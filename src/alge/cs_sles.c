@@ -2439,6 +2439,7 @@ void CS_PROCF(reslin, RESLIN)
  const cs_int_t   *ilved,     /* <-- Interleaved indicator  */
                               /*     1: interleaved; 2: not interleaved */
  const cs_int_t   *ibsize,    /* <-- Block size of element ii, ii */
+ const cs_int_t   *iesize,    /* <-- Block size of element ij */
  const cs_int_t   *ireslp,    /* <-- Resolution type:
                                      0: pcg; 1: Jacobi; 2: cg-stab */
  const cs_int_t   *ipol,      /* <-- Preconditioning polynomial degree
@@ -2465,6 +2466,7 @@ void CS_PROCF(reslin, RESLIN)
   int cvg = 0;
   int n_iter = *niterf;
   int diag_block_size[4] = {1, 1, 1, 1};
+  int extra_diag_block_size[4] = {1, 1, 1, 1};
   bool symmetric = (*isym == 1) ? true : false;
   bool interleaved = (*ilved == 1) ? true : false;
   cs_halo_rotation_t rotation_mode = CS_HALO_ROTATION_COPY;
@@ -2485,6 +2487,13 @@ void CS_PROCF(reslin, RESLIN)
     diag_block_size[1] = *ibsize;
     diag_block_size[2] = *ibsize;
     diag_block_size[3] = (*ibsize)*(*ibsize);
+  }
+
+  if (*iesize > 1) {
+    extra_diag_block_size[0] = *iesize;
+    extra_diag_block_size[1] = *iesize;
+    extra_diag_block_size[2] = *iesize;
+    extra_diag_block_size[3] = (*iesize)*(*iesize);
   }
 
   var_name = cs_base_string_f_to_c_create(cname, *lname);
@@ -2511,6 +2520,7 @@ void CS_PROCF(reslin, RESLIN)
     cs_matrix_set_coefficients(a,
                                symmetric,
                                diag_block_size,
+                               extra_diag_block_size,
                                dam,
                                xam);
     cvg = cs_sles_solve(var_name,

@@ -126,7 +126,7 @@ integer          iinvpe
 integer          idiffp, iconvp, ndircp
 integer          nitmap, imgrp , ncymap, nitmgp
 integer          nagmax, npstmg
-integer          ibsize
+integer          ibsize, iesize
 integer          imucpp
 
 double precision residu, rnorm , rnrmf , rnrmdf
@@ -164,6 +164,7 @@ isqrt = 1
 
 ! Matrix block size
 ibsize = 1
+iesize = 1
 
 !     TEST DE VARIATION DE LA PRESSION HYDROSTATIQUE EN SORTIE
 
@@ -303,8 +304,8 @@ if (imgr(ipr).gt.0) then
 
   call clmlga &
   !==========
- ( chaine(1:16) ,     lchain ,                                    &
-   isym   , ibsize , nagmax , npstmg , iwarnp ,                   &
+ ( chaine(1:16) ,    lchain ,                                     &
+   isym   , ibsize , iesize , nagmax , npstmg , iwarnp ,          &
    ngrmax , ncegrm ,                                              &
    rlxp1  ,                                                       &
    dam    , xam    )
@@ -369,10 +370,11 @@ do isweep = 1, nswmpr
   epsilp = epsilo(ipr)
   iinvpe = 1
   ibsize = 1
+  iesize = 1
 
-  call invers                                                     &
+  call invers &
   !==========
- ( chaine(1:16)    , isym   , ibsize ,                            &
+ ( chaine(1:16)    , isym   , ibsize , iesize ,                   &
    ipol   , ireslp , nitmap , imgrp  ,                            &
    ncymap , nitmgp ,                                              &
    iwarnp , nfecra , niterf , icycle , iinvpe ,                   &

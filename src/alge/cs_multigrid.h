@@ -66,6 +66,7 @@ void CS_PROCF(clmlga, CLMLGA)
  const cs_int_t   *isym,      /* <-- Symmetry indicator:
                                      1: symmetric; 2: not symmetric */
  const cs_int_t   *ibsize,    /* <-- Matrix block size */
+ const cs_int_t   *iesize,    /* <-- Matrix extra diag block size */
  const cs_int_t   *nagmax,    /* <-- Agglomeration count limit */
  const cs_int_t   *ncpost,    /* <-- If > 0, postprocess coarsening, using
                                      coarse cell numbers modulo ncpost */
@@ -160,6 +161,7 @@ cs_multigrid_finalize(void);
  *   p0p1_relax             <-- p0/p1 relaxation_parameter
  *   symmetric              <-- indicates if matrix coefficients are symmetric
  *   diag_block_size        <-- block sizes for diagonal, or NULL
+ *   extra_diag_block_size  <-- Block sizes for extra diagonal, or NULL
  *   da                     <-- diagonal values (NULL if zero)
  *   xa                     <-- extradiagonal values (NULL if zero)
  *----------------------------------------------------------------------------*/
@@ -174,6 +176,7 @@ cs_multigrid_build(const char       *var_name,
                    double            p0p1_relax,
                    bool              symmetric,
                    const int        *diag_block_size,
+                   const int        *extra_diag_block_size,
                    const cs_real_t  *da,
                    const cs_real_t  *xa);
 

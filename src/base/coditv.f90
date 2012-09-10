@@ -119,9 +119,8 @@
 !>                               - 0 with slope test
 !> \param[in]     iescap        compute the predictor indicator if 1
 !> \param[in]     idftnp        indicator
-!>                               - 0 the diffusivity is scalar
-!>                               - 1 the diffusivity is a diagonal tensor
-!>                               - 2 the diffusivity is a symmetric tensor
+!>                               - 1 the diffusivity is scalar
+!>                               - 6 the diffusivity is a symmetric tensor
 
 !> \param[in]     iswdyp        indicator
 !>                               - 0 no dynamic relaxation
@@ -241,8 +240,8 @@ double precision cofafv(3,ndimfb)
 double precision coefbv(3,3,ndimfb)
 double precision cofbfv(3,3,ndimfb)
 double precision flumas(nfac), flumab(nfabor)
-double precision viscfm(nfac), viscbm(nfabor)
-double precision viscfs(nfac), viscbs(nfabor)
+double precision viscfm(*), viscbm(nfabor)
+double precision viscfs(*), viscbs(nfabor)
 double precision secvif(nfac), secvib(nfabor)
 double precision fimp(3,3,ncelet)
 double precision smbrp(3,ncelet)
@@ -259,7 +258,7 @@ integer          iinvpe
 integer          idtva0
 integer          nagmax, npstmg
 integer          isou , jsou, ifac
-integer          ibsize
+integer          ibsize, iesize
 integer          incp, insqrt
 
 double precision residu, rnorm, ressol, res, rnorm2
@@ -278,9 +277,16 @@ double precision, allocatable, dimension(:,:) :: adxk, adxkm1, dpvarm1, rhs0
 ! 0.  Initialization
 !===============================================================================
 
+! Matrix block size
+ibsize = 3
+if (idftnp.eq.1) iesize = 1
+if (idftnp.eq.6) iesize = 3
+
 ! Allocate temporary arrays
+allocate(dam(3,3,ncelet))
 ! be carefull here, xam is interleaved
-allocate(dam(3,3,ncelet), xam(2,nfac))
+if (iesize.eq.1) allocate(xam(2,nfac))
+if (iesize.eq.3) allocate(xam(3*3*2,nfac))
 allocate(dpvar(3,ncelet), smbini(3,ncelet))
 if (iswdyp.ge.1) then
   allocate(adxk(3,ncelet), adxkm1(3,ncelet), dpvarm1(3,ncelet))
@@ -298,9 +304,6 @@ cnom(3)= chaine(1:16)
 ! Symmetric matrix, except if advection
 isym  = 1
 if (iconvp.gt.0) isym  = 2
-
-! Matrix block size
-ibsize = 3
 
 ! METHODE DE RESOLUTION ET DEGRE DU PRECOND DE NEUMANN
 !     0 SI CHOIX AUTOMATIQUE GRADCO OU BICGSTAB
@@ -328,17 +331,31 @@ iinvpe = 0
 ! 1.  Building of the "simplified" matrix
 !===============================================================================
 
-! xam is the same for the 3 components
+if (iesize.eq.1) then
 
-call matrxv &
-!==========
- ( ncelet , ncel   , nfac   , nfabor ,                            &
-   iconvp , idiffp , ndircp , isym   , nfecra ,                   &
-   thetap ,                                                       &
-   ifacel , ifabor ,                                              &
-   coefbv , cofbfv , fimp   ,                                     &
-   flumas , flumab , viscfm , viscbm ,                            &
-   dam    , xam    )
+  call matrxv &
+  !==========
+   ( ncelet , ncel   , nfac   , nfabor ,                            &
+     iconvp , idiffp , ndircp , isym   , nfecra ,                   &
+     thetap ,                                                       &
+     ifacel , ifabor ,                                              &
+     coefbv , cofbfv , fimp   ,                                     &
+     flumas , flumab , viscfm , viscbm ,                            &
+     dam    , xam    )
+
+elseif (iesize.eq.3) then
+
+  call matrvv &
+  !==========
+   ( ncelet , ncel   , nfac   , nfabor ,                            &
+     iconvp , idiffp , ndircp , isym   , nfecra ,                   &
+     thetap ,                                                       &
+     ifacel , ifabor ,                                              &
+     coefbv , cofbfv , fimp   ,                                     &
+     flumas , flumab , viscfm , viscbm ,                            &
+     dam    , xam    )
+
+endif
 
 ! For stationary computations, the diagonal is relaxed
 if (idtvar.lt.0) then
@@ -369,7 +386,7 @@ if (imgrp.gt.0) then
   call clmlga &
   !==========
  ( chaine(1:16) ,    lchain ,                                     &
-   isym   , ibsize , nagmax , npstmg , iwarnp ,                   &
+   isym   , ibsize , iesize , nagmax , npstmg , iwarnp ,          &
    ngrmax , ncegrm ,                                              &
    rlxp1  ,                                                       &
    dam    , xam    )
@@ -501,7 +518,7 @@ res = residu
 
 allocate(w1(3, ncelet))  ! Allocate a temporary array
 
-call promav(isym, ibsize, iinvpe, dam, xam, pvar, w1)
+call promav(isym, ibsize, iesize, iinvpe, dam, xam, pvar, w1)
 
 !$omp parallel do private(isou)
 do iel = 1, ncel
@@ -562,7 +579,8 @@ do while (isweep.le.nswmod.and.res.gt.epsrsp*rnorm)
 
   call invers &
   !==========
- ( cnom(1), isym   , ibsize , ipol   , ireslq , nitmap , imgrp  , &
+ ( cnom(1), isym   , ibsize , iesize ,                            &
+   ipol   , ireslq , nitmap , imgrp  ,                            &
    ncymxp , nitmfp ,                                              &
    iwarnp , nfecra , niterf , icycle , iinvpe ,                   &
    epsilp , rnorm  , ressol ,                                     &

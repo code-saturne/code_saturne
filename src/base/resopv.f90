@@ -182,7 +182,7 @@ integer          itypfl
 integer          iesdep
 integer          idtsca
 integer          nagmax, npstmg
-integer          isou  , ibsize
+integer          isou  , ibsize, iesize
 integer          imucpp, idftnp, iswdyp
 integer          iescap, ircflp, ischcp, isstpp, ivar, ncymxp, nitmfp
 integer          nswrsp
@@ -257,6 +257,7 @@ endif
 
 ! Matrix block size
 ibsize = 1
+iesize = 1
 
 if (iresol(ipr).eq.-1) then
   ireslp = 0
@@ -947,8 +948,8 @@ if (imgr(ipr).gt.0) then
 
   call clmlga &
   !==========
- ( chaine(1:16) ,   lchain ,                                      &
-   isym   , ibsize , nagmax , npstmg , iwarnp ,                   &
+ ( chaine(1:16) ,    lchain ,                                     &
+   isym   , ibsize , iesize , nagmax , npstmg , iwarnp ,          &
    ngrmax , ncegrm ,                                              &
    rlxp1  ,                                                       &
    dam    , xam    )
@@ -1212,7 +1213,7 @@ do while (isweep.le.nswmpr.and.residu.gt.tcrite)
 
   call invers &
   !==========
- ( chaine(1:16)    , isym   , ibsize ,                            &
+ ( chaine(1:16)    , isym   , ibsize , iesize ,                   &
    ipol   , ireslp , nitmap , imgrp  ,                            &
    ncymap , nitmgp ,                                              &
    iwarnp , nfecra , niterf , icycle , iinvpe ,                   &

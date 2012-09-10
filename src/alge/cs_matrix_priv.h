@@ -112,7 +112,8 @@ typedef struct _cs_matrix_struct_native_t {
 typedef struct _cs_matrix_coeff_native_t {
 
   bool              symmetric;       /* Symmetry indicator */
-  int               max_block_size;  /* Current max allocated block size */
+  int               max_db_size;     /* Current max allocated diag block size */
+  int               max_eb_size;     /* Current max allocated extradiag block size */
 
   /* Pointers to possibly shared arrays */
 
@@ -220,7 +221,8 @@ typedef struct _cs_matrix_coeff_msr_t {
   int              n_prefetch_rows;   /* Number of rows at a time for which
                                          the x values in y = Ax should be
                                          prefetched (0 if no prefetch) */
-  int              max_block_size;    /* Current max allocated block size */
+  int              max_db_size;       /* Current max allocated block size */
+  int              max_eb_size;       /* Current max allocated extradiag block size */
 
   /* Pointers to possibly shared arrays */
 
@@ -275,7 +277,13 @@ struct _cs_matrix_t {
   cs_lnum_t              n_faces;      /* Local Number of mesh faces
                                           (necessary to affect coefficients) */
 
-  int                    b_size[4];    /* Block size, including padding:
+  int                    db_size[4];   /* Diag Block size, including padding:
+                                          0: useful block size
+                                          1: vector block extents
+                                          2: matrix line extents
+                                          3: matrix line*column extents */
+
+  int                    eb_size[4];   /* Extradiag block size, including padding:
                                           0: useful block size
                                           1: vector block extents
                                           2: matrix line extents
@@ -307,9 +315,9 @@ struct _cs_matrix_t {
   cs_matrix_copy_diagonal_t         *copy_diagonal;
 
   /* Function pointer arrays, with 4 variants:
-     block_flag*2 + exclude_diagonal_flag */
+     block_flag*2 + exclude_diagonal_flag + extra_block_flag */
 
-  cs_matrix_vector_product_t        *vector_multiply[4];
+  cs_matrix_vector_product_t        *vector_multiply[6];
 
   /* Loop lenght parameter for some SpMv algorithms */
 
@@ -334,9 +342,9 @@ struct _cs_matrix_variant_t {
   int                    loop_length;
 
   /* Function pointer arrays, with 4 variants:
-     block_flag*2 + exclude_diagonal_flag */
+     block_flag*2 + exclude_diagonal_flag + extra_block_flag */
 
-  cs_matrix_vector_product_t        *vector_multiply[4];
+  cs_matrix_vector_product_t        *vector_multiply[6];
 
   /* Measured structure creation cost, or -1 otherwise */
 

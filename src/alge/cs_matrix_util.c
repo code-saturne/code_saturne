@@ -321,11 +321,11 @@ _b_diag_dom_native(const cs_matrix_t  *matrix,
   const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
 
   const cs_real_t  *restrict xa = mc->xa;
-  const int *b_size = matrix->b_size;
+  const int *db_size = matrix->db_size;
 
   /* block diagonal contribution */
 
-  _b_diag_dom_diag_contrib(mc->da, dd, ms->n_cells, ms->n_cells_ext, b_size);
+  _b_diag_dom_diag_contrib(mc->da, dd, ms->n_cells, ms->n_cells_ext, db_size);
 
   /* non-diagonal terms */
 
@@ -338,9 +338,9 @@ _b_diag_dom_native(const cs_matrix_t  *matrix,
       for (face_id = 0; face_id < ms->n_faces; face_id++) {
         ii = face_cel_p[2*face_id] -1;
         jj = face_cel_p[2*face_id + 1] -1;
-        for (kk = 0; kk < b_size[0]; kk++) {
-          dd[ii*b_size[1] + kk] -= fabs(xa[face_id]);
-          dd[jj*b_size[1] + kk] -= fabs(xa[face_id]);
+        for (kk = 0; kk < db_size[0]; kk++) {
+          dd[ii*db_size[1] + kk] -= fabs(xa[face_id]);
+          dd[jj*db_size[1] + kk] -= fabs(xa[face_id]);
         }
       }
     }
@@ -351,9 +351,9 @@ _b_diag_dom_native(const cs_matrix_t  *matrix,
       for (face_id = 0; face_id < ms->n_faces; face_id++) {
         ii = face_cel_p[2*face_id] -1;
         jj = face_cel_p[2*face_id + 1] -1;
-        for (kk = 0; kk < b_size[0]; kk++) {
-          dd[ii*b_size[1] + kk] -= fabs(xa[2*face_id]);
-          dd[jj*b_size[1] + kk] -= fabs(xa[2*face_id + 1]);
+        for (kk = 0; kk < db_size[0]; kk++) {
+          dd[ii*db_size[1] + kk] -= fabs(xa[2*face_id]);
+          dd[jj*db_size[1] + kk] -= fabs(xa[2*face_id + 1]);
         }
       }
 
@@ -361,7 +361,7 @@ _b_diag_dom_native(const cs_matrix_t  *matrix,
 
   }
 
-  _b_diag_dom_diag_normalize(mc->da, dd, ms->n_cells, b_size);
+  _b_diag_dom_diag_normalize(mc->da, dd, ms->n_cells, db_size);
 }
 
 /*----------------------------------------------------------------------------
@@ -543,12 +543,12 @@ _b_diag_dom_msr(const cs_matrix_t  *matrix,
 
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
   const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
-  const int *b_size = matrix->b_size;
+  const int *db_size = matrix->db_size;
   const cs_lnum_t  n_rows = ms->n_rows;
 
   /* diagonal contribution */
 
-  _b_diag_dom_diag_contrib(mc->d_val, dd, ms->n_rows, ms->n_cols, b_size);
+  _b_diag_dom_diag_contrib(mc->d_val, dd, ms->n_rows, ms->n_cols, db_size);
 
   /* extra-diagonal contribution */
 
@@ -559,14 +559,14 @@ _b_diag_dom_msr(const cs_matrix_t  *matrix,
       m_row = mc->x_val + ms->row_index[ii];
       n_cols = ms->row_index[ii+1] - ms->row_index[ii];
       for (jj = 0; jj < n_cols; jj++) {
-        for (kk = 0; kk < b_size[0]; kk++)
-          dd[ii*b_size[1] + kk] -= fabs(m_row[jj]);
+        for (kk = 0; kk < db_size[0]; kk++)
+          dd[ii*db_size[1] + kk] -= fabs(m_row[jj]);
       }
     }
 
   }
 
-  _b_diag_dom_diag_normalize(mc->d_val, dd, ms->n_rows, b_size);
+  _b_diag_dom_diag_normalize(mc->d_val, dd, ms->n_rows, db_size);
 }
 
 /*----------------------------------------------------------------------------
@@ -766,16 +766,16 @@ _b_pre_dump_native(const cs_matrix_t  *matrix,
   const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
 
   const cs_real_t  *restrict xa = mc->xa;
-  const int *b_size = matrix->b_size;
+  const int *db_size = matrix->db_size;
 
   /* block diagonal contribution */
 
   _b_pre_dump_diag_contrib(mc->da, m_coo, m_val,
-                           g_coo_num, ms->n_cells, b_size);
+                           g_coo_num, ms->n_cells, db_size);
 
   /* non-diagonal terms */
 
-  dump_id = ms->n_cells*b_size[0]*b_size[0];
+  dump_id = ms->n_cells*db_size[0]*db_size[0];
 
   if (mc->xa != NULL) {
 
@@ -786,12 +786,12 @@ _b_pre_dump_native(const cs_matrix_t  *matrix,
       for (face_id = 0; face_id < ms->n_faces; face_id++) {
         ii = face_cel_p[2*face_id] -1;
         jj = face_cel_p[2*face_id + 1] -1;
-        for (kk = 0; kk < b_size[0]; kk++) {
-          m_coo[dump_id*2] = g_coo_num[ii]*b_size[0] + kk;
-          m_coo[dump_id*2 + 1] = g_coo_num[jj]*b_size[0] + kk;
+        for (kk = 0; kk < db_size[0]; kk++) {
+          m_coo[dump_id*2] = g_coo_num[ii]*db_size[0] + kk;
+          m_coo[dump_id*2 + 1] = g_coo_num[jj]*db_size[0] + kk;
           m_val[dump_id] = xa[face_id];
-          m_coo[dump_id*2 + 2] = g_coo_num[jj]*b_size[0] + kk;
-          m_coo[dump_id*2 + 3] = g_coo_num[ii]*b_size[0] + kk;
+          m_coo[dump_id*2 + 2] = g_coo_num[jj]*db_size[0] + kk;
+          m_coo[dump_id*2 + 3] = g_coo_num[ii]*db_size[0] + kk;
           m_val[dump_id + 1] = xa[face_id];
           dump_id += 2;
         }
@@ -804,12 +804,12 @@ _b_pre_dump_native(const cs_matrix_t  *matrix,
       for (face_id = 0; face_id < ms->n_faces; face_id++) {
         ii = face_cel_p[2*face_id] -1;
         jj = face_cel_p[2*face_id + 1] -1;
-        for (kk = 0; kk < b_size[0]; kk++) {
-          m_coo[dump_id*2] = g_coo_num[ii]*b_size[0] + kk;
-          m_coo[dump_id*2 + 1] = g_coo_num[jj]*b_size[0] + kk;
+        for (kk = 0; kk < db_size[0]; kk++) {
+          m_coo[dump_id*2] = g_coo_num[ii]*db_size[0] + kk;
+          m_coo[dump_id*2 + 1] = g_coo_num[jj]*db_size[0] + kk;
           m_val[dump_id] = xa[face_id*2];
-          m_coo[dump_id*2 + 2] = g_coo_num[jj]*b_size[0] + kk;
-          m_coo[dump_id*2 + 3] = g_coo_num[ii]*b_size[0] + kk;
+          m_coo[dump_id*2 + 2] = g_coo_num[jj]*db_size[0] + kk;
+          m_coo[dump_id*2 + 3] = g_coo_num[ii]*db_size[0] + kk;
           m_val[dump_id + 1] = xa[face_id*2 + 1];
           dump_id += 2;
         }
@@ -819,7 +819,7 @@ _b_pre_dump_native(const cs_matrix_t  *matrix,
 
   }
 
-  return ((ms->n_cells*b_size[0] + ms->n_faces*2) * b_size[0]);
+  return ((ms->n_cells*db_size[0] + ms->n_faces*2) * db_size[0]);
 }
 
 /*----------------------------------------------------------------------------
@@ -1032,14 +1032,14 @@ _b_pre_dump_msr(const cs_matrix_t  *matrix,
 
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
   const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
-  const int  *b_size = matrix->b_size;
+  const int  *db_size = matrix->db_size;
   const cs_lnum_t  n_rows = ms->n_rows;
-  const cs_lnum_t  dump_id_shift = ms->n_rows*b_size[0]*b_size[0];
+  const cs_lnum_t  dump_id_shift = ms->n_rows*db_size[0]*db_size[0];
 
   /* diagonal contribution */
 
   _b_pre_dump_diag_contrib(mc->d_val, m_coo, m_val,
-                           g_coo_num, ms->n_rows, b_size);
+                           g_coo_num, ms->n_rows, db_size);
 
 
   /* extra-diagonal contribution */
@@ -1051,10 +1051,10 @@ _b_pre_dump_msr(const cs_matrix_t  *matrix,
       m_row = mc->x_val + ms->row_index[ii];
       n_cols = ms->row_index[ii+1] - ms->row_index[ii];
       for (jj = 0; jj < n_cols; jj++) {
-        for (kk = 0; kk < b_size[0]; kk++) {
-          dump_id = (ms->row_index[ii] + jj)*b_size[0] + kk + dump_id_shift;
-          m_coo[dump_id*2] = g_coo_num[ii]*b_size[0] + kk;
-          m_coo[dump_id*2+1] = g_coo_num[col_id[jj]]*b_size[0] + kk;
+        for (kk = 0; kk < db_size[0]; kk++) {
+          dump_id = (ms->row_index[ii] + jj)*db_size[0] + kk + dump_id_shift;
+          m_coo[dump_id*2] = g_coo_num[ii]*db_size[0] + kk;
+          m_coo[dump_id*2+1] = g_coo_num[col_id[jj]]*db_size[0] + kk;
           m_val[dump_id] = m_row[jj];
         }
       }
@@ -1066,17 +1066,17 @@ _b_pre_dump_msr(const cs_matrix_t  *matrix,
       col_id = ms->col_id + ms->row_index[ii];
       n_cols = ms->row_index[ii+1] - ms->row_index[ii];
       for (jj = 0; jj < n_cols; jj++) {
-        for (kk = 0; kk < b_size[0]; kk++) {
-          dump_id = (ms->row_index[ii] + jj)*b_size[0] + kk + dump_id_shift;
-          m_coo[dump_id*2] = g_coo_num[ii]*b_size[0] + kk;
-          m_coo[dump_id*2+1] = g_coo_num[col_id[jj]]*b_size[0] + kk;
+        for (kk = 0; kk < db_size[0]; kk++) {
+          dump_id = (ms->row_index[ii] + jj)*db_size[0] + kk + dump_id_shift;
+          m_coo[dump_id*2] = g_coo_num[ii]*db_size[0] + kk;
+          m_coo[dump_id*2+1] = g_coo_num[col_id[jj]]*db_size[0] + kk;
           m_val[dump_id] = 0.0;
         }
       }
     }
   }
 
-  return ((ms->row_index[n_rows])*b_size[0] + dump_id_shift);
+  return ((ms->row_index[n_rows])*db_size[0] + dump_id_shift);
 }
 
 /*----------------------------------------------------------------------------
@@ -1173,7 +1173,7 @@ _prepare_matrix_dump_data(const cs_matrix_t  *m,
 {
   cs_lnum_t ii, jj;
   cs_lnum_t _n_entries
-    = (m->n_cells*m->b_size[0] + m->n_faces*2) * m->b_size[0];
+    = (m->n_cells*m->db_size[0] + m->n_faces*2) * m->db_size[0];
   cs_gnum_t coo_shift = 1, n_g_rows = 0;
 
   cs_gnum_t *g_coo_num = NULL;
@@ -1215,21 +1215,21 @@ _prepare_matrix_dump_data(const cs_matrix_t  *m,
 
   switch(m->type) {
   case CS_MATRIX_NATIVE:
-    if (m->b_size[3] == 1)
+    if (m->db_size[3] == 1)
       _n_entries = _pre_dump_native(m, _m_coords, _m_vals, g_coo_num);
     else
       _n_entries = _b_pre_dump_native(m, _m_coords, _m_vals, g_coo_num);
     break;
   case CS_MATRIX_CSR:
-    assert(m->b_size[3] == 1);
+    assert(m->db_size[3] == 1);
     _n_entries = _pre_dump_csr(m, _m_coords, _m_vals, g_coo_num);
     break;
   case CS_MATRIX_CSR_SYM:
-    assert(m->b_size[3] == 1);
+    assert(m->db_size[3] == 1);
     _n_entries = _pre_dump_csr_sym(m, _m_coords, _m_vals, g_coo_num);
     break;
   case CS_MATRIX_MSR:
-    if (m->b_size[3] == 1)
+    if (m->db_size[3] == 1)
       _n_entries = _pre_dump_msr(m, _m_coords, _m_vals, g_coo_num);
     else
       _n_entries = _b_pre_dump_msr(m, _m_coords, _m_vals, g_coo_num);
@@ -1636,21 +1636,21 @@ cs_matrix_diag_dominance(const cs_matrix_t  *matrix,
 
   switch(matrix->type) {
   case CS_MATRIX_NATIVE:
-    if (matrix->b_size[3] == 1)
+    if (matrix->db_size[3] == 1)
       _diag_dom_native(matrix, dd);
     else
       _b_diag_dom_native(matrix, dd);
     break;
   case CS_MATRIX_CSR:
-    assert(matrix->b_size[3] == 1);
+    assert(matrix->db_size[3] == 1);
     _diag_dom_csr(matrix, dd);
     break;
   case CS_MATRIX_CSR_SYM:
-    assert(matrix->b_size[3] == 1);
+    assert(matrix->db_size[3] == 1);
     _diag_dom_csr_sym(matrix, dd);
     break;
   case CS_MATRIX_MSR:
-    if (matrix->b_size[3] == 1)
+    if (matrix->db_size[3] == 1)
       _diag_dom_msr(matrix, dd);
     else
       _b_diag_dom_msr(matrix, dd);
@@ -1667,15 +1667,15 @@ cs_matrix_diag_dominance(const cs_matrix_t  *matrix,
   /* Sync ghost cells as a precaution */
 
   if (halo != NULL) {
-    if (matrix->b_size[3] == 1)
+    if (matrix->db_size[3] == 1)
       cs_halo_sync_var(halo, CS_HALO_STANDARD, dd);
     else {
-      cs_halo_sync_var_strided(halo, CS_HALO_STANDARD, dd, matrix->b_size[1]);
-      if (halo->n_transforms > 0 && matrix->b_size[0] == 3)
+      cs_halo_sync_var_strided(halo, CS_HALO_STANDARD, dd, matrix->db_size[1]);
+      if (halo->n_transforms > 0 && matrix->db_size[0] == 3)
         cs_halo_perio_sync_var_vect(halo,
                                     CS_HALO_STANDARD,
                                     dd,
-                                    matrix->b_size[1]);
+                                    matrix->db_size[1]);
     }
   }
 }
@@ -1759,6 +1759,7 @@ cs_matrix_dump_test(cs_lnum_t              n_cells,
 
   cs_real_t  *da = NULL, *xa = NULL, *rhs = NULL;
   int diag_block_size[4] = {3, 3, 3, 9};
+  int extra_diag_block_size[4] = {1, 1, 1, 1};
 
   const int n_tests = 7;
   const char *name[] = {"matrix_native",
@@ -1805,6 +1806,7 @@ cs_matrix_dump_test(cs_lnum_t              n_cells,
   for (test_id = 0; test_id < n_tests; test_id++) {
 
     int *_diag_block_size = (block_flag[test_id]) ? diag_block_size : NULL;
+    int *_extra_diag_block_size = (block_flag[test_id]-1) ? extra_diag_block_size : NULL;
 
     cs_matrix_structure_t
       *ms = cs_matrix_structure_create(type[test_id],
@@ -1821,6 +1823,7 @@ cs_matrix_dump_test(cs_lnum_t              n_cells,
     cs_matrix_set_coefficients(m,
                                sym_flag[test_id],
                                _diag_block_size,
+                               _extra_diag_block_size,
                                da,
                                xa);
 

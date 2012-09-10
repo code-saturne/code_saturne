@@ -639,6 +639,7 @@ _multigrid_add_level(cs_multigrid_t  *mg,
                      NULL,
                      NULL,
                      NULL,
+                     NULL,
                      &n_ranks,
                      &n_cells,
                      &n_cells_with_ghosts,
@@ -1117,6 +1118,7 @@ _abort_on_divergence(cs_multigrid_t      *mg,
 
     int i;
     int db_size[4] = {1, 1, 1, 1};
+    int eb_size[4] = {1, 1, 1, 1};
 
     const cs_grid_t *g = mg->grid_hierarchy[0];
     const cs_lnum_t n_base_cells = cs_grid_get_n_cells(g);
@@ -1146,6 +1148,7 @@ _abort_on_divergence(cs_multigrid_t      *mg,
                        NULL,
                        NULL,
                        db_size,
+                       eb_size,
                        NULL,
                        NULL,
                        NULL,
@@ -1181,6 +1184,7 @@ _abort_on_divergence(cs_multigrid_t      *mg,
                        NULL,
                        NULL,
                        db_size,
+                       eb_size,
                        NULL,
                        &n_cells,
                        &n_cells_ext,
@@ -1315,6 +1319,7 @@ _multigrid_cycle(cs_multigrid_t      *mg,
   cs_timer_t t0, t1;
 
   int db_size[4] = {1, 1, 1, 1};
+  int eb_size[4] = {1, 1, 1, 1};
   int cvg = 0, c_cvg = 0;
   int n_iter = 0;
   size_t alloc_size = 0, wr_size = 0;
@@ -1364,6 +1369,7 @@ _multigrid_cycle(cs_multigrid_t      *mg,
                    NULL,
                    NULL,
                    db_size,
+                   eb_size,
                    NULL,
                    &n_cells,
                    &n_cells_ext,
@@ -1549,6 +1555,7 @@ _multigrid_cycle(cs_multigrid_t      *mg,
                      NULL,
                      NULL,
                      NULL,
+                     NULL,
                      &n_cells,
                      &n_cells_ext,
                      NULL,
@@ -1655,6 +1662,7 @@ _multigrid_cycle(cs_multigrid_t      *mg,
       f = mg->grid_hierarchy[level];
 
       cs_grid_get_info(f,
+                       NULL,
                        NULL,
                        NULL,
                        NULL,
@@ -1781,6 +1789,7 @@ void CS_PROCF(clmlga, CLMLGA)
  const cs_int_t   *isym,      /* <-- Symmetry indicator:
                                      1: symmetric; 2: not symmetric */
  const cs_int_t   *ibsize,    /* <-- Matrix block size */
+ const cs_int_t   *iesize,    /* <-- Matrix extra diag block size */
  const cs_int_t   *nagmax,    /* <-- Agglomeration count limit */
  const cs_int_t   *ncpost,    /* <-- If > 0, postprocess coarsening, using
                                      coarse cell numbers modulo ncpost */
@@ -1797,6 +1806,7 @@ void CS_PROCF(clmlga, CLMLGA)
 
   bool symmetric = (*isym == 1) ? true : false;
   int diag_block_size[4] = {*ibsize, *ibsize, *ibsize, (*ibsize)*(*ibsize)};
+  int extra_diag_block_size[4] = {*iesize, *iesize, *iesize, (*iesize)*(*iesize)};
 
   var_name = cs_base_string_f_to_c_create(cname, *lname);
 
@@ -1809,6 +1819,7 @@ void CS_PROCF(clmlga, CLMLGA)
                      *rlxp1,
                      symmetric,
                      diag_block_size,
+                     extra_diag_block_size,
                      dam,
                      xam);
 
@@ -1991,6 +2002,7 @@ cs_multigrid_finalize(void)
  *   p0p1_relax             <-- p0/p1 relaxation_parameter
  *   symmetric              <-- indicates if matrix coefficients are symmetric
  *   diag_block_size        <-- block sizes for diagonal, or NULL
+ *   extra_diag_block_size  <-- Block sizes for extra diagonal, or NULL
  *   da                     <-- diagonal values (NULL if zero)
  *   xa                     <-- extradiagonal values (NULL if zero)
  *----------------------------------------------------------------------------*/
@@ -2005,6 +2017,7 @@ cs_multigrid_build(const char       *var_name,
                    double            p0p1_relax,
                    bool              symmetric,
                    const int        *diag_block_size,
+                   const int        *extra_diag_block_size,
                    const cs_real_t  *da,
                    const cs_real_t  *xa)
 {
@@ -2053,6 +2066,7 @@ cs_multigrid_build(const char       *var_name,
                                  mesh->n_i_faces,
                                  symmetric,
                                  diag_block_size,
+                                 extra_diag_block_size,
                                  mesh->i_face_cells,
                                  mesh->halo,
                                  mesh->i_face_numbering,
@@ -2105,6 +2119,7 @@ cs_multigrid_build(const char       *var_name,
     cs_grid_get_info(g,
                      &grid_lv,
                      &symmetric,
+                     NULL,
                      NULL,
                      &n_coarse_ranks,
                      &n_cells,
@@ -2352,6 +2367,7 @@ cs_multigrid_solve(const char          *var_name,
 {
   int ii;
   int db_size[4] = {1, 1, 1, 1};
+  int eb_size[4] = {1, 1, 1, 1};
 
   int cvg = 0;
   cs_lnum_t n_cells = 0;
@@ -2368,6 +2384,7 @@ cs_multigrid_solve(const char          *var_name,
                    NULL,
                    NULL,
                    db_size,
+                   eb_size,
                    NULL,
                    &n_cells,
                    NULL,

@@ -524,7 +524,7 @@ call resopv &
    isostd , idtsca ,                                              &
    dt     , rtp    , rtpa   , vel    , vela   ,                   &
    propce , propfa , propfb ,                                     &
-   coefa  , coefb  , coefau , coefbu , coefap ,                   & !TODO
+   coefa  , coefb  , coefau , coefbu , coefap ,                   &
    ckupdc , smacel ,                                              &
    frcxt  , dfrcxt , tpucov , trav   ,                            &
    viscf  , viscb  , viscfi , viscbi ,                            &

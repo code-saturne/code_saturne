@@ -78,6 +78,7 @@ bilsc2.f90 \
 bilscv.f90 \
 bilsc4.f90 \
 diften.f90 \
+diftnv.f90 \
 divmas.f90 \
 divrij.f90 \
 grdcel.f90 \
@@ -93,6 +94,7 @@ itrmas.f90 \
 itrmav.f90 \
 matrdt.f90 \
 matrix.f90 \
+matrvv.f90 \
 matrxv.f90 \
 prodsc.f90 \
 projts.f90 \
@@ -101,6 +103,7 @@ vectds.f90 \
 viscfa.f90 \
 visort.f90 \
 vitens.f90 \
+vistnv.f90 \
 viortv.f90
 libcsalge_la_LDFLAGS = -no-undefined
 

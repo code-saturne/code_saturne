@@ -186,11 +186,12 @@ double precision cofafv(3  ,nfabor)
 double precision coefbv(3,3,nfabor)
 double precision cofbfv(3,3,nfabor)
 double precision flumas(nfac)  , flumab(nfabor)
-double precision viscf (nfac)  , viscb (nfabor)
+double precision viscf (*)  , viscb (nfabor)
 double precision secvif(nfac), secvib(nfabor)
 double precision smbr(3,ncelet)
 
 ! Local variables
+double precision idiflc
 
 !===============================================================================
 
@@ -212,7 +213,40 @@ if (idftnp.eq.1) then
 ! Symmetric tensor diffusivity
 elseif (idftnp.eq.6) then
 
-  !TODO
+  idiflc = 0
+  ! Convective part
+  if (iconvp.eq.1) then
+
+    call bilsc4 &
+    !==========
+     ( nvar   , nscal  ,                                              &
+       idtvar , ivar   , iconvp , idiflc , nswrgp , imligp , ircflp , &
+       ischcp , isstpp , inc    , imrgra , ivisep ,                   &
+       ippu   , ippv   , ippw   , iwarnp ,                            &
+       blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
+       pvar   , pvara  ,                                              &
+       coefav , coefbv , cofafv , cofbfv ,                            &
+       flumas , flumab , viscf  , viscb  , secvif , secvib ,          &
+       smbr   )
+
+  endif
+
+  ! Diffusive part (with a 3x3 symmetric diffusivity)
+  if (idiffp.eq.1) then
+
+    call diftnv &
+    !==========
+   ( idtvar , ivar   , nswrgp , imligp , ircflp ,                   &
+     inc    , imrgra ,                                              &
+     ippu   , ippv   , ippw   , iwarnp , epsrgp ,                   &
+     climgp , extrap , relaxp , thetap ,                            &
+     pvar   , pvara  ,                                              &
+     coefav , coefbv , cofafv , cofbfv ,                            &
+     viscf  , viscb  ,                                              &
+     smbr   )
+
+  endif
+
 endif
 
 !--------

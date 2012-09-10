@@ -238,6 +238,50 @@ _dense_3_3_ax(cs_lnum_t         b_id,
 }
 
 /*----------------------------------------------------------------------------
+ * Compute matrix-vector product increment for one dense block:
+ * y[i] += a[ij].x[j]
+ *
+ * Vectors and blocks may be larger than their useful size, to
+ * improve data alignment.
+ *
+ * parameters:
+ *   b_i    <-- block id for i
+ *   b_j    <-- block id for j
+ *   b_ij   <-- block id for matrix ij position
+ *   b_size <-- block size, including padding:
+ *              b_size[0]: useful block size
+ *              b_size[1]: vector block extents
+ *              b_size[2]: matrix line extents
+ *              b_size[3]: matrix line*column (block) extents
+ *   a      <-- Pointer to block matrixes array (usually matrix extra-diagonal)
+ *   x      <-- Multipliying vector values
+ *   y      --> Resulting vector
+ *----------------------------------------------------------------------------*/
+
+static inline void
+_dense_eb_ax_add(cs_lnum_t         b_i,
+                 cs_lnum_t         b_j,
+                 cs_lnum_t         b_ij,
+                 const int         b_size[4],
+                 const cs_real_t  *restrict a,
+                 const cs_real_t  *restrict x,
+                 cs_real_t        *restrict y)
+{
+  cs_lnum_t   ii, jj;
+
+# if defined(__xlc__) /* Tell IBM compiler not to alias */
+# pragma disjoint(*x, *y, * a)
+# endif
+
+  for (ii = 0; ii < b_size[0]; ii++) {
+    for (jj = 0; jj < b_size[0]; jj++)
+      y[b_i*b_size[1] + ii]
+        +=   a[b_ij*b_size[3] + ii*b_size[2] + jj]
+           * x[b_j*b_size[1] + jj];
+  }
+}
+
+/*----------------------------------------------------------------------------
  * y[i] = da[i].x[i], with da possibly NULL
  *
  * parameters:
@@ -583,7 +627,8 @@ _create_coeff_native(void)
   /* Initialize */
 
   mc->symmetric = false;
-  mc->max_block_size = 0;
+  mc->max_db_size = 0;
+  mc->max_eb_size = 0;
 
   mc->da = NULL;
   mc->xa = NULL;
@@ -652,11 +697,11 @@ _set_coeffs_native(cs_matrix_t      *matrix,
   if (da != NULL) {
 
     if (copy) {
-      if (mc->_da == NULL || mc->max_block_size < matrix->b_size[3]) {
-        BFT_REALLOC(mc->_da, matrix->b_size[3]*ms->n_cells, cs_real_t);
-        mc->max_block_size = matrix->b_size[3];
+      if (mc->_da == NULL || mc->max_db_size < matrix->db_size[3]) {
+        BFT_REALLOC(mc->_da, matrix->db_size[3]*ms->n_cells, cs_real_t);
+        mc->max_db_size = matrix->db_size[3];
       }
-      memcpy(mc->_da, da, matrix->b_size[3]*sizeof(cs_real_t) * ms->n_cells);
+      memcpy(mc->_da, da, matrix->db_size[3]*sizeof(cs_real_t) * ms->n_cells);
       mc->da = mc->_da;
     }
     else
@@ -676,9 +721,11 @@ _set_coeffs_native(cs_matrix_t      *matrix,
         xa_n_vals *= 2;
 
       if (copy) {
-        if (mc->_xa == NULL)
-          BFT_MALLOC(mc->_xa, xa_n_vals, cs_real_t);
-        memcpy(mc->_xa, xa, xa_n_vals*sizeof(cs_real_t));
+        if (mc->_xa == NULL || mc->max_eb_size < matrix->eb_size[3]) {
+          BFT_MALLOC(mc->_xa, matrix->eb_size[3]*xa_n_vals, cs_real_t);
+          mc->max_eb_size = matrix->eb_size[3];
+        }
+        memcpy(mc->_xa, xa, matrix->eb_size[3]*xa_n_vals*sizeof(cs_real_t));
         mc->xa = mc->_xa;
       }
       else
@@ -687,7 +734,8 @@ _set_coeffs_native(cs_matrix_t      *matrix,
     }
     else { /* !interleaved && symmetric == false */
 
-      assert(matrix->b_size[3] == 1);
+      assert(matrix->db_size[3] == 1);
+      assert(matrix->eb_size[3] == 1);
 
       if (mc->_xa == NULL)
         BFT_MALLOC(mc->_xa, 2*ms->n_faces, cs_real_t);
@@ -745,7 +793,7 @@ _copy_diagonal_separate(const cs_matrix_t  *matrix,
 
   /* Unblocked version */
 
-  if (matrix->b_size[3] == 1) {
+  if (matrix->db_size[3] == 1) {
 
     if (_da != NULL) {
 #     pragma omp parallel for if(n_cells > THR_MIN)
@@ -764,18 +812,18 @@ _copy_diagonal_separate(const cs_matrix_t  *matrix,
 
   else {
 
-    const int *b_size = matrix->b_size;
+    const int *db_size = matrix->db_size;
 
     if (_da != NULL) {
-#     pragma omp parallel for private(jj) if(n_cells*b_size[0] > THR_MIN)
+#     pragma omp parallel for private(jj) if(n_cells*db_size[0] > THR_MIN)
       for (ii = 0; ii < n_cells; ii++) {
-        for (jj = 0; jj < b_size[0]; jj++)
-          da[ii*b_size[1] + jj] = _da[ii*b_size[3] + jj*b_size[2] + jj];
+        for (jj = 0; jj < db_size[0]; jj++)
+          da[ii*db_size[1] + jj] = _da[ii*db_size[3] + jj*db_size[2] + jj];
       }
     }
     else {
-#     pragma omp parallel for  if(n_cells*b_size[1] > THR_MIN)
-      for (ii = 0; ii < n_cells*b_size[1]; ii++)
+#     pragma omp parallel for  if(n_cells*db_size[1] > THR_MIN)
+      for (ii = 0; ii < n_cells*db_size[1]; ii++)
         da[ii] = 0.0;
     }
   }
@@ -874,7 +922,7 @@ _b_mat_vec_p_l_native(bool                exclude_diag,
   const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
 
   const cs_real_t  *restrict xa = mc->xa;
-  const int *b_size = matrix->b_size;
+  const int *db_size = matrix->db_size;
 
   /* Tell IBM compiler not to alias */
 # if defined(__xlc__)
@@ -884,11 +932,11 @@ _b_mat_vec_p_l_native(bool                exclude_diag,
   /* Diagonal part of matrix.vector product */
 
   if (! exclude_diag) {
-    _b_diag_vec_p_l(mc->da, x, y, ms->n_cells, b_size);
-    _b_zero_range(y, ms->n_cells, ms->n_cells_ext, b_size);
+    _b_diag_vec_p_l(mc->da, x, y, ms->n_cells, db_size);
+    _b_zero_range(y, ms->n_cells, ms->n_cells_ext, db_size);
   }
   else
-    _b_zero_range(y, 0, ms->n_cells_ext, b_size);
+    _b_zero_range(y, 0, ms->n_cells_ext, db_size);
 
   /* Note: parallel and periodic synchronization could be delayed to here */
 
@@ -903,9 +951,9 @@ _b_mat_vec_p_l_native(bool                exclude_diag,
       for (face_id = 0; face_id < ms->n_faces; face_id++) {
         ii = face_cel_p[2*face_id] -1;
         jj = face_cel_p[2*face_id + 1] -1;
-        for (kk = 0; kk < b_size[0]; kk++) {
-          y[ii*b_size[1] + kk] += xa[face_id] * x[jj*b_size[1] + kk];
-          y[jj*b_size[1] + kk] += xa[face_id] * x[ii*b_size[1] + kk];
+        for (kk = 0; kk < db_size[0]; kk++) {
+          y[ii*db_size[1] + kk] += xa[face_id] * x[jj*db_size[1] + kk];
+          y[jj*db_size[1] + kk] += xa[face_id] * x[ii*db_size[1] + kk];
         }
       }
     }
@@ -916,9 +964,9 @@ _b_mat_vec_p_l_native(bool                exclude_diag,
       for (face_id = 0; face_id < ms->n_faces; face_id++) {
         ii = face_cel_p[2*face_id] -1;
         jj = face_cel_p[2*face_id + 1] -1;
-        for (kk = 0; kk < b_size[0]; kk++) {
-          y[ii*b_size[1] + kk] += xa[2*face_id]     * x[jj*b_size[1] + kk];
-          y[jj*b_size[1] + kk] += xa[2*face_id + 1] * x[ii*b_size[1] + kk];
+        for (kk = 0; kk < db_size[0]; kk++) {
+          y[ii*db_size[1] + kk] += xa[2*face_id]     * x[jj*db_size[1] + kk];
+          y[jj*db_size[1] + kk] += xa[2*face_id + 1] * x[ii*db_size[1] + kk];
         }
       }
 
@@ -953,7 +1001,7 @@ _3_3_mat_vec_p_l_native(bool                exclude_diag,
 
   const cs_real_t  *restrict xa = mc->xa;
 
-  assert(matrix->b_size[0] == 3 && matrix->b_size[3] == 9);
+  assert(matrix->db_size[0] == 3 && matrix->db_size[3] == 9);
 
   /* Tell IBM compiler not to alias */
 # if defined(__xlc__)
@@ -998,6 +1046,83 @@ _3_3_mat_vec_p_l_native(bool                exclude_diag,
         for (kk = 0; kk < 3; kk++) {
           y[ii*3 + kk] += xa[2*face_id]     * x[jj*3 + kk];
           y[jj*3 + kk] += xa[2*face_id + 1] * x[ii*3 + kk];
+        }
+      }
+
+    }
+
+  }
+
+}
+
+/*----------------------------------------------------------------------------
+ * Local matrix.vector product y = A.x with native matrix.
+ *
+ * parameters:
+ *   exclude_diag <-- exclude diagonal if true
+ *   matrix       <-- Pointer to matrix structure
+ *   x            <-- Multipliying vector values
+ *   y            --> Resulting vector
+ *----------------------------------------------------------------------------*/
+
+static void
+_bb_mat_vec_p_l_native(bool                exclude_diag,
+                       const cs_matrix_t  *matrix,
+                       const cs_real_t    *restrict x,
+                       cs_real_t          *restrict y)
+{
+  cs_lnum_t  ii, jj, kk, face_id;
+
+  const cs_matrix_struct_native_t  *ms = matrix->structure;
+  const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
+
+  const cs_real_t  *restrict xa = mc->xa;
+  const int *db_size = matrix->db_size;
+  const int *eb_size = matrix->eb_size;
+
+  /* Tell IBM compiler not to alias */
+# if defined(__xlc__)
+# pragma disjoint(*x, *y, *xa)
+# endif
+
+  /* Diagonal part of matrix.vector product */
+
+  if (! exclude_diag) {
+    _b_diag_vec_p_l(mc->da, x, y, ms->n_cells, db_size);
+    _b_zero_range(y, ms->n_cells, ms->n_cells_ext, db_size);
+  }
+  else
+    _b_zero_range(y, 0, ms->n_cells_ext, db_size);
+
+  /* Note: parallel and periodic synchronization could be delayed to here */
+
+  /* non-diagonal terms */
+
+  if (mc->xa != NULL) {
+
+    if (mc->symmetric) {
+
+      const cs_lnum_t *restrict face_cel_p = ms->face_cell;
+
+      for (face_id = 0; face_id < ms->n_faces; face_id++) {
+        ii = face_cel_p[2*face_id] -1;
+        jj = face_cel_p[2*face_id + 1] -1;
+        for (kk = 0; kk < db_size[0]; kk++) {
+          _dense_eb_ax_add(ii, jj, face_id, eb_size, xa, x, y);
+          _dense_eb_ax_add(jj, ii, face_id, eb_size, xa, x, y);
+        }
+      }
+    }
+    else {
+
+      const cs_lnum_t *restrict face_cel_p = ms->face_cell;
+
+      for (face_id = 0; face_id < ms->n_faces; face_id++) {
+        ii = face_cel_p[2*face_id] -1;
+        jj = face_cel_p[2*face_id + 1] -1;
+        for (kk = 0; kk < db_size[0]; kk++) {
+          _dense_eb_ax_add(ii, jj, 2*face_id, eb_size, xa, x, y);
+          _dense_eb_ax_add(jj, ii, 2*face_id + 1, eb_size, xa, x, y);
         }
       }
 
@@ -1121,7 +1246,7 @@ _b_mat_vec_p_l_native_omp(bool                exclude_diag,
 {
   int g_id, t_id;
   cs_lnum_t  ii, jj, kk, face_id;
-  const int *b_size = matrix->b_size;
+  const int *db_size = matrix->db_size;
 
   const int n_threads = matrix->numbering->n_threads;
   const int n_groups = matrix->numbering->n_groups;
@@ -1142,11 +1267,11 @@ _b_mat_vec_p_l_native_omp(bool                exclude_diag,
   /* Diagonal part of matrix.vector product */
 
   if (! exclude_diag) {
-    _b_diag_vec_p_l(mc->da, x, y, ms->n_cells, b_size);
-    _b_zero_range(y, ms->n_cells, ms->n_cells_ext, b_size);
+    _b_diag_vec_p_l(mc->da, x, y, ms->n_cells, db_size);
+    _b_zero_range(y, ms->n_cells, ms->n_cells_ext, db_size);
   }
   else
-    _b_zero_range(y, 0, ms->n_cells_ext, b_size);
+    _b_zero_range(y, 0, ms->n_cells_ext, db_size);
 
   /* Note: parallel and periodic synchronization could be delayed to here */
 
@@ -1168,9 +1293,9 @@ _b_mat_vec_p_l_native_omp(bool                exclude_diag,
                face_id++) {
             ii = face_cel_p[2*face_id] -1;
             jj = face_cel_p[2*face_id + 1] -1;
-            for (kk = 0; kk < b_size[0]; kk++) {
-              y[ii*b_size[1] + kk] += xa[face_id] * x[jj*b_size[1] + kk];
-              y[jj*b_size[1] + kk] += xa[face_id] * x[ii*b_size[1] + kk];
+            for (kk = 0; kk < db_size[0]; kk++) {
+              y[ii*db_size[1] + kk] += xa[face_id] * x[jj*db_size[1] + kk];
+              y[jj*db_size[1] + kk] += xa[face_id] * x[ii*db_size[1] + kk];
             }
           }
         }
@@ -1191,9 +1316,9 @@ _b_mat_vec_p_l_native_omp(bool                exclude_diag,
                face_id++) {
             ii = face_cel_p[2*face_id] -1;
             jj = face_cel_p[2*face_id + 1] -1;
-            for (kk = 0; kk < b_size[0]; kk++) {
-              y[ii*b_size[1] + kk] += xa[2*face_id]     * x[jj*b_size[1] + kk];
-              y[jj*b_size[1] + kk] += xa[2*face_id + 1] * x[ii*b_size[1] + kk];
+            for (kk = 0; kk < db_size[0]; kk++) {
+              y[ii*db_size[1] + kk] += xa[2*face_id]     * x[jj*db_size[1] + kk];
+              y[jj*db_size[1] + kk] += xa[2*face_id + 1] * x[ii*db_size[1] + kk];
             }
           }
         }
@@ -2769,7 +2894,8 @@ _create_coeff_msr(void)
   /* Initialize */
 
   mc->n_prefetch_rows = 0;
-  mc->max_block_size = 0;
+  mc->max_db_size = 0;
+  mc->max_eb_size = 0;
 
   mc->d_val = NULL;
 
@@ -3033,11 +3159,11 @@ _set_coeffs_msr(cs_matrix_t      *matrix,
   if (da != NULL) {
 
     if (copy) {
-      if (mc->_d_val == NULL || mc->max_block_size < matrix->b_size[3]) {
-        BFT_REALLOC(mc->_d_val, matrix->b_size[3]*ms->n_rows, cs_real_t);
-        mc->max_block_size = matrix->b_size[3];
+      if (mc->_d_val == NULL || mc->max_db_size < matrix->db_size[3]) {
+        BFT_REALLOC(mc->_d_val, matrix->db_size[3]*ms->n_rows, cs_real_t);
+        mc->max_db_size = matrix->db_size[3];
       }
-      memcpy(mc->_d_val, da, matrix->b_size[3]*sizeof(cs_real_t) * ms->n_rows);
+      memcpy(mc->_d_val, da, matrix->db_size[3]*sizeof(cs_real_t) * ms->n_rows);
       mc->d_val = mc->_d_val;
     }
     else
@@ -3047,7 +3173,7 @@ _set_coeffs_msr(cs_matrix_t      *matrix,
   else
     mc->d_val = NULL;
 
-  /* Extradiagonal values */
+  /* Extradiagonal values */ //TODO with matrix->eb_size[3] > 1
 
   if (mc->x_val == NULL)
     BFT_MALLOC(mc->x_val, ms->row_index[ms->n_rows], cs_real_t);
@@ -3210,7 +3336,7 @@ _b_mat_vec_p_l_msr(bool                exclude_diag,
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
   const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
   const cs_lnum_t  n_rows = ms->n_rows;
-  const int *b_size = matrix->b_size;
+  const int *db_size = matrix->db_size;
 
   /* Tell IBM compiler not to alias */
 # if defined(__xlc__)
@@ -3234,12 +3360,12 @@ _b_mat_vec_p_l_msr(bool                exclude_diag,
 #     pragma disjoint(*x, *y, *m_row, *col_id)
 #     endif
 
-      _dense_b_ax(ii, b_size, mc->d_val, x, y);
+      _dense_b_ax(ii, db_size, mc->d_val, x, y);
 
       for (jj = 0; jj < n_cols; jj++) {
-        for (kk = 0; kk < b_size[0]; kk++) {
-          y[ii*b_size[1] + kk]
-            += (m_row[jj]*x[col_id[jj]*b_size[1] + kk]);
+        for (kk = 0; kk < db_size[0]; kk++) {
+          y[ii*db_size[1] + kk]
+            += (m_row[jj]*x[col_id[jj]*db_size[1] + kk]);
         }
       }
 
@@ -3259,13 +3385,13 @@ _b_mat_vec_p_l_msr(bool                exclude_diag,
       m_row = mc->x_val + ms->row_index[ii];
       n_cols = ms->row_index[ii+1] - ms->row_index[ii];
 
-      for (kk = 0; kk < b_size[0]; kk++)
-        y[ii*b_size[1] + kk] = 0.;
+      for (kk = 0; kk < db_size[0]; kk++)
+        y[ii*db_size[1] + kk] = 0.;
 
       for (jj = 0; jj < n_cols; jj++) {
-        for (kk = 0; kk < b_size[0]; kk++) {
-          y[ii*b_size[1] + kk]
-            += (m_row[jj]*x[col_id[jj]*b_size[1] + kk]);
+        for (kk = 0; kk < db_size[0]; kk++) {
+          y[ii*db_size[1] + kk]
+            += (m_row[jj]*x[col_id[jj]*db_size[1] + kk]);
         }
       }
 
@@ -3475,7 +3601,7 @@ _pre_vector_multiply_sync(cs_halo_rotation_t   rotation_mode,
 
   /* Non-blocked version */
 
-  if (matrix->b_size[3] == 1) {
+  if (matrix->db_size[3] == 1) {
 
     /* Synchronize for parallelism and periodicity first */
 
@@ -3493,13 +3619,13 @@ _pre_vector_multiply_sync(cs_halo_rotation_t   rotation_mode,
 
   /* Blocked version */
 
-  else { /* if (matrix->b_size[3] > 1) */
+  else { /* if (matrix->db_size[3] > 1) */
 
-    const int *b_size = matrix->b_size;
+    const int *db_size = matrix->db_size;
 
     /* Synchronize for parallelism and periodicity first */
 
-    _b_zero_range(y, matrix->n_cells, n_cells_ext, b_size);
+    _b_zero_range(y, matrix->n_cells, n_cells_ext, db_size);
 
     /* Update distant ghost cells */
 
@@ -3508,15 +3634,15 @@ _pre_vector_multiply_sync(cs_halo_rotation_t   rotation_mode,
       cs_halo_sync_var_strided(matrix->halo,
                                CS_HALO_STANDARD,
                                x,
-                               b_size[1]);
+                               db_size[1]);
 
       /* Synchronize periodic values */
 
-      if (matrix->halo->n_transforms > 0 && b_size[0] == 3)
+      if (matrix->halo->n_transforms > 0 && db_size[0] == 3)
         cs_halo_perio_sync_var_vect(matrix->halo,
                                     CS_HALO_STANDARD,
                                     x,
-                                    b_size[1]);
+                                    db_size[1]);
 
     }
 
@@ -3599,6 +3725,7 @@ _matrix_check(int                    n_variants,
   cs_matrix_structure_t *ms = NULL;
   cs_matrix_t *m = NULL;
   int diag_block_size[4] = {3, 3, 3, 9};
+  int extra_diag_block_size[4] = {3, 3, 3, 9};
 
   /* Allocate and initialize  working arrays */
 
@@ -3636,10 +3763,11 @@ _matrix_check(int                    n_variants,
 
   /* Loop on block sizes */
 
-  for (b_id = 0; b_id < 2; b_id++) {
+  for (b_id = 0; b_id < 3; b_id++) {
 
     const int *_diag_block_size = (b_id == 0) ? NULL : diag_block_size;
     const cs_lnum_t _block_mult = (b_id == 0) ? 1 : diag_block_size[1];
+    const int *_extra_diag_block_size = (b_id == 2) ? extra_diag_block_size : NULL;
 
     /* Loop on symmetry and diagonal exclusion flags */
 
@@ -3687,6 +3815,7 @@ _matrix_check(int                    n_variants,
           cs_matrix_set_coefficients(m,
                                      sym_coeffs,
                                      _diag_block_size,
+                                     _extra_diag_block_size,
                                      da,
                                      xa);
 
@@ -3769,6 +3898,7 @@ _matrix_tune_test(double                 t_measure,
   cs_matrix_structure_t *ms = NULL;
   cs_matrix_t *m = NULL;
   int diag_block_size[4] = {3, 3, 3, 9};
+  int extra_diag_block_size[4] = {3, 3, 3, 9};
 
   type_prev = CS_MATRIX_N_TYPES;
 
@@ -3849,9 +3979,10 @@ _matrix_tune_test(double                 t_measure,
 
     /* Loop on block sizes */
 
-    for (b_id = 0; b_id < 2; b_id++) {
+    for (b_id = 0; b_id < 3; b_id++) {
 
       const int *_diag_block_size = (b_id == 0) ? NULL : diag_block_size;
+      const int *_extra_diag_block_size = (b_id == 2) ? extra_diag_block_size : NULL;
 
       /* Loop on symmetry and diagonal exclusion flags */
 
@@ -3885,6 +4016,7 @@ _matrix_tune_test(double                 t_measure,
               cs_matrix_set_coefficients(m,
                                          sym_coeffs,
                                          _diag_block_size,
+                                         _extra_diag_block_size,
                                          da,
                                          xa);
               run_id++;
@@ -3949,7 +4081,7 @@ _matrix_tune_test(double                 t_measure,
  * parameters:
  *   struct_flag <-- 0: assignment; 1: structure creation
  *   sym_flag    <-- 0: non-symmetric only; 1; symmetric only
- *   block_flag  <-- 0: no blocks; 1; blocks only
+ *   block_flag  <-- 0: no blocks; 1; blocks diag only; 2; blocks
  *----------------------------------------------------------------------------*/
 
 static void
@@ -4036,7 +4168,7 @@ _matrix_tune_create_assign_title(int  struct_flag,
  *   variant_id  <-- variant id
  *   struct_flag <-- 0: assignment; 1: structure creation
  *   sym_flag    <-- 0: non-symmetric only; 1; symmetric only
- *   block_flag  <-- 0: no blocks; 1; blocks only
+ *   block_flag  <-- 0: no blocks; 1; blocks diag only; 2; blocks
  *----------------------------------------------------------------------------*/
 
 static void
@@ -4087,7 +4219,7 @@ _matrix_tune_create_assign_stats(const cs_matrix_variant_t  *m_variant,
  * parameters:
  *   sym_flag    <-- 0: non-symmetric only; 1; symmetric only
  *   ed_flag     <-- 0: include diagonal; 1: exclude diagonal
- *   block_flag  <-- 0: no blocks; 1; blocks only
+ *   block_flag  <-- 0: no blocks; 1; blocks diag only; 2; blocks
  *----------------------------------------------------------------------------*/
 
 static void
@@ -4163,7 +4295,7 @@ _matrix_tune_spmv_title(int  sym_flag,
  *   variant_id  <-- variant id
  *   sym_flag    <-- 0: non-symmetric only; 1; symmetric only
  *   ed_flag     <-- 0: include diagonal; 1: exclude diagonal
- *   block_flag  <-- 0: no blocks; 1; blocks only
+ *   block_flag  <-- 0: no blocks; 1; blocks diag only; 2; blocks
  *----------------------------------------------------------------------------*/
 
 static void
@@ -4246,7 +4378,7 @@ _variant_init(cs_matrix_variant_t  *v)
  * parameters:
  *   name                 <-- matrix variant name
  *   type                 <-- matrix type
- *   block_flag           <-- 0: non-block only, 1: block only, 2: both
+ *   block_flag           <-- 0: non-block only, 1: block only diag, 2: both
  *   sym_flag             <-- 0: non-symmetric only, 1: symmetric only, 2: both
  *   ed_flag              <-- 0: with diagonal only, 1 exclude only; 2; both
  *   loop_length          <-- loop length option for some algorithms
@@ -4298,10 +4430,25 @@ _variant_add(const char                        *name,
   }
 
   if (block_flag != 0) {
-    if (ed_flag != 1)
-      v->vector_multiply[2] = b_vector_multiply;
-    if (ed_flag != 0)
-      v->vector_multiply[3] = b_vector_multiply;
+
+    if (block_flag != 2) {
+
+      if (ed_flag != 1)
+        v->vector_multiply[2] = b_vector_multiply;
+      if (ed_flag != 0)
+        v->vector_multiply[3] = b_vector_multiply;
+
+    }
+
+    if (block_flag != 1) {
+
+      if (ed_flag != 1)
+        v->vector_multiply[4] = b_vector_multiply;
+      if (ed_flag != 0)
+        v->vector_multiply[5] = b_vector_multiply;
+
+    }
+
   }
 
   *n_variants += 1;
@@ -4312,7 +4459,7 @@ _variant_add(const char                        *name,
  *
  * parameters:
  *   sym_flag    <-- 0: non-symmetric only, 1: symmetric only, 2: both
- *   block_flag  <-- 0: non-block only, 1: block only, 2: both
+ *   block_flag  <-- 0: non-block only, 1: block only diag, 2: both
  *   numbering   <-- vectorization or thread-related numbering info,
  *                   or NULL
  *   n_variants  --> number of variants
@@ -4330,6 +4477,18 @@ _build_variant_list(int                    sym_flag,
 
   *n_variants = 0;
   *m_variant = NULL;
+
+  _variant_add(_("Native, baseline, block extradiag"),
+               CS_MATRIX_NATIVE,
+               block_flag,
+               sym_flag,
+               2, /* ed_flag */
+               0, /* loop_length */
+               _mat_vec_p_l_native,//FIXME
+               _bb_mat_vec_p_l_native,
+               n_variants,
+               &n_variants_max,
+               m_variant);
 
   _variant_add(_("Native, baseline"),
                CS_MATRIX_NATIVE,
@@ -4525,7 +4684,8 @@ void CS_PROCF(promav, PROMAV)
 (
  const cs_int_t   *isym,      /* <-- Symmetry indicator:
                                      1: symmetric; 2: not symmetric */
- const cs_int_t   *ibsize,    /* <-- Block size of element ii, ii */
+ const cs_int_t   *ibsize,    /* <-- Block size of element ii */
+ const cs_int_t   *iesize,    /* <-- Block size of element ij */
  const cs_int_t   *iinvpe,    /* <-- Indicator to cancel increments
                                      in rotational periodicty (2) or
                                      to exchange them as scalars (1) */
@@ -4535,7 +4695,8 @@ void CS_PROCF(promav, PROMAV)
  cs_real_t        *vy         /* <-> vy = A*vx */
 )
 {
-  int diag_block_size[4] = {1, 1, 1, 1};
+  int _diag_block_size[4] = {1, 1, 1, 1};
+  int _extra_diag_block_size[4] = {1, 1, 1, 1};
   bool symmetric = (*isym == 1) ? true : false;
   cs_halo_rotation_t rotation_mode = CS_HALO_ROTATION_COPY;
 
@@ -4546,13 +4707,23 @@ void CS_PROCF(promav, PROMAV)
 
   if (*ibsize > 1 || symmetric) {
     /* TODO: update diag_block_size[] values for the general case */
-    diag_block_size[0] = *ibsize;
-    diag_block_size[1] = *ibsize;
-    diag_block_size[2] = *ibsize;
-    diag_block_size[3] = (*ibsize)*(*ibsize);
+    _diag_block_size[0] = *ibsize;
+    _diag_block_size[1] = *ibsize;
+    _diag_block_size[2] = *ibsize;
+    _diag_block_size[3] = (*ibsize)*(*ibsize);
+
+    if (*iesize > 1) {
+      /* TODO: update extra_diag_block_size[] values for the general case */
+      _extra_diag_block_size[0] = *iesize;
+      _extra_diag_block_size[1] = *iesize;
+      _extra_diag_block_size[2] = *iesize;
+      _extra_diag_block_size[3] = (*iesize)*(*iesize);
+    }
+
     cs_matrix_set_coefficients(cs_glob_matrix_default,
                                symmetric,
-                               diag_block_size,
+                               _diag_block_size,
+                               _extra_diag_block_size,
                                dam,
                                xam);
   }
@@ -4784,8 +4955,10 @@ cs_matrix_create(const cs_matrix_structure_t  *ms)
   m->n_cells_ext = ms->n_cells_ext;
   m->n_faces = ms->n_faces;
 
-  for (i = 0; i < 4; i++)
-    m->b_size[i] = 1;
+  for (i = 0; i < 4; i++) {
+    m->db_size[i] = 1;
+    m->eb_size[i] = 1;
+  }
 
   m->structure = ms->structure;
 
@@ -4827,6 +5000,7 @@ cs_matrix_create(const cs_matrix_structure_t  *ms)
   m->set_coefficients = NULL;
   m->vector_multiply[0] = NULL;
   m->vector_multiply[2] = NULL;
+  m->vector_multiply[4] = NULL;
 
   switch(m->type) {
 
@@ -4837,6 +5011,7 @@ cs_matrix_create(const cs_matrix_structure_t  *ms)
     m->copy_diagonal = _copy_diagonal_separate;
     m->vector_multiply[0] = _mat_vec_p_l_native;
     m->vector_multiply[2] = _b_mat_vec_p_l_native;
+    m->vector_multiply[4] = _bb_mat_vec_p_l_native;
 
     /* Optimized variants here */
 
@@ -4898,6 +5073,7 @@ cs_matrix_create(const cs_matrix_structure_t  *ms)
 
   m->vector_multiply[1] = m->vector_multiply[0];
   m->vector_multiply[3] = m->vector_multiply[2];
+  m->vector_multiply[5] = m->vector_multiply[4];
 
   return m;
 }
@@ -4925,7 +5101,7 @@ cs_matrix_create_tuned(const cs_matrix_structure_t  *ms,
     if (mv->type == ms->type) {
       int i;
       m->loop_length = mv->loop_length;
-      for (i = 0; i < 4; i++) {
+      for (i = 0; i < 6; i++) {
         if (mv->vector_multiply[i] != NULL)
           m->vector_multiply[i] = mv->vector_multiply[i];
       }
@@ -5043,7 +5219,7 @@ cs_matrix_get_diag_block_size(const cs_matrix_t  *matrix)
     bft_error(__FILE__, __LINE__, 0,
               _("The matrix is not defined."));
 
-  return matrix->b_size;
+  return matrix->db_size;
 }
 
 /*----------------------------------------------------------------------------
@@ -5061,17 +5237,19 @@ cs_matrix_get_diag_block_size(const cs_matrix_t  *matrix)
  *   2: matrix line extents,  3: matrix line*column extents
  *
  * parameters:
- *   matrix           <-> Pointer to matrix structure
- *   symmetric        <-- Indicates if matrix coefficients are symmetric
- *   diag_block_size  <-- Block sizes for diagonal, or NULL
- *   da               <-- Diagonal values (NULL if zero)
- *   xa               <-- Extradiagonal values (NULL if zero)
+ *   matrix                 <-> Pointer to matrix structure
+ *   symmetric              <-- Indicates if matrix coefficients are symmetric
+ *   diag_block_size        <-- Block sizes for diagonal, or NULL
+ *   extra_diag_block_size  <-- Block sizes for extra diagonal, or NULL
+ *   da                     <-- Diagonal values (NULL if zero)
+ *   xa                     <-- Extradiagonal values (NULL if zero)
  *----------------------------------------------------------------------------*/
 
 void
 cs_matrix_set_coefficients(cs_matrix_t      *matrix,
                            bool              symmetric,
                            const int        *diag_block_size,
+                           const int        *extra_diag_block_size,
                            const cs_real_t  *da,
                            const cs_real_t  *xa)
 {
@@ -5083,12 +5261,22 @@ cs_matrix_set_coefficients(cs_matrix_t      *matrix,
 
   if (diag_block_size == NULL) {
     for (i = 0; i < 4; i++)
-      matrix->b_size[i] = 1;
+      matrix->db_size[i] = 1;
   }
   else {
     for (i = 0; i < 4; i++)
-      matrix->b_size[i] = diag_block_size[i];
+      matrix->db_size[i] = diag_block_size[i];
   }
+
+  if (extra_diag_block_size == NULL) {
+    for (i = 0; i < 4; i++)
+      matrix->eb_size[i] = 1;
+  }
+  else {
+    for (i = 0; i < 4; i++)
+      matrix->eb_size[i] = extra_diag_block_size[i];
+  }
+
 
   if (matrix->set_coefficients != NULL)
     matrix->set_coefficients(matrix, symmetric, true, false, da, xa);
@@ -5122,7 +5310,7 @@ cs_matrix_set_coefficients_ni(cs_matrix_t      *matrix,
               _("The matrix is not defined."));
 
   for (i = 0; i < 4; i++)
-    matrix->b_size[i] = 1;
+    matrix->db_size[i] = 1;
 
   if (matrix->set_coefficients != NULL)
     matrix->set_coefficients(matrix, symmetric, false, false, da, xa);
@@ -5139,17 +5327,19 @@ cs_matrix_set_coefficients_ni(cs_matrix_t      *matrix,
  *   2: matrix line extents,  3: matrix line*column extents
  *
  * parameters:
- *   matrix           <-> Pointer to matrix structure
- *   symmetric        <-- Indicates if matrix coefficients are symmetric
- *   diag_block_size  <-- Block sizes for diagonal, or NULL
- *   da               <-- Diagonal values (NULL if zero)
- *   xa               <-- Extradiagonal values (NULL if zero)
+ *   matrix                 <-> Pointer to matrix structure
+ *   symmetric              <-- Indicates if matrix coefficients are symmetric
+ *   diag_block_size        <-- Block sizes for diagonal, or NULL
+ *   extra_diag_block_size  <-- Block sizes for extra diagonal, or NULL
+ *   da                     <-- Diagonal values (NULL if zero)
+ *   xa                     <-- Extradiagonal values (NULL if zero)
  *----------------------------------------------------------------------------*/
 
 void
 cs_matrix_copy_coefficients(cs_matrix_t      *matrix,
                             bool              symmetric,
                             const int        *diag_block_size,
+                            const int        *extra_diag_block_size,
                             const cs_real_t  *da,
                             const cs_real_t  *xa)
 {
@@ -5161,11 +5351,20 @@ cs_matrix_copy_coefficients(cs_matrix_t      *matrix,
 
   if (diag_block_size == NULL) {
     for (i = 0; i < 4; i++)
-      matrix->b_size[i] = 1;
+      matrix->db_size[i] = 1;
   }
   else {
     for (i = 0; i < 4; i++)
-      matrix->b_size[i] = diag_block_size[i];
+      matrix->db_size[i] = diag_block_size[i];
+  }
+
+  if (extra_diag_block_size == NULL) {
+    for (i = 0; i < 4; i++)
+      matrix->eb_size[i] = 1;
+  }
+  else {
+    for (i = 0; i < 4; i++)
+      matrix->eb_size[i] = extra_diag_block_size[i];
   }
 
   if (matrix->set_coefficients != NULL)
@@ -5249,10 +5448,10 @@ cs_matrix_get_diagonal(const cs_matrix_t  *matrix)
     {
       cs_matrix_coeff_native_t *mc = matrix->coeffs;
       if (mc->da == NULL) {
-        cs_lnum_t n_rows = matrix->n_cells * matrix->b_size[3];
-        if (mc->_da == NULL || mc->max_block_size < matrix->b_size[3]) {
-          BFT_REALLOC(mc->_da, matrix->b_size[3]*matrix->n_cells, cs_real_t);
-          mc->max_block_size = matrix->b_size[3];
+        cs_lnum_t n_rows = matrix->n_cells * matrix->db_size[3];
+        if (mc->_da == NULL || mc->max_db_size < matrix->db_size[3]) {
+          BFT_REALLOC(mc->_da, matrix->db_size[3]*matrix->n_cells, cs_real_t);
+          mc->max_db_size = matrix->db_size[3];
         }
 #       pragma omp parallel for if(n_rows > THR_MIN)
         for (ii = 0; ii < n_rows; ii++)
@@ -5266,7 +5465,7 @@ cs_matrix_get_diagonal(const cs_matrix_t  *matrix)
   case CS_MATRIX_CSR:
     {
       cs_matrix_coeff_csr_t *mc = matrix->coeffs;
-      assert(matrix->b_size[3] == 1);
+      assert(matrix->db_size[3] == 1);
       if (mc->_d_val == NULL)
         BFT_MALLOC(mc->_d_val, matrix->n_cells, cs_real_t);
       if (mc->d_val == NULL) {
@@ -5280,7 +5479,7 @@ cs_matrix_get_diagonal(const cs_matrix_t  *matrix)
   case CS_MATRIX_CSR_SYM:
     {
       cs_matrix_coeff_csr_sym_t *mc = matrix->coeffs;
-      assert(matrix->b_size[3] == 1);
+      assert(matrix->db_size[3] == 1);
       if (mc->_d_val == NULL)
         BFT_MALLOC(mc->_d_val, matrix->n_cells, cs_real_t);
       if (mc->d_val == NULL) {
@@ -5295,10 +5494,10 @@ cs_matrix_get_diagonal(const cs_matrix_t  *matrix)
     {
       cs_matrix_coeff_msr_t *mc = matrix->coeffs;
       if (mc->d_val == NULL) {
-        cs_lnum_t n_rows = matrix->n_cells * matrix->b_size[3];
-        if (mc->_d_val == NULL || mc->max_block_size < matrix->b_size[3]) {
-          BFT_REALLOC(mc->_d_val, matrix->b_size[3]*matrix->n_cells, cs_real_t);
-          mc->max_block_size = matrix->b_size[3];
+        cs_lnum_t n_rows = matrix->n_cells * matrix->db_size[3];
+        if (mc->_d_val == NULL || mc->max_db_size < matrix->db_size[3]) {
+          BFT_REALLOC(mc->_d_val, matrix->db_size[3]*matrix->n_cells, cs_real_t);
+          mc->max_db_size = matrix->db_size[3];
         }
 #       pragma omp parallel for if(n_rows > THR_MIN)
         for (ii = 0; ii < n_rows; ii++)
@@ -5345,7 +5544,7 @@ cs_matrix_vector_multiply(cs_halo_rotation_t   rotation_mode,
 
   /* Non-blocked version */
 
-  if (matrix->b_size[3] == 1) {
+  if (matrix->db_size[3] == 1) {
     if (matrix->vector_multiply[0] != NULL)
       matrix->vector_multiply[0](false, matrix, x, y);
     else
@@ -5356,11 +5555,30 @@ cs_matrix_vector_multiply(cs_halo_rotation_t   rotation_mode,
   /* Blocked version */
 
   else {
-    if (matrix->vector_multiply[2] != NULL)
-      matrix->vector_multiply[2](false, matrix, x, y);
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                _("Block matrix is missing a vector multiply function."));
+
+    /* Non-blocked version of extradiag */
+
+    if (matrix->eb_size[3] == 1) {
+
+      if (matrix->vector_multiply[2] != NULL)
+        matrix->vector_multiply[2](false, matrix, x, y);
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Block matrix is missing a vector multiply function."));
+
+    }
+
+    /* Blocked version of extradiag */
+
+    else {
+
+      if (matrix->vector_multiply[4] != NULL)
+        matrix->vector_multiply[4](false, matrix, x, y);
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Block matrix is missing a vector multiply function."));
+
+    }
   }
 }
 
@@ -5387,7 +5605,7 @@ cs_matrix_vector_multiply_nosync(const cs_matrix_t  *matrix,
 
   /* Non-blocked version */
 
-  if (matrix->b_size[3] == 1) {
+  if (matrix->db_size[3] == 1) {
 
     if (matrix->vector_multiply[0] != NULL)
       matrix->vector_multiply[0](false, matrix, x, y);
@@ -5399,14 +5617,31 @@ cs_matrix_vector_multiply_nosync(const cs_matrix_t  *matrix,
 
   /* Blocked version */
 
-  else { /* if (matrix->b_size[3] > 1) */
+  else { /* if (matrix->db_size[3] > 1) */
 
-    if (matrix->vector_multiply[2] != NULL)
-      matrix->vector_multiply[2](false, matrix, x, y);
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                _("Block matrix is missing a vector multiply function."));
+    /* Non-blocked version of extradiag */
 
+    if (matrix->eb_size[3] == 1) {
+
+      if (matrix->vector_multiply[2] != NULL)
+        matrix->vector_multiply[2](false, matrix, x, y);
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Block matrix is missing a vector multiply function."));
+
+    }
+
+    /* Non-blocked version of extradiag */
+
+    else {
+
+      if (matrix->vector_multiply[4] != NULL)
+        matrix->vector_multiply[4](false, matrix, x, y);
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Block matrix is missing a vector multiply function."));
+
+    }
   }
 }
 
@@ -5438,7 +5673,7 @@ cs_matrix_exdiag_vector_multiply(cs_halo_rotation_t   rotation_mode,
 
   /* Non-blocked version */
 
-  if (matrix->b_size[3] == 1) {
+  if (matrix->db_size[3] == 1) {
     if (matrix->vector_multiply[1] != NULL)
       matrix->vector_multiply[1](true, matrix, x, y);
     else
@@ -5449,11 +5684,29 @@ cs_matrix_exdiag_vector_multiply(cs_halo_rotation_t   rotation_mode,
   /* Blocked version */
 
   else {
-    if (matrix->vector_multiply[3] != NULL)
-      matrix->vector_multiply[3](true, matrix, x, y);
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                _("Block matrix is missing a vector multiply function."));
+
+    /* Non-blocked version of extradiag */
+
+    if (matrix->eb_size[3] == 1) {
+      if (matrix->vector_multiply[3] != NULL)
+        matrix->vector_multiply[3](true, matrix, x, y);
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Block matrix is missing a vector multiply function."));
+
+    }
+
+    /* Non-blocked version of extradiag */
+
+    else {
+
+      if (matrix->vector_multiply[5] != NULL)
+        matrix->vector_multiply[5](true, matrix, x, y);
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Block matrix is missing a vector multiply function."));
+
+    }
   }
 }
 

@@ -255,7 +255,7 @@ integer          inc,isweep,niterf,iccocg,iel,icycle,nswmod
 integer          idimte,itenso,iinvpe, iinvpp
 integer          idtva0
 integer          nagmax, npstmg
-integer          ibsize
+integer          ibsize, iesize
 integer          incp, insqrt
 
 double precision residu, rnorm, ressol, res, rnorm2
@@ -290,6 +290,7 @@ if (iconvp.gt.0) isym  = 2
 
 ! Matrix block size
 ibsize = 1
+iesize = 1
 
 ! METHODE DE RESOLUTION ET DEGRE DU PRECOND DE NEUMANN
 !     0 SI CHOIX AUTOMATIQUE GRADCO OU BICGSTAB
@@ -383,7 +384,7 @@ if (imgrp.gt.0) then
   call clmlga &
   !==========
  ( chaine(1:16) ,    lchain ,                                     &
-   isym   , ibsize , nagmax , npstmg , iwarnp ,                   &
+   isym   , ibsize , iesize , nagmax , npstmg , iwarnp ,          &
    ngrmax , ncegrm ,                                              &
    rlxp1  ,                                                       &
    dam    , xam    )
@@ -519,7 +520,7 @@ else
   iinvpp = iinvpe
 endif
 
-call promav(isym,ibsize,iinvpp,dam,xam,pvar,w1)
+call promav(isym,ibsize,iesize,iinvpp,dam,xam,pvar,w1)
 
 !$omp parallel do
 do iel = 1, ncel
@@ -561,7 +562,7 @@ do while (isweep.le.nswmod.and.res.gt.epsrsp*rnorm)
 
   call invers &
   !==========
- ( cnom   , isym   , ibsize ,                                     &
+ ( cnom   , isym   , ibsize , iesize ,                            &
    ipol   , ireslq , nitmap , imgrp  ,                            &
    ncymxp , nitmfp ,                                              &
    iwarnp , nfecra , niterf , icycle , iinvpe ,                   &

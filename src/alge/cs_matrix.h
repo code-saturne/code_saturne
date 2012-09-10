@@ -99,6 +99,7 @@ void CS_PROCF(promav, PROMAV)
  const cs_int_t   *isym,      /* <-- Symmetry indicator:
                                      1: symmetric; 2: not symmetric */
  const cs_int_t   *ibsize,    /* <-- Block size of diagonal element */
+ const cs_int_t   *iesize,    /* <-- Block size of element ij */
  const cs_int_t   *iinvpe,    /* <-- Indicator to cancel increments
                                      in rotational periodicty (2) or
                                      to exchange them as scalars (1) */
@@ -271,17 +272,19 @@ cs_matrix_get_diag_block_size(const cs_matrix_t  *matrix);
  *   2: matrix line extents,  3: matrix line*column extents
  *
  * parameters:
- *   matrix           <-> Pointer to matrix structure
- *   symmetric        <-- Indicates if matrix coefficients are symmetric
- *   diag_block_size  <-- Block sizes for diagonal, or NULL
- *   da               <-- Diagonal values (NULL if zero)
- *   xa               <-- Extradiagonal values (NULL if zero)
+ *   matrix                 <-> Pointer to matrix structure
+ *   symmetric              <-- Indicates if matrix coefficients are symmetric
+ *   diag_block_size        <-- Block sizes for diagonal, or NULL
+ *   extra_diag_block_size  <-- Block sizes for extra diagonal, or NULL
+ *   da                     <-- Diagonal values (NULL if zero)
+ *   xa                     <-- Extradiagonal values (NULL if zero)
  *----------------------------------------------------------------------------*/
 
 void
 cs_matrix_set_coefficients(cs_matrix_t      *matrix,
                            bool              symmetric,
                            const int        *diag_block_size,
+                           const int        *extra_diag_block_size,
                            const cs_real_t  *da,
                            const cs_real_t  *xa);
 
@@ -317,17 +320,19 @@ cs_matrix_set_coefficients_ni(cs_matrix_t      *matrix,
  *   2: matrix line extents,  3: matrix line*column extents
  *
  * parameters:
- *   matrix           <-> Pointer to matrix structure
- *   symmetric        <-- Indicates if matrix coefficients are symmetric
- *   diag_block_size  <-- Block sizes for diagonal, or NULL
- *   da               <-- Diagonal values (NULL if zero)
- *   xa               <-- Extradiagonal values (NULL if zero)
+ *   matrix                 <-> Pointer to matrix structure
+ *   symmetric              <-- Indicates if matrix coefficients are symmetric
+ *   diag_block_size        <-- Block sizes for diagonal, or NULL
+ *   extra_diag_block_size  <-- Block sizes for extra diagonal, or NULL
+ *   da                     <-- Diagonal values (NULL if zero)
+ *   xa                     <-- Extradiagonal values (NULL if zero)
  *----------------------------------------------------------------------------*/
 
 void
 cs_matrix_copy_coefficients(cs_matrix_t      *matrix,
                             bool              symmetric,
                             const int        *diag_block_size,
+                            const int        *extra_diag_block_size,
                             const cs_real_t  *da,
                             const cs_real_t  *xa);
 

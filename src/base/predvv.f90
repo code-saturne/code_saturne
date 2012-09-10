@@ -149,8 +149,8 @@ double precision trava(ndim,ncelet)
 double precision ximpa(ndim,ndim,ncelet),uvwk(ndim,ncelet)
 double precision tpucou(ndim,ncelet)
 double precision trav(3,ncelet)
-double precision viscf(nfac), viscb(nfabor)
-double precision viscfi(nfac), viscbi(nfabor)
+double precision viscf(*), viscb(nfabor)
+double precision viscfi(*), viscbi(nfabor)
 double precision secvif(nfac), secvib(nfabor)
 double precision w1(ncelet)
 double precision w7(ncelet), w8(ncelet), w9(ncelet)
@@ -851,17 +851,10 @@ endif
 
 
 !-------------------------------------------------------------------------------
-! ---> "VITESSE" DE DIFFUSION FACETTE
-!      SI ON FAIT AUTRE CHOSE QUE DU K EPS, IL FAUDRA LA METTRE
-!        DANS LA BOUCLE
+! ---> Face diffusivity for the velocity
 
-if( idiff(iu).ge. 1 ) then
+if (idiff(iu).ge. 1) then
 
-! --- Si la vitesse doit etre diffusee, on calcule la viscosite
-!       pour le second membre (selon Rij ou non)
-
-  !FIXME we do NOT extrapolate the viscosity here, whereas we do extrapolate for
-  ! the second viscosity
   if (itytur.eq.3) then
     do iel = 1, ncel
       w1(iel) = propce(iel,ipcvis)
@@ -872,35 +865,30 @@ if( idiff(iu).ge. 1 ) then
     enddo
   endif
 
-  call viscfa                                                     &
+  call viscfa &
   !==========
  ( imvisf ,                                                       &
    w1     ,                                                       &
    viscf  , viscb  )
 
-!     Quand on n'est pas en Rij ou que irijnu = 0, les tableaux
-!       VISCFI, VISCBI se trouvent remplis par la meme occasion
-!       (ils sont confondus avec VISCF, VISCB)
-!     En Rij avec irijnu = 1, on calcule la viscosite increment
-!       de la matrice dans VISCFI, VISCBI
+  ! When using Rij-epsilon model with th option irijnu=1, the face
+  ! viscosity for the Matrix (viscfi and viscbi) is increased
 
   if(itytur.eq.3.and.irijnu.eq.1) then
+
     do iel = 1, ncel
-      w1(iel) = propce(iel,ipcvis)                                &
-                            + idifft(iu)*propce(iel,ipcvst)
+      w1(iel) = propce(iel,ipcvis) + idifft(iu)*propce(iel,ipcvst)
     enddo
-    call viscfa                                                   &
+
+    call viscfa &
     !==========
  ( imvisf ,                                                       &
    w1     ,                                                       &
    viscfi , viscbi )
   endif
 
+! --- If no dissusion, viscosity is set to 0.
 else
-
-! --- Si la vitesse n'a pas de diffusion, on annule la viscosite
-!      (matrice et second membre sont dans le meme tableau,
-!       sauf en Rij avec IRIJNU = 1)
 
   do ifac = 1, nfac
     viscf(ifac) = 0.d0

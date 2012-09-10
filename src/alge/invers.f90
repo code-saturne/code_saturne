@@ -23,7 +23,7 @@
 subroutine invers &
 !================
 
- ( cnom   , isym   , ibsize , ipol   , ireslp , nitmap ,          &
+ ( cnom   , isym   , ibsize , iesize , ipol   , ireslp , nitmap , &
    imgrp  , ncymxp , nitmfp ,                                     &
    iwarnp , nfecra , niterf , icycle , iinvpe ,                   &
    epsilp , rnorm  , residu ,                                     &
@@ -47,6 +47,10 @@ subroutine invers &
 ! cnom             ! a  ! <-- ! variable name                                  !
 ! isym             ! e  ! <-- ! flag = 1: symmetric matrix                     !
 !                  !    !     !        2: non-symmetric matrix                 !
+! ibsize           !    ! <-- ! flag = 1: diag block size 1                    !
+!                  !    !     !      = 3: diag block size 3                    !
+! iesize           !    ! <-- ! flag = 1: extra diag block size                !
+!                  !    !     !      = 3: diag block size 3                    !
 ! ipol             ! e  ! <-- ! polynomial degree for preconditioning          !
 !                  !    !     !   (0 <-- diagonal)                             !
 ! ireslp           ! e  ! <-- ! solver type: 0 conjugate gradient              !
@@ -92,7 +96,7 @@ implicit none
 ! Arguments
 
 character*16     cnom
-integer          isym   , ipol   , ireslp , nitmap , ibsize
+integer          isym   , ipol   , ireslp , nitmap , ibsize , iesize
 integer          imgrp  , ncymxp , nitmfp
 integer          iwarnp , nfecra
 integer          niterf , icycle , iinvpe
@@ -142,11 +146,11 @@ elseif(imgrp.eq.0) then
 
   if (ireslp.ge.0 .and. ireslp.le. 3) then
 
-    call reslin                                                   &
+    call reslin &
     !==========
- ( cnom   , lnom   , ncelet , ncel   , nfac   ,                   &
-   isym   , ilved  , ibsize , ireslp , ipol   , nitmap , iinvpe , &
-   iwarnp , niterf , epsilp , rnorm  , residu ,                   &
+ ( cnom   , lnom   , ncelet , ncel   , nfac   ,                            &
+   isym   , ilved  , ibsize , iesize , ireslp , ipol   , nitmap , iinvpe , &
+   iwarnp , niterf , epsilp , rnorm  , residu ,                            &
    !        ------                     ------
    ifacel , dam    , xam    , smbrp  , vx     )
    !                          -----

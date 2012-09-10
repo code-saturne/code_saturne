@@ -156,7 +156,6 @@ integer          ipp    , iwarnp
 double precision blencp , epsilp , epsrgp , climgp , extrap
 double precision thetap , epsrsp
 
-
 double precision pvara(ncelet), coefap(nfabor), coefbp(nfabor)
 double precision                cofafp(nfabor), cofbfp(nfabor)
 double precision flumas(nfac), flumab(nfabor)
@@ -173,7 +172,7 @@ character*80     chaine
 character*16     cnom
 integer          isym,ireslp,ireslq,ipol,isqrt
 integer          inc,isweep,niterf,iccocg,iel,icycle,nswmod
-integer          itenso,iinvpe, iinvpp,ibsize
+integer          itenso,iinvpe, iinvpp, ibsize, iesize
 
 double precision residu,rnorm
 
@@ -350,7 +349,9 @@ do 100 isweep = 1, nswmod
     else
       iinvpp = iinvpe
     endif
-    call promav(isym,1,iinvpp,dam,xam,pvar,w1)
+    ibsize = 1
+    iesize = 1
+    call promav(isym,ibsize, iesize,iinvpp,dam,xam,pvar,w1)
     do iel = 1, ncel
       w1(iel) = w1(iel) + smbrp(iel)
     enddo
@@ -367,10 +368,12 @@ do 100 isweep = 1, nswmod
   enddo
 
   ibsize = 1
+  iesize = 1
 
-  call invers                                                     &
+  call invers &
   !==========
- ( cnom   , isym   , ibsize , ipol   , ireslq , nitmap , imgrp  , &
+ ( cnom   , isym   , ibsize , iesize ,                            &
+   ipol   , ireslq , nitmap , imgrp  ,                            &
    ncymxp , nitmfp ,                                              &
    iwarnp , nfecra , niterf , icycle , iinvpe ,                   &
    epsilp , rnorm  , residu ,                                     &

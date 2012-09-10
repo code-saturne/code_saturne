@@ -281,6 +281,7 @@ _matrix_vector_test(double                 t_measure,
   cs_matrix_set_coefficients(m,
                              sym_coeffs,
                              NULL,
+                             NULL,
                              da,
                              xa);
 

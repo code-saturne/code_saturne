@@ -29,20 +29,6 @@
 !> \brief This function computes the equivalent viscosity at faces for
 !> a 3x3 symetric tensor.
 !>
-!> More precisely, the right hand side \f$ Rhs \f$ is updated as
-!> follows:
-!> \f[
-!> Rhs = Rhs + \sum_{\fij \in \Facei{\celli}}      \left(
-!>        \dot{m}_\ij \varia_\fij
-!>      - \mu_\fij \gradv_\fij \varia \cdot \vect{S}_\ij  \right)
-!> \f]
-!>
-!> Warning:
-!> The boundary conditions must be seted carefully.
-!>
-!> Options:
-!> - blencp = 0: upwind scheme for the advection
-!> - blencp = 1: no upwind scheme except in the slope test
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------

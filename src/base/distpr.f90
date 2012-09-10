@@ -96,7 +96,7 @@ integer          iinvpe
 integer          isqrt , iel   , ifac
 integer          inc   , iccocg, ivar
 integer          isweep, nittot, idtva0
-integer          ibsize, mmprpl, nswrsl
+integer          ibsize, iesize, mmprpl, nswrsl
 integer          imucpp, idftnp
 double precision relaxp, thetap, rnorm, residu, rnoini
 double precision dismax, dismin, hint, pimp, qimp
@@ -238,6 +238,7 @@ iinvpe = 0
 if(iperio.eq.1) iinvpe = 1
 isqrt = 1
 ibsize = 1
+iesize = 1
 nswrsl = nswrsy
 110 continue
 
@@ -271,9 +272,9 @@ do isweep = 0, nswrsl
     rtpdp(iel) = 0.d0
   enddo
 
-  call invers                                                     &
+  call invers &
   !==========
- ( nomvar(ipp)     , isym   , ibsize ,                            &
+ ( nomvar(ipp)     , isym   , ibsize , iesize ,                   &
    ipol   , ireslp , nitmay , imgrpy ,                            &
    ncymxp , nitmfp ,                                              &
    iwarny , nfecra , niterf , icycle , iinvpe ,                   &

@@ -90,6 +90,7 @@ void CS_PROCF(reslin, RESLIN)
  const cs_int_t   *ilved,     /* <-- Interleaved indicator  */
                               /*     1: interleaved; 2: not interleaved */
  const cs_int_t   *ibsize,    /* <-- Block size of element ii,ii */
+ const cs_int_t   *iesize,    /* <-- Block size of element ij */
  const cs_int_t   *ireslp,    /* <-- Resolution type:
                                      0: pcg; 1: Jacobi; 2: cg-stab */
  const cs_int_t   *ipol,      /* <-- Preconditioning polynomial degree

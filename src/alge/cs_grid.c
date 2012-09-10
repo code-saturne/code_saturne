@@ -115,6 +115,8 @@ struct _cs_grid_t {
   bool                symmetric;    /* Symmetric matrix coefficients
                                        indicator */
   int                 diag_block_size[4]; /* Block sizes for diagonal, or NULL */
+  int                 extra_diag_block_size[4]; /* Block sizes for
+                                                   extra diagonal, or NULL */
 
   cs_lnum_t           n_cells;      /* Local number of cells */
   cs_lnum_t           n_cells_ext;  /* Local number of participating cells
@@ -253,6 +255,11 @@ _create_grid(void)
   g->diag_block_size[2] = 1;
   g->diag_block_size[3] = 1;
 
+  g->extra_diag_block_size[0] = 1;
+  g->extra_diag_block_size[1] = 1;
+  g->extra_diag_block_size[2] = 1;
+  g->extra_diag_block_size[3] = 1;
+
   g->level = 0;
 
   g->n_cells = 0;
@@ -341,6 +348,9 @@ _coarse_init(const cs_grid_t *f)
   c->symmetric = f->symmetric;
   for (i = 0; i < 4; i++)
     c->diag_block_size[i] = f->diag_block_size[i];
+
+  for (i = 0; i < 4; i++)
+    c->extra_diag_block_size[i] = f->extra_diag_block_size[i];
 
   BFT_MALLOC(c->coarse_cell, f->n_cells_ext, cs_lnum_t);
 
@@ -2466,6 +2476,7 @@ _automatic_aggregation(const cs_grid_t  *fine_grid,
   cs_real_t *aggr_crit = NULL;
 
   const int *db_size = fine_grid->diag_block_size;
+  const int *eb_size = fine_grid->extra_diag_block_size;
   const cs_lnum_t *f_face_cells = fine_grid->face_cell;
   const cs_real_t *f_da = fine_grid->da;
   const cs_real_t *f_xa = fine_grid->xa;
@@ -2565,7 +2576,7 @@ _automatic_aggregation(const cs_grid_t  *fine_grid,
       /* the communication pattern and require a more complex algorithm). */
 
       if (ii < f_n_cells && jj < f_n_cells) {
-        f_xa1 = f_xa[c_face*isym];
+        f_xa1 = f_xa[c_face*isym];//TODO if f_xa1 is a block
         f_xa2 = f_xa[(c_face +1)*isym -1];
         /* TODO: remove these tests, or adimensionalize them */
         f_xa1 = CS_MAX(-f_xa1, 1.e-15);
@@ -2866,6 +2877,7 @@ _compute_coarse_quantities(const cs_grid_t  *fine_grid,
   cs_real_t *w1 = NULL;
 
   const int *db_size = fine_grid->diag_block_size;
+  const int *eb_size = fine_grid->extra_diag_block_size;
 
   const cs_lnum_t *f_face_cell = fine_grid->face_cell;
   const cs_lnum_t *c_face_cell = coarse_grid->face_cell;
@@ -3386,20 +3398,23 @@ void CS_PROCF(clmlgo, CLMLGO)
  * destroyed before those arrays.
  *
  * parameters:
- *   n_cells         <-- Local number of cells
- *   n_cells_ext     <-- Local number of cells + ghost cells
- *   n_faces         <-- Local number of faces
- *   symmetric       <-- True if xam is symmetric, false otherwise
- *   diag_block_size <-- Block sizes for diagonal, or NULL
- *   face_cell       <-- Face -> cells connectivity (1 to n)
- *   halo            <-- Halo structure associated with this level, or NULL.
- *   numbering       <-- vectorization or thread-related numbering info, or NULL
- *   cell_cen        <-- Cell center (size: 3.n_cells_ext)
- *   cell_vol        <-- Cell volume (size: n_cells_ext)
- *   face_normal     <-- Internal face normals (size: 3.n_faces)
- *   da              <-- Matrix diagonal (size: n_cell_ext)
- *   xa              <-- Matrix extra-diagonal terms
- *                       (size: n_faces if symmetric, 2.n_faces otherwise)
+ *   n_cells               <-- Local number of cells
+ *   n_cells_ext           <-- Local number of cells + ghost cells
+ *   n_faces               <-- Local number of faces
+ *   symmetric             <-- True if xam is symmetric, false otherwise
+ *   diag_block_size       <-- Block sizes for diagonal, or NULL
+ *   extra_diag_block_size <-- Block sizes for diagonal, or NULL
+ *   face_cell             <-- Face -> cells connectivity (1 to n)
+ *   halo                  <-- Halo structure associated with this level,
+ *                             or NULL.
+ *   numbering             <-- vectorization or thread-related numbering info,
+ *                             or NULL.
+ *   cell_cen              <-- Cell center (size: 3.n_cells_ext)
+ *   cell_vol              <-- Cell volume (size: n_cells_ext)
+ *   face_normal           <-- Internal face normals (size: 3.n_faces)
+ *   da                    <-- Matrix diagonal (size: n_cell_ext)
+ *   xa                    <-- Matrix extra-diagonal terms
+ *                             (size: n_faces if symmetric, 2.n_faces otherwise)
  *
  * returns:
  *   base grid structure
@@ -3411,6 +3426,7 @@ cs_grid_create_from_shared(cs_lnum_t              n_cells,
                            cs_lnum_t              n_faces,
                            bool                   symmetric,
                            const int             *diag_block_size,
+                           const int             *extra_diag_block_size,
                            const cs_lnum_t       *face_cell,
                            const cs_halo_t       *halo,
                            const cs_numbering_t  *numbering,
@@ -3439,6 +3455,16 @@ cs_grid_create_from_shared(cs_lnum_t              n_cells,
     for (ii = 0; ii < 4; ii++)
       g->diag_block_size[ii] = 1;
   }
+
+  if (extra_diag_block_size != NULL) {
+    for (ii = 0; ii < 4; ii++)
+      g->extra_diag_block_size[ii] = extra_diag_block_size[ii];
+  }
+  else {
+    for (ii = 0; ii < 4; ii++)
+      g->extra_diag_block_size[ii] = 1;
+  }
+
 
   g->n_cells = n_cells;
   g->n_cells_ext = n_cells_ext;
@@ -3508,7 +3534,12 @@ cs_grid_create_from_shared(cs_lnum_t              n_cells,
 
 
   g->matrix = cs_matrix_create(g->matrix_struct);
-  cs_matrix_set_coefficients(g->matrix, symmetric, diag_block_size, g->da, g->xa);
+  cs_matrix_set_coefficients(g->matrix,
+                             symmetric,
+                             diag_block_size,
+                             extra_diag_block_size,
+                             g->da,
+                             g->xa);
 
   return g;
 }
@@ -3570,6 +3601,7 @@ cs_grid_destroy(cs_grid_t **grid)
  *   level       --> Level in multigrid hierarchy (or NULL)
  *   symmetric   --> Symmetric matrix coefficients indicator (or NULL)
  *   db_size     --> Size of the diagonal block (or NULL)
+ *   eb_size     --> Size of the extra diagonal block (or NULL)
  *   n_ranks     --> number of ranks with data (or NULL)
  *   n_cells     --> Number of local cells (or NULL)
  *   n_cells_ext --> Number of cells including ghosts (or NULL)
@@ -3582,6 +3614,7 @@ cs_grid_get_info(const cs_grid_t  *g,
                  int              *level,
                  bool             *symmetric,
                  int              *db_size,
+                 int              *eb_size,
                  int              *n_ranks,
                  cs_lnum_t        *n_cells,
                  cs_lnum_t        *n_cells_ext,
@@ -3601,6 +3634,13 @@ cs_grid_get_info(const cs_grid_t  *g,
     db_size[1] = g->diag_block_size[1];
     db_size[2] = g->diag_block_size[2];
     db_size[3] = g->diag_block_size[3];
+  }
+
+ if (eb_size != NULL) {
+    eb_size[0] = g->extra_diag_block_size[0];
+    eb_size[1] = g->extra_diag_block_size[1];
+    eb_size[2] = g->extra_diag_block_size[2];
+    eb_size[3] = g->extra_diag_block_size[3];
   }
 
   if (n_ranks != NULL) {
@@ -3876,7 +3916,12 @@ cs_grid_coarsen(const cs_grid_t   *f,
                                                 NULL);
 
   c->matrix = cs_matrix_create(c->matrix_struct);
-  cs_matrix_set_coefficients(c->matrix, c->symmetric, c->diag_block_size, c->da, c->xa);
+  cs_matrix_set_coefficients(c->matrix,
+                             c->symmetric,
+                             c->diag_block_size,
+                             c->extra_diag_block_size,
+                             c->da,
+                             c->xa);
 
   /* Return new (coarse) grid */
 

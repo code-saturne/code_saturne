@@ -168,7 +168,7 @@ integer          iinvpe, imaspe, indhyd, itypfl
 integer          iesdep
 integer          idtsca
 integer          nagmax, npstmg
-integer          ibsize
+integer          ibsize, iesize
 integer          iescap, ircflp, ischcp, isstpp, ivar, ncymxp, nitmfp
 integer          nswrsp
 integer          imucpp, idftnp, iswdyp
@@ -236,6 +236,7 @@ endif
 
 ! Matrix block size
 ibsize = 1
+iesize = 1
 
 if (iresol(ipr).eq.-1) then
   ireslp = 0
@@ -890,8 +891,8 @@ if (imgr(ipr).gt.0) then
 
   call clmlga &
   !==========
- ( chaine(1:16) ,   lchain ,                                      &
-   isym   , ibsize , nagmax , npstmg , iwarnp ,                   &
+ ( chaine(1:16) ,    lchain ,                                     &
+   isym   , ibsize , iesize , nagmax , npstmg , iwarnp ,          &
    ngrmax , ncegrm ,                                              &
    rlxp1  ,                                                       &
    dam    , xam    )
@@ -1145,15 +1146,16 @@ do 100 isweep = 1, nswmpr
   iwarnp = iwarni(ipr)
   epsilp = epsilo(ipr)
   ibsize = 1
+  iesize = 1
 
 ! ---> TRAITEMENT PERIODICITE
 !     (La pression est un scalaire,
 !                 pas de pb pour la rotation: IINVPE=1)
- iinvpe = 1
+  iinvpe = 1
 
-  call invers                                                     &
+  call invers &
   !==========
- ( chaine(1:16)    , isym   , ibsize ,                            &
+ ( chaine(1:16)    , isym   , ibsize , iesize ,                   &
    ipol   , ireslp , nitmap , imgrp  ,                            &
    ncymap , nitmgp ,                                              &
    iwarnp , nfecra , niterf , icycle , iinvpe ,                   &
