@@ -2514,10 +2514,10 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
 static void
 _vector_gradient_clipping(const cs_mesh_t              *m,
                           const cs_mesh_quantities_t   *fvq,
-                          const cs_halo_type_t          halo_type,
-                          const cs_int_t                clipping_type,
-                          const cs_int_t                verbosity,
-                          const cs_real_t               climgp,
+                          cs_halo_type_t                halo_type,
+                          int                           clipping_type,
+                          int                           verbosity,
+                          cs_real_t                     climgp,
                           const cs_real_3_t   *restrict pvar,
                           cs_real_33_t        *restrict gradv)
 {
@@ -2782,8 +2782,8 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
     /* Synchronize variable */
 
     if (halo != NULL) {
-      cs_mesh_sync_var_scal(denom);
-      cs_mesh_sync_var_scal(denum);
+      cs_halo_sync_var(m->halo, halo_type, denom);
+      cs_halo_sync_var(m->halo, halo_type, denum);
     }
 
   } /* End if clipping_type == 1 */
@@ -2972,8 +2972,11 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
 
   /* Synchronize the updated Gradient */
 
-  if (halo != NULL)
-    cs_mesh_sync_var_tens((cs_real_t *)gradv);
+  if (m->halo != NULL) {
+    cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)gradv, 9);
+    if (cs_glob_mesh->n_init_perio > 0)
+      cs_halo_perio_sync_var_tens(m->halo, halo_type, (cs_real_t *)gradv);
+  }
 
   BFT_FREE(buf);
 }
@@ -2986,6 +2989,7 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
  * parameters:
  *   m              <-- pointer to associated mesh structure
  *   fvq            <-- pointer to associated finite volume quantities
+ *   halo_type      <-- halo type (extended or not)
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   coefav         <-- B.C. coefficients for boundary face normals
  *   coefbv         <-- B.C. coefficients for boundary face normals
@@ -2995,7 +2999,8 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
 static void
 _initialize_vector_gradient(const cs_mesh_t              *m,
                             const cs_mesh_quantities_t   *fvq,
-                            const cs_int_t                inc,
+                            cs_halo_type_t                halo_type,
+                            int                           inc,
                             const cs_real_3_t   *restrict coefav,
                             const cs_real_33_t  *restrict coefbv,
                             const cs_real_3_t   *restrict pvar,
@@ -3028,8 +3033,11 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
   /* By default, handle the gradient as a tensor
      (i.e. we assume it is the gradient of a vector field) */
 
-  if (m->halo != NULL)
-    cs_mesh_sync_var_vect((cs_real_t *)pvar);
+  if (m->halo != NULL) {
+    cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)pvar, 3);
+    if (cs_glob_mesh->n_init_perio > 0)
+      cs_halo_perio_sync_var_vect(m->halo, halo_type, (cs_real_t *)pvar, 3);
+  }
 
   /* Computation without reconstruction */
   /*------------------------------------*/
@@ -3109,8 +3117,11 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
 
   /* Periodicity and parallelism treatment */
 
-  if (m->halo != NULL)
-    cs_mesh_sync_var_tens((cs_real_t *)gradv);
+  if (m->halo != NULL) {
+    cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)gradv, 9);
+    if (cs_glob_mesh->n_init_perio > 0)
+      cs_halo_perio_sync_var_tens(m->halo, halo_type, (cs_real_t *)gradv);
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -3125,6 +3136,7 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
  *   m              <-- pointer to associated mesh structure
  *   fvq            <-- pointer to associated finite volume quantities
  *   var_num        <-- variable's number (0 if non-solved variable)
+ *   halo_type      <-- halo type (extended or not)
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   nswrgp         --> >1: with reconstruction
  *   verbosity      --> verbosity level
@@ -3139,6 +3151,7 @@ static void
 _iterative_vector_gradient(const cs_mesh_t              *m,
                            const cs_mesh_quantities_t   *fvq,
                            int                           var_num,
+                           cs_halo_type_t                halo_type,
                            int                           inc,
                            int                           nswrgp,
                            int                           verbosity,
@@ -3300,8 +3313,11 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
 
       /* Periodicity and parallelism treatment */
 
-      if (m->halo != NULL)
-        cs_mesh_sync_var_tens((cs_real_t *)gradv);
+      if (m->halo != NULL) {
+        cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)gradv, 9);
+        if (cs_glob_mesh->n_init_perio > 0)
+          cs_halo_perio_sync_var_tens(m->halo, halo_type, (cs_real_t *)gradv);
+      }
 
       /* Convergence test (L2 norm) */
 
@@ -3392,8 +3408,11 @@ _lsq_vector_gradient(const cs_mesh_t              *m,
   /* By default, handle the gradient as a tensor
      (i.e. we assume it is the gradient of a vector field) */
 
-  if (m->halo != NULL)
-    cs_mesh_sync_var_vect((cs_real_t *)pvar);
+  if (m->halo != NULL) {
+    cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)pvar, 3);
+    if (cs_glob_mesh->n_init_perio > 0)
+      cs_halo_perio_sync_var_vect(m->halo, halo_type, (cs_real_t *)pvar, 3);
+  }
 
   /* Compute Right-Hand Side */
   /*-------------------------*/
@@ -3522,8 +3541,11 @@ _lsq_vector_gradient(const cs_mesh_t              *m,
 
   /* Periodicity and parallelism treatment */
 
-  if (m->halo != NULL)
-    cs_mesh_sync_var_tens((cs_real_t *)gradv);
+  if (m->halo != NULL) {
+    cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)gradv, 9);
+    if (cs_glob_mesh->n_init_perio > 0)
+      cs_halo_perio_sync_var_tens(m->halo, halo_type, (cs_real_t *)gradv);
+  }
 
   BFT_FREE(rhs);
 }
@@ -3832,6 +3854,7 @@ void CS_PROCF (cgdvec, CGDVEC)
 
     _initialize_vector_gradient(mesh,
                                 fvq,
+                                halo_type,
                                 *inc,
                                 coefav,
                                 coefbv,
@@ -3843,6 +3866,7 @@ void CS_PROCF (cgdvec, CGDVEC)
     if (*nswrgp > 1)
       _iterative_vector_gradient(mesh,
                                  fvq,
+                                 halo_type,
                                  *ivar,
                                  *inc,
                                  *nswrgp,
@@ -3861,6 +3885,7 @@ void CS_PROCF (cgdvec, CGDVEC)
     if (*nswrgp <= 1)
       _initialize_vector_gradient(mesh,
                                   fvq,
+                                  halo_type,
                                   *inc,
                                   coefav,
                                   coefbv,
@@ -3910,6 +3935,7 @@ void CS_PROCF (cgdvec, CGDVEC)
     _iterative_vector_gradient(mesh,
                                fvq,
                                *ivar,
+                               halo_type,
                                *inc,
                                *nswrgp,
                                *iwarnp,
@@ -3921,14 +3947,14 @@ void CS_PROCF (cgdvec, CGDVEC)
 
   }
 
-   _vector_gradient_clipping(mesh,
-                             fvq,
-                             halo_type,
-                             *imligp,
-                             *iwarnp,
+  _vector_gradient_clipping(mesh,
+                            fvq,
+                            halo_type,
+                            *imligp,
+                            *iwarnp,
                              *climgp,
-                             pvar,
-                             gradv);
+                            pvar,
+                            gradv);
 
   if (update_stats == true) {
     gradient_info->n_calls += 1;
