@@ -238,6 +238,8 @@ if (iscalt.gt.0) then
     else
       imucpp = 0
     endif
+  else
+    imucpp = 0
   endif
 else
   imucpp = 0
