@@ -186,7 +186,7 @@ def runAutoverif(pkg, opt_f, opt_v, opt_u, opt_r, opt_c, opt_p, opt_to):
 
     # Scripts
 
-    exe = os.path.join(pkg.bindir, pkg.name)
+    exe = os.path.join(pkg.get_dir('bindir'), pkg.name)
 
     dif = pkg.get_io_dump()
 
