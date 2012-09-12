@@ -353,7 +353,7 @@ void CS_PROCF (cssf2c, CSSF2C)
  * ********************
  *
  * integer          len         : <-- : maximum string length
- * character*       name        : --> : Fortran string
+ * character*       dir         : --> : Fortran string
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (cslogname, CSLOGNAME)
@@ -408,13 +408,15 @@ void CS_PROCF (csdatadir, CSDATADIR)
                                          by many Fortran compilers) */
 )
 {
+  size_t datadir_l;
   size_t l = *len;
   const char *datadir = cs_base_get_pkgdatadir();
 
-  if (strlen(datadir) <= l) {
+  datadir_l = strlen(datadir);
+  if (datadir_l <= l) {
     size_t i;
-    memcpy(dir, datadir, l);
-    for (i = strlen(datadir); i < l; i++)
+    memcpy(dir, datadir, datadir_l);
+    for (i = datadir_l; i < l; i++)
       dir[i] = ' ';
   }
   else
