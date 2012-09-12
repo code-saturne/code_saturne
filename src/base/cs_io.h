@@ -107,12 +107,16 @@ extern int       cs_glob_io_hints;
  *
  * parameters:
  *   name         <-- file name
- *   magic_string <-- magic string associated with file type, or NULL
+ *   magic_string <-- magic string associated with file type
  *   mode         <-- read or write
- *   hints        <-- optional flags for file access method (see cs_file.h)
+ *   method       <-- file access method
  *   echo         <-- echo on main output (< 0 if none, header if 0,
  *                    n first and last elements if n > 0)
- *   comm         <-- associated MPI communicator
+ *   hints        <-- associated hints for MPI-IO, or MPI_INFO_NULL
+ *   block_comm   <-- handle to MPI communicator used for distributed file
+ *                    block access (may be a subset of comm if some ranks do
+ *                    not directly access distributed data blocks)
+ *   comm         <-- handle to main MPI communicator
  *
  * returns:
  *   pointer to kernel IO structure
@@ -121,21 +125,23 @@ extern int       cs_glob_io_hints;
 #if defined(HAVE_MPI)
 
 cs_io_t *
-cs_io_initialize(const char    *file_name,
-                 const char    *magic_string,
-                 cs_io_mode_t   mode,
-                 int            hints,
-                 long           echo,
-                 MPI_Comm       comm);
+cs_io_initialize(const char        *file_name,
+                 const char        *magic_string,
+                 cs_io_mode_t       mode,
+                 cs_file_access_t   method,
+                 long               echo,
+                 MPI_Info           hints,
+                 MPI_Comm           block_comm,
+                 MPI_Comm           comm);
 
 #else
 
 cs_io_t *
-cs_io_initialize(const char    *file_name,
-                 const char    *magic_string,
-                 cs_io_mode_t   mode,
-                 int            hints,
-                 long           echo);
+cs_io_initialize(const char        *file_name,
+                 const char        *magic_string,
+                 cs_io_mode_t       mode,
+                 cs_file_access_t   method,
+                 long               echo);
 
 #endif /* HAVE_MPI */
 
@@ -147,11 +153,15 @@ cs_io_initialize(const char    *file_name,
  * parameters:
  *   name         <-- file name
  *   magic_string <-- magic string associated with file type
- *   hints        <-- optional flags for file access method (see cs_file.h)
+ *   method       <-- file access method
  *   echo         <-- echo on main output (< 0 if none, header if 0,
  *                    n first and last elements if n > 0)
- *   comm         <-- associated MPI communicator
- *
+ *   hints        <-- associated hints for MPI-IO, or MPI_INFO_NULL
+ *   block_comm   <-- handle to MPI communicator used for distributed file
+ *                    block access (may be a subset of comm if some ranks do
+ *                    not directly access distributed data blocks)
+ *   comm         <-- handle to main MPI communicator
+
  * returns:
  *   pointer to kernel IO structure
  *----------------------------------------------------------------------------*/
@@ -159,19 +169,20 @@ cs_io_initialize(const char    *file_name,
 #if defined(HAVE_MPI)
 
 cs_io_t *
-cs_io_initialize_with_index(const char    *file_name,
-                            const char    *magic_string,
-                            int            hints,
-                            long           echo,
-                            MPI_Comm       comm);
-
+cs_io_initialize_with_index(const char        *file_name,
+                            const char        *magic_string,
+                            cs_file_access_t   method,
+                            long               echo,
+                            MPI_Info           hints,
+                            MPI_Comm           block_comm,
+                            MPI_Comm           comm);
 #else
 
 cs_io_t *
-cs_io_initialize_with_index(const char    *file_name,
-                            const char    *magic_string,
-                            int            hints,
-                            long           echo);
+cs_io_initialize_with_index(const char        *file_name,
+                            const char        *magic_string,
+                            cs_file_access_t   method,
+                            long               echo);
 
 #endif /* HAVE_MPI */
 
@@ -562,31 +573,6 @@ cs_io_get_offset(cs_io_t  *inp);
 void
 cs_io_set_offset(cs_io_t        *inp,
                  cs_file_off_t   offset);
-
-/*----------------------------------------------------------------------------
- * Print information on default options for file access.
- *----------------------------------------------------------------------------*/
-
-void
-cs_io_defaults_info(void);
-
-/*----------------------------------------------------------------------------
- * Set the default semantics for file access.
- *
- * Allowed values for mpi_io_mode are:
- *   0: no MPI-IO,
- *   1: MPI-IO with explicit offsets,
- *   2: MPI-IO with individual file pointers
- *
- * Invalid values (for example an MPI-IO mode with no MPI or MPI-IO
- * support) are silently ignored.
- *
- * parameters:
- *   mpi_io_mode <-- mode for default semantics
- *----------------------------------------------------------------------------*/
-
-void
-cs_io_set_defaults(int  mpi_io_mode);
 
 /*----------------------------------------------------------------------------
  * Initialize performance logging for cs_io_t structures.

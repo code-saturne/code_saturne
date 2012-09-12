@@ -45,18 +45,6 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
-/*
- * File hints and semantics
- */
-
-#define CS_FILE_NO_MPI_IO            (1 << 0)
-#define CS_FILE_NO_PREDISTRIBUTE     (1 << 1)
-
-/* MPI-IO positioning semantics */
-
-#define CS_FILE_EXPLICIT_OFFSETS     (1 << 2)
-#define CS_FILE_INDIVIDUAL_POINTERS  (1 << 3)
-
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -81,18 +69,6 @@ typedef enum {
 
 } cs_file_mode_t;
 
-/* Hints for file management */
-
-typedef unsigned int cs_file_hints_t;
-
-/* Offset for file position indicator (int64_t in C99) */
-
-#if defined(SIZEOF_LONG_LONG)
-typedef long long cs_file_off_t;
-#else
-typedef long cs_file_off_t;
-#endif
-
 /* Possibilities for the third argument of cs_file_seek() */
 
 typedef enum {
@@ -102,6 +78,48 @@ typedef enum {
   CS_FILE_SEEK_END    /* Seek from end of file */
 
 } cs_file_seek_t;
+
+/* File access methods */
+
+typedef enum {
+
+  CS_FILE_DEFAULT,
+  CS_FILE_STDIO_SERIAL,
+  CS_FILE_STDIO_PARALLEL,
+  CS_FILE_MPI_INDEPENDENT,
+  CS_FILE_MPI_NON_COLLECTIVE,
+  CS_FILE_MPI_COLLECTIVE
+
+} cs_file_access_t;
+
+/* MPI-IO file positionning methods */
+
+typedef enum {
+
+  CS_FILE_MPI_EXPLICIT_OFFSETS,
+  CS_FILE_MPI_INDIVIDUAL_POINTERS
+
+} cs_file_mpi_positionning_t;
+
+/* Offset for file position indicator (int64_t in C99) */
+
+#if defined(SIZEOF_LONG_LONG)
+typedef long long cs_file_off_t;
+#else
+typedef long cs_file_off_t;
+#endif
+
+/*=============================================================================
+ * Global variables
+ *============================================================================*/
+
+/* names associated with file access methods */
+
+extern const char  *cs_file_access_name[];
+
+/* names associated with MPI-IO positionning */
+
+extern const char  *cs_file_mpi_positionning_name[];
 
 /*=============================================================================
  * Public function prototypes
@@ -114,9 +132,14 @@ typedef enum {
  * modified by cs_file_set_swap_endian().
  *
  * parameters:
- *   name  <-- file name
- *   mode  <-- file acces mode: read, write, or append
- *   hints <-- file I/O hints (for MPI and MPI I/O behavior)
+ *   name       <-- file name
+ *   mode       <-- file acces mode: read, write, or append
+ *   method     <-- file access method
+ *   hints      <-- associated hints for MPI-IO, or MPI_INFO_NULL
+ *   block_comm <-- handle to MPI communicator used for distributed file
+ *                  block access (may be a subset of comm if some ranks do
+ *                  not directly access distributed data blocks)
+ *   comm       <-- handle to main MPI communicator
  *
  * returns:
  *   pointer to cs_file_t file descriptor (NULL in case of failure);
@@ -128,7 +151,9 @@ typedef enum {
 cs_file_t *
 cs_file_open(const char        *name,
              cs_file_mode_t     mode,
-             cs_file_hints_t    hints,
+             cs_file_access_t   method,
+             MPI_Info           hints,
+             MPI_Comm           block_comm,
              MPI_Comm           comm);
 
 #else
@@ -136,9 +161,29 @@ cs_file_open(const char        *name,
 cs_file_t *
 cs_file_open(const char        *name,
              cs_file_mode_t     mode,
-             cs_file_hints_t    hints);
+             cs_file_access_t   method);
 
 #endif
+
+/*----------------------------------------------------------------------------
+ * Create a file descriptor and open the associated file, using the default
+ * file communicator and access method.
+ *
+ * By default, data is written or read as native data. This behavior may be
+ * modified by cs_file_set_swap_endian().
+ *
+ * parameters:
+ *   name    <-- file name
+ *   mode    <-- file acces mode: read, write, or append
+ *
+ * returns:
+ *   pointer to cs_file_t file descriptor (NULL in case of failure);
+ *   currently, errors are fatal.
+ *----------------------------------------------------------------------------*/
+
+cs_file_t *
+cs_file_open_default(const char        *name,
+                     cs_file_mode_t     mode);
 
 /*----------------------------------------------------------------------------
  * Destroy a file descriptor and close the associated file.
@@ -380,8 +425,8 @@ cs_file_seek(cs_file_t       *f,
 /*----------------------------------------------------------------------------
  * Return the position of the file pointer.
  *
- * When using MPI-IO with individual file pointers, we consider the file
- * pointer to be equal to the highest value of the individual file pointers.
+ * In parallel, we consider the file pointer to be equal to the highest
+ * value of the individual file pointers.
  *
  * parameters:
  *   f <-- cs_file_t descriptor
@@ -394,33 +439,6 @@ cs_file_off_t
 cs_file_tell(cs_file_t  *f);
 
 /*----------------------------------------------------------------------------
- * Get the default semantics for file access.
- *
- * returns:
- *   current default semantics for file access
- *----------------------------------------------------------------------------*/
-
-cs_file_hints_t
-cs_file_get_default_semantics(void);
-
-/*----------------------------------------------------------------------------
- * Set the default semantics for file access.
- *
- * This may fail if semantics given contain incompatible values,
- * such as (CS_FILE_EXPLICIT_OFFSETS | CS_FILE_INDIVIDUAL_POINTERS),
- * or when setting MPI-IO access semantics when MPI-IO is not available.
- *
- * parameters:
- *   hints <-- flag (bit mask) defining default semantics
- *
- * returns:
- *   0 if the semantics were valid, 1 otherwise.
- *----------------------------------------------------------------------------*/
-
-int
-cs_file_set_default_semantics(cs_file_hints_t  hints);
-
-/*----------------------------------------------------------------------------
  * Dump the metadata of a file structure in human readable form
  *
  * parameters:
@@ -429,6 +447,164 @@ cs_file_set_default_semantics(cs_file_hints_t  hints);
 
 void
 cs_file_dump(const cs_file_t  *f);
+
+/*----------------------------------------------------------------------------
+ * Get the default options for file access.
+ *
+ * parameters:
+ *   mode   <-- file mode for which the default is queried (write and
+ *              append use the same method, and are interchangeable here)
+ *   access --> default file access method, or NULL
+ *   hints  --> MPI-IO hints, or NULL
+ *----------------------------------------------------------------------------*/
+
+#if defined(HAVE_MPI)
+
+void
+cs_file_get_default_access(cs_file_mode_t     mode,
+                           cs_file_access_t  *method,
+                           MPI_Info          *hints);
+
+#else
+
+void
+cs_file_get_default_access(cs_file_mode_t     mode,
+                           cs_file_access_t  *method);
+
+#endif
+
+/*----------------------------------------------------------------------------
+ * Set the default options for file access.
+ *
+ * If the method given contains incompatible values, such as when setting
+ * MPI-IO methods when MPI-IO is not available, a "reasonable" default
+ * is used instead.
+ *
+ * parameters:
+ *   mode      <-- file mode for which the default is to be set (write and
+ *                 append use the same method, and are interchangeable here)
+ *   method    <-- default access method to set
+ *   hints     <-- MPI-IO hints, or MPI_INFO_NULL
+ *----------------------------------------------------------------------------*/
+
+#if defined(HAVE_MPI)
+
+void
+cs_file_set_default_access(cs_file_mode_t    mode,
+                           cs_file_access_t  method,
+                           MPI_Info          hints);
+
+#else
+
+void
+cs_file_set_default_access(cs_file_mode_t    mode,
+                           cs_file_access_t  method);
+
+#endif
+
+#if defined(HAVE_MPI)
+
+/*----------------------------------------------------------------------------
+ * Get default MPI communicator values for file access.
+ *
+ * A block rank stepping value may be used, allowing the use of a reduced
+ * communicator for distributed block reads and writes.
+ * If this value is greater than 1, ranks not a multiple of this step must be
+ * guaranteed to be empty for block reads and writes with files opened using
+ * this default.
+ *
+ * A minimum block size target may also be used, so as to limit the number
+ * of active blocks to a value proportional to the data size (limiting
+ * latency issues for small data sets, while not requiring too much local
+ * memory).
+ *
+ * parameters:
+ *   block_rank_step --> MPI rank stepping between non-empty distributed blocks,
+ *                       or NULL
+ *   block_min_size  --> minimum block size target for non-empty distributed
+ *                       blocks, or NULL
+ *   block_comm      --> Handle to MPI communicator used for distributed
+ *                       file block access, or NULL
+ *   comm            --> Handle to main MPI communicator, or NULL
+ *----------------------------------------------------------------------------*/
+
+void
+cs_file_get_default_comm(int       *block_rank_step,
+                         int       *block_min_size,
+                         MPI_Comm  *block_comm,
+                         MPI_Comm  *comm);
+
+/*----------------------------------------------------------------------------
+ * Set default MPI communicator values for file access.
+ *
+ * A block rank stepping value may be used, allowing the use of a reduced
+ * communicator for distributed block reads and writes.
+ * If this value is greater than 1, ranks not a multiple of this step must be
+ * guaranteed to be empty for block reads and writes with files opened using
+ * this default.
+ *
+ * A minimum block size target may also be used, so as to limit the number
+ * of active blocks to a value proportional to the data size (limiting
+ * latency issues for small data sets, while not requiring too much local
+ * memory).
+ *
+ * For each argument, an "out of range" value may be used to avoid modifying
+ * the previous default for that argument.
+ *
+ * parameters:
+ *   block_rank_step <-- MPI rank stepping between non-empty blocks for
+ *                       file block reads and writes (not set if <= 0)
+ *   block_min_size  <-- minimum block size target for non-empty distributed
+ *                       blocks (not set if < 1)
+ *   comm            <-- handle to main MPI communicator
+ *                       (not set if MPI_COMM_SELF)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_file_set_default_comm(int       block_rank_step,
+                         int       block_min_size,
+                         MPI_Comm  comm);
+
+#endif /* defined(HAVE_MPI) */
+
+/*----------------------------------------------------------------------------
+ * Get the positionning method for MPI-IO
+ *
+ * For details, see cs_file_set_mpi_io_positionning().
+ *
+ * returns:
+ *   positionning method for MPI-IO
+ *----------------------------------------------------------------------------*/
+
+cs_file_mpi_positionning_t
+cs_file_get_mpi_io_positionning(void);
+
+/*----------------------------------------------------------------------------
+ * Set the positionning method for MPI-IO
+ *
+ * It is not always known whether a performance or robustness difference is
+ * to be expected using explicit file offsets or individual file pointers.
+ * Perusal of a sampling of ROMIO code would seem to indicate that no
+ * difference is to be expected, but this might change with MPI IO variants
+ * or file systems, so this advanced setting is made possible.
+ *
+ * This setting is not available on a per-file basis, though this could be
+ * done in the future in the unexpected case of performance results
+ * showing this would be useful.
+ *
+ * parameters:
+ *   positionning <-- chosen positionning method for MPI-IO
+ *----------------------------------------------------------------------------*/
+
+void
+cs_file_set_mpi_io_positionning(cs_file_mpi_positionning_t  positionning);
+
+/*----------------------------------------------------------------------------
+ * Print information on default options for file access.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_file_defaults_info(void);
 
 #if defined(HAVE_MPI)
 

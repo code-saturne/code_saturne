@@ -140,7 +140,6 @@ static int
 _bft_printf_f(const char     *const format,
               va_list         arg_ptr)
 {
-  cs_int_t  line;
   cs_int_t  msgsize;
 
   /* Buffer for printing from C code: print to a character string, which will
@@ -162,8 +161,6 @@ _bft_printf_f(const char     *const format,
 #else
   msgsize = vsnprintf (cs_buf_print_f, CS_BUF_PRINT_F_SIZE, format, arg_ptr);
 #endif
-
-  line = __LINE__ - 1;
 
   if (msgsize == -1 || msgsize > CS_BUF_PRINT_F_SIZE - 1) {
     fprintf(stderr,

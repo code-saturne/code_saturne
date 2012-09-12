@@ -128,14 +128,6 @@ def define_domain_parameters(domain):
     if domain.param == None:
         domain.logging_args = None
 
-    # Optional MPI IO behavior for the solver
-    # may be forced using domain.mpi_io = <option>, where option is one of:
-    #   'off' (disable MPI_IO)
-    #   'eo' (use explicit offsets)
-    #   'ip' (use individual file pointers)
-
-    domain.mpi_io = None
-
     # Solver options
     #---------------
 

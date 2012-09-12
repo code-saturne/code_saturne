@@ -98,14 +98,16 @@ typedef struct _location_t {
 
 struct _cs_restart_t {
 
-  char              *name;         /* Name of restart file */
+  char              *name;           /* Name of restart file */
 
-  cs_io_t           *fh;           /* Pointer to associated file handle */
+  cs_io_t           *fh;             /* Pointer to associated file handle */
+  int                rank_step;      /* Block rank step for parallel IO */
+  int                min_block_size; /* Minimum block size for parallel IO */
 
-  size_t             n_locations;  /* Number of locations */
-  _location_t       *location;     /* Location definition array */
+  size_t             n_locations;    /* Number of locations */
+  _location_t       *location;       /* Location definition array */
 
-  cs_restart_mode_t  mode;         /* Read or write */
+  cs_restart_mode_t  mode;           /* Read or write */
 };
 
 /*============================================================================
@@ -117,11 +119,6 @@ static const char _dir_separator = '\\';
 #else
 static const char _dir_separator = '/';
 #endif
-
-/* Minimum buffer size on rank 0 (to limit number of blocks
-   when there is a large number of processors) */
-
-static int cs_restart_def_buf_size = 1024*1024*8;
 
 /* Monitoring info */
 
@@ -327,6 +324,7 @@ static void
 _add_file(cs_restart_t  *r)
 {
   double timing[2];
+  cs_file_access_t method;
 
   const char magic_string[] = "Checkpoint / restart, R0";
   const long echo = CS_IO_ECHO_NONE;
@@ -335,38 +333,62 @@ _add_file(cs_restart_t  *r)
 
   /* In read mode, open file to detect header first */
 
-  if (r->mode == CS_RESTART_MODE_READ) {
-
 #if defined(HAVE_MPI)
-    r->fh = cs_io_initialize_with_index(r->name,
-                                        magic_string,
-                                        cs_glob_io_hints,
-                                        echo,
-                                        cs_glob_mpi_comm);
-#else
-    r->fh = cs_io_initialize_with_index(r->name, magic_string, 0, echo);
-#endif
+  {
+    int                block_rank_step, min_block_size;
+    MPI_Info           hints;
+    MPI_Comm           block_comm, comm;
 
-    _locations_from_index(r);
+    cs_file_get_default_comm(&block_rank_step, &min_block_size,
+                             &block_comm, &comm);
+
+    r->rank_step = block_rank_step;
+    r->min_block_size = min_block_size;
+    assert(comm == cs_glob_mpi_comm || comm == MPI_COMM_NULL);
+
+    if (r->mode == CS_RESTART_MODE_READ) {
+      cs_file_get_default_access(CS_FILE_MODE_READ, &method, &hints);
+      r->fh = cs_io_initialize_with_index(r->name,
+                                          magic_string,
+                                          method,
+                                          echo,
+                                          hints,
+                                          block_comm,
+                                          comm);
+      _locations_from_index(r);
+    }
+    else {
+      cs_file_get_default_access(CS_FILE_MODE_WRITE, &method, &hints);
+      r->fh = cs_io_initialize(r->name,
+                               magic_string,
+                               CS_IO_MODE_WRITE,
+                               method,
+                               echo,
+                               hints,
+                               block_comm,
+                               comm);
+    }
   }
-
-  else {
-
-#if defined(HAVE_MPI)
-    r->fh = cs_io_initialize(r->name,
-                             magic_string,
-                             CS_IO_MODE_WRITE,
-                             cs_glob_io_hints,
-                             echo,
-                             cs_glob_mpi_comm);
 #else
-    r->fh = cs_io_initialize(r->name,
-                             magic_string,
-                             CS_IO_MODE_WRITE,
-                             0,
-                             echo);
-#endif
+  {
+    if (r->mode == CS_RESTART_MODE_READ) {
+      cs_file_get_default_access(CS_FILE_MODE_READ, &method);
+      r->fh = cs_io_initialize_with_index(r->name,
+                                          magic_string,
+                                          method,
+                                          echo);
+      _locations_from_index(r);
+    }
+    else {
+      cs_file_get_default_access(CS_FILE_MODE_WRITE, &method);
+      r->fh = cs_io_initialize(r->name,
+                               magic_string,
+                               CS_IO_MODE_WRITE,
+                               method,
+                               echo);
+    }
   }
+#endif
 
   timing[1] = cs_timer_wtime();
   _restart_wtime[r->mode] += timing[1] - timing[0];
@@ -426,8 +448,8 @@ _read_ent_values(cs_restart_t        *r,
 
   bi = cs_block_dist_compute_sizes(cs_glob_rank_id,
                                    cs_glob_n_ranks,
-                                   0,
-                                   cs_restart_def_buf_size / nbr_byte_ent,
+                                   r->rank_step,
+                                   r->min_block_size / nbr_byte_ent,
                                    n_glob_ents);
 
   d = cs_block_to_part_create_by_gnum(cs_glob_mpi_comm,
@@ -517,8 +539,8 @@ _write_ent_values(const cs_restart_t  *r,
 
   bi = cs_block_dist_compute_sizes(cs_glob_rank_id,
                                    cs_glob_n_ranks,
-                                   0,
-                                   cs_restart_def_buf_size / nbr_byte_ent,
+                                   r->rank_step,
+                                   r->min_block_size / nbr_byte_ent,
                                    n_glob_ents);
 
   d = cs_part_to_block_create_by_gnum(cs_glob_mpi_comm,
@@ -1316,6 +1338,9 @@ cs_restart_create(const char         *name,
   restart->mode = mode;
 
   restart->fh = NULL;
+
+  restart->rank_step = 1;
+  restart->min_block_size = 0;
 
   /* Initialize location data */
 

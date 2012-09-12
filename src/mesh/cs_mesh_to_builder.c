@@ -1048,21 +1048,15 @@ _mesh_to_builder_perio_faces(const cs_mesh_t    *mesh,
  * parameters:
  *   mesh     <-- pointer to mesh structure
  *   mb       <-- pointer to optional mesh builder structure, or NULL
- *   transfer <-- if true, data is transferred from mesh to builder;
- *                if false, builder fields are only used as a temporary
- *                arrays.
  *   pp_out   <-> output file
  *----------------------------------------------------------------------------*/
 
 static void
 _write_dimensions(cs_mesh_t          *mesh,
                   cs_mesh_builder_t  *mb,
-                  bool                transfer,
                   cs_io_t            *pp_out)
 {
   cs_lnum_t i;
-
-  cs_gnum_t g_i_face_vertices_size = 0, g_b_face_vertices_size = 0;
 
   const cs_gnum_t n_g_faces = mesh->n_g_i_faces + mesh->n_g_b_faces;
   const cs_datatype_t gnum_type
@@ -1204,6 +1198,7 @@ _write_mesh_perio_metadata(const cs_mesh_t  *mesh,
  *   perio_num       <-- periodicity number
  *   n_perio_couples <-- number of periodic face couples for this periodicity
  *   perio_couples   <-> periodic face couples for this periodicity
+ *   min_rank_step   <-- minimum rank step between blocks
  *   transfer        <-- if true, mesh transferred to builder;
  *                       if false, builder is a temporary copy
  *   pp_out          <-> output file
@@ -1213,6 +1208,7 @@ static void
 _write_mesh_perio_data_g(int         perio_num,
                          cs_lnum_t   n_perio_couples,
                          cs_gnum_t   perio_couples[],
+                         int         min_rank_step,
                          bool        transfer,
                          cs_io_t    *pp_out)
 {
@@ -1241,7 +1237,7 @@ _write_mesh_perio_data_g(int         perio_num,
 
   bi = cs_block_dist_compute_sizes(cs_glob_rank_id,
                                    cs_glob_n_ranks,
-                                   0,
+                                   min_rank_step,
                                    0,
                                    n_g_couples);
 
@@ -1400,7 +1396,7 @@ cs_mesh_to_builder(cs_mesh_t          *mesh,
   cs_mesh_builder_define_block_dist(mb,
                                     cs_glob_rank_id,
                                     cs_glob_n_ranks,
-                                    0,
+                                    mb->min_rank_step,
                                     0,
                                     mesh->n_g_cells,
                                     mb->n_g_faces,
@@ -1419,7 +1415,7 @@ cs_mesh_to_builder(cs_mesh_t          *mesh,
   /* Write metadata if output is required */
 
   if (pp_out != NULL)
-    _write_dimensions(mesh, mb, transfer, pp_out);
+    _write_dimensions(mesh, mb, pp_out);
 
   /* Main mesh data */
 
@@ -1458,6 +1454,7 @@ cs_mesh_to_builder(cs_mesh_t          *mesh,
         _write_mesh_perio_data_g(i+1,
                                  mb->n_per_face_couples[i],
                                  mb->per_face_couples[i],
+                                 mb->min_rank_step,
                                  transfer,
                                  pp_out);
 #endif

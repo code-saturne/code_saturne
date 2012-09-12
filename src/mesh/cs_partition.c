@@ -2199,15 +2199,15 @@ _part_ptscotch(cs_gnum_t    n_g_cells,
  * Prepare input from mesh builder for use by partitioner.
  *
  * parameters:
- *   mesh         <-- pointer to mesh structure
- *   mb           <-- pointer to mesh builder structure
- *   rank_step    <-- Step between active partitioning ranks
- *                    (1 in basic case, > 1 if we seek to partition on a
- *                    reduced number of ranks)
- *   ignore_perio <-- ignore periodicity information if true
- *   cell_range   <-- first and past-the-last cell numbers for this rank
- *   n_faces      <-- number of local faces for current rank
- *   g_face_cells <-> global face -> cells connectivity
+ *   mesh           <-- pointer to mesh structure
+ *   mb             <-- pointer to mesh builder structure
+ *   rank_step      <-- Step between active partitioning ranks
+ *                      (1 in basic case, > 1 if we seek to partition on a
+ *                      reduced number of ranks)
+ *   ignore_perio   <-- ignore periodicity information if true
+ *   cell_range     <-- first and past-the-last cell numbers for this rank
+ *   n_faces        <-- number of local faces for current rank
+ *   g_face_cells   <-> global face -> cells connectivity
  *----------------------------------------------------------------------------*/
 
 static void
@@ -2459,6 +2459,7 @@ _write_output(cs_gnum_t  n_g_cells,
 {
   size_t i;
   int n_ranks_size;
+  cs_file_access_t method;
   char *filename = NULL;
   cs_io_t *fh = NULL;
   int *domain_num = NULL;
@@ -2516,18 +2517,30 @@ _write_output(cs_gnum_t  n_g_cells,
           dir, _dir_separator, n_ranks);
 
 #if defined(HAVE_MPI)
-  fh = cs_io_initialize(filename,
-                        magic_string,
-                        CS_IO_MODE_WRITE,
-                        cs_glob_io_hints,
-                        CS_IO_ECHO_OPEN_CLOSE,
-                        cs_glob_mpi_comm);
+  {
+    MPI_Info  hints;
+    MPI_Comm  block_comm, comm;
+    cs_file_get_default_access(CS_FILE_MODE_WRITE, &method, &hints);
+    cs_file_get_default_comm(NULL, NULL, &block_comm, &comm);
+    assert(comm == cs_glob_mpi_comm || comm == MPI_COMM_NULL);
+    fh = cs_io_initialize(filename,
+                          magic_string,
+                          CS_IO_MODE_WRITE,
+                          method,
+                          CS_IO_ECHO_OPEN_CLOSE,
+                          hints,
+                          block_comm,
+                          comm);
+  }
 #else
-  fh = cs_io_initialize(filename,
-                        magic_string,
-                        CS_IO_MODE_WRITE,
-                        cs_glob_io_hints,
-                        CS_IO_ECHO_OPEN_CLOSE);
+  {
+    cs_file_get_default_access(CS_FILE_MODE_WRITE, &method);
+    fh = cs_io_initialize(filename,
+                          magic_string,
+                          CS_IO_MODE_WRITE,
+                          method,
+                          CS_IO_ECHO_OPEN_CLOSE);
+  }
 #endif
 
   BFT_FREE(filename);
@@ -2585,6 +2598,7 @@ _read_cell_rank(cs_mesh_t          *mesh,
   char file_name[64]; /* more than enough for
                          "partition_input/domain_number_<n_ranks>" */
   size_t  i;
+  cs_file_access_t  method;
   cs_io_sec_header_t  header;
 
   cs_io_t  *rank_pp_in = NULL;
@@ -2592,6 +2606,7 @@ _read_cell_rank(cs_mesh_t          *mesh,
   cs_gnum_t   n_elts = 0;
   cs_gnum_t   n_g_cells = 0;
 
+  const char magic_string[] = "Domain partitioning, R0";
   const char  *unexpected_msg = N_("Section of type <%s> on <%s>\n"
                                    "unexpected or of incorrect size");
 
@@ -2620,18 +2635,30 @@ _read_cell_rank(cs_mesh_t          *mesh,
   /* Open file */
 
 #if defined(HAVE_MPI)
-  rank_pp_in = cs_io_initialize(file_name,
-                                "Domain partitioning, R0",
-                                CS_IO_MODE_READ,
-                                cs_glob_io_hints,
-                                echo,
-                                cs_glob_mpi_comm);
+  {
+    MPI_Info           hints;
+    MPI_Comm           block_comm, comm;
+    cs_file_get_default_access(CS_FILE_MODE_WRITE, &method, &hints);
+    cs_file_get_default_comm(NULL, NULL, &block_comm, &comm);
+    assert(comm == cs_glob_mpi_comm || comm == MPI_COMM_NULL);
+    rank_pp_in = cs_io_initialize(file_name,
+                                  magic_string,
+                                  CS_IO_MODE_READ,
+                                  method,
+                                  echo,
+                                  hints,
+                                  block_comm,
+                                  comm);
+  }
 #else
-  rank_pp_in = cs_io_initialize(file_name,
-                                "Domain partitioning, R0",
-                                CS_IO_MODE_READ,
-                                cs_glob_io_hints,
-                                echo);
+  {
+    cs_file_get_default_access(CS_FILE_MODE_WRITE, &method);
+    rank_pp_in = cs_io_initialize(file_name,
+                                  magic_string,
+                                  CS_IO_MODE_READ,
+                                  method,
+                                  echo);
+  }
 #endif
 
   if (echo > 0)

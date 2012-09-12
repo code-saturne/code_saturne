@@ -570,6 +570,91 @@ class RegExpValidator(QtGui.QRegExpValidator):
         return text
 
 #-------------------------------------------------------------------------------
+# SpinBox progressing by multiplication and division
+#-------------------------------------------------------------------------------
+
+class RankSpinBoxWidget(QtGui.QSpinBox):
+    """
+    Special Spin box for rank stepping.
+    """
+    def __init__(self, parent):
+        """
+        Constructor
+        """
+        QtGui.QSpinBox.__init__(self, parent)
+
+    def stepBy(self, steps):
+        v = self.value()
+        if steps > 0:
+            self.setValue(v*2)
+        elif steps < 0 and v > 1:
+            self.setValue(v/2)
+
+    def stepEnabled(self):
+        v = self.value()
+        if v < 2:
+            return QtGui.QAbstractSpinBox.StepUpEnabled
+        else:
+            return QtGui.QAbstractSpinBox.StepUpEnabled | QtGui.QAbstractSpinBox.StepDownEnabled
+
+#-------------------------------------------------------------------------------
+# SpinBox progressing by multiplication and division for Buffer size
+#-------------------------------------------------------------------------------
+
+class BufferSpinBoxWidget(QtGui.QSpinBox):
+    """
+    Special Spin box for buffer size.
+    """
+    def __init__(self, parent):
+        """
+        Constructor
+        """
+        QtGui.QSpinBox.__init__(self, parent)
+        self.basesize = 1024*1024
+
+    def stepBy(self, steps):
+        v = self.value()
+        if steps > 0:
+            if v > 0:
+                self.setValue(v*2)
+            else:
+                self.setValue(self.basesize)
+        elif steps < 0 and v > 0:
+            self.setValue(v/2)
+
+    def textFromValue(self, v):
+        """
+        Define text to be shown.
+        This text uses a local suffix (not that of the QSpinBox),
+        as the suffix and value shown are dynamically related.
+        """
+        tv = v
+        suffix = ''
+        if v >= 1073741824 and v % 1073741824 == 0:
+            tv = v / 1073741824
+            suffix = ' GiB'
+        elif v >= 1048576 and v % 1048576 == 0:
+            tv = v / 1048576
+            suffix = ' MiB'
+        elif v >= 1024 and v % 1024 == 0:
+            tv = v / 1024
+            suffix = ' KiB'
+        elif v > 0:
+            tv = v
+            suffix = ' B'
+        else:
+            tv = 0
+            suffix = ''
+        return QtGui.QSpinBox.textFromValue(self, tv) + suffix
+
+    def stepEnabled(self):
+        v = self.value()
+        if v < 1:
+            return QtGui.QAbstractSpinBox.StepUpEnabled
+        else:
+            return QtGui.QAbstractSpinBox.StepUpEnabled | QtGui.QAbstractSpinBox.StepDownEnabled
+
+#-------------------------------------------------------------------------------
 # Paint in green a given widget
 #-------------------------------------------------------------------------------
 

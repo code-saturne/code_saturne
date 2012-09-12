@@ -75,23 +75,24 @@ typedef struct {
 
   /* Periodic features */
 
-  int          *periodicity_num;       /* Periodicity numbers */
-  cs_lnum_t    *n_per_face_couples;    /* Nb. face couples per periodicity */
-  cs_gnum_t    *n_g_per_face_couples;  /* Global nb. couples per periodicity */
+  int          *periodicity_num;         /* Periodicity numbers */
+  cs_lnum_t    *n_per_face_couples;      /* Nb. face couples per periodicity */
+  cs_gnum_t    *n_g_per_face_couples;    /* Global nb. couples per periodicity */
 
-  cs_gnum_t   **per_face_couples;      /* Periodic face couples list. */
+  cs_gnum_t   **per_face_couples;        /* Periodic face couples list. */
 
   /* Optional partitioning info */
 
-  int          *cell_rank;             /* Partition id for each cell */
+  int          *cell_rank;               /* Partition id for each cell */
 
   /* Block ranges for parallel distribution */
 
-  cs_block_dist_info_t   cell_bi;      /* Block info for cell data */
-  cs_block_dist_info_t   face_bi;      /* Block info for face data */
-  cs_block_dist_info_t   vertex_bi;    /* Block info for vertex data */
-  cs_block_dist_info_t  *per_face_bi;  /* Block info for parallel face
-                                          couples */
+  int                    min_rank_step;  /* Minimum block rank step */
+  cs_block_dist_info_t   cell_bi;        /* Block info for cell data */
+  cs_block_dist_info_t   face_bi;        /* Block info for face data */
+  cs_block_dist_info_t   vertex_bi;      /* Block info for vertex data */
+  cs_block_dist_info_t  *per_face_bi;    /* Block info for parallel face
+                                            couples */
 
 } cs_mesh_builder_t;
 

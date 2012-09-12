@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2012-09-03 11:26+0200\n"
+"POT-Creation-Date: 2012-09-12 16:02+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3158,6 +3158,9 @@ msgstr "max"
 msgid "speedup"
 msgstr ""
 
+msgid "Native, baseline, block extradiag"
+msgstr ""
+
 msgid "Native, baseline"
 msgstr ""
 
@@ -4658,6 +4661,30 @@ msgstr ""
 "------------------------------------\n"
 "\n"
 
+msgid "default"
+msgstr "défaut"
+
+msgid "standard input and output, serial access"
+msgstr "entrées/sorties standard, accès série"
+
+msgid "standard input and output, parallel access"
+msgstr "entrées/sorties standard, accès parallèle"
+
+msgid "non-collective MPI-IO, independent file open/close"
+msgstr "MPI-IO non collectif, ouverture/fermeture indépendante"
+
+msgid "non-collective MPI-IO, collective file open/close"
+msgstr "MPI-IO non collectif, ouverture/fermeture collective"
+
+msgid "collective MPI-IO"
+msgstr "MPI-IO collectif"
+
+msgid "explicit offsets"
+msgstr "positions explicites"
+
+msgid "individual file pointers"
+msgstr "pointeurs de fichiers individuels"
+
 #, c-format
 msgid ""
 "Error writing file \"%s\":\n"
@@ -4679,6 +4706,40 @@ msgid ""
 msgstr ""
 "Erreur MPI IO pour le fichier : %s\n"
 "Type d'erreur : %s"
+
+#, c-format
+msgid ""
+"Error opening file:\n"
+"%s\n"
+"MPI-IO is requested, but not available."
+msgstr ""
+
+#, c-format
+msgid "  I/O read method:     %s\n"
+msgstr "  méthode de lecture : %s\n"
+
+#, c-format
+msgid "  I/O write method:    %s\n"
+msgstr "  méthode d'écriture : %s\n"
+
+#, c-format
+msgid "  I/O read method:     %s (%s)\n"
+msgstr "  méthode de lecture : %s (%s)\n"
+
+#, c-format
+msgid "  I/O write method:    %s (%s)\n"
+msgstr "  méthode d'écriture : %s (%s)\n"
+
+msgid "    hints:\n"
+msgstr "    indications :\n"
+
+#, c-format
+msgid "      %s: %s\n"
+msgstr ""
+
+#, c-format
+msgid "  I/O rank step:        %d\n"
+msgstr "   pas des rangs E/S :  %d\n"
 
 #, c-format
 msgid ""
@@ -4906,23 +4967,6 @@ msgstr ""
 "    premier élement rang suivant :\n"
 "    %10llu : %12llu\n"
 
-#, c-format
-msgid "  I/O mode:            %s\n"
-msgstr "  mode E/S :           %s\n"
-
-msgid "MPI-IO, explicit offsets"
-msgstr "MPI-IO, positions explicites"
-
-msgid "MPI-IO, individual file pointers"
-msgstr "MPI-IO, pointeurs de fichiers individuels"
-
-msgid ""
-"serial IO\n"
-"\n"
-msgstr ""
-"ES série\n"
-"\n"
-
 msgid ""
 "\n"
 "Code_Saturne IO files read:\n"
@@ -5015,9 +5059,6 @@ msgstr "temps"
 
 msgid "calls"
 msgstr "appels"
-
-msgid "default"
-msgstr "défaut"
 
 msgid "vectorization"
 msgstr "vectorisation"

@@ -84,6 +84,11 @@ extern "C" {
 #    define MPI_VERSION 1
 #  endif
 
+#  if MPI_VERSION == 1
+#    define MPI_Info       int
+#    define MPI_INFO_NULL  0
+#  endif
+
 #endif
 
 #if defined(HAVE_OPENMP)

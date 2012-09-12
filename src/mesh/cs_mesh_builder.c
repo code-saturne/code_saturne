@@ -131,6 +131,7 @@ cs_mesh_builder_create(void)
 
   /* Block ranges for parallel distribution */
 
+  mb->min_rank_step = 1;
   memset(&(mb->cell_bi), 0, sizeof(cs_block_dist_info_t));
   memset(&(mb->face_bi), 0, sizeof(cs_block_dist_info_t));
   memset(&(mb->vertex_bi), 0, sizeof(cs_block_dist_info_t));
@@ -211,6 +212,8 @@ cs_mesh_builder_define_block_dist(cs_mesh_builder_t  *mb,
                                   cs_gnum_t           n_g_faces,
                                   cs_gnum_t           n_g_vertices)
 {
+  mb->min_rank_step = min_rank_step;
+
   mb->cell_bi = cs_block_dist_compute_sizes(rank_id,
                                             n_ranks,
                                             min_rank_step,

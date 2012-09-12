@@ -77,6 +77,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_file.h"
 #include "cs_gui_util.h"
 #include "cs_gui_variables.h"
 #include "cs_gui_boundary_conditions.h"
@@ -873,32 +874,6 @@ cs_gui_coriolis_value(const char   *const param,
   BFT_FREE(path);
 }
 
-/*-----------------------------------------------------------------------------
- * Get initial value from property markup.
- *
- * parameters:
- *   property_name       -->  name of the property
- *   value              <--   new initial value of the property
- *----------------------------------------------------------------------------*/
-
-void
-cs_gui_properties_value(const char   *const property_name,
-                              double *const value)
-{
-  char   *path = NULL;
-  double  result;
-
-  path = cs_xpath_short_path();
-  cs_xpath_add_element(&path, "property");
-  cs_xpath_add_test_attribute(&path, "name", property_name);
-  cs_xpath_add_element(&path, "initial_value");
-  cs_xpath_add_function_text(&path);
-
-  if (cs_gui_get_double(path, &result))
-    *value = result;
-
-  BFT_FREE(path);
-}
 /*----------------------------------------------------------------------------
  * Return the value of the choice attribute from a property name.
  *
@@ -949,33 +924,6 @@ cs_gui_properties_choice(const char *const property_name, int *choice)
     iok = 0;
   BFT_FREE(buff);
   return iok;
-}
-
-/*-----------------------------------------------------------------------------
- * Initialization choice of the reference variables parameters.
- *
- * parameters:
- *   name            <--   parameter name
- *   value           -->   parameter value
- *----------------------------------------------------------------------------*/
-
-void
-cs_gui_reference_initialization(const char   *const param,
-                                      double *const value)
-{
-  char *path = NULL;
-  double  result;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 3,
-                        "thermophysical_models",
-                        "reference_values",
-                        param);
-  cs_xpath_add_function_text(&path);
-
-  if (cs_gui_get_double(path, &result))
-    *value = result;
-  BFT_FREE(path);
 }
 
 /*----------------------------------------------------------------------------
@@ -5364,6 +5312,60 @@ void CS_PROCF (memui1, MEMUI1) (const int *const ncharb)
  *============================================================================*/
 
 /*-----------------------------------------------------------------------------
+ * Get initial value from property markup.
+ *
+ * parameters:
+ *   property_name      <--   name of the property
+ *   value              -->   new initial value of the property
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_properties_value(const char  *property_name,
+                        double      *value)
+{
+  char   *path = NULL;
+  double  result;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_element(&path, "property");
+  cs_xpath_add_test_attribute(&path, "name", property_name);
+  cs_xpath_add_element(&path, "initial_value");
+  cs_xpath_add_function_text(&path);
+
+  if (cs_gui_get_double(path, &result))
+    *value = result;
+
+  BFT_FREE(path);
+}
+
+/*-----------------------------------------------------------------------------
+ * Initialization choice of the reference variables parameters.
+ *
+ * parameters:
+ *   name            <--   parameter name
+ *   value           -->   parameter value
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_reference_initialization(const char  *param,
+                                double      *value)
+{
+  char *path = NULL;
+  double  result;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3,
+                        "thermophysical_models",
+                        "reference_values",
+                        param);
+  cs_xpath_add_function_text(&path);
+
+  if (cs_gui_get_double(path, &result))
+    *value = result;
+  BFT_FREE(path);
+}
+
+/*-----------------------------------------------------------------------------
  * Set partitioning options.
  *----------------------------------------------------------------------------*/
 
@@ -5508,6 +5510,100 @@ cs_gui_partition(void)
     cs_partition_add_partitions(n_add_parts, add_parts);
     BFT_FREE(add_parts);
   }
+}
+
+/*-----------------------------------------------------------------------------
+ * Define parallel IO settings.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_parallel_io(void)
+{
+  int op_id;
+  char  *path = NULL;
+
+  cs_partition_algorithm_t a = CS_PARTITION_DEFAULT;
+  bool ignore_perio = false;
+  int  rank_step = 0, block_size = -1;
+
+  cs_file_mode_t op_mode[2] = {CS_FILE_MODE_READ, CS_FILE_MODE_WRITE};
+  const char *op_name[2] = {"read_method", "write_method"};
+
+  if (!cs_gui_file_is_loaded())
+    return;
+
+  /* Block IO read and write method */
+
+  for (op_id = 0; op_id < 2; op_id++) {
+
+    cs_file_access_t  m = CS_FILE_DEFAULT;
+    char  *method_name = NULL;
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path, 3,
+                          "calculation_management", "block_io", op_name[op_id]);
+    cs_xpath_add_function_text(&path);
+
+    method_name = cs_gui_get_text_value(path);
+
+    if (method_name != NULL) {
+      if (!strcmp(method_name, "default"))
+        m = CS_FILE_DEFAULT;
+      else if (!strcmp(method_name, "stdio serial"))
+        m = CS_FILE_STDIO_SERIAL;
+      else if (!strcmp(method_name, "stdio parallel"))
+        m = CS_FILE_STDIO_PARALLEL;
+      else if (!strcmp(method_name, "mpi independent"))
+        m = CS_FILE_MPI_INDEPENDENT;
+      else if (!strcmp(method_name, "mpi noncollective"))
+        m = CS_FILE_MPI_NON_COLLECTIVE;
+      else if (!strcmp(method_name, "mpi collective"))
+        m = CS_FILE_MPI_COLLECTIVE;
+#if defined(HAVE_MPI)
+      cs_file_set_default_access(op_mode[op_id], m, MPI_INFO_NULL);
+#else
+      cs_file_set_default_access(op_mode[op_id], m);
+#endif
+      BFT_FREE(method_name);
+    }
+
+    BFT_FREE(path);
+
+  }
+
+#if defined(HAVE_MPI)
+
+  /* Rank step and block buffer size */
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3,
+                        "calculation_management", "block_io", "rank_step");
+  cs_xpath_add_function_text(&path);
+  cs_gui_get_int(path, &rank_step);
+
+  BFT_FREE(path);
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3,
+                        "calculation_management",
+                        "block_io",
+                        "min_block_size");
+  cs_xpath_add_function_text(&path);
+  cs_gui_get_int(path, &block_size);
+
+  BFT_FREE(path);
+
+  if (rank_step > 0 || block_size > -1) {
+    int def_rank_step, def_block_size;
+    cs_file_get_default_comm(&def_rank_step, &def_block_size, NULL, NULL);
+    if (rank_step < 1)
+      rank_step = def_rank_step;
+    if (block_size < 0)
+      block_size = def_block_size;
+    cs_file_set_default_comm(rank_step, block_size, cs_glob_mpi_comm);
+  }
+
+#endif /* defined(HAVE_MPI) */
 }
 
 /*-----------------------------------------------------------------------------

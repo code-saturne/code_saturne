@@ -100,6 +100,8 @@ cs_mesh_save(cs_mesh_t          *mesh,
              cs_mesh_builder_t  *mb,
              const char         *filename)
 {
+  cs_file_access_t  method;
+  int  block_rank_step = 1, block_min_size = 0;
   long  echo = CS_IO_ECHO_OPEN_CLOSE;
 
   cs_io_t  *pp_out = NULL;
@@ -107,6 +109,18 @@ cs_mesh_save(cs_mesh_t          *mesh,
   cs_mesh_builder_t  *_mb = NULL;
 
   bool transfer = false;
+
+#if defined(HAVE_MPI)
+
+  MPI_Info  hints;
+  MPI_Comm  block_comm, comm;
+
+  cs_file_get_default_comm(&block_rank_step, &block_min_size,
+                           &block_comm, &comm);
+
+  assert(comm == cs_glob_mpi_comm || comm == MPI_COMM_NULL);
+
+#endif
 
   const cs_gnum_t n_g_faces = mesh->n_g_i_faces + mesh->n_g_b_faces;
 
@@ -123,8 +137,8 @@ cs_mesh_save(cs_mesh_t          *mesh,
   cs_mesh_builder_define_block_dist(_mb,
                                     cs_glob_rank_id,
                                     cs_glob_n_ranks,
-                                    0,
-                                    0,
+                                    block_rank_step,
+                                    block_min_size,
                                     mesh->n_g_cells,
                                     n_g_faces,
                                     mesh->n_g_vertices);
@@ -132,18 +146,22 @@ cs_mesh_save(cs_mesh_t          *mesh,
   /* Open file for output */
 
 #if defined(HAVE_MPI)
+  cs_file_get_default_access(CS_FILE_MODE_WRITE, &method, &hints);
   pp_out = cs_io_initialize(filename,
                             "Face-based mesh definition, R0",
                             CS_IO_MODE_WRITE,
-                            cs_glob_io_hints,
+                            method,
                             echo,
-                            cs_glob_mpi_comm);
+                            hints,
+                            block_comm,
+                            comm);
 #else
+  cs_file_get_default_access(CS_FILE_MODE_WRITE, &method);
   pp_out = cs_io_initialize(filename,
                             "Face-based mesh definition, R0",
                             CS_IO_MODE_WRITE,
-                            echo,
-                            -1);
+                            method,
+                            echo);
 #endif
 
   /* Write data */

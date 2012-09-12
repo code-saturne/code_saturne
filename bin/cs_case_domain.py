@@ -412,10 +412,6 @@ class domain(base_domain):
         self.prefix = prefix
         self.lib_add = lib_add
 
-        # MPI IO (if available: options are: 'off', 'eo', 'ip')
-
-        self.mpi_io = None
-
         # Adaptation using HOMARD
 
         self.adaptation = adaptation
@@ -877,12 +873,6 @@ class domain(base_domain):
             args += ' --mpi --app-name ' + self.name
         elif self.n_procs > 1:
             args += ' --mpi'
-
-        if self.mpi_io != None:
-            args += ' --mpi-io ' + self.mpi_io
-
-        if 'syr_port' in kw:
-            args += ' --syr-socket ' + str(kw['syr_port'])
 
         # Adjust for Valgrind if used
 

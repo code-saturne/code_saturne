@@ -101,6 +101,9 @@ typedef struct {
   fvm_to_ensight_case_t  *case_info;  /* Associated case structure */
 
 #if defined(HAVE_MPI)
+  int          min_rank_step;      /* Minimum rank step */
+  int          min_block_size;     /* Minimum block buffer size */
+  MPI_Comm     block_comm;         /* Associated MPI block communicator */
   MPI_Comm     comm;               /* Associated MPI communicator */
 #endif
 
@@ -164,13 +167,28 @@ _open_ensight_file(const fvm_to_ensight_writer_t  *this_writer,
     }
   }
   else {
+
     cs_file_mode_t mode = append ? CS_FILE_MODE_APPEND : CS_FILE_MODE_WRITE;
-    const int hints = 0;
+    cs_file_access_t method;
+
 #if defined(HAVE_MPI)
-    f.bf = cs_file_open(filename, mode, hints, this_writer->comm);
+
+    MPI_Info hints;
+    cs_file_get_default_access(CS_FILE_MODE_WRITE, &method, &hints);
+    f.bf = cs_file_open(filename,
+                        mode,
+                        method,
+                        hints,
+                        this_writer->block_comm,
+                        this_writer->comm);
+
 #else
-    f.bf = cs_file_open(filename, mode, hints);
+
+    cs_file_get_default_access(CS_FILE_MODE_WRITE, &method);
+    f.bf = cs_file_open(filename, mode, method);
+
 #endif
+
     if (this_writer->swap_endian == true)
       cs_file_set_swap_endian(f.bf, 1);
   }
@@ -543,22 +561,18 @@ _extra_vertex_get_gnum(const fvm_nodal_t  *mesh,
  * Build block info and part to block distribution helper for vertices.
  *
  * parameters:
- *   mesh             <-- pointer to nodal mesh structure
- *   divide_polyhedra <-- true if polyhedra are tesselated
- *   comm             <-- associated MPI communicator
- *   bi               --> block information structure
- *   d                --> part to bloc distributor
+ *   w    <-- pointer to writer structure
+ *   mesh <-- pointer to nodal mesh structure
+ *   bi   --> block information structure
+ *   d    --> part to bloc distributor
  *----------------------------------------------------------------------------*/
 
 static void
-_vertex_part_to_block_create(const fvm_nodal_t      *mesh,
-                             _Bool                   divide_polyhedra,
-                             MPI_Comm                comm,
-                             cs_block_dist_info_t   *bi,
-                             cs_part_to_block_t    **d)
+_vertex_part_to_block_create(const fvm_to_ensight_writer_t   *w,
+                             const fvm_nodal_t               *mesh,
+                             cs_block_dist_info_t            *bi,
+                             cs_part_to_block_t             **d)
 {
-  int  rank, n_ranks;
-
   cs_gnum_t    n_g_extra_vertices = 0, n_g_vertices_tot = 0;
   cs_lnum_t    n_extra_vertices = 0, n_vertices_tot = 0;
 
@@ -567,8 +581,7 @@ _vertex_part_to_block_create(const fvm_nodal_t      *mesh,
   cs_block_dist_info_t  _bi;
   cs_part_to_block_t   *_d;
 
-  size_t min_block_size
-    = cs_parall_get_min_coll_buf_size() / sizeof(float);
+  size_t min_block_size = w->min_block_size / sizeof(float);
 
   const cs_lnum_t   n_vertices
     = fvm_io_num_get_local_count(mesh->global_vertex_num);
@@ -577,24 +590,19 @@ _vertex_part_to_block_create(const fvm_nodal_t      *mesh,
   const cs_gnum_t   *g_num
     = fvm_io_num_get_global_num(mesh->global_vertex_num);
 
-  /* Get info on the current MPI communicator */
-
-  MPI_Comm_rank(comm, &rank);
-  MPI_Comm_size(comm, &n_ranks);
-
   /* Compute extra vertex coordinates if present */
 
   _count_extra_vertices(mesh,
-                        divide_polyhedra,
+                        w->divide_polyhedra,
                         &n_g_extra_vertices,
                         &n_extra_vertices);
 
   n_vertices_tot = n_vertices + n_extra_vertices;
   n_g_vertices_tot = n_g_vertices + n_g_extra_vertices;
 
-  _bi = cs_block_dist_compute_sizes(rank,
-                                    n_ranks,
-                                    0,
+  _bi = cs_block_dist_compute_sizes(w->rank,
+                                    w->n_ranks,
+                                    w->min_rank_step,
                                     min_block_size,
                                     n_g_vertices_tot);
 
@@ -614,7 +622,7 @@ _vertex_part_to_block_create(const fvm_nodal_t      *mesh,
 
   /* Build distribution structures */
 
-  _d = cs_part_to_block_create_by_gnum(comm, _bi, n_vertices_tot, g_num);
+  _d = cs_part_to_block_create_by_gnum(w->comm, _bi, n_vertices_tot, g_num);
 
   if (n_extra_vertices > 0)
     cs_part_to_block_transfer_gnum(_d, _g_num);
@@ -663,9 +671,8 @@ _export_vertex_coords_g(const fvm_to_ensight_writer_t  *this_writer,
 
   /* Initialize distribution info */
 
-  _vertex_part_to_block_create(mesh,
-                               this_writer->divide_polyhedra,
-                               this_writer->comm,
+  _vertex_part_to_block_create(this_writer,
+                               mesh,
                                &bi,
                                &d);
 
@@ -794,9 +801,11 @@ _export_vertex_coords_l(const fvm_to_ensight_writer_t  *this_writer,
 
     if (j < mesh->dim) {
       if (parent_vertex_num != NULL) {
-        for (i = 0; i < n_vertices; i++)
+        for (i = 0; i < n_vertices; i++) {
+          assert(parent_vertex_num[i] != 0);
           coords_tmp[i]
             = (float)(vertex_coords[(parent_vertex_num[i]-1)*stride + j]);
+        }
       }
       else {
         for (i = 0; i < n_vertices; i++)
@@ -1102,15 +1111,15 @@ _write_connect_l(int                stride,
  * Write "trivial" point elements to an EnSight Gold file in parallel mode
  *
  * parameters:
+ *   w    <-- pointer to writer structure
  *   mesh <-- pointer to nodal mesh structure
- *   comm <-- associated MPI communicator
  *   f    <-- file to write to
  *----------------------------------------------------------------------------*/
 
 static void
-_export_point_elements_g(const fvm_nodal_t  *mesh,
-                         MPI_Comm            comm,
-                         _ensight_file_t     f)
+_export_point_elements_g(const fvm_to_ensight_writer_t  *w,
+                         const fvm_nodal_t              *mesh,
+                         _ensight_file_t                 f)
 {
   const cs_gnum_t   n_g_vertices
     = fvm_io_num_get_global_count(mesh->global_vertex_num);
@@ -1129,23 +1138,16 @@ _export_point_elements_g(const fvm_nodal_t  *mesh,
   }
   else if (f.bf != NULL) { /* Binary mode */
 
-    int  rank, n_ranks;
-    cs_lnum_t   i;
+    cs_lnum_t i;
     cs_gnum_t j;
     cs_block_dist_info_t  bi;
 
-    size_t min_block_size
-      = cs_parall_get_min_coll_buf_size() / sizeof(float);
+    size_t min_block_size = w->min_block_size / sizeof(float);
     int32_t  *connect = NULL;
 
-    /* Get info on the current MPI communicator */
-
-    MPI_Comm_rank(comm, &rank);
-    MPI_Comm_size(comm, &n_ranks);
-
-    bi = cs_block_dist_compute_sizes(rank,
-                                     n_ranks,
-                                     0,
+    bi = cs_block_dist_compute_sizes(w->rank,
+                                     w->n_ranks,
+                                     w->min_rank_step,
                                      min_block_size,
                                      n_g_vertices);
 
@@ -1158,7 +1160,7 @@ _export_point_elements_g(const fvm_nodal_t  *mesh,
                            bi.gnum_range[0],
                            bi.gnum_range[1],
                            connect,
-                           comm,
+                           w->comm,
                            f);
 
     BFT_FREE(connect);
@@ -1220,20 +1222,19 @@ _export_point_elements_l(const fvm_nodal_t  *mesh,
  * file in parallel mode
  *
  * parameters:
+ *   w                  <-- pointer to writer structure
  *   global_element_num <-- global element numbering
  *   vertex_index       <-- pointer to element -> vertex index
- *   comm               <-- associated MPI communicator
  *   n_ranks            <-- number of processes in communicator
  *   f                  <-- associated file handle
  *----------------------------------------------------------------------------*/
 
 static void
-_write_lengths_g(const fvm_io_num_t  *global_element_num,
-                 const cs_lnum_t      vertex_index[],
-                 MPI_Comm             comm,
-                 _ensight_file_t      f)
+_write_lengths_g(const fvm_to_ensight_writer_t  *w,
+                 const fvm_io_num_t             *global_element_num,
+                 const cs_lnum_t                 vertex_index[],
+                 _ensight_file_t                 f)
 {
-  int  rank, n_ranks;
   cs_lnum_t   i;
   cs_block_dist_info_t   bi;
 
@@ -1242,8 +1243,7 @@ _write_lengths_g(const fvm_io_num_t  *global_element_num,
 
   cs_part_to_block_t  *d = NULL;
 
-  const size_t min_block_size
-    = cs_parall_get_min_coll_buf_size() / sizeof(int32_t);
+  const size_t min_block_size = w->min_block_size / sizeof(int32_t);
   const cs_lnum_t   n_elements
     = fvm_io_num_get_local_count(global_element_num);
   const cs_lnum_t   n_g_elements
@@ -1251,16 +1251,11 @@ _write_lengths_g(const fvm_io_num_t  *global_element_num,
   const cs_gnum_t   *g_num
     = fvm_io_num_get_global_num(global_element_num);
 
-  /* Get info on the current MPI communicator */
-
-  MPI_Comm_rank(comm, &rank);
-  MPI_Comm_size(comm, &n_ranks);
-
   /* Allocate block buffer */
 
-  bi = cs_block_dist_compute_sizes(rank,
-                                   n_ranks,
-                                   0,
+  bi = cs_block_dist_compute_sizes(w->rank,
+                                   w->n_ranks,
+                                   w->min_rank_step,
                                    min_block_size,
                                    n_g_elements);
 
@@ -1272,7 +1267,7 @@ _write_lengths_g(const fvm_io_num_t  *global_element_num,
   for (i = 0; i < n_elements; i++)
     part_lengths[i] = vertex_index[i+1] - vertex_index[i];
 
-  d = cs_part_to_block_create_by_gnum(comm, bi, n_elements, g_num);
+  d = cs_part_to_block_create_by_gnum(w->comm, bi, n_elements, g_num);
 
   cs_part_to_block_copy_array(d,
                               CS_INT32,
@@ -1289,7 +1284,7 @@ _write_lengths_g(const fvm_io_num_t  *global_element_num,
                          bi.gnum_range[0],
                          bi.gnum_range[1],
                          block_lengths,
-                         comm,
+                         w->comm,
                          f);
 
   BFT_FREE(block_lengths);
@@ -1381,30 +1376,28 @@ _write_block_indexed(cs_gnum_t         num_start,
  * to indicate extra newlines between face -> vertex definitions.
  *
  * parameters:
+ *   w                  <-- pointer to writer structure
  *   global_vertex_num  <-- vertex global numbering
  *   global_element_num <-- global element numbering
  *   vertex_index       <-- element -> vertex index
  *   vertex_num         <-- element -> vertex number
- *   comm               <-- associated MPI communicator
  *   f                  <-- associated file handle
  *----------------------------------------------------------------------------*/
 
 static void
-_write_indexed_connect_g(const fvm_io_num_t  *global_element_num,
-                         const cs_lnum_t      vertex_index[],
-                         const int32_t        vertex_num[],
-                         MPI_Comm             comm,
-                         _ensight_file_t      f)
+_write_indexed_connect_g(const fvm_to_ensight_writer_t  *w,
+                         const fvm_io_num_t             *global_element_num,
+                         const cs_lnum_t                 vertex_index[],
+                         const int32_t                   vertex_num[],
+                         _ensight_file_t                 f)
 {
-  int  rank, n_ranks;
   cs_block_dist_info_t bi;
 
   cs_gnum_t loc_size = 0, tot_size = 0, block_size = 0;
   cs_part_to_block_t  *d = NULL;
   cs_lnum_t   *block_index = NULL;
   int32_t  *block_vtx_num = NULL;
-  size_t  min_block_size
-    = cs_parall_get_min_coll_buf_size() / sizeof(int32_t);
+  size_t  min_block_size = w->min_block_size / sizeof(int32_t);
 
   const cs_gnum_t   n_g_elements
     = fvm_io_num_get_global_count(global_element_num);
@@ -1413,29 +1406,24 @@ _write_indexed_connect_g(const fvm_io_num_t  *global_element_num,
   const cs_gnum_t   *g_elt_num
     = fvm_io_num_get_global_num(global_element_num);
 
-  /* Get info on the current MPI communicator */
-
-  MPI_Comm_rank(comm, &rank);
-  MPI_Comm_size(comm, &n_ranks);
-
   /* Adjust min block size based on minimum element size */
 
   loc_size = vertex_index[n_elements];
-  MPI_Allreduce(&loc_size, &tot_size, 1, CS_MPI_GNUM, MPI_SUM, comm);
+  MPI_Allreduce(&loc_size, &tot_size, 1, CS_MPI_GNUM, MPI_SUM, w->comm);
 
   min_block_size /= (tot_size / n_g_elements);
 
   /* Allocate memory for additionnal indexes */
 
-  bi = cs_block_dist_compute_sizes(rank,
-                                   n_ranks,
-                                   0,
+  bi = cs_block_dist_compute_sizes(w->rank,
+                                   w->n_ranks,
+                                   w->min_rank_step,
                                    min_block_size,
                                    n_g_elements);
 
   BFT_MALLOC(block_index, bi.gnum_range[1] - bi.gnum_range[0] + 1, cs_lnum_t);
 
-  d = cs_part_to_block_create_by_gnum(comm, bi, n_elements, g_elt_num);
+  d = cs_part_to_block_create_by_gnum(w->comm, bi, n_elements, g_elt_num);
 
   cs_part_to_block_copy_index(d,
                               vertex_index,
@@ -1458,7 +1446,7 @@ _write_indexed_connect_g(const fvm_io_num_t  *global_element_num,
                        bi.gnum_range[1],
                        block_index,
                        block_vtx_num,
-                       comm,
+                       w->comm,
                        f);
 
   /* Free memory */
@@ -1472,9 +1460,9 @@ _write_indexed_connect_g(const fvm_io_num_t  *global_element_num,
  * Write polyhedra from a nodal mesh to an EnSight Gold file in parallel mode
  *
  * parameters:
+ *   w                 <-- pointer to writer structure
  *   export_section    <-- pointer to EnSight section helper structure
  *   global_vertex_num <-- pointer to vertex global numbering
- *   comm              <-- associated MPI communicator
  *   f                 <-- associated file handle
  *
  * returns:
@@ -1482,12 +1470,11 @@ _write_indexed_connect_g(const fvm_io_num_t  *global_element_num,
  *----------------------------------------------------------------------------*/
 
 static const fvm_writer_section_t *
-_export_nodal_polyhedra_g(const fvm_writer_section_t  *export_section,
-                          const fvm_io_num_t          *global_vertex_num,
-                          MPI_Comm                     comm,
-                          _ensight_file_t              f)
+_export_nodal_polyhedra_g(const fvm_to_ensight_writer_t  *w,
+                          const fvm_writer_section_t     *export_section,
+                          const fvm_io_num_t             *global_vertex_num,
+                          _ensight_file_t                 f)
 {
-  int  rank, n_ranks;
   cs_lnum_t   i, j, k, l, face_id;
 
   cs_lnum_t   face_length, cell_length;
@@ -1495,11 +1482,6 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_section,
 
   cs_part_to_block_t  *d = NULL;
   const fvm_writer_section_t  *current_section;
-
-  /* Get info on the current MPI communicator */
-
-  MPI_Comm_rank(comm, &rank);
-  MPI_Comm_size(comm, &n_ranks);
 
   /* Export number of faces per polyhedron */
   /*---------------------------------------*/
@@ -1510,9 +1492,9 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_section,
 
     const fvm_nodal_section_t  *section = current_section->section;
 
-    _write_lengths_g(section->global_element_num,
+    _write_lengths_g(w,
+                     section->global_element_num,
                      section->face_index,
-                     comm,
                      f);
 
     current_section = current_section->next;
@@ -1530,8 +1512,7 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_section,
     cs_gnum_t   block_size = 0, block_start = 0, block_end = 0;
     cs_lnum_t *block_index = NULL;
 
-    size_t  min_block_size
-      = cs_parall_get_min_coll_buf_size() / sizeof(int32_t);
+    size_t  min_block_size = w->min_block_size / sizeof(int32_t);
     int32_t  *part_face_len = NULL, *block_face_len = NULL;
 
     const fvm_nodal_section_t  *section = current_section->section;
@@ -1561,13 +1542,13 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_section,
 
     /* Prepare distribution structures */
 
-    bi = cs_block_dist_compute_sizes(rank,
-                                     n_ranks,
-                                     0,
+    bi = cs_block_dist_compute_sizes(w->rank,
+                                     w->n_ranks,
+                                     w->min_rank_step,
                                      min_block_size,
                                      n_g_elements);
 
-    d = cs_part_to_block_create_by_gnum(comm,
+    d = cs_part_to_block_create_by_gnum(w->comm,
                                         bi,
                                         n_elements,
                                         g_elt_num);
@@ -1589,7 +1570,7 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_section,
                                   block_index,
                                   block_face_len);
 
-    MPI_Scan(&block_size, &block_end, 1, CS_MPI_GNUM, MPI_SUM, comm);
+    MPI_Scan(&block_size, &block_end, 1, CS_MPI_GNUM, MPI_SUM, w->comm);
     block_end += 1;
     block_start = block_end - block_size;
 
@@ -1597,7 +1578,7 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_section,
                            block_start,
                            block_end,
                            block_face_len,
-                           comm,
+                           w->comm,
                            f);
 
     BFT_FREE(block_face_len);
@@ -1695,10 +1676,10 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_section,
 
     /* Now distribute and write cells -> vertices connectivity */
 
-    _write_indexed_connect_g(section->global_element_num,
+    _write_indexed_connect_g(w,
+                             section->global_element_num,
                              part_vtx_idx,
                              part_vtx_num,
-                             comm,
                              f);
 
     BFT_FREE(part_vtx_num);
@@ -1910,9 +1891,9 @@ _export_nodal_polyhedra_l(const fvm_writer_section_t  *export_section,
  * Write polygons from a nodal mesh to an EnSight Gold file in parallel mode
  *
  * parameters:
+ *   w                 <-- pointer to writer structure
  *   export_section    <-- pointer to EnSight section helper structure
  *   global_vertex_num <-- pointer to vertex global numbering
- *   comm              <-- associated MPI communicator
  *   f                 <-- associated file handle
  *
  * returns:
@@ -1920,10 +1901,10 @@ _export_nodal_polyhedra_l(const fvm_writer_section_t  *export_section,
  *----------------------------------------------------------------------------*/
 
 static const fvm_writer_section_t *
-_export_nodal_polygons_g(const fvm_writer_section_t  *export_section,
-                         const fvm_io_num_t          *global_vertex_num,
-                         MPI_Comm                     comm,
-                         _ensight_file_t              f)
+_export_nodal_polygons_g(const fvm_to_ensight_writer_t  *w,
+                         const fvm_writer_section_t     *export_section,
+                         const fvm_io_num_t             *global_vertex_num,
+                         _ensight_file_t                 f)
 {
   const fvm_writer_section_t  *current_section;
 
@@ -1936,9 +1917,9 @@ _export_nodal_polygons_g(const fvm_writer_section_t  *export_section,
 
     const fvm_nodal_section_t  *section = current_section->section;
 
-    _write_lengths_g(section->global_element_num,
+    _write_lengths_g(w,
+                     section->global_element_num,
                      section->vertex_index,
-                     comm,
                      f);
 
     current_section = current_section->next;
@@ -2005,10 +1986,10 @@ _export_nodal_polygons_g(const fvm_writer_section_t  *export_section,
 
     /* Now distribute and write cell -> vertices connectivity */
 
-    _write_indexed_connect_g(section->global_element_num,
+    _write_indexed_connect_g(w,
+                             section->global_element_num,
                              part_vtx_idx,
                              part_vtx_num,
-                             comm,
                              f);
 
     BFT_FREE(part_vtx_num);
@@ -2152,25 +2133,24 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_section,
  * file in parallel mode.
  *
  * parameters:
+ *   w                  <-- pointer to writer structure
  *   global_vertex_num  <-- vertex global numbering
  *   global_element_num <-- global element numbering
  *   tesselation        <-- element tesselation description
  *   type               <-- tesselated sub-element type
  *   extra_vertex_base  <-- starting number for added vertices
- *   comm               <-- associated MPI communicator
  *   f                  <-- associated file handle
  *----------------------------------------------------------------------------*/
 
 static void
-_write_tesselated_connect_g(const fvm_io_num_t       *global_vertex_num,
-                            const fvm_io_num_t       *global_element_num,
-                            const fvm_tesselation_t  *tesselation,
-                            fvm_element_t             type,
-                            const cs_gnum_t           extra_vertex_base,
-                            MPI_Comm                  comm,
-                            _ensight_file_t           f)
+_write_tesselated_connect_g(const fvm_to_ensight_writer_t  *w,
+                            const fvm_io_num_t             *global_vertex_num,
+                            const fvm_io_num_t             *global_element_num,
+                            const fvm_tesselation_t        *tesselation,
+                            fvm_element_t                   type,
+                            const cs_gnum_t                 extra_vertex_base,
+                            _ensight_file_t                 f)
 {
-  int  rank, n_ranks;
   cs_lnum_t   i;
   cs_block_dist_info_t bi;
 
@@ -2185,8 +2165,7 @@ _write_tesselated_connect_g(const fvm_io_num_t       *global_vertex_num,
   int32_t     *part_vtx_num = NULL, *block_vtx_num = NULL;
   cs_gnum_t   *part_vtx_gnum = NULL;
 
-  size_t  min_block_size
-    = cs_parall_get_min_coll_buf_size() / sizeof(int32_t);
+  size_t  min_block_size = w->min_block_size / sizeof(int32_t);
 
   const int  stride = fvm_nodal_n_vertices_element[type];
   const cs_lnum_t   n_elements = fvm_tesselation_n_elements(tesselation);
@@ -2198,11 +2177,6 @@ _write_tesselated_connect_g(const fvm_io_num_t       *global_vertex_num,
       = fvm_tesselation_sub_elt_index(tesselation, type);
   const cs_gnum_t   *g_elt_num
     = fvm_io_num_get_global_num(global_element_num);
-
-  /* Get info on the current MPI communicator */
-
-  MPI_Comm_rank(comm, &rank);
-  MPI_Comm_size(comm, &n_ranks);
 
   /* Adjust min block size based on mean number of sub-elements */
 
@@ -2233,7 +2207,7 @@ _write_tesselated_connect_g(const fvm_io_num_t       *global_vertex_num,
                                     global_vertex_num,
                                     extra_vertex_base,
                                     part_vtx_gnum,
-                                    comm);
+                                    w->comm);
 
   assert(end_id == n_elements);
   assert(global_num_end == n_g_elements + 1);
@@ -2248,16 +2222,16 @@ _write_tesselated_connect_g(const fvm_io_num_t       *global_vertex_num,
 
   /* Allocate memory for additionnal indexes and decoded connectivity */
 
-  bi = cs_block_dist_compute_sizes(rank,
-                                   n_ranks,
-                                   0,
+  bi = cs_block_dist_compute_sizes(w->rank,
+                                   w->n_ranks,
+                                   w->min_rank_step,
                                    min_block_size,
                                    n_g_elements);
 
   BFT_MALLOC(block_index, bi.gnum_range[1] - bi.gnum_range[0] + 1, cs_lnum_t);
   BFT_MALLOC(part_index, n_elements + 1, cs_lnum_t);
 
-  d = cs_part_to_block_create_by_gnum(comm, bi, n_elements, g_elt_num);
+  d = cs_part_to_block_create_by_gnum(w->comm, bi, n_elements, g_elt_num);
 
   part_index[0] = 0;
   for (i = 0; i < n_elements; i++) {
@@ -2294,7 +2268,7 @@ _write_tesselated_connect_g(const fvm_io_num_t       *global_vertex_num,
 
   block_size /= stride;
 
-  MPI_Scan(&block_size, &block_end, 1, CS_MPI_GNUM, MPI_SUM, comm);
+  MPI_Scan(&block_size, &block_end, 1, CS_MPI_GNUM, MPI_SUM, w->comm);
   block_end += 1;
   block_start = block_end - block_size;
 
@@ -2302,7 +2276,7 @@ _write_tesselated_connect_g(const fvm_io_num_t       *global_vertex_num,
                          block_start,
                          block_end,
                          block_vtx_num,
-                         comm,
+                         w->comm,
                          f);
 
   /* Free remaining memory */
@@ -2315,9 +2289,9 @@ _write_tesselated_connect_g(const fvm_io_num_t       *global_vertex_num,
  * file in parallel mode
  *
  * parameters:
+ *   w                 <-- pointer to writer structure
  *   export_section    <-- pointer to EnSight section helper structure
  *   global_vertex_num <-- pointer to vertex global numbering
- *   comm              <-- associated MPI communicator
  *   f                 <-- associated file handle
  *
  * returns:
@@ -2325,10 +2299,10 @@ _write_tesselated_connect_g(const fvm_io_num_t       *global_vertex_num,
  *----------------------------------------------------------------------------*/
 
 static const fvm_writer_section_t *
-_export_nodal_tesselated_g(const fvm_writer_section_t  *export_section,
-                           const fvm_io_num_t          *global_vertex_num,
-                           MPI_Comm                     comm,
-                           _ensight_file_t              f)
+_export_nodal_tesselated_g(const fvm_to_ensight_writer_t  *w,
+                           const fvm_writer_section_t     *export_section,
+                           const fvm_io_num_t             *global_vertex_num,
+                           _ensight_file_t                 f)
 {
   const fvm_writer_section_t  *current_section;
 
@@ -2341,12 +2315,12 @@ _export_nodal_tesselated_g(const fvm_writer_section_t  *export_section,
 
     const fvm_nodal_section_t  *section = current_section->section;
 
-    _write_tesselated_connect_g(global_vertex_num,
+    _write_tesselated_connect_g(w,
+                                global_vertex_num,
                                 section->global_element_num,
                                 section->tesselation,
                                 current_section->type,
                                 current_section->extra_vertex_base,
-                                comm,
                                 f);
 
     current_section = current_section->next;
@@ -2441,9 +2415,9 @@ _export_nodal_tesselated_l(const fvm_writer_section_t  *export_section,
  * parallel mode
  *
  * parameters:
+ *   w                 <-- pointer to writer structure
  *   export_section    <-- pointer to EnSight section helper structure
  *   global_vertex_num <-- pointer to vertex global numbering
- *   comm              <-- associated MPI communicator
  *   f                 <-- associated file handle
  *
  * returns:
@@ -2451,20 +2425,14 @@ _export_nodal_tesselated_l(const fvm_writer_section_t  *export_section,
  *----------------------------------------------------------------------------*/
 
 static const fvm_writer_section_t *
-_export_nodal_strided_g(const fvm_writer_section_t  *export_section,
-                        const fvm_io_num_t          *global_vertex_num,
-                        MPI_Comm                     comm,
-                        _ensight_file_t              f)
+_export_nodal_strided_g(const fvm_to_ensight_writer_t  *w,
+                        const fvm_writer_section_t     *export_section,
+                        const fvm_io_num_t             *global_vertex_num,
+                        _ensight_file_t                 f)
 {
-  int  rank, n_ranks;
   cs_lnum_t   i, j;
 
   const fvm_writer_section_t  *current_section;
-
-  /* Get info on the current MPI communicator */
-
-  MPI_Comm_rank(comm, &rank);
-  MPI_Comm_size(comm, &n_ranks);
 
   /* Export vertex connectivity */
 
@@ -2482,7 +2450,7 @@ _export_nodal_strided_g(const fvm_writer_section_t  *export_section,
     const int  stride = fvm_nodal_n_vertices_element[section->type];
 
     const size_t  min_block_size
-      = cs_parall_get_min_coll_buf_size() / (sizeof(int32_t) * stride);
+      = w->min_block_size / (sizeof(int32_t) * stride);
 
     const cs_lnum_t   n_elements
       = fvm_io_num_get_local_count(section->global_element_num);
@@ -2495,13 +2463,13 @@ _export_nodal_strided_g(const fvm_writer_section_t  *export_section,
 
     /* Prepare distribution structures */
 
-    bi = cs_block_dist_compute_sizes(rank,
-                                     n_ranks,
-                                     0,
+    bi = cs_block_dist_compute_sizes(w->rank,
+                                     w->n_ranks,
+                                     w->min_rank_step,
                                      min_block_size,
                                      n_g_elements);
 
-    d = cs_part_to_block_create_by_gnum(comm,
+    d = cs_part_to_block_create_by_gnum(w->comm,
                                         bi,
                                         n_elements,
                                         g_elt_num);
@@ -2532,7 +2500,7 @@ _export_nodal_strided_g(const fvm_writer_section_t  *export_section,
                            bi.gnum_range[0],
                            bi.gnum_range[1],
                            block_vtx_num,
-                           comm,
+                           w->comm,
                            f);
 
     BFT_FREE(block_vtx_num);
@@ -2556,6 +2524,7 @@ _export_nodal_strided_g(const fvm_writer_section_t  *export_section,
  * values are set to 0, and may be interlaced or not.
  *
  * parameters:
+ *   w                <-- pointer to writer structure
  *   mesh             <-- pointer to nodal mesh structure
  *   divide_polyhedra <-- true if polyhedra are tesselated
  *   input_dim        <-- input field dimension
@@ -2568,22 +2537,20 @@ _export_nodal_strided_g(const fvm_writer_section_t  *export_section,
  *                        size: n_parent_lists
  *   datatype         <-- input data type (output is real)
  *   field_values     <-- array of associated field value arrays
- *   comm             <-- associated MPI communicator
  *   f                <-- associated file handle
  *----------------------------------------------------------------------------*/
 
 static void
-_export_field_values_ng(const fvm_nodal_t        *mesh,
-                        _Bool                     divide_polyhedra,
-                        int                       input_dim,
-                        int                       output_dim,
-                        cs_interlace_t            interlace,
-                        int                       n_parent_lists,
-                        const cs_lnum_t           parent_num_shift[],
-                        cs_datatype_t             datatype,
-                        const void         *const field_values[],
-                        _ensight_file_t           f,
-                        MPI_Comm                  comm)
+_export_field_values_ng(const fvm_to_ensight_writer_t  *w,
+                        const fvm_nodal_t              *mesh,
+                        int                             input_dim,
+                        int                             output_dim,
+                        cs_interlace_t                  interlace,
+                        int                             n_parent_lists,
+                        const cs_lnum_t                 parent_num_shift[],
+                        cs_datatype_t                   datatype,
+                        const void               *const field_values[],
+                        _ensight_file_t                 f)
 {
   int  i;
   cs_block_dist_info_t  bi;
@@ -2594,9 +2561,8 @@ _export_field_values_ng(const fvm_nodal_t        *mesh,
 
   /* Initialize distribution info */
 
-  _vertex_part_to_block_create(mesh,
-                               divide_polyhedra,
-                               comm,
+  _vertex_part_to_block_create(w,
+                               mesh,
                                &bi,
                                &d);
 
@@ -2641,7 +2607,7 @@ _export_field_values_ng(const fvm_nodal_t        *mesh,
 
         const fvm_nodal_section_t  *section = mesh->sections[j];
 
-        assert(divide_polyhedra == true);
+        assert(w->divide_polyhedra == true);
 
         if (section->type == FVM_CELL_POLY && section->tesselation != NULL) {
 
@@ -2691,7 +2657,7 @@ _export_field_values_ng(const fvm_nodal_t        *mesh,
     _write_block_floats_g(bi.gnum_range[0],
                           bi.gnum_range[1],
                           block_values,
-                          comm,
+                          w->comm,
                           f);
   }
 
@@ -2784,6 +2750,7 @@ _export_field_values_nl(const fvm_nodal_t           *mesh,
  * values are set to 0, and may be interlaced or not.
  *
  * parameters:
+ *   w                <-- pointer to writer structure
  *   export_section   <-- pointer to EnSight section helper structure
  *   helper           <-- pointer to general writer helper structure
  *   input_dim        <-- input field dimension
@@ -2796,7 +2763,6 @@ _export_field_values_nl(const fvm_nodal_t           *mesh,
  *                        size: n_parent_lists
  *   datatype         <-- indicates the data type of (source) field values
  *   field_values     <-- array of associated field value arrays
- *   comm             <-- associated MPI communicator
  *   f                <-- associated file handle
  *
  * returns:
@@ -2804,7 +2770,8 @@ _export_field_values_nl(const fvm_nodal_t           *mesh,
  *----------------------------------------------------------------------------*/
 
 static const fvm_writer_section_t *
-_export_field_values_eg(const fvm_writer_section_t      *export_section,
+_export_field_values_eg(const fvm_to_ensight_writer_t   *w,
+                        const fvm_writer_section_t      *export_section,
                         int                              input_dim,
                         int                              output_dim,
                         cs_interlace_t                   interlace,
@@ -2812,10 +2779,8 @@ _export_field_values_eg(const fvm_writer_section_t      *export_section,
                         const cs_lnum_t                  parent_num_shift[],
                         cs_datatype_t                    datatype,
                         const void                *const field_values[],
-                        MPI_Comm                         comm,
                         _ensight_file_t                  f)
 {
-  int  rank, n_ranks;
   int  i;
   cs_lnum_t   j, k;
 
@@ -2837,11 +2802,7 @@ _export_field_values_eg(const fvm_writer_section_t      *export_section,
 
   const fvm_writer_section_t  *current_section = NULL;
 
-  size_t  min_block_size
-    = cs_parall_get_min_coll_buf_size() / sizeof(int32_t);
-
-  MPI_Comm_rank(comm, &rank);
-  MPI_Comm_size(comm, &n_ranks);
+  size_t  min_block_size = w->min_block_size / sizeof(int32_t);
 
   /* Loop on sections to count output size */
 
@@ -2926,15 +2887,15 @@ _export_field_values_eg(const fvm_writer_section_t      *export_section,
 
   /* Build distribution structures */
 
-  bi = cs_block_dist_compute_sizes(rank,
-                                   n_ranks,
-                                   0,
+  bi = cs_block_dist_compute_sizes(w->rank,
+                                   w->n_ranks,
+                                   w->min_rank_step,
                                    min_block_size,
                                    n_g_elements);
 
   block_size = bi.gnum_range[1] - bi.gnum_range[0];
 
-  d = cs_part_to_block_create_by_gnum(comm, bi, part_size, g_elt_num);
+  d = cs_part_to_block_create_by_gnum(w->comm, bi, part_size, g_elt_num);
 
   if (_g_elt_num != NULL)
     cs_part_to_block_transfer_gnum(d, _g_elt_num);
@@ -2971,7 +2932,7 @@ _export_field_values_eg(const fvm_writer_section_t      *export_section,
   BFT_MALLOC(block_values, block_size, float);
 
   if (have_tesselation) {
-    MPI_Scan(&block_sub_size, &block_end, 1, CS_MPI_GNUM, MPI_SUM, comm);
+    MPI_Scan(&block_sub_size, &block_end, 1, CS_MPI_GNUM, MPI_SUM, w->comm);
     block_end += 1;
     block_start = block_end - block_sub_size;
     _block_values = part_values;
@@ -3056,7 +3017,7 @@ _export_field_values_eg(const fvm_writer_section_t      *export_section,
     _write_block_floats_g(block_start,
                           block_end,
                           _block_values,
-                          comm,
+                          w->comm,
                           f);
 
   } /* end of loop on spatial dimension */
@@ -3244,18 +3205,28 @@ fvm_to_ensight_init_writer(const char             *name,
 
 #if defined(HAVE_MPI)
   {
-    int mpi_flag, rank, n_ranks;
+    int mpi_flag, rank, n_ranks, min_rank_step, min_block_size;
+    MPI_Comm w_block_comm, w_comm;
+    this_writer->min_rank_step = 1;
+    this_writer->min_block_size = 1024*1024*8;
+    this_writer->block_comm = MPI_COMM_NULL;
+    this_writer->comm = MPI_COMM_NULL;
     MPI_Initialized(&mpi_flag);
-
     if (mpi_flag && comm != MPI_COMM_NULL) {
       this_writer->comm = comm;
       MPI_Comm_rank(this_writer->comm, &rank);
       MPI_Comm_size(this_writer->comm, &n_ranks);
       this_writer->rank = rank;
       this_writer->n_ranks = n_ranks;
+      cs_file_get_default_comm(&min_rank_step, &min_block_size,
+                               &w_block_comm, &w_comm);
+      if (comm == w_comm) {
+        this_writer->min_rank_step = min_rank_step;
+        this_writer->min_block_size = min_block_size;
+        this_writer->block_comm = w_block_comm;
+      }
+      this_writer->comm = comm;
     }
-    else
-      this_writer->comm = MPI_COMM_NULL;
   }
 #endif /* defined(HAVE_MPI) */
 
@@ -3499,7 +3470,7 @@ fvm_to_ensight_export_nodal(void               *this_writer_p,
 
 #if defined(HAVE_MPI)
     if (n_ranks > 1)
-      _export_point_elements_g(mesh, this_writer->comm, f);
+      _export_point_elements_g(this_writer, mesh, f);
 #endif
     if (n_ranks == 1)
       _export_point_elements_l(mesh, f);
@@ -3552,9 +3523,9 @@ fvm_to_ensight_export_nodal(void               *this_writer_p,
 #if defined(HAVE_MPI)
 
       if (n_ranks > 1)
-        export_section = _export_nodal_strided_g(export_section,
+        export_section = _export_nodal_strided_g(this_writer,
+                                                 export_section,
                                                  mesh->global_vertex_num,
-                                                 this_writer->comm,
                                                  f);
 
 #endif /* defined(HAVE_MPI) */
@@ -3582,9 +3553,9 @@ fvm_to_ensight_export_nodal(void               *this_writer_p,
       /* output in parallel mode */
 
       if (n_ranks > 1)
-        export_section = _export_nodal_tesselated_g(export_section,
+        export_section = _export_nodal_tesselated_g(this_writer,
+                                                    export_section,
                                                     mesh->global_vertex_num,
-                                                    this_writer->comm,
                                                     f);
 #endif /* defined(HAVE_MPI) */
 
@@ -3603,9 +3574,9 @@ fvm_to_ensight_export_nodal(void               *this_writer_p,
       /* output in parallel mode */
 
       if (n_ranks > 1)
-        export_section = _export_nodal_polygons_g(export_section,
+        export_section = _export_nodal_polygons_g(this_writer,
+                                                  export_section,
                                                   mesh->global_vertex_num,
-                                                  this_writer->comm,
                                                   f);
 #endif /* defined(HAVE_MPI) */
 
@@ -3625,9 +3596,9 @@ fvm_to_ensight_export_nodal(void               *this_writer_p,
       /* output in parallel mode */
 
       if (n_ranks > 1)
-        export_section =_export_nodal_polyhedra_g(export_section,
+        export_section =_export_nodal_polyhedra_g(this_writer,
+                                                  export_section,
                                                   mesh->global_vertex_num,
-                                                  this_writer->comm,
                                                   f);
 
 #endif /* defined(HAVE_MPI) */
@@ -3787,8 +3758,8 @@ fvm_to_ensight_export_field(void                  *this_writer_p,
 #if defined(HAVE_MPI)
 
     if (n_ranks > 1)
-      _export_field_values_ng(mesh,
-                              this_writer->divide_polyhedra,
+      _export_field_values_ng(this_writer,
+                              mesh,
                               dimension,
                               output_dim,
                               interlace,
@@ -3796,8 +3767,7 @@ fvm_to_ensight_export_field(void                  *this_writer_p,
                               parent_num_shift,
                               datatype,
                               field_values,
-                              f,
-                              this_writer->comm);
+                              f);
 
 #endif /* defined(HAVE_MPI) */
 
@@ -3832,7 +3802,8 @@ fvm_to_ensight_export_field(void                  *this_writer_p,
 #if defined(HAVE_MPI)
 
       if (n_ranks > 1)
-        export_section = _export_field_values_eg(export_section,
+        export_section = _export_field_values_eg(this_writer,
+                                                 export_section,
                                                  dimension,
                                                  output_dim,
                                                  interlace,
@@ -3840,7 +3811,6 @@ fvm_to_ensight_export_field(void                  *this_writer_p,
                                                  parent_num_shift,
                                                  datatype,
                                                  field_values,
-                                                 this_writer->comm,
                                                  f);
 
 #endif /* defined(HAVE_MPI) */

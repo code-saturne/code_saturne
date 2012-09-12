@@ -87,7 +87,7 @@ typedef enum {
 /* Function pointers for extra cleanup operations to be called when
    entering cs_exit() or bft_error() */
 
-typedef int (cs_base_atexit_t) (void);
+typedef void (cs_base_atexit_t) (void);
 
 /*=============================================================================
  * Global variable definitions

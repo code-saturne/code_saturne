@@ -180,6 +180,6 @@ src/mesh/cs_partition.c
 src/turb/cs_les_filter.c
 src/user/cs_user_coupling.c
 src/user/cs_user_mesh.c
-src/user/cs_user_parallel.c
+src/user/cs_user_performance_tuning.c
 src/user/cs_user_postprocess.c
 src/user/cs_user_solver.c

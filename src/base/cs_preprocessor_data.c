@@ -337,8 +337,15 @@ _set_block_ranges(cs_mesh_t          *mesh,
 {
   int i;
 
+  int min_block_size = 0;
   int rank_id = cs_glob_rank_id;
   int n_ranks = cs_glob_n_ranks;
+
+#if defined(HAVE_MPI)
+  int block_rank_step = 1;
+  cs_file_get_default_comm(&block_rank_step, &min_block_size, NULL, NULL);
+  mb->min_rank_step = block_rank_step;
+#endif
 
   /* Always build per_face_range in case of periodicity */
 
@@ -351,28 +358,28 @@ _set_block_ranges(cs_mesh_t          *mesh,
 
   mb->cell_bi = cs_block_dist_compute_sizes(rank_id,
                                             n_ranks,
-                                            0,
-                                            0,
+                                            mb->min_rank_step,
+                                            min_block_size,
                                             mesh->n_g_cells);
 
   mb->face_bi = cs_block_dist_compute_sizes(rank_id,
                                             n_ranks,
-                                            0,
-                                            0,
+                                            mb->min_rank_step,
+                                            min_block_size,
                                             mb->n_g_faces);
 
   mb->vertex_bi = cs_block_dist_compute_sizes(rank_id,
                                               n_ranks,
-                                              0,
-                                              0,
+                                              mb->min_rank_step,
+                                              min_block_size,
                                               mesh->n_g_vertices);
 
   for (i = 0; i < mb->n_perio; i++)
     mb->per_face_bi[i]
       = cs_block_dist_compute_sizes(rank_id,
                                     n_ranks,
-                                    0,
-                                    0,
+                                    mb->min_rank_step,
+                                    min_block_size,
                                     mb->n_g_per_face_couples[i]);
 }
 
@@ -576,7 +583,7 @@ _read_dimensions(cs_mesh_t          *mesh,
   cs_int_t  i, j;
   cs_io_sec_header_t  header;
 
-  cs_gnum_t n_elts = 0;
+  cs_gnum_t  n_elts = 0;
   int        n_gc = 0;
   int        n_gc_props_max = 0;
   int        n_groups = 0;
@@ -606,15 +613,17 @@ _read_dimensions(cs_mesh_t          *mesh,
   pp_in = cs_io_initialize(f->filename,
                            "Face-based mesh definition, R0",
                            CS_IO_MODE_READ,
-                           CS_FILE_NO_MPI_IO,
+                           CS_FILE_STDIO_SERIAL,
                            CS_IO_ECHO_NONE,
+                           MPI_INFO_NULL,
+                           MPI_COMM_NULL,
                            cs_glob_mpi_comm);
 #else
   pp_in = cs_io_initialize(f->filename,
                            "Face-based mesh definition, R0",
                            CS_IO_MODE_READ,
-                           CS_IO_ECHO_NONE,
-                           -1);
+                           CS_FILE_STDIO_SERIAL,
+                           CS_IO_ECHO_NONE);
 #endif
 
   /* Loop on read sections */
@@ -1241,6 +1250,7 @@ _read_data(int                 file_id,
            long                echo)
 {
   cs_int_t  perio_id, perio_type;
+  cs_file_access_t  method;
   cs_io_sec_header_t  header;
 
   cs_real_t  perio_matrix[3][4];
@@ -1271,18 +1281,30 @@ _read_data(int                 file_id,
   f = mr->file_info + file_id;
 
 #if defined(HAVE_MPI)
-  pp_in = cs_io_initialize(f->filename,
-                           "Face-based mesh definition, R0",
-                           CS_IO_MODE_READ,
-                           cs_glob_io_hints,
-                           echo,
-                           cs_glob_mpi_comm);
+  {
+    MPI_Info           hints;
+    MPI_Comm           block_comm, comm;
+    cs_file_get_default_access(CS_FILE_MODE_READ, &method, &hints);
+    cs_file_get_default_comm(NULL, NULL, &block_comm, &comm);
+    assert(comm == cs_glob_mpi_comm || comm == MPI_COMM_NULL);
+    pp_in = cs_io_initialize(f->filename,
+                             "Face-based mesh definition, R0",
+                             CS_IO_MODE_READ,
+                             method,
+                             echo,
+                             hints,
+                             block_comm,
+                             comm);
+  }
 #else
-  pp_in = cs_io_initialize(f->filename,
-                           "Face-based mesh definition, R0",
-                           CS_IO_MODE_READ,
-                           echo,
-                           -1);
+  {
+    cs_file_get_default_access(CS_FILE_MODE_READ, &method);
+    pp_in = cs_io_initialize(f->filename,
+                             "Face-based mesh definition, R0",
+                             CS_IO_MODE_READ,
+                             method,
+                             echo);
+  }
 #endif
 
   cs_io_set_offset(pp_in, f->offset);

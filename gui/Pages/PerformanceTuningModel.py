@@ -61,6 +61,7 @@ class PerformanceTuningModel(Model):
         self.case = case
         node_mgt = self.case.xmlInitNode('calculation_management')
         self.node_part = node_mgt.xmlInitNode('partitioning')
+        self.node_io = node_mgt.xmlInitNode('block_io')
 
 
     def _defaultPartitionValues(self):
@@ -225,6 +226,110 @@ class PerformanceTuningModel(Model):
         else:
             node.xmlRemoveNode()
 
+
+    def getBlockIOReadMethod(self):
+        """
+        Return default block IO read method
+        """
+        val = self.node_io.xmlGetString('read_method')
+        if not val:
+            val = 'default'
+        return val
+
+
+    def setBlockIOReadMethod(self, m):
+        """
+        Set block IO read method if applicable
+        """
+        self.isInList(m, ('default', 'stdio serial', 'stdio parallel',
+                          'mpi independent', 'mpi noncollective',
+                          'mpi collective'))
+        if m == 'default':
+            node = self.node_io.xmlGetNode('read_method')
+            if node:
+                node.xmlRemoveNode()
+        else:
+            self.node_io.xmlSetData('read_method', m)
+
+
+    def getBlockIOWriteMethod(self):
+        """
+        Return default block IO write method
+        """
+        val = self.node_io.xmlGetString('write_method')
+        if not val:
+            val = 'default'
+        return val
+
+
+    def setBlockIOWriteMethod(self, m):
+        """
+        Set block IO write method if applicable
+        """
+        self.isInList(m, ('default', 'stdio serial', 'stdio parallel',
+                          'mpi independent', 'mpi noncollective',
+                          'mpi collective'))
+        if m == 'default':
+            node = self.node_io.xmlGetNode('write_method')
+            if node:
+                node.xmlRemoveNode()
+        else:
+            self.node_io.xmlSetData('write_method', m)
+
+
+    def getBlockIORankStep(self):
+        """
+        Get block IO rank step.
+        """
+        val = self.node_io.xmlGetString('rank_step')
+        if not val:
+            val = 1
+
+        return val
+
+
+    def setBlockIORankStep(self, rank_step):
+        """
+        Set block IO rank step.
+        """
+        if rank_step < 2:
+            node = self.node_io.xmlGetNode('rank_step')
+            if node:
+                node.xmlRemoveNode()
+        else:
+            self.node_io.xmlSetData('rank_step', rank_step)
+
+
+    def _defaultBlockIOMinSize(self):
+        """
+        Define default block IO buffer size.
+        """
+        return 1024*1024*8
+
+
+    def getBlockIOMinSize(self):
+        """
+        Get block IO min block size.
+        """
+        val = self.node_io.xmlGetString('min_block_size')
+        if not val:
+            val = self._defaultBlockIOMinSize()
+
+        return val
+
+
+    def setBlockIOMinSize(self, min_size):
+        """
+        Set block IO min block size.
+        """
+        if min_size ==  self._defaultBlockIOMinSize():
+            node = self.node_io.xmlGetNode('min_block_size')
+            if node:
+                node.xmlRemoveNode()
+        else:
+            self.node_io.xmlSetData('min_block_size', min_size)
+
+
 #-------------------------------------------------------------------------------
 # PartitionModel test case
 #-------------------------------------------------------------------------------
@@ -233,19 +338,19 @@ class PerformanceTuningModel(Model):
 class PerformanceTuningTestCase(ModelTest):
     """
     """
-    def checkPartitionInstantiation(self):
+    def checkPerformanceTuningModelInstantiation(self):
         """
-        Check whether the PartitionModel class could be instantiated
+        Check whether the PerformanceTuningModel class could be instantiated
         """
         model = None
-        model = PartitionModel(self.case)
-        assert model != None, 'Could not instantiate PartitionModel'
+        model = PerformanceTuningModel(self.case)
+        assert model != None, 'Could not instantiate PerformanceTuningModel'
 
     def checkSetandGetPartInput(self):
         """
         Check whether the partition method could be set and get
         """
-        model = PartitionModel(self.case)
+        model = PerformanceTuningModel(self.case)
         model.setPartitionInputPath("RESU/test/partition_output")
         doc= '''<partitioning>
                     <partition path="RESU/test/partition"/>
@@ -255,6 +360,7 @@ class PerformanceTuningTestCase(ModelTest):
                     'Could not set partition in Partition model'
         assert model.getPartitionInputPath() == 'RESU/test/partition_output',\
                     'Could not get partition in Partition model'
+
 
 def runTest():
     print("PerformanceTuningTestCase")

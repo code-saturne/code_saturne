@@ -1292,6 +1292,7 @@ static void
 _write_matrix_g(const cs_matrix_t  *m,
                 cs_file_t          *f)
 {
+  int  block_rank_step = 1, min_block_size = 0;
   cs_lnum_t  block_size = 0;
   cs_gnum_t  n_glob_ents = 0;
 
@@ -1320,10 +1321,12 @@ _write_matrix_g(const cs_matrix_t  *m,
 
   n_glob_ents = fvm_io_num_get_global_count(io_num);
 
+  cs_file_get_default_comm(&block_rank_step, &min_block_size, NULL, NULL);
+
   bi = cs_block_dist_compute_sizes(cs_glob_rank_id,
                                    cs_glob_n_ranks,
-                                   0,
-                                   1024*1024*8/2,
+                                   block_rank_step,
+                                   min_block_size/2,
                                    n_glob_ents);
 
   d = cs_part_to_block_create_by_gnum(cs_glob_mpi_comm,
@@ -1494,6 +1497,7 @@ _write_vector_g(cs_lnum_t         n_elts,
 {
   cs_lnum_t  ii;
 
+  int        block_rank_step = 1, min_block_size = 0;
   cs_lnum_t  block_size = 0;
   cs_gnum_t  coo_shift = 1;
   cs_gnum_t  local_max = 0, n_glob_ents = 0;
@@ -1522,12 +1526,14 @@ _write_vector_g(cs_lnum_t         n_elts,
   for (ii = 0; ii < n_elts; ii++)
     g_elt_num[ii] = ii + coo_shift + 1;
 
+  cs_file_get_default_comm(&block_rank_step, &min_block_size, NULL, NULL);
+
   /* Redistribution structures */
 
   bi = cs_block_dist_compute_sizes(cs_glob_rank_id,
                                    cs_glob_n_ranks,
-                                   0,
-                                   1024*1024*8/2,
+                                   block_rank_step,
+                                   min_block_size/2,
                                    n_glob_ents);
 
   d = cs_part_to_block_create_by_gnum(cs_glob_mpi_comm,
@@ -1710,11 +1716,7 @@ cs_matrix_dump_linear_system(const cs_matrix_t  *matrix,
   snprintf(filename, 63, "%s_%010llu", name, (unsigned long long)n_g_rows);
   filename[63] = '\0';
 
-#if defined(HAVE_MPI)
-  f = cs_file_open(filename, CS_FILE_MODE_WRITE, 0, cs_glob_mpi_comm);
-#else
-  f = cs_file_open(filename, CS_FILE_MODE_WRITE, 0);
-#endif
+  f = cs_file_open_default(filename, CS_FILE_MODE_WRITE);
 
   _write_header_simple(f);
 

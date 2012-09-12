@@ -80,6 +80,7 @@
 #include "cs_coupling.h"
 #include "cs_ctwr.h"
 #include "cs_field.h"
+#include "cs_file.h"
 #include "cs_gradient.h"
 #include "cs_gradient_quality.h"
 #include "cs_gui.h"
@@ -197,9 +198,13 @@ cs_run(void)
   cs_system_info();
 #endif
 
-  cs_io_defaults_info();
+  cs_gui_parallel_io();
+  cs_user_parallel_io();
+  cs_file_defaults_info();
 
   cs_partition_external_library_info();
+
+  bft_printf("\n");
 
   /* Initialize global structures for main mesh */
 
@@ -708,10 +713,6 @@ main(int    argc,
   /* Log-file header and command line arguments recap */
 
   cs_base_logfile_head(argc, argv);
-
-  /* MPI-IO options */
-
-  cs_io_set_defaults(opts.mpi_io_mode);
 
   /* I/O operations initialization */
 

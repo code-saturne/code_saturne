@@ -99,10 +99,24 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         self.modelPartOut.addItem(self.tr("For graph-based partitioning"), 'default')
         self.modelPartOut.addItem(self.tr("Yes"), 'yes')
 
+        self.modelBlockIORead = ComboModel(self.comboBox_IORead, 6, 1)
+        self.modelBlockIOWrite = ComboModel(self.comboBox_IOWrite, 5, 1)
+
+        self.modelBlockIORead.addItem(self.tr("Default"), 'default')
+        self.modelBlockIORead.addItem(self.tr("Standard I/O, serial"), 'stdio serial')
+        self.modelBlockIORead.addItem(self.tr("Standard I/O, parallel"), 'stdio parallel')
+        self.modelBlockIORead.addItem(self.tr("MPI I/O, independent"), 'mpi independent')
+        self.modelBlockIORead.addItem(self.tr("MPI I/O, non-collective"), 'mpi noncollective')
+        self.modelBlockIORead.addItem(self.tr("MPI I/O, collective"), 'mpi collective')
+
+        self.modelBlockIOWrite.addItem(self.tr("Default"), 'default')
+        self.modelBlockIOWrite.addItem(self.tr("Standard I/O, serial"), 'stdio serial')
+        self.modelBlockIOWrite.addItem(self.tr("MPI I/O, independent"), 'mpi independent')
+        self.modelBlockIOWrite.addItem(self.tr("MPI I/O, non-collective"), 'mpi noncollective')
+        self.modelBlockIOWrite.addItem(self.tr("MPI I/O, collective"), 'mpi collective')
+
         # Validators
 
-        rankStepVd = IntValidator(self.lineEdit_RankStep, min=1)
-        self.lineEdit_RankStep.setValidator(rankStepVd)
         partListVd = RegExpValidator(self.lineEdit_PartList, QRegExp("[0-9- ]*"))
         self.lineEdit_PartList.setValidator(partListVd)
 
@@ -115,21 +129,15 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
 
         self.connect(self.comboBox_PartType, SIGNAL("activated(const QString&)"), self.slotPartType)
         self.connect(self.lineEdit_PartList, SIGNAL("textChanged(const QString &)"), self.slotPartitionList)
-        self.connect(self.lineEdit_RankStep, SIGNAL("textChanged(const QString &)"), self.slotRankStep)
-
-        self.partition_alg = str(self.mdl.getPartitionType())
-        self.modelPartType.setItem(str_model=self.partition_alg)
-
-        self.partition_out = str(self.mdl.getPartitionOut())
-        self.modelPartOut.setItem(str_model=self.partition_out)
-
-        self.partition_list = str(self.mdl.getPartitionList())
-        self.lineEdit_PartList.setText(QString(self.partition_list))
-
-        self.rank_step = self.mdl.getPartitionRankStep()
-        self.lineEdit_RankStep.setText(QString(str(self.rank_step)))
+        self.connect(self.spinBoxRankStep, SIGNAL("valueChanged(int)"), self.slotRankStep)
 
         self.connect(self.checkBox_IgnorePerio, SIGNAL("clicked(bool)"), self.slotIgnorePerio)
+
+        self.connect(self.comboBox_IORead, SIGNAL("activated(const QString&)"), self.slotBlockIOReadMethod)
+        self.connect(self.comboBox_IOWrite, SIGNAL("activated(const QString&)"), self.slotBlockIOWriteMethod)
+
+        self.connect(self.spinBoxIORankStep, SIGNAL("valueChanged(int)"), self.slotBlockIORankStep)
+        self.connect(self.spinBoxIOMinBlockSize, SIGNAL("valueChanged(int)"), self.slotBlockIOMinSize)
 
         # Widget initialization
 
@@ -149,6 +157,18 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
             self.radioButtonYes.setChecked(False)
             self.radioButtonNo.setChecked(True)
 
+        self.partition_alg = str(self.mdl.getPartitionType())
+        self.modelPartType.setItem(str_model=self.partition_alg)
+
+        self.partition_out = str(self.mdl.getPartitionOut())
+        self.modelPartOut.setItem(str_model=self.partition_out)
+
+        self.partition_list = str(self.mdl.getPartitionList())
+        self.lineEdit_PartList.setText(QString(self.partition_list))
+
+        self.rank_step = self.mdl.getPartitionRankStep()
+        self.spinBoxRankStep.setValue(int(self.rank_step))
+
         self.slotPartition()
 
         if self.mdl.getIgnorePerio() == 'on':
@@ -157,6 +177,19 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         else:
             self.checkBox_IgnorePerio.setChecked(False)
             self.slotIgnorePerio(False)
+
+        self.blockio_read_method = str(self.mdl.getBlockIOReadMethod())
+        self.modelBlockIORead.setItem(str_model=self.blockio_read_method)
+
+        self.blockio_write_method = str(self.mdl.getBlockIOWriteMethod())
+        self.modelBlockIOWrite.setItem(str_model=self.blockio_write_method)
+
+        self.blockio_rank_step = self.mdl.getBlockIORankStep()
+        self.spinBoxIORankStep.setValue(int(self.blockio_rank_step))
+
+        self.blockio_min_size = self.mdl.getBlockIOMinSize()
+        self.spinBoxIOMinBlockSize.setValue(int(self.blockio_min_size))
+
 
     @pyqtSignature("")
     def slotSearchPartInputDirectory(self):
@@ -268,7 +301,7 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         """
         Input for Partitioner.
         """
-        self.rank_step, ok = self.lineEdit_RankStep.text().toInt()
+        self.rank_step = self.spinBoxRankStep.value()
         self.mdl.setPartitionRankStep(self.rank_step)
 
 
@@ -281,6 +314,42 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
             self.mdl.setIgnorePerio("on")
         else:
             self.mdl.setIgnorePerio("off")
+
+
+    @pyqtSignature("const QString &")
+    def slotBlockIOReadMethod(self, text):
+        """
+        Partitioner execution mode option.
+        """
+        self.blockio_read_method = self.modelBlockIORead.dicoV2M[str(text)]
+        self.mdl.setBlockIOReadMethod(self.blockio_read_method)
+
+
+    @pyqtSignature("const QString &")
+    def slotBlockIOWriteMethod(self, text):
+        """
+        Partitioner execution mode option.
+        """
+        self.blockio_write_method = self.modelBlockIOWrite.dicoV2M[str(text)]
+        self.mdl.setBlockIOWriteMethod(self.blockio_write_method)
+
+
+    @pyqtSignature("const QString &")
+    def slotBlockIORankStep(self, text):
+        """
+        Input for Partitioner.
+        """
+        self.blockio_rank_step = self.spinBoxIORankStep.value()
+        self.mdl.setBlockIORankStep(self.blockio_rank_step)
+
+
+    @pyqtSignature("const QString &")
+    def slotBlockIOMinSize(self, text):
+        """
+        Input for Partitioner.
+        """
+        self.blockio_min_size = self.spinBoxIOMinBlockSize.value()
+        self.mdl.setBlockIOMinSize(self.blockio_min_size)
 
 
     def tr(self, text):

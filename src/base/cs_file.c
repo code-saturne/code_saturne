@@ -89,8 +89,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_parall.h"
-
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
@@ -102,21 +100,86 @@
 BEGIN_C_DECLS
 
 /*=============================================================================
- * Macro definitions
+ * Additional doxygen documentation
  *============================================================================*/
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
+/*!
+  \file cs_file.c
+        File and directory operations, with parallel IO.
+
+  \typedef cs_file_t
+           File descriptor (opaque object)
+
+  \typedef cs_file_off_t
+           Offset for file position indicator
+
+  \enum cs_file_mode_t
+
+  \brief File acces modes
+
+  \var CS_FILE_MODE_READ
+       Read mode
+  \var CS_FILE_MODE_WRITE
+       Write mode
+  \var CS_FILE_MODE_APPEND
+       Append
+
+  \enum cs_file_seek_t
+
+  \brief seek semantics (third argument of \ref cs_file_seek)
+
+  \var CS_FILE_SEEK_SET
+       Seek from beginning of file
+  \var CS_FILE_SEEK_CUR
+       Seek from current position
+  \var CS_FILE_SEEK_END
+       Seek from end of file
+
+  \enum cs_file_access_t
+
+  \brief Shared file access methods
+
+  \var CS_FILE_STDIO_SERIAL
+       Default IO option
+  \var CS_FILE_STDIO_SERIAL
+       Serial standard C IO (funnelled through rank 0 in parallel)
+  \var CS_FILE_STDIO_PARALLEL
+       Per-process standard C IO (for reading only)
+  \var CS_FILE_MPI_INDEPENDENT
+       Non-collective MPI-IO with independent file open and close
+  \var CS_FILE_MPI_NON_COLLECTIVE
+       Non-collective MPI-IO with collective file open and close
+  \var CS_FILE_MPI_COLLECTIVE
+       Collective MPI-IO
+
+  \enum cs_file_mpi_positionning_t
+
+  \brief MPI-IO positionning methods
+  \detail It is not always known whether a performance or robustness
+          difference is to be expected using explicit file offsets
+          or individual file pointers. Perusal of a sampling of ROMIO
+          code would seem to indicate that no difference is to be
+          expected, but this might change with MPI IO variants
+          or file systems, so an advanced setting is made possible.
+
+  \var CS_FILE_MPI_EXPLICIT_OFFSETS
+       Use explicit offsets positionning with MPI-IO
+  \var CS_FILE_MPI_INDIVIDUAL_POINTERS
+       Use individual file pointer positionning with MPI-IO
+*/
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
+/*=============================================================================
+ * Macro definitions
+ *============================================================================*/
 
 /* MPI tag for file operations */
 #define CS_FILE_MPI_TAG  (int)('C'+'S'+'_'+'F'+'I'+'L'+'E')
 
-#endif
-
 /*============================================================================
  * Type definitions
  *============================================================================*/
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
 
 /* File descriptor */
 
@@ -124,7 +187,7 @@ struct _cs_file_t {
 
   char              *name;         /* File name */
   cs_file_mode_t     mode;         /* File mode */
-  int                semantics;    /* Preferred file positioning semantics */
+  cs_file_access_t   method;       /* File access method */
   int                rank;         /* MPI rank */
   int                n_ranks;      /* MPI rank */
   _Bool              swap_endian;  /* Swap big-endian and little-endian ? */
@@ -133,16 +196,17 @@ struct _cs_file_t {
 
 #if defined(HAVE_MPI)
   MPI_Comm           comm;         /* Associated MPI communicator */
+  MPI_Comm           io_comm;      /* Associated MPI-IO communicator */
+#endif
 #if defined(HAVE_MPI_IO)
   MPI_File           fh;           /* MPI file handle */
   MPI_Info           info;         /* MPI file info */
   MPI_Offset         offset;       /* MPI file offset */
-#endif
+#else
+  cs_file_off_t      offset;       /* File offset */
 #endif
 
 };
-
-#endif /* DOXYGEN_SHOULD_SKIP_THIS */
 
 /* Associated typedef documentation (for cs_file.h) */
 
@@ -150,8 +214,6 @@ struct _cs_file_t {
  * \typedef cs_file_t
  * \brief Pointer to opaque file descriptor
  */
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
 
 #if defined(HAVE_MPI)
 
@@ -182,23 +244,109 @@ struct _cs_file_serializer_t {
 
 #endif /* defined(HAVE_MPI) */
 
-#endif /* DOXYGEN_SHOULD_SKIP_THIS */
-
 /*============================================================================
  * Static global variables
  *============================================================================*/
 
-/* Default hints */
+/* Default access */
+
+static cs_file_mpi_positionning_t
+  _mpi_io_positionning = CS_FILE_MPI_EXPLICIT_OFFSETS;
+
+static cs_file_access_t _default_access_r = CS_FILE_DEFAULT;
+static cs_file_access_t _default_access_w = CS_FILE_DEFAULT;
+
+/* Communicator and hints used for file operations */
+
+#if defined(HAVE_MPI)
+
+static bool     _mpi_defaults_are_set = false;
+static int      _mpi_rank_step = 1;
+static size_t   _mpi_min_coll_buf_size = 1024*1024*8;
+static MPI_Comm _mpi_comm = MPI_COMM_NULL;
+static MPI_Comm _mpi_io_comm = MPI_COMM_NULL;
+static MPI_Info _mpi_io_hints_r = MPI_INFO_NULL;
+static MPI_Info _mpi_io_hints_w = MPI_INFO_NULL;
+
+#endif
+
+/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
+
+/*============================================================================
+ * Global variables
+ *============================================================================*/
+
+/* names associated with file I/O methods */
+
+const char  *cs_file_access_name[]
+  = {N_("default"),
+     N_("standard input and output, serial access"),
+     N_("standard input and output, parallel access"),
+     N_("non-collective MPI-IO, independent file open/close"),
+     N_("non-collective MPI-IO, collective file open/close"),
+     N_("collective MPI-IO")};
+
+/* names associated with MPI-IO positionning */
 
 #if defined(HAVE_MPI_IO)
-static cs_file_hints_t _default_semantics = CS_FILE_INDIVIDUAL_POINTERS;
-#else
-static cs_file_hints_t _default_semantics = 0;
+const char *cs_file_mpi_positionning_name[] = {N_("explicit offsets"),
+                                               N_("individual file pointers")};
 #endif
 
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Evaluate an access method, transforming default to actual value.
+ *
+ * parameters:
+ *   m <-- access method
+ *   w <-- true if write access (false for readonly)
+ *
+ * returns:
+ *   actual access method
+ *----------------------------------------------------------------------------*/
+
+static cs_file_access_t
+_access_method(cs_file_access_t  m,
+               bool              w)
+{
+  cs_file_access_t  _m = m;
+
+  /* Handle default */
+
+  if (_m == CS_FILE_DEFAULT) {
+
+#if defined(HAVE_MPI)
+#  if defined(HAVE_MPI_IO)
+    _m = CS_FILE_MPI_COLLECTIVE;
+#  else
+    _m = CS_FILE_STDIO_PARALLEL;
+#  endif
+#else
+    _m = CS_FILE_STDIO_SERIAL;
+#endif
+
+  }
+
+  /* Restrict to possible values */
+
+#if defined(HAVE_MPI)
+#  if !defined(HAVE_MPI_IO)
+  _m = CS_MAX(_m, CS_FILE_STDIO_PARALLEL);
+#  endif
+  if (cs_glob_mpi_comm == MPI_COMM_NULL)
+    _m = CS_FILE_STDIO_SERIAL;
+#else
+  _m = CS_FILE_STDIO_SERIAL;
+#endif
+
+  if (w && _m == CS_FILE_STDIO_PARALLEL)
+    _m = CS_FILE_STDIO_SERIAL;
+
+  return _m;
+}
 
 #if defined(HAVE_MPI)
 
@@ -246,36 +394,55 @@ _serializer_init(cs_file_serializer_t  *s,
 
   /* Get local rank and size of the current MPI communicator */
 
-  MPI_Comm_rank(comm, &(s->rank_id));
-  MPI_Comm_size(comm, &(s->n_ranks));
+  if (comm != MPI_COMM_NULL) {
 
-  s->next_rank_id = 0;
-  s->next_g_num = global_num_start;
+    MPI_Comm_rank(comm, &(s->rank_id));
+    MPI_Comm_size(comm, &(s->n_ranks));
 
-  /* Initialize counter */
+    s->next_rank_id = 0;
+    s->next_g_num = global_num_start;
 
-  if (s->rank_id == 0)
-    BFT_MALLOC(s->count, s->n_ranks, cs_lnum_t);
-  else
+    /* Initialize counter */
+
+    if (s->rank_id == 0)
+      BFT_MALLOC(s->count, s->n_ranks, cs_lnum_t);
+    else
+      s->count = NULL;
+
+    MPI_Gather(&l_count, 1, CS_MPI_LNUM, s->count, 1, CS_MPI_LNUM, 0, comm);
+
+    /* Allocate local buffer if necessary, or point to external buffer */
+
+    s->buf = buf;
+    s->recv_buf = NULL;
+
+    if (s->rank_id == 0) {
+      int i;
+      cs_lnum_t _max_block_size = 0;
+      cs_lnum_t _buf_block_size = CS_MAX((cs_lnum_t)buf_block_size, l_count);
+      for (i = 0; i < s->n_ranks; i++)
+        _max_block_size = CS_MAX(_max_block_size, s->count[i]);
+      if (_max_block_size > _buf_block_size)
+        BFT_MALLOC(s->recv_buf, _max_block_size*size, unsigned char);
+      else
+        s->recv_buf = buf;
+    }
+
+  }
+
+  else { /* if (comm == MPI_COMM_NULL) */
+
+    s->rank_id = -1;
+    s->n_ranks = 0;
+
+    s->next_rank_id = 0;
+    s->next_g_num = 0;
+
     s->count = NULL;
 
-  MPI_Gather(&l_count, 1, CS_MPI_LNUM, s->count, 1, CS_MPI_LNUM, 0, comm);
+    s->buf = buf;
+    s->recv_buf = NULL;
 
-  /* Allocate local buffer if necessary, or point to external buffer */
-
-  s->buf = buf;
-  s->recv_buf = NULL;
-
-  if (s->rank_id == 0) {
-    int i;
-    cs_lnum_t _max_block_size = 0;
-    cs_lnum_t _buf_block_size = CS_MAX((cs_lnum_t)buf_block_size, l_count);
-    for (i = 0; i < s->n_ranks; i++)
-      _max_block_size = CS_MAX(_max_block_size, s->count[i]);
-    if (_max_block_size > _buf_block_size)
-      BFT_MALLOC(s->recv_buf, _max_block_size*size, unsigned char);
-    else
-      s->recv_buf = buf;
   }
 
   s->comm = comm;
@@ -351,15 +518,13 @@ _swap_endian(void        *dest,
  *
  * parameters:
  *   f    <-- pointer to file handler
- *   mode <-- file acces mode: read, write, or append
  *
  * returns:
  *   0 in case of success, error number in case of failure
  *----------------------------------------------------------------------------*/
 
 static int
-_file_open(cs_file_t       *f,
-           cs_file_mode_t   mode)
+_file_open(cs_file_t  *f)
 {
   int retval = 0;
 
@@ -369,8 +534,6 @@ _file_open(cs_file_t       *f,
     return 0;
 
   /* The file handler exists and the corresponding file is closed */
-
-  f->mode = mode;
 
   switch (f->mode) {
   case CS_FILE_MODE_APPEND:
@@ -679,11 +842,11 @@ _file_tell(cs_file_t  *f)
  *----------------------------------------------------------------------------*/
 
 static size_t
-_file_read_block(cs_file_t  *f,
-                 void       *buf,
-                 size_t      size,
-                 cs_gnum_t   global_num_start,
-                 cs_gnum_t   global_num_end)
+_file_read_block_s(cs_file_t  *f,
+                   void       *buf,
+                   size_t      size,
+                   cs_gnum_t   global_num_start,
+                   cs_gnum_t   global_num_end)
 {
   size_t retval = 0;
 
@@ -776,6 +939,58 @@ _file_read_block(cs_file_t  *f,
 }
 
 /*----------------------------------------------------------------------------
+ * Read data to a buffer, distributing a contiguous part of it to each
+ * process associated with a file.
+ *
+ * Each process should receive a (possibly empty) block of the data,
+ * and we should have:
+ *   global_num_start at rank 0 = 1
+ *   global_num_start at rank i+1 = global_num_end at rank i.
+ * Otherwise, behavior (especially positioning for future reads) is undefined.
+ *
+ * This version does not use MPI-IO
+ *
+ * parameters:
+ *   f                <-- cs_file_t descriptor
+ *   buf              --> pointer to location receiving data
+ *   size             <-- size of each item of data in bytes
+ *   global_num_start <-- global number of first block item (1 to n numbering)
+ *   global_num_end   <-- global number of past-the end block item
+ *                        (1 to n numbering)
+ *
+ * returns:
+ *   the (local) number of items (not bytes) sucessfully read;
+ *----------------------------------------------------------------------------*/
+
+static size_t
+_file_read_block_p(cs_file_t  *f,
+                   void       *buf,
+                   size_t      size,
+                   cs_gnum_t   global_num_start,
+                   cs_gnum_t   global_num_end)
+{
+  size_t retval = 0;
+  cs_gnum_t loc_count = global_num_end - global_num_start;
+
+  if (loc_count > 0) {
+
+    /* Only rank 0 initially opened (to check existence/rights, and
+       as all ranks might not participate), so open here if needed */
+
+    cs_file_off_t offset = f->offset + ((global_num_start - 1) * size);
+
+    if (f->sh == NULL)
+      _file_open(f);
+
+    if (_file_seek(f, offset, CS_FILE_SEEK_SET) == 0)
+      retval = _file_read(f, buf, size, (size_t)loc_count);
+
+  }
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
  * Write data to a file, each associated process providing a contiguous part
  * of this data.
  *
@@ -800,11 +1015,11 @@ _file_read_block(cs_file_t  *f,
  *----------------------------------------------------------------------------*/
 
 static size_t
-_file_write_block(cs_file_t  *f,
-                  void       *buf,
-                  size_t      size,
-                  cs_gnum_t   global_num_start,
-                  cs_gnum_t   global_num_end)
+_file_write_block_s(cs_file_t  *f,
+                    void       *buf,
+                    size_t      size,
+                    cs_gnum_t   global_num_start,
+                    cs_gnum_t   global_num_end)
 {
   size_t retval = 0;
 
@@ -865,6 +1080,71 @@ _file_write_block(cs_file_t  *f,
   }
 
 #endif /* defined(HAVE_MPI) */
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Write data to a file, each associated process providing a contiguous part
+ * of this data.
+ *
+ * Each process should provide a (possibly empty) block of the data,
+ * and we should have:
+ *   global_num_start at rank 0 = 1
+ *   global_num_start at rank i+1 = global_num_end at rank i.
+ * Otherwise, behavior (especially positioning for future reads) is undefined.
+ *
+ * This version does not use MPI-IO
+ *
+ * parameters:
+ *   f                <-- cs_file_t descriptor
+ *   buf              <-> pointer to location containing data
+ *   size             <-- size of each item of data in bytes
+ *   global_num_start <-- global number of first block item (1 to n numbering)
+ *   global_num_end   <-- global number of past-the end block item
+ *                        (1 to n numbering)
+ *
+ * returns:
+ *   the (local) number of items (not bytes) sucessfully written;
+ *----------------------------------------------------------------------------*/
+
+static size_t
+_file_write_block_p(cs_file_t  *f,
+                    void       *buf,
+                    size_t      size,
+                    cs_gnum_t   global_num_start,
+                    cs_gnum_t   global_num_end)
+{
+  size_t retval = 0;
+  cs_gnum_t loc_count = 0;
+
+  if (global_num_end > global_num_start) {
+
+    loc_count = global_num_end - global_num_start;
+
+    if (f->n_ranks == 1)
+      retval = _file_write(f, buf, size, (size_t)loc_count);
+
+#if defined(HAVE_MPI)
+
+    if (f->n_ranks > 1) {
+
+      cs_file_off_t offset = f->offset + ((global_num_start - 1) * size);
+
+      /* Only rank 0 initially opened (to check existence/rights, as
+         all ranks might not participate), so open here if needed */
+
+      if (f->sh == NULL)
+        _file_open(f);
+
+      if (_file_seek(f, offset, SEEK_SET) == 0)
+        retval = _file_write(f, buf, size, (size_t)loc_count);
+
+    }
+
+#endif /* defined(HAVE_MPI) */
+
+  }
 
   return retval;
 }
@@ -956,7 +1236,6 @@ _mpi_file_open(cs_file_t       *f,
                cs_file_mode_t   mode)
 {
   int amode = MPI_MODE_RDWR;
-  MPI_Info  info = MPI_INFO_NULL;
   int retval = 0;
 
   assert(f != NULL);
@@ -982,17 +1261,68 @@ _mpi_file_open(cs_file_t       *f,
   else if (f->mode == CS_FILE_MODE_READ)
     amode = MPI_MODE_RDONLY;
 
-  /* Open file */
+  /* Open file (for independent access, only on rank 0 initially) */
 
-  retval = MPI_File_open(f->comm, f->name, amode, info, &(f->fh));
+  if (f->io_comm != MPI_COMM_NULL) {
+
+    if (   f->method <= CS_FILE_MPI_INDEPENDENT
+        && f->rank == 0) {
+      retval = MPI_File_open(MPI_COMM_SELF, f->name, amode, f->info, &(f->fh));
+      if (retval == MPI_SUCCESS)
+        retval = MPI_File_get_position(f->fh, &(f->offset));
+
+    }
+    else {
+      retval = MPI_File_open(f->io_comm, f->name, amode, f->info, &(f->fh));
+      if (retval == MPI_SUCCESS)
+        retval = MPI_File_get_position(f->fh, &(f->offset));
+    }
+
+  }
 
   if (retval != MPI_SUCCESS)
     _mpi_io_error_message(f->name, retval);
 
-  if (f->mode == CS_FILE_MODE_APPEND) {
-    retval = MPI_File_get_position(f->fh, &(f->offset));
+  if (f->mode == CS_FILE_MODE_APPEND)
+    f->offset = cs_file_tell(f);
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Open a file independently of other ranks if required using MPI IO.
+ *
+ * This function is used in the case of independent file IO, to allow
+ * files to be opened only on ranks reading/writing nonempty blocks.
+ *
+ * parameters:
+ *   f     <-- pointer to file handler
+ *
+ * returns:
+ *   MPI_SUCCESS in case of success, MPI error code in case of failure
+ *----------------------------------------------------------------------------*/
+
+static int
+_mpi_file_ensure_isopen(cs_file_t *f)
+{
+  int retval = 0;
+
+  assert(f != NULL);
+
+  if (f->io_comm != MPI_COMM_NULL && f->fh == MPI_FILE_NULL) {
+
+    int amode = MPI_MODE_RDWR;
+    if (f->mode == CS_FILE_MODE_APPEND)
+      amode = MPI_MODE_WRONLY | MPI_MODE_APPEND;
+    else if (f->mode == CS_FILE_MODE_WRITE)
+      amode = MPI_MODE_WRONLY | MPI_MODE_CREATE;
+    else if (f->mode == CS_FILE_MODE_READ)
+      amode = MPI_MODE_RDONLY;
+
+    retval = MPI_File_open(MPI_COMM_SELF, f->name, amode, f->info, &(f->fh));
     if (retval != MPI_SUCCESS)
       _mpi_io_error_message(f->name, retval);
+
   }
 
   return retval;
@@ -1037,7 +1367,8 @@ _mpi_file_close(cs_file_t  *f)
  *   global_num_start at rank i+1 = global_num_end at rank i.
  * Otherwise, behavior (especially positioning for future reads) is undefined.
  *
- * There are 2 variants, depending on the semantics:
+ * There are 3 variants, depending on the semantics:
+ *   _mpi_file_read_block_noncoll (non-collective)
  *   _mpi_file_read_block_eo (using explicit offsets)
  *   _mpi_file_read_block_ip (using individual pointers, setting a file view)
  *
@@ -1054,23 +1385,87 @@ _mpi_file_close(cs_file_t  *f)
  *----------------------------------------------------------------------------*/
 
 static size_t
+_mpi_file_read_block_noncoll(cs_file_t  *f,
+                             void       *buf,
+                             size_t      size,
+                             cs_gnum_t   global_num_start,
+                             cs_gnum_t   global_num_end)
+{
+  cs_gnum_t gcount = (global_num_end - global_num_start)*size;
+  size_t retval = 0;
+
+  assert(gcount == 0 || f->fh != MPI_FILE_NULL);
+
+  if (f->fh == MPI_FILE_NULL)
+    return retval;
+
+  if (gcount > 0) {
+
+    int errcode, count;
+    MPI_Status status;
+
+    MPI_Offset disp = f->offset + ((global_num_start - 1) * size);
+    MPI_Datatype ent_type = MPI_BYTE;
+
+    if (gcount > INT_MAX) {
+      MPI_Type_contiguous(size, MPI_BYTE, &ent_type);
+      MPI_Type_commit(&ent_type);
+      count = global_num_end - global_num_start;
+    }
+    else
+      count = gcount;
+
+    errcode = _mpi_file_ensure_isopen(f);
+
+    if (errcode == MPI_SUCCESS) {
+
+      if (_mpi_io_positionning == CS_FILE_MPI_EXPLICIT_OFFSETS)
+        errcode = MPI_File_read_at(f->fh, disp, buf, count, ent_type, &status);
+
+      else {
+        errcode = MPI_File_seek(f->fh, disp, MPI_SEEK_SET);
+        if (errcode == MPI_SUCCESS)
+          errcode = MPI_File_read(f->fh, buf, count, ent_type, &status);
+      }
+
+    }
+
+    if (errcode != MPI_SUCCESS)
+      _mpi_io_error_message(f->name, errcode);
+
+    MPI_Get_count(&status, ent_type, &count);
+
+    if (ent_type != MPI_BYTE) {
+      MPI_Type_free(&ent_type);
+      retval = count;
+    }
+    else
+      retval = count / size;
+
+  }
+
+  return retval;
+}
+
+static size_t
 _mpi_file_read_block_eo(cs_file_t  *f,
                         void       *buf,
                         size_t      size,
                         cs_gnum_t   global_num_start,
                         cs_gnum_t   global_num_end)
 {
-  MPI_Offset disp;
   MPI_Status status;
   int errcode, count;
-  cs_gnum_t gcount;
-
-  cs_gnum_t global_num_end_last = global_num_end;
-  size_t retval = 0;
+  cs_gnum_t gcount = (global_num_end - global_num_start)*size;
   MPI_Datatype ent_type = MPI_BYTE;
+  MPI_Offset disp = f->offset + ((global_num_start - 1) * size);
 
-  disp = f->offset + ((global_num_start - 1) * size);
-  gcount = (global_num_end - global_num_start)*size;
+  size_t retval = 0;
+
+  assert(gcount == 0 || f->fh != MPI_FILE_NULL);
+
+  if (f->fh == MPI_FILE_NULL)
+    return retval;
 
   if (gcount > INT_MAX) {
     MPI_Type_contiguous(size, MPI_BYTE, &ent_type);
@@ -1095,9 +1490,6 @@ _mpi_file_read_block_eo(cs_file_t  *f,
   else
     retval = count / size;
 
-  MPI_Bcast(&global_num_end_last, 1, CS_MPI_GNUM, f->n_ranks-1, f->comm);
-  f->offset += ((global_num_end_last - 1) * size);
-
   return retval;
 }
 
@@ -1110,20 +1502,22 @@ _mpi_file_read_block_ip(cs_file_t  *f,
 {
   int errcode;
   int lengths[1];
-  cs_gnum_t gcount, gdisp;
   MPI_Aint disps[1];
   MPI_Status status;
   MPI_Datatype file_type;
 
   int count = 0;
   char datarep[] = "native";
-  cs_gnum_t global_num_end_last = global_num_end;
   MPI_Datatype ent_type = MPI_BYTE;
+  cs_gnum_t gcount = (global_num_end - global_num_start) * size;
+  cs_gnum_t gdisp = (global_num_start - 1) * size;
 
   size_t retval = 0;
 
-  gcount = (global_num_end - global_num_start) * size;
-  gdisp = (global_num_start - 1) * size;
+  assert(gcount == 0 || f->fh != MPI_FILE_NULL);
+
+  if (f->fh == MPI_FILE_NULL)
+    return retval;
 
   if (gcount > INT_MAX || gdisp > INT_MAX) {
     MPI_Type_contiguous(size, MPI_BYTE, &ent_type);
@@ -1141,8 +1535,7 @@ _mpi_file_read_block_ip(cs_file_t  *f,
 
   MPI_File_set_view(f->fh, f->offset, ent_type, file_type, datarep, f->info);
 
-  errcode = MPI_File_read_all(f->fh, buf, (int)(lengths[0]), ent_type,
-                              &status);
+  errcode = MPI_File_read_all(f->fh, buf, lengths[0], ent_type, &status);
 
   if (errcode != MPI_SUCCESS)
     _mpi_io_error_message(f->name, errcode);
@@ -1159,9 +1552,6 @@ _mpi_file_read_block_ip(cs_file_t  *f,
   else
     retval = count / size;
 
-  MPI_Bcast(&global_num_end_last, 1, CS_MPI_GNUM, f->n_ranks-1, f->comm);
-  f->offset += ((global_num_end_last - 1) * size);
-
   return retval;
 }
 
@@ -1175,7 +1565,8 @@ _mpi_file_read_block_ip(cs_file_t  *f,
  *   global_num_start at rank i+1 = global_num_end at rank i.
  * Otherwise, behavior (especially positioning for future reads) is undefined.
  *
- * There are 2 variants, depending on the semantics:
+ * There are 3 variants, depending on the semantics:
+ *   _mpi_file_write_block_noncoll (non-collective)
  *   _mpi_file_write_block_eo (using explicit offsets)
  *   _mpi_file_write_block_ip (using individual pointers, setting a file view)
  *
@@ -1192,23 +1583,88 @@ _mpi_file_read_block_ip(cs_file_t  *f,
  *----------------------------------------------------------------------------*/
 
 static size_t
+_mpi_file_write_block_noncoll(cs_file_t  *f,
+                              void       *buf,
+                              size_t      size,
+                              cs_gnum_t   global_num_start,
+                              cs_gnum_t   global_num_end)
+{
+  cs_gnum_t gcount = (global_num_end - global_num_start)*size;
+  size_t retval = 0;
+
+  assert(gcount == 0 || f->fh != MPI_FILE_NULL);
+
+  if (f->fh == MPI_FILE_NULL)
+    return retval;
+
+  if (gcount > 0) {
+
+    int errcode, count;
+    MPI_Status status;
+    MPI_Offset disp = f->offset + ((global_num_start - 1) * size);
+    MPI_Datatype ent_type = MPI_BYTE;
+
+    if (gcount > INT_MAX) {
+      MPI_Type_contiguous(size, MPI_BYTE, &ent_type);
+      MPI_Type_commit(&ent_type);
+      count = global_num_end - global_num_start;
+    }
+    else
+      count = gcount;
+
+    errcode = _mpi_file_ensure_isopen(f);
+
+    if (errcode == MPI_SUCCESS) {
+
+      if (_mpi_io_positionning == CS_FILE_MPI_EXPLICIT_OFFSETS)
+        errcode = MPI_File_write_at(f->fh, disp, buf, count, ent_type, &status);
+
+      else {
+        errcode = MPI_File_seek(f->fh, disp, MPI_SEEK_SET);
+        if (errcode == MPI_SUCCESS)
+          errcode = MPI_File_write(f->fh, buf, count, ent_type, &status);
+      }
+
+    }
+
+    if (errcode != MPI_SUCCESS)
+      _mpi_io_error_message(f->name, errcode);
+
+    if (count > 0)
+      MPI_Get_count(&status, MPI_BYTE, &count);
+
+    if (ent_type != MPI_BYTE) {
+      MPI_Type_free(&ent_type);
+      retval = count;
+    }
+    else
+      retval = count / size;
+
+  }
+
+  return retval;
+}
+
+static size_t
 _mpi_file_write_block_eo(cs_file_t  *f,
                          void       *buf,
                          size_t      size,
                          cs_gnum_t   global_num_start,
                          cs_gnum_t   global_num_end)
 {
-  MPI_Offset disp;
   MPI_Status status;
   int errcode, count;
-  cs_gnum_t gcount;
 
-  cs_gnum_t global_num_end_last = global_num_end;
-  size_t retval = 0;
   MPI_Datatype ent_type = MPI_BYTE;
+  MPI_Offset disp = f->offset + ((global_num_start - 1) * size);
+  cs_gnum_t gcount = (global_num_end - global_num_start)*size;
 
-  disp = f->offset + ((global_num_start - 1) * size);
-  gcount = (global_num_end - global_num_start)*size;
+  size_t retval = 0;
+
+  assert(gcount == 0 || f->fh != MPI_FILE_NULL);
+
+  if (f->fh == MPI_FILE_NULL)
+    return retval;
 
   if (gcount > INT_MAX) {
     MPI_Type_contiguous(size, MPI_BYTE, &ent_type);
@@ -1233,9 +1689,6 @@ _mpi_file_write_block_eo(cs_file_t  *f,
   else
     retval = count / size;
 
-  MPI_Bcast(&global_num_end_last, 1, CS_MPI_GNUM, f->n_ranks-1, f->comm);
-  f->offset += ((global_num_end_last - 1) * size);
-
   return retval;
 }
 
@@ -1247,20 +1700,22 @@ _mpi_file_write_block_ip(cs_file_t  *f,
                          cs_gnum_t   global_num_end)
 {
   int lengths[1];
-  cs_gnum_t gcount, gdisp;
   MPI_Aint disps[1];
   MPI_Status status;
   MPI_Datatype file_type;
 
   int errcode = MPI_SUCCESS, count = 0;
   char datarep[] = "native";
-  cs_gnum_t global_num_end_last = global_num_end;
   MPI_Datatype ent_type = MPI_BYTE;
+  cs_gnum_t gcount = (global_num_end - global_num_start) * size;
+  cs_gnum_t gdisp = (global_num_start - 1) * size;
 
   size_t retval = 0;
 
-  gcount = (global_num_end - global_num_start) * size;
-  gdisp = (global_num_start - 1) * size;
+  assert(gcount == 0 || f->fh != MPI_FILE_NULL);
+
+  if (f->fh == MPI_FILE_NULL)
+    return retval;
 
   if (gcount > INT_MAX || gdisp > INT_MAX) {
     MPI_Type_contiguous(size, MPI_BYTE, &ent_type);
@@ -1295,9 +1750,6 @@ _mpi_file_write_block_ip(cs_file_t  *f,
   }
   else
     retval = count / size;
-
-  MPI_Bcast(&global_num_end_last, 1, CS_MPI_GNUM, f->n_ranks-1, f->comm);
-  f->offset += ((global_num_end_last - 1) * size);
 
   return retval;
 }
@@ -1335,10 +1787,14 @@ _cs_file_compare_names(const void  *a,
  * By default, data is written or read as native data. This behavior may be
  * modified by cs_file_set_swap_endian().
  *
- * \param[in]  name   file name
- * \param[in]  mode   file acces mode: read, write, or append
- * \param[in]  hints  file I/O hints (for MPI and MPI I/O behavior)
- * \param[in]  comm   associated MPI communicator
+ * \param[in]  name        file name
+ * \param[in]  mode        file acces mode: read, write, or append
+ * \param[in]  method      file access method
+ * \param[in]  hints       associated hints for MPI-IO, or MPI_INFO_NULL
+ * \param[in]  block_comm  handle to MPI communicator used for distributed file
+ *                         block access (may be a subset of comm if some ranks
+ *                         do not directly access distributed data blocks)
+ * \param[in]  comm        handle to main MPI communicator
  *
  * \return pointer to cs_file_t file descriptor (NULL in case of failure);
  *   currently, errors are fatal.
@@ -1354,9 +1810,10 @@ _cs_file_compare_names(const void  *a,
  * By default, data is written or read as native data. This behavior may be
  * modified by cs_file_set_swap_endian().
  *
- * \param[in]  name   file name
- * \param[in]  mode   file acces mode: read, write, or append
- * \param[in]  hints  file I/O hints (for MPI and MPI I/O behavior)
+ * \param[in]  name    file name
+ * \param[in]  mode    file acces mode: read, write, or append
+ * \param[in]  method  file access method (currently only C standard-IO when
+ *                     built without MPI)
  *
  * \return pointer to cs_file_t file descriptor (NULL in case of failure);
  *   currently, errors are fatal.
@@ -1370,7 +1827,9 @@ _cs_file_compare_names(const void  *a,
 cs_file_t *
 cs_file_open(const char        *name,
              cs_file_mode_t     mode,
-             cs_file_hints_t    hints,
+             cs_file_access_t   method,
+             MPI_Info           hints,
+             MPI_Comm           block_comm,
              MPI_Comm           comm)
 
 #else
@@ -1378,13 +1837,12 @@ cs_file_open(const char        *name,
 cs_file_t *
 cs_file_open(const char        *name,
              cs_file_mode_t     mode,
-             cs_file_hints_t    hints)
+             cs_file_access_t   method)
 
 #endif
 {
   int errcode = 0;
   cs_file_t * f = NULL;
-  cs_file_hints_t _hints = _default_semantics;
 
   BFT_MALLOC(f, 1, cs_file_t);
 
@@ -1392,18 +1850,19 @@ cs_file_open(const char        *name,
 
 #if defined(HAVE_MPI)
   f->comm = MPI_COMM_NULL;
+  f->io_comm = MPI_COMM_NULL;
 #if defined(HAVE_MPI_IO)
   f->fh = MPI_FILE_NULL;
-  f->info = MPI_INFO_NULL;
-  f->offset = 0;
+  f->info = hints;
 #endif
+  f->offset = 0;
 #endif
 
   BFT_MALLOC(f->name, strlen(name) + 1, char);
   strcpy(f->name, name);
 
   f->mode = mode;
-  f->semantics = CS_FILE_NO_MPI_IO;
+  f->method = method;
   f->rank = 0;
   f->n_ranks = 1;
 
@@ -1413,50 +1872,104 @@ cs_file_open(const char        *name,
 
 #if defined(HAVE_MPI)
   {
-    if (hints != 0)
-      _hints = hints;
-
     if (comm != MPI_COMM_NULL) {
       MPI_Comm_size(comm, &(f->n_ranks));
       if (f->n_ranks > 1) {
-        MPI_Comm_dup(comm, &(f->comm));
+        f->comm = comm;
+        f->io_comm = block_comm;
         MPI_Comm_rank(f->comm, &(f->rank));
       }
-      else
+      else {
         f->comm = MPI_COMM_NULL;
+        f->io_comm = MPI_COMM_NULL;
+      }
     }
+    if (f->comm == MPI_COMM_NULL)
+      f->method = CS_FILE_STDIO_SERIAL;
   }
-#endif /* defined(HAVE_MPI) */
+#else
+  f->method = CS_FILE_STDIO_SERIAL;
+#endif
 
   /* Use MPI IO ? */
 
-#if defined(HAVE_MPI_IO)
-  if (   f->comm != MPI_COMM_NULL
-      && !(_hints & CS_FILE_NO_MPI_IO)) {
-    int positioning_mask = (  CS_FILE_EXPLICIT_OFFSETS
-                            | CS_FILE_INDIVIDUAL_POINTERS);
-    if (_hints & positioning_mask)
-      f->semantics = _hints & positioning_mask;
-    else
-      f->semantics = CS_FILE_INDIVIDUAL_POINTERS;
-    f->semantics = f->semantics | (_hints & CS_FILE_NO_PREDISTRIBUTE);
-  }
+#if !defined(HAVE_MPI_IO)
+  if (f->method > CS_FILE_STDIO_PARALLEL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error opening file:\n%s\n"
+                "MPI-IO is requested, but not available."),
+              name);
 #endif
 
   /* Open file. In case of failure, destroy the allocated structure;
      this is only useful with a non-default error handler,
      as the program is terminated by default */
 
-  if ((f->semantics & CS_FILE_NO_MPI_IO) && f->rank == 0)
-    errcode = _file_open(f, f->mode);
+  if (f->method <= CS_FILE_STDIO_PARALLEL && f->rank == 0)
+    errcode = _file_open(f);
 
 #if defined(HAVE_MPI_IO)
-  else if (!(f->semantics & CS_FILE_NO_MPI_IO))
+  else if (   f->method > CS_FILE_MPI_INDEPENDENT
+           || f->rank == 0)
     errcode = _mpi_file_open(f, f->mode);
 #endif
 
   if (errcode != 0)
     f = cs_file_free(f);
+
+  return f;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a file descriptor and open the associated file, using the
+ *        default file communicator and access method.
+ *
+ * By default, data is written or read as native data. This behavior may be
+ * modified by cs_file_set_swap_endian().
+ *
+ * \param[in]  name   file name
+ * \param[in]  mode   file acces mode: read, write, or append
+ *
+ * \return pointer to cs_file_t file descriptor (NULL in case of failure);
+ *   currently, errors are fatal.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_file_t *
+cs_file_open_default(const char      *name,
+                     cs_file_mode_t   mode)
+{
+  cs_file_t *f = NULL;
+
+  if (mode == CS_FILE_MODE_READ) {
+#if defined(HAVE_MPI)
+    f = cs_file_open(name,
+                     mode,
+                     _default_access_r,
+                     _mpi_io_hints_r,
+                     _mpi_io_comm,
+                     cs_glob_mpi_comm);
+#else
+    f = cs_file_open(name,
+                     mode,
+                     _default_access_r);
+#endif
+  }
+  else {
+#if defined(HAVE_MPI)
+    f = cs_file_open(name,
+                     mode,
+                     _default_access_w,
+                     _mpi_io_hints_w,
+                     _mpi_io_comm,
+                     cs_glob_mpi_comm);
+#else
+    f = cs_file_open(name,
+                     mode,
+                     _default_access_w);
+#endif
+  }
 
   return f;
 }
@@ -1473,19 +1986,13 @@ cs_file_t *
 cs_file_free(cs_file_t  *f)
 {
   cs_file_t  *_f = f;
-  int errcode = 0;
 
   if (_f->sh != NULL)
-    errcode = _file_close(_f);
+    _file_close(_f);
 
 #if defined(HAVE_MPI_IO)
   else if (_f->fh != MPI_FILE_NULL)
-    errcode = _mpi_file_close(_f);
-#endif
-
-#if defined(HAVE_MPI)
-  if (_f->comm != MPI_COMM_NULL)
-    MPI_Comm_free(&(_f->comm));
+    _mpi_file_close(_f);
 #endif
 
   BFT_FREE(_f->name);
@@ -1604,37 +2111,33 @@ cs_file_read_global(cs_file_t  *f,
 {
   size_t retval = 0;
 
-  if ((f->semantics & CS_FILE_NO_MPI_IO)&& f->rank == 0) {
-    retval = _file_read(f, buf, size, ni);
-  }
-
-#if defined(HAVE_MPI)
-  {
-    if ((f->semantics & CS_FILE_NO_MPI_IO) && f->comm != MPI_COMM_NULL) {
-      long _retval = retval;
-      MPI_Bcast(buf, size*ni, MPI_BYTE, 0, f->comm);
-      MPI_Bcast(&_retval, 1, MPI_LONG, 0, f->comm);
-      retval = _retval;
+  if (f->method <= CS_FILE_STDIO_PARALLEL) {
+    if (f->rank == 0) {
+      if (_file_seek(f, f->offset, CS_FILE_SEEK_SET) == 0)
+        retval = _file_read(f, buf, size, ni);
     }
+  }
 
 #if defined(HAVE_MPI_IO)
 
-    else if (!(f->semantics & CS_FILE_NO_MPI_IO)) {
+  else if ((f->method > CS_FILE_STDIO_PARALLEL)) {
+
+    if (f->rank == 0) {
 
       MPI_Status status;
       int errcode = MPI_SUCCESS, count = 0;
 
-      if (f->semantics & CS_FILE_EXPLICIT_OFFSETS) {
-        errcode = MPI_File_read_at_all(f->fh,
-                                       f->offset,
-                                       buf,
-                                       size*ni,
-                                       MPI_BYTE,
-                                       &status);
+      if (_mpi_io_positionning == CS_FILE_MPI_EXPLICIT_OFFSETS) {
+        errcode = MPI_File_read_at(f->fh,
+                                   f->offset,
+                                   buf,
+                                   size*ni,
+                                   MPI_BYTE,
+                                   &status);
         MPI_Get_count(&status, MPI_BYTE, &count);
       }
 
-      else if (f->semantics & CS_FILE_INDIVIDUAL_POINTERS) {
+      else {
         MPI_Datatype file_type;
         MPI_Aint disps[1];
         int lengths[1];
@@ -1645,11 +2148,7 @@ cs_file_read_global(cs_file_t  *f,
         MPI_Type_commit(&file_type);
         MPI_File_set_view(f->fh, f->offset, MPI_BYTE, file_type,
                           datarep, f->info);
-        errcode = MPI_File_read_all(f->fh,
-                                    buf,
-                                    size*ni,
-                                    MPI_BYTE,
-                                    &status);
+        errcode = MPI_File_read(f->fh, buf, size*ni, MPI_BYTE, &status);
         MPI_Get_count(&status, MPI_BYTE, &count);
         MPI_Type_free(&file_type);
       }
@@ -1659,12 +2158,24 @@ cs_file_read_global(cs_file_t  *f,
 
       retval = count / size;
 
-      f->offset += count;
     }
 
-#endif /* defined(HAVE_MPI_IO) */
   }
-#endif /* defined(HAVE_MPI) */
+
+#endif /* defined(HAVE_MPI_IO) */
+
+#if defined(HAVE_MPI)
+  if (f->comm != MPI_COMM_NULL) {
+    long _retval = retval;
+    MPI_Bcast(buf, size*ni, MPI_BYTE, 0, f->comm);
+    MPI_Bcast(&_retval, 1, MPI_LONG, 0, f->comm);
+    retval = _retval;
+  }
+#endif
+
+  /* Update offset */
+
+  f->offset += (cs_file_off_t)ni * (cs_file_off_t)size;
 
   if (f->swap_endian == true && size > 1)
     _swap_endian(buf, buf, size, retval);
@@ -1706,7 +2217,7 @@ cs_file_write_global(cs_file_t   *f,
 
   if (   f->rank == 0
       && (   (f->swap_endian == true && size > 1)
-          || !(f->semantics & CS_FILE_NO_MPI_IO))) {
+          || (f->method > CS_FILE_STDIO_PARALLEL))) {
 
     if (size*ni > sizeof(_copybuf))
       BFT_MALLOC(copybuf, size*ni, unsigned char);
@@ -1718,68 +2229,73 @@ cs_file_write_global(cs_file_t   *f,
     _buf = copybuf;
   }
 
-  if ((f->semantics & CS_FILE_NO_MPI_IO) && f->sh != NULL) {
-    retval = _file_write(f,
-                         _buf,
-                         size,
-                         ni);
-  }
+  if (f->rank == 0 && f->sh != NULL && f->method <= CS_FILE_STDIO_PARALLEL)
+    retval = _file_write(f, _buf, size, ni);
 
 #if defined(HAVE_MPI_IO)
 
-  if (f->comm != MPI_COMM_NULL && (!(f->semantics & CS_FILE_NO_MPI_IO))) {
+  else if ((f->method > CS_FILE_STDIO_PARALLEL)) {
 
-    MPI_Status status;
-    int aux[2] = {MPI_SUCCESS, 0}; /* 0: return value; 1: count */
+    if (f->rank == 0) {
 
-    if (f->semantics & CS_FILE_EXPLICIT_OFFSETS) {
-      if (f->rank == 0) {
-        aux[0] = MPI_File_write_at(f->fh,
-                                   f->offset,
-                                   copybuf,
-                                   size*ni,
-                                   MPI_BYTE,
-                                   &status);
-        MPI_Get_count(&status, MPI_BYTE, &(aux[1]));
+      MPI_Status status;
+      int errcode = MPI_SUCCESS, count = 0;
+
+      if (_mpi_io_positionning == CS_FILE_MPI_EXPLICIT_OFFSETS) {
+        errcode = MPI_File_write_at(f->fh,
+                                    f->offset,
+                                    copybuf,
+                                    size*ni,
+                                    MPI_BYTE,
+                                    &status);
+        MPI_Get_count(&status, MPI_BYTE, &count);
       }
+
+      else {
+        MPI_Datatype file_type;
+        MPI_Aint disps[1];
+        int lengths[1];
+        char datarep[] = "native";
+        lengths[0] = ni * size;
+        disps[0] = 0;
+        MPI_Type_create_hindexed(1, lengths, disps, MPI_BYTE, &file_type);
+        MPI_Type_commit(&file_type);
+        MPI_File_set_view(f->fh, f->offset, MPI_BYTE,
+                          file_type, datarep, f->info);
+        errcode = MPI_File_write(f->fh,
+                                 copybuf,
+                                 size*ni,
+                                 MPI_BYTE,
+                                 &status);
+        MPI_Get_count(&status, MPI_BYTE, &count);
+        MPI_Type_free(&file_type);
+      }
+
+      if (errcode != MPI_SUCCESS)
+        _mpi_io_error_message(f->name, errcode);
+
+      retval = count / size;
+
     }
 
-    else if (f->semantics & CS_FILE_INDIVIDUAL_POINTERS) {
-      MPI_Datatype file_type;
-      MPI_Aint disps[1];
-      int lengths[1];
-      char datarep[] = "native";
-      lengths[0] = ni * size;
-      disps[0] = 0;
-      MPI_Type_create_hindexed(1, lengths, disps, MPI_BYTE, &file_type);
-      MPI_Type_commit(&file_type);
-      MPI_File_set_view(f->fh, f->offset, MPI_BYTE, file_type,
-                        datarep, f->info);
-      if (f->rank == 0) {
-        aux[0] = MPI_File_write(f->fh,
-                                copybuf,
-                                size*ni,
-                                MPI_BYTE,
-                                &status);
-        MPI_Get_count(&status, MPI_BYTE, &(aux[1]));
-      }
-      MPI_Type_free(&file_type);
-    }
-
-    MPI_Bcast(aux, 2, MPI_INT, 0, f->comm);
-
-    if (aux[0] != MPI_SUCCESS)
-      _mpi_io_error_message(f->name, aux[0]);
-
-    retval = aux[1] / size;
-
-    f->offset += aux[1];
   }
 
 #endif /* defined(HAVE_MPI_IO) */
 
   if (copybuf != _copybuf) /* Free allocated memory if necessary */
     BFT_FREE(copybuf);
+
+#if defined(HAVE_MPI)
+  if (f->comm != MPI_COMM_NULL) {
+    long _retval = retval;
+    MPI_Bcast(&_retval, 1, MPI_LONG, 0, f->comm);
+    retval = _retval;
+  }
+#endif
+
+  /* Update offset */
+
+  f->offset += (cs_file_off_t)ni * (cs_file_off_t)size;
 
   return retval;
 }
@@ -1819,36 +2335,74 @@ cs_file_read_block(cs_file_t  *f,
 {
   size_t retval = 0;
 
+  cs_gnum_t global_num_end_last = global_num_end;
+
   const cs_gnum_t _global_num_start = (global_num_start-1)*stride + 1;
   const cs_gnum_t _global_num_end = (global_num_end-1)*stride + 1;
 
-  if (f->semantics & CS_FILE_NO_MPI_IO)
-    retval = _file_read_block(f,
-                              buf,
-                              size,
-                              _global_num_start,
-                              _global_num_end);
+  assert(global_num_end >= global_num_start);
+
+  switch(f->method) {
+
+  case CS_FILE_STDIO_SERIAL:
+    retval = _file_read_block_s(f,
+                                buf,
+                                size,
+                                _global_num_start,
+                                _global_num_end);
+    break;
+
+  case CS_FILE_STDIO_PARALLEL:
+    retval = _file_read_block_p(f,
+                                buf,
+                                size,
+                                _global_num_start,
+                                _global_num_end);
+    break;
 
 #if defined(HAVE_MPI_IO)
 
-  else if (!(f->semantics & CS_FILE_NO_MPI_IO)) {
+  case CS_FILE_MPI_INDEPENDENT:
+  case CS_FILE_MPI_NON_COLLECTIVE:
+    retval = _mpi_file_read_block_noncoll(f,
+                                          buf,
+                                          size,
+                                          _global_num_start,
+                                          _global_num_end);
+    break;
 
-    if (f->semantics & CS_FILE_EXPLICIT_OFFSETS)
+  case CS_FILE_MPI_COLLECTIVE:
+
+    if (_mpi_io_positionning == CS_FILE_MPI_EXPLICIT_OFFSETS)
       retval = _mpi_file_read_block_eo(f,
                                        buf,
                                        size,
                                        _global_num_start,
                                        _global_num_end);
-
-    else /* if (f->semantics & CS_FILE_INDIVIDUAL_POINTERS) */
+    else
       retval = _mpi_file_read_block_ip(f,
                                        buf,
                                        size,
                                        _global_num_start,
                                        _global_num_end);
-  }
+    break;
 
 #endif /* defined(HAVE_MPI_IO) */
+
+  default:
+    assert(0);
+  }
+
+  /* Update offset */
+
+  assert(f->rank > 0 || global_num_start == 1);
+
+#if defined(HAVE_MPI)
+  if (f->n_ranks > 1)
+    MPI_Bcast(&global_num_end_last, 1, CS_MPI_GNUM, f->n_ranks-1, f->comm);
+#endif
+
+  f->offset += ((global_num_end_last - 1) * size * stride);
 
   if (f->swap_endian == true && size > 1)
     _swap_endian(buf, buf, size, retval);
@@ -1902,8 +2456,7 @@ cs_file_write_block(cs_file_t   *f,
   /* Copy contents to ensure buffer constedness if necessary */
 
   if (   (f->swap_endian == true && size > 1)
-      || (f->n_ranks > 1)
-      || !(f->semantics & CS_FILE_NO_MPI_IO)) {
+      || (f->n_ranks > 1 && f->method != CS_FILE_STDIO_PARALLEL)) {
 
     unsigned char *copybuf = NULL;
 
@@ -1921,17 +2474,36 @@ cs_file_write_block(cs_file_t   *f,
     BFT_FREE(copybuf);
   }
 
-  /* In single-processor case with no byte-swapping, write directly */
+  /* Using Standard IO with no byte-swapping or serialization, write directly */
 
-  else if (f->sh != NULL) {
+  else {
+
+    cs_gnum_t global_num_end_last = global_num_end;
 
     const cs_gnum_t _global_num_start = (global_num_start-1)*stride + 1;
     const cs_gnum_t _global_num_end = (global_num_end-1)*stride + 1;
 
-    retval = _file_write(f,
-                         buf,
-                         size,
-                         (_global_num_end - _global_num_start));
+    if (_global_num_end > _global_num_start) {
+
+      if (f->sh == NULL)
+        _file_open(f);
+
+      retval = _file_write(f,
+                           buf,
+                           size,
+                           (_global_num_end - _global_num_start));
+
+    }
+
+    /* Update offset */
+
+#if defined(HAVE_MPI)
+    if (f->n_ranks > 1)
+      MPI_Bcast(&global_num_end_last, 1, CS_MPI_GNUM, f->n_ranks-1, f->comm);
+#endif
+
+    f->offset += ((global_num_end_last - 1) * size * stride);
+
   }
 
   return retval;
@@ -1978,6 +2550,8 @@ cs_file_write_block_buffer(cs_file_t  *f,
 {
   size_t retval = 0;
 
+  cs_gnum_t global_num_end_last = global_num_end;
+
   const cs_gnum_t _global_num_start = (global_num_start-1)*stride + 1;
   const cs_gnum_t _global_num_end = (global_num_end-1)*stride + 1;
 
@@ -1991,33 +2565,64 @@ cs_file_write_block_buffer(cs_file_t  *f,
 
   /* Write to file using chosen method */
 
-  if (f->semantics & CS_FILE_NO_MPI_IO)
-    retval = _file_write_block(f,
-                               buf,
-                               size,
-                               _global_num_start,
-                               _global_num_end);
+  switch(f->method) {
+
+  case CS_FILE_STDIO_SERIAL:
+    retval = _file_write_block_s(f,
+                                 buf,
+                                 size,
+                                 _global_num_start,
+                                 _global_num_end);
+    break;
+
+  case CS_FILE_STDIO_PARALLEL:
+    retval = _file_write_block_p(f,
+                                 buf,
+                                 size,
+                                 _global_num_start,
+                                 _global_num_end);
+    break;
 
 #if defined(HAVE_MPI_IO)
 
-  else if (!(f->semantics & CS_FILE_NO_MPI_IO)) {
+  case CS_FILE_MPI_INDEPENDENT:
+  case CS_FILE_MPI_NON_COLLECTIVE:
+      retval = _mpi_file_write_block_noncoll(f,
+                                             buf,
+                                             size,
+                                             _global_num_start,
+                                             _global_num_end);
+      break;
 
-    if (f->semantics & CS_FILE_EXPLICIT_OFFSETS)
+  case CS_FILE_MPI_COLLECTIVE:
+    if (_mpi_io_positionning == CS_FILE_MPI_EXPLICIT_OFFSETS)
       retval = _mpi_file_write_block_eo(f,
                                         buf,
                                         size,
                                         _global_num_start,
                                         _global_num_end);
-
-    else /* if (f->semantics & CS_FILE_INDIVIDUAL_POINTERS) */
+    else
       retval = _mpi_file_write_block_ip(f,
                                         buf,
                                         size,
                                         _global_num_start,
                                         _global_num_end);
-  }
+    break;
 
 #endif /* defined(HAVE_MPI_IO) */
+
+  default:
+    assert(0);
+  }
+
+  /* Update offset */
+
+#if defined(HAVE_MPI)
+  if (f->n_ranks > 1)
+    MPI_Bcast(&global_num_end_last, 1, CS_MPI_GNUM, f->n_ranks-1, f->comm);
+#endif
+
+  f->offset += ((global_num_end_last - 1) * size * stride);
 
   return retval;
 }
@@ -2045,39 +2650,68 @@ cs_file_seek(cs_file_t       *f,
 {
   int retval = 0;
 
-  if (f->semantics & CS_FILE_NO_MPI_IO) {
-    if (f->rank == 0)
-      retval = _file_seek(f, offset, whence);
+  /* Always update f->offset, regardless of mode */
+
+  switch(whence) {
+
+  case CS_FILE_SEEK_SET:
+
+    f->offset = offset;
+    break;
+
+  case CS_FILE_SEEK_CUR:
+
+    f->offset += offset;
+    break;
+
+  case CS_FILE_SEEK_END:
+
+    if (f->sh != NULL)
+      f->offset = cs_file_tell(f) + offset;
+
+#if defined(HAVE_MPI_IO)
+    if (f->fh != MPI_FILE_NULL) {
+      MPI_Offset f_size = 0;
+      retval = MPI_File_get_size(f->fh, &f_size);
+      f->offset = f_size + offset;
+    }
+#endif
+
+#if defined(HAVE_MPI)
+  if (f->comm != MPI_COMM_NULL) {
+#if defined(MPI_LONG_LONG)
+    long long offset_g;
+    long long offset_l = f->offset;
+    MPI_Datatype  _mpi_datatype_offset = MPI_LONG_LONG;
+#else
+    long offset_g;
+    long offset_l = f->offset;
+    MPI_Datatype  _mpi_datatype_offset = MPI_LONG_INT;
+#endif
+    MPI_Allreduce(&offset_l, &offset_g, 1, _mpi_datatype_offset, MPI_MAX,
+                  f->comm);
+    f->offset = offset_g;
   }
+#endif
+
+  break;
+  }
+
+  /* Now update actual file position */
+
+  if (f->sh != NULL)
+      retval = _file_seek(f, offset, whence);
 
 #if defined(HAVE_MPI_IO)
 
-  else if (!(f->semantics & CS_FILE_NO_MPI_IO)) {
+  else if (   f->fh != MPI_FILE_NULL
+           && _mpi_io_positionning == CS_FILE_MPI_INDIVIDUAL_POINTERS) {
 
-    retval = MPI_SUCCESS;
-
-    /* Always update f->offset, regardless of mode */
-
-    switch(whence) {
-    case CS_FILE_SEEK_SET:
-      f->offset = offset;
-      break;
-    case CS_FILE_SEEK_CUR:
-      f->offset += offset;
-      break;
-    case CS_FILE_SEEK_END:
-      {
-        MPI_Offset f_size = 0;
-        retval = MPI_File_get_size(f->fh, &f_size);
-        f->offset = f_size + offset;
-      }
-    }
-
-    if (f->semantics & CS_FILE_INDIVIDUAL_POINTERS)
-      retval = MPI_File_seek(f->fh, f->offset, MPI_SEEK_SET);
+    retval = MPI_File_seek(f->fh, f->offset, MPI_SEEK_SET);
 
     if (retval != MPI_SUCCESS)
       _mpi_io_error_message(f->name, retval);
+
   }
 
 #endif /* defined(HAVE_MPI_IO) */
@@ -2089,8 +2723,8 @@ cs_file_seek(cs_file_t       *f,
 /*!
  * \brief Return the position of the file pointer.
  *
- * When using MPI-IO with individual file pointers, we consider the file
- * pointer to be equal to the highest value of the individual file pointers.
+ * In parallel, we consider the file pointer to be equal to the highest
+ * value of the individual file pointers.
  *
  * \param[in]  f  cs_file_t descriptor
  *
@@ -2101,99 +2735,32 @@ cs_file_seek(cs_file_t       *f,
 cs_file_off_t
 cs_file_tell(cs_file_t  *f)
 {
-  cs_file_off_t retval = 0;
+  cs_file_off_t retval = f->offset;
 
-  if (f->semantics & CS_FILE_NO_MPI_IO) {
-
-    if (f->rank == 0)
-      retval = _file_tell(f);
+  if (f->method == CS_FILE_STDIO_SERIAL && f->rank == 0 && f->sh != NULL)
+    retval = _file_tell(f);
 
 #if defined(HAVE_MPI)
-    if (f->comm != MPI_COMM_NULL) {
+  if (f->comm != MPI_COMM_NULL) {
 #if defined(MPI_LONG_LONG)
-      long long _offset = retval;
-      MPI_Datatype  _mpi_datatype_offset = MPI_LONG_LONG;
+    long long _offset = retval;
+    MPI_Datatype  _mpi_datatype_offset = MPI_LONG_LONG;
 #else
-      long _offset = retval;
-      MPI_Datatype  _mpi_datatype_offset = MPI_LONG_INT;
+    long _offset = retval;
+    MPI_Datatype  _mpi_datatype_offset = MPI_LONG_INT;
 #endif
-      MPI_Bcast(&_offset, 1, _mpi_datatype_offset, 0, f->comm);
-      retval = _offset;
-    }
-#endif
-
+    MPI_Bcast(&_offset, 1, _mpi_datatype_offset, 0, f->comm);
+    retval = _offset;
   }
-
-#if defined(HAVE_MPI_IO)
-
-  else if (!(f->semantics & CS_FILE_NO_MPI_IO)) {
-
-    /*
-      Note that in case of individual file pointers, using
-      MPI_File_get_position() and MPI_File_get_byte_offset() should also
-      work, but fail after certain collective writes with some processes
-      writing zero values (at least on Open MPI 1.2.6), so we prefer to
-      keep track of the global offset (which we use to set views anyways).
-    */
-
-    retval = f->offset;
-  }
-
-#endif /* defined(HAVE_MPI_IO) */
-
-  return retval;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Get the default semantics for file access.
- *
- * \return current default semantics for file access.
- */
-/*----------------------------------------------------------------------------*/
-
-cs_file_hints_t
-cs_file_get_default_semantics(void)
-{
-  return _default_semantics;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set the default semantics for file access.
- *
- * This may fail if semantics given contain incompatible values,
- * such as (CS_FILE_EXPLICIT_OFFSETS | CS_FILE_INDIVIDUAL_POINTERS),
- * or when setting MPI-IO access semantics when MPI-IO is not available.
- *
- * \param[in]  hints  flag (bit mask) defining default semantics
- *
- * \return 0 if the semantics were valid, 1 otherwise.
- */
-/*----------------------------------------------------------------------------*/
-
-int
-cs_file_set_default_semantics(cs_file_hints_t  hints)
-{
-  int retval = 0;
-
-  const cs_file_hints_t mpi_io_hints = (  CS_FILE_EXPLICIT_OFFSETS
-                                        | CS_FILE_INDIVIDUAL_POINTERS);
-
-#if defined(HAVE_MPI_IO)
-  if (   (hints & CS_FILE_EXPLICIT_OFFSETS)
-      && (hints & CS_FILE_INDIVIDUAL_POINTERS))
-    retval = 1;
-  else if (   (hints & mpi_io_hints)
-           && (hints & CS_FILE_NO_MPI_IO))
-    retval = 1;
-#else
-  if (hints & mpi_io_hints)
-    retval = 1;
 #endif
 
-  if (retval == 0)
-    _default_semantics = hints;
+  /*
+    Note that in case of individual file pointers, using
+    MPI_File_get_position() and MPI_File_get_byte_offset() should also
+    work, but fail after certain collective writes with some processes
+    writing zero values (at least on Open MPI 1.2.6), so we prefer to keep
+    track of the global offset (which we need for seeking or views anyways).
+  */
 
   return retval;
 }
@@ -2212,6 +2779,11 @@ cs_file_dump(const cs_file_t  *f)
   const char *mode_name[] = {"CS_FILE_MODE_READ",
                              "CS_FILE_MODE_WRITE",
                              "CS_FILE_MODE_APPEND"};
+  const char *access_name[] = {"CS_FILE_STDIO_SERIAL",
+                               "CS_FILE_STDIO_PARALLEL",
+                               "CS_FILE_MPI_INDEPENDENT",
+                               "CS_FILE_MPI_NON_COLLECTIVE",
+                               "CS_FILE_MPI_COLLECTIVE"};
 
   if (f == NULL) {
     bft_printf("\n"
@@ -2220,37 +2792,462 @@ cs_file_dump(const cs_file_t  *f)
   }
 
   bft_printf("\n"
-             "File name:                \"%s\"\n"
-             "Access mode:              %s\n"
-             "Semantics:\n"
-             "  no_mpi_io:              %d\n"
-             "  no_predistribute:       %d\n"
-             "  explicit_offsets:       %d\n"
-             "  individual_pointers:    %d\n"
-             "Rank:                     %d\n"
-             "N ranks:                  %d\n"
-             "Swap endian:              %d\n"
-             "Serial handle:            %p\n",
-             f->name, mode_name[f->mode],
-             (f->semantics & CS_FILE_NO_MPI_IO),
-             (f->semantics & CS_FILE_NO_PREDISTRIBUTE) >> 1,
-             (f->semantics & CS_FILE_EXPLICIT_OFFSETS) >> 2,
-             (f->semantics & CS_FILE_INDIVIDUAL_POINTERS) >> 3,
+             "File name:                   \"%s\"\n"
+             "Access mode:                 %s\n"
+             "Access method:               %s\n"
+             "Rank:                        %d\n"
+             "N ranks:                     %d\n"
+             "Swap endian:                 %d\n"
+             "Serial handle:               %p\n",
+             f->name, mode_name[f->mode], access_name[f->method],
              f->rank, f->n_ranks, (int)(f->swap_endian),
              (const void *)f->sh);
 
 #if defined(HAVE_MPI)
-  bft_printf("Associated communicator:  %llu\n",
+  bft_printf("Associated io communicator:  %llu\n",
+             (unsigned long long)(f->io_comm));
+  bft_printf("Associated communicator:     %llu\n",
              (unsigned long long)(f->comm));
 #if defined(HAVE_MPI_IO)
-  bft_printf("MPI file handle:          %llu\n"
-               "MPI file offset:          %llu\n",
+  bft_printf("MPI file handle:             %llu\n"
+             "MPI file offset:             %llu\n",
              (unsigned long long)(f->fh),
              (unsigned long long)(f->offset));
 #endif
 #endif
 
   bft_printf("\n");
+}
+
+#if defined(HAVE_MPI)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the default options for file access.
+ *
+ * \param[in]    mode    file mode for which the default is queried
+ *                       (write and append use the same method, and are
+ *                       interchangeable here)
+ * \param[out]   method  default file access method, or NULL
+ * \param[out]   hints   MPI-IO hints, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_file_get_default_access(cs_file_mode_t     mode,
+                           cs_file_access_t  *method,
+                           MPI_Info          *hints)
+{
+  if (mode == CS_FILE_MODE_READ) {
+    if (method != NULL)
+      *method = _access_method(_default_access_r, false);
+    if (hints != NULL)
+      *hints = _mpi_io_hints_r;
+  }
+  else {
+    if (method != NULL)
+      *method = _access_method(_default_access_w, true);
+    if (hints != NULL)
+      *hints = _mpi_io_hints_w;
+  }
+}
+
+#else /* if !defined(HAVE_MPI) */
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the default options for file access.
+ *
+ * \param[in]    mode    file mode for which the default is queried
+ *                       (write and append use the same method, and are
+ *                       interchangeable here)
+ * \param[out]   method  default file access method, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_file_get_default_access(cs_file_mode_t     mode,
+                           cs_file_access_t  *method)
+{
+  if (mode == CS_FILE_MODE_READ) {
+    if (method != NULL)
+      *method = _access_method(_default_access_r, false);
+  }
+  else {
+    if (method != NULL)
+      *method = _access_method(_default_access_w, true);
+  }
+}
+
+#endif /* defined(HAVE_MPI) */
+
+#if defined(HAVE_MPI)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the default options for file access.
+ *
+ * If the method given contains incompatible values, such as when setting
+ * MPI-IO methods when MPI-IO is not available, a "reasonable" default
+ * is used instead.
+ *
+ * \param[in]  mode       file mode for which the default is being set
+ *                        (write and append use the same method, and are
+ *                        interchangeable here)
+ * \param[in]  method     default access method to set
+ * \param[in]  hints      MPI-IO hints, or MPI_INFO_NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_file_set_default_access(cs_file_mode_t    mode,
+                           cs_file_access_t  method,
+                           MPI_Info          hints)
+{
+  cs_file_access_t  _method = _access_method(method, true);
+
+  if (mode == CS_FILE_MODE_READ) {
+    _method = _access_method(method, false);
+    _default_access_r = _method;
+  }
+  else { /* if (mode == CS_FILE_MODE_WRITE || mode == CS_FILE_MODE_APPEND) */
+    _method = _access_method(method, true);
+    _default_access_w = _method;
+  }
+
+#if defined(HAVE_MPI_IO)
+#  if MPI_VERSION > 1
+
+  /* Free previous info objects */
+
+  if (mode == CS_FILE_MODE_READ && _mpi_io_hints_r != MPI_INFO_NULL)
+    MPI_Info_free(&_mpi_io_hints_r);
+  else if (    (mode == CS_FILE_MODE_WRITE || mode == CS_FILE_MODE_APPEND)
+           && _mpi_io_hints_w != MPI_INFO_NULL)
+    MPI_Info_free(&_mpi_io_hints_w);
+
+  /* Set info objects */
+
+  if (_method > CS_FILE_STDIO_PARALLEL && hints != MPI_INFO_NULL) {
+    if (mode == CS_FILE_MODE_READ)
+      MPI_Info_dup(hints, &_mpi_io_hints_r);
+    else if (mode == CS_FILE_MODE_WRITE || mode == CS_FILE_MODE_APPEND)
+      MPI_Info_dup(hints, &_mpi_io_hints_w);
+  }
+
+#  endif /* MPI_VERSION > 1 */
+#endif /* defined(HAVE_MPI_IO) */
+}
+
+#else /* if !defined(HAVE_MPI) */
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the default options for file access.
+ *
+ * If the method given contains incompatible values, such as when setting
+ * MPI-IO methods when MPI-IO is not available, a "reasonable" default
+ * is used instead.
+ *
+ * \param[in]  mode       file mode for which the default is being set
+ *                        (write and append use the same method, and are
+ *                        interchangeable here)
+ * \param[in]  method     default access method to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_file_set_default_access(cs_file_mode_t    mode,
+                           cs_file_access_t  method)
+{
+  if (mode == CS_FILE_MODE_READ)
+    _default_access_r = _access_method(method, false);
+  else if (mode == CS_FILE_MODE_WRITE || mode == CS_FILE_MODE_APPEND)
+    _default_access_w = _access_method(method, true);
+}
+
+#endif /* defined(HAVE_MPI) */
+
+#if defined(HAVE_MPI)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get default MPI communicator values for file access.
+ *
+ * A block rank stepping value may be used, allowing the use of a reduced
+ * communicator for distributed block reads and writes.
+ * If this value is greater than 1, ranks not a multiple of this step must be
+ * guaranteed to be empty for block reads and writes with files opened using
+ * this default.
+ *
+ * A minimum block size target may also be used, so as to limit the number
+ * of active blocks to a value proportional to the data size (limiting
+ * latency issues for small data sets, while not requiring too much local
+ * memory).
+ *
+ * \param[out]   block_rank_step  MPI rank stepping between non-empty
+ *                                distributed blocks, or NULL
+ * \param[out]   block_min_size   minimum block size target for non-empty
+ *                                distributed blocks, or NULL
+ * \param[out]   block_comm       Handle to MPI communicator used for
+ *                                distributed file block access, or NULL
+ * \param[out]   comm             Handle to main MPI communicator, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_file_get_default_comm(int       *block_rank_step,
+                         int       *block_min_size,
+                         MPI_Comm  *block_comm,
+                         MPI_Comm  *comm)
+{
+  /* Initialize defauts if not already done */
+
+  if (_mpi_defaults_are_set == false && cs_glob_mpi_comm != MPI_COMM_NULL) {
+    cs_file_set_default_comm(0, -1, MPI_COMM_SELF);
+    _mpi_defaults_are_set = true;
+  }
+
+  /* Return defaults */
+
+  if (block_rank_step != NULL)
+    *block_rank_step = _mpi_rank_step;
+
+  if (block_min_size != NULL)
+    *block_min_size = _mpi_min_coll_buf_size;
+
+  if (block_comm != NULL) {
+    if (_mpi_comm != MPI_COMM_NULL)
+      *block_comm = _mpi_io_comm;
+    else {
+      if (_mpi_comm != MPI_COMM_NULL)
+        *block_comm = _mpi_comm;
+    else
+      *block_comm = cs_glob_mpi_comm;
+    }
+  }
+
+  if (comm != NULL) {
+    if (_mpi_comm != MPI_COMM_NULL)
+      *comm = _mpi_comm;
+    else
+      *comm = cs_glob_mpi_comm;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set default MPI communicator values for file access.
+ *
+ * A block rank stepping value may be used, allowing the use of a reduced
+ * communicator for distributed block reads and writes.
+ * If this value is greater than 1, ranks not a multiple of this step must be
+ * guaranteed to be empty for block reads and writes with files opened using
+ * this default.
+ *
+ * A minimum block size target may also be used, so as to limit the number
+ * of active blocks to a value proportional to the data size (limiting
+ * latency issues for small data sets, while not requiring too much local
+ * memory).
+ *
+ * For each argument, an "out of range" value may be used to avoid modifying
+ * the previous default for that argument.
+ *
+ * \param[in]  block_rank_step  MPI rank stepping between non-empty blocks for
+ *                              file block reads and writes (not set if <= 0)
+ * \param[in]  block_min_size   minimum block size target for non-empty
+ *                              distributed blocks (not set if  < 1)
+ * \param[in]  comm             Handle to main MPI communicator
+ *                              (not set if MPI_COMM_SELF)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_file_set_default_comm(int       block_rank_step,
+                         int       block_min_size,
+                         MPI_Comm  comm)
+{
+  if (block_rank_step > 0)
+    _mpi_rank_step = block_rank_step;
+
+  if (block_min_size > -1)
+    _mpi_min_coll_buf_size = block_min_size;
+
+  if (comm != MPI_COMM_SELF)
+    _mpi_comm = comm;
+  else if (_mpi_defaults_are_set == false)
+    _mpi_comm = cs_glob_mpi_comm;
+
+  if (   comm != MPI_COMM_SELF
+      || block_min_size > -1
+      || _mpi_defaults_are_set == false) {
+
+    if (_mpi_io_comm != MPI_COMM_NULL) {
+      MPI_Comm_free(&_mpi_io_comm);
+      _mpi_io_comm = MPI_COMM_NULL;
+    }
+
+    if (comm != MPI_COMM_NULL) {
+
+      if (block_rank_step < 2) {
+        _mpi_rank_step = 1;
+        MPI_Comm_dup(comm, &_mpi_io_comm);
+      }
+
+      else { /* Create reduced communicator */
+
+        int rank_id;
+        int n_ranks;
+        int ranges[1][3];
+        MPI_Group old_group, new_group;
+
+        _mpi_rank_step = block_rank_step;
+
+        MPI_Comm_size(comm, &n_ranks);
+        MPI_Comm_rank(comm, &rank_id);
+
+        MPI_Comm_group(comm, &old_group);
+
+        if (block_rank_step > n_ranks)
+          _mpi_rank_step = n_ranks;
+
+        MPI_Barrier(cs_glob_mpi_comm); /* For debugging */
+
+        ranges[0][0] = 0;
+        ranges[0][1] = n_ranks - 1;
+        ranges[0][2] = block_rank_step;
+
+        MPI_Group_range_incl(old_group, 1, ranges, &new_group);
+        MPI_Comm_create(comm, new_group, &_mpi_io_comm);
+        MPI_Group_free(&new_group);
+
+        MPI_Group_free(&old_group);
+
+        if (rank_id % block_rank_step)
+          _mpi_io_comm = MPI_COMM_NULL;
+
+        MPI_Barrier(cs_glob_mpi_comm); /* For debugging */
+
+      }
+
+    }
+
+  }
+
+  _mpi_defaults_are_set = true;
+}
+
+#endif /* defined(HAVE_MPI) */
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the positionning method for MPI-IO
+ *
+ * For details, see \ref cs_file_set_mpi_io_positionning.
+ *
+ * \return  positionning method for MPI-IO
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_file_mpi_positionning_t
+cs_file_get_mpi_io_positionning(void)
+{
+  return _mpi_io_positionning;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the positionning method for MPI-IO
+ *
+ * It is not always known whether a performance or robustness difference is
+ * to be expected using explicit file offsets or individual file pointers.
+ * Perusal of a sampling of ROMIO code would seem to indicate that no
+ * difference is to be expected, but this might change with MPI IO variants
+ * or file systems, so this advanced setting is made possible.
+ *
+ * This setting is not available on a per-file basis, though this could be
+ * done in the future in the unexpected case of performance results
+ * showing this would be useful.
+ *
+ * \param[in]  positionning  chosen positionning method for MPI-IO
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_file_set_mpi_io_positionning(cs_file_mpi_positionning_t  positionning)
+{
+  _mpi_io_positionning = positionning;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print information on default options for file access.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_file_defaults_info(void)
+{
+#if defined(HAVE_MPI)
+
+  bool have_mpi_io = false;
+
+  const char *fmt[4] = {N_("  I/O read method:     %s\n"),
+                        N_("  I/O write method:    %s\n"),
+                        N_("  I/O read method:     %s (%s)\n"),
+                        N_("  I/O write method:    %s (%s)\n")};
+
+  for (cs_file_mode_t mode = CS_FILE_MODE_READ;
+       mode < CS_FILE_MODE_APPEND;
+       mode++) {
+
+    MPI_Info hints;
+    cs_file_access_t method;
+
+    cs_file_get_default_access(mode, &method, &hints);
+
+    if (method > CS_FILE_STDIO_PARALLEL) {
+      have_mpi_io = true;
+      bft_printf(_(fmt[mode + 2]),
+                 _(cs_file_access_name[method]),
+                 _(cs_file_mpi_positionning_name[_mpi_io_positionning]));
+    }
+    else
+      bft_printf(_(fmt[mode]), _(cs_file_access_name[method]));
+
+
+#if MPI_VERSION > 1
+
+    if (hints != MPI_INFO_NULL) {
+      int i, n_keys, flag;
+      char *val;
+      char key[MPI_MAX_INFO_KEY + 1];
+      BFT_MALLOC(val, MPI_MAX_INFO_VAL + 1, char);
+      MPI_Info_get_nkeys(hints, &n_keys);
+      if (n_keys > 0)
+        bft_printf(_("    hints:\n"));
+      for (i = 0; i < n_keys; i++) {
+        MPI_Info_get_nthkey(hints, i, key);
+        MPI_Info_get(hints, key, MPI_MAX_INFO_VAL, val, &flag);
+        if (flag) {
+          val[MPI_MAX_INFO_VAL] = '\0';
+          bft_printf(_("      %s: %s\n"), key, val);
+        }
+      }
+      BFT_FREE(val);
+    }
+
+#endif /* MPI_VERSION > 1 */
+
+  }
+
+  if (cs_glob_n_ranks > 1) {
+    int block_rank_step;
+    cs_file_get_default_comm(&block_rank_step, NULL, NULL, NULL);
+    bft_printf(_("  I/O rank step:        %d\n"), block_rank_step);
+  }
+
+#endif
 }
 
 #if defined(HAVE_MPI)
@@ -2418,6 +3415,8 @@ cs_file_serializer_advance(cs_file_serializer_t  *s,
     int count = s->range[1] - s->range[0];
 
     if (count > 0) {
+
+      assert(s->rank_id > -1);
 
       /* Forced synchronization */
       MPI_Recv(&sync_range, 2, CS_MPI_GNUM, 0, CS_FILE_MPI_TAG, s->comm, &status);
