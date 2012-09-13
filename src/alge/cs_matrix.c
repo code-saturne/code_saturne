@@ -1071,7 +1071,7 @@ _bb_mat_vec_p_l_native(bool                exclude_diag,
                        const cs_real_t    *restrict x,
                        cs_real_t          *restrict y)
 {
-  cs_lnum_t  ii, jj, kk, face_id;
+  cs_lnum_t  ii, jj, face_id;
 
   const cs_matrix_struct_native_t  *ms = matrix->structure;
   const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
@@ -1107,10 +1107,8 @@ _bb_mat_vec_p_l_native(bool                exclude_diag,
       for (face_id = 0; face_id < ms->n_faces; face_id++) {
         ii = face_cel_p[2*face_id] -1;
         jj = face_cel_p[2*face_id + 1] -1;
-        for (kk = 0; kk < db_size[0]; kk++) {
-          _dense_eb_ax_add(ii, jj, face_id, eb_size, xa, x, y);
-          _dense_eb_ax_add(jj, ii, face_id, eb_size, xa, x, y);
-        }
+        _dense_eb_ax_add(ii, jj, face_id, eb_size, xa, x, y);
+        _dense_eb_ax_add(jj, ii, face_id, eb_size, xa, x, y);
       }
     }
     else {
@@ -1120,10 +1118,8 @@ _bb_mat_vec_p_l_native(bool                exclude_diag,
       for (face_id = 0; face_id < ms->n_faces; face_id++) {
         ii = face_cel_p[2*face_id] -1;
         jj = face_cel_p[2*face_id + 1] -1;
-        for (kk = 0; kk < db_size[0]; kk++) {
-          _dense_eb_ax_add(ii, jj, 2*face_id, eb_size, xa, x, y);
-          _dense_eb_ax_add(jj, ii, 2*face_id + 1, eb_size, xa, x, y);
-        }
+        _dense_eb_ax_add(ii, jj, 2*face_id, eb_size, xa, x, y);
+        _dense_eb_ax_add(jj, ii, 2*face_id + 1, eb_size, xa, x, y);
       }
 
     }
@@ -4363,7 +4359,7 @@ _variant_init(cs_matrix_variant_t  *v)
 
   v->matrix_create_cost = -1.;
 
-  for (i = 0; i < 4; i++) {
+  for (i = 0; i < 6; i++) {
     v->vector_multiply[i] = NULL;
     v->matrix_assign_cost[i] = -1.;
   }
@@ -4384,6 +4380,8 @@ _variant_init(cs_matrix_variant_t  *v)
  *   loop_length          <-- loop length option for some algorithms
  *   vector_multiply      <-- function pointer for A.x
  *   b_vector_multiply    <-- function pointer for block A.x
+ *   bb_vector_multiply   <-- function pointer for block A.x
+ *                             with block extra diag
  *   n_variants           <-> number of variants
  *   n_variants_max       <-> current maximum number of variants
  *   m_variant            <-> array of matrix variants
@@ -4398,6 +4396,7 @@ _variant_add(const char                        *name,
              int                                loop_length,
              cs_matrix_vector_product_t        *vector_multiply,
              cs_matrix_vector_product_t        *b_vector_multiply,
+             cs_matrix_vector_product_t        *bb_vector_multiply,
              int                               *n_variants,
              int                               *n_variants_max,
              cs_matrix_variant_t              **m_variant)
@@ -4443,9 +4442,9 @@ _variant_add(const char                        *name,
     if (block_flag != 1) {
 
       if (ed_flag != 1)
-        v->vector_multiply[4] = b_vector_multiply;
+        v->vector_multiply[4] = bb_vector_multiply;
       if (ed_flag != 0)
-        v->vector_multiply[5] = b_vector_multiply;
+        v->vector_multiply[5] = bb_vector_multiply;
 
     }
 
@@ -4478,18 +4477,6 @@ _build_variant_list(int                    sym_flag,
   *n_variants = 0;
   *m_variant = NULL;
 
-  _variant_add(_("Native, baseline, block extradiag"),
-               CS_MATRIX_NATIVE,
-               block_flag,
-               sym_flag,
-               2, /* ed_flag */
-               0, /* loop_length */
-               _mat_vec_p_l_native,//FIXME
-               _bb_mat_vec_p_l_native,
-               n_variants,
-               &n_variants_max,
-               m_variant);
-
   _variant_add(_("Native, baseline"),
                CS_MATRIX_NATIVE,
                block_flag,
@@ -4498,6 +4485,7 @@ _build_variant_list(int                    sym_flag,
                0, /* loop_length */
                _mat_vec_p_l_native,
                _b_mat_vec_p_l_native,
+               _bb_mat_vec_p_l_native,
                n_variants,
                &n_variants_max,
                m_variant);
@@ -4510,6 +4498,7 @@ _build_variant_list(int                    sym_flag,
                0, /* loop_length */
                NULL,
                _3_3_mat_vec_p_l_native,
+               NULL,
                n_variants,
                &n_variants_max,
                m_variant);
@@ -4521,6 +4510,7 @@ _build_variant_list(int                    sym_flag,
                2, /* ed_flag */
                508, /* loop_length */
                _mat_vec_p_l_native_bull,
+               NULL,
                NULL,
                n_variants,
                &n_variants_max,
@@ -4538,6 +4528,7 @@ _build_variant_list(int                    sym_flag,
                    0, /* loop_length */
                    _mat_vec_p_l_native_omp,
                    _b_mat_vec_p_l_native_omp,
+                   NULL,
                    n_variants,
                    &n_variants_max,
                    m_variant);
@@ -4552,6 +4543,7 @@ _build_variant_list(int                    sym_flag,
                    2, /* ed_flag */
                    0, /* loop_length */
                    _mat_vec_p_l_native_vector,
+                   NULL,
                    NULL,
                    n_variants,
                    &n_variants_max,
@@ -4568,6 +4560,7 @@ _build_variant_list(int                    sym_flag,
                0, /* loop_length */
                _mat_vec_p_l_csr,
                NULL,
+               NULL,
                n_variants,
                &n_variants_max,
                m_variant);
@@ -4579,6 +4572,7 @@ _build_variant_list(int                    sym_flag,
                0, /* ed_flag */
                508, /* loop_length */
                _mat_vec_p_l_csr_pf,
+               NULL,
                NULL,
                n_variants,
                &n_variants_max,
@@ -4593,6 +4587,7 @@ _build_variant_list(int                    sym_flag,
                0, /* ed_flag */
                0, /* loop_length */
                _mat_vec_p_l_csr_mkl,
+               NULL,
                NULL,
                n_variants,
                &n_variants_max,
@@ -4610,6 +4605,7 @@ _build_variant_list(int                    sym_flag,
                  0, /* loop_length */
                  _mat_vec_p_l_csr_sym,
                  NULL,
+                 NULL,
                  n_variants,
                  &n_variants_max,
                  m_variant);
@@ -4623,6 +4619,7 @@ _build_variant_list(int                    sym_flag,
                  0, /* ed_flag */
                  0, /* loop_length */
                  _mat_vec_p_l_csr_sym_mkl,
+                 NULL,
                  NULL,
                  n_variants,
                  &n_variants_max,
@@ -4640,6 +4637,7 @@ _build_variant_list(int                    sym_flag,
                0, /* loop_length */
                _mat_vec_p_l_msr,
                _b_mat_vec_p_l_msr,
+               NULL,
                n_variants,
                &n_variants_max,
                m_variant);
@@ -4651,6 +4649,7 @@ _build_variant_list(int                    sym_flag,
                2, /* ed_flag */
                508, /* loop_length */
                _mat_vec_p_l_msr_pf,
+               NULL,
                NULL,
                n_variants,
                &n_variants_max,
@@ -4665,6 +4664,7 @@ _build_variant_list(int                    sym_flag,
                2, /* ed_flag */
                0, /* loop_length */
                _mat_vec_p_l_msr_mkl,
+               NULL,
                NULL,
                n_variants,
                &n_variants_max,
@@ -5311,6 +5311,9 @@ cs_matrix_set_coefficients_ni(cs_matrix_t      *matrix,
 
   for (i = 0; i < 4; i++)
     matrix->db_size[i] = 1;
+
+  for (i = 0; i < 4; i++)
+    matrix->eb_size[i] = 1;
 
   if (matrix->set_coefficients != NULL)
     matrix->set_coefficients(matrix, symmetric, false, false, da, xa);

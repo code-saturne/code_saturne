@@ -141,9 +141,15 @@ if (iporos.eq.0) then
 
     enddo
 
+    do ifac = 1, nfabor
+      ii = ifabor(ifac)
+      viscb(ifac) = surfbn(ifac)
+    enddo
+
   ! Harmonic mean
   else
 !TODO
+    call csexit(1)
   endif
 
 ! With porosity
@@ -189,9 +195,15 @@ else
 
     enddo
 
+    do ifac = 1, nfabor
+      ii = ifabor(ifac)
+      viscb(ifac) = surfbn(ifac)*porosi(ii)
+    enddo
+
   ! Harmonic mean
   else
 !TODO
+    call csexit(1)
   endif
 
 endif
