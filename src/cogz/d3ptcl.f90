@@ -372,50 +372,47 @@ enddo
 !===============================================================================
 
 
-if ( ippmod(icod3p).eq.1 ) then
-
-!     On regarde s'il y a une entree carburant au moins et
-!                         une entree oxydant   au moins
-  ifue = 0
-  ioxy = 0
-  do ii = 1, nzfppp
-    izone = ilzppp(ii)
-    if    ( ientfu(izone).eq.1 ) then
-      ifue = 1
-    elseif( ientox(izone).eq.1 ) then
-      ioxy = 1
-    endif
-  enddo
-  if(irangp.ge.0) then
-    call parcmx(ifue)
-    call parcmx(ioxy)
+! On regarde s'il y a une entree carburant au moins et
+!                     une entree oxydant   au moins
+ifue = 0
+ioxy = 0
+do ii = 1, nzfppp
+  izone = ilzppp(ii)
+  if (ientfu(izone).eq.1) then
+    ifue = 1
+  elseif(ientox(izone).eq.1) then
+    ioxy = 1
   endif
+enddo
+if(irangp.ge.0) then
+  call parcmx(ifue)
+  call parcmx(ioxy)
+endif
 
-!       Entree carburant a TINFUE : calcul de HINFUE
-  if(ifue.eq.1) then
-    coefg(1) = 1.d0
-    coefg(2) = zero
-    coefg(3) = zero
-    mode    = -1
-    call cothht                                                   &
-    !==========
-        ( mode   , ngazg , ngazgm  , coefg  ,                     &
-          npo    , npot   , th     , ehgazg ,                     &
-          hinfue , tinfue )
-  endif
+! Entree carburant a TINFUE : calcul de HINFUE
+if (ifue.eq.1) then
+  coefg(1) = 1.d0
+  coefg(2) = zero
+  coefg(3) = zero
+  mode    = -1
+  call cothht                                                   &
+  !==========
+      ( mode   , ngazg , ngazgm  , coefg  ,                     &
+        npo    , npot   , th     , ehgazg ,                     &
+        hinfue , tinfue )
+endif
 
-!       Entree oxydant a TINOXY : calcul de HINOXY
-  if(ioxy.eq.1) then
-    coefg(1) = zero
-    coefg(2) = 1.d0
-    coefg(3) = zero
-    mode    = -1
-    call cothht                                                   &
-    !==========
-        ( mode   , ngazg , ngazgm  , coefg  ,                     &
-          npo    , npot   , th     , ehgazg ,                     &
-          hinoxy , tinoxy  )
-  endif
+! Entree oxydant a TINOXY : calcul de HINOXY
+if (ioxy.eq.1) then
+  coefg(1) = zero
+  coefg(2) = 1.d0
+  coefg(3) = zero
+  mode    = -1
+  call cothht                                                   &
+  !==========
+      ( mode   , ngazg , ngazgm  , coefg  ,                     &
+        npo    , npot   , th     , ehgazg ,                     &
+        hinoxy , tinoxy  )
 
 endif
 
