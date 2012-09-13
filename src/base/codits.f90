@@ -117,10 +117,10 @@
 !> \param[in]     iswdyp        indicator
 !>                               - 0 no dynamic relaxation
 !>                               - 1 dynamic relaxation depending on
-!>                                 \$f \delta \varia^k \f$
+!>                                 \f$ \delta \varia^k \f$
 !>                               - 2 dynamic relaxation depending on
-!>                                 \$f \delta \varia^k \f$  and
-!>                                 \$f \delta \varia^{k-1} \f$
+!>                                 \f$ \delta \varia^k \f$  and
+!>                                 \f$ \delta \varia^{k-1} \f$
 !> \param[in]     imgrp         indicator
 !>                               - 0 no multi-grid
 !>                               - 1 otherwise
