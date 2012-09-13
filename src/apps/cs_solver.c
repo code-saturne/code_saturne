@@ -231,6 +231,8 @@ cs_run(void)
 
   /* Call main calculation initialization function or help */
 
+  cs_io_log_initialize();
+
   cs_field_define_keys_base();
 
   cs_preprocessor_data_read_headers(cs_glob_mesh,
@@ -713,10 +715,6 @@ main(int    argc,
   /* Log-file header and command line arguments recap */
 
   cs_base_logfile_head(argc, argv);
-
-  /* I/O operations initialization */
-
-  cs_io_log_initialize();
 
   /* Running as a standalone SALOME component, load YACS component
      library and run yacsinit() component initialization and event loop,
