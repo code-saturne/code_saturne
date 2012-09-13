@@ -582,10 +582,14 @@ sys.stdout.write(path)]"
     CMDPYUIC4="cmd //C $PYPATH/Lib/site-packages/PyQt4/pyuic4"
   fi
 
-  AC_PATH_PROG([PYUIC4], [pyuic4], [$CMDPYUIC4], [${PYPATH}:$PATH])
-  AC_PATH_PROG([PYRCC4], [pyrcc4], [],           [${PYPATH}:$PATH])
+  if test "x$PYUIC4" = "x" ; then
+    AC_PATH_PROG([PYUIC4], [pyuic4], [$CMDPYUIC4], [${PYPATH}:$PATH])
+  fi
+  if test "x$PYRCC4" = "x" ; then
+    AC_PATH_PROG([PYRCC4], [pyrcc4], [],           [${PYPATH}:$PATH])
+  fi
 
-  if test -z "$ac_cv_path_PYUIC4" -o -z "$ac_cv_path_PYRCC4"; then
+  if test "x$PYUIC4" = "x" -o "x$PYRCC4" = "x" ; then
     AC_MSG_FAILURE([cannot find PyQt4 dev tools, Graphical User Interface cannot be installed])
     cs_have_gui=no
   fi
@@ -602,8 +606,12 @@ if test "x$cs_have_gui" = "xyes" ; then
   AC_ARG_VAR([LRELEASE], [Qt message files generator])
   AC_ARG_VAR([MOC], [Qt meta objects compiler])
 
-  AC_PATH_PROGS([LRELEASE], [lrelease lrelease-qt4])
-  AC_PATH_PROGS([MOC], [moc moc-qt4])
+  if test "x$LRELEASE" = "x" ; then
+    AC_PATH_PROGS([LRELEASE], [lrelease lrelease-qt4])
+  fi
+  if test "x$MOC" = "x" ; then
+    AC_PATH_PROGS([MOC], [moc moc-qt4])
+  fi
 
   if test "$LRELEASE" = : -o "$MOC" = : ; then
     AC_MSG_FAILURE([cannot find Qt4 dev tools, Graphical User Interface cannot be installed])
