@@ -46,7 +46,7 @@ module ppincl
   integer :: iphpar
 
   ! ---- Modeles propres a la combustion gaz ICO...
-  integer ::  icod3p, icodeq, icoebu, icobml, icolwc
+  integer ::  icod3p, icodeq, icoebu, icobml, icolwc, isoot
 
   ! ---- Modeles propres a la combustion charbon pulverise ICP...
   integer ::  icp3pl
@@ -95,6 +95,11 @@ module ppincl
 
   ! --- Pointeurs proprietes (PROPCE)
   integer, save :: itsc
+
+  ! --- Pointers for soot model
+  !     INPM  : pointer for soot precursor number in isca (isoot = 1)
+  !     IFSM  : pointer for soot mass fraction in isca (isoot = 1)
+  integer, save :: inpm, ifsm
 
   !--> POINTEURS VARIABLES COMBUSTION CHARBON PULVERISE
 

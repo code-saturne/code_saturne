@@ -39,7 +39,7 @@ module coincl
   !       IENTOX       --> indicateur oxydant par type de facette d'entree
   !       IENTFU       --> indicateur fuel    par type de facette d'entree
 
-  ! ---- Grandeurs deduiites
+  ! ---- Grandeurs deduites
 
   !       HINOXY       --> Enthalpie massique d'entree pour l'oxydant
   !       HINFUE       --> Enthalpie massique d'entree pour le fuel
@@ -108,6 +108,13 @@ module coincl
   double precision, save :: vref, lref, ta, tstar
   double precision, save :: fmin, fmax, hmin, hmax
   double precision, save :: coeff1, coeff2, coeff3
+
+  ! --- Soot model
+
+  !     XSOOT : soot fraction production (isoot = 0)
+  !     ROSOOT: soot density
+
+  double precision, save :: xsoot, rosoot
 
   !=============================================================================
 

@@ -62,6 +62,7 @@ use ppthch
 use coincl
 use cpincl
 use ppincl
+use radiat
 
 !===============================================================================
 
@@ -97,17 +98,22 @@ if( ro0.lt.0d0) then
   iok = iok + 1
 endif
 
-! --> Diffusivite dynamique en kg/(m s) : DIFTL0
+!===============================================================================
+! 3. Working array of coincl.h (Soot)
+!===============================================================================
 
-if( diftl0.lt.0d0) then
-  WRITE(NFECRA,3010)'DIFTL0', DIFTL0
+if (isoot.ge.1.and.iirayo.eq.0) then
+  write(nfecra,4000),isoot,iirayo
   iok = iok + 1
-else
-  visls0(ihm) = diftl0
+endif
+
+if (isoot.ge.1.and.ippmod(icod3p).eq.-1) then
+  write(nfecra,4010),isoot, ippmod(icod3p)
+  iok = iok + 1
 endif
 
 !===============================================================================
-! 3. FORMATS VERIFICATION
+! 4. FORMATS VERIFICATION
 !===============================================================================
 
  2000 format(                                                           &
@@ -153,6 +159,36 @@ endif
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
 '@  Verifier usd3p1.                                          ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 4000 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
+'@    =========                                               ',/,&
+'@    ISOOT EST POSITIONNE A ',I8,'                           ',/,&
+'@    SANS MODELE DE RAYONNEMENT (iirayo = ',i8,')            ',/,&
+'@                                                            ',/,&
+'@  Ce calcul sans interet ne sera pas execute.               ',/,&
+'@                                                            ',/,&
+'@  Verifier usppmo et usray1.                                ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 4010 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
+'@    =========                                               ',/,&
+'@    ISOOT EST POSITIONNE A ',I8,' SANS MODELE               ',/,&
+'@    DE FLAMME DE DIFFUSION (ippmod(icod3p) = ',i8,')        ',/,&
+'@                                                            ',/,&
+'@  Ce calcul ne peut etre pas execute.                       ',/,&
+'@                                                            ',/,&
+'@  Verifier usppmo.                                          ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

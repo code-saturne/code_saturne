@@ -91,6 +91,10 @@ if ( ippmod(icod3p).ge.0 ) then
 
 ! ---- Enthalpie
   if ( ippmod(icod3p).eq.1 ) ihm = iscapp(3)
+
+! Soot mass fraction and precursor number
+  if (isoot.ge.1) ifsm = iscapp(4)
+  if (isoot.ge.1) inpm = iscapp(5)
 endif
 
 

@@ -158,6 +158,20 @@ double precision tslagr(ncelet,*)
 ! 2. AIGUILLAGE VERS LE MODELE ADEQUAT
 !===============================================================================
 
+! Soot model
+
+if (isoot.eq.1) then
+  call sootsc                                                     &
+  !==========
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
+   iscal  ,                                                       &
+   icepdc , icetsm , itypsm ,                                     &
+   izfppp ,                                                       &
+   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
+   coefa  , coefb  , ckupdc , smacel ,                            &
+   smbrs  , rovsdt )
+endif
+
 ! ---> Flamme de premelange : Modele EBU
 
 if ( ippmod(icoebu).ge.0 ) then

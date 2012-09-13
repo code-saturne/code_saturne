@@ -100,6 +100,16 @@ enddo
 ! 1.1 Definition des scamin et des scamax des variables transportees
 ! ==================================================================
 
+! --> Soot
+
+if (isoot.eq.1) then
+  scamin(ifsm) = 0.d0
+  scamax(ifsm) = 1.d0
+  scamin(inpm) = 0.d0
+  scamax(inpm) = 1.d0
+endif
+
+
 ! --> Flamme de diffusion : chimie 3 points
 
 if ( ippmod(icod3p).ge.0 ) then
@@ -280,6 +290,26 @@ enddo
 !          listing 'developpeur'
 
 ! =======================================================================
+
+! ---> Soot model
+
+if (isoot.eq.1) then
+
+  ! --- Soot mass fraction
+  ipp = ipprtp(isca(ifsm))
+  nomvar(IPP)  = 'Fra_Soot'
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+
+  ! --- Soot precursor number
+  ipp = ipprtp(isca(inpm))
+  nomvar(IPP)  = 'NPr_Soot'
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+endif
+
 
 ! --> Flamme de diffusion : chimie 3 points - chmie equilibre
 

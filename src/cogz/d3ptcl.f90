@@ -413,7 +413,6 @@ if (ioxy.eq.1) then
       ( mode   , ngazg , ngazgm  , coefg  ,                     &
         npo    , npot   , th     , ehgazg ,                     &
         hinoxy , tinoxy  )
-
 endif
 
 
@@ -439,8 +438,14 @@ do ifac = 1, nfabor
        rcodcl(ifac,isca(ifp2m),1) = 0.d0
 
 !          - Enthalpie du melange gazeux
-      if ( ippmod(icod3p).eq.1 ) then
+      if (ippmod(icod3p).eq.1) then
         rcodcl(ifac,isca(ihm),1) = hinfue
+      endif
+
+      ! Soot model
+      if (isoot.ge.1) then
+        rcodcl(ifac,isca(ifsm),1) = 0.d0
+        rcodcl(ifac,isca(inpm),1) = 0.d0
       endif
 
     elseif( ientox(izone).eq.1 ) then
@@ -458,6 +463,11 @@ do ifac = 1, nfabor
         rcodcl(ifac,isca(ihm),1) = hinoxy
       endif
 
+      ! Soot model
+      if (isoot.ge.1) then
+        rcodcl(ifac,isca(ifsm),1) = 0.d0
+        rcodcl(ifac,isca(inpm),1) = 0.d0
+      endif
 
     endif
 

@@ -131,17 +131,27 @@ if ( ippmod(icod3p).ge.0 .or. ippmod(icoebu).ge.0 ) then
                   + propce(iel,ipproc(iym(3)))/wmolg(3) )
       w1(iel) = propce(iel,ipproc(iym(3)))*xm/wmolg(3)*xco2
       w2(iel) = propce(iel,ipproc(iym(3)))*xm/wmolg(3)*xh2o
+
       w3(iel) = 0.d0
+
+      ! Soot model
+      if (isoot.eq.0) w3(iel) = Xsoot * propce(iel,ipproc(iym(1))) &
+                       * propce(iel,ipproc(irom)) / rosoot
+      if (isoot.ge.1) w3(iel) = rtp(iel,isca(ifsm)) &
+                        * propce(iel,ipproc(irom)) / rosoot
     enddo
     call raydak(ncel,ncelet,                                      &
     !==========
       propce(1,ipproc(icak(1))),w1,w2,w3,propce(1,ipproc(itemp)))
 
-    write(NFECRA,*) ' a verifier '
-    write(NFECRA,*) ' a finir   : raydak '
-    write(NFECRA,*) ' Le codage est a terminer par le groupe I81'
-    write(NFECRA,*) '                     13-10-03 22:38:03      '
-    call csexit(1)
+    ! the code seems to be good (BS)
+    if (ntcabs.eq.ntpabs+1) then
+      write(NFECRA,*) ' a verifier '
+      write(NFECRA,*) ' a finir   : raydak '
+      write(NFECRA,*) ' Le codage est a terminer par le groupe I81'
+      write(NFECRA,*) '                     13-10-03 22:38:03      '
+      ! call csexit(1)
+    endif
 
   else
     do iel = 1, ncel

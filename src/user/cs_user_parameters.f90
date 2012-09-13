@@ -100,6 +100,7 @@ use ppppar
 use ppthch
 use ppincl
 use ppcpfu
+use coincl
 
 !===============================================================================
 
@@ -175,6 +176,23 @@ if (ixmlpu.eq.0) then
   ippmod(icolwc) = -1
 
 endif
+
+
+! --- Soot model
+! =================
+
+!        if = -1   module not activated
+!        if =  0   constant fraction of fuel Xsoot
+!        if =  1   2 equations model of Moss et al.
+
+if (.false.) then
+  isoot = 0
+
+  xsoot  = 0.1d0 ! ( if isoot = 0 )
+  rosoot = 2000.d0 ! kg/m3
+endif
+
+
 
 ! --- cp3pl: Pulverized coal combustion
 ! ==========
@@ -2536,13 +2554,24 @@ ilisvr(ipp)  = 1
 ihisvr(ipp,1)= -1
 
 ! ---- Enthalpy
- if (ippmod(icod3p).eq.1) then
-   ipp = ipprtp(isca(ihm))
-   ichrvr(ipp)  = 1
-   ilisvr(ipp)  = 1
-   ihisvr(ipp,1)= -1
-  endif
+if (ippmod(icod3p).eq.1) then
+  ipp = ipprtp(isca(ihm))
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+endif
 
+! ---- Soot
+if (isoot.eq.1) then
+  ipp = ipprtp(isca(ifsm))
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+  ipp = ipprtp(isca(inpm))
+  ichrvr(ipp)  = 1
+  ilisvr(ipp)  = 1
+  ihisvr(ipp,1)= -1
+endif
 
 !===============================================================================
 ! b. Variables of State; User definied Variables

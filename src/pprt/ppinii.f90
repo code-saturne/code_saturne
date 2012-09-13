@@ -85,6 +85,8 @@ do ipp = 1, nmodmx
   ippmod(ipp) = -1
 enddo
 
+isoot = -1
+
 ! ---> Initialisation pour la combustion gaz
 !       Variables transportees
 ifm    = 0
@@ -115,6 +117,10 @@ do idirac = 1, ndracm
   itscl (idirac) = 0
   imaml (idirac) = 0
 enddo
+
+! ---> Initialisation for soot model
+inpm = 0
+ifsm = 0
 
 ! ---> Initialisation pour la combustion du charbon
 !       Variables transportees
@@ -333,6 +339,10 @@ hmax = zero
 coeff1 = zero
 coeff2 = zero
 coeff3 = zero
+
+! ---> Initialisation for soot model
+xsoot = 0.d0
+rosoot = 0.d0
 
 !===============================================================================
 ! 4. REMPLISSAGE INCLUDE cpincl.h

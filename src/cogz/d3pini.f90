@@ -192,6 +192,11 @@ if ( isuite.eq.0 ) then
         rtp(iel,isca(ihm)) = hair
       endif
 
+! ---- Soot
+      if (isoot.eq.1) then
+        rtp(iel,isca(inpm)) = 0.d0
+        rtp(iel,isca(ifsm)) = 0.d0
+      endif
     enddo
 
 ! ---> Initialisation au 2eme passage
@@ -210,6 +215,13 @@ if ( isuite.eq.0 ) then
       if ( ippmod(icod3p).eq.1 ) then
         rtp(iel,isca(ihm)) = hinfue*fs(1)+hinoxy*(1.d0-fs(1))
       endif
+
+! ---- Soot
+      if (isoot.eq.1) then
+        rtp(iel,isca(inpm)) = 0.d0
+        rtp(iel,isca(ifsm)) = 0.d0
+      endif
+
 
     enddo
 
@@ -233,6 +245,12 @@ if ( isuite.eq.0 ) then
         !==========
       endif
     endif
+
+      ! ---- Soot
+      if (isoot.eq.1) then
+        call synsca(rtp(1,isca(inpm)))
+        call synsca(rtp(1,isca(ifsm)))
+      endif
 
 
 !      Impressions de controle
