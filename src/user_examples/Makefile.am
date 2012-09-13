@@ -98,7 +98,8 @@ cs_user_initialization-gas_libby_williams.f90 \
 cs_user_initialization-pulverized_coal.f90 \
 cs_user_initialization-time_step.f90 \
 cs_user_initialization-unified_combustion_coal.f90 \
-cs_user_les_inflow-base.f90
+cs_user_les_inflow-base.f90 \
+cs_user_postprocess-sfc.c
 
 noinst_LTLIBRARIES = libcsexample.la
 libcsexample_la_SOURCES = $(examplefiles)
