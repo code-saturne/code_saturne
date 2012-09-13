@@ -63,13 +63,6 @@ typedef struct {
                                    1: redirected to "listing_n*" file;
                                    2: redirected to "/dev/null", suppressed) */
 
-  /* MPI-IO mode */
-
-  int            mpi_io_mode;   /* MPI-IO mode:
-                                   0: no MPI-IO
-                                   1: MPI-IO with explicit offsets
-                                   2: MPI-IO with individual file pointers */
-
   /* Other options */
 
   bool           preprocess;    /* Mesh preprocessing mode */

@@ -121,12 +121,6 @@ _arg_env_help(const char  *name)
           "                   (usually automatic, only required for\n"
           "                   undetermined MPI libraries)\n"));
   fprintf
-    (e, _(" --mpi-io          <mode> set parallel I/O behavior\n"
-          "                     off: do not use MPI-IO\n"
-          "                     eo:  MPI-IO with explicit offsets\n"
-          "                          (default if available)\n"
-          "                     ip:  MPI-IO with individual file pointers\n"));
-  fprintf
     (e, _(" --log             output redirection for rank -1 or 0:\n"
           "                     0: standard output\n"
           "                     1: output in \"listing\" (default)\n"));
@@ -237,8 +231,6 @@ cs_opts_define(int         argc,
   opts->ilisr0 = 1;
   opts->ilisrp = 2;
 
-  opts->mpi_io_mode = -1;
-
   opts->preprocess = false;
   opts->verif = false;
   opts->benchmark = 0;
@@ -299,27 +291,9 @@ cs_opts_define(int         argc,
       /* Handled in pre-reading stage */
     }
 
-    else if (strcmp(s, "--mpi-io") == 0) {
-      if (arg_id + 1 < argc) {
-        const char *s_n = argv[arg_id + 1];
-        if (strcmp(s_n, "off") == 0)
-          opts->mpi_io_mode = 0;
-        else if (strcmp(s_n, "eo") == 0)
-          opts->mpi_io_mode = 1;
-        else if (strcmp(s_n, "ip") == 0)
-          opts->mpi_io_mode = 2;
-        else
-          argerr = 1;
-        if (argerr == 0)
-          arg_id++;
-      }
-      else
-        argerr = 1;
-    }
-
 #else /* !defined(HAVE_MPI) */
 
-    else if ((strcmp(s, "--mpi") == 0) || (strcmp(s, "--mpi-io") == 0)) {
+    else if (strcmp(s, "--mpi") == 0) {
       fprintf(stderr, _("%s was built without MPI support,\n"
                         "so option \"%s\" may not be used.\n"),
               argv[0], s);

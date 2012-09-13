@@ -1352,13 +1352,6 @@ code will detect the presence of an MPI environment automatically, and
 this option is redundant. It is only kept for the rare case in which the
 MPI environment might not be detected.
 
-\item \texttt{--mpi-io}: specifies that if MPI-IO should be used where
-available, and which mode should be used (\texttt{off} to disable,
-\texttt{eo} for explicit offsets, and \texttt{ip} for individual file
-pointers). MPI-IO is only available when running with MPI, and may improve
-performance only on parallel file systems. In other cases, it will incurr
-additional overhead.
-
 \item \texttt{--preprocess}: triggers the preprocessing-only mode.
 The code may run without any Interface parameter file nor any user subroutine.
 Only the initial operations such as mesh joining and modification are
