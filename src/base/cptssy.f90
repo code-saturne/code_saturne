@@ -110,15 +110,9 @@ if (nbccou.lt.1) then
 endif
 
 ! Define source term only for the temperature scalar
-!FIXME il manquerait pas un test pour dire qu'on veut que de la temperature?
+
 if (iscalt.ne.iscal) then
   return
-endif
-
-if (iscalt.eq.iscal) then
-  if (iscsth(iscalt).ne.-1) then
-    write(nfecra, 1000)
-  endif
 endif
 
 !===============================================================================
@@ -138,6 +132,15 @@ do inbcou = 1, nbccou
   !==========
 
   if (isvol.eq.1) then
+
+    ! Sanity check : only temperature in degree is possible when doing a
+    ! volume coupling with SYRTHES
+
+    if (iscalt.eq.iscal) then
+      if (iscsth(iscalt).ne.-1) then
+        write(nfecra, 1000)
+      endif
+    endif
 
     mode = 1 ! Volume coupling
     ivart = isca(iscalt)
@@ -210,7 +213,7 @@ return
  1000 format(                                                     &
 '@                                                            ',/,&
 '@ @@ ATTENTION : COUPLAGE VOLUMIQUE SYRTHES :                ',/,&
-'@      LA TEMPERATURE N''EST PAS CONFIGUREE EN °C.           ',/,&
+'@      LA TEMPERATURE N''EST PAS CONFIGUREE EN DEGRE C.      ',/,&
 '@    =========                                               ',/,&
 '@    Le calcul continue.                                     ',/,&
 '@                                                            ')
@@ -220,7 +223,7 @@ return
  1000 format(                                                     &
 '@                                                            ',/,&
 '@ @@ WARNING: SYRTHES VOLUME COUPLING:                       ',/,&
-'@      THE TEMPERATURE IS NOT CONFIGURED IN °C.              ',/,&
+'@      THE TEMPERATURE IS NOT CONFIGURED IN DEGREE C.        ',/,&
 '@    ========                                                ',/,&
 '@    The calculation continue.                               ',/,&
 '@                                                            ')
