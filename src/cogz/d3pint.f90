@@ -23,11 +23,9 @@
 subroutine d3pint &
 !================
 
- ( ncelet , ncel   , indpdf ,                                     &
-   dirmin , dirmax , fdeb   , ffin   , hrec   ,                   &
-   fm     , hm     , p      ,                                     &
-   propce ,                                                       &
-   w1      )
+ ( indpdf ,                                                       &
+   dirmin , dirmax , fdeb   , ffin   , hrec   , tpdf ,            &
+   rtp    , propce , w1      )
 
 !===============================================================================
 !  FONCTION  :
@@ -52,9 +50,6 @@ subroutine d3pint &
 ! fdeb             ! tr ! <-- ! pdf : abscisse debut rectangle                 !
 ! ffin             ! tr ! <-- ! pdf : abscisse fin rectangle                   !
 ! hrec             ! tr ! <-- ! pdf : hauteur rectangle                        !
-! fm               ! tr ! <-- ! fraction de melange moyenne                    !
-! hm               ! tr ! <-- ! enthalpie massique moyenne                     !
-!                  !    !     !  si ecoulement permeatique                     !
 ! p                ! tr ! <-- ! pression                                       !
 ! propce           ! tr ! <-- ! proprietes physiques au centre des             !
 ! (ncelet,*)       !    !     ! cellules ( concentrations, temp. )   !                                  !
@@ -82,6 +77,7 @@ use ppthch
 use coincl
 use ppincl
 use radiat
+use mesh
 
 !===============================================================================
 
@@ -89,21 +85,25 @@ implicit none
 
 ! Arguments
 
-integer          ncelet, ncel
 integer          indpdf(ncelet)
 double precision dirmin(ncelet), dirmax(ncelet)
-double precision fdeb(ncelet), ffin(ncelet), hrec(ncelet)
-double precision fm(ncelet), hm(ncelet), p(ncelet)
-double precision propce(ncelet,*), w1(ncelet)
+double precision fdeb(ncelet), ffin(ncelet), hrec(ncelet), tpdf(ncelet)
+double precision rtp(ncelet,*), propce(ncelet,*), w1(ncelet)
 
 
 ! Local variables
 
-integer          icel, icg
-integer          ih, if, jh, jf, ipcrom
+integer          iel, icg, iscal
+integer          ih, if, jh, jf, ipcrom, iptsro
 integer          ipcsca, ipctem, ipckab, ipct4, ipct3
 double precision aa1, bb1, aa2, bb2, f1, f2, a, b, fmini, fmaxi
 double precision u, v, c, d, temsmm, fsir
+double precision fm, fp2m
+
+double precision dtsmdf  , dd1df  , dd2df  , df1df  , df2df  , dhrecdf
+double precision dtsmdfp2, dd1dfp2, dd2dfp2, df1dfp2, df2dfp2, dhrecdfp2
+double precision dtsmdd1, dtsmdd2, dtsmdf1, dtsmdf2, dtsmdhrec, dtsmdhs
+double precision dadhs, dbdhs, cotshs
 
 
 !===============================================================================
@@ -145,7 +145,10 @@ fsir = fs(1)
 fmini = zero
 fmaxi = 1.d0
 
-do icel = 1, ncel
+do iel = 1, ncel
+
+  fm   = rtp(iel,isca(ifm))
+  fp2m = rtp(iel,isca(ifp2m))
 
   do icg = 1, ngazg
 
@@ -184,32 +187,32 @@ do icel = 1, ncel
 
     ipcsca = ipproc(iym(icg))
 
-    if ( indpdf(icel) .eq. 1 ) then
+    if (indpdf(iel) .eq. 1) then
 
 ! ---> Integration de la PDF
 
-      propce(icel,ipcsca) = dirmin(icel) * ( aa1 + bb1 * fmini )  &
-                          + dirmax(icel) * ( aa2 + bb2 * fmaxi )
-      if ( fdeb(icel).lt.fsir ) then
-        f1 = fdeb(icel)
-        f2 = min( fsir,ffin(icel) )
-        propce(icel,ipcsca) = propce(icel,ipcsca)                 &
-             + hrec(icel)*(f2-f1)*(aa1+bb1*5.d-1*(f2+f1))
+      propce(iel,ipcsca) = dirmin(iel) * ( aa1 + bb1 * fmini )  &
+                          + dirmax(iel) * ( aa2 + bb2 * fmaxi )
+      if (fdeb(iel).lt.fsir) then
+        f1 = fdeb(iel)
+        f2 = min( fsir,ffin(iel) )
+        propce(iel,ipcsca) = propce(iel,ipcsca)                 &
+             + hrec(iel)*(f2-f1)*(aa1+bb1*5.d-1*(f2+f1))
       endif
-      if ( ffin(icel).gt.fsir ) then
-        f1 = max(fsir,fdeb(icel))
-        f2 = ffin(icel)
-        propce(icel,ipcsca) = propce(icel,ipcsca)                 &
-             + hrec(icel)*(f2-f1)*(aa2+bb2*5.d-1*(f2+f1))
+      if (ffin(iel).gt.fsir) then
+        f1 = max(fsir,fdeb(iel))
+        f2 = ffin(iel)
+        propce(iel,ipcsca) = propce(iel,ipcsca)                 &
+             + hrec(iel)*(f2-f1)*(aa2+bb2*5.d-1*(f2+f1))
       endif
     else
 
 ! ---> Degenerescence sur la valeur moyenne
 
-      if ( fm(icel).le.fsir ) then
-        propce(icel,ipcsca) = aa1+bb1*fm(icel)
+      if (fm.le.fsir) then
+        propce(iel,ipcsca) = aa1+bb1*fm
       else
-        propce(icel,ipcsca) = aa2+bb2*fm(icel)
+        propce(iel,ipcsca) = aa2+bb2*fm
       endif
 
     endif
@@ -229,17 +232,17 @@ enddo
 
 ! ---- Initialisation
 
-do icel = 1, ncel
-  w1(icel) = hstoea
+do iel = 1, ncel
+  w1(iel) = hstoea
 enddo
 
-if ( ippmod(icod3p).eq.1 ) then
+if (ippmod(icod3p).eq.1) then
 
   call d3phst                                                     &
   !==========
   ( ncelet , ncel    , indpdf ,                                   &
     dirmin , dirmax  , fdeb   , ffin   , hrec   ,                 &
-    fm     , hm      ,                                            &
+    rtp(1,isca(ifm)) , rtp(1,isca(ihm)),                          &
     w1      )
 
 endif
@@ -263,43 +266,62 @@ if ( iirayo.gt.0 ) then
 endif
 
 ipcrom = ipproc(irom)
+if (idilat.eq.4) iptsro = ipproc(iustdy(itsrho))
 
-do icel = 1, ncel
+do iel = 1, ncel
 
-  if ( indpdf(icel) .eq. 1 ) then
+  fm   = rtp(iel,isca(ifm))
+  fp2m = rtp(iel,isca(ifp2m))
+
+  if (indpdf(iel).eq.1) then
 
 ! ---> Integration de la PDF
 
     ih = 1
     do jh = 1,(nmaxh-1)
-      if ( w1(icel).gt.hh(jh+1) .and. w1(icel).le.hh(jh) )        &
+      if (w1(iel).gt.hh(jh+1) .and. w1(iel).le.hh(jh))        &
            ih = jh
     enddo
-    if ( w1(icel) .ge. hh(1)     ) ih = 1
-    if ( w1(icel) .le. hh(nmaxh) ) ih = nmaxh-1
-    propce(icel,ipctem) = dirmin(icel)*tinoxy +                   &
-                          dirmax(icel)*tinfue
-    temsmm = dirmin(icel)/wmolg(2)*tinoxy                         &
-           + dirmax(icel)/wmolg(1)*tinfue
-    if ( iirayo.gt.0 ) then
-      propce(icel,ipckab) =                                       &
-        dirmin(icel)*ckabsg(2)  + dirmax(icel)*ckabsg(1)
-      propce(icel,ipct4) =                                        &
-        dirmin(icel)*tinoxy**4 + dirmax(icel)*tinfue**4
-      propce(icel,ipct3) =                                        &
-        dirmin(icel)*tinoxy**3 + dirmax(icel)*tinfue**3
+    if (w1(iel) .ge. hh(1)) ih = 1
+    if (w1(iel) .le. hh(nmaxh)) ih = nmaxh-1
+    propce(iel,ipctem) = dirmin(iel)*tinoxy +                   &
+                          dirmax(iel)*tinfue
+    temsmm = dirmin(iel)/wmolg(2)*tinoxy                         &
+           + dirmax(iel)/wmolg(1)*tinfue
+
+    ! Weakly compressible algorithm: d T/M /d D1, d T/M /d D2
+    if (idilat.eq.4) then
+      dtsmdd1 = tinoxy/wmolg(2)
+      dtsmdd2 = tinfue/wmolg(1)
+    endif
+
+    if (iirayo.gt.0) then
+      propce(iel,ipckab) =                                       &
+        dirmin(iel)*ckabsg(2)  + dirmax(iel)*ckabsg(1)
+      propce(iel,ipct4) =                                        &
+        dirmin(iel)*tinoxy**4 + dirmax(iel)*tinfue**4
+      propce(iel,ipct3) =                                        &
+        dirmin(iel)*tinoxy**3 + dirmax(iel)*tinfue**3
     endif
     if = 1
     do jf = 1, (nmaxf-1)
-      if ( fdeb(icel).ge.ff(jf) .and.                             &
-           fdeb(icel).lt.ff(jf+1) ) if = jf
+      if (fdeb(iel).ge.ff(jf) .and.                             &
+          fdeb(iel).lt.ff(jf+1)) if = jf
     enddo
-    if ( fdeb(icel) .le. ff(1)     ) if = 1
-    if ( fdeb(icel) .ge. ff(nmaxf) ) if = nmaxf-1
+    if (fdeb(iel) .le. ff(1)) if = 1
+    if (fdeb(iel) .ge. ff(nmaxf)) if = nmaxf-1
     f2 = zero
-    f1 = fdeb(icel)
-    do while ( (ffin(icel)-f2).gt.epzero )
-      f2 = min(ff(if+1),ffin(icel))
+    f1 = fdeb(iel)
+
+    ! Weakly compressible algorithm: initialisation of d T/M /d Hrec d T/M /d Hs
+    if (idilat.eq.4) then
+      dtsmdhrec = 0.d0
+      dtsmdhs   = 0.d0
+      cotshs    = 0.d0
+    endif
+
+    do while ( (ffin(iel)-f2).gt.epzero )
+      f2 = min(ff(if+1),ffin(iel))
 !          Dans le tableau TFH,
 !           on extrait sur chaque ligne i : T = Ai+Bi*F
 !           et on construit pour la valeur courante de HSTOE (W1)
@@ -308,14 +330,14 @@ do icel = 1, ncel
       bb1 = (tfh(if+1,ih)-tfh(if,ih))/(ff(if+1)-ff(if))
       aa2 = tfh(if,ih+1)
       bb2 = (tfh(if+1,ih+1)-tfh(if,ih+1))/(ff(if+1)-ff(if))
-      a = aa1 + (w1(icel)-hh(ih))*(aa2-aa1)/(hh(ih+1)-hh(ih))
-      b = bb1 + (w1(icel)-hh(ih))*(bb2-bb1)/(hh(ih+1)-hh(ih))
+      a = aa1 + (w1(iel)-hh(ih))*(aa2-aa1)/(hh(ih+1)-hh(ih))
+      b = bb1 + (w1(iel)-hh(ih))*(bb2-bb1)/(hh(ih+1)-hh(ih))
       a = a - b*ff(if)
 
 ! ----- Calcul de la temperature par integration
 
-      propce(icel,ipctem) = propce(icel,ipctem)                   &
-         + hrec(icel)*(f2-f1)*(a+b*(f1+f2)/2.d0)
+      propce(iel,ipctem) = propce(iel,ipctem)                   &
+         + hrec(iel)*(f2-f1)*(a+b*(f1+f2)/2.d0)
 
 ! ----- Preparation aux calculs du coefficient d'absorption
 !                               de T^4 et de T^3
@@ -359,19 +381,19 @@ do icel = 1, ncel
 ! ----- Calcul du coefficient d'absorption
 !           et des termes T^4 et de T^3 (si rayonnement)
 
-        propce(icel,ipckab) = propce(icel,ipckab) +               &
-          hrec(icel)*( u*(f2-f1) + v*(f2**2-f1**2)*0.5d0 )
+        propce(iel,ipckab) = propce(iel,ipckab) +               &
+          hrec(iel)*( u*(f2-f1) + v*(f2**2-f1**2)*0.5d0 )
 
-        propce(icel,ipct4) = propce(icel,ipct4) +                 &
-          hrec(icel)*                                             &
+        propce(iel,ipct4) = propce(iel,ipct4) +                 &
+          hrec(iel)*                                             &
       (      a**4            * (f2-f1)                            &
    +   (4.d0*a**3  *b      ) * (f2**2-f1**2)/2.d0                 &
    +   (6.d0*(a**2)*(b**2) ) * (f2**3-f1**3)/3.d0                 &
    +   (4.d0*a     *(b**3) ) * (f2**4-f1**4)/4.d0                 &
    +   (            (b**4) ) * (f2**5-f1**5)/5.d0  )
 
-        propce(icel,ipct3) = propce(icel,ipct3) +                 &
-          hrec(icel)*                                             &
+        propce(iel,ipct3) = propce(iel,ipct3) +                 &
+          hrec(iel)*                                             &
       (      (a**3)          * (f2-f1)                            &
    +   (3.d0*(a**2)*b      ) * (f2**2-f1**2)/2.d0                 &
    +   (3.d0*a     *(b**2) ) * (f2**3-f1**3)/3.d0                 &
@@ -381,14 +403,65 @@ do icel = 1, ncel
 
 ! ----- Calcul du terme Temperature/masse molaire
 
-      temsmm = temsmm + hrec(icel)*                               &
+      temsmm = temsmm + hrec(iel)*                               &
         ( a*c       * (f2-f1)                                     &
         + (c*b+a*d) * (f2**2-f1**2)/2.d0                          &
         +  b*d      * (f2**3-f1**3)/3.d0 )
 
+        ! Weakly compressible algorithm:
+        ! d T/M /d f0 ; d T/M /d Hrec ; d T/M /d Hs ;
+        ! d T/M /d f1 est calcule apres la boucle pour etre sur d'avoir f1 = ffin
+        if (idilat.eq.4) then
+
+          if (ippmod(icod3p).eq.1) then
+
+           ! d(T/M)dHs = d(T/M)dA*dAdHs + d(T/M)dB*dBdHs
+            dadhs = (aa2-aa1)/(hh(ih+1)-hh(ih))                      &
+                  - (bb2-bb1)/(hh(ih+1)-hh(ih))*ff(if)
+            dbdhs = (bb2-bb1)/(hh(ih+1)-hh(ih))
+
+            dtsmdhs = dtsmdhs + hrec(iel) *                           &
+                 ( (c * (f2-f1) + d * (f2**2-f1**2)/2.d0) * dadhs     &
+      + (c * (f2**2-f1**2)/2.d0 + d * (f2**3-f1**3)/3.d0) * dbdhs )
+
+          endif
+
+          if ((f1-fdeb(iel)).lt.epzero) then
+            dtsmdf1 =  hrec(iel) * ( -a*c -(c*b+a*d)*fdeb(iel)    &
+                                        -b*d*fdeb(iel)**2       )
+          endif
+
+          dtsmdhrec = dtsmdhrec + (     a*c   *(f2-f1)              &
+                                   + (c*b+a*d)*(f2**2-f1**2)/2.d0   &
+                                   +    b*d   *(f2**3-f1**3)/3.d0 )
+        endif
+
       if = if+1
       f1 = f2
     enddo
+
+    if (idilat.eq.4) then
+
+      ! Weakly compressible algorithm: d T/M /d f1
+      dtsmdf2 = hrec(iel) * ( a*c +(c*b+a*d)*ffin(iel) + b*d*ffin(iel)**2 )
+
+      ! Weakly compressible algorithm: factor for Hs source term
+      if (iirayo.ge.1) then
+
+        cotshs = 0.d0
+        if( ffin(iel).lt.fsir) then
+          cotshs = hrec(iel)/2.d0*(ffin(iel)**2-fdeb(iel)**2)/fsir
+        elseif( fdeb(iel).gt.fsir) then
+          cotshs = hrec(iel)/2.d0 * ( (ffin(iel)-fdeb(iel))          &
+                 *(2.d0-(ffin(iel)+fdeb(iel))/(1.d0-fsir)))
+        else
+          cotshs = hrec(iel)/2.d0 * ( (fsir**2-fdeb(iel)**2)/fsir       &
+                 + (ffin(iel)-fsir)*(2.d0-(ffin(iel)+fsir))/(1.d0-fsir))
+        endif
+
+      endif
+
+    endif
 
   else
 
@@ -396,31 +469,31 @@ do icel = 1, ncel
 
     ih = 1
     do jh = 1, (nmaxh-1)
-      if ( w1(icel).gt.hh(jh+1) .and. w1(icel).le.hh(jh) )        &
+      if (w1(iel).gt.hh(jh+1) .and. w1(iel).le.hh(jh))        &
             ih = jh
     enddo
-    if ( w1(icel) .ge. hh(1)     ) ih =1
-    if ( w1(icel) .le. hh(nmaxh) ) ih =nmaxh-1
+    if (w1(iel) .ge. hh(1)) ih =1
+    if (w1(iel) .le. hh(nmaxh)) ih =nmaxh-1
     if = 1
     do jf = 1, (nmaxf-1)
-      if ( fm(icel).ge.ff(jf) .and. fm(icel).lt.ff(jf+1) )        &
+      if (fm.ge.ff(jf) .and. fm.lt.ff(jf+1))        &
            if = jf
     enddo
-    if ( fm(icel) .le. ff(1)     ) if = 1
-    if ( fm(icel) .ge. ff(nmaxf) ) if = nmaxf-1
+    if (fm .le. ff(1)) if = 1
+    if (fm .ge. ff(nmaxf)) if = nmaxf-1
     aa1 = tfh(if,ih)
     bb1 = (tfh(if+1,ih)-tfh(if,ih))/(ff(if+1)-ff(if))
     aa2 = tfh(if,ih+1)
     bb2 = (tfh(if+1,ih+1)-tfh(if,ih+1))/(ff(if+1)-ff(if))
-    a  = aa1 + (w1(icel)-hh(ih))*(aa2-aa1)/(hh(ih+1)-hh(ih))
-    b  = bb1 + (w1(icel)-hh(ih))*(bb2-bb1)/(hh(ih+1)-hh(ih))
+    a  = aa1 + (w1(iel)-hh(ih))*(aa2-aa1)/(hh(ih+1)-hh(ih))
+    b  = bb1 + (w1(iel)-hh(ih))*(bb2-bb1)/(hh(ih+1)-hh(ih))
     a  = a - b*ff(if)
 
 ! ----- Calcul de la temperature a partir de la valeur moyenne
 
-    propce(icel,ipctem) = a+b*fm(icel)
+    propce(iel,ipctem) = a+b*fm
 
-    if ( fm(icel).lt.fsir ) then
+    if (fm.lt.fsir) then
 !         On a demarre cote pauvre
       c =   1.d0/wmolg(2)
       d = (-1.d0/wmolg(2)+1.d0/wmolg(3))/fsir
@@ -430,8 +503,8 @@ do icel = 1, ncel
       d = (   1.d0/wmolg(1)-1.d0/wmolg(3))/(1.d0-fsir)
      endif
 
-    if ( iirayo.gt.0 ) then
-      if ( fm(icel).lt.fsir ) then
+    if (iirayo.gt.0) then
+      if (fm.lt.fsir) then
 !         On a demarre cote pauvre
         u =   ckabsg(2)
         v = (-ckabsg(2)+ ckabsg(3))/fsir
@@ -445,32 +518,167 @@ do icel = 1, ncel
 !         et des termes T^4 et de T^3
 !         a partir de la valeur moyenne (si rayonnement)
 
-      propce(icel,ipckab) = u + v*fm(icel)
-      propce(icel,ipct4) = a**4                                   &
-       + (4.d0*(a**3)*b      ) * fm(icel)                         &
-       + (6.d0*(a**2)*(b**2) ) * fm(icel)**2                      &
-       + (4.d0*a     *(b**3) ) * fm(icel)**3                      &
-       + (            (b**4) ) * fm(icel)**4
+      propce(iel,ipckab) = u + v*fm
+      propce(iel,ipct4) = a**4                                   &
+       + (4.d0*(a**3)*b      ) * fm                              &
+       + (6.d0*(a**2)*(b**2) ) * fm**2                           &
+       + (4.d0*a     *(b**3) ) * fm**3                           &
+       + (            (b**4) ) * fm**4
 
-      propce(icel,ipct3) = a**3                                   &
-       + ( 3.d0*(a**2)*b      ) * fm(icel)                        &
-       + ( 3.d0*a     *(b**2) ) * fm(icel)**2                     &
-       + (             (b**3) ) * fm(icel)**3
+      propce(iel,ipct3) = a**3                                   &
+       + ( 3.d0*(a**2)*b      ) * fm                             &
+       + ( 3.d0*a     *(b**2) ) * fm**2                          &
+       + (             (b**3) ) * fm**3
 
     endif
 
 ! ----- Calcul du terme Temperature/masse molaire
 
-    temsmm = a*c +(c*b+a*d)*fm(icel) + b*d*fm(icel)**2
+    temsmm = a*c +(c*b+a*d)*fm + b*d*fm**2
+
+    ! Weakly compressible algorithm: derivative
+    if (idilat.eq.4) then
+      dtsmdf   = (c*b+a*d) + 2.d0*b*d*fm
+      dtsmdfp2 = 0.d0
+
+      if (ippmod(icod3p).eq.1) then
+
+        ! d(T/M)dHs = d(T/M)dA*dAdHs + d(T/M)dB*dBdHs
+        dadhs = (aa2-aa1)/(hh(ih+1)-hh(ih))                              &
+              - (bb2-bb1)/(hh(ih+1)-hh(ih))*ff(if)
+        dbdhs = (bb2-bb1)/(hh(ih+1)-hh(ih))
+
+        dtsmdhs = (c + d * fm) * ( dadhs + fm * dbdhs )
+
+        if (fm.le.fsir) then
+          cotshs = fm/fsir
+        else
+          cotshs = (1.d0-fm)/(1.d0-fsir)
+        endif
+
+      endif
+
+    endif
 
   endif
 
 ! ---> Calcul de la masse volumique
 
   if (ipass.gt.1.or.(isuite.eq.1.and.initro.eq.1)) then
-    propce(icel,ipcrom) = srrom*propce(icel,ipcrom)               &
-                        + (1.d0-srrom)*                           &
+    propce(iel,ipcrom) = srrom*propce(iel,ipcrom)               &
+                        + (1.d0-srrom)*                         &
                         ( p0/(rr*temsmm) )
+  endif
+
+  ! Weakly compressible algorithm: Derivative calculation of pdf parameters
+  if (idilat.eq.4) then
+
+    ! dD0df, dD0df"2,
+    ! dD1df, dD1df"2,
+    ! df0df, df0df"2,
+    ! df1df, df1df"2,
+    ! dhrecdf,dhrecdf"2
+
+    df1df     = 0.d0
+    df1dfp2   = 0.d0
+    df2df     = 0.d0
+    df2dfp2   = 0.d0
+    dd1df     = 0.d0
+    dd1dfp2   = 0.d0
+    dd2df     = 0.d0
+    dd2dfp2   = 0.d0
+    dhrecdf   = 0.d0
+    dhrecdfp2 = 0.d0
+
+    if (indpdf(iel).eq.1) then
+
+      if (tpdf(iel).eq.1.d0) then
+
+        df1df = 1.d0
+        df1dfp2 = -3.d0/(2.d0*sqrt(3.d0*fp2m))
+
+        df2df = 1.d0
+        df2dfp2 = 3.d0/(2.d0*sqrt(3.d0*fp2m))
+
+      elseif (tpdf(iel).eq.2.d0) then
+
+        df2df = 3.d0/2.d0*(fm**2-fp2m)/fm**2
+        df2dfp2 = 3.d0/(2.d0*fm)
+
+        dd1df = -8.d0/3.d0*fm*fp2m/(fp2m+fm**2)**2
+        dd1dfp2 = 4.d0/3.d0*fm**2/(fp2m+fm**2)**2
+
+      elseif (tpdf(iel).eq.3.d0) then
+
+        df1df = 3.d0/2.d0*(1.d0-2.d0*fm+fm**2-fp2m)/(fm-1.d0)**2
+        df1dfp2 = 3.d0/(2.d0*(fm-1.d0))
+
+        dd2df = 8.d0/3.d0*(fp2m*(1.d0-fm))/((1.d0-fm)**2+fp2m)**2
+        dd2dfp2 = 4.d0/3.d0*(1.d0-fm)**2/((1.d0-fm)**2+fp2m)**2
+
+      elseif (tpdf(iel).eq.4.d0) then
+
+        dd1df = 6.d0*fm-4.d0
+        dd1dfp2 = 3.d0
+
+        dd2df = 6.d0*fm-2.d0
+        dd2dfp2 = 3.d0
+
+      endif
+
+      dhrecdf = - 1.d0/(ffin(iel)-fdeb(iel))*dd1df                      &
+                - 1.d0/(ffin(iel)-fdeb(iel))*dd2df                      &
+                + (1.d0-dirmin(iel)-dirmax(iel))*df1df                  &
+                   /(ffin(iel)-fdeb(iel))**2                            &
+                - (1.d0-dirmin(iel)-dirmax(iel))*df2df                  &
+                   /(ffin(iel)-fdeb(iel))**2
+
+      dhrecdfp2 = - 1.d0/(ffin(iel)-fdeb(iel))*dd1dfp2                  &
+                  - 1.d0/(ffin(iel)-fdeb(iel))*dd2dfp2                  &
+                  + (1.d0-dirmin(iel)-dirmax(iel))*df1dfp2              &
+                    /(ffin(iel)-fdeb(iel))**2                           &
+                  - (1.d0-dirmin(iel)-dirmax(iel))*df2dfp2              &
+                    /(ffin(iel)-fdeb(iel))**2
+
+     ! Calculation of d(T/MM)/df, d(T/MM)/df"2, d(T/MM)/dH = 1/(M*Cp) = (C+Df)/Cp
+
+      dtsmdf =   dtsmdd1 * dd1df + dtsmdd2 * dd2df                      &
+               + dtsmdf1 * df1df + dtsmdf2 * df2df                      &
+               + dtsmdhrec * dhrecdf
+
+      dtsmdfp2 =   dtsmdd1 * dd1dfp2 + dtsmdd2 * dd2dfp2                &
+                 + dtsmdf1 * df1dfp2 + dtsmdf2 * df2dfp2                &
+                 + dtsmdhrec * dhrecdfp2
+
+    endif
+
+    ! Scalar contribution is computed and add to the total source term
+    propce(iel,iptsro) =                                                &
+           (-rr/p0 * dtsmdf)   * propce(iel,ipproc(iustdy(ifm)))        &
+         + (-rr/p0 * dtsmdfp2) * propce(iel,ipproc(iustdy(ifp2m)))
+
+    if( ippmod(icod3p).eq.1 ) then
+    propce(iel,iptsro) = propce(iel,iptsro)                             &
+         + (-rr/p0 * dtsmdhs)  * propce(iel,ipproc(iustdy(ihm)))
+
+      if( iirayo.ge.1 .and. abs(cotshs).gt.epzero ) then
+        propce(iel,iptsro) = propce(iel,iptsro)                         &
+        + (-rr/p0 * dtsmdhs) / cotshs                                   &
+                   * propce(iel,ipproc(itsre(1)))*volume(iel)
+      endif
+    endif
+
+    ! D(rho)/Dt = 1/rho d(rho)/dz Diff(z) = -rho d(1/rho)/dz Diff(z)
+    ! iptsro contains -d(1/rho)/dz Diff(z) > x rho
+    propce(iel,iptsro) = propce(iel,iptsro) * propce(iel,ipcrom)
+
+    ! arrays are re-initialize for source terms of next time step
+    propce(iel,ipproc(iustdy(ifm  ))) = 0.d0
+    propce(iel,ipproc(iustdy(ifp2m))) = 0.d0
+    ! array fo ihm is used to store enthalpy gap from adiabatic Hs
+    ! to compute its diffusive term in tridim
+    if (ippmod(icod3p).ge.1) propce(iel,ipproc(iustdy(ihm  ))) = w1(iel)
+
   endif
 
 enddo

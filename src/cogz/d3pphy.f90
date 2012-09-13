@@ -111,7 +111,7 @@ integer, allocatable, dimension(:) :: indpdf
 
 double precision, allocatable, dimension(:) :: dirmin, dirmax
 double precision, allocatable, dimension(:) :: fdeb, ffin
-double precision, allocatable, dimension(:) :: hrec
+double precision, allocatable, dimension(:) :: hrec, tpdf
 double precision, allocatable, dimension(:) :: w1, w2
 
 integer       ipass
@@ -132,7 +132,7 @@ ipass = ipass + 1
 ! Allocate temporary arrays
 allocate(dirmin(ncelet), dirmax(ncelet))
 allocate(fdeb(ncelet), ffin(ncelet))
-allocate(hrec(ncelet))
+allocate(hrec(ncelet), tpdf(ncelet))
 
 ! Allocate temporary arrays
 allocate(w1(ncelet), w2(ncelet))
@@ -260,10 +260,10 @@ enddo
 
 call pppdfr &
 !==========
- ( ncelet, ncel, indpdf ,                                         &
-   rtp(1,isca(ifm)), rtp(1,isca(ifp2m)),                          &
-   w1, w2,                                                        &
-   dirmin, dirmax, fdeb, ffin, hrec )
+ ( ncelet, ncel  , indpdf, tpdf,                           &
+   rtp(1,isca(ifm))      , rtp(1,isca(ifp2m)),             &
+   w1    , w2    ,                                         &
+   dirmin, dirmax, fdeb  , ffin, hrec )
 
 
 
@@ -276,27 +276,11 @@ call pppdfr &
 !    Ces variables d'etat sont dans PROPCE
 !===============================================================================
 
-if ( ippmod(icod3p).eq.1 ) then
-
-  call d3pint &
-  !==========
- ( ncelet , ncel , indpdf ,                                       &
-   dirmin,dirmax,fdeb,ffin,hrec,                                  &
-   rtp(1,isca(ifm)),rtp(1,isca(ihm)),rtp(1,ipr),                  &
-   propce,                                                        &
-   w1 )
-
-else
-
-  call d3pint &
-  !==========
- ( ncelet , ncel , indpdf ,                                       &
-   dirmin,dirmax,fdeb,ffin,hrec,                                  &
-   rtp(1,isca(ifm)),w2,rtp(1,ipr),                                &
-   propce,                                                        &
-   w1 )
-
-endif
+call d3pint &
+!==========
+ ( indpdf ,                                                       &
+   dirmin , dirmax , fdeb   , ffin , hrec , tpdf ,                &
+   rtp    , propce , w1 )
 
 ! Free memory
 deallocate(indpdf)
@@ -369,7 +353,7 @@ endif
 ! Free memory
 deallocate(dirmin, dirmax)
 deallocate(fdeb, ffin)
-deallocate(hrec)
+deallocate(hrec, tpdf)
 deallocate(w1, w2)
 
 !===============================================================================

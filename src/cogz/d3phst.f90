@@ -91,7 +91,7 @@ double precision fm(ncelet), hm(ncelet), hstoe(ncelet)
 
 ! Local variables
 
-integer          icel
+integer          iel
 double precision fsir, hhh, hct, f1, f2
 double precision epsi
 
@@ -114,20 +114,20 @@ hsmin = grand
 hsmax =-grand
 
 
-do icel = 1, ncel
+do iel = 1, ncel
 
-  if ( indpdf(icel) .eq. 0 ) then
+  if ( indpdf(iel) .eq. 0 ) then
 
 !===============================================================================
 ! 1. DETERMINATION DE HSTOE SANS INTEGRATION
 !===============================================================================
 
-    if ( fm(icel).le.fsir .and. fm(icel).gt.epsi ) then
-      hstoe(icel) = ( fsir*hm(icel)+(fm(icel)-fsir)*hinoxy )      &
-                  / fm(icel)
-    elseif( fm(icel).lt.(1.d0-epsi) ) then
-      hstoe(icel) = ((1.d0-fsir)*hm(icel)+(fsir-fm(icel))*hinfue) &
-                 / (1.d0-fm(icel))
+    if (fm(iel).le.fsir .and. fm(iel).gt.epsi) then
+      hstoe(iel) = (fsir*hm(iel)+(fm(iel)-fsir)*hinoxy)        &
+                  / fm(iel)
+    elseif (fm(iel).lt.(1.d0-epsi)) then
+      hstoe(iel) = ((1.d0-fsir)*hm(iel)+(fsir-fm(iel))*hinfue) &
+                 / (1.d0-fm(iel))
     endif
 
   else
@@ -136,44 +136,44 @@ do icel = 1, ncel
 ! 2. DETERMINATION DE HSTOE AVEC INTEGRATION
 !===============================================================================
 
-    hct = dirmin(icel)*hinoxy+dirmax(icel)*hinfue
+    hct = dirmin(iel)*hinoxy+dirmax(iel)*hinfue
     hhh = 0.d0
-    if ( hrec(icel).gt.epsi ) then
+    if (hrec(iel).gt.epsi) then
 
-      if (fdeb(icel).le.fsir) then
-        f1 = fdeb(icel)
-        f2 = min(fsir,ffin(icel))
-        hct = hct + hrec(icel)*                                   &
+      if (fdeb(iel).le.fsir) then
+        f1 = fdeb(iel)
+        f2 = min(fsir,ffin(iel))
+        hct = hct + hrec(iel)*                                   &
               (f2-f1)*hinoxy*(2.d0*fsir-f1-f2)/(2.d0*fsir)
-        hhh = hhh + hrec(icel)*(f2**2-f1**2)/(2.d0*fsir)
+        hhh = hhh + hrec(iel)*(f2**2-f1**2)/(2.d0*fsir)
       endif
-      if (ffin(icel).gt.fsir) then
-        f1 = max( fsir,fdeb(icel))
-        f2 = ffin(icel)
-        hct = hct + hrec(icel) *                                  &
+      if (ffin(iel).gt.fsir) then
+        f1 = max( fsir,fdeb(iel))
+        f2 = ffin(iel)
+        hct = hct + hrec(iel) *                                  &
              (f2-f1)*hinfue*(f2+f1-2.d0*fsir)/(2.d0*(1.d0-fsir))
         hhh = hhh +                                               &
-              hrec(icel)*(f2-f1)*(2.d0-f1-f2)/(2.d0*(1.d0-fsir))
+              hrec(iel)*(f2-f1)*(2.d0-f1-f2)/(2.d0*(1.d0-fsir))
       endif
-      hstoe(icel) = (hm(icel)-hct)/ hhh
-
-! Clipping a HSTOEA = HH(1)     en max
-! Clipping a HSTOEA = HH(NMAXH) em min
-
-      if ( hstoe(icel) .gt. hh(1) ) then
-        n1 = n1 + 1
-        hsmax = max(hstoe(icel),hsmax)
-        hstoe(icel) = hh(1)
-      endif
-
-      if ( hstoe(icel) .lt. hh(nmaxh) ) then
-        n2 = n2 + 1
-        hsmin = min(hstoe(icel),hsmin)
-        hstoe(icel) = hh(nmaxh)
-      endif
+      hstoe(iel) = (hm(iel)-hct)/ hhh
 
     endif
 
+  endif
+
+  ! Clipping a HSTOEA = HH(1)     en max
+  ! Clipping a HSTOEA = HH(NMAXH) em min
+
+  if (hstoe(iel) .gt. hh(1)) then
+    n1 = n1 + 1
+    hsmax = max(hstoe(iel),hsmax)
+    hstoe(iel) = hh(1)
+  endif
+
+  if (hstoe(iel) .lt. hh(nmaxh)) then
+    n2 = n2 + 1
+    hsmin = min(hstoe(iel),hsmin)
+    hstoe(iel) = hh(nmaxh)
   endif
 
 enddo

@@ -24,6 +24,7 @@ subroutine pppdfr &
 !================
 
  ( ncelet , ncel   , indpdf ,                                     &
+   tpdf   ,                                                       &
    fm     , fp2m   ,                                              &
    fmini  , fmaxi  ,                                              &
    dirmin , dirmax , fdeb   , ffin   , hrec )
@@ -103,6 +104,7 @@ implicit none
 integer          ncelet, ncel
 integer          indpdf(ncelet)
 
+double precision tpdf(ncelet)
 double precision fm(ncelet), fp2m(ncelet)
 double precision fmini(ncelet), fmaxi(ncelet)
 double precision dirmin(ncelet), dirmax(ncelet)
@@ -125,6 +127,7 @@ do iel = 1, ncel
 
   indpdf(iel) = 0
 
+  tpdf  (iel) = 0.d0
   dirmin(iel) = 0.d0
   dirmax(iel) = 0.d0
   fdeb  (iel) = 0.d0
@@ -216,6 +219,8 @@ do iel = 1, ncel
 
 ! --> Rectangle seul
 
+      tpdf  (iel) = 1.d0
+
       hrec(iel)   = sqrt(3.d0*fp2m(iel))
       dirmin(iel) = 0.d0
       dirmax(iel) = 0.d0
@@ -228,6 +233,8 @@ do iel = 1, ncel
       then
 
 ! --> Rectangle et un Dirac en FMINI
+
+      tpdf  (iel) = 2.d0
 
       fdeb(iel)   = fmini(iel)
       dirmax(iel) = 0.d0
@@ -245,6 +252,8 @@ do iel = 1, ncel
 ! --> Rectangle et un Dirac en FMAXI (c'est juste ;
 !                          le HI/81/02/03/A contient une erreur  p 12)
 
+      tpdf  (iel) = 3.d0
+
       ffin(iel)   = fmaxi(iel)
       dirmin(iel) = 0.d0
       fdeb(iel)   = fmini(iel)                                    &
@@ -259,6 +268,8 @@ do iel = 1, ncel
     else
 
 ! --> Rectangle et deux Diracs
+
+      tpdf  (iel) = 4.d0
 
       fdeb(iel)   = fmini(iel)
       ffin(iel)   = fmaxi(iel)
@@ -288,6 +299,9 @@ do iel = 1, ncel
     endif
 
   else
+
+    tpdf  (iel) = 0.d0
+
     dirmin(iel) = 0.d0
     dirmax(iel) = 0.d0
     fdeb(iel)   = 0.d0
