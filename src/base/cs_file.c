@@ -3206,15 +3206,16 @@ cs_file_defaults_info(void)
 
     cs_file_get_default_access(mode, &method, &hints);
 
+#if defined(HAVE_MPI_IO)
     if (method > CS_FILE_STDIO_PARALLEL) {
       have_mpi_io = true;
       bft_printf(_(fmt[mode + 2]),
                  _(cs_file_access_name[method]),
                  _(cs_file_mpi_positionning_name[_mpi_io_positionning]));
     }
-    else
+#endif
+    if (method <= CS_FILE_STDIO_PARALLEL)
       bft_printf(_(fmt[mode]), _(cs_file_access_name[method]));
-
 
 #if MPI_VERSION > 1
 
