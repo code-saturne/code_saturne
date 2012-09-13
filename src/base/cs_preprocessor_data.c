@@ -2010,7 +2010,7 @@ cs_preprocessor_data_add_file(const char     *file_name,
       data_size += _align_size(strlen(group_rename[i*2+1]) + 1);
   }
 
-  /* Allocate data (reallocate mesh file info array f necesary) */
+  /* Allocate data (reallocate mesh file info array if necesary) */
 
   if (_n_max_mesh_files == 0) {
     _n_max_mesh_files = 1;
@@ -2025,7 +2025,7 @@ cs_preprocessor_data_add_file(const char     *file_name,
   f = _mesh_file_info + _n_mesh_files;
   _n_mesh_files += 1;
 
-  /* Setup base structeure fields */
+  /* Setup base structure fields */
 
   f->offset = 0;
   f->data_size = data_size;
