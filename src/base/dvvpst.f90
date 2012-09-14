@@ -500,118 +500,13 @@ else if (numtyp .eq. -2) then
 
       !       Numero de la variable
 
-      iscal  = iscalt
-      ivar   = isca(iscal)
-      iclvar = iclrtp(ivar,icoef)
-      iclvaf = iclrtp(ivar,icoeff)
+      call post_boundary_thermal_flux &
+      !==============================
+        ( nfbrps , lstfbr ,                                              &
+          rtp    , propce , propfb ,                                     &
+          trafbr )
 
-      !       Calcul des valeurs de la variable sur les faces de bord
-
-      !          Reservation de la memoire pour reconstruction
-
-      allocate(treco(nfabor))
-
-      !          Calcul du gradient de la temperature / enthalpie
-
-
-      !      Pour calculer le gradient de Temperature
-      !        - dans les calculs paralleles, il est necessaire que
-      !          les cellules situees sur un bord de sous-domaine connaissent
-      !          la valeur de temperature dans les cellules situees en
-      !          vis-a-vis sur le sous-domaine voisin.
-      !        - dans les calculs periodiques, il est necessaire que
-      !          les cellules periodiques aient acces a la valeur de la
-      !          temperature des cellules periodiques correspondantes
-
-      !      Pour cela, il est necessaire d'appeler les routines de
-      !        de synchronisation des halos pour echanger les valeurs de temperature
-      !        avant de calculer le gradient.
-      !      En effet, on se situe ici a la fin du pas de temps n. Or,
-      !        les variables RTP ne seront echangees qu'en debut du pas de
-      !        temps n+1. Ici, seules les variables RTPA (obtenues a la fin
-      !        du pas de temps n-1) ont deja ete echangees.
-
-      !      Si le calcul n'est ni periodique, ni parallele, on peut conserver
-      !        appels (les tests sur IPERIO et IRANGP assurent la generalite)
-
-
-      !          Echange pour le parallelisme et la periodicite
-
-      if (irangp.ge.0.or.iperio.eq.1) then
-        call synsca(rtp(1,ivar))
-        !==========
-      endif
-
-      ! Allocate a temporary array for the gradient calculation
-      allocate(grad(ncelet,3))
-
-      !          Calcul du gradient
-
-      inc = 1
-      iccocg = 1
-      nswrgp = nswrgr(ivar)
-      imligp = imligr(ivar)
-      iwarnp = iwarni(ivar)
-      epsrgp = epsrgr(ivar)
-      climgp = climgr(ivar)
-      extrap = extrag(ivar)
-
-      call grdcel &
-      !==========
- ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , nfecra ,                                              &
-   epsrgp , climgp , extrap ,                                     &
-   rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
-   grad   )
-
-      !          Calcul de la valeur reconstruite dans les cellules de bord
-
-      do ifac = 1, nfabor
-        iel = ifabor(ifac)
-        diipbx = diipb(1,ifac)
-        diipby = diipb(2,ifac)
-        diipbz = diipb(3,ifac)
-        treco(ifac) = rtp(iel,ivar)                        &
-             + diipbx*grad(iel,1)                          &
-             + diipby*grad(iel,2)                          &
-             + diipbz*grad(iel,3)
-      enddo
-
-      deallocate(grad)
-
-      ! Calcul du flux convectif et diffusif
-
-      if (ivisls(iscal).gt.0) then
-        ipcvsl = ipproc(ivisls(iscal))
-      else
-        ipcvsl = 0
-      endif
-      ipcvst = ipproc(ivisct)
-      iflmab = ipprob(ifluma(ivar))
-
-      do iloc = 1, nfbrps
-        ifac = lstfbr(iloc)
-        iel = ifabor(ifac)
-
-        if (ipcvsl.gt.0) then
-          xvsl = propce(iel,ipcvsl)
-        else
-          xvsl = visls0(iscal)
-        endif
-        srfbn = max(surfbn(ifac), epzero**2)
-        visct  = propce(iel,ipcvst)
-        flumab = propfb(ifac,iflmab)
-
-        trafbr(1 + (iloc-1)*idimt) =                                   &
-             (coefa(ifac,iclvaf) + coefb(ifac,iclvaf)*treco(ifac))     &
-             - flumab/srfbn*                                           &
-             (coefa(ifac,iclvar) + coefb(ifac,iclvar)*treco(ifac))
-
-      enddo
-
-      deallocate(treco)
-
-      !             Valeurs entrelacées, définies sur tableau de travail
+      ! interleaved values, defined on work array
       ientla = 1
       ivarpr = 0
 
@@ -632,32 +527,28 @@ else if (numtyp .eq. -2) then
 
 !       Initialisation
     do ii = 1, 32
-      NAMEVR (II:II) = ' '
+      namevr (ii:ii) = ' '
     enddo
 
 !       Nom de la variable
-    NAMEVR = 'Efforts'
+    namevr = 'Efforts'
 
 !       Dimension de la variable (3 = vecteur, 1=scalaire)
     idimt = 3
 
 !       Calcul des valeurs de la variable sur les faces de bord
 
-    do iloc = 1, nfbrps
-      ifac = lstfbr(iloc)
-      srfbn = surfbn(ifac)
-      trafbr(1 + (iloc-1)*idimt ) = forbr(1,ifac)/srfbn
-      trafbr(2 + (iloc-1)*idimt ) = forbr(2,ifac)/srfbn
-      trafbr(3 + (iloc-1)*idimt ) = forbr(3,ifac)/srfbn
-    enddo
+    call post_efforts (nfbrps, lstfbr, trafbr)
+    !================
 
-!           Valeurs entrelacées, définies sur tableau de travail
-      ientla = 1
-      ivarpr = 0
+    ! interleaved values, defined on work array
 
-      call psteva(nummai, namevr, idimt, ientla, ivarpr,          &
-      !==========
-                  ntcabs, ttcabs, rbid, rbid, trafbr)
+    ientla = 1
+    ivarpr = 0
+
+    call psteva(nummai, namevr, idimt, ientla, ivarpr,          &
+    !==========
+                ntcabs, ttcabs, rbid, rbid, trafbr)
 
   endif
 ! fin du test sur sortie des efforts
