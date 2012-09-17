@@ -3205,12 +3205,10 @@ cs_io_write_global(const char     *sec_name,
                                       cs_datatype_size[elt_type],
                                       n_vals);
 
-#if !defined(__bgq__)
     if (n_vals != (cs_gnum_t)n_written)
       bft_error(__FILE__, __LINE__, 0,
                 _("Error writing %llu bytes to file \"%s\"."),
                 (unsigned long long)n_vals, cs_file_get_name(outp->f));
-#endif
 
     if (log != NULL) {
       double t_end = cs_timer_wtime();
@@ -3304,12 +3302,10 @@ cs_io_write_block(const char     *sec_name,
                                   global_num_start,
                                   global_num_end);
 
-# if !defined(__bgq__) /* Work around BG/Q XL compiler bug */
   if (n_vals != (cs_gnum_t)n_written)
     bft_error(__FILE__, __LINE__, 0,
               _("Error writing %llu bytes to file \"%s\"."),
               (unsigned long long)n_vals, cs_file_get_name(outp->f));
-#endif
 
   if (log != NULL) {
     double t_end = cs_timer_wtime();
@@ -3407,12 +3403,10 @@ cs_io_write_block_buffer(const char     *sec_name,
                                           global_num_start,
                                           global_num_end);
 
-# if !defined(__bgq__) /* Work around BG/Q XL compiler bug */
   if (n_vals != (cs_gnum_t)n_written)
     bft_error(__FILE__, __LINE__, 0,
               _("Error writing %llu bytes to file \"%s\"."),
               (unsigned long long)n_vals, cs_file_get_name(outp->f));
-#endif
 
   if (log != NULL) {
     double t_end = cs_timer_wtime();
