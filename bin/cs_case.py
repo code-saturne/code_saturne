@@ -902,7 +902,7 @@ fi
             cs_exec_environment.write_prepend_path(s, 'PATH',
                 self.package_compute.mpi_bindir)
         if len(self.package_compute.mpi_libdir) > 0:
-            cs_exec_environment.write_preprend_path(s, 'LD_LIBRARY_PATH',
+            cs_exec_environment.write_prepend_path(s, 'LD_LIBRARY_PATH',
                 self.package_compute.mpi_libdir)
         s.write('\n')
 
@@ -1118,11 +1118,11 @@ fi
 
         if len(self.domains) == 1 and len(self.syr_domains) == 0:
             d = self.domains[0]
-            try:
-                d.define_mpi_environment(exec_env.mpi_env)
-                del(self.domains[0].define_mpi_environment)
-            except AttributeError:
-                pass
+            if d.user_locals:
+                m = 'define_mpi_environment'
+                if m in d.user_locals.keys():
+                    eval(m + '(exec_env.mpi_env)', locals(), d.user_locals)
+                    del d.user_locals[m]
 
         # Compute number of processors
 
@@ -1419,9 +1419,12 @@ fi
 
             if hasattr(d, 'case_scratchdir'):
                 scratchdir = d.case_scratchdir
-            if hasattr(d, 'define_case_parameters'):
-                d.define_case_parameters(self)
-                del(self.domains[0].define_case_parameters)
+
+            if d.user_locals:
+                m = 'define_case_parameters'
+                if m in d.user_locals.keys():
+                    eval(m + '(self)', globals(), d.user_locals)
+                    del d.user_locals[m]
                 if hasattr(self, 'scratchdir'):
                     scratchdir = self.scratchdir
                     del(self.scratchdir)

@@ -118,6 +118,9 @@ class Parser:
         if fileName == None:
             return
 
+        if not os.path.isfile(fileName):
+            raise XMLError('XML file: ' + fileName + ' not found')
+
         try:
             self.doc = minidom.parse(fileName)
         except Exception:

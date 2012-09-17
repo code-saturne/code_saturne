@@ -147,6 +147,10 @@ istpp1 = 0
 !--> Probes output tracking
 ttchis = -1.d0
 
+!  Test presence of ficstp to modify ntmabs if required
+call modpar(ntcabs, ntmabs)
+!==========
+
 !===============================================================================
 ! Geometry
 !===============================================================================
@@ -758,7 +762,7 @@ endif
 !===============================================================================
 
 !  Test presence of ficstp to modify ntmabs if required
-call modpar(ntcabs,ntmabs)
+call modpar(ntcabs, ntmabs)
 !==========
 
 call dmtmps(titer1)

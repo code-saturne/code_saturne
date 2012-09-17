@@ -25,21 +25,99 @@
 import os
 
 #===============================================================================
+# Local functions
+#===============================================================================
+
+def domain_auto_restart(domain, n_add):
+    """
+    Select latest valid checkpoint for restart, and
+    create ficstp file to add n_add time steps.
+    """
+
+    from cs_exec_environment import get_command_output
+
+    results_dir = os.path.abspath(os.path.join(self.result_dir, '..'))
+    results = os.listdir(results_dir)
+    results.sort(reverse=True)
+    for r in results:
+        m = os.path.join(results_dir, r, 'checkpoint', 'main')
+        if os.path.isfile(m):
+            try:
+                cmd = self.package.get_io_dump()
+                cmd += ' --section nbre_pas_de_temps --extract ' + m
+                res = get_command_output(cmd)
+                n_steps = int(get_command_output(cmd))
+            except Exception:
+                print('checkpoint of result: ' + r + ' does not seem usable')
+                continue
+            info_line = 'Restart from iterations ' + str(n_steps)
+            n_steps += n_add
+            info_line += ' to ' + str(n_steps)
+            print(info_line)
+            f = open(os.path.join(self.exec_dir, 'ficstp'), 'w')
+            l = ['#Target number of time steps, determined by script\n',
+                 str(n_steps)]
+            f.writelines(l)
+            f.close()
+            domain.restart_input = os.path.join('RESU',
+                                                r,
+                                                'checkpoint')
+            print('using ' + domain.restart_input)
+            break
+
+    return
+
+#===============================================================================
 # Defining parameters for a calculation domain
 #===============================================================================
 
-def define_domain_parameter_file(domain):
-    """Define the associated parameters file name"""
+def domain_prepare_data_add(domain):
+    """
+    Additional steps to prepare data
+    (called in data preparation stage, between copy of files
+    in DATA and copy of link of restart files as defined by domain).
+    """
+
+    # Example: select latest valid checkpoint file for restart
 
     if False:
-        domain.param = 'param2.xml'
+        domain_auto_restart(domain, 200)
+
+    return
+
+#-------------------------------------------------------------------------------
+
+def domain_copy_results_add(domain):
+    """
+    Additional steps to copy results or cleanup execution directory
+    (called at beginning of data copy stage).
+    """
+
+    # Example: clean some temporary files
+
+    if False:
+        import fnmatch
+        dir_files = os.listdir(self.exec_dir)
+        tmp_files = (fnmatch.filter(dir_files, '*.tmp')
+                     + fnmatch.filter(dir_files, '*.fort'))
+        for f in tmp_files:
+            os.remove(os.path.join(self.exec_dir, f))
 
     return
 
 #-------------------------------------------------------------------------------
 
 def define_domain_parameters(domain):
-    """Define domain execution parameters"""
+    """
+    Define domain execution parameters.
+    """
+
+    # Read parameters file
+    # (already done just prior to this stage when
+    # running script with --param option)
+
+    if False:
+        domain.read_parameter_file('param2.xml')
 
     # Reusing output from previous runs
     #----------------------------------
@@ -137,7 +215,9 @@ def define_domain_parameters(domain):
 #-------------------------------------------------------------------------------
 
 def define_case_parameters(case):
-    """Define global case execution parameters"""
+    """
+    Define global case execution parameters.
+    """
 
     # The parameters defined here apply for the whole calculation.
     # In case of coupled calculations with multiple domains,
@@ -179,7 +259,9 @@ def define_case_parameters(case):
 #-------------------------------------------------------------------------------
 
 def define_mpi_environment(mpi_env):
-    """Redefine global MPI execution command parameters"""
+    """
+    Redefine global MPI execution command parameters.
+    """
 
     # The parameters defined here apply for the whole calculation.
     # In case of coupled calculations with multiple domains,

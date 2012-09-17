@@ -99,6 +99,10 @@ class base_domain:
 
         self.package = package
 
+        # User functions
+
+        self.user = {}
+
         # Names, directories, and files in case structure
 
         self.case_dir = None
@@ -383,6 +387,25 @@ class domain(base_domain):
 
     #---------------------------------------------------------------------------
 
+    def read_parameter_file(self, param):
+        """
+        Parse the optional XML parameter file.
+        """
+
+        if param != None:
+            root_str = self.package.code_name + '_GUI'
+            version_str = '2.0'
+            P = cs_xml_reader.Parser(os.path.join(self.data_dir, param),
+                                     root_str = root_str,
+                                     version_str = version_str)
+            params = P.getParams()
+            for k in list(params.keys()):
+                self.__dict__[k] = params[k]
+
+            self.param = param
+
+    #---------------------------------------------------------------------------
+
     def set_case_dir(self, case_dir):
 
         # Names, directories, and files in case structure
@@ -391,55 +414,31 @@ class domain(base_domain):
 
         # We may now import user python script functions if present.
 
+        self.user_locals = None
+
         user_scripts = os.path.join(self.data_dir, 'cs_user_scripts.py')
         if os.path.isfile(user_scripts):
-
-            sys.path.insert(0, self.data_dir)
-            import cs_user_scripts
-            reload(cs_user_scripts) # In case of multiple domains
-            sys.path.pop(0)
-
             try:
-                cs_user_scripts.define_domain_parameter_file(self)
-                del cs_user_scripts.define_domain_parameter_file
-            except AttributeError:
-                pass
-
-            try:
-                self.define_case_parameters \
-                    = cs_user_scripts.define_case_parameters
-                del cs_user_scripts.define_case_parameters
-            except AttributeError:
-                pass
-
-            try:
-                self.define_mpi_environment \
-                    = cs_user_scripts.define_mpi_environment
-                del cs_user_scripts.define_mpi_environment
-            except AttributeError:
-                pass
+                exec(compile(open(user_scripts).read(), user_scripts, 'exec'),
+                     locals(),
+                     locals())
+                self.user_locals = locals()
+            except Exception:
+                execfile(user_scripts, locals(), locals())
+                self.user_locals = locals()
 
         # We may now parse the optional XML parameter file
         # now that its path may be built and checked.
 
-        if self.param != None:
-            root_str = self.package.code_name + '_GUI'
-            version_str = '2.0'
-            P = cs_xml_reader.Parser(os.path.join(self.data_dir, self.param),
-                                     root_str = root_str,
-                                     version_str = version_str)
-            params = P.getParams()
-            for k in list(params.keys()):
-                self.__dict__[k] = params[k]
+        self.read_parameter_file(self.param)
 
         # Now override or complete data from the XML file.
 
-        if os.path.isfile(user_scripts):
-            try:
-                cs_user_scripts.define_domain_parameters(self)
-                del cs_user_scripts.define_domain_parameters
-            except AttributeError:
-                pass
+        if self.user_locals:
+            m = 'define_domain_parameters'
+            if m in self.user_locals.keys():
+                eval(m + '(self)', globals(), self.user_locals)
+                del self.user_locals[m]
 
         # Finally, ensure some fields are of the required types
 
@@ -608,6 +607,14 @@ class domain(base_domain):
             if os.path.isfile(src):
                 shutil.copy2(src,
                              os.path.join(self.exec_dir, f))
+
+        # Call user script if necessary
+
+        if self.user_locals:
+            m = 'domain_prepare_data_add'
+            if m in self.user_locals.keys():
+                eval(m + '(self)', globals(), self.user_locals)
+                del self.user_locals[m]
 
         # Restart files
 
@@ -863,8 +870,13 @@ class domain(base_domain):
         Retrieve solver results from the execution directory
         """
 
-        if not self.exec_solver:
-            return
+        # Call user script
+
+        if self.user_locals:
+            m = 'domain_copy_results_add'
+            if m in self.user_locals.keys():
+                eval(m + '(self)', globals(), self.user_locals)
+                del self.user_locals[m]
 
         # Determine all files present in execution directory
 
