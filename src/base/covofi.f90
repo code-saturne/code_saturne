@@ -523,21 +523,57 @@ if (itspdv.eq.1) then
       ! On prend la viscosite a l'instant n, meme si elle est extrapolee
       ipcvso = ipcvst
       if(iviext.gt.0) ipcvso = ipproc(ivista)
-      do iel = 1, ncel
-        propce(iel,iptsca) = propce(iel,iptsca)                   &
-             + 2.d0*max(propce(iel,ipcvso),zero)                  &
-             *volume(iel)/sigmas(iscal)                           &
-             *(grad(iel,1)**2 + grad(iel,2)**2 + grad(iel,3)**2)
-      enddo
+
+      ! Variance of the thermal scalar with modelized turbulent fluxes
+      if ((iscavr(iscal).eq.iscalt).and.(ityturt.ge.0.and.ityturt.lt.3)) then
+        do iel = 1, ncel
+          propce(iel,iptsca) = propce(iel,iptsca) -2.d0*volume(iel) &
+                             *(propce(iel,ipproc(iut))*grad(iel,1)  &
+                              +propce(iel,ipproc(ivt))*grad(iel,2)  &
+                              +propce(iel,ipproc(iwt))*grad(iel,3) )
+        enddo
+      ! Variance of the thermal scalar with a transport equation
+      ! on the turbulent fluxes
+      elseif ((iscavr(iscal).eq.iscalt).and.(ityturt.eq.3)) then
+        do iel = 1, ncel
+          propce(iel,iptsca) = propce(iel,iptsca) -2.d0*volume(iel)  &
+                             *(rtpa(iel,iut)*grad(iel,1)             &
+                              +rtpa(iel,ivt)*grad(iel,2)             &
+                              +rtpa(iel,iwt)*grad(iel,3) )
+        enddo
+      else
+        do iel = 1, ncel
+          propce(iel,iptsca) = propce(iel,iptsca)                   &
+               + 2.d0*max(propce(iel,ipcvso),zero)                  &
+               *volume(iel)/sigmas(iscal)                           &
+               *(grad(iel,1)**2 + grad(iel,2)**2 + grad(iel,3)**2)
+        enddo
+      endif
     ! Sinon : dans SMBRS
     else
       ipcvso = ipcvst
-      do iel = 1, ncel
-        smbrs(iel) = smbrs(iel)                                   &
-             + 2.d0*max(propce(iel,ipcvso),zero)                  &
-             *volume(iel)/sigmas(iscal)                           &
-             *(grad(iel,1)**2 + grad(iel,2)**2 + grad(iel,3)**2)
-      enddo
+      if ((iscavr(iscal).eq.iscalt).and.(ityturt.ge.0.and.ityturt.lt.3)) then
+        do iel = 1, ncel
+          smbrs(iel) = smbrs(iel) -2.d0*volume(iel)         &
+                     *(propce(iel,ipproc(iut))*grad(iel,1)  &
+                      +propce(iel,ipproc(ivt))*grad(iel,2)  &
+                      +propce(iel,ipproc(iwt))*grad(iel,3) )
+        enddo
+      elseif ((iscavr(iscal).eq.iscalt).and.(ityturt.eq.3)) then
+        do iel = 1, ncel
+          smbrs(iel) = smbrs(iel) -2.d0*volume(iel)          &
+                     *(rtpa(iel,iut)*grad(iel,1)             &
+                      +rtpa(iel,ivt)*grad(iel,2)             &
+                      +rtpa(iel,iwt)*grad(iel,3) )
+        enddo
+      else
+        do iel = 1, ncel
+          smbrs(iel) = smbrs(iel)                                   &
+               + 2.d0*max(propce(iel,ipcvso),zero)                  &
+               *volume(iel)/sigmas(iscal)                           &
+               *(grad(iel,1)**2 + grad(iel,2)**2 + grad(iel,3)**2)
+        enddo
+      endif
       ! Production term for a variance  TODO compute ustdy when isso2t >0
       if (idilat.eq.4) then
         do iel = 1, ncel
@@ -612,7 +648,6 @@ idftnp = idften(ivar)
 ! MAX(K + K_t,0) mais cela autoriserait des K_t negatif, ce qui est
 ! considere ici comme non physique.
 if(idiff(ivar).ge.1) then
-
   ! Scalar diffusivity
   if (idftnp.eq.1) then
     if (ipcvsl.eq.0) then
@@ -633,7 +668,7 @@ if(idiff(ivar).ge.1) then
      w1     ,                      &
      viscf  , viscb  )
 
-  ! Symmetric tensor diffusivity
+  ! Symmetric tensor diffusivity (GGDH)
   elseif (idftnp.eq.6) then
 
     ! Allocate temporary arrays
@@ -645,28 +680,28 @@ if(idiff(ivar).ge.1) then
       do iel = 1, ncel
 
         viscce(1,iel) = visls0(iscal)                                      &
-                      + idifft(ivar)*xcpp(iel)*visten(1,iel)/sigmas(iscal)
+                      + idifft(ivar)*xcpp(iel)*visten(1,iel)*ctheta(iscal)
         viscce(2,iel) = visls0(iscal)                                      &
-                      + idifft(ivar)*xcpp(iel)*visten(2,iel)/sigmas(iscal)
+                      + idifft(ivar)*xcpp(iel)*visten(2,iel)*ctheta(iscal)
         viscce(3,iel) = visls0(iscal)                                      &
-                      + idifft(ivar)*xcpp(iel)*visten(3,iel)/sigmas(iscal)
-        viscce(4,iel) = idifft(ivar)*xcpp(iel)*visten(4,iel)/sigmas(iscal)
-        viscce(5,iel) = idifft(ivar)*xcpp(iel)*visten(5,iel)/sigmas(iscal)
-        viscce(6,iel) = idifft(ivar)*xcpp(iel)*visten(6,iel)/sigmas(iscal)
+                      + idifft(ivar)*xcpp(iel)*visten(3,iel)*ctheta(iscal)
+        viscce(4,iel) = idifft(ivar)*xcpp(iel)*visten(4,iel)*ctheta(iscal)
+        viscce(5,iel) = idifft(ivar)*xcpp(iel)*visten(5,iel)*ctheta(iscal)
+        viscce(6,iel) = idifft(ivar)*xcpp(iel)*visten(6,iel)*ctheta(iscal)
 
       enddo
     else
       do iel = 1, ncel
 
         viscce(1,iel) = propce(iel,ipcvsl)                                 &
-                      + idifft(ivar)*xcpp(iel)*visten(1,iel)/sigmas(iscal)
+                      + idifft(ivar)*xcpp(iel)*visten(1,iel)*ctheta(iscal)
         viscce(2,iel) = propce(iel,ipcvsl)                                 &
-                      + idifft(ivar)*xcpp(iel)*visten(2,iel)/sigmas(iscal)
+                      + idifft(ivar)*xcpp(iel)*visten(2,iel)*ctheta(iscal)
         viscce(3,iel) = propce(iel,ipcvsl)                                 &
-                      + idifft(ivar)*xcpp(iel)*visten(3,iel)/sigmas(iscal)
-        viscce(4,iel) = idifft(ivar)*xcpp(iel)*visten(4,iel)/sigmas(iscal)
-        viscce(5,iel) = idifft(ivar)*xcpp(iel)*visten(5,iel)/sigmas(iscal)
-        viscce(6,iel) = idifft(ivar)*xcpp(iel)*visten(6,iel)/sigmas(iscal)
+                      + idifft(ivar)*xcpp(iel)*visten(3,iel)*ctheta(iscal)
+        viscce(4,iel) = idifft(ivar)*xcpp(iel)*visten(4,iel)*ctheta(iscal)
+        viscce(5,iel) = idifft(ivar)*xcpp(iel)*visten(5,iel)*ctheta(iscal)
+        viscce(6,iel) = idifft(ivar)*xcpp(iel)*visten(6,iel)*ctheta(iscal)
 
       enddo
     endif
@@ -679,6 +714,20 @@ if(idiff(ivar).ge.1) then
      viscce , iwarnp ,             &
      weighf , weighb ,             &
      viscf  , viscb  )
+
+  endif
+
+  ! AFM model or DFM models: add div(T'u') to smbrs
+  if ((ityturt.eq.2.or.ityturt.eq.3).and.iscal.eq.iscalt) then
+
+    call divrit &
+    !==========
+    ( nvar   , nscal  ,                                              &
+      iscal  , itspdv ,                                              &
+      dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+      coefa  , coefb  ,                                              &
+      xcpp   ,                                                       &
+      smbrs  )
 
   endif
 
@@ -721,7 +770,6 @@ endif
 !===============================================================================
 ! 3. Solving
 !===============================================================================
-
 iconvp = iconv (ivar)
 idiffp = idiff (ivar)
 ireslp = iresol(ivar)

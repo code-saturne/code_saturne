@@ -470,7 +470,7 @@ end subroutine
 
 subroutine usipph &
 !================
- ( ixmlpu, nfecra , iturb , irccor , icp )
+ ( ixmlpu, nfecra , iturb , iturbt , irccor , icp )
 
 
 !===============================================================================
@@ -489,6 +489,7 @@ subroutine usipph &
 ! nfecra           ! i  ! <-- ! Fortran unit number for standard output        !
 ! iturb            ! ia ! <-> ! turbulence model                               !
 ! irccor           ! ia ! <-> ! flag for rotation/curvature correction or not  !
+! iturbt           ! ia ! <-> ! turbulent flux model for a scalar              !
 ! icp              ! ia ! <-> ! flag for uniform Cp or not                     !
 !__________________!____!_____!________________________________________________!
 
@@ -511,7 +512,7 @@ implicit none
 ! Arguments
 
 integer ixmlpu, nfecra
-integer iturb, irccor, icp
+integer iturb, iturbt, irccor, icp
 
 ! Local variables
 
@@ -607,6 +608,20 @@ if (.false.) then
 
   irccor = 1
 
+endif
+
+! --- Turbulent flux model
+!     Algebraic Model
+!      0  SGDH
+!      10 GGDH
+!      20 AFM
+!     Model with transport equations
+!      30 DFM
+
+if (iturb.gt.0) then
+  if (.false.) then
+     iturbt = 10
+  endif
 endif
 
 ! --- Variable specific heat (ICP=1) or not (ICP=0)

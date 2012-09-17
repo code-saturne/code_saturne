@@ -533,7 +533,7 @@ if (iok.eq.1) then
     do iel = 1, ncel
       !FIXME it should be csrij/sigmae instead of crijep
       trrij = 0.5d0*(rtp(iel,ir11)+rtp(iel,ir22)+rtp(iel,ir33))
-      csteps  = propce(iel,ipcrom) * csrij * trrij / rtp(iel,iep)
+      csteps  = propce(iel,ipcrom) * trrij / rtp(iel,iep)
 
       visten(1,iel) = csteps*rtp(iel,ir11)
       visten(2,iel) = csteps*rtp(iel,ir22)
@@ -812,6 +812,12 @@ if (nscal.ge.1) then
       iok = iok + 1
     endif
 
+    if ((iscal.eq.iscalt).and.(irovar.eq.1))then
+      if (propce(iel,ipproc(ibeta)).le.0.d0) then
+        write(nfecra,9013)
+        iok = iok + 1
+      endif
+    endif
   enddo
 
 endif
@@ -1030,6 +1036,25 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
+ 9013  format(                                                    &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@ ATTENTION : ARRET LORS DU CALCUL DES GRANDEURS PHYSIQUES',/,&
+'@    =========',                                               /,&
+'@    INCOHERENCE ENTRE LES PARAMETRES ET LE COEFFICIENT      ',/,&
+'@    de dilatation volumique  Beta                           ',/,&
+'@',                                                            /,&
+'@  On a indique que la masse volumique etait',                 /,&
+'@     variable (IROVAR=1) mais on n a pas modifie ',           /,&
+'@     la valeur de Beta dans l''interface ou dans usphyv',     /,&
+'@',                                                            /,&
+'@  Le calcul ne sera pas execute.',                            /,&
+'@',                                                            /,&
+'@  Verifier l''interface et usphyv.'                         , /,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
 
  9111  format(                                                    &
 '@',                                                            /,&
@@ -1222,6 +1247,26 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
+ 9013  format(                                                    &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@ WARNING : ABORT IN THE PHYSICAL QUANTITIES COMPUTATION',  /,&
+'@    =========',                                               /,&
+'@    INCOHERENCY BETWEEN PARAMETERS and the volumic thermal'  ,/,&
+'@    expansion coefficient Beta'                              ,/,&
+'@',                                                            /,&
+'@  The density has been declared variable (IROVAR=1) but',     /,&
+'@     the value of Beta has not been modified     ',           /,&
+'@     in GUI or usphyv',                                       /,&
+'@',                                                            /,&
+'@  The calculation will not be run',                           /,&
+'@',                                                            /,&
+'@  Check the interface or usphyv.'                           , /,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
+
 
  9111  format(                                                    &
 '@',                                                            /,&

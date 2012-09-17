@@ -670,10 +670,7 @@ if (idifre.eq.1) then
 !        (il reste des doutes sur la periodicite)
 
   if (irangp.ge.0.or.iperio.eq.1) then
-    call synvec(grad(1,1), grad(1,2), grad(1,3))
-    !==========
     call syndia(w4, w5, w6)
-    !==========
   endif
 
 

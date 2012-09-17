@@ -132,7 +132,7 @@ module cstphy
   !       Constante de Smagorinsky maximale souhaitee (on peut prendre 10*csmago)
   !   idries
   !       Amortissement Van Driest active (=1) ou non (=0)
-  !   CDRIES
+  !   cdries
   !       Constante de Van Driest dans (1-exp(-y+/cdries))
   !   ce4    : Coefficient du terme interfacial dans k-eps
   !            (Ce coefficient sert en Lagrangien)
@@ -202,12 +202,19 @@ module cstphy
   ! wmolsp : molar fraction for multi-species scalars
   !          wmolsp(0) is associated to the deduced species.
   ! rvarfl : coeff de dissipation des variances
+  ! ctheta : coefficient des modeles de flux turbulents GGDH et AFM
+  ! xiafm, etaafm : coefficients du modele de flux turbulent AFM
+  ! c*trit : coefficients du modele de flux turbulent DFM
+  ! cthafm : constant of GGDH and AFM on the thermal scalar
+  ! cthdfm : constant of GGDH and AFM on the thermal scalar
 
   integer, save ::          iscsth(nscamx), ivisls(nscamx), ivissa(nscamx),  &
                             iclvfl(nscamx), iscavr(nscamx), iscasp(nscamx)
   double precision, save :: scamin(nscamx), scamax(nscamx),                  &
                             visls0(nscamx), sigmas(nscamx), wmolsp(0:nscamx),&
-                            rvarfl(nscamx)
+                            rvarfl(nscamx), ctheta(nscamx)
+  double precision, save :: xiafm, etaafm, c1trit, c2trit, c3trit, c4trit,   &
+                            cthafm, cthdfm
 
   !=============================================================================
 

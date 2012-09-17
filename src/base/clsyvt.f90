@@ -84,7 +84,7 @@ subroutine clsyvt &
  ( nvar   , nscal  ,                                              &
    icodcl ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
-   velipb , rijipb , coefa  , coefb  )
+   velipb , rijipb , uitipb , coefa  , coefb  )
 
 !===============================================================================
 
@@ -117,6 +117,7 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision rcodcl(nfabor,nvar,3)
 double precision velipb(nfabor,ndim), rijipb(nfabor,6)
+double precision uitipb(nfabor,3)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 
 ! Local variables
@@ -129,14 +130,17 @@ integer          icl11r, icl22r, icl33r, icl12r, icl13r, icl23r
 integer          icluf , iclvf , iclwf
 integer          iclumf, iclvmf, iclwmf
 integer          icl11f, icl22f, icl33f, icl12f, icl13f, icl23f
-integer          iclvar, iel, iclvrr
+integer          iclvar, iel   , iclvrr
+integer          iscal , ipccp
 double precision rnx, rny, rnz, rxnn
 double precision upx, upy, upz, usn
 double precision tx, ty, tz, txn, t2x, t2y, t2z
 double precision clsyme
 double precision eloglo(3,3), alpha(6,6)
 double precision srfbnf, rcodcn, hint, visclc, visctc, distbf
+double precision cpp,rkl
 double precision vismsh(3), hintv(3)
+double precision hintt(6)
 
 !===============================================================================
 
@@ -468,6 +472,90 @@ do ifac = 1, nfabor
         coefa(ifac,iclvrr) = coefa(ifac,iclvar)
         coefb(ifac,iclvrr) = coefb(ifac,iclvar)
 
+      enddo
+
+    endif
+
+    !===========================================================================
+    ! 3.bis Boundary conditions on uit
+    !===========================================================================
+
+    if ((ityturt.eq.3)) then
+
+      iel = ifabor(ifac)
+      ! --- Physical Propreties
+      visclc = propce(iel,ipproc(iviscl))
+      if (icp.gt.0) then
+        ipccp  = ipproc(icp)
+      else
+        ipccp = 0
+      endif
+      if (iscsth(iscalt).eq.0.or.iscsth(iscalt).eq.2.or.iscsth(iscalt).eq.3) then
+        cpp = 1.d0
+      elseif (abs(iscsth(iscalt)).eq.1.and.(ipccp.gt.0)) then
+        cpp = propce(iel,ipccp)
+      elseif (abs(iscsth(iscalt)).eq.1) then
+        cpp = cp0
+      endif
+
+      ! --- Geometrical quantities
+      distbf = distb(ifac)
+
+      if (ivisls(iscalt).le.0) then
+        rkl = visls0(iscalt)/cpp
+      else
+        rkl = propce(iel,ipproc(ivisls(iscalt)))/cpp
+      endif
+
+      hintt(1) = 0.5d0*(visclc+rkl)/distbf             &
+               + idifft(iut)*visten(1,iel)*ctheta(iscalt)
+      hintt(2) = 0.5d0*(visclc+rkl)/distbf             &
+               + idifft(iut)*visten(2,iel)*ctheta(iscalt)
+      hintt(3) = 0.5d0*(visclc+rkl)/distbf             &
+               + idifft(iut)*visten(3,iel)*ctheta(iscalt)
+      hintt(4) = idifft(iut)*visten(4,iel)*ctheta(iscalt)
+      hintt(5) = idifft(iut)*visten(5,iel)*ctheta(iscalt)
+      hintt(6) = idifft(iut)*visten(6,iel)*ctheta(iscalt)
+
+
+      ! Gradient BCs
+      coefaut(1,ifac) = 0.d0
+      coefaut(2,ifac) = 0.d0
+      coefaut(3,ifac) = 0.d0
+
+      coefbut(1,1,ifac) = 1.d0-rnx**2
+      coefbut(2,2,ifac) = 1.d0-rny**2
+      coefbut(3,3,ifac) = 1.d0-rnz**2
+
+      coefbut(1,2,ifac) = -rnx*rny
+      coefbut(1,3,ifac) = -rnx*rnz
+      coefbut(2,1,ifac) = -rny*rnx
+      coefbut(2,3,ifac) = -rny*rnz
+      coefbut(3,1,ifac) = -rnz*rnx
+      coefbut(3,2,ifac) = -rnz*rny
+
+      ! Flux BCs K.(nxn)
+      cofafut(1,ifac) = 0.d0
+      cofafut(2,ifac) = 0.d0
+      cofafut(3,ifac) = 0.d0
+
+      cofbfut(1,1,ifac) = hintt(1)*rnx**2  + hintt(4)*rnx*rny + hintt(6)*rnx*rnz
+      cofbfut(2,2,ifac) = hintt(4)*rnx*rny + hintt(2)*rny**2  + hintt(5)*rny*rnz
+      cofbfut(3,3,ifac) = hintt(6)*rnx*rnz + hintt(5)*rny*rnz + hintt(3)*rnz**2
+
+      cofbfut(1,2,ifac) = hintt(1)*rnx*rny + hintt(4)*rny**2  + hintt(6)*rny*rnz
+      cofbfut(2,1,ifac) = hintt(1)*rnx*rny + hintt(4)*rny**2  + hintt(6)*rny*rnz
+      cofbfut(1,3,ifac) = hintt(1)*rnx*rnz + hintt(4)*rny*rnz + hintt(6)*rnz**2
+      cofbfut(3,1,ifac) = hintt(1)*rnx*rnz + hintt(4)*rny*rnz + hintt(6)*rnz**2
+      cofbfut(2,3,ifac) = hintt(4)*rnx*rnz + hintt(2)*rny*rnz + hintt(5)*rnz**2
+      cofbfut(3,2,ifac) = hintt(4)*rnx*rnz + hintt(2)*rny*rnz + hintt(5)*rnz**2
+
+      ! Boundary conditions for thermal transport equation
+      do isou = 1, 3
+        cofarut(isou,ifac) = coefaut(isou,ifac)
+        do jsou =1, 3
+          cofbrut(isou,jsou,ifac) = coefbut(isou,jsou,ifac)
+        enddo
       enddo
 
     endif

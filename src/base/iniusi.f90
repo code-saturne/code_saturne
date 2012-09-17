@@ -127,7 +127,7 @@ endif
 
 if (iihmpr.eq.1) then
 
-  call csturb(iturb, ideuch, igrake, igrari, xlomlg)
+  call csturb(iturb, iturbt, ideuch, igrake, igrari, xlomlg)
   !==========
 
   call cscpva(icp)
@@ -139,8 +139,7 @@ endif
 !     ==========================
 
 iihmpu = iihmpr
-call usipph(iihmpu , nfecra , iturb  , irccor , icp)
-!==========
+call usipph(iihmpu , nfecra , iturb , iturbt , irccor , icp)
 
 !===============================================================================
 ! 2. INITIALISATION DE PARAMETRES DEPENDANT DU NOMBRE DE SCALAIRES
@@ -356,6 +355,13 @@ call varpos(nmodpp)
 
 if (iihmpr.eq.1) then
 
+  ! Temperature ou enthalpie (hors physiques particulieres)
+  if(nmodpp.eq.0) then
+    call cssca1(iscalt, iscsth)
+    !==========
+
+  endif
+
   call csvnum                                                     &
   !==========
             (nvar,                                                &
@@ -366,7 +372,8 @@ if (iihmpr.eq.1) then
              iomg, iphi, ifb, ial,                                &
              inusa,                                               &
              iale, iuma, ivma, iwma,                              &
-             isca, iscapp)
+             isca, iscapp, iscalt,                                &
+             iturbt, iut, ivt, iwt)
 
 !     Suite de calcul, relecture fichier auxiliaire, champ de vitesse figé
 
@@ -378,13 +385,6 @@ if (iihmpr.eq.1) then
   !==========
              (inpdt0, iptlro, ntmabs, idtvar, dtref, dtmin,       &
               dtmax, coumax, foumax, varrdt, relxst)
-
-!     Temperature ou enthalpie (hors physiques particulieres)
-  if (nmodpp.eq.0) then
-    call cssca1(iscalt, iscsth)
-    !==========
-
-  endif
 
 !      Options numériques locales
 
@@ -433,7 +433,8 @@ if (iihmpr.eq.1) then
              ismago, iale, icp, iscalt, iscavr,                   &
              iprtot, ipppro, ipproc, icmome,                      &
              ipptx, ippty, ipptz, ippdt,                          &
-             ivisma, idtvar, ipucou, iappel)
+             ivisma, idtvar, ipucou, iappel,                      &
+             iturbt, iut, ivt, iwt)
 
   call uimoyt (ndgmox, ntdmom, imoold, idfmom)
   !==========
@@ -466,7 +467,7 @@ if (ivelco.eq.1) then
     ioplsq = 1
   endif
 else
-  ioptit = 0
+  ioptit = 1
   ioplsq = 0
 endif
 call comcoc(ioptit, ioplsq)

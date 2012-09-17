@@ -477,8 +477,8 @@ endif
 do ivar=1, nvar
   do ifac = 1, nfabor
     if((itypfb(ifac) .ne. isolib) .and. &
-         (itypfb(ifac) .ne. ientre) .and. &
-         (rcodcl(ifac,ivar,1) .gt. rinfin*0.5d0)) then
+       (itypfb(ifac) .ne. ientre) .and. &
+       (rcodcl(ifac,ivar,1) .gt. rinfin*0.5d0)) then
       rcodcl(ifac,ivar,1) = 0.d0
     endif
   enddo
@@ -815,6 +815,16 @@ do ivar = 1, nvar
         rcodcl(ifac,ivar,3) = 0.d0
       endif
     enddo
+  elseif(ivar.eq.iut.or.ivar.eq.ivt.or.ivar.eq.iwt) then
+    do ii = ideb, ifin
+      ifac = itrifb(ii)
+      if(icodcl(ifac,ivar).eq.0) then
+        icodcl(ifac,ivar)   = 3
+        rcodcl(ifac,ivar,1) = 0.d0
+        rcodcl(ifac,ivar,2) = rinfin
+        rcodcl(ifac,ivar,3) = 0.d0
+      endif
+    enddo
   endif
 enddo
 
@@ -836,7 +846,9 @@ do ivar = 1, nvar
        ( itytur.eq.3.and.                                 &
        (ivar.eq.ir11.or.ivar.eq.ir22.or.ivar.eq.ir33.or.  &
        ivar.eq.ir12.or.ivar.eq.ir13.or.ivar.eq.ir23)      &
-       ) ) then
+       ).or.                                              &
+       ((ityturt.eq.3).and.                               &
+       (ivar.eq.iut.or.ivar.eq.ivt.or.ivar.eq.iwt))) then
     do ii = ideb, ifin
       ifac = itrifb(ii)
       if(icodcl(ifac,ivar).eq.0) then
@@ -895,7 +907,9 @@ do ivar = 1, nvar
        ( iturb.eq.60.and.                                  &
        (ivar.eq.ik.or.ivar.eq.iomg)   ).or.                &
        ( iturb.eq.70.and.                                  &
-       (ivar.eq.inusa)                    )    ) then
+       (ivar.eq.inusa)                ).or.                &
+       ((ityturt.eq.3).and.                                &
+       (ivar.eq.iut.or.ivar.eq.ivt.or.ivar.eq.iwt))) then
     do ii = ideb, ifin
       ifac = itrifb(ii)
       if(icodcl(ifac,ivar).eq.0) then
@@ -955,7 +969,9 @@ do ivar = 1, nvar
        ( iturb.eq.60.and.                                  &
        (ivar.eq.ik.or.ivar.eq.iomg)   ).or.                &
        ( iturb.eq.70.and.                                  &
-       (ivar.eq.inusa)                    )    ) then
+       (ivar.eq.inusa)                ).or.                &
+       ((ityturt.eq.3).and.                                &
+       (ivar.eq.iut.or.ivar.eq.ivt.or.ivar.eq.iwt))) then
     do ii = ideb, ifin
       ifac = itrifb(ii)
       if(icodcl(ifac,ivar).eq.0) then

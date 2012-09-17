@@ -201,6 +201,7 @@ integer          nswrgp, imligp, iwarnp
 
 double precision sigma , cpp   , rkl
 double precision hint  , hext  , heq   , pimp  , xdis, qimp, cfl
+double precision hintt(6)
 double precision flumbf, visclc, visctc, distbf, srfbn2
 double precision epsrgp, climgp, extrap
 double precision xxp0, xyp0, xzp0
@@ -214,7 +215,7 @@ double precision visci(3,3), fikis, viscis, distfi
 logical          ilved
 
 double precision, allocatable, dimension(:) :: w1
-double precision, allocatable, dimension(:,:) :: velipb, rijipb
+double precision, allocatable, dimension(:,:) :: velipb, rijipb, uitipb
 double precision, allocatable, dimension(:,:) :: grad
 double precision, dimension(:,:,:), allocatable :: gradv
 
@@ -532,10 +533,12 @@ if (isvtb.ne.0) then
 endif
 
 
-! S'il y a du rayonnement
+! S'il y a du rayonnement ou
+! si on utilise des equations de transport pour les flux thermiques turbulents
 !   (il y a forcement une variable energetique)
 !   on en calcule le gradient
-if (iirayo.ge.1) then
+
+if ((iirayo.ge.1).or.(ityturt.eq.3)) then
   iscat = iscalt
 endif
 
@@ -545,7 +548,7 @@ if (iscat.gt.0) then
 
   ivar   = isca(iscat)
 
-  if (ntcabs.gt.1 .and. itbrrb.eq.1) then
+  if (ntcabs.gt.1 .and. itbrrb.eq.1 .and. ircflu(ivar).eq.1) then
 
     inc = 1
     iccocg = 1
@@ -753,6 +756,70 @@ if ((iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0).and.itytur.eq.3) then
 
 endif
 
+! ---> Compute uit in I' for boundary cells
+
+if ((iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0).and.ityturt.eq.3) then
+
+  ! Allocate a work array to store uit values at boundary faces
+  allocate(uitipb(nfabor,3))
+
+  if (ntcabs.gt.1) then
+    ! Allocate a temporary array
+    allocate(gradv(ncelet,3,3))
+
+    iccocg = 1
+    inc    = 1
+    nswrgp = nswrgr(iut)
+    imligp = imligr(iut)
+    iwarnp = iwarni(iut)
+    epsrgp = epsrgr(iut)
+    climgp = climgr(iut)
+    extrap = extrag(iut)
+
+    ilved = .false.
+
+    call grdvec &
+    !==========
+    ( iut    , imrgra , inc    , nswrgp , imligp ,                   &
+      iwarnp , nfecra ,                                              &
+      epsrgp , climgp , extrap ,                                     &
+      ilved ,                                                        &
+      rtpa(1,iut) ,  coefaut , coefbut,                              &
+      gradv  )
+
+    do isou = 1 , 3
+
+      if(isou.eq.1) ivar = iut
+      if(isou.eq.2) ivar = ivt
+      if(isou.eq.3) ivar = iwt
+
+      do ifac = 1 , nfabor
+        iel = ifabor(ifac)
+        uitipb(ifac,isou) = rtpa(iel,ivar)                  &
+                          + gradv(iel,1,isou)*diipb(1,ifac) &
+                          + gradv(iel,2,isou)*diipb(2,ifac) &
+                          + gradv(iel,3,isou)*diipb(3,ifac)
+      enddo
+    enddo
+    deallocate(gradv)
+  ! Nb: at the first time step, coefa and coefb are unknown, so the walue
+  !     in I is stored instead of the value in I'
+  else
+    do isou = 1 , 3
+
+      if(isou.eq.1) ivar = iut
+      if(isou.eq.2) ivar = ivt
+      if(isou.eq.3) ivar = iwt
+
+      do ifac = 1 , nfabor
+        iel = ifabor(ifac)
+        uitipb(ifac,isou) = rtpa(iel,ivar)
+      enddo
+    enddo
+  endif
+
+endif
+
 ! Free memory
 deallocate(grad)
 
@@ -817,6 +884,7 @@ endif
 !       (u,v,w,Rij)
 !===============================================================================
 !   On a besoin de velipb et de rijipb
+!   On a egalement besoin de uitipb pour les uit
 
 do ifac = 1, nfabor
   isympa(ifac) = 1
@@ -829,7 +897,7 @@ if (iclsym.ne.0) then
  ( nvar   , nscal  ,                                              &
    icodcl ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
-   velipb , rijipb , coefa  , coefb  )
+   velipb , rijipb , uitipb , coefa  , coefb  )
 
 endif
 
@@ -1197,10 +1265,10 @@ do ifac = 1, nfabor
   ! Convective Boundary Conditions
   !-------------------------------
 
-  elseif (icodcl(ifac,ivar).eq.2) then
+  elseif (icodcl(ifac,ipr).eq.2) then
 
-    pimp = rcodcl(ifac,ivar,1)
-    cfl = rcodcl(ifac,ivar,2)
+    pimp = rcodcl(ifac,ipr,1)
+    cfl = rcodcl(ifac,ipr,2)
 
     call set_convective_outlet_scalar &
          !===========================
@@ -1438,7 +1506,9 @@ elseif (itytur.eq.3) then
     ! --- Geometrical quantities
     distbf = distb(ifac)
 
-    hint = (visclc + idifft(ivar)*visctc/sigmae)/distbf
+    hint = (visclc + idifft(ivar)*visctc/sigmae)/distbf !FIXME
+! this hint is good only with SSG because Daly Harlow is used in
+! epsilon equation with EB-RSM and LRR
 
     ! Dirichlet Boundary Condition
     !-----------------------------
@@ -1925,15 +1995,15 @@ if (nscal.ge.1) then
       ! Symmetric tensor diffusivity
       elseif (idften(ivar).eq.6) then
 
-        visci(1,1) = rkl + idifft(ivar)*cpp*visten(1,iel)/sigmas(ii)
-        visci(2,2) = rkl + idifft(ivar)*cpp*visten(2,iel)/sigmas(ii)
-        visci(3,3) = rkl + idifft(ivar)*cpp*visten(3,iel)/sigmas(ii)
-        visci(1,2) =       idifft(ivar)*cpp*visten(4,iel)/sigmas(ii)
-        visci(2,1) =       idifft(ivar)*cpp*visten(4,iel)/sigmas(ii)
-        visci(2,3) =       idifft(ivar)*cpp*visten(5,iel)/sigmas(ii)
-        visci(3,2) =       idifft(ivar)*cpp*visten(5,iel)/sigmas(ii)
-        visci(1,3) =       idifft(ivar)*cpp*visten(6,iel)/sigmas(ii)
-        visci(3,1) =       idifft(ivar)*cpp*visten(6,iel)/sigmas(ii)
+        visci(1,1) = rkl + idifft(ivar)*cpp*visten(1,iel)*ctheta(ii)
+        visci(2,2) = rkl + idifft(ivar)*cpp*visten(2,iel)*ctheta(ii)
+        visci(3,3) = rkl + idifft(ivar)*cpp*visten(3,iel)*ctheta(ii)
+        visci(1,2) =       idifft(ivar)*cpp*visten(4,iel)*ctheta(ii)
+        visci(2,1) =       idifft(ivar)*cpp*visten(4,iel)*ctheta(ii)
+        visci(2,3) =       idifft(ivar)*cpp*visten(5,iel)*ctheta(ii)
+        visci(3,2) =       idifft(ivar)*cpp*visten(5,iel)*ctheta(ii)
+        visci(1,3) =       idifft(ivar)*cpp*visten(6,iel)*ctheta(ii)
+        visci(3,1) =       idifft(ivar)*cpp*visten(6,iel)*ctheta(ii)
 
         ! ||Ki.S||^2
         viscis = ( visci(1,1)*surfbo(1,ifac)       &
@@ -1991,7 +2061,6 @@ if (nscal.ge.1) then
         if (isvhbl.gt.0) then
           hbord(ifac) = hint
         endif
-
 
         !--> Rayonnement :
 
@@ -2080,11 +2149,6 @@ if (nscal.ge.1) then
            ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
              coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
              qimp              , hint )
-     !FIXME gradient BCs were set to homegenous Neumann
-!        if(iclvar.ne.iclvaf) then
-!          coefa(ifac,iclvar)  = 0.d0
-!          coefb(ifac,iclvar)  = 1.d0
-!        endif
 
         if (isvhbl.gt.0) hbord(ifac) = hint
 
@@ -2135,6 +2199,110 @@ if (nscal.ge.1) then
            ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
              coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
              pimp              , cfl               , hint )
+
+      endif
+
+      ! Thermal heat flux boundary conditions
+      if ((ii.eq.iscalt).and.(ityturt.eq.3)) then
+
+        ! --- Physical Propreties
+        visclc = propce(iel,ipcvis)
+
+        ! --- Geometrical quantities
+        distbf = distb(ifac)
+
+        if (ivisls(iscalt).le.0) then
+          rkl = visls0(iscalt)/cpp
+        else
+          rkl = propce(iel,ipproc(ivisls(iscalt)))/cpp
+        endif
+        hintt(1) = 0.5d0*(visclc+rkl)/distbf            &
+                 + idifft(iut)*visten(1,iel)*ctheta(iscalt)
+        hintt(2) = 0.5d0*(visclc+rkl)/distbf            &
+                 + idifft(iut)*visten(2,iel)*ctheta(iscalt)
+        hintt(3) = 0.5d0*(visclc+rkl)/distbf            &
+                 + idifft(iut)*visten(3,iel)*ctheta(iscalt)
+        hintt(4) = idifft(iut)*visten(4,iel)*ctheta(iscalt)
+        hintt(5) = idifft(iut)*visten(5,iel)*ctheta(iscalt)
+        hintt(6) = idifft(iut)*visten(6,iel)*ctheta(iscalt)
+
+        ! Dirichlet Boundary Condition
+        !-----------------------------
+
+        if (icodcl(ifac,iut).eq.1) then
+
+
+          pimpv(1) = rcodcl(ifac,iut,1)
+          pimpv(2) = rcodcl(ifac,ivt,1)
+          pimpv(3) = rcodcl(ifac,iwt,1)
+          hextv(1) = rcodcl(ifac,iut,2)
+          hextv(2) = rcodcl(ifac,ivt,2)
+          hextv(3) = rcodcl(ifac,iwt,2)
+
+          call set_dirichlet_vector_ggdh &
+               !========================
+             ( coefaut(1,ifac)  , cofafut(1,ifac)  ,           &
+               coefbut(1,1,ifac), cofbfut(1,1,ifac),           &
+               pimpv            , hintt            , hextv )
+
+          ! Boundary conditions for thermal transport equation
+          do isou = 1, 3
+            cofarut(isou,ifac) = coefaut(isou,ifac)
+            do jsou =1, 3
+              cofbrut(isou,jsou,ifac) = coefbut(isou,jsou,ifac)
+            enddo
+          enddo
+
+        ! Neumann Boundary Conditions
+        !----------------------------
+
+        elseif (icodcl(ifac,iut).eq.3) then
+
+          qimpv(1) = rcodcl(ifac,iut,3)
+          qimpv(2) = rcodcl(ifac,ivt,3)
+          qimpv(3) = rcodcl(ifac,iwt,3)
+
+          call set_neumann_vector_ggdh &
+          !===========================
+             ( coefaut(1,ifac)  , cofafut(1,ifac)  ,           &
+               coefbut(1,1,ifac), cofbfut(1,1,ifac),           &
+               qimpv            , hintt )
+
+          ! Boundary conditions for thermal transport equation
+          do isou = 1, 3
+            cofarut(isou,ifac) = coefaut(isou,ifac)
+            do jsou =1, 3
+              cofbrut(isou,jsou,ifac) = coefbut(isou,jsou,ifac)
+            enddo
+          enddo
+
+        ! Convective Boundary Conditions
+        !-------------------------------
+
+        elseif (icodcl(ifac,iut).eq.2) then
+
+          pimpv(1) = rcodcl(ifac,iut,1)
+          cflv(1) = rcodcl(ifac,iut,2)
+          pimpv(2) = rcodcl(ifac,ivt,1)
+          cflv(2) = rcodcl(ifac,ivt,2)
+          pimpv(3) = rcodcl(ifac,iwt,1)
+          cflv(3) = rcodcl(ifac,iwt,2)
+
+          call set_convective_outlet_vector_ggdh &
+          !=====================================
+             ( coefaut(1,ifac)  , cofafut(1,ifac)  ,           &
+               coefbut(1,1,ifac), cofbfut(1,1,ifac),           &
+               pimpv            , cflv             , hintt )
+
+          ! Boundary conditions for thermal transport equation
+          do isou = 1, 3
+            cofarut(isou,ifac) = coefaut(isou,ifac)
+            do jsou =1, 3
+              cofbrut(isou,jsou,ifac) = coefbut(isou,jsou,ifac)
+            enddo
+          enddo
+
+        endif
 
       endif
 
@@ -2384,6 +2552,7 @@ endif
 ! Free memory
 deallocate(velipb)
 if (allocated(rijipb)) deallocate(rijipb)
+if (allocated(uitipb)) deallocate(uitipb)
 
 !===============================================================================
 ! 15. Formats
@@ -2500,7 +2669,7 @@ end subroutine
 
 subroutine set_dirichlet_scalar &
            !===================
- ( coefa , coefaf, coefb , coefbf, pimp  , hint, hext)
+ ( coefa , cofaf, coefb , cofbf, pimp  , hint, hext)
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -2508,9 +2677,9 @@ subroutine set_dirichlet_scalar &
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[out]    coefa         explicit BC coefficient for gradients
-!> \param[out]    coefaf        explicit BC coefficient for diffusive flux
+!> \param[out]    cofaf         explicit BC coefficient for diffusive flux
 !> \param[out]    coefb         implicit BC coefficient for gradients
-!> \param[out]    coefbf        implicit BC coefficient for diffusive flux
+!> \param[out]    cofbf         implicit BC coefficient for diffusive flux
 !> \param[in]     pimp          Dirichlet value to impose
 !> \param[in]     hint          Internal exchange coefficient
 !> \param[in]     hext          External exchange coefficient (10^30 by default)
@@ -2528,7 +2697,7 @@ implicit none
 
 ! Arguments
 
-double precision coefa, coefaf, coefb, coefbf, pimp, hint, hext
+double precision coefa, cofaf, coefb, cofbf, pimp, hint, hext
 
 ! Local variables
 
@@ -2543,8 +2712,8 @@ if (abs(hext).gt.rinfin*0.5d0) then
   coefb = 0.d0
 
   ! Flux BCs
-  coefaf = -hint*pimp
-  coefbf =  hint
+  cofaf = -hint*pimp
+  cofbf =  hint
 
 else
 
@@ -2554,8 +2723,8 @@ else
 
   ! Flux BCs
   heq = hint*hext/(hint + hext)
-  coefaf = -heq*pimp
-  coefbf =  heq
+  cofaf = -heq*pimp
+  cofbf =  heq
 
 endif
 
@@ -2566,7 +2735,7 @@ end subroutine
 
 subroutine set_dirichlet_vector &
            !===================
- ( coefa , coefaf, coefb , coefbf, pimpv  , hint , hextv)
+ ( coefa , cofaf, coefb , cofbf, pimpv  , hint , hextv)
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -2574,9 +2743,9 @@ subroutine set_dirichlet_vector &
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[out]    coefa         explicit BC coefficient for gradients
-!> \param[out]    coefaf        explicit BC coefficient for diffusive flux
+!> \param[out]    cofaf         explicit BC coefficient for diffusive flux
 !> \param[out]    coefb         implicit BC coefficient for gradients
-!> \param[out]    coefbf        implicit BC coefficient for diffusive flux
+!> \param[out]    cofbf         implicit BC coefficient for diffusive flux
 !> \param[in]     pimpv         Dirichlet value to impose
 !> \param[in]     hint          Internal exchange coefficient
 !> \param[in]     hextv         External exchange coefficient (10^30 by default)
@@ -2594,8 +2763,8 @@ implicit none
 
 ! Arguments
 
-double precision coefa(3), coefaf(3)
-double precision coefb(3,3), coefbf(3,3)
+double precision coefa(3), cofaf(3)
+double precision coefb(3,3), cofbf(3,3)
 double precision pimpv(3)
 double precision hint
 double precision hextv(3)
@@ -2617,12 +2786,12 @@ do isou = 1, 3
     enddo
 
     ! Flux BCs
-    coefaf(isou) = -hint*pimpv(isou)
+    cofaf(isou) = -hint*pimpv(isou)
     do jsou = 1, 3
       if (jsou.eq.isou) then
-        coefbf(isou,jsou) = hint
+        cofbf(isou,jsou) = hint
       else
-        coefbf(isou,jsou) = 0.d0
+        cofbf(isou,jsou) = 0.d0
       endif
     enddo
 
@@ -2641,12 +2810,12 @@ do isou = 1, 3
     enddo
 
     ! Flux BCs
-    coefaf(isou) = -heq*pimpv(isou)
+    cofaf(isou) = -heq*pimpv(isou)
     do jsou = 1, 3
       if (jsou.eq.isou) then
-        coefbf(isou,jsou) = heq
+        cofbf(isou,jsou) = heq
       else
-        coefbf(isou,jsou) = 0.d0
+        cofbf(isou,jsou) = 0.d0
       endif
     enddo
 
@@ -2659,9 +2828,9 @@ end subroutine
 
 !===============================================================================
 
-subroutine set_neumann_scalar &
-           !=================
- ( coefa , coefaf, coefb , coefbf, qimp  , hint)
+subroutine set_dirichlet_vector_ggdh &
+           !========================
+ ( coefa , cofaf, coefb , cofbf, pimpv  , hint , hextv)
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -2669,9 +2838,88 @@ subroutine set_neumann_scalar &
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[out]    coefa         explicit BC coefficient for gradients
-!> \param[out]    coefaf        explicit BC coefficient for diffusive flux
+!> \param[out]    cofaf         explicit BC coefficient for diffusive flux
 !> \param[out]    coefb         implicit BC coefficient for gradients
-!> \param[out]    coefbf        implicit BC coefficient for diffusive flux
+!> \param[out]    cofbf         implicit BC coefficient for diffusive flux
+!> \param[in]     pimpv         Dirichlet value to impose
+!> \param[in]     hint          Internal exchange coefficient
+!> \param[in]     hextv         External exchange coefficient (10^30 by default)
+!_______________________________________________________________________________
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use cstnum, only: rinfin
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+double precision coefa(3), cofaf(3)
+double precision coefb(3,3), cofbf(3,3)
+double precision pimpv(3)
+double precision hint(6)
+double precision hextv(3)
+
+! Local variables
+
+integer          isou  , jsou
+double precision heq
+
+!===============================================================================
+
+do isou = 1, 3
+
+  if (abs(hextv(isou)).gt.rinfin*0.5d0) then
+    ! Gradient BCs
+    coefa(isou) = pimpv(isou)
+    do jsou = 1, 3
+      coefb(isou,jsou) = 0.d0
+    enddo
+
+  else
+
+    call csexit(1)
+
+  endif
+
+enddo
+
+! Flux BCs
+cofaf(1) = -(hint(1)*pimpv(1) + hint(4)*pimpv(2) + hint(6)*pimpv(3))
+cofaf(2) = -(hint(4)*pimpv(1) + hint(2)*pimpv(2) + hint(5)*pimpv(3))
+cofaf(3) = -(hint(6)*pimpv(1) + hint(5)*pimpv(2) + hint(3)*pimpv(3))
+cofbf(1,1) = hint(1)
+cofbf(2,2) = hint(2)
+cofbf(3,3) = hint(3)
+cofbf(1,2) = hint(4)
+cofbf(2,1) = hint(4)
+cofbf(2,3) = hint(5)
+cofbf(3,2) = hint(5)
+cofbf(1,3) = hint(6)
+cofbf(3,1) = hint(6)
+
+return
+end subroutine
+
+!===============================================================================
+
+subroutine set_neumann_scalar &
+           !=================
+ ( coefa , cofaf, coefb , cofbf, qimp  , hint)
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[out]    coefa         explicit BC coefficient for gradients
+!> \param[out]    cofaf         explicit BC coefficient for diffusive flux
+!> \param[out]    coefb         implicit BC coefficient for gradients
+!> \param[out]    cofbf         implicit BC coefficient for diffusive flux
 !> \param[in]     qimp          Flux value to impose
 !> \param[in]     hint          Internal exchange coefficient
 !_______________________________________________________________________________
@@ -2686,7 +2934,7 @@ implicit none
 
 ! Arguments
 
-double precision coefa, coefaf, coefb, coefbf, qimp, hint
+double precision coefa, cofaf, coefb, cofbf, qimp, hint
 
 ! Local variables
 
@@ -2697,8 +2945,8 @@ coefa = -qimp/hint
 coefb = 1.d0
 
 ! Flux BCs
-coefaf = qimp
-coefbf = 0.d0
+cofaf = qimp
+cofbf = 0.d0
 
 return
 end subroutine
@@ -2707,7 +2955,7 @@ end subroutine
 
 subroutine set_neumann_vector &
          !==================
- ( coefa , coefaf, coefb , coefbf, qimpv  , hint)
+ ( coefa , cofaf, coefb , cofbf, qimpv  , hint)
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -2715,9 +2963,9 @@ subroutine set_neumann_vector &
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[out]    coefa         explicit BC coefficient for gradients
-!> \param[out]    coefaf        explicit BC coefficient for diffusive flux
+!> \param[out]    cofaf         explicit BC coefficient for diffusive flux
 !> \param[out]    coefb         implicit BC coefficient for gradients
-!> \param[out]    coefbf        implicit BC coefficient for diffusive flux
+!> \param[out]    cofbf         implicit BC coefficient for diffusive flux
 !> \param[in]     qimpv         Flux value to impose
 !> \param[in]     hint          Internal exchange coefficient
 !_______________________________________________________________________________
@@ -2732,8 +2980,8 @@ implicit none
 
 ! Arguments
 
-double precision coefa(3), coefaf(3)
-double precision coefb(3,3), coefbf(3,3)
+double precision coefa(3), cofaf(3)
+double precision coefb(3,3), cofbf(3,3)
 double precision qimpv(3)
 double precision hint
 
@@ -2756,9 +3004,9 @@ do isou = 1, 3
   enddo
 
   ! Flux BCs
-  coefaf(isou) = qimpv(isou)
+  cofaf(isou) = qimpv(isou)
   do jsou = 1, 3
-    coefbf(isou,jsou) = 0.d0
+    cofbf(isou,jsou) = 0.d0
   enddo
 
 enddo
@@ -2766,6 +3014,88 @@ enddo
 return
 end subroutine
 
+!===============================================================================
+
+subroutine set_neumann_vector_ggdh &
+         !========================
+ ( coefa , cofaf, coefb , cofbf, qimpv  , hint)
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[out]    coefa         explicit BC coefficient for gradients
+!> \param[out]    cofaf         explicit BC coefficient for diffusive flux
+!> \param[out]    coefb         implicit BC coefficient for gradients
+!> \param[out]    cofbf         implicit BC coefficient for diffusive flux
+!> \param[in]     qimpv         Flux value to impose
+!> \param[in]     hint          Internal exchange coefficient
+!_______________________________________________________________________________
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+double precision coefa(3), cofaf(3)
+double precision coefb(3,3), cofbf(3,3)
+double precision qimpv(3)
+double precision hint(6)
+
+! Local variables
+
+integer          isou  , jsou
+double precision invh(6), invdet, m(6)
+
+!===============================================================================
+m(1) = hint(2)*hint(3) - hint(5)*hint(5)
+m(2) = hint(1)*hint(3) - hint(6)*hint(6)
+m(3) = hint(1)*hint(2) - hint(4)*hint(4)
+m(4) = hint(5)*hint(6) - hint(4)*hint(3)
+m(5) = hint(4)*hint(6) - hint(1)*hint(5)
+m(6) = hint(4)*hint(5) - hint(2)*hint(6)
+
+invdet = 1.d0/(hint(1)*m(1) + hint(4)*m(4) + hint(6)*m(6))
+
+invh(1) = m(1) * invdet
+invh(2) = m(2) * invdet
+invh(3) = m(3) * invdet
+invh(4) = m(4) * invdet
+invh(5) = m(5) * invdet
+invh(6) = m(6) * invdet
+
+! Gradient BCs
+coefa(1) = -(invh(1)*qimpv(1) + invh(4)*qimpv(2) + invh(6)*qimpv(3))
+coefa(2) = -(invh(4)*qimpv(1) + invh(2)*qimpv(2) + invh(5)*qimpv(3))
+coefa(3) = -(invh(6)*qimpv(1) + invh(5)*qimpv(2) + invh(3)*qimpv(3))
+coefb(1,1) = invh(1)
+coefb(2,2) = invh(2)
+coefb(3,3) = invh(3)
+coefb(1,2) = invh(4)
+coefb(2,1) = invh(4)
+coefb(2,3) = invh(5)
+coefb(3,2) = invh(5)
+coefb(1,3) = invh(6)
+coefb(3,1) = invh(6)
+
+do isou = 1, 3
+
+  ! Flux BCs
+  cofaf(isou) = qimpv(isou)
+  do jsou = 1, 3
+    cofbf(isou,jsou) = 0.d0
+  enddo
+
+enddo
+
+return
+end subroutine
 
 !===============================================================================
 
@@ -2878,6 +3208,78 @@ do isou = 1, 3
   enddo
 
 enddo
+
+return
+end subroutine
+
+!===============================================================================
+
+subroutine set_convective_outlet_vector_ggdh &
+           !================================
+ ( coefa , cofaf, coefb , cofbf, pimpv  , cflv  , hint )
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[out]    coefa         explicit BC coefficient for gradients
+!> \param[out]    cofaf         explicit BC coefficient for diffusive flux
+!> \param[out]    coefb         implicit BC coefficient for gradients
+!> \param[out]    cofbf         implicit BC coefficient for diffusive flux
+!> \param[in]     pimpv         Dirichlet value to impose
+!> \param[in]     cflv          Local Courant number used to convect
+!> \param[in]     hint          Internal exchange coefficient
+!_______________________________________________________________________________
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+double precision coefa(3), cofaf(3)
+double precision coefb(3,3), cofbf(3,3)
+double precision pimpv(3), cflv(3)
+double precision hint(6)
+
+! Local variables
+
+integer          isou  , jsou
+
+!===============================================================================
+
+do isou = 1, 3
+
+  ! Gradient BCs
+  do jsou = 1, 3
+    if (jsou.eq.isou) then
+      coefb(isou,jsou) = cflv(isou)*(1.d0+cflv(isou))
+    else
+      coefb(isou,jsou) = 0.d0
+    endif
+  enddo
+  coefa(isou) = (1.d0-coefb(isou,isou))*pimpv(isou)
+
+enddo
+
+! Flux BCs
+cofaf(1) = -(hint(1)*coefa(1) + hint(4)*coefa(2) + hint(6)*coefa(3))
+cofaf(2) = -(hint(4)*coefa(1) + hint(2)*coefa(2) + hint(5)*coefa(3))
+cofaf(3) = -(hint(6)*coefa(1) + hint(5)*coefa(2) + hint(3)*coefa(3))
+cofbf(1,1) = hint(1)*(1.d0 - coefb(1,1))
+cofbf(2,2) = hint(2)*(1.d0 - coefb(2,2))
+cofbf(3,3) = hint(3)*(1.d0 - coefb(3,3))
+cofbf(1,2) = hint(4)*(1.d0 - coefb(1,1))
+cofbf(2,1) = hint(4)*(1.d0 - coefb(1,1))
+cofbf(2,3) = hint(5)*(1.d0 - coefb(2,2))
+cofbf(3,2) = hint(5)*(1.d0 - coefb(2,2))
+cofbf(1,3) = hint(6)*(1.d0 - coefb(3,3))
+cofbf(3,1) = hint(6)*(1.d0 - coefb(3,3))
 
 return
 end subroutine

@@ -55,6 +55,7 @@ subroutine lecamx &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! jturb            ! te ! <-- ! modeles de turb calcul precedent               !
+! jturbt           ! te ! <-- ! modeles de flux turb calcul precedent          !
 ! dt(ncelet)       ! tr ! --> ! pas de temps                                   !
 ! rtp              ! tr ! --> ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant        )          !
@@ -150,7 +151,7 @@ integer          impamx
 integer          nfmtsc, nfmtfl, nfmtmo, nfmtch, nfmtcl
 integer          nfmtst
 integer          numflu(nvarmx)
-integer          jturb , jtytur, jale
+integer          jturb , jtytur, jale, jturbt, jtyturt
 integer          ngbstr(2)
 double precision d2s3  , tsrii , cdtcm
 double precision tmpstr(27)
@@ -505,6 +506,7 @@ endif
 
 if(nscal.gt.0) then
 
+  ! --->  Donnees modifiees
   do iscal = 1, nscal
     isco = iscold(iscal)
     if ( isco         .gt.0.and.                                  &
@@ -534,6 +536,17 @@ if(nscal.gt.0) then
       if (inierr.eq.0) then
         initvs(iscal) = 1
       endif
+    endif
+    if (iscal.eq.iscalt) then
+      RUBRIQ = 'modele_flux_turbulent_phase'//cphase
+      itysup = 0
+      nbval  = 1
+      irtyp  = 1
+      call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,       &
+                  jturbt,ierror)
+      nberro=nberro+ierror
+      if (iturbt.ne.jturbt) write(nfecra,8221) iturbt, jturbt
+      jtyturt=jturbt/10
     endif
   enddo
 
@@ -764,6 +777,11 @@ if (nfaiok.eq.1 .or. nfabok.eq.1) then
         endif
         NOMFLU(ISCA(ISCAL))='fm_scalaire'//CAR4
       endif
+      if ((iscal.eq.iscalt).and.(ityturt.eq.3).and.(jtyturt.eq.3)) then
+        nomflu(iut)='fm_ut_phase'//cphase
+        nomflu(ivt)='fm_vt_phase'//cphase
+        nomflu(iwt)='fm_wt_phase'//cphase
+      endif
     enddo
   endif
   if (iale.eq.1) then
@@ -954,6 +972,11 @@ if (nfaiok.eq.1 .or. nfabok.eq.1) then
         endif
         NOMFLU(ISCA(ISCAL))='fm_a_scalaire'//CAR4
       endif
+      if ((iscal.eq.iscalt).and.(ityturt.eq.3).and.(jtyturt.eq.3)) then
+        nomflu(iut)='fm_a_ut_phase'//cphase
+        nomflu(ivt)='fm_a_vt_phase'//cphase
+        nomflu(iwt)='fm_a_wt_phase'//cphase
+      endif
     enddo
   endif
   if (iale.eq.1) then
@@ -1105,6 +1128,11 @@ if (nfabok.eq.1) then
           car4 = cindfs
         endif
         NOMCLI(ISCA(ISCAL))='_scalaire'//CAR4
+      endif
+      if ((iscal.eq.iscalt).and.(ityturt.eq.3).and.(jtyturt.eq.3)) then
+        nomcli(iut)='_ut_phase'//cphase
+        nomcli(ivt)='_vt_phase'//cphase
+        nomcli(iwt)='_wt_phase'//cphase
       endif
     enddo
   endif
@@ -2853,6 +2881,27 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
+ 8221 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : LECTURE DU FICHIER SUITE AUXILIAIRE         ',/,&
+'@    =========                                               ',/,&
+'@      REPRISE  DE CALCUL           AVEC ITURBT = ',I4        ,/,&
+'@      A PARTIR D''UN CALCUL REALISE AVEC ITURBT = ',I4       ,/,&
+'@                                                            ',/,&
+'@    Le modele de flux turbulent a ete modifie.              ',/,&
+'@                                                            ',/,&
+'@    Il est conseille cependant de                           ',/,&
+'@      verifier la valeur de ITURBT                          ',/,&
+'@                                                            ',/,&
+'@    Verifier que le fichier suite auxiliaire utilise        ',/,&
+'@      correspond bien au cas traite                         ',/,&
+'@                                                            ',/,&
+'@    Le calcul se poursuit...                                ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
  8300 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -3080,6 +3129,27 @@ return
 '@                                                            ',/,&
 '@    It is advised however in this case to                   ',/,&
 '@      verify the value of ITURB                             ',/,&
+'@                                                            ',/,&
+'@    Verify that the auxiliary restart file being used       ',/,&
+'@      corresponds  to the present case.                     ',/,&
+'@                                                            ',/,&
+'@    The run will continue...                                ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 8221 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING : WHEN READING THE AUXILIARY RESTART FILE       ',/,&
+'@    =========                                               ',/,&
+'@      THE RUN RESTARTED            WITH ITURBT = ',I4        ,/,&
+'@      FROM RUN CONDUCTED WITH           ITURBT = ',I4        ,/,&
+'@                                                            ',/,&
+'@    The turbulent flux model has changed.                   ',/,&
+'@                                                            ',/,&
+'@    It is advised however in this case to                   ',/,&
+'@      verify the value of ITURBT                            ',/,&
 '@                                                            ',/,&
 '@    Verify that the auxiliary restart file being used       ',/,&
 '@      corresponds  to the present case.                     ',/,&

@@ -167,7 +167,7 @@ double precision hbord(nfabor),thbord(nfabor)
 
 ! Local variables
 
-integer          ifac, iel, ivar, isou, ii, jj, kk, isvhbl
+integer          ifac, iel, ivar, isou, jsou, ii, jj, kk, isvhbl
 integer          ihcp, iscal
 integer          modntl
 integer          iuntur, iuiptn
@@ -189,7 +189,8 @@ double precision tx, ty, tz, txn, txn0, t2x, t2y, t2z
 double precision utau, upx, upy, upz, usn
 double precision uiptn, uiptnf, uiptmn, uiptmx
 double precision uetmax, uetmin, ukmax, ukmin, yplumx, yplumn
-double precision uk, uet, tet, yplus, uplus
+double precision tetmax, tetmin, tplumx, tplumn
+double precision uk, uet, tet, yplus, uplus, phit, tplus
 double precision gredu, rib, lmo, q0, e0
 double precision cfnnu, cfnns, cfnnk, cfnne
 double precision sqrcmu, clsyme, ek
@@ -204,6 +205,8 @@ double precision visclc, visctc, romc  , distbf, srfbnf, cpscv
 double precision cofimp
 double precision distb0, rugd  , rugt  , ydep  , act
 double precision dsa0
+double precision pfac
+double precision visci(3,3), fikis, viscis, distfi
 
 !===============================================================================
 
@@ -346,6 +349,14 @@ ukmin  =  grand
 ! min. and max. of y+
 yplumx = -grand
 yplumn =  grand
+
+! min. and max. of wall friction of the thermal scalar
+tetmax = -grand
+tetmin =  grand
+
+! min. and max. of T+
+tplumx = -grand
+tplumn =  grand
 
 ! Counter (reversal)
 iuiptn = 0
@@ -1216,8 +1227,8 @@ do ifac = 1, nfabor
             endif
           endif
 
-          ! Turbulent
-          if (iturb.ne.0) then
+          ! Scalar diffusivity
+          if (idften(ivar).eq.1) then
             ! En compressible, pour l'energie LAMBDA/CV+CP/CV*(MUT/SIGMAS)
             if (ippmod(icompf) .ge. 0) then
               if (ipccp.gt.0) then
@@ -1230,24 +1241,91 @@ do ifac = 1, nfabor
               else
                 cpscv = cpscv/cv0
               endif
-              hint = (rkl+cpp*cpscv*visctc/sigmas(iscal))/distbf
+              hint = (rkl+idifft(ivar)*cpp*cpscv*visctc/sigmas(iscal))/distbf
             else
-              hint = (rkl+cpp*visctc/sigmas(iscal))/distbf
+              hint = (rkl+idifft(ivar)*cpp*visctc/sigmas(iscal))/distbf
             endif
 
-          ! Laminar
-          else
-            hint  = rkl/distbf
+          ! Symmetric tensor diffusivity (GGDH or AFM)
+          elseif (idften(ivar).eq.6) then
+            ! En compressible, pour l'energie LAMBDA/CV+CP/CV*(MUT/SIGMAS)
+            if (ippmod(icompf) .ge. 0) then
+              if (ipccp.gt.0) then
+                cpscv = propce(iel,ipproc(icp))
+              else
+                cpscv = cp0
+              endif
+              if (ipccv.gt.0) then
+                cpscv = cpscv/propce(iel,ipproc(icv))
+              else
+                cpscv = cpscv/cv0
+              endif
+              visci(1,1) = rkl + idifft(ivar)*cpp*cpscv*visten(1,iel)*ctheta(ii)
+              visci(2,2) = rkl + idifft(ivar)*cpp*cpscv*visten(2,iel)*ctheta(ii)
+              visci(3,3) = rkl + idifft(ivar)*cpp*cpscv*visten(3,iel)*ctheta(ii)
+              visci(1,2) =       idifft(ivar)*cpp*cpscv*visten(4,iel)*ctheta(ii)
+              visci(2,1) =       idifft(ivar)*cpp*cpscv*visten(4,iel)*ctheta(ii)
+              visci(2,3) =       idifft(ivar)*cpp*cpscv*visten(5,iel)*ctheta(ii)
+              visci(3,2) =       idifft(ivar)*cpp*cpscv*visten(5,iel)*ctheta(ii)
+              visci(1,3) =       idifft(ivar)*cpp*cpscv*visten(6,iel)*ctheta(ii)
+              visci(3,1) =       idifft(ivar)*cpp*cpscv*visten(6,iel)*ctheta(ii)
+            else
+              visci(1,1) = rkl + idifft(ivar)*cpp*visten(1,iel)*ctheta(ii)
+              visci(2,2) = rkl + idifft(ivar)*cpp*visten(2,iel)*ctheta(ii)
+              visci(3,3) = rkl + idifft(ivar)*cpp*visten(3,iel)*ctheta(ii)
+              visci(1,2) =       idifft(ivar)*cpp*visten(4,iel)*ctheta(ii)
+              visci(2,1) =       idifft(ivar)*cpp*visten(4,iel)*ctheta(ii)
+              visci(2,3) =       idifft(ivar)*cpp*visten(5,iel)*ctheta(ii)
+              visci(3,2) =       idifft(ivar)*cpp*visten(5,iel)*ctheta(ii)
+              visci(1,3) =       idifft(ivar)*cpp*visten(6,iel)*ctheta(ii)
+              visci(3,1) =       idifft(ivar)*cpp*visten(6,iel)*ctheta(ii)
+            endif
+
+            ! ||Ki.S||^2
+            viscis = ( visci(1,1)*surfbo(1,ifac)       &
+                     + visci(1,2)*surfbo(2,ifac)       &
+                     + visci(1,3)*surfbo(3,ifac))**2   &
+                   + ( visci(2,1)*surfbo(1,ifac)       &
+                     + visci(2,2)*surfbo(2,ifac)       &
+                     + visci(2,3)*surfbo(3,ifac))**2   &
+                   + ( visci(3,1)*surfbo(1,ifac)       &
+                     + visci(3,2)*surfbo(2,ifac)       &
+                     + visci(3,3)*surfbo(3,ifac))**2
+
+            ! IF.Ki.S
+            fikis = ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,1)   &
+                    + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,1)   &
+                    + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,1)   &
+                    )*surfbo(1,ifac)                              &
+                  + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,2)   &
+                    + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,2)   &
+                    + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,2)   &
+                    )*surfbo(2,ifac)                              &
+                  + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,3)   &
+                    + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,3)   &
+                    + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,3)   &
+                    )*surfbo(3,ifac)
+
+            distfi = distb(ifac)
+
+            ! Take I" so that I"F= eps*||FI||*Ki.n when J" is in cell rji
+            ! NB: eps =1.d-1 must be consistent with vitens.f90
+            fikis = max(fikis, 1.d-1*sqrt(viscis)*distfi)
+
+            hint = viscis/surfbn(ifac)/fikis
           endif
 
           ! Loi rugueuse, on recalcule le coefficient d'echange fluide - paroi
           if (iturb.ne.0.and.icodcl(ifac,ivar).eq.6)then
-
             rugt = rcodcl(ifac,iv,3)
             act = xkappa/log((distbf+rugt)/rugt)
+            ! T+ = (T_I - T_w) / Tet
+            tplus = log((distbf+rugt)/rugt)/xkappa
             hflui = romc*cpp*uet*act*cfnns
           else
             hflui = hint
+            ! T+ = (T_I - T_w) / Tet
+            tplus = (distbf+rugt)/rugt
           endif
 
           if (isvhbl.gt.0) hbord(ifac) = hflui
@@ -1267,29 +1345,95 @@ do ifac = 1, nfabor
             hext = rcodcl(ifac,ivar,2)
             pimp = rcodcl(ifac,ivar,1)
 
+            rcprod = 2.d0*distbf/(distbf+rugt)-1.d0/(2.d0+rugt/(rugt+distbf))
+            ! Always outside of the viscous sub-layer
+            cofimp  = max(1.d0 - 1.d0/(xkappa*tplus)*rcprod*cfnns, 0.d0)
+            pfac = 0.d0
+
+            ! Gradient BCs
+            coefa(ifac,iclvar) = pfac
+            coefb(ifac,iclvar) = cofimp
+
+            ! Flux BCs
             if (abs(hext).gt.rinfin*0.5d0) then
-
-              ! Gradient BCs
-              hredui = hint/hflui
-              coefa(ifac,iclvar) = pimp/hredui
-              coefb(ifac,iclvar) = (hredui-1.d0)/hredui
-
-              ! Flux BCs
               coefa(ifac,iclvaf) = -hflui*pimp
               coefb(ifac,iclvaf) =  hflui
-
             else
-
-              ! Gradient BCs
-              hredui = hint/hflui
-              coefa(ifac,iclvar) = hext*pimp/(hint+hext*hredui)
-              coefb(ifac,iclvar) = (hint-(1.d0-hredui)*hext)/       &
-                                 (hint+hext*hredui)
-
-              ! Flux BCs
               heq = hflui*hext/(hflui+hext)
               coefa(ifac,iclvaf) = -heq*pimp
               coefb(ifac,iclvaf) =  heq
+            endif
+
+            ! Save the value of T^star and T^+
+            if (iscal.eq.iscalt) then
+              phit = coefa(ifac,iclvaf)+coefb(ifac,iclvaf)*thbord(ifac)
+              tet = phit/(max(sqrt(uk*uet),epzero))
+
+              tetmax = max(tet, tetmax)
+              tetmin = min(tet, tetmin)
+              tplumx = max(tplus,tplumx)
+              tplumn = min(tplus,tplumn)
+            endif
+
+            !-->turbulent heat flux !FIXME voir avec les personnes qui font du rugueux
+            if ((ityturt.eq.3).and.(iscal.eq.iscalt)) then
+              hint = 0.5d0*(visclc+rkl)/distbf !FIXME with the GGDH component
+
+              ! Gradient boundary conditions
+              !-----------------------------
+
+              coefaut(1,ifac) = 0.d0
+              coefaut(2,ifac) = 0.d0
+              coefaut(3,ifac) = 0.d0
+              ! Projection in order to have the velocity parallel to the wall
+              ! B = cofimp * ( IDENTITY - n x n )
+
+              coefbut(1,1,ifac) = 0.d0
+              coefbut(2,2,ifac) = 0.d0
+              coefbut(3,3,ifac) = 0.d0
+              coefbut(1,2,ifac) = 0.d0
+              coefbut(1,3,ifac) = 0.d0
+              coefbut(2,1,ifac) = 0.d0
+              coefbut(2,3,ifac) = 0.d0
+              coefbut(3,1,ifac) = 0.d0
+              coefbut(3,2,ifac) = 0.d0
+
+              ! Boundary conditions used in the temperature equation
+              do isou = 1, 3
+                cofarut(isou,ifac) = coefaut(isou,ifac)
+                do jsou = 1, 3
+                  cofbrut(isou,jsou,ifac) = coefbut(isou,jsou,ifac)
+                enddo
+              enddo
+
+              ! Add uk*Tet to the turbulent flux T'v' in High Reynolds
+              do isou = 1, 3
+                coefaut(isou,ifac) = coefaut(isou,ifac)                    &
+                                   + surfbo(isou,ifac)/surfbn(ifac)*phit
+              enddo
+
+              ! Translate coefa into cofaf and coefb into cofbf
+
+              ! Flux boundary conditions
+              !-------------------------
+
+              cofafut(1,ifac) = -hint*coefaut(1,ifac)
+              cofafut(2,ifac) = -hint*coefaut(2,ifac)
+              cofafut(3,ifac) = -hint*coefaut(3,ifac)
+
+              ! Projection in order to have the shear stress parallel to the wall
+              !  B = hflui*( IDENTITY - n x n )
+
+              cofbfut(1,1,ifac) = hint*(1.d0-rnx**2)
+              cofbfut(2,2,ifac) = hint*(1.d0-rny**2)
+              cofbfut(3,3,ifac) = hint*(1.d0-rnz**2)
+
+              cofbfut(1,2,ifac) = - hint*rnx*rny
+              cofbfut(1,3,ifac) = - hint*rnx*rnz
+              cofbfut(2,1,ifac) = - hint*rny*rnx
+              cofbfut(2,3,ifac) = - hint*rny*rnz
+              cofbfut(3,1,ifac) = - hint*rnz*rnx
+              cofbfut(3,2,ifac) = - hint*rnz*rny
 
             endif
 
@@ -1382,23 +1526,20 @@ enddo
 
 if (irangp.ge.0) then
   call parmin (uiptmn)
-  !==========
   call parmax (uiptmx)
-  !==========
   call parmin (uetmin)
-  !==========
   call parmax (uetmax)
-  !==========
   call parmin (ukmin)
-  !==========
   call parmax (ukmax)
-  !==========
   call parmin (yplumn)
-  !==========
   call parmax (yplumx)
-  !==========
   call parcpt (iuiptn)
-  !==========
+  if (iscalt.gt.0) then
+    call parmin (tetmin)
+    call parmax (tetmax)
+    call parmin (tplumn)
+    call parmax (tplumx)
+  endif
 endif
 
 !===============================================================================
@@ -1421,7 +1562,11 @@ if (iwarni(iu).ge.0) then
     modntl = 1
   endif
 
-  if (modntl.eq.0 .or. iwarni(iu).ge.2) then
+  if ((modntl.eq.0 .or. iwarni(iu).ge.2).and.iscalt.gt.0) then
+    write(nfecra,2011) &
+         uiptmn,uiptmx,uetmin,uetmax,ukmin,ukmax,yplumn,yplumx,   &
+         tetmin, tetmax, tplumn, tplumx, iuiptn
+  elseif (modntl.eq.0 .or. iwarni(iu).ge.2) then
     write(nfecra,2010) &
          uiptmn,uiptmx,uetmin,uetmax,ukmin,ukmax,yplumn,yplumx,   &
          iuiptn
@@ -1453,6 +1598,23 @@ endif
  '------------------------------------------------------------',  &
  /,/)
 
+ 2011 format(/,                                                   &
+ 3X,'** CONDITIONS AUX LIMITES EN PAROI RUGUEUSE',/,        &
+ '   -------------------------------------------',/,        &
+ '------------------------------------------------------------',/,&
+ '                                         Minimum     Maximum',/,&
+ '------------------------------------------------------------',/,&
+ '   Vitesse rel. en paroi    uiptn : ',2E12.5                 ,/,&
+ '   Vitesse de frottement    uet   : ',2E12.5                 ,/,&
+ '   Vitesse de frottement    uk    : ',2E12.5                 ,/,&
+ '   Distance adim. rugueuse  yplus : ',2E12.5                 ,/,&
+ '   Sca. thermal de frott.   tstar : ',2E12.5                 ,/,&
+ '   Sca. thermal adim. rug.  tplus : ',2E12.5                 ,/,&
+ '   ------------------------------------------------------'   ,/,&
+ '   Nbre de retournements de la vitesse en paroi : ',I10      ,/,&
+ '------------------------------------------------------------',  &
+ /,/)
+
 
 #else
 
@@ -1469,6 +1631,23 @@ endif
  '   Friction velocity        uet   : ',2E12.5                 ,/,&
  '   Friction velocity        uk    : ',2E12.5                 ,/,&
  '   Rough dimensionless dist yplus : ',2E12.5                 ,/,&
+ '   ------------------------------------------------------   ',/,&
+ '   Nb of reversal of the velocity at the wall   : ',I10      ,/,&
+ '------------------------------------------------------------',  &
+ /,/)
+
+ 2011 format(/,                                                   &
+ 3X,'** BOUNDARY CONDITIONS FOR ROUGH WALLS',/,             &
+ '   --------------------------------------',/,             &
+ '------------------------------------------------------------',/,&
+ '                                         Minimum     Maximum',/,&
+ '------------------------------------------------------------',/,&
+ '   Rel velocity at the wall uiptn : ',2E12.5                 ,/,&
+ '   Friction velocity        uet   : ',2E12.5                 ,/,&
+ '   Friction velocity        uk    : ',2E12.5                 ,/,&
+ '   Rough dimensionless dist yplus : ',2E12.5                 ,/,&
+ '   Friction thermal sca.    tstar : ',2E12.5                 ,/,&
+ '   Rough dim-less th. sca.  tplus : ',2E12.5                 ,/,&
  '   ------------------------------------------------------   ',/,&
  '   Nb of reversal of the velocity at the wall   : ',I10      ,/,&
  '------------------------------------------------------------',  &

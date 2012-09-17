@@ -495,6 +495,9 @@ endif
 
 write(nfecra,9900)
 
+if (nscaus.gt.0) write(nfecra,2543) iturbt
+
+write(nfecra,9900)
 
 #if defined(_CS_LANG_FR)
 
@@ -747,6 +750,11 @@ write(nfecra,9900)
 '       CSSR1  = ', E14.5,    ' (Coef c_r1                   )',/,&
 '       CSSR2  = ', E14.5,    ' (Coef c_r2                   )',/,&
 '       CSSR3  = ', E14.5,    ' (Coef c_r3                   )',/)
+
+ 2543 FORMAT( &
+' ** MODELE DIFFUSION SCALAIRE'                                ,/,&
+'    -------------------------'                                ,/,&
+'       ITURBT = ',4X,I10,    ' (modele flux turbulent       )',/)
 
  2550 format(/)
 
@@ -1001,6 +1009,11 @@ write(nfecra,9900)
 '       CSSR1  = ', E14.5,    ' (Coef c_r1                   )',/,&
 '       CSSR2  = ', E14.5,    ' (Coef c_r2                   )',/,&
 '       CSSR3  = ', E14.5,    ' (Coef c_r3                   )',/)
+
+ 2543 FORMAT( &
+' ** SCALAR DIFFUSION MODEL'                                   ,/,&
+'    ----------------------'                                   ,/,&
+'       ITURBT = ',4X,I10,    ' (turbulent flux model        )',/)
 
  2550 format(/)
 

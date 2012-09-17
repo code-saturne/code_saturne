@@ -238,6 +238,38 @@ do iscal = 1, nscal
       enddo
     endif
   endif
+  if ((iturbt.ge.0).and.(iturbt.lt.30)) then
+    do iel = 1, ncel
+      propce(iel,ipproc(iut)) = 0.d0
+      propce(iel,ipproc(ivt)) = 0.d0
+      propce(iel,ipproc(iwt)) = 0.d0
+    enddo
+  endif
+  if (ityturt.eq.3)then
+    ! Boundary conditions for the velocity if coupling of the components
+    do ifac = 1, nfabor
+      do isou = 1, 3
+        coefaut(isou,ifac) = 0.d0
+        cofafut(isou,ifac) = 0.d0
+        cofarut(isou,ifac) = coefaut(isou,ifac)
+        do jsou = 1, 3
+          if (jsou.eq.isou) then
+            coefbut(isou,jsou,ifac) = 1.d0
+            cofbfut(isou,jsou,ifac) = 0.d0
+          else
+            coefbut(isou,jsou,ifac) = 0.d0
+            cofbfut(isou,jsou,ifac) = 0.d0
+          endif
+          cofbrut(isou,jsou,ifac) = coefbut(isou,jsou,ifac)
+        enddo
+      enddo
+    enddo
+  endif
+  if (iscal.eq.iscalt) then
+    do iel = 1, ncel
+      propce(iel,ipproc(ibeta)) = 0.d0
+    enddo
+  endif
 enddo
 
 ! Initialisation of source terms for weakly compressible algorithm

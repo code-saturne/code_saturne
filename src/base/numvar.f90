@@ -94,6 +94,8 @@ module numvar
   ! ivisma : Viscosite de maillage en ALE (eventuellement orthotrope)
   ! iustdy : pointer for dilatation source terms
   ! itsrho : pointer for global dilatation source terms
+  ! iut,ivt,iwt: pointer for turbulent flux
+
 
   integer, save :: ipproc(npromx), ipprof(npromx), ipprob(npromx), &
                    irom  , iroma , iviscl,                         &
@@ -103,7 +105,8 @@ module numvar
                    iestim(nestmx)         , ifluma(nvarmx),        &
                    ifluaa(nvarmx), ismago, icour ,                 &
                    ifour , iprtot, ivisma(3),                      &
-                   iustdy(nscamx), itsrho
+                   iustdy(nscamx), itsrho,                         &
+                   iut,ivt,iwt,ibeta
 
   ! Position des conditions aux limites
   !  (position dans coefa et coefb des coef (coef. coef.f) relatifs a

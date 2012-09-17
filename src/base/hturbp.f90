@@ -62,12 +62,13 @@
 !> \param[in]     prt           turbulent Prandtl number
 !> \param[in]     prl           laminar Prandtl number
 !> \param[out]    htur          corrected exchange coefficient
+!> \param[out]    yp1
 !_______________________________________________________________________________
 
 subroutine hturbp &
 !================
 
- ( prl    , prt    , ckarm  , yplus  , htur   )
+ ( prl    , prt    , ckarm  , yplus  , htur , yp1 )
 
 !===============================================================================
 
@@ -78,13 +79,13 @@ implicit none
 ! Arguments
 
 double precision htur
-double precision prl,ckarm,prt,yplus
+double precision prl,ckarm,prt,yplus, yp1
 
 ! Local variables
 
 double precision tplus
 double precision beta2,a2
-double precision yp0,yp1,yp2
+double precision yp0,yp2
 double precision prlm1
 
 !============================================================================

@@ -913,6 +913,16 @@ if (nscal.ge.1) then
          'NOMBRE DE SCALAIRES  ',          nscal
     iok = iok + 1
   endif
+
+!    Turbulent flux model for scalar
+
+  if (iturbt.ne. 0.and.iturbt.ne.10                 .and. &
+      iturbt.ne.20                 .and.iturbt.ne.30      &
+                   ) then
+    write(nfecra,2604) 'iturbt  ',iturbt
+    iok = iok + 1
+  endif
+
 endif
 
 if (ideuch.lt.0.or.ideuch.gt.2) then
@@ -3156,6 +3166,23 @@ endif
 '@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@'                                                            ,/)
+ 2604 format(&
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES'               ,/,&
+'@    ========='                                               ,/,&
+'@    ',a7,' DOIT ETRE UN ENTIER EGAL A 0, 10,         20,'    ,/,&
+'@       OU 30'                                                ,/,&
+'@    IL VAUT ICI ',i10                                        ,/,&
+'@'                                                            ,/,&
+'@  Le calcul ne peut etre execute.'                           ,/,&
+'@'                                                            ,/,&
+'@  Verifier les parametres donnes via l''interface'           ,/,&
+'@    ou cs_user_parameters.f90.'                              ,/,&
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',/)
  2606 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -5697,6 +5724,23 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
+2604 format( &
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA'               ,/,&
+'@    ========='                                               ,/,&
+'@    ',a7,' MUST BE AN INTEGER EQUAL TO 0, 10, 11, 20, 21,'   ,/,&
+'@    30 OR 31'                                                ,/,&
+'@   IT HAS VALUE ',i10                                        ,/,&
+'@'                                                            ,/,&
+'@   The calculation could NOT run.'                           ,/,&
+'@'                                                            ,/,&
+'@ Check the input data given through the User Interface'      ,/,&
+'@   or in cs_user_parameters.f90.'                            ,/,&
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',/)
  2606 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&

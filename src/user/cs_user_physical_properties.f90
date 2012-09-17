@@ -249,9 +249,15 @@ if (.false.) then
   ! law                    rho  = t  * ( a *  t +  b) +   c
   ! so      propce(iel, ipcrom) = xrtp * (vara*xrtp+varb) + varc
 
+  ! Volumic thermal expansion coefficient
+  !--------------------------------------
+  ! law                     beta  = -1/rho * (d rho / d T)
+  ! so propce(iel, ipproc(ibeta)) = (-1.d0/propce(iel,ipcrom))*(2.d0*vara*xrtp+varb)
+
   do iel = 1, ncel
     xrtp = rtp(iel,ivart)
     propce(iel,ipcrom) = xrtp * (vara*xrtp+varb) + varc
+    propce(iel,ipproc(ibeta))= (-1.d0/propce(iel,ipcrom))*(2.d0*vara*xrtp+varb)
   enddo
 
 

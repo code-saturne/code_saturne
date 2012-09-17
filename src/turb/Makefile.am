@@ -57,9 +57,11 @@ clipsa.f90 \
 clpalp.f90 \
 clprij.f90 \
 clpv2f.f90 \
+divrit.f90 \
 resalp.f90 \
 reseps.f90 \
 resrij.f90 \
+resrit.f90 \
 resssg.f90 \
 resv2f.f90 \
 rijech.f90 \

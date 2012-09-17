@@ -50,6 +50,7 @@ subroutine lecamp &
 ! jphas            ! e  ! <-- ! nombre de phases du calcul precedent           !
 ! ljtu             ! e  ! <-- ! longueur de jturb                              !
 ! jturb            ! te ! <-- ! modeles de turb calcul precedent               !
+! jturbt           ! te ! <-- ! modeles de flux turb calcul precedent          !
 ! rtp              ! tr ! --> ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant        )          !
 !__________________!____!_____!________________________________________________!
@@ -101,7 +102,7 @@ integer          ierror, irtyp,  itysup, nbval
 integer          nberro, ilecec
 integer          iturph, jturph, itytph, jtytph
 integer          nfmtsc, nfmtru
-integer          jturb, jtytur, jale
+integer          jturb, jtytur, jale, jturbt
 integer          impamo
 integer          ival
 double precision d2s3, d2s3xk
@@ -937,6 +938,17 @@ write(nfecra,1598)
 nberro = 0
 
 if(nscal.gt.0) then
+  rubriq = 'modele_flux_turbulent_phase'//cphase
+  itysup = 0
+  nbval  = 1
+  irtyp  = 1
+  call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,jturbt,    &
+              ierror)
+  nberro=nberro+ierror
+
+  ! --->  Donnees modifiees
+  if (iturbt .ne. jturbt) write(nfecra,8411) iturbt, jturbt
+
   do iscal = 1, nscal
     ivar = isca(iscal)
 !         Si le scalaire existait precedemment on le lit
@@ -965,6 +977,26 @@ if(nscal.gt.0) then
         enddo
         write(nfecra,9511)rubrik
       endif
+    endif
+    if((iscal.eq.iscalt).and.(ityturt.eq.3)) then
+      itysup = 1
+      nbval  = 1
+      irtyp  = 2
+
+      rubriq = 'ut_ce_phase'//cphase
+      call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+           rtp(1,iut),ierror)
+      nberro=nberro+ierror
+
+      rubriq = 'vt_ce_phase'//cphase
+      call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+           rtp(1,ivt),ierror)
+      nberro=nberro+ierror
+
+      rubriq = 'wt_ce_phase'//cphase
+      call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+           rtp(1,iwt),ierror)
+      nberro=nberro+ierror
     endif
   enddo
 endif
@@ -1175,6 +1207,24 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
+ 8411 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : LECTURE DU FICHIER SUITE PRINCIPAL          ',/,&
+'@    =========                                               ',/,&
+'@                                                            ',/,&
+'@      REPRISE  DE CALCUL           AVEC ITURBT = ',I4        ,/,&
+'@      A PARTIR D''UN CALCUL REALISE AVEC ITURBT = ',I4       ,/,&
+'@                                                            ',/,&
+'@    Le modele de flux turbulent a ete modifie.              ',/,&
+'@    Le calcul peut etre execute.                            ',/,&
+'@                                                            ',/,&
+'@    Il est conseille cependant de                           ',/,&
+'@      verifier la valeur de ITURBT(',I2,')                  ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
  8711 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -1260,6 +1310,24 @@ return
 '@                                                            ',/,&
 '@    However, it is strongly advised to check                ',/,&
 '@      the value of the variable ITURB(',I2,')               ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 8411 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING : WHEN READING THE MAIN RESTART FILE            ',/,&
+'@    =========                                               ',/,&
+'@                                                            ',/,&
+'@    THE CURRENT CALCULATION USES ITURBT = ',I4               ,/,&
+'@    BUT RESTARTS FROM ANOTHER ONE USING ITURBT = ',I4        ,/,&
+'@                                                            ',/,&
+'@    The turbulent flux model has changed.                   ',/,&
+'@    The computation can be executed.                        ',/,&
+'@                                                            ',/,&
+'@    However, it is strongly advised to check                ',/,&
+'@      the value of the variable ITURBT(',I2,')              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

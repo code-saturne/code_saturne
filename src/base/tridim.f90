@@ -142,7 +142,7 @@ integer          nbzfmx, nozfmx
 double precision cpcst , tditot, tdist2, tdist1, cvcst
 double precision xxp0, xyp0, xzp0
 double precision relaxk, relaxe, relaxw, relaxn
-double precision ctheta, stheta, omgnrm, rrotgb(3,3)
+double precision cosdto, sindto, omgnrm, rrotgb(3,3)
 
 integer          ipass
 data             ipass /0/
@@ -422,13 +422,13 @@ if (imobil.eq.1) then
 
   omgnrm = sqrt(omegax**2 + omegay**2 + omegaz**2)
 
-  ctheta = cos(ttcabs*omgnrm)
-  stheta = sin(ttcabs*omgnrm)
+  cosdto = cos(ttcabs*omgnrm)
+  sindto = sin(ttcabs*omgnrm)
 
   do ii = 1, 3
     do jj = 1, 3
-      rrotgb(ii,jj) = ctheta*irot(ii,jj) + (1.d0 - ctheta)*prot(ii,jj) &
-                                         +         stheta *qrot(ii,jj)
+      rrotgb(ii,jj) = cosdto*irot(ii,jj) + (1.d0 - cosdto)*prot(ii,jj) &
+                                         +         sindto *qrot(ii,jj)
     enddo
   enddo
 
@@ -684,7 +684,7 @@ allocate(rcodcl(nfabor,nvar,3))
 if (isvhb.gt.0) then
   allocate(hbord(nfabor))
 endif
-if (isvtb.gt.0 .or. iirayo.gt.0) then
+if (isvtb.gt.0 .or. iirayo.gt.0 .or. ityturt.eq.3) then
   allocate(tbord(nfabor))
 endif
 if (itytur.eq.4 .and. idries.eq.1) then

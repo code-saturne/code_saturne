@@ -237,6 +237,14 @@ enddo
 do iis = 1 , nscal
   ivar = isca  (iis  )
   ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
+  if ((iis.eq.iscalt).and.(ityturt.eq.3)) then
+    ivar = iut
+    ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
+    ivar = ivt
+    ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
+    ivar = iwt
+    ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
+  endif
 enddo
 
 if (idtvar.le.0) then

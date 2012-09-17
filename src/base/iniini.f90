@@ -471,6 +471,9 @@ iphi   = 0
 ifb    = 0
 ial    = 0
 inusa  = 0
+iut    = 0
+ivt    = 0
+iwt    = 0
 
 do iscal = 1, nscamx
   isca  (iscal) = 0
@@ -865,6 +868,10 @@ idries =-1
 irccor = 0
 itycor = -999
 
+! --- Turbulent flux for a scalar
+!     The turbulence model must be chosen by the user
+iturbt = -999
+
 ! --- Viscosite secondaire
 
 ivisse = 1
@@ -1178,7 +1185,7 @@ cebmr2  = 0.80d0
 cebmr3  = 0.65d0
 cebmr4  = 0.625d0
 cebmr5  = 0.20d0
-! cebmr6  is used in the boyant term
+! cebmr6  is used in the buoyant term
 cebmr6  = 0.6d0
 csebm   = 0.21d0
 cebme2  = 1.83d0
@@ -1188,7 +1195,6 @@ sigebm  = 1.15d0
 xa1     = 0.1d0
 xceta   = 80.d0
 xct     = 6.d0
-
 
 !   pour la LES
 xlesfl = 2.d0
@@ -1292,6 +1298,20 @@ do iscal = 1, nscamx
   wmolsp(iscal) = 0.0d0
   rvarfl(iscal) = 0.8d0
 enddo
+
+! For the turbulent fluxes of the scalar
+c1trit = 4.15d0
+c2trit = 0.55d0
+c3trit = 0.5d0
+c4trit = 0.d0
+
+! For the AFM model (Algebraic flux model)
+xiafm  = 0.7d0
+etaafm = 0.4d0
+cthafm = 0.236d0
+
+! For the DFM (tranport equation on the turbulent flux)
+cthdfm = 0.31d0
 
 ! --- Ici tout cstphy a ete initialise
 

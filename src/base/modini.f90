@@ -72,7 +72,7 @@ integer          ii, jj, ivar, iok, iest, imom, ikw
 integer          icompt, ipp, nbccou, nn
 integer          nscacp, iscal
 double precision relxsp
-double precision omgnrm, ctheta, stheta
+double precision omgnrm, cosdto, sindto
 double precision ux, uy, uz
 
 !===============================================================================
@@ -375,6 +375,15 @@ if (iscalt.gt.0.and.iscalt.le.nscal) then
         nomvar(ipprtp(isca(iscalt))) = 'Temperature'
       endif
     endif
+  endif
+  if (nomvar(ipprtp(iut)) .eq.' ') then
+    write(nomvar(ipprtp(iut)), '(a2)') 'ut'
+  endif
+  if (nomvar(ipprtp(ivt)) .eq.' ') then
+    write(nomvar(ipprtp(ivt)), '(a2)') 'vt'
+  endif
+  if (nomvar(ipprtp(iwt)) .eq.' ') then
+    write(nomvar(ipprtp(iwt)), '(a2)') 'wt'
   endif
 endif
 
@@ -780,6 +789,35 @@ do iscal = 1, nscal
   elseif (ischtp.eq.2) then
     thetav(ivar) = 0.5d0
   endif
+  if ((iscal.eq.iscalt).and.(ityturt.eq.3)) then
+    if (abs(thetav(iut)+999.d0).gt.epzero) then
+      write(nfecra,1031) 'VARIABLE ut ','THETAV'
+      iok = iok + 1
+    elseif (ischtp.eq.1) then
+      thetav(iut) = 1.d0
+    elseif (ischtp.eq.2) then
+      !     pour le moment, on ne peut pas passer par ici (cf varpos)
+      thetav(iut) = 0.5d0
+    endif
+    if (abs(thetav(ivt)+999.d0).gt.epzero) then
+      write(nfecra,1031) 'VARIABLE vt ','THETAV'
+      iok = iok + 1
+    elseif (ischtp.eq.1) then
+      thetav(ivt) = 1.d0
+    elseif (ischtp.eq.2) then
+      !     pour le moment, on ne peut pas passer par ici (cf varpos)
+      thetav(ivt) = 0.5d0
+    endif
+    if (abs(thetav(iwt)+999.d0).gt.epzero) then
+      write(nfecra,1031) 'VARIABLE wt ','THETAV'
+      iok = iok + 1
+    elseif (ischtp.eq.1) then
+      thetav(iwt) = 1.d0
+    elseif (ischtp.eq.2) then
+      !     pour le moment, on ne peut pas passer par ici (cf varpos)
+      thetav(iwt) = 0.5d0
+    endif
+  endif
 enddo
 
 !     Vitesse de maillage en ALE
@@ -973,6 +1011,11 @@ elseif (iturb.eq.60) then
 elseif (iturb.eq.70) then
   ! cdtvar est à 1.0 par defaut dans iniini.f90
   cdtvar(inusa)= cdtvar(inusa)
+endif
+if ((nscaus.gt.0).and.(ityturt.eq.3)) then
+  cdtvar(iut) = cdtvar(iu)
+  cdtvar(ivt) = cdtvar(iu)
+  cdtvar(iwt) = cdtvar(iu)
 endif
 
 ! ---> IDEUCH, YPLULI
@@ -1319,6 +1362,46 @@ do ii = 1, 3
   endif
 enddo
 
+! Turbulent fluxes constant for GGDH, AFM and DFM
+if (nscal.gt.0) then
+  if (iturbt.eq.0) then
+    do iscal = 1, nscal
+      idften(isca(iscal)) = 1
+    enddo
+
+  ! AFM and GGDH on the thermal scalar
+  elseif (ityturt.eq.1.or.ityturt.eq.2) then
+    if (iscalt.gt.0) then
+      idften(isca(iscalt)) = 6
+      ctheta(iscalt) = cthafm
+    else
+      call csexit(1)
+    endif
+
+  ! DFM on the thermal scalar
+  elseif (ityturt.eq.3) then
+    if (iscalt.gt.0) then
+      idifft(isca(iscalt)) = 0
+      idften(isca(iscalt)) = 1
+      ctheta(iscalt) = cthdfm
+    else
+      call csexit(1)
+    endif
+    ! GGDH on the thermal fluxes
+    idften(iut) = 6
+    idften(ivt) = 6
+    idften(iwt) = 6
+    ! GGDH on the variance of the thermal scalar
+    do iscal = 1, nscal
+      if (iscavr(iscal).eq.iscalt) then
+        idften(isca(iscal)) = 6
+        ctheta(iscal) = csrij
+      endif
+    enddo
+
+  endif
+endif
+
 ! Vecteur rotation et matrice(s) associees
 
 omgnrm = sqrt(omegax**2 + omegay**2 + omegaz**2)
@@ -1363,8 +1446,8 @@ if (omgnrm.ge.epzero) then
 
   ! Matrice de rotation
 
-  ctheta = cos(dtref*omgnrm)
-  stheta = sin(dtref*omgnrm)
+  cosdto = cos(dtref*omgnrm)
+  sindto = sin(dtref*omgnrm)
 
   do ii = 1, 3
     do jj = 1, 3
@@ -1375,8 +1458,8 @@ if (omgnrm.ge.epzero) then
 
   do ii = 1, 3
     do jj = 1, 3
-      rrot(ii,jj) = ctheta*irot(ii,jj) + (1.d0 - ctheta)*prot(ii,jj) &
-                                       +         stheta *qrot(ii,jj)
+      rrot(ii,jj) = cosdto*irot(ii,jj) + (1.d0 - cosdto)*prot(ii,jj) &
+                                       +         sindto *qrot(ii,jj)
     enddo
   enddo
 

@@ -140,8 +140,8 @@ cindfm = 'YYYY'
 !  A la sortie de cette section, NSCAL, NSCAUS et NSCAPP sont connus.
 !  On renseignera egalement ici les valeurs de ISCAVR, IVISLS
 !    pour les scalaires physiques particulieres en question.
-!  On en profite aussi pour remplir ITYTUR puisque ITURB vient d'etre
-!    defini.
+!  On en profite aussi pour remplir ITYTUR et ITYTURT puisque ITURB et ITURBT
+!    viennent d'etre definis.
 !  On remplit aussi itycor puisque irccor, iturb et itytur viennent d'etre
 !    definis.
 !===============================================================================
@@ -158,6 +158,8 @@ if(ipass.eq.1) then
   elseif (irccor.eq.1.and.(iturb.eq.60.or.iturb.eq.70)) then
     itycor = 2
   endif
+  ! ---> Remplissage de ityturt
+  if (nscaus.gt.0) ityturt = iturbt/10
 
 ! ---> Coherence modele
 !     Rq : ATTENTION il faudrait renforcer le blindage
@@ -492,6 +494,14 @@ if(ipass.eq.2) then
       ivar     = ivar + 1
       isca(ii) = ivar
     enddo
+    if (ityturt.eq.3) then
+      ivar   = ivar + 1
+      iut    = ivar
+      ivar   = ivar + 1
+      ivt    = ivar
+      ivar   = ivar + 1
+      iwt    = ivar
+    endif
   endif
 
 ! --- Nombre total de variables
@@ -644,6 +654,18 @@ if(ipass.eq.2) then
         ivisls(ii) = iprop
       endif
     enddo
+    if ((ityturt.eq.0).or.(ityturt.eq.1).or.(ityturt.eq.2)) then
+      iprop      = iprop + 1
+      iut        = iprop
+      iprop      = iprop + 1
+      ivt        = iprop
+      iprop      = iprop + 1
+      iwt        = iprop
+    endif
+    if (ityturt.ge.0) then
+      iprop      = iprop + 1
+      ibeta      = iprop
+    endif
   endif
 
 
@@ -685,6 +707,12 @@ if(ipass.eq.2) then
   do iscal = 1, nscal
     ifluma(isca(iscal)) = ifluma(iu)
   enddo
+  if ((nscal.ge.1).and.(ityturt.eq.3)) then
+    ifluma(iut) = iprop
+    ifluma(ivt) = iprop
+    ifluma(iwt) = iprop
+  endif
+
   if (iale.eq.1) then
     ifluma(iuma) = ifluma(ipr)
     ifluma(ivma) = ifluma(ipr)
@@ -825,7 +853,6 @@ if(ipass.eq.2) then
       endif
     enddo
   else
-
     do ii = 1, nscal
       if(ivisls(ii).gt.0) then
         if(iscavr(ii).le.0) then
@@ -836,7 +863,27 @@ if(ipass.eq.2) then
         endif
       endif
     enddo
-
+  endif
+  if ((nscal.ge.1).and.                                         &
+      ((ityturt.eq.0).or.(ityturt.eq.1).or.(ityturt.eq.2))) then
+    iprop                 = iprop + 1
+    ipproc(iut)           = iprop
+    ipppst                = ipppst + 1
+    ipppro(iprop)         = ipppst
+    iprop                 = iprop + 1
+    ipproc(ivt)           = iprop
+    ipppst                = ipppst + 1
+    ipppro(iprop)         = ipppst
+    iprop                 = iprop + 1
+    ipproc(iwt)           = iprop
+    ipppst                = ipppst + 1
+    ipppro(iprop)         = ipppst
+  endif
+  if ((nscal.ge.1).and.(ityturt.ge.0)) then
+    iprop                 = iprop + 1
+    ipproc(ibeta)         = iprop
+    ipppst                = ipppst + 1
+    ipppro(iprop)         = ipppst
   endif
 
   do ii = 1, nscal
@@ -1288,6 +1335,11 @@ if(ipass.eq.3) then
     do iscal = 1, nscal
       ifluaa(isca(iscal)) = ifluaa(iu)
     enddo
+    if ((nscal.ge.1).and.(ityturt.eq.3)) then
+      ifluaa(iut) = iprop
+      ifluaa(ivt) = iprop
+      ifluaa(iwt) = iprop
+    endif
   endif
 
 ! --- Sauvegarde du dernier numero de propriete
@@ -1348,6 +1400,9 @@ if(ipass.eq.3) then
       iprop                 = iprop + 4-1
     elseif(iturb.eq.70) then
       iprop                 = iprop + 1-1
+    endif
+    if ((nscal.ge.1).and.(ityturt.eq.3)) then
+      iprop               = iprop + 3 -1
     endif
   endif
 

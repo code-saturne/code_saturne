@@ -450,6 +450,20 @@ module optcal
 
   integer, save :: imvisf
 
+  ! modele de flux turbulent u'T' pour un scalaire T
+  !  iturbt
+  !    = 0  SGDH
+  !    = 10 GGDH
+  !    = 20 AFM
+  !    = 30 DFM (Transport equation modelized)
+  !    = 11 EB-GGDH
+  !    = 21 EB-AFM
+  !    = 31 EB-DFM
+  !  ityturt
+  !    = int(iturbt/10) pour distinguer rapidement les classes de modeles
+
+  integer, save :: iturbt , ityturt
+
   ! Type des conditions limites et index min et max
   !                 des sous listes defaces de bord
 

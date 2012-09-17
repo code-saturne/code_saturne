@@ -135,7 +135,7 @@ double precision energi(ncelet) , dissip(ncelet), romp(nbpmax)
 
 ! Local variables
 
-integer          iel , ip , id , igvx , igvy , igvz , ivt
+integer          iel , ip , id , igvx , igvy , igvz , iscath
 integer          iromf
 
 double precision cd1 , cd2 , rec , cl , c0 , cb , cbcb
@@ -269,19 +269,19 @@ do ip = 1,nbpart
            ippmod(icfuel).ge.0 .or.                               &
            ippmod(ielarc).ge.0 .or.                               &
            ippmod(ieljou).ge.0      ) then
-        ivt = ihm
+        iscath = ihm
       else
-        ivt = iscalt
+        iscath = iscalt
       endif
 
 ! a priori en combustion gaz ou CP, la diffusvite est toujours constante
 
       if (ippmod(icoebu).eq.0 .or. ippmod(icoebu).eq.2) then
         xrkl = diftl0 / rom
-      else if (ivisls(ivt).ge.1) then
-        xrkl = propce(iel,ipproc(ivisls(ivt))) / rom
+      else if (ivisls(iscath).ge.1) then
+        xrkl = propce(iel,ipproc(ivisls(iscath))) / rom
       else
-        xrkl = visls0(ivt) / rom
+        xrkl = visls0(iscath) / rom
       endif
 
       prt  = xnul / xrkl

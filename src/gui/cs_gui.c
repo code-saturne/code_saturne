@@ -1207,6 +1207,27 @@ static char *_scalar_name_label(const char *kw, const int scalar_num)
   return str;
 }
 
+/*-----------------------------------------------------------------------------
+ * Return the model for heat flux
+ *
+ *----------------------------------------------------------------------------*/
+
+static char *cs_gui_get_heat_flux_model(void)
+{
+  char *path = NULL;
+  char *str  = NULL;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "thermophysical_models", "thermal_scalar");
+  cs_xpath_add_attribute(&path, "heat_flux");
+
+  str = cs_gui_get_attribute_value(path);
+
+  BFT_FREE(path);
+
+  return str;
+}
+
 /*==========================
  * FOR VOLUMICS ZONES
  *==========================*/
@@ -1563,10 +1584,11 @@ void CS_PROCF (uiinit, UIINIT) (void)
  *
  * Fortran Interface:
  *
- * SUBROUTINE CSTURB (ITURB, IDEUCH, IGRAKE, IGRAKI, XLOMLG)
+ * SUBROUTINE CSTURB (ITURB, ITURBT, IDEUCH, IGRAKE, IGRAKI, XLOMLG)
  * *****************
  *
  * INTEGER          ITURB   <--   turbulence model
+ * INTEGER          ITURBT   <--  heat flux model
  * INTEGER          IDEUCH  <--   wall law treatment
  * INTEGER          IGRAKE  <--   k-eps gravity effects
  * INTEGER          IGRAKI  <--   Rij-eps gravity effects
@@ -1575,12 +1597,14 @@ void CS_PROCF (uiinit, UIINIT) (void)
 
 
 void CS_PROCF (csturb, CSTURB) (int    *const iturb,
+                                int    *const iturbt,
                                 int    *const ideuch,
                                 int    *const igrake,
                                 int    *const igrari,
                                 double *const xlomlg)
 {
   char *model = NULL;
+  char *flux_model = NULL;
 
   model = cs_gui_get_thermophysical_model("turbulence");
   if (model == NULL)
@@ -1635,10 +1659,24 @@ void CS_PROCF (csturb, CSTURB) (int    *const iturb,
     bft_error(__FILE__, __LINE__, 0,
         _("Invalid turbulence model: %s.\n"), model);
 
+  if (!cs_gui_strcmp(model, "off"))
+    if (cs_gui_thermal_scalar()) {
+      flux_model = cs_gui_get_heat_flux_model();
+      if (cs_gui_strcmp(flux_model, "SGDH"))
+        *iturbt = 0;
+      else if (cs_gui_strcmp(flux_model, "GGDH"))
+        *iturbt = 10;
+      else if (cs_gui_strcmp(flux_model, "AFM"))
+        *iturbt = 20;
+      else if (cs_gui_strcmp(flux_model, "DFM"))
+        *iturbt = 30;
+    }
+
 #if _XML_DEBUG_
   bft_printf("==>CSTURB\n");
   bft_printf("--model: %s\n", model);
   bft_printf("--iturb = %i\n", *iturb);
+  bft_printf("--iturbt = %i\n", *iturbt);
   bft_printf("--igrake = %i\n", *igrake);
   bft_printf("--igrari = %i\n", *igrari);
   bft_printf("--ideuch = %i\n", *ideuch);
@@ -1646,6 +1684,7 @@ void CS_PROCF (csturb, CSTURB) (int    *const iturb,
 #endif
 
   BFT_FREE(model);
+  BFT_FREE(flux_model);
 }
 
 /*----------------------------------------------------------------------------
@@ -1978,7 +2017,12 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
                                 const int *const ivma,
                                 const int *const iwma,
                                 const int *const isca,
-                                const int *const iscapp)
+                                const int *const iscapp,
+                                const int *const iscalt,
+                                const int *const iturbt,
+                                const int *const iut,
+                                const int *const ivt,
+                                const int *const iwt)
 {
   int n = 0;
   int i, j, k;
@@ -2156,6 +2200,27 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
     for (i=k; i < n; i++) {
       BFT_MALLOC(cs_glob_var->head[i], strlen("ale_method")+1, char);
       strcpy(cs_glob_var->head[i], "ale_method");
+    }
+  }
+
+  if (*iscalt > 0 && *iturbt == 30) {
+    k = n;
+
+    cs_glob_var->rtp[n] = *iut -1;
+    BFT_MALLOC(cs_glob_var->name[n], strlen("ut")+1, char);
+    strcpy(cs_glob_var->name[n++], "ut");
+
+    cs_glob_var->rtp[n] = *ivt -1;
+    BFT_MALLOC(cs_glob_var->name[n], strlen("vt")+1, char);
+    strcpy(cs_glob_var->name[n++], "vt");
+
+    cs_glob_var->rtp[n] = *iwt -1;
+    BFT_MALLOC(cs_glob_var->name[n], strlen("wt")+1, char);
+    strcpy(cs_glob_var->name[n++], "wt");
+
+    for (i=k; i < n; i++) {
+      BFT_MALLOC(cs_glob_var->head[i], strlen("heat_flux_model")+1, char);
+      strcpy(cs_glob_var->head[i], "heat_flux_model");
     }
   }
 
@@ -2866,7 +2931,11 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
                                 const int *const ivisma,
                                 const int *const idtvar,
                                 const int *const ipucou,
-                                const int *const iappel)
+                                const int *const iappel,
+                                const int *const iturbt,
+                                const int *const iut,
+                                const int *const ivt,
+                                const int *const iwt)
 {
   int itype = 0;
   int n;
@@ -2898,6 +2967,8 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
       nbp++;
     }
   }
+  if (*iscalt > 0 && *iturbt >= 0 && *iturbt != 30)
+    nbp = nbp + 3;
 
   n = cs_glob_var->nprop;
 
@@ -2975,6 +3046,24 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
         strcpy(cs_glob_var->properties_name[n++], "mesh_viscosity_3");
       }
 
+    }
+
+    if (*iscalt > 0 && *iturbt >= 0 && *iturbt != 30) {
+
+      cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ *iut-1 ]-1 ];
+      cs_glob_var->propce[n] = ipproc[ *iut-1 ] -1;
+      BFT_MALLOC(cs_glob_var->properties_name[n], strlen("ut")+1, char);
+      strcpy(cs_glob_var->properties_name[n++], "ut");
+
+      cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ *ivt-1 ]-1 ];
+      cs_glob_var->propce[n] = ipproc[ *ivt-1 ] -1;
+      BFT_MALLOC(cs_glob_var->properties_name[n], strlen("vt")+1, char);
+      strcpy(cs_glob_var->properties_name[n++], "vt");
+
+      cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ *iwt-1 ]-1 ];
+      cs_glob_var->propce[n] = ipproc[ *iwt-1 ] -1;
+      BFT_MALLOC(cs_glob_var->properties_name[n], strlen("wt")+1, char);
+      strcpy(cs_glob_var->properties_name[n++], "wt");
     }
 
     /* scalar diffusivity */

@@ -167,7 +167,7 @@ double precision hbord(nfabor),thbord(nfabor)
 
 ! Local variables
 
-integer          ifac, iel, ivar, isou, ii, jj, kk, isvhbl
+integer          ifac, iel, ivar, isou, jsou, ii, jj, kk, isvhbl
 integer          ihcp, iscal
 integer          imprim, modntl
 integer          iuntur
@@ -190,7 +190,8 @@ double precision tx, ty, tz, txn, txn0, t2x, t2y, t2z
 double precision utau, upx, upy, upz, usn
 double precision uiptn, uiptnf, uiptmn, uiptmx
 double precision uetmax, uetmin, ukmax, ukmin, yplumx, yplumn
-double precision uk, uet, nusury, yplus, dplus
+double precision tetmax, tetmin, tplumx, tplumn
+double precision uk, uet, nusury, yplus, dplus, tet, phit
 double precision sqrcmu, clsyme, ek
 double precision xnuii, xmutlm
 double precision rcprod, rcflux
@@ -200,9 +201,12 @@ double precision und0, deuxd0
 double precision eloglo(3,3), alpha(6,6)
 double precision rcodcx, rcodcy, rcodcz, rcodcn
 double precision visclc, visctc, romc  , distbf, srfbnf, cpscv
-double precision cofimp, ypup
+double precision cofimp, ypup, yptp, yp1
 double precision bldr12, ypp, dudyp, xv2
-double precision xkip, xlldrb, xllkmg, xllke, xnu
+double precision xkip
+double precision tplus
+double precision rinfiv(3), pimpv(3), qimpv(3), pfac
+double precision visci(3,3), fikis, viscis, distfi
 
 integer          ntlast , iaff
 data             ntlast , iaff /-1 , 0/
@@ -343,6 +347,14 @@ ukmin  =  grand
 ! min. and max. of y+
 yplumx = -grand
 yplumn =  grand
+
+! min. and max. of wall friction of the thermal scalar
+tetmax = -grand
+tetmin =  grand
+
+! min. and max. of T+
+tplumx = -grand
+tplumn =  grand
 
 ! Counters (turbulent, laminar, reversal, scale correction)
 inturb = 0
@@ -1476,8 +1488,9 @@ do ifac = 1, nfabor
             endif
           endif
 
-          ! Turbulent
-          if (iturb.ne.0) then
+          ! Scalar diffusivity
+          if (idften(ivar).eq.1) then
+
             ! En compressible, pour l'energie LAMBDA/CV+CP/CV*(MUT/SIGMAS)
             if (ippmod(icompf) .ge. 0) then
               if (ipccp.gt.0) then
@@ -1490,74 +1503,209 @@ do ifac = 1, nfabor
               else
                 cpscv = cpscv/cv0
               endif
-              hint = (rkl+cpp*cpscv*visctc/sigmas(iscal))/distbf
+              hint = (rkl+idifft(ivar)*cpp*cpscv*visctc/sigmas(iscal))/distbf
             else
-              hint = (rkl+cpp*visctc/sigmas(iscal))/distbf
+              hint = (rkl+idifft(ivar)*cpp*visctc/sigmas(iscal))/distbf
             endif
 
-          ! Laminar
-          else
-            hint = rkl/distbf
+          ! Symmetric tensor diffusivity (GGDH or AFM)
+          elseif (idften(ivar).eq.6) then
+            ! En compressible, pour l'energie LAMBDA/CV+CP/CV*(MUT/SIGMAS)
+            if (ippmod(icompf) .ge. 0) then
+              if (ipccp.gt.0) then
+                cpscv = propce(iel,ipproc(icp))
+              else
+                cpscv = cp0
+              endif
+              if (ipccv.gt.0) then
+                cpscv = cpscv/propce(iel,ipproc(icv))
+              else
+                cpscv = cpscv/cv0
+              endif
+              visci(1,1) = rkl + idifft(ivar)*cpp*cpscv*visten(1,iel)*ctheta(ii)
+              visci(2,2) = rkl + idifft(ivar)*cpp*cpscv*visten(2,iel)*ctheta(ii)
+              visci(3,3) = rkl + idifft(ivar)*cpp*cpscv*visten(3,iel)*ctheta(ii)
+              visci(1,2) =       idifft(ivar)*cpp*cpscv*visten(4,iel)*ctheta(ii)
+              visci(2,1) =       idifft(ivar)*cpp*cpscv*visten(4,iel)*ctheta(ii)
+              visci(2,3) =       idifft(ivar)*cpp*cpscv*visten(5,iel)*ctheta(ii)
+              visci(3,2) =       idifft(ivar)*cpp*cpscv*visten(5,iel)*ctheta(ii)
+              visci(1,3) =       idifft(ivar)*cpp*cpscv*visten(6,iel)*ctheta(ii)
+              visci(3,1) =       idifft(ivar)*cpp*cpscv*visten(6,iel)*ctheta(ii)
+            else
+              visci(1,1) = rkl + idifft(ivar)*cpp*visten(1,iel)*ctheta(ii)
+              visci(2,2) = rkl + idifft(ivar)*cpp*visten(2,iel)*ctheta(ii)
+              visci(3,3) = rkl + idifft(ivar)*cpp*visten(3,iel)*ctheta(ii)
+              visci(1,2) =       idifft(ivar)*cpp*visten(4,iel)*ctheta(ii)
+              visci(2,1) =       idifft(ivar)*cpp*visten(4,iel)*ctheta(ii)
+              visci(2,3) =       idifft(ivar)*cpp*visten(5,iel)*ctheta(ii)
+              visci(3,2) =       idifft(ivar)*cpp*visten(5,iel)*ctheta(ii)
+              visci(1,3) =       idifft(ivar)*cpp*visten(6,iel)*ctheta(ii)
+              visci(3,1) =       idifft(ivar)*cpp*visten(6,iel)*ctheta(ii)
+            endif
+
+            ! ||Ki.S||^2
+            viscis = ( visci(1,1)*surfbo(1,ifac)       &
+                     + visci(1,2)*surfbo(2,ifac)       &
+                     + visci(1,3)*surfbo(3,ifac))**2   &
+                   + ( visci(2,1)*surfbo(1,ifac)       &
+                     + visci(2,2)*surfbo(2,ifac)       &
+                     + visci(2,3)*surfbo(3,ifac))**2   &
+                   + ( visci(3,1)*surfbo(1,ifac)       &
+                     + visci(3,2)*surfbo(2,ifac)       &
+                     + visci(3,3)*surfbo(3,ifac))**2
+
+            ! IF.Ki.S
+            fikis = ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,1)   &
+                    + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,1)   &
+                    + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,1)   &
+                    )*surfbo(1,ifac)                              &
+                  + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,2)   &
+                    + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,2)   &
+                    + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,2)   &
+                    )*surfbo(2,ifac)                              &
+                  + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,3)   &
+                    + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,3)   &
+                    + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,3)   &
+                    )*surfbo(3,ifac)
+
+            distfi = distb(ifac)
+
+            ! Take I" so that I"F= eps*||FI||*Ki.n when J" is in cell rji
+            ! NB: eps =1.d-1 must be consistent with vitens.f90
+            fikis = max(fikis, 1.d-1*sqrt(viscis)*distfi)
+
+            hint = viscis/surfbn(ifac)/fikis
           endif
 
           if (iturb.ne.0.and.icodcl(ifac,ivar).eq.5)then
-            call hturbp (prdtl,sigmas(iscal),xkappa,yplus,hflui)
+            call hturbp (prdtl,sigmas(iscal),xkappa,yplus,hflui,yp1)
             !==========
+            ! y+/T+ *PrT
+            yptp = hflui/prdtl
             if (ideuch.eq.2) then !FIXME
               hflui = uk*romc/(yplus*prdtl) *hflui
             else
               hflui = rkl/distbf *hflui
             endif
           else
+            ! y+/T+ *PrT
+            yptp = hint/prdtl
             hflui = hint
           endif
 
           if (isvhbl.gt.0) hbord(ifac) = hflui
 
-          ! --->  C.L DE TYPE DIRICHLET AVEC OU SANS COEFFICIENT D'ECHANGE
+          ! ---> Dirichlet Boundary condition with a wall function correction
+          !      with or without an additional exchange coefficient hext
 
-          ! Si on a deux types de conditions aux limites (ICLVAR, ICLVAF)
-          !   il faut que le flux soit traduit par ICLVAF.
-          ! Si on n'a qu'un type de condition, peu importe (ICLVAF=ICLVAR)
-          ! Pour le moment, dans cette version compressible, on impose un
-          !   flux nul pour ICLVAR, lorsqu'il est different de ICLVAF (cette
-          !   condition ne sert qu'a la reconstruction des gradients et
-          !   s'applique a l'energie totale qui inclut l'energie cinetique :
-
-          ! TODO local function for wall function
           if (icodcl(ifac,ivar).eq.5) then
             hext = rcodcl(ifac,ivar,2)
             pimp = rcodcl(ifac,ivar,1)
 
+            ! In the log layer
+            if (yplus.ge.yp1) then
+              ! T+ = (T_I - T_w) / Tet
+              tplus = yplus/yptp
+              cofimp  = 1.d0 - yptp*sigmas(iscal)/xkappa*                        &
+                               (deuxd0/yplus - und0/(deuxd0*yplus))
+              ! On implicite le terme (rho*tet*uk)
+              pfac = 0.d0
+
+            ! In the viscous sub-layer
+            else
+              ! T+ = (T_I - T_w) / Tet
+              tplus = yplus/yptp
+              cofimp = 0.d0
+              pfac = pimp
+            endif
+
+            ! Gradient BCs
+            coefa(ifac,iclvar) = pfac
+            coefb(ifac,iclvar) = cofimp
+
+            ! Flux BCs
             if (abs(hext).gt.rinfin*0.5d0) then
-
-              ! Gradient BCs
-              hredui = hint/hflui
-              coefa(ifac,iclvar) = pimp/hredui
-              coefb(ifac,iclvar) = (hredui-1.d0)/hredui
-              !FIXME ou un flux nul
-              !coefa(ifac,iclvar) = 0.d0
-              !coefb(ifac,iclvar) = 1.d0
-
-              ! Flux BCs
               coefa(ifac,iclvaf) = -hflui*pimp
               coefb(ifac,iclvaf) =  hflui
-
             else
-
-              ! Gradient BCs
-              hredui = hint/hflui
-              coefa(ifac,iclvar) = hext*pimp/(hint+hext*hredui)
-              coefb(ifac,iclvar) = (hint-(1.d0-hredui)*hext)/       &
-                                 (hint+hext*hredui)
-              !FIXME or zero flux?
-              !coefa(ifac,iclvar) = 0.d0
-              !coefb(ifac,iclvar) = 1.d0
-
-              ! Flux BCs
               heq = hflui*hext/(hflui+hext)
               coefa(ifac,iclvaf) = -heq*pimp
               coefb(ifac,iclvaf) =  heq
+            endif
+
+            ! Save the value of T^star and T^+
+            if (iscal.eq.iscalt) then
+              phit = coefa(ifac,iclvaf)+coefb(ifac,iclvaf)*thbord(ifac)
+              tet = phit/(max(sqrt(uk*uet),epzero))
+
+              tetmax = max(tet, tetmax)
+              tetmin = min(tet, tetmin)
+              tplumx = max(tplus,tplumx)
+              tplumn = min(tplus,tplumn)
+            endif
+
+            !--> Turbulent heat flux
+            if ((ityturt.eq.3).and.(iscal.eq.iscalt)) then
+
+              hint = 0.5d0*(visclc+rkl)/distbf
+
+              ! Gradient boundary conditions !TODO FIXME
+              !-----------------------------
+
+              coefaut(1,ifac) = 0.d0
+              coefaut(2,ifac) = 0.d0
+              coefaut(3,ifac) = 0.d0
+              ! Projection in order to have the velocity parallel to the wall
+              ! B = cofimp * ( IDENTITY - n x n )
+
+              coefbut(1,1,ifac) = 0.d0
+              coefbut(2,2,ifac) = 0.d0
+              coefbut(3,3,ifac) = 0.d0
+              coefbut(1,2,ifac) = 0.d0
+              coefbut(1,3,ifac) = 0.d0
+              coefbut(2,1,ifac) = 0.d0
+              coefbut(2,3,ifac) = 0.d0
+              coefbut(3,1,ifac) = 0.d0
+              coefbut(3,2,ifac) = 0.d0
+
+              ! Boundary conditions used in the temperature equation
+              do isou = 1, 3
+                cofarut(isou,ifac) = coefaut(isou,ifac)
+                do jsou = 1, 3
+                  cofbrut(isou,jsou,ifac) = coefbut(isou,jsou,ifac)
+                enddo
+              enddo
+
+              ! Add uk*Tet to T'v' in High Reynolds
+              if (yplus.ge.yp1) then
+                do isou = 1, 3
+                  coefaut(isou,ifac) = coefaut(isou,ifac)                    &
+                                     + surfbo(isou,ifac)/surfbn(ifac)*phit
+                enddo
+              endif
+
+              ! Translate coefa into cofaf and coefb into cofbf
+
+              ! Flux boundary conditions
+              !-------------------------
+
+              cofafut(1,ifac) = -hint*coefaut(1,ifac)
+              cofafut(2,ifac) = -hint*coefaut(2,ifac)
+              cofafut(3,ifac) = -hint*coefaut(3,ifac)
+
+              ! Projection in order to have the shear stress parallel to the wall
+              !  B = hflui*( IDENTITY - n x n )
+
+              cofbfut(1,1,ifac) = hint*(1.d0-rnx**2)
+              cofbfut(2,2,ifac) = hint*(1.d0-rny**2)
+              cofbfut(3,3,ifac) = hint*(1.d0-rnz**2)
+
+              cofbfut(1,2,ifac) = - hint*rnx*rny
+              cofbfut(1,3,ifac) = - hint*rnx*rnz
+              cofbfut(2,1,ifac) = - hint*rny*rnx
+              cofbfut(2,3,ifac) = - hint*rny*rnz
+              cofbfut(3,1,ifac) = - hint*rnz*rnx
+              cofbfut(3,2,ifac) = - hint*rnz*rny
 
             endif
 
@@ -1650,27 +1798,22 @@ enddo
 
 if (irangp.ge.0) then
   call parmin (uiptmn)
-  !==========
   call parmax (uiptmx)
-  !==========
   call parmin (uetmin)
-  !==========
   call parmax (uetmax)
-  !==========
   call parmin (ukmin)
-  !==========
   call parmax (ukmax)
-  !==========
   call parmin (yplumn)
-  !==========
   call parmax (yplumx)
-  !==========
   call parcpt (inturb)
-  !==========
   call parcpt (inlami)
-  !==========
   call parcpt (iuiptn)
-  !==========
+  if (iscalt.gt.0) then
+    call parmin (tetmin)
+    call parmax (tetmax)
+    call parmin (tplumn)
+    call parmax (tplumx)
+  endif
 endif
 
 !===============================================================================
@@ -1702,9 +1845,17 @@ if (iwarni(iu).ge.0) then
        (ntlast.ge.0     .and.ntcabs.ge.ntmabs-1) .or.             &
        (ntlast.eq.ntcabs.and.iwarni(iu).ge.2) ) then
     iaff = iaff + 1
-    write(nfecra,2010) &
-         uiptmn,uiptmx,uetmin,uetmax,ukmin,ukmax,yplumn,yplumx,   &
-         iuiptn,inlami,inlami+inturb
+
+    if (iscalt.gt.0) then
+      write(nfecra,2011) &
+           uiptmn,uiptmx,uetmin,uetmax,ukmin,ukmax,yplumn,yplumx,      &
+           tetmin, tetmax, tplumn, tplumx, iuiptn,inlami,inlami+inturb
+    else
+      write(nfecra,2010) &
+           uiptmn,uiptmx,uetmin,uetmax,ukmin,ukmax,yplumn,yplumx,   &
+           iuiptn,inlami,inlami+inturb
+    endif
+
     if (iturb.eq. 0) write(nfecra,2020)  ntlast,ypluli
     if (itytur.eq.5) write(nfecra,2030)  ntlast,ypluli
     ! No warnings in EBRSM
@@ -1717,9 +1868,16 @@ if (iwarni(iu).ge.0) then
     endif
 
   else if (modntl.eq.0 .or. iwarni(iu).ge.2) then
-    write(nfecra,2010) &
-         uiptmn,uiptmx,uetmin,uetmax,ukmin,ukmax,yplumn,yplumx,   &
-         iuiptn,inlami,inlami+inturb
+
+    if (iscalt.gt.0) then
+      write(nfecra,2011) &
+           uiptmn,uiptmx,uetmin,uetmax,ukmin,ukmax,yplumn,yplumx,      &
+           tetmin, tetmax, tplumn, tplumx, iuiptn,inlami,inlami+inturb
+    else
+      write(nfecra,2010) &
+           uiptmn,uiptmx,uetmin,uetmax,ukmin,ukmax,yplumn,yplumx,   &
+           iuiptn,inlami,inlami+inturb
+    endif
   endif
 
 endif
@@ -1744,6 +1902,25 @@ endif
  '   Vitesse de frottement    uk    : ',2E12.5                 ,/,&
  '   Distance adimensionnelle yplus : ',2E12.5                 ,/,&
  '   ------------------------------------------------------   ',/,&
+ '   Nbre de retournements de la vitesse en paroi : ',I10      ,/,&
+ '   Nbre de faces en sous couche visqueuse       : ',I10      ,/,&
+ '   Nbre de faces de paroi total                 : ',I10      ,/,&
+ '------------------------------------------------------------',  &
+ /,/)
+
+ 2011 format(/,                                                   &
+ 3X,'** CONDITIONS AUX LIMITES EN PAROI LISSE',/,                 &
+ '   ----------------------------------------',/,                 &
+ '------------------------------------------------------------',/,&
+ '                                         Minimum     Maximum',/,&
+ '------------------------------------------------------------',/,&
+ '   Vitesse rel. en paroi    uiptn : ',2E12.5                 ,/,&
+ '   Vitesse de frottement    uet   : ',2E12.5                 ,/,&
+ '   Vitesse de frottement    uk    : ',2E12.5                 ,/,&
+ '   Distance adimensionnelle yplus : ',2E12.5                 ,/,&
+ '   Sca. thermal de frott.   tstar : ',2E12.5                 ,/,&
+ '   Sca. thermal adim. rug.  tplus : ',2E12.5                 ,/,&
+ '   ------------------------------------------------------'   ,/,&
  '   Nbre de retournements de la vitesse en paroi : ',I10      ,/,&
  '   Nbre de faces en sous couche visqueuse       : ',I10      ,/,&
  '   Nbre de faces de paroi total                 : ',I10      ,/,&
@@ -1839,12 +2016,32 @@ endif
  '   Friction velocity        uet   : ',2E12.5                 ,/,&
  '   Friction velocity        uk    : ',2E12.5                 ,/,&
  '   Dimensionless distance   yplus : ',2E12.5                 ,/,&
- '   ------------------------------------------------------   ',/,&
+ '   ------------------------------------------------------'   ,/,&
  '   Nb of reversal of the velocity at the wall   : ',I10      ,/,&
  '   Nb of faces within the viscous sub-layer     : ',I10      ,/,&
  '   Total number of wall faces                   : ',I10      ,/,&
  '------------------------------------------------------------',  &
  /,/)
+
+ 2011 format(/,                                                   &
+ 3X,'** BOUNDARY CONDITIONS FOR SMOOTH WALLS',/,                  &
+ '   ---------------------------------------',/,                  &
+ '------------------------------------------------------------',/,&
+ '                                         Minimum     Maximum',/,&
+ '------------------------------------------------------------',/,&
+ '   Rel velocity at the wall uiptn : ',2E12.5                 ,/,&
+ '   Friction velocity        uet   : ',2E12.5                 ,/,&
+ '   Friction velocity        uk    : ',2E12.5                 ,/,&
+ '   Dimensionless distance   yplus : ',2E12.5                 ,/,&
+ '   Friction thermal sca.    tstar : ',2E12.5                 ,/,&
+ '   Rough dim-less th. sca.  tplus : ',2E12.5                 ,/,&
+ '   ------------------------------------------------------'   ,/,&
+ '   Nb of reversal of the velocity at the wall   : ',I10      ,/,&
+ '   Nb of faces within the viscous sub-layer     : ',I10      ,/,&
+ '   Total number of wall faces                   : ',I10      ,/,&
+ '------------------------------------------------------------',  &
+ /,/)
+
 
  2020 format(                                                     &
 '@                                                            ',/,&
