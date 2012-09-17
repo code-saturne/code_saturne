@@ -944,7 +944,8 @@ if(nscal.gt.0) then
   irtyp  = 1
   call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,jturbt,    &
               ierror)
-  nberro=nberro+ierror
+  ! If the old calculation has no turbulent flux model, set it to 0
+  if (ierror.gt.0) jturbt = 0
 
   ! --->  Donnees modifiees
   if (iturbt .ne. jturbt) write(nfecra,8411) iturbt, jturbt
