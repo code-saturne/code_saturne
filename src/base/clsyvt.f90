@@ -507,15 +507,15 @@ do ifac = 1, nfabor
         rkl = propce(iel,ipproc(ivisls(iscalt)))/cpp
       endif
 
-      hintt(1) = 0.5d0*(visclc+rkl)/distbf             &
-               + idifft(iut)*visten(1,iel)*ctheta(iscalt)
-      hintt(2) = 0.5d0*(visclc+rkl)/distbf             &
-               + idifft(iut)*visten(2,iel)*ctheta(iscalt)
-      hintt(3) = 0.5d0*(visclc+rkl)/distbf             &
-               + idifft(iut)*visten(3,iel)*ctheta(iscalt)
-      hintt(4) = idifft(iut)*visten(4,iel)*ctheta(iscalt)
-      hintt(5) = idifft(iut)*visten(5,iel)*ctheta(iscalt)
-      hintt(6) = idifft(iut)*visten(6,iel)*ctheta(iscalt)
+      hintt(1) = 0.5d0*(visclc+rkl)/distbf                        &
+               + idifft(iut)*visten(1,iel)*ctheta(iscalt)/distbf
+      hintt(2) = 0.5d0*(visclc+rkl)/distbf                        &
+               + idifft(iut)*visten(2,iel)*ctheta(iscalt)/distbf
+      hintt(3) = 0.5d0*(visclc+rkl)/distbf                        &
+               + idifft(iut)*visten(3,iel)*ctheta(iscalt)/distbf
+      hintt(4) = idifft(iut)*visten(4,iel)*ctheta(iscalt)/distbf
+      hintt(5) = idifft(iut)*visten(5,iel)*ctheta(iscalt)/distbf
+      hintt(6) = idifft(iut)*visten(6,iel)*ctheta(iscalt)/distbf
 
 
       ! Gradient BCs
