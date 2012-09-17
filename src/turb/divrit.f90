@@ -1,0 +1,465 @@
+!-------------------------------------------------------------------------------
+
+! This file is part of Code_Saturne, a general-purpose CFD tool.
+!
+! Copyright (C) 1998-2012 EDF S.A.
+!
+! This program is free software; you can redistribute it and/or modify it under
+! the terms of the GNU General Public License as published by the Free Software
+! Foundation; either version 2 of the License, or (at your option) any later
+! version.
+!
+! This program is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+! FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+! details.
+!
+! You should have received a copy of the GNU General Public License along with
+! this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+! Street, Fifth Floor, Boston, MA 02110-1301, USA.
+
+!-------------------------------------------------------------------------------
+
+!===============================================================================
+! Function:
+! ---------
+
+!> \file divrit.f90
+!>
+!> \brief This subroutine perform  add the divergence of turbulent flux
+!> to the transport equation of a scalar.
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     dt            time step (per cell)
+!> \param[in,out] rtp, rtpa     calculated variables at cell centers
+!>                               (at current and previous time steps)
+!> \param[in]     propce        physical properties at cell centers
+!> \param[in]     propfa        physical properties at interior face centers
+!> \param[in]     propfb        physical properties at boundary face centers
+!> \param[in]     coefa         boundary condition array for the variable
+!> \param[in]     coefb         boundary condition array for the variable
+!> \param[in]     xcpp          Cp
+!> \param[out]    smbrs         Right hand side to update
+!_______________________________________________________________________________
+
+subroutine divrit &
+!================
+ ( nvar   , nscal  ,                                              &
+   iscal  , itspdv ,                                              &
+   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   coefa  , coefb  ,                                              &
+   xcpp   ,                                                       &
+   smbrs )
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use dimens, only: ndimfb
+use numvar
+use entsor
+use optcal
+use cstphy
+use cstnum!
+use pointe
+use field
+use mesh
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+integer          nvar   , nscal
+integer          iscal  , itspdv
+double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision propce(ncelet,*)
+double precision propfa(nfac,*), propfb(ndimfb,*)
+double precision coefa(ndimfb,*), coefb(ndimfb,*)
+double precision xcpp(ncelet)
+double precision smbrs(ncelet)
+
+! Local variables
+
+integer          ifac, init, inc
+integer          iccocg,iflmb0,imaspe
+integer          ipcrom, ipbrom
+integer          nswrgp, imligp, iwarnp
+integer          itypfl
+integer          ivar , iclvar, iel, ii, jj, isou
+integer          iuit(3),itt
+double precision epsrgp, climgp, extrap
+double precision xk, xe, xtt
+double precision grav(3),xrij(3,3)
+
+logical          ilved
+
+double precision, dimension(:), pointer :: coefap, coefbp
+double precision, dimension(:,:), pointer :: coefav
+double precision, dimension(:,:,:), pointer :: coefbv
+double precision, allocatable, dimension(:,:,:) :: gradv
+double precision, allocatable, dimension(:,:) :: gradt
+double precision, allocatable, dimension(:,:) :: xut
+double precision, allocatable, dimension(:,:) :: xuta
+double precision, allocatable, dimension(:,:) :: coefat
+double precision, allocatable, dimension(:,:,:) :: coefbt
+double precision, allocatable, dimension(:) :: thflxf, thflxb
+double precision, allocatable, dimension(:) :: divut
+
+!===============================================================================
+
+!===============================================================================
+! 1. Initialization
+!===============================================================================
+
+! First component is for x,y,z  and the 2nd for u,v,w
+allocate(gradv(ncelet,3,3))
+allocate(xut(3,ncelet))
+allocate(gradt(ncelet,3), thflxf(nfac), thflxb(nfabor))
+ipcrom = ipproc(irom)
+ipbrom = ipprob(irom)
+
+! Compute scalar gradient
+ivar = isca(iscal)
+iccocg = 1
+inc = 1
+
+nswrgp = nswrgr(ivar)
+imligp = imligr(ivar)
+iwarnp = iwarni(ivar)
+epsrgp = epsrgr(ivar)
+climgp = climgr(ivar)
+extrap = extrag(ivar)
+
+! Boundary condition pointers for gradients and advection
+call field_get_coefa_s(ivarfl(ivar), coefap)
+call field_get_coefb_s(ivarfl(ivar), coefbp)
+
+call grdcel &
+!==========
+ ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,         &
+   iwarnp , nfecra , epsrgp , climgp , extrap ,                  &
+   rtpa(1,ivar)    , coefap , coefbp ,                           &
+   gradt  )
+
+! Compute velocity gradient
+iccocg = 1
+inc    = 1
+nswrgp = nswrgr(iu)
+imligp = imligr(iu)
+iwarnp = iwarni(iu)
+epsrgp = epsrgr(iu)
+climgp = climgr(iu)
+extrap = extrag(iu)
+iclvar = iclrtp(iu,icoef)
+
+! Boundary condition pointers for gradients and advection
+call field_get_coefa_v(ivarfl(iu), coefav)
+call field_get_coefb_v(ivarfl(iu), coefbv)
+
+if (ivelco.eq.1) then
+
+  ilved = .false.
+
+  call grdvec &
+  !==========
+( iu     , imrgra , inc    , nswrgp , imligp ,                   &
+  iwarnp , nfecra ,                                              &
+  epsrgp , climgp , extrap ,                                     &
+  ilved ,                                                        &
+  rtp(1,iu)       , coefav , coefbv ,                            &
+  gradv  )
+
+else
+
+  call grdvni &
+  !==========
+( iu     , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+  iwarnp , nfecra ,                                              &
+  epsrgp , climgp , extrap ,                                     &
+  rtp(1,iu)      , coefa(1,iclvar)  , coefb(1,iclvar) ,          &
+  gradv  )
+
+endif
+
+! Find the variance of the thermal scalar !TODO adapt it for other scalars
+itt = -1
+if (((abs(gx)+abs(gy)+abs(gz)).gt.0).and.((ityturt.eq.2).or.(ityturt.eq.3))) then
+  grav(1) = gx
+  grav(2) = gy
+  grav(3) = gz
+  do ii = 1, nscal
+    if (iscavr(ii).eq.iscalt) itt = ii
+  enddo
+  if (itt.le.0) then
+    write(nfecra,9999)
+    call csexit(1)
+  endif
+endif
+
+!===============================================================================
+! 2. Agebraic models AFM
+!===============================================================================
+if (ityturt.ne.3) then
+
+  do ifac = 1, nfac
+    thflxf(ifac) = 0.d0
+  enddo
+  do ifac = 1, nfabor
+    thflxb(ifac) = 0.d0
+  enddo
+
+  do iel=1, ncel
+    !uit
+    iuit(1)=ipproc(iut)
+    iuit(2)=ipproc(ivt)
+    iuit(3)=ipproc(iwt)
+    !Rij
+    xrij(1,1) = rtp(iel,ir11)
+    xrij(2,2) = rtp(iel,ir22)
+    xrij(3,3) = rtp(iel,ir33)
+    xrij(1,2) = rtp(iel,ir12)
+    xrij(1,3) = rtp(iel,ir13)
+    xrij(2,3) = rtp(iel,ir23)
+    xrij(2,1) = xrij(1,2)
+    xrij(3,1) = xrij(1,3)
+    xrij(3,2) = xrij(2,3)
+    ! Epsilon
+    xe = rtp(iel,iep)
+    ! Kinetic turbulent energy
+    xk = 0.5d0*(xrij(1,1)+xrij(2,2)+xrij(3,3))
+
+    !  Turbulent time-scale (constant in AFM)
+    if (iturbt.eq.20) then
+      xtt = xk/xe
+    endif
+
+    ! Compute thermal flux u'T'
+
+    !FIXME compute u'T' for GGDH.
+    do ii = 1, 3
+
+      xut(ii,iel) = 0.d0
+
+      ! AFM and EB-AFM models
+      !  -C_theta*k/eps*( xi*u_jt*dU_i/dx_j + eta*beta*g_i*variance(t^2))
+      if (ityturt.eq.2) then
+        if (itt.gt.0) then
+          xut(ii,iel) = xut(ii,iel) - ctheta(iscal)*xtt*                            &
+                       etaafm*propce(iel,ipproc(ibeta))*grav(ii)*rtp(iel,isca(itt))
+        endif
+
+        do jj = 1, 3
+          if (ii.ne.jj) then
+            xut(ii,iel) = xut(ii,iel)                                               &
+                     - ctheta(iscal)*xtt*xiafm*gradv(iel,jj,ii)*propce(iel,iuit(jj))
+          endif
+        enddo
+      endif
+
+      ! pour eviter de faire ut = x+y*ut, on fait ut = x/(1-y)
+      ! pour l'AFM, ut n'apparait qu'avec xi
+      if (iturbt.eq.20) then
+        xut(ii,iel) = xut(ii,iel)/(1.d0+ctheta(iscal)*xtt*xiafm*gradv(iel,ii,ii))
+      endif
+
+    enddo
+
+    ! On ajoute la partie en gradT qui est implicitee precedemment dans propce(iut)
+    !       -C_theta*k/eps*u_i*u_j*dT/dx_j
+    ! pour ne pas ecraser propce dans la premiere boucle ii, on refait une boucle sur ii
+    do ii = 1, 3
+      propce(iel,iuit(ii)) = xut(ii,iel) +(- ctheta(iscal)*xtt*(                      &
+          xrij(ii,1)*gradT(iel,1)+ xrij(ii,2)*gradT(iel,2)+ xrij(ii,3)*gradT(iel,3)) )
+      !On calcul la divergence de Cp*ut dans la suite
+      xut(ii,iel) = xcpp(iel)*xut(ii,iel)
+    enddo
+  enddo
+
+  ivar  = 0
+  itypfl = 1
+  iflmb0 = 1
+  init   = 1
+  inc    = 1
+  nswrgp = 100
+  imligp = imligr(iu)
+  iwarnp = iwarni(iu)
+  epsrgp = epsrgr(iu)
+  climgp = climgr(iu)
+  extrap = extrag(iu)
+
+  ! Local gradient boundaray conditions: homogenous Neumann
+  allocate(coefat(3,ndimfb))
+  allocate(coefbt(3,3,ndimfb))
+  do ifac =1, nfabor
+    do ii = 1, 3
+    coefat(ii,ifac) = 0.d0
+      do jj=1,3
+        if (ii.eq.jj) then
+          coefbt(ii,jj,ifac) = 1.d0
+        else
+          coefbt(ii,jj,ifac) = 0.d0
+        endif
+      enddo
+    enddo
+  enddo
+
+  call inimav &
+  !==========
+  ( nvar   , nscal  ,                                     &
+    ivar   , itypfl ,                                     &
+    iflmb0 , init   , inc    , imrgra , nswrgp  , imligp, &
+    iwarnp , nfecra ,                                     &
+    epsrgp , climgp , extrap ,                            &
+    propce(1,ipcrom), propfb(1,ipbrom),                   &
+    xut    ,                                              &
+    coefat , coefbt ,                                     &
+    thflxf , thflxb )
+
+  deallocate (coefat)
+  deallocate (coefbt)
+
+!===============================================================================
+! 3. Transport equation on turbulent thermal fluxes (DFM)
+!===============================================================================
+else
+
+  allocate(xuta(3,ncelet))
+
+  do iel = 1, ncelet
+    xut(1,iel) = rtp(iel,iut)
+    xut(2,iel) = rtp(iel,ivt)
+    xut(3,iel) = rtp(iel,iwt)
+    xuta(1,iel)= rtpa(iel,iut)
+    xuta(2,iel)= rtpa(iel,ivt)
+    xuta(3,iel)= rtpa(iel,iwt)
+  enddo
+
+  call resrit &
+  !==========
+( nvar   , nscal  ,                                      &
+  iscal  , xcpp   , xut    , xuta   ,                    &
+  dt     , rtp    , rtpa   , propce , propfa , propfb ,  &
+  coefaut, coefbut, cofafut, cofbfut,                    &
+  gradv  , gradt  )
+
+  do iel = 1, ncelet
+    rtp(iel,iut) = xut(1,iel)
+    rtp(iel,ivt) = xut(2,iel)
+    rtp(iel,iwt) = xut(3,iel)
+  enddo
+
+  itypfl = 1
+  iflmb0 = 1
+  init   = 1
+  inc    = 1
+  nswrgp = nswrgr(iut)
+  imligp = imligr(iut)
+  iwarnp = iwarni(iut)
+  epsrgp = epsrgr(iut)
+  climgp = climgr(iut)
+  extrap = extrag(iut)
+
+  call inimav &
+  !==========
+  ( nvar   , nscal  ,                                     &
+    iut    , itypfl ,                                     &
+    iflmb0 , init   , inc    , imrgra , nswrgp  , imligp, &
+    iwarnp , nfecra ,                                     &
+    epsrgp , climgp , extrap ,                            &
+    propce(1,ipcrom), propfb(1,ipbrom),                   &
+    xut    ,                                              &
+    cofarut, cofbrut,                                     &
+    thflxf , thflxb )
+
+  deallocate (xuta)
+endif
+
+!===============================================================================
+! 4. Add the divergence of the thermal flux to the thermal transport equation
+!===============================================================================
+
+allocate(divut(ncelet))
+
+init = 1
+
+call divmas &
+!==========
+ ( ncelet , ncel   , nfac  , nfabor , init   , nfecra ,          &
+   ifacel , ifabor ,                                             &
+   thflxf , thflxb , divut )
+
+do iel = 1, ncel
+  smbrs(iel) = smbrs(iel) - divut(iel)
+enddo
+
+! Free memory
+deallocate (xut)
+deallocate (gradv)
+deallocate(divut)
+deallocate(gradt)
+deallocate(thflxf)
+deallocate(thflxb)
+
+!--------
+! Formats
+!--------
+
+#if defined(_CS_LANG_FR)
+
+ 9999 format(                                                     &
+'@'                                                            ,/,&
+'@'                                                            ,/,&
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES'               ,/,&
+'@    ========='                                               ,/,&
+'@    LES PARAMETRES DE CALCUL SONT INCOHERENTS OU INCOMPLETS' ,/,&
+'@'                                                            ,/,&
+'@  Le calcul ne sera pas execute'                             ,/,&
+'@'                                                            ,/,&
+'@  Le modele de flux thermique turbulent choisi        '      ,/,&
+'@  necessite le calcul de la variance du scalaire thermique'  ,/,&
+'@'                                                            ,/,&
+'@  Verifier les donnees entrees dans l''interface'            ,/,&
+'@    et dans les sous-programmes utilisateur.'                ,/,&
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/)
+
+#else
+
+ 9999 format(                                                     &
+'@'                                                            ,/,&
+'@'                                                            ,/,&
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/,&
+'@ @@ WARNING: ABORT IN THE DATA SPECIFICATION'                ,/,&
+'@    ========'                                                ,/,&
+'@    THE CALCULATION PARAMETERS ARE INCOHERENT OR INCOMPLET'  ,/,&
+'@'                                                            ,/,&
+'@  The calculation will not be run                  '         ,/,&
+'@'                                                            ,/,&
+'@  Turbulent heat flux model taken imposed that   '           ,/,&
+'@  Thermal scalar variance has to be calculate.   '           ,/,&
+'@'                                                            ,/,&
+'@  Verify the provided data in the interface'                 ,/,&
+'@    and in user subroutines.'                                ,/,&
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/)
+
+#endif
+
+end subroutine
