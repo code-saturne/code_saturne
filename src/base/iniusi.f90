@@ -184,6 +184,9 @@ if (iihmpr.eq.1) then
    ieljou, ielarc, ielion, icompf, iatmos,                        &
    iaeros, ieos  , ieqco2)
 
+  call cfnmtd(ficfpp, len(ficfpp))
+  !==========
+
 endif
 
 !   - Sous-programme utilisateur

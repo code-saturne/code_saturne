@@ -253,9 +253,14 @@ void CS_PROCF (uicosc, UICOSC) (const int *const ippmod,
  * subroutine uiati1
  * *****************
  * integer         imeteo   <--   on/off index
+ * char(*)         fmeteo   <--   meteo file name
+ * int             len      <--   meteo file name destination string length
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiati1, UIATI1) (int *const imeteo);
+void CS_PROCF (uiati1, UIATI1) (int           *imeteo,
+                                char          *fmeteo,
+                                int           *len
+                                CS_ARGF_SUPP_CHAINE);
 
 /*----------------------------------------------------------------------------
  * Atmospheric flows: indirection between the solver numbering and the XML one
@@ -371,6 +376,14 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
                                       double *const oxyn2,
                                       double *const oxyh2o,
                                       double *const oxyco2);
+
+/*----------------------------------------------------------------------------
+ * Copy name of thermophysical data file from C to Fortran
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(cfnmtd, CFNMTD) (char          *fstr,    /* --> Fortran string */
+                               int           *len      /* --> String Length  */
+                               CS_ARGF_SUPP_CHAINE);
 
 /*=============================================================================
  * Public function prototypes

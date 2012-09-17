@@ -24,7 +24,6 @@
 
 """
 This module contains the following classes and function:
-- BatchRunningUserFilesDialogView
 - BatchRunningAdvancedOptionsDialogView
 - BatchRunningStopByIterationDialogView
 - BatchRunningListingLinesDisplayedDialogView
@@ -63,7 +62,6 @@ import cs_exec_environment
 #-------------------------------------------------------------------------------
 
 from Pages.BatchRunningForm import Ui_BatchRunningForm
-from Pages.BatchRunningUserFilesDialogForm import Ui_BatchRunningUserFilesDialogForm
 from Pages.BatchRunningAdvancedOptionsDialogForm import Ui_BatchRunningAdvancedOptionsDialogForm
 from Pages.BatchRunningStopByIterationDialogForm import Ui_BatchRunningStopByIterationDialogForm
 
@@ -81,204 +79,6 @@ from Pages.LocalizationModel import LocalizationModel, Zone
 logging.basicConfig()
 log = logging.getLogger("BatchRunningView")
 log.setLevel(GuiParam.DEBUG)
-
-#-------------------------------------------------------------------------------
-# Popup window class: Data user files
-#-------------------------------------------------------------------------------
-
-
-class BatchRunningUserFilesDialogView(QDialog, Ui_BatchRunningUserFilesDialogForm):
-    """
-    Class for data user files
-    """
-    def __init__(self, parent, data_path, default):
-        """
-        Constructor
-        """
-        QDialog.__init__(self, parent)
-
-        Ui_BatchRunningUserFilesDialogForm.__init__(self)
-        self.setupUi(self)
-
-        self.setWindowTitle(self.tr("User files"))
-
-        self.data_path = data_path
-        self.default = default
-        self.result  = []
-
-        # Models
-        rows = 0
-        columns = 1
-        self.modelData = QListModel(rows, columns)
-
-        # associated with views.
-        self.viewData.setModel(self.modelData)
-        self.viewData.setItemDelegate(DataDelegate(self, self.data_path))
-
-        # Connections
-        self.connect(self.buttonNewData, SIGNAL("clicked()"), self.slotAddData)
-        self.connect(self.buttonAddData, SIGNAL("clicked()"), self.slotNewData)
-        self.connect(self.buttonDeleteData, SIGNAL("clicked()"), self.slotDeleteData)
-
-        # Previous values
-        if self.default != None:
-            for item in self.default:
-                self.setFileData(item)
-
-
-    def setFileData(self, item):
-        # Verify that the input is not already in the QListView
-        indexList = self.modelData.search(QString(item))
-
-        if indexList:
-            title = self.tr("Warning")
-            msg   = self.tr("%s is already in the list." % str(item))
-            QMessageBox.warning(self, title, msg)
-        else:
-            std_item = QStandardItem(QString(item))
-            self.modelData.appendRow(std_item)
-
-
-    @pyqtSignature("")
-    def slotAddData(self):
-        """
-        Add data users files input in entries in the good list.
-        """
-        title = self.tr("Select user data files.")
-        filetypes = self.tr("User data files (*);;""All Files (*)")
-        list = QFileDialog.getOpenFileNames(self,
-                                            title,
-                                            self.data_path,
-                                            filetypes)
-        for item in list:
-            self.setFileData(os.path.basename(str(item)))
-
-
-    @pyqtSignature("")
-    def slotNewData(self):
-        std_item = QStandardItem(QString(""))
-        self.modelData.appendRow(std_item)
-        index = self.modelData.indexFromItem(std_item)
-        self.viewData.edit(index)
-
-
-    @pyqtSignature("")
-    def slotDeleteData(self):
-        """
-        Delete the selection from the listbox (one by one).
-        """
-        index = self.viewData.currentIndex()
-        if index.isValid():
-            self.modelData.removeRow(index.row())
-
-
-    def get_result(self):
-        """
-        Method to get the result
-        """
-        return self.result
-
-
-    def accept(self):
-        """
-        Method called when user clicks 'OK'
-        """
-        column = 0
-
-        for row in range(self.modelData.rowCount()):
-            index = self.modelData.index(row, column, QModelIndex())
-            qstring = index.data(Qt.DisplayRole).toString()
-            self.result.append(str(qstring))
-
-        QDialog.accept(self)
-
-
-    def reject(self):
-        """
-        Method called when user clicks 'Cancel'
-        """
-        self.result  = self.default
-        QDialog.reject(self)
-
-
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
-#-------------------------------------------------------------------------------
-
-class QListModel(QStandardItemModel):
-    def __init__(self, row,  column,  parent=None):
-        super(QListModel, self).__init__(row, column, parent)
-
-    def search(self, item):
-        result = []
-        column = 0
-        for row in range(self.rowCount()):
-            index = self.index(row, column, QModelIndex())
-            qstring = index.data(Qt.DisplayRole).toString()
-            if item == qstring:
-                result.append(index)
-
-        return result
-
-#-------------------------------------------------------------------------------
-
-class DataDelegate(QItemDelegate):
-    def __init__(self, parent=None, path=None):
-        super(DataDelegate, self).__init__(parent)
-        self.path = path
-        self.parent = parent
-
-
-    def createEditor(self, parent, option, index):
-        editor = QLineEdit(parent)
-        vd = RegExpValidator(editor, QRegExp("[_A-Za-z0-9\-\*\!\?\.]*"))
-        editor.setValidator(vd)
-        editor.setFrame(False)
-        self.connect(editor, SIGNAL("returnPressed()"), self.commitAndCloseEditor)
-        editor.setCursorPosition(0)
-        return editor
-
-
-    def commitAndCloseEditor(self):
-        editor = self.sender()
-        if isinstance(editor, QLineEdit):
-            self.emit(SIGNAL("commitData(QWidget*)"), editor)
-            self.emit(SIGNAL("closeEditor(QWidget*)"), editor)
-
-
-    def setEditorData(self, editor, index):
-        text = index.model().data(index, Qt.DisplayRole).toString()
-        editor.setText(text)
-
-
-    def setModelData(self, editor, model, index):
-        if not editor.isModified():
-            return
-
-        item = editor.text()
-
-        if model.search(item):
-            model.removeRow(index.row())
-            title = self.tr("Warning")
-            msg   = self.tr("%s is already in the list." % str(item))
-            QMessageBox.warning(self.parent, title, msg)
-            return
-
-        path = self.path + "/" + str(item)
-        if not os.path.isfile(path) and not os.path.islink(path):
-            model.removeRow(index.row())
-            title = self.tr("Information")
-            msg   = self.tr("%s is not in the data directory:\n\n%s"
-                            "\n\nCheck location of this file.\n"
-                            "(Note: wildcards are authorized)" % (str(item), self.path))
-            QMessageBox.information(self.parent, title, msg)
-
-        model.setData(index, QVariant(item), Qt.DisplayRole)
-
 
 #-------------------------------------------------------------------------------
 # Popup advanced options
@@ -747,7 +547,6 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
         self.connect(self.toolButtonSearchBatch, SIGNAL("clicked()"), self.slotSearchBatchFile)
         self.connect(self.comboBoxRunType, SIGNAL("activated(const QString&)"), self.slotArgRunType)
-        self.connect(self.toolButtonFiles, SIGNAL("clicked()"), self.slotUserFiles)
         self.connect(self.toolButtonAdvanced, SIGNAL("clicked()"), self.slotAdvancedOptions)
         self.connect(self.pushButtonRunSubmit, SIGNAL("clicked()"), self.slotBatchRunning)
 
@@ -861,24 +660,6 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         self.n_procs = int(v)
         self.mdl.setString('n_procs', str(v))
-
-
-    @pyqtSignature("")
-    def slotUserFiles(self):
-        """
-        Input user data files
-        """
-        default = self.mdl.getUserInputFiles()
-        log.debug("slotUserFiles -> %s" % str(default))
-
-        dialog = BatchRunningUserFilesDialogView(self,
-                                                 self.case['data_path'],
-                                                 default)
-
-        if dialog.exec_():
-            result = dialog.get_result()
-            log.debug("slotUserFiles -> %s" % str(result))
-            self.mdl.setUserInputFiles(result)
 
 
     @pyqtSignature("")
@@ -1251,9 +1032,6 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         Layout of the second part of this page.
         """
-
-        self.labelFiles.show()
-        self.toolButtonFiles.show()
 
         if self.case['batch_type'] == None:
             self.labelNProcs.show()

@@ -127,35 +127,6 @@ class ScriptRunningModel(Model):
                 del node['parallel']
 
 
-    def getUserInputFiles(self):
-        """
-        Get user data file names.
-        """
-        input_files = []
-        node = self.node_mgt.xmlGetNode('user_input_files')
-        if node:
-            nodeList = node.xmlGetNodeList('data', 'name')
-            for node in nodeList:
-                input_files.append(node['name'])
-        return input_files
-
-
-    def setUserInputFiles(self, input_files):
-        """
-        Set user input files.
-        """
-        if not input_files:
-            node = self.node_mgt.xmlGetNode('user_input_files')
-            if node:
-                node.xmlRemoveNode()
-        else:
-            node = self.node_mgt.xmlInitNode('user_input_files')
-            for old in node.xmlGetNodeList('data', 'name'):
-                old.xmlRemoveNode()
-            for f in input_files:
-                node.xmlInitNode('data', name=f)
-
-
     def getString(self, key):
         """
         Get entry by named string.

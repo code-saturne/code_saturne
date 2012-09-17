@@ -479,9 +479,9 @@ class Study:
             thch_distpath = os.path.join(data_distpath, 'thch')
             ref           = os.path.join(data, 'REFERENCE')
             os.mkdir(ref)
-            for f in ['dp_C3P', 'dp_C3PSJ', 'dp_ELE',
+            for f in ['dp_C3P', 'dp_C3PSJ', 'dp_C4P', 'dp_ELE',
                       'dp_FCP', 'dp_FCP.xml', 'dp_FCP_new',
-                      'dp_FUE', 'dp_FUE_new',
+                      'dp_FUE', 'dp_FUE_new', 'dp_transfo',
                       'meteo']:
                 abs_f = os.path.join(thch_distpath, f)
                 if os.path.isfile(abs_f):

@@ -184,42 +184,6 @@ class base_domain:
 
     #---------------------------------------------------------------------------
 
-    def copy_data_file(self, name, copy_name=None, description=None):
-        """
-        Copy a data file to the execution directory.
-        """
-        if os.path.isabs(name):
-            source = name
-            if copy_name == None:
-                dest = os.path.join(self.exec_dir, os.path.basename(name))
-            elif os.path.isabs(copy_name):
-                dest = copy_name
-            else:
-                dest = os.path.join(self.exec_dir, copy_name)
-        else:
-            source = os.path.join(self.data_dir, name)
-            if copy_name == None:
-                dest = os.path.join(self.exec_dir, name)
-            elif os.path.isabs(copy_name):
-                dest = copy_name
-            else:
-                dest = os.path.join(self.exec_dir, copy_name)
-
-        if os.path.isfile(source):
-            shutil.copy2(source, dest)
-        else:
-            if description != None:
-                err_str = \
-                    'The ' + description + ' file: ', name, '\n' \
-                    'can not be accessed.'
-            else:
-                err_str = \
-                    'File: ', name, '\n' \
-                    'can not be accessed.'
-            raise RunCaseError(err_str)
-
-    #---------------------------------------------------------------------------
-
     def copy_result(self, name, purge=False):
         """
         Copy a file or directory to the results directory,
@@ -400,14 +364,6 @@ class domain(base_domain):
         self.valgrind = None
 
         # Additional data
-
-        self.thermochemistry_data = None
-        self.solidfuel_data = None
-        self.meteo_data = None
-        self.gas_data = None
-
-        self.user_input_files = None
-        self.user_scratch_files = None
 
         self.prefix = prefix
         self.lib_add = lib_add
@@ -643,12 +599,15 @@ class domain(base_domain):
         if not self.exec_solver:
             return
 
-        # Parameters file
+        # Copy data files
 
-        if self.param != None:
-            self.copy_data_file(self.param,
-                                os.path.basename(self.param),
-                                'parameters')
+        dir_files = os.listdir(self.data_dir)
+
+        for f in dir_files:
+            src = os.path.join(self.data_dir, f)
+            if os.path.isfile(src):
+                shutil.copy2(src,
+                             os.path.join(self.exec_dir, f))
 
         # Restart files
 
@@ -683,37 +642,6 @@ class domain(base_domain):
                 else:
                     self.symlink(partition_input,
                                  os.path.join(self.exec_dir, 'partition_input'))
-
-        # Data for specific physics
-
-        if self.solidfuel_data != None:
-            self.copy_data_file(self.solidfuel_data,
-                                'dp_FCP.xml',
-                                'thermochemistry')
-
-        if self.thermochemistry_data != None:
-            self.copy_data_file(self.thermochemistry_data,
-                                'dp_thch',
-                                'thermochemistry')
-
-        if self.meteo_data != None:
-            self.copy_data_file(self.meteo_data,
-                                'meteo',
-                                'meteo profile')
-            # Second copy so as to have correct name upon backup
-            if self.meteo_data != 'meteo':
-                self.copy_data_file(self.meteo_data)
-
-        if self.gas_data != None:
-            self.copy_data_file(self.gas_data,
-                                'dp_thch',
-                                'thermochemistry')
-
-        # Presence of user input files
-
-        if self.user_input_files != None:
-            for f in self.user_input_files:
-                self.copy_data_file(f)
 
     #---------------------------------------------------------------------------
 
@@ -964,10 +892,6 @@ class domain(base_domain):
             if f in dir_files:
                 purge_list.append(f)
         purge_list.extend(fnmatch.filter(dir_files, 'core*'))
-
-        if self.user_scratch_files != None:
-            for f in self.user_scratch_files:
-                purge_list.extend = fnmatch.filter(dir_files, f)
 
         for f in purge_list:
             dir_files.remove(f)

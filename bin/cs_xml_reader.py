@@ -273,50 +273,6 @@ class Parser:
 
     #---------------------------------------------------------------------------
 
-    def _getInputFiles(self):
-        """
-        Get input file parameters
-        """
-
-        # Search for meteorological and thermochemistry data
-
-        th_models = getChildNode(self.root, 'thermophysical_models')
-        if th_models:
-
-            node = getChildNode(th_models, 'atmospheric_flows')
-            if node:
-                status_node = getChildNode(node, 'read_meteo_data')
-                if status_node:
-                    if str(status_node.getAttribute('status')) == 'on':
-                        self.dict['meteo_data'] = getDataFromNode(node,
-                                                                  'meteo_data')
-
-            node = getChildNode(th_models, 'gas_combustion')
-            if node:
-                data_node = getChildNode(node, 'data_file')
-                if data_node:
-                    self.dict['gas_data'] = getDataFromNode(node,
-                                                            'data_file')
-
-        # Search for user input files
-
-        user_data = []
-
-        calc_node = getChildNode(self.root, 'calculation_management')
-        if calc_node:
-            input_node = getChildNode(calc_node, 'user_input_files')
-            if input_node != None:
-                nodeList = childNodeList(input_node, 'data')
-                for node in nodeList:
-                    name = str(node.getAttribute('name'))
-                    if name:
-                        user_data.append(name)
-
-        if len(user_data) > 0:
-            self.dict['user_input_files'] = user_data
-
-    #---------------------------------------------------------------------------
-
     def _getCalcParams(self):
         """
         Get various calculation parameters
@@ -387,7 +343,6 @@ class Parser:
         Get all parameters
         """
         self._getMeshParams()
-        self._getInputFiles()
         self._getCalcParams()
 
         return self.dict

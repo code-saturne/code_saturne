@@ -224,11 +224,12 @@ In the standard cases, \texttt{RESU/<run\_id>} contains a
 restart files, a \texttt{monitoring} directory for the files of chronological
 record of the results at specific locations (probes),\\
 \texttt{preprocessor.log} and \texttt{listing} files reporting the
-Preprocessor and the Kernel execution. For an tracing of
+Preprocessor and the Kernel execution. All files from the \texttt{DATA}
+directory not in subdirectories is also copied. For a tracing of
 the modifications in prior calculations, the user-subroutines used in
-a calculation are stored in a \texttt{src\_saturne} subdirectory. The {\em Xml}
-Interface data file, thermo-chemical data files and launch script are also
-copied into the results directory. \texttt{compil.log} and
+a calculation are stored in a \texttt{src\_saturne} subdirectory. The data files
+(such as the {\em Xml} Interface data file and thermo-chemical data files) and
+launch script are also copied into the results directory. \texttt{compil.log} and
 \texttt{summary} are respectively reports of the compilation stage and
 general information on the calculation (type of machine, user,
 version of the code, ...).

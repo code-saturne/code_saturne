@@ -71,7 +71,7 @@ module entsor
   !     fpp    --> fichier utilisateur lorsqu'on utilise Janaf
   !     jon    --> Utilisation de Janaf ou non
 
-  character*7, save :: ficfpp
+  character*32, save :: ficfpp
 
   integer, save :: impfpp, indjon
 
@@ -81,7 +81,7 @@ module entsor
 
   integer, save :: impmet
 
-  character*10, save :: ficmet
+  character*32, save :: ficmet
 
   ! --- Fichiers historiques
 

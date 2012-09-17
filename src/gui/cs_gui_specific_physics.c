@@ -2426,9 +2426,14 @@ void CS_PROCF (uicfsc, UICFSC) (const int *const irho,
  * subroutine uiati1
  * *****************
  * integer         imeteo   <--   on/off index
+ * char(*)         fmeteo   <--   meteo file name
+ * int             len      <--   meteo file name destination string length
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiati1, UIATI1) (int *const imeteo)
+void CS_PROCF (uiati1, UIATI1) (int           *imeteo,
+                                char          *fmeteo,
+                                int           *len
+                                CS_ARGF_SUPP_CHAINE)
 {
   char *path   = NULL;
   int   status = 0;
@@ -2442,6 +2447,45 @@ void CS_PROCF (uiati1, UIATI1) (int *const imeteo)
   if (cs_gui_get_status(path, &status))
     *imeteo = status;
   BFT_FREE(path);
+
+  if (*imeteo) {
+
+    int i, l;
+    char *cstr = NULL;
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path, 3, "thermophysical_models",
+                          "atmospheric_flows",
+                          "meteo_data");
+
+    cs_xpath_add_function_text(&path);
+    cstr = cs_gui_get_text_value(path);
+
+    BFT_FREE(path);
+
+    /* Copy string */
+
+    if (cstr != NULL) {
+
+      /* Compute string length (removing start or end blanks) */
+
+      l = strlen(cstr);
+      if (l > *len)
+        l = *len;
+
+      for (i = 0; i < l; i++)
+        fmeteo[i] = cstr[i];
+
+      /* Pad with blanks if necessary */
+
+      for (i = l; i < *len; i++)
+        fmeteo[i] = ' ';
+
+      BFT_FREE(cstr);
+
+    }
+
+  }
 
 #if _XML_DEBUG_
   bft_printf("==>UIATI1\n");
@@ -2947,6 +2991,54 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
     }
 
   BFT_FREE(model);
+}
+
+/*----------------------------------------------------------------------------
+ * Copy name of thermophysical data file from C to Fortran
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(cfnmtd, CFNMTD) (char          *fstr,    /* --> Fortran string */
+                               int           *len      /* --> String Length  */
+                               CS_ARGF_SUPP_CHAINE)
+{
+  int i;
+  int l = 0;
+  char *cstr = NULL;
+  char *path = NULL;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3,
+                        "thermophysical_models",
+                        "gas_combustion",
+                        "data_file");
+
+  cs_xpath_add_function_text(&path);
+  cstr = cs_gui_get_text_value(path);
+
+  BFT_FREE(path);
+
+  /* Copy string */
+
+  if (cstr != NULL) {
+
+    /* Compute string length (removing start or end blanks) */
+
+    l = strlen(cstr);
+    if (l > *len)
+      l = *len;
+
+    for (i = 0; i < l; i++)
+      fstr[i] = cstr[i];
+
+    /* Pad with blanks if necessary */
+
+    for (i = l; i < *len; i++)
+      fstr[i] = ' ';
+
+    BFT_FREE(cstr);
+
+  }
+
 }
 
 /*============================================================================

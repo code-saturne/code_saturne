@@ -394,6 +394,65 @@ if (ixmlpu.eq.0) then
 
 endif
 
+!===============================================================================
+! 2.  Data file related to modules above
+!===============================================================================
+
+if (ixmlpu.eq.0) then
+
+  ! Combustion
+
+  if (     ippmod(icod3p).ge.0                                          &
+      .or. ippmod(icoebu).ge.0 .or. ippmod(icolwc).ge.0) then
+
+    if (indjon.eq.1) then
+      ficfpp = 'dp_C3P'
+    else
+      ficfpp = 'dp_C3PSJ'
+    endif
+
+  endif
+
+  ! Pulverized coal
+
+  if (ippmod(icp3pl).ge.0 .or. ippmod(icpl3c).ge.0) then
+
+    ficfpp = 'dp_FCP'
+
+  endif
+
+  ! Fuel combustion
+
+  if (ippmod(icfuel).ge.0) then
+
+    ficfpp = 'dp_FUE'
+
+  endif
+
+  ! Electric arcs
+
+  if (ippmod(ielarc).eq.1) then
+
+    ficfpp = 'dp_ELE'
+
+  endif
+
+  ! Joule effect
+
+  if (ippmod(ieljou).eq.1 .or. ippmod(ieljou).eq.2) then
+    ficfpp = 'dp_ELE'
+  else if (ippmod(ieljou).eq.3 .or. ippmod(ieljou).eq.4) then
+    ficfpp = 'dp_transfo'
+  endif
+
+  ! Atmospheric flows
+
+  if (ippmod(iatmos).ge.0) then
+    ficmet = 'meteo'
+  endif
+
+endif
+
 !----
 ! Formats
 !----

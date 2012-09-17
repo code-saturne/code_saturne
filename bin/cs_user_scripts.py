@@ -87,39 +87,8 @@ def define_domain_parameters(domain):
     if domain.param == None:
         domain.meshes = None
 
-    # User data files
-    #----------------
-
-    # If meteorological profiles are used, the name of the meteo data file
-    # may be specified. For example:
-    # domain.meteo_data = 'meteo'
-
-    if domain.param == None:
-        domain.meteo_data = None
-
-    # If thermochemistry applies, the name of the thermochemistry data file
-    # may be specified. For example:
-    # domain.thermochemistry_data = 'dp_C3P'
-    # domain.solidfuel_data = 'dp_FCP.xml'
-
-    if domain.param == None:
-        domain.thermochemistry_data = None
-        domain.solidfuel_data = None
-
-    # Additional input files or patterns found in the DATA subdirectory
-    # may be defined by the domain.user_input_files list.
-
-    if domain.param == None:
-        domain.user_input_files = None
-
-    # Output files that do not need to be retrieved can be defined in
-    # user_scratch_files, for example:
-    # domain.user_scratch_files = ['*.tmp', 'fort.*']
-
-    domain.user_scratch_files = None
-
-    # Logging and IO arguments
-    #-------------------------
+    # Logging arguments
+    #------------------
 
     # Command-line arguments useful for logging, or determining the calculation
     # type may be defined here, for example:

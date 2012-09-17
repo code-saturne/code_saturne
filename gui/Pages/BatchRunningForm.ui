@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>474</width>
-    <height>544</height>
+    <height>509</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -540,41 +540,13 @@ p, li { white-space: pre-wrap; }
            </spacer>
           </item>
           <item row="2" column="0">
-           <widget class="QLabel" name="labelFiles">
-            <property name="text">
-             <string>User files</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="2">
-           <widget class="QToolButton" name="toolButtonFiles">
-            <property name="toolTip">
-             <string>Data files selection and
-results files name</string>
-            </property>
-            <property name="text">
-             <string>...</string>
-            </property>
-            <property name="icon">
-             <iconset resource="resources_pages.qrc">
-              <normaloff>:/new/prefix1/icons/22x22/bookmark-new.png</normaloff>:/new/prefix1/icons/22x22/bookmark-new.png</iconset>
-            </property>
-            <property name="iconSize">
-             <size>
-              <width>22</width>
-              <height>22</height>
-             </size>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="0">
            <widget class="QLabel" name="labelAdvanced">
             <property name="text">
              <string>Advanced options</string>
             </property>
            </widget>
           </item>
-          <item row="3" column="2">
+          <item row="2" column="2">
            <widget class="QToolButton" name="toolButtonAdvanced">
             <property name="text">
              <string>...</string>

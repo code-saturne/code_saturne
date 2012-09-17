@@ -284,7 +284,7 @@ syear = 1994
 squant = 1
 shour = 1
 smin = 0
-ssec = 0.
+ssec = 0
 xlon = 0.d0
 xlat = 45.d0
 
@@ -365,7 +365,7 @@ endif
 
 if (iihmpr.eq.1) then
 
-  call uiati1 (imeteo)
+  call uiati1 (imeteo, ficmet, len(ficmet))
   !==========
 
 endif

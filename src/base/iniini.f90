@@ -179,7 +179,7 @@ enddo
 !      En prime, INDJON (janaf=1 ou non=0)
 
 impfpp = 25
-ficfpp = 'dp_thch'
+ficfpp = 'define_ficfpp_in_usppmo'
 
 indjon = 1
 
