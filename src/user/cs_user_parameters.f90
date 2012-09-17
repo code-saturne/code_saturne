@@ -618,10 +618,8 @@ endif
 !     Model with transport equations
 !      30 DFM
 
-if (iturb.gt.0) then
-  if (.false.) then
-     iturbt = 10
-  endif
+if (ixmlpu.eq.0) then
+  iturbt = 0
 endif
 
 ! --- Variable specific heat (ICP=1) or not (ICP=0)
