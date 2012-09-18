@@ -232,7 +232,7 @@ endif
 ! When solving the Temperature, we solve:
 !  cp*Vol*dT/dt + ...
 if (iscalt.gt.0) then
-  if (ivar.eq.isca(iscalt)) then
+  if (ivar.eq.isca(iscalt) .or. iscavr(iscal).eq.iscalt) then
     if (abs(iscsth(iscalt)).eq.1) then
       imucpp = 1
     else
@@ -527,25 +527,25 @@ if (itspdv.eq.1) then
       ! Variance of the thermal scalar with modelized turbulent fluxes
       if ((iscavr(iscal).eq.iscalt).and.(ityturt.ge.0.and.ityturt.lt.3)) then
         do iel = 1, ncel
-          propce(iel,iptsca) = propce(iel,iptsca) -2.d0*volume(iel) &
-                             *(propce(iel,ipproc(iut))*grad(iel,1)  &
-                              +propce(iel,ipproc(ivt))*grad(iel,2)  &
+          propce(iel,iptsca) = propce(iel,iptsca) -2.d0*xcpp(iel)*volume(iel) &
+                             *(propce(iel,ipproc(iut))*grad(iel,1)            &
+                              +propce(iel,ipproc(ivt))*grad(iel,2)            &
                               +propce(iel,ipproc(iwt))*grad(iel,3) )
         enddo
       ! Variance of the thermal scalar with a transport equation
       ! on the turbulent fluxes
       elseif ((iscavr(iscal).eq.iscalt).and.(ityturt.eq.3)) then
         do iel = 1, ncel
-          propce(iel,iptsca) = propce(iel,iptsca) -2.d0*volume(iel)  &
-                             *(rtpa(iel,iut)*grad(iel,1)             &
-                              +rtpa(iel,ivt)*grad(iel,2)             &
+          propce(iel,iptsca) = propce(iel,iptsca) -2.d0*volume(iel)*xcpp(iel)  &
+                             *(rtpa(iel,iut)*grad(iel,1)                       &
+                              +rtpa(iel,ivt)*grad(iel,2)                       &
                               +rtpa(iel,iwt)*grad(iel,3) )
         enddo
       else
         do iel = 1, ncel
-          propce(iel,iptsca) = propce(iel,iptsca)                   &
-               + 2.d0*max(propce(iel,ipcvso),zero)                  &
-               *volume(iel)/sigmas(iscal)                           &
+          propce(iel,iptsca) = propce(iel,iptsca)                             &
+               + 2.d0*xcpp(iel)*max(propce(iel,ipcvso),zero)                  &
+               *volume(iel)/sigmas(iscal)                                     &
                *(grad(iel,1)**2 + grad(iel,2)**2 + grad(iel,3)**2)
         enddo
       endif
@@ -554,23 +554,23 @@ if (itspdv.eq.1) then
       ipcvso = ipcvst
       if ((iscavr(iscal).eq.iscalt).and.(ityturt.ge.0.and.ityturt.lt.3)) then
         do iel = 1, ncel
-          smbrs(iel) = smbrs(iel) -2.d0*volume(iel)         &
-                     *(propce(iel,ipproc(iut))*grad(iel,1)  &
-                      +propce(iel,ipproc(ivt))*grad(iel,2)  &
+          smbrs(iel) = smbrs(iel) -2.d0*xcpp(iel)*volume(iel)                &
+                     *(propce(iel,ipproc(iut))*grad(iel,1)                   &
+                      +propce(iel,ipproc(ivt))*grad(iel,2)                   &
                       +propce(iel,ipproc(iwt))*grad(iel,3) )
         enddo
       elseif ((iscavr(iscal).eq.iscalt).and.(ityturt.eq.3)) then
         do iel = 1, ncel
-          smbrs(iel) = smbrs(iel) -2.d0*volume(iel)          &
-                     *(rtpa(iel,iut)*grad(iel,1)             &
-                      +rtpa(iel,ivt)*grad(iel,2)             &
+          smbrs(iel) = smbrs(iel) -2.d0*xcpp(iel)*volume(iel)                &
+                     *(rtpa(iel,iut)*grad(iel,1)                             &
+                      +rtpa(iel,ivt)*grad(iel,2)                             &
                       +rtpa(iel,iwt)*grad(iel,3) )
         enddo
       else
         do iel = 1, ncel
-          smbrs(iel) = smbrs(iel)                                   &
-               + 2.d0*max(propce(iel,ipcvso),zero)                  &
-               *volume(iel)/sigmas(iscal)                           &
+          smbrs(iel) = smbrs(iel)                                            &
+               + 2.d0*xcpp(iel)*max(propce(iel,ipcvso),zero)                 &
+               *volume(iel)/sigmas(iscal)                                    &
                *(grad(iel,1)**2 + grad(iel,2)**2 + grad(iel,3)**2)
         enddo
       endif
@@ -579,7 +579,7 @@ if (itspdv.eq.1) then
         do iel = 1, ncel
           propce(iel,ipproc(iustdy(iscal))) =                     &
           propce(iel,ipproc(iustdy(iscal))) +                     &
-               2.d0*max(propce(iel,ipcvso),zero)                  &
+               2.d0*xcpp(iel)*max(propce(iel,ipcvso),zero)        &
              *volume(iel)/sigmas(iscal)                           &
              *(grad(iel,1)**2 + grad(iel,2)**2 + grad(iel,3)**2)
         enddo
@@ -606,7 +606,8 @@ if (itspdv.eq.1) then
         xk = rtpa(iel,ik)
         xe = cmu*xk*rtpa(iel,iomg)
       endif
-      rhovst = propce(iel,ipcrom)*xe/(xk * rvarfl(iscal))*volume(iel)
+      rhovst = xcpp(iel)*propce(iel,ipcrom)*xe/(xk * rvarfl(iscal))       &
+             *volume(iel)
 
       ! La diagonale recoit eps/Rk, (*theta eventuellement)
       rovsdt(iel) = rovsdt(iel) + rhovst*thetap
@@ -614,8 +615,8 @@ if (itspdv.eq.1) then
       smbrs(iel) = smbrs(iel) - rhovst*rtpa(iel,ivar)
       ! Dissipation term for a variance
       if (idilat.eq.4) then
-        propce(iel,ipproc(iustdy(iscal))) =                       &
-        propce(iel,ipproc(iustdy(iscal))) - rhovst*rtpa(iel,ivar)
+        propce(iel,ipproc(iustdy(iscal))) =                               &
+          propce(iel,ipproc(iustdy(iscal))) - xcpp(iel)*rhovst*rtpa(iel,ivar)
       endif
     enddo
 
