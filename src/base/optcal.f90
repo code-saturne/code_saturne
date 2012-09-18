@@ -596,6 +596,43 @@ module optcal
 
   integer, save :: ineedf
 
+  ! Constantes pour les scalaires
+
+  ! iscsth :
+  !   -1 : de type temperature en C (      Cp pour la loi de paroi)
+  !    0 : scalaire passif      (ie pas de Cp pour la loi de paroi)
+  !    1 : de type temperature en K (      Cp pour la loi de paroi)
+  !    2 : enthalpie            (ie pas de Cp pour la loi de paroi)
+  !    3 : energie (en compressible, pas de Cp pour la loi de paroi)
+  !      la distinction C/K sert en rayonnement
+  ! ivisls : si positif strictement, indique que la viscosite associee
+  !            au scalaire est variable, et la valeur est le numero
+  !            d'ordre de la viscosite dans le tableau des viscosites
+  !            variables
+  ! ivissa : comme ivisls sauf que sert au stockage de la viscosite au
+  !          pas de temps precedent
+  ! iclvfl : 0 : clipping des variances a zero
+  !          1 : clipping des variances a zero et a f(1-f)
+  !          2 : clipping des variances a max(zero,scamin) et scamax
+  ! iscavr : numero du scalaire associe a la variance ou zero
+  !          si le scalaire n'est pas une variance
+  ! iscasp : 0 : le scalaire associe n est pas une espece
+  !          1 : le scalaire associe est une espece
+  ! scamin, scamax : min et max pour clipping des scalaires
+  !                  on ne clippe que si scamin < scamax
+  ! visls0 : viscosite des scalaires si constante
+  ! sigmas : prandtl des scalaires
+  ! wmolsp : molar fraction for multi-species scalars
+  !          wmolsp(0) is associated to the deduced species.
+  ! rvarfl : coeff de dissipation des variances
+  ! ctheta : coefficient des modeles de flux turbulents GGDH et AFM
+
+  integer, save ::          iscsth(nscamx), ivisls(nscamx), ivissa(nscamx),  &
+                            iclvfl(nscamx), iscavr(nscamx), iscasp(nscamx)
+  double precision, save :: scamin(nscamx), scamax(nscamx),                  &
+                            visls0(nscamx), sigmas(nscamx), wmolsp(0:nscamx),&
+                            rvarfl(nscamx), ctheta(nscamx)
+
   !=============================================================================
 
   interface
