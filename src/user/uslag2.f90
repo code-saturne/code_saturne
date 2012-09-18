@@ -215,7 +215,7 @@ pis6 = pi / 6.d0
 izone = -1
 
 ! ---> First zone numbered izone=1 ( = color 10)
-CALL GETFBR('10',NLELT,LSTELT)
+call getfbr('10',nlelt,lstelt)
 !==========
 
 do ilelt = 1, nlelt
@@ -228,7 +228,7 @@ do ilelt = 1, nlelt
 enddo
 
 ! ---> Second zone numbered izone=2 ( = part of color 4)
-CALL GETFBR('4 and Y < 1.0',NLELT,LSTELT)
+call getfbr('4 and y < 1.0',nlelt,lstelt)
 !==========
 
 do ilelt = 1, nlelt
@@ -249,7 +249,7 @@ do ifac = 1, nfabor
 enddo
 
 ! ---> Nth zone numbered izone=5 (= color 3)
-CALL GETFBR('3',NLELT,LSTELT)
+call getfbr('3',nlelt,lstelt)
 !==========
 
 do ilelt = 1, nlelt
@@ -417,13 +417,13 @@ do iclas  = 1, nbclas
     ruslag (iclas,izone,idpt)  = 50.d-6
     ruslag (iclas,izone,ivdpt) = 0.d0
 
-!        Density
+    ! Density
 
     ruslag(iclas,izone,iropt) = 2500.d0
 
     if ( iphyla.eq.1 ) then
 
-!        Temperature and Cp
+      ! Temperature and Cp
 
       if ( itpvar.eq.1 ) then
         iuslag (iclas,izone,ijprtp) = 1
@@ -435,52 +435,50 @@ do iclas  = 1, nbclas
 
     endif
 
-!    Coal
+    ! Coal
 
   else if ( iphyla.eq.2 ) then
 
-!    CAUTION :   1) To transport and burn coal particles with the Lagrangian
-!                   module, a specific physics for the dispersed phase must
-!                   be activated for the carrier phase.
-!
-!                2) The physical properties of the coal particles are known
-!                   from the thermo-chemical file: dp_FCP
-!
-!                3) For the current phase ICLAS, and for the current boundary zone
-!                   NB, we assign to the coal particles the properties of the coal ICHA
-!                   of the icha class taken from the file dp_FCP.
-!
-!                4) icha : number of the coal between 1 and ncharb defined by the user
-!                   in the file dp_FCP.
-!
-
+    ! CAUTION :   1) To transport and burn coal particles with the Lagrangian
+    !                module, a specific physics for the dispersed phase must
+    !                be activated for the carrier phase.
+    !
+    !             2) The physical properties of the coal particles are known
+    !                from the thermo-chemical file: dp_FCP
+    !
+    !             3) For the current phase ICLAS, and for the current boundary
+    !                zone NB, we assign to the coal particles the properties of
+    !                the coal ICHA of the ICHA class taken from the file dp_FCP.
+    !
+    !             4) icha : number of the coal between 1 and ncharb defined by
+    !                the user in the file dp_FCP.
 
     icha = ichcor(iclas)
     temp = 800.d0
 
-!        Number of the coal
+    ! Number of the coal
 
     iuslag(iclas,izone,inuchl) = icha
 
-!        Temperature and Cp
+    ! Temperature and Cp
 
     ruslag(iclas,izone,ihpt) = temp
     ruslag(iclas,izone,icpt) = cp2ch(icha)
 
-!        Mean value and standard deviation of the diameter
+    ! Mean value and standard deviation of the diameter
 
     ruslag (iclas,izone,idpt)  = diam20(iclas)
     ruslag (iclas,izone,ivdpt) = 0.d0
 
-!        Density
+    ! Density
 
     ruslag(iclas,izone,iropt) =  rho0ch(icha)
 
-!        Mass of reactive coal and
-!        mass of coke (null if the coal has never burnt)
+    ! Mass of reactive coal and
+    ! mass of coke (null if the coal has never burnt)
 
     mp0 = pis6 * ( ruslag(iclas,izone,idpt)**3 )                  &
-               * ruslag(iclas,izone,iropt)
+                 * ruslag(iclas,izone,iropt)
     ruslag(iclas,izone,imcht) = mp0 * (1.d0-xashch(icha))
     ruslag(iclas,izone,imckt) = 0.d0
 
