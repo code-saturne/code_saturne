@@ -812,11 +812,12 @@ if (nscal.ge.1) then
       iok = iok + 1
     endif
 
-    if ((iscal.eq.iscalt).and.(irovar.eq.1))then
-      if (propce(iel,ipproc(ibeta)).le.0.d0) then
-        write(nfecra,9013)
-        iok = iok + 1
-      endif
+    if ((iscal.eq.iscalt).and.(irovar.eq.1).and.ityturt.eq.2) then
+      iok1 = 0
+      do iel = 1, ncel
+        if (propce(iel,ipproc(ibeta)).le.0.d0) iok1 = 1
+      enddo
+      if (iok1.eq.1) write(nfecra,9013)
     endif
   enddo
 

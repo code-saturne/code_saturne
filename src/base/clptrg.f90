@@ -1315,17 +1315,18 @@ do ifac = 1, nfabor
             hint = viscis/surfbn(ifac)/fikis
           endif
 
-          ! Loi rugueuse, on recalcule le coefficient d'echange fluide - paroi
-          if (iturb.ne.0.and.icodcl(ifac,ivar).eq.6)then
+          ! Dirichlet on the scalar, with wall function
+          if (iturb.ne.0.and.icodcl(ifac,ivar).eq.6) then
             rugt = rcodcl(ifac,iv,3)
             act = xkappa/log((distbf+rugt)/rugt)
             ! T+ = (T_I - T_w) / Tet
             tplus = log((distbf+rugt)/rugt)/xkappa
             hflui = romc*cpp*uet*act*cfnns
+          ! Neumann on the scalar, with wall function (for post-processing)
           else
             hflui = hint
-            ! T+ = (T_I - T_w) / Tet
-            tplus = (distbf+rugt)/rugt
+            ! T+ = (T_I - T_w) / Tet, we assume here rugt = rugd
+            tplus = uplus
           endif
 
           if (isvhbl.gt.0) hbord(ifac) = hflui
@@ -1362,17 +1363,6 @@ do ifac = 1, nfabor
               heq = hflui*hext/(hflui+hext)
               coefa(ifac,iclvaf) = -heq*pimp
               coefb(ifac,iclvaf) =  heq
-            endif
-
-            ! Save the value of T^star and T^+
-            if (iscal.eq.iscalt) then
-              phit = coefa(ifac,iclvaf)+coefb(ifac,iclvaf)*thbord(ifac)
-              tet = phit/(max(sqrt(uk*uet),epzero))
-
-              tetmax = max(tet, tetmax)
-              tetmin = min(tet, tetmin)
-              tplumx = max(tplus,tplumx)
-              tplumn = min(tplus,tplumn)
             endif
 
             !-->turbulent heat flux !FIXME voir avec les personnes qui font du rugueux
@@ -1509,6 +1499,26 @@ do ifac = 1, nfabor
                                           + coefb(ifac,iclvaf)*thbord(ifac)
             endif
 
+          endif ! End if icodcl=6
+
+          ! Save the value of T^star and T^+
+          if (iscal.eq.iscalt) then
+            ! Rough wall function
+            if (icodcl(ifac,ivar).eq.6) then
+              phit = coefa(ifac,iclvaf)+coefb(ifac,iclvaf)*thbord(ifac)
+            ! Imposed flux with wall function for post-processing
+            elseif (icodcl(ifac,ivar).eq.3) then
+              phit = rcodcl(ifac,ivar,3)
+            else
+              phit = 0.d0
+            endif
+
+            tet = phit/(max(sqrt(uk*uet),epzero))
+
+            tetmax = max(tet, tetmax)
+            tetmin = min(tet, tetmin)
+            tplumx = max(tplus,tplumx)
+            tplumn = min(tplus,tplumn)
           endif
 
         endif

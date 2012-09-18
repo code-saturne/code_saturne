@@ -1577,9 +1577,9 @@ do ifac = 1, nfabor
             hint = viscis/surfbn(ifac)/fikis
           endif
 
-          if (iturb.ne.0.and.icodcl(ifac,ivar).eq.5)then
+          ! Dirichlet on the scalar, with wall function
+          if (iturb.ne.0.and.icodcl(ifac,ivar).eq.5) then
             call hturbp (prdtl,sigmas(iscal),xkappa,yplus,hflui,yp1)
-            !==========
             ! y+/T+ *PrT
             yptp = hflui/prdtl
             if (ideuch.eq.2) then !FIXME
@@ -1587,6 +1587,14 @@ do ifac = 1, nfabor
             else
               hflui = rkl/distbf *hflui
             endif
+
+          ! Neumann on the scalar, with wall function (for post-processing)
+          elseif (iturb.ne.0.and.icodcl(ifac,ivar).eq.3) then
+            call hturbp (prdtl,sigmas(iscal),xkappa,yplus,hflui,yp1)
+            ! y+/T+ *PrT
+            yptp = hflui/prdtl
+            hflui = hint
+
           else
             ! y+/T+ *PrT
             yptp = hint/prdtl
@@ -1604,8 +1612,6 @@ do ifac = 1, nfabor
 
             ! In the log layer
             if (yplus.ge.yp1) then
-              ! T+ = (T_I - T_w) / Tet
-              tplus = yplus/yptp
               cofimp  = 1.d0 - yptp*sigmas(iscal)/xkappa*                        &
                                (deuxd0/yplus - und0/(deuxd0*yplus))
               ! On implicite le terme (rho*tet*uk)
@@ -1613,8 +1619,6 @@ do ifac = 1, nfabor
 
             ! In the viscous sub-layer
             else
-              ! T+ = (T_I - T_w) / Tet
-              tplus = yplus/yptp
               cofimp = 0.d0
               pfac = pimp
             endif
@@ -1631,17 +1635,6 @@ do ifac = 1, nfabor
               heq = hflui*hext/(hflui+hext)
               coefa(ifac,iclvaf) = -heq*pimp
               coefb(ifac,iclvaf) =  heq
-            endif
-
-            ! Save the value of T^star and T^+
-            if (iscal.eq.iscalt) then
-              phit = coefa(ifac,iclvaf)+coefb(ifac,iclvaf)*thbord(ifac)
-              tet = phit/(max(sqrt(uk*uet),epzero))
-
-              tetmax = max(tet, tetmax)
-              tetmin = min(tet, tetmin)
-              tplumx = max(tplus,tplumx)
-              tplumn = min(tplus,tplumn)
             endif
 
             !--> Turbulent heat flux
@@ -1781,6 +1774,30 @@ do ifac = 1, nfabor
                                           + coefb(ifac,iclvaf)*thbord(ifac)
             endif
 
+          endif ! End of icodcl.eq.5
+
+          ! Save the value of T^star and T^+ for post-processing
+          if (iscal.eq.iscalt) then
+
+            ! Wall function
+            if (icodcl(ifac,ivar).eq.5) then
+              phit = coefa(ifac,iclvaf)+coefb(ifac,iclvaf)*thbord(ifac)
+
+            ! Imposed flux with wall function for post-processing
+            elseif (icodcl(ifac,ivar).eq.3) then
+              phit = rcodcl(ifac,ivar,3)
+            else
+              phit = 0.d0
+            endif
+
+            tet = phit/(romc*cpp*max(sqrt(uk*uet),epzero))
+            ! T+ = (T_I - T_w) / Tet
+            tplus = yplus/yptp
+
+            tetmax = max(tet, tetmax)
+            tetmin = min(tet, tetmin)
+            tplumx = max(tplus,tplumx)
+            tplumn = min(tplus,tplumn)
           endif
 
         endif
@@ -1788,7 +1805,6 @@ do ifac = 1, nfabor
       enddo
 
     endif
-
 
   endif
   ! Test on the presence of a smooth wall (End)

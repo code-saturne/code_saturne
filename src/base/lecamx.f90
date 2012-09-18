@@ -538,13 +538,14 @@ if(nscal.gt.0) then
       endif
     endif
     if (iscal.eq.iscalt) then
-      RUBRIQ = 'modele_flux_turbulent_phase'//cphase
+      rubriq = 'modele_flux_turbulent_phase'//cphase
       itysup = 0
       nbval  = 1
       irtyp  = 1
       call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,       &
                   jturbt,ierror)
-      nberro=nberro+ierror
+      ! If the old calculation has no turbulent flux model, set it to 0
+      if (ierror.ne.0) jturbt = 0
       if (iturbt.ne.jturbt) write(nfecra,8221) iturbt, jturbt
       jtyturt=jturbt/10
     endif
