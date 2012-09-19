@@ -365,8 +365,9 @@ enddo
 
 ! ---> Post traitement automatique (bord)
 
-ipstdv = ipstyp*ipstcl*ipstft*ipstfo
-
+do ii = 1, 5
+  ipstdv(ii) = 0
+enddo
 
 ! ---> CPU
 !      TMARUS : marge (Arret du calcul avant limite CPU)
