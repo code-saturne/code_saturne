@@ -376,14 +376,16 @@ if (iscalt.gt.0.and.iscalt.le.nscal) then
       endif
     endif
   endif
-  if (nomvar(ipprtp(iut)) .eq.' ') then
-    write(nomvar(ipprtp(iut)), '(a2)') 'ut'
-  endif
-  if (nomvar(ipprtp(ivt)) .eq.' ') then
-    write(nomvar(ipprtp(ivt)), '(a2)') 'vt'
-  endif
-  if (nomvar(ipprtp(iwt)) .eq.' ') then
-    write(nomvar(ipprtp(iwt)), '(a2)') 'wt'
+  if (iut.gt.0) then
+    if (nomvar(ipprtp(iut)) .eq.' ') then
+      write(nomvar(ipprtp(iut)), '(a2)') 'ut'
+    endif
+    if (nomvar(ipprtp(ivt)) .eq.' ') then
+      write(nomvar(ipprtp(ivt)), '(a2)') 'vt'
+    endif
+    if (nomvar(ipprtp(iwt)) .eq.' ') then
+      write(nomvar(ipprtp(iwt)), '(a2)') 'wt'
+    endif
   endif
 endif
 
