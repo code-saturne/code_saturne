@@ -264,12 +264,12 @@ do ifac = 1, nfabor
             call intprf &
             !==========
             (nbmett, nbmetm, ztmet, tmmet, qvmet, zent, ttcabs, qvent )
-            rcodcl(ifac,isca(iscapp(2)),1) = qvent
+            rcodcl(ifac,isca(iscapp(itotwt)),1) = qvent
 
             call intprf &
             !==========
             (nbmett, nbmetm, ztmet, tmmet, ncmet, zent, ttcabs, ncent )
-            rcodcl(ifac,isca(iscapp(3)),1) = ncent
+            rcodcl(ifac,isca(iscapp(intdrp)),1) = ncent
           endif
 
       endif
