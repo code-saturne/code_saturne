@@ -152,6 +152,7 @@ use ppincl
 use radiat
 use cplsat
 use mesh
+use field
 
 !===============================================================================
 
@@ -198,6 +199,7 @@ integer          icl11f, icl22f, icl33f, icl12f, icl13f, icl23f
 integer          iclphf, iclfbf, iclalf, iclomf
 integer          iclvaf, iclumf, iclvmf, iclwmf
 integer          nswrgp, imligp, iwarnp
+integer          itplus, itstar
 
 double precision sigma , cpp   , rkl
 double precision hint  , hext  , heq   , pimp  , xdis, qimp, cfl
@@ -218,6 +220,7 @@ double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:,:) :: velipb, rijipb, uitipb
 double precision, allocatable, dimension(:,:) :: grad
 double precision, dimension(:,:,:), allocatable :: gradv
+double precision, dimension(:), pointer :: tplusp, tstarp
 
 !===============================================================================
 
@@ -259,6 +262,27 @@ ipccv = 0
 rinfiv(1) = rinfin
 rinfiv(2) = rinfin
 rinfiv(3) = rinfin
+
+! pointers to T+ and T* if saved
+
+tplusp => null()
+tstarp => null()
+
+call field_get_id('tplus', itplus)
+if (itplus.ge.0) then
+  call field_get_val_s (itplus, tplusp)
+  do ifac = 1, nfabor
+    tplusp(ifac) = 0.d0
+  enddo
+endif
+
+call field_get_id('tstar', itstar)
+if (itstar.ge.0) then
+  call field_get_val_s (itstar, tstarp)
+  do ifac = 1, nfabor
+    tstarp(ifac) = 0.d0
+  enddo
+endif
 
 !===============================================================================
 ! 2. Treatment of types of BCs given by itypfb
@@ -832,7 +856,7 @@ deallocate(grad)
 ! Initialization of the array storing yplus
 !  which is computed in clptur.f90 and/or clptrg.f90
 
-if(mod(ipstdv,ipstyp).eq.0) then
+if (ipstdv(ipstyp).ne.0) then
   do ifac = 1, nfabor
     yplbr(ifac) = 0.d0
   enddo

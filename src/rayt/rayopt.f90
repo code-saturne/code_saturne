@@ -612,8 +612,7 @@ if (iihmpr.eq.1) then
   call csenso                                                     &
   !==========
      ( nvppmx, ncapt,  nthist, frhist, ntlist, iecaux,            &
-       ipstdv, ipstyp, ipstcl, ipstft, ipstfo,                    &
-       ichrvr, ilisvr, ihisvr, tplfmt, isca, iscapp,              &
+       ipstdv, ichrvr, ilisvr, ihisvr, tplfmt, isca, iscapp,      &
        ipprtp, xyzcap )
 
   do ii = 1,nvppmx

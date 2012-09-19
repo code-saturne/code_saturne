@@ -143,6 +143,7 @@ use ppincl
 use radiat
 use cplsat
 use mesh
+use field
 use lagran
 
 !===============================================================================
@@ -183,7 +184,7 @@ integer          icl11f, icl22f, icl33f, icl12f, icl13f, icl23f
 integer          iclphf, iclfbf, iclalf, iclomf
 integer          iclvaf
 integer          ipcrom, ipcvis, ipcvst, ipccp , ipccv
-integer          ipcvsl
+integer          ipcvsl, itplus, itstar
 double precision rnx, rny, rnz, rxnn
 double precision tx, ty, tz, txn, txn0, t2x, t2y, t2z
 double precision utau, upx, upy, upz, usn
@@ -207,6 +208,8 @@ double precision distb0, rugd  , rugt  , ydep  , act
 double precision dsa0
 double precision pfac
 double precision visci(3,3), fikis, viscis, distfi
+
+double precision, dimension(:), pointer :: tplusp, tstarp
 
 !===============================================================================
 
@@ -367,6 +370,21 @@ iuiptn = 0
 if (itytur.eq.5) then
   uiptmx = 0.d0
   uiptmn = 0.d0
+endif
+
+! pointers to T+ and T* if saved
+
+tplusp => null()
+tstarp => null()
+
+call field_get_id('tplus', itplus)
+if (itplus.ge.0) then
+  call field_get_val_s (itplus, tplusp)
+endif
+
+call field_get_id('tstar', itstar)
+if (itstar.ge.0) then
+  call field_get_val_s (itstar, tstarp)
 endif
 
 ! --- Loop on boundary faces
@@ -629,7 +647,7 @@ do ifac = 1, nfabor
 
 
     ! Save yplus is post-processed
-    if (mod(ipstdv,ipstyp).eq.0) then
+    if (ipstdv(ipstyp).ne.0) then
       yplbr(ifac) = yplus
     endif
 
@@ -1514,6 +1532,9 @@ do ifac = 1, nfabor
             endif
 
             tet = phit/(max(sqrt(uk*uet),epzero))
+
+            if (itplus .ge. 0) tplusp(ifac) = tplus
+            if (itstar .ge. 0) tstarp(ifac) = tet
 
             tetmax = max(tet, tetmax)
             tetmin = min(tet, tetmin)

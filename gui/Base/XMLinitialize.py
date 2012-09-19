@@ -99,8 +99,17 @@ class XMLinit(Variables):
         n = self.setNewProperty(node, 'effort')
         n['support'] = 'boundary'
         n['label'] = 'Efforts'
-        n = self.setNewProperty(node, 'all_variables')
-        n['support'] = 'boundary'
+        if not node.xmlGetChildNode('property', name='effort_tangential'):
+            n = self.setNewProperty(node, 'effort_tangential')
+            n['label'] = 'Efforts, tangential'
+            n['support'] = 'boundary'
+            n.xmlInitNode('postprocessing_recording')['status']= "off"
+        if not node.xmlGetChildNode('property', name='effort_normal'):
+            n = self.setNewProperty(node, 'effort_normal')
+            n['label'] = 'Efforts, normal'
+            n['support'] = 'boundary'
+            n.xmlInitNode('postprocessing_recording')['status']= "off"
+
         OutputControlModel(self.case).addDefaultWriter()
         OutputControlModel(self.case).addDefaultMesh()
         MobileMeshModel(self.case).getMethod()

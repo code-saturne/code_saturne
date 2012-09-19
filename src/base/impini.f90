@@ -2511,12 +2511,11 @@ write(nfecra,7532)
 
 !   - Post-traitement automatique (bord)
 
-write(nfecra,7550)   'IPSTDV',ipstdv,                             &
-                     'IPSTYP',ipstyp,                             &
-                     'IPSTCL',ipstcl,                             &
-                     'IPSTFT',ipstft,                             &
-                     'IPSTFO',ipstfo,                             &
-                     'IPSTDV'
+write(nfecra,7550)   'ipstfo', ipstdv(ipstfo),                     &
+                     'ipstyp', ipstdv(ipstyp),                     &
+                     'ipstft', ipstdv(ipstft),                     &
+                     'ipsttb', ipstdv(ipsttb),                     &
+                     'ipstnu', ipstdv(ipstnu)
 
 write(nfecra,9900)
 
@@ -2555,14 +2554,12 @@ write(nfecra,9900)
 '       Numero Nom                 Niveau d''impression IWARNI',/,&
 '                                      (-999 : non applicable)',/)
  7550 format(                                                     &
-' --- Variables supplementaires en post-traitement',            /,&
-'       ',a6,' = ',4x,i10,    ' (Produit des valeurs suivantes',/,&
-'                                selon activation ou non',      /,&
-'       ',a6,' = ',4x,i10,    ' (Yplus          au bord',       /,&
-'       ',a6,' = ',4x,i10,    ' (Variables      au bord',       /,&
-'       ',a6,' = ',4x,i10,    ' (Flux thermique au bord',       /,&
-'       ',a6,' = ',4x,i10,    ' (Force exercee  au bord',       /,&
-'  et   ',a6,' =              1 (Pas de sortie supplementaire', /)
+' --- Variables supplementaires en post-traitement (ipstdv)',   /,&
+'       ',a6,' = ',4x,i10,    ' (Force exercee  au bord)',      /,&
+'       ',a6,' = ',4x,i10,    ' (Yplus          au bord)',      /,&
+'       ',a6,' = ',4x,i10,    ' (Flux thermique au bord)',      /,&
+'       ',a6,' = ',4x,i10,    ' (Temperature    au bord)',      /,&
+'       ',a6,' = ',4x,i10,    ' (Nusselt        au bord)',      /)
 
 #else
 
@@ -2598,14 +2595,12 @@ write(nfecra,9900)
 '       Number Name                IWARNI verbosity level',     /,&
 '                                      (-999: not applicable)', /)
  7550 format(                                                     &
-' --- Additional post-processing variables',                    /,&
-'       ',a6,' = ',4x,i10,    ' (Product of the following',     /,&
-'                                values based on activation  )',/,&
-'       ',a6,' = ',4x,i10,    ' (Yplus          on boundary  )',/,&
-'       ',a6,' = ',4x,i10,    ' (Variables      on boundary  )',/,&
-'       ',a6,' = ',4x,i10,    ' (Thermal flow   on boundary  )',/,&
-'       ',a6,' = ',4x,i10,    ' (Force exerted  on boundary  )',/,&
-'  and  ',a6,' =              1 (No additional output        )',/)
+' --- Additional post-processing variables (ipstdv)',           /,&
+'       ',a6,' = ',4x,i10,    ' (Force exerted  at boundary)',  /,&
+'       ',a6,' = ',4x,i10,    ' (Yplus          at boundary)',  /,&
+'       ',a6,' = ',4x,i10,    ' (Thermal flow   at boundary)',  /,&
+'       ',a6,' = ',4x,i10,    ' (Temperature    at boundary)',  /,&
+'       ',a6,' = ',4x,i10,    ' (Nusselt        at boundary)',  /)
 
 #endif
 

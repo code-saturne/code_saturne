@@ -640,7 +640,6 @@ class NumericalParamEquatTestCase(ModelTest):
                         <property label="total_pressure" name="total_pressure"/>
                         <property label="Yplus" name="yplus" support="boundary"/>
                         <property label="Efforts" name="effort" support="boundary"/>
-                        <property label="all_variables" name="all_variables" support="boundary"/>
                  </velocity_pressure>"""
         assert model.node_vitpre == self.xmlNodeFromString(doc),\
                 'Could not set scheme in NumericalParamEquationModel'
@@ -664,7 +663,6 @@ class NumericalParamEquatTestCase(ModelTest):
                     <property label="total_pressure" name="total_pressure"/>
                     <property label="Yplus" name="yplus" support="boundary"/>
                     <property label="Efforts" name="effort" support="boundary"/>
-                    <property label="all_variables" name="all_variables" support="boundary"/>
                  </velocity_pressure>"""
         assert model.node_vitpre == self.xmlNodeFromString(doc),\
                 'Could not set blending factor in NumericalParamEquationModel'
@@ -687,7 +685,6 @@ class NumericalParamEquatTestCase(ModelTest):
                     <property label="total_pressure" name="total_pressure"/>
                     <property label="Yplus" name="yplus" support="boundary"/>
                     <property label="Efforts" name="effort" support="boundary"/>
-                    <property label="all_variables" name="all_variables" support="boundary"/>
                  </velocity_pressure>"""
         assert model.node_vitpre == self.xmlNodeFromString(doc),\
                 'Could not set status of slope test in NumericalParamEquationModel'
@@ -710,7 +707,6 @@ class NumericalParamEquatTestCase(ModelTest):
                     <property label="total_pressure" name="total_pressure"/>
                     <property label="Yplus" name="yplus" support="boundary"/>
                     <property label="Efforts" name="effort" support="boundary"/>
-                    <property label="all_variables" name="all_variables" support="boundary"/>
                  </velocity_pressure>"""
         assert model.node_vitpre == self.xmlNodeFromString(doc),\
                 'Could not set status of flux reconstruction in NumericalParamEquationModel'
@@ -728,7 +724,6 @@ class NumericalParamEquatTestCase(ModelTest):
                     <property label="total_pressure" name="total_pressure"/>
                     <property label="Yplus" name="yplus" support="boundary"/>
                     <property label="Efforts" name="effort" support="boundary"/>
-                    <property label="all_variables" name="all_variables" support="boundary"/>
                   </velocity_pressure>"""
         assert model.node_vitpre == self.xmlNodeFromString(doc2),\
                 'Could not set status of flux reconstruction in NumericalParamEquationModel'
@@ -751,7 +746,6 @@ class NumericalParamEquatTestCase(ModelTest):
                     <property label="total_pressure" name="total_pressure"/>
                     <property label="Yplus" name="yplus" support="boundary"/>
                     <property label="Efforts" name="effort" support="boundary"/>
-                    <property label="all_variables" name="all_variables" support="boundary"/>
                  </velocity_pressure>"""
         assert model.node_vitpre == self.xmlNodeFromString(doc),\
                 'Could not set max of number of iterations in NumericalParamEquationModel'
@@ -782,7 +776,6 @@ class NumericalParamEquatTestCase(ModelTest):
                     <property label="total_pressure" name="total_pressure"/>
                     <property label="Yplus" name="yplus" support="boundary"/>
                     <property label="Efforts" name="effort" support="boundary"/>
-                    <property label="all_variables" name="all_variables" support="boundary"/>
                  </velocity_pressure>"""
         assert model.node_vitpre == self.xmlNodeFromString(doc),\
                 'Could not set solver precision in NumericalParamEquationModel'
@@ -811,7 +804,6 @@ class NumericalParamEquatTestCase(ModelTest):
                     <property label="total_pressure" name="total_pressure"/>
                     <property label="Yplus" name="yplus" support="boundary"/>
                     <property label="Efforts" name="effort" support="boundary"/>
-                    <property label="all_variables" name="all_variables" support="boundary"/>
                  </velocity_pressure>"""
         sca = """<additional_scalars>
                     <scalar label="TempC" name="temperature_celsius" type="thermal">

@@ -35,7 +35,14 @@
          </spacer>
         </item>
         <item row="0" column="1" >
-         <widget class="QTableView" name="tableViewOutput" />
+         <widget class="QTableView" name="tableViewOutput">
+          <property name="minimumSize">
+           <size>
+            <width>360</width>
+            <height>280</height>
+           </size>
+          </property>
+         </widget>
         </item>
         <item row="0" column="2" >
          <spacer>

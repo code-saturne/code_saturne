@@ -214,19 +214,21 @@ static void cs_gui_output_choice(const char *const param,
 }
 
 /*----------------------------------------------------------------------------
- * Get postprocessing value parameters for surfacic variables
+ * Get postprocessing value status for surfacic variables
  *
  * parameters:
- *   name                -->  name of the parameter
- *   keyword             <--   output control parameter
+ *   name        <-- name of the parameter
+ *   default_val <-- default value
  *----------------------------------------------------------------------------*/
 
-static void cs_gui_surfacic_variable_post(const char *const name,
-                                          const int  *const param,
-                                          int  *const ipstdv)
+static bool
+cs_gui_surfacic_variable_post(const char  *name,
+                              bool         default_val)
 {
+  int   result = 0;
   char *path = NULL;
-  int   result;
+
+  bool active = default_val;
 
   path = cs_xpath_short_path();
   cs_xpath_add_element(&path, "property");
@@ -235,10 +237,14 @@ static void cs_gui_surfacic_variable_post(const char *const name,
   cs_xpath_add_element(&path, "postprocessing_recording");
   cs_xpath_add_attribute(&path, "status");
   if (cs_gui_get_status(path, &result)) {
-    if (result == 0)
-      *ipstdv = *ipstdv / *param;
+    if (result == 1)
+      active = true;
+    else
+      active = false;
   }
   BFT_FREE(path);
+
+  return active;
 }
 
 
@@ -1554,27 +1560,21 @@ void CS_PROCF (uinpst, UINPST) ( const cs_int_t  *ntcabs,
  * Input/output treatment
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csenso, CSENSO)
-     (
-      const    int *const nvppmx,
-      int *const ncapt,
-      int *const nthist,
-      double *const frhist,
-      int *const ntlist,
-      int *const iecaux,
-      int *const ipstdv,
-      int *const ipstyp,
-      int *const ipstcl,
-      int *const ipstft,
-      int *const ipstfo,
-      int *const ichrvr,
-      int *const ilisvr,
-      int *const ihisvr,
-      int *const tplfmt,
-      const    int *const isca,
-      const    int *const iscapp,
-      const    int *const ipprtp,
-      double *const xyzcap)
+void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
+                                cs_int_t        *ncapt,
+                                cs_int_t        *nthist,
+                                cs_real_t       *frhist,
+                                cs_int_t        *ntlist,
+                                cs_int_t        *iecaux,
+                                cs_int_t        *ipstdv,
+                                cs_int_t        *ichrvr,
+                                cs_int_t        *ilisvr,
+                                cs_int_t        *ihisvr,
+                                cs_int_t        *tplfmt,
+                                const cs_int_t  *isca,
+                                const cs_int_t  *iscapp,
+                                const cs_int_t  *ipprtp,
+                                cs_real_t       *xyzcap)
 {
   int i, j;
   int ipp;
@@ -1598,10 +1598,27 @@ void CS_PROCF (csenso, CSENSO)
     *tplfmt = 2;
 
   /* Surfacic variables output */
-  cs_gui_surfacic_variable_post("yplus", ipstyp, ipstdv);
-  cs_gui_surfacic_variable_post("effort", ipstfo, ipstdv);
-  cs_gui_surfacic_variable_post("all_variables",ipstcl,  ipstdv);
-  cs_gui_surfacic_variable_post("input_thermal_flux",ipstft,  ipstdv);
+
+  for (i = 0; i < 6; i++)
+    ipstdv[i] = 0;
+
+  if (cs_gui_surfacic_variable_post("effort", true))
+    ipstdv[0] += 1;
+  if (cs_gui_surfacic_variable_post("effort_tangential", false))
+    ipstdv[0] += 2;
+  if (cs_gui_surfacic_variable_post("effort_normal", false))
+    ipstdv[0] += 4;
+
+  if (cs_gui_surfacic_variable_post("yplus", true))
+    ipstdv[1] = 1;
+  if (cs_gui_surfacic_variable_post("tplus", true))
+    ipstdv[2] = 1;
+  if (cs_gui_surfacic_variable_post("thermal_flux", true))
+    ipstdv[3] = 1;
+  if (cs_gui_surfacic_variable_post("boundary_temperature", true))
+    ipstdv[4] = 1;
+  if (cs_gui_surfacic_variable_post("boundary_layer_nusselt", true))
+    ipstdv[5] = 1;
 
   *ncapt = cs_gui_get_tag_number("/analysis_control/output/probe", 1);
   for (i=0; i < *ncapt; i++) {

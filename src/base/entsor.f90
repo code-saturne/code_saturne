@@ -216,18 +216,20 @@ module entsor
 
   ! Parametres des sorties au bord =
 
-  ! ipstdv = proprietes post traitees
-  !   ipstdv est le produit des valeurs entieres suivantes (nombres premiers) :
-  !   ipstyp => yplus
-  !   ipstcl => variables non reconstruites (suffisant pour Dirichlet)
-  !   ipstft => flux thermique reconstruit
+  ! ipstdv = post-processed properties
+  !   ipstfo: Efforts (1: all; 2: tangent; 4: normal)
+  !   ipstyp: yplus
+  !   ipsttp: Tplus
+  !   ipstft: flux thermique reconstruit
+  !   ipsttb: boundary temperature
+  !   ipstnu: Nusselt
 
-  integer    ipstyp  , ipstcl  , ipstft, ipstfo
-  parameter (ipstyp=2, ipstcl=3, ipstft=5, ipstfo=7)
+  integer    ipstfo  , ipstyp  , ipsttp   , ipstft  , ipsttb  , ipstnu
+  parameter (ipstfo=1, ipstyp=2, ipsttp= 3, ipstft=4, ipsttb=5, ipstnu=6)
 
   !   si ipstdv = 1 = pas de sortie
 
-  integer, save :: ipstdv
+  integer, save :: ipstdv(6)
 
   ! --- Temps CPU
 

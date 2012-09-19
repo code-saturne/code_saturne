@@ -171,6 +171,18 @@ module field
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function returning a given field's dimension info
+
+    subroutine cs_f_field_get_dimension(f_id, f_dim)  &
+      bind(C, name='cs_f_field_get_dimension')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: f_id
+      integer(c_int), dimension(2), intent(out) :: f_dim
+    end subroutine cs_f_field_get_dimension
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function allocating field values
 
     subroutine cs_field_allocate_values(f)  &
@@ -475,6 +487,45 @@ contains
     return
 
   end subroutine field_get_name
+
+  !=============================================================================
+
+  !> \brief Return a given field's dimension.
+
+  !> \param[in]   f_id         field id
+  !> \param[out]  f_dim        number of field components (dimension)
+  !> \param[out]  interleaved  true if field is interleaved, false otherwise
+
+  subroutine field_get_dim (f_id, f_dim, interleaved)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer, intent(in)  :: f_id
+    integer, intent(out) :: f_dim
+    logical, intent(out) :: interleaved
+
+    ! Local variables
+
+    integer(c_int) :: c_f_id
+    integer(c_int), dimension(2) :: c_dim
+
+    c_f_id = f_id
+
+    call cs_f_field_get_dimension(c_f_id, c_dim)
+
+    f_dim = c_dim(1)
+    if (c_dim(2) .eq. 0) then
+      interleaved = .false.
+    else
+      interleaved = .true.
+    endif
+
+    return
+
+  end subroutine field_get_dim
 
   !=============================================================================
 

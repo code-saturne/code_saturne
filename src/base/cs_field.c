@@ -212,6 +212,10 @@ cs_f_field_get_name(int           id,
                     int          *name_len);
 
 void
+cs_f_field_get_dimension(int           id,
+                         int           dim[2]);
+
+void
 cs_f_field_var_ptr_by_id(int          id,
                          int          pointer_type,
                          int          pointer_rank,
@@ -548,6 +552,26 @@ cs_f_field_id_by_name(const char *name)
 }
 
 /*----------------------------------------------------------------------------
+ * Return the dimension of a field defined by its id.
+ *
+ * This function is intended for use by Fortran wrappers.
+ *
+ * parameters:
+ *   id  <-- field id
+ *   dim <-- field dimension and interleave flag
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_field_get_dimension(int  id,
+                         int  dim[2])
+{
+  const cs_field_t *f = cs_field_by_id(id);
+
+  dim[0] = f->dim;
+  dim[1] = (f->interleaved) ? 1 : 0;
+}
+
+/*----------------------------------------------------------------------------
  * Return the name of a field defined by its id.
  *
  * This function is intended for use by Fortran wrappers.
@@ -733,8 +757,14 @@ cs_f_field_bc_coeffs_ptr_by_id(int          id,
       }
       else { /* uncoupled */
 
-        dim[0] = _n_elts;
-        dim[1] = f->dim;
+        if (f->interleaved) {
+          dim[0] = f->dim;
+          dim[1] = _n_elts;
+        }
+        else {
+          dim[0] = _n_elts;
+          dim[1] = f->dim;
+        }
         cur_p_rank = 2;
 
       }

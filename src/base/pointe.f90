@@ -278,7 +278,7 @@ contains
 
     ! Non-dimensional distance to the wall (for post-processing)
 
-    if (mod(ipstdv,ipstyp).eq.0) then
+    if (ipstdv(ipstyp).ne.0) then
       allocate(yplbr(nfabor))
     endif
 

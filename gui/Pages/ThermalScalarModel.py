@@ -160,11 +160,6 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
                 if node['name'] != thermal_scalar:
                     self.deleteScalar(node['label'])
             self._setNewThermalScalar(thermal_scalar)
-            n = self.node_therm.xmlInitChildNode('property',
-                                                 name="input_thermal_flux",
-                                                 support="boundary")
-            if not n['label']:
-                n['label'] = "input_thermal_flux"
 
         else:
             node = self.scalar_node.xmlGetNode('scalar', type='thermal')
@@ -174,17 +169,26 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
             ThermalRadiationModel(self.case).setRadiativeModel('off')
             ConjugateHeatTransferModel(self.case).deleteConjugateHeatTransfer()
 
-            if not self.isSpecificPhysicActiv():
-                self.node_therm.xmlRemoveChild('property',
-                                               name="input_thermal_flux",
-                                               support="boundary")
-            else:
+        t_outputs = (("tplus", "Tplus", False),
+                     ("input_thermal_flux", "Thermal flux", True),
+                     ("boundary_temperature", "Boundary temperature", True),
+                     ("boundary_layer_nusselt", "Boundary layer Nusselt", False))
+
+        if thermal_scalar != 'off' or self.isSpecificPhysicActiv():
+            for v in t_outputs:
                 n = self.node_therm.xmlInitChildNode('property',
-                                                     name="input_thermal_flux",
+                                                     name=v[0],
                                                      support="boundary")
                 if not n['label']:
-                    n['label'] = "input_thermal_flux"
+                    n['label'] = v[1]
+                if not v[2]:
+                    n.xmlInitNode('postprocessing_recording')['status']= "off"
 
+        else:
+            for v in t_outputs:
+                self.node_therm.xmlRemoveChild('property',
+                                               name=v[0],
+                                               support="boundary")
 
     def getThermalScalarModel(self):
         """

@@ -105,6 +105,7 @@ use ppincl
 use radiat
 use cplsat
 use mesh
+use field
 
 !===============================================================================
 
@@ -130,19 +131,19 @@ double precision trafac(nfacps*3), trafbr(nfbrps*3)
 
 ! Local variables
 
-character*32     namevr, namev1, namev2
+character*32     namevr
 character*80     name80
 
+logical          ilved
 integer          inc   , iccocg, nswrgp, imligp, iwarnp
-integer          isorva, isaut
 integer          ifac  , iloc  , ivar , iclvar, iclvaf
 integer          ira   , idivdt, ineeyp
-integer          ipp   , idimt , ii    , kk   , iel
+integer          ipp   , idimt , ii    , kk   , ll, iel
 integer          ivarl , iip
 integer          iii, ivarl1 , ivarlm , iflu   , ilpd1  , icla
 integer          iscal , ipcvsl, ipcvst, iflmab
-integer          ientla, ivarpr
-integer          ipccp , ipcrom
+integer          ientla, ivarpr, fldid, fldprv, keycpl, iflcpl
+integer          ipccp , ipcrom, keyvis, iflpst, itplus
 
 double precision xcp   , xvsl  , srfbn
 double precision visct , flumab, diipbx, diipby, diipbz
@@ -153,6 +154,10 @@ double precision rbid(1)
 
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: treco
+double precision, dimension(:), pointer :: tplusp, tstarp
+double precision, dimension(:), pointer :: valsp, coefap, coefbp
+double precision, dimension(:,:), pointer :: valvp, cofavp, cofbvp
+double precision, dimension(:,:,:), pointer :: cofbtp
 
 !===============================================================================
 
@@ -322,11 +327,163 @@ if (numtyp .eq. -1) then
 
 else if (numtyp .eq. -2) then
 
+  !  Projection of variables at boundary with no reconstruction
+  !  ----------------------------------------------------------
 
-  ! 1.2.1 output y+ at the boundary
-  ! -------------------------------
+  call field_get_key_id('post_vis', keyvis)
+  call field_get_key_id('coupled', keycpl)
 
-  if (mod(ipstdv,ipstyp).eq.0) then
+  fldprv = -1
+
+  do ivar = 1, nvar  ! Loop on main cell-based variables
+
+    fldid = ivarfl(ivar)
+
+    if (fldid .eq. fldprv) cycle ! already output for multiple components
+
+    fldprv = fldid
+
+    call field_get_key_int(fldid, keyvis, iflpst)
+
+    if (iand(iflpst, 2) .eq. 0) cycle ! nothing to do for this field
+
+    call field_get_dim (fldid, idimt, ilved)
+    call field_get_name(fldid, name80)
+    namevr = name80(1:32)
+
+    !  Compute non-reconstructed values at boundary faces
+
+    if (idimt.ne.1) then
+      call field_get_key_int(fldid, keycpl, iflcpl)
+    else
+      iflcpl = 0
+    endif
+
+    if (idimt.eq.1) then  ! Scalar
+
+      call field_get_val_s(fldid, valsp)
+      call field_get_coefa_s(fldid, coefap)
+      call field_get_coefb_s(fldid, coefbp)
+
+      do iloc = 1, nfbrps
+
+        ifac = lstfbr(iloc)
+        iel = ifabor(ifac)
+
+        trafbr(iloc) =   coefap(ifac) + coefbp(ifac)*valsp(iel)
+
+      enddo
+
+    else if (iflcpl.eq.0) then  ! Uncoupled vector or tensor
+
+      call field_get_val_v(fldid, valvp)
+      call field_get_coefa_v(fldid, cofavp)
+      call field_get_coefb_uv(fldid, cofbvp)
+
+      if (.not.ilved) then
+
+        do kk = 0, idimt-1
+
+          do iloc = 1, nfbrps
+
+            ifac = lstfbr(iloc)
+            iel = ifabor(ifac)
+
+            trafbr(kk + (iloc-1)*idimt + 1)                      &
+                 =   cofavp(ifac,kk+1)                           &
+                   + cofbvp(ifac,kk+1)*valvp(iel,kk+1)
+
+          enddo
+
+        enddo
+
+      else ! if interleaved
+
+        do kk = 0, idimt-1
+
+          do iloc = 1, nfbrps
+
+            ifac = lstfbr(iloc)
+            iel = ifabor(ifac)
+
+            trafbr(kk + (iloc-1)*idimt + 1)                      &
+                 =   cofavp(kk+1,ifac)                           &
+                   + cofbvp(kk+1,ifac)*valvp(kk+1,iel)
+
+          enddo
+
+        enddo
+
+      endif
+
+    else ! Coupled vector or tensor
+
+      call field_get_val_v(fldid, valvp)
+      call field_get_coefa_v(fldid, cofavp)
+      call field_get_coefb_v(fldid, cofbtp)
+
+      if (.not.ilved) then ! in coupled case coefa/coefb interleaved
+
+        do kk = 0, idimt-1
+
+          do iloc = 1, nfbrps
+
+            ifac = lstfbr(iloc)
+            iel = ifabor(ifac)
+
+            trafbr(kk + (iloc-1)*idimt + 1) = cofavp(kk+1,ifac)
+
+            do ll = 1, idimt
+              trafbr(kk + (iloc-1)*idimt + 1)                    &
+                 =   trafbr(kk + (iloc-1)*idimt + 1)             &
+                   + cofbtp(kk+1,ll,ifac)*valvp(iel,ll)
+            enddo
+
+          enddo
+
+        enddo
+
+      else ! coupled + interleaved case
+
+        do kk = 0, idimt-1
+
+          do iloc = 1, nfbrps
+
+            ifac = lstfbr(iloc)
+            iel = ifabor(ifac)
+
+            trafbr(kk + (iloc-1)*idimt + 1) = cofavp(kk+1,ifac)
+
+            do ll = 1, idimt
+              trafbr(kk + (iloc-1)*idimt + 1)                    &
+                 =   trafbr(kk + (iloc-1)*idimt + 1)             &
+                   + cofbtp(kk+1,ll,ifac)*valvp(ll,iel)
+            enddo
+
+          enddo
+
+        enddo
+
+      endif
+
+    endif ! test on field dimension and interleaving
+
+    ientla = 1 ! interleaved result values
+    ivarpr = 0 ! defined on work array
+
+    name80 = 'bc_'//trim(namevr)
+    namevr = name80(1:32)
+
+    call psteva(nummai, namevr, idimt, ientla, ivarpr,        &
+    !==========
+                ntcabs, ttcabs, rbid, rbid, trafbr)
+
+  enddo ! End of loop on variables
+
+  ! output y+ at the boundary
+  ! -------------------------
+
+  if (ipstdv(ipstyp).ne.0) then
 
     ! Variable name
 
@@ -356,149 +513,138 @@ else if (numtyp .eq. -2) then
 
   endif ! end of test on output of y+
 
-  !  1.2.2 Projection of variables at boundary with no reconstruction
-  !  ----------------------------------------------------------------
+  ! Handle efforts at boundary
+  ! --------------------------------
 
-  if (mod(ipstdv, ipstcl).eq.0) then
+  if (iand(ipstdv(ipstfo), 1) .ne. 0) then
 
-    ! Loop on main cell-based variables
-    !----------------------------------
+    ! Initialisation
+    do ii = 1, 32
+      namevr (ii:ii) = ' '
+    enddo
 
-    isaut = 0
+    ! Nom de la variable
+    namevr = 'Efforts'
 
-    do ivar = 1, nvar
+    ! Calcul des valeurs de la variable sur les faces de bord
 
-      ! isaut used here to avoid multiple output for vector components 2 and 3
+    call post_efforts (nfbrps, lstfbr, trafbr)
+    !================
 
-      ipp = ipprtp(ivar)
+    idimt = 3  ! variable dimension (3: vector, 1: scalar)
+    ientla = 1 ! interleaved values
+    ivarpr = 0 ! defined on work array
 
-      isorva = 0
-      if (isaut .gt. 0) then
-        isaut = isaut - 1
-        isorva = 0
-      else if (ichrvr(ipp).eq.1) then
-        isorva = 1
-        name80 = nomvar(ipp)
-        namevr = name80(1:32)
-      endif
+    call psteva(nummai, namevr, idimt, ientla, ivarpr,          &
+    !==========
+                ntcabs, ttcabs, rbid, rbid, trafbr)
 
-      if (isorva .eq. 1) then
+  endif
 
-        ! if the sign of the index in ra is negative, we have a vector
+  if (iand(ipstdv(ipstfo), 2) .ne. 0) then
 
-        idimt = 1
-        if (ipp2ra(ipp).lt.0) then
-          idimt = 3
-          isaut = 2
-        endif
+    ! Initialisation
+    do ii = 1, 32
+      namevr (ii:ii) = ' '
+    enddo
 
-        ! For vectors, remove X, Y, or Z at the end of the name
+    ! Nom de la variable
+    namevr = 'Tangential Efforts'
 
-        if (idimt.eq.3) then
-          name80 = nomvar(ipp+1)
-          namev1 = name80(1:32)
-          name80 = nomvar(ipp+2)
-          namev2 = name80(1:32)
-          call pstsnv ( namevr , namev1 , namev2 )
-          !==========
-        endif
+    ! Calcul des valeurs de la variable sur les faces de bord
 
-        !  Compute non-reconstructed values at boundary faces
+    call post_efforts_tangential (nfbrps, lstfbr, trafbr)
+    !===========================
 
-        if (     ivelco.eq.0 &
-            .or. (ivar.ne.iu .and. ivar.ne.iv .and. ivar.ne.iw .and.        &
-                  ivar.ne.iuma .and. ivar.ne.ivma .and. ivar.ne.iwma)) then
+    idimt = 3  ! variable dimension (3: vector, 1: scalar)
+    ientla = 1 ! interleaved values
+    ivarpr = 0 ! defined on work array
 
-          do kk = 0, idimt-1
+    call psteva(nummai, namevr, idimt, ientla, ivarpr,          &
+    !==========
+                ntcabs, ttcabs, rbid, rbid, trafbr)
 
-            iclvar = iclrtp(ivar+kk,icoef)
-            do iloc = 1, nfbrps
+  endif
 
-              ifac = lstfbr(iloc)
-              iel = ifabor(ifac)
+  if (iand(ipstdv(ipstfo), 4) .ne. 0) then
 
-              trafbr(kk + (iloc-1)*idimt + 1)                       &
-                   =   coefa(ifac,iclvar)                           &
-                     + coefb(ifac,iclvar)*rtp(iel,ivar+kk)
+    ! Initialisation
+    do ii = 1, 32
+      namevr (ii:ii) = ' '
+    enddo
 
-            enddo
+    ! Nom de la variable
+    namevr = 'Normal Efforts'
 
-          enddo
+    ! Calcul des valeurs de la variable sur les faces de bord
 
-        else if (ivar.eq.iu) then
+    call post_efforts_normal (nfbrps, lstfbr, trafbr)
+    !=======================
 
-          do kk = 0, idimt-1
+    idimt = 1  ! variable dimension (3: vector, 1: scalar)
+    ientla = 1 ! interleaved values
+    ivarpr = 0 ! defined on work array
 
-            do iloc = 1, nfbrps
+    call psteva(nummai, namevr, idimt, ientla, ivarpr,          &
+    !==========
+                ntcabs, ttcabs, rbid, rbid, trafbr)
 
-              ifac = lstfbr(iloc)
-              iel = ifabor(ifac)
+  endif
 
-              trafbr(kk + (iloc-1)*idimt + 1)                       &
-                   =   coefau(kk+1,ifac)                            &
-                     + coefbu(kk+1,1,ifac)*rtp(iel,ivar)            &
-                     + coefbu(kk+1,2,ifac)*rtp(iel,ivar+1)          &
-                     + coefbu(kk+1,3,ifac)*rtp(iel,ivar+2)
+  ! T+ near the boundary
+  ! --------------------
 
-            enddo
+  if (ipstdv(ipsttp).ne.0) then
 
-          enddo
+    call field_get_id('tplus', itplus)
 
-        else if (ivar.eq.iuma) then
+    if (itplus.ge.0) then
 
-          do kk = 0, idimt-1
+      call field_get_val_s (itplus, tplusp)
 
-            do iloc = 1, nfbrps
+      ! Variable name
 
-              ifac = lstfbr(iloc)
-              iel = ifabor(ifac)
-
-              trafbr(kk + (iloc-1)*idimt + 1)                       &
-                   =   claale(kk+1,ifac)                            &
-                     + clbale(kk+1,1,ifac)*rtp(iel,ivar)            &
-                     + clbale(kk+1,2,ifac)*rtp(iel,ivar+1)          &
-                     + clbale(kk+1,3,ifac)*rtp(iel,ivar+2)
-
-            enddo
-
-          enddo
-
-        endif
-
-        ! Interleaved values, defined on work array
-        ientla = 1
-        ivarpr = 0
-
-        call psteva(nummai, namevr, idimt, ientla, ivarpr,        &
-        !==========
-                    ntcabs, ttcabs, rbid, rbid, trafbr)
-
-      endif ! End of variable output
-
-    enddo ! End of loop on variables
-
-  endif ! End of test on variable boundary values output
-
-  ! Output thermal flux at boundary
-  ! -------------------------------
-  !  If working with enthalpy, compute an enthalpy flux
-
-  if (mod(ipstdv,ipstft).eq.0) then
-
-    if (iscalt.gt.0 .and. nscal.gt.0 .and. iscalt.le.nscal) then
-
-      !       Initialisation
       do ii = 1, 32
         namevr (ii:ii) = ' '
       enddo
 
-      !       Nom de la variable
-      namevr = 'Input thermal flux W.m-2'
+      namevr = 'Tplus'
 
-      !       Dimension de la variable (3 = vecteur, 1=scalaire)
-      idimt = 1
+      idimt = 1  ! variable dimension (3: vector, 1: scalar)
 
-      !       Numero de la variable
+      ! Compute variable on boundary faces
+
+      do iloc = 1, nfbrps
+        ifac = lstfbr(iloc)
+        trafbr(iloc) = tplusp(ifac)
+      enddo
+
+      idimt = 1  ! variable dimension (3: vector, 1: scalar)
+      ientla = 1 ! interleaved values
+      ivarpr = 0 ! defined on work array
+
+      call psteva(nummai, namevr, idimt, ientla, ivarpr,          &
+      !==========
+                  ntcabs, ttcabs, rbid, rbid, trafbr)
+
+    endif ! end of test on presence ot T+
+
+  endif ! end of test on output of y+
+
+  ! Thermal flux at boundary
+  ! ------------------------
+  !  If working with enthalpy, compute an enthalpy flux
+
+  if (ipstdv(ipstft).ne.0) then
+
+    if (iscalt.gt.0 .and. nscal.gt.0 .and. iscalt.le.nscal) then
+
+      ! Initialisation
+      do ii = 1, 32
+        namevr (ii:ii) = ' '
+      enddo
+
+      namevr = 'Input thermal flux'
 
       call post_boundary_thermal_flux &
       !==============================
@@ -506,55 +652,81 @@ else if (numtyp .eq. -2) then
           rtp    , propce , propfb ,                                     &
           trafbr )
 
-      ! interleaved values, defined on work array
-      ientla = 1
-      ivarpr = 0
+      idimt = 1  ! variable dimension (3: vector, 1: scalar)
+      ientla = 1 ! interleaved values
+      ivarpr = 0 ! defined on work array
 
       call psteva(nummai, namevr, idimt, ientla, ivarpr,        &
       !==========
                   ntcabs, ttcabs, rbid, rbid, trafbr)
 
     endif
-    !         Fin du test sur variable thermique
 
   endif
-  !      Fin du test sur sortie des flux thermiques
 
-! --    1.2.4 TRAITEMENT DES EFFORTS AUX BORDS
-!       --------------------------------------
+  ! Temperature at the boundary
+  ! ---------------------------
 
-  if (mod(ipstdv,ipstfo).eq.0) then
+  if (ipstdv(ipsttb).ne.0) then
 
-!       Initialisation
+    ! Variable name
+
     do ii = 1, 32
       namevr (ii:ii) = ' '
     enddo
 
-!       Nom de la variable
-    namevr = 'Efforts'
+    namevr = 'Wall temperature'
 
-!       Dimension de la variable (3 = vecteur, 1=scalaire)
-    idimt = 3
+    idimt = 1  ! variable dimension (3: vector, 1: scalar)
+    ientla = 1 ! interleaved values
+    ivarpr = 0 ! defined in work array
 
-!       Calcul des valeurs de la variable sur les faces de bord
+    ! Compute variable on boundary faces
 
-    call post_efforts (nfbrps, lstfbr, trafbr)
-    !================
-
-    ! interleaved values, defined on work array
-
-    ientla = 1
-    ivarpr = 0
+    call post_boundary_temperature &
+    !=============================
+        ( nfbrps , lstfbr ,                                              &
+          rtp    , propce , propfb ,                                     &
+          trafbr )
 
     call psteva(nummai, namevr, idimt, ientla, ivarpr,          &
     !==========
                 ntcabs, ttcabs, rbid, rbid, trafbr)
 
-  endif
-! fin du test sur sortie des efforts
+  endif ! end of test on output of wall temperature
 
-endif
-!     Fin du test sur le numero de maillage post.
+  ! Nusselt at the boundary
+  ! -----------------------
+
+  if (ipstdv(ipstnu).ne.0) then
+
+    ! Variable name
+
+    do ii = 1, 32
+      namevr (ii:ii) = ' '
+    enddo
+
+    namevr = 'Wall law Nusselt'
+
+    idimt = 1  ! variable dimension (3: vector, 1: scalar)
+    ientla = 1 ! interleaved values
+    ivarpr = 0 ! defined in work array
+
+    ! Compute variable on boundary faces
+
+    call post_boundary_nusselt &
+    !=========================
+        ( nfbrps , lstfbr ,                                              &
+          rtp    , propce , propfb ,                                     &
+          trafbr )
+
+    call psteva(nummai, namevr, idimt, ientla, ivarpr,          &
+    !==========
+                ntcabs, ttcabs, rbid, rbid, trafbr)
+
+  endif ! end of test on output of Nusselt
+
+endif ! end of test on postprocessing mesh number
 
 !===============================================================================
 !     2.1. VARIABLES LAGRANGIENNES
@@ -745,7 +917,6 @@ endif
 !     2.2. VARIABLES RADIATIVES AUX FRONTIERES
 !===============================================================================
 
-
 if (nummai.eq.-2) then
 
   if (iirayo.gt.0) then
@@ -801,9 +972,9 @@ if (nummai.eq.-2) then
     idimt  = 1
     ientla = 0
     ivarpr = 0
-!
+
     call psteva(nummai, namevr, idimt, ientla, ivarpr,            &
-         ntcabs, ttcabs, rbid, rbid, trafbr)
+                ntcabs, ttcabs, rbid, rbid, trafbr)
 
   endif
 endif

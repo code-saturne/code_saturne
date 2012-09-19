@@ -166,22 +166,6 @@ if (ntlist.ne.-1.and.ntlist.le.0) then
   iok = iok + 1
 endif
 
-! --- Post traitement automatique (bord)
-
-if (ipstdv.ne.1.and.                                              &
-    mod(ipstdv,ipstyp).ne.0.and.                                  &
-    mod(ipstdv,ipstcl).ne.0.and.                                  &
-    mod(ipstdv,ipstft).ne.0) then
-  write(nfecra,1300) 'IPSTDV',                                    &
-                     'IPSTYP',ipstyp,                             &
-                     'IPSTCL',ipstcl,                             &
-                     'IPSTFT',ipstft,                             &
-                     'IPSTFO',ipstfo,                             &
-                     'IPSTDV',ipstdv
-  iok = iok + 1
-endif
-
-
 !===============================================================================
 ! 2. OPTIONS DU CALCUL : TABLEAUX DE optcal : formats 2000
 !===============================================================================
@@ -1854,30 +1838,6 @@ endif
 '@    IL VAUT ICI', i10,                                        /,&
 '@',                                                            /,&
 '@  Le calcul ne peut etre execute',                            /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 1300 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    LE PARAMETRE', a6,' DOIT ETRE UN ENTIER MULTIPLE DE',     /,&
-'@      DE CERTAINS DES ENTIERS SUIVANTS :',                    /,&
-'@',      a6,' = ', i10,                                        /,&
-'@',      a6,' = ', i10,                                        /,&
-'@',      a6,' = ', i10,                                        /,&
-'@',      a6,' = ', i10,                                        /,&
-'@    IL VAUT ICI', a6,' = ',  i10,                             /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute',                            /,&
-'@',                                                            /,&
-'@  Ce parametre precise les variables supplementaires',        /,&
-'@    a post-traiter.',                                         /,&
 '@',                                                            /,&
 '@  Verifier les parametres donnes via l''interface',           /,&
 '@    ou cs_user_parameters.f90.',                              /,&
@@ -4410,30 +4370,6 @@ endif
 '@   IT HAS VALUE', i10,                                        /,&
 '@',                                                            /,&
 '@  The calculation could NOT run.',                            /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 1300 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@      PARAMETER', a6,' MUST BE AN INTEGER MULTIPLE OF',       /,&
-'@      THE FOLLOWING INTEGER :',                               /,&
-'@',      a6,' = ', i10,                                        /,&
-'@',      a6,' = ', i10,                                        /,&
-'@',      a6,' = ', i10,                                        /,&
-'@',      a6,' = ', i10,                                        /,&
-'@   IT HAS VALUE', a6,' = ', i10,                              /,&
-'@',                                                            /,&
-'@  The calculation could NOT run.',                            /,&
-'@',                                                            /,&
-'@  This parameter tells which extra variables should be',      /,&
-'@    included for post-processing',                            /,&
 '@',                                                            /,&
 '@ Check the input data given through the User Interface',      /,&
 '@   or in cs_user_parameters.f90.',                            /,&

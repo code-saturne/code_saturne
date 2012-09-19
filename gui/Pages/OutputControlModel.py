@@ -341,7 +341,7 @@ class OutputControlModel(Model):
 
     def getWriterOutputEndStatus(self, writer_id):
         """
-        Return the all_variables status of a mesh
+        Return the output_at_end status of a mesh
         """
         self.isInList(writer_id, self.getWriterIdList())
         node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
@@ -355,7 +355,7 @@ class OutputControlModel(Model):
 
     def setWriterOutputEndStatus(self, writer_id, status):
         """
-        Set the all_variables status of a mesh
+        Set the output_at_end status of a mesh
         """
         self.isInList(writer_id, self.getWriterIdList())
         self.isOnOff(status)

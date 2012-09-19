@@ -2370,6 +2370,142 @@ end subroutine
 
 !===============================================================================
 
+subroutine user_field_parameters
+!===============================
+
+!===============================================================================
+! Purpose:
+! --------
+
+! Define (redefine) key-value pairs on calculation fields.
+
+! This subroutine is called at the end of the parameters initialization
+! stage, after all other routines from this file have been called.
+
+! Note that to determine which fields are defined in a computation, you
+! may check the 'config.log' file after a first execution.
+
+!-------------------------------------------------------------------------------
+! Arguments
+!__________________.____._____.________________________________________________.
+! name             !type!mode ! role                                           !
+!__________________!____!_____!________________________________________________!
+!__________________!____!_____!________________________________________________!
+
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
+!===============================================================================
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use cstnum
+use dimens
+use numvar
+use optcal
+use cstphy
+use entsor
+use parall
+use ihmpre
+use ppppar
+use ppthch
+use ppincl
+use field
+
+!===============================================================================
+
+implicit none
+
+! Local variables
+
+logical       ilved, inoprv
+integer       fldid, keyvis, idim1, iflpst, itycat, ityloc
+
+!===============================================================================
+
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
+!===============================================================================
+
+if (1.eq.1) return
+
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
+
+!===============================================================================
+
+! Example: force postprocessing of projection of some variables at boundary
+!          with no reconstruction.
+!          This is handled automatically if the second bit of a field's
+!          'post_vis' key value is set to 1 (which amounts to adding 2
+!          to that key value).
+!
+!          field_get_id returns -1 if field does not exist
+
+if (.false.) then
+
+  call field_get_key_id('post_vis', keyvis)
+
+  fldid = ivarfl(iu)
+  call field_get_key_int(fldid, keyvis, iflpst)
+  if (iand(iflpst, 2) .eq. 0) then
+    iflpst = ior(iflpst, 2)
+    call field_set_key_int(fldid, keyvis, iflpst)
+  endif
+
+  fldid = ivarfl(ipr)
+  call field_get_key_int(fldid, keyvis, iflpst)
+  if (iand(iflpst, 2) .eq. 0) then
+    iflpst = ior(iflpst, 2)
+    call field_set_key_int(fldid, keyvis, iflpst)
+  endif
+
+endif
+
+!-------------------------------------------------------------------------------
+
+! Example: enforce existence of 'tplus' and 'tstar' fields, so that
+!          a boundary temperature or Nusselt number may be computed using the
+!          post_boundary_temperature or post_boundary_nusselt subroutines.
+!          When postprocessing of these quantities is activated, those fields
+!          are present, but if we need to compute them in the
+!          cs_user_extra_operations user subroutine without postprocessing them,
+!          forcing the definition of these fields to save the values computed
+!          for the boundary layer is necessary.
+
+if (.false.) then
+
+  itycat = FIELD_INTENSIVE + FIELD_PROPERTY
+  ityloc = 3 ! boundary faces
+  ilved = .true. ! interleaved
+  inoprv = .false. ! no previous time step values needed
+
+  call field_get_id('tplus', fldid)
+  if (fldid.lt.0) then
+    call field_create('tplus', itycat, ityloc, idim1, ilved, inoprv, fldid)
+  endif
+
+  call field_get_id('tstar', fldid)
+  if (fldid.lt.0) then
+    call field_create('tstar', itycat, ityloc, idim1, ilved, inoprv, fldid)
+  endif
+
+endif
+
+return
+
+!===============================================================================
+
+!----
+! Formats
+!----
+
+return
+end subroutine user_field_parameters
+
+!===============================================================================
+
 
 subroutine usalin
 !================

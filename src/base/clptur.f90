@@ -108,7 +108,7 @@
 !>                               de bord apres amortisst de v driest
 !> \param[out]    hbord         coefficients d'echange aux bords
 !>
-!> \param[out]    thbord        boundary temperature in \f$ \centip \f$
+!> \param[in]     thbord        boundary temperature in \f$ \centip \f$
 !>                               (more exaclty the energetic variable)
 !_______________________________________________________________________________
 
@@ -143,6 +143,7 @@ use ppincl
 use radiat
 use cplsat
 use mesh
+use field
 use lagran
 
 !===============================================================================
@@ -184,7 +185,7 @@ integer          icl11f, icl22f, icl33f, icl12f, icl13f, icl23f
 integer          iclphf, iclfbf, iclalf, iclomf
 integer          iclvaf
 integer          ipcrom, ipcvis, ipcvst, ipccp , ipccv
-integer          ipcvsl
+integer          ipcvsl, itplus, itstar
 double precision rnx, rny, rnz, rxnn
 double precision tx, ty, tz, txn, txn0, t2x, t2y, t2z
 double precision utau, upx, upy, upz, usn
@@ -207,6 +208,8 @@ double precision xkip
 double precision tplus
 double precision rinfiv(3), pimpv(3), qimpv(3), pfac
 double precision visci(3,3), fikis, viscis, distfi
+
+double precision, dimension(:), pointer :: tplusp, tstarp
 
 integer          ntlast , iaff
 data             ntlast , iaff /-1 , 0/
@@ -367,6 +370,21 @@ iuiptn = 0
 if (itytur.eq.5) then
   uiptmx = 0.d0
   uiptmn = 0.d0
+endif
+
+! pointers to T+ and T* if saved
+
+tplusp => null()
+tstarp => null()
+
+call field_get_id('tplus', itplus)
+if (itplus.ge.0) then
+  call field_get_val_s (itplus, tplusp)
+endif
+
+call field_get_id('tstar', itstar)
+if (itstar.ge.0) then
+  call field_get_val_s (itstar, tstarp)
 endif
 
 ! --- Loop on boundary faces
@@ -669,7 +687,7 @@ do ifac = 1, nfabor
     endif
 
     ! Save yplus if post-processed
-    if (mod(ipstdv,ipstyp).eq.0) then
+    if (ipstdv(ipstyp).ne.0) then
       yplbr(ifac) = yplus
     endif
 
@@ -1794,6 +1812,9 @@ do ifac = 1, nfabor
             ! T+ = (T_I - T_w) / Tet
             tplus = yplus/yptp
 
+            if (itplus .ge. 0) tplusp(ifac) = tplus
+            if (itstar .ge. 0) tstarp(ifac) = tet
+
             tetmax = max(tet, tetmax)
             tetmin = min(tet, tetmin)
             tplumx = max(tplus,tplumx)
@@ -1833,7 +1854,7 @@ if (irangp.ge.0) then
 endif
 
 !===============================================================================
-! 9. Writtings
+! 9. Writings
 !===============================================================================
 
 !     Remarque : afin de ne pas surcharger les listings dans le cas ou

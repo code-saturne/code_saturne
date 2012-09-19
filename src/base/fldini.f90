@@ -121,9 +121,6 @@ call field_get_key_id(name, keycpl)
 ! Postprocessing level for variables
 
 iopchr = 1
-if (mod(ipstdv, ipstcl).eq.0) then
-  iopchr = 1 + 2
-endif
 
 !===============================================================================
 ! 2. Mapping for post-processing
@@ -396,6 +393,20 @@ if (ipucou.ne.0) then
 endif
 if (ichrvr(ipptx).gt.0) then
   call field_set_key_int(iflid, keyvis, ichrvr(ipptx))
+endif
+
+! Additional fields
+!------------------
+
+! Fields used to save postprocessing data
+
+itycat = FIELD_INTENSIVE + FIELD_PROPERTY
+ityloc = 3 ! boundary faces
+
+! If postprocessing of boundary temperature or boundary layer Nusselt required
+if (ipstdv(ipsttb).gt.0 .or. ipstdv(ipstnu).gt.0) then
+  call field_create('tplus', itycat, ityloc, idim1, ilved, inoprv, iflid)
+  call field_create('tstar', itycat, ityloc, idim1, ilved, inoprv, iflid)
 endif
 
 return

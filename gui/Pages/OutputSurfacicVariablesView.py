@@ -104,11 +104,11 @@ class StandardItemModelOutput(QStandardItemModel):
         # ToolTips BUG
         if role == Qt.ToolTipRole:
             if index.column() == 0 and index.column() > 3:
-                return QVariant(self.tr("Code_Saturne keyword: NBRVAF"))
+                return QVariant(self.tr("Code_Saturne keyword: nbrvaf"))
             elif index.column() == 1 and index.column() > 3:
-                return QVariant(self.tr("Code_Saturne keyword: IRAYVF"))
+                return QVariant(self.tr("Code_Saturne keyword: irayvf"))
             elif index.column() == 1 and index.column() <= 3:
-                return QVariant(self.tr("Code_Saturne keyword: IPSTYP/IPSTCL/IPSTFT/IPSTFO"))
+                return QVariant(self.tr("Code_Saturne keyword: ipstdv"))
 
         # StatusTips
         if role == Qt.StatusTipRole:
