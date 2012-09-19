@@ -602,6 +602,9 @@ class domain(base_domain):
 
         dir_files = os.listdir(self.data_dir)
 
+        if self.package.guiname in dir_files:
+            dir_files.remove(self.package.guiname)
+
         for f in dir_files:
             src = os.path.join(self.data_dir, f)
             if os.path.isfile(src):
