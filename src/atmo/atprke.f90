@@ -111,7 +111,7 @@ double precision theta_virt
 double precision qldia,qw
 double precision epsrgp, climgp, extrap
 
-double precision xent,yent,zent
+double precision xent,yent,zent,dum
 double precision, allocatable, dimension(:,:) :: grad
 
 !===============================================================================
@@ -245,9 +245,13 @@ ipcliq = ipproc(iliqwt)
 
 do iel = 1, ncel
   ! calculate the physical pressure 'pphy'
-  call intprf (                                                 &
-       nbmett, nbmetm,                                          &
-       ztmet, tmmet, phmet, xyzcen(3,iel), ttcabs, pphy )
+  if (imeteo.eq.0) then
+    call atmstd(xyzcen(3,iel),pphy,dum,dum)
+  else
+    call intprf (                                                 &
+         nbmett, nbmetm,                                          &
+         ztmet, tmmet, phmet, xyzcen(3,iel), ttcabs, pphy )
+  endif
   qw = rtpa(iel,iqw) ! total water content
   qldia = propce(iel,ipcliq) ! liquid water content
   call etheq(pphy,rtpa(iel,itpp),qw,qldia,                      &

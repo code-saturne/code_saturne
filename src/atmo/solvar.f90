@@ -119,7 +119,7 @@ double precision tssol,qvsol,w1,w2,foir,fos
 double precision ray1,chas1,chal1,rapp1,premem
 double precision ray2,chas2,chal2,rapp2,secmem
 double precision w1min,w1max,w2min,w2max
-double precision r1,r2,tseuil
+double precision r1,r2,tseuil,dum
 
 !
 !===============================================================================
@@ -209,7 +209,7 @@ do isol = 1, nfmodsol
   iel = ifabor(ifac)
   zreel = xyzcen(3,iel)
 
-  if(pourcent_sol(isol,1) > 50) then
+  if (pourcent_sol(isol,1) > 50) then
 
     !     ====================================
     !     3) cas particulier des points de mer
@@ -218,10 +218,15 @@ do isol = 1, nfmodsol
     ! on impose t = tmer et hr = 100 %
     esat = 610.78d0*exp(17.2694d0*tmer/(tmer + tkelvi-35.86d0))
 
-    call intprf                                                         &
+    if (imeteo.eq.0) then
+      call atmstd(zreel,pres1,dum,dum)
+    else
+      call intprf                                                       &
          !==========
          (nbmett, nbmetm,                                               &
-         ztmet, tmmet, phmet, zreel, ttcabs, pres1)
+          ztmet, tmmet, phmet, zreel, ttcabs, pres1)
+    endif
+
     tsplus = tmer + tkelvi
     qvsplu = esat/(rvsra*pres1 + esat*(1.d0 - rvsra))
 
@@ -236,10 +241,14 @@ do isol = 1, nfmodsol
     rscp1 = (rair/cp0)*(1.d0 + (rvsra - cpvcpa)*qvsol)
     rscp2 = (rair/cp0)*(1.d0 + (rvsra - cpvcpa)*qv(iel))
 
-    call intprf                                                         &
+    if (imeteo.eq.0) then
+      call atmstd(zreel,pres1,dum,dum)
+    else
+      call intprf                                                       &
          !==========
          (nbmett, nbmetm,                                               &
-         ztmet, tmmet, phmet, zreel, ttcabs, pres1)
+          ztmet, tmmet, phmet, zreel, ttcabs, pres1)
+    endif
 
     tpot1 = solution_sol(isol)%tempp
     tpot2 = temp(iel)

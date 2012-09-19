@@ -161,11 +161,8 @@ double precision                   varal, varbl, varcl, vardl
 double precision                   varac, varbc
 double precision xrtp, rhum, rscp, pp, zent
 double precision lrhum, lrscp
-double precision qsl, esat
-double precision deltaq
-double precision qliq
-double precision qwt
-double precision tliq
+double precision qsl, esat, deltaq
+double precision qliq, qwt, tliq, dum
 
 logical activate
 
@@ -246,12 +243,17 @@ do iel = 1, ncel
             rtp(iel,isca(itotwt)))
   endif
 
-  ! Pressure profile from meteo file:
   zent = xyzcen(3,iel)
-  call intprf &
-       ! ===========
-     ( nbmett, nbmetm,                                            &
-       ztmet , tmmet , phmet , zent, ttcabs, pp )
+
+  if (imeteo.eq.0) then
+    call atmstd(zent,pp,dum,dum)
+  else
+    ! Pressure profile from meteo file:
+    call intprf &
+         ! ===========
+       ( nbmett, nbmetm,                                            &
+         ztmet , tmmet , phmet , zent, ttcabs, pp )
+  endif
 
   ! Temperature in Celsius in cell centers:
   ! ---------------------------------------
@@ -323,12 +325,17 @@ lrhum = rhum
 
 do iel = 1, ncel
 
-  !   Pressure profile from meteo file:
   zent = xyzcen(3,iel)
-  call intprf &
-       !   ===========
-     ( nbmett, nbmetm,                                            &
-       ztmet , tmmet , phmet , zent, ttcabs, pp )
+
+  if (imeteo.eq.0) then
+    call atmstd(zent,pp,dum,dum)
+  else
+    ! Pressure profile from meteo file:
+    call intprf &
+         !   ===========
+       ( nbmett, nbmetm,                                            &
+         ztmet , tmmet , phmet , zent, ttcabs, pp )
+  endif
 
   xrtp = rtp(iel,ivart) ! thermal scalar: liquid potential temperature
   tliq = xrtp*(pp/ps)**rscp ! liquid temperature
@@ -422,11 +429,17 @@ do iel = 1, ncel
   var_q = a_coeff*( dqsd(iel,1)**2 + dqsd(iel,2)**2 + dqsd(iel,3)**2)
   cov_tlq = a_coeff*(dtlsd(iel,1)*dqsd(iel,1) + dtlsd(iel,2)*dqsd(iel,2)        &
           + dtlsd(iel,3)*dqsd(iel,3))
+
   zent = xyzcen(3,iel)
 
-  call intprf &
+  if (imeteo.eq.0) then
+    call atmstd(zent,pp,dum,dum)
+  else
+    ! Pressure profile from meteo file:
+    call intprf &
      ( nbmett, nbmetm,                                                          &
        ztmet , tmmet , phmet , zent, ttcabs, pp )
+  endif
 
   xrtp = rtp(iel,ivart) ! thermal scalar: liquid potential temperature
   tliq = xrtp*(pp/ps)**rscp ! liquid temperature

@@ -151,7 +151,7 @@ do ifac = 1, nfabor
 
   izone = izfppp(ifac)
 
-  if (iprofm(izone).eq.1) then
+  if (iprofm(izone).eq.1.and.imeteo.eq.1) then
 
 !     On recupere les valeurs du profil et on met a jour RCODCL s'il n'a pas
 !       ete modifie. Il servira si la face est une face d'entree ou si c'est une

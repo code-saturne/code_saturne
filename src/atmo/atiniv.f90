@@ -160,123 +160,125 @@ endif
 ! Only if the simulation is not a restart from another one
 if (isuite.eq.0) then
 
-  if (imeteo.eq.0.and.initmeteo.eq.1) then
-
-    if (ippmod(iatmos).eq.1) then
-      ! The thermal scalar is potential temperature
-      do iel = 1, ncel
-        rtp(iel,isca(iscalt)) = t0
-      enddo
-    endif
-
-    if (ippmod(iatmos).eq.2) then
-      ! The thermal scalar is liquid potential temperature
-      do iel = 1, ncel
-        rtp(iel,isca(iscalt)) = t0
-        rtp(iel,isca(itotwt)) = 0.d0
-        rtp(iel,isca(intdrp)) = 0.d0
-      enddo
-    endif
-
-  ! Only if meteo file is present:
-  else
-
-    do iel = 1, ncel
-
-      zent=xyzcen(3,iel)
-
-      call intprf                                                   &
-      !==========
-     (nbmetd, nbmetm,                                               &
-      zdmet, tmmet, umet , zent  , ttcabs, xuent )
-
-      call intprf                                                   &
-      !==========
-     (nbmetd, nbmetm,                                               &
-      zdmet, tmmet, vmet , zent  , ttcabs, xvent )
-
-      call intprf                                                   &
-      !==========
-     (nbmetd, nbmetm,                                               &
-      zdmet, tmmet, ekmet, zent  , ttcabs, xkent )
-
-      call intprf                                                   &
-      !==========
-     (nbmetd, nbmetm,                                               &
-      zdmet, tmmet, epmet, zent  , ttcabs, xeent )
-
-      rtp(iel,iu)=xuent
-      rtp(iel,iv)=xvent
-      rtp(iel,iw)=0.d0
-
-  !     ITYTUR est un indicateur qui vaut ITURB/10
-      if    (itytur.eq.2) then
-
-        rtp(iel,ik)  = xkent
-        rtp(iel,iep) = xeent
-
-      elseif (itytur.eq.3) then
-
-        rtp(iel,ir11) = d2s3*xkent
-        rtp(iel,ir22) = d2s3*xkent
-        rtp(iel,ir33) = d2s3*xkent
-        rtp(iel,ir12) = 0.d0
-        rtp(iel,ir13) = 0.d0
-        rtp(iel,ir23) = 0.d0
-        rtp(iel,iep)  = xeent
-
-      elseif (iturb.eq.50) then
-
-        rtp(iel,ik)   = xkent
-        rtp(iel,iep)  = xeent
-        rtp(iel,iphi) = d2s3
-        rtp(iel,ifb)  = 0.d0
-
-      elseif (iturb.eq.60) then
-
-        rtp(iel,ik)   = xkent
-        rtp(iel,iomg) = xeent/cmu/xkent
-
-      elseif (iturb.eq.70) then
-
-        rtp(iel,inusa) = cmu*xkent**2/xeent
-
-      endif
-
+  if (initmeteo.eq.1) then
+    if (imeteo.eq.0) then
 
       if (ippmod(iatmos).eq.1) then
         ! The thermal scalar is potential temperature
-          call intprf                                                 &
-          !==========
-       (nbmett, nbmetm,                                               &
-        ztmet, tmmet, tpmet, zent  , ttcabs, tpent )
-
-          rtp(iel,isca(iscalt)) = tpent
+        do iel = 1, ncel
+          rtp(iel,isca(iscalt)) = t0
+        enddo
       endif
 
       if (ippmod(iatmos).eq.2) then
         ! The thermal scalar is liquid potential temperature
-          call intprf                                                 &
-          !==========
-       (nbmett, nbmetm,                                               &
-        ztmet, tmmet, tpmet, zent  , ttcabs, tpent )
-          rtp(iel,isca(iscalt)) = tpent
-
-          call intprf                                                 &
-          !==========
-       (nbmett, nbmetm,                                               &
-        ztmet, tmmet, qvmet, zent  , ttcabs, qvent )
-          rtp(iel,isca(itotwt)) = qvent
-
-          call intprf                                                 &
-          !==========
-       (nbmett, nbmetm,                                               &
-        ztmet, tmmet, ncmet, zent  , ttcabs, ncent )
-          rtp(iel,isca(intdrp)) = ncent
+        do iel = 1, ncel
+          rtp(iel,isca(iscalt)) = t0
+          rtp(iel,isca(itotwt)) = 0.d0
+          rtp(iel,isca(intdrp)) = 0.d0
+        enddo
       endif
 
-    enddo
+    ! Only if meteo file is present:
+    else
 
+      do iel = 1, ncel
+
+        zent = xyzcen(3,iel)
+
+        call intprf                                                   &
+        !==========
+       (nbmetd, nbmetm,                                               &
+        zdmet, tmmet, umet , zent  , ttcabs, xuent )
+
+        call intprf                                                   &
+        !==========
+       (nbmetd, nbmetm,                                               &
+        zdmet, tmmet, vmet , zent  , ttcabs, xvent )
+
+        call intprf                                                   &
+        !==========
+       (nbmetd, nbmetm,                                               &
+        zdmet, tmmet, ekmet, zent  , ttcabs, xkent )
+
+        call intprf                                                   &
+        !==========
+       (nbmetd, nbmetm,                                               &
+        zdmet, tmmet, epmet, zent  , ttcabs, xeent )
+
+        rtp(iel,iu) = xuent
+        rtp(iel,iv) = xvent
+        rtp(iel,iw) = 0.d0
+
+    !     ITYTUR est un indicateur qui vaut ITURB/10
+        if    (itytur.eq.2) then
+
+          rtp(iel,ik)  = xkent
+          rtp(iel,iep) = xeent
+
+        elseif (itytur.eq.3) then
+
+          rtp(iel,ir11) = d2s3*xkent
+          rtp(iel,ir22) = d2s3*xkent
+          rtp(iel,ir33) = d2s3*xkent
+          rtp(iel,ir12) = 0.d0
+          rtp(iel,ir13) = 0.d0
+          rtp(iel,ir23) = 0.d0
+          rtp(iel,iep)  = xeent
+
+        elseif (iturb.eq.50) then
+
+          rtp(iel,ik)   = xkent
+          rtp(iel,iep)  = xeent
+          rtp(iel,iphi) = d2s3
+          rtp(iel,ifb)  = 0.d0
+
+        elseif (iturb.eq.60) then
+
+          rtp(iel,ik)   = xkent
+          rtp(iel,iomg) = xeent/cmu/xkent
+
+        elseif (iturb.eq.70) then
+
+          rtp(iel,inusa) = cmu*xkent**2/xeent
+
+        endif
+
+
+        if (ippmod(iatmos).eq.1) then
+          ! The thermal scalar is potential temperature
+            call intprf                                                 &
+            !==========
+         (nbmett, nbmetm,                                               &
+          ztmet, tmmet, tpmet, zent  , ttcabs, tpent )
+
+            rtp(iel,isca(iscalt)) = tpent
+        endif
+
+        if (ippmod(iatmos).eq.2) then
+          ! The thermal scalar is liquid potential temperature
+            call intprf                                                 &
+            !==========
+         (nbmett, nbmetm,                                               &
+          ztmet, tmmet, tpmet, zent  , ttcabs, tpent )
+            rtp(iel,isca(iscalt)) = tpent
+
+            call intprf                                                 &
+            !==========
+         (nbmett, nbmetm,                                               &
+          ztmet, tmmet, qvmet, zent  , ttcabs, qvent )
+            rtp(iel,isca(itotwt)) = qvent
+
+            call intprf                                                 &
+            !==========
+         (nbmett, nbmetm,                                               &
+          ztmet, tmmet, ncmet, zent  , ttcabs, ncent )
+            rtp(iel,isca(intdrp)) = ncent
+        endif
+
+      enddo
+
+    endif
   endif
 
 endif
@@ -290,7 +292,6 @@ call cs_user_initialization &
 ( nvar   , nscal  ,                                            &
   dt     , rtp    , propce , propfa , propfb )
 
-
 !----
 ! FORMATS
 !----
@@ -301,4 +302,4 @@ call cs_user_initialization &
 
 return
 
-end subroutine
+end subroutine atiniv

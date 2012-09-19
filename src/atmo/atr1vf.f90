@@ -90,7 +90,7 @@ integer kmray, ktamp
 double precision heuray, xmedor, albedo, emis, foir, fos
 double precision hrmax,esat,qsat,qseuil
 double precision xvert, yvert
-double precision zrac,fpond,rap,tmoy,rhum
+double precision zrac,fpond,rap,tmoy,rhum,dum
 
 integer , allocatable :: cressm(:), interp(:)
 double precision, allocatable :: temray(:), qvray(:), qlray(:)
@@ -217,8 +217,13 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
 
     do k = 2, kvert
       zray(k) = zvert(k)
-      call intprf(nbmetd, nbmetm, ztmet, tmmet,                           &
-           phmet, zray(k), ttcabs, preray(k))
+
+      if (imeteo.eq.0) then
+        call atmstd(zray(k),preray(k),dum,dum)
+      else
+        call intprf(nbmetd, nbmetm, ztmet, tmmet,                           &
+                    phmet, zray(k), ttcabs, preray(k))
+      endif
 
       temray(k) = ttvert(k + (ii-1)*kmx)
       qvray(k)  = qvvert(k + (ii-1)*kmx)
@@ -247,32 +252,34 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
     enddo
 
     ! --- Smoothing the temperature and humidity profile in the damping zone
+    if (imeteo.eq.1) then
+      ktamp = 6
+      do k = kvert - ktamp+1, kmray
+        call intprf(nbmaxt,nbmetm, ztmet, tmmet,                                 &
+             ttmet, zray(k), ttcabs, temray(k))
+        call intprf(nbmaxt,nbmetm, ztmet, tmmet, qvmet,                          &
+             zray(k), ttcabs, qvray(k))
+      enddo
 
-    ktamp = 6
-    do k = kvert - ktamp+1, kmray
-      call intprf(nbmaxt,nbmetm, ztmet, tmmet,                                 &
-           ttmet, zray(k), ttcabs, temray(k))
-      call intprf(nbmaxt,nbmetm, ztmet, tmmet, qvmet,                          &
-           zray(k), ttcabs, qvray(k))
-    enddo
+      icompt = 0
+      do k = kvert,2,-1
+        icompt = icompt+1
+        if (icompt.le.6) then
+          zrac = 2.d0*(zray(k) - zray(nbmett-ktamp + 3))                         &
+               /(zray(nbmett) - zray(nbmett - ktamp))
+          fpond = (1.d0 + tanh(zrac))/2.d0
+          temray(k) = ttvert(k + (ii-1)*kmx)*(1.d0 - fpond) + temray(k)*fpond
+          qvray(k) = qvvert(k + (ii-1)*kmx)*(1.d0 - fpond) + qvray(k)*fpond
+        endif
+      enddo
 
-    icompt = 0
-    do k = kvert,2,-1
-      icompt = icompt+1
-      if (icompt.le.6) then
-        zrac = 2.d0*(zray(k) - zray(nbmett-ktamp + 3))                       &
-             /(zray(nbmett) - zray(nbmett - ktamp))
-        fpond = (1.d0 + tanh(zrac))/2.d0
-        temray(k) = ttvert(k + (ii-1)*kmx)*(1.d0 - fpond) + temray(k)*fpond
-        qvray(k) = qvvert(k + (ii-1)*kmx)*(1.d0 - fpond) + qvray(k)*fpond
-      endif
-    enddo
+    endif
 
     ! --- Clipping the humidity
 
-  do k = 1, kmray
+    do k = 1, kmray
       qvray(k) = max(5.d-4,qvray(k))
-  enddo
+    enddo
 
     ! --- Computing pressure and density according to theta and qv profiles
 

@@ -126,7 +126,7 @@ character*80     chaine
 integer          ivar, ipcrom, iel
 
 integer ntmax,nzmax,i
-double precision pp
+double precision pp, dum
 
 double precision, dimension(:), allocatable :: ray3Di, ray3Dst
 double precision, dimension(:,:), allocatable, save :: grad1, grad2
@@ -145,10 +145,6 @@ double precision ddd11,ddd12,ddd13,ddd21,ddd22,ddd23
 !===============================================================================
 ! 1. INITIALISATION
 !===============================================================================
-
-do iel = 1, ncel
-  crvexp(iel) = 0.d0
-enddo
 
 ! --- Numero du scalaire a traiter : ISCAL
 ! --- Numero de la variable associee au scalaire a traiter ISCAL
@@ -226,13 +222,22 @@ if ( ippmod(iatmos).eq.2.and.modsedi.eq.1 ) then ! for humid atmosphere physics 
         ! number of condensation nucleii (ncc) and if the droplet number (nc)
         ! is smaller than ncc set it to ncc.
         allocate(pphy(ncelet))
-        do iel = 1, ncel
-          !calculate pressure from meteo file
-          call intprf                                                 &
-               ( nbmett, nbmetm,                                      &
-               ztmet , tmmet , phmet , xyzcen(3,iel), ttcabs,         &
-               pphy(iel) )
-        enddo
+
+        if (imeteo.eq.0) then
+            ! calculate pressure from standard atm
+          do iel = 1, ncel
+            call atmstd(xyzcen(3,iel),pphy(iel),dum,dum)
+          enddo
+        else
+            ! calculate pressure from meteo file
+          do iel = 1, ncel
+            call intprf                                                 &
+                 ( nbmett, nbmetm,                                      &
+                 ztmet , tmmet , phmet , xyzcen(3,iel), ttcabs,         &
+                 pphy(iel) )
+          enddo
+        endif
+
         allocate(refrad(ncelet))
         do iel = 1, ncel
           refrad(iel) = 0.d+00
@@ -266,11 +271,15 @@ if ( ippmod(iatmos).eq.2.and.modsedi.eq.1 ) then ! for humid atmosphere physics 
     if (ivar.eq.isca(iscalt) )then
 
       do iel = 1, ncel
-        call intprf &
-             ( nbmett, nbmetm,                                        &
-             ztmet , tmmet , phmet , xyzcen(3,iel) , ttcabs, pp )
+        if (imeteo.eq.0) then
+          call atmstd(xyzcen(3,iel),pp,dum,dum)
+        else
+          call intprf &
+               ( nbmett, nbmetm,                                        &
+                 ztmet , tmmet , phmet , xyzcen(3,iel) , ttcabs, pp )
+        endif
 
-        crvexp(iel) = crvexp(iel) -clatev*(ps/pp)**(rair/cp0)   &
+        crvexp(iel) = crvexp(iel) -clatev*(ps/pp)**(rair/cp0)           &
                     *(volume(iel)*grad1(iel,3)/propce(iel,ipproc(irom)))
       enddo
       treated_scalars=treated_scalars + 1

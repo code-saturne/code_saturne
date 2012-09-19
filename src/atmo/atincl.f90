@@ -98,7 +98,7 @@ integer, save :: itempc, iliqwt
 !----------------------------------------------
 !                   imeteo --> flag for reading the meteo input file
 !                               = 0 -> no reading
-!                              = 1 -> reading
+!                               = 1 -> reading
 !                   nbmetd --> numbers of altitudes for the dynamics
 !                   nbmett --> numbers of altitudes for the temperature
 !                                and specific humidity
@@ -229,6 +229,13 @@ implicit none
 
 integer :: imode
 
+! Allocate additional arrays for Water Microphysics
+
+if (ippmod(iatmos).ge.2) then
+  allocate(nebdia(ncelet))
+  allocate(nn(ncelet))
+endif
+
 if (imeteo.gt.0) then
 
   imode = 0
@@ -246,13 +253,6 @@ if (imeteo.gt.0) then
   allocate(pmer(nbmetm))
   allocate(xmet(nbmetm), ymet(nbmetm))
   allocate(rmet(nbmaxt,nbmetm), tpmet(nbmaxt,nbmetm), phmet(nbmaxt,nbmetm))
-
-  ! Allocate additional arrays for Water Microphysics
-
-  if (ippmod(iatmos).ge.2) then
-    allocate(nebdia(ncelet))
-    allocate(nn(ncelet))
-  endif
 
   ! Allocate additional arrays for 1D radiative model
 
@@ -296,6 +296,11 @@ use atsoil
 
 implicit none
 
+if (ippmod(iatmos).ge.2) then
+  deallocate(nebdia)
+  deallocate(nn)
+endif
+
 if (imeteo.gt.0) then
 
   deallocate(tmmet, zdmet, ztmet)
@@ -305,13 +310,6 @@ if (imeteo.gt.0) then
   deallocate(pmer)
   deallocate(xmet, ymet)
   deallocate(rmet, tpmet, phmet)
-
-  if (ippmod(iatmos).ge.2) then
-
-    deallocate(nebdia)
-    deallocate(nn)
-
-  endif
 
   if (iatra1.eq.1) then
 

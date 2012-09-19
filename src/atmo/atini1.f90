@@ -295,7 +295,7 @@ xlat = 45.d0
 !       = 1 : top to bottom Laplace integration based on P computed for
 !            the standard atmosphere at z(nbmaxt)
 
-ihpm = 1
+ihpm = 0
 
 ! 1d radiative transfer model:
 ! ----------------------------

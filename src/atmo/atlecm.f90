@@ -79,7 +79,7 @@ integer ih2o
 
 double precision second
 double precision sjday, jday
-double precision rap,rscp,tmoy, rhmoy, psol
+double precision rap,rscp,tmoy, rhmoy
 double precision ztop, zzmax, tlkelv, pptop, dum
 double precision rhum,q0,q1
 
@@ -324,7 +324,6 @@ endif
 if (imode.eq.1) then
 
   phmet(1, itp) = pmer(itp)
-  psol = p0
   rscp = rair/cp0
 
   if (ihpm.eq.0) then
