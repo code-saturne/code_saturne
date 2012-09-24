@@ -779,7 +779,6 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  preprocessor/Makefile
                  preprocessor/appli/Makefile preprocessor/base/Makefile
                  preprocessor/pre-post/Makefile preprocessor/util/Makefile
-                 preprocessor/tools/Makefile
                  salome/Makefile
                  src/Makefile      src/apps/Makefile src/gui/Makefile
                  src/bft/Makefile  src/fvm/Makefile  src/mei/Makefile

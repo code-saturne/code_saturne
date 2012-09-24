@@ -30,7 +30,6 @@ preprocessor/pre-post/ecs_table_post.c
 preprocessor/pre-post/ecs_table_post_cgns.c
 preprocessor/pre-post/ecs_table_post_ens.c
 preprocessor/pre-post/ecs_table_post_med.c
-preprocessor/tools/igghexa_to_med.c
 preprocessor/util/ecs_backtrace.c
 preprocessor/util/ecs_comm.c
 preprocessor/util/ecs_def.c
