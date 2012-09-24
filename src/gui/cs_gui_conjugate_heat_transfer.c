@@ -167,6 +167,7 @@ void CS_PROCF (uisyrc, UISYRC) (void)
                              boundary_criteria,
                              volume_criteria,
                              *projection_axis,
+                             false,
                              verbosity,
                              visualization);
 

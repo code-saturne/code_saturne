@@ -138,6 +138,9 @@ struct _cs_syr4_coupling_t {
   cs_syr4_coupling_ent_t  *faces;          /* Wall coupling structure */
   cs_syr4_coupling_ent_t  *cells;          /* Volume coupling structure */
 
+  bool                     allow_nearest;  /* Allow nearest-neighbor
+                                              mapping beyond basic matching
+                                              tolerance */
   int                      verbosity;      /* Verbosity level */
   int                      visualization;  /* Visualization output flag */
 
@@ -527,7 +530,8 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
 
   else if (elt_dim == syr_coupling->dim - 1) {
 
-    locate_on_closest = cs_coupling_point_closest_mesh;
+    if (syr_coupling->allow_nearest)
+      locate_on_closest = cs_coupling_point_closest_mesh;
 
     BFT_MALLOC(coupled_mesh_name,
                strlen("SYRTHES  faces") + strlen(syr_coupling->syr_name) + 1,
@@ -1155,6 +1159,7 @@ cs_syr4_coupling_by_id(cs_lnum_t coupling_id)
  *   face_sel_criterion <-- criterion for selection of boundary faces
  *   cell_sel_criterion <-- criterion for selection of cells
  *   syr_name           <-- SYRTHES application name
+ *   allow_nonmatching  <-- nearest-neighbor search for non-matching faces flag
  *   verbosity          <-- verbosity level
  *   visualization      <-- visualization output flag
  *----------------------------------------------------------------------------*/
@@ -1165,6 +1170,7 @@ cs_syr4_coupling_add(cs_lnum_t    dim,
                      const char  *face_sel_criterion,
                      const char  *cell_sel_criterion,
                      const char  *syr_name,
+                     bool         allow_nonmatching,
                      int          verbosity,
                      int          visualization)
 {
@@ -1213,6 +1219,7 @@ cs_syr4_coupling_add(cs_lnum_t    dim,
   syr_coupling->faces = NULL;
   syr_coupling->cells = NULL;
 
+  syr_coupling->allow_nearest = allow_nonmatching;
   syr_coupling->verbosity = verbosity;
   syr_coupling->visualization = visualization;
 

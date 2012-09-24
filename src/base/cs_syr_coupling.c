@@ -100,6 +100,7 @@ typedef struct {
   char    *app_name;       /* Application name */
   char    *face_sel_c;     /* Face selection criteria */
   char    *cell_sel_c;     /* Cell selection criteria */
+  bool     allow_nearest;  /* Allow nearest-neighbor beyond tolerance */
   int      verbosity;      /* Verbosity level */
   int      visualization;  /* Visualization level */
   int      conservativity; /* Conservativity forcing flag */
@@ -226,6 +227,7 @@ _syr4_add_mpi(int builder_id,
                        scb->face_sel_c,
                        scb->cell_sel_c,
                        scb->app_name,
+                       scb->allow_nearest,
                        scb->verbosity,
                        scb->visualization);
 
@@ -835,6 +837,8 @@ void CS_PROCF (ctbvsy, CTBVSY)
  *   volume_criteria   <-- volume cell selection criteria, or NULL
  *   projection_axis   <-- 'x', 'y', or 'y' for 2D projection axis (case
  *                         independent), or ' ' for standard 3D coupling
+ *   allow_nonmatching <-- allow nearest-neighbor mapping where matching
+ *                         within tolerance is not available
  *   verbosity         <-- verbosity level
  *   visualization     <-- visualization output level (0 or 1)
  *----------------------------------------------------------------------------*/
@@ -844,6 +848,7 @@ cs_syr_coupling_define(const char  *syrthes_name,
                        const char  *boundary_criteria,
                        const char  *volume_criteria,
                        char         projection_axis,
+                       bool         allow_nonmatching,
                        int          verbosity,
                        int          visualization)
 {
@@ -900,6 +905,7 @@ cs_syr_coupling_define(const char  *syrthes_name,
     strcpy(scb->cell_sel_c, volume_criteria);
   }
 
+  scb->allow_nearest = allow_nonmatching;
   scb->verbosity = verbosity;
   scb->visualization = visualization;
   scb->conservativity = conservativity;

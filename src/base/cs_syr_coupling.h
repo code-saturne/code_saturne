@@ -276,6 +276,8 @@ void CS_PROCF (ctbvsy, CTBVSY)
  *   volume_criteria   <-- volume cell selection criteria, or NULL
  *   projection_axis   <-- 'x', 'y', or 'y' for 2D projection axis (case
  *                         independent), or ' ' for standard 3D coupling
+ *   allow_nonmatching <-- allow nearest-neighbor mapping where matching
+ *                         within tolerance is not available
  *   verbosity         <-- verbosity level
  *   visualization     <-- visualization output level (0 or 1)
  *----------------------------------------------------------------------------*/
@@ -285,6 +287,7 @@ cs_syr_coupling_define(const char  *syrthes_name,
                        const char  *boundary_criteria,
                        const char  *volume_criteria,
                        char         projection_axis,
+                       bool         allow_nonmatching,
                        int          verbosity,
                        int          visualization);
 

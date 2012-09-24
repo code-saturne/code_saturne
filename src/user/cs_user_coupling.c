@@ -105,6 +105,10 @@ cs_user_coupling(void)
  *   projection_axis   <-- ' ' : standard 3D coupling
  *                         'x', 'y', or 'z': projection axis for coupling
  *                                           with 2D SYRTHES.
+ *   allow_nonmatching <-- if true, allow nearest-neighbor search to match
+ *                         faces beyond mapping tolerance distance (useful
+ *                         when meshes have a different level of detail,
+ *                         but may lead to a much slower initialization stage)
  *   verbosity         <-- verbosity level
  *   plot              <-- visualization level
  *
@@ -120,6 +124,7 @@ void
 cs_user_syrthes_coupling(void)
 {
   int  verbosity = 1, plot = 1;
+  bool allow_nonmatching = false;
   return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 
   /*-------------------------------------------------------------------------
@@ -130,9 +135,10 @@ cs_user_syrthes_coupling(void)
 
   if (false)
     cs_syr_coupling_define("SYRTHES_01",
-                           "3",             /* boundary criteria */
-                           NULL,            /* volume_criteria */
-                           ' ',             /* projection_axis */
+                           "3",               /* boundary criteria */
+                           NULL,              /* volume_criteria */
+                           ' ',               /* projection_axis */
+                           allow_nonmatching,
                            verbosity,
                            plot);
 
@@ -145,9 +151,10 @@ cs_user_syrthes_coupling(void)
 
   if (false)
     cs_syr_coupling_define("SYRTHES_02",
-                           "Wall",          /* boundary criteria */
-                           NULL,            /* volume_criteria */
-                           'z',             /* projection_axis */
+                           "Wall",            /* boundary criteria */
+                           NULL,              /* volume_criteria */
+                           'z',               /* projection_axis */
+                           allow_nonmatching,
                            verbosity,
                            plot);
 
@@ -163,6 +170,7 @@ cs_user_syrthes_coupling(void)
                            NULL,                          /* boundary */
                            "box[0., 0., 0., 1., 1., 1.]", /* volume */
                            ' ',                           /* projection */
+                           allow_nonmatching,
                            verbosity,
                            plot);
 

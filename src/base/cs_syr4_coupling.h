@@ -128,16 +128,18 @@ cs_syr4_coupling_by_id(cs_int_t coupling_id);
  *   face_sel_criterion <-- criterion for selection of boundary faces
  *   cell_sel_criterion <-- criterion for selection of cells
  *   app_name           <-- SYRTHES application name
+ *   allow_nonmatching  <-- nearest-neighbor search for non-matching faces flag
  *   verbosity          <-- verbosity level
  *   visualization      <-- visualization output flag
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr4_coupling_add(cs_lnum_t    dim,
-                     cs_lnum_t    ref_axis,
+cs_syr4_coupling_add(int          dim,
+                     int          ref_axis,
                      const char  *face_sel_criterion,
                      const char  *cell_sel_criterion,
                      const char  *app_name,
+                     bool         allow_nonmatching,
                      int          verbosity,
                      int          visualization);
 
