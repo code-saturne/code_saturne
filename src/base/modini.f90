@@ -408,12 +408,14 @@ if (ippmod(icompf).lt.0) then
   endif
 endif
 
-if (nomvar(icour) .eq.' ') then
-  nomvar(icour) = 'CFL'
+ipp = ipppro(ipproc(icour))
+if (nomvar(ipp) .eq.' ') then
+  nomvar(ipp) = 'CFL'
 endif
 
-if (nomvar(ifour) .eq.' ') then
-  nomvar(ifour) = 'Fourier Number'
+ipp = ipppro(ipproc(ifour))
+if (nomvar(ipp) .eq.' ') then
+  nomvar(ipp) = 'Fourier Number'
 endif
 
 if (nomvar(ippdt) .eq.' ') then
