@@ -1462,7 +1462,11 @@ write(nfecra,9900)
 '                ',14x,     '      de l''equilibre entre grad', /,&
 '                ',14x,     '      de pression et termes',      /,&
 '                ',14x,     '      sources de gravite et de',   /,&
-'                ',14x,     '      pertes de charge          )',/,&
+'                ',14x,     '      pertes de charge',           /,&
+'                ',14x,     '  2 : prise en compte explicite',  /,&
+'                ',14x,     '      du desequilibre entre grad', /,&
+'                ',14x,     '      de pression et termes',      /,&
+'                ',14x,     '      sources de gravite        )',/,&
 '       ICALHY = ',4x,i10,  ' (1 : calcul de la pression',      /,&
 '                ',14x,     '      hydrostatique pour les',     /,&
 '                ',14x,     '      conditions de Dirichlet en', /,&

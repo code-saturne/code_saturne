@@ -69,6 +69,7 @@ subroutine lecamx &
 !  (nfabor,*)      !    !     !    faces de bord                               !
 ! frcxt(ncelet,3)  ! tr ! --> ! force exterieure generant la pression          !
 !                  !    !     !  hydrostatique                                 !
+! prhyd(ncelet)    ! ra ! --> ! hydrostatic pressure predicted                 !
 ! racell(ncelet    ! tr ! --- ! tableau de travail                             !
 ! rafacl(nfac      ! tr ! --- ! tableau de travail                             !
 ! rafabl(nfabor    ! tr ! --- ! tableau de travail                             !
@@ -119,7 +120,7 @@ double precision dt(ncelet), rtp(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
-double precision frcxt(ncelet,3)
+double precision frcxt(ncelet,3), prhyd(ncelet)
 
 ! Local variables
 
@@ -1861,9 +1862,35 @@ if(iphydr.eq.1) then
 
 endif
 
+!===============================================================================
+! 11. PRESSION HYDROSTATIQUE PREDITE
+!===============================================================================
+
+if(iphydr.eq.2) then
+  nberro=0
+
+  itysup = 1
+  nbval  = 1
+  irtyp  = 2
+
+  RUBRIQ = 'prhyd_pre_phase'//CPHASE
+  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+       prhyd(1),ierror)
+  nberro=nberro+ierror
+
+ if (nberro.ne.0) then
+    car54 =                                                       &
+         'LECTURE DE LA PRESSION HYDROSTATIQUE PREDITE          '
+    write(nfecra,8300)car54
+  endif
+
+  CAR54 =' Fin de la lecture de la pression hydro. predite      '
+  write(nfecra,1110)car54
+
+endif
 
 !===============================================================================
-! 11.  DEPLACEMENT AUX NOEUDS EN ALE
+! 12.  DEPLACEMENT AUX NOEUDS EN ALE
 !===============================================================================
 
 if (iale.eq.1 .and. jale.eq.1) then
@@ -1994,7 +2021,7 @@ if (iale.eq.1 .and. jale.eq.1) then
 endif
 
 !===============================================================================
-! 12. LECTURE DES INFORMATIONS COMPLEMENTAIRES COMBUSTION GAZ, CP ET
+! 13. LECTURE DES INFORMATIONS COMPLEMENTAIRES COMBUSTION GAZ, CP ET
 !                                                                  FUEL
 !===============================================================================
 
@@ -2570,7 +2597,7 @@ if(ilu.ne.0) then
 endif
 
 !===============================================================================
-! 13. LECTURE DES INFORMATIONS COMPLEMENTAIRES ELECTRIQUES
+! 14. LECTURE DES INFORMATIONS COMPLEMENTAIRES ELECTRIQUES
 !===============================================================================
 
 nberro=0
@@ -2663,7 +2690,7 @@ if(ilu.ne.0) then
 endif
 
 !===============================================================================
-! 14.  FERMETURE DU FICHIER SUITE AUXILAIRE
+! 15.  FERMETURE DU FICHIER SUITE AUXILAIRE
 !===============================================================================
 
 
@@ -2677,13 +2704,13 @@ endif
 write(nfecra,1200)
 
 !===============================================================================
-! 15. SORTIE
+! 16. SORTIE
 !===============================================================================
 
 return
 
 !===============================================================================
-! 16. FORMATS
+! 17. FORMATS
 !===============================================================================
 
 ! --- ETAPES

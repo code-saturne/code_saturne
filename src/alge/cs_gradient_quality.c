@@ -196,7 +196,8 @@ cs_gradient_quality(void)
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
   cs_int_t  *isympa = NULL;
-  cs_real_t  *var = NULL, *coefa = NULL, *coefb = NULL, *grad = NULL;
+  cs_real_t  *var = NULL, *ktvar=NULL;
+  cs_real_t *coefa = NULL, *coefb = NULL, *grad = NULL;
 
   assert(m != NULL);
 
@@ -207,6 +208,7 @@ cs_gradient_quality(void)
 
   BFT_MALLOC(isympa, n_b_faces, cs_int_t);
   BFT_MALLOC(var, n_cells_ext, cs_real_t);
+  BFT_MALLOC(ktvar, n_cells_ext, cs_real_t);
   BFT_MALLOC(coefa, n_b_faces, cs_real_t);
   BFT_MALLOC(coefb, n_b_faces, cs_real_t);
   BFT_MALLOC(grad, n_cells_ext*3, cs_real_t);
@@ -235,7 +237,7 @@ cs_gradient_quality(void)
   const cs_int_t iale = 1; /* set ALE indicator to 1 so as to force recompute of
                               boundary cells contribution at each gradient call */
 
-  const cs_int_t ivar = 0, inc = 0, idimtr = 0, iphydp = 0, iccocg = 1;
+  const cs_int_t ivar = 0, inc = 0, idimtr = 0, iphydp = 0, ipond = 0, iccocg = 1;
   const cs_int_t imobil = 0, nswrgp = 100, iwarnp = 0;
   const cs_real_t epsrgp = 1.e-5, climgp = 1.5, extrap = 0.;
 
@@ -279,6 +281,7 @@ cs_gradient_quality(void)
                               &nswrgp,
                               &idimtr,
                               &iphydp,
+                              &ipond,
                               &iwarnp,
                               &(imligp[test_id]),
                               &epsrgp,
@@ -291,6 +294,7 @@ cs_gradient_quality(void)
                               coefa,
                               coefb,
                               var,
+                              NULL,
                               grad);
 
     /* Postprocess gradient */
@@ -329,6 +333,7 @@ cs_gradient_quality(void)
 
   BFT_FREE(isympa);
   BFT_FREE(var);
+  BFT_FREE(ktvar);
   BFT_FREE(coefa);
   BFT_FREE(coefb);
   BFT_FREE(grad);

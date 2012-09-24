@@ -114,6 +114,7 @@ double precision, allocatable, dimension(:) :: ra
 double precision, allocatable, dimension(:,:) :: coefa, coefb
 double precision, allocatable, dimension(:,:) :: propfa, propfb
 double precision, allocatable, dimension(:,:) :: frcxt
+double precision, allocatable, dimension(:) :: prhyd
 
 ! Lagrangian specific arrays
 
@@ -337,6 +338,10 @@ if (iphydr.eq.1) then
   allocate(frcxt(ncelet,3))
 endif
 
+if (iphydr.eq.2) then
+  allocate(prhyd(ncelet))
+endif
+
 call init_aux_arrays ( ncelet , ncel   , ncelbr , nfac  , nfabor )
 !===================
 
@@ -400,7 +405,7 @@ call iniva0 &
    ra(idt)    , ra(itpuco) , ra(irtp) ,                           &
    ra(ipropc) , propfa , propfb ,                                 &
    coefa  , coefb  ,                                              &
-   frcxt  )
+   frcxt  , prhyd  )
 
 call fldtri &
 !==========
@@ -424,7 +429,7 @@ if (isuite.eq.1) then
    ra(idt)    , ra(irtp) ,                                        &
    ra(ipropc) , propfa , propfb ,                                 &
    coefa  , coefb  ,                                              &
-   frcxt  )
+   frcxt  , prhyd  )
 
   ! Using ALE, geometric parameters must be recalculated
   if (iale.eq.1) then
@@ -776,7 +781,7 @@ call tridim                                                       &
    ra(idt)    , ra(itpuco) , ra(irtpa) , ra(irtp)  ,              &
    ra(ipropc) , propfa , propfb ,                                 &
    tslagr , coefa  , coefb  ,                                     &
-   frcxt  )
+   frcxt  , prhyd  )
 
 !===============================================================================
 ! Compute temporal means (accumulation)
@@ -942,7 +947,7 @@ if (iisuit.eq.1) then
    ra(idt)    , ra(irtp) ,                                        &
    ra(ipropc) , propfa , propfb ,                                 &
    coefa  , coefb  ,                                              &
-   frcxt  )
+   frcxt  , prhyd  )
 
   if (nfpt1t.gt.0) then
     ficsui = '1dwall_module'
@@ -1186,6 +1191,10 @@ deallocate(propfa, propfb)
 if (iphydr.eq.1) then
   deallocate(isostd)
   deallocate(frcxt)
+endif
+
+if (iphydr.eq.2) then
+  deallocate(prhyd)
 endif
 
 if (ivrtex.eq.1) then

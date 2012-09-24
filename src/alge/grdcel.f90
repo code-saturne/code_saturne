@@ -108,7 +108,7 @@ double precision grad(ncelet,3)
 
 ! Local variables
 
-integer          iphydp
+integer          iphydp, ipond
 integer          idimtr, irpvar
 integer          imlini
 
@@ -162,13 +162,14 @@ endif
 ! This subroutine is never used to compute the pressure gradient
 
 iphydp = 0
+ipond  = 0
 
 call cgdcel                                                       &
 !==========
  ( ivar   , imrgra , inc    , iccocg , imobil , iale   , nswrgp , &
-   idimtr , iphydp , iwarnp , imligp , epsrgp , extrap , climgp , &
-   isympa , rvoid  , rvoid  , rvoid  , coefap , coefbp , pvar   , &
-   grad   )
+   idimtr , iphydp , ipond  , iwarnp , imligp , epsrgp , extrap , &
+   climgp , isympa , rvoid  , rvoid  , rvoid  , coefap , coefbp , &
+   pvar   , rvoid  , grad   )
 
 return
 end subroutine

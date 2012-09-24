@@ -29,7 +29,7 @@ subroutine preduv &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    flumas , flumab ,                                              &
    tslagr , coefa  , coefb  ,                                     &
-   ckupdc , smacel , frcxt  ,                                     &
+   ckupdc , smacel , frcxt  , grdphd ,                            &
    trava  , ximpa  , uvwk   , dfrcxt , tpucou , trav   ,          &
    viscf  , viscb  , viscfi , viscbi ,                            &
    drtp   , smbr   , rovsdt ,                                     &
@@ -90,6 +90,7 @@ subroutine preduv &
 !                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
 ! frcxt(ncelet,3)  ! tr ! <-- ! force exterieure generant la pression          !
 !                  !    !     !  hydrostatique                                 !
+! grdphd(ncelet,3) ! tr ! <-- ! hydrostatic pressure gradient                  !
 ! trava,ximpa      ! tr ! <-- ! tableau de travail pour couplage               !
 ! uvwk             ! tr ! <-- ! tableau de travail pour couplage u/p           !
 !                  !    !     ! sert a stocker la vitesse de                   !
@@ -162,6 +163,7 @@ double precision tslagr(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision frcxt(ncelet,3), dfrcxt(ncelet,3)
+double precision grdphd(ncelet,3)
 double precision trava(ncelet,ndim)
 double precision ximpa(ncelet,ndim),uvwk(ncelet,ndim)
 double precision tpucou(ncelet,ndim), trav(ncelet,3)
@@ -191,7 +193,7 @@ integer          idiaex, idtva0
 integer          imucpp, idftnp, iswdyp
 
 double precision rnorm , vitnor
-double precision romvom, drom
+double precision romvom, rom, drom
 double precision epsrgp, climgp, extrap, relaxp, blencp, epsilp
 double precision epsrsp
 double precision vit1  , vit2  , vit3, xkb, pip, pfac, pfac1
@@ -492,6 +494,15 @@ if(iappel.eq.1) then
       trav(iel,2) = (frcxt(iel,2) - grad(iel,2)) * volume(iel)
       trav(iel,3) = (frcxt(iel,3) - grad(iel,3)) * volume(iel)
     enddo
+
+  elseif(iphydr.eq.2) then
+    do iel = 1, ncel
+      rom = propce(iel,ipcrom)
+      trav(iel,1) = (rom*gx - grdphd(iel,1)) * volume(iel)
+      trav(iel,2) = (rom*gy - grdphd(iel,2)) * volume(iel)
+      trav(iel,3) = (rom*gz - grdphd(iel,3)) * volume(iel)
+    enddo
+
   else
     do iel = 1, ncel
       drom = (propce(iel,ipcrom)-ro0)
@@ -505,16 +516,25 @@ elseif(iappel.eq.2) then
 
   if (iphydr.eq.1) then
     do iel = 1, ncel
-      trav(iel,1) = trav(iel,1) + ( frcxt(iel,1) - grad(iel,1) )*volume(iel)
-      trav(iel,2) = trav(iel,2) + ( frcxt(iel,2) - grad(iel,2) )*volume(iel)
-      trav(iel,3) = trav(iel,3) + ( frcxt(iel,3) - grad(iel,3) )*volume(iel)
+      trav(iel,1) = trav(iel,1) + (frcxt(iel,1) - grad(iel,1))*volume(iel)
+      trav(iel,2) = trav(iel,2) + (frcxt(iel,2) - grad(iel,2))*volume(iel)
+      trav(iel,3) = trav(iel,3) + (frcxt(iel,3) - grad(iel,3))*volume(iel)
     enddo
+
+  elseif (iphydr.eq.2) then
+    do iel = 1, ncel
+      rom = propce(iel,ipcrom)
+      trav(iel,1) = trav(iel,1) + (rom*gx - grdphd(iel,1))*volume(iel)
+      trav(iel,2) = trav(iel,2) + (rom*gy - grdphd(iel,2))*volume(iel)
+      trav(iel,3) = trav(iel,3) + (rom*gz - grdphd(iel,3))*volume(iel)
+    enddo
+
   else
     do iel = 1, ncel
       drom = (propce(iel,ipcrom)-ro0)
-      trav(iel,1) =  trav(iel,1) + ( drom*gx - grad(iel,1) )*volume(iel)
-      trav(iel,2) =  trav(iel,2) + ( drom*gy - grad(iel,2) )*volume(iel)
-      trav(iel,3) =  trav(iel,3) + ( drom*gz - grad(iel,3) )*volume(iel)
+      trav(iel,1) = trav(iel,1) + (drom*gx - grad(iel,1))*volume(iel)
+      trav(iel,2) = trav(iel,2) + (drom*gy - grad(iel,2))*volume(iel)
+      trav(iel,3) = trav(iel,3) + (drom*gz - grad(iel,3))*volume(iel)
     enddo
   endif
 

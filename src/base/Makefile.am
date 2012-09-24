@@ -266,6 +266,7 @@ precli.f90 \
 predfl.f90 \
 preduv.f90 \
 predvv.f90 \
+prehyd.f90 \
 prmoy0.f90 \
 pthrbm.f90 \
 recvmc.f90 \

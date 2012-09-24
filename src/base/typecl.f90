@@ -563,7 +563,7 @@ if (itbslb.gt.0) then
   !  Put in pripb the value at I' or F (depending on iphydr) of the
   !  total pressure, computed from P*
 
-  if (iphydr.eq.0) then
+  if (iphydr.eq.0.or.iphydr.eq.2) then
     do ifac = 1, nfabor
       ii = ifabor(ifac)
       diipbx = diipb(1,ifac)

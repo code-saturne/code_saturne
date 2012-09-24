@@ -988,7 +988,7 @@ if(ipass.eq.3) then
   iok = 0
 
 !     Pression hydrostatique
-  if(iphydr.eq.0) then
+  if(iphydr.eq.0.or.iphydr.eq.2) then
     icalhy = 0
   elseif(iphydr.eq.1) then
     gravn2 = gx**2+gy**2+gz**2
@@ -1104,8 +1104,8 @@ if(ipass.eq.3) then
 
 
 !     Pression hydrostatique
-  if (iphydr.ne.0.and.iphydr.ne.1) then
-    WRITE(NFECRA,8021) 'IPHYDR ',IPHYDR
+  if (iphydr.ne.0.and.iphydr.ne.1.and.iphydr.ne.2) then
+    write(nfecra,8121) 'IPHYDR ',iphydr
     iok = iok + 1
   endif
 
@@ -2585,21 +2585,6 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8021 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    ',A6,' DOIT ETRE UN ENTIER EGAL A 0 OU 1                ',/,&
-'@    IL VAUT ICI ',I10                                        ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@  Verifier les parametres.                                  ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  8022 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -3579,21 +3564,6 @@ endif
 '@  Verify   parameters.                                      ',/,&
 '@                                                            ',/,&
 '@  NPROMX must be at least     ',I10                          ,/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 8021 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,&
-'@    =========                                               ',/,&
-'@    ',A6,' MUST BE AN INTEGER EQUAL TO 0 OR 1               ',/,&
-'@    HERE IT IS  ',I10                                        ,/,&
-'@                                                            ',/,&
-'@  The calculation cannot be executed                        ',/,&
-'@                                                            ',/,&
-'@  Verify   parameters.                                      ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

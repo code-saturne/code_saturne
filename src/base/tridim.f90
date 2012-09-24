@@ -27,7 +27,7 @@ subroutine tridim &
    nvar   , nscal  ,                                              &
    isostd ,                                                       &
    dt     , tpucou , rtpa   , rtp    , propce , propfa , propfb , &
-   tslagr , coefa  , coefb  , frcxt  )
+   tslagr , coefa  , coefb  , frcxt  , prhyd  )
 
 !===============================================================================
 ! FONCTION :
@@ -59,6 +59,7 @@ subroutine tridim &
 !(ncelet,*)        !    !     !     lagrangien                                 !
 ! frcxt(ncelet,3)  ! tr ! <-- ! force exterieure generant la pression          !
 !                  !    !     !  hydrostatique                                 !
+! prhyd(ncelet)    ! tr ! <-- ! pression hydrostatique predite                 !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -118,7 +119,7 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision tslagr(ncelet,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision frcxt(ncelet,3)
+double precision frcxt(ncelet,3), prhyd(ncelet)
 
 ! Local variables
 
@@ -232,8 +233,8 @@ endif
 ! On ne le fait pas dans le cas de la prise en compte de la pression
 !   hydrostatique, ni dans le cas du compressible
 
-if( ntcabs.le.2 .and. isuite.eq.0 .and. iphydr.eq.0               &
-                .and. ippmod(icompf).lt.0                         &
+if( ntcabs.le.2 .and. isuite.eq.0 .and. (iphydr.eq.0.or.iphydr.eq.2)    &
+                .and. ippmod(icompf).lt.0                               &
                 .and. idilat .le.0                 ) then
 
   if(iwarni(ipr).ge.2) then
@@ -355,6 +356,16 @@ if (ipass.eq.1) then
     ipcrom = ipproc(irom  )
     if (irangp.ge.0 .or. iperio.eq.1) then
       call synsce (propce(1,ipcrom))
+      !==========
+    endif
+
+  endif
+
+! --- Communication de prhyd
+  if (iphydr.eq.2) then
+
+    if (irangp.ge.0 .or. iperio.eq.1) then
+      call synsce (prhyd(1))
       !==========
     endif
 
@@ -1274,7 +1285,7 @@ do while (iterns.le.nterup)
       ( nvar   , nscal  , iterns , icvrge ,                            &
         isostd ,                                                       &
         dt     , tpucou , rtp    , rtpa   , propce , propfa , propfb , &
-        tslagr , coefa  , coefb  , frcxt  ,                            &
+        tslagr , coefa  , coefb  , frcxt  , prhyd  ,                   &
         trava  , ximpa  , uvwk   )
 
       else

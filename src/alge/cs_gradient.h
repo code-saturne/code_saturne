@@ -89,6 +89,7 @@ void CS_PROCF (cgdcel, CGDCEL)
  const cs_int_t   *const idimtr,      /* <-- 0, 1, 2: scalar, vector, tensor
                                              in case of rotation              */
  const cs_int_t   *const iphydp,      /* <-- use hydrosatatic pressure        */
+ const cs_int_t   *const ipond,       /* <-- >0: weighted gradient computation*/
  const cs_int_t   *const iwarnp,      /* <-- verbosity level                  */
  const cs_int_t   *const imligp,      /* <-- type of clipping                 */
  const cs_real_t  *const epsrgp,      /* <-- precision for iterative gradient
@@ -102,6 +103,7 @@ void CS_PROCF (cgdcel, CGDCEL)
  const cs_real_t         coefap[],    /* <-- boundary condition term          */
  const cs_real_t         coefbp[],    /* <-- boundary condition term          */
        cs_real_t         pvar[],      /* <-- gradient's base variable         */
+       cs_real_t         ktvar[],     /* <-- gradient coefficient variable   */
        cs_real_t         grad[]       /* <-> gradient                         */
 );
 

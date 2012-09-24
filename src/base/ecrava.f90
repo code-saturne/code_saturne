@@ -27,7 +27,7 @@ subroutine ecrava &
    nvar   , nscal  ,                                              &
    xyzcen , surfac , surfbo , cdgfac , cdgfbo ,                   &
    dt     , rtp    , propce , propfa , propfb ,                   &
-   coefa  , coefb  , frcxt  )
+   coefa  , coefb  , frcxt  , prhyd  )
 
 !===============================================================================
 
@@ -59,6 +59,7 @@ subroutine ecrava &
 !  (nfabor, *)     !    !     !                                                !
 ! frcxt(ncelet,3)  ! tr ! <-- ! force exterieure generant la pression          !
 !                  !    !     !  hydrostatique                                 !
+! prhyd(ncelet)    ! tr ! <-- ! hydrostatic pressure predicted                 !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -108,7 +109,7 @@ double precision dt(ncelet), rtp(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
-double precision frcxt(ncelet,3)
+double precision frcxt(ncelet,3), prhyd(ncelet)
 
 ! Local variables
 
@@ -1615,6 +1616,38 @@ if (iecaux.eq.1) then
     car54=' Fin de l''ecriture des forces exterieures            '
 #else
     car54=' End writing the external forces                      '
+#endif
+    write(nfecra,1110)car54
+
+  endif
+
+! ---> Pression hydrostatique predite
+
+  if(iphydr.eq.2) then
+    nberro=0
+
+    itysup = 1
+    nbval  = 1
+    irtyp  = 2
+
+    rubriq = 'Prhyd_pre_phase'//cphase
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+         prhyd(1),ierror)
+    nberro=nberro+ierror
+
+    if (nberro.ne.0) then
+#if defined(_CS_LANG_FR)
+      car54='ERREUR A L''ECRITURE DE LA PRESSION HYDROSTATIQUE PREDITE  '
+#else
+      car54='ERROR WHILE WRITING THE PREDICTED HYDROSTATIC PRESSURE     '
+#endif
+      write(nfecra,8101)car54
+    endif
+
+#if defined(_CS_LANG_FR)
+    car54=' Fin de l''ecriture de la pression hydrostatique predite     '
+#else
+    car54=' End writing the predicted hydrostatic pressure              '
 #endif
     write(nfecra,1110)car54
 

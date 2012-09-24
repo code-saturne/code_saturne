@@ -1134,8 +1134,12 @@ if (.false.) then
 endif
 
 ! --- Handling of hydrostatic pressure
-!                               (0 : usual algorithm
-!                                1 : specific handling)
+!     iphydr = 0 : ignore hydrostatic pressure (by default)
+!              1 : with hydrotatic pressure computation to handle the balance
+!                  between the pressure gradient and source terms (gravity and
+!                  head losses)
+!              2 : with hydrostatic pressure computation to handle the imbalance
+!                  between the pressure gradient and gravity source term
 
 if (.false.) then
   iphydr = 1

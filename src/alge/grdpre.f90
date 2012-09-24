@@ -20,72 +20,65 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine grdpot &
+subroutine grdpre &
 !================
 
- ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ppond  ,                                                       &
-   fextx  , fexty  , fextz  ,                                     &
-   pvar   , coefap , coefbp ,                                     &
+   pvar   , ktvar  , coefap , coefbp ,                            &
    grad   )
 
 !===============================================================================
-! FONCTION :
-! ----------
+! Purpose:
+! --------
 
-! APPEL DES DIFFERENTES ROUTINES DE CALCUL DE GRADIENT CELLULE
+! Call different cell gradient subroutines
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ivar             ! e  ! <-- ! numero de la variable                          !
+! ivar             ! i  ! <-- ! numero de la variable                          !
 !                  !    !     !   destine a etre utilise pour la               !
 !                  !    !     !   periodicite uniquement (pering)              !
 !                  !    !     !   on pourra donner ivar=0 si la                !
 !                  !    !     !   variable n'est ni une composante de          !
 !                  !    !     !   la vitesse, ni une composante du             !
 !                  !    !     !   tenseur des contraintes rij                  !
-! imrgra           ! e  ! <-- ! methode de reconstruction du gradient          !
+! imrgra           ! i  ! <-- ! methode de reconstruction du gradient          !
 !                  !    !     !  0 reconstruction 97                           !
 !                  !    !     !  1 moindres carres                             !
 !                  !    !     !  2 moindres carres support etendu              !
 !                  !    !     !    complet                                     !
 !                  !    !     !  3 moindres carres avec selection du           !
 !                  !    !     !    support etendu                              !
-! inc              ! e  ! <-- ! indicateur = 0 resol sur increment             !
+! inc              ! i  ! <-- ! indicateur = 0 resol sur increment             !
 !                  !    !     !              1 sinon                           !
-! iccocg           ! e  ! <-- ! indicateur = 1 pour recalcul de cocg           !
+! iccocg           ! i  ! <-- ! indicateur = 1 pour recalcul de cocg           !
 !                  !    !     !              0 sinon                           !
-! nswrgp           ! e  ! <-- ! nombre de sweep pour reconstruction            !
+! nswrgp           ! i  ! <-- ! nombre de sweep pour reconstruction            !
 !                  !    !     !             des gradients                      !
-! imligp           ! e  ! <-- ! methode de limitation du gradient              !
+! imligp           ! i  ! <-- ! methode de limitation du gradient              !
 !                  !    !     !  < 0 pas de limitation                         !
 !                  !    !     !  = 0 a partir des gradients voisins            !
 !                  !    !     !  = 1 a partir du gradient moyen                !
 ! iwarnp           ! i  ! <-- ! verbosity                                      !
-! iphydp           ! e  ! <-- ! indicateur de prise en compte de la            !
-!                  !    !     ! pression hydrostatique                         !
-! nfecra           ! e  ! <-- ! unite du fichier sortie std                    !
+! nfecra           ! i  ! <-- ! unite du fichier sortie std                    !
 ! epsrgp           ! r  ! <-- ! precision relative pour la                     !
 !                  !    !     !  reconstruction des gradients 97               !
 ! climgp           ! r  ! <-- ! coef gradient*distance/ecart                   !
 ! extrap           ! r  ! <-- ! coef extrap gradient                           !
-! pvar  (ncelet    ! tr ! <-- ! variable (pression)                            !
-! coefap,coefbp    ! tr ! <-- ! tableaux des cond lim pour pvar                !
+! pvar  (ncelet    ! ra ! <-- ! variable (pression)                            !
+! ktvar (ncelet    ! ra ! <-- ! variable (coefficient du gradient de pression) !
+! coefap,coefbp    ! ra ! <-- ! tableaux des cond lim pour pvar                !
 !   (nfabor)       !    !     !  sur la normale a la face de bord              !
-! ppond(ncelet)    ! tr ! <-- ! ponderation "physique"                         !
-! fextx,y,z        ! tr ! <-- ! force exterieure generant la pression          !
-!   (ncelet)       !    !     !  hydrostatique                                 !
-! grad(ncelet,3)   ! tr ! --> ! gradient de pvar                               !
+! grad(ncelet,3)   ! ra ! --> ! gradient de pvar                               !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -107,23 +100,18 @@ implicit none
 ! Arguments
 
 integer          ivar   , imrgra , inc    , iccocg , nswrgp
-integer          imligp ,iwarnp  , iphydp , nfecra
+integer          imligp ,iwarnp  , nfecra
 double precision epsrgp , climgp , extrap
 
 
-double precision ppond(ncelet)
-double precision fextx(ncelet),fexty(ncelet),fextz(ncelet)
 double precision pvar(ncelet), coefap(nfabor), coefbp(nfabor)
+double precision ktvar(ncelet)
 double precision grad(ncelet,3)
 
 ! Local variables
 
-integer          idimtr, ipond
-integer          iiu,iiv,iiw
-integer          iitytu
-integer          iir11,iir22,iir33
-integer          iir12,iir13,iir23
-integer          imlini
+integer          iphydp, ipond
+integer          idimtr
 
 double precision rvoid(1)
 double precision climin
@@ -131,24 +119,26 @@ double precision climin
 !===============================================================================
 
 !===============================================================================
-! 0. Initialization
-!===============================================================================
-
-! The gradient of a potential (pressure, ...) is a vector
-
-idimtr = 0
-ipond =0
-
-!===============================================================================
 ! 1. Compute gradient
 !===============================================================================
 
-call cgdcel                                                       &
+! The current variable is a scalar (and the gradient is a vector)
+idimtr = 0
+
+! In apriori the hydrostatic pressure gradient is computed without
+! extern hydrostatic force
+
+iphydp = 0
+
+! the pressure gradient coefficient ponderation activated
+ipond = 1
+
+call cgdcel &
 !==========
  ( ivar   , imrgra , inc    , iccocg , imobil , iale   , nswrgp , &
    idimtr , iphydp , ipond  , iwarnp , imligp , epsrgp , extrap , &
-   climgp , isympa , fextx  , fexty  , fextz  , coefap , coefbp , &
-   pvar   , rvoid  , grad   )
+   climgp , isympa , rvoid  , rvoid  , rvoid  , coefap , coefbp , &
+   pvar   , ktvar  , grad   )
 
 return
 end subroutine

@@ -26,7 +26,7 @@ subroutine navsto &
  ( nvar   , nscal  , iterns , icvrge ,                            &
    isostd ,                                                       &
    dt     , tpucou , rtp    , rtpa   , propce , propfa , propfb , &
-   tslagr , coefa  , coefb  , frcxt  ,                            &
+   tslagr , coefa  , coefb  , frcxt  , prhyd  ,                   &
    trava  , ximpa  , uvwk   )
 
 !===============================================================================
@@ -58,6 +58,7 @@ subroutine navsto &
 !  (nfabor, *)     !    !     !                                                !
 ! frcxt(ncelet,3)  ! tr ! <-- ! force exterieure generant la pression          !
 !                  !    !     !  hydrostatique                                 !
+! prhyd(ncelet)    ! tr ! <-- ! hydrostatic pressure predicted at cell centers !
 ! tslagr           ! tr ! <-- ! terme de couplage retour du                    !
 !(ncelet,*)        !    !     !     lagrangien                                 !
 ! trava,ximpa      ! tr ! <-- ! tableau de travail pour couplage               !
@@ -111,6 +112,7 @@ double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision tslagr(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision frcxt(ncelet,3)
+double precision prhyd(ncelet)
 double precision trava(ncelet,ndim),ximpa(ncelet,ndim)
 double precision uvwk(ncelet,ndim)
 
@@ -149,6 +151,7 @@ double precision, allocatable, dimension(:) :: w7, w8, w9
 double precision, allocatable, dimension(:) :: w10
 double precision, allocatable, dimension(:,:) :: dfrcxt
 double precision, allocatable, dimension(:,:) :: frchy, dfrchy
+double precision, allocatable, dimension(:,:) :: grdphd
 double precision, allocatable, dimension(:) :: esflum, esflub
 double precision, allocatable, dimension(:) :: flint, flbrd
 double precision, allocatable, dimension(:) :: coefap
@@ -174,6 +177,7 @@ allocate(coefap(nfabor))
 !if (iphydr.eq.1) allocate(dfrcxt(ncelet,3))
 allocate(dfrcxt(ncelet,3))
 if (icalhy.eq.1) allocate(frchy(ncelet,ndim), dfrchy(ncelet,ndim))
+if (iphydr.eq.2) allocate(grdphd(ncelet,ndim))
 if (iescal(iestot).gt.0) allocate(esflum(nfac), esflub(nfabor))
 if (itytur.eq.3.and.irijnu.eq.1) then
   allocate(wvisfi(nfac), wvisbi(nfabor))
@@ -272,7 +276,22 @@ if (idilat.eq.2.or.idilat.eq.3) then
 endif
 
 !===============================================================================
-! 2.  ETAPE DE PREDICTION DES VITESSES
+! 2. Hydrostatic pressure prediction in case of Low Mach compressible algorithm
+!===============================================================================
+
+if (iphydr.eq.2) then
+
+  call prehyd &
+  !==========
+  ( nvar   , nscal  ,                                     &
+    dt     , rtp    , rtpa   ,                            &
+    propce , propfa , propfb ,                            &
+    prhyd  , grdphd )
+
+endif
+
+!===============================================================================
+! 3.  ETAPE DE PREDICTION DES VITESSES
 !===============================================================================
 
 iappel = 1
@@ -288,7 +307,7 @@ call preduv &
   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
   propfa(1,iflmas), propfb(1,iflmab),                            &
   tslagr , coefa  , coefb  ,                                     &
-  ckupdc , smacel , frcxt ,                                      &
+  ckupdc , smacel , frcxt  , grdphd ,                            &
   trava  , ximpa  , uvwk   , dfrcxt , tpucou ,  trav  ,          &
   viscf  , viscb  , viscfi , viscbi ,                            &
   drtp   , smbr   , rovsdt ,                                     &
@@ -493,7 +512,7 @@ if ( iprco.le.0 ) then
 endif
 
 !===============================================================================
-! 3.  ETAPE DE PRESSION/CONTINUITE ( VITESSE/PRESSION )
+! 4.  ETAPE DE PRESSION/CONTINUITE ( VITESSE/PRESSION )
 !===============================================================================
 
 if (iwarni(iu).ge.1) then
@@ -520,7 +539,7 @@ call resolp &
 
 
 !===============================================================================
-! 4.  REACTUALISATION DU CHAMP DE VITESSE
+! 5.  REACTUALISATION DU CHAMP DE VITESSE
 !===============================================================================
 
 iclipr = iclrtp(ipr,icoef)
@@ -666,7 +685,7 @@ else
   !     REACTUALISATION DU CHAMP DE VITESSES
 
   thetap = thetav(ipr)
-  if (iphydr.eq.0) then
+  if (iphydr.eq.0.or.iphydr.eq.2) then
     if (idtsca.eq.0) then
       !$omp parallel do private(dtsrom)
       do iel = 1, ncel
@@ -882,7 +901,7 @@ endif
 
 
 !===============================================================================
-! 5.  CALCUL D'UN ESTIMATEUR D'ERREUR DE L'ETAPE DE CORRECTION ET TOTAL
+! 6.  CALCUL D'UN ESTIMATEUR D'ERREUR DE L'ETAPE DE CORRECTION ET TOTAL
 !===============================================================================
 
 
@@ -1030,7 +1049,7 @@ if (iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
 endif
 
 !===============================================================================
-! 6.  TRAITEMENT DU POINT FIXE SUR LE SYSTEME VITESSE/PRESSION
+! 7.  TRAITEMENT DU POINT FIXE SUR LE SYSTEME VITESSE/PRESSION
 !===============================================================================
 
 if (nterup.gt.1) then
@@ -1100,7 +1119,7 @@ if (ippmod(icompf).lt.0) then
 endif
 
 !===============================================================================
-! 7.  IMPRESSIONS
+! 8.  IMPRESSIONS
 !===============================================================================
 
 iflmas = ipprof(ifluma(iu))
@@ -1232,6 +1251,7 @@ deallocate(drtp, smbr, rovsdt)
 deallocate(trav)
 if (allocated(dfrcxt)) deallocate(dfrcxt)
 if (allocated(frchy))  deallocate(frchy, dfrchy)
+if (allocated(grdphd)) deallocate(grdphd)
 if (allocated(esflum)) deallocate(esflum, esflub)
 if (allocated(wvisfi)) deallocate(wvisfi, wvisbi)
 deallocate(w1, w2, w3)

@@ -911,12 +911,18 @@ idilat = 1
 pther  = 1.013d5
 epsdp  = 1.0d-12
 
-! --- Prise en compte de l'equilibre gradient de pression
-!       termes sources de gravite et de pertes de charge
-!       Non active par defaut
-!       ICALHY=1 permet de calculer la pression
-!       hydrostatique pour les Dirichlet de pression en sortie
-!       Sera modifie dans modini
+! --- Take into account the balance or imbalance between the pressure
+!     gradient and source terms (as gravity and head losses)
+!     (not activate by default iphydr=0)
+
+!     iphydr = 1 : hydrostatic pressure computation for the pressure
+!                  dirichlet conditions in outlet (will be modify in modini)
+!                  to take into account the balance between the pressure gradient
+!                  and source terms
+!
+!              2 : hydrostatic pressure computation with a apriori qdm equation
+!                  to obtain a hydrostatic pressure taking into account the imbalance
+!                  between the pressure gradient and the gravity source term
 
 iphydr = 0
 icalhy = -1

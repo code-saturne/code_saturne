@@ -25,7 +25,7 @@ subroutine iniva0 &
 
  ( nvar   , nscal  , ncofab ,                                     &
    dt     , tpucou , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  , frcxt  )
+   coefa  , coefb  , frcxt  , prhyd)
 
 !===============================================================================
 ! FONCTION :
@@ -54,6 +54,7 @@ subroutine iniva0 &
 !  (nfabor,*)      !    !     !    faces de bord                               !
 ! frcxt(ncelet,3)  ! tr ! <-- ! force exterieure generant la pression          !
 !                  !    !     !  hydrostatique                                 !
+! prhyd(ncelet)    ! ra ! <-- ! hydrostatic pressure predicted                 !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -94,7 +95,7 @@ integer          nvar   , nscal  , ncofab
 double precision dt(ncelet), tpucou(ncelet,3), rtp(ncelet,*), propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,ncofab), coefb(nfabor,ncofab)
-double precision frcxt(ncelet,3)
+double precision frcxt(ncelet,3), prhyd(ncelet)
 
 ! Local variables
 
@@ -674,7 +675,17 @@ if(iphydr.eq.1) then
 endif
 
 !===============================================================================
-! 13.  INITIALISATIONS EN ALE OU MAILLAGE MOBILE
+! 13.  INITIALISATION DE LA PRESSION HYDROSTATIQUE QUAND IPHYDR=2
+!===============================================================================
+
+if(iphydr.eq.2) then
+  do iel = 1, ncel
+    prhyd(iel) = 0.d0
+  enddo
+endif
+
+!===============================================================================
+! 14.  INITIALISATIONS EN ALE OU MAILLAGE MOBILE
 !===============================================================================
 
 if (iale.eq.1) then

@@ -958,6 +958,7 @@ _scalar_gradient_clipping(int                    imrgra,
  *                        or there is no periodicity of rotation
  *                      1 for velocity, 2 for Reynolds stress
  *   iphydp         <-- flag for hydrostatic pressure
+ *   ipond          <-- >0: weighted gradient computation
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   fextx          <-- x component of exterior force generating pressure
  *   fexty          <-- y component of exterior force generating pressure
@@ -965,6 +966,7 @@ _scalar_gradient_clipping(int                    imrgra,
  *   coefap         <-- B.C. coefficients for boundary face normals
  *   coefbp         <-- B.C. coefficients for boundary face normals
  *   pvar           <-- variable
+ *   ktvar          <-- pressure gradient coefficient variable
  *   dpdxyz         <-> gradient of pvar (halo prepared for periodicity
  *                      of rotation)
  *   rhsv           <-> interleaved array for gradient RHS components
@@ -976,6 +978,7 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
                             cs_mesh_quantities_t        *fvq,
                             int                          idimtr,
                             int                          iphydp,
+                            int                          ipond,
                             double                       inc,
                             const cs_real_t              fextx[],
                             const cs_real_t              fexty[],
@@ -983,6 +986,7 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
                             const cs_real_t              coefap[],
                             const cs_real_t              coefbp[],
                             const cs_real_t              pvar[],
+                            const cs_real_t              ktvar[],
                             cs_real_3_t        *restrict dpdxyz,
                             cs_real_4_t        *restrict rhsv)
 {
@@ -1016,6 +1020,7 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
   cs_lnum_t  cell_id, face_id, ii, jj;
   int        g_id, t_id;
   cs_real_t  pfac, vol_inv;
+  cs_real_t  ktpond;
   cs_real_4_t  fctb;
 
   /* Initialize gradient */
@@ -1032,39 +1037,82 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
   /* Standard case, without hydrostatic pressure */
   /*---------------------------------------------*/
 
-  if (iphydp == 0) {
+  if (iphydp == 0 || iphydp == 2) {
 
-    /* Contribution from interior faces */
+    /* Pressure gradient coefficient ponderation activated */
 
-    for (g_id = 0; g_id < n_i_groups; g_id++) {
+    if (ipond > 0) {
+
+      /* Contribution from interior faces */
+
+      for (g_id = 0; g_id < n_i_groups; g_id++) {
+
+#     pragma omp parallel for private(face_id, ii, jj, ktpond, pfac, fctb)
+        for (t_id = 0; t_id < n_i_threads; t_id++) {
+
+          for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+              face_id++) {
+
+            ii = i_face_cells[face_id][0] - 1;
+            jj = i_face_cells[face_id][1] - 1;
+
+            ktpond = weight[face_id] * ktvar[ii]/
+              (weight[face_id] * ktvar[ii]
+              + (1.0-weight[face_id])* ktvar[jj]);
+            pfac  =      ktpond  * rhsv[ii][3]
+                  + (1.0-ktpond) * rhsv[jj][3];
+            fctb[0] = pfac * i_face_normal[face_id][0];
+            fctb[1] = pfac * i_face_normal[face_id][1];
+            fctb[2] = pfac * i_face_normal[face_id][2];
+            rhsv[ii][0] += fctb[0];
+            rhsv[ii][1] += fctb[1];
+            rhsv[ii][2] += fctb[2];
+            rhsv[jj][0] -= fctb[0];
+            rhsv[jj][1] -= fctb[1];
+            rhsv[jj][2] -= fctb[2];
+
+          } /* loop on faces */
+
+        } /* loop on threads */
+
+      } /* loop on thread groups */
+
+    }
+    else {
+      /* Contribution from interior faces */
+
+      for (g_id = 0; g_id < n_i_groups; g_id++) {
 
 #     pragma omp parallel for private(face_id, ii, jj, pfac, fctb)
-      for (t_id = 0; t_id < n_i_threads; t_id++) {
+        for (t_id = 0; t_id < n_i_threads; t_id++) {
 
-        for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-             face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-             face_id++) {
+          for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+              face_id++) {
 
-          ii = i_face_cells[face_id][0] - 1;
-          jj = i_face_cells[face_id][1] - 1;
+            ii = i_face_cells[face_id][0] - 1;
+            jj = i_face_cells[face_id][1] - 1;
 
-          pfac  =        weight[face_id]  * rhsv[ii][3]
+            pfac  =      weight[face_id]  * rhsv[ii][3]
                   + (1.0-weight[face_id]) * rhsv[jj][3];
-          fctb[0] = pfac * i_face_normal[face_id][0];
-          fctb[1] = pfac * i_face_normal[face_id][1];
-          fctb[2] = pfac * i_face_normal[face_id][2];
-          rhsv[ii][0] += fctb[0];
-          rhsv[ii][1] += fctb[1];
-          rhsv[ii][2] += fctb[2];
-          rhsv[jj][0] -= fctb[0];
-          rhsv[jj][1] -= fctb[1];
-          rhsv[jj][2] -= fctb[2];
+            fctb[0] = pfac * i_face_normal[face_id][0];
+            fctb[1] = pfac * i_face_normal[face_id][1];
+            fctb[2] = pfac * i_face_normal[face_id][2];
+            rhsv[ii][0] += fctb[0];
+            rhsv[ii][1] += fctb[1];
+            rhsv[ii][2] += fctb[2];
+            rhsv[jj][0] -= fctb[0];
+            rhsv[jj][1] -= fctb[1];
+            rhsv[jj][2] -= fctb[2];
 
-        } /* loop on faces */
+          } /* loop on faces */
 
-      } /* loop on threads */
+        } /* loop on threads */
 
-    } /* loop on thread groups */
+      } /* loop on thread groups */
+
+    } /* loop on contribution for interior faces without ponderation */
 
     /* Contribution from boundary faces */
 
@@ -1210,6 +1258,7 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
  *                        or there is no periodicity of rotation
  *                      1 for velocity, 2 for Reynolds stress
  *   iphydp         <-- flag for hydrostatic pressure
+ *   ipond          <-- >0: activating the weighted gradient computation
  *   verbosity      <-- verbosity level
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   epsrgp         <-- relative precision for gradient reconstruction
@@ -1220,6 +1269,7 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
  *   coefap         <-- B.C. coefficients for boundary face normals
  *   coefbp         <-- B.C. coefficients for boundary face normals
  *   pvar           <-- variable
+ *   ktvar          <-- pressure gradient coefficient variable
  *   dpdxyz         <-> gradient of pvar (halo prepared for periodicity
  *                      of rotation)
  *   rhsv           <-> interleaved array for gradient RHS components
@@ -1237,6 +1287,7 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
                            int                          nswrgp,
                            int                          idimtr,
                            int                          iphydp,
+                           int                          ipond,
                            int                          verbosity,
                            double                       inc,
                            double                       epsrgp,
@@ -1247,6 +1298,7 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
                            const cs_real_t              coefap[],
                            const cs_real_t              coefbp[],
                            const cs_real_t              pvar[],
+                           const cs_real_t              ktvar[],
                            cs_real_3_t        *restrict dpdxyz,
                            cs_real_4_t        *restrict rhsv)
 {
@@ -1312,6 +1364,7 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
                                 fvq,
                                 idimtr,
                                 iphydp,
+                                ipond,
                                 inc,
                                 fextx,
                                 fexty,
@@ -1319,6 +1372,7 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
                                 coefap,
                                 coefbp,
                                 pvar,
+                                ktvar,
                                 dpdxyz,
                                 rhsv);
 
@@ -1580,7 +1634,7 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
     /* Standard case, without hydrostatic pressure */
     /*---------------------------------------------*/
 
-    if (iphydp == 0) {
+    if (iphydp == 0 || iphydp == 2) {
 
       /* Contribution from interior faces */
 
@@ -1843,6 +1897,7 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
  *                        or there is no periodicity of rotation
  *                      1 for velocity, 2 for Reynolds stress
  *   iphydp         <-- flag for hydrostatic pressure
+ *   ipond          <-- flag for hydrostatic pressure
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   extrap         <-- gradient extrapolation coefficient
  *   isympa         <-- Array with value 0 on symmetries, 1 elsewhere
@@ -1866,6 +1921,7 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
                      int                          nswrgp,
                      int                          idimtr,
                      int                          iphydp,
+                     int                          ipond,
                      cs_real_t                    inc,
                      double                       extrap,
                      const cs_int_t               isympa[],
@@ -1875,6 +1931,7 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
                      const cs_real_t              coefap[],
                      const cs_real_t              coefbp[],
                      const cs_real_t              pvar[],
+                     const cs_real_t              ktvar[],
                      cs_real_3_t        *restrict dpdxyz,
                      cs_real_4_t        *restrict rhsv)
 {
@@ -1941,6 +1998,7 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
                                 fvq,
                                 idimtr,
                                 iphydp,
+                                ipond,
                                 inc,
                                 fextx,
                                 fexty,
@@ -1948,6 +2006,7 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
                                 coefap,
                                 coefbp,
                                 pvar,
+                                ktvar,
                                 dpdxyz,
                                 rhsv);
 
@@ -2216,7 +2275,7 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
   /* Standard case, without hydrostatic pressure */
   /*---------------------------------------------*/
 
-  if (iphydp == 0) {
+  if (iphydp == 0 || iphydp == 2) {
 
     /* Contribution from interior faces */
 
@@ -3571,6 +3630,7 @@ void CS_PROCF (cgdcel, CGDCEL)
  const cs_int_t   *const idimtr,      /* <-- 0, 1, 2: scalar, vector, tensor
                                              in case of rotation              */
  const cs_int_t   *const iphydp,      /* <-- use hydrosatatic pressure        */
+ const cs_int_t   *const ipond,       /* <-- >0: weighted gradient computation*/
  const cs_int_t   *const iwarnp,      /* <-- verbosity level                  */
  const cs_int_t   *const imligp,      /* <-- type of clipping                 */
  const cs_real_t  *const epsrgp,      /* <-- precision for iterative gradient
@@ -3584,6 +3644,7 @@ void CS_PROCF (cgdcel, CGDCEL)
  const cs_real_t         coefap[],    /* <-- boundary condition term          */
  const cs_real_t         coefbp[],    /* <-- boundary condition term          */
        cs_real_t         pvar[],      /* <-- gradient's base variable         */
+       cs_real_t         ktvar[],     /* <-- gradient coefficient variable   */
        cs_real_t         grad[]       /* <-> gradient                         */
 )
 {
@@ -3649,11 +3710,13 @@ void CS_PROCF (cgdcel, CGDCEL)
     }
     else
       cs_halo_sync_var(halo, halo_type, pvar);
+      if (*ipond > 0)
+          cs_halo_sync_var(halo, halo_type, ktvar);
 
     /* TODO: check if fext* components are all up to date, in which
      *       case we need no special treatment for *idimtr > 0 */
 
-    if (*iphydp != 0) {
+    if (*iphydp == 1) {
 
       if (*idimtr > 0){
         cs_halo_sync_component(halo, halo_type, CS_HALO_ROTATION_IGNORE, fextx);
@@ -3684,6 +3747,7 @@ void CS_PROCF (cgdcel, CGDCEL)
                                *nswrgp,
                                *idimtr,
                                *iphydp,
+                               *ipond,
                                *iwarnp,
                                *inc,
                                *epsrgp,
@@ -3694,6 +3758,7 @@ void CS_PROCF (cgdcel, CGDCEL)
                                coefap,
                                coefbp,
                                pvar,
+                               ktvar,
                                (cs_real_3_t *)dpdxyz,
                                rhsv);
 
@@ -3708,6 +3773,7 @@ void CS_PROCF (cgdcel, CGDCEL)
                          *nswrgp,
                          *idimtr,
                          *iphydp,
+                         *ipond,
                          *inc,
                          *extrap,
                          isympa,
@@ -3717,6 +3783,7 @@ void CS_PROCF (cgdcel, CGDCEL)
                          coefap,
                          coefbp,
                          pvar,
+                         ktvar,
                          (cs_real_3_t *)dpdxyz,
                          rhsv);
 
@@ -3735,6 +3802,7 @@ void CS_PROCF (cgdcel, CGDCEL)
                          *nswrgp,
                          *idimtr,
                          *iphydp,
+                         *ipond,
                          *inc,
                          *extrap,
                          isympa,
@@ -3744,6 +3812,7 @@ void CS_PROCF (cgdcel, CGDCEL)
                          coefap,
                          coefbp,
                          pvar,
+                         ktvar,
                          (cs_real_3_t *)dpdxyz,
                          rhsv);
 
@@ -3760,6 +3829,7 @@ void CS_PROCF (cgdcel, CGDCEL)
                                *nswrgp,
                                *idimtr,
                                *iphydp,
+                               *ipond,
                                *iwarnp,
                                *inc,
                                *epsrgp,
@@ -3770,6 +3840,7 @@ void CS_PROCF (cgdcel, CGDCEL)
                                coefap,
                                coefbp,
                                pvar,
+                               ktvar,
                                (cs_real_3_t *)dpdxyz,
                                rhsv);
 

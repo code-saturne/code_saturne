@@ -26,7 +26,7 @@ subroutine lecamo &
  ( ndim   , ncelet , ncel   , nfac   , nfabor , nnod   ,          &
    nvar   , nscal  ,                                              &
    dt     , rtp    , propce , propfa , propfb ,                   &
-   coefa  , coefb  , frcxt  )
+   coefa  , coefb  , frcxt  , prhyd  )
 
 !===============================================================================
 
@@ -60,6 +60,7 @@ subroutine lecamo &
 !  (nfabor,*)      !    !     !    faces de bord                               !
 ! frcxt(ncelet,3)  ! tr ! --> ! force exterieure generant la pression          !
 !                  !    !     !  hydrostatique                                 !
+! prhyd(ncelet)    ! ra ! --> ! pression hydrostatic predite                   !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -95,7 +96,7 @@ double precision dt(ncelet), rtp(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision frcxt(ncelet,3)
+double precision frcxt(ncelet,3), prhyd(ncelet)
 
 ! Local variables
 
@@ -134,7 +135,7 @@ if (ileaux.eq.1) then
 ( ndim   , ncelet , ncel   , nfac   , nfabor ,       &
   nnod   , nvar   , nscal  ,                         &
   dt     , rtp    , propce , propfa , propfb ,       &
-  coefa  , coefb  , frcxt  )
+  coefa  , coefb  , frcxt  , prhyd  )
 
 endif
 

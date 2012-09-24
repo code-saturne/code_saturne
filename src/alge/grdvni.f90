@@ -114,7 +114,7 @@ double precision gradv(3*3*ncelet)
 ! Local variables
 
 integer          iel, isou, ivarloc
-integer          iphydp
+integer          iphydp, ipond
 integer          idimtr, irpvar
 integer          iiu,iiv,iiw
 integer          imlini
@@ -188,15 +188,16 @@ endif
 
 ! This subroutine is never used to compute the pressure gradient
 iphydp = 0
+ipond = 0
 
 ivarloc = ivar
 
 call cgdcel &
 !==========
  ( ivarloc, imrgra , inc    , iccocg , imobil , iale   , nswrgp , &
-   idimtr , iphydp , iwarnp , imligp , epsrgp , extrap , climgp , &
-   isympa , rvoid  , rvoid  , rvoid  ,                            &
-   coefav(1)       , coefbv(1)       , vel(1) ,                   &
+   idimtr , iphydp , ipond  , iwarnp , imligp , epsrgp , extrap , &
+   climgp , isympa , rvoid  , rvoid  , rvoid  ,                   &
+   coefav(1)       , coefbv(1)       , vel(1) , rvoid  ,          &
    gradv(1)     )
 
 ivarloc = ivarloc+1
@@ -204,9 +205,9 @@ ivarloc = ivarloc+1
 call cgdcel &
 !==========
  ( ivarloc, imrgra , inc    , iccocg , imobil , iale   , nswrgp , &
-   idimtr , iphydp , iwarnp , imligp , epsrgp , extrap , climgp , &
-   isympa , rvoid  , rvoid  , rvoid  ,                            &
-   coefav(1+ndimfb), coefbv(1+ndimfb), vel(1+ncelet)   ,          &
+   idimtr , iphydp , ipond  , iwarnp , imligp , epsrgp , extrap , &
+   climgp , isympa , rvoid  , rvoid  , rvoid  ,                   &
+   coefav(1+ndimfb), coefbv(1+ndimfb), vel(1+ncelet)   , rvoid  , &
    gradv(1+3*ncelet)     )
 
 ivarloc = ivarloc+1
@@ -214,10 +215,10 @@ ivarloc = ivarloc+1
 call cgdcel &
 !==========
  ( ivarloc, imrgra , inc    , iccocg , imobil , iale   , nswrgp , &
-   idimtr , iphydp , iwarnp , imligp , epsrgp , extrap , climgp , &
-   isympa , rvoid  , rvoid  , rvoid  ,                            &
+   idimtr , iphydp , ipond  , iwarnp , imligp , epsrgp , extrap , &
+   climgp , isympa , rvoid  , rvoid  , rvoid  ,                   &
    coefav(1+2*ndimfb), coefbv(1+2*ndimfb), vel(1+2*ncelet),       &
-   gradv(1+6*ncelet)  )
+   rvoid , gradv(1+6*ncelet)  )
 
 return
 end subroutine
