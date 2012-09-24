@@ -201,8 +201,8 @@ class Informations:
 
 
     def getLocalizations(self):
-        list = self.refList + self.groupList
-        return list(map(str, list))
+        lst = self.refList + self.groupList
+        return list(map(str, lst))
 
 
 #-------------------------------------------------------------------------------
