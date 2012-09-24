@@ -75,11 +75,11 @@ implicit none
 
 ! Arguments
 
-integer, intent(in)                                :: nfbrps
-integer, dimension(nfbrps), intent(in)             :: lstfbr
-double precision, dimension(ncelet, *), intent(in) :: rtp, propce
-double precision, dimension(ndimfb, *), intent(in) :: propfb
-double precision, dimension(nfbrps), intent(out)   :: bflux
+integer, intent(in)                                        :: nfbrps
+integer, dimension(nfbrps), intent(in)                     :: lstfbr
+double precision, dimension(ncelet, *), intent(in), target :: rtp, propce
+double precision, dimension(ndimfb, *), intent(in)         :: propfb
+double precision, dimension(nfbrps), intent(out)           :: bflux
 
 ! Local variables
 
@@ -161,7 +161,7 @@ if (iscalt.gt.0) then
 
   else ! If flux is not reconstructed
 
-    tcel = rtp(1, ivar)
+    tcel => rtp(1:ncelet, ivar)
 
   endif
 
@@ -189,8 +189,8 @@ if (iscalt.gt.0) then
     visct  = propce(iel,ipcvst)
     flumab = propfb(ifac,iflmab)
 
-    bflux(iloc) =                (cofafp(ifac) + cofbfp(ifac)*tcel(ifac))   &
-                  - flumab/srfbn*(coefap(ifac) + coefbp(ifac)*tcel(ifac))
+    bflux(iloc) =                (cofafp(ifac) + cofbfp(ifac)*tcel(iel))   &
+                  - flumab/srfbn*(coefap(ifac) + coefbp(ifac)*tcel(iel))
 
   enddo
 
@@ -268,11 +268,11 @@ implicit none
 
 ! Arguments
 
-integer, intent(in)                                :: nfbrps
-integer, dimension(nfbrps), intent(in)             :: lstfbr
-double precision, dimension(ncelet, *), intent(in) :: rtp, propce
-double precision, dimension(ndimfb, *), intent(in) :: propfb
-double precision, dimension(nfbrps), intent(out)   :: btemp
+integer, intent(in)                                        :: nfbrps
+integer, dimension(nfbrps), intent(in)                     :: lstfbr
+double precision, dimension(ncelet, *), intent(in), target :: rtp, propce
+double precision, dimension(ndimfb, *), intent(in)         :: propfb
+double precision, dimension(nfbrps), intent(out)           :: btemp
 
 ! Local variables
 
@@ -354,7 +354,7 @@ if (itstar.ge.0 .and. itplus.ge.0) then
 
   else ! If flux is not reconstructed
 
-    tcel = rtp(1, ivar)
+    tcel => rtp(1:ncelet, ivar)
 
   endif
 
@@ -439,11 +439,11 @@ implicit none
 
 ! Arguments
 
-integer, intent(in)                                :: nfbrps
-integer, dimension(nfbrps), intent(in)             :: lstfbr
-double precision, dimension(ncelet, *), intent(in) :: rtp, propce
-double precision, dimension(ndimfb, *), intent(in) :: propfb
-double precision, dimension(nfbrps), intent(out)   :: bnussl
+integer, intent(in)                                        :: nfbrps
+integer, dimension(nfbrps), intent(in)                     :: lstfbr
+double precision, dimension(ncelet, *), intent(in), target :: rtp, propce
+double precision, dimension(ndimfb, *), intent(in)         :: propfb
+double precision, dimension(nfbrps), intent(out)           :: bnussl
 
 ! Local variables
 
@@ -531,7 +531,7 @@ if (itstar.ge.0 .and. itplus.ge.0) then
 
   else ! If flux is not reconstructed
 
-    tcel = rtp(1, ivar)
+    tcel => rtp(1:ncelet, ivar)
 
   endif
 
@@ -555,7 +555,7 @@ if (itstar.ge.0 .and. itplus.ge.0) then
     srfbn = max(surfbn(ifac), epzero**2)
     visct  = propce(iel,ipcvst)
 
-    numer = (cofafp(ifac) + cofbfp(ifac)*tcel(ifac)) * distb(ifac)
+    numer = (cofafp(ifac) + cofbfp(ifac)*tcel(iel)) * distb(ifac)
     denom = xvsl * tplusp(ifac)*tstarp(ifac)
 
     if (abs(denom).gt.1e-30) then
