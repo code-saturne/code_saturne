@@ -20,13 +20,50 @@
 
 !-------------------------------------------------------------------------------
 
-! Module for pointer variables
+!> \file pointe.f90
+!> Module for pointer variables
 
 module pointe
 
   !=============================================================================
 
   use paramx
+
+  !=============================================================================
+
+
+  !> \defgroup fortan_pointer_containers Containers to Fortran array pointers.
+  !> An array of one of these these derived types can be used to manage a set of
+  !> pointers (Fortran not allow arrays of pointers directly, so this
+  !> technique is a classical workaround.
+
+  !> Note also that Fortran bounds remapping could in theory be used to
+  !> handle different pointer shapes with a single type, but this feature
+  !> of Fortran 2003 (extended in 2008) is supported only by very recent
+  !> compilers (2010 or later), and even recent compilers such as Intel 12
+  !> reportedly have bugs using this feature, so we will need to avoid
+  !> depending on it for a few years.
+
+  !> \ingroup fortan_pointer_containers
+  !> \brief container for rank 1 double precision array pointer.
+
+  type pmapper_double_r1
+    double precision, dimension(:),  pointer :: p !< rank 1 array pointer
+  end type pmapper_double_r1
+
+  !> \ingroup fortan_pointer_containers
+  !> \brief container for rank 2 double precision array pointer.
+
+  type pmapper_double_r2
+    double precision, dimension(:,:),  pointer :: p !< rank 2 array pointer
+  end type pmapper_double_r2
+
+  !> \ingroup fortan_pointer_containers
+  !> \brief container for rank 3 double precision array pointer.
+
+  type pmapper_double_r3
+    double precision, dimension(:,:,:),  pointer :: p !< rank 3 array pointer
+  end type pmapper_double_r3
 
   !=============================================================================
 
