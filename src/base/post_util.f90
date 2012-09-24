@@ -89,10 +89,10 @@ integer ::         iel
 integer ::         ipcvsl, ipcvst, iflmab
 
 double precision :: xcp   , xvsl  , srfbn
-double precision :: visct , flumab, diipbx, diipby, diipbz
+double precision :: visct , flumab, diipbx, diipby, diipbz, tcel
 double precision :: epsrgp, climgp, extrap
 
-double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp, tcel
+double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, allocatable, dimension(:,:) :: grad
 
 !===============================================================================
@@ -113,11 +113,19 @@ if (iscalt.gt.0) then
   call field_get_coefaf_s(ivarfl(ivar), cofafp)
   call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
+  ! Pointers to properties
+
+  if (ivisls(iscalt).gt.0) then
+    ipcvsl = ipproc(ivisls(iscalt))
+  else
+    ipcvsl = 0
+  endif
+  ipcvst = ipproc(ivisct)
+  iflmab = ipprob(ifluma(ivar))
+
   ! Compute variable values at boundary faces
 
   if (ircflu(ivar) .gt. 0) then
-
-    allocate(tcel(nfabor))
 
     ! Compute gradient of temperature / enthalpy
 
@@ -144,57 +152,62 @@ if (iscalt.gt.0) then
    epsrgp , climgp , extrap , rtp(1,ivar) , coefap , coefbp ,     &
    grad   )
 
-    ! Compute reconstructed value in boundary cells
+    ! Compute diffusive and convective flux using reconstructed temperature
 
-    do ifac = 1, nfabor
+    do iloc = 1, nfbrps
+
+      ifac = lstfbr(iloc)
       iel = ifabor(ifac)
+
       diipbx = diipb(1,ifac)
       diipby = diipb(2,ifac)
       diipbz = diipb(3,ifac)
-      tcel(ifac) =   rtp(iel,ivar)                                &
-                   + diipbx*grad(iel,1)                           &
-                   + diipby*grad(iel,2)                           &
-                   + diipbz*grad(iel,3)
+
+      tcel =   rtp(iel,ivar)                                                  &
+             + diipbx*grad(iel,1) + diipby*grad(iel,2) + diipbz*grad(iel,3)
+
+      if (ipcvsl.gt.0) then
+        xvsl = propce(iel,ipcvsl)
+      else
+        xvsl = visls0(iscalt)
+      endif
+      srfbn = max(surfbn(ifac), epzero**2)
+      visct  = propce(iel,ipcvst)
+      flumab = propfb(ifac,iflmab)
+
+      bflux(iloc) =                (cofafp(ifac) + cofbfp(ifac)*tcel)   &
+                    - flumab/srfbn*(coefap(ifac) + coefbp(ifac)*tcel)
+
     enddo
 
     deallocate(grad)
 
   else ! If flux is not reconstructed
 
-    tcel => rtp(1:ncelet, ivar)
+    ! Compute diffusive and convective flux using non-reconstructed temperature
 
-  endif
+    do iloc = 1, nfbrps
 
-  ! Compute diffusive and convective flux
+      ifac = lstfbr(iloc)
+      iel = ifabor(ifac)
 
-  if (ivisls(iscalt).gt.0) then
-    ipcvsl = ipproc(ivisls(iscalt))
-  else
-    ipcvsl = 0
-  endif
-  ipcvst = ipproc(ivisct)
-  iflmab = ipprob(ifluma(ivar))
+      tcel = rtp(iel,ivar)
 
-  do iloc = 1, nfbrps
+      if (ipcvsl.gt.0) then
+        xvsl = propce(iel,ipcvsl)
+      else
+        xvsl = visls0(iscalt)
+      endif
+      srfbn = max(surfbn(ifac), epzero**2)
+      visct  = propce(iel,ipcvst)
+      flumab = propfb(ifac,iflmab)
 
-    ifac = lstfbr(iloc)
-    iel = ifabor(ifac)
+      bflux(iloc) =                (cofafp(ifac) + cofbfp(ifac)*tcel)   &
+                    - flumab/srfbn*(coefap(ifac) + coefbp(ifac)*tcel)
 
-    if (ipcvsl.gt.0) then
-      xvsl = propce(iel,ipcvsl)
-    else
-      xvsl = visls0(iscalt)
-    endif
-    srfbn = max(surfbn(ifac), epzero**2)
-    visct  = propce(iel,ipcvst)
-    flumab = propfb(ifac,iflmab)
+    enddo
 
-    bflux(iloc) =                (cofafp(ifac) + cofbfp(ifac)*tcel(iel))   &
-                  - flumab/srfbn*(coefap(ifac) + coefbp(ifac)*tcel(iel))
-
-  enddo
-
-  if (ircflu(ivar) .gt. 0) deallocate(tcel)
+  endif ! test on reconstruction
 
 else ! if thermal variable is not available
 
@@ -281,9 +294,9 @@ integer ::         iel, ifac, iloc, ivar
 integer ::         itplus, itstar
 
 double precision :: diipbx, diipby, diipbz
-double precision :: epsrgp, climgp, extrap
+double precision :: epsrgp, climgp, extrap, tcel
 
-double precision, dimension(:), pointer :: coefap, coefbp, tcel
+double precision, dimension(:), pointer :: coefap, coefbp
 double precision, allocatable, dimension(:,:) :: grad
 double precision, dimension(:), pointer :: tplusp, tstarp
 
@@ -304,8 +317,6 @@ if (itstar.ge.0 .and. itplus.ge.0) then
   ! Compute variable values at boundary faces
 
   if (ircflu(ivar) .gt. 0) then
-
-    allocate(tcel(nfabor))
 
     ! Boundary condition pointers for gradients and advection
 
@@ -339,35 +350,37 @@ if (itstar.ge.0 .and. itplus.ge.0) then
 
     ! Compute reconstructed value in boundary cells
 
-    do ifac = 1, nfabor
+    do iloc = 1, nfbrps
+
+      ifac = lstfbr(iloc)
       iel = ifabor(ifac)
+
       diipbx = diipb(1,ifac)
       diipby = diipb(2,ifac)
       diipbz = diipb(3,ifac)
-      tcel(ifac) =   rtp(iel,ivar)                                &
-                   + diipbx*grad(iel,1)                           &
-                   + diipby*grad(iel,2)                           &
-                   + diipbz*grad(iel,3)
+      tcel =   rtp(iel,ivar)                                                 &
+             + diipbx*grad(iel,1) + diipby*grad(iel,2) + diipbz*grad(iel,3)
+
+      btemp(iloc) = tcel - tplusp(ifac)*tstarp(ifac)
+
     enddo
 
     deallocate(grad)
 
   else ! If flux is not reconstructed
 
-    tcel => rtp(1:ncelet, ivar)
+    do iloc = 1, nfbrps
+
+      ifac = lstfbr(iloc)
+      iel = ifabor(ifac)
+
+      tcel = rtp(iel,ivar)
+
+      btemp(iloc) = tcel - tplusp(ifac)*tstarp(ifac)
+
+    enddo
 
   endif
-
-  do iloc = 1, nfbrps
-
-    ifac = lstfbr(iloc)
-    iel = ifabor(ifac)
-
-    btemp(iloc) = tcel(iel) - tplusp(ifac)*tstarp(ifac)
-
-  enddo
-
-  if (ircflu(ivar) .gt. 0) deallocate(tcel)
 
 else ! default if not computable
 
@@ -453,9 +466,9 @@ integer ::         ipcvsl, ipcvst, itplus, itstar
 
 double precision :: xvsl  , srfbn
 double precision :: visct , flumab, diipbx, diipby, diipbz
-double precision :: epsrgp, climgp, extrap, numer, denom
+double precision :: epsrgp, climgp, extrap, numer, denom, tcel
 
-double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp, tcel
+double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, allocatable, dimension(:,:) :: grad
 double precision, dimension(:), pointer :: tplusp, tstarp
 
@@ -478,11 +491,18 @@ if (itstar.ge.0 .and. itplus.ge.0) then
   call field_get_coefaf_s(ivarfl(ivar), cofafp)
   call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
+  ! Physical property pointers
+
+  if (ivisls(iscalt).gt.0) then
+    ipcvsl = ipproc(ivisls(iscalt))
+  else
+    ipcvsl = 0
+  endif
+  ipcvst = ipproc(ivisct)
+
   ! Compute variable values at boundary faces
 
   if (ircflu(ivar) .gt. 0) then
-
-    allocate(tcel(nfabor))
 
     ! Boundary condition pointers for gradients and advection
 
@@ -514,59 +534,71 @@ if (itstar.ge.0 .and. itplus.ge.0) then
    epsrgp , climgp , extrap , rtp(1,ivar) , coefap , coefbp ,     &
    grad   )
 
-    ! Compute reconstructed value in boundary cells
+    ! Compute using reconstructed temperature value in boundary cells
 
-    do ifac = 1, nfabor
+    do iloc = 1, nfbrps
+
+      ifac = lstfbr(iloc)
       iel = ifabor(ifac)
+
       diipbx = diipb(1,ifac)
       diipby = diipb(2,ifac)
       diipbz = diipb(3,ifac)
-      tcel(ifac) =   rtp(iel,ivar)                                &
-                   + diipbx*grad(iel,1)                           &
-                   + diipby*grad(iel,2)                           &
-                   + diipbz*grad(iel,3)
+      tcel =   rtp(iel,ivar)                                                 &
+             + diipbx*grad(iel,1) + diipby*grad(iel,2) + diipbz*grad(iel,3)
+
+      if (ipcvsl.gt.0) then
+        xvsl = propce(iel,ipcvsl)
+      else
+        xvsl = visls0(iscalt)
+      endif
+      srfbn = max(surfbn(ifac), epzero**2)
+      visct = propce(iel,ipcvst)
+
+      numer = (cofafp(ifac) + cofbfp(ifac)*tcel) * distb(ifac)
+      denom = xvsl * tplusp(ifac)*tstarp(ifac)
+
+      if (abs(denom).gt.1e-30) then
+        bnussl(iloc) = numer / denom
+      else
+        bnussl(iloc) = 0.d0
+      endif
+
     enddo
 
     deallocate(grad)
 
   else ! If flux is not reconstructed
 
-    tcel => rtp(1:ncelet, ivar)
+    ! Compute using non-reconstructed temperature value in boundary cells
+
+    do iloc = 1, nfbrps
+
+      ifac = lstfbr(iloc)
+      iel = ifabor(ifac)
+
+      tcel =   rtp(iel,ivar)
+
+      if (ipcvsl.gt.0) then
+        xvsl = propce(iel,ipcvsl)
+      else
+        xvsl = visls0(iscalt)
+      endif
+      srfbn = max(surfbn(ifac), epzero**2)
+      visct = propce(iel,ipcvst)
+
+      numer = (cofafp(ifac) + cofbfp(ifac)*tcel) * distb(ifac)
+      denom = xvsl * tplusp(ifac)*tstarp(ifac)
+
+      if (abs(denom).gt.1e-30) then
+        bnussl(iloc) = numer / denom
+      else
+        bnussl(iloc) = 0.d0
+      endif
+
+    enddo
 
   endif
-
-  if (ivisls(iscalt).gt.0) then
-    ipcvsl = ipproc(ivisls(iscalt))
-  else
-    ipcvsl = 0
-  endif
-  ipcvst = ipproc(ivisct)
-
-  do iloc = 1, nfbrps
-
-    ifac = lstfbr(iloc)
-    iel = ifabor(ifac)
-
-    if (ipcvsl.gt.0) then
-      xvsl = propce(iel,ipcvsl)
-    else
-      xvsl = visls0(iscalt)
-    endif
-    srfbn = max(surfbn(ifac), epzero**2)
-    visct  = propce(iel,ipcvst)
-
-    numer = (cofafp(ifac) + cofbfp(ifac)*tcel(iel)) * distb(ifac)
-    denom = xvsl * tplusp(ifac)*tstarp(ifac)
-
-    if (abs(denom).gt.1e-30) then
-      bnussl(iloc) = numer / denom
-    else
-      bnussl(iloc) = 0.d0
-    endif
-
-  enddo
-
-  if (ircflu(ivar) .gt. 0) deallocate(tcel)
 
 else ! default if not computable
 
