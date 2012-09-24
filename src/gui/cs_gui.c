@@ -639,6 +639,33 @@ static char *cs_gui_variable_choice(const char *const name,
 }
 
 /*----------------------------------------------------------------------------
+ * Return the attribute choice associated to a child markup from a variable.
+ *
+ * parameters:
+ *   name          -->  name of the variable markup
+ *   child         -->  child markup
+ *----------------------------------------------------------------------------*/
+
+static char *cs_gui_model_variable_choice(const char *const name,
+                                          const char *const child)
+{
+  char *path = NULL;
+  char *choice;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_element(&path, "variable");
+  cs_xpath_add_test_attribute(&path, "label", name);
+  cs_xpath_add_element(&path, child);
+  cs_xpath_add_attribute(&path, "choice");
+
+  choice = cs_gui_get_attribute_value(path);
+
+  BFT_FREE(path);
+
+  return choice;
+}
+
+/*----------------------------------------------------------------------------
  * Get the text value associated to a child markup from a scalar.
  *
  * parameters:
@@ -714,7 +741,7 @@ cs_gui_model_scalar_value(const   char *const model,
   cs_xpath_add_element(&path, "thermophysical_models");
   cs_xpath_add_element(&path, model);
   cs_xpath_add_element(&path, "scalar");
-  cs_xpath_add_test_attribute(&path, "name", name);
+  cs_xpath_add_test_attribute(&path, "label", name);
   cs_xpath_add_element(&path, keyword);
   cs_xpath_add_function_text(&path);
 
@@ -746,7 +773,7 @@ cs_gui_model_scalar_output_status(const char *const model,
   cs_xpath_add_element(&path, "thermophysical_models");
   cs_xpath_add_element(&path, model);
   cs_xpath_add_element(&path, "scalar");
-  cs_xpath_add_test_attribute(&path, "name", name);
+  cs_xpath_add_test_attribute(&path, "label", name);
   cs_xpath_add_element(&path, child);
 
   _attribute_value(path, child, keyword);
@@ -2571,7 +2598,7 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
 
       imgr[jj] = 0;
 
-      algo_choice = cs_gui_variable_choice(vars->label[j], "solver_choice");
+      algo_choice = cs_gui_model_variable_choice(vars->label[j], "solver_choice");
       if (cs_gui_strcmp(algo_choice, "conjugate_gradient"))
         iresol[jj] = 0;
       else if (cs_gui_strcmp(algo_choice, "jacobi"))

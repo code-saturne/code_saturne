@@ -113,6 +113,34 @@ _scalar_number(const char* model)
 }
 
 /*-----------------------------------------------------------------------------
+ * Return the label or the name from a specific physics scalar.
+ *
+ * parameters:
+ *   physics              -->  keyword: specific physic model required
+ *   kw                   -->  keyword: name of scalar
+ *----------------------------------------------------------------------------*/
+
+static char *_scalar_name_label(const char *physics, const char *kw)
+{
+  char *path = NULL;
+  char *str  = NULL;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_elements(&path, 3,
+                        "thermophysical_models",
+                        physics,
+                        "scalar");
+  cs_xpath_add_test_attribute(&path, "name", kw);
+  cs_xpath_add_attribute(&path, "label");
+
+  str = cs_gui_get_attribute_value(path);
+
+  BFT_FREE(path);
+
+  return str;
+}
+
+/*-----------------------------------------------------------------------------
  * Return an integer for class number.
  *
  * parameters:
@@ -2098,6 +2126,7 @@ void CS_PROCF (uicosc, UICOSC) (const int *const ippmod,
                                 const int *const icoyfp)
 {
   cs_var_t  *vars = cs_glob_var;
+  char *label = NULL;
 
   if (vars->nscaus > 0) {
     BFT_REALLOC(vars->label, vars->nscapp + vars->nscaus, char*);
@@ -2106,54 +2135,78 @@ void CS_PROCF (uicosc, UICOSC) (const int *const ippmod,
   }
   //   model D3P
   if (ippmod[*icod3p-1] >=0) {
-    BFT_MALLOC(vars->label[*ifm -1], strlen("Fra_MEL")+1, char);
-    strcpy(vars->label[*ifm -1], "Fra_MEL");
+    label = _scalar_name_label("gas_combustion", "Fra_MEL");
+    BFT_MALLOC(vars->label[*ifm -1], strlen(label)+1, char);
+    strcpy(vars->label[*ifm -1], label);
+    BFT_FREE(label);
 
-    BFT_MALLOC(vars->label[*ifp2m -1], strlen("Var_FMe")+1, char);
-    strcpy(vars->label[*ifp2m -1], "Var_FMe");
+    label = _scalar_name_label("gas_combustion", "Var_FMe");
+    BFT_MALLOC(vars->label[*ifp2m -1], strlen(label)+1, char);
+    strcpy(vars->label[*ifp2m -1], label);
+    BFT_FREE(label);
 
     if (ippmod[*icod3p-1] == 1 ) {
-      BFT_MALLOC(vars->label[*ihm -1], strlen("Enthalpy")+1, char);
-      strcpy(vars->label[*ihm -1], "Enthalpy");
+      label = _scalar_name_label("gas_combustion", "Enthalpy");
+      BFT_MALLOC(vars->label[*ihm -1], strlen(label)+1, char);
+      strcpy(vars->label[*ihm -1], label);
+      BFT_FREE(label);
     }
   }
   // model EBU
   if (ippmod[*icoebu-1] >= 0) {
-    BFT_MALLOC(vars->label[*iygfm -1], strlen("Fra_GF")+1, char);
-    strcpy(vars->label[*iygfm -1], "Fra_GF");
+    label = _scalar_name_label("gas_combustion", "Fra_GF");
+    BFT_MALLOC(vars->label[*iygfm -1], strlen(label)+1, char);
+    strcpy(vars->label[*iygfm -1], label);
+    BFT_FREE(label);
 
     if (ippmod[*icoebu-1] >= 2) {
-      BFT_MALLOC(vars->label[*ifm -1], strlen("Fra_MEL")+1, char);
-      strcpy(vars->label[*ifm -1], "Fra_MEL");
+      label = _scalar_name_label("gas_combustion", "Fra_MEL");
+      BFT_MALLOC(vars->label[*ifm -1], strlen(label)+1, char);
+      strcpy(vars->label[*ifm -1], label);
+      BFT_FREE(label);
     }
 
     if (ippmod[*icoebu-1] == 1 || ippmod[*icoebu-1] == 3) {
-      BFT_MALLOC(vars->label[*ihm -1], strlen("Enthalpy")+1, char);
-      strcpy(vars->label[*ihm -1], "Enthalpy");
+      label = _scalar_name_label("gas_combustion", "Enthalpy");
+      BFT_MALLOC(vars->label[*ihm -1], strlen(label)+1, char);
+      strcpy(vars->label[*ihm -1], label);
+      BFT_FREE(label);
     }
   }
   // model LWC
   if (ippmod[*icolwc-1] >= 0) {
-    BFT_MALLOC(vars->label[*ifm -1], strlen("Fra_MEL")+1, char);
-    strcpy(vars->label[*ifm -1], "Fra_MEL");
+    label = _scalar_name_label("gas_combustion", "Fra_MEL");
+    BFT_MALLOC(vars->label[*ifm -1], strlen(label)+1, char);
+    strcpy(vars->label[*ifm -1], label);
+    BFT_FREE(label);
 
-    BFT_MALLOC(vars->label[*ifp2m -1], strlen("Var_FMe")+1, char);
-    strcpy(vars->label[*ifp2m -1], "Var_FMe");
+    label = _scalar_name_label("gas_combustion", "Var_FMe");
+    BFT_MALLOC(vars->label[*ifp2m -1], strlen(label)+1, char);
+    strcpy(vars->label[*ifp2m -1], label);
+    BFT_FREE(label);
 
-    BFT_MALLOC(vars->label[*iyfm -1], strlen("Fra_Mas")+1, char);
-    strcpy(vars->label[*iyfm -1], "Fra_Mas");
+    label = _scalar_name_label("gas_combustion", "Fra_Mas");
+    BFT_MALLOC(vars->label[*iyfm -1], strlen(label)+1, char);
+    strcpy(vars->label[*iyfm -1], label);
+    BFT_FREE(label);
 
-    BFT_MALLOC(vars->label[*iyfp2m -1], strlen("Var_FMa")+1, char);
-    strcpy(vars->label[*iyfp2m -1], "Var_FMa");
+    label = _scalar_name_label("gas_combustion", "Var_FMa");
+    BFT_MALLOC(vars->label[*iyfp2m -1], strlen(label)+1, char);
+    strcpy(vars->label[*iyfp2m -1], label);
+    BFT_FREE(label);
   }
 
   if (ippmod[*icolwc-1] >= 2) {
-    BFT_MALLOC(vars->label[*icoyfp -1], strlen("COYF_PP4")+1, char);
-    strcpy(vars->label[*icoyfp -1], "COYF_PP4");
+    label = _scalar_name_label("gas_combustion", "COYF_PP4");
+    BFT_MALLOC(vars->label[*icoyfp -1], strlen(label)+1, char);
+    strcpy(vars->label[*icoyfp -1], label);
+    BFT_FREE(label);
   }
   if (ippmod[*icolwc-1] == 1 || ippmod[*icolwc-1] == 3 || ippmod[*icolwc-1] == 5) {
-    BFT_MALLOC(vars->label[*ihm -1], strlen("Enthalpy")+1, char);
-    strcpy(vars->label[*ihm -1], "Enthalpy");
+    label = _scalar_name_label("gas_combustion", "Enthalpy");
+    BFT_MALLOC(vars->label[*ihm -1], strlen(label)+1, char);
+    strcpy(vars->label[*ihm -1], label);
+    BFT_FREE(label);
   }
 
 
@@ -2202,6 +2255,7 @@ void CS_PROCF (uicpsc, UICPSC) (const int *const ncharb,
   int i;
   char *name = NULL;
   char *snumsca = NULL;
+  char *label = NULL;
 
   cs_var_t  *vars = cs_glob_var;
 
@@ -2212,168 +2266,192 @@ void CS_PROCF (uicpsc, UICPSC) (const int *const ncharb,
   }
 
   /* IHM */
-  BFT_MALLOC(vars->label[*ihm -1], strlen("Enthalpy")+1, char);
-  strcpy(vars->label[*ihm -1], "Enthalpy");
+  label = _scalar_name_label("solid_fuels", "Enthalpy");
+  BFT_MALLOC(vars->label[*ihm -1], strlen(label)+1, char);
+  strcpy(vars->label[*ihm -1], label);
+  BFT_FREE(label);
 
   /* Loop on classes IH2, INP, IXCH, IXCK */
   BFT_MALLOC(snumsca, 1 + 2, char);
 
   /* IH2 */
   BFT_MALLOC(name, strlen("ENT_CP")+1 + 2, char);
-  strcpy(name, "ENT_CP");
   for (i = 0; i < *nclass; i++) {
+    strcpy(name, "ENT_CP");
     sprintf(snumsca,"%2.2i", i+1);
     strcat(name, snumsca);
+    label = _scalar_name_label("solid_fuels", name);
 
-    BFT_MALLOC(vars->label[ih2[i] -1], strlen(name)+1, char);
-    strcpy(vars->label[ih2[i] -1], name);
-
-    strcpy(name, "ENT_CP");
+    BFT_MALLOC(vars->label[ih2[i] -1], strlen(label)+1, char);
+    strcpy(vars->label[ih2[i] -1], label);
+    BFT_FREE(label);
   }
 
   /* INP */
   BFT_REALLOC(name, strlen("NP_CP") + 1 + 2, char);
-  strcpy(name, "NP_CP");
   for (i = 0; i < *nclass; i++) {
+    strcpy(name, "NP_CP");
     sprintf(snumsca,"%2.2i", i+1);
     strcat(name, snumsca);
 
-    BFT_MALLOC(vars->label[inp[i] -1], strlen(name)+1, char);
-    strcpy(vars->label[inp[i] -1], name);
-
-    strcpy(name, "NP_CP");
+    label = _scalar_name_label("solid_fuels", name);
+    BFT_MALLOC(vars->label[inp[i] -1], strlen(label)+1, char);
+    strcpy(vars->label[inp[i] -1], label);
+    BFT_FREE(label);
   }
 
   /* IXCH */
   BFT_REALLOC(name, strlen("XCH_CP")+1 + 2, char);
-  strcpy(name, "XCH_CP");
   for (i = 0; i < *nclass; i++) {
+    strcpy(name, "XCH_CP");
     sprintf(snumsca,"%2.2i", i+1);
     strcat(name, snumsca);
 
-    BFT_MALLOC(vars->label[ixch[i] -1], strlen(name)+1, char);
-    strcpy(vars->label[ixch[i] -1], name);
-
-    strcpy(name, "XCH_CP");
+    label = _scalar_name_label("solid_fuels", name);
+    BFT_MALLOC(vars->label[ixch[i] -1], strlen(label)+1, char);
+    strcpy(vars->label[ixch[i] -1], label);
+    BFT_FREE(label);
   }
 
   /* IXCK */
   BFT_REALLOC(name, strlen("XCK_CP")+1 + 2, char);
-  strcpy(name, "XCK_CP");
   for (i = 0; i < *nclass; i++) {
+    strcpy(name, "XCK_CP");
     sprintf(snumsca,"%2.2i", i+1);
     strcat(name, snumsca);
 
-    BFT_MALLOC(vars->label[ixck[i] -1], strlen(name)+1, char);
-    strcpy(vars->label[ixck[i] -1], name);
-
-    strcpy(name, "XCK_CP");
+    label = _scalar_name_label("solid_fuels", name);
+    BFT_MALLOC(vars->label[ixck[i] -1], strlen(label)+1, char);
+    strcpy(vars->label[ixck[i] -1], label);
+    BFT_FREE(label);
   }
 
   /* Loop on coals IFM1 IFM2 */
 
   BFT_REALLOC(name, strlen("Fr_MV1")+1 + 2, char);
-  strcpy(name, "Fr_MV1");
   for (i = 0; i < *ncharb; i++) {
+    strcpy(name, "Fr_MV1");
     sprintf(snumsca,"%2.2i",i+1);
     strcat(name, snumsca);
 
-    BFT_MALLOC(vars->label[if1m[i] -1], strlen(name)+1, char);
-    strcpy(vars->label[if1m[i] -1], name);
-
-    strcpy(name, "Fr_MV1");
+    label = _scalar_name_label("solid_fuels", name);
+    BFT_MALLOC(vars->label[if1m[i] -1], strlen(label)+1, char);
+    strcpy(vars->label[if1m[i] -1], label);
+    BFT_FREE(label);
   }
 
   BFT_REALLOC(name, strlen("Fr_MV2")+1 + 2, char);
-  strcpy(name, "Fr_MV2");
   for (i = 0; i < *ncharb; i++) {
+    strcpy(name, "Fr_MV2");
     sprintf(snumsca,"%2.2i",i+1);
     strcat(name, snumsca);
 
-    BFT_MALLOC(vars->label[if2m[i] -1], strlen(name)+1, char);
-    strcpy(vars->label[if2m[i] -1], name);
-
-    strcpy(name, "Fr_MV2");
+    label = _scalar_name_label("solid_fuels", name);
+    BFT_MALLOC(vars->label[if2m[i] -1], strlen(label)+1, char);
+    strcpy(vars->label[if2m[i] -1], label);
+    BFT_FREE(label);
   }
 
   /* IF7M */
-  BFT_MALLOC(vars->label[*if7m -1], strlen("Fr_HET_O2")+1, char);
-  strcpy(vars->label[*if7m -1], "Fr_HET_O2");
+  label = _scalar_name_label("solid_fuels", "Fr_HET_O2");
+  BFT_MALLOC(vars->label[*if7m -1], strlen(label)+1, char);
+  strcpy(vars->label[*if7m -1], label);
+  BFT_FREE(label);
 
   if (*ihtco2 == 1)
-    {
-      /* IF3MC2 */
-      BFT_MALLOC(vars->label[*if8m -1], strlen("Fr_HET_CO2")+1, char);
-      strcpy(vars->label[*if8m -1], "Fr_HET_CO2");
-    }
+  {
+    /* IF3MC2 */
+    label = _scalar_name_label("solid_fuels", "Fr_HET_CO2");
+    BFT_MALLOC(vars->label[*if8m -1], strlen(label)+1, char);
+    strcpy(vars->label[*if8m -1], label);
+    BFT_FREE(label);
+  }
 
   if (*ihth2o == 1)
-    {
-      /* IF3MC2 */
-      BFT_MALLOC(vars->label[*if9m -1], strlen("Fr_HET_H2O")+1, char);
-      strcpy(vars->label[*if9m -1], "Fr_HET_H2O");
-    }
+  {
+    /* IF3MC2 */
+    label = _scalar_name_label("solid_fuels", "Fr_HET_H2O");
+    BFT_MALLOC(vars->label[*if9m -1], strlen(label)+1, char);
+    strcpy(vars->label[*if9m -1],label );
+    BFT_FREE(label);
+  }
 
   /* IFVP2M */
-  BFT_MALLOC(vars->label[*ifvp2m -1], strlen("Var_F1F2")+1, char);
-  strcpy(vars->label[*ifvp2m -1], "Var_F1F2");
+  label = _scalar_name_label("solid_fuels", "Var_F1F2");
+  BFT_MALLOC(vars->label[*ifvp2m -1], strlen(label)+1, char);
+  strcpy(vars->label[*ifvp2m -1], label);
+  BFT_FREE(label);
 
   if (ippmod[*iccoal -1] == 1)
+  {
+    /* IXWT */
+    BFT_MALLOC(name, strlen("XWT_CP")+1 + 2, char);
+    for (i = 0; i < *nclass; i++)
     {
-      /* IXWT */
-      BFT_MALLOC(name, strlen("XWT_CP")+1 + 2, char);
       strcpy(name, "XWT_CP");
-      for (i = 0; i < *nclass; i++)
-        {
-          sprintf(snumsca,"%2.2i", i+1);
-          strcat(name, snumsca);
+      sprintf(snumsca,"%2.2i", i+1);
+      strcat(name, snumsca);
 
-          BFT_MALLOC(vars->label[ixwt[i] -1], strlen(name)+1, char);
-          strcpy(vars->label[ixwt[i] -1], name);
-          strcpy(name, "XWT_CP");
-        }
-
-      /* IF6M */
-      BFT_MALLOC(vars->label[*if6m -1], strlen("FR_H20")+1, char);
-      strcpy(vars->label[*if6m -1], "FR_H20");
+      label = _scalar_name_label("solid_fuels", name);
+      BFT_MALLOC(vars->label[ixwt[i] -1], strlen(label)+1, char);
+      strcpy(vars->label[ixwt[i] -1], label);
+      BFT_FREE(label);
     }
 
+    /* IF6M */
+    label = _scalar_name_label("solid_fuels", "FR_H20");
+    BFT_MALLOC(vars->label[*if6m -1], strlen(label)+1, char);
+    strcpy(vars->label[*if6m -1], label);
+    BFT_FREE(label);
+  }
 
   if (*noxyd >= 2)
-    {
-      /* IF4M */
-      BFT_MALLOC(vars->label[*if4m -1], strlen("FR_OXYD2")+1, char);
-      strcpy(vars->label[*if4m -1], "FR_OXYD2");
-    }
+  {
+    /* IF4M */
+    label = _scalar_name_label("solid_fuels", "FR_OXYD2");
+    BFT_MALLOC(vars->label[*if4m -1], strlen(label)+1, char);
+    strcpy(vars->label[*if4m -1], label);
+    BFT_FREE(label);
+  }
 
   if (*noxyd == 3)
-    {
-      /* IF5M */
-      BFT_MALLOC(vars->label[*if5m -1], strlen("FR_OXYD3")+1, char);
-      strcpy(vars->label[*if5m -1], "FR_OXYD3");
-    }
+  {
+    /* IF5M */
+    label = _scalar_name_label("solid_fuels", "FR_OXYD3");
+    BFT_MALLOC(vars->label[*if5m -1], strlen(label)+1, char);
+    strcpy(vars->label[*if5m -1], label);
+    BFT_FREE(label);
+  }
 
   if (*ieqco2 == 1)
-    {
-      /* IYCO2 */
-      BFT_MALLOC(vars->label[*iyco2 -1], strlen("FR_CO2")+1, char);
-      strcpy(vars->label[*iyco2 -1], "FR_CO2");
-    }
+  {
+    /* IYCO2 */
+    label = _scalar_name_label("solid_fuels", "FR_CO2");
+    BFT_MALLOC(vars->label[*iyco2 -1], strlen(label)+1, char);
+    strcpy(vars->label[*iyco2 -1], label);
+    BFT_FREE(label);
+  }
 
   if (*ieqnox == 1)
-    {
-      /* FR_HCN */
-      BFT_MALLOC(vars->label[*iyhcn -1], strlen("FR_HCN")+1, char);
-      strcpy(vars->label[*iyhcn -1], "FR_HCN");
+  {
+    /* FR_HCN */
+    label = _scalar_name_label("solid_fuels", "FR_HCN");
+    BFT_MALLOC(vars->label[*iyhcn -1], strlen(label)+1, char);
+    strcpy(vars->label[*iyhcn -1], label);
+    BFT_FREE(label);
 
-      /* FR_NO */
-      BFT_MALLOC(vars->label[*iyno -1], strlen("FR_NO")+1, char);
-      strcpy(vars->label[*iyno -1], "FR_NO");
+    /* FR_NO */
+    label = _scalar_name_label("solid_fuels", "FR_NO");
+    BFT_MALLOC(vars->label[*iyno -1], strlen(label)+1, char);
+    strcpy(vars->label[*iyno -1], label);
+    BFT_FREE(label);
 
-      /* Enth_Ox */
-      BFT_MALLOC(vars->label[*ihox -1], strlen("Enth_Ox")+1, char);
-      strcpy(vars->label[*ihox -1], "Enth_Ox");
-    }
+    /* Enth_Ox */
+    label = _scalar_name_label("solid_fuels", "Enth_Ox");
+    BFT_MALLOC(vars->label[*ihox -1], strlen(label)+1, char);
+    strcpy(vars->label[*ihox -1], label);
+    BFT_FREE(label);
+  }
 
   BFT_FREE(name);
   BFT_FREE(snumsca);
@@ -2396,6 +2474,7 @@ void CS_PROCF (uicfsc, UICFSC) (const int *const irho,
                                 const int *const itempk)
 {
   cs_var_t *vars = cs_glob_var;
+  char *label = NULL;
 
   if (vars->nscaus > 0) {
     BFT_REALLOC(vars->label, vars->nscapp + vars->nscaus, char*);
@@ -2403,12 +2482,20 @@ void CS_PROCF (uicfsc, UICFSC) (const int *const irho,
     BFT_MALLOC(vars->label, vars->nscapp, char*);
   }
 
-  BFT_MALLOC(vars->label[*irho -1], strlen("Rho")+1, char);
-  strcpy(vars->label[*irho -1], "Rho");
-  BFT_MALLOC(vars->label[*ienerg -1], strlen("EnergieT")+1, char);
-  strcpy(vars->label[*ienerg -1], "EnergieT");
-  BFT_MALLOC(vars->label[*itempk -1], strlen("TempK")+1, char);
-  strcpy(vars->label[*itempk -1], "TempK");
+  label = _scalar_name_label("compressible_model", "Rho");
+  BFT_MALLOC(vars->label[*irho -1], strlen(label)+1, char);
+  strcpy(vars->label[*irho -1], label);
+  BFT_FREE(label);
+
+  label = _scalar_name_label("compressible_model", "EnergieT");
+  BFT_MALLOC(vars->label[*ienerg -1], strlen(label)+1, char);
+  strcpy(vars->label[*ienerg -1], label);
+  BFT_FREE(label);
+
+  label = _scalar_name_label("compressible_model", "TempK");
+  BFT_MALLOC(vars->label[*itempk -1], strlen(label)+1, char);
+  strcpy(vars->label[*itempk -1], label);
+  BFT_FREE(label);
 
 #if _XML_DEBUG_
   bft_printf("==>UICPSC\n");
@@ -2584,39 +2671,41 @@ void CS_PROCF (uiatsc, UIATSC) (const int *const ippmod,
                                 const int *const intdrp)
 {
   cs_var_t  *vars = cs_glob_var;
+  char *label = NULL;
 
   if (vars->nscaus > 0)
-    {
       BFT_REALLOC(vars->label, vars->nscapp + vars->nscaus, char*);
-    }
   else
-    {
       BFT_MALLOC(vars->label, vars->nscapp, char*);
-    }
 
   if (ippmod[*iatmos -1] == 1)
-    {
+  {
       /* itempp */
-      BFT_MALLOC(vars->label[*itempp -1],
-                  strlen("potential_temperature")+1, char);
-      strcpy(vars->label[*itempp -1], "potential_temperature");
-    }
+      label = _scalar_name_label("atmospheric_flows", "potential_temperature");
+      BFT_MALLOC(vars->label[*itempp -1], strlen(label)+1, char);
+      strcpy(vars->label[*itempp -1], label);
+      BFT_FREE(label);
+  }
   else if (ippmod[*iatmos -1] == 2)
-    {
+  {
       /* itempl */
-      BFT_MALLOC(vars->label[*itempl -1],
-                 strlen("liquid_potential_temperature")+1, char);
-      strcpy(vars->label[*itempl -1], "liquid_potential_temperature");
+      label = _scalar_name_label("atmospheric_flows", "liquid_potential_temperature");
+      BFT_MALLOC(vars->label[*itempl -1], strlen(label)+1, char);
+      strcpy(vars->label[*itempl -1], label);
+      BFT_FREE(label);
 
       /* itotwt */
-      BFT_MALLOC(vars->label[*itotwt -1], strlen("total_water")+1, char);
-      strcpy(vars->label[*itotwt -1], "total_water");
+      label = _scalar_name_label("atmospheric_flows", "total_water");
+      BFT_MALLOC(vars->label[*itotwt -1], strlen(label)+1, char);
+      strcpy(vars->label[*itotwt -1], label);
+      BFT_FREE(label);
 
       /* intdrp */
-      BFT_MALLOC(vars->label[*intdrp -1],
-                 strlen("number_of_droplets")+1, char);
-      strcpy(vars->label[*intdrp -1], "number_of_droplets");
-    }
+      label = _scalar_name_label("atmospheric_flows", "number_of_droplets");
+      BFT_MALLOC(vars->label[*intdrp -1], strlen(label)+1, char);
+      strcpy(vars->label[*intdrp -1], label);
+      BFT_FREE(label);
+  }
 #if _XML_DEBUG_
   {
     int i;
