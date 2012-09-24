@@ -871,7 +871,7 @@ itycor = -999
 
 ! --- Turbulent flux for a scalar
 !     The turbulence model must be chosen by the user
-iturbt = -999
+iturbt = 0
 
 ! --- Viscosite secondaire
 
