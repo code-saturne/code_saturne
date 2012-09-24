@@ -107,7 +107,7 @@ _init_join_writer(void)
                         "postprocessing",
                         cs_post_get_default_format(),
                         cs_post_get_default_format_options(),
-                        -1, /* No time dependency here */
+                        FVM_WRITER_FIXED_MESH,
                         false,
                         -1,
                         -1.0);
