@@ -395,7 +395,7 @@
           <item>
            <widget class="QLabel" name="labelOxydant">
             <property name="toolTip">
-             <string>Code_Saturne key word: T0</string>
+             <string>Code_Saturne key word: Tinoxy</string>
             </property>
             <property name="text">
              <string>Oxydant</string>
@@ -405,7 +405,7 @@
           <item>
            <widget class="QLineEdit" name="lineEditOxydant">
             <property name="toolTip">
-             <string>Code_Saturne key word: T0</string>
+             <string>Code_Saturne key word: Tinoxy</string>
             </property>
            </widget>
           </item>
@@ -429,7 +429,7 @@
           <item>
            <widget class="QLabel" name="labelTFuel">
             <property name="toolTip">
-             <string>Code_Saturne key word: T0</string>
+             <string>Code_Saturne key word: Tinfue</string>
             </property>
             <property name="text">
              <string>Fuel</string>
@@ -452,7 +452,7 @@
           <item>
            <widget class="QLineEdit" name="lineEditFuel">
             <property name="toolTip">
-             <string>Code_Saturne key word: T0</string>
+             <string>Code_Saturne key word: Tinfue</string>
             </property>
            </widget>
           </item>
