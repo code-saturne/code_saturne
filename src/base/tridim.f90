@@ -194,15 +194,15 @@ if (nbccou .ge. 1) then
   do iscal = 1, nscal
     if(icpsyr(iscal).eq.1) then
       isvhb = iscal
-      isvtb = iscal
     endif
   enddo
 endif
 
 if ((nfpt1t.gt.0).and.(nbccou.le.0)) then
   isvhb = iscalt
-  isvtb = iscalt
 endif
+
+if (iscalt.gt.0) isvtb = iscalt
 
 !     Si la distance a la paroi doit etre mise a jour, on l'initialise a GRAND
 !     des maintenant (pour le premier passage dans phyvar en k-omega)
