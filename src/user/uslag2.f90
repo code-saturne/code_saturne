@@ -138,6 +138,9 @@ integer          ilelt, nlelt
 
 double precision pis6 , mp0 , temp
 
+integer, dimension(ndlaim) :: iczpar
+double precision, dimension(ndlagm) :: rczpar
+
 integer, allocatable, dimension(:) :: lstelt
 
 !===============================================================================
@@ -203,7 +206,7 @@ pis6 = pi / 6.d0
 !     that, we fill the ifrlag(nfabor) array which gives for every boundary
 !     face the number of the zone to which it belongs ifrlag(ifac)
 !
-!     Be careful, all the boundary faces must have been affected.
+!     Be careful, all the boundary faces must have been assigned.
 !
 !     The number of the zones (thus the values of ifrlag(ifac)) is arbitrarily
 !     chosen by the user, but must be a positive integer and inferior or equal
@@ -307,7 +310,7 @@ iusncl(izone) = nbclas
 
 
 ! --> For every class associated with a zone,
-!     we give the followong information.
+!     we give the following information.
 
 
 !     iusncl number of classes per zone
@@ -322,8 +325,8 @@ iusncl(izone) = nbclas
 !     = iencrl -> fouling (coal only iphyla = 2)
 
 
-!     Array iuslag :
-!     ================
+!     Array iczpar:
+!     ============
 !        ijnbp : number of particles per class and per zone
 !        ijfre : injection frequency. If ijfre = 0, then the injection
 !                occurs only at the first absolute iteration.
@@ -332,22 +335,22 @@ iusncl(izone) = nbclas
 !        ijuvw : type of condition on the velocity
 !                  = -1 imposed flow velocity
 !                  =  0 imposed velocity along the normal direction of the
-!                      boundary face, with norm equal to RUSLAG(ICLAS,IZONE,IUNO)
-!                  =  1 imposed velocity: we prescribe   RUSLAG(ICLAS,IZONE,IUPT)
-!                                                        RUSLAG(ICLAS,IZONE,IVPT)
-!                                                        RUSLAG(ICLAS,IZONE,IWPT)
+!                      boundary face, with norm equal to rczpar(iuno)
+!                  =  1 imposed velocity: we prescribe   rczpar(iupt)
+!                                                        rczpar(ivpt)
+!                                                        rczpar(iwpt)
 !                  =  2 user-defined profile
 !        ijprtp : type of temperature condition
-!                  =  1 imposed temperature: we prescribe RUSLAG(ICLAS,IZONE,ITPT)
+!                  =  1 imposed temperature: we prescribe rczpar(itpt)
 !                  =  2 user-defined profile
 !        ijprdp : type of diameter condition
-!                  =  1 imposed diameter: we prescribe  RUSLAG(ICLAS,IZONE,IDPT)
-!                                                       RUSLAG(ICLAS,IZONE,IVDPT)
+!                  =  1 imposed diameter: we prescribe  rczpar(idpt)
+!                                                       rczpar(ivdpt)
 !                  =  2 user-defined profile
 !        inuchl : number of the coal of the particle (only if iphyla = 2)
 
-!     Array ruslag :
-!     ===============
+!     Array rczpar:
+!     ============
 !        iuno  : Norm of the velocity (m/s)
 !        iupt  : Velocity along the X axis, for each class and for each zone (m/s)
 !        ivpt  : Velocity along the Y axis, for each class and for each zone (m/s)
@@ -387,50 +390,58 @@ iusncl(izone) = nbclas
 !        IDEBT  : mass flow rate
 
 
-izone     = 1
-nbclas    = iusncl(izone)
-iusclb (izone)         =  ientrl
+izone         = 1
+nbclas        = iusncl(izone)
+iusclb(izone) =  ientrl
+
 do iclas  = 1, nbclas
 
-  iuslag (iclas,izone,ijnbp) = 10
-  iuslag (iclas,izone,ijfre) = 2
+  ! Ensure defaults are set
+
+  call lagr_init_zone_class_param(iczpar, rczpar)
+  !==============================
+
+  ! Now define parameters for this class and zone
+
+  iczpar(ijnbp) = 10
+  iczpar(ijfre) = 2
 
   if (nbclst.gt.0) then
-    iuslag(iclas,izone,iclst) = 1
+    iczpar(iclst) = 1
   endif
 
-  iuslag (iclas,izone,ijuvw) = -1
-  ruslag (iclas,izone,iupt)  = 1.1d0
-  ruslag (iclas,izone,ivpt)  = 0.0d0
-  ruslag (iclas,izone,iwpt)  = 0.0d0
-  iuslag (iclas,izone,ijprpd)= 1
-  ruslag (iclas,izone,ipoit) = 1.d0
-  ruslag (iclas,izone,idebt) = 0.d0
+  iczpar(ijuvw) = -1
+  rczpar(iupt)  = 1.1d0
+  rczpar(ivpt)  = 0.0d0
+  rczpar(iwpt)  = 0.0d0
+  iczpar(ijprpd)= 1
+  rczpar(ipoit) = 1.d0
+  rczpar(idebt) = 0.d0
 
-!    if the physics is " simple"
+  ! if the physics is " simple"
 
-  if ( iphyla.eq.0 .or. iphyla.eq.1 ) then
+  if (iphyla.eq.0 .or. iphyla.eq.1) then
 
-!        Mean value and standard deviation of the diameter
+    ! Mean value and standard deviation of the diameter
 
-    iuslag (iclas,izone,ijprdp)= 1
-    ruslag (iclas,izone,idpt)  = 50.d-6
-    ruslag (iclas,izone,ivdpt) = 0.d0
+    iczpar(ijprdp)= 1
+    rczpar(idpt)  = 50.d-6
+    rczpar(ivdpt) = 0.d0
 
     ! Density
 
-    ruslag(iclas,izone,iropt) = 2500.d0
+    rczpar(iropt) = 2500.d0
 
-    if ( iphyla.eq.1 ) then
+    if (iphyla.eq.1) then
 
       ! Temperature and Cp
 
       if ( itpvar.eq.1 ) then
-        iuslag (iclas,izone,ijprtp) = 1
-        ruslag(iclas,izone,itpt)    = 20.d0
+        iczpar(ijprtp) = 1
+        rczpar(itpt)    = 20.d0
 
-        ruslag(iclas,izone,icpt)    = 1400.d0
-        ruslag(iclas,izone,iepsi)   = 0.7d0
+        rczpar(icpt)    = 1400.d0
+        rczpar(iepsi)   = 0.7d0
       endif
 
     endif
@@ -458,31 +469,35 @@ do iclas  = 1, nbclas
 
     ! Number of the coal
 
-    iuslag(iclas,izone,inuchl) = icha
+    iczpar(inuchl) = icha
 
     ! Temperature and Cp
 
-    ruslag(iclas,izone,ihpt) = temp
-    ruslag(iclas,izone,icpt) = cp2ch(icha)
+    rczpar(ihpt) = temp
+    rczpar(icpt) = cp2ch(icha)
 
     ! Mean value and standard deviation of the diameter
 
-    ruslag (iclas,izone,idpt)  = diam20(iclas)
-    ruslag (iclas,izone,ivdpt) = 0.d0
+    rczpar(idpt)  = diam20(iclas)
+    rczpar(ivdpt) = 0.d0
 
     ! Density
 
-    ruslag(iclas,izone,iropt) =  rho0ch(icha)
+    rczpar(iropt) = rho0ch(icha)
 
     ! Mass of reactive coal and
     ! mass of coke (null if the coal has never burnt)
 
-    mp0 = pis6 * ( ruslag(iclas,izone,idpt)**3 )                  &
-                 * ruslag(iclas,izone,iropt)
-    ruslag(iclas,izone,imcht) = mp0 * (1.d0-xashch(icha))
-    ruslag(iclas,izone,imckt) = 0.d0
+    mp0 = pis6 * (rczpar(idpt)**3) * rczpar(iropt)
+    rczpar(imcht) = mp0 * (1.d0-xashch(icha))
+    rczpar(imckt) = 0.d0
 
   endif
+
+  ! Complete definition of parameters for this class and zone
+
+  call lagr_define_zone_class_param(iclas, izone, iczpar, rczpar)
+  !================================
 
 enddo
 

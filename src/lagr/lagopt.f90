@@ -1027,21 +1027,6 @@ do ii = 1,nflagm
   iusmoy(ii) = 0
   deblag(ii) = 0
 enddo
-do i1 = 1,ndlaim
-  do i2 = 1,nflagm
-    do i3 = 1,nclagm
-      iuslag(i3,i2,i1) = 0
-    enddo
-  enddo
-enddo
-do i1 = 1,ndlagm
-  do i2 = 1,nflagm
-    do i3 = 1,nclagm
-      ruslag(i3,i2,i1) = 0
-    enddo
-  enddo
-enddo
-
 
 !     STATISTIQUES VOLUMIQUES
 

@@ -71,18 +71,7 @@ BEGIN_C_DECLS
 
 /*
   rcodcl[ k * dim1 *dim2 + j *dim1 + i]
-  iuslag (iclas,izone,ijnbp)
-  iuslag[ijnbp][izone][iclas]
-  iuslag[ijnbp*nclagm*nflagm + izone*nclagm + iclas]
-  iuslag[ijnbp*nclagm*nflagm + izone*nclagm + iclas]
-
-  F77: IUSLAG(ICLAS, IZONE, I)
-  C  : &iuslag[i][izone][iclas] = &iuslag[ i*(*nclagm)*(*nflagm) + izone*(*nclagm) + iclas]
 */
-
-/* simplified access for fortran arrays */
-#define IUSLAG(I_,J_,K_) (*(iuslag +I_*(*nclagm)*(*nflagm) +J_*(*nclagm) +K_))
-#define RUSLAG(I_,J_,K_) (*(ruslag +I_*(*nclagm)*(*nflagm) +J_*(*nclagm) +K_))
 
 /*============================================================================
  * Local Structure Definitions
@@ -1327,20 +1316,14 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
  *
  * integer          nfabor  -->  number of boundary faces
  * integer          nozppm  -->  max number of boundary conditions zone
- * integer          nclagm  -->  max number of classes
- * integer          nflagm  -->  max number of boundaries
  * integer          iphyla  -->  physica model associated to the particles
  * integer          iusncl  <--  array for particles class(es) number
  * integer          iusclb  <--  array for particles boundary conditions
- * integer          iuslag  <--  array for integer variables
- * double precision ruslag  <--  array for real variables
  *----------------------------------------------------------------------------*/
 
 
 void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
                                 const int *const nozppm,
-                                const int *const nclagm,
-                                const int *const nflagm,
                                 const int *const nbclst,
                                 const int *const ientrl,
                                 const int *const isortl,
@@ -1380,9 +1363,7 @@ void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
                                 int     xashch[],
                                 int     ifrlag[],
                                 int     iusncl[],
-                                int     iusclb[],
-                                int     iuslag[],
-                                double  ruslag[])
+                                int     iusclb[])
 {
   int izone, zones;
   int iclas;
@@ -1393,7 +1374,14 @@ void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
   char *choice;
   int *faces_list = NULL;
 
+  cs_int_t  i_cz_params[20];  /* size: current ndlaim (=10) + margin */
+  cs_real_t r_cz_params[100]; /* size: current ndlagm (=50) + margin */
+
   zones = cs_gui_boundary_zones_number();
+
+#if _XML_DEBUG_
+  bft_printf("==>UILAG2\n");
+#endif
 
   /* First iteration only: memory allocation */
 
@@ -1401,7 +1389,6 @@ void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
     if (boundaries == NULL)
       _init_boundaries(nfabor, nozppm);
   */
-
 
   for (izone=0; izone < zones; izone++) {
 
@@ -1426,136 +1413,8 @@ void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
 
     if (interaction != NULL) {
 
-      if (cs_gui_strcmp(interaction, "inlet")) {
-
+      if (cs_gui_strcmp(interaction, "inlet"))
         iusclb[izone] = *ientrl;
-        strcpy(path1, path2);
-        cs_xpath_add_element(&path1, "class");
-        iusncl[izone] = cs_gui_get_nb_element(path1);
-        strcpy(path1, path2);
-
-        for (iclas=0; iclas < iusncl[izone]; iclas++) {
-
-          sprintf(sclass, "class[%i]", iclas+1);
-          BFT_REALLOC(path2, 20+strlen(boundaries->nature[izone])+10+strlen(boundaries->label[izone])+13+strlen(sclass)+1, char);
-          strcpy(path2, "");
-          sprintf(path2,
-                  "boundary_conditions/%s[@label='%s']/particles/%s",
-                  boundaries->nature[izone],
-                  boundaries->label[izone],
-                  sclass);
-
-          _get_int(&IUSLAG((*ijnbp -1), izone, iclas), 2, path2, "number");
-          _get_int(&IUSLAG((*ijfre -1), izone, iclas), 2, path2, "frequency");
-          _get_int(&IUSLAG((*iclst -1), izone, iclas), 2, path2, "statistical_groups");
-
-          /* velocity */
-
-          choice = _get_attr("choice", 2, path2, "velocity");
-
-          if (cs_gui_strcmp(choice, "fluid"))
-            /* iuslag[3*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas] = -1; */
-            IUSLAG((*ijuvw -1), izone, iclas) = -1;
-
-          else if (cs_gui_strcmp(choice, "norm")) {
-            IUSLAG((*ijuvw -1), izone, iclas) = 0;
-            /* _get_double(&ruslag[1*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 3, path2, "velocity", "norm"); */
-            _get_double(&RUSLAG((*iuno -1), izone, iclas), 3, path2, "velocity", "norm");
-          }
-          else if (cs_gui_strcmp(choice, "components")) {
-            /* _get_double(&ruslag[1*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 3, path2, "velocity", "velocity_x"); */
-            /*_get_double(&ruslag[2*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 3, path2, "velocity", "velocity_y"); */
-            /* _get_double(&ruslag[3*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 3, path2, "velocity", "velocity_z"); */
-            IUSLAG((*ijuvw -1), izone, iclas) = 1;
-            _get_double(&RUSLAG((*iupt -1), izone, iclas), 3, path2, "velocity", "velocity_x");
-            _get_double(&RUSLAG((*ivpt -1), izone, iclas), 3, path2, "velocity", "velocity_y");
-            _get_double(&RUSLAG((*iwpt -1), izone, iclas), 3, path2, "velocity", "velocity_z");
-          }
-          else if (cs_gui_strcmp(choice, "subroutine"))
-            IUSLAG((*ijuvw -1), izone, iclas) = 2;
-
-          /* statistical_weight, mass_flow_rate*/
-
-          choice = _get_attr("choice", 2, path2, "statistical_weight");
-
-          if (cs_gui_strcmp(choice, "prescribed")) {
-            /* iuslag[5*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas] = 1; */
-            /* _get_double(&ruslag[10*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "statistical_weight"); */
-            IUSLAG((*ijprpd -1), izone, iclas) = 1;
-            _get_double(&RUSLAG((*ipoit -1), izone, iclas), 2, path2, "statistical_weight");
-            RUSLAG((*idebt -1), izone, iclas) = 0;
-          }
-          else if (cs_gui_strcmp(choice, "rate")) {
-            /* iuslag[5*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas] = 1; */
-            /* _get_double(&ruslag[11*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "mass_flow_rate"); */
-            IUSLAG((*ijprpd -1), izone, iclas) = 1;
-            _get_double(&RUSLAG((*idebt -1), izone, iclas), 2, path2, "mass_flow_rate");
-            RUSLAG((*ipoit -1), izone, iclas) = 1;
-          }
-          else if (cs_gui_strcmp(choice, "subroutine")) {
-            /* iuslag[5*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas] = 2; */
-            /* _get_double(&ruslag[10*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "statistical_weight"); */
-            IUSLAG((*ijprpd -1), izone, iclas) = 2;
-            _get_double(&RUSLAG((*ipoit -1), izone, iclas), 2, path2, "statistical_weight");
-            RUSLAG((*idebt -1), izone, iclas) = 0;
-          }
-
-          /* diameter */
-
-          choice = _get_attr("choice", 2, path2, "diameter");
-
-          if (cs_gui_strcmp(choice, "prescribed")) {
-            /* iuslag[5*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas] = 1; */
-            /* _get_double(&ruslag[5*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "diameter"); */
-            /* _get_double(&ruslag[6*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "diameter_standard_deviation"); */
-            IUSLAG((*ijprdp -1), izone, iclas) = 1;
-            _get_double(&RUSLAG((*idpt -1), izone, iclas), 2, path2, "diameter");
-            _get_double(&RUSLAG((*ivdpt -1), izone, iclas), 2, path2, "diameter_standard_deviation");
-
-          }
-          else if (cs_gui_strcmp(choice, "subroutine"))
-            IUSLAG((*ijprdp -1), izone, iclas) = 2;
-
-          /* density */
-
-          /* _get_double(&ruslag[7*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "density"); */
-          _get_double(&RUSLAG((*iropt -1), izone, iclas), 2, path2, "density");
-
-          if (*iphyla == 1) {
-
-            /* temperature, specific_heat, emissivity */
-
-            choice = _get_attr("choice", 2, path2, "temperature");
-
-            if (cs_gui_strcmp(choice, "prescribed")) {
-              /* iuslag[4*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas] = 1; */
-              /* _get_double(&ruslag[4*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "temperature"); */
-              IUSLAG((*ijprtp -1), izone, iclas) = 1;
-              _get_double(&RUSLAG((*itpt -1), izone, iclas), 2, path2, "temperature");
-            }
-            else if (cs_gui_strcmp(choice, "subroutine"))
-              IUSLAG((*ijprtp -1), izone, iclas) = 2;
-
-            /* _get_double(&ruslag[8*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "specific_heat"); */
-            /* _get_double(&ruslag[9*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "emissivity"); */
-            _get_double(&RUSLAG((*icpt -1), izone, iclas), 2, path2, "specific_heat");
-            _get_double(&RUSLAG((*iepsi -1), izone, iclas), 2, path2, "emissivity");
-          }
-
-          /* coal */
-
-          if (*iphyla == 2) {
-            /* _get_int(&iuslag[6*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "coal_number"); */
-            /* _get_double(&ruslag[12*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "coal_temperature"); */
-            /* _get_double(&ruslag[13*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "raw_coal_mass_fraction"); */
-            /* _get_double(&ruslag[14*(*nclagm)*(*nflagm)+izone*(*nclagm)+iclas], 2, path2, "char_mass_fraction"); */
-            _get_int(&IUSLAG((*inuchl -1), izone, iclas), 2, path2, "coal_number");
-            _get_double(&RUSLAG((*ihpt -1), izone, iclas), 2, path2, "coal_temperature");
-            _get_double(&RUSLAG((*imcht -1), izone, iclas), 2, path2, "raw_coal_mass_fraction");
-            _get_double(&RUSLAG((*imckt -1), izone, iclas), 2, path2, "char_mass_fraction");
-          }
-        }
-      }
 
       else if(cs_gui_strcmp(interaction, "outlet"))
         iusclb[izone] = *isortl;
@@ -1575,80 +1434,197 @@ void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
       else if(cs_gui_strcmp(interaction, "fouling") && (*iphyla == 0  || *iphyla == 1))
         iusclb[izone] = *idepfa;
 
-   }
-   BFT_FREE(path1);
-   BFT_FREE(path2);
-   BFT_FREE(faces_list);
- }
-
 #if _XML_DEBUG_
-  bft_printf("==>UILAG2\n");
-  for (izone=0; izone<zones; izone++) {
-
-    bft_printf("--iusclb[%i] = %i has %i class(es) \n", izone, iusclb[izone], iusncl[izone]);
-
-    for (iclas=0; iclas < iusncl[izone]; iclas++) {
+      bft_printf("--iusclb[%i] = %i has %i class(es) \n", izone, iusclb[izone], iusncl[izone]);
 
       bft_printf("--zone %i : class number %i \n", izone, iusncl[izone]);
       bft_printf("--        : label    %s \n", boundaries->label[izone]);
       bft_printf("--        : nature   %s \n", boundaries->nature[izone]);
       bft_printf("--        : p_nature %i \n", iusclb[izone]);
-
-      if ( (iusclb[izone] == *ientrl) && (iusncl[izone] != 0) ) {
-        bft_printf("---number = %i \n", IUSLAG((*ijnbp -1), izone, iclas));
-        bft_printf("---frequency = %i \n", IUSLAG((*ijfre -1), izone, iclas));
-        bft_printf("---statistical_groups = %i \n", IUSLAG((*iclst -1), izone, iclas));
-
-        bft_printf("---velocity choice: %i  (-1: fluid, 0: norm, 1: components, 2: subroutine)\n", IUSLAG((*ijuvw -1), izone, iclas));
-
-        if (IUSLAG((*ijuvw -1), izone, iclas) == 0)
-
-          bft_printf("----norm = %f \n", RUSLAG((*iuno -1), izone, iclas));
-
-        else if (IUSLAG((*ijuvw -1), izone, iclas) == 1) {
-
-          bft_printf("----u = %f \n", RUSLAG((*iupt -1), izone, iclas));
-          bft_printf("----v = %f \n", RUSLAG((*ivpt -1), izone, iclas));
-          bft_printf("----w = %f \n", RUSLAG((*iwpt -1), izone, iclas));
-        }
-
-        bft_printf("---statistical weight choice: %i  (1: prescribed, 2: subroutine)\n", IUSLAG((*ijprpd -1), izone, iclas));
-
-        if (IUSLAG((*ijprpd -1), izone, iclas) == 1) {
-          bft_printf("----statistical weight = %f \n", RUSLAG((*ipoit -1), izone, iclas));
-          bft_printf("----mass flow rate = %f \n", RUSLAG((*idebt -1), izone, iclas));
-        }
-
-        bft_printf("---diameter choice = %i (1: prescribed, 2: subroutine)\n", IUSLAG((*ijprdp -1), izone, iclas));
-
-        if (IUSLAG((*ijprdp -1), izone, iclas) == 1) {
-          bft_printf("----diameter = %f \n", RUSLAG((*idpt -1), izone, iclas));
-          bft_printf("----standard deviation = %f \n", RUSLAG((*ivdpt -1), izone, iclas));
-        }
-
-        bft_printf("---density = %f \n", RUSLAG((*iropt -1), izone, iclas));
-
-        if (*iphyla == 1) {
-
-          bft_printf("---temperature choice = %i (1: prescribed, 2: subroutine)\n", IUSLAG((*ijprtp -1), izone, iclas));
-
-          if (IUSLAG((*ijprtp -1), izone, iclas) == 1)
-            bft_printf("----temperature = %f \n", RUSLAG((*itpt -1), izone, iclas));
-
-          bft_printf("---specific heat = %f \n", RUSLAG((*icpt -1), izone, iclas));
-          bft_printf("---emissivity = %f \n", RUSLAG((*iepsi -1), izone, iclas));
-        }
-
-        if (*iphyla == 2) {
-          bft_printf("---coal number = %i \n",            IUSLAG((*inuchl -1), izone, iclas));
-          bft_printf("---coal temperature = %f \n",       RUSLAG((*ihpt -1), izone, iclas));
-          bft_printf("---raw coal mass fraction = %f \n", RUSLAG((*imcht -1), izone, iclas));
-          bft_printf("---char mass fraction = %f \n",     RUSLAG((*imckt -1), izone, iclas));
-        }
-      }
-    }
-  }
 #endif
+
+      /* Additional info for inlet */
+
+      if (iusclb[izone] = *ientrl) {
+
+        strcpy(path1, path2);
+        cs_xpath_add_element(&path1, "class");
+        iusncl[izone] = cs_gui_get_nb_element(path1);
+        strcpy(path1, path2);
+
+        for (iclas=0; iclas < iusncl[izone]; iclas++) {
+
+          cs_lagr_init_zone_class_param(i_cz_params, r_cz_params);
+
+          sprintf(sclass, "class[%i]", iclas+1);
+          BFT_REALLOC(path2,
+                      ( 20+strlen(boundaries->nature[izone])
+                       +10+strlen(boundaries->label[izone])
+                       +13+strlen(sclass)+1),
+                      char);
+          strcpy(path2, "");
+          sprintf(path2,
+                  "boundary_conditions/%s[@label='%s']/particles/%s",
+                  boundaries->nature[izone],
+                  boundaries->label[izone],
+                  sclass);
+
+          _get_int(&(i_cz_params[*ijnbp -1]), 2, path2, "number");
+          _get_int(&(i_cz_params[*ijfre -1]), 2, path2, "frequency");
+          _get_int(&(i_cz_params[*iclst -1]), 2, path2, "statistical_groups");
+
+          /* velocity */
+
+          choice = _get_attr("choice", 2, path2, "velocity");
+
+          if (cs_gui_strcmp(choice, "fluid"))
+            i_cz_params[*ijuvw -1] = -1;
+
+          else if (cs_gui_strcmp(choice, "norm")) {
+            i_cz_params[*ijuvw -1] = 0;
+            _get_double(&(r_cz_params[*iuno -1]), 3, path2, "velocity", "norm");
+          }
+          else if (cs_gui_strcmp(choice, "components")) {
+            i_cz_params[*ijuvw -1] = 1;
+            _get_double(&(r_cz_params[*iupt -1]), 3, path2, "velocity", "velocity_x");
+            _get_double(&(r_cz_params[*ivpt -1]), 3, path2, "velocity", "velocity_y");
+            _get_double(&(r_cz_params[*iwpt -1]), 3, path2, "velocity", "velocity_z");
+          }
+          else if (cs_gui_strcmp(choice, "subroutine"))
+            i_cz_params[*ijuvw -1] = 2;
+
+          /* statistical_weight, mass_flow_rate*/
+
+          choice = _get_attr("choice", 2, path2, "statistical_weight");
+
+          if (cs_gui_strcmp(choice, "prescribed")) {
+            i_cz_params[*ijprpd -1] = 1;
+            _get_double(&(r_cz_params[*ipoit -1]), 2, path2, "statistical_weight");
+            r_cz_params[*idebt -1] = 0;
+          }
+          else if (cs_gui_strcmp(choice, "rate")) {
+            i_cz_params[*ijprpd -1] = 1;
+            _get_double(&(r_cz_params[*idebt -1]), 2, path2, "mass_flow_rate");
+            r_cz_params[*ipoit -1] = 1;
+          }
+          else if (cs_gui_strcmp(choice, "subroutine")) {
+            i_cz_params[*ijprpd -1] = 2;
+            _get_double(&(r_cz_params[*ipoit -1]), 2, path2, "statistical_weight");
+            r_cz_params[*idebt -1] = 0;
+          }
+
+          /* diameter */
+
+          choice = _get_attr("choice", 2, path2, "diameter");
+
+          if (cs_gui_strcmp(choice, "prescribed")) {
+            i_cz_params[*ijprdp -1] = 1;
+            _get_double(&(r_cz_params[*idpt -1]), 2, path2, "diameter");
+            _get_double(&(r_cz_params[*ivdpt -1]), 2, path2, "diameter_standard_deviation");
+          }
+          else if (cs_gui_strcmp(choice, "subroutine"))
+            i_cz_params[*ijprdp -1] = 2;
+
+          /* density */
+
+          _get_double(&(r_cz_params[*iropt -1]), 2, path2, "density");
+
+          if (*iphyla == 1) {
+
+            /* temperature, specific_heat, emissivity */
+
+            choice = _get_attr("choice", 2, path2, "temperature");
+
+            if (cs_gui_strcmp(choice, "prescribed")) {
+              i_cz_params[*ijprtp -1] = 1;
+              _get_double(&(r_cz_params[*itpt -1]), 2, path2, "temperature");
+            }
+            else if (cs_gui_strcmp(choice, "subroutine"))
+              i_cz_params[*ijprtp -1] = 2;
+
+            _get_double(&(r_cz_params[*icpt -1]), 2, path2, "specific_heat");
+            _get_double(&(r_cz_params[*iepsi -1]), 2, path2, "emissivity");
+          }
+
+          /* coal */
+
+          if (*iphyla == 2) {
+            _get_int(&(i_cz_params[*inuchl -1]), 2, path2, "coal_number");
+            _get_double(&(r_cz_params[*ihpt -1]), 2, path2, "coal_temperature");
+            _get_double(&(r_cz_params[*imcht -1]), 2, path2, "raw_coal_mass_fraction");
+            _get_double(&(r_cz_params[*imckt -1]), 2, path2, "char_mass_fraction");
+          }
+
+          /* Complete class paramaters definition */
+
+          cs_lagr_define_zone_class_param(iclas+1, izone+1,
+                                          i_cz_params, r_cz_params);
+
+#if _XML_DEBUG_
+
+          bft_printf("---number = %i \n", i_cz_params[*ijnbp -1]);
+          bft_printf("---frequency = %i \n", i_cz_params[*ijfre -1]);
+          bft_printf("---statistical_groups = %i \n", i_cz_params[*iclst -1]);
+
+          bft_printf("---velocity choice: %i  (-1: fluid, 0: norm, 1: components, 2: subroutine)\n", i_cz_params[*ijuvw -1]);
+
+          if (i_cz_params[*ijuvw -1] == 0)
+
+            bft_printf("----norm = %f \n", r_cz_params[*iuno -1]);
+
+          else if (i_cz_params[*ijuvw -1] == 1) {
+
+            bft_printf("----u = %f \n", r_cz_params[*iupt -1]);
+            bft_printf("----v = %f \n", r_cz_params[*ivpt -1]);
+            bft_printf("----w = %f \n", r_cz_params[*iwpt -1]);
+          }
+
+          bft_printf("---statistical weight choice: %i  (1: prescribed, 2: subroutine)\n", i_cz_params[*ijprpd -1]);
+
+          if (i_cz_params[*ijprpd -1] == 1) {
+            bft_printf("----statistical weight = %f \n", r_cz_params[*ipoit -1]);
+            bft_printf("----mass flow rate = %f \n", r_cz_params[*idebt -1]);
+          }
+
+          bft_printf("---diameter choice = %i (1: prescribed, 2: subroutine)\n", i_cz_params[*ijprdp -1]);
+
+          if (i_cz_params[*ijprdp -1] == 1) {
+            bft_printf("----diameter = %f \n", r_cz_params[*idpt -1]);
+            bft_printf("----standard deviation = %f \n", r_cz_params[*ivdpt -1]);
+          }
+
+          bft_printf("---density = %f \n", r_cz_params[*iropt -1]);
+
+          if (*iphyla == 1) {
+
+            bft_printf("---temperature choice = %i (1: prescribed, 2: subroutine)\n", i_cz_params[*ijprtp -1]);
+
+            if (i_cz_params[*ijprtp -1] == 1)
+              bft_printf("----temperature = %f \n", r_cz_params[*itpt -1]);
+
+            bft_printf("---specific heat = %f \n", r_cz_params[*icpt -1]);
+            bft_printf("---emissivity = %f \n", r_cz_params[*iepsi -1]);
+          }
+
+          if (*iphyla == 2) {
+            bft_printf("---coal number = %i \n",            i_cz_params[*inuchl -1]);
+            bft_printf("---coal temperature = %f \n",       r_cz_params[*ihpt -1]);
+            bft_printf("---raw coal mass fraction = %f \n", r_cz_params[*imcht -1]);
+            bft_printf("---char mass fraction = %f \n",     r_cz_params[*imckt -1]);
+          }
+
+#endif _XML_DEBUG_
+
+        } /* End of loop on class */
+
+      } /* End of test on inlet */
+
+    } /* End of loop on zones */
+
+    BFT_FREE(path1);
+    BFT_FREE(path2);
+    BFT_FREE(faces_list);
+  }
 }
 
 /*============================================================================

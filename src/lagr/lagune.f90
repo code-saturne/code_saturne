@@ -372,7 +372,6 @@ if ( ntcabs.eq.1 ) then
    itycel , icocel ,                                              &
    itypfb , itrifb , ifrlag , itepa  ,                            &
    dt     , rtp    , propce , propfa , propfb ,                   &
-   coefa  , coefb  ,                                              &
    ettp   , tepa   , vagaus , auxl   , w1     , w2     , w3     )
 
 else
@@ -386,7 +385,6 @@ else
    itycel , icocel ,                                              &
    itypfb , itrifb , ifrlag , itepa  ,                            &
    dt     , rtpa   , propce , propfa , propfb ,                   &
-   coefa  , coefb  ,                                              &
    ettp   , tepa   , vagaus , auxl   , w1     , w2     , w3     )
 endif
 
@@ -674,7 +672,7 @@ endif
   call getbdy                                                     &
   !==========
  ( nflagm , nfrlag , injcon , ilflag , iusncl ,                   &
-   iusclb , iusmoy , iuslag , deblag , ifrlag )
+   iusclb , iusmoy , deblag , ifrlag )
 
 
   call prtget                                                     &

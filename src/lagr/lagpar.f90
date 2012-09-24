@@ -34,12 +34,7 @@ module lagpar
   !=============================================================================
   ! 1. Classes et particules
 
-  !     NCLAGM : NOMBRE MAXIMAL DE CLASSES DE PARTICULES
-
-  integer         nclagm
-  parameter      (nclagm = 20)
-
-  !     NCHARM2 : NOMBRE MAXIMAL DE CLASSES DE CHARBON (voir cpincl.h)
+  !     NCHARM2 : NOMBRE MAXIMAL DE CLASSES DE CHARBON (voir cpincl.f90)
 
   integer         ncharm2
   parameter      (ncharm2 = 3)

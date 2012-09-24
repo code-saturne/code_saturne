@@ -20,7 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-! Module for Lagrangian: non dimensions
+!> \file lagran.f90
+!> Module for Lagrangian model.
 
 module lagran
 
@@ -80,7 +81,7 @@ module lagran
   !     NPCSUP/DNPCSU : NOMBRE DE PARTICULES QUI ON SUBIT LE CLONNAGE
 
 
-  integer, save ::           nbpart , nbpnew , nbperr , nbptot , nbpout ,    &
+  integer, save ::           nbpart , nbpnew , nbperr , nbptot , nbpout ,   &
                              nbpert , ndepot , nbpdep
   double precision, save ::  dnbpar , dnbpnw , dnbper , dnbpou, dnbdep
 
@@ -237,8 +238,9 @@ module lagran
                              ilflag(nflagm),                                 &
                              iusncl(nflagm),                                 &
                              iusclb(nflagm),                                 &
-                             iusmoy(nflagm),                                 &
-                             iuslag(nclagm, nflagm, ndlaim)
+                             iusmoy(nflagm)
+
+  integer, allocatable, dimension(:,:,:) :: iuslag
 
   double precision, save ::  deblag(nflagm)
 
@@ -265,7 +267,7 @@ module lagran
 
   !     RUSLAG  : tableau d info par classe et par frontieres
 
-  double precision, save ::  ruslag(nclagm, nflagm, ndlagm)
+  double precision, allocatable, dimension(:,:,:) :: ruslag
 
   !     IUNO  : Norme de la vitesse
   !     IUPT  : U par classe et zones
@@ -555,6 +557,228 @@ module lagran
   integer, save ::           itlag
   double precision, save ::  timlag(9999)
 
+
+  !=============================================================================
+
+contains
+
+  !=============================================================================
+
+  ! Local function to initialize Lagrangian module parameters for
+  ! a given zone ii and class jj
+
+  subroutine init_zone_class_param(ii, jj)
+
+    use cstnum
+    implicit none
+
+    ! Arguments
+
+    integer :: ii, jj
+
+    ! Local variables
+
+    integer :: kk
+
+    ! define defaults (impossible values the user should override)
+
+    do kk = 1, ndlaim
+      iuslag(ii, jj, kk) = 0
+    enddo
+    iuslag(ii,jj,ijuvw) = -2
+    iuslag(ii,jj,ijprtp) = -2
+    iuslag(ii,jj,ijprdp) = -2
+    iuslag(ii,jj,ijprpd) = -2
+    do kk = 1, ndlagm
+      ruslag(ii, jj, kk) = 0.d0
+    enddo
+    ruslag(ii,jj,iuno)  = -grand
+    ruslag(ii,jj,iupt)  = -grand
+    ruslag(ii,jj,ivpt)  = -grand
+    ruslag(ii,jj,iwpt)  = -grand
+    ruslag(ii,jj,ipoit) = -grand
+    ruslag(ii,jj,idpt)  = -grand
+    ruslag(ii,jj,ivdpt) = -grand
+    ruslag(ii,jj,iropt) = -grand
+    if (iphyla.eq.1) then
+      if (itpvar.eq.1) then
+        ruslag(ii,jj,itpt)  = -grand
+        ruslag(ii,jj,icpt)  = -grand
+        ruslag(ii,jj,iepsi) = -grand
+      endif
+    else if ( iphyla .eq. 2 ) then
+      ruslag(ii,jj,ihpt)   = -grand
+      ruslag(ii,jj,imcht)  = -grand
+      ruslag(ii,jj,imckt)  = -grand
+      ruslag(ii,jj,icpt)   = -grand
+    endif
+
+  end subroutine init_zone_class_param
+
+  !=============================================================================
+
+  !> \brief Initialize Lagrangian module parameters for a given zone and class
+
+  !> \param[in]  i_cz_params  integer parameters for this class and zone
+  !> \param[in]  r_cz_params  real parameters for this class and zone
+
+  subroutine lagr_init_zone_class_param(i_cz_params, r_cz_params)  &
+    bind(C, name='cs_lagr_init_zone_class_param')
+
+    use, intrinsic :: iso_c_binding
+    use cstnum
+    implicit none
+
+    ! Arguments
+
+    integer, dimension(ndlaim)          :: i_cz_params
+    double precision, dimension(ndlagm) :: r_cz_params
+
+    ! Local variables
+
+    integer :: ii
+
+    ! define defaults (impossible values the user should override)
+
+    do ii = 1, ndlaim
+      i_cz_params(ii) = 0
+    enddo
+    i_cz_params(ijuvw) = -2
+    i_cz_params(ijprtp) = -2
+    i_cz_params(ijprdp) = -2
+    i_cz_params(ijprpd) = -2
+
+    do ii = 1, ndlagm
+      r_cz_params(ii) = 0.d0
+    enddo
+    if (iphyla.eq.1) then
+      if (itpvar.eq.1) then
+        r_cz_params(itpt)  = -grand
+        r_cz_params(icpt)  = -grand
+        r_cz_params(iepsi) = -grand
+      endif
+    else if (iphyla .eq. 2) then
+      r_cz_params(ihpt)  = -grand
+      r_cz_params(imcht) = -grand
+      r_cz_params(imckt) = -grand
+      r_cz_params(icpt)  = -grand
+    endif
+
+  end subroutine lagr_init_zone_class_param
+
+  !=============================================================================
+
+  !> \brief Initialize Lagrangian module parameters for a given zone and class
+
+  !> \param[in]     class_id     id of given particle class
+  !> \param[in]     zone_id      id of given boundary zone
+  !> \param[in]     i_cz_params  integer parameters for this class and zone
+  !> \param[in]     r_cz_params  real parameters for this class and zone
+
+  subroutine lagr_define_zone_class_param(class_id, zone_id,         &
+                                          i_cz_params, r_cz_params)  &
+    bind(C, name='cs_lagr_define_zone_class_param')
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer, value                      :: class_id
+    integer, value                      :: zone_id
+    integer, dimension(ndlaim)          :: i_cz_params
+    double precision, dimension(ndlagm) :: r_cz_params
+
+    ! Local variables
+
+    integer :: ncmax, nzmax, mcmxp, nzmxp, ii, jj, kk
+    integer, allocatable, dimension(:,:,:) :: itmp
+    integer, dimension(3) :: shpe
+    double precision, allocatable, dimension(:,:,:) :: rtmp
+
+    ! Allocate on first pass
+
+    if (.not.allocated(iuslag) .or. .not.allocated(ruslag)) then
+      allocate(iuslag(1,1,ndlaim))
+      allocate(ruslag(1,1,ndlagm))
+      call init_zone_class_param(1, 1)
+    endif
+
+    ! Reallocate arrays if required
+    ! (use size margin to avoid reallocating too often, though this
+    ! should only impact the first time step)
+
+    shpe = shape(iuslag)
+    ncmax = shpe(1)
+    nzmax = shpe(2)
+
+    if (class_id.gt.ncmax .or. zone_id.gt.nzmax) then
+
+      mcmxp = ncmax
+      nzmxp = nzmax
+
+      ncmax = max(class_id, mcmxp+5)
+      nzmax = max(zone_id, nzmxp+5)
+
+      ! Save iuslag and ruslag arrays
+
+      allocate(itmp(mcmxp,nzmxp,ndlaim))
+      allocate(rtmp(mcmxp,nzmxp,ndlagm))
+
+      do ii = 1, mcmxp
+        do jj = 1, nzmxp
+          do kk = 1, ndlaim
+            itmp(ii,jj,kk) = iuslag(ii,jj,kk)
+          enddo
+          do kk = 1, ndlagm
+            rtmp(ii,jj,kk) = ruslag(ii,jj,kk)
+          enddo
+        enddo
+      enddo
+
+      ! Reallocate iuslag and ruslag arrays
+
+      deallocate(iuslag)
+      deallocate(ruslag)
+      allocate(iuslag(ncmax,nzmax,ndlaim))
+      allocate(ruslag(ncmax,nzmax,ndlagm))
+
+      ! Restore saved values, and initialize new entries
+
+      do ii = 1, mcmxp
+        do jj = 1, nzmxp
+          do kk = 1, ndlaim
+            iuslag(ii,jj,kk) = itmp(ii,jj,kk)
+          enddo
+          do kk = 1, ndlagm
+            ruslag(ii,jj,kk) = rtmp(ii,jj,kk)
+          enddo
+        enddo
+        do jj = nzmxp + 1, nzmax
+          call init_zone_class_param(ii, jj)
+        enddo
+      enddo
+      do ii = mcmxp + 1, ncmax
+        do jj = 1, nzmxp
+          call init_zone_class_param(ii, jj)
+        enddo
+      enddo
+
+      deallocate(rtmp)
+      deallocate(itmp)
+
+    endif
+
+    ! Now copy defined values
+
+    do kk = 1, ndlaim
+      iuslag(class_id, zone_id, kk) = i_cz_params(kk)
+    enddo
+    do kk = 1, ndlagm
+      ruslag(class_id, zone_id, kk) = r_cz_params(kk)
+    enddo
+
+  end subroutine lagr_define_zone_class_param
 
   !=============================================================================
 

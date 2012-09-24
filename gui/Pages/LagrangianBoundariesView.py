@@ -83,7 +83,7 @@ class ValueDelegate(QItemDelegate):
 
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
-        validator = IntValidator(editor, min=0, max=20) # nb max classes
+        validator = IntValidator(editor, min=0) # nb max classes
         editor.setValidator(validator)
         #editor.installEventFilter(self)
         return editor

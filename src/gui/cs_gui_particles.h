@@ -173,14 +173,10 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
  * integer          iphyla  -->  physica model associated to the particles
  * integer          iusncl  <--  array for particles class(es) number
  * integer          iusclb  <--  array for particles boundary conditions
- * integer          iuslag  <--  array for integer variables
- * double precision ruslag  <--  array for real variables
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
                                 const int *const nozppm,
-                                const int *const nclagm,
-                                const int *const nflagm,
                                 const int *const nbclst,
                                 const int *const ientrl,
                                 const int *const isortl,
@@ -220,9 +216,7 @@ void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
                                 int     xashch[],
                                 int     ifrlag[],
                                 int     iusncl[],
-                                int     iusclb[],
-                                int     iuslag[],
-                                double  ruslag[]);
+                                int     iusclb[]);
 
 /*============================================================================
  * Public function prototypes

@@ -30,7 +30,6 @@ subroutine lagent &
    itycel , icocel ,                                              &
    itypfb , itrifb , ifrlag , itepa  ,                            &
    dt     , rtpa   , propce , propfa , propfb ,                   &
-   coefa  , coefb  ,                                              &
    ettp   , tepa   , vagaus , auxl   , w1     , w2     , w3     )
 
 !===============================================================================
@@ -85,8 +84,6 @@ subroutine lagent &
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! ettp             ! tr ! <-- ! tableaux des variables liees                   !
 !  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
 ! tepa             ! tr ! <-- ! info particulaires (reels)                     !
@@ -143,7 +140,6 @@ integer          itepa(nbpmax,nivep) , ifrlag(nfabor)
 double precision dt(ncelet) , rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision vagaus(nbpmax,*)
 double precision auxl(nbpmax,3)
@@ -155,6 +151,7 @@ double precision w1(ncelet) ,  w2(ncelet) ,  w3(ncelet)
 integer          iel , ifac , ip , nb , nc, ii, ifvu
 integer          iok , n1 , nd , icha
 integer          npt , nfin , npar1  , npar2 , mode , idvar
+integer          ncmax, nzmax
 
 double precision vn1 , vn2 , vn3 , pis6 , d3
 double precision dmasse , rd(1) , aa
@@ -164,6 +161,7 @@ double precision ddpart , ttpart
 double precision surf   , volp , vitp
 double precision dintrf(1)
 
+integer, dimension(3) :: shpe
 integer, allocatable, dimension(:) :: iwork
 double precision, allocatable, dimension(:) :: surflag
 double precision, allocatable, dimension(:,:) :: surlgrg
@@ -182,7 +180,6 @@ double precision, dimension(1) :: unif
 ! 0.  GESTION MEMOIRE
 !===============================================================================
 
-allocate(iusloc(nclagm,nflagm,ndlaim))
 
 !===============================================================================
 ! 1. INITIALISATION
@@ -195,65 +192,6 @@ pis6 = pi / 6.d0
 do nb = 1, nflagm
   iusncl(nb) = 0
   iusclb(nb) = 0
-enddo
-
-do nb = 1, nflagm
-  do nc = 1, nclagm
-    do nd = 1,ndlagm
-      ruslag(nc,nb,nd) = 0.d0
-    enddo
-    do nd = 1,ndlaim
-      iuslag(nc,nb,nd) = 0
-      iusloc(nc,nb,nd) = 0
-    enddo
-  enddo
-enddo
-
-do nb = 1, nflagm
-  do nc = 1, nclagm
-
-    iuslag(nc,nb,ijnbp) =  0
-    iuslag(nc,nb,ijfre) =  0
-    iuslag(nc,nb,iclst) =  0
-    iuslag(nc,nb,ijuvw) = -2
-    iuslag(nc,nb,ijprtp) = -2
-    iuslag(nc,nb,ijprdp) = -2
-    iuslag(nc,nb,ijprpd) = -2
-
-    ruslag(nc,nb,iuno)  = -grand
-    ruslag(nc,nb,iupt)  = -grand
-    ruslag(nc,nb,ivpt)  = -grand
-    ruslag(nc,nb,iwpt)  = -grand
-    ruslag(nc,nb,ipoit) = -grand
-
-    ruslag(nc,nb,idpt)  = -grand
-    ruslag(nc,nb,ivdpt) = -grand
-    ruslag(nc,nb,iropt) = -grand
-
-    if ( iphyla.eq.1 ) then
-
-!    Thermique
-
-      if ( itpvar.eq.1 ) then
-        ruslag(nc,nb,itpt)  = -grand
-        ruslag(nc,nb,icpt)  = -grand
-        ruslag(nc,nb,iepsi) = -grand
-      endif
-
-    else if ( iphyla .eq. 2 ) then
-
-!    Charbon
-!    (REM : le diametre du coeur retrecissant est calcule dans lagich.F)
-
-      iuslag(nc,nb,inuchl) = 0
-      ruslag(nc,nb,ihpt)   = -grand
-      ruslag(nc,nb,imcht)  = -grand
-      ruslag(nc,nb,imckt)  = -grand
-      ruslag(nc,nb,icpt)   = -grand
-
-    endif
-
-  enddo
 enddo
 
 do ifac = 1,nfabor
@@ -273,7 +211,7 @@ enddo
 if (iihmpr.eq.1) then
   call uilag2                                                     &
   !==========
- ( nfabor, nozppm, nclagm, nflagm, nbclst,                        &
+ ( nfabor, nozppm, nbclst,                                        &
    ientrl, isortl, idepo1, idepo2,                                &
    idepfa, iencrl, irebol, iphyla,                                &
    ijnbp,  ijfre,  iclst,  ijuvw,  iuno,   iupt,   ivpt,   iwpt,  &
@@ -281,7 +219,7 @@ if (iihmpr.eq.1) then
    iropt,  ijprtp, itpt,   icpt,   iepsi,                         &
    ihpt,   inuchl, imcht,  imckt,                                 &
    ichcor, cp2ch,  diam20, rho0ch, xashch,                        &
-   ifrlag, iusncl, iusclb, iuslag, ruslag     )
+   ifrlag, iusncl, iusclb  )
 endif
 
 call uslag2                                                       &
@@ -293,11 +231,18 @@ call uslag2                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    ettp   , tepa   )
 
-do nb = 1, nflagm
-  do nc = 1, nclagm
-     do nd = 1,ndlaim
-        iusloc(nc,nb,nd) = iuslag(nc,nb,nd)
-     enddo
+
+shpe = shape(iuslag)
+ncmax = shpe(1)
+nzmax = shpe(2)
+
+allocate(iusloc(ncmax,nzmax,ndlaim))
+
+do nd = 1,ndlaim
+  do nb = 1, nzmax
+    do nc = 1, ncmax
+      iusloc(nc,nb,nd) = iuslag(nc,nb,nd)
+    enddo
   enddo
 enddo
 
@@ -398,9 +343,9 @@ endif
 
 do ii = 1,nfrlag
   nb = ilflag(ii)
-  if (iusncl(nb).lt.0 .or. iusncl(nb).gt.nclagm) then
+  if (iusncl(nb).lt.0) then
     iok = iok + 1
-    write(nfecra,1010) nb,nclagm,iusncl(nb)
+    write(nfecra,1010) nb,iusncl(nb)
   endif
 enddo
 
@@ -1480,8 +1425,7 @@ endif
 '@    LES CONDITIONS AUX LIMITES SONT INCOMPLETES OU ERRONEES ',/,&
 '@                                                            ',/,&
 '@  Le nombre de classes de la zone numero ',I10   ,' doit    ',/,&
-'@    etre un entier positif ou nul et inferieur ou egal      ',/,&
-'@    a NCLAGM = ',I10                                         ,/,&
+'@    etre un entier positif ou nul.                          ',/,&
 '@  Ce nombre (IUSNCL(NB)  ) vaut ici ',I10                    ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&

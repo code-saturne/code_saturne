@@ -160,7 +160,6 @@ CS_PROCF (getbdy, GETBDY)(const cs_int_t    *nflagm,
                           const cs_int_t     iusncl[],
                           const cs_int_t     iusclb[],
                           const cs_int_t     iusmoy[],
-                          const cs_int_t     iuslag[],
                           const cs_real_t    deblag[],
                           const cs_int_t     ifrlag[]);
 
