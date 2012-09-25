@@ -246,7 +246,7 @@ do iscal = 1, nscal
     endif
   endif
 
-  if (iscal.eq.iscalt) then
+  if (iscal.eq.iscalt.and.iturt(iscal).gt.0) then
     do iel = 1, ncelet
       propce(iel,ipproc(ibeta)) = 0.d0
     enddo

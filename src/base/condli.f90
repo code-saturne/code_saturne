@@ -2283,22 +2283,6 @@ if (nscal.ge.1) then
 
 endif
 
-do ifac = 1, nfabor
-  write(nfecra,*) 'coefav(',1,ifac,')=',coefaut(1,ifac), itypfb(ifac)
-  write(nfecra,*) 'coefav(',2,ifac,')=',coefaut(2,ifac)
-  write(nfecra,*) 'coefav(',3,ifac,')=',coefaut(3,ifac)
-  write(nfecra,*) 'cofafv(',1,ifac,')=',cofafut(1,ifac)
-  write(nfecra,*) 'cofafv(',2,ifac,')=',cofafut(2,ifac)
-  write(nfecra,*) 'cofafv(',3,ifac,')=',cofafut(3,ifac)
-  write(nfecra,*) 'coefbv(',1,ifac,')=',coefbut(1,1,ifac)
-  write(nfecra,*) 'coefbv(',2,ifac,')=',coefbut(2,2,ifac)
-  write(nfecra,*) 'coefbv(',3,ifac,')=',coefbut(3,3,ifac)
-  write(nfecra,*) 'cofbfv(',1,ifac,')=',cofbfut(1,1,ifac)
-  write(nfecra,*) 'cofbfv(',2,ifac,')=',cofbfut(2,2,ifac)
-  write(nfecra,*) 'cofbfv(',3,ifac,')=',cofbfut(3,3,ifac)
-
-enddo
-
 !===============================================================================
 ! 13. Mesh velocity (ALE module): Dirichlet and Neumann and convectiv outlet
 !===============================================================================
