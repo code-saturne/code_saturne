@@ -247,6 +247,39 @@ def set_modules(pkg):
 
 #-------------------------------------------------------------------------------
 
+def source_shell_script(path):
+    """
+    Source shell script.
+    """
+
+    if not os.path.isfile(path):
+        sys.stderr.write('Warning:\n'
+                         + '   file ' + path + '\n'
+                         + 'not present, so cannot be sourced.\n\n')
+
+    if sys.platform.startswith('win'):
+        return
+
+    user_shell = os.getenv('SHELL')
+    if not user_shell:
+        user_shell = '/bin/sh'
+
+    cmd = ['source ' + path + ' && env']
+
+    p = subprocess.Popen(cmd,
+                         shell=True,
+                         executable=user_shell,
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE)
+
+    output = p.communicate()[0]
+
+    for line in output.splitlines():
+        (key, _, value) = line.partition("=")
+        os.environ[key] = value
+
+#-------------------------------------------------------------------------------
+
 class batch_info:
 
     #---------------------------------------------------------------------------

@@ -269,6 +269,10 @@ class Study:
             syr_datapath = os.path.join(config.get('install', 'syrthes'),
                                         os.path.join('share', 'syrthes'))
             sys.path.insert(0, syr_datapath)
+            if not os.getenv('SYRTHES4_HOME'):
+                syr_profile = os.path.join(config.get('install', 'syrthes'),
+                                           'bin', 'syrthes.profile')
+                cs_exec_environment.source_shell_script(syr_profile)
             import syrthes
         except Exception:
             sys.stderr.write("SYRTHES create case: Cannot locate SYRTHES installation.\n")
