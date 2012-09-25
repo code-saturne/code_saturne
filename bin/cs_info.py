@@ -97,7 +97,7 @@ def print_version(pkg):
     Print Code_Saturne version.
     """
 
-    print(pkg.name + " version: " + pkg.version)
+    print(pkg.code_name + " version: " + pkg.version)
 
 
 #-------------------------------------------------------------------------------
