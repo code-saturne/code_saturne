@@ -119,7 +119,9 @@ typedef enum {
   COALFLOW,
   WALL_FUNCTION,
   DIRICHLET_FORMULA,
+  DIRICHLET_IMPLICIT,
   NEUMANN_FORMULA,
+  NEUMANN_IMPLICIT,
   COEF_ECHANGE_FORMULA
 } cs_boundary_value_t;
 
@@ -149,6 +151,7 @@ extern cs_boundary_t *boundaries;
  * INTEGER          NCHARM  --> maximal number of coals
  * INTEGER          NCHARB  --> number of simulated coals
  * INTEGER          NCLPCH  --> number of simulated class per coals
+ * INTEGER          NGASG   --> number of simulated gas for electrical models
  * INTEGER          IINDEF  --> type of boundary: not defined
  * INTEGER          IENTRE  --> type of boundary: inlet
  * INTEGER          IESICF  --> type of boundary: imposed inlet (compressible)
@@ -174,6 +177,9 @@ extern cs_boundary_t *boundaries;
  * INTEGER          IENTGB  --> 1 for burned gas inlet (gas combustion)
  * INTEGER          IENTGF  --> 1 for unburned gas inlet (gas combustion)
  * integer          iprofm  --> atmospheric flows: on/off for profile from data
+ * DOUBLE PRECISION COEJOU  --> electric arcs
+ * DOUBLE PRECISION DPOT    --> electric arcs : potential difference
+ * DOUBLE PRECISION RTPA    --> rtpa for implicit flux
  * INTEGER          ITYPFB  --> type of boundary for each face
  * INTEGER          IZFPPP  --> zone number for each boundary face
  * INTEGER          ICODCL  --> boundary conditions array type
@@ -200,6 +206,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                                const    int *const ncharm,
                                const    int *const ncharb,
                                const    int *const nclpch,
+                               const    int *const ngazg,
                                const    int *const iindef,
                                const    int *const ientre,
                                const    int *const iesicf,
@@ -225,6 +232,14 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                                         int *const ientgf,
                                         int *const ientgb,
                                         int *const iprofm,
+                                     double *const coejou,
+                                     double *const dpot,
+                                     cs_real_t     rtpa[],
+                                        int *const ielcor,
+                                        int *const ipotr,
+                                        int *const ipoti,
+                                        int        ipotva[],
+                                        int *const ncelet,
                                         int *const itypfb,
                                         int *const izfppp,
                                         int *const icodcl,

@@ -201,6 +201,40 @@ void CS_PROCF (uicfsc, UICFSC) (const int *const irho,
 
 /*-----------------------------------------------------------------------------
  * Indirection between the solver numbering and the XML one
+ * for physical properties of the activated specific physics (electrical model)
+ *----------------------------------------------------------------------------*/
+void CS_PROCF (uielpr, UIELPR) (const int *const nsalpp,
+                                const int *const ippmod,
+                                const int *const ipppro,
+                                const int *const ipproc,
+                                const int *const ieljou,
+                                const int *const ielarc,
+                                const int *const itemp,
+                                const int *const iefjou,
+                                const int *const idjr,
+                                const int *const idji,
+                                const int *const ilapla,
+                                const int *const idrad,
+                                const int *const ivisls,
+                                const int *const ipotr,
+                                const int *const ixkabe);
+
+/*------------------------------------------------------------------------------
+ * Indirection between the solver numbering and the XML one
+ * for the model scalar (electrical model)
+ *----------------------------------------------------------------------------*/
+void CS_PROCF (uielsc, UIELSC) (const int *const ippmod,
+                                const int *const ieljou,
+                                const int *const ielarc,
+                                const int *const ngazg,
+                                const int *const ihm,
+                                const int *const ipotr,
+                                const int *const iycoel,
+                                const int *const ipoti,
+                                const int *const ipotva);
+
+/*-----------------------------------------------------------------------------
+ * Indirection between the solver numbering and the XML one
  * for physical properties of the activated specific physics (gaz combustion)
  *----------------------------------------------------------------------------*/
 
@@ -244,6 +278,49 @@ void CS_PROCF (uicosc, UICOSC) (const int *const ippmod,
                                 const int *const iyfm,
                                 const int *const iyfp2m,
                                 const int *const icoyfp);
+
+/*----------------------------------------------------------------------------
+ * Electrical model : read parameters
+ *
+ * Fortran Interface:
+ *
+ * subroutine uieli1
+ * *****************
+ * integer         ieljou    -->   joule model
+ * integer         ielarc    -->   arc model
+ * integer         ielcor    <--   scaling electrical variables
+ * double          couimp    <--   imposed current intensity
+ * double          puisim    <--   imposed power
+ * integer         modrec    <--   scaling type for electric arc
+ * integer         idrecal   <--   current density component used to scaling
+ *                                 (modrec ==2)
+ * char            crit_reca <--   define criteria for plane used to scaling (modrec ==2)
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uieli1, UIELI1) (const int    *const ncelet,
+                                const int    *const ieljou,
+                                const int    *const ielarc,
+                                      int    *const ielcor,
+                                      double *const couimp,
+                                      double *const puisim,
+                                      int    *const modrec,
+                                      int    *const idreca,
+                                      char   *const crit_reca);
+
+/*----------------------------------------------------------------------------
+ * Electrical model : define plane for elreca
+ *
+ * Fortran Interface:
+ *
+ * subroutine uielrc
+ * *****************
+ * integer         izreca    <--   define plane used to scaling (modrec ==2)
+ * char            crit_reca <--   define criteria for plane used to scaling (modrec ==2)
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uielrc, UIELRC) (const int    *const ncelet,
+                                      int    *const izreca,
+                                      char   *const crit_reca);
 
 /*----------------------------------------------------------------------------
  * Atmospheric flows: read of meteorological file of data
