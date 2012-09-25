@@ -764,7 +764,7 @@ endif ! --- Test on .false.
 !----
 
 return
-end subroutine
+end subroutine usphyv
 
 
 !===============================================================================
@@ -1447,7 +1447,7 @@ endif
 !----
 
 return
-end subroutine
+end subroutine uscfpv
 
 
 !===============================================================================
@@ -1913,7 +1913,7 @@ endif
 !----
 
 return
-end subroutine
+end subroutine uselph
 
 
 !===============================================================================
@@ -2107,7 +2107,7 @@ deallocate(grad)
 !----
 
 return
-end subroutine
+end subroutine usvist
 
 
 !===============================================================================
@@ -2263,7 +2263,7 @@ deallocate(w1, w2, w3)
 !----
 
 return
-end subroutine
+end subroutine ussmag
 
 
 !===============================================================================
@@ -2421,4 +2421,4 @@ endif ! --- Test on .false.
 !----
 
 return
-end subroutine
+end subroutine usvima

@@ -269,7 +269,7 @@ enddo
 ! End
 !----
 
-end subroutine
+end subroutine uslaed
 
 
 !===============================================================================
@@ -468,7 +468,7 @@ endif
 ! End
 !----
 
-end subroutine
+end subroutine uslafe
 
 
 !===============================================================================
@@ -730,7 +730,7 @@ endif
 
 return
 
-end subroutine
+end subroutine uslain
 
 
 !===============================================================================
@@ -969,7 +969,7 @@ endif
 
 return
 
-end subroutine
+end subroutine uslapr
 
 
 !===============================================================================
@@ -1151,7 +1151,7 @@ enddo
 ! End
 !----
 
-end subroutine
+end subroutine uslaru
 
 
 !===============================================================================
@@ -1574,7 +1574,7 @@ endif
 
 return
 
-end subroutine
+end subroutine uslast
 
 !===============================================================================
 
@@ -1799,7 +1799,7 @@ endif
 ! End
 !----
 
-end subroutine
+end subroutine uslatc
 
 
 !===============================================================================
@@ -2045,4 +2045,4 @@ taup = romp / romf / fdr
 ! End
 !----
 
-end subroutine
+end subroutine uslatp

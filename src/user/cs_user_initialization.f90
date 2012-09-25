@@ -168,4 +168,4 @@ allocate(lstelt(ncel)) ! temporary array for cells selection
 deallocate(lstelt) ! temporary array for cells selection
 
 return
-end subroutine
+end subroutine cs_user_initialization

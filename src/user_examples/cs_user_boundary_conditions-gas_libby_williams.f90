@@ -705,4 +705,4 @@ enddo
 deallocate(lstelt)  ! temporary array for boundary faces selection
 
 return
-end subroutine
+end subroutine cs_user_boundary_conditions

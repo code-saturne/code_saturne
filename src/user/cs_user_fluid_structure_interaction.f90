@@ -250,7 +250,7 @@ ihistr = 1
 deallocate(lstelt)
 
 return
-end subroutine
+end subroutine usstr1
 
 
 !===============================================================================
@@ -496,7 +496,7 @@ enddo
 
 return
 
-end subroutine
+end subroutine usstr2
 
 
 !===============================================================================
@@ -666,4 +666,4 @@ asddlf(3,2) = 0
 deallocate(lstelt)
 
 return
-end subroutine
+end subroutine usaste

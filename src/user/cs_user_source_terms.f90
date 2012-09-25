@@ -251,7 +251,7 @@ endif
 deallocate(lstelt)
 
 return
-end subroutine
+end subroutine ustsns
 
 
 !===============================================================================
@@ -471,7 +471,7 @@ enddo
 deallocate(lstelt)
 
 return
-end subroutine
+end subroutine ustsnv
 
 
 !===============================================================================
@@ -808,7 +808,7 @@ enddo
 deallocate(lstelt)
 
 return
-end subroutine
+end subroutine ustssc
 
 
 !===============================================================================
@@ -1041,7 +1041,7 @@ enddo
 deallocate(lstelt)
 
 return
-end subroutine
+end subroutine ustske
 
 
 !===============================================================================
@@ -1282,7 +1282,7 @@ enddo
 deallocate(lstelt)
 
 return
-end subroutine
+end subroutine ustskw
 
 
 !===============================================================================
@@ -1547,7 +1547,7 @@ endif
 deallocate(lstelt)
 
 return
-end subroutine
+end subroutine ustsri
 
 
 !===============================================================================
@@ -1802,7 +1802,7 @@ endif
 deallocate(lstelt)
 
 return
-end subroutine
+end subroutine ustsv2
 
 
 !===============================================================================
@@ -2019,4 +2019,4 @@ enddo
 deallocate(lstelt)
 
 return
-end subroutine
+end subroutine ustssa

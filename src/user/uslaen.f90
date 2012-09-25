@@ -157,9 +157,7 @@ double precision aa
 
 if (ivarl.ne.ilfv .and. ivarl.ne.ilpd) then
 
-
 !-----> Average
-
 
   if (iflu.eq.0) then
 
@@ -268,49 +266,50 @@ endif
 !               stored in the array statis
 !    --------------------------------------------------
 
-  if (nvlsts.gt.0) then
+if (nvlsts.gt.0) then
 
-    if (ivarl.eq.ilvu(1)) then
+  if (ivarl.eq.ilvu(1)) then
 
 !-----> Average for the mass concentration
 
-      if (iflu.eq.0) then
+    if (iflu.eq.0) then
 
-        do iel = 1, ncel
-          if ( statis(iel,ilpd1).gt.seuil .and. npst.gt.0 ) then
-            tracel(iel) = statis(iel,ivarl1)                      &
-                        / ( dble(npst) *ro0 *volume(iel) )
-          else if ( statis(iel,ilpd1).gt.seuil .and.              &
-                  iplas.ge.idstnt                  ) then
-            tracel(iel) = statis(iel,ivarl1)                      &
+      do iel = 1, ncel
+        if ( statis(iel,ilpd1).gt.seuil .and. npst.gt.0 ) then
+          tracel(iel) = statis(iel,ivarl1)                      &
+                      / ( dble(npst) *ro0 *volume(iel) )
+        else if ( statis(iel,ilpd1).gt.seuil .and.              &
+             iplas.ge.idstnt                  ) then
+          tracel(iel) = statis(iel,ivarl1)                      &
                         / ( ro0 *volume(iel) )
-          else
-            tracel(iel) = zero
-          endif
-        enddo
+        else
+          tracel(iel) = zero
+        endif
+      enddo
 
-      else
+    else
 
 !-----> Variance of the mass concentration
 
-        do iel = 1, ncel
-          if (statis(iel,ilpd1).gt.seuil) then
-            aa = statis(iel,ivarlm)/statis(iel,ilpd1)
-            tracel(iel) = stativ(iel,ivarl1)/statis(iel,ilpd1)    &
-                        -( aa * aa)
-          else
-            tracel(iel) = zero
-          endif
+      do iel = 1, ncel
+        if (statis(iel,ilpd1).gt.seuil) then
+          aa = statis(iel,ivarlm)/statis(iel,ilpd1)
+          tracel(iel) = stativ(iel,ivarl1)/statis(iel,ilpd1)    &
+                      - (aa * aa)
+        else
+          tracel(iel) = zero
+        endif
 
-        enddo
-
-      endif
+      enddo
 
     endif
 
   endif
 
+endif
+
 !===============================================================================
 ! End
 !===============================================================================
-end subroutine
+
+end subroutine uslaen

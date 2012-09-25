@@ -244,4 +244,4 @@ endif
 deallocate(lstelt)
 
 return
-end subroutine
+end subroutine cs_user_initialization

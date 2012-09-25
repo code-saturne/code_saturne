@@ -211,7 +211,7 @@ if (iappel.eq.1.or.iappel.eq.2) then
 
     ifac = lstelt(ilelt)
     izft1d(ifac) = izone
-    ifbt1d =ifbt1d + 1
+    ifbt1d = ifbt1d + 1
     if (iappel.eq.2) ifpt1d(ifbt1d) = ifac
 
   enddo
@@ -301,5 +301,5 @@ endif
 deallocate(lstelt)
 
 return
-end subroutine
+end subroutine uspt1d
 

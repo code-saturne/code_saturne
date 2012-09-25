@@ -104,7 +104,7 @@ isuisy = isuite
 !----
 
 return
-end subroutine
+end subroutine cs_user_les_inflow_init
 
 !===============================================================================
 
@@ -288,7 +288,7 @@ endif
 !----
 
 return
-end subroutine
+end subroutine cs_user_les_inflow_define
 
 !===============================================================================
 
@@ -516,4 +516,4 @@ endif
 !----
 
 return
-end subroutine
+end subroutine cs_user_les_inflow_advanced

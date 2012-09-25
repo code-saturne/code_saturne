@@ -399,7 +399,7 @@ endif
 deallocate(lstelt)
 
 return
-end subroutine
+end subroutine usvort
 
 !===============================================================================
 ! 7. DEFINTION DE LA FONCTION PERMETAT D'IMPOSER LES DONNEES D'ENTREE
@@ -484,4 +484,4 @@ endif
 
 
 return
-end function
+end function phidat

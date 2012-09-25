@@ -890,4 +890,4 @@ endif ! End of test on inpdt0
 deallocate(lstelt)
 
 return
-end subroutine
+end subroutine cs_user_extra_operations

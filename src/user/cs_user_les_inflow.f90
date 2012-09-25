@@ -98,7 +98,7 @@ if (1.eq.1) return
 !----
 
 return
-end subroutine
+end subroutine cs_user_les_inflow_init
 
 !===============================================================================
 
@@ -228,7 +228,7 @@ if (1.eq.1) return
 !----
 
 return
-end subroutine
+end subroutine cs_user_les_inflow_define
 
 !===============================================================================
 
@@ -351,4 +351,4 @@ if (1.eq.1) return
 !----
 
 return
-end subroutine
+end subroutine cs_user_les_inflow_advanced

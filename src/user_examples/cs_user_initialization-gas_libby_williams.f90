@@ -293,4 +293,4 @@ endif
 deallocate(lstelt) ! temporary array for cells selection
 
 return
-end subroutine
+end subroutine cs_user_initialization
