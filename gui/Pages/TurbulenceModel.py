@@ -169,9 +169,8 @@ class TurbulenceModel(Variables, Model):
             turbList = self.RANSmodels()
             turbList.insert(0, "off")
 
-        for node in (self.node_gas, self.node_joule):
-            if node and node['model'] != 'off':
-                turbList = self.RANSmodels()
+        if self.node_gas and self.node_gas['model'] != 'off':
+            turbList = self.RANSmodels()
 
         if self.node_coal and self.node_coal['model'] != 'off':
             turbList = ('off', 'k-epsilon', 'k-epsilon-PL')
@@ -286,6 +285,8 @@ class TurbulenceModel(Variables, Model):
         for nodbc in self.node_bc.xmlGetChildNodeList('inlet'):
             model = Boundary('inlet', nodbc['label'], self.case)
             model.getTurbulenceChoice()
+
+        del Boundary
 
 
     def getTurbulenceModel(self):

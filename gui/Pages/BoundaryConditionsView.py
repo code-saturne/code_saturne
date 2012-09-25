@@ -166,6 +166,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.scalarsWidget.setup(self.__case)
         self.mobileMeshWidget.setup(self.__case)
         self.radiativeWidget.setup(self.__case)
+        self.electricalwidget.setup(self.__case)
 
         self.__hideAllWidgets()
 
@@ -206,6 +207,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.meteoWidget.showWidget(boundary)
         self.scalarsWidget.showWidget(boundary)
         self.mobileMeshWidget.showWidget(boundary)
+        self.electricalwidget.showWidget(boundary)
 
 
     def __selectWallBoundary(self, boundary):
@@ -217,6 +219,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.scalarsWidget.showWidget(boundary)
         self.mobileMeshWidget.showWidget(boundary)
         self.radiativeWidget.showWidget(boundary)
+        self.electricalwidget.showWidget(boundary)
 
 
     def __selectOutletBoundary(self, boundary):
@@ -230,6 +233,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
             self.compressibleOutletWidget.showWidget(boundary)
         else:
             self.compressibleOutletWidget.hideWidget()
+        self.electricalwidget.showWidget(boundary)
         #self.pressureWidget.showWidget(boundary)
 
 
@@ -254,6 +258,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.scalarsWidget.hideWidget()
         self.mobileMeshWidget.hideWidget()
         self.radiativeWidget.hideWidget()
+        self.electricalwidget.hideWidget()
         #self.pressureWidget.hideWidget()
 
 

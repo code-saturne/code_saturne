@@ -125,8 +125,16 @@ module elincl
   !     DPOT   : Delta du potentiel electrique entre l'Anode et la cathode
   !              (arc et Joule)
   !     COEJOU : coefficient de correction pour version Joule
+  !     MODREC : modele de recalage de l'arc
+  !              1 : modele cas general
+  !              2 : modele avec un plan
+  !     IZRECA : definition du plan de recalage
+  !     IDRECA : defnition de la compsante a recaler
+  !     CRIT_RECA : define criteria for recal
 
-  integer, save ::           ielcor
+  character*150, save :: crit_reca
+  integer, save ::           ielcor, modrec, idreca
+  integer, allocatable, dimension(:) :: izreca
 
   double precision, save ::  couimp , dpot , puisim , coejou, elcou
 
@@ -140,5 +148,31 @@ module elincl
   double precision, save ::   qespel(ngazgm), suscep(ngazgm)
 
   !=============================================================================
+
+contains
+
+  !=============================================================================
+
+subroutine init_elec
+
+  use mesh
+  implicit none
+  integer iel
+  allocate(izreca(ncelet))
+
+  do iel = 1, ncelet
+    izreca(iel) = 0
+  enddo
+
+end subroutine init_elec
+
+  !=============================================================================
+
+subroutine finalize_elec
+
+  implicit none
+  deallocate(izreca)
+
+end subroutine finalize_elec
 
 end module elincl

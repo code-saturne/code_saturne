@@ -58,7 +58,7 @@ from Pages.LagrangianModel import LagrangianModel
 from Pages.GasCombustionModel import GasCombustionModel
 from Pages.CompressibleModel import CompressibleModel
 from Pages.CoalCombustionModel import CoalCombustionModel
-from Pages.ElectricalModelsModel import ElectricalModel
+from Pages.ElectricalModel import ElectricalModel
 from Pages.DefineUserScalarsModel import DefineUserScalarsModel
 from Pages.ThermalRadiationModel import ThermalRadiationModel
 from Pages.SteadyManagementModel import SteadyManagementModel
@@ -137,7 +137,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         self.modelJouleEffect.addItem(self.tr("off"), "off")
         self.modelJouleEffect.addItem(self.tr("Joule Effect"), "joule")
-        self.modelJouleEffect.addItem(self.tr("Joule Effect and Lorentz Forces"), "arc")
+        self.modelJouleEffect.addItem(self.tr("Joule Effect and Laplace Forces"), "arc")
 
         self.modelCompressible.addItem(self.tr("off"), 'off')
         self.modelCompressible.addItem(self.tr("Perfect gas with constant gamma"), 'constant_gamma')
@@ -180,9 +180,6 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         model = self.gas.getGasCombustionModel()
         self.modelGasCombustionModel.setItem(str_model=model)
 
-        self.modelJouleEffect.setItem(str_model='off') # to delete
-        self.modelJouleEffect.disableItem(str_model='joule') # to delete
-        self.modelJouleEffect.disableItem(str_model='arc') # to delete
         elec = self.elect.getElectricalModel()
         self.modelJouleEffect.setItem(str_model=elec)
 
@@ -238,9 +235,6 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
             self.modelGasCombustionModel.disableItem(str_model='d3p')
             self.modelGasCombustionModel.disableItem(str_model='lwp')
 
-            self.modelJouleEffect.disableItem(str_model='joule')
-            self.modelJouleEffect.disableItem(str_model='arc')
-
             self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel')
             self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel_moisture')
             # WARNING: the 'coal_lagr' model is deprecated
@@ -248,7 +242,6 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
             self.comboBoxGasCombustionModel.setEnabled(False)
             self.comboBoxPulverizedCoal.setEnabled(False)
-            self.comboBoxJouleEffect.setEnabled(False)
 
         # Update the QComboBox
 

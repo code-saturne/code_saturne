@@ -364,6 +364,12 @@ if (ippmod(iphpar).ge.1) then
 
           if ( ielcor .eq.1  .and. ntcabs .gt. 1 ) then
 
+            call elreca                                           &
+            !==========
+  ( nvar   , nscal  ,                                             &
+    dt     , rtpa   , rtp    , propce , propfa , propfb ,         &
+    coefa  , coefb  )
+
             call uselrc                                           &
             !==========
   ( nvar   , nscal  ,                                             &

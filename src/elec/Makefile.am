@@ -39,12 +39,14 @@ pkginclude_HEADERS =
 
 noinst_LTLIBRARIES = libcselec.la
 libcselec_la_SOURCES = \
+cs_elec_bcond.f90 \
 elflux.f90 \
 elini1.f90 \
 eliniv.f90 \
 ellecd.f90 \
 elphyv.f90 \
 elprop.f90 \
+elreca.f90 \
 elthht.f90 \
 eltssc.f90 \
 elvarp.f90 \

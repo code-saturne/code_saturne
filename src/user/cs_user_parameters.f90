@@ -3946,6 +3946,7 @@ use cstphy
 use entsor
 use cstnum
 use parall
+use ihmpre
 use period
 use ppppar
 use ppthch
@@ -3969,7 +3970,9 @@ integer          ipp , icha
 !       thus the default (library reference) version returns immediately.
 !===============================================================================
 
-if (1.eq.1) then
+if (iihmpr.eq.1) then
+  return
+else
   write(nfecra,9000)
   call csexit (1)
 endif
@@ -4883,8 +4886,10 @@ end subroutine user_fuel_ini1
 !===============================================================================
 
 
-subroutine useli1
+subroutine useli1 &
 !================
+
+ ( iihmpu )
 
 
 !===============================================================================
@@ -4898,6 +4903,8 @@ subroutine useli1
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
+! iihmpu           ! i  ! <-- ! indicates if the XML file from the GUI is      !
+!                  !    !     ! used (1: yes, 0: no)                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -4921,12 +4928,19 @@ use ppppar
 use ppthch
 use ppincl
 use elincl
+use mesh
 
 !===============================================================================
 
 implicit none
 
+! Arguments
+
+integer iihmpu
+
 integer          ipp, iesp , idimve
+integer          ilelt, nlelt, izone, iel
+integer, allocatable, dimension(:) :: lstelt
 
 !===============================================================================
 
@@ -4938,7 +4952,10 @@ integer          ipp, iesp , idimve
 !       thus the default (library reference) version returns immediately.
 !===============================================================================
 
-if (1.eq.1) then
+
+if (iihmpu.eq.1) then
+  return
+else
   write(nfecra,9000)
   call csexit (1)
 endif
@@ -4959,6 +4976,9 @@ endif
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
+
+! Allocate a temporary array for cells selection
+allocate(lstelt(ncel))
 
 !===============================================================================
 ! 1. Solved variables
@@ -5111,6 +5131,22 @@ puisim = 0.d0
 !     Initial Potential Difference (positive value)
 dpot = 0.d0
 
+! ---> Modele pour le recalage de l'intensite (arc electrique)
+!       MODREC = 1 : modele standard
+!       MODREC = 2 : modele avec un plan de recalage
+modrec = 1
+
+! ---> Definition du plan de recalage et de la composante
+!                 lorsque MODREC = 2
+!       IDRECA (1, 2 ou 3) pour composante (x, y ou z)
+idreca = 3
+
+! Exemple : plan z = 3. et x <=6.
+
+crit_reca = "plane[0, 0, -1, 3., epsilon = 0.0001] and X <= 6.0"
+
+! Deallocate the temporary array
+deallocate(lstelt)
 
 !----
 ! End

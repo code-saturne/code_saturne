@@ -46,7 +46,7 @@ from Base.XMLvariables import Variables, Model
 from Base.XMLmodel import ModelTest
 from Pages.CoalCombustionModel import CoalCombustionModel
 from Pages.GasCombustionModel import GasCombustionModel
-from Pages.ElectricalModelsModel import ElectricalModel
+from Pages.ElectricalModel import ElectricalModel
 from Pages.AtmosphericFlowsModel import AtmosphericFlowsModel
 from Pages.CompressibleModel import CompressibleModel
 

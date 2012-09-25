@@ -69,6 +69,7 @@ use radiat
 use cplsat
 use atincl
 use cfpoin
+use elincl
 use mesh
 use field
 
@@ -358,6 +359,11 @@ endif
 if (iale.eq.1.or.imobil.eq.1) then
   call init_ale ( ncelet , ncel , nfac , nfabor , nnod )
   !============
+endif
+
+if (ippmod(ielarc).gt.0) then
+  call init_elec
+  !==============
 endif
 
 if (ncpdct.gt.0) then
@@ -1233,6 +1239,10 @@ endif
 
 if (iale.eq.1.or.imobil.eq.1) then
   call finalize_ale
+endif
+
+if (ippmod(ielarc).gt.0) then
+  call finalize_elec
 endif
 
 if (ncpdct.gt.0) then

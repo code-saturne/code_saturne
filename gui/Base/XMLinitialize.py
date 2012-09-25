@@ -54,7 +54,7 @@ from Pages.SteadyManagementModel import SteadyManagementModel
 from Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
 from Pages.CoalCombustionModel import CoalCombustionModel
 from Pages.ThermalScalarModel import ThermalScalarModel
-from Pages.ElectricalModelsModel import ElectricalModel
+from Pages.ElectricalModel import ElectricalModel
 from Pages.GasCombustionModel import GasCombustionModel
 from Pages.ThermalRadiationModel import ThermalRadiationModel
 

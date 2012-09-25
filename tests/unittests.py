@@ -165,7 +165,7 @@ def starttest35():
     runTest()
 
 def starttest36():
-    from Pages.ElectricalModelsModel import runTest
+    from Pages.ElectricalModel import runTest
     runTest()
 
 def starttest37():

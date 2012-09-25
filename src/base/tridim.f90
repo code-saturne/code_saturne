@@ -99,6 +99,7 @@ use ihmpre
 use radiat
 use cplsat
 use ppcpfu
+use elincl
 use mesh
 
 ! les " use pp* " ne servent que pour recuperer le pointeur IIZFPP
@@ -735,12 +736,14 @@ do while (iterns.le.nterup)
     call uiclim &
     !==========
   ( ntcabs, nfabor,                                                &
-    nozppm, ncharm, ncharb, nclpch,                                &
+    nozppm, ncharm, ncharb, nclpch, ngazg,                         &
     iindef, ientre, iesicf, isspcf, ierucf, isopcf,                &
     iparoi, iparug, isymet, isolib, isca  ,                        &
     ipr   , irho  , itempk, ienerg,                                &
     iqimp,  icalke, ientat, ientcp, inmoxy, ientfu,                &
     ientox, ientgb, ientgf, iprofm,                                &
+    coejou, dpot,   rtpa,   ielcor,                                &
+    ipotr,  ipoti,  ipotva, ncelet,                                &
     itypfb, izfppp, icodcl,                                        &
     dtref,  ttcabs, surfbo, cdgfbo,                                &
     qimp,   qimpat, qimpcp, dh,     xintur,                        &

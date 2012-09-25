@@ -790,7 +790,7 @@ Calculation management
                 nb_zone = nb_zone + 1
             elif node['scalar_source_term'] == 'on':
                 nb_zone = nb_zone + 1
-            elif node['head_losses'] == 'on':
+            if node['head_losses'] == 'on':
                 nb_zone_losses = nb_zone_losses + 1
 
         if nb_zone > 0:

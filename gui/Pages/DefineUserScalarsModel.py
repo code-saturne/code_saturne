@@ -251,6 +251,25 @@ class DefineUserScalarsModel(Variables, Model):
         return list_scalar
 
 
+    def getElectricalScalarsList(self):
+        node_list = []
+        models = self.case.xmlGetNode('thermophysical_models')
+        node = models.xmlGetNode('joule_effect', 'model')
+        if node == None:
+            return
+
+        model = node['model']
+        if model != 'off':
+            node_list = node.xmlGetNodeList('scalar')
+            list_scalar=[]
+            for node_scalar in node_list:
+                list_scalar.append(node_scalar['label'])
+        else:
+            return
+
+        return list_scalar
+
+
     def getUserScalarLabelsList(self):
         """Public method.
         Return the user scalar label list (without thermal scalar).
@@ -632,6 +651,29 @@ class DefineUserScalarsModel(Variables, Model):
         self.isInList(scalar_label, self.getMeteoScalarsList())
         models = self.case.xmlGetNode('thermophysical_models')
         node = models.xmlGetNode('atmospheric_flows', 'model')
+        n = node.xmlGetNode('scalar', 'name', label=scalar_label)
+        return n['name']
+
+
+    def getElectricalScalarType(self, scalar_label):
+        """
+        Return type of scalar for choice of color (for view)
+        """
+        self.isInList(scalar_label, self.getElectricalScalarsList())
+        models = self.case.xmlGetNode('thermophysical_models')
+        node = models.xmlGetNode('joule_effect', 'model')
+        n = node.xmlGetNode('scalar', 'type', label=scalar_label)
+        Model().isInList(n['type'], ('user', 'thermal', 'model'))
+        return n['type']
+
+
+    def getElectricalScalarName(self, scalar_label):
+        """
+        Return type of scalar for choice of color (for view)
+        """
+        self.isInList(scalar_label, self.getElectricalScalarsList())
+        models = self.case.xmlGetNode('thermophysical_models')
+        node = models.xmlGetNode('joule_effect', 'model')
         n = node.xmlGetNode('scalar', 'name', label=scalar_label)
         return n['name']
 

@@ -22,11 +22,12 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine uselrc &
+subroutine elreca &
 !================
 
  ( nvar   , nscal  ,                                              &
-   dt     , rtpa   , rtp    , propce , propfa , propfb )
+   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
+   coefa  , coefb  )
 
 !===============================================================================
 ! FONCTION :
@@ -54,6 +55,8 @@ subroutine uselrc &
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
+! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
+!  (nfabor, *)     !    !     !                                                !
 ! smacel           ! tr ! <-- ! valeur des variables associee a la             !
 ! (ncesmp,*   )    !    !     !  source de masse                               !
 !                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
@@ -93,216 +96,121 @@ integer          nvar   , nscal
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
+double precision coefa(nfabor,*), coefb(nfabor,*)
 
 ! Local variables
 
-integer          iel    , ifac   , iutile
+integer          iel    , ifac
 integer          ipcefj , ipcdc1 , ipcdc2 , ipcdc3 , ipcsig
-integer          ipdcrp , idimve , jaiex
+integer          ipdcrp , idimve, idir
 
 double precision somje , coepoa , coefav , coepot
 double precision emax  , aiex   , amex
 double precision rayo  , econs  , z1     , z2   , posi
 double precision dtj   , dtjm   , delhsh , cdtj , cpmx
-double precision xelec , yelec  , zelec, diff
+double precision xelec , yelec  , zelec
 
 double precision, allocatable, dimension(:) :: w1
 
-
-!===============================================================================
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-!===============================================================================
-
-if (1.eq.1) return
-
-!===============================================================================
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
+logical          ok
 
 !===============================================================================
 !===============================================================================
 ! 1. INITIALISATION
 !===============================================================================
 
+
+
 !===============================================================================
 ! 2.  ARC ELECTRIQUE
 !===============================================================================
 
+
+
 if ( ippmod(ielarc).ge.1 ) then
 
-! 2.1 :  exemple : cas avec claquage
-! =======================================
+! 2.1 :  cas general
+! ===============================
+
+  if ( modrec .eq. 1) then
+
+!       CALCUL DU COEFFICIENT DE RECALAGE
+!       -------------------------------
+
+!  Calcul de l'integrale sur le Volume de J.E
+!     (c'est forcement positif ou nul)
+
+    ipcefj = ipproc(iefjou)
+    somje = 0.d0
+    do iel = 1, ncel
+      somje = somje+propce(iel,ipcefj)*volume(iel)
+    enddo
+
+    if(irangp.ge.0) then
+      call parsom (somje)
+    endif
+
+    coepot = couimp*dpot/max(somje,epzero)
+
+    coepoa = coepot
+
+!  On impose COEPOT >= 0.75 et COEPOT <= 1.5
+
+    if ( coepot .gt. 1.50d0 ) coepot = 1.50d0
+    if ( coepot .lt. 0.75d0 ) coepot = 0.75d0
+
+    write(nfecra,1000)coepoa,coepot
+ 1000     format(/,                                               &
+ ' Courant impose/Courant= ',E14.5,', Coeff. recalage= ',E14.5)
+
+!       RECALAGE DES VARIABLES ELECTRIQUES
+!       ---------------------------------------
+
+!        Valeur de DPOT
+!        --------------
+
+    dpot = dpot*coepot
+
+!        Potentiel Electrique (on pourrait eviter ; c'est pour le post)
+!        --------------------
+
+    do iel = 1, ncel
+      rtp(iel,isca(ipotr)) = rtp(iel,isca(ipotr))*coepot
+    enddo
+
+
+!        Densite de courant (sert pour A et pour jXB)
+!        ------------------
+
+    if(ippmod(ielarc).ge.1 ) then
+      do idimve = 1, ndimve
+        ipdcrp = ipproc(idjr(idimve))
+        do iel = 1, ncel
+          propce(iel,ipdcrp) = propce(iel,ipdcrp) * coepot
+        enddo
+      enddo
+    endif
+
+!        Effet Joule (sert pour H au pas de temps suivant)
+!        -----------
+
+    ipcefj = ipproc(iefjou)
+    do iel = 1, ncel
+      propce(iel,ipcefj) = propce(iel,ipcefj)*coepot**2
+    enddo
+
+  else if ( modrec .eq. 2) then
+
+! 2.2 : 2eme exemple : Autre methode de recalage
+! ==============================================
 !    Ceci est un cas particulier et doit etre adapte en fonction
 !    du cas et du maillage (intervenir aussi dans uselcl)
-
-
-!        Utilisation d'une rampe d'intensite
-!        -----------------------------------
-
-    if ( ntcabs.le.200 ) then
-      couimp = 200.d0
-    endif
-
-    if ( ntcabs.gt.200.and.ntcabs.le.400 ) then
-      couimp = 200.d0 + 2 * (ntcabs-200)
-    endif
-
-    if ( ntcabs.gt.400 ) then
-      couimp = 600.d0
-    endif
-
-!        UTILISANT D'UN CLAQUAGE AUTO
-!        ----------------------------
-
-    if(ntcabs.le.400.or.ntcabs.eq.ntpabs+1) iclaq = 0
-
-    econs = 1.5d5
-    jaiex = 0
-
-!        ON REPERE SI IL Y A CLAQUAGE ET SI OUI OU
-!        -----------------------------------------
-
-    if(ntcabs.ge.400 .and. iclaq .eq. 0 ) then
-
-      ! Allocate a work array
-      allocate(w1(ncelet))
-
-      amex = 1.d30
-      aiex = -1.d30
-      emax = 0.d0
-
-!     les composantes du champ electrique : J/SIGMA
-
-      ipcdc1 = ipproc(idjr(1))
-      ipcdc2 = ipproc(idjr(2))
-      ipcdc3 = ipproc(idjr(3))
-      ipcsig = ipproc(ivisls(ipotr))
-
-      do iel = 1, ncel
-
-        xelec = propce(iel,ipcdc1)/propce(iel,ipcsig)
-        yelec = propce(iel,ipcdc2)/propce(iel,ipcsig)
-        zelec = propce(iel,ipcdc3)/propce(iel,ipcsig)
-
-!       Calcul du champ E
-        w1(iel) = sqrt ( xelec**2 + yelec**2 + zelec**2 )
-        amex =  min(amex,w1(iel))
-        aiex =  max(aiex,w1(iel))
-      enddo
-
-      if(irangp.ge.0) then
-        call parmin (amex)
-        call parmax (aiex)
-      endif
-!
-      write(nfecra,*) 'Min et Max de E : amex, aiex = ',amex,aiex
-
-! Si le champ E max depasse la valeur seuil imposé, on claque à l'endroit du max de E
-      if(aiex .ge. econs) then
-        iclaq = 1
-        ntdcla = ntcabs
-
-!Initialisation des variables
-        xclaq = 1.d-8
-        yclaq = 1.d-8
-        zclaq = 1.d-8
-        diff  = 0.d0
-        write(nfecra,*) '0000 xclaq, yclaq, zclaq = ',xclaq,yclaq,zclaq
-!
-        do iel = 1, ncel
-          diff = aiex - w1(iel)
-
-! Pour le multiprocessing, il ne doit y avoir le claquage que sur un seul processeur
-! Pour le verifier, taper ARG_CS_OUTPUT = "--logp 1" dans le runcase
-          if(diff .le. 1.d-6) then
-            emax  =  w1(iel)
-            xclaq =  xyzcen(1,iel)
-            yclaq =  xyzcen(2,iel)
-            zclaq =  xyzcen(3,iel)
-            write(nfecra,*) '0011 xclaq, yclaq, zclaq = ',xclaq,yclaq,zclaq
-          endif
-        enddo
-
-        call parmax (emax)
-        call parmax (zclaq)
-
-! Transfert des bonnes valeurs de x,y,zclaq entre les processeurs.
-! On compare abs(xclaq) entre tous les processeurs
-! Si valeur négative, parmin se charge de transférer le signe
-! Attention : tous les processeurs doivent recevoir le signal PARMAX/PARMIN
-! pour se synchroniser sinon calcul sans fin
-!
-
-        if(irangp .ge. 0) then
-          write(nfecra,*) '1111 xclaq, yclaq, zclaq =',xclaq,yclaq,zclaq
-          write(nfecra,*) 'diff =', diff
-!
-          if (xclaq .gt. 1.d-7) then
-            call parmax (xclaq)
-            call parmin (xclaq)
-          elseif (xclaq .lt. -1.d-7) then
-            xclaq=abs(xclaq)
-            call parmax (xclaq)
-            xclaq=-xclaq
-            call parmin (xclaq)
-          else
-            call parmax (xclaq)
-            call parmin (xclaq)
-          endif
-!
-          if(yclaq .gt. 1.d-7) then
-            call parmax (yclaq)
-            call parmin (yclaq)
-          elseif (yclaq .lt. -1.d-7) then
-            yclaq=abs(yclaq)
-            call parmax (yclaq)
-            yclaq=-yclaq
-            call parmin (yclaq)
-          else
-            call parmax (yclaq)
-            call parmin (yclaq)
-          endif
-!
-        endif
-!
-        write(nfecra,*) 'claquage : ntdcla, emax ', ntcabs, emax
-        write(nfecra,*) 'xclaq, yclaq, zclaq = ',xclaq,yclaq,zclaq
-      endif
-      ! Free memory
-      deallocate(w1)
-    endif
-
-!        SI IL Y A CLAQUAGE : ON IMPOSE COLONNE CHAUDE DU CENTRE VERS
-!        LE POINT DE CLAQUAGE
-!        =============================================================
-
-    if(iclaq .eq. 1) then
-      if(ntcabs.le.ntdcla+30) then
-        z1 = zclaq - 3.d-4
-        if(z1.le.0.d0) z1 = 0.d0
-        z2 = zclaq + 3.d-4
-        if(z2.ge.2.d-2) z2 = 2.d-2
-
-        do iel = 1, ncel
-
-          if( xyzcen(3,iel).ge.z1 .and. xyzcen(3,iel).le.z2) then
-            rayo = sqrt((xclaq*xyzcen(1,iel)-yclaq*xyzcen(2,iel)  &
-                 /sqrt(xclaq**2+yclaq**2))**2+(xyzcen(3,iel)      &
-                 -zclaq)**2)
-            posi=xclaq*xyzcen(1,iel)
-            if( rayo.le.5d-4 .and. posi.ge.0d0 ) then
-              rtp(iel,isca(ihm)) = 8.d7
-            endif
-          endif
-        enddo
-      else
-        iclaq = 0
-      endif
-    endif
 
 !        Calcul de l'integrale sur le Volume de J.E
 !        -----------------------------------
 !        (c'est forcement positif ou nul)
+
+    call uielrc(ncelet, izreca, crit_reca)
 
     ipcefj = ipproc(iefjou)
     somje = 0.d0
@@ -327,14 +235,22 @@ if ( ippmod(ielarc).ge.1 ) then
 !       ATTENTION : changer la valeur des tests sur CDGFAC(3,IFAC)
 !                   en fonction du maillage
 
-    ipcdc3 = ipproc(idjr(3))
-    elcou = 0.d0
+    ipcdc3 = ipproc(idjr(idreca))
+    elcou  = 0.d0
     do ifac = 1, nfac
-      if( abs(surfac(1,ifac)).le.1.d-8 .and. abs(surfac(2,ifac)).le.1.d-8 &
-           .and. cdgfac(3,ifac) .gt. 0.05d-2                              &
-           .and. cdgfac(3,ifac) .lt. 0.08d-2 ) then
+      ok = .true.
+      do idir = 1, 3
+        if (idir.ne.idreca) then
+          if (abs(surfac(idir,ifac)) .le. 1.d-8) then
+            ok = .false.
+          endif
+        endif
+      enddo
+      if (ok .eqv. .true.) then
         iel = ifacel(1,ifac)
-        elcou = elcou + propce(iel,ipcdc3) * surfac(3,ifac)
+        if (izreca(iel).gt.0) then
+          elcou = elcou + propce(iel,ipcdc3) * surfac(idreca,ifac)
+        endif
       endif
     enddo
 
@@ -355,11 +271,11 @@ if ( ippmod(ielarc).ge.1 ) then
     dtj = 1.d15
     dtjm =dtj
     delhsh = 0.d0
-    cdtj= 2.0d2
+    cdtj= 80.d0
 
     do iel = 1, ncel
       if(propce(iel,ipproc(irom)).ne.0.d0)                     &
-           delhsh =  propce(iel,ipcefj) * dt(iel)              &
+           delhsh =  propce(iel,ipcefj) * dt(iel)                 &
            /propce(iel,ipproc(irom))
 
       if(delhsh.ne.0.d0) then
@@ -370,14 +286,14 @@ if ( ippmod(ielarc).ge.1 ) then
       dtjm=abs(dtjm)
       dtj =min(dtj,dtjm)
     enddo
-
     if(irangp.ge.0) then
       call parmin (dtj)
     endif
+    WRITE(NFECRA,*) ' DTJ = ',DTJ
 
     cpmx= sqrt(cdtj*dtj)
     coepot=cpmx
-    if(ntcabs.gt.3) then
+    if(ntcabs.gt.2) then
       if(coepoa.ge.1.05d0) then
         coepot=cpmx
       else
@@ -423,6 +339,83 @@ if ( ippmod(ielarc).ge.1 ) then
     do iel = 1, ncel
       propce(iel,ipcefj) = propce(iel,ipcefj)*coepot**2
     enddo
+  endif
+endif
+
+!===============================================================================
+! 3.  EFFET JOULE
+!===============================================================================
+
+if ( ippmod(ieljou).ge.1 ) then
+
+! 3.1  CALCUL DU COEFFICIENT DE RECALAGE
+! --------------------------------------
+
+!  Calcul de l'integrale sur le Volume de J.E
+!     (c'est forcement positif ou nul)
+
+  ipcefj = ipproc(iefjou)
+  somje = 0.d0
+  do iel = 1, ncel
+    somje = somje+propce(iel,ipcefj)*volume(iel)
+  enddo
+
+  if(irangp.ge.0) then
+    call parsom (somje)
+  endif
+
+  coepot = sqrt(puisim/max(somje,epzero))
+
+  coefav = coepot
+
+!  On impose COEF >= 0.75 et COEF <= 1.5
+
+  if ( coepot .gt. 1.50d0 ) coepot = 1.50d0
+  if ( coepot .lt. 0.75d0 ) coepot = 0.75d0
+
+  write(nfecra,2000)coefav,coejou
+ 2000   format(/,                                                 &
+ ' Puissance impose/Somme jE= ',E14.5,', Coeff. recalage= ',E14.5)
+
+
+! 3.2  RECALAGE DES VARIABLES JOULE
+! ---------------------------------
+
+!       Valeur de DPOT (au cas ou utile)
+!       --------------
+
+  dpot = dpot*coepot
+
+!       Coefficient correcteur COEJOU cumule
+!       ------------------------------------
+
+  coejou = coejou*coepot
+
+!       Potentiel Electrique (on pourrait eviter ; c'est pour le post)
+!       --------------------
+
+  if ( ippmod(ieljou).ne.3 .and. ippmod(ieljou).ne.4 ) then
+    do iel = 1, ncel
+      rtp(iel,isca(ipotr)) = rtp(iel,isca(ipotr))*coepot
+    enddo
+  endif
+
+!      Potentiel complexe (on pourrait eviter ; c'est pour le post)
+!      -----------------
+
+  if ( ippmod(ieljou).eq.2 ) then
+    do iel = 1, ncel
+      rtp(iel,isca(ipoti)) = rtp(iel,isca(ipoti))*coepot
+    enddo
+  endif
+
+!      Effet Joule (sert pour H au pas de temps suivant)
+!      -----------
+
+  ipcefj = ipproc(iefjou)
+  do iel = 1, ncel
+    propce(iel,ipcefj) = propce(iel,ipcefj)*coepot**2
+  enddo
 
 endif
 
@@ -446,4 +439,4 @@ endif
 !----
 
 return
-end subroutine uselrc
+end subroutine

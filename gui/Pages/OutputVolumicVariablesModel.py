@@ -72,6 +72,7 @@ class OutputVolumicVariablesModel(Model):
                               self.getFluidProperty(),
                               self.getTimeProperty(),
                               self.getMeteoScalProper(),
+                              self.getElecScalProper(),
                               self.getPuCoalScalProper(),
                               self.getGasCombScalProper(),
                               self._getWeightMatrixProperty(),
@@ -215,6 +216,24 @@ class OutputVolumicVariablesModel(Model):
         """
         nodList = []
         node = self.node_models.xmlGetNode('atmospheric_flows', 'model')
+        if not node: return []
+        model = node['model']
+        varList = []
+        if model != 'off':
+            for var in ('scalar', 'property'):
+                nodList = node.xmlGetNodeList(var)
+                for nodvar in nodList:
+                    varList.append(nodvar)
+        return varList
+
+
+    def getElecScalProper(self):
+        """
+        Return list fo nodes of electric flows.
+        Also called by ProfilesModel and TimeAveragesModel
+        """
+        nodList = []
+        node = self.node_models.xmlGetNode('joule_effect', 'model')
         if not node: return []
         model = node['model']
         varList = []

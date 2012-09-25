@@ -194,17 +194,32 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         self.modelRho.addItem(self.tr('user law'), 'user_law')
         if mdl_atmo != 'off':
             self.modelRho.addItem(self.tr('defined in atphyv'), 'variable')
+        elif mdl_joule == 'arc':
+            self.modelRho.addItem(self.tr('defined in elphyv'), 'variable')
         else:
             self.modelRho.addItem(self.tr('user subroutine (cs_user_physical_properties)'), 'variable')
+
         self.modelMu.addItem(self.tr('constant'), 'constant')
         self.modelMu.addItem(self.tr('user law'), 'user_law')
-        self.modelMu.addItem(self.tr('user subroutine (cs_user_physical_properties)'), 'variable')
+        if mdl_joule == 'arc':
+            self.modelMu.addItem(self.tr('defined in elphyv'), 'variable')
+        else:
+            self.modelMu.addItem(self.tr('user subroutine (cs_user_physical_properties)'), 'variable')
+
         self.modelCp.addItem(self.tr('constant'), 'constant')
         self.modelCp.addItem(self.tr('user law'), 'user_law')
-        self.modelCp.addItem(self.tr('user subroutine (cs_user_physical_properties)'), 'variable')
+        if mdl_joule == 'arc':
+            self.modelCp.addItem(self.tr('defined in elphyv'), 'variable')
+        else:
+            self.modelCp.addItem(self.tr('user subroutine (cs_user_physical_properties)'), 'variable')
+
         self.modelAl.addItem(self.tr('constant'), 'constant')
         self.modelAl.addItem(self.tr('user law'), 'user_law')
-        self.modelAl.addItem(self.tr('user subroutine (cs_user_physical_properties)'), 'variable')
+        if mdl_joule == 'arc':
+            self.modelAl.addItem(self.tr('defined in elphyv'), 'variable')
+        else:
+            self.modelAl.addItem(self.tr('user subroutine (cs_user_physical_properties)'), 'variable')
+
         self.modelDiff.addItem(self.tr('constant'), 'constant')
         self.modelDiff.addItem(self.tr('user law'), 'user_law')
         self.modelCv.addItem(self.tr('constant'), 'constant')
@@ -357,10 +372,17 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
                     self.mdl.setPropertyMode(tag, 'constant')
 
             # Joule
-            if mdl_joule != 'off':
-                __model.setItem(str_model='user_law')
+            if mdl_joule == 'arc':
                 __model.disableItem(str_model='constant')
-                self.mdl.setPropertyMode(name, 'user_law')
+                __model.disableItem(str_model='user_law')
+                __model.disableItem(str_model='variable')
+                __model.setItem(str_model='variable')
+                __combo.setEnabled(False)
+                __button.setEnabled(False)
+            if mdl_joule == 'joule':
+                __model.setItem(str_model='variable')
+                __model.disableItem(str_model='constant')
+                self.mdl.setPropertyMode(tag, 'variable')
 
             # Atmospheric Flows
             if mdl_atmo != 'off':

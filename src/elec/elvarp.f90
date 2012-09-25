@@ -59,6 +59,7 @@ use ppppar
 use ppthch
 use ppincl
 use elincl
+use ihmpre
 
 !===============================================================================
 
@@ -121,6 +122,15 @@ if ( ngazg .gt. 1 ) then
     is = is+1
     iycoel(iesp)=iscapp(is)
   enddo
+endif
+
+!   - Interface Code_Saturne
+!     ======================
+!     Construction de l'indirection entre la numerotation du noyau et XML
+
+if (iihmpr.eq.1) then
+   call uielsc(ippmod, ieljou, ielarc, ngazg, ihm,               &
+               ipotr, iycoel, ipoti, ipotva)
 endif
 
 

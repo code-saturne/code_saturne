@@ -1309,6 +1309,31 @@ _getNOxStatus(int   *keyword)
   BFT_FREE(path);
 }
 
+/*-----------------------------------------------------------------------------
+ * Return the name of a joule effect model.
+ *
+ * parameter:
+ *----------------------------------------------------------------------------*/
+
+char*
+cs_gui_get_joule_model(void)
+{
+  char *model = NULL;
+  char *path = NULL;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3, "thermophysical_models",
+                                  "joule_effect",
+                                  "joule_model");
+  cs_xpath_add_attribute(&path, "model");
+
+  model = cs_gui_get_attribute_value(path);
+
+  BFT_FREE(path);
+
+  return model;
+}
+
 /*============================================================================
  * Public Fortran function definitions
  *============================================================================*/
@@ -1388,99 +1413,124 @@ void CS_PROCF (uippmo, UIPPMO)(int *const ippmod,
   isactiv = cs_gui_get_activ_thermophysical_model();
 
   if (isactiv)
+  {
+    if (cs_gui_strcmp(vars->model, "solid_fuels"))
     {
-      if (cs_gui_strcmp(vars->model, "solid_fuels"))
-        {
-          if (cs_gui_strcmp(vars->model_value, "homogeneous_fuel"))
-            ippmod[*iccoal - 1] = 0;
-          else if (cs_gui_strcmp(vars->model_value, "homogeneous_fuel_moisture"))
-            ippmod[*iccoal - 1] = 1;
-          else
-            bft_error(__FILE__, __LINE__, 0,
-                      _("Invalid coal model: %s.\n"), vars->model_value);
-          // ieqco2 fix to transport of CO2 mass fraction
-          *ieqco2 = 1;
-        }
-      else if  (cs_gui_strcmp(vars->model, "gas_combustion"))
-        {
-          if (cs_gui_strcmp(vars->model_value, "adiabatic"))
-            ippmod[*icod3p - 1] = 0;
-          else if (cs_gui_strcmp(vars->model_value, "extended"))
-            ippmod[*icod3p - 1] = 1;
-          else if (cs_gui_strcmp(vars->model_value, "spalding"))
-            ippmod[*icoebu - 1] = 0;
-          else if (cs_gui_strcmp(vars->model_value, "enthalpy_st"))
-            ippmod[*icoebu - 1] = 1;
-          else if (cs_gui_strcmp(vars->model_value, "mixture_st"))
-            ippmod[*icoebu - 1] = 2;
-          else if (cs_gui_strcmp(vars->model_value, "enthalpy_mixture_st"))
-            ippmod[*icoebu - 1] = 3;
-          else if (cs_gui_strcmp(vars->model_value, "2-peak_adiabatic"))
-            ippmod[*icolwc - 1] = 0;
-          else if (cs_gui_strcmp(vars->model_value, "2-peak_enthalpy"))
-            ippmod[*icolwc - 1] = 1;
-          else if (cs_gui_strcmp(vars->model_value, "3-peak_adiabatic"))
-            ippmod[*icolwc - 1] = 2;
-          else if (cs_gui_strcmp(vars->model_value, "3-peak_enthalpy"))
-            ippmod[*icolwc - 1] = 3;
-          else if (cs_gui_strcmp(vars->model_value, "4-peak_adiabatic"))
-            ippmod[*icolwc - 1] = 4;
-          else if (cs_gui_strcmp(vars->model_value, "4-peak_enthalpy"))
-            ippmod[*icolwc - 1] = 5;
-          else
-            bft_error(__FILE__, __LINE__, 0,
-                      _("Invalid gas combustion flow model: %s.\n"),
-                      vars->model_value);
-        }
-      else if  (cs_gui_strcmp(vars->model, "atmospheric_flows"))
-        {
-          if (cs_gui_strcmp(vars->model_value, "constant"))
-            ippmod[*iatmos - 1] = 0;
-          else if (cs_gui_strcmp(vars->model_value, "dry"))
-            ippmod[*iatmos - 1] = 1;
-          else if (cs_gui_strcmp(vars->model_value, "humid"))
-            ippmod[*iatmos - 1] = 2;
-          else
-            bft_error(__FILE__, __LINE__, 0,
-                      _("Invalid atmospheric flow model: %s.\n"),
-                      vars->model_value);
-        }
-      else if  (cs_gui_strcmp(vars->model, "compressible_model"))
-        {
-          if (cs_gui_strcmp(vars->model_value, "constant_gamma")){
-            ippmod[*icompf - 1] = 0;
-            *ieos = 0;
-          }
-          else if (cs_gui_strcmp(vars->model_value, "variable_gamma'")){
-            ippmod[*icompf - 1] = 0;
-            *ieos = 1;
-          }
-          else if (cs_gui_strcmp(vars->model_value, "van_der_waals")){
-            ippmod[*icompf - 1] = 0;
-            *ieos = 2;
-          }
-          else
-            bft_error(__FILE__, __LINE__, 0,
-                      _("Invalid compressible model: %s.\n"),
-                      vars->model_value);
-        }
-
-      /* If the model is active, one only takes the specific physics scalars */
-      nscapp = _scalar_number(vars->model);
+      if (cs_gui_strcmp(vars->model_value, "homogeneous_fuel"))
+        ippmod[*iccoal - 1] = 0;
+      else if (cs_gui_strcmp(vars->model_value, "homogeneous_fuel_moisture"))
+        ippmod[*iccoal - 1] = 1;
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Invalid coal model: %s.\n"), vars->model_value);
+      // ieqco2 fix to transport of CO2 mass fraction
+      *ieqco2 = 1;
     }
+    else if  (cs_gui_strcmp(vars->model, "gas_combustion"))
+    {
+      if (cs_gui_strcmp(vars->model_value, "adiabatic"))
+        ippmod[*icod3p - 1] = 0;
+      else if (cs_gui_strcmp(vars->model_value, "extended"))
+        ippmod[*icod3p - 1] = 1;
+      else if (cs_gui_strcmp(vars->model_value, "spalding"))
+        ippmod[*icoebu - 1] = 0;
+      else if (cs_gui_strcmp(vars->model_value, "enthalpy_st"))
+        ippmod[*icoebu - 1] = 1;
+      else if (cs_gui_strcmp(vars->model_value, "mixture_st"))
+        ippmod[*icoebu - 1] = 2;
+      else if (cs_gui_strcmp(vars->model_value, "enthalpy_mixture_st"))
+        ippmod[*icoebu - 1] = 3;
+      else if (cs_gui_strcmp(vars->model_value, "2-peak_adiabatic"))
+        ippmod[*icolwc - 1] = 0;
+      else if (cs_gui_strcmp(vars->model_value, "2-peak_enthalpy"))
+        ippmod[*icolwc - 1] = 1;
+      else if (cs_gui_strcmp(vars->model_value, "3-peak_adiabatic"))
+        ippmod[*icolwc - 1] = 2;
+      else if (cs_gui_strcmp(vars->model_value, "3-peak_enthalpy"))
+        ippmod[*icolwc - 1] = 3;
+      else if (cs_gui_strcmp(vars->model_value, "4-peak_adiabatic"))
+        ippmod[*icolwc - 1] = 4;
+      else if (cs_gui_strcmp(vars->model_value, "4-peak_enthalpy"))
+        ippmod[*icolwc - 1] = 5;
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Invalid gas combustion flow model: %s.\n"),
+                  vars->model_value);
+    }
+    else if  (cs_gui_strcmp(vars->model, "atmospheric_flows"))
+    {
+      if (cs_gui_strcmp(vars->model_value, "constant"))
+        ippmod[*iatmos - 1] = 0;
+      else if (cs_gui_strcmp(vars->model_value, "dry"))
+        ippmod[*iatmos - 1] = 1;
+      else if (cs_gui_strcmp(vars->model_value, "humid"))
+        ippmod[*iatmos - 1] = 2;
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Invalid atmospheric flow model: %s.\n"),
+                  vars->model_value);
+    }
+    else if  (cs_gui_strcmp(vars->model, "joule_effect"))
+    {
+      if (cs_gui_strcmp(vars->model_value, "joule"))
+      {
+        char *value = cs_gui_get_joule_model();
+        if (cs_gui_strcmp(value, "AC/DC"))
+          ippmod[*ieljou - 1] = 1;
+        else if (cs_gui_strcmp(value, "three-phase"))
+          ippmod[*ieljou - 1] = 2;
+        else if (cs_gui_strcmp(value, "AC/DC+Transformer"))
+          ippmod[*ieljou - 1] = 3;
+        else if (cs_gui_strcmp(value, "three-phase+Transformer"))
+          ippmod[*ieljou - 1] = 4;
+        else
+          bft_error(__FILE__, __LINE__, 0,
+                    _("Invalid joule model: %s.\n"),
+                    vars->model_value);
+        BFT_FREE(value);
+      }
+      else if (cs_gui_strcmp(vars->model_value, "arc"))
+        ippmod[*ielarc - 1] = 2;
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Invalid electrical model: %s.\n"),
+                  vars->model_value);
+    }
+    else if  (cs_gui_strcmp(vars->model, "compressible_model"))
+    {
+      if (cs_gui_strcmp(vars->model_value, "constant_gamma")){
+        ippmod[*icompf - 1] = 0;
+        *ieos = 0;
+      }
+      else if (cs_gui_strcmp(vars->model_value, "variable_gamma'")){
+        ippmod[*icompf - 1] = 0;
+        *ieos = 1;
+      }
+      else if (cs_gui_strcmp(vars->model_value, "van_der_waals")){
+        ippmod[*icompf - 1] = 0;
+        *ieos = 2;
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Invalid compressible model: %s.\n"),
+                  vars->model_value);
+    }
+
+    /* If the model is active, one only takes the specific physics scalars */
+    nscapp = _scalar_number(vars->model);
+  }
 
   vars->nscapp = nscapp;
 
 #if _XML_DEBUG_
   bft_printf("==>UIPPMO\n");
   if (isactiv)
-    {
-      bft_printf("--thermophysical model: %s\n", vars->model);
-      bft_printf("--thermophysical value: %s\n", vars->model_value);
-      bft_printf("--model scalars number: %i\n", vars->nscapp);
-    }
+  {
+    bft_printf("--thermophysical model: %s\n", vars->model);
+    bft_printf("--thermophysical value: %s\n", vars->model_value);
+    bft_printf("--model scalars number: %i\n", vars->nscapp);
+  }
 #endif
-
 }
 
 /*----------------------------------------------------------------------------
@@ -1540,7 +1590,7 @@ void CS_PROCF (uicpi2, UICPI2) (double *const toxy,
 
 /*-----------------------------------------------------------------------------
  * Indirection between the solver numbering and the XML one
- * for physical properties of the activated specific physics
+ * for physical properties of the activated specific physics (solid fuel)
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
@@ -1675,26 +1725,25 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
   BFT_MALLOC(vars->properties_name[n], strlen("YM_N2") +1, char);
   strcpy(vars->properties_name[n++], "YM_N2");
 
-  if (*ieqnox == 1)
-    {
-      /* IGHCN1 */
-      vars->properties_ipp[n] = ipppro[ipproc[ *ighcn1 -1] -1];
-      vars->propce[n] = ipproc[ *ighcn1 -1] -1;
-      BFT_MALLOC(vars->properties_name[n], strlen("EXP1") +1, char);
-      strcpy(vars->properties_name[n++], "EXP1");
+  if (*ieqnox == 1) {
+    /* IGHCN1 */
+    vars->properties_ipp[n] = ipppro[ipproc[ *ighcn1 -1] -1];
+    vars->propce[n] = ipproc[ *ighcn1 -1] -1;
+    BFT_MALLOC(vars->properties_name[n], strlen("EXP1") +1, char);
+    strcpy(vars->properties_name[n++], "EXP1");
 
-      /* IGHCN2 */
-      vars->properties_ipp[n] = ipppro[ipproc[ *ighcn2 -1] -1];
-      vars->propce[n] = ipproc[ *ighcn2 -1] -1;
-      BFT_MALLOC(vars->properties_name[n], strlen("EXP2") +1, char);
-      strcpy(vars->properties_name[n++], "EXP2");
+    /* IGHCN2 */
+    vars->properties_ipp[n] = ipppro[ipproc[ *ighcn2 -1] -1];
+    vars->propce[n] = ipproc[ *ighcn2 -1] -1;
+    BFT_MALLOC(vars->properties_name[n], strlen("EXP2") +1, char);
+    strcpy(vars->properties_name[n++], "EXP2");
 
-      /* ignoth */
-      vars->properties_ipp[n] = ipppro[ipproc[ *ignoth -1 ] -1];
-      vars->propce[n] = ipproc[*ignoth -1] -1;
-      BFT_MALLOC(vars->properties_name[n], strlen("EXP3") +1, char);
-      strcpy(vars->properties_name[n++], "EXP3");
-    }
+    /* ignoth */
+    vars->properties_ipp[n] = ipppro[ipproc[ *ignoth -1 ] -1];
+    vars->propce[n] = ipproc[*ignoth -1] -1;
+    BFT_MALLOC(vars->properties_name[n], strlen("EXP3") +1, char);
+    strcpy(vars->properties_name[n++], "EXP3");
+  }
 
   /* IMEL */
   vars->properties_ipp[n] = ipppro[ipproc[ *immel -1] -1];
@@ -1823,62 +1872,59 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     strcpy(name, "Ga_HET_O2");
   }
 
-  if (*ihtco2 == 1)
+  if (*ihtco2 == 1) {
+    /* IGHCO2 loop on classes */
+    BFT_REALLOC(name, strlen("Ga_HET_CO2")+1 + 2, char);
+    strcpy(name, "Ga_HET_CO2");
+    for (i = 0; i < *nclass; i++)
     {
-      /* IGHCO2 loop on classes */
-      BFT_REALLOC(name, strlen("Ga_HET_CO2")+1 + 2, char);
+      sprintf(snumpp, "%2.2i", i+1);
+      strcat(name, snumpp);
+
+      vars->properties_ipp[n] = ipppro[ipproc[ighco2[i] -1] -1];
+      vars->propce[n] = ipproc[ighco2[i] -1] -1;
+      BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
+      strcpy(vars->properties_name[n++], name);
+
       strcpy(name, "Ga_HET_CO2");
-      for (i = 0; i < *nclass; i++)
-        {
-          sprintf(snumpp, "%2.2i", i+1);
-          strcat(name, snumpp);
-
-          vars->properties_ipp[n] = ipppro[ipproc[ighco2[i] -1] -1];
-          vars->propce[n] = ipproc[ighco2[i] -1] -1;
-          BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
-          strcpy(vars->properties_name[n++], name);
-
-          strcpy(name, "Ga_HET_CO2");
-        }
     }
+  }
 
-  if (*ihth2o == 1)
+  if (*ihth2o == 1) {
+    /* IGNH2O loop on classes */
+    BFT_REALLOC(name, strlen("Ga_HET_H2O")+1 + 2, char);
+    strcpy(name, "Ga_HET_H2O");
+    for (i = 0; i < *nclass; i++)
     {
-      /* IGNH2O loop on classes */
-      BFT_REALLOC(name, strlen("Ga_HET_H2O")+1 + 2, char);
+      sprintf(snumpp, "%2.2i", i+1);
+      strcat(name, snumpp);
+
+      vars->properties_ipp[n] = ipppro[ipproc[ighh2o[i] -1] -1];
+      vars->propce[n] = ipproc[ighh2o[i] -1] -1;
+      BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
+      strcpy(vars->properties_name[n++], name);
+
       strcpy(name, "Ga_HET_H2O");
-      for (i = 0; i < *nclass; i++)
-        {
-          sprintf(snumpp, "%2.2i", i+1);
-          strcat(name, snumpp);
-
-          vars->properties_ipp[n] = ipppro[ipproc[ighh2o[i] -1] -1];
-          vars->propce[n] = ipproc[ighh2o[i] -1] -1;
-          BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
-          strcpy(vars->properties_name[n++], name);
-
-          strcpy(name, "Ga_HET_H2O");
-        }
     }
+  }
 
-  if (ippmod[*iccoal -1] == 1)
+  if (ippmod[*iccoal -1] == 1) {
+    /* IGMSEC loop on classes */
+    BFT_REALLOC(name, strlen("Ga_SEC")+1 + 2, char);
+    strcpy(name, "Ga_SEC");
+    for (i = 0; i < *nclass; i++)
     {
-      /* IGMSEC loop on classes */
-      BFT_REALLOC(name, strlen("Ga_SEC")+1 + 2, char);
+      sprintf(snumpp, "%2.2i", i+1);
+      strcat(name, snumpp);
+
+      vars->properties_ipp[n] = ipppro[ipproc[igmsec[i] -1] -1];
+      vars->propce[n] = ipproc[igmsec[i] -1] -1;
+      BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
+      strcpy(vars->properties_name[n++], name);
+
       strcpy(name, "Ga_SEC");
-      for (i = 0; i < *nclass; i++)
-        {
-          sprintf(snumpp, "%2.2i", i+1);
-          strcat(name, snumpp);
-
-          vars->properties_ipp[n] = ipppro[ipproc[igmsec[i] -1] -1];
-          vars->propce[n] = ipproc[igmsec[i] -1] -1;
-          BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
-          strcpy(vars->properties_name[n++], name);
-
-          strcpy(name, "Ga_SEC");
-        }
     }
+  }
 
   /* Bilan_C */
   vars->properties_ipp[n] = ipppro[ipproc[ *ibcarbone -1] -1];
@@ -2088,7 +2134,6 @@ void CS_PROCF (uicopr, UICOPR) (const int *const nsalpp,
     strcpy(vars->properties_name[n++], "TEMP3");
   }
 
-
   BFT_FREE(name);
   BFT_FREE(snumpp);
 
@@ -2215,6 +2260,176 @@ void CS_PROCF (uicosc, UICOSC) (const int *const ippmod,
   for (i=0; i< vars->nscaus+vars->nscapp; i++)
     bft_printf("--label of scalar[%i]: %s\n", i, vars->label[i]);
 #endif
+
+}
+
+/*----------------------------------------------------------------------------
+ * Electrical model : read parameters
+ *
+ * Fortran Interface:
+ *
+ * subroutine uieli1
+ * *****************
+ * integer         ieljou    -->   joule model
+ * integer         ielarc    -->   arc model
+ * integer         ielcor    <--   scaling electrical variables
+ * double          couimp    <--   imposed current intensity
+ * double          puisim    <--   imposed power
+ * integer         modrec    <--   scaling type for electric arc
+ * integer         idreca    <--   current density component used to scaling
+ *                                 (modrec ==2)
+ * char            crit_reca <--   define criteria for plane used to scaling (modrec ==2)
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uieli1, UIELI1) (const int    *const ncelet,
+                                const int    *const ieljou,
+                                const int    *const ielarc,
+                                      int    *const ielcor,
+                                      double *const couimp,
+                                      double *const puisim,
+                                      int    *const modrec,
+                                      int    *const idreca,
+                                      char   *const crit_reca)
+{
+  char *path   = NULL;
+  int   status = 0;
+  double   result;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3, "thermophysical_models",
+                                  "joule_effect",
+                                  "variable_scaling");
+
+  cs_xpath_add_attribute(&path, "status");
+  if (cs_gui_get_status(path, &status))
+    *ielcor = status;
+  BFT_FREE(path);
+
+  if (*ieljou > 0) {
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path, 3, "thermophysical_models",
+                                    "joule_effect",
+                                    "imposed_power");
+
+    cs_xpath_add_function_text(&path);
+    if (!cs_gui_get_double(path, &result))
+      bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+    *puisim = result;
+    BFT_FREE(path);
+  }
+
+  if (*ielarc > 0) {
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path, 3, "thermophysical_models",
+                                    "joule_effect",
+                                    "imposed_current");
+    cs_xpath_add_function_text(&path);
+    if (!cs_gui_get_double(path, &result))
+      bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+    *couimp = result;
+    BFT_FREE(path);
+
+    if (*ielcor > 0) {
+      path = cs_xpath_init_path();
+      char *choice;
+
+      cs_xpath_add_elements(&path, 3, "thermophysical_models",
+                                      "joule_effect",
+                                      "recal_model");
+      cs_xpath_add_attribute(&path, "model");
+      choice = cs_gui_get_attribute_value(path);
+      if (cs_gui_strcmp(choice, "general_case"))
+        *modrec = 1;
+      else if (cs_gui_strcmp(choice, "plane_define"))
+        *modrec = 2;
+      else if (cs_gui_strcmp(choice, "user"))
+        *modrec = 3;
+      else
+        bft_error(__FILE__, __LINE__, 0, _("Invalid modele : %s\n"), choice);
+
+      BFT_FREE(choice);
+
+      if (*modrec == 2) {
+        path = cs_xpath_init_path();
+        cs_xpath_add_elements(&path, 4, "thermophysical_models",
+                                        "joule_effect",
+                                        "recal_model",
+                                        "direction");
+        cs_xpath_add_function_text(&path);
+        choice = cs_gui_get_text_value(path);
+        if (cs_gui_strcmp(choice, "X"))
+          *idreca = 1;
+        else if (cs_gui_strcmp(choice, "Y"))
+          *idreca = 2;
+        else
+          *idreca = 3;
+        BFT_FREE(path);
+        BFT_FREE(choice);
+
+        path = cs_xpath_init_path();
+        cs_xpath_add_elements(&path, 4, "thermophysical_models",
+                                        "joule_effect",
+                                        "recal_model",
+                                        "plane_definition");
+        cs_xpath_add_function_text(&path);
+        *crit_reca = cs_gui_get_text_value(path);
+
+        BFT_FREE(path);
+      }
+    }
+    BFT_FREE(path);
+  }
+
+#if _XML_DEBUG_
+  bft_printf("==>UIELI1\n");
+  bft_printf("--ielcor  = %i\n", *ielcor);
+  bft_printf("--puisim  = %f\n", *puisim);
+  bft_printf("--couimp  = %f\n", *couimp);
+  bft_printf("--modrec  = %f\n", *modrec);
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ * Electrical model : define plane for elreca
+ *
+ * Fortran Interface:
+ *
+ * subroutine uielrc
+ * *****************
+ * integer         izreca    <--   define plane used to scaling (modrec ==2)
+ * char            crit_reca <--   define criteria for plane used to scaling (modrec ==2)
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uielrc, UIELRC) (const int    *const ncelet,
+                                      int    *const izreca,
+                                      char   *const crit_reca)
+{
+  /* build list of cells */
+  int  c_id         = 0;
+  int  *cells_list  = NULL;
+  int  cells = 0;
+
+  BFT_MALLOC(cells_list, *ncelet, int);
+  c_id = fvm_selector_get_list(cs_glob_mesh->select_cells,
+                               crit_reca,
+                               cells,
+                               cells_list);
+
+  if (fvm_selector_n_missing(cs_glob_mesh->select_cells, c_id) > 0)
+  {
+    const char *missing
+      = fvm_selector_get_missing(cs_glob_mesh->select_cells, c_id, 0);
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf(_("The group or attribute \"%s\" in the selection\n"
+          "criteria:\n"
+          "\"%s\"\n"
+          " does not correspond to any cell.\n"),
+        missing, crit_reca);
+  }
+
+  for (int j=0; j < cells; j++)
+    izreca[cells_list[j]] = 1;
+  BFT_FREE(cells_list);
 
 }
 
@@ -2358,8 +2573,7 @@ void CS_PROCF (uicpsc, UICPSC) (const int *const ncharb,
   strcpy(vars->label[*if7m -1], label);
   BFT_FREE(label);
 
-  if (*ihtco2 == 1)
-  {
+  if (*ihtco2 == 1) {
     /* IF3MC2 */
     label = _scalar_name_label("solid_fuels", "Fr_HET_CO2");
     BFT_MALLOC(vars->label[*if8m -1], strlen(label)+1, char);
@@ -2367,8 +2581,7 @@ void CS_PROCF (uicpsc, UICPSC) (const int *const ncharb,
     BFT_FREE(label);
   }
 
-  if (*ihth2o == 1)
-  {
+  if (*ihth2o == 1) {
     /* IF3MC2 */
     label = _scalar_name_label("solid_fuels", "Fr_HET_H2O");
     BFT_MALLOC(vars->label[*if9m -1], strlen(label)+1, char);
@@ -2405,8 +2618,7 @@ void CS_PROCF (uicpsc, UICPSC) (const int *const ncharb,
     BFT_FREE(label);
   }
 
-  if (*noxyd >= 2)
-  {
+  if (*noxyd >= 2) {
     /* IF4M */
     label = _scalar_name_label("solid_fuels", "FR_OXYD2");
     BFT_MALLOC(vars->label[*if4m -1], strlen(label)+1, char);
@@ -2414,8 +2626,7 @@ void CS_PROCF (uicpsc, UICPSC) (const int *const ncharb,
     BFT_FREE(label);
   }
 
-  if (*noxyd == 3)
-  {
+  if (*noxyd == 3) {
     /* IF5M */
     label = _scalar_name_label("solid_fuels", "FR_OXYD3");
     BFT_MALLOC(vars->label[*if5m -1], strlen(label)+1, char);
@@ -2423,8 +2634,7 @@ void CS_PROCF (uicpsc, UICPSC) (const int *const ncharb,
     BFT_FREE(label);
   }
 
-  if (*ieqco2 == 1)
-  {
+  if (*ieqco2 == 1) {
     /* IYCO2 */
     label = _scalar_name_label("solid_fuels", "FR_CO2");
     BFT_MALLOC(vars->label[*iyco2 -1], strlen(label)+1, char);
@@ -2432,8 +2642,7 @@ void CS_PROCF (uicpsc, UICPSC) (const int *const ncharb,
     BFT_FREE(label);
   }
 
-  if (*ieqnox == 1)
-  {
+  if (*ieqnox == 1) {
     /* FR_HCN */
     label = _scalar_name_label("solid_fuels", "FR_HCN");
     BFT_MALLOC(vars->label[*iyhcn -1], strlen(label)+1, char);
@@ -2505,6 +2714,204 @@ void CS_PROCF (uicfsc, UICFSC) (const int *const irho,
 
 }
 
+/*-----------------------------------------------------------------------------
+ * Indirection between the solver numbering and the XML one
+ * for physical properties of the activated specific physics (electrical model)
+ *----------------------------------------------------------------------------*/
+void CS_PROCF (uielpr, UIELPR) (const int *const nsalpp,
+                                const int *const ippmod,
+                                const int *const ipppro,
+                                const int *const ipproc,
+                                const int *const ieljou,
+                                const int *const ielarc,
+                                const int *const itemp,
+                                const int *const iefjou,
+                                const int *const idjr,
+                                const int *const idji,
+                                const int *const ilapla,
+                                const int *const idrad,
+                                const int *const ivisls,
+                                const int *const ipotr,
+                                const int *const ixkabe)
+{
+  int n, ndirac, idirac;
+  char *name = NULL;
+  char *snumpp = NULL;
+
+  cs_var_t  *vars = cs_glob_var;
+
+  n = vars->nprop;
+  vars->nprop  += *nsalpp;
+  vars->nsalpp  = *nsalpp;
+
+  BFT_REALLOC(vars->properties_ipp,  vars->nprop, int);
+  BFT_REALLOC(vars->propce,          vars->nprop, int);
+  BFT_REALLOC(vars->properties_name, vars->nprop, char*);
+  BFT_MALLOC(snumpp, 1 + 1, char);
+
+  /* Temperature */
+  vars->properties_ipp[n] = ipppro[ipproc[*itemp -1] -1];
+  vars->propce[n] = ipproc[*itemp -1] -1;
+  BFT_MALLOC(vars->properties_name[n], strlen("Temperature") +1, char);
+  strcpy(vars->properties_name[n++], "Temperature");
+
+  /* Power */
+  vars->properties_ipp[n] = ipppro[ipproc[*iefjou -1] -1];
+  vars->propce[n] = ipproc[*iefjou -1] -1;
+  BFT_MALLOC(vars->properties_name[n], strlen("PuisJoul") +1, char);
+  strcpy(vars->properties_name[n++], "PuisJoul");
+
+  for (int idimve = 0; idimve < 3; idimve++) {
+    vars->properties_ipp[n] = ipppro[ipproc[idjr[idimve] -1] -1];
+    vars->propce[n] = ipproc[idjr[idimve] -1] -1;
+    BFT_MALLOC(name, strlen("Cour_re") +1 + 1, char);
+    BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
+    strcpy(name, "Cour_re");
+    sprintf(snumpp,"%1.1i", idimve+1);
+    strcat(name, snumpp);
+    strcpy(vars->properties_name[n++], name);
+  }
+
+  if (ippmod[*ieljou - 1] == 2 || ippmod[*ieljou - 1] == 4)
+    for (int idimve = 0; idimve < 3; idimve++) {
+      vars->properties_ipp[n] = ipppro[ipproc[idji[idimve] -1] -1];
+      vars->propce[n] = ipproc[idji[idimve] -1] -1;
+      BFT_MALLOC(name, strlen("CouImag") +1 + 1, char);
+      BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
+      strcpy(name, "CouImag");
+      sprintf(snumpp,"%1.1i", idimve+1);
+      strcat(name, snumpp);
+      strcpy(vars->properties_name[n++], name);
+    }
+
+  if (ippmod[*ielarc - 1] >= 1) {
+    for (int idimve = 0; idimve < 3; idimve++) {
+      vars->properties_ipp[n] = ipppro[ipproc[ilapla[idimve] -1] -1];
+      vars->propce[n] = ipproc[ilapla[idimve] -1] -1;
+      BFT_MALLOC(name, strlen("For_Lap") +1 + 1, char);
+      BFT_MALLOC(vars->properties_name[n], strlen(name) +1, char);
+      strcpy(name, "For_Lap");
+      sprintf(snumpp,"%1.1i", idimve+1);
+      strcat(name, snumpp);
+      strcpy(vars->properties_name[n++], name);
+    }
+
+    if (*ixkabe == 1) {
+      vars->properties_ipp[n] = ipppro[ipproc[*idrad -1] -1];
+      vars->propce[n] = ipproc[*idrad -1] -1;
+      BFT_MALLOC(vars->properties_name[n], strlen("Coef_Abso") +1, char);
+      strcpy(vars->properties_name[n++], "Coef_Abso");
+    } else if (*ixkabe == 2) {
+      vars->properties_ipp[n] = ipppro[ipproc[*idrad -1] -1];
+      vars->propce[n] = ipproc[*idrad -1] -1;
+      BFT_MALLOC(vars->properties_name[n], strlen("TS_radia") +1, char);
+      strcpy(vars->properties_name[n++], "TS_radia");
+    }
+  }
+
+  vars->properties_ipp[n] = ipppro[ipproc[ivisls[*ipotr -1] -1] -1];
+  vars->propce[n] = ipproc[ivisls[*ipotr -1] -1] -1;
+  BFT_MALLOC(vars->properties_name[n], strlen("Sigma") +1, char);
+  strcpy(vars->properties_name[n++], "Sigma");
+
+  BFT_FREE(name);
+  BFT_FREE(snumpp);
+
+  if (n != vars->nsalpp)
+    bft_error(__FILE__, __LINE__, 0,
+              _("number of properties is not correct: %i instead of: %i\n"),
+              n, vars->nsalpp);
+
+#if _XML_DEBUG_
+  bft_printf("==>UICPPR\n");
+  bft_printf("-->nombre de proprietes = %i\n", vars->nprop);
+  for (i=0 ; i<vars->nprop ; i++)
+    bft_printf("-->properties_ipp[%i]: %i propce[%i]: %i "
+               "properties_name[%i]: %s\n",
+               i, vars->properties_ipp[i],
+               i, vars->propce[i],
+               i, vars->properties_name[i]);
+#endif
+}
+
+/*------------------------------------------------------------------------------
+ * Indirection between the solver numbering and the XML one
+ * for the model scalar (electrical model)
+ *----------------------------------------------------------------------------*/
+void CS_PROCF (uielsc, UIELSC) (const int *const ippmod,
+                                const int *const ieljou,
+                                const int *const ielarc,
+                                const int *const ngazg,
+                                const int *const ihm,
+                                const int *const ipotr,
+                                const int *const iycoel,
+                                const int *const ipoti,
+                                const int *const ipotva)
+{
+  cs_var_t  *vars = cs_glob_var;
+  char *snumsca = NULL;
+  char *name = NULL;
+  char *label = NULL;
+
+  if (vars->nscaus > 0)
+    BFT_REALLOC(vars->label, vars->nscapp + vars->nscaus, char*);
+  else
+    BFT_MALLOC(vars->label, vars->nscapp, char*);
+
+  BFT_MALLOC(snumsca, 1 + 1, char);
+
+  label = _scalar_name_label("joule_effect", "Enthalpy");
+  BFT_MALLOC(vars->label[*ihm -1], strlen(label)+1, char);
+  strcpy(vars->label[*ihm -1], label);
+  BFT_FREE(label);
+
+  label = _scalar_name_label("joule_effect", "PotElecReal");
+  BFT_MALLOC(vars->label[*ipotr -1], strlen(label)+1, char);
+  strcpy(vars->label[*ipotr -1], label);
+  BFT_FREE(label);
+
+  if (*ngazg > 1)
+    for (int iesp = 0; iesp < *ngazg - 1; iesp++) {
+      BFT_MALLOC(name, strlen("YM_ESL") +1 + 1, char);
+      strcpy(name, "YM_ESL");
+      sprintf(snumsca, "%2.2i", iesp +1);
+      strcat(name, snumsca);
+      label = _scalar_name_label("joule_effect", name);
+      BFT_MALLOC(vars->label[iycoel[iesp] -1], strlen(label) +1, char);
+      strcpy(vars->label[iycoel[iesp] -1], label);
+      BFT_FREE(label);
+    }
+
+  if (ippmod[*ieljou - 1] == 2 || ippmod[*ieljou - 1] == 4) {
+    label = _scalar_name_label("joule_effect", "POT_EL_I");
+    BFT_MALLOC(vars->label[*ipoti -1], strlen(label) +1, char);
+    strcpy(vars->label[*ipoti -1], label);
+    BFT_FREE(label);
+  }
+
+  if (ippmod[*ielarc - 1] >= 2)
+    for (int idimve = 0; idimve < 3; idimve++) {
+      BFT_MALLOC(name, strlen("POT_VEC") +1 + 1, char);
+      strcpy(name, "POT_VEC");
+      sprintf(snumsca, "%2.2i", idimve +1);
+      strcat(name, snumsca);
+      label = _scalar_name_label("joule_effect", name);
+      BFT_MALLOC(vars->label[ipotva[idimve] -1], strlen(label) +1, char);
+      strcpy(vars->label[ipotva[idimve] -1], label);
+      BFT_FREE(label);
+    }
+
+  BFT_FREE(snumsca);
+  BFT_FREE(name);
+
+#if _XML_DEBUG_
+  bft_printf("==>UICPSC\n");
+  for (i=0; i< vars->nscaus+vars->nscapp; i++)
+    bft_printf("--label of scalar[%i]: %s\n", i, vars->label[i]);
+#endif
+
+}
+
 /*----------------------------------------------------------------------------
  * Atmospheric flows: read of meteorological file of data
  *
@@ -2527,8 +2934,8 @@ void CS_PROCF (uiati1, UIATI1) (int           *imeteo,
 
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 3, "thermophysical_models",
-                        "atmospheric_flows",
-                        "read_meteo_data");
+                                  "atmospheric_flows",
+                                  "read_meteo_data");
 
   cs_xpath_add_attribute(&path, "status");
   if (cs_gui_get_status(path, &status))
@@ -2624,14 +3031,13 @@ void CS_PROCF (uiatpr, UIATPR) (const int *const nsalpp,
   BFT_MALLOC(vars->properties_name[n], strlen("real_temperature") +1, char);
   strcpy(vars->properties_name[n++], "real_temperature");
 
-  if (ippmod[*iatmos -1] == 2)
-    {
-      /* iliqwt */
-      vars->properties_ipp[n] = ipppro[ipproc[ *iliqwt -1] -1];
-      vars->propce[n] = ipproc[ *iliqwt -1] -1;
-      BFT_MALLOC(vars->properties_name[n], strlen("liquid_water") +1, char);
-      strcpy(vars->properties_name[n++], "liquid_water");
-    }
+  if (ippmod[*iatmos -1] == 2) {
+    /* iliqwt */
+    vars->properties_ipp[n] = ipppro[ipproc[ *iliqwt -1] -1];
+    vars->propce[n] = ipproc[ *iliqwt -1] -1;
+    BFT_MALLOC(vars->properties_name[n], strlen("liquid_water") +1, char);
+    strcpy(vars->properties_name[n++], "liquid_water");
+  }
 #if _XML_DEBUG_
   {
     int i;
@@ -2674,37 +3080,37 @@ void CS_PROCF (uiatsc, UIATSC) (const int *const ippmod,
   char *label = NULL;
 
   if (vars->nscaus > 0)
-      BFT_REALLOC(vars->label, vars->nscapp + vars->nscaus, char*);
+    BFT_REALLOC(vars->label, vars->nscapp + vars->nscaus, char*);
   else
-      BFT_MALLOC(vars->label, vars->nscapp, char*);
+    BFT_MALLOC(vars->label, vars->nscapp, char*);
 
   if (ippmod[*iatmos -1] == 1)
   {
-      /* itempp */
-      label = _scalar_name_label("atmospheric_flows", "potential_temperature");
-      BFT_MALLOC(vars->label[*itempp -1], strlen(label)+1, char);
-      strcpy(vars->label[*itempp -1], label);
-      BFT_FREE(label);
+    /* itempp */
+    label = _scalar_name_label("atmospheric_flows", "potential_temperature");
+    BFT_MALLOC(vars->label[*itempp -1], strlen(label)+1, char);
+    strcpy(vars->label[*itempp -1], label);
+    BFT_FREE(label);
   }
   else if (ippmod[*iatmos -1] == 2)
   {
-      /* itempl */
-      label = _scalar_name_label("atmospheric_flows", "liquid_potential_temperature");
-      BFT_MALLOC(vars->label[*itempl -1], strlen(label)+1, char);
-      strcpy(vars->label[*itempl -1], label);
-      BFT_FREE(label);
+    /* itempl */
+    label = _scalar_name_label("atmospheric_flows", "liquid_potential_temperature");
+    BFT_MALLOC(vars->label[*itempl -1], strlen(label)+1, char);
+    strcpy(vars->label[*itempl -1], label);
+    BFT_FREE(label);
 
-      /* itotwt */
-      label = _scalar_name_label("atmospheric_flows", "total_water");
-      BFT_MALLOC(vars->label[*itotwt -1], strlen(label)+1, char);
-      strcpy(vars->label[*itotwt -1], label);
-      BFT_FREE(label);
+    /* itotwt */
+    label = _scalar_name_label("atmospheric_flows", "total_water");
+    BFT_MALLOC(vars->label[*itotwt -1], strlen(label)+1, char);
+    strcpy(vars->label[*itotwt -1], label);
+    BFT_FREE(label);
 
-      /* intdrp */
-      label = _scalar_name_label("atmospheric_flows", "number_of_droplets");
-      BFT_MALLOC(vars->label[*intdrp -1], strlen(label)+1, char);
-      strcpy(vars->label[*intdrp -1], label);
-      BFT_FREE(label);
+    /* intdrp */
+    label = _scalar_name_label("atmospheric_flows", "number_of_droplets");
+    BFT_MALLOC(vars->label[*intdrp -1], strlen(label)+1, char);
+    strcpy(vars->label[*intdrp -1], label);
+    BFT_FREE(label);
   }
 #if _XML_DEBUG_
   {
@@ -2819,205 +3225,195 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
   iclag  = 0;
   idecal = 0;
 
-  for (icha = 0; icha < *ncharb; icha++)
-    {
-      /* ---- Nb de classes */
-      itypdp = _get_diameter_type(icha+1);
-      nclpch[icha] = _cs_gui_get_nb_class(icha+1, itypdp);
-      if (nclpch[icha] > *ncpcmx)
-        {
-          bft_error(__FILE__, __LINE__, 0,
-                    _("class number by coal is limited.\n"
-                      "For coal %i it is %i \n in the parametric file \n"),
-                    icha, nclpch[icha]);
-        }
-
-      /*---- Calcul du nb de classes et remplissage de ICHCOR */
-      *nclacp = *nclacp + nclpch[icha];
-      for (iclapc = 0; iclapc < nclpch[icha]; iclapc++)
-        {
-          icla = iclapc+idecal;
-          ichcor[icla] = icha +1 ;
-        }
-      idecal = nclpch[icha];
-
-      /* Type de diametres  = 1 ---> diametre donnes
-         = 2 ---> loi de Rosin-Rammler */
-      if (itypdp == 1)
-        {
-          for (icla = iclag; icla < iclag+nclpch[icha]; icla++)
-            diam20[icla] = _get_solid_fuel_diameter(icha+1,icla+1);
-        } else if (itypdp == 2) {
-        nbrf = _cs_gui_get_nb_refusal(icha+1);
-
-        BFT_MALLOC(dprefus, nbrf,         double);
-        BFT_MALLOC(refus,   nbrf,         double);
-        BFT_MALLOC(pourc,   nclpch[icha], double);
-
-        for (ii = 0; ii < nbrf; ii++)
-          {
-            dprefus[ii] = _get_solid_fuel_refusal_diameter(ii+1,icha+1)
-                         *1000000;
-            refus[ii] = _get_solid_fuel_refusal_value(ii+1,icha+1);
-          }
-        for (ii = 0; ii<nclpch[icha]; ii++)
-          pourc[ii] = _get_solid_fuel_pourc(ii+1,icha+1);
-
-        /* decoupage des classes */
-        BFT_MALLOC(rf, nclpch[icha], double);
-        rf[0] = pourc[0] / 2.;
-
-        for (icla = 1; icla < nclpch[icha]; icla++)
-          rf[icla] = rf[icla-1] + (pourc[icla] + pourc[icla-1]) / 2.;
-
-        kk1 = 0.;
-        kk2 = 0.;
-        kk3 = 0.;
-        kk4 = 0.;
-        for (ii = 0; ii < nbrf ; ii++)
-          {
-            kk1 = kk1 + log(dprefus[ii]);
-            kk2 = kk2 + log(-log(refus[ii]));
-            kk3 = kk3 + log(dprefus[ii])*log(dprefus[ii]);
-            kk4 = kk4 + log(dprefus[ii])*log(-log(refus[ii]));
-          }
-
-        qq  = (nbrf * kk4 - kk1 * kk2) / (nbrf * kk3 - kk1 * kk1);
-        var = (kk2 * kk3 - kk1 * kk4) / (nbrf * kk3 - kk1 * kk1);
-        xx  = exp(-var / qq);
-
-        for (icla = iclag; icla < iclag + nclpch[icha]; icla++)
-          diam20[icla]=  xx*pow((-log(1.-rf[icla-iclag])),(1./qq))*1000000;
-
-        bft_printf("** Rosin-Rammeler results for the coal %i **\n"
-                   "[ Checking of the Rosin-Rammeler law ]\n"
-                   "Diameter       refus given      refus computed\n\n", icha+1);
-
-        for (icla = 0; icla< nbrf; icla++)
-          bft_printf("%f     %f     %f \n", dprefus[icla], refus[icla],
-                     exp(-pow((dprefus[icla]/xx),(qq))));
-
-        bft_printf("\nRefus       diam. given      diam. computed\n");
-
-        for (icla = 0; icla< nbrf; icla++)
-          bft_printf("%f     %f     %f \n", refus[icla], dprefus[icla],
-                     xx*pow((-log(refus[icla])),(1./qq)));
-
-        bft_printf("\nDiameters computed by the Rosin-Rammeler law\n");
-
-        for (icla = iclag; icla <iclag+nclpch[icha]; icla ++)
-          bft_printf("%d     %f \n", icla-iclag, diam20[icla]);
-
-        BFT_FREE(pourc);
-        BFT_FREE(refus);
-        BFT_FREE(dprefus);
-        BFT_FREE(rf);
-
-      }
-      else {
-        bft_error(__FILE__, __LINE__, 0,
-                  _("type diameter value must be equal to 1 or 2.\n"
-                    "Calculation is interupted \n"));
-      }
-
-      iclag = iclag + nclpch[icha];
-
-      /* ---- Composition elementaire en C, H , O , N , S sur sec (% en masse) */
-      cch[icha] = _get_solid_fuel_composition_on_dry(icha+1,"C_composition_on_dry");
-      hch[icha] = _get_solid_fuel_composition_on_dry(icha+1,"H_composition_on_dry");
-      och[icha] = _get_solid_fuel_composition_on_dry(icha+1,"O_composition_on_dry");
-      nch[icha] = _get_solid_fuel_composition_on_dry(icha+1,"N_composition_on_dry");
-      sch[icha] = _get_solid_fuel_composition_on_dry(icha+1,"S_composition_on_dry");
-
-      /* ---- PCI sur charbon sec ou pur suivant la valeur de IPCI */
-      ipci[icha] = _get_PCI_type(icha+1);
-      if (ipci[icha] < 6)
-        pcich[icha] = _get_PCI_value(icha+1);
-
-      volatile_matter = _get_volatile_matter(icha+1);
-      h0ashc[icha] = _get_ashes_enthalpy(icha+1);
-      cpashc[icha] = _get_ashes_thermal_capacity(icha+1);
-
-      /*  ---- CP moyen du charbon sec (J/kg/K) */
-      cp2ch[icha] = _get_solid_fuel_specific_heat_average(icha+1);
-
-      /* ---- Masse volumique initiale (kg/m3) */
-      rho0ch[icha] = _get_solid_fuel_density(icha+1);
-
-      /* ---- Caracteristiques cendres */
-
-      /* ------ Taux de cendre (kg/kg) en % */
-      xashsec[icha] = _get_ashes_rate(icha+1);
-
-      /*      Transformation en kg/kg */
-      xashch[icha] = xashsec[icha]/100.;
-
-      /* ------ Taux d'humidite (kg/kg) en % */
-      xwatch[icha] = _get_humidity_rate(icha+1);
-
-      /*      Transformation en kg/kg */
-      xwatch[icha] = xwatch[icha]/100.;
-
-      /*      Transformation du taux de cendre de sec
-              sur humide en kg/kg */
-      xashch[icha] = xashch[icha]*(1.-xwatch[icha]);
-
-      /* ---- Parametres de devolatilisation (modele de Kobayashi) */
-
-      iy1ch[icha] = _get_Y1Y2_coefficient_type(icha+1);
-      iy2ch[icha] = iy1ch[icha];
-      if (iy1ch[icha] > 0)
-        {
-          y1ch[icha] = _get_Y1_coefficient(icha+1);
-          y2ch[icha] = _get_Y2_coefficient(icha+1);
-        }
-      a1ch[icha] = _get_A1_pre_exponential_factor(icha+1);
-      a2ch[icha] = _get_A2_pre_exponential_factor(icha+1);
-      e1ch[icha] = _get_E1_energy_of_activation(icha+1);
-      e2ch[icha] = _get_E2_energy_of_activation(icha+1);
-
-      /* ---- Repartition de l'azote entre HCN et NH3 */
-      crepn1[icha] = _get_nitrogen_partition_in_HCN_NH3_reaction_1(icha+1);
-      crepn1[*ncharb+icha] = 1-crepn1[icha];
-      crepn2[icha] = _get_nitrogen_partition_in_HCN_NH3_reaction_2(icha+1);
-      crepn2[*ncharb+icha] = 1-crepn2[icha];
-
-      /*  ---- Parametres combustion heterogene pour O2
-               (modele a sphere retrecissante) */
-      ahetch[icha] = _get_pre_exponential_constant(icha+1,"O2");
-      ehetch[icha] = _get_energy_of_activation(icha+1,"O2");
-      iochet[icha] = _get_order_of_reaction(icha+1,"O2");
-
-      /* ---- Parametres combustion heterogene pour CO2
-              (modele a sphere retrecissante) */
-      _getCO2KineticsStatus(ihtco2);
-      if (*ihtco2)
-        {
-          ahetc2[icha] = _get_pre_exponential_constant(icha+1,"CO2");
-          ehetc2[icha] = _get_energy_of_activation(icha+1,"CO2");
-          ioetc2[icha] = _get_order_of_reaction(icha+1,"CO2");
-        }
-
-      /* ---- Parametres combustion heterogene pour H2O
-              (modele a sphere retrecissante) */
-      _getH2OKineticsStatus(ihth2o);
-      if (*ihth2o)
-        {
-          ahetwt[icha] = _get_pre_exponential_constant(icha+1,"H2O");
-          ehetwt[icha] = _get_energy_of_activation(icha+1,"H2O");
-          ioetwt[icha] = _get_order_of_reaction(icha+1,"H2O");
-        }
-
-      /* ---- Parametres modele de NOX
-        QPR =  %d'azote libere pendant la devol
-             / %de MV libere pendant la devol */
-      _getNOxStatus(ieqnox);
-      if (*ieqnox)
-        {
-          qpr[icha] = _get_nitrogen_fraction(icha+1);
-          fn[icha] = _get_nitrogen_concentration(icha+1);
-        }
+  for (icha = 0; icha < *ncharb; icha++) {
+    /* ---- Nb de classes */
+    itypdp = _get_diameter_type(icha+1);
+    nclpch[icha] = _cs_gui_get_nb_class(icha+1, itypdp);
+    if (nclpch[icha] > *ncpcmx) {
+      bft_error(__FILE__, __LINE__, 0,
+                _("class number by coal is limited.\n"
+                  "For coal %i it is %i \n in the parametric file \n"),
+                  icha, nclpch[icha]);
     }
+
+    /*---- Calcul du nb de classes et remplissage de ICHCOR */
+    *nclacp = *nclacp + nclpch[icha];
+    for (iclapc = 0; iclapc < nclpch[icha]; iclapc++) {
+      icla = iclapc+idecal;
+      ichcor[icla] = icha +1 ;
+    }
+    idecal = nclpch[icha];
+
+    /* Type de diametres  = 1 ---> diametre donnes
+       = 2 ---> loi de Rosin-Rammler */
+    if (itypdp == 1) {
+      for (icla = iclag; icla < iclag+nclpch[icha]; icla++)
+        diam20[icla] = _get_solid_fuel_diameter(icha+1,icla+1);
+    } else if (itypdp == 2) {
+      nbrf = _cs_gui_get_nb_refusal(icha+1);
+
+      BFT_MALLOC(dprefus, nbrf,         double);
+      BFT_MALLOC(refus,   nbrf,         double);
+      BFT_MALLOC(pourc,   nclpch[icha], double);
+
+      for (ii = 0; ii < nbrf; ii++) {
+        dprefus[ii] = _get_solid_fuel_refusal_diameter(ii+1,icha+1)
+          *1000000;
+        refus[ii] = _get_solid_fuel_refusal_value(ii+1,icha+1);
+      }
+      for (ii = 0; ii<nclpch[icha]; ii++)
+        pourc[ii] = _get_solid_fuel_pourc(ii+1,icha+1);
+
+      /* decoupage des classes */
+      BFT_MALLOC(rf, nclpch[icha], double);
+      rf[0] = pourc[0] / 2.;
+
+      for (icla = 1; icla < nclpch[icha]; icla++)
+        rf[icla] = rf[icla-1] + (pourc[icla] + pourc[icla-1]) / 2.;
+
+      kk1 = 0.;
+      kk2 = 0.;
+      kk3 = 0.;
+      kk4 = 0.;
+      for (ii = 0; ii < nbrf ; ii++) {
+        kk1 = kk1 + log(dprefus[ii]);
+        kk2 = kk2 + log(-log(refus[ii]));
+        kk3 = kk3 + log(dprefus[ii])*log(dprefus[ii]);
+        kk4 = kk4 + log(dprefus[ii])*log(-log(refus[ii]));
+      }
+
+      qq  = (nbrf * kk4 - kk1 * kk2) / (nbrf * kk3 - kk1 * kk1);
+      var = (kk2 * kk3 - kk1 * kk4) / (nbrf * kk3 - kk1 * kk1);
+      xx  = exp(-var / qq);
+
+      for (icla = iclag; icla < iclag + nclpch[icha]; icla++)
+        diam20[icla]=  xx*pow((-log(1.-rf[icla-iclag])),(1./qq))*1000000;
+
+      bft_printf("** Rosin-Rammeler results for the coal %i **\n"
+                 "[ Checking of the Rosin-Rammeler law ]\n"
+                 "Diameter       refus given      refus computed\n\n", icha+1);
+
+      for (icla = 0; icla< nbrf; icla++)
+        bft_printf("%f     %f     %f \n", dprefus[icla], refus[icla],
+            exp(-pow((dprefus[icla]/xx),(qq))));
+
+      bft_printf("\nRefus       diam. given      diam. computed\n");
+
+      for (icla = 0; icla< nbrf; icla++)
+        bft_printf("%f     %f     %f \n", refus[icla], dprefus[icla],
+            xx*pow((-log(refus[icla])),(1./qq)));
+
+      bft_printf("\nDiameters computed by the Rosin-Rammeler law\n");
+
+      for (icla = iclag; icla <iclag+nclpch[icha]; icla ++)
+        bft_printf("%d     %f \n", icla-iclag, diam20[icla]);
+
+      BFT_FREE(pourc);
+      BFT_FREE(refus);
+      BFT_FREE(dprefus);
+      BFT_FREE(rf);
+
+    }
+    else {
+      bft_error(__FILE__, __LINE__, 0,
+                _("type diameter value must be equal to 1 or 2.\n"
+                  "Calculation is interupted \n"));
+    }
+
+    iclag = iclag + nclpch[icha];
+
+    /* ---- Composition elementaire en C, H , O , N , S sur sec (% en masse) */
+    cch[icha] = _get_solid_fuel_composition_on_dry(icha+1,"C_composition_on_dry");
+    hch[icha] = _get_solid_fuel_composition_on_dry(icha+1,"H_composition_on_dry");
+    och[icha] = _get_solid_fuel_composition_on_dry(icha+1,"O_composition_on_dry");
+    nch[icha] = _get_solid_fuel_composition_on_dry(icha+1,"N_composition_on_dry");
+    sch[icha] = _get_solid_fuel_composition_on_dry(icha+1,"S_composition_on_dry");
+
+    /* ---- PCI sur charbon sec ou pur suivant la valeur de IPCI */
+    ipci[icha] = _get_PCI_type(icha+1);
+    if (ipci[icha] < 6)
+      pcich[icha] = _get_PCI_value(icha+1);
+
+    volatile_matter = _get_volatile_matter(icha+1);
+    h0ashc[icha] = _get_ashes_enthalpy(icha+1);
+    cpashc[icha] = _get_ashes_thermal_capacity(icha+1);
+
+    /*  ---- CP moyen du charbon sec (J/kg/K) */
+    cp2ch[icha] = _get_solid_fuel_specific_heat_average(icha+1);
+
+    /* ---- Masse volumique initiale (kg/m3) */
+    rho0ch[icha] = _get_solid_fuel_density(icha+1);
+
+    /* ---- Caracteristiques cendres */
+
+    /* ------ Taux de cendre (kg/kg) en % */
+    xashsec[icha] = _get_ashes_rate(icha+1);
+
+    /*      Transformation en kg/kg */
+    xashch[icha] = xashsec[icha]/100.;
+
+    /* ------ Taux d'humidite (kg/kg) en % */
+    xwatch[icha] = _get_humidity_rate(icha+1);
+
+    /*      Transformation en kg/kg */
+    xwatch[icha] = xwatch[icha]/100.;
+
+    /*      Transformation du taux de cendre de sec
+            sur humide en kg/kg */
+    xashch[icha] = xashch[icha]*(1.-xwatch[icha]);
+
+    /* ---- Parametres de devolatilisation (modele de Kobayashi) */
+
+    iy1ch[icha] = _get_Y1Y2_coefficient_type(icha+1);
+    iy2ch[icha] = iy1ch[icha];
+    if (iy1ch[icha] > 0) {
+      y1ch[icha] = _get_Y1_coefficient(icha+1);
+      y2ch[icha] = _get_Y2_coefficient(icha+1);
+    }
+    a1ch[icha] = _get_A1_pre_exponential_factor(icha+1);
+    a2ch[icha] = _get_A2_pre_exponential_factor(icha+1);
+    e1ch[icha] = _get_E1_energy_of_activation(icha+1);
+    e2ch[icha] = _get_E2_energy_of_activation(icha+1);
+
+    /* ---- Repartition de l'azote entre HCN et NH3 */
+    crepn1[icha] = _get_nitrogen_partition_in_HCN_NH3_reaction_1(icha+1);
+    crepn1[*ncharb+icha] = 1-crepn1[icha];
+    crepn2[icha] = _get_nitrogen_partition_in_HCN_NH3_reaction_2(icha+1);
+    crepn2[*ncharb+icha] = 1-crepn2[icha];
+
+    /*  ---- Parametres combustion heterogene pour O2
+        (modele a sphere retrecissante) */
+    ahetch[icha] = _get_pre_exponential_constant(icha+1,"O2");
+    ehetch[icha] = _get_energy_of_activation(icha+1,"O2");
+    iochet[icha] = _get_order_of_reaction(icha+1,"O2");
+
+    /* ---- Parametres combustion heterogene pour CO2
+       (modele a sphere retrecissante) */
+    _getCO2KineticsStatus(ihtco2);
+    if (*ihtco2) {
+      ahetc2[icha] = _get_pre_exponential_constant(icha+1,"CO2");
+      ehetc2[icha] = _get_energy_of_activation(icha+1,"CO2");
+      ioetc2[icha] = _get_order_of_reaction(icha+1,"CO2");
+    }
+
+    /* ---- Parametres combustion heterogene pour H2O
+       (modele a sphere retrecissante) */
+    _getH2OKineticsStatus(ihth2o);
+    if (*ihth2o) {
+      ahetwt[icha] = _get_pre_exponential_constant(icha+1,"H2O");
+      ehetwt[icha] = _get_energy_of_activation(icha+1,"H2O");
+      ioetwt[icha] = _get_order_of_reaction(icha+1,"H2O");
+    }
+
+    /* ---- Parametres modele de NOX
+       QPR =  %d'azote libere pendant la devol
+       / %de MV libere pendant la devol */
+    _getNOxStatus(ieqnox);
+    if (*ieqnox) {
+      qpr[icha] = _get_nitrogen_fraction(icha+1);
+      fn[icha] = _get_nitrogen_concentration(icha+1);
+    }
+  }
 
   /*        ! --> Lecture rayonnement */
 
@@ -3029,55 +3425,50 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
 
   /* ---- Nb d'oxydants */
   *noxyd = cs_gui_get_tag_number("/oxidants/oxidant", 1);
-  if (*noxyd < 1 || *noxyd > 3 )
-    {
-      bft_error(__FILE__, __LINE__, 0,
-                _("Oxidant number must be between 1 and 3.\n"
-                  "It is  %i in the parametric file \n"
-                  "Calculation is interupted \n"),
-                *noxyd);
-    }
+  if (*noxyd < 1 || *noxyd > 3 ) {
+    bft_error(__FILE__, __LINE__, 0,
+        _("Oxidant number must be between 1 and 3.\n"
+          "It is  %i in the parametric file \n"
+          "Calculation is interupted \n"),
+        *noxyd);
+  }
   itypoxy = _get_oxydant_type();
 
   /* ---- Composition en O2,N2,H2O,N2 */
 
-  for (ioxy = 0; ioxy < 3; ioxy++)
-    {
-      oxyo2 [ioxy] = 0.;
-      oxyn2 [ioxy] = 0.;
-      oxyh2o[ioxy] = 0.;
-      oxyco2[ioxy] = 0.;
-    }
-  for (ioxy = 0; ioxy < *noxyd; ioxy++)
-    {
-      oxyo2[ioxy] = _get_oxydant_composition(ioxy+1,"O2_composition");
-      oxyn2[ioxy] = _get_oxydant_composition(ioxy+1,"N2_composition");
-      oxyh2o[ioxy] = _get_oxydant_composition(ioxy+1,"H2O_composition");
-      oxyco2[ioxy] = _get_oxydant_composition(ioxy+1,"CO2_composition");
-    }
+  for (ioxy = 0; ioxy < 3; ioxy++) {
+    oxyo2 [ioxy] = 0.;
+    oxyn2 [ioxy] = 0.;
+    oxyh2o[ioxy] = 0.;
+    oxyco2[ioxy] = 0.;
+  }
 
+  for (ioxy = 0; ioxy < *noxyd; ioxy++) {
+    oxyo2[ioxy] = _get_oxydant_composition(ioxy+1,"O2_composition");
+    oxyn2[ioxy] = _get_oxydant_composition(ioxy+1,"N2_composition");
+    oxyh2o[ioxy] = _get_oxydant_composition(ioxy+1,"H2O_composition");
+    oxyco2[ioxy] = _get_oxydant_composition(ioxy+1,"CO2_composition");
+  }
 
-  if (itypoxy == 1)
-    {
-      /* transformation pourcentage volumique en nombre de mole */
-      for (ioxy = 0; ioxy<*noxyd ; ioxy++)
-        {
-          coef = 100.;
-          if (oxyo2[ioxy] > 0.)
-            coef = CS_MIN(coef,oxyo2[ioxy]);
-          if (oxyn2[ioxy] > 0.)
-            coef = CS_MIN(coef,oxyn2[ioxy]);
-          if (oxyh2o[ioxy] > 0.)
-            coef = CS_MIN(coef,oxyh2o[ioxy]);
-          if (oxyco2[ioxy] > 0.)
-            coef = CS_MIN(coef,oxyco2[ioxy]);
+  if (itypoxy == 1) {
+    /* transformation pourcentage volumique en nombre de mole */
+    for (ioxy = 0; ioxy<*noxyd ; ioxy++) {
+      coef = 100.;
+      if (oxyo2[ioxy] > 0.)
+        coef = CS_MIN(coef,oxyo2[ioxy]);
+      if (oxyn2[ioxy] > 0.)
+        coef = CS_MIN(coef,oxyn2[ioxy]);
+      if (oxyh2o[ioxy] > 0.)
+        coef = CS_MIN(coef,oxyh2o[ioxy]);
+      if (oxyco2[ioxy] > 0.)
+        coef = CS_MIN(coef,oxyco2[ioxy]);
 
-          oxyo2 [ioxy] = oxyo2 [ioxy]/coef;
-          oxyn2 [ioxy] = oxyn2 [ioxy]/coef;
-          oxyh2o[ioxy] = oxyh2o[ioxy]/coef;
-          oxyco2[ioxy] = oxyco2[ioxy]/coef;
-        }
+      oxyo2 [ioxy] = oxyo2 [ioxy]/coef;
+      oxyn2 [ioxy] = oxyn2 [ioxy]/coef;
+      oxyh2o[ioxy] = oxyh2o[ioxy]/coef;
+      oxyco2[ioxy] = oxyco2[ioxy]/coef;
     }
+  }
 
   BFT_FREE(model);
 }
@@ -3149,11 +3540,10 @@ cs_gui_get_thermophysical_model(const char *const model_thermo)
 
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 2, "thermophysical_models", model_thermo);
-  if (cs_gui_strcmp(model_thermo, "gas_combustion")) {
+  if (cs_gui_strcmp(model_thermo, "gas_combustion"))
     cs_xpath_add_attribute(&path, "option");
-  } else {
+  else
     cs_xpath_add_attribute(&path, "model");
-  }
 
   model = cs_gui_get_attribute_value(path);
 
@@ -3183,35 +3573,30 @@ cs_gui_get_activ_thermophysical_model(void)
                          "compressible_model" };
   int name_nbr = sizeof(name) / sizeof(name[0]);
 
-  if (vars->model != NULL && vars->model_value != NULL)
-    {
+  if (vars->model != NULL && vars->model_value != NULL) {
+    isactiv = 1;
+    return isactiv;
+  } else {
+    vars->model = NULL;
+    vars->model_value = NULL;
+  }
+
+  for (i = 0; i < name_nbr; i++) {
+    char *value = cs_gui_get_thermophysical_model(name[i]);
+
+    if (value && !cs_gui_strcmp(value, "off")) {
+      BFT_MALLOC(vars->model, strlen(name[i])+1, char);
+      strcpy(vars->model, name[i]);
+
+      BFT_MALLOC(vars->model_value, strlen(value)+1, char);
+      strcpy(vars->model_value, value);
+
       isactiv = 1;
-      return isactiv;
-    }
-  else
-    {
-      vars->model = NULL;
-      vars->model_value = NULL;
+      break;
     }
 
-  for (i = 0; i < name_nbr; i++)
-    {
-      char *value = cs_gui_get_thermophysical_model(name[i]);
-
-      if (value && !cs_gui_strcmp(value, "off"))
-        {
-          BFT_MALLOC(vars->model, strlen(name[i])+1, char);
-          strcpy(vars->model, name[i]);
-
-          BFT_MALLOC(vars->model_value, strlen(value)+1, char);
-          strcpy(vars->model_value, value);
-
-          isactiv = 1;
-          break;
-        }
-
-      BFT_FREE(value);
-    }
+    BFT_FREE(value);
+  }
 
   return isactiv;
 }

@@ -67,6 +67,7 @@ use ppppar
 use ppthch
 use ppincl
 use elincl
+use ihmpre
 
 !===============================================================================
 
@@ -110,7 +111,7 @@ enddo
 ! Variables specifiques Effet Joule
 ! =================================
 
-if ( ippmod(ieljou).eq.4 ) then
+if ( ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4 ) then
 
 ! ---> Densite de courant electrique imaginaire A/m2
 
@@ -154,6 +155,11 @@ if ( ippmod(ielion).ge.1 ) then
   iqelec = iprop
 
 endif
+
+! Conductivite Electrique
+
+iprop         = iprop + 1
+ivisls(ipotr) = iprop
 
 ! ----  Nb de variables algebriques (ou d'etat)
 !         propre a la physique particuliere NSALPP
@@ -234,6 +240,11 @@ if ( ippmod(ielion).ge.1 ) then
 
 endif
 
+! Conductivite Electrique
+
+iprop                 = iprop + 1
+ipproc(ivisls(ipotr)) = iprop
+
 nproce = iprop
 
 
@@ -253,6 +264,16 @@ nproce = iprop
 
  iprop = nprofa
  nprofa = iprop
+
+!   - Interface Code_Saturne
+!     ======================
+!     Construction de l'indirection entre la numerotation du noyau et XML
+if (iihmpr.eq.1) then
+  call uielpr (nsalpp, ippmod, ipppro, ipproc, ieljou, ielarc,      &
+               itemp, iefjou, idjr, idji, ilapla, idrad, ivisls,   &
+               ipotr, ixkabe)
+
+endif
 
 return
 end subroutine

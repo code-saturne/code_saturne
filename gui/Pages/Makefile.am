@@ -34,6 +34,7 @@ BodyForcesModel.py \
 BodyForcesView.py \
 BoundaryConditionsCoalInletView.py \
 BoundaryConditionsCompressibleOutletView.py \
+BoundaryConditionsElectricalView.py \
 BoundaryConditionsMeteoView.py \
 BoundaryConditionsMobileMeshView.py \
 BoundaryConditionsParticlesModel.py \
@@ -56,7 +57,8 @@ CoriolisSourceTermsModel.py \
 CoriolisSourceTermsView.py \
 DefineUserScalarsModel.py \
 DefineUserScalarsView.py \
-ElectricalModelsModel.py \
+ElectricalModel.py \
+ElectricalView.py \
 FacesSelectionView.py \
 FluidCharacteristicsModel.py \
 FluidCharacteristicsView.py \
@@ -137,6 +139,7 @@ BodyForcesForm.ui \
 BoundaryConditionsCoalInletForm.ui \
 BoundaryConditionsCompressibleOutletForm.ui \
 BoundaryConditionsForm.ui \
+BoundaryConditionsElectricalForm.ui \
 BoundaryConditionsMeteoForm.ui \
 BoundaryConditionsMobileMeshForm.ui \
 BoundaryConditionsRoughWallForm.ui \
@@ -150,6 +153,7 @@ CompressibleForm.ui \
 ConjugateHeatTransferForm.ui \
 CoriolisSourceTermsForm.ui \
 DefineUserScalarsForm.ui \
+ElectricalForm.ui \
 FacesSelectionForm.ui \
 FluidCharacteristicsForm.ui \
 FluidStructureInteractionAdvancedOptionsDialogForm.ui \

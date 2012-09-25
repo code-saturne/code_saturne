@@ -119,8 +119,9 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         import Pages.CoalCombustionView as Page
         thisPage = Page.CoalCombustionView(root, case, stbar)
 
-##     elif page_name == tr("Electrical models"):
-##         thisPage = root.fr2.p2.fr.window.myPage
+    elif page_name == tr("Electrical models"):
+        import Pages.ElectricalView as Page
+        thisPage = Page.ElectricalView(root, case, stbar)
 
     elif page_name == tr("Radiative transfers"):
         import Pages.ThermalRadiationView as Page

@@ -46,12 +46,10 @@ import Base.Toolbox as Tool
 from Base.XMLmodel import XMLmodel, ModelTest
 from Base.XMLvariables import Model
 from Pages.TurbulenceModel import TurbulenceModel
-from Pages.GasCombustionModel import GasCombustionModel
-from Pages.CoalCombustionModel import CoalCombustionModel
-from Pages.ElectricalModelsModel import ElectricalModel
 from Pages.DefineUserScalarsModel import DefineUserScalarsModel
 from Pages.LocalizationModel import LocalizationModel
 from Pages.CompressibleModel import CompressibleModel
+from Pages.ElectricalModel import ElectricalModel
 
 #-------------------------------------------------------------------------------
 # Variables and Scalar model initialization modelling class
@@ -85,6 +83,9 @@ class InitializationModel(Model):
         self.turb = TurbulenceModel(self.case)
         self.turbulenceModes = ('formula',
                                 'reference_value')
+        self.node_scalartherm = self.node_userscalar
+        if ElectricalModel(self.case).getElectricalModel() != "off":
+            self.node_scalartherm = self.models.xmlGetNode("joule_effect")
 
 
     def __defaultValues(self):
@@ -239,7 +240,7 @@ omega = k^0.5/almax;"""
         """
         self.__verifyZone(zone)
         self.isInList(scalar, ['TempC', 'TempK', 'Enthalpy'])
-        node = self.node_userscalar.xmlGetNode('scalar', label = str(scalar))
+        node = self.node_scalartherm.xmlGetNode('scalar', label = str(scalar))
         if not node:
             msg = "There is an error: this node " + str(node) + "should be existed"
             raise ValueError(msg)
@@ -254,7 +255,7 @@ omega = k^0.5/almax;"""
         """
         self.__verifyZone(zone)
         self.isInList(scalar, ['TempC', 'TempK', 'Enthalpy'])
-        node = self.node_userscalar.xmlGetNode('scalar', label = str(scalar))
+        node = self.node_scalartherm.xmlGetNode('scalar', label = str(scalar))
         if not node:
             msg = "There is an error: this node " + str(node) + "should be existed"
             raise ValueError(msg)

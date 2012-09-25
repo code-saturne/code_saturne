@@ -59,6 +59,8 @@ use ppppar
 use ppthch
 use ppincl
 use elincl
+use ihmpre
+use mesh
 
 !===============================================================================
 
@@ -334,7 +336,7 @@ do idimve = 1, ndimve
   ihisvr(ipp,1)= -1
 enddo
 
-if ( ippmod(ieljou).eq.4 ) then
+if ( ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
   do idimve = 1, ndimve
     ipp = ipppro(ipproc(idji(idimve)) )
     WRITE(NOMVAR(IPP),'(A7,I1.1)')'CouImag',IDIMVE
@@ -422,11 +424,27 @@ coejou = 1.d0
 irovar = 1
 ivivar = 1
 
+! ---> Modele pour le recalage de l'intensite (arc electrique)
+!       MODREC = 1 : modele standard
+!       MODREC = 2 : modele avec un plan de recalage
+modrec = 1
+
 !===============================================================================
 ! 4. ON REDONNE LA MAIN A L'UTLISATEUR
 !===============================================================================
 
-call useli1
+if (iihmpr.eq.1) then
+    call uicpi1 (srrom, diftl0)
+    ! gaz number and radiatif transfer are read in dp_ELE
+    call uieli1 (ncelet, ippmod(ieljou), ippmod(ielarc), ielcor, couimp, puisim, &
+                 coejou, modrec, idreca, crit_reca)
+
+    ! Initial value for dpot is set to 1000 V.
+    dpot = 1000.d0
+
+endif
+
+call useli1(iihmpr)
 !==========
 
 !===============================================================================

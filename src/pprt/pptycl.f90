@@ -346,6 +346,17 @@ elseif ( ippmod(iatmos).ge.0 ) then
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , rcodcl )
 
+! ---> Ecoulements electrique
+
+elseif ( ippmod(ielarc).ge.1 .or. ippmod(ieljou).ge.1 ) then
+
+  call cs_elec_bcond                                              &
+  !==========
+ ( nvar   , nscal  ,                                              &
+   icodcl , itrifb , itypfb , izfppp ,                            &
+   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   coefa  , coefb  , rcodcl )
+
 endif
 !----
 ! FORMATS

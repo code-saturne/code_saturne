@@ -666,6 +666,115 @@ _inlet_gas(const int         izone)
 
 
 /*-----------------------------------------------------------------------------
+ * Get electrical's data for boundary.
+ *
+ * parameters:
+ *   izone       -->  number of the current zone
+ *----------------------------------------------------------------------------*/
+
+static void
+_boundary_elec(const char       *nature,
+               const int         izone,
+               const int  *const ngazg,
+                     int         nsca)
+{
+  int numvar;
+  char *path = NULL;
+  char *path_commun = NULL;
+  char *path2 = NULL;
+  char *choice = NULL;
+  double result;
+
+  cs_var_t  *vars = cs_glob_var;
+
+  numvar  = vars->nvar - vars->nscaus - vars->nscapp;
+  numvar = numvar + nsca;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "boundary_conditions", nature);
+  cs_xpath_add_test_attribute(&path, "label", boundaries->label[izone]);
+  cs_xpath_add_element(&path, "scalar");
+  cs_xpath_add_test_attribute(&path, "label", vars->label[nsca]);
+
+  BFT_MALLOC(path_commun, strlen(path)+1, char);
+  strcpy(path_commun, path);
+
+  BFT_MALLOC(path2, strlen(path)+1, char);
+  strcpy(path2, path);
+
+  cs_xpath_add_attribute(&path_commun, "choice");
+  choice = cs_gui_get_attribute_value(path_commun);
+
+  if (choice != NULL) {
+
+    if (cs_gui_strcmp(choice, "dirichlet") || cs_gui_strcmp(choice, "exchange_coefficient") || cs_gui_strcmp(choice, "wall_function")) {
+      cs_xpath_add_element(&path, "dirichlet");
+      cs_xpath_add_function_text(&path);
+      if (cs_gui_get_double(path, &result)) {
+        if (cs_gui_strcmp(choice, "wall_function")) {
+          boundaries->type_code[vars->rtp[numvar]][izone] = WALL_FUNCTION;
+        } else {
+          boundaries->type_code[vars->rtp[numvar]][izone] = DIRICHLET;
+        }
+        boundaries->values[vars->rtp[numvar]][izone].val1 = result;
+      }
+
+    } else if(cs_gui_strcmp(choice, "neumann")) {
+      cs_xpath_add_element(&path, "neumann");
+      cs_xpath_add_function_text(&path);
+      if (cs_gui_get_double(path, &result)) {
+        boundaries->type_code[vars->rtp[numvar]][izone] = NEUMANN;
+        boundaries->values[vars->rtp[numvar]][izone].val3 = result;
+      }
+    } else if (cs_gui_strcmp(choice, "dirichlet_formula")) {
+      cs_xpath_add_element(&path, "dirichlet_formula");
+      cs_xpath_add_function_text(&path);
+      if (cs_gui_get_text_value(path)){
+        const char *sym[] = {vars->label[nsca]};
+        boundaries->type_code[vars->rtp[numvar]][izone] = DIRICHLET_FORMULA;
+        boundaries->scalar[vars->rtp[numvar]][izone] = _boundary_scalar_init_mei_tree(cs_gui_get_text_value(path), sym, 1);
+      }
+    } else if (cs_gui_strcmp(choice, "neumann_formula")) {
+      cs_xpath_add_element(&path, "neumann_formula");
+      cs_xpath_add_function_text(&path);
+      if (cs_gui_get_text_value(path)){
+        const char *sym[] = {"flux"};
+        boundaries->type_code[vars->rtp[numvar]][izone] = NEUMANN_FORMULA;
+        boundaries->scalar[vars->rtp[numvar]][izone] = _boundary_scalar_init_mei_tree(cs_gui_get_text_value(path), sym, 1);
+      }
+    } else if (cs_gui_strcmp(choice, "exchange_coefficient_formula")){
+      cs_xpath_add_element (&path, "exchange_coefficient_formula");
+      cs_xpath_add_function_text(&path);
+      if (cs_gui_get_text_value(path)){
+        const char *sym[] = {vars->label[nsca],"hc"};
+        boundaries->type_code[vars->rtp[numvar]][izone] = COEF_ECHANGE_FORMULA;
+        boundaries->scalar[vars->rtp[numvar]][izone] = _boundary_scalar_init_mei_tree(cs_gui_get_text_value(path), sym, 2);
+      }
+    } else if (cs_gui_strcmp(choice, "dirichlet_implicit")){
+        boundaries->type_code[vars->rtp[numvar]][izone] = DIRICHLET_IMPLICIT;
+    } else if (cs_gui_strcmp(choice, "neumann_implicit")){
+        boundaries->type_code[vars->rtp[numvar]][izone] = NEUMANN_IMPLICIT;
+    }
+
+    if (cs_gui_strcmp(choice, "exchange_coefficient")) {
+      cs_xpath_add_element(&path2, "exchange_coefficient");
+      cs_xpath_add_function_text(&path2);
+      if (cs_gui_get_double(path2, &result)) {
+        boundaries->type_code[vars->rtp[numvar]][izone] = COEF_ECHANGE;
+        boundaries->values[vars->rtp[numvar]][izone].val2 = result;
+      }
+    }
+
+    BFT_FREE(choice);
+  }
+
+  BFT_FREE(path);
+  BFT_FREE(path2);
+  BFT_FREE(path_commun);
+}
+
+
+/*-----------------------------------------------------------------------------
  * Get compressible data for inlet.
  *
  * parameters:
@@ -865,6 +974,7 @@ static mei_tree_t *_boundary_init_mei_tree(const char *formula,
  *   nozppm               <--  max number of boundary conditions zone
  *   ncharb               <--  number of simulated coals
  *   nclpch               <--  number of simulated class per coals
+ *   ncharb               <--  number of simulated gaz for electrical models
  *   izfppp               <--  zone number for each boundary face
  *   iesicf               <-- type of boundary: imposed inlet (compressible)
  *   isspcf               <-- type of boundary: supersonic outlet (compressible)
@@ -877,6 +987,7 @@ _init_boundaries(const int *const nfabor,
                  const int *const nozppm,
                  const int *const ncharb,
                  const int *const nclpch,
+                 const int *const ngazg,
                        int *const izfppp,
                  const int *const iesicf,
                  const int *const isspcf,
@@ -960,6 +1071,9 @@ _init_boundaries(const int *const nfabor,
         BFT_MALLOC(boundaries->entin,   zones, double);
         BFT_MALLOC(boundaries->preout,  zones, double);
         BFT_MALLOC(boundaries->denin,   zones, double);
+    }
+    else if (cs_gui_strcmp(vars->model, "arc") || cs_gui_strcmp(vars->model, "joule"))
+    {
     }
     else
     {
@@ -1220,6 +1334,10 @@ _init_boundaries(const int *const nfabor,
             if (cs_gui_strcmp(vars->model, "compressible_model"))
                 _outlet_compressible(izone, isspcf, isopcf);
         }  /* if (cs_gui_strcmp(nature, "outlet")) */
+
+        if (cs_gui_strcmp(vars->model, "arc") || cs_gui_strcmp(vars->model, "joule"))
+          for (isca = 0; isca < vars->nscapp; isca++)
+            _boundary_elec(nature, izone, ngazg, isca+vars->nscaus);
         BFT_FREE(nature);
         BFT_FREE(label);
 
@@ -1461,6 +1579,7 @@ cs_gui_get_faces_list(int          izone,
  * INTEGER          NCHARM  <-- maximal number of coals
  * INTEGER          NCHARB  <-- number of simulated coals
  * INTEGER          NCLPCH  <-- number of simulated class per coals
+ * INTEGER          NGASG   <-- number of simulated gas for electrical models
  * INTEGER          IINDEF  <-- type of boundary: not defined
  * INTEGER          IENTRE  <-- type of boundary: inlet
  * INTEGER          IESICF  <-- type of boundary: imposed inlet (compressible)
@@ -1486,6 +1605,9 @@ cs_gui_get_faces_list(int          izone,
  * INTEGER          IENTGB  <-- 1 for burned gas inlet (gas combustion)
  * INTEGER          IENTGF  <-- 1 for unburned gas inlet (gas combustion)
  * integer          iprofm  <-- atmospheric flows: on/off for profile from data
+ * DOUBLE PRECISION COEJOU  <-- electric arcs
+ * DOUBLE PRECISION DPOT    <-- electric arcs : potential difference
+ * DOUBLE PRECISION RTPA    <-- rtpa for implicit flux
  * INTEGER          ITYPFB  <-- type of boundary for each face
  * INTEGER          IZFPPP  <-- zone number for each boundary face
  * INTEGER          ICODCL  <-- boundary conditions array type
@@ -1512,6 +1634,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                                const    int *const ncharm,
                                const    int *const ncharb,
                                const    int *const nclpch,
+                               const    int *const ngazg,
                                const    int *const iindef,
                                const    int *const ientre,
                                const    int *const iesicf,
@@ -1537,6 +1660,14 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                                         int *const ientgb,
                                         int *const ientgf,
                                         int *const iprofm,
+                                     double *const coejou,
+                                     double *const dpot,
+                                     cs_real_t     rtpa[],
+                                        int *const ielcor,
+                                        int *const ipotr,
+                                        int *const ipoti,
+                                        int        ipotva[],
+                                        int *const ncelet,
                                         int *const itypfb,
                                         int *const izfppp,
                                         int *const icodcl,
@@ -1573,13 +1704,14 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
     mei_tree_t *ev_formula  = NULL;
 
     cs_var_t  *vars = cs_glob_var;
+    int *ifabor = cs_glob_mesh->b_face_cells;
 
     zones = cs_gui_boundary_zones_number();
 
     /* First iteration only: memory allocation */
 
     if (boundaries == NULL)
-        _init_boundaries(nfabor, nozppm, ncharb, nclpch, izfppp, iesicf, isspcf, ierucf, isopcf);
+        _init_boundaries(nfabor, nozppm, ncharb, nclpch, ngazg, izfppp, iesicf, isspcf, ierucf, isopcf);
 
     /* At each time-step, loop on boundary faces:
      One sets itypfb, rcodcl and icodcl thanks to the arrays
@@ -1695,6 +1827,39 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
 
                 for (i = 0; i < vars->nvar; i++)
                     rcodcl[vars->rtp[i] * (*nfabor) + ifbr] = boundaries->values[vars->rtp[i]][izone].val1;
+            }
+
+            if (cs_gui_strcmp(vars->model, "joule"))
+            {
+              if (*ielcor == 1)
+              {
+                for (ifac = 0; ifac < faces; ifac++)
+                {
+                  ifbr = faces_list[ifac]- 1;
+                  rcodcl[vars->rtp[*ipotr -1] * (*nfabor) + ifbr] = boundaries->values[vars->rtp[*ipotr -1]][izone].val1 * (*coejou);
+                  if (*ipoti > 0)
+                    rcodcl[vars->rtp[*ipoti -1] * (*nfabor) + ifbr] = boundaries->values[vars->rtp[*ipoti -1]][izone].val1 * (*coejou);
+                }
+              }
+            }
+
+            if (cs_gui_strcmp(vars->model, "arc"))
+            {
+              if (boundaries->type_code[*ipotr -1][izone] == DIRICHLET_IMPLICIT && *ielcor == 1)
+                for (ifac = 0; ifac < faces; ifac++)
+                {
+                  ifbr = faces_list[ifac]- 1;
+                  rcodcl[vars->rtp[*ipotr -1] * (*nfabor) + ifbr] = *dpot;
+                }
+              if (boundaries->type_code[ipotva[0] -1][izone] == NEUMANN_IMPLICIT)
+                for (ifac = 0; ifac < faces; ifac++)
+                {
+                  ifbr = faces_list[ifac]- 1;
+                  int iel = ifabor[ifbr];
+                  rcodcl[vars->rtp[ipotva[0] -1] * (*nfabor) + ifbr] = rtpa[vars->rtp[ipotva[0] -1]*(*ncelet) + iel-1];
+                  rcodcl[vars->rtp[ipotva[1] -1] * (*nfabor) + ifbr] = rtpa[vars->rtp[ipotva[1] -1]*(*ncelet) + iel-1];
+                  rcodcl[vars->rtp[ipotva[2] -1] * (*nfabor) + ifbr] = rtpa[vars->rtp[ipotva[2] -1]*(*ncelet) + iel-1];
+                }
             }
 
             if (cs_gui_strcmp(vars->model, "atmospheric_flows"))
@@ -2222,6 +2387,38 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                 } /* switch */
             } /* for (i = 0; i < vars->nvar; i++) */
 
+            if (cs_gui_strcmp(vars->model, "joule"))
+            {
+              if (*ielcor == 1)
+              {
+                for (ifac = 0; ifac < faces; ifac++)
+                {
+                  ifbr = faces_list[ifac]- 1;
+                  rcodcl[vars->rtp[*ipotr -1] * (*nfabor) + ifbr] = boundaries->values[vars->rtp[*ipotr -1]][izone].val1 * (*coejou);
+                  if (*ipoti > 0)
+                    rcodcl[vars->rtp[*ipoti -1] * (*nfabor) + ifbr] = boundaries->values[vars->rtp[*ipoti -1]][izone].val1 * (*coejou);
+                }
+              }
+            }
+
+            if (cs_gui_strcmp(vars->model, "arc"))
+            {
+              if (boundaries->type_code[*ipotr -1][izone] == DIRICHLET_IMPLICIT && *ielcor == 1)
+                for (ifac = 0; ifac < faces; ifac++)
+                {
+                  ifbr = faces_list[ifac]- 1;
+                  rcodcl[vars->rtp[*ipotr -1] * (*nfabor) + ifbr] = *dpot;
+                }
+              if (boundaries->type_code[ipotva[0] -1][izone] == NEUMANN_IMPLICIT)
+                for (ifac = 0; ifac < faces; ifac++)
+                {
+                  ifbr = faces_list[ifac]- 1;
+                  int iel = ifabor[ifbr];
+                  rcodcl[vars->rtp[ipotva[0] -1] * (*nfabor) + ifbr] = rtpa[vars->rtp[ipotva[0] -1]*(*ncelet) + iel-1];
+                  rcodcl[vars->rtp[ipotva[1] -1] * (*nfabor) + ifbr] = rtpa[vars->rtp[ipotva[1] -1]*(*ncelet) + iel-1];
+                  rcodcl[vars->rtp[ipotva[2] -1] * (*nfabor) + ifbr] = rtpa[vars->rtp[ipotva[2] -1]*(*ncelet) + iel-1];
+                }
+            }
         }
         else if (cs_gui_strcmp(boundaries->nature[izone], "outlet"))
         {
@@ -2292,6 +2489,38 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                 }
             }
 
+            if (cs_gui_strcmp(vars->model, "joule"))
+            {
+              if (*ielcor == 1)
+              {
+                for (ifac = 0; ifac < faces; ifac++)
+                {
+                  ifbr = faces_list[ifac]- 1;
+                  rcodcl[vars->rtp[*ipotr -1] * (*nfabor) + ifbr] = boundaries->values[vars->rtp[*ipotr -1]][izone].val1 * (*coejou);
+                  if (*ipoti > 0)
+                    rcodcl[vars->rtp[*ipoti -1] * (*nfabor) + ifbr] = boundaries->values[vars->rtp[*ipoti -1]][izone].val1 * (*coejou);
+                }
+              }
+            }
+
+            if (cs_gui_strcmp(vars->model, "arc"))
+            {
+              if (boundaries->type_code[*ipotr -1][izone] == DIRICHLET_IMPLICIT && *ielcor == 1)
+                for (ifac = 0; ifac < faces; ifac++)
+                {
+                  ifbr = faces_list[ifac]- 1;
+                  rcodcl[vars->rtp[*ipotr -1] * (*nfabor) + ifbr] = *dpot;
+                }
+              if (boundaries->type_code[ipotva[0] -1][izone] == NEUMANN_IMPLICIT)
+                for (ifac = 0; ifac < faces; ifac++)
+                {
+                  ifbr = faces_list[ifac]- 1;
+                  int iel = ifabor[ifbr];
+                  rcodcl[vars->rtp[ipotva[0] -1] * (*nfabor) + ifbr] = rtpa[vars->rtp[ipotva[0] -1]*(*ncelet) + iel-1];
+                  rcodcl[vars->rtp[ipotva[1] -1] * (*nfabor) + ifbr] = rtpa[vars->rtp[ipotva[1] -1]*(*ncelet) + iel-1];
+                  rcodcl[vars->rtp[ipotva[2] -1] * (*nfabor) + ifbr] = rtpa[vars->rtp[ipotva[2] -1]*(*ncelet) + iel-1];
+                }
+            }
         }
         else if (cs_gui_strcmp(boundaries->nature[izone], "symmetry"))
         {

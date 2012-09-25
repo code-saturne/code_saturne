@@ -44,9 +44,6 @@ from Base.Common import *
 import Base.Toolbox as Tool
 from Base.XMLvariables import Variables, Model
 from Base.XMLmodel import XMLmodel, ModelTest
-from Pages.CoalCombustionModel import CoalCombustionModel
-from Pages.GasCombustionModel import GasCombustionModel
-from Pages.ElectricalModelsModel import ElectricalModel
 from Pages.TimeStepModel import TimeStepModel
 
 #-------------------------------------------------------------------------------

@@ -182,6 +182,17 @@ class NumericalParamEquatModel(Model):
         return nodList
 
 
+    def _getElectricalScalarsNodes(self):
+        """ Private method: return list of meteo scalar's nodes """
+        nodList = []
+        node = self.node_models.xmlGetNode('joule_effect', 'model')
+        if not node: return []
+        model = node['model']
+        if model != 'off':
+            nodList = node.xmlGetNodeList('scalar')
+        return nodList
+
+
     def _getAdditionalScalarNodes(self):
         """ Private method: return list of additional scalar's nodes """
         n = self.case.xmlGetNode('additional_scalars')
@@ -205,6 +216,7 @@ class NumericalParamEquatModel(Model):
                      self._getPuCoalScalarsNodes(),
                      self._getGasScalarsNodes(),
                      self._getMeteoScalarsNodes(),
+                     self._getElectricalScalarsNodes(),
                      self._getAdditionalScalarNodes()):
             self.var_clip.append(part)
         return self.var_clip
@@ -220,6 +232,7 @@ class NumericalParamEquatModel(Model):
                      self._getPuCoalScalarsNodes(),
                      self._getGasScalarsNodes(),
                      self._getMeteoScalarsNodes(),
+                     self._getElectricalScalarsNodes(),
                      self._getAdditionalScalarNodes()):
             self.var_shem.append(part)
         return self.var_shem
@@ -234,6 +247,7 @@ class NumericalParamEquatModel(Model):
                      self._getPuCoalScalarsNodes(),
                      self._getGasScalarsNodes(),
                      self._getMeteoScalarsNodes(),
+                     self._getElectricalScalarsNodes(),
                      self._getAdditionalScalarNodes(),
                      self._getAleVariablesNodes()):
             self.var_solv.append(part)

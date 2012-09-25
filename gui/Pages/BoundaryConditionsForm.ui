@@ -6,15 +6,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>144</width>
-    <height>384</height>
+    <width>281</width>
+    <height>398</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_2">
-   <item>
+  <layout class="QGridLayout" name="gridLayout_2">
+   <item row="0" column="0">
     <widget class="QGroupBox" name="groupBoxMain">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
@@ -25,8 +25,8 @@
      <property name="title">
       <string>Boundary conditions</string>
      </property>
-     <layout class="QVBoxLayout" name="verticalLayout">
-      <item>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="0">
        <widget class="QTreeView" name="treeViewBoundaries">
         <property name="alternatingRowColors">
          <bool>true</bool>
@@ -36,7 +36,7 @@
         </property>
        </widget>
       </item>
-      <item>
+      <item row="1" column="0">
        <widget class="BoundaryConditionsRoughWallView" name="roughWidget" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -46,7 +46,7 @@
         </property>
        </widget>
       </item>
-      <item>
+      <item row="2" column="0">
        <widget class="BoundaryConditionsSlidingWallView" name="slidingWidget" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -56,7 +56,7 @@
         </property>
        </widget>
       </item>
-      <item>
+      <item row="3" column="0">
        <widget class="BoundaryConditionsMeteoView" name="meteoWidget" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -66,7 +66,7 @@
         </property>
        </widget>
       </item>
-      <item>
+      <item row="4" column="0">
        <widget class="BoundaryConditionsVelocityInletView" name="velocityWidget" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -76,7 +76,7 @@
         </property>
        </widget>
       </item>
-      <item>
+      <item row="5" column="0">
        <widget class="BoundaryConditionsCoalInletView" name="coalWidget" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -86,7 +86,7 @@
         </property>
        </widget>
       </item>
-      <item>
+      <item row="6" column="0">
        <widget class="BoundaryConditionsCompressibleOutletView" name="compressibleOutletWidget" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -96,7 +96,7 @@
         </property>
        </widget>
       </item>
-      <item>
+      <item row="7" column="0">
        <widget class="BoundaryConditionsTurbulenceInletView" name="turbulenceWidget" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -106,19 +106,22 @@
         </property>
        </widget>
       </item>
-      <item>
+      <item row="8" column="0">
        <widget class="BoundaryConditionsScalarsView" name="scalarsWidget" native="true"/>
       </item>
-      <item>
+      <item row="9" column="0">
        <widget class="BoundaryConditionsMobileMeshView" name="mobileMeshWidget" native="true"/>
       </item>
-      <item>
+      <item row="10" column="0">
        <widget class="BoundaryConditionsWallRadiativeTransferView" name="radiativeWidget" native="true"/>
+      </item>
+      <item row="11" column="0">
+       <widget class="BoundaryConditionsElectricalView" name="electricalwidget" native="true"/>
       </item>
      </layout>
     </widget>
    </item>
-   <item>
+   <item row="1" column="0">
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
@@ -192,6 +195,12 @@
    <class>BoundaryConditionsWallRadiativeTransferView</class>
    <extends>QWidget</extends>
    <header location="global">BoundaryConditionsWallRadiativeTransferView.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>BoundaryConditionsElectricalView</class>
+   <extends>QWidget</extends>
+   <header location="global">BoundaryConditionsElectricalView.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
