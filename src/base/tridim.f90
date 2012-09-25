@@ -1297,7 +1297,7 @@ do while (iterns.le.nterup)
       ( nvar   , nscal  , iterns , icvrge , itrale ,                   &
         isostd ,                                                       &
         dt     , tpucou , rtp    , rtpa   , propce , propfa , propfb , &
-        tslagr , coefa  , coefb  , frcxt  ,                            &
+        tslagr , coefa  , coefb  , frcxt  , prhyd  ,                   &
         trava  , ximpav , uvwk   )
 
       endif

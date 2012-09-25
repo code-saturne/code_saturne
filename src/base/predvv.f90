@@ -71,6 +71,8 @@
 !> \param[in]     uvwk          idem (stores the velocity at the previous iteration)*
 !> \param[in]     dfrcxt        variation of the external forces
 !> \param[in]                    making the hydrostatic pressure
+!> \param[in]     grdphd        hydrostatic pressure gradient to handle the imbalance
+!> \param[in]                   between the pressure gradient and gravity source term
 !> \param[in]     tpucou        non scalar time step in case of
 !>                               velocity pressure coupling
 !> \param[in]     trav          right hand side for the normalizing
@@ -95,7 +97,7 @@ subroutine predvv &
    propce , propfa , propfb ,                                     &
    flumas , flumab ,                                              &
    tslagr , coefa  , coefb  , coefav , coefbv , cofafv , cofbfv , &
-   ckupdc , smacel , frcxt  ,                                     &
+   ckupdc , smacel , frcxt  , grdphd ,                            &
    trava  , ximpa  , uvwk   , dfrcxt , tpucou , trav   ,          &
    viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
    w1     , w7     , w8     , w9     , xnormp )
@@ -145,6 +147,7 @@ double precision tslagr(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision frcxt(ncelet,3), dfrcxt(ncelet,3)
+double precision grdphd(ncelet,3)
 double precision trava(ndim,ncelet)
 double precision ximpa(ndim,ndim,ncelet),uvwk(ndim,ncelet)
 double precision tpucou(ndim,ncelet)
@@ -486,6 +489,13 @@ if (iappel.eq.1) then
       trav(2,iel) = (frcxt(iel,2) - grad(iel,2)) * volume(iel)
       trav(3,iel) = (frcxt(iel,3) - grad(iel,3)) * volume(iel)
     enddo
+  elseif (iphydr.eq.2) then
+    do iel = 1, ncel
+      rom = propce(iel, ipcrom)
+      trav(1,iel) = (rom*gx - grdphd(iel,1)) * volume(iel)
+      trav(2,iel) = (rom*gy - grdphd(iel,2)) * volume(iel)
+      trav(3,iel) = (rom*gz - grdphd(iel,3)) * volume(iel)
+    enddo
   else
     do iel = 1, ncel
       drom = (propce(iel,ipcrom)-ro0)
@@ -499,9 +509,16 @@ elseif(iappel.eq.2) then
 
   if (iphydr.eq.1) then
     do iel = 1, ncel
-      trav(1,iel) = trav(1,iel) + ( frcxt(iel,1) - grad(iel,1) )*volume(iel)
-      trav(2,iel) = trav(2,iel) + ( frcxt(iel,2) - grad(iel,2) )*volume(iel)
-      trav(3,iel) = trav(3,iel) + ( frcxt(iel,3) - grad(iel,3) )*volume(iel)
+      trav(1,iel) = trav(1,iel) + ( frcxt(iel,1) - grad(iel,1) ) * volume(iel)
+      trav(2,iel) = trav(2,iel) + ( frcxt(iel,2) - grad(iel,2) ) * volume(iel)
+      trav(3,iel) = trav(3,iel) + ( frcxt(iel,3) - grad(iel,3) ) * volume(iel)
+    enddo
+  elseif (iphydr.eq.2) then
+    do iel = 1, ncel
+      rom = propce(iel,ipcrom)
+      trav(1,iel) = trav(1,iel) + (rom*gx - grdphd(iel,1)) * volume(iel)
+      trav(2,iel) = trav(2,iel) + (rom*gy - grdphd(iel,2)) * volume(iel)
+      trav(3,iel) = trav(3,iel) + (rom*gz - grdphd(iel,3)) * volume(iel)
     enddo
   else
     do iel = 1, ncel
