@@ -406,9 +406,12 @@ update-copyright:
 
 dist-hook: changelog
 	\cp -f ${top_srcdir}/ChangeLog ${distdir}
+	-rm -rf `find $(distdir)/docs -name .svn`
 	-rm -rf `find $(distdir)/examples  -name .svn`
 	-rm -rf `find $(distdir)/extras  -name .svn`
+	-rm -rf `find $(distdir)/gui  -name .svn`
 	-rm -rf `find $(distdir)/patches -name .svn`
+	-rm -rf `find $(distdir)/salome -name .svn`
 	-rm -f $(distdir)/extras/salome/fsi_appli_config.xml
 
 clean-local:
