@@ -20,6 +20,35 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Function:
+! ---------
+
+!> \file d3pphy.f90
+!>
+!> \brief Specific physic subroutine: diffusion flame.
+!>
+!> Calculation of mean density
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     ibrom         indicator of boundary density array filling
+!> \param[in]     izfppp        boundary zone index for specific physic
+!> \param[in]     dt            time step (per cell)
+!> \param[in]     rtp, rtpa     calculated variables at cell centers
+!>                               (at current and previous time steps)
+!> \param[in,out] propce        physical properties at cell centers
+!> \param[in]     propfa        physical properties at interior face centers
+!> \param[in,out] propfb        physical properties at boundary face centers
+!> \param[in]     coefa, coefb  boundary conditions
+!_______________________________________________________________________________
+
 subroutine d3pphy &
 !================
 
@@ -28,40 +57,6 @@ subroutine d3pphy &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  )
 
-!===============================================================================
-! FONCTION :
-! --------
-
-! ROUTINE PHYSIQUE PARTICULIERE : FLAMME DE DIFFUSION
-! Calcul de RHO mutualise pour chimie 3 points
-!  adiabatique ou permeatique (transport de H)
-
-
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ibrom            ! te ! <-- ! indicateur de remplissage de romb              !
-!        !    !     !                                                !
-! izfppp           ! te ! --> ! numero de zone de la face de bord              !
-! (nfabor)         !    !     !  pour le module phys. part.                    !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
-! rpp              ! tr ! --- ! macro tableau reel pp                          !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================

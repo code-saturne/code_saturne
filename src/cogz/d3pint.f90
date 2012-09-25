@@ -20,6 +20,35 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Function:
+! ---------
+
+!> \file d3pint.f90
+!>
+!> \brief Specific physic subroutine: diffusion flame.
+!>
+!> Integration of thermodynamical variables function of mixture fraction
+
+!  NB : Temperature integration could be ponderated by Cp
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     indpdf        indicator for pdf integration or mean value
+!> \param[in]     dirmin        Dirac's peak value at \f$ f_{min} \f$
+!> \param[in]     dirmax        Dirac's peak value at \f$ f_{max} \f$
+!> \param[in]     fdeb          abscissa of rectangle low boundary
+!> \param[in]     ffin          abscissa of rectangle high boundary
+!> \param[in]     hrec          rectangle height
+!> \param[in]     rtp           calculated variables at cell centers
+!> \param[in,out] propce        physical properties at cell centers
+!> \param[in]     w1            work array
+!_______________________________________________________________________________
+
 subroutine d3pint &
 !================
 
@@ -27,39 +56,6 @@ subroutine d3pint &
    dirmin , dirmax , fdeb   , ffin   , hrec   , tpdf ,            &
    rtp    , propce , w1      )
 
-!===============================================================================
-!  FONCTION  :
-!  ---------
-
-! ROUTINE PHYSIQUE PARTICULIERE : FLAMME DE DIFFUSION
-! Integration des variables thermodynamiques en fonction de
-!  la fraction de melange
-!  Rq : Il serait judicieux de ponderer l'integration de la
-!           temperature par les CP
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! indpdf           ! ti ! <-- ! indicteur passage ou non par les pdf           !
-! dirmin           ! tr ! <-- ! pdf : dirac en fmin                            !
-! dirmax           ! tr ! <-- ! pdf : dirac en fmax                            !
-! fdeb             ! tr ! <-- ! pdf : abscisse debut rectangle                 !
-! ffin             ! tr ! <-- ! pdf : abscisse fin rectangle                   !
-! hrec             ! tr ! <-- ! pdf : hauteur rectangle                        !
-! p                ! tr ! <-- ! pression                                       !
-! propce           ! tr ! <-- ! proprietes physiques au centre des             !
-! (ncelet,*)       !    !     ! cellules ( concentrations, temp. )   !                                  !
-! w1               ! tr ! --- ! tableau de tavail                              !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================

@@ -26,37 +26,28 @@
 
 !> \file sootsc.f90
 !>
-!> \brief Routine physique particuliere : modele de suies a 2 equations.
+!> \brief Specific physic subroutine: two equations soot model.
 !>
-!> On precise les termes sources pour les scalaires
-!> fraction massique de suies et nombre de précurseurs
-!> sur un pas de temps
-!>
-!> Attention :
-!>  le traitement des termes sources est different
-!>  de celui de ustssc.f
-!>
-!> On resout rovsdt*d(var) = smbrs
-!>
-!> rovsdt et smbrs contiennent deja d'eventuels termes sources
-!>  utilisateur. il faut donc les incrementer et pas les
-!>  ecraser
-!>
-!> Pour des questions de stabilite, on ne rajoute dans rovsdt
-!>  que des termes positifs. il n'y a pas de contrainte pour
-!>  smbrs
-!>
-!> Dans le cas d'un terme source en cexp + cimp*var on doit
-!> ecrire :
-!>          smbrs  = smbrs  + cexp + cimp*var
-!>          rovsdt = rovsdt + max(-cimp,zero)
-!>
-!> On fournit ici rovsdt et smbrs (ils contiennent RHO*volume)
-!>  - smbrs en kg variable/s :
-!>     ex : pour la vitesse            kg m/s2
-!>          pour les temperatures      kg degres/s
-!>          pour les enthalpies        Joules/s
-!>  - rovsdt en kg /s
+!> This subroutine defines the source terms for the soot mass fraction
+!> and the precursor number for soot model of Moss et al for one time step.
+!
+!  The equations read: \f$ rovsdt \delta a = smbrs \f$
+!
+!  \f$ rovsdt \f$ et \f$ smbrs \f$ could already contain source term
+!  and don't have to be erased but incremented.
+!
+!  For stability sake, only positive terms should be add in \f$ rovsdt \f$.
+!  There is no constrain for \f$ smbrs \f$.
+!
+!  For a source term written \f$ S_{exp} + S_{imp} a \f$, source terms are:
+!           \f$ smbrs  = smbrs  + S_{exp} + S_{imp} a \f$
+!           \f$ rovsdt = rovsdt + \max(-S_{imp},0) \f$
+!
+!  Here are set \f$ rovsdt \f$ and \f$ smbrs \f$ containning \f$ \rho \Omega \f$
+!   - \f$ smbrs \f$ in \f$ kg_a.s^{-1} \f$ (ex: for velocity:
+!     \f$ kg.m.s^{-2} \f$, for temperature: \f$ kg.°C.s^{-1} \f$,
+!     for enthalpy: \f$ J.s^{-1} \f$)
+!   - \f$ rovsdt \f$ en \f$ kg.s^{-1} \f$
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------

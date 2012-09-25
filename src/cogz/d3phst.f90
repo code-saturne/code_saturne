@@ -20,6 +20,35 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Function:
+! ---------
+
+!> \file d3phst.f90
+!>
+!> \brief Specific physic subroutine: diffusion flame.
+!>
+!> Calculation of local stoechiometric enthalpy
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     ncel          number of cells
+!> \param[in]     ncelet        number of extended (real + ghost) cells
+!> \param[in]     indpdf        indicator for pdf integration or mean value
+!> \param[in]     dirmin        Dirac's peak value at \f$ f_{min} \f$
+!> \param[in]     dirmax        Dirac's peak value at \f$ f_{max} \f$
+!> \param[in]     fdeb          abscissa of rectangle low boundary
+!> \param[in]     ffin          abscissa of rectangle high boundary
+!> \param[in]     hrec          rectangle height
+!> \param[in]     fm            mean mixture fraction at cell centers
+!> \param[in]     hm            mean mixture enthalpy at cell centers
+!> \param[in,out] hstoe         local stoechiometric enthalpy
+!_______________________________________________________________________________
+
 subroutine d3phst &
 !================
 
@@ -28,36 +57,6 @@ subroutine d3phst &
    fm     , hm     ,                                              &
    hstoe  )
 
-!===============================================================================
-!  FONCTION  :
-!  ---------
-
-! ROUTINE PHYSIQUE PARTICULIERE : FLAMME DE DIFFUSION
-! CALCUL DE L'ENTHALPIE STOECHIOMETRIQUE LOCALE
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! indpdf           ! te ! <-- ! indicateur passage ou non par les pdf          !
-! dirmin           ! tr ! <-- ! pdf : dirac en fmin                            !
-! dirmax           ! tr ! <-- ! pdf : dirac en fmax                            !
-! fdeb             ! tr ! <-- ! pdf : abscisse debut rectangle                 !
-! ffin             ! tr ! <-- ! pdf : abscisse fin rectangle                   !
-! hrec             ! tr ! <-- ! pdf : hauteur rectangle                        !
-! fm               ! tr ! <-- ! fraction de melange moyenne                    !
-! hm               ! tr ! <-- ! enthalpie massique moyenne                     !
-!                  !    !     !  si ecoulement permeatique                     !
-! hstoe            ! tr ! <-- ! enthalpie stoechiometrique                     !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================
