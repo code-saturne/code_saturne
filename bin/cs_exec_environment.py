@@ -285,12 +285,6 @@ def source_rcfile(pkg):
     Source user environement if defined by rcfile in preferences file.
     """
 
-    # Protect against multiple inclusions
-
-    rcfile_sourced = False
-
-    if hasattr(pkg, rcfile
-        os.environ[key] = value
     try:
         import ConfigParser  # Python2
         configparser = ConfigParser
@@ -303,8 +297,9 @@ def source_rcfile(pkg):
 
     if config.has_option('install', 'rcfile'):
         rcfile = config.get('install', 'rcfile')
-        if (os.
-        source_shell_script()
+        if not os.file.isabs(rcfile):
+            rcfile = '~/.' + rcfile
+        source_shell_script(rcfile)
 
 #-------------------------------------------------------------------------------
 
