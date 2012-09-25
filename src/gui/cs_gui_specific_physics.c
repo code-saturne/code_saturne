@@ -2345,7 +2345,7 @@ void CS_PROCF (uieli1, UIELI1) (const int    *const ncelet,
       else if (cs_gui_strcmp(choice, "user"))
         *modrec = 3;
       else
-        bft_error(__FILE__, __LINE__, 0, _("Invalid modele : %s\n"), choice);
+        bft_error(__FILE__, __LINE__, 0, _("Invalid model : %s\n"), choice);
 
       BFT_FREE(choice);
 

@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2012-09-12 16:02+0200\n"
+"POT-Creation-Date: 2012-09-25 18:18+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3158,9 +3158,6 @@ msgstr "max"
 msgid "speedup"
 msgstr ""
 
-msgid "Native, baseline, block extradiag"
-msgstr ""
-
 msgid "Native, baseline"
 msgstr ""
 
@@ -5115,20 +5112,6 @@ msgstr ""
 " --mpi             calcul parallèle ou couplé via MPI ;\n"
 "                   (généralement automatique, nécessaire uniquement\n"
 "                   pour des librairies MPI inconnues)\n"
-
-#, c-format
-msgid ""
-" --mpi-io          <mode> set parallel I/O behavior\n"
-"                     off: do not use MPI-IO\n"
-"                     eo:  MPI-IO with explicit offsets\n"
-"                          (default if available)\n"
-"                     ip:  MPI-IO with individual file pointers\n"
-msgstr ""
-" --mpi-io          <mode> choix du mode des E/S parallèles\n"
-"                     off: ne pas utiliser MPI-IO\n"
-"                     eo:  MPI-IO avec positions explicites\n"
-"                          (défaut si disponible)\n"
-"                     ip:  MPI-IO avec pointeurs de fichiers individuels\n"
 
 #, c-format
 msgid ""
@@ -7814,7 +7797,19 @@ msgid "Invalid atmospheric flow model: %s.\n"
 msgstr ""
 
 #, c-format
+msgid "Invalid joule model: %s.\n"
+msgstr ""
+
+#, c-format
+msgid "Invalid electrical model: %s.\n"
+msgstr ""
+
+#, c-format
 msgid "Invalid compressible model: %s.\n"
+msgstr ""
+
+#, c-format
+msgid "Invalid model : %s\n"
 msgstr ""
 
 #, c-format
@@ -9781,3 +9776,4 @@ msgid ""
 msgstr ""
 "  temps écoulé :              %.3g s\n"
 "\n"
+
