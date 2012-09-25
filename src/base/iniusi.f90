@@ -127,7 +127,7 @@ endif
 
 if (iihmpr.eq.1) then
 
-  call csturb(iturb, iturbt, ideuch, igrake, igrari, xlomlg)
+  call csturb(iturb, ideuch, igrake, igrari, xlomlg)
   !==========
 
   call cscpva(icp)
@@ -139,7 +139,7 @@ endif
 !     ==========================
 
 iihmpu = iihmpr
-call usipph(iihmpu , nfecra , iturb , iturbt , irccor , icp)
+call usipph(iihmpu , nfecra , iturb , irccor , icp)
 
 !===============================================================================
 ! 2. INITIALISATION DE PARAMETRES DEPENDANT DU NOMBRE DE SCALAIRES
@@ -372,8 +372,7 @@ if (iihmpr.eq.1) then
              iomg, iphi, ifb, ial,                                &
              inusa,                                               &
              iale, iuma, ivma, iwma,                              &
-             isca, iscapp, iscalt,                                &
-             iturbt, iut, ivt, iwt)
+             isca, iscapp, iscalt)
 
 !     Suite de calcul, relecture fichier auxiliaire, champ de vitesse figé
 
@@ -433,8 +432,7 @@ if (iihmpr.eq.1) then
              ismago, iale, icp, iscalt, iscavr,                   &
              iprtot, ipppro, ipproc, icmome,                      &
              ipptx, ippty, ipptz, ippdt,                          &
-             ivisma, idtvar, ipucou, iappel,                      &
-             iturbt, iut, ivt, iwt)
+             ivisma, idtvar, ipucou, iappel)
 
   call uimoyt (ndgmox, ntdmom, imoold, idfmom)
   !==========

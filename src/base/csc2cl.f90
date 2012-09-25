@@ -107,7 +107,7 @@ integer          nvar   , nscal
 integer          nvcp   , nvcpto
 integer          nfbcpl , nfbncp
 
-integer          icodcl(nfabor,nvar)
+integer          icodcl(nfabor,nvarcl)
 integer          lfbcpl(nfbcpl)  , lfbncp(nfbncp)
 integer          itrifb(nfabor), itypfb(nfabor)
 
@@ -115,7 +115,7 @@ double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision rcodcl(nfabor,nvar,3)
+double precision rcodcl(nfabor,nvarcl,3)
 double precision rvcpfb(nfbcpl,nvcpto), pndcpl(nfbcpl)
 double precision dofcpl(3,nfbcpl)
 

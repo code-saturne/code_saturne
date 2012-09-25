@@ -118,7 +118,7 @@
 !> \param[out]    visvdr        viscosite dynamique ds les cellules
 !>                               de bord apres amortisst de v driest
 !> \param[out]    hbord         coefficients d'echange aux bords
-!> \param[out]    thbord        boundary temperature in \f$ \centip \f$
+!> \param[out]    theipb        boundary temperature in \f$ \centip \f$
 !>                               (more exaclty the energetic variable)
 !> \param[in]     frcxt         external force responsible for the hydrostatic
 !>                               pressure
@@ -130,7 +130,7 @@ subroutine condli &
    isvhb  , isvtb  ,                                              &
    icodcl , isostd ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
-   coefa  , coefb  , visvdr , hbord  , thbord , frcxt  )
+   coefa  , coefb  , visvdr , hbord  , theipb , frcxt  )
 
 !===============================================================================
 ! Module files
@@ -163,17 +163,17 @@ implicit none
 integer          nvar   , nscal , iterns
 integer          isvhb  , isvtb
 
-integer          icodcl(nfabor,nvar)
+integer          icodcl(nfabor,nvarcl)
 integer          isostd(nfabor+1)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
-double precision rcodcl(nfabor,nvar,3)
+double precision rcodcl(nfabor,nvarcl,3)
 double precision frcxt(ncelet,3)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision visvdr(ncelet)
-double precision hbord(nfabor),thbord(nfabor)
+double precision hbord(nfabor),theipb(nfabor)
 
 ! Local variables
 
@@ -200,6 +200,7 @@ integer          iclphf, iclfbf, iclalf, iclomf
 integer          iclvaf, iclumf, iclvmf, iclwmf
 integer          nswrgp, imligp, iwarnp
 integer          itplus, itstar
+integer          f_id  ,  iut  , ivt   , iwt
 
 double precision sigma , cpp   , rkl
 double precision hint  , hext  , heq   , pimp  , xdis, qimp, cfl
@@ -215,12 +216,15 @@ double precision rinfiv(3), pimpv(3), qimpv(3), hextv(3), cflv(3)
 double precision visci(3,3), fikis, viscis, distfi
 
 logical          ilved
+character*80     fname
 
 double precision, allocatable, dimension(:) :: w1
-double precision, allocatable, dimension(:,:) :: velipb, rijipb, uitipb
+double precision, allocatable, dimension(:,:) :: velipb, rijipb
 double precision, allocatable, dimension(:,:) :: grad
 double precision, dimension(:,:,:), allocatable :: gradv
 double precision, dimension(:), pointer :: tplusp, tstarp
+double precision, dimension(:,:), pointer :: coefaut, cofafut, cofarut
+double precision, dimension(:,:,:), pointer :: coefbut, cofbfut, cofbrut
 
 !===============================================================================
 
@@ -502,11 +506,11 @@ endif
 !     (thanks to the formula: Fi + GRAD(Fi).II')
 
 !    For the coupling with SYRTHES
-!     thbord is used by coupbo after condli
+!     theipb is used by coupbo after condli
 !    For the coupling with the 1D wall thermal module
-!     thbord is used by cou1do after condli
+!     theipb is used by cou1do after condli
 !    For the radiation module
-!     thbord is used to compute the required flux in raypar
+!     theipb is used to compute the required flux in raypar
 
 !        CECI POURRAIT EN PRATIQUE ETRE HORS DE LA BOUCLE.
 
@@ -554,23 +558,14 @@ if (isvtb.ne.0) then
   else
     iscat = isvtb
   endif
-endif
-
-
-! S'il y a du rayonnement ou
-! si on utilise des equations de transport pour les flux thermiques turbulents
-!   (il y a forcement une variable energetique)
-!   on en calcule le gradient
-
-if ((iirayo.ge.1).or.(ityturt.eq.3)) then
+else
   iscat = iscalt
 endif
 
-! S'il y a un scalaire dont il faut calculer le gradient
-!   ... on le calcule.
+! Compute the boundary value of the thermal scalar in I' if required
 if (iscat.gt.0) then
 
-  ivar   = isca(iscat)
+  ivar = isca(iscat)
 
   if (ntcabs.gt.1 .and. itbrrb.eq.1 .and. ircflu(ivar).eq.1) then
 
@@ -594,7 +589,7 @@ if (iscat.gt.0) then
 
     do ifac = 1 , nfabor
       iel = ifabor(ifac)
-      thbord(ifac) = rtpa(iel,ivar) &
+      theipb(ifac) = rtpa(iel,ivar) &
                    + grad(iel,1)*diipb(1,ifac) &
                    + grad(iel,2)*diipb(2,ifac) &
                    + grad(iel,3)*diipb(3,ifac)
@@ -604,7 +599,7 @@ if (iscat.gt.0) then
 
     do ifac = 1 , nfabor
       iel = ifabor(ifac)
-      thbord(ifac) = rtpa(iel,ivar)
+      theipb(ifac) = rtpa(iel,ivar)
     enddo
 
   endif
@@ -780,70 +775,6 @@ if ((iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0).and.itytur.eq.3) then
 
 endif
 
-! ---> Compute uit in I' for boundary cells
-
-if ((iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0).and.ityturt.eq.3) then
-
-  ! Allocate a work array to store uit values at boundary faces
-  allocate(uitipb(nfabor,3))
-
-  if (ntcabs.gt.1) then
-    ! Allocate a temporary array
-    allocate(gradv(ncelet,3,3))
-
-    iccocg = 1
-    inc    = 1
-    nswrgp = nswrgr(iut)
-    imligp = imligr(iut)
-    iwarnp = iwarni(iut)
-    epsrgp = epsrgr(iut)
-    climgp = climgr(iut)
-    extrap = extrag(iut)
-
-    ilved = .false.
-
-    call grdvec &
-    !==========
-    ( iut    , imrgra , inc    , nswrgp , imligp ,                   &
-      iwarnp , nfecra ,                                              &
-      epsrgp , climgp , extrap ,                                     &
-      ilved ,                                                        &
-      rtpa(1,iut) ,  coefaut , coefbut,                              &
-      gradv  )
-
-    do isou = 1 , 3
-
-      if(isou.eq.1) ivar = iut
-      if(isou.eq.2) ivar = ivt
-      if(isou.eq.3) ivar = iwt
-
-      do ifac = 1 , nfabor
-        iel = ifabor(ifac)
-        uitipb(ifac,isou) = rtpa(iel,ivar)                  &
-                          + gradv(iel,1,isou)*diipb(1,ifac) &
-                          + gradv(iel,2,isou)*diipb(2,ifac) &
-                          + gradv(iel,3,isou)*diipb(3,ifac)
-      enddo
-    enddo
-    deallocate(gradv)
-  ! Nb: at the first time step, coefa and coefb are unknown, so the walue
-  !     in I is stored instead of the value in I'
-  else
-    do isou = 1 , 3
-
-      if(isou.eq.1) ivar = iut
-      if(isou.eq.2) ivar = ivt
-      if(isou.eq.3) ivar = iwt
-
-      do ifac = 1 , nfabor
-        iel = ifabor(ifac)
-        uitipb(ifac,isou) = rtpa(iel,ivar)
-      enddo
-    enddo
-  endif
-
-endif
-
 ! Free memory
 deallocate(grad)
 
@@ -851,7 +782,7 @@ deallocate(grad)
 ! 7. Turbulence at walls:
 !       (u,v,w,k,epsilon,Rij,temperature)
 !===============================================================================
-! --- On a besoin de velipb et de rijipb (et thbord pour le rayonnement)
+! --- On a besoin de velipb et de rijipb (et theipb pour le rayonnement)
 
 ! Initialization of the array storing yplus
 !  which is computed in clptur.f90 and/or clptrg.f90
@@ -885,7 +816,7 @@ if (ipatur.ne.0) then
    icodcl ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
    velipb , rijipb , coefa  , coefb  , visvdr ,                   &
-   hbord  , thbord )
+   hbord  , theipb )
 
 endif
 
@@ -899,7 +830,7 @@ if (ipatrg.ne.0) then
    icodcl ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
    velipb , rijipb , coefa  , coefb  , visvdr ,                   &
-   hbord  , thbord )
+   hbord  , theipb )
 
 endif
 
@@ -908,7 +839,6 @@ endif
 !       (u,v,w,Rij)
 !===============================================================================
 !   On a besoin de velipb et de rijipb
-!   On a egalement besoin de uitipb pour les uit
 
 do ifac = 1, nfabor
   isympa(ifac) = 1
@@ -921,7 +851,7 @@ if (iclsym.ne.0) then
  ( nvar   , nscal  ,                                              &
    icodcl ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
-   velipb , rijipb , uitipb , coefa  , coefb  )
+   velipb , rijipb , coefa  , coefb  )
 
 endif
 
@@ -2155,7 +2085,7 @@ if (nscal.ge.1) then
           ! The outgoing flux is stored (Q = h(Ti'-Tp): negative if
           !  gain for the fluid) in W/m2
           propfb(ifac,ipprob(ifconv)) = coefa(ifac,iclvaf)              &
-                                      + coefb(ifac,iclvaf)*thbord(ifac)
+                                      + coefb(ifac,iclvaf)*theipb(ifac)
 
         endif
 
@@ -2227,7 +2157,20 @@ if (nscal.ge.1) then
       endif
 
       ! Thermal heat flux boundary conditions
-      if ((ii.eq.iscalt).and.(ityturt.eq.3)) then
+      if (ityturt(ii).eq.3) then
+
+        ! Name of the scalar ivar !TODO move outside of the loop
+        call field_get_name(ivarfl(ivar), fname)
+
+        ! Index of the corresponding turbulent flux
+        call field_get_id(trim(fname)//'_turbulent_flux', f_id)
+
+        call field_get_coefa_v(f_id,coefaut)
+        call field_get_coefb_v(f_id,coefbut)
+        call field_get_coefaf_v(f_id,cofafut)
+        call field_get_coefbf_v(f_id,cofbfut)
+        call field_get_coefad_v(f_id,cofarut)
+        call field_get_coefbd_v(f_id,cofbrut)
 
         ! --- Physical Propreties
         visclc = propce(iel,ipcvis)
@@ -2235,26 +2178,30 @@ if (nscal.ge.1) then
         ! --- Geometrical quantities
         distbf = distb(ifac)
 
-        if (ivisls(iscalt).le.0) then
-          rkl = visls0(iscalt)/cpp
+        if (ivisls(iscal).le.0) then
+          rkl = visls0(iscal)/cpp
         else
-          rkl = propce(iel,ipproc(ivisls(iscalt)))/cpp
+          rkl = propce(iel,ipproc(ivisls(iscal)))/cpp
         endif
         hintt(1) = 0.5d0*(visclc+rkl)/distbf                        &
-                 + idifft(iut)*visten(1,iel)*ctheta(iscalt)/distbf
+                 + visten(1,iel)*ctheta(iscal)/distbf !FIXME ctheta (iscal)
         hintt(2) = 0.5d0*(visclc+rkl)/distbf                        &
-                 + idifft(iut)*visten(2,iel)*ctheta(iscalt)/distbf
+                 + visten(2,iel)*ctheta(iscal)/distbf
         hintt(3) = 0.5d0*(visclc+rkl)/distbf                        &
-                 + idifft(iut)*visten(3,iel)*ctheta(iscalt)/distbf
-        hintt(4) = idifft(iut)*visten(4,iel)*ctheta(iscalt)/distbf
-        hintt(5) = idifft(iut)*visten(5,iel)*ctheta(iscalt)/distbf
-        hintt(6) = idifft(iut)*visten(6,iel)*ctheta(iscalt)/distbf
+                 + visten(3,iel)*ctheta(iscal)/distbf
+        hintt(4) = visten(4,iel)*ctheta(iscal)/distbf
+        hintt(5) = visten(5,iel)*ctheta(iscal)/distbf
+        hintt(6) = visten(6,iel)*ctheta(iscal)/distbf
+
+        ! Set pointer values of turbulent fluxes in icodcl
+        iut = nvar + 3*(ifltur(ii) - 1) + 1
+        ivt = nvar + 3*(ifltur(ii) - 1) + 2
+        iwt = nvar + 3*(ifltur(ii) - 1) + 3
 
         ! Dirichlet Boundary Condition
         !-----------------------------
 
         if (icodcl(ifac,iut).eq.1) then
-
 
           pimpv(1) = rcodcl(ifac,iut,1)
           pimpv(2) = rcodcl(ifac,ivt,1)
@@ -2335,6 +2282,22 @@ if (nscal.ge.1) then
   enddo
 
 endif
+
+do ifac = 1, nfabor
+  write(nfecra,*) 'coefav(',1,ifac,')=',coefaut(1,ifac), itypfb(ifac)
+  write(nfecra,*) 'coefav(',2,ifac,')=',coefaut(2,ifac)
+  write(nfecra,*) 'coefav(',3,ifac,')=',coefaut(3,ifac)
+  write(nfecra,*) 'cofafv(',1,ifac,')=',cofafut(1,ifac)
+  write(nfecra,*) 'cofafv(',2,ifac,')=',cofafut(2,ifac)
+  write(nfecra,*) 'cofafv(',3,ifac,')=',cofafut(3,ifac)
+  write(nfecra,*) 'coefbv(',1,ifac,')=',coefbut(1,1,ifac)
+  write(nfecra,*) 'coefbv(',2,ifac,')=',coefbut(2,2,ifac)
+  write(nfecra,*) 'coefbv(',3,ifac,')=',coefbut(3,3,ifac)
+  write(nfecra,*) 'cofbfv(',1,ifac,')=',cofbfut(1,1,ifac)
+  write(nfecra,*) 'cofbfv(',2,ifac,')=',cofbfut(2,2,ifac)
+  write(nfecra,*) 'cofbfv(',3,ifac,')=',cofbfut(3,3,ifac)
+
+enddo
 
 !===============================================================================
 ! 13. Mesh velocity (ALE module): Dirichlet and Neumann and convectiv outlet
@@ -2576,7 +2539,6 @@ endif
 ! Free memory
 deallocate(velipb)
 if (allocated(rijipb)) deallocate(rijipb)
-if (allocated(uitipb)) deallocate(uitipb)
 
 !===============================================================================
 ! 15. Formats

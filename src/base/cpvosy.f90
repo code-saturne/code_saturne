@@ -25,7 +25,7 @@ subroutine cpvosy &
 
  ( nvar   , nscal  , isvtf  ,                                     &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   hbord  , tbord  )
+   hbord  , theipb )
 
 !===============================================================================
 ! Purpose:
@@ -49,7 +49,7 @@ subroutine cpvosy &
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! hbord(nfabor)    ! ra ! <-- ! coefficients d'echange aux bords               !
-! tbord(nfabor)    ! ra ! <-- ! temperatures aux bords                         !
+! theipb(nfabor)   ! ra ! <-- ! temperatures aux bords                         !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -79,7 +79,7 @@ integer          isvtf
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*),propfa(nfac,*),propfb(nfabor,*)
-double precision hbord(nfabor),tbord(nfabor)
+double precision hbord(nfabor),theipb(nfabor)
 
 ! Local variables
 

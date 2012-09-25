@@ -87,8 +87,8 @@ implicit none
 ! Arguments
 
 integer          nfabor, nvar, nscal
-integer          icodcl(nfabor,nvar)
-double precision rcodcl(nfabor,nvar,3)
+integer          icodcl(nfabor,nvarcl)
+double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
 

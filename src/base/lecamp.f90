@@ -74,6 +74,7 @@ use pointe
 use numvar
 use albase
 use parall
+use field
 
 !===============================================================================
 
@@ -93,6 +94,7 @@ character        rubriq*64,rubrik*64,car4*4
 character        cindfp*2
 character        cphase*2
 character        ficsui*32
+character*80     fname
 
 integer          iel
 integer          ivar  , iscal , ii    ,  ivers
@@ -105,8 +107,13 @@ integer          nfmtsc, nfmtru
 integer          jturb, jtytur, jale, jturbt
 integer          impamo
 integer          ival
+integer          f_id
 double precision d2s3, d2s3xk
 double precision rval
+
+double precision, allocatable, dimension(:) :: w1, w2, w3
+
+double precision, dimension(:,:), pointer :: xut
 
 !===============================================================================
 
@@ -937,33 +944,34 @@ write(nfecra,1598)
 
 nberro = 0
 
-if(nscal.gt.0) then
-  rubriq = 'modele_flux_turbulent_phase'//cphase
-  itysup = 0
-  nbval  = 1
-  irtyp  = 1
-  call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,jturbt,    &
-              ierror)
-  ! If the old calculation has no turbulent flux model, set it to 0
-  if (ierror.ne.0) jturbt = 0
-
-  ! --->  Donnees modifiees
-  if (iturbt .ne. jturbt) write(nfecra,8411) iturbt, jturbt
-
+if (nscal.gt.0) then
   do iscal = 1, nscal
     ivar = isca(iscal)
-!         Si le scalaire existait precedemment on le lit
-!         sinon on ne fait rien (init par defaut dans INIVA0)
+    ! Si le scalaire existait precedemment on le lit
+    ! sinon on ne fait rien (init par defaut dans INIVA0)
     if (iscold(iscal).gt.0) then
       if(iscold(iscal).le.nfmtsc) then
-        WRITE(CAR4,'(I4.4)')ISCOLD(ISCAL)
-        rubriq = 'scalaire_ce_'//CAR4
+        write(car4,'(i4.4)')iscold(iscal)
+        rubriq = 'scalaire_ce_'//car4
         itysup = 1
         nbval  = 1
         irtyp  = 2
         call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp, &
                     rtp(1,ivar),ierror)
         nberro=nberro+ierror
+
+        rubriq = 'flux_turbulent_ce'//car4
+        itysup = 0
+        nbval  = 1
+        irtyp  = 1
+        call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,jturbt,    &
+                    ierror)
+        ! If the old calculation has no turbulent flux model, set it to 0
+        if (ierror.ne.0) jturbt = 0
+
+        ! ---> Modified data
+        if (iturt(iscal) .ne. jturbt) write(nfecra,8411) iturt(iscal), jturbt
+
       else
         ierror= -1
         nberro=nberro+ierror
@@ -979,25 +987,44 @@ if(nscal.gt.0) then
         write(nfecra,9511)rubrik
       endif
     endif
-    if((iscal.eq.iscalt).and.(ityturt.eq.3)) then
+    if (ityturt(iscal).eq.3) then
+
+      allocate(w1(ncelet), w2(ncelet), w3(ncelet))
+
+      ! Name of the scalar ivar
+      call field_get_name(ivarfl(ivar), fname)
+
+      ! Index of the corresponding turbulent flux
+      call field_get_id(trim(fname)//'_turbulent_flux', f_id)
+
+      call field_get_val_v(f_id, xut)
+
       itysup = 1
       nbval  = 1
       irtyp  = 2
-
-      rubriq = 'ut_ce_phase'//cphase
+      rubriq = 'ut_ce_phase'//car4
       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-           rtp(1,iut),ierror)
+           w1,ierror)
       nberro=nberro+ierror
 
-      rubriq = 'vt_ce_phase'//cphase
+      rubriq = 'vt_ce_phase'//car4
       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-           rtp(1,ivt),ierror)
+           w2,ierror)
       nberro=nberro+ierror
 
-      rubriq = 'wt_ce_phase'//cphase
+      rubriq = 'wt_ce_phase'//car4
       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-           rtp(1,iwt),ierror)
+           w3,ierror)
       nberro=nberro+ierror
+
+      do iel = 1, ncel
+        xut(1,iel) = w1(iel)
+        xut(2,iel) = w2(iel)
+        xut(3,iel) = w3(iel)
+      enddo
+
+      deallocate(w1, w2, w3)
+
     endif
   enddo
 endif
@@ -1215,14 +1242,14 @@ return
 '@ @@ ATTENTION : LECTURE DU FICHIER SUITE PRINCIPAL          ',/,&
 '@    =========                                               ',/,&
 '@                                                            ',/,&
-'@      REPRISE  DE CALCUL           AVEC ITURBT = ',I4        ,/,&
-'@      A PARTIR D''UN CALCUL REALISE AVEC ITURBT = ',I4       ,/,&
+'@      REPRISE  DE CALCUL           AVEC ITURB = ',I4         ,/,&
+'@      A PARTIR D''UN CALCUL REALISE AVEC ITURB = ',I4        ,/,&
 '@                                                            ',/,&
 '@    Le modele de flux turbulent a ete modifie.              ',/,&
 '@    Le calcul peut etre execute.                            ',/,&
 '@                                                            ',/,&
 '@    Il est conseille cependant de                           ',/,&
-'@      verifier la valeur de ITURBT(',I2,')                  ',/,&
+'@      verifier la valeur de ITURB(',I2,')                   ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -1321,14 +1348,14 @@ return
 '@ @@ WARNING : WHEN READING THE MAIN RESTART FILE            ',/,&
 '@    =========                                               ',/,&
 '@                                                            ',/,&
-'@    THE CURRENT CALCULATION USES ITURBT = ',I4               ,/,&
-'@    BUT RESTARTS FROM ANOTHER ONE USING ITURBT = ',I4        ,/,&
+'@    THE CURRENT CALCULATION USES ITURB = ',I4                ,/,&
+'@    BUT RESTARTS FROM ANOTHER ONE USING ITURB = ',I4         ,/,&
 '@                                                            ',/,&
 '@    The turbulent flux model has changed.                   ',/,&
 '@    The computation can be executed.                        ',/,&
 '@                                                            ',/,&
 '@    However, it is strongly advised to check                ',/,&
-'@      the value of the variable ITURBT(',I2,')              ',/,&
+'@      the value of the variable ITURB(',I2,')               ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

@@ -439,23 +439,17 @@ elseif (iturb == 60) then
 elseif (iturb.eq.70) then
   nomrtp(inusa)='nusa_ce_phase'//cphase
 endif
-if(nscal.gt.0) then
-  !  ---> Modeles de flux turbulent
-  rubriq = 'modele_flux_turbulent_phase'//cphase
-  itysup = 0
-  nbval  = 1
-  irtyp  = 1
-  call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-       iturbt,ierror)
-  nberro=nberro+ierror
-
+if (nscal.gt.0) then
   do iscal = 1, nscal
+
+    !  ---> Turbulent flux model
+    rubriq = 'flux_turbulent'//cscal(iscal)
+    itysup = 0
+    nbval  = 1
+    irtyp  = 1
+    call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,       &
+         iturt(iscal),ierror)
     nomrtp(isca(iscal))='scalaire_ce_'//cscal(iscal)
-    if((iscal.eq.iscalt).and.(ityturt.eq.3)) then
-      nomrtp(iut)='ut_ce_phase'//cphase
-      nomrtp(ivt)='vt_ce_phase'//cphase
-      nomrtp(iwt)='wt_ce_phase'//cphase
-    endif
   enddo
 endif
 if (iale.eq.1) then
@@ -761,22 +755,22 @@ if (iecaux.eq.1) then
 
 !     Si on a des scalaires, on ecrit leur model de flux et
 !     leur diffusivite (on ne l'ecrit pas pour les variances)
-  if(nscal.gt.0) then
-  !  ---> Modeles de flux turbulent
-!       On les reecrit ici car on en aura besoin a la relecture
-    rubriq = 'modele_flux_turbulent_phase'//cphase
-    itysup = 0
-    nbval  = 1
-    irtyp  = 1
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-         iturbt,ierror)
-    nberro=nberro+ierror
-
+  if (nscal.gt.0) then
     do iscal = 1, nscal
+
+      !  ---> Turbulent flux model
+      rubriq = 'flux_turbulent'//cscal(iscal)
+      itysup = 0
+      nbval  = 1
+      irtyp  = 1
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+           iturt(iscal),ierror)
+      nberro=nberro+ierror
+
       if(ivsext(iscal).gt.0.and.ivisls(iscal).gt.0.and.           &
          (iscavr(iscal).le.0.or.iscavr(iscal).gt.nscal) ) then
-!         Diffusivite - cellules
-        rubriq = 'visls_ce_scalaire'//CSCAL(ISCAL)
+        ! Cell diffusivity
+        rubriq = 'visls_ce_scalaire'//cscal(iscal)
         itysup = 1
         nbval  = 1
         irtyp  = 2
@@ -894,12 +888,7 @@ if (iecaux.eq.1) then
   endif
   if(nscal.gt.0) then
     do iscal = 1, nscal
-      nomflu(ISCA(ISCAL))='fm_scalaire'//CSCAL(ISCAL)
-      if ((iscal.eq.iscalt).and.(ityturt.eq.3)) then
-        nomflu(iut)='fm_ut_phase'//cphase
-        nomflu(ivt)='fm_vt_phase'//cphase
-        nomflu(iwt)='fm_wt_phase'//cphase
-      endif
+      nomflu(isca(iscal))='fm_scalaire'//cscal(iscal)
     enddo
   endif
   if (iale.eq.1) then
@@ -995,11 +984,6 @@ if (iecaux.eq.1) then
   if(nscal.gt.0) then
     do iscal = 1, nscal
       nomflu(isca(iscal))='fm_a_scalaire'//cscal(iscal)
-      if ((iscal.eq.iscalt).and.(ityturt.eq.3)) then
-        nomflu(iut)='fm_a_ut_phase'//cphase
-        nomflu(ivt)='fm_a_vt_phase'//cphase
-        nomflu(iwt)='fm_a_wt_phase'//cphase
-      endif
     enddo
   endif
   if (iale.eq.1) then
@@ -1106,11 +1090,6 @@ if (iecaux.eq.1) then
   if(nscal.gt.0) then
     do iscal = 1, nscal
       nomcli(isca(iscal))='_scalaire'//cscal(iscal)
-      if ((iscal.eq.iscalt).and.(ityturt.eq.3)) then
-        nomcli(iut)='_ut_phase'//cphase
-        nomcli(ivt)='_vt_phase'//cphase
-        nomcli(iwt)='_wt_phase'//cphase
-      endif
     enddo
   endif
   if (iale.eq.1) then

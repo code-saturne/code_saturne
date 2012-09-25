@@ -65,7 +65,6 @@ void CS_PROCF (uiinit, UIINIT) (void);
  * *****************
  *
  * INTEGER          ITURB   <--   turbulence model
- * INTEGER          ITURBT  <--   heat flux model
  * INTEGER          IDEUCH  <--   wall law treatment
  * INTEGER          IGRAKE  <--   k-eps gravity effects
  * INTEGER          IGRAKI  <--   Rij-eps gravity effects
@@ -73,7 +72,6 @@ void CS_PROCF (uiinit, UIINIT) (void);
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csturb, CSTURB) (int *const iturb,
-                                int *const iturbt,
                                 int *const ideuch,
                                 int *const igrake,
                                 int *const igrari,
@@ -220,11 +218,7 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
                                 const int *const iwma,
                                 const int *const isca,
                                 const int *const iscapp,
-                                const int *const iscalt,
-                                const int *const iturbt,
-                                const int *const iut,
-                                const int *const ivt,
-                                const int *const iwt);
+                                const int *const iscalt);
 
 /*----------------------------------------------------------------------------
  * Restart parameters.
@@ -405,11 +399,7 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
                                 const int *const ivisma,
                                 const int *const idtvar,
                                 const int *const ipucou,
-                                const int *const iappel,
-                                const int *const iturbt,
-                                const int *const iut,
-                                const int *const ivt,
-                                const int *const iwt);
+                                const int *const iappel);
 
 /*----------------------------------------------------------------------------
  * Temporal averaging treatment

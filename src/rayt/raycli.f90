@@ -28,7 +28,7 @@ subroutine raycli &
    icodcl , itrifb , itypfb ,                                     &
    izfrad ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
-   coefa  , coefb  , hbord  , tbord  )
+   coefa  , coefb  , hbord  )
 
 !===============================================================================
 ! FONCTION :
@@ -86,8 +86,6 @@ subroutine raycli &
 !  (nfabor, *)     !    !     !                                                !
 ! hbord            ! tr ! --> ! coefficients d'echange aux bords               !
 ! (nfabor)         !    !     !                                                !
-! tbord            ! tr ! --> ! temperature aux bords           i              !
-! (nfabor)         !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -123,20 +121,19 @@ implicit none
 integer          nvar   , nscal
 integer          isvhb  , isvtb
 
-integer          icodcl(ndimfb,nvar)
+integer          icodcl(ndimfb,nvarcl)
 integer          itrifb(ndimfb), itypfb(ndimfb)
 integer          izfrad(ndimfb)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
-double precision rcodcl(ndimfb,nvar,3)
+double precision rcodcl(ndimfb,nvarcl,3)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
-double precision hbord(ndimfb),tbord(ndimfb)
+double precision hbord(ndimfb)
 
 ! Local variables
-
-integer          ifac, iel, ideb, ivart, iscat
+integer          ifac, iel, ideb, ivart
 integer          mode, iok, ifvu, ii, izonem, izone
 
 double precision tmin , tmax   , tx
@@ -144,7 +141,7 @@ double precision xmtk
 
 integer, allocatable, dimension(:) :: isothm
 
-double precision, allocatable, dimension(:) :: tempk
+double precision, allocatable, dimension(:) :: tempk, thwall
 double precision, allocatable, dimension(:) :: text, tint
 
 integer    ipacli
@@ -152,49 +149,39 @@ data       ipacli /0/
 save       ipacli
 
 !===============================================================================
-! 0 - GESTION MEMOIRE
+! 1. Initializations
 !===============================================================================
 
 ! Allocate temporary arrays
 allocate(isothm(nfabor))
-
-allocate(tempk(ncelet))
+allocate(tempk(ncelet), thwall(ndimfb))
 allocate(text(nfabor), tint(nfabor))
 
-!===============================================================================
-! 1.  INITIALISATIONS
-!===============================================================================
-
 !---> NUMERO DE PASSAGE RELATIF
-
 ipacli = ipacli + 1
 ideb = 0
 
-!---> VALEURS MIN ET MAX ADMISSIBLES POUR LA TEMPERATURE DE PAROI
-!         EN KELVIN
-
+!---> Min and Max values of the temperature (in Kelvin)
 tmin = 0.d0
 tmax = grand + tkelvi
 
 !---> COEFF DE RELAX
 
-!      TX est strictement superieur a 0 et inferieur ou egal a 1
+!     tx est strictement superieur a 0 et inferieur ou egal a 1
 
-!      Pour calculer la temperature de paroi, on calcule un increment
-!      de temperature DeltaT entre l'etape courante n et l'etape
-!      precedente n-1, puis on calcule :
-!           n    n-1                                 n-1
-!          T  = T    + DeltaT si le rapport DeltaT/T    =< TX, sinon
+!     Pour calculer la temperature de paroi, on calcule un increment
+!     de temperature DeltaT entre l'etape courante n et l'etape
+!     precedente n-1, puis on calcule :
+!          n    n-1                                 n-1
+!         T  = T    + DeltaT si le rapport DeltaT/T    =< tx, sinon
 
-!           n    n-1                      n-1             n-1
-!          T  = T    * (1 + TX *((DeltaT/T   ) / |DeltaT/T   |))
+!          n    n-1                      n-1             n-1
+!         T  = T    * (1 + tx *((DeltaT/T   ) / |DeltaT/T   |))
 
 tx = 0.1d0
 
-
-!---> INITIALISATIONS PAR DEFAUT BIDON
-
-do ifac = 1,nfabor
+!---> Default initialization
+do ifac = 1, nfabor
   izfrad(ifac) = -1
   isothm(ifac) = -1
   propfb(ifac,ipprob(ixlam)) = -grand
@@ -204,6 +191,8 @@ do ifac = 1,nfabor
   tint  (ifac) = -grand
 enddo
 
+! Index of the thermal variable
+ivart = isca(iscalt)
 
 !===============================================================================
 ! 2. SI PAS DE FICHIER SUITE ALORS INITIALISATION AU PREMIER PASSAGE
@@ -216,132 +205,118 @@ enddo
 
 if (ipacli.eq.1 .and. isuird.eq.0) then
 
-! Indicateur : si non suite et premier pas de temps.
-    ideb = 1
+  ! Indicateur : si non suite et premier pas de temps.
+  ideb = 1
 
-      do iel = 1,ncelet
-        propce(iel,ipproc(itsri(1))) = zero
-        propce(iel,ipproc(itsre(1))) = zero
-      enddo
+  do iel = 1,ncelet
+    propce(iel,ipproc(itsri(1))) = zero
+    propce(iel,ipproc(itsre(1))) = zero
+  enddo
 
-      do ifac = 1,nfabor
-        propfb(ifac,ipprob(ihconv)) = zero
-        propfb(ifac,ipprob(ifconv)) = zero
-      enddo
+  do ifac = 1,nfabor
+    propfb(ifac,ipprob(ihconv)) = zero
+    propfb(ifac,ipprob(ifconv)) = zero
+  enddo
 
-!     On utilise TBORD comme auxiliaire pour l'appel a USRAY2
-!       pour etre sur que TPAROI ne sera pas modifie
-!       (puisqu'on a TBORD libre)
-!     On utilise FLUNET comme auxiliaire pour l'appel a USRAY2
-!       pour etre sur que QINCID ne sera pas modifie
-!       (puisqu'on a FLUNET libre)
+  !     On utilise TBORD comme auxiliaire pour l'appel a USRAY2
+  !       pour etre sur que TPAROI ne sera pas modifie
+  !       (puisqu'on a TBORD libre)
+  !     On utilise FLUNET comme auxiliaire pour l'appel a USRAY2
+  !       pour etre sur que QINCID ne sera pas modifie
+  !       (puisqu'on a FLUNET libre)
 
-      do ifac = 1,nfabor
-        tbord(ifac)      = zero
-        propfb(ifac,ipprob(ifnet)) = zero
-      enddo
+  do ifac = 1, nfabor
+    thwall(ifac) = zero
+    propfb(ifac,ipprob(ifnet)) = zero
+  enddo
 
-!         - Interface Code_Saturne
-!           ======================
+  ! - Interface Code_Saturne
+  !   ======================
 
-      if (iihmpr.eq.1) then
+  if (iihmpr.eq.1) then
 
-!---> NUMERO DU SCALAIRE ET DE LA VARIABLE THERMIQUE
-        ivart = isca(iscalt)
+    !---> NUMERO DU SCALAIRE ET DE LA VARIABLE THERMIQUE
 
-        call uiray2                                               &
-        !==========
-       ( itypfb, iparoi, iparug, ivart , izfrad,                  &
-         isothm, itpimp, ipgrno, iprefl, ifgrno, ifrefl,          &
-         nozppm, nfabor, nvar,                                    &
-         propfb(1,ipprob(ieps)), propfb(1,ipprob(iepa)),          &
-         tint, text,                                              &
-         propfb(1,ipprob(ixlam)), rcodcl)
+    call uiray2 &
+    !==========
+   ( itypfb, iparoi, iparug, ivart , izfrad,                  &
+     isothm, itpimp, ipgrno, iprefl, ifgrno, ifrefl,          &
+     nozppm, nfabor, nvar,                                    &
+     propfb(1,ipprob(ieps)), propfb(1,ipprob(iepa)),          &
+     tint, text,                                              &
+     propfb(1,ipprob(ixlam)), rcodcl)
 
-      endif
+  endif
 
-      call usray2                                                 &
-      !==========
- ( nvar   , nscal  ,                                              &
-   itypfb ,                                                       &
-   icodcl , izfrad , isothm ,                                     &
-   tmin   , tmax   , tx     ,                                     &
-   dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
-   tbord  , propfb(1,ipprob(ifnet))  , propfb(1,ipprob(ihconv))  ,&
-   propfb(1,ipprob(ifconv)),                                      &
-   propfb(1,ipprob(ixlam)) , propfb(1,ipprob(iepa)) ,             &
-   propfb(1,ipprob(ieps))  ,                                      &
-   text   , tint   )
+  call usray2 &
+  !==========
+( nvar   , nscal  ,                                              &
+  itypfb ,                                                       &
+  icodcl , izfrad , isothm ,                                     &
+  tmin   , tmax   , tx     ,                                     &
+  dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
+  thwall , propfb(1,ipprob(ifnet))  , propfb(1,ipprob(ihconv))  ,&
+  propfb(1,ipprob(ifconv)),                                      &
+  propfb(1,ipprob(ixlam)) , propfb(1,ipprob(iepa)) ,             &
+  propfb(1,ipprob(ieps))  ,                                      &
+  text   , tint   )
 
-      write(nfecra,1000)
+  write(nfecra,1000)
 
-! Tparoi en Kelvin et QINCID en W/m2
-      do ifac = 1,nfabor
-        propfb(ifac,ipprob(itparo)) = tint(ifac)
-        propfb(ifac,ipprob(iqinci)) = stephn*tint(ifac)**4
-        if ( itypfb(ifac).eq.iparoi .or.                   &
-             itypfb(ifac).eq.iparug ) then
-          propfb(ifac,ipprob(itparo)) = tint(ifac)
-          propfb(ifac,ipprob(iqinci)) = stephn*tint(ifac)**4
-        else
-          propfb(ifac,ipprob(itparo)) = 0.d0
-          propfb(ifac,ipprob(iqinci)) = 0.d0
-        endif
-      enddo
+  ! Tparoi en Kelvin et QINCID en W/m2
+  do ifac = 1, nfabor
+    propfb(ifac,ipprob(itparo)) = tint(ifac)
+    propfb(ifac,ipprob(iqinci)) = stephn*tint(ifac)**4
+    if (itypfb(ifac).eq.iparoi.or.itypfb(ifac).eq.iparug) then
+      propfb(ifac,ipprob(itparo)) = tint(ifac)
+      propfb(ifac,ipprob(iqinci)) = stephn*tint(ifac)**4
+    else
+      propfb(ifac,ipprob(itparo)) = 0.d0
+      propfb(ifac,ipprob(iqinci)) = 0.d0
+    endif
+  enddo
 
-! Fin detection premier passage
 endif
-
-!===============================================================================
-! 3. PHASE
-!===============================================================================
-
-!---> NUMERO DU SCALAIRE ET DE LA VARIABLE THERMIQUE
-  iscat = iscalt
-  ivart = isca(iscalt)
 
 !===============================================================================
 ! 3.1 DONNEES SUR LES FACES FRONTIERES
 !===============================================================================
 
-!     On utilise TBORD comme auxiliaire pour l'appel a USRAY2
-!       pour etre sur que TPAROI ne sera pas modifie
-!       (puisqu'on a TBORD libre)
-!     On utilise FLUNET comme auxiliaire pour l'appel a USRAY2
+!     On utilise flunet comme auxiliaire pour l'appel a USRAY2
 !       pour etre sur que QINCID ne sera pas modifie
-!       (puisqu'on a FLUNET libre)
+!       (puisqu'on a flunet libre)
 
-  do ifac = 1,nfabor
-    tbord (ifac)     = propfb(ifac,ipprob(itparo))
-    propfb(ifac,ipprob(ifnet)) = propfb(ifac,ipprob(iqinci))
-  enddo
+do ifac = 1, nfabor
+  thwall (ifac) = propfb(ifac,ipprob(itparo))
+  propfb(ifac,ipprob(ifnet)) = propfb(ifac,ipprob(iqinci))
+enddo
 
 !     - Interface Code_Saturne
 !       ======================
 
-  if (iihmpr.eq.1) then
+if (iihmpr.eq.1) then
 
-    call uiray2                                                   &
-    !==========
-  ( itypfb, iparoi, iparug, ivart , izfrad,                       &
-    isothm, itpimp, ipgrno, iprefl, ifgrno, ifrefl,               &
-    nozppm, nfabor, nvar,                                         &
-    propfb(1,ipprob(ieps)), propfb(1,ipprob(iepa)), tint, text,   &
-    propfb(1,ipprob(ixlam)), rcodcl)
-
-  endif
-
-  call usray2                                                     &
+  call uiray2 &
   !==========
- ( nvar   , nscal  ,                                              &
-   itypfb ,                                                       &
-   icodcl , izfrad , isothm ,                                     &
-   tmin   , tmax   , tx     ,                                     &
-   dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
-   tbord  , propfb(1,ipprob(ifnet)) ,  propfb(1,ipprob(ifconv)) , &
-   propfb(1,ipprob(ifconv)) , propfb(1,ipprob(ixlam)),            &
-   propfb(1,ipprob(iepa))   , propfb(1,ipprob(ieps)) ,            &
-   text   , tint   )
+( itypfb, iparoi, iparug, ivart , izfrad,                       &
+  isothm, itpimp, ipgrno, iprefl, ifgrno, ifrefl,               &
+  nozppm, nfabor, nvar,                                         &
+  propfb(1,ipprob(ieps)), propfb(1,ipprob(iepa)), tint, text,   &
+  propfb(1,ipprob(ixlam)), rcodcl)
+
+endif
+
+call usray2 &
+!==========
+( nvar   , nscal  ,                                              &
+  itypfb ,                                                       &
+  icodcl , izfrad , isothm ,                                     &
+  tmin   , tmax   , tx     ,                                     &
+  dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
+  thwall , propfb(1,ipprob(ifnet)) ,  propfb(1,ipprob(ifconv)) , &
+  propfb(1,ipprob(ifconv)) , propfb(1,ipprob(ixlam)),            &
+  propfb(1,ipprob(iepa))   , propfb(1,ipprob(ieps)) ,            &
+  text   , tint   )
 
 !===============================================================================
 ! 3.2 CONTROLE DES DONNEES UTILISATEUR
@@ -349,195 +324,180 @@ endif
 
 !--> Arret si le numero de zone est non renseigne ou mal renseigne
 
-  iok = 0
+iok = 0
 
-  do ifac = 1, nfabor
-    if (izfrad(ifac).le.0.or.izfrad(ifac).gt.nozrdm) then
-      iok = iok + 1
-      write(nfecra,2000)ifac,nozrdm,izfrad(ifac)
-    endif
-  enddo
-
-  if(iok.ne.0) then
-    call csexit (1)
-    !==========
+do ifac = 1, nfabor
+  if (izfrad(ifac).le.0.or.izfrad(ifac).gt.nozrdm) then
+    iok = iok + 1
+    write(nfecra,2000)ifac,nozrdm,izfrad(ifac)
   endif
+enddo
+
+if(iok.ne.0) then
+  call csexit (1)
+endif
 
 ! --> On construit une liste des numeros des zones frontieres.
 !           (liste locale au processeur, en parallele)
 !     Stop si depassement.
 
-  nzfrad = 0
-  do ifac = 1, nfabor
-    ifvu = 0
-    do ii = 1, nzfrad
-      if (ilzrad(ii).eq.izfrad(ifac)) then
-        ifvu = 1
-      endif
-    enddo
-    if(ifvu.eq.0) then
-      nzfrad = nzfrad + 1
-      if(nzfrad.le.nbzrdm) then
-        ilzrad(nzfrad) = izfrad(ifac)
-      else
-        write(nfecra,2001) nbzrdm
-        write(nfecra,2002)(ilzrad(ii),ii=1,nbzrdm)
-        call csexit (1)
-        !==========
-      endif
+nzfrad = 0
+do ifac = 1, nfabor
+  ifvu = 0
+  do ii = 1, nzfrad
+    if (ilzrad(ii).eq.izfrad(ifac)) then
+      ifvu = 1
     endif
   enddo
+  if (ifvu.eq.0) then
+    nzfrad = nzfrad + 1
+    if (nzfrad.le.nbzrdm) then
+      ilzrad(nzfrad) = izfrad(ifac)
+    else
+      write(nfecra,2001) nbzrdm
+      write(nfecra,2002)(ilzrad(ii),ii=1,nbzrdm)
+      call csexit (1)
+    endif
+  endif
+enddo
 
 ! ---> Plus grand numero de zone atteint
 
-  izonem = 0
-  do ii = 1, nzfrad
-    izone = ilzrad(ii)
-    izonem = max(izonem,izone)
-  enddo
-  if(irangp.ge.0) then
-    call parcmx(izonem)
-    !==========
-  endif
-  nozarm = izonem
-
-
-
+izonem = 0
+do ii = 1, nzfrad
+  izone = ilzrad(ii)
+  izonem = max(izonem,izone)
+enddo
+if (irangp.ge.0) then
+  call parcmx(izonem)
+endif
+nozarm = izonem
 
 ! On verra si ca coute cher ou non.
 !   Pour le moment on le fait tout le temps.
 !        IF(IWARNI(IVART).GE.-1.OR.IPACLI.LE.3) THEN
-  if(1.eq.1) then
+if (1.eq.1) then
 
-    iok = 0
+  iok = 0
 
-!--> Si en paroi ISOTHM non renseignee : stop
-    do ifac = 1, nfabor
-      if( (itypfb(ifac).eq.iparoi  .or.                    &
-           itypfb(ifac).eq.iparug) .and.                   &
-           isothm(ifac)  .eq.-1    ) then
-        iok = iok + 1
-        write(nfecra,2110) ifac,izfrad(ifac)
-      endif
-    enddo
-
-!--> Si ISOTHM renseignee en non paroi : stop
-    do ifac = 1, nfabor
-      if( itypfb(ifac).ne.iparoi .and.                     &
-          itypfb(ifac).ne.iparug .and.                     &
-          isothm(ifac)  .ne.-1         ) then
-        iok = iok + 1
-        write(nfecra,2111)                                        &
-             ifac,izfrad(ifac),isothm(ifac)
-      endif
-    enddo
-
-!--> Si valeur physique erronee : stop
-    do ifac = 1, nfabor
-      if(isothm(ifac).eq.itpimp ) then
-        if(propfb(ifac,ipprob(ieps)) .lt.0.d0.or.                 &
-            propfb(ifac,ipprob(ieps)).gt.1.d0.or.                 &
-           tint(ifac).le.0.d0                      ) then
-          iok = iok + 1
-          write(nfecra,2120) ifac,izfrad(ifac),            &
-               propfb(ifac,ipprob(ieps)),                         &
-                              tint(ifac)
-        endif
-      elseif(isothm(ifac).eq.ipgrno ) then
-        if(propfb(ifac,ipprob(ieps)) .lt.0.d0.or.                 &
-            propfb(ifac,ipprob(ieps)).gt.1.d0.or.                 &
-           propfb(ifac,ipprob(ixlam)).le.0.d0.or.                 &
-           propfb(ifac,ipprob(iepa)) .le.0.d0.or.                 &
-           text(ifac).le.0.d0.or.                                 &
-           tint(ifac).le.0.d0                      ) then
-          iok = iok + 1
-          write(nfecra,2130) ifac,izfrad(ifac),            &
-               propfb(ifac,ipprob(ieps)) ,                        &
-               propfb(ifac,ipprob(ixlam)),                        &
-               propfb(ifac,ipprob(iepa)) ,                        &
-               text(ifac),tint(ifac)
-        endif
-      elseif(isothm(ifac).eq.iprefl ) then
-        if(propfb(ifac,ipprob(ixlam)).le.0.d0.or.                 &
-           propfb(ifac,ipprob(iepa)) .le.0.d0.or.                 &
-           text(ifac).le.0.d0.or.                                 &
-           tint(ifac).le.0.d0                      ) then
-          iok = iok + 1
-          write(nfecra,2140) ifac,izfrad(ifac),            &
-                             propfb(ifac,ipprob(ixlam))    ,      &
-                             propfb(ifac,ipprob(iepa))     ,      &
-               text(ifac),tint(ifac)
-        endif
-      elseif(isothm(ifac).eq.ifgrno ) then
-        if(propfb(ifac,ipprob(ieps)).lt.0.d0.or.                  &
-           propfb(ifac,ipprob(ieps)).gt.1.d0.or.                  &
-           tint(ifac).le.0.d0                      ) then
-          iok = iok + 1
-          write(nfecra,2150) ifac,izfrad(ifac),            &
-               propfb(ifac,ipprob(ieps)),                         &
-                              tint(ifac)
-        endif
-      elseif(isothm(ifac).eq.ifrefl ) then
-        if(tint(ifac).le.0.d0                      ) then
-          iok = iok + 1
-          write(nfecra,2160) ifac,izfrad(ifac),            &
-                              tint(ifac)
-        endif
-      elseif(isothm(ifac).ne.-1) then
-          iok = iok + 1
-          write(nfecra,2170) ifac,izfrad(ifac),            &
-                             isothm(ifac)
-      endif
-    enddo
-
-!--> Si valeur renseignee sans raison : stop
-    do ifac = 1, nfabor
-     if(isothm(ifac).eq.itpimp ) then
-        if(propfb(ifac,ipprob(ixlam)).gt.0.d0.or.                 &
-           propfb(ifac,ipprob(iepa))  .gt.0.d0.or.                &
-           text(ifac).gt.0.d0                      ) then
-          iok = iok + 1
-          write(nfecra,2220) ifac,izfrad(ifac),            &
-               propfb(ifac,ipprob(ixlam)),                        &
-               propfb(ifac,ipprob(iepa)) ,text(ifac)
-        endif
-      elseif(isothm(ifac).eq.iprefl ) then
-        if(propfb(ifac,ipprob(ieps)).ge.0.d0             ) then
-          iok = iok + 1
-          write(nfecra,2240) ifac,izfrad(ifac),            &
-               propfb(ifac,ipprob(ieps))
-        endif
-      elseif(isothm(ifac).eq.ifgrno ) then
-        if(propfb(ifac,ipprob(ixlam)).gt.0.d0.or.                 &
-           propfb(ifac,ipprob(iepa)) .gt.0.d0.or.                 &
-           text(ifac).gt.0.d0                      ) then
-          iok = iok + 1
-          write(nfecra,2250) ifac,izfrad(ifac),            &
-               propfb(1,ipprob(ixlam)),propfb(1,ipprob(iepa)),    &
-               text(ifac)
-        endif
-      elseif(isothm(ifac).eq.ifrefl ) then
-        if(propfb(ifac,ipprob(ieps)) .ge.0.d0.or.                 &
-           propfb(ifac,ipprob(ixlam)).gt.0.d0.or.                 &
-           propfb(ifac,ipprob(iepa)) .gt.0.d0.or.                 &
-           text(ifac).gt.0.d0                      ) then
-          iok = iok + 1
-          write(nfecra,2260) ifac,izfrad(ifac),            &
-               propfb(ifac,ipprob(ieps)) ,                        &
-               propfb(ifac,ipprob(ixlam)),                        &
-               propfb(ifac,ipprob(iepa)) ,text(ifac)
-        endif
-      endif
-    enddo
-
-!--> Stop si erreur
-    if(iok.ne.0) then
-      call csexit (1)
-      !==========
+  !--> Si en paroi ISOTHM non renseignee : stop
+  do ifac = 1, nfabor
+    if ((itypfb(ifac).eq.iparoi  .or.                            &
+         itypfb(ifac).eq.iparug) .and.                           &
+         isothm(ifac).eq.-1) then
+      iok = iok + 1
+      write(nfecra,2110) ifac,izfrad(ifac)
     endif
+  enddo
 
+  !--> Si ISOTHM renseignee en non paroi : stop
+  do ifac = 1, nfabor
+    if (itypfb(ifac).ne.iparoi .and.                             &
+        itypfb(ifac).ne.iparug .and.                             &
+        isothm(ifac)  .ne.-1         ) then
+      iok = iok + 1
+      write(nfecra,2111) ifac, izfrad(ifac), isothm(ifac)
+    endif
+  enddo
+
+  !--> Si valeur physique erronee : stop
+  do ifac = 1, nfabor
+    if (isothm(ifac).eq.itpimp) then
+      if (propfb(ifac,ipprob(ieps)).lt.0.d0.or.                  &
+          propfb(ifac,ipprob(ieps)).gt.1.d0.or.                  &
+          tint(ifac).le.0.d0                      ) then
+        iok = iok + 1
+        write(nfecra,2120) ifac,izfrad(ifac),                    &
+                           propfb(ifac,ipprob(ieps)), tint(ifac)
+      endif
+    elseif (isothm(ifac).eq.ipgrno) then
+      if (propfb(ifac,ipprob(ieps)) .lt.0.d0.or.                 &
+          propfb(ifac,ipprob(ieps)) .gt.1.d0.or.                 &
+          propfb(ifac,ipprob(ixlam)).le.0.d0.or.                 &
+          propfb(ifac,ipprob(iepa)) .le.0.d0.or.                 &
+          text(ifac).le.0.d0.or.                                 &
+          tint(ifac).le.0.d0                      ) then
+        iok = iok + 1
+        write(nfecra,2130) ifac,izfrad(ifac),                    &
+                           propfb(ifac,ipprob(ieps)) ,           &
+                           propfb(ifac,ipprob(ixlam)),           &
+                           propfb(ifac,ipprob(iepa)) ,           &
+                           text(ifac),tint(ifac)
+      endif
+    elseif (isothm(ifac).eq.iprefl) then
+      if (propfb(ifac,ipprob(ixlam)).le.0.d0.or.                 &
+          propfb(ifac,ipprob(iepa)) .le.0.d0.or.                 &
+          text(ifac).le.0.d0.or.                                 &
+          tint(ifac).le.0.d0                      ) then
+        iok = iok + 1
+        write(nfecra,2140) ifac,izfrad(ifac),                    &
+                           propfb(ifac,ipprob(ixlam)),           &
+                           propfb(ifac,ipprob(iepa)),            &
+                           text(ifac),tint(ifac)
+      endif
+    elseif (isothm(ifac).eq.ifgrno) then
+      if (propfb(ifac,ipprob(ieps)).lt.0.d0.or.                  &
+          propfb(ifac,ipprob(ieps)).gt.1.d0.or.                  &
+          tint(ifac).le.0.d0                      ) then
+        iok = iok + 1
+        write(nfecra,2150) ifac, izfrad(ifac),                   &
+             propfb(ifac,ipprob(ieps)), tint(ifac)
+      endif
+    elseif (isothm(ifac).eq.ifrefl) then
+      if (tint(ifac).le.0.d0) then
+        iok = iok + 1
+        write(nfecra,2160) ifac, izfrad(ifac), tint(ifac)
+      endif
+    elseif (isothm(ifac).ne.-1) then
+        iok = iok + 1
+        write(nfecra,2170) ifac, izfrad(ifac), isothm(ifac)
+    endif
+  enddo
+
+  !--> Si valeur renseignee sans raison : stop
+  do ifac = 1, nfabor
+   if (isothm(ifac).eq.itpimp) then
+      if (propfb(ifac,ipprob(ixlam)).gt.0.d0.or.                &
+          propfb(ifac,ipprob(iepa)) .gt.0.d0.or.                &
+          text(ifac).gt.0.d0                      ) then
+        iok = iok + 1
+        write(nfecra,2220) ifac,izfrad(ifac),                   &
+                           propfb(ifac,ipprob(ixlam)),          &
+                           propfb(ifac,ipprob(iepa)), text(ifac)
+      endif
+    elseif (isothm(ifac).eq.iprefl) then
+      if (propfb(ifac,ipprob(ieps)).ge.0.d0) then
+        iok = iok + 1
+        write(nfecra,2240) ifac, izfrad(ifac), propfb(ifac,ipprob(ieps))
+      endif
+    elseif (isothm(ifac).eq.ifgrno) then
+      if (propfb(ifac,ipprob(ixlam)).gt.0.d0.or.                &
+          propfb(ifac,ipprob(iepa)) .gt.0.d0.or.                &
+          text(ifac).gt.0.d0                      ) then
+        iok = iok + 1
+        write(nfecra,2250) ifac,izfrad(ifac),                   &
+                           propfb(1,ipprob(ixlam)),             &
+                           propfb(1,ipprob(iepa)), text(ifac)
+      endif
+    elseif (isothm(ifac).eq.ifrefl) then
+      if(propfb(ifac,ipprob(ieps)) .ge.0.d0.or.                 &
+         propfb(ifac,ipprob(ixlam)).gt.0.d0.or.                 &
+         propfb(ifac,ipprob(iepa)) .gt.0.d0.or.                 &
+         text(ifac).gt.0.d0                      ) then
+        iok = iok + 1
+        write(nfecra,2260) ifac,izfrad(ifac),                   &
+                           propfb(ifac,ipprob(ieps)),           &
+                           propfb(ifac,ipprob(ixlam)),          &
+                           propfb(ifac,ipprob(iepa)), text(ifac)
+      endif
+    endif
+  enddo
+
+  if (iok.ne.0) then
+    call csexit (1)
   endif
 
+endif
 
 !===============================================================================
 ! 3.2 COMPLETION DES DONNEES UTILISATEUR
@@ -545,78 +505,76 @@ endif
 
 ! ICODCL et EPS (quand il est nul)
 
-  do ifac = 1, nfabor
-    if(    isothm(ifac).eq.itpimp ) then
-      icodcl(ifac,ivart) = 5
-    elseif(isothm(ifac).eq.ipgrno ) then
-      icodcl(ifac,ivart) = 5
-    elseif(isothm(ifac).eq.iprefl ) then
-      icodcl(ifac,ivart) = 5
-      propfb(ifac,ipprob(ieps)) = 0.d0
-    elseif(isothm(ifac).eq.ifgrno ) then
-      icodcl(ifac,ivart) = 5
-    elseif(isothm(ifac).eq.ifrefl ) then
-      icodcl(ifac,ivart) = 3
-      propfb(ifac,ipprob(ieps)) = 0.d0
-    endif
-  enddo
-
+do ifac = 1, nfabor
+  if (isothm(ifac).eq.itpimp) then
+    icodcl(ifac,ivart) = 5
+  elseif (isothm(ifac).eq.ipgrno) then
+    icodcl(ifac,ivart) = 5
+  elseif (isothm(ifac).eq.iprefl) then
+    icodcl(ifac,ivart) = 5
+    propfb(ifac,ipprob(ieps)) = 0.d0
+  elseif (isothm(ifac).eq.ifgrno) then
+    icodcl(ifac,ivart) = 5
+  elseif (isothm(ifac).eq.ifrefl) then
+    icodcl(ifac,ivart) = 3
+    propfb(ifac,ipprob(ieps)) = 0.d0
+  endif
+enddo
 
 !===============================================================================
 ! 4. STOCKAGE DE LA TEMPERATURE (en Kelvin) dans TEMPK(IEL)
 !===============================================================================
 
-  if (abs(iscsth(iscat)).eq.1) then
+if (abs(iscsth(iscalt)).eq.1) then
 
-!---> ON REMPLIT TEMPK
+  !---> ON REMPLIT TEMPK
 
-    if (iscsth(iscat).eq.-1) then
-      do iel = 1, ncel
-        tempk(iel) = rtpa(iel,ivart) + tkelvi
-      enddo
-    else
-      do iel = 1, ncel
-        tempk(iel) = rtpa(iel,ivart)
-      enddo
-    endif
+  if (iscsth(iscalt).eq.-1) then
+    do iel = 1, ncel
+      tempk(iel) = rtpa(iel,ivart) + tkelvi
+    enddo
+  else
+    do iel = 1, ncel
+      tempk(iel) = rtpa(iel,ivart)
+    enddo
+  endif
 
-  else if (iscsth(iscat).eq.2) then
+  elseif (iscsth(iscalt).eq.2) then
 
-!---> LECTURES DES DONNEES UTILISATEURS (TBORD est un auxiliaire)
+    !---> LECTURES DES DONNEES UTILISATEURS (TBORD est un auxiliaire)
 
     mode = 1
 
     if (ippmod(iphpar).le.1) then
 
-      call usray4                                                 &
+      call usray4 &
       !==========
- ( nvar   , nscal  ,                                             &
+ ( nvar   , nscal  ,                                              &
    mode   ,                                                       &
    itypfb ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   propfb(1,ipprob(itparo)) , tbord  , tempk  )
-!                                   Resultat : T en K
+   propfb(1,ipprob(itparo)) , thwall , tempk  )
+      ! Resultat : T en K
 
     else
 
-      call ppray4                                                 &
+      call ppray4 &
       !==========
- ( nvar   , nscal  ,                                             &
+ ( nvar   , nscal  ,                                              &
    mode   ,                                                       &
    itypfb ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   propfb(1,ipprob(itparo)) , tbord  , tempk  )
-!                                   Resultat : T en K
+   propfb(1,ipprob(itparo)) , thwall , tempk  )
+      ! Resultat : T en K
 
     endif
 
   endif
 
 !===============================================================================
-! 5.  CALCUL DES TEMPERATURES DE PAROIS
+! 5. CALCUL DES TEMPERATURES DE PAROIS
 !===============================================================================
-
 
 ! DANS TOUS LES CAS HFCONV CONTIENT Lambda * Hturb / distance
 !   (HFCONV : W/(m2 K) ; Hturb est sans dimension)
@@ -629,10 +587,9 @@ endif
 !      Le flux est calcule dans condli clptur, sauf au premier
 !        passage sans suite de calcul, puisque raycli est appele avant.
 
-
 if (ideb.eq.1) then
 
-  do ifac = 1,nfabor
+  do ifac = 1, nfabor
     if (isothm(ifac).ne.-1) then
       propfb(ifac,ipprob(ifconv)) =                               &
       propfb(ifac,ipprob(ihconv))*(tempk(ifabor(ifac))-           &
@@ -642,28 +599,27 @@ if (ideb.eq.1) then
 
 endif
 
-
 !--> Les cas ou il faut calculer TPAROI sont, au premier passage sans suite
 !      des cas a temperature imposee TPAROI = TINT
 
-  if (ideb.eq.1) then
+if (ideb.eq.1) then
 
-    do ifac = 1,nfabor
-      if (isothm(ifac).eq.ipgrno .or.                             &
-          isothm(ifac).eq.iprefl .or.                             &
-          isothm(ifac).eq.ifgrno    ) then
-        isothm(ifac) = itpimp
-      endif
-    enddo
+  do ifac = 1,nfabor
+    if (isothm(ifac).eq.ipgrno .or.                             &
+        isothm(ifac).eq.iprefl .or.                             &
+        isothm(ifac).eq.ifgrno    ) then
+      isothm(ifac) = itpimp
+    endif
+  enddo
 
-  endif
+endif
 
-  if(ideb.eq.0) then
+if(ideb.eq.0) then
 
-    call raypar                                                   &
-    !==========
- ( nvar   , nscal  ,                                             &
-   itypfb ,                                                      &
+  call raypar &
+  !==========
+ ( nvar   , nscal  ,                                              &
+   itypfb ,                                                       &
    icodcl , isothm , izfrad ,                                     &
    tmin   , tmax   , tx     ,                                     &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
@@ -674,8 +630,7 @@ endif
    propfb(1,ipprob(ieps))   , propfb(1,ipprob(ihconv)) ,          &
    propfb(1,ipprob(ifconv)) , tempk  )
 
-  endif
-
+endif
 
 !===============================================================================
 ! 6.  CHANGEMENT DES CONDITIONS LIMITES UTILISATEUR
@@ -685,186 +640,187 @@ endif
 ! 6.1  LA VARIABLE TRANSPORTEE EST LA TEMPERATURE
 !===============================================================================
 
-  if (abs(iscsth(iscat)).eq.1) then
+if (abs(iscsth(iscalt)).eq.1) then
 
-    if(iscsth(iscat).eq.-1) then
-      xmtk = -tkelvi
-    else
-      xmtk = 0.d0
+  if (iscsth(iscalt).eq.-1) then
+    xmtk = -tkelvi
+  else
+    xmtk = 0.d0
+  endif
+
+  do ifac = 1, nfabor
+
+    if (isothm(ifac).eq.itpimp .or.                             &
+        isothm(ifac).eq.ipgrno .or.                             &
+        isothm(ifac).eq.ifgrno) then
+      rcodcl(ifac,ivart,1) = propfb(ifac,ipprob(itparo))+xmtk
+      rcodcl(ifac,ivart,2) = rinfin
+      rcodcl(ifac,ivart,3) = 0.d0
+
+    elseif (isothm(ifac).eq.iprefl) then
+      rcodcl(ifac,ivart,1) = text(ifac)+xmtk
+      rcodcl(ifac,ivart,2) = propfb(ifac,ipprob(ixlam))/        &
+                              propfb(ifac,ipprob(iepa))
+      rcodcl(ifac,ivart,3) = 0.d0
+
+    elseif (isothm(ifac).eq.ifrefl) then
+      icodcl(ifac,ivart) = 3
+      rcodcl(ifac,ivart,1) = 0.d0
+      rcodcl(ifac,ivart,2) = rinfin
     endif
 
-    do ifac = 1,nfabor
-
-      if (isothm(ifac).eq.itpimp .or.                             &
-          isothm(ifac).eq.ipgrno .or.                             &
-          isothm(ifac).eq.ifgrno    ) then
-        rcodcl(ifac,ivart,1) = propfb(ifac,ipprob(itparo))+xmtk
-        rcodcl(ifac,ivart,2) = rinfin
-        rcodcl(ifac,ivart,3) = 0.d0
-
-      else if (isothm(ifac).eq.iprefl) then
-        rcodcl(ifac,ivart,1) = text(ifac)+xmtk
-        rcodcl(ifac,ivart,2) = propfb(ifac,ipprob(ixlam))/        &
-                                propfb(ifac,ipprob(iepa))
-        rcodcl(ifac,ivart,3) = 0.d0
-
-      else if (isothm(ifac).eq.ifrefl) then
-        icodcl(ifac,ivart) = 3
-        rcodcl(ifac,ivart,1) = 0.d0
-        rcodcl(ifac,ivart,2) = rinfin
-      endif
-
-    enddo
+  enddo
 
 !===============================================================================
 ! 6.2  LA VARIABLE TRANSPORTEE EST L'ENTHALPIE
 !===============================================================================
 
-  elseif (iscsth(iscat).eq.2) then
+elseif (iscsth(iscalt).eq.2) then
 
-!---> LECTURES DES DONNEES UTILISATEURS
-!     ON CONVERTIT TPAROI EN ENTHALPIE DE BORD, STOCKEE DANS FLUNET,
-!     QUI EST UTILISE COMME AUXILIAIRE
+  !---> LECTURES DES DONNEES UTILISATEURS
+  !     ON CONVERTIT TPAROI EN ENTHALPIE DE BORD, STOCKEE DANS FLUNET,
+  !     QUI EST UTILISE COMME AUXILIAIRE
 
-    mode = 0
+  mode = 0
 
-    do ifac = 1,nfabor
-      if (isothm(ifac).eq.itpimp.or.                              &
-          isothm(ifac).eq.ipgrno.or.                              &
-          isothm(ifac).eq.ifgrno    ) then
-        mode = -1
-      endif
-    enddo
+  do ifac = 1, nfabor
+    if (isothm(ifac).eq.itpimp.or.                              &
+        isothm(ifac).eq.ipgrno.or.                              &
+        isothm(ifac).eq.ifgrno) then
+      mode = -1
+    endif
+  enddo
 
-    if (mode.eq.-1) then
+  if (mode.eq.-1) then
 
-      if (ippmod(iphpar).le.1) then
+    if (ippmod(iphpar).le.1) then
 
-        call usray4                                               &
-        !==========
- ( nvar   , nscal  ,                                              &
-   mode   ,                                                       &
-   itypfb ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   propfb(1,ipprob(itparo)) , propfb(1,ipprob(ifnet))  ,          &
-   tempk  )
-!                          HPAROI
+      call usray4 &
+      !==========
+    ( nvar   , nscal  ,                                              &
+      mode   ,                                                       &
+      itypfb ,                                                       &
+      dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+      propfb(1,ipprob(itparo)) , propfb(1,ipprob(ifnet))  ,          &
+      tempk  )
+      ! HPAROI
 
-      else
+    else
 
-        call ppray4                                               &
-        !==========
- ( nvar   , nscal  ,                                              &
-   mode   ,                                                       &
-   itypfb ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
-   propfb(1,ipprob(itparo)) , propfb(1,ipprob(ifnet))  ,          &
-   tempk  )
-!                          HPAROI
-
-      endif
+      call ppray4 &
+      !==========
+    ( nvar   , nscal  ,                                              &
+      mode   ,                                                       &
+      itypfb ,                                                       &
+      dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+      coefa  , coefb  ,                                              &
+      propfb(1,ipprob(itparo)) , propfb(1,ipprob(ifnet))  ,          &
+      tempk  )
+      ! HPAROI
 
     endif
-
-    mode = 0
-
-    do ifac = 1,nfabor
-      if (isothm(ifac).eq.iprefl) then
-        mode = -1
-      endif
-    enddo
-
-    if (mode.eq.-1) then
-
-      if (ippmod(iphpar).le.1) then
-
-        call usray4                                               &
-        !==========
- ( nvar   , nscal  ,                                             &
-   mode   ,                                                       &
-   itypfb ,                                                      &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   text   , tbord  , tempk  )
-!                       HEXT
-
-      else
-
-        call ppray4                                               &
-        !==========
- ( nvar   , nscal  ,                                             &
-   mode   ,                                                       &
-   itypfb ,                                                      &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
-   text   , tbord  , tempk  )
-!                       HEXT
-
-      endif
-
-    endif
-
-    do ifac = 1,nfabor
-
-      if (isothm(ifac).eq.itpimp.or.                              &
-          isothm(ifac).eq.ipgrno.or.                              &
-          isothm(ifac).eq.ifgrno    ) then
-        rcodcl(ifac,ivart,1) = propfb(ifac,ipprob(ifnet))
-        rcodcl(ifac,ivart,2) = rinfin
-        rcodcl(ifac,ivart,3) = 0.d0
-
-      else if (isothm(ifac).eq.iprefl) then
-
-        rcodcl(ifac,ivart,1) = tbord(ifac)
-        ! hext
-        rcodcl(ifac,ivart,2) =  propfb(ifac,ipprob(ixlam))     &
-                             / (propfb(ifac,ipprob(iepa)))
-        rcodcl(ifac,ivart,3) = 0.d0
-
-      else if (isothm(ifac).eq.ifrefl) then
-        icodcl(ifac,ivart) = 3
-        rcodcl(ifac,ivart,1) = 0.d0
-        rcodcl(ifac,ivart,2) = rinfin
-      endif
-
-    enddo
 
   endif
 
+  mode = 0
+
+  do ifac = 1, nfabor
+    if (isothm(ifac).eq.iprefl) then
+      mode = -1
+    endif
+  enddo
+
+  if (mode.eq.-1) then
+
+    if (ippmod(iphpar).le.1) then
+
+      call usray4 &
+      !==========
+    ( nvar   , nscal  ,                                              &
+      mode   ,                                                       &
+      itypfb ,                                                       &
+      dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+      text   , thwall , tempk  )
+      ! HEXT
+
+    else
+
+      call ppray4 &
+      !==========
+    ( nvar   , nscal  ,                                              &
+      mode   ,                                                       &
+      itypfb ,                                                       &
+      dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+      coefa  , coefb  ,                                              &
+      text   , thwall , tempk  )
+      ! HEXT
+
+    endif
+
+  endif
+
+  do ifac = 1, nfabor
+
+    if (isothm(ifac).eq.itpimp.or.                              &
+        isothm(ifac).eq.ipgrno.or.                              &
+        isothm(ifac).eq.ifgrno) then
+      rcodcl(ifac,ivart,1) = propfb(ifac,ipprob(ifnet))
+      rcodcl(ifac,ivart,2) = rinfin
+      rcodcl(ifac,ivart,3) = 0.d0
+
+    elseif (isothm(ifac).eq.iprefl) then
+
+      rcodcl(ifac,ivart,1) = thwall(ifac)
+      ! hext
+      rcodcl(ifac,ivart,2) =  propfb(ifac,ipprob(ixlam))     &
+                           / (propfb(ifac,ipprob(iepa)))
+      rcodcl(ifac,ivart,3) = 0.d0
+
+    elseif (isothm(ifac).eq.ifrefl) then
+      icodcl(ifac,ivart) = 3
+      rcodcl(ifac,ivart,1) = 0.d0
+      rcodcl(ifac,ivart,2) = rinfin
+    endif
+
+  enddo
+
+endif
+
 ! Free memory
 deallocate(isothm)
-deallocate(tempk)
+deallocate(tempk,thwall)
 deallocate(text, tint)
 
 !--------
-! FORMATS
+! Formats
 !--------
 
- 1000 format (/, 3X,'** INFORMATIONS SUR LE MODULE DE RAYONNEMENT ',/,  &
-           3X,'   ------------------------------------------',/,  &
-           3X,' Initialisation de la temperature de paroi   ',/,  &
-           3X,' (TPAROI) avec le profil utilisateur (TINTP) ',/,  &
-           3X,' et du flux incident aux parois (QINCID).    ',/)
+ 1000 format (/, &
+ 3X,'** INFORMATIONS SUR LE MODULE DE RAYONNEMENT'             ,/,&
+3X,'   ------------------------------------------'             ,/,&
+3X,' Initialisation de la temperature de paroi'                ,/,&
+3X,' (TPAROI) avec le profil utilisateur (TINTP)'              ,/,&
+3X,' et du flux incident aux parois (QINCID).'                 ,/)
 
- 2000 format(                                                     &
-'@                                                            ',/,&
+ 2000 format( &
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : RAYONNEMENT                                 ',/,&
-'@    =========                                               ',/,&
-'@    LES CONDITIONS AUX LIMITES SONT INCOMPLETES OU ERRONEES ',/,&
-'@                                                            ',/,&
-'@  Le numero de zone associee a la face ',I10   ,' doit etre ',/,&
-'@    un entier strictement positif et inferieur ou egal a    ',/,&
+'@'                                                            ,/,&
+'@ @@ ATTENTION : RAYONNEMENT'                                 ,/,&
+'@    ========='                                               ,/,&
+'@    LES CONDITIONS AUX LIMITES SONT INCOMPLETES OU ERRONEES' ,/,&
+'@'                                                            ,/,&
+'@  Le numero de zone associee a la face ',I10   ,' doit etre' ,/,&
+'@    un entier strictement positif et inferieur ou egal a'    ,/,&
 '@    NOZRDM = ',I10                                           ,/,&
 '@  Ce numero (IZFRDP(IFAC)) vaut ici ',I10                    ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@  Verifier les conditions aux limites dans usray2.          ',/,&
-'@                                                            ',/,&
+'@'                                                            ,/,&
+'@  Le calcul ne peut etre execute.'                           ,/,&
+'@'                                                            ,/,&
+'@  Verifier les conditions aux limites dans usray2.'          ,/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@'                                                            ,/)
  2001 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&

@@ -30,7 +30,7 @@ subroutine usray2 &
    icodcl , izfrdp , isothp ,                                     &
    tmin   , tmax   , tx     ,                                     &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
-   tparop , qincid , hfcnvp , flcnvp ,                            &
+   thwall , qincid , hfcnvp , flcnvp ,                            &
    xlamp  , epap   , epsp   , textp  , tintp  )
 
 !===============================================================================
@@ -160,7 +160,7 @@ subroutine usray2 &
 ! rcodcl           ! ra ! --> ! boundary condition values                      !
 !                  !    !     ! rcodcl(3) = flux density value                 !
 !                  !    !     !  (negative for gain) in w/m2                   !
-! tparop(nfabor)   ! ra ! <-- ! inside current wall temperature (K)            !
+! thwall(nfabor)   ! ra ! <-- ! inside current wall temperature (K)            !
 ! qincid(nfabor)   ! ra ! <-- ! radiative incident flux  (W/m2)                !
 ! hfcnvp(nfabor)   ! ra ! <-- ! convective exchange coefficient (W/m2/K)       !
 ! flcnvp(nfabor)   ! ra ! <-- ! convective flux (W/m2)                         !
@@ -202,7 +202,7 @@ implicit none
 integer          nvar   , nscal
 
 integer          itypfb(nfabor)
-integer          icodcl(nfabor,nvar)
+integer          icodcl(nfabor,nvarcl)
 integer          izfrdp(nfabor), isothp(nfabor)
 
 double precision tmin , tmax , tx
@@ -210,9 +210,9 @@ double precision tmin , tmax , tx
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
-double precision rcodcl(nfabor,nvar,3)
+double precision rcodcl(nfabor,nvarcl,3)
 
-double precision tparop(nfabor), qincid(nfabor)
+double precision thwall(nfabor), qincid(nfabor)
 double precision hfcnvp(nfabor),flcnvp(nfabor)
 double precision xlamp(nfabor), epap(nfabor)
 double precision epsp(nfabor)
@@ -321,8 +321,8 @@ tmax = grand + tkelvi
 !                  = ifrefl -> Reflecting wall with fixed conduction flux
 
 !      tintp(ifac) inside wall temperature (Kelvin)
-!                  initialize tparop at the first time step.
-!                  If isothp = itpimp, the value of tparop is fixed to tintp
+!                  initialize thwall at the first time step.
+!                  If isothp = itpimp, the value of thwall is fixed to tintp
 !                  In the other case, tintp is only for initialization.
 
 
@@ -346,7 +346,7 @@ tmax = grand + tkelvi
 !          the user can define arbritay new zone using the array IFRFAC(IFAC),
 !          for wich a value can be arbitrarily choosen between 1 and NBZRDM.
 !
-!     Warning: it is forbidden to modify tparop and qincid in this subroutine
+!     Warning: it is forbidden to modify thwall and qincid in this subroutine
 !     ========
 
 !    Indicator for forgotten faces.
@@ -358,7 +358,7 @@ iok = 0
 !       Gray or black wall with profil of fixed inside temperature
 !       ------------------------------------
 
-CALL GETFBR('1',NLELT,LSTELT)
+call getfbr('1',nlelt,lstelt)
 !==========
 
 do ilelt = 1, nlelt

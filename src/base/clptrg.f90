@@ -108,7 +108,7 @@
 !>                               de bord apres amortisst de v driest
 !> \param[out]    hbord         coefficients d'echange aux bords
 !>
-!> \param[out]    thbord        boundary temperature in \f$ \centip \f$
+!> \param[out]    theipb        boundary temperature in \f$ \centip \f$
 !>                               (more exaclty the energetic variable)
 !_______________________________________________________________________________
 
@@ -120,7 +120,7 @@ subroutine clptrg &
    icodcl ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
    velipb , rijipb , coefa  , coefb  , visvdr ,                   &
-   hbord  , thbord )
+   hbord  , theipb )
 
 !===============================================================================
 
@@ -155,16 +155,16 @@ implicit none
 integer          nvar   , nscal
 integer          isvhb
 
-integer          icodcl(nfabor,nvar)
+integer          icodcl(nfabor,nvarcl)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
-double precision rcodcl(nfabor,nvar,3)
+double precision rcodcl(nfabor,nvarcl,3)
 double precision velipb(nfabor,ndim), rijipb(nfabor,6)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision visvdr(ncelet)
-double precision hbord(nfabor),thbord(nfabor)
+double precision hbord(nfabor),theipb(nfabor)
 
 ! Local variables
 
@@ -185,6 +185,8 @@ integer          iclphf, iclfbf, iclalf, iclomf
 integer          iclvaf
 integer          ipcrom, ipcvis, ipcvst, ipccp , ipccv
 integer          ipcvsl, itplus, itstar
+integer          f_id
+
 double precision rnx, rny, rnz, rxnn
 double precision tx, ty, tz, txn, txn0, t2x, t2y, t2z
 double precision utau, upx, upy, upz, usn
@@ -209,7 +211,11 @@ double precision dsa0
 double precision pfac
 double precision visci(3,3), fikis, viscis, distfi
 
+character*80     fname
+
 double precision, dimension(:), pointer :: tplusp, tstarp
+double precision, dimension(:,:), pointer :: coefaut, cofafut, cofarut
+double precision, dimension(:,:,:), pointer :: coefbut, cofbfut, cofbrut
 
 !===============================================================================
 
@@ -1383,8 +1389,22 @@ do ifac = 1, nfabor
               coefb(ifac,iclvaf) =  heq
             endif
 
-            !-->turbulent heat flux !FIXME voir avec les personnes qui font du rugueux
-            if ((ityturt.eq.3).and.(iscal.eq.iscalt)) then
+            !--> Turbulent heat flux
+            if (ityturt(iscal).eq.3) then
+
+              ! Name of the scalar ivar !TODO move outside of the loop
+              call field_get_name(ivarfl(ivar), fname)
+
+              ! Index of the corresponding turbulent flux
+              call field_get_id(trim(fname)//'_turbulent_flux', f_id)
+
+              call field_get_coefa_v(f_id,coefaut)
+              call field_get_coefb_v(f_id,coefbut)
+              call field_get_coefaf_v(f_id,cofafut)
+              call field_get_coefbf_v(f_id,cofbfut)
+              call field_get_coefad_v(f_id,cofarut)
+              call field_get_coefbd_v(f_id,cofbrut)
+
               hint = 0.5d0*(visclc+rkl)/distbf !FIXME with the GGDH component
 
               ! Gradient boundary conditions
@@ -1514,7 +1534,7 @@ do ifac = 1, nfabor
               ! The outgoing flux is stored (Q = h(Ti'-Tp): negative if
               !  gain for the fluid) in W/m2
               propfb(ifac,ipprob(ifconv)) = coefa(ifac,iclvaf)              &
-                                          + coefb(ifac,iclvaf)*thbord(ifac)
+                                          + coefb(ifac,iclvaf)*theipb(ifac)
             endif
 
           endif ! End if icodcl=6
@@ -1523,7 +1543,7 @@ do ifac = 1, nfabor
           if (iscal.eq.iscalt) then
             ! Rough wall function
             if (icodcl(ifac,ivar).eq.6) then
-              phit = coefa(ifac,iclvaf)+coefb(ifac,iclvaf)*thbord(ifac)
+              phit = coefa(ifac,iclvaf)+coefb(ifac,iclvaf)*theipb(ifac)
             ! Imposed flux with wall function for post-processing
             elseif (icodcl(ifac,ivar).eq.3) then
               phit = rcodcl(ifac,ivar,3)

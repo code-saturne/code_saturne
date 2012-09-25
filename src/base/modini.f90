@@ -376,17 +376,6 @@ if (iscalt.gt.0.and.iscalt.le.nscal) then
       endif
     endif
   endif
-  if (iut.gt.0) then
-    if (nomvar(ipprtp(iut)) .eq.' ') then
-      write(nomvar(ipprtp(iut)), '(a2)') 'ut'
-    endif
-    if (nomvar(ipprtp(ivt)) .eq.' ') then
-      write(nomvar(ipprtp(ivt)), '(a2)') 'vt'
-    endif
-    if (nomvar(ipprtp(iwt)) .eq.' ') then
-      write(nomvar(ipprtp(iwt)), '(a2)') 'wt'
-    endif
-  endif
 endif
 
 do jj = 1, nscaus
@@ -791,35 +780,6 @@ do iscal = 1, nscal
   elseif (ischtp.eq.2) then
     thetav(ivar) = 0.5d0
   endif
-  if ((iscal.eq.iscalt).and.(ityturt.eq.3)) then
-    if (abs(thetav(iut)+999.d0).gt.epzero) then
-      write(nfecra,1031) 'VARIABLE ut ','THETAV'
-      iok = iok + 1
-    elseif (ischtp.eq.1) then
-      thetav(iut) = 1.d0
-    elseif (ischtp.eq.2) then
-      !     pour le moment, on ne peut pas passer par ici (cf varpos)
-      thetav(iut) = 0.5d0
-    endif
-    if (abs(thetav(ivt)+999.d0).gt.epzero) then
-      write(nfecra,1031) 'VARIABLE vt ','THETAV'
-      iok = iok + 1
-    elseif (ischtp.eq.1) then
-      thetav(ivt) = 1.d0
-    elseif (ischtp.eq.2) then
-      !     pour le moment, on ne peut pas passer par ici (cf varpos)
-      thetav(ivt) = 0.5d0
-    endif
-    if (abs(thetav(iwt)+999.d0).gt.epzero) then
-      write(nfecra,1031) 'VARIABLE wt ','THETAV'
-      iok = iok + 1
-    elseif (ischtp.eq.1) then
-      thetav(iwt) = 1.d0
-    elseif (ischtp.eq.2) then
-      !     pour le moment, on ne peut pas passer par ici (cf varpos)
-      thetav(iwt) = 0.5d0
-    endif
-  endif
 enddo
 
 !     Vitesse de maillage en ALE
@@ -1013,11 +973,6 @@ elseif (iturb.eq.60) then
 elseif (iturb.eq.70) then
   ! cdtvar est à 1.0 par defaut dans iniini.f90
   cdtvar(inusa)= cdtvar(inusa)
-endif
-if ((nscaus.gt.0).and.(ityturt.eq.3)) then
-  cdtvar(iut) = cdtvar(iu)
-  cdtvar(ivt) = cdtvar(iu)
-  cdtvar(iwt) = cdtvar(iu)
 endif
 
 ! ---> IDEUCH, YPLULI
@@ -1373,42 +1328,31 @@ enddo
 
 ! Turbulent fluxes constant for GGDH, AFM and DFM
 if (nscal.gt.0) then
-  if (iturbt.eq.0) then
-    do iscal = 1, nscal
+  do iscal = 1, nscal
+    if (iturt(iscal).eq.0) then
       idften(isca(iscal)) = 1
-    enddo
 
-  ! AFM and GGDH on the thermal scalar
-  elseif (ityturt.eq.1.or.ityturt.eq.2) then
-    if (iscalt.gt.0) then
-      idften(isca(iscalt)) = 6
-      ctheta(iscalt) = cthafm
-    else
-      call csexit(1)
+    ! AFM and GGDH on the scalar
+    elseif (ityturt(iscal).eq.1.or.ityturt(iscal).eq.2) then
+      idften(isca(iscal)) = 6
+      ctheta(iscal) = cthafm
+
+    ! DFM on the scalar
+    elseif (ityturt(iscal).eq.3) then
+      idifft(isca(iscal)) = 0
+      idften(isca(iscal)) = 1
+      ctheta(iscal) = cthdfm
+      ! GGDH on the thermal fluxes is automatically done
+
+      ! GGDH on the variance of the thermal scalar
+      do ii = 1, nscal
+        if (iscavr(ii).eq.iscal) then
+          idften(isca(ii)) = 6
+          ctheta(ii) = csrij
+        endif
+      enddo
     endif
-
-  ! DFM on the thermal scalar
-  elseif (ityturt.eq.3) then
-    if (iscalt.gt.0) then
-      idifft(isca(iscalt)) = 0
-      idften(isca(iscalt)) = 1
-      ctheta(iscalt) = cthdfm
-    else
-      call csexit(1)
-    endif
-    ! GGDH on the thermal fluxes
-    idften(iut) = 6
-    idften(ivt) = 6
-    idften(iwt) = 6
-    ! GGDH on the variance of the thermal scalar
-    do iscal = 1, nscal
-      if (iscavr(iscal).eq.iscalt) then
-        idften(isca(iscal)) = 6
-        ctheta(iscal) = csrij
-      endif
-    enddo
-
-  endif
+  enddo
 endif
 
 ! Vecteur rotation et matrice(s) associees

@@ -525,6 +525,10 @@ do ivar = 1, nvar
   if (idften(ivar).eq.6) iok = 1
 enddo
 
+do iscal = 1, nscal
+  if (ityturt(iscal).eq.3) iok = 1
+enddo
+
 if (iok.eq.1) then
   if (itytur.eq.3) then
 
@@ -812,7 +816,7 @@ if (nscal.ge.1) then
       iok = iok + 1
     endif
 
-    if ((iscal.eq.iscalt).and.(irovar.eq.1).and.ityturt.eq.2) then
+    if ((iscal.eq.iscalt).and.(irovar.eq.1).and.ityturt(iscal).eq.2) then
       iok1 = 0
       do iel = 1, ncel
         if (propce(iel,ipproc(ibeta)).le.0.d0) iok1 = 1
@@ -1043,8 +1047,8 @@ endif
 '@',                                                            /,&
 '@ @@ ATTENTION : ARRET LORS DU CALCUL DES GRANDEURS PHYSIQUES',/,&
 '@    =========',                                               /,&
-'@    INCOHERENCE ENTRE LES PARAMETRES ET LE COEFFICIENT      ',/,&
-'@    de dilatation volumique  Beta                           ',/,&
+'@    INCOHERENCE ENTRE LES PARAMETRES ET LE COEFFICIENT'      ,/,&
+'@    de dilatation volumique  Beta'                           ,/,&
 '@',                                                            /,&
 '@  On a indique que la masse volumique etait',                 /,&
 '@     variable (IROVAR=1) mais on n a pas modifie ',           /,&
@@ -1248,7 +1252,7 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
- 9013  format(                                                    &
+ 9013  format( &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /,&
@@ -1266,7 +1270,7 @@ endif
 '@  Check the interface or usphyv.'                           , /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
+'@', /)
 
 
  9111  format(                                                    &

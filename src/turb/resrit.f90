@@ -47,10 +47,6 @@
 !> \param[in]     propce        physical properties at cell centers
 !> \param[in]     propfa        physical properties at interior face centers
 !> \param[in]     propfb        physical properties at boundary face centers
-!> \param[in]     coefav        boundary condition array for the variable
-!>                               (Explicit part - vector array )
-!> \param[in]     coefbv        boundary condition array for the variable
-!>                               (Impplicit part - 3x3 tensor array)
 !> \param[in]     gradv         mean velocity gradient
 !> \param[in]     gradt         mean temperature gradient
 !_______________________________________________________________________________
@@ -61,7 +57,6 @@ subroutine resrit &
  ( nvar   , nscal  ,                                              &
    iscal  , xcpp   , xut    , xuta   ,                            &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefav , coefbv , cofafv , cofbfv ,                            &
    gradv  , gradt  )
 
 !===============================================================================
@@ -78,6 +73,7 @@ use cstphy
 use parall
 use period
 use pointe, only:visten
+use field
 use mesh
 
 !===============================================================================
@@ -94,10 +90,6 @@ double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision xcpp(ncelet), xut(3,ncelet), xuta(3,ncelet)
 double precision gradv(ncelet,3,3)
 double precision gradt(ncelet,3)
-double precision coefav(3  ,ndimfb)
-double precision cofafv(3  ,ndimfb)
-double precision coefbv(3,3,ndimfb)
-double precision cofbfv(3,3,ndimfb)
 
 ! Local variables
 
@@ -115,6 +107,8 @@ integer          ipcvsl
 integer          isou, jsou
 integer          itt
 integer          idftnp, iswdyp
+integer          f_id
+
 double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
 double precision epsrsp
 double precision trrij , rctse
@@ -126,11 +120,13 @@ double precision hint
 double precision grav(3)
 double precision xrij(3,3),phiith(3)
 
-double precision d1s2
+double precision d1s2,cssca
 
-double precision rvoid(1),cssca
+double precision rvoid(1)
 
 logical          ilved
+
+character*80     fname
 
 double precision, allocatable, dimension(:,:,:) :: gradut
 double precision, allocatable, dimension(:,:) :: viscce
@@ -138,6 +134,9 @@ double precision, allocatable, dimension(:) :: viscb
 double precision, allocatable, dimension(:,:,:) :: viscf
 double precision, allocatable, dimension(:,:) :: smbrut
 double precision, allocatable, dimension(:,:,:) :: fimp
+
+double precision, dimension(:,:), pointer :: coefav, cofafv
+double precision, dimension(:,:,:), pointer :: coefbv, cofbfv
 
 !===============================================================================
 
@@ -164,10 +163,10 @@ ipcvst = ipproc(ivisct)
 iflmas = ipprof(ifluma(iu))
 iflmab = ipprob(ifluma(iu))
 
-ivar = iut
+ivar = isca(iscal)
 ipput = ipprtp(ivar)
 if (iwarni(ivar).ge.1) then
-  write(nfecra,1000) nomvar(ipput)
+  write(nfecra,1000) nomvar(ipput)//'_turbulent_flux'!FIXME
 endif
 
 ! S pour Source, V pour Variable
@@ -184,8 +183,8 @@ else
   iptsta = 0
 endif
 
-if (ivisls(iscalt).gt.0) then
-  ipcvsl = ipproc(ivisls(iscalt))
+if (ivisls(iscal).gt.0) then
+  ipcvsl = ipproc(ivisls(iscal))
 else
   ipcvsl = 0
 endif
@@ -199,14 +198,14 @@ do iel = 1, ncelet
   enddo
 enddo
 
-! Find the corresponding variance of the thermal scalar iscalt
+! Find the corresponding variance of the scalar iscal
 itt = -1
 if ((abs(gx)+abs(gy)+abs(gz)).gt.0) then
   grav(1) = gx
   grav(2) = gy
   grav(3) = gz
   do ii = 1, nscal
-    if (iscavr(ii).eq.iscalt) itt = ii
+    if (iscavr(ii).eq.iscal) itt = ii
   enddo
 endif
 
@@ -315,9 +314,9 @@ enddo
 
 do iel = 1, ncel
   if (ipcvsl.gt.0) then
-    prdtl = propce(iel,ipcvis)*xcpp(iel)/propce(iel,ipproc(ivisls(iscalt)))
+    prdtl = propce(iel,ipcvis)*xcpp(iel)/propce(iel,ipproc(ivisls(iscal)))
   else
-    prdtl = propce(iel,ipcvis)*xcpp(iel)/visls0(iscalt)
+    prdtl = propce(iel,ipcvis)*xcpp(iel)/visls0(iscal)
   endif
 
   do isou = 1, 6
@@ -347,6 +346,17 @@ if (isto2t.gt.0) then
   enddo
 endif
 
+! Name of the scalar ivar
+call field_get_name(ivarfl(ivar), fname)
+
+! Index of the corresponding turbulent flux
+call field_get_id(trim(fname)//'_turbulent_flux', f_id)
+
+call field_get_coefa_v(f_id,coefav)
+call field_get_coefb_v(f_id,coefbv)
+call field_get_coefaf_v(f_id,cofafv)
+call field_get_coefbf_v(f_id,cofbfv)
+
 iconvp = iconv (ivar)
 idiffp = idiff (ivar)
 ireslp = iresol(ivar)
@@ -359,7 +369,7 @@ ircflp = ircflu(ivar)
 ischcp = ischcv(ivar)
 isstpp = isstpc(ivar)
 iescap = 0
-idftnp = idften(ivar)
+idftnp = 6
 iswdyp = iswdyn(ivar)
 imgrp  = imgr  (ivar)
 ncymxp = ncymax(ivar)
@@ -373,9 +383,9 @@ climgp = climgr(ivar)
 extrap = extrag(ivar)
 relaxp = relaxv(ivar)
 
-ipput = ipprtp(iut)
-ippvt = ipprtp(ivt)
-ippwt = ipprtp(iwt)
+ipput = ipprtp(ivar)!FIXME
+ippvt = ipprtp(ivar)
+ippwt = ipprtp(ivar)
 
 ! We do not take into account transpose of grad
 ivisep = 0

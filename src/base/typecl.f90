@@ -110,7 +110,7 @@ implicit none
 
 integer          nvar   , nscal
 
-integer          icodcl(nfabor,nvar)
+integer          icodcl(nfabor,nvarcl)
 integer          itypfb(nfabor) , itrifb(nfabor)
 integer          isostd(nfabor+1)
 
@@ -118,7 +118,7 @@ double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
-double precision rcodcl(nfabor,nvar,3)
+double precision rcodcl(nfabor,nvarcl,3)
 double precision frcxt(ncelet,3)
 
 ! Local variables
@@ -132,6 +132,7 @@ integer          nswrgp, imligp, iwarnp
 integer          iii
 integer          irangd, iclipr, iiptot
 integer          ifadir
+integer          iut  , ivt   , iwt, iscal
 double precision pref, epsrgp, climgp, extrap, pipb
 double precision diipbx, diipby, diipbz
 double precision flumbf, flumty(ntypmx)
@@ -474,14 +475,41 @@ endif
 !     isolib and ientre are handled later.
 !================================================================================
 
-do ivar=1, nvar
+do ivar = 1, nvar
   do ifac = 1, nfabor
-    if((itypfb(ifac) .ne. isolib) .and. &
-       (itypfb(ifac) .ne. ientre) .and. &
-       (rcodcl(ifac,ivar,1) .gt. rinfin*0.5d0)) then
+    if ((itypfb(ifac) .ne. isolib) .and. &
+        (itypfb(ifac) .ne. ientre) .and. &
+        (rcodcl(ifac,ivar,1) .gt. rinfin*0.5d0)) then
       rcodcl(ifac,ivar,1) = 0.d0
     endif
   enddo
+enddo
+
+do iscal = 1, nscal
+  if (ityturt(iscal).eq.3) then
+    ! Set pointer values of turbulent fluxes in icodcl
+    iut = nvar + 3*(ifltur(ii) - 1) + 1
+    ivt = nvar + 3*(ifltur(ii) - 1) + 2
+    iwt = nvar + 3*(ifltur(ii) - 1) + 3
+
+    do ifac = 1, nfabor
+      if ((itypfb(ifac) .ne. isolib) .and. &
+          (itypfb(ifac) .ne. ientre) .and. &
+          (rcodcl(ifac,iut,1) .gt. rinfin*0.5d0)) then
+        rcodcl(ifac,iut,1) = 0.d0
+      endif
+      if ((itypfb(ifac) .ne. isolib) .and. &
+          (itypfb(ifac) .ne. ientre) .and. &
+          (rcodcl(ifac,ivt,1) .gt. rinfin*0.5d0)) then
+        rcodcl(ifac,ivt,1) = 0.d0
+      endif
+      if ((itypfb(ifac) .ne. isolib) .and. &
+          (itypfb(ifac) .ne. ientre) .and. &
+          (rcodcl(ifac,iwt,1) .gt. rinfin*0.5d0)) then
+        rcodcl(ifac,iwt,1) = 0.d0
+      endif
+    enddo
+  endif
 enddo
 
 !===============================================================================
@@ -625,7 +653,6 @@ do ivar = 1, nvar
     enddo
   endif
 enddo
-
 
 ! 6.2 SORTIE (entree-sortie libre) (ISOLIB)
 ! ===================
@@ -815,16 +842,6 @@ do ivar = 1, nvar
         rcodcl(ifac,ivar,3) = 0.d0
       endif
     enddo
-  elseif(ivar.eq.iut.or.ivar.eq.ivt.or.ivar.eq.iwt) then
-    do ii = ideb, ifin
-      ifac = itrifb(ii)
-      if(icodcl(ifac,ivar).eq.0) then
-        icodcl(ifac,ivar)   = 3
-        rcodcl(ifac,ivar,1) = 0.d0
-        rcodcl(ifac,ivar,2) = rinfin
-        rcodcl(ifac,ivar,3) = 0.d0
-      endif
-    enddo
   endif
 enddo
 
@@ -842,13 +859,10 @@ ideb = idebty(isymet)
 ifin = ifinty(isymet)
 
 do ivar = 1, nvar
-  if ( ivar.eq.iu.or.ivar.eq.iv.or.ivar.eq.iw.or.         &
-       ( itytur.eq.3.and.                                 &
-       (ivar.eq.ir11.or.ivar.eq.ir22.or.ivar.eq.ir33.or.  &
-       ivar.eq.ir12.or.ivar.eq.ir13.or.ivar.eq.ir23)      &
-       ).or.                                              &
-       ((ityturt.eq.3).and.                               &
-       (ivar.eq.iut.or.ivar.eq.ivt.or.ivar.eq.iwt))) then
+  if (ivar.eq.iu.or.ivar.eq.iv.or.ivar.eq.iw                     &
+     .or.(itytur.eq.3                                            &
+         .and.(ivar.eq.ir11.or.ivar.eq.ir22.or.ivar.eq.ir33.or.  &
+               ivar.eq.ir12.or.ivar.eq.ir13.or.ivar.eq.ir23))) then
     do ii = ideb, ifin
       ifac = itrifb(ii)
       if(icodcl(ifac,ivar).eq.0) then
@@ -881,35 +895,32 @@ ideb = idebty(iparoi)
 ifin = ifinty(iparoi)
 
 do ivar = 1, nvar
-  if ( ivar.eq.iu.or.ivar.eq.iv.or.ivar.eq.iw) then
+  if (ivar.eq.iu.or.ivar.eq.iv.or.ivar.eq.iw) then
     do ii = ideb, ifin
       ifac = itrifb(ii)
-      if(icodcl(ifac,ivar).eq.0) then
+      if (icodcl(ifac,ivar).eq.0) then
         icodcl(ifac,ivar)   = 5
         ! rcodcl(ifac,ivar,1) = Utilisateur
         rcodcl(ifac,ivar,2) = rinfin
         rcodcl(ifac,ivar,3) = 0.d0
       endif
     enddo
-  elseif (                                                 &
-       ( itytur.eq.2.and.                                  &
-       (ivar.eq.ik  .or.ivar.eq.iep) ).or.                 &
-       ( itytur.eq.3.and.                                  &
-       (ivar.eq.ir11.or.ivar.eq.ir22.or.ivar.eq.ir33.or.   &
-       ivar.eq.ir12.or.ivar.eq.ir13.or.ivar.eq.ir23.or.    &
-       ivar.eq.iep.or.ivar.eq.ial)     ).or.               &
-       ( iturb.eq.50.and.                                  &
-       (ivar.eq.ik.or.ivar.eq.iep.or.ivar.eq.iphi.or.      &
-       ivar.eq.ifb)                    ).or.               &
-       ( iturb.eq.51.and.                                  &
-       (ivar.eq.ik.or.ivar.eq.iep.or.ivar.eq.iphi.or.      &
-       ivar.eq.ial)                    ).or.               &
-       ( iturb.eq.60.and.                                  &
-       (ivar.eq.ik.or.ivar.eq.iomg)   ).or.                &
-       ( iturb.eq.70.and.                                  &
-       (ivar.eq.inusa)                ).or.                &
-       ((ityturt.eq.3).and.                                &
-       (ivar.eq.iut.or.ivar.eq.ivt.or.ivar.eq.iwt))) then
+  elseif ((itytur.eq.2                                             &
+          .and.(ivar.eq.ik.or.ivar.eq.iep))                        &
+      .or.(itytur.eq.3                                             &
+          .and.(ivar.eq.ir11.or.ivar.eq.ir22.or.ivar.eq.ir33.or.   &
+                ivar.eq.ir12.or.ivar.eq.ir13.or.ivar.eq.ir23.or.   &
+                ivar.eq.iep.or.ivar.eq.ial))                       &
+      .or.(iturb.eq.50                                             &
+          .and.(ivar.eq.ik.or.ivar.eq.iep.or.ivar.eq.iphi.or.      &
+                ivar.eq.ifb))                                      &
+      .or.(iturb.eq.51                                             &
+          .and.(ivar.eq.ik.or.ivar.eq.iep.or.ivar.eq.iphi.or.      &
+                ivar.eq.ial))                                      &
+      .or.(iturb.eq.60                                             &
+          .and.(ivar.eq.ik.or.ivar.eq.iomg))                       &
+      .or.(iturb.eq.70                                             &
+          .and.(ivar.eq.inusa))) then
     do ii = ideb, ifin
       ifac = itrifb(ii)
       if(icodcl(ifac,ivar).eq.0) then
@@ -953,25 +964,22 @@ do ivar = 1, nvar
         ! rcodcl(ifac,ivar,3) = Utilisateur
       endif
     enddo
-  elseif (                                                 &
-       ( itytur.eq.2.and.                                  &
-       (ivar.eq.ik  .or.ivar.eq.iep) ).or.                 &
-       ( itytur.eq.3.and.                                  &
-       (ivar.eq.ir11.or.ivar.eq.ir22.or.ivar.eq.ir33.or.   &
-       ivar.eq.ir12.or.ivar.eq.ir13.or.ivar.eq.ir23.or.    &
-       ivar.eq.iep.or.ivar.eq.ial)     ).or.               &
-       ( iturb.eq.50.and.                                  &
-       (ivar.eq.ik.or.ivar.eq.iep.or.ivar.eq.iphi.or.      &
-       ivar.eq.ifb)                    ).or.               &
-       ( iturb.eq.51.and.                                  &
-       (ivar.eq.ik.or.ivar.eq.iep.or.ivar.eq.iphi.or.      &
-       ivar.eq.ial)                    ).or.               &
-       ( iturb.eq.60.and.                                  &
-       (ivar.eq.ik.or.ivar.eq.iomg)   ).or.                &
-       ( iturb.eq.70.and.                                  &
-       (ivar.eq.inusa)                ).or.                &
-       ((ityturt.eq.3).and.                                &
-       (ivar.eq.iut.or.ivar.eq.ivt.or.ivar.eq.iwt))) then
+  elseif ((itytur.eq.2                                              &
+          .and.(ivar.eq.ik.or.ivar.eq.iep))                         &
+      .or.(itytur.eq.3                                              &
+          .and.(ivar.eq.ir11.or.ivar.eq.ir22.or.ivar.eq.ir33.or.    &
+                ivar.eq.ir12.or.ivar.eq.ir13.or.ivar.eq.ir23.or.    &
+                ivar.eq.iep.or.ivar.eq.ial))                        &
+      .or.(iturb.eq.50                                              &
+          .and.(ivar.eq.ik.or.ivar.eq.iep.or.ivar.eq.iphi.or.       &
+                ivar.eq.ifb))                                       &
+      .or.(iturb.eq.51                                              &
+          .and.(ivar.eq.ik.or.ivar.eq.iep.or.ivar.eq.iphi.or.       &
+                ivar.eq.ial))                                       &
+      .or.(iturb.eq.60                                              &
+          .and.(ivar.eq.ik.or.ivar.eq.iomg))                        &
+      .or.(iturb.eq.70                                              &
+          .and.(ivar.eq.inusa))) then
     do ii = ideb, ifin
       ifac = itrifb(ii)
       if(icodcl(ifac,ivar).eq.0) then
@@ -1098,8 +1106,6 @@ do ivar = 1, nvar
     endif
   enddo
 enddo
-
-
 
 ! 6.3 SYMETRIE bis
 ! =============

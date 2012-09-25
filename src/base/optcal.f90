@@ -451,7 +451,7 @@ module optcal
   integer, save :: imvisf
 
   ! modele de flux turbulent u'T' pour un scalaire T
-  !  iturbt
+  !  iturt
   !    = 0  SGDH
   !    = 10 GGDH
   !    = 20 AFM
@@ -460,9 +460,13 @@ module optcal
   !    = 21 EB-AFM
   !    = 31 EB-DFM
   !  ityturt
-  !    = int(iturbt/10) pour distinguer rapidement les classes de modeles
+  !    = int(iturt/10) pour distinguer rapidement les classes de modeles
+  !  ifltur
+  !    = index of the turbulent flux for the scalar iscal.
+  !  nvarcl
+  !    = number of variable plus number of turbulent fluxes
 
-  integer, save :: iturbt , ityturt
+  integer, save :: iturt(nscamx) , ityturt(nscamx), ifltur(nscamx), nvarcl
 
   ! Type des conditions limites et index min et max
   !                 des sous listes defaces de bord

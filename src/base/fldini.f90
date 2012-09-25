@@ -88,6 +88,7 @@ integer          ifvar(nvppmx), iapro(npromx)
 
 character*80     name
 character*32     name1, name2, name3
+character*80     f_name
 character*80     fname(nvppmx)
 
 !===============================================================================
@@ -297,6 +298,15 @@ do ii = 1, nscal
     call field_set_key_str(ivarfl(ivar), keylbl, nomvar(ipprtp(ivar)))
     if (ichrvr(ipprtp(ivar)) .eq. 1) then
       call field_set_key_int(ivarfl(ivar), keyvis, iopchr)
+    endif
+    if (ityturt(ii).gt.0) then
+      f_name = trim(name)//'_turbulent_flux'
+      call field_create(f_name, itycat, ityloc, idim3, .true., iprev, iflid)
+      call field_set_key_int(iflid, keycpl, 1)
+      if (ichrvr(ipprtp(ivar)) .eq. 1) then
+        call field_set_key_int(iflid, keyvis, iopchr)
+      endif
+      if (ityturt(ii).eq.3) call field_allocate_bc_coeffs(iflid, .true., .true.)
     endif
   endif
 

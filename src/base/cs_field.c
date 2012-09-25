@@ -679,6 +679,7 @@ cs_f_field_var_ptr_by_id(int          id,
  *   id           <-- field id
  *   pointer_type <-- 1: bc_coeffs->a;   2: bc_coeffs->b
  *                    3: bc_coeffs->af;  4: bc_coeffs->bf
+ *                    5: bc_coeffs->ad;  6: bc_coeffs->bd
  *   pointer_rank <-- expected rank (1 for scalar, 2 for vector)
  *   dim          <-- dimensions (indexes in Fortran order,
  *                    dim[i] = 0 if i unused)
@@ -725,6 +726,10 @@ cs_f_field_bc_coeffs_ptr_by_id(int          id,
       *p = f->bc_coeffs->af;
     else if (pointer_type == 4)
       *p = f->bc_coeffs->bf;
+    else if (pointer_type == 5)
+      *p = f->bc_coeffs->ad;
+    else if (pointer_type == 6)
+      *p = f->bc_coeffs->bd;
 
     if (*p == NULL) /* Adjust dimensions to assist Fortran bounds-checking */
       _n_elts = 0;
@@ -742,12 +747,12 @@ cs_f_field_bc_coeffs_ptr_by_id(int          id,
 
       if (coupled) {
 
-        if (pointer_type == 1 || pointer_type == 3) {
+        if (pointer_type == 1 || pointer_type == 3 || pointer_type == 5) {
           dim[0] = f->dim;
           dim[1] = _n_elts;
           cur_p_rank = 2;
         }
-        else { /* if (pointer_type == 2 || pointer_type == 4) */
+        else { /* if (pointer_type == 2 || pointer_type == 4 || pointer_type == 6) */
           dim[0] = f->dim;
           dim[1] = f->dim;
           dim[2] = _n_elts;
@@ -1056,12 +1061,15 @@ cs_field_map_values(cs_field_t   *f,
  * \param[in, out]  f             pointer to field structure
  * \param[in]       have_flux_bc  if true, flux bc coefficients (af and bf)
  *                                are added
+ * \param[in]       have_mom_bc   if true, div BC coefficients (ad and bd)
+ *                                are added
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_field_allocate_bc_coeffs(cs_field_t  *f,
-                            bool         have_flux_bc)
+                            bool         have_flux_bc,
+                            bool         have_mom_bc)
 {
   /* Add boundary condition coefficients if required */
 
@@ -1100,6 +1108,15 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
         f->bc_coeffs->bf = NULL;
       }
 
+      if (have_mom_bc) {
+        BFT_MALLOC(f->bc_coeffs->ad,  n_elts[0]*a_mult, cs_real_t);
+        BFT_MALLOC(f->bc_coeffs->bd,  n_elts[0]*b_mult, cs_real_t);
+      }
+      else {
+        f->bc_coeffs->ad = NULL;
+        f->bc_coeffs->bd = NULL;
+      }
+
     }
 
     else {
@@ -1115,6 +1132,148 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
         BFT_FREE(f->bc_coeffs->af);
         BFT_FREE(f->bc_coeffs->bf);
       }
+
+      if (have_mom_bc) {
+        BFT_REALLOC(f->bc_coeffs->ad,  n_elts[0]*a_mult, cs_real_t);
+        BFT_REALLOC(f->bc_coeffs->bd,  n_elts[0]*b_mult, cs_real_t);
+      }
+      else {
+        BFT_FREE(f->bc_coeffs->ad);
+        BFT_FREE(f->bc_coeffs->bd);
+      }
+
+    }
+
+  }
+
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              _("Field \"%s\"\n"
+                " has location %d, which does not support BC coefficients."),
+              f->name, f->location_id);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Initialize boundary condition coefficients arrays.
+ *
+ * For fields on location CS_MESH_LOCATION_CELLS, boundary conditions
+ * are located on CS_MESH_LOCATION_BOUNDARY_FACES.
+ *
+ * Boundary condition coefficients are not currently supported for other
+ * locations (though support could be added by mapping a boundary->location
+ * indirection array in the cs_mesh_location_t structure).
+ *
+ * For multidimensional fields, arrays are assumed to have the same
+ * interleaving behavior as the field, unless components are coupled.
+ *
+ * For multidimensional fields with coupled components, interleaving
+ * is the norm, and implicit b and bf coefficient arrays are arrays of
+ * block matrices, not vectors, so the number of entries for each boundary
+ * face is dim*dim instead of dim.
+ *
+ * \param[in, out]  f             pointer to field structure
+ * \param[in]       have_flux_bc  if true, flux bc coefficients (af and bf)
+ *                                are initialized
+ * \param[in]       have_mom_bc   if true, div BC coefficients (ad and bd)
+ *                                are initialized
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_init_bc_coeffs(cs_field_t  *f,
+                        bool         have_flux_bc,
+                        bool         have_mom_bc)
+{
+  /* Add boundary condition coefficients if required */
+
+  cs_lnum_t dim = f->dim;
+
+  int ifac;
+  int coupled = 0;
+
+  if (f->type & CS_FIELD_VARIABLE) {
+    int coupled_key_id = cs_field_key_id_try("coupled");
+    if (coupled_key_id > -1)
+      coupled = cs_field_get_key_int(f, coupled_key_id);
+  }
+
+  if (f->location_id == CS_MESH_LOCATION_CELLS) {
+
+    const int location_id = CS_MESH_LOCATION_BOUNDARY_FACES;
+    const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(location_id);
+
+    if (coupled == 0 && dim == 1) {
+
+      for (ifac = 0; ifac < n_elts[0]; ifac++) {
+        f->bc_coeffs->a[ifac] = 0.;
+        f->bc_coeffs->b[ifac] = 1.;
+      }
+
+      if (have_flux_bc)
+        for (ifac = 0; ifac < n_elts[0]; ifac++) {
+          f->bc_coeffs->af[ifac] = 0.;
+          f->bc_coeffs->bf[ifac] = 0.;
+        }
+
+      if (have_mom_bc)
+        for (ifac = 0; ifac < n_elts[0]; ifac++) {
+          f->bc_coeffs->ad[ifac] = 0.;
+          f->bc_coeffs->bd[ifac] = 1.;
+        }
+
+
+    }
+
+    /* Coupled vectorial BCs */
+    else if (coupled && dim == 3) {
+
+      for (ifac = 0; ifac < n_elts[0]; ifac++) {
+        f->bc_coeffs->a[ifac*dim] = 0.;
+        f->bc_coeffs->a[ifac*dim + 1] = 0.;
+        f->bc_coeffs->a[ifac*dim + 2] = 0.;
+        f->bc_coeffs->b[ifac*dim*dim] = 1.;
+        f->bc_coeffs->b[ifac*dim*dim + 1] = 0.;
+        f->bc_coeffs->b[ifac*dim*dim + 2] = 0.;
+        f->bc_coeffs->b[ifac*dim*dim + 3] = 1.;
+        f->bc_coeffs->b[ifac*dim*dim + 4] = 0.;
+        f->bc_coeffs->b[ifac*dim*dim + 5] = 0.;
+        f->bc_coeffs->b[ifac*dim*dim + 6] = 1.;
+        f->bc_coeffs->b[ifac*dim*dim + 7] = 0.;
+        f->bc_coeffs->b[ifac*dim*dim + 8] = 0.;
+      }
+
+      if (have_flux_bc)
+        for (ifac = 0; ifac < n_elts[0]; ifac++) {
+          f->bc_coeffs->af[ifac*dim] = 0.;
+          f->bc_coeffs->af[ifac*dim + 1] = 0.;
+          f->bc_coeffs->af[ifac*dim + 2] = 0.;
+          f->bc_coeffs->bf[ifac*dim*dim] = 0.;
+          f->bc_coeffs->bf[ifac*dim*dim + 1] = 0.;
+          f->bc_coeffs->bf[ifac*dim*dim + 2] = 0.;
+          f->bc_coeffs->bf[ifac*dim*dim + 3] = 0.;
+          f->bc_coeffs->bf[ifac*dim*dim + 4] = 0.;
+          f->bc_coeffs->bf[ifac*dim*dim + 5] = 0.;
+          f->bc_coeffs->bf[ifac*dim*dim + 6] = 0.;
+          f->bc_coeffs->bf[ifac*dim*dim + 7] = 0.;
+          f->bc_coeffs->bf[ifac*dim*dim + 8] = 0.;
+        }
+
+      if (have_mom_bc)
+        for (ifac = 0; ifac < n_elts[0]; ifac++) {
+          f->bc_coeffs->ad[ifac*dim] = 0.;
+          f->bc_coeffs->ad[ifac*dim + 1] = 0.;
+          f->bc_coeffs->ad[ifac*dim + 2] = 0.;
+          f->bc_coeffs->bd[ifac*dim*dim] = 1.;
+          f->bc_coeffs->bd[ifac*dim*dim + 1] = 0.;
+          f->bc_coeffs->bd[ifac*dim*dim + 2] = 0.;
+          f->bc_coeffs->bd[ifac*dim*dim + 3] = 1.;
+          f->bc_coeffs->bd[ifac*dim*dim + 4] = 0.;
+          f->bc_coeffs->bd[ifac*dim*dim + 5] = 0.;
+          f->bc_coeffs->bd[ifac*dim*dim + 6] = 1.;
+          f->bc_coeffs->bd[ifac*dim*dim + 7] = 0.;
+          f->bc_coeffs->bd[ifac*dim*dim + 8] = 0.;
+        }
 
     }
 
@@ -1215,6 +1374,8 @@ cs_field_destroy_all(void)
         BFT_FREE(f->bc_coeffs->b);
         BFT_FREE(f->bc_coeffs->af);
         BFT_FREE(f->bc_coeffs->bf);
+        BFT_FREE(f->bc_coeffs->ad);
+        BFT_FREE(f->bc_coeffs->bd);
       }
       BFT_FREE(f->bc_coeffs);
     }

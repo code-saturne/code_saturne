@@ -100,12 +100,15 @@ double precision coefa(ndimfb,*), coefb(ndimfb,*)
 
 ! Local variables
 
-integer ii, ippu, ippv, ippw, ivar, iprop
-integer imom, idtnm
-integer iflid, nfld
-integer icondl, icondf
+integer          ii, ippu, ippv, ippw, ivar, iprop
+integer          imom, idtnm
+integer          iflid, nfld
+integer          icondl, icondf
+integer          f_id
 
 integer          ifvar(nvppmx)
+
+character*80     fname
 
 !===============================================================================
 
@@ -250,6 +253,15 @@ do ii = 1, nscal
       call field_map_bc_coeffs(ivarfl(ivar),                         &
                                coefa(1, icondl), coefb(1, icondl),   &
                                coefa(1, icondf), coefb(1, icondf))
+
+      ! Boundary conditions of the turbulent fluxes T'u'
+      if (ityturt(ii).eq.3) then
+        call field_get_name(ivarfl(ivar), fname)
+        ! Index of the corresponding turbulent flux
+        call field_get_id(trim(fname)//'_turbulent_flux', f_id)
+        call field_allocate_bc_coeffs(f_id, .true., .true.)
+        call field_init_bc_coeffs(f_id, .true., .true.)
+      endif
     endif
   endif
 enddo

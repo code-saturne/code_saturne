@@ -102,6 +102,7 @@ use ppincl
 use lagpar
 use lagran
 use radiat
+use field
 use mesh
 use parall
 use period
@@ -145,6 +146,7 @@ integer          iconvp, idiffp, ndircp, ireslp, nitmap
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
 integer          imucpp, idftnp, iswdyp
+integer          f_id
 
 double precision epsrgp, climgp, extrap, relaxp, blencp, epsilp
 double precision epsrsp
@@ -155,6 +157,8 @@ double precision trrij , csteps
 
 double precision rvoid(1)
 
+character*80     fname
+
 double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:,:) :: viscce
 double precision, allocatable, dimension(:,:) :: weighf
@@ -164,10 +168,12 @@ double precision, allocatable, dimension(:) :: dpvar
 double precision, allocatable, dimension(:) :: xcpp
 double precision, allocatable, dimension(:) :: srcmas
 
+double precision, dimension(:,:), pointer :: xut
+
 !===============================================================================
 
 !===============================================================================
-! 1. INITIALISATION
+! 1. Initialization
 !===============================================================================
 
 ! Allocate temporary arrays
@@ -431,7 +437,6 @@ if (iilagr.eq.2 .and. ltsthe.eq.1)  then
 endif
 
 ! Mass source term
-
 if (ncesmp.gt.0) then
 
   ! Entier egal a 1 (pour navsto : nb de sur-iter)
@@ -472,10 +477,8 @@ if (ncesmp.gt.0) then
 
 endif
 
-
-! SI ON CALCULE LA VARIANCE DES FLUCTUATIONS D'UN SCALAIRE,
-!   ON RAJOUTE LES TERMES DE PRODUCTION ET DE DISSIPATION
-
+! If the current scalar is the variance of an other scalar,
+! production and dissipation terms are added.
 if (itspdv.eq.1) then
 
   if (itytur.eq.2 .or. itytur.eq.3 .or. itytur.eq.5 .or. iturb.eq.60) then
@@ -486,7 +489,7 @@ if (itspdv.eq.1) then
     ! Remarque : on a prevu la possibilite de scalaire associe non
     !  variable de calcul, mais des adaptations sont requises
 
-    if(ivarsc.gt.0) then
+    if (ivarsc.gt.0) then
       iii = ivarsc
     else
       write(nfecra,9000)ivarsc
@@ -504,12 +507,12 @@ if (itspdv.eq.1) then
 
     call grdcel &
     !==========
- ( iii    , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , nfecra ,                                              &
-   epsrgp , climgp , extrap ,                                     &
-   rtpa(1,iii) , coefa(1,iclrtp(iii,icoef)) ,                     &
-                 coefb(1,iclrtp(iii,icoef)) ,                     &
-   grad   )
+  ( iii    , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+    iwarnp , nfecra ,                                              &
+    epsrgp , climgp , extrap ,                                     &
+    rtpa(1,iii) , coefa(1,iclrtp(iii,icoef)) ,                     &
+                  coefb(1,iclrtp(iii,icoef)) ,                     &
+    grad   )
 
     ! Traitement de la production
     ! On utilise MAX(PROPCE,ZERO) car en LES dynamique on fait un clipping
@@ -522,25 +525,28 @@ if (itspdv.eq.1) then
     if (isso2t(iscal).gt.0) then
       ! On prend la viscosite a l'instant n, meme si elle est extrapolee
       ipcvso = ipcvst
-      if(iviext.gt.0) ipcvso = ipproc(ivista)
+      if (iviext.gt.0) ipcvso = ipproc(ivista)
 
-      ! Variance of the thermal scalar with modelized turbulent fluxes
-      if ((iscavr(iscal).eq.iscalt).and.(ityturt.ge.0.and.ityturt.lt.3)) then
+
+      ! iscal is the variance of the scalar iiscav
+      ! with modelized turbulent fluxes GGDH or AFM or DFM
+      if (ityturt(iiscav).ge.1) then
+
+        ! Name of the scalar iiscav associated to the variance iscal
+        call field_get_name(ivarfl(ivarsc), fname)
+
+        ! Index of the corresponding turbulent flux
+        call field_get_id(trim(fname)//'_turbulent_flux', f_id)
+
+        call field_get_val_v(f_id, xut)
+
         do iel = 1, ncel
           propce(iel,iptsca) = propce(iel,iptsca) -2.d0*xcpp(iel)*volume(iel) &
-                             *(propce(iel,ipproc(iut))*grad(iel,1)            &
-                              +propce(iel,ipproc(ivt))*grad(iel,2)            &
-                              +propce(iel,ipproc(iwt))*grad(iel,3) )
+                                                  *(xut(1,iel)*grad(iel,1)    &
+                                                   +xut(2,iel)*grad(iel,2)    &
+                                                   +xut(3,iel)*grad(iel,3) )
         enddo
-      ! Variance of the thermal scalar with a transport equation
-      ! on the turbulent fluxes
-      elseif ((iscavr(iscal).eq.iscalt).and.(ityturt.eq.3)) then
-        do iel = 1, ncel
-          propce(iel,iptsca) = propce(iel,iptsca) -2.d0*volume(iel)*xcpp(iel)  &
-                             *(rtpa(iel,iut)*grad(iel,1)                       &
-                              +rtpa(iel,ivt)*grad(iel,2)                       &
-                              +rtpa(iel,iwt)*grad(iel,3) )
-        enddo
+      ! SGDH model
       else
         do iel = 1, ncel
           propce(iel,iptsca) = propce(iel,iptsca)                             &
@@ -552,28 +558,37 @@ if (itspdv.eq.1) then
     ! Sinon : dans SMBRS
     else
       ipcvso = ipcvst
-      if ((iscavr(iscal).eq.iscalt).and.(ityturt.ge.0.and.ityturt.lt.3)) then
+
+      ! iscal is the variance of the scalar iiscav
+      ! with modelized turbulent fluxes GGDH or AFM or DFM
+      if (ityturt(iiscav).ge.1) then
+
+
+        ! Name of the scalar ivarsc associated to the variance iscal
+        call field_get_name(ivarfl(ivarsc), fname)
+
+        ! Index of the corresponding turbulent flux
+        call field_get_id(trim(fname)//'_turbulent_flux', f_id)
+
+        call field_get_val_v(f_id, xut)
+
         do iel = 1, ncel
-          smbrs(iel) = smbrs(iel) -2.d0*xcpp(iel)*volume(iel)                &
-                     *(propce(iel,ipproc(iut))*grad(iel,1)                   &
-                      +propce(iel,ipproc(ivt))*grad(iel,2)                   &
-                      +propce(iel,ipproc(iwt))*grad(iel,3) )
+          smbrs(iel) = smbrs(iel) -2.d0*xcpp(iel)*volume(iel)   &
+                                  *(xut(1,iel)*grad(iel,1)      &
+                                   +xut(2,iel)*grad(iel,2)      &
+                                   +xut(3,iel)*grad(iel,3) )
         enddo
-      elseif ((iscavr(iscal).eq.iscalt).and.(ityturt.eq.3)) then
-        do iel = 1, ncel
-          smbrs(iel) = smbrs(iel) -2.d0*xcpp(iel)*volume(iel)                &
-                     *(rtpa(iel,iut)*grad(iel,1)                             &
-                      +rtpa(iel,ivt)*grad(iel,2)                             &
-                      +rtpa(iel,iwt)*grad(iel,3) )
-        enddo
+
+      ! SGDH model
       else
         do iel = 1, ncel
           smbrs(iel) = smbrs(iel)                                            &
-               + 2.d0*xcpp(iel)*max(propce(iel,ipcvso),zero)                 &
-               *volume(iel)/sigmas(iscal)                                    &
-               *(grad(iel,1)**2 + grad(iel,2)**2 + grad(iel,3)**2)
+                     + 2.d0*xcpp(iel)*max(propce(iel,ipcvso),zero)           &
+                     * volume(iel)/sigmas(iscal)                             &
+                     * (grad(iel,1)**2 + grad(iel,2)**2 + grad(iel,3)**2)
         enddo
       endif
+
       ! Production term for a variance  TODO compute ustdy when isso2t >0
       if (idilat.eq.4) then
         do iel = 1, ncel
@@ -648,7 +663,7 @@ idftnp = idften(ivar)
 ! (clipping sur (mu + mu_t)). On aurait pu prendre
 ! MAX(K + K_t,0) mais cela autoriserait des K_t negatif, ce qui est
 ! considere ici comme non physique.
-if(idiff(ivar).ge.1) then
+if (idiff(ivar).ge.1) then
   ! Scalar diffusivity
   if (idftnp.eq.1) then
     if (ipcvsl.eq.0) then
@@ -719,7 +734,7 @@ if(idiff(ivar).ge.1) then
   endif
 
   ! AFM model or DFM models: add div(T'u') to smbrs
-  if ((ityturt.eq.2.or.ityturt.eq.3).and.iscal.eq.iscalt) then
+  if ((ityturt(iscal).eq.2.or.ityturt(iscal).eq.3)) then
 
     call divrit &
     !==========

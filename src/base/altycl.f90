@@ -98,13 +98,13 @@ implicit none
 integer          nvar   , nscal
 
 integer          itypfb(nfabor)
-integer          ialtyb(nfabor), icodcl(nfabor,nvar)
+integer          ialtyb(nfabor), icodcl(nfabor,nvarcl)
 integer          impale(nnod)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
-double precision rcodcl(nfabor,nvar,3)
+double precision rcodcl(nfabor,nvarcl,3)
 double precision depale(nnod,3), xyzno0(3,nnod)
 
 ! Local variables

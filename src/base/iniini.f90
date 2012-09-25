@@ -472,9 +472,6 @@ iphi   = 0
 ifb    = 0
 ial    = 0
 inusa  = 0
-iut    = 0
-ivt    = 0
-iwt    = 0
 
 do iscal = 1, nscamx
   isca  (iscal) = 0
@@ -868,10 +865,6 @@ idries =-1
 !     Correction type (itycor) is set in varpos
 irccor = 0
 itycor = -999
-
-! --- Turbulent flux for a scalar
-!     The turbulence model must be chosen by the user
-iturbt = 0
 
 ! --- Viscosite secondaire
 
@@ -1304,6 +1297,11 @@ do iscal = 1, nscamx
   sigmas(iscal) = 1.0d0
   wmolsp(iscal) = 0.0d0
   rvarfl(iscal) = 0.8d0
+enddo
+
+! --- Turbulent flux for a scalar (Default: SGDH)
+do iscal = 1, nscamx
+  iturt(iscal) = 0
 enddo
 
 ! For the turbulent fluxes of the scalar

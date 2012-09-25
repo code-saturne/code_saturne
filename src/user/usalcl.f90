@@ -350,14 +350,14 @@ implicit none
 integer          itrale
 integer          nvar   , nscal
 
-integer          icodcl(nfabor,nvar)
+integer          icodcl(nfabor,nvarcl)
 integer          itypfb(nfabor), ialtyb(nfabor)
 integer          impale(nnod)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
-double precision rcodcl(nfabor,nvar,3)
+double precision rcodcl(nfabor,nvarcl,3)
 double precision depale(nnod,3), xyzno0(3,nnod)
 
 ! Local variables

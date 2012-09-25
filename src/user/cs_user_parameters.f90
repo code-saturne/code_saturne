@@ -470,7 +470,7 @@ end subroutine usppmo
 
 subroutine usipph &
 !================
- ( ixmlpu, nfecra , iturb , iturbt , irccor , icp )
+ ( ixmlpu, nfecra , iturb , irccor , icp )
 
 
 !===============================================================================
@@ -489,7 +489,6 @@ subroutine usipph &
 ! nfecra           ! i  ! <-- ! Fortran unit number for standard output        !
 ! iturb            ! ia ! <-> ! turbulence model                               !
 ! irccor           ! ia ! <-> ! flag for rotation/curvature correction or not  !
-! iturbt           ! ia ! <-> ! turbulent flux model for a scalar              !
 ! icp              ! ia ! <-> ! flag for uniform Cp or not                     !
 !__________________!____!_____!________________________________________________!
 
@@ -512,7 +511,7 @@ implicit none
 ! Arguments
 
 integer ixmlpu, nfecra
-integer iturb, iturbt, irccor, icp
+integer iturb, irccor, icp
 
 ! Local variables
 
@@ -608,18 +607,6 @@ if (.false.) then
 
   irccor = 1
 
-endif
-
-! --- Turbulent flux model
-!     Algebraic Model
-!      0  SGDH
-!      10 GGDH
-!      20 AFM
-!     Model with transport equations
-!      30 DFM
-
-if (ixmlpu.eq.0) then
-  iturbt = 0
 endif
 
 ! --- Variable specific heat (ICP=1) or not (ICP=0)
@@ -1783,6 +1770,22 @@ if (.false.) then
   enddo
 
 endif
+
+! --- Turbulent flux model u'T' for the scalar T
+!     Algebraic Model
+!      0  SGDH
+!      10 GGDH
+!      20 AFM
+!     Model with transport equations
+!      30 DFM
+
+if (.false.) then
+
+  ! GGDH for the scalar:
+  iturt(1) = 10
+
+endif
+
 
 ! --- Define scalar (among nscaus) which are species:
 !     If a user scalar isca represents the species Yk,

@@ -129,13 +129,13 @@ integer          nvar   , nscal
 integer          itypfb(nfabor)
 
 integer          isothp(nfabor), izfrap(nfabor)
-integer          icodcl(nfabor,nvar)
+integer          icodcl(nfabor,nvarcl)
 
 double precision tmin , tmax , tx
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
-double precision rcodcl(nfabor,nvar,3)
+double precision rcodcl(nfabor,nvarcl,3)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 
 double precision tparop(nfabor), qincip(nfabor)

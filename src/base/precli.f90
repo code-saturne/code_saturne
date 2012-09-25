@@ -108,17 +108,17 @@ implicit none
 
 integer          nvar   , nscal
 
-integer          icodcl(nfabor,nvar)
+integer          icodcl(nfabor,nvarcl)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision rcodcl(nfabor,nvar,3)
+double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
 
-integer          ifac, ivar
+integer          ifac, ivar, iscal, iut, ivt, iwt
 
 !===============================================================================
 !===============================================================================
@@ -149,6 +149,29 @@ do ivar = 1, nvar
     rcodcl(ifac,ivar,2) = rinfin
     rcodcl(ifac,ivar,3) = 0.d0
   enddo
+enddo
+
+! Default value for turbulent fluxes
+do iscal = 1, nscal
+  if (ityturt(iscal).eq.3) then
+    iut = nvar + 3*(ifltur(iscal) - 1) + 1
+    ivt = nvar + 3*(ifltur(iscal) - 1) + 2
+    iwt = nvar + 3*(ifltur(iscal) - 1) + 3
+    do ifac = 1, nfabor
+      icodcl(ifac,iut)   = 0
+      rcodcl(ifac,iut,1) = rinfin
+      rcodcl(ifac,iut,2) = rinfin
+      rcodcl(ifac,iut,3) = 0.d0
+      icodcl(ifac,ivt)   = 0
+      rcodcl(ifac,ivt,1) = rinfin
+      rcodcl(ifac,ivt,2) = rinfin
+      rcodcl(ifac,ivt,3) = 0.d0
+      icodcl(ifac,iwt)   = 0
+      rcodcl(ifac,iwt,1) = rinfin
+      rcodcl(ifac,iwt,2) = rinfin
+      rcodcl(ifac,iwt,3) = 0.d0
+    enddo
+  endif
 enddo
 
 ! En ALE, on initialise aussi le tableau IALTYB

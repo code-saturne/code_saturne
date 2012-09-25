@@ -126,7 +126,7 @@ double precision frcxt(ncelet,3), prhyd(ncelet)
 integer          iel   , ifac  , inod  , ivar  , iscal , iappel
 integer          ncp   , ncv   , iok
 integer          iicodc, ircodc
-integer          ihbord, itbord
+integer          ihbord, itheipb
 integer          iiptot
 integer          nbccou
 integer          ntrela
@@ -139,6 +139,7 @@ integer          iterns, inslst, icvrge, ivsvdr
 integer          iflmas, iflmab
 integer          italim, itrfin, itrfup, ineefl
 integer          nbzfmx, nozfmx
+integer          nturfl
 
 double precision cpcst , tditot, tdist2, tdist1, cvcst
 double precision xxp0, xyp0, xzp0
@@ -161,7 +162,7 @@ double precision, allocatable, dimension(:) :: flmalf, flmalb, xprale
 double precision, allocatable, dimension(:,:) :: cofale
 double precision, allocatable, dimension(:) :: qcalc
 double precision, allocatable, dimension(:,:,:) :: rcodcl
-double precision, allocatable, dimension(:) :: hbord, tbord
+double precision, allocatable, dimension(:) :: hbord, theipb
 double precision, allocatable, dimension(:) :: visvdr
 double precision, allocatable, dimension(:) :: prdv2f
 
@@ -688,15 +689,21 @@ if (nterup.gt.1) then
   if (nbccou.gt.0 .or. nfpt1t.gt.0 .or. iirayo.gt.0) itrfup = 0
 
 endif
+! Compute the number of variable plus the number of turbulent fluxes
+nvarcl = nvar
+do iscal = 1, nscal
+  if (ityturt(iscal).eq.3) nvarcl = nvarcl + 3
+enddo
 
 ! Allocate temporary arrays for boundary conditions
-allocate(icodcl(nfabor,nvar))
-allocate(rcodcl(nfabor,nvar,3))
+allocate(icodcl(nfabor,nvarcl))
+allocate(rcodcl(nfabor,nvarcl,3))
 if (isvhb.gt.0) then
   allocate(hbord(nfabor))
 endif
-if (isvtb.gt.0 .or. iirayo.gt.0 .or. ityturt.eq.3) then
-  allocate(tbord(nfabor))
+! Boundary value of the thermal scalar in I'
+if (iscalt.gt.0) then
+  allocate(theipb(nfabor))
 endif
 if (itytur.eq.4 .and. idries.eq.1) then
   allocate(visvdr(ncelet))
@@ -913,7 +920,7 @@ do while (iterns.le.nterup)
     !==========
   ( nvar   , nscal  , isvtb  ,                                 &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,      &
-    hbord  , tbord  )
+    hbord  , theipb )
 
     call coupbi(nfabor, nvar, nscal, icodcl, rcodcl)
     !==========
@@ -940,7 +947,7 @@ do while (iterns.le.nterup)
     izfrad ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     rcodcl ,                                                       &
-    coefa  , coefb  , hbord  , tbord  )
+    coefa  , coefb  , hbord  )
 
   endif
 
@@ -954,7 +961,7 @@ do while (iterns.le.nterup)
   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
   rcodcl ,                                                       &
   coefa  , coefb  , visvdr ,                                     &
-  hbord  , tbord  ,                                              &
+  hbord  , theipb ,                                              &
   frcxt  )
 
 !     ==============================================
@@ -1033,7 +1040,7 @@ do while (iterns.le.nterup)
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     coefa  , coefb  ,                                              &
     cpcst  , propce(1,ippcp) , cvcst  , propce(1,ippcv),           &
-    hbord  , tbord  )
+    hbord  , theipb )
 
 
     if (nfpt1t.gt.0) then
@@ -1045,7 +1052,7 @@ do while (iterns.le.nterup)
       fept1d , xlmbt1 , rcpt1d , dtpt1d ,                            &
       dt     , rtpa   , propce , propfa , propfb ,                   &
       coefa  , coefb  ,                                              &
-      cpcst  , propce(1,ippcp) , hbord  , tbord  )
+      cpcst  , propce(1,ippcp) , hbord  , theipb )
     endif
   endif
 
@@ -1362,7 +1369,7 @@ enddo
 
 ! Free memory
 if (allocated(hbord)) deallocate(hbord)
-if (allocated(tbord)) deallocate(tbord)
+if (allocated(theipb)) deallocate(theipb)
 if (allocated(visvdr)) deallocate(visvdr)
 
 if (nterup.gt.1) then

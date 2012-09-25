@@ -93,21 +93,12 @@ module pointe
   ! clbale ! (3,3,nfabor)   ! implicit Boundary conditions for the mesh velocity
   ! cfaale ! (3,nfabor)     ! explicit Boundary conditions for the mesh velocity
   ! cfbale ! (3,3,nfabor)   ! implicit Boundary conditions for the mesh velocity
-  ! coefaut! (3,nfabor)     ! explicit Boundary conditions for the turbulent heat flux
-  ! coefbut! (3,3,nfabor)   ! implicit Boundary conditions for the turbulent heat flux
-  ! cofarut! (3,nfabor)     ! explicit Boundary conditions for the turbulent heat flux
-  !                         !  in the temperature transport equation
-  ! cofbrut! (3,3,nfabor)   ! implicit Boundary conditions for the turbulent heat flux
-  !                         !  in the temperature transport equation
 
   double precision, dimension(:,:), allocatable :: coefau, cofafu
   double precision, dimension(:,:,:), allocatable :: coefbu, cofbfu
 
   double precision, dimension(:,:), allocatable :: cfaale, claale
   double precision, dimension(:,:,:), allocatable :: cfbale, clbale
-
-  double precision, dimension(:,:), allocatable :: coefaut, cofafut, cofarut
-  double precision, dimension(:,:,:), allocatable :: coefbut, cofbfut, cofbrut
 
   ! dudxy  ! (ncelet-ncel,3,3)   ! sauvegarde du gradient de la
   !        !                     ! vitesse en cas de rotation
@@ -223,7 +214,7 @@ contains
     integer, intent(in) :: ncelet, ncel, ncelbr, nfac, nfabor
 
     ! Local variables
-    integer                iok, ivar
+    integer                iok, ivar, iscal
 
     ! Boundary-face related arrays
 
@@ -256,12 +247,6 @@ contains
       allocate(coefbu(3,3,nfabor),cofbfu(3,3,nfabor))
     endif
 
-    ! Boundary condition for the turbulent heat flux when transport equations are used
-    if (ityturt.eq.3) then
-      allocate(coefaut(3,nfabor),cofafut(3,nfabor),cofarut(3,nfabor))
-      allocate(coefbut(3,3,nfabor),cofbfut(3,3,nfabor),cofbrut(3,3,nfabor))
-    endif
-
     ! Porosity array when needed
 
     if (iporos.eq.1) then
@@ -271,10 +256,14 @@ contains
     ! Symmetric cell diffusivity when needed
     iok = 0
     do ivar = 1, nvarmx
-      if (idften(ivar).eq.6) iok = iok + 1
+      if (idften(ivar).eq.6) iok = 1
     enddo
 
-    if (iok.ge.1) then
+    do iscal = 1, nscamx
+      if (ityturt(iscal).eq.3) iok = 1
+    enddo
+
+    if (iok.eq.1) then
       allocate(visten(6,ncelet))
     endif
 
@@ -352,8 +341,6 @@ contains
     if (allocated(izctsm)) deallocate(izctsm)
     if (allocated(izft1d)) deallocate(izft1d)
     if (allocated(coefau)) deallocate(coefau, cofafu, coefbu, cofbfu)
-    if (allocated(coefaut)) deallocate(coefaut, cofafut, cofarut, &
-                                       coefbut, cofbfut, cofbrut)
     if (allocated(porosi)) deallocate(porosi)
     if (allocated(visten)) deallocate(visten)
     if (allocated(cfaale)) deallocate(cfaale, cfbale, claale, clbale)

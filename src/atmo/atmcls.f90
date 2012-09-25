@@ -122,7 +122,7 @@ implicit none
 integer          nvar   , nscal
 integer          ifac   , iel
 
-integer          icodcl(nfabor,nvar)
+integer          icodcl(nfabor,nvarcl)
 
 double precision uk, utau, yplus, uet
 double precision gredu, rib, lmo, q0, e0
@@ -131,7 +131,7 @@ double precision cfnnu, cfnns, cfnnk,cfnne
 double precision dt(ncelet), rtp(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
-double precision rcodcl(nfabor,nvar,3)
+double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
 

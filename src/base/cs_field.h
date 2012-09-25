@@ -85,6 +85,8 @@ typedef struct {
   cs_real_t         *b;            /* Implicit coefficient */
   cs_real_t         *af;           /* Explicit coefficient for flux */
   cs_real_t         *bf;           /* Implicit coefficient for flux */
+  cs_real_t         *ad;           /* Explicit coefficient for divergence */
+  cs_real_t         *bd;           /* Implicit coefficient for divergence */
 
 } cs_field_bc_coeffs_t;
 
@@ -203,11 +205,45 @@ cs_field_map_values(cs_field_t   *f,
  * parameters:
  *   f            <-- pointer to field structure
  *   have_flux_bc <-- if true, flux BC coefficients (af and bf) are added
+ *   have_mom_bc  <-- if true, div BC coefficients (ad and bd) are added
  *----------------------------------------------------------------------------*/
 
 void
 cs_field_allocate_bc_coeffs(cs_field_t  *f,
-                            bool         have_flux_bc);
+                            bool         have_flux_bc,
+                            bool         have_mom_bc);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Initialize boundary condition coefficients arrays.
+ *
+ * For fields on location CS_MESH_LOCATION_CELLS, boundary conditions
+ * are located on CS_MESH_LOCATION_BOUNDARY_FACES.
+ *
+ * Boundary condition coefficients are not currently supported for other
+ * locations (though support could be added by mapping a boundary->location
+ * indirection array in the cs_mesh_location_t structure).
+ *
+ * For multidimensional fields, arrays are assumed to have the same
+ * interleaving behavior as the field, unless components are coupled.
+ *
+ * For multidimensional fields with coupled components, interleaving
+ * is the norm, and implicit b and bf coefficient arrays are arrays of
+ * block matrices, not vectors, so the number of entries for each boundary
+ * face is dim*dim instead of dim.
+ *
+ * \param[in, out]  f             pointer to field structure
+ * \param[in]       have_flux_bc  if true, flux bc coefficients (af and bf)
+ *                                are initialized
+ * \param[in]       have_mom_bc   if true, div BC coefficients (ad and bd)
+ *                                are initialized
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_init_bc_coeffs(cs_field_t  *f,
+                        bool         have_flux_bc,
+                        bool         have_mom_bc);
 
 /*----------------------------------------------------------------------------
  * Map existing field boundary condition coefficient arrays.

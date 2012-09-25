@@ -81,6 +81,7 @@ use ppppar
 use ppthch
 use ppincl
 use cplsat
+use field
 use mesh
 
 !===============================================================================
@@ -109,10 +110,15 @@ integer          iicp  , iicpa
 integer          iiviss, iiptot
 integer          iptsna, iptsta, iptsca
 integer          nn
+integer          f_id
 
 double precision xxk, xcmu, trii
 
+character*80     fname
+
 double precision rvoid(1)
+
+double precision, dimension(:,:), pointer :: xut
 
 !===============================================================================
 
@@ -224,50 +230,24 @@ if (ippmod(icompf).lt.0) then
   enddo
 endif
 
-!     Diffusivite des scalaires
+! Diffusivite des scalaires
 do iscal = 1, nscal
-  if(ivisls(iscal).gt.0) then
+  if (ivisls(iscal).gt.0) then
     iiviss = ipproc(ivisls(iscal))
-!     Diffusivite aux cellules (et au pdt precedent si ordre2)
+    ! Diffusivite aux cellules (et au pdt precedent si ordre2)
     do iel = 1, ncel
       propce(iel,iiviss) = visls0(iscal)
     enddo
-    if(ivsext(iscal).gt.0) then
+    if (ivsext(iscal).gt.0) then
       iivisa = ipproc(ivissa(iscal))
       do iel = 1, ncel
         propce(iel,iivisa) = propce(iel,iiviss)
       enddo
     endif
   endif
-  if ((iturbt.ge.0).and.(iturbt.lt.30)) then
-    do iel = 1, ncel
-      propce(iel,ipproc(iut)) = 0.d0
-      propce(iel,ipproc(ivt)) = 0.d0
-      propce(iel,ipproc(iwt)) = 0.d0
-    enddo
-  endif
-  if (ityturt.eq.3)then
-    ! Boundary conditions for the velocity if coupling of the components
-    do ifac = 1, nfabor
-      do isou = 1, 3
-        coefaut(isou,ifac) = 0.d0
-        cofafut(isou,ifac) = 0.d0
-        cofarut(isou,ifac) = coefaut(isou,ifac)
-        do jsou = 1, 3
-          if (jsou.eq.isou) then
-            coefbut(isou,jsou,ifac) = 1.d0
-            cofbfut(isou,jsou,ifac) = 0.d0
-          else
-            coefbut(isou,jsou,ifac) = 0.d0
-            cofbfut(isou,jsou,ifac) = 0.d0
-          endif
-          cofbrut(isou,jsou,ifac) = coefbut(isou,jsou,ifac)
-        enddo
-      enddo
-    enddo
-  endif
+
   if (iscal.eq.iscalt) then
-    do iel = 1, ncel
+    do iel = 1, ncelet
       propce(iel,ipproc(ibeta)) = 0.d0
     enddo
   endif

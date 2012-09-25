@@ -96,24 +96,31 @@ integer          ipcrom, ipbrom
 integer          nswrgp, imligp, iwarnp
 integer          itypfl
 integer          ivar , iclvar, iel, ii, jj, isou
-integer          iuit(3),itt
+integer          itt
+integer          f_id
+
 double precision epsrgp, climgp, extrap
 double precision xk, xe, xtt
 double precision grav(3),xrij(3,3)
 
 logical          ilved
 
+character*80     fname
+
 double precision, dimension(:), pointer :: coefap, coefbp
 double precision, dimension(:,:), pointer :: coefav
 double precision, dimension(:,:,:), pointer :: coefbv
 double precision, allocatable, dimension(:,:,:) :: gradv
 double precision, allocatable, dimension(:,:) :: gradt
-double precision, allocatable, dimension(:,:) :: xut
-double precision, allocatable, dimension(:,:) :: xuta
 double precision, allocatable, dimension(:,:) :: coefat
 double precision, allocatable, dimension(:,:,:) :: coefbt
 double precision, allocatable, dimension(:) :: thflxf, thflxb
 double precision, allocatable, dimension(:) :: divut
+
+double precision, dimension(:,:), pointer :: cofarut
+double precision, dimension(:,:,:), pointer :: cofbrut
+double precision, dimension(:,:), pointer :: xut
+double precision, dimension(:,:), pointer :: xuta
 
 !===============================================================================
 
@@ -123,7 +130,6 @@ double precision, allocatable, dimension(:) :: divut
 
 ! First component is for x,y,z  and the 2nd for u,v,w
 allocate(gradv(ncelet,3,3))
-allocate(xut(3,ncelet))
 allocate(gradt(ncelet,3), thflxf(nfac), thflxb(nfabor))
 ipcrom = ipproc(irom)
 ipbrom = ipprob(irom)
@@ -132,6 +138,15 @@ ipbrom = ipprob(irom)
 ivar = isca(iscal)
 iccocg = 1
 inc = 1
+
+! Name of the scalar ivar
+call field_get_name(ivarfl(ivar), fname)
+
+! Index of the corresponding turbulent flux
+call field_get_id(trim(fname)//'_turbulent_flux', f_id)
+
+call field_get_val_v(f_id, xut)
+
 
 nswrgp = nswrgr(ivar)
 imligp = imligr(ivar)
@@ -191,9 +206,10 @@ else
 
 endif
 
-! Find the variance of the thermal scalar !TODO adapt it for other scalars
+! Find the variance of the thermal scalar
 itt = -1
-if (((abs(gx)+abs(gy)+abs(gz)).gt.0).and.((ityturt.eq.2).or.(ityturt.eq.3))) then
+if (((abs(gx)+abs(gy)+abs(gz)).gt.0).and.                   &
+    ((ityturt(iscal).eq.2).or.(ityturt(iscal).eq.3))) then
   grav(1) = gx
   grav(2) = gy
   grav(3) = gz
@@ -209,7 +225,7 @@ endif
 !===============================================================================
 ! 2. Agebraic models AFM
 !===============================================================================
-if (ityturt.ne.3) then
+if (ityturt(iscal).ne.3) then
 
   do ifac = 1, nfac
     thflxf(ifac) = 0.d0
@@ -218,11 +234,8 @@ if (ityturt.ne.3) then
     thflxb(ifac) = 0.d0
   enddo
 
-  do iel=1, ncel
-    !uit
-    iuit(1)=ipproc(iut)
-    iuit(2)=ipproc(ivt)
-    iuit(3)=ipproc(iwt)
+
+  do iel = 1, ncel !FIXME
     !Rij
     xrij(1,1) = rtp(iel,ir11)
     xrij(2,2) = rtp(iel,ir22)
@@ -239,7 +252,7 @@ if (ityturt.ne.3) then
     xk = 0.5d0*(xrij(1,1)+xrij(2,2)+xrij(3,3))
 
     !  Turbulent time-scale (constant in AFM)
-    if (iturbt.eq.20) then
+    if (iturt(iscal).eq.20) then
       xtt = xk/xe
     endif
 
@@ -252,7 +265,7 @@ if (ityturt.ne.3) then
 
       ! AFM and EB-AFM models
       !  -C_theta*k/eps*( xi*u_jt*dU_i/dx_j + eta*beta*g_i*variance(t^2))
-      if (ityturt.eq.2) then
+      if (ityturt(iscal).eq.2) then
         if (itt.gt.0) then
           xut(ii,iel) = xut(ii,iel) - ctheta(iscal)*xtt*                            &
                        etaafm*propce(iel,ipproc(ibeta))*grav(ii)*rtp(iel,isca(itt))
@@ -261,31 +274,31 @@ if (ityturt.ne.3) then
         do jj = 1, 3
           if (ii.ne.jj) then
             xut(ii,iel) = xut(ii,iel)                                               &
-                     - ctheta(iscal)*xtt*xiafm*gradv(iel,jj,ii)*propce(iel,iuit(jj))
+                     - ctheta(iscal)*xtt*xiafm*gradv(iel,jj,ii)*xut(jj,iel)!TODO FIXME CHECKME
           endif
         enddo
       endif
 
       ! pour eviter de faire ut = x+y*ut, on fait ut = x/(1-y)
       ! pour l'AFM, ut n'apparait qu'avec xi
-      if (iturbt.eq.20) then
+      if (iturt(iscal).eq.20) then
         xut(ii,iel) = xut(ii,iel)/(1.d0+ctheta(iscal)*xtt*xiafm*gradv(iel,ii,ii))
       endif
 
     enddo
 
-    ! On ajoute la partie en gradT qui est implicitee precedemment dans propce(iut)
+    ! On ajoute la partie en gradT qui est implicitee precedemment dans propce(iut)!TODO FIXME
     !       -C_theta*k/eps*u_i*u_j*dT/dx_j
     ! pour ne pas ecraser propce dans la premiere boucle ii, on refait une boucle sur ii
     do ii = 1, 3
-      propce(iel,iuit(ii)) = xut(ii,iel) +(- ctheta(iscal)*xtt*(                      &
-          xrij(ii,1)*gradT(iel,1)+ xrij(ii,2)*gradT(iel,2)+ xrij(ii,3)*gradT(iel,3)) )
+      xut(ii,iel) = xut(ii,iel) - ctheta(iscal)*xtt*( xrij(ii,1)*gradT(iel,1)  &
+                                                    + xrij(ii,2)*gradT(iel,2)  &
+                                                    + xrij(ii,3)*gradT(iel,3))
       !On calcul la divergence de Cp*ut dans la suite
       xut(ii,iel) = xcpp(iel)*xut(ii,iel)
     enddo
   enddo
 
-  ivar  = 0
   itypfl = 1
   iflmb0 = 1
   init   = 1
@@ -300,10 +313,10 @@ if (ityturt.ne.3) then
   ! Local gradient boundaray conditions: homogenous Neumann
   allocate(coefat(3,ndimfb))
   allocate(coefbt(3,3,ndimfb))
-  do ifac =1, nfabor
+  do ifac = 1, nfabor
     do ii = 1, 3
     coefat(ii,ifac) = 0.d0
-      do jj=1,3
+      do jj = 1, 3
         if (ii.eq.jj) then
           coefbt(ii,jj,ifac) = 1.d0
         else
@@ -333,46 +346,35 @@ if (ityturt.ne.3) then
 !===============================================================================
 else
 
-  allocate(xuta(3,ncelet))
-
-  do iel = 1, ncelet
-    xut(1,iel) = rtp(iel,iut)
-    xut(2,iel) = rtp(iel,ivt)
-    xut(3,iel) = rtp(iel,iwt)
-    xuta(1,iel)= rtpa(iel,iut)
-    xuta(2,iel)= rtpa(iel,ivt)
-    xuta(3,iel)= rtpa(iel,iwt)
-  enddo
+  call field_get_val_prev_v(f_id, xuta)
 
   call resrit &
   !==========
 ( nvar   , nscal  ,                                      &
   iscal  , xcpp   , xut    , xuta   ,                    &
   dt     , rtp    , rtpa   , propce , propfa , propfb ,  &
-  coefaut, coefbut, cofafut, cofbfut,                    &
   gradv  , gradt  )
-
-  do iel = 1, ncelet
-    rtp(iel,iut) = xut(1,iel)
-    rtp(iel,ivt) = xut(2,iel)
-    rtp(iel,iwt) = xut(3,iel)
-  enddo
 
   itypfl = 1
   iflmb0 = 1
   init   = 1
   inc    = 1
-  nswrgp = nswrgr(iut)
-  imligp = imligr(iut)
-  iwarnp = iwarni(iut)
-  epsrgp = epsrgr(iut)
-  climgp = climgr(iut)
-  extrap = extrag(iut)
+  nswrgp = nswrgr(ivar)
+  imligp = imligr(ivar)
+  iwarnp = iwarni(ivar)
+  epsrgp = epsrgr(ivar)
+  climgp = climgr(ivar)
+  extrap = extrag(ivar)
+
+  ! Boundary Conditions on T'u' for the divergence term of
+  ! the thermal transport equation
+  call field_get_coefad_v(f_id,cofarut)
+  call field_get_coefbd_v(f_id,cofbrut)
 
   call inimav &
   !==========
   ( nvar   , nscal  ,                                     &
-    iut    , itypfl ,                                     &
+    ivar   , itypfl ,                                     &
     iflmb0 , init   , inc    , imrgra , nswrgp  , imligp, &
     iwarnp , nfecra ,                                     &
     epsrgp , climgp , extrap ,                            &
@@ -381,7 +383,6 @@ else
     cofarut, cofbrut,                                     &
     thflxf , thflxb )
 
-  deallocate (xuta)
 endif
 
 !===============================================================================
@@ -403,7 +404,6 @@ do iel = 1, ncel
 enddo
 
 ! Free memory
-deallocate (xut)
 deallocate (gradv)
 deallocate(divut)
 deallocate(gradt)
@@ -416,7 +416,7 @@ deallocate(thflxb)
 
 #if defined(_CS_LANG_FR)
 
- 9999 format(                                                     &
+ 9999 format( &
 '@'                                                            ,/,&
 '@'                                                            ,/,&
 '@'                                                            ,/,&
@@ -439,7 +439,7 @@ deallocate(thflxb)
 
 #else
 
- 9999 format(                                                     &
+ 9999 format( &
 '@'                                                            ,/,&
 '@'                                                            ,/,&
 '@'                                                            ,/,&

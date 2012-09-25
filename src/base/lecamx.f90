@@ -152,7 +152,7 @@ integer          impamx
 integer          nfmtsc, nfmtfl, nfmtmo, nfmtch, nfmtcl
 integer          nfmtst
 integer          numflu(nvarmx)
-integer          jturb , jtytur, jale, jturbt, jtyturt
+integer          jturb , jtytur, jale, jturbt, jtyturt(nscamx)
 integer          ngbstr(2)
 double precision d2s3  , tsrii , cdtcm
 double precision tmpstr(27)
@@ -517,10 +517,10 @@ if(nscal.gt.0) then
 
       inierr = 0
 
-!         Diffusivite - cellules
-      if(isco.le.nfmtsc) then
-        WRITE(CAR4,'(I4.4)')ISCO
-        RUBRIQ = 'visls_ce_scalaire'//CAR4
+      ! Cell diffusivity
+      if (isco.le.nfmtsc) then
+        write(car4,'(i4.4)')isco
+        rubriq = 'visls_ce_scalaire'//car4
         itysup = 1
         nbval  = 1
         irtyp  = 2
@@ -538,18 +538,17 @@ if(nscal.gt.0) then
         initvs(iscal) = 1
       endif
     endif
-    if (iscal.eq.iscalt) then
-      rubriq = 'modele_flux_turbulent_phase'//cphase
-      itysup = 0
-      nbval  = 1
-      irtyp  = 1
-      call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-                  jturbt,ierror)
-      ! If the old calculation has no turbulent flux model, set it to 0
-      if (ierror.ne.0) jturbt = 0
-      if (iturbt.ne.jturbt) write(nfecra,8221) iturbt, jturbt
-      jtyturt=jturbt/10
-    endif
+
+    rubriq = 'flux_turbulent_ce'//car4
+    itysup = 0
+    nbval  = 1
+    irtyp  = 1
+    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,       &
+                jturbt,ierror)
+    ! If the old calculation has no turbulent flux model, set it to 0
+    if (ierror.ne.0) jturbt = 0
+    if (iturt(iscal).ne.jturbt) write(nfecra,8221) iturt(iscal), jturbt
+    jtyturt(iscal) = jturbt/10
   enddo
 
 !     Pour les variances, il suffit de dire qu'on a initialise ou non
@@ -773,23 +772,18 @@ if (nfaiok.eq.1 .or. nfabok.eq.1) then
     do iscal = 1, nscal
       if(iscold(iscal).gt.0) then
         if(iscold(iscal).le.nfmtsc) then
-          WRITE(CAR4,'(I4.4)')ISCOLD(ISCAL)
+          write(car4,'(i4.4)')iscold(iscal)
         else
           car4 = cindfs
         endif
-        NOMFLU(ISCA(ISCAL))='fm_scalaire'//CAR4
-      endif
-      if ((iscal.eq.iscalt).and.(ityturt.eq.3).and.(jtyturt.eq.3)) then
-        nomflu(iut)='fm_ut_phase'//cphase
-        nomflu(ivt)='fm_vt_phase'//cphase
-        nomflu(iwt)='fm_wt_phase'//cphase
+        nomflu(isca(iscal))='fm_scalaire'//car4
       endif
     enddo
   endif
   if (iale.eq.1) then
-    NOMFLU(IUMA)='fm_vit_maill_u'
-    NOMFLU(IVMA)='fm_vit_maill_v'
-    NOMFLU(IWMA)='fm_vit_maill_w'
+    nomflu(iuma)='fm_vit_maill_u'
+    nomflu(ivma)='fm_vit_maill_v'
+    nomflu(iwma)='fm_vit_maill_w'
   endif
 
 !     --Pour les variables
@@ -972,12 +966,7 @@ if (nfaiok.eq.1 .or. nfabok.eq.1) then
         else
           car4 = cindfs
         endif
-        NOMFLU(ISCA(ISCAL))='fm_a_scalaire'//CAR4
-      endif
-      if ((iscal.eq.iscalt).and.(ityturt.eq.3).and.(jtyturt.eq.3)) then
-        nomflu(iut)='fm_a_ut_phase'//cphase
-        nomflu(ivt)='fm_a_vt_phase'//cphase
-        nomflu(iwt)='fm_a_wt_phase'//cphase
+        nomflu(isca(iscal))='fm_a_scalaire'//car4
       endif
     enddo
   endif
@@ -1125,23 +1114,18 @@ if (nfabok.eq.1) then
     do iscal = 1, nscal
       if(iscold(iscal).gt.0) then
         if(iscold(iscal).le.nfmtsc) then
-          WRITE(CAR4,'(I4.4)')ISCOLD(ISCAL)
+          write(car4,'(i4.4)')iscold(iscal)
         else
           car4 = cindfs
         endif
-        NOMCLI(ISCA(ISCAL))='_scalaire'//CAR4
-      endif
-      if ((iscal.eq.iscalt).and.(ityturt.eq.3).and.(jtyturt.eq.3)) then
-        nomcli(iut)='_ut_phase'//cphase
-        nomcli(ivt)='_vt_phase'//cphase
-        nomcli(iwt)='_wt_phase'//cphase
+        nomcli(isca(iscal))='_scalaire'//car4
       endif
     enddo
   endif
   if (iale.eq.1) then
-    NOMCLI(IUMA)='_vit_maillage_u'
-    NOMCLI(IVMA)='_vit_maillage_v'
-    NOMCLI(IWMA)='_vit_maillage_w'
+    nomcli(iuma)='_vit_maillage_u'
+    nomcli(ivma)='_vit_maillage_v'
+    nomcli(iwma)='_vit_maillage_w'
   endif
 
 !     --Pour les variables
@@ -2915,13 +2899,13 @@ return
 '@                                                            ',/,&
 '@ @@ ATTENTION : LECTURE DU FICHIER SUITE AUXILIAIRE         ',/,&
 '@    =========                                               ',/,&
-'@      REPRISE  DE CALCUL           AVEC ITURBT = ',I4        ,/,&
-'@      A PARTIR D''UN CALCUL REALISE AVEC ITURBT = ',I4       ,/,&
+'@      REPRISE  DE CALCUL           AVEC ITURT = ',I4         ,/,&
+'@      A PARTIR D''UN CALCUL REALISE AVEC ITURT = ',I4        ,/,&
 '@                                                            ',/,&
 '@    Le modele de flux turbulent a ete modifie.              ',/,&
 '@                                                            ',/,&
 '@    Il est conseille cependant de                           ',/,&
-'@      verifier la valeur de ITURBT                          ',/,&
+'@      verifier la valeur de ITURT                           ',/,&
 '@                                                            ',/,&
 '@    Verifier que le fichier suite auxiliaire utilise        ',/,&
 '@      correspond bien au cas traite                         ',/,&
@@ -3165,27 +3149,27 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8221 format(                                                     &
-'@                                                            ',/,&
+ 8221 format( &
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING : WHEN READING THE AUXILIARY RESTART FILE       ',/,&
-'@    =========                                               ',/,&
-'@      THE RUN RESTARTED            WITH ITURBT = ',I4        ,/,&
-'@      FROM RUN CONDUCTED WITH           ITURBT = ',I4        ,/,&
-'@                                                            ',/,&
-'@    The turbulent flux model has changed.                   ',/,&
-'@                                                            ',/,&
-'@    It is advised however in this case to                   ',/,&
-'@      verify the value of ITURBT                            ',/,&
-'@                                                            ',/,&
-'@    Verify that the auxiliary restart file being used       ',/,&
-'@      corresponds  to the present case.                     ',/,&
-'@                                                            ',/,&
-'@    The run will continue...                                ',/,&
-'@                                                            ',/,&
+'@'                                                            ,/,&
+'@ @@ WARNING : WHEN READING THE AUXILIARY RESTART FILE'       ,/,&
+'@    ========='                                               ,/,&
+'@      THE RUN RESTARTED            WITH ITURT = ',I4         ,/,&
+'@      FROM RUN CONDUCTED WITH           ITURT = ',I4         ,/,&
+'@'                                                            ,/,&
+'@    The turbulent flux model has changed.'                   ,/,&
+'@'                                                            ,/,&
+'@    It is advised however in this case to'                   ,/,&
+'@      verify the value of ITURT'                             ,/,&
+'@'                                                            ,/,&
+'@    Verify that the auxiliary restart file being used'       ,/,&
+'@      corresponds  to the present case.'                     ,/,&
+'@'                                                            ,/,&
+'@    The run will continue...'                                ,/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@'                                                            ,/)
  8300 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&

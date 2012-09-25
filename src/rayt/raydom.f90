@@ -112,13 +112,13 @@ implicit none
 integer          nvar   , nscal
 
 integer          itypfb(ndimfb)
-integer          icodcl(ndimfb,nvar)
+integer          icodcl(ndimfb,nvarcl)
 integer          izfrad(ndimfb)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
-double precision rcodcl(ndimfb,nvar,3)
+double precision rcodcl(ndimfb,nvarcl,3)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 
 ! Local variables

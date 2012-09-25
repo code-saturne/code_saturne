@@ -93,8 +93,8 @@ implicit none
 
 integer          nfabor
 integer          nvar , nscal
-integer          isvtb  , icodcl(nfabor,nvar)
-double precision rcodcl(nfabor,nvar,3)
+integer          isvtb  , icodcl(nfabor,nvarcl)
+double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
 

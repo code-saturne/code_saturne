@@ -898,12 +898,15 @@ if (nscal.ge.1) then
     iok = iok + 1
   endif
 
-!    Turbulent flux model for scalar
-
-  if (iturbt.ne. 0.and.iturbt.ne.10                 .and. &
-      iturbt.ne.20                 .and.iturbt.ne.30      &
+  ! Turbulent flux model for scalar
+  if (iturt(iscal).ne. 0.and.iturt(iscal).ne.10 .and. &
+      iturt(iscal).ne.20.and.iturt(iscal).ne.30       &
                    ) then
-    write(nfecra,2604) 'iturbt  ',iturbt
+    write(nfecra,2604) 'iturt  ',iturt(iscal)
+    write(nfecra,2610)                         &
+         'Index of the scalar: ', iscal,       &
+         'Number of scalars: ', nscal
+
     iok = iok + 1
   endif
 
