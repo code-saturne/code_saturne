@@ -326,7 +326,6 @@ class domain(base_domain):
                  logging_args = None,         # command-line options for logging
                  param = None,                # XML parameters file
                  prefix = None,               # installation prefix
-                 lib_add = None,              # linker command-line options
                  adaptation = None):          # HOMARD adaptation script
 
         base_domain.__init__(self, package,
@@ -370,7 +369,11 @@ class domain(base_domain):
         # Additional data
 
         self.prefix = prefix
-        self.lib_add = lib_add
+
+        self.compile_cflags = None
+        self.compile_cxxflags = None
+        self.compile_fcflags = None
+        self.compile_libs = None
 
         # Adaptation using HOMARD
 
@@ -555,7 +558,10 @@ class domain(base_domain):
             retval = cs_compile.compile_and_link(self.package_compute,
                                                  exec_src,
                                                  self.exec_dir,
-                                                 self.lib_add,
+                                                 self.compile_cflags,
+                                                 self.compile_cxxflags,
+                                                 self.compile_fcflags,
+                                                 self.compile_libs,
                                                  keep_going=True,
                                                  stdout=log,
                                                  stderr=log)

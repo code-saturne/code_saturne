@@ -196,6 +196,23 @@ def define_domain_parameters(domain):
         domain.exec_solver = True
         domain.solver_args = None
 
+    # Compile and build options
+    #--------------------------
+
+    # Additionnal compiler flags may be passed to the C, C++, or Fortran
+    # compilers, and libraries may be added, in case linking of user
+    # subroutines against external libraries is needed.
+
+    # Note that compiler flags will be added before the default flags;
+    # this helps ensure added search paths have priority, but also implies
+    # that user optimization options may be superceded by the default ones.
+
+    if domain.param == None:
+        domain.compile_cflags = None
+        domain.compile_cxxflags = None
+        domain.compile_fcflags = None
+        domain.compile_libs = None
+
     # Debugging options
     #------------------
 

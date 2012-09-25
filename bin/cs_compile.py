@@ -71,9 +71,21 @@ def process_cmd_line(argv, pkg):
                       metavar="<version>",
                       help="select installed version")
 
-    parser.add_option("--opt-libs", dest="opt_libs", type="string",
+    parser.add_option("--cflags", dest="cflags", type="string",
+                      metavar="<cflags>",
+                      help="additional C compiler and preprocessor flags")
+
+    parser.add_option("--cxxflags", dest="cxxflags", type="string",
+                      metavar="<cxxflags>",
+                      help="additional C++ compiler and preprocessor flags")
+
+    parser.add_option("--fcflags", dest="fcflags", type="string",
+                      metavar="<fcflags>",
+                      help="additional Fortran compiler flags")
+
+    parser.add_option("--libs", dest="libs", type="string",
                       metavar="<libs>",
-                      help="optional libraries")
+                      help="additional libraries")
 
     parser.set_defaults(test_mode=False)
     parser.set_defaults(force_link=False)
@@ -81,7 +93,10 @@ def process_cmd_line(argv, pkg):
     parser.set_defaults(src_dir=os.getcwd())
     parser.set_defaults(dest_dir=os.getcwd())
     parser.set_defaults(version="")
-    parser.set_defaults(opt_libs="")
+    parser.set_defaults(cflags=None)
+    parser.set_defaults(cxxflags=None)
+    parser.set_defaults(fccflags=None)
+    parser.set_defaults(libs=None)
     parser.set_defaults(log_name=None)
 
     (options, args) = parser.parse_args(argv)
@@ -105,7 +120,8 @@ def process_cmd_line(argv, pkg):
         sys.exit(1)
 
     return options.test_mode, options.force_link, options.keep_going, \
-           src_dir, dest_dir, options.version, options.opt_libs
+           src_dir, dest_dir, options.version, options.cflags, \
+           options.cxxflags, options.fcflags, options.libs
 
 #-------------------------------------------------------------------------------
 
@@ -135,8 +151,9 @@ def so_dirs_path(flags, pkg):
 
 #-------------------------------------------------------------------------------
 
-def compile_and_link(pkg, srcdir, destdir, optlibs,
-                     force_link = False, keep_going = False,
+def compile_and_link(pkg, srcdir, destdir,
+                     opt_cflags=None, opt_cxxflags=None, opt_fcflags=None,
+                     opt_libs=None, force_link=False, keep_going=False,
                      stdout = sys.stdout, stderr = sys.stderr):
     """
     Compilation and link function.
@@ -189,6 +206,8 @@ def compile_and_link(pkg, srcdir, destdir, optlibs,
         if (retval != 0 and not keep_going):
             break
         cmd = pkg.cc
+        if opt_cflags != None:
+            cmd = cmd + " " + opt_cflags
         if len(h_files) > 0:
             cmd = cmd + " -I" + srcdir
         cmd = cmd + " -I" + pkg.get_dir('pkgincludedir')
@@ -205,6 +224,8 @@ def compile_and_link(pkg, srcdir, destdir, optlibs,
         if (retval != 0 and not keep_going):
             break
         cmd = pkg.cxx
+        if opt_cxxflags != None:
+            cmd = cmd + " " + opt_cxxflags
         if len(hxx_files) > 0:
             cmd = cmd + " -I" + srcdir
         cmd = cmd + " -I" + pkg.get_dir('pkgincludedir')
@@ -223,6 +244,8 @@ def compile_and_link(pkg, srcdir, destdir, optlibs,
         if (retval != 0 and not keep_going):
             break
         cmd = pkg.fc
+        if opt_fcflags != None:
+            cmd = cmd + " " + opt_fcflags
         cmd = cmd + " -I" + srcdir
         if pkg.fcmodinclude != "-I":
             cmd += " " + pkg.fcmodinclude + srcdir
@@ -240,9 +263,9 @@ def compile_and_link(pkg, srcdir, destdir, optlibs,
         if (len(c_files) + len(cxx_files) + len(f_files)) > 0:
           cmd = cmd + " *.o"
         cmd = cmd + " -L" + pkg.get_dir('libdir')
-        if optlibs != None:
-            if len(optlibs) > 0:
-                cmd = cmd + " " + optlibs
+        if opt_libs != None:
+            if len(opt_libs) > 0:
+                cmd = cmd + " " + opt_libs
         cmd = cmd + " " + pkg.ldflags + " " + p_libs
         cmd = cmd + " " + pkg.deplibs
         if pkg.rpath != "":
@@ -272,7 +295,7 @@ def main(argv, pkg):
     """
 
     test_mode, force_link, keep_going, src_dir, dest_dir, \
-        version, opt_libs = process_cmd_line(argv, pkg)
+        version, cflags, cxxflags, fcflags, libs = process_cmd_line(argv, pkg)
 
     if (version):
         pkg = pkg.get_alternate_version(version)
@@ -282,8 +305,8 @@ def main(argv, pkg):
     if test_mode == True:
         dest_dir = None
 
-    retcode = compile_and_link(pkg, src_dir, dest_dir, opt_libs,
-                               force_link, keep_going)
+    retcode = compile_and_link(pkg, src_dir, dest_dir, cflags, cxxflags,
+                               fcflags, libs, force_link, keep_going)
 
     sys.exit(retcode)
 
