@@ -30,7 +30,7 @@ import tempfile
 
 from optparse import OptionParser
 
-from cs_exec_environment import run_command, set_modules
+from cs_exec_environment import run_command
 
 #-------------------------------------------------------------------------------
 
@@ -294,13 +294,16 @@ def main(argv, pkg):
     Main function.
     """
 
+    from cs_exec_environment import set_modules, source_rcfile
+
     test_mode, force_link, keep_going, src_dir, dest_dir, \
         version, cflags, cxxflags, fcflags, libs = process_cmd_line(argv, pkg)
 
     if (version):
         pkg = pkg.get_alternate_version(version)
 
-    set_modules(pkg) # Set environment modules if present
+    set_modules(pkg)    # Set environment modules if present
+    source_rcfile(pkg)  # Source rcfile if defined
 
     if test_mode == True:
         dest_dir = None

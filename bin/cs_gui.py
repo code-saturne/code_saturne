@@ -118,8 +118,9 @@ def main(argv, pkg):
     Start Qt and a session of the application.
     """
 
-    from cs_exec_environment import set_modules
+    from cs_exec_environment import set_modules, source_rcfile
     set_modules(pkg)
+    source_rcfile(pkg)
 
     # Test the package name to know which modules have to be imported
     if pkg.name == 'code_saturne':

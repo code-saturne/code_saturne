@@ -22,6 +22,10 @@
 ###
 ### Set the location to the Code_Aster installation directory.
 # aster =
+###
+### Optional path to sourcable shell environment initialization file
+### (similar to .profile or .bashrc, specific to Code_Saturne).
+# rcfile =
 
 ### End of section.
 

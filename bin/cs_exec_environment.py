@@ -280,6 +280,34 @@ def source_shell_script(path):
 
 #-------------------------------------------------------------------------------
 
+def source_rcfile(pkg):
+    """
+    Source user environement if defined by rcfile in preferences file.
+    """
+
+    # Protect against multiple inclusions
+
+    rcfile_sourced = False
+
+    if hasattr(pkg, rcfile
+        os.environ[key] = value
+    try:
+        import ConfigParser  # Python2
+        configparser = ConfigParser
+    except Exception:
+        import configparser  # Python3
+
+    config = configparser.ConfigParser()
+    config.read([pkg.get_configfile(),
+                 os.path.expanduser('~/.' + pkg.configfile)])
+
+    if config.has_option('install', 'rcfile'):
+        rcfile = config.get('install', 'rcfile')
+        if (os.
+        source_shell_script()
+
+#-------------------------------------------------------------------------------
+
 class batch_info:
 
     #---------------------------------------------------------------------------

@@ -93,6 +93,7 @@ class case:
         # Set environment modules if present
 
         cs_exec_environment.set_modules(self.package_compute)
+        cs_exec_environment.source_rcfile(self.package_compute)
 
         # Ensure we have tuples or lists to simplify later tests
 
