@@ -152,7 +152,7 @@ class InfoDialogHandler(InfoDialog):
             raise DialogError, "Invalid CFD_Code in InfoDialog class"
         pkg = package()
         self.labelVersionValue.setText(pkg.version)
-        self.labelPrefixValue.setText(pkg.prefix)
+        self.labelPrefixValue.setText(pkg.dirs['prefix'][1])
         _SetCFDCode(code)
 
 
@@ -167,7 +167,7 @@ class InfoDialogHandler(InfoDialog):
                 from nc_package import package
             pkg = package()
             self.labelVersionValue.setText(pkg.version)
-            self.labelPrefixValue.setText(pkg.prefix)
+            self.labelPrefixValue.setText(pkg.dirs['prefix'][1])
 
 
 #-----------------------------------------------------------------------------------------------------------

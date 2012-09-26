@@ -173,6 +173,7 @@ def createPreferences():
     editor      = sgPyQt.addPreference("External Editor",editorGroup,SalomePyQt.PT_String, "CFDSTUDY","ExternalEditor")
     Reader      = sgPyQt.addPreference("External Reader",editorGroup,SalomePyQt.PT_String, "CFDSTUDY","ExternalReader")
 
+
 def preferenceChanged( section, setting ):
     log.debug("preferenceChanged(): %s / %s" % ( section, setting ))
     pass
@@ -247,11 +248,12 @@ def activate():
     # Hide the Python Console window layout
     for dock in sgPyQt.getDesktop().findChildren(QDockWidget):
         dockTitle = dock.windowTitle()
-        log.debug("activate -> QDockWidget: %s" % str(dockTitle))
-        if str(dockTitle) in ("Python Console", "Message Window"):
+        log.debug("activate -> QDockWidget: %s" % dockTitle)
+        if dockTitle in (u"Python Console", u"Console Python",  u"Message Window"):
             dock.setVisible(False)
 
     return True
+
 
 def setSettings():
     """
@@ -264,6 +266,7 @@ def setSettings():
     ActionHandler = _DesktopMgr.getActionHandler(dsk)
     ActionHandler.onCFDCode()
     ActionHandler.updateActions()
+
 
 def deactivate():
     """
