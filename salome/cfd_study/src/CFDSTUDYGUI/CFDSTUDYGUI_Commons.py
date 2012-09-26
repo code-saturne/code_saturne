@@ -83,8 +83,8 @@ UpdateScriptFolder  = -1002
 
 logging.basicConfig()
 log = logging.getLogger("CFDSTUDYGUI_Commons")
-#log.setLevel(logging.DEBUG)
-log.setLevel(logging.NOTSET)
+log.setLevel(logging.DEBUG)
+#log.setLevel(logging.NOTSET)
 
 #-------------------------------------------------------------------------------
 # Functions definitions
@@ -130,7 +130,7 @@ def CheckCFD_CodeEnv(code):
     prefix = ""
     bindir = ""
 
-    if code not in [CFD_Saturne,CFD_Neptune]:
+    if code not in [CFD_Saturne, CFD_Neptune]:
         mess = ObjectTR.tr("CFDSTUDY_INVALID_SOLVER_NAME").arg(code).arg(CFD_Saturne).arg(CFD_Neptune)
         iok= False
 
@@ -186,7 +186,7 @@ def CheckCFD_CodeEnv(code):
 
     log.debug("CheckCFD_CodeEnv -> %s = %s" % (code, iok))
     log.debug("CheckCFD_CodeEnv -> %s: %s" % (code, mess))
-    return iok,mess
+    return iok, mess
 
 
 def BinCode():
@@ -208,32 +208,7 @@ def BinCode():
 
     c = pkg.get_preprocessor()
     log.debug("BinCode -> \n    %s\n    %s" % (b, c))
-    return b,c,mess
-
-
-#def runCommand(cmd, start_directory, prefix, * args):
-#    """
-#    Run command cmd and asynchronize put it to LogWindow
-#    Each string logged with prefix
-#    """
-#    import subprocess
-#    import os
-#
-#    if start_directory != None and start_directory != "":
-#        os.chdir(start_directory)
-#
-#    try:
-#        pipe = subprocess.Popen(cmd, bufsize = 0, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-#
-#        while True:
-#            text = pipe.stdout.readline()
-#            if not text:
-#                break
-#
-#            sgPyQt.message( prefix + text, False )
-#
-#    except OSError, e:
-#        sgPyQt.message( prefix + "Exception had occured during script execution " + e.__str__(), True )
+    return b, c, mess
 
 #-------------------------------------------------------------------------------
 # Classes definitions

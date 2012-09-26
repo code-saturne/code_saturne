@@ -58,6 +58,7 @@ _d_DockWindowsRuncase = {}
 #-------------------------------------------------------------------------------
 # Class definitions
 #-------------------------------------------------------------------------------
+
 class Mapper :
     def __init__(self, d1, d2 = {} ):
         self.d1 = d1
@@ -68,6 +69,7 @@ class Mapper :
         except SyntaxError, m :
             print "Syntax Error '%s' in the mapper" % expr
         raise
+
 #-------------------------------------------------------------------------------
 
 class CFDGUI_Management:
@@ -81,8 +83,6 @@ Case CFD Name                : %(aCaseCFDName)s
 XML CFD File Name            : %(axmlCFDFileName)s
 Run text edit window         : %(adockWRuncaseName)s
 """
-
-#################################################################################
     def __init__(self):
       """
       """
@@ -117,9 +117,8 @@ Run text edit window         : %(adockWRuncaseName)s
       self.d_CfdCases = {}
       self.studyId                         = None
 
-#################################################################################
 
-    def format(self,studyId):
+    def format(self, studyId):
       StudyID                              = studyId
       dockName                             = self.dockName
       dockWBName                           = self.dockWBName
@@ -130,7 +129,6 @@ Run text edit window         : %(adockWRuncaseName)s
       adockWRuncaseName                    = self.aDockWRuncaseName
       return self.model_windowCFD % Mapper(locals())
 
-#################################################################################
 
     def set_d_CfdCases(self,studyId,dock,dockWB,mwCFD,aStudyCFD,aCaseCFD,axmlCFDFile,sobjXml,adockWRuncase) :
       if studyId not in self.d_CfdCases.keys() :
@@ -146,7 +144,6 @@ Run text edit window         : %(adockWRuncaseName)s
       self.sobjXml                         = sobjXml
       self.aDockWRuncase                   = adockWRuncase
 
-#################################################################################
 
     def getdockWB(self,studyId,dock):
       dockWB = None
@@ -157,7 +154,6 @@ Run text edit window         : %(adockWRuncaseName)s
           dockWB = self.d_CfdCases[studyId][ind][self.dockWBPosInListe]
       return dockWB
 
-#################################################################################
 
     def getdock(self,studyId,dockWB):
       dock = None
@@ -168,7 +164,7 @@ Run text edit window         : %(adockWRuncaseName)s
           dock = self.d_CfdCases[studyId][ind][self.dockPosInListe]
       return dock
 
-#################################################################################
+
 
     def checkDockWindowsLists(self,studyId):
       """
@@ -178,13 +174,11 @@ Run text edit window         : %(adockWRuncaseName)s
       else:
           return False
 
-#################################################################################
 
     def printDockListe(self,dockListe) :
       for dock in dockListe :
         print "dockListe = ",dock.windowTitle()
 
-#################################################################################
 
     def getDockListes(self,studyId) :
       """
@@ -197,11 +191,8 @@ Run text edit window         : %(adockWRuncaseName)s
           dockListeWB.append(liste[self.dockWBPosInListe])
       return dockListe,dockListeWB
 
-#################################################################################
 
     def print_d_CfdCases(self) :
-
-      print "self.d_CfdCases = ",self.d_CfdCases
       for studySalome in self.d_CfdCases.keys() :
         for l_winValue in self.d_CfdCases[studySalome] :
           if l_winValue[self.dockPosInListe] != None :
@@ -218,11 +209,7 @@ Run text edit window         : %(adockWRuncaseName)s
             self.aXmlCFDFileName    = l_winValue[self.xmlCFDFileNamePosInListe]
           if l_winValue[self.dockWRuncasePosInListe] != None :
             self.aDockWRuncaseName  = l_winValue[self.dockWRuncasePosInListe].windowTitle()
-          print self.format(studySalome)
-          print "  "
 
-
-#################################################################################
 
     def getElem(self,studyId,elempos) :
       """
@@ -235,7 +222,6 @@ Run text edit window         : %(adockWRuncaseName)s
             d[liste[elempos]] = self.d_CfdCases[studyId].index(liste)
       return d
 
-#################################################################################
 
     def getDocks(self,studyId) :
       """
@@ -244,7 +230,6 @@ Run text edit window         : %(adockWRuncaseName)s
       d = self.getElem(studyId,self.dockPosInListe)
       return d
 
-#################################################################################
 
     def getDocksWB(self,studyId) :
       """
@@ -252,7 +237,6 @@ Run text edit window         : %(adockWRuncaseName)s
       d = self.getElem(studyId,self.dockWBPosInListe)
       return d
 
-#################################################################################
 
     def getDockWithCFDNames(self,studyId,studyCFDName, caseName, xmlName) :
       l = []
@@ -261,7 +245,6 @@ Run text edit window         : %(adockWRuncaseName)s
           l = liste
       return l
 
-#################################################################################
 
     def getListElem(self,studyId,elempos) :
       """
@@ -274,7 +257,6 @@ Run text edit window         : %(adockWRuncaseName)s
             l.append(liste[elempos])
       return l
 
-#################################################################################
 
     def getListSobj(self,studyId) :
       """
@@ -283,7 +265,6 @@ Run text edit window         : %(adockWRuncaseName)s
       liste = self.getListElem(studyId,self.sobjXmlPosInListe)
       return liste
 
-#################################################################################
 
     def getStudyCaseXmlNames(self,studyId,mw) :
       if self.d_CfdCases.keys() != [] :
@@ -293,7 +274,6 @@ Run text edit window         : %(adockWRuncaseName)s
               return l[self.studyCFDPosInListe].GetName(),l[self.caseCFDPosInListe].GetName(),l[self.xmlCFDFileNamePosInListe]
       return None,None,None
 
-#################################################################################
 
     def getCase(self,studyId,mw) :
       if self.d_CfdCases.keys() != [] :
@@ -303,7 +283,6 @@ Run text edit window         : %(adockWRuncaseName)s
               return l[self.caseCFDPosInListe]
       return None
 
-#################################################################################
 
     def hideDocks(self,studyId) :
       if not self.checkDockWindowsLists(studyId) : return
@@ -313,7 +292,6 @@ Run text edit window         : %(adockWRuncaseName)s
             liste[pos].hide()
             liste[pos].toggleViewAction().setVisible(False)
 
-#################################################################################
 
     def showDocks(self,studyId) :
       if not self.checkDockWindowsLists(studyId) : return
@@ -325,10 +303,8 @@ Run text edit window         : %(adockWRuncaseName)s
             liste[pos].setVisible(True)
             liste[pos].toggleViewAction().setVisible(True)
 
-#################################################################################
 
     def findElem(self,xmlName, caseName, studyCFDName):
-
       boo = False
       if self.d_CfdCases.keys() != [] :
         for studyId in self.d_CfdCases.keys() :
@@ -344,10 +320,8 @@ Run text edit window         : %(adockWRuncaseName)s
                     boo = True
       return boo
 
-#################################################################################
 
     def showDockWindows(self,studyId,xmlName, caseName, studyCFDName) :
-
       for l in self.d_CfdCases[studyId] :
         if l[self.xmlCFDFileNamePosInListe] == xmlName :
           if l[self.caseCFDPosInListe].GetName() == caseName :
@@ -359,7 +333,6 @@ Run text edit window         : %(adockWRuncaseName)s
                 l[pos].toggleViewAction().setVisible(True)
           return
 
-#################################################################################
 
     def getDockId(self,studyId,dock) :
       """
@@ -372,7 +345,6 @@ Run text edit window         : %(adockWRuncaseName)s
       else :
         return None
 
-#################################################################################
 
     def getMW(self,studyId,dock) :
       """
@@ -385,7 +357,6 @@ Run text edit window         : %(adockWRuncaseName)s
       else :
         return None
 
-#################################################################################
 
     def getSobjXml(self,studyId,dock) :
       """
@@ -398,7 +369,6 @@ Run text edit window         : %(adockWRuncaseName)s
       else :
         return None
 
-#################################################################################
 
     def getCaseCFD(self,studyId,dock) :
         """
@@ -411,10 +381,8 @@ Run text edit window         : %(adockWRuncaseName)s
         else :
             return None
 
-#################################################################################
 
     def delDock(self,dsk,studyId,studyCFDName, caseName, xmlName) :
-
       liste = self.getDockWithCFDNames(studyId,studyCFDName, caseName, xmlName)
       if liste == [] : return
       dockcfd,docwb = liste[self.dockPosInListe],liste[self.dockWBPosInListe]
@@ -426,14 +394,12 @@ Run text edit window         : %(adockWRuncaseName)s
       # remove the liste which contains the removed docks in the dictionary
       self.d_CfdCases[studyId].remove(liste)
 
-#################################################################################
 
     def tabifyDockWindows(self,dsk,studyId):
       """
       tabify all opened CFD windows and window CFD Browser
       force le regroupement en onglets des fenetres d'etudes CFD
       """
-
       docListe,docListeWB = self.getDockListes(studyId)
 
       if _d_DockWindowsRuncase.has_key(studyId) :
@@ -445,6 +411,3 @@ Run text edit window         : %(adockWRuncaseName)s
       if len(docListeWB) > 1:
         for i in range(1,len(docListeWB)):
           dsk.tabifyDockWidget(docListeWB[0], docListeWB[i])
-
-#################################################################################
-

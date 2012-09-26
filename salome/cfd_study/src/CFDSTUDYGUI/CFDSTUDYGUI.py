@@ -129,7 +129,7 @@ def views():
     This method is called when GUI module is being created and initialized.
     Should return a list of the SALOME view window types
     needed to be opened when module is activated.
-    cf. SALOME_PYQT_Module.cxx : PyObjWrapper
+    cf. SALOME_PYQT_Module.cxx: PyObjWrapper
 
     @return: list of the SALOME view window types
     @rtype: C{String} or C{list} of C{String}
@@ -206,31 +206,30 @@ def activate():
         log.debug("activate -> env_neptune = %s" % env_neptune)
 
         if not env_saturne and not env_neptune:
-
             QMessageBox.critical(ActionHandler.dskAgent().workspace(),
                                  "Error", mess1, QMessageBox.Ok, 0)
             QMessageBox.critical(ActionHandler.dskAgent().workspace(),
                                  "Error", mess2, QMessageBox.Ok, 0)
             d_activation[studyId] = 1
             return False
-        elif env_saturne:
-            if mess1 != "" :
-                Error = "Error : "+ ObjectTR.tr("CFDSTUDY_INVALID_ENV")
-                QMessageBox.critical(ActionHandler.dskAgent().workspace(),
-                                 Error, mess1, QMessageBox.Ok, 0)
-                d_activation[studyId] = 1
-                return False
-            else :
-                ActionHandler.DialogCollector.InfoDialog.setCode(CFD_Saturne, True)
         elif env_neptune:
-            if mess2 != "" :
-                Error = "Error : "+ ObjectTR.tr("CFDSTUDY_INVALID_ENV")
+            if mess2 != "":
+                Error = "Error: "+ ObjectTR.tr("CFDSTUDY_INVALID_ENV")
                 QMessageBox.critical(ActionHandler.dskAgent().workspace(),
                                  Error, mess2, QMessageBox.Ok, 0)
                 d_activation[studyId] = 1
                 return False
-            else :
+            else:
                 ActionHandler.DialogCollector.InfoDialog.setCode(CFD_Neptune, True)
+        elif env_saturne:
+            if mess1 != "":
+                Error = "Error: "+ ObjectTR.tr("CFDSTUDY_INVALID_ENV")
+                QMessageBox.critical(ActionHandler.dskAgent().workspace(),
+                                 Error, mess1, QMessageBox.Ok, 0)
+                d_activation[studyId] = 1
+                return False
+            else:
+                ActionHandler.DialogCollector.InfoDialog.setCode(CFD_Saturne, True)
 
         ActionHandler.DialogCollector.InfoDialog.exec_()
 
@@ -264,7 +263,6 @@ def setSettings():
 
     dsk = sgPyQt.getDesktop()
     ActionHandler = _DesktopMgr.getActionHandler(dsk)
-    ActionHandler.onCFDCode()
     ActionHandler.updateActions()
 
 
@@ -307,19 +305,19 @@ def createPopupMenu(popup, context):
                     test, anAttr = sobj.FindAttribute("AttributeLocalID")
                     if test:
                         id = anAttr._narrow(SALOMEDS.AttributeLocalID).Value()
-                        if id >= 0 :
+                        if id >= 0:
 
                             if sobj.GetFatherComponent().GetName() == "Mesh":
-                                if CFDSTUDYGUI_DataModel.getMeshFromMesh(sobj) == None :
+                                if CFDSTUDYGUI_DataModel.getMeshFromMesh(sobj) == None:
                                     meshGroupObject,group = CFDSTUDYGUI_DataModel.getMeshFromGroup(sobj)
-                                    if meshGroupObject != None :
+                                    if meshGroupObject != None:
                                         ActionHandler.customPopup(id, popup)
-                                        if sg.SelectedCount() > 1 :
+                                        if sg.SelectedCount() > 1:
                                             popup.removeAction(ActionHandler.commonAction(CFDSTUDYGUI_ActionsHandler.DisplayOnlyGroupMESHAction))
-                                else :
+                                else:
                                     ActionHandler.customPopup(id, popup)
                                     popup.removeAction(ActionHandler.commonAction(CFDSTUDYGUI_ActionsHandler.DisplayOnlyGroupMESHAction))
 
-                            else :
+                            else:
                                 if not CFDSTUDYGUI_DataModel.isLinkPathObject(sobj):
                                     ActionHandler.customPopup(id, popup)

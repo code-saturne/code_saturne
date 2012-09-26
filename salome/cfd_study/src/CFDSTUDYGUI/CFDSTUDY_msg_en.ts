@@ -286,30 +286,6 @@
             <translation>Display current Case</translation>
         </message>
         <message>
-            <source>SATURNE_RELOADMODULES_ACTION_TEXT</source>
-            <translation>Reload all modules</translation>
-        </message>
-        <message>
-            <source>SATURNE_RELOADMODULES_ACTION_TIP</source>
-            <translation>Reload all modules</translation>
-        </message>
-        <message>
-            <source>SATURNE_RELOADMODULES_ACTION_SB</source>
-            <translation>Reload all modules</translation>
-        </message>
-        <message>
-            <source>SATURNE_RELOADPAGE_ACTION_TEXT</source>
-            <translation>Reload current page</translation>
-        </message>
-        <message>
-            <source>SATURNE_RELOADPAGE_ACTION_TIP</source>
-            <translation>Reload current page</translation>
-        </message>
-        <message>
-            <source>SATURNE_RELOADPAGE_ACTION_SB</source>
-            <translation>Reload current page</translation>
-        </message>
-        <message>
             <source>SATURNE_HELP_MENU_TEXT</source>
             <translation>Code_Saturne</translation>
         </message>

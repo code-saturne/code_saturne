@@ -70,32 +70,34 @@ log.setLevel(logging.DEBUG)
 # Global definitions
 #-------------------------------------------------------------------------------
 
-mw=None
+mw = None
 
-def getObjectBrowserDock() :
-  dock = None
-  dsk = sgPyQt.getDesktop()
-  studyId = sgPyQt.getStudyId()
-  for dock in dsk.findChildren(QDockWidget):
-    dockTitle = str(dock.windowTitle())
-    if (dockTitle == 'Object Browser') :
-      return dock
+def getObjectBrowserDock():
+    dock = None
+    dsk = sgPyQt.getDesktop()
+    studyId = sgPyQt.getStudyId()
+    for dock in dsk.findChildren(QDockWidget):
+        dockTitle = str(dock.windowTitle())
+        if (dockTitle == 'Object Browser'):
+            return dock
+
 #-------------------------------------------------------------------------------
 # Function definitions
 #-------------------------------------------------------------------------------
+
 _c_CFDGUI = CFDGUI_Management()
 
 
 def tabObjectBrowser():
     """
-    tabify DockWidgets which contains QTreeView :
+    tabify DockWidgets which contains QTreeView:
     Object Browser and CFDSTUDY tree
     """
     dsk = sgPyQt.getDesktop()
-    ldock=dsk.findChildren(QDockWidget)
-    ldocktree=[]
+    ldock = dsk.findChildren(QDockWidget)
+    ldocktree = []
     for i in ldock:
-        lo=i.findChildren(QTreeView)
+        lo = i.findChildren(QTreeView)
         if len(lo):
             ldocktree.append(i)
     for i in range(1, len(ldocktree)):
@@ -110,13 +112,14 @@ def updateObjectBrowser():
     sgPyQt.updateObjBrowser(studyId, 1)
     tabObjectBrowser()
 
+
 def findDockWindow( xmlName, caseName, studyCFDName):
     """
     Find if the dockwindow corresponding to this xmlcase is already opened
     """
     bool_findDockWindow = False
 
-    if _c_CFDGUI != None :
+    if _c_CFDGUI != None:
         bool_findDockWindow = _c_CFDGUI.findElem(xmlName, caseName, studyCFDName)
 
     return bool_findDockWindow
@@ -142,10 +145,10 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         """
         log.debug("CFDSTUDY_SolverGUI.ExecGUI: ")
         mw = None
-        if sobjXML != None :
+        if sobjXML != None:
             #searching
             aTitle = sobjXML.GetName()
-            if aCase != None :
+            if aCase != None:
                 if findDockWindow(aTitle,aCase.GetName(),aCase.GetFather().GetName()):
                     fileN = str(aCase.GetFather().GetName() + "." + aCase.GetName()) + '.' + str(aTitle)
                     mess = "Case file " + fileN + " is already opened"
@@ -153,29 +156,24 @@ class CFDSTUDYGUI_SolverGUI(QObject):
                     return
         else:
             aTitle = "unnamed"
-            if aCase != None :
+            if aCase != None:
                 if findDockWindow(aTitle,aCase.GetName(),aCase.GetFather().GetName()):
                     mess = "A case not finished to be set is already opened"
                     QMessageBox.warning(None, "Warning: ",mess)
                     return
 
         if aCase != None:
-            if CFD_Code() == CFD_Saturne:
-                # object of DATA folder
-                aChildList = CFDSTUDYGUI_DataModel.ScanChildren(aCase, "^DATA$")
-                if not len(aChildList)== 1:
-                    # no DATA folder
-                    log.debug("CFDSTUDYGUI_SolverGUI.ExecGUI:There are not data folder in selected by user case")
-                    return None
-                aStartPath = CFDSTUDYGUI_DataModel._GetPath(aChildList[0])
-            elif CFD_Code() == CFD_Neptune:
-                aStartPath = CFDSTUDYGUI_DataModel._GetPath(aCase)
+            # object of DATA folder
+            aChildList = CFDSTUDYGUI_DataModel.ScanChildren(aCase, "^DATA$")
+            if not len(aChildList)== 1:
+                # no DATA folder
+                log.debug("CFDSTUDYGUI_SolverGUI.ExecGUI:There are not data folder in selected by user case")
+                return None
+            aStartPath = CFDSTUDYGUI_DataModel._GetPath(aChildList[0])
             if aStartPath != None and aStartPath != '':
                 os.chdir(aStartPath)
-        if CFD_Code() == CFD_Saturne:
-            mw = self._ExecICS(WorkSpace, aCase, sobjXML, Args)
-        elif CFD_Code() == CFD_Neptune:
-            mw = self._ExecIPB(WorkSpace, aTitle, Args)
+
+        mw = self.lauchGUI(WorkSpace, aCase, sobjXML, Args)
         if mw != None:
             self._CurrentWindow = mw
 
@@ -189,30 +187,31 @@ class CFDSTUDYGUI_SolverGUI(QObject):
     def onSaveXmlFile(self):
         log.debug("onSaveXmlFile")
         if self._CurrentWindow != None:
-            if CFD_Code() == CFD_Saturne:
-                if self._CurrentWindow.case['xmlfile'] != "":
-                    self._CurrentWindow.fileSave()
-                else:
-                    self.SaveAsXmlFile()
+            if self._CurrentWindow.case['xmlfile'] != "":
+                self._CurrentWindow.fileSave()
+            else:
+                self.SaveAsXmlFile()
+
 
     def SaveAsXmlFile(self):
         """
-        First : get the xmlfile name with the case (whose path is stored into the MainView Object)
+        First: get the xmlfile name with the case (whose path is stored into the MainView Object)
         then save as into tne new xml file (the new name is stored into the case of the MainView Object instead of the old one)
         return old_xml_file,new_xml_file
         """
         old_xml_file = None
         xml_file = None
 
-        if self._CurrentWindow != None :
+        if self._CurrentWindow != None:
             _sMainViewCase = self._CurrentWindow
-            if CFD_Code() == CFD_Saturne:
-                old_xml_file = _sMainViewCase.case['xmlfile']
-                _sMainViewCase.fileSaveAs()
-                xml_file = _sMainViewCase.case['xmlfile']
-                if old_xml_file == "" :
-                    old_xml_file = None
-        return old_xml_file,xml_file
+            old_xml_file = _sMainViewCase.case['xmlfile']
+            _sMainViewCase.fileSaveAs()
+            xml_file = _sMainViewCase.case['xmlfile']
+
+            if old_xml_file == "":
+                old_xml_file = None
+
+        return old_xml_file, xml_file
 
 
     def getDockTitleName(self,xml_file):
@@ -220,14 +219,16 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         Build the Dock Title Name STUDY.CASE.file.xml with the entire file Name path
         """
         lnames = string.split(xml_file,"/")
-        if len(lnames) < 4: return None
+        if len(lnames) < 4:
+            return None
         xmlname   = lnames[-1]
         casename  = lnames[-3]
         studyname = lnames[-4]
-        return string.join([studyname,casename,xmlname],".")
+        return string.join([studyname, casename, xmlname], ".")
 
-    def getDockTitleNameFromOB(self,studyname,casename,xmlname) :
-        return string.join([studyname,casename,xmlname],".")
+
+    def getDockTitleNameFromOB(self, studyname, casename, xmlname):
+        return string.join([studyname, casename, xmlname], ".")
 
 
     def onOpenShell(self):
@@ -235,8 +236,7 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         """
         log.debug("onOpenShell")
         if self._CurrentWindow != None:
-            if CFD_Code() == CFD_Saturne:
-                self._CurrentWindow.openXterm()
+            self._CurrentWindow.openXterm()
 
 
     def onDisplayCase(self):
@@ -244,44 +244,24 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         _LoggingMgr.start(sys)
         if self._CurrentWindow != None:
 
-            if CFD_Code() == CFD_Saturne:
-                self._CurrentWindow.displayCase()
+            self._CurrentWindow.displayCase()
         _LoggingMgr.finish(sys)
+
 
     def onHelpAbout(self):
         log.debug("onHelpAbout")
         if self._CurrentWindow != None:
-           if CFD_Code() == CFD_Saturne:
-                self._CurrentWindow.displayAbout()
+            self._CurrentWindow.displayAbout()
 
-#-----------------------------------------------------------------------------
-
-    def onSaturneReloadModule(self):
-        """
-        """
-        log.debug("onSaturneReloadModule")
-        if self._CurrentWindow != None:
-            if CFD_Code() == CFD_Saturne:
-                self._CurrentWindow.reload_modules()
-        return
-
-    def onSaturneReloadPage(self):
-        """
-        """
-        log.debug("CFDSTUDY_SolverGUI.onSaturneReloadPage")
-        if self._CurrentWindow != None:
-            if CFD_Code() == CFD_Saturne:
-                self._CurrentWindow.reload_page()
-        return
 
     def onSaturneHelpLicense(self):
         """
         """
         log.debug("onSaturneHelpLicense")
         if self._CurrentWindow != None:
-            if CFD_Code() == CFD_Saturne:
-                self._CurrentWindow.displayLicence()
+            self._CurrentWindow.displayLicence()
         return
+
 
     def onSaturneHelpCS(self):
         """
@@ -291,6 +271,7 @@ class CFDSTUDYGUI_SolverGUI(QObject):
             if CFD_Code() == CFD_Saturne:
                 self._CurrentWindow.displayCSManual()
         return
+
 
     def onSaturneHelpSD(self):
         """
@@ -324,54 +305,44 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         return
 
 
-    def onNeptuneWinBrowser(self, flag):
-        if self._CurrentWindow != None:
-            if CFD_Code() == CFD_Neptune:
-                self._CurrentWindow.browserDockDisplay(flag)
-
-
-    def onNeptuneWinIdenty(self,flag):
-        if self._CurrentWindow != None:
-            if CFD_Code() == CFD_Neptune:
-                self._CurrentWindow.identityDockDisplay(flag)
-
-
-    def _ExecIPB(self, WorkSpace, Title, Args):
-        """
-        A developper
-        """
-        pass
-
-
-    def setWindowTitle_CFD(self,mw,aCase,baseTitleName) :
+    def setWindowTitle_CFD(self,mw,aCase,baseTitleName):
         """
         """
-        if aCase != None :
+        if aCase != None:
             fatherName = aCase.GetFather().GetName()
             aTitle = str(fatherName + "." + aCase.GetName()) + '.' + str(baseTitleName)
-            if mw != None :
+            if mw != None:
                 mw.setWindowTitle(aTitle)
         return aTitle
 
 
-    def _ExecICS(self, WorkSpace, aCase, sobjXML, Args):
+    def lauchGUI(self, WorkSpace, aCase, sobjXML, Args):
         """
         mw.dockWidgetBrowser is the Browser of the CFD MainView
         """
-        log.debug("_ExecICS")
+        log.debug("lauchGUI")
         from cs_gui import process_cmd_line
         from cs_package import package
         from Base.MainView import MainView
-        if sobjXML == None :
+
+        if CFD_Code() == CFD_Saturne:
+            from cs_package import package
+            from Base.MainView import MainView
+        elif CFD_Code() == CFD_Neptune:
+            from nc_package import package
+            from core.MainView import MainView
+
+        if sobjXML == None:
             Title = "unnamed"
-        else :
+        else:
             Title = sobjXML.GetName()
+
         self.Workspace = WorkSpace
         pkg = package()
         case, splash = process_cmd_line(Args)
         mw = MainView(pkg, case, aCase)
 
-        aTitle = self.setWindowTitle_CFD(mw,aCase,Title)
+        aTitle = self.setWindowTitle_CFD(mw, aCase, Title)
         dsk = sgPyQt.getDesktop()
         dock = QDockWidget(aTitle)
 
@@ -398,7 +369,7 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         aStudyCFD = aCase.GetFather()
         aCaseCFD  = aCase
         xmlFileName = str(Title)
-        _c_CFDGUI.set_d_CfdCases(studyId,dock,mw.dockWidgetBrowser,mw,aStudyCFD,aCaseCFD,xmlFileName,sobjXML,None)
+        _c_CFDGUI.set_d_CfdCases(studyId, dock, mw.dockWidgetBrowser, mw, aStudyCFD, aCaseCFD, xmlFileName, sobjXML, None)
 
         self.connect(dock, SIGNAL("visibilityChanged(bool)"), self.setdockWindowBrowserActivated)
         self.connect(mw.dockWidgetBrowser, SIGNAL("visibilityChanged(bool)"),self.setdockWindowActivated)
@@ -406,22 +377,23 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         self.connect(dock.toggleViewAction(), SIGNAL("toggled(bool)"), self.setdockWB)
         self.connect(mw.dockWidgetBrowser.toggleViewAction(), SIGNAL("toggled(bool)"), self.setdock)
 
-        _c_CFDGUI.tabifyDockWindows(dsk,studyId)
-        self.showDockWindows( studyId,xmlFileName, aCaseCFD.GetName(), aStudyCFD.GetName())
+        _c_CFDGUI.tabifyDockWindows(dsk, studyId)
+        self.showDockWindows(studyId, xmlFileName, aCaseCFD.GetName(), aStudyCFD.GetName())
         updateObjectBrowser()
 
         return mw
 
-    def setdockWB(self, istoggled) :
+
+    def setdockWB(self, istoggled):
         studyId = sgPyQt.getStudyId()
         dock = self.sender().parent()
-        if _c_CFDGUI != None :
+        if _c_CFDGUI != None:
           dockWB = _c_CFDGUI.getdockWB(studyId,dock)
-          if dockWB != None :
+          if dockWB != None:
             dockWB.setVisible(dock.isVisible())
-            if istoggled : dockWB.setVisible(True)
+            if istoggled: dockWB.setVisible(True)
             #
-            if istoggled :
+            if istoggled:
               dock.show()
               dock.raise_()
               dockWB.show()
@@ -430,15 +402,16 @@ class CFDSTUDYGUI_SolverGUI(QObject):
             self._CurrentWindow = mw
             mw.activateWindow()
 
-    def setdock(self, istoggled) :
+
+    def setdock(self, istoggled):
         studyId = sgPyQt.getStudyId()
         dockWB = self.sender().parent()
-        if _c_CFDGUI != None :
+        if _c_CFDGUI != None:
           dock = _c_CFDGUI.getdock(studyId,dockWB)
-          if dock != None :
+          if dock != None:
             dock.setVisible(dockWB.isVisible())
-            if istoggled : dock.setVisible(True)
-            if istoggled :
+            if istoggled: dock.setVisible(True)
+            if istoggled:
               dock.show()
               dock.raise_()
               dockWB.show()
@@ -446,6 +419,7 @@ class CFDSTUDYGUI_SolverGUI(QObject):
             mw = _c_CFDGUI.getMW(studyId,dock)
             self._CurrentWindow = mw
             mw.activateWindow()
+
 
     def setdockWindowBrowserActivated(self,visible):
         """
@@ -454,11 +428,13 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         """
         studyId = sgPyQt.getStudyId()
         dock = self.sender()
-        if not visible: return
-        if dock.isActiveWindow() == False: return
-        if _c_CFDGUI != None :
+        if not visible:
+            return
+        if dock.isActiveWindow() == False:
+            return
+        if _c_CFDGUI != None:
           dockWB = _c_CFDGUI.getdockWB(studyId,dock)
-          if dockWB != None :
+          if dockWB != None:
             dockWB.activateWindow()
             dockWB.setVisible(True)
             dockWB.show()
@@ -470,6 +446,7 @@ class CFDSTUDYGUI_SolverGUI(QObject):
             # Clear the current selection in the SALOME object browser, which does not match with the shown dock window
             ob.clearSelection()
 
+
     def setdockWindowActivated(self,visible):
         """
         mv is the Main CFD window allocated by MainView code
@@ -479,11 +456,13 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         studyId = sgPyQt.getStudyId()
         dockWB = self.sender()
 
-        if not visible: return
-        if dockWB.isActiveWindow() == False: return
-        if _c_CFDGUI != None :
+        if not visible:
+            return
+        if dockWB.isActiveWindow() == False:
+            return
+        if _c_CFDGUI != None:
           dock = _c_CFDGUI.getdock(studyId,dockWB)
-          if dock != None :
+          if dock != None:
             dock.activateWindow()
             dock.setVisible(True)
             dock.show()
@@ -495,6 +474,7 @@ class CFDSTUDYGUI_SolverGUI(QObject):
             # effacer la selection en cours
             ob.clearSelection()
 
+
     def disconnectDockWindows(self):
         """
         Hide the dock windows of CFDSTUDY GUI, when activating another Salome module
@@ -502,56 +482,66 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         Salome
         """
         studyId = sgPyQt.getStudyId()
-        if _c_CFDGUI != None :
+        if _c_CFDGUI != None:
           _c_CFDGUI.hideDocks(studyId)
+
 #MP runcase dock window is managed independently of the Management class CFDGUI_Management because it is not attached to an xml case in the CFD GUI
-#MP to analyze : impact : CFDSTUDYGUI_CommandMgr.py (runTextEdit) and CFDSTUDYGUI_Management.py
+#MP to analyze: impact: CFDSTUDYGUI_CommandMgr.py (runTextEdit) and CFDSTUDYGUI_Management.py
         if studyId not in _d_DockWindowsRuncase.keys():
           return
+
         if len(_d_DockWindowsRuncase[studyId]) != 0:
             dock.hide()
             dock.toggleViewAction().setVisible(False)
+
 
     def connectDockWindows(self):
         """
         Show all the dock windows of CFDSTUDY GUI, when activating Salome CFDSTUDY module
         """
         studyId = sgPyQt.getStudyId()
-        if _c_CFDGUI != None :
+        if _c_CFDGUI != None:
           _c_CFDGUI.showDocks(studyId)
+
         updateObjectBrowser()
+
 #MP runcase dock window is managed independently of the Management class CFDGUI_Management because it is not attached to an xml case in the CFD GUI
-#MP to analyze : impact : CFDSTUDYGUI_CommandMgr.py (runTextEdit) and CFDSTUDYGUI_Management.py
+#MP to analyze: impact: CFDSTUDYGUI_CommandMgr.py (runTextEdit) and CFDSTUDYGUI_Management.py
         if studyId not in _d_DockWindowsRuncase.keys():
           return
+
         if len(_d_DockWindowsRuncase[studyId]) != 0:
           for dock in _d_DockWindowsRuncase[studyId]:
             dock.show()
             dock.setVisible(True)
             dock.toggleViewAction().setVisible(True)
 
+
     def showDockWindows(self, studyId,xmlName, caseName, studyCFDName):
         """
         Find if the dockwindow corresponding to this xmlcase is already opened
         """
-        if _c_CFDGUI != None :
+        if _c_CFDGUI != None:
             _c_CFDGUI.showDockWindows(studyId,xmlName, caseName, studyCFDName)
 
-    def getStudyCaseXmlNames(self,mw) :
+
+    def getStudyCaseXmlNames(self,mw):
 
         dsk = sgPyQt.getDesktop()
         studyId = sgPyQt.getStudyId()
-        if _c_CFDGUI != None :
+        if _c_CFDGUI != None:
             studyCFDName,caseName,xmlName  = _c_CFDGUI.getStudyCaseXmlNames(studyId,mw)
         return studyCFDName,caseName,xmlName
 
-    def getCase(self,mw) :
+
+    def getCase(self,mw):
 
         dsk = sgPyQt.getDesktop()
         studyId = sgPyQt.getStudyId()
-        if _c_CFDGUI != None :
+        if _c_CFDGUI != None:
             case  = _c_CFDGUI.getCase(studyId,mw)
         return case
+
 
     def removeDockWindow(self,studyCFDName, caseName, xmlName=""):
         """
@@ -560,10 +550,6 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         log.debug("removeDockWindow -> caseName = %s" % caseName)
         dsk = sgPyQt.getDesktop()
         studyId = sgPyQt.getStudyId()
-        if _c_CFDGUI != None :
+        if _c_CFDGUI != None:
             _c_CFDGUI.delDock(dsk,studyId,studyCFDName, caseName, xmlName)
             updateObjectBrowser()
-
-
-
-

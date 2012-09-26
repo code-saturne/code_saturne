@@ -114,6 +114,7 @@ class InfoDialogHandler(InfoDialog):
         if self.SaturneRB != None:
             self.SaturneRB.setText(self.tr("INFO_DLG_SATURNE_TEXT"))
             self.SaturneRB.setChecked(True)
+
         self.NeptuneRB = self.findChild(QtGui.QRadioButton, "NeptuneRB")
         if self.NeptuneRB != None:
             self.NeptuneRB.setText(self.tr("INFO_DLG_NEPTUNE_TEXT"))
@@ -122,7 +123,7 @@ class InfoDialogHandler(InfoDialog):
 
 
     def accept(self):
-        iok,mess = CheckCFD_CodeEnv(CFD_Code())
+        iok, mess = CheckCFD_CodeEnv(CFD_Code())
         if iok :
             if mess != "" :
                 Error = "Error : "+ self.tr("CFDSTUDY_INVALID_ENV")
@@ -141,12 +142,12 @@ class InfoDialogHandler(InfoDialog):
         if code == CFD_Saturne:
             self.SaturneRB.setEnabled(True)
             self.SaturneRB.setChecked(True)
-            self.NeptuneRB.setEnabled(not isDisableOther)
+            #self.NeptuneRB.setEnabled(not isDisableOther)
             from cs_package import package
         elif code == CFD_Neptune:
             self.NeptuneRB.setEnabled(True)
             self.NeptuneRB.setChecked(True)
-            self.SaturneRB.setEnabled(not isDisableOther)
+            #self.SaturneRB.setEnabled(not isDisableOther)
             from nc_package import package
         else:
             raise DialogError, "Invalid CFD_Code in InfoDialog class"
@@ -273,10 +274,6 @@ class SetTreeLocationDialogHandler(SetTreeLocationDialog):
             self.findChild(QtGui.QLineEdit,"StudyDirName").hide()
             self.findChild(QtGui.QLabel,"NameLabel").hide()
             self.findChild(QtGui.QLabel,"StudyDirLabel").hide()
-
-            if CFD_Code() == CFD_Neptune:
-                self.findChild(QtGui.QGroupBox,"StudyGB").hide()
-
             self.findChild(QtGui.QGroupBox,"CaseGroupBox").setCheckable(False)
         else:
             self.findChild(QtGui.QPushButton,"BrowseButton").show()
@@ -870,7 +867,7 @@ class GUIActivationDialogHandler(GUIActivationDialog):
         if CFD_Code() == CFD_Saturne:
             self.setWindowTitle(self.tr("ICSACTIVATE_DLG_CAPTION"))
             self.CaseLabel.setTitle(self.tr("ICSACTIVATE_DLG_CASE_LABEL"))
-            self.FileCheckBox.setChecked(False)
+            #self.FileCheckBox.setChecked(False)
         elif CFD_Code() == CFD_Neptune:
             self.setWindowTitle(self.tr("IPBACTIVATE_DLG_CAPTION"))
             self.CaseLabel.setTitle(self.tr("IPBACTIVATE_DLG_CASE_LABEL"))
@@ -987,8 +984,8 @@ class CFDSTUDYGUI_DialogCollector:
         self.GUIActivationDialog = GUIActivationDialogHandler()
 
 
-def CFD_Code ():
-    return CFD_Saturne
+#def CFD_Code():
+#    return CFD_Saturne
 
 
 if __name__ == "__main__":
