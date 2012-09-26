@@ -3247,7 +3247,7 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
     /* Type de diametres  = 1 ---> diametre donnes
        = 2 ---> loi de Rosin-Rammler */
     if (itypdp == 1) {
-      for (icla = iclag; icla < iclag+nclpch[icha]; icla++)
+      for (icla = 0; icla < nclpch[icha]; icla++)
         diam20[icla] = _get_solid_fuel_diameter(icha+1,icla+1);
     } else if (itypdp == 2) {
       nbrf = _cs_gui_get_nb_refusal(icha+1);
