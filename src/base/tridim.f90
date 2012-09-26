@@ -675,7 +675,7 @@ endif
 !     pour Syrthes, T1D ou rayonnement.
 itrfup = 1
 
-if (nterup.gt.1) then
+if (nterup.gt.1.or.isno2t.gt.0) then
 
   if (ivelco.eq.1) then
     allocate(ximpav(ndim,ndim,ncelet))
