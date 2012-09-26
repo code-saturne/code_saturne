@@ -255,7 +255,8 @@ enddo
 
 call pppdfr &
 !==========
- ( ncelet, ncel  , indpdf, tpdf,                           &
+ ( ncelet, ncel  , indpdf,                                 &
+   tpdf  ,                                                 &
    rtp(1,isca(ifm))      , rtp(1,isca(ifp2m)),             &
    w1    , w2    ,                                         &
    dirmin, dirmax, fdeb  , ffin, hrec )

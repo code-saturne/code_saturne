@@ -169,11 +169,12 @@ double precision f4cmin,f4cmax,xden
 integer, allocatable, dimension(:,:) :: itbcp, itbmc, itbwo
 
 double precision, allocatable, dimension(:,:) :: rtbcp, rtbmc, rtbwo
+double precision, allocatable, dimension(:) :: tpdf
 
 !===============================================================================
 
 !===============================================================================
-! 1. INITIALISATIONS
+! 1. Initializations
 !===============================================================================
 
 ! Allocate temporary arrays
@@ -185,11 +186,7 @@ allocate(rtbcp(ncelet,nrtbcp))
 allocate(rtbmc(ncelet,nrtbmc))
 allocate(rtbwo(ncelet,nrtbwo))
 
-! --- Initialisation memoire
-
-
 ! --- Initialisation des tableaux d'entiers de travail
-
 do iel = 1, ncel
   do iitbcp = 1, nitbcp
     itbcp(iel,iitbcp) = 0
@@ -203,7 +200,6 @@ do iel = 1, ncel
 enddo
 
 ! --- Initialisation des tableaux de reels de travail
-
 do iel = 1, ncel
   do iitbcp = 1, nrtbcp
     rtbcp(iel,iitbcp) = zero
@@ -306,12 +302,14 @@ enddo
 if ( irangp .ge. 0 ) then
   call parcpt(nbf3)
 endif
-WRITE(NFECRA,*) ' Nombre de clipping sur F3 : ',NBF3
+write(nfecra,*) ' Nombre de clipping sur F3 : ',nbf3
 
-call pppdfr                                                       &
+allocate(tpdf(ncelet))
+
+call pppdfr &
 !==========
- ( ncelet,ncel,                                                   &
-   itbcp(1,1) ,                                                   &
+ ( ncelet ,  ncel  , itbcp(1,1) ,                                 &
+   tpdf   ,                                                       &
    rtbcp(1,14), f4p2m ,                                           &
 !          F4+F5
    rtbcp(1,4), rtbcp(1,8),                                        &
@@ -320,6 +318,9 @@ call pppdfr                                                       &
 !           D4CL         D4F4          F4M1        F4M2
     rtbcp(1,13) )
 !           HREC
+
+! Free memory
+deallocate(tpdf)
 
 !===============================================================================
 ! 2.CALCUL DES CONCENTRATIONS MOYENNES

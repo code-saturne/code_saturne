@@ -146,7 +146,7 @@ double precision zchx10 , zchx20
 double precision den1   , den2 , f1mc , f2mc
 double precision wmolme
 double precision somch , somck , cfolc , cfolh , cfolo , ckxc , ckxh , ckxo
-!
+
 integer          iok1 , iok2 , iok3 , iok4 , iok5
 integer          , dimension ( : )     , allocatable :: intpdf
 double precision , dimension ( : )     , allocatable :: fmini,fmaxi,ffuel
@@ -155,18 +155,15 @@ double precision , dimension ( : )     , allocatable :: x2,cx1m,cx2m,wmf1,wmf2
 double precision , dimension ( : , : ) , allocatable :: af1    , af2
 double precision , dimension ( : )     , allocatable :: fs3no  , fs4no
 double precision , dimension ( : , : ) , allocatable :: yfs4no
-!
+double precision, allocatable, dimension(:) :: tpdf
+
 integer          ipass
 data ipass / 0 /
-!
+
 !===============================================================================
 ! 0. Memory allocation
 !===============================================================================
-!
 
-!===============================================================================
-! Deallocation dynamic arrays
-!----
 allocate(intpdf(1:ncel)                                       ,stat=iok1)
 allocate(fmini(1:ncel)      ,fmaxi(1:ncel)      ,ffuel(1:ncel),stat=iok2)
 allocate(dfuel(1:ncel)      ,doxyd(1:ncel)      ,pdfm1(1:ncel),stat=iok3)
@@ -234,14 +231,20 @@ do iel = 1, ncel
 !  Somme de F1+F2 (pour le fuel, f1=0)
   ffuel(iel)=f1m(iel)+f2m(iel)
 enddo
-!
-call pppdfr                                                       &
+
+allocate(tpdf(ncelet))
+
+call pppdfr &
 !==========
- ( ncelet,ncel,                                                   &
-   intpdf ,                                                       &
-   ffuel  , fvp2m , fmini , fmaxi ,                               &
+ ( ncelet ,ncel   , intpdf ,                                      &
+   tpdf   ,                                                       &
+   ffuel  , fvp2m ,                                               &
+   fmini  , fmaxi ,                                               &
    doxyd  , dfuel , pdfm1 , pdfm2 , hrec )
-!
+
+! Free memory
+deallocate(tpdf)
+
 !===============================================================================
 ! 2.CALCUL DES CONCENTRATIONS MOYENNES
 !===============================================================================
