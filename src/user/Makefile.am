@@ -71,6 +71,7 @@ EXTRA_DIST = cs_user_modules.f90
 # Library source files
 
 userfiles = \
+cs_user_atmospheric_model.f90 \
 cs_user_boundary_conditions.f90 \
 cs_user_coupling.c \
 cs_user_extra_operations.f90 \
@@ -104,9 +105,7 @@ usthht.f90 \
 ustsma.f90 \
 usvort.f90 \
 usvosy.f90 \
-usvpst.f90 \
-usatdv.f90 \
-usatsoil.f90
+usvpst.f90
 
 noinst_LTLIBRARIES = libcsuser.la
 libcsuser_la_SOURCES = $(userfiles)
