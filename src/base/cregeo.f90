@@ -122,7 +122,7 @@ call pstema (ntcabs, ttcabs)
 ! 4. Filter extended neighborhood for least-squares gradients
 !===============================================================================
 
-if (imrgra.eq.3) then
+if (imrgra.eq.3 .or. imrgra.eq.6 .or. imrgra.eq.-3 .or. imrgra.eq.-6) then
   call redvse (anomax)
   !==========
 endif

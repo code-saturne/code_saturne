@@ -457,10 +457,10 @@ if (ivelco.eq.1) then
   if (imrgra.eq.0) then
     ioptit = 1
     ioplsq = 0
-  elseif (imrgra.eq.1.or.imrgra.eq.2.or.imrgra.eq.3) then
+  elseif (imrgra.lt.4 .and. imrgra.gt.-4) then
     ioptit = 0
     ioplsq = 1
-  elseif (imrgra.eq.4) then
+  elseif (imrgra.ge.4 .or. imrgra.le.-4) then
     ioptit = 1
     ioplsq = 1
   endif

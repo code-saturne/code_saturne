@@ -62,13 +62,16 @@ implicit none
 
 ! Arguments
 
-integer          ii, ivoset
+integer          ii, ivoset, imrgrl
 
 !===============================================================================
 
 ivoset = 0
 
-if (imrgra.eq.2 .or. imrgra.eq.3) ivoset = 1
+imrgrl = imrgra
+if (imrgrl.lt.0) imrgrl = - imrgra
+
+if (imrgrl.eq.2 .or. imrgrl.eq.3 .or. imrgrl.eq.5 .or. imrgrl.eq.6) ivoset = 1
 
 if (iturb.eq.41) ivoset = 1
 

@@ -913,13 +913,13 @@ endif
 !        On impose -1 avec gradrc (pas de limitation)
 !               et  1 avec gradmc (limitation)
 
-if (imrgra.eq.0.or.imrgra.eq.4) then
+if (imrgra.eq.0.or.imrgra.ge.4.or.imrgra.le.-4) then
   do ii = 1, nvarmx
     if (imligr(ii).eq.-999) then
       imligr(ii) = -1
     endif
   enddo
-elseif (imrgra.eq.1.or.imrgra.eq.2.or.imrgra.eq.3) then
+else
   do ii = 1, nvarmx
     if (imligr(ii).eq.-999) then
       imligr(ii) = 1
@@ -1160,11 +1160,11 @@ if ((iturb.eq.30.and.irijec.eq.1).or.              &
   ineedy = 1
 endif
 
-if (imrgra.eq.0 .or. imrgra.eq.4) then
+if (imrgra.eq.0 .or. imrgra.ge.4 .or. imrgra.le.-4) then
   if (imligy.eq.-999) then
     imligy = -1
   endif
-elseif (imrgra.eq.1.or.imrgra.eq.2.or.imrgra.eq.3) then
+else
   if (imligy.eq.-999) then
     imligy = 1
   endif

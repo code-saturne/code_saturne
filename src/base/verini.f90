@@ -611,7 +611,7 @@ endif
 ! On verifie l'angle de non orthogonalite de selection du
 !   voisinage etendu dans le cas du moindre carre qui l'utilise
 
-if (imrgra.eq.3) then
+if (imrgra.eq.3.or.imrgra.eq.6.or.imrgra.eq.-3.or.imrgra.eq.-6) then
   if (anomax.gt.pi*0.5d0.or.anomax.lt.0.d0) then
     write(nfecra,2206) anomax, imrgra
   endif
@@ -620,9 +620,9 @@ endif
 ! Extrapolation : indetermination possible par mc,
 !     necessitant un traitement particulier dans gradmc,
 !     pour lequel on fait certaines hypotheses
-if (imrgra.eq.1.or.imrgra.eq.2.or.imrgra.eq.3) then
-  if ( (abs(extrag(ipr)-1.d0).gt.epzero).and.                   &
-      (abs(extrag(ipr)     ).gt.epzero)  ) then
+if (imrgra.ne.0.and.(imrgra.le.3.and.imrgra.ge.-3)) then
+  if (      (abs(extrag(ipr)-1.d0).gt.epzero)             &
+      .and. (abs(extrag(ipr)     ).gt.epzero)) then
     write(nfecra,2207) imrgra, extrag(ipr)
     iok = iok + 1
   endif
@@ -1080,7 +1080,8 @@ if (itytur.eq.4) then
   endif
   !         La reduction du voisinage etendu peut degrader
   !         les resultats du modele dynamique en LES
-  if (iturb.eq.41.and.imrgra.eq.3) then
+  if (     iturb.eq.41                                                       &
+      .and.(imrgra.eq.3.or.imrgra.eq.6.or.imrgra.eq.-3.or.imrgra.eq.-6)) then
     write(nfecra,2607) iturb, imrgra
   endif
 endif

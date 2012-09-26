@@ -1555,7 +1555,7 @@ useful if {\tt nscal}$>$1}
 \subsubsection{Gradient reconstruction}
 %==================================
 
-\motcle{imrgra}{i}{0, 1, 2, 3 or 4}{0}{O}{L2}
+\motcle{imrgra}{i}{0, 1, 2, 3, 4, 5, or 6}{0}{O}{L2}
 {indicates the type of gradient reconstruction (one method for all the
 variables)\\
 \hspace*{1.3cm}= 0: iterative reconstruction of the non-orthogonalities\\
@@ -1569,12 +1569,21 @@ are connected to a face where the non-orthogonality angle is larger than
 parameter {\tt anomax})\\
 \hspace*{1.3cm}= 4: iterative reconstruction with initialisation using the least
 squares method (first neighbors)\\
+\hspace*{1.3cm}= 5: iterative reconstruction with initialisation using the least
+squares method based on an extended neighborhood\\
+\hspace*{1.3cm}= 6: iterative reconstruction with initialisation using the least
+squares method based on a partial extended neighborhood\\
 if {\tt imrgra} fails due to probable mesh quality problems, it is usually effective
 to use {\tt imrgra}=3. Moreover, {\tt imrgra}=3 is usually faster than
 {\tt imrgra}=0 (but with less feedback on its use).\\
-it should be noted that {\tt imrgra}=1, 2 or 3 automatically triggers a gradient
+It should be noted that {\tt imrgra}=1, 2 or 3 automatically triggers a gradient
 limitation procedure. See {\tt imligr}.\\
-useful if and only if there is {\tt n} so that {\tt nswrgr(n)} $>$ 1}
+useful if and only if there is {\tt n} so that {\tt nswrgr(n)} $>$ 1.
+Also, pressure gradients (or other gradients deriving from a potential)
+always use an iterative reconstruction. To force a non-iterative
+reconstruction for those gradients, a negative value of this keyword may be
+used, in which case the method matching the absolute value of the keyword will
+be used.}
 
 \motcle{nswrgr}{ia}{positive integer}{100}{O}{L3}
 {for each unknown {\tt ivar}, {\tt nswrgr(ivar)} $\leqslant$ 1 indicates that the
