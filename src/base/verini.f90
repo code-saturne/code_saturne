@@ -603,10 +603,8 @@ if (idtvar.lt.0) then
 endif
 
 ! --- Reconstruction des gradients
-if (imrgra.ne.0.and.imrgra.ne.1.and.                              &
-   imrgra.ne.2.and.imrgra.ne.3.and.                               &
-   imrgra.ne.4 ) then
-  write(nfecra,2205) 'IMRGRA',imrgra
+if (imrgra.gt.6 .or. imrgra.lt.-6) then
+  write(nfecra,2205) 'IMRGRA', imrgra
   iok = iok + 1
 endif
 
@@ -2598,7 +2596,7 @@ endif
 '@',                                                            /,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
 '@    =========',                                               /,&
-'@',    a6,' DOIT ETRE UN ENTIER EGAL A 0, 1, 2, 3 OU 4',       /,&
+'@',    a6,' DOIT ETRE UN ENTIER COMPRIS ENTRE -6 et 6',        /,&
 '@    IL VAUT ICI', i10,                                        /,&
 '@',                                                            /,&
 '@  Le calcul ne peut etre execute.',                           /,&
@@ -5132,7 +5130,7 @@ endif
 '@',                                                            /,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
-'@',    a6,' MUST BE AN INTEGER EQUAL TO 0, 1, 2, 3 or 4',      /,&
+'@',    a6,' MUST BE AN INTEGER BETWEEN -6 and 6',              /,&
 '@   IT HAS VALUE', i10,                                        /,&
 '@',                                                            /,&
 '@   The calculation could NOT run.',                           /,&

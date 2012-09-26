@@ -107,9 +107,8 @@ implicit none
 ! Arguments
 
 integer          ivar   , imrgra , inc    , iccocg , nswrgp
-integer          imligp ,iwarnp  , iphydp , nfecra
+integer          imligp , iwarnp , iphydp , nfecra
 double precision epsrgp , climgp , extrap
-
 
 double precision ppond(ncelet)
 double precision fextx(ncelet),fexty(ncelet),fextz(ncelet)
@@ -118,6 +117,7 @@ double precision grad(ncelet,3)
 
 ! Local variables
 
+integer          imrgrp
 integer          idimtr, ipond
 integer          iiu,iiv,iiw
 integer          iitytu
@@ -134,6 +134,11 @@ double precision climin
 ! 0. Initialization
 !===============================================================================
 
+! Use iterative gradient
+
+imrgrp = 0
+if (imrgra.lt.0) imrgrp = -imrgra
+
 ! The gradient of a potential (pressure, ...) is a vector
 
 idimtr = 0
@@ -145,7 +150,7 @@ ipond =0
 
 call cgdcel                                                       &
 !==========
- ( ivar   , imrgra , inc    , iccocg , imobil , iale   , nswrgp , &
+ ( ivar   , imrgrp , inc    , iccocg , imobil , iale   , nswrgp , &
    idimtr , iphydp , ipond  , iwarnp , imligp , epsrgp , extrap , &
    climgp , isympa , fextx  , fexty  , fextz  , coefap , coefbp , &
    pvar   , rvoid  , grad   )

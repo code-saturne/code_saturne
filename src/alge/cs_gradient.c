@@ -474,7 +474,7 @@ _initialize_rotation_values(const cs_halo_t  *halo,
  * the standard or extended neighborhood.
  *
  * parameters:
- *   imrgra         <-- type of computation for the gradient
+ *   halo_type      <-- halo type (extended or not)
  *   imligp         <-- type of clipping for the computation of the gradient
  *   iwarnp         <-- output level
  *   idimtr         <-- 0 for scalars or without rotational periodicity,
@@ -486,7 +486,7 @@ _initialize_rotation_values(const cs_halo_t  *halo,
  *----------------------------------------------------------------------------*/
 
 static void
-_scalar_gradient_clipping(int                    imrgra,
+_scalar_gradient_clipping(cs_halo_type_t         halo_type,
                           int                    imligp,
                           int                    verbosity,
                           int                    idimtr,
@@ -507,8 +507,6 @@ _scalar_gradient_clipping(int                    imrgra,
   cs_real_t  *restrict buf = NULL, *restrict clip_factor = NULL;
   cs_real_t  *restrict denom = NULL, *restrict denum = NULL;
 
-  cs_halo_type_t halo_type = CS_HALO_STANDARD;
-
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const int n_i_groups = mesh->i_face_numbering->n_groups;
   const int n_i_threads = mesh->i_face_numbering->n_threads;
@@ -526,9 +524,6 @@ _scalar_gradient_clipping(int                    imrgra,
 
   if (imligp < 0)
     return;
-
-  if (imrgra == 2 || imrgra ==  3)
-    halo_type = CS_HALO_EXTENDED;
 
   /* Synchronize variable */
 
@@ -1249,7 +1244,6 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
  *   m              <-- pointer to associated mesh structure
  *   fvq            <-- pointer to associated finite volume quantities
  *   var_num        <-- variable's number (0 if non-solved variable)
- *   imrgra         <-- gradient computation method
  *   imobil         <-- 1 if using mobile mesh, 0 otherwise
  *   iccocg         <-- flag to recompute cocg (1 or 0)
  *   iale           <-- 1 if using ALE, 0 otherwise
@@ -1280,7 +1274,6 @@ static void
 _iterative_scalar_gradient(const cs_mesh_t             *m,
                            cs_mesh_quantities_t        *fvq,
                            int                          var_num,
-                           int                          imrgra,
                            int                          iccocg,
                            int                          imobil,
                            int                          iale,
@@ -1352,29 +1345,6 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
   cs_real_t residue = 0.;
 
   const double epzero = 1.e-12;
-
-  /* Computation without reconstruction */
-  /*------------------------------------*/
-
-  /* if initialized using least squares, rhsv is already initialized;
-     otherwise, compute a gradient without reconstruction */
-
-  if (imrgra == 0)
-    _initialize_scalar_gradient(m,
-                                fvq,
-                                idimtr,
-                                iphydp,
-                                ipond,
-                                inc,
-                                fextx,
-                                fexty,
-                                fextz,
-                                coefap,
-                                coefbp,
-                                pvar,
-                                ktvar,
-                                dpdxyz,
-                                rhsv);
 
   if (nswrgp <  1) return;
 
@@ -1888,7 +1858,7 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
  * parameters:
  *   m              <-- pointer to associated mesh structure
  *   fvq            <-- pointer to associated finite volume quantities
- *   imrgra         <-- gradient computation method
+ *   halo_type      <-- halo type (extended or not)
  *   iccocg         <-- flag to recompute cocg (1 or 0)
  *   imobil         <-- 1 if using mobile mesh, 0 otherwise
  *   iale           <-- 1 if using ALE, 0 otherwise
@@ -1914,7 +1884,7 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
 static void
 _lsq_scalar_gradient(const cs_mesh_t             *m,
                      cs_mesh_quantities_t        *fvq,
-                     int                          imrgra,
+                     cs_halo_type_t               halo_type,
                      int                          iccocg,
                      int                          imobil,
                      int                          iale,
@@ -2073,7 +2043,7 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
 
     /* Contribution from extended neighborhood */
 
-    if (imrgra == 2 || imrgra == 3) {
+    if (halo_type == CS_HALO_EXTENDED) {
 
 #     pragma omp parallel for private(cidx, jj, ll, mm, uddij2, dc)
       for (ii = 0; ii < n_cells; ii++) {
@@ -2314,7 +2284,7 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
 
     /* Contribution from extended neighborhood */
 
-    if (imrgra == 2 || imrgra == 3) {
+    if (halo_type == CS_HALO_EXTENDED) {
 
 #     pragma omp parallel for private(cidx, jj, ll, dc, fctb, pfac)
       for (ii = 0; ii < n_cells; ii++) {
@@ -2426,7 +2396,7 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
        We assume that the middle of the segment joining cell centers
        may replace the center of gravity of a fictitious face. */
 
-    if (imrgra == 2 || imrgra == 3) {
+    if (halo_type == CS_HALO_EXTENDED) {
 
 #     pragma omp parallel for private(cidx, jj, ll, dc, fctb, pfac)
       for (ii = 0; ii < n_cells; ii++) {
@@ -3653,7 +3623,6 @@ void CS_PROCF (cgdcel, CGDCEL)
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_halo_t  *halo = mesh->halo;
 
-  cs_halo_type_t halo_type = CS_HALO_STANDARD;
 
   cs_gradient_info_t *gradient_info = NULL;
   cs_timer_t t0, t1;
@@ -3664,7 +3633,9 @@ void CS_PROCF (cgdcel, CGDCEL)
   cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
 
   bool update_stats = true;
-  cs_gradient_type_t gradient_type = CS_GRADIENT_N_TYPES;
+
+  cs_halo_type_t halo_type = CS_HALO_STANDARD;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
 
   /* Allocate work arrays */
 
@@ -3674,11 +3645,25 @@ void CS_PROCF (cgdcel, CGDCEL)
   /* Choose gradient type */
 
   switch (*imrgra) {
-  case 0: gradient_type = CS_GRADIENT_ITER; break;
-  case 1: gradient_type = CS_GRADIENT_LSQ_STD; break;
-  case 2: gradient_type = CS_GRADIENT_LSQ_EXT; break;
-  case 3: gradient_type = CS_GRADIENT_LSQ_EXT_RED; break;
-  case 4: gradient_type = CS_GRADIENT_LSQ_ITER; break;
+  case 0:
+    gradient_type = CS_GRADIENT_ITER;
+    break;
+  case 1:
+    gradient_type = CS_GRADIENT_LSQ;
+    break;
+  case 2:
+  case 3:
+    gradient_type = CS_GRADIENT_LSQ;
+    halo_type = CS_HALO_EXTENDED;
+    break;
+  case 4:
+    gradient_type = CS_GRADIENT_LSQ_ITER;
+    break;
+  case 5:
+  case 6:
+    gradient_type = CS_GRADIENT_LSQ_ITER;
+    halo_type = CS_HALO_EXTENDED;
+    break;
   default: break;
   }
 
@@ -3688,9 +3673,6 @@ void CS_PROCF (cgdcel, CGDCEL)
     t0 = cs_timer_time();
     gradient_info = _find_or_add_system(var_name, gradient_type);
   }
-
-  if (*imrgra == 2 || *imrgra ==  3)
-    halo_type = CS_HALO_EXTENDED;
 
   /* Synchronize variable */
 
@@ -3736,11 +3718,27 @@ void CS_PROCF (cgdcel, CGDCEL)
 
   /* Compute gradient */
 
-  if (*imrgra == 0)
+  if (gradient_type == CS_GRADIENT_ITER) {
+
+    _initialize_scalar_gradient(cs_glob_mesh,
+                                cs_glob_mesh_quantities,
+                                *idimtr,
+                                *iphydp,
+                                *ipond,
+                                *inc,
+                                fextx,
+                                fexty,
+                                fextz,
+                                coefap,
+                                coefbp,
+                                pvar,
+                                ktvar,
+                                (cs_real_3_t *)dpdxyz,
+                                rhsv);
+
     _iterative_scalar_gradient(cs_glob_mesh,
                                cs_glob_mesh_quantities,
                                *ivar,
-                               *imrgra,
                                *iccocg,
                                *imobil,
                                *iale,
@@ -3762,11 +3760,13 @@ void CS_PROCF (cgdcel, CGDCEL)
                                (cs_real_3_t *)dpdxyz,
                                rhsv);
 
-  else if (*imrgra == 1 || *imrgra == 2 || *imrgra == 3) {
+  }
+
+  else if (gradient_type == CS_GRADIENT_LSQ) {
 
     _lsq_scalar_gradient(cs_glob_mesh,
                          cs_glob_mesh_quantities,
-                         *imrgra,
+                         halo_type,
                          *iccocg,
                          *imobil,
                          *iale,
@@ -3788,14 +3788,14 @@ void CS_PROCF (cgdcel, CGDCEL)
                          rhsv);
 
   }
-  else if (*imrgra == 4) {
+  else if (gradient_type == CS_GRADIENT_LSQ_ITER) {
 
     const cs_int_t  _imlini = 1;
     const cs_real_t _climin = 1.5;
 
     _lsq_scalar_gradient(cs_glob_mesh,
                          cs_glob_mesh_quantities,
-                         *imrgra,
+                         halo_type,
                          *iccocg,
                          *imobil,
                          *iale,
@@ -3816,13 +3816,12 @@ void CS_PROCF (cgdcel, CGDCEL)
                          (cs_real_3_t *)dpdxyz,
                          rhsv);
 
-    _scalar_gradient_clipping(*imrgra, _imlini, *iwarnp, *idimtr, _climin,
+    _scalar_gradient_clipping(halo_type, _imlini, *iwarnp, *idimtr, _climin,
                               pvar, (cs_real_3_t *)dpdxyz);
 
     _iterative_scalar_gradient(cs_glob_mesh,
                                cs_glob_mesh_quantities,
                                *ivar,
-                               *imrgra,
                                *iccocg,
                                *imobil,
                                *iale,
@@ -3846,7 +3845,7 @@ void CS_PROCF (cgdcel, CGDCEL)
 
   }
 
-  _scalar_gradient_clipping(*imrgra, *imligp, *iwarnp, *idimtr, *climgp,
+  _scalar_gradient_clipping(halo_type, *imligp, *iwarnp, *idimtr, *climgp,
                             pvar, (cs_real_3_t *)dpdxyz);
 
   /* Copy gradient to component arrays */
@@ -3892,20 +3891,34 @@ void CS_PROCF (cgdvec, CGDVEC)
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
 
-  cs_halo_type_t halo_type = CS_HALO_STANDARD;
-
   cs_gradient_info_t *gradient_info = NULL;
   cs_timer_t t0, t1;
 
   bool update_stats = true;
-  cs_gradient_type_t gradient_type = CS_GRADIENT_N_TYPES;
+
+  cs_halo_type_t halo_type = CS_HALO_STANDARD;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
 
   switch (*imrgra) {
-  case 0: gradient_type = CS_GRADIENT_ITER; break;
-  case 1: gradient_type = CS_GRADIENT_LSQ_STD; break;
-  case 2: gradient_type = CS_GRADIENT_LSQ_EXT; break;
-  case 3: gradient_type = CS_GRADIENT_LSQ_EXT_RED; break;
-  case 4: gradient_type = CS_GRADIENT_LSQ_ITER; break;
+  case 0:
+    gradient_type = CS_GRADIENT_ITER;
+    break;
+  case 1:
+    gradient_type = CS_GRADIENT_LSQ;
+    break;
+  case 2:
+  case 3:
+    gradient_type = CS_GRADIENT_LSQ;
+    halo_type = CS_HALO_EXTENDED;
+    break;
+  case 4:
+    gradient_type = CS_GRADIENT_LSQ_ITER;
+    break;
+  case 5:
+  case 6:
+    gradient_type = CS_GRADIENT_LSQ_ITER;
+    halo_type = CS_HALO_EXTENDED;
+    break;
   default: break;
   }
 
@@ -3921,7 +3934,7 @@ void CS_PROCF (cgdvec, CGDVEC)
 
   /* Compute gradient */
 
-  if (*imrgra == 0) {
+  if (gradient_type == CS_GRADIENT_ITER) {
 
     _initialize_vector_gradient(mesh,
                                 fvq,
@@ -3949,7 +3962,7 @@ void CS_PROCF (cgdvec, CGDVEC)
                                  gradv);
 
   }
-  else if (*imrgra == 1 || *imrgra == 2 || *imrgra == 3) {
+  else if (gradient_type == CS_GRADIENT_LSQ) {
 
     /* If NO reconstruction are required */
 
@@ -3976,7 +3989,7 @@ void CS_PROCF (cgdvec, CGDVEC)
                            gradv);
 
   }
-  else if (*imrgra == 4) {
+  else if (gradient_type == CS_GRADIENT_LSQ_ITER) {
 
     /* Clipping algorithm and clipping factor */
 

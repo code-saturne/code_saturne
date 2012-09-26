@@ -46,17 +46,14 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Gradient types
+ * Gradient reconstruction method
  *----------------------------------------------------------------------------*/
 
 typedef enum {
 
-  CS_GRADIENT_ITER,        /* Iterative method */
-  CS_GRADIENT_LSQ_STD,     /* Least-square method */
-  CS_GRADIENT_LSQ_EXT,     /* Least-square method with extended neighborhood  */
-  CS_GRADIENT_LSQ_EXT_RED, /* Least-square method with reduced extended neig. */
-  CS_GRADIENT_LSQ_ITER,    /* LSQ followed with iterative */
-  CS_GRADIENT_N_TYPES
+  CS_GRADIENT_ITER,              /* Iterative */
+  CS_GRADIENT_LSQ,               /* Least-squares */
+  CS_GRADIENT_LSQ_ITER           /* LSQ followed with iterative */
 
 } cs_gradient_type_t;
 
