@@ -20,6 +20,42 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Function:
+! ---------
+
+!> \file pppdfr.f90
+!>
+!> \brief Specific physic subroutine: Calculation of rectangle-Dirac pdf parameters
+!
+! from P. Plion & A. Escaich
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     ncel          number of cells
+!> \param[in]     ncelet        number of extended (real + ghost) cells
+!> \param[in]     indpdf        indicator for pdf integration or mean value
+!> \param[out]    tpdf          indicator for pdf shape:
+!                               - 0: Dirac at mean value
+!                               - 1: rectangle
+!                               - 2: Dirac's peak at \f$ f_{min} \f$
+!                               - 3: Dirac's peak at \f$ f_{max} \f$
+!                               - 4: rectangle and 2 Dirac's pics
+!> \param[in]     fm            mean mixture fraction at cell centers
+!> \param[in]     fp2m          mean mixture fraction variance at cell centers
+!> \param[in]     fmini         mixture fraction low boundary
+!> \param[in]     fmaxi         mixture fraction high boundary
+!> \param[in]     dirmin        Dirac's peak value at \f$ f_{min} \f$
+!> \param[in]     dirmax        Dirac's peak value at \f$ f_{max} \f$
+!> \param[in]     fdeb          abscissa of rectangle low boundary
+!> \param[in]     ffin          abscissa of rectangle high boundary
+!> \param[in]     hrec          rectangle height
+!_______________________________________________________________________________
+
 subroutine pppdfr &
 !================
 
@@ -29,52 +65,6 @@ subroutine pppdfr &
    fmini  , fmaxi  ,                                              &
    dirmin , dirmax , fdeb   , ffin   , hrec )
 
-!===============================================================================
-! FONCTION :
-! ----------
-
-! CALCUL DES PARAMETRES DE LA PDF
-! PDF RECTANGLE - PICS DE DIRAC "GENERALISEE" PPl - AE
-
-! LE RESULTAT EST :
-! ---------------
-!    CALCUL DES PARAMETRES ASSOCIES AUX FONCTIONS RECTANGLE - DIRAC
-
-!         INDPDF indique le passage ou non par la pdf
-!         DIRMIN contient le Dirac en FMINI
-!         DIRMAX - - - -  le Dirac en FMAXI
-!         FDEB - - - -  l'abcisse de debut du rectangle
-!         FFIN - - - - - - - - - - - fin   - - - - - -
-!         HREC - - - -  la hauteur du rectangle
-
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! indpdf           ! te ! --> ! indicateur passage ou non par pdf              !
-! fm               ! tr ! <-- ! moyenne de la fraction de melange              !
-! fp2m             ! tr ! <-- ! variance de la fraction de melange             !
-! fmini            ! tr ! <-- ! borne min de la fraction de melange           !
-! fmaxi            ! tr ! <-- ! borne max de la fraction de melange           !
-! dirmin           ! tr !  <- ! dirac en fmini                                 !
-! dirmax           ! tr !  <- ! dirac en fmaxi                                 !
-! fdeb             ! tr !  <- ! abscisse debut rectangle                       !
-! ffin             ! tr !  <- ! abscisse fin rectangle                         !
-! hrec             ! tr !  <- ! hauteur rectangle                              !
-! xinpdf           ! tr !  <- ! indicateur passage ou non par pdf              !
-!                  !    !     ! pourrait etre entier mais puisqu'on a          !
-!                  !    !     ! un tableau de travail reel on s"en             !
-!                  !    !     ! sert                                           !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !==============================================================================
