@@ -1944,7 +1944,8 @@ integer nmodpp
 
 ! Local variables
 
-integer ii, ipp, imom
+integer ii, ipp, imom, idirac, icla, icha
+integer idimve, iesp
 
 !===============================================================================
 
@@ -2065,183 +2066,8 @@ if (.false.) then
 
 endif
 
-! --- current variable
-
-!     As for other variables,
-!       if we do not assign the following array values,
-!       default values will be used
-
-!     ichrvr( ) = chonological output (yes 1/no 0)
-!     ilisvr( ) = logging in listing (yes 1/no 0)
-!     ihisvr( ) = history output (number of probes and their numbers)
-!     if ihisvr(.,1)  = -1, output for all probes
-
-!     Note: Only the fist 8 characters of a name will be used in the most
-!           detailed log.
-
-if (.false.) then
-
-  ! Current dynamic variables
-
-  ! pressure variable
-  ipp = ipprtp(ipr)
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-
-  ! variable v1x
-  ipp = ipprtp(iu)
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-
-  ! v1y variable
-  ipp = ipprtp(iv)
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-
-  ! v1z variable
-  ipp = ipprtp(iw)
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-
-  if (itytur.eq.2) then
-
-    ! turbulent kinetic energy
-    ipp = ipprtp(ik)
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-
-    ! turbulent dissipation
-    ipp = ipprtp(iep)
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-
-  elseif (itytur.eq.3) then
-
-    ! Reynolds stresses
-    ipp = ipprtp(ir11)
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-
-    ! Reynolds stresses
-    ipp = ipprtp(ir22)
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-
-    ! Reynolds stresses
-    ipp = ipprtp(ir33)
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-
-    ! Reynolds stresses
-    ipp = ipprtp(ir12)
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-
-    ! Reynolds stresses
-    ipp = ipprtp(ir13)
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-
-    ! Reynolds stresses
-    ipp = ipprtp(ir23)
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-
-    ! turbulent dissipation
-    ipp = ipprtp(iep)
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-
-  elseif (iturb.eq.50) then
-
-    ! turbulent kinetic energy
-    ipp = ipprtp(ik)
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-
-    ! turbulent dissipation
-    ipp = ipprtp(iep)
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-
-    ! phi
-    ipp = ipprtp(iphi)
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-
-    ! f_bar
-    ipp = ipprtp(ifb)
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-
-  elseif (iturb.eq.51) then
-
-    ! turbulent kinetic energy
-    ipp = ipprtp(ik)
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-
-    ! turbulent dissipation
-    ipp = ipprtp(iep)
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-
-    ! phi
-    ipp = ipprtp(iphi)
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-
-    ! alpha
-    ipp = ipprtp(ial)
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-
-  elseif (iturb.eq.60) then
-
-    ! turbulent kinetic energy
-    ipp = ipprtp(ik)
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-
-    ! omega
-    ipp = ipprtp(iomg)
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-
-  elseif (iturb.eq.70) then
-
-    ! Spalart-Allmaras variable (viscosity-like)
-    ipp = ipprtp(inusa)
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-
-  endif
-
-endif
+! Per variable output control
+! Many more examples are provided in cs_user_parameters-output.f90
 
 ! User scalar variables.
 
@@ -2269,100 +2095,6 @@ if (.false.) then
     ilisvr(ipp)  = 1
     ihisvr(ipp,1)= -1
   endif
-
-endif
-
-! Other variables
-
-if (.false.) then
-
-  ! Density variable (output for post-processing only if variable or
-  !                   in the case of specific physics)
-  ipp = ipppro(ipproc(irom))
-  ichrvr(ipp)   = max(irovar,nmodpp)
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-
-  ! specific heat
-  if (icp .gt. 0) then
-    ipp = ipppro(ipproc(icp))
-    ichrvr(ipp)   = 0
-    ilisvr(ipp)   = 0
-    ihisvr(ipp,1) = 0
-  endif
-
-  ! laminar viscosity
-  ipp = ipppro(ipproc(iviscl))
-  ichrvr(ipp)   = 0
-  ilisvr(ipp)   = 0
-  ihisvr(ipp,1) = 0
-
-  ! turbulent viscosity
-  ipp = ipppro(ipproc(ivisct))
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-
-  ! Courant number
-  ipp = ipppro(ipproc(icour))
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 0
-  ihisvr(ipp,1) = -1
-
-  ! Fourier number
-  ipp = ipppro(ipproc(ifour))
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 0
-  ihisvr(ipp,1) = -1
-
-  ! 'csmago' variable for dynamic L.E.S. models
-  !    (square of the Samgorinsky "constant")
-  if (ismago.gt.0) then
-    ipp = ipppro(ipproc(ismago))
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-  endif
-
-  ! temporal means (example for moment 1)
-  if (nbmomt.gt.0) then
-    imom = 1
-    ipp = ipppro(ipproc(icmome(imom)))
-    nomvar(ipp) = 'Time Average 01'
-    ichrvr(ipp) = 1
-    ilisvr(ipp) = 1
-    ihisvr(ipp,1) = -1
-  endif
-
-  ! total pressure (not defined in compressible case)
-  if (ippmod(icompf).lt.0) then
-    ipp = ipppro(ipproc(iprtot))
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-  endif
-
-  ! local time step
-  ipp = ippdt
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-
-  ! characteristic time of transient velocity/pressure coupling
-  ipp = ipptx
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-
-  ipp = ippty
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-
-  ipp = ipptz
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
 
 endif
 
@@ -2702,14 +2434,10 @@ subroutine usd3p1
 !===============================================================================
 !  Features of this subroutine:
 !  ----------------------------
-!  1. Variable Output
-!     a. Transported Variables
-!     b. Variables of State; User definied Variables
-!
-!  2. Additional Calculation Options
+!  1. Additional Calculation Options
 !     a. Density Relaxation
 !
-!  3. Physical Constants
+!  2. Physical Constants
 !     a.Dynamic Diffusion Coefficient
 !===============================================================================
 
@@ -2722,7 +2450,6 @@ use dimens
 use numvar
 use optcal
 use cstphy
-use entsor
 use cstnum
 use parall
 use period
@@ -2737,115 +2464,10 @@ use radiat
 
 implicit none
 
-integer          ipp
-
-!===============================================================================
-!===============================================================================
-! 1. Variable Output
-!===============================================================================
-!    Function                             |  Key Word |   Indicator
-!    ---------------------------------------------------------------
-!    Variable Output in the result file   | ICHRVR()  | yes= 1  ; no=0
-!    Variable Output in the listing file  | ILISVR()  | yes= 1  ; no=0
-!    Output of the temporal evolution of  | IHISVR()  | yes=-1* ; no=0
-!    the variable at monitoring points    |           |
-!    -----------------------------------------------------------------
-!    *: Output for all monitoring points
-!
-!===============================================================================
-! a. Transported Variables
 !===============================================================================
 
-! ---- Mean mixture fraction
-ipp = ipprtp(isca(ifm))
-ichrvr(ipp)  = 1
-ilisvr(ipp)  = 1
-ihisvr(ipp,1)= -1
-
-! ---- Variance of mixture fraction
-ipp = ipprtp(isca(ifp2m))
-ichrvr(ipp)  = 1
-ilisvr(ipp)  = 1
-ihisvr(ipp,1)= -1
-
-! ---- Enthalpy
-if (ippmod(icod3p).eq.1) then
-  ipp = ipprtp(isca(ihm))
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-endif
-
-! ---- Soot
-if (isoot.eq.1) then
-  ipp = ipprtp(isca(ifsm))
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-  ipp = ipprtp(isca(inpm))
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-endif
-
 !===============================================================================
-! b. Variables of State; User definied Variables
-!===============================================================================
-
-! ---- Temperature
-ipp = ipppro(ipproc(itemp))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-! ---- Fuel Mass fraction :    YM_Fuel
-ipp = ipppro(ipproc(iym(1)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-! ---- Oxydizer Mass fraction : YM_Oxy
-ipp = ipppro(ipproc(iym(2)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-! ---- Product Mass fraction : YM_Prod
-ipp = ipppro(ipproc(iym(3)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-! ---- Diffusion flame including gas radiation
-
-if (iirayo.gt.0) then
-
-! ---- Absorption Coefficient
-  ipp = ipppro(ipproc(ickabs))
-  nomvar(ipp)   = 'KABS'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-
-! ---- Term T^4
-  ipp = ipppro(ipproc(it4m))
-  nomvar(ipp)   = 'TEMP4'
-  ichrvr(ipp)   = 0
-  ilisvr(ipp)   = 0
-  ihisvr(ipp,1) = -1
-
-! ---- Term T^3
-  ipp = ipppro(ipproc(it3m))
-  nomvar(ipp)   = 'TEMP3'
-  ichrvr(ipp)   = 0
-  ilisvr(ipp)   = 0
-  ihisvr(ipp,1) = -1
-
-endif
-
-
-!===============================================================================
-! 2. Additional Calculation Options
+! 1. Additional Calculation Options
 !===============================================================================
 
 ! -->  Density Relaxation
@@ -2853,14 +2475,12 @@ endif
 
 srrom = 0.8d0
 
-
 !===============================================================================
-! 3. Physical Constants
+! 2. Physical Constants
 !===============================================================================
 
 !       DIFTL0: Dynamic Diffusion Coefficient (kg/(m s))
 diftl0 = 4.25d-5
-
 
 !----
 ! End
@@ -2878,14 +2498,10 @@ subroutine usebu1
 !===============================================================================
 !  PURPOSE:
 !  --------
-!  1. Variable Output
-!     a. Transported Variables
-!     b. Variables of State; User definied Variables
-!
-!  2. Additional Calculation Options
+!  1. Additional Calculation Options
 !     a. Density Relaxation
 !
-!  3. Physical Constants
+!  2. Physical Constants
 !     a.Dynamic Diffusion Coefficient
 !===============================================================================
 
@@ -2913,108 +2529,10 @@ use radiat
 
 implicit none
 
-integer          ipp
-
-!===============================================================================
-!===============================================================================
-! 1. Variable Output
-!===============================================================================
-!    Function                             |  Key Word |   Indicator
-!    ---------------------------------------------------------------
-!    Variable Output in the result file   | ICHRVR()  | yes= 1  ; no=0
-!    Variable Output in the listing file  | ILISVR()  | yes= 1  ; no=0
-!    Output of the temporal evolution of  | IHISVR()  | yes=-1* ; no=0
-!    the variable at monitoring points    |           |
-!    -----------------------------------------------------------------
-!    *: Output for all monitoring points
-!
-!===============================================================================
-! a. Transported Variables
-!===============================================================================
-! ---- Mass fraction of unburned (or fresh)  gas
-if (ippmod(icoebu).ge.0) then
-  ipp = ipprtp(isca(iygfm))
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-endif
-
-! ---- Mean Mixture Fraction
-if (ippmod(icoebu).ge.2) then
-  ipp = ipprtp(isca(ifm))
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-endif
-
-
-! ---- Enthalpy
-if (ippmod(icoebu).eq.1 .or. ippmod(icoebu).eq.3) then
-  ipp = ipprtp(isca(ihm))
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-endif
-
-
-!===============================================================================
-! b. Variables of State; User definied Variables
 !===============================================================================
 
-! ---- Temperature
-ipp = ipppro(ipproc(itemp))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-! ---- Mean mass fraction of Fuel:    YM_Fuel
-ipp = ipppro(ipproc(iym(1)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-! ---- Mean mass fraction of Oxidizer : YM_Oxy
-ipp = ipppro(ipproc(iym(2)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-! ---- Mean mass fraction of Product: YM_Prod
-ipp = ipppro(ipproc(iym(3)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-! ---- Premixed flame including gas radiation
-
-if (iirayo.gt.0) then
-
-! ---- Absorption Coefficient
-  ipp = ipppro(ipproc(ickabs))
-  nomvar(ipp)   = 'KABS'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-
-! ---- Term T^4
-  ipp = ipppro(ipproc(it4m))
-  nomvar(ipp)   = 'TEMP4'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-
-! ---- Term T^3
-  ipp = ipppro(ipproc(it3m))
-  nomvar(ipp)   = 'TEMP3'
-  ichrvr(ipp)   = 0
-  ilisvr(ipp)   = 0
-  ihisvr(ipp,1) = -1
-
-endif
-
-
 !===============================================================================
-! 2. Additional Calculation Options
+! 1. Additional Calculation Options
 !===============================================================================
 
 ! -->  Density Relaxation
@@ -3024,16 +2542,16 @@ srrom = 0.8d0
 
 
 !===============================================================================
-! 3. Physical Constants
+! 2. Physical Constants
 !===============================================================================
 
-!       DIFTL0: Dynamic Diffusion Coefficient (kg/(m s))
+! DIFTL0: Dynamic Diffusion Coefficient (kg/(m s))
+
 diftl0 = 4.25d-5
 
-!       cebu: EBU-model constant
+! cebu: EBU-model constant
 
- cebu   = 2.5d0
-
+cebu   = 2.5d0
 
 !----
 ! End
@@ -3052,14 +2570,10 @@ subroutine uslwc1
 !===============================================================================
 !  PURPOSE:
 !  --------
-!  1. Variable Output
-!     a. Transported Variables
-!     b. Variables of State; User definied Variables
-!
-!  2. Additional Calculation Options
+!  1. Additional Calculation Options
 !     a. Density Relaxation
 !
-!  3. Physical Constants
+!  2. Physical Constants
 !     a.Dynamic Diffusion Coefficient
 !     b.Constants of the Libby-Williams Model
 !===============================================================================
@@ -3091,175 +2605,9 @@ implicit none
 integer          ipp, idirac
 
 !===============================================================================
-!===============================================================================
-! 1. Variable Output
-!===============================================================================
-!    Function                             |  Key Word |   Indicator
-!    ---------------------------------------------------------------
-!    Variable Output in the result file   | ICHRVR()  | yes= 1  ; no=0
-!    Variable Output in the listing file  | ILISVR()  | yes= 1  ; no=0
-!    Output of the temporal evolution of  | IHISVR()  | yes=-1* ; no=0
-!    the variable at monitoring points    |           |
-!    -----------------------------------------------------------------
-!    *: Output for all monitoring points
-!
-!===============================================================================
-! a. Transported Variables
-!===============================================================================
-
-! ---- Mean Mixture Fraction
-if (ippmod(icolwc).ge.0) then
-  ipp = ipprtp(isca(ifm))
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-
-! ---- Variance of Mixture Fraction
-  ipp = ipprtp(isca(ifp2m))
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-
-! ---- Fuel Mass fraction
-  ipp = ipprtp(isca(iyfm))
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-
-! ---- Variance of Fuel Mass fraction
-  ipp = ipprtp(isca(iyfp2m))
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-endif
-
-if (ippmod(icolwc).ge.2) then
-    ipp = ipprtp(isca(icoyfp))
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-endif
-
-! ---- Enthalpy
-if (ippmod(icolwc).eq.1 .or.                                     &
-    ippmod(icolwc).eq.3 .or.                                     &
-    ippmod(icolwc).eq.5) then
-  ipp = ipprtp(isca(ihm))
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-endif
-
 
 !===============================================================================
-! b. Variables of State; User definied Variables
-!===============================================================================
-
-! --- Source term
-  ipp = ipppro(ipproc(itsc))
-  nomvar(ipp)   = 'T.SOURCE'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-! --- Temperature in K
-  ipp = ipppro(ipproc(itemp))
-  nomvar(ipp)   = 'Temperature'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-! --- Fuel Mass fraction
-  ipp = ipppro(ipproc(iym(1)))
-  nomvar(ipp)   = 'YM_Fuel'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-! --- Oxidizer Mass fraction
-  ipp = ipppro(ipproc(iym(2)))
-  nomvar(ipp)   = 'YM_Oxyd'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-! --- Products Mass fraction
-  ipp = ipppro(ipproc(iym(3)))
-  nomvar(ipp)   = 'YM_Prod'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-
-  do idirac = 1, ndirac
-    ipp = ipppro(ipproc(irhol(idirac)))
-    write(nomvar(ipp),'(a4,i1)') 'RHOL', idirac
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-
-    ipp = ipppro(ipproc(iteml(idirac)))
-    write(nomvar(ipp),'(a4,i1)') 'TEML', idirac
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-
-    ipp = ipppro(ipproc(ifmel(idirac)))
-    write(nomvar(ipp),'(a4,i1)') 'FMEL', idirac
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-
-    ipp = ipppro(ipproc(ifmal(idirac)))
-    write(nomvar(ipp),'(a4,i1)') 'FMAL', idirac
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-
-    ipp = ipppro(ipproc(iampl(idirac)))
-    write(nomvar(ipp),'(a4,i1)') 'AMPL', idirac
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-
-    ipp = ipppro(ipproc(itscl(idirac)))
-    write(nomvar(ipp),'(a4,i1)') 'TSCL', idirac
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-
-    ipp = ipppro(ipproc(imaml(idirac)))
-    write(nomvar(ipp),'(a4,i1)') 'MAML', idirac
-    ichrvr(ipp)   = 1
-    ilisvr(ipp)   = 1
-    ihisvr(ipp,1) = -1
-  enddo
-
-! ---- Premixed flame including gas radiation
-
-if (iirayo.gt.0) then
-
-! ---- Absorption Coefficient
-  ipp = ipppro(ipproc(ickabs))
-  nomvar(ipp)   = 'KABS'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-
-! ---- Term T^4
-  ipp = ipppro(ipproc(it4m))
-  nomvar(ipp)   = 'TEMP4'
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-
-! ---- Term T^3
-  ipp = ipppro(ipproc(it3m))
-  nomvar(ipp)   = 'TEMP3'
-  ichrvr(ipp)   = 0
-  ilisvr(ipp)   = 0
-  ihisvr(ipp,1) = -1
-
-endif
-
-
-!===============================================================================
-! 2. Additional Calculation Options
+! 1. Additional Calculation Options
 !===============================================================================
 
 ! -->  Density Relaxation
@@ -3269,7 +2617,7 @@ srrom = 0.95d0
 
 
 !===============================================================================
-! 3. Physical Constants
+! 2. Physical Constants
 !===============================================================================
 
 ! --> DIFTL0: Dynamic Diffusion Coefficient (kg/(m s))
@@ -3277,14 +2625,14 @@ diftl0 = 4.25d-5
 
 ! --> Constants of the Libby-Williams Model
 
-! --- Reference velocity
- vref = 60.d0
-! --- Reference length scale
- lref = 0.1d0
-! --- Activation Temperature
- ta   = 0.2d5
-! --- Cross-over Temperature (combustion of propane)
- tstar= 0.12d4
+! Reference velocity
+vref = 60.d0
+! Reference length scale
+lref = 0.1d0
+! Activation Temperature
+ta   = 0.2d5
+! Cross-over Temperature (combustion of propane)
+tstar= 0.12d4
 
 !----
 ! End
@@ -3542,7 +2890,7 @@ subroutine uscpi1
 !  PURPOSE   :
 !  ---------
 
-!  User's routine to control outing of variables for pulverised coal combustion
+!  Additional options for pulverised coal combustion
 !  (these parameters are in modules)
 
 !-------------------------------------------------------------------------------
@@ -3617,266 +2965,7 @@ endif
 
 
 !===============================================================================
-! 1. TRANSPORTED VARIABLES
-!===============================================================================
-
-! OUTLET chrono, listing, and histo
-!     if below vector are not allocated, default values will be used
-
-!       ICHRVR( ) =  chono outlet (Yes 1/No  0)
-!       ILISVR( ) =  listing outlet (Yes 1/No  0)
-!       IHISVR( ) =  histo outlet (number of roiqu and number)
-!       if IHISVR(.,1)  = -1 every monitoring point
-
-
-! --> Variables for the mix (carrying gas and coal particles)
-
-!      - Enthalpy
-ipp = ipprtp(isca(ihm))
-ichrvr(ipp)  = 1
-ilisvr(ipp)  = 1
-ihisvr(ipp,1)= -1
-
-! --> Variables for coal particles
-
-do icla = 1, nclacp
-
-!       - Char mass fraction (in class ICLA)
-  ipp = ipprtp(isca(ixck(icla)))
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-
-!       - Coal mass fraction (in class ICLA)
-  ipp = ipprtp(isca(ixch(icla)))
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-
-!       - Number of particles for 1 kg mix (from class ICLA)
-  ipp = ipprtp(isca(inp(icla)))
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-
-!       - Enthalpy J/kg (for class ICLA)
-  ipp = ipprtp(isca(ih2(icla)))
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-
-!       - Water mass fraction (in class ICLA)
-  if (ippmod(icp3pl) .eq. 1) then
-    ipp = ipprtp(isca(ixwt(icla)))
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-  endif
-enddo
-
-! --> Variables for the carrier phase
-
-do icha = 1, ncharb
-
-!       - Mean of 1 mixture fraction
-!         (from light volatiles of char ICHA)
-  ipp = ipprtp(isca(if1m(icha)))
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-
-!       - Mean of 2 mixture fraction
-!         (from heavy volatiles of char ICHA)
-  ipp = ipprtp(isca(if2m(icha)))
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-
-enddo
-
-!     - Mean of 3 mixture fraction
-!       (C from heterogeneoux oxidation, of char, by O2)
-ipp = ipprtp(isca(if3m))
-ichrvr(ipp)  = 1
-ilisvr(ipp)  = 1
-ihisvr(ipp,1)= -1
-
-!     - Meam of (6 ?) mixture fraction
-!       (C from heterogeneous reaction between char and CO2)
-if ( ihtco2 .eq. 1) then
-  ipp = ipprtp(isca(if3mc2))
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-endif
-
-!     - Mean of 5 mixture fraction
-!       (water vapor from drying)
-if (ippmod(icp3pl) .eq. 1) then
-  ipp = ipprtp(isca(if5m))
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-endif
-
-!     - Mass fraction of CO2 or CO (relaxation to equilibrium)
-
-if (ieqco2 .ge. 1) then
-  ipp = ipprtp(isca(iyco2))
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-endif
-
-!===============================================================================
-! 2. Sate variables
-!===============================================================================
-
-! OUTLET chrono, listing, and histo
-!     if below vector are not allocated, default values will be used
-
-!       ICHRVR( ) =  chono outlet (Yes 1/No  0)
-!       ILISVR( ) =  listing outlet (Yes 1/No  0)
-!       IHISVR( ) =  histo outlet (number of roiqu and number)
-!       if IHISVR(.,1)  = -1 every monitoring point
-
-! --> State varables for the mix
-
-!     - Mean Molar Mass
-ipp = ipppro(ipproc(immel))
-ichrvr(ipp)   = 0
-ilisvr(ipp)   = 0
-ihisvr(ipp,1) = -1
-
-! --> State variables for coal particles
-
-do icla = 1, nclacp
-
-!       - Particles' Temperature K (of class ICLA)
-  ipp = ipppro(ipproc(itemp2(icla)))
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-
-!       - Particles' Density kg/m3 (of class ICLA)
-  ipp = ipppro(ipproc(irom2(icla)))
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-
-!       - Particles' Diameter m (of class ICLA)
-  ipp = ipppro(ipproc(idiam2(icla)))
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-
-!       - Rate of coal consumption  (s-1) < 0
-!         (for class ICLA)
-  ipp = ipppro(ipproc(igmdch(icla)))
-  ichrvr(ipp)   = 0
-  ilisvr(ipp)   = 0
-  ihisvr(ipp,1) = -1
-
-!       - Rate of light volatiles exhaust (s-1) < 0
-!         (for class ICLA)
-  ipp = ipppro(ipproc(igmdv1(icla)))
-  ichrvr(ipp)   = 0
-  ilisvr(ipp)   = 0
-  ihisvr(ipp,1) = -1
-
-!       - Rate of heavy volatile exhaust (s-1) < 0
-!         (de la classe ICLA)
-  ipp = ipppro(ipproc(igmdv2(icla)))
-  ichrvr(ipp)   = 0
-  ilisvr(ipp)   = 0
-  ihisvr(ipp,1) = -1
-
-!       - Rate of char oxidation by O2 (s-1) < 0
-!         (from class ICLA)
-  ipp = ipppro(ipproc(igmhet(icla)))
-  ichrvr(ipp)   = 0
-  ilisvr(ipp)   = 0
-  ihisvr(ipp,1) = -1
-
-!       - Rate of char gazeification by CO2 (s-1) < 0
-!         (from class ICLA)
-  if (ihtco2 .eq. 1) then
-    ipp = ipppro(ipproc(ighco2(icla)))
-    ichrvr(ipp)   = 0
-    ilisvr(ipp)   = 0
-    ihisvr(ipp,1) = -1
-  endif
-
-!       - Rate of drying (s-1) < 0
-!         (from class ICLA)
-  if (ippmod(icp3pl) .eq. 1) then
-    ipp = ipppro(ipproc(igmsec(icla)))
-    ichrvr(ipp)   = 0
-    ilisvr(ipp)   = 0
-    ihisvr(ipp,1) = -1
-  endif
-
-!       - Mass fraction (of class ICLA) in mix
-  ipp = ipppro(ipproc(ix2(icla)))
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-
-enddo
-
-! --> State variables for carrier gas phase
-
-!     - Temperature of gas mixture
-ipp = ipppro(ipproc(itemp1))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!     - Mass fraction (among gases) of  CHx1m
-ipp = ipppro(ipproc(iym1(1)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!     - mass fraction (among gases) of CHx2m
-ipp = ipppro(ipproc(iym1(2)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!     - mass fraction (among gases) of CO
-ipp = ipppro(ipproc(iym1(3)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!     - mass fraction (among gases) of O2
-ipp = ipppro(ipproc(iym1(4)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!     - mass fraction (among gases) of CO2
-ipp = ipppro(ipproc(iym1(5)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!     - mass fraction (among gases) of H2O
-ipp = ipppro(ipproc(iym1(6)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!     - mass fraction (among gases) of N2
-ipp = ipppro(ipproc(iym1(7)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-
-!===============================================================================
-! 3. Computation OPTION
+! 1. Computation OPTION
 !===============================================================================
 
 ! --- Relaxation for density (Advisable when starting combustion computation)
@@ -3887,7 +2976,7 @@ srrom = 0.95d0
 
 
 !===============================================================================
-! 4. Physical constants
+! 2. Physical constants
 !===============================================================================
 
 ! ---  Laminar viscosity for enthalpy (dynamical diffusivity) kg/(m.s)
@@ -3958,8 +3047,6 @@ use ppincl
 
 implicit none
 
-integer          ipp , icha
-
 !===============================================================================
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
@@ -3995,141 +3082,22 @@ endif
 !===============================================================================
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
-
 !===============================================================================
-! 1. Transported variables
-!===============================================================================
-
-!  Chronological output, logging in listing, history output
-!       if we do not assign the following array values,
-!       default values will be used!
-!
-!     ichrvr( ) = chonological output (yes 1/no 0)
-!     ilisvr( ) = logging in listing (yes 1/no 0)
-!     ihisvr( ) = history output (number of probes and their numbers)
-!     if ihisvr(.,1)  = -1, output for all probes
-
-! --> Variables propres a la phase gaz continue
-
-!      - Enthalpie de la phase gaz continue
-ipp = ipprtp(isca(ihm))
-ichrvr(ipp)  = 1
-ilisvr(ipp)  = 1
-ihisvr(ipp,1)= -1
-
-! --> Variables propres a la phase continue
-
-do icha = 1, ncharb
-
-!       - Moyenne du traceur 1
-!         (representatif des MV legeres du charbon ICHA)
-  ipp = ipprtp(isca(if1m(icha)))
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-
-!       - Moyenne du traceur 2
-!         (representatif des MV lourdes du charbon ICHA)
-  ipp = ipprtp(isca(if2m(icha)))
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-
-enddo
-
-!     - Moyenne du traceur 3 (representatif du C libere sous forme de CO
-!       lors de la combustion heterogene)
-ipp = ipprtp(isca(if3m))
-ichrvr(ipp)  = 1
-ilisvr(ipp)  = 1
-ihisvr(ipp,1)= -1
-
-!===============================================================================
-! 2. Algebraic or state variables
+! 1. Calculation options
 !===============================================================================
 
-!  Chronological output, logging in listing, history output
-!       if we do not assign the following array values,
-!       default values will be used!
-!
-!     ichrvr( ) = chonological output (yes 1/no 0)
-!     ilisvr( ) = logging in listing (yes 1/no 0)
-!     ihisvr( ) = history output (number of probes and their numbers)
-!     if ihisvr(.,1)  = -1, output for all probes
-
-! --> Variables algebriques propres a la suspension gaz - particules
-
-!     - Masse molaire du melange gazeux
-ipp = ipppro(ipproc(immel))
-ichrvr(ipp)   = 0
-ilisvr(ipp)   = 0
-ihisvr(ipp,1) = -1
-
-!     - Temperature du melange gazeux
-ipp = ipppro(ipproc(itemp1))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!     - Fraction massique (dans le melange gazeux) du CHx1m
-ipp = ipppro(ipproc(iym1(1)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!     - Fraction massique (dans le melange gazeux) du CHx2m
-ipp = ipppro(ipproc(iym1(2)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!     - Fraction massique (dans le melange gazeux) du CO
-ipp = ipppro(ipproc(iym1(3)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!     - Fraction massique (dans le melange gazeux) du O2
-ipp = ipppro(ipproc(iym1(4)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!     - Fraction massique (dans le melange gazeux) du CO2
-ipp = ipppro(ipproc(iym1(5)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!     - Fraction massique (dans le melange gazeux) du H2O
-ipp = ipppro(ipproc(iym1(6)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!     - Fraction massique (dans le melange gazeux) du N2
-ipp = ipppro(ipproc(iym1(7)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-
-!===============================================================================
-! 3. OPTIONS DE CALCUL
-!===============================================================================
-
-! --- Coefficient de relaxation de la masse volumique
-!      RHO(n+1) = SRROM * RHO(n) + (1-SRROM) * RHO(n+1)
+! Relaxation coefficient for density
+! rho(n+1) = srrom * rho(n) + (1-srrom) * rho(n+1)
 
 srrom = 0.8d0
 
 
 !===============================================================================
-! 4. CONSTANTES PHYSIQUES
+! 2. Physical constants
 !===============================================================================
 
-! ---> Viscosite laminaire associee au scalaire enthalpie
-!       DIFTL0 (diffusivite dynamique en kg/(m s))
+! Laminar viscosity associated t Enthalpy scalar
+! DIFTL0 (dynamic diffusivity in kg/(m s))
 diftl0 = 4.25d-5
 
 
@@ -4193,343 +3161,10 @@ use cs_coal_incl
 
 implicit none
 
-integer          ipp , icla , icha
-
 !===============================================================================
 
-
 !===============================================================================
-! 1. Transported variables
-!===============================================================================
-
-! OUTLET chrono, listing, and histo
-!     if below vector are not allocated, default values will be used
-
-!       ichrvr( ) =  chono outlet (Yes 1/No  0)
-!       ilisvr( ) =  listing outlet (Yes 1/No  0)
-!       ihisvr( ) =  histo outlet (number of roiqu and number)
-!       if ihisvr(.,1)  = -1 every probe
-
-
-! --> Variables for the mix (carrying gas and coal particles)
-
-!      - Enthalpy
-ipp = ipprtp(isca(ihm))
-ichrvr(ipp)  = 1
-ilisvr(ipp)  = 1
-ihisvr(ipp,1)= -1
-
-! --> Variables for coal particles
-
-do icla = 1, nclacp
-
-!       - Char mass fraction (in class ICLA)
-  ipp = ipprtp(isca(ixck(icla)))
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-
-!       - Coal mass fraction (in class ICLA)
-  ipp = ipprtp(isca(ixch(icla)))
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-
-!       - Number of particles for 1 kg mix (from class ICLA)
-  ipp = ipprtp(isca(inp(icla)))
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-
-!       - Enthalpy J/kg (for class ICLA)
-  ipp = ipprtp(isca(ih2(icla)))
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-
-!       - Water mass fraction (in class ICLA)
-  if (ippmod(icp3pl) .eq. 1) then
-    ipp = ipprtp(isca(ixwt(icla)))
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-  endif
-enddo
-
-! --> Variables for the carrier phase
-
-do icha = 1, ncharb
-
-!       - Mean of 1 mixture fraction
-!         (from light volatiles of char ICHA)
-  ipp = ipprtp(isca(if1m(icha)))
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-
-!       - Mean of 2 mixture fraction
-!         (from heavy volatiles of char ICHA)
-  ipp = ipprtp(isca(if2m(icha)))
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-
-enddo
-
-! ---- Variables propres a la phase continue
-  if (noxyd .ge. 2) then
-    ipp = ipprtp(isca(if4m))
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-  endif
-  if (noxyd .eq. 3) then
-    ipp = ipprtp(isca(if5m))
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-  endif
-  if (ippmod(iccoal) .ge. 1) then
-    ipp = ipprtp(isca(if6m))
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-  endif
-  ipp = ipprtp(isca(if7m))
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-  if (ihtco2 .eq. 1) then
-    ipp = ipprtp(isca(if8m))
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-  endif
-  if (ihth2o .eq. 1) then
-    ipp = ipprtp(isca(if9m))
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-  endif
-!
-
-  ipp = ipprtp(isca(ifvp2m))
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-
-!
-  if (ieqco2 .ge. 1) then
-    ipp = ipprtp(isca(iyco2))
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-  endif
-  if (ieqnox .ge. 1) then
-    ipp = ipprtp(isca(iyhcn))
-    nomvar(ipp)  = 'FR_HCN'
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-    ipp = ipprtp(isca(iyno))
-    nomvar(ipp)  = 'FR_NO'
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-    ipp = ipprtp(isca(ihox))
-    nomvar(ipp)  = 'Enth_Ox'
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-  endif
-
-!===============================================================================
-! 2. Sate variables
-!===============================================================================
-
-! OUTLET chrono, listing, and histo
-!     if below vector are not allocated, default values will be used
-
-!       ICHRVR( ) =  chono outlet (Yes 1/No  0)
-!       ILISVR( ) =  listing outlet (Yes 1/No  0)
-!       IHISVR( ) =  histo outlet (number of roiqu and number)
-!       if IHISVR(.,1)  = -1 every probe
-
-! --> State varables for the mix
-
-!     - Mean Molar Mass
-ipp = ipppro(ipproc(immel))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-! --> State variables for coal particles
-
-do icla = 1, nclacp
-
-!       - Particles' Temperature K (of class ICLA)
-  ipp = ipppro(ipproc(itemp2(icla)))
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-
-!       - Particles' Density kg/m3 (of class ICLA)
-  ipp = ipppro(ipproc(irom2(icla)))
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-
-!       - Particles' Diameter m (of class ICLA)
-  ipp = ipppro(ipproc(idiam2(icla)))
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-
-!       - Rate of coal consumption  (s-1) < 0
-!         (for class ICLA)
-  ipp = ipppro(ipproc(igmdch(icla)))
-  ichrvr(ipp)   = 0
-  ilisvr(ipp)   = 0
-  ihisvr(ipp,1) = -1
-
-!       - Rate of light volatiles exhaust (s-1) < 0
-!         (for class ICLA)
-  ipp = ipppro(ipproc(igmdv1(icla)))
-  ichrvr(ipp)   = 0
-  ilisvr(ipp)   = 0
-  ihisvr(ipp,1) = -1
-
-!       - Rate of heavy volatile exhaust (s-1) < 0
-!         (de la classe ICLA)
-  ipp = ipppro(ipproc(igmdv2(icla)))
-  ichrvr(ipp)   = 0
-  ilisvr(ipp)   = 0
-  ihisvr(ipp,1) = -1
-
-!       - Rate of char oxidation by O2 (s-1) < 0
-!         (from class ICLA)
-  ipp = ipppro(ipproc(igmhet(icla)))
-  ichrvr(ipp)   = 0
-  ilisvr(ipp)   = 0
-  ihisvr(ipp,1) = -1
-
-!       - Rate of char gazeification by CO2 (s-1) < 0
-!         (from class ICLA)
-  if (ihtco2 .eq. 1) then
-    ipp = ipppro(ipproc(ighco2(icla)))
-    ichrvr(ipp)   = 0
-    ilisvr(ipp)   = 0
-    ihisvr(ipp,1) = -1
-  endif
-
-!       - Rate of char gazeification by H2O (s-1) < 0
-!         (from class ICLA)
-  if (ihth2o .eq. 1) then
-    ipp = ipppro(ipproc(ighh2o(icla)))
-    ichrvr(ipp)   = 0
-    ilisvr(ipp)   = 0
-    ihisvr(ipp,1) = -1
-  endif
-
-!       - Rate of drying (s-1) < 0
-!         (from class ICLA)
-  if (ippmod(icp3pl) .eq. 1) then
-    ipp = ipppro(ipproc(igmsec(icla)))
-    ichrvr(ipp)   = 0
-    ilisvr(ipp)   = 0
-    ihisvr(ipp,1) = -1
-  endif
-
-!       - Mass fraction (of class ICLA) in mix
-  ipp = ipppro(ipproc(ix2(icla)))
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-
-enddo
-
-! --> State variables for carrier gas phase
-
-!     - Temperature of gas mixture
-ipp = ipppro(ipproc(itemp1))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!     - Mass fraction (among gases) of  CHx1m
-ipp = ipppro(ipproc(iym1(1)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!     - mass fraction (among gases) of CHx2m
-ipp = ipppro(ipproc(iym1(2)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!     - mass fraction (among gases) of CO
-ipp = ipppro(ipproc(iym1(3)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!     - mass fraction (among gases) of H2S
-ipp = ipppro(ipproc(iym1(4)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!     - mass fraction (among gases) of H2
-ipp = ipppro(ipproc(iym1(5)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!     - mass fraction (among gases) of HCN
-ipp = ipppro(ipproc(iym1(6)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!     - mass fraction (among gases) of NH3
-ipp = ipppro(ipproc(iym1(7)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!     - mass fraction (among gases) of O2
-ipp = ipppro(ipproc(iym1(8)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!     - mass fraction (among gases) of CO2
-ipp = ipppro(ipproc(iym1(9)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!     - mass fraction (among gases) of H2O
-ipp = ipppro(ipproc(iym1(10)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!     - mass fraction (among gases) of SO2
-ipp = ipppro(ipproc(iym1(11)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!     - mass fraction (among gases) of N2
-ipp = ipppro(ipproc(iym1(12)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!===============================================================================
-! 3. Computation OPTION
+! 1. Computation OPTION
 !===============================================================================
 
 ! --- Relaxation for density (Advisable when starting combustion computation)
@@ -4539,7 +3174,7 @@ ihisvr(ipp,1) = -1
 srrom = 0.95d0
 
 !===============================================================================
-! 4. Physical constants
+! 2. Physical constants
 !===============================================================================
 
 ! ---  Laminar viscosity for enthalpy (dynamical diffusivity) kg/(m.s)
@@ -4602,262 +3237,10 @@ use ppcpfu
 
 implicit none
 
-integer ipp, icla
-
 !===============================================================================
 
 !===============================================================================
-! 1. Transported variables
-!===============================================================================
-
-! OUTLET chrono, listing, and histo
-!     if below vector are not allocated, default values will be used
-
-!       ichrvr( ) =  chono outlet (Yes 1/No  0)
-!       ilisvr( ) =  listing outlet (Yes 1/No  0)
-!       ihisvr( ) =  histo outlet (number of roiqu and number)
-!       if ihisvr(.,1)  = -1 every probe
-
-! --> Variables for the mix (carrying gas and coal particles)
-
-!      - Enthalpy
-
-ipp = ipprtp(isca(ihm))
-ichrvr(ipp)  = 1
-ilisvr(ipp)  = 1
-ihisvr(ipp,1)= -1
-
-! --> Variables for droplets
-
-do icla = 1, nclafu
-!       - Fuel mass fraction
-  ipp = ipprtp(isca(iyfol(icla)))
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-
-!       - Number of droplets in mix (1/kg)
-  ipp = ipprtp(isca(ing(icla)))
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-
-!       - Fuel enthalpy (J/kg)
-  ipp = ipprtp(isca(ih2(icla)))
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-enddo
-
-! --> Variables for carrying gas
-
-!       - Mean of 1 mixture fraction (fuel vapor)
-ipp = ipprtp(isca(ifvap))
-ichrvr(ipp)  = 1
-ilisvr(ipp)  = 1
-ihisvr(ipp,1)= -1
-
-!     - Mean of 3 mixture fraction
-!       (carbon from heterogeneous oxidation of char)
-ipp = ipprtp(isca(if7m))
-ichrvr(ipp)  = 1
-ilisvr(ipp)  = 1
-ihisvr(ipp,1)= -1
-
-!     - Variance of 4 mixture fraction (air)
-ipp = ipprtp(isca(ifvp2m))
-ichrvr(ipp)  = 1
-ilisvr(ipp)  = 1
-ihisvr(ipp,1)= -1
-
-!     - YCO2
-
-if (ieqco2 .ge. 1) then
-  ipp = ipprtp(isca(iyco2))
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-endif
-
-!     - HCN and NO
-
-if (ieqnox .eq. 1) then
-  ipp = ipprtp(isca(iyhcn))
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-  ipp = ipprtp(isca(iyno))
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-  ipp = ipprtp(isca(ihox))
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-endif
-
-!===============================================================================
-! 2. State variables
-!===============================================================================
-
-! OUTLET chrono, listing, and histo
-!     if below vector are not allocated, default values will be used
-
-!       ichrvr( ) =  chono outlet (Yes 1/No  0)
-!       ilisvr( ) =  listing outlet (Yes 1/No  0)
-!       ihisvr( ) =  histo outlet (number of roiqu and number)
-!       if ihisvr(.,1)  = -1 every monitoring point
-
-
-! --> Variables for the mix (carrying gas and coal particles)
-
-!     - Mean Molar Mass of gases in kg
-ipp = ipppro(ipproc(immel))
-ichrvr(ipp)   = 0
-ilisvr(ipp)   = 0
-ihisvr(ipp,1) = -1
-
-! --> Variables for droplets
-
-do icla = 1, nclafu
-!       - Droplets' Temperature in K
-  ipp = ipppro(ipproc(itemp2(icla)))
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-
-!       - Droplet's Density in kg/m3
-  ipp = ipppro(ipproc(irom2(icla)))
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-
-!       - Droplet's Diameter
-  ipp = ipppro(ipproc(idiam2(icla)))
-  ichrvr(ipp)   = 1
-  ilisvr(ipp)   = 1
-  ihisvr(ipp,1) = -1
-
-!       - Heat flux (between gases and ICLA class droplets)
-  ipp = ipppro(ipproc(ih1hlf(icla)))
-  ichrvr(ipp)   = 0
-  ilisvr(ipp)   = 0
-  ihisvr(ipp,1) = -1
-
-!       - Evaporation mass flow rate (s-1) < 0
-  ipp = ipppro(ipproc(igmeva(icla)))
-  ichrvr(ipp)   = 0
-  ilisvr(ipp)   = 0
-  ihisvr(ipp,1) = -1
-
-!       - Char combsution mass flow rate
-  ipp = ipppro(ipproc(igmhtf(icla)))
-  ichrvr(ipp)   = 0
-  ilisvr(ipp)   = 0
-  ihisvr(ipp,1) = -1
-enddo
-
-! --> State variables for carrying gas
-
-!     - Temperature for gases only (not mixed with droplets)
-ipp = ipppro(ipproc(itemp1))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!      - Nothing
-ipp = ipppro(ipproc(iym1(1)))
-ichrvr(ipp)   = 0
-ilisvr(ipp)   = 0
-ihisvr(ipp,1) = -1
-
-!     -  Mass fraction of fuel vapor
-!          (relative to pure gases : not mixed with droplets ..)
-ipp = ipppro(ipproc(iym1(2)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!     - mass fraction (among gases) of CO
-ipp = ipppro(ipproc(iym1(3)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!     - mass fraction (among gases) of H2S
-ipp = ipppro(ipproc(iym1(4)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!     - mass fraction (among gases) of H2
-ipp = ipppro(ipproc(iym1(5)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!     - mass fraction (among gases) of HCN
-ipp = ipppro(ipproc(iym1(6)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!     - mass fraction (among gases) of NH3
-ipp = ipppro(ipproc(iym1(7)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!     - mass fraction (among gases) of O2
-ipp = ipppro(ipproc(iym1(8)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!     - mass fraction (among gases) of CO2
-ipp = ipppro(ipproc(iym1(9)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!     - mass fraction (among gases) of H2O
-ipp = ipppro(ipproc(iym1(10)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!     - mass fraction (among gases) of SO2
-ipp = ipppro(ipproc(iym1(11)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!     - mass fraction (among gases) of N2
-ipp = ipppro(ipproc(iym1(12)))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!     - Carbon balance
-ipp = ipppro(ipproc(ibcarbone))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!     - Oxygen balance
-ipp = ipppro(ipproc(iboxygen))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!     - Hydrogen balance
-ipp = ipppro(ipproc(ibhydrogen))
-ichrvr(ipp)   = 1
-ilisvr(ipp)   = 1
-ihisvr(ipp,1) = -1
-
-!===============================================================================
-! 3. Computation OPTION
+! 1. Computation OPTION
 !===============================================================================
 
 ! --- Relaxation for density (Advisable when starting combustion computation)
@@ -4868,7 +3251,7 @@ srrom = 0.7d0
 
 
 !===============================================================================
-! 4. Physical constants
+! 2. Physical constants
 !===============================================================================
 
 ! ---  Laminar viscosity for enthalpy (dynamical diffusivity) kg/(m.s)
@@ -4981,135 +3364,7 @@ endif
 allocate(lstelt(ncel))
 
 !===============================================================================
-! 1. Solved variables
-!===============================================================================
-
-!  Chronological output, logging in listing, history output
-!       if we do not assign the following array values,
-!       default values will be used!
-!
-!     ichrvr( ) = chonological output (yes 1/no 0)
-!     ilisvr( ) = logging in listing (yes 1/no 0)
-!     ihisvr( ) = history output (number of probes and their numbers)
-!     if ihisvr(.,1)  = -1, output for all probes
-!
-! --> Current variables for electric modules
-
-! ---- Enthalpy
-ipp = ipprtp(isca(ihm))
-ichrvr(ipp)  = 1
-ilisvr(ipp)  = 1
-ihisvr(ipp,1)= -1
-
-! ---- Real component of the electrical potential
-ipp = ipprtp(isca(ipotr))
-ichrvr(ipp)  = 1
-ilisvr(ipp)  = 1
-ihisvr(ipp,1)= -1
-
-!---- Mass fraction of the different constituants of the phase
-if (ngazg .gt. 1) then
-  do iesp = 1, ngazg-1
-    ipp = ipprtp(isca(iycoel(iesp)))
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-  enddo
-endif
-
-! --> Specific variables for Joule effect for direct conduction
-!     Imaginary component of electrical potential
-if (ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
-  ipp = ipprtp(isca(ipoti))
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-endif
-
-! --> Specific variables for electric arc in 3D
-!     vector potential components
-if (ippmod(ielarc) .ge. 2) then
-  do idimve = 1, ndimve
-    ipp = ipprtp(isca(ipotva(idimve)))
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-  enddo
-endif
-
-! --> Ionic conduction module
-!     Not available in the present version of the code
-
-!===============================================================================
-! 2. Algebric or state variables
-!===============================================================================
-
-! ---- Temperature
-ipp = ipppro(ipproc(itemp))
-ichrvr(ipp)  = 1
-ilisvr(ipp)  = 1
-ihisvr(ipp,1)= -1
-
-! ---- Electric conductivity
-ipp = ipppro(ipproc(ivisls(ipotr)))
-ichrvr(ipp)  = 1
-ilisvr(ipp)  = 1
-ihisvr(ipp,1)= -1
-
-! ---- Joule effect Power
-ipp = ipppro(ipproc(iefjou))
-ichrvr(ipp)  = 1
-ilisvr(ipp)  = 1
-ihisvr(ipp,1)= -1
-
-! ---- Real component of the current density
-do idimve = 1, ndimve
-  ipp = ipppro(ipproc(idjr(idimve)))
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-enddo
-
-! ---- Imaginary component of the current density
-if (ippmod(ieljou).eq.4) then
-  do idimve = 1, ndimve
-    ipp = ipppro(ipproc(idji(idimve)))
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-  enddo
-endif
-
-if (ippmod(ielarc).ge.1) then
-
-! ---- Electromagnetic Forces (Laplace forces)
-  do idimve = 1, ndimve
-    ipp = ipppro(ipproc(ilapla(idimve)))
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-  enddo
-
-! ---- Absorption oefficient  or Radiative sources term
-  if (ixkabe.gt.0) then
-    ipp = ipppro(ipproc(idrad))
-    ichrvr(ipp)  = 1
-    ilisvr(ipp)  = 1
-    ihisvr(ipp,1)= -1
-  endif
-endif
-
-! ---- Electric charge (volumic)
-if (ippmod(ielion).ge.1) then
-  ipp = ipppro(ipproc(iqelec))
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-endif
-
-
-!===============================================================================
-! 3. Calculation options
+! 1. Calculation options
 !===============================================================================
 
 ! --> Relaxation coefficient for mass density

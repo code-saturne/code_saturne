@@ -317,14 +317,14 @@ if ( ippmod(icod3p).ge.0 ) then
 
 ! ---- Taux de melange
   ipp = ipprtp(isca(ifm))
-  NOMVAR(IPP)  = 'Fra_MEL'
+  nomvar(ipp)  = 'Fra_MEL'
   ichrvr(ipp)  = 1
   ilisvr(ipp)  = 1
   ihisvr(ipp,1)= -1
 
 ! ---- Variance du taux melange
   ipp = ipprtp(isca(ifp2m))
-  NOMVAR(IPP)  = 'Var_FrMe'
+  nomvar(ipp)  = 'Var_FrMe'
   ichrvr(ipp)  = 1
   ilisvr(ipp)  = 1
   ihisvr(ipp,1)= -1
@@ -338,7 +338,7 @@ if ( ippmod(icoebu).ge.0 ) then
 
 ! ---- Fraction massique des gaz frais
   ipp = ipprtp(isca(iygfm))
-  NOMVAR(IPP)  = 'Fra_GF'
+  nomvar(ipp)  = 'Fra_GF'
   ichrvr(ipp)  = 1
   ilisvr(ipp)  = 1
   ihisvr(ipp,1)= -1
@@ -347,7 +347,7 @@ endif
 ! ---- Taux de melange
 if ( ippmod(icoebu).ge.2 ) then
   ipp = ipprtp(isca(ifm))
-  NOMVAR(IPP)  = 'Fra_MEL'
+  nomvar(ipp)  = 'Fra_MEL'
   ichrvr(ipp)  = 1
   ilisvr(ipp)  = 1
   ihisvr(ipp,1)= -1
@@ -359,32 +359,32 @@ endif
 if ( ippmod(icolwc).ne.-1 ) then
 ! --- Taux de melange
   ipp = ipprtp(isca(ifm))
-  NOMVAR(IPP) = 'Fra_Mel'
+  nomvar(ipp) = 'Fra_Mel'
   ichrvr(ipp)  = 1
   ilisvr(ipp)  = 1
   ihisvr(ipp,1)= -1
 ! --- Variance du taux de melange
   ipp = ipprtp(isca(ifp2m))
-  NOMVAR(IPP) = 'Var_FMe'
+  nomvar(ipp) = 'Var_FMe'
   ichrvr(ipp)  = 1
   ilisvr(ipp)  = 1
   ihisvr(ipp,1)= -1
 ! --- Fraction massique
   ipp = ipprtp(isca(iyfm))
-  NOMVAR(IPP) = 'Fra_Mas'
+  nomvar(ipp) = 'Fra_Mas'
   ichrvr(ipp)  = 1
   ilisvr(ipp)  = 1
   ihisvr(ipp,1)= -1
 ! --- Variance de la fraction massique
   ipp = ipprtp(isca(iyfp2m))
-  NOMVAR(IPP) = 'Var_FMa'
+  nomvar(ipp) = 'Var_FMa'
   ichrvr(ipp)  = 1
   ilisvr(ipp)  = 1
   ihisvr(ipp,1)= -1
 ! --- Covariance
   if (ippmod(icolwc).ge.2) then
     ipp = ipprtp(isca(icoyfp))
-    NOMVAR(IPP) = 'COYF_PP4'
+    nomvar(ipp) = 'COYF_PP4'
     ichrvr(ipp)  = 1
     ilisvr(ipp)  = 1
     ihisvr(ipp,1)= -1
@@ -400,7 +400,7 @@ endif
       ippmod(icolwc).eq.3 .or.                                    &
       ippmod(icolwc).eq.5   ) then
    ipp = ipprtp(isca(ihm))
-   NOMVAR(IPP)  = 'Enthalpy'
+   nomvar(ipp)  = 'Enthalpy'
    ichrvr(ipp)  = 1
    ilisvr(ipp)  = 1
    ihisvr(ipp,1)= -1
@@ -415,22 +415,22 @@ endif
 
 if ( ippmod(icod3p).ge.0 ) then
   ipp = ipppro(ipproc(itemp))
-  NOMVAR(IPP)   = 'Temperature'
+  nomvar(ipp)   = 'Temperature'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
   ipp = ipppro(ipproc(iym(1)))
-  NOMVAR(IPP)   = 'YM_Fuel'
+  nomvar(ipp)   = 'YM_Fuel'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
   ipp = ipppro(ipproc(iym(2)))
-  NOMVAR(IPP)   = 'YM_Oxyd'
+  nomvar(ipp)   = 'YM_Oxyd'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
   ipp = ipppro(ipproc(iym(3)))
-  NOMVAR(IPP)   = 'YM_Prod'
+  nomvar(ipp)   = 'YM_Prod'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
@@ -440,22 +440,22 @@ endif
 
 if ( ippmod(icoebu).ge.0 ) then
   ipp = ipppro(ipproc(itemp))
-  NOMVAR(IPP)   = 'Temperature'
+  nomvar(ipp)   = 'Temperature'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
   ipp = ipppro(ipproc(iym(1)))
-  NOMVAR(IPP)   = 'YM_Fuel'
+  nomvar(ipp)   = 'YM_Fuel'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
   ipp = ipppro(ipproc(iym(2)))
-  NOMVAR(IPP)   = 'YM_Oxyd'
+  nomvar(ipp)   = 'YM_Oxyd'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
   ipp = ipppro(ipproc(iym(3)))
-  NOMVAR(IPP)   = 'YM_Prod'
+  nomvar(ipp)   = 'YM_Prod'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
@@ -465,70 +465,70 @@ endif
 
 if ( ippmod(icolwc).ge. 0 ) then
   ipp = ipppro(ipproc(itsc))
-  NOMVAR(IPP)   = 'Source Term'
+  nomvar(ipp)   = 'Source Term'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
   ipp = ipppro(ipproc(itemp))
-  NOMVAR(IPP)   = 'Temperature'
+  nomvar(ipp)   = 'Temperature'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
   ipp = ipppro(ipproc(iym(1)))
-  NOMVAR(IPP)   = 'YM_Fuel'
+  nomvar(ipp)   = 'YM_Fuel'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
   ipp = ipppro(ipproc(iym(2)))
-  NOMVAR(IPP)   = 'YM_Oxyd'
+  nomvar(ipp)   = 'YM_Oxyd'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
   ipp = ipppro(ipproc(iym(3)))
-  NOMVAR(IPP)   = 'YM_Prod'
+  nomvar(ipp)   = 'YM_Prod'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   do idirac = 1, ndirac
     ipp = ipppro(ipproc(irhol(idirac)))
-    WRITE(NOMVAR(IPP),'(A4,I1)') 'RHOL',IDIRAC
+    write(nomvar(ipp),'(A4,I1)') 'RHOL',idirac
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
 
     ipp = ipppro(ipproc(iteml(idirac)))
-    WRITE(NOMVAR(IPP),'(A4,I1)') 'TEML',IDIRAC
+    write(nomvar(ipp),'(A4,I1)') 'TEML',idirac
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
 
     ipp = ipppro(ipproc(ifmel(idirac)))
-    WRITE(NOMVAR(IPP),'(A4,I1)') 'FMEL',IDIRAC
+    write(nomvar(ipp),'(A4,I1)') 'FMEL',idirac
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
 
     ipp = ipppro(ipproc(ifmal(idirac)))
-    WRITE(NOMVAR(IPP),'(A4,I1)') 'FMAL',IDIRAC
+    write(nomvar(ipp),'(A4,I1)') 'FMAL',idirac
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
 
     ipp = ipppro(ipproc(iampl(idirac)))
-    WRITE(NOMVAR(IPP),'(A4,I1)') 'AMPL',IDIRAC
+    write(nomvar(ipp),'(A4,I1)') 'AMPL',idirac
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
 
     ipp = ipppro(ipproc(itscl(idirac)))
-    WRITE(NOMVAR(IPP),'(A4,I1)') 'TSCL',IDIRAC
+    write(nomvar(ipp),'(A4,I1)') 'TSCL',idirac
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
 
     ipp = ipppro(ipproc(imaml(idirac)))
-    WRITE(NOMVAR(IPP),'(A4,I1)') 'MAML',IDIRAC
+    write(nomvar(ipp),'(A4,I1)') 'MAML',idirac
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1
@@ -547,17 +547,17 @@ if ( ( ippmod(icod3p).eq.1 .or.                                   &
        ippmod(icolwc).eq.5 )                                      &
       .and. (iirayo.ge.1) ) then
   ipp = ipppro(ipproc(ickabs))
-  NOMVAR(IPP)   = 'KABS'
+  nomvar(ipp)   = 'KABS'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
   ipp = ipppro(ipproc(it4m))
-  NOMVAR(IPP)   = 'TEMP4'
+  nomvar(ipp)   = 'TEMP4'
   ichrvr(ipp)   = 0
   ilisvr(ipp)   = 0
   ihisvr(ipp,1) = -1
   ipp = ipppro(ipproc(it3m))
-  NOMVAR(IPP)   = 'TEMP3'
+  nomvar(ipp)   = 'TEMP3'
   ichrvr(ipp)   = 0
   ilisvr(ipp)   = 0
   ihisvr(ipp,1) = -1
@@ -625,7 +625,7 @@ else if( ippmod(icod3p).ge.0 ) then
   !==========
 else if( ippmod(icolwc).ge.0 ) then
   call uslwc1
-!       ==========
+  !==========
 endif
 
 !===============================================================================

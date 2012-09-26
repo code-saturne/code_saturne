@@ -520,12 +520,6 @@ if (iihmpr.eq.1) then
 
 endif
 
-!   - Sous-programme utilisateur
-!     ==========================
-
-call usipes(nmodpp)
-!==========
-
 !----
 ! Formats
 !----

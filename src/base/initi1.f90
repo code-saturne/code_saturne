@@ -50,6 +50,7 @@ use paramx
 use optcal
 use entsor
 use ihmpre
+use ppincl, only: ippmod, nmodmx
 
 !===============================================================================
 
@@ -59,7 +60,7 @@ implicit none
 
 ! Local variables
 
-integer          iok
+integer          iok, ipp, nmodpp
 
 !===============================================================================
 
@@ -77,6 +78,13 @@ integer          iok
 call iniini
 !==========
 
+nmodpp = 0
+do ipp = 2, nmodmx
+  if (ippmod(ipp).ne.-1) then
+    nmodpp = nmodpp+1
+  endif
+enddo
+
 !===============================================================================
 ! 2. ENTREE DES DONNEES PAR L'UTILISATEUR
 !      ET POSITIONNEMENT DES VARIABLES (VARPOS)
@@ -86,6 +94,9 @@ call iniusi
 !==========
 
 call ppini1
+!==========
+
+call usipes(nmodpp)
 !==========
 
 call rayopt
