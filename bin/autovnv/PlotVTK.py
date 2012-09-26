@@ -313,18 +313,19 @@ class Builder(object):
                              -1 * self.opt.normal[1],
                              -1 * self.opt.normal[2])
 
-        axes.SetXAxisVisibility(1)
-        axes.SetYAxisVisibility(1)
-        axes.SetZAxisVisibility(1)
-        if self.opt.normal[1] == 0 and self.opt.normal[2] == 0:
-            axes.SetYAxisVisibility(0)
-            self.cam.SetViewUp(0, 0, 1)
-        elif self.opt.normal[0] == 0 and self.opt.normal[2] == 0:
-            axes.SetZAxisVisibility(0)
-            self.cam.SetViewUp(0, 0, 1)
-        elif self.opt.normal[0] == 0 and self.opt.normal[1] == 0:
-            axes.SetYAxisVisibility(0)
-            self.cam.SetViewUp(0, 1, 0)
+        if self.opt.axes:
+            axes.SetXAxisVisibility(1)
+            axes.SetYAxisVisibility(1)
+            axes.SetZAxisVisibility(1)
+            if self.opt.normal[1] == 0 and self.opt.normal[2] == 0:
+                axes.SetYAxisVisibility(0)
+                self.cam.SetViewUp(0, 0, 1)
+            elif self.opt.normal[0] == 0 and self.opt.normal[2] == 0:
+                axes.SetZAxisVisibility(0)
+                self.cam.SetViewUp(0, 0, 1)
+            elif self.opt.normal[0] == 0 and self.opt.normal[1] == 0:
+                axes.SetYAxisVisibility(0)
+                self.cam.SetViewUp(0, 1, 0)
 
         cam = self.cam
 
