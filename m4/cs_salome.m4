@@ -537,7 +537,7 @@ InterpKernelDEC *dec = new InterpKernelDEC(procs_source, procs_target);]])
                    [ AC_MSG_WARN([no ParaMEDMEM support]) ],
                   )
 
-    if test "x$cs_have_paramedmem"; then
+    if test "x$cs_have_paramedmem" = "xyes"; then
       PARAMEDMEM_CPPFLAGS="-I$withval/include/salome"
       PARAMEDMEM_LDFLAGS="-L$withval/lib/salome"
       PARAMEDMEM_LIBS="-lparamedmem ${MEDCOUPLING_LIBS}"
