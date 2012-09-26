@@ -1822,11 +1822,43 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                     itypfb[ifbr] = boundaries->itype[izone];
                 else
                     itypfb[ifbr] = *ientre;
+            }
 
-                /* dirichlet for turbulent variables and scalars */
+            /* dirichlet for turbulent variables and scalars */
 
-                for (i = 0; i < vars->nvar; i++)
-                    rcodcl[vars->rtp[i] * (*nfabor) + ifbr] = boundaries->values[vars->rtp[i]][izone].val1;
+            for (i = 0; i < vars->nvar; i++)
+            {
+                ivar = vars->rtp[i];
+                int isca;
+                int numvar  = vars->nvar - vars->nscaus - vars->nscapp;
+                if (i < vars->nvar - vars->nscapp)
+                    isca = ivar - numvar;
+                else
+                    isca = ivar - numvar + vars->nscaus;
+
+                switch (boundaries->type_code[ivar][izone])
+                {
+                    case DIRICHLET:
+                        for (ifac = 0; ifac < faces; ifac++)
+                        {
+                            ifbr = faces_list[ifac]-1;
+                            rcodcl[ivar * (*nfabor) + ifbr]
+                                = boundaries->values[ivar][izone].val1;
+                        }
+                        break;
+
+                    case DIRICHLET_FORMULA:
+
+                        for (ifac = 0; ifac < faces; ifac++)
+                        {
+                            ifbr = faces_list[ifac]-1;
+                            mei_evaluate(boundaries->scalar[ivar][izone]);
+                            rcodcl[ivar * (*nfabor) + ifbr]
+                                = mei_tree_lookup(boundaries->scalar[ivar][izone],
+                                        vars->label[isca]);
+                        }
+                        break;
+                }
             }
 
             if (cs_gui_strcmp(vars->model, "joule"))
@@ -2349,12 +2381,18 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
 
                         for (ifac = 0; ifac < faces; ifac++)
                         {
+                            int isca;
+                            int numvar  = vars->nvar - vars->nscaus - vars->nscapp;
+                            if (i < vars->nvar - vars->nscapp)
+                                isca = ivar - numvar;
+                            else
+                                isca = ivar - numvar + vars->nscaus;
                             ifbr = faces_list[ifac]-1;
                             mei_evaluate(boundaries->scalar[ivar][izone]);
                             icodcl[ivar *(*nfabor) + ifbr] = 5;
                             rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
                                 = mei_tree_lookup(boundaries->scalar[ivar][izone],
-                                                  vars->label[ivar - vars->nvar + vars->nscaus + vars->nscapp]);
+                                                  vars->label[isca]);
                         }
                     break;
 
@@ -2374,12 +2412,18 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
 
                         for (ifac = 0; ifac < faces; ifac++)
                         {
+                            int isca;
+                            int numvar  = vars->nvar - vars->nscaus - vars->nscapp;
+                            if (i < vars->nvar - vars->nscapp)
+                                isca = ivar - numvar;
+                            else
+                                isca = ivar - numvar + vars->nscaus;
                             ifbr = faces_list[ifac]-1;
                             mei_evaluate(boundaries->scalar[ivar][izone]);
                             icodcl[ivar *(*nfabor) + ifbr] = 5;
                             rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
                                     = mei_tree_lookup(boundaries->scalar[ivar][izone],
-                                                      vars->label[ivar - vars->nvar + vars->nscaus + vars->nscapp]);
+                                                      vars->label[isca]);
                             rcodcl[1 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
                                     = mei_tree_lookup(boundaries->scalar[ivar][izone], "hc");
                         }
@@ -2453,13 +2497,19 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                 case DIRICHLET_FORMULA:
 
                     for (ifac = 0; ifac < faces; ifac++)
-                        {
+                    {
+                        int isca;
+                        int numvar  = vars->nvar - vars->nscaus - vars->nscapp;
+                        if (i < vars->nvar - vars->nscapp)
+                            isca = ivar - numvar;
+                        else
+                            isca = ivar - numvar + vars->nscaus;
                         ifbr = faces_list[ifac]-1;
                         mei_evaluate(boundaries->scalar[ivar][izone]);
                         icodcl[ivar *(*nfabor) + ifbr] = 1;
                         rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
                             = mei_tree_lookup(boundaries->scalar[ivar][izone],
-                                              vars->label[ivar - vars->nvar + vars->nscaus + vars->nscapp]);
+                                              vars->label[isca]);
                     }
                 break;
                 }
