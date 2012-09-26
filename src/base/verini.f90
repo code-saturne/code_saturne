@@ -920,6 +920,10 @@ if (ideuch.ne.0 .and.                                    &
   write(nfecra,2209)iturb,ideuch
   iok = iok + 1
 endif
+if (iwallt.lt.0.or.iwallt.gt.1) then
+  write(nfecra,2201)'IWALLT',iwallt
+  iok = iok + 1
+endif
 if (ilogpo.ne.0.and.ilogpo.ne.1) then
   write(nfecra,2201)'ILOGPO',ilogpo
   iok = iok + 1

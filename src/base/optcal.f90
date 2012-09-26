@@ -353,6 +353,9 @@ module optcal
   !    = 0 une echelle       (deux echelles = faux)
   !    = 1 deux echelles     (deux echelles = vrai)
   !    = 2 deux echelles limitation de yplus a ypluli (scalable wall function)
+  !  iwallt
+  !    = 0 exchange coefficient correlation not use by default
+  !    = 1 exchange coefficient computed with a correlation
   !  ilogpo
   !    = 0 une echelle  avec loi en puissance
   !    = 1 une echelles avec loi log
@@ -399,7 +402,7 @@ module optcal
 
   integer, save :: iturb , itytur,                 &
                    irccor, itycor,                 &
-                   ideuch, ilogpo, iclkep,         &
+                   ideuch, iwallt, ilogpo, iclkep, &
                    igrhok, igrake,                 &
                    iscalt, ikecou,                 &
                    irijnu, irijrb, irijec,         &
@@ -492,6 +495,13 @@ module optcal
   !                Dirichlets de pression en sortie
 
   integer, save :: iphydr, icalhy
+
+  ! icond: Handling condensation source terms
+  !        1: condensation source terms activated
+  !        2: condensation source terms with metal structures activated
+  !        0: by default (without condensation source terms)
+
+  integer, save :: icond
 
   !   Calcul des estimateurs
 

@@ -336,7 +336,7 @@ write(nfecra,2510)
 !   - Modeles
 
 write(nfecra,2515)                                              &
-     iturb,ideuch,ypluli,ilogpo,                                &
+     iturb,ideuch,iwallt,ypluli,ilogpo,                         &
      igrhok,iscalt
 if(iturb.eq.10) then
   write(nfecra,2516)                                            &
@@ -509,6 +509,9 @@ write(nfecra,9900)
 '       IDEUCH = ',4x,i10,    ' (0: modele a une echelle     )',/,&
 '                               (1: modele a deux echelles   )',/,&
 '                               (2: loi de paroi invariante  )',/,&
+'       IWALLT = ',4x,i10,    ' (correlation coeff. echange  )',/,&
+'                               (0: non activee              )',/,&
+'                               (1: activee                  )',/,&
 '       YPLULI = ', e14.5,    ' (Y plus limite               )',/,&
 '       ILOGPO = ',4x,i10,    ' (0: loi puissance (interdite',  /,&
 '                                              en k-epsilon) )',/,&
@@ -763,6 +766,9 @@ write(nfecra,9900)
 '       IDEUCH = ',4x,i10,    ' (0: one-scale model          )',/,&
 '                               (1: two-scale model          )',/,&
 '                               (2: invariant wall function  )',/,&
+'       IWALLT = ',4x,i10,    ' (Exch. coeff. correlation    )',/,&
+'                               (0: not activated            )',/,&
+'                               (1: activated                )',/,&
 '       YPLULI = ', e14.5,    ' (Limit Y+                    )',/,&
 '       ILOGPO = ',4x,i10,    ' (0: power law (forbidden for',  /,&
 '                                              k-epsilon)    )',/,&

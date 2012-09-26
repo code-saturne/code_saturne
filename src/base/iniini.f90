@@ -848,6 +848,7 @@ iscalt =-1
 igrhok = 0
 igrake = 1
 ideuch =-999
+iwallt = 0
 ilogpo = 1
 iclkep = 0
 ikecou =-999
@@ -919,6 +920,13 @@ epsdp  = 1.0d-12
 
 iphydr = 0
 icalhy = -1
+
+! --- Handle the condensation source terms (not activate by default icond=0)
+
+!     icond = 1 : standard condensation source terms
+!             2 : condensation source terms with metal structures
+
+icond = 0
 
 ! --- Champ de vitesse fige (non fige par defaut)
 
