@@ -135,6 +135,8 @@ if (nfabor .gt. 0) then
   call field_map_bc_coeffs(ivarfl(ivar),                             &
                            coefa(1, icondl), coefb(1, icondl),       &
                            coefa(1, icondf), coefb(1, icondf))
+else
+  call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false.)
 endif
 
 ivar = iu
@@ -152,6 +154,8 @@ if (nfabor .gt. 0) then
                              coefau(1, 1), coefbu(1, 1, 1),          &
                              cofafu(1, 1), cofbfu(1, 1, 1))
   endif
+else
+  call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false.)
 endif
 
 ! Turbulence
@@ -212,6 +216,8 @@ do ii = 1, nfld
     call field_map_bc_coeffs(ivarfl(ivar),                           &
                              coefa(1, icondl), coefb(1, icondl),     &
                              coefa(1, icondf), coefb(1, icondf))
+  else
+    call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false.)
   endif
 enddo
 
@@ -235,6 +241,8 @@ if (iale.eq.1) then
                                claale(1, 1), clbale(1, 1, 1),        &
                                cfaale(1, 1), cfbale(1, 1, 1))
     endif
+  else
+    call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false.)
   endif
 endif
 
@@ -262,6 +270,8 @@ do ii = 1, nscal
         call field_allocate_bc_coeffs(f_id, .true., .true.)
         call field_init_bc_coeffs(f_id, .true., .true.)
       endif
+    else
+      call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false.)
     endif
   endif
 enddo
