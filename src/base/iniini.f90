@@ -856,7 +856,7 @@ irijrb = 0
 irijec = 0
 igrari = 1
 idifre = 1
-iclsyr = 0
+iclsyr = 1
 iclptr = 0
 idries =-1
 
