@@ -1830,7 +1830,7 @@ do ifac = 1, nfabor
               phit = 0.d0
             endif
 
-            tet = phit/(romc*cpp*max(sqrt(uk*uet),epzero))
+            tet = phit/(romc*cpp*max(uk,epzero))
             ! T+ = (T_I - T_w) / Tet
             tplus = yplus/yptp
 
