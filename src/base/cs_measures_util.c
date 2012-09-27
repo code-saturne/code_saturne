@@ -140,7 +140,7 @@ _mesh_interpol_create_connect(cs_interpol_grid_t   *ig)
   const cs_mesh_t *mesh = cs_glob_mesh;
 
 #if defined(HAVE_MPI)
-  _cs_base_mpi_double_int_t val_min[1], val_in[1];
+  _cs_base_mpi_double_int_t val_min, val_in;
 #endif
 
   nodal_mesh = cs_mesh_connect_cells_to_nodal(mesh,
@@ -170,20 +170,20 @@ _mesh_interpol_create_connect(cs_interpol_grid_t   *ig)
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
     for (ii = 0; ii < nb_points; ii++) {
-      if (distance[ii] > 0)
-        val_in[0].val = distance[ii];
+      if (location[ii] > 0)
+        val_in.val = distance[ii];
       else
-        val_in[0].val = DBL_MAX;
+        val_in.val = DBL_MAX;
 
-      val_in[0].rank = cs_glob_rank_id;
+      val_in.rank = cs_glob_rank_id;
 
-      MPI_Reduce(val_in, val_min, 1, MPI_DOUBLE_INT, MPI_MINLOC, 0,
+      MPI_Reduce(&val_in, &val_min, 1, MPI_DOUBLE_INT, MPI_MINLOC, 0,
                   cs_glob_mpi_comm);
-      MPI_Bcast(&val_min[0].rank, 1, CS_MPI_INT, 0, cs_glob_mpi_comm);
-      MPI_Bcast(&location[ii], 1, CS_MPI_INT, val_min[0].rank,
+      MPI_Bcast(&val_min.rank, 1, CS_MPI_INT, 0, cs_glob_mpi_comm);
+      MPI_Bcast(&location[ii], 1, CS_MPI_INT, val_min.rank,
                 cs_glob_mpi_comm);
 
-      ig->rank_connect[ii] = val_min[0].rank;
+      ig->rank_connect[ii] = val_min.rank;
     }
   }
 #endif
