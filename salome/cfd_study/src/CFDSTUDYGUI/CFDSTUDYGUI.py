@@ -199,8 +199,8 @@ def activate():
 
     if d_activation[studyId] == 1:
         d_activation[studyId] = 0
-        env_saturne,mess1 = CheckCFD_CodeEnv(CFD_Saturne)
-        env_neptune,mess2 = CheckCFD_CodeEnv(CFD_Neptune)
+        env_saturne, mess1 = CheckCFD_CodeEnv(CFD_Saturne)
+        env_neptune, mess2 = CheckCFD_CodeEnv(CFD_Neptune)
 
         log.debug("activate -> env_saturne = %s" % env_saturne)
         log.debug("activate -> env_neptune = %s" % env_neptune)
@@ -212,20 +212,22 @@ def activate():
                                  "Error", mess2, QMessageBox.Ok, 0)
             d_activation[studyId] = 1
             return False
+
         elif env_neptune:
             if mess2 != "":
                 Error = "Error: "+ ObjectTR.tr("CFDSTUDY_INVALID_ENV")
                 QMessageBox.critical(ActionHandler.dskAgent().workspace(),
-                                 Error, mess2, QMessageBox.Ok, 0)
+                                     Error, mess2, QMessageBox.Ok, 0)
                 d_activation[studyId] = 1
                 return False
             else:
                 ActionHandler.DialogCollector.InfoDialog.setCode(CFD_Neptune, True)
+
         elif env_saturne:
             if mess1 != "":
                 Error = "Error: "+ ObjectTR.tr("CFDSTUDY_INVALID_ENV")
                 QMessageBox.critical(ActionHandler.dskAgent().workspace(),
-                                 Error, mess1, QMessageBox.Ok, 0)
+                                     Error, mess1, QMessageBox.Ok, 0)
                 d_activation[studyId] = 1
                 return False
             else:

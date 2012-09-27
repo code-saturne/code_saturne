@@ -490,8 +490,9 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         if studyId not in _d_DockWindowsRuncase.keys():
           return
 
-        if len(_d_DockWindowsRuncase[studyId]) != 0:
-            dock.hide()
+        for dock in _d_DockWindowsRuncase[studyId]:
+            dock.show()
+            dock.setVisible(False)
             dock.toggleViewAction().setVisible(False)
 
 
