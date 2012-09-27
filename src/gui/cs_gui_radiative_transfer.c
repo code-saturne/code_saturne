@@ -331,7 +331,7 @@ _radiative_boundary(const   char *const label,
   cs_xpath_add_function_text(&path);
 
   if (cs_gui_get_double(path, &res)) {
-    if (res != *value)
+    if (!cs_gui_is_equal_real(res, *value))
       *value = res;
   }
 
@@ -1001,8 +1001,8 @@ void CS_PROCF (uiray2, UIRAY2)
         isothp[ifbr] = boundary->type[izone];
         if (isothp[ifbr] == *itpimp)
         {
-            epsp[ifbr] = boundary->emissivity[izone];
-            tintp[ifbr] = boundary->internal_temp[izone];
+          epsp[ifbr] = boundary->emissivity[izone];
+          tintp[ifbr] = boundary->internal_temp[izone];
         }
         else if (isothp[ifbr] == *ipgrno)
         {
@@ -1011,8 +1011,8 @@ void CS_PROCF (uiray2, UIRAY2)
           textp[ifbr] = boundary->external_temp[izone];
           tintp[ifbr] = boundary->internal_temp[izone];
           epsp[ifbr] = boundary->emissivity[izone];
-          if (boundary->emissivity[izone] == 0.)
-               isothp[ifbr] = *iprefl;
+          if (cs_gui_is_equal_real(boundary->emissivity[izone], 0.))
+            isothp[ifbr] = *iprefl;
         }
         else if (isothp[ifbr] == *ifgrno)
         {
@@ -1020,8 +1020,8 @@ void CS_PROCF (uiray2, UIRAY2)
             = boundary->conduction_flux[izone];
           tintp[ifbr] = boundary->internal_temp[izone];
           epsp[ifbr] = boundary->emissivity[izone];
-          if (boundary->emissivity[izone] != 0.)
-               isothp[ifbr] = *ifrefl;
+          if (!cs_gui_is_equal_real(boundary->emissivity[izone], 0.))
+            isothp[ifbr] = *ifrefl;
         }
       }
 

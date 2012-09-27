@@ -216,6 +216,9 @@ double precision, allocatable, dimension(:) :: adxk, adxkm1, dpvarm1, rhs0
 ! 1.  INITIALISATIONS
 !===============================================================================
 
+! Initializations to avoid compiler warnings
+rnorm2 = 0.d0
+
 ! Allocate temporary arrays
 allocate(dam(ncelet), xam(nfac,2))
 allocate(res(ncelet), presa(ncelet), divu(ncelet))
@@ -227,7 +230,7 @@ if (iswdyp.ge.1) allocate(adxk(ncelet), adxkm1(ncelet),   &
 ! Boundary conditions for delta P
 allocate(cofafp(nfabor), coefbp(nfabor), cofbfp(nfabor))
 
-! --- Writting
+! --- Writing
 ipp    = ipprtp(ipr)
 
 ! --- Boundary conditions

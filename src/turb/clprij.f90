@@ -89,6 +89,12 @@ double precision vmin, vmax, var, rijmin, varrel, und0, epz2
 
 !===============================================================================
 
+! Initialization to avoid compiler warnings
+
+ivar = 0
+ivar1 = 0
+ivar2 = 0
+
 ! Une petite valeur pour eviter des valeurs exactement nulles.
 
 epz2 = epzero**2

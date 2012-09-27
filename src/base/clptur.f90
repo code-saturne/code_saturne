@@ -240,10 +240,28 @@ icl33 = 0
 icl12 = 0
 icl13 = 0
 icl23 = 0
+icl11r = 0
+icl12r = 0
+icl13r = 0
+icl22r = 0
+icl23r = 0
+icl33r = 0
 iclvar = 0
 ipccv = 0
+iclal = 0
+iclalf = 0
+iclepf = 0
+iclfbf = 0
+iclkf = 0
+iclnuf = 0
+iclomf = 0
+iclphf = 0
 
+cofimp  = 0.d0
 ek = 0.d0
+rcprod = 0.d0
+uiptn = 0.d0
+uiptnf = 0.d0
 
 ! --- Constants
 uet = 1.d0
@@ -1546,25 +1564,25 @@ do ifac = 1, nfabor
               else
                 cpscv = cpscv/cv0
               endif
-              visci(1,1) = rkl + idifft(ivar)*cpp*cpscv*visten(1,iel)*ctheta(ii)
-              visci(2,2) = rkl + idifft(ivar)*cpp*cpscv*visten(2,iel)*ctheta(ii)
-              visci(3,3) = rkl + idifft(ivar)*cpp*cpscv*visten(3,iel)*ctheta(ii)
-              visci(1,2) =       idifft(ivar)*cpp*cpscv*visten(4,iel)*ctheta(ii)
-              visci(2,1) =       idifft(ivar)*cpp*cpscv*visten(4,iel)*ctheta(ii)
-              visci(2,3) =       idifft(ivar)*cpp*cpscv*visten(5,iel)*ctheta(ii)
-              visci(3,2) =       idifft(ivar)*cpp*cpscv*visten(5,iel)*ctheta(ii)
-              visci(1,3) =       idifft(ivar)*cpp*cpscv*visten(6,iel)*ctheta(ii)
-              visci(3,1) =       idifft(ivar)*cpp*cpscv*visten(6,iel)*ctheta(ii)
+              visci(1,1) = rkl + idifft(ivar)*cpp*cpscv*visten(1,iel)*ctheta(iscal)
+              visci(2,2) = rkl + idifft(ivar)*cpp*cpscv*visten(2,iel)*ctheta(iscal)
+              visci(3,3) = rkl + idifft(ivar)*cpp*cpscv*visten(3,iel)*ctheta(iscal)
+              visci(1,2) =       idifft(ivar)*cpp*cpscv*visten(4,iel)*ctheta(iscal)
+              visci(2,1) =       idifft(ivar)*cpp*cpscv*visten(4,iel)*ctheta(iscal)
+              visci(2,3) =       idifft(ivar)*cpp*cpscv*visten(5,iel)*ctheta(iscal)
+              visci(3,2) =       idifft(ivar)*cpp*cpscv*visten(5,iel)*ctheta(iscal)
+              visci(1,3) =       idifft(ivar)*cpp*cpscv*visten(6,iel)*ctheta(iscal)
+              visci(3,1) =       idifft(ivar)*cpp*cpscv*visten(6,iel)*ctheta(iscal)
             else
-              visci(1,1) = rkl + idifft(ivar)*cpp*visten(1,iel)*ctheta(ii)
-              visci(2,2) = rkl + idifft(ivar)*cpp*visten(2,iel)*ctheta(ii)
-              visci(3,3) = rkl + idifft(ivar)*cpp*visten(3,iel)*ctheta(ii)
-              visci(1,2) =       idifft(ivar)*cpp*visten(4,iel)*ctheta(ii)
-              visci(2,1) =       idifft(ivar)*cpp*visten(4,iel)*ctheta(ii)
-              visci(2,3) =       idifft(ivar)*cpp*visten(5,iel)*ctheta(ii)
-              visci(3,2) =       idifft(ivar)*cpp*visten(5,iel)*ctheta(ii)
-              visci(1,3) =       idifft(ivar)*cpp*visten(6,iel)*ctheta(ii)
-              visci(3,1) =       idifft(ivar)*cpp*visten(6,iel)*ctheta(ii)
+              visci(1,1) = rkl + idifft(ivar)*cpp*visten(1,iel)*ctheta(iscal)
+              visci(2,2) = rkl + idifft(ivar)*cpp*visten(2,iel)*ctheta(iscal)
+              visci(3,3) = rkl + idifft(ivar)*cpp*visten(3,iel)*ctheta(iscal)
+              visci(1,2) =       idifft(ivar)*cpp*visten(4,iel)*ctheta(iscal)
+              visci(2,1) =       idifft(ivar)*cpp*visten(4,iel)*ctheta(iscal)
+              visci(2,3) =       idifft(ivar)*cpp*visten(5,iel)*ctheta(iscal)
+              visci(3,2) =       idifft(ivar)*cpp*visten(5,iel)*ctheta(iscal)
+              visci(1,3) =       idifft(ivar)*cpp*visten(6,iel)*ctheta(iscal)
+              visci(3,1) =       idifft(ivar)*cpp*visten(6,iel)*ctheta(iscal)
             endif
 
             ! ||Ki.S||^2

@@ -256,12 +256,33 @@ icl33 = 0
 icl12 = 0
 icl13 = 0
 icl23 = 0
+icl11r = 0
+icl12r = 0
+icl13r = 0
+icl22r = 0
+icl23r = 0
+icl33r = 0
+icl11f = 0
+icl12f = 0
+icl13f = 0
+icl22f = 0
+icl23f = 0
+icl33f = 0
+iclal = 0
+iclalf= 0
 iclvar = 0
 iclvaf = 0
 icluf = 0
 iclvf = 0
 iclwf = 0
 ipccv = 0
+iclepf = 0
+iclfbf = 0
+iclkf = 0
+iclnuf = 0
+iclomf = 0
+iclphf = 0
+iclvrr = 0
 
 rinfiv(1) = rinfin
 rinfiv(2) = rinfin
@@ -1893,23 +1914,21 @@ if (nscal.ge.1) then
     !        scalaire associe n'est pas resolu, on suppose alors qu'il
     !        doit etre traite comme un scalaire passif (defaut IHCP = 0)
     ihcp = 0
-    if(iscavr(ii).le.nscal) then
-      if(iscavr(ii).gt.0) then
-        iscal = iscavr(ii)
-      else
-        iscal = ii
-      endif
 
-      if(iscsth(iscal).eq.0.or.             &
-         iscsth(iscal).eq.2.or.             &
-         iscsth(iscal).eq.3) then
-        ihcp = 0
-      elseif(abs(iscsth(iscal)).eq.1) then
-        if(ipccp.gt.0) then
-          ihcp = 2
-        else
-          ihcp = 1
-        endif
+    iscal = ii
+    if (iscavr(ii).gt.0) then
+      iscal = iscavr(ii)
+    endif
+
+    if (iscsth(iscal).eq.0.or.             &
+        iscsth(iscal).eq.2.or.             &
+        iscsth(iscal).eq.3) then
+      ihcp = 0
+    elseif(abs(iscsth(iscal)).eq.1) then
+      if(ipccp.gt.0) then
+        ihcp = 2
+      else
+        ihcp = 1
       endif
     endif
 
@@ -2212,8 +2231,8 @@ if (nscal.ge.1) then
 
           call set_dirichlet_vector_ggdh &
                !========================
-             ( coefaut(1,ifac)  , cofafut(1,ifac)  ,           &
-               coefbut(1,1,ifac), cofbfut(1,1,ifac),           &
+             ( coefaut(:,ifac)  , cofafut(:,ifac)  ,           &
+               coefbut(:,:,ifac), cofbfut(:,:,ifac),           &
                pimpv            , hintt            , hextv )
 
           ! Boundary conditions for thermal transport equation
@@ -2235,8 +2254,8 @@ if (nscal.ge.1) then
 
           call set_neumann_vector_ggdh &
           !===========================
-             ( coefaut(1,ifac)  , cofafut(1,ifac)  ,           &
-               coefbut(1,1,ifac), cofbfut(1,1,ifac),           &
+             ( coefaut(:,ifac)  , cofafut(:,ifac)  ,           &
+               coefbut(:,:,ifac), cofbfut(:,:,ifac),           &
                qimpv            , hintt )
 
           ! Boundary conditions for thermal transport equation
@@ -2261,8 +2280,8 @@ if (nscal.ge.1) then
 
           call set_convective_outlet_vector_ggdh &
           !=====================================
-             ( coefaut(1,ifac)  , cofafut(1,ifac)  ,           &
-               coefbut(1,1,ifac), cofbfut(1,1,ifac),           &
+             ( coefaut(:,ifac)  , cofafut(:,ifac)  ,           &
+               coefbut(:,:,ifac), cofbfut(:,:,ifac),           &
                pimpv            , cflv             , hintt )
 
           ! Boundary conditions for thermal transport equation

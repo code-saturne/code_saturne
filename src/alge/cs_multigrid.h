@@ -98,9 +98,6 @@ void CS_PROCF(resmgr, RESMGR)
 (
  const char       *cname,     /* <-- variable name */
  const cs_int_t   *lname,     /* <-- variable name length */
- const cs_int_t   *ncelet,    /* <-- Number of cells, halo included */
- const cs_int_t   *ncel,      /* <-- Number of local cells */
- const cs_int_t   *nfac,      /* <-- Number of faces */
  const cs_int_t   *iresds,    /* <-- Descent smoother type:
                                      0: pcg; 1: Jacobi; 2: cg-stab */
  const cs_int_t   *iresas,    /* <-- Ascent smoother type:

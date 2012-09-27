@@ -386,7 +386,7 @@ if (idtvar.lt.0) then
 
   do ig = 1, ngrpb
     !$omp parallel do private(ifac, ii, isou, jsou, diipbv,               &
-    !$omp                     pfacd, pir, pipr, flux,        )            &
+    !$omp                     pfacd, pir, pipr, flux)                     &
     !$omp          if(nfabor > thr_n_min)
     do it = 1, nthrdb
       do ifac = iomplb(1,ig,it), iomplb(2,ig,it)

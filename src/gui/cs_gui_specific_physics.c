@@ -1104,7 +1104,7 @@ _get_order_of_reaction(const int icha,
 {
   char *path;
   char *buff = NULL;
-  int   ichoice;
+  int   ichoice = 0;
 
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path,2,"thermophysical_models", "solid_fuels");
@@ -1114,9 +1114,7 @@ _get_order_of_reaction(const int icha,
   cs_xpath_add_element(&path,"order_of_reaction");
   cs_xpath_add_attribute(&path,"choice");
   buff = cs_gui_get_attribute_value(path);
-  if (buff == NULL) {
-    ichoice = 0;
-  } else {
+  if (buff != NULL) {
     if (cs_gui_strcmp(buff, "0.5"))
       ichoice = 0;
     else if (cs_gui_strcmp(buff, "1"))
@@ -1315,8 +1313,8 @@ _getNOxStatus(int   *keyword)
  * parameter:
  *----------------------------------------------------------------------------*/
 
-char*
-cs_gui_get_joule_model(void)
+static char*
+_get_joule_model(void)
 {
   char *model = NULL;
   char *path = NULL;
@@ -1474,7 +1472,7 @@ void CS_PROCF (uippmo, UIPPMO)(int *const ippmod,
     {
       if (cs_gui_strcmp(vars->model_value, "joule"))
       {
-        char *value = cs_gui_get_joule_model();
+        char *value = _get_joule_model();
         if (cs_gui_strcmp(value, "AC/DC"))
           ippmod[*ieljou - 1] = 1;
         else if (cs_gui_strcmp(value, "three-phase"))
@@ -1992,7 +1990,8 @@ void CS_PROCF (uicopr, UICOPR) (const int *const nsalpp,
                                 const int *const itscl,
                                 const int *const imaml)
 {
-  int n, ndirac, idirac;
+  int n, idirac;
+  int ndirac = 0;
   char *name = NULL;
   char *snumpp = NULL;
 
@@ -2406,13 +2405,13 @@ void CS_PROCF (uielrc, UIELRC) (const int    *const ncelet,
 {
   /* build list of cells */
   int  c_id         = 0;
-  int  *cells_list  = NULL;
-  int  cells = 0;
+  cs_lnum_t  *cells_list  = NULL;
+  cs_lnum_t  cells = 0;
 
   BFT_MALLOC(cells_list, *ncelet, int);
   c_id = fvm_selector_get_list(cs_glob_mesh->select_cells,
                                crit_reca,
-                               cells,
+                               &cells,
                                cells_list);
 
   if (fvm_selector_n_missing(cs_glob_mesh->select_cells, c_id) > 0)
@@ -2734,7 +2733,7 @@ void CS_PROCF (uielpr, UIELPR) (const int *const nsalpp,
                                 const int *const ipotr,
                                 const int *const ixkabe)
 {
-  int n, ndirac, idirac;
+  int n;
   char *name = NULL;
   char *snumpp = NULL;
 

@@ -342,7 +342,9 @@ call vistnv &
 if (isto2t.gt.0) then
   thetp1 = 1.d0 + thets
   do iel = 1, ncel
-    smbrut(isou,iel) = smbrut(isou,iel) + thetp1*propce(iel,iptsta+isou-1) !FIXME
+    do isou = 1, 3
+      smbrut(isou,iel) = smbrut(isou,iel) + thetp1*propce(iel,iptsta+isou-1) !FIXME
+    enddo
   enddo
 endif
 

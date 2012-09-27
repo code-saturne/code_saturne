@@ -341,7 +341,7 @@ struct _cs_matrix_variant_t {
 
   int                    loop_length;
 
-  /* Function pointer arrays, with 4 variants:
+  /* Function pointer arrays, with 6 variants (0 <= block_flag <= 2):
      block_flag*2 + exclude_diagonal_flag + extra_block_flag */
 
   cs_matrix_vector_product_t        *vector_multiply[6];

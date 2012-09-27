@@ -668,7 +668,7 @@ contains
 
   !=============================================================================
 
-  !> \brief Initialize Lagrangian module parameters for a given zone and class
+  !> \brief Define Lagrangian module parameters for a given zone and class
 
   !> \param[in]     class_id     id of given particle class
   !> \param[in]     zone_id      id of given boundary zone

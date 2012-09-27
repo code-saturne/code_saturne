@@ -1616,17 +1616,17 @@ if (iecaux.eq.1) then
 
     if (nberro.ne.0) then
 #if defined(_CS_LANG_FR)
-      car54='ERREUR A L''ECRITURE DE LA PRESSION HYDROSTATIQUE PREDITE  '
+      car54='ERREUR ECRITURE DE LA PRESSION HYDROSTATIQUE PREDITE  '
 #else
-      car54='ERROR WHILE WRITING THE PREDICTED HYDROSTATIC PRESSURE     '
+      car54='ERROR WHILE WRITING THE PREDICTED HYDROSTATIC PRESSURE'
 #endif
-      write(nfecra,8101)car54
+      write(nfecra,8101) car54
     endif
 
 #if defined(_CS_LANG_FR)
-    car54=' Fin de l''ecriture de la pression hydrostatique predite     '
+    car54=' Fin de l''ecriture de la pression hydrostatique predite'
 #else
-    car54=' End writing the predicted hydrostatic pressure              '
+    car54=' End writing the predicted hydrostatic pressure         '
 #endif
     write(nfecra,1110)car54
 

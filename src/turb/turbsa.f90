@@ -323,20 +323,20 @@ deallocate(grad)
 ! (and then give it the appropriate roughness value)
 
 ipatrg = 0
-dsa0   = -999.d0
+dsa0 = -999.d0
+hssa = -999.d0
 
 iclvar = iclrtp(inusa,icoef)
 do ifac = 1, nfabor
-  if ( itypfb(ifac).eq.iparug ) then
+  if (itypfb(ifac).eq.iparug) then
     ipatrg = 1
     cofbnu = coefb(ifac,iclvar)
     ! Roughness of the wall
     dsa0   = distb(ifac) *cofbnu/(1.d0-cofbnu)
     hssa   = exp(8.5d0*xkappa)*dsa0
   endif
-  if(ipatrg.ne.0) goto 100
+  if (ipatrg.ne.0) exit
 enddo
- 100    continue
 
 if(irangp.ge.0) then
   call parcpt(ipatrg)

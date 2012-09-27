@@ -742,7 +742,7 @@ do ii = 1,nfrlag
                      goto 156
 
                   endif
- 561              enddo
+561             enddo
 
             endif
             ! Broadcast a tous les rangs

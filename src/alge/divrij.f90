@@ -114,6 +114,11 @@ double precision epsrgp, climgp, extrap
 ! 1.  INITIALISATION
 !===============================================================================
 
+! Initialization to avoid compiler warnings
+ivar1 = 0
+ivar2 = 0
+ivar2 = 0
+
 ! --- Memoire
 
 ! --- Masse volumique

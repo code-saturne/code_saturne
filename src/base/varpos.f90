@@ -842,6 +842,7 @@ if(ipass.eq.2) then
   if (iscalt.gt.0) then
     if (ityturt(iscalt).gt.0) then!FIXME
       iprop                 = iprop + 1
+      ibeta                 = iprop
       ipproc(ibeta)         = iprop
       ipppst                = ipppst + 1
       ipppro(iprop)         = ipppst
@@ -1072,13 +1073,6 @@ if(ipass.eq.3) then
     if (ityturt(iscal).eq.3) then
       idttur = idttur + 1
       ifltur(iscal) = idttur
-    endif
-
-    if (iscalt.gt.0) then
-      if (ityturt(iscalt).gt.0) then!FIXME beta always needed?
-        iprop      = iprop + 1
-        ibeta      = iprop
-      endif
     endif
 
   enddo

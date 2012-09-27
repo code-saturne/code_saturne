@@ -184,6 +184,7 @@ allocate(dpvar(ncelet))
 
 ! Initialize variables to avoid compiler warnings
 
+iclal = 0
 iii = 0
 jjj = 0
 

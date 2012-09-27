@@ -136,7 +136,7 @@ if (imgrp.eq.1) then
 
   call resmgr                                                     &
   !==========
- ( cnom   , lnom   , ncelet , ncel   , nfac   ,                   &
+ ( cnom   , lnom   ,                                              &
    iresds , iresas , ireslp , ipol   ,                            &
    ncymxp , nitmds , nitmas , nitmap , iinvpe ,                   &
    iwarnp , icycle , niterf , epsilp , rnorm  , residu ,          &

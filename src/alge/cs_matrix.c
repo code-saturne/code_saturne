@@ -3779,7 +3779,7 @@ _matrix_check(int                    n_variants,
 
           cs_matrix_variant_t *v = m_variant + v_id;
 
-          cs_matrix_vector_product_t        *vector_multiply = NULL;
+          cs_matrix_vector_product_t  *vector_multiply = NULL;
 
           if (sym_flag == 0) {
             if (v->symmetry == 1)
@@ -4359,10 +4359,11 @@ _variant_init(cs_matrix_variant_t  *v)
 
   v->matrix_create_cost = -1.;
 
-  for (i = 0; i < 6; i++) {
+  for (i = 0; i < 6; i++)
     v->vector_multiply[i] = NULL;
+
+  for (i = 0; i < 4; i++)
     v->matrix_assign_cost[i] = -1.;
-  }
 
   for (i = 0; i < 8; i++)
     v->matrix_vector_cost[i] = -1.;

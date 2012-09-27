@@ -86,11 +86,11 @@ BEGIN_C_DECLS
  *  1 if the two vertices are identical otherwise 0
  *----------------------------------------------------------------------------*/
 
-cs_int_t
+int
 cs_lagrang_check_colocalization(cs_real_t p[3],
                                 cs_real_t q[3])
 {
-  cs_int_t  sign = -1;
+  int  sign = -1;
 
   /* We check if the two vertices are identical */
 
@@ -102,7 +102,6 @@ cs_lagrang_check_colocalization(cs_real_t p[3],
     sign = 0;
 
   return  sign;
-
 }
 
 /*----------------------------------------------------------------------------
@@ -120,21 +119,16 @@ cs_lagrang_check_colocalization(cs_real_t p[3],
  *  an indicator on the orientation of the tetrahedron [p1, p2, p3, p4]
  *----------------------------------------------------------------------------*/
 
-cs_int_t
+int
 cs_lagrang_tetra_orientation(cs_real_t   p1[3],
                              cs_real_t   p2[3],
                              cs_real_t   p3[3],
                              cs_real_t   p4[3],
-                             cs_int_t    perturbation)
-
+                             int         perturbation)
 {
+  int  returned_sign = -2; /* initialize to an incoherent value */
 
-  cs_int_t  i;
-
-  cs_int_t  returned_sign = -2; /* initialize to an incoherent value */
-
-
-  /* points are assumed to be distincts */
+  /* points are assumed to be distinct */
 
   /*  | A B C |   | bx-ax  by-ay  bz-az |  */
   /*  | D E F | = | cx-ax  cy-ay  cz-az |  */

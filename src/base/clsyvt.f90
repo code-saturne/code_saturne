@@ -164,7 +164,15 @@ icl33 = 0
 icl12 = 0
 icl13 = 0
 icl23 = 0
+icl11r = 0
+icl12r = 0
+icl13r = 0
+icl22r = 0
+icl23r = 0
+icl33r = 0
 iclvar = 0
+
+cpp = 0.d0
 
 ! --- Gradient Boundary Conditions
 iclu   = iclrtp(iu ,icoef)
@@ -637,6 +645,8 @@ if (iale.eq.1) then
 
   do ifac = 1, nfabor
     if (icodcl(ifac,iuma).eq.4) then
+
+      iel = ifabor(ifac)
 
       ! For a sliding boundary, the normal velocity is enforced to zero
       ! whereas the other components have an Homogenous Neumann

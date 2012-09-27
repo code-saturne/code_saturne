@@ -318,13 +318,14 @@ _compute_least_squares(const cs_mesh_t             *mesh,
   const cs_real_t *surfbo  = mesh_quantities->b_face_normal;
 
   int           sweep_id, n_sweeps;
-  cs_lnum_t     i, k, indexl, indexc, face_id, cell1, cell2, cell_id;
+  cs_lnum_t     i, k, face_id, cell1, cell2, cell_id;
   cs_real_3_t   cell_center1, cell_center2, vect, dij, eigenvalues;
   cs_real_33_t  w2, rot;
 
   double unsdij, surfn, surf_n_inv, min_diag, max_diag;
   double pivot, y, t, s, c;
 
+  cs_lnum_t  indexl = 0, indexc = 0;
   cs_real_t *w1 = NULL;
   BFT_MALLOC(w1, 6 * n_cells_wghosts, cs_real_t);
 

@@ -670,6 +670,16 @@ void
 cs_mesh_sync_var_tens(cs_real_t  *var);
 
 /*----------------------------------------------------------------------------
+ * Update a symmetric tensor array in case of parallelism and/or periodicity.
+ *
+ * parameters:
+ *   var  <->  symmetric interleaved tensor (of dimension 6)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_sync_var_sym_tens(cs_real_t  *var);
+
+/*----------------------------------------------------------------------------
  * Order family numbers and remove duplicates
  *
  * parameters

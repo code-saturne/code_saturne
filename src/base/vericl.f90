@@ -145,6 +145,7 @@ integer          ippnup
 
 ! Initialize variables to avoid compiler warnings
 
+ippalp = 0
 ippepp = 0
 ippkip = 0
 ippfbp = 0

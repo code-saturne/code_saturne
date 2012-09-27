@@ -128,6 +128,9 @@ double precision, dimension(:,:), pointer :: xuta
 ! 1. Initialization
 !===============================================================================
 
+! Initializations to avoid compiler warnings
+xtt = 0.d0
+
 ! First component is for x,y,z  and the 2nd for u,v,w
 allocate(gradv(ncelet,3,3))
 allocate(gradt(ncelet,3), thflxf(nfac), thflxb(nfabor))

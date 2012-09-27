@@ -304,17 +304,17 @@ else
              + visci(3,3)*surfac(3,ifac))**2
 
     ! IF.Ki.S
-    fikis = ( (cdgfac(1,ifac)-xyzcen(1,ii))*viscj(1,1)   &
-            + (cdgfac(2,ifac)-xyzcen(2,ii))*viscj(2,1)   &
-            + (cdgfac(3,ifac)-xyzcen(3,ii))*viscj(3,1)   &
+    fikis = ( (cdgfac(1,ifac)-xyzcen(1,ii))*visci(1,1)   &
+            + (cdgfac(2,ifac)-xyzcen(2,ii))*visci(2,1)   &
+            + (cdgfac(3,ifac)-xyzcen(3,ii))*visci(3,1)   &
             )*surfac(1,ifac)                             &
-          + ( (cdgfac(1,ifac)-xyzcen(1,ii))*viscj(1,2)   &
-            + (cdgfac(2,ifac)-xyzcen(2,ii))*viscj(2,2)   &
-            + (cdgfac(3,ifac)-xyzcen(3,ii))*viscj(3,2)   &
+          + ( (cdgfac(1,ifac)-xyzcen(1,ii))*visci(1,2)   &
+            + (cdgfac(2,ifac)-xyzcen(2,ii))*visci(2,2)   &
+            + (cdgfac(3,ifac)-xyzcen(3,ii))*visci(3,2)   &
             )*surfac(2,ifac)                             &
-          + ( (cdgfac(1,ifac)-xyzcen(1,ii))*viscj(1,3)   &
-            + (cdgfac(2,ifac)-xyzcen(2,ii))*viscj(2,3)   &
-            + (cdgfac(3,ifac)-xyzcen(3,ii))*viscj(3,3)   &
+          + ( (cdgfac(1,ifac)-xyzcen(1,ii))*visci(1,3)   &
+            + (cdgfac(2,ifac)-xyzcen(2,ii))*visci(2,3)   &
+            + (cdgfac(3,ifac)-xyzcen(3,ii))*visci(3,3)   &
             )*surfac(3,ifac)
 
     distfi = (1.d0 - pond(ifac))*dist(ifac)

@@ -372,7 +372,7 @@ if (iihmpr.eq.1) then
              iomg, iphi, ifb, ial,                                &
              inusa,                                               &
              iale, iuma, ivma, iwma,                              &
-             isca, iscapp, iscalt)
+             isca, iscapp)
 
 !     Suite de calcul, relecture fichier auxiliaire, champ de vitesse figé
 

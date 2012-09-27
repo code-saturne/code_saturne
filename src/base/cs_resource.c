@@ -248,8 +248,9 @@ cs_resource_get_max_timestep(int   ts_cur,
   /* Local variables */
 
   int t_lim_flag;
-  double tmoy00, t_it_prev, trestc, t_it_mean, alpha, t_it_sup;
-  double t_margin, tcpuco, tresmn, titsmx;
+  double trestc, t_it_mean, alpha;
+  double tcpuco, tresmn, titsmx;
+  double t_margin = -1., tmoy00 = -1., t_it_prev = -1., t_it_sup = -1.;
 
   static int r_time_method = -1, ntcab0 = -1;
   static double trest0 = -1., trestp = -1., tcpupr = -1.;
@@ -317,7 +318,7 @@ cs_resource_get_max_timestep(int   ts_cur,
         t_lim_flag = _t_remain(&trestc);
         tmoy00 = (trest0-trestc)/((double)(ts_cur-ntcab0));
       }
-      else if (r_time_method == 2) {
+      else { /* if (r_time_method == 2) */
         /* Use initially allocated time */
         trestc = CS_MAX((trest0 - tcpuco), 0.);
         tmoy00 = tcpuco/((double)(ts_cur-ntcab0));
@@ -373,7 +374,7 @@ cs_resource_get_max_timestep(int   ts_cur,
       MPI_Bcast(ts_max, 1, CS_MPI_INT, 0, cs_glob_mpi_comm);
 #endif
 
-    if (ts_cur == *ts_max)
+    if (cs_glob_rank_id <= 0 && ts_cur == *ts_max)
       bft_printf
         (_("===============================================================\n"
            "   ** Remaining time management\n"

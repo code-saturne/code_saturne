@@ -2028,8 +2028,7 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
                                 const int *const ivma,
                                 const int *const iwma,
                                 const int *const isca,
-                                const int *const iscapp,
-                                const int *const iscalt)
+                                const int *const iscapp)
 {
   int n = 0;
   int i, j, k;
@@ -2691,7 +2690,9 @@ void CS_PROCF (csphys, CSPHYS)
   cs_gui_coriolis_value("omega_y", omegay);
   cs_gui_coriolis_value("omega_z", omegaz);
 
-  if (*omegax == 0. && *omegay == 0. && *omegaz == 0.)
+  if (   cs_gui_is_equal_real(*omegax, 0.)
+      && cs_gui_is_equal_real(*omegay, 0.)
+      && cs_gui_is_equal_real(*omegaz, 0.))
     *icorio = 0;
   else
     *icorio = 1;
@@ -4442,7 +4443,9 @@ void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
         a32 = _c_heads_losses(zone_id, "a32");
         a33 = _c_heads_losses(zone_id, "a33");
 
-        if (a12 == 0.0 && a13 == 0.0 && a23 == 0.0)
+        if (   cs_gui_is_equal_real(a12, 0.0)
+            && cs_gui_is_equal_real(a13, 0.0)
+            && cs_gui_is_equal_real(a23, 0.0))
         {
           c11 = k11;
           c22 = k22;
@@ -5121,7 +5124,7 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
   int i, ii, iii, j;
   int npoint, iel1, irang1, iel, irangv;
   int nvar_prop, nvar_prop4, output_frequency;
-  double x1, y1, z1;
+  double x1 = 0., y1 = 0., z1 = 0.;
   double xx, yy, zz, xyz[3];
   double a, aa;
   double *array;

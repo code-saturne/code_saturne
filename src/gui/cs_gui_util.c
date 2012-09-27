@@ -249,20 +249,19 @@ cs_gui_check_version(void)
   minus = modf(version_number, &major);
   min_sat = modf(version_sat, &maj_sat);
 
-  if (major != maj_sat)
-     bft_error(__FILE__, __LINE__, 0,
-               _("========================================================\n"
-                 "   ** Invalid version of the XML file\n"
-                 "      -------------------------------------- \n"
-                 "      XML file version: %.1f  \n"
-                 "      XML reader version: %.1f \n"
-                 "========================================================\n"),
-                  version_number, version_sat);
+  if (!cs_gui_is_equal_real(major, maj_sat))
+    bft_error(__FILE__, __LINE__, 0,
+              _("========================================================\n"
+                "   ** Invalid version of the XML file\n"
+                "      -------------------------------------- \n"
+                "      XML file version: %.1f  \n"
+                "      XML reader version: %.1f \n"
+                "========================================================\n"),
+              version_number, version_sat);
 
-  if (minus != min_sat) {
-
-     cs_base_warn(__FILE__, __LINE__);
-     bft_printf(_("========================================================\n"
+  if (!cs_gui_is_equal_real(minus, min_sat))
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf(_("========================================================\n"
                  "   ** Unexpected version XML file version\n"
                  "      -----------------------------------\n"
                  "      XML file version: %.1f  \n"
@@ -270,9 +269,7 @@ cs_gui_check_version(void)
                  "\n"
                  "      It is recommenende to rebuild a new XML file.\n"
                  "========================================================\n"),
-                 version_number, version_sat);
-
-  }
+               version_number, version_sat);
 
   BFT_FREE(version);
   BFT_FREE(path);

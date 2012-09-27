@@ -92,6 +92,9 @@ double precision epz2
 iivisc = ipproc(iviscl)
 iiromc = ipproc(irom)
 
+! Initialization to avoid compiler warnings
+
+ivar = 0
 
 ! Une petite valeur pour eviter des valeurs exactement nulles.
 

@@ -150,6 +150,14 @@ double precision, allocatable, dimension(:) :: dpvar
 ! 1. INITIALISATION
 !===============================================================================
 
+! Initializations to avoid compiler warnings
+iclalf = 0
+iclfbf = 0
+iclfb = 0
+iclal = 0
+iclvaf = 0
+iclvar = 0
+
 ! Allocate temporary arrays for the turbulence resolution
 allocate(viscf(nfac), viscb(nfabor))
 allocate(smbr(ncelet), rovsdt(ncelet))

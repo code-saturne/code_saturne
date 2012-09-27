@@ -343,6 +343,34 @@ void CS_PROCF (normalen, normalen)
  const cs_real_t  *x              /* <-- generated random number vector */
 );
 
+/*----------------------------------------------------------------------------
+ * Initialize Lagrangian module parameters for a given zone and class
+ *
+ * parameters:
+ *   i_cz_params <-- integer parameters for this class and zone
+ *   r_cz_params <-- real parameters for this class and zone
+ *----------------------------------------------------------------------------*/
+
+void
+cs_lagr_init_zone_class_param(const cs_int_t   i_cs_params[],
+                              const cs_real_t  r_cs_params[]);
+
+/*----------------------------------------------------------------------------
+ * Define Lagrangian module parameters for a given zone and class
+ *
+ * parameters:
+ *   class_id    <-- id of given particle class
+ *   zone_id     <-- id of given boundary zone
+ *   i_cz_params <-- integer parameters for this class and zone
+ *   r_cz_params <-- real parameters for this class and zone
+ *----------------------------------------------------------------------------*/
+
+void
+cs_lagr_define_zone_class_param(cs_int_t         class_id,
+                                cs_int_t         zone_id,
+                                const cs_int_t   i_cs_params[],
+                                const cs_real_t  r_cs_params[]);
+
 /*============================================================================
  *  User function prototypes
  *============================================================================*/

@@ -1032,15 +1032,15 @@ _cs_inflow_add_inlet(cs_inflow_type_t   type,
     BFT_MALLOC(inlet->face_centre, 3*inlet->n_faces, cs_real_t);
     for (face_id = 0; face_id < inlet->n_faces; face_id++)
       for (coo_id = 0; coo_id < 3; coo_id++)
-        inlet->face_centre[face_id*3 + coo_id] =
-          mesh_q->b_face_cog[(num_face[face_id]-1)*3 + coo_id];
+        inlet->face_centre[face_id*3 + coo_id]
+          = mesh_q->b_face_cog[(num_face[face_id]-1)*3 + coo_id];
 
     BFT_MALLOC(inlet->face_surface, inlet->n_faces, cs_real_t);
     for (face_id = 0; face_id < inlet->n_faces; face_id++)
-      inlet->face_surface[face_id] = sqrt(
-          pow(mesh_q->b_face_normal[(num_face[face_id]-1)*3 + 0],2)
-          +pow(mesh_q->b_face_normal[(num_face[face_id]-1)*3 + 1],2)
-          +pow(mesh_q->b_face_normal[(num_face[face_id]-1)*3 + 2],2));
+      inlet->face_surface[face_id]
+        = sqrt(  pow(mesh_q->b_face_normal[(num_face[face_id]-1)*3 + 0],2)
+               + pow(mesh_q->b_face_normal[(num_face[face_id]-1)*3 + 1],2)
+               + pow(mesh_q->b_face_normal[(num_face[face_id]-1)*3 + 2],2));
 
   }
 
@@ -1055,7 +1055,7 @@ _cs_inflow_add_inlet(cs_inflow_type_t   type,
   /* Generation method of synthetic turbulence */
   /*-------------------------------------------*/
 
-  if (type < 0 || type > 3)
+  if (type > 3)
     bft_error(__FILE__, __LINE__, 0,
               _("Invalid choice of synthetic turbulence generation method (%d).\n"
                 "Valid choices are:\n"

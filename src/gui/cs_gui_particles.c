@@ -36,21 +36,18 @@
 #include <assert.h>
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *----------------------------------------------------------------------------*/
-
-#include <bft_mem.h>
-#include <bft_error.h>
-#include <bft_printf.h>
-
-/*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
+
+#include "bft_mem.h"
+#include "bft_error.h"
+#include "bft_printf.h"
 
 #include "cs_base.h"
 #include "cs_gui.h"
 #include "cs_gui_util.h"
 #include "cs_gui_boundary_conditions.h"
+#include "cs_prototypes.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -1445,7 +1442,7 @@ void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
 
       /* Additional info for inlet */
 
-      if (iusclb[izone] = *ientrl) {
+      if (iusclb[izone] == *ientrl) {
 
         strcpy(path1, path2);
         cs_xpath_add_element(&path1, "class");
@@ -1613,7 +1610,7 @@ void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
             bft_printf("---char mass fraction = %f \n",     r_cz_params[*imckt -1]);
           }
 
-#endif _XML_DEBUG_
+#endif /* _XML_DEBUG_ */
 
         } /* End of loop on class */
 

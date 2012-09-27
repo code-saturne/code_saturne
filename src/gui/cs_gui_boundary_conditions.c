@@ -1829,12 +1829,12 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
             for (i = 0; i < vars->nvar; i++)
             {
                 ivar = vars->rtp[i];
-                int isca;
+                int scal_id;
                 int numvar  = vars->nvar - vars->nscaus - vars->nscapp;
                 if (i < vars->nvar - vars->nscapp)
-                    isca = ivar - numvar;
+                    scal_id = ivar - numvar;
                 else
-                    isca = ivar - numvar + vars->nscaus;
+                    scal_id = ivar - numvar + vars->nscaus;
 
                 switch (boundaries->type_code[ivar][izone])
                 {
@@ -1855,7 +1855,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                             mei_evaluate(boundaries->scalar[ivar][izone]);
                             rcodcl[ivar * (*nfabor) + ifbr]
                                 = mei_tree_lookup(boundaries->scalar[ivar][izone],
-                                        vars->label[isca]);
+                                        vars->label[scal_id]);
                         }
                         break;
                 }
@@ -2381,18 +2381,18 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
 
                         for (ifac = 0; ifac < faces; ifac++)
                         {
-                            int isca;
+                            int scal_id;
                             int numvar  = vars->nvar - vars->nscaus - vars->nscapp;
                             if (i < vars->nvar - vars->nscapp)
-                                isca = ivar - numvar;
+                                scal_id = ivar - numvar;
                             else
-                                isca = ivar - numvar + vars->nscaus;
+                                scal_id = ivar - numvar + vars->nscaus;
                             ifbr = faces_list[ifac]-1;
                             mei_evaluate(boundaries->scalar[ivar][izone]);
                             icodcl[ivar *(*nfabor) + ifbr] = 5;
                             rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
                                 = mei_tree_lookup(boundaries->scalar[ivar][izone],
-                                                  vars->label[isca]);
+                                                  vars->label[scal_id]);
                         }
                     break;
 
@@ -2412,18 +2412,18 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
 
                         for (ifac = 0; ifac < faces; ifac++)
                         {
-                            int isca;
+                            int scal_id;
                             int numvar  = vars->nvar - vars->nscaus - vars->nscapp;
                             if (i < vars->nvar - vars->nscapp)
-                                isca = ivar - numvar;
+                                scal_id = ivar - numvar;
                             else
-                                isca = ivar - numvar + vars->nscaus;
+                                scal_id = ivar - numvar + vars->nscaus;
                             ifbr = faces_list[ifac]-1;
                             mei_evaluate(boundaries->scalar[ivar][izone]);
                             icodcl[ivar *(*nfabor) + ifbr] = 5;
                             rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
                                     = mei_tree_lookup(boundaries->scalar[ivar][izone],
-                                                      vars->label[isca]);
+                                                      vars->label[scal_id]);
                             rcodcl[1 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
                                     = mei_tree_lookup(boundaries->scalar[ivar][izone], "hc");
                         }
@@ -2498,18 +2498,18 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
 
                     for (ifac = 0; ifac < faces; ifac++)
                     {
-                        int isca;
+                        int scal_id;
                         int numvar  = vars->nvar - vars->nscaus - vars->nscapp;
                         if (i < vars->nvar - vars->nscapp)
-                            isca = ivar - numvar;
+                            scal_id = ivar - numvar;
                         else
-                            isca = ivar - numvar + vars->nscaus;
+                            scal_id = ivar - numvar + vars->nscaus;
                         ifbr = faces_list[ifac]-1;
                         mei_evaluate(boundaries->scalar[ivar][izone]);
                         icodcl[ivar *(*nfabor) + ifbr] = 1;
                         rcodcl[0 * (*nfabor * (vars->nvar)) + ivar * (*nfabor) + ifbr]
                             = mei_tree_lookup(boundaries->scalar[ivar][izone],
-                                              vars->label[isca]);
+                                              vars->label[scal_id]);
                     }
                 break;
                 }

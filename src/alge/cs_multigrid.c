@@ -1854,9 +1854,6 @@ void CS_PROCF(resmgr, RESMGR)
 (
  const char       *cname,     /* <-- variable name */
  const cs_int_t   *lname,     /* <-- variable name length */
- const cs_int_t   *ncelet,    /* <-- Number of cells, halo included */
- const cs_int_t   *ncel,      /* <-- Number of local cells */
- const cs_int_t   *nfac,      /* <-- Number of faces */
  const cs_int_t   *iresds,    /* <-- Descent smoother type:
                                      0: pcg; 1: Jacobi; 2: cg-stab */
  const cs_int_t   *iresas,    /* <-- Ascent smoother type:
@@ -1894,9 +1891,6 @@ void CS_PROCF(resmgr, RESMGR)
   int _ireslp = *ireslp;
 
   cs_halo_rotation_t rotation_mode = CS_HALO_ROTATION_COPY;
-
-  assert(*ncelet >= *ncel);
-  assert(*nfac > 0);
 
   if (*iinvpe == 2)
     rotation_mode = CS_HALO_ROTATION_ZERO;

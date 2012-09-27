@@ -160,6 +160,7 @@ allocate(pripb(nfabor))
 
 ! Initialize variables to avoid compiler warnings
 
+pipb = 0.d0
 pref = 0.d0
 
 ! Memoire

@@ -107,12 +107,12 @@ open (unit=impmet, file=ficmet,                                  &
 rewind(unit=impmet, err=99)
 
 itp=0
+ih2o = 0
 
 if (imode.eq.1) then
   rscp=rair/cp0
 
   !--> flag to take into account the humidity
-  ih2o = 0
   if (ippmod(iatmos).eq.2) ih2o=1
 
 endif

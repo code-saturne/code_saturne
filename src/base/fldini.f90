@@ -306,7 +306,6 @@ do ii = 1, nscal
       if (ichrvr(ipprtp(ivar)) .eq. 1) then
         call field_set_key_int(iflid, keyvis, iopchr)
       endif
-      if (ityturt(ii).eq.3) call field_allocate_bc_coeffs(iflid, .true., .true.)
     endif
   endif
 
