@@ -28,6 +28,8 @@
 
 import os, sys, logging
 from xml.dom import minidom
+from xml.sax.handler import ContentHandler
+from xml.sax import make_parser
 
 #-------------------------------------------------------------------------------
 # log config
@@ -37,6 +39,30 @@ logging.basicConfig()
 log = logging.getLogger(__file__)
 log.setLevel(logging.NOTSET)
 #log.setLevel(logging.DEBUG)
+
+#-------------------------------------------------------------------------------
+# Checker of XML file syntax
+#-------------------------------------------------------------------------------
+
+def xmlChecker(filename):
+    """Try to open the xml file, and return a message if an error occurs.
+
+    @param filename name of the file of parameters ith its absolute path
+    @return m error message
+    """
+    m = ""
+
+    try:
+        p = make_parser()
+        p.setContentHandler(ContentHandler())
+        p.parse(filename)
+    except Exception as e:
+        f = os.path.basename(filename)
+        m = "%s file reading error. \n\n"\
+            "This file is not in accordance with XML specifications.\n\n"\
+            "The parsing syntax error is:\n\n%s" % (f, e)
+
+    return m
 
 #-------------------------------------------------------------------------------
 # Reader of the XML file
@@ -52,10 +78,14 @@ class Parser(object):
         @param XMLFileName: name of the xml file
         """
         self.filename = XMLFileName
+
         try:
             self.doc =  minidom.parse(XMLFileName)
         except:
             print "No file of parameters or error in the name of the file or error in the syntax of the xml.\n"
+            msg =  xmlChecker(self.filename)
+            if msg:
+                print msg
             sys.exit(1)
 
         self.root = self.doc.firstChild
