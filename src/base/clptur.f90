@@ -230,6 +230,7 @@ icl23 = 0
 iclvar = 0
 ipccv = 0
 
+cofimp = 0.d0
 ek = 0.d0
 
 ! --- Constants
