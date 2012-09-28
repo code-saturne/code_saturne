@@ -963,7 +963,7 @@ if (iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
    propce , propfa , propfb ,                                     &
    esflum , esflub ,                                              &
    tslagr , coefa  , coefb  , coefau , coefbu , cofafu , cofbfu , &
-   ckupdc , smacel , frcxt  ,                                     &
+   ckupdc , smacel , frcxt  , grdphd ,                            &
    trava  , ximpa  , uvwk   , dfrcxt , tpucov , trav   ,          &
    viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
    w1     , w7     , w8     , w9     , w10    )

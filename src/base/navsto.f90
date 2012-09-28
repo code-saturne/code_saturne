@@ -1038,7 +1038,7 @@ if (iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
    dt     , rtp    , rtp    , propce , propfa , propfb ,          &
    esflum , esflub ,                                              &
    tslagr , coefa  , coefb  ,                                     &
-   ckupdc , smacel , frcxt  ,                                     &
+   ckupdc , smacel , frcxt  , grdphd ,                            &
    trava  , ximpa  , uvwk   , dfrcxt , tpucou , trav   ,          &
    viscf  , viscb  , viscfi , viscbi ,                            &
    drtp   , smbr   , rovsdt ,                                     &
