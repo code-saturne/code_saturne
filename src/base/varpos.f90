@@ -840,7 +840,7 @@ if(ipass.eq.2) then
     enddo
   endif
   if (iscalt.gt.0) then
-    if (ityturt(iscalt).gt.0) then!FIXME
+    if (ityturt(iscalt).gt.0.and.irovar.eq.1) then!FIXME
       iprop                 = iprop + 1
       ibeta                 = iprop
       ipproc(ibeta)         = iprop

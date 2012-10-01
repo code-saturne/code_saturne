@@ -1683,7 +1683,7 @@ do ifac = 1, nfabor
             if (ityturt(iscal).eq.3) then
 
               ! Diffusive flux of the scalar T
-              phit = coefa(ifac,iclvaf)+coefb(ifac,iclvaf)*rtp(iel,ivar)
+              phit = coefa(ifac,iclvaf) + coefb(ifac,iclvaf)*rtp(iel,ivar)
 
               ! Name of the scalar ivar !TODO move outside of the loop
               call field_get_name(ivarfl(ivar), fname)
@@ -1727,7 +1727,7 @@ do ifac = 1, nfabor
                 enddo
               enddo
 
-              ! Add uk*Tet to T'v' in High Reynolds
+              ! Add rho*uk*Tet to T'v' in High Reynolds
               if (yplus.ge.yp1) then
                 do isou = 1, 3
                   coefaut(isou,ifac) = coefaut(isou,ifac)                    &

@@ -816,7 +816,7 @@ if (nscal.ge.1) then
       iok = iok + 1
     endif
 
-    if ((iscal.eq.iscalt).and.(irovar.eq.1).and.ityturt(iscal).eq.2) then
+    if (iscal.eq.iscalt.and.irovar.eq.1.and.ityturt(iscal).eq.2) then
       iok1 = 0
       do iel = 1, ncel
         if (propce(iel,ipproc(ibeta)).le.0.d0) iok1 = 1

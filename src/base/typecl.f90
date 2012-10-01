@@ -489,9 +489,9 @@ enddo
 do iscal = 1, nscal
   if (ityturt(iscal).eq.3) then
     ! Set pointer values of turbulent fluxes in icodcl
-    iut = nvar + 3*(ifltur(ii) - 1) + 1
-    ivt = nvar + 3*(ifltur(ii) - 1) + 2
-    iwt = nvar + 3*(ifltur(ii) - 1) + 3
+    iut = nvar + 3*(ifltur(iscal) - 1) + 1
+    ivt = nvar + 3*(ifltur(iscal) - 1) + 2
+    iwt = nvar + 3*(ifltur(iscal) - 1) + 3
 
     do ifac = 1, nfabor
       if ((itypfb(ifac) .ne. isolib) .and. &
