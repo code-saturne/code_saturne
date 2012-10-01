@@ -101,7 +101,7 @@ integer          f_id
 
 double precision epsrgp, climgp, extrap
 double precision xk, xe, xtt
-double precision grav(3),xrij(3,3)
+double precision grav(3),xrij(3,3), temp(3)
 
 logical          ilved
 
@@ -116,6 +116,7 @@ double precision, allocatable, dimension(:,:) :: coefat
 double precision, allocatable, dimension(:,:,:) :: coefbt
 double precision, allocatable, dimension(:) :: thflxf, thflxb
 double precision, allocatable, dimension(:) :: divut
+double precision, allocatable, dimension(:,:) :: w1
 
 double precision, dimension(:,:), pointer :: cofarut
 double precision, dimension(:,:,:), pointer :: cofbrut
@@ -211,7 +212,7 @@ endif
 
 ! Find the variance of the thermal scalar
 itt = -1
-if (((abs(gx)+abs(gy)+abs(gz)).gt.0).and.                   &
+if (((abs(gx)+abs(gy)+abs(gz)).gt.epzero).and.irovar.gt.0.and.         &
     ((ityturt(iscal).eq.2).or.(ityturt(iscal).eq.3))) then
   grav(1) = gx
   grav(2) = gy
@@ -230,6 +231,8 @@ endif
 !===============================================================================
 if (ityturt(iscal).ne.3) then
 
+  allocate(w1(3,ncelet))
+
   do ifac = 1, nfac
     thflxf(ifac) = 0.d0
   enddo
@@ -237,8 +240,7 @@ if (ityturt(iscal).ne.3) then
     thflxb(ifac) = 0.d0
   enddo
 
-
-  do iel = 1, ncel !FIXME
+  do iel = 1, ncel
     !Rij
     xrij(1,1) = rtp(iel,ir11)
     xrij(2,2) = rtp(iel,ir22)
@@ -264,20 +266,20 @@ if (ityturt(iscal).ne.3) then
     !FIXME compute u'T' for GGDH.
     do ii = 1, 3
 
-      xut(ii,iel) = 0.d0
+      temp(ii) = 0.d0
 
       ! AFM and EB-AFM models
       !  -C_theta*k/eps*( xi*u_jt*dU_i/dx_j + eta*beta*g_i*variance(t^2))
-      if (ityturt(iscal).eq.2) then
+      if (ityturt(iscal).eq.2.and.ibeta.gt.0) then
         if (itt.gt.0) then
-          xut(ii,iel) = xut(ii,iel) - ctheta(iscal)*xtt*                            &
+          temp(ii) = temp(ii) - ctheta(iscal)*xtt*                            &
                        etaafm*propce(iel,ipproc(ibeta))*grav(ii)*rtp(iel,isca(itt))
         endif
 
         do jj = 1, 3
           if (ii.ne.jj) then
-            xut(ii,iel) = xut(ii,iel)                                               &
-                     - ctheta(iscal)*xtt*xiafm*gradv(iel,jj,ii)*xut(jj,iel)!TODO FIXME CHECKME
+            temp(ii) = temp(ii)                                               &
+                     - ctheta(iscal)*xtt*xiafm*gradv(iel,jj,ii)*xut(jj,iel)
           endif
         enddo
       endif
@@ -285,7 +287,7 @@ if (ityturt(iscal).ne.3) then
       ! pour eviter de faire ut = x+y*ut, on fait ut = x/(1-y)
       ! pour l'AFM, ut n'apparait qu'avec xi
       if (iturt(iscal).eq.20) then
-        xut(ii,iel) = xut(ii,iel)/(1.d0+ctheta(iscal)*xtt*xiafm*gradv(iel,ii,ii))
+        temp(ii) = temp(ii)/(1.d0+ctheta(iscal)*xtt*xiafm*gradv(iel,ii,ii))
       endif
 
     enddo
@@ -294,11 +296,11 @@ if (ityturt(iscal).ne.3) then
     !       -C_theta*k/eps*u_i*u_j*dT/dx_j
     ! pour ne pas ecraser propce dans la premiere boucle ii, on refait une boucle sur ii
     do ii = 1, 3
-      xut(ii,iel) = xut(ii,iel) - ctheta(iscal)*xtt*( xrij(ii,1)*gradT(iel,1)  &
-                                                    + xrij(ii,2)*gradT(iel,2)  &
-                                                    + xrij(ii,3)*gradT(iel,3))
+      xut(ii,iel) = temp(ii) - ctheta(iscal)*xtt*( xrij(ii,1)*gradT(iel,1)  &
+                                                 + xrij(ii,2)*gradT(iel,2)  &
+                                                 + xrij(ii,3)*gradT(iel,3))
       !On calcul la divergence de Cp*ut dans la suite
-      xut(ii,iel) = xcpp(iel)*xut(ii,iel)
+      w1(ii,iel) = xcpp(iel)*xut(ii,iel)
     enddo
   enddo
 
@@ -306,12 +308,12 @@ if (ityturt(iscal).ne.3) then
   iflmb0 = 1
   init   = 1
   inc    = 1
-  nswrgp = 100
-  imligp = imligr(iu)
-  iwarnp = iwarni(iu)
-  epsrgp = epsrgr(iu)
-  climgp = climgr(iu)
-  extrap = extrag(iu)
+  nswrgp = nswrgr(ivar)
+  imligp = imligr(ivar)
+  iwarnp = iwarni(ivar)
+  epsrgp = epsrgr(ivar)
+  climgp = climgr(ivar)
+  extrap = extrag(ivar)
 
   ! Local gradient boundaray conditions: homogenous Neumann
   allocate(coefat(3,ndimfb))
@@ -337,12 +339,13 @@ if (ityturt(iscal).ne.3) then
     iwarnp , nfecra ,                                     &
     epsrgp , climgp , extrap ,                            &
     propce(1,ipcrom), propfb(1,ipbrom),                   &
-    xut    ,                                              &
+    w1     ,                                              &
     coefat , coefbt ,                                     &
     thflxf , thflxb )
 
   deallocate (coefat)
   deallocate (coefbt)
+  deallocate(w1)
 
 !===============================================================================
 ! 3. Transport equation on turbulent thermal fluxes (DFM)
@@ -368,6 +371,12 @@ else
   epsrgp = epsrgr(ivar)
   climgp = climgr(ivar)
   extrap = extrag(ivar)
+
+  do iel = 1, ncelet
+    xuta(1,iel) = xut(1,iel)
+    xuta(2,iel) = xut(2,iel)
+    xuta(3,iel) = xut(3,iel)
+  enddo
 
   ! Boundary Conditions on T'u' for the divergence term of
   ! the thermal transport equation
@@ -407,7 +416,7 @@ do iel = 1, ncel
 enddo
 
 ! Free memory
-deallocate (gradv)
+deallocate(gradv)
 deallocate(divut)
 deallocate(gradt)
 deallocate(thflxf)
