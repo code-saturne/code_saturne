@@ -103,12 +103,12 @@ endif
 !===============================================================================
 
 if (isoot.ge.1.and.iirayo.eq.0) then
-  write(nfecra,4000),isoot,iirayo
+  write(nfecra,4000) isoot,iirayo
   iok = iok + 1
 endif
 
 if (isoot.ge.1.and.ippmod(icod3p).eq.-1) then
-  write(nfecra,4010),isoot, ippmod(icod3p)
+  write(nfecra,4010) isoot, ippmod(icod3p)
   iok = iok + 1
 endif
 
