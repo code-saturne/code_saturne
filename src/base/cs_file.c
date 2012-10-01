@@ -3019,8 +3019,12 @@ cs_file_get_default_comm(int       *block_rank_step,
   if (block_comm != NULL) {
     if (_mpi_comm != MPI_COMM_NULL)
       *block_comm = _mpi_io_comm;
+    else {
+      if (_mpi_comm != MPI_COMM_NULL)
+        *block_comm = _mpi_comm;
     else
       *block_comm = cs_glob_mpi_comm;
+    }
   }
 
   if (comm != NULL) {
@@ -3075,7 +3079,7 @@ cs_file_set_default_comm(int       block_rank_step,
     _mpi_comm = cs_glob_mpi_comm;
 
   if (   comm != MPI_COMM_SELF
-      || block_rank_step > 0
+      || block_min_size > -1
       || _mpi_defaults_are_set == false) {
 
     if (_mpi_io_comm != MPI_COMM_NULL) {
@@ -3083,11 +3087,11 @@ cs_file_set_default_comm(int       block_rank_step,
       _mpi_io_comm = MPI_COMM_NULL;
     }
 
-    if (_mpi_comm != MPI_COMM_NULL) {
+    if (comm != MPI_COMM_NULL) {
 
       if (block_rank_step < 2) {
         _mpi_rank_step = 1;
-        MPI_Comm_dup(_mpi_comm, &_mpi_io_comm);
+        MPI_Comm_dup(comm, &_mpi_io_comm);
       }
 
       else { /* Create reduced communicator */
@@ -3099,10 +3103,10 @@ cs_file_set_default_comm(int       block_rank_step,
 
         _mpi_rank_step = block_rank_step;
 
-        MPI_Comm_size(_mpi_comm, &n_ranks);
-        MPI_Comm_rank(_mpi_comm, &rank_id);
+        MPI_Comm_size(comm, &n_ranks);
+        MPI_Comm_rank(comm, &rank_id);
 
-        MPI_Comm_group(_mpi_comm, &old_group);
+        MPI_Comm_group(comm, &old_group);
 
         if (block_rank_step > n_ranks)
           _mpi_rank_step = n_ranks;
@@ -3114,7 +3118,7 @@ cs_file_set_default_comm(int       block_rank_step,
         ranges[0][2] = block_rank_step;
 
         MPI_Group_range_incl(old_group, 1, ranges, &new_group);
-        MPI_Comm_create(_mpi_comm, new_group, &_mpi_io_comm);
+        MPI_Comm_create(comm, new_group, &_mpi_io_comm);
         MPI_Group_free(&new_group);
 
         MPI_Group_free(&old_group);
