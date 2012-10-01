@@ -259,7 +259,7 @@ cs_gui_check_version(void)
                 "========================================================\n"),
               version_number, version_sat);
 
-  if (!cs_gui_is_equal_real(minus, min_sat))
+  if (!cs_gui_is_equal_real(minus, min_sat)) {
     cs_base_warn(__FILE__, __LINE__);
     bft_printf(_("========================================================\n"
                  "   ** Unexpected version XML file version\n"
@@ -267,9 +267,10 @@ cs_gui_check_version(void)
                  "      XML file version: %.1f  \n"
                  "      XML reader version: %.1f \n"
                  "\n"
-                 "      It is recommenende to rebuild a new XML file.\n"
+                 "      It is recommended to rebuild a new XML file.\n"
                  "========================================================\n"),
                version_number, version_sat);
+  }
 
   BFT_FREE(version);
   BFT_FREE(path);
