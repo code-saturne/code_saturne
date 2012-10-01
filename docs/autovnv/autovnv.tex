@@ -1300,6 +1300,19 @@ my_case.xml:86:12: not well-formed (invalid token)
 \end{verbatim}
 \normalsize
 
+\item How to set a logarithmic scale ?
+
+The following raw commands have to be used:
+
+\small
+\begin{verbatim}
+<subplot id="2" title="Grid convergence" xlabel="Number of cells" ylabel="Error (\%)">
+    <plt_command>ax.set_xscale('log')</plt_command>
+    <plt_command>ax.set_yscale('log')</plt_command>
+</subplot>
+\end{verbatim}
+\normalsize
+
 \end{list}
 
 %
