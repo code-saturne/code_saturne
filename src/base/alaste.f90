@@ -20,7 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-! Module for ALE with Code_Aster coupling
+!> \file alaste.f90
+!> Module for ALE with Code_Aster coupling
 
 module alaste
 

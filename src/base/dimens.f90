@@ -20,7 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-! Module for dimensions
+!> \file dimens.f90
+!> Module for dimensions
 
 module dimens
 

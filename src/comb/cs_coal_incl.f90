@@ -20,7 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-! Module for coal combustion
+!> \file cs_coal_incl.f90
+!> Module for coal combustion
 
 module cs_coal_incl
 

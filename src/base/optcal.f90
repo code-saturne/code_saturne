@@ -20,7 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-! Module for calculation options
+!> \file optcal.f90
+!> Module for calculation options
 
 module optcal
 

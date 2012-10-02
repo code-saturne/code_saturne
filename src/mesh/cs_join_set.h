@@ -47,6 +47,8 @@ BEGIN_C_DECLS
  * Macro and type definitions
  *===========================================================================*/
 
+/*! \cond 0 (start ignore by Doxygen) */
+
 typedef struct { /* Definition of a global indexed list of global elements */
 
   cs_lnum_t   n_elts;
@@ -79,6 +81,8 @@ typedef struct {
   cs_lnum_t  *equiv_couple;   /* ids of the two equivalent entities.
                                  size = 2 * n_equiv */
 } cs_join_eset_t;
+
+/*! \endcond (end ignore by Doxygen) */
 
 /*============================================================================
  * Public function prototypes

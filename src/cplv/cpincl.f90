@@ -20,7 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-! Module for pulverized coal combustion
+!> \file cpincl.f90
+!> Module for pulverized coal combustion
 
 module cpincl
 

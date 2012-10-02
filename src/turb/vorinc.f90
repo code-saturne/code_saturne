@@ -20,7 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-! Module for vortex method for LES boundary conditions
+!> \file vorinc.f90
+!> Module for vortex method for LES boundary conditions
 
 module vorinc
 

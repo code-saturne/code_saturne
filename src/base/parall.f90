@@ -20,7 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-! Module for basic MPI and OpenMP parallelism-related values
+!> \file parall.f90
+!> Module for basic MPI and OpenMP parallelism-related values
 
 module parall
 

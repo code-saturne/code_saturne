@@ -20,7 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-! Module for physical constants
+!> \file cstphy.f90
+!> Module for physical constants
 
 module cstphy
 

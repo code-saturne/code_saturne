@@ -20,7 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-! Module for variable numbering
+!> \file numvar.f90
+!> Module for variable numbering
 
 module numvar
 

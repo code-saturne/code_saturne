@@ -20,7 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-! Module for Radiation
+!> \file radiat.f90
+!> Module for Radiation
 
 module radiat
 

@@ -20,7 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-! Module for gas combustion
+!> \file coincl.f90
+!> Module for gas combustion
 
 module coincl
 

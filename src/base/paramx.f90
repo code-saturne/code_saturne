@@ -20,7 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-! Module for definition of general parameters
+!> \file paramx.f90
+!> Module for definition of general parameters
 
 module paramx
 

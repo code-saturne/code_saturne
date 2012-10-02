@@ -39,6 +39,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond 0 (start ignore by Doxygen) */
+
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
@@ -362,6 +364,8 @@ struct _cs_matrix_variant_t {
   double  matrix_vector_cost[8];
 
 };
+
+/*! \endcond (end ignore by Doxygen) */
 
 /*=============================================================================
  * Semi-private function prototypes

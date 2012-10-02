@@ -181,6 +181,8 @@ typedef struct {
  * Set of variables to synchronize single elements
  *---------------------------------------------------------------------------*/
 
+/*! \cond 0 (start ignore by Doxygen) */
+
 typedef struct {
 
   int      n_elts;
@@ -298,6 +300,8 @@ extern int  cs_glob_n_joinings;
 extern cs_join_t  **cs_glob_join_array;
 
 extern FILE  *cs_glob_join_log;
+
+/*! \endcond (end ignore by Doxygen) */
 
 /*============================================================================
  * Public function prototypes

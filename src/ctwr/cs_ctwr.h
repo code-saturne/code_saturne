@@ -62,6 +62,7 @@ BEGIN_C_DECLS
 
 typedef struct _cs_ctwr_zone_t cs_ctwr_zone_t;
 
+/*! \cond 0 (start ignore by Doxygen) */
 
 /* Cooling tower exchange zone structure definition */
 /*--------------------------------------------------*/
@@ -168,6 +169,8 @@ struct _cs_ctwr_zone_t {
   cs_halo_t  *water_halo;          /* Structure used to manage ghost cells */
 
 };
+
+/*! \endcond (end ignore by Doxygen) */
 
 /*============================================================================
  * Static global variables

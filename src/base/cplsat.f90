@@ -20,7 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-! Module for code/code coupling
+!> \file cplsat.f90
+!> Module for code/code coupling
 
 module cplsat
 

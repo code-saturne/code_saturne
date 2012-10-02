@@ -20,7 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-! Module for multigrid parameters
+!> \file albase.f90
+!> Module for multigrid parameters
 
 module albase
 

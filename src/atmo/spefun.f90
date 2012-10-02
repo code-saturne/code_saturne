@@ -20,7 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-! Module for specific math functions
+!> \file spefun.f90
+!> Module for specific math functions
 
 module spefun
 

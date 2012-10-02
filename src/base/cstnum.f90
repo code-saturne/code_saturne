@@ -20,7 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-! Module for numerical constants
+!> \file cstnum.f90
+!> Module for numerical constants
 
 module cstnum
 

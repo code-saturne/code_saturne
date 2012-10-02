@@ -20,7 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-! Module for multigrid parameters
+!> \file mltgrd.f90
+!> Module for multigrid parameters
 
 module mltgrd
 

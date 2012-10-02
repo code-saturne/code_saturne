@@ -20,7 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-! Module for electric arcs
+!> \file elincl.f90
+!> Module for electric arcs
 
 module elincl
 

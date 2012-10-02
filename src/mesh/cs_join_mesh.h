@@ -58,6 +58,8 @@ BEGIN_C_DECLS
  * Macro and type definitions
  *===========================================================================*/
 
+/*! \cond 0 (start ignore by Doxygen) */
+
 typedef enum {
 
   CS_JOIN_FACE_UNDEFINED,
@@ -127,6 +129,8 @@ typedef struct {
   cs_join_vertex_t  *vertices;
 
 } cs_join_mesh_t;
+
+/*! \endcond (end ignore by Doxygen) */
 
 /*============================================================================
  * Public function prototypes
