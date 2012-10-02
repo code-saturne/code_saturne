@@ -3247,7 +3247,7 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
        = 2 ---> loi de Rosin-Rammler */
     if (itypdp == 1) {
       for (icla = 0; icla < nclpch[icha]; icla++)
-        diam20[icla] = _get_solid_fuel_diameter(icha+1,icla+1);
+        diam20[icla + iclag] = _get_solid_fuel_diameter(icha+1,icla+1);
     } else if (itypdp == 2) {
       nbrf = _cs_gui_get_nb_refusal(icha+1);
 
@@ -3256,8 +3256,7 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
       BFT_MALLOC(pourc,   nclpch[icha], double);
 
       for (ii = 0; ii < nbrf; ii++) {
-        dprefus[ii] = _get_solid_fuel_refusal_diameter(ii+1,icha+1)
-          *1000000;
+        dprefus[ii] = _get_solid_fuel_refusal_diameter(ii+1,icha+1)*1.e6;  //en microns
         refus[ii] = _get_solid_fuel_refusal_value(ii+1,icha+1);
       }
       for (ii = 0; ii<nclpch[icha]; ii++)
@@ -3286,7 +3285,7 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
       xx  = exp(-var / qq);
 
       for (icla = iclag; icla < iclag + nclpch[icha]; icla++)
-        diam20[icla]=  xx*pow((-log(1.-rf[icla-iclag])),(1./qq))*1000000;
+        diam20[icla]=  xx*pow((-log(1.-rf[icla-iclag])),(1./qq))*1.e-6; // en metres
 
       bft_printf("** Rosin-Rammeler results for the coal %i **\n"
                  "[ Checking of the Rosin-Rammeler law ]\n"
