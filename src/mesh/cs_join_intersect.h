@@ -56,6 +56,8 @@ BEGIN_C_DECLS
  * Macro and type definitions
  *===========================================================================*/
 
+/*! \cond 0 (start ignore by Doxygen) */
+
 /* Definition of a structure defining an intersection */
 /* -------------------------------------------------- */
 
@@ -101,6 +103,8 @@ typedef struct {
   cs_lnum_t    max_sub_size;
 
 } cs_join_inter_edges_t;
+
+/*! \endcond (end ignore by Doxygen) */
 
 /*============================================================================
  * Public function prototypes

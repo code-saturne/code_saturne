@@ -20,8 +20,9 @@
 
 !-------------------------------------------------------------------------------
 
-! Module for specific physics common variables
-! between combustion of pulverized coal and heavy fuel
+!> \file ppcpfu.f90
+!> Module for specific physics common variables
+!> between combustion of pulverized coal and heavy fuel
 
 module ppcpfu
 

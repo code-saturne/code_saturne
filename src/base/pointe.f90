@@ -37,12 +37,12 @@ module pointe
   !> pointers (Fortran not allow arrays of pointers directly, so this
   !> technique is a classical workaround.
 
-  !> Note also that Fortran bounds remapping could in theory be used to
-  !> handle different pointer shapes with a single type, but this feature
-  !> of Fortran 2003 (extended in 2008) is supported only by very recent
-  !> compilers (2010 or later), and even recent compilers such as Intel 12
-  !> reportedly have bugs using this feature, so we will need to avoid
-  !> depending on it for a few years.
+  ! Note also that Fortran bounds remapping could in theory be used to
+  ! handle different pointer shapes with a single type, but this feature
+  ! of Fortran 2003 (extended in 2008) is supported only by very recent
+  ! compilers (2010 or later), and even recent compilers such as Intel 12
+  ! reportedly have bugs using this feature, so we will need to avoid
+  ! depending on it for a few years.
 
   !> \ingroup fortan_pointer_containers
   !> \brief container for rank 1 double precision array pointer.

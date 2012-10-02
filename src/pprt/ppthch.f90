@@ -20,7 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-! Module for specific physics thermophysical data
+!> \file ppthch.f90
+!> Module for specific physics thermophysical data
 
 module ppthch
 

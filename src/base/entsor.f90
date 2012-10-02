@@ -20,7 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-! Module for input/output
+!> \file entsor.f90
+!> Module for input/output
 
 module entsor
 

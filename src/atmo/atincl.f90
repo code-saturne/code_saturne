@@ -20,7 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-! Module for atmospheric specific physics
+!> \file atincl.f90
+!> Module for atmospheric models
 
 module atincl
 

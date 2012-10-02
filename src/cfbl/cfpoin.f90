@@ -20,7 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-! Module for fuel combustion
+!> \file cfpoin.f90
+!> Module for fuel combustion
 
 module cfpoin
 

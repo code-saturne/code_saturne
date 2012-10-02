@@ -20,7 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-! Module for heavy fuel oil combustion
+!> \file cs_fuel_incl.f90
+!> Module for heavy fuel oil combustion
 
 module cs_fuel_incl
 

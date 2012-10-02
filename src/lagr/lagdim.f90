@@ -20,7 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-! Module for Lagrangian: dimensions
+!> \file lagdim.f90
+!> Module for Lagrangian dimensions
 
 module lagdim
 

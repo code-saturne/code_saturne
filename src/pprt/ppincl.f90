@@ -20,7 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-! General module for specific physics
+!> \file ppincl.f90
+!> General module for specific physics
 
 module ppincl
 

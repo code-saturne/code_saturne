@@ -20,7 +20,9 @@
 
 !-------------------------------------------------------------------------------
 
-! Module for ALE structure movement with internal coupling
+
+!> \file alstru.f90
+!> Module for ALE structure movement with internal coupling
 
 module alstru
 

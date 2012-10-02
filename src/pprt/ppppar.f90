@@ -20,7 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-! General module for specific physics containing common parameters
+!> \file ppppar.f90
+!> General module for specific physics containing common parameters
 
 module ppppar
 

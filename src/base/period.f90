@@ -20,7 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-! Module for periodicity flags
+!> \file period.f90
+!> Module for periodicity flags
 
 module period
 

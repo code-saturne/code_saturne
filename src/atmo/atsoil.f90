@@ -20,7 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-! Module for the atmospheric soil model structures
+!> \file atsoil.f90
+!> Module for the atmospheric soil model structures.
 
 module atsoil
 

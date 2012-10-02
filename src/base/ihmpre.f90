@@ -20,7 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-! Module for GUI parameter file flag
+!> \file ihmpre.f90
+!> Module for GUI parameter file flag
 
 module ihmpre
 
