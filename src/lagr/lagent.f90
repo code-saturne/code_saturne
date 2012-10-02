@@ -167,12 +167,10 @@ double precision, allocatable, dimension(:) :: surflag
 double precision, allocatable, dimension(:,:) :: surlgrg
 integer, allocatable, dimension(:) :: ninjrg
 integer, allocatable, dimension(:,:,:) :: iusloc
+integer, allocatable, dimension(:) :: ilftot
 
-
-double precision offset
-integer irp, ipart, jj, kk, nfrtot, nlocnew
-
-double precision, dimension(1) :: unif
+double precision unif, offset, rapsurf
+integer irp, ipart, jj, kk, nfrtot, nlocnew, nbpartall
 
 !===============================================================================
 
@@ -180,6 +178,7 @@ double precision, dimension(1) :: unif
 ! 0.  GESTION MEMOIRE
 !===============================================================================
 
+allocate(ilftot(nflagm))
 
 !===============================================================================
 ! 1. INITIALISATION
@@ -294,47 +293,59 @@ enddo
 
 nrangp = irangp
 
-
 if (irangp.ge.0) then
-
    nrangp = irangp
    call parmax(nrangp)
-
-   nfrtot = nfrlag
-   call parcpt(nfrtot)
-
    allocate(surflag(nflagm))
    allocate(surlgrg(nflagm, nrangp + 1))
    allocate(ninjrg(nrangp  + 1))
 
-   do jj = 1, nrangp + 1
-      do kk = 1, nflagm
-         surlgrg(kk,jj) = 0.0
+   do kk = 1, nflagm
+      surflag(kk) = 0.d0
+      do jj = 1, nrangp + 1
+         surlgrg(kk,jj) = 0.d0
       enddo
    enddo
 
    do ii = 1, nfrlag
 
       surflag(ilflag(ii)) = 0.d0
-
       do ifac = 1, nfabor
-
          if (ilflag(ii).eq.ifrlag(ifac)) then
-
             surflag(ilflag(ii)) = surflag(ilflag(ii)) + surfbn(ifac)
             surlgrg(ilflag(ii), irangp + 1) =                                  &
-                       surlgrg(ilflag(ii), irangp + 1) + surfbn(ifac)
-
+                 surlgrg(ilflag(ii), irangp + 1) + surfbn(ifac)
          endif
-
       enddo
+   enddo
 
-      call parsom(surflag(ilflag(ii)))
-
+   do kk = 1, nflagm
+      call parsom(surflag(kk))
       do jj = 1, nrangp + 1
-         call parsom(surlgrg(ilflag(ii), jj))
+         call parsom(surlgrg(kk, jj))
       enddo
+   enddo
 
+   if (irangp.eq.0) then
+      nfrtot = 0
+      jj = 1
+      do kk = 1, nflagm
+         if (surflag(kk).gt.1.d-15) then
+            nfrtot = nfrtot + 1
+            ilftot(jj) = kk
+            jj = jj + 1
+         endif
+      enddo
+   endif
+
+   call parbci(0, 1, nfrtot)
+   call parbci(0, nfrtot, ilftot)
+
+else
+
+   nfrtot = nfrlag
+   do ii = 1, nfrlag
+      ilftot(ii) = ilflag(ii)
    enddo
 
 endif
@@ -625,8 +636,8 @@ endif
 
 ! --> Injection des part 1ere iter seulement si freq d'injection nulle
 
-do ii = 1, nfrlag
-  nb = ilflag(ii)
+do ii = 1, nfrtot
+  nb = ilftot(ii)
   do nc = 1, iusncl(nb)
     if (iuslag(nc,nb,ijfre).eq.0 .and. iplas.eq.1) then
       iuslag(nc,nb,ijfre) = ntcabs
@@ -667,8 +678,8 @@ do ii = 1,nfrlag
   enddo
 enddo
 
-do ii = 1,nfrlag
-  nb = ilflag(ii)
+do ii = 1,nfrtot
+  nb = ilftot(ii)
   do nc = 1, iusncl(nb)
     if (mod(ntcabs,iuslag(nc,nb,ijfre)).eq.0) then
       nbpnew = nbpnew + iuslag(nc,nb,ijnbp)
@@ -677,14 +688,17 @@ do ii = 1,nfrlag
 enddo
 
 ! --> Limite du nombre de particules a NBPMAX
+nbpartall = nbpart
+if (irangp.ge.0) then
+   call parsom(nbpartall)
+endif
 
-if ( (nbpart+nbpnew).gt.nbpmax ) then
-  write(nfecra,3000) nbpart,nbpnew,nbpmax
+if ( (nbpartall+nbpnew).gt.nbpmax ) then
+  write(nfecra,3000) nbpartall,nbpnew,nbpmax
   nbpnew = 0
 endif
 
 ! --> Si pas de new particules alors RETURN
-
 if (nbpnew.eq.0) return
 
 ! --> Tirage aleatoire des positions des NBPNEW nouvelles particules
@@ -704,8 +718,8 @@ nlocnew = 0
 !     Ensuite, on regarde ou on les met
 
 !     pour chaque zone de bord :
-do ii = 1,nfrlag
-   nb = ilflag(ii)
+do ii = 1,nfrtot
+   nb = ilftot(ii)
    !       pour chaque classe :
    do nc = 1, iusncl(nb)
       !         si de nouvelles particules doivent entrer :
@@ -728,23 +742,19 @@ do ii = 1,nfrlag
 
                   call zufall(1, unif)
 
+                  ! blindage
+                  unif = unif + 1.d-9
+
                   irp = 1
                   offset = surlgrg(nb,irp) / surflag(nb)
-
-156               if (unif(1).lt.offset) then
-
-                     ninjrg(irp) = ninjrg(irp) + 1
-                     goto 561
-
-                  else
+                  do while (unif.gt.offset)
                      irp = irp + 1
                      offset = offset + surlgrg(nb,irp) / surflag(nb)
-                     goto 156
-
-                  endif
-561             enddo
-
+                  enddo
+                  ninjrg(irp) = ninjrg(irp) + 1
+               enddo
             endif
+
             ! Broadcast a tous les rangs
             if (irangp.ge.0) then
                call parbci(0, nrangp + 1, ninjrg)
@@ -1055,12 +1065,16 @@ do ii = 1,nfrlag
 ! Modele de Deposition : Initialisation
 
          if ( idepst .eq. 1 ) then
+
            call zufall(1,dintrf(1))
-           tepa(ip,jrinpf) = 5.d0 + 15.d0*dintrf(1)
+
+           tepa(ip,jrinpf) = 5.d0 + 15.d0 * dintrf(1)
+
            tepa(ip,jryplu) = 1000.d0
            itepa(ip,jimark) = -1
            itepa(ip,jdiel)  = 0
            itepa(ip,jdfac)  = 0
+
          endif
 
       enddo
@@ -1103,7 +1117,13 @@ do ii = 1,nfrlag
 
       if ( mod(ntcabs,iuslag(nc,nb,ijfre)).eq.0 .and.               &
            ruslag(nc,nb,idebt) .gt. 0.d0        .and.               &
-           iuslag(nc,nb,ijnbp) .gt. 0                 ) then
+           iusloc(nc,nb,ijnbp) .gt. 0                 ) then
+
+         if (irangp.ge.0) then
+            rapsurf = dble(iusloc(nc,nb,ijnbp)) / iuslag(nc,nb,ijnbp)
+         else
+            rapsurf = 1.d0
+         endif
 
          dmasse = 0.d0
          do ip = npt+1 , npt + iusloc(nc,nb,ijnbp)
@@ -1113,8 +1133,9 @@ do ii = 1,nfrlag
          !        Calcul des Poids
 
          if ( dmasse.gt.0.d0 ) then
-            do ip = npt+1 , npt+iuslag(nc,nb,ijnbp)
-               tepa(ip,jrpoi) = ( ruslag(nc,nb,idebt)*dtp ) / dmasse
+            do ip = npt+1 , npt+iusloc(nc,nb,ijnbp)
+               tepa(ip,jrpoi) = ( ruslag(nc,nb,idebt)*dtp )  * rapsurf &
+                    / dmasse
             enddo
          else
             write(nfecra,1057) nb, nc, ruslag(nc,nb,idebt),           &
@@ -1152,7 +1173,7 @@ enddo
 !   si de nouvelles particules doivent entrer :
 
 npar1 = nbpart+1
-npar2 = nbpart+ iusloc(nc,nb,ijnbp)
+npar2 = nbpart+ nlocnew
 
 call lagipn                                                       &
 !==========
@@ -1364,6 +1385,7 @@ if (irangp.ge.0) then
    deallocate(surflag)
    deallocate(surlgrg)
    deallocate(ninjrg)
+   deallocate(ilftot)
 endif
 
 !--------
