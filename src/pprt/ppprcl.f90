@@ -144,9 +144,6 @@ if ( ippmod(icod3p).ge.0 ) then
     ientfu(izone) = 0
   enddo
 
-  tinoxy        = zero
-  tinfue        = zero
-
   do ifac = 1, nfabor
     izfppp(ifac) = 0
   enddo
