@@ -511,9 +511,6 @@ do ilelt = 1, nlelt
 ! ATTENTION: If iqimp()  = 1 the direction vector of the massfow has
 !            to begiven here.
 !
-!   Inlet Temperature in K
-  tinfue        = 436.d0
-!
 !   Boundary conditions of turbulence
   icalke(izone) = 1
 !
@@ -613,9 +610,6 @@ do ilelt = 1, nlelt
   rcodcl(ifac,iw,1) = 0.097d0
 ! ATTENTION: If iqimp()  = 1 the direction vector of the massfow has
 !            to be given here.
-!
-!   Inlet Temperature in K
-  tinoxy        = 353.d0
 
 !   Boundary conditions of turbulence
   icalke(izone) = 1

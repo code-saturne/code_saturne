@@ -566,6 +566,10 @@ srrom =-grand
 !       DIFTL0 (diffusivite dynamique en kg/(m s))
 diftl0      =-grand
 
+! --> Reference temperature for fuel and oxydant (K)
+tinfue = -grand
+tinoxy = -grand
+
 ! --> Diffusion 3 points, tableaux HH HF THF
 !           (generes dans d3pphy)
 
