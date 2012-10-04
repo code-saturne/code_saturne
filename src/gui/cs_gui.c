@@ -1259,6 +1259,34 @@ static char *_scalar_name_label(const char *kw, const int scalar_num)
   return str;
 }
 
+/*-----------------------------------------------------------------------------
+ * Return the name from a specific physic scalar.
+ *
+ * parameters:
+ *   physics              -->  keyword: specific physic model required
+ *   kw                   -->  scalar name
+ *----------------------------------------------------------------------------*/
+
+static char *_specific_physic_scalar_name_label(const char *physics, const char *kw)
+{
+  char *path = NULL;
+  char *str  = NULL;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_elements(&path, 3,
+                        "thermophysical_models",
+                        physics,
+                        "scalar");
+  cs_xpath_add_test_attribute(&path, "label", kw);
+  cs_xpath_add_attribute(&path, "name");
+
+  str = cs_gui_get_attribute_value(path);
+
+  BFT_FREE(path);
+
+  return str;
+}
+
 /*==========================
  * FOR VOLUMICS ZONES
  *==========================*/
@@ -2243,8 +2271,10 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
     j = iscapp[i] -1;
     cs_glob_var->rtp[n++] = isca[j] -1;
 
-    BFT_MALLOC(cs_glob_var->name[k+j], strlen(cs_glob_var->label[j]) +1, char);
-    strcpy(cs_glob_var->name[k+j], cs_glob_var->label[j]);
+    name = _specific_physic_scalar_name_label(cs_glob_var->model, cs_glob_var->label[j]);
+    BFT_MALLOC(cs_glob_var->name[k+j], strlen(name) +1, char);
+    strcpy(cs_glob_var->name[k+j], name);
+    BFT_FREE(name);
 
     BFT_MALLOC(cs_glob_var->type[k+j], strlen("scalar")+1, char);
     strcpy(cs_glob_var->type[k+j], "scalar");
@@ -2786,7 +2816,6 @@ void CS_PROCF (cssca2, CSSCA2) (const    int *const iscavr,
 /*----------------------------------------------------------------------------
  * Read reference dynamic and user scalar viscosity
  *----------------------------------------------------------------------------*/
-
 
 void CS_PROCF (cssca3, CSSCA3) (const    int *const iscalt,
                                 const    int *const iscsth,
