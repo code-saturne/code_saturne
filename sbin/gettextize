@@ -24,7 +24,7 @@ case `xgettext --version | sed 1q | sed -e 's,^[^0-9]*,,'` in
       --files-from=../po/POTFILES.in \
       --copyright-holder='EDF S.A.' \
       --package-name="${package_gnu}ncs" \
-      --package-version='1.3.3' \
+      --package-version='1.3.6' \
       --msgid-bugs-address="$msgid_bugs_address";;
 esac
 

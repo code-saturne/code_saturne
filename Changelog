@@ -1,3 +1,20 @@
+* 08/10/2012 - Yvan Fournier <yvan.fournier@edf.fr>
+  Remove configurations for obsolete platforms, complete Blue Gene/Q
+  port of source code (not lance script), and update version number.
+  removed files:
+    bin/batch_clamart2.sh
+    bin/macros_clamart2.mk
+    bin/macros_calibre5.mk
+  modified files:
+    COMPATIBILITY
+    aux/compil.exe
+    bin/cs_profile
+    bin/Makefile
+    bin/macros_zumbrota.mk
+    doc/style/csdoc.sty
+    doc/USER/latex/ale.tex
+    src/base/cs_opts.c
+
 * 07/05/2012 - Yvan Fournier <yvan.fournier@edf.fr>
   Initial (minimal) port to Blue Gene/Q.
   added files:

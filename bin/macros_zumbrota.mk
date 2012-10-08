@@ -35,7 +35,7 @@
 # Macros for BFT
 #---------------
 
-BFT_HOME        =/home/projets/saturne/Code_Saturne/1.3/opt/bft-1.1/arch/bgq
+BFT_HOME        =/home/projets/saturne/Code_Saturne/1.3/opt/bft-1.1/arch/zumbrota
 
 BFT_INC         =-I$(BFT_HOME)/include
 BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
@@ -43,7 +43,7 @@ BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
 # Macros for FVM
 #---------------
 
-FVM_HOME        =/home/projets/saturne/Code_Saturne/1.3/opt/fvm-0.15/arch/bgq
+FVM_HOME        =/home/projets/saturne/Code_Saturne/1.3/opt/fvm-0.15/arch/zumbrota
 
 FVM_INC         =-I$(FVM_HOME)/include
 FVM_LDFLAGS     =-L$(FVM_HOME)/lib -lfvm
@@ -75,7 +75,7 @@ SOCKET_LIB      =
 # XML support
 XML             =1
 
-XML_HOME = /gpfs/home/saturne/opt/libxml2-2.7/arch/bgq
+XML_HOME = /home/projets/saturne/opt/libxml2-2.8/arch/zumbrota
 
 XML_INC  =-I$(XML_HOME)/include/libxml2
 XML_LIB  =-L$(XML_HOME)/lib -lxml2
@@ -102,7 +102,7 @@ CS_LANG         =
 # C compiler
 #-----------
 
-CCOMP                  = mpixlc_r
+CCOMP                  = /bgsys/drivers/ppcfloor/comm/xl/bin/mpixlc
 
 CCOMPFLAGSDEF          = -g
 
@@ -119,7 +119,7 @@ CCOMPFLAGSVERS         = -v
 # Fortran compiler
 #-----------------
 
-FTNCOMP                = mpixlf77_r
+FTNCOMP                = /bgsys/drivers/ppcfloor/comm/xl/bin/mpixlf77
 
 FTNCOMPFLAGSDEF        = -g -qextname
 
@@ -137,7 +137,7 @@ FTNPREPROCOPT          = -WF,
 # Linker
 #-------
 
-LDEDL           = mpixlf77_r
+LDEDL           = /bgsys/drivers/ppcfloor/comm/xl/bin/mpixlf77_r
 LDEDLFLAGS      = -O3
 LDEDLFLAGSLO    = -O0
 LDEDLFLAGSDBG   = -g
@@ -155,15 +155,14 @@ VARDEF          = -D_POSIX_SOURCE
 #--------------------------
 
 # Zlib used by HDF5
-ZLIB     = -L/bgsys/local/tools_ibm/lib -lz
+ZLIB     =
 
 # IBM libraries
-MASS     = -L/opt/ibmcmp/xlmass/bg/4.4/bglib -lmass -lmassv
 ESSL     = -L/opt/ibmmath/essl/5.1/lib64 -lesslbg
 
 # Base libraries (always used)
 
-LIBBASIC = $(ZLIB) -Wl,--allow-multiple-definition $(MASS) $(ESSL)
+LIBBASIC = $(ZLIB) -Wl,--allow-multiple-definition $(ESSL)
 
 # Libraries in production mode
 

@@ -38,12 +38,6 @@ if [ "$NOM_ARCH" = "Linux" ] ; then
     else
       NOM_ARCH=calibre7
     fi
-  elif [ $(grep -c "Calibre 5" /etc/issue) -ne 0 ] ; then
-    if [ "`hostname | cut -c1-5`" = "clala" -o "`hostname`" = "clay1pfr" -o "`hostname`" = "clay2pfr"  ] ; then
-      NOM_ARCH=clamart2
-    else
-      NOM_ARCH=calibre5
-    fi
   elif [ -d /bgsys/drivers/ppcfloor ] ; then
     if [ "`hostname | cut -c1-6`" = "bgqfen" ] ; then
       NOM_ARCH=zumbrota
