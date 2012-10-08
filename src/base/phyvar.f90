@@ -20,6 +20,37 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Function:
+! ---------
+
+!> \file phyvar.f90
+!>
+!> \brief This subroutine fills physical properties which are variable in time
+!> (mainly the eddy viscosity).
+!>
+!> Some user subroutines are called which allows the setting of \f$ \rho \f$,
+!> \f$ \mu \f$, etc.
+
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     dt            time step (per cell)
+!> \param[in,out] rtp, rtpa     calculated variables at cell centers
+!>                               (at current and previous time steps)
+!> \param[in]     propce        physical properties at cell centers
+!> \param[in,out] propfa        physical properties at interior face centers
+!> \param[in,out] propfb        physical properties at boundary face centers
+!> \param[in]     coefa, coefb  boundary conditions
+!_______________________________________________________________________________
+
+
 subroutine phyvar &
 !================
 
@@ -27,35 +58,6 @@ subroutine phyvar &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  )
 
-!===============================================================================
-! FONCTION :
-! --------
-
-! REMPLISSAGE DES GRANDEURS PHYSIQUES VARIABLES EN TEMPS
-!    ESSENTIELLEMENT LA VISCOSITE TURBULENTE.
-!    ON APPELLE UN SOUS PROGRAMME UTILISATEUR QUI PERMET DE
-!    SPECIFIER ROM, ROMB, VISCL, VISCLS ...
-
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================
@@ -119,21 +121,19 @@ save             ipass
 !===============================================================================
 
 !===============================================================================
-! 1.  INITIALISATIONS
+! 1. Initializations
 !===============================================================================
 
 ipass = ipass + 1
 
 !===============================================================================
-! 2.  PREPARATION DE LA PERIODICITE DE ROTATION
-!       CALCUL DE DUDXYZ ET DRDXYZ (gradients sur les halos avec prise
-!       en compte des periodicites pour exploitation dans pering, inimas)
+! 2. Preparing periodicity of rotation
 !===============================================================================
 
 if (iperot.gt.0) then
 
   if (ivelco.eq.0) then
-    call perinu                                                    &
+    call perinu &
     !==========
   ( nvar   , nscal  ,                                              &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -143,7 +143,7 @@ if (iperot.gt.0) then
 
   if (itytur.eq.3) then
 
-    call perinr                                                   &
+    call perinr &
     !==========
  ( nvar   , nscal  ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -171,14 +171,13 @@ if (idilat.eq.4.and.ipass.gt.1) then
 endif
 
 !===============================================================================
-! 4.  ON REND LA MAIN A L'UTILISATEUR POUR LA PROGRAMMATION DES
-!      GRANDEURS PHYSIQUES VARIABLES QUI LUI SONT PROPRES
+! 4. User settings
 !===============================================================================
 
 ibrom = 0
 
 if (ippmod(iphpar).ge.1) then
-  call ppphyv                                                     &
+  call ppphyv &
   !==========
  ( nvar   , nscal  ,                                              &
    ibrom  ,                                                       &
@@ -208,8 +207,11 @@ call usphyv &
   dt     , rtp    , rtpa   ,                                     &
   propce , propfa , propfb )
 
-!  Density defined by a perfect gas equation of state
-!  for the low-Mach algorithm
+!===============================================================================
+! 5. Density defined by a perfect gas equation of state
+!    for the low-Mach algorithm
+!===============================================================================
+
 if (idilat.eq.3) then
 
   ! Works only with enthalpy
@@ -306,7 +308,7 @@ endif
 
 if (ntcabs.eq.ntpabs+1) then
 
-!     Masse volumique aux cellules et aux faces de bord
+  ! Masse volumique aux cellules et aux faces de bord
   iok1 = 0
   if (irovar.eq.0) then
     ipcrom = ipproc(irom)
@@ -326,7 +328,7 @@ if (ntcabs.eq.ntpabs+1) then
     write(nfecra,9001)
   endif
 
-!     Viscosite moleculaire aux cellules
+  ! Viscosite moleculaire aux cellules
   iok2 = 0
   if (ivivar.eq.0) then
     ipcvis = ipproc(iviscl)
@@ -351,13 +353,13 @@ if (ntcabs.eq.ntpabs+1) then
 endif
 
 !===============================================================================
-! 3.  CALCUL DE LA VISCOSITE TURBULENTE
+! 6. Compute the eddy viscosity
 !===============================================================================
 
 if     (iturb.eq. 0) then
 
-! 3.1 LAMINAIRE
-! ==============
+! 6.1 Laminar
+! ===========
 
   ipcvst = ipproc(ivisct)
 
@@ -367,8 +369,8 @@ if     (iturb.eq. 0) then
 
 elseif (iturb.eq.10) then
 
-! 3.2 LONGUEUR DE MELANGE
-! ========================
+! 6.2 Mixing length model
+! =======================
 
   call vislmg &
   !==========
@@ -380,8 +382,8 @@ elseif (iturb.eq.10) then
 
 elseif (itytur.eq.2) then
 
-! 3.3 K-EPSILON
-! ==============
+! 6.3 k-epsilon
+! =============
 
   ipcvst = ipproc(ivisct)
   ipcrom = ipproc(irom  )
@@ -394,8 +396,8 @@ elseif (itytur.eq.2) then
 
 elseif (itytur.eq.3) then
 
-! 3.4 Rij-EPSILON
-! ================
+! 6.4 Rij-epsilon
+! ===============
 
   ipcvst = ipproc(ivisct)
   ipcrom = ipproc(irom  )
@@ -408,9 +410,8 @@ elseif (itytur.eq.3) then
 
 elseif (iturb.eq.40) then
 
-! 3.5 LES Smagorinsky
+! 6.5 LES Smagorinsky
 ! ===================
-
 
   call vissma &
   !==========
@@ -422,9 +423,8 @@ elseif (iturb.eq.40) then
 
 elseif (iturb.eq.41) then
 
-! 3.6 LES dynamique
-! =================
-
+! 6.6 LES dynamic
+! ===============
 
   call visdyn &
   !==========
@@ -437,9 +437,8 @@ elseif (iturb.eq.41) then
 
 elseif (iturb.eq.42) then
 
-! 3.7 LES WALE
+! 6.7 LES WALE
 ! ============
-
 
   call viswal &
   !==========
@@ -451,7 +450,7 @@ elseif (iturb.eq.42) then
 
 elseif (itytur.eq.5) then
 
-! 3.8 v2f (phi-model and BL-v2/k)
+! 6.8 v2f (phi-model and BL-v2/k)
 ! ===============================
 
   if (iturb.eq.50) then
@@ -485,7 +484,7 @@ elseif (itytur.eq.5) then
 
 elseif (iturb.eq.60) then
 
-! 3.9 K-OMEGA SST
+! 6.9 k-omega SST
 ! ===============
 
   call vissst &
@@ -498,8 +497,8 @@ elseif (iturb.eq.60) then
 
 elseif (iturb.eq.70) then
 
-! 3.10 SPALART -ALLMARAS
-! ======================
+! 6.10 Spalart-Allmaras
+! =====================
 
   cv13 = csav1**3
 
@@ -518,7 +517,7 @@ elseif (iturb.eq.70) then
 endif
 
 !===============================================================================
-! 4. Symmetric tensor diffusivity
+! 7. Symmetric tensor diffusivity
 !===============================================================================
 iok = 0
 do ivar = 1, nvar
@@ -535,7 +534,6 @@ if (iok.eq.1) then
     ipcrom = ipproc(irom)
 
     do iel = 1, ncel
-      !FIXME it should be csrij/sigmae instead of crijep
       trrij = 0.5d0*(rtp(iel,ir11)+rtp(iel,ir22)+rtp(iel,ir33))
       csteps  = propce(iel,ipcrom) * trrij / rtp(iel,iep)
 
@@ -562,7 +560,7 @@ if (iok.eq.1) then
 endif
 
 !===============================================================================
-! 5. User modification of the turbulent viscosity and symmetric tensor
+! 8. User modification of the turbulent viscosity and symmetric tensor
 !    diffusivity
 !===============================================================================
 
@@ -575,7 +573,7 @@ call usvist &
   ckupdc , smacel )
 
 !===============================================================================
-! 6. Clipping of the turbulent viscosity in dynamic LES
+! 9. Clipping of the turbulent viscosity in dynamic LES
 !===============================================================================
 
 ! Pour la LES en modele dynamique on clippe la viscosite turbulente de maniere
@@ -597,14 +595,13 @@ if (iturb.eq.41) then
   if (iwarni(iu).ge.1) then
     if (irangp.ge.0) then
       call parcpt(iclipc)
-      !==========
     endif
     write(nfecra,1000) iclipc
   endif
 endif
 
 !===============================================================================
-! 6. User modification of the mesh viscosity in ALE
+! 10. User modification of the mesh viscosity in ALE
 !===============================================================================
 
 if (iale.eq.1.and.ntcabs.eq.0) then
@@ -614,7 +611,7 @@ if (iale.eq.1.and.ntcabs.eq.0) then
 
   if (iihmpr.eq.1) then
 
-    call uivima                       &
+    call uivima &
     !==========
   ( ncel,                             &
     propce(1,ipproc(ivisma(1))),      &
@@ -624,7 +621,7 @@ if (iale.eq.1.and.ntcabs.eq.0) then
 
   endif
 
-  call usvima                                                     &
+  call usvima &
   !==========
  ( nvar   , nscal  ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -634,7 +631,7 @@ if (iale.eq.1.and.ntcabs.eq.0) then
 endif
 
 !===============================================================================
-! 7.  IMPRESSIONS DE CONTROLE DES VALEURS ENTREES PAR L'UTILISATEUR
+! 11. Checcking of the user values
 !===============================================================================
 
 ! ---> Calcul des bornes des variables et impressions
@@ -673,9 +670,7 @@ do ii = 1, nn
     enddo
     if (irangp.ge.0) then
       call parmax (varmx(ii))
-      !==========
       call parmin (varmn(ii))
-      !==========
     endif
   endif
 enddo
@@ -689,12 +684,10 @@ do ifac = 1, nfabor
 enddo
 if (irangp.ge.0) then
   call parmax (varmx(ii))
-  !==========
   call parmin (varmn(ii))
-  !==========
 endif
 
-! Impressions
+! Writings
 iok1 = 0
 do ii = 1, nn
   if (ii.eq.1) chaine = nomvar(ipppro(ipproc(irom  )))
@@ -780,9 +773,7 @@ if (nscal.ge.1) then
       enddo
       if (irangp.ge.0) then
         call parmax (vismax(iscal))
-        !==========
         call parmin (vismin(iscal))
-        !==========
       endif
     else
       vismax(iscal) = visls0(iscal)
@@ -802,9 +793,9 @@ if (nscal.ge.1) then
   enddo
   if (iok1.eq.1) write(nfecra,3112)
 
-! Verifications de valeur physique
+  ! Verifications de valeur physique
 
-! IOK a deja ete initialise
+  ! IOK a deja ete initialise
 
   do iscal = 1, nscal
 
@@ -837,7 +828,7 @@ if (iale.eq.1.and.ntcabs.eq.0) then
   do ii = 1, nn
     ipcvma = ipproc(ivisma(ii))
 
-! Min et max sur les cellules
+    ! Min et max sur les cellules
     varmx(1) = propce(1,ipcvma)
     varmn(1) = propce(1,ipcvma)
     do iel = 2, ncel
@@ -846,12 +837,10 @@ if (iale.eq.1.and.ntcabs.eq.0) then
     enddo
     if (irangp.ge.0) then
       call parmax (varmx(1))
-      !==========
       call parmin (varmn(1))
-      !==========
     endif
 
-! Impressions
+    ! Writings
     chaine = nomvar(ipppro(ipcvma))
     if (iwarni(iuma).ge.1.or.ipass.eq.1.or.varmn(1).lt.0.d0) then
       if (iok1.eq.0) then
@@ -861,9 +850,9 @@ if (iale.eq.1.and.ntcabs.eq.0) then
       write(nfecra,3211)chaine(1:16),varmn(1),varmx(1)
     endif
 
-! Verifications de valeur physique
+    ! Verifications de valeur physique
 
-! Viscosite de maillage definie
+    ! Viscosite de maillage definie
     chaine = nomvar(ipppro(ipcvma))
     if (varmn(1).le.0.d0) then
       write(nfecra,9211) varmn(1)
@@ -884,22 +873,20 @@ if (iok.ne.0) then
 endif
 
 !===============================================================================
-! 8.  ECHANGES
+! 12. Parallelism and periodicity
 !===============================================================================
 
 ! Pour navsto et vissec on a besoin de ROM dans le halo
-
 
 ipcrom = ipproc(irom)
 
 if (irangp.ge.0.or.iperio.eq.1) then
   call synsca(propce(1,ipcrom))
-  !==========
 endif
 
-!----
-! FORMATS
-!----
+!--------
+! Formats
+!--------
 
 #if defined(_CS_LANG_FR)
 
