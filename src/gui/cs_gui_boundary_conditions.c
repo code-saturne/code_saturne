@@ -1072,9 +1072,6 @@ _init_boundaries(const int *const nfabor,
         BFT_MALLOC(boundaries->preout,  zones, double);
         BFT_MALLOC(boundaries->denin,   zones, double);
     }
-    else if (cs_gui_strcmp(vars->model, "arc") || cs_gui_strcmp(vars->model, "joule"))
-    {
-    }
     else
     {
         boundaries->ientat = NULL;
@@ -1335,7 +1332,7 @@ _init_boundaries(const int *const nfabor,
                 _outlet_compressible(izone, isspcf, isopcf);
         }  /* if (cs_gui_strcmp(nature, "outlet")) */
 
-        if (cs_gui_strcmp(vars->model, "arc") || cs_gui_strcmp(vars->model, "joule"))
+        if (cs_gui_strcmp(vars->model, "joule_effect"))
           for (isca = 0; isca < vars->nscapp; isca++)
             _boundary_elec(nature, izone, ngazg, isca+vars->nscaus);
         BFT_FREE(nature);
@@ -1861,7 +1858,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                 }
             }
 
-            if (cs_gui_strcmp(vars->model, "joule"))
+            if (cs_gui_strcmp(vars->model_value, "joule"))
             {
               if (*ielcor == 1)
               {
@@ -1875,7 +1872,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
               }
             }
 
-            if (cs_gui_strcmp(vars->model, "arc"))
+            if (cs_gui_strcmp(vars->model_value, "arc"))
             {
               if (boundaries->type_code[*ipotr -1][izone] == DIRICHLET_IMPLICIT && *ielcor == 1)
                 for (ifac = 0; ifac < faces; ifac++)
@@ -2431,7 +2428,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                 } /* switch */
             } /* for (i = 0; i < vars->nvar; i++) */
 
-            if (cs_gui_strcmp(vars->model, "joule"))
+            if (cs_gui_strcmp(vars->model_value, "joule"))
             {
               if (*ielcor == 1)
               {
@@ -2445,7 +2442,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
               }
             }
 
-            if (cs_gui_strcmp(vars->model, "arc"))
+            if (cs_gui_strcmp(vars->model_value, "arc"))
             {
               if (boundaries->type_code[*ipotr -1][izone] == DIRICHLET_IMPLICIT && *ielcor == 1)
                 for (ifac = 0; ifac < faces; ifac++)
@@ -2539,7 +2536,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                 }
             }
 
-            if (cs_gui_strcmp(vars->model, "joule"))
+            if (cs_gui_strcmp(vars->model_value, "joule"))
             {
               if (*ielcor == 1)
               {
@@ -2553,7 +2550,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
               }
             }
 
-            if (cs_gui_strcmp(vars->model, "arc"))
+            if (cs_gui_strcmp(vars->model_value, "arc"))
             {
               if (boundaries->type_code[*ipotr -1][izone] == DIRICHLET_IMPLICIT && *ielcor == 1)
                 for (ifac = 0; ifac < faces; ifac++)

@@ -437,7 +437,7 @@ if (iihmpr.eq.1) then
     call uicpi1 (srrom, diftl0)
     ! gaz number and radiatif transfer are read in dp_ELE
     call uieli1 (ncelet, ippmod(ieljou), ippmod(ielarc), ielcor, couimp, puisim, &
-                 coejou, modrec, idreca, crit_reca)
+                 modrec, idreca, crit_reca)
 
     ! Initial value for dpot is set to 1000 V.
     dpot = 1000.d0
