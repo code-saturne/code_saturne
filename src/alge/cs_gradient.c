@@ -3866,8 +3866,8 @@ void CS_PROCF (cgdvec, CGDVEC)
     if (*nswrgp > 1)
       _iterative_vector_gradient(mesh,
                                  fvq,
-                                 halo_type,
                                  *ivar,
+                                 halo_type,
                                  *inc,
                                  *nswrgp,
                                  *iwarnp,
