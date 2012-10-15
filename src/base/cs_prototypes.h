@@ -100,7 +100,6 @@ extern void CS_PROCF (dvvpst, DVVPST)
  const cs_real_t  stativ[],  /* <-- cell variance statistics (Lagrangian) */
  const cs_real_t  statfb[],  /* <-- boundary face statistics (Lagrangian) */
  cs_real_t        tracel[],  /* --- work array for output cells */
- cs_real_t        trafac[],  /* --- work array for output interior faces */
  cs_real_t        trafbr[]   /* --- work array for output boundary faces */
 );
 
@@ -245,26 +244,6 @@ extern void CS_PROCF (tstvec, TSTVEC)
 );
 
 /*----------------------------------------------------------------------------
- * User override of default frequency or calculation end based output.
- *
- * Fortran interface:
- *
- * subroutine pstusn (ntmabs, ntcabs, ttcabs)
- * *****************
- *
- * integer          ntmabs      : <-- : maximum time step number
- * integer          ntcabs      : <-- : current time step number
- * double precision ttcabs      : <-- : absolute time at the current time step
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (pstusn, PSTUSN)
-(
- const cs_int_t  *ntmabs,
- const cs_int_t  *ntcabs,
- const cs_real_t *ttcabs
-);
-
-/*----------------------------------------------------------------------------
  * Indicate if the variable considered is a component of a vector or tensor
  * in the presence of periodicity of rotation
  *
@@ -317,10 +296,7 @@ void CS_PROCF (usvpst, USVPST)
  const cs_real_t  propce[],  /* <-- cell physical properties */
  const cs_real_t  propfa[],  /* <-- interior face physical properties */
  const cs_real_t  propfb[],  /* <-- boundary face physical properties */
- const cs_real_t  statce[],  /* <-- cell statistics (Lagrangian) */
- cs_real_t        tracel[],  /* --- work array for output cells */
- cs_real_t        trafac[],  /* --- work array for output interior faces */
- cs_real_t        trafbr[]   /* --- work array for output boundary faces */
+ const cs_real_t  statce[]   /* <-- cell statistics (Lagrangian) */
 );
 
 /*----------------------------------------------------------------------------

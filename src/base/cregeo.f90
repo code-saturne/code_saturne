@@ -54,6 +54,7 @@ use ppthch
 use ppincl
 use ctincl
 use mesh
+use post
 
 !===============================================================================
 
@@ -115,8 +116,7 @@ endif
 ! 3. Write time-independent post-processing meshes
 !===============================================================================
 
-call pstema (ntcabs, ttcabs)
-!==========
+call cs_post_write_meshes (ntcabs, ttcabs)
 
 !===============================================================================
 ! 4. Filter extended neighborhood for least-squares gradients

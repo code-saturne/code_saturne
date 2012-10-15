@@ -30,7 +30,7 @@ subroutine dvvpst &
    lstcel , lstfac , lstfbr ,                                     &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , statce , stativ , statfb ,                   &
-   tracel , trafac , trafbr )
+   tracel , trafbr )
 
 !===============================================================================
 ! Purpose:
@@ -74,7 +74,6 @@ subroutine dvvpst &
 ! statfb           ! tr ! <-- ! statistiques faces bord (lagrangien)           !
 !  (nfabor,nvisbr) !    !     !                                                !
 ! tracel(*)        ! tr ! <-- ! tab reel valeurs cellules post                 !
-! trafac(*)        ! tr ! <-- ! tab reel valeurs faces int. post               !
 ! trafbr(*)        ! tr ! <-- ! tab reel valeurs faces bord post               !
 !__________________!____!_____!________________________________________________!
 
@@ -106,6 +105,7 @@ use radiat
 use cplsat
 use mesh
 use field
+use post
 
 !===============================================================================
 
@@ -127,23 +127,22 @@ double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision statce(ncelet,nvlsta), statfb(nfabor,nvisbr)
 double precision stativ(ncelet,nvlsta)
 double precision tracel(ncelps*3)
-double precision trafac(nfacps*3), trafbr(nfbrps*3)
+double precision trafbr(nfbrps*3)
 
 ! Local variables
 
-character*32     namevr
 character*80     name80
 
-logical          ilved
+logical          ilved , ientla, ivarpr
 integer          inc   , iccocg, nswrgp, imligp, iwarnp
 integer          ifac  , iloc  , ivar , iclvar, iclvaf
-integer          ira   , idivdt, ineeyp
+integer          ira   , idivdt
 integer          ipp   , idimt , ii    , kk   , ll, iel
-integer          ivarl , iip
+integer          ivarl , ivar0 , iip
 integer          iii, ivarl1 , ivarlm , iflu   , ilpd1  , icla
 integer          iscal , ipcvsl, ipcvst, iflmab
-integer          ientla, ivarpr, fldid, fldprv, keycpl, iflcpl
-integer          ipccp , ipcrom, keyvis, iflpst, itplus
+integer          fldid, fldprv, keycpl, iflcpl
+integer          ipccp , ipcrom, ipcsii, keyvis, iflpst, itplus
 
 double precision xcp   , xvsl  , srfbn
 double precision visct , flumab, diipbx, diipby, diipbz
@@ -171,43 +170,34 @@ ipp = 0
 
 if (numtyp .eq. -1) then
 
-  !  1.1.2 Variables supplementaires automatiques
-  !  --------------------------------------------
+  !  1.1.2 Automatic additional variables
+  !  ------------------------------------
 
-  ! Distance a la paroi (si LES+VanDriest ou Rij+Echo ou K-w SST)
+  ! Wall distance (if LES+VanDriest or Rij+Echo or K-w SST)
 
   if (ineedy.eq.1 .and. abs(icdpar).eq.1) then
 
-    namevr = 'DistWall'
     idimt = 1
-    ientla = 0
-    ivarpr = 1
+    ientla = .true.
+    ivarpr = .true.
 
-    call psteva(nummai, namevr, idimt, ientla, ivarpr,  &
-    !==========
-                ntcabs, ttcabs, dispar, rbid, rbid)
+    call post_write_var(nummai, 'DistWall', idimt, ientla, ivarpr,  &
+                        ntcabs, ttcabs, dispar, rbid, rbid)
 
   endif
 
-  ! Yplus (si LES+VanDriest)
+  ! Yplus (if LES+VanDriest)
 
   if (ineedy.eq.1 .and. abs(icdpar).eq.1) then
 
-    ineeyp = 0
     if (itytur.eq.4.and.idries.eq.1) then
-      ineeyp = 1
-    endif
 
-    if (ineeyp.eq.1) then
-
-      namevr = 'Yplus'
       idimt = 1
-      ientla = 0
-      ivarpr = 1
+      ientla = .true.
+      ivarpr = .true.
 
-      call psteva(nummai, namevr, idimt, ientla, ivarpr,          &
-      !==========
-                  ntcabs, ttcabs, yplpar, rbid, rbid)
+      call post_write_var(nummai, 'Yplus', idimt, ientla, ivarpr,  &
+                          ntcabs, ttcabs, yplpar, rbid, rbid)
 
     endif
 
@@ -219,10 +209,9 @@ if (numtyp .eq. -1) then
 
     ipcrom = ipproc(irom)
 
-    namevr = 'Pressure'
     idimt = 1
-    ientla = 0
-    ivarpr = 0
+    ientla = .true.
+    ivarpr = .false.
 
     do iloc = 1, ncelps
 
@@ -236,15 +225,12 @@ if (numtyp .eq. -1) then
 
     enddo
 
-    call psteva(nummai, namevr, idimt, ientla, ivarpr,        &
-    !==========
-                ntcabs, ttcabs, tracel, rbid, rbid)
+    call post_write_var(nummai, 'Pressure', idimt, ientla, ivarpr,  &
+                        ntcabs, ttcabs, tracel, rbid, rbid)
 
-
-    namevr = 'Velocity'
     idimt = 3
-    ientla = 1
-    ivarpr = 0
+    ientla = .true.
+    ivarpr = .false.
 
     do iloc = 1, ncelps
 
@@ -261,9 +247,9 @@ if (numtyp .eq. -1) then
 
     enddo
 
-    call psteva(nummai, namevr, idimt, ientla, ivarpr,        &
-    !==========
-                ntcabs, ttcabs, tracel, rbid, rbid)
+    call post_write_var(nummai, 'Velocity', idimt, ientla, ivarpr,  &
+                        ntcabs, ttcabs, tracel, rbid, rbid)
+
   endif
 
   ! Vitesse et pression relatives en cas de calcul en repère fixe
@@ -272,10 +258,9 @@ if (numtyp .eq. -1) then
 
     ipcrom = ipproc(irom)
 
-    namevr = 'Rel Pressure'
     idimt = 1
-    ientla = 0
-    ivarpr = 0
+    ientla = .true.
+    ivarpr = .false.
 
     do iloc = 1, ncelps
 
@@ -289,15 +274,12 @@ if (numtyp .eq. -1) then
 
     enddo
 
-    call psteva(nummai, namevr, idimt, ientla, ivarpr,        &
-    !==========
-                ntcabs, ttcabs, tracel, rbid, rbid)
+    call post_write_var(nummai, 'Rel Pressure', idimt, ientla, ivarpr,  &
+                        ntcabs, ttcabs, tracel, rbid, rbid)
 
-
-    namevr = 'Rel Velocity'
     idimt = 3
-    ientla = 1
-    ivarpr = 0
+    ientla = .true.
+    ivarpr = .false.
 
     do iloc = 1, ncelps
 
@@ -314,9 +296,8 @@ if (numtyp .eq. -1) then
 
     enddo
 
-    call psteva(nummai, namevr, idimt, ientla, ivarpr,        &
-    !==========
-                ntcabs, ttcabs, tracel, rbid, rbid)
+    call post_write_var(nummai, 'Rel Velocity', idimt, ientla, ivarpr,  &
+                        ntcabs, ttcabs, tracel, rbid, rbid)
 
   endif
 
@@ -348,8 +329,9 @@ else if (numtyp .eq. -2) then
     if (iand(iflpst, 2) .eq. 0) cycle ! nothing to do for this field
 
     call field_get_dim (fldid, idimt, ilved)
-    call field_get_name(fldid, name80)
-    namevr = name80(1:32)
+    call field_get_name(fldid, name80(4:80))
+    name80(1:3) = 'bc_'
+
 
     !  Compute non-reconstructed values at boundary faces
 
@@ -468,15 +450,11 @@ else if (numtyp .eq. -2) then
 
     endif ! test on field dimension and interleaving
 
-    ientla = 1 ! interleaved result values
-    ivarpr = 0 ! defined on work array
+    ientla = .true.  ! interleaved result values
+    ivarpr = .false. ! defined on work array
 
-    name80 = 'bc_'//trim(namevr)
-    namevr = name80(1:32)
-
-    call psteva(nummai, namevr, idimt, ientla, ivarpr,        &
-    !==========
-                ntcabs, ttcabs, rbid, rbid, trafbr)
+    call post_write_var(nummai, trim(name80), idimt, ientla, ivarpr,  &
+                        ntcabs, ttcabs, rbid, rbid, trafbr)
 
   enddo ! End of loop on variables
 
@@ -485,15 +463,7 @@ else if (numtyp .eq. -2) then
 
   if (ipstdv(ipstyp).ne.0) then
 
-    ! Variable name
-
-    do ii = 1, 32
-      namevr (ii:ii) = ' '
-    enddo
-
-    namevr = 'Yplus'
-
-    idimt = 1  ! variable dimension (3: vector, 1: scalar)
+    idimt = 1  ! variable dimension
 
     ! Compute variable on boundary faces
 
@@ -504,12 +474,11 @@ else if (numtyp .eq. -2) then
 
     ! Non interleaved values, defined in work array
 
-    ientla = 0
-    ivarpr = 0
+    ientla = .true.
+    ivarpr = .false.
 
-    call psteva(nummai, namevr, idimt, ientla, ivarpr,          &
-    !==========
-                ntcabs, ttcabs, rbid, rbid, trafbr)
+    call post_write_var(nummai, 'Yplus', idimt, ientla, ivarpr,  &
+                        ntcabs, ttcabs, rbid, rbid, trafbr)
 
   endif ! end of test on output of y+
 
@@ -518,76 +487,46 @@ else if (numtyp .eq. -2) then
 
   if (iand(ipstdv(ipstfo), 1) .ne. 0) then
 
-    ! Initialisation
-    do ii = 1, 32
-      namevr (ii:ii) = ' '
-    enddo
+    ! Compute variable values on boundary faces
 
-    ! Nom de la variable
-    namevr = 'Efforts'
+    call post_efforts(nfbrps, lstfbr, trafbr)
 
-    ! Calcul des valeurs de la variable sur les faces de bord
+    idimt = 3        ! variable dimension
+    ientla = .true.  ! interleaved values
+    ivarpr = .false. ! defined on work array
 
-    call post_efforts (nfbrps, lstfbr, trafbr)
-    !================
-
-    idimt = 3  ! variable dimension (3: vector, 1: scalar)
-    ientla = 1 ! interleaved values
-    ivarpr = 0 ! defined on work array
-
-    call psteva(nummai, namevr, idimt, ientla, ivarpr,          &
-    !==========
-                ntcabs, ttcabs, rbid, rbid, trafbr)
+    call post_write_var(nummai, 'Efforts', idimt, ientla, ivarpr,  &
+                        ntcabs, ttcabs, rbid, rbid, trafbr)
 
   endif
 
   if (iand(ipstdv(ipstfo), 2) .ne. 0) then
 
-    ! Initialisation
-    do ii = 1, 32
-      namevr (ii:ii) = ' '
-    enddo
+    ! Compute variable values on boundary faces
 
-    ! Nom de la variable
-    namevr = 'Tangential Efforts'
+    call post_efforts_tangential(nfbrps, lstfbr, trafbr)
 
-    ! Calcul des valeurs de la variable sur les faces de bord
+    idimt = 3        ! variable dimension
+    ientla = .true.  ! interleaved values
+    ivarpr = .false. ! defined on work array
 
-    call post_efforts_tangential (nfbrps, lstfbr, trafbr)
-    !===========================
-
-    idimt = 3  ! variable dimension (3: vector, 1: scalar)
-    ientla = 1 ! interleaved values
-    ivarpr = 0 ! defined on work array
-
-    call psteva(nummai, namevr, idimt, ientla, ivarpr,          &
-    !==========
-                ntcabs, ttcabs, rbid, rbid, trafbr)
+    call post_write_var(nummai, 'Tangential Efforts', idimt, ientla, ivarpr,  &
+                        ntcabs, ttcabs, rbid, rbid, trafbr)
 
   endif
 
   if (iand(ipstdv(ipstfo), 4) .ne. 0) then
 
-    ! Initialisation
-    do ii = 1, 32
-      namevr (ii:ii) = ' '
-    enddo
-
-    ! Nom de la variable
-    namevr = 'Normal Efforts'
-
     ! Calcul des valeurs de la variable sur les faces de bord
 
-    call post_efforts_normal (nfbrps, lstfbr, trafbr)
-    !=======================
+    call post_efforts_normal(nfbrps, lstfbr, trafbr)
 
-    idimt = 1  ! variable dimension (3: vector, 1: scalar)
-    ientla = 1 ! interleaved values
-    ivarpr = 0 ! defined on work array
+    idimt = 1        ! variable dimension
+    ientla = .true.  ! interleaved values
+    ivarpr = .false. ! defined on work array
 
-    call psteva(nummai, namevr, idimt, ientla, ivarpr,          &
-    !==========
-                ntcabs, ttcabs, rbid, rbid, trafbr)
+    call post_write_var(nummai, 'Normal Efforts', idimt, ientla, ivarpr,  &
+                        ntcabs, ttcabs, rbid, rbid, trafbr)
 
   endif
 
@@ -600,32 +539,14 @@ else if (numtyp .eq. -2) then
 
     if (itplus.ge.0) then
 
-      call field_get_val_s (itplus, tplusp)
+      call field_get_val_s(itplus, tplusp)
 
-      ! Variable name
+      idimt = 1        ! variable dimension
+      ientla = .true.  ! interleaved values
+      ivarpr = .true.  ! defined on parent array
 
-      do ii = 1, 32
-        namevr (ii:ii) = ' '
-      enddo
-
-      namevr = 'Tplus'
-
-      idimt = 1  ! variable dimension (3: vector, 1: scalar)
-
-      ! Compute variable on boundary faces
-
-      do iloc = 1, nfbrps
-        ifac = lstfbr(iloc)
-        trafbr(iloc) = tplusp(ifac)
-      enddo
-
-      idimt = 1  ! variable dimension (3: vector, 1: scalar)
-      ientla = 1 ! interleaved values
-      ivarpr = 0 ! defined on work array
-
-      call psteva(nummai, namevr, idimt, ientla, ivarpr,          &
-      !==========
-                  ntcabs, ttcabs, rbid, rbid, trafbr)
+      call post_write_var(nummai, 'Tplus', idimt, ientla, ivarpr,  &
+                          ntcabs, ttcabs, rbid, rbid, tplusp)
 
     endif ! end of test on presence ot T+
 
@@ -639,26 +560,15 @@ else if (numtyp .eq. -2) then
 
     if (iscalt.gt.0 .and. nscal.gt.0 .and. iscalt.le.nscal) then
 
-      ! Initialisation
-      do ii = 1, 32
-        namevr (ii:ii) = ' '
-      enddo
+      call post_boundary_thermal_flux(nfbrps, lstfbr, rtp, propce, propfb,      &
+                                      trafbr)
 
-      namevr = 'Input thermal flux'
+      idimt = 1        ! variable dimension
+      ientla = .true.  ! interleaved values
+      ivarpr = .false. ! defined on work array
 
-      call post_boundary_thermal_flux &
-      !==============================
-        ( nfbrps , lstfbr ,                                              &
-          rtp    , propce , propfb ,                                     &
-          trafbr )
-
-      idimt = 1  ! variable dimension (3: vector, 1: scalar)
-      ientla = 1 ! interleaved values
-      ivarpr = 0 ! defined on work array
-
-      call psteva(nummai, namevr, idimt, ientla, ivarpr,        &
-      !==========
-                  ntcabs, ttcabs, rbid, rbid, trafbr)
+      call post_write_var(nummai, 'Input thermal flux', idimt, ientla, ivarpr,  &
+                          ntcabs, ttcabs, rbid, rbid, trafbr)
 
     endif
 
@@ -669,29 +579,17 @@ else if (numtyp .eq. -2) then
 
   if (ipstdv(ipsttb).ne.0) then
 
-    ! Variable name
-
-    do ii = 1, 32
-      namevr (ii:ii) = ' '
-    enddo
-
-    namevr = 'Wall temperature'
-
-    idimt = 1  ! variable dimension (3: vector, 1: scalar)
-    ientla = 1 ! interleaved values
-    ivarpr = 0 ! defined in work array
+    idimt = 1        ! variable dimension
+    ientla = .true.  ! interleaved values
+    ivarpr = .false. ! defined on work array
 
     ! Compute variable on boundary faces
 
-    call post_boundary_temperature &
-    !=============================
-        ( nfbrps , lstfbr ,                                              &
-          rtp    , propce , propfb ,                                     &
-          trafbr )
+    call post_boundary_temperature(nfbrps, lstfbr, rtp, propce, propfb,     &
+                                   trafbr)
 
-    call psteva(nummai, namevr, idimt, ientla, ivarpr,          &
-    !==========
-                ntcabs, ttcabs, rbid, rbid, trafbr)
+    call post_write_var(nummai, 'Wall temperature', idimt, ientla, ivarpr,  &
+                        ntcabs, ttcabs, rbid, rbid, trafbr)
 
   endif ! end of test on output of wall temperature
 
@@ -700,56 +598,43 @@ else if (numtyp .eq. -2) then
 
   if (ipstdv(ipstnu).ne.0) then
 
-    ! Variable name
-
-    do ii = 1, 32
-      namevr (ii:ii) = ' '
-    enddo
-
-    namevr = 'Wall law Nusselt'
-
-    idimt = 1  ! variable dimension (3: vector, 1: scalar)
-    ientla = 1 ! interleaved values
-    ivarpr = 0 ! defined in work array
+    idimt = 1        ! variable dimension
+    ientla = .true.  ! interleaved values
+    ivarpr = .false. ! defined on work array
 
     ! Compute variable on boundary faces
 
-    call post_boundary_nusselt &
-    !=========================
-        ( nfbrps , lstfbr ,                                              &
-          rtp    , propce , propfb ,                                     &
-          trafbr )
+    call post_boundary_nusselt(nfbrps, lstfbr, rtp, propce, propfb,         &
+                               trafbr)
 
-    call psteva(nummai, namevr, idimt, ientla, ivarpr,          &
-    !==========
-                ntcabs, ttcabs, rbid, rbid, trafbr)
+    call post_write_var(nummai, 'Wall law Nusselt', idimt, ientla, ivarpr,  &
+                        ntcabs, ttcabs, rbid, rbid, trafbr)
 
   endif ! end of test on output of Nusselt
 
 endif ! end of test on postprocessing mesh number
 
 !===============================================================================
-!     2.1. VARIABLES LAGRANGIENNES
+! 2.1. Lagrangian variables
 !===============================================================================
 
 if (nummai .eq. -1) then
 
   if (iilagr.gt.0 .and. istala.ge.1) then
 
-!         Toutes les statistiques standard sont de dimension 1,
-!         et sont definies ou calculees sur tableau de travail
-!         de maniere non entrelacee (sans importance de toutes
-!         manieres pour une variable scalaire)
+    ! All standard statistics have dimension 1, and are defined or computed
+    ! on the global mesh cells.
 
     idimt  = 1
-    ientla = 0
+    ientla = .true.
+    ivarpr = .true.
 
     iii = nvlsta-nvlsts
 
     do icla  = 0, nbclst
 
-!     -> si ICLA = 0 : statistiques globales
-!        si 0 < ICLA =< NBCLST : statistiques par groupe
+      ! -> if ICLA = 0: global statistics
+      !    if 0 < ICLA =< NBCLST: per group statistics
 
       do ivarl = 1, nvlsta
 
@@ -769,25 +654,20 @@ if (nummai .eq. -1) then
             name80 = nomlag(ilvu(ivarl-iii))
           else
             write(name80,'(a8,a4,i3)')                            &
-                 nomlag(ilvu(ivarl-iii)),'_grp',icla
+                  nomlag(ilvu(ivarl-iii)),'_grp',icla
           endif
         endif
 
-        namevr = name80(1:32)
-
         call uslaen                                               &
         !==========
- ( nvar   , nscal  , nvlsta ,                                     &
-   ivarl  , ivarl1 , ivarlm , iflu   , ilpd1  , icla   ,          &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   statce , stativ , tracel )
+          (nvar, nscal, nvlsta,                                   &
+           ivarl, ivarl1, ivarlm, iflu, ilpd1, icla,              &
+           dt, rtpa, rtp, propce, propfa, propfb,                 &
+           statce, stativ, tracel)
 
-!           La variable est deja definie sur le maillage volumique
-!           global ; on utilise donc l'indirection  (donc IVARPR = 1)
-        ivarpr = 1
+        call post_write_var(nummai, trim(name80), idimt, ientla, ivarpr,  &
+                            ntcabs, ttcabs, tracel, rbid, rbid)
 
-        call psteva(nummai, namevr, idimt, ientla, ivarpr,        &
-                    ntcabs, ttcabs, tracel, rbid, rbid)
       enddo
 
       do ivarl = 1, nvlsta-1
@@ -812,21 +692,15 @@ if (nummai .eq. -1) then
           endif
         endif
 
-        namevr = name80(1:32)
-
         call uslaen                                               &
         !==========
- ( nvar   , nscal  , nvlsta ,                                     &
-   ivarl  , ivarl1 , ivarlm , iflu   , ilpd1  , icla   ,          &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   statce , stativ , tracel )
+          (nvar, nscal, nvlsta,                                   &
+           ivarl, ivarl1, ivarlm, iflu, ilpd1, icla,              &
+           dt, rtpa, rtp, propce, propfa, propfb,                 &
+           statce, stativ, tracel)
 
-!           La variable est deja definie sur le maillage volumique
-!           global ; on utilise donc l'indirection  (donc IVARPR = 1)
-        ivarpr = 1
-
-        call psteva(nummai, namevr, idimt, ientla, ivarpr,        &
-                    ntcabs, ttcabs, tracel, rbid, rbid)
+        call post_write_var(nummai, trim(name80), idimt, ientla, ivarpr,  &
+                            ntcabs, ttcabs, tracel, rbid, rbid)
       enddo
 
     enddo
@@ -835,7 +709,7 @@ if (nummai .eq. -1) then
 
 endif
 
-if (nummai.eq.-2) then
+if (numtyp.eq.-2) then
 
   if (iilagr.gt.0 .and. iensi3.eq.1) then
 
@@ -848,7 +722,6 @@ if (nummai.eq.-2) then
       else if (nusbor.gt.0) then
         name80 = nombrd(iusb(ivarl-iii))
       endif
-      namevr = name80(1:32)
 
       if (imoybr(ivarl).eq.2) then
 
@@ -886,16 +759,13 @@ if (nummai.eq.-2) then
       endif
 
       idimt  = 1
-      ientla = 0
-      ivarpr = 0
+      ientla = .true.
+      ivarpr = .false.
 
-      call psteva(nummai, namevr, idimt, ientla, ivarpr,          &
-                  ntcabs, ttcabs, rbid, rbid, trafbr)
+      call post_write_var(nummai, trim(name80), idimt, ientla, ivarpr,  &
+                          ntcabs, ttcabs, rbid, rbid, trafbr)
 
     enddo
-
-    !NAME80 = 'lagrangian_boundary_zones'
-    !namevr = name80(1:32)
 
     !do iloc = 1, nfbrps
     !  ifac = lstfbr(iloc)
@@ -903,11 +773,11 @@ if (nummai.eq.-2) then
     !enddo
 
     !idimt  = 1
-    !ientla = 0
-    !ivarpr = 0
+    !ientla = .true.
+    !ivarpr = .false.
 
-    !call psteva(nummai, namevr, idimt, ientla, ivarpr,            &
-    !     ntcabs, ttcabs, rbid, rbid, trafbr)
+    !call post_write_var(nummai, 'lagrangian_boundary_zones', idimt,          &
+    !                    ientla, ivarpr, ntcabs, ttcabs, rbid, rbid, trafbr)
 
   endif
 endif
@@ -917,16 +787,13 @@ endif
 !     2.2. VARIABLES RADIATIVES AUX FRONTIERES
 !===============================================================================
 
-if (nummai.eq.-2) then
+if (numtyp.eq.-2) then
 
   if (iirayo.gt.0) then
 
     do ivarl = 1,nbrayf
 
       if (irayvf(ivarl).eq.1) then
-
-        name80 = nbrvaf(ivarl)
-        namevr = name80(1:32)
 
         if (ivarl .eq. itparp)      then
           ipp =  ipprob(itparo)
@@ -952,17 +819,14 @@ if (nummai.eq.-2) then
         enddo
 
         idimt  = 1
-        ientla = 0
-        ivarpr = 0
+        ientla = .true.
+        ivarpr = .false.
 
-        call psteva(nummai, namevr, idimt, ientla, ivarpr,        &
-                    ntcabs, ttcabs, rbid, rbid, trafbr)
+        call post_write_var(nummai, trim(nbrvaf(ivarl)), idimt,              &
+                            ientla, ivarpr, ntcabs, ttcabs, rbid, rbid, trafbr)
 
       endif
     enddo
-
-    name80 = 'radiative_boundary_zones'
-    namevr = name80(1:32)
 
     do iloc = 1, nfbrps
       ifac = lstfbr(iloc)
@@ -970,31 +834,324 @@ if (nummai.eq.-2) then
     enddo
 
     idimt  = 1
-    ientla = 0
-    ivarpr = 0
+    ientla = .true.
+    ivarpr = .false.
 
-    call psteva(nummai, namevr, idimt, ientla, ivarpr,            &
-                ntcabs, ttcabs, rbid, rbid, trafbr)
+    call post_write_var(nummai, 'radiative_boundary_zones', idimt,           &
+                        ientla, ivarpr, ntcabs, ttcabs, rbid, rbid, trafbr)
 
   endif
 endif
 
 !===============================================================================
-!     2.3. VARIABLES ELECTRIQUES
+! 2.3. Electric module variables
 !===============================================================================
 
-if (     ippmod(ieljou).ge.1                                      &
-    .or. ippmod(ielarc).ge.1                                      &
-    .or. ippmod(ielion).ge.1) then
+if (numtyp.eq.-1) then
 
-  call uselen                                                     &
-  !==========
- ( nummai ,                                                       &
-   nvar   , nscal  ,                                              &
-   ncelps , nfacps , nfbrps ,                                     &
-   lstcel , lstfac , lstfbr ,                                     &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   tracel , trafac , trafbr )
+  if (     ippmod(ieljou).ge.1                                      &
+      .or. ippmod(ielarc).ge.1                                      &
+      .or. ippmod(ielion).ge.1) then
+
+    allocate(grad(ncelet,3))
+
+    if (.true.) then
+
+      ! Gradient of the real potential
+
+      ivar = isca(ipotr)
+
+      inc = 1
+      iccocg = 1
+      nswrgp = nswrgr(ivar)
+      imligp = imligr(ivar)
+      iwarnp = iwarni(ivar)
+      epsrgp = epsrgr(ivar)
+      climgp = climgr(ivar)
+      extrap = extrag(ivar)
+      ivar0 = 0
+
+      call field_get_coefa_s(ivarfl(ivar), coefap)
+      call field_get_coefb_s(ivarfl(ivar), coefbp)
+
+      call grdcel                                                 &
+      !==========
+        (ivar0, imrgra, inc, iccocg, nswrgp, imligp,              &
+         iwarnp, nfecra, epsrgp, climgp, extrap,                  &
+         rtp(1,ivar), coefap, coefbp,                             &
+         grad)
+
+      idimt  = 3
+      ientla = .false.
+      ivarpr = .true.
+
+      call post_write_var(nummai, 'Pot_Gradient_R', idimt, ientla, ivarpr,   &
+                          ntcabs, ttcabs, grad, rbid, rbid)
+
+    endif
+
+    ! For Joule Heating by direct conduction:
+    !   gradient of the imaginary component of the potential
+
+    if (.true.                                                               &
+        .and. (ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4)) then
+
+      ivar = isca(ipoti)
+
+      inc = 1
+      iccocg = 1
+      nswrgp = nswrgr(ivar)
+      imligp = imligr(ivar)
+      iwarnp = iwarni(ivar)
+      epsrgp = epsrgr(ivar)
+      climgp = climgr(ivar)
+      extrap = extrag(ivar)
+
+      ivar0 = 0
+
+      call field_get_coefa_s(ivarfl(ivar), coefap)
+      call field_get_coefb_s(ivarfl(ivar), coefbp)
+
+      call grdcel                                                 &
+      !==========
+        (ivar0, imrgra, inc, iccocg, nswrgp, imligp,              &
+         iwarnp, nfecra, epsrgp, climgp, extrap,                  &
+         rtp(1,ivar), coefap, coefbp,                             &
+         grad)
+
+      idimt  = 3
+      ientla = .false.
+      ivarpr = .true.
+
+      call post_write_var(nummai, 'Pot_Gradient_Im', idimt, ientla, ivarpr,  &
+                          ntcabs, ttcabs, grad, rbid, rbid)
+
+    endif
+
+    ! For Joule heating by direct conduction:
+    !   imaginary component of the current density
+
+    if (.true.                                                               &
+        .and. (ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4)) then
+
+      ivar = isca(ipoti)
+
+      ! As in elflux
+      ipcsii = ipproc(ivisls(ipoti))
+
+      inc = 1
+      iccocg = 1
+      nswrgp = nswrgr(ivar)
+      imligp = imligr(ivar)
+      iwarnp = iwarni(ivar)
+      epsrgp = epsrgr(ivar)
+      climgp = climgr(ivar)
+      extrap = extrag(ivar)
+
+      ivar0 = 0
+
+      call field_get_coefa_s(ivarfl(ivar), coefap)
+      call field_get_coefb_s(ivarfl(ivar), coefbp)
+
+      call grdcel                                                 &
+      !==========
+        (ivar0, imrgra, inc, iccocg, nswrgp, imligp,              &
+         iwarnp, nfecra, epsrgp, climgp, extrap,                  &
+         rtp(1,ivar), coefap, coefbp,                             &
+         grad)
+
+      do iloc = 1, ncelps
+        iel = lstcel(iloc)
+        tracel(1 + (iloc-1)*idimt) = -propce(iel,ipcsii)*grad(iel,1)
+        tracel(2 + (iloc-1)*idimt) = -propce(iel,ipcsii)*grad(iel,2)
+        tracel(3 + (iloc-1)*idimt) = -propce(iel,ipcsii)*grad(iel,3)
+      enddo
+
+      idimt  = 3
+      ientla = .true.
+      ivarpr = .false.
+
+      call post_write_var(nummai, 'Current_Im', idimt, ientla, ivarpr,  &
+                          ntcabs, ttcabs, grad, rbid, rbid)
+
+    endif
+
+    ! For electric arcs: electromagnetic field calculation
+
+    if (.true. .and. ippmod(ielarc).ge.2) then
+
+      ! Ax Component
+
+      ivar = isca(ipotva(1))
+
+      inc = 1
+      iccocg = 1
+      nswrgp = nswrgr(ivar)
+      imligp = imligr(ivar)
+      iwarnp = iwarni(ivar)
+      epsrgp = epsrgr(ivar)
+      climgp = climgr(ivar)
+      extrap = extrag(ivar)
+
+      ivar0 = 0
+
+      call field_get_coefa_s(ivarfl(ivar), coefap)
+      call field_get_coefb_s(ivarfl(ivar), coefbp)
+
+      call grdcel                                                 &
+      !==========
+        (ivar0, imrgra, inc, iccocg, nswrgp, imligp,              &
+         iwarnp, nfecra, epsrgp, climgp, extrap,                  &
+         rtp(1,ivar), coefap, coefbp,                             &
+         grad)
+
+      ! B = rot A ( B = curl A)
+
+      do iloc = 1, ncelps
+        iel = lstcel(iloc)
+        tracel(1 + (iloc-1)*idimt) =  zero
+        tracel(2 + (iloc-1)*idimt) =  grad(iel,3)
+        tracel(3 + (iloc-1)*idimt) = -grad(iel,2)
+      enddo
+
+      ! Ay component
+
+      ivar = isca(ipotva(2))
+
+      inc = 1
+      iccocg = 1
+      nswrgp = nswrgr(ivar)
+      imligp = imligr(ivar)
+      iwarnp = iwarni(ivar)
+      epsrgp = epsrgr(ivar)
+      climgp = climgr(ivar)
+      extrap = extrag(ivar)
+
+      ivar0 = 0
+
+      call field_get_coefa_s(ivarfl(ivar), coefap)
+      call field_get_coefb_s(ivarfl(ivar), coefbp)
+
+      call grdcel                                                 &
+      !==========
+        (ivar0, imrgra, inc, iccocg, nswrgp, imligp,              &
+         iwarnp, nfecra, epsrgp, climgp, extrap,                  &
+         rtp(1,ivar), coefap, coefbp,                             &
+         grad)
+
+      ! B = rot A (B = curl A)
+
+      do iloc = 1, ncelps
+        iel = lstcel(iloc)
+        tracel(1 + (iloc-1)*idimt) = tracel(1 + (iloc-1)*idimt) - grad(iel,3)
+        tracel(3 + (iloc-1)*idimt) = tracel(3 + (iloc-1)*idimt) + grad(iel,1)
+      enddo
+
+      ! Az component
+
+      ivar = isca(ipotva(3))
+
+      inc = 1
+      iccocg = 1
+      nswrgp = nswrgr(ivar)
+      imligp = imligr(ivar)
+      iwarnp = iwarni(ivar)
+      epsrgp = epsrgr(ivar)
+      climgp = climgr(ivar)
+      extrap = extrag(ivar)
+
+      ivar0 = 0
+
+      call field_get_coefa_s(ivarfl(ivar), coefap)
+      call field_get_coefb_s(ivarfl(ivar), coefbp)
+
+      call grdcel                                                 &
+      !==========
+        (ivar0, imrgra, inc, iccocg, nswrgp, imligp,              &
+         iwarnp, nfecra, epsrgp, climgp, extrap,                  &
+         rtp(1,ivar), coefap, coefbp,                             &
+         grad   )
+
+      ! B = rot A (B = curl A)
+
+      do iloc = 1, ncelps
+        iel = lstcel(iloc)
+        tracel(1 + (iloc-1)*idimt) = tracel(1 + (iloc-1)*idimt) + grad(iel,2)
+        tracel(2 + (iloc-1)*idimt) = tracel(2 + (iloc-1)*idimt) - grad(iel,1)
+      enddo
+
+      idimt  = 3
+      ientla = .true.
+      ivarpr = .false.
+
+      call post_write_var(nummai, 'Magnetic_field', idimt, ientla, ivarpr,  &
+                          ntcabs, ttcabs, tracel, rbid, rbid)
+
+    endif
+
+    ! Calculation of Module and Argument of the complex potential if IELJOU = 4
+
+    if (.true. .and. ippmod(ieljou).eq.4) then
+
+      ivar = isca(ipotr)
+
+      do iloc = 1, ncelps
+        iel = lstcel(iloc)
+        tracel(iloc) =                                              &
+          sqrt( rtp(iel,isca(ipotr))*rtp(iel,isca(ipotr))           &
+               +rtp(iel,isca(ipoti))*rtp(iel,isca(ipoti)) )
+      enddo
+
+      idimt  = 1
+      ientla = .true.
+      ivarpr = .false.
+
+      call post_write_var(nummai, 'Pot_Module', idimt, ientla, ivarpr,  &
+                          ntcabs, ttcabs, tracel, rbid, rbid)
+
+      ivar = isca(ipotr)
+
+      do iloc = 1, ncelps
+
+        iel = lstcel(iloc)
+
+        if (rtp(iel,isca(ipotr)) .ne. 0.d0) then
+          if (rtp(iel,isca(ipotr)) .ge. 0.d0) then
+            tracel(iloc) = atan(rtp(iel,isca(ipoti))/rtp(iel,isca(ipotr)))
+          else
+            if (rtp(iel,isca(ipoti)) .gt. 0.d0) then
+              tracel(iloc) = 4.d0*atan(1.d0)                      &
+                             + atan(  rtp(iel,isca(ipoti))        &
+                                    / rtp(iel,isca(ipotr)))
+            else
+              tracel(iloc) = -4.d0*atan(1.d0)                     &
+                             + atan(  rtp(iel,isca(ipoti))        &
+                                    / rtp(iel,isca(ipotr)))
+            endif
+          endif
+        else
+          tracel(iloc) = 2.d0*atan(1.d0)
+        endif
+
+        if (tracel(iloc) .lt. 0.d0) then
+          tracel(iloc) = tracel(iloc) + 8.d0**atan(1.d0)
+        endif
+
+      enddo
+
+      idimt  = 1
+      ientla = .true.
+      ivarpr = .false.
+
+      call post_write_var(nummai, 'Pot_Arg', idimt, ientla, ivarpr,  &
+                          ntcabs, ttcabs, tracel, rbid, rbid)
+
+    endif
+
+    ! Free memory
+    deallocate(grad)
+
+  endif
 
 endif
 

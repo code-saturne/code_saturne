@@ -183,146 +183,6 @@ typedef void
  *============================================================================*/
 
 /*============================================================================
- * Public Fortran function prototypes
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Configure the post-processing output so that a mesh displacement field
- * may be output automatically for meshes based on the global volume mesh/
- *
- * Fortran interface:
- *
- * subroutine pstdfm
- * *****************
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (pstdfm, PSTDFM)
-(
- void
-);
-
-/*----------------------------------------------------------------------------
- * Update the "active" or "inactive" flag for writers based on the current
- * time step and their default output frequency.
- *
- * Fortran interface:
- *
- * subroutine pstntc (ntmabs, ntcabs, ttcabs)
- * *****************
- *
- * integer          ntmabs      : <-- : maximum time step number
- * integer          ntcabs      : <-- : current time step number
- * double precision ttcabs      : <-- : absolute time at the current time step
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (pstntc, PSTNTC)
-(
- const cs_int_t  *ntmabs,
- const cs_int_t  *ntcabs,
- const cs_real_t *ttcabs
-);
-
-/*----------------------------------------------------------------------------
- * Force the "active" or "inactive" flag for a specific writer or for all
- * writers for the current time step.
- *
- * Fortran interface:
- *
- * subroutine pstact (numwri, indact)
- * *****************
- *
- * integer          numwri      : <-- : writer number, or 0 for all writers
- * integer          indact      : <-- : 0 to deactivate, 1 to activate
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (pstact, PSTACT)
-(
- const cs_int_t  *numwri,
- const cs_int_t  *indact
-);
-
-/*----------------------------------------------------------------------------
- * Output post-processing meshes using associated writers.
- *
- * Fortran interface:
- *
- * subroutine pstema (ntcabs, ttcabs)
- * *****************
- *
- * integer          ntcabs      : <-- : current time step number
- * double precision ttcabs      : <-- : current physical time
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (pstema, PSTEMA)
-(
- const cs_int_t   *ntcabs,
- const cs_real_t  *ttcabs
-);
-
-/*----------------------------------------------------------------------------
- * Post-processing output of a variable defined on cells or faces of a mesh
- * using associated writers.
- *
- * fortran interface; use psteva (see cs_post_f2c.f90)
- *
- * subroutine pstev1 (nummai, nomvar, lnmvar, idimt,  ientla, ivarpr,
- * *****************
- *                    ntcabs, ttcabs, varcel, varfac, varfbr)
- *
- * integer          nummai      : <-- : number of associated output mesh
- * character        nomvar      : <-- : name of associated variable
- * integer          lnmvar      : <-- : variable name length
- * integer          idimt       : <-- : 1 for scalar, 3 for vector
- * integer          ientla      : <-- : if a vector, 1 for interlaced values
- *                              :     : (x1, y1, z1, x2, y2, ..., yn, zn),
- *                              :     : 0 otherwise (x1, x2, ...xn, y1, y2, ...)
- * integer          ivarpr      : <-- : 1 if variable is defined on "parent"
- *                              :     : mesh, 2 if defined on output mesh
- * integer          ntcabs      : <-- : current time step number
- * double precision ttcabs      : <-- : current physical time
- * double precision varcel(*)   : <-- : cell values
- * double precision varfac(*)   : <-- : interior face values
- * double precision varfbo(*)   : <-- : boundary face values
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (pstev1, PSTEV1)
-(
- const cs_int_t   *nummai,
- const char       *nomvar,
- const cs_int_t   *lnmvar,
- const cs_int_t   *idimt,
- const cs_int_t   *ientla,
- const cs_int_t   *ivarpr,
- const cs_int_t   *ntcabs,
- const cs_real_t  *ttcabs,
- const cs_real_t   varcel[],
- const cs_real_t   varfac[],
- const cs_real_t   varfbr[]
- CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
-                                         by many Fortran compilers) */
-);
-
-/*----------------------------------------------------------------------------
- * User override of default frequency or calculation end based output.
- *
- * Fortran interface:
- *
- * subroutine pstusn (ntmabs, ntcabs, ttcabs)
- * *****************
- *
- * integer          ntmabs      : <-- : maximum time step number
- * integer          ntcabs      : <-- : current time step number
- * double precision ttcabs      : <-- : absolute time at the current time step
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (pstusn, PSTUSN)
-(
- const cs_int_t  *ntmabs,
- const cs_int_t  *ntcabs,
- const cs_real_t *ttcabs
-);
-
-/*============================================================================
  * Public function prototypes
  *============================================================================*/
 
@@ -952,6 +812,16 @@ cs_post_renum_cells(const cs_lnum_t  init_cell_num[]);
 void
 cs_post_renum_faces(const cs_lnum_t  init_i_face_num[],
                     const cs_lnum_t  init_b_face_num[]);
+
+/*----------------------------------------------------------------------------
+ * Initialize post-processing of moments
+ *
+ * Currently, an external cumulative time array is simply mapped to
+ * the post-processing API.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_init_moments(const cs_real_t  *cumulative_time);
 
 /*----------------------------------------------------------------------------
  * Initialize post-processing writers

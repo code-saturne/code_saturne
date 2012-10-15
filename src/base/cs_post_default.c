@@ -159,7 +159,6 @@ _write_additional_vars(void             *input,
 
   cs_real_t  *var_trav = NULL;
   cs_real_t  *cel_vals = NULL;
-  cs_real_t  *i_face_vals = NULL;
   cs_real_t  *b_face_vals = NULL;
 
   /* Basic initialization */
@@ -177,13 +176,10 @@ _write_additional_vars(void             *input,
      (so as to provoke an immediate error in case of incorrect use) */
 
   cel_vals = var_trav;
-  i_face_vals = cel_vals + (n_cells * 3);
-  b_face_vals = i_face_vals + (n_i_faces * 3);
+  b_face_vals = cel_vals + (n_cells * 3);
 
   if (n_cells == 0)
     cel_vals = NULL;
-  if (n_i_faces == 0)
-    i_face_vals = NULL;
   if (n_b_faces == 0)
     b_face_vals = NULL;
 
@@ -201,7 +197,11 @@ _write_additional_vars(void             *input,
                               _input->propce, _input->propfa, _input->propfb,
                               _input->coefa, _input->coefb,
                               _input->statce, _input->stativ, _input->statfb,
-                              cel_vals, i_face_vals, b_face_vals);
+                              cel_vals, b_face_vals);
+
+  /* Free work array */
+
+  BFT_FREE(var_trav);
 
   /* Call to user subroutine for additional post-processing */
 
@@ -213,12 +213,8 @@ _write_additional_vars(void             *input,
                             _input->dt,
                             _input->rtpa, _input->rtp,
                             _input->propce, _input->propfa, _input->propfb,
-                            _input->statce,
-                            cel_vals, i_face_vals, b_face_vals);
+                            _input->statce);
 
-  /* Free work array */
-
-  BFT_FREE(var_trav);
 }
 
 /*============================================================================

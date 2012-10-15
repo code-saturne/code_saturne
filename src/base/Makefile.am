@@ -203,7 +203,6 @@ cs_opts.c \
 cs_parall.c \
 cs_post.c \
 cs_post_default.c \
-cs_post_f2c.f90 \
 cs_preprocessor_data.c \
 cs_renumber.c \
 cs_resource.c \
