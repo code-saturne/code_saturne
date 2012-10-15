@@ -153,6 +153,7 @@ double precision rbid(1)
 
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: treco
+double precision, allocatable, dimension(:) :: wcell
 double precision, dimension(:), pointer :: tplusp, tstarp
 double precision, dimension(:), pointer :: valsp, coefap, coefbp
 double precision, dimension(:,:), pointer :: valvp, cofavp, cofbvp
@@ -618,7 +619,7 @@ endif ! end of test on postprocessing mesh number
 ! 2.1. Lagrangian variables
 !===============================================================================
 
-if (nummai .eq. -1) then
+if (numtyp .eq. -1) then
 
   if (iilagr.gt.0 .and. istala.ge.1) then
 
@@ -628,6 +629,8 @@ if (nummai .eq. -1) then
     idimt  = 1
     ientla = .true.
     ivarpr = .true.
+
+    allocate(wcell(ncelet))
 
     iii = nvlsta-nvlsts
 
@@ -663,10 +666,10 @@ if (nummai .eq. -1) then
           (nvar, nscal, nvlsta,                                   &
            ivarl, ivarl1, ivarlm, iflu, ilpd1, icla,              &
            dt, rtpa, rtp, propce, propfa, propfb,                 &
-           statce, stativ, tracel)
+           statce, stativ, wcell)
 
         call post_write_var(nummai, trim(name80), idimt, ientla, ivarpr,  &
-                            ntcabs, ttcabs, tracel, rbid, rbid)
+                            ntcabs, ttcabs, wcell, rbid, rbid)
 
       enddo
 
@@ -697,13 +700,15 @@ if (nummai .eq. -1) then
           (nvar, nscal, nvlsta,                                   &
            ivarl, ivarl1, ivarlm, iflu, ilpd1, icla,              &
            dt, rtpa, rtp, propce, propfa, propfb,                 &
-           statce, stativ, tracel)
+           statce, stativ, wcell)
 
         call post_write_var(nummai, trim(name80), idimt, ientla, ivarpr,  &
-                            ntcabs, ttcabs, tracel, rbid, rbid)
+                            ntcabs, ttcabs, wcell, rbid, rbid)
       enddo
 
     enddo
+
+    deallocate(wcell)
 
   endif
 

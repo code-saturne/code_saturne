@@ -32,21 +32,14 @@
  *----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------
- * FVM library headers
- *----------------------------------------------------------------------------*/
-
-#include <fvm_nodal.h>
-#include <fvm_writer.h>
-
-/*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "fvm_nodal.h"
+#include "fvm_writer.h"
+
 #include "cs_base.h"
+#include "cs_time_step.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -599,6 +592,36 @@ fvm_writer_t *
 cs_post_get_writer(int  writer_id);
 
 /*----------------------------------------------------------------------------
+ * Add an activation time step for a specific writer or for all writers.
+ *
+ * If a negative value is provided, a previously added activation time
+ * step matching that absolute value will be removed, if present.
+ *
+ * parameters:
+ *   writer_id <-- writer id, or 0 for all writers
+ *   nt        <-- time step value to add (or remove)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_add_writer_t_step(int  writer_id,
+                          int  nt);
+
+/*----------------------------------------------------------------------------
+ * Add an activation time value for a specific writer or for all writers.
+ *
+ * If a negative value is provided, a previously added activation time
+ * step matching that absolute value will be removed, if present.
+ *
+ * parameters:
+ *   writer_id <-- writer id, or 0 for all writers
+ *   t         <-- time value to add (or remove)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_add_writer_t_value(int     writer_id,
+                           double  t);
+
+/*----------------------------------------------------------------------------
  * Check for the existence of a post-processing mesh of the given id.
  *
  * parameters:
@@ -680,19 +703,18 @@ int
 cs_post_get_free_mesh_id(void);
 
 /*----------------------------------------------------------------------------
- * Update "active" or "inactive" flag of writers whose output frequency
- * is a divisor of the current time step number.
+ * Update "active" or "inactive" flag of writers based on the time step.
+ *
+ * Writers are activated if their output frequency is a divisor of the
+ * current time step, or if their optional time step and value output lists
+ * contain matches for the current time step.
  *
  * parameters:
- *   nt_max_abs <-- maximum time step number
- *   nt_cur_abs <-- current time step number
- *   t_cur_abs  <-- absolute time at the current time step
+ *   ts <-- time step status structure
  *----------------------------------------------------------------------------*/
 
 void
-cs_post_activate_if_default(int     nt_max_abs,
-                            int     nt_cur_abs,
-                            double  t_cur_abs);
+cs_post_activate_by_time_step(const cs_time_step_t  *ts);
 
 /*----------------------------------------------------------------------------
  * Force the "active" or "inactive" flag for a specific writer or for all
