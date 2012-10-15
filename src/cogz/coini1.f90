@@ -623,6 +623,7 @@ if ( ippmod(icoebu).ge.0 ) then
   !==========
 else if( ippmod(icod3p).ge.0 ) then
   if (iihmpr.eq.1) then
+    call uicpi1 (srrom, diftl0)
     call uicpi2 (tinoxy, tinfue)
   endif
   call usd3p1
