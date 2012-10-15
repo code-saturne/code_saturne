@@ -169,7 +169,7 @@ integer, allocatable, dimension(:) :: ninjrg
 integer, allocatable, dimension(:,:,:) :: iusloc
 integer, allocatable, dimension(:) :: ilftot
 
-double precision unif, offset, rapsurf
+double precision unif(1), offset, rapsurf
 integer irp, ipart, jj, kk, nfrtot, nlocnew, nbpartall
 
 !===============================================================================
@@ -743,11 +743,11 @@ do ii = 1,nfrtot
                   call zufall(1, unif)
 
                   ! blindage
-                  unif = unif + 1.d-9
+                  unif(1) = unif(1) + 1.d-9
 
                   irp = 1
                   offset = surlgrg(nb,irp) / surflag(nb)
-                  do while (unif.gt.offset)
+                  do while (unif(1).gt.offset)
                      irp = irp + 1
                      offset = offset + surlgrg(nb,irp) / surflag(nb)
                   enddo
