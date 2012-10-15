@@ -70,20 +70,18 @@ module post
 
     !---------------------------------------------------------------------------
 
-    !> \brief User override of default frequency or calculation end
-    !>        based output.
+    !> \brief Update "active" or "inactive" flag of writers based on the
+    !>        time step.
 
-    !> \param[in]  nt_max      maximum time step number
-    !> \param[in]  nt_cur_abs  current time step number
-    !> \param[in]  t_cur_abs   current physical time
+    !> Writers are activated if their output frequency is a divisor of the
+    !> current time step, or if their optional time step and value output lists
+    !> contain matches for the current time step.
 
-    subroutine cs_post_activate_if_default(nt_max_abs, nt_cur_abs, t_cur_abs)  &
-      bind(C, name='cs_post_activate_if_default')
+    subroutine post_activate_by_time_step()             &
+      bind(C, name='cs_f_post_activate_by_time_step')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), value :: nt_max_abs, nt_cur_abs
-      real(c_double), value :: t_cur_abs
-    end subroutine cs_post_activate_if_default
+    end subroutine post_activate_by_time_step
 
     !---------------------------------------------------------------------------
 

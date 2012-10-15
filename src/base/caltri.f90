@@ -1017,7 +1017,7 @@ endif ! iisuit = 1
 ! Test to determine if a visualization output is generated
 !===============================================================================
 
-call cs_post_activate_if_default(ntmabs, ntcabs, ttcabs)
+call post_activate_by_time_step
 
 if (iihmpr.eq.1) then
   call uinpst(ntcabs, ttcabs)

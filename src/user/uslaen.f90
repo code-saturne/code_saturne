@@ -51,16 +51,16 @@ subroutine uslaen &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nvlsta           ! i  ! <-- ! nb of Lagrangian statistical variables         !
-! ivarl            !  i ! <-- ! number of the stat (between 1 and nvlsta)      !
-! ivarl1           !  i ! <-- ! number of the global stat + group              !
+! ivarl            ! i  ! <-- ! number of the stat (between 1 and nvlsta)      !
+! ivarl1           ! i  ! <-- ! number of the global stat + group              !
 !                  !    !     ! (average or variance)                          !
-! ivarlm           !  i ! <-- ! number of the stat mean + group                !
-! iflu             !  i ! <-- ! 0: mean of the stat ivarl/ivarl1               !
+! ivarlm           ! i  ! <-- ! number of the stat mean + group                !
+! iflu             ! i  ! <-- ! 0: mean of the stat ivarl/ivarl1               !
 !                  !    !     ! 1: variance of the stat ivarl/ivarl1           !
-! ilpd1            !  i ! <-- ! "pointer" to global statistical weight         !
+! ilpd1            ! i  ! <-- ! "pointer" to global statistical weight         !
 !                  !    !     !                                                !
-! icla             !  i ! <-- ! 0: global statistic                            !
-                   !    ! <-- ! !=0: stat for the icla group                   !
+! icla             ! i  ! <-- ! 0: global statistic                            !
+!                  !    ! <-- ! !=0: stat for the icla group                   !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! transported variables at cell centers          !
 ! (ncelet,*)       !    !     ! at the current and previous time step          !
@@ -73,12 +73,10 @@ subroutine uslaen &
 ! statis(ncelet    ! ra ! <-- ! cumulation of the volume statistics            !
 !   nvlsta)        !    !     !                                                !
 ! stativ           ! ra ! <-- ! cumulation for the variances of the            !
-!(ncelet,          !    !     ! volume statistics                              !
+!  (ncelet,        !    !     ! volume statistics                              !
 !   nvlsta-1)      !    !     !                                                !
-! tracel(ncelet    ! ra ! <-- ! real array, values cells post                  !
-!                  !    !     !                                                !
+! tracel(ncelet)   ! ra ! <-- ! real array, values cells post                  !
 !__________________!____!_____!________________________________________________!
-
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
 !           and composite types (ex: ra real array)
@@ -124,6 +122,7 @@ integer          iel
 double precision aa
 
 !===============================================================================
+
 !===============================================================================
 ! 0. By default, we consider that the subroutine below fits the user's needs;
 !    which means running the Lagrangian module triggers the production of
@@ -135,29 +134,28 @@ double precision aa
 !
 !===============================================================================
 
-
 !===============================================================================
 ! 1 . Zone of standard statistics
 !===============================================================================
 
-!--> General case:
-!     Component X of the particle velocity: ivarl=ilvx
-!     Component Y of the particle velocity: ivarl=ilvy
-!     Component Z of the particle velocity: ivarl=ilvz
-!     Particle temperature: ivarl=iltp
-!     Particle diameter: ivarl=ildp
-!     Particle mass: ivarl= ilmp
-!     Temperature of the coal particles: ivarl=ilhp
-!     Mass of reactive coal of the coal particles: ivarl= ilmch
-!     Mass of coke of the coal particles: ivarl=ilmck
-!     Diameter of the shrinking core of the coal particles: ivarl=ilmck
-!    except volume fraction (ivarl=ilfv) and sum of the statistical weights (ivarl=ilpd)
+! General case:
 !
-
+!   Component X of the particle velocity: ivarl=ilvx
+!   Component Y of the particle velocity: ivarl=ilvy
+!   Component Z of the particle velocity: ivarl=ilvz
+!   Particle temperature: ivarl=iltp
+!   Particle diameter: ivarl=ildp
+!   Particle mass: ivarl= ilmp
+!   Temperature of the coal particles: ivarl=ilhp
+!   Mass of reactive coal of the coal particles: ivarl= ilmch
+!   Mass of coke of the coal particles: ivarl=ilmck
+!   Diameter of the shrinking core of the coal particles: ivarl=ilmck
+!     except volume fraction (ivarl=ilfv) and sum of the statistical weights
+!     (ivarl=ilpd)
 
 if (ivarl.ne.ilfv .and. ivarl.ne.ilpd) then
 
-!-----> Average
+  !-----> Average
 
   if (iflu.eq.0) then
 
@@ -169,15 +167,14 @@ if (ivarl.ne.ilfv .and. ivarl.ne.ilpd) then
       endif
     enddo
 
-!-----> Variance
+    !-----> Variance
 
   else
 
     do iel = 1, ncel
       if ( statis(iel,ilpd1).gt.seuil ) then
         aa = statis(iel,ivarlm)/statis(iel,ilpd1)
-        tracel(iel) =  stativ(iel,ivarl1)/statis(iel,ilpd1)       &
-                    -( aa * aa )
+        tracel(iel) =  stativ(iel,ivarl1)/statis(iel,ilpd1) - (aa * aa)
       else
         tracel(iel) = zero
       endif
@@ -185,11 +182,11 @@ if (ivarl.ne.ilfv .and. ivarl.ne.ilpd) then
 
   endif
 
-!--> Volume fraction (ilfv)
+  !--> Volume fraction (ilfv)
 
 else if (ivarl.eq.ilfv) then
 
-!-----> Average
+  !-----> Average
 
   if (iflu.eq.0) then
 
@@ -204,16 +201,16 @@ else if (ivarl.eq.ilfv) then
 
   else
 
-!-----> Variance
+    !-----> Variance
 
     do iel = 1, ncel
 
       if (statis(iel,ilpd1).gt.seuil .and. npst.gt.1) then
 
         aa = statis(iel,ivarlm) / (dble(npst) * volume(iel))
-        tracel(iel) = stativ(iel,ivarl1)                          &
-                 / ( dble(npst) * volume(iel))**2      &
-                - aa*aa
+        tracel(iel) =   stativ(iel,ivarl1)                        &
+                      / (dble(npst) * volume(iel))**2             &
+                      - aa*aa
       else
         tracel(iel) = zero
       endif
@@ -270,18 +267,18 @@ if (nvlsts.gt.0) then
 
   if (ivarl.eq.ilvu(1)) then
 
-!-----> Average for the mass concentration
+    !-----> Average for the mass concentration
 
     if (iflu.eq.0) then
 
       do iel = 1, ncel
-        if ( statis(iel,ilpd1).gt.seuil .and. npst.gt.0 ) then
-          tracel(iel) = statis(iel,ivarl1)                      &
-                      / ( dble(npst) *ro0 *volume(iel) )
-        else if ( statis(iel,ilpd1).gt.seuil .and.              &
-             iplas.ge.idstnt                  ) then
-          tracel(iel) = statis(iel,ivarl1)                      &
-                        / ( ro0 *volume(iel) )
+        if (statis(iel,ilpd1).gt.seuil .and. npst.gt.0) then
+          tracel(iel) =   statis(iel,ivarl1)                      &
+                        / (dble(npst) *ro0 *volume(iel))
+        else if (statis(iel,ilpd1).gt.seuil .and.                 &
+                 iplas.ge.idstnt) then
+          tracel(iel) =   statis(iel,ivarl1)                      &
+                        / (ro0 *volume(iel))
         else
           tracel(iel) = zero
         endif
@@ -289,7 +286,7 @@ if (nvlsts.gt.0) then
 
     else
 
-!-----> Variance of the mass concentration
+      !-----> Variance of the mass concentration
 
       do iel = 1, ncel
         if (statis(iel,ilpd1).gt.seuil) then
