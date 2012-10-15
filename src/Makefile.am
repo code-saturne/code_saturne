@@ -59,6 +59,7 @@ $(top_srcdir)/src/base/optcal.f90 \
 $(top_srcdir)/src/base/parall.f90 \
 $(top_srcdir)/src/base/period.f90 \
 $(top_srcdir)/src/base/pointe.f90 \
+$(top_srcdir)/src/base/post.f90 \
 $(top_srcdir)/src/atmo/atincl.f90 \
 $(top_srcdir)/src/atmo/atsoil.f90 \
 $(top_srcdir)/src/atmo/spefun.f90 \

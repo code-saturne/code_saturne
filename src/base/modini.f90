@@ -57,6 +57,7 @@ use albase
 use radiat, only: iirayo
 use alstru
 use cplsat
+use post
 use ppincl
 
 !===============================================================================
@@ -140,8 +141,7 @@ if (nbmomt.gt.0) then
   enddo
 endif
 if (iale.eq.1) then
-  call pstdfm
-  !==========
+  call cs_post_set_deformable
   nn = 1
   if (iortvm.eq.1) nn = 3
   do ii = 1, nn
@@ -1470,8 +1470,7 @@ if (nbrcpl.ge.1) then
     ! Maillage mobile
     if (icorio.eq.0) then
       imobil = 1
-      call pstdfm
-      !==========
+      call cs_post_set_deformable
     endif
   endif
 endif

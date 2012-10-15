@@ -72,6 +72,7 @@ use cfpoin
 use elincl
 use mesh
 use field
+use post
 
 !===============================================================================
 
@@ -94,7 +95,7 @@ integer          ntsdef, ntcam1
 integer          ivar
 
 integer          inod   , idim
-integer          itrale , indact , indwri
+integer          itrale
 
 integer          nent
 
@@ -1016,16 +1017,14 @@ endif ! iisuit = 1
 ! Test to determine if a visualization output is generated
 !===============================================================================
 
-call pstntc(ntmabs, ntcabs, ttcabs)
-!==========
+call cs_post_activate_if_default(ntmabs, ntcabs, ttcabs)
 
 if (iihmpr.eq.1) then
   call uinpst(ntcabs, ttcabs)
   !==========
 endif
 
-call pstusn(ntmabs, ntcabs, ttcabs)
-!==========
+call cs_user_postprocess_activate(ntmabs, ntcabs, ttcabs)
 
 !===============================================================================
 ! Standard visualization output
@@ -1034,10 +1033,7 @@ call pstusn(ntmabs, ntcabs, ttcabs)
 !     Si ITRALE=0 on desactive tous les writers (car la geometrie n'a pas ete
 !       ecrite)
 if (itrale.eq.0) then
-  indwri = 0
-  indact = 0
-  call pstact(indwri, indact)
-  !==========
+  call post_activate_writer(0, .false.)
 endif
 
 call pstvar                                                       &

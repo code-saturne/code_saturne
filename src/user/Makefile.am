@@ -90,7 +90,6 @@ cs_user_source_terms.f90 \
 usalcl.f90 \
 uscfth.f90 \
 usctdz.f90 \
-uselen.f90 \
 uselrc.f90 \
 ushist.f90 \
 uskpdc.f90 \
@@ -105,7 +104,7 @@ usthht.f90 \
 ustsma.f90 \
 usvort.f90 \
 usvosy.f90 \
-usvpst.f90
+cs_user_postprocess_var.f90
 
 noinst_LTLIBRARIES = libcsuser.la
 libcsuser_la_SOURCES = $(userfiles)
