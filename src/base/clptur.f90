@@ -795,7 +795,7 @@ do ifac = 1, nfabor
         ! de turbulence :
         ! si on est en LRR ou SSG on laisse les lois de paroi, si on est en
         ! EBRSM, on impose l adherence.
-        if (iturb.eq.32) then
+        if (iturb.eq.32.or.iturb.eq.0) then
 
           uiptn = 0.d0
           uiptnf = uiptn
@@ -1653,7 +1653,7 @@ do ifac = 1, nfabor
             pimp = rcodcl(ifac,ivar,1)
 
             ! In the log layer
-            if (yplus.ge.yp1) then
+            if (yplus.ge.yp1.and.iturb.ne.0) then
               cofimp  = 1.d0 - yptp*sigmas(iscal)/xkappa*                        &
                                (deuxd0/yplus - und0/(deuxd0*yplus))
               ! On implicite le terme (rho*tet*uk)
