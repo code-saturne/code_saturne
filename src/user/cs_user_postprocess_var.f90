@@ -138,9 +138,9 @@ double precision, dimension(:), allocatable :: scel, sfac, sfbr
 double precision, dimension(:,:), allocatable :: vcel, vfac, vfbr
 double precision, dimension(:), pointer :: coefap, coefbp
 
-integer          ipass
-data             ipass /0/
-save             ipass
+integer          intpst
+data             intpst /0/
+save             intpst
 
 !===============================================================================
 
@@ -153,10 +153,12 @@ if(1.eq.1) return
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
-! Increment call counter (possibly used in some tests)
+! Increment call counter once per time step (possibly used in some tests)
 !===============================================================================
 
-ipass = ipass + 1
+if (ipart .eq. -1) then
+  intpst = intpst + 1
+endif
 
 !===============================================================================
 ! 1. Handle variables to output
@@ -457,7 +459,7 @@ else if (ipart.eq.1 .or. ipart.eq.2) then
   ! Output of the centers of gravity, interlaced
   ! --------------------------------
 
-  if (ipass.eq.0) then
+  if (intpst.eq.1) then
 
     allocate(vfac(3,nfacps), vfbr(3,nfbrps))
 
@@ -504,7 +506,7 @@ else if (ipart.eq.1 .or. ipart.eq.2) then
   ! Output of the centers of gravity, non-interlaced, time independent
   ! --------------------------------
 
-  if (ipass.eq.0) then
+  if (intpst.eq.1) then
 
     allocate(vfac(nfacps, 3), vfbr(nfbrps, 3))
 
@@ -551,7 +553,7 @@ else if (ipart.eq.1 .or. ipart.eq.2) then
   ! Output of the centers of gravity, with indirection (parent-based)
   ! --------------------------------
 
-  if (ipass.eq.0) then
+  if (intpst.eq.1) then
 
     ! We assign a negative time step and output this variable once only
     ! to avoid duplicating it at each output time (assuming a fixed mesh).
