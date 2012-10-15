@@ -55,10 +55,9 @@ subroutine cscfbr &
 ! crvimp(ncelet    ! tr ! --> ! tableau de travail pour part implicit          !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -164,8 +163,16 @@ do numcpl = 1, nbrcpl
   allocate(pndpts(nfbdis))
 
   ! Allocate temporary arrays for variables exchange
-  allocate(rvdis(nfbdis,nvarto(numcpl)))
-  allocate(rvfbr(nfbcpl,nvarto(numcpl)))
+  if (nfbdis.gt.0) then
+    allocate(rvdis(nfbdis,nvarto(numcpl)))
+  else
+    allocate(rvdis(1,nvarto(numcpl)))
+  endif
+  if (nfbcpl.gt.0) then
+    allocate(rvfbr(nfbcpl,nvarto(numcpl)))
+  else
+    allocate(rvfbr(1,nvarto(numcpl)))
+  endif
 
   call coocpl &
   !==========
