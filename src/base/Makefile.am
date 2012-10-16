@@ -73,6 +73,7 @@ cs_block_dist.h \
 cs_block_to_part.h \
 cs_boundary_conditions.h \
 cs_calcium.h \
+cs_control.h \
 cs_coupling.h \
 cs_defs.h \
 cs_ext_neighborhood.h \
