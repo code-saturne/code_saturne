@@ -117,14 +117,6 @@ corresponds to $10^{12}$.
 
 \minititre{General}
 
-\motcle{impstp}{i}{strictly positive integer}{12}{O}{L3}
-{unit of the calculation interactive stop file\\
-always useful (because of the interactive character)}
-
-\motcle{ficstp}{c}{string of 6 characters}{\tt ficstp}{O}{L3}
-{name of the calculation interactive stop file (see p.\pageref{prg_ficstp})\\
-always useful (because of the interactive characteristic)}
-
 \minititre{1D wall thermal module}
 
 \motcle{ficmt1}{c}{string of 13 characters}{\tt t1damo}{O}{L3}
@@ -383,12 +375,12 @@ During the calculation, the user can read the chronological record files
 in the execution directory when they have been saved, {\em i.e.} at the first
 time step, at the tenth time step and when the time step number is a multiple of
 {\tt nthsav} (multiple of {\tt (ntmabs-ntpabs)/4} if {\tt nthsav}=0)\\
-{\em Note: using the \texttt{ficstp} file allows to update the value of
+{\em Note: using the \texttt{control\_file} file allows to update the value of
 {\tt ntmabs}. Hence, if the calculation is at the time step n, the saving of the
 chronological record files can be forced by changing {\tt ntmabs} to
 {\tt ntpabs}+4(n+1)
-using \texttt{ficstp}; after the files have been saved, {\tt ntmabs} can be
-reset to its original value, still using \texttt{ficstp}.}\\
+using \texttt{control\_file}; after the files have been saved, {\tt ntmabs} can be
+reset to its original value, still using \texttt{control\_file}.}\\
 useful if and only if chronological record files are generated ({\em
 i.e.} there are probes ({\tt ncapt}$>$0) there is {\tt n} for which
 {\tt ihisvr(n, 1)} $\ne$ 0)}

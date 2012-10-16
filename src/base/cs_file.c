@@ -3685,5 +3685,62 @@ cs_file_listdir(const char  *path)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the size of a file.
+ *
+ * If the file does not exit, 0 is returned.
+ *
+ * Note also that for some special files, such as files in the Linux /proc
+ * directory, this may return 0.
+ *
+ * \param[in]  path  file path.
+ *
+ * \return size of file.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_file_off_t
+cs_file_size(const char  *path)
+{
+  cs_file_off_t retval = 0;
+
+#if defined(HAVE_SYS_STAT_H)
+
+  struct stat s;
+
+  if (stat(path, &s) != 0) {
+    if (errno != ENOENT)
+      bft_error(__FILE__, __LINE__, errno,
+                _("Error querying information for file:\n%s."),
+                path);
+  }
+  else
+    retval = s.st_size;
+
+#else /* defined(HAVE_SYS_STAT_H) */
+
+  /* If Posix-type API is not available, revert to basic method */
+
+  FILE *f;
+
+  if ((f = fopen(fic_path, "r")) != NULL) {
+
+# if defined(HAVE_FSEEKO) && (_FILE_OFFSET_BITS == 64)
+    if (fseeko(f, 0, SEEK_END) == 0)
+      retval = ftello(f);
+# else
+    if (fseek(f, 0, SEEK_END) == 0)
+      retval = ftell(f);
+# endif
+
+    fclose(f);
+  }
+
+#endif /* defined(HAVE_SYS_STAT_H) */
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

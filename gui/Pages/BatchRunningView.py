@@ -396,8 +396,8 @@ class ListingDialogView(CommandMgrDialogView):
         Private method. Stops the code.
         """
         line = "\n" + str(iter) + "\n\n"
-        ficstp = os.path.join(self.exec_dir, "ficstp")
-        f = open(ficstp, 'w')
+        fstp = os.path.join(self.exec_dir, "control_file")
+        f = open(fstp, 'w')
         f.write(line)
         f.close()
         QMessageBox.warning(self, self.tr("Warning"), msg)

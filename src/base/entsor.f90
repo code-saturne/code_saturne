@@ -54,12 +54,6 @@ module entsor
 
   integer, save :: ntsuit
 
-  ! --- fichier nstop
-
-  character*6, save :: ficstp
-
-  integer, save :: impstp
-
   ! --- Sorties post traitement
 
   !     ichrvr : on sort la variable (1) ou non (0) ou non initialise

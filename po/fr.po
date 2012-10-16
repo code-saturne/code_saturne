@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2012-10-01 16:26+0200\n"
+"POT-Creation-Date: 2012-10-16 13:50+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -4308,6 +4308,45 @@ msgid ""
 "Application \"%s\" (%s) requested last iteration.\n"
 msgstr ""
 
+#, c-format
+msgid "   ignored: \"%s\"\n"
+msgstr "   ignoré : \"%s\"\n"
+
+msgid "ignored"
+msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+"   Warning: error opening %s (ignored):\n"
+"   --------\n"
+"     \"%s\"\n"
+"\n"
+msgstr ""
+
+msgid ""
+"\n"
+"  Options set or changed by \"control_file\":\n"
+"  -----------------------------------------\n"
+"\n"
+msgstr ""
+"\n"
+"  Options positionnées ou modifiées par fichier \"control_file\" :\n"
+"  --------------------------------------------------------------\n"
+"\n"
+
+msgid "current:"
+msgstr "courant :"
+
+msgid ""
+"\n"
+"  Finished reading \"control_file\".\n"
+"\n"
+msgstr ""
+"\n"
+"  Lecture de \"control_file\" terminée.\n"
+"\n"
+
 msgid ""
 "\n"
 "WARNING\n"
@@ -5254,22 +5293,6 @@ msgstr ""
 
 msgid "displacement"
 msgstr ""
-
-#, c-format
-msgid ""
-"The PSTEVA sub-routine argument IVARPR must be\n"
-"equal to 0 or 1, and not %d.\n"
-msgstr ""
-"L'argument IVARPR du sous-programme PSTEVA doit être\n"
-"égal à 0 ou 1, et non %d.\n"
-
-#, c-format
-msgid ""
-"The PSTEVA sub-routine argument IENTLA must be\n"
-"equal to 0 or 1, and not %d.\n"
-msgstr ""
-"L'argument IENTLA du sous-programme PSTEVA doit être\n"
-"égal à 0 ou 1, et non %d.\n"
 
 msgid ""
 "The requested post-processing writer number\n"

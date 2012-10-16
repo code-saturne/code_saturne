@@ -756,6 +756,24 @@ cs_file_isdir(const char  *path);
 char **
 cs_file_listdir(const char *path);
 
+/*----------------------------------------------------------------------------
+ * Return the size of a file.
+ *
+ * If the file does not exit, 0 is returned.
+ *
+ * Note that for some special files, such as files in the Linux /proc
+ * directory, this may return 0.
+ *
+ * parameters
+ *   path <-- file path.
+ *
+ * returns:
+ *   size of file.
+ *----------------------------------------------------------------------------*/
+
+cs_file_off_t
+cs_file_size(const char  *path);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

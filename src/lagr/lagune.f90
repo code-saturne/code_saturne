@@ -708,8 +708,8 @@ endif
    jryplu , jdfac  , jimark , idepst )
 
   if (ierr.eq.1) then
-    call lagerr
-    !==========
+    ntmabs = ntcabs
+    write (nfecra,1000) ntmabs
     goto 20
   endif
 
@@ -968,7 +968,29 @@ endif
 '---------------------------------------------------------------  ',/)
 
 !----
-! FIN
+! Formats
+!----
+
+#if defined(_CS_LANG_FR)
+
+ 1000 format(/,                                                   &
+'=============================================================',/,&
+' Erreur dans le module lagrangien: tentative de terminaison',  /,&
+'   ntmabs remis a ', i10,                                      /,&
+'=============================================================',/,&
+                                                                /)
+#else
+
+ 1000 format(/,                                                   &
+'=============================================================',/,&
+' Lagrangian module error: trying to finish cleanly',           /,&
+'   ntmabs reset to ', i10,                                   /,&
+'=============================================================',/,&
+                                                                /)
+#endif
+
+!----
+! End
 !----
 
 end subroutine
