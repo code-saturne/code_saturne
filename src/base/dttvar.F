@@ -290,7 +290,7 @@ C
      &           (IWARNP.GE.2.OR.MODNTL.EQ.0) ) .AND.
      &   .NOT. ( IPPMOD(ICOMPF).GE.0.AND.
      &           (IWARNP.GE.2.OR.MODNTL.EQ.0) ) .AND.
-     &   .NOT. ( IDTVAR.EQ.1.OR.IDTVAR.EQ.2.OR.
+     &   .NOT. ( IDTVAR.EQ.-1.OR.IDTVAR.EQ.1.OR.IDTVAR.EQ.2.OR.
      &           ( (IWARNP.GE.2.OR.MODNTL.EQ.0).AND.
      &             (IDIFF(IUIPH).GE.1.OR.ICONV(IUIPH).GE.1
      &                               .OR.IPPMOD(ICOMPF).GE.0)  ) )
