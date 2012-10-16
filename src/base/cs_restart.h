@@ -36,6 +36,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_defs.h"
+#include "cs_time_step.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -82,6 +83,62 @@ typedef struct _cs_restart_t cs_restart_t;
 /*============================================================================
  * Public Fortran function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Indicate if a restart directory is present.
+ *
+ * Fortran interface
+ *
+ * subroutine dflsui (ntsuit, ttsuit, wtsuit)
+ * *****************
+ *
+ * integer          ntsuit      : <-- : > 0: checkpoint time step interval
+ *                              :     : 0: default interval
+ *                              :     : -1: checkpoint at end
+ *                              :     : -2: no checkpoint
+ * double precision ttsuit      : <-- : if> 0, checkpoint time interval
+ * double precision wtsuit      : <-- : if> 0, checkpoint wall time interval
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (dflsui, DFLSUI)
+(
+ cs_int_t   *ntsuit,
+ cs_real_t  *ttsuit,
+ cs_real_t  *wtsuit
+);
+
+/*----------------------------------------------------------------------------
+ * Check if checkpointing is recommended at a given time.
+ *
+ * Fortran interface
+ *
+ * subroutine reqsui (iisuit)
+ * *****************
+ *
+ * integer          iisuit      : --> : 0 if no restart required, 1 otherwise
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (reqsui, RESSUI)
+(
+ cs_int_t   *iisuit
+);
+
+/*----------------------------------------------------------------------------
+ * Indicate checkpointing has been done at a given time.
+ *
+ * This updates the status for future checks to determine
+ * if checkpointing is recommended at a given time.
+ *
+ * Fortran interface
+ *
+ * subroutine stusui
+ * *****************
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (stusui, STUSUI)
+(
+ void
+);
 
 /*----------------------------------------------------------------------------
  * Indicate if a restart directory is present.
@@ -264,6 +321,79 @@ void CS_PROCF (ecrsui, ECRSUI)
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Define default checkpoint interval.
+ *
+ * parameters
+ *   nt_interval <-- if > 0 time step interval for checkpoint
+ *                   if 0, default of 4 checkpoints per run
+ *                   if -1, checkpoint at end
+ *                   if -2, no checkpointing
+ *   t_interval  <-- if > 0, time value interval for checkpoint
+ *   wt_interval <-- if > 0, wall-clock interval for checkpoints
+ *----------------------------------------------------------------------------*/
+
+void
+cs_restart_checkpoint_set_defaults(int     nt_interval,
+                                   double  t_interval,
+                                   double  wt_interval);
+
+/*----------------------------------------------------------------------------
+ * Define next forced checkpoint time step
+ *
+ * parameters
+ *   nt_next <-- next time step for forced checkpoint
+ *----------------------------------------------------------------------------*/
+
+void
+cs_restart_checkpoint_set_next_ts(int  nt_next);
+
+/*----------------------------------------------------------------------------
+ * Define next forced checkpoint time value
+ *
+ * parameters
+ *   t_next <-- next time value for forced checkpoint
+ *----------------------------------------------------------------------------*/
+
+void
+cs_restart_checkpoint_set_next_tv(double  t_next);
+
+/*----------------------------------------------------------------------------
+ * Define next forced checkpoint wall-clock time value
+ *
+ * parameters
+ *   wt_next <-- next wall-clock time value for forced checkpoint
+ *----------------------------------------------------------------------------*/
+
+void
+cs_restart_checkpoint_set_next_wt(double  wt_next);
+
+/*----------------------------------------------------------------------------
+ * Check if checkpointing is recommended at a given time.
+ *
+ * parameters
+ *   ts <-- time step status structure
+ *
+ * returns:
+ *   true if checkpointing is recommended, 0 otherwise
+ *----------------------------------------------------------------------------*/
+
+bool
+cs_restart_checkpoint_required(const cs_time_step_t  *ts);
+
+/*----------------------------------------------------------------------------
+ * Indicate checkpointing has been done at a given time.
+ *
+ * This updates the status for future checks to determine
+ * if checkpointing is recommended at a given time.
+ *
+ * parameters
+ *   ts <-- time step status structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_restart_checkpoint_done(const cs_time_step_t  *ts);
 
 /*----------------------------------------------------------------------------
  * Check if we have a restart directory.

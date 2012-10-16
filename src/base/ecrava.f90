@@ -1624,9 +1624,9 @@ if (iecaux.eq.1) then
     endif
 
 #if defined(_CS_LANG_FR)
-    car54=' Fin de l''ecriture de la pression hydrostatique predite'
+    car54=' Fin d''ecriture de la pression hydrostatique predite '
 #else
-    car54=' End writing the predicted hydrostatic pressure         '
+    car54=' End writing the predicted hydrostatic pressure       '
 #endif
     write(nfecra,1110)car54
 
@@ -2387,13 +2387,13 @@ return
 
 #if defined(_CS_LANG_FR)
 
- 1000 format(3X,'** Ecriture du fichier suite principal',/,       &
-       3X,'   ----------------------------------- ',/)
+ 1000 format(3x,'** Ecriture du fichier suite principal',/,       &
+             3x,'   ----------------------------------- ',/)
  1100 format(' Debut de l''ecriture')
  1110 format('  ',A54)
  1200 format(' Fin de l''ecriture')
- 2000 format(/,3X,'** Ecriture du fichier suite auxiliaire',/,    &
-           3X,'   ------------------------------------ ',/)
+ 2000 format(/,3x,'** Ecriture du fichier suite auxiliaire',/,    &
+               3x,'   ------------------------------------ ',/)
 
  7001 format(                                                     &
 '@                                                            ',/,&
@@ -2404,9 +2404,9 @@ return
 '@                                                            ',/,&
 '@      Le nombre de scalaires maximal NSCAMX supporte par le ',/,&
 '@        format d''ecriture du fichier suite est             ',/,&
-'@        NFMTSC = ',I10                                       ,/,&
+'@        NFMTSC = ',i10                                       ,/,&
 '@      On a ici un nombre de scalaires maximal superieur     ',/,&
-'@        NSCAMX = ',I10                                       ,/,&
+'@        NSCAMX = ',i10                                       ,/,&
 '@      On ne pourra pas relire les scalaires dont le numero  ',/,&
 '@        est superieur                                       ',/,&
 '@                                                            ',/,&
@@ -2425,9 +2425,9 @@ return
 '@                                                            ',/,&
 '@      Le nombre de flux de masse max NVARMX supporte par le ',/,&
 '@        format d''ecriture du fichier suite est             ',/,&
-'@        NFMTFL = ',I10                                       ,/,&
+'@        NFMTFL = ',i10                                       ,/,&
 '@      On a ici un nombre de flux      maximal superieur     ',/,&
-'@        NVARMX = ',I10                                       ,/,&
+'@        NVARMX = ',i10                                       ,/,&
 '@      On ne pourra pas relire les flux      dont le numero  ',/,&
 '@        est superieur                                       ',/,&
 '@                                                            ',/,&
@@ -2446,9 +2446,9 @@ return
 '@                                                            ',/,&
 '@      Le nombre de moments       max NBMOMX supporte par le ',/,&
 '@        format d''ecriture du fichier suite est             ',/,&
-'@        NFMTMO = ',I10                                       ,/,&
+'@        NFMTMO = ',i10                                       ,/,&
 '@      On a ici un nombre de moments   maximal superieur     ',/,&
-'@        NBMOMX = ',I10                                       ,/,&
+'@        NBMOMX = ',i10                                       ,/,&
 '@      On ne pourra pas relire les moments   dont le numero  ',/,&
 '@        est superieur                                       ',/,&
 '@                                                            ',/,&
@@ -2467,9 +2467,9 @@ return
 '@                                                            ',/,&
 '@      Le nombre de charbons      max NCHARM supporte par le ',/,&
 '@        format d''ecriture du fichier suite est             ',/,&
-'@        NFMTCH = ',I10                                       ,/,&
+'@        NFMTCH = ',i10                                       ,/,&
 '@      On a ici un nombre de charbons  maximal superieur     ',/,&
-'@        NCHARM = ',I10                                       ,/,&
+'@        NCHARM = ',i10                                       ,/,&
 '@      On ne pourra pas relire certaines informations        ',/,&
 '@        relatives aux charbons dont le numero               ',/,&
 '@        est superieur                                       ',/,&
@@ -2489,9 +2489,9 @@ return
 '@                                                            ',/,&
 '@      Le nombre de classes par charbon max NCPCMX supporte  ',/,&
 '@        par le format d''ecriture du fichier suite est      ',/,&
-'@        NFMTCL = ',I10                                       ,/,&
+'@        NFMTCL = ',i10                                       ,/,&
 '@      On a ici un nombre de classes par charbon superieur   ',/,&
-'@        NCPCMX = ',I10                                       ,/,&
+'@        NCPCMX = ',i10                                       ,/,&
 '@      On ne pourra pas relire certaines informations        ',/,&
 '@        relatives aux classes  dont le numero               ',/,&
 '@        est superieur                                       ',/,&
@@ -2510,7 +2510,7 @@ return
 '@ @@ ATTENTION : ERREUR A L''OUVERTURE DU FICHIER SUITE      ',/,&
 '@    =========                                 AVAL PRINCIPAL',/,&
 '@                                                            ',/,&
-'@    Verifier que le fichier ',A13,'peut etre                ',/,&
+'@    Verifier que le fichier ',a13,'peut etre                ',/,&
 '@            cree dans le repertoire de travail.             ',/,&
 '@                                                            ',/,&
 '@    Le calcul se poursuit...                                ',/,&
@@ -2524,7 +2524,7 @@ return
 '@ @@ ATTENTION : ERREUR A L''OUVERTURE DU FICHIER SUITE      ',/,&
 '@    =========                                AVAL AUXILIAIRE',/,&
 '@                                                            ',/,&
-'@    Verifier que le fichier ',A13,'peut etre                ',/,&
+'@    Verifier que le fichier ',a13,'peut etre                ',/,&
 '@            cree dans le repertoire de travail.             ',/,&
 '@                                                            ',/,&
 '@    Le calcul se poursuit...                                ',/,&
@@ -2539,7 +2539,7 @@ return
 '@ @@ ATTENTION : ERREUR A LA FERMETURE DU FICHIER SUITE      ',/,&
 '@    =========                                 AVAL PRINCIPAL',/,&
 '@                                                            ',/,&
-'@    Probleme sur le fichier de nom (',A13,')                ',/,&
+'@    Probleme sur le fichier de nom (',a13,')                ',/,&
 '@                                                            ',/,&
 '@    Le calcul se poursuit...                                ',/,&
 '@                                                            ',/,&
@@ -2552,7 +2552,7 @@ return
 '@ @@ ATTENTION : ERREUR A LA FERMETURE DU FICHIER SUITE      ',/,&
 '@    =========                                AVAL AUXILIAIRE',/,&
 '@                                                            ',/,&
-'@    Probleme sur le fichier de nom (',A13,')                ',/,&
+'@    Probleme sur le fichier de nom (',a13,')                ',/,&
 '@                                                            ',/,&
 '@    Le calcul se poursuit...                                ',/,&
 '@                                                            ',/,&
@@ -2571,7 +2571,7 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8101 format(                                                          &
+ 8101 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2586,15 +2586,13 @@ return
 
 #else
 
- 1000 format(3X,'** Writing the main restart file',/,             &
-       3X,'   -----------------------------',/)
- 1010 format(3X,'   Opening a binary file',/)
- 1020 format(3X,'   Opening an ASCII file',/)
+ 1000 format(3x,'** Writing the main restart file',/,             &
+             3x,'   -----------------------------',/)
  1100 format(' Start writing'                                      )
- 1110 format('  ',A54                                              )
+ 1110 format('  ',a54                                              )
  1200 format(' End writing'                                        )
- 2000 format(/,3X,'** Writing the auxilliary restart file',/,     &
-         3X,'   -----------------------------------',/)
+ 2000 format(/,3x,'** Writing the auxilliary restart file',/,     &
+               3x,'   -----------------------------------',/)
 
  7001 format(                                                     &
 '@                                                            ',/,&
@@ -2605,9 +2603,9 @@ return
 '@                                                            ',/,&
 '@      The maximum number of scalars NSCAMX handled by the   ',/,&
 '@        restart file writing format is                      ',/,&
-'@        NFMTSC = ',I10                                       ,/,&
+'@        NFMTSC = ',i10                                       ,/,&
 '@      The current maximum number of scalars is greater.     ',/,&
-'@        NSCAMX = ',I10                                       ,/,&
+'@        NSCAMX = ',i10                                       ,/,&
 '@      The scalars with a larger number will not be read.    ',/,&
 '@                                                            ',/,&
 '@    The calculation will be run.                            ',/,&
@@ -2625,9 +2623,9 @@ return
 '@                                                            ',/,&
 '@      The maximum number of mass flux NVARMX handled by the ',/,&
 '@        restart file writing format is                      ',/,&
-'@        NFMTFL = ',I10                                       ,/,&
+'@        NFMTFL = ',i10                                       ,/,&
 '@      The current maximum number of mass fluxes is greater. ',/,&
-'@        NVARMX = ',I10                                       ,/,&
+'@        NVARMX = ',i10                                       ,/,&
 '@      The fluxes with a larger number will not be read.     ',/,&
 '@                                                            ',/,&
 '@    The calculation will be run.                            ',/,&
@@ -2645,9 +2643,9 @@ return
 '@                                                            ',/,&
 '@      The maximum number of moments NBMOMX handled by the   ',/,&
 '@        restart file writing format is                      ',/,&
-'@        NFMTMO = ',I10                                       ,/,&
+'@        NFMTMO = ',i10                                       ,/,&
 '@      The current maximum number of moments is greater.     ',/,&
-'@        NBMOMX = ',I10                                       ,/,&
+'@        NBMOMX = ',i10                                       ,/,&
 '@      The moments with a larger number will not be read.    ',/,&
 '@                                                            ',/,&
 '@    The calculation will be run.                            ',/,&
@@ -2665,9 +2663,9 @@ return
 '@                                                            ',/,&
 '@      The maximum number of coals NCHARM handled by the     ',/,&
 '@        restart file writing format is                      ',/,&
-'@        NFMTCH = ',I10                                       ,/,&
+'@        NFMTCH = ',i10                                       ,/,&
 '@      The current maximum number of coals is greater.       ',/,&
-'@        NCHARM = ',I10                                       ,/,&
+'@        NCHARM = ',i10                                       ,/,&
 '@      Some information relative to coals with a greater     ',/,&
 '@        number will not be read.                            ',/,&
 '@                                                            ',/,&
@@ -2686,9 +2684,9 @@ return
 '@                                                            ',/,&
 '@      The number of coal classes NCPCMX handled by the      ',/,&
 '@        restart file writing format is                      ',/,&
-'@        NFMTCL = ',I10                                       ,/,&
+'@        NFMTCL = ',i10                                       ,/,&
 '@      The current number of coal classes is greater.        ',/,&
-'@        NCPCMX = ',I10                                       ,/,&
+'@        NCPCMX = ',i10                                       ,/,&
 '@      Some information relative to classes with a greater   ',/,&
 '@        number will not be read.                            ',/,&
 '@                                                            ',/,&
@@ -2706,7 +2704,7 @@ return
 '@ @@ WARNING: ERROR WHILE OPENING THE MAIN RESTART FILE      ',/,&
 '@    ========                                                ',/,&
 '@                                                            ',/,&
-'@    Verify that the file ',A13,'can be created              ',/,&
+'@    Verify that the file ',a13,'can be created              ',/,&
 '@            in the working directory.                       ',/,&
 '@                                                            ',/,&
 '@    The calculation will be run.                            ',/,&
@@ -2720,7 +2718,7 @@ return
 '@ @@ WARNING: ERROR WHILE OPENING THE AUXILIARY RESTART FILE ',/,&
 '@    ========                                                ',/,&
 '@                                                            ',/,&
-'@    Verify that the file ',A13,'can be created              ',/,&
+'@    Verify that the file ',a13,'can be created              ',/,&
 '@            in the working directory.                       ',/,&
 '@                                                            ',/,&
 '@    The calculation will be run.                            ',/,&
@@ -2735,7 +2733,7 @@ return
 '@ @@ WARNING: ERROR WHILE CLOSING THE MAIN RESTART FILE      ',/,&
 '@    ========                                                ',/,&
 '@                                                            ',/,&
-'@    Problem with the file of name (',A13,')                 ',/,&
+'@    Problem with the file of name (',a13,')                 ',/,&
 '@                                                            ',/,&
 '@    The calculation will be run.                            ',/,&
 '@                                                            ',/,&
@@ -2748,7 +2746,7 @@ return
 '@ @@ WARNING: ERROR WHILE CLOSING THE AUXILIARY RESTART FILE ',/,&
 '@    ========                                                ',/,&
 '@                                                            ',/,&
-'@    Problem with the file of name (',A13,')                 ',/,&
+'@    Problem with the file of name (',a13,')                 ',/,&
 '@                                                            ',/,&
 '@    The calculation will be run.                            ',/,&
 '@                                                            ',/,&
