@@ -56,6 +56,7 @@
 #include "cs_mesh_location.h"
 #include "cs_part_to_block.h"
 #include "cs_timer.h"
+#include "cs_time_step.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -134,6 +135,18 @@ static cs_restart_t **_restart_pointer = _restart_pointer_base;
 /* Do we have a restart directory ? */
 
 static int _restart_present = 0;
+
+/* Restart time steps and frequency */
+
+static int    _checkpoint_nt_interval = -1;  /* time step interval */
+static int    _checkpoint_nt_next = -1;      /* next forced time step */
+static double _checkpoint_t_interval = -1.;  /* physical time interval */
+static double _checkpoint_t_next = -1.;      /* next forced time value */
+static double _checkpoint_t_last = 0.;       /* last forced time value */
+static double _checkpoint_wt_interval = -1.; /* wall-clock interval */
+static double _checkpoint_wt_next = -1.;     /* next forced wall-clock value */
+static double _checkpoint_wt_last = 0.;      /* wall-clock time of last
+                                                checkpointing */
 
 /*============================================================================
  * Private function definitions
@@ -839,6 +852,74 @@ _restart_permute_write(cs_int_t          n_ents,
  *
  * Fortran interface
  *
+ * subroutine dflsui (ntsuit, ttsuit, wtsuit)
+ * *****************
+ *
+ * integer          ntsuit      : <-- : > 0: checkpoint time step interval
+ *                              :     : 0: default interval
+ *                              :     : -1: checkpoint at end
+ *                              :     : -2: no checkpoint
+ * double precisionsttsuit      : <-- : if> 0, checkpoint time interval
+ * double precision wtsuit      : <-- : if> 0, checkpoint wall time interval
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (dflsui, DFLSUI)
+(
+ cs_int_t   *ntsuit,
+ cs_real_t  *ttsuit,
+ cs_real_t  *wtsuit
+)
+{
+  cs_restart_checkpoint_set_defaults(*ntsuit, *ttsuit, *wtsuit);;
+}
+
+/*----------------------------------------------------------------------------
+ * Check if checkpointing is recommended at a given time.
+ *
+ * Fortran interface
+ *
+ * subroutine reqsui (iisuit)
+ * *****************
+ *
+ * integer          iisuit      : --> : 0 if no restart required, 1 otherwise
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (reqsui, RESSUI)
+(
+ cs_int_t   *iisuit
+)
+{
+  if (cs_restart_checkpoint_required(cs_glob_time_step))
+    *iisuit = 1;
+  else
+    *iisuit = 0;
+}
+
+/*----------------------------------------------------------------------------
+ * Indicate checkpointing has been done at a given time.
+ *
+ * This updates the status for future checks to determine
+ * if checkpointing is recommended at a given time.
+ *
+ * Fortran interface
+ *
+ * subroutine indsui
+ * *****************
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (stusui, STUSUI)
+(
+ void
+)
+{
+  cs_restart_checkpoint_done(cs_glob_time_step);
+}
+
+/*----------------------------------------------------------------------------
+ * Indicate if a restart directory is present.
+ *
+ * Fortran interface
+ *
  * subroutine indsui (isuite)
  * *****************
  *
@@ -905,11 +986,10 @@ void CS_PROCF (opnsui, OPNSUI)
       restart_mode = CS_RESTART_MODE_WRITE;
       break;
     default:
-      cs_base_warn(__FILE__, __LINE__);
-      bft_printf(_("The access mode of the restart file <%s>\n"
-                   "must be equal to 1 (read) or 2 (write) and not <%d>."),
-                 bufname, (int)(*ireawr));
-
+      bft_error(__FILE__, __LINE__, 0,
+                _("The access mode of the restart file <%s>\n"
+                  "must be equal to 1 (read) or 2 (write) and not <%d>."),
+                bufname, (int)(*ireawr));
       *ierror = CS_RESTART_ERR_MODE;
     }
 
@@ -977,7 +1057,6 @@ void CS_PROCF (clssui, CLSSUI)
   _free_restart_id(r_id);
 }
 
-
 /*----------------------------------------------------------------------------
  * Check the locations associated with a restart file.
  *
@@ -1042,7 +1121,6 @@ void CS_PROCF (tstsui, TSTSUI)
 
 }
 
-
 /*----------------------------------------------------------------------------
  * Print index associated with a restart file in read mode
  *
@@ -1071,13 +1149,9 @@ void CS_PROCF (infsui, INFSUI)
     bft_printf(_("Information on the restart file number <%d> unavailable\n"
                  "(file already closed or invalid number)."), (int)(*numsui));
   }
-  else {
-
+  else
     cs_restart_dump_index(_restart_pointer[r_id]);
-
-  }
 }
-
 
 /*----------------------------------------------------------------------------
  * Read a section from a restart file
@@ -1123,7 +1197,6 @@ void CS_PROCF (lecsui, LECSUI)
   cs_restart_t  *restart;
   int          location_id;
 
-
   *ierror = CS_RESTART_SUCCES;
 
   /* Handle name for C API */
@@ -1156,7 +1229,6 @@ void CS_PROCF (lecsui, LECSUI)
 
   cs_base_string_f_to_c_free(&bufname);
 }
-
 
 /*----------------------------------------------------------------------------
  * Write a section to a restart file
@@ -1202,7 +1274,6 @@ void CS_PROCF (ecrsui, ECRSUI)
   cs_restart_t *restart;
   int location_id;
 
-
   *ierror = CS_RESTART_SUCCES;
 
   /* Handle name for C API */
@@ -1239,6 +1310,156 @@ void CS_PROCF (ecrsui, ECRSUI)
 /*============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Define default checkpoint interval.
+ *
+ * parameters
+ *   nt_interval <-- if > 0 time step interval for checkpoint
+ *                   if 0, default of 4 checkpoints per run
+ *                   if -1, checkpoint at end
+ *                   if -2, no checkpointing
+ *   t_interval  <-- if > 0, time value interval for checkpoint
+ *   wt_interval <-- if > 0, wall-clock interval for checkpoints
+ *----------------------------------------------------------------------------*/
+
+void
+cs_restart_checkpoint_set_defaults(int     nt_interval,
+                                   double  t_interval,
+                                   double  wt_interval)
+{
+  _checkpoint_nt_interval = nt_interval;
+  _checkpoint_t_interval = t_interval;
+  _checkpoint_wt_interval = wt_interval;
+}
+
+/*----------------------------------------------------------------------------
+ * Define next forced checkpoint time step
+ *
+ * parameters
+ *   nt_next <-- next time step for forced checkpoint
+ *----------------------------------------------------------------------------*/
+
+void
+cs_restart_checkpoint_set_next_ts(int  nt_next)
+{
+  _checkpoint_nt_next = nt_next;
+}
+
+/*----------------------------------------------------------------------------
+ * Define next forced checkpoint time value
+ *
+ * parameters
+ *   t_next <-- next time value for forced checkpoint
+ *----------------------------------------------------------------------------*/
+
+void
+cs_restart_checkpoint_set_next_tv(double  t_next)
+{
+  _checkpoint_t_next = t_next;
+}
+
+/*----------------------------------------------------------------------------
+ * Define next forced checkpoint wall-clock time value
+ *
+ * parameters
+ *   wt_next <-- next wall-clock time value for forced checkpoint
+ *----------------------------------------------------------------------------*/
+
+void
+cs_restart_checkpoint_set_next_wt(double  wt_next)
+{
+  _checkpoint_wt_next = wt_next;
+}
+
+/*----------------------------------------------------------------------------
+ * Check if checkpointing is recommended at a given time.
+ *
+ * parameters
+ *   ts <-- time step status structure
+ *
+ * returns:
+ *   true if checkpointing is recommended, 0 otherwise
+ *----------------------------------------------------------------------------*/
+
+bool
+cs_restart_checkpoint_required(const cs_time_step_t  *ts)
+{
+  assert(ts != NULL);
+
+  int nt = ts->nt_cur - ts->nt_prev;
+  double t = ts->t_cur - ts->t_prev;
+
+  bool retval = false;
+
+  if (_checkpoint_nt_interval > -2) {
+
+    if (ts->nt_cur == ts->nt_max)
+      retval = true;
+
+    else if (_checkpoint_nt_interval == 0) {
+      /* default interval: current number of expected time_steps for this run,
+         with a minimum of 10. */
+      int nt_def = nt/4;
+      if (nt_def < 10)
+        nt_def = 10;
+      if (nt % nt_def == 0)
+        retval = true;
+    }
+
+    else if (_checkpoint_nt_interval > 0 && _checkpoint_nt_interval % nt == 0)
+      retval = true;
+  }
+
+  if (_checkpoint_wt_next >= 0) {
+    double wt = cs_timer_wtime();
+    if (wt >= _checkpoint_wt_next)
+      retval = true;
+  }
+
+  else if (   (_checkpoint_nt_next >= 0 && _checkpoint_nt_next <= nt)
+           || (_checkpoint_t_next >= 0 && _checkpoint_t_next <= t))
+    retval = true;
+
+  else if (_checkpoint_wt_interval >= 0) {
+    double wt = cs_timer_wtime();
+    if (wt - _checkpoint_wt_last >= _checkpoint_wt_interval)
+      retval = true;
+  }
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Indicate checkpointing has been done at a given time.
+ *
+ * This updates the status for future checks to determine
+ * if checkpointing is recommended at a given time.
+ *
+ * parameters
+ *   ts <-- time step status structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_restart_checkpoint_done(const cs_time_step_t  *ts)
+{
+  assert(ts != NULL);
+
+  int nt = ts->nt_cur - ts->nt_prev;
+  double t = ts->t_cur - ts->t_prev;
+
+  if (_checkpoint_nt_next >= 0 && _checkpoint_nt_next <= nt)
+    _checkpoint_nt_next = -1;
+
+  if (_checkpoint_t_next >= 0 && _checkpoint_t_next <= t)
+    _checkpoint_t_next = -1.;
+
+  if (_checkpoint_wt_next >= 0 && _checkpoint_wt_next <= t)
+    _checkpoint_wt_next = -1.;
+
+  _checkpoint_t_last = ts->t_cur;
+  _checkpoint_wt_last = cs_timer_wtime();
+}
 
 /*----------------------------------------------------------------------------
  * Check if we have a restart directory.

@@ -91,7 +91,7 @@ integer          idebra, ifinra
 integer          iiii
 
 integer          modhis, iappel, modntl, iisuit, iwarn0
-integer          ntsdef, ntcam1
+integer          ntcam1
 integer          ivar
 
 integer          inod   , idim
@@ -920,28 +920,18 @@ endif
 ! Possible output of checkpoint files
 !===============================================================================
 
-iisuit = 0
-if(ntcabs.lt.ntmabs) then
-  if(ntsuit.eq.0) then
-    ntsdef = max((ntmabs-ntpabs)/4,10)
-    if(ntsdef.gt.0) then
-      if(mod(ntcabs-ntpabs,ntsdef).eq.0) then
-        iisuit = 1
-      endif
-    endif
-  elseif(ntsuit.gt.0) then
-    if(mod(ntcabs,ntsuit).eq.0) then
-      iisuit = 1
-    endif
-  endif
-  if (itrale.eq.0) iisuit = 0
-  if (iwarn0.gt.0 .and. iisuit.eq.1) write(nfecra,3020)ntcabs,ttcabs
-else if(ntcabs.eq.ntmabs .and. ntsuit.gt.-2) then
-  iisuit = 1
-  if(iwarn0.gt.0) write(nfecra,3021)ntcabs,ttcabs
-endif
+call reqsui(iisuit)
+!==========
+
+if(ntcabs.lt.ntmabs .and.itrale.eq.0) iisuit = 0
 
 if (iisuit.eq.1) then
+
+  if(ntcabs.lt.ntmabs) then
+    if (iwarn0.gt.0) write(nfecra,3020) ntcabs, ttcabs
+  else if(ntcabs.eq.ntmabs) then
+    if(iwarn0.gt.0) write(nfecra,3021)ntcabs,ttcabs
+  endif
 
   call dmtmps(tecrf1)
   !==========
@@ -1010,6 +1000,9 @@ if (iisuit.eq.1) then
   !==========
 
   if(iwarn0.gt.0) write(nfecra,3022) tecrf2-tecrf1
+
+  call stusui
+  !==========
 
 endif ! iisuit = 1
 

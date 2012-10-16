@@ -62,6 +62,7 @@ implicit none
 ! Local variables
 
 integer          iok, ipp, nmodpp
+double precision ttsuit, wtsuit
 
 !===============================================================================
 
@@ -98,6 +99,12 @@ call ppini1
 !==========
 
 call usipes(nmodpp)
+!==========
+
+ttsuit = -1.d0
+wtsuit = -1.d0
+
+call dflsui(ntsuit, ttsuit, wtsuit);
 !==========
 
 call rayopt
