@@ -259,7 +259,7 @@ if (                                                              &
            (iwarnp.ge.2.or.modntl.eq.0) ) .and.                   &
    .not. ( ippmod(icompf).ge.0.and.                               &
            (iwarnp.ge.2.or.modntl.eq.0) ) .and.                   &
-   .not. ( idtvar.eq.1.or.idtvar.eq.2.or.                         &
+   .not. ( idtvar.eq.-1.or.idtvar.eq.1.or.idtvar.eq.2.or.         &
            ( (iwarnp.ge.2.or.modntl.eq.0).and.                    &
              (idiff(iuiph).ge.1.or.iconv(iuiph).ge.1              &
                                .or.ippmod(icompf).ge.0)  ) )      &
