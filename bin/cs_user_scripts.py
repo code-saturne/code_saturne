@@ -54,7 +54,7 @@ def domain_auto_restart(domain, n_add):
             n_steps += n_add
             info_line += ' to ' + str(n_steps)
             print(info_line)
-            f = open(os.path.join(self.exec_dir, 'ficstp'), 'w')
+            f = open(os.path.join(self.exec_dir, 'control_file'), 'w')
             l = ['#Target number of time steps, determined by script\n',
                  str(n_steps)]
             f.writelines(l)

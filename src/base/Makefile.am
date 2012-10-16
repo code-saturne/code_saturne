@@ -190,6 +190,7 @@ cscloc.f90 \
 cscpce.f90 \
 cspcev.f90 \
 cscpfb.f90 \
+cs_control.c \
 cs_coupling.c \
 cs_ext_neighborhood.c \
 cs_field.c \
@@ -249,7 +250,6 @@ majgeo.f90 \
 memfin.f90 \
 memtri.f90 \
 modini.f90 \
-modpar.f90 \
 mmtycl.f90 \
 navsto.f90 \
 navstv.f90 \

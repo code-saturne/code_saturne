@@ -150,8 +150,8 @@ istpp1 = 0
 !--> Probes output tracking
 ttchis = -1.d0
 
-!  Test presence of ficstp to modify ntmabs if required
-call modpar(ntcabs, ntmabs)
+! Test presence of control_file to modify ntmabs if required
+call modpar
 !==========
 
 !===============================================================================
@@ -773,8 +773,8 @@ endif
 ! Step forward in time
 !===============================================================================
 
-!  Test presence of ficstp to modify ntmabs if required
-call modpar(ntcabs, ntmabs)
+! Test presence of control_file to modify ntmabs if required
+call modpar
 !==========
 
 call dmtmps(titer1)

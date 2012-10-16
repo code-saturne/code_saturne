@@ -69,7 +69,6 @@ lagdif.f90 \
 lageje.f90 \
 lagent.f90 \
 lageqp.f90 \
-lagerr.f90 \
 lages1.f90 \
 lages2.f90 \
 lagesd.f90 \

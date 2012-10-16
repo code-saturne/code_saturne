@@ -637,7 +637,7 @@ AC_CHECK_HEADERS([float.h string.h sys/time.h])
 # Checks for library functions.
 #------------------------------------------------------------------------------
 
-AC_CHECK_FUNCS([mkdir chdir stat dup2])
+AC_CHECK_FUNCS([mkdir chdir stat dup2 access])
 AC_CHECK_FUNCS([snprintf])
 AC_CHECK_FUNCS([getcwd sleep])
 AC_CHECK_FUNCS([getpwuid geteuid])

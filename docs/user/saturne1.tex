@@ -665,19 +665,40 @@ expected to run for many iterations.
 %==================================
 \subsubsection{Interactive modification of the target time step}
 %==================================
-\label{prg_ficstp}%
+\label{prg_control_file}%
 During a calculation, it is possible to change the limit time step number
 (\texttt{ntmabs}) specified through the Interface or in \texttt{cs\_user\_parameters.f90}.
-To do so, a file named \texttt{ficstp} must be placed in the temporary
+To do so, a file named \texttt{control\_file} must be placed in the
 execution directory (see \S\ref{prg_temporarydirectory}).
-This file must contain a blank first line and
-the second line indicating the value of the new limit number of time steps.\\
+This file must contain a line indicating the value of the new limit
+number of time steps.\\
 If this new limit has already been passed in the calculation, \CS will stop
 properly at the end of the current time step (the results and restart files
 will be written correctly).\\
 This procedure allows the user to stop a calculation in a clean and interactive
 way whenever they wish.
 
+The \texttt{control\_file} may also contain a few other commands:
+
+\begin{tabular}[top]{|p{8.5cm}%
+                     |>{\PreserveBackslash\raggedright\hspace{0pt}}p{10.5cm}|}
+\hline
+\texttt{max\_time\_step}                   & $<$time\_step\_number$>$ \\
+\texttt{max\_time\_value}                  & $<$time\_value$>$ \\
+\hline
+\texttt{checkpoint\_time\_step}            & $<$time\_step\_number$>$ \\
+\texttt{checkpoint\_time\_value}           & $<$time\_value$>$ \\
+\texttt{checkpoint\_wall\_time}            & $<$wall\_clock\_time$>$ \\
+\texttt{checkpoint\_time\_step\_interval}   & $<$time\_step\_interval$>$ \\
+\texttt{checkpoint\_time\_value\_interval}  & $<$time\_interval$>$  \\
+\texttt{checkpoint\_wall\_time\_interval}   & $<$wall\_time\_interval$>$ \\
+\hline
+\texttt{control\_file\_wtime\_interval}     & $<$wall\_time\_interval$>$ \\
+\hline
+\texttt{postprocess\_time\_step}           & $<$time\_step\_number$>$ [writer\_id] \\
+\texttt{postprocess\_time\_value}          & $<$time\_step\_value$>$ [writer\_id] \\
+\hline
+\end{tabular}
 
 %==================================
 \subsection{Case preparer}
@@ -2542,10 +2563,10 @@ in the standard cases:
       the standard launch script to make it more general.
 
 \item A parallel calculation may be stopped in the same manner as a
-      sequential one using a \texttt{ficstp} file (see praragraph
-      \ref{prg_ficstp}).
+      sequential one using a \texttt{control\_file} file (see paragraph
+      \ref{prg_control_file}).
 
-\item The standard pieces of information displayed in the listing
+\item The standard elements of information displayed in the listing
       (marked out with \texttt{'v  '} for the min/max values of the
       variables), \texttt{'c  '} for the data concerning the convergence
       and \texttt{'a  '} for the values before clipping) are global

@@ -137,11 +137,6 @@ enddo
 impmvo = 11
 impdvo = 20
 
-! ---> Fichier stop
-
-impstp = 12
-ficstp = 'ficstp'
-
 ! ---> Fichier aval
 
 !     NTSUIT : Periode de sauvegarde du fichier suite
