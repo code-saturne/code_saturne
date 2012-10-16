@@ -412,9 +412,9 @@ cs_control_check_file(void)
     else
       bft_printf
         (_("\n"
-           "   Warning: error opening %s (ignored):\n"
-           "   --------\n"
-           "     \"%s\"\n\n"), path, strerror(errno));
+           " Warning: error opening %s (ignored):\n"
+           " --------\n"
+           "   \"%s\"\n\n"), path, strerror(errno));
 
 
     _control_file_wt_last = cs_timer_wtime();
@@ -432,8 +432,8 @@ cs_control_check_file(void)
 
   bft_printf
     (_("\n"
-       "  Options set or changed by \"control_file\":\n"
-       "  -----------------------------------------\n\n"));
+       " Options set or changed by \"control_file\":\n"
+       " -----------------------------------------\n\n"));
 
   /* Loop on buffer's lines */
 
@@ -541,7 +541,7 @@ cs_control_check_file(void)
 
   bft_printf
     (_("\n"
-       "  Finished reading \"control_file\".\n\n"));
+       " Finished reading \"control_file\".\n\n"));
 
   BFT_FREE(buffer);
 }
