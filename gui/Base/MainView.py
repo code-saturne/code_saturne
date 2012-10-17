@@ -128,32 +128,32 @@ class MainView(QMainWindow, Ui_MainForm):
 
         # connections
 
-        self.connect(self.fileOpenAction,   SIGNAL("activated()"),   self.fileOpen)
-        self.connect(self.fileNewAction,    SIGNAL("activated()"),   self.fileNew)
+        self.connect(self.fileOpenAction,   SIGNAL("triggered()"),   self.fileOpen)
+        self.connect(self.fileNewAction,    SIGNAL("triggered()"),   self.fileNew)
         self.connect(self.menuRecent,       SIGNAL("aboutToShow()"), self.updateRecentFileMenu)
-        self.connect(self.fileSaveAction,   SIGNAL("activated()"),   self.fileSave)
-        self.connect(self.fileSaveAsAction, SIGNAL("activated()"),   self.fileSaveAs)
-        self.connect(self.fileCloseAction,  SIGNAL("activated()"),   self.close)
-        self.connect(self.fileQuitAction,   SIGNAL("activated()"),   self.fileQuit)
+        self.connect(self.fileSaveAction,   SIGNAL("triggered()"),   self.fileSave)
+        self.connect(self.fileSaveAsAction, SIGNAL("triggered()"),   self.fileSaveAs)
+        self.connect(self.fileCloseAction,  SIGNAL("triggered()"),   self.close)
+        self.connect(self.fileQuitAction,   SIGNAL("triggered()"),   self.fileQuit)
 
-        self.connect(self.openXtermAction,      SIGNAL("activated()"), self.openXterm)
-        self.connect(self.displayCaseAction,    SIGNAL("activated()"), self.displayCase)
-        self.connect(self.reload_modulesAction, SIGNAL("activated()"), self.reload_modules)
-        self.connect(self.reload_pageAction,    SIGNAL("activated()"), self.reload_page)
+        self.connect(self.openXtermAction,      SIGNAL("triggered()"), self.openXterm)
+        self.connect(self.displayCaseAction,    SIGNAL("triggered()"), self.displayCase)
+        self.connect(self.reload_modulesAction, SIGNAL("triggered()"), self.reload_modules)
+        self.connect(self.reload_pageAction,    SIGNAL("triggered()"), self.reload_page)
 
         self.connect(self.IdentityAction, SIGNAL("toggled(bool)"), self.dockWidgetIdentityDisplay)
         self.connect(self.BrowserAction,  SIGNAL("toggled(bool)"), self.dockWidgetBrowserDisplay)
 
-        self.connect(self.displayAboutAction,    SIGNAL("activated()"), self.displayAbout)
-        self.connect(self.backgroundColorAction, SIGNAL("activated()"), self.setColor)
-        self.connect(self.actionFont,            SIGNAL("activated()"), self.setFontSize)
+        self.connect(self.displayAboutAction,    SIGNAL("triggered()"), self.displayAbout)
+        self.connect(self.backgroundColorAction, SIGNAL("triggered()"), self.setColor)
+        self.connect(self.actionFont,            SIGNAL("triggered()"), self.setFontSize)
 
-        self.connect(self.displayLicenceAction,   SIGNAL("activated()"), self.displayLicence)
-        #self.connect(self.displayConfigAction,   SIGNAL("activated()"), self.displayConfig)
-        self.connect(self.displayCSManualAction,  SIGNAL("activated()"), self.displayCSManual)
-        self.connect(self.displayCSTutorialAction, SIGNAL("activated()"), self.displayCSTutorial)
-        self.connect(self.displayCSKernelAction,  SIGNAL("activated()"), self.displayCSKernel)
-        self.connect(self.displayCSRefcardAction,  SIGNAL("activated()"), self.displayCSRefcard)
+        self.connect(self.displayLicenceAction,   SIGNAL("triggered()"), self.displayLicence)
+        #self.connect(self.displayConfigAction,   SIGNAL("triggered()"), self.displayConfig)
+        self.connect(self.displayCSManualAction,  SIGNAL("triggered()"), self.displayCSManual)
+        self.connect(self.displayCSTutorialAction, SIGNAL("triggered()"), self.displayCSTutorial)
+        self.connect(self.displayCSKernelAction,  SIGNAL("triggered()"), self.displayCSKernel)
+        self.connect(self.displayCSRefcardAction,  SIGNAL("triggered()"), self.displayCSRefcard)
 
         # connection for page layout
 
@@ -386,13 +386,13 @@ class MainView(QMainWindow, Ui_MainForm):
             #        if self.recentFiles else QVariant()
             settings.setValue("RecentFiles", recentFiles)
             settings.setValue("MainWindow/Geometry",
-                    QVariant(self.saveGeometry()))
+                              QVariant(self.saveGeometry()))
             settings.setValue("MainWindow/State",
-                    QVariant(self.saveState()))
+                              QVariant(self.saveState()))
             settings.setValue("MainWindow/Color",
-                    QVariant(self.palette().color(QPalette.Window).name()))
+                              QVariant(self.palette().color(QPalette.Window).name()))
             settings.setValue("MainWindow/Font",
-                    QVariant(self.font().toString()))
+                              QVariant(self.font().toString()))
 
             event.accept()
             log.debug("closeEvent -> accept")
@@ -898,12 +898,12 @@ class MainView(QMainWindow, Ui_MainForm):
          - version
          - contact
         """
-        msg = self.package.code_name + "\n"                      +\
+        msg = self.package.code_name + "\n"                 +\
               "version " + self.package.version + "\n\n"    +\
-              "For information about this application "  +\
-              "please contact:\n\n"                      +\
+              "For information about this application "     +\
+              "please contact:\n\n"                         +\
               self.package.bugreport + "\n\n"               +\
-              "Please visit our site:\n"                 +\
+              "Please visit our site:\n"                    +\
               self.package.url
         QMessageBox.about(self, self.package.name + ' Interface', msg)
 
