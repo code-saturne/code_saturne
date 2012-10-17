@@ -1,3 +1,8 @@
+* 16/10/2012 - Jacques Fontaine <jacques-j.fontaine@edf.fr>
+  Fix bug in steady algorithm.
+  modified files:
+    src/base/dttvar.F
+
 * 08/10/2012 - Yvan Fournier <yvan.fournier@edf.fr>
   Remove configurations for obsolete platforms, complete Blue Gene/Q
   port of source code (not lance script), and update version number.
