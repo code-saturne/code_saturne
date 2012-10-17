@@ -1,3 +1,14 @@
+* 17/10/2012 - Yvan Fournier <yvan.fournier@edf.fr>
+  GUI: replace deprecated "activated" signals by "triggered" for compatibility
+  with recent Qt and PyQT versions.
+  modified files:
+    gui/Base/MainView.py
+
+* 16/10/2012 - Jacques Fontaine <jacques-j.fontaine@edf.fr>
+  Fix bug in steady algorithm.
+  modified files:
+    src/base/dttvar.f90
+
 * 24/07/2012 - Yvan Fournier <yvan.fournier@edf.fr>
   Release of Code_Saturne 2.0.6.
 
