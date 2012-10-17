@@ -4827,6 +4827,8 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
 
   if (user_law)
   {
+    ipcvsl = ipproc[ ivisls[*iscalt -1 ] -1 ] -1;
+
     /* search the formula for the law */
 
     path = cs_xpath_short_path();
@@ -4847,11 +4849,11 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
     /* for the Temperature, the diffusivity factor is not divided by Cp */
     if (abs(iscsth[*iscalt-1]) != 1)
     {
-      mei_tree_insert(ev_la, "lambda0", visls0[*iscalt-1]);
+      mei_tree_insert(ev_la, "lambda0", visls0[*iscalt-1]*(*cp0));
     }
     else
     {
-      mei_tree_insert(ev_la, "lambda0", visls0[*iscalt-1]*(*cp0));
+      mei_tree_insert(ev_la, "lambda0", visls0[*iscalt-1]);
     }
     mei_tree_insert(ev_la, "p0", *p0);
 
@@ -4873,7 +4875,6 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
 
     if (*icp > 0)
     {
-      ipcvsl = ipproc[ ivisls[*iscalt -1 ] -1 ] -1;
       for (iel = 0; iel < *ncel; iel++)
       {
         for (i = 0; i < *nscaus; i++)
