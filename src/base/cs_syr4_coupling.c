@@ -702,7 +702,7 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
 
   /* Post-process distances from SYRTHES points to Code_Saturne faces */
 
-  if (locate_on_closest != NULL) {
+  if (elt_dim == syr_coupling->dim - 1) {
 
     n_dist_elts = ple_locator_get_n_dist_points(coupling_ent->locator);
     BFT_MALLOC(syr_to_cs_dist, n_dist_elts, float);
@@ -715,7 +715,7 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                                    1,
                                    1);
 
-    if (syr_coupling->visualization != 0) {
+    if (syr_coupling->visualization != 0 && locate_on_closest != NULL) {
 
       cs_lnum_t i;
       int writer_ids[] = {-1};
