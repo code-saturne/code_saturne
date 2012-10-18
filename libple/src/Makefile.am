@@ -22,7 +22,7 @@
 # Main part
 
 AM_CPPFLAGS = $(MPI_CPPFLAGS)
-AM_CFLAGS =
+AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
 AM_LDFLAGS = $(MPI_LDFLAGS)
 
 # Public header files (to be installed)
