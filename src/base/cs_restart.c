@@ -1400,25 +1400,29 @@ cs_restart_checkpoint_required(const cs_time_step_t  *ts)
     else if (_checkpoint_nt_interval == 0) {
       /* default interval: current number of expected time_steps for this run,
          with a minimum of 10. */
-      int nt_def = nt/4;
+      int nt_def = (ts->nt_max - ts->nt_prev)/4;
       if (nt_def < 10)
         nt_def = 10;
       if (nt % nt_def == 0)
         retval = true;
     }
 
-    else if (_checkpoint_nt_interval > 0 && _checkpoint_nt_interval % nt == 0)
+    else if (_checkpoint_nt_interval > 0 && nt % _checkpoint_nt_interval == 0)
       retval = true;
   }
 
-  if (_checkpoint_wt_next >= 0) {
+  if (_checkpoint_t_interval > 0
+      && _checkpoint_t_last + _checkpoint_t_interval <= t)
+    retval = true;
+
+  else if (_checkpoint_wt_next >= 0) {
     double wt = cs_timer_wtime();
     if (wt >= _checkpoint_wt_next)
       retval = true;
   }
 
-  else if (   (_checkpoint_nt_next >= 0 && _checkpoint_nt_next <= nt)
-           || (_checkpoint_t_next >= 0 && _checkpoint_t_next <= t))
+  else if (   (_checkpoint_nt_next >= 0 && _checkpoint_nt_next <= ts->nt_cur)
+           || (_checkpoint_t_next >= 0 && _checkpoint_t_next <= ts->t_cur))
     retval = true;
 
   else if (_checkpoint_wt_interval >= 0) {
@@ -1445,20 +1449,29 @@ cs_restart_checkpoint_done(const cs_time_step_t  *ts)
 {
   assert(ts != NULL);
 
-  int nt = ts->nt_cur - ts->nt_prev;
   double t = ts->t_cur - ts->t_prev;
 
-  if (_checkpoint_nt_next >= 0 && _checkpoint_nt_next <= nt)
+  if (_checkpoint_nt_next >= 0 && _checkpoint_nt_next <= ts->nt_cur)
     _checkpoint_nt_next = -1;
 
-  if (_checkpoint_t_next >= 0 && _checkpoint_t_next <= t)
+  if (_checkpoint_t_next >= 0 && _checkpoint_t_next <= ts->t_cur)
     _checkpoint_t_next = -1.;
 
-  if (_checkpoint_wt_next >= 0 && _checkpoint_wt_next <= t)
-    _checkpoint_wt_next = -1.;
+  if (_checkpoint_wt_next >= 0) {
+    double wt = cs_timer_wtime();
+    if (wt >= _checkpoint_wt_next)
+      _checkpoint_wt_next = -1.;
+  }
 
-  _checkpoint_t_last = ts->t_cur;
-  _checkpoint_wt_last = cs_timer_wtime();
+  if (_checkpoint_t_interval > 0
+      && _checkpoint_t_last + _checkpoint_t_interval <= t)
+    _checkpoint_t_last = ts->t_cur;
+
+  if (_checkpoint_wt_interval >= 0) {
+    double wt = cs_timer_wtime();
+    if (wt - _checkpoint_wt_last >= _checkpoint_wt_interval)
+      _checkpoint_wt_last = cs_timer_wtime();
+  }
 }
 
 /*----------------------------------------------------------------------------

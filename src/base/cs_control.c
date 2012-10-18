@@ -504,7 +504,7 @@ cs_control_check_file(void)
     else if (strncmp(s, "max_time_value ", 15) == 0) {
       double t_max;
       if (_read_next_double(cur_line, &s, &t_max) > 0)
-        t_max = CS_MAX(nt_max, ts->t_cur);
+        t_max = CS_MAX(t_max, ts->t_cur);
       cs_time_step_define_t_max(t_max);
       bft_printf("  %-32s %12.5g (%s %12.5g)\n",
                  "max_time_value", ts->t_max, _("current:"), ts->t_cur);
