@@ -193,10 +193,12 @@ typedef struct {
 
   cs_lnum_t  n_particles;
   cs_lnum_t  n_part_out;
+  cs_lnum_t  n_part_dep;
   cs_lnum_t  n_failed_part;
 
   cs_real_t  weight;
   cs_real_t  weight_out;
+  cs_real_t  weight_dep;
   cs_real_t  weight_failed;
 
   cs_lnum_t  n_particles_max;
@@ -2072,6 +2074,10 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
     move_particle = CS_LAGR_PART_MOVE_OFF;
     particle_state = CS_LAGR_PART_OUT;
 
+    _particle_set->n_part_dep += 1;
+    _particle_set->weight_dep += particle.stat_weight;
+
+
     bdy_conditions->particle_flow_rate[boundary_zone]
       -= particle.stat_weight * particle.mass;
 
@@ -2085,6 +2091,9 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
 
     move_particle = CS_LAGR_PART_MOVE_OFF;
     particle.cur_cell_num =  - particle.cur_cell_num; /* Store a negative value */
+
+    _particle_set->n_part_dep += 1;
+    _particle_set->weight_dep += particle.stat_weight;
 
     particle_state = CS_LAGR_PART_STICKED;
 
@@ -3348,8 +3357,14 @@ CS_PROCF (prtget, PRTGET)(const cs_lnum_t   *nbpmax,  /* n_particles max. */
   set->n_part_out = 0;
   prev_set->n_part_out = 0;
 
+  set->n_part_dep = 0;
+  prev_set->n_part_dep = 0;
+
   set->weight_out = 0.0;
   prev_set->weight_out = 0.0;
+
+  set->weight_dep = 0.0;
+  prev_set->weight_dep = 0.0;
 
   set->n_failed_part = 0;
   prev_set->n_failed_part = 0;
@@ -3549,6 +3564,8 @@ CS_PROCF (prtput, PRTPUT)(const cs_int_t   *nbpmax,  /* n_particles max. */
                           cs_real_t        *dnbpou,  /* outgoing particle total weight */
                           cs_int_t         *nbperr,  /* number of failed particles */
                           cs_real_t        *dnbper,  /* failed particles total weight */
+                          cs_int_t         *nbpdep,  /* number of depositing particles */
+                          cs_real_t        *dnbdep,  /* depositing particles total weight */
                           cs_int_t          liste[],
                           cs_int_t         *nbvis,
                           cs_real_t         ettp[],
@@ -3714,6 +3731,12 @@ CS_PROCF (prtput, PRTPUT)(const cs_int_t   *nbpmax,  /* n_particles max. */
   /* weight of exiting particles */
   *dnbpou = set->weight_out;
 
+  /* Number of depositing particles */
+  *nbpdep = set->n_part_dep;
+
+  /* weight of depositing particles */
+  *dnbdep = set->weight_dep;
+
   /* Number of failed particles */
   *nbperr = set->n_failed_part;
 
@@ -3860,6 +3883,7 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_n_particles,
 
     n_delete_particles = 0;
     n_failed_particles = 0;
+
     r_weight = 0.0;
     tot_weight = 0.0;
     failed_particle_weight = 0.0;

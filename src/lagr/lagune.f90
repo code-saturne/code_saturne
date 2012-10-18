@@ -699,6 +699,7 @@ endif
   call prtput                                                     &
   !==========
  ( nbpmax , nbpart , dnbpar , nbpout , dnbpou , nbperr , dnbper,  &
+   nbpdep , dnbdep ,                                              &
    liste  , nbvis,                                                &
    ettp   , ettpa  , itepa  , tepa   ,                            &
    ibord  ,                                                       &
