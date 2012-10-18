@@ -116,6 +116,8 @@ CS_PROCF (prtput, PRTPUT)(const cs_int_t   *nbpmax,  /* n_particles max. */
                           cs_real_t        *dnbpou,  /* outgoing particle total weight */
                           cs_int_t         *nbperr,  /* number of failed particles */
                           cs_real_t        *dnbper,  /* failed particles total weight */
+                          cs_int_t         *nbpdep,  /* number of depositing particles during the timestep*/
+                          cs_real_t        *dnbdep,  /* depositing particles total weight during the timestep */
                           cs_int_t          liste[],
                           cs_int_t         *nbvis,
                           cs_real_t         ettp[],
@@ -141,7 +143,7 @@ CS_PROCF (prtput, PRTPUT)(const cs_int_t   *nbpmax,  /* n_particles max. */
                           const cs_int_t   *jryplu,
                           const cs_int_t   *jdfac,
                           const cs_int_t   *jimark,
-                          cs_int_t               *idepst
+                          cs_int_t         *idepst
 );
 
 /*----------------------------------------------------------------------------
