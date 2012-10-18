@@ -45,6 +45,9 @@
 
 #if defined(PLE_HAVE_MPI)
 #include <mpi.h>
+#if !defined(MPI_VERSION) /* Defined in up-to-date MPI versions */
+#  define MPI_VERSION 1
+#endif
 #endif
 
 /*----------------------------------------------------------------------------
@@ -101,10 +104,10 @@ struct _ple_locator_t {
   int       dim;               /* Spatial dimension */
 
   int       locate_closest;    /* 0: no special handling of unlocated points
-                                  1: distant (but not local) points not located
+                                  1: local (but not distant) points not located
                                      within the tolerance will be located on
                                      the closest element
-                                  2: local (and possibly distant) points not
+                                  2: distant (and possibly local) points not
                                      located within the tolerance will be
                                      located on the closest element */
 
@@ -701,7 +704,7 @@ _locate_closest_distant(ple_locator_t                *this_locator,
   float *min_dist = NULL;
   float *distance_dist, *distance_loc;
   double w_start, w_end, cpu_start, cpu_end;
-  double e_extents[6];
+  double e_extents[6] = {1., 0., 0., 0., 0., 0.}; /* initially "impossible" */
   double p_extents[6];
 
   MPI_Status status;
@@ -722,7 +725,7 @@ _locate_closest_distant(ple_locator_t                *this_locator,
 
   /* Count points not yet located */
 
-  if (this_locator->locate_closest > 1) {
+  if (this_locator->locate_closest > 0) {
 
     for (j = 0; j < n_points; j++) {
       if (location[j] == -1)
@@ -753,9 +756,12 @@ _locate_closest_distant(ple_locator_t                *this_locator,
 
   }
 
-  /* Recompute extents using only points not yet located */
+  /* Recompute mesh extents only if local location function is available */
 
-  mesh_extents_f(mesh, 1, 0.1, e_extents);
+  if (locate_closest_f != NULL)
+    mesh_extents_f(mesh, 1, 0.1, e_extents);
+
+  /* Recompute point extents using only points not yet located */
 
   _point_extents(dim,
                  _n_points,
@@ -792,7 +798,7 @@ _locate_closest_distant(ple_locator_t                *this_locator,
   for (i = 0; i < comm_size; i++)
     send_flag[i] = 0;
 
-  if (this_locator->locate_closest > 1) {
+  if (this_locator->locate_closest > 0) {
 
     for (i = 0; i < this_locator->n_ranks; i++) {
       j = this_locator->start_rank + i;
@@ -808,7 +814,9 @@ _locate_closest_distant(ple_locator_t                *this_locator,
       double _min_dist = _extents_min_distance(dim,
                                                p_extents,
                                                recvbuf + (j*stride2));
-      if (_min_dist <= min_max_dist)
+      if (recvbuf[j*stride2] > recvbuf[(j+1)*stride2])
+        send_flag[j] = 0;
+      else if (_min_dist <= min_max_dist)
         send_flag[j] = 1;
       min_dist[i] = _min_dist;
     }
@@ -907,11 +915,12 @@ _locate_closest_distant(ple_locator_t                *this_locator,
       distance_dist[j] = -1.0;
     }
 
-    locate_closest_f(mesh,
-                     n_coords_dist,
-                     coords_dist,
-                     location_dist,
-                     distance_dist);
+    if (locate_closest_f != NULL)
+      locate_closest_f(mesh,
+                       n_coords_dist,
+                       coords_dist,
+                       location_dist,
+                       distance_dist);
 
     PLE_FREE(coords_dist);
 
@@ -1731,12 +1740,16 @@ _exchange_point_var_distant(ple_locator_t     *this_locator,
 
   double comm_timing[4] = {0., 0., 0., 0.};
 
-  MPI_Aint extent;
+  MPI_Aint lb, extent;
   MPI_Status status;
 
   /* Check extent of datatype */
 
+#if (MPI_VERSION >= 2)
+  MPI_Type_get_extent(datatype, &lb, &extent);
+#else
   MPI_Type_extent(datatype, &extent);
+#endif
   MPI_Type_size(datatype, &size);
 
   if (extent != size)
@@ -1931,7 +1944,7 @@ _exchange_point_var_distant_asyn(ple_locator_t     *this_locator,
   size_t dist_v_idx;
   unsigned char *dist_v_ptr, *loc_v_ptr;
 
-  MPI_Aint extent;
+  MPI_Aint lb, extent;
   void *loc_v_buf = NULL;
   int *dist_v_flag = NULL, *loc_v_flag = NULL;
   MPI_Status *status = NULL;
@@ -1941,7 +1954,11 @@ _exchange_point_var_distant_asyn(ple_locator_t     *this_locator,
 
   /* Check extent of datatype */
 
+#if (MPI_VERSION >= 2)
+  MPI_Type_get_extent(datatype, &lb, &extent);
+#else
   MPI_Type_extent(datatype, &extent);
+#endif
   MPI_Type_size(datatype, &size);
 
   if (extent != size)
@@ -2404,7 +2421,7 @@ ple_locator_create(double  tolerance)
   this_locator->tolerance = tolerance;
   this_locator->dim = 0;
 
-  this_locator->locate_closest = false;
+  this_locator->locate_closest = 0;
 
 #if defined(PLE_HAVE_MPI)
   this_locator->comm = comm;
@@ -2624,13 +2641,14 @@ ple_locator_set_mesh(ple_locator_t                *this_locator,
 
     if (n_points > 0) {
       locflag[1] = dim;
-      if (locate_closest_f != NULL)
-        locflag[2] = 1;
     }
+
+    if (locate_closest_f != NULL)
+      locflag[2] = 1;
 
     _locator_trace_start_comm(_ple_locator_log_start_g_comm, comm_timing);
 
-    MPI_Allreduce(locflag, globflag, 3, MPI_INT, MPI_MAX,
+    MPI_Allreduce(locflag, globflag, 4, MPI_INT, MPI_MAX,
                   this_locator->comm);
 
     _locator_trace_end_comm(_ple_locator_log_end_g_comm, comm_timing);

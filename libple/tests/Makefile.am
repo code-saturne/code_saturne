@@ -19,17 +19,9 @@
 #   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #-------------------------------------------------------------------------------
 
-# Add any debug flags
- 
-if DEBUG
-  DEBUG_CPPFLAGS = -DDEBUG
-else
-  DEBUG_CPPFLAGS = -DNDEBUG
-endif
-
 # Main part
 
-AM_CPPFLAGS = $(DEBUG_CPPFLAGS) -I$(top_srcdir)/src $(MPI_CPPFLAGS)
+AM_CPPFLAGS = -I$(top_srcdir)/src $(MPI_CPPFLAGS)
 AM_CFLAGS   =
 AM_LDFLAGS  = $(MPI_LDFLAGS)
 LDADD = $(top_builddir)/src/libple.la $(MPI_LIBS)
@@ -39,7 +31,7 @@ check_PROGRAMS =
 if HAVE_MPI
 check_PROGRAMS += ple_coupling_test
 ple_coupling_test_SOURCES = ple_coupling_test.c
-ple_coupling_test_CPPFLAGS = $(DEBUG_CPPFLAGS) -I$(top_srcdir)/src $(MPI_CPPFLAGS)
+ple_coupling_test_CPPFLAGS = -I$(top_srcdir)/src $(MPI_CPPFLAGS)
 ple_coupling_test_LDFLAGS  = $(MPI_LDFLAGS)
 ple_coupling_test_LDADD = $(top_builddir)/src/libple.la $(MPI_LIBS) -lm
 endif

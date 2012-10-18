@@ -114,7 +114,7 @@ if test "x$ple_gcc" = "xgcc"; then
   test -n "$ple_cc_vers_patch" || ple_cc_vers_patch=0
 
   # Default compiler flags
-  cflags_default="-ansi -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused"
+  cflags_default="-std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused"
   cflags_default_dbg="-g"
   cflags_default_opt="-O2"
   cflags_default_prf="-pg"
@@ -128,10 +128,11 @@ if test "x$ple_gcc" = "xgcc"; then
       case "$host_cpu" in
         i686)
           case "$ple_cc_vendor-$ple_cc_version" in
-            gcc-2.9[56]*|gcc-3*|gcc-4*)
+            gcc-3*|gcc-4*)
               cflags_default_opt="$cflags_default_opt -march=i686"
-            ;;
+              ;;
           esac
+          ;;
       esac
       ;;
 
@@ -145,11 +146,6 @@ if test "x$ple_gcc" = "xgcc"; then
   # may not handle all flags)
 
   case "$ple_cc_vendor-$ple_cc_version" in
-
-    gcc-2.9[56]*)
-      cflags_default="$cflags_default -Wno-long-long"
-      ;;
-
     gcc-3.*|gcc-4.*)
       cflags_default="`echo $cflags_default | sed -e 's/-ansi/-std=c99/g'`"
       cflags_default="$cflags_default -Wfloat-equal"
@@ -157,10 +153,11 @@ if test "x$ple_gcc" = "xgcc"; then
 
   esac
 
-  case "$cs_cc_vendor-$cs_cc_version" in
-    gcc-4.[56]*)
+  case "$ple_cc_vendor-$ple_cc_version" in
+    gcc-3*|gcc-4.[01234]*)
+      ;;
+    *)
       cflags_default_opt="$cflags_default_opt -fexcess-precision=fast"
-      cflags_default_hot="$cflags_default_hot -fexcess-precision=fast"
       ;;
   esac
 
@@ -234,7 +231,7 @@ if test "x$ple_compiler_known" != "xyes" ; then
     ple_linker_set=yes
 
     # Default compiler flags
-    cflags_default="-q64"
+    cflags_default="-qlanglvl=stdc99 -q64"
     cflags_default_opt="-O2"
     cflags_default_dbg="-g"
     cflags_default_prf="-pg"
@@ -244,9 +241,6 @@ if test "x$ple_compiler_known" != "xyes" ; then
     ldflags_default_opt="-O2"
     ldflags_default_dbg="-g"
     ldflags_default_prf="-pg"
-
-    # Disable shared libraries in all cases
-    ple_disable_shared=yes
 
     # Adjust options for IBM Blue Gene cross-compiler
 
@@ -260,12 +254,14 @@ if test "x$ple_compiler_known" != "xyes" ; then
         cflags_default_opt="-O2"
         cflags_default_dbg=""
         ldflags_default="-L/bgl/BlueLight/ppcfloor/bglsys/lib -lmpich.rts -lmsglayer.rts -lrts.rts -ldevices.rts -lnss_files -lnss_dns -lresolv"
+        ple_disable_shared=yes # Disable shared libraries
       elif test "$ple_ibm_bg_type" = "P" ; then
         cppflags_default="-I/bgsys/drivers/ppcfloor/comm/include"
         cflags_default="-g -qmaxmem=-1 -qarch=450d -qtune=450"
         cflags_default_opt="-O1"
         cflags_default_dbg=""
         ldflags_default=""
+        ple_disable_shared=yes # Disable shared libraries
       else
         ple_ibm_bg_type="Q"
         cppflags_default=""
