@@ -2074,12 +2074,13 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
     move_particle = CS_LAGR_PART_MOVE_OFF;
     particle_state = CS_LAGR_PART_OUT;
 
-    _particle_set->n_part_dep += 1;
-    _particle_set->weight_dep += particle.stat_weight;
+    if (bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IDEPO1) {
+      _particle_set->n_part_dep += 1;
+      _particle_set->weight_dep += particle.stat_weight;
+    }
 
-
-    bdy_conditions->particle_flow_rate[boundary_zone]
-      -= particle.stat_weight * particle.mass;
+      bdy_conditions->particle_flow_rate[boundary_zone]
+        -= particle.stat_weight * particle.mass;
 
     /* FIXME: For post-processing by trajectory purpose */
 
