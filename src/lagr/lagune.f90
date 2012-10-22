@@ -247,6 +247,14 @@ if ((idepst.eq.1).and.(ipass.eq.1)) then
    allocate(vislen(nfabor))
 endif
 
+!do ip = 1, nbpart
+!   if (tepa(ip,jryplu).lt.100) then
+!      write(nfecra,*) "ip = ",ip
+!      write(nfecra,*) "yplus = ",tepa(ip,jryplu)
+!      write(nfecra,*) "marko = ",itepa(ip,jimark)
+!   endif
+!enddo
+
 
 !===============================================================================
 ! 1.  INITIALISATIONS
@@ -683,7 +691,8 @@ endif
    jisor  , jrpoi  , jrtsp  , jdp    , jmp    ,                   &
    jxp    , jyp    , jzp    ,                                     &
    jup    , jvp    , jwp    ,                                     &
-   juf    , jvf    , jwf    , jtaux  , jryplu, jdfac,             &
+   juf    , jvf    , jwf    , jtaux  , jryplu,                    &
+   jrinpf , jdfac  ,                                              &
    jimark , idepst)
 
 
@@ -706,7 +715,7 @@ endif
    jisor  , jrpoi  , jrtsp  , jdp    ,                            &
    jmp    , jxp    , jyp    , jzp    ,                            &
    jup    , jvp    , jwp    , juf    , jvf    , jwf , jtaux,      &
-   jryplu , jdfac  , jimark , idepst )
+   jryplu , jrinpf , jdfac  , jimark , idepst )
 
   if (ierr.eq.1) then
     ntmabs = ntcabs

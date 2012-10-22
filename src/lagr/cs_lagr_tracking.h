@@ -95,6 +95,7 @@ CS_PROCF (prtget, PRTGET)(const cs_int_t   *nbpmax,  /* n_particles max. */
                           const cs_int_t   *jwf,
                           const cs_int_t   *jtaux,
                           const cs_int_t   *jryplu,
+                          const cs_int_t   *jrinpf,
                           const cs_int_t   *jdfac,
                           const cs_int_t   *jimark,
                           cs_int_t         *idepst
@@ -141,6 +142,7 @@ CS_PROCF (prtput, PRTPUT)(const cs_int_t   *nbpmax,  /* n_particles max. */
                           const cs_int_t   *jwf,
                           const cs_int_t   *jtaux,
                           const cs_int_t   *jryplu,
+                          const cs_int_t   *jrinpf,
                           const cs_int_t   *jdfac,
                           const cs_int_t   *jimark,
                           cs_int_t         *idepst

@@ -85,7 +85,7 @@ BEGIN_C_DECLS
 #define  N_GEOL 13
 #define  CS_LAGR_MIN_COMM_BUF_SIZE  10
 #define  CS_LAGR_MAX_PROPAGATION_LOOPS  30
-#define  N_VAR_PART_STRUCT  20
+#define  N_VAR_PART_STRUCT  21
 #define  N_VAR_PART_COAL     1
 #define  N_VAR_PART_HEAT     1
 #define  N_VAR_PART_AUX      1
@@ -142,6 +142,7 @@ typedef struct {
 
   /* Deposition submodel parameters */
   cs_real_t   yplus;
+  cs_real_t   interf;
   cs_lnum_t   close_face_id;
   cs_lnum_t   marko_val;
 
@@ -564,9 +565,9 @@ _define_particle_datatype(void)
 
   int  count = 0;
   int  blocklengths[N_VAR_PART_STRUCT]
-    = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3, 3, 1, 1, 1};
+    = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3, 3, 1, 1, 1, 1};
   MPI_Aint  displacements[N_VAR_PART_STRUCT]
-    = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   MPI_Datatype  types[N_VAR_PART_STRUCT] = {CS_MPI_GNUM,
                                             CS_MPI_LNUM,
                                             CS_MPI_LNUM,
@@ -576,6 +577,7 @@ _define_particle_datatype(void)
                                             MPI_INT,
                                             CS_MPI_LNUM,
                                             CS_MPI_LNUM,
+                                            CS_MPI_REAL,
                                             CS_MPI_REAL,
                                             CS_MPI_REAL,
                                             CS_MPI_REAL,
@@ -613,6 +615,7 @@ _define_particle_datatype(void)
   }
 
   part.yplus = 0.0;
+  part.interf = 0.0;
   part.close_face_id = 0;
   part.marko_val = 0;
 
@@ -636,6 +639,7 @@ _define_particle_datatype(void)
   MPI_Get_address(&part.velocity, displacements + count++);
   MPI_Get_address(&part.velocity_seen, displacements + count++);
   MPI_Get_address(&part.yplus, displacements + count++);
+  MPI_Get_address(&part.interf, displacements + count++);
   MPI_Get_address(&part.close_face_id, displacements + count++);
   MPI_Get_address(&part.marko_val, displacements + count++);
 
@@ -2079,8 +2083,8 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
       _particle_set->weight_dep += particle.stat_weight;
     }
 
-      bdy_conditions->particle_flow_rate[boundary_zone]
-        -= particle.stat_weight * particle.mass;
+    bdy_conditions->particle_flow_rate[boundary_zone]
+      -= particle.stat_weight * particle.mass;
 
     /* FIXME: For post-processing by trajectory purpose */
 
@@ -2377,8 +2381,48 @@ _local_propagation(cs_lagr_particle_t     *p_prev_particle,
             particle.cur_cell_num = cell_num1;
 
           if (particle.cur_cell_num > mesh->n_cells) {
+
             particle_state = CS_LAGR_PART_TO_SYNC;
             move_particle = CS_LAGR_PART_ERR;
+
+            if (*idepst > 0 && particle.yplus < 50.) {
+
+              cs_real_t x_p_q = particle.coord[0] - prev_particle.coord[0];
+              cs_real_t y_p_q = particle.coord[1] - prev_particle.coord[1];
+              cs_real_t z_p_q = particle.coord[2] - prev_particle.coord[2];
+
+              cs_real_t face_normal[3], face_cog[3];
+
+              for (k = 0; k < 3; k++) {
+                face_normal[k] = cs_glob_mesh_quantities->i_face_normal[3*face_id+k];
+                face_cog[k] = cs_glob_mesh_quantities->i_face_cog[3*face_id+k];
+              }
+
+              cs_real_t aa = x_p_q * face_normal[0] +
+                y_p_q * face_normal[1] +
+                z_p_q * face_normal[2];
+
+
+              cs_real_t bb = ( face_normal[0] * face_cog[0] +
+                               face_normal[1] * face_cog[1] +
+                               face_normal[2] * face_cog[2] -
+                               face_normal[0] *  prev_particle.coord[0] -
+                               face_normal[1] *  prev_particle.coord[1] -
+                               face_normal[2] *  prev_particle.coord[2] ) / aa;
+
+              cs_real_t xk =  prev_particle.coord[0] + bb * x_p_q;
+              cs_real_t yk =  prev_particle.coord[1] + bb * y_p_q;
+              cs_real_t zk =  prev_particle.coord[2] + bb * z_p_q;
+
+
+              cs_real_t* xyzcen = cs_glob_mesh_quantities->cell_cen;
+
+              particle.coord[0] =  xk + 1e-8 * (xyzcen[ 3* (particle.cur_cell_num - 1)] - xk);
+              particle.coord[1] =  yk + 1e-8 * (xyzcen[ 3* (particle.cur_cell_num - 1) + 1] - yk);
+              particle.coord[2] =  zk + 1e-8 * (xyzcen[ 3* (particle.cur_cell_num - 1) + 2] - zk);
+
+            }
+
           }
           else {
 
@@ -2387,13 +2431,17 @@ _local_propagation(cs_lagr_particle_t     *p_prev_particle,
             if (*idepst > 0) {
 
               cs_lnum_t save_close_face_id = particle.close_face_id;
+              cs_real_t save_yplus = particle.yplus;
 
               /*Wall cell detection */
 
               _test_wall_cell(&particle,visc_length,dlgeo);
 
-
-              if (particle.close_face_id >= 0) {
+              if (particle.close_face_id >= 0 &&
+                  particle.yplus < 100. &&
+                  save_yplus < 100. &&
+                  save_close_face_id > 0)
+              {
 
                 cs_real_t x_p_q = particle.coord[0] - prev_particle.coord[0];
                 cs_real_t y_p_q = particle.coord[1] - prev_particle.coord[1];
@@ -3337,6 +3385,7 @@ CS_PROCF (prtget, PRTGET)(const cs_lnum_t   *nbpmax,  /* n_particles max. */
                           const cs_lnum_t   *jwf,
                           const cs_lnum_t   *jtaux,
                           const cs_lnum_t   *jryplu,
+                          const cs_lnum_t   *jrinpf,
                           const cs_lnum_t   *jdfac,
                           const cs_lnum_t   *jimark,
                           cs_lnum_t         *idepst
@@ -3511,6 +3560,9 @@ CS_PROCF (prtget, PRTGET)(const cs_lnum_t   *nbpmax,  /* n_particles max. */
       id = (*jryplu-1) * (*nbpmax) + i;
       cur_part.yplus = tepa[id];
 
+      id = (*jrinpf-1) * (*nbpmax) + i;
+      cur_part.interf = tepa[id];
+
       id = (*jdfac -1) * (*nbpmax) + i;
       cur_part.close_face_id = itepa[id] - 1;
 
@@ -3590,6 +3642,7 @@ CS_PROCF (prtput, PRTPUT)(const cs_int_t   *nbpmax,  /* n_particles max. */
                           const cs_int_t   *jwf,
                           const cs_int_t   *jtaux,
                           const cs_int_t   *jryplu,
+                          const cs_int_t   *jrinpf,
                           const cs_int_t   *jdfac,
                           const cs_int_t   *jimark,
                           cs_int_t         *idepst)
@@ -3632,6 +3685,8 @@ CS_PROCF (prtput, PRTPUT)(const cs_int_t   *nbpmax,  /* n_particles max. */
     if (*idepst > 0) {
 
       tepa[ (*jryplu - 1) * (*nbpmax) + i] = cur_part.yplus;
+
+      tepa[ (*jrinpf - 1) * (*nbpmax) + i] = cur_part.interf;
 
       itepa[(*jdfac - 1) * (*nbpmax) + i]  = cur_part.close_face_id + 1;
       itepa[(*jimark - 1) * (*nbpmax) + i]  = cur_part.marko_val;
