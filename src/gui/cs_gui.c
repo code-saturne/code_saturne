@@ -653,7 +653,7 @@ static char *cs_gui_model_variable_choice(const char *const name,
   char *choice;
 
   path = cs_xpath_short_path();
-  cs_xpath_add_element(&path, "variable");
+  cs_xpath_add_element(&path, "scalar");
   cs_xpath_add_test_attribute(&path, "label", name);
   cs_xpath_add_element(&path, child);
   cs_xpath_add_attribute(&path, "choice");
