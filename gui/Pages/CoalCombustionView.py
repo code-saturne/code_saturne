@@ -705,6 +705,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.setupUi(self)
 
         self.case = case
+        self.case.undoStopGlobal()
+
         self.stbar = stbar
 
         self.model = CoalCombustionModel(self.case)
@@ -839,6 +841,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.connect(self.checkBoxCO2Kinetics,  SIGNAL("clicked(bool)"), self.slotCO2Kinetics)
         self.connect(self.checkBoxH2OKinetics,  SIGNAL("clicked(bool)"), self.slotH2OKinetics)
 
+        self.connect(self.tabWidget,            SIGNAL("currentChanged(int)"), self.slotchanged)
+
         # Validators
         # ----------
         validatorC   = DoubleValidator(self.lineEditC, min=0., max=100.)
@@ -919,6 +923,10 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         # Update buttons
         self._updateCoalButton()
         self._updateOxidantButton()
+
+        self.tabWidget.setCurrentIndex(self.case['current_tab'])
+
+        self.case.undoStartGlobal()
 
 
     def _updateCoalButton(self):
@@ -1811,6 +1819,14 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             status = 'on'
         self.model.setH2OKineticsStatus(status)
         self.initializeKineticsView()
+
+
+    @pyqtSignature("int")
+    def slotchanged(self, index):
+        """
+        Changed tab
+        """
+        self.case['current_tab'] = index
 
 
     def tr(self, text):

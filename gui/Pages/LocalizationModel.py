@@ -44,7 +44,7 @@ import sys, unittest, types
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.XMLvariables import Model
+from Base.XMLvariables import Model, Variables
 from Base.XMLmodel import ModelTest
 from Base.XMLengine import *
 from Pages.Boundary import Boundary
@@ -72,7 +72,7 @@ class Zone(object):
     def __init__(self, typeZone, case = None, label = None, codeNumber = None, localization = None, nature = None):
         """
         """
-        self._case = case
+        self.case = case
         self._initNatureList()
 
         if label:
@@ -205,23 +205,23 @@ class VolumicZone(Zone):
     def _initNatureList(self):
         self._natureList = ['initialization']
 
-        if self._case['package'].name == 'code_saturne':
+        if self.case['package'].name == 'code_saturne':
             self._natureList.append('head_losses')
             self._natureList.append('momentum_source_term')
 
         self._natureDict = {}
         self._natureDict['initialization']       = self.tr("Initialization")
-        if self._case['package'].name == 'code_saturne':
+        if self.case['package'].name == 'code_saturne':
             self._natureDict['head_losses']          = self.tr("Head losses")
             self._natureDict['momentum_source_term'] = self.tr("Momentum source\n term")
 
         from Pages.ThermalScalarModel import ThermalScalarModel
-        if ThermalScalarModel(self._case).getThermalScalarModel() != 'off':
+        if ThermalScalarModel(self.case).getThermalScalarModel() != 'off':
             self._natureList.append('thermal_source_term')
             self._natureDict['thermal_source_term']  = self.tr("Thermal source term")
         del ThermalScalarModel
 
-        node = self._case.xmlGetNode('additional_scalars')
+        node = self.case.xmlGetNode('additional_scalars')
         number = len(node.xmlGetNodeList('scalar', type='user'))
         if number > 0:
             self._natureList.append('scalar_source_term')
@@ -269,7 +269,7 @@ class LocalizationModel(object):
     def __init__(self, typeZone, case):
         """
         """
-        self._case = case
+        self.case = case
         self._initModel()
         self._typeZone = typeZone
 
@@ -496,15 +496,17 @@ class VolumicLocalizationModel(LocalizationModel):
         """
         Initialize mode
         """
-        XMLSolutionDomainNode = self._case.xmlInitNode('solution_domain')
+        XMLSolutionDomainNode = self.case.xmlInitNode('solution_domain')
         self.__XMLVolumicConditionsNode = XMLSolutionDomainNode.xmlInitNode('volumic_conditions')
-        self.__natureOptions = Zone('VolumicZone', case = self._case).getNatureList()
+        self.__natureOptions = Zone('VolumicZone', case = self.case).getNatureList()
         self._tagList = ['formula', 'head_loss']
-        self.node_models = self._case.xmlGetNode('thermophysical_models')
+        self.node_models = self.case.xmlGetNode('thermophysical_models')
         self.node_veloce = self.node_models.xmlGetNode('velocity_pressure')
-        self.scalar_node = self._case.xmlGetNode('additional_scalars')
-        self.losses_node = self._case.xmlGetNode('heads_losses')
+        self.scalar_node = self.case.xmlGetNode('additional_scalars')
+        self.losses_node = self.case.xmlGetNode('heads_losses')
 
+
+    @Variables.noUndo
     def getZones(self):
         """
         Get zones in the XML file
@@ -519,7 +521,7 @@ class VolumicLocalizationModel(LocalizationModel):
             localization = str(node.xmlGetTextNode())
             nature = self.getNature(label)
             zone = Zone('VolumicZone',
-                        case = self._case,
+                        case = self.case,
                         label = label,
                         codeNumber = codeNumber,
                         localization = localization,
@@ -528,6 +530,7 @@ class VolumicLocalizationModel(LocalizationModel):
         return zones
 
 
+    @Variables.noUndo
     def getCodeNumberOfZoneLabel(self, label):
         """
         Get zones in the XML file
@@ -542,6 +545,7 @@ class VolumicLocalizationModel(LocalizationModel):
         return codeNumber
 
 
+    @Variables.undoLocal
     def setLocalization(self, label, localization):
         """
         Define a new localization for the current zone (zone.getLabel == label)
@@ -551,18 +555,20 @@ class VolumicLocalizationModel(LocalizationModel):
         node.xmlSetTextNode(localization)
 
 
+    @Variables.noUndo
     def getCodeNumbersList(self, codeNumber=None):
         """
         Define a new code number for the current zone (zone.getLabel == label)
         Update XML file
         """
-        XMLZonesNodesList = self._case.xmlGetNodeList('zone', 'label', 'id')
+        XMLZonesNodesList = self.case.xmlGetNodeList('zone', 'label', 'id')
         codeList = []
         for node in XMLZonesNodesList:
             codeList.append(node['id'])
         return codeList
 
 
+    @Variables.noUndo
     def getNature(self, label):
         """
         Define a new Nature for the current zone (zone.getLabel == label)
@@ -578,6 +584,7 @@ class VolumicLocalizationModel(LocalizationModel):
         return nature
 
 
+    @Variables.undoGlobal
     def setNature(self, label, nature):
         """
         Define a new Nature for the current zone (zone.getLabel == label)
@@ -593,6 +600,7 @@ class VolumicLocalizationModel(LocalizationModel):
                 node[k] = v
 
 
+    @Variables.undoGlobal
     def addZone(self, zone = None):
         """
         Add a new zone in the XML file
@@ -612,6 +620,7 @@ class VolumicLocalizationModel(LocalizationModel):
         return newZone
 
 
+    @Variables.undoGlobal
     def replaceZone(self, old_zone, new_zone):
         """
         Replace a zone by another in the XML file
@@ -635,14 +644,15 @@ class VolumicLocalizationModel(LocalizationModel):
         lst.append('initial_value')
         lst.append('head_loss')
         for tag in lst:
-            for n in self._case.xmlGetNodeList(tag, zone=old_zone.getCodeNumber()):
+            for n in self.case.xmlGetNodeList(tag, zone=old_zone.getCodeNumber()):
                 n['zone'] = newCodeNumber
-            for n in self._case.xmlGetNodeList(tag, id=old_zone.getCodeNumber()):
+            for n in self.case.xmlGetNodeList(tag, id=old_zone.getCodeNumber()):
                 n['zone_id'] = newCodeNumber
-            for n in self._case.xmlGetNodeList(tag, label=old_zone.getLabel()):
+            for n in self.case.xmlGetNodeList(tag, label=old_zone.getLabel()):
                 n['label'] = newLabel
 
 
+    @Variables.undoGlobal
     def deleteZone(self, label):
         """
         Delete one zone in the XML file
@@ -650,14 +660,14 @@ class VolumicLocalizationModel(LocalizationModel):
         LocalizationModel.deleteZone(self, label)
         #
         # Delete node
-        node = self._case.xmlGetNode('zone', label=label)
+        node = self.case.xmlGetNode('zone', label=label)
         if node:
             name = node['id']
             node.xmlRemoveNode()
 
         # Delete the other nodes for zone initializations
         for tag in self._tagList:
-            nodeList = self._case.xmlGetNodeList(tag, zone_id=name)
+            nodeList = self.case.xmlGetNodeList(tag, zone_id=name)
             for node in nodeList:
                 node.xmlRemoveNode()
 
@@ -694,10 +704,11 @@ class BoundaryLocalizationModel(LocalizationModel):
         Initialize mode
         """
         #LocalizationModel._initModel(self)
-        self.__XMLBoundaryConditionsNode = self._case.xmlInitNode('boundary_conditions')
+        self.__XMLBoundaryConditionsNode = self.case.xmlInitNode('boundary_conditions')
         self.__natureList = Zone('BoundaryZone').getNatureList()
 
 
+    @Variables.noUndo
     def getZones(self):
         """
         Get zones in the XML file
@@ -716,6 +727,7 @@ class BoundaryLocalizationModel(LocalizationModel):
         return zones
 
 
+    @Variables.noUndo
     def getMaxNumberNature(self, nature):
         """
         Return maximum of nature number's values to put on name
@@ -732,7 +744,7 @@ class BoundaryLocalizationModel(LocalizationModel):
         return max
 
 
-
+    @Variables.undoLocal
     def setLabel(self, label, newLabel):
         """
         Define a new label for the current zone (zone.getLabel == label)
@@ -751,6 +763,7 @@ class BoundaryLocalizationModel(LocalizationModel):
             node['label'] = newLabel
 
 
+    @Variables.undoLocal
     def setLocalization(self, label, localization):
         """
         Define a new localization for the current zone (zone.getLabel == label)
@@ -763,6 +776,7 @@ class BoundaryLocalizationModel(LocalizationModel):
         node.xmlSetTextNode(localization)
 
 
+    @Variables.undoLocal
     def setCodeNumber(self, label, codeNumber):
         """
         Define a new code number for the current zone (zone.getLabel == label)
@@ -775,6 +789,7 @@ class BoundaryLocalizationModel(LocalizationModel):
         node['name'] = str(codeNumber)
 
 
+    @Variables.undoGlobal
     def setNature(self, label, nature):
         """
         Define a new Nature for the current zone (zone.getLabel == label)
@@ -788,12 +803,13 @@ class BoundaryLocalizationModel(LocalizationModel):
         node['nature'] = str(nature)
 
         # Delete oldNature boundary
-        Boundary(oldNature, label, self._case).delete()
+        Boundary(oldNature, label, self.case).delete()
 
         # Create nature boundary
-        Boundary(nature, label, self._case)
+        Boundary(nature, label, self.case)
 
 
+    @Variables.undoGlobal
     def addZone(self, zone = None):
         """
         Add a new zone in the XML file
@@ -808,16 +824,17 @@ class BoundaryLocalizationModel(LocalizationModel):
         node.xmlSetTextNode(newZone.getLocalization())
 
         # Create nature boundary
-        Boundary(newZone.getNature(), newZone.getLabel(), self._case)
+        Boundary(newZone.getNature(), newZone.getLabel(), self.case)
 
         return newZone
 
 
+    @Variables.undoGlobal
     def replaceZone(self, old_zone, new_zone):
         """
         Replace a zone by another in the XML file
         """
-        Boundary(old_zone.getNature(), old_zone.getLabel(), self._case).delete()
+        Boundary(old_zone.getNature(), old_zone.getLabel(), self.case).delete()
         newLabel, newCodeNumber, newLocal = LocalizationModel.replaceZone(self, old_zone, new_zone)
 
         newNature = new_zone.getNature()
@@ -831,9 +848,10 @@ class BoundaryLocalizationModel(LocalizationModel):
         node['nature'] = newNature
         node.xmlSetTextNode(newLocal)
 
-        Boundary(new_zone.getNature(), new_zone.getLabel(), self._case)
+        Boundary(new_zone.getNature(), new_zone.getLabel(), self.case)
 
 
+    @Variables.undoGlobal
     def deleteZone(self, label):
         """
         Delete a zone in the XML file
@@ -846,7 +864,7 @@ class BoundaryLocalizationModel(LocalizationModel):
         node.xmlRemoveNode()
 
         # Delete nature boundary
-        Boundary(nature, label, self._case).delete()
+        Boundary(nature, label, self.case).delete()
 
 #-------------------------------------------------------------------------------
 # LocalizationModel test case for volumic zones

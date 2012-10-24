@@ -57,9 +57,9 @@ class ConjugateHeatTransferModel(Variables, Model):
         """
         Constructor.
         """
-        self.__case = case
+        self.case = case
 
-        self.__node_models = self.__case.xmlGetNode('thermophysical_models')
+        self.__node_models = self.case.xmlGetNode('thermophysical_models')
         self.__node_cht    = self.__node_models.xmlInitNode('conjugate_heat_transfer')
         self.__node_syr    = self.__node_cht.xmlInitNode('external_coupling')
 
@@ -80,6 +80,7 @@ class ConjugateHeatTransferModel(Variables, Model):
         return len(self.__node_syr.xmlGetNodeList('syrthes'))
 
 
+    @Variables.undoLocal
     def deleteConjugateHeatTransfer(self):
         """
         Update the 'Conjugate heat transfer' status.
@@ -89,6 +90,7 @@ class ConjugateHeatTransferModel(Variables, Model):
         self.__node_syr.xmlRemoveChild('syrthes')
 
 
+    @Variables.noUndo
     def getSyrthesCouplingList(self):
         """
         @return: list of Syrthes coupling description.
@@ -109,6 +111,7 @@ class ConjugateHeatTransferModel(Variables, Model):
         return list
 
 
+    @Variables.undoGlobal
     def addSyrthesCoupling(self, syrthes_name,
                            verbosity, visualization, proj_axis, location):
         """
@@ -139,6 +142,7 @@ class ConjugateHeatTransferModel(Variables, Model):
         return num
 
 
+    @Variables.undoLocal
     def deleteSyrthesCoupling(self, num):
         """
         Delete a definition of a Syrthes coupling.
@@ -186,6 +190,7 @@ class ConjugateHeatTransferModel(Variables, Model):
     #------------------------------------------------------------------
     # Syrthes instance name
     #------------------------------------------------------------------
+    @Variables.undoLocal
     def setSyrthesInstanceName(self, num, value):
         """
         Set value of Syrthes instance name.
@@ -201,6 +206,7 @@ class ConjugateHeatTransferModel(Variables, Model):
         node.xmlSetData('syrthes_name', value)
 
 
+    @Variables.noUndo
     def getSyrthesInstanceName(self, num):
         """
         Get value of Syrthes instance name.
@@ -217,6 +223,7 @@ class ConjugateHeatTransferModel(Variables, Model):
     #------------------------------------------------------------------
     # Syrthes verbosity
     #------------------------------------------------------------------
+    @Variables.undoLocal
     def setSyrthesVerbosity(self, num, value):
         """
         Set value of Syrthes verbosity.
@@ -233,6 +240,7 @@ class ConjugateHeatTransferModel(Variables, Model):
         node.xmlSetData('verbosity', value)
 
 
+    @Variables.noUndo
     def getSyrthesVerbosity(self, num):
         """
         Get value of Syrthes verbosity.
@@ -249,6 +257,7 @@ class ConjugateHeatTransferModel(Variables, Model):
     #------------------------------------------------------------------
     # Syrthes visualization output
     #------------------------------------------------------------------
+    @Variables.undoLocal
     def setSyrthesVisualization(self, num, value):
         """
         Set value of Syrthes visualization.
@@ -265,6 +274,7 @@ class ConjugateHeatTransferModel(Variables, Model):
         node.xmlSetData('visualization', value)
 
 
+    @Variables.noUndo
     def getSyrthesVisualization(self, num):
         """
         Get value of Syrthes visualization.
@@ -281,6 +291,7 @@ class ConjugateHeatTransferModel(Variables, Model):
     #------------------------------------------------------------------
     # Projection axis
     #------------------------------------------------------------------
+    @Variables.undoLocal
     def setSyrthesProjectionAxis(self, num, value):
         """
         Set value of Syrthes projection axis.
@@ -296,6 +307,7 @@ class ConjugateHeatTransferModel(Variables, Model):
         node.xmlSetData('projection_axis', value)
 
 
+    @Variables.noUndo
     def getSyrthesProjectionAxis(self, num):
         """
         Get value of Syrthes projection axis.
@@ -312,6 +324,7 @@ class ConjugateHeatTransferModel(Variables, Model):
     #------------------------------------------------------------------
     # Selection criteria
     #------------------------------------------------------------------
+    @Variables.undoLocal
     def setSelectionCriteria(self, num, value):
         """
         Set value of selection criteria.
@@ -327,6 +340,7 @@ class ConjugateHeatTransferModel(Variables, Model):
         node.xmlSetData('selection_criteria', value)
 
 
+    @Variables.noUndo
     def getSelectionCriteria(self, num):
         """
         Get value of selection criteria.

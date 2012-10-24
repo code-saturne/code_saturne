@@ -39,7 +39,7 @@ import unittest
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.XMLvariables import Model
+from Base.XMLvariables import Model, Variables
 from Base.XMLmodel     import  ModelTest
 from Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
 
@@ -64,8 +64,8 @@ class AtmosphericFlowsModel(Model):
         """
         Constructor.
         """
-        self.__case = case
-        self.__fluidProp = FluidCharacteristicsModel(self.__case)
+        self.case = case
+        self.__fluidProp = FluidCharacteristicsModel(self.case)
 
         models = case.xmlGetNode('thermophysical_models')
         self.__node_atmos  = models.xmlInitChildNode('atmospheric_flows')
@@ -79,6 +79,7 @@ class AtmosphericFlowsModel(Model):
         self.__default['meteo_data'] = "meteo"
 
 
+    @Variables.undoLocal
     def setAtmosphericFlowsModel(self, model):
         """
         Update the atmospheric flows model markup from the XML document.
@@ -88,6 +89,7 @@ class AtmosphericFlowsModel(Model):
         self.__updateScalarAndProperty()
 
 
+    @Variables.noUndo
     def getAtmosphericFlowsModel(self):
         """
         Return the current atmospherics flows model.
@@ -99,6 +101,7 @@ class AtmosphericFlowsModel(Model):
         return model
 
 
+    @Variables.noUndo
     def getMeteoDataStatus(self):
         """
         Return if reading meteo data status is 'on' or 'off'.
@@ -110,6 +113,7 @@ class AtmosphericFlowsModel(Model):
         return node[self.status]
 
 
+    @Variables.undoLocal
     def setMeteoDataStatus(self, status):
         """
         Set meteo data status to 'on' / 'off'.
@@ -119,10 +123,11 @@ class AtmosphericFlowsModel(Model):
 
         if status == 'off':
             for tag in ['read_meteo_data', 'meteo_automatic']:
-                for node in self.__case.xmlGetNodeList(tag):
+                for node in self.case.xmlGetNodeList(tag):
                     node['status'] = "off"
 
 
+    @Variables.noUndo
     def getMeteoDataFileName(self):
         """
         Return the name of the meteo data file.
@@ -134,6 +139,7 @@ class AtmosphericFlowsModel(Model):
         return f
 
 
+    @Variables.undoLocal
     def setMeteoDataFileName(self, tag):
         """
         Set the name of the meteo data file.
@@ -177,7 +183,7 @@ class AtmosphericFlowsModel(Model):
                 self.__removeScalar(node, 'total_water')
                 self.__removeScalar(node, 'number_of_droplets')
                 self.__removeProperty(node, 'liquid_water')
-                FluidCharacteristicsModel(self.__case).setPropertyMode('density', 'constant')
+                FluidCharacteristicsModel(self.case).setPropertyMode('density', 'constant')
 
         else:
             self.__removeScalar(node, 'potential_temperature')

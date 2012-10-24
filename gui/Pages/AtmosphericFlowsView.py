@@ -77,7 +77,9 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
         # create model
         model = AtmosphericFlowsModel(case)
         self.__model = model
-        self.__case = case
+        self.case = case
+
+        self.case.undoStopGlobal()
 
         # Define connection
         self.connect(self.checkBoxMeteoData,
@@ -93,6 +95,8 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
         self.labelMeteoFile.setText(QString(self.__model.getMeteoDataFileName()))
         self.labelMeteoData.setEnabled(isMeteoDataChecked)
         self.labelMeteoFile.setEnabled(isMeteoDataChecked)
+
+        self.case.undoStartGlobal()
 
 
     @pyqtSignature("bool")
@@ -115,7 +119,7 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
         """
         Select a meteorological file of data
         """
-        data = self.__case['data_path']
+        data = self.case['data_path']
         title = self.tr("Meteorological file of data.")
         filetypes = self.tr("Meteo data (*meteo*);;All Files (*)")
         file = QFileDialog.getOpenFileName(self, title, data, filetypes)

@@ -42,7 +42,7 @@ import os, sys, unittest, logging
 
 from Base.Common import *
 import Base.Toolbox as Tool
-from Base.XMLvariables import Model
+from Base.XMLvariables import Model, Variables
 from Base.XMLmodel import ModelTest
 
 #-------------------------------------------------------------------------------
@@ -78,32 +78,30 @@ class LagrangianModel(Model):
         Return a dictionnary which contains default values.
         """
         default = {}
-        default['model'] = "off"
-        default['coupling_mode'] = "one_way"
-        default['restart'] = "off"
-        default['carrier_field_stationary'] = "off"
-        default['particles_max_number'] = 1000000
-        default['continuous_injection'] = "off"
-        default['particles_models'] = "off"
-        default['thermal'] = "off"
-        #default['particle_temperature'] = 700.
-        #default['particle_specific_heat'] = 5200.
-        default['evaporation'] = "off"
-        default['break_up'] = "off"
-        default['coal_fouling'] = "off"
-        default['threshold_temperature'] = 600.
-        default['critical_viscosity'] = 10000.
-        default['fouling_coefficient_1'] = 0.316608
-        default['fouling_coefficient_2'] = -1.6786
-        default['iteration_start'] = 1
-        default['thermal'] = "off"
-        default['dynamic'] = "off"
-        default['mass'] = "off"
-        default['scheme_order'] = 2
-        default['turbulent_dispersion'] = "on"
+        default['model']                               = "off"
+        default['coupling_mode']                       = "one_way"
+        default['restart']                             = "off"
+        default['carrier_field_stationary']            = "off"
+        default['particles_max_number']                = 1000000
+        default['continuous_injection']                = "off"
+        default['particles_models']                    = "off"
+        default['thermal']                             = "off"
+        default['evaporation']                         = "off"
+        default['break_up']                            = "off"
+        default['coal_fouling']                        = "off"
+        default['threshold_temperature']               = 600.
+        default['critical_viscosity']                  = 10000.
+        default['fouling_coefficient_1']               = 0.316608
+        default['fouling_coefficient_2']               = -1.6786
+        default['iteration_start']                     = 1
+        default['thermal']                             = "off"
+        default['dynamic']                             = "off"
+        default['mass']                                = "off"
+        default['scheme_order']                        = 2
+        default['turbulent_dispersion']                = "on"
         default['fluid_particles_turbulent_diffusion'] = "off"
-        default['complete_model_iteration'] = 0
-        default['complete_model_direction'] = 1
+        default['complete_model_iteration']            = 0
+        default['complete_model_direction']            = 1
         return default
 
 
@@ -142,6 +140,7 @@ class LagrangianModel(Model):
         return self.__lagrangianCouplingMode
 
 
+    @Variables.undoGlobal
     def setLagrangianStatus(self, status):
         """
         Update the lagrangian module status markup.
@@ -149,16 +148,8 @@ class LagrangianModel(Model):
         self.isOnOff(status)
         self.node_lagr['model'] = status
 
-        # WARNING: the 'coal_lagr' model is deprecated.
-#        if status == 'off':
-#            import Pages.CoalCombustionModel
-#            coal = Pages.CoalCombustionModel.CoalCombustionModel(self.case).getCoalCombustionModel()
-#            # WARNING: the 'coal_lagr' model is deprecated.
-#            if coal == 'coal_lagr':
-#                CoalCombustionModel.CoalCombustionModel(self.case).setCoalCombustion('off')
-#            del CoalCombustionModel
 
-
+    @Variables.noUndo
     def getLagrangianStatus(self):
         """
         Return the status for lagrangian module markup from the XML document.
@@ -170,6 +161,7 @@ class LagrangianModel(Model):
         return status
 
 
+    @Variables.undoLocal
     def setCouplingMode(self, model):
         """
         Update the lagrangian model markup from the XML document.
@@ -182,6 +174,7 @@ class LagrangianModel(Model):
             node_2way = self.node_lagr.xmlInitChildNode('two_way_coupling')
 
 
+    @Variables.noUndo
     def getCouplingMode(self):
         """
         Return the current lagrangian model.
@@ -194,6 +187,7 @@ class LagrangianModel(Model):
         return model
 
 
+    @Variables.undoLocal
     def setRestart(self, status):
         """
         Update the restart status markup from the XML document.
@@ -203,6 +197,7 @@ class LagrangianModel(Model):
         node_restart['status'] = status
 
 
+    @Variables.noUndo
     def getRestart(self):
         """
         Return status of restart file.
@@ -215,6 +210,7 @@ class LagrangianModel(Model):
         return status
 
 
+    @Variables.undoGlobal
     def setCarrierFlowStationary(self, status):
         """
         Update the status for steady flow markup from the XML document.
@@ -225,6 +221,7 @@ class LagrangianModel(Model):
             node_steady['status'] = status
 
 
+    @Variables.noUndo
     def getCarrierFlowStationary(self):
         """
         Return status of steady (on) or unsteady (off) state
@@ -238,6 +235,7 @@ class LagrangianModel(Model):
         return status
 
 
+    @Variables.undoLocal
     def setMaxNumber(self, value):
         """
         Update value for maximum number of particles allowed
@@ -248,6 +246,7 @@ class LagrangianModel(Model):
         self.node_lagr.xmlSetData('particles_max_number', value)
 
 
+    @Variables.noUndo
     def getMaxNumber(self):
         """
         Return the value for maximum number of particles allowed
@@ -260,6 +259,7 @@ class LagrangianModel(Model):
         return nbpmax
 
 
+    @Variables.undoLocal
     def setContinuousInjection(self, status):
         """
         Update the status for continuous injection of particles.
@@ -269,6 +269,7 @@ class LagrangianModel(Model):
         node_injection['status'] = status
 
 
+    @Variables.noUndo
     def getContinuousInjection(self):
         """
         Return status for continuous injection of particles.
@@ -281,6 +282,7 @@ class LagrangianModel(Model):
         return status
 
 
+    @Variables.undoGlobal
     def setParticlesModel(self, model):
         """
         Update the particles model markup from the XML document.
@@ -315,6 +317,7 @@ class LagrangianModel(Model):
         return node_model
 
 
+    @Variables.noUndo
     def getParticlesModel(self):
         """
         Return the current particles model.
@@ -322,7 +325,7 @@ class LagrangianModel(Model):
         return self.__nodeParticlesModel()['model']
 
 
-
+    @Variables.undoLocal
     def setHeating(self, status):
         """
         Update the status for the activation of an evolution equation on the particle temperature.
@@ -331,15 +334,9 @@ class LagrangianModel(Model):
         node_model = self.__nodeParticlesModel()
         node_thermal = node_model.xmlInitChildNode('thermal', 'status')
         node_thermal['status'] = status
-        #if status == "on":
-            #node_temp = node_thermal.xmlInitChildNode('particle_temperature')
-            #temp = self.getParticlesTemperatureValue()
-            #node_temp.xmlSetTextNode(str(temp))
-            #node_cp = node_thermal.xmlInitChildNode('particle_specific_heat')
-            #cp = self.getParticlesSpecificHeatValue()
-            #node_cp.xmlSetTextNode(str(cp))
 
 
+    @Variables.noUndo
     def getHeating(self):
         """
         Return status for the activation of an evolution equation on the particle temperature.
@@ -353,52 +350,7 @@ class LagrangianModel(Model):
         return status
 
 
-    #def setParticlesTemperatureValue(self, value):
-        #"""
-        #"""
-        #self.isFloat(value)
-        #node_model = self.__nodeParticlesModel()
-        #node_thermal = node_model.xmlInitChildNode('thermal', 'status')
-        ##check if node_thermal status == "on" ?
-        #node_temp = node_thermal.xmlInitChildNode('particle_temperature')
-        #node_temp.xmlSetTextNode(str(value))
-
-
-    #def getParticlesTemperatureValue(self):
-        #"""
-        #"""
-        #node_model = self.__nodeParticlesModel()
-        #node_thermal = node_model.xmlInitChildNode('thermal', 'status')
-        #value = node_thermal.xmlGetDouble('particle_temperature')
-        #if not value:
-            #value = self.defaultParticlesValues()['particle_temperature']
-            #self.setParticlesTemperatureValue(value)
-        #return value
-
-
-    #def setParticlesSpecificHeatValue(self, value):
-        #"""
-        #"""
-        #self.isFloat(value)
-        #node_model = self.__nodeParticlesModel()
-        #node_thermal = node_model.xmlInitChildNode('thermal', 'status')
-        ##check if node_thermal status == "on" ?
-        #node_cp = node_thermal.xmlInitChildNode('particle_specific_heat')
-        #node_cp.xmlSetTextNode(str(value))
-
-
-    #def getParticlesSpecificHeatValue(self):
-        #"""
-        #"""
-        #node_model = self.__nodeParticlesModel()
-        #node_thermal = node_model.xmlInitChildNode('thermal', 'status')
-        #value = node_thermal.xmlGetDouble('particle_specific_heat')
-        #if not value:
-            #value = self.defaultParticlesValues()['particle_specific_heat']
-            #self.setParticlesSpecificHeatValue(value)
-        #return value
-
-
+    @Variables.undoLocal
     def setEvaporation(self, status):
         """
         Update the status for the activation of an evolution equation on the particle temperature.
@@ -409,6 +361,7 @@ class LagrangianModel(Model):
         node_mass['status'] = status
 
 
+    @Variables.noUndo
     def getEvaporation(self):
         """
         Return status for the activation of an evolution equation on the particle temperature.
@@ -422,6 +375,7 @@ class LagrangianModel(Model):
         return status
 
 
+    @Variables.undoGlobal
     def setCoalFouling(self, status):
         """
         Update the status for coal particle fouling.
@@ -444,6 +398,7 @@ class LagrangianModel(Model):
             node_coal.xmlRemoveChild('fouling_coefficient_2')
 
 
+    @Variables.noUndo
     def getCoalFouling(self):
         """
         Return status for coal particle fouling.
@@ -457,6 +412,7 @@ class LagrangianModel(Model):
         return status
 
 
+    @Variables.undoLocal
     def setThresholdTemperatureOfFouling(self, icoal, value):
         """
         Update the value for the threshold temperature for the coal specified.
@@ -469,6 +425,7 @@ class LagrangianModel(Model):
         node_temp.xmlSetTextNode(str(value))
 
 
+    @Variables.noUndo
     def getThresholdTemperatureOfFouling(self, icoal):
         """
         Return the value for the threshold temperature for the specified coal.
@@ -482,6 +439,7 @@ class LagrangianModel(Model):
         return value
 
 
+    @Variables.undoLocal
     def setCriticalViscosityOfFouling(self, icoal, value):
         """
         Update the value for the critical viscosity for the coal specified.
@@ -494,6 +452,7 @@ class LagrangianModel(Model):
         node_visc.xmlSetTextNode(str(value))
 
 
+    @Variables.noUndo
     def getCriticalViscosityOfFouling(self, icoal):
         """
         Return the value for the critical viscosity for the coal specified.
@@ -507,6 +466,7 @@ class LagrangianModel(Model):
         return value
 
 
+    @Variables.undoLocal
     def setCoef1OfFouling(self, icoal, value):
         """
         Update the value for the coefficient for the coal specified.
@@ -518,6 +478,7 @@ class LagrangianModel(Model):
         node_visc.xmlSetTextNode(str(value))
 
 
+    @Variables.noUndo
     def getCoef1OfFouling(self, icoal):
         """
         Return the value for the coefficient for the coal specified.
@@ -531,6 +492,7 @@ class LagrangianModel(Model):
         return value
 
 
+    @Variables.undoLocal
     def setCoef2OfFouling(self, icoal, value):
         """
         Update the value for the coefficient for the coal specified.
@@ -542,6 +504,7 @@ class LagrangianModel(Model):
         node_visc.xmlSetTextNode(str(value))
 
 
+    @Variables.noUndo
     def getCoef2OfFouling(self, icoal):
         """
         Return the value for the coefficient for the coal specified.
@@ -555,6 +518,7 @@ class LagrangianModel(Model):
         return value
 
 
+    @Variables.undoLocal
     def set2WayCouplingStartIteration(self, value):
         """
         """
@@ -564,6 +528,7 @@ class LagrangianModel(Model):
         node_2way.xmlSetData('iteration_start', value)
 
 
+    @Variables.noUndo
     def get2WayCouplingStartIteration(self):
         """
         """
@@ -575,6 +540,7 @@ class LagrangianModel(Model):
         return niter
 
 
+    @Variables.undoLocal
     def set2WayCouplingDynamic(self, status):
         """
         Update the status for 2 way coupling on continuous phase dynamic markup from the XML document.
@@ -585,6 +551,7 @@ class LagrangianModel(Model):
         node_dyn['status'] = status
 
 
+    @Variables.noUndo
     def get2WayCouplingDynamic(self):
         """
         Return status of 2 way coupling on continuous phase dynamic.
@@ -598,6 +565,7 @@ class LagrangianModel(Model):
         return status
 
 
+    @Variables.undoLocal
     def set2WayCouplingMass(self, status):
         """
         Update the status markup for 2 way coupling on mass from the XML document.
@@ -608,6 +576,7 @@ class LagrangianModel(Model):
         node_mass['status'] = status
 
 
+    @Variables.noUndo
     def get2WayCouplingMass(self):
         """
         Return status of 2 way coupling on mass.
@@ -621,6 +590,7 @@ class LagrangianModel(Model):
         return status
 
 
+    @Variables.undoLocal
     def set2WayCouplingTemperature(self, status):
         """
         Update the status markup for 2 way coupling on temperature from the XML document.
@@ -631,6 +601,7 @@ class LagrangianModel(Model):
         node_temp['status'] = status
 
 
+    @Variables.noUndo
     def get2WayCouplingTemperature(self):
         """
         Return status of 2 way coupling on temperature.
@@ -644,6 +615,7 @@ class LagrangianModel(Model):
         return status
 
 
+    @Variables.undoLocal
     def setSchemeOrder(self, value):
         """
         Update value for scheme order.
@@ -654,6 +626,7 @@ class LagrangianModel(Model):
         node_order['choice'] = value
 
 
+    @Variables.noUndo
     def getSchemeOrder(self):
         """
         Return value for scheme order.
@@ -667,6 +640,7 @@ class LagrangianModel(Model):
         return val
 
 
+    @Variables.undoLocal
     def setTurbulentDispersion(self, status):
         """
         Update the status markup for turbulent dispersion status from the XML document.
@@ -676,6 +650,7 @@ class LagrangianModel(Model):
         node_turb['status'] = status
 
 
+    @Variables.noUndo
     def getTurbulentDispersion(self):
         """
         Return status of turbulent dispersion status.
@@ -688,6 +663,7 @@ class LagrangianModel(Model):
         return status
 
 
+    @Variables.undoLocal
     def setTurbulentDiffusion(self, status):
         """
         Update the status markup for turbulent diffusion status from the XML document.
@@ -697,6 +673,7 @@ class LagrangianModel(Model):
         node_turb['status'] = status
 
 
+    @Variables.noUndo
     def getTurbulentDiffusion(self):
         """
         Return status of turbulent diffusion status.
@@ -709,6 +686,7 @@ class LagrangianModel(Model):
         return status
 
 
+    @Variables.undoLocal
     def setCompleteModelStartIteration(self, iteration):
         """
         Set value for complete model start iteration.
@@ -718,6 +696,7 @@ class LagrangianModel(Model):
         self.node_lagr.xmlSetData('complete_model', iteration)
 
 
+    @Variables.noUndo
     def getCompleteModelStartIteration(self):
         """
         Return value for complete model iteration.
@@ -729,6 +708,7 @@ class LagrangianModel(Model):
         return iteration
 
 
+    @Variables.undoLocal
     def setCompleteModelDirection(self, value):
         """
         Set value for complete model direction.
@@ -739,6 +719,7 @@ class LagrangianModel(Model):
         node_direction['choice'] = value
 
 
+    @Variables.noUndo
     def getCompleteModelDirection(self):
         """
         Return value for complete model direction.

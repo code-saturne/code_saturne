@@ -469,6 +469,7 @@ class CoalCombustionModel(Variables, Model):
             self.setNewModelScalar(self.node_fuel, name)
 
 
+    @Variables.undoGlobal
     def setCoalCombustionModel(self, model):
         """
         Update the coal combustion model markup from the XML document.
@@ -512,6 +513,7 @@ class CoalCombustionModel(Variables, Model):
                 self.__updateWetScalarsAndProperty(model)
 
 
+    @Variables.noUndo
     def getCoalCombustionModel(self):
         """
         Return the current coal combustion model.
@@ -681,6 +683,7 @@ class CoalCombustionModel(Variables, Model):
                             node['label'] = name
 
 
+    @Variables.noUndo
     def getFuelNameList(self):
         """
         Return the fuel name list
@@ -691,6 +694,7 @@ class CoalCombustionModel(Variables, Model):
         return fuel
 
 
+    @Variables.noUndo
     def getFuelIdList(self):
         """
         return list of fuel Id's
@@ -701,6 +705,7 @@ class CoalCombustionModel(Variables, Model):
         return fuel
 
 
+    @Variables.noUndo
     def getLabelIdList(self):
         """
         return list of fuel label
@@ -711,6 +716,7 @@ class CoalCombustionModel(Variables, Model):
         return fuel
 
 
+    @Variables.noUndo
     def getCoalNumber(self):
         """
         return number of solid fuel
@@ -719,6 +725,7 @@ class CoalCombustionModel(Variables, Model):
         return nb
 
 
+    @Variables.noUndo
     def getClassIdList(self, fuelId):
         """
         return list of class_id for define fuel id
@@ -736,6 +743,7 @@ class CoalCombustionModel(Variables, Model):
         return class_list
 
 
+    @Variables.noUndo
     def getClassNumber(self, fuelId):
         """
         return number of class for define fuel id
@@ -751,6 +759,7 @@ class CoalCombustionModel(Variables, Model):
         return nb
 
 
+    @Variables.noUndo
     def getClassesNumber(self):
         """
         return global number of class for fuel(s)
@@ -758,6 +767,7 @@ class CoalCombustionModel(Variables, Model):
         return len(self.case.xmlGetNodeList('diameter', 'class_id'))
 
 
+    @Variables.noUndo
     def getRefusalIdList(self, fuelId):
         """
         return number of refusal for define fuel id
@@ -769,6 +779,7 @@ class CoalCombustionModel(Variables, Model):
         return class_list
 
 
+    @Variables.noUndo
     def getRefusalNumber(self, id):
         """
         return global number of refusal
@@ -778,6 +789,7 @@ class CoalCombustionModel(Variables, Model):
         return nb
 
 
+    @Variables.noUndo
     def getOxidantNumber(self):
         """
         return global number oxidant
@@ -787,6 +799,7 @@ class CoalCombustionModel(Variables, Model):
         return nb
 
 
+    @Variables.noUndo
     def getOxidantIdList(self):
         """
         return list of oxidant Id's
@@ -798,6 +811,7 @@ class CoalCombustionModel(Variables, Model):
         return oxidant
 
 
+    @Variables.noUndo
     def createCoal(self):
         """
         create a new solid fuel
@@ -868,6 +882,7 @@ class CoalCombustionModel(Variables, Model):
                 node['ox_id'] = str(n)
 
 
+    @Variables.noUndo
     def getElementComposition(self, oxId, element):
         """
         return contribution of an element for a define oxidant
@@ -884,6 +899,7 @@ class CoalCombustionModel(Variables, Model):
         return value
 
 
+    @Variables.undoLocal
     def setElementComposition(self, oxId, element, value):
         """
         set contribution of an element for a define oxidant
@@ -896,6 +912,7 @@ class CoalCombustionModel(Variables, Model):
         oxidant.xmlSetData(name, value)
 
 
+    @Variables.noUndo
     def getOxidant(self, oxId):
         """
         return an oxidant
@@ -909,6 +926,7 @@ class CoalCombustionModel(Variables, Model):
         return oxi
 
 
+    @Variables.noUndo
     def getDiameterType(self, fuelId):
         """
         return diameter model for a define fuel Id
@@ -923,6 +941,7 @@ class CoalCombustionModel(Variables, Model):
         return value
 
 
+    @Variables.undoGlobal
     def setDiameterType(self, fuelId, choice):
         """
         put diameter model for a define fuel Id
@@ -1045,6 +1064,7 @@ class CoalCombustionModel(Variables, Model):
                 node['id'] = str(n)
 
 
+    @Variables.noUndo
     def getRefusalDiameter(self, fuelId, refusal_number):
         """
         Return the refusal diameter for a define fuel Id  and refusal Id
@@ -1060,6 +1080,7 @@ class CoalCombustionModel(Variables, Model):
         return value
 
 
+    @Variables.undoLocal
     def setRefusalDiameter(self, fuelId, refusal_number, value):
         """
         Put the refusal diameter for a define fuel Id  and refusal Id
@@ -1072,6 +1093,7 @@ class CoalCombustionModel(Variables, Model):
         node_refusal.xmlSetData('diameter', value)
 
 
+    @Variables.noUndo
     def getRefusalValue(self, fuelId, refusal_number):
         """
         Return the refusal value for a define fuel Id  and refusal Id
@@ -1087,6 +1109,7 @@ class CoalCombustionModel(Variables, Model):
         return value
 
 
+    @Variables.noUndo
     def getRefusal(self, fuelId, refusal_number):
         """
         Return all characteristics of a refusal
@@ -1098,6 +1121,7 @@ class CoalCombustionModel(Variables, Model):
         return [refusal_number, diameter, value]
 
 
+    @Variables.undoLocal
     def setRefusalValue(self, fuelId, refusal_number, value):
         """
         Put the refusal value for a define fuel Id  and refusal Id
@@ -1110,6 +1134,7 @@ class CoalCombustionModel(Variables, Model):
         node_refusal.xmlSetData('value', value)
 
 
+    @Variables.noUndo
     def getDiameter(self, fuelId, class_number):
         """
         Return diameter for a define fuel Id
@@ -1124,6 +1149,7 @@ class CoalCombustionModel(Variables, Model):
         return value
 
 
+    @Variables.undoLocal
     def setDiameter(self, fuelId, class_number, value):
         """
         Put diameter for a define fuel Id
@@ -1135,6 +1161,7 @@ class CoalCombustionModel(Variables, Model):
         node_class.xmlSetData('diameter', value, class_id = class_number)
 
 
+    @Variables.noUndo
     def getMassPercent(self, fuelId, class_number):
         """
         Return mass percent for a define fuel Id
@@ -1149,6 +1176,7 @@ class CoalCombustionModel(Variables, Model):
         return value
 
 
+    @Variables.undoLocal
     def setMassPercent(self, fuelId, class_number, value):
         """
         Put mass percent for a define fuel Id
@@ -1160,6 +1188,7 @@ class CoalCombustionModel(Variables, Model):
         node_class.xmlSetData('mass_percent', value, class_id = class_number)
 
 
+    @Variables.noUndo
     def getFuelLabel(self, fuelId):
         """
         Return label for a define fuel Id
@@ -1187,6 +1216,7 @@ class CoalCombustionModel(Variables, Model):
         return name
 
 
+    @Variables.undoLocal
     def setFuelLabel(self, fuelId, label):
         """
         Set a fuel label
@@ -1196,6 +1226,7 @@ class CoalCombustionModel(Variables, Model):
         solid_fuel['name']= label
 
 
+    @Variables.noUndo
     def getFuelType(self, fuelId):
         """
         Return the type for a define fuel Id
@@ -1209,6 +1240,7 @@ class CoalCombustionModel(Variables, Model):
         return fuel_type
 
 
+    @Variables.undoLocal
     def setFuelType(self, fuelId, fuel_type):
         """
         Set the type for a define fuel Id
@@ -1219,6 +1251,7 @@ class CoalCombustionModel(Variables, Model):
         solid_fuel['type']= fuel_type
 
 
+    @Variables.noUndo
     def getAbsorptionCoeff(self):
         """
         Return the absorption coefficient
@@ -1230,6 +1263,7 @@ class CoalCombustionModel(Variables, Model):
         return value
 
 
+    @Variables.undoLocal
     def setAbsorptionCoeff(self, value):
         """
         Set the absorption coefficient
@@ -1238,6 +1272,7 @@ class CoalCombustionModel(Variables, Model):
         self.node_fuel.xmlSetData('absorption_coefficient', value)
 
 
+    @Variables.noUndo
     def getComposition(self, fuelId, element):
         """
         Return composition for a define fuel Id and an element
@@ -1253,6 +1288,7 @@ class CoalCombustionModel(Variables, Model):
         return composition
 
 
+    @Variables.undoLocal
     def setComposition(self, fuelId, element, composition):
         """
         Set composition for a define fuel Id and an element
@@ -1264,6 +1300,7 @@ class CoalCombustionModel(Variables, Model):
         solid_fuel.xmlSetData(name, composition)
 
 
+    @Variables.noUndo
     def getPCIValue(self, fuelId):
         """
         Return PCI Value for a fuel
@@ -1278,6 +1315,7 @@ class CoalCombustionModel(Variables, Model):
         return value
 
 
+    @Variables.undoLocal
     def setPCIValue(self, fuelId, value):
         """
         Set PCI Value for a fuel
@@ -1289,6 +1327,7 @@ class CoalCombustionModel(Variables, Model):
         node.xmlSetData('value', value)
 
 
+    @Variables.noUndo
     def getPCIChoice(self, fuelId):
         """
         Return PCI choice for a fuel
@@ -1303,6 +1342,7 @@ class CoalCombustionModel(Variables, Model):
         return PCIChoice
 
 
+    @Variables.undoLocal
     def setPCIChoice(self, fuelId, choice):
         """
         Set PCI choice for a fuel
@@ -1317,6 +1357,7 @@ class CoalCombustionModel(Variables, Model):
             node.xmlRemoveChild('type')
 
 
+    @Variables.noUndo
     def getPCIType(self, fuelId):
         """
         Return PCI type for a fuel
@@ -1331,6 +1372,7 @@ class CoalCombustionModel(Variables, Model):
         return value
 
 
+    @Variables.undoLocal
     def setPCIType(self, fuelId, choice):
         """
         Set PCI type for a fuel
@@ -1342,6 +1384,7 @@ class CoalCombustionModel(Variables, Model):
         node.xmlSetData('type', choice)
 
 
+    @Variables.noUndo
     def getProperty(self, fuelId, name):
         """
         Return value for a define fuel Id and property
@@ -1355,6 +1398,7 @@ class CoalCombustionModel(Variables, Model):
         return value
 
 
+    @Variables.undoLocal
     def setProperty(self, fuelId, name, value):
         """
         Set value for a define fuel Id and property
@@ -1365,6 +1409,7 @@ class CoalCombustionModel(Variables, Model):
         solid_fuel.xmlSetData(name, value)
 
 
+    @Variables.noUndo
     def getY1Y2(self, fuelId):
         """
         Return Y1Y2 value for a fuel
@@ -1380,6 +1425,7 @@ class CoalCombustionModel(Variables, Model):
         return choice
 
 
+    @Variables.undoLocal
     def setY1Y2(self, fuelId, choice):
         """
         Set Y1Y2 value for a fuel
@@ -1393,6 +1439,7 @@ class CoalCombustionModel(Variables, Model):
         node.xmlRemoveChild('Y2')
 
 
+    @Variables.noUndo
     def getY1StoichiometricCoefficient(self, fuelId):
         """
         Return Y1 stoichiometric coefficient for a fuel
@@ -1413,6 +1460,7 @@ class CoalCombustionModel(Variables, Model):
         return value
 
 
+    @Variables.undoLocal
     def setY1StoichiometricCoefficient(self, fuelId, value):
         """
         Set Y1 stoichiometric coefficient for a fuel
@@ -1426,6 +1474,7 @@ class CoalCombustionModel(Variables, Model):
         node.xmlSetData('Y1', value)
 
 
+    @Variables.noUndo
     def getY2StoichiometricCoefficient(self, fuelId):
         """
         Return Y2 stoichiometric coefficient for a fuel
@@ -1446,6 +1495,7 @@ class CoalCombustionModel(Variables, Model):
         return value
 
 
+    @Variables.undoLocal
     def setY2StoichiometricCoefficient(self, fuelId, value):
         """
         Set Y2 stoichiometric coefficient for a fuel
@@ -1479,6 +1529,7 @@ class CoalCombustionModel(Variables, Model):
         return Y2
 
 
+    @Variables.noUndo
     def getHCNParameter(self, fuelId, param):
         """
         Return value for a define fuel Id and nitrogen partition parameter
@@ -1493,6 +1544,7 @@ class CoalCombustionModel(Variables, Model):
         return value
 
 
+    @Variables.undoLocal
     def setHCNParameter(self, fuelId, param, value):
         """
         Set value for a define fuel Id and nitrogen partition parameter
@@ -1504,6 +1556,7 @@ class CoalCombustionModel(Variables, Model):
         devolatilisation.xmlSetData(param, value)
 
 
+    @Variables.noUndo
     def getDevolatilisationParameter(self, fuelId, param):
         """
         """
@@ -1517,6 +1570,7 @@ class CoalCombustionModel(Variables, Model):
         return value
 
 
+    @Variables.undoLocal
     def setDevolatilisationParameter(self, fuelId, param, value):
         """
         """
@@ -1527,6 +1581,7 @@ class CoalCombustionModel(Variables, Model):
         devolatilisation.xmlSetData(param, value)
 
 
+    @Variables.noUndo
     def getPreExponentialConstant(self, fuelId, specie):
         """
         """
@@ -1541,6 +1596,7 @@ class CoalCombustionModel(Variables, Model):
         return value
 
 
+    @Variables.undoLocal
     def setPreExponentialConstant(self, fuelId, specie, value):
         """
         """
@@ -1552,6 +1608,7 @@ class CoalCombustionModel(Variables, Model):
         specie_node.xmlSetData('pre-exponential_constant', value)
 
 
+    @Variables.noUndo
     def getEnergyOfActivation(self, fuelId, specie):
         """
         """
@@ -1566,6 +1623,7 @@ class CoalCombustionModel(Variables, Model):
         return value
 
 
+    @Variables.undoLocal
     def setEnergyOfActivation(self, fuelId, specie, value):
         """
         """
@@ -1577,6 +1635,7 @@ class CoalCombustionModel(Variables, Model):
         specie_node.xmlSetData('energy_of_activation', value)
 
 
+    @Variables.noUndo
     def getOrderOfReaction(self, fuelId, specie):
         """
         """
@@ -1592,6 +1651,7 @@ class CoalCombustionModel(Variables, Model):
         return choice
 
 
+    @Variables.undoLocal
     def setOrderOfReaction(self, fuelId, specie, choice):
         """
         """
@@ -1604,6 +1664,7 @@ class CoalCombustionModel(Variables, Model):
         node['choice'] = choice
 
 
+    @Variables.noUndo
     def getNitrogenFraction(self, fuelId):
         """
         """
@@ -1617,6 +1678,7 @@ class CoalCombustionModel(Variables, Model):
         return value
 
 
+    @Variables.undoLocal
     def setNitrogenFraction(self, fuelId, value):
         """
         """
@@ -1627,6 +1689,7 @@ class CoalCombustionModel(Variables, Model):
         node.xmlSetData('nitrogen_fraction', value)
 
 
+    @Variables.noUndo
     def getNitrogenConcentration(self, fuelId):
         """
         """
@@ -1640,6 +1703,7 @@ class CoalCombustionModel(Variables, Model):
         return value
 
 
+    @Variables.undoLocal
     def setNitrogenConcentration(self, fuelId, value):
         """
         """
@@ -1650,6 +1714,7 @@ class CoalCombustionModel(Variables, Model):
         node.xmlSetData('nitrogen_concentration', value)
 
 
+    @Variables.noUndo
     def getOxidantType(self):
         """
         """
@@ -1661,6 +1726,7 @@ class CoalCombustionModel(Variables, Model):
         return value
 
 
+    @Variables.undoLocal
     def setOxidantType(self, choice):
         """
         """
@@ -1670,6 +1736,7 @@ class CoalCombustionModel(Variables, Model):
         node_oxi.xmlSetData('oxidant_type', choice)
 
 
+    @Variables.undoGlobal
     def setNOxFormationStatus(self, status):
         """
         put NOx formation status
@@ -1699,6 +1766,7 @@ class CoalCombustionModel(Variables, Model):
         self.__createModelProperties()
 
 
+    @Variables.noUndo
     def getNOxFormationStatus(self):
         """
         get NOx formation status
@@ -1709,6 +1777,7 @@ class CoalCombustionModel(Variables, Model):
         return status
 
 
+    @Variables.undoGlobal
     def setCO2KineticsStatus(self, status):
         """
         put CO2 Kinetics status
@@ -1735,6 +1804,7 @@ class CoalCombustionModel(Variables, Model):
         self.__createModelProperties()
 
 
+    @Variables.noUndo
     def getCO2KineticsStatus(self):
         """
         get CO2 Kinetics status
@@ -1745,6 +1815,7 @@ class CoalCombustionModel(Variables, Model):
         return status
 
 
+    @Variables.undoGlobal
     def setH2OKineticsStatus(self, status):
         """
         put H2O Kinetics status
@@ -1771,6 +1842,7 @@ class CoalCombustionModel(Variables, Model):
         self.__createModelProperties()
 
 
+    @Variables.noUndo
     def getH2OKineticsStatus(self):
         """
         get H2O Kinetics status

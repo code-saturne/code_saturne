@@ -43,7 +43,7 @@ import os, sys, string, types, unittest
 from Base.Common import *
 import Base.Toolbox as Tool
 from Base.XMLmodel import XMLmodel, ModelTest
-from Base.XMLvariables import Model
+from Base.XMLvariables import Model, Variables
 from Pages.OutputVolumicVariablesModel import OutputVolumicVariablesModel
 from Pages.StartRestartModel import StartRestartModel
 
@@ -79,11 +79,6 @@ class TimeAveragesModel(Model):
         value = {}
         value['start']   = 1
         value['restart'] = -2
-
-#        if not StartRestartModel(self.case).getRestartPath():
-#            value['restart']    = 0
-#        else:
-#            value['restart']    = -1
 
         return value
 
@@ -161,6 +156,7 @@ class TimeAveragesModel(Model):
             node.xmlRemoveChild('restart_from_time_average')
 
 
+    @Variables.undoGlobal
     def setTimeAverage(self, label, start, restart, lst):
         """
         Public method.
@@ -182,6 +178,7 @@ class TimeAveragesModel(Model):
         self.__updateTimeAverage(nb+1, label, start, restart, lst)
 
 
+    @Variables.undoGlobal
     def replaceTimeAverage(self, old_label, new_label, start, restart, lst):
         """
         Public method.
@@ -209,6 +206,7 @@ class TimeAveragesModel(Model):
         self.__updateTimeAverage(node['id'], new_label, start, restart, lst)
 
 
+    @Variables.undoGlobal
     def deleteTimeAverage(self, label):
         """
         Public method.
@@ -227,6 +225,7 @@ class TimeAveragesModel(Model):
                 t['id'] = p - 1
 
 
+    @Variables.noUndo
     def getTimeAverageData(self, imom):
         """
         Public method.
@@ -248,6 +247,7 @@ class TimeAveragesModel(Model):
         return node['label'], start, restart, lst
 
 
+    @Variables.noUndo
     def getTimeAverageLabels(self):
         """
         Public method.
@@ -261,6 +261,7 @@ class TimeAveragesModel(Model):
         return lst
 
 
+    @Variables.noUndo
     def getNumberOfTimeAverage(self):
         """
         Public method.

@@ -37,8 +37,6 @@ BoundaryConditionsCompressibleOutletView.py \
 BoundaryConditionsElectricalView.py \
 BoundaryConditionsMeteoView.py \
 BoundaryConditionsMobileMeshView.py \
-BoundaryConditionsParticlesModel.py \
-BoundaryConditionsParticlesView.py \
 BoundaryConditionsRoughWallView.py \
 BoundaryConditionsScalarsView.py \
 BoundaryConditionsSlidingWallView.py \

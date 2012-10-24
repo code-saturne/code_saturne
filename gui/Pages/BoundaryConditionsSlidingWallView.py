@@ -85,6 +85,8 @@ class BoundaryConditionsSlidingWallView(QWidget, Ui_BoundaryConditionsSlidingWal
         self.__case = case
         self.__boundary = None
 
+        self.__case.undoStopGlobal()
+
         self.connect(self.groupBoxSliding, SIGNAL("clicked(bool)"), self.__slotSlidingWall)
 
         self.connect(self.lineEditSlideU, SIGNAL("textChanged(const QString &)"), self.__slotVelocityU)
@@ -98,6 +100,8 @@ class BoundaryConditionsSlidingWallView(QWidget, Ui_BoundaryConditionsSlidingWal
         self.lineEditSlideU.setValidator(validatorSlideU)
         self.lineEditSlideV.setValidator(validatorSlideV)
         self.lineEditSlideW.setValidator(validatorSlideW)
+
+        self.__case.undoStartGlobal()
 
 
     def showWidget(self, boundary):

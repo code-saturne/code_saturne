@@ -143,6 +143,9 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         self.setupUi(self)
 
         self.case = case
+
+        self.case.undoStopGlobal()
+
         self.mdl = FluidCharacteristicsModel(self.case)
 
         if CompressibleModel(self.case).getCompressibleModel() != 'off':
@@ -421,6 +424,8 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
             else:
                 if tag == 'specific_heat':
                     self.groupBoxCp.setTitle(QString('Specific heat'))
+
+        self.case.undoStartGlobal()
 
 
     @pyqtSignature("const QString &")

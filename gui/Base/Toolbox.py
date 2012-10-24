@@ -92,8 +92,6 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
     elif page_name == tr("Volume regions definition"):
         import Pages.LocalizationView as Page
         thisPage = Page.VolumeLocalizationView(root, case, tree)
-##         import Pages.AddScalarFieldBoundView as Page
-##         thisPage = Page.AddScalarFieldBoundView(root, case)
 
     elif page_name == tr("Calculation features"):
         import Pages.AnalysisFeaturesView as Page
@@ -183,14 +181,6 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         import Pages.BoundaryConditionsView as Page
         thisPage = Page.BoundaryConditionsView(root, case)
 
-#    elif page_name == tr("Scalars boundary conditions"):
-#        import Pages.ScalarsBoundariesView as Page
-#        thisPage = Page.ScalarsBoundariesView(root, case)
-
-#    elif page_name == tr("Radiative boundary conditions"):
-#        import Pages.RadiativeBoundariesView as Page
-#        thisPage = Page.RadiativeBoundariesView(root, case)
-
     elif page_name == tr("Particles boundary conditions"):
         import Pages.LagrangianBoundariesView as Page
         thisPage = Page.LagrangianBoundariesView(root, case)
@@ -247,10 +237,6 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         import Pages.BatchRunningView as Page
         thisPage = Page.BatchRunningView(root, case)
 
-#    elif page_name == tr("Mobil mesh boundary"):
-#        import Pages.MobilMeshBoundaryView as Page
-#        thisPage = Page.MobilMeshBoundaryView(root, case)
-
     elif page_name == tr("Fluid structure interaction"):
         import Pages.FluidStructureInteractionView as Page
         thisPage = Page.FluidStructureInteractionView(root, case)
@@ -266,6 +252,8 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         # So we display the Welcome Page!
         import Pages.WelcomeView as Page
         thisPage = Page.WelcomeView()
+
+    case['current_page'] = str(page_name)
 
     return thisPage
 

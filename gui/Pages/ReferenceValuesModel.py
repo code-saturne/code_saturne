@@ -94,6 +94,7 @@ class ReferenceValuesModel(Model):
         return default
 
 
+    @Variables.undoLocal
     def setPressure(self, value):
         """
         Set value of reference pressure into xml file.
@@ -102,6 +103,7 @@ class ReferenceValuesModel(Model):
         self.node_reference.xmlSetData('pressure',value)
 
 
+    @Variables.noUndo
     def getPressure(self):
         """
         Return the value of reference pressure.
@@ -114,6 +116,7 @@ class ReferenceValuesModel(Model):
         return value
 
 
+    @Variables.undoLocal
     def setVelocity(self, value):
         """
         Set value of reference velocity into xml file.
@@ -122,6 +125,7 @@ class ReferenceValuesModel(Model):
         self.node_reference.xmlSetData('velocity',value)
 
 
+    @Variables.noUndo
     def getVelocity(self):
         """
         Return the value of reference velocity.
@@ -134,6 +138,7 @@ class ReferenceValuesModel(Model):
         return value
 
 
+    @Variables.undoLocal
     def setLengthChoice(self, choice):
         """
         Set the Length choice.
@@ -146,6 +151,7 @@ class ReferenceValuesModel(Model):
             self.node_reference.xmlRemoveChild('length')
 
 
+    @Variables.noUndo
     def getLengthChoice(self):
         """
         Get the Length choice.
@@ -158,6 +164,7 @@ class ReferenceValuesModel(Model):
         return choice
 
 
+    @Variables.undoLocal
     def setLength(self, value):
         """
         Set value of reference length into xml file.
@@ -166,6 +173,7 @@ class ReferenceValuesModel(Model):
         self.node_reference.xmlSetData('length',value)
 
 
+    @Variables.noUndo
     def getLength(self):
         """
         Return the value of reference length.
@@ -178,6 +186,7 @@ class ReferenceValuesModel(Model):
         return value
 
 
+    @Variables.undoLocal
     def setTemperature(self, value):
         """
         Set reference temperature.
@@ -186,6 +195,7 @@ class ReferenceValuesModel(Model):
         self.node_reference.xmlSetData('temperature', value)
 
 
+    @Variables.noUndo
     def getTemperature(self):
         """
         Get reference temperature.
@@ -197,6 +207,7 @@ class ReferenceValuesModel(Model):
         return value
 
 
+    @Variables.undoLocal
     def setTempOxydant(self, value):
         """
         Set reference temperature for Oxydant.
@@ -205,6 +216,7 @@ class ReferenceValuesModel(Model):
         self.node_reference.xmlSetData('oxydant_temperature', value)
 
 
+    @Variables.noUndo
     def getTempOxydant(self):
         """
         Get reference temperaturefor Oxydant.
@@ -216,6 +228,7 @@ class ReferenceValuesModel(Model):
         return value
 
 
+    @Variables.undoLocal
     def setTempFuel(self, value):
         """
         Set reference temperature.
@@ -224,6 +237,7 @@ class ReferenceValuesModel(Model):
         self.node_reference.xmlSetData('fuel_temperature', value)
 
 
+    @Variables.noUndo
     def getTempFuel(self):
         """
         Get reference temperature.
@@ -235,6 +249,7 @@ class ReferenceValuesModel(Model):
         return value
 
 
+    @Variables.undoLocal
     def setMassemol(self, value):
         """
         Set reference mass molar.
@@ -243,6 +258,7 @@ class ReferenceValuesModel(Model):
         self.node_reference.xmlSetData('mass_molar', value)
 
 
+    @Variables.noUndo
     def getMassemol(self):
         """
         Get reference mass molar.
@@ -254,6 +270,7 @@ class ReferenceValuesModel(Model):
         return value
 
 
+    @Variables.noUndo
     def getParticularPhysical(self):
         """
         Get model for set temperature for relative model

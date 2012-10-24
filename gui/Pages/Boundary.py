@@ -33,7 +33,7 @@ import sys, unittest
 #-------------------------------------------------------------------------------
 
 from Base.Toolbox import GuiParam
-from Base.XMLvariables import Model
+from Base.XMLvariables import Model, Variables
 from Base.XMLmodel import ModelTest
 from Base.XMLengine import *
 from Pages.DefineUserScalarsModel import DefineUserScalarsModel
@@ -94,11 +94,11 @@ class Boundary(object) :
         """
         self._label = label
         self._nature = nature
-        self._case = case
-        self._XMLBoundaryConditionsNode = self._case.xmlGetNode('boundary_conditions')
+        self.case = case
+        self._XMLBoundaryConditionsNode = self.case.xmlGetNode('boundary_conditions')
         self._thermalLabelsList = ('temperature_celsius', 'temperature_kelvin', 'enthalpy')
 
-        self.sca_model = DefineUserScalarsModel(self._case)
+        self.sca_model = DefineUserScalarsModel(self.case)
 
         # Create nodes
         if nature not in ["coal_inlet",
@@ -185,6 +185,7 @@ class Boundary(object) :
             scalarNode['type'] = self.sca_model.getScalarType(label)
 
 
+    @Variables.noUndo
     def getLabel(self):
         """
         Return the label
@@ -192,6 +193,7 @@ class Boundary(object) :
         return self._label
 
 
+    @Variables.noUndo
     def getNature(self):
         """
         Return the nature
@@ -231,7 +233,7 @@ class InletBoundary(Boundary):
         self.typeList        = ['imposed_inlet', 'subsonic_inlet']
         self.typeListGasComb = ['oxydant', 'fuel', 'unburned', 'burned']
 
-        self.th_model = ThermalScalarModel(self._case)
+        self.th_model = ThermalScalarModel(self.case)
 
         # Initialize nodes if necessary
 
@@ -244,7 +246,7 @@ class InletBoundary(Boundary):
                 self.getScalarValue(label,'dirichlet')
 
         from Pages.CoalCombustionModel import CoalCombustionModel
-        if CoalCombustionModel(self._case).getCoalCombustionModel() =="off":
+        if CoalCombustionModel(self.case).getCoalCombustionModel() =="off":
             self.boundNode.xmlRemoveChild('coal')
             self.boundNode.xmlRemoveChild('temperature')
 
@@ -280,14 +282,14 @@ class InletBoundary(Boundary):
         dico['compressible_type']   = 'imposed_inlet'
         dico['fraction'] = 0.0
         from Pages.GasCombustionModel import GasCombustionModel
-        model = GasCombustionModel(self._case).getGasCombustionModel()
+        model = GasCombustionModel(self.case).getGasCombustionModel()
         del GasCombustionModel
         if model == 'lwp' or model == 'ebu':
             dico['gas_type'] = 'unburned'
         elif model == 'd3p':
             dico['gas_type'] = 'oxydant'
         from Pages.ReferenceValuesModel import ReferenceValuesModel
-        dico['temperatureGas'] = ReferenceValuesModel(self._case).getTemperature()
+        dico['temperatureGas'] = ReferenceValuesModel(self.case).getTemperature()
 
         return dico
 
@@ -333,6 +335,7 @@ class InletBoundary(Boundary):
                 scalarNode.xmlRemoveChild(tt)
 
 
+    @Variables.noUndo
     def getVelocityChoice(self):
         """
         Get the choice of velocity.
@@ -341,6 +344,7 @@ class InletBoundary(Boundary):
         return choice
 
 
+    @Variables.noUndo
     def getDirectionChoice(self):
         """
         Get the choice of direction.
@@ -349,6 +353,7 @@ class InletBoundary(Boundary):
         return dir
 
 
+    @Variables.noUndo
     def getVelocity(self):
         """
         Get value of velocity beyond choice.
@@ -369,6 +374,7 @@ class InletBoundary(Boundary):
         return value
 
 
+    @Variables.undoGlobal
     def setVelocity(self, value):
         """
         Set value of velocity.
@@ -383,6 +389,7 @@ class InletBoundary(Boundary):
         XMLVelocityNode.xmlSetData(choice, value)
 
 
+    @Variables.noUndo
     def getDirection(self, component):
         """
         Get the component velocity
@@ -404,6 +411,7 @@ class InletBoundary(Boundary):
         return value
 
 
+    @Variables.undoLocal
     def setDirection(self, component, value):
         """
         Set the component velocity for fieldLabel
@@ -416,6 +424,7 @@ class InletBoundary(Boundary):
         XMLVelocityNode.xmlSetData(component, value)
 
 
+    @Variables.undoGlobal
     def setVelocityChoice(self, value):
         """
         Set the velocity definition according to choice
@@ -437,6 +446,7 @@ class InletBoundary(Boundary):
                 XMLVelocityNode.xmlRemoveChild(tag)
 
 
+    @Variables.undoGlobal
     def setDirectionChoice(self, value):
         """
         Set the direction of the flow definition according to choice.
@@ -464,6 +474,7 @@ class InletBoundary(Boundary):
                 XMLVelocityNode.xmlRemoveChild(tag)
 
 
+    @Variables.noUndo
     def getTurbulenceChoice(self):
         """
         Get the turbulence choice
@@ -478,6 +489,7 @@ class InletBoundary(Boundary):
         return choice
 
 
+    @Variables.undoGlobal
     def setTurbulenceChoice(self, value):
         """
         Set the choice turbulence
@@ -505,6 +517,7 @@ class InletBoundary(Boundary):
             self.getTurbFormula()
 
 
+    @Variables.noUndo
     def getHydraulicDiameter(self):
         """
         Get hydraulic diameter
@@ -518,6 +531,7 @@ class InletBoundary(Boundary):
         return value
 
 
+    @Variables.undoLocal
     def setHydraulicDiameter(self, value):
         """
         Set hydraulic diameter
@@ -529,6 +543,7 @@ class InletBoundary(Boundary):
         XMLTurbulenceNode.xmlSetData('hydraulic_diameter', value)
 
 
+    @Variables.undoLocal
     def setTurbFormula(self, formula):
         """
         Public method.
@@ -542,6 +557,7 @@ class InletBoundary(Boundary):
         n.xmlSetTextNode(formula)
 
 
+    @Variables.noUndo
     def getTurbFormula(self):
         """
         Public method.
@@ -553,6 +569,7 @@ class InletBoundary(Boundary):
         return formula
 
 
+    @Variables.noUndo
     def getDefaultTurbFormula(self, turb_model):
         """
         Get defaut turbulence formula
@@ -596,6 +613,7 @@ omega = 0.;"""
         return formula
 
 
+    @Variables.noUndo
     def getTurbulentIntensity(self):
         """
         Get turbulent intensity
@@ -610,6 +628,7 @@ omega = 0.;"""
         return value
 
 
+    @Variables.undoLocal
     def setTurbulentIntensity(self, value):
         """
         Set turbulent intensity
@@ -621,6 +640,7 @@ omega = 0.;"""
         XMLTurbulenceNode.xmlSetData('turbulent_intensity', value)
 
 
+    @Variables.noUndo
     def getScalarChoice(self, scalarLabel):
         """
         Get scalar choice
@@ -640,6 +660,7 @@ omega = 0.;"""
         return choice
 
 
+    @Variables.undoGlobal
     def setScalarChoice(self, scalarLabel, choice) :
         """
         Set scalar choice
@@ -659,6 +680,7 @@ omega = 0.;"""
         self.__deleteScalarNodes(scalarLabel, choice)
 
 
+    @Variables.noUndo
     def getScalarValue(self, scalarLabel, choice) :
         """
         Get scalar value
@@ -678,6 +700,7 @@ omega = 0.;"""
         return value
 
 
+    @Variables.undoGlobal
     def setScalarValue(self, scalarLabel, choice, value):
         """
         Set scalar value
@@ -694,6 +717,7 @@ omega = 0.;"""
         scalarNode.xmlSetData(choice, value)
 
 
+    @Variables.noUndo
     def getDefaultScalarFormula(self, scalarLabel, scalar_model):
         """
         Get defaut scalar formula
@@ -708,6 +732,7 @@ omega = 0.;"""
         return formula
 
 
+    @Variables.noUndo
     def getScalarFormula(self, scalarLabel, choice):
         """
         Public method.
@@ -724,6 +749,7 @@ omega = 0.;"""
         return formula
 
 
+    @Variables.undoLocal
     def setScalarFormula(self, scalarLabel, choice, formula):
         """
         Public method.
@@ -736,6 +762,7 @@ omega = 0.;"""
         n = scalarNode.xmlSetData(choice, formula)
 
 
+    @Variables.noUndo
     def getInletType(self):
         """
         Return type for velocities's boundary conditions for inlet gas combustion.
@@ -749,6 +776,7 @@ omega = 0.;"""
         return type
 
 
+    @Variables.noUndo
     def getThermoStatus(self, var):
         """
         Return status of var for the initialisation
@@ -762,6 +790,7 @@ omega = 0.;"""
         return status
 
 
+    @Variables.undoLocal
     def setThermoStatus(self, var, status):
         """
         Put status of var for the initialisation
@@ -773,6 +802,7 @@ omega = 0.;"""
         n['status'] = status
 
 
+    @Variables.undoLocal
     def setInletType(self, type):
         """
         Set type of inlet.
@@ -788,6 +818,8 @@ omega = 0.;"""
 
         n['choice'] = type
 
+
+    @Variables.noUndo
     def getThermoValue(self, var):
         """
         Return value of the variable
@@ -801,6 +833,7 @@ omega = 0.;"""
         return value
 
 
+    @Variables.undoLocal
     def setThermoValue(self, var, value):
         """
         Set value of the variable
@@ -810,6 +843,7 @@ omega = 0.;"""
         node.xmlSetData(var, value)
 
 
+    @Variables.noUndo
     def getCheckedBoxList(self):
         """
         Public method.
@@ -831,6 +865,7 @@ omega = 0.;"""
         return box_list
 
 
+    @Variables.noUndo
     def getListValue(self):
         """
         Public method.
@@ -865,6 +900,7 @@ omega = 0.;"""
         n.xmlRemoveChild('energy')
 
 
+    @Variables.noUndo
     def getInletGasCombustionType(self):
         """
         Return type for velocities's boundary conditions for inlet gas combustion.
@@ -880,6 +916,7 @@ omega = 0.;"""
         return type
 
 
+    @Variables.undoLocal
     def setInletGasCombustionType(self, type):
         """
         Set type for velocities's boundary conditions for inlet gas combustion.
@@ -891,6 +928,7 @@ omega = 0.;"""
         n['choice'] = type
 
 
+    @Variables.noUndo
     def getGasCombustionTemperature(self):
         """
         Return value of the temperature for inlet gas combustion.
@@ -904,6 +942,7 @@ omega = 0.;"""
         return temperature
 
 
+    @Variables.undoLocal
     def setGasCombustionTemperature(self, value):
         """
         Set value of the temperature for inlet gas combustion.
@@ -912,6 +951,7 @@ omega = 0.;"""
         self.boundNode.xmlInitNode('velocity_pressure').xmlSetData('temperature',value)
 
 
+    @Variables.noUndo
     def getMeanMixtureFraction(self):
         """
         Return value of the mean mixture fraction
@@ -924,6 +964,7 @@ omega = 0.;"""
         return fraction
 
 
+    @Variables.undoLocal
     def setMeanMixtureFraction(self, value):
         """
         Set value of the mean mixture fraction
@@ -968,6 +1009,7 @@ class MeteoBoundary(Boundary) :
         return dico
 
 
+    @Variables.noUndo
     def getMeteoDataStatus(self):
         """
         Return if one reads the meteorological data.
@@ -978,6 +1020,7 @@ class MeteoBoundary(Boundary) :
         return node['status']
 
 
+    @Variables.undoLocal
     def setMeteoDataStatus(self, status):
         """
         """
@@ -985,6 +1028,7 @@ class MeteoBoundary(Boundary) :
         self.boundNode.xmlInitNode('velocity_pressure').xmlInitNode('meteo_data')['status'] = status
 
 
+    @Variables.noUndo
     def getAutomaticNatureStatus(self):
         """
         The boundary could be set to an inlet or an outlet automaticaly.
@@ -995,6 +1039,7 @@ class MeteoBoundary(Boundary) :
         return node['status']
 
 
+    @Variables.undoLocal
     def setAutomaticNatureStatus(self, status):
         """
         The boundary could be set to an inlet or an outlet automaticaly.
@@ -1034,7 +1079,7 @@ class JouleBoundary(Boundary) :
         return list of scalars
         """
         scalar_list = []
-        self.sca_model = DefineUserScalarsModel(self._case)
+        self.sca_model = DefineUserScalarsModel(self.case)
         for sca in self.sca_model.getElectricalScalarsList():
             scalar_list.append(sca)
 
@@ -1233,7 +1278,7 @@ class CoalInletBoundary(InletBoundary) :
 
     def __updateCoalInfo(self):
         from Pages.CoalCombustionModel import CoalCombustionModel
-        CoalCombustionModel = CoalCombustionModel(self._case)
+        CoalCombustionModel = CoalCombustionModel(self.case)
         self.coalNumber = CoalCombustionModel.getCoalNumber()
         log.debug("__updateCoalInfo coalNumber: %i " % self.coalNumber)
         self.coalClassesNumber = []
@@ -1306,11 +1351,12 @@ class CoalInletBoundary(InletBoundary) :
         dico['ratio'] = 0.0
         dico['oxydant'] = 1
         from Pages.ReferenceValuesModel import ReferenceValuesModel
-        dico['temperature'] = ReferenceValuesModel(self._case).getTemperature()
+        dico['temperature'] = ReferenceValuesModel(self.case).getTemperature()
 
         return dico
 
 
+    @Variables.noUndo
     def getInletType(self):
         """
         Return type (oxydant or oxydant+coal) for velocities's boundary conditions for inlet coal flow.
@@ -1322,6 +1368,7 @@ class CoalInletBoundary(InletBoundary) :
         return type
 
 
+    @Variables.undoGlobal
     def setInletType(self, type):
         """
         Set type (oxydant or oxydant+coal) for velocities's boundary conditions for inlet coal flow.
@@ -1333,13 +1380,13 @@ class CoalInletBoundary(InletBoundary) :
         if type == "oxydantFlow":
             self.__deleteCoalNodes()
         elif type == "coalFlow":
-            #self.__updateCoalInfo()
             for coal_idx in range(0, self.coalNumber):
                 self.getCoalFlow(coal_idx)
                 self.getCoalTemperature(coal_idx)
                 self.getCoalRatios(coal_idx)
 
 
+    @Variables.noUndo
     def getCoalFlow(self, coal_idx):
         """
         Return value of flow for coal
@@ -1357,6 +1404,7 @@ class CoalInletBoundary(InletBoundary) :
         return flow
 
 
+    @Variables.undoLocal
     def setCoalFlow(self, value, coal):
         """
         Put value of flow for coal
@@ -1369,6 +1417,7 @@ class CoalInletBoundary(InletBoundary) :
         n.xmlInitNode('coal', name = "coal"+num).xmlSetData('flow1', value)
 
 
+    @Variables.noUndo
     def getOxydantTemperature(self):
         """
         Return value of the temperature for oxydant for coal choice
@@ -1382,6 +1431,7 @@ class CoalInletBoundary(InletBoundary) :
         return temperature
 
 
+    @Variables.undoLocal
     def setOxydantNumber(self, value):
         """
         Set value of the oxydant number.
@@ -1390,6 +1440,7 @@ class CoalInletBoundary(InletBoundary) :
         self.boundNode.xmlInitNode('velocity_pressure').xmlSetData('oxydant',value)
 
 
+    @Variables.noUndo
     def getOxydantNumber(self):
         """
         Return value of oxydant number.
@@ -1403,6 +1454,7 @@ class CoalInletBoundary(InletBoundary) :
         return oxydant
 
 
+    @Variables.undoLocal
     def setOxydantTemperature(self, value):
         """
         Set value of the temperature for oxydant for coal choice
@@ -1411,6 +1463,7 @@ class CoalInletBoundary(InletBoundary) :
         self.boundNode.xmlInitNode('velocity_pressure').xmlSetData('temperature',value)
 
 
+    @Variables.noUndo
     def getCoalTemperature(self, coal):
         """
         Return value of temperature for coal for coal choice
@@ -1428,6 +1481,7 @@ class CoalInletBoundary(InletBoundary) :
         return temperature
 
 
+    @Variables.undoLocal
     def setCoalTemperature(self, value, coal_idx):
         """
         Put value of temperature for coal for coal choice
@@ -1440,12 +1494,12 @@ class CoalInletBoundary(InletBoundary) :
         n.xmlInitNode('coal', name="coal"+ num).xmlSetData('temperature',value)
 
 
+    @Variables.noUndo
     def getCoalRatios(self, coal_idx):
         """
         Put list of values of classe's ratio for one coal
         """
         Model().isInt(coal_idx)
-        #self.__updateCoalInfo()
         Model().isLowerOrEqual(coal_idx, self.coalNumber-1)
 
         list = []
@@ -1461,11 +1515,11 @@ class CoalInletBoundary(InletBoundary) :
         return list
 
 
+    @Variables.undoLocal
     def setCoalRatios(self, coal, list):
         """
         Put list of values of classe's ratio for one coal
         """
-        #self.__updateCoalInfo()
         Model().isInt(coal)
         Model().isIntEqual(len(list), self.coalClassesNumber[coal])
         som = 0.
@@ -1579,6 +1633,7 @@ class CompressibleOutletBoundary(Boundary) :
         return dico
 
 
+    @Variables.noUndo
     def getOutletType(self):
         """
         Return type of boundary conditions for outlet
@@ -1591,6 +1646,7 @@ class CompressibleOutletBoundary(Boundary) :
         return type
 
 
+    @Variables.undoLocal
     def setOutletType(self, type):
         """
         Set type of boundary conditions for outlet
@@ -1602,6 +1658,8 @@ class CompressibleOutletBoundary(Boundary) :
         if type == 'supersonic_outlet':
             self.boundNode.xmlRemoveChild('dirichlet', name='pressure')
 
+
+    @Variables.noUndo
     def getPressureValue(self):
         """
         Return value of the pressure
@@ -1614,6 +1672,7 @@ class CompressibleOutletBoundary(Boundary) :
         return pressure
 
 
+    @Variables.undoLocal
     def setPressureValue(self, value):
         """
         Set value of the pressure
@@ -1691,13 +1750,14 @@ class OutletBoundary(Boundary) :
         """
         dico = {}
         from Pages.ReferenceValuesModel import ReferenceValuesModel
-        dico['reference_pressure'] = ReferenceValuesModel(self._case).getPressure()
+        dico['reference_pressure'] = ReferenceValuesModel(self.case).getPressure()
         dico['scalarChoice'] = 'neumann'
         dico['scalar'] = 0.
 
         return dico
 
 
+    @Variables.noUndo
     def getScalarChoice(self, label):
         """
         Get scalar choice
@@ -1717,6 +1777,7 @@ class OutletBoundary(Boundary) :
         return choice
 
 
+    @Variables.undoLocal
     def setScalarChoice(self, label, choice) :
         """
         Set scalar choice
@@ -1740,6 +1801,7 @@ class OutletBoundary(Boundary) :
             self.__deleteScalarNodes(label, choice)
 
 
+    @Variables.noUndo
     def getScalarValue(self, label, choice) :
         """
         Get variableName variable
@@ -1761,6 +1823,7 @@ class OutletBoundary(Boundary) :
         return value
 
 
+    @Variables.undoLocal
     def setScalarValue(self, label, choice, value) :
         """
         Set variableName variable
@@ -1778,6 +1841,7 @@ class OutletBoundary(Boundary) :
         scalarNode.xmlSetData(choice, value)
 
 
+    @Variables.undoLocal
     def setScalarFormula(self,label, formula, choice):
         """
         Public method.
@@ -1790,6 +1854,7 @@ class OutletBoundary(Boundary) :
         n = scalarNode.xmlSetData(choice, formula)
 
 
+    @Variables.noUndo
     def getScalarFormula(self, label, choice):
         """
         Public method.
@@ -1802,6 +1867,7 @@ class OutletBoundary(Boundary) :
         return formula
 
 
+    @Variables.noUndo
     def getPressureChoice(self) :
         """
         Return if the value of pressure exist or not of boundary conditions for outlet.
@@ -1813,6 +1879,7 @@ class OutletBoundary(Boundary) :
         return choice
 
 
+    @Variables.undoGlobal
     def setPressureChoice(self, choice) :
         """
         Set balise of pressure beyond the choice for boundary conditions for outlet
@@ -1825,6 +1892,7 @@ class OutletBoundary(Boundary) :
                 self.setReferencePressure(self.__defaultValues()['pressure'])
 
 
+    @Variables.noUndo
     def getReferencePressure(self) :
         """
         Get reference pressure
@@ -1836,6 +1904,7 @@ class OutletBoundary(Boundary) :
         return pressure
 
 
+    @Variables.undoLocal
     def setReferencePressure(self, value) :
         """
         Set reference pressure
@@ -1956,6 +2025,7 @@ class WallBoundary(Boundary) :
         return dico
 
 
+    @Variables.noUndo
     def getVelocityChoice(self):
         """
         Get the velocity choice
@@ -1968,6 +2038,7 @@ class WallBoundary(Boundary) :
         return node['choice']
 
 
+    @Variables.undoGlobal
     def setVelocityChoice(self, choice):
         """
         Set the velocity choice
@@ -1992,6 +2063,7 @@ class WallBoundary(Boundary) :
             self.__deleteVelocities(XMLVelocityNode)
 
 
+    @Variables.noUndo
     def getVelocities(self):
         """
         Set the velocity definition according to choice
@@ -2019,6 +2091,7 @@ class WallBoundary(Boundary) :
         return u, v, w
 
 
+    @Variables.undoLocal
     def setVelocities(self, u, v, w):
         """
         Set the velocity definition according to choice
@@ -2035,6 +2108,7 @@ class WallBoundary(Boundary) :
         node.xmlSetData('dirichlet', w, name='velocity_W')
 
 
+    @Variables.undoLocal
     def setVelocityComponent(self, val, component):
         """
         Set the value of component of the velocity - Method for the view
@@ -2047,6 +2121,7 @@ class WallBoundary(Boundary) :
         node.xmlSetData('dirichlet', val, name=component)
 
 
+    @Variables.noUndo
     def getRoughnessChoice(self):
         """
         Return if the value of roughness height exist or not of boundary conditions for wall.
@@ -2059,6 +2134,7 @@ class WallBoundary(Boundary) :
         return choice
 
 
+    @Variables.undoGlobal
     def setRoughnessChoice(self, choice):
         """
         Update balise of roughness beyond the choice for boundary conditions for wall.
@@ -2072,6 +2148,7 @@ class WallBoundary(Boundary) :
                 self.setRoughness(self.__defaultValues()['roughness'])
 
 
+    @Variables.noUndo
     def getRoughness(self):
         """
         Get the value of roughness height if it's exist of boundary conditions for wall.
@@ -2085,6 +2162,7 @@ class WallBoundary(Boundary) :
         return val
 
 
+    @Variables.undoLocal
     def setRoughness(self, value):
         """
         Put value of roughness height in xmlfile
@@ -2098,6 +2176,7 @@ class WallBoundary(Boundary) :
             node.xmlSetData('roughness', value)
 
 
+    @Variables.noUndo
     def getScalarChoice(self, label):
         """
         Get scalar choice
@@ -2117,6 +2196,7 @@ class WallBoundary(Boundary) :
         return choice
 
 
+    @Variables.undoGlobal
     def setScalarChoice(self, label, choice) :
         """
         Set scalar choice
@@ -2144,6 +2224,7 @@ class WallBoundary(Boundary) :
             self.__deleteScalarNodes(label, choice)
 
 
+    @Variables.noUndo
     def getScalarValue(self, label, choice) :
         """
         Get variableName variable
@@ -2163,6 +2244,7 @@ class WallBoundary(Boundary) :
         return value
 
 
+    @Variables.undoLocal
     def setScalarValue(self, label, choice, value) :
         """
         Set variableName variable
@@ -2179,6 +2261,7 @@ class WallBoundary(Boundary) :
         scalarNode.xmlSetData(choice, value)
 
 
+    @Variables.undoLocal
     def setScalarFormula(self, label, formula, choice):
         """
         Public method.
@@ -2191,6 +2274,7 @@ class WallBoundary(Boundary) :
         scalarNode.xmlSetData(choice, formula)
 
 
+    @Variables.noUndo
     def getScalarFormula(self, label, choice):
         """
         Public method.
@@ -2265,6 +2349,7 @@ class RadiativeWallBoundary(Boundary) :
         return dico
 
 
+    @Variables.noUndo
     def getRadiativeChoice(self):
         """
         Return variables according to choice of type of condition for the radiative wall
@@ -2277,6 +2362,7 @@ class RadiativeWallBoundary(Boundary) :
         return choice
 
 
+    @Variables.undoLocal
     def setRadiativeChoice(self, choice):
         """
         Put variables according to choice of type of condition for the radiative wall
@@ -2291,6 +2377,7 @@ class RadiativeWallBoundary(Boundary) :
                 nod_ray_cond.xmlSetData(i, self.__defaultValues()[i])
 
 
+    @Variables.noUndo
     def getEmissivity(self):
         """
         Return value of emissivity for the radiative wall
@@ -2304,6 +2391,7 @@ class RadiativeWallBoundary(Boundary) :
         return val
 
 
+    @Variables.undoLocal
     def setEmissivity(self, val):
         """
         Put value of emissivity for the radiative wall
@@ -2315,6 +2403,7 @@ class RadiativeWallBoundary(Boundary) :
         nod_ray_cond.xmlSetData('emissivity', val)
 
 
+    @Variables.noUndo
     def getThermalConductivity(self):
         """
         Return value of thermal conductivity for the radiative wall
@@ -2328,6 +2417,7 @@ class RadiativeWallBoundary(Boundary) :
         return val
 
 
+    @Variables.undoLocal
     def setThermalConductivity(self, val):
         """
         Put value of thermal conductivity for the radiative wall
@@ -2338,6 +2428,7 @@ class RadiativeWallBoundary(Boundary) :
         nod_ray_cond.xmlSetData('wall_thermal_conductivity', val)
 
 
+    @Variables.noUndo
     def getThickness(self):
         """
         Return value of thickness for the radiative wall
@@ -2351,6 +2442,7 @@ class RadiativeWallBoundary(Boundary) :
         return val
 
 
+    @Variables.undoLocal
     def setThickness(self, val):
         """
         Put value of thickness for the radiative wall
@@ -2361,6 +2453,7 @@ class RadiativeWallBoundary(Boundary) :
         nod_ray_cond.xmlSetData('thickness', val)
 
 
+    @Variables.noUndo
     def getExternalTemperatureProfile(self):
         """
         Return value of external temperature profile for the radiative wall
@@ -2374,6 +2467,7 @@ class RadiativeWallBoundary(Boundary) :
         return val
 
 
+    @Variables.undoLocal
     def setExternalTemperatureProfile(self, val):
         """
         Put value of external temperature profile for the radiative wall
@@ -2384,6 +2478,7 @@ class RadiativeWallBoundary(Boundary) :
         nod_ray_cond.xmlSetData('external_temperature_profile',val)
 
 
+    @Variables.noUndo
     def getInternalTemperatureProfile(self):
         """
         Return value of internal temperature profile for the radiative wall
@@ -2397,6 +2492,7 @@ class RadiativeWallBoundary(Boundary) :
         return val
 
 
+    @Variables.undoLocal
     def setInternalTemperatureProfile(self, val):
         """
         Put value of internal temperature profile for the radiative wall
@@ -2407,31 +2503,27 @@ class RadiativeWallBoundary(Boundary) :
         nod_ray_cond.xmlSetData('internal_temperature_profile',val)
 
 
+    @Variables.noUndo
     def getFlux(self):
         """
         Return value of flux for the radiative wall
         """
-##        nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
-##        val = nod_ray_cond.xmlGetChildDouble('flux')
-##        if not val:
-##            val = self.__defaultValues()['flux']
-##            self.setFlux(val)
         val = self.getValRay('flux')
 
         return val
 
 
+    @Variables.undoGlobal
     def setFlux(self, val):
         """
         Put value of flux for the radiative wall
         """
         Model().isGreaterOrEqual(val, 0.)
 
-##        nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
-##        nod_ray_cond.xmlSetData('flux', val)
         self.setValRay(val, 'flux')
 
 
+    @Variables.noUndo
     def getOutputRadiativeZone(self):
         """
         Return value of output radiative zone for the radiative wall
@@ -2445,6 +2537,7 @@ class RadiativeWallBoundary(Boundary) :
         return ival
 
 
+    @Variables.undoLocal
     def setOutputRadiativeZone(self, ival):
         """
         Put value of output radiative zone for the radiative wall
@@ -2455,6 +2548,7 @@ class RadiativeWallBoundary(Boundary) :
         nod_ray_cond.xmlSetData('output_zone', ival)
 
 
+    @Variables.noUndo
     def getValRay(self, rayvar):
         """
         Return value of radiative variable named 'var' for the radiative wall
@@ -2473,6 +2567,7 @@ class RadiativeWallBoundary(Boundary) :
         return val
 
 
+    @Variables.undoLocal
     def setValRay(self, val, rayvar):
         """
         Put value of radiative variable named 'rayvar' for the radiative wall
@@ -2520,6 +2615,7 @@ class MobilWallBoundary(Boundary) :
         self._defaultValues[ formula_displacement  ] = 'X_mesh=0;\nY_mesh=0;\nZ_mesh=0;'
 
 
+    @Variables.noUndo
     def getALEChoice(self):
         """
         Get the choice ALE
@@ -2535,6 +2631,7 @@ class MobilWallBoundary(Boundary) :
         return choice
 
 
+    @Variables.undoGlobal
     def setALEChoice(self, value):
         """
         Set the ALE according to choice
@@ -2551,6 +2648,7 @@ class MobilWallBoundary(Boundary) :
                 node.xmlRemoveChild('formula')
 
 
+    @Variables.noUndo
     def getFormula(self):
         """
         Get the formula from the xml
@@ -2565,6 +2663,7 @@ class MobilWallBoundary(Boundary) :
         return value
 
 
+    @Variables.undoLocal
     def setFormula(self, value):
         """
         Set the formula into the xml
@@ -2669,6 +2768,7 @@ class CouplingMobilWallBoundary(Boundary) :
     # InitialDisplacement
     #--------------------
 
+    @Variables.undoLocal
     def setInitialDisplacementX(self, value ):
         """
         Set value of initial displacement X into xml file.
@@ -2676,6 +2776,7 @@ class CouplingMobilWallBoundary(Boundary) :
         self._setData('initial_displacement', 'X', value)
 
 
+    @Variables.noUndo
     def getInitialDisplacementX(self ):
         """
         Get value of initial displacement X from xml file.
@@ -2683,6 +2784,7 @@ class CouplingMobilWallBoundary(Boundary) :
         return self._getDoubleData('initial_displacement', 'X', self.setInitialDisplacementX)
 
 
+    @Variables.undoLocal
     def setInitialDisplacementY(self, value ):
         """
         Set value of initial displacement Y into xml file.
@@ -2690,6 +2792,7 @@ class CouplingMobilWallBoundary(Boundary) :
         self._setData('initial_displacement', 'Y', value)
 
 
+    @Variables.noUndo
     def getInitialDisplacementY(self ):
         """
         Get value of initial displacement Y from xml file.
@@ -2697,6 +2800,7 @@ class CouplingMobilWallBoundary(Boundary) :
         return self._getDoubleData('initial_displacement', 'Y', self.setInitialDisplacementY)
 
 
+    @Variables.undoLocal
     def setInitialDisplacementZ(self, value ):
         """
         Set value of initial displacement Z into xml file.
@@ -2704,6 +2808,7 @@ class CouplingMobilWallBoundary(Boundary) :
         self._setData('initial_displacement', 'Z', value)
 
 
+    @Variables.noUndo
     def getInitialDisplacementZ(self ):
         """
         Get value of initial displacement Z from xml file.
@@ -2714,6 +2819,7 @@ class CouplingMobilWallBoundary(Boundary) :
     # EquilibriumDisplacement
     #------------------------
 
+    @Variables.undoLocal
     def setEquilibriumDisplacementX(self, value):
         """
         Set value of equilibrium displacement X into xml file.
@@ -2721,6 +2827,7 @@ class CouplingMobilWallBoundary(Boundary) :
         self._setData('equilibrium_displacement', 'X', value)
 
 
+    @Variables.noUndo
     def getEquilibriumDisplacementX(self):
         """
         Get value of equilibrium displacement X from xml file.
@@ -2728,6 +2835,7 @@ class CouplingMobilWallBoundary(Boundary) :
         return self._getDoubleData('equilibrium_displacement', 'X', self.setEquilibriumDisplacementX)
 
 
+    @Variables.undoLocal
     def setEquilibriumDisplacementY(self, value):
         """
         Set value of equilibrium displacement Y into xml file.
@@ -2735,6 +2843,7 @@ class CouplingMobilWallBoundary(Boundary) :
         self._setData('equilibrium_displacement', 'Y', value)
 
 
+    @Variables.noUndo
     def getEquilibriumDisplacementY(self):
         """
         Get value of equilibrium displacement Y from xml file.
@@ -2742,6 +2851,7 @@ class CouplingMobilWallBoundary(Boundary) :
         return self._getDoubleData('equilibrium_displacement', 'Y', self.setEquilibriumDisplacementY)
 
 
+    @Variables.undoLocal
     def setEquilibriumDisplacementZ(self, value):
         """
         Set value of equilibrium displacement Z into xml file.
@@ -2749,6 +2859,7 @@ class CouplingMobilWallBoundary(Boundary) :
         self._setData('equilibrium_displacement', 'Z', value)
 
 
+    @Variables.noUndo
     def getEquilibriumDisplacementZ(self):
         """
         Get value of equilibrium displacement X from xml file.
@@ -2759,6 +2870,7 @@ class CouplingMobilWallBoundary(Boundary) :
     # InitialDisplacement
     #--------------------
 
+    @Variables.undoLocal
     def setInitialVelocityX(self, value):
         """
         Set value of initial velocity X into xml file.
@@ -2766,6 +2878,7 @@ class CouplingMobilWallBoundary(Boundary) :
         self._setData('initial_velocity', 'X', value)
 
 
+    @Variables.noUndo
     def getInitialVelocityX(self):
         """
         Get value of initial velocity X from xml file.
@@ -2773,6 +2886,7 @@ class CouplingMobilWallBoundary(Boundary) :
         return self._getDoubleData('initial_velocity', 'X', self.setInitialVelocityX)
 
 
+    @Variables.undoLocal
     def setInitialVelocityY(self, value):
         """
         Set value of initial velocity Y into xml file.
@@ -2780,6 +2894,7 @@ class CouplingMobilWallBoundary(Boundary) :
         self._setData('initial_velocity', 'Y', value)
 
 
+    @Variables.noUndo
     def getInitialVelocityY(self):
         """
         Get value of initial velocity Y from xml file.
@@ -2787,6 +2902,7 @@ class CouplingMobilWallBoundary(Boundary) :
         return self._getDoubleData('initial_velocity', 'Y', self.setInitialVelocityY)
 
 
+    @Variables.undoLocal
     def setInitialVelocityZ(self, value):
         """
         Set value of initial velocity Z into xml file.
@@ -2794,6 +2910,7 @@ class CouplingMobilWallBoundary(Boundary) :
         self._setData('initial_velocity', 'Z', value)
 
 
+    @Variables.noUndo
     def getInitialVelocityZ(self):
         """
         Get value of initial velocity Z from xml file.
@@ -2804,6 +2921,7 @@ class CouplingMobilWallBoundary(Boundary) :
     # Matrix
     #-------
 
+    @Variables.undoLocal
     def setMassMatrix(self, value):
         """
         Set values of massMatrix into xml file.
@@ -2811,6 +2929,7 @@ class CouplingMobilWallBoundary(Boundary) :
         self._setData('mass_matrix', 'formula', value)
 
 
+    @Variables.noUndo
     def getMassMatrix(self):
         """
         Get values of massMatrix from xml file.
@@ -2818,6 +2937,7 @@ class CouplingMobilWallBoundary(Boundary) :
         return self._getStringData('mass_matrix', 'formula', self.setMassMatrix)
 
 
+    @Variables.undoLocal
     def setStiffnessMatrix(self, value):
         """
         Set values of stiffnessMatrix into xml file.
@@ -2825,6 +2945,7 @@ class CouplingMobilWallBoundary(Boundary) :
         self._setData('stiffness_matrix', 'formula', value)
 
 
+    @Variables.noUndo
     def getStiffnessMatrix(self):
         """
         Get values of stiffnessMatrix from xml file.
@@ -2832,6 +2953,7 @@ class CouplingMobilWallBoundary(Boundary) :
         return self._getStringData('stiffness_matrix', 'formula', self.setStiffnessMatrix)
 
 
+    @Variables.undoLocal
     def setDampingMatrix(self, value):
         """
         Set values of dampingMatrix into xml file.
@@ -2839,6 +2961,7 @@ class CouplingMobilWallBoundary(Boundary) :
         self._setData('damping_matrix', 'formula', value)
 
 
+    @Variables.noUndo
     def getDampingMatrix(self):
         """
         Get values of dampingMatrix from xml file.
@@ -2846,6 +2969,7 @@ class CouplingMobilWallBoundary(Boundary) :
         return self._getStringData('damping_matrix', 'formula', self.setDampingMatrix)
 
 
+    @Variables.undoLocal
     def setFluidForceMatrix(self, value):
         """
         Set values of fluid force matrix into xml file.
@@ -2853,6 +2977,7 @@ class CouplingMobilWallBoundary(Boundary) :
         self._setData('fluid_force_matrix', 'formula', value)
 
 
+    @Variables.noUndo
     def getFluidForceMatrix(self):
         """
         Get values of fluid force matrix from xml file.
@@ -2888,6 +3013,7 @@ class CouplingMobilWallBoundary(Boundary) :
         return choice
 
 
+    @Variables.undoLocal
     def setDDLX(self, value):
         """
         Set the DDLX to xml
@@ -2895,6 +3021,7 @@ class CouplingMobilWallBoundary(Boundary) :
         self._setChoice('DDLX', value )
 
 
+    @Variables.noUndo
     def getDDLX(self):
         """
         Get DDLX from xml
@@ -2902,6 +3029,7 @@ class CouplingMobilWallBoundary(Boundary) :
         return self._getChoice('DDLX', self.setDDLX)
 
 
+    @Variables.undoLocal
     def setDDLY(self, value):
         """
         Set the DDLY to xml
@@ -2909,6 +3037,7 @@ class CouplingMobilWallBoundary(Boundary) :
         self._setChoice('DDLY', value )
 
 
+    @Variables.noUndo
     def getDDLY(self):
         """
         Get DDLY from xml
@@ -2916,6 +3045,7 @@ class CouplingMobilWallBoundary(Boundary) :
         return self._getChoice('DDLY', self.setDDLY)
 
 
+    @Variables.undoLocal
     def setDDLZ(self, value):
         """
         Set the DDLZ to xml
@@ -2923,6 +3053,7 @@ class CouplingMobilWallBoundary(Boundary) :
         self._setChoice('DDLZ', value )
 
 
+    @Variables.noUndo
     def getDDLZ(self):
         """
         Get DDLZ from xml

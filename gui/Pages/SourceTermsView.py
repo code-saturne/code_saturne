@@ -79,6 +79,7 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
         self.setupUi(self)
 
         self.case = case
+        self.case.undoStopGlobal()
         self.parent = parent
 
         self.mdl     = SourceTermsModel(self.case)
@@ -134,6 +135,8 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
         # 3/ Initialize widget
 
         self.initialize(self.zone)
+
+        self.case.undoStartGlobal()
 
 
     def initialize(self, zone_num):

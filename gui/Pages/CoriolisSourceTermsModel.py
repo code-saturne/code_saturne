@@ -43,7 +43,7 @@ import sys, unittest
 
 from Base.Common import *
 import Base.Toolbox as Tool
-from Base.XMLvariables import Model
+from Base.XMLvariables import Model, Variables
 from Base.XMLmodel import ModelTest
 
 #-------------------------------------------------------------------------------
@@ -75,6 +75,7 @@ class CoriolisSourceTermsModel(Model):
         return default
 
 
+    @Variables.noUndo
     def getOmega(self, var):
         """
         Return value of omega for var
@@ -88,6 +89,7 @@ class CoriolisSourceTermsModel(Model):
         return omega
 
 
+    @Variables.undoLocal
     def setOmega(self, txml, value):
         """
         Put value of omega for txml balise

@@ -165,6 +165,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         self.setupUi(self)
 
         self.case = case
+        self.case.undoStopGlobal()
         self.mdl = ProfilesModel(self.case)
 
         #  Initialize variables concerning the display of the Hlist
@@ -247,6 +248,8 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
 
         setGreenColor(self.pushButtonFormula, True)
         self.__eraseEntries()
+
+        self.case.undoStartGlobal()
 
 
     def __verifLabel(self):

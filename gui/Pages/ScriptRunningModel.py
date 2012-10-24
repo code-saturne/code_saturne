@@ -60,6 +60,7 @@ class ScriptRunningModel(Model):
         self.parameters = None
 
 
+    @Variables.noUndo
     def getRunType(self):
         """
         Get run type.
@@ -71,6 +72,7 @@ class ScriptRunningModel(Model):
         return val
 
 
+    @Variables.undoLocal
     def setRunType(self, run):
         """
         Set run type.
@@ -79,6 +81,7 @@ class ScriptRunningModel(Model):
         self.node_mgt.xmlSetData('run_type', run)
 
 
+    @Variables.noUndo
     def getLogType(self):
         """
         Get logging options.
@@ -102,6 +105,7 @@ class ScriptRunningModel(Model):
         return log_type
 
 
+    @Variables.undoLocal
     def setLogType(self, log_type):
         """
         Set logging options.
@@ -127,6 +131,7 @@ class ScriptRunningModel(Model):
                 del node['parallel']
 
 
+    @Variables.noUndo
     def getString(self, key):
         """
         Get entry by named string.
@@ -138,6 +143,7 @@ class ScriptRunningModel(Model):
         return val
 
 
+    @Variables.undoLocal
     def setString(self, key, string):
         """
         Set entry by named string.

@@ -46,7 +46,7 @@ import sys, unittest, logging
 
 from Base.Common import *
 import Base.Toolbox as Tool
-from Base.XMLvariables import Model
+from Base.XMLvariables import Model, Variables
 
 
 #-------------------------------------------------------------------------------
@@ -83,22 +83,22 @@ class LagrangianOutputModel(Model):
         """
         default = {}
         default['listing_printing_frequency'] = 1
-        default['postprocessing_frequency'] = 1
-        default['postprocessing_format'] = "EnSight"
-        default['postprocessing_options'] = "ascii"
-        default['particles'] = "off"
-        default['trajectory'] = "off"
-        default['number_of_particles'] = 500
-        default['resident_time'] = "off"
-        default['diameter'] = "off"
-        default['temperature'] = "off"
-        default['velocity_particles'] = "off"
-        default['velocity_fluid_seen'] = "off"
-        default['mass'] = "off"
-        default['coal_temperature'] = "off"
-        default['shrinking_core_diameter'] = "off"
-        default['raw_coal_mass_fraction'] = "off"
-        default['char_mass_fraction'] = "off"
+        default['postprocessing_frequency']   = 1
+        default['postprocessing_format']      = "EnSight"
+        default['postprocessing_options']     = "ascii"
+        default['particles']                  = "off"
+        default['trajectory']                 = "off"
+        default['number_of_particles']        = 500
+        default['resident_time']              = "off"
+        default['diameter']                   = "off"
+        default['temperature']                = "off"
+        default['velocity_particles']         = "off"
+        default['velocity_fluid_seen']        = "off"
+        default['mass']                       = "off"
+        default['coal_temperature']           = "off"
+        default['shrinking_core_diameter']    = "off"
+        default['raw_coal_mass_fraction']     = "off"
+        default['char_mass_fraction']         = "off"
         return default
 
 
@@ -157,16 +157,17 @@ class LagrangianOutputModel(Model):
 ##         self.node_output.xmlInitChildNode('char_mass_fraction', status=default)
 
 
+    @Variables.undoLocal
     def setTrajectoryStatus(self, status):
         """
         Update the trajectory mode status markup from the XML document.
         """
         self.isOnOff(status)
         node_traj = self.node_lagr.xmlInitNode('trajectory', 'status')
-        #node_traj = self.node_output.xmlInitChildNode('trajectory', 'status')
         node_traj['status'] = status
 
 
+    @Variables.noUndo
     def getTrajectoryStatus(self):
         """
         Return status for trajectory mode.
@@ -179,6 +180,7 @@ class LagrangianOutputModel(Model):
         return status
 
 
+    @Variables.undoLocal
     def setParticlesStatus(self, status):
         """
         Update the particles mode status markup from the XML document.
@@ -188,6 +190,7 @@ class LagrangianOutputModel(Model):
         node_part['status'] = status
 
 
+    @Variables.noUndo
     def getParticlesStatus(self):
         """
         Return status for particles mode.
@@ -200,6 +203,7 @@ class LagrangianOutputModel(Model):
         return status
 
 
+    @Variables.undoLocal
     def setDisplayParticlesValue(self, value):
         """
         Update value of particles for post-processing display.
@@ -209,6 +213,7 @@ class LagrangianOutputModel(Model):
         self.node_output.xmlSetData('number_of_particles', value)
 
 
+    @Variables.noUndo
     def getDisplayParticlesValue(self):
         """
         Return the value of particles for post-processing display.
@@ -220,6 +225,7 @@ class LagrangianOutputModel(Model):
         return npart
 
 
+    @Variables.undoLocal
     def setListingFrequency(self, value):
         """
         Update the value for listing frequency.
@@ -229,6 +235,7 @@ class LagrangianOutputModel(Model):
         self.node_output.xmlSetData('listing_printing_frequency', value)
 
 
+    @Variables.noUndo
     def getListingFrequency(self):
         """
         Return the value for listing frequency.
@@ -240,6 +247,7 @@ class LagrangianOutputModel(Model):
         return freq
 
 
+    @Variables.undoLocal
     def setPostProcessingFrequency(self, value):
         """
         Update the value for post-processing frequency.
@@ -249,6 +257,7 @@ class LagrangianOutputModel(Model):
         self.node_output.xmlSetData('postprocessing_frequency', value)
 
 
+    @Variables.noUndo
     def getPostProcessingFrequency(self):
         """
         Return the value for post-processing frequency.
@@ -260,6 +269,7 @@ class LagrangianOutputModel(Model):
         return freq
 
 
+    @Variables.noUndo
     def getPostProcessingFormat(self):
         """
         Return the value for post-processing format.
@@ -268,10 +278,10 @@ class LagrangianOutputModel(Model):
         format = node_format['choice']
         if not format:
             format = self._defaultLagrangianOutputValues()['postprocessing_format']
-            #self.setPostProcessingFormat(format)
         return format
 
 
+    @Variables.noUndo
     def getPostProcessingOption(self):
         """
         Return the value for post-processing options.
@@ -280,10 +290,10 @@ class LagrangianOutputModel(Model):
         format = node_format['choice']
         if not format:
             format = self._defaultLagrangianOutputValues()['postprocessing_options']
-            #self.setPostProcessingOption(format)
         return format
 
 
+    @Variables.undoLocal
     def setFluidVelocityStatus(self, status):
         """
         Update the status markup from the XML document to associate the variable
@@ -294,6 +304,7 @@ class LagrangianOutputModel(Model):
         node_velocity['status'] = status
 
 
+    @Variables.noUndo
     def getFluidVelocityStatus(self):
         """
         Return status for association of the variable 'velocity of the locally
@@ -307,6 +318,7 @@ class LagrangianOutputModel(Model):
         return status
 
 
+    @Variables.undoLocal
     def setParticlesVelocityStatus(self, status):
         """
         Update the status markup from the XML document to associate the variable
@@ -317,6 +329,7 @@ class LagrangianOutputModel(Model):
         node_velocity['status'] = status
 
 
+    @Variables.noUndo
     def getParticlesVelocityStatus(self):
         """
         Return status for association of the variable 'particle velocity'
@@ -330,6 +343,7 @@ class LagrangianOutputModel(Model):
         return status
 
 
+    @Variables.undoLocal
     def setResidentTimeStatus(self, status):
         """
         Update the status markup from the XML document to associate the variable
@@ -340,6 +354,7 @@ class LagrangianOutputModel(Model):
         node_rtime['status'] = status
 
 
+    @Variables.noUndo
     def getResidentTimeStatus(self):
         """
         Return status for association of the variable 'resident time'
@@ -353,6 +368,7 @@ class LagrangianOutputModel(Model):
         return status
 
 
+    @Variables.undoLocal
     def setParticleDiameterStatus(self, status):
         """
         Update the status markup from the XML document to associate the variable
@@ -363,6 +379,7 @@ class LagrangianOutputModel(Model):
         node_diam['status'] = status
 
 
+    @Variables.noUndo
     def getParticleDiameterStatus(self):
         """
         Return status for association of the variable 'particle diameter'
@@ -376,6 +393,7 @@ class LagrangianOutputModel(Model):
         return status
 
 
+    @Variables.undoLocal
     def setParticleTemperatureStatus(self, status):
         """
         Update the status markup from the XML document to associate the variable
@@ -386,6 +404,7 @@ class LagrangianOutputModel(Model):
         node_temp['status'] = status
 
 
+    @Variables.noUndo
     def getParticleTemperatureStatus(self):
         """
         Return status for association of the variable 'particle temperature'
@@ -399,6 +418,7 @@ class LagrangianOutputModel(Model):
         return status
 
 
+    @Variables.undoLocal
     def setParticleMassStatus(self, status):
         """
         Update the status markup from the XML document to associate the variable
@@ -409,6 +429,7 @@ class LagrangianOutputModel(Model):
         node_mass['status'] = status
 
 
+    @Variables.noUndo
     def getParticleMassStatus(self):
         """
         Return status for association of the variable 'particle mass'
@@ -422,6 +443,7 @@ class LagrangianOutputModel(Model):
         return status
 
 
+    @Variables.undoLocal
     def setCoalParticleTemperatureStatus(self, status):
         """
         Update the status markup from the XML document to associate the variable
@@ -432,6 +454,7 @@ class LagrangianOutputModel(Model):
         node_temp['status'] = status
 
 
+    @Variables.noUndo
     def getCoalParticleTemperatureStatus(self):
         """
         Return status for association of the variable 'temperature of the coal particles'
@@ -449,6 +472,7 @@ class LagrangianOutputModel(Model):
         return status
 
 
+    @Variables.undoLocal
     def setCoalParticleDiameterStatus(self, status):
         """
         Update the status markup from the XML document to associate the variable
@@ -460,6 +484,7 @@ class LagrangianOutputModel(Model):
         node_diam['status'] = status
 
 
+    @Variables.noUndo
     def getCoalParticleDiameterStatus(self):
         """
         Return status for association of the variable
@@ -473,6 +498,7 @@ class LagrangianOutputModel(Model):
         return status
 
 
+    @Variables.undoLocal
     def setCoalParticleMassStatus(self, status):
         """
         Update the status markup from the XML document to associate the variable
@@ -483,6 +509,7 @@ class LagrangianOutputModel(Model):
         node_mass['status'] = status
 
 
+    @Variables.noUndo
     def getCoalParticleMassStatus(self):
         """
         Return status for association of the variable 'mass of reactive coal of the coal particles'
@@ -496,6 +523,7 @@ class LagrangianOutputModel(Model):
         return status
 
 
+    @Variables.undoLocal
     def setCokeParticleMassStatus(self, status):
         """
         Update the status markup from the XML document to associate the variable
@@ -506,6 +534,7 @@ class LagrangianOutputModel(Model):
         node_mass['status'] = status
 
 
+    @Variables.noUndo
     def getCokeParticleMassStatus(self):
         """
         Return status for association of the variable 'mass of char of the coal particles'

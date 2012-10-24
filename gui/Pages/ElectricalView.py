@@ -78,6 +78,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
 
         self.case = case
         self.stbar = stbar
+        self.case.undoStopGlobal()
 
         self.model = ElectricalModel(self.case)
 
@@ -124,6 +125,8 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
 
         # Initialize widget
         self.__initializeWidget()
+
+        self.case.undoStartGlobal()
 
 
     @pyqtSignature("")

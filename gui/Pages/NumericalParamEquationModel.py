@@ -291,7 +291,7 @@ class NumericalParamEquatModel(Model):
         else:
             return 0
 
-
+    @Variables.undoGlobal
     def setSchemeDefaultValues(self):
         """Usefull for TurbulenceModel in case of LES"""
         for label in self.var:
@@ -305,6 +305,7 @@ class NumericalParamEquatModel(Model):
                 pass
 
 
+    @Variables.noUndo
     def getClippingList(self):
         """ Return the variables label list for clipping parameters """
         list = []
@@ -315,6 +316,7 @@ class NumericalParamEquatModel(Model):
         return list
 
 
+    @Variables.noUndo
     def getSchemeList(self):
         """ Return the variables label list for scheme parameters """
         list = []
@@ -325,6 +327,7 @@ class NumericalParamEquatModel(Model):
         return list
 
 
+    @Variables.noUndo
     def getSolverList(self):
         """ Return the variables label list for solver parameters """
         list = []
@@ -349,6 +352,7 @@ class NumericalParamEquatModel(Model):
 
 # Following methods for dependances of scheme:
 
+    @Variables.noUndo
     def getScheme(self, label):
         """ Return value of order scheme for variable labelled label """
         node = self._getSchemeLabelNode(label)
@@ -359,6 +363,7 @@ class NumericalParamEquatModel(Model):
         return value
 
 
+    @Variables.noUndo
     def getBlendingFactor(self, label):
         """ Return value of blending factor for variable labelled label """
         node = self._getSchemeLabelNode(label)
@@ -368,6 +373,7 @@ class NumericalParamEquatModel(Model):
         return value
 
 
+    @Variables.noUndo
     def getSlopeTest(self, label):
         """ Return value of slope test for variable labelled label """
         node = self._getSchemeLabelNode(label)
@@ -378,6 +384,7 @@ class NumericalParamEquatModel(Model):
         return value
 
 
+    @Variables.noUndo
     def getFluxReconstruction(self, label):
         """ Return value of flux reconstruction for variable labelled label """
         node = self._getSchemeLabelNode(label)
@@ -387,6 +394,7 @@ class NumericalParamEquatModel(Model):
         return value
 
 
+    @Variables.noUndo
     def getRhsReconstruction(self, label):
         """ Return value of blending factor for variable labelled label """
         node = self._getSchemeLabelNode(label)
@@ -396,6 +404,7 @@ class NumericalParamEquatModel(Model):
         return value
 
 
+    @Variables.undoGlobal
     def setBlendingFactor(self, label, value):
         """
         Put value of blending factor for variable labelled label
@@ -418,6 +427,7 @@ class NumericalParamEquatModel(Model):
 #                node.xmlRemoveChild('blending_factor')
 
 
+    @Variables.undoGlobal
     def setScheme(self, label, value):
         """
         Put value of order scheme for variable or scalar labelled label
@@ -436,6 +446,7 @@ class NumericalParamEquatModel(Model):
             n['choice'] = value
 
 
+    @Variables.undoLocal
     def setSlopeTest(self, label, status):
         """ Put status of slope test for variable labelled label """
         self.isOnOff(status)
@@ -447,6 +458,7 @@ class NumericalParamEquatModel(Model):
             n['status'] = status
 
 
+    @Variables.undoLocal
     def setFluxReconstruction(self, label, value):
         """ Put status of flux reconstruction for variable labelled label """
         self.isOnOff(value)
@@ -458,6 +470,7 @@ class NumericalParamEquatModel(Model):
             n['status']=value
 
 
+    @Variables.undoLocal
     def setRhsReconstruction(self, label, value):
         """
         Put value of blending factor for variable labelled label
@@ -470,6 +483,7 @@ class NumericalParamEquatModel(Model):
 
 # Following methods for dependances of solver:
 
+    @Variables.undoLocal
     def setMaxIterNumber(self, label, value):
         """ Put number of maximum iterations for variable labelled label """
         self.isInt(value)
@@ -480,6 +494,7 @@ class NumericalParamEquatModel(Model):
             node.xmlRemoveChild('max_iter_number')
 
 
+    @Variables.undoLocal
     def setSolverPrecision(self, label, value):
         """ Put value of solver precision for variable labelled label """
         # for pressure default value always equal to 1e-8
@@ -496,6 +511,7 @@ class NumericalParamEquatModel(Model):
             node.xmlRemoveChild('solver_precision')
 
 
+    @Variables.undoLocal
     def setSolverChoice(self, label, value):
         """ Put choice of solver for variable labelled label """
         self.isInList(value, ('multigrid', 'conjugate_gradient', 'jacobi', 'bi_cgstab', 'gmres'))
@@ -512,6 +528,7 @@ class NumericalParamEquatModel(Model):
             node.xmlRemoveChild('solver_choice')
 
 
+    @Variables.noUndo
     def getMaxIterNumber(self, label):
         """ Return number of maximum iterations for variable labelled label """
         node = self._getSolverLabelNode(label)
@@ -521,6 +538,7 @@ class NumericalParamEquatModel(Model):
         return value
 
 
+    @Variables.noUndo
     def getSolverPrecision(self, label):
         """ Return value of solver precision for variable labelled label """
         node = self._getSolverLabelNode(label)
@@ -536,6 +554,7 @@ class NumericalParamEquatModel(Model):
         return value
 
 
+    @Variables.noUndo
     def getSolverChoice(self, label):
         """ Return choice of solver for variable labelled label """
         node = self._getSolverLabelNode(label)
@@ -552,6 +571,7 @@ class NumericalParamEquatModel(Model):
         return value
 
 
+    @Variables.noUndo
     def getScalarTimeStepFactor(self, label):
         """ Return value of time_step_factor for variable labelled label """
         if self.isScalar(label):
@@ -564,6 +584,7 @@ class NumericalParamEquatModel(Model):
             raise ValueError("This method runs only with scalar label")
 
 
+    @Variables.undoLocal
     def setScalarTimeStepFactor(self, label, value):
         """ Put value of time_step_factor for variable labelled label """
         self.isStrictPositiveFloat(value)
@@ -577,6 +598,7 @@ class NumericalParamEquatModel(Model):
             raise ValueError("This method runs only with scalar label")
 
 
+    @Variables.noUndo
     def getMinValue(self, label):
         """Get minimal value from an additional_scalar with label scalar_label"""
         self.isInList(label, self.getClippingList())
@@ -589,6 +611,7 @@ class NumericalParamEquatModel(Model):
         return min_val
 
 
+    @Variables.undoLocal
     def setMinValue(self, label, min_value):
         """
         Put minimal value for an additional_scalar with label scalar_label.
@@ -600,6 +623,7 @@ class NumericalParamEquatModel(Model):
         node.xmlSetData('min_value', min_value)
 
 
+    @Variables.noUndo
     def getMaxValue(self, label):
         """Get maximal value from an additional_scalar with label scalar_label"""
         self.isInList(label, self.getClippingList())
@@ -611,6 +635,7 @@ class NumericalParamEquatModel(Model):
         return max_val
 
 
+    @Variables.undoLocal
     def setMaxValue(self, label, max_value):
         """
         Put maximal value for an additional_scalar with label scalar_label.

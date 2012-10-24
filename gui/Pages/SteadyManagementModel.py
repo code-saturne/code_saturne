@@ -75,6 +75,7 @@ class SteadyManagementModel(Model):
         return default
 
 
+    @Variables.undoGlobal
     def setSteadyFlowManagement(self, steady):
         """
         Set steady flow management balise into xml file.
@@ -103,6 +104,7 @@ class SteadyManagementModel(Model):
             del NumericalParamGlobalModel
 
 
+    @Variables.noUndo
     def getSteadyFlowManagement(self):
         """
         Get status of steady flow management balise fromxml file.
@@ -115,6 +117,7 @@ class SteadyManagementModel(Model):
         return status
 
 
+    @Variables.undoLocal
     def setRelaxCoefficient(self, value):
         """
         Set value of coefficient of relaxation into xml file.
@@ -125,6 +128,7 @@ class SteadyManagementModel(Model):
         node.xmlSetData('relaxation_coefficient', value)
 
 
+    @Variables.undoLocal
     def setNbIter(self, value):
         """
         Set value of iterations number into xml file.
@@ -135,6 +139,7 @@ class SteadyManagementModel(Model):
         node.xmlSetData('iterations', value)
 
 
+    @Variables.undoLocal
     def setZeroIteration(self, status):
         """
         Set status of option of zero iteration into xml file.
@@ -145,6 +150,7 @@ class SteadyManagementModel(Model):
         node['status'] = status
 
 
+    @Variables.noUndo
     def getRelaxCoefficient(self):
         """
         Get value of coefficient of relaxation from xml file.
@@ -158,6 +164,7 @@ class SteadyManagementModel(Model):
         return coef
 
 
+    @Variables.noUndo
     def getNbIter(self):
         """
         Get value of coefficient of relaxation from xml file.
@@ -171,6 +178,7 @@ class SteadyManagementModel(Model):
         return value
 
 
+    @Variables.noUndo
     def getZeroIteration(self):
         """
         Get status of option of zero iteration from xml file.

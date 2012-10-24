@@ -118,6 +118,7 @@ class FluidCharacteristicsModel(Variables, Model):
         return default
 
 
+    @Variables.noUndo
     def getThermalModel(self):
         """
         Return node and model of choosen thermophysical model
@@ -146,6 +147,7 @@ class FluidCharacteristicsModel(Variables, Model):
         return nodeThermal, modelList[0]
 
 
+    @Variables.noUndo
     def getThermoPhysicalModel(self):
         """
         Return values of attribute "model" of all thermophysical model nodes.
@@ -169,6 +171,7 @@ class FluidCharacteristicsModel(Variables, Model):
                d['solid_fuels']
 
 
+    @Variables.noUndo
     def getInitialValue(self, tag):
         """
         Return initial value of the markup tag : 'density', or
@@ -185,6 +188,7 @@ class FluidCharacteristicsModel(Variables, Model):
         return pp
 
 
+    @Variables.undoLocal
     def setInitialValue(self, tag, val):
         """
         Put initial value for the markup tag : 'density', or
@@ -198,66 +202,79 @@ class FluidCharacteristicsModel(Variables, Model):
         node.xmlSetData('initial_value', val)
 
 
+    @Variables.noUndo
     def getInitialValueDensity(self):
         """Return initial value of density"""
         return self.getInitialValue('density')
 
 
+    @Variables.undoLocal
     def setInitialValueDensity(self, val):
         """Put initial value for density"""
         self.setInitialValue('density', val)
 
 
+    @Variables.noUndo
     def getInitialValueViscosity(self):
         """Return initial value of viscosity"""
         return self.getInitialValue('molecular_viscosity')
 
 
+    @Variables.undoLocal
     def setInitialValueViscosity(self, val):
         """Put initial value for viscosity"""
         self.setInitialValue('molecular_viscosity', val)
 
 
+    @Variables.noUndo
     def getInitialValueVolumicViscosity(self):
         """Return initial value of volumic viscosity"""
         return self.getInitialValue('volumic_viscosity')
 
 
+    @Variables.undoLocal
     def setInitialValueVolumicViscosity(self, val):
         """Put initial value for volumic viscosity"""
         self.setInitialValue('volumic_viscosity', val)
 
 
+    @Variables.noUndo
     def getInitialValueHeat(self):
         """Return initial value of specific heat"""
         return self.getInitialValue('specific_heat')
 
 
+    @Variables.undoLocal
     def setInitialValueHeat(self, val):
         """Put initial value for specific heat"""
         self.setInitialValue('specific_heat', val)
 
 
+    @Variables.noUndo
     def getInitialValueCond(self):
         """Return initial value of conductivity"""
         return self.getInitialValue('thermal_conductivity')
 
 
+    @Variables.undoLocal
     def setInitialValueCond(self, val):
         """Put initial value for conductivity"""
         self.setInitialValue('thermal_conductivity', val)
 
 
+    @Variables.noUndo
     def getInitialValueDyn(self):
         """Return initial value of conductivity"""
         return self.getInitialValue('dynamic_diffusion')
 
 
+    @Variables.undoLocal
     def setInitialValueDyn(self, val):
         """Put initial value for conductivity"""
         self.setInitialValue('dynamic_diffusion', val)
 
 
+    @Variables.noUndo
     def getFormula(self, tag):
         """
         Return a formula for I{tag} 'density', 'molecular_viscosity',
@@ -274,6 +291,7 @@ class FluidCharacteristicsModel(Variables, Model):
         return formula
 
 
+    @Variables.noUndo
     def getDefaultFormula(self, tag):
         """
         Return default formula
@@ -295,6 +313,7 @@ class FluidCharacteristicsModel(Variables, Model):
         return formula
 
 
+    @Variables.undoLocal
     def setFormula(self, tag, str):
         """
         Gives a formula for 'density', 'molecular_viscosity',
@@ -307,6 +326,7 @@ class FluidCharacteristicsModel(Variables, Model):
         node.xmlSetData('formula', str)
 
 
+    @Variables.noUndo
     def getPropertyMode(self, tag):
         """Return choice of node I{tag}. Choice is constant or variable"""
         self.isInList(tag, ('density', 'molecular_viscosity',
@@ -318,6 +338,7 @@ class FluidCharacteristicsModel(Variables, Model):
         return c
 
 
+    @Variables.undoGlobal
     def setPropertyMode(self, tag, choice):
         """Put choice in xml file's node I{tag}"""
         self.isInList(tag, ('density', 'molecular_viscosity',

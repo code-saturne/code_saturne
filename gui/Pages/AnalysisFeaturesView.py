@@ -92,6 +92,8 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.case = case
         self.browser = tree
 
+        self.case.undoStopGlobal()
+
         self.lagr  = LagrangianModel(self.case)
         self.turb  = TurbulenceModel(self.case)
         self.therm = ThermalScalarModel(self.case)
@@ -279,6 +281,8 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         # Update the Tree files and folders
 
         self.browser.configureTree(self.case)
+
+        self.case.undoStartGlobal()
 
 
     def __activateComboBox(self):

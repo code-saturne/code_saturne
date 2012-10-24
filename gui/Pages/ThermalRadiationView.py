@@ -69,7 +69,7 @@ class ThermalRadiationAdvancedDialogView(QDialog, Ui_ThermalRadiationAdvancedDia
     """
     Building of popup window for advanced options.
     """
-    def __init__(self, parent, default):
+    def __init__(self, parent, case, default):
         """
         Constructor
         """
@@ -77,6 +77,9 @@ class ThermalRadiationAdvancedDialogView(QDialog, Ui_ThermalRadiationAdvancedDia
 
         Ui_ThermalRadiationAdvancedDialogForm.__init__(self)
         self.setupUi(self)
+
+        self.case = case
+        self.case.undoStopGlobal()
 
         self.setWindowTitle(self.tr("Advanced options"))
         self.default = default
@@ -124,6 +127,8 @@ class ThermalRadiationAdvancedDialogView(QDialog, Ui_ThermalRadiationAdvancedDia
 
         validatorFreq = QtPage.IntValidator(self.lineEditFreq, min=1)
         self.lineEditFreq.setValidator(validatorFreq)
+
+        self.case.undoStartGlobal()
 
 
     def accept(self):
@@ -179,6 +184,7 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
 
         self.browser = tree
         self.case = case
+        self.case.undoStopGlobal()
         self.mdl = ThermalRadiationModel(self.case)
 
         # Combo models
@@ -256,6 +262,8 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
         self.pushButtonCoeffFormula.setEnabled(False)
 
         self.lineEditCoeff.setText(QString(str(self.mdl.getAbsorCoeff())))
+
+        self.case.undoStartGlobal()
 
 
     @pyqtSignature("const QString &")
@@ -335,7 +343,7 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
         default['model']     = self.mdl.getRadiativeModel()
         log.debug("slotAdvancedOptions -> %s" % str(default))
 
-        dialog = ThermalRadiationAdvancedDialogView(self, default)
+        dialog = ThermalRadiationAdvancedDialogView(self, self.case, default)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotAdvancedOptions -> %s" % str(result))

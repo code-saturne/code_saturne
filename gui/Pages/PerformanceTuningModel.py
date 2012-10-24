@@ -43,7 +43,7 @@ import unittest
 
 from Base.Common import *
 import Base.Toolbox as Tool
-from Base.XMLvariables import Model
+from Base.XMLvariables import Model, Variables
 from Base.XMLmodel import ModelTest
 
 #-------------------------------------------------------------------------------
@@ -74,6 +74,7 @@ class PerformanceTuningModel(Model):
         return default
 
 
+    @Variables.noUndo
     def getPartitionInputPath(self):
         """
         Return restart path if applicable
@@ -86,6 +87,7 @@ class PerformanceTuningModel(Model):
         return partition_input
 
 
+    @Variables.undoLocal
     def setPartitionInputPath(self, v):
         """
         Set partition path if applicable
@@ -97,6 +99,7 @@ class PerformanceTuningModel(Model):
             node.xmlRemoveNode()
 
 
+    @Variables.noUndo
     def getPartitionInputPath(self):
         """
         Return restart path if applicable
@@ -109,6 +112,7 @@ class PerformanceTuningModel(Model):
         return partition_input
 
 
+    @Variables.noUndo
     def getPartitionType(self):
         """
         Get partition type.
@@ -120,6 +124,7 @@ class PerformanceTuningModel(Model):
         return val
 
 
+    @Variables.undoLocal
     def setPartitionType(self, p):
         """
         Set partition type.
@@ -135,6 +140,7 @@ class PerformanceTuningModel(Model):
             self.node_part.xmlSetData('type', p)
 
 
+    @Variables.noUndo
     def getPartitionOut(self):
         """
         Get partition type.
@@ -146,6 +152,7 @@ class PerformanceTuningModel(Model):
         return val
 
 
+    @Variables.undoLocal
     def setPartitionOut(self, p):
         """
         Set partition type.
@@ -159,6 +166,7 @@ class PerformanceTuningModel(Model):
             self.node_part.xmlSetData('output', p)
 
 
+    @Variables.noUndo
     def getPartitionList(self):
         """
         Get partitions list.
@@ -170,6 +178,7 @@ class PerformanceTuningModel(Model):
         return val
 
 
+    @Variables.undoLocal
     def setPartitionList(self, parts):
         """
         Set partitions list.
@@ -182,6 +191,7 @@ class PerformanceTuningModel(Model):
             self.node_part.xmlSetData('partition_list', parts)
 
 
+    @Variables.noUndo
     def getPartitionRankStep(self):
         """
         Get partitions list.
@@ -193,6 +203,7 @@ class PerformanceTuningModel(Model):
         return val
 
 
+    @Variables.undoLocal
     def setPartitionRankStep(self, rank_step):
         """
         Set partitions list.
@@ -205,6 +216,7 @@ class PerformanceTuningModel(Model):
             self.node_part.xmlSetData('rank_step', rank_step)
 
 
+    @Variables.noUndo
     def getIgnorePerio(self):
         """
         """
@@ -216,6 +228,7 @@ class PerformanceTuningModel(Model):
         return status
 
 
+    @Variables.undoLocal
     def setIgnorePerio(self, v):
         """
         """
@@ -227,6 +240,7 @@ class PerformanceTuningModel(Model):
             node.xmlRemoveNode()
 
 
+    @Variables.noUndo
     def getBlockIOReadMethod(self):
         """
         Return default block IO read method
@@ -237,6 +251,7 @@ class PerformanceTuningModel(Model):
         return val
 
 
+    @Variables.undoLocal
     def setBlockIOReadMethod(self, m):
         """
         Set block IO read method if applicable
@@ -252,6 +267,7 @@ class PerformanceTuningModel(Model):
             self.node_io.xmlSetData('read_method', m)
 
 
+    @Variables.noUndo
     def getBlockIOWriteMethod(self):
         """
         Return default block IO write method
@@ -262,6 +278,7 @@ class PerformanceTuningModel(Model):
         return val
 
 
+    @Variables.undoLocal
     def setBlockIOWriteMethod(self, m):
         """
         Set block IO write method if applicable
@@ -277,6 +294,7 @@ class PerformanceTuningModel(Model):
             self.node_io.xmlSetData('write_method', m)
 
 
+    @Variables.noUndo
     def getBlockIORankStep(self):
         """
         Get block IO rank step.
@@ -288,6 +306,7 @@ class PerformanceTuningModel(Model):
         return val
 
 
+    @Variables.undoLocal
     def setBlockIORankStep(self, rank_step):
         """
         Set block IO rank step.
@@ -307,6 +326,7 @@ class PerformanceTuningModel(Model):
         return 1024*1024*8
 
 
+    @Variables.noUndo
     def getBlockIOMinSize(self):
         """
         Get block IO min block size.
@@ -318,6 +338,7 @@ class PerformanceTuningModel(Model):
         return val
 
 
+    @Variables.undoLocal
     def setBlockIOMinSize(self, min_size):
         """
         Set block IO min block size.

@@ -78,6 +78,7 @@ class ThermalScalarView(QWidget, Ui_ThermalScalarForm):
 
         self.browser = tree
         self.case = case
+        self.case.undoStopGlobal()
         self.thermal = ThermalScalarModel(self.case)
 
         # combo Model
@@ -100,6 +101,8 @@ class ThermalScalarView(QWidget, Ui_ThermalScalarForm):
 
         model = self.thermal.getThermalScalarModel()
         self.modelThermal.setItem(str_model=model)
+
+        self.case.undoStartGlobal()
 
 
     @pyqtSignature("const QString &")

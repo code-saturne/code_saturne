@@ -122,6 +122,11 @@ class Dico:
         self.data['no_boundary_conditions'] = False
         self.data['salome']           = False
         self.data['package']          = None
+        self.data['current_page']     = ""
+        self.data['current_index']    = None
+        self.data['current_tab']     = -1
+        self.data['undo']             =  []
+        self.data['redo']             =  []
 
 
     def _errorExit(self, msg):
@@ -1132,6 +1137,11 @@ class Case(Dico, XMLDocument):
             self['new'] = "yes"
             self['saved'] = "yes"
 
+        self.record_func_prev = None
+        self.record_local = False
+        self.record_global = True
+        self.xml_prev = ""
+
 
     def xmlRootNode(self):
         """
@@ -1193,6 +1203,43 @@ class Case(Dico, XMLDocument):
             msg = "Error: unable to save the XML document file." ,
             "(XMLengine module, Case class, xmlSaveDocument method)"
             print(msg)
+
+
+    def undoStop(self):
+        self.record_local = True
+
+
+    def undoStart(self):
+        self.record_local = False
+
+
+    def undoStopGlobal(self):
+        self.record_global = False
+
+
+    def undoStartGlobal(self):
+        self.record_global = True
+
+
+    def undoGlobal(self):
+        if self['current_page'] != '' and self.record_local == False and self.record_global == True:
+            if self.xml_prev != self.toString() or self.xml_prev == "":
+                self['undo'].append([self['current_page'], self.toString(), self['current_index'], self['current_tab']])
+                self['redo'] = []
+                self.xml_prev = self.toString()
+                self.record_func_prev = None
+
+
+    def undo(self, f):
+        if self['current_page'] != '' and self.record_local == False and self.record_global == True:
+            if self.xml_prev != self.toString():
+                if self.record_func_prev == f:
+                    self['redo'] = []
+                else:
+                    self.record_func_prev = f
+                    self['undo'].append([self['current_page'], self.toString(), self['current_index'], self['current_tab']])
+                    self['redo'] = []
+                    self.xml_prev = self.toString()
 
 
 #-------------------------------------------------------------------------------

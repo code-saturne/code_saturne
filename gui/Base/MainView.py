@@ -215,6 +215,8 @@ class MainView(object):
         self.statusbar.showMessage(self.tr("Ready"), 5000)
 #        self.setMaximumSize(QSize(700, 600))
 #        self.setMinimumSize(QSize(700, 600))
+        self.actionRedo.setEnabled(True)
+        self.actionUndo.setEnabled(True)
 
 
     def loadInitialFile(self):
@@ -687,6 +689,10 @@ class MainView(object):
         self.case.xmlSaveDocument()
         self.batchFileSave()
 
+        # force to blank after save
+        self.case['undo'] = []
+        self.case['redo'] = []
+
         log.debug("fileSave(): ok")
 
         msg = self.tr("%s saved" % file_name)
@@ -719,6 +725,10 @@ class MainView(object):
                 self.batchFileSave()
                 title = os.path.basename(self.case['xmlfile']) + " - " + self.tr(self.package.code_name) + self.tr(" GUI")
                 self.setWindowTitle(title)
+
+                # force to blank after save
+                self.case['undo'] = []
+                self.case['redo'] = []
 
             else:
                 msg = self.tr("Saving aborted")
@@ -1040,6 +1050,8 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         self.connect(self.displayCSTutorialAction, SIGNAL("triggered()"), self.displayCSTutorial)
         self.connect(self.displayCSKernelAction,   SIGNAL("triggered()"), self.displayCSKernel)
         self.connect(self.displayCSRefcardAction,  SIGNAL("triggered()"), self.displayCSRefcard)
+        self.connect(self.actionUndo,              SIGNAL("activated()"), self.slotUndo)
+        self.connect(self.actionRedo,              SIGNAL("activated()"), self.slotRedo)
 
 
     def initCase(self):
@@ -1062,6 +1074,8 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         """
         Display the first page if a file of parameters (new or previous) is loaded
         """
+        self.case['current_tab'] = 0
+        self.case['current_index'] = None
         return displaySelectedPage('Identity and paths',
                                     self,
                                     self.case,
@@ -1108,6 +1122,65 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         open the quick reference card for Code_Saturne
         """
         self.displayManual('refcard')
+
+
+    @pyqtSignature("")
+    def slotUndo(self):
+        """
+        public slot
+        """
+        if self.case['undo'] != []:
+            last_record = self.case['undo'].pop()
+            self.case.record_func_prev = None
+            self.case.xml_prev = ""
+            self.case['redo'].append([last_record[0],
+                                      self.case.toString(),
+                                      last_record[2],
+                                      last_record[3]])
+
+            self.case.parseString(last_record[1])
+            self.Browser.activeSelectedPage(last_record[2])
+            self.Browser.configureTree(self.case)
+            self.case['current_index'] = last_record[2]
+            self.case['current_tab'] = last_record[3]
+
+            p = displaySelectedPage(last_record[0],
+                                    self,
+                                    self.case,
+                                    stbar=self.statusbar,
+                                    study=self.Id,
+                                    tree=self.Browser)
+            self.scrollArea.setWidget(p)
+
+
+    @pyqtSignature("")
+    def slotRedo(self):
+        """
+        public slot
+        """
+        if self.case['redo'] != []:
+            last_record = self.case['redo'].pop()
+            self.case.record_func_prev = None
+            self.case.xml_prev = ""
+            self.case['undo'].append([last_record[0],
+                                      self.case.toString(),
+                                      last_record[2],
+                                      last_record[3]])
+
+            self.case.parseString(last_record[1])
+            self.Browser.activeSelectedPage(last_record[2])
+            self.Browser.configureTree(self.case)
+            self.case['current_index'] = last_record[2]
+            self.case['current_tab'] = last_record[3]
+
+            p = displaySelectedPage(last_record[0],
+                                    self,
+                                    self.case,
+                                    stbar=self.statusbar,
+                                    study=self.Id,
+                                    tree=self.Browser)
+            self.scrollArea.setWidget(p)
+
 
 #-------------------------------------------------------------------------------
 

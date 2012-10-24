@@ -192,6 +192,7 @@ class TurbulenceModel(Variables, Model):
         self.node_turb.xmlRemoveChild('property', name=propName)
 
 
+    @Variables.undoGlobal
     def setTurbulenceModel(self, model_turb):
         """
         Input ITURB
@@ -288,7 +289,7 @@ class TurbulenceModel(Variables, Model):
 
         del Boundary
 
-
+    @Variables.noUndo
     def getTurbulenceModel(self):
         """
         Return the current turbulence model.
@@ -300,6 +301,7 @@ class TurbulenceModel(Variables, Model):
         return model
 
 
+    @Variables.undoLocal
     def setLengthScale(self, l_scale):
         """
         Input XLOMLG.
@@ -309,6 +311,7 @@ class TurbulenceModel(Variables, Model):
             self.node_turb.xmlSetData('mixing_length_scale', l_scale)
 
 
+    @Variables.noUndo
     def getLengthScale(self):
         """
         Return XLOMLG.
@@ -320,6 +323,7 @@ class TurbulenceModel(Variables, Model):
         return l_scale
 
 
+    @Variables.noUndo
     def getScaleModel(self):
         """
         Return scale model from advanced options.
@@ -331,6 +335,7 @@ class TurbulenceModel(Variables, Model):
         return scale
 
 
+    @Variables.undoLocal
     def setScaleModel(self, scale):
         """
         Input scale model for advanced options.
@@ -339,6 +344,7 @@ class TurbulenceModel(Variables, Model):
         self.node_turb.xmlSetData('scale_model', scale)
 
 
+    @Variables.noUndo
     def getGravity(self):
         """
         Return scale model from advanced options .
@@ -357,6 +363,7 @@ class TurbulenceModel(Variables, Model):
         return gravity
 
 
+    @Variables.undoLocal
     def setGravity(self, gravity):
         """
         Input gravity for advanced options.

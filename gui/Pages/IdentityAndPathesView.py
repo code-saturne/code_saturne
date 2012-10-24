@@ -83,6 +83,8 @@ class IdentityAndPathesView(QtGui.QWidget, Ui_IdentityAndPathesForm):
         self.case = case
         self.study = study
 
+        self.case.undoStopGlobal()
+
         self.path = ['data_path',
                      'resu_path',
                      'user_src_path',
@@ -122,6 +124,8 @@ class IdentityAndPathesView(QtGui.QWidget, Ui_IdentityAndPathesForm):
         self.case_path = self.mdl.getCasePath()
         self.lineEditCasePath.setText(self.case_path)
         self.getAbsolutePath()
+
+        self.case.undoStartGlobal()
 
 
     def updateId(self, case_path):

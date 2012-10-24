@@ -91,14 +91,17 @@ class FluidStructureInteractionAdvancedOptionsView(QDialog,
     """
     Advanced dialog
     """
-    def __init__(self, parent, default):
+    def __init__(self, parent, case, default):
         """
         Constructor
         """
         # Init base classes
-        QDialog.__init__(self, parent)
+        QDialog.__init__(self, parent, case)
         Ui_FluidStructureInteractionAdvancedOptionsDialogForm.__init__(self)
         self.setupUi(self)
+
+        self.__case = case
+        self.__case.undoStopGlobal()
 
         title = self.tr("Displacements prediction:")
         self.setWindowTitle(title)
@@ -107,6 +110,8 @@ class FluidStructureInteractionAdvancedOptionsView(QDialog,
         self.__result  = default.copy()
         self.__setValidator()
         self.__setInitialValues()
+
+        self.__case.undoStartGlobal()
 
 
     def __setValidator(self):
@@ -490,6 +495,7 @@ class CouplingManager:
         Constructor
         """
         self.__case               = case
+        self.__case.undoStopGlobal()
         self.__internalTableModel = internalTableModel
         self.__externalTableModel = externalTableModel
         self.__internalCouplings = []
@@ -499,6 +505,7 @@ class CouplingManager:
         self.__initLineEditCouplings(mainView)
         self.__initFormulaCouplings (mainView)
         self.__initCheckBoxCouplings(mainView)
+        self.__case.undoStartGlobal()
 
 
     def __initLineEditCouplings(self, mainView):
@@ -682,6 +689,7 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
         self.setupUi(self)
 
         self.__case = case
+        self.__case.undoStopGlobal()
         self.__model = FluidStructureInteractionModel(case)
 
         self.__defineConnection()
@@ -714,6 +722,7 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
         self.__initTableView(self.tableExternalCoupling,
                             self.__externalTableModel,
                             couplingManager.slotExternalSelectionChanged)
+        self.__case.undoStartGlobal()
 
 
     def __defineConnection(self):
@@ -840,7 +849,7 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
         log.debug("slotAdvancedOptions -> %s" % str(default))
 
         # run the dialog
-        dialog = FluidStructureInteractionAdvancedOptionsView(self, default)
+        dialog = FluidStructureInteractionAdvancedOptionsView(self, self.__case, default)
         if dialog.exec_():
             # Set the model with the dialog results
             result = dialog.get_result()

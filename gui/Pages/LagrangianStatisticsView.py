@@ -292,6 +292,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         self.setupUi(self)
 
         self.case = case
+        self.case.undoStopGlobal()
         self.model = LagrangianStatisticsModel(self.case)
 
         self.connect(self.checkBoxISUIST, SIGNAL("clicked()"), self.slotISUIST)
@@ -358,6 +359,8 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         else:
             self.groupBoxIENSI3.setChecked(False)
         self.slotIENSI3()
+
+        self.case.undoStartGlobal()
 
 
     def _initVolumicNames(self):

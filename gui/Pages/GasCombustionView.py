@@ -78,6 +78,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
         self.setupUi(self)
 
         self.case = case
+        self.case.undoStopGlobal()
         self.mdl = GasCombustionModel(self.case)
 
         # Set models and number of elements for combo boxes
@@ -115,6 +116,8 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
             setGreenColor(self.pushButtonThermochemistryData, False)
         else:
             setGreenColor(self.pushButtonThermochemistryData, True)
+
+        self.case.undoStartGlobal()
 
 
     @pyqtSignature("const QString&")

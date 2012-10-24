@@ -43,7 +43,7 @@ import os, sys, string, types, unittest
 from Base.Common import *
 import Base.Toolbox as Tool
 from Base.XMLmodel import XMLmodel, ModelTest
-from Base.XMLvariables import Model
+from Base.XMLvariables import Model, Variables
 from Pages.OutputVolumicVariablesModel import OutputVolumicVariablesModel
 
 #-------------------------------------------------------------------------------
@@ -85,6 +85,7 @@ class ProfilesModel(Model):
         return value
 
 
+    @Variables.noUndo
     def getVariablesAndVolumeProperties(self):
         """
         Creates a dictionnary to connect name and label from
@@ -166,6 +167,7 @@ class ProfilesModel(Model):
         return node.xmlGetInt('points')
 
 
+    @Variables.noUndo
     def getProfilesLabelsList(self):
         """
         Public method.
@@ -178,6 +180,7 @@ class ProfilesModel(Model):
         return lst
 
 
+    @Variables.undoGlobal
     def setProfile(self, label, title, format, lst, freq, formula, NbPoint):
         """
         Public method.
@@ -199,6 +202,7 @@ class ProfilesModel(Model):
         self.__setNbPoint(label, NbPoint)
 
 
+    @Variables.undoGlobal
     def replaceProfile(self, old_label, label, title, format, lst, freq, formula, NbPoint):
         """
         Public method.
@@ -229,6 +233,7 @@ class ProfilesModel(Model):
             self.__setNbPoint(label, NbPoint)
 
 
+    @Variables.undoLocal
     def deleteProfile(self, label):
         """
         Public method.
@@ -241,6 +246,7 @@ class ProfilesModel(Model):
             node.xmlRemoveNode()
 
 
+    @Variables.noUndo
     def getProfileData(self, label):
         """
         Public method. Only for the GUI.

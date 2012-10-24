@@ -146,6 +146,7 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
         return spec
 
 
+    @Variables.undoGlobal
     def setThermalModel(self, thermal_scalar):
         """
         Update the thermal model and create the thermal scalar markup from the XML document.
@@ -190,6 +191,7 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
                                                name=v[0],
                                                support="boundary")
 
+    @Variables.noUndo
     def getThermalScalarModel(self):
         """
         Get name of thermal scalar (not label)

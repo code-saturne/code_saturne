@@ -88,6 +88,9 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         """
         self.__case = case
         self.__boundary = None
+
+        self.__case.undoStopGlobal()
+
         self.mdl = CompressibleModel(self.__case)
         self.gas = GasCombustionModel(self.__case)
 
@@ -170,6 +173,8 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
 
         self.connect(self.pushButtonVelocityFormula, SIGNAL("clicked()"), self.__slotVelocityFormula)
         self.connect(self.pushButtonDirectionFormula, SIGNAL("clicked()"), self.__slotDirectionFormula)
+
+        self.__case.undoStartGlobal()
 
 
     def showWidget(self, boundary):

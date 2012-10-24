@@ -84,6 +84,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
 
         self.case = case
         self.parent = parent
+        self.case.undoStopGlobal()
 
         self.init    = InitializationModel(self.case)
         self.turb    = TurbulenceModel(self.case)
@@ -195,6 +196,8 @@ class InitializationView(QWidget, Ui_InitializationForm):
 
         # Initialize widget
         self.initializeVariables(self.zone)
+
+        self.case.undoStartGlobal()
 
 
     @pyqtSignature("const QString&")

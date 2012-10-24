@@ -780,6 +780,7 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquationForm):
         self.setupUi(self)
 
         self.case = case
+        self.case.undoStopGlobal()
         self.NPE = NumericalParamEquatModel(self.case)
         self.SM  = SteadyManagementModel(self.case)
         self.turb = TurbulenceModel(self.case)
@@ -843,6 +844,20 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquationForm):
 
         if len(self.NPE.getClippingList()) == 0:
             self.tab_clipping.setEnabled(False)
+
+        self.tabWidgetScheme.setCurrentIndex(self.case['current_tab'])
+
+        self.connect(self.tabWidgetScheme, SIGNAL("currentChanged(int)"), self.slotchanged)
+
+        self.case.undoStartGlobal()
+
+
+    @pyqtSignature("int")
+    def slotchanged(self, index):
+        """
+        Changed tab
+        """
+        self.case['current_tab'] = index
 
 
     def tr(self, text):

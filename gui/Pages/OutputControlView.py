@@ -963,6 +963,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
 
         self.browser = tree
         self.case = case
+        self.case.undoStopGlobal()
         self.mdl = OutputControlModel(self.case)
 
         # Combo models
@@ -1094,6 +1095,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.connect(self.lineEditHisto, SIGNAL("textChanged(const QString &)"), self.slotMonitoringPointFrequency)
         self.connect(self.lineEditFRHisto, SIGNAL("textChanged(const QString &)"), self.slotMonitoringPointFrequencyTime)
         self.connect(self.comboBoxProbeFmt, SIGNAL("activated(const QString&)"), self.slotOutputProbeFmt)
+        self.connect(self.tabWidget, SIGNAL("currentChanged(int)"), self.slotchanged)
 
         # Validators
 
@@ -1157,6 +1159,12 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
 
         fmt = self.mdl.getMonitoringPointFormat()
         self.modelProbeFmt.setItem(str_model=fmt)
+
+        # tabWidget active
+
+        self.tabWidget.setCurrentIndex(self.case['current_tab'])
+
+        self.case.undoStartGlobal()
 
 
     @pyqtSignature("const QString &")
@@ -1844,6 +1852,14 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 steady = 0
 
         return steady
+
+
+    @pyqtSignature("int")
+    def slotchanged(self, index):
+        """
+        Changed tab
+        """
+        self.case['current_tab'] = index
 
 
     def tr(self, text):
