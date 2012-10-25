@@ -3238,10 +3238,10 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
     /*---- Calcul du nb de classes et remplissage de ICHCOR */
     *nclacp = *nclacp + nclpch[icha];
     for (iclapc = 0; iclapc < nclpch[icha]; iclapc++) {
-      icla = iclapc+idecal;
-      ichcor[icla] = icha +1 ;
+      icla = iclapc + idecal;
+      ichcor[icla] = icha + 1;
     }
-    idecal = nclpch[icha];
+    idecal += nclpch[icha];
 
     /* Type de diametres  = 1 ---> diametre donnes
        = 2 ---> loi de Rosin-Rammler */
