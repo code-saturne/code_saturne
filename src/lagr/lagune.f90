@@ -683,7 +683,8 @@ endif
    jisor  , jrpoi  , jrtsp  , jdp    , jmp    ,                   &
    jxp    , jyp    , jzp    ,                                     &
    jup    , jvp    , jwp    ,                                     &
-   juf    , jvf    , jwf    , jtaux  , jryplu, jdfac,             &
+   juf    , jvf    , jwf    , jtaux  , jryplu,                    &
+   jrinpf , jdfac  ,                                              &
    jimark , idepst)
 
 
@@ -706,7 +707,7 @@ endif
    jisor  , jrpoi  , jrtsp  , jdp    ,                            &
    jmp    , jxp    , jyp    , jzp    ,                            &
    jup    , jvp    , jwp    , juf    , jvf    , jwf , jtaux,      &
-   jryplu , jdfac  , jimark , idepst )
+   jryplu , jrinpf , jdfac  , jimark , idepst )
 
   if (ierr.eq.1) then
     ntmabs = ntcabs
