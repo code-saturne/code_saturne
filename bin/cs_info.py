@@ -134,20 +134,19 @@ def launch_manual(reader, m, pkg):
         print("File %s not found." % manual)
         return
 
-    # First:  use the reader specified by the user, if any
-    # Second: try the different tool that open with the default system reader
-    # Last:   try some classical pdf viewers
+    # On Windows platform, use the system standard launcher
+    if sys.platform.startswith('win'):
+        os.startfile(manual)
 
-    if reader is not None:
-        cmd = reader + ' ' + manual + ' 2>/dev/null &'
-        os.system(cmd)
-
+    # On Linux and Unix-like platforms,
+    #  - first:  use the reader specified by the user, if any
+    #  - second: try the different tool that open with the default system reader
+    #  - last:   try some classical pdf viewers
     else:
-        if os.name == "nt":
-            os.filestart(manual)
-
-        elif os.name == "posix":
-
+        if reader is not None:
+            cmd = reader + ' ' + manual + ' 2>/dev/null &'
+            os.system(cmd)
+        else:
             for r in (sys_tools + readers):
                 cmd = r + ' ' + manual + ' 2>/dev/null &'
                 if os.system(cmd) == 0:

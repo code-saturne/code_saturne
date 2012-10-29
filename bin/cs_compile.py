@@ -186,7 +186,7 @@ def compile_and_link(pkg, srcdir, destdir,
     # no multiple definitions are allowable in static mode;
     # in this case, extract archive, then overwrite with user files.
 
-    p_libs = pkg.libs
+    p_libs = pkg.get_flags('libs')
     if pkg.special_user_link == 'ar_x':
         if force_link or (len(c_files) + len(cxx_files) + len(f_files)) > 0:
             i = p_libs.find(' ')
@@ -205,7 +205,7 @@ def compile_and_link(pkg, srcdir, destdir,
     for f in c_files:
         if (retval != 0 and not keep_going):
             break
-        cmd = pkg.cc
+        cmd = pkg.get_compiler('cc')
         if opt_cflags != None:
             cmd = cmd + " " + opt_cflags
         if len(h_files) > 0:
@@ -214,8 +214,8 @@ def compile_and_link(pkg, srcdir, destdir,
         if f == 'cs_base.c':
             cmd = cmd + ' -DLOCALEDIR=\\"' + pkg.get_dir('localedir') \
                       + '\\" -DPKGDATADIR=\\"' + pkg.get_dir('pkgdatadir') + '\\"'
-        cmd = cmd + " " + pkg.cppflags
-        cmd = cmd + " " + pkg.cflags
+        cmd = cmd + " " + pkg.get_flags('cppflags')
+        cmd = cmd + " " + pkg.get_flags('cflags')
         cmd = cmd + " -c " + os.path.join(srcdir, f)
         if run_command(cmd, echo=True, stdout=stdout, stderr=stderr) != 0:
             retval = 1
@@ -223,14 +223,14 @@ def compile_and_link(pkg, srcdir, destdir,
     for f in cxx_files:
         if (retval != 0 and not keep_going):
             break
-        cmd = pkg.cxx
+        cmd = pkg.get_compiler('cxx')
         if opt_cxxflags != None:
             cmd = cmd + " " + opt_cxxflags
         if len(hxx_files) > 0:
             cmd = cmd + " -I" + srcdir
         cmd = cmd + " -I" + pkg.get_dir('pkgincludedir')
-        cmd = cmd + " " + pkg.cppflags
-        cmd = cmd + " " + pkg.cxxflags
+        cmd = cmd + " " + pkg.get_flags('cppflags')
+        cmd = cmd + " " + pkg.get_flags('cxxflags')
         cmd = cmd + " -c " + os.path.join(srcdir, f)
         if run_command(cmd, echo=True, stdout=stdout, stderr=stderr) != 0:
             retval = 1
@@ -243,22 +243,22 @@ def compile_and_link(pkg, srcdir, destdir,
     for f in f_files:
         if (retval != 0 and not keep_going):
             break
-        cmd = pkg.fc
+        cmd = pkg.get_compiler('fc')
         if opt_fcflags != None:
             cmd = cmd + " " + opt_fcflags
         cmd = cmd + " -I" + srcdir
         if pkg.fcmodinclude != "-I":
             cmd += " " + pkg.fcmodinclude + srcdir
-        cmd = cmd + " -I" + pkg.fcmoddir
+        cmd = cmd + " -I" + pkg.get_flags('fcmoddir')
         if pkg.fcmodinclude != "-I":
-            cmd += " " + pkg.fcmodinclude + pkg.fcmoddir
-        cmd = cmd + " " + pkg.fcflags
+            cmd += " " + pkg.fcmodinclude + pkg.get_flags('fcmoddir')
+        cmd = cmd + " " + pkg.get_flags('fcflags')
         cmd = cmd + " -c " + os.path.join(srcdir, f)
         if run_command(cmd, echo=True, stdout=stdout, stderr=stderr) != 0:
             retval = 1
 
     if retval == 0 and (force_link or (len(c_files) + len(cxx_files) + len(f_files)) > 0):
-        cmd = pkg.ld
+        cmd = pkg.get_compiler('ld')
         cmd = cmd + " -o " + exec_name
         if (len(c_files) + len(cxx_files) + len(f_files)) > 0:
           cmd = cmd + " *.o"
@@ -266,8 +266,8 @@ def compile_and_link(pkg, srcdir, destdir,
         if opt_libs != None:
             if len(opt_libs) > 0:
                 cmd = cmd + " " + opt_libs
-        cmd = cmd + " " + pkg.ldflags + " " + p_libs
-        cmd = cmd + " " + pkg.deplibs
+        cmd = cmd + " " + pkg.get_flags('ldflags') + " " + p_libs
+        cmd = cmd + " " + pkg.get_flags('deplibs')
         if pkg.rpath != "":
             cmd = cmd + " " + so_dirs_path(cmd, pkg)
         if run_command(cmd, echo=True, stdout=stdout, stderr=stderr) != 0:

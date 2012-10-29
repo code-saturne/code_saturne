@@ -76,18 +76,178 @@ Source: "C:\MinGW\bin\libgcc_s_dw2-1.dll"; DestDir: "{app}\bin"; Flags: ignoreve
 Source: "C:\MinGW\bin\libgfortran-3.dll"; DestDir: "{app}\bin"; Flags: ignoreversion
 Source: "C:\MinGW\bin\libquadmath-0.dll"; DestDir: "{app}\bin"; Flags: ignoreversion
 Source: "C:\MinGW\bin\libstdc++-6.dll"; DestDir: "{app}\bin"; Flags: ignoreversion
+; GCC executables
+Source: "C:\MinGW\bin\cpp.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
+Source: "C:\MinGW\bin\g++.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
+Source: "C:\MinGW\bin\gcc.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
+Source: "C:\MinGW\bin\gfortran.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
+Source: "C:\MinGW\bin\libgomp-1.dll"; DestDir: "{app}\bin"; Flags: ignoreversion
+Source: "C:\MinGW\bin\libgmp-10.dll"; DestDir: "{app}\bin"; Flags: ignoreversion
+Source: "C:\MinGW\bin\libgmpxx-4.dll"; DestDir: "{app}\bin"; Flags: ignoreversion
+Source: "C:\MinGW\bin\libmpc-2.dll"; DestDir: "{app}\bin"; Flags: ignoreversion
+Source: "C:\MinGW\bin\libmpfr-1.dll"; DestDir: "{app}\bin"; Flags: ignoreversion
+Source: "C:\MinGW\lib\gcc\mingw32\4.7.0\*"; DestDir: "{app}\lib\gcc\mingw32\4.7.0"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "C:\MinGW\libexec\gcc\mingw32\4.7.0\*"; DestDir: "{app}\libexec\gcc\mingw32\4.7.0"; Flags: ignoreversion recursesubdirs createallsubdirs
+; Binutils
+Source: "C:\MinGW\bin\addr2line.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
+Source: "C:\MinGW\bin\ar.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
+Source: "C:\MinGW\bin\as.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
+Source: "C:\MinGW\bin\c++filt.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
+Source: "C:\MinGW\bin\dlltool.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
+Source: "C:\MinGW\bin\dllwrap.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
+Source: "C:\MinGW\bin\elfedit.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
+Source: "C:\MinGW\bin\gprof.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
+Source: "C:\MinGW\bin\ld.bfd.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
+Source: "C:\MinGW\bin\ld.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
+Source: "C:\MinGW\bin\nm.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
+Source: "C:\MinGW\bin\objcopy.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
+Source: "C:\MinGW\bin\objdump.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
+Source: "C:\MinGW\bin\ranlib.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
+Source: "C:\MinGW\bin\readelf.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
+Source: "C:\MinGW\bin\size.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
+Source: "C:\MinGW\bin\strings.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
+Source: "C:\MinGW\bin\strip.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
+Source: "C:\MinGW\bin\windmc.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
+Source: "C:\MinGW\bin\windres.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
+Source: "C:\MinGW\include\ansidecl.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\bfd.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\bfdlink.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\dis-asm.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\symcat.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libbfd.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libiberty.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libopcodes.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+; MinGW runtime
+Source: "C:\MinGW\include\_mingw.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\assert.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\complex.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\conio.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\ctype.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\dir.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\direct.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\dirent.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\dos.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\errno.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\excpt.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\fcntl.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\fenv.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\float.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\getopt.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\gmon.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\inttypes.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\io.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\libgen.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\limits.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\locale.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\malloc.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\math.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\mbctype.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\mbstring.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\mem.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\memory.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\process.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\profil.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\profile.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\search.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\setjmp.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\share.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\signal.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\stdint.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\stdio.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\stdlib.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\string.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\strings.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\sys\*"; DestDir: "{app}\include\sys"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "C:\MinGW\include\tchar.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\time.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\unistd.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\utime.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\values.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\varargs.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\wchar.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\wctype.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\lib\CRT_fp10.o"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\CRT_fp8.o"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\CRT_noglob.o"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\binmode.o"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\crt1.o"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\crt2.o"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\crtmt.o"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\crtst.o"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\dllcrt1.o"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\dllcrt2.o"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\gcrt1.o"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\gcrt2.o"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libcoldname.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libcrtdll.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libgmon.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libm.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libmingw32.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libmingwex.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libmingwthrd.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libmingwthrd_old.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libmoldname.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libmoldname100.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libmoldname100d.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libmoldname70.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libmoldname70d.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libmoldname71.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libmoldname71d.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libmoldname80.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libmoldname80d.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libmoldname90.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libmoldname90d.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libmoldnamed.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libmsvcr100.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libmsvcr100d.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libmsvcr70.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libmsvcr70d.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libmsvcr71.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libmsvcr71d.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libmsvcr80.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libmsvcr80d.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libmsvcr90.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libmsvcr90d.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libmsvcrt.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libmsvcrtd.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\txtmode.o"; DestDir: "{app}\lib"; Flags: ignoreversion
 ; Pre-requisites
 Source: "C:\MinGW\bin\libcgns.dll"; DestDir: "{app}\bin"; Flags: ignoreversion
 Source: "C:\MinGW\bin\libhdf5-7.dll"; DestDir: "{app}\bin"; Flags: ignoreversion
 Source: "C:\MinGW\bin\libmedC-1.dll"; DestDir: "{app}\bin"; Flags: ignoreversion
 Source: "C:\MinGW\bin\libxml2-2.dll"; DestDir: "{app}\bin"; Flags: ignoreversion
+; Headers and library files for user files compilation
+Source: "C:\MinGW\include\cgns_io.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\cgnslib.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\cgnstypes.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\hdf5.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\H5*.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\med.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\med_proto.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\medC_win_dll.h"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "C:\MinGW\include\libxml2\*"; DestDir: "{app}\include\libxml2"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "C:\MinGW\lib\libcgns.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libcgns.dll.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libhdf5.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libhdf5.dll.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libmedC.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libmedC.dll.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libxml2.a"; DestDir: "{app}\lib"; Flags: ignoreversion
+Source: "C:\MinGW\lib\libxml2.dll.a"; DestDir: "{app}\lib"; Flags: ignoreversion
 ; Code_Saturne (bin directory is preferred over libexec directory to avoid modifying Windows PATH variable for DLL search)
 Source: "bin\libple-0.dll"; Destdir: "{app}\bin"; Flags: ignoreversion
+Source: "include\code_saturne\*"; DestDir: "{app}\include\code_saturne"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "include\ple_*"; DestDir: "{app}\include"; Flags: ignoreversion
+Source: "lib\libple.a"; Destdir: "{app}\lib"; Flags: ignoreversion
+Source: "lib\libple.dll.a"; Destdir: "{app}\lib"; Flags: ignoreversion
+Source: "lib\libsaturne.a"; Destdir: "{app}\lib"; Flags: ignoreversion
 Source: "libexec\code_saturne\cs_check_syntax.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
 Source: "libexec\code_saturne\cs_io_dump.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
 Source: "libexec\code_saturne\cs_preprocess.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
 Source: "libexec\code_saturne\cs_solver.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
 Source: "share\code_saturne\*"; DestDir: "{app}\share\code_saturne"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "share\doc\code_saturne\*"; DestDir: "{app}\share\doc\code_saturne"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "share\locale\*"; DestDir: "{app}\share\locale"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; Graphical user interface (generated by cx_freeze)
 Source: "build\exe.win32-2.7\code_saturne.com"; DestDir: "{app}\bin"; Flags: ignoreversion
 Source: "build\exe.win32-2.7\code_saturne.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
@@ -110,9 +270,9 @@ Source: "build\exe.win32-2.7\translations\*"; DestDir: "{app}\translations"; Fla
 ;-------------------------------------------------------------------------------
 
 [Icons]
-Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
+Name: "{group}\{#MyAppName}"; Filename: "{app}\bin\{#MyAppExeName}"
 Name: "{group}\{cm:ProgramOnTheWeb,{#MyAppName}}"; Filename: "{#MyAppURL}"
-Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\bin\{#MyAppExeName}"; Tasks: desktopicon
 
 ;-------------------------------------------------------------------------------
 
