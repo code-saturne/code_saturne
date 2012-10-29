@@ -1855,8 +1855,9 @@ cs_file_open(const char        *name,
   f->fh = MPI_FILE_NULL;
   f->info = hints;
 #endif
-  f->offset = 0;
 #endif
+
+  f->offset = 0;
 
   BFT_MALLOC(f->name, strlen(name) + 1, char);
   strcpy(f->name, name);
