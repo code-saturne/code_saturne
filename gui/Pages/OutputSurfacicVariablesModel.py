@@ -41,7 +41,7 @@ import string, unittest
 from Base.Common import *
 import Base.Toolbox as Tool
 from Base.XMLmodel import ModelTest
-from Base.XMLvariables import Model
+from Base.XMLvariables import Model, Variables
 from Pages.ThermalScalarModel import ThermalScalarModel
 from Pages.ThermalRadiationModel import ThermalRadiationModel
 
@@ -140,6 +140,7 @@ class OutputSurfacicVariablesModel(Model):
         return list
 
 
+    @Variables.undoLocal
     def setPropertyLabel(self, old_label, new_label):
         """
         Replace old_label by new_label for node with name and old_label. Only for the View
@@ -154,6 +155,7 @@ class OutputSurfacicVariablesModel(Model):
         self._updateDicoLabelName()
 
 
+    @Variables.noUndo
     def getPostProcessing(self, label):
         """ Return status of post processing for node withn label 'label'"""
         self.isInList(label, self.getLabelsList())
@@ -167,6 +169,7 @@ class OutputSurfacicVariablesModel(Model):
         return status
 
 
+    @Variables.undoLocal
     def setPostProcessing(self, label, status):
         """ Put status of post processing for node with label 'label'"""
         self.isOnOff(status)

@@ -198,6 +198,7 @@ class OutputSurfacicVariablesView(QWidget, Ui_OutputSurfacicVariablesForm):
         self.setupUi(self)
 
         self.case = case
+        self.case.undoStopGlobal()
         self.mdl = OutputSurfacicVariablesModel(self.case)
 
         self.modelOutput = StandardItemModelOutput(self.case)
@@ -212,6 +213,8 @@ class OutputSurfacicVariablesView(QWidget, Ui_OutputSurfacicVariablesForm):
 
         labelDelegate = LabelDelegate(self.tableViewOutput, self.mdl)
         self.tableViewOutput.setItemDelegateForColumn(0, labelDelegate)
+
+        self.case.undoStartGlobal()
 
 
     def tr(self, text):

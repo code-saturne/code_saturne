@@ -261,10 +261,10 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
                 self.pushButtonPotVectorFormula.setEnabled(True)
                 setGreenColor(self.pushButtonPotVectorFormula, True)
 
-        # Initialize species
-        if self.species :
-            v = self.__b.getElecScalarValue(self.species, 'dirichlet')
-            self.lineEditValueSpecies.setText(QString(str(v)))
+            # Initialize species
+            if self.species :
+                v = self.__b.getElecScalarValue(self.species, 'dirichlet')
+                self.lineEditValueSpecies.setText(QString(str(v)))
 
         # Initialize exchange coef
         self.lineEditExThermal.hide()

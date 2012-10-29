@@ -78,6 +78,7 @@ class SteadyManagementView(QWidget, Ui_SteadyManagementForm):
         self.setupUi(self)
 
         self.case = case
+        self.case.undoStopGlobal()
         self.mdl = SteadyManagementModel(self.case)
 
         # Connections
@@ -107,6 +108,8 @@ class SteadyManagementView(QWidget, Ui_SteadyManagementForm):
             self.checkBoxINPDT0.setChecked(True)
         else:
             self.checkBoxINPDT0.setChecked(False)
+
+        self.case.undoStartGlobal()
 
 
     @pyqtSignature("const QString&")

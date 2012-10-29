@@ -470,6 +470,9 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
         self.setupUi(self)
 
         self.case = case
+
+        self.case.undoStopGlobal()
+
         self.mdl = DefineUserScalarsModel(self.case)
 
         # tableView
@@ -511,6 +514,8 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
             self.modelScalars.newItem(label)
         for label in self.mdl.getScalarsVarianceList():
             self.modelVariance.newItem(label)
+
+        self.case.undoStartGlobal()
 
 
     @pyqtSignature("")

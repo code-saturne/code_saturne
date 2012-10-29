@@ -79,8 +79,10 @@ class BoundaryConditionsRoughWallView(QWidget, Ui_BoundaryConditionsRoughWallFor
         """
         Setup the widget
         """
-        self.__case = case
+        self.case = case
         self.__boundary = None
+
+        self.case.undoStopGlobal()
 
         self.connect(self.radioButtonSmooth, SIGNAL("clicked()"), self.__slotRoughness)
         self.connect(self.radioButtonRough,  SIGNAL("clicked()"), self.__slotRoughness)
@@ -89,6 +91,8 @@ class BoundaryConditionsRoughWallView(QWidget, Ui_BoundaryConditionsRoughWallFor
 
         validatorRoughCoef = DoubleValidator(self.lineEditRoughCoef)
         self.lineEditRoughCoef.setValidator(validatorRoughCoef)
+
+        self.case.undoStartGlobal()
 
 
     def showWidget(self, boundary):

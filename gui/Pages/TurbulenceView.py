@@ -69,7 +69,7 @@ class TurbulenceAdvancedOptionsDialogView(QDialog, Ui_TurbulenceAdvancedOptionsD
     """
     Advanced dialog
     """
-    def __init__(self, parent, default):
+    def __init__(self, parent, case, default):
         """
         Constructor
         """
@@ -77,6 +77,9 @@ class TurbulenceAdvancedOptionsDialogView(QDialog, Ui_TurbulenceAdvancedOptionsD
 
         Ui_TurbulenceAdvancedOptionsDialogForm.__init__(self)
         self.setupUi(self)
+
+        self.case = case
+        self.case.undoStopGlobal()
 
         if default['model'] in ('k-epsilon', 'k-epsilon-PL'):
             title = self.tr("Options for k-epsilon model")
@@ -116,6 +119,8 @@ class TurbulenceAdvancedOptionsDialogView(QDialog, Ui_TurbulenceAdvancedOptionsD
                 self.checkBoxGravity.setChecked(True)
             else:
                 self.checkBoxGravity.setChecked(False)
+
+        self.case.undoStartGlobal()
 
 
     def get_result(self):
@@ -170,6 +175,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
         self.setupUi(self)
 
         self.case = case
+        self.case.undoStopGlobal()
         self.model = TurbulenceModel(self.case)
 
         # Combo model
@@ -225,6 +231,8 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
 
         l_scale = self.model.getLengthScale()
         self.lineEditLength.setText(QString(str(l_scale)))
+
+        self.case.undoStartGlobal()
 
 
     @pyqtSignature("const QString&")
@@ -282,7 +290,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
         default['gravity_terms'] = self.model.getGravity()
         log.debug("slotAdvancedOptions -> %s" % str(default))
 
-        dialog = TurbulenceAdvancedOptionsDialogView(self, default)
+        dialog = TurbulenceAdvancedOptionsDialogView(self, self.case, default)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotAdvancedOptions -> %s" % str(result))

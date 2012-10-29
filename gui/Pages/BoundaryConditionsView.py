@@ -130,6 +130,8 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.setupUi(self)
         self.__case = case
 
+        self.__case.undoStopGlobal()
+
         # Model and QTreeView for Boundaries
 
         self.__modelBoundaries = StandardItemModelBoundaries()
@@ -169,6 +171,8 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.electricalwidget.setup(self.__case)
 
         self.__hideAllWidgets()
+
+        self.__case.undoStartGlobal()
 
 
     @pyqtSignature("const QModelIndex&")

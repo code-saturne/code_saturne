@@ -43,7 +43,7 @@ import sys, unittest
 
 from Base.Common import *
 import Base.Toolbox as Tool
-from Base.XMLvariables import Model
+from Base.XMLvariables import Model, Variables
 from Base.XMLmodel import ModelTest
 
 #-------------------------------------------------------------------------------
@@ -75,6 +75,7 @@ class BodyForcesModel(Model):
         return default
 
 
+    @Variables.noUndo
     def getGravity(self, var):
         """
         Return value of gravity for var
@@ -88,6 +89,7 @@ class BodyForcesModel(Model):
         return gravity
 
 
+    @Variables.undoGlobal
     def setGravity(self, txml, value):
         """
         Put value of gravity for txml balise

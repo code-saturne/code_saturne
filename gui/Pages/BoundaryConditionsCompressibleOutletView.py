@@ -82,6 +82,9 @@ class BoundaryConditionsCompressibleOutletView(QWidget, Ui_BoundaryConditionsCom
         """
         self.__case = case
         self.__boundary = None
+
+        self.__case.undoStopGlobal()
+
         self.mdl = CompressibleModel(self.__case)
 
         # Connections
@@ -98,6 +101,8 @@ class BoundaryConditionsCompressibleOutletView(QWidget, Ui_BoundaryConditionsCom
 
         # Apply validators
         self.lineEditPressure.setValidator(validatorP)
+
+        self.__case.undoStartGlobal()
 
 
     def showWidget(self, boundary):

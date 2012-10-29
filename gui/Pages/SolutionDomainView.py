@@ -575,6 +575,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
 
         self.stbar = stbar
         self.case = case
+        self.case.undoStopGlobal()
         self.mdl = SolutionDomainModel(self.case)
 
         # 0) Mesh Input
@@ -763,6 +764,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         self.connect(self.lineEditM32, SIGNAL("textChanged(const QString &)"), self.slotMatrix32)
         self.connect(self.lineEditM33, SIGNAL("textChanged(const QString &)"), self.slotMatrix33)
         self.connect(self.lineEditM34, SIGNAL("textChanged(const QString &)"), self.slotMatrix34)
+        self.connect(self.tabWidget,   SIGNAL("currentChanged(int)"), self.slotchanged)
 
         # 5) Initialize meshes list
 
@@ -828,6 +830,11 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         v = self.mdl.getSmoothAngle()
         self.smooth = v
         self.lineEditMeshSmooth.setText(str(self.smooth))
+
+        # 5.4) tab Widget
+        self.tabWidget.setCurrentIndex(self.case['current_tab'])
+
+        self.case.undoStartGlobal()
 
 
     def MeshesResizeEvent(self, event):
@@ -1558,6 +1565,14 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
             val, ok = text.toDouble()
             if self.sender().validator().state == QValidator.Acceptable:
                 self.mdl.setRotationCenter(self.perio_id, "invariant_z", val)
+
+
+    @pyqtSignature("int")
+    def slotchanged(self, index):
+        """
+        Changed tab
+        """
+        self.case['current_tab'] = index
 
 
     def tr(self, text):

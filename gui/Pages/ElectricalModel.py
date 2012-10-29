@@ -120,6 +120,7 @@ class ElectricalModel(Variables, Model):
         return electricalList
 
 
+    @Variables.undoGlobal
     def setElectricalModel(self, model):
         """
         Update the electrical model markup from the XML document.
@@ -146,6 +147,7 @@ class ElectricalModel(Variables, Model):
 #        del Boundary
 
 
+    @Variables.noUndo
     def getElectricalModel(self):
         """
         Return the current electrical model.
@@ -222,6 +224,7 @@ class ElectricalModel(Variables, Model):
                 self.node_joule.xmlRemoveChild('property', name=v)
 
 
+    @Variables.noUndo
     def getSpeciesLabelsList(self):
         """
         Return the species label list.
@@ -236,6 +239,7 @@ class ElectricalModel(Variables, Model):
         return lst
 
 
+    @Variables.noUndo
     def getRadiativeModel(self):
         """
         Return the radiative model for electric model
@@ -249,6 +253,7 @@ class ElectricalModel(Variables, Model):
         return model
 
 
+    @Variables.undoLocal
     def setRadiativeModel(self, model):
         """
         Input radiative model for electric model
@@ -259,6 +264,7 @@ class ElectricalModel(Variables, Model):
         node['model'] = model
 
 
+    @Variables.noUndo
     def getJouleModel(self):
         """
         Return the joule model
@@ -272,6 +278,7 @@ class ElectricalModel(Variables, Model):
         return model
 
 
+    @Variables.undoLocal
     def setJouleModel(self, model):
         """
         Input joule model
@@ -282,6 +289,7 @@ class ElectricalModel(Variables, Model):
         node['model'] = model
 
 
+    @Variables.noUndo
     def getGasNumber(self):
         """
         Return the number of gas for electric model (read in file)
@@ -293,6 +301,7 @@ class ElectricalModel(Variables, Model):
         return nb
 
 
+    @Variables.undoLocal
     def setGasNumber(self, val):
         """
         Input the number of gas for electric model
@@ -301,6 +310,7 @@ class ElectricalModel(Variables, Model):
         self.node_joule.xmlSetData('gasNumber', val)
 
 
+    @Variables.noUndo
     def getSRROM(self):
         """
         Return the relaxation coefficient for mass density
@@ -312,6 +322,7 @@ class ElectricalModel(Variables, Model):
         return value
 
 
+    @Variables.undoLocal
     def setSRROM(self, val):
         """
         Input the relaxation coefficient for mass density
@@ -320,6 +331,7 @@ class ElectricalModel(Variables, Model):
         self.node_joule.xmlSetData('density_relaxation', val)
 
 
+    @Variables.noUndo
     def getPower(self):
         """
         Return the imposed power in watt
@@ -331,6 +343,7 @@ class ElectricalModel(Variables, Model):
         return value
 
 
+    @Variables.undoLocal
     def setPower(self, val):
         """
         Input the imposed power in watt
@@ -339,6 +352,7 @@ class ElectricalModel(Variables, Model):
         self.node_joule.xmlSetData('imposed_power', val)
 
 
+    @Variables.noUndo
     def getCurrent(self):
         """
         Return the imposed current intensity
@@ -350,6 +364,7 @@ class ElectricalModel(Variables, Model):
         return value
 
 
+    @Variables.undoLocal
     def setCurrent(self, val):
         """
         Input the imposed current intensity
@@ -358,6 +373,7 @@ class ElectricalModel(Variables, Model):
         self.node_joule.xmlSetData('imposed_current', val)
 
 
+    @Variables.noUndo
     def getScaling(self):
         """
         Get status of "Electric variables" scaling
@@ -370,6 +386,7 @@ class ElectricalModel(Variables, Model):
         return s
 
 
+    @Variables.undoLocal
     def setScaling(self, status):
         """
         Put status of "Electric variables" scaling
@@ -379,6 +396,7 @@ class ElectricalModel(Variables, Model):
         node['status'] = status
 
 
+    @Variables.noUndo
     def getPropertiesDataFileName(self):
         """
         Get name for properties data (return None if not defined)i
@@ -387,6 +405,7 @@ class ElectricalModel(Variables, Model):
         return f
 
 
+    @Variables.undoGlobal
     def setPropertiesDataFileName(self, name):
         """
         Put name for properties data and load file for number gaz and radiative model
@@ -395,6 +414,7 @@ class ElectricalModel(Variables, Model):
         self.load(name)
 
 
+    @Variables.noUndo
     def getScalingModel(self):
         """
         Get modele for "Electric variables" scaling
@@ -407,6 +427,7 @@ class ElectricalModel(Variables, Model):
         return s
 
 
+    @Variables.undoLocal
     def setScalingModel(self, model):
         """
         Put modele for "Electric variables" scaling
@@ -419,6 +440,7 @@ class ElectricalModel(Variables, Model):
             node.xmlRemoveChild('plane_definition')
 
 
+    @Variables.noUndo
     def getDirection(self):
         """
         Get direction of current intensity for "Electric variables" scaling
@@ -431,6 +453,7 @@ class ElectricalModel(Variables, Model):
         return s
 
 
+    @Variables.undoLocal
     def setDirection(self, direction):
         """
         Put direction of current intensity for "Electric variables" scaling
@@ -440,6 +463,7 @@ class ElectricalModel(Variables, Model):
         node.xmlSetData('direction', direction)
 
 
+    @Variables.noUndo
     def getPlaneDefinition(self):
         """
         Get plane of current intensity for "Electric variables" scaling
@@ -452,6 +476,7 @@ class ElectricalModel(Variables, Model):
         return s
 
 
+    @Variables.undoLocal
     def setPlaneDefinition(self, plane):
         """
         Put plane current intensity for "Electric variables" scaling
@@ -460,6 +485,7 @@ class ElectricalModel(Variables, Model):
         node.xmlSetData('plane_definition', plane)
 
 
+    @Variables.noUndo
     def getScalarLabel(self, tag):
         """
         Get label for thermal scalar

@@ -75,6 +75,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         self.setupUi(self)
 
         self.case = case
+        self.case.undoStopGlobal()
         self.mdl = TimeStepModel(self.case)
 
        # Combo model
@@ -180,6 +181,8 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
             self.checkBoxINPDT0.setChecked(True)
         else:
             self.checkBoxINPDT0.setChecked(False)
+
+        self.case.undoStartGlobal()
 
 
     @pyqtSignature("")

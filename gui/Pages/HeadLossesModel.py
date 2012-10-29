@@ -96,6 +96,7 @@ class HeadLossesModel(Variables, Model):
         return default
 
 
+    @Variables.noUndo
     def getNameAndLocalizationZone(self):
         """
         Return name and localization zone from volume regions definitions.
@@ -113,6 +114,7 @@ class HeadLossesModel(Variables, Model):
         return zoneDico
 
 
+    @Variables.undoGlobal
     def setNameAndLabelZone(self, zoneid):
         """
         Set name and label zone for head losses markups.
@@ -122,6 +124,8 @@ class HeadLossesModel(Variables, Model):
         self.getMatrix(zoneid)
         self.getMatrixChoice(zoneid,'choice')
 
+
+    @Variables.noUndo
     def getMatrixChoice(self,zoneid,choice):
         """
         Get the Transfo Matrix choice
@@ -135,6 +139,7 @@ class HeadLossesModel(Variables, Model):
         return value
 
 
+    @Variables.undoLocal
     def setMatrixChoice(self, zoneid, choice, value):
         """
         Set the Transfo Matrix Choice
@@ -145,6 +150,8 @@ class HeadLossesModel(Variables, Model):
         node = self.node_hloss.xmlGetNode('head_loss', zone_id=zoneid)
         node.xmlSetData(choice, value)
 
+
+    @Variables.noUndo
     def getCoefficient(self, zoneid, k):
         """
         Return value of coefficient k for the head loss with zone's id.
@@ -161,6 +168,7 @@ class HeadLossesModel(Variables, Model):
         return value
 
 
+    @Variables.noUndo
     def getKCoefficients(self, zoneid):
         """
         Get value of kxx, kyy and kzz from xml file, for the head loss with zone's id.
@@ -174,6 +182,7 @@ class HeadLossesModel(Variables, Model):
         return kxx, kyy, kzz
 
 
+    @Variables.undoLocal
     def setCoefficient(self, zoneid, k, value):
         """
         Set value of coefficient k for the head loss with zone's id.
@@ -186,6 +195,7 @@ class HeadLossesModel(Variables, Model):
         node.xmlSetData(k, value)
 
 
+    @Variables.undoGlobal
     def setKCoefficients(self, zoneid, kxx, kyy, kzz):
         """
         Set value of kxx, kyy and kzz into xml file, for the head loss with zone's id.
@@ -200,6 +210,7 @@ class HeadLossesModel(Variables, Model):
         self.setCoefficient(zoneid, 'kzz', kzz)
 
 
+    @Variables.noUndo
     def getMatrixComposant(self, zoneid, a):
         """
         Get values of one composant of the matrix of the change reference frame,
@@ -217,6 +228,7 @@ class HeadLossesModel(Variables, Model):
         return value
 
 
+    @Variables.noUndo
     def getMatrix(self, zoneid):
         """
         Get values of matrix of the change reference frame from xml file,
@@ -237,6 +249,7 @@ class HeadLossesModel(Variables, Model):
         return a11, a12, a13, a21, a22, a23, a31, a32, a33
 
 
+    @Variables.undoLocal
     def setMatrixComposant(self, zoneid, a, value):
         """
         Set value of composant of matrix of the change reference frame,
@@ -250,6 +263,7 @@ class HeadLossesModel(Variables, Model):
         node.xmlSetData(a, value)
 
 
+    @Variables.undoGlobal
     def setMatrix(self, zoneid, a11, a12, a13, a21, a22, a23, a31, a32, a33):
         """
         Set values of the matrix of the change reference frame,

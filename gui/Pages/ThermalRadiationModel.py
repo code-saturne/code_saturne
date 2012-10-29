@@ -68,8 +68,6 @@ class ThermalRadiationModel(Model):
         self.c_prop = {}
         self.b_prop = {}
 
-        #self.c_prop['intensity']                 = self.tr("Intensity")
-        #self.c_prop['implicite_source_term']     = self.tr("Implicite_source_term")
         self.c_prop['qrad_x']                     = self.tr("Qrad_x")
         self.c_prop['qrad_y']                     = self.tr("Qrad_y")
         self.c_prop['qrad_z']                     = self.tr("Qrad_z")
@@ -155,86 +153,6 @@ class ThermalRadiationModel(Model):
         return dico['name'], label
 
 
-#    def _getCoalModel(self):
-#        """
-#        Private method : return value model of radiative transfer for coal
-#        """
-#        import Pages.CoalThermoChemistry as CoalThermoChemistry
-#        model = CoalThermoChemistry.CoalThermoChemistryModel("dp_FCP", self.case)
-#        model.load()
-#        ind = model.radiativTransfer.getRadiativTransfer()
-#        if (ind == 1) or (ind == 2):
-#            val = "dom"
-#        elif (ind == 3) or (ind == 4):
-#            val = "p-1"
-#        else:
-#            val = self._defaultValues()['radiative_model']
-#        return val
-
-
-#    def _setCoalModel(self, model2):
-#        """
-#        Private method : put value of model of radiative transfer for coal
-#        """
-#        self.isInList(model2, self.radiativeModels)
-#        import Pages.CoalThermoChemistry as CoalThermoChemistry
-#        model = CoalThermoChemistry.CoalThermoChemistryModel("dp_FCP", self.case)
-#        model.load()
-#        ind = 0
-#        node_coeff = self.node_ray.xmlGetNode('absorption_coefficient', 'type')
-#        if model2 != "off":
-#            if model2 == "p-1":
-#                ind = 2
-#            coalCoeff = 'constant'
-#            if node_coeff:
-#                coalCoeff = node_coeff['type']
-#            if coalCoeff == 'constant':
-#                ind += 1
-#            elif coalCoeff == 'modak':
-#                ind += 2
-#        model.radiativTransfer.setRadiativTransfer(ind)
-#        model.save()
-
-
-#    def _getTypeCoalCoeff(self):
-#        """
-#        Private method : return type of coefficient absorption for coal
-#        """
-#        import Pages.CoalThermoChemistry as CoalThermoChemistry
-#        model = CoalThermoChemistry.CoalThermoChemistryModel("dp_FCP", self.case)
-#        model.load()
-#        ind = model.radiativTransfer.getRadiativTransfer()
-#        type = "constant"
-#        if (ind == 1) or (ind == 3):
-#            type = "constant"
-#        elif (ind == 2) or (ind == 4):
-#            type = "modak"
-#        return type
-
-
-#    def _setTypeCoalCoeff(self, val):
-#        """
-#        Private method : put indice relatively to type of
-#        coefficient absorption for coal
-#        """
-#        self.isInList(val, ('constant', 'variable', 'modak'))
-#        import Pages.CoalThermoChemistry as CoalThermoChemistry
-#        model = CoalThermoChemistry.CoalThermoChemistryModel("dp_FCP", self.case)
-#        model.load()
-#        if val == "constant":
-#            ind = 1
-#        else :
-#            ind = 2
-#
-#        radModel = self.node_ray['model']
-#        if radModel == 'p-1':
-#            ind += 2
-#        elif radModel == 'off':
-#            ind = 0
-#        model.radiativTransfer.setRadiativTransfer(ind)
-#        model.save()
-
-
     def _setBoundCond(self):
         """
         Private method : put by default boundary conditions for radiative
@@ -296,25 +214,6 @@ class ThermalRadiationModel(Model):
         return value
 
 
-#    def _setVariable_ray(self):
-#        """
-#        Private method: put all variables for thermal radiative transfer
-#        """
-#        dico = self.__dicoRayLabel()
-#        if self.getRadiativeModel() != "off":
-#            for nb in range(len(dico[0])):
-#                if not self.node_ray.xmlGetNode('property', name =dico[0][nb]):
-#                    if dico[0][nb] in ("srad", "qrad", "absorp", "emiss", "coefAb"):
-#                        self.node_ray.xmlInitNode('property',
-#                                                   label=dico[1][nb],
-#                                                   name =dico[0][nb])
-#                    else:
-#                        self.node_ray.xmlInitNode('property',
-#                                                   label=dico[1][nb],
-#                                                   name =dico[0][nb],
-#                                                   support='boundary')
-
-
     def _setVariable_ray(self):
         if self.getRadiativeModel() != "off":
             for k, v in list(self.__volumeProperties().items()):
@@ -326,13 +225,11 @@ class ThermalRadiationModel(Model):
                     self.node_ray.xmlInitNode('property', label=v, name=k, support='boundary')
 
 
+    @Variables.noUndo
     def getRadiativeModel(self):
         """
         Return value of attribute model
         """
-        #if self.isCoalCombustion():
-        #    return self._getCoalModel()
-        #else:
         model = self.node_ray['model']
         if model not in self.radiativeModels:
             model = self._defaultValues()['radiative_model']
@@ -340,14 +237,13 @@ class ThermalRadiationModel(Model):
         return model
 
 
+    @Variables.undoGlobal
     def setRadiativeModel(self, model):
         """
         Put value of attribute model to radiative transfer markup
         """
         self.isInList(model, self.radiativeModels)
         self.node_ray['model'] = model
-        #if self.isCoalCombustion():
-        #    self._setCoalModel(model)
         if model in ('dom', 'p-1'):
             self._setVariable_ray()
             self._setBoundCond()
@@ -363,6 +259,7 @@ class ThermalRadiationModel(Model):
                 self.node_gas.xmlRemoveChild('property',  name = "TEMP3")
 
 
+    @Variables.noUndo
     def getNbDir(self):
         """ Return value of number of directions """
         nb = self.node_ray.xmlGetInt('directions_number')
@@ -372,6 +269,7 @@ class ThermalRadiationModel(Model):
         return nb
 
 
+    @Variables.undoLocal
     def setNbDir(self, val):
         """ Put value of number of directions """
         self.isIntInList(val, [32, 128])
@@ -379,6 +277,7 @@ class ThermalRadiationModel(Model):
         self.node_ray.xmlSetData('directions_number', val)
 
 
+    @Variables.noUndo
     def getRestart(self):
         """
         Return status of restart markup
@@ -391,6 +290,7 @@ class ThermalRadiationModel(Model):
         return status
 
 
+    @Variables.undoLocal
     def setRestart(self, status):
         """
         Put status of restart markup
@@ -400,33 +300,30 @@ class ThermalRadiationModel(Model):
         node['status'] = status
 
 
+    @Variables.noUndo
     def getTypeCoeff(self):
         """
         Return value of attribute type of 'absorption_coefficient' markup
         """
         node = self.node_ray.xmlInitNode('absorption_coefficient', 'type')
         type = node['type']
-#        if self.isCoalCombustion():
-#            type = self._getTypeCoalCoeff()
-#            self._setTypeCoalCoeff(type)
-#        else:
         if not type:
             type = self._defaultValues()['type_coef']
             self.setTypeCoeff(type)
         return type
 
 
+    @Variables.undoLocal
     def setTypeCoeff(self, type):
         """
         Put value of attribute type of 'absorption_coefficient' markup
         """
         self.isInList(type, ('constant', 'variable', 'formula', 'modak'))
-#        if self.isCoalCombustion():
-#            self._setTypeCoalCoeff(type)
         node  = self.node_ray.xmlInitNode('absorption_coefficient', 'type')
         node['type'] = type
 
 
+    @Variables.noUndo
     def getAbsorCoeff(self):
         """
         Return value of absorption coefficient
@@ -445,6 +342,7 @@ class ThermalRadiationModel(Model):
         return val
 
 
+    @Variables.undoGlobal
     def setAbsorCoeff(self, val):
         """
         Put value of absorption coefficient
@@ -459,7 +357,7 @@ class ThermalRadiationModel(Model):
         self.node_ray.xmlSetData('absorption_coefficient', val, type=t)
 
 
-
+    @Variables.noUndo
     def getFrequency(self):
         """ Return value of frequency for advanced options """
         freq = self.node_ray.xmlGetInt('frequency')
@@ -469,12 +367,14 @@ class ThermalRadiationModel(Model):
         return freq
 
 
+    @Variables.undoLocal
     def setFrequency(self, val):
         """ Put value of frequency for advanced options """
         self.isInt(val)
         self.node_ray.xmlSetData('frequency', val)
 
 
+    @Variables.noUndo
     def getIntensityResolution(self):
         """ Return value of IIMLUM for advanced options """
         intens = self.node_ray.xmlGetInt('intensity_resolution_listing_printing')
@@ -484,12 +384,14 @@ class ThermalRadiationModel(Model):
         return intens
 
 
+    @Variables.undoLocal
     def setIntensityResolution(self, intens):
         """ Put value of IIMLUM for advanced options """
         self.isIntInList(intens, self.optionsList)
         self.node_ray.xmlSetData('intensity_resolution_listing_printing', intens)
 
 
+    @Variables.noUndo
     def getTemperatureListing(self):
         """ Return value of IIMPAR for advanced options """
         tp = self.node_ray.xmlGetInt('temperature_listing_printing')
@@ -499,12 +401,14 @@ class ThermalRadiationModel(Model):
         return tp
 
 
+    @Variables.undoLocal
     def setTemperatureListing(self, val):
         """ Put value of IIMPAR for advanced options """
         self.isIntInList(val, self.optionsList)
         self.node_ray.xmlSetData('temperature_listing_printing', val)
 
 
+    @Variables.noUndo
     def getTrs(self):
         """ Return value of IDIVER for advanced options """
         idiver = self.node_ray.xmlGetInt('thermal_radiative_source_term')
@@ -514,6 +418,7 @@ class ThermalRadiationModel(Model):
         return idiver
 
 
+    @Variables.undoLocal
     def setTrs(self, idiver):
         """ Put value of IDIVER for advanced options """
         self.isIntInList(idiver, self.optionsList)

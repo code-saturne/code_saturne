@@ -284,14 +284,12 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         self.setupUi(self)
 
         self.case = case
+        self.case.undoStopGlobal()
         self.model = LagrangianBoundariesModel(self.case)
 
         self.modelBoundaries = StandardItemModelBoundaries(self.case, self.model)
         self.tableViewBoundaries.setModel(self.modelBoundaries)
         self.tableViewBoundaries.setAlternatingRowColors(True)
-##         self.tableViewBoundaries.setSelectionBehavior(QAbstractItemView.SelectItems)
-##         self.tableViewBoundaries.setSelectionMode(QAbstractItemView.ExtendedSelection)
-##         self.tableViewBoundaries.setEditTriggers(QAbstractItemView.DoubleClicked)
         self.tableViewBoundaries.horizontalHeader().setResizeMode(QHeaderView.Stretch)
 
         delegateInteraction = ParticleBoundaryInteractionDelegate(self.tableViewBoundaries)
@@ -319,7 +317,6 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         self.modelIJRDP.addItem(self.tr("User defined diameter"), "subroutine")
 
         self.connect(self.tableViewBoundaries, SIGNAL("clicked(const QModelIndex &)"), self.slotSelectBoundary)
-#        self.connect(self.modelBoundaries, SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), self.slotEditBoundary)
         self.connect(self.spinBoxICLAS, SIGNAL("valueChanged(int)"), self.slotICLAS)
 
         self.connect(self.lineEditIJNBP,  SIGNAL("textChanged(const QString &)"), self.slotIJNBP)
@@ -403,6 +400,8 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
 
         self._hideAllWidgets()
 
+        self.case.undoStartGlobal()
+
 
     def _hideAllWidgets(self):
         self.groupBoxClassNumber.hide()
@@ -412,13 +411,6 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         self.groupBoxTemperature.hide()
         self.groupBoxDiameter.hide()
         self.groupBoxCoal.hide()
-
-
-#    @pyqtSignature("const QModelIndex&, const QModelIndex&")
-#    def slotEditBoundary(self, index, index2):
-#        """
-#        """
-#        self.slotSelectBoundary(index)
 
 
     @pyqtSignature("const QModelIndex&")

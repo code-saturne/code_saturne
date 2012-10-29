@@ -273,6 +273,8 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         self.__case = case
         self.__boundary = None
 
+        self.__case.undoStopGlobal()
+
         # Connections
         self.connect(self.comboBoxTypeInlet,
                      SIGNAL("activated(const QString&)"),
@@ -376,6 +378,8 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         delegateValueMass = ValueDelegate(self.tableViewCoalMass)
         for c in range(self.__modelCoalMass.columnCount()):
             self.tableViewCoalMass.setItemDelegateForColumn(c, delegateValueMass)
+
+        self.__case.undoStartGlobal()
 
 
     def showWidget(self, b):

@@ -42,7 +42,7 @@ import sys, unittest, logging
 
 from Base.Common import *
 import Base.Toolbox as Tool
-from Base.XMLvariables import Model
+from Base.XMLvariables import Model, Variables
 from Pages.LagrangianModel import LagrangianModel
 
 #-------------------------------------------------------------------------------
@@ -110,7 +110,7 @@ class LagrangianStatisticsModel(Model):
         return volume_names
 
 
-    # not private, used in View
+    @Variables.noUndo
     def getVariablesNamesVolume(self):
 
         names = ["Part_vol_frac",
@@ -119,13 +119,14 @@ class LagrangianStatisticsModel(Model):
         return names
 
 
-    # not private, used in View
+    @Variables.noUndo
     def getVariablesNamesBoundary(self):
         names = ["Part_bndy_mass_flux","Part_impact_number",
                  "Part_impact_angle", "Part_impact_velocity"]
         return names
 
 
+    @Variables.undoLocal
     def setRestartStatisticsStatus(self, status):
         """
         Update the restart status markup from the XML document.
@@ -135,6 +136,7 @@ class LagrangianStatisticsModel(Model):
         node_restart['status'] = status
 
 
+    @Variables.noUndo
     def getRestartStatisticsStatus(self):
         """
         Return status of restart file.
@@ -147,6 +149,7 @@ class LagrangianStatisticsModel(Model):
         return status
 
 
+    @Variables.undoLocal
     def setGroupOfParticlesValue(self, value):
         """
         Update the value of group of particles.
@@ -156,6 +159,7 @@ class LagrangianStatisticsModel(Model):
         self.node_stat.xmlSetData('statistics_groups_of_particles', value)
 
 
+    @Variables.noUndo
     def getGroupOfParticlesValue(self):
         """
         Return the value of group of particles.
@@ -169,6 +173,7 @@ class LagrangianStatisticsModel(Model):
 
     # Volume functions
     # ----------------
+    @Variables.undoLocal
     def setVolumeStatisticsStatus(self, status):
         """
         """
@@ -176,6 +181,7 @@ class LagrangianStatisticsModel(Model):
         self.node_volume['status'] = status
 
 
+    @Variables.noUndo
     def getVolumeStatisticsStatus(self):
         """
         """
@@ -187,6 +193,7 @@ class LagrangianStatisticsModel(Model):
         return status
 
 
+    @Variables.undoLocal
     def setIterationStartVolume(self, value):
         """
         Update the iteration value for start of volume statistics calculation.
@@ -196,6 +203,7 @@ class LagrangianStatisticsModel(Model):
         self.node_volume.xmlSetData('iteration_start_volume', value)
 
 
+    @Variables.noUndo
     def getIterationStartVolume(self):
         """
         Return the iteration value for start of volume statistics calculation.
@@ -207,6 +215,7 @@ class LagrangianStatisticsModel(Model):
         return value
 
 
+    @Variables.undoLocal
     def setIterSteadyStartVolume(self, value):
         """
         Update the iteration value for start of steady volume statistics calculation.
@@ -216,6 +225,7 @@ class LagrangianStatisticsModel(Model):
         self.node_volume.xmlSetData('iteration_steady_start_volume', value)
 
 
+    @Variables.noUndo
     def getIterSteadyStartVolume(self):
         """
         Return the iteration value for start of steady volume statistics calculation.
@@ -227,7 +237,7 @@ class LagrangianStatisticsModel(Model):
         return value
 
 
-
+    @Variables.undoLocal
     def setThresholdValueVolume(self, value):
         """
         Update the limit statistical weight value.
@@ -237,6 +247,7 @@ class LagrangianStatisticsModel(Model):
         self.node_volume.xmlSetData('threshold_volume', value)
 
 
+    @Variables.noUndo
     def getThresholdValueVolume(self):
         """
         Return the limit statistical weight value.
@@ -248,6 +259,7 @@ class LagrangianStatisticsModel(Model):
         return value
 
 
+    @Variables.noUndo
     def getPostprocessingVolStatusFromName(self, name):
         node = self.node_volume.xmlInitChildNode('property', name=name)
         node2 = node.xmlGetChildNode('postprocessing_recording', 'status')
@@ -257,6 +269,7 @@ class LagrangianStatisticsModel(Model):
             return "off"
 
 
+    @Variables.undoLocal
     def setPostprocessingVolStatusFromName(self, name, status):
         self.isOnOff(status)
         node = self.node_volume.xmlInitChildNode('property', name=name)
@@ -269,6 +282,7 @@ class LagrangianStatisticsModel(Model):
 
     # Boundary functions
     # ------------------
+    @Variables.undoLocal
     def setBoundaryStatisticsStatus(self, status):
         """
         """
@@ -276,6 +290,7 @@ class LagrangianStatisticsModel(Model):
         self.node_boundary['status'] = status
 
 
+    @Variables.noUndo
     def getBoundaryStatisticsStatus(self):
         """
         """
@@ -287,6 +302,7 @@ class LagrangianStatisticsModel(Model):
         return status
 
 
+    @Variables.undoLocal
     def setIterationStartBoundary(self, value):
         """
         Update iteration value for start of boundary statistics calculation.
@@ -296,6 +312,7 @@ class LagrangianStatisticsModel(Model):
         self.node_boundary.xmlSetData('iteration_start_boundary', value)
 
 
+    @Variables.noUndo
     def getIterationStartBoundary(self):
         """
         Return the iteration value for start of boundary statistics calculation.
@@ -307,6 +324,7 @@ class LagrangianStatisticsModel(Model):
         return value
 
 
+    @Variables.undoLocal
     def setThresholdValueBoundary(self, value):
         """
         Update the limit statistical weight value.
@@ -316,6 +334,7 @@ class LagrangianStatisticsModel(Model):
         self.node_boundary.xmlSetData('threshold_boundary', value)
 
 
+    @Variables.noUndo
     def getThresholdValueBoundary(self):
         """
         Return the limit statistical weight value.
@@ -327,8 +346,9 @@ class LagrangianStatisticsModel(Model):
         return value
 
 
+    @Variables.noUndo
     def getPropertyLabelFromNameBoundary(self, name):
-        node = self.node_boundary.xmlInitChildNode('property', name=name) #, support="boundary")
+        node = self.node_boundary.xmlInitChildNode('property', name=name)
         label = node['label']
         if not label:
             label = self._defaultLagrangianStatisticsValues()[name]
@@ -336,13 +356,15 @@ class LagrangianStatisticsModel(Model):
         return label
 
 
+    @Variables.undoLocal
     def setPropertyLabelFromNameBoundary(self, name, label):
-        node = self.node_boundary.xmlInitChildNode('property', name=name) #, support="boundary")
+        node = self.node_boundary.xmlInitChildNode('property', name=name)
         node['label'] = label
 
 
+    @Variables.noUndo
     def getListingPrintingStatusFromName(self, name):
-        node = self.node_boundary.xmlInitChildNode('property', name=name) #, support="boundary")
+        node = self.node_boundary.xmlInitChildNode('property', name=name)
         node2 = node.xmlGetChildNode('listing_printing', 'status')
         if not node2:
             return "on"
@@ -350,9 +372,10 @@ class LagrangianStatisticsModel(Model):
             return "off" # node2['status']
 
 
+    @Variables.undoLocal
     def setListingPrintingStatusFromName(self, name, status):
         self.isOnOff(status)
-        node = self.node_boundary.xmlInitChildNode('property', name=name) #, support="boundary")
+        node = self.node_boundary.xmlInitChildNode('property', name=name)
         node2 = node.xmlInitChildNode('listing_printing', 'status')
         if status == "on":
             node.xmlRemoveChild('listing_printing')
@@ -360,8 +383,9 @@ class LagrangianStatisticsModel(Model):
             node2['status'] = status
 
 
+    @Variables.noUndo
     def getPostprocessingStatusFromName(self, name):
-        node = self.node_boundary.xmlInitChildNode('property', name=name) #, support="boundary")
+        node = self.node_boundary.xmlInitChildNode('property', name=name)
         node2 = node.xmlGetChildNode('postprocessing_recording', 'status')
         if not node2:
             return "on"
@@ -369,9 +393,10 @@ class LagrangianStatisticsModel(Model):
             return "off" # node2['status']
 
 
+    @Variables.undoLocal
     def setPostprocessingStatusFromName(self, name, status):
         self.isOnOff(status)
-        node = self.node_boundary.xmlInitChildNode('property', name=name) #, support="boundary")
+        node = self.node_boundary.xmlInitChildNode('property', name=name)
         node2 = node.xmlInitChildNode('postprocessing_recording', 'status')
         if status == "on":
             node.xmlRemoveChild('postprocessing_recording')

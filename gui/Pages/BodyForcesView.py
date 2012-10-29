@@ -76,6 +76,9 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
         self.setupUi(self)
 
         self.case = case
+
+        self.case.undoStopGlobal()
+
         self.mdl = BodyForcesModel(self.case)
 
         # Connections
@@ -102,6 +105,8 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
         self.lineEditX.setText(QString(str(gravity_x)))
         self.lineEditY.setText(QString(str(gravity_y)))
         self.lineEditZ.setText(QString(str(gravity_z)))
+
+        self.case.undoStartGlobal()
 
 
     @pyqtSignature("const QString&")

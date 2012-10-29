@@ -152,13 +152,13 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
         self.setupUi(self)
 
         self.case = case
+        self.case.undoStopGlobal()
 
         # Create the Page layout.
 
         # Model and QTreeView for Head Losses
         self.modelHeadLosses = StandardItemModelHeadLosses()
         self.treeView.setModel(self.modelHeadLosses)
-
 
         # Connections
         self.connect(self.treeView, SIGNAL("clicked(const QModelIndex &)"), self.slotSelectHeadLossesZones)
@@ -222,6 +222,8 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
             Lab=t[0 ]
             self.modelHeadLosses.insertItem(Lab, NamLoc[0],NamLoc[1])
         self.forgetStandardWindows()
+
+        self.case.undoStartGlobal()
 
 
     @pyqtSignature("const QModelIndex&")

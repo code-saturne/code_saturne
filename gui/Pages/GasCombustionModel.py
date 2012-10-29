@@ -100,6 +100,7 @@ class GasCombustionModel(Variables, Model):
         return default
 
 
+    @Variables.noUndo
     def getAllGasCombustionModels(self):
         """
         Return all defined gas combustion models in a tuple.
@@ -131,6 +132,7 @@ class GasCombustionModel(Variables, Model):
         return gasCombustionList
 
 
+    @Variables.undoGlobal
     def setGasCombustionModel(self, model):
         """
         Update the gas combustion model markup from the XML document.
@@ -175,6 +177,7 @@ class GasCombustionModel(Variables, Model):
         self.createModel()
 
 
+    @Variables.noUndo
     def getGasCombustionModel(self):
         """
         Return the current gas combustion model.
@@ -187,6 +190,7 @@ class GasCombustionModel(Variables, Model):
         return model
 
 
+    @Variables.noUndo
     def getGasCombustionOption(self):
         """
         Return the current gas combustion option.
@@ -214,6 +218,7 @@ class GasCombustionModel(Variables, Model):
         return option
 
 
+    @Variables.undoGlobal
     def setGasCombustionOption(self, option):
         """
         Return the current gas combustion option.
@@ -322,6 +327,7 @@ class GasCombustionModel(Variables, Model):
                 NPE.setFluxReconstruction(node['label'], 'off')
 
 
+    @Variables.noUndo
     def getNdirac(self):
         """
         """
@@ -370,6 +376,7 @@ class GasCombustionModel(Variables, Model):
         self.__createModelProperties(model)
 
 
+    @Variables.noUndo
     def getThermoChemistryDataFileName(self):
         """
         Get name for properties data (return None if not defined)i
@@ -378,6 +385,7 @@ class GasCombustionModel(Variables, Model):
         return f
 
 
+    @Variables.undoLocal
     def setThermoChemistryDataFileName(self, name):
         """
         Put name for properties data and load file for number gaz and radiative model

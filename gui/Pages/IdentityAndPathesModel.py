@@ -43,7 +43,7 @@ import os, string, unittest
 
 from Base.Common import *
 import Base.Toolbox as Tool
-from Base.XMLvariables import Model
+from Base.XMLvariables import Model, Variables
 from Base.XMLmodel import ModelTest
 
 #-------------------------------------------------------------------------------
@@ -82,6 +82,7 @@ class IdentityAndPathesModel(Model):
         self.case.root().xmlSetAttribute(case=ncase, study=nstudy)
 
 
+    @Variables.undoLocal
     def setCasePath(self, dircase):
         """
         Put path of case into xml file
@@ -89,6 +90,7 @@ class IdentityAndPathesModel(Model):
         self.case['case_path'] = dircase
 
 
+    @Variables.undoLocal
     def setRelevantSubdir(self, val, directory):
         """
         Put relevant_subdir value into xml file
@@ -103,6 +105,7 @@ class IdentityAndPathesModel(Model):
         self.case['relevant_subdir'] = val
 
 
+    @Variables.undoLocal
     def setPath(self, pathi, tag):
         """
         Put relevant_subdir value into xml file

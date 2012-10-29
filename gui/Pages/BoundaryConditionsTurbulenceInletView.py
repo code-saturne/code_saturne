@@ -84,6 +84,8 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
         self.__case = case
         self.__boundary = None
 
+        self.__case.undoStopGlobal()
+
         self.connect(self.comboBoxTurbulence, SIGNAL("activated(const QString&)"), self.__slotChoiceTurbulence)
 
         self.__modelTurbulence = ComboModel(self.comboBoxTurbulence, 2, 1)
@@ -103,6 +105,8 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
         self.lineEditDiameter.setValidator(validatorDiam)
         self.lineEditDiameterIntens.setValidator(validatorDiam)
         self.lineEditIntensity.setValidator(validatorIntensity)
+
+        self.__case.undoStartGlobal()
 
 
     def showWidget(self, boundary):

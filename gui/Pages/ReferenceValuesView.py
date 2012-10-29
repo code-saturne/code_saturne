@@ -79,6 +79,7 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         self.setupUi(self)
 
         self.case = case
+        self.case.undoStopGlobal()
         self.mdl = ReferenceValuesModel(self.case)
 
         # Combo models
@@ -181,6 +182,8 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
             self.lineEditT0.setText(QString(str(t)))
             m = self.mdl.getMassemol()
             self.lineEditMassMolar.setText(QString(str(m)))
+
+        self.case.undoStartGlobal()
 
 
     @pyqtSignature("const QString&")

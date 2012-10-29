@@ -273,6 +273,45 @@ class Variables:
         self.case = case
 
 
+    @staticmethod
+    def undoGlobal(f):
+        def _wrapper(self, *c, **d):
+            """
+            we suspend global record to prevent infinity loop
+            use when call another class function
+            """
+            if self.case.record_global == True:
+                self.case.undoGlobal()
+                self.case.undoStop()
+                r = f(self, *c, **d)
+                self.case.undoStart()
+            else:
+                r = f(self, *c, **d)
+            return r
+        return _wrapper
+
+
+    @staticmethod
+    def undoLocal(f):
+        def _wrapper2(self, *c, **d):
+            self.case.undo(f)
+            return f(self, *c, **d)
+        return _wrapper2
+
+
+    @staticmethod
+    def noUndo(f):
+        def _wrapper3(self, *c, **d):
+            if self.case.record_global == True:
+                self.case.undoStopGlobal()
+                r = f(self, *c, **d)
+                self.case.undoStartGlobal()
+            else:
+                r = f(self, *c, **d)
+            return r
+        return _wrapper3
+
+
 ##    def defaultInitialValues(self):
 ##        """
 ##        Return in a dictionnary which contains default values.

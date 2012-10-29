@@ -86,6 +86,9 @@ class BoundaryConditionsMobileMeshView(QWidget, Ui_BoundaryConditionsMobileMeshF
         """
         self.__case = case
         self.__boundary = None
+
+        self.__case.undoStopGlobal()
+
         self.__model = MobileMeshModel(self.__case)
 
         self.__comboModel = ComboModel(self.comboMobilBoundary, 6, 1)
@@ -102,6 +105,8 @@ class BoundaryConditionsMobileMeshView(QWidget, Ui_BoundaryConditionsMobileMeshF
         self.connect(self.pushButtonMobilBoundary,
                      SIGNAL("clicked(bool)"),
                      self.__slotFormula)
+
+        self.__case.undoStartGlobal()
 
 
     @pyqtSignature("const QString&")

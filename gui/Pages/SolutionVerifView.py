@@ -78,12 +78,13 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
 
         Ui_MeshQualityCriteriaLogDialogForm.__init__(self)
         self.setupUi(self)
+
         self.setWindowTitle(self.tr("Run mesh quality criteria"))
         self.pushButton.setEnabled(False)
 
-
         self.case = case
         self.case2 = case2
+        self.case.undoStopGlobal()
         self.cs = self.case['package'].get_solver()
         self.mdl = SolutionDomainModel(self.case)
         self.out2 = OutputControlModel(self.case2)
@@ -168,6 +169,8 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
                 self.preprocess_cmd.append(cmd)
 
             self.__preProcess()
+
+        self.case.undoStartGlobal()
 
 
     def __preProcess(self):
@@ -308,6 +311,7 @@ class SolutionVerifView(QWidget, Ui_SolutionVerifForm):
 
         self.parent = parent
         self.case = case
+        self.case.undoStopGlobal()
         self.mdl = SolutionDomainModel(self.case)
         self.out = OutputControlModel(self.case)
 
@@ -374,6 +378,8 @@ class SolutionVerifView(QWidget, Ui_SolutionVerifForm):
 
         if not (self.mdl.getMeshList() or self.mdl.getMeshInput()):
             self.toolButtonBatch.setEnabled(False)
+
+        self.case.undoStartGlobal()
 
 
     @pyqtSignature("const QString &")

@@ -85,6 +85,8 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.__case = case
         self.__boundary = None
 
+        self.__case.undoStopGlobal()
+
         self.connect(self.lineEditValueThermal, SIGNAL("textChanged(const QString &)"), self.slotValueThermal)
         self.connect(self.lineEditValueSpecies, SIGNAL("textChanged(const QString &)"), self.slotValueSpecies)
         self.connect(self.lineEditValueMeteo,   SIGNAL("textChanged(const QString &)"), self.slotValueMeteo)
@@ -116,6 +118,8 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.lineEditExThermal.setValidator(validatorExThermal)
         self.lineEditExSpecies.setValidator(validatorExSpecies)
         self.lineEditExMeteo.setValidator(validatorExMeteo)
+
+        self.__case.undoStartGlobal()
 
 
     def __setBoundary(self, boundary):

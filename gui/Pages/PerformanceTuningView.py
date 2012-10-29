@@ -78,6 +78,7 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         Ui_PerformanceTuningForm.__init__(self)
         self.setupUi(self)
         self.case = case
+        self.case.undoStopGlobal()
 
         self.mdl = PerformanceTuningModel(self.case)
 
@@ -139,6 +140,8 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         self.connect(self.spinBoxIORankStep, SIGNAL("valueChanged(int)"), self.slotBlockIORankStep)
         self.connect(self.spinBoxIOMinBlockSize, SIGNAL("valueChanged(int)"), self.slotBlockIOMinSize)
 
+        self.connect(self.tabWidget, SIGNAL("currentChanged(int)"), self.slotchanged)
+
         # Widget initialization
 
         self.partinput_path = self.mdl.getPartitionInputPath()
@@ -189,6 +192,10 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
 
         self.blockio_min_size = self.mdl.getBlockIOMinSize()
         self.spinBoxIOMinBlockSize.setValue(int(self.blockio_min_size))
+
+        self.tabWidget.setCurrentIndex(self.case['current_tab'])
+
+        self.case.undoStartGlobal()
 
 
     @pyqtSignature("")
@@ -296,7 +303,7 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         self.mdl.setPartitionType(self.partition_alg)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSignature("int")
     def slotRankStep(self, text):
         """
         Input for Partitioner.
@@ -334,7 +341,7 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         self.mdl.setBlockIOWriteMethod(self.blockio_write_method)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSignature("int")
     def slotBlockIORankStep(self, text):
         """
         Input for Partitioner.
@@ -343,13 +350,21 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         self.mdl.setBlockIORankStep(self.blockio_rank_step)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSignature("int")
     def slotBlockIOMinSize(self, text):
         """
         Input for Partitioner.
         """
         self.blockio_min_size = self.spinBoxIOMinBlockSize.value()
         self.mdl.setBlockIOMinSize(self.blockio_min_size)
+
+
+    @pyqtSignature("int")
+    def slotchanged(self, index):
+        """
+        Changed tab
+        """
+        self.case['current_tab'] = index
 
 
     def tr(self, text):

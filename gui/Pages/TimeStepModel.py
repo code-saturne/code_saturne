@@ -115,6 +115,7 @@ class TimeStepModel(Model):
         return thermal_case
 
 
+    @Variables.noUndo
     def getTimePassing(self):
         """
         Get value of time_passing (IDTVAR) for node "time_parameters"
@@ -135,6 +136,7 @@ class TimeStepModel(Model):
         return v
 
 
+    @Variables.undoGlobal
     def setTimePassing(self, val):
         """
         Get value of time_passing (IDTVAR) for node "time_parameters"
@@ -165,6 +167,7 @@ class TimeStepModel(Model):
                 self.node_time.xmlRemoveChild(tag)
 
 
+    @Variables.noUndo
     def getTimeStep(self):
         """
         Get value of time_step_reference for node "time_parameters"
@@ -178,6 +181,7 @@ class TimeStepModel(Model):
         return v
 
 
+    @Variables.undoLocal
     def setTimeStep(self, val):
         """
         Get value of time_step_reference for node "time_parameters"
@@ -186,6 +190,7 @@ class TimeStepModel(Model):
         self.node_time.xmlSetData('time_step_ref', val)
 
 
+    @Variables.noUndo
     def getIterationsNumber(self):
         """
         Get number of iterations for node "time_parameters"
@@ -198,6 +203,7 @@ class TimeStepModel(Model):
         return v
 
 
+    @Variables.undoLocal
     def setIterationsNumber(self, val):
         """
         Put number of iterations for node "time_parameters"
@@ -206,6 +212,7 @@ class TimeStepModel(Model):
         self.node_time.xmlSetData('iterations', val)
 
 
+    @Variables.noUndo
     def getMaxCourant(self):
         """
         Return the max courant number allowed
@@ -214,6 +221,7 @@ class TimeStepModel(Model):
         return self.getOptions(tag)
 
 
+    @Variables.undoGlobal
     def setMaxCourant(self, val):
         """
         Input the max courant number allowed
@@ -222,6 +230,7 @@ class TimeStepModel(Model):
         self.setOptions('max_courant_num', val)
 
 
+    @Variables.noUndo
     def getMaxFourier(self):
         """
         Return the max fourier number allowed
@@ -230,6 +239,7 @@ class TimeStepModel(Model):
         return self.getOptions(tag)
 
 
+    @Variables.undoGlobal
     def setMaxFourier(self, val):
         """
         Input the max fourier number allowed
@@ -238,6 +248,7 @@ class TimeStepModel(Model):
         self.setOptions('max_fourier_num', val)
 
 
+    @Variables.noUndo
     def getTimeStepMinFactor(self):
         """
         Return the minimal time step factor
@@ -246,6 +257,7 @@ class TimeStepModel(Model):
         return self.getOptions(tag)
 
 
+    @Variables.undoGlobal
     def setTimeStepMinFactor(self, val):
         """
         Input the minimal time step factor
@@ -254,6 +266,7 @@ class TimeStepModel(Model):
         self.setOptions('time_step_min_factor', val)
 
 
+    @Variables.noUndo
     def getTimeStepMaxFactor(self):
         """
         Return the maximal time step factor
@@ -262,6 +275,7 @@ class TimeStepModel(Model):
         return self.getOptions(tag)
 
 
+    @Variables.undoGlobal
     def setTimeStepMaxFactor(self, val):
         """
         Input the maximal time step factor
@@ -270,6 +284,7 @@ class TimeStepModel(Model):
         self.setOptions('time_step_max_factor', val)
 
 
+    @Variables.noUndo
     def getTimeStepVariation(self):
         """
         Return the maximal variation of time step between two iteration
@@ -278,6 +293,7 @@ class TimeStepModel(Model):
         return self.getOptions(tag)
 
 
+    @Variables.undoGlobal
     def setTimeStepVariation(self, val):
         """
         Input the maximal variation of time step between two iteration
@@ -286,6 +302,7 @@ class TimeStepModel(Model):
         self.setOptions('time_step_var', val)
 
 
+    @Variables.noUndo
     def getOptions(self, tag):
         """
         Get options for node "time_parameters"
@@ -301,6 +318,7 @@ class TimeStepModel(Model):
         return v
 
 
+    @Variables.undoLocal
     def setOptions(self, tag, val):
         """
         Put options for node "time_parameters"
@@ -316,6 +334,7 @@ class TimeStepModel(Model):
         self.node_time.xmlSetData(tag, val)
 
 
+    @Variables.noUndo
     def getThermalTimeStep(self):
         """
         Get status of thermal_time_step for node "time_parameters"
@@ -331,6 +350,7 @@ class TimeStepModel(Model):
         return s
 
 
+    @Variables.undoLocal
     def setThermalTimeStep(self, status):
         """
         Put status of thermal_time_step for node "time_parameters"
@@ -344,6 +364,7 @@ class TimeStepModel(Model):
         node['status'] = status
 
 
+    @Variables.noUndo
     def getZeroTimeStep(self):
         """
         Get status of zero_time_step for node "time_parameters"
@@ -356,6 +377,7 @@ class TimeStepModel(Model):
         return s
 
 
+    @Variables.undoLocal
     def setZeroTimeStep(self, status):
         """
         Get status of zero_time_step for node "time_parameters"

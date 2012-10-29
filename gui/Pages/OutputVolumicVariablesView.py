@@ -424,6 +424,7 @@ class OutputVolumicVariablesView(QWidget, Ui_OutputVolumicVariablesForm):
         self.setupUi(self)
 
         self.case = case
+        self.case.undoStopGlobal()
         self.info_turb_name = []
         self.mdl = OutputVolumicVariablesModel(self.case)
 
@@ -442,6 +443,8 @@ class OutputVolumicVariablesView(QWidget, Ui_OutputVolumicVariablesForm):
 
         probesDelegate = ProbesDelegate(self.tableViewOutput, self.mdl)
         self.tableViewOutput.setItemDelegateForColumn(3, probesDelegate)
+
+        self.case.undoStartGlobal()
 
 
     def tr(self, text):

@@ -435,6 +435,7 @@ class SolutionDomainModel(MeshModel, Model):
 # Methods to manage the mesh_input path
 #======================================
 
+    @Variables.noUndo
     def getMeshInput(self):
         """
         Public method. Return the mesh_input file or directory path.
@@ -446,6 +447,7 @@ class SolutionDomainModel(MeshModel, Model):
             return None
 
 
+    @Variables.undoLocal
     def setMeshInput(self, mesh_input):
         """
         Public method. Add mesh_input path name in xml file.
@@ -464,6 +466,7 @@ class SolutionDomainModel(MeshModel, Model):
 # Methods to manage meshes :
 #=========================
 
+    @Variables.undoLocal
     def addMesh(self, mesh):
         """
         Public method. Add mesh name in xml file.
@@ -476,6 +479,7 @@ class SolutionDomainModel(MeshModel, Model):
             self.node_meshes.xmlInitNode('mesh', name=mesh[0])
 
 
+    @Variables.undoLocal
     def delMesh(self, mesh):
         """
         Public method. Delete node for mesh named "mesh" in xml file
@@ -499,6 +503,7 @@ class SolutionDomainModel(MeshModel, Model):
         return meshList
 
 
+    @Variables.undoLocal
     def setMeshFormat(self, mesh, format):
         """
         Public method. Set the mesh format.
@@ -510,6 +515,7 @@ class SolutionDomainModel(MeshModel, Model):
             node['format'] = format
 
 
+    @Variables.noUndo
     def getMeshFormat(self, mesh):
         """
         Public method. Return the mesh format recorded in the case.
@@ -521,6 +527,7 @@ class SolutionDomainModel(MeshModel, Model):
         return format
 
 
+    @Variables.undoLocal
     def setMeshNumbers(self, mesh, num):
         """
         Public method. Set the mesh number(s).
@@ -532,6 +539,7 @@ class SolutionDomainModel(MeshModel, Model):
             node['num'] = num
 
 
+    @Variables.noUndo
     def getMeshNumbers(self, mesh):
         """
         Public method. Return the mesh number recorded in the case.
@@ -540,6 +548,7 @@ class SolutionDomainModel(MeshModel, Model):
         return node['num']
 
 
+    @Variables.undoLocal
     def setMeshGroupCells(self, mesh, grp_cel):
         """
         Public method. Put the grp-cel option.
@@ -553,6 +562,7 @@ class SolutionDomainModel(MeshModel, Model):
             node['grp_cel'] = grp_cel
 
 
+    @Variables.undoLocal
     def setMeshReorient(self, mesh, reorient):
         """
         Public method. Put the grp-cel option.
@@ -565,6 +575,7 @@ class SolutionDomainModel(MeshModel, Model):
             node['reorient'] = 'on'
 
 
+    @Variables.noUndo
     def getMeshReorient(self, mesh):
         """
         Public method. Return the mesh 'grp-cel' sub-option recorded in the case.
@@ -576,6 +587,7 @@ class SolutionDomainModel(MeshModel, Model):
         return reorient
 
 
+    @Variables.noUndo
     def getMeshGroupCells(self, mesh):
         """
         Public method. Return the mesh 'grp-cel' sub-option recorded in the case.
@@ -583,6 +595,7 @@ class SolutionDomainModel(MeshModel, Model):
         return self.__getMeshGroup(mesh, 'grp_cel')
 
 
+    @Variables.undoLocal
     def setMeshGroupFaces(self, mesh, grp_fac):
         """
         Public method. Put the 'grp-fac' sub-option.
@@ -596,6 +609,7 @@ class SolutionDomainModel(MeshModel, Model):
             node['grp_fac'] = grp_fac
 
 
+    @Variables.noUndo
     def getMeshGroupFaces(self, mesh):
         """
         Public method. Return the mesh 'grp_fac' option recorded in the case.
@@ -614,6 +628,7 @@ class SolutionDomainModel(MeshModel, Model):
         return grp
 
 
+    @Variables.noUndo
     def getMeshDir(self):
         """
         Public method. Return the meshdir directory name.
@@ -629,6 +644,7 @@ class SolutionDomainModel(MeshModel, Model):
             return None
 
 
+    @Variables.undoLocal
     def setMeshDir(self, mesh_dir):
         """
         Public method. Add mesh name in xml file.
@@ -677,6 +693,7 @@ class SolutionDomainModel(MeshModel, Model):
 # Methods to manage status of all main tags :
 #==========================================
 
+    @Variables.noUndo
     def getCutStatus(self):
         """
         Get status on tag "faces_cutting" from xml file
@@ -688,6 +705,7 @@ class SolutionDomainModel(MeshModel, Model):
         return status
 
 
+    @Variables.undoLocal
     def setCutStatus(self, status):
         """
         Put status on tag "faces_cutting" in xml file
@@ -696,6 +714,7 @@ class SolutionDomainModel(MeshModel, Model):
         self.node_cut['status'] = status
 
 
+    @Variables.undoLocal
     def setCutAngle(self, var):
         """
         input '--cut_warped_faces' parameter.
@@ -707,6 +726,7 @@ class SolutionDomainModel(MeshModel, Model):
             self.node_cut.xmlRemoveChild('warp_angle_max')
 
 
+    @Variables.noUndo
     def getCutAngle(self):
         """
         get '--cut_warped_faces' parameters.
@@ -717,6 +737,7 @@ class SolutionDomainModel(MeshModel, Model):
         return angle
 
 
+    @Variables.noUndo
     def getSmoothingStatus(self):
         """
         Get status on tag "mesh_smoothing" from xml file
@@ -728,6 +749,7 @@ class SolutionDomainModel(MeshModel, Model):
         return status
 
 
+    @Variables.undoLocal
     def setSmoothingStatus(self, status):
         """
         Put status on tag "mesh_smoothing" in xml file
@@ -736,6 +758,7 @@ class SolutionDomainModel(MeshModel, Model):
         self.node_smooth['status'] = status
 
 
+    @Variables.undoLocal
     def setSmoothAngle(self, var):
         """
         input '--mesh_smoothing' parameter.
@@ -748,6 +771,7 @@ class SolutionDomainModel(MeshModel, Model):
             self.node_smooth.xmlRemoveChild('smooth_angle')
 
 
+    @Variables.noUndo
     def getSmoothAngle(self):
         """
         get '--mesh_smoothing' parameters.
@@ -761,6 +785,7 @@ class SolutionDomainModel(MeshModel, Model):
 # Methods to manage periodicity :
 #==============================
 
+    @Variables.noUndo
     def getPeriodicSelectionsCount(self):
         """
         Public method.
@@ -771,6 +796,7 @@ class SolutionDomainModel(MeshModel, Model):
         return len(self.node_perio.xmlGetNodeList('face_periodicity'))
 
 
+    @Variables.noUndo
     def getPeriodicityMode(self, perio_id):
         """
         Public method.
@@ -789,6 +815,7 @@ class SolutionDomainModel(MeshModel, Model):
         return mode
 
 
+    @Variables.undoGlobal
     def updatePeriodicityMode(self, perio_id, mode):
         """
         Public method.
@@ -817,6 +844,7 @@ class SolutionDomainModel(MeshModel, Model):
                       self._setMixedDefault(perio_id)
 
 
+    @Variables.undoGlobal
     def deletePeriodicity(self, perio_id):
         """
         Public method.
@@ -832,6 +860,7 @@ class SolutionDomainModel(MeshModel, Model):
             self._updatePerioSelectionNumbers()
 
 
+    @Variables.noUndo
     def getTranslationDirection(self, perio_id):
         """
         Public method.
@@ -853,6 +882,7 @@ class SolutionDomainModel(MeshModel, Model):
         return dx, dy, dz
 
 
+    @Variables.undoLocal
     def setTranslationDirection(self, perio_id, dir, valcoor):
         """
         Put values of translation for periodic translation
@@ -866,6 +896,7 @@ class SolutionDomainModel(MeshModel, Model):
             n.xmlSetData(dir, valcoor)
 
 
+    @Variables.noUndo
     def getRotationDirection(self, perio_id):
         """
         Get values for director vector rotation for periodic translation
@@ -880,6 +911,7 @@ class SolutionDomainModel(MeshModel, Model):
         return rx, ry, rz
 
 
+    @Variables.undoLocal
     def setRotationVector(self, perio_id, dir, valcoor):
         """
         Put values for director vector rotation for periodic translation
@@ -893,6 +925,7 @@ class SolutionDomainModel(MeshModel, Model):
         n.xmlSetData(dir,valcoor)
 
 
+    @Variables.noUndo
     def getRotationAngle(self, perio_id):
         """
         Get angle for rotation for periodic rotation
@@ -905,6 +938,7 @@ class SolutionDomainModel(MeshModel, Model):
         return angle
 
 
+    @Variables.undoLocal
     def setRotationAngle(self, perio_id, angle):
         """
         Put angle for rotation for periodic rotation
@@ -917,6 +951,7 @@ class SolutionDomainModel(MeshModel, Model):
         n.xmlSetData('angle', angle)
 
 
+    @Variables.noUndo
     def getRotationCenter(self, perio_id):
         """
         Get coordinates of center of rotation for periodic transformation
@@ -935,6 +970,7 @@ class SolutionDomainModel(MeshModel, Model):
         return px, py, pz
 
 
+    @Variables.undoGlobal
     def setRotationCenter(self, perio_id, pos, val):
         """
         Put coordinates of center of rotation for periodic transformation
@@ -951,6 +987,7 @@ class SolutionDomainModel(MeshModel, Model):
         n.xmlSetData(pos, val)
 
 
+    @Variables.noUndo
     def getTransformationMatrix(self, perio_id):
         """
         Get values of matrix of rotation for periodic transformation
@@ -977,6 +1014,7 @@ class SolutionDomainModel(MeshModel, Model):
         return m11, m12, m13, m14, m21, m22, m23, m24, m31, m32, m33, m34
 
 
+    @Variables.undoGlobal
     def setTransformationMatrix(self, perio_id, pos, val):
         """
         Put values of matrix of rotation for periodic transformation
@@ -994,6 +1032,7 @@ class SolutionDomainModel(MeshModel, Model):
         n.xmlSetData(pos, val)
 
 
+    @Variables.undoGlobal
     def addPeriodicFaces(self, select):
         """
         Add faces selection for periodic transformation.
@@ -1006,6 +1045,7 @@ class SolutionDomainModel(MeshModel, Model):
         self.updatePeriodicityMode(nb, 'translation')
 
 
+    @Variables.noUndo
     def getPeriodicFaces(self, perio_id):
         """
         Public method.
@@ -1022,6 +1062,7 @@ class SolutionDomainModel(MeshModel, Model):
         return result
 
 
+    @Variables.undoGlobal
     def replacePeriodicFaces(self, perio_id, select):
         """
         Replace values of faces selection for periodic transformation, by select
@@ -1037,6 +1078,7 @@ class SolutionDomainModel(MeshModel, Model):
 # Methods to manage faces :
 #========================
 
+    @Variables.noUndo
     def getJoinSelectionsCount(self):
         """
         Public method.
@@ -1047,6 +1089,7 @@ class SolutionDomainModel(MeshModel, Model):
         return len(self.node_join.xmlGetNodeList('face_joining'))
 
 
+    @Variables.undoGlobal
     def addJoinFaces(self, select):
         """
         Add faces selection for face joining.
@@ -1058,6 +1101,7 @@ class SolutionDomainModel(MeshModel, Model):
         self._addJoinSelect(node, select)
 
 
+    @Variables.noUndo
     def getJoinFaces(self, join_id):
         """
         Return faces selection named 'number' for face joining .
@@ -1066,6 +1110,7 @@ class SolutionDomainModel(MeshModel, Model):
         return self._getFaces(node)
 
 
+    @Variables.undoGlobal
     def replaceJoinFaces(self, join_id, select):
         """
         Replace values of faces selection named 'number' for face joining, by select
@@ -1075,6 +1120,7 @@ class SolutionDomainModel(MeshModel, Model):
         self._addJoinSelect(node, select)
 
 
+    @Variables.undoGlobal
     def deleteJoinFaces(self, join_id):
         """
         Delete faces selection named 'number' for face joining

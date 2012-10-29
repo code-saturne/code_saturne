@@ -161,24 +161,10 @@ class StandardItemModelScalars(QStandardItemModel):
                      (2, self.tr("Thickness"), 'm', 'EPAP' , 'thickness'),
                      (3, self.tr("Profile of external temperature"), 'K', 'TEXTP', 'external_temperature_profile'),
                      (4, self.tr("Profile of internal temperature"), 'K', 'TINTP', 'internal_temperature_profile')]
-##        if cond == 'iprefl':
-##            list = [(0, self.xlamp,t.XLAMP, 'W/m/K', 'XLAMP'),
-##                    (1, self.epap, t.EPAP,  'm', 'EPAP'),
-##                    (2, self.textp,t.TEXTP, 'K', 'TEXTP'),
-##                    (3, self.tintp,t.TINTP, 'K', 'TINTP')]
-##            self.f43 = Tix.Frame(self.f4, relief=FLAT)
-##            self.f43.pack(side=TOP, fill=X, pady=10)
-##            frad = self.f43
         if cond == 'ifgrno':
             liste = [(0, self.tr("Emissivity"),'', 'EPSP', 'emissivity'),
                      (1, self.tr("Flux of conduction"), 'W/m2', 'FLUX',  'flux'),
                      (2, self.tr("Inital temperature"), 'K', 'TINTP', 'internal_temperature_profile')]
-##        if cond == 'ifrefl':
-##            list = [(0, self.flux, t.FLUX, 'W/m2', 'FLUX'),
-##                    (1, self.tintp, t.TINTP, 'K', 'TINTP')]
-##            self.f45 = Tix.Frame(self.f4, relief=FLAT)
-##            self.f45.pack(side=TOP, fill=X, pady=10)
-##            frad = self.f45
         return liste
 
 #-------------------------------------------------------------------------------
@@ -206,6 +192,8 @@ class BoundaryConditionsWallRadiativeTransferView(QWidget,
         self.__case = case
         self.__boundary = None
 
+        self.__case.undoStopGlobal()
+
         # Create the Page layout.
 
         # Combo
@@ -214,12 +202,8 @@ class BoundaryConditionsWallRadiativeTransferView(QWidget,
                                             " and profile of fixed internal temperature"), 'itpimp')
         self.modelRadiative.addItem(self.tr("Gray or black wall\n"\
                                             " and profile of fixed external temperature"), 'ipgrno')
-##         self.modelRadiative.addItem(self.tr("Paroi reflechissante\n"\
-##                                               " + profil de temperature externe impose"), 'iprefl')
         self.modelRadiative.addItem(self.tr("Gray or black wall\n"\
                                             " and flux of fixed conduction"), 'ifgrno')
-##         self.modelRadiative.addItem(self.tr("Paroi reflechissante\n"\
-##                                               " + flux de conduction impose en paroi"), 'ifrefl')
 
         # Validator
         validatorZone = IntValidator(self.lineEditZone, min=0)
@@ -233,6 +217,8 @@ class BoundaryConditionsWallRadiativeTransferView(QWidget,
         self.connect(self.lineEditZone,
                      SIGNAL("textChanged(const QString &)"),
                      self.slotZone)
+
+        self.__case.undoStartGlobal()
 
 
     def showWidget(self, b):

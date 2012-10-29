@@ -62,7 +62,6 @@ class DefineUserScalarsModel(Variables, Model):
         """
         self.case = case
 
-#        self.node_th_sca = self.case.xmlGetNode('thermal_scalar')
         self.scalar_node = self.case.xmlGetNode('additional_scalars')
         self.node_bc     = self.case.xmlGetNode('boundary_conditions')
 
@@ -223,6 +222,7 @@ class DefineUserScalarsModel(Variables, Model):
         self.__updateScalarNameAndDiffusivityName()
 
 
+    @Variables.noUndo
     def getScalarLabelsList(self):
         """Public method.
         Return the User scalar label list (thermal scalar included)"""
@@ -232,6 +232,7 @@ class DefineUserScalarsModel(Variables, Model):
         return lst
 
 
+    @Variables.noUndo
     def getMeteoScalarsList(self):
         node_list = []
         models = self.case.xmlGetNode('thermophysical_models')
@@ -251,6 +252,7 @@ class DefineUserScalarsModel(Variables, Model):
         return list_scalar
 
 
+    @Variables.noUndo
     def getElectricalScalarsList(self):
         node_list = []
         models = self.case.xmlGetNode('thermophysical_models')
@@ -270,6 +272,7 @@ class DefineUserScalarsModel(Variables, Model):
         return list_scalar
 
 
+    @Variables.noUndo
     def getUserScalarLabelsList(self):
         """Public method.
         Return the user scalar label list (without thermal scalar).
@@ -281,6 +284,7 @@ class DefineUserScalarsModel(Variables, Model):
         return lst
 
 
+    @Variables.undoGlobal
     def setScalarBoundaries(self):
         """Public method.
         Input boundaries conditions for a scalar node. Method also used by ThermalScalarModel
@@ -298,6 +302,7 @@ class DefineUserScalarsModel(Variables, Model):
                 model.setScalarValue(label, 'dirichlet', 0.0)
 
 
+    @Variables.undoGlobal
     def addUserScalar(self, label=None):
         """Public method.
         Input a new user scalar I{label}"""
@@ -315,6 +320,7 @@ class DefineUserScalarsModel(Variables, Model):
         return l
 
 
+    @Variables.undoGlobal
     def addVariance(self, label=None):
         """Public method.
         Input a new user scalar I{label}"""
@@ -327,6 +333,7 @@ class DefineUserScalarsModel(Variables, Model):
         return l
 
 
+    @Variables.undoLocal
     def renameScalarLabel(self, old_label, new_label):
         """Public method.
         Modify old_label of scalar with new_label and put new label if variancy exists"""
@@ -354,6 +361,7 @@ class DefineUserScalarsModel(Variables, Model):
 
 
     # FIXME: cette methode est a deplacer dans ThermalScalarmodel
+    @Variables.noUndo
     def getThermalScalarLabel(self):
         """
         Get label for thermal scalar
@@ -366,6 +374,7 @@ class DefineUserScalarsModel(Variables, Model):
         return label
 
 
+    @Variables.noUndo
     def getScalarVariance(self, l):
         """
         Get variance of an additional_scalar with label I{l}.
@@ -376,6 +385,7 @@ class DefineUserScalarsModel(Variables, Model):
         return self.scalar_node.xmlGetNode('scalar', label=l).xmlGetString('variance')
 
 
+    @Variables.undoGlobal
     def setScalarVariance(self, scalar_label, variance_label):
         """Put variance of an additional_scalar with label scalar_label"""
         self.isInList(scalar_label, self.getUserScalarLabelsList())
@@ -387,6 +397,7 @@ class DefineUserScalarsModel(Variables, Model):
         self.__removeScalarChildNode(scalar_label, 'property')
 
 
+    @Variables.noUndo
     def getScalarsWithVarianceList(self):
         """
         Return list of scalars which have a variance
@@ -399,6 +410,7 @@ class DefineUserScalarsModel(Variables, Model):
         return lst
 
 
+    @Variables.noUndo
     def getScalarsVarianceList(self):
         """
         Return list of scalars which are also a variance
@@ -410,6 +422,7 @@ class DefineUserScalarsModel(Variables, Model):
         return lst
 
 
+    @Variables.noUndo
     def getVarianceLabelFromScalarLabel(self, label):
         """
         Get the label of scalar with variancy's label: label
@@ -423,6 +436,7 @@ class DefineUserScalarsModel(Variables, Model):
         return lab
 
 
+    @Variables.noUndo
     def getScalarDiffusivityName(self, scalar_label):
         """
         Get label of diffusivity's property for an additional_scalar
@@ -439,6 +453,7 @@ class DefineUserScalarsModel(Variables, Model):
         return lab_diff
 
 
+    @Variables.undoLocal
     def setScalarDiffusivityLabel(self, scalar_label, diff_label):
         """
         Set label of diffusivity's property for an additional_scalar
@@ -449,6 +464,7 @@ class DefineUserScalarsModel(Variables, Model):
         n.xmlGetChildNode('property')['label'] = diff_label
 
 
+    @Variables.noUndo
     def getScalarDiffusivityLabel(self, scalar_label):
         """
         Get label of diffusivity's property for an additional_scalar
@@ -465,6 +481,7 @@ class DefineUserScalarsModel(Variables, Model):
         return lab_diff
 
 
+    @Variables.undoLocal
     def setScalarDiffusivityInitialValue(self, scalar_label, initial_value):
         """
         Set initial value of diffusivity's property for an additional_scalar
@@ -479,6 +496,7 @@ class DefineUserScalarsModel(Variables, Model):
         n_diff.xmlSetData('initial_value', initial_value)
 
 
+    @Variables.noUndo
     def getScalarDiffusivityInitialValue(self, scalar_label):
         """
         Get initial value of diffusivity's property for an additional_scalar
@@ -497,6 +515,7 @@ class DefineUserScalarsModel(Variables, Model):
         return diffu
 
 
+    @Variables.undoLocal
     def setScalarDiffusivityChoice(self, scalar_label, choice):
         """
         Set choice of diffusivity's property for an additional_scalar
@@ -511,6 +530,7 @@ class DefineUserScalarsModel(Variables, Model):
         n_diff['choice'] = choice
 
 
+    @Variables.noUndo
     def getScalarDiffusivityChoice(self, scalar_label):
         """
         Get choice of diffusivity's property for an additional_scalar
@@ -528,6 +548,7 @@ class DefineUserScalarsModel(Variables, Model):
         return choice
 
 
+    @Variables.noUndo
     def getDiffFormula(self, scalar):
         """
         Return a formula for I{tag} 'density', 'molecular_viscosity',
@@ -544,6 +565,7 @@ class DefineUserScalarsModel(Variables, Model):
         return formula
 
 
+    @Variables.noUndo
     def getDefaultFormula(self, scalar):
         """
         Return default formula
@@ -558,6 +580,7 @@ class DefineUserScalarsModel(Variables, Model):
         return formula
 
 
+    @Variables.undoLocal
     def setDiffFormula(self, scalar, str):
         """
         Gives a formula for 'density', 'molecular_viscosity',
@@ -570,6 +593,7 @@ class DefineUserScalarsModel(Variables, Model):
         node.xmlSetData('formula', str)
 
 
+    @Variables.undoGlobal
     def setScalarValues(self, label, vari):
         """
         Put values to scalar with labelled I{label} for creating or replacing values.
@@ -588,6 +612,7 @@ class DefineUserScalarsModel(Variables, Model):
         self.__updateScalarNameAndDiffusivityName()
 
 
+    @Variables.undoGlobal
     def deleteScalar(self, slabel):
         """
         Public method.
@@ -613,6 +638,7 @@ class DefineUserScalarsModel(Variables, Model):
         return lst
 
 
+    @Variables.noUndo
     def getScalarType(self, scalar_label):
         """
         Return type of scalar for choice of color (for view)
@@ -623,6 +649,7 @@ class DefineUserScalarsModel(Variables, Model):
         return node['type']
 
 
+    @Variables.noUndo
     def getScalarName(self, scalar_label):
         """
         Return type of scalar for choice of color (for view)
@@ -632,6 +659,7 @@ class DefineUserScalarsModel(Variables, Model):
         return node['name']
 
 
+    @Variables.noUndo
     def getMeteoScalarType(self, scalar_label):
         """
         Return type of scalar for choice of color (for view)
@@ -644,6 +672,7 @@ class DefineUserScalarsModel(Variables, Model):
         return n['type']
 
 
+    @Variables.noUndo
     def getMeteoScalarName(self, scalar_label):
         """
         Return type of scalar for choice of color (for view)
@@ -655,6 +684,7 @@ class DefineUserScalarsModel(Variables, Model):
         return n['name']
 
 
+    @Variables.noUndo
     def getElectricalScalarType(self, scalar_label):
         """
         Return type of scalar for choice of color (for view)
@@ -667,6 +697,7 @@ class DefineUserScalarsModel(Variables, Model):
         return n['type']
 
 
+    @Variables.noUndo
     def getElectricalScalarName(self, scalar_label):
         """
         Return type of scalar for choice of color (for view)

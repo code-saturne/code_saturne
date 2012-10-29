@@ -109,6 +109,7 @@ class LagrangianBoundariesModel(Model):
         return default
 
 
+    @Variables.undoGlobal
     def setBoundaryChoice(self, nature, labelbc, value):
         """
         Update value for the boundary condition. Here we defined the xml nodes
@@ -130,6 +131,7 @@ class LagrangianBoundariesModel(Model):
         self.setCurrentBoundaryNode(nature, labelbc)
 
 
+    @Variables.noUndo
     def getBoundaryChoice(self, nature, labelbc):
         """
         Return value for the boundary condition.
@@ -145,6 +147,7 @@ class LagrangianBoundariesModel(Model):
         return val
 
 
+    @Variables.undoLocal
     def setCurrentBoundaryNode(self, nature, labelbc):
         """
         Update the current boundary node.
@@ -168,7 +171,6 @@ class LagrangianBoundariesModel(Model):
         node_class.xmlSetData('statitical_weight', self.default['statistical_weight'])
 
         node_class.xmlInitChildNode('velocity', choice=self.default['velocity_choice'])
-        #node_class.xmlSetData('', self.default[''])
 
         node_class.xmlInitChildNode('diameter', choice=self.default['diameter_choice'])
         node_class.xmlSetData('diameter', self.default['diameter'])
@@ -177,13 +179,8 @@ class LagrangianBoundariesModel(Model):
         node_class.xmlInitChildNode('temperature', choice=self.default['temperature_choice'])
         node_class.xmlSetData('temperature', self.default['temperature'])
 
-##         node_class.xmlSetData('specific_heat', self.default['specific_heat'])
-##         node_class.xmlSetData('emissivity', self.default['emissivity'])
-##         node_class.xmlSetData('coal_number', self.default['coal_number'])
-##         node_class.xmlSetData('raw_coal_mass_fraction', self.default['raw_coal_mass_fraction'])
-##         node_class.xmlSetData('char_mass_fraction', self.default['char_mass_fraction'])
 
-
+    @Variables.undoGlobal
     def setNumberOfClassesValue(self, labelbc, value):
         """
         Update the number of classes. Create or delete nodes if necessary.
@@ -202,6 +199,7 @@ class LagrangianBoundariesModel(Model):
             self.setCurrentClassNode(labelbc, value)
 
 
+    @Variables.noUndo
     def getNumberOfClassesValue(self, labelbc):
         """
         Return the number of classes.
@@ -214,6 +212,7 @@ class LagrangianBoundariesModel(Model):
         return value
 
 
+    @Variables.undoLocal
     def setCurrentClassNode(self, labelbc, iclass):
         """
         Update the current class node.
@@ -229,6 +228,7 @@ class LagrangianBoundariesModel(Model):
             self.node_class = nodes_list[iclass-1]
 
 
+    @Variables.undoLocal
     def setNumberOfParticulesInClassValue(self, label, iclass, value):
         """
         Update the number of particles in a class.
@@ -238,6 +238,7 @@ class LagrangianBoundariesModel(Model):
         self.node_class.xmlSetData('number', value)
 
 
+    @Variables.noUndo
     def getNumberOfParticulesInClassValue(self, label, iclass):
         """
         Return the number of particles in a class.
@@ -249,6 +250,7 @@ class LagrangianBoundariesModel(Model):
         return value
 
 
+    @Variables.undoLocal
     def setInjectionFrequencyValue(self, label, iclass, value):
         """
         Update the injection frequency.
@@ -258,6 +260,7 @@ class LagrangianBoundariesModel(Model):
         self.node_class.xmlSetData('frequency', value)
 
 
+    @Variables.noUndo
     def getInjectionFrequencyValue(self, label, iclass):
         """
         Return the injection frequency.
@@ -269,6 +272,7 @@ class LagrangianBoundariesModel(Model):
         return value
 
 
+    @Variables.undoLocal
     def setParticleGroupNumberValue(self, label, iclass, value):
         """
         Update the group number of the particle.
@@ -278,6 +282,7 @@ class LagrangianBoundariesModel(Model):
         self.node_class.xmlSetData('statistical_groups', value)
 
 
+    @Variables.noUndo
     def getParticleGroupNumberValue(self, label, iclass):
         """
         Return the group number of the particle.
@@ -289,6 +294,7 @@ class LagrangianBoundariesModel(Model):
         return value
 
 
+    @Variables.undoLocal
     def setMassFlowRateValue(self, label, iclass, value):
         """
         Update the mass flow rate value.
@@ -298,6 +304,7 @@ class LagrangianBoundariesModel(Model):
         self.node_class.xmlSetData('mass_flow_rate', value)
 
 
+    @Variables.noUndo
     def getMassFlowRateValue(self, label, iclass):
         """
         Return the mass flow rate value.
@@ -309,6 +316,7 @@ class LagrangianBoundariesModel(Model):
         return value
 
 
+    @Variables.undoLocal
     def setStatisticalWeightChoice(self, label, iclass, value):
         """
         Update the condition on statistical weight.
@@ -318,6 +326,7 @@ class LagrangianBoundariesModel(Model):
         node['choice'] = value
 
 
+    @Variables.noUndo
     def getStatisticalWeightChoice(self, label, iclass):
         """
         Return the condition on statistical weight.
@@ -331,6 +340,7 @@ class LagrangianBoundariesModel(Model):
         return val
 
 
+    @Variables.undoLocal
     def setStatisticalWeightValue(self, label, iclass, value):
         """
         Update the statistical weight value.
@@ -340,6 +350,7 @@ class LagrangianBoundariesModel(Model):
         self.node_class.xmlSetData('statistical_weight', value)
 
 
+    @Variables.noUndo
     def getStatisticalWeightValue(self, label, iclass):
         """
         Return the statistical weight value.
@@ -351,6 +362,7 @@ class LagrangianBoundariesModel(Model):
         return value
 
 
+    @Variables.undoLocal
     def setDensityValue(self, label, iclass, value):
         """
         Update the density value.
@@ -360,6 +372,7 @@ class LagrangianBoundariesModel(Model):
         self.node_class.xmlSetData('density', value)
 
 
+    @Variables.noUndo
     def getDensityValue(self, label, iclass):
         """
         Return the density value.
@@ -371,6 +384,7 @@ class LagrangianBoundariesModel(Model):
         return value
 
 
+    @Variables.undoLocal
     def setVelocityChoice(self, label, iclass, choice):
         """
         Update the condition on velocity.
@@ -386,6 +400,7 @@ class LagrangianBoundariesModel(Model):
             node_velocity.xmlRemoveChild('norm')
 
 
+    @Variables.noUndo
     def getVelocityChoice(self, label, iclass):
         """
         Return the condition on velocity.
@@ -399,6 +414,7 @@ class LagrangianBoundariesModel(Model):
         return val
 
 
+    @Variables.undoLocal
     def setVelocityNormValue(self, label, iclass, value):
         """
         Update the velocity norm.
@@ -411,6 +427,7 @@ class LagrangianBoundariesModel(Model):
         node_velocity.xmlSetData('norm', value)
 
 
+    @Variables.noUndo
     def getVelocityNormValue(self, label, iclass):
         """
         Return the velocity norm.
@@ -423,6 +440,7 @@ class LagrangianBoundariesModel(Model):
         return value
 
 
+    @Variables.undoLocal
     def setVelocityDirectionValue(self, label, iclass, idir, value):
         """
         Update the velocity value in the given direction.
@@ -435,6 +453,7 @@ class LagrangianBoundariesModel(Model):
         node_velocity.xmlSetData('velocity_' + idir, value)
 
 
+    @Variables.noUndo
     def getVelocityDirectionValue(self, label, iclass, idir):
         """
         Return the velocity value in the given direction.
@@ -447,6 +466,7 @@ class LagrangianBoundariesModel(Model):
         return value
 
 
+    @Variables.undoLocal
     def setTemperatureChoice(self, label, iclass, value):
         """
         Update the condition on temperature.
@@ -456,6 +476,7 @@ class LagrangianBoundariesModel(Model):
         node['choice'] = value
 
 
+    @Variables.noUndo
     def getTemperatureChoice(self, label, iclass):
         """
         Return the condition on temperature.
@@ -469,6 +490,7 @@ class LagrangianBoundariesModel(Model):
         return val
 
 
+    @Variables.undoLocal
     def setTemperatureValue(self, label, iclass, value):
         """
         Update the temperature value.
@@ -478,6 +500,7 @@ class LagrangianBoundariesModel(Model):
         self.node_class.xmlSetData('temperature', value)
 
 
+    @Variables.noUndo
     def getTemperatureValue(self, label, iclass):
         """
         Return the temperature value.
@@ -489,6 +512,7 @@ class LagrangianBoundariesModel(Model):
         return value
 
 
+    @Variables.undoLocal
     def setSpecificHeatValue(self, label, iclass, value):
         """
         Update the specific heat value.
@@ -498,6 +522,7 @@ class LagrangianBoundariesModel(Model):
         self.node_class.xmlSetData('specific_heat', value)
 
 
+    @Variables.noUndo
     def getSpecificHeatValue(self, label, iclass):
         """
         Return the specific heat value.
@@ -509,6 +534,7 @@ class LagrangianBoundariesModel(Model):
         return value
 
 
+    @Variables.undoLocal
     def setEmissivityValue(self, label, iclass, value):
         """
         Update the emissivity value.
@@ -518,6 +544,7 @@ class LagrangianBoundariesModel(Model):
         self.node_class.xmlSetData('emissivity', value)
 
 
+    @Variables.noUndo
     def getEmissivityValue(self, label, iclass):
         """
         Return the emissivity value.
@@ -529,6 +556,7 @@ class LagrangianBoundariesModel(Model):
         return value
 
 
+    @Variables.undoLocal
     def setDiameterChoice(self, label, iclass, value):
         """
         Update the condition on the particle diameter.
@@ -538,6 +566,7 @@ class LagrangianBoundariesModel(Model):
         node['choice'] = value
 
 
+    @Variables.noUndo
     def getDiameterChoice(self, label, iclass):
         """
         Return the condition on the particle diameter.
@@ -551,6 +580,7 @@ class LagrangianBoundariesModel(Model):
         return val
 
 
+    @Variables.undoLocal
     def setDiameterValue(self, label, iclass, value):
         """
         Update the particle diameter value.
@@ -560,6 +590,7 @@ class LagrangianBoundariesModel(Model):
         self.node_class.xmlSetData('diameter', value)
 
 
+    @Variables.noUndo
     def getDiameterValue(self, label, iclass):
         """
         Return the particle diameter value.
@@ -571,6 +602,7 @@ class LagrangianBoundariesModel(Model):
         return value
 
 
+    @Variables.undoLocal
     def setDiameterVarianceValue(self, label, iclass, value):
         """
         Update the particle diameter variance value.
@@ -580,6 +612,7 @@ class LagrangianBoundariesModel(Model):
         self.node_class.xmlSetData('diameter_standard_deviation', value)
 
 
+    @Variables.noUndo
     def getDiameterVarianceValue(self, label, iclass):
         """
         Return the particle diameter variance value.
@@ -591,6 +624,7 @@ class LagrangianBoundariesModel(Model):
         return value
 
 
+    @Variables.undoLocal
     def setCoalNumberValue(self, label, iclass, value):
         """
         Update the coal number of the particle.
@@ -600,6 +634,7 @@ class LagrangianBoundariesModel(Model):
         self.node_class.xmlSetData('coal_number', value)
 
 
+    @Variables.noUndo
     def getCoalNumberValue(self, label, iclass):
         """
         Return the coal number of the particle.
@@ -611,6 +646,7 @@ class LagrangianBoundariesModel(Model):
         return value
 
 
+    @Variables.undoLocal
     def setCoalTemperatureValue(self, label, iclass, value):
         """
         Update the coal temperature.
@@ -620,6 +656,7 @@ class LagrangianBoundariesModel(Model):
         self.node_class.xmlSetData('coal_temperature', value)
 
 
+    @Variables.noUndo
     def getCoalTemperatureValue(self, label, iclass):
         """
         Return the coal temperature.
@@ -631,6 +668,7 @@ class LagrangianBoundariesModel(Model):
         return value
 
 
+    @Variables.undoLocal
     def setCoalMassValue(self, label, iclass, value):
         """
         Update the coal mass value.
@@ -640,6 +678,7 @@ class LagrangianBoundariesModel(Model):
         self.node_class.xmlSetData('raw_coal_mass_fraction', value)
 
 
+    @Variables.noUndo
     def getCoalMassValue(self, label, iclass):
         """
         Return the coal mass value.
@@ -651,6 +690,7 @@ class LagrangianBoundariesModel(Model):
         return value
 
 
+    @Variables.undoLocal
     def setCokeMassValue(self, label, iclass, value):
         """
         Update the coke mass value.
@@ -660,6 +700,7 @@ class LagrangianBoundariesModel(Model):
         self.node_class.xmlSetData('char_mass_fraction', value)
 
 
+    @Variables.noUndo
     def getCokeMassValue(self, label, iclass):
         """
         Return the coke mass value.

@@ -45,7 +45,7 @@ import string, sys, unittest
 #-------------------------------------------------------------------------------
 
 import Base.Toolbox as Tool
-from Base.XMLvariables import Model
+from Base.XMLvariables import Model, Variables
 from Base.XMLmodel import ModelTest
 
 #-------------------------------------------------------------------------------
@@ -97,6 +97,7 @@ class OutputControlModel(Model):
         self.node_out.xmlGetNode('probe', name=name).xmlSetData(coord, val)
 
 
+    @Variables.noUndo
     def getListingFrequency(self):
         """
         Return the frequency for printing listing
@@ -108,6 +109,7 @@ class OutputControlModel(Model):
         return f
 
 
+    @Variables.undoLocal
     def setListingFrequency(self, freq):
         """
         Set the frequency for printing listing
@@ -233,6 +235,7 @@ class OutputControlModel(Model):
             self.__deleteWriter(writer)
 
 
+    @Variables.noUndo
     def getWriterIdList(self):
         """
         Return a list of writer id already defined
@@ -243,6 +246,7 @@ class OutputControlModel(Model):
         return writer
 
 
+    @Variables.noUndo
     def getWriterLabelList(self):
         """
         Return a list of writer id already defined
@@ -253,6 +257,7 @@ class OutputControlModel(Model):
         return writer
 
 
+    @Variables.noUndo
     def getWriterIdFromLabel(self, label):
         """
         Return the label of a writer
@@ -264,6 +269,7 @@ class OutputControlModel(Model):
         return writer_id
 
 
+    @Variables.noUndo
     def getWriterLabel(self, writer_id):
         """
         Return the label of a writer
@@ -277,6 +283,7 @@ class OutputControlModel(Model):
         return label
 
 
+    @Variables.undoLocal
     def setWriterLabel(self, writer_id, label):
         """
         Set the label of a writer
@@ -286,6 +293,7 @@ class OutputControlModel(Model):
         n['label'] = label
 
 
+    @Variables.noUndo
     def getWriterFrequencyChoice(self, writer_id):
         """
         Return the choice of frequency output for a writer
@@ -300,6 +308,7 @@ class OutputControlModel(Model):
         return frequency_choice
 
 
+    @Variables.undoLocal
     def setWriterFrequencyChoice(self, writer_id, choice):
         """
         Set the choice of frequency output for a writer
@@ -320,6 +329,7 @@ class OutputControlModel(Model):
         n['period'] = choice
 
 
+    @Variables.noUndo
     def getWriterFrequency(self, writer_id):
         """
         Return the frequency of a writer
@@ -330,6 +340,7 @@ class OutputControlModel(Model):
         return freq
 
 
+    @Variables.undoLocal
     def setWriterFrequency(self, writer_id, freq):
         """
         Set the frequency of a writer
@@ -339,6 +350,7 @@ class OutputControlModel(Model):
         node.xmlSetData('frequency', str(freq))
 
 
+    @Variables.noUndo
     def getWriterOutputEndStatus(self, writer_id):
         """
         Return the output_at_end status of a mesh
@@ -353,6 +365,7 @@ class OutputControlModel(Model):
         return status
 
 
+    @Variables.undoLocal
     def setWriterOutputEndStatus(self, writer_id, status):
         """
         Set the output_at_end status of a mesh
@@ -364,6 +377,7 @@ class OutputControlModel(Model):
         n['status'] = status
 
 
+    @Variables.noUndo
     def getWriterFormat(self, writer_id):
         """
         Return the format for a writer
@@ -378,6 +392,7 @@ class OutputControlModel(Model):
         return format
 
 
+    @Variables.undoLocal
     def setWriterFormat(self, writer_id, format):
         """
         Set the format for a writer
@@ -389,6 +404,7 @@ class OutputControlModel(Model):
         n['name'] = format
 
 
+    @Variables.noUndo
     def getWriterDirectory(self, writer_id):
         """
         Return the directory for a writer
@@ -403,6 +419,7 @@ class OutputControlModel(Model):
         return directory
 
 
+    @Variables.undoLocal
     def setWriterDirectory(self, writer_id, directory):
         """
         Set the directory for a writer
@@ -413,6 +430,7 @@ class OutputControlModel(Model):
         n['name'] = directory
 
 
+    @Variables.noUndo
     def getWriterOptions(self, writer_id):
         """
         Return the options for a writer
@@ -427,6 +445,7 @@ class OutputControlModel(Model):
         return options
 
 
+    @Variables.undoLocal
     def setWriterOptions(self, writer_id, options):
         """
         Set the options for a writer
@@ -437,6 +456,7 @@ class OutputControlModel(Model):
         n['options'] = options
 
 
+    @Variables.noUndo
     def getWriterTimeDependency(self, writer_id):#-------> a réutiliser
         """
         Return the type of time dependency for a writer
@@ -452,6 +472,7 @@ class OutputControlModel(Model):
         return choice
 
 
+    @Variables.undoLocal
     def setWriterTimeDependency(self, writer_id, choice):#-------> a réutiliser
         """
         Set the type of time dependency for a writer
@@ -584,6 +605,7 @@ class OutputControlModel(Model):
             self.__deleteMesh(mesh)
 
 
+    @Variables.noUndo
     def getMeshLabelList(self):
         """
         Return a list of mesh id already defined
@@ -594,6 +616,7 @@ class OutputControlModel(Model):
         return mesh
 
 
+    @Variables.noUndo
     def getMeshLabel(self, mesh_id):
         """
         Return the label of a mesh
@@ -607,6 +630,7 @@ class OutputControlModel(Model):
         return label
 
 
+    @Variables.undoLocal
     def setMeshLabel(self, mesh_id, label):
         """
         Set the label of a mesh
@@ -616,6 +640,7 @@ class OutputControlModel(Model):
         n['label'] = label
 
 
+    @Variables.noUndo
     def getMeshType(self, mesh_id):
         """
         Return the type of a mesh
@@ -629,6 +654,7 @@ class OutputControlModel(Model):
         return mesh_type
 
 
+    @Variables.undoLocal
     def setMeshType(self, mesh_id, mesh_type):
         """
         Set the type of a mesh
@@ -639,6 +665,7 @@ class OutputControlModel(Model):
         node['type'] = mesh_type
 
 
+    @Variables.noUndo
     def getMeshAllVariablesStatus(self, mesh_id):
         """
         Return the all_variables status of a mesh
@@ -653,6 +680,7 @@ class OutputControlModel(Model):
         return status
 
 
+    @Variables.undoLocal
     def setMeshAllVariablesStatus(self, mesh_id, status):
         """
         Set the all_variables status of a mesh
@@ -664,6 +692,7 @@ class OutputControlModel(Model):
         n['status'] = status
 
 
+    @Variables.noUndo
     def getMeshLocation(self, mesh_id):
         """
         Return the location of a mesh
@@ -677,6 +706,7 @@ class OutputControlModel(Model):
         return loc
 
 
+    @Variables.undoLocal
     def setMeshLocation(self, mesh_id, location):
         """
         Set the location of a mesh
@@ -686,6 +716,7 @@ class OutputControlModel(Model):
         node.xmlSetData('location', location)
 
 
+    @Variables.noUndo
     def getAssociatedWriterIdList(self, mesh_id):
         """
         Return a list of associated writer to a mesh already defined
@@ -738,7 +769,7 @@ class OutputControlModel(Model):
 
         self.__deleteAssociatedWriter(mesh_id, writer_id)
 
-
+    @Variables.undoLocal
     def setAssociatedWriterChoice(self, mesh_id, writer_list):
         """
         Set the type of a mesh
@@ -750,10 +781,10 @@ class OutputControlModel(Model):
         for w in node.xmlGetNodeList('writer'):
             w.xmlRemoveNode()
         for w in writer_list:
-            #print w, 'dans se associatedWriterchoice'
             node.xmlInitNode('writer', id = w)
 
 
+    @Variables.noUndo
     def getMonitoringPointType(self):
         """
         Return the type of output for printing listing
@@ -770,6 +801,7 @@ class OutputControlModel(Model):
             return 'Frequency_h'
 
 
+    @Variables.undoLocal
     def setMonitoringPointType(self, type):
         """
         Set the type of output for printing listing
@@ -786,6 +818,7 @@ class OutputControlModel(Model):
                 childNode.xmlRemoveNode()
 
 
+    @Variables.noUndo
     def getMonitoringPointFrequency(self):
         """
         Return the frequency for recording probes
@@ -797,6 +830,7 @@ class OutputControlModel(Model):
         return f
 
 
+    @Variables.undoLocal
     def setMonitoringPointFrequency(self, freq):
         """
         Set the frequency for recording probes
@@ -805,6 +839,7 @@ class OutputControlModel(Model):
         self.node_out.xmlSetData('probe_recording_frequency', freq)
 
 
+    @Variables.noUndo
     def getMonitoringPointFrequencyTime(self):
         """
         Return the frequency for recording probes
@@ -816,6 +851,7 @@ class OutputControlModel(Model):
         return f
 
 
+    @Variables.undoLocal
     def setMonitoringPointFrequencyTime(self, freq):
         """
         Set the frequency for recording probes
@@ -824,6 +860,7 @@ class OutputControlModel(Model):
         self.node_out.xmlSetData('probe_recording_frequency_time', freq)
 
 
+    @Variables.noUndo
     def getMonitoringPointFormat(self):
         """
         Return choice of format for post processing output file
@@ -836,6 +873,7 @@ class OutputControlModel(Model):
         return choice
 
 
+    @Variables.undoLocal
     def setMonitoringPointFormat(self, choice):
         """
         Set choice of format for probes
@@ -948,6 +986,7 @@ class OutputControlModel(Model):
                             n['choice']= str(len(nlist))
 
 
+    @Variables.noUndo
     def getMonitoringPointCoordinates(self, name):
         """
         Public method.
@@ -965,6 +1004,7 @@ class OutputControlModel(Model):
         return X, Y, Z
 
 
+    @Variables.noUndo
     def getNumberOfMonitoringPoints(self):
         """
         Public method.

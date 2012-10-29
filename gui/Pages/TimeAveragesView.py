@@ -173,6 +173,7 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         self.setupUi(self)
 
         self.case = case
+        self.case.undoStopGlobal()
         self.mdl = TimeAveragesModel(self.case)
         self.entriesNumber = 0
         self.start = 1
@@ -251,6 +252,8 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
             self.entriesNumber = self.entriesNumber + 1
             label, start, restart, lst = self.mdl.getTimeAverageData(nb+1)
             self.insertAverage(label, start, restart, lst)
+
+        self.case.undoStartGlobal()
 
 
     def getLabel(self):

@@ -381,7 +381,6 @@ class BrowserView(QWidget, Ui_BrowserForm):
         self.treeView.setModel(self.model)
         self.treeView.header().hide()
         self.treeView.setAnimated(True)
-        #self.treeView.setMinimumSize(QSize(200, 300))
         self.treeView.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.treeView.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.treeView.setAlternatingRowColors(True)
@@ -403,15 +402,6 @@ class BrowserView(QWidget, Ui_BrowserForm):
 Calculation environment
     Meshes selection
     Mesh quality criteria
-Storage system description
-    Storage system type
-    Storage system geometry
-    Inlet description
-    Outlet description
-    Network description
-Thermohydraulic parameters
-    Hydraulic load
-    Thermal load
 Thermophysical models
     Calculation features
     Deformable mesh
@@ -560,12 +550,22 @@ Calculation management
         self.fileMenu.show()
 
 
+    def activeSelectedPage(self, index):
+        """
+        """
+        self.treeView.selectionModel().select(index, QItemSelectionModel.SelectCurrent)
+
+        return
+
+
     def display(self, root, case, stbar, study, tree):
         """
         """
         index = self.treeView.currentIndex()
         item  = index.internalPointer()
         name  = item.itemData[0]
+        case['current_tab'] = 0
+        case['current_index'] = index
         return displaySelectedPage(name, root, case, stbar, study, tree)
 
 
@@ -657,9 +657,6 @@ Calculation management
         # self.setRowClose(self.tr('Surface solution control'))
         self.setRowClose(self.tr('Time step'))
         self.setRowClose(self.tr('Pseudo-Time step'))
-        self.setRowClose(self.tr('Storage system description'))
-        self.setRowClose(self.tr('Thermohydraulic parameters'))
-        self.setRowClose(self.tr('Mobil mesh boundary'))
         self.setRowClose(self.tr('Fluid structure interaction'))
         self.setRowClose(self.tr('Source terms'))
         self.setRowClose(self.tr('Head losses'))
@@ -772,7 +769,6 @@ Calculation management
 
         node7 = node0.xmlGetNode('ale_method', 'status')
         if node7 and node7['status'] == 'on':
-            self.setRowOpen(self.tr('Mobil mesh boundary'))
             self.setRowOpen(self.tr('Fluid structure interaction'))
 
         # Source terms view

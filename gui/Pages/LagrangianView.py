@@ -69,7 +69,7 @@ class LagrangianAdvancedOptionsDialogView(QDialog, Ui_LagrangianAdvancedOptionsD
     """
     Advanced dialog
     """
-    def __init__(self, parent, default):
+    def __init__(self, parent, case, default):
         """
         Constructor
         """
@@ -77,6 +77,9 @@ class LagrangianAdvancedOptionsDialogView(QDialog, Ui_LagrangianAdvancedOptionsD
 
         Ui_LagrangianAdvancedOptionsDialogForm.__init__(self)
         self.setupUi(self)
+
+        self.case = case
+        self.case.undoStopGlobal()
 
         self.setWindowTitle(self.tr("Advanced options"))
         self.default = default
@@ -125,6 +128,8 @@ class LagrangianAdvancedOptionsDialogView(QDialog, Ui_LagrangianAdvancedOptionsD
             self.modelIDIRLA.setItem(str_model=str(direction))
         else:
             self.groupBoxModel.setChecked(False)
+
+        self.case.undoStartGlobal()
 
 
     @pyqtSignature("const QString&")
@@ -357,6 +362,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         self.setupUi(self)
 
         self.case = case
+        self.case.undoStopGlobal()
         self.model = LagrangianModel(self.case)
 
         # Combo model
@@ -459,6 +465,8 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
 
         # Disabling the coal model model waiting for validation
         #self.modelIPHYLA.disableItem(str_model="coal")
+
+        self.case.undoStartGlobal()
 
 
     @pyqtSignature("const QString&")
@@ -732,7 +740,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         default['complete_model_iteration']            = self.model.getCompleteModelStartIteration()
         default['complete_model_direction']            = self.model.getCompleteModelDirection()
 
-        dialog = LagrangianAdvancedOptionsDialogView(self, default)
+        dialog = LagrangianAdvancedOptionsDialogView(self, self.case, default)
         if dialog.exec_():
             result = dialog.get_result()
             self.model.setSchemeOrder(int(result['scheme_order']))

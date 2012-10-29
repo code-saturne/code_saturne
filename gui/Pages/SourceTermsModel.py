@@ -44,7 +44,7 @@ from math import pow
 from Base.Common import *
 import Base.Toolbox as Tool
 from Base.XMLmodel import XMLmodel, ModelTest
-from Base.XMLvariables import Model
+from Base.XMLvariables import Model, Variables
 from Pages.DefineUserScalarsModel import DefineUserScalarsModel
 from Pages.LocalizationModel import LocalizationModel
 
@@ -80,6 +80,7 @@ class SourceTermsModel(Model):
         self.isInList(zone, LocalizationModel('VolumicZone', self.case).getCodeNumbersList())
 
 
+    @Variables.undoLocal
     def setMomentumFormula(self, zone, formula):
         """
         Public method.
@@ -94,6 +95,7 @@ class SourceTermsModel(Model):
         n.xmlSetTextNode(formula)
 
 
+    @Variables.noUndo
     def getMomentumFormula(self, zone):
         """
         Public method.
@@ -107,6 +109,7 @@ class SourceTermsModel(Model):
         return formula
 
 
+    @Variables.undoGlobal
     def setSpeciesFormula(self, zone, species, formula):
         """
         Public method.
@@ -123,6 +126,7 @@ class SourceTermsModel(Model):
         n.xmlSetTextNode(formula)
 
 
+    @Variables.noUndo
     def getSpeciesFormula(self, zone, species):
         """
         Public method.
@@ -140,6 +144,7 @@ class SourceTermsModel(Model):
         return formula
 
 
+    @Variables.undoGlobal
     def setThermalFormula(self, zone, scalar, formula):
         """
         Public method.
@@ -156,6 +161,7 @@ class SourceTermsModel(Model):
         n.xmlSetTextNode(formula)
 
 
+    @Variables.noUndo
     def getThermalFormula(self, zone, scalar):
         """
         Public method.

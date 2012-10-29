@@ -127,6 +127,7 @@ class FluidStructureInteractionModel(Model):
     #------------------------------------------------------------------
     # MaxIterations
     #------------------------------------------------------------------
+    @Variables.undoLocal
     def setMaxIterations(self, value):
         """
         Set value of maximum of iteration if implicitation into xml file.
@@ -136,6 +137,7 @@ class FluidStructureInteractionModel(Model):
         self.__node_ale.xmlSetData(const.max_iterations_implicitation, value)
 
 
+    @Variables.noUndo
     def getMaxIterations(self):
         """
         Get value of maximum of iteration if implicitation from xml file.
@@ -147,6 +149,7 @@ class FluidStructureInteractionModel(Model):
     #------------------------------------------------------------------
     # Precision
     #------------------------------------------------------------------
+    @Variables.undoLocal
     def setPrecision(self, value):
         """
         Set value of precision of implicitation into xml file.
@@ -155,6 +158,7 @@ class FluidStructureInteractionModel(Model):
         self.__node_ale.xmlSetData(const.implicitation_precision, value)
 
 
+    @Variables.noUndo
     def getPrecision(self):
         """
         Get value of precision of implicitation from xml file.
@@ -165,6 +169,7 @@ class FluidStructureInteractionModel(Model):
     #------------------------------------------------------------------
     # ExternalCouplingPostSynchronization
     #------------------------------------------------------------------
+    @Variables.undoLocal
     def setExternalCouplingPostSynchronization(self, value):
         """
         Set value of stress prediction alpha into xml file.
@@ -172,6 +177,7 @@ class FluidStructureInteractionModel(Model):
         self.__setOnOffXML(const.external_coupling_post_synchronization, value)
 
 
+    @Variables.noUndo
     def getExternalCouplingPostSynchronization(self):
         """
         Get value of external coupling post syncrhonization from xml file.
@@ -183,6 +189,7 @@ class FluidStructureInteractionModel(Model):
     #------------------------------------------------------------------
     # DisplacementPredictionAlpha
     #------------------------------------------------------------------
+    @Variables.undoLocal
     def setDisplacementPredictionAlpha(self, value):
         """
         Set value of isplacement prediction alpha into xml file.
@@ -190,6 +197,7 @@ class FluidStructureInteractionModel(Model):
         self.__node_ale.xmlSetData(const.displacement_prediction_alpha, value)
 
 
+    @Variables.noUndo
     def getDisplacementPredictionAlpha(self):
         """
         Get value of displacement prediction alpha from xml file.
@@ -201,6 +209,7 @@ class FluidStructureInteractionModel(Model):
     #------------------------------------------------------------------
     # DisplacementPredictionBeta
     #------------------------------------------------------------------
+    @Variables.undoLocal
     def setDisplacementPredictionBeta(self, value):
         """
         Set value of isplacement prediction beta into xml file.
@@ -208,6 +217,7 @@ class FluidStructureInteractionModel(Model):
         self.__node_ale.xmlSetData(const.displacement_prediction_beta, value)
 
 
+    @Variables.noUndo
     def getDisplacementPredictionBeta(self):
         """
         Get value of displacement prediction beta from xml file.
@@ -219,6 +229,7 @@ class FluidStructureInteractionModel(Model):
     #------------------------------------------------------------------
     # StressPredictionAlpha
     #------------------------------------------------------------------
+    @Variables.undoLocal
     def setStressPredictionAlpha(self, value):
         """
         Set value of stress prediction alpha into xml file.
@@ -226,6 +237,7 @@ class FluidStructureInteractionModel(Model):
         self.__node_ale.xmlSetData(const.stress_prediction_alpha, value)
 
 
+    @Variables.noUndo
     def getStressPredictionAlpha(self):
         """
         Get value of stress prediction alpha from xml file.
@@ -237,6 +249,7 @@ class FluidStructureInteractionModel(Model):
     #------------------------------------------------------------------
     # Monitor point synchronisation
     #------------------------------------------------------------------
+    @Variables.undoLocal
     def setMonitorPointSynchronisation(self, value):
         """
         Set value of monitor point synchronisation into xml file.
@@ -244,6 +257,7 @@ class FluidStructureInteractionModel(Model):
         self.__setOnOffXML(const.monitor_point_synchronisation, value)
 
 
+    @Variables.noUndo
     def getMonitorPointSynchronisation(self):
         """
         Get value of monitor point synchronisation from xml file.

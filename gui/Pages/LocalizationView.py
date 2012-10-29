@@ -606,6 +606,9 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
         Ui_LocalizationForm.__init__(self)
         self.setupUi(self)
 
+        self.case = case
+        self.case.undoStopGlobal()
+
         self.zoneType = zoneType
         self.mdl = LocalizationModel(zoneType, case)
         self.browser = tree
@@ -646,6 +649,8 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
         # Context menu
         self.tableView.setContextMenuPolicy(Qt.CustomContextMenu)
         self.connect(self.tableView, SIGNAL("customContextMenuRequested(QPoint)"), self.slotContextMenu)
+
+        self.case.undoStartGlobal()
 
 
     @pyqtSignature("")

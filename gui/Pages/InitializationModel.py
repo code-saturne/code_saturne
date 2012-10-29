@@ -44,7 +44,7 @@ from math import pow
 from Base.Common import *
 import Base.Toolbox as Tool
 from Base.XMLmodel import XMLmodel, ModelTest
-from Base.XMLvariables import Model
+from Base.XMLvariables import Model, Variables
 from Pages.TurbulenceModel import TurbulenceModel
 from Pages.DefineUserScalarsModel import DefineUserScalarsModel
 from Pages.LocalizationModel import LocalizationModel
@@ -109,6 +109,7 @@ class InitializationModel(Model):
         self.isInList(zone, LocalizationModel('VolumicZone', self.case).getCodeNumbersList())
 
 
+    @Variables.noUndo
     def getDefaultTurbFormula(self, turb_model):
         self.isInList(turb_model,self.turb.turbulenceModels())
         if turb_model in ('k-epsilon', 'k-epsilon-PL'):
@@ -152,6 +153,7 @@ omega = k^0.5/almax;"""
         return formula
 
 
+    @Variables.noUndo
     def getInitialTurbulenceChoice(self, zone):
         """
         Public method.
@@ -169,6 +171,7 @@ omega = k^0.5/almax;"""
         return choice
 
 
+    @Variables.undoLocal
     def setInitialTurbulenceChoice(self, zone, init_mode):
         """
         Public method.
@@ -181,6 +184,7 @@ omega = k^0.5/almax;"""
         node_init['choice'] = init_mode
 
 
+    @Variables.noUndo
     def getTurbFormula(self, zone, turb_model):
         """
         Public method.
@@ -196,6 +200,7 @@ omega = k^0.5/almax;"""
         return formula
 
 
+    @Variables.undoLocal
     def setTurbFormula(self, zone, formula):
         """
         Public method.
@@ -210,6 +215,7 @@ omega = k^0.5/almax;"""
         n.xmlSetTextNode(formula)
 
 
+    @Variables.undoLocal
     def setVelocityFormula(self, zone, formula):
         """
         Public method.
@@ -221,6 +227,7 @@ omega = k^0.5/almax;"""
         n.xmlSetTextNode(formula)
 
 
+    @Variables.noUndo
     def getVelocityFormula(self, zone):
         """
         Public method.
@@ -233,6 +240,7 @@ omega = k^0.5/almax;"""
         return formula
 
 
+    @Variables.undoLocal
     def setThermalFormula(self, zone, scalar, formula):
         """
         Public method.
@@ -248,6 +256,7 @@ omega = k^0.5/almax;"""
         n.xmlSetTextNode(formula)
 
 
+    @Variables.noUndo
     def getThermalFormula(self, zone, scalar):
         """
         Public method.
@@ -264,6 +273,7 @@ omega = k^0.5/almax;"""
         return formula
 
 
+    @Variables.noUndo
     def getDensityStatus(self, zone):
         """
         Return status of Density for the initialisation
@@ -277,6 +287,7 @@ omega = k^0.5/almax;"""
         return status
 
 
+    @Variables.undoLocal
     def setDensityStatus(self, zone, status):
         """
         Put status of Density for the initialisation
@@ -287,6 +298,7 @@ omega = k^0.5/almax;"""
         n['status'] = status
 
 
+    @Variables.noUndo
     def getTemperatureStatus(self, zone):
         """
         Return status of Temperature for the initialisation
@@ -300,6 +312,7 @@ omega = k^0.5/almax;"""
         return status
 
 
+    @Variables.undoLocal
     def setTemperatureStatus(self, zone, status):
         """
         Put status of Temperature for the initialisation
@@ -310,6 +323,7 @@ omega = k^0.5/almax;"""
         n['status'] = status
 
 
+    @Variables.noUndo
     def getEnergyStatus(self, zone):
         """
         Return status of total energy for the initialisation
@@ -323,6 +337,7 @@ omega = k^0.5/almax;"""
         return status
 
 
+    @Variables.undoLocal
     def setEnergyStatus(self, zone, status):
         """
         Put status of Energy for the initialisation
@@ -333,6 +348,7 @@ omega = k^0.5/almax;"""
         n['status'] = status
 
 
+    @Variables.noUndo
     def getPressureStatus(self, zone):
         """
         Return status of pressure for the initialisation
@@ -346,6 +362,7 @@ omega = k^0.5/almax;"""
         return status
 
 
+    @Variables.undoLocal
     def setPressureStatus(self, zone, status):
         """
         Put status of pressure for the initialisation
@@ -356,6 +373,7 @@ omega = k^0.5/almax;"""
         n['status'] = status
 
 
+    @Variables.undoLocal
     def setPressureFormula(self, zone, formula):
         """
         Public method.
@@ -371,6 +389,7 @@ omega = k^0.5/almax;"""
         n.xmlSetTextNode(formula)
 
 
+    @Variables.noUndo
     def getPressureFormula(self, zone):
         """
         Public method.
@@ -387,6 +406,7 @@ omega = k^0.5/almax;"""
         return formula
 
 
+    @Variables.undoLocal
     def setDensityFormula(self, zone, formula):
         """
         Public method.
@@ -401,6 +421,7 @@ omega = k^0.5/almax;"""
         n.xmlSetTextNode(formula)
 
 
+    @Variables.noUndo
     def getDensityFormula(self, zone):
         """
         Public method.
@@ -416,6 +437,7 @@ omega = k^0.5/almax;"""
         return formula
 
 
+    @Variables.undoLocal
     def setTemperatureFormula(self, zone, formula):
         """
         Public method.
@@ -432,6 +454,7 @@ omega = k^0.5/almax;"""
         n.xmlSetTextNode(formula)
 
 
+    @Variables.noUndo
     def getTemperatureFormula(self, zone):
         """
         Public method.
@@ -449,8 +472,7 @@ omega = k^0.5/almax;"""
         return formula
 
 
-
-
+    @Variables.undoLocal
     def setEnergyFormula(self, zone, formula):
         """
         Public method.
@@ -465,6 +487,7 @@ omega = k^0.5/almax;"""
         n.xmlSetTextNode(formula)
 
 
+    @Variables.noUndo
     def getEnergyFormula(self, zone):
         """
         Public method.
@@ -480,6 +503,7 @@ omega = k^0.5/almax;"""
         return formula
 
 
+    @Variables.noUndo
     def getCheckedBoxList(self,zone):
         """
         Public method.
@@ -501,6 +525,7 @@ omega = k^0.5/almax;"""
         return box_list
 
 
+    @Variables.undoLocal
     def setSpeciesFormula(self, zone, species, formula):
         """
         Public method.
@@ -516,6 +541,7 @@ omega = k^0.5/almax;"""
         n.xmlSetTextNode(formula)
 
 
+    @Variables.noUndo
     def getSpeciesFormula(self, zone, species):
         """
         Public method.
@@ -536,6 +562,7 @@ omega = k^0.5/almax;"""
         return formula
 
 
+    @Variables.undoLocal
     def setMeteoFormula(self, zone, scalar, formula):
         """
         Public method.
@@ -552,6 +579,7 @@ omega = k^0.5/almax;"""
         n.xmlSetTextNode(formula)
 
 
+    @Variables.noUndo
     def getMeteoFormula(self, zone, scalar):
         """
         Public method.

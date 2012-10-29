@@ -86,6 +86,9 @@ class BoundaryConditionsMeteoView(QWidget, Ui_BoundaryConditionsMeteoForm):
         self.velocityWidget = velocityWidget
         self.turbulenceWidget = turbulenceWidget
         self.__boundary = None
+
+        self.__case.undoStopGlobal()
+
         self.__model = AtmosphericFlowsModel(self.__case)
 
         self.connect(self.checkBoxReadData,
@@ -94,6 +97,8 @@ class BoundaryConditionsMeteoView(QWidget, Ui_BoundaryConditionsMeteoForm):
         self.connect(self.checkBoxAutoNature,
                      SIGNAL("clicked(bool)"),
                      self.__slotAutoNature)
+
+        self.__case.undoStartGlobal()
 
 
     def showWidget(self, b):

@@ -269,8 +269,11 @@ class ConjugateHeatTransferView(QWidget, Ui_ConjugateHeatTransferForm):
         Ui_ConjugateHeatTransferForm.__init__(self)
         self.setupUi(self)
 
-        self.__case = case
-        self.__model = ConjugateHeatTransferModel(self.__case)
+        self.case = case
+
+        self.case.undoStopGlobal()
+
+        self.__model = ConjugateHeatTransferModel(self.case)
 
         # Models
         self.modelSyrthes = StandardItemModelSyrthes(self.__model)
@@ -300,6 +303,8 @@ class ConjugateHeatTransferView(QWidget, Ui_ConjugateHeatTransferForm):
 
         if len(self.__model.getSyrthesCouplingList()) < 2:
             self.tableViewSyrthes.hideColumn(0)
+
+        self.case.undoStartGlobal()
 
 
     @pyqtSignature("")

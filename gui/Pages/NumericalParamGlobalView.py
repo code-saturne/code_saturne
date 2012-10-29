@@ -77,6 +77,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         self.setupUi(self)
 
         self.case = case
+        self.case.undoStopGlobal()
         self.model = NumericalParamGlobalModel(self.case)
         self.browser = tree
 
@@ -186,6 +187,8 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
 
         # Update the Tree files and folders
         self.browser.configureTree(self.case)
+
+        self.case.undoStartGlobal()
 
 
     @pyqtSignature("")

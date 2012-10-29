@@ -142,7 +142,7 @@
                   </size>
                  </property>
                  <property name="toolTip">
-                  <string>Inlet hydraulic diameter = 
+                  <string>Inlet hydraulic diameter =
 4S/P with S=surface and P=perimeter of wet wall</string>
                  </property>
                 </widget>
@@ -243,7 +243,7 @@
                   </size>
                  </property>
                  <property name="toolTip">
-                  <string>Inlet hydraulic diameter = 
+                  <string>Inlet hydraulic diameter =
 4S/P with S=surface and P=perimeter of wet wall</string>
                  </property>
                 </widget>

@@ -127,35 +127,7 @@ class MobileMeshModel(Model):
         self.node_ale.xmlRemoveChild('variable')
         self.node_ale.xmlRemoveChild('property')
 
-##    def setMethod(self, answer):
-##        """
-##        Set method of activation of ALE into xml file.
-##        """
-##        self.isOnOff(answer)
-##        typ = ''
-##        typ = self.out.getTypePostMeshes()
-##        self.node_ale['status'] = answer
-##       if answer == 'on':
-##            if typ not in ('10', '11', '12'):
-##                typ = '10'
-##            self.__setVariablesandProperties()
-##        else:
-##            if typ not in ('0', '1', '2'):
-##                typ = '0'
-##        self.out.setTypePostMeshes(typ)
-##
-##
-##    def getMethod(self):
-##        """
-##        Get method of activation of ALE from xml file.
-##        """
-##        if self.node_ale['status'] == '':
-##            status = 'off'
-##            self.setMethod(status)
-##        else:
-##            status = self.node_ale['status']
-##        return status
-
+    @Variables.noUndo
     def getMethod(self):
         """
         Get status on balise "ALE" from xml file
@@ -167,6 +139,7 @@ class MobileMeshModel(Model):
         return status
 
 
+    @Variables.undoGlobal
     def setMethod(self, status):
         """
         Put status on balise "ALE" in xml file
@@ -186,6 +159,7 @@ class MobileMeshModel(Model):
         self.out.setWriterTimeDependency("-1", 'fixed_mesh')
 
 
+    @Variables.undoLocal
     def setSubIterations(self, value):
         """
         Set value of fluid initialization sub iterations into xml file.
@@ -195,6 +169,7 @@ class MobileMeshModel(Model):
         self.node_ale.xmlSetData('fluid_initialization_sub_iterations', value)
 
 
+    @Variables.noUndo
     def getSubIterations(self):
         """
         Get value of fluid initialization sub iterations from xml file.
@@ -206,6 +181,7 @@ class MobileMeshModel(Model):
         return nalinf
 
 
+    @Variables.undoGlobal
     def setViscosity(self, value):
         """
         Set value of mesh viscosity into xml file.
@@ -216,6 +192,7 @@ class MobileMeshModel(Model):
         self.__updateNodeViscosity()
 
 
+    @Variables.noUndo
     def getViscosity(self):
         """
         Get value of mesh viscosity from xml file.
@@ -230,6 +207,7 @@ class MobileMeshModel(Model):
         return iortvm
 
 
+    @Variables.undoLocal
     def setFormula(self, value):
         """
         Set the formula for the viscosity of mesh
@@ -237,6 +215,7 @@ class MobileMeshModel(Model):
         self.node_ale.xmlSetData('formula', value)
 
 
+    @Variables.noUndo
     def getFormula(self):
         """
         Get the formula for the viscosity of mesh
@@ -248,6 +227,7 @@ class MobileMeshModel(Model):
         return formula
 
 
+    @Variables.noUndo
     def getDefaultFormula(self):
         """
         Get the default formula base on viscosity type

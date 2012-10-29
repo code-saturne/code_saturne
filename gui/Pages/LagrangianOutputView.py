@@ -74,6 +74,7 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
         self.setupUi(self)
 
         self.case = case
+        self.case.undoStopGlobal()
         self.model = LagrangianOutputModel(self.case)
 
         # Combo model
@@ -228,6 +229,8 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
             self.checkBoxIVISCK.setChecked(True)
         else:
             self.checkBoxIVISCK.setChecked(False)
+
+        self.case.undoStartGlobal()
 
 
     @pyqtSignature("")

@@ -461,6 +461,8 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         self.case = case
         self.parent = parent
 
+        self.case.undoStopGlobal()
+
         self.mdl = ScriptRunningModel(self.case)
 
         # Check if the script file name is already defined
@@ -578,6 +580,8 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
         self.displayScriptInfo()
 
+        self.case.undoStartGlobal()
+
 
     @pyqtSignature("const QString &")
     def slotJobName(self, v):
@@ -682,7 +686,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         # Is the file saved?
 
-        if self.case['new'] == "yes" or self.case.isModified():
+        if self.case['new'] == "yes" or len(self.case['undo']) > 0 or len(self.case['redo']) > 0:
 
             title = self.tr("Warning")
             msg   = self.tr("The current case must be saved before "\

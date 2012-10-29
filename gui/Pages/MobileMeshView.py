@@ -123,6 +123,7 @@ if (xray2 < xr2) {
         self.setupUi(self)
 
         self.case = case
+        self.case.undoStopGlobal()
         self.mdl = MobileMeshModel(self.case)
         self.browser = browser
 
@@ -153,6 +154,8 @@ if (xray2 < xr2) {
 
         # Enable / disable formula state
         setGreenColor(self.pushButtonFormula, False)
+
+        self.case.undoStartGlobal()
 
 
     @pyqtSignature("bool")

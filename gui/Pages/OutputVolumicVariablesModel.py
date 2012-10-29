@@ -38,7 +38,7 @@ import string, unittest
 from Base.Common import *
 import Base.Toolbox as Tool
 from Base.XMLmodel import XMLmodel, ModelTest
-from Base.XMLvariables import Model
+from Base.XMLvariables import Model, Variables
 from Pages.DefineUserScalarsModel import DefineUserScalarsModel
 from Pages.ThermalRadiationModel import ThermalRadiationModel
 
@@ -165,7 +165,7 @@ class OutputVolumicVariablesModel(Model):
 
 # Following methods also called by ProfilesModel and TimeAveragesModel
 
-
+    @Variables.noUndo
     def getThermalScalar(self):
         """
         Return node of thermal scalar (idem ds NumericalParamEquationModel)
@@ -174,7 +174,7 @@ class OutputVolumicVariablesModel(Model):
         return node.xmlGetNodeList('scalar', type='thermal')
 
 
-
+    @Variables.noUndo
     def getPuCoalScalProper(self):
         """
         Return list fo nodes of pulverized coal.
@@ -192,6 +192,7 @@ class OutputVolumicVariablesModel(Model):
         return varList
 
 
+    @Variables.noUndo
     def getGasCombScalProper(self):
         """
         Return list fo nodes of gas combustion.
@@ -209,6 +210,7 @@ class OutputVolumicVariablesModel(Model):
         return varList
 
 
+    @Variables.noUndo
     def getMeteoScalProper(self):
         """
         Return list fo nodes of atmospheric flows.
@@ -227,6 +229,7 @@ class OutputVolumicVariablesModel(Model):
         return varList
 
 
+    @Variables.noUndo
     def getElecScalProper(self):
         """
         Return list fo nodes of electric flows.
@@ -245,7 +248,7 @@ class OutputVolumicVariablesModel(Model):
         return varList
 
 
-
+    @Variables.noUndo
     def getAdditionalScalar(self):
         """
         Return list of nodes of user scalars
@@ -256,6 +259,7 @@ class OutputVolumicVariablesModel(Model):
         return node.xmlGetNodeList('scalar', type='user')
 
 
+    @Variables.noUndo
     def getAdditionalScalarProperty(self):
         """
         Return list of nodes of properties of user scalars
@@ -269,6 +273,7 @@ class OutputVolumicVariablesModel(Model):
         return nodeList
 
 
+    @Variables.noUndo
     def getFluidProperty(self):
         """
         Return list of nodes of fluid properties
@@ -290,6 +295,7 @@ class OutputVolumicVariablesModel(Model):
         return nodeList
 
 
+    @Variables.noUndo
     def getTimeProperty(self):
         """
         Return list fo nodes of properties of time_parameters.
@@ -312,6 +318,7 @@ class OutputVolumicVariablesModel(Model):
         return nodeList
 
 
+    @Variables.noUndo
     def getListOfTimeAverage(self):
         """
         Return list of time averages variables
@@ -325,6 +332,7 @@ class OutputVolumicVariablesModel(Model):
 
 
 #Following methods only called by the View
+    @Variables.noUndo
     def getLabelsList(self):
         """
         Return list of labels for all variables, properties .....Only for the View
@@ -336,6 +344,7 @@ class OutputVolumicVariablesModel(Model):
         return list
 
 
+    @Variables.noUndo
     def getVariableProbeList(self):
         """ Return list of node for probes """
         probeList = []
@@ -344,6 +353,7 @@ class OutputVolumicVariablesModel(Model):
         return probeList
 
 
+    @Variables.noUndo
     def getProbesList(self, label):
         """
         Return list of probes if it exists for node['name'] = name. Only for the View
@@ -365,6 +375,7 @@ class OutputVolumicVariablesModel(Model):
         return lst
 
 
+    @Variables.noUndo
     def getPrintingStatus(self, label):
         """
         Return status of markup printing from node with label. Only for the View
@@ -380,6 +391,7 @@ class OutputVolumicVariablesModel(Model):
         return status
 
 
+    @Variables.noUndo
     def getPostStatus(self, label):
         """
         Return status of markup  post processing from node with label. Only for the View
@@ -395,6 +407,7 @@ class OutputVolumicVariablesModel(Model):
         return status
 
 
+    @Variables.undoLocal
     def setVariableLabel(self, old_label, new_label):
         """
         Replace old_label by new_label for node with name and old_label. Only for the View
@@ -432,6 +445,7 @@ class OutputVolumicVariablesModel(Model):
                     nodebc['label'] = new_label
 
 
+    @Variables.undoLocal
     def setPrintingStatus(self, label, status):
         """
         Put status for balise printing from node with name and label
@@ -448,6 +462,7 @@ class OutputVolumicVariablesModel(Model):
                             node.xmlRemoveChild('listing_printing')
 
 
+    @Variables.undoLocal
     def setPostStatus(self, label, status):
         """
         Put status for balise postprocessing from node with name and label
@@ -505,16 +520,6 @@ class OutputVolumicVariablesModelTestCase(ModelTest):
         mdl = OutputVolumicVariablesModel(self.case)
         assert mdl != None, 'Could not instantiate OutputVolumicVariablesModel'
 
-##    def checkGetPuCoalScalProper(self):
-##        """
-##        Check whether the OutputVolumicVariablesModel class could be get
-##        properties of pulverized coal
-##        """
-##        mdl = OutputVolumicVariablesModel(self.case)
-##        mdl.getPuCoalScalProper()
-##        node = mdl.node_models.xmlGetNode('solid_fuels', 'model')
-##        print(node)
-##        print(mdl.getPuCoalScalProper())
 
     def checkSetVariableLabel(self):
         """

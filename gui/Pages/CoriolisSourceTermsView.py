@@ -76,6 +76,9 @@ class CoriolisSourceTermsView(QWidget, Ui_CoriolisSourceTermsForm):
         self.setupUi(self)
 
         self.case = case
+
+        self.case.undoStopGlobal()
+
         self.mdl = CoriolisSourceTermsModel(self.case)
 
         # Connections
@@ -101,6 +104,8 @@ class CoriolisSourceTermsView(QWidget, Ui_CoriolisSourceTermsForm):
         self.lineEditOMEGAX.setText(QString(str(omega_x)))
         self.lineEditOMEGAY.setText(QString(str(omega_y)))
         self.lineEditOMEGAZ.setText(QString(str(omega_z)))
+
+        self.case.undoStartGlobal()
 
 
     @pyqtSignature("const QString&")

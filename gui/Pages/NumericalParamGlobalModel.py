@@ -83,6 +83,7 @@ class NumericalParamGlobalModel(Model):
         return self.default
 
 
+    @Variables.noUndo
     def getTransposedGradient(self):
         """
         Return status of transposed gradient
@@ -95,6 +96,7 @@ class NumericalParamGlobalModel(Model):
         return status
 
 
+    @Variables.noUndo
     def getVelocityPressureCoupling(self):
         """
         Return status of IPUCOU value is activated or not
@@ -107,6 +109,7 @@ class NumericalParamGlobalModel(Model):
         return status
 
 
+    @Variables.noUndo
     def getHydrostaticEquilibrium(self):
         """
         Return status of ICFGRP value (for hydrostatic equilibrium) is activated or not
@@ -119,6 +122,7 @@ class NumericalParamGlobalModel(Model):
         return status
 
 
+    @Variables.noUndo
     def getHydrostaticPressure(self):
         """
         Return status of hydrostatic pressure :
@@ -132,6 +136,7 @@ class NumericalParamGlobalModel(Model):
         return status
 
 
+    @Variables.noUndo
     def getWallPressureExtrapolation(self):
         """
         Return EXTRAG value
@@ -149,6 +154,7 @@ class NumericalParamGlobalModel(Model):
         return value
 
 
+    @Variables.noUndo
     def getPressureRelaxation(self):
         """
         Return RELAXP value
@@ -160,6 +166,7 @@ class NumericalParamGlobalModel(Model):
         return value
 
 
+    @Variables.noUndo
     def getDensityRelaxation(self):
         """
         Return SRROM value
@@ -171,6 +178,7 @@ class NumericalParamGlobalModel(Model):
         return value
 
 
+    @Variables.noUndo
     def getGradientReconstruction(self):
         """
         Return IMRGRA value : 0, 1, 2, 3, 4 or 5
@@ -183,6 +191,7 @@ class NumericalParamGlobalModel(Model):
         return choice
 
 
+    @Variables.noUndo
     def getVelocityPressureAlgorithm(self):
         """
         Return velocity pressure algoritm value
@@ -195,6 +204,7 @@ class NumericalParamGlobalModel(Model):
         return value
 
 
+    @Variables.noUndo
     def getPisoSweepNumber(self):
         """
         Return piso_sweep_number value
@@ -207,6 +217,7 @@ class NumericalParamGlobalModel(Model):
         return value
 
 
+    @Variables.undoLocal
     def setTransposedGradient(self, status):
         """
         Put status of gradient transposed
@@ -216,6 +227,7 @@ class NumericalParamGlobalModel(Model):
         node['status'] = status
 
 
+    @Variables.undoLocal
     def setVelocityPressureCoupling(self, status):
         """
         Put status of velocity_pressure_coupling
@@ -239,6 +251,7 @@ class NumericalParamGlobalModel(Model):
                 node.xmlRemoveNode()
 
 
+    @Variables.undoLocal
     def setHydrostaticEquilibrium(self, var):
         """
         Put status of hydrostatic equilibrium
@@ -248,6 +261,7 @@ class NumericalParamGlobalModel(Model):
         node['status'] = var
 
 
+    @Variables.undoLocal
     def setHydrostaticPressure(self, var):
         """
         Put status of hydrostatic pressure
@@ -257,6 +271,7 @@ class NumericalParamGlobalModel(Model):
         node['status'] = var
 
 
+    @Variables.undoLocal
     def setPressureRelaxation(self, value):
         """
         Put value of pressure_relaxation
@@ -265,6 +280,7 @@ class NumericalParamGlobalModel(Model):
         self.node_np.xmlSetData('pressure_relaxation', value)
 
 
+    @Variables.undoLocal
     def setDensityRelaxation(self, value):
         """
         Put value of density_relaxation
@@ -274,6 +290,7 @@ class NumericalParamGlobalModel(Model):
         self.node_np.xmlSetData('density_relaxation', value)
 
 
+    @Variables.undoLocal
     def setWallPressureExtrapolation(self, value):
         """
         Put value of wall pressure extrapolation
@@ -286,6 +303,7 @@ class NumericalParamGlobalModel(Model):
         self.node_np.xmlSetData('wall_pressure_extrapolation', value)
 
 
+    @Variables.undoLocal
     def setGradientReconstruction(self, value):
         """
         Put value of gradient_reconstruction
@@ -296,6 +314,7 @@ class NumericalParamGlobalModel(Model):
         node['choice'] = value
 
 
+    @Variables.undoLocal
     def getTimeSchemeOrder(self):
         """
         Return time scheme order for NumericalParamEquationModel
@@ -309,6 +328,7 @@ class NumericalParamGlobalModel(Model):
         return order
 
 
+    @Variables.undoLocal
     def setTimeSchemeOrder(self, order):
         """
         Set or remove markup of time scheme order for turbulence (LES)
@@ -321,6 +341,7 @@ class NumericalParamGlobalModel(Model):
             self.node_np.xmlRemoveChild('time_scheme_order')
 
 
+    @Variables.undoGlobal
     def setVelocityPressureAlgorithm(self, value):
         """
         Put value of velocity pressure algorithm
@@ -335,6 +356,7 @@ class NumericalParamGlobalModel(Model):
             self.setPisoSweepNumber(value)
 
 
+    @Variables.undoLocal
     def setPisoSweepNumber(self, value):
         """
         Put value of NTRUP

@@ -43,7 +43,7 @@ import unittest
 
 from Base.Common import *
 import Base.Toolbox as Tool
-from Base.XMLvariables import Model
+from Base.XMLvariables import Model, Variables
 from Base.XMLmodel import ModelTest
 
 #-------------------------------------------------------------------------------
@@ -76,6 +76,7 @@ class StartRestartModel(Model):
         return default
 
 
+    @Variables.noUndo
     def getRestartPath(self):
         """
         Return restart path if applicable
@@ -88,6 +89,7 @@ class StartRestartModel(Model):
         return restart
 
 
+    @Variables.undoLocal
     def setRestartPath(self, v):
         """
         Set restart path if applicable
@@ -101,6 +103,7 @@ class StartRestartModel(Model):
                 n.xmlRemoveChild('restart_from_time_average')
 
 
+    @Variables.noUndo
     def getFrozenField(self):
         """
         Return if the velocity and the pressure are solved
@@ -113,6 +116,7 @@ class StartRestartModel(Model):
         return status
 
 
+    @Variables.undoLocal
     def setFrozenField(self, v):
         """
         """
@@ -121,6 +125,7 @@ class StartRestartModel(Model):
         node['status'] = v
 
 
+    @Variables.noUndo
     def getRestartWithAuxiliaryStatus(self):
         """
         Return status of reading auxiliary restart file for advanced options.
@@ -133,6 +138,7 @@ class StartRestartModel(Model):
         return status
 
 
+    @Variables.noUndo
     def getRestartRescue(self):
         """
         Return frequency for restart checkpoints from advanced options.
@@ -152,6 +158,7 @@ class StartRestartModel(Model):
         return val, period
 
 
+    @Variables.undoLocal
     def setRestartWithAuxiliaryStatus(self, status):
         """
         Input status of reading auxiliary restart file for advanced options.
@@ -161,6 +168,7 @@ class StartRestartModel(Model):
         node['status'] = status
 
 
+    @Variables.undoLocal
     def setRestartRescue(self, freq):
         """
         Inputfrequency for restart checkpoints from advanced options.

@@ -71,7 +71,7 @@ class StartRestartAdvancedDialogView(QDialog, Ui_StartRestartAdvancedDialogForm)
     """
     Building of popup window for advanced options.
     """
-    def __init__(self, parent, default):
+    def __init__(self, parent, case, default):
         """
         Constructor
         """
@@ -79,6 +79,9 @@ class StartRestartAdvancedDialogView(QDialog, Ui_StartRestartAdvancedDialogForm)
 
         Ui_StartRestartAdvancedDialogForm.__init__(self)
         self.setupUi(self)
+
+        self.case = case
+        self.case.undoStopGlobal()
 
         self.setWindowTitle(self.tr("Advanced options"))
         self.default = default
@@ -134,6 +137,8 @@ class StartRestartAdvancedDialogView(QDialog, Ui_StartRestartAdvancedDialogForm)
             self.freq = 'Frequency'
         self.modelFreq.setItem(str_model=self.freq)
         self.lineEditNSUIT.setText(str(self.nsuit))
+
+        self.case.undoStartGlobal()
 
 
     @pyqtSignature("const QString &")
@@ -225,7 +230,9 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
 
         Ui_StartRestartForm.__init__(self)
         self.setupUi(self)
+
         self.case = case
+        self.case.undoStopGlobal()
 
         self.connect(self.radioButtonYes, SIGNAL("clicked()"), self.slotStartRestart)
         self.connect(self.radioButtonNo, SIGNAL("clicked()"), self.slotStartRestart)
@@ -259,6 +266,8 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
             self.checkBox.setChecked(True)
         else:
             self.checkBox.setChecked(False)
+
+        self.case.undoStartGlobal()
 
 
     @pyqtSignature("")
@@ -365,7 +374,7 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
         default['period_rescue']          = period
         log.debug("slotAdvancedOptions -> %s" % str(default))
 
-        dialog = StartRestartAdvancedDialogView(self, default)
+        dialog = StartRestartAdvancedDialogView(self, self.case, default)
 
         if dialog.exec_():
             result = dialog.get_result()

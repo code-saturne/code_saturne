@@ -86,6 +86,7 @@ class CompressibleModel(Variables, Model):
         return default
 
 
+    @Variables.undoGlobal
     def setCompressibleModel(self, model):
         """
         Active or desactive the compressible model
@@ -112,6 +113,7 @@ class CompressibleModel(Variables, Model):
                 TurbulenceModel(self.case).setTurbulenceModel('off')
 
 
+    @Variables.noUndo
     def getCompressibleModel(self):
         """
         Return the model of the compressible
