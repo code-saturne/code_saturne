@@ -192,7 +192,7 @@ double precision xcpp(ncelet)
 double precision viscce(*)
 
 ! Local variables
-double precision idiflc
+integer          idiflc
 
 !===============================================================================
 
