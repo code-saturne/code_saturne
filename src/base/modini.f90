@@ -140,6 +140,8 @@ if(nbmomt.gt.0) then
   enddo
 endif
 if (iale.eq.1) then
+  call pstdfm
+  !==========
   nn = 1
   if (iortvm.eq.1) nn = 3
   do ii = 1, nn
