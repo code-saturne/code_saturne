@@ -2318,7 +2318,7 @@ _cs_post_build_moment(const cs_field_t  *f,
     d_mult = 1;
   }
   else if (moment_id < 0) {
-    denom = &(_cs_post_cumulative_mom_time[- moment_id - 1]);
+    denom = &(_cs_post_cumulative_mom_time[(- moment_id - 1) - 1]);
     /* d_mult = 0 is set above */
   }
 
