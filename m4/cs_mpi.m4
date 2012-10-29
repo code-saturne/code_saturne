@@ -260,6 +260,8 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
         AC_MSG_CHECKING([for MPICH2])
         # First try (with ROMIO)
         case $host_os in
+          mingw32)
+            MPI_LIBS="-lmpi";;
           freebsd*)
             MPI_LIBS="-lmpich -lopa -lmpl -lrt $PTHREAD_LIBS";;
           *)

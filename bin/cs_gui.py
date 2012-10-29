@@ -139,6 +139,13 @@ def main(argv, pkg):
     #app.setWindowIcon(QIcon(":/icon.png"))
     app.connect(app, SIGNAL("lastWindowClosed()"), app, SLOT("quit()"))
 
+    # Locale detection
+    locale = QLocale.system().name()
+    translator = QTranslator(app)
+    if translator.load(QString("qt_") + locale,
+                       QLibraryInfo.location(QLibraryInfo.TranslationsPath)):
+        app.installTranslator(translator)
+
     if spl:
         app.setOverrideCursor(QCursor(Qt.WaitCursor))
         pixmap = QPixmap('%s/splashscreen.png' % icons_path)
