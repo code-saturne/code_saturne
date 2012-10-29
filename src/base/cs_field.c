@@ -348,10 +348,9 @@ _field_create(const char   *name,
   f->id = field_id;
   f->type = type_flag;
   f->dim = dim;
-  if (f->dim > 1)
-    f->interleaved = interleaved;
-  else
-    f->interleaved = true;
+  f->interleaved = true;
+  if (f->dim > 1 && interleaved == false)
+    f->interleaved = false;
   f->location_id = location_id;
   f->n_time_vals = 1;
 
@@ -1758,7 +1757,7 @@ cs_field_key_flag(int key_id)
 
 bool
 cs_field_is_key_set(const cs_field_t  *f,
-                     int               key_id)
+                    int                key_id)
 {
   int errcode = CS_FIELD_OK;
 
