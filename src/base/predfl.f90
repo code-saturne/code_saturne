@@ -402,11 +402,13 @@ do while (isweep.le.nswmpr.and.residu.gt.tcrite)
     epsrgp = epsrgr(ipr)
     climgp = climgr(ipr)
     extrap = extrag(ipr)
+    ! This option should be adapted to iphydr = 1
+    iphydp = 0
 
     call itrgrp &
     !==========
    ( nvar   , nscal  ,                                              &
-     init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
+     init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
      iwarnp , nfecra ,                                              &
      epsrgp , climgp , extrap ,                                     &
      rvoid  , rvoid  , rvoid  ,                                     &
