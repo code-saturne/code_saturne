@@ -2648,7 +2648,7 @@ ple_locator_set_mesh(ple_locator_t                *this_locator,
 
     _locator_trace_start_comm(_ple_locator_log_start_g_comm, comm_timing);
 
-    MPI_Allreduce(locflag, globflag, 4, MPI_INT, MPI_MAX,
+    MPI_Allreduce(locflag, globflag, 3, MPI_INT, MPI_MAX,
                   this_locator->comm);
 
     _locator_trace_end_comm(_ple_locator_log_end_g_comm, comm_timing);
