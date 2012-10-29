@@ -3873,7 +3873,7 @@ cs_post_write_var(int              mesh_id,
 
   post_mesh = _cs_post_meshes + _mesh_id;
 
-  if (interlace == true)
+  if (interlace)
     _interlace = CS_INTERLACE;
   else
     _interlace = CS_NO_INTERLACE;
@@ -3887,7 +3887,7 @@ cs_post_write_var(int              mesh_id,
 
   if (post_mesh->ent_flag[CS_POST_LOCATION_CELL] == 1) {
 
-    if (use_parent == true) {
+    if (use_parent) {
       n_parent_lists = 1;
       parent_num_shift[0] = 0;
     }
@@ -3896,7 +3896,7 @@ cs_post_write_var(int              mesh_id,
 
     var_ptr[0] = cel_vals;
     if (interlace == false) {
-      if (use_parent == true)
+      if (use_parent)
         dec_ptr = cs_glob_mesh->n_cells_with_ghosts;
       else
         dec_ptr = fvm_nodal_get_n_entities(post_mesh->exp_mesh, 3);
@@ -3914,7 +3914,7 @@ cs_post_write_var(int              mesh_id,
 
     /* In case of indirection, all that is necessary is to set pointers */
 
-    if (use_parent == true) {
+    if (use_parent) {
 
       n_parent_lists = 2;
       parent_num_shift[0] = 0;
@@ -4106,7 +4106,7 @@ cs_post_write_vertex_var(int              mesh_id,
 
   post_mesh = _cs_post_meshes + _mesh_id;
 
-  if (interlace == true)
+  if (interlace)
     _interlace = CS_INTERLACE;
   else
     _interlace = CS_NO_INTERLACE;
@@ -4118,14 +4118,14 @@ cs_post_write_vertex_var(int              mesh_id,
 
   /* Assign appropriate array to FVM for output */
 
-  if (use_parent == true)
+  if (use_parent)
     n_parent_lists = 1;
   else
     n_parent_lists = 0;
 
   var_ptr[0] = vtx_vals;
   if (interlace == false) {
-    if (use_parent == true)
+    if (use_parent)
       dec_ptr = cs_glob_mesh->n_vertices;
     else
       dec_ptr =   fvm_nodal_get_n_entities(post_mesh->exp_mesh, 0)
