@@ -395,6 +395,9 @@ cs_coupling_sync_apps(int      flags,
     int app_id
       = ple_coupling_mpi_set_get_app_id(_cs_glob_coupling_mpi_app_world);
 
+    int reset_flags[] = {PLE_COUPLING_NEW_ITERATION,
+                         PLE_COUPLING_REDO_ITERATION};
+
     const int *app_status = NULL;
     const double *app_ts = NULL;
 
@@ -405,7 +408,12 @@ cs_coupling_sync_apps(int      flags,
     app_status
       = ple_coupling_mpi_set_get_status(_cs_glob_coupling_mpi_app_world);
 
-    sync_flags = app_status[app_id] | flags;
+    sync_flags = app_status[app_id];
+    for (i = 0; i < 2; i++) {
+      if (sync_flags & reset_flags[i])
+        sync_flags -= reset_flags[i];
+    }
+    sync_flags = sync_flags | flags;
 
     if (current_ts_id >= *max_ts_id)
       sync_flags = sync_flags | PLE_COUPLING_STOP;
