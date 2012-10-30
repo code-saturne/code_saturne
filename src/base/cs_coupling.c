@@ -409,10 +409,11 @@ cs_coupling_sync_apps(int      flags,
 
     if (current_ts_id >= *max_ts_id)
       sync_flags = sync_flags | PLE_COUPLING_STOP;
-    else if (current_ts_id == *max_ts_id - 1)
-      sync_flags = sync_flags | PLE_COUPLING_LAST;
-    else
+    else {
       sync_flags = sync_flags | PLE_COUPLING_NEW_ITERATION;
+      if (current_ts_id == *max_ts_id - 1)
+        sync_flags = sync_flags | PLE_COUPLING_LAST;
+    }
 
     if (flags & PLE_COUPLING_REDO_ITERATION) {
       if (sync_flags & PLE_COUPLING_NEW_ITERATION)
