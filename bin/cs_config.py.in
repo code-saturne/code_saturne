@@ -5,7 +5,7 @@
 #     This file is part of the Code_Saturne Kernel, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 2009-2011 EDF S.A., France
+#     Copyright (C) 2009-2012 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -117,12 +117,6 @@ class config:
         self.features['nls'] = '@USE_NLS@'
 
         # Setup the optionnal libraries
-
-        self.libs['adf'] = \
-            prerequisite("ADF",
-                         have = "@cs_have_adf@",
-                         ldflags = "@ADF_LDFLAGS@",
-                         libs = "@ADF_LIBS@")
 
         self.libs['blas'] = \
             prerequisite("BLAS",
@@ -326,11 +320,12 @@ Compilers and associated options:
 """
 
     return msg \
-        % { 'cc':pkg.cc, 'cxx': pkg.cxx, 'fc':pkg.fc,
-            'cppflags':pkg.cppflags, 'cflags':pkg.cflags,
-            'cxxflags':pkg.cxxflags,
-            'fcflags':pkg.fcflags, 'ldflags':pkg.ldflags,
-            'libs':pkg.libs, 'rpath':pkg.rpath }
+        % { 'cc':pkg.compilers['cc'], 'cxx': pkg.compilers['cxx'],
+            'fc':pkg.compilers['fc'],
+            'cppflags':pkg.flags['cppflags'], 'cflags':pkg.flags['cflags'],
+            'cxxflags':pkg.flags['cxxflags'],
+            'fcflags':pkg.flags['fcflags'], 'ldflags':pkg.flags['ldflags'],
+            'libs':pkg.flags['libs'], 'rpath':pkg.rpath }
 
 #-------------------------------------------------------------------------------
 
@@ -362,13 +357,13 @@ def main(argv, pkg):
 
     cfg = config()
 
-    if opts.print_cc  == True: print(pkg.cc)
-    if opts.print_cxx == True: print(pkg.cxx)
-    if opts.print_fc  == True: print(pkg.fc)
+    if opts.print_cc  == True: print(pkg.compilers['cc'])
+    if opts.print_cxx == True: print(pkg.compilers['cxx'])
+    if opts.print_fc  == True: print(pkg.compilers['fc'])
 
-    if opts.print_cflags   == True: print(pkg.cflags)
-    if opts.print_cxxflags == True: print(pkg.cxxflags)
-    if opts.print_fcflags  == True: print(pkg.fcflags)
+    if opts.print_cflags   == True: print(pkg.flags['cflags'])
+    if opts.print_cxxflags == True: print(pkg.flags['cxxflags'])
+    if opts.print_fcflags  == True: print(pkg.flags['fcflags'])
 
     if opts.print_rpath == True: print(pkg.rpath)
 
@@ -384,7 +379,7 @@ def main(argv, pkg):
         if opts.cppflags == "saturne":
             print("@CPPFLAGS@ -I" + pkg.get_dir("pkgincludedir"))
         elif opts.cppflags == "ple":
-            print(pkg.ple_cppflags)
+            print(pkg.flags['ple_cppflags'])
         else:
             print(cfg.libs[opts.cppflags].cppflags)
 
@@ -392,7 +387,7 @@ def main(argv, pkg):
         if opts.ldflags == "saturne":
             print("-L" + pkg.get_dir("libdir"))
         elif opts.ldflags == "ple":
-            print(pkg.ple_ldflags)
+            print(pkg.flags['ple_ldflags'])
         else:
             print(cfg.libs[opts.ldflags].ldflags)
 
@@ -400,7 +395,7 @@ def main(argv, pkg):
         if opts.libs == "saturne":
             print("-lsaturne")
         elif opts.libs == "ple":
-            print(pkg.ple_libs)
+            print(pkg.flags['ple_libs'])
         else:
             print(cfg.libs[opts.libs].libs)
 
