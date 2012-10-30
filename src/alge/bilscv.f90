@@ -191,7 +191,7 @@ double precision secvif(nfac), secvib(nfabor)
 double precision smbr(3,ncelet)
 
 ! Local variables
-double precision idiflc
+integer          idiflc
 
 !===============================================================================
 
