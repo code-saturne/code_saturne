@@ -126,11 +126,11 @@ integer          ipcroo, ipbroo, ipcvto, ipcvlo
 integer          iphydp
 integer          imucpp, idftnp, iswdyp
 
-double precision rnorm , d2s3, divp23
+double precision rnorm , d2s3, d1s3, divp23
 double precision deltk , delte, a11, a12, a22, a21
 double precision gravke, epssuk, unsdet, romvsd
 double precision prdtur, xk, xeps, xphi, xnu, xnut, ttke, ttmin, tt
-double precision visct , rom   , ceps1 , ctsqnu
+double precision visct , rho   , ceps1 , ctsqnu
 double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
 double precision epsrsp
 double precision thetp1, thetak, thetae, thets, thetap
@@ -146,6 +146,8 @@ double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: usimpk
 double precision, allocatable, dimension(:) :: smbrk, smbre, rovsdt
 double precision, allocatable, dimension(:) :: tinstk, tinste, divu
+double precision, allocatable, dimension(:) :: prdtke, prdeps
+double precision, allocatable, dimension(:) :: strain
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4, w5
 double precision, allocatable, dimension(:) :: w7, w8, usimpe
@@ -164,7 +166,7 @@ double precision, allocatable, dimension(:) :: dpvar
 ! Allocate temporary arrays for the turbulence resolution
 allocate(viscf(nfac), viscb(nfabor))
 allocate(smbrk(ncelet), smbre(ncelet), rovsdt(ncelet))
-allocate(tinstk(ncelet), tinste(ncelet), divu(ncelet))
+allocate(tinstk(ncelet), tinste(ncelet), divu(ncelet), strain(ncelet))
 
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet), w3(ncelet))
@@ -172,6 +174,10 @@ allocate(w4(ncelet), w5(ncelet))
 allocate(usimpk(ncelet))
 allocate(w7(ncelet), w8(ncelet), usimpe(ncelet))
 allocate(dpvar(ncelet))
+
+if (iturb.eq.20) then
+  allocate(prdtke(ncelet), prdeps(ncelet))
+endif
 
 if (iturb.eq.51) then
   allocate(w10(ncelet),w11(ncelet))
@@ -224,13 +230,15 @@ endif
 ! For the model with linear production, sqrt(Cmu) is required
 sqrcmu = sqrt(cmu)
 
+d2s3 = 2.d0/3.d0
+d1s3 = 1.d0/3.d0
+
 !===============================================================================
 ! 2. Compute the scalar strain rate SijSij and the trace of the velocity
 !    gradient
 
-!      SijSij est stocke dans           tinstk
-!      DivU est stocke dans             divu
-!      En sortie de l'etape on conserve tinstk, divu
+!      (Sij^D) (Sij^D)  is stored in    strain (deviatoric strain tensor rate)
+!      tr(Grad u)       is stored in    divu
 !===============================================================================
 
 ! Allocate temporary arrays for gradients calculation
@@ -270,18 +278,21 @@ else
 
 endif
 
-! tinstk = Stain rate = ( 2 (S11)**2 + 2 (S22)**2 + 2 (S33)**2
-!                       + (2 S12)**2 + (2 S13)**2 + (2 S23)**2 )
-!        = 2 Sij.Sij
-! divu = dudx + dvdy + dwdz
+! strain = Stain rate of the deviatoric part of the strain tensor
+!        = 2 (Sij^D).(Sij^D)
+! divu   = trace of the velocity gradient
+!        = dudx + dvdy + dwdz
 
 do iel = 1, ncel
 
-  tinstk(iel) = 2.d0*( gradv(iel,1,1)**2 + gradv(iel,2,2) **2 &
-                     + gradv(iel,3,3)**2 )                    &
-              + (gradv(iel,2,1) + gradv(iel,1,2))**2          &
-              + (gradv(iel,3,1) + gradv(iel,1,3))**2          &
-              + (gradv(iel,3,2) + gradv(iel,2,3))**2
+  strain(iel) = 2.d0                                                           &
+    *( ( d2s3*gradv(iel,1,1) - d1s3*gradv(iel,2,2) - d1s3*gradv(iel,3,3))**2   &
+     + (-d1s3*gradv(iel,1,1) + d2s3*gradv(iel,2,2) - d1s3*gradv(iel,3,3))**2   &
+     + (-d1s3*gradv(iel,1,1) - d1s3*gradv(iel,2,2) + d2s3*gradv(iel,3,3))**2   &
+     )                                                                         &
+    + (gradv(iel,2,1) + gradv(iel,1,2))**2                                     &
+    + (gradv(iel,3,1) + gradv(iel,1,3))**2                                     &
+    + (gradv(iel,3,2) + gradv(iel,2,3))**2
 
   divu(iel) = gradv(iel,1,1) + gradv(iel,2,2) + gradv(iel,3,3)
 
@@ -291,57 +302,37 @@ enddo
 deallocate(gradv)
 
 !===============================================================================
-! 3. Take user source terms into account
-
-!    The scalar strain rate (tinstk) and the trace of the velocity gradient
-!     (divu) are available.
-!
-!    La partie a expliciter est stockee dans    w7, w8
-!    La partie a impliciter est stockee dans    usimpk, usimpe
-!    En sortie de l'etape on conserve           tinstk, divu,
-!                                               w7 , w8, usimpk, usimpe
+! 3. Instationnary terms (stored in tinstk and tinste)
 !===============================================================================
 
 do iel = 1, ncel
-  usimpk(iel) = 0.d0
-  usimpe(iel) = 0.d0
-  w7(iel) = 0.d0
-  w8(iel) = 0.d0
+  rho = propce(iel,ipcrom)
+  romvsd = rho*volume(iel)/dt(iel)
+  tinstk(iel) = istat(ik)*romvsd
+  tinste(iel) = istat(iep)*romvsd
 enddo
 
-call ustske                                                       &
-!==========
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce , propfa , propfb ,                   &
-   ckupdc , smacel , tinstk , divu   ,                            &
-   w7     , w8     , usimpk , usimpe )
-
 !===============================================================================
-! 4. Add - 2/3 div(u) * div(u)
+! 4. Compute the first part of the production term: muT (S^D)**2
 
-!      En sortie de l'etape on conserve tinstk, divu,
-!                                       w7 , w8, usimpk, usimpe
+!      En sortie de l'etape on conserve strain, divu,
 !===============================================================================
 
-! Dans le cas de la production lineaire, seul le terme en divu est
-! multiplie par visct. Pour les autres modeles, la multiplication par
-! visct sera faite ulterieurement.
-! A ce stade, tinstk contient S**2
-d2s3 = 2.d0/3.d0
+! For the Linear Production k-epsilon model,
+! the production term is assumed to be asymptotically in S and
+! not in mu_TxS**2
 if (iturb.eq.21) then
   do iel = 1, ncel
-    rom   = propce(iel,ipcroo)
+    rho   = propce(iel,ipcroo)
     visct = propce(iel,ipcvto)
-    xs = sqrt(tinstk(iel))
-    cmueta = cmu*rtpa(iel,ik)/rtpa(iel,iep)*xs
-    cmueta = min(cmueta,sqrcmu)
-    tinstk(iel) = rom*cmueta*xs*rtpa(iel,ik)                   &
-         - d2s3*visct*divu(iel)*divu(iel)
+    xs = sqrt(strain(iel))
+    cmueta = min(cmu*rtpa(iel,ik)/rtpa(iel,iep)*xs, sqrcmu)
+    smbrk(iel) = rho*cmueta*xs*rtpa(iel,ik)
   enddo
 else
   do iel = 1, ncel
-    tinstk(iel) = tinstk(iel) - d2s3*divu(iel)*divu(iel)
+    visct = propce(iel,ipcvto)
+    smbrk(iel) = visct*strain(iel)
   enddo
 endif
 
@@ -388,37 +379,32 @@ endif
 
 !      Les s.m. recoivent production et termes de gravite
 !      Tableaux de travail              viscb
-!      Les s.m. sont stockes dans       tinstk, tinste
-!      En sortie de l'etape on conserve tinstk, tinste,
+!      Les s.m. sont stockes dans       smbrk, smbre
+!      En sortie de l'etape on conserve smbrk, smbre,
 !                                       divu,
-!                                       w7 , w8, usimpk, usimpe
 !===============================================================================
 
+! Buoyant term for the Atmospheric module
+! (function of the potential temperature)
 if (igrake.eq.1 .and. ippmod(iatmos).ge.1) then
 
-    !  Calcul du terme de gravite pour la version atmospherique
-
-    call atprke &
-    !==========
+  call atprke &
+  !==========
  ( nscal  ,                                                       &
-   ipcvto,                                                        &
    rtp    , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
-   tinstk , tinste )
+   tinstk , tinste ,                                              &
+   smbrk  , smbre  )
 
+! --- Buoyancy term     G = Beta*g.Grad(scalar)/prdtur/rho
+!     Here is computed  G =-g.grad(rho)/prdtur/rho
 else if (igrake.eq.1) then
 
   ! Allocate a temporary for the gradient calculation
   allocate(grad(ncelet,3))
 
-! --- Terme de gravite G = BETA*G*GRAD(SCA)/PRDTUR/RHO
-!     Ici on calcule   G =-G*GRAD(RHO)/PRDTUR/RHO
-
   iccocg = 1
   inc = 1
-
-!     Le choix ci dessous a l'avantage d'etre simple
-
   nswrgp = nswrgr(ik)
   epsrgp = epsrgr(ik)
   imligp = imligr(ik)
@@ -426,81 +412,69 @@ else if (igrake.eq.1) then
   climgp = climgr(ik)
   extrap = extrag(ik)
 
-!     Conditions aux limites sur ROM : Dirichlet ROMB
-!       On utilise VISCB pour stocker le COEFB relatif a ROM
-!       On impose en Dirichlet (COEFA) la valeur ROMB
-
+  ! Dirichlet boundary condition on the gradient of rho
   do ifac = 1, nfabor
     viscb(ifac) = 0.d0
   enddo
 
   iivar = 0
 
-  call grdcel                                                     &
+  call grdcel &
   !==========
  ( iivar  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    propce(1,ipcroo), propfb(1,ipbroo), viscb  ,                   &
    grad   )
 
-
-!      Production et terme de gravite
-!        TINSTK=P+G et TINSTE=P+(1-CE3)*G
-
+  ! Production term due to buoyancy
+  !   smbrk = P+G
+  !   smbre = P+(1-ce3)*G
   if(iscalt.gt.0.and.nscal.ge.iscalt) then
     prdtur = sigmas(iscalt)
   else
     prdtur = 1.d0
   endif
 
-!     En production lineaire, on multiplie tout de suite le terme
-!     de gravite par VISCT, car le reste est deja multiplie.
-!     Dans les autres cas, la multiplication est faite plus tard.
-  if (iturb.eq.21) then
+  ! smbr* store mu_TxS**2
+  if (itytur.eq.2) then
     do iel = 1, ncel
-      gravke = -(grad(iel,1)*gx + grad(iel,2)*gy + grad(iel,3)*gz) / &
-                (propce(iel,ipcroo)*prdtur)
-      tinste(iel) = tinstk(iel) + propce(iel,ipcvto)*max(gravke,zero)
-      tinstk(iel) = tinstk(iel) + propce(iel,ipcvto)*gravke
-    enddo
-  else
-    do iel = 1, ncel
-      gravke = -(grad(iel,1)*gx + grad(iel,2)*gy + grad(iel,3)*gz) / &
-                (propce(iel,ipcroo)*prdtur)
-      tinste(iel) = tinstk(iel) + max( gravke,zero )
-      tinstk(iel) = tinstk(iel) + gravke
+      rho   = propce(iel,ipcroo)
+      visct = propce(iel,ipcvto)
+      xeps = rtpa(iel,iep )
+      xk   = rtpa(iel,ik )
+      ttke = xk / xeps
+
+      gravke = -(grad(iel,1)*gx + grad(iel,2)*gy + grad(iel,3)*gz) &
+             / (rho*prdtur)
+
+      ! Implicit Buoyant terms when negativ
+      tinstk(iel) = tinstk(iel) + max(-rho*volume(iel)*cmu*ttke*gravke, 0.d0)
+      tinste(iel) = tinste(iel) + 0.d0
+
+      ! Explicit Buoyant terms
+      smbre(iel) = smbrk(iel) + visct*max(gravke, zero)
+      smbrk(iel) = smbrk(iel) + visct*gravke
     enddo
   endif
 
   ! Free memory
   deallocate(grad)
 
-else
-
-! --- Production sans termes de gravite
-!       tinstk=tinste=P
-
-  do iel = 1, ncel
-    tinste(iel) = tinstk(iel)
-  enddo
-
 endif
 
-! En v2f, on stocke tinstk dans prdv2f qui sera complete plus loin pour
+! En v2f, on stocke la production  dans prdv2f qui sera complete plus loin pour
 ! contenir le terme de production complet
 if (itytur.eq.5) then
   do iel = 1, ncel
-    prdv2f(iel) = tinstk(iel)
+    prdv2f(iel) = smbrk(iel)
   enddo
 endif
-
-! On libere viscb
 
 !===============================================================================
 ! 7. pre Seulement pour le modele bl-v2/k, calcul de e et ceps2*
 
 !      Les termes sont stockes dans     w10, w11
-!      Tableaux de travail              w2, w3, w4, w5, drtp,smbrk,smbre
+!      Tableaux de travail              w2, w3
 !                                       viscf, viscb
 !      En sortie de l'etape on conserve w10, w11
 !===============================================================================
@@ -511,8 +485,8 @@ if (iturb.eq.51) then
 
   do iel=1,ncel
     visct = propce(iel,ipcvto)
-    rom   = propce(iel,ipcroo)
-    w3(iel) = visct/rom/sigmak
+    rho   = propce(iel,ipcroo)
+    w3(iel) = visct/rho/sigmak
   enddo
 
   call viscfa &
@@ -564,14 +538,14 @@ if (iturb.eq.51) then
   w3     , w3     , w3     ,                                     &
   w10    )
 
-  do iel=1,ncel
+  do iel = 1, ncel
     w10(iel) = -w10(iel)/volume(iel)/rtpa(iel,iep)
     w10(iel) = tanh(abs(w10(iel))**1.5d0)
     w10(iel) = cpale2*(1.d0-(cpale2-cpale4)/cpale2*w10(iel)*rtpa(iel,ial)**3)
   enddo
 
-!  Calcul du terme 2*Ceps3*(1-alpha)^3*nu*nut/eps*d2Ui/dxkdxj*d2Ui/dxkdxj:
-!   (i.e. E term / k)           : Il est stocke dans W11
+  ! Calcul du terme 2*Ceps3*(1-alpha)^3*nu*nut/eps*d2Ui/dxkdxj*d2Ui/dxkdxj:
+  !  (i.e. E term / k)           : Il est stocke dans w11
 
   ! Allocate a work array
   allocate(w12(ncelet))
@@ -582,11 +556,11 @@ if (iturb.eq.51) then
   coefa  , coefb  ,                                              &
   w12    )
 
-  do iel=1,ncel
+  do iel = 1, ncel
 
-    rom   = propce(iel,ipcroo)
-    xnu   = propce(iel,ipcvlo)/rom
-    xnut  = propce(iel,ipcvto)/rom
+    rho   = propce(iel,ipcroo)
+    xnu   = propce(iel,ipcvlo)/rho
+    xnut  = propce(iel,ipcvto)/rho
     xeps = rtpa(iel,iep )
     xk   = rtpa(iel,ik )
     xphi = rtpa(iel,iphi)
@@ -614,12 +588,8 @@ if (iturb.eq.51) then
 endif
 
 !===============================================================================
-! 7. On finalise le calcul des termes sources
+! 8. Finalization of explicit and implicit source terms
 
-!      Les termes sont stockes dans     smbrk, smbre
-!      En sortie de l'etape on conserve tinstk, tinste, divu,
-!                                       smbrk, smbre
-!                                       w7 , w8, usimpk, usimpe
 !===============================================================================
 
 ! smbre = ceps1 epsilon/k (prod + g ) - rho0 volume epsilon epsilon/k
@@ -628,72 +598,85 @@ endif
 ! Si on extrapole les termes sources et rho  , il faut ici rho^n
 !                                    et visct, il faut ici visct^n
 
-if (iturb.eq.20) then
+if (itytur.eq.2) then
+
+  ! Stores the production terms for the k-epsilon coupling option
+  if (iturb.eq.20) then
+    do iel = 1, ncel
+      prdtke(iel) = smbrk(iel)
+      prdeps(iel) = smbre(iel)
+    enddo
+  endif
 
   do iel = 1, ncel
 
-    visct = propce(iel,ipcvto)
-    rom   = propce(iel,ipcroo)
+    rho   = propce(iel,ipcroo)
 
-    smbrk(iel) = volume(iel)*(                                    &
-         visct*tinstk(iel)                                        &
-         -d2s3*rom*rtpa(iel,ik)*divu(iel)                         &
-         -rom*rtpa(iel,iep) )
+    smbrk(iel) = volume(iel)*                                     &
+               ( smbrk(iel) - rho*rtpa(iel,iep)                   &
+               - d2s3*rho*rtpa(iel,ik)*divu(iel)                  &
+               )
 
-    smbre(iel) = volume(iel)*rtpa(iel,iep)/rtpa(iel,ik)*(         &
-         ce1*( visct*tinste(iel)                                  &
-         -d2s3*rom*rtpa(iel,ik)*divu(iel) )                       &
-         -ce2rc(iel)*rom*rtpa(iel,iep) )
-
-  enddo
-
-else if (iturb.eq.21) then
-
-  do iel = 1, ncel
-
-    rom   = propce(iel,ipcroo)
-
-    smbrk(iel) = volume(iel)*(                                    &
-         tinstk(iel)                                              &
-         -d2s3*rom*rtpa(iel,ik)*divu(iel)                         &
-         -rom*rtpa(iel,iep) )
-
-    smbre(iel) = volume(iel)*rtpa(iel,iep)/rtpa(iel,ik)*(         &
-         ce1*(tinste(iel)                                         &
-         -d2s3*rom*rtpa(iel,ik)*divu(iel) )                       &
-         -ce2rc(iel)*rom*rtpa(iel,iep) )
+    smbre(iel) = volume(iel)*                                              &
+               ( rtpa(iel,iep)/rtpa(iel,ik)*( ce1*smbre(iel)               &
+                                            - ce2rc(iel)*rho*rtpa(iel,iep) &
+                                            )                              &
+               - d2s3*rho*ce1*rtpa(iel,iep)*divu(iel)                      &
+               )
 
   enddo
+
+  ! If the solving of k-epsilon is uncoupled, negative source terms are implicited
+  if (ikecou.eq.0) then
+    do iel = 1, ncel
+      xeps = rtpa(iel,iep )
+      xk   = rtpa(iel,ik )
+      rho = propce(iel,ipcrom)
+      ttke = xk / xeps
+      tinstk(iel) = tinstk(iel) + rho*volume(iel)/ttke            &
+                  + max(d2s3*rho*volume(iel)*divu(iel), 0.d0)
+      tinste(iel) = tinste(iel) + ce2rc(iel)*rho*volume(iel)/ttke &
+                  + max(d2s3*ce1*rho*volume(iel)*divu(iel), 0.d0)
+    enddo
+  endif
 
 else if (iturb.eq.50) then
 
   do iel = 1, ncel
 
     visct = propce(iel,ipcvto)
-    rom   = propce(iel,ipcroo)
-    xeps = rtpa(iel,iep )
-    xk   = rtpa(iel,ik )
-    xphi = rtpa(iel,iphi)
-    xphi = max(xphi,epzero)
-    xnu  = propce(iel,ipcvlo)/rom
+    rho  = propce(iel,ipcroo)
+    xnu  = propce(iel,ipcvlo)/rho
+    xeps = rtpa(iel,iep)
+    xk   = rtpa(iel,ik)
+    xphi = max(xphi, rtpa(iel,iphi))
     ceps1= 1.4d0*(1.d0+cv2fa1*sqrt(1.d0/xphi))
     ttke = xk / xeps
     ttmin = cv2fct*sqrt(xnu/xeps)
-    tt = max(ttke,ttmin)
+    tt = max(ttke, ttmin)
 
-    smbrk(iel) = volume(iel)*(                                    &
-         visct*tinstk(iel)                                        &
-         -d2s3*rom*rtpa(iel,ik)*divu(iel)                         &
-         -rom*rtpa(iel,iep) )
+    ! Explicit part
+    smbrk(iel) = volume(iel)*                                     &
+               ( smbrk(iel) - rho*rtpa(iel,iep)                   &
+               - d2s3*rho*rtpa(iel,ik)*divu(iel)                  &
+               )
 
-    smbre(iel) = volume(iel)/tt*(                                 &
-         ceps1*( visct*tinste(iel)                                &
-         -d2s3*rom*rtpa(iel,ik)*divu(iel) )                       &
-         -ce2rc(iel)*rom*rtpa(iel,iep) )
+    smbre(iel) = volume(iel)*                                                &
+               ( 1.d0/tt*(ceps1*smbre(iel) - ce2rc(iel)*rho*rtpa(iel,iep))   &
+               - d2s3*rho*ceps1*rtpa(iel,iep)*divu(iel)                      &
+               )
 
-!     On stocke la partie en Pk dans PRDV2F pour etre reutilise dans RESV2F
-    prdv2f(iel) = visct*prdv2f(iel)                               &
-         -d2s3*rom*rtpa(iel,ik)*divu(iel)
+    ! On stocke la partie en Pk dans PRDV2F pour etre reutilise dans RESV2F
+    prdv2f(iel) = prdv2f(iel)                               &
+                - d2s3*rho*rtpa(iel,ik)*divu(iel)!FIXME this term should be removed
+
+    ! Implicit part
+    if (xk.gt.1.d-12) then !FIXME make it dimensionless
+      tinstk(iel) = tinstk(iel) + rho*volume(iel)/ttke
+    endif
+    tinstk(iel) = tinstk(iel) + max(d2s3*rho*volume(iel)*divu(iel), 0.d0)
+    tinste(iel) = tinste(iel) + ce2rc(iel)*rho*volume(iel)/tt                &
+                + max(d2s3*ceps1*rho*volume(iel)*divu(iel), 0.d0)
 
   enddo
 
@@ -702,84 +685,114 @@ else if (iturb.eq.51) then
   do iel=1,ncel
 
     visct = propce(iel,ipcvto)
-    rom   = propce(iel,ipcroo)
+    rho   = propce(iel,ipcroo)
+    xnu  = propce(iel,ipcvlo)/rho
     xeps = rtpa(iel,iep )
     xk   = rtpa(iel,ik )
     xphi = rtpa(iel,iphi)
-    xnu  = propce(iel,ipcvlo)/rom
     ttke = xk / xeps
     ttmin = cpalct*sqrt(xnu/xeps)
     tt = sqrt(ttke**2.d0+ttmin**2.d0)
 
-    smbrk(iel) = volume(iel)*(                                    &
-         visct*tinstk(iel)                                        &
-         -d2s3*rom*rtpa(iel,ik)*divu(iel)                      &
-         -rom*rtpa(iel,iep)                                     &
-         -rom*w11(iel)*xk )
+    ! Explicit part
+    smbrk(iel) = volume(iel)*                                     &
+               ( smbrk(iel)                                       &
+               - rho*rtpa(iel,iep)                                &
+               - rho*w11(iel)*xk                                  &
+               - d2s3*rho*rtpa(iel,ik)*divu(iel)                  &
+               )
 
-    smbre(iel) = volume(iel)/tt*(                                 &
-         cpale1*( visct*tinste(iel)                               &
-         -d2s3*rom*rtpa(iel,ik)*divu(iel) )                    &
-         -w10(iel)*rom*rtpa(iel,iep) )
+    smbre(iel) = volume(iel)*                                               &
+               ( 1.d0/tt*(cpale1*smbre(iel) - w10(iel)*rho*rtpa(iel,iep))   &
+               - d2s3*rho*cpale1*rtpa(iel,iep)*divu(iel)                    &
+               )
 
-!     On stocke la partie en Pk dans PRDV2F pour etre reutilise dans RESV2F
-    prdv2f(iel) = visct*prdv2f(iel)                               &
-         -d2s3*rom*rtpa(iel,ik)*divu(iel)
+    ! On stocke la partie en Pk dans PRDV2F pour etre reutilise dans RESV2F
+    prdv2f(iel) = prdv2f(iel)                               &
+                - d2s3*rho*rtpa(iel,ik)*divu(iel)!FIXME this term should be removed
+
+    ! Implicit part
+    if (xk.gt.1.d-12) then !FIXME make it dimensionless
+      tinstk(iel) = tinstk(iel) + rho*volume(iel)/ttke
+    endif
+    tinstk(iel) = tinstk(iel) + max(d2s3*rho*volume(iel)*divu(iel), 0.d0)
+    tinstk(iel) = tinstk(iel) + w11(iel)*rho*volume(iel)
+    tinste(iel) = tinste(iel) + w10(iel)*rho*volume(iel)/tt                  &
+                  + max(d2s3*cpale1*rho*volume(iel)*divu(iel), 0.d0)
 
   enddo
 
 endif
 
 !===============================================================================
-! 8. Prise en compte des termes sources utilisateurs
-!                        et accumulation de masse    : partie explicite
-!      On utilise                       w7, w8, usimpk, usimpe
-!      Les termes sont stockes dans     smbrk, smbre
-!      En sortie de l'etape on conserve tinstk, tinste, divu,
-!                                       smbrk, smbre
-!                                       usimpk, usimpe
+! 9. Take user source terms into account
 
-!    Remarque : l'extrapolation telle qu'elle est ecrite n'a pas grand
-!               sens si IKECOU=1
+!    The scalar strain rate (strain) and the trace of the velocity gradient
+!     (divu) are available.
+!
+!    La partie a expliciter est stockee dans    w7, w8
+!    La partie a impliciter est stockee dans    usimpk, usimpe
+!    En sortie de l'etape on conserve           strain, divu,
 !===============================================================================
 
-! Si on extrapole les T.S.
-if(isto2t.gt.0) then
+do iel = 1, ncel
+  usimpk(iel) = 0.d0
+  usimpe(iel) = 0.d0
+  w7(iel) = 0.d0
+  w8(iel) = 0.d0
+enddo
+
+call ustske &
+!==========
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
+   icepdc , icetsm , itypsm ,                                     &
+   dt     , rtpa   , propce , propfa , propfb ,                   &
+   ckupdc , smacel , strain , divu   ,                            &
+   w7     , w8     , usimpk , usimpe )
+
+! If source terms are extrapolated over time
+if (isto2t.gt.0) then
+
+  thetak = thetav(ik)
+  thetae = thetav(iep)
 
   do iel = 1, ncel
 
-    ! Sauvegarde pour echange
+    ! Recover the value at time (n-1)
     tuexpk = propce(iel,iptsta)
-    ! Pour la suite et le pas de temps suivant
-    propce(iel,iptsta) = smbrk(iel) + w7(iel)
-    ! Termes dependant de la variable resolue et theta PROPCE
-    smbrk(iel) = - thets*tuexpk
-    ! On suppose -usimpk > 0 : on implicite
-    !  le terme utilisateur dependant de la variable resolue
-    smbrk(iel) = usimpk(iel)*rtpa(iel,ik) + smbrk(iel)
-
-    ! Sauvegarde pour echange
     tuexpe = propce(iel,iptsta+1)
-    ! Pour la suite et le pas de temps suivant
+    ! Save the values for the next time-step
+    propce(iel,iptsta) = smbrk(iel) + w7(iel)
     propce(iel,iptsta+1) = smbre(iel) + w8(iel)
-    ! Termes dependant de la variable resolue et theta PROPCE
+
+    ! Explicit Part
+    smbrk(iel) = - thets*tuexpk
     smbre(iel) = - thets*tuexpe
-    ! On suppose -usimpe > 0 : on implicite
-    !  le terme utilisateur dependant de la variable resolue
-    smbre(iel) =  usimpe(iel)*rtpa(iel,iep) + smbre(iel)
+    ! It is assumed that (-usimpk > 0) and though this term is implicit
+    smbrk(iel) = usimpk(iel)*rtpa(iel,ik) + smbrk(iel)
+    smbre(iel) = usimpe(iel)*rtpa(iel,iep) + smbre(iel)
+
+    ! Implicit part
+    tinstk(iel) = tinstk(iel) - usimpk(iel)*thetak
+    tinste(iel) = tinste(iel) - usimpe(iel)*thetae
 
   enddo
 
-! Si on n'extrapole pas les T.S.
+! If no extrapolation over time
 else
   do iel = 1, ncel
+    ! Explicit part
     smbrk(iel) = smbrk(iel) + usimpk(iel)*rtpa(iel,ik) + w7(iel)
-    smbre(iel) = smbre(iel) + usimpe (iel)*rtpa(iel,iep) + w8(iel)
+    smbre(iel) = smbre(iel) + usimpe(iel)*rtpa(iel,iep) + w8(iel)
+
+    ! Implicit part
+    tinstk(iel) = tinstk(iel) + max(-usimpk(iel),zero)
+    tinste(iel) = tinste(iel) + max(-usimpe(iel),zero)
   enddo
 endif
 
 !===============================================================================
-! 8.1 Prise en compte des termes sources lagrangien : partie explicite
+! 10. Prise en compte des termes sources lagrangien
 !     couplage retour
 !===============================================================================
 
@@ -796,21 +809,86 @@ if (iilagr.eq.2 .and. ltsdyn.eq.1) then
                 + ce4 *tslagr(iel,itske) *rtpa(iel,iep)         &
                                          /rtpa(iel,ik)
 
+    ! Termes sources implicite sur k
+    tinstk(iel) = tinstk(iel) + max(-tslagr(iel,itsli),zero)
+
+    ! Termes sources implicte sur Eps
+    tinste(iel) = tinste(iel) + max((-ce4*tslagr(iel,itske)/rtpa(iel,ik)), zero)
+
   enddo
 
 endif
 
 !===============================================================================
-! 9. Prise en compte des termes de conv/diff dans le second membre
+! 11. Mass source terms (Implicit and explicit parts)
+
+!       En sortie de l'etape on conserve divu,
+!                                        smbrk, smbre
+!===============================================================================
+
+if (ncesmp.gt.0) then
+
+  do iel = 1, ncel
+    w2(iel) = 0.d0
+    w3(iel) = 0.d0
+  enddo
+
+  ! Entier egal a 1 (pour navsto : nb de sur-iter)
+  iiun = 1
+
+  ! On incremente smbrs par -Gamma rtpa et rovsdt par Gamma (*theta)
+  ivar = ik
+
+  call catsma &
+  !==========
+ ( ncelet , ncel   , ncesmp , iiun   ,                            &
+   isto2t , thetav(ivar)    ,                                     &
+   icetsm , itypsm(1,ivar)  ,                                     &
+   volume , rtpa(1,ivar)    , smacel(1,ivar) , smacel(1,ipr) ,    &
+   smbrk  , w2     , w4 )
+
+  ivar = iep
+
+  call catsma &
+  !==========
+ ( ncelet , ncel   , ncesmp , iiun   ,                            &
+   isto2t , thetav(ivar)    ,                                     &
+   icetsm , itypsm(1,ivar)  ,                                     &
+   volume , rtpa(1,ivar)    , smacel(1,ivar) , smacel(1,ipr) ,    &
+   smbre  , w3     , w5 )
+
+  ! Si on extrapole les TS on met Gamma Pinj dans propce
+  if(isto2t.gt.0) then
+    do iel = 1, ncel
+      propce(iel,iptsta  ) = propce(iel,iptsta  ) + w4(iel)
+      propce(iel,iptsta+1) = propce(iel,iptsta+1) + w5(iel)
+    enddo
+  ! Sinon on le met directement dans smbr
+  else
+    do iel = 1, ncel
+      smbrk(iel) = smbrk(iel) + w4(iel)
+      smbre(iel) = smbre(iel) + w5(iel)
+    enddo
+  endif
+
+  ! Implicit part (theta is already taken into account in catsma)
+  do iel = 1, ncel
+    tinstk(iel) = tinstk(iel) + w2(iel)
+    tinste(iel) = tinste(iel) + w3(iel)
+  enddo
+
+endif
+
+!===============================================================================
+! 12.1 Prise en compte des termes de conv/diff dans le second membre pour le
+!      couplage renforcé k-epsilon (ikecou == 1)
 
 !      Tableaux de travail              w4, w5
 !      Les termes sont stockes dans     w7 et w8, puis ajoutes a smbrk, smbre
-!      En sortie de l'etape on conserve tinstk, tinste, divu,
+!      En sortie de l'etape on conserve divu,
 !                                       smbrk, smbre
-!                                       usimpk, w7, w8, usimpe
+!                                       w7, w8
 !===============================================================================
-
-! Ceci ne sert a rien si ikecou n'est pas egal a 1
 
 if (ikecou.eq.1) then
 
@@ -819,47 +897,25 @@ if (ikecou.eq.1) then
     w8 (iel) = 0.d0
   enddo
 
-! ---> Traitement de k
-
+  ! ---> Traitement de k
   ivar   = ik
-
   ipp    = ipprtp(ivar)
-
-  iclvar = iclrtp(ivar,icoef )
-  iclvaf = iclrtp(ivar,icoeff)
+  iclvar = iclrtp(ivar, icoef)
+  iclvaf = iclrtp(ivar, icoeff)
   chaine = nomvar(ipp)
 
-  if( idiff(ivar).ge. 1 ) then
+  if (idiff(ivar).ge. 1) then
 
     do iel = 1, ncel
-      if(iturb.eq.51) then
-        w4(iel) = propce(iel,ipcvis)/2.d0                         &
-             + idifft(ivar)*propce(iel,ipcvst)/sigmak
-      else
-        w4(iel) = propce(iel,ipcvis)                              &
-             + idifft(ivar)*propce(iel,ipcvst)/sigmak
-      endif
+      w4(iel) = propce(iel,ipcvis)                              &
+              + idifft(ivar)*propce(iel,ipcvst)/sigmak
     enddo
-    call viscfa                                                   &
+
+    call viscfa &
     !==========
  ( imvisf ,                                                       &
    w4     ,                                                       &
    viscf  , viscb  )
-
-    if (iturb.eq.51) then
-      ! Translate coefa into cofaf and coefb into cofbf
-      do ifac = 1, nfabor
-
-        iel = ifabor(ifac)
-
-        hint = w4(iel)/distb(ifac)
-
-        ! Translate coefa into cofaf and coefb into cofbf
-        coefa(ifac, iclvaf) = -hint*coefa(ifac,iclvar)
-        coefb(ifac, iclvaf) = hint*(1.d0-coefb(ifac,iclvar))
-
-      enddo
-    endif
 
   else
 
@@ -913,46 +969,24 @@ if (ikecou.eq.1) then
   endif
 
 
-! ---> Traitement de epsilon
-
+  ! ---> Traitement de epsilon
   ivar   = iep
-
   ipp    = ipprtp(ivar)
-
-  iclvar = iclrtp(ivar,icoef )
-  iclvaf = iclrtp(ivar,icoeff)
+  iclvar = iclrtp(ivar, icoef)
+  iclvaf = iclrtp(ivar, icoeff)
   chaine = nomvar(ipp)
 
-  if( idiff(ivar).ge. 1 ) then
+  if (idiff(ivar).ge. 1) then
     do iel = 1, ncel
-      if(iturb.eq.51) then
-        w4(iel) = propce(iel,ipcvis)/2.0                          &
-             + idifft(ivar)*propce(iel,ipcvst)/cpalse
-      else
-        w4(iel) = propce(iel,ipcvis)                              &
-             + idifft(ivar)*propce(iel,ipcvst)/sigmae
-      endif
+      w4(iel) = propce(iel,ipcvis)                              &
+              + idifft(ivar)*propce(iel,ipcvst)/sigmae
     enddo
 
     call viscfa &
+    !==========
  ( imvisf ,                                                       &
    w4     ,                                                       &
    viscf  , viscb  )
-
-    if (iturb.eq.51) then
-      ! Translate coefa into cofaf and coefb into cofbf
-      do ifac = 1, nfabor
-
-        iel = ifabor(ifac)
-
-        hint = w4(iel)/distb(ifac)
-
-        ! Translate coefa into cofaf and coefb into cofbf
-        coefa(ifac, iclvaf) = -hint*coefa(ifac,iclvar)
-        coefb(ifac, iclvaf) = hint*(1.d0-coefb(ifac,iclvar))
-
-      enddo
-    endif
 
   else
 
@@ -1013,95 +1047,22 @@ if (ikecou.eq.1) then
 endif
 
 !===============================================================================
-! 10. Ajout des termes sources de masse explicites
+! 12.2 k-Epsilon coupling (ikecou == 1)
 
-!       Les parties implicites eventuelles sont conservees dans w2 et w3
-!         et utilisees dans la phase d'implicitation cv/diff
-
-!       Les termes sont stockes dans     smbrk, smbre, w2, w3
-!       En sortie de l'etape on conserve tinstk, tinste, divu,
-!                                        smbrk, smbre
-!                                        usimpk, usimpe, w2, w3
-!===============================================================================
-
-if (ncesmp.gt.0) then
-
-  do iel = 1, ncel
-    w2(iel) = 0.d0
-    w3(iel) = 0.d0
-  enddo
-
-  ! Entier egal a 1 (pour navsto : nb de sur-iter)
-  iiun = 1
-
-  ! On incremente smbrs par -Gamma rtpa et rovsdt par Gamma (*theta)
-  ivar = ik
-
-  call catsma &
-  !==========
- ( ncelet , ncel   , ncesmp , iiun   ,                            &
-   isto2t , thetav(ivar)    ,                                     &
-   icetsm , itypsm(1,ivar)  ,                                     &
-   volume , rtpa(1,ivar)    , smacel(1,ivar) , smacel(1,ipr) ,    &
-   smbrk  , w2     , w4 )
-
-  ivar = iep
-
-  call catsma &
-  !==========
- ( ncelet , ncel   , ncesmp , iiun   ,                            &
-   isto2t , thetav(ivar)    ,                                     &
-   icetsm , itypsm(1,ivar)  ,                                     &
-   volume , rtpa(1,ivar)    , smacel(1,ivar) , smacel(1,ipr) ,    &
-   smbre  , w3     , w5 )
-
-  ! Si on extrapole les TS on met Gamma Pinj dans propce
-  if(isto2t.gt.0) then
-    do iel = 1, ncel
-      propce(iel,iptsta  ) = propce(iel,iptsta  ) + w4(iel)
-      propce(iel,iptsta+1) = propce(iel,iptsta+1) + w5(iel)
-    enddo
-  ! Sinon on le met directement dans smbr
-  else
-    do iel = 1, ncel
-      smbrk(iel) = smbrk(iel) + w4(iel)
-      smbre(iel) = smbre(iel) + w5(iel)
-    enddo
-  endif
-
-endif
-
-! On libere                       w4, w5
-
-! Finalisation des termes sources
-if(isto2t.gt.0) then
-  thetp1 = 1.d0 + thets
-  do iel = 1, ncel
-    smbrk(iel) = smbrk(iel) + thetp1 * propce(iel,iptsta)
-    smbre(iel) = smbre(iel) + thetp1 * propce(iel,iptsta+1)
-  enddo
-endif
-
-!===============================================================================
-! 11. Increments des termes sources dans le second membre
-
-!       On utilise                       tinstk, tinste, divu
-!       Les termes sont stockes dans     smbrk, smbre
-!       En sortie de l'etape on conserve smbrk, smbre,
-!                                        usimpk, usimpe, w2, w3, w7, w8
 !===============================================================================
 
 ! Ordre 2 non pris en compte
-if(ikecou.eq.1) then
+if (ikecou.eq.1) then
 
   if (iturb.eq.20) then
 
     do iel = 1, ncel
 
-      rom = propce(iel,ipcrom)
+      rho = propce(iel,ipcrom)
+      visct = propce(iel,ipcvto)
 
       ! Coupled solving
-      romvsd=1.d0/(rom*volume(iel))
+      romvsd = 1.d0/(rho*volume(iel))
       smbrk(iel)=smbrk(iel)*romvsd
       smbre(iel)=smbre(iel)*romvsd
       divp23= d2s3*max(divu(iel),zero)
@@ -1110,9 +1071,9 @@ if(ikecou.eq.1) then
 
       a11 = 1.d0/dt(iel)                                          &
            -2.d0*rtpa(iel,ik)/rtpa(iel,iep)                       &
-           *cmu*min(tinstk(iel),zero)+divp23
+           *cmu*min(prdtke(iel)/visct,zero)+divp23
       a12 = 1.d0
-      a21 = -ce1*cmu*tinste(iel)-ce2rc(iel)*epssuk*epssuk
+      a21 = -ce1*cmu*prdeps(iel)/visct-ce2rc(iel)*epssuk*epssuk
       a22 = 1.d0/dt(iel)+ce1*divp23                               &
            +2.d0*ce2rc(iel)*epssuk
 
@@ -1122,253 +1083,69 @@ if(ikecou.eq.1) then
       delte = (-a21*smbrk(iel) +a11*smbre(iel) )*unsdet
 
       ! New source term for the iterative process
-      romvsd = rom*volume(iel)/dt(iel)
+      romvsd = rho*volume(iel)/dt(iel)
 
       smbrk(iel) = romvsd*deltk
       smbre(iel) = romvsd*delte
 
     enddo
 
-  ! Dans verini on bloque la combinaison iturb=21/ikecou=1
-  else if (iturb.eq.21) then
-
-    write(nfecra,*)'ikecou=1 non valide en k-eps prod lin'
-    call csexit (1)
-  !  Section non totalement validee (a priori ca marche, mais pas trop stable) :
-  !  en fait le v2f est meilleur avec ikecou=0, on bloque donc la combinaison
-  !  iturb=50/ikecou=1 au niveau de verini. Ces lignes sont donc inaccessibles.
-  !  On les laisse au cas ou .....
-  else if (iturb.eq.50) then
-
+    ! on enleve la convection/diffusion au temps n a smbrk et smbre
+    ! si on les avait calcules
     do iel = 1, ncel
-
-      rom = propce(iel,ipcrom)
-
-      ! Coupled solving
-      romvsd=1.d0/(rom*volume(iel))
-      smbrk(iel)=smbrk(iel)*romvsd
-      smbre(iel)=smbre(iel)*romvsd
-      divp23= d2s3*max(divu(iel),zero)
-
-      xeps = rtpa(iel,iep )
-      xk   = rtpa(iel,ik )
-      xphi = rtpa(iel,iphi)
-      xphi = max(xphi,epzero)
-      xnu  = propce(iel,ipcvis)/propce(iel,ipcrom)
-      ctsqnu= cv2fct*sqrt(xnu)
-      ceps1= 1.4d0*(1.d0+cv2fa1*sqrt(1.d0/xphi))
-      epssuk = xeps/xk
-      ttke = xk / xeps
-      ttmin = cv2fct*sqrt(xnu/xeps)
-
-      if(ttke.gt.ttmin) then
-        a11 = 1.d0/dt(iel)                                        &
-             -2.d0*xk/xeps*xphi                                   &
-             *cv2fmu*min(tinstk(iel),zero)+divp23
-        ! Pour a12 on fait comme en k-eps standard pour l'instant,
-        ! on ne prend pas le terme en P+G ... est-ce judicieux ?
-        a12 = 1.d0
-        a21 = -ceps1*cv2fmu*xphi*tinste(iel)-ce2rc(iel)*epssuk*epssuk
-        a22 = 1.d0/dt(iel)+ceps1*divp23                           &
-             +2.d0*ce2rc(iel)*epssuk
-      else
-        a11 = 1.d0/dt(iel)                                        &
-             -cv2fmu*xphi*ctsqnu*min(tinstk(iel),zero)/sqrt(xeps) &
-             +divp23
-        ! Pour a12 on fait comme en k-eps standard pour l'instant,
-        ! on ne prend pas le terme en P+G ... est-ce judicieux ?
-        a12 = 1.d0
-        ! Le terme en divp23 dans a21 n'est pas forcement judicieux
-        ! (a-t-on besoin du MAX ?)
-        a21 = -ceps1*cv2fmu*xphi*tinste(iel)                      &
-             +ceps1*sqrt(xeps)/ctsqnu*divp23
-        a22 = 1.d0/dt(iel)+1.d0/2.d0*ceps1*divp23*xk              &
-             /ctsqnu/sqrt(xeps)                                   &
-             +3.d0/2.d0*ce2rc(iel)/ctsqnu*sqrt(xeps)
-      endif
-
-      unsdet = 1.d0/(a11*a22 -a12*a21)
-
-      deltk = ( a22*smbrk(iel) -a12*smbre(iel) )*unsdet
-      delte = (-a21*smbrk(iel) +a11*smbre(iel) )*unsdet
-
-      ! New source term for the iterative process
-      romvsd = rom*volume(iel)/dt(iel)
-
-      smbrk(iel) = romvsd*deltk
-      smbre(iel) = romvsd*delte
-
+      smbrk(iel) = smbrk(iel) - w7(iel)
+      smbre(iel) = smbre(iel) - w8(iel)
     enddo
 
-  ! Dans verini on bloque la combinaison iturb=51/ikecou=1
-  else if (iturb.eq.51) then
+  ! Dans verini on bloque la combinaison iturb!=20/ikecou=1
+  else
 
-    write(nfecra,*)'ikecou=1 non valide en bl-v2/k'
+    write(nfecra,*)'ikecou=1 non valide avec ce modele de turbulence'
     call csexit (1)
 
   endif
 
 endif
 
-! On libere                       tinstk, tinste, divu
-
 !===============================================================================
-! 12. Termes instationnaires
-
-!     On utilise                       w2, w3, w7, w8
-!                                      usimpk, usimpe
-!     Les termes sont stockes dans     tinstk, tinste
-!     En sortie de l'etape on conserve smbrk, smbre,  tinstk, tinste
+! 13. Finalization of the Right Hand Side when activating 2nd time order
 !===============================================================================
 
-! --- Explicit part
-
-!     on enleve la convection/diffusion au temps n a smbrk et smbre
-!     si on les avait calcules
-if (ikecou.eq.1) then
+if (isto2t.gt.0) then
+  thetp1 = 1.d0 + thets
   do iel = 1, ncel
-    smbrk(iel) = smbrk(iel) - w7(iel)
-    smbre(iel) = smbre(iel) - w8(iel)
+    smbrk(iel) = smbrk(iel) + thetp1 * propce(iel,iptsta)
+    smbre(iel) = smbre(iel) + thetp1 * propce(iel,iptsta+1)
   enddo
 endif
-
-! --- RHO/DT
-
-do iel = 1, ncel
-  rom = propce(iel,ipcrom)
-  romvsd = rom*volume(iel)/dt(iel)
-  tinstk(iel) = istat(ik)*romvsd
-  tinste(iel) = istat(iep)*romvsd
-enddo
-
-! --- Source de masse (le theta est deja inclus par catsma)
-if (ncesmp.gt.0) then
-  do iel = 1, ncel
-    tinstk(iel) = tinstk(iel) + w2(iel)
-    tinste(iel) = tinste(iel) + w3(iel)
-  enddo
-endif
-
-! --- Termes sources utilisateurs
-if(isto2t.gt.0) then
-  thetak = thetav(ik)
-  thetae = thetav(iep)
-  do iel = 1, ncel
-    tinstk(iel) = tinstk(iel) -usimpk(iel)*thetak
-    tinste(iel) = tinste(iel) -usimpe (iel)*thetae
-  enddo
-else
-  do iel = 1, ncel
-    tinstk(iel) = tinstk(iel) + max(-usimpk(iel),zero)
-    tinste(iel) = tinste(iel) + max(-usimpe (iel),zero)
-  enddo
-endif
-
-! --- prise en compte des termes lagrangien : couplage retour
-
-! Ordre 2 non pris en compte
-if (iilagr.eq.2 .and. ltsdyn.eq.1) then
-
-  do iel = 1,ncel
-
-! Termes sources implicite sur k
-
-    tinstk(iel) = tinstk(iel) + max(-tslagr(iel,itsli),zero)
-
-! Termes sources implicte sur Eps
-
-    tinste(iel) = tinste(iel)                                     &
-          + max( (-ce4*tslagr(iel,itske)/rtpa(iel,ik)) , zero)
-
-  enddo
-
-endif
-
-! Si ikecou=0, on implicite plus fortement k et eps
-
-if(ikecou.eq.0)then
-  if(itytur.eq.2)then
-    do iel=1,ncel
-      xeps = rtpa(iel,iep )
-      xk   = rtpa(iel,ik )
-      rom = propce(iel,ipcrom)
-      ttke = xk / xeps
-      if(xk.gt.1.d-12) then
-        tinstk(iel) = tinstk(iel) +                               &
-             rom*volume(iel)/ttke
-      endif
-      tinste(iel) = tinste(iel) +                                 &
-           ce2rc(iel)*rom*volume(iel)/ttke
-    enddo
-  else if(iturb.eq.50)then
-    do iel=1,ncel
-      xeps = rtpa(iel,iep )
-      xk   = rtpa(iel,ik )
-      rom = propce(iel,ipcrom)
-      xnu  = propce(iel,ipcvis)/rom
-      ttke = xk / xeps
-      ttmin = cv2fct*sqrt(xnu/xeps)
-      tt = max(ttke,ttmin)
-      if(xk.gt.1.d-12) then
-        tinstk(iel) = tinstk(iel) +                               &
-             rom*volume(iel)/ttke
-      endif
-      tinste(iel) = tinste(iel) +                                 &
-           ce2rc(iel)*rom*volume(iel)/tt
-    enddo
-  else if(iturb.eq.51)then
-    do iel=1,ncel
-      xeps = rtpa(iel,iep )
-      xk   = rtpa(iel,ik )
-      rom = propce(iel,ipcrom)
-      xnu  = propce(iel,ipcvis)/rom
-      ttke = xk / xeps
-      ttmin = cpalct*sqrt(xnu/xeps)
-      tt = sqrt(ttke**2.d0+ttmin**2.d0)
-      if(xk.gt.1.d-12) then
-        tinstk(iel) = tinstk(iel) +                               &
-             rom*volume(iel)/ttke
-      endif
-      tinstk(iel) = tinstk(iel) +                                 &
-             rom*w11(iel)*volume(iel)
-      tinste(iel) = tinste(iel) +                                 &
-           w10(iel)*rom*volume(iel)/tt
-    enddo
-
-  endif
-endif
-
-! On libere w2, w3, usimpk, usimpe
 
 !===============================================================================
-! 13. Solving
+! 14. Solving
 
 !       On utilise                      smbrk, smbre,  tinstk, tinste
 !       Tableaux de travail             w1
 !===============================================================================
 
 ! ---> turbulent kinetic (k) energy treatment
-
 ivar = ik
 iclvar = iclrtp(ivar,icoef )
 iclvaf = iclrtp(ivar,icoeff)
-
 ipp    = ipprtp(ivar)
 
-! "vitesse" de diffusion facette
-
-if( idiff(ivar).ge. 1 ) then
+! Face viscosity
+if (idiff(ivar).ge.1) then
 
   do iel = 1, ncel
-    if(iturb.eq.51) then
+    if (iturb.eq.51) then
       w1(iel) = propce(iel,ipcvis)/2.d0                           &
-                          + idifft(ivar)*propce(iel,ipcvst)/sigmak
+              + idifft(ivar)*propce(iel,ipcvst)/sigmak
     else
       w1(iel) = propce(iel,ipcvis)                                &
-                          + idifft(ivar)*propce(iel,ipcvst)/sigmak
+              + idifft(ivar)*propce(iel,ipcvst)/sigmak
     endif
   enddo
-  call viscfa                                                     &
+
+  call viscfa &
   !==========
  ( imvisf ,                                                       &
    w1     ,                                                       &
@@ -1386,7 +1163,6 @@ else
 endif
 
 ! Solving k
-
 iconvp = iconv (ivar)
 idiffp = idiff (ivar)
 ireslp = iresol(ivar)
@@ -1434,28 +1210,25 @@ call codits &
    rvoid  , rvoid  )
 
 ! ---> Turbulent dissipation (epsilon) treatment
-
 ivar = iep
 iclvar = iclrtp(ivar,icoef )
 iclvaf = iclrtp(ivar,icoeff)
-
 ipp    = ipprtp(ivar)
 
-
-! "vitesse" de diffusion facette
-
-if( idiff(ivar).ge. 1 ) then
+! Face viscosity
+if (idiff(ivar).ge.1) then
   do iel = 1, ncel
-    if(iturb.eq.51) then
+    if (iturb.eq.51) then
       w1(iel) = propce(iel,ipcvis)/2.d0                           &
-                          + idifft(ivar)*propce(iel,ipcvst)/cpalse
+              + idifft(ivar)*propce(iel,ipcvst)/cpalse
     else
       w1(iel) = propce(iel,ipcvis)                                &
-                          + idifft(ivar)*propce(iel,ipcvst)/sigmae
+              + idifft(ivar)*propce(iel,ipcvst)/sigmae
     endif
   enddo
 
   call viscfa &
+  !==========
  ( imvisf ,                                                       &
    w1     ,                                                       &
    viscf  , viscb  )
@@ -1472,7 +1245,6 @@ else
 endif
 
 ! Solving epsilon
-
 iconvp = iconv (ivar)
 idiffp = idiff (ivar)
 ireslp = iresol(ivar)
@@ -1520,12 +1292,12 @@ call codits &
    rvoid  , rvoid  )
 
 !===============================================================================
-! 14. Clipping
+! 15. Clipping
 !===============================================================================
 
 iclip = 1
 iwarnp = iwarni(ik)
-call clipke                                                       &
+call clipke &
 !==========
  ( ncelet , ncel   , nvar   ,                                     &
    iclip  , iwarnp ,                                              &
@@ -1535,7 +1307,7 @@ call clipke                                                       &
 deallocate(viscf, viscb)
 deallocate(usimpk)
 deallocate(smbrk, smbre, rovsdt)
-deallocate(tinstk, tinste, divu)
+deallocate(tinstk, tinste, divu, strain)
 deallocate(w1, w2, w3)
 deallocate(w4, w5)
 deallocate(w7, w8, usimpe)
@@ -1543,6 +1315,7 @@ deallocate(dpvar)
 deallocate(ce2rc)
 
 if (allocated(w10)) deallocate(w10, w11)
+if (allocated(prdtke)) deallocate(prdtke, prdeps)
 
 !--------
 ! Formats
