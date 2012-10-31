@@ -417,6 +417,12 @@ dist-hook: changelog
 	-rm -rf `find $(distdir)/gui  -name .svn`
 	-rm -rf `find $(distdir)/patches -name .svn`
 	-rm -rf `find $(distdir)/salome -name .svn`
+	-rm -rf $(distdir)/extras/installer/install_saturne.py.in
+	sed \
+	-e 's|@distdir[@]|$(distdir)|g' \
+	-e 's|@PACKAGE_VERSION[@]|$(PACKAGE_VERSION)|g' \
+	${top_srcdir}/extras/installer/install_saturne.py.in > ${distdir}/extras/installer/install_saturne.py
+	chmod +x $(distdir)/extras/installer/install_saturne.py
 
 clean-local:
 	-rm -f *__genmod.f90 *__genmod.mod
