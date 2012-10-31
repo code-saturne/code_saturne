@@ -2397,7 +2397,7 @@ _cs_post_output_fields(cs_post_mesh_t   *post_mesh,
     const char *name;
 
     const int location_id = (post_mesh->cat_id == -1) ?
-      CS_MESH_LOCATION_CELLS : CS_POST_LOCATION_B_FACE;
+      CS_MESH_LOCATION_CELLS : CS_MESH_LOCATION_BOUNDARY_FACES;
 
     const int n_fields = cs_field_n_fields();
     const int vis_key_id = cs_field_key_id("post_vis");
@@ -2426,7 +2426,7 @@ _cs_post_output_fields(cs_post_mesh_t   *post_mesh,
 
       if (location_id == CS_MESH_LOCATION_CELLS)
         cell_val = f->val;
-      else /* if (location_id == CS_MESH_LOCATION_B_FACES) */
+      else /* if (location_id == CS_MESH_LOCATION_BOUNDARY_FACES) */
         b_face_val = f->val;
 
       name = cs_field_get_key_str(f, label_key_id);
@@ -2454,7 +2454,7 @@ _cs_post_output_fields(cs_post_mesh_t   *post_mesh,
           _cs_post_build_moment(f, moment_id, n_elts, elt_list, _val);
           if (location_id == CS_MESH_LOCATION_CELLS)
             cell_val = _val;
-          else /* if (location_id == CS_MESH_LOCATION_B_FACES) */
+          else /* if (location_id == CS_MESH_LOCATION_BOUNDARY_FACES) */
             b_face_val = _val;
 
           interleaved = true;
