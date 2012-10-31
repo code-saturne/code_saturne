@@ -426,14 +426,14 @@ _add_file(cs_restart_t  *r)
  *----------------------------------------------------------------------------*/
 
 static void
-_read_ent_values(cs_restart_t        *r,
-                 cs_io_sec_header_t  *header,
-                 cs_gnum_t            n_glob_ents,
-                 cs_lnum_t            n_ents,
-                 const cs_gnum_t      ent_global_num[],
-                 int                  n_location_vals,
-                 cs_type_t            val_type,
-                 cs_byte_t            vals[])
+_read_ent_values(cs_restart_t           *r,
+                 cs_io_sec_header_t     *header,
+                 cs_gnum_t               n_glob_ents,
+                 cs_lnum_t               n_ents,
+                 const cs_gnum_t         ent_global_num[],
+                 int                     n_location_vals,
+                 cs_restart_val_type_t   val_type,
+                 cs_byte_t               vals[])
 {
   cs_byte_t  *buffer = NULL;
 
@@ -452,11 +452,15 @@ _read_ent_values(cs_restart_t        *r,
     nbr_byte_ent = n_location_vals * sizeof(cs_int_t);
     cs_io_set_cs_lnum(header, r->fh);
     break;
+  case CS_TYPE_cs_gnum_t:
+    nbr_byte_ent = n_location_vals * sizeof(cs_gnum_t);
+    cs_io_set_cs_gnum(header, r->fh);
+    break;
   case CS_TYPE_cs_real_t:
     nbr_byte_ent = n_location_vals * sizeof(cs_real_t);
     break;
   default:
-    assert(val_type == CS_TYPE_cs_int_t || val_type == CS_TYPE_cs_real_t);
+    assert(0);
   }
 
   bi = cs_block_dist_compute_sizes(cs_glob_rank_id,
@@ -514,15 +518,15 @@ _read_ent_values(cs_restart_t        *r,
  *----------------------------------------------------------------------------*/
 
 static void
-_write_ent_values(const cs_restart_t  *r,
-                  const char          *sec_name,
-                  cs_gnum_t            n_glob_ents,
-                  cs_lnum_t            n_ents,
-                  const cs_gnum_t     *ent_global_num,
-                  int                  location_id,
-                  int                  n_location_vals,
-                  cs_type_t            val_type,
-                  const cs_byte_t     *vals)
+_write_ent_values(const cs_restart_t     *r,
+                  const char             *sec_name,
+                  cs_gnum_t               n_glob_ents,
+                  cs_lnum_t               n_ents,
+                  const cs_gnum_t        *ent_global_num,
+                  int                     location_id,
+                  int                     n_location_vals,
+                  cs_restart_val_type_t   val_type,
+                  const cs_byte_t        *vals)
 {
   cs_lnum_t  block_buf_size = 0;
 
@@ -541,13 +545,17 @@ _write_ent_values(const cs_restart_t  *r,
     nbr_byte_ent = n_location_vals * sizeof(cs_int_t);
     elt_type = (sizeof(cs_int_t) == 8) ? CS_INT64 : CS_INT32;
     break;
+  case CS_TYPE_cs_gnum_t:
+    nbr_byte_ent = n_location_vals * sizeof(cs_gnum_t);
+    elt_type = (sizeof(cs_gnum_t) == 8) ? CS_UINT64 : CS_UINT32;
+    break;
   case CS_TYPE_cs_real_t:
     nbr_byte_ent = n_location_vals * sizeof(cs_real_t);
     elt_type =   (sizeof(cs_real_t) == cs_datatype_size[CS_DOUBLE])
                ? CS_DOUBLE : CS_FLOAT;
     break;
   default:
-    assert(val_type == CS_TYPE_cs_int_t || val_type == CS_TYPE_cs_real_t);
+    assert(0);
   }
 
   bi = cs_block_dist_compute_sizes(cs_glob_rank_id,
@@ -612,17 +620,17 @@ _write_ent_values(const cs_restart_t  *r,
  *----------------------------------------------------------------------------*/
 
 static void
-_section_f77_to_c(const cs_int_t   *numsui,
-                  const cs_int_t   *itysup,
-                  const cs_int_t   *irtype,
-                  cs_restart_t    **r,
-                  int              *location,
-                  cs_type_t        *val_type,
-                  cs_int_t         *ierror)
+_section_f77_to_c(const cs_int_t          *numsui,
+                  const cs_int_t          *itysup,
+                  const cs_int_t          *irtype,
+                  cs_restart_t           **r,
+                  int                     *location,
+                  cs_restart_val_type_t   *val_type,
+                  cs_int_t                *ierror)
 {
   cs_int_t r_id = *numsui - 1;
 
-  *ierror = CS_RESTART_SUCCES;
+  *ierror = CS_RESTART_SUCCESS;
 
   /* Pointer to associated restart file handle */
 
@@ -707,11 +715,11 @@ _section_f77_to_c(const cs_int_t   *numsui,
  *----------------------------------------------------------------------------*/
 
 static void
-_restart_permute_read(cs_int_t          n_ents,
-                      const cs_gnum_t  *ini_ent_num,
-                      cs_int_t          n_location_vals,
-                      cs_type_t         val_type,
-                      cs_byte_t        *vals)
+_restart_permute_read(cs_int_t                n_ents,
+                      const cs_gnum_t        *ini_ent_num,
+                      cs_int_t                n_location_vals,
+                      cs_restart_val_type_t   val_type,
+                      cs_byte_t              *vals)
 {
   cs_int_t ent_id, jj;
 
@@ -730,6 +738,26 @@ _restart_permute_read(cs_int_t          n_ents,
       cs_int_t  *val_cur = (cs_int_t *)vals;
 
       BFT_MALLOC(val_ord, n_ents * n_location_vals, cs_int_t);
+
+      for (ent_id = 0; ent_id < n_ents; ent_id++) {
+        for (jj = 0; jj < n_location_vals; jj++)
+          val_ord[ii++]
+            = val_cur[(ini_ent_num[ent_id] - 1) * n_location_vals + jj];
+      }
+
+      for (ii = 0; ii < n_ents * n_location_vals; ii++)
+        val_cur[ii] = val_ord[ii];
+
+      BFT_FREE(val_ord);
+    }
+    break;
+
+  case CS_TYPE_cs_gnum_t:
+    {
+      cs_gnum_t  *val_ord;
+      cs_gnum_t  *val_cur = (cs_gnum_t *)vals;
+
+      BFT_MALLOC(val_ord, n_ents * n_location_vals, cs_gnum_t);
 
       for (ent_id = 0; ent_id < n_ents; ent_id++) {
         for (jj = 0; jj < n_location_vals; jj++)
@@ -765,7 +793,7 @@ _restart_permute_read(cs_int_t          n_ents,
     break;
 
   default:
-    assert(val_type == CS_TYPE_cs_int_t || val_type == CS_TYPE_cs_real_t);
+    assert(0);
 
   }
 }
@@ -785,11 +813,11 @@ _restart_permute_read(cs_int_t          n_ents,
  *----------------------------------------------------------------------------*/
 
 static cs_byte_t *
-_restart_permute_write(cs_int_t          n_ents,
-                       const cs_gnum_t  *ini_ent_num,
-                       cs_int_t          n_location_vals,
-                       cs_type_t         val_type,
-                       const cs_byte_t  *vals)
+_restart_permute_write(cs_int_t                n_ents,
+                       const cs_gnum_t        *ini_ent_num,
+                       cs_int_t                n_location_vals,
+                       cs_restart_val_type_t   val_type,
+                       const cs_byte_t        *vals)
 {
   cs_int_t  ent_id, jj;
 
@@ -808,6 +836,23 @@ _restart_permute_write(cs_int_t          n_ents,
       const cs_int_t  *val_cur = (const cs_int_t *)vals;
 
       BFT_MALLOC(val_ord, n_ents * n_location_vals, cs_int_t);
+
+      for (ent_id = 0; ent_id < n_ents; ent_id++) {
+        for (jj = 0; jj < n_location_vals; jj++)
+          val_ord[(ini_ent_num[ent_id] - 1) * n_location_vals + jj]
+            = val_cur[ii++];
+      }
+
+      return (cs_byte_t *)val_ord;
+    }
+    break;
+
+  case CS_TYPE_cs_gnum_t:
+    {
+      cs_gnum_t  *val_ord;
+      const cs_gnum_t  *val_cur = (const cs_gnum_t *)vals;
+
+      BFT_MALLOC(val_ord, n_ents * n_location_vals, cs_gnum_t);
 
       for (ent_id = 0; ent_id < n_ents; ent_id++) {
         for (jj = 0; jj < n_location_vals; jj++)
@@ -969,7 +1014,7 @@ void CS_PROCF (opnsui, OPNSUI)
   /* Initialization */
 
   *numsui = 0;
-  *ierror = CS_RESTART_SUCCES;
+  *ierror = CS_RESTART_SUCCESS;
 
   /* Handle name for C API */
 
@@ -997,7 +1042,7 @@ void CS_PROCF (opnsui, OPNSUI)
 
   /* Search for an available slot and create file */
 
-  if (*ierror == CS_RESTART_SUCCES) {
+  if (*ierror == CS_RESTART_SUCCESS) {
 
     id = _new_restart_id();
     _restart_pointer[id] = cs_restart_create(bufname, NULL, restart_mode);
@@ -1035,7 +1080,7 @@ void CS_PROCF (clssui, CLSSUI)
 {
   cs_int_t r_id = *numsui - 1;
 
-  *ierror = CS_RESTART_SUCCES;
+  *ierror = CS_RESTART_SUCCESS;
 
   /* Check that the file is valid */
 
@@ -1192,12 +1237,12 @@ void CS_PROCF (lecsui, LECSUI)
 {
   char    *bufname;
 
-  cs_type_t   val_type;
+  cs_restart_val_type_t   val_type;
 
   cs_restart_t  *restart;
   int          location_id;
 
-  *ierror = CS_RESTART_SUCCES;
+  *ierror = CS_RESTART_SUCCESS;
 
   /* Handle name for C API */
 
@@ -1213,7 +1258,7 @@ void CS_PROCF (lecsui, LECSUI)
                     &val_type,
                     ierror);
 
-  if (*ierror < CS_RESTART_SUCCES)
+  if (*ierror < CS_RESTART_SUCCESS)
     return;
 
   /* Read section */
@@ -1269,12 +1314,12 @@ void CS_PROCF (ecrsui, ECRSUI)
 {
   char *bufname;
 
-  cs_type_t val_type;
+  cs_restart_val_type_t val_type;
 
   cs_restart_t *restart;
   int location_id;
 
-  *ierror = CS_RESTART_SUCCES;
+  *ierror = CS_RESTART_SUCCESS;
 
   /* Handle name for C API */
 
@@ -1290,7 +1335,7 @@ void CS_PROCF (ecrsui, ECRSUI)
                     &val_type,
                     ierror);
 
-  if (*ierror < CS_RESTART_SUCCES)
+  if (*ierror < CS_RESTART_SUCCESS)
     return;
 
   /* Write section */
@@ -1656,7 +1701,7 @@ cs_restart_destroy(cs_restart_t  *restart)
 /*----------------------------------------------------------------------------
  * Check the locations associated with a restart file.
  *
- * For each type of entity, the correspondinf flag is set to true if the
+ * For each type of entity, the corresponding flag is set to true if the
  * associated number of entities matches the current value (and so that we
  * consider the mesh locations are the same), false otherwise.
  *
@@ -1755,7 +1800,7 @@ cs_restart_add_location(cs_restart_t     *restart,
         timing[1] = cs_timer_wtime();
         _restart_wtime[restart->mode] += timing[1] - timing[0];
 
-        return loc_id + 1;
+        return loc_id;
 
       }
     }
@@ -1849,17 +1894,17 @@ cs_restart_dump_index(const cs_restart_t  *restart)
  *   val_type        <-- value type
  *   val             --> array of values
  *
- * returns: 0 (CS_RESTART_SUCCES) in case of success,
+ * returns: 0 (CS_RESTART_SUCCESS) in case of success,
  *          or error code (CS_RESTART_ERR_xxx) in case of error
  *----------------------------------------------------------------------------*/
 
 int
-cs_restart_read_section(cs_restart_t  *restart,
-                        const char    *sec_name,
-                        int            location_id,
-                        cs_int_t       n_location_vals,
-                        cs_type_t      val_type,
-                        void          *val)
+cs_restart_read_section(cs_restart_t           *restart,
+                        const char             *sec_name,
+                        int                     location_id,
+                        cs_int_t                n_location_vals,
+                        cs_restart_val_type_t   val_type,
+                        void                   *val)
 {
   double timing[2];
 
@@ -1980,6 +2025,14 @@ cs_restart_read_section(cs_restart_t  *restart,
       return CS_RESTART_ERR_VAL_TYPE;
     }
   }
+  else if (header.elt_type == CS_UINT32 || header.elt_type == CS_UINT64) {
+    cs_io_set_cs_gnum(&header, restart->fh);
+    if (val_type != CS_TYPE_cs_gnum_t) {
+      bft_printf(_("  %s: section \"%s\" is not of global number type.\n"),
+                 restart->name, sec_name);
+      return CS_RESTART_ERR_VAL_TYPE;
+    }
+  }
   else if (header.elt_type == CS_FLOAT || header.elt_type == CS_DOUBLE) {
     if (sizeof(cs_real_t) != cs_datatype_size[header.elt_type]) {
       if (sizeof(cs_real_t) == cs_datatype_size[CS_FLOAT])
@@ -2036,7 +2089,7 @@ cs_restart_read_section(cs_restart_t  *restart,
 
   /* Return */
 
-  return CS_RESTART_SUCCES;
+  return CS_RESTART_SUCCESS;
 }
 
 /*----------------------------------------------------------------------------
@@ -2052,12 +2105,12 @@ cs_restart_read_section(cs_restart_t  *restart,
  *----------------------------------------------------------------------------*/
 
 void
-cs_restart_write_section(cs_restart_t  *restart,
-                         const char    *sec_name,
-                         int            location_id,
-                         cs_int_t       n_location_vals,
-                         cs_type_t      val_type,
-                         const void    *val)
+cs_restart_write_section(cs_restart_t           *restart,
+                         const char             *sec_name,
+                         int                     location_id,
+                         cs_int_t                n_location_vals,
+                         cs_restart_val_type_t   val_type,
+                         const void             *val)
 {
   double timing[2];
 
@@ -2096,12 +2149,15 @@ cs_restart_write_section(cs_restart_t  *restart,
   case CS_TYPE_cs_int_t:
     elt_type = (sizeof(cs_int_t) == 8) ? CS_INT64 : CS_INT32;
     break;
+  case CS_TYPE_cs_gnum_t:
+    elt_type = (sizeof(cs_gnum_t) == 8) ? CS_UINT64 : CS_UINT32;
+    break;
   case CS_TYPE_cs_real_t:
     elt_type =   (sizeof(cs_real_t) == cs_datatype_size[CS_DOUBLE])
                ? CS_DOUBLE : CS_FLOAT;
     break;
   default:
-    assert(val_type == CS_TYPE_cs_int_t || val_type == CS_TYPE_cs_real_t);
+    assert(0);
   }
 
   /* Section contents */

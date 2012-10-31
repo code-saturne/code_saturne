@@ -452,7 +452,7 @@ void CS_PROCF (ecrctw, ECRCTW)
 
   cs_restart_t         *suite;
   cs_mesh_location_type_t  location_id,support;
-  cs_type_t             typ_val;
+  cs_restart_val_type_t    typ_val;
 
   cs_ctwr_zone_t  *ct;
   char            *location_name = NULL;
@@ -461,7 +461,7 @@ void CS_PROCF (ecrctw, ECRCTW)
 
   cs_lnum_t n_g_elements, n_elements;
 
-  ierror = CS_RESTART_SUCCES;
+  ierror = CS_RESTART_SUCCESS;
 
   /* Open the restart file */
 
@@ -631,7 +631,7 @@ void CS_PROCF (lecctw, LECCTW)
 
   cs_restart_t             *suite;
   cs_mesh_location_type_t   location_id,support;
-  cs_type_t                 typ_val;
+  cs_restart_val_type_t     typ_val;
 
   cs_lnum_t n_g_elements, n_elements;
 
@@ -641,7 +641,7 @@ void CS_PROCF (lecctw, LECCTW)
   cs_int_t     length        = 0;
   cs_gnum_t   *g_elt_num     = NULL;
 
-  ierror = CS_RESTART_SUCCES;
+  ierror = CS_RESTART_SUCCESS;
 
   /* Open the restart file */
 
@@ -715,7 +715,7 @@ void CS_PROCF (lecctw, LECCTW)
                                        typ_val,
                                        tabvar);
 
-      if (ierror < CS_RESTART_SUCCES)
+      if (ierror < CS_RESTART_SUCCESS)
         bft_error(__FILE__, __LINE__, 0,
                   _("Problem while reading section in the restart file\n"
                     "for the cooling tower module:\n"
@@ -786,7 +786,7 @@ void CS_PROCF (lecctw, LECCTW)
                                        typ_val,
                                        tabvar);
 
-      if (ierror < CS_RESTART_SUCCES)
+      if (ierror < CS_RESTART_SUCCESS)
         bft_error(__FILE__, __LINE__, 0,
                   _("Problem while reading section in the restart file\n"
                     "for the cooling tower module:\n"
@@ -854,7 +854,7 @@ void CS_PROCF (lecctw, LECCTW)
                                        typ_val    ,
                                        tabvar     );
 
-      if (ierror < CS_RESTART_SUCCES)
+      if (ierror < CS_RESTART_SUCCESS)
         bft_error(__FILE__, __LINE__, 0,
                   _("Problem while reading section in the restart file\n"
                     "for the cooling tower module:\n"
@@ -884,7 +884,7 @@ void CS_PROCF (lecctw, LECCTW)
                                        typ_val,
                                        tabvar);
 
-      if (ierror < CS_RESTART_SUCCES)
+      if (ierror < CS_RESTART_SUCCESS)
         bft_error(__FILE__, __LINE__, 0,
                   _("Problem while reading section in the restart file\n"
                     "for the cooling tower module:\n"
@@ -914,7 +914,7 @@ void CS_PROCF (lecctw, LECCTW)
                                        typ_val,
                                        tabvar);
 
-      if (ierror < CS_RESTART_SUCCES)
+      if (ierror < CS_RESTART_SUCCESS)
         bft_error(__FILE__, __LINE__, 0,
                   _("Problem while reading section in the restart file\n"
                     "for the cooling tower module:\n"
