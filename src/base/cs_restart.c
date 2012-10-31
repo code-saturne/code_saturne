@@ -1800,7 +1800,7 @@ cs_restart_add_location(cs_restart_t     *restart,
         timing[1] = cs_timer_wtime();
         _restart_wtime[restart->mode] += timing[1] - timing[0];
 
-        return loc_id;
+        return loc_id + 1;
 
       }
     }
