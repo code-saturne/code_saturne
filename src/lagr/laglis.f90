@@ -136,14 +136,34 @@ integer nbpartall, nbpoutall, nbperrall, nbpdepall
 double precision dnbparall, dnbperall, dnbpouall
 double precision dnbdepall, dnbpnwall
 
+integer          ipass
+data             ipass /0/
+save             ipass
+
 !===============================================================================
 !===============================================================================
 ! 1. Initializations
 !===============================================================================
 
+ipass = ipass + 1
+
 ! Initialize variables to avoid compiler warnings
 
 nbrcel = 0
+
+
+! FIXME
+! The Lagrangian information display in the main listing
+! is currently disabled during a parallel calculation
+
+if (irangp.ge.0) then
+   if (ipass.eq.1) then
+      write(nfecra,1000)
+      write(nfecra, 901)
+   endif
+   return
+endif
+
 
 if (nbpart.ne.0) then
   aa = 100.d0 / dble(nbpart)
@@ -156,6 +176,7 @@ endif
 !===============================================================================
 
 write (nfecra,1000)
+
 
 ! Parallelism management
 
@@ -408,8 +429,18 @@ endif
 ! FORMATS
 !--------
 
+
 1000 format(3X,'** INFORMATION ON THE LAGRANGIAN CALCULATION',/3X,         &
           '   ------------------------------------------')
+
+901  format(/,                                                    &
+'==================================================================     ',/,&
+' WARNING: The listing information on the Lagrangian calculation        ',/,&
+' is not available in parallel mode in this version of Code_Saturne.    ' /,&
+' The calculation continues..                                           ' /,&
+'==================================================================     ',/,&
+                                                                /)
+
 
 1001 format('-----------------------------------------------------',   &
           '----------')
