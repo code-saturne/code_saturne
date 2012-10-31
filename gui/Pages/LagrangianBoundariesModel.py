@@ -46,7 +46,7 @@ import sys, unittest, logging
 
 from Base.Common import *
 import Base.Toolbox as Tool
-from Base.XMLvariables import Model
+from Base.XMLvariables import Model, Variables
 from Pages.LagrangianModel import LagrangianModel
 
 
