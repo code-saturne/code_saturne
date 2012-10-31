@@ -397,7 +397,7 @@ cs_block_to_part_create_by_rank(MPI_Comm              comm,
  * It is also possible to define a default destination rank,
  * so that elements with no adjacency are redistributed.
  * If the default rank for a given element is < 0, or no default
- * ranks are defined, elements with no adjacency are no distributed.
+ * ranks are defined, elements with no adjacency are not distributed.
  *
  * arguments:
  *   comm              <-- communicator
@@ -407,7 +407,7 @@ cs_block_to_part_create_by_rank(MPI_Comm              comm,
  *   adjacency         <-- entity adjacency (1 to n numbering)
  *   adjacent_ent_rank <-- destination rank for adjacent entities, or
  *                         NULL if based on block size and range only.
- *   default_rank      <-- default rank in case there is no adjacency
+ *   default_rank      <-- default rank in case there is no adjacency, or NULL
  *
  * returns:
  *   initialized block to partition distributor

@@ -491,7 +491,7 @@ cs_control_check_file(void)
     if (sscanf(s, "%i", &nt_max) > 0)
       nt_max = CS_MAX(nt_max, 0);
     else if (strncmp(s, "max_time_step ", 14) == 0) {
-      if (_read_next_int(cur_line, &s, &nt_max) > 0)
+      if (_read_next_int(cur_line, (const char **)&s, &nt_max) > 0)
         nt_max = CS_MAX(nt_max, 0);
     }
 
@@ -503,7 +503,7 @@ cs_control_check_file(void)
     }
     else if (strncmp(s, "max_time_value ", 15) == 0) {
       double t_max;
-      if (_read_next_double(cur_line, &s, &t_max) > 0)
+      if (_read_next_double(cur_line, (const char **)&s, &t_max) > 0)
         t_max = CS_MAX(t_max, ts->t_cur);
       cs_time_step_define_t_max(t_max);
       bft_printf("  %-32s %12.5g (%s %12.5g)\n",
@@ -514,19 +514,19 @@ cs_control_check_file(void)
 
     else if (strncmp(s, "control_file_wtime_interval ", 28) == 0) {
       double wt;
-      if (_read_next_double(cur_line, &s, &wt) > 0)
+      if (_read_next_double(cur_line, (const char **)&s, &wt) > 0)
         _control_file_wt_interval = wt;
     }
 
     /* Checkpointing options */
 
     else if (strncmp(s, "checkpoint_", 11) == 0)
-      _control_checkpoint(cur_line, &s);
+      _control_checkpoint(cur_line, (const char **)&s);
 
     /* Postprocessing options */
 
     else if (strncmp(s, "postprocess_", 12) == 0)
-      _control_postprocess(ts, cur_line, &s);
+      _control_postprocess(ts, cur_line, (const char **)&s);
 
     /* Unhandled lines */
 
