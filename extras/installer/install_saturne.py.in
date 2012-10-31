@@ -263,7 +263,7 @@ class Setup:
         self.optlibs = ['hdf5', 'cgns', 'med', 'mpi', 'libxml2']
 
         # Code_Saturne version
-        self.version = '3.0-beta'
+        self.version = '@PACKAGE_VERSION@'
 
         # Logging file
         self.log_file = sys.stdout
@@ -300,9 +300,6 @@ class Setup:
         # Scotch library path
         self.scotch = None
 
-        # SYRTHES path
-        self.syrthes = None
-
         # Architecture name
         self.arch = None
 
@@ -315,14 +312,14 @@ class Setup:
 
         # Code_Saturne
 
-        url_cs = "http://innovation.edf.com/fichiers/fckeditor/Commun/Innovation/logiciels/code_saturne/Releases/%s"
+        url_cs = "http://code-saturne.org/cms/sites/default/files/releases/%s"
 
         self.packages['code_saturne'] = \
             Package(name="Code_Saturne",
                     description="Code_Saturne CFD tool",
                     package="code_saturne",
-                    version="3.0-beta",
-                    archive="code_saturne-30b.tar.gz",
+                    version=self.version,
+                    archive="@distdir@.tar.gz",
                     url=url_cs)
 
         p = self.packages['code_saturne']
@@ -335,9 +332,9 @@ class Setup:
             Package(name="HDF5",
                     description="Hierarchical Data Format",
                     package="hdf5",
-                    version="1.8.8",
-                    archive="hdf5-1.8.8.tar.gz",
-                    url="http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.8/src/%s")
+                    version="1.8.9",
+                    archive="hdf5-1.8.9.tar.gz",
+                    url="http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.9/src/%s")
 
         p = self.packages['hdf5']
         p.config_opts = "--enable-production"
@@ -374,8 +371,8 @@ class Setup:
             Package(name="MPI",
                     description="Message Passing Interface",
                     package="openmpi",
-                    version="1.6.2",
-                    archive="openmpi-1.6.2.tar.gz",
+                    version="1.6.3",
+                    archive="openmpi-1.6.3.tar.gz",
                     url="http://www.open-mpi.org/software/ompi/v1.6/downloads/%s")
 
         # Libxml2 library (possible mirror at "ftp://fr.rpmfind.net/pub/libxml/%s")
@@ -437,7 +434,6 @@ class Setup:
                 elif key == 'blas': self.blas = list[1]
                 elif key == 'metis': self.metis = list[1]
                 elif key == 'scotch': self.scotch = list[1]
-                elif key == 'syrthes': self.syrthes = list[1]
                 else:
                     p = self.packages[key]
                     p.use = list[2]
@@ -476,11 +472,6 @@ class Setup:
             self.scotch = os.path.expanduser(self.scotch)
             self.scotch = os.path.expandvars(self.scotch)
             self.scotch = os.path.abspath(self.scotch)
-
-        if self.syrthes is not None:
-            self.syrthes = os.path.expanduser(self.syrthes)
-            self.syrthes = os.path.expandvars(self.syrthes)
-            self.syrthes = os.path.abspath(self.syrthes)
 
 
     def check_setup(self):
@@ -646,15 +637,6 @@ Check the setup file and some utilities presence.
                              % self.scotch)
             sys.exit(1)
 
-        # Looking for SYRTHES path probided by the user
-        if self.syrthes is not None and not os.path.isdir(self.syrthes):
-            sys.stderr.write("\n*** Aborting installation:\n"
-                             "\'%s\' BLAS directory is provided in the setup "
-                             "file but is not a directory.\n"
-                             "Please check your setup file.\n\n"
-                             % self.syrthes)
-            sys.exit(1)
-
         # Looking for make utility
         ret = run_test("make")
         if ret != 0:
@@ -774,17 +756,12 @@ Check the setup file and some utilities presence.
         # Python
 
         if self.python is not None:
-            config_opts = config_opts + " --with-python=" + self.python
+            config_opts = config_opts + " PYTHON=" + self.python
 
         # BLAS
 
         if self.blas is not None:
             config_opts = config_opts + " --with-blas=" + self.blas
-
-        # SYRTHES
-
-        if self.syrthes is not None:
-            config_opts = config_opts + " --with-syrthes=" + self.syrthes
 
         # Language
 
@@ -924,18 +901,6 @@ metis     %(metis)s
 scotch    %(scotch)s
 #
 #--------------------------------------------------------
-# SYRTHES installation path for an optional coupling.
-#
-# Only coupling with the SYRTHES thermal code version 3
-# is handled at the moment.
-#
-# SYRTHES has to be installed before Code_Saturne for
-# a correct detection. However, it is still possible to
-# update the scripts after Code_Saturne installation.
-#--------------------------------------------------------
-syrthes   %(syrthes)s
-#
-#--------------------------------------------------------
 # Optional packages:
 # ------------------
 #
@@ -950,7 +915,7 @@ syrthes   %(syrthes)s
 #   For Linux workstations, MPI, HDF5, and even MED
 # packages may be available through the package manager.
 # HDF5 is also often available on large systems such as
-# IBM Blue Gene or Cray XT.
+# IBM Blue Gene or Cray XT/XE/XK.
 #
 #   For clusters using high-speed networks,  it is highly
 # recommended to use the system's default MPI library, as
@@ -982,7 +947,6 @@ syrthes   %(syrthes)s
         if self.blas is None: self.blas = ''
         if self.metis is None: self.metis = ''
         if self.scotch is None: self.scotch = ''
-        if self.syrthes is None: self.syrthes = ''
 
         sf.write(setupMain
                  % { 'download':self.download, 'prefix':self.prefix,
@@ -992,8 +956,7 @@ syrthes   %(syrthes)s
                      'disable_gui':self.disable_gui,
                      'disable_frontend':self.disable_frontend,
                      'python':self.python, 'blas':self.blas,
-                     'metis':self.metis, 'scotch': self.scotch,
-                     'syrthes':self.syrthes })
+                     'metis':self.metis, 'scotch': self.scotch})
 
         for lib in self.optlibs:
             p = self.packages[lib]
@@ -1022,10 +985,10 @@ You can have a look at the log file meanwhile.
 
     finalize = \
 """
-Before using Code_Saturne, please update your path with:
+Before using Code_Saturne, please update your environment with:
 
   cspath=%(cspath)s
-  export PATH=$cspath:$PATH
+  alias code_saturne="$cspath/bin"
 
 The documentation should then be available through the commands:
   code_saturne info -g refcard

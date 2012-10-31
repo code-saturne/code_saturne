@@ -20,31 +20,26 @@ section II for element by element install.
 These scripts are given in the hope that they will be useful, but
 WITHOUT ANY WARRANTY.
 
-The script can download every packages needed by the code to run
+The script can download every package needed by the code to run
 properly. If this behaviour is not wanted, set the "download" variable
 to "no" in the setup script.
 
-It is possible to specify her/his own Python executable through the "python"
-variable, as well as BLAS libraries through the "blas" variable, or Metis and
-Scotch through similar variables.
-
-SYRTHES installation path (for coupling with the thermal code SYRTHES) will be
-provided with the "syrthes" variable.
+It is possible to specify a Python interpreter through the "python"
+variable, as well as Metis and Scotch through similar variables.
 
 Lastly, the possibility is given to compile Code_Saturne with debugging symbols
 ("debug" variable), to disable the Graphical User Interface ("disable_gui"
 variable), and to specify the language (between English and French).
 
-On some architectures and for some elements (MED and FVM for instance)
-it is preferable if the "make" command refers to the GNU "make". Otherwise
-some problems can occur (problem with libtool, need to copy the sources in
-the build directory, ...)
+On some architectures and for some elements (MED and SCOTCH for instance)
+it is preferable if the "make" command is a recent enough version of GNU "make".
+Otherwise some problems can occur.
 
 * install_saturne.py:
   This python script will install the different elements of Code_Saturne and
   associated libraries. Due to dependencies between the different modules, the
   order of install should be the following:
-  - libxml2 (it is advised to use the distrib own package)
+  - libxml2 (it is advised to use the distrib's own package)
   - MPI
   - CGNS
   - HDF5
@@ -62,20 +57,20 @@ the build directory, ...)
   The install script uses the "setup" file to determine which library to
   install or to use. For each element, there are four options:
 
-  - to not use the element (for optional libraries like MPI)
+  - do not use the element (for optional libraries like MPI)
      In this case, specify "no" in the "Usage" and "Install" columns. The other
      elements will be installed in accordance. The "Path" column is not used.
 
-  - to automatically detect some element (especially useful for libxml2)
+  - automatically detect some element (especially useful for libxml2)
      In this case, specify "auto" in the "Usage". The other elements will be
       installed in accordance. The "Path" and "Install" column are not used.
 
-  - to use a pre-installed library in a non standard path
+  - use a pre-installed library in a non standard path
      In this case, specify "yes" in the Usage column and "no" in the Install
      column. The "Path" column should contain the location of the library
      (up to the name of the library itself).
 
-  - to install and use a library
+  - install and use a library
      In this case, specify "yes" in the "Usage" and "Install" columns. The
      script will download the library and install it default install directory.
      If download has been set to "no", package archive are looked for at the
@@ -95,16 +90,7 @@ the build directory, ...)
    to the architecture of the machine. Leaving it blank will make it
    automatically detected with the "uname" command."arch" should be specified
    if you want different implementations on the same architecture
-   (for instance Linux_LAM and Linux_MPICH).
-
-   Commonly used compilers for different architectures :
-   SunOS : compC = cc -Xa
-           compF = f90
-
-   IRIX64 : compC = cc -64
-            compF = f90 -64
-
-
+   (for instance Linux_OMPI and Linux_MPICH).
 
 
 II) MANUAL INSTALL
@@ -120,7 +106,6 @@ for the directory where you want to install Code_Saturne.
   -----------------------
 
   - create a "build" directory (usually code_saturne-x.y.z.build)
-
 
   - from within the build directory, run the configure command:
 
@@ -151,7 +136,6 @@ for the directory where you want to install Code_Saturne.
 
       --with-blas=...       for BLAS
       --with-mpi=...        for MPI (parallel computing)
-      --with-syrthes=...    for SYRTHES coupling
 
       CC=...   to specify the compiler if necessary (especially if mpicc
                   should be used, to get the proper links to MPI libraries)
@@ -163,32 +147,25 @@ for the directory where you want to install Code_Saturne.
       make install
       make clean
 
-
-  - documentation can be compiled (if LaTeX is available) and installed
-    by running:
-      make pdf
-      make install-pdf
-
     The compiled libraries will be put in $prefix/cs-$version
-
 
 
 III) Before using Code_Saturne
 ==============================
-Each user of Code_Saturne must set her/his PATH accordingly with Code_Saturne
-installation before using the code. The easiest way is to put the following
-lines in each of the users ".profile" (depending on the shell).
+For some systems (such as when using a batch system or coupling with SYRTHES,
+a post-install step may be required). In this case, copy
+"$prefix/code_saturne-$version/etc/code_saturne.cfg.template" to
+"$prefix/code_saturne-$version/etc/code_saturne.cfg" and adapt the file to
+your needs.
 
-cspath=$prefix/code_saturne-$version/bin
-#(adjust path to your system)
-if [ -d $cspath ] ; then
-  export PATH=$cspath:$PATH
-fi
+Each user of Code_Saturne may set her/his PATH or define an alias accordingly
+with the Code_Saturne installation before using the code.
+The easiest way is to add the following
+line in the user's ".profile" or ".alias" file(depending on the shell).
 
-After changing the user ".profile", it is advised to logout and login,
-so that there is no mix-up in the PATH variable.
+alias code_saturne="$prefix/code_saturne-$version/bin/code_saturne"
 
-For more information refer to the Code_Saturne documentation, available
+For more information please refer to the Code_Saturne documentation, available
 through the "code_saturne info -g refcard" and "code_saturnes info -g user"
 commands.
 
