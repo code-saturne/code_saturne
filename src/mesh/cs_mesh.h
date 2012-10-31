@@ -466,18 +466,6 @@ void
 cs_mesh_discard_free_faces(cs_mesh_t  *mesh);
 
 /*----------------------------------------------------------------------------
- * Renumber vertices.
- *
- * Ensure: if i < j then mesh->global_vtx_num[i] < mesh->global_vtx_num[j]
- *
- * parameters:
- *   mesh  <->  pointer to mesh structure
- *----------------------------------------------------------------------------*/
-
-void
-cs_mesh_order_vertices(cs_mesh_t  *mesh);
-
-/*----------------------------------------------------------------------------
  * Compute or update mesh structure members the depend on other members,
  * but whose results may be reused, such as global number of elements
  * (cells, vertices, interior and boundary faces) and sync cell family.
