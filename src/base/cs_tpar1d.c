@@ -423,10 +423,10 @@ void CS_PROCF (lect1d,LECT1D)
 
   cs_restart_t             *suite;
   cs_mesh_location_type_t   support;
-  cs_type_t                 typ_val;
+  cs_restart_val_type_t     typ_val;
 
 
-  ierror = CS_RESTART_SUCCES;
+  ierror = CS_RESTART_SUCCESS;
 
   /* Open the restart file */
   cs_loc_tpar1d_opnsuite(nomsui,
@@ -475,7 +475,7 @@ void CS_PROCF (lect1d,LECT1D)
                                      typ_val,
                                      tabvar);
 
-    if (ierror < CS_RESTART_SUCCES)
+    if (ierror < CS_RESTART_SUCCESS)
       bft_error(__FILE__, __LINE__, 0,
                 _("WARNING: ABORT WHILE READING THE RESTART FILE\n"
                   "********               1D-WALL THERMAL MODULE\n"
@@ -514,7 +514,7 @@ void CS_PROCF (lect1d,LECT1D)
                                      typ_val,
                                      tabvar);
 
-    if (ierror < CS_RESTART_SUCCES)
+    if (ierror < CS_RESTART_SUCCESS)
       bft_error(__FILE__, __LINE__, 0,
                 _("Problem while reading section in the restart file\n"
                   "for the 1D-wall thermal module:\n"
@@ -602,7 +602,7 @@ void CS_PROCF (lect1d,LECT1D)
                                      typ_val,
                                      tabvar);
 
-    if (ierror < CS_RESTART_SUCCES)
+    if (ierror < CS_RESTART_SUCCESS)
       bft_error(__FILE__, __LINE__, 0,
                 _("Problem while reading section in the restart file\n"
                   "for the 1D-wall thermal module:\n"
@@ -656,7 +656,7 @@ void CS_PROCF (lect1d,LECT1D)
                                      typ_val,
                                      tabvar);
 
-    if (ierror < CS_RESTART_SUCCES)
+    if (ierror < CS_RESTART_SUCCESS)
       bft_error(__FILE__, __LINE__, 0,
                 _("Problem while reading section in the restart file\n"
                   "for the 1D-wall thermal module:\n"
@@ -692,7 +692,7 @@ void CS_PROCF (lect1d,LECT1D)
                                      typ_val,
                                      tabvar);
 
-    if (ierror < CS_RESTART_SUCCES)
+    if (ierror < CS_RESTART_SUCCESS)
       bft_error(__FILE__, __LINE__, 0,
                 _("Problem while reading section in the restart file\n"
                   "for the 1D-wall thermal module:\n"
@@ -757,7 +757,7 @@ void CS_PROCF (lect1d,LECT1D)
                                      typ_val,
                                      tabvar);
 
-    if (ierror < CS_RESTART_SUCCES) {
+    if (ierror < CS_RESTART_SUCCESS) {
       cs_base_warn(__FILE__,__LINE__);
       bft_printf(_("Problem while reading the section in the restart file\n"
                    "for the 1D-wall thermal module:\n"
@@ -816,10 +816,10 @@ void CS_PROCF (ecrt1d,ECRT1D)
 
   cs_restart_t             *suite;
   cs_mesh_location_type_t   support;
-  cs_type_t                 typ_val;
+  cs_restart_val_type_t     typ_val;
 
 
-  ierror = CS_RESTART_SUCCES;
+  ierror = CS_RESTART_SUCCESS;
 
   /* Open the restart file */
   cs_loc_tpar1d_opnsuite(nomsui,

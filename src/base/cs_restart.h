@@ -48,7 +48,7 @@ BEGIN_C_DECLS
 
 /* Error codes */
 
-#define CS_RESTART_SUCCES         0 /* Success */
+#define CS_RESTART_SUCCESS        0 /* Success */
 #define CS_RESTART_ERR_FILE_NUM  -1 /* No restart file for the given number */
 #define CS_RESTART_ERR_LOCATION  -2 /* Undefined location / incorrect size */
 #define CS_RESTART_ERR_VAL_TYPE  -3 /* Unknown or unexpected value type */
@@ -68,6 +68,14 @@ typedef enum {
   CS_RESTART_MODE_WRITE         /* Write mode */
 
 } cs_restart_mode_t;
+
+/* Datatype enumeration to transmit a data's type to a function */
+
+typedef enum {
+  CS_TYPE_cs_int_t,
+  CS_TYPE_cs_gnum_t,
+  CS_TYPE_cs_real_t,
+} cs_restart_val_type_t;
 
 /*
   Pointer associated with a restart file structure. The structure itself
@@ -500,17 +508,17 @@ cs_restart_dump_index(const cs_restart_t  *restart);
  *   val_type        <-- value type
  *   val             --> array of values
  *
- * returns: 0 (CS_RESTART_SUCCES) in case of success,
+ * returns: 0 (CS_RESTART_SUCCESS) in case of success,
  *          or error code (CS_RESTART_ERR_xxx) in case of error
  *----------------------------------------------------------------------------*/
 
 int
-cs_restart_read_section(cs_restart_t  *restart,
-                        const char    *sec_name,
-                        int            location_id,
-                        cs_int_t       n_location_vals,
-                        cs_type_t      val_type,
-                        void          *val);
+cs_restart_read_section(cs_restart_t           *restart,
+                        const char             *sec_name,
+                        int                     location_id,
+                        cs_int_t                n_location_vals,
+                        cs_restart_val_type_t   val_type,
+                        void                   *val);
 
 /*----------------------------------------------------------------------------
  * Write a section to a restart file.
@@ -525,12 +533,12 @@ cs_restart_read_section(cs_restart_t  *restart,
  *----------------------------------------------------------------------------*/
 
 void
-cs_restart_write_section(cs_restart_t  *restart,
-                         const char    *sec_name,
-                         int            location_id,
-                         cs_int_t       n_location_vals,
-                         cs_type_t      val_type,
-                         const void    *val);
+cs_restart_write_section(cs_restart_t           *restart,
+                         const char             *sec_name,
+                         int                     location_id,
+                         cs_int_t                n_location_vals,
+                         cs_restart_val_type_t   val_type,
+                         const void             *val);
 
 /*----------------------------------------------------------------------------
  * Print statistics associated with restart files

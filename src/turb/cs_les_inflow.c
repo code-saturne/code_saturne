@@ -1493,11 +1493,11 @@ void CS_PROCF(lecsyn, LECSYN)
 
   cs_restart_t             *suite;
   cs_mesh_location_type_t   support;
-  cs_type_t                 typ_val;
+  cs_restart_val_type_t     typ_val;
 
   bft_printf(_(" Reading the LES inflow module restart file...\n"));
 
-  ierror = CS_RESTART_SUCCES;
+  ierror = CS_RESTART_SUCCESS;
 
   /* Open the restart file */
   cs_loc_inflow_opnsuite(filnam,
@@ -1545,7 +1545,7 @@ void CS_PROCF(lecsyn, LECSYN)
                                      typ_val,
                                      tabvar);
 
-    if (ierror < CS_RESTART_SUCCES)
+    if (ierror < CS_RESTART_SUCCESS)
       bft_error(__FILE__, __LINE__, 0,
                 _("WARNING: ABORT WHILE READING THE RESTART FILE\n"
                   "********               LES INFLOW MODULE\n"
@@ -1582,7 +1582,7 @@ void CS_PROCF(lecsyn, LECSYN)
                                      typ_val,
                                      tabvar);
 
-    if (ierror < CS_RESTART_SUCCES)
+    if (ierror < CS_RESTART_SUCCESS)
       bft_error(__FILE__, __LINE__, 0,
                 _("Problem while reading section in the restart file\n"
                   "for the LES inflow module:\n"
@@ -1627,7 +1627,7 @@ void CS_PROCF(lecsyn, LECSYN)
                                          typ_val,
                                          tabvar);
 
-        if (ierror < CS_RESTART_SUCCES)
+        if (ierror < CS_RESTART_SUCCESS)
           bft_error(__FILE__, __LINE__, 0,
                     _("Problem while reading section in the restart file\n"
                       "for the LES inflow module:\n"
@@ -1679,7 +1679,7 @@ void CS_PROCF(lecsyn, LECSYN)
                                              typ_val,
                                              tabvar);
 
-            if (ierror < CS_RESTART_SUCCES)
+            if (ierror < CS_RESTART_SUCCESS)
               bft_error(__FILE__, __LINE__, 0,
                         _("Problem while reading section in the restart file\n"
                           "for the LES inflow module:\n"
@@ -1713,7 +1713,7 @@ void CS_PROCF(lecsyn, LECSYN)
                                              typ_val,
                                              inflow->frequency);
 
-            if (ierror < CS_RESTART_SUCCES)
+            if (ierror < CS_RESTART_SUCCESS)
               bft_error(__FILE__, __LINE__, 0,
                         _("Problem while reading section in the restart file\n"
                           "for the LES inflow module:\n"
@@ -1734,7 +1734,7 @@ void CS_PROCF(lecsyn, LECSYN)
                                              typ_val,
                                              inflow->wave_vector);
 
-            if (ierror < CS_RESTART_SUCCES)
+            if (ierror < CS_RESTART_SUCCESS)
               bft_error(__FILE__, __LINE__, 0,
                         _("Problem while reading section in the restart file\n"
                           "for the LES inflow module:\n"
@@ -1755,7 +1755,7 @@ void CS_PROCF(lecsyn, LECSYN)
                                              typ_val,
                                              inflow->amplitude_cos);
 
-            if (ierror < CS_RESTART_SUCCES)
+            if (ierror < CS_RESTART_SUCCESS)
               bft_error(__FILE__, __LINE__, 0,
                         _("Problem while reading section in the restart file\n"
                           "for the LES inflow module:\n"
@@ -1776,7 +1776,7 @@ void CS_PROCF(lecsyn, LECSYN)
                                              typ_val,
                                              inflow->amplitude_sin);
 
-            if (ierror < CS_RESTART_SUCCES)
+            if (ierror < CS_RESTART_SUCCESS)
               bft_error(__FILE__, __LINE__, 0,
                         _("Problem while reading section in the restart file\n"
                           "for the LES inflow module:\n"
@@ -1810,7 +1810,7 @@ void CS_PROCF(lecsyn, LECSYN)
                                              typ_val,
                                              tabvar);
 
-            if (ierror < CS_RESTART_SUCCES)
+            if (ierror < CS_RESTART_SUCCESS)
               bft_error(__FILE__, __LINE__, 0,
                         _("Problem while reading section in the restart file\n"
                           "for the LES inflow module:\n"
@@ -1844,7 +1844,7 @@ void CS_PROCF(lecsyn, LECSYN)
                                              typ_val,
                                              inflow->position);
 
-            if (ierror < CS_RESTART_SUCCES)
+            if (ierror < CS_RESTART_SUCCESS)
               bft_error(__FILE__, __LINE__, 0,
                         _("Problem while reading section in the restart file\n"
                           "for the LES inflow module:\n"
@@ -1865,7 +1865,7 @@ void CS_PROCF(lecsyn, LECSYN)
                                              typ_val,
                                              inflow->energy);
 
-            if (ierror < CS_RESTART_SUCCES)
+            if (ierror < CS_RESTART_SUCCESS)
               bft_error(__FILE__, __LINE__, 0,
                         _("Problem while reading section in the restart file\n"
                           "for the LES inflow module:\n"
@@ -1917,14 +1917,14 @@ void CS_PROCF(ecrsyn, ECRSYN)
 
   cs_restart_t             *suite;
   cs_mesh_location_type_t   support;
-  cs_type_t                 typ_val;
+  cs_restart_val_type_t     typ_val;
 
   if (cs_glob_inflow_n_inlets == 0)
     return;
 
   bft_printf(_("\n Writing the LES inflow module restart file...\n"));
 
-  ierror = CS_RESTART_SUCCES;
+  ierror = CS_RESTART_SUCCESS;
 
   /* Open the restart file */
   cs_loc_inflow_opnsuite(filnam,
