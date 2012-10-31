@@ -1810,11 +1810,6 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                 }
                 else if (cs_gui_strcmp(choice_v, "norm_formula"))
                 {
-                    norm = boundaries->norm[izone] /
-                             sqrt( boundaries->dirx[izone] * boundaries->dirx[izone]
-                                 + boundaries->diry[izone] * boundaries->diry[izone]
-                                 + boundaries->dirz[izone] * boundaries->dirz[izone]);
-
                     t0 = cs_timer_wtime();
 
                     mei_tree_insert(boundaries->velocity[izone], "t", *ttcabs);
