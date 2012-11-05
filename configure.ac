@@ -852,6 +852,7 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  docs/user/Makefile docs/user/graphics/Makefile
                  tests/Makefile
                  extras/salome/fsi_appli_config.xml
+                 extras/windows/innosetup/setup.iss
                  bin/cs_config.py])
 
 #------------------------------------------------------------------------------
