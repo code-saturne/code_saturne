@@ -24,10 +24,10 @@ subroutine atprke &
 !================
 
  ( nscal  ,                                                       &
-   ipcvto,                                                        &
    rtp    , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
-   tinstk , tinste )
+   tinstk , tinste ,                                              &
+   smbrk  , smbre )
 
 !===============================================================================
 ! FONCTION :
@@ -41,7 +41,6 @@ subroutine atprke &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! ipcvto           ! i  ! <-- ! pointer for turbulent viscosity
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
@@ -50,8 +49,10 @@ subroutine atprke &
 !  (nfabor,*)      !    !     !              faces de bord                     !
 ! coefa, coefb     ! tr ! <-- ! conditions aux limites aux                     !
 !  (nfabor,*)      !    !     !              faces de bord                     !
-! tinstk(ncelet)   ! tr ! --> ! prod et terme de gravite pour eq k             !
-! tinste(ncelet)   ! tr ! --> ! prod et terme de gravite pour eq eps           !
+! tinstk(ncelet)   ! tr ! --> ! Implicit part of the buoyancy term (for k)     !
+! tinste(ncelet)   ! tr ! --> ! Implicit part of the buoyancy term (for esp)   !
+! smbrk(ncelet)    ! tr ! --> ! Explicit part of the buoyancy term (for k)     !
+! smbre(ncelet)    ! tr ! --> ! Explicit part of the buoyancy term (for eps)   !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -85,20 +86,18 @@ use atincl
 implicit none
 
 ! Arguments
-
 integer          nscal
-integer          ipcvto
-
-
 
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision rtp (ncelet,*), rtpa (ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
+double precision smbrk(ncelet), smbre(ncelet)
 double precision tinstk(ncelet), tinste(ncelet)
 
 ! Local variables
 integer         iel
+integer         ipcvto, ipcroo
 integer         itpp , iqw, icltpp,iclqw
 integer         ipcliq
 integer         iccocg, inc
@@ -110,6 +109,7 @@ double precision gravke, prdtur
 double precision theta_virt
 double precision qldia,qw
 double precision epsrgp, climgp, extrap
+double precision xk, xeps, visct, ttke, rho
 
 double precision xent,yent,zent,dum
 double precision, allocatable, dimension(:,:) :: grad
@@ -123,6 +123,17 @@ double precision, allocatable, dimension(:,:) :: grad
 ! Allocate work arrays
 allocate(grad(ncelet,3))
 
+! Pointer to density and turbulent viscosity
+ipcroo = ipproc(irom)
+ipcvto = ipproc(ivisct)
+if(isto2t.gt.0) then
+  if (iroext.gt.0) then
+    ipcroo = ipproc(iroma)
+  endif
+  if(iviext.gt.0) then
+    ipcvto = ipproc(ivista)
+  endif
+endif
 
 !===============================================================================
 ! 2. Calcul des derivees de la temperature potentielle
@@ -190,23 +201,25 @@ else
   prdtur = 1.d0
 endif
 
-! En production lineaire, on multiplie tout de suite le terme
-! de gravite par VISCT, car le reste est deja multiplie.
-! Dans les autres cas, la multiplication est faite plus tard.
+if (itytur.eq.2) then
+  do iel = 1, ncel
+    rho   = propce(iel,ipcroo)
+    visct = propce(iel,ipcvto)
+    xeps = rtpa(iel,iep )
+    xk   = rtpa(iel,ik )
+    ttke = xk / xeps
 
-if (iturb.eq.21) then
-  do iel = 1, ncel
     gravke = (grad(iel,1)*gx + grad(iel,2)*gy + grad(iel,3)*gz) &
            / (rtpa(iel,itpp)*prdtur)
-    tinste(iel) = tinstk(iel) + propce(iel,ipcvto)*max(gravke,zero)
-    tinstk(iel) = tinstk(iel) + propce(iel,ipcvto)*gravke
-  enddo
-else
-  do iel = 1, ncel
-    gravke = (grad(iel,1)*gx + grad(iel,2)*gy + grad(iel,3)*gz) &
-           / (rtpa(iel,itpp)*prdtur)
-    tinste(iel) = tinstk(iel) + max(gravke,zero)
-    tinstk(iel) = tinstk(iel) + gravke
+
+    ! Implicit part (no implicit part for epsilon because the source
+    ! term is positive)
+    tinstk(iel) = tinstk(iel) + max(-rho*volume(iel)*cmu*ttke*gravke, 0.d0)
+
+    ! Explicit part
+    smbre(iel) = smbrk(iel) + visct*max(gravke, zero)
+    smbrk(iel) = smbrk(iel) + visct*gravke
+
   enddo
 endif
 end subroutine dry_atmosphere
@@ -274,8 +287,8 @@ iivar = itpp
 ! computes the turbulent production/destruction terms:
 ! humid atmo: (1/sigmas*theta_v)*(dtheta_l/dz)*gz
 
-call grdcel                                                       &
-     !==========
+call grdcel &
+!==========
  ( iivar  , imrgra , inc    , iccocg , nswrgp ,imligp,            &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    rtpa(1,itpp), coefa(1,icltpp) , coefb(1,icltpp) ,              &
@@ -291,20 +304,7 @@ else
 endif
 
 ! store now the production term due to theta_liq in gravke_theta
-
-if (iturb.eq.21) then
-  ! For linear production multiply immediately by the turbulent
-  ! viscosity VISCT.
-  do iel = 1, ncel
-    qw = rtpa(iel,iqw) ! total water content
-    qldia = propce(iel,ipcliq) ! liquid water content
-    theta_virt = rtpa(iel,itpp)*(1.d0 + (rvsra-1)*qw - rvsra*qldia)
-    gravke = (grad(iel,1)*gx + grad(iel,2)*gy + grad(iel,3)*gz)            &
-           / (theta_virt*prdtur)
-    gravke_theta(iel) = propce(iel,ipcvto)*gravke*etheta(iel)
-  enddo
-else
-  ! For the other cases no multiplication done
+if (itytur.eq.2) then
   do iel = 1, ncel
     qw = rtpa(iel,iqw) ! total water content
     qldia = propce(iel,ipcliq) ! liquid water content
@@ -349,22 +349,10 @@ endif
 
 ! store the production term due to qw in gravke_qw
 
-if (iturb.eq.21) then
-  ! For linear production multiply immediately by the turbulent
-  ! viscosity VISCT.
+if (itytur.eq.2) then
   do iel = 1, ncel
     qw = rtpa(iel,iqw) ! total water content
     qldia = propce(iel,ipcliq) !liquid water content
-    theta_virt = rtpa(iel,itpp)*(1.d0 + (rvsra - 1.d0)*qw - rvsra*qldia)
-    gravke = (grad(iel,1)*gx + grad(iel,2)*gy + grad(iel,3)*gz)                 &
-           / (theta_virt*prdtur)
-    gravke_qw(iel) = propce(iel,ipcvto)*gravke*eq(iel)
-  enddo
-else
-  ! For the other cases no multiplication done
-  do iel = 1, ncel
-    qw = rtpa(iel,iqw) ! total water content
-    qldia = propce(iel,ipcliq) ! liquid water content
     theta_virt = rtpa(iel,itpp)*(1.d0 + (rvsra - 1.d0)*qw - rvsra*qldia)
     gravke = (grad(iel,1)*gx + grad(iel,2)*gy + grad(iel,3)*gz)                 &
            / (theta_virt*prdtur)
@@ -372,12 +360,23 @@ else
   enddo
 endif
 
-! termination
-
+! Finalization
 do iel = 1, ncel
+  rho   = propce(iel,ipcroo)
+  visct = propce(iel,ipcvto)
+  xeps = rtpa(iel,iep)
+  xk   = rtpa(iel,ik)
+  ttke = xk / xeps
+
   gravke = gravke_theta(iel) + gravke_qw(iel)
-  tinste(iel) = tinstk(iel) + max(gravke,zero)
-  tinstk(iel) = tinstk(iel) + gravke
+
+  ! Implicit part (no implicit part for epsilon because the source
+  ! term is positive)
+  tinstk(iel) = tinstk(iel) + max(-rho*volume(iel)*cmu*ttke*gravke, 0.d0)
+
+  ! Explicit part
+  smbre(iel) = smbrk(iel) + visct*max(gravke, zero)
+  smbrk(iel) = smbrk(iel) + visct*gravke
 enddo
 end subroutine humid_atmosphere
 

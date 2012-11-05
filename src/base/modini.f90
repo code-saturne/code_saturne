@@ -1203,11 +1203,16 @@ if (idtvar.lt.0) then
   enddo
 else
   if (ikecou.eq.0) then
-    if (itytur.eq.2 .or. itytur.eq.5) then
+    if (itytur.eq.5) then !FIXME
       if (abs(relaxv(ik)+999.d0).lt.epzero)              &
            relaxv(ik) = 0.7d0
       if (abs(relaxv(iep)+999.d0).lt.epzero)             &
            relaxv(iep) = 0.7d0
+    else if (itytur.eq.2) then
+      if (abs(relaxv(ik)+999.d0).lt.epzero)              &
+           relaxv(ik) = 1.d0
+      if (abs(relaxv(iep)+999.d0).lt.epzero)             &
+           relaxv(iep) = 1.d0
     else if (itytur.eq.6) then
       if (abs(relaxv(ik)+999.d0).lt.epzero)              &
            relaxv(ik) = 0.7d0
