@@ -328,11 +328,13 @@ if (iturb.eq.21) then
     xs = sqrt(strain(iel))
     cmueta = min(cmu*rtpa(iel,ik)/rtpa(iel,iep)*xs, sqrcmu)
     smbrk(iel) = rho*cmueta*xs*rtpa(iel,ik)
+    smbre(iel) = smbrk(iel)
   enddo
 else
   do iel = 1, ncel
     visct = propce(iel,ipcvto)
     smbrk(iel) = visct*strain(iel)
+    smbre(iel) = smbrk(iel)
   enddo
 endif
 
@@ -449,10 +451,9 @@ else if (igrake.eq.1) then
 
       ! Implicit Buoyant terms when negativ
       tinstk(iel) = tinstk(iel) + max(-rho*volume(iel)*cmu*ttke*gravke, 0.d0)
-      tinste(iel) = tinste(iel) + 0.d0
 
       ! Explicit Buoyant terms
-      smbre(iel) = smbrk(iel) + visct*max(gravke, zero)
+      smbre(iel) = smbre(iel) + visct*max(gravke, zero)
       smbrk(iel) = smbrk(iel) + visct*gravke
     enddo
   endif
@@ -661,9 +662,9 @@ else if (iturb.eq.50) then
                - d2s3*rho*rtpa(iel,ik)*divu(iel)                  &
                )
 
-    smbre(iel) = volume(iel)*                                                &
-               ( 1.d0/tt*(ceps1*smbre(iel) - ce2rc(iel)*rho*rtpa(iel,iep))   &
-               - d2s3*rho*ceps1*rtpa(iel,iep)*divu(iel)                      &
+    smbre(iel) = volume(iel)*                                       &
+               ( 1.d0/tt*(ceps1*smbre(iel) - ce2rc(iel)*rho*xeps)   &
+               - d2s3*rho*ceps1*xk*divu(iel)                        &
                )
 
     ! On stocke la partie en Pk dans PRDV2F pour etre reutilise dans RESV2F
@@ -676,7 +677,7 @@ else if (iturb.eq.50) then
     endif
     tinstk(iel) = tinstk(iel) + max(d2s3*rho*volume(iel)*divu(iel), 0.d0)
     tinste(iel) = tinste(iel) + ce2rc(iel)*rho*volume(iel)/tt                &
-                + max(d2s3*ceps1*rho*volume(iel)*divu(iel), 0.d0)
+                + max(d2s3*ceps1*ttke/tt*rho*volume(iel)*divu(iel), 0.d0)
 
   enddo
 
@@ -697,14 +698,14 @@ else if (iturb.eq.51) then
     ! Explicit part
     smbrk(iel) = volume(iel)*                                     &
                ( smbrk(iel)                                       &
-               - rho*rtpa(iel,iep)                                &
+               - rho*xeps                                         &
                - rho*w11(iel)*xk                                  &
-               - d2s3*rho*rtpa(iel,ik)*divu(iel)                  &
+               - d2s3*rho*xk*divu(iel)                            &
                )
 
     smbre(iel) = volume(iel)*                                               &
-               ( 1.d0/tt*(cpale1*smbre(iel) - w10(iel)*rho*rtpa(iel,iep))   &
-               - d2s3*rho*cpale1*rtpa(iel,iep)*divu(iel)                    &
+               ( 1.d0/tt*(cpale1*smbre(iel) - w10(iel)*rho*xeps)            &
+               - d2s3*rho*cpale1*xk/tt*divu(iel)                            &
                )
 
     ! On stocke la partie en Pk dans PRDV2F pour etre reutilise dans RESV2F
@@ -718,7 +719,7 @@ else if (iturb.eq.51) then
     tinstk(iel) = tinstk(iel) + max(d2s3*rho*volume(iel)*divu(iel), 0.d0)
     tinstk(iel) = tinstk(iel) + w11(iel)*rho*volume(iel)
     tinste(iel) = tinste(iel) + w10(iel)*rho*volume(iel)/tt                  &
-                  + max(d2s3*cpale1*rho*volume(iel)*divu(iel), 0.d0)
+                + max(d2s3*cpale1*ttke/tt*rho*volume(iel)*divu(iel), 0.d0)
 
   enddo
 
