@@ -98,6 +98,17 @@ if( ro0.lt.0d0) then
   iok = iok + 1
 endif
 
+! --> Fuel and oxydant reference temperature
+
+if (tinfue.lt.0.d0) then
+  write(nfecra,3000)'Tinfue', tinfue
+  iok = iok + 1
+endif
+if (tinoxy.lt.0.d0) then
+  write(nfecra,3000)'Tinoxy', tinoxy
+  iok = iok + 1
+endif
+
 !===============================================================================
 ! 3. Working array of coincl.h (Soot)
 !===============================================================================
