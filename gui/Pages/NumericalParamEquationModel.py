@@ -102,7 +102,7 @@ class NumericalParamEquatModel(Model):
         self.default['flux_reconstruction'] = 'on'
 
         self.default['solver_choice_pressure'] = 'multigrid'
-        self.default['solver_choice'] = 'jacobi'
+        self.default['solver_choice'] = 'automatic'
 
         if label not in self.var:
             self.default['order_scheme'] = 'upwind'
@@ -514,7 +514,7 @@ class NumericalParamEquatModel(Model):
     @Variables.undoLocal
     def setSolverChoice(self, label, value):
         """ Put choice of solver for variable labelled label """
-        self.isInList(value, ('multigrid', 'conjugate_gradient', 'jacobi', 'bi_cgstab', 'gmres'))
+        self.isInList(value, ('multigrid', 'conjugate_gradient', 'jacobi', 'bi_cgstab', 'gmres', 'automatic'))
         node = self._getSolverLabelNode(label)
         if self._isPressure(node):
             default = self._defaultValues()['solver_choice_pressure']

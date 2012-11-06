@@ -2501,6 +2501,8 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
     iresol[j] = 2;
   else if (cs_gui_strcmp(algo_choice, "gmres"))
     iresol[j] = 3;
+  else if (cs_gui_strcmp(algo_choice, "automatic"))
+    iresol[j] = -1;
   else //default value
   {
     iresol[j] = 0;
@@ -2525,8 +2527,10 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
       iresol[j] = 2;
     else if (cs_gui_strcmp(algo_choice, "gmres"))
       iresol[j] = 3;
+    else if (cs_gui_strcmp(algo_choice, "automatic"))
+      iresol[j] = -1;
     else //default value
-      iresol[j] = 1;
+      iresol[j] = -1;
 
     tmp = (double) nitmax[j];
     cs_gui_variable_value(vars->name[i], "max_iter_number", &tmp);
@@ -2558,8 +2562,10 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
         iresol[j] = 2;
       else if (cs_gui_strcmp(algo_choice, "gmres"))
         iresol[j] = 3;
+      else if (cs_gui_strcmp(algo_choice, "automatic"))
+        iresol[j] = -1;
       else //default value
-        iresol[j] = 1;
+        iresol[j] = -1;
 
       cs_gui_scalar_value(vars->label[i], "time_step_factor", &cdtvar[j]);
       tmp = (double) nitmax[j];
@@ -2595,8 +2601,10 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
         iresol[jj] = 2;
       else if (cs_gui_strcmp(algo_choice, "gmres"))
         iresol[jj] = 3;
+      else if (cs_gui_strcmp(algo_choice, "automatic"))
+        iresol[j] = -1;
       else //default value
-        iresol[jj] = 1;
+        iresol[jj] = -1;
 
       tmp = (double) nitmax[jj];
       cs_gui_model_scalar_value(vars->model, vars->label[j], "max_iter_number", &tmp);
