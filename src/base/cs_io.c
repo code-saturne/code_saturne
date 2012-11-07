@@ -129,12 +129,6 @@ typedef struct {
   size_t          data_size;         /* Current size of data array */
   unsigned char  *data;              /* Array containing embedded data */
 
-  /* An index maintains its own list of files, in case multiple
-     files are used to contain the data */
-
-  size_t          n_files;           /* Number of associated files */
-  cs_file_t     **f;                 /* Pointers to associated files */
-
 } cs_io_sec_index_t;
 
 /* Main kernel IO state structure */
@@ -449,7 +443,7 @@ _create_index(cs_io_t *inp)
   idx->size = 0;
   idx->max_size = 32;
 
-  BFT_MALLOC(idx->h_vals, idx->max_size*8, cs_file_off_t);
+  BFT_MALLOC(idx->h_vals, idx->max_size*7, cs_file_off_t);
   BFT_MALLOC(idx->offset, idx->max_size, cs_file_off_t);
 
   idx->max_names_size = 256;
@@ -461,9 +455,6 @@ _create_index(cs_io_t *inp)
   idx->data_size = 0;
 
   BFT_MALLOC(idx->data, idx->max_data_size, unsigned char);
-
-  idx->n_files = 0;
-  idx->f = NULL;
 
   /* Add structure */
 
@@ -480,7 +471,6 @@ _create_index(cs_io_t *inp)
 static void
 _destroy_index(cs_io_t *inp)
 {
-  size_t i;
   cs_io_sec_index_t *idx = inp->index;
 
   if (idx == NULL)
@@ -490,14 +480,6 @@ _destroy_index(cs_io_t *inp)
   BFT_FREE(idx->offset);
   BFT_FREE(idx->names);
   BFT_FREE(idx->data);
-
-  for (i = 0; i < idx->n_files; i++) {
-    if (idx->f[i] == inp->f)
-      idx->f[i] = NULL;
-    else if (idx->f[i] != NULL)
-      idx->f[i] = cs_file_free(idx->f[i]);
-  }
-  BFT_FREE(idx->f);
 
   BFT_FREE(inp->index);
 }
@@ -532,7 +514,7 @@ _update_index_and_shift(cs_io_t             *inp,
       idx->max_size = 32;
     else
       idx->max_size *= 2;
-    BFT_REALLOC(idx->h_vals, idx->max_size*8, cs_file_off_t);
+    BFT_REALLOC(idx->h_vals, idx->max_size*7, cs_file_off_t);
     BFT_REALLOC(idx->offset, idx->max_size, cs_file_off_t);
   };
 
@@ -563,14 +545,13 @@ _update_index_and_shift(cs_io_t             *inp,
 
   id = idx->size;
 
-  idx->h_vals[id*8]     = inp->n_vals;
-  idx->h_vals[id*8 + 1] = inp->location_id;
-  idx->h_vals[id*8 + 2] = inp->index_id;
-  idx->h_vals[id*8 + 3] = inp->n_loc_vals;
-  idx->h_vals[id*8 + 4] = idx->names_size;
-  idx->h_vals[id*8 + 5] = 0;
-  idx->h_vals[id*8 + 6] = header->type_read;
-  idx->h_vals[id*8 + 7] = idx->n_files - 1;
+  idx->h_vals[id*7]     = inp->n_vals;
+  idx->h_vals[id*7 + 1] = inp->location_id;
+  idx->h_vals[id*7 + 2] = inp->index_id;
+  idx->h_vals[id*7 + 3] = inp->n_loc_vals;
+  idx->h_vals[id*7 + 4] = idx->names_size;
+  idx->h_vals[id*7 + 5] = 0;
+  idx->h_vals[id*7 + 6] = header->type_read;
 
   strcpy(idx->names + idx->names_size, inp->sec_name);
   idx->names[new_names_size - 1] = '\0';
@@ -588,7 +569,7 @@ _update_index_and_shift(cs_io_t             *inp,
     cs_file_seek(inp->f, idx->offset[id] + data_shift, CS_FILE_SEEK_SET);
   }
   else {
-    idx->h_vals[id*8 + 5] = idx->data_size + 1;
+    idx->h_vals[id*7 + 5] = idx->data_size + 1;
     memcpy(idx->data + idx->data_size,
            inp->data,
            new_data_size - idx->data_size);
@@ -795,347 +776,6 @@ _file_open(cs_io_t           *cs_io,
 }
 
 /*----------------------------------------------------------------------------
- * Add fictitious sections for mesh sizes for a legacy restart file.
- *
- * parameters:
- *   inp     <-> kernel IO input structure
- *   sizes   <-- number of cells, interior face, bountery face, and vertices
- *----------------------------------------------------------------------------*/
-
-static void
-_file_legacy_add_sizes(cs_io_t     *inp,
-                       cs_lnum_t    sizes[4])
-{
-  int i;
-  cs_io_sec_header_t h;
-
-  char _sec_name[32];
-  const char *sec_name[] = {"cells",
-                            "interior_faces",
-                            "boundary_faces",
-                            "vertices"};
-
-  assert(inp->mode == CS_IO_MODE_READ);
-  assert(inp->index != NULL);
-
-  /* Common initializations */
-
-  h.n_location_vals = 1;
-  h.type_read = CS_INT32;
-  h.elt_type = CS_INT32;
-
-  /* Add 4 sizes and associated locations as sections with embedded data */
-
-  for (i = 0; i < 4; i++) {
-
-    size_t embedded_val = sizes[i];
-
-    strcpy(_sec_name, sec_name[i]); /* Copy to avoid const warnings */
-    inp->sec_name = _sec_name;
-    inp->n_vals = 1;
-    inp->location_id = i+1;
-    inp->index_id = 0;
-    inp->n_loc_vals = 1;
-    inp->data = &embedded_val;
-
-    h.sec_name = inp->sec_name;
-    h.n_vals = inp->n_vals;
-    h.location_id = inp->location_id;
-
-    assert(sizeof(size_t) == 4 || sizeof(size_t) == 8);
-
-    if (sizeof(size_t) == 4)
-      h.type_read = CS_UINT32;
-    else
-      h.type_read = CS_UINT64;
-    h.elt_type = _type_read_to_elt_type(h.type_read);
-
-    /* Add to index */
-
-    _update_index_and_shift(inp, &h);
-
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Check if a file is a Code_Saturne version 1.1 - 1.3 restart file,
- * and open it if it is.
- *
- * parameters:
- *   inp   <-> kernel IO input structure
- *   name  <-- file name
- *   sizes <-- location sizes
- *   comm  <-- associated MPI communicator
- *
- * returns:
- *   1 if file is a legacy restart file, 0 otherwise.
- *----------------------------------------------------------------------------*/
-
-#if defined(HAVE_MPI)
-static int
-_file_legacy_restart_open(cs_io_t     *inp,
-                          const char  *name,
-                          cs_lnum_t    sizes[4],
-                          MPI_Comm     comm)
-#else
-static int
-_file_legacy_restart_open(cs_io_t    *inp,
-                          const char  *name,
-                          cs_lnum_t    sizes[4])
-#endif
-{
-  char expected_header[] = "Code_Saturne_1.1_bin_reprise\n";
-  char header_read[32] = "";
-  cs_lnum_t expected_len = strlen(expected_header);
-
-  cs_lnum_t n_read = 0;
-  int retval = 0;
-
-  assert(inp->mode == CS_IO_MODE_READ);
-
-  /* Create interface file descriptor */
-
-#if defined(HAVE_MPI)
-  inp->f = cs_file_open(name,
-                        CS_FILE_MODE_READ,
-                        CS_FILE_STDIO_SERIAL,
-                        MPI_INFO_NULL,
-                        MPI_COMM_NULL,
-                        comm);
-#else
-  inp->f = cs_file_open(name, CS_FILE_MODE_READ, CS_FILE_STDIO_SERIAL);
-#endif
-
-  cs_file_set_big_endian(inp->f);
-
-  /* Read first characters and compare */
-  /*-----------------------------------*/
-
-  n_read = cs_file_read_global(inp->f, header_read, 1, expected_len);
-
-  if (n_read == expected_len) {
-    header_read[expected_len] = '\0';
-    if (strcmp(header_read, expected_header) == 0)
-      retval = 1;
-  }
-
-  /* Close file and return if it is not what we are looking for */
-
-  if (retval == 0) {
-    inp->f = cs_file_free(inp->f);
-    return retval;
-  }
-
-  /* From here on, we know the file is in the legacy restart format */
-  /*----------------------------------------------------------------*/
-
-  if (inp->buffer_size == 0) {
-    inp->buffer_size = 128;
-    BFT_MALLOC(inp->buffer, inp->buffer_size, unsigned char);
-    memset(inp->buffer, 0, inp->buffer_size);
-  }
-
-  /* Read location sizes */
-
-  n_read = cs_file_read_global(inp->f, sizes, sizeof(cs_lnum_t), 4);
-  if (n_read < 4) {
-    bft_error(__FILE__, __LINE__, 0,
-              _("Restart file \"%s\"\n"
-                "in format 1.1 is not conforming."),
-              cs_file_get_name(inp->f));
-
-    /* following code will not be reached as long as errors are fatal */
-    inp->f = cs_file_free(inp->f);
-    retval = 0;
-  }
-
-  /* Update index file section */
-  if (inp->index != NULL) {
-    BFT_REALLOC(inp->index->f, inp->index->n_files + 1, cs_file_t *);
-    inp->index->f[inp->index->n_files] = inp->f;
-    inp->index->n_files += 1;
-  }
-
-  return retval;
-}
-
-/*----------------------------------------------------------------------------
- * Test if a file is a legacy restart file, and open it if it is.
- *
- * parameters:
- *   inp     <-> kernel IO input structure
- *   name    <-- file name
- *   comm    <-- associated MPI communicator
- *
- * returns:
- *   1 if file is a legacy restart file, 0 otherwise.
- *----------------------------------------------------------------------------*/
-
-#if defined(HAVE_MPI)
-static int
-_file_legacy_restart_index(cs_io_t     *inp,
-                           const char  *name,
-                           MPI_Comm     comm)
-#else
-static int
-_file_legacy_restart_index(cs_io_t     *inp,
-                           const char  *name)
-#endif
-{
-  cs_lnum_t sizes[4] = {0, 0, 0, 0};
-
-  cs_lnum_t n_read = 0;
-  int end_of_file = 0;
-  int retval = 0;
-
-  const char incorrect_next_file_msg[]
-    = N_("Restart file \"%s\" does not correspond\n"
-         "to part %d of the original restart file.");
-
-#if defined(HAVE_MPI)
-  retval = _file_legacy_restart_open(inp, name, sizes, comm);
-#else
-  retval = _file_legacy_restart_open(inp, name, sizes);
-#endif
-
-  if (retval == 0)
-    return retval;
-
-  /* From here on, we know the file is in the legacy restart format */
-
-  _file_legacy_add_sizes(inp, sizes);
-
-  /* Now analyze the file */
-
-  inp->header_size = 0;
-  inp->header_align = 0;
-  inp->body_align = 0;
-  inp->data = NULL;
-
-  while (end_of_file == 0) {
-
-    cs_lnum_t buf[4];
-    char *sec_name = NULL;
-
-    /* Read section */
-
-    n_read = cs_file_read_global(inp->f, buf, sizeof(cs_lnum_t), 4);
-
-    if (n_read < 4) {
-      end_of_file = 1;
-      break;
-    }
-
-    if (buf[0] + 56 >= (cs_lnum_t)(inp->buffer_size)) {
-      while (buf[0] + 56 >= (cs_lnum_t)(inp->buffer_size))
-        inp->buffer_size *= 2;
-      BFT_REALLOC(inp->buffer, inp->buffer_size, unsigned char);
-    }
-    sec_name = (char *)(inp->buffer + 56);
-
-    n_read = cs_file_read_global(inp->f, sec_name, 1, buf[0]);
-    sec_name[n_read] = '\0';
-
-    if (n_read < buf[0]) {
-      end_of_file = 1;
-      break;
-    }
-
-    /* Now handle section, starting with special records */
-    /*---------------------------------------------------*/
-
-    /* If contents continue on another file, switch files */
-
-    if (strcmp(sec_name, "reprise : fic suivant") == 0) {
-
-      size_t ii;
-      cs_lnum_t cmp_sizes[4] = {0, 0, 0, 0};
-      size_t _name_len = strlen(name) + strlen("_pxx");
-      char *_name = NULL;
-
-      /* Build next restart file name */
-      BFT_MALLOC(_name, _name_len + 1, char);
-      sprintf(_name, "%s_p%02d", name, (int)(inp->index->n_files + 1));
-
-      /* Open new file */
-      end_of_file = 0;
-      inp->index->f[inp->index->n_files - 1] = inp->f;
-#if defined(HAVE_MPI)
-      retval = _file_legacy_restart_open(inp, _name, cmp_sizes, comm);
-#else
-      retval = _file_legacy_restart_open(inp, _name, cmp_sizes);
-#endif
-      if (retval == 0)
-        end_of_file = 1;
-
-      for (ii = 0; ii < 4; ii++) {
-        if (sizes[ii] != cmp_sizes[ii]) {
-          bft_error(__FILE__, __LINE__, 0, _(incorrect_next_file_msg),
-                    cs_file_get_name(inp->f), (int)(inp->index->n_files));
-          end_of_file = 1;
-        }
-      }
-      BFT_FREE(_name);
-    }
-
-    /* If end of file is indicated */
-
-    else if (strcmp(sec_name, "reprise : fin") == 0)
-      end_of_file = 1;
-
-    /* If the beginning of a new file is indicated */
-
-    else if (strcmp(sec_name, "reprise : partie num") == 0) {
-      if (buf[0] != (cs_lnum_t)(inp->index->n_files)) {
-        bft_error(__FILE__, __LINE__, 0, _(incorrect_next_file_msg),
-                  cs_file_get_name(inp->f), (int)(inp->index->n_files));
-        end_of_file = 1;
-      }
-      continue;
-    }
-
-    /* Standard record */
-
-    else {
-
-      /* Prepare addition to index */
-
-      cs_io_sec_header_t h;
-
-      inp->sec_name = sec_name;
-      inp->n_vals = buf[2];
-      if (buf[1] > 0)
-        inp->n_vals *= buf[2] * sizes[buf[1] - 1];
-      inp->location_id = buf[1];
-      inp->index_id = 0;
-      inp->n_loc_vals = buf[2];
-
-      h.sec_name = inp->sec_name;
-      h.n_vals = inp->n_vals;
-      h.location_id = inp->location_id;
-      h.n_location_vals = inp->n_loc_vals;
-      h.type_read = CS_DATATYPE_NULL;
-      if (buf[3] == 0)
-        h.type_read = CS_CHAR;
-      else if (buf[3] == 1)
-        h.type_read = CS_INT32;
-      else if (buf[3] == 2)
-        h.type_read = CS_DOUBLE;
-      h.elt_type = _type_read_to_elt_type(h.type_read);
-
-      inp->type_size = cs_datatype_size[h.type_read];
-
-      /* Add to index */
-
-      _update_index_and_shift(inp, &h);
-
-    }
-  }
-
-  return 1;
-}
-
-/*----------------------------------------------------------------------------
  * Re-open the interface file descriptor when building an index.
  *
  * parameters:
@@ -1159,43 +799,37 @@ _file_reopen_read(cs_io_t           *inp,
                   cs_file_access_t   method)
 #endif /* HAVE_MPI */
 {
-  size_t i;
   char _tmpname[128];
   char *tmpname = _tmpname;
 
   assert(inp->index != NULL);
 
-  for (i = 0; i < inp->index->n_files; i++) {
+  if (inp->f == NULL)
+    return;
 
-    const char *filename = cs_file_get_name(inp->index->f[i]);
+  const char *filename = cs_file_get_name(inp->f);
 
-    if (strlen(filename) >= 128)
-      BFT_MALLOC(tmpname, strlen(filename) + 1, char);
-    strcpy(tmpname, filename);
+  if (strlen(filename) >= 128)
+    BFT_MALLOC(tmpname, strlen(filename) + 1, char);
+  strcpy(tmpname, filename);
 
-    inp->index->f[i] = cs_file_free(inp->index->f[i]);
+  inp->f = cs_file_free(inp->f);
 
 #if defined(HAVE_MPI)
-    inp->index->f[i] = cs_file_open(tmpname,
-                                    CS_FILE_MODE_READ,
-                                    method,
-                                    hints,
-                                    block_comm,
-                                    comm);
+  inp->f = cs_file_open(tmpname,
+                        CS_FILE_MODE_READ,
+                        method,
+                        hints,
+                        block_comm,
+                        comm);
 #else
-    inp->index->f[i] = cs_file_open(tmpname, CS_FILE_MODE_READ, method);
+  inp->f = cs_file_open(tmpname, CS_FILE_MODE_READ, method);
 #endif
 
-    cs_file_set_big_endian(inp->index->f[i]);
+  cs_file_set_big_endian(inp->f);
 
-    if (tmpname != _tmpname)
-      BFT_FREE(tmpname);
-  }
-
-  if (inp->index->n_files > 0)
-    inp->f = inp->index->f[0];
-  else
-    inp->f = NULL;
+  if (tmpname != _tmpname)
+    BFT_FREE(tmpname);
 }
 
 /*----------------------------------------------------------------------------
@@ -1885,14 +1519,6 @@ _cs_io_initialize_with_index(cs_io_t           *inp,
   _file_open(inp, file_name, magic_string, method);
 #endif
 
-  /* Update index file section */
-
-  if (inp->index != NULL) {
-    BFT_REALLOC(inp->index->f, inp->index->n_files + 1, cs_file_t *);
-    inp->index->f[inp->index->n_files] = inp->f;
-    inp->index->n_files += 1;
-  }
-
   /* Read headers to build index index */
 
   while (end_reached == 0) {
@@ -2168,7 +1794,7 @@ _dump_index(const cs_io_sec_index_t  *idx)
   for (ii = 0; ii < idx->size; ii++) {
 
     char embed = 'n';
-    cs_file_off_t *h_vals = idx->h_vals + ii*8;
+    cs_file_off_t *h_vals = idx->h_vals + ii*7;
     const char *name = idx->names + h_vals[4];
 
     if (h_vals[5] > 0)
@@ -2182,11 +1808,6 @@ _dump_index(const cs_io_sec_index_t  *idx)
                (long)(idx->offset[ii]));
 
   }
-
-  bft_printf(_("\n %u associated file(s):\n"), (unsigned)(idx->n_files));
-
-  for (ii = 0; ii < idx->n_files; ii++)
-    bft_printf(_("  \"%s\"\n"), cs_file_get_name(idx->f[ii]));
 
   bft_printf("\n");
 }
@@ -2297,8 +1918,6 @@ cs_io_initialize_with_index(const char        *file_name,
                             long               echo)
 #endif /* HAVE_MPI */
 {
-  int retval = 0;
-
   cs_io_t  *inp =_cs_io_create(CS_IO_MODE_READ, echo);
 
   /* Info on interface creation */
@@ -2312,42 +1931,29 @@ cs_io_initialize_with_index(const char        *file_name,
 
   _create_index(inp);
 
-  /* Test for legacy restart format first */
+  /* Create interface file descriptor; do not use MPI-IO at this
+     stage, as we only read global headers of limited size, and
+     a "lighter" method than MPI-IO should be well adapted. */
 
-#if defined(HAVE_MPI)
-  retval = _file_legacy_restart_index(inp, file_name, comm);
-#else
-  retval = _file_legacy_restart_index(inp, file_name);
-
-#endif
-
-  if (retval == 0) {
-
-    /* Create interface file descriptor; do not use MPI-IO at this
-       stage, as we only read global headers of limited size, and
-       a "lighter" method than MPI-IO should be well adapted. */
-
-    cs_file_access_t _method = CS_FILE_STDIO_SERIAL;
+  cs_file_access_t _method = CS_FILE_STDIO_SERIAL;
 
 #if defined(HAVE_MPI)
 
-    MPI_Info _hints = MPI_INFO_NULL;
+  MPI_Info _hints = MPI_INFO_NULL;
 
-    _cs_io_initialize_with_index(inp,
-                                 file_name,
-                                 magic_string,
-                                 _method,
-                                 _hints,
-                                 block_comm,
-                                 comm);
+  _cs_io_initialize_with_index(inp,
+                               file_name,
+                               magic_string,
+                               _method,
+                               _hints,
+                               block_comm,
+                               comm);
 
 #else
 
-    _cs_io_initialize_with_index(inp, file_name, magic_string, _method);
+  _cs_io_initialize_with_index(inp, file_name, magic_string, _method);
 
 #endif
-
-  }
 
   /* Now reopen all indexed files using hints */
 
@@ -2453,7 +2059,7 @@ cs_io_get_indexed_sec_name(const cs_io_t  *inp,
 
   if (inp != NULL && inp->index != NULL) {
     if (id < inp->index->size) {
-      size_t name_id = inp->index->h_vals[8*id + 4];
+      size_t name_id = inp->index->h_vals[7*id + 4];
       retval = inp->index->names + name_id;
     }
   }
@@ -2483,15 +2089,15 @@ cs_io_get_indexed_sec_header(const cs_io_t  *inp,
   if (inp != NULL && inp->index != NULL) {
     if (id < inp->index->size) {
 
-      size_t name_id = inp->index->h_vals[8*id + 4];
+      size_t name_id = inp->index->h_vals[7*id + 4];
 
       h.sec_name = inp->index->names + name_id;
 
-      h.n_vals          = inp->index->h_vals[8*id];
-      h.location_id     = inp->index->h_vals[8*id + 1];
-      h.index_id        = inp->index->h_vals[8*id + 2];
-      h.n_location_vals = inp->index->h_vals[8*id + 3];
-      h.type_read       = (cs_datatype_t)(inp->index->h_vals[8*id + 6]);
+      h.n_vals          = inp->index->h_vals[7*id];
+      h.location_id     = inp->index->h_vals[7*id + 1];
+      h.index_id        = inp->index->h_vals[7*id + 2];
+      h.n_location_vals = inp->index->h_vals[7*id + 3];
+      h.type_read       = (cs_datatype_t)(inp->index->h_vals[7*id + 6]);
       h.elt_type        = _type_read_to_elt_type(h.type_read);
     }
   }
@@ -2762,13 +2368,13 @@ cs_io_set_indexed_position(cs_io_t             *inp,
   if (id >= inp->index->size)
     return 1;
 
-  header->sec_name = inp->index->names + inp->index->h_vals[8*id + 4];
+  header->sec_name = inp->index->names + inp->index->h_vals[7*id + 4];
 
-  header->n_vals          = inp->index->h_vals[8*id];
-  header->location_id     = inp->index->h_vals[8*id + 1];
-  header->index_id        = inp->index->h_vals[8*id + 2];
-  header->n_location_vals = inp->index->h_vals[8*id + 3];
-  header->type_read       = (cs_datatype_t)(inp->index->h_vals[8*id + 6]);
+  header->n_vals          = inp->index->h_vals[7*id];
+  header->location_id     = inp->index->h_vals[7*id + 1];
+  header->index_id        = inp->index->h_vals[7*id + 2];
+  header->n_location_vals = inp->index->h_vals[7*id + 3];
+  header->type_read       = (cs_datatype_t)(inp->index->h_vals[7*id + 6]);
   header->elt_type        = _type_read_to_elt_type(header->type_read);
 
   inp->n_vals      = header->n_vals;
@@ -2786,17 +2392,15 @@ cs_io_set_indexed_position(cs_io_t             *inp,
 
   /* Non-embedded values */
 
-  if (inp->index->h_vals[8*id + 5] == 0) {
-    size_t file_id = inp->index->h_vals[8*id + 7];
+  if (inp->index->h_vals[7*id + 5] == 0) {
     cs_file_off_t offset = inp->index->offset[id];
-    inp->f = inp->index->f[file_id];
     retval = cs_file_seek(inp->f, offset, CS_FILE_SEEK_SET);
   }
 
   /* Embedded values */
 
   else {
-    size_t data_id = inp->index->h_vals[8*id + 5] - 1;
+    size_t data_id = inp->index->h_vals[7*id + 5] - 1;
     unsigned char *_data = inp->index->data + data_id;
     inp->data = _data;
   }
