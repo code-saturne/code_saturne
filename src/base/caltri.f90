@@ -716,6 +716,8 @@ write(nfecra,2000)
 ntcabs = ntpabs
 ttcabs = ttpabs
 
+if (imobil.eq.1)  ttcmob = ttpmob
+
 iwarn0 = 1
 do ivar = 1, nvar
   iwarn0 = max(iwarn0,iwarni(ivar))
@@ -775,6 +777,13 @@ if (inpdt0.eq.0 .and. itrale.gt.0) then
   endif
   if(iwarn0.gt.0) then
     write(nfecra,3001) ttcabs,ntcabs
+  endif
+  if (imobil.eq.1) then
+    if(idtvar.eq.0.or.idtvar.eq.1) then
+      ttcmob = ttcmob + ra(idt)
+    else
+      ttcmob = ttcmob + dtref
+    endif
   endif
 endif
 

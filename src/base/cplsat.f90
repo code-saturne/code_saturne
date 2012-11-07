@@ -53,6 +53,14 @@ module cplsat
   integer, save :: iturcp(nbcpmx), imajcp(nbcpmx), icormx(nbcpmx)
   integer, save :: nvarcp(nbcpmx), nvarto(nbcpmx)
 
+  !> Absolute time value after the mesh starts to rotate (if it does),
+  !> for previous calculation
+  double precision, save :: ttpmob
+
+  !> Current absolute time after the mesh starts to rotate (if it does).
+  !> In case of restart, this is equal to ttpmob + additional computed time.
+  double precision, save :: ttcmob
+
   !=============================================================================
 
 end module cplsat

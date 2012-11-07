@@ -91,6 +91,7 @@ use radiat, only: iirayo
 use cs_fuel_incl
 use elincl
 use ppcpfu
+use cplsat
 
 !===============================================================================
 
@@ -381,6 +382,14 @@ itysup = 0
 nbval  = 1
 irtyp  = 1
 call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,iale,    &
+            ierror)
+nberro=nberro+ierror
+
+rubriq = 'instant_mobile_precedent'
+itysup = 0
+nbval  = 1
+irtyp  = 2
+call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,ttcmob,  &
             ierror)
 nberro=nberro+ierror
 
