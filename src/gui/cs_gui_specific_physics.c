@@ -2113,7 +2113,7 @@ void CS_PROCF (uicopr, UICOPR) (const int *const nsalpp,
       strcpy(name, "RHOL");
     }
   }
-  if (*iirayo >= 0) {
+  if (*iirayo > 0) {
     /* Absoption coefficient */
     vars->properties_ipp[n] = ipppro[ipproc[ *ickabs -1] -1];
     vars->propce[n] = ipproc[ *ickabs -1] -1;

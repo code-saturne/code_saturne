@@ -170,14 +170,6 @@ if ( isuite.eq.0 ) then
     npo    , npot   , th     , ehgazg ,                           &
     hair   , tinitk )
 
-! ----- On en profite pour initialiser TINFUE et TINOXY
-!       et calculer HINFUE et HINOXY a partir de TINITK et HAIR
-!       CAR on n'a pas encore vu usd3pc.F
-
-    tinoxy = tinitk
-    tinfue = tinitk
-    hinoxy = hair
-    hinfue = hair
 
     do iel = 1, ncel
 
