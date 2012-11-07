@@ -47,6 +47,8 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
+#include "fvm_io_num.h"
+
 #include "cs_base.h"
 #include "cs_block_dist.h"
 #include "cs_block_to_part.h"
@@ -55,6 +57,7 @@
 #include "cs_mesh.h"
 #include "cs_mesh_location.h"
 #include "cs_part_to_block.h"
+#include "cs_parall.h"
 #include "cs_timer.h"
 #include "cs_time_step.h"
 
@@ -88,12 +91,15 @@ BEGIN_C_DECLS
 
 typedef struct _location_t {
 
-  char             *name;            /* Location name */
-  size_t            id;              /* Associated id in file */
-  cs_lnum_t         n_ents;          /* Local number of entities */
-  cs_gnum_t         n_glob_ents_f;   /* Global number of entities by file */
-  cs_gnum_t         n_glob_ents;     /* Global number of entities */
-  const cs_gnum_t  *ent_global_num;  /* Global entity numbers, or NULL */
+  char             *name;             /* Location name */
+  size_t            id;               /* Associated id in file */
+  cs_lnum_t         n_ents;           /* Local number of entities */
+  cs_gnum_t         n_glob_ents_f;    /* Global number of entities by file */
+  cs_gnum_t         n_glob_ents;      /* Global number of entities */
+  const cs_gnum_t  *ent_global_num;   /* Possibly shared global entity numbers,
+                                         or NULL */
+  cs_gnum_t        *_ent_global_num;  /* Private global entity numbers,
+                                         or NULL */
 
 } _location_t;
 
@@ -319,6 +325,7 @@ _locations_from_index(cs_restart_t  *r)
       cs_io_read_global(&h, &(loc->n_glob_ents_f), r->fh);
 
       loc->ent_global_num = NULL;
+      loc->_ent_global_num = NULL;
 
       r->n_locations += 1;
     }
@@ -638,8 +645,8 @@ _section_f77_to_c(const cs_int_t          *numsui,
       || r_id > (cs_int_t)_restart_pointer_size
       || _restart_pointer[r_id] == NULL) {
     cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("Restart file number <%d> can not be closed\n"
-                 "(file already closed or invalid number)."), (int)(*numsui));
+    bft_printf(_("Restart file number <%d> can not be accessed\n"
+                 "(file closed or invalid number)."), (int)(*numsui));
 
     *ierror = CS_RESTART_ERR_FILE_NUM;
     return;
@@ -673,11 +680,7 @@ _section_f77_to_c(const cs_int_t          *numsui,
     break;
 
   default:
-    cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("Location type <%d> given for a restart file section\n"
-                 "is invalid using the Fortran API."), (int)(*itysup));
-    *ierror = CS_RESTART_ERR_LOCATION;
-    return;
+    *location = *itysup;
 
   }
 
@@ -882,10 +885,185 @@ _restart_permute_write(cs_int_t                n_ents,
     break;
 
   default:
-    assert(val_type == CS_TYPE_cs_int_t || val_type == CS_TYPE_cs_real_t);
+    assert(0);
     return NULL;
 
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Find a given record in an indexed restart file.
+ *
+ * parameters:
+ *   restart   <-- associated restart file pointer
+ *   prefix    <-- prefix to name of record
+ *   name      <-- base name of record
+ *   postfix   <-- postfix to name of record
+ *
+ * returns:
+ *   the id assigned to the record, or -1 if not found
+ *----------------------------------------------------------------------------*/
+
+static int
+_restart_section_id(cs_restart_t     *restart,
+                    const char       *prefix,
+                    const char       *name,
+                    const char       *postfix)
+{
+  size_t index_size = cs_io_get_index_size(restart->fh);
+
+  char *_sec_name = NULL;
+  const char *sec_name = name;
+
+  int rec_id = -1;
+
+  if (prefix != NULL || postfix != NULL) {
+
+
+    size_t sec_name_l = strlen(name);
+
+    if (prefix != NULL)
+      sec_name_l += strlen(prefix);
+    if (postfix != NULL)
+      sec_name_l += strlen(postfix);
+
+    BFT_MALLOC(_sec_name, sec_name_l + 1, char);
+    sec_name = _sec_name;
+
+    if (prefix != NULL) {
+      strcpy(_sec_name, prefix);
+      strcat(_sec_name, name);
+    }
+    else
+      strcpy(_sec_name, name);
+
+    if (postfix != NULL)
+      strcat(_sec_name, postfix);
+
+  }
+
+  /* Search for the record in the index */
+
+  for (rec_id = 0; rec_id < (int)index_size; rec_id++) {
+    const char * cmp_name = cs_io_get_indexed_sec_name(restart->fh, rec_id);
+    if (strcmp(cmp_name, sec_name) == 0)
+      break;
+  }
+
+  if (rec_id >= (int)index_size) {
+    bft_printf(_("  %s: section \"%s\" not present.\n"),
+               restart->name, sec_name);
+    rec_id = -1;
+  }
+
+  BFT_FREE(_sec_name);
+
+  return rec_id;
+}
+
+/*----------------------------------------------------------------------------
+ * Compute default particle destination rank array in case of untracked
+ * particles.
+ *
+ * For simplicity, those particles are simply distributed among ranks
+ * (as it is possible to define a global numbering based on a space-filling
+ * curve when generating the restart file, this may be made "geometrically"
+ * balanced also).
+ *
+ * parameters:
+ *   p_bi         <-- pointer to particles bock distribution info
+ *   p_cell_num   <-- global cell number associated with each particle
+ *                    (0 for untracked particles)
+ *   comm         <-- associated MPI communicator
+ *
+ * returns:
+ *   default rank array for particles (>= 0 for untracked particles)
+ *----------------------------------------------------------------------------*/
+
+static int *
+_default_p_rank(cs_block_dist_info_t  *p_bi,
+                const cs_gnum_t       *p_cell_num,
+                MPI_Comm               comm)
+{
+  cs_lnum_t i;
+  cs_block_dist_info_t free_particle_bi;
+
+  int n_ranks = 0, rank_id = -1;
+
+  cs_lnum_t _n_particles = 0, n_free_particles = 0;
+  cs_gnum_t _n_g_free_particles = 0, n_g_free_particles = 0;
+
+  cs_lnum_t *free_particle_ids = NULL;
+
+  fvm_io_num_t *free_particle_io_num = NULL;
+  const cs_gnum_t *free_particle_num = NULL;
+
+  int *default_rank = NULL;
+
+  /* Initialization */
+
+  assert((sizeof(cs_lnum_t) == 4) || (sizeof(cs_lnum_t) == 8));
+
+  /* Count number of untracked particles */
+
+  _n_particles = p_bi->gnum_range[1] - p_bi->gnum_range[0];
+  n_free_particles = 0;
+
+  for (i = 0; i < _n_particles; i++) {
+    if (p_cell_num[i] == 0)
+      n_free_particles += 1;
+  }
+
+  _n_g_free_particles = n_free_particles;
+  MPI_Allreduce(&_n_g_free_particles, &n_g_free_particles, 1,
+                CS_MPI_GNUM, MPI_SUM, comm);
+
+  /* Return if we do not have untracked particles */
+
+  if (n_g_free_particles == 0)
+    return NULL;
+
+  /* Initialize rank info */
+
+  MPI_Comm_size(comm, &n_ranks);
+  MPI_Comm_size(comm, &rank_id);
+  free_particle_bi = cs_block_dist_compute_sizes(rank_id,
+                                                 n_ranks,
+                                                 0,
+                                                 0,
+                                                 n_g_free_particles);
+
+  /* Define distribution of untracked particles based on scan;
+   *
+   *  The main objective of this function
+   *  is to ensure some measure of load balancing. */
+
+  BFT_MALLOC(default_rank, _n_particles, int);
+  for (i = 0; i < _n_particles; i++)
+    default_rank[i] = -1;
+
+  BFT_MALLOC(free_particle_ids, n_free_particles, cs_lnum_t);
+
+  n_free_particles = 0;
+  for (i = 0; i < _n_particles; i++) {
+    if (p_cell_num[i] == 0)
+      free_particle_ids[n_free_particles++] = i;
+  }
+
+  free_particle_io_num = fvm_io_num_create_from_scan(n_free_particles);
+  free_particle_num = fvm_io_num_get_global_num(free_particle_io_num);
+
+  /* Determine rank based on global numbering with SFC ordering */
+  for (i = 0; i < n_free_particles; i++) {
+    default_rank[free_particle_ids[i]]
+      =    ((free_particle_num[i] - 1) / free_particle_bi.block_size)
+         * free_particle_bi.rank_step;
+  }
+
+  free_particle_io_num = fvm_io_num_destroy(free_particle_io_num);
+  BFT_FREE(free_particle_ids);
+
+  return default_rank;
 }
 
 /*============================================================================
@@ -1352,6 +1530,210 @@ void CS_PROCF (ecrsui, ECRSUI)
   cs_base_string_f_to_c_free(&bufname);
 }
 
+/*----------------------------------------------------------------------------
+ * Read basic particles information from a restart file.
+ *
+ * Fortran interface
+ *
+ * subroutine lipsui (numsui, nomrub, lngnom, itysup, nbvent, irtype, tabvar)
+ * *****************
+ *
+ * integer          numsui      : <-- : Restart file number
+ * character*       nomrub      : <-- : Particles location name
+ * integer          lngnom      : <-- : Particles location name length
+ * integer          nbpart      : --> : Number of particles
+ * integer          itysup      : --> : Particles location id,
+ *                                      or -1 in case of error
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (lipsui, LIPSUI)
+(
+ const cs_int_t   *numsui,
+ const char       *nomrub,
+ const cs_int_t   *lngnom,
+       cs_int_t   *nbpart,
+       cs_int_t   *itysup
+ CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
+                                         by many Fortran compilers) */
+)
+{
+  char *bufname;
+  cs_restart_t *r;
+
+  int r_id = *numsui - 1;
+
+  *itysup = -1;
+
+  /* Handle name for C API */
+
+  bufname = cs_base_string_f_to_c_create(nomrub, *lngnom);
+
+  /* Handle other arguments for C API */
+
+  /* Pointer to associated restart file handle */
+
+  if (   r_id < 0
+      || r_id > (cs_int_t)_restart_pointer_size
+      || _restart_pointer[r_id] == NULL) {
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf(_("Restart file number <%d> can not be accessed\n"
+                 "(file closed or invalid number)."), (int)(*numsui));
+    return;
+  }
+
+  else
+    r = _restart_pointer[r_id];
+
+  /* Read particles information */
+
+  *itysup = cs_restart_read_particles_info(r, bufname, nbpart);
+
+  /* Free memory if necessary */
+
+  cs_base_string_f_to_c_free(&bufname);
+}
+
+/*----------------------------------------------------------------------------
+ * Read basic particles information from a restart file.
+ *
+ * Fortran interface
+ *
+ * subroutine lepsui (numsui, nomrub, lngnom, inmcoo, nbpart, ipcell,
+ * *****************
+ *                    coopar, itysup, ierror)
+ *
+ * integer          numsui      : <-- : Restart file number
+ * integer          ipcell      : --> : Particle -> cell number
+ * double precision coopar      : --> : Particle coordinate
+ * integer          ipsup       : <-- : Particles location id
+ * integer          ierror      : --> : 0: success, < 0: error code
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (lepsui, LEPSUI)
+(
+ const cs_int_t   *numsui,
+       cs_int_t   *ipcell,
+       cs_real_t  *coopar,
+ const cs_int_t   *itysup,
+       cs_int_t   *ierror
+ CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
+                                         by many Fortran compilers) */
+)
+{
+  cs_restart_t *r;
+
+  int r_id = *numsui - 1;
+
+  *ierror = CS_RESTART_SUCCESS;
+
+  /* Pointer to associated restart file handle */
+
+  if (   r_id < 0
+      || r_id > (cs_int_t)_restart_pointer_size
+      || _restart_pointer[r_id] == NULL) {
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf(_("Restart file number <%d> can not be accessed\n"
+                 "(file closed or invalid number)."), (int)(*numsui));
+
+    *ierror = CS_RESTART_ERR_FILE_NUM;
+    return;
+  }
+
+  else
+    r = _restart_pointer[r_id];
+
+  /* Write particles information */
+
+  *ierror = cs_restart_read_particles(r,
+                                      *itysup,
+                                      ipcell,
+                                      coopar);
+}
+
+/*----------------------------------------------------------------------------
+ * Write basic particles information to a restart file.
+ *
+ * This includes defining a matching location and associated global numbering,
+ * then writing particle coordinates and cell ids.
+ *
+ * Fortran interface
+ *
+ * subroutine ecpsui (numsui, nomrub, lngnom, inmcoo, nbpart, ipcell,
+ * *****************
+ *                    coopar, itysup, ierror)
+ *
+ * integer          numsui      : <-- : Restart file number
+ * character*       nomrub      : <-- : Particles location name
+ * integer          lngnom      : <-- : Particles location name length
+ * integer          inmcoo      : <-- : Number by coords
+ * integer          nbpart      : <-- : Number of particles
+ * integer          ipcell      : <-- : Particle -> cell number
+ * double precision coopar      : <-- : Particle coordinates
+ * integer          ipsup       : --> : Particles location id
+ * integer          ierror      : --> : 0: success, < 0: error code
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (ecpsui, ECPSUI)
+(
+ const cs_int_t   *numsui,
+ const char       *nomrub,
+ const cs_int_t   *lngnom,
+ const cs_int_t   *inmcoo,
+ const cs_int_t   *nbpart,
+ const cs_int_t   *ipcell,
+ const cs_real_t  *coopar,
+       cs_int_t   *itysup,
+       cs_int_t   *ierror
+ CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
+                                         by many Fortran compilers) */
+)
+{
+  char *bufname;
+  cs_restart_t *r;
+
+  bool number_by_coords = (*inmcoo) ? true : false;
+
+  int r_id = *numsui - 1;
+
+  *itysup = 0;
+  *ierror = CS_RESTART_SUCCESS;
+
+  /* Handle name for C API */
+
+  bufname = cs_base_string_f_to_c_create(nomrub, *lngnom);
+
+  /* Handle other arguments for C API */
+
+  /* Pointer to associated restart file handle */
+
+  if (   r_id < 0
+      || r_id > (cs_int_t)_restart_pointer_size
+      || _restart_pointer[r_id] == NULL) {
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf(_("Restart file number <%d> can not be accessed\n"
+                 "(file closed or invalid number)."), (int)(*numsui));
+
+    *ierror = CS_RESTART_ERR_FILE_NUM;
+    return;
+  }
+
+  else
+    r = _restart_pointer[r_id];
+
+  /* Write particles information */
+
+  *itysup = cs_restart_write_particles(r,
+                                       bufname,
+                                       number_by_coords,
+                                       *nbpart,
+                                       ipcell,
+                                       coopar);
+
+  /* Free memory if necessary */
+
+  cs_base_string_f_to_c_free(&bufname);
+}
+
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -1681,8 +2063,10 @@ cs_restart_destroy(cs_restart_t  *restart)
 
   if (restart->n_locations > 0) {
     size_t loc_id;
-    for (loc_id = 0; loc_id < restart->n_locations; loc_id++)
+    for (loc_id = 0; loc_id < restart->n_locations; loc_id++) {
       BFT_FREE((restart->location[loc_id]).name);
+      BFT_FREE((restart->location[loc_id])._ent_global_num);
+    }
   }
   if (restart->location != NULL)
     BFT_FREE(restart->location);
@@ -1796,6 +2180,7 @@ cs_restart_add_location(cs_restart_t     *restart,
 
         (restart->location[loc_id]).n_ents  = n_ents;
         (restart->location[loc_id]).ent_global_num = ent_global_num;
+        (restart->location[loc_id])._ent_global_num = NULL;
 
         timing[1] = cs_timer_wtime();
         _restart_wtime[restart->mode] += timing[1] - timing[0];
@@ -1834,6 +2219,7 @@ cs_restart_add_location(cs_restart_t     *restart,
     (restart->location[restart->n_locations-1]).n_glob_ents_f  = n_glob_ents;
     (restart->location[restart->n_locations-1]).n_ents         = n_ents;
     (restart->location[restart->n_locations-1]).ent_global_num = ent_global_num;
+    (restart->location[restart->n_locations-1])._ent_global_num = NULL;
 
     cs_io_write_global(location_name, 1, restart->n_locations, 0, 0,
                        gnum_type, &n_glob_ents,
@@ -2026,8 +2412,11 @@ cs_restart_read_section(cs_restart_t           *restart,
     }
   }
   else if (header.elt_type == CS_UINT32 || header.elt_type == CS_UINT64) {
-    cs_io_set_cs_gnum(&header, restart->fh);
-    if (val_type != CS_TYPE_cs_gnum_t) {
+    if (val_type = CS_TYPE_cs_gnum_t)
+      cs_io_set_cs_gnum(&header, restart->fh);
+    else if (val_type = CS_TYPE_cs_int_t)
+      cs_io_set_cs_lnum(&header, restart->fh);
+    else {
       bft_printf(_("  %s: section \"%s\" is not of global number type.\n"),
                  restart->name, sec_name);
       return CS_RESTART_ERR_VAL_TYPE;
@@ -2219,6 +2608,431 @@ cs_restart_write_section(cs_restart_t           *restart,
   _restart_wtime[restart->mode] += timing[1] - timing[0];
 
 #endif /* #if defined(HAVE_MPI) */
+}
+
+/*----------------------------------------------------------------------------
+ * Read basic particles information from a restart file.
+ *
+ * This includes building a matching location and associated global numbering.
+ *
+ * parameters:
+ *   restart      <-- associated restart file pointer
+ *   name         <-- name of particles set
+ *   n_particles  --> number of particles, or NULL
+ *
+ * returns:
+ *   the location id assigned to the particles, or -1 in case of error
+ *----------------------------------------------------------------------------*/
+
+int
+cs_restart_read_particles_info(cs_restart_t  *restart,
+                               const char    *name,
+                               cs_lnum_t     *n_particles)
+{
+  double timing[2];
+
+  cs_lnum_t c_id;
+  int rec_id;
+  cs_io_sec_header_t  header;
+
+  cs_lnum_t  block_buf_size = 0;
+  size_t  nbr_byte_ent = sizeof(cs_gnum_t);
+  cs_lnum_t n_cells = (restart->location[CS_MESH_LOCATION_CELLS-1]).n_ents;
+  cs_gnum_t n_glob_cells
+    = (restart->location[CS_MESH_LOCATION_CELLS-1]).n_glob_ents;
+  cs_gnum_t n_glob_particles = 0;
+
+  int  *default_p_rank = NULL;
+  const cs_gnum_t  *g_cell_num
+    = restart->location[CS_MESH_LOCATION_CELLS-1].ent_global_num;
+  const cs_datatype_t int_type
+    = (sizeof(int) == 8) ? CS_INT64 : CS_INT32;
+
+  int loc_id = -1;
+
+  timing[0] = cs_timer_wtime();
+
+  if (n_particles != NULL)
+    *n_particles = 0;
+
+  /* Search for location with the same name */
+
+  for (loc_id = 0; loc_id < (int)(restart->n_locations); loc_id++) {
+    if ((strcmp((restart->location[loc_id]).name, name) == 0))
+      break;
+  }
+
+  if (loc_id >= (int)(restart->n_locations))
+    return -1;
+
+  n_glob_particles = (restart->location[loc_id]).n_glob_ents_f;
+
+  /* Search for the corresponding cell_num record in the index */
+
+  rec_id = _restart_section_id(restart, NULL, name, "_cell_num");
+
+  if (rec_id < 0)
+    return -1;
+
+#if defined(HAVE_MPI)
+
+  if (cs_glob_n_ranks > 1) {
+
+    int  *b_cell_rank, *p_cell_rank;
+    cs_gnum_t  *part_cell_num = NULL;
+    cs_part_to_block_t *pbd = NULL;
+    cs_block_to_part_t *d = NULL;
+
+    /* Now read matching cell_num to an arbitrary block distribution */
+
+    cs_block_dist_info_t cell_bi
+      = cs_block_dist_compute_sizes(cs_glob_rank_id,
+                                    cs_glob_n_ranks,
+                                    restart->rank_step,
+                                    restart->min_block_size / nbr_byte_ent,
+                                    n_glob_cells);
+
+    cs_block_dist_info_t part_bi
+      = cs_block_dist_compute_sizes(cs_glob_rank_id,
+                                    cs_glob_n_ranks,
+                                    restart->rank_step,
+                                    restart->min_block_size / nbr_byte_ent,
+                                    n_glob_particles);
+
+    /* Read data to blocks */
+
+    block_buf_size = (part_bi.gnum_range[1] - part_bi.gnum_range[0]);
+
+    if (block_buf_size > 0)
+      BFT_MALLOC(part_cell_num, block_buf_size, cs_gnum_t);
+
+    header = cs_io_get_indexed_sec_header(restart->fh, rec_id);
+
+    cs_io_set_indexed_position(restart->fh, &header, rec_id);
+
+    cs_io_read_block(&header,
+                     part_bi.gnum_range[0],
+                     part_bi.gnum_range[1],
+                     part_cell_num,
+                     restart->fh);
+
+    /* Build block distribution cell rank info */
+
+    BFT_MALLOC(b_cell_rank,
+               (cell_bi.gnum_range[1] - cell_bi.gnum_range[0]),
+               int);
+
+    BFT_MALLOC(p_cell_rank, n_cells, int);
+
+    pbd = cs_part_to_block_create_by_gnum(cs_glob_mpi_comm,
+                                          cell_bi,
+                                          n_cells,
+                                          g_cell_num);
+
+    for (c_id = 0; c_id < n_cells; c_id++)
+      p_cell_rank[c_id] = cs_glob_rank_id;
+
+    cs_part_to_block_copy_array(pbd,
+                                int_type,
+                                1,
+                                p_cell_rank,
+                                b_cell_rank);
+
+    cs_part_to_block_destroy(&pbd);
+
+    BFT_FREE(p_cell_rank);
+
+    /* Now build distribution structure */
+
+    default_p_rank = _default_p_rank(&part_bi,
+                                     part_cell_num,
+                                     cs_glob_mpi_comm);
+
+    d = cs_block_to_part_create_by_adj_s(cs_glob_mpi_comm,
+                                         part_bi,
+                                         cell_bi,
+                                         1,
+                                         part_cell_num,
+                                         b_cell_rank,
+                                         default_p_rank);
+
+    if (default_p_rank != NULL)
+      BFT_FREE(default_p_rank);
+
+    BFT_FREE(b_cell_rank);
+
+    (restart->location[loc_id])._ent_global_num
+      = cs_block_to_part_transfer_gnum(d);
+    (restart->location[loc_id]).ent_global_num
+      = (restart->location[loc_id])._ent_global_num;
+
+    (restart->location[loc_id]).n_glob_ents = n_glob_particles;
+    (restart->location[loc_id]).n_ents = cs_block_to_part_get_n_part_ents(d);
+
+    cs_block_to_part_destroy(&d);
+
+    BFT_FREE(part_cell_num);
+
+  }
+
+#endif /* #if defined(HAVE_MPI) */
+
+  if (cs_glob_n_ranks == 1) {
+
+    (restart->location[loc_id]).n_glob_ents = n_glob_particles;
+    (restart->location[loc_id]).n_ents = n_glob_particles;
+
+  }
+
+  if (n_particles != NULL)
+    *n_particles = (restart->location[loc_id]).n_ents;
+
+  timing[1] = cs_timer_wtime();
+  _restart_wtime[restart->mode] += timing[1] - timing[0];
+
+  return loc_id + 1;
+}
+
+/*----------------------------------------------------------------------------
+ * Read basic particles information from a restart file.
+ *
+ * parameters:
+ *   restart               <-- associated restart file pointer
+ *   particles_location_id <-- location id of particles set
+ *   particle_cell_num     --> local cell number to which particles belong
+ *                             (1 to n; 0 for "unlocated" particles)
+ *   particle_coords       --> local particle coordinates (interleaved)
+ *
+ * returns: 0 (CS_RESTART_SUCCESS) in case of success,
+ *          or error code (CS_RESTART_ERR_xxx) in case of error
+ *----------------------------------------------------------------------------*/
+
+int
+cs_restart_read_particles(cs_restart_t  *restart,
+                          int            particles_location_id,
+                          cs_lnum_t     *particle_cell_num,
+                          cs_real_t     *particle_coords)
+{
+  double timing[2];
+  char *sec_name = NULL;
+
+  cs_lnum_t n_cells = (restart->location[CS_MESH_LOCATION_CELLS-1]).n_ents;
+  const cs_gnum_t *g_cells_num
+    = (restart->location[CS_MESH_LOCATION_CELLS-1]).ent_global_num;
+
+  const char *name = (restart->location[particles_location_id - 1]).name;
+  const char *cell_num_postfix = "_cell_num";
+  const char *coords_postfix = "_coords";
+
+  int retcode = CS_RESTART_SUCCESS;
+
+  cs_lnum_t  n_particles = (restart->location[particles_location_id - 1]).n_ents;
+
+  /* Read particle coordinates */
+
+  BFT_MALLOC(sec_name, strlen(name) + strlen(coords_postfix) + 1, char);
+  strcpy(sec_name, name);
+  strcat(sec_name, coords_postfix);
+
+  retcode = cs_restart_read_section(restart,
+                                    sec_name,
+                                    particles_location_id,
+                                    3,
+                                    CS_TYPE_cs_real_t,
+                                    particle_coords);
+
+  BFT_FREE(sec_name);
+
+  if (retcode != CS_RESTART_SUCCESS)
+    return retcode;
+
+  /* Read particle cell id */
+
+  BFT_MALLOC(sec_name, strlen(name) + strlen(cell_num_postfix) + 1, char);
+  strcpy(sec_name, name);
+  strcat(sec_name, cell_num_postfix);
+
+#if defined(HAVE_MPI)
+
+  if (cs_glob_n_ranks > 1) {
+
+    cs_lnum_t i;
+    cs_gnum_t *g_part_cell_num;
+
+    BFT_MALLOC(g_part_cell_num, n_particles, cs_gnum_t);
+
+    retcode = cs_restart_read_section(restart,
+                                    sec_name,
+                                    particles_location_id,
+                                    1,
+                                    CS_TYPE_cs_gnum_t,
+                                    g_part_cell_num);
+
+    timing[0] = cs_timer_wtime();
+
+    cs_block_to_part_global_to_local(n_particles,
+                                     1,
+                                     n_cells,
+                                     false,
+                                     g_cells_num,
+                                     g_part_cell_num,
+                                     particle_cell_num);
+
+    for (i = 0; i < n_particles; i++)
+      particle_cell_num[i] += 1;
+
+    BFT_FREE(g_part_cell_num);
+
+    timing[1] = cs_timer_wtime();
+    _restart_wtime[restart->mode] += timing[1] - timing[0];
+
+  }
+
+#endif /* #if defined(HAVE_MPI) */
+
+  if (cs_glob_n_ranks == 1)
+    retcode = cs_restart_read_section(restart,
+                                      sec_name,
+                                      particles_location_id,
+                                      1,
+                                      CS_TYPE_cs_int_t,
+                                      particle_cell_num);
+
+  BFT_FREE(sec_name);
+
+  return retcode;
+}
+
+/*----------------------------------------------------------------------------
+ * Write basic particles information to a restart file.
+ *
+ * This includes defining a matching location and associated global numbering,
+ * then writing particle coordinates and cell ids.
+ *
+ * parameters:
+ *   restart           <-- associated restart file pointer
+ *   name              <-- name of particles set
+ *   number_by_coords  <-- if true, numbering is based on current coordinates;
+ *                         otherwise, it is simply based on local numbers,
+ *                         plus the sum of particles on lower MPI ranks
+ *   n_particles       <-- local number of particles
+ *   particle_cell_num <-- local cell number (1 to n) to which particles
+ *                         belong; 0 for untracked particles
+ *   particle_coords   <-- local particle coordinates (interleaved)
+ *
+ * returns:
+ *   the location id assigned to the particles
+ *----------------------------------------------------------------------------*/
+
+int
+cs_restart_write_particles(cs_restart_t     *restart,
+                           const char       *name,
+                           bool              number_by_coords,
+                           cs_lnum_t         n_particles,
+                           const cs_lnum_t  *particle_cell_num,
+                           const cs_real_t  *particle_coords)
+{
+  double timing[2];
+  cs_lnum_t i;
+
+  cs_gnum_t n_glob_particles = n_particles;
+  cs_gnum_t  *global_particle_num = NULL;
+  cs_gnum_t  *global_part_cell_num = NULL;
+  fvm_io_num_t  *io_num = NULL;
+  char *sec_name = NULL;
+
+  const char *cell_num_postfix = "_cell_num";
+  const char *coords_postfix = "_coords";
+
+  int loc_id = -1;
+
+  timing[0] = cs_timer_wtime();
+
+  /* Build global numbering */
+
+  cs_parall_counter(&n_glob_particles, 1);
+
+  if (number_by_coords)
+    io_num = fvm_io_num_create_from_sfc(particle_coords,
+                                        3,
+                                        n_particles,
+                                        FVM_IO_NUM_SFC_MORTON_BOX);
+
+  else
+    io_num = fvm_io_num_create_from_scan(n_particles);
+
+  global_particle_num = fvm_io_num_transfer_global_num(io_num);
+  fvm_io_num_destroy(io_num);
+
+  /* Create a new location, with ownership of global numbers */
+
+  loc_id = cs_restart_add_location(restart,
+                                   name,
+                                   n_glob_particles,
+                                   n_particles,
+                                   global_particle_num);
+
+  (restart->location[loc_id-1])._ent_global_num = global_particle_num;
+  assert((restart->location[loc_id-1]).ent_global_num == global_particle_num);
+
+  /* Write particle coordinates */
+
+  BFT_MALLOC(sec_name, strlen(name) + strlen(coords_postfix) + 1, char);
+  strcpy(sec_name, name);
+  strcat(sec_name, coords_postfix);
+
+  timing[1] = cs_timer_wtime();
+  _restart_wtime[restart->mode] += timing[1] - timing[0];
+
+  cs_restart_write_section(restart,
+                           sec_name,
+                           loc_id,
+                           3,
+                           CS_TYPE_cs_real_t,
+                           particle_coords);
+
+  timing[0] = cs_timer_wtime();
+
+  BFT_FREE(sec_name);
+
+  /* Write particle cell location information */
+
+  BFT_MALLOC(global_part_cell_num, n_particles, cs_gnum_t);
+
+  if (restart->location[CS_MESH_LOCATION_CELLS-1].ent_global_num != NULL) {
+    const cs_gnum_t  *g_cell_num
+      = restart->location[CS_MESH_LOCATION_CELLS-1].ent_global_num;
+    for (i = 0; i < n_particles; i++) {
+      if (particle_cell_num[i] > 0)
+        global_part_cell_num[i] = g_cell_num[particle_cell_num[i]-1];
+      else
+        global_part_cell_num[i] = 0;
+    }
+  }
+  else {
+    for (i = 0; i < n_particles; i++)
+      global_part_cell_num[i] = particle_cell_num[i];
+  }
+
+  BFT_MALLOC(sec_name, strlen(name) + strlen(cell_num_postfix) + 1, char);
+  strcpy(sec_name, name);
+  strcat(sec_name, cell_num_postfix);
+
+  timing[1] = cs_timer_wtime();
+  _restart_wtime[restart->mode] += timing[1] - timing[0];
+
+  cs_restart_write_section(restart,
+                           sec_name,
+                           loc_id,
+                           1,
+                           CS_TYPE_cs_gnum_t,
+                           global_part_cell_num);
+
+  BFT_FREE(sec_name);
+
+  BFT_FREE(global_part_cell_num);
+
+  return loc_id;
 }
 
 /*----------------------------------------------------------------------------

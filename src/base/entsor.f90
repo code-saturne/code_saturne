@@ -124,14 +124,6 @@ module entsor
 
   ! --- Fichiers Lagrangiens
 
-  !   - Fichier suite et suite statistisque  amont Lagrangien
-
-  character*13, save :: ficaml, ficmls
-
-  !   - Fichier suite et suite statistisque aval Lagrangien
-
-  character*13, save :: ficavl, ficvls
-
   !   - Fichier listing Lagrangien
 
   !     ficlal : nom du fichier

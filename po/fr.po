@@ -1,15 +1,12 @@
-# translation of fr.po to
-# French translations for code_saturne package.
-# Copyright (C) 2008-2011 EDF S.A.
-# This file is distributed under the same license as Code_Saturne.
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
-# Automatically generated, 2008-2011.
-# Saturne <saturne-support@edf.fr>, 2008-2010.
 msgid ""
 msgstr ""
-"Project-Id-Version: code-saturne 2.0\n"
+"Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2012-10-31 19:40+0100\n"
+"POT-Creation-Date: 2012-11-07 11:09+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -4224,7 +4221,7 @@ msgid ""
 "Shared library support not available.\n"
 "Unable to load: %s\n"
 msgstr ""
-"Support de librairies partagées non disponible.\n"
+"Support de bibliothèques partagées non disponible.\n"
 "Impossible de charger : %s\n"
 
 msgid "point-to-point or not synchronized"
@@ -5155,7 +5152,7 @@ msgid ""
 msgstr ""
 " --mpi             calcul parallèle ou couplé via MPI ;\n"
 "                   (généralement automatique, nécessaire uniquement\n"
-"                   pour des librairies MPI inconnues)\n"
+"                   pour des bibliothèques MPI inconnues)\n"
 
 #, c-format
 msgid ""
@@ -5563,19 +5560,11 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Restart file number <%d> can not be closed\n"
-"(file already closed or invalid number)."
+"Restart file number <%d> can not be accessed\n"
+"(file closed or invalid number)."
 msgstr ""
-"Le fichier suite numéro <%d> ne peut être fermé\n"
+"Le fichier suite numéro <%d> n'est pas accessible\n"
 "(fichier déjà fermé ou numéro invalide)."
-
-#, c-format
-msgid ""
-"Location type <%d> given for a restart file section\n"
-"is invalid using the Fortran API."
-msgstr ""
-"Le type de support <%d> indiqué pour une rubrique de\n"
-"fichier suite est invalide pour l'interface Fortran."
 
 #, c-format
 msgid ""
@@ -5586,12 +5575,24 @@ msgstr ""
 "fichier suite est invalide pour l'interface Fortran."
 
 #, c-format
+msgid "  %s: section \"%s\" not present.\n"
+msgstr ""
+
+#, c-format
 msgid ""
 "The access mode of the restart file <%s>\n"
 "must be equal to 1 (read) or 2 (write) and not <%d>."
 msgstr ""
 "Le mode d'ouverture du fichier suite <%s>\n"
 "doit être égal à 1 (lecture) ou 2 (écriture) et non <%d>."
+
+#, c-format
+msgid ""
+"Restart file number <%d> can not be closed\n"
+"(file already closed or invalid number)."
+msgstr ""
+"Le fichier suite numéro <%d> ne peut être fermé\n"
+"(fichier déjà fermé ou numéro invalide)."
 
 #, c-format
 msgid ""
@@ -5644,10 +5645,6 @@ msgstr ""
 
 #, c-format
 msgid "  %s: location id %d for \"%s\" has size %llu, but %llu is expected.\n"
-msgstr ""
-
-#, c-format
-msgid "  %s: section \"%s\" not present.\n"
 msgstr ""
 
 #, c-format
@@ -9774,7 +9771,7 @@ msgid ""
 "  External libraries for partitioning:\n"
 msgstr ""
 "\n"
-"  Librairies externes pour le partitionnement :\n"
+"  Bibliothèques externes pour le partitionnement :\n"
 
 #, c-format
 msgid ""
