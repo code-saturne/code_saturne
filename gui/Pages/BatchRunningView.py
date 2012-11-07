@@ -694,6 +694,11 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             QMessageBox.information(self, title, msg)
             return
 
+        # Ensure code is run from a case subdirectory
+
+        prv_dir = os.getcwd()
+        os.chdir(self.case['scripts_path'])
+
         # Do we have a mesh ?
 
         have_mesh = False
@@ -723,7 +728,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
         key = self.case['batch_type']
 
-        batch = os.path.join(self.case['scripts_path'], self.case['batch'])
+        batch = os.path.join('.', self.case['batch'])
 
         if key == None:
             run_id, run_title = self.__suggest_run_id()
@@ -750,7 +755,9 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             dlg = ListingDialogView(self.parent, self.case, run_title, [cmd])
             dlg.show()
         else:
-            return cs_exec_environment.run_command(cmd)
+            cs_exec_environment.run_command(cmd)
+
+        os.chdir(prv_dir)
 
 
     def __suggest_run_id(self):
