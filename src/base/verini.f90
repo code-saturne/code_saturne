@@ -64,6 +64,7 @@ use ppincl
 use lagpar
 use lagran
 use radiat
+use cplsat
 use mesh
 
 !===============================================================================
@@ -1696,7 +1697,30 @@ if (ippmod(icompf).ge.0) then
 endif
 
 !===============================================================================
-! 8. FORMATS VERIFICATION
+! 8. Rotating frame and unsteady rotor/stator coupling : 9000 formats
+!===============================================================================
+
+if (icorio.ne.0 .and. icorio.ne.1) then
+  write(nfecra,9000) icorio
+  iok = iok + 1
+endif
+
+if (imobil.eq.1) then
+  ! Unsteady rotor/stator coupling is not compatible with the
+  !   steady algorithm...
+  if (idtvar.lt.0) then
+    write(nfecra,9010) idtvar
+    iok = iok + 1
+  endif
+  ! ... nor with the space variable time steps
+  if (idtvar.eq.2) then
+    write(nfecra,9011) idtvar
+    iok = iok + 1
+  endif
+endif
+
+!===============================================================================
+! 9. FORMATS VERIFICATION
 !===============================================================================
 
 #if defined(_CS_LANG_FR)
@@ -4227,6 +4251,55 @@ endif
 '@',                                                            /,&
 '@  Verifier les parametres donnes via l''interface',           /,&
 '@    ou cs_user_parameters.f90.',                              /,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
+ 9000 format(                                                     &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
+'@    =========',                                               /,&
+'@    INDICATEUR DE PRISE EN COMPTE DE LA ROTATION'             /,&
+'@',                                                            /,&
+'@  ICORIO DOIT VALOIR 0 OU 1',                                 /,&
+'@    IL VAUT ICI', i10,                                        /,&
+'@',                                                            /,&
+'@  Le calcul ne peut etre execute.',                           /,&
+'@',                                                            /,&
+'@  Verifier les parametres donnes via cs_user_parameter.f90'  ,/,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
+ 9010  format(                                                    &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
+'@    =========',                                               /,&
+'@   LE COUPLAGE ROTOR/STATOR INSTATIONNAIRE N''EST PAS',       /,&
+'@     COMPATIBLE AVEC L''ALGORITHME STATIONNAIRE',             /,&
+'@',                                                            /,&
+'@  Le calcul ne sera pas execute.',                            /,&
+'@',                                                            /,&
+'@  L''indicateur IDTVAR a ete positionne a', i10,              /,&
+'@    par l''interface ou dans cs_user_parameter.f90',          /,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
+ 9011  format(                                                    &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
+'@    =========',                                               /,&
+'@   LE COUPLAGE ROTOR/STATOR INSTATIONNAIRE N''EST PAS',       /,&
+'@     COMPATIBLE AVEC LES PAS DE TEMPS VARIABLES EN ESPACE'    /,&
+'@',                                                            /,&
+'@  Le calcul ne sera pas execute.',                            /,&
+'@',                                                            /,&
+'@  L''indicateur IDTVAR a ete positionne a', i10,              /,&
+'@    par l''interface ou dans cs_user_parameter.f90',          /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -6797,6 +6870,55 @@ endif
 '@',                                                            /,&
 '@ Check the input data given through the User Interface',      /,&
 '@   or in cs_user_parameters.f90.',                            /,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
+ 9000 format(                                                     &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
+'@    =========',                                               /,&
+'@    FLAG FOR CONSIDERATION OF ROTATION',                      /,&
+'@',                                                            /,&
+'@  ICORIO should be = 0 or 1',                                 /,&
+'@   IT HAS VALUE', i10,                                        /,&
+'@',                                                            /,&
+'@   The calculation could NOT run.',                           /,&
+'@',                                                            /,&
+'@  Verify the parameters given in cs_user_parameter.f90',      /,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
+ 9010  format(                                                    &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
+'@    =========',                                               /,&
+'@   UNSTEADY ROTOR/STATOR COUPLING IS NOT COMPATIBLE',         /,&
+'@     WITH THE STEADY ALGORITHM',                              /,&
+'@',                                                            /,&
+'@  Computation CAN NOT run',                                   /,&
+'@',                                                            /,&
+'@  Integer parameter IDTVAR was set to', i10,                  /,&
+'@    through the User Interface or in cs_user_parameters.f90.',/,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
+ 9011  format(                                                    &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
+'@    =========',                                               /,&
+'@   UNSTEADY ROTOR/STATOR COUPLING IS NOT COMPATIBLE',         /,&
+'@     WITH THE SPACE VARIABLE TIME STEPS',                     /,&
+'@',                                                            /,&
+'@  Computation CAN NOT run',                                   /,&
+'@',                                                            /,&
+'@  Integer parameter IDTVAR was set to', i10,                  /,&
+'@    through the User Interface or in cs_user_parameters.f90.',/,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
