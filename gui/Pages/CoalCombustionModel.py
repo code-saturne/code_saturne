@@ -566,8 +566,8 @@ class CoalCombustionModel(Variables, Model):
         """
         self.isInt(coalNumber)
 
-        for classId in range(self.getClassNumber(coalNumber), 0):
-            self.deleteClass(coalNumber, classId + 1)
+        for classId in range(self.getClassNumber(coalNumber), 0, -1):
+            self.deleteClass(coalNumber, classId)
 
         # Remove fuel scalars
         baseNames = [ "Fr_MV1", "Fr_MV2"]
