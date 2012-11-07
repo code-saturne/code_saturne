@@ -1490,6 +1490,8 @@ void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
           else if (cs_gui_strcmp(choice, "subroutine"))
             i_cz_params[*ijuvw -1] = 2;
 
+          BFT_FREE(choice);
+
           /* statistical_weight, mass_flow_rate*/
 
           choice = _get_attr("choice", 2, path2, "statistical_weight");
@@ -1510,6 +1512,8 @@ void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
             r_cz_params[*idebt -1] = 0;
           }
 
+          BFT_FREE(choice);
+
           /* diameter */
 
           choice = _get_attr("choice", 2, path2, "diameter");
@@ -1521,6 +1525,8 @@ void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
           }
           else if (cs_gui_strcmp(choice, "subroutine"))
             i_cz_params[*ijprdp -1] = 2;
+
+          BFT_FREE(choice);
 
           /* density */
 
@@ -1541,6 +1547,9 @@ void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
 
             _get_double(&(r_cz_params[*icpt -1]), 2, path2, "specific_heat");
             _get_double(&(r_cz_params[*iepsi -1]), 2, path2, "emissivity");
+
+            BFT_FREE(choice);
+
           }
 
           /* coal */
