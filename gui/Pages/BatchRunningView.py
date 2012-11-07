@@ -756,6 +756,11 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             QMessageBox.information(self, title, msg)
             return
 
+        # Ensure code is run from a case subdirectory
+
+        prv_dir = os.getcwd()
+        os.chdir(self.case['scripts_path'])
+
         # Do we have a mesh ?
 
         have_mesh = False
@@ -785,7 +790,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
         key = self.case['batch_type']
 
-        batch = os.path.join(self.case['scripts_path'], self.case['batch'])
+        batch = os.path.join('.', self.case['batch'])
 
         if key == None:
             cmd = 'nice nohup ' + batch + ' | tee ' + batch + '.log &'
@@ -807,6 +812,8 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             SalomeHandler.runSolver(self.case, batch)
         else:
             os.system(cmd)
+
+        os.chdir(prv_dir)
 
 
     def getCommandOutput(self, cmd):
