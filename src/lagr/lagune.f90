@@ -864,6 +864,9 @@ endif
 ! 17. NOMBRE DE PARITICULES PERDUES (SUITES COMPRISES)
 !===============================================================================
 
+if (irangp .ge. 0) then
+  call parcpt(nbperr)
+endif
 nbpert = nbpert + nbperr
 
 !===============================================================================

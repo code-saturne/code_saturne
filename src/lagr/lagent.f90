@@ -1375,6 +1375,11 @@ endif
 nbpart = nbpart + nlocnew
 dnbpar = dnbpar + dnbpnw
 
+if (irangp.ge.0) then
+  call parcpt(nlocnew)
+  !==========
+endif
+
 nbptot = nbptot + nlocnew
 
 !===============================================================================

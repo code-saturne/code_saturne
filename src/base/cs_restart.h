@@ -326,6 +326,98 @@ void CS_PROCF (ecrsui, ECRSUI)
                                          by many Fortran compilers) */
 );
 
+/*----------------------------------------------------------------------------
+ * Read basic particles information from a restart file.
+ *
+ * Fortran interface
+ *
+ * subroutine lipsui (numsui, nomrub, lngnom, itysup, nbvent, irtype, tabvar)
+ * *****************
+ *
+ * integer          numsui      : <-- : Restart file number
+ * character*       nomrub      : <-- : Particles location name
+ * integer          lngnom      : <-- : Particles location name length
+ * integer          nbpart      : --> : Number of particles
+ * integer          itysup      : --> : Particles location id,
+ *                                      or -1 in case of error
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (lipsui, LIPSUI)
+(
+ const cs_int_t   *numsui,
+ const char       *nomrub,
+ const cs_int_t   *lngnom,
+       cs_int_t   *nbpart,
+       cs_int_t   *itysup
+ CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
+                                         by many Fortran compilers) */
+);
+
+/*----------------------------------------------------------------------------
+ * Read basic particles information from a restart file.
+ *
+ * Fortran interface
+ *
+ * subroutine lepsui (numsui, nomrub, lngnom, inmcoo, nbpart, ipcell,
+ * *****************
+ *                    coopar, itysup, ierror)
+ *
+ * integer          numsui      : <-- : Restart file number
+ * integer          ipcell      : --> : Particle -> cell number
+ * double precision coopar      : --> : Particle coordinate
+ * integer          ipsup       : <-- : Particles location id
+ * integer          ierror      : --> : 0: success, < 0: error code
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (lepsui, LEPSUI)
+(
+ const cs_int_t   *numsui,
+       cs_int_t   *ipcell,
+       cs_real_t  *coopar,
+ const cs_int_t   *itysup,
+       cs_int_t   *ierror
+ CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
+                                         by many Fortran compilers) */
+);
+
+/*----------------------------------------------------------------------------
+ * Write basic particles information to a restart file.
+ *
+ * This includes defining a matching location and associated global numbering,
+ * then writing particle coordinates and cell ids.
+ *
+ * Fortran interface
+ *
+ * subroutine ecpsui (numsui, nomrub, lngnom, inmcoo, nbpart, ipcell,
+ * *****************
+ *                    coopar, itysup, ierror)
+ *
+ * integer          numsui      : <-- : Restart file number
+ * character*       nomrub      : <-- : Particles location name
+ * integer          lngnom      : <-- : Particles location name length
+ * integer          inmcoo      : <-- : Number by coords
+ * integer          nbpart      : <-- : Number of particles
+ * integer          ipcell      : <-- : Particle -> cell number
+ * double precision coopar      : <-- : Particle coordinates
+ * integer          ipsup       : --> : Particles location id
+ * integer          ierror      : --> : 0: success, < 0: error code
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (ecpsui, ECPSUI)
+(
+ const cs_int_t   *numsui,
+ const char       *nomrub,
+ const cs_int_t   *lngnom,
+ const cs_int_t   *inmcoo,
+ const cs_int_t   *nbpart,
+ const cs_int_t   *ipcell,
+ const cs_real_t  *coopar,
+       cs_int_t   *itysup,
+       cs_int_t   *ierror
+ CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
+                                         by many Fortran compilers) */
+);
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -539,6 +631,73 @@ cs_restart_write_section(cs_restart_t           *restart,
                          cs_int_t                n_location_vals,
                          cs_restart_val_type_t   val_type,
                          const void             *val);
+
+/*----------------------------------------------------------------------------
+ * Read basic particles information from a restart file.
+ *
+ * This includes building a matching location and associated global numbering.
+ *
+ * parameters:
+ *   restart      <-- associated restart file pointer
+ *   name         <-- name of particles set
+ *   n_particles  --> number of particles, or NULL
+ *
+ * returns:
+ *   the location id assigned to the particles, or -1 in case of error
+ *----------------------------------------------------------------------------*/
+
+int
+cs_restart_read_particles_info(cs_restart_t  *restart,
+                               const char    *name,
+                               cs_lnum_t     *n_particles);
+
+/*----------------------------------------------------------------------------
+ * Read basic particles information from a restart file.
+ *
+ * parameters:
+ *   restart               <-- associated restart file pointer
+ *   particles_location_id <-- location id of particles set
+ *   particle_cell_id      --> local cell id to which particles belong
+ *   particle_coords       --> local particle coordinates (interleaved)
+ *
+ * returns: 0 (CS_RESTART_SUCCESS) in case of success,
+ *          or error code (CS_RESTART_ERR_xxx) in case of error
+ *----------------------------------------------------------------------------*/
+
+int
+cs_restart_read_particles(cs_restart_t  *restart,
+                          int            particles_location_id,
+                          cs_lnum_t     *particle_cell_id,
+                          cs_real_t     *particle_coords);
+
+/*----------------------------------------------------------------------------
+ * Write basic particles information to a restart file.
+ *
+ * This includes defining a matching location and associated global numbering,
+ * then writing particle coordinates and cell ids.
+ *
+ * parameters:
+ *   restart           <-- associated restart file pointer
+ *   name              <-- name of particles set
+ *   number_by_coords  <-- if true, numbering is based on current coordinates;
+ *                         otherwise, it is simply based on local numbers,
+ *                         plus the sum of particles on lower MPI ranks
+ *   n_particles       <-- local number of particles
+ *   particle_cell_num <-- local cell number (1 to n) to which particles
+ *                         belong; 0 for untracked particles
+ *   particle_coords   <-- local particle coordinates (interleaved)
+ *
+ * returns:
+ *   the location id assigned to the particles
+ *----------------------------------------------------------------------------*/
+
+int
+cs_restart_write_particles(cs_restart_t     *restart,
+                           const char       *name,
+                           bool              number_by_coords,
+                           cs_lnum_t         n_particles,
+                           const cs_lnum_t  *particle_cell_num,
+                           const cs_real_t  *particle_coords);
 
 /*----------------------------------------------------------------------------
  * Print statistics associated with restart files

@@ -1819,8 +1819,7 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier la valeur de IILAGR dans la subroutine USLAG1 et ',/,&
-'@  verifier la valeur de ISUITE dans la subroutine USINI1.   ',/,&
+'@  Verifier la valeur de IILAGR dans la subroutine USLAG1.   ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -1910,7 +1909,6 @@ endif
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
 '@  Verifier la valeur de ISUILA dans la subroutine USLAG1.   ',/,&
-'@  Verifier la valeur de ISUITE dans la subroutine USINI1.   ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

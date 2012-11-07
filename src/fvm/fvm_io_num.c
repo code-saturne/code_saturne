@@ -2438,6 +2438,29 @@ fvm_io_num_destroy(fvm_io_num_t  * this_io_num)
 }
 
 /*----------------------------------------------------------------------------
+ * Transfer ownership of global numbering array from IO numbering structure.
+ *
+ * parameters:
+ *   this_io_num <-> pointer to structure transferring array ownership.
+ *
+ * returns:
+ *   pointer to transferred array
+ *----------------------------------------------------------------------------*/
+
+cs_gnum_t *
+fvm_io_num_transfer_global_num(fvm_io_num_t  * this_io_num)
+{
+  cs_gnum_t *retval = NULL;
+
+  if (this_io_num != NULL) {
+    retval = this_io_num->_global_num;
+    this_io_num->_global_num = NULL;
+  }
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
  * Return local number of entities associated with an I/O numbering
  * structure.
  *

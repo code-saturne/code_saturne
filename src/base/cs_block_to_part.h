@@ -265,32 +265,35 @@ cs_block_to_part_copy_indexed(cs_block_to_part_t  *d,
  * Determine local references from references to global numbers.
  *
  * This is based on finding the local id of a given global number
- * in a sorted global list using a binary search.
+ * using a binary search.
  *
  * Global numbers use a 1 to n numbering, while local numbers use a
  * 0+base to n-1+base numbering. If an entity's global number does not
  * appear in the global list, base-1 is assigned for that entity's
  * local list.
  *
- * If the sorted list contains duplicate values, any local id having
- * a multiple global number (i.e not necessarily the smallest one)
- * may be assigned to the corresponding local_number[] entry.
+ * If list contains duplicate values, any local id having a multiple
+ * global number (i.e not necessarily the smallest one) may be
+ * assigned to the corresponding local_number[] entry.
  *
  * arguments:
- *   n_ents           <-- number of entities
- *   base             <-- base numbering (typically 0 or 1)
- *   global_list_size <-- size of global entity list
- *   global_list      <-- global entity list
- *   global_number    <-- entity global numbers
- *                        (size: n_ents)
- *   local__number    --> entity local numbers
- *                        (size: n_ents)
+ *   n_ents                <-- number of entities
+ *   base                  <-- base numbering (typically 0 or 1)
+ *   global_list_size      <-- size of global entity list
+ *   global_list_is_sorted <-- true if global entity list is guaranteed
+ *                             to be sorted
+ *   global_list           <-- global entity list
+ *   global_number         <-- entity global numbers
+ *                             (size: n_ents)
+ *   local_number          --> entity local numbers
+ *                             (size: n_ents)
  *----------------------------------------------------------------------------*/
 
 void
 cs_block_to_part_global_to_local(cs_lnum_t        n_ents,
                                  cs_lnum_t        base,
                                  cs_lnum_t        global_list_size,
+                                 bool             global_list_is_sorted,
                                  const cs_gnum_t  global_list[],
                                  const cs_gnum_t  global_number[],
                                  cs_lnum_t        local_number[]);

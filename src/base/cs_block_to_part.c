@@ -1236,45 +1236,61 @@ cs_block_to_part_copy_indexed(cs_block_to_part_t  *d,
  * Determine local references from references to global numbers.
  *
  * This is based on finding the local id of a given global number
- * in a sorted global list using a binary search.
+ * using a binary search.
  *
  * Global numbers use a 1 to n numbering, while local numbers use a
  * 0+base to n-1+base numbering. If an entity's global number does not
  * appear in the global list, base-1 is assigned for that entity's
  * local list.
  *
- * If the sorted list contains duplicate values, any local id having
- * a multiple global number (i.e not necessarily the smallest one)
- * may be assigned to the corresponding local_number[] entry.
+ * If list contains duplicate values, any local id having a multiple
+ * global number (i.e not necessarily the smallest one) may be
+ * assigned to the corresponding local_number[] entry.
  *
  * arguments:
- *   n_ents           <-- number of entities
- *   base             <-- base numbering (typically 0 or 1)
- *   global_list_size <-- size of global entity list
- *   global_list      <-- global entity list
- *   global_number    <-- entity global numbers
- *                        (size: n_ents)
- *   local_number     --> entity local numbers
- *                        (size: n_ents)
+ *   n_ents                <-- number of entities
+ *   base                  <-- base numbering (typically 0 or 1)
+ *   global_list_size      <-- size of global entity list
+ *   global_list_is_sorted <-- true if global entity list is guaranteed
+ *                             to be sorted
+ *   global_list           <-- global entity list
+ *   global_number         <-- entity global numbers
+ *                             (size: n_ents)
+ *   local_number          --> entity local numbers
+ *                             (size: n_ents)
  *----------------------------------------------------------------------------*/
 
 void
 cs_block_to_part_global_to_local(cs_lnum_t        n_ents,
                                  cs_lnum_t        base,
                                  cs_lnum_t        global_list_size,
+                                 bool             global_list_is_sorted,
                                  const cs_gnum_t  global_list[],
                                  const cs_gnum_t  global_number[],
                                  cs_lnum_t        local_number[])
 {
   cs_lnum_t i;
+  cs_lnum_t *order = NULL;
+  cs_gnum_t *_g_list = NULL;
+  const cs_gnum_t *g_list = global_list;
 
   if (n_ents == 0)
     return;
 
  #if defined(DEBUG) && !defined(NDEBUG)
-  for (i = 1; i < global_list_size; i++)
-    assert(global_list[i] > global_list[i-1]);
+  if (global_list_is_sorted) {
+    for (i = 1; i < global_list_size; i++)
+      assert(global_list[i] > global_list[i-1]);
+  }
 #endif
+
+  if (global_list_is_sorted == false) {
+    BFT_MALLOC(_g_list, global_list_size, cs_gnum_t);
+    order = cs_order_gnum(NULL, global_list, global_list_size);
+    for (i = 0; i < global_list_size; i++)
+      _g_list[i] = global_number[order[i]];
+    g_list = _g_list;
+  }
 
   for (i = 0; i < n_ents; i++) {
 
@@ -1287,22 +1303,32 @@ cs_block_to_part_global_to_local(cs_lnum_t        n_ents,
 
     while (start_id < end_id) {
       cs_lnum_t mid_id = start_id + ((end_id - start_id) / 2);
-      if (global_list[mid_id] < num_1)
+      if (g_list[mid_id] < num_1)
         start_id = mid_id + 1;
       else
         end_id = mid_id;  /* Can't be end_id = mid_id -1;
-                             global_list[mid_id] >= num_1, so
+                             g_list[mid_id] >= num_1, so
                              end_id must not be < mid_id in case
-                             global_list[mid_id] == num_1 */
+                             g_list[mid_id] == num_1 */
     }
 
     /* start_id == end_id at this stage; */
 
-    if (start_id < global_list_size && global_list[start_id] == num_1)
+    if (start_id < global_list_size && g_list[start_id] == num_1)
       local_number[i] = start_id + base;
     else
       local_number[i] = base - 1;
+
   }
+
+  BFT_FREE(_g_list);
+
+  if (order != NULL) {
+    for (i = 0 ; i < n_ents ; i++)
+      local_number[i] = order[local_number[i]];
+    BFT_FREE(order);
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/

@@ -50,7 +50,6 @@ subroutine laglec &
 
 !-------------------------------------------------------------------------------
 ! Arguments
-!TODO cartouche
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
@@ -138,21 +137,20 @@ character        nomnvl(nvplmx)*60 , nomtsl(nvplmx)*60
 character        nomite(nvplmx)*64 , nomrte(nvplmx)*64
 character        ficsui*32
 integer          ncelok , nfaiok , nfabok , nsomok
-integer          ierror , irtyp  , itysup , nbval
+integer          ierror , irtyp  , itysup , ipasup, nbval
 integer          ilecec , nberro , ivers
 integer          mvls   , ivar   , ip     , icha
-integer          ifac   , iel    , iok
+integer          ifac   , iel    , ii     , iok
 integer          jphyla , jtpvar , jdpvar , jmpvar
 integer          jsttio , jdstnt , mstist , mvlsts
 integer          mstbor , musbor , mstits , jturb, jtytur
 integer          mode   , ipas   , ivl    , nclsto
 integer          impaml , impmls
 
-!===============================================================================
-!===============================================================================
-! 0. Gestion memoire
-!===============================================================================
+integer, allocatable, dimension(:) :: iflpar
+double precision, allocatable, dimension(:,:) :: coopar
 
+!===============================================================================
 
 !===============================================================================
 ! 1. Initialisations par defaut
@@ -231,7 +229,7 @@ ficsui = 'lagrangian'
 call opnsui(ficsui,len(ficsui),ilecec,impaml,ierror)
 !==========
 if(ierror.ne.0) then
-  write(nfecra,9010) ficsui, ficsui
+  write(nfecra,9010) ficsui
   call csexit (1)
 endif
 
@@ -239,17 +237,16 @@ write(nfecra,6010)
 
 !  ---> Type de fichier suite
 !        Pourrait porter le numero de version si besoin.
-!        On ne se sert pas de IVERS pour le moment
 
 itysup = 0
 nbval  = 1
 irtyp  = 1
-RUBRIQ = 'version_fichier_suite_Lagrangien_variables'
+rubriq = 'version_fichier_suite_Lagrangien_variables'
 call lecsui(impaml,rubriq,len(rubriq),itysup,nbval,irtyp,         &
             ivers,ierror)
 
 if(ierror.ne.0) then
-  write(nfecra,9020) ficaml, ficaml
+  write(nfecra,9020) ficsui
   call csexit (1)
 endif
 
@@ -262,54 +259,51 @@ iok = 0
 call tstsui(impaml,ncelok,nfaiok,nfabok,nsomok)
 !==========
 if(ncelok.eq.0) then
-  write(nfecra,9030) ficaml
+  write(nfecra,9030) ficsui
   iok = iok + 1
 endif
 
-IF(NFAIOK.EQ.0) WRITE(NFECRA,9031) FICAML,'internes','internes'
+if(nfaiok.eq.0) write(nfecra,9031) ficsui,'internes','internes'
 
-IF(NFABOK.EQ.0) WRITE(NFECRA,9031) FICAML,'de bord ','de bord '
+if(nfabok.eq.0) write(nfecra,9031) ficsui,'de bord ','de bord '
 
 !     Nombre de particules dans le domaine du calcul
 
 itysup = 0
 nbval  = 1
-
-RUBRIQ = 'nombre_courant_particules'
 irtyp  = 1
-call lecsui(impaml,rubriq,len(rubriq),itysup,nbval,irtyp,         &
-            nbpart,ierror)
+
+rubriq = 'particles'
+call lipsui(impaml,rubriq,len(rubriq),nbpart,ipasup)
 
 if(ierror.ne.0) then
-  write(nfecra,9040) ficaml,                                      &
-  'nombre_courant_particules                                   ', &
-  ficaml
+  write(nfecra,9040) ficsui,                                      &
+  'nombre_courant_particules                                   '
   iok = iok + 1
 endif
 if(nbpart.gt.nbpmax) then
-  write(nfecra,9050) ficaml, nbpart, nbpmax
+  write(nfecra,9050) ficsui, nbpart, nbpmax
   iok = iok + 1
 endif
 
 !     Physique associee aux particules
 
-RUBRIQ = 'indicateur_physique_particules'
+rubriq = 'indicateur_physique_particules'
 irtyp  = 1
 call lecsui(impaml,rubriq,len(rubriq),itysup,nbval,irtyp,         &
             jphyla,ierror)
 if(ierror.ne.0) then
-  write(nfecra,9040) ficaml, rubriq, ficaml
+  write(nfecra,9040) ficsui, rubriq
   iok = iok + 1
 endif
 
-RUBRIQ = 'indicateur_temperature_particules'
+rubriq = 'indicateur_temperature_particules'
 irtyp  = 1
 call lecsui(impaml,rubriq,len(rubriq),itysup,nbval,irtyp,         &
             jtpvar,ierror)
 if(ierror.ne.0) then
-  write(nfecra,9040) ficaml,                                      &
-  'indicateur_temperature_particules                           ', &
-  ficaml
+  write(nfecra,9040) ficsui,                                      &
+  'indicateur_temperature_particules                           '
   iok = iok + 1
 endif
 
@@ -318,22 +312,22 @@ if(iok.ne.0) then
   call csexit (1)
 endif
 
-RUBRIQ = 'indicateur_diametre_particules'
+rubriq = 'indicateur_diametre_particules'
 irtyp  = 1
 call lecsui(impaml,rubriq,len(rubriq),itysup,nbval,irtyp,         &
             jdpvar,ierror)
 if(ierror.ne.0) then
-  write(nfecra,9062) ficaml,                                      &
+  write(nfecra,9062) ficsui,                                      &
   'indicateur_diametre_particules                              '
   jdpvar = idpvar
 endif
 
-RUBRIQ = 'indicateur_masse_particules'
+rubriq = 'indicateur_masse_particules'
 irtyp  = 1
 call lecsui(impaml,rubriq,len(rubriq),itysup,nbval,irtyp,         &
             jmpvar,ierror)
 if(ierror.ne.0) then
-  write(nfecra,9062) ficaml,                                      &
+  write(nfecra,9062) ficsui,                                      &
   'indicateur_masse_particules                                 '
   jmpvar = impvar
 endif
@@ -344,7 +338,7 @@ if ( jphyla.ne.iphyla .or.                                        &
      jtpvar.ne.itpvar .or.                                        &
      jdpvar.ne.idpvar .or.                                        &
      jmpvar.ne.impvar      ) then
-  write(nfecra,9070) ficaml,                                      &
+  write(nfecra,9070) ficsui,                                      &
                      jphyla, jtpvar, jdpvar, jmpvar,              &
                      iphyla, itpvar, idpvar, impvar
 endif
@@ -352,147 +346,182 @@ endif
 ! ---> Verification de la compatibilite si changement de thermique
 
 if (jphyla.ne.0 .and. iphyla.eq.0) then
-  write(nfecra,9071) ficaml
+  write(nfecra,9071) ficsui
 endif
 
 if (itpvar.eq.1 .and. jtpvar.eq.0) then
-  write(nfecra,9072) ficaml, tpart, cppart
+  write(nfecra,9072) ficsui, tpart, cppart
 endif
 
 if (iphyla.eq.2 .and. jphyla.ne.2) then
-  write(nfecra,9073) ficaml, ficaml
+  write(nfecra,9073) ficsui
   call csexit (1)
 endif
 
 if ( (jphyla.eq.2 .and. iphyla.eq.1) .or.                         &
      (jphyla.eq.1 .and. iphyla.eq.2)      ) then
-  write(nfecra,9074) ficaml, ficaml
+  write(nfecra,9074) ficsui
   call csexit (1)
 endif
 
 ! ---> Infos suivi du calcul
 
-RUBRIQ = 'nombre_iterations_Lagrangiennes'
+rubriq = 'nombre_iterations_Lagrangiennes'
 irtyp  = 1
 call lecsui(impaml,rubriq,len(rubriq),itysup,nbval,irtyp,         &
             iplas,ierror)
 if(ierror.ne.0) then
-  write(nfecra,9060) ficaml,                                      &
+  write(nfecra,9060) ficsui,                                      &
   'nombre_iterations_Lagrangiennes                             ', &
-  'IPLAS',IPLAS
+  'IPLAS',iplas
 endif
 
 if(istala.eq.1 .and. isuist.eq.0 .and. iplas.ge.idstnt) then
-  write(nfecra,9065) ficaml, isuist, iplas +1, idstnt
+  write(nfecra,9065) ficsui, isuist, iplas +1, idstnt
   call csexit (1)
 endif
 
 if(iensi3.eq.1 .and. isuist.eq.0 .and. iplas.ge.nstbor) then
-  write(nfecra,9066) ficaml, isuist, iplas +1, nstbor
+  write(nfecra,9066) ficsui, isuist, iplas +1, nstbor
   call csexit (1)
 endif
 
-RUBRIQ = 'temps_physique_Lagrangien'
+rubriq = 'temps_physique_Lagrangien'
 irtyp  = 2
 call lecsui(impaml,rubriq,len(rubriq),itysup,nbval,irtyp,         &
             ttclag,ierror)
 if(ierror.ne.0) then
-  write(nfecra,9061) ficaml,                                      &
+  write(nfecra,9061) ficsui,                                      &
   'temps_physique_Lagrangien                                   ', &
-  'TTCLAG',TTCLAG
+  'TTCLAG',ttclag
 endif
 
-RUBRIQ = 'nombre_total_particules'
+rubriq = 'nombre_total_particules'
 irtyp  = 1
 call lecsui(impaml,rubriq,len(rubriq),itysup,nbval,irtyp,         &
             nbptot,ierror)
 if(ierror.ne.0) then
-  write(nfecra,9060) ficaml,                                      &
+  write(nfecra,9060) ficsui,                                      &
   'nombre_total_particules                                     ', &
-  'NBPTOT',NBPTOT
+  'NBPTOT',nbptot
 endif
 
-RUBRIQ = 'nombre_particules_perdues'
+rubriq = 'nombre_particules_perdues'
 irtyp  = 1
 call lecsui(impaml,rubriq,len(rubriq),itysup,nbval,irtyp,         &
             nbpert,ierror)
 if(ierror.ne.0) then
-  write(nfecra,9060) ficaml,                                      &
+  write(nfecra,9060) ficsui,                                      &
   'nombre_particules_perdues                                   ', &
-  'NBPERT',NBPERT
+  'NBPERT',nbpert
 endif
 
-RUBRIQ = 'nombre_variables_utilisateur'
+rubriq = 'nombre_variables_utilisateur'
 irtyp  = 1
 call lecsui(impaml,rubriq,len(rubriq),itysup,nbval,irtyp,         &
             mvls,ierror)
 if(ierror.ne.0) then
   mvls = 0
   if (nvls.gt.0) then
-    write(nfecra,9062) ficaml,                                    &
+    write(nfecra,9062) ficsui,                                    &
   'nombre_variables_utilisateur                                '
   endif
 endif
 
 if (nvls.lt.mvls) then
-  write(nfecra,9080) ficaml, mvls, nvls, nvls, nvls
+  write(nfecra,9080) ficsui, mvls, nvls, nvls, nvls
   mvls = nvls
 elseif (nvls.gt.mvls ) then
-  write(nfecra,9080) ficaml, mvls, nvls, nvls, nvls
+  write(nfecra,9080) ficsui, mvls, nvls, nvls, nvls
 endif
 
 ! --> Caracteristiques et infos particulaires (ENTIERS)
 
 nberro = 0
 
-NOMITE(JISOR) = 'numero_cellule_particules'
 if (nbclst.gt.0) then
-  NOMITE(JCLST) = 'numero_groupe_statistiques'
+  nomite(jclst) = 'numero_groupe_statistiques'
 endif
 if (iphyla.eq.2) then
-  NOMITE(JINCH) = 'numero_charbon'
+  nomite(jinch) = 'numero_charbon'
 endif
 ! deposition submodel
 if (idepst.eq.1) then
-  NOMITE(jimark) = 'indicateur_de_saut'
-  NOMITE(JDIEL) = 'diel_particules'
-  NOMITE(JDFAC) = 'dfac_particules'
-  NOMITE(JDIFEL) = 'difel_particules'
-  NOMITE(JTRAJ) = 'traj_particules'
-  NOMITE(JPTDET) = 'ptdet_particules'
-  NOMITE(jinjst) = 'indic_stat'
+  nomite(jimark) = 'indicateur_de_saut'
+  nomite(jdiel) = 'diel_particules'
+  nomite(jdfac) = 'dfac_particules'
+  nomite(jdifel) = 'difel_particules'
+  nomite(jtraj) = 'traj_particules'
+  nomite(jptdet) = 'ptdet_particules'
+  nomite(jinjst) = 'indic_stat'
 endif
 
-nbval  = nbpart
+itysup = ipasup
+nbval  = 1
+
+allocate(coopar(3,nbpart))
+
+call lepsui(impaml,itepa(1,jisor),coopar,itysup,ierror)
+
+nberro = nberro+ierror
+
+if (ierror.eq.0) then
+  do ii = 1, nbpart
+    ettp(ii,jxp) = coopar(1,ii)
+    ettp(ii,jyp) = coopar(2,ii)
+    ettp(ii,jzp) = coopar(3,ii)
+  enddo
+endif
+
+deallocate(coopar)
+
+allocate(iflpar(nbpart))
+
+irtyp  = 1
+
+rubriq = 'particle_status_flag'
+call lecsui(impaml,rubriq,len(rubriq),itysup,nbval,irtyp,       &
+            iflpar,ierror)
+nberro = nberro+ierror
+
+if (ierror.eq.0) then
+  do ii = 1, nbpart
+    if (iand(iflpar(ii), 1) .eq. 1) itepa(ii,jisor) = -itepa(ii,jisor)
+  enddo
+endif
+
+deallocate(iflpar)
+
 irtyp  = 1
 
 do ivar = 1, nivep
-  rubriq = nomite(ivar)
-  call lecsui(impaml,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              itepa(1,ivar),ierror)
-  nberro = nberro+ierror
+  if (ivar.ne.jisor) then
+    rubriq = nomite(ivar)
+    call lecsui(impaml,rubriq,len(rubriq),itysup,nbval,irtyp,       &
+               itepa(1,ivar),ierror)
+    nberro = nberro+ierror
+  endif
 enddo
 
 ! --> Caracteristiques et infos particulaires (REELS)
 
-NOMRTE(JRTSP) = 'temps_sejour_particules'
-NOMRTE(JRPOI) = 'poids_statistiques_particules'
+nomrte(jrtsp) = 'temps_sejour_particules'
+nomrte(jrpoi) = 'poids_statistiques_particules'
 if (iphyla.eq.1 .and. itpvar.eq.1 .and. iirayo.gt.0) then
-  NOMRTE(JREPS) = 'emissivite_particules'
+  nomrte(jreps) = 'emissivite_particules'
 endif
 if (iphyla.eq.2) then
-  NOMRTE(JRDCK) = 'diametre_coeur_retrecissant_charbon'
-  NOMRTE(JRD0P) = 'diametre_initial_charbon'
-  NOMRTE(JRR0P) = 'masse_volumique_initial_charbon'
+  nomrte(jrdck) = 'diametre_coeur_retrecissant_charbon'
+  nomrte(jrd0p) = 'diametre_initial_charbon'
+  nomrte(jrr0p) = 'masse_volumique_initial_charbon'
 endif
 
 ! Deposition submodel
 if (idepst.eq.1) then
-   NOMRTE(jryplu) = 'yplus_particules'
-   NOMRTE(jrinpf) = 'dx_particules'
+  nomrte(jryplu) = 'yplus_particules'
+  nomrte(jrinpf) = 'dx_particules'
 endif
 
-nbval  = nbpart
 irtyp  = 2
 
 do ivar = 1, nvep
@@ -509,43 +538,41 @@ enddo
 
 ! --> Variables particulaires
 
-NOMNVL(JXP) = 'variable_positionX_particule'
-NOMNVL(JYP) = 'variable_positionY_particule'
-NOMNVL(JZP) = 'variable_positionZ_particule'
-NOMNVL(JUP) = 'variable_vitesseU_particule'
-NOMNVL(JVP) = 'variable_vitesseV_particule'
-NOMNVL(JWP) = 'variable_vitesseW_particule'
-NOMNVL(JUF) = 'variable_vitesseU_fluide_vu'
-NOMNVL(JVF) = 'variable_vitesseV_fluide_vu'
-NOMNVL(JWF) = 'variable_vitesseW_fluide_vu'
-NOMNVL(JMP) = 'variable_masse_particule'
-NOMNVL(JDP) = 'variable_diametre_particule'
+nomnvl(jup) = 'variable_vitesseU_particule'
+nomnvl(jvp) = 'variable_vitesseV_particule'
+nomnvl(jwp) = 'variable_vitesseW_particule'
+nomnvl(juf) = 'variable_vitesseU_fluide_vu'
+nomnvl(jvf) = 'variable_vitesseV_fluide_vu'
+nomnvl(jwf) = 'variable_vitesseW_fluide_vu'
+nomnvl(jmp) = 'variable_masse_particule'
+nomnvl(jdp) = 'variable_diametre_particule'
 if (iphyla.eq.1 .and. itpvar.eq.1) then
-  NOMNVL(JTP) = 'variable_temperature_particule'
-  NOMNVL(JTF) = 'variable_temperature_fluide_vu'
-  NOMNVL(JCP) = 'variable_chaleur_specifique_particule'
+  nomnvl(jtp) = 'variable_temperature_particule'
+  nomnvl(jtf) = 'variable_temperature_fluide_vu'
+  nomnvl(jcp) = 'variable_chaleur_specifique_particule'
 elseif (iphyla.eq.2) then
-  NOMNVL(JHP) = 'variable_temperature_particule'
-  NOMNVL(JTF) = 'variable_temperature_fluide_vu'
-  NOMNVL(JMCH) = 'variable_masse_charbon_reactif'
-  NOMNVL(JMCK) = 'variable_masse_coke'
-  NOMNVL(JCP) = 'variable_chaleur_specifique_particule'
+  nomnvl(jhp) = 'variable_temperature_particule'
+  nomnvl(jtf) = 'variable_temperature_fluide_vu'
+  nomnvl(jmch) = 'variable_masse_charbon_reactif'
+  nomnvl(jmck) = 'variable_masse_coke'
+  nomnvl(jcp) = 'variable_chaleur_specifique_particule'
 endif
 if (mvls.gt.0) then
   do ip = 1,mvls
-    WRITE(CAR4,'(I4.4)') IP
-    NOMNVL(JVLS(IP)) = 'variable_supplementaire_'//CAR4
+    write(car4,'(i4.4)') ip
+    nomnvl(jvls(ip)) = 'variable_supplementaire_'//car4
   enddo
 endif
 
-nbval  = nbpart
 irtyp  = 2
 
 do ivar = jmp, jwf
-  rubriq = nomnvl(ivar)
-  call lecsui(impaml,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              ettp(1,ivar),ierror)
-  nberro = nberro+ierror
+  if (ivar .lt. jxp .or. ivar.gt.jzp) then
+    rubriq = nomnvl(ivar)
+    call lecsui(impaml,rubriq,len(rubriq),itysup,nbval,irtyp,       &
+                ettp(1,ivar),ierror)
+    nberro = nberro+ierror
+  endif
 enddo
 
 if (iphyla.eq.1 .and. itpvar.eq.1) then
@@ -607,7 +634,7 @@ endif
 
 
 if(nberro.ne.0) then
-  write(nfecra,9041) ficaml, ficaml
+  write(nfecra,9041) ficsui
   call csexit (1)
 endif
 
@@ -618,7 +645,7 @@ write(nfecra,6011)
 call clssui(impaml,ierror)
 
 if(ierror.ne.0) then
-  write(nfecra,9090) ficaml, ficaml
+  write(nfecra,9090) ficsui
 endif
 
 write(nfecra,6099)
@@ -635,13 +662,13 @@ if (isuist.eq.1) then
 
   write(nfecra,7000)
 
-!     (ILECEC=1:lecture)
+  ! (ILECEC=1:lecture)
   ilecec = 1
   ficsui = 'lagrangian_stats'
   call opnsui(ficsui,len(ficsui),ilecec,impmls,ierror)
   !==========
   if(ierror.ne.0) then
-    write(nfecra,9010) ficsui, ficsui
+    write(nfecra,9010) ficsui
     call csexit (1)
   endif
 
@@ -655,21 +682,20 @@ if (isuist.eq.1) then
   nbval  = 1
   irtyp  = 1
 
-  RUBRIQ = 'version_fichier_suite_Lagrangien_statistiques'
+  rubriq = 'version_fichier_suite_Lagrangien_statistiques'
   call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp,       &
               ivers,ierror)
   if(ierror.ne.0) then
-    write(nfecra,9020) ficaml, ficaml
+    write(nfecra,9020) ficsui
     call csexit (1)
   endif
 
-  RUBRIQ = 'indicateur_ecoulement_stationnaire'
+  rubriq = 'indicateur_ecoulement_stationnaire'
   call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp,       &
               jsttio,ierror)
   if (ierror.ne.0) then
-    write(nfecra,9040) ficaml,                                    &
-  'indicateur_ecoulement_stationnaire                          ', &
-    ficaml
+    write(nfecra,9040) ficsui,                                    &
+  'indicateur_ecoulement_stationnaire                          '
     call csexit (1)
   endif
 
@@ -678,14 +704,13 @@ if (isuist.eq.1) then
   call tstsui(impmls,ncelok,nfaiok,nfabok,nsomok)
   !==========
   if(ncelok.eq.0) then
-    write(nfecra,9030) ficmls
+    write(nfecra,9030) ficsui
     call csexit (1)
   endif
 
-  IF(NFAIOK.EQ.0) WRITE(NFECRA,9031) FICMLS,'internes','internes'
+  if(nfaiok.eq.0) write(nfecra,9031) ficsui,'internes','internes'
 
-  IF(NFABOK.EQ.0) WRITE(NFECRA,9031) FICMLS,'de bord ','de bord '
-
+  if(nfabok.eq.0) write(nfecra,9031) ficsui,'de bord ','de bord '
 
 ! --> Est-on cense lire une suite de stats volumiques ?
 
@@ -695,13 +720,13 @@ if (isuist.eq.1) then
     itysup = 0
     nbval  = 1
 
-    RUBRIQ = 'iteration_debut_statistiques'
+    rubriq = 'iteration_debut_statistiques'
     irtyp  = 1
     call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 jdstnt,ierror)
     nberro = nberro+ierror
 
-    RUBRIQ = 'iteration_debut_statistiques_stationnaires'
+    rubriq = 'iteration_debut_statistiques_stationnaires'
     irtyp  = 1
     call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 mstist,ierror)
@@ -717,10 +742,10 @@ if (isuist.eq.1) then
     if(nberro.ne.0) then
       if ( isttio.eq.0 .or.                                       &
           (isttio.eq.1 .and. iplas.lt.nstist) ) then
-        write(nfecra,9110) ficmls, isttio, idstnt, nstist, iplas+1
+        write(nfecra,9110) ficsui, isttio, idstnt, nstist, iplas+1
         goto 9991
       else
-        write(nfecra,9120) ficmls, isttio, idstnt, nstist, iplas+1
+        write(nfecra,9120) ficsui, isttio, idstnt, nstist, iplas+1
         call csexit (1)
       endif
     endif
@@ -731,41 +756,41 @@ if (isuist.eq.1) then
     if ( jsttio.ne.isttio .or.                                    &
          jdstnt.ne.idstnt .or.                                    &
          mstist.ne.nstist     ) then
-      write (nfecra,9130) ficmls,                                 &
+      write (nfecra,9130) ficsui,                                 &
                           jsttio, jdstnt, mstist,                 &
                           isttio, idstnt, nstist
     endif
 
 !  --> Lecture de l'avancement du calcul stats volumiques
 
-    RUBRIQ = 'nombre_iterations_statistiques_stationnaires'
+    rubriq = 'nombre_iterations_statistiques_stationnaires'
     irtyp  = 1
     call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 npst,ierror)
     if(ierror.ne.0) then
-      write(nfecra,9060) ficmls,                                  &
+      write(nfecra,9060) ficsui,                                  &
   'nombre_iterations_statistiques_stationnaires                ', &
-      'NPST',NPST
+      'NPST',npst
     endif
 
-    RUBRIQ = 'temps_statistiques_stationnaires'
+    rubriq = 'temps_statistiques_stationnaires'
     irtyp  = 2
     call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 tstat,ierror)
     if(ierror.ne.0) then
-      write(nfecra,9061) ficmls,                                  &
+      write(nfecra,9061) ficsui,                                  &
   'temps_statistiques_stationnaires                            ', &
-      'TSTAT',TSTAT
+      'TSTAT',tstat
     endif
 
-    RUBRIQ = 'classe_statistique_particules'
+    rubriq = 'classe_statistique_particules'
     irtyp  = 1
     call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 nclsto,ierror)
     if(ierror.ne.0) then
-      write(nfecra,9061) ficmls,                                  &
+      write(nfecra,9061) ficsui,                                  &
   'classes_statistiques                                        ', &
-      'NBCLST',NCLSTO
+      'NBCLST',nclsto
     endif
 
 !  --> Verif de coherence de l'avancement du calcul avec les
@@ -781,38 +806,38 @@ if (isuist.eq.1) then
 !                                 NSTIST n'ont pas change, sinon Exit)
 
     if (npst.eq.0 .and. (isttio.eq.1 .and. nstist.le.iplas)) then
-      write(nfecra,9140) ficmls, iplas+1, nstist
+      write(nfecra,9140) ficsui, iplas+1, nstist
       call csexit (1)
     endif
 
     if ( npst.gt.0 .and.                                          &
         ( (isttio.eq.1 .and. iplas.le.nstist) .or.                &
            isttio.eq.0)                              ) then
-      write(nfecra,9141) ficmls
+      write(nfecra,9141) ficsui
     endif
 
     if (npst.gt.0 .and. (isttio.eq.1 .and. iplas.ge.nstist)) then
      if (  jdstnt.ne.idstnt .or.                                  &
            mstist.ne.nstist      ) then
-        write(nfecra,9142) ficmls
+        write(nfecra,9142) ficsui
         call csexit (1)
       endif
     endif
 
     if ( nbclst .ne. nclsto ) then
-      write(nfecra,9143) ficmls
+      write(nfecra,9143) ficsui
       call csexit (1)
     endif
 
 ! --> Stats supplementaires utilisateurs
 
-    RUBRIQ = 'nombre_statistiques_utilisateur'
+    rubriq = 'nombre_statistiques_utilisateur'
     irtyp  = 1
     call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 mvlsts,ierror)
 
     if (nvlsts.lt.mvlsts) then
-      write(nfecra,9150) ficmls, mvlsts, nvlsts, nvlsts, nvlsts
+      write(nfecra,9150) ficsui, mvlsts, nvlsts, nvlsts, nvlsts
     endif
 
 !  --> Lecture des Statistiques volumiques. Pas de traitement d'erreurs,
@@ -826,10 +851,10 @@ if (isuist.eq.1) then
       do ivl = 1,nvlsta
         ivar  = ipas*nvlsta +ivl
         if (ipas.gt.0) then
-          WRITE(CAR4,'(I4.4)') IPAS
-          RUBRIQ = 'moy_stat_vol_groupe_'//CAR4//'_'//NOMLAG(IVAR)
+          write(car4,'(i4.4)') ipas
+          rubriq = 'moy_stat_vol_groupe_'//car4//'_'//nomlag(ivar)
         else
-          RUBRIQ = 'moy_stat_vol_'//NOMLAG(IVAR)
+          rubriq = 'moy_stat_vol_'//nomlag(ivar)
         endif
         call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp, &
                     statis(1,ivar),ierror)
@@ -838,10 +863,10 @@ if (isuist.eq.1) then
       do ivl = 1,nvlsta-1
         ivar  = ipas*nvlsta +ivl
         if (ipas.gt.0) then
-          WRITE(CAR4,'(I4.4)') IPAS
-          RUBRIQ = 'var_stat_vol_groupe_'//CAR4//'_'//NOMLAV(IVAR)
+          write(car4,'(i4.4)') ipas
+          rubriq = 'var_stat_vol_groupe_'//car4//'_'//nomlav(ivar)
         else
-          RUBRIQ = 'var_stat_vol_'//NOMLAV(IVAR)
+          rubriq = 'var_stat_vol_'//nomlav(ivar)
         endif
         call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp, &
                     stativ(1,ivar),ierror)
@@ -858,7 +883,7 @@ if (isuist.eq.1) then
     itysup = 0
     nbval  = 1
 
-    RUBRIQ = 'iteration_debut_stats_frontieres_stationnaires'
+    rubriq = 'iteration_debut_stats_frontieres_stationnaires'
     irtyp  = 1
     call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 mstbor,ierror)
@@ -873,10 +898,10 @@ if (isuist.eq.1) then
     if(ierror.ne.0) then
       if ( isttio.eq.0 .or.                                       &
           (isttio.eq.1 .and. iplas.lt.nstbor) ) then
-        write(nfecra,9210) ficmls, isttio, nstbor, iplas+1
+        write(nfecra,9210) ficsui, isttio, nstbor, iplas+1
         goto 9992
       else
-        write(nfecra,9220) ficmls, isttio, nstbor, iplas+1
+        write(nfecra,9220) ficsui, isttio, nstbor, iplas+1
         call csexit (1)
       endif
     endif
@@ -886,41 +911,41 @@ if (isuist.eq.1) then
 
     if ( jsttio.ne.isttio .or.                                    &
          mstbor.ne.nstbor     ) then
-      write (nfecra,9230) ficmls,                                 &
+      write (nfecra,9230) ficsui,                                 &
                           jsttio, mstbor,                         &
                           isttio, nstbor
     endif
 
 !  --> Lecture de l'avancement du calcul stats aux frontieres
 
-    RUBRIQ = 'nombre_iterations_stats_frontieres'
+    rubriq = 'nombre_iterations_stats_frontieres'
     irtyp  = 1
     call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 npstft,ierror)
     if(ierror.ne.0) then
-      write(nfecra,9060) ficmls,                                  &
+      write(nfecra,9060) ficsui,                                  &
   'nombre_iterations_stats_frontieres                          ', &
-      'NPSTFT',NPSTFT
+      'NPSTFT',npstft
     endif
 
-    RUBRIQ = 'nombre_iterations_stats_frontieres_stationnaires'
+    rubriq = 'nombre_iterations_stats_frontieres_stationnaires'
     irtyp  = 1
     call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 npstf,ierror)
     if(ierror.ne.0) then
-      write(nfecra,9060) ficmls,                                  &
+      write(nfecra,9060) ficsui,                                  &
   'nombre_iterations_stats_frontieres_stationnaires            ', &
-      'NPSTF',NPSTF
+      'NPSTF',npstf
     endif
 
-    RUBRIQ = 'temps_stats_frontieres_stationnaires'
+    rubriq = 'temps_stats_frontieres_stationnaires'
     irtyp  = 2
     call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 tstatp,ierror)
     if(ierror.ne.0) then
-      write(nfecra,9060) ficmls,                                  &
+      write(nfecra,9060) ficsui,                                  &
   'temps_stats_frontieres_stationnaires                        ', &
-      'TSTATP',TSTATP
+      'TSTATP',tstatp
     endif
 
 !  --> Verif de coherence de l'avancement du calcul avec les
@@ -928,32 +953,32 @@ if (isuist.eq.1) then
 
 
     if (npstf.eq.0 .and. (isttio.eq.1 .and. nstbor.le.iplas)) then
-      write(nfecra,9240) ficmls, iplas+1, nstbor
+      write(nfecra,9240) ficsui, iplas+1, nstbor
       call csexit (1)
     endif
 
     if ( npstf.gt.0 .and.                                         &
         ( (isttio.eq.1 .and. iplas.le.nstbor) .or.                &
            isttio.eq.0)                             ) then
-      write(nfecra,9241) ficmls
+      write(nfecra,9241) ficsui
     endif
 
     if (npstf.gt.0 .and. (isttio.eq.1 .and. iplas.ge.nstbor)) then
      if (mstbor.ne.nstbor) then
-        write(nfecra,9242) ficmls
+        write(nfecra,9242) ficsui
         call csexit (1)
       endif
     endif
 
 ! --> Stats supplementaires utilisateurs
 
-    RUBRIQ = 'nombre_stats_frontieres_utilisateur'
+    rubriq = 'nombre_stats_frontieres_utilisateur'
     irtyp  = 1
     call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 musbor,ierror)
 
     if (nusbor.lt.musbor) then
-      write(nfecra,9250) ficmls, musbor, nusbor, nusbor, nusbor
+      write(nfecra,9250) ficsui, musbor, nusbor, nusbor, nusbor
     endif
 
 !  --> Lecture des stats aux frontieres. Pas de traitement d'erreurs,
@@ -964,7 +989,7 @@ if (isuist.eq.1) then
     nbval  = 1
 
     do ivar = 1,nvisbr
-      RUBRIQ = 'stat_bord_'//NOMBRD(IVAR)
+      rubriq = 'stat_bord_'//nombrd(ivar)
       call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp,   &
                   parbor(1,ivar),ierror)
     enddo
@@ -978,14 +1003,14 @@ if (isuist.eq.1) then
     itysup = 0
     nbval  = 1
 
-    RUBRIQ = 'iteration_debut_termes_sources_stationnaires'
+    rubriq = 'iteration_debut_termes_sources_stationnaires'
     irtyp  = 1
     call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 mstits,ierror)
     if(ierror.ne.0) then
-      write(nfecra,9020) ficmls,                                  &
+      write(nfecra,9020) ficsui,                                  &
   'iteration_debut_termes_sources_stationnaires                ', &
-      'NSTITS',MSTITS
+      'NSTITS',mstits
     endif
 
 !  ---> S'il y a une erreur, on suppose que c'est parce que le fichier
@@ -998,10 +1023,10 @@ if (isuist.eq.1) then
     if(ierror.ne.0) then
       if ( isttio.eq.0 .or.                                       &
           (isttio.eq.1 .and. iplas.lt.nstits) ) then
-        write(nfecra,9310) ficmls, isttio, nstits, iplas+1
+        write(nfecra,9310) ficsui, isttio, nstits, iplas+1
         goto 9993
       else
-        write(nfecra,9320) ficmls, isttio, nstits, iplas+1
+        write(nfecra,9320) ficsui, isttio, nstits, iplas+1
         call csexit (1)
       endif
     endif
@@ -1009,7 +1034,7 @@ if (isuist.eq.1) then
 ! --> A partir d'ici on considere que le fichier suite contient
 !       des stats volumiques
 
-    RUBRIQ = 'modele_turbulence_termes_sources'
+    rubriq = 'modele_turbulence_termes_sources'
     irtyp  = 1
     call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 jturb,ierror)
@@ -1018,15 +1043,15 @@ if (isuist.eq.1) then
 
     if ( jsttio.ne.isttio .or.                                    &
          mstits.ne.nstits     ) then
-      IF (JTYTUR.EQ.2) CAR8 = 'k-eps'
-      IF (JTYTUR.EQ.3) CAR8 = 'Rij-eps'
-      IF (JTURB.EQ.50) CAR8 = 'v2f'
-      IF (JTURB.EQ.60) CAR8 = 'k-omega'
-      IF (ITYTUR.EQ.2) KAR8 = 'k-eps'
-      IF (ITYTUR.EQ.3) KAR8 = 'Rij-eps'
-      IF (ITURB.EQ.50) KAR8 = 'v2f'
-      IF (ITURB.EQ.60) KAR8 = 'k-omega'
-      write (nfecra,9330) ficmls,                                 &
+      if (jtytur.eq.2) car8 = 'k-eps'
+      if (jtytur.eq.3) car8 = 'Rij-eps'
+      if (jturb.eq.50) car8 = 'v2f'
+      if (jturb.eq.60) car8 = 'k-omega'
+      if (itytur.eq.2) kar8 = 'k-eps'
+      if (itytur.eq.3) kar8 = 'Rij-eps'
+      if (iturb.eq.50) kar8 = 'v2f'
+      if (iturb.eq.60) kar8 = 'k-omega'
+      write (nfecra,9330) ficsui,                                 &
                           jsttio, mstits, car8,                   &
                           isttio, nstits, kar8
     endif
@@ -1034,33 +1059,33 @@ if (isuist.eq.1) then
 
 !  --> Lecture de l'avancement du couplage retour
 
-    RUBRIQ = 'nombre_iterations_termes_sources_stationnaires'
+    rubriq = 'nombre_iterations_termes_sources_stationnaires'
     irtyp  = 1
     call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 npts,ierror)
     if(ierror.ne.0) then
-      write(nfecra,9060) ficmls,                                  &
+      write(nfecra,9060) ficsui,                                  &
   'nombre_iterations_termes_sources_stationnaires              ', &
-      'NPTS',NPTS
+      'NPTS',npts
     endif
 
 !  --> Verif de coherence de l'avancement du calcul avec les
 !       indicateurs de calcul de la suite actuelle :
 
     if (npts.eq.0 .and. (isttio.eq.1 .and. nstits.le.iplas)) then
-      write(nfecra,9340) ficmls, iplas+1, nstits
+      write(nfecra,9340) ficsui, iplas+1, nstits
       call csexit (1)
     endif
 
     if ( npts.gt.0 .and.                                          &
         ( (isttio.eq.1 .and. iplas.le.nstits) .or.                &
            isttio.eq.0)                             ) then
-      write(nfecra,9341) ficmls
+      write(nfecra,9341) ficsui
     endif
 
     if (npts.gt.0 .and. (isttio.eq.1 .and. iplas.ge.nstits)) then
      if (mstits.ne.nstits) then
-        write(nfecra,9342) ficmls
+        write(nfecra,9342) ficsui
         call csexit (1)
       endif
     endif
@@ -1069,39 +1094,38 @@ if (isuist.eq.1) then
 !       On donne le meme label au keps, au v2f et au k-omega (meme variable k)
 
     if (ltsdyn.eq.1) then
-      NOMTSL(ITSVX) = 'terme_source_vitesseX'
-      NOMTSL(ITSVY) = 'terme_source_vitesseY'
-      NOMTSL(ITSVZ) = 'terme_source_vitesseZ'
-      NOMTSL(ITSLI) = 'terme_source_vitesse_implicite'
-      if (itytur.eq.2 .or. iturb.eq.50              &
-           .or. iturb.eq.60) then
-        NOMTSL(ITSKE) = 'terme_source_turbulence_keps'
+      nomtsl(itsvx) = 'terme_source_vitesseX'
+      nomtsl(itsvy) = 'terme_source_vitesseY'
+      nomtsl(itsvz) = 'terme_source_vitesseZ'
+      nomtsl(itsli) = 'terme_source_vitesse_implicite'
+      if (itytur.eq.2 .or. iturb.eq.50 .or. iturb.eq.60) then
+        nomtsl(itske) = 'terme_source_turbulence_keps'
       else if (itytur.eq.3) then
-        NOMTSL(ITSR11) = 'terme_source_turbulence_R11'
-        NOMTSL(ITSR12) = 'terme_source_turbulence_R12'
-        NOMTSL(ITSR13) = 'terme_source_turbulence_R13'
-        NOMTSL(ITSR22) = 'terme_source_turbulence_R22'
-        NOMTSL(ITSR23) = 'terme_source_turbulence_R23'
-        NOMTSL(ITSR33) = 'terme_source_turbulence_R33'
+        nomtsl(itsr11) = 'terme_source_turbulence_R11'
+        nomtsl(itsr12) = 'terme_source_turbulence_R12'
+        nomtsl(itsr13) = 'terme_source_turbulence_R13'
+        nomtsl(itsr22) = 'terme_source_turbulence_R22'
+        nomtsl(itsr23) = 'terme_source_turbulence_R23'
+        nomtsl(itsr33) = 'terme_source_turbulence_R33'
       endif
     endif
     if (ltsmas.eq.1) then
-      NOMTSL(ITSMAS) = 'terme_source_masse'
+      nomtsl(itsmas) = 'terme_source_masse'
     endif
     if (ltsthe.eq.1) then
       if (iphyla.eq.1 .and. itpvar.eq.1) then
-        NOMTSL(ITSTE) = 'terme_source_thermique_explicite'
-        NOMTSL(ITSTI) = 'terme_source_thermique_implicite'
+        nomtsl(itste) = 'terme_source_thermique_explicite'
+        nomtsl(itsti) = 'terme_source_thermique_implicite'
       else if (iphyla.eq.2) then
-        NOMTSL(ITSTE) = 'terme_source_thermique_explicite'
-        NOMTSL(ITSTI) = 'terme_source_thermique_implicite'
+        nomtsl(itste) = 'terme_source_thermique_explicite'
+        nomtsl(itsti) = 'terme_source_thermique_implicite'
         do icha = 1,ncharb
-          WRITE(CAR4,'(I4.4)') ICHA
-          NOMTSL(ITSMV1(ICHA)) = 'terme_source_legeres_F1_'//CAR4
-          NOMTSL(ITSMV2(ICHA)) = 'terme_source_lourdes_F2_'//CAR4
+          write(car4,'(i4.4)') icha
+          nomtsl(itsmv1(icha)) = 'terme_source_legeres_F1_'//car4
+          nomtsl(itsmv2(icha)) = 'terme_source_lourdes_F2_'//car4
         enddo
-        NOMTSL(ITSCO) = 'terme_source_F3'
-        NOMTSL(ITSFP4) = 'terme_source_variance_traceur_air'
+        nomtsl(itsco) = 'terme_source_F3'
+        nomtsl(itsfp4) = 'terme_source_variance_traceur_air'
       endif
     endif
 
@@ -1129,8 +1153,8 @@ if (isuist.eq.1) then
         itysup = 1
         nbval  = 1
         irtyp  = 2
-        WRITE(CAR4,'(I4.4)') IVAR
-        RUBRIQ = 'scalaires_physiques_pariculieres_charbon'//CAR4
+        write(car4,'(i4.4)') ivar
+        rubriq = 'scalaires_physiques_pariculieres_charbon'//car4
         call lecsui(impmls,rubriq,len(rubriq),itysup,nbval,irtyp, &
                     propce(1,ipproc(icha)),ierror)
       enddo
@@ -1146,7 +1170,7 @@ if (isuist.eq.1) then
 
   call clssui(impmls,ierror)
 
-  if(ierror.ne.0) write(nfecra,9090) ficmls, ficmls
+  if(ierror.ne.0) write(nfecra,9090) ficsui, ficsui
 
 ! ---> En cas d'erreur, on continue quand meme
 
@@ -1163,45 +1187,43 @@ write(nfecra,2000)
 !--------
 
 
- 2000 format(                                                           &
+ 2000 format(                                                     &
 '                                                             ',/,&
 '-------------------------------------------------------------',/)
 
- 6000 FORMAT (/, 3X,'** INFORMATIONS SUR LE CALCUL LAGRANGIEN     ',/,  &
-           3X,'   -------------------------------------     ',/,  &
-           3X,' Lecture d''un fichier suite                 ',/,  &
-           3X,'   sur les variables liees aux particules    '  )
- 6010 FORMAT (   3X,'   Debut de la lecture                       '  )
- 6011 FORMAT (   3X,'   Fin   de la lecture                       '  )
- 6099 FORMAT (   3X,' Fin de la lecture du fichier suite          ',/,  &
+ 6000 FORMAT (/, 3X,'** INFORMATIONS SUR LE CALCUL LAGRANGIEN',/,  &
+           3X,'   -------------------------------------      ',/,  &
+           3X,' Lecture d''un fichier suite                  ',/,  &
+           3X,'   sur les variables liees aux particules     '  )
+ 6010 FORMAT (   3X,'   Debut de la lecture                  '  )
+ 6011 FORMAT (   3X,'   Fin   de la lecture                  '  )
+ 6099 FORMAT (   3X,' Fin de la lecture du fichier suite     ',/,  &
            3X,'   sur les variables liees aux particules    ',/)
 
- 7000 FORMAT (/, 3X,'** INFORMATIONS SUR LE CALCUL LAGRANGIEN     ',/,  &
-           3X,'   -------------------------------------     ',/,  &
-           3X,' Lecture d''un fichier suite                 ',/,  &
+ 7000 FORMAT (/, 3X,'** INFORMATIONS SUR LE CALCUL LAGRANGIEN',/,  &
+           3X,'   -------------------------------------      ',/,  &
+           3X,' Lecture d''un fichier suite                  ',/,  &
            3X,'   sur les statistiques et TS couplage retour'  )
- 7010 FORMAT (   3X,'   Debut de la lecture                       '  )
- 7099 FORMAT (   3X,' Fin de la lecture du fichier suite          ',/,  &
+ 7010 FORMAT (   3X,'   Debut de la lecture                  '  )
+ 7099 FORMAT (   3X,' Fin de la lecture du fichier suite     ',/,  &
            3X,'   sur les statistiques et TS couplage retour'  )
 
- 9010 format(                                                           &
+ 9010 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A LA LECTURE D''UN FICHIER SUITE      ',/,&
-'@    =========                                    LAGRANGIEN ',/,&
-'@                                                            ',/,&
-'@      ERREUR A L''OUVERTURE DU FICHIER SUITE ',A13           ,/,&
+'@ @@ ATTENTION : ARRET A L''OUVERTURE D''UN FICHIER SUITE    ',/,&
+'@    =========     LAGRANGIEN ',A13                           ,/,&
 '@                                                            ',/,&
 '@    Le calcul ne peut pas etre execute.                     ',/,&
 '@                                                            ',/,&
-'@    Verifier l''existence et le nom (',A13      ,') du      ',/,&
-'@        fichier suite dans le repertoire de travail.        ',/,&
+'@    Verifier l''existence de ce fichier suite dans le       ',/,&
+'@        sous-repertoire ''restart'' du repertoire de travail.',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
- 9020 format(                                                           &
+ 9020 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1209,7 +1231,7 @@ write(nfecra,2000)
 '@    =========     LAGRANGIEN ',A13                           ,/,&
 '@      TYPE DE FICHIER INCORRECT                             ',/,&
 '@                                                            ',/,&
-'@    Le fichier ',A13      ,' ne semble pas etre un fichier  ',/,&
+'@    Ce fichier ne semble pas etre un fichier                ',/,&
 '@      suite Lagrangien.                                     ',/,&
 '@                                                            ',/,&
 '@    Le calcul ne peut etre execute.                         ',/,&
@@ -1267,7 +1289,7 @@ write(nfecra,2000)
 '@                                                            ',/,&
 '@    Le calcul ne peut pas etre execute.                     ',/,&
 '@                                                            ',/,&
-'@    Verifier que le fichier suite ',A13      ,' utilise     ',/,&
+'@    Verifier que ce fichier suite                           ',/,&
 '@        correspond bien a un fichier suite Lagrangien,      ',/,&
 '@        et qu''il n''a pas ete endommage.                   ',/,&
 '@                                                            ',/,&
@@ -1285,7 +1307,7 @@ write(nfecra,2000)
 '@                                                            ',/,&
 '@    Le calcul ne peut pas etre execute.                     ',/,&
 '@                                                            ',/,&
-'@    Verifier que le fichier suite ',A13      ,' utilise     ',/,&
+'@    Verifier que ce fichier suite                           ',/,&
 '@        correspond bien a un fichier suite Lagrangien,      ',/,&
 '@        et qu''il n''a pas ete endommage.                   ',/,&
 '@                                                            ',/,&
@@ -1481,7 +1503,7 @@ write(nfecra,2000)
 '@                                                            ',/,&
 '@    L''indicateur d''un calcul Lagrangien de grains         ',/,&
 '@      de charbon est enclenche (IPHYLA = 2).                ',/,&
-'@    Le fichier suite ',A13      ,' ne correspond pas        ',/,&
+'@    Ce fichier suite ne correspond pas                      ',/,&
 '@      a un calcul Lagrangien de grains de charbon.          ',/,&
 '@                                                            ',/,&
 '@    Le calcul ne peut etre execute.                         ',/,&
@@ -1500,7 +1522,7 @@ write(nfecra,2000)
 '@    =========     LAGRANGIEN ',A13                           ,/,&
 '@      DONNEES AMONT ET ACTUELLES INCOHERENTES               ',/,&
 '@                                                            ',/,&
-'@    Le fichier suite ',A13      ,' correspond               ',/,&
+'@    Ce fichier suite correspond                             ',/,&
 '@      a un calcul Lagrangien de grains de charbon.          ',/,&
 '@    L''indicateur de physique actuel associee aux particules',/,&
 '@      a une valeur non permise dans le cadre d''une suite   ',/,&
@@ -1548,8 +1570,6 @@ write(nfecra,2000)
 '@                                                            ',/,&
 '@ @@ ATTENTION : A LA FERMETURE DU FICHIER SUITE             ',/,&
 '@    =========     LAGRANGIEN ',A13                           ,/,&
-'@                                                            ',/,&
-'@    Probleme sur le fichier de nom : ',A13                   ,/,&
 '@                                                            ',/,&
 '@    Le calcul continue...                                   ',/,&
 '@                                                            ',/,&
