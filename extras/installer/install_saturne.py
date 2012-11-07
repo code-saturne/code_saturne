@@ -321,8 +321,8 @@ class Setup:
             Package(name="Code_Saturne",
                     description="Code_Saturne CFD tool",
                     package="code_saturne",
-                    version="2.2.2",
-                    archive="code_saturne-2.2.2.tar.gz",
+                    version="2.2.3",
+                    archive="code_saturne-2.2.3.tar.gz",
                     url=url_cs)
 
         p = self.packages['code_saturne']
@@ -335,9 +335,9 @@ class Setup:
             Package(name="HDF5",
                     description="Hierarchical Data Format",
                     package="hdf5",
-                    version="1.8.8",
-                    archive="hdf5-1.8.8.tar.gz",
-                    url="http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.8/src/%s")
+                    version="1.8.9",
+                    archive="hdf5-1.8.9.tar.gz",
+                    url="http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.9/src/%s")
 
         p = self.packages['hdf5']
         p.config_opts = "--enable-production"
@@ -361,8 +361,8 @@ class Setup:
             Package(name="MED",
                     description="Model for Exchange of Data",
                     package="med",
-                    version="3.0.4",
-                    archive="med-3.0.4.tar.gz",
+                    version="3.0.5",
+                    archive="med-3.0.5.tar.gz",
                     url="http://files.salome-platform.org/Salome/other/%s")
 
         p = self.packages['med']
@@ -374,9 +374,9 @@ class Setup:
             Package(name="MPI",
                     description="Message Passing Interface",
                     package="openmpi",
-                    version="1.4.5",
-                    archive="openmpi-1.4.5.tar.gz",
-                    url="http://www.open-mpi.org/software/ompi/v1.4/downloads/%s")
+                    version="1.6.3",
+                    archive="openmpi-1.6.3.tar.gz",
+                    url="http://www.open-mpi.org/software/ompi/v1.6/downloads/%s")
 
         # Libxml2 library (possible mirror at "ftp://fr.rpmfind.net/pub/libxml/%s")
 
