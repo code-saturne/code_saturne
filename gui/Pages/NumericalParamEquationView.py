@@ -127,7 +127,7 @@ class SolverChoiceDelegate(QItemDelegate):
 
 
     def setEditorData(self, comboBox, index):
-        dico = {"conjugate_gradient": 0, "jacobi": 1, "bi_cgstab": 2, "gmres": 3, "multigrid":4}
+        dico = {"automatic": 0, "conjugate_gradient": 1, "jacobi": 2, "bi_cgstab": 3, "gmres": 4, "multigrid": 5}
         row = index.row()
         string = index.model().dataSolver[row]['iresol']
         idx = dico[string]
@@ -457,9 +457,11 @@ class StandardItemModelSolver(QStandardItemModel):
 
     def populateModel(self):
         self.dicoV2M= {"Multigrid": 'multigrid',"Conjugate gradient" : 'conjugate_gradient',
-                       "Jacobi": 'jacobi', "BI-CGSTAB": 'bi_cgstab', "GMRES": 'gmres'}
+                       "Jacobi": 'jacobi', "BI-CGSTAB": 'bi_cgstab', "GMRES": 'gmres',
+                       "Automatic": "automatic"}
         self.dicoM2V= {"multigrid" : 'Multigrid',"conjugate_gradient" : 'Conjugate gradient',
-                       "jacobi": 'Jacobi', "bi_cgstab": 'BI-CGSTAB', 'gmres': "GMRES"}
+                       "jacobi": 'Jacobi', "bi_cgstab": 'BI-CGSTAB', 'gmres': "GMRES",
+                       "automatic": "Automatic"}
         for label in self.NPE.getSolverList():
             row = self.rowCount()
             self.setRowCount(row + 1)
