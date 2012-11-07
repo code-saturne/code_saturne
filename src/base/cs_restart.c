@@ -2771,6 +2771,8 @@ cs_restart_read_particles_info(cs_restart_t  *restart,
 
     cs_block_to_part_destroy(&d);
 
+    BFT_FREE(part_cell_num);
+
   }
 
 #endif /* #if defined(HAVE_MPI) */
