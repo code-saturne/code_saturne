@@ -435,8 +435,8 @@ if (imobil.eq.1) then
 
   omgnrm = sqrt(omegax**2 + omegay**2 + omegaz**2)
 
-  cosdto = cos(ttcabs*omgnrm)
-  sindto = sin(ttcabs*omgnrm)
+  cosdto = cos(ttcmob*omgnrm)
+  sindto = sin(ttcmob*omgnrm)
 
   do ii = 1, 3
     do jj = 1, 3

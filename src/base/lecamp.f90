@@ -74,6 +74,7 @@ use pointe
 use numvar
 use albase
 use parall
+use cplsat
 use field
 
 !===============================================================================
@@ -427,6 +428,28 @@ if (iale.eq.1 .and. jale.eq.1) then
     call csexit(1)
   endif
 endif
+
+!     Instant de maillage mobile precedent (rotor/stator)
+
+nberro = 0
+
+rubriq = 'instant_mobile_precedent'
+itysup = 0
+nbval  = 1
+irtyp  = 2
+call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,rval,ierror)
+ttpmob = rval ! no direct read to avoid pointer issue
+nberro=nberro+ierror
+
+! --->  Message si erreur (pas de stop pour compatibilite avec les fichiers anterieurs)
+!       -> on n'affiche le message que si imobil=1 (sinon RAS)
+if (nberro.ne.0) then
+  if (imobil.eq.1) write(nfecra,9403) ttpabs
+  ttpmob = ttpabs
+endif
+
+! --->  Information (uniquement si imobil=1 et pas d affichage precedent)
+if (imobil.eq.1 .and. nberro.eq.0)  write(nfecra,2412) ttpmob
 
 ! --->  Fin de la lecture des options
 write(nfecra,1499)
@@ -1145,6 +1168,9 @@ return
  2411 format                                                            &
  ('   Lecture du pas de temps precedent (suite) ',                &
                                                 'TTPABS = ',E12.4)
+ 2412 format                                                            &
+ ('   Lecture du temps de maillage mobile precedent (suite) ',    &
+                                                'TTPMOB = ',E12.4)
 
 #else
 
@@ -1154,6 +1180,9 @@ return
  2411 format                                                            &
  ('   Reading the previous time step number ',                    &
                       '(restarting computation)  TTPABS = ',E12.4)
+ 2412 format                                                            &
+ ('   Reading the previous moving mesh moment ',                  &
+                      '(restarting computation)  TTPMOB = ',E12.4)
 
 #endif
 
@@ -1577,6 +1606,26 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
+ 9403 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ERREUR A LA LECTURE DU FICHIER SUITE        ',/,&
+'@    =========                                      PRINCIPAL',/,&
+'@                                                            ',/,&
+'@      ERREUR A LA LECTURE DE L INSTANT DE MAILLAGE MOBILE  ',/,&
+'@                                                   PRECEDENT',/,&
+'@    Il se peut que le fichier suite relu corresponde a une  ',/,&
+'@      version anterieure de Code_Saturne, sans couplage     ',/,&
+'@      rotor/stator instationnaire.                          ',/,&
+'@    Le calcul sera execute en initialisant l instant de     ',/,&
+'@      maillage mobile precedent a TTCMOB = ',E12.4           ,/,&
+'@    Verifier neanmoins que le fichier suite utilise n''a    ',/,&
+'@        pas ete endommage.                                  ',/,&
+'@                                                            ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
  9410 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -1849,6 +1898,26 @@ return
 '@                                                            ',/,&
 '@                                                            ',/,&
 '@    Please check the value of ILEAUX.                       ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 9403 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING : ERROR AT THE MAIN RESTART FILE READING        ',/,&
+'@    =========                                               ',/,&
+'@                                                            ',/,&
+'@      ERROR AT READING THE PREVIOUS MOVING MESH MOMENT      ',/,&
+'@                                                            ',/,&
+'@    The read restart file might come from a previous        ',/,&
+'@      version of Code Saturne, without unsteady             ',/,&
+'@      rotor/stator coupling method.                         ',/,&
+'@    The calculation will be executed with the previous      ',/,&
+'@      moving mesh moment initialized to TTCMOB = ',E12.4     ,/,&
+'@    Please check the integrity of the file used as          ',/,&
+'@        restart file, however.                              ',/,&
+'@                                                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

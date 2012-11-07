@@ -799,6 +799,9 @@ inpdt0 = 0
 ttpabs = 0.d0
 ttcabs = ttpabs
 
+ttpmob = 0.d0
+ttcmob = ttpmob
+
 ! --- Marche en temps
 !       Par defaut pas de temps uniforme et constant,
 !         sans coef multiplicatif
