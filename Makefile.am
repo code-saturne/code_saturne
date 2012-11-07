@@ -316,7 +316,8 @@ bin/runcase_aster \
 bin/runcase_coupling
 
 dist_pkgdata_DATA = \
-bin/cs_user_scripts.py
+bin/cs_user_scripts.py \
+COPYING
 
 dist_pkgdata_SCRIPTS = \
 bin/runcase_mpi_rank
