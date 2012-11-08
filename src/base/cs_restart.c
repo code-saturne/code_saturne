@@ -961,6 +961,8 @@ _restart_section_id(cs_restart_t     *restart,
   return rec_id;
 }
 
+#if defined(HAVE_MPI)
+
 /*----------------------------------------------------------------------------
  * Compute default particle destination rank array in case of untracked
  * particles.
@@ -1065,6 +1067,8 @@ _default_p_rank(cs_block_dist_info_t  *p_bi,
 
   return default_rank;
 }
+
+#endif /* defined(HAVE_MPI) */
 
 /*============================================================================
  * Public Fortran function definitions
