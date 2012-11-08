@@ -172,6 +172,7 @@ _compute_ortho_norm(const cs_mesh_t             *mesh,
 
     if (i_face_ortho[face_id] < 0.1) {
       bad_cell_flag[cell1] = bad_cell_flag[cell1] | _type_flag_mask[0];
+      bad_cell_flag[cell2] = bad_cell_flag[cell2] | _type_flag_mask[0];
     }
   }
 
@@ -298,6 +299,7 @@ _compute_weighting_offsetting(const cs_mesh_t         *mesh,
 
     if (offsetting[face_id] < 0.1) {
       bad_cell_flag[cell1] = bad_cell_flag[cell1] | _type_flag_mask[1];
+      bad_cell_flag[cell2] = bad_cell_flag[cell2] | _type_flag_mask[1];
     }
   }
 }
