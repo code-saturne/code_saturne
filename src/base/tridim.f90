@@ -456,8 +456,9 @@ if (imobil.eq.1) then
     enddo
   enddo
 
-  call algrma
-  !==========
+  ! do not update "bad cells" marker here, as we have "solid" mesh movement,
+  ! which only impacts quality in a marginal manner (i.e. gradient variations
+  ! based on axis alignement).
 
   ! Abort at the end of the current time-step if there is a negative volume
   if (volmin.le.0.d0) ntmabs = ntcabs

@@ -59,6 +59,48 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Define which cell quality indicators are used and when.
+ *
+ * Note: we assume that if a given criterion is computed at each time
+ * step, it is also computed at initialization, but for visualization,
+ * it is either one or the other, as visualization formats and tools
+ * may not always accept both a fixed and time-varying instance of a
+ * given variable.
+ *
+ * parameters:
+ *   type_flag_mask <-- criterion type mask (0 for all)
+ *   compute        <-- 0: never compute;
+ *                      1: compute at initialization;
+ *                      2: compute at each time step
+ *   visualize      <-- 0: never visualize
+ *                      1: visualize at initialization;
+ *                      2: visualize at each time step
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_bad_cells_set_options(int  type_flag_mask,
+                              int  compute,
+                              int  visualize);
+
+/*----------------------------------------------------------------------------
+ * Indicate which cell quality indicators are used and when.
+ *
+ * Each array is optional, and returns 2 flags; the first flag is used at
+ * initialization, the second one at each time step.
+ *
+ * A flag is a mask to be compared using an "and" (&) operation with a given
+ * criteria type mask (CS_BAD_CELL_ORTHO_NORM, CS_BAD_CELL_OFFSET, ...).
+ *
+ * parameters:
+ *   compute   --> computation mask (initialization, per time step), or NULL
+ *   visualize --> visualization mask (initialization, per time step), or NULL
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_bad_cells_get_options(int  compute[2],
+                              int  visualize[2]);
+
+/*----------------------------------------------------------------------------
  * Compute bad cell quality indicators.
  *
  * parameters:
