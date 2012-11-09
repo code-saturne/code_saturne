@@ -687,8 +687,8 @@ do ifac = 1, nfabor
     uetmin = min(uet,uetmin)
     ukmax  = max(uk,ukmax)
     ukmin  = min(uk,ukmin)
-    yplumx = max(yplus,yplumx)
-    yplumn = min(yplus,yplumn)
+    yplumx = max(yplus-dplus,yplumx)
+    yplumn = min(yplus-dplus,yplumn)
 
     ! Sauvegarde de la vitesse de frottement et de la viscosite turbulente
     ! apres amortissement de van Driest pour la LES
@@ -702,7 +702,7 @@ do ifac = 1, nfabor
       uetbor(ifac) = uet
       if (visvdr(iel).lt.-900.d0) then
         propce(iel,ipcvst) = propce(iel,ipcvst)                   &
-             *(1.d0-exp(-yplus/cdries))**2
+             *(1.d0-exp(-(yplus-dplus)/cdries))**2
         visvdr(iel) = propce(iel,ipcvst)
         visctc = propce(iel,ipcvst)
       endif
@@ -712,7 +712,7 @@ do ifac = 1, nfabor
 
     ! Save yplus if post-processed
     if (ipstdv(ipstyp).ne.0) then
-      yplbr(ifac) = yplus
+      yplbr(ifac) = yplus-dplus
     endif
 
     !===========================================================================
@@ -773,7 +773,7 @@ do ifac = 1, nfabor
         if (ivelco.eq.1) then
           if (yplus.ge.ypluli) then
             ! On implicite le terme de bord pour le gradient de vitesse
-            ypup =  yplus/(log(yplus)/xkappa +cstlog)
+            ypup =  (yplus-dplus)/(log(yplus)/xkappa +cstlog)
             cofimp  = 1.d0 - ypup/xkappa*                        &
                              (deuxd0*rcprod - und0/(deuxd0*yplus-dplus))
             ! On implicite le terme (rho*uet*uk)
@@ -825,7 +825,7 @@ do ifac = 1, nfabor
           if (ivelco.eq.1) then
             if (yplus.ge.ypluli) then
               ! On implicite le terme de bord pour le gradient de vitesse
-              ypup   =  yplus/(log(yplus)/xkappa +cstlog)
+              ypup   =  (yplus-dplus)/(log(yplus)/xkappa +cstlog)
               cofimp = 1.d0                                                    &
                      - ypup/xkappa*(deuxd0/yplus - und0/(deuxd0*yplus-dplus))
               ! On implicite le terme (rho*uet*uk)
@@ -848,8 +848,8 @@ do ifac = 1, nfabor
         ! Coupled solving of the velocity components
         if (ivelco.eq.1) then
           if (yplus.ge.ypluli) then
-            ypup   =  yplus/(log(yplus)/xkappa +cstlog)
-            cofimp = 1.d0 - ypup/(xkappa*yplus)*1.5d0
+            ypup   =  (yplus-dplus)/(log(yplus)/xkappa +cstlog)
+            cofimp = 1.d0 - ypup/(xkappa*(yplus-dplus))*1.5d0
           else
             cofimp = 0.d0
           endif
@@ -870,7 +870,7 @@ do ifac = 1, nfabor
           if (ivelco.eq.1) then
             if (yplus.ge.ypluli) then
               ! The boundary term for velocity gradient is implicit
-              ypup   =  yplus/(log(yplus)/xkappa +cstlog)
+              ypup   =  (yplus-dplus)/(log(yplus)/xkappa +cstlog)
               ! The term (rho*uet*uk) is implicit
               hflui = visclc / distbf * ypup
 
@@ -1010,7 +1010,7 @@ do ifac = 1, nfabor
       ! By the way, in this case: iuntur=0
       if (yplus.gt.epzero) then !FIXME use iuntur
         pimp = distbf*4.d0*uk**5*romc**2/           &
-            (xkappa*visclc**2*(yplus+dplus)**2)
+            (xkappa*visclc**2*(yplus+dplus)**2) !FIXME
 
         qimp = -pimp*hint !TODO transform it, it is only to be fully equivalent
       else
@@ -1621,18 +1621,17 @@ do ifac = 1, nfabor
 
           ! Dirichlet on the scalar, with wall function
           if (iturb.ne.0.and.icodcl(ifac,ivar).eq.5) then
-            call hturbp (prdtl,sigmas(iscal),xkappa,yplus,hflui,yp1)
-            ! y+/T+ *PrT
+
+            call hturbp (prdtl,sigmas(iscal),xkappa,yplus,dplus,hflui,yp1)
+
+            ! Compute (y+-d+)/T+ *PrT
             yptp = hflui/prdtl
-            if (ideuch.eq.2) then !FIXME
-              hflui = uk*romc/(yplus*prdtl) *hflui
-            else
-              hflui = rkl/distbf *hflui
-            endif
+            ! Compute lambda/y * (y+-d+)/T+
+            hflui = rkl/distbf *hflui
 
           ! Neumann on the scalar, with wall function (for post-processing)
           elseif (iturb.ne.0.and.icodcl(ifac,ivar).eq.3) then
-            call hturbp (prdtl,sigmas(iscal),xkappa,yplus,hflui,yp1)
+            call hturbp (prdtl,sigmas(iscal),xkappa,yplus,dplus,hflui,yp1)
             ! y+/T+ *PrT
             yptp = hflui/prdtl
             hflui = hint
@@ -1655,7 +1654,7 @@ do ifac = 1, nfabor
             ! In the log layer
             if (yplus.ge.yp1.and.iturb.ne.0) then
               cofimp  = 1.d0 - yptp*sigmas(iscal)/xkappa*                        &
-                               (deuxd0/yplus - und0/(deuxd0*yplus))
+                               (deuxd0/yplus - und0/(deuxd0*yplus-dplus))
               ! On implicite le terme (rho*tet*uk)
               pfac = 0.d0
 
@@ -1850,7 +1849,7 @@ do ifac = 1, nfabor
 
             tet = phit/(romc*cpp*max(uk,epzero))
             ! T+ = (T_I - T_w) / Tet
-            tplus = yplus/yptp
+            tplus = (yplus-dplus)/yptp
 
             if (itplus .ge. 0) tplusp(ifac) = tplus
             if (itstar .ge. 0) tstarp(ifac) = tet
