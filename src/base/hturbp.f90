@@ -57,10 +57,12 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]     yplus         dimensionless distance to the wall
-!> \param[in]     ckarm         Von Karman constant
-!> \param[in]     prt           turbulent Prandtl number
 !> \param[in]     prl           laminar Prandtl number
+!> \param[in]     prt           turbulent Prandtl number
+!> \param[in]     ckarm         Von Karman constant
+!> \param[in]     yplus         dimensionless distance to the wall
+!> \param[in]     dplus         dimensionless distance for scalable
+!>                              wall functions
 !> \param[out]    htur          corrected exchange coefficient
 !> \param[out]    yp1
 !_______________________________________________________________________________
@@ -68,7 +70,7 @@
 subroutine hturbp &
 !================
 
- ( prl    , prt    , ckarm  , yplus  , htur , yp1 )
+ ( prl    , prt    , ckarm  , yplus  , dplus, htur , yp1 )
 
 !===============================================================================
 
@@ -85,7 +87,7 @@ implicit none
 ! Arguments
 
 double precision htur
-double precision prl,ckarm,prt,yplus, yp1
+double precision prl,ckarm,prt,yplus, dplus, yp1
 
 ! Local variables
 
@@ -118,7 +120,7 @@ yp1   = (1000.d0/prl)**(1.d0/3.d0)
 if (prl.le.prlm1) then
   if (yplus .gt. yp0) then
     tplus = prl*yp0 + prt/ckarm * log(yplus/yp0)
-    htur = prl*yplus/tplus
+    htur = prl*(yplus-dplus)/tplus
   endif
 endif
 
@@ -133,12 +135,12 @@ if (prl.gt.prlm1) then
 
   if ((yplus.ge.yp1).and.(yplus.lt.yp2)) then
     tplus = a2 - 500.d0/(yplus*yplus)
-    htur = prl*yplus/tplus
+    htur = prl*(yplus-dplus)/tplus
   endif
 
   if ((yplus.ge.yp2)) then
     tplus = beta2 + prt/ckarm*log(yplus/yp2)
-    htur = prl*yplus/tplus
+    htur = prl*(yplus-dplus)/tplus
   endif
 
 endif
