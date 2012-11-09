@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2012-11-07 10:56+0100\n"
+"POT-Creation-Date: 2012-11-09 14:44+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -4851,22 +4851,6 @@ msgstr "Erreur à l'écriture de l'entête du fichier : \"%s\".\n"
 
 #, c-format
 msgid ""
-"Restart file \"%s\"\n"
-"in format 1.1 is not conforming."
-msgstr ""
-"Le fichier suite \"%s\"\n"
-"au format 1.1 n'est pas conforme."
-
-#, c-format
-msgid ""
-"Restart file \"%s\" does not correspond\n"
-"to part %d of the original restart file."
-msgstr ""
-"Le fichier suite \"%s\" ne correspond pas\n"
-"à la partie %d du fichier suite d'origine."
-
-#, c-format
-msgid ""
 "\n"
 "  Section read on \"%s\":\n"
 msgstr ""
@@ -4923,18 +4907,6 @@ msgstr ""
 #, c-format
 msgid " %40s %10llu %2u %2u %2u %6s %c %2u %ld\n"
 msgstr ""
-
-#, c-format
-msgid ""
-"\n"
-" %u associated file(s):\n"
-msgstr ""
-"\n"
-" %u fichier(s) associé(s):\n"
-
-#, c-format
-msgid "  \"%s\"\n"
-msgstr "  \"%s\"\n"
 
 #, c-format
 msgid ""
@@ -9088,9 +9060,27 @@ msgid ""
 "  boundary faces   %10d  %12.5f\n"
 msgstr ""
 
+msgid "Bad Cell Ortho Norm"
+msgstr ""
+
+msgid "Bad Cell Offset"
+msgstr ""
+
+msgid "Bad Cell LSQ Gradient"
+msgstr ""
+
+msgid "Bad Cell Volume Ratio"
+msgstr ""
+
+msgid "Bad Cell Association"
+msgstr ""
+
+msgid "Bad Cell by User"
+msgstr ""
+
 msgid ""
 "\n"
-"  Criteria 1: Orthogonality:\n"
+"  Criterion 1: Orthogonality:\n"
 msgstr ""
 "\n"
 "  Critère 1 : orthogonalité :\n"
@@ -9101,28 +9091,28 @@ msgstr "    Nombre de mauvaises cellules détecté : %llu --> %3.0f %%\n"
 
 msgid ""
 "\n"
-"  Criteria 2: Offset:\n"
+"  Criterion 2: Offset:\n"
 msgstr ""
 "\n"
 "  Critère 2 : décentrement :\n"
 
 msgid ""
 "\n"
-"  Criteria 3: Least-Squares Gradient Quality:\n"
+"  Criterion 3: Least-Squares Gradient Quality:\n"
 msgstr ""
 "\n"
 "  Critère 3 : qualité du gradient moindres-carrés :\n"
 
 msgid ""
 "\n"
-"  Criteria 4: Cells Volume Ratio:\n"
+"  Criterion 4: Cells Volume Ratio:\n"
 msgstr ""
 "\n"
 "  Critère 4 : ratio des volumes de cellules :\n"
 
 msgid ""
 "\n"
-"  Criteria 5: Guilt by Association:\n"
+"  Criterion 5: Guilt by Association:\n"
 msgstr ""
 "\n"
 "  Critère 5 : culpabilité par association :\n"
@@ -9146,24 +9136,6 @@ msgstr ""
 "\n"
 "    Le calcul sera effectué mais la qualité de la solution peut être "
 "dégradée...\n"
-
-msgid "Bad Cell Ortho Norm"
-msgstr ""
-
-msgid "Bad Cell Offset"
-msgstr ""
-
-msgid "Bad Cell LSQ Gradient"
-msgstr ""
-
-msgid "Bad Cell Volume Ratio"
-msgstr ""
-
-msgid "Bad Cell Association"
-msgstr ""
-
-msgid "Bad Cell by User"
-msgstr ""
 
 msgid "    Checking the face -> cells connectivity coherency\n"
 msgstr "    Test de cohérence de la connectivité faces -> cellules\n"
@@ -9816,3 +9788,27 @@ msgid ""
 msgstr ""
 "  temps écoulé :              %.3g s\n"
 "\n"
+
+#~ msgid ""
+#~ "Restart file \"%s\"\n"
+#~ "in format 1.1 is not conforming."
+#~ msgstr ""
+#~ "Le fichier suite \"%s\"\n"
+#~ "au format 1.1 n'est pas conforme."
+
+#~ msgid ""
+#~ "Restart file \"%s\" does not correspond\n"
+#~ "to part %d of the original restart file."
+#~ msgstr ""
+#~ "Le fichier suite \"%s\" ne correspond pas\n"
+#~ "à la partie %d du fichier suite d'origine."
+
+#~ msgid ""
+#~ "\n"
+#~ " %u associated file(s):\n"
+#~ msgstr ""
+#~ "\n"
+#~ " %u fichier(s) associé(s):\n"
+
+#~ msgid "  \"%s\"\n"
+#~ msgstr "  \"%s\"\n"
