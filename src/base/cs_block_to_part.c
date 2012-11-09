@@ -1288,7 +1288,7 @@ cs_block_to_part_global_to_local(cs_lnum_t        n_ents,
     BFT_MALLOC(_g_list, global_list_size, cs_gnum_t);
     order = cs_order_gnum(NULL, global_list, global_list_size);
     for (i = 0; i < global_list_size; i++)
-      _g_list[i] = global_number[order[i]];
+      _g_list[i] = global_list[order[i]];
     g_list = _g_list;
   }
 
@@ -1325,7 +1325,7 @@ cs_block_to_part_global_to_local(cs_lnum_t        n_ents,
 
   if (order != NULL) {
     for (i = 0 ; i < n_ents ; i++)
-      local_number[i] = order[local_number[i]];
+      local_number[i] = order[local_number[i] - base] + base;
     BFT_FREE(order);
   }
 
