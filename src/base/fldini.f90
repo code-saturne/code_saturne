@@ -271,7 +271,7 @@ if (iale.eq.1) then
     call field_set_key_int(ivarfl(ivar), keycpl, 1)
   endif
   ivarfl(ivma) = ivarfl(iuma)
-  ivarfl(iwma) = ivarfl(iwma)
+  ivarfl(iwma) = ivarfl(iuma)
 endif
 
 ! User variables
