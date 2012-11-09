@@ -168,12 +168,26 @@ def get_script_return_code():
 
 #-------------------------------------------------------------------------------
 
-def run_command(cmd, echo = False, stdout = sys.stdout, stderr = sys.stderr):
+def run_command(cmd, pkg = None, echo = False,
+                stdout = sys.stdout, stderr = sys.stderr):
     """
     Run a command.
     """
     if echo == True:
         stdout.write(cmd + '\n')
+
+    # Modify the PATH for relocatable installation: add Code_Saturne "bindir"
+
+    import cs_config
+    cfg = cs_config.config()
+
+    if cfg.features['relocatable'] == "yes" and pkg != None:
+        if sys.platform.startswith("win"):
+            sep = ";"
+        else:
+            sep = ":"
+        saved_path = os.environ['PATH']
+        os.environ['PATH'] = pkg.get_dir('bindir') + sep + saved_path
 
     # As a workaround for a bug in which the standard output an error
     # are "lost" (observed in an apparently random manner, with Python 2.4),
@@ -191,6 +205,11 @@ def run_command(cmd, echo = False, stdout = sys.stdout, stderr = sys.stderr):
                          **kwargs)
 
     p.communicate()
+
+    # Reset the PATH to its previous value
+
+    if cfg.features['relocatable'] == "yes" and pkg != None:
+        os.environ['PATH'] = saved_path
 
     return p.returncode
 
@@ -796,6 +815,7 @@ class mpi_environment:
                                'BGP_MPI':self.__init_bgp__,
                                'BGQ_MPI':self.__init_bgq__,
                                'HP_MPI':self.__init_hp_mpi__,
+                               'MSMPI':self.__init_msmpi__,
                                'MPIBULL2':self.__init_mpibull2__}
             if self.type in mpi_env_by_type:
                 init_method = mpi_env_by_type[self.type]
@@ -1303,6 +1323,37 @@ class mpi_environment:
                 self.mpiexec_n = None
             elif resource_info.manager == 'LSF':
                 self.mpiexec += ' -lsb_hosts'
+
+        # Info commands
+
+    #---------------------------------------------------------------------------
+
+    def __init_msmpi__(self, p, resource_info=None, wdir = None):
+
+        """
+        Initialize for MS-MPI environment.
+
+        Microsoft MPI is based on standard MPICH2 distribution.
+
+        It allows only for the smpd process manager that consists
+        of independent daemons, so if a hostsfile is used, it must
+        be passed to mpiexec.
+        """
+
+        # On Windows, mpiexec.exe will be found through the PATH variable
+        # so, unset the MPI 'bindir' variable
+
+        self.bindir = ''
+
+        # Determine MS-MPI configuration
+
+        self.mpiexec = 'mpiexec.exe'
+        self.mpmd = MPI_MPMD_mpiexec | MPI_MPMD_configfile
+        self.mpiexec_n = ' -n '
+
+        # Other options to add
+
+        # Resource manager info
 
         # Info commands
 

@@ -28,6 +28,7 @@ dnl-----------------------------------------------------------------------------
 AC_DEFUN([CS_AC_TEST_LIBXML2], [
 
 cs_have_libxml2=no
+cs_have_libxml2_header=no
 
 AC_ARG_WITH(libxml2,
             [AS_HELP_STRING([--with-libxml2=PATH],
@@ -74,23 +75,42 @@ if test "x$with_libxml2" != "xno" ; then
 
   LIBXML2_LIBS="-lxml2"
 
-  CPPFLAGS="${CPPFLAGS} ${LIBXML2_CPPFLAGS}"
   LDFLAGS="${LDFLAGS} ${LIBXML2_LDFLAGS}"
   LIBS="${LIBS} ${LIBXML2_LIBS}"
 
-  AC_CHECK_HEADER([libxml/parser.h])
+  CPPFLAGS="${saved_CPPFLAGS} ${LIBXML2_CPPFLAGS}"
+  AC_CHECK_HEADERS([libxml/parser.h],
+                   [cs_have_libxml2_header=yes],
+                   [], 
+                   [])
 
-  AC_CHECK_LIB(xml2, xmlInitParser, 
-               [ AC_DEFINE([HAVE_LIBXML2], 1, [LIBXML2 support])
-                 cs_have_libxml2=yes
-               ], 
-               [if test "x$with_libxml2" != "xcheck" ; then
-                  AC_MSG_FAILURE([LIBXML2 support is requested, but test for LIBXML2 failed!])
-                else
-                  AC_MSG_WARN([no LIBXML2 support])
-                fi
-               ],
-              )
+  # If header not found, try other standard configurations
+
+  if test "x$cs_have_libxml2_header" = "xno" ; then
+    unset ac_cv_header_libxml_parser_h
+    LIBXML2_CPPFLAGS="-I/mingw/include/libxml2"
+    CPPFLAGS="${saved_CPPFLAGS} ${LIBXML2_CPPFLAGS}"
+    AC_CHECK_HEADERS([libxml/parser.h],
+                     [cs_have_libxml2_header=yes],
+                     [], 
+                     [])
+  fi
+
+  if test "x$cs_have_libxml2_header" = "xyes" ; then
+
+    AC_CHECK_LIB(xml2, xmlInitParser, 
+                 [ AC_DEFINE([HAVE_LIBXML2], 1, [LIBXML2 support])
+                   cs_have_libxml2=yes
+                 ], 
+                 [if test "x$with_libxml2" != "xcheck" ; then
+                    AC_MSG_FAILURE([LIBXML2 support is requested, but test for LIBXML2 failed!])
+                  else
+                    AC_MSG_WARN([no LIBXML2 support])
+                  fi
+                 ],
+                )
+
+  fi
 
   if test "x$cs_have_libxml2" != "xyes"; then
     LIBXML2_LIBS=""

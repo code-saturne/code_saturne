@@ -938,6 +938,8 @@ cs_base_logfile_head(int    argc,
 #else
   const char mpi_lib[] = "Open MPI";
 #endif
+#elif defined(MSMPI_VER)
+  const char mpi_lib[] = "MSMPI";
 #elif defined(MPICH2)
 #if defined(MPICH2_VERSION)
   char mpi_lib[32];
@@ -1059,7 +1061,10 @@ cs_base_mpi_init(int    *argc,
 
   use_mpi = true;
 
-#elif defined(MPICH2)
+#elif defined(MPICH2) || defined(MSMPI_VER)
+
+  /* Notes: Microsoft MPI is based on standard MPICH2 */
+
   if (getenv("PMI_RANK") != NULL)
     use_mpi = true;
 

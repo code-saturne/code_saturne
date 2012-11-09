@@ -181,6 +181,16 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
     fi
   fi
   if test "x$mpi_type" = "x"; then
+    AC_EGREP_CPP([msmpi],
+                 [
+                  #include <mpi.h>
+                  #ifdef MSMPI_VER
+                  msmpi
+                  #endif
+                  ],
+                 [mpi_type=MSMPI])
+  fi
+  if test "x$mpi_type" = "x"; then
     AC_EGREP_CPP([mpich2],
                  [
                   #include <mpi.h>
@@ -349,6 +359,21 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
         ;;
 
       
+      MSMPI)
+        AC_MSG_CHECKING([for MSMPI])
+        case $host_os in
+          mingw32)
+            MPI_LIBS="-lmsmpi";;
+        esac
+        LIBS="$saved_LIBS $MPI_LIBS"
+        AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
+                       [[ MPI_Init(0, (void *)0); ]])],
+                       [AC_DEFINE([HAVE_MPI], 1, [MPI support])
+                        cs_have_mpi=yes],
+                       [cs_have_mpi=no])
+        AC_MSG_RESULT($cs_have_mpi)
+        ;;
+
       *) # General case include OpenMPI, whose dynamic libraries
          # make it easy to detect.
         AC_MSG_CHECKING([for MPI (basic test)])

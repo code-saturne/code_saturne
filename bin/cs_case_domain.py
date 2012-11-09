@@ -767,7 +767,7 @@ class domain(base_domain):
 
             # Run command
 
-            retcode = run_command(cmd)
+            retcode = run_command(cmd, pkg=self.package)
 
             if retcode != 0:
                 err_str = \

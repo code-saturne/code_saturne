@@ -370,7 +370,11 @@ void CS_PROCF (cslogname, CSLOGNAME)
   const char *name = cs_base_bft_printf_name();
 
   if (cs_base_bft_printf_suppressed())
+#if defined(WIN32) || defined(_WIN32)
+    name = "NUL";
+#else
     name = "/dev/null";
+#endif
 
   name_l = strlen(name);
   if (name_l <= l) {
@@ -484,7 +488,11 @@ cs_base_fortran_bft_printf_set(const char  *log_name,
   if (suppress) {
     infecr = 9;
     isuppr = 1;
+#if defined(WIN32) || defined(_WIN32)
+    name = "NUL";
+#else
     name = "/dev/null";
+#endif
   }
 
   CS_PROCF(csopli, CSOPLI)(&infecr, &isuppr, &ierror);

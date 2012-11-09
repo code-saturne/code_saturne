@@ -36,6 +36,7 @@
 #define HAVE_MED "@cs_have_med@"
 #define HAVE_METIS "@cs_have_metis@"
 #define HAVE_MPI "@cs_have_mpi@"
+#define HAVE_SCOTCH "@cs_have_scotch@"
 
 #define GCC_VERSION "4.7.0"
 #define PYTHON_VERSION "2.7"
@@ -121,6 +122,9 @@ Name: "dev\metis"; Description: "Metis"; Types: full
 #if HAVE_MPI == "yes"
 Name: "dev\mpi"; Description: "MPI"; Types: full
 #endif
+#if HAVE_SCOTCH == "yes"
+Name: "dev\scotch"; Description: "Scotch"; Types: full
+#endif
 
 ;-------------------------------------------------------------------------------
 
@@ -131,10 +135,11 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
-; Low-level dependencies (zlib, gettext, ...)
+; Low-level dependencies (zlib, gettext, pthread, ...)
 Source: "{#MinGW}\bin\libiconv-2.dll"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core
 Source: "{#MinGW}\bin\libintl-8.dll"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core
 Source: "{#MinGW}\bin\libz-1.dll"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core
+Source: "{#MinGW}\bin\pthreadGC2.dll"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core
 ; Windows CRT DLL
 Source: "C:\Windows\System32\msvcrt.dll"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core
 ; GCC runtime
@@ -309,16 +314,20 @@ Source: "{#MinGW}\include\metis.h"; DestDir: "{app}\include"; Flags: ignoreversi
 Source: "{#MinGW}\lib\libmetis.dll.a"; DestDir: "{app}\lib"; Flags: ignoreversion; Components: dev\metis
 #endif
 #if HAVE_MPI == "yes"
-Source: "{#MinGW}\bin\libmpi.dll"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core
-Source: "{#MinGW}\bin\libopen-pal.dll"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core
-Source: "{#MinGW}\bin\libopen-rte.dll"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core
 Source: "{#MinGW}\bin\mpiexec.exe"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core
+Source: "{#MinGW}\bin\msmpi.dll"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core
+Source: "{#MinGW}\bin\smpd.exe"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core
 Source: "{#MinGW}\include\mpi.h"; DestDir: "{app}\include"; Flags: ignoreversion; Components: dev\mpi
-Source: "{#MinGW}\lib\libmpi.dll.a"; DestDir: "{app}\lib"; Flags: ignoreversion; Components: dev\mpi
-Source: "{#MinGW}\lib\libopen-pal.dll.a"; DestDir: "{app}\lib"; Flags: ignoreversion; Components: dev\mpi
-Source: "{#MinGW}\lib\libopen-rte.dll.a"; DestDir: "{app}\lib"; Flags: ignoreversion; Components: dev\mpi
+Source: "{#MinGW}\lib\libmsmpi.dll.a"; DestDir: "{app}\lib"; Flags: ignoreversion; Components: dev\mpi
 #endif
-; Code_Saturne (bin directory is preferred over libexec directory to avoid modifying Windows PATH variable for DLL search)
+#if HAVE_SCOTCH == "yes"
+Source: "{#MinGW}\bin\libscotch.dll"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core
+Source: "{#MinGW}\bin\libscotcherr.dll"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core
+Source: "{#MinGW}\include\scotch.h"; DestDir: "{app}\include"; Flags: ignoreversion; Components: dev\scotch
+Source: "{#MinGW}\lib\libscotch.dll.a"; DestDir: "{app}\lib"; Flags: ignoreversion; Components: dev\scotch
+Source: "{#MinGW}\lib\libscotcherr.dll.a"; DestDir: "{app}\lib"; Flags: ignoreversion; Components: dev\scotch
+#endif
+; Code_Saturne
 Source: "{#Install}\bin\libple-0.dll"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core
 Source: "{#Install}\include\code_saturne\*"; DestDir: "{app}\include\code_saturne"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: dev\saturne
 Source: "{#Install}\include\ple_*"; DestDir: "{app}\include"; Flags: ignoreversion; Components: dev\saturne

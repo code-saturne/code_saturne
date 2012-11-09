@@ -3127,7 +3127,7 @@ cs_io_log_finalize(void)
 
         MPI_Allreduce(_wtimes, log->wtimes, 3, MPI_DOUBLE, MPI_MAX,
                       cs_glob_mpi_comm);
-#if defined(MPI_UNSIGNED_LONG_LONG)
+#if defined(MPI_UNSIGNED_LONG_LONG) && !defined(MSMPI_VER) /* By-pass MS-MPI */
         MPI_Allreduce(&data_size_loc, log->data_size + 1, 1,
                       MPI_UNSIGNED_LONG_LONG, MPI_SUM, cs_glob_mpi_comm);
 #elif defined(MPI_LONG_LONG)

@@ -827,7 +827,8 @@ class case:
         sys.stdout.write('\n'
                          'Generating MPMD launcher:\n\n')
 
-        retcode = cs_exec_environment.run_command(cmd, echo = True)
+        retcode = cs_exec_environment.run_command(cmd, pkg=self.package,
+                                                  echo = True)
 
         sys.stdout.write('\n')
 

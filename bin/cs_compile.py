@@ -197,7 +197,8 @@ def compile_and_link(pkg, srcdir, destdir,
                 lib0 = os.path.join(pkg.get_dir('libdir'), 'lib' + p_libs[2:] + '.a')
                 p_libs = ''
             cmd = 'ar x ' + lib0
-            if run_command(cmd, echo=True, stdout=stdout, stderr=stderr) != 0:
+            if run_command(cmd, pkg=pkg, echo=True,
+                           stdout=stdout, stderr=stderr) != 0:
                 retval = 1
 
     # Compile files
@@ -217,7 +218,8 @@ def compile_and_link(pkg, srcdir, destdir,
         cmd = cmd + " " + pkg.get_flags('cppflags')
         cmd = cmd + " " + pkg.get_flags('cflags')
         cmd = cmd + " -c " + os.path.join(srcdir, f)
-        if run_command(cmd, echo=True, stdout=stdout, stderr=stderr) != 0:
+        if run_command(cmd, pkg=pkg, echo=True,
+                       stdout=stdout, stderr=stderr) != 0:
             retval = 1
 
     for f in cxx_files:
@@ -232,7 +234,8 @@ def compile_and_link(pkg, srcdir, destdir,
         cmd = cmd + " " + pkg.get_flags('cppflags')
         cmd = cmd + " " + pkg.get_flags('cxxflags')
         cmd = cmd + " -c " + os.path.join(srcdir, f)
-        if run_command(cmd, echo=True, stdout=stdout, stderr=stderr) != 0:
+        if run_command(cmd, pkg=pkg, echo=True,
+                       stdout=stdout, stderr=stderr) != 0:
             retval = 1
 
     user_mod_name = 'cs_user_modules.f90'
@@ -254,7 +257,8 @@ def compile_and_link(pkg, srcdir, destdir,
             cmd += " " + pkg.fcmodinclude + pkg.get_flags('fcmoddir')
         cmd = cmd + " " + pkg.get_flags('fcflags')
         cmd = cmd + " -c " + os.path.join(srcdir, f)
-        if run_command(cmd, echo=True, stdout=stdout, stderr=stderr) != 0:
+        if run_command(cmd, pkg=pkg, echo=True,
+                       stdout=stdout, stderr=stderr) != 0:
             retval = 1
 
     if retval == 0 and (force_link or (len(c_files) + len(cxx_files) + len(f_files)) > 0):
@@ -270,7 +274,8 @@ def compile_and_link(pkg, srcdir, destdir,
         cmd = cmd + " " + pkg.get_flags('deplibs')
         if pkg.rpath != "":
             cmd = cmd + " " + so_dirs_path(cmd, pkg)
-        if run_command(cmd, echo=True, stdout=stdout, stderr=stderr) != 0:
+        if run_command(cmd, pkg=pkg, echo=True,
+                       stdout=stdout, stderr=stderr) != 0:
             retval = 1
 
     # Cleanup
