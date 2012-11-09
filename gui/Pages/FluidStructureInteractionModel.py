@@ -38,7 +38,7 @@ import unittest
 #-------------------------------------------------------------------------------
 # Application modules import
 #-------------------------------------------------------------------------------
-from Base.XMLvariables import  Model
+from Base.XMLvariables import  Model, Variables
 from Base.XMLmodel     import  ModelTest
 
 
