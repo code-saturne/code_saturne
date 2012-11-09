@@ -2866,11 +2866,11 @@ cs_restart_read_particles(cs_restart_t  *restart,
     BFT_MALLOC(g_part_cell_num, n_particles, cs_gnum_t);
 
     retcode = cs_restart_read_section(restart,
-                                    sec_name,
-                                    particles_location_id,
-                                    1,
-                                    CS_TYPE_cs_gnum_t,
-                                    g_part_cell_num);
+                                      sec_name,
+                                      particles_location_id,
+                                      1,
+                                      CS_TYPE_cs_gnum_t,
+                                      g_part_cell_num);
 
     timing[0] = cs_timer_wtime();
 
@@ -2881,9 +2881,6 @@ cs_restart_read_particles(cs_restart_t  *restart,
                                      g_cells_num,
                                      g_part_cell_num,
                                      particle_cell_num);
-
-    for (i = 0; i < n_particles; i++)
-      particle_cell_num[i] += 1;
 
     BFT_FREE(g_part_cell_num);
 
