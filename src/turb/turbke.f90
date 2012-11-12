@@ -668,8 +668,8 @@ else if (iturb.eq.50) then
                )
 
     ! On stocke la partie en Pk dans PRDV2F pour etre reutilise dans RESV2F
-    prdv2f(iel) = prdv2f(iel)                               &
-                - d2s3*rho*rtpa(iel,ik)*divu(iel)!FIXME this term should be removed
+    prdv2f(iel) = prdv2f(iel)  !                             &
+!                - d2s3*rho*rtpa(iel,ik)*divu(iel)!FIXME this term should be removed
 
     ! Implicit part
     if (xk.gt.1.d-12) then !FIXME make it dimensionless
@@ -709,13 +709,11 @@ else if (iturb.eq.51) then
                )
 
     ! On stocke la partie en Pk dans PRDV2F pour etre reutilise dans RESV2F
-    prdv2f(iel) = prdv2f(iel)                               &
-                - d2s3*rho*rtpa(iel,ik)*divu(iel)!FIXME this term should be removed
+    prdv2f(iel) = prdv2f(iel) !                              &
+!                - d2s3*rho*rtpa(iel,ik)*divu(iel)!FIXME this term should be removed
 
     ! Implicit part
-    if (xk.gt.1.d-12) then !FIXME make it dimensionless
-      tinstk(iel) = tinstk(iel) + rho*volume(iel)/ttke
-    endif
+    tinstk(iel) = tinstk(iel) + rho*volume(iel)/ttke
     tinstk(iel) = tinstk(iel) + max(d2s3*rho*volume(iel)*divu(iel), 0.d0)
     tinstk(iel) = tinstk(iel) + w11(iel)*rho*volume(iel)
     tinste(iel) = tinste(iel) + w10(iel)*rho*volume(iel)/tt                  &

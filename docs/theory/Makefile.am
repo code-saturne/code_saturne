@@ -32,6 +32,7 @@ TEXOTHERS = \
 algebr.tex \
 apintr.tex \
 bilsc2.tex \
+bndcnd.tex \
 cfbase.tex \
 cfener.tex \
 cfmsvl.tex \
