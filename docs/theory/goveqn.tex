@@ -464,7 +464,7 @@ C = \frac{\widetilde{ \tens{M} : \tens{L}}} {\widetilde{ \tens{M} : \tens{M}}}
 \subsection{Energy equation}
 The energy equation reads:
 \begin{equation}
- \rho \DP{e} + e \left(\underbrace{\DP{\rho} + \rho \divs \underline{u}}_{\displaystyle =0} \right)= -\divs \underline{q''}+q'''-P\divs \underline{u} + \mu \phi 
+ \rho \DP{e} = -\divs \underline{q''}+q'''-P\divs \underline{u} + \mu s^2 
 \label{eq:energy}
 \end{equation}
 where 
@@ -473,49 +473,44 @@ where
        \item $\underline{u}$ is the velocity vector
        \item $\underline{q''}$ is the heat flux vector, the Fourier law of heat conduction gives: $\displaystyle \underline{q''}=-\lambda \grad T$
        \item $q'''$ is the dissipation rate or rate of internal heat generation
-       \item $\phi$ is the viscous dissipation function such as
+       \item $S^2$ is scalar strain rate defined by CHECKME
 	  \begin{equation}
 	    \begin{array}{rcl}
-	      \phi & = & 2\left[\left(\der{u}{x}\right)^2 + \left(\der{v}{y}\right)^2 + \left(\der{w}{z}\right)^2\right]\\
-		   & + &  \left[\left(\der{u}{y}+\der{v}{x}\right)^2 + \left(\der{v}{z}+\der{w}{y}\right)^2 + \left(\der{w}{x} + \der{u}{z}\right)^2\right]\\
-		   & + &  \dfrac{2}{3}\left( \divs \underline{u}\right)
+	      S^2 & = & 2 \tens{S} : \tens{S}
 	    \end{array}
 	  \end{equation}
       \end{itemize}
-\begin{remark}
- In the left hand side of Eq. (\ref{eq:energy}), the term between parenthesis is equal to $0$ thank to the mass conservation equation.
-\end{remark}
 
 %-------------------------------------------------------------------------------
 \subsection{Enthalpy equation}
 
-Thermodynamics definition gives:
+Thermodynamics definition of enthalpy gives:
 \begin{equation}
  h=e+ \dfrac{1}{\rho} P
 \end{equation}
 
 Applying the lagrangian derivative $\DP{}$ to $h$:
 \begin{equation}
- \DP{h}=\DP{e}+\frac{1}{\rho}\DP{P}-\frac{P}{\rho^2}\DP{\rho}{t}
+ \DP{h}=\DP{e}+\frac{1}{\rho}\DP{P}-\frac{P}{\rho^2}\DP{\rho}
 \end{equation}
 %
 then
 \begin{align}
-  \rho \DP{h} &= \divs \left( \lambda \grad T \right) +q'''-P\divs \underline{u} + \mu \phi + \DP{P} -\frac{P}{\rho}\DP{\rho}{t} \\
-  \rho \DP{h} &= \divs \left( \lambda \grad T \right) +q''' + \mu \phi + \DP{P} - \frac{P}{\rho} \left(\underbrace{\DP{\rho}{t} + \rho \divs \underline{u}}_{\displaystyle =0} \right) \\
-  \rho \DP{h} &= \divs \left( \lambda \grad T \right) +q''' + \mu \phi + \DP{P} 
+  \rho \DP{h} &= \divs \left( \lambda \grad T \right) +q'''-P\divs \vect{u} + \mu S^2 + \DP{P} -\frac{P}{\rho}\DP{\rho} \\
+  \rho \DP{h} &= \divs \left( \lambda \grad T \right) +q''' + \mu  S^2 + \DP{P} - \frac{P}{\rho} \left(\underbrace{\DP{\rho} + \rho \divs \underline{u}}_{\displaystyle =0} \right) \\
+  \rho \DP{h} &= \divs \left( \lambda \grad T \right) +q''' + \mu  S^2 + \DP{P} 
 \label{eq:enthalpyT}
 \end{align}
 
 To have only enthalpy in equation, one can use:
 \begin{itemize}
- \item for ideal gas: $\displaystyle \dd h=C_p \dd T$
- \item for incompressible liquid: $\displaystyle \dd h=C_p \dd T + v \dd P$ where $\displaystyle v =\frac{1}{\rho}$
+ \item for ideal gas: $\displaystyle \dd h=C_p \dd T$,
+ \item for incompressible liquid: $\displaystyle \dd h=C_p \dd T + \dfrac{1}{\rho} \dd P$.
 \end{itemize}
 
 If the incompressible liquid hypothesis is used, the equation \ref{eq:enthalpyT} becomes:
 \begin{equation}
- \rho \DP{h} = \divs \left( \dfrac{\lambda}{C_p} \left(\grad h -\frac{\grad P}{\rho}\right)\right) +q''' + \mu \phi + \DP{P} 
+ \rho \DP{h} = \divs \left( \dfrac{\lambda}{C_p} \left(\grad h -\frac{\grad P}{\rho}\right)\right) +q''' + \mu S^2 + \DP{P} 
 \label{eq:enthalpyH}
 \end{equation}
 
@@ -529,28 +524,28 @@ In order to rearrange the enthalpy Equation (\ref{eq:enthalpyT}) in terms of tem
 
 The entropy $s$ can be written as:
 \begin{equation}
- \dd s = \left(\der{s}{T}\right)_P \dd T + \left(\der{s}{P}\right)_T \dd P
+ \dd s = \left.\der{s}{T}\right|_P \dd T + \left.\der{s}{P}\right|_T \dd P
 \label{eq:Ds}
 \end{equation}
 
 Using Maxwell's relations, for a pure substance we can obtain:
 \begin{equation}
- \dd s = \frac{C_p}{T} \dd T - \left( \der{(1/\rho}{T}\right)_P  \dd P
+ \dd s = \frac{C_p}{T} \dd T - \left.\der{(1/\rho}{T}\right|_P  \dd P
 \label{eq:Ds_maxwell}
 \end{equation}
 
 In the r.h.s. of Equation (\ref{eq:Ds}), the second term becomes:
 \begin{equation}
- \left(\der{s}{P}\right)_T = -\left( \der{(1/\rho)}{T}\right)_P = \frac{1}{\rho^2}\left( \der{\rho}{T}\right)_P=-\frac{\beta}{\rho}
+ \left.\der{s}{P}\right|_T = -  \left.\der{(1/\rho)}{T}\right|_P = \frac{1}{\rho^2} \left.\der{\rho}{T}\right|_P=-\frac{\beta}{\rho}
 \end{equation}
-where $\beta$ is the thermal expansion coefficient such as:
+where $\beta$ is the thermal expansion coefficient is defined by:
 \begin{equation}
- \beta= -\frac{1}{\rho}\left( \der{\rho}{T}\right)_P
+ \beta= -\frac{1}{\rho}  \left.\der{\rho}{T}\right|_P
 \end{equation}
 
 the Maxwell's relations give also:
 \begin{equation}
- \left(\der{s}{T}\right)_P= \frac{C_p}{T}
+ \left.\der{s}{T}\right|_P= \frac{C_p}{T}
 \end{equation}
 
 Combining all this equations, we obtain:
@@ -565,7 +560,7 @@ So the l.h.s. of Equation (\ref{eq:enthalpyT}) becomes:
 %
  then,
 \begin{equation}
-  \rho C_p \DP{T}=  \divs \left( \lambda \grad T \right) + \beta T \DP{P} +q''' + \mu \phi
+  \rho C_p \DP{T}=  \divs \left( \lambda \grad T \right) + \beta T \DP{P} +q''' + \mu S^2
 \label{eq:T_all}
 \end{equation}
 
@@ -573,12 +568,12 @@ The Eq. (\ref{eq:T_all}) can be reduce using some hypothesis, for example:
 \begin{itemize}
  \item If the fluid is an ideal gas, $\beta=\dfrac{1}{T}$ and it becomes:
 \begin{equation}
-  \rho C_p \DP{T}=  \divs \left( \lambda \grad T \right) + \DP{P} +q''' + \mu \phi
+  \rho C_p \DP{T}=  \divs \left( \lambda \grad T \right) + \DP{P} +q''' + \mu S^2
 \end{equation}
 
  \item If the fluid is incompressible, $\beta=0$ and it becomes:
 \begin{equation}
-  \rho C_p \DP{T}=  \divs \left( \lambda \grad T \right) +q''' + \mu \phi
+  \rho C_p \DP{T}=  \divs \left( \lambda \grad T \right) +q''' + \mu S^2
 \end{equation}
 
  \item If the fluid is incompressible, $q'''=0$ and $\mu \phi=0$,  it becomes:

@@ -247,7 +247,7 @@ B_{\fib} \Phi_{\celli} + B_{\fib} \grad_{\celli} \Phi \cdot \vect{\centi \centip
 \end{array}
 \end{equation*}
 
-Bringing all $\grad_\celli \Phi$ terms all together on the left hand side, we have:
+Bringing $\grad_\celli \Phi$ terms all together on the left hand side, we have:
 %
 \begin{equation}\label{eq:gradrc_recontruit}
 \begin{array}{r c l}
@@ -314,7 +314,7 @@ and the associated system is:
 \displaystyle
 \grad_{\celli}^{k+1} \Phi \cdot \left[\norm{\vol{\celli}} \tens{1} - 
 \sum\limits_{ \fij \in \Facei{\celli}} \frac{1}{2}  \vect{\cento \centf} \otimes \vect{S}_{\ij} -
-\sum\limits_{ \fib \in \Faceb{\celli}}  \vect{\centi \centip}  \otimes \vect{S}_{\ib}  \right]
+\sum\limits_{ \fib \in \Faceb{\celli}} B_{\fib} \vect{\centi \centip}  \otimes \vect{S}_{\ib}  \right]
 = \\
 \displaystyle
 \sum\limits_{\fij \in \Facei{\celli}}\left[
@@ -335,7 +335,7 @@ or, as the following relationship stands:
 \displaystyle
 \delta \grad_{\celli}^{k+1} \Phi \cdot \left[\norm{\vol{\celli}} \tens{1} - 
 \sum\limits_{ \fij \in \Facei{\celli}} \frac{1}{2}  \vect{\cento \centf} \otimes \vect{S}_{\ij} -
-\sum\limits_{ \fib \in \Faceb{\celli}}  \vect{\centi \centip}  \otimes \vect{S}_{\ib}  \right]
+\sum\limits_{ \fib \in \Faceb{\celli}} B_{\fib}  \vect{\centi \centip}  \otimes \vect{S}_{\ib}  \right]
 = \\
 \displaystyle
  -\norm{\vol{\celli}}  \grad_{\celli}^{k} \Phi +
@@ -344,7 +344,8 @@ or, as the following relationship stands:
 \sum\limits_{\fij \in \Facei{\celli}} \frac{1}{2} 
 \left(\grad_\celli^k \Phi + \grad_\cellj^k \Phi \right) \cdot \left( \vect{\cento \centf} \otimes \vect{S}_{\ij} \right) \\
 \displaystyle +
-\sum\limits_{\fib \in \Faceb{\celli}}\left[ \var{INC} A_{\fib} + B_{\fib} \Phi_\celli \right] \vect{S}_{\ib}
+\sum\limits_{\fib \in \Faceb{\celli}}\left[ \var{INC} A_{\fib} 
+            + B_{\fib} \left( \Phi_\celli + \grad_\celli^k \Phi \cdot \vect{\centi \centip} \right) \right] \vect{S}_{\ib}
 \end{array}
 \end{equation}
 
@@ -397,7 +398,7 @@ with:
 \displaystyle
 \norm{\vol{\celli}} \tens{1} - 
 \sum\limits_{ \fij \in \Facei{\celli}} \frac{1}{2}  \vect{\cento \centf} \otimes \vect{S}_{\ij} -
-\sum\limits_{ \fib \in \Faceb{\celli}}  \vect{\centi \centip}  \otimes \vect{S}_{\ib} \\
+\sum\limits_{ \fib \in \Faceb{\celli}} B_{\fib} \vect{\centi \centip}  \otimes \vect{S}_{\ib} \\
 \vect{R}^{k+1}_{\celli} &=&
 \displaystyle 
  -\norm{\vol{\celli}}  \grad_{\celli}^{k} \Phi +
@@ -407,13 +408,14 @@ with:
 \sum\limits_{\fij \in \Facei{\celli}} \frac{1}{2} 
 \left(\grad_\celli^k \Phi + \grad_\cellj^k \Phi \right) \cdot \left( \vect{\cento \centf} \otimes \vect{S}_{\ij} \right) \\
 &+& \displaystyle 
-\sum\limits_{\fib \in \Faceb{\celli}}\left[ \var{INC} A_{\fib} + B_{\fib} \Phi_\celli \right] \vect{S}_{\ib}
+\sum\limits_{\fib \in \Faceb{\celli}}\left[ \var{INC} A_{\fib} 
++ B_{\fib} \left( \Phi_\celli + \grad_\celli^k \Phi \cdot \vect{\centi \centip} \right)  \right] \vect{S}_{\ib}
 \end{array}\right.
 \end{equation}
 
 The invert of the matrix $\tens{C}_{\celli}$ is used to compute $\left( \delta \grad_\celli^{k+1} \Phi \right)$ 
 and so $\left( \grad^{k+1}_{\celli} \Phi \right)$. The iterative process stops as soon as the Euclidean norm of the right-hand-side $\vect{R}^{k+1}_{\celli}$ tends toward zero (\emph{i.e.} when the Euclidean norm
-of $\left( \delta \grad^{k}_{\celli} \Phi \right)$ tends to zero) or when the number of iteration reaches the maximal number of iterations.
+of $\left( \delta \grad^{k}_{\celli} \Phi \right)$ tends to zero) or when the number of iterations reaches the maximal number of iterations.
 
 
 
