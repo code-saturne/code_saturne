@@ -269,7 +269,7 @@ if (ityturt(iscal).ne.3) then
       temp(ii) = 0.d0
 
       ! AFM and EB-AFM models
-      !  -C_theta*k/eps*( xi*u_jt*dU_i/dx_j + eta*beta*g_i*variance(t^2))
+      !  "-C_theta*k/eps*( xi* uT'.Grad u + eta*beta*g_i*T'^2)"
       if (ityturt(iscal).eq.2.and.ibeta.gt.0) then
         if (itt.gt.0) then
           temp(ii) = temp(ii) - ctheta(iscal)*xtt*                            &
@@ -284,23 +284,23 @@ if (ityturt(iscal).ne.3) then
         enddo
       endif
 
-      ! pour eviter de faire ut = x+y*ut, on fait ut = x/(1-y)
-      ! pour l'AFM, ut n'apparait qu'avec xi
+      ! Partial implicitation of "-C_theta*k/eps*( xi* uT'.Grad u )"
       if (iturt(iscal).eq.20) then
         temp(ii) = temp(ii)/(1.d0+ctheta(iscal)*xtt*xiafm*gradv(iel,ii,ii))
       endif
 
     enddo
 
-    ! On ajoute la partie en gradT qui est implicitee precedemment dans propce(iut)!TODO FIXME
-    !       -C_theta*k/eps*u_i*u_j*dT/dx_j
-    ! pour ne pas ecraser propce dans la premiere boucle ii, on refait une boucle sur ii
+    ! Add the term in "grad T" which is implicited by the GGDH part in covofi.
+    !  "-C_theta*k/eps* R.grad T"
     do ii = 1, 3
       xut(ii,iel) = temp(ii) - ctheta(iscal)*xtt*( xrij(ii,1)*gradT(iel,1)  &
                                                  + xrij(ii,2)*gradT(iel,2)  &
                                                  + xrij(ii,3)*gradT(iel,3))
-      !On calcul la divergence de Cp*ut dans la suite
-      w1(ii,iel) = xcpp(iel)*xut(ii,iel)
+      ! In the next step, we compute the divergence of:
+      !  "-Cp*C_theta*k/eps*( xi* uT'.Grad u + eta*beta*g_i*T'^2)"
+      !  The part "-C_theta*k/eps* R.Grad T" is computed by the GGDH part
+      w1(ii,iel) = xcpp(iel)*temp(ii)
     enddo
   enddo
 
