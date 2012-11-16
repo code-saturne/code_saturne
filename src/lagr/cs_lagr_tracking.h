@@ -201,7 +201,8 @@ CS_PROCF (dplprt, DPLPRT)(cs_int_t        *p_n_particles,
                           const cs_int_t  *iu,
                           const cs_int_t  *iv,
                           const cs_int_t  *iw,
-                          cs_int_t        *idepst);
+                          cs_int_t        *idepst,
+                          cs_real_t        energt[]);
 
 /*============================================================================
  * Public function prototypes

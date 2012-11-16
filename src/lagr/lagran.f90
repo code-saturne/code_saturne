@@ -106,6 +106,9 @@ module lagran
 
   double precision, save ::  tpart , cppart
 
+
+
+
   ! 4.1 Particules deposition submodel (Guingo & Minier, 2008)
   !==================================
 
@@ -114,6 +117,11 @@ module lagran
   !            = 1 : deposition submodel used
 
   integer, save ::     idepst
+
+  !     IDLVO  = 0 : no DLVO conditions
+  !            = 1 : DLVO conditions
+
+  integer, save ::         idlvo
 
   !     NGEOL : geometric parameters stored
 

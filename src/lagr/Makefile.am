@@ -59,6 +59,7 @@ diverv.f90 \
 enslag.f90 \
 enswaf.f90 \
 lagaff.f90 \
+lagbar.f90 \
 lagcar.f90 \
 lagcli.f90 \
 lagcou.f90 \

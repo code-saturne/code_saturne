@@ -183,6 +183,8 @@ double precision, allocatable, dimension(:,:) :: tslag
 
 double precision, allocatable, save, dimension(:) :: vislen
 
+double precision, allocatable, dimension(:):: energt
+
 
 integer nrangpp, ii
 integer nbpartall
@@ -192,7 +194,6 @@ integer nbpartall
 integer          ipass
 data             ipass /0/
 save             ipass
-
 
 
 !===============================================================================
@@ -239,7 +240,9 @@ endif
 if (nordre.eq.2) then
   allocate(auxl2(nbpmax,7))
 endif
-
+if (idlvo.eq.1) then
+  allocate(energt(nfabor))
+endif
 
 ipass = ipass + 1
 
@@ -651,7 +654,19 @@ if (iilagr.eq.2 .and. nor.eq.nordre) then
 endif
 
 !===============================================================================
-! 7.  Reperage des particules - Traitement des conditions aux limites
+! 7.  Calcul de la barrière d'énergie dans le cas DLVO
+!===============================================================================
+
+if (idlvo.eq.1) then
+
+   call lagbar                                                    &
+   !==========
+  ( rtp , energt )
+
+endif
+
+!===============================================================================
+! 8.  Reperage des particules - Traitement des conditions aux limites
 !     pour la position des particules
 !===============================================================================
 
@@ -702,7 +717,8 @@ endif
    nvisbr , inbr  , inbrbd,                                       &
    iflm   , iflmbd, iang  , iangbd, ivit  ,  ivitbd,              &
    nusbor , iusb,   vislen,  dlgeo , rtp , iu    ,                &
-   iv     , iw  ,   idepst)
+   iv     , iw  ,   idepst , energt)
+
 
 
   call prtput                                                     &
@@ -902,6 +918,7 @@ if (modntl.eq.0) then
 endif
 
 ! Free memory
+
 deallocate(indep, ibord)
 deallocate(auxl)
 deallocate(taup)
@@ -941,6 +958,9 @@ endif
 
 if ((idepst.eq.1).and.(ntcabs.eq.ntmabs)) then
    deallocate(vislen)
+endif
+if (idlvo.eq.1) then
+   deallocate(energt)
 endif
 
 !===============================================================================

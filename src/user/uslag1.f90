@@ -568,32 +568,40 @@ if (modcpl.gt.0) idirla = 1
 !===============================================================================
 ! 10. Options concerning the treatment of specific forces
 !===============================================================================
+!         IDLVO = 0
+!               = 1   DLVO deposition conditions are activated for the
+!                     wall with appropriate conditions idepfa (see uslag2.f90)
+
+idlvo = 0
+
+if (idlvo.eq.1) then
 
 !-->  Constants for the van der Waals forces
 !     --------------------------------------
 !    Hamaker constant for the particle/fluid/substrate system:
 
-cstham = 6.d-20
+  cstham = 6.d-20
 
 !-->  Constants for the elecstrostatic forces
 !    ----------------------------------------
 
 !    Dielectric constant of the fluid (example: water at 293 K)
 
-epseau = 80.10d0
+  epseau = 80.10d0
 
 !    Electrokinetic potential of the first solid (Volt)
 
-phi1 = 50.d-3
+  phi1 = 50.d-3
 
 !    Electrokinetic potential of the second solid (Volt)
 
-phi2 = -50.d-3
+  phi2 = -50.d-3
 
 !    Ionic force (mol/l)
 
-fion = 1.d-2
+  fion = 1.d-2
 
+endif
 
 !===============================================================================
 ! 11. Activation of Brownian motion

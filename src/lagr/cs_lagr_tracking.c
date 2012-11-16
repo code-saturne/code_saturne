@@ -1987,7 +1987,8 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
                const cs_lnum_t      *ivit,
                const cs_lnum_t      *ivitbd,
                const cs_lnum_t      *nusbor,
-               cs_lnum_t             iusb[])
+               cs_lnum_t             iusb[],
+               cs_real_t             energt[])
 
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
@@ -2010,7 +2011,7 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
   cs_lnum_t  face_id = face_num - 1;
   cs_lnum_t  error = 0; /* FIXME: Not very useful -> _manage_error() */
   cs_lnum_t  particle_state = -999;
-
+  cs_lnum_t  depch = 1; /* Indicator of mass flux calculation */
 
   cs_lagr_track_builder_t  *builder = _particle_track_builder;
   cs_lagr_bdy_condition_t  *bdy_conditions = _lagr_bdy_conditions;
@@ -2111,11 +2112,78 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
     }
   }
 
-  /* FIXME: IDEPFA not yet implemented */
+  else if (bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IDEPFA) {
 
-  else if (bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IDEPFA)
-    bft_error(__FILE__, __LINE__, 0,
-              " Boundary condition IDEPFA not yet implemented.\n");
+    cs_real_t uxn = particle.velocity[0] * face_normal[0]/face_area;
+    cs_real_t vyn = particle.velocity[1] * face_normal[1]/face_area;
+    cs_real_t wzn = particle.velocity[2] * face_normal[2]/face_area;
+
+    cs_real_t  energ = 0.5 * particle.mass * (uxn + vyn + wzn) * (uxn + vyn + wzn);
+
+    if ( energ > energt[face_id] * 0.5 * particle.diameter ) {
+
+      /* The particle deposits*/
+
+      move_particle = CS_LAGR_PART_MOVE_OFF;
+      particle.cur_cell_num =  - particle.cur_cell_num; /* Store a negative value */
+
+      _particle_set->n_part_dep += 1;
+      _particle_set->weight_dep += particle.stat_weight;
+
+      particle_state = CS_LAGR_PART_STICKED;
+
+      /* For post-processing purpose */
+
+      for (k = 0; k < 3; k++) {
+        particle.coord[k] = intersect_pt[k];
+        particle.velocity[k] = 0.0;
+        particle.velocity_seen[k] = 0.0;}
+    }
+
+    else  {
+      /*The particle does not deposit:
+        It 'rebounds' on the energy barrier*/
+
+      /* The particle mass flux is not calculated */
+      depch = 0;
+
+            cs_real_t  face_norm[3] = {face_normal[0]/face_area,
+                                   face_normal[1]/face_area,
+                                   face_normal[2]/face_area};
+
+      move_particle = 1;
+      particle_state = CS_LAGR_PART_TO_SYNC;
+      particle.cur_cell_num = cs_glob_mesh->b_face_cells[face_id];
+
+      for (k = 0; k < 3; k++)
+        prev_particle.coord[k] = intersect_pt[k];
+
+      /* Modify the ending point. */
+
+      for (k = 0; k < 3; k++)
+        depl[k] = particle.coord[k] - intersect_pt[k];
+
+      tmp = CS_ABS(_get_dot_prod(depl, face_norm));
+      tmp *= 2.0;
+
+      for (k = 0; k < 3; k++)
+        particle.coord[k] -= tmp * face_norm[k];
+
+      /* Modify particle velocity and velocity seen */
+
+      tmp = CS_ABS(_get_dot_prod(particle.velocity, face_norm));
+      tmp *= 2.0;
+
+      for (k = 0; k < 3; k++)
+        particle.velocity[k] -= tmp * face_norm[k];
+
+      tmp = CS_ABS(_get_dot_prod(particle.velocity_seen, face_norm));
+      tmp *= 2.0;
+
+      for (k = 0; k < 3; k++)
+        particle.velocity_seen[k] -= tmp * face_norm[k];
+    }
+  }
 
   else if (bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IREBOL) {
 
@@ -2190,7 +2258,7 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
         boundary_stat[(*inbr -1) * nfabor + face_id] +=  particle.stat_weight;
 
       /* Particulate boundary mass flux */
-      if (*iflmbd > 0)
+      if ((*iflmbd > 0) && (depch == 1))
         boundary_stat[(*iflm -1) * nfabor + face_id] +=
           particle.stat_weight * particle.mass / face_area;
 
@@ -2260,7 +2328,8 @@ _local_propagation(cs_lagr_particle_t     *p_prev_particle,
                    const cs_lnum_t  *iu,
                    const cs_lnum_t  *iv,
                    const cs_lnum_t  *iw,
-                   cs_lnum_t               *idepst)
+                   cs_lnum_t               *idepst,
+                           cs_real_t               energt[])
 {
   cs_lnum_t  i, j, k;
   cs_real_t  depl[3];
@@ -2647,7 +2716,8 @@ _local_propagation(cs_lagr_particle_t     *p_prev_particle,
                              ivit,
                              ivitbd,
                              nusbor,
-                             iusb);
+                             iusb,
+                             energt);
 
           if (scheme_order == 2)
             particle.switch_order_1 = CS_LAGR_SWITCH_ON;
@@ -3909,7 +3979,8 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_n_particles,
                           const cs_lnum_t  *iu,
                           const cs_lnum_t  *iv,
                           const cs_lnum_t  *iw,
-                          cs_lnum_t        *idepst)
+                          cs_lnum_t        *idepst,
+                          cs_real_t         energt[])
 {
   cs_lnum_t  i, j;
 
@@ -3975,7 +4046,8 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_n_particles,
                                              visc_length,
                                              dlgeo,
                                              rtp, iu, iv ,iw,
-                                             idepst);
+                                             idepst,
+                                             energt);
 
       prev_part->state = cur_part->state;
       j = cur_part->next_id;
