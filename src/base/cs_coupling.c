@@ -101,19 +101,17 @@ static fvm_coupling_mpi_world_t *_cs_glob_coupling_mpi_app_world = NULL;
  *
  * parameters:
  *   app_num  <-- application number for this instance of Code_Saturne (>= 0)
- *   app_name <-- optional name of this instance of Code_Saturne, or NULL.
  *----------------------------------------------------------------------------*/
 
 void
-cs_coupling_discover_mpi_apps(int          app_num,
-                              const char  *app_name)
+cs_coupling_discover_mpi_apps(int  app_num)
 {
   if (app_num > -1 && cs_glob_mpi_comm != MPI_COMM_WORLD) {
 
     int i, n_apps, app_id;
 
     /* App_type contains a string such as
-       "Code_Saturne 1.4.0" or "NEPTUNE_CFD 1.2.1" */
+       "Code_Saturne 2.0.0" or "NEPTUNE_CFD 1.2.1" */
 
     const char app_type[] = CS_APP_NAME " " CS_APP_VERSION;
 
@@ -129,7 +127,7 @@ cs_coupling_discover_mpi_apps(int          app_num,
     _cs_glob_coupling_mpi_app_world
       = fvm_coupling_mpi_world_create(app_num,
                                       app_type,
-                                      app_name,
+                                      NULL,
                                       cs_glob_mpi_comm);
 
     n_apps = fvm_coupling_mpi_world_n_apps(_cs_glob_coupling_mpi_app_world);

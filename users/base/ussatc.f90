@@ -90,18 +90,15 @@ iwarns = 1
 nbcsat = 2
 
 ! In the case of a coupling between two Code_Saturne instances, the
-! 'numsat' and 'namsat' arguments of 'defsat' are ignored.
+! 'numsat' argument of 'defsat' is ignored.
 
 ! In case of multiple couplings, a coupling will be matched with available
-! Code_Saturne instances prioritarily based on the 'namsat' (Code_Saturne
-! instance name) argument, then on the 'numsat' (Code_Saturne instance
+! Code_Saturne instances based on the 'numsat' (Code_Saturne instance
 ! application number) argument.
-
-! If 'namsat' is empty, matching will be based on 'numsat' only.
 
 ! The arguments to defsat are:
 !   numsat <-- matching Code_Saturne application id, or -1
-!   namsat <-- matching Code_Saturne application name
+!   namsat <-- matching Code_Saturne application name (ignored)
 !   crtcsu <-- cell selection criteria for support
 !   crtfsu <-- boundary face selection criteria for support (not functional)
 !   crtccp <-- cell selection criteria for coupled cells

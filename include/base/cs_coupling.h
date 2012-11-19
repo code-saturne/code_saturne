@@ -75,12 +75,10 @@ BEGIN_C_DECLS
  *
  * parameters:
  *   app_num  <-- application number for this instance of Code_Saturne (>= 0)
- *   app_name <-- optional name of this instance of Code_Saturne, or NULL.
  *----------------------------------------------------------------------------*/
 
 void
-cs_coupling_discover_mpi_apps(int          app_num,
-                              const char  *app_name);
+cs_coupling_discover_mpi_apps(int  app_num);
 
 /*----------------------------------------------------------------------------
  * Finalize MPI coupling helper structures.

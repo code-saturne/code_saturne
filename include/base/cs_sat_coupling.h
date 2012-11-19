@@ -429,7 +429,6 @@ void CS_PROCF (mxicpl, MXICPL)
  *
  * arguments:
  *   saturne_app_num   <-- number of Code_Saturne application, or -1
- *   saturne_name      <-- name of Code_Saturne instance, or NULL
  *   boundary_criteria <-- boundary face selection criteria, or NULL
  *   volume_criteria   <-- volume cell selection criteria, or NULL
  *   verbosity         <-- verbosity level
@@ -437,7 +436,6 @@ void CS_PROCF (mxicpl, MXICPL)
 
 void
 cs_sat_coupling_define(int          saturne_app_num,
-                       const char  *saturne_name,
                        const char  *boundary_cpl_criteria,
                        const char  *volume_cpl_criteria,
                        const char  *boundary_sup_criteria,
@@ -474,8 +472,7 @@ cs_sat_coupling_by_id(fvm_lnum_t coupling_id);
  *   ref_axis           <-- reference axis
  *   face_sel_criterion <-- criterion for selection of boundary faces
  *   cell_sel_criterion <-- criterion for selection of cells
- *   syr_num            <-- SYRTHES application number, or -1
- *   sat_name           <-- SYRTHES application name, or NULL
+ *   syr_num            <-- Code_Saturne application number, or -1
  *   verbosity          <-- verbosity level
  *----------------------------------------------------------------------------*/
 
@@ -485,7 +482,6 @@ cs_sat_coupling_add(const char  *face_cpl_sel_c,
                     const char  *face_sup_sel_c,
                     const char  *cell_sup_sel_c,
                     int          sat_num,
-                    const char  *sat_name,
                     int          verbosity);
 
 /*----------------------------------------------------------------------------

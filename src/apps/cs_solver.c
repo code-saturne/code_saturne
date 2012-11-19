@@ -213,12 +213,10 @@ cs_run(void)
 
   CS_PROCF(initi1, INITI1)(&_verif);
 
-  /* Discover applications visible through MPI (requires communication);
-     this is done after main calculation initialization so that the user
-     may have the option of assigning a name to this instance. */
+  /* Discover applications visible through MPI (requires communication). */
 
 #if defined(HAVE_MPI)
-  cs_coupling_discover_mpi_apps(app_num, NULL);
+  cs_coupling_discover_mpi_apps(app_num);
 #endif
 
   /* Initialize SYRTHES couplings and communication if necessary */

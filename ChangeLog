@@ -1,3 +1,14 @@
+* 14/11/2012 - Yvan Fournier <yvan.fournier@edf.fr>
+  Application name is ignored for Code_Saturne/Code_Saturne couplings, so reflect
+  this in code and comments.
+  modified files:
+    include/base/cs_coupling.h
+    include/base/cs_sat_coupling.h
+    src/base/cs_coupling.c
+    src/base/cs_sat_coupling.c
+    src/apps/cs_solver.c
+    users/base/ussatc.f90
+
 * 17/10/2012 - Yvan Fournier <yvan.fournier@edf.fr>
   GUI: replace deprecated "activated" signals by "triggered" for compatibility
   with recent Qt and PyQT versions.

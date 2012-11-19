@@ -92,7 +92,6 @@ typedef struct {
 
   int      match_id;        /* Id of matched application, -1 initially */
   int      app_num;         /* Application number, or -1 */
-  char    *app_name;        /* Application name, or -1 */
   char    *face_cpl_sel_c;  /* Face selection criteria */
   char    *cell_cpl_sel_c;  /* Cell selection criteria */
   char    *face_sup_sel_c;  /* Face selection criteria */
@@ -105,7 +104,6 @@ typedef struct {
 struct _cs_sat_coupling_t {
 
   int                      sat_num;  /* Application number, or -1 */
-  char                    *sat_name; /* Application name, or -1 */
 
   char                    *face_cpl_sel; /* Face selection criteria */
   char                    *cell_cpl_sel; /* Face selection criteria */
@@ -183,7 +181,6 @@ _remove_matched_builder_entries(void)
       if (scb->cell_cpl_sel_c != NULL) BFT_FREE(scb->cell_cpl_sel_c);
       if (scb->face_sup_sel_c != NULL) BFT_FREE(scb->face_sup_sel_c);
       if (scb->cell_sup_sel_c != NULL) BFT_FREE(scb->cell_sup_sel_c);
-      if (scb->app_name != NULL) BFT_FREE(scb->app_name);
     }
   }
 
@@ -213,8 +210,6 @@ _print_all_unmatched_sat(void)
 {
   int i;
 
-  const char empty_string[] = "";
-
   /* Loop on defined Code_Saturne instances */
 
   for (i = 0; i < _sat_coupling_builder_size; i++) {
@@ -223,16 +218,10 @@ _print_all_unmatched_sat(void)
 
     if (scb->match_id < 0) {
 
-      const char *local_name = empty_string;
-
-      if (scb->app_name != NULL)
-        local_name = scb->app_name;
-
       bft_printf(_(" Code_Saturne coupling:\n"
                    "   coupling id:              %d\n"
-                   "   local name:               \"%s\"\n"
                    "   local number:             %d\n\n"),
-                 i, local_name, scb->app_num);
+                 i, scb->app_num);
     }
   }
 
@@ -313,7 +302,6 @@ _sat_add_mpi(int builder_id,
                       scb->face_sup_sel_c,
                       scb->cell_sup_sel_c,
                       scb->app_num,
-                      scb->app_name,
                       scb->verbosity);
 
   sat_coupling = cs_sat_coupling_by_id(cs_sat_coupling_n_couplings() - 1);
@@ -338,7 +326,6 @@ _print_all_mpi_sat(void)
   int i;
 
   const fvm_coupling_mpi_world_t *mpi_apps = cs_coupling_get_mpi_apps();
-  const char empty_string[] = "";
 
   /* Loop on defined Code_Saturne instances */
 
@@ -348,27 +335,16 @@ _print_all_mpi_sat(void)
 
     if (scb->match_id > -1) {
 
-      const char *local_name = empty_string;
-      const char *distant_name = empty_string;
-
       const fvm_coupling_mpi_world_info_t
         ai = fvm_coupling_mpi_world_get_info(mpi_apps, scb->match_id);
 
-      if (scb->app_name != NULL)
-        local_name = scb->app_name;
-      if (ai.app_name != NULL)
-        distant_name = ai.app_name;
-
       bft_printf(_(" Code_Saturne coupling:\n"
                    "   coupling id:              %d\n"
-                   "   local name:               \"%s\"\n"
-                   "   distant application name: \"%s\"\n"
                    "   local number:             %d\n"
                    "   MPI application number:   %d\n"
                    "   MPI root rank:            %d\n"
                    "   number of MPI ranks:      %d\n\n"),
-                 i, local_name, distant_name,
-                 scb->app_num, ai.app_num, ai.root_rank, ai.n_ranks);
+                 i, scb->app_num, ai.app_num, ai.root_rank, ai.n_ranks);
     }
   }
 
@@ -390,7 +366,6 @@ _init_all_mpi_sat(void)
   int n_apps = 0;
   int n_matched_apps = 0;
   int n_sat_apps = 0;
-  int sat_app_id = -1;
 
   const fvm_coupling_mpi_world_t *mpi_apps = cs_coupling_get_mpi_apps();
 
@@ -406,7 +381,6 @@ _init_all_mpi_sat(void)
       ai = fvm_coupling_mpi_world_get_info(mpi_apps, i);
     if (strncmp(ai.app_type, "Code_Saturne", 12) == 0) {
       n_sat_apps += 1;
-      sat_app_id = i;
     }
   }
 
@@ -460,29 +434,7 @@ _init_all_mpi_sat(void)
 
       _cs_sat_coupling_builder_t *scb = _sat_coupling_builder + i;
 
-      /* First loop on available Code_Saturne instances to match app_names */
-
-      if (scb->app_name != NULL) {
-
-        for (j = 0; j < n_sat_apps; j++) {
-
-          if (sat_appinfo[j*2] != 0) /* Consider only unmatched applications */
-            continue;
-
-          ai = fvm_coupling_mpi_world_get_info(mpi_apps, sat_appinfo[j*2 + 1]);
-          if (ai.app_name != NULL) {
-            if (strcmp(ai.app_name, scb->app_name) == 0) {
-              scb->match_id = sat_appinfo[j*2 + 1];
-              sat_appinfo[j*2] = i;
-              n_matched_apps += 1;
-              break;
-            }
-          }
-        }
-
-      }
-
-      /* Second loop on available Code_Saturne instances to match app_nums */
+      /* Loop on available Code_Saturne instances to match app_nums */
 
       if (scb->match_id < 0 && scb->app_num > -1) {
 
@@ -887,12 +839,8 @@ void CS_PROCF(defsa1, DEFSA1)
  CS_ARGF_SUPP_CHAINE
 )
 {
-  char *_saturne_name = NULL;
   char *_boundary_cpl_criteria = NULL, *_volume_cpl_criteria = NULL;
   char *_boundary_sup_criteria = NULL, *_volume_sup_criteria = NULL;
-
-  if (saturne_name != NULL && *saturne_n_len > 0)
-    _saturne_name = cs_base_string_f_to_c_create(saturne_name, *saturne_n_len);
 
   if (boundary_cpl_criteria != NULL && *boundary_cpl_c_len > 0)
     _boundary_cpl_criteria = cs_base_string_f_to_c_create(boundary_cpl_criteria,
@@ -919,15 +867,12 @@ void CS_PROCF(defsa1, DEFSA1)
     cs_base_string_f_to_c_free(&_volume_sup_criteria);
 
   cs_sat_coupling_define(*saturne_app_num,
-                         _saturne_name,
                          _boundary_cpl_criteria,
                          _volume_cpl_criteria,
                          _boundary_sup_criteria,
                          _volume_sup_criteria,
                          *verbosity);
 
-  if (_saturne_name != NULL)
-    cs_base_string_f_to_c_free(&_saturne_name);
   if (_boundary_cpl_criteria != NULL)
     cs_base_string_f_to_c_free(&_boundary_cpl_criteria);
   if (_volume_cpl_criteria != NULL)
@@ -1944,7 +1889,6 @@ void CS_PROCF (mxicpl, MXICPL)
  *
  * arguments:
  *   saturne_app_num   <-- number of Code_Saturne application, or -1
- *   saturne_name      <-- name of Code_Saturne instance, or NULL
  *   boundary_criteria <-- boundary face selection criteria, or NULL
  *   volume_criteria   <-- volume cell selection criteria, or NULL
  *   projection_axis   <-- 'x', 'y', or 'y' for 2D projection axis (case
@@ -1954,7 +1898,6 @@ void CS_PROCF (mxicpl, MXICPL)
 
 void
 cs_sat_coupling_define(int          saturne_app_num,
-                       const char  *saturne_name,
                        const char  *boundary_cpl_criteria,
                        const char  *volume_cpl_criteria,
                        const char  *boundary_sup_criteria,
@@ -1974,12 +1917,6 @@ cs_sat_coupling_define(int          saturne_app_num,
   scb->match_id = -1;
 
   scb->app_num = saturne_app_num;
-
-  scb->app_name = NULL;
-  if (saturne_name != NULL) {
-    BFT_MALLOC(scb->app_name, strlen(saturne_name) + 1, char);
-    strcpy(scb->app_name, saturne_name);
-  }
 
   scb->face_cpl_sel_c = NULL;
   if (boundary_cpl_criteria != NULL) {
@@ -2087,7 +2024,6 @@ cs_sat_coupling_all_init(void)
  *   face_sel_criterion <-- criterion for selection of boundary faces
  *   cell_sel_criterion <-- criterion for selection of cells
  *   sat_num            <-- Code_Saturne application number, or -1
- *   sat_name           <-- Code_Saturne application name, or NULL
  *   verbosity          <-- verbosity level
  *----------------------------------------------------------------------------*/
 
@@ -2097,7 +2033,6 @@ cs_sat_coupling_add(const char  *face_cpl_sel_c,
                     const char  *face_sup_sel_c,
                     const char  *cell_sup_sel_c,
                     int          sat_num,
-                    const char  *sat_name,
                     int          verbosity)
 {
   cs_sat_coupling_t *sat_coupling = NULL;
@@ -2109,12 +2044,6 @@ cs_sat_coupling_add(const char  *face_cpl_sel_c,
   BFT_MALLOC(sat_coupling, 1, cs_sat_coupling_t);
 
   sat_coupling->sat_num = sat_num;
-  sat_coupling->sat_name = NULL;
-
-  if (sat_name != NULL) {
-    BFT_MALLOC(sat_coupling->sat_name, strlen(sat_name) + 1, char);
-    strcpy(sat_coupling->sat_name, sat_name);
-  }
 
   /* Selection criteria  */
 
