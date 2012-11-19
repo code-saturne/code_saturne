@@ -238,11 +238,6 @@ if (isuite.eq.0) then
       rtp(iel,isca(ixck(icla))) = zero
       rtp(iel,isca(inp(icla) )) = zero
       rtp(iel,isca(ih2(icla)))  = zero
-
-      if ( ippmod(icp3pl) .eq. 1 ) then
-        rtp(iel,isca(ixwt(icla))) = zero
-      endif
-
     enddo
   enddo
 

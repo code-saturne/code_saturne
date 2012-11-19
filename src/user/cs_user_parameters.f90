@@ -194,42 +194,6 @@ endif
 
 
 
-! --- cp3pl: Pulverized coal combustion
-! ==========
-
-!        Description of granulometry
-!        Assumption of diffusion flame around particles
-!         (extension of 3-point fast chemistry "D3P")
-!        Between a mixture of gaseous fuels (volatiles matters, CO from char
-!                                            oxydation)
-!            and a mixture of oxidisers (air and water vapor)
-!        Enthalpy for both mix and solid phase are solved
-
-!        if = -1   module not activated
-!        if = 0    module activated
-!        if = 1    with drying
-
-if (ixmlpu.eq.0) then
-
-  ippmod(icp3pl) = -1
-
-endif
-
-! --- cpl3c: Pulverized coal with Lagrangian reciprocal approach
-! ==========
-
-!        Not recently tested... at least outdated, may be obsolete
-
-!        if = -1   module not activated
-!        if = 0    module activated
-!        if = 1    with drying (NOT functional)
-
-if (ixmlpu.eq.0) then
-
-  ippmod(icpl3c) = -1
-
-endif
-
 ! --- cfuel: Heavy fuel oil combustion
 ! ==========
 
@@ -265,6 +229,21 @@ endif
 if (ixmlpu.eq.0) then
 
   ippmod(iccoal) = -1
+
+endif
+
+! --- cpl3c: Pulverized coal with Lagrangian reciprocal approach
+! ==========
+
+!        Not recently tested... at least outdated, may be obsolete
+
+!        if = -1   module not activated
+!        if = 0    module activated
+!        if = 1    with drying (NOT functional)
+
+if (ixmlpu.eq.0) then
+
+  ippmod(icpl3c) = -1
 
 endif
 
@@ -410,14 +389,6 @@ if (ixmlpu.eq.0) then
     else
       ficfpp = 'dp_C3PSJ'
     endif
-
-  endif
-
-  ! Pulverized coal
-
-  if (ippmod(icp3pl).ge.0 .or. ippmod(icpl3c).ge.0) then
-
-    ficfpp = 'dp_FCP'
 
   endif
 

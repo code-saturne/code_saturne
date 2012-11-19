@@ -637,14 +637,6 @@ if (.false.) then
       ichrvr(ipp)  = 1
       ilisvr(ipp)  = 1
       ihisvr(ipp,1)= -1
-
-      ! - Water mass fraction (in class ICLA)
-      if (ippmod(icp3pl) .eq. 1) then
-        ipp = ipprtp(isca(ixwt(icla)))
-        ichrvr(ipp)  = 1
-        ilisvr(ipp)  = 1
-        ihisvr(ipp,1)= -1
-      endif
     enddo
 
   endif
@@ -676,14 +668,6 @@ if (.false.) then
         ichrvr(ipp)  = 1
         ilisvr(ipp)  = 1
         ihisvr(ipp,1)= -1
-
-        !  Water mass fraction (in class ICLA)
-        if (ippmod(icp3pl) .eq. 1) then
-          ipp = ipprtp(isca(ixwt(icla)))
-          ichrvr(ipp)  = 1
-          ilisvr(ipp)  = 1
-          ihisvr(ipp,1)= -1
-        endif
       enddo
 
     endif
@@ -1032,15 +1016,6 @@ if (.false.) then
     !   (from class ICLA)
     if (ihth2o .eq. 1) then
       ipp = ipppro(ipproc(ighh2o(icla)))
-      ichrvr(ipp)   = 0
-      ilisvr(ipp)   = 0
-      ihisvr(ipp,1) = -1
-    endif
-
-    ! - Rate of drying (s-1) < 0
-    !   (from class ICLA)
-    if (ippmod(icp3pl) .eq. 1) then
-      ipp = ipppro(ipproc(igmsec(icla)))
       ichrvr(ipp)   = 0
       ilisvr(ipp)   = 0
       ihisvr(ipp,1) = -1

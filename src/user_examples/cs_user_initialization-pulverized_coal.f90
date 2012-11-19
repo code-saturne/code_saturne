@@ -238,11 +238,6 @@ if (isuite.eq.0) then
       rtp(iel,isca(ixck(icla))) = zero
       rtp(iel,isca(inp(icla) )) = zero
       rtp(iel,isca(ih2(icla)))  = zero
-
-      if ( ippmod(icp3pl) .eq. 1 ) then
-        rtp(iel,isca(ixwt(icla))) = zero
-      endif
-
     enddo
   enddo
 
@@ -293,10 +288,6 @@ if (isuite.eq.0) then
 
     if ( ihtco2 .eq. 1 ) then
       rtp(iel,isca(if3mc2)) = zero
-    endif
-
-    if ( ippmod(icp3pl) .eq. 1 ) then
-      rtp(iel,isca(if5m)) = zero
     endif
 
     if ( noxyd .ge. 2 ) then
