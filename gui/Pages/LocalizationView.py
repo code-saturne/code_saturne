@@ -567,6 +567,7 @@ class StandardItemModelLocalization(QStandardItemModel):
                 for c in range(self.columnCount()):
                     self._disable.append((row, c))
             self._disable.append((row, 1))
+        self.browser.configureTree(self.case)
 
 
     def getItem(self, row):

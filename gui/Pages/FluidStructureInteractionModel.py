@@ -109,7 +109,7 @@ class FluidStructureInteractionModel(Model):
         """
         Constructor.
         """
-        self.__case = case
+        self.case = case
 
         self.__node_models = case.xmlGetNode('thermophysical_models')
         self.__node_ale    = self.__node_models.xmlInitChildNode('ale_method', 'status')
