@@ -583,7 +583,7 @@ if (iphyla.eq.1 .and. itpvar.eq.1) then
       iel = itepa(ip,jisor)
       ettp(ip,jtp) = tpart
       ettp(ip,jcp) = cppart
-      if ( ippmod(icp3pl).ge.0 .or.                               &
+      if ( ippmod(iccoal).ge.0 .or.                               &
            ippmod(icpl3c).ge.0 .or.                               &
            ippmod(icfuel).ge.0      ) then
          ettp(ip,jtf) = propce(iel,ipproc(itemp1)) -tkelvi

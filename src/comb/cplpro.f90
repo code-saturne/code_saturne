@@ -20,7 +20,7 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine ppprop &
+subroutine cplpro &
 !================
 
  ( ipropp , ipppst )
@@ -29,18 +29,25 @@ subroutine ppprop &
 !  FONCTION  :
 !  ---------
 
-! INIT DES POSITIONS DES VARIABLES D'ETAT SELON
-!   LE TYPE DE PHYSIQUE PARTICULIERE
-!   (DANS VECTEURS PROPCE, PROPFA, PROPFB)
+
+!   SOUS-PROGRAMME DU MODULE LAGRANGIEN COUPLE CHARBON PULVERISE :
+!   --------------------------------------------------------------
+
+!    ROUTINE UTILISATEUR POUR PHYSIQUE PARTICULIERE
+
+!      COMBUSTION EULERIENNE DE CHARBON PULVERISE ET
+!      TRANSPORT LAGRANGIEN DES PARTICULES DE CHARBON
+
+!      INIT DES POSITIONS DES VARIABLES D'ETAT
+!        (DANS VECTEURS PROPCE, PROPFA, PROPFB)
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ipropp           ! e  ! <-- ! numero de la derniere propriete                !
-!                  !    !     !  (les proprietes sont dans propce,             !
-!                  !    !     !   propfa ou prpfb)                             !
+! ipropp           ! e  ! ->  ! numero de la derniere case utlisee             !
+!                  !    !     ! dans ipproc, ipprob, ipprof                    !
 ! ipppst           ! e  ! <-- ! pointeur indiquant le rang de la               !
 !                  !    !     !  derniere grandeur definie aux                 !
 !                  !    !     !  cellules (rtp,propce...) pour le              !
@@ -68,7 +75,6 @@ use ppppar
 use ppthch
 use coincl
 use cpincl
-use atincl
 use ppincl
 
 !===============================================================================
@@ -79,59 +85,73 @@ implicit none
 
 integer       ipropp, ipppst
 
+! Local variables
+
+integer       iprop, ige
+
 !===============================================================================
 
-! ---> Physique particuliere : Combustion Gaz
 
-if ( ippmod(icod3p).ge.0 .or. ippmod(icoebu).ge.0                 &
-                         .or. ippmod(icolwc).ge.0 ) then
-  call coprop(ipropp,ipppst)
-  !==========
-endif
+! ---> Definition des pointeurs relatifs aux variables d'etat
 
-! ---> Physique particuliere :  Combustion Charbon Pulverise
+iprop = ipropp
 
-if ( ippmod(iccoal).ge.0 ) then
-  call cs_coal_prop(ipropp,ipppst)
-  !================
-endif
+!    Phase continue
+iprop   = iprop + 1
+itemp1  = iprop
+do ige = 1, (ngaze-2*ncharb)
+! ---- Cf. definition de NGAZE dans cplecd.F
+  iprop     = iprop + 1
+  iym1(ige) = iprop
+enddo
+iprop = iprop + 1
+immel = iprop
 
-! ---> Physique particuliere :  Combustion Charbon Pulverise
-!      Couplee Transport Lagrangien des particules de charbon
+! ---- Nb de variables algebriques (ou d'etat)
+!         propre a la physique particuliere NSALPP
+!         total NSALTO
 
-if ( ippmod(icpl3c).ge.0 ) then
-  call cplpro (ipropp,ipppst)
-  !==========
-endif
+nsalpp = iprop - ipropp
+nsalto = iprop
 
-! ---> Physique particuliere : Combustion Fuel
 
-if ( ippmod(icfuel).ge.0 ) then
-  call cs_fuel_prop(ipropp,ipppst)
-  !================
-endif
+! ---> Positionnement dans le tableau PROPCE
 
-! ---> Physique particuliere : Compressible
+iprop         = nproce
 
-if ( ippmod(icompf).ge.0 ) then
-  call cfprop(ipropp,ipppst)
-  !==========
-endif
+!    Phase continue (melange gazeux)
+iprop           = iprop + 1
+ipproc(itemp1)  = iprop
+ipppst          = ipppst + 1
+ipppro(iprop)   = ipppst
 
-! ---> Physique particuliere : Versions electriques
+do ige = 1, (ngaze-2*ncharb)
+! ---- Cf. definition de NGAZE dans cplecd.F
+  iprop             = iprop + 1
+  ipproc(iym1(ige)) = iprop
+  ipppst            = ipppst + 1
+  ipppro(iprop)     = ipppst
+enddo
 
-if ( ippmod(ieljou).ge.1 .or.                                     &
-     ippmod(ielarc).ge.1 .or.                                     &
-     ippmod(ielion).ge.1       ) then
-  call elprop(ipropp,ipppst)
-  !==========
-endif
+iprop         = iprop + 1
+ipproc(immel) = iprop
+ ipppst       = ipppst + 1
+ipppro(iprop) = ipppst
 
-! ---> Physique particuliere : Atmospherique
+nproce = iprop
 
-if ( ippmod(iatmos).ge.1 ) then
-  call atprop(ipropp,ipppst)
-  !==========
-endif
 
+! ---> Positionnement dans le tableau PROPFB
+!      Au centre des faces de bord
+
+iprop = nprofb
+nprofb = iprop
+
+! ---> Positionnement dans le tableau PROPFA
+!      Au centre des faces internes (flux de masse)
+
+iprop = nprofa
+nprofa = iprop
+
+return
 end subroutine

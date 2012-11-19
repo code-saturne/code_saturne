@@ -49,9 +49,6 @@ module ppincl
   ! ---- Modeles propres a la combustion gaz ICO...
   integer ::  icod3p, icodeq, icoebu, icobml, icolwc, isoot
 
-  ! ---- Modeles propres a la combustion charbon pulverise ICP...
-  integer ::  icp3pl
-
   ! ---- Modeles propres aux versions effet Joule et conduction ionique
   integer ::  ieljou, ielarc, ielion
 
@@ -73,10 +70,9 @@ module ppincl
 
   parameter       (iphpar = 1 , icod3p = 2 , icodeq = 3 ,           &
                    icoebu = 4 , icobml = 5 , icolwc = 6 ,           &
-                   icp3pl = 7 , icpl3c = 8 , icfuel = 9 ,           &
-                   ieljou = 10, ielarc = 11, ielion = 12,           &
-                   icompf = 13, iatmos = 14, iaeros = 15,           &
-                   iccoal = 16)
+                   icpl3c = 7 , icfuel = 8 , ieljou = 9 ,           &
+                   ielarc = 10, ielion = 11, icompf = 12,           &
+                   iatmos = 13, iaeros = 14, iccoal = 15)
 
 
   !--> NOMBRE DE VARIABLES ALGEBRIQUES OU D'ETAT

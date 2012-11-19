@@ -210,14 +210,13 @@ if (ippmod(iphpar).ge.2) then
   !---> ckmel stores temporarly the absorbption coefficient
   !     of gaz-particle mixing
 
-  if (ippmod(icp3pl).ge.0 .or. ippmod(iccoal).ge.0              &
-                          .or. ippmod(icfuel).ge.0  ) then
+  if (ippmod(iccoal).ge.0 .or. ippmod(icfuel).ge.0  ) then
 
     do iel = 1, ncel
       ckmel(iel) = propce(iel,ipproc(icak(1)))
     enddo
 
-    if (ippmod(icp3pl).ge.0 .or. ippmod(iccoal).ge.0 ) then
+    if (ippmod(iccoal).ge.0 ) then
       do icla = 1,nclacp
         ipcla = 1+icla
         do iel = 1, ncel
@@ -226,7 +225,7 @@ if (ippmod(iphpar).ge.2) then
                        * propce(iel,ipproc(icak(ipcla))) )
         enddo
       enddo
-    else if (ippmod(icfuel) .ge.0) then
+    else
       do icla = 1,nclafu
         ipcla = 1+icla
         do iel = 1, ncel
@@ -397,7 +396,7 @@ if (idverl.ge.0) then
 
     endif
 
-    if (ippmod(icp3pl).ge.0 .or. ippmod(iccoal).ge.0) then
+    if (ippmod(iccoal).ge.0) then
 
       ! Particules' temperature
       do icla = 1, nclacp
@@ -447,7 +446,7 @@ if (idverl.ge.0) then
   endif
 
   ! Coal
-  if (ippmod(icp3pl).ge.0 .or. ippmod(iccoal).ge.0) then
+  if (ippmod(iccoal).ge.0) then
     do icla = 1, nclacp
       ipcla = 1+icla
       do iel = 1, ncel
@@ -489,7 +488,7 @@ if (iirayo.eq.2) then
   ! Tenir compte de l'absorption des particules
 
   ! Coal
-  if (ippmod(icp3pl).ge.0 .or. ippmod(iccoal).ge.0) then
+  if (ippmod(iccoal).ge.0) then
     do icla = 1, nclacp
       ipcla = 1+icla
       do iel = 1,ncel
@@ -521,7 +520,7 @@ if (iirayo.eq.2) then
   ! Tenir compte de l'absorption des particules
 
   ! Coal
-  if (ippmod(icp3pl).ge.0 .or. ippmod(iccoal).ge.0) then
+  if (ippmod(iccoal).ge.0) then
     do icla = 1, nclacp
       ipcla = 1+icla
       do iel = 1,ncel
@@ -555,7 +554,7 @@ if (iirayo.eq.2) then
   ! Tenir compte de l'absorption des particules
 
   ! Coal
-  if (ippmod(icp3pl).ge.0 .or. ippmod(iccoal).ge.0) then
+  if (ippmod(iccoal).ge.0) then
     do icla = 1, nclacp
       ipcla = 1+icla
       do iel = 1,ncel
@@ -622,7 +621,7 @@ else if (iirayo.eq.1) then
   enddo
 
   ! Coal
-  if (ippmod(icp3pl).ge.0 .or. ippmod(iccoal).ge.0) then
+  if (ippmod(iccoal).ge.0) then
     do icla = 1,nclacp
       ipcla = 1+icla
       do iel = 1,ncel
@@ -654,7 +653,7 @@ else if (iirayo.eq.1) then
   enddo
 
   ! Coal
-  if (ippmod(icp3pl).ge.0 .or. ippmod(iccoal).ge.0) then
+  if (ippmod(iccoal).ge.0) then
     do icla = 1,nclacp
       ipcla = 1+icla
       do iel = 1,ncel
@@ -829,7 +828,7 @@ if (idverl.ge.0) then
   enddo
 
   ! Combustion CP : On rajoute la contribution des particules
-  if (ippmod(icp3pl).ge.0 .or. ippmod(iccoal).ge.0) then
+  if (ippmod(iccoal).ge.0) then
     do icla = 1, nclacp
       ipcla = 1+icla
       do iel = 1, ncel
@@ -922,7 +921,7 @@ if (idverl.ge.0) then
   deallocate(dcp)
 
   ! Combustion CP : On rajoute la contribution des particules
-  if (ippmod(icp3pl).ge.0 .or. ippmod(iccoal).ge.0) then
+  if (ippmod(iccoal).ge.0) then
     do icla = 1, nclacp
       ipcla = 1+icla
       do iel = 1, ncel

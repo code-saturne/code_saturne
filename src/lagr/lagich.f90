@@ -194,7 +194,7 @@ endif
 ! 2. Pointeur sur la masse volumique en fonction de l'ecoulement
 !===============================================================================
 
-if ( ippmod(icp3pl).ge.0 ) then
+if ( ippmod(iccoal).ge.0 ) then
   iromf = ipproc(irom1)
 else
   iromf = ipproc(irom)
@@ -205,14 +205,14 @@ endif
 !    porteuse est une flamme de charbon pulverise
 !===============================================================================
 
-if ( ippmod(icp3pl).ge.0 .or. ippmod(icpl3c).ge.0 ) then
+if ( ippmod(iccoal).ge.0 .or. ippmod(icpl3c).ge.0 ) then
 
    do iel = 1,ncel
      tempf(iel) = propce(iel,ipproc(itemp1))
    enddo
 
 else
-  write(nfecra,1000) iphyla, ippmod(icpl3c), ippmod(icp3pl)
+  write(nfecra,1000) iphyla, ippmod(icpl3c), ippmod(iccoal)
   call csexit (1)
   !==========
 endif

@@ -102,9 +102,6 @@ else if (ippmod(icoebu).ne.-1) then
   write(nfecra,1010)
   write(nfecra,1030) ippmod(icoebu), cebu
   write(nfecra,1060) indjon
-else if (ippmod(icp3pl).ne.-1) then
-  write(nfecra,1010)
-  write(nfecra,1040) ippmod(icp3pl)
 else if (ippmod(icfuel).ne.-1) then
   write(nfecra,1010)
   write(nfecra,1050) ippmod(icfuel)

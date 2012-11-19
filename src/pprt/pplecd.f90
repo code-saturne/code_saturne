@@ -88,14 +88,11 @@ if ( ippmod(icod3p).ge.0 .or. ippmod(icoebu).ge.0                 &
 endif
 
 
-! ---> Flamme charbon pulverise
+! ---> Flamme charbon pulverise ou
+! ---> Combustion charbon pulverise couple transport Lagrangien
+!      des particules de charbon
 
-if ( ippmod(icp3pl).ge.0 ) then
-  call cplecd
-  !==========
-endif
-
-if ( ippmod(iccoal).ge.0 ) then
+if ( ippmod(iccoal).ge.0 .or. ippmod(icpl3c).ge.0 ) then
   call uisofu(iirayo, iihmpr, ncharm, ncharb, nclpch, nclacp,         &
               ncpcmx, ichcor, diam20, cch,                            &
               hch, och, nch, sch, ipci, pcich, cp2ch, rho0ch,         &
@@ -108,13 +105,6 @@ if ( ippmod(iccoal).ge.0 ) then
               ckabs1, noxyd, oxyo2, oxyn2, oxyh2o, oxyco2)
   call cs_coal_readata
   !==================
-endif
-! ---> Combustion charbon pulverise couple transport Lagrangien
-!      des particules de charbon
-
-if ( ippmod(icpl3c).ge.0 ) then
-  call cplecd
-  !==========
 endif
 
 ! ---> Flamme fuel

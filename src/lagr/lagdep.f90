@@ -206,7 +206,7 @@ depint = 100.d0
 
 !  The density pointer according to the flow location
 
-if ( ippmod(icp3pl).ge.0 .or. ippmod(icfuel).ge.0 ) then
+if ( ippmod(iccoal).ge.0 .or. ippmod(icfuel).ge.0 ) then
   iromf = ipproc(irom1)
 else
   iromf = ipproc(irom)
@@ -227,7 +227,7 @@ endif
 
     ! Fluid temperature computation depending on the type of flow
 
-      if (ippmod(icp3pl).ge.0 .or.                             &
+      if (ippmod(iccoal).ge.0 .or.                             &
           ippmod(icpl3c).ge.0 .or.                             &
           ippmod(icfuel).ge.0) then
 

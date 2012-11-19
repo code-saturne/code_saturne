@@ -36,7 +36,7 @@ AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT) $(CFLAGS_EXT)
 AM_FCFLAGS = \
 $(FCMODINCLUDE)$(top_builddir)/src \
 $(FCMODINCLUDE)$(top_builddir)/src/base \
-$(FCMODINCLUDE)$(top_builddir)/src/cplv \
+$(FCMODINCLUDE)$(top_builddir)/src/comb \
 $(FCFLAGS_DBG) $(FCFLAGS_OPT)
 
 AM_LDFLAGS =

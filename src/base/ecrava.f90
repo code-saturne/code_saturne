@@ -2061,11 +2061,9 @@ if (iecaux.eq.1) then
 
 ! ---> Grandeurs complementaires pour la combustion CP
 
-  if (ippmod(icp3pl).ge.0 .or.                                    &
-      ippmod(icpl3c).ge.0 .or.                                    &
+  if (ippmod(icpl3c).ge.0 .or.                                    &
       ippmod(iccoal).ge.0) then
     nberro = 0
-
 
 !     Charbon PuLVerise : masse vol des charbons
 
@@ -2108,7 +2106,7 @@ if (iecaux.eq.1) then
     nberro = nberro + ierror
 
 !       ientat, inmoxy et x20 ne servent pas pour le CP couple Lagrangien (cplphy)
-    if (ippmod(icp3pl).ge.0 .or. ippmod(iccoal).ge.0) then
+    if (ippmod(iccoal).ge.0) then
 
       itysup = 0
       nbval  = nozppm

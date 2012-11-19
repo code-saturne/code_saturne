@@ -40,6 +40,21 @@ pkginclude_HEADERS =
 noinst_LTLIBRARIES = libcscomb.la
 libcscomb_la_SOURCES = \
 cs_coal_bcond.f90 \
+cplin1.f90 \
+cplini.f90 \
+cplph1.f90 \
+cplphy.f90 \
+cplpro.f90 \
+cpltcl.f90 \
+cpltss.f90 \
+cplvar.f90 \
+cpthp1.f90 \
+cplver.f90 \
+cppdf4.f90 \
+cpltsv.f90 \
+cplym1.f90 \
+cppdfr.f90 \
+cpteh1.f90 \
 cs_coal_fp2st.f90 \
 cs_coal_htconvers1.f90 \
 cs_coal_htconvers2.f90 \

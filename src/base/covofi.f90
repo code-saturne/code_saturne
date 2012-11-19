@@ -377,18 +377,6 @@ if (iirayo.ge.1) then
 
   !-> Charbon pulverise
   !   Ordre 2 non pris en compte
-  ! old model
-  if ( ippmod(icp3pl) .ge. 0 ) then
-    if ( isca(iscal).ge.isca(ih2(1)) .and.       &
-         isca(iscal).le.isca(ih2(nclacp)) ) then
-
-      call cprays &
-      !==========
-    ( ivar  ,ncelet, ncel  ,       &
-      volume,propce,smbrs,rovsdt)
-
-    endif
-  endif
   ! new model
   if (ippmod(iccoal) .ge. 0) then
     if (isca(iscal).ge.isca(ih2(1)) .and.       &

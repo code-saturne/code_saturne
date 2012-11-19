@@ -209,17 +209,6 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 
 ! ---> Flamme charbon pulverise
 
-  if ( ippmod(icp3pl).ge.0 ) then
-
-     call cpphyv                                                  &
-     !==========
- ( nvar   , nscal  ,                                              &
-   ibrom  , izfppp ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  )
-
-   endif
-
    if ( ippmod(iccoal).ge.0 ) then
 
      call cs_coal_physprop                                        &

@@ -20,12 +20,14 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine pptssc &
+subroutine cpltss &
 !================
 
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
+   itypfb ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
+   izfppp ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    smbrs  , rovsdt , tslagr )
@@ -34,8 +36,15 @@ subroutine pptssc &
 ! FONCTION :
 ! ----------
 
-! ROUTINE PHYSIQUE PARTICULIERE
-! ON PRECISE LES TERMES SOURCES POUR UN SCALAIRE PP
+!   SOUS-PROGRAMME DU MODULE LAGRANGIEN COUPLE CHARBON PULVERISE :
+!   --------------------------------------------------------------
+
+!    ROUTINE UTILISATEUR POUR PHYSIQUE PARTICULIERE
+
+!      COMBUSTION EULERIENNE DE CHARBON PULVERISE ET
+!      TRANSPORT LAGRANGIEN DES PARTICULES DE CHARBON
+
+!   ON PRECISE LES TERMES SOURCES POUR UN SCALAIRE PP
 !   SUR UN PAS DE TEMPS
 
 ! ATTENTION : LE TRAITEMENT DES TERMES SOURCES EST DIFFERENT
@@ -73,10 +82,13 @@ subroutine pptssc &
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
 ! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
 ! iscal            ! i  ! <-- ! scalar number                                  !
+! itypfb(nfabor    ! te ! --> ! type des faces de bord                         !
 ! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
 ! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
+! izfppp           ! te ! --> ! numero de zone de la face de bord              !
+! (nfabor)         !    !     !  pour le module phys. part.                    !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -112,7 +124,8 @@ use entsor
 use optcal
 use cstphy
 use cstnum
-use pointe, only: itypfb, izfppp
+use parall
+use period
 use ppppar
 use ppthch
 use coincl
@@ -132,8 +145,10 @@ integer          nvar   , nscal
 integer          ncepdp , ncesmp
 integer          iscal
 
+integer          itypfb(nfabor)
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
+integer          izfppp(nfabor)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -142,9 +157,16 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision smbrs(ncelet), rovsdt(ncelet)
 double precision tslagr(ncelet,*)
+double precision w1(ncelet), w2(ncelet), w3(ncelet)
+double precision w4(ncelet), w5(ncelet), w6(ncelet)
+double precision w7(ncelet), w8(ncelet), w9(ncelet)
+double precision w10(ncelet), w11(ncelet)
 
 ! Local variables
 
+character*80     chaine
+integer          ivar   , iel
+integer          iscala , icha
 
 !===============================================================================
 
@@ -153,155 +175,120 @@ double precision tslagr(ncelet,*)
 !===============================================================================
 
 
+! --- Numero du scalaire a traiter : ISCAL
+
+! --- Numero de la variable associee au scalaire a traiter ISCAL
+ivar = isca(iscal)
+
+! --- Nom de la variable associee au scalaire a traiter ISCAL
+chaine = nomvar(ipprtp(ivar))
+
+
 
 !===============================================================================
-! 2. AIGUILLAGE VERS LE MODELE ADEQUAT
+! 2. PRISE EN COMPTE DES TERMES SOURCES
 !===============================================================================
 
-! Soot model
+! --> Terme source pour les matieres volatiles legeres
 
-if (isoot.eq.1) then
-  call sootsc                                                     &
+if ( ivar.ge.isca(if1m(1)) .and. ivar.le.isca(if1m(ncharb)) ) then
+
+  if (iwarni(ivar).ge.1) then
+    write(nfecra,1000) chaine(1:8)
+  endif
+
+! ---- Contribution du TS interfacial aux bilans explicite et implicite
+
+  icha = ivar-isca(if1m(1))+1
+  do iel = 1, ncel
+    smbrs(iel)  = smbrs(iel)  + tslagr(iel,itsmv1(icha))
+!          ROVSDT(IEL) = ROVSDT(IEL) + ZERO
+  enddo
+
+endif
+
+! --> Terme source pour les matieres volatiles lourdes
+
+if ( ivar.ge.isca(if2m(1)) .and. ivar.le.isca(if2m(ncharb)) ) then
+
+  if (iwarni(ivar).ge.1) then
+    write(nfecra,1000) chaine(1:8)
+  endif
+
+! ---- Contribution du TS interfacial pour le bilan explicite
+
+  icha = ivar-isca(if2m(1))+1
+  do iel = 1, ncel
+    smbrs(iel)  = smbrs(iel)  +  tslagr(iel,itsmv2(icha))
+!          ROVSDT(IEL) = ROVSDT(IEL) + ZERO
+  enddo
+
+endif
+
+! --> Terme source pour le traceur 3 (C de la comb. het.)
+
+if ( ivar.eq.isca(if3m) ) then
+
+  if (iwarni(ivar).ge.1) then
+    write(nfecra,1000) chaine(1:8)
+  endif
+
+! ---- Contribution du TS interfacial aux bilans explicite et implicite
+
+  do iel = 1, ncel
+    smbrs(iel)  = smbrs(iel)  + tslagr(iel,itsco)
+!          ROVSDT(IEL) = ROVSDT(IEL) + ZERO
+  enddo
+
+endif
+
+! --> Terme source pour la variance du traceur 4 (Air)
+
+if ( ivar.eq.isca(if4p2m) ) then
+
+  if (iwarni(ivar).ge.1) then
+    write(nfecra,1000) chaine(1:8)
+  endif
+
+! ---- Calcul des termes sources explicite et implicite
+!      relatif aux echanges interfaciaux entre phases
+
+! -> appel commente => SMBRS et ROVSDT non modifies
+!       NUMTRA = 4
+!       CALL CPTSVI
+!!==========
+!     & ( NCELET , NCEL   , NUMTRA ,
+!     &   RTP    , PROPCE , VOLUME ,
+!     &   SMBRS  , ROVSDT ,
+!     &   W1     , W2     ,
+!     &   W3 )
+
+
+! ---- Calcul des termes sources explicite et implicite
+!      relatif aux termes de production et de dissipation
+
+!      Pointeur relatif au scalaire associe
+!      (0 si pas de scalaire associe)
+  iscala = 0
+
+  call cpltsv                                                     &
   !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iscal  ,                                                       &
-   icepdc , icetsm , itypsm ,                                     &
-   izfppp ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  , ckupdc , smacel ,                            &
-   smbrs  , rovsdt )
-endif
-
-! ---> Flamme de premelange : Modele EBU
-
-if ( ippmod(icoebu).ge.0 ) then
-  call ebutss                                                     &
-  !==========
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iscal  ,                                                       &
-   icepdc , icetsm , itypsm ,                                     &
-   izfppp ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  , ckupdc , smacel ,                            &
-   smbrs  , rovsdt )
-endif
-
-
-! ---> Flamme de premelange : Modele BML
-
-!      IF ( IPPMOD(ICOBML).GE.0 )
-!           CALL BMLTSS
-
-! ---> Flamme de premelange : Modele LWC
-
-if ( ippmod(icolwc).ge.0 ) then
-  call lwctss                                                     &
-  !==========
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iscal  ,                                                       &
-   icepdc , icetsm , itypsm ,                                     &
-   izfppp ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  , ckupdc , smacel ,                            &
-   smbrs  , rovsdt )
-endif
-
-! ---> Flamme charbon pulverise
-
-if ( ippmod(iccoal).ge.0 ) then
-  call cs_coal_scast                                              &
-   !================
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iscal  ,                                                       &
+   iscal  , iscala ,                                              &
    itypfb ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   izfppp ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  , ckupdc , smacel ,                            &
+   coefa  , coefb  ,                                              &
    smbrs  , rovsdt )
+
 endif
 
-! ---> Flamme charbon pulverise couplee Transport Lagrangien
-!      des particules de charbon
+!--------
+! FORMATS
+!--------
 
-if ( ippmod(icpl3c).ge.0 .and. iilagr.eq.2 ) then
-  call cpltss                                                     &
-   !==========
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iscal  ,                                                       &
-   itypfb ,                                                       &
-   icepdc , icetsm , itypsm ,                                     &
-   izfppp ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  , ckupdc , smacel ,                            &
-   smbrs  , rovsdt , tslagr )
-endif
-
-! ---> Flamme fuel
-
-if ( ippmod(icfuel).ge.0 ) then
-  call cs_fuel_scast                                              &
-   !================
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iscal  ,                                                       &
-   itypfb ,                                                       &
-   icepdc , icetsm , itypsm ,                                     &
-   izfppp ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  , ckupdc , smacel ,                            &
-   smbrs  , rovsdt )
-endif
-
-! ---> Versions electriques :
-!             Effet Joule
-!             Arc Electrique
-!             Conduction ionique
-
-if ( ippmod(ieljou).ge.1 .or.                                     &
-     ippmod(ielarc).ge.1 .or.                                     &
-     ippmod(ielion).ge.1       ) then
-   call eltssc                                                    &
-   !==========
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iscal  ,                                                       &
-   itypfb ,                                                       &
-   icepdc , icetsm , itypsm ,                                     &
-   izfppp ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  , ckupdc , smacel ,                            &
-   smbrs  , rovsdt )
-endif
-
-! ---> Version atmospherique :
-
-if ( ippmod(iatmos).ge.0 ) then
-   call attssc                                                    &
-   !==========
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iscal  ,                                                       &
-   itypfb ,                                                       &
-   icepdc , icetsm , itypsm ,                                     &
-   izfppp ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  , ckupdc , smacel ,                            &
-   smbrs  , rovsdt )
-endif
-
-
-! ---> Version aerorefrigerant :
-
-if ( ippmod(iaeros).ge.0 ) then
-   call cttssc                                                    &
-   !==========
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iscal  ,                                                       &
-   itypfb ,                                                       &
-   icepdc , icetsm , itypsm ,                                     &
-   izfppp ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  , ckupdc , smacel ,                            &
-   smbrs  , rovsdt )
-endif
+ 1000 format(' TERMES SOURCES PHYSIQUE PARTICULIERE POUR LA VARIABLE '  &
+       ,a8,/)
 
 !----
 ! FIN

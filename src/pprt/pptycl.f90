@@ -284,15 +284,6 @@ elseif ( ippmod(icolwc).ge.0 ) then
 
 ! ---> Combustion charbon pulverise USCPCL
 
-elseif ( ippmod(icp3pl).ge.0 ) then
-
-  call cpptcl                                                     &
-  !==========
- ( nvar   , nscal  ,                                              &
-   icodcl , itrifb , itypfb , izfppp ,                            &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , rcodcl )
-
 elseif ( ippmod(iccoal).ge.0 ) then
 
   call cs_coal_bcond                                              &

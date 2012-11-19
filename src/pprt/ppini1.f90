@@ -84,10 +84,6 @@ endif
 
 ! ---> Physique particuliere : Combustion Charbon Pulverise
 
-if ( ippmod(icp3pl).ge.0 ) then
-  call cpini1
-  !==========
-endif
 if ( ippmod(iccoal).ge.0 ) then
   call cs_coal_param
   !=================

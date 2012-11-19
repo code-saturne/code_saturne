@@ -79,12 +79,6 @@ if (  ippmod(icod3p).ge.0 .or. ippmod(icoebu).ge.0                &
   !==========
 endif
 
-! ---> Physique particuliere :  Combustion Charbon Pulverise
-
-if ( ippmod(icp3pl).ge.0 ) then
-  call cpvarp
-  !==========
-endif
 if ( ippmod(iccoal).ge.0 ) then
   call cs_coal_varpos
   !==================

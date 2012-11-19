@@ -171,7 +171,7 @@ if (mode.eq.1) then
 
 ! ---- Combustion charbon pulverise
 
-  else if ( ippmod(icp3pl).ge.0 .or. ippmod(iccoal).ge.0 ) then
+  else if ( ippmod(iccoal).ge.0 ) then
 
     do iel = 1,ncel
       tempk(iel) = propce(iel, ipproc(itemp1))
@@ -238,66 +238,6 @@ if (mode.eq.-1) then
         ( mode   , ngazg , ngazgm  , coefg  ,                     &
           npo    , npot   , th     , ehgazg ,                     &
           hparop(ifac) , tparop(ifac) )
-
-! ---- Combustion charbon pulverise
-
-      else if ( ippmod(icp3pl).ge.0 ) then
-
-        x2t  = zero
-        x2h2 = zero
-        do icla = 1, nclacp
-          icha   = ichcor(icla)
-          ixchcl = isca(ixch(icla))
-          ixckcl = isca(ixck(icla))
-          ixnpcl = isca(inp(icla ))
-          ipcx2c = ipproc(ix2(icla))
-          x2t = x2t + propce(iel,ipcx2c)
-          h2 = zero
-          do isol = 1, nsolim
-            xsolid(isol) = zero
-          enddo
-          if (propce(iel,ipcx2c).gt.epsicp) then
-            xsolid(ich(icha) ) = rtp(iel,ixchcl)                  &
-                               / propce(iel,ipcx2c)
-            xsolid(ick(icha) ) = rtp(iel,ixckcl)                  &
-                               / propce(iel,ipcx2c)
-            xsolid(iash(icha)) = rtp(iel,ixnpcl)*xmash(icla)      &
-                               / propce(iel,ipcx2c)
-            if ( ippmod(icp3pl).eq.1 ) then
-              xsolid(iwat(icha)) = rtp(iel,isca(ixwt(icla)))      &
-                                  /propce(iel,ipcx2c)
-            endif
-            iii = icla
-            t1 = tparop(ifac)
-            call cpthp2                                           &
-            !==========
-            ( mode   , iii   , h2     , xsolid ,                  &
-              tparop(ifac) , t1 )
-          endif
-          x2h2 = x2h2 + propce(iel,ipcx2c)*h2
-        enddo
-
-        do ige = 1, ngazem
-          coefe(ige) = zero
-        enddo
-        do icha = 1, ncharb
-          f1mc(icha) = rtp(iel,isca(if1m(icha)))                  &
-                     / (1.d0-x2t)
-          f2mc(icha) =  rtp(iel,isca(if2m(icha)))                 &
-                     / (1.d0-x2t)
-        enddo
-        do icha = (ncharb+1), ncharm
-          f1mc(icha) = zero
-          f2mc(icha) = zero
-        enddo
-        do ige = 1, (ngaze-2*ncharb)
-          coefe(ige) = propce(iel,ipproc(iym1(ige)))
-        enddo
-        call cpthp1                                               &
-        !==========
-        ( mode   , hf     , coefe       ,                         &
-          f1mc   , f2mc   ,tparop(ifac) )
-          hparop(ifac) = (1.d0-x2t)*hf+x2h2
 
 ! ---- Combustion charbon pulverise : nouveau modele
 

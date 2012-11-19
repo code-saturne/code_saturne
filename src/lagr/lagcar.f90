@@ -182,7 +182,7 @@ d3s444 = 0.44d0 * 3.d0 / 4.d0
 
 ! Pointeur sur la masse volumique en fonction de l'ecoulement
 
-if ( ippmod(icp3pl).ge.0 .or. ippmod(icfuel).ge.0 ) then
+if ( ippmod(iccoal).ge.0 .or. ippmod(icfuel).ge.0 ) then
   iromf = ipproc(irom1)
 else
   iromf = ipproc(irom)
@@ -261,7 +261,7 @@ do ip = 1,nbpart
 
 !     CALCUL DU NUSSELT LOCAL
 
-      if ( ippmod(icp3pl).ge.0 .or.                               &
+      if ( ippmod(iccoal).ge.0 .or.                               &
            ippmod(icpl3c).ge.0 .or.                               &
            ippmod(icod3p).ge.1 .or.                               &
            ippmod(icoebu).eq.1 .or.                               &

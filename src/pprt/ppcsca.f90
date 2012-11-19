@@ -137,29 +137,6 @@ if (isoot.ge.1) nscapp = nscapp + 2
 
 ! --> Flamme charbon pulverise
 
-! ------ Transport d'H2
-if ( ippmod(icp3pl).eq.0 ) then
-
-  nscapp = 1 + 2*ncharb + 2 + 4*nclacp + (noxyd-1)
-
-  if ( ihtco2.eq. 1) nscapp = nscapp + 1
-  if ( ieqco2.ge. 1) nscapp = nscapp + 1
-  if ( ieqnox.ge. 1) nscapp = nscapp + 3
-
-endif
-
-! ------ Transport d'H2 + phase de sechage
-
-if ( ippmod(icp3pl).eq.1 ) then
-
-  nscapp = 1 + 2*ncharb + 3 +5*nclacp + (noxyd-1)
-
-  if ( ihtco2.eq. 1) nscapp = nscapp + 1
-  if ( ieqco2.eq. 1) nscapp = nscapp + 1
-  if ( ieqnox.ge. 1) nscapp = nscapp + 3
-
-endif
-!
 if ( ippmod(iccoal).ge.0 ) then
 ! enthalpie du melange
 ! phase disperse : (Np , Xch , Xck , h2  ) par classe

@@ -20,7 +20,7 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine ppiniv &
+subroutine cplini &
 !================
 
  ( nvar   , nscal  ,                                              &
@@ -30,8 +30,17 @@ subroutine ppiniv &
 ! FONCTION :
 ! --------
 
-! INITIALISATION DES VARIABLES DE CALCUL POUR
-!      LA PHYSIQUE PARTICULIERE
+!   SOUS-PROGRAMME DU MODULE LAGRANGIEN COUPLE CHARBON PULVERISE :
+!   --------------------------------------------------------------
+
+!    ROUTINE UTILISATEUR POUR PHYSIQUE PARTICULIERE
+
+!      COMBUSTION EULERIENNE DE CHARBON PULVERISE ET
+!      TRANSPORT LAGRANGIEN DES PARTICULES DE CHARBON
+
+!      INITIALISATION DES VARIABLES DE CALCUL
+
+!      PENDANT DE USINIV.F
 
 ! Cette routine est appelee en debut de calcul (suite ou non)
 !     avant le debut de la boucle en temps
@@ -47,7 +56,7 @@ subroutine ppiniv &
 !     definies) que si elles ont pu etre relues dans un fichier
 !     suite de calcul
 
-! Les proprietes physiques sont accessibles dans le tableau
+! Les proprietes physiaues sont accessibles dans le tableau
 !     PROPCE (prop au centre), PROPFA (aux faces internes),
 !     PROPFB (prop aux faces de bord)
 !     Ainsi,
@@ -97,12 +106,12 @@ use optcal
 use cstphy
 use cstnum
 use entsor
-use parall
 use ppppar
 use ppthch
 use coincl
 use cpincl
 use ppincl
+use ppcpfu
 use mesh
 
 !===============================================================================
@@ -118,7 +127,17 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 
 ! Local variables
 
+integer          iel, ige, mode, icha
 
+double precision t1init, h1init, coefe(ngazem)
+double precision f1mc(ncharm), f2mc(ncharm)
+double precision xkent, xeent, d2s3
+
+! NOMBRE DE PASSAGES DANS LA ROUTINE
+
+integer          ipass
+data             ipass /0/
+save             ipass
 
 !===============================================================================
 
@@ -126,113 +145,108 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 ! 1.  INITIALISATION VARIABLES LOCALES
 !===============================================================================
 
+ipass = ipass + 1
+
+
+d2s3 = 2.d0/3.d0
 
 !===============================================================================
-! 2. AIGUILLAGE VERS LE MODELE ADEQUAT
+! 2. INITIALISATION DES INCONNUES :
+!      UNIQUEMENT SI ON NE FAIT PAS UNE SUITE
 !===============================================================================
 
+! RQ IMPORTANTE : pour la combustion CP, 1 seul passage suffit
 
-! ---> Combustion gaz
-!      Flamme de diffusion : chimie 3 points
+if ( isuite.eq.0 .and. ipass.eq.1 ) then
 
- if ( ippmod(icod3p).ge.0 ) then
-  call d3pini                                                     &
-  !==========
- ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
+! --> Initialisation de k et epsilon
+
+  xkent = 1.d-10
+  xeent = 1.d-10
+
+  if (itytur.eq.2) then
+
+    do iel = 1, ncel
+      rtp(iel,ik)  = xkent
+      rtp(iel,iep) = xeent
+    enddo
+
+  elseif (itytur.eq.3) then
+
+    do iel = 1, ncel
+      rtp(iel,ir11) = d2s3*xkent
+      rtp(iel,ir22) = d2s3*xkent
+      rtp(iel,ir33) = d2s3*xkent
+      rtp(iel,ir12) = 0.d0
+      rtp(iel,ir13) = 0.d0
+      rtp(iel,ir23) = 0.d0
+      rtp(iel,iep)  = xeent
+    enddo
+
+  elseif (iturb.eq.50) then
+
+    do iel = 1, ncel
+      rtp(iel,ik)   = xkent
+      rtp(iel,iep)  = xeent
+      rtp(iel,iphi) = d2s3
+      rtp(iel,ifb)  = 0.d0
+    enddo
+
+  elseif (iturb.eq.60) then
+
+    do iel = 1, ncel
+      rtp(iel,ik)   = xkent
+      rtp(iel,iomg) = xeent/cmu/xkent
+    enddo
+
+  elseif (iturb.eq.70) then
+
+    do iel = 1, ncel
+      rtp(iel,inusa) = cmu*xkent**2/xeent
+    enddo
+
   endif
 
-! ---> Combustion gaz
-!      Flamme de premelange : modele EBU
+! --> On initialise tout le domaine de calcul avec de l'air a TINITK
+!                   ================================================
 
- if ( ippmod(icoebu).ge.0 ) then
-  call ebuini                                                     &
+!   Enthalpie
+
+  t1init = t0
+
+! ------ Variables de transport relatives au melange
+
+  do ige = 1, ngazem
+    coefe(ige) = zero
+  enddo
+  coefe(io2) = wmole(io2) / (wmole(io2)+xsi*wmole(in2))
+  coefe(in2) = 1.d0 - coefe(io2)
+  do icha = 1, ncharm
+    f1mc(icha) = zero
+    f2mc(icha) = zero
+  enddo
+  mode = -1
+  call cpthp1                                                     &
   !==========
- ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
-endif
+ ( mode   , h1init , coefe  , f1mc   , f2mc   ,                   &
+   t1init )
 
-! ---> Combustion gaz
-!      Flamme de premelange : modele LWC
+  do iel = 1, ncel
+    rtp(iel,isca(ihm)) = h1init
+  enddo
 
- if ( ippmod(icolwc).ge.0 ) then
-  call lwcini                                                     &
-  !==========
- ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
-endif
+! Fraction massique et variance
 
-! ---> Combustion charbon pulverise
-
-if ( ippmod(iccoal).ge.0 ) then
-  call cs_coal_varini                                             &
-  !==================
- ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
-endif
-
-
-! ---> Combustion charbon pulverise couples Lagrangien
-
-if ( ippmod(icpl3c).ge.0 ) then
-  call cplini                                                     &
-  !==========
- ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
-endif
-
-! ---> Combustion fuel
-
-if  (ippmod(icfuel).ge.0 ) then
-  call cs_fuel_varini                                             &
-  !==================
- ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
-endif
-
-! ---> Compressible
-
-if ( ippmod(icompf).ge.0 ) then
-  call cfiniv                                                     &
-  !==========
- ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
-endif
-
-! ---> Version electrique
-!      Effet Joule
-!      Conduction ionique
-
-if ( ippmod(ieljou).ge.1 .or.                                     &
-     ippmod(ielarc).ge.1 .or.                                     &
-     ippmod(ielion).ge.1       ) then
-
-  call eliniv                                                     &
-  !==========
- ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
-
-endif
-
-! ---> Ecoulements atmospheriques
-
-if ( ippmod(iatmos).ge.0 ) then
-
-  call atiniv                                                     &
-  !==========
- ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
-
-endif
-
-! ---> Ecoulements aerorefrigerants
-
-if ( ippmod(iaeros).ge.0 ) then
-
-  call ctiniv                                                     &
-  !==========
- ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
+  do icha = 1, ncharb
+    do iel = 1, ncel
+      rtp(iel,isca(if1m(icha))) = zero
+      rtp(iel,isca(if2m(icha))) = zero
+    enddo
+  enddo
+  do iel = 1, ncel
+    rtp(iel,isca(if3m)) = zero
+    rtp(iel,isca(if4p2m)) = zero
+  enddo
 
 endif
 

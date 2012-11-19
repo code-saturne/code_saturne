@@ -174,7 +174,7 @@ grav(3) = gz
 
 ! Pointeur sur la masse volumique en fonction de l'ecoulement
 
-if ( ippmod(icp3pl).ge.0 .or. ippmod(icfuel).ge.0 ) then
+if ( ippmod(iccoal).ge.0 .or. ippmod(icfuel).ge.0 ) then
   iromf = ipproc(irom1)
 else
   iromf = ipproc(irom)
@@ -338,7 +338,7 @@ do id = 1,3
 !             Calcul de la temperature du fluide en fonction du type
 !             d'ecoulement
 
-        if ( ippmod(icp3pl).ge.0 .or.                             &
+        if ( ippmod(iccoal).ge.0 .or.                             &
              ippmod(icpl3c).ge.0      ) then
 
           tempf = propce(iel,ipproc(itemp1))

@@ -154,7 +154,7 @@ call grdcel &
 
 ! Pointeur sur la masse volumique en fonction de l'ecoulement
 
-if ( ippmod(icp3pl).ge.0 .or. ippmod(icfuel).ge.0 ) then
+if ( ippmod(iccoal).ge.0 .or. ippmod(icfuel).ge.0 ) then
   iromf = ipproc(irom1)
 else
   iromf = ipproc(irom)

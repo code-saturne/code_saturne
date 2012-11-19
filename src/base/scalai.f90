@@ -159,16 +159,6 @@ if (ippmod(iphpar).ge.1) then
 
 ! ---> Calculs TS relatifs a la physique du charbon
 !      GMDEV1, GMDEV2, GMHET, GMDCH
-
-  if ( ippmod(icp3pl).ne.-1 ) then
-
-    call cpflux &
-    !==========
-   ( ncelet , ncel   ,        &
-     rtpa   , propce , volume )
-
-  endif
-
   if ( ippmod(iccoal).ne.-1 ) then
 
     call cs_coal_masstransfer &
@@ -177,7 +167,6 @@ if (ippmod(iphpar).ge.1) then
      rtpa   , propce , volume )
 
   endif
-
 
 ! ---> Calculs TS relatifs a la physique du fuel
 !      GAMEVA, GAMHTF

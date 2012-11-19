@@ -426,11 +426,6 @@ do icha = 1, ncharm
 
 enddo
 
-alpham = zero
-betam  = zero
-tetam  = zero
-omegam = zero
-
 do isol = 1, nsolim
   do it = 1, npot
     ehsoli(isol,it) = zero
@@ -647,7 +642,7 @@ syear=-999
 squant=-999
 shour=-999
 smin=-999
-ssec=-999.d0
+ssec=-999
 
 xlon =0.d0
 xlat=0.d0

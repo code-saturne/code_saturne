@@ -20,31 +20,29 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine ppprop &
+subroutine cplvar
 !================
 
- ( ipropp , ipppst )
 
 !===============================================================================
 !  FONCTION  :
 !  ---------
 
-! INIT DES POSITIONS DES VARIABLES D'ETAT SELON
-!   LE TYPE DE PHYSIQUE PARTICULIERE
-!   (DANS VECTEURS PROPCE, PROPFA, PROPFB)
+!   SOUS-PROGRAMME DU MODULE LAGRANGIEN COUPLE CHARBON PULVERISE :
+!   --------------------------------------------------------------
+
+!    ROUTINE UTILISATEUR POUR PHYSIQUE PARTICULIERE
+
+!      COMBUSTION EULERIENNE DE CHARBON PULVERISE ET
+!      TRANSPORT LAGRANGIEN DES PARTICULES DE CHARBON
+
+!      INIT DES POSITIONS DES VARIABLES TRANSPORTEES
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ipropp           ! e  ! <-- ! numero de la derniere propriete                !
-!                  !    !     !  (les proprietes sont dans propce,             !
-!                  !    !     !   propfa ou prpfb)                             !
-! ipppst           ! e  ! <-- ! pointeur indiquant le rang de la               !
-!                  !    !     !  derniere grandeur definie aux                 !
-!                  !    !     !  cellules (rtp,propce...) pour le              !
-!                  !    !     !  post traitement                               !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -68,70 +66,63 @@ use ppppar
 use ppthch
 use coincl
 use cpincl
-use atincl
 use ppincl
 
 !===============================================================================
 
 implicit none
 
-! Arguments
-
-integer       ipropp, ipppst
+integer        is, icha, isc
 
 !===============================================================================
 
-! ---> Physique particuliere : Combustion Gaz
+!===============================================================================
+! 1. DEFINITION DES POINTEURS
+!===============================================================================
 
-if ( ippmod(icod3p).ge.0 .or. ippmod(icoebu).ge.0                 &
-                         .or. ippmod(icolwc).ge.0 ) then
-  call coprop(ipropp,ipppst)
-  !==========
-endif
+! ---> Variables propres a la phase continue
 
-! ---> Physique particuliere :  Combustion Charbon Pulverise
+ihm   = iscapp(1)
 
-if ( ippmod(iccoal).ge.0 ) then
-  call cs_coal_prop(ipropp,ipppst)
-  !================
-endif
+! ---> Variables propres a la phase continue
 
-! ---> Physique particuliere :  Combustion Charbon Pulverise
-!      Couplee Transport Lagrangien des particules de charbon
+do icha = 1, ncharb
+  is          = 1+icha
+  if1m(icha)  = iscapp(is)
+  is          = 1+ncharb+icha
+  if2m(icha)  = iscapp(is)
+enddo
 
-if ( ippmod(icpl3c).ge.0 ) then
-  call cplpro (ipropp,ipppst)
-  !==========
-endif
+is = 1+ncharb*2
+is = is+1
+if3m  = iscapp(is)
+is = is+1
+if4p2m = iscapp(is)
 
-! ---> Physique particuliere : Combustion Fuel
+!===============================================================================
+! 2. PROPRIETES PHYSIQUES
+!    A RENSEIGNER OBLIGATOIREMENT (sinon pb dans varpos)
+!    - PROPRES AUX SCALAIRES   : IVISLS, ISCAVR
+!      Rq : pas de variance associee a un scalaire dans notre cas
+!    - PROPRES A LA SUSPENSION : ICP
+!===============================================================================
 
-if ( ippmod(icfuel).ge.0 ) then
-  call cs_fuel_prop(ipropp,ipppst)
-  !================
-endif
+do isc = 1, nscapp
 
-! ---> Physique particuliere : Compressible
+  if ( iscavr(iscapp(isc)).le.0 ) then
 
-if ( ippmod(icompf).ge.0 ) then
-  call cfprop(ipropp,ipppst)
-  !==========
-endif
+! ---- Viscosite dynamique de reference relative au scalaire
+!      ISCAPP(ISC)
+    ivisls(iscapp(isc)) = 0
 
-! ---> Physique particuliere : Versions electriques
+  endif
 
-if ( ippmod(ieljou).ge.1 .or.                                     &
-     ippmod(ielarc).ge.1 .or.                                     &
-     ippmod(ielion).ge.1       ) then
-  call elprop(ipropp,ipppst)
-  !==========
-endif
+enddo
 
-! ---> Physique particuliere : Atmospherique
+! ---- Bien que l on soit en enthalpie on conserve un CP constant
 
-if ( ippmod(iatmos).ge.1 ) then
-  call atprop(ipropp,ipppst)
-  !==========
-endif
+icp    = 0
 
+
+return
 end subroutine

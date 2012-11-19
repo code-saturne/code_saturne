@@ -528,8 +528,8 @@ if (iphyla.ne.2 .and. ippmod(icpl3c).ge.0) then
 endif
 
 if ( iphyla.eq.2 .and. (ippmod(icpl3c).lt.0 .and.                 &
-                        ippmod(icp3pl).lt.0) ) then
-  write(nfecra,1044) iphyla, ippmod(icpl3c), ippmod(icp3pl)
+                        ippmod(iccoal).lt.0) ) then
+  write(nfecra,1044) iphyla, ippmod(icpl3c), ippmod(iccoal)
   iok = iok + 1
 endif
 

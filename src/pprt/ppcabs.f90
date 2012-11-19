@@ -159,7 +159,7 @@ if ( ippmod(icod3p).ge.0 .or. ippmod(icoebu).ge.0 ) then
     enddo
   endif
 
-else if ( ippmod(icp3pl).ge.0 .or. ippmod(iccoal) .ge. 0 ) then
+else if ( ippmod(iccoal) .ge. 0 ) then
 
 ! ---->  Charbon
 
@@ -225,7 +225,7 @@ if (imodak.eq.1) deallocate(w1, w2, w3)
 
 ! ---->  Charbon
 
-if ( ippmod(icp3pl).ge.0 .or. ippmod(iccoal) .ge. 0 ) then
+if ( ippmod(iccoal) .ge. 0 ) then
 
   do icla = 1, nclacp
 
@@ -314,7 +314,7 @@ endif
        w3(iel) =  propce(iel,ipproc(icak(1)))
      enddo
 
-     if ( ippmod(icp3pl).ge.0 .or. ippmod(iccoal).ge.0 ) then
+     if ( ippmod(iccoal).ge.0 ) then
        do icla = 1,nclacp
          ipck = 1+icla
          do iel = 1,ncel

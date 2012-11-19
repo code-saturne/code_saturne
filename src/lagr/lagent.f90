@@ -972,7 +972,7 @@ do ii = 1,nfrlag
 
             endif
 
-            if ( ippmod(icp3pl).ge.0 .or.                         &
+            if ( ippmod(iccoal).ge.0 .or.                         &
                  ippmod(icpl3c).ge.0 .or.                         &
                  ippmod(icfuel).ge.0      ) then
 

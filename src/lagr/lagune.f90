@@ -334,7 +334,7 @@ if (iplar.eq.1) then
 
            ! the density pointer according to the flow location
 
-           if ( ippmod(icp3pl).ge.0 .or. ippmod(icfuel).ge.0 ) then
+           if ( ippmod(iccoal).ge.0 .or. ippmod(icfuel).ge.0 ) then
               iromf = ipproc(irom1)
            else
               iromf = ipproc(irom)

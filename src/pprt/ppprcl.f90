@@ -172,30 +172,6 @@ elseif ( ippmod(icoebu).ge.0 ) then
 
 ! ---> Combustion charbon pulverise USCPCL
 
-elseif ( ippmod(icp3pl).ge.0 ) then
-
-  do izone = 1, nozppm
-    iqimp(izone)  = 0
-    icalke(izone) = 0
-    ientcp(izone) = 0
-    ientat(izone) = 0
-    dh(izone)     = zero
-    xintur(izone) = zero
-    qimpat(izone) = zero
-    timpat(izone) = zero
-    do icha = 1, ncharm
-      qimpcp(izone,icha) = zero
-      timpcp(izone,icha) = zero
-      do iclapc = 1, ncpcmx
-        distch(izone,icha,iclapc) = zero
-      enddo
-    enddo
-  enddo
-
-  do ifac = 1, nfabor
-    izfppp(ifac) = 0
-  enddo
-
 elseif ( ippmod(iccoal).ge.0 ) then
 
   do izone = 1, nozppm

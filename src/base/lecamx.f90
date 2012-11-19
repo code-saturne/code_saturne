@@ -2344,8 +2344,7 @@ if ( ippmod(icolwc).ge.0 ) then
 endif
 
 !     Charbon PuLVerise : masse vol des charbons
-if (ippmod(icp3pl).ge.0 .or.                                      &
-    ippmod(icpl3c).ge.0 .or.                                      &
+if (ippmod(icpl3c).ge.0 .or.                                      &
     ippmod(iccoal).ge.0) then
   itysup = 0
   nbval  = 1
@@ -2402,7 +2401,7 @@ if (ippmod(icp3pl).ge.0 .or.                                      &
     nberro = nberro + ierror
 
 !         ientcp et x20 ne servent pas pour le CP couple Lagrangien (cplphy)
-    if ( ippmod(icp3pl).ge.0 .or. ippmod(iccoal).ge.0) then
+    if (ippmod(iccoal).ge.0) then
 
       itysup = 0
       nbval  = nozppm

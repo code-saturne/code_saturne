@@ -25,7 +25,7 @@
 SUBDIRS = \
 . bft fvm mei gui \
 base pprt alge mesh turb \
-atmo cfbl cogz comb cplv ctwr elec lagr rayt \
+atmo cfbl cogz comb ctwr elec lagr rayt \
 user user_examples apps
 
 # General flags
@@ -67,7 +67,7 @@ $(top_srcdir)/src/cfbl/cfpoin.f90 \
 $(top_srcdir)/src/cogz/coincl.f90 \
 $(top_srcdir)/src/comb/cs_coal_incl.f90 \
 $(top_srcdir)/src/comb/cs_fuel_incl.f90 \
-$(top_srcdir)/src/cplv/cpincl.f90 \
+$(top_srcdir)/src/comb/cpincl.f90 \
 $(top_srcdir)/src/ctwr/ctincl.f90 \
 $(top_srcdir)/src/elec/elincl.f90 \
 $(top_srcdir)/src/lagr/lagdim.f90 \
@@ -95,7 +95,7 @@ $(top_srcdir)/src/base/pointe.f90: paramx.lo parall.lo period.lo optcal.lo entso
 $(top_srcdir)/src/atmo/atincl.f90: ppppar.lo ppincl.lo mesh.lo atsoil.lo
 $(top_srcdir)/src/atmo/spefun.f90: entsor.lo
 $(top_srcdir)/src/cogz/coincl.f90: paramx.lo ppppar.lo
-$(top_srcdir)/src/cplv/cpincl.f90: ppppar.lo ppthch.lo
+$(top_srcdir)/src/comb/cpincl.f90: ppppar.lo ppthch.lo
 $(top_srcdir)/src/comb/cs_coal_incl.f90: ppppar.lo ppthch.lo
 $(top_srcdir)/src/comb/cs_fuel_incl.f90: ppppar.lo ppthch.lo
 $(top_srcdir)/src/elec/elincl.f90: paramx.lo ppthch.lo
@@ -108,7 +108,7 @@ $(top_srcdir)/src/rayt/radiat.f90: ppppar.lo
 # Additional local targets
 
 clean-local:
-	-rm -f *__genmod.f90 *.mod 
+	-rm -f *__genmod.f90 *.mod
 
 install-exec-local: $(libcsmodules_la_SOURCES)
 	@$(NORMAL_INSTALL)
