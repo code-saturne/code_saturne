@@ -2611,8 +2611,8 @@ class MobilWallBoundary(Boundary) :
 
         formula_velocity = 'ale_formula_' + "fixed_velocity"
         formula_displacement = 'ale_formula_' + "fixed_displacement"
-        self._defaultValues[ formula_velocity ] = 'U_mesh=0;\nV_mesh=0;\nW_mesh=0;'
-        self._defaultValues[ formula_displacement  ] = 'X_mesh=0;\nY_mesh=0;\nZ_mesh=0;'
+        self._defaultValues[ formula_velocity ] = 'mesh_u=0;\nmesh_v=0;\nmesh_w=0;'
+        self._defaultValues[ formula_displacement  ] = 'mesh_x=0;\nmesh_y=0;\nmesh_z=0;'
 
 
     @Variables.noUndo
