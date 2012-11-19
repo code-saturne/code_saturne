@@ -478,6 +478,14 @@ class LocalizationModel(object):
         """
         pass
 
+
+    def mergeZones(self, label, localization, lst):
+        """
+        Merge zones (zone.getLabel == label)
+        lst : list of zone to merge
+        """
+        pass
+
 #-------------------------------------------------------------------------------
 #
 #-------------------------------------------------------------------------------
@@ -685,6 +693,35 @@ class VolumicLocalizationModel(LocalizationModel):
                 if nodeid > int(name):
                     node['zone_id'] = str(nodeid-1)
 
+
+    @Variables.undoGlobal
+    def mergeZones(self, label, localization, lst):
+        """
+        Merge zones in the XML file
+        """
+        LocalizationModel.mergeZones(self, label, localization, lst)
+
+        node = self.__XMLVolumicConditionsNode.xmlGetNode('zone', 'id', label = label)
+        node.xmlSetTextNode(localization)
+
+        lst.reverse()
+
+        for z in lst:
+            n = self.__XMLVolumicConditionsNode.xmlGetNode('zone', 'label', id = str(z + 1))
+            n.xmlRemoveNode()
+
+            for tag in self._tagList:
+                nodeList = self.case.xmlGetNodeList(tag, zone_id = str(z + 1))
+                for node in nodeList:
+                    node.xmlRemoveNode()
+
+        # Update Id's
+        count = 1
+        XMLZonesNodes = self.__XMLVolumicConditionsNode.xmlGetChildNodeList('zone', 'label', 'id')
+        for node in XMLZonesNodes:
+            node['id'] = str(count)
+
+
 #-------------------------------------------------------------------------------
 #
 #-------------------------------------------------------------------------------
@@ -865,6 +902,31 @@ class BoundaryLocalizationModel(LocalizationModel):
 
         # Delete nature boundary
         Boundary(nature, label, self.case).delete()
+
+
+    @Variables.undoGlobal
+    def mergeZones(self, label, localization, lst):
+        """
+        Merge zones in the XML file
+        """
+        LocalizationModel.mergeZones(self, label, localization, lst)
+
+        node = self.__XMLBoundaryConditionsNode.xmlGetNode('boundary', 'name', 'nature', label = label)
+        node.xmlSetTextNode(localization)
+
+        for z in lst:
+            n = self.__XMLBoundaryConditionsNode.xmlGetNode('boundary', 'nature', 'label', name = z + 1)
+            n.xmlRemoveNode()
+
+        count = 1
+        for z in self.getCodeNumbersList():
+            n = self.__XMLBoundaryConditionsNode.xmlGetNode('boundary', 'nature', 'label', name = z)
+            n['name'] = count
+            nature = n['nature']
+            count = count + 1
+            # Delete nature boundary
+            Boundary(nature, label, self.case).delete()
+
 
 #-------------------------------------------------------------------------------
 # LocalizationModel test case for volumic zones
