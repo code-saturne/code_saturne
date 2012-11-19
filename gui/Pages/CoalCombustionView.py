@@ -808,6 +808,11 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.connect(self.lineEditDensity,         SIGNAL("textChanged(const QString &)"), self.slotDensity)
         self.connect(self.comboBoxPCIList,         SIGNAL("activated(const QString&)"), self.slotPCIChoice)
         self.connect(self.comboBoxPCIType,         SIGNAL("activated(const QString&)"), self.slotPCIType)
+        self.connect(self.lineEditCCoke,           SIGNAL("textChanged(const QString &)"), self.slotCCompositionCoke)
+        self.connect(self.lineEditHCoke,           SIGNAL("textChanged(const QString &)"), self.slotHCompositionCoke)
+        self.connect(self.lineEditOCoke,           SIGNAL("textChanged(const QString &)"), self.slotOCompositionCoke)
+        self.connect(self.lineEditNCoke,           SIGNAL("textChanged(const QString &)"), self.slotNCompositionCoke)
+        self.connect(self.lineEditSCoke,           SIGNAL("textChanged(const QString &)"), self.slotSCompositionCoke)
 
         self.connect(self.lineEditAshesRatio,      SIGNAL("textChanged(const QString &)"), self.slotAshesRatio)
         self.connect(self.lineEditAshesEnthalpy,   SIGNAL("textChanged(const QString &)"), self.slotAshesFormingEnthalpy)
@@ -855,6 +860,11 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         validatorDensity = DoubleValidator(self.lineEditDensity, min=0.)
         validatorMoisture = DoubleValidator(self.lineEditMoisture, min=0., max=100.)
         validatorVolatileMatter = DoubleValidator(self.lineEditVolatileMatter, min=0., max=100.)
+        validatorCCoke = DoubleValidator(self.lineEditCCoke, min=0., max=100.)
+        validatorHCoke = DoubleValidator(self.lineEditHCoke, min=0., max=100.)
+        validatorOCoke = DoubleValidator(self.lineEditOCoke, min=0., max=100.)
+        validatorNCoke = DoubleValidator(self.lineEditNCoke, min=0., max=100.)
+        validatorSCoke = DoubleValidator(self.lineEditSCoke, min=0., max=100.)
 
         validatorAshesRatio = DoubleValidator(self.lineEditAshesRatio, min=0., max=100.)
         validatorAshesEnthalpy = DoubleValidator(self.lineEditAshesEnthalpy, min=0.)
@@ -887,6 +897,11 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.lineEditPCI.setValidator(validatorPCI)
         self.lineEditCp.setValidator(validatorCp)
         self.lineEditDensity.setValidator(validatorDensity)
+        self.lineEditCCoke.setValidator(validatorCCoke)
+        self.lineEditHCoke.setValidator(validatorHCoke)
+        self.lineEditOCoke.setValidator(validatorOCoke)
+        self.lineEditNCoke.setValidator(validatorNCoke)
+        self.lineEditSCoke.setValidator(validatorSCoke)
 
         self.lineEditAshesRatio.setValidator(validatorAshesRatio)
         self.lineEditAshesEnthalpy.setValidator(validatorAshesEnthalpy)
@@ -1103,6 +1118,11 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.lineEditO.setText(QString(str(self.model.getComposition(self.fuel, "O"))))
         self.lineEditN.setText(QString(str(self.model.getComposition(self.fuel, "N"))))
         self.lineEditS.setText(QString(str(self.model.getComposition(self.fuel, "S"))))
+        self.lineEditCCoke.setText(QString(str(self.model.getCokeComposition(self.fuel, "C"))))
+        self.lineEditHCoke.setText(QString(str(self.model.getCokeComposition(self.fuel, "H"))))
+        self.lineEditOCoke.setText(QString(str(self.model.getCokeComposition(self.fuel, "O"))))
+        self.lineEditNCoke.setText(QString(str(self.model.getCokeComposition(self.fuel, "N"))))
+        self.lineEditSCoke.setText(QString(str(self.model.getCokeComposition(self.fuel, "S"))))
         self.lineEditPCI.setText(QString(str(self.model.getPCIValue(self.fuel))))
         self.lineEditCp.setText(QString(str(self.model.getProperty(self.fuel, "specific_heat_average"))))
         self.lineEditDensity.setText(QString(str(self.model.getProperty(self.fuel, "density"))))
@@ -1467,6 +1487,71 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             PCIType = self.model.getPCIType(self.fuel)
             self.modelPCIType.setItem(str_model=PCIType)
             self.lineEditPCI.setText(QString(str(self.model.getPCIValue(self.fuel))))
+
+
+    @pyqtSignature("const QString&")
+    def slotCCompositionCoke(self, text):
+        """
+        Change the C composition for coke
+        """
+        composition, ok = text.toDouble()
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.model.setCokeComposition(self.fuel, "C", composition)
+        else:
+            msg = self.tr("This value must be between 0 and 100.")
+            self.stbar.showMessage(msg, 2000)
+
+
+    @pyqtSignature("const QString&")
+    def slotHCompositionCoke(self, text):
+        """
+        Change the H composition for coke
+        """
+        composition, ok = text.toDouble()
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.model.setCokeComposition(self.fuel, "H", composition)
+        else:
+            msg = self.tr("This value must be between 0 and 100.")
+            self.stbar.showMessage(msg, 2000)
+
+
+    @pyqtSignature("const QString&")
+    def slotOCompositionCoke(self, text):
+        """
+        Change the O composition for coke
+        """
+        composition, ok = text.toDouble()
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.model.setCokeComposition(self.fuel, "O", composition)
+        else:
+            msg = self.tr("This value must be between 0 and 100.")
+            self.stbar.showMessage(msg, 2000)
+
+
+    @pyqtSignature("const QString&")
+    def slotNCompositionCoke(self, text):
+        """
+        Change the N composition for coke
+        """
+        composition, ok = text.toDouble()
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.model.setCokeComposition(self.fuel, "N", composition)
+        else:
+            msg = self.tr("This value must be between 0 and 100.")
+            self.stbar.showMessage(msg, 2000)
+
+
+    @pyqtSignature("const QString&")
+    def slotSCompositionCoke(self, text):
+        """
+        Change the S composition for coke
+        """
+        composition, ok = text.toDouble()
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.model.setCokeComposition(self.fuel, "S", composition)
+        else:
+            msg = self.tr("This value must be between 0 and 100.")
+            self.stbar.showMessage(msg, 2000)
 
 
     @pyqtSignature("const QString&")

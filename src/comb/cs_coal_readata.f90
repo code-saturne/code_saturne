@@ -634,6 +634,10 @@ do icha = 1, ncharb
                 + teta (icha)      ) *ho20 )  / wmols(ich(icha))
     enddo
   endif
+  gamma(icha) = zero
+  delta(icha) = zero
+  kappa(icha) = zero
+  zeta (icha) = zero
 enddo
 
 ! ---- Calcul relatif au coke
@@ -643,10 +647,6 @@ enddo
 !            Si CP2CH > 0 : HCK = H02CH + CP2CH(T2-TREFTH)
 !            Sinon       : HCK = Enthalpie du carbone pur
 
-gamma(icha) = zero
-delta(icha) = zero
-kappa(icha) = zero
-zeta (icha) = zero
 do icha = 1, ncharb
   wmols(ick(icha)) = wmolce(ncoel)
   if (cp2ch(icha).gt.epsicp) then

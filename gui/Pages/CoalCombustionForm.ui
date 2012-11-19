@@ -6,31 +6,31 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>556</width>
-    <height>869</height>
+    <width>561</width>
+    <height>1057</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_3">
-   <item>
+  <layout class="QGridLayout" name="gridLayout_24">
+   <item row="0" column="0">
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="tab_7">
       <attribute name="title">
        <string>Fuel</string>
       </attribute>
-      <layout class="QGridLayout" name="gridLayout_17">
+      <layout class="QGridLayout" name="gridLayout_23">
        <item row="0" column="0">
         <widget class="QGroupBox" name="groupBoxCoalsList">
          <property name="title">
           <string>Fuel combustion</string>
          </property>
-         <layout class="QGridLayout" name="gridLayout_6">
-          <item row="0" column="0">
+         <layout class="QGridLayout" name="gridLayout_17">
+          <item row="0" column="0" colspan="2">
            <layout class="QHBoxLayout">
             <item>
              <spacer>
@@ -116,7 +116,7 @@
             </item>
            </layout>
           </item>
-          <item row="1" column="0">
+          <item row="1" column="0" rowspan="2" colspan="2">
            <widget class="QTabWidget" name="tabWidgetCoal">
             <property name="currentIndex">
              <number>0</number>
@@ -341,8 +341,8 @@
              <attribute name="title">
               <string>Solid fuel</string>
              </attribute>
-             <layout class="QVBoxLayout" name="verticalLayout_7">
-              <item>
+             <layout class="QGridLayout" name="gridLayout_6">
+              <item row="0" column="0">
                <widget class="QGroupBox" name="groupBoxComposition">
                 <property name="title">
                  <string>Elementary analysis (refers to dry coal)</string>
@@ -486,7 +486,7 @@
                 </layout>
                </widget>
               </item>
-              <item>
+              <item row="1" column="0">
                <widget class="QGroupBox" name="groupBoxProperties">
                 <property name="title">
                  <string>Immediate analysis</string>
@@ -701,7 +701,7 @@
                 </layout>
                </widget>
               </item>
-              <item>
+              <item row="2" column="0">
                <widget class="QGroupBox" name="groupBoxProperties_2">
                 <property name="title">
                  <string>Solid fuel physical properties</string>
@@ -787,7 +787,7 @@ p, li { white-space: pre-wrap; }
                 </layout>
                </widget>
               </item>
-              <item>
+              <item row="3" column="0">
                <widget class="QGroupBox" name="groupBoxProperties_3">
                 <property name="title">
                  <string>Ashes physical properties</string>
@@ -869,7 +869,151 @@ p, li { white-space: pre-wrap; }
                 </layout>
                </widget>
               </item>
-              <item>
+              <item row="4" column="0">
+               <widget class="QGroupBox" name="groupBoxCompositionCoke">
+                <property name="title">
+                 <string>Coke Elementary analysis (refers to dry)</string>
+                </property>
+                <layout class="QHBoxLayout" name="horizontalLayout_16">
+                 <item>
+                  <spacer>
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>97</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item>
+                  <layout class="QVBoxLayout" name="verticalLayout_3">
+                   <item>
+                    <layout class="QHBoxLayout" name="horizontalLayout_17">
+                     <item>
+                      <widget class="QLabel" name="labelCCoke">
+                       <property name="text">
+                        <string>Mass content of C</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QLineEdit" name="lineEditCCoke"/>
+                     </item>
+                     <item>
+                      <widget class="QLabel" name="labelUnitCCoke">
+                       <property name="text">
+                        <string>%</string>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </item>
+                   <item>
+                    <layout class="QHBoxLayout" name="horizontalLayout_18">
+                     <item>
+                      <widget class="QLabel" name="labelHCoke">
+                       <property name="text">
+                        <string>Mass content of H</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QLineEdit" name="lineEditHCoke"/>
+                     </item>
+                     <item>
+                      <widget class="QLabel" name="labelUnitHCoke">
+                       <property name="text">
+                        <string>%</string>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </item>
+                   <item>
+                    <layout class="QHBoxLayout" name="horizontalLayout_19">
+                     <item>
+                      <widget class="QLabel" name="labelOCoke">
+                       <property name="text">
+                        <string>Mass content of O</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QLineEdit" name="lineEditOCoke"/>
+                     </item>
+                     <item>
+                      <widget class="QLabel" name="labelUnitOCoke">
+                       <property name="text">
+                        <string>%</string>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </item>
+                   <item>
+                    <layout class="QHBoxLayout" name="horizontalLayout_20">
+                     <item>
+                      <widget class="QLabel" name="labelNCoke">
+                       <property name="text">
+                        <string>Mass content of N</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QLineEdit" name="lineEditNCoke"/>
+                     </item>
+                     <item>
+                      <widget class="QLabel" name="labelUnitNCoke">
+                       <property name="text">
+                        <string>%</string>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </item>
+                   <item>
+                    <layout class="QHBoxLayout" name="horizontalLayout_21">
+                     <item>
+                      <widget class="QLabel" name="labelSCoke">
+                       <property name="text">
+                        <string>Mass content of S</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QLineEdit" name="lineEditSCoke"/>
+                     </item>
+                     <item>
+                      <widget class="QLabel" name="labelUnitSCoke">
+                       <property name="text">
+                        <string>%</string>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </item>
+                  </layout>
+                 </item>
+                 <item>
+                  <spacer>
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>97</width>
+                     <height>16</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item row="5" column="0">
                <spacer name="verticalSpacer_4">
                 <property name="orientation">
                  <enum>Qt::Vertical</enum>
@@ -1537,19 +1681,6 @@ p, li { white-space: pre-wrap; }
              </layout>
             </widget>
            </widget>
-          </item>
-          <item row="2" column="0">
-           <spacer name="verticalSpacer_2">
-            <property name="orientation">
-             <enum>Qt::Vertical</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>17</width>
-              <height>8</height>
-             </size>
-            </property>
-           </spacer>
           </item>
          </layout>
         </widget>

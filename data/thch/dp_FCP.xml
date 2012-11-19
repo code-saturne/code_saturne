@@ -14,6 +14,11 @@
 				<O_composition_on_dry>9.9</O_composition_on_dry>
 				<N_composition_on_dry>0</N_composition_on_dry>
 				<S_composition_on_dry>0</S_composition_on_dry>
+				<C_coke_composition_on_dry>100.</C_coke_composition_on_dry>
+				<H_coke_composition_on_dry>0.</H_coke_composition_on_dry>
+				<O_coke_composition_on_dry>0.</O_coke_composition_on_dry>
+				<N_coke_composition_on_dry>0.</N_coke_composition_on_dry>
+				<S_coke_composition_on_dry>0.</S_coke_composition_on_dry>
 				<Heating_model choice="LHV">
 					<value>3e+07</value>
 					<type>dry_ash_free</type>

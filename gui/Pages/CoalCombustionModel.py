@@ -85,6 +85,11 @@ class CoalCombustionModel(Variables, Model):
         default['O_compo_dry']                     = 10.8
         default['N_compo_dry']                     = 0
         default['S_compo_dry']                     = 0
+        default['C_coke_compo_dry']                = 100
+        default['H_coke_compo_dry']                = 0.
+        default['O_coke_compo_dry']                = 0.
+        default['N_coke_compo_dry']                = 0.
+        default['S_coke_compo_dry']                = 0.
         default['O2_oxi']                          = 1
         default['N2_oxi']                          = 3.76
         default['H2O_oxi']                         = 0
@@ -1296,6 +1301,34 @@ class CoalCombustionModel(Variables, Model):
         self.isInList(str(fuelId), self.getFuelIdList())
         self.isPositiveFloat(composition)
         name = element + "_composition_on_dry"
+        solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
+        solid_fuel.xmlSetData(name, composition)
+
+
+    @Variables.noUndo
+    def getCokeComposition(self, fuelId, element):
+        """
+        Return composition for a define fuel Id and an element
+        """
+        self.isInList(str(fuelId), self.getFuelIdList())
+        solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
+        name = element + "_coke_composition_on_dry"
+        composition = solid_fuel.xmlGetDouble(name)
+        if composition == None:
+            defName = element + "_coke_compo_dry"
+            composition = self.defaultValues()[defName]
+            self.setCokeComposition(fuelId, element, composition)
+        return composition
+
+
+    @Variables.undoLocal
+    def setCokeComposition(self, fuelId, element, composition):
+        """
+        Set composition for a define fuel Id and an element
+        """
+        self.isInList(str(fuelId), self.getFuelIdList())
+        self.isPositiveFloat(composition)
+        name = element + "_coke_composition_on_dry"
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         solid_fuel.xmlSetData(name, composition)
 

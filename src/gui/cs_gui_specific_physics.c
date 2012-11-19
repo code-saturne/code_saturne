@@ -3327,6 +3327,14 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
     nch[icha] = _get_solid_fuel_composition_on_dry(icha+1,"N_composition_on_dry");
     sch[icha] = _get_solid_fuel_composition_on_dry(icha+1,"S_composition_on_dry");
 
+
+    /* ---- Composition elementaire en C, H , O , N , S du coke (% en masse) */
+    cck[icha] = _get_solid_fuel_composition_on_dry(icha+1,"C_coke_composition_on_dry");
+    hck[icha] = _get_solid_fuel_composition_on_dry(icha+1,"H_coke_composition_on_dry");
+    ock[icha] = _get_solid_fuel_composition_on_dry(icha+1,"O_coke_composition_on_dry");
+    nck[icha] = _get_solid_fuel_composition_on_dry(icha+1,"N_coke_composition_on_dry");
+    sck[icha] = _get_solid_fuel_composition_on_dry(icha+1,"S_coke_composition_on_dry");
+
     /* ---- PCI sur charbon sec ou pur suivant la valeur de IPCI */
     ipci[icha] = _get_PCI_type(icha+1);
     if (ipci[icha] < 6)
