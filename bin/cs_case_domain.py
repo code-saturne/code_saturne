@@ -568,7 +568,7 @@ class domain(base_domain):
             log.close()
 
             if retval == 0:
-                self.solver_path = os.path.join(self.exec_dir,
+                self.solver_path = os.path.join('.',
                                                 self.package_compute.solver)
             else:
                 # In case of error, copy source to results directory now,
@@ -1183,7 +1183,7 @@ class syrthes_domain(base_domain):
 
         # Set executable
 
-        self.solver_path = os.path.join(self.exec_dir, 'syrthes')
+        self.solver_path = os.path.join('.', 'syrthes')
 
     #---------------------------------------------------------------------------
 
