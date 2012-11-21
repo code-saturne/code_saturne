@@ -92,7 +92,8 @@ void CS_PROCF(reslin, RESLIN)
  const cs_int_t   *ibsize,    /* <-- Block size of element ii,ii */
  const cs_int_t   *iesize,    /* <-- Block size of element ij */
  const cs_int_t   *ireslp,    /* <-- Resolution type:
-                                     0: pcg; 1: Jacobi; 2: cg-stab */
+                                     0: pcg; 1: Jacobi; 2: cg-stab,
+                                     3: gmres, 10: pcg_sr */
  const cs_int_t   *ipol,      /* <-- Preconditioning polynomial degree
                                      (0: diagonal) */
  const cs_int_t   *nitmap,    /* <-- Number of max iterations */

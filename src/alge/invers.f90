@@ -144,10 +144,8 @@ if (imgrp.eq.1) then
 
 elseif(imgrp.eq.0) then
 
-  if (ireslp.ge.0 .and. ireslp.le. 3) then
-
-    call reslin &
-    !==========
+  call reslin &
+  !==========
  ( cnom   , lnom   , ncelet , ncel   , nfac   ,                            &
    isym   , ilved  , ibsize , iesize , ireslp , ipol   , nitmap , iinvpe , &
    iwarnp , niterf , epsilp , rnorm  , residu ,                            &
@@ -155,23 +153,7 @@ elseif(imgrp.eq.0) then
    ifacel , dam    , xam    , smbrp  , vx     )
    !                          -----
 
-  else
-    write(nfecra,1000) cnom, ireslp
-    call csexit (1)
-  endif
-
 endif
-
-
-#if defined(_CS_LANG_FR)
-
- 1000 format('invers appele pour ', a16, ' avec iresol = ', i10)
-
-#else
-
- 1000 format('invers called for ', a16, ' with iresol = ', i10)
-
-#endif
 
 !----
 ! End

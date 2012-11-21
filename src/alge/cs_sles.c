@@ -2441,7 +2441,8 @@ void CS_PROCF(reslin, RESLIN)
  const cs_int_t   *ibsize,    /* <-- Block size of element ii, ii */
  const cs_int_t   *iesize,    /* <-- Block size of element ij */
  const cs_int_t   *ireslp,    /* <-- Resolution type:
-                                     0: pcg; 1: Jacobi; 2: cg-stab */
+                                     0: pcg; 1: Jacobi; 2: cg-stab,
+                                     3: gmres, 10: pcg_sr */
  const cs_int_t   *ipol,      /* <-- Preconditioning polynomial degree
                                      (0: diagonal) */
  const cs_int_t   *nitmap,    /* <-- Number of max iterations */
@@ -2510,6 +2511,9 @@ void CS_PROCF(reslin, RESLIN)
     break;
   case 3:
     type = CS_SLES_GMRES;
+    break;
+  case 10:
+    type = CS_SLES_PCG_SR;
     break;
   default:
     type = CS_SLES_N_TYPES;
@@ -2900,6 +2904,11 @@ cs_sles_solve(const char          *var_name,
              _("GMRES not supported with block_size > 1 (velocity coupling)."));
         break;
       default:
+        bft_error
+          (__FILE__, __LINE__, 0,
+           _("Resolution of linear equation on \"%s\"\n"
+             "with solver type %d, which is not defined)."),
+           var_name, (int)solver_type);
         break;
       }
 

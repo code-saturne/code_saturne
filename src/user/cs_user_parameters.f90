@@ -1427,6 +1427,7 @@ endif
 !     iresol = 1000*ipol +j: ipol is the degree of the Neumann polynomial
 !                            used for preconditioning,
 !                            j = 0: conjugate gradient,
+!                            j = 10: conjugate gradient, single reduction
 !                            j = 1: Jacobi
 !                            j = 2: bi-CgStab
 !                            j = 3: GMRES
