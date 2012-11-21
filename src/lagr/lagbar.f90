@@ -54,7 +54,6 @@ use lagpar
 use ppthch
 use optcal
 use numvar
-use optcal
 use cstphy
 use cstnum
 
