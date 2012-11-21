@@ -246,28 +246,12 @@ if (ncesmp.gt.0) then
                 smacel(1,ipr) , smbrs , rovsdt , w1    )
 endif
 
-!                                     __    n+1
-!     TERME D'ACCUMULATION DE MASSE : >  (Q    .n)  *S
-!     =============================   --   pr     ij  ij
-
-init = 1
-call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                  &
-               ifacel,ifabor,propfa(1,iflmas),propfb(1,iflmab),w1)
-
-!                                      __    n+1             n
-!     TERME INSTATIONNAIRE EXPLICITE : >  (Q    .n)  *S   * e
-!     ==============================   --   pr     ij  ij
+!                                      RHO*VOLUME
+!     TERME INSTATIONNAIRE IMPLICITE : ----------
+!     ==============================       DT
 
 do iel = 1, ncel
-  smbrs(iel) = smbrs(iel) + iconv(ivar)*w1(iel)*rtpa(iel,ivar)
-enddo
-
-!                                      RHO*VOLUME   __    n+1
-!     TERME INSTATIONNAIRE IMPLICITE : ---------- - >  (Q    .n)  *S
-!     ==============================       DT       --   pr     ij  ij
-
-do iel = 1, ncel
-  rovsdt(iel) = rovsdt(iel) - iconv(ivar)*w1(iel)                 &
+  rovsdt(iel) = rovsdt(iel)                                       &
            + istat(ivar)*(propce(iel,ipcrom)/dt(iel))*volume(iel)
 enddo
 
@@ -500,7 +484,7 @@ if( idiff(ivar).ge. 1 ) then
  ( nvar   , nscal  ,                                              &
    iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   w9     , wb     , w8     , w1     )
+   w9     , wb     , w8     , w4     )
 
 !     Calcul de la divergence avec reconstruction
 
@@ -591,7 +575,7 @@ enddo
 !     Pour les faces à flux imposé ou temperature imposée, tout est
 !       pris par le terme de diffusion de l'energie. On ne doit donc
 !       pas prendre en compte la contribution des termes en u2 et e-CvT
-!       quand IA(IIFBE+IFAC-1).NE.0
+!       quand ifbet(ifac).ne.0
 
   do ifac = 1, nfabor
 
@@ -599,13 +583,14 @@ enddo
 
       iel = ifabor(ifac)
 
-      flux = viscb(ifac)*( w9(iel) - wb(ifac)            &
+      flux = viscb(ifac)*(w1(iel)/distb(ifac))*            &
+            ( w9(iel) - wb(ifac)                           &
            + 0.5d0*( rtp(iel,iu)**2 -                      &
    ( coefa(ifac,iclrtp(iu,icoef))                          &
-   + coefb(ifac,iclrtp(iu,icoef))*rtp(iel,iu) )**2  &
+   + coefb(ifac,iclrtp(iu,icoef))*rtp(iel,iu) )**2         &
                    + rtp(iel,iv)**2 -                      &
    ( coefa(ifac,iclrtp(iv,icoef))                          &
-   + coefb(ifac,iclrtp(iv,icoef))*rtp(iel,iv) )**2  &
+   + coefb(ifac,iclrtp(iv,icoef))*rtp(iel,iv) )**2         &
                    + rtp(iel,iw)**2 -                      &
    ( coefa(ifac,iclrtp(iw,icoef))                          &
    + coefb(ifac,iclrtp(iw,icoef))*rtp(iel,iw) )**2))
@@ -659,7 +644,7 @@ iescap = 0
 call cfcdts                                                       &
 !==========
  ( nvar   , nscal  ,                                              &
-   iscal  , iconvp , idiffp , ireslp , ndircp , nitmap ,          &
+   ivar  , iconvp , idiffp , ireslp , ndircp , nitmap ,           &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap ,                                     &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &

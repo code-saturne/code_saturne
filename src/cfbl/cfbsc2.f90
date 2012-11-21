@@ -146,7 +146,7 @@ integer          idimtr, irpvar
 double precision pfac,pfacd,pip,pjp,flui,fluj,flux
 double precision difx,dify,difz,djfx,djfy,djfz,pif,pjf
 double precision testi,testj,testij
-double precision dpxf,dpyf,dpzf
+double precision dpxf,dpyf,dpzf, pi, pj
 double precision dcc, ddi, ddj, tesqck
 double precision dijpfx, dijpfy, dijpfz
 double precision diipfx, diipfy, diipfz
@@ -356,20 +356,21 @@ if(iupwin.eq.1) then
     dpyf = 0.5d0*(grad(ii,2) + grad(jj,2))
     dpzf = 0.5d0*(grad(ii,3) + grad(jj,3))
 
-    pip = pvar(ii) + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
-    pjp = pvar(jj) + ircflp*(dpxf*djjpfx+dpyf*djjpfy+dpzf*djjpfz)
+    pi = pvar(ii)
+    pj = pvar(jj)
+
+    pip = pi + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
+    pjp = pj + ircflp*(dpxf*djjpfx+dpyf*djjpfy+dpzf*djjpfz)
 
     flui = 0.5d0*( flumas(ifac) +abs(flumas(ifac)) )
     fluj = 0.5d0*( flumas(ifac) -abs(flumas(ifac)) )
 
-    pif = pvar(ii)
-    pjf = pvar(jj)
     infac = infac+1
 
-    flux = iconvp*( flui*pif +fluj*pjf ) + idiffp*viscf(ifac)*( pip -pjp )
+    flux = iconvp*( flui*pi  +fluj*pj  ) + idiffp*viscf(ifac)*( pip -pjp )
 
-    smbrp(ii) = smbrp(ii) -flux
-    smbrp(jj) = smbrp(jj) +flux
+    smbrp(ii) = smbrp(ii) - (flux - iconvp*pi*flumas(ifac))
+    smbrp(jj) = smbrp(jj) + (flux - iconvp*pj*flumas(ifac))
 
   enddo
 
@@ -404,8 +405,11 @@ elseif(isstpp.eq.1) then
     dpyf = 0.5d0*(grad(ii,2) + grad(jj,2))
     dpzf = 0.5d0*(grad(ii,3) + grad(jj,3))
 
-    pip = pvar(ii) + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
-    pjp = pvar(jj) + ircflp*(dpxf*djjpfx+dpyf*djjpfy+dpzf*djjpfz)
+    pi = pvar(ii)
+    pj = pvar(jj)
+
+    pip = pi + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
+    pjp = pj + ircflp*(dpxf*djjpfx+dpyf*djjpfy+dpzf*djjpfz)
 
     flui = 0.5d0*( flumas(ifac) +abs(flumas(ifac)) )
     fluj = 0.5d0*( flumas(ifac) -abs(flumas(ifac)) )
@@ -459,8 +463,8 @@ elseif(isstpp.eq.1) then
 !        ASSEMBLAGE
 !       ------------
 
-    smbrp(ii) = smbrp(ii) -flux
-    smbrp(jj) = smbrp(jj) +flux
+    smbrp(ii) = smbrp(ii) - (flux - pi*flumas(ifac))
+    smbrp(jj) = smbrp(jj) + (flux - pj*flumas(ifac))
 
   enddo
 !        Le call csexit ne doit pas etre dans la boucle, sinon
@@ -505,8 +509,11 @@ else
     dpyf = 0.5d0*(grad(ii,2) + grad(jj,2))
     dpzf = 0.5d0*(grad(ii,3) + grad(jj,3))
 
-    pip = pvar(ii) + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
-    pjp = pvar(jj) + ircflp*(dpxf*djjpfx+dpyf*djjpfy+dpzf*djjpfz)
+    pi = pvar(ii)
+    pj = pvar(jj)
+
+    pip = pi + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
+    pjp = pj + ircflp*(dpxf*djjpfx+dpyf*djjpfy+dpzf*djjpfz)
 
     flui = 0.5d0*( flumas(ifac) +abs(flumas(ifac)) )
     fluj = 0.5d0*( flumas(ifac) -abs(flumas(ifac)) )
@@ -599,8 +606,8 @@ else
 !        ASSEMBLAGE
 !       ------------
 
-    smbrp(ii) = smbrp(ii) -flux
-    smbrp(jj) = smbrp(jj) +flux
+    smbrp(ii) = smbrp(ii) - (flux - pi*flumas(ifac))
+    smbrp(jj) = smbrp(jj) + (flux - pj*flumas(ifac))
 
   enddo
 !        Le call csexit ne doit pas etre dans la boucle, sinon
@@ -655,14 +662,16 @@ do ifac = 1, nfabor
   flui = 0.5d0*( flumab(ifac) +abs(flumab(ifac)) )
   fluj = 0.5d0*( flumab(ifac) -abs(flumab(ifac)) )
 
-  pip = pvar(ii) +ircflp*(grad(ii,1)*diipbx+grad(ii,2)*diipby+grad(ii,3)*diipbz)
+  pi = pvar(ii)
+
+  pip = pi +ircflp*(grad(ii,1)*diipbx+grad(ii,2)*diipby+grad(ii,3)*diipbz)
 
   pfac  = inc*coefap(ifac) +coefbp(ifac)*pip
   pfacd = inc*cofafp(ifac) +cofbfp(ifac)*pip
 
 !            FLUX = ICONVP*( FLUI*PVAR(II) +FLUJ*PFAC )
 !     &           + IDIFFP*VISCB(IFAC)*( PIP -PFACD )
-  flux = iconvp*( flui*pvar(ii) +fluj*pfac ) *dble(1-ifbrus(ifac)) &
+  flux = iconvp*( (flui*pi +fluj*pfac )*(1-ifbrus(ifac)) - flumab(ifac)*pi ) &
        + idiffp*viscb(ifac)*pfacd
   smbrp(ii) = smbrp(ii) -flux
 

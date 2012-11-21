@@ -226,7 +226,7 @@ isqrt = 1
 !    Initialisation pour test avant promav
 iinvpe = 0
 
-if(iperio.eq.1) then
+if(irangp.ge.0 .or. iperio.eq.1) then
 
 
 !    Par defaut, toutes les periodicites seront traitees,

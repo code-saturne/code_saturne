@@ -133,7 +133,7 @@ double precision, allocatable, dimension(:) :: w4, w5, w6
 double precision, allocatable, dimension(:) :: w7, w8, w9
 double precision, allocatable, dimension(:) :: w10, w11, w12
 double precision, allocatable, dimension(:,:) :: coefu
-
+double precision, allocatable, dimension(:,:) :: coefuf
 !===============================================================================
 
 !===============================================================================
@@ -142,6 +142,7 @@ double precision, allocatable, dimension(:,:) :: coefu
 
 ! Allocate temporary arrays
 allocate(coefu(nfabor,3))
+allocate(coefuf(nfabor,3))
 
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet), w3(ncelet))
@@ -484,7 +485,10 @@ call viscfa                                                       &
 do ifac = 1, nfabor
   coefu(ifac,1) = 0.d0
   coefu(ifac,2) = 1.d0
+  coefuf(ifac,1) = 0.d0
+  coefuf(ifac,2) = 0.d0
 enddo
+
 
 inc =1
 iccocg = 1
@@ -511,7 +515,7 @@ call cfbsc3                                                       &
    ipp    , iwarnp ,                                              &
    blencp , epsrgp , climgp , extrap ,                            &
    w1     , coefu(1,1)      , coefu(1,2)      ,                   &
-            coefu(1,1)      , coefu(1,2)      ,                   &
+            coefuf(1,1)     , coefuf(1,2)     ,                   &
    trflms , trflmb , trflms , trflmb ,                            &
    flabgs , flbbgs )
 
@@ -583,6 +587,7 @@ call inimas                                                       &
 
 ! Free memory
 deallocate(coefu)
+deallocate(coefuf)
 deallocate(w1, w2, w3)
 deallocate(w4, w5, w6)
 deallocate(w7, w8, w9)

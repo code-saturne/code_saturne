@@ -133,7 +133,7 @@ double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4, w5, w6
 double precision, allocatable, dimension(:) :: w7, w8, w9
 double precision, allocatable, dimension(:) :: w10, w11, w12
-
+double precision, allocatable, dimension(:,:) :: coefuf
 !===============================================================================
 
 !===============================================================================
@@ -145,7 +145,7 @@ allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 allocate(w4(ncelet), w5(ncelet), w6(ncelet))
 allocate(w7(ncelet), w8(ncelet), w9(ncelet))
 allocate(w10(ncelet), w11(ncelet), w12(ncelet))
-
+allocate(coefuf(nfabor,3))
 
 ! --- Numero des variables de calcul
 !     Masse volumique
@@ -475,6 +475,8 @@ call viscfa                                                       &
 do ifac = 1, nfabor
   coefu(ifac,1) = 0.d0
   coefu(ifac,2) = 1.d0
+  coefuf(ifac,1) = 0.d0
+  coefuf(ifac,2) = 0.d0
 enddo
 
 inc =1
@@ -502,7 +504,7 @@ call cfbsc3                                                       &
    ipp    , iwarnp ,                                              &
    blencp , epsrgp , climgp , extrap ,                            &
    w1     , coefu(1,1)      , coefu(1,2)      ,                   &
-            coefu(1,1)      , coefu(1,2)      ,                   &
+            coefuf(1,1)     , coefuf(1,2)     ,                   &
    trflms , trflmb , trflms , trflmb ,                            &
    flumas , flumab )
 
@@ -578,7 +580,7 @@ deallocate(w1, w2, w3)
 deallocate(w4, w5, w6)
 deallocate(w7, w8, w9)
 deallocate(w10, w11, w12)
-
+deallocate(coefuf)
 
 !--------
 ! FORMATS
