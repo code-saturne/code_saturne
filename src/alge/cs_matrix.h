@@ -49,9 +49,7 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Matrix types
- *----------------------------------------------------------------------------*/
+/* Matrix structure representation types */
 
 typedef enum {
 
@@ -62,6 +60,22 @@ typedef enum {
   CS_MATRIX_N_TYPES     /* Number of known matrix types */
 
 } cs_matrix_type_t;
+
+/* Matrix fill types (for tuning) */
+
+typedef enum {
+
+  CS_MATRIX_SCALAR,           /* Simple calar matrix */
+  CS_MATRIX_SCALAR_SYM,       /* Simple scalar symmetric matrix */
+  CS_MATRIX_33_BLOCK_D,       /* Matrix with 3x3 diagonal blocks
+                                 (and 3.I extradiagonal blocks) */
+  CS_MATRIX_33_BLOCK_D_SYM,   /* Symmetric matrix with 3x3 diagonal blocks
+                                 (and 3.I extradiagonal blocks) */
+  CS_MATRIX_33_BLOCK,         /* Matrix with 3x3 blocks
+                                 (diagonal and extra-diagonal) */
+  CS_MATRIX_N_FILL_TYPES      /* Number of possible matrix fill types */
+
+} cs_matrix_fill_type_t;
 
 /* Structure associated with opaque matrix structure object */
 
@@ -441,10 +455,21 @@ cs_matrix_exdiag_vector_multiply(cs_halo_rotation_t   rotation_mode,
 /*----------------------------------------------------------------------------
  * Tune local matrix.vector product operations.
  *
+ * To avoid multiplying structures for multiple matrix fill-ins,
+ * an array of tuning types may be provided, and weights may be
+ * associated to each type based on the expected usage of each fill-in
+ * type. If n_fill_types is set to 0, these arrays are ignored, and their
+ * following default is used:
+ *
+ *   CS_MATRIX_SCALAR      0.5
+ *   CS_MATRIX_SCALAR_SYM  0.25
+ *   CS_MATRIX_33_BLOCK_D  0.25
+ *
  * parameters:
  *   t_measure      <-- minimum time for each measure
- *   sym_weight     <-- weight of symmetric case (0 <= weight <= 1)
- *   block_weight   <-- weight of block case (0 <= weight <= 1)
+ *   n_fill_types   <-- number of fill types tuned for, or 0
+ *   fill_types     <-- array of fill types tuned for, or NULL
+ *   fill_weights   <-- weight of fill types tuned for, or NULL
  *   n_min_spmv     <-- minimum number of SpMv products (to estimate
  *                      amortization of coefficients assignment)
  *   n_cells        <-- number of local cells
@@ -461,8 +486,9 @@ cs_matrix_exdiag_vector_multiply(cs_halo_rotation_t   rotation_mode,
 
 cs_matrix_variant_t *
 cs_matrix_variant_tuned(double                 t_measure,
-                        double                 sym_weight,
-                        double                 block_weight,
+                        int                    n_fill_types,
+                        cs_matrix_fill_type_t  fill_types[],
+                        double                 fill_weights[],
                         int                    n_min_products,
                         cs_lnum_t              n_cells,
                         cs_lnum_t              n_cells_ext,

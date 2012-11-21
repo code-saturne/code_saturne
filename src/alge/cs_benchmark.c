@@ -767,6 +767,16 @@ cs_benchmark(int  mpi_trace_mode)
   size_t n_cells_ext = mesh->n_cells_with_ghosts;
   size_t n_faces = mesh->n_i_faces;
 
+  int                    n_fill_types_nsym = 3;
+  int                    n_fill_types_sym = 2;
+  cs_matrix_fill_type_t  fill_types_nsym[] = {CS_MATRIX_SCALAR,
+                                              CS_MATRIX_33_BLOCK_D,
+                                              CS_MATRIX_33_BLOCK};
+  cs_matrix_fill_type_t  fill_types_sym[] = {CS_MATRIX_SCALAR_SYM,
+                                             CS_MATRIX_33_BLOCK_D_SYM};
+  double                 fill_weights_nsym[] = {0.5, 0.4, 0.1};
+  double                 fill_weights_sym[] = {0.8, 0.2};
+
   /* Allocate and initialize  working arrays */
   /*-----------------------------------------*/
 
@@ -820,8 +830,9 @@ cs_benchmark(int  mpi_trace_mode)
                   "=====================================\n"));
 
   mv = cs_matrix_variant_tuned(t_measure,
-                               0.000001, /* sym_weight */
-                               0.000001, /* block_weight */
+                               n_fill_types_nsym,
+                               fill_types_nsym,
+                               fill_weights_nsym,
                                10,       /* min expected SpMV products */
                                n_cells,
                                n_cells_ext,
@@ -845,8 +856,9 @@ cs_benchmark(int  mpi_trace_mode)
                   "=============================\n"));
 
   mv = cs_matrix_variant_tuned(t_measure,
-                               1.0, /* sym_weight */
-                               0.0, /* block_weight */
+                               n_fill_types_sym,
+                               fill_types_sym,
+                               fill_weights_sym,
                                10,  /* min expected SpMV products */
                                n_cells,
                                n_cells_ext,

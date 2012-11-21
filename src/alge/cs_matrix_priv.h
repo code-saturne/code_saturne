@@ -279,6 +279,8 @@ struct _cs_matrix_t {
   cs_lnum_t              n_faces;      /* Local Number of mesh faces
                                           (necessary to affect coefficients) */
 
+  cs_matrix_fill_type_t  fill_type;    /* Matrix fill type */
+
   int                    db_size[4];   /* Diag Block size, including padding:
                                           0: useful block size
                                           1: vector block extents
@@ -316,10 +318,10 @@ struct _cs_matrix_t {
   cs_matrix_release_coeffs_t        *release_coefficients;
   cs_matrix_copy_diagonal_t         *copy_diagonal;
 
-  /* Function pointer arrays, with 4 variants:
-     block_flag*2 + exclude_diagonal_flag + extra_block_flag */
+  /* Function pointer arrays, with CS_MATRIX_N_FILL_TYPES variants:
+     fill_type*2 + exclude_diagonal_flag */
 
-  cs_matrix_vector_product_t        *vector_multiply[6];
+  cs_matrix_vector_product_t        *vector_multiply[CS_MATRIX_N_FILL_TYPES][2];
 
   /* Loop lenght parameter for some SpMv algorithms */
 
@@ -336,32 +338,27 @@ struct _cs_matrix_variant_t {
 
   cs_matrix_type_t       type;         /* Matrix storage and definition type */
 
-  int                    symmetry;     /* 0 for non-symmetric, 1 for symmetric,
-                                          2 for both */
-
   /* Loop lenght parameter for some SpMv algorithms */
 
   int                    loop_length;
 
-  /* Function pointer arrays, with 6 variants (0 <= block_flag <= 2):
-     block_flag*2 + exclude_diagonal_flag + extra_block_flag */
+  /* Function pointer arrays, with variants:
+     fill_type + exclude_diagonal_flag */
 
-  cs_matrix_vector_product_t        *vector_multiply[6];
+  cs_matrix_vector_product_t        *vector_multiply[CS_MATRIX_N_FILL_TYPES*2];
 
   /* Measured structure creation cost, or -1 otherwise */
 
   double  matrix_create_cost;
 
-  /* Measured assignment costs for each available operation, or -1 otherwise
-     (up to 4 measures per variant: block_flag * 2 + sym_flag */
+  /* Measured assignment costs for each available fill type, or -1 otherwise */
 
-  double  matrix_assign_cost[4];
+  double  matrix_assign_cost[CS_MATRIX_N_FILL_TYPES];
 
   /* Measured operation costs for each available operation, or -1 otherwise
-     (up to 8 measures per variant:
-     block_flag*4 + sym_flag*2 + exclude_diagonal_flag) */
+     fill_type*2 + exclude_diagonal_flag */
 
-  double  matrix_vector_cost[8];
+  double  matrix_vector_cost[CS_MATRIX_N_FILL_TYPES*2];
 
 };
 
