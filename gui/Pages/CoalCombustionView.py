@@ -951,7 +951,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         CoalNumber = self.model.getCoalNumber()
         self.pushButtonDeleteCoal.setEnabled(True)
         self.pushButtonAddCoal.setEnabled(True)
-        if CoalNumber >= 3:
+        if CoalNumber >= 5:
             self.pushButtonAddCoal.setDisabled(True)
         elif CoalNumber <= 1:
             self.pushButtonDeleteCoal.setDisabled(True)
