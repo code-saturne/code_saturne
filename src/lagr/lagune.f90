@@ -813,13 +813,12 @@ if ( nor.eq.nordre .and. iroule.ge.1 ) then
 
     call lagipn                                                   &
     !==========
-    ( ncelet , ncel   ,                                           &
-      nbpmax , nvp    , nvp1   , nvep   , nivep  ,                &
+    ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                &
       npar1  , npar2  ,                                           &
       itepa  ,                                                    &
       rtp    ,                                                    &
       ettp   , tepa   , vagaus ,                                  &
-      icocel , lndnod , itycel , nfabor ,dlgeo  , propce , ifrlag )
+      icocel , lndnod , itycel , dlgeo  , propce , ifrlag )
 
   endif
 

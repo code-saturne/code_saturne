@@ -23,13 +23,12 @@
 subroutine lagipn &
 !================
 
- ( ncelet , ncel   ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+ ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    npar1  , npar2  ,                                              &
    itepa  ,                                                       &
    rtp    ,                                                       &
    ettp   , tepa   , vagaus ,                                     &
-   icocel , lndnod , itycel , nfabor ,dlgeo , propce , ifrlag  )
+   icocel , lndnod , itycel ,dlgeo , propce , ifrlag  )
 
 !===============================================================================
 ! FONCTION :
@@ -46,9 +45,6 @@ subroutine lagipn &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nfabor           ! i  ! <-- ! number of boundary faces
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! nvp              ! e  ! <-- ! nombre de variables particulaires              !
 ! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
@@ -100,13 +96,14 @@ use period
 use lagpar
 use lagran
 use ppincl
+use mesh
+
 !===============================================================================
 
 implicit none
 
 ! Arguments
 
-integer          ncelet , ncel , nfabor
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          npar1 , npar2
 integer          itepa(nbpmax,nivep)

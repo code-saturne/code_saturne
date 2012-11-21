@@ -1180,13 +1180,12 @@ npar2 = nbpart+ nlocnew
 
 call lagipn                                                       &
 !==========
-  ( ncelet , ncel   ,                                             &
-    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
+  ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
     npar1  , npar2  ,                                             &
     itepa  ,                                                      &
     rtpa   ,                                                      &
     ettp   , tepa   , vagaus ,                                    &
-    icocel , lndnod , itycel , nfabor ,dlgeo  , propce , ifrlag )
+    icocel , lndnod , itycel , dlgeo  , propce , ifrlag )
 
 !===============================================================================
 ! 7. MODIFICATION DES TABLEAUX DE DONNEES PARTICULAIRES
