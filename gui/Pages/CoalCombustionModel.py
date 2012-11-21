@@ -556,7 +556,12 @@ class CoalCombustionModel(Variables, Model):
         classNum = 0
         for coal in range(0, coalNumber):
             node= self.node_fuel.xmlGetNode('solid_fuel', fuel_id = str(coal + 1))
-            classNum += len(node.xmlGetNodeList('diameter', 'class_id'))
+            diameter_type = self.getDiameterType(coal + 1)
+
+            if diameter_type == 'automatic':
+                classNum += len(node.xmlGetNodeList('diameter', 'class_id'))
+            else:
+                classNum += len(node.xmlGetNodeList('mass_percent', 'class_id'))
 
         classesNumber = self.getClassesNumber()
 
