@@ -27,7 +27,7 @@ subroutine lagent &
    nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   itycel , icocel ,                                              &
+   itycel , icocel , dlgeo  ,                                     &
    itypfb , itrifb , ifrlag , itepa  ,                            &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    ettp   , tepa   , vagaus , auxl   , w1     , w2     , w3     )
@@ -67,6 +67,8 @@ subroutine lagent &
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
 ! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
+! dlgeo            ! tr ! --> ! tableau contenant les donnees geometriques     !
+! (nfabor,ngeol)   !    !     ! pour le sous-modele de depot                   !
 ! icocel           ! te ! <-- ! connectivite cellules -> faces                 !
 ! (lndnod)         !    !     !    face de bord si numero negatif              !
 ! itycel           ! te ! <-- ! connectivite cellules -> faces                 !
@@ -144,6 +146,7 @@ double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision vagaus(nbpmax,*)
 double precision auxl(nbpmax,3)
 double precision w1(ncelet) ,  w2(ncelet) ,  w3(ncelet)
+double precision dlgeo(nfabor,ngeol)
 
 ! Local variables
 
@@ -1182,7 +1185,8 @@ call lagipn                                                       &
     npar1  , npar2  ,                                             &
     itepa  ,                                                      &
     rtpa   ,                                                      &
-    ettp   , tepa   , vagaus )
+    ettp   , tepa   , vagaus ,                                    &
+    icocel , lndnod , itycel , nfabor ,dlgeo  , propce , ifrlag )
 
 !===============================================================================
 ! 7. MODIFICATION DES TABLEAUX DE DONNEES PARTICULAIRES

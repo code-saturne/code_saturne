@@ -304,7 +304,7 @@ if (iplar.eq.1) then
 
   call lagbeg                                                     &
   !==========
- ( nbpmax , iphyla , nvls, nbclst)
+ ( nbpmax , iphyla , nvls, nbclst , icocel , itycel , lndnod )
 
 !
 ! --> if the deposition model is activated
@@ -380,7 +380,7 @@ if ( ntcabs.eq.1 ) then
    nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   itycel , icocel ,                                              &
+   itycel , icocel , dlgeo  ,                                             &
    itypfb , itrifb , ifrlag , itepa  ,                            &
    dt     , rtp    , propce , propfa , propfb ,                   &
    ettp   , tepa   , vagaus , auxl   , w1     , w2     , w3     )
@@ -393,7 +393,7 @@ else
    nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   itycel , icocel ,                                              &
+   itycel , icocel , dlgeo  ,                                             &
    itypfb , itrifb , ifrlag , itepa  ,                            &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    ettp   , tepa   , vagaus , auxl   , w1     , w2     , w3     )
@@ -818,7 +818,8 @@ if ( nor.eq.nordre .and. iroule.ge.1 ) then
       npar1  , npar2  ,                                           &
       itepa  ,                                                    &
       rtp    ,                                                    &
-      ettp   , tepa   , vagaus )
+      ettp   , tepa   , vagaus ,                                  &
+      icocel , lndnod , itycel , nfabor ,dlgeo  , propce , ifrlag )
 
   endif
 

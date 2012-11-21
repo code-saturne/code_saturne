@@ -57,7 +57,9 @@ void
 CS_PROCF (lagbeg, LAGBEG)(const cs_int_t   *n_particles_max,
                           const cs_int_t   *iphyla,
                           const cs_int_t   *nvls,
-                          const cs_int_t   *nbclst);
+                          const cs_int_t   *nbclst,
+                          cs_lnum_t icocel[],
+                          cs_lnum_t itycel[]);
 
 /*----------------------------------------------------------------------------
  * Get variables and parameters associated to each particles and keep it in

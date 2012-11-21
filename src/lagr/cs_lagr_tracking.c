@@ -3363,9 +3363,13 @@ void
 CS_PROCF (lagbeg, LAGBEG)(const cs_int_t  *n_particles_max,
                           const cs_int_t  *iphyla,
                           const cs_int_t  *nvls,
-                          const cs_int_t  *nbclst)
+                          const cs_int_t  *nbclst,
+                          cs_lnum_t icocel[],
+                          cs_lnum_t itycel[]
+)
 {
   cs_lnum_t  i;
+  cs_mesh_t  *mesh = cs_glob_mesh;
 
   /* Initialize global parameter relative to the lagrangian module */
 
@@ -3416,6 +3420,14 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t  *n_particles_max,
     _CS_MPI_AUX_PARTICLE = _define_aux_particle_datatype();
     }
 #endif
+
+  /* Saving of itycel and icocel */
+  cs_lagr_track_builder_t  *builder = _particle_track_builder;
+
+  for (i = 0; i <= mesh->n_cells; i++)
+    itycel[i] = builder->cell_face_idx[i];
+  for (i = 0; i <= builder->cell_face_idx[mesh->n_cells] ; i++)
+    icocel[i] = builder->cell_face_lst[i];
 
 }
 
