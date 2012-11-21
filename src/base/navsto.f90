@@ -568,6 +568,13 @@ ipbrom = ipprob(irom  )
 !                      gradient par moindres carres IMRGRA=1 dans la
 !                      reactualisation des vitesses.
 
+!       IREVMC = 2 : On applique la methode par moindres carres au
+!                      flux de masse actualise
+!                      pour obtenir la vitesse actualisee
+!                    Cette methode correspond a la methode RT0.
+
+!       La methode IREVMC = 2 semble plus "diffusive", mais semble aussi la
+!         seule issue pour certains ecoulements atmospheriques de mercure.
 !       La methode IREVMC = 1 semble ne pas trop "diffuser", avec un
 !         gain du a l'utilisation du gradient moindres carres. Elle
 !         se rapproche beaucoup de IREVMC=0.
@@ -632,6 +639,15 @@ if (irevmc.eq.1) then
 
   ! Free memory
   deallocate(flint, flbrd)
+
+else if (irevmc.eq.2) then
+
+  call recvmc &
+  !==========
+( propce(1,ipcrom), propfa(1,iflmas), propfb(1,iflmab),          &
+  rtp(1,iu), rtp(1,iv), rtp(1,iw),                               &
+  w4     , w5     , w6     )
+
 
 else
 
