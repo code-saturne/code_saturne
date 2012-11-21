@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2012-11-09 14:49+0100\n"
+"POT-Creation-Date: 2012-11-21 17:43+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3097,6 +3097,21 @@ msgid ""
 "does not handle case with excluded diagonal."
 msgstr ""
 
+msgid "scalar"
+msgstr ""
+
+msgid "scalar symmetric"
+msgstr ""
+
+msgid "block diagonal"
+msgstr ""
+
+msgid "block diagonal symmetric"
+msgstr ""
+
+msgid "block"
+msgstr ""
+
 msgid "y <- A.x"
 msgstr ""
 
@@ -3109,16 +3124,22 @@ msgstr ""
 msgid "Symmetric y <- (A-D).x"
 msgstr ""
 
+msgid "Block diagonal y <- A.x"
+msgstr ""
+
+msgid "Block diagonal y <- (A-D).x"
+msgstr ""
+
+msgid "Block diagonal symmetric y <- A.x"
+msgstr ""
+
+msgid "Block diagonal symmetric y <- (A-D).x"
+msgstr ""
+
 msgid "Block y <- A.x"
 msgstr ""
 
 msgid "Block y <- (A-D).x"
-msgstr ""
-
-msgid "Block symmetric y <- A.x"
-msgstr ""
-
-msgid "Block symmetric y <- (A-D).x"
 msgstr ""
 
 msgid ""
@@ -3128,13 +3149,7 @@ msgstr ""
 "Affectation de coefficients matriciels non symétriques\n"
 "à une matrice en stockage CSR symmétrique."
 
-msgid "symmetric "
-msgstr ""
-
-msgid "block "
-msgstr ""
-
-msgid "matrix coefficients assign"
+msgid " matrix coefficients assign"
 msgstr ""
 
 msgid "matrix structure creation/destruction"
@@ -3202,9 +3217,6 @@ msgstr "La matrice n'est pas définie."
 msgid "Matrix is missing a vector multiply function."
 msgstr ""
 
-msgid "Block matrix is missing a vector multiply function."
-msgstr ""
-
 #, c-format
 msgid ""
 "\n"
@@ -3223,8 +3235,11 @@ msgid ""
 "\n"
 "Checking matrix structure and operation variants (diff/reference):\n"
 "------------------------------------------------\n"
-"\n"
 msgstr ""
+"\n"
+"Test de variantes de structures et opérations matricielles (diff/"
+"référence) :\n"
+"---------------------------------------------------------------------------\n"
 
 #, c-format
 msgid ""
@@ -3596,6 +3611,12 @@ msgstr ""
 "  sortie immédiate ; r_norm = %11.4e, residu = %11.4e\n"
 
 msgid "GMRES not supported with block_size > 1 (velocity coupling)."
+msgstr ""
+
+#, c-format
+msgid ""
+"Resolution of linear equation on \"%s\"\n"
+"with solver type %d, which is not defined)."
 msgstr ""
 
 #, c-format
