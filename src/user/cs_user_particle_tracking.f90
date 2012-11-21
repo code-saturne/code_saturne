@@ -483,7 +483,7 @@ subroutine uslain &
    nptnew ,                                                       &
    itypfb , itrifb , itepa  , ifrlag , injfac ,                   &
    dt     , rtpa   , propce , propfa , propfb ,                   &
-   ettp   , tepa   , vagaus )
+   ettp   , tepa   , vagaus , icocel , lndnod , itycel , dlgeo)
 
 !===============================================================================
 ! Purpose:
@@ -540,6 +540,13 @@ subroutine uslain &
 ! (nbpmax,nvep)    !    !     !                                                !
 ! vagaus           ! ra ! --> ! Gaussian random variables                      !
 !(nbpmax,nvgaus    !    !     !                                                !
+! icocel           ! ia ! <-- ! connectivity cells -> faces                    !
+!   (lndnod)       !    !     !    boundary cell if the number is negative     !
+! lndnod           ! i  ! <-- ! dim. connectivity cells -> faces               !
+!  itycel          ! ia ! <-- ! connectivity cells -> faces                    !
+! (ncelet+1)       !    !     !    pointer of the icocel array                 !
+!  dlgeo           ! ra ! <-- ! array of the geometrical quantities            !
+!(nfabor,ngeol)    !    !     ! related to the boundary faces                  !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -575,6 +582,7 @@ integer          nvar   , nscal
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 integer          nptnew
+integer          lndnod
 
 integer          itypfb(nfabor) , itrifb(nfabor)
 integer          itepa(nbpmax,nivep) , ifrlag(nfabor)
@@ -585,6 +593,8 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*) , propfb(nfabor,*)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision vagaus(nbpmax,*)
+integer          icocel(lndnod) ,  itycel(ncelet+1)
+double precision dlgeo(nfabor,ngeol)
 
 ! Local variables
 
@@ -709,12 +719,12 @@ if ( 1.eq.0 ) then
 
   call lagipn                                                     &
   !==========
-  ( ncelet , ncel   ,                                             &
-    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
+  ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
     npar1  , npar2  ,                                             &
     itepa  ,                                                      &
     rtpa   ,                                                      &
-    ettp   , tepa   , vagaus )
+    ettp   , tepa   , vagaus ,                                    &
+    icocel , lndnod , itycel ,  dlgeo , propce , ifrlag  )
 
 endif
 

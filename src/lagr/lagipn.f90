@@ -28,7 +28,7 @@ subroutine lagipn &
    itepa  ,                                                       &
    rtp    ,                                                       &
    ettp   , tepa   , vagaus ,                                     &
-   icocel , lndnod , itycel ,dlgeo , propce , ifrlag  )
+   icocel , lndnod , itycel , dlgeo  , propce , ifrlag  )
 
 !===============================================================================
 ! FONCTION :
