@@ -440,8 +440,8 @@ call codits &
 !==========
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
-   imrgra , nswrsp , nswrgp , imligp , ircflp , iswdyp ,          &
-   ischcp , isstpp , iescap , imucpp , idftnp ,                   &
+   imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
+   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &

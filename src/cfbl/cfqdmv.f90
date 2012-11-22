@@ -627,26 +627,15 @@ do isou = 1, 3
     smbr  (iel) = smbr(iel) + drtp(iel) * rtp(iel,ivar)
   enddo
 
-
-! ---> TERME D'ACCUMULATION DE MASSE -(dRO/dt)*Volume
-
-  init = 1
-  call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                &
-                           ifacel,ifabor,flumas,flumab,w1)
-
-
-
 ! ---> AJOUT DANS LE TERME SOURCE ET DANS LE TERME INSTATIONNAIRE
 
   do iel = 1, ncel
-    smbr(iel) = smbr  (iel) +                                     &
-         trav(iel,isou)+iconv(ivar)*w1(iel)*rtpa(iel,ivar)
+    smbr(iel) = smbr(iel) + trav(iel,isou)
   enddo
 
   do iel = 1, ncel
     rovsdt(iel) = rovsdt(iel) +                                   &
-         istat(ivar)*(propce(iel,ipcrom)/dt(iel))*volume(iel)     &
-         -iconv(ivar)*w1(iel)
+         istat(ivar)*(propce(iel,ipcrom)/dt(iel))*volume(iel)
   enddo
 
 
@@ -671,8 +660,6 @@ do isou = 1, 3
                   volume , rtp(1,ivar) , smacel(1,ivar) ,         &
                   smacel(1,ipr) , smbr , rovsdt , w1)
   endif
-
-
 
 ! ---> PARAMETRES POUR LA RESOLUTION DU SYSTEME
 

@@ -294,18 +294,6 @@ endif
 !   ifac0 is the number of the current face
 ifac0 = imodif
 
-call field_get_coefa_s(ivarfl(ipr), coefap)
-call field_get_coefa_s(ivarfl(ipr), coefbp)
-
-call field_get_coefa_s(ivarfl(irh), coefar)
-
-call field_get_coefa_s(ivarfl(itk), coefat)
-call field_get_coefa_s(ivarfl(itk), coefbt)
-
-call field_get_coefa_s(ivarfl(ien), coefae)
-
-call field_get_coefa_v(ivarfl(iu), coefav)
-
 !===============================================================================
 ! 1. Thermodynamic law choice
 !    User input required.
@@ -321,6 +309,44 @@ ieos = 1
 ! Warning: once the thermodynamic law has been chosen,
 ! =======  the remainder of the user subroutine must be modified
 
+if (iccfth.eq.-1) then
+  if (ieos.eq.1) then
+
+! --- Calculation options: constant Cp and Cv (perfect gas)
+
+  ! The value for the isobaric specific heat Cp0 must be provided in
+  !   the user subroutine ''usipph''. The value for the isochoric
+  !   specific heat Cv0 is calculated in a subsequent section (from Cp0)
+
+    icp = 0
+    icv = 0
+
+  elseif (ieos.eq.2) then
+
+! --- Calculation options: variable Cp and Cv
+!     (isobaric and isochoric specific heat)
+
+    icp = 1
+    cp0 = epzero
+    icv = 1
+    cv0 = epzero
+  endif
+
+  return
+
+endif
+
+call field_get_coefa_s(ivarfl(ipr), coefap)
+call field_get_coefa_s(ivarfl(ipr), coefbp)
+
+call field_get_coefa_s(ivarfl(irh), coefar)
+
+call field_get_coefa_s(ivarfl(itk), coefat)
+call field_get_coefa_s(ivarfl(itk), coefbt)
+
+call field_get_coefa_s(ivarfl(ien), coefae)
+
+call field_get_coefa_v(ivarfl(iu), coefav)
 
 !===============================================================================
 ! 2. Perfect gas
@@ -333,6 +359,7 @@ if (ieos.eq.1) then
 !===============================================================================
 
 ! --- Molar mass of the gas (kg/mol)
+    ! For example with dry air, xmasml is around 28.8d-3 kg/mol
 
   if (iccfth.ge.0) then
     xmasml = 28.8d-3
@@ -369,24 +396,12 @@ if (ieos.eq.1) then
   endif
 
 
-! --- Calculation options: constant Cp and Cv (perfect gas)
-
-  if (iccfth.eq.-1) then
-
-    ! The value for the isobaric specific heat Cp0 must be provided in
-    !   the user subroutine ''usipph''. The value for the isochoric
-    !   specific heat Cv0 is calculated in a subsequent section (from Cp0)
-
-    icp = 0
-    icv = 0
-
-
 ! --- Default initializations (before uscfxi)
 
 !     T0 is positive (this assumption has been checked in
 !       the user programme 'verini')
 
-  elseif (iccfth.eq.0) then
+  if (iccfth.eq.0) then
 
     cv0 = cp0 - rr/xmasml
 
@@ -1230,21 +1245,9 @@ elseif (ieos.eq.2) then
     call csexit (1)
   endif
 
+  ! Default initializations
 
-! --- Calculation options: variable Cp and Cv
-!     (isobaric and isochoric specific heat)
-
-  if (iccfth.eq.-1) then
-
-    icp = 1
-    cp0 = epzero
-    icv = 1
-    cv0 = epzero
-
-
-! Default initializations
-
-  elseif (iccfth.eq.0) then
+  if (iccfth.eq.0) then
 
     do iel = 1, ncel
       propce(iel,ipproc(icp)) = cp0

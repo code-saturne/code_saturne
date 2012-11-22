@@ -59,6 +59,8 @@ use cstnum
 use ppppar
 use ppthch
 use ppincl
+!bug Ba
+use ihmpre
 
 !===============================================================================
 
@@ -223,7 +225,9 @@ ivivar = 0
 ! 4. ON REDONNE LA MAIN A L'UTLISATEUR
 !===============================================================================
 
-call cscfgp(icfgrp)
+if (iihmpr.eq.1) then
+  call cscfgp(icfgrp)
+endif
 
 call uscfx1
 !==========
@@ -248,7 +252,7 @@ iconv(isca(irho)) = 0
 ! --> Prise en compte de la pression predite pour resoudre Navier-Stokes
 !     (oui = 1 , non = 0)
 
-igrdpp = 0
+igrdpp = 1
 
 ! --> Prediction de pression par une equation d'evolution
 
