@@ -733,7 +733,7 @@ if (idiff(ivar).ge.1) then
 
   endif
 
-  ! AFM model or DFM models: add div(T'u') to smbrs
+  ! AFM model or DFM models: add div(Cp*rho*T'u') to smbrs
   if ((ityturt(iscal).eq.2.or.ityturt(iscal).eq.3)) then
 
     call divrit &

@@ -1729,8 +1729,9 @@ do ifac = 1, nfabor
               ! Add rho*uk*Tet to T'v' in High Reynolds
               if (yplus.ge.yp1) then
                 do isou = 1, 3
-                  coefaut(isou,ifac) = coefaut(isou,ifac)                    &
-                                     + surfbo(isou,ifac)/surfbn(ifac)*phit
+                  coefaut(isou,ifac) = coefaut(isou,ifac)        &
+                                     + surfbo(isou,ifac)*phit    &
+                                     / (surfbn(ifac)*cpp*romc)
                 enddo
               endif
 
