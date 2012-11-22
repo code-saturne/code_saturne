@@ -378,6 +378,14 @@ else
     xuta(3,iel) = xut(3,iel)
   enddo
 
+  allocate(w1(3, ncelet))
+
+  do iel = 1, ncelet
+    w1(1,iel) = xcpp(iel)*xut(1,iel)
+    w1(2,iel) = xcpp(iel)*xut(2,iel)
+    w1(3,iel) = xcpp(iel)*xut(3,iel)
+  enddo
+
   ! Boundary Conditions on T'u' for the divergence term of
   ! the thermal transport equation
   call field_get_coefad_v(f_id,cofarut)
@@ -391,9 +399,11 @@ else
     iwarnp , nfecra ,                                     &
     epsrgp , climgp , extrap ,                            &
     propce(1,ipcrom), propfb(1,ipbrom),                   &
-    xut    ,                                              &
+    w1     ,                                              &
     cofarut, cofbrut,                                     &
     thflxf , thflxb )
+
+  deallocate(w1)
 
 endif
 
