@@ -864,9 +864,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         elif id == CFDSTUDYGUI_DataModel.dict_object["HISTFile"]:
             popup.addAction(self.commonAction(ViewAction))
             popup.addAction(self.commonAction(ExportInPostProAction))
-        # elif id == CFDSTUDYGUI_DataModel.dict_object["PRETFolder"] or \
-        #     id == CFDSTUDYGUI_DataModel.dict_object["SUITEFolder"]:
-        #    popup.addAction(self.commonAction(RemoveAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["RESMEDFile"]:
             popup.addAction(self.commonAction(ExportInPostProAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["SCRPTLanceFile"]:
@@ -902,11 +899,9 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             #popup.addAction(self.commonAction(ECSConvertAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["POSTFile"]:
             popup.addAction(self.commonAction(ViewAction))
-
         elif id == "VTKViewer":
             popup.addAction(self.commonAction(DisplayTypeSHADED))
             popup.addAction(self.commonAction(DisplayTypeWIREFRAME))
-
         else:
 
             for sobj in self._multipleSelectedObject():
@@ -1116,19 +1111,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                     os.spawnlp(os.P_NOWAIT,viewerName , viewerName, path, "-f", "toggle-read-only")
                 else:
                     os.spawnlp(os.P_NOWAIT,viewerName ,viewerName , path)
-
-
-    def slotEditAction_OLD(self):
-        """
-        Edits in the user's editor the file selected in the Object Browser.
-        """
-        viewer = self.tr("CFDSTUDY_PREF_EDITOR")
-        if not viewer.isEmpty():
-            viewerName = str(viewer.toLatin1())
-            sobj = self._singleSelectedObject()
-            if not sobj == None:
-                path = CFDSTUDYGUI_DataModel._GetPath(sobj)
-                os.spawnlp(os.P_NOWAIT,viewerName ,viewerName , path)
 
 
     def slotRemoveAction(self):
@@ -1939,6 +1921,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         sobj = self._singleSelectedObject()
         if sobj == None:
             return
+
         # get current case
         aCase = CFDSTUDYGUI_DataModel.GetCase(sobj)
         if aCase == None:
@@ -1948,8 +1931,8 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 #                                        self.tr("STMSG_CHECK_COMPILATION"),\
 #                                        False,\
 #                                        aCaseObject = aCase)
+        cmd = self.__compile(aCase)
         if cmd != "":
-            cmd = self.__compile(aCase)
             aChildList = CFDSTUDYGUI_DataModel.ScanChildren(aCase, "SRC")
             aSRCObj =  aChildList[0]
             aSRCPath = CFDSTUDYGUI_DataModel._GetPath(aSRCObj)
@@ -1997,6 +1980,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                 self._SolverGUI._CurrentWindow.fileSave()
             else:
                 self.slotSaveAsDataFile()
+
 
     def slotSaveAsDataFile(self):
         """

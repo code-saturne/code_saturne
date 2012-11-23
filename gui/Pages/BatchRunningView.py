@@ -748,10 +748,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         else:
             pass
 
-        if self.case['salome']:
-            from Pages import  SalomeHandler
-            SalomeHandler.runSolver(self.case, batch)
-        elif key == 'localhost':
+        if self.case['salome'] or key == 'localhost':
             dlg = ListingDialogView(self.parent, self.case, run_title, [cmd])
             dlg.show()
         else:
