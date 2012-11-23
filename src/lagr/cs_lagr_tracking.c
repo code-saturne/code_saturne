@@ -2454,7 +2454,7 @@ _local_propagation(cs_lagr_particle_t     *p_prev_particle,
             particle_state = CS_LAGR_PART_TO_SYNC;
             move_particle = CS_LAGR_PART_ERR;
 
-            if (*idepst > 0 && particle.yplus < 50.) {
+            if (*idepst > 0 && particle.yplus < 100.) {
 
               cs_real_t x_p_q = particle.coord[0] - prev_particle.coord[0];
               cs_real_t y_p_q = particle.coord[1] - prev_particle.coord[1];
@@ -2490,6 +2490,31 @@ _local_propagation(cs_lagr_particle_t     *p_prev_particle,
               particle.coord[1] =  yk + 1e-8 * (xyzcen[ 3* (particle.cur_cell_num - 1) + 1] - yk);
               particle.coord[2] =  zk + 1e-8 * (xyzcen[ 3* (particle.cur_cell_num - 1) + 2] - zk);
 
+              /*Marking of particles */
+
+              particle.yplus = -particle.yplus;
+
+              /*Saving of dot product */
+
+              cs_real_t bdy_normal[3];
+
+
+              for (k = 0; k < 3; k++)
+
+                bdy_normal[k] = cs_glob_mesh_quantities->b_face_normal[3 * particle.close_face_id + k];
+
+              cs_real_t area  = _get_norm(bdy_normal);
+
+              cs_real_t  face_norm[3] = {bdy_normal[0]/area,
+                                         bdy_normal[1]/area,
+                                         bdy_normal[2]/area};
+
+
+
+              particle.velocity_seen[0] = particle.velocity_seen[0] * face_norm[0] +
+                particle.velocity_seen[1] * face_norm[1] +
+                particle.velocity_seen[2] * face_norm[2];
+
             }
 
           }
@@ -2506,11 +2531,7 @@ _local_propagation(cs_lagr_particle_t     *p_prev_particle,
 
               _test_wall_cell(&particle,visc_length,dlgeo);
 
-              if (particle.close_face_id >= 0 &&
-                  particle.yplus < 100. &&
-                  save_yplus < 100. &&
-                  save_close_face_id > 0)
-              {
+              if (save_yplus < 100.) {
 
                 cs_real_t x_p_q = particle.coord[0] - prev_particle.coord[0];
                 cs_real_t y_p_q = particle.coord[1] - prev_particle.coord[1];
@@ -2551,7 +2572,7 @@ _local_propagation(cs_lagr_particle_t     *p_prev_particle,
                 _test_wall_cell(&particle,visc_length,dlgeo);
 
 
-                if (particle.yplus < 100.e0 && particle.marko_val >= 0) {
+                if (particle.yplus < 100.e0 ) {
 
                   cs_real_t flow_velo_x = rtp[ (particle.cur_cell_num - 1) + (*iu - 1) * mesh->n_cells_with_ghosts ];
                   cs_real_t flow_velo_y = rtp[ (particle.cur_cell_num - 1) + (*iv - 1) * mesh->n_cells_with_ghosts ];
@@ -2631,8 +2652,67 @@ _local_propagation(cs_lagr_particle_t     *p_prev_particle,
             }
           }
         } else if (indian == -1) {
-          move_particle =  CS_LAGR_PART_MOVE_OFF;
-          particle_state = CS_LAGR_PART_TREATED;
+
+          if (particle.yplus < 0.) {
+            _test_wall_cell(&particle,visc_length,dlgeo);
+
+            if (particle.yplus < 100.) {
+
+              cs_real_t flow_velo_x = rtp[ (particle.cur_cell_num - 1) + (*iu - 1) * mesh->n_cells_with_ghosts ];
+              cs_real_t flow_velo_y = rtp[ (particle.cur_cell_num - 1) + (*iv - 1) * mesh->n_cells_with_ghosts ];
+              cs_real_t flow_velo_z = rtp[ (particle.cur_cell_num - 1) + (*iw - 1) * mesh->n_cells_with_ghosts ];
+
+              /* e1 (normal) vector coordinates */
+              cs_real_t e1_x = dlgeo[particle.close_face_id];
+              cs_real_t e1_y = dlgeo[particle.close_face_id + (mesh->n_b_faces)];
+              cs_real_t e1_z = dlgeo[particle.close_face_id + (mesh->n_b_faces) * 2];
+
+              /* e2 vector coordinates */
+              cs_real_t e2_x = dlgeo[particle.close_face_id + (mesh->n_b_faces) * 7];
+              cs_real_t e2_y = dlgeo[particle.close_face_id + (mesh->n_b_faces) * 8];
+              cs_real_t e2_z = dlgeo[particle.close_face_id + (mesh->n_b_faces) * 9];
+
+              /* e3 vector coordinates */
+              cs_real_t e3_x = dlgeo[particle.close_face_id + (mesh->n_b_faces) * 10];
+              cs_real_t e3_y = dlgeo[particle.close_face_id + (mesh->n_b_faces) * 11];
+              cs_real_t e3_z = dlgeo[particle.close_face_id + (mesh->n_b_faces) * 12];
+
+              /* V_n * e1 */
+
+              cs_real_t v_n_e1[3] = {particle.velocity_seen[0] * e1_x,
+                                     particle.velocity_seen[0] * e1_y,
+                                     particle.velocity_seen[0] * e1_z};
+
+
+              /* (U . e2) * e2 */
+
+              cs_real_t flow_e2 = flow_velo_x * e2_x +
+                flow_velo_y * e2_y +
+                flow_velo_z * e2_z;
+
+              cs_real_t u_times_e2[3] = {flow_e2 * e2_x,
+                                         flow_e2 * e2_y,
+                                         flow_e2 * e2_z};
+
+              /* (U . e3) * e3 */
+
+              cs_real_t flow_e3 = flow_velo_x * e3_x +
+                flow_velo_y * e3_y +
+                flow_velo_z * e3_z;
+
+              cs_real_t u_times_e3[3] = {flow_e3 * e3_x,
+                                         flow_e3 * e3_y,
+                                         flow_e3 * e3_z};
+              /* Update of the flow seen velocity */
+
+              particle.velocity_seen[0] =  v_n_e1[0] + u_times_e2[0] + u_times_e3[0];
+              particle.velocity_seen[1] =  v_n_e1[1] + u_times_e2[1] + u_times_e3[1];
+              particle.velocity_seen[2] =  v_n_e1[2] + u_times_e2[2] + u_times_e3[2];
+            }
+          }
+
+              move_particle =  CS_LAGR_PART_MOVE_OFF;
+              particle_state = CS_LAGR_PART_TREATED;
         }
 
       } /* End if face_num > 0 (interior face) && face_num != old_face_num */
