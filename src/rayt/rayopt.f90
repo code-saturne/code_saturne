@@ -76,7 +76,7 @@ implicit none
 integer          ii, jj, iok , iiscal, iscaok, ipp, iph, nmodpp, iverif
 integer          irphas
 character        car4*4
-character*2      num
+character*3      num
 
 !===============================================================================
 !===============================================================================
@@ -536,7 +536,7 @@ ihisvr(ipp,1) = -1
 
 do irphas = 1, nrphas-1
 
-  WRITE(NUM,'(I1)') IRPHAS
+  WRITE(NUM,'(I2)') IRPHAS
 
 !--> TERME SOURCE IMPLICITE
 
