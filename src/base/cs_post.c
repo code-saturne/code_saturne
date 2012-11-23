@@ -1925,7 +1925,7 @@ _cs_post_build_moment(const cs_field_t  *f,
     else {
       for (ii = 0; ii < n_elts; ii++) {
         cs_lnum_t c_id = elt_list[ii] - 1;
-        moment[c_id] = f->val[c_id] / CS_MAX(denom[c_id*d_mult], ep_zero);
+        moment[ii] = f->val[c_id] / CS_MAX(denom[c_id*d_mult], ep_zero);
       }
     }
   }
