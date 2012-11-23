@@ -152,9 +152,10 @@ def main(argv, pkg):
         splash = QSplashScreen(pixmap, Qt.WindowStaysOnTopHint)
         splash.setMask(pixmap.mask()) # this is usefull if the splashscreen is not a regular ractangle...
         splash.show()
-        splash.showMessage("%(name)s %(vers)s starting..." \
-                           % {'name': pkg.name, 'vers':pkg.version},
-                           Qt.AlignHCenter | Qt.AlignVCenter, Qt.black)
+        if pkg.name == 'neptune_cfd':
+            splash.showMessage("%(name)s %(vers)s starting..." \
+                               % {'name': pkg.name, 'vers':pkg.version},
+                               Qt.AlignHCenter | Qt.AlignVCenter, Qt.black)
         app.processEvents()
         QTimer.singleShot(1500, splash.hide)
 

@@ -130,7 +130,7 @@ class MainView(object):
         self.setAttribute(Qt.WA_DeleteOnClose)
         MainView.Instances.add(self)
 
-        self.setWindowTitle(self.package.code_name + " GUI")
+        self.setWindowTitle(self.package.code_name + " GUI" + " - " + self.package.version)
 
         self.Id = IdView()
         self.dockWidgetIdentity.setWidget(self.Id)
@@ -412,7 +412,8 @@ class MainView(object):
             self.case.root()['version'] = self.XML_DOC_VERSION
             self.initCase()
             title = self.tr("New parameters set") + \
-                     " - " + self.tr(self.package.code_name) + self.tr(" GUI")
+                     " - " + self.tr(self.package.code_name) + self.tr(" GUI") \
+                     + " - " + self.package.version
             self.setWindowTitle(title)
 
             self.Browser.configureTree(self.case)
@@ -552,7 +553,8 @@ class MainView(object):
 
         # Update the case and the StudyIdBar
         self.case['xmlfile'] = file_name
-        title = fn + " - " + self.tr(self.package.code_name) + self.tr(" GUI")
+        title = fn + " - " + self.tr(self.package.code_name) + self.tr(" GUI") \
+                   + " - " + self.package.version
         self.setWindowTitle(title)
 
         msg = self.tr("Loaded: %s" % fn)
@@ -723,7 +725,8 @@ class MainView(object):
                 self.updateStudyId()
                 self.case.xmlSaveDocument()
                 self.batchFileSave()
-                title = os.path.basename(self.case['xmlfile']) + " - " + self.tr(self.package.code_name) + self.tr(" GUI")
+                title = os.path.basename(self.case['xmlfile']) + " - " + self.tr(self.package.code_name) + self.tr(" GUI") \
+                     + " - " + self.package.version
                 self.setWindowTitle(title)
 
                 # force to blank after save
