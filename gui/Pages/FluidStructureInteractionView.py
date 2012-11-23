@@ -96,12 +96,12 @@ class FluidStructureInteractionAdvancedOptionsView(QDialog,
         Constructor
         """
         # Init base classes
-        QDialog.__init__(self, parent, case)
+        QDialog.__init__(self, parent)
         Ui_FluidStructureInteractionAdvancedOptionsDialogForm.__init__(self)
         self.setupUi(self)
 
-        self.__case = case
-        self.__case.undoStopGlobal()
+        self.case = case
+        self.case.undoStopGlobal()
 
         title = self.tr("Displacements prediction:")
         self.setWindowTitle(title)
@@ -111,7 +111,7 @@ class FluidStructureInteractionAdvancedOptionsView(QDialog,
         self.__setValidator()
         self.__setInitialValues()
 
-        self.__case.undoStartGlobal()
+        self.case.undoStartGlobal()
 
 
     def __setValidator(self):
@@ -494,8 +494,8 @@ class CouplingManager:
         """
         Constructor
         """
-        self.__case               = case
-        self.__case.undoStopGlobal()
+        self.case               = case
+        self.case.undoStopGlobal()
         self.__internalTableModel = internalTableModel
         self.__externalTableModel = externalTableModel
         self.__internalCouplings = []
@@ -505,7 +505,7 @@ class CouplingManager:
         self.__initLineEditCouplings(mainView)
         self.__initFormulaCouplings (mainView)
         self.__initCheckBoxCouplings(mainView)
-        self.__case.undoStartGlobal()
+        self.case.undoStartGlobal()
 
 
     def __initLineEditCouplings(self, mainView):
@@ -664,7 +664,7 @@ fx = fluid_fx;\nfy = 0;\nfz = fluid_fz;"""
         # Get Boundary
         label = tableModel.getLabel(selected)
 
-        boundary = Boundary("coupling_mobile_boundary", label, self.__case)
+        boundary = Boundary("coupling_mobile_boundary", label, self.case)
 
         # Set boundary for coupling
         for coupling in couplings:
@@ -688,8 +688,8 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
         Ui_FluidStructureInteractionForm.__init__(self)
         self.setupUi(self)
 
-        self.__case = case
-        self.__case.undoStopGlobal()
+        self.case = case
+        self.case.undoStopGlobal()
         self.__model = FluidStructureInteractionModel(case)
 
         self.__defineConnection()
@@ -722,7 +722,7 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
         self.__initTableView(self.tableExternalCoupling,
                             self.__externalTableModel,
                             couplingManager.slotExternalSelectionChanged)
-        self.__case.undoStartGlobal()
+        self.case.undoStartGlobal()
 
 
     def __defineConnection(self):
@@ -773,7 +773,7 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
 
         # Populate QTableView model
         for zone in modelLocalization.getZones():
-            boundary = Boundary("mobile_boundary", zone.getLabel(), self.__case)
+            boundary = Boundary("mobile_boundary", zone.getLabel(), self.case)
             if boundary.getALEChoice() == filterALE:
                 tableViewItemModel.addItem(zone)
         return tableViewItemModel
@@ -849,7 +849,7 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
         log.debug("slotAdvancedOptions -> %s" % str(default))
 
         # run the dialog
-        dialog = FluidStructureInteractionAdvancedOptionsView(self, self.__case, default)
+        dialog = FluidStructureInteractionAdvancedOptionsView(self, self.case, default)
         if dialog.exec_():
             # Set the model with the dialog results
             result = dialog.get_result()

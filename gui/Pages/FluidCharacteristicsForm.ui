@@ -1029,9 +1029,6 @@
           </item>
           <item>
            <widget class="QLineEdit" name="lineEditAl">
-            <property name="toolTip">
-             <string>Code_Saturne key word: VISLS0*CP0</string>
-            </property>
            </widget>
           </item>
           <item>
