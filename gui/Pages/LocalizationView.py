@@ -576,8 +576,8 @@ class StandardItemModelLocalization(QStandardItemModel):
 
     def updateItem(self):
         # update zone Id
-        for id in self.mdl.getCodeNumbersList():
-            self._data[int(id)-1][1] = id
+        for id in range(0, len(self.mdl.getCodeNumbersList())):
+            self._data[id][1] = id + 1
 
 
     def deleteItem(self, irow):
@@ -585,6 +585,12 @@ class StandardItemModelLocalization(QStandardItemModel):
         nb_rows = self.rowCount()
         self.setRowCount(nb_rows-1)
         self.updateItem()
+
+
+    def deleteItems(self):
+        for row in range(self.rowCount()):
+            del self._data[0]
+        self.setRowCount(0)
 
 
     def getData(self, row, column):
@@ -750,12 +756,7 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
 
         row = lst.pop(0)
         [label, code, nature, new_localization] = self.modelLocalization.getItem(row)
-
-        new_zone = Zone(self.zoneType,
-                        label        = label,
-                        codeNumber   = code,
-                        localization = new_localization,
-                        nature       = nature)
+        ll = label
 
         for row in lst:
             [label, code, nature, localization] = self.modelLocalization.getItem(row)
@@ -764,10 +765,12 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
             if localization == "all[]":
                 new_localization = "all[]"
 
-        new_zone.setLocalization(new_localization)
-        self.slotDeleteZone()
-        self.mdl.addZone(new_zone)
-        self.modelLocalization.addItem(new_zone)
+        self.modelLocalization.deleteItems()
+        self.mdl.mergeZones(ll, new_localization, lst)
+
+        # Populate QTableView model
+        for zone in self.mdl.getZones():
+            self.modelLocalization.addItem(zone)
 
 
     @pyqtSignature("")
