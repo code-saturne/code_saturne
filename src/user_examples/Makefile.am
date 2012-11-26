@@ -89,6 +89,7 @@ cs_user_extra_operations-parallel_operations.f90 \
 cs_user_extra_operations-print_statistical_moment.f90 \
 cs_user_initialization-atmospheric.f90 \
 cs_user_initialization-base.f90 \
+cs_user_initialization-compressible.f90 \
 cs_user_initialization-cooling_towers.f90 \
 cs_user_initialization-electric_arcs.f90 \
 cs_user_initialization-fuel.f90 \
