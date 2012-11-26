@@ -578,7 +578,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
       mesh->vtx_coord[vtx_id*3 + 2] *= coo_mult;
     }
 
-    /* Set mesh modification flag it i should be saved for future re-use */
+    /* Set mesh modification flag if it should be saved for future re-use. */
 
     mesh->modified = 1;
   }
