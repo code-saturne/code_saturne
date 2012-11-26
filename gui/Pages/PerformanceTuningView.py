@@ -67,7 +67,7 @@ log.setLevel(GuiParam.DEBUG)
 
 class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
     """
-    This page is devoted to the start/restart control.
+    This page is devoted to the performance tuning control.
     """
     def __init__(self, parent, case):
         """
@@ -201,9 +201,9 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
     @pyqtSignature("")
     def slotSearchPartInputDirectory(self):
         """
-        Search restart file (directory) in list of directories
+        Search for the partition input directory in list of directories
         """
-        title    = self.tr("Select checkpoint/restart directory")
+        title    = self.tr("Select partition input directory")
 
         default = None
         l_restart_dirs = []
