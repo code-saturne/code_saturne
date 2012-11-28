@@ -55,7 +55,11 @@ log = logging.getLogger(__file__)
 log.setLevel(logging.NOTSET)
 
 #-------------------------------------------------------------------------------
-def nodot(item): return item[0] != '.'
+
+def nodot(item):
+    return item[0] != '.'
+
+#-------------------------------------------------------------------------------
 
 class RunThread(threading.Thread):
     """
@@ -767,9 +771,15 @@ class Studies(object):
         """
         # 1. Check if the given result directory exists.
         if rep != "":
-            rep_f = os.path.join(result, rep, 'checkpoint', 'main')
-            if not os.path.isfile(rep_f):
+            rep_f = os.path.join(result, rep)
+            rep_e = os.path.join(result, rep, 'error')
+            if not os.path.isdir(rep_f):
                 msg = "Study %s case %s:\nthe directory %s does not exist.\nStop.\n" % \
+                    (study_label, case_label, rep_f)
+                self.reporting(msg)
+                sys.exit(1)
+            if not os.path.isfile(rep_e):
+                msg = "Study %s case %s:\nthe directory %s contains an error file.\nStop.\n" % \
                     (study_label, case_label, rep_f)
                 self.reporting(msg)
                 sys.exit(1)
@@ -777,8 +787,13 @@ class Studies(object):
         # 2. The result directory must be read automatically;
         #    check if there is a single result directory.
         elif rep == "":
-            if not (len(filter(nodot, os.listdir(result))) == 1):
-                msg = "Study %s case %s:\nthere is not a single result directory in %s\nStop.\n" % \
+            if len(filter(nodot, os.listdir(result))) == 0:
+                msg = "Study %s case %s:\nthere is no result directory in %s\nStop.\n" % \
+                    (study_label, case_label, result)
+                self.reporting(msg)
+                sys.exit(1)
+            if len(filter(nodot, os.listdir(result))) > 1:
+                msg = "Study %s case %s:\nthere are several directories in %s\nStop.\n" % \
                     (study_label, case_label, result)
                 self.reporting(msg)
                 sys.exit(1)
