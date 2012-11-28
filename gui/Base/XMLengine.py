@@ -124,10 +124,10 @@ class Dico:
         self.data['package']          = None
         self.data['current_page']     = ""
         self.data['current_index']    = None
-        self.data['current_tab']     = -1
+        self.data['current_tab']      = -1
         self.data['undo']             =  []
         self.data['redo']             =  []
-
+        self.data['probes']           = None
 
     def _errorExit(self, msg):
         """

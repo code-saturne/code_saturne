@@ -781,10 +781,6 @@ class StandardItemModelAssociatedWriter(QStandardItemModel):
         self._data = []
         self.setRowCount(0)
 
-
-
-
-
 #-------------------------------------------------------------------------------
 # QStandardItemModel for monitoring points QTableView
 #-------------------------------------------------------------------------------
@@ -881,6 +877,29 @@ class StandardItemModelMonitoring(QStandardItemModel):
         self.setRowCount(row + 1)
 
 
+    def replaceData(self, row, label, X, Y, Z):
+        """
+        Replace value in an existing 'item' into the table.
+        """
+        self.dataMonitoring[row]['n'] = label
+        self.dataMonitoring[row]['X'] = X
+        self.dataMonitoring[row]['Y'] = Y
+        self.dataMonitoring[row]['Z'] = Z
+
+        row = self.rowCount()
+        self.setRowCount(row)
+
+
+    def getLabel(self, index):
+        return self.getData(index)['n']
+
+
+    def getData(self, index):
+        row = index.row()
+        dico = self.dataMonitoring[row]
+        return dico
+
+
     def deleteAllData(self):
         """
         Destroy the contents of the list.
@@ -893,15 +912,16 @@ class StandardItemModelMonitoring(QStandardItemModel):
 #-------------------------------------------------------------------------------
 
 class MonitoringPointDelegate(QItemDelegate):
-    def __init__(self, parent=None, xml_model=None):
+    def __init__(self, parent=None, case=None, model=None):
         """ Construtor.
 
         @param: parent ancestor object
-        @xml_model: monitoring points model
+        @model: monitoring points model
         """
         super(MonitoringPointDelegate, self).__init__(parent)
         self.table = parent
-        self.mdl = xml_model
+        self.case = case
+        self.mdl = model
 
 
     def createEditor(self, parent, option, index):
@@ -939,10 +959,13 @@ class MonitoringPointDelegate(QItemDelegate):
             for index in selectionModel.selectedRows(index.column()):
                 model.setData(index, QVariant(item), Qt.DisplayRole)
                 dico = model.dataMonitoring[index.row()]
-                self.mdl.replaceMonitoringPointCoordinates(str(dico['n']),
-                                                           float(dico['X']),
-                                                           float(dico['Y']),
-                                                           float(dico['Z']))
+                x = float(dico['X'])
+                y = float(dico['Y'])
+                z = float(dico['Z'])
+                label = str(dico['n'])
+                self.mdl.replaceMonitoringPointCoordinates(label, x, y, z)
+                if self.case['salome'] and self.case['probes']:
+                    self.case['probes'].updateLocation(label, [x, y, z])
 
 
 #-------------------------------------------------------------------------------
@@ -1025,8 +1048,8 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.tableViewPoints.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.tableViewPoints.setEditTriggers(QAbstractItemView.DoubleClicked)
         self.tableViewPoints.horizontalHeader().setResizeMode(QHeaderView.Stretch)
-        delegate = MonitoringPointDelegate(self.tableViewPoints, self.mdl)
-        self.tableViewPoints.setItemDelegate(delegate)
+        self.delegate = MonitoringPointDelegate(self.tableViewPoints, self.case, self.mdl)
+        self.tableViewPoints.setItemDelegate(self.delegate)
 
         self.modelWriter = StandardItemModelWriter(self.mdl)
         self.tableViewWriter.setModel(self.modelWriter)
@@ -1104,11 +1127,15 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         validatorNTHIST = QtPage.IntValidator(self.lineEditHisto, min=1)
         validatorFrequencyTime = QtPage.DoubleValidator(self.lineEditFrequencyTime)
         validatorFRHIST = QtPage.DoubleValidator(self.lineEditFRHisto)
+        validatorRadius = QtPage.DoubleValidator(self.lineEditProbesRadius, min=0.)
+        validatorRadius.setExclusiveMin(True)
+
         self.lineEditNTLIST.setValidator(validatorNTLIST)
         self.lineEditFrequency.setValidator(validatorFrequency)
         self.lineEditHisto.setValidator(validatorNTHIST)
         self.lineEditFrequencyTime.setValidator(validatorFrequencyTime)
         self.lineEditFRHisto.setValidator(validatorFRHIST)
+        self.lineEditProbesRadius.setValidator(validatorRadius)
 
         # Initialisation of the listing frequency
 
@@ -1139,10 +1166,36 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
 
         # Monitoring points initialisation
 
+        if self.case['salome'] and not self.case['probes']:
+            from SalomeActors import ProbeActors
+            self.case['probes'] = ProbeActors(self.tableViewPoints)
+
+        self.groupBoxProbesDisplay.setChecked(False)
+        self.groupBoxProbesDisplay.setEnabled(False)
+
+        if self.case['salome'] and self.case['probes']:
+            self.groupBoxProbesDisplay.setChecked(self.case['probes'].getVisibility())
+            self.groupBoxProbesDisplay.setEnabled(True)
+            self.lineEditProbesRadius.setText(str(self.case['probes'].getRadius()))
+
+            self.connect(self.tableViewPoints, SIGNAL("pressed(const QModelIndex &)"), self.slotSelectedActors)
+            self.connect(self.tableViewPoints, SIGNAL("entered(const QModelIndex &)"), self.slotSelectedActors)
+            self.connect(self.groupBoxProbesDisplay, SIGNAL("clicked(bool)"), self.slotProbesDisplay)
+            self.connect(self.lineEditProbesRadius, SIGNAL("textChanged(const QString &)"), self.slotProbesRadius)
+
+            # FIXME
+            ##self.connect(self.case['probes'], SIGNAL("actorSelected()"), self.slotSalomeHandlerSelectActors)
+            #self.connect(self.horizontalSliderX, SIGNAL("valueChanged(int)"), self.slotSlider)
+            #self.connect(self.horizontalSliderY, SIGNAL("valueChanged(int)"), self.slotSlider)
+            #self.connect(self.horizontalSliderZ, SIGNAL("valueChanged(int)"), self.slotSlider)
+
+
         for n in range(self.mdl.getNumberOfMonitoringPoints()):
             name = str(n+1)
             X, Y, Z = self.mdl.getMonitoringPointCoordinates(name)
             self.__insertMonitoringPoint(name, X, Y, Z)
+            if self.case['salome']:
+                self.__salomeHandlerAddMonitoringPoint(name, X, Y, Z)
 
         # Writer initialisation
 
@@ -1247,10 +1300,10 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.modelWriter.deleteAllData()
         list_writer = []
         for writer in self.mdl.getWriterIdList():
-            if int(writer) >0 :
+            if int(writer) > 0:
                 list_writer.append(writer)
         for writer in self.mdl.getWriterIdList():
-            if int(writer) <0 :
+            if int(writer) < 0:
                 label = self.mdl.getWriterLabel(writer)
                 format = self.mdl.getWriterFormat(writer)
                 directory = self.mdl.getWriterDirectory(writer)
@@ -1811,10 +1864,11 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         The number of the monitoring point is added at the precedent one
         """
         self.mdl.addMonitoringPoint(x=0.0, y=0.0, z=0.0)
-        self.__insertMonitoringPoint(self.mdl.getNumberOfMonitoringPoints(),
-                                     QString('0'),
-                                     QString('0'),
-                                     QString('0'))
+        n = self.mdl.getNumberOfMonitoringPoints()
+        self.__insertMonitoringPoint(n, QString('0'), QString('0'), QString('0'))
+
+        if self.case['salome']:
+            self.__salomeHandlerAddMonitoringPoint(n, 0., 0., 0.)
 
 
     @pyqtSignature("")
@@ -1822,20 +1876,118 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         """
         Just delete the current selected entries from the Hlist and
         of course from the XML file.
+        If salome, delete from the VTK view.
         """
-        lst = []
+        l1 = []
+        l2 = []
         selectionModel = self.tableViewPoints.selectionModel()
         for index in selectionModel.selectedRows():
             name = index.row() + 1
-            lst.append(name)
+            l1.append(name)
+            l2.append(name)
 
-        self.mdl.deleteMonitoringPoints(lst)
+        log.debug("slotDeleteMonitoringPoints -> %s" % (l1,))
+
+        self.mdl.deleteMonitoringPoints(l1)
 
         self.modelMonitoring.deleteAllData()
         for n in range(self.mdl.getNumberOfMonitoringPoints()):
-            name = str(n+1)
+            name = str(n + 1)
             X, Y, Z = self.mdl.getMonitoringPointCoordinates(name)
             self.__insertMonitoringPoint(name, X, Y, Z)
+
+        if self.case['salome']:
+            self.__salomeHandlerDeleteMonitoringPoint(l2)
+
+
+    def __salomeHandlerAddMonitoringPoint(self, name, X, Y, Z):
+        self.case['probes'].addProbe(str(name), [X, Y, Z])
+
+
+    def __salomeHandlerDeleteMonitoringPoint(self, l2):
+        l2.sort()
+        r = len(l2)
+        for n in range(r):
+            name = str(l2[n])
+            self.case['probes'].remove(name)
+            for i in range(n, r):
+                l2[i] = l2[i] - 1
+
+
+    @pyqtSignature("const QModelIndex&")
+    def slotSelectedActors(self, idx):
+        """
+        If salome, hightlights monitoring points in the VTK view.
+        """
+        log.debug("Current selected row -> %s" % (idx.row(),))
+        self.case['probes'].unSelectAll()
+        self.case['probes'].select(str(idx.row() + 1))
+        for index in self.tableViewPoints.selectionModel().selectedRows():
+            name = index.row() + 1
+            log.debug("select row -> %s" % name)
+            self.case['probes'].select(str(name))
+
+
+    @pyqtSignature("bool")
+    def slotProbesDisplay(self, checked):
+        """
+        @type checked: C{True} or C{False}
+        @param checked: if C{True}, shows the QGroupBox mesh probes display parameters
+        """
+        if checked:
+            self.case['probes'].setVisibility(1)
+        else:
+            self.case['probes'].setVisibility(0)
+
+
+    @pyqtSignature("const QString&")
+    def slotProbesRadius(self, text):
+        """
+        @type text: C{QString}
+        @param text: radius for display probes
+        """
+        r, ok = text.toDouble()
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.case['probes'].setRadius(r)
+
+
+    #@pyqtSignature("intS")
+    #def slotSlider(self, intS):
+        ##log.debug("slotSlider -> %s" % (intS,))
+        #for index in self.tableViewPoints.selectionModel().selectedRows():
+            #row = index.row()
+            #dico = self.modelMonitoring.getData(index)
+            #label = dico['n']
+            #x = float(dico['X'])
+            #y = float(dico['Y'])
+            #z = float(dico['Z'])
+            ##log.debug("slotSlider -> l: %s c: %s data: %s" % (index.row(), index.column(), dico))
+
+            #if self.sender() == self.horizontalSliderX:
+                #idx = index.sibling(row, 1)
+                #x = intS * 0.01
+            #elif self.sender() == self.horizontalSliderY:
+                #y = intS * 0.01
+                #idx = index.sibling(row, 2)
+            #elif self.sender() == self.horizontalSliderZ:
+                #z = intS * 0.01
+                #idx = index.sibling(row, 3)
+
+            ##d = MonitoringPointDelegate(self.tableViewPoints, self.case, self.mdl)
+            ##e = self.delegate.createEditor(self.tableViewPoints, QStyleOptionViewItem.Left, idx)
+
+            #self.tableViewPoints.setCurrentIndex(idx)
+            #self.tableViewPoints.openPersistentEditor(idx)
+            ##self.emit(SIGNAL("doubleClicked(const QModelIndex &)"), index)
+            ##self.tableViewPoints.edit(index)
+            #self.modelMonitoring.replaceData(idx.row(), label, x, y, z)
+            ##self.delegate.setEditorData(e, index)
+            ##e.setText(QString(z))
+            ##self.delegate.setModelData(e, self.modelMonitoring, idx)
+            #self.mdl.replaceMonitoringPointCoordinates(label, x, y, z)
+            #if self.case['probes']:
+                #self.case['probes'].updateLocation(label, [x, y, z])
+            #self.tableViewPoints.closePersistentEditor(idx)
 
 
     def isSteady(self):

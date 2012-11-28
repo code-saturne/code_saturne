@@ -100,6 +100,7 @@ ProfilesView.py \
 QMeiEditorView.py \
 ReferenceValuesModel.py \
 ReferenceValuesView.py \
+SalomeActors.py \
 SalomeHandler.py \
 ScriptRunningModel.py \
 SolutionDomainModel.py \
