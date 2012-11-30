@@ -208,11 +208,11 @@ double precision hintt(6)
 double precision flumbf, visclc, visctc, distbf, srfbn2
 double precision epsrgp, climgp, extrap
 double precision xxp0, xyp0, xzp0
-double precision srfbnf, rnx   , rny   , rnz
+double precision srfbnf, normal(3)
 double precision upx   , upy   , upz   , vistot
 double precision xk, xe, xnu
 double precision xllke, xllkmg, xlldrb
-double precision rinfiv(3), pimpv(3), qimpv(3), hextv(3), cflv(3)
+double precision rinfiv(3), pimpv(3), qimpv(3), hextv(3), cflv(3), vect(3)
 double precision visci(3,3), fikis, viscis, distfi
 
 logical          ilved
@@ -1173,6 +1173,52 @@ do ifac = 1, nfabor
            pimpv           , cflv            , hint )
 
     endif
+
+  ! Convective Boundary For Marangoni Effects (generalized symmetry condition)
+  !---------------------------------------------------------------------------
+
+  elseif (icodcl(ifac,iu).eq.14) then
+
+    pimpv(1) = rcodcl(ifac,iu,1)
+    pimpv(2) = rcodcl(ifac,iv,1)
+    pimpv(3) = rcodcl(ifac,iw,1)
+
+    qimpv(1) = rcodcl(ifac,iu,3)
+    qimpv(2) = rcodcl(ifac,iv,3)
+    qimpv(3) = rcodcl(ifac,iw,3)
+
+    normal(1) = surfbo(1,ifac)/surfbn(ifac)
+    normal(2) = surfbo(2,ifac)/surfbn(ifac)
+    normal(3) = surfbo(3,ifac)/surfbn(ifac)
+
+
+    ! Coupled solving of the velocity components
+    if (ivelco.eq.1) then
+
+      call set_generalized_sym_vector &
+           !=========================
+         ( coefau(1,ifac)  , cofafu(1,ifac)  ,             &
+           coefbu(1,1,ifac), cofbfu(1,1,ifac),             &
+           pimpv           , qimpv            , hint , normal )
+
+    else
+
+      vect(1) = velipb(ifac, 1)
+      vect(2) = velipb(ifac, 2)
+      vect(3) = velipb(ifac, 3)
+
+       call set_generalized_sym_scalar &
+           !==========================
+         ( coefa(ifac,iclu), coefa(ifac,icluf),                       &
+           coefa(ifac,iclv), coefa(ifac,iclvf),                       &
+           coefa(ifac,iclv), coefa(ifac,iclvf),                       &
+           coefb(ifac,iclu), coefb(ifac,icluf),                       &
+           coefb(ifac,iclv), coefb(ifac,iclvf),                       &
+           coefb(ifac,iclv), coefb(ifac,iclvf),                       &
+           pimpv           , qimpv            , vect , hint , normal )
+
+    endif
+
 
   endif
 
@@ -3085,6 +3131,182 @@ enddo
 
 return
 end subroutine
+
+!===============================================================================
+
+subroutine set_generalized_sym_scalar &
+           !=========================
+ ( coefau, cofafu,                                                &
+   coefav, cofafv,                                                &
+   coefaw, cofafw,                                                &
+   coefbu, cofbfu,                                                &
+   coefbv, cofbfv,                                                &
+   coefbw, cofbfw,                                                &
+   pimpv , qimpv , vect  , hint, normal)
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[out]    coefa*        explicit BC coefficient for gradients
+!> \param[out]    cofaf*        explicit BC coefficient for diffusive flux
+!> \param[out]    coefb*        implicit BC coefficient for gradients
+!> \param[out]    cofbf*        implicit BC coefficient for diffusive flux
+!> \param[in]     pimpv         Dirichlet value to impose on the normal
+!>                              component
+!> \param[in]     qimpv         Flux value to impose on the
+!>                              tangential components
+!> \param[in]     vect          value of the vector at time n
+!> \param[in]     hint          Internal exchange coefficient
+!> \param[in]     normal        normal
+!_______________________________________________________________________________
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+double precision coefau, coefav, coefaw
+double precision cofafu, cofafv, cofafw
+double precision coefbu, coefbv, coefbw
+double precision cofbfu, cofbfv, cofbfw
+double precision hint
+double precision normal(3)
+double precision vect(3)
+double precision pimpv(3), qimpv(3)
+
+! Local variables
+
+integer          isou  , jsou
+double precision coefa(3), cofaf(3)
+double precision coefb(3), cofbf(3)
+
+!===============================================================================
+
+do isou = 1, 3
+
+  ! Gradient BCs
+  coefa(isou) = pimpv(isou)*normal(isou)                                 &
+              - (1.d0-normal(isou)*normal(isou))*qimpv(isou)/hint
+  coefb(isou) = 1.d0 - normal(isou)*normal(jsou)
+
+  ! Part which cannot be implicited
+  do jsou = 1, 3
+    if (jsou.ne.isou) then
+      coefa(isou) = coefa(isou) - normal(isou)*normal(jsou)*vect(jsou)
+    endif
+  enddo
+
+  ! Flux BCs
+  cofaf(isou) = -hint*pimpv(isou)*normal(isou)                           &
+              + (1.d0-normal(isou)*normal(isou))*qimpv(isou)
+
+  cofbf(isou) = hint*normal(isou)*normal(isou)
+
+  ! Part which cannot be implicited
+  do jsou = 1, 3
+    if (jsou.ne.isou) then
+      cofaf(isou) = cofaf(isou) + hint*normal(isou)*normal(jsou)*vect(jsou)
+    endif
+  enddo
+
+enddo
+
+coefau = coefa(1)
+coefav = coefa(2)
+coefaw = coefa(3)
+
+coefbu = coefb(1)
+coefbv = coefb(2)
+coefbw = coefb(3)
+
+cofafu = cofaf(1)
+cofafv = cofaf(2)
+cofafw = cofaf(3)
+
+cofbfu = cofbf(1)
+cofbfv = cofbf(2)
+cofbfw = cofbf(3)
+
+return
+end subroutine set_generalized_sym_scalar
+
+
+!===============================================================================
+
+subroutine set_generalized_sym_vector &
+           !=========================
+ ( coefa , cofaf, coefb , cofbf, pimpv, qimpv, hint, normal)
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[out]    coefa         explicit BC coefficient for gradients
+!> \param[out]    cofaf         explicit BC coefficient for diffusive flux
+!> \param[out]    coefb         implicit BC coefficient for gradients
+!> \param[out]    cofbf         implicit BC coefficient for diffusive flux
+!> \param[in]     pimpv         Dirichlet value to impose on the normal
+!>                              component
+!> \param[in]     qimpv         Flux value to impose on the
+!>                              tangential components
+!> \param[in]     hint          Internal exchange coefficient
+!> \param[in]     normal        normal
+!_______________________________________________________________________________
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+double precision coefa(3), cofaf(3)
+double precision coefb(3,3), cofbf(3,3)
+double precision hint
+double precision normal(3)
+double precision pimpv(3), qimpv(3)
+
+! Local variables
+
+integer          isou  , jsou
+
+!===============================================================================
+
+do isou = 1, 3
+
+  ! Gradient BCs
+  coefa(isou) = pimpv(isou)*normal(isou)                                 &
+              - (1.d0-normal(isou)*normal(isou))*qimpv(isou)/hint
+  do jsou = 1, 3
+    if (jsou.eq.isou) then
+      coefb(isou,jsou) = 1.d0 - normal(isou)*normal(jsou)
+    else
+      coefb(isou,jsou) = - normal(isou)*normal(jsou)
+    endif
+  enddo
+
+  ! Flux BCs
+  cofaf(isou) = -hint*pimpv(isou)*normal(isou)                           &
+              + (1.d0-normal(isou)*normal(isou))*qimpv(isou)
+  do jsou = 1, 3
+    cofbf(isou,jsou) = hint*normal(isou)*normal(jsou)
+  enddo
+
+enddo
+
+return
+end subroutine set_generalized_sym_vector
 
 !===============================================================================
 

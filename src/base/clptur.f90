@@ -1612,7 +1612,7 @@ do ifac = 1, nfabor
 
             distfi = distb(ifac)
 
-            ! Take I" so that I"F= eps*||FI||*Ki.n when J" is in cell rji
+            ! Take I" so that I"F= eps*||FI||*Ki.n when I" is not in cell i
             ! NB: eps =1.d-1 must be consistent with vitens.f90
             fikis = max(fikis, 1.d-1*sqrt(viscis)*distfi)
 
