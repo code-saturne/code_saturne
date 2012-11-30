@@ -276,14 +276,14 @@ do ifac = 1, nfabor
 
   if(icodcu.ne. 1.and.icodcu.ne. 2.and.icodcu.ne. 3.and.        &
      icodcu.ne. 4.and.icodcu.ne. 5.and.icodcu.ne. 6.and.        &
-     icodcu.ne. 9) then
+     icodcu.ne. 9.and.icodcu.ne.14) then
     chaine=nomvar(ippuip)
     write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),icodcl(ifac,iu)
     nstvit = nstvit + 1
   endif
   if(icodcv.ne. 1.and.icodcv.ne. 2.and.icodcv.ne. 3.and.        &
      icodcv.ne. 4.and.icodcv.ne. 5.and.icodcv.ne. 6.and.        &
-     icodcv.ne. 9) then
+     icodcv.ne. 9.and.icodcv.ne.14) then
     chaine=nomvar(ippvip )
     write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),&
          icodcl(ifac,iv)
@@ -291,7 +291,7 @@ do ifac = 1, nfabor
   endif
   if(icodcw.ne. 1.and.icodcw.ne. 2.and.icodcw.ne. 3.and.        &
      icodcw.ne. 4.and.icodcw.ne. 5.and.icodcv.ne. 6.and.        &
-     icodcw.ne. 9) then
+     icodcw.ne. 9.and.icodcw.ne.14) then
     chaine=nomvar(ippwip)
     write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:16),&
          icodcl(ifac,iw)

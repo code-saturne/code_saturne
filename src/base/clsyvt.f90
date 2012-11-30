@@ -350,7 +350,7 @@ do ifac = 1, nfabor
     !                     a homogenous Neumann on the other components
     !===========================================================================
 
-    coefa(ifac,iclu) = rcodcn*rnx - rnx*(rny*upy+rnz*upz) !FIXME with the new formulation
+    coefa(ifac,iclu) = rcodcn*rnx - rnx*(rny*upy+rnz*upz)
     coefb(ifac,iclu) = 1.d0-rnx**2
     coefa(ifac,iclv) = rcodcn*rny - rny*(rnz*upz+rnx*upx)
     coefb(ifac,iclv) = 1.d0-rny**2
