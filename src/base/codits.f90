@@ -258,7 +258,7 @@ integer          nagmax, npstmg
 integer          ibsize, iesize
 integer          incp, insqrt
 
-double precision residu, rnorm, ressol, res, rnorm2
+double precision residu, rnorm, ressol, rnorm2
 double precision thetex, nadxkm1, nadxk, paxm1ax, paxm1rk, paxkrk, alph, beta
 
 double precision, allocatable, dimension(:) :: dam
@@ -496,8 +496,6 @@ endif
 ! --- Right hand side residual
 call prodsc(ncel,isqrt,smbrp,smbrp,residu)
 
-res = residu
-
 ! ---> RESIDU DE NORMALISATION
 !    (NORME C.L +TERMES SOURCES+ TERMES DE NON ORTHOGONALITE)
 
@@ -540,7 +538,7 @@ nswmod = max(nswrsp, 1)
 ! Reconstruction loop (beginning)
 !--------------------------------
 nbivar(ipp) = 0
-do while (isweep.le.nswmod.and.res.gt.epsrsp*rnorm)
+do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm)
 
   ! --- Solving on the increment dpvar
 
@@ -568,20 +566,6 @@ do while (isweep.le.nswmod.and.res.gt.epsrsp*rnorm)
    iwarnp , nfecra , niterf , icycle , iinvpe ,                   &
    epsilp , rnorm  , ressol ,                                     &
    dam    , xam    , smbrp  , dpvar  )
-
-  ! Writing
-  nbivar(ipp) = nbivar(ipp) + niterf
-  if (abs(rnorm).gt.epzero) then
-    resvar(ipp) = residu/rnorm
-  else
-    resvar(ipp) = 0.d0
-  endif
-
-  ! Writing
-  if (iwarnp.ge.3) then
-    write(nfecra,1000) cnom, isweep, residu, rnorm
-    write(nfecra,1010) cnom, isweep, niterf
-  endif
 
   ! Dynamic relaxation of the system
   if (iswdyp.ge.1) then
@@ -689,58 +673,67 @@ do while (isweep.le.nswmod.and.res.gt.epsrsp*rnorm)
     endif
   endif
 
-  isweep = isweep + 1
+  ! --- Update the right hand side And compute the new residual
 
-  res = residu
+  iccocg = 0
 
-  ! --- Update the right hand side if needed:
-  if (isweep.le.nswmod.and.res.gt.epsrsp*rnorm) then
-
-    iccocg = 0
-
-    if (iswdyp.eq.0) then
-      !$omp parallel do
-      do iel = 1, ncel
-        ! smbini already contains instationnary terms and mass source terms
-        ! of the RHS updated at each sweep
-        smbini(iel) = smbini(iel) - rovsdt(iel)*dpvar(iel)
-        smbrp(iel)  = smbini(iel)
-      enddo
-    elseif (iswdyp.eq.1) then
-      !$omp parallel do
-      do iel = 1, ncel
-        ! smbini already contains instationnary terms and mass source terms
-        ! of the RHS updated at each sweep
-        smbini(iel) = smbini(iel) - rovsdt(iel)*alph*dpvar(iel)
-        smbrp(iel)  = smbini(iel)
-      enddo
-    elseif (iswdyp.ge.2) then
-      !$omp parallel do
-      do iel = 1, ncel
-        ! smbini already contains instationnary terms and mass source terms
-        ! of the RHS updated at each sweep
-        smbini(iel) = smbini(iel)                                     &
-                    - rovsdt(iel)*(alph*dpvar(iel)+beta*dpvarm1(iel))
-        smbrp(iel)  = smbini(iel)
-      enddo
-    endif
-
-    call bilsca &
-    !==========
-   ( nvar   , nscal  ,                                              &
-     idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
-     ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-     ipp    , iwarnp , imucpp , idftnp ,                            &
-     blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
-     pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
-     flumas , flumab , viscfs , viscbs , visccs , xcpp   ,          &
-     weighf , weighb ,                                              &
-     smbrp  )
-
-    ! --- Convergence test
-    call prodsc(ncel , isqrt , smbrp , smbrp , residu)
-
+  if (iswdyp.eq.0) then
+    !$omp parallel do
+    do iel = 1, ncel
+      ! smbini already contains instationnary terms and mass source terms
+      ! of the RHS updated at each sweep
+      smbini(iel) = smbini(iel) - rovsdt(iel)*dpvar(iel)
+      smbrp(iel)  = smbini(iel)
+    enddo
+  elseif (iswdyp.eq.1) then
+    !$omp parallel do
+    do iel = 1, ncel
+      ! smbini already contains instationnary terms and mass source terms
+      ! of the RHS updated at each sweep
+      smbini(iel) = smbini(iel) - rovsdt(iel)*alph*dpvar(iel)
+      smbrp(iel)  = smbini(iel)
+    enddo
+  elseif (iswdyp.ge.2) then
+    !$omp parallel do
+    do iel = 1, ncel
+      ! smbini already contains instationnary terms and mass source terms
+      ! of the RHS updated at each sweep
+      smbini(iel) = smbini(iel)                                     &
+                  - rovsdt(iel)*(alph*dpvar(iel)+beta*dpvarm1(iel))
+      smbrp(iel)  = smbini(iel)
+    enddo
   endif
+
+  call bilsca &
+  !==========
+ ( nvar   , nscal  ,                                              &
+   idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
+   ischcp , isstpp , inc    , imrgra , iccocg ,                   &
+   ipp    , iwarnp , imucpp , idftnp ,                            &
+   blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
+   pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
+   flumas , flumab , viscfs , viscbs , visccs , xcpp   ,          &
+   weighf , weighb ,                                              &
+   smbrp  )
+
+  ! --- Convergence test
+  call prodsc(ncel , isqrt , smbrp , smbrp , residu)
+
+  ! Writing
+  nbivar(ipp) = nbivar(ipp) + niterf
+  if (abs(rnorm).gt.epzero) then
+    resvar(ipp) = residu/rnorm
+  else
+    resvar(ipp) = 0.d0
+  endif
+
+  ! Writing
+  if (iwarnp.ge.3) then
+    write(nfecra,1000) cnom, isweep, residu, rnorm
+    write(nfecra,1010) cnom, isweep, niterf
+  endif
+
+  isweep = isweep + 1
 
 enddo
 ! --- Reconstruction loop (end)

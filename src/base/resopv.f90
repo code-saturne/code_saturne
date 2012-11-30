@@ -1221,19 +1221,6 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
    epsilp , rnormp , ressol ,                                     &
    dam    , xam    , rhs    , drtp   )
 
-  ! Writing
-  nbivar(ipp) = nbivar(ipp) + niterf
-  if (abs(rnormp).gt.0.d0) then
-    resvar(ipp) = residu/rnormp
-  else
-    resvar(ipp) = 0.d0
-  endif
-
-  ! Writing
-  if (iwarnp.ge.3) then
-    write(nfecra,1500) chaine(1:16), isweep, residu, rnormp, niterf
-  endif
-
   ! Dynamic relaxation of the system
   !---------------------------------
   if (iswdyp.ge.1) then
@@ -1376,84 +1363,94 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
     enddo
   endif
 
-  isweep = isweep + 1
-
-  ! --- Update the right hand side if needed:
+  ! --- Update the right hand side and update the residual
   !      rhs^{k+1} = - div(rho u^n) - D(dt, delta delta p^{k+1})
   !-------------------------------------------------------------
 
-  if (isweep.le.nswmpr) then
-    iccocg = 1
-    init = 1
-    inc  = 0
-    if (iphydr.eq.1) inc = 1
-    nswrgp = nswrgr(ipr)
-    imligp = imligr(ipr)
-    iwarnp = iwarni(ipr)
-    epsrgp = epsrgr(ipr)
-    climgp = climgr(ipr)
-    extrap = extrag(ipr)
+  iccocg = 1
+  init = 1
+  inc  = 0
+  if (iphydr.eq.1) inc = 1
+  nswrgp = nswrgr(ipr)
+  imligp = imligr(ipr)
+  iwarnp = iwarni(ipr)
+  epsrgp = epsrgr(ipr)
+  climgp = climgr(ipr)
+  extrap = extrag(ipr)
 
-    if (idtsca.eq.0) then
+  if (idtsca.eq.0) then
 
-      call itrgrp &
-      !==========
-   ( nvar   , nscal  ,                                              &
-     init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
-     iwarnp , nfecra ,                                              &
-     epsrgp , climgp , extrap ,                                     &
-     dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
-     rtp(1,ipr)      ,                                              &
-     coefap , coefb(1,iclipr) ,                                     &
-     cofafp , coefb(1,iclipf) ,                                     &
-     viscf  , viscb  ,                                              &
-     dt     , dt     , dt     ,                                     &
-     rhs    )
+    call itrgrp &
+    !==========
+ ( nvar   , nscal  ,                                              &
+   init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
+   iwarnp , nfecra ,                                              &
+   epsrgp , climgp , extrap ,                                     &
+   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
+   rtp(1,ipr)      ,                                              &
+   coefap , coefb(1,iclipr) ,                                     &
+   cofafp , coefb(1,iclipf) ,                                     &
+   viscf  , viscb  ,                                              &
+   dt     , dt     , dt     ,                                     &
+   rhs    )
 
-    else
-      !interleaved tpucou array
-      call itrgrv &
-      !==========
-   ( nvar   , nscal  ,                                              &
-     init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
-     iwarnp , nfecra ,                                              &
-     epsrgp , climgp , extrap ,                                     &
-     dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
-     rtp(1,ipr)      ,                                              &
-     coefap , coefb(1,iclipr) ,                                     &
-     cofafp , coefb(1,iclipf) ,                                     &
-     viscf  , viscb  ,                                              &
-     tpucou ,                                                       &
-     rhs    )
-
-    endif
-
-    do iel = 1, ncel
-      rhs(iel) = - divu(iel) - rhs(iel)
-    enddo
-
-    ! --- Add eps*pressure*volume/dt in the right hand side
-    !     to strengthen the diagonal for the low-Mach algo.
-    if (idilat.eq.3) then
-      do iel = 1, ncel
-        rhs(iel) = rhs(iel) - epsdp*volume(iel)/dt(iel)*rtp(iel,ipr)
-      enddo
-    endif
-
-    ! --- Convergence test
-    call prodsc(ncel,isqrt,rhs,rhs,residu)
-
-    ! Writing
-    if (iwarni(ipr).ge.2) then
-      chaine = nomvar(ipp)
-      if (rnormp.gt.0.d0) then
-        write(nfecra,1440)chaine(1:16),isweep,residu/rnormp, relaxp
-      else
-        write(nfecra,1440)chaine(1:16),isweep,residu, relaxp
-      endif
-    endif
+  else
+    !interleaved tpucou array
+    call itrgrv &
+    !==========
+ ( nvar   , nscal  ,                                              &
+   init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
+   iwarnp , nfecra ,                                              &
+   epsrgp , climgp , extrap ,                                     &
+   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
+   rtp(1,ipr)      ,                                              &
+   coefap , coefb(1,iclipr) ,                                     &
+   cofafp , coefb(1,iclipf) ,                                     &
+   viscf  , viscb  ,                                              &
+   tpucou ,                                                       &
+   rhs    )
 
   endif
+
+  do iel = 1, ncel
+    rhs(iel) = - divu(iel) - rhs(iel)
+  enddo
+
+  ! --- Add eps*pressure*volume/dt in the right hand side
+  !     to strengthen the diagonal for the low-Mach algo.
+  if (idilat.eq.3) then
+    do iel = 1, ncel
+      rhs(iel) = rhs(iel) - epsdp*volume(iel)/dt(iel)*rtp(iel,ipr)
+    enddo
+  endif
+
+  ! --- Convergence test
+  call prodsc(ncel,isqrt,rhs,rhs,residu)
+
+  ! Writing
+  if (iwarni(ipr).ge.2) then
+    chaine = nomvar(ipp)
+    if (rnormp.gt.0.d0) then
+      write(nfecra,1440)chaine(1:16),isweep,residu/rnormp, relaxp
+    else
+      write(nfecra,1440)chaine(1:16),isweep,residu, relaxp
+    endif
+  endif
+
+  ! Writing
+  nbivar(ipp) = nbivar(ipp) + niterf
+  if (abs(rnormp).gt.0.d0) then
+    resvar(ipp) = residu/rnormp
+  else
+    resvar(ipp) = 0.d0
+  endif
+
+  ! Writing
+  if (iwarnp.ge.3) then
+    write(nfecra,1500) chaine(1:16), isweep, residu, rnormp, niterf
+  endif
+
+  isweep = isweep + 1
 
 enddo
 ! --- Reconstruction loop (end)
