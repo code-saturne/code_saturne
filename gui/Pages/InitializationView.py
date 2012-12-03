@@ -171,7 +171,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             for item in self.species_group:
                 item.show()
             for scalar in scalar_list:
-                self.modelSpecies.addItem(self.tr(scalar),self.scalar)
+                self.modelSpecies.addItem(self.tr(scalar), scalar)
             self.modelSpecies.setItem(str_model = self.scalar)
             setGreenColor(self.pushButtonSpecies, True)
         else:
