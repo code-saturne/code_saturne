@@ -1211,10 +1211,10 @@ do ifac = 1, nfabor
            !==========================
          ( coefa(ifac,iclu), coefa(ifac,icluf),                       &
            coefa(ifac,iclv), coefa(ifac,iclvf),                       &
-           coefa(ifac,iclv), coefa(ifac,iclvf),                       &
+           coefa(ifac,iclw), coefa(ifac,iclwf),                       &
            coefb(ifac,iclu), coefb(ifac,icluf),                       &
            coefb(ifac,iclv), coefb(ifac,iclvf),                       &
-           coefb(ifac,iclv), coefb(ifac,iclvf),                       &
+           coefb(ifac,iclw), coefb(ifac,iclwf),                       &
            pimpv           , qimpv            , vect , hint , normal )
 
     endif
@@ -3194,7 +3194,7 @@ do isou = 1, 3
   ! Gradient BCs
   coefa(isou) = pimpv(isou)*normal(isou)                                 &
               - (1.d0-normal(isou)*normal(isou))*qimpv(isou)/hint
-  coefb(isou) = 1.d0 - normal(isou)*normal(jsou)
+  coefb(isou) = 1.d0 - normal(isou)*normal(isou)
 
   ! Part which cannot be implicited
   do jsou = 1, 3
