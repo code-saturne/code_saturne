@@ -386,6 +386,8 @@ cs_run(void)
 
   /* Renumber mesh based on code options */
 
+  cs_user_numbering();
+
   bft_printf(_("\n Renumbering mesh:\n"));
   bft_printf_flush();
   cs_renumber_mesh(cs_glob_mesh,

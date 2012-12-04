@@ -51,6 +51,7 @@
 #include "cs_file.h"
 #include "cs_parall.h"
 #include "cs_partition.h"
+#include "cs_renumber.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -65,6 +66,38 @@ BEGIN_C_DECLS
 /*============================================================================
  * User function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Define advanced mesh numbering options.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_numbering(void)
+{
+  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
+
+  /* Force the target number of threads for mesh renumbering
+     (by default, OMP_NUM_THREADS if OpenMP is enabled, 1 otherwise) */
+
+  if (false)
+    cs_renumber_set_n_threads(4);
+
+  /* Set the minimum subset sizes when renumbering for threads. */
+
+  if (false)
+    cs_renumber_set_min_subset_size(64,   /* min. interior_subset_size */
+                                    64);  /* min. boundary subset_size */
+
+  /* Select renumbering algorithm, among:
+
+     CS_RENUMBER_I_FACES_BLOCK       (no shared cell in block)
+     CS_RENUMBER_I_FACES_MULTIPASS   (use multipass face numbering)
+     CS_RENUMBER_I_FACES_NONE        (no interior face numbering)
+  */
+
+  if (false)
+    cs_renumber_set_i_face_algorithm(CS_RENUMBER_I_FACES_MULTIPASS);
+}
 
 /*----------------------------------------------------------------------------
  * Define advanced partitioning options.

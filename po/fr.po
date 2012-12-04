@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2012-11-21 17:19+0100\n"
+"POT-Creation-Date: 2012-12-04 15:54+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -5428,16 +5428,58 @@ msgid "    no value\n"
 msgstr "    aucune valeur\n"
 
 #, c-format
-msgid "    minimum value =         %10d\n"
-msgstr "    valeur minimale =       %10d\n"
+msgid "    minimum value =         %10llu\n"
+msgstr "    valeur minimale =       %10llu\n"
 
 #, c-format
 msgid ""
-"    maximum value =         %10d\n"
+"    maximum value =         %10llu\n"
 "\n"
 msgstr ""
-"    valeur maximale =       %10d\n"
+"    valeur maximale =       %10llu\n"
 "\n"
+
+#, c-format
+msgid "    minimum value =         %10.5e\n"
+msgstr "    valeur minimale =       %10.5e\n"
+
+#, c-format
+msgid ""
+"    maximum value =         %10.5e\n"
+"\n"
+msgstr ""
+"    valeur maximale =       %10.5e\n"
+"\n"
+
+#, c-format
+msgid ""
+"\n"
+" Histogram of %s matrix bandwidth per rank:\n"
+"\n"
+msgstr ""
+"\n"
+" Histogramme de la largeur de bande de matrice %s sur les rangs :\n"
+"\n"
+
+#, c-format
+msgid ""
+"\n"
+" Histogram of %s matrix profile/lines per rank:\n"
+"\n"
+msgstr ""
+"\n"
+" Histogramme du profil/lignes de matrice % sur les rangs :\n"
+"\n"
+
+#, c-format
+msgid ""
+"\n"
+" Matrix bandwidth for %s :          %llu\n"
+" Matrix profile/lines for %s :      %llu\n"
+msgstr ""
+"\n"
+" Largeur de bande de la matrice pour %s :        %llu\n"
+" Profil/lignes de la matrice pour les %s :       %llu\n"
 
 #, c-format
 msgid ""
@@ -5462,12 +5504,24 @@ msgstr ""
 #, c-format
 msgid ""
 "\n"
+" Histogram of thread imbalance for %s per rank:\n"
+"\n"
+msgstr ""
+"\n"
+" Histogramme du déséquilibre de threads pour les %s par rang :\n"
+"\n"
+
+#, c-format
+msgid ""
+"\n"
 " Number of thread pools for %s :          %d\n"
 " Number of threading groups for %s :      %d\n"
+" Estimated thread imbalance for %s :      %10.5e\n"
 msgstr ""
 "\n"
 " Nombre de threads pour les %s :                 %d\n"
 " Nombre de groupes de threads pour les %s :      %d\n"
+" Déséquilibre de threads estimé pour les %s :    %10.5e\n"
 
 msgid "interior faces"
 msgstr "faces intérieures"
@@ -5501,6 +5555,17 @@ msgid ""
 "  for interior faces: %llu\n"
 "  for boundary faces: %llu"
 msgstr ""
+
+msgid ""
+"\n"
+" Mesh renumbering off.\n"
+"\n"
+msgstr ""
+"\n"
+" Renumérotation du maillage désactivée.\n"
+
+msgid "volume mesh"
+msgstr "maillage volumique"
 
 #, c-format
 msgid ""
@@ -8801,6 +8866,18 @@ msgstr ""
 msgid "Synchronizing cell families\n"
 msgstr " Synchronisation des familles des cellules\n"
 
+#, c-format
+msgid "    minimum value =         %10d\n"
+msgstr "    valeur minimale =       %10d\n"
+
+#, c-format
+msgid ""
+"    maximum value =         %10d\n"
+"\n"
+msgstr ""
+"    valeur maximale =       %10d\n"
+"\n"
+
 msgid ""
 "\n"
 "Halo creation times summary\n"
@@ -9316,18 +9393,6 @@ msgid ""
 "A selection criteria is given but no associated selector\n"
 "is available for mesh location %d of type %d."
 msgstr ""
-
-#, c-format
-msgid "    minimum value =         %10.5e\n"
-msgstr "    valeur minimale =       %10.5e\n"
-
-#, c-format
-msgid ""
-"    maximum value =         %10.5e\n"
-"\n"
-msgstr ""
-"    valeur maximale =       %10.5e\n"
-"\n"
 
 msgid ""
 "\n"
