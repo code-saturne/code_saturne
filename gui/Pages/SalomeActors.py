@@ -34,11 +34,8 @@ import logging
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
-import vtk
 
-#-------------------------------------------------------------------------------
-# Application modules import
-#-------------------------------------------------------------------------------
+import vtk
 
 import libSalomePy
 import salome
@@ -49,6 +46,12 @@ try:
     from libvtkRenderingPython import *
 except:
     from vtkRenderingPython import *
+
+#-------------------------------------------------------------------------------
+# Application modules import
+#-------------------------------------------------------------------------------
+
+from Base.Toolbox import GuiParam
 
 #-------------------------------------------------------------------------------
 # log config
@@ -171,14 +174,14 @@ class ActorBase(object):
 #-------------------------------------------------------------------------------
 
 class ProbeActor(ActorBase):
-    def __init__(self, render, label, point, color = ""):
+    def __init__(self, render, label, point, radius, color = ""):
         """
         """
         ActorBase.__init__(self, render, label, color)
 
         self.points.InsertNextPoint(point[0], point[1], point[2])
 
-        self.radius = 0.025
+        self.radius = radius
         self.__sphere = vtk.vtkSphereSource()
         self.__sphere.SetThetaResolution(10)
         self.__sphere.SetPhiResolution(10)
@@ -239,7 +242,7 @@ class ProbeActor(ActorBase):
 #-------------------------------------------------------------------------------
 
 class ProfilActor(ActorBase):
-    def __init__(self, render, label, p1, p2, color = ""):
+    def __init__(self, render, label, p1, p2, radius, color = ""):
         """
         """
         ActorBase.__init__(self, render, label, color)
@@ -247,9 +250,9 @@ class ProfilActor(ActorBase):
         pt1 = self.points.InsertNextPoint(p1[0], p1[1], p1[2])
         pt2 = self.points.InsertNextPoint(p2[0], p2[1], p2[2])
 
-        self.radius = 0.005
-        radius = vtk.vtkFloatArray()
-        radius.InsertNextValue(self.radius)
+        self.radius = radius
+        r = vtk.vtkFloatArray()
+        r.InsertNextValue(self.radius)
 
         self.__array = vtk.vtkCellArray()
         self.__array.InsertNextCell(2)
@@ -259,7 +262,7 @@ class ProfilActor(ActorBase):
         self.polyData = vtk.vtkPolyData()
         self.polyData.SetPoints(self.points)
         self.polyData.SetLines(self.__array)
-        self.polyData.GetCellData().SetScalars(radius)
+        self.polyData.GetCellData().SetScalars(self.radius)
 
         # TODO: to finish
         #edgeColors = vtk.vtkIdTypeArray()
@@ -322,17 +325,15 @@ class ProfilActor(ActorBase):
                                       #point[1] + factor * self.radius,
                                       #point[2] + factor * self.radius)
 
-
 #-------------------------------------------------------------------------------
 #
 #-------------------------------------------------------------------------------
-
 
 class Actors(object):
     """
     Manage the collection of Generic Actors.
     """
-    def __init__(self, view=None):
+    def __init__(self):
         """
         http://www.google.com/codesearch/p?hl=fr#a-DtlzUst6U/Examples/Annotation/Python/textOrigin.py&q=annotatePick&d=3
         """
@@ -343,7 +344,11 @@ class Actors(object):
         self.picker = self.__interactor.GetPicker()
         self.__interactor.AddObserver("LeftButtonPressEvent", self.leftButtonPressEvent)
 
+        self.radius = 0.025
         self.p = []
+
+
+    def setTableView(self, view):
         self.__view = view
 
 
@@ -367,6 +372,13 @@ class Actors(object):
         return self.p
 
 
+    def labels(self):
+        l = []
+        for p in self.p:
+            l.append(p.getLabel())
+        return l
+
+
     def remove(self, label):
         log.debug("remove -> %s in %s" % (label, self.labels()))
         idx = self.labels().index(label)
@@ -382,11 +394,36 @@ class Actors(object):
         self.refreshView()
 
 
-    def labels(self):
-        l = []
-        for p in self.p:
-            l.append(p.getLabel())
-        return l
+    def removeActors(self):
+        if label in self.labels():
+            self.remove(label)
+
+
+    def setRadius(self, r):
+        self.radius = r
+        for a in self.actors():
+            a.setRadius(r)
+        self.refreshView()
+
+
+    def getRadius(self):
+        return self.radius
+
+
+    def setVisibility(self, b):
+        for a in self.actors():
+            a.getActor().SetVisibility(b)
+            a.getLabelActor().SetVisibility(b)
+        self.refreshView()
+
+
+    def getVisibility(self):
+        try:
+            r = self.actors()[0].getActor().GetVisibility()
+        except:
+            r = 1
+
+        return r
 
 
     def select(self, label):
@@ -467,7 +504,7 @@ class ProbeActors(Actors):
         log.debug("addProbe -> %s: %s" % (label, point))
 
         if label not in self.labels():
-            self.add(ProbeActor(self.render, label, point))
+            self.add(ProbeActor(self.render, label, point, self.radius))
 
 
     def updateLocation(self, label, point):
@@ -475,37 +512,6 @@ class ProbeActors(Actors):
         idx = self.labels().index(label)
         self.p[idx].updateLocation(point)
         self.refreshView()
-
-
-    def setRadius(self, r):
-        for a in self.actors():
-            a.setRadius(r)
-        self.refreshView()
-
-
-    def getRadius(self):
-        try:
-            r = self.actors()[0].getRadius()
-        except:
-            r = 0.05
-
-        return r
-
-
-    def setVisibility(self, b):
-        for a in self.actors():
-            a.getActor().SetVisibility(b)
-            a.getLabelActor().SetVisibility(b)
-        self.refreshView()
-
-
-    def getVisibility(self):
-        try:
-            r = self.actors()[0].getActor().GetVisibility()
-        except:
-            r = 1
-
-        return r
 
 #-------------------------------------------------------------------------------
 #
@@ -517,7 +523,7 @@ class ProfilActors(Actors):
     """
     def addProfil(self, label, point1, point2):
         log.debug("addProfil -> %s: %s %s" % (label, point1, point2))
-        self.add(ProfilActor(self.render, label, point1, point2))
+        self.add(ProfilActor(self.render, label, point1, point2, self.radius))
 
 
     def updateLocation(self, label, point1, point2):

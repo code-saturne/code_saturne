@@ -964,9 +964,8 @@ class MonitoringPointDelegate(QItemDelegate):
                 z = float(dico['Z'])
                 label = str(dico['n'])
                 self.mdl.replaceMonitoringPointCoordinates(label, x, y, z)
-                if self.case['salome'] and self.case['probes']:
+                if self.case['probes']:
                     self.case['probes'].updateLocation(label, [x, y, z])
-
 
 #-------------------------------------------------------------------------------
 # Main class
@@ -1168,12 +1167,14 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
 
         if self.case['salome'] and not self.case['probes']:
             from SalomeActors import ProbeActors
-            self.case['probes'] = ProbeActors(self.tableViewPoints)
+            self.case['probes'] = ProbeActors()
+            self.case['probes'].setTableView(self.tableViewPoints)
 
         self.groupBoxProbesDisplay.setChecked(False)
         self.groupBoxProbesDisplay.setEnabled(False)
 
         if self.case['salome'] and self.case['probes']:
+            self.case['probes'].setTableView(self.tableViewPoints)
             self.groupBoxProbesDisplay.setChecked(self.case['probes'].getVisibility())
             self.groupBoxProbesDisplay.setEnabled(True)
             self.lineEditProbesRadius.setText(str(self.case['probes'].getRadius()))
