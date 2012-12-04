@@ -3506,7 +3506,7 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t  *n_particles_max,
 
   for (i = 0; i <= mesh->n_cells; i++)
     itycel[i] = builder->cell_face_idx[i];
-  for (i = 0; i <= builder->cell_face_idx[mesh->n_cells] ; i++)
+  for (i = 0; i < builder->cell_face_idx[mesh->n_cells] ; i++)
     icocel[i] = builder->cell_face_lst[i];
 
 }
