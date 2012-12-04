@@ -3533,6 +3533,7 @@ CS_PROCF (prtget, PRTGET)(const cs_lnum_t   *nbpmax,  /* n_particles max. */
                           const cs_lnum_t    ibord[],
                           const cs_lnum_t    indep[],
                           const cs_lnum_t   *jisor,
+                          const cs_lnum_t   *jgnum,
                           const cs_lnum_t   *jrpoi,
                           const cs_lnum_t   *jrtsp,
                           const cs_lnum_t   *jdp,
@@ -3634,6 +3635,9 @@ CS_PROCF (prtget, PRTGET)(const cs_lnum_t   *nbpmax,  /* n_particles max. */
 
     cur_part.cur_cell_num = itepa[i + (*jisor-1) * (*nbpmax)];
     prev_part.cur_cell_num = indep[i];
+
+    cur_part.global_num = itepa[i + (*jgnum-1) * (*nbpmax)];
+    prev_part.global_num = itepa[i + (*jgnum-1) * (*nbpmax)];
 
     if (cur_part.cur_cell_num < 0)
       cur_part.state = CS_LAGR_PART_STICKED;
@@ -3790,6 +3794,7 @@ CS_PROCF (prtput, PRTPUT)(const cs_int_t   *nbpmax,  /* n_particles max. */
                           cs_real_t         tepa[],
                           cs_int_t          ibord[],
                           const cs_int_t   *jisor,
+                          const cs_int_t   *jgnum,
                           const cs_int_t   *jrpoi,
                           const cs_int_t   *jrtsp,
                           const cs_int_t   *jdp,
