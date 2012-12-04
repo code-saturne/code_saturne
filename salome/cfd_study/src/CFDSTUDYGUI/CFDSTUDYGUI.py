@@ -213,7 +213,7 @@ def activate():
             d_activation[studyId] = 1
             return False
 
-        elif env_neptune:
+        if env_neptune:
             if mess2 != "":
                 Error = "Error: "+ ObjectTR.tr("CFDSTUDY_INVALID_ENV")
                 QMessageBox.critical(ActionHandler.dskAgent().workspace(),
@@ -221,7 +221,7 @@ def activate():
                 d_activation[studyId] = 1
                 return False
             else:
-                ActionHandler.DialogCollector.InfoDialog.setCode(CFD_Neptune, True)
+                ActionHandler.DialogCollector.InfoDialog.setCode(env_saturne, env_neptune)
 
         elif env_saturne:
             if mess1 != "":
@@ -231,7 +231,7 @@ def activate():
                 d_activation[studyId] = 1
                 return False
             else:
-                ActionHandler.DialogCollector.InfoDialog.setCode(CFD_Saturne, True)
+                ActionHandler.DialogCollector.InfoDialog.setCode(env_saturne, False)
 
         ActionHandler.DialogCollector.InfoDialog.exec_()
 

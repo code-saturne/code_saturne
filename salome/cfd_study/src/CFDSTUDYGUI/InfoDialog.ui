@@ -1,7 +1,8 @@
-<ui version="4.0" >
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
  <class>InfoDialog</class>
- <widget class="QDialog" name="InfoDialog" >
-  <property name="geometry" >
+ <widget class="QDialog" name="InfoDialog">
+  <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
@@ -9,47 +10,47 @@
     <height>234</height>
    </rect>
   </property>
-  <property name="windowTitle" >
+  <property name="windowTitle">
    <string>Saturne Information</string>
   </property>
-  <property name="modal" >
+  <property name="modal">
    <bool>true</bool>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout" >
+  <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QGroupBox" name="CodeBG" >
-     <property name="title" >
+    <widget class="QGroupBox" name="CodeBG">
+     <property name="title">
       <string>Select CFD code</string>
      </property>
-     <layout class="QGridLayout" >
-      <item row="0" column="1" >
-       <widget class="QRadioButton" name="SaturneRB" >
-        <property name="font" >
+     <layout class="QGridLayout">
+      <item row="0" column="1">
+       <widget class="QRadioButton" name="SaturneRB">
+        <property name="font">
          <font>
           <italic>true</italic>
          </font>
         </property>
-        <property name="text" >
+        <property name="text">
          <string>Code_Saturne</string>
         </property>
        </widget>
       </item>
-      <item row="1" column="1" colspan="2" >
-       <widget class="QRadioButton" name="NeptuneRB" >
-        <property name="text" >
+      <item row="1" column="1" colspan="2">
+       <widget class="QRadioButton" name="NeptuneRB">
+        <property name="text">
          <string>NEPTUNE_CFD</string>
         </property>
        </widget>
       </item>
-      <item row="0" column="0" >
-       <spacer name="spacer6_2_2" >
-        <property name="orientation" >
+      <item row="0" column="0">
+       <spacer name="spacer6_2_2">
+        <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
-        <property name="sizeType" >
+        <property name="sizeType">
          <enum>QSizePolicy::Expanding</enum>
         </property>
-        <property name="sizeHint" stdset="0" >
+        <property name="sizeHint" stdset="0">
          <size>
           <width>46</width>
           <height>21</height>
@@ -57,15 +58,15 @@
         </property>
        </spacer>
       </item>
-      <item row="0" column="2" colspan="2" >
-       <spacer name="spacer6_2_3" >
-        <property name="orientation" >
+      <item row="0" column="2" colspan="2">
+       <spacer name="spacer6_2_3">
+        <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
-        <property name="sizeType" >
+        <property name="sizeType">
          <enum>QSizePolicy::Expanding</enum>
         </property>
-        <property name="sizeHint" stdset="0" >
+        <property name="sizeHint" stdset="0">
          <size>
           <width>46</width>
           <height>21</height>
@@ -73,15 +74,15 @@
         </property>
        </spacer>
       </item>
-      <item row="1" column="3" >
-       <spacer name="spacer6_2_4" >
-        <property name="orientation" >
+      <item row="1" column="3">
+       <spacer name="spacer6_2_4">
+        <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
-        <property name="sizeType" >
+        <property name="sizeType">
          <enum>QSizePolicy::Expanding</enum>
         </property>
-        <property name="sizeHint" stdset="0" >
+        <property name="sizeHint" stdset="0">
          <size>
           <width>46</width>
           <height>21</height>
@@ -89,15 +90,15 @@
         </property>
        </spacer>
       </item>
-      <item row="1" column="0" >
-       <spacer name="spacer6_2_5" >
-        <property name="orientation" >
+      <item row="1" column="0">
+       <spacer name="spacer6_2_5">
+        <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
-        <property name="sizeType" >
+        <property name="sizeType">
          <enum>QSizePolicy::Expanding</enum>
         </property>
-        <property name="sizeHint" stdset="0" >
+        <property name="sizeHint" stdset="0">
          <size>
           <width>46</width>
           <height>21</height>
@@ -109,47 +110,47 @@
     </widget>
    </item>
    <item>
-    <widget class="QGroupBox" name="groupBox3" >
-     <property name="title" >
+    <widget class="QGroupBox" name="groupBox3">
+     <property name="title">
       <string>Informations</string>
      </property>
-     <layout class="QGridLayout" name="gridLayout" >
-      <item row="0" column="0" >
-       <widget class="QLabel" name="labelVersion" >
-        <property name="text" >
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="0">
+       <widget class="QLabel" name="labelVersion">
+        <property name="text">
          <string>version:</string>
         </property>
-        <property name="wordWrap" >
+        <property name="wordWrap">
          <bool>false</bool>
         </property>
        </widget>
       </item>
-      <item row="0" column="1" >
-       <widget class="QLabel" name="labelVersionValue" >
-        <property name="text" >
+      <item row="0" column="1">
+       <widget class="QLabel" name="labelVersionValue">
+        <property name="text">
          <string/>
         </property>
-        <property name="wordWrap" >
+        <property name="wordWrap">
          <bool>false</bool>
         </property>
        </widget>
       </item>
-      <item row="1" column="0" >
-       <widget class="QLabel" name="labelPrefix" >
-        <property name="text" >
+      <item row="1" column="0">
+       <widget class="QLabel" name="labelPrefix">
+        <property name="text">
          <string>prefix:</string>
         </property>
-        <property name="wordWrap" >
+        <property name="wordWrap">
          <bool>false</bool>
         </property>
        </widget>
       </item>
-      <item row="1" column="1" >
-       <widget class="QLabel" name="labelPrefixValue" >
-        <property name="text" >
+      <item row="1" column="1">
+       <widget class="QLabel" name="labelPrefixValue">
+        <property name="text">
          <string/>
         </property>
-        <property name="wordWrap" >
+        <property name="wordWrap">
          <bool>false</bool>
         </property>
        </widget>
@@ -158,16 +159,16 @@
     </widget>
    </item>
    <item>
-    <layout class="QHBoxLayout" >
+    <layout class="QHBoxLayout">
      <item>
-      <spacer name="spacer5" >
-       <property name="orientation" >
+      <spacer name="spacer5">
+       <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
-       <property name="sizeType" >
+       <property name="sizeType">
         <enum>QSizePolicy::Expanding</enum>
        </property>
-       <property name="sizeHint" stdset="0" >
+       <property name="sizeHint" stdset="0">
         <size>
          <width>191</width>
          <height>20</height>
@@ -176,27 +177,27 @@
       </spacer>
      </item>
      <item>
-      <widget class="QPushButton" name="OKButton" >
-       <property name="sizePolicy" >
-        <sizepolicy vsizetype="Fixed" hsizetype="Minimum" >
+      <widget class="QPushButton" name="OKButton">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
-       <property name="text" >
+       <property name="text">
         <string>OK</string>
        </property>
       </widget>
      </item>
      <item>
-      <spacer name="spacer3" >
-       <property name="orientation" >
+      <spacer name="spacer3">
+       <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
-       <property name="sizeType" >
+       <property name="sizeType">
         <enum>QSizePolicy::Expanding</enum>
        </property>
-       <property name="sizeHint" stdset="0" >
+       <property name="sizeHint" stdset="0">
         <size>
          <width>187</width>
          <height>20</height>
@@ -208,7 +209,7 @@
    </item>
   </layout>
  </widget>
- <layoutdefault spacing="6" margin="11" />
+ <layoutdefault spacing="6" margin="11"/>
  <pixmapfunction>qPixmapFromMimeSource</pixmapfunction>
  <resources/>
  <connections>
@@ -218,29 +219,45 @@
    <receiver>InfoDialog</receiver>
    <slot>accept()</slot>
    <hints>
-    <hint type="sourcelabel" >
+    <hint type="sourcelabel">
      <x>20</x>
      <y>20</y>
     </hint>
-    <hint type="destinationlabel" >
+    <hint type="destinationlabel">
      <x>20</x>
      <y>20</y>
     </hint>
    </hints>
   </connection>
   <connection>
-   <sender>CodeBG</sender>
-   <signal>clicked(int)</signal>
+   <sender>SaturneRB</sender>
+   <signal>clicked()</signal>
    <receiver>InfoDialog</receiver>
    <slot>onCodeChanged(int)</slot>
    <hints>
-    <hint type="sourcelabel" >
-     <x>20</x>
-     <y>20</y>
+    <hint type="sourcelabel">
+     <x>234</x>
+     <y>43</y>
     </hint>
-    <hint type="destinationlabel" >
-     <x>20</x>
-     <y>20</y>
+    <hint type="destinationlabel">
+     <x>233</x>
+     <y>116</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>NeptuneRB</sender>
+   <signal>clicked()</signal>
+   <receiver>InfoDialog</receiver>
+   <slot>onCodeChanged()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>237</x>
+     <y>70</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>233</x>
+     <y>116</y>
     </hint>
    </hints>
   </connection>
