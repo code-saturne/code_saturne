@@ -506,6 +506,7 @@ class Study:
             'Ensure the correct command is found:\n')
         cs_exec_environment.write_prepend_path(fd, 'PATH',
                                                self.package.get_dir("bindir"))
+        fd.write('\n')
         cs_exec_environment.write_script_comment(fd, 'Run command:\n')
         # On Linux systems, add a backslash to prevent aliases
         if sys.platform.startswith('linux'): fd.write('\\')
@@ -621,9 +622,6 @@ class Study:
 
             fdt.close()
 
-        else:
-            fd.write('\n')
-
         # Add command to execute.
 
         if scriptname:
@@ -634,6 +632,7 @@ class Study:
                 'Ensure the correct command is found:\n')
             cs_exec_environment.write_prepend_path(fd, 'PATH',
                                                    self.package.get_dir("bindir"))
+            fd.write('\n')
             cs_exec_environment.write_script_comment(fd, 'Run command:\n')
             # On Linux systems, add a backslash to prevent aliases
             if sys.platform.startswith('linux'): fd.write('\\')
