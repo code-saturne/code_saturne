@@ -757,6 +757,9 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         else:
             cs_exec_environment.run_command(cmd)
 
+        if key == 'localhost':
+            self.__updateRuncase(None)  # remove --id <id> from runcase
+
         os.chdir(prv_dir)
 
 
@@ -807,11 +810,17 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         for i in range(len(lines)):
             if re.search(pattern, lines[i]):
                 l = lines[i].split()
-                if "--id" in l:
-                    l[l.index("--id") + 1] = run_id
+                if run_id != None:
+                    if "--id" in l:
+                        l[l.index("--id") + 1] = run_id
+                    else:
+                        l.append("--id")
+                        l.append(run_id)
                 else:
-                    l.append("--id")
-                    l.append(run_id)
+                    if "--id" in l:
+                        id = l.index("--id")
+                        l.pop(id)
+                        l.pop(id)
                 lines[i] = string.join(l)
 
         run_new_f = file(runcase, mode='w')
