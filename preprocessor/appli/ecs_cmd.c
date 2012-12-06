@@ -460,7 +460,7 @@ _print_help(void)
   printf("   CGNS                           cgns\n");
 #endif
   printf("   EnSight Gold                   ensight\n");
-#if defined(HAVE_CGNS)
+#if defined(HAVE_MED)
   printf("   MED                            med\n");
 #endif
 
@@ -556,7 +556,7 @@ _read_post_opt(int    argc,
     }
 
     if (!strcmp ("med", argv[iarg])) {
-#if defined(HAVE_CGNS)
+#if defined(HAVE_MED)
       strcpy(post_type, "med");
       *argpos += 1;
 #else
