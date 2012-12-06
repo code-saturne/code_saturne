@@ -1391,21 +1391,24 @@ do ifac = 1, nfabor
             hext = rcodcl(ifac,ivar,2)
             pimp = rcodcl(ifac,ivar,1)
 
-            rcprod = 2.d0*distbf/(distbf+rugt)-1.d0/(2.d0+rugt/(rugt+distbf))
-            ! Always outside of the viscous sub-layer
-            cofimp  = max(1.d0 - 1.d0/(xkappa*tplus)*rcprod*cfnns, 0.d0)
-            pfac = 0.d0
-
-            ! Gradient BCs
-            coefa(ifac,iclvar) = pfac
-            coefb(ifac,iclvar) = cofimp
-
-            ! Flux BCs
             if (abs(hext).gt.rinfin*0.5d0) then
+
+              ! Gradient BCs
+              coefa(ifac,iclvar) = pimp*hflui/hint
+              coefb(ifac,iclvar) = 1.d0 - hflui/hint
+
+              ! Flux BCs
               coefa(ifac,iclvaf) = -hflui*pimp
               coefb(ifac,iclvaf) =  hflui
+
             else
+
               heq = hflui*hext/(hflui+hext)
+              ! Gradient BCs
+              coefa(ifac,iclvar) = pimp*heq/hint
+              coefb(ifac,iclvar) = 1.d0 - heq/hint
+
+              ! Flux BCs
               coefa(ifac,iclvaf) = -heq*pimp
               coefb(ifac,iclvaf) =  heq
             endif
