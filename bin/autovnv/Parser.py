@@ -528,7 +528,7 @@ class Parser(object):
             filePath = node.attributes["path"].value
 
             if filePath == "":
-                for root, dirs, fs in os.walk(self.getRepository()):
+                for root, dirs, fs in os.walk(os.path.join(self.getRepository(), l)):
                     if fileName in fs:
                         filePath = root
                         break
