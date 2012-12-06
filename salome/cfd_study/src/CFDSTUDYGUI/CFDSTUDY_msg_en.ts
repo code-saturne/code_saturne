@@ -586,30 +586,6 @@
             <translation>Check compilation</translation>
         </message>
         <message>
-            <source>STOP_SOLVER_ACTION_TEXT</source>
-            <translation>Stop solver</translation>
-        </message>
-        <message>
-            <source>STOP_SOLVER_ACTION_TIP</source>
-            <translation>Stop correspoinding solver process</translation>
-        </message>
-        <message>
-            <source>STOP_SOLVER_ACTION_SB</source>
-            <translation>Stop correspoinding solver process</translation>
-        </message>
-        <message>
-            <source>SHOW_SOLVER_PROCESS_ACTION_TEXT</source>
-            <translation>Show solver process</translation>
-        </message>
-        <message>
-            <source>SHOW_SOLVER_PROCESS_ACTION_TIP</source>
-            <translation>Show process log of correspoinding solver process</translation>
-        </message>
-        <message>
-            <source>SHOW_SOLVER_PROCESS_ACTION_SB</source>
-            <translation>Show process log of correspoinding solver process</translation>
-        </message>
-        <message>
             <source>PROCESS_DLG_PROCESS_NOT_SUCCESS</source>
             <translation>Some errors occured during Solver execution. See lof files for details</translation>
         </message>
@@ -684,15 +660,15 @@
         </message>
         <message>
             <source>STMSG_ECS_CONVERT</source>
-            <translation>Convertion to MED format...</translation>
+            <translation>Convertion to MED format</translation>
         </message>
         <message>
             <source>STMSG_RUN_SCRIPT</source>
-            <translation>Running Code_Saturne...</translation>
+            <translation>Running Code_Saturne</translation>
         </message>
         <message>
             <source>STMSG_CHECK_COMPILATION</source>
-            <translation>Check compilation...</translation>
+            <translation>Check compilation</translation>
         </message>
         <message>
             <source>ENV_DLG_INVALID_DIRECTORY</source>
@@ -760,7 +736,7 @@
         </message>
         <message>
             <source>INFO_DLG_INVALID_ENV</source>
-            <translation>Invalid environment!Please, correct required or non-existent variables:</translation>
+            <translation>Invalid environment! Please, correct required or non-existent variables:</translation>
         </message>
         <message>
             <source>DLG_OK_BUTTON_TEXT</source>
@@ -783,7 +759,7 @@
         </message>
         <message>
             <source>ENV_DLG_LOAD_BTN_TEXT</source>
-            <translation>Load from file...</translation>
+            <translation>Load from file</translation>
         </message>
         <message>
             <source>DLG_OK_BUTTON_TEXT</source>

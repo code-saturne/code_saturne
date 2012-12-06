@@ -103,72 +103,72 @@ class InfoDialogHandler(InfoDialog):
         self.status = 1 #initial access status
 
         aBtn = self.findChild(QtGui.QPushButton, "OKButton")
-        if aBtn != None:
-            aBtn.setText(self.tr("DLG_OK_BUTTON_TEXT"))
+        aBtn.setText(self.tr("DLG_OK_BUTTON_TEXT"))
 
-        codeBG = self.findChild(QtGui.QButtonGroup, "CodeBG")
-        if codeBG != None:
-            codeBG.setTitle(self.tr("INFO_DLG_CFDCODE_TITLE"))
+        codeBG = self.findChild(QtGui.QGroupBox, "CodeBG")
+        codeBG.setTitle(self.tr("INFO_DLG_CFDCODE_TITLE"))
 
         self.SaturneRB = self.findChild(QtGui.QRadioButton, "SaturneRB")
-        if self.SaturneRB != None:
-            self.SaturneRB.setText(self.tr("INFO_DLG_SATURNE_TEXT"))
-            self.SaturneRB.setChecked(True)
+        self.SaturneRB.setText(self.tr("INFO_DLG_SATURNE_TEXT"))
+        self.SaturneRB.setChecked(True)
 
         self.NeptuneRB = self.findChild(QtGui.QRadioButton, "NeptuneRB")
-        if self.NeptuneRB != None:
-            self.NeptuneRB.setText(self.tr("INFO_DLG_NEPTUNE_TEXT"))
+        self.NeptuneRB.setText(self.tr("INFO_DLG_NEPTUNE_TEXT"))
 
         self.setWindowTitle(self.tr("INFO_DLG_CAPTION"))
 
 
     def accept(self):
         iok, mess = CheckCFD_CodeEnv(CFD_Code())
-        if iok :
+        if iok:
             if mess != "" :
                 Error = "Error : "+ self.tr("CFDSTUDY_INVALID_ENV")
                 QMessageBox.critical(ActionHandler.dskAgent().workspace(),
                                  Error, mess, QMessageBox.Ok, 0)
             else :
                 InfoDialog.accept(self)
-                #block other code
-                self.setCode(CFD_Code(), True)
         else:
             Error = "Error : " + self.tr("INFO_DLG_INVALID_ENV")
             QMessageBox.critical(self, Error, mess, QMessageBox.Ok, 0)
 
 
-    def setCode(self, code, isDisableOther):
-        if code == CFD_Saturne:
-            self.SaturneRB.setEnabled(True)
-            self.SaturneRB.setChecked(True)
-            #self.NeptuneRB.setEnabled(not isDisableOther)
-            from cs_package import package
-        elif code == CFD_Neptune:
+    def setCode(self, env_saturne, env_neptune):
+        if env_neptune:
+            code = CFD_Neptune
             self.NeptuneRB.setEnabled(True)
             self.NeptuneRB.setChecked(True)
-            #self.SaturneRB.setEnabled(not isDisableOther)
+            self.SaturneRB.setEnabled(env_saturne)
             from nc_package import package
+
+        elif env_saturne:
+            code = CFD_Saturne
+            self.SaturneRB.setEnabled(True)
+            self.SaturneRB.setChecked(True)
+            self.NeptuneRB.setEnabled(env_neptune)
+            from cs_package import package
+
         else:
             raise DialogError, "Invalid CFD_Code in InfoDialog class"
+
         pkg = package()
         self.labelVersionValue.setText(pkg.version)
         self.labelPrefixValue.setText(pkg.dirs['prefix'][1])
         _SetCFDCode(code)
 
 
-    def onCodeChanged(self, currenBtnId):
-        codeBG = self.findChild(QtGui.QButtonGroup, "CodeBG")
-        if codeBG != None:
-            if codeBG.selected() == self.SaturneRB:
-                _SetCFDCode(CFD_Saturne)
-                from cs_package import package
-            if codeBG.selected() == self.NeptuneRB:
-                _SetCFDCode(CFD_Neptune)
-                from nc_package import package
-            pkg = package()
-            self.labelVersionValue.setText(pkg.version)
-            self.labelPrefixValue.setText(pkg.dirs['prefix'][1])
+    def onCodeChanged(self):
+        if self.sender() == self.SaturneRB:
+            self.NeptuneRB.setChecked(False)
+            _SetCFDCode(CFD_Saturne)
+            from cs_package import package
+        if self.sender() == self.NeptuneRB:
+            self.SaturneRB.setChecked(False)
+            _SetCFDCode(CFD_Neptune)
+            from nc_package import package
+
+        pkg = package()
+        self.labelVersionValue.setText(pkg.version)
+        self.labelPrefixValue.setText(pkg.dirs['prefix'][1])
 
 
 #-----------------------------------------------------------------------------------------------------------

@@ -85,26 +85,4 @@ class Desktop_Agent:
         """
         return self._WORKSPACE
 
-
-#class SolverProcess_Agent:
-#    """
-#    Usefull for a CFD code run management.
-#    """
-#    def __init__(self):
-#        """
-#        Constructor.
-#        """
-#        self._Solver = None
-#
-#
-#    def setProcessMgr(self, pm):
-#        self._Solver = solver
-#
-#
-#    def isEmpty(self):
-#        return self._Solver == None
-#
-#
-#    def stopSolver(self):
-#        if self._Solver:
-#            self._Solver.Stop()
+#-------------------------------------------------------------------------------

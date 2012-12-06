@@ -52,7 +52,6 @@ from PyQt4.QtCore import QObject, SIGNAL
 
 from CFDSTUDYGUI_Commons import CFD_Code, Trace, CFD_Saturne, CFD_Neptune, sgPyQt, sg
 from CFDSTUDYGUI_ActionsHandler import CFDSTUDYGUI_ActionsHandler
-from CFDSTUDYGUI_ProcessMgr import CFDSTUDYGUI_ProcessMgr
 from CFDSTUDYGUI_Agents import *
 
 #-------------------------------------------------------------------------------
@@ -100,19 +99,6 @@ class CFDSTUDYGUI_DesktopMgr(QObject):
         return self._ActionHandlerMap[dsk]
 
 
-    def getProcessMgr(self, dsk):
-        """
-        Returns existing or creates new Process Manager. Usefull for the CFD code ruuning.
-
-        @type dsk: C{QMainWindow}
-        @param dsk: main window of a SALOME application
-        @return: Process Manager.
-        @rtype: C{CFDSTUDYGUI_ProcessMgr}
-        """
-        ah = self.getActionHandler(dsk)
-        return ah.processMgr()
-
-
     def setWorkspace(self, dsk, ws):
         """
         Stores a workspace I{ws} to an associated desktop I{dsk}.
@@ -124,4 +110,5 @@ class CFDSTUDYGUI_DesktopMgr(QObject):
         """
         ah = self.getActionHandler(dsk)
         ah.dskAgent().setWorkspace(ws)
-        #updates in ProcessMgr automatically
+
+#-------------------------------------------------------------------------------
