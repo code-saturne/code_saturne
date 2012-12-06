@@ -498,7 +498,11 @@ class Study(object):
                     if m in meshes:
                         os.symlink(os.path.join(ref, m), os.path.join(des, m))
                     elif m != ".svn":
-                        shutil.copy2(os.path.join(ref, m), des)
+                        t = os.path.join(ref, m)
+                        if os.path.isdir(t):
+                            shutil.copytree(t, os.path.join(des, m))
+                        elif os.path.isfile(t):
+                            shutil.copy2(t, des)
 
             # Copy external scripts for post-processing
             ref = os.path.join(self.__repo, "POST")
