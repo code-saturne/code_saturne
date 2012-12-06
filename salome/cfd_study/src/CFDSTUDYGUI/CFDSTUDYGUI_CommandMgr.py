@@ -117,6 +117,7 @@ class CFDSTUDYGUI_CommandMgr(QObject):
 
         QApplication.postEvent(dlg, QEvent(9999))
 
+
     def runCommandDlg(self, sObjRep, Message, cmd, start_directory = "", prefix = ""):
         """
         Executing of custom shell command in background mode.
@@ -149,7 +150,6 @@ class CFDSTUDYGUI_CommandMgr(QObject):
         if log_file != '':
             aLogFile = open( log_file, 'w' )
 
-        #try:
         pipe = subprocess.Popen(cmd, bufsize = 0, stdout=subprocess.PIPE,
                                     stderr=subprocess.STDOUT, close_fds=True)
         try:
@@ -172,7 +172,6 @@ class CFDSTUDYGUI_CommandMgr(QObject):
             aLogFile.close()
         if pipe:
             pipe.stdout.close()
-            #QApplication.postEvent(dlg, QEvent(9998))
             import CFDSTUDYGUI_DataModel
             CFDSTUDYGUI_DataModel.UpdateSubTree(self.sObjR)
 
