@@ -87,7 +87,6 @@ cs_user_radiative_transfer.f90 \
 cs_user_solver.c \
 cs_user_source_terms.f90 \
 usalcl.f90 \
-uscfth.f90 \
 usctdz.f90 \
 uselrc.f90 \
 ushist.f90 \

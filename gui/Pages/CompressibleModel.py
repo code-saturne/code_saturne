@@ -48,7 +48,6 @@ from Base.XMLvariables import Variables, Model
 from Pages.LocalizationModel import LocalizationModel
 from Pages.Boundary import Boundary
 from Pages.ThermalScalarModel import ThermalScalarModel
-from Pages.TurbulenceModel import TurbulenceModel
 
 #-------------------------------------------------------------------------------
 # Compressible model class
@@ -110,7 +109,9 @@ class CompressibleModel(Variables, Model):
             else :
                 for v in self.var_list:
                     self.setNewModelScalar(self.node_comp, v)
+                from Pages.TurbulenceModel import TurbulenceModel
                 TurbulenceModel(self.case).setTurbulenceModel('off')
+                del TurbulenceModel
 
 
     @Variables.noUndo

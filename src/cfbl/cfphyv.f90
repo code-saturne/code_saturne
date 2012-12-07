@@ -246,7 +246,7 @@ enddo
 '@                                                            ',/,&
 '@  Renseigner uscfpv ou déclarer les propriétés constantes et',/,&
 '@    uniformes (uscfx2 pour la conductivité thermique,       ',/,&
-'@    uscfth pour les capacités calorifiques).                ',/,&
+'@    cfther pour les capacités calorifiques).                ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

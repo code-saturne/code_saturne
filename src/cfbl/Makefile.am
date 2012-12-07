@@ -55,6 +55,7 @@ cfphyv.f90 \
 cfprop.f90 \
 cfqdmv.f90 \
 cfrusb.f90 \
+cfther.f90 \
 cfvarp.f90 \
 cfxtcl.f90
 libcscfbl_la_LDFLAGS = -no-undefined

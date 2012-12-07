@@ -473,7 +473,7 @@ call clpsca                                                       &
 !       et actions correctives éventuelles.
   iccfth = -2
   imodif = 0
-  call uscfth                                                     &
+  call cfther                                                     &
   !==========
  ( nvar   , nscal  ,                                              &
    iccfth , imodif ,                                              &
@@ -560,7 +560,7 @@ if(igrdpp.gt.0) then
 
   iccfth = 24
   imodif = 0
-  call uscfth                                                     &
+  call cfther                                                     &
   !==========
  ( nvar   , nscal  ,                                              &
    iccfth , imodif ,                                              &

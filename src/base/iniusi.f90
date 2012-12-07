@@ -246,7 +246,7 @@ if (iihmpr.eq.1) then
   call  csisca(iscavr)
   !===========
 
-  call  csivis(iscavr, ivisls, iscalt, iscsth)
+  call  csivis(iscavr, ivisls, iscalt, iscsth, isca, itempk)
   !===========
 
 endif

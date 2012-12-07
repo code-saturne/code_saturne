@@ -1879,7 +1879,9 @@ void CS_PROCF (csisca, CSISCA) (int *const iscavr)
 void CS_PROCF (csivis, CSIVIS) (int *const iscavr,
                                 int *const ivisls,
                                 int *const iscalt,
-                                int *const iscsth)
+                                int *const iscsth,
+                                const int *const isca,
+                                int *const itempk)
 {
   int i;
   int choice1, choice2;
@@ -1916,6 +1918,16 @@ void CS_PROCF (csivis, CSIVIS) (int *const iscavr,
     for (i=0 ; i < vars->nscaus ; i++)
       bft_printf("--ivisls[%i] = %i\n", i, ivisls[i]);
 #endif
+  }
+
+  if (cs_gui_strcmp(vars->model, "compressible_model"))
+  {
+    ivisls[isca[*itempk] -1] = 0;
+
+    char *prop_choice = _properties_choice("thermal_conductivity");
+    if (cs_gui_strcmp(prop_choice, "user_law"))
+      ivisls[isca[*itempk] -1] = 1;
+    BFT_FREE(prop_choice);
   }
 }
 
@@ -2888,6 +2900,7 @@ void CS_PROCF (cssca3, CSSCA3) (const    int *const iscalt,
         visls0[i] = coeff * density;
       }
     }
+
 #if _XML_DEBUG_
     bft_printf("==>CSSCA3\n");
     for (i=0 ; i < vars->nscaus; i++)
@@ -4931,6 +4944,9 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
 
     cs_gui_add_mei_time(cs_timer_wtime() - time0);
   }
+
+  if (cs_gui_strcmp(vars->model, "compressible_model"))
+    cs_gui_properties_value("thermal_conductivity", &visls0[isca[*itempk] -1]);
 
   /* law for scalar diffusivity */
 

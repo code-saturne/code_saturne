@@ -182,7 +182,7 @@ nvarcf    = 7
 !       Il est calculé aux cellules W5 et aux faces de bord COEFU.
 !       On n'en a besoin ici qu'aux cellules de bord : s'il est
 !         nécessaire de gagner de la mémoire, on pourra modifier
-!         uscfth.
+!         cfther.
 
 icalep = 0
 do ifac = 1, nfabor
@@ -193,7 +193,7 @@ enddo
 if(icalep.ne.0) then
   iccfth = 7
   imodif = 0
-  call uscfth                                                   &
+  call cfther                                                   &
   !==========
 ( nvar   , nscal  ,                                              &
   iccfth , imodif ,                                              &
@@ -217,7 +217,7 @@ enddo
 if(icalgm.ne.0) then
   iccfth = 1
   imodif = 0
-  call uscfth                                                   &
+  call cfther                                                   &
   !==========
 ( nvar   , nscal  ,                                              &
   iccfth , imodif ,                                              &
@@ -289,7 +289,7 @@ do ifac = 1, nfabor
 
       iccfth = 91
 
-      call uscfth                                               &
+      call cfther                                               &
       !==========
  ( nvar   , nscal  ,                                              &
    iccfth , ifac   ,                                              &
@@ -417,7 +417,7 @@ do ifac = 1, nfabor
 
     iccfth = 90
 
-    call uscfth                                                 &
+    call cfther                                                 &
     !==========
  ( nvar   , nscal  ,                                              &
    iccfth , ifac   ,                                              &
@@ -496,7 +496,7 @@ do ifac = 1, nfabor
       coefa(ifac,iclrtp(ivar,icoef)) = rcodcl(ifac,ivar,1)
     enddo
 
-    call uscfth                                                 &
+    call cfther                                                 &
     !==========
  ( nvar   , nscal  ,                                              &
    iccfth , ifac   ,                                              &
@@ -550,7 +550,7 @@ do ifac = 1, nfabor
       coefa(ifac,iclrtp(ivar,icoef)) = rcodcl(ifac,ivar,1)
     enddo
 
-    call uscfth                                                 &
+    call cfther                                                 &
     !==========
  ( nvar   , nscal  ,                                              &
    iccfth , ifac   ,                                              &
@@ -603,7 +603,7 @@ do ifac = 1, nfabor
       coefa(ifac,iclrtp(ivar,icoef)) = rcodcl(ifac,ivar,1)
     enddo
 
-    call uscfth                                                 &
+    call cfther                                                 &
     !==========
  ( nvar   , nscal  ,                                              &
    iccfth , ifac   ,                                              &
@@ -656,7 +656,7 @@ do ifac = 1, nfabor
       coefa(ifac,iclrtp(ivar,icoef)) = rcodcl(ifac,ivar,1)
     enddo
 
-    call uscfth                                                 &
+    call cfther                                                 &
     !==========
  ( nvar   , nscal  ,                                              &
    iccfth , ifac   ,                                              &
@@ -1086,7 +1086,7 @@ deallocate(w7)
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier IEOS dans uscfth.                                ',/,&
+'@  Verifier IEOS dans cfther.                                ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

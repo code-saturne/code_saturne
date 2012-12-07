@@ -22,7 +22,7 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine uscfth &
+subroutine cfther &
 !================
 
  ( nvar   , nscal  ,                                              &
@@ -34,19 +34,11 @@ subroutine uscfth &
 ! Purpose:
 ! -------
 
-!    User subroutine.
-
 !    Define thermodynamic laws (especially for the compressible flow scheme).
-
-!    This user subroutine is mandatory for the compressible flow scheme.
 
 
 ! Introduction
 ! ============
-
-! This user subroutine allows to define all physical properties and
-! variables, through the implementation of thermodynamic laws.
-
 
 ! Avalable thermodynamic laws
 ! ===========================
@@ -303,8 +295,6 @@ ifac0 = imodif
 ! --> ieos = 2: Perfect gas with variable Gamma
 ! --> ieos = 3: Van Der Waals
 
-ieos = 1
-
 
 ! Warning: once the thermodynamic law has been chosen,
 ! =======  the remainder of the user subroutine must be modified
@@ -362,7 +352,7 @@ if (ieos.eq.1) then
     ! For example with dry air, xmasml is around 28.8d-3 kg/mol
 
   if (iccfth.ge.0) then
-    xmasml = 28.8d-3
+    xmasml = xmasmr
   endif
 
 !===============================================================================
@@ -1889,7 +1879,7 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in thermodynamics computations',/,         &
 '@    =======',/,                                                 &
-'@     Error encountered in the user subroutine ''uscfth'', ',/,  &
+'@     Error encountered in the user subroutine ''cfther'', ',/,  &
 '@       for perfect gas with constant gamma.',/,                 &
 '@',/,                                                            &
 '@     Gamma = ',e12.4   ,/,                                      &
@@ -1903,7 +1893,7 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in thermodynamics computations',/,         &
 '@    =======',/,                                                 &
-'@     Error encountered in the user subroutine ''uscfth'', ',/,  &
+'@     Error encountered in the user subroutine ''cfther'', ',/,  &
 '@       for perfect gas with constant gamma.',/,                 &
 '@',/,                                                            &
 '@     In cell ',i10   ,', Gamma = ',e12.4   ,/,                  &
@@ -1917,7 +1907,7 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in thermodynamics computations',/,         &
 '@    =======',/,                                                 &
-'@     Error encountered in the user subroutine ''uscfth'', ',/,  &
+'@     Error encountered in the user subroutine ''cfther'', ',/,  &
 '@       for perfect gas with constant gamma.',/,                 &
 '@',/,                                                            &
 '@     The computation of density failed.',/,                     &
@@ -1933,7 +1923,7 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in thermodynamics computations',/,         &
 '@    =======',/,                                                 &
-'@     Error encountered in the user subroutine ''uscfth'', ',/,  &
+'@     Error encountered in the user subroutine ''cfther'', ',/,  &
 '@       for perfect gas with constant gamma.',/,                 &
 '@',/,                                                            &
 '@     The computation of temperature failed.',/,                 &
@@ -1949,7 +1939,7 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in thermodynamics computations',/,         &
 '@    =======',/,                                                 &
-'@     Error encountered in the user subroutine ''uscfth'', ',/,  &
+'@     Error encountered in the user subroutine ''cfther'', ',/,  &
 '@       for perfect gas with constant gamma.',/,                 &
 '@',/,                                                            &
 '@     The computation of the squared speed of sound failed.',/,  &
@@ -1965,7 +1955,7 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in thermodynamics computations',/,         &
 '@    =======',/,                                                 &
-'@     Error encountered in the user subroutine ''uscfth'', ',/,  &
+'@     Error encountered in the user subroutine ''cfther'', ',/,  &
 '@       for perfect gas with constant gamma.',/,                 &
 '@',/,                                                            &
 '@     The computation of the variable beta failed.',/,           &
@@ -1981,7 +1971,7 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in thermodynamics computations',/,         &
 '@    =======',/,                                                 &
-'@     Error encountered in the user subroutine ''uscfth'', ',/,  &
+'@     Error encountered in the user subroutine ''cfther'', ',/,  &
 '@       for perfect gas with constant gamma.',/,                 &
 '@',/,                                                            &
 '@     The computation of the entropy failed.',/,                 &
@@ -1997,14 +1987,14 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in thermodynamics computations',/,         &
 '@    =======',/,                                                 &
-'@     Error encountered in the user subroutine ''uscfth'', ',/,  &
+'@     Error encountered in the user subroutine ''cfther'', ',/,  &
 '@       for perfect gas with constant gamma.',/,                 &
 '@',/,                                                            &
 '@     The boundary condition of the type ''prescribed mass',/,   &
 '@     and enthalpy flow rates '' is not available in the ',/,    &
 '@     current release.',/,                                       &
 '@',/,                                                            &
-'@     Modify the user subroutine ''uscfth''.',/,                 &
+'@     Modify the user subroutine ''cfther''.',/,                 &
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)
@@ -2014,7 +2004,7 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in thermodynamics computations',/,         &
 '@    =======',/,                                                 &
-'@     Error encountered in the user subroutine ''uscfth'', ',/,  &
+'@     Error encountered in the user subroutine ''cfther'', ',/,  &
 '@       for perfect gas with constant gamma.',/,                 &
 '@',/,                                                            &
 '@     Negative values of the density were encountered ',/,       &
@@ -2037,7 +2027,7 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in thermodynamics computations',/,         &
 '@    =======',/,                                                 &
-'@     Error encountered in the user subroutine ''uscfth'', ',/,  &
+'@     Error encountered in the user subroutine ''cfther'', ',/,  &
 '@       for perfect gas with constant gamma.',/,                 &
 '@',/,                                                            &
 '@     Negative values of the internal energy were encountered',/,&
@@ -2059,7 +2049,7 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in thermodynamics computations',/,         &
 '@    =======',/,                                                 &
-'@     Error encountered in the user subroutine ''uscfth'', ',/,  &
+'@     Error encountered in the user subroutine ''cfther'', ',/,  &
 '@       for perfect gas with variable gamma.',/,                 &
 '@',/,                                                            &
 '@     The computation of the squared speed of sound failed.',/,  &
@@ -2075,7 +2065,7 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in thermodynamics computations',/,         &
 '@    =======',/,                                                 &
-'@     Error encountered in the user subroutine ''uscfth'', ',/,  &
+'@     Error encountered in the user subroutine ''cfther'', ',/,  &
 '@       for perfect gas with variable gamma.',/,                 &
 '@',/,                                                            &
 '@     The computation of the squared speed of sound failed.',/,  &
@@ -2091,7 +2081,7 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in thermodynamics computations',/,         &
 '@    =======',/,                                                 &
-'@     Error encountered in the user subroutine ''uscfth'', ',/,  &
+'@     Error encountered in the user subroutine ''cfther'', ',/,  &
 '@       for perfect gas with variable gamma.',/,                 &
 '@',/,                                                            &
 '@     The computation of the variable beta failed.',/,           &
@@ -2107,7 +2097,7 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in thermodynamics computations',/,         &
 '@    =======',/,                                                 &
-'@     Error encountered in the user subroutine ''uscfth'', ',/,  &
+'@     Error encountered in the user subroutine ''cfther'', ',/,  &
 '@       for perfect gas with variable gamma.',/,                 &
 '@',/,                                                            &
 '@     The computation of the entropy failed.',/,                 &
@@ -2123,7 +2113,7 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in thermodynamics computations',/,         &
 '@    =======',/,                                                 &
-'@     Error encountered in the user subroutine ''uscfth'', ',/,  &
+'@     Error encountered in the user subroutine ''cfther'', ',/,  &
 '@       for perfect gas with variable gamma.',/,                 &
 '@',/,                                                            &
 '@     The computation of the entropy failed.',/,                 &
@@ -2140,4 +2130,4 @@ endif
 !----
 
 return
-end subroutine uscfth
+end subroutine cfther

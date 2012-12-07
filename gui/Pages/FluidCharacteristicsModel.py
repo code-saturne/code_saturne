@@ -87,8 +87,9 @@ class FluidCharacteristicsModel(Variables, Model):
         elif self.node_comp['model'] != None and self.node_comp['model'] != 'off':
             self.node_vol_visc  = self.setNewFluidProperty(self.node_fluid, 'volumic_viscosity')
             self.node_dyn = self.setNewFluidProperty(self.node_fluid, 'dynamic_diffusion')
+            self.node_cond      = self.setNewFluidProperty(self.node_fluid, 'thermal_conductivity')
             self.nodeList = (self.node_density, self.node_viscosity,
-                             self.node_heat, self.node_vol_visc, self.node_dyn)
+                             self.node_heat, self.node_vol_visc, self.node_dyn, self.node_cond)
         else:
             self.node_cond      = self.setNewFluidProperty(self.node_fluid, 'thermal_conductivity')
             self.nodeList = (self.node_density, self.node_viscosity,
@@ -113,7 +114,7 @@ class FluidCharacteristicsModel(Variables, Model):
         default['specific_heat']        = 1017.24
         default['thermal_conductivity'] = 0.02495
         default['dynamic_diffusion']    = 0.01
-        default['volumic_viscosity']    = 1.83e-05
+        default['volumic_viscosity']    = 0.
 
         return default
 
@@ -129,8 +130,9 @@ class FluidCharacteristicsModel(Variables, Model):
         node3 = self.node_models.xmlGetNode('joule_effect',      'model')
         node4 = self.node_models.xmlGetNode('thermal_scalar',    'model')
         node5 = self.node_models.xmlGetNode('atmospheric_flows', 'model')
+        node6 = self.node_models.xmlGetNode('compressible_model', 'model')
 
-        for node in (node1, node2, node3, node4, node5):
+        for node in (node1, node2, node3, node4, node5, node6):
             if node:
                 if node['model'] == "":
                     node['model'] = "off"
@@ -154,11 +156,12 @@ class FluidCharacteristicsModel(Variables, Model):
         (also called by NumericalParamGlobalView and TimeStepView)
         """
         d = {}
-        d['joule_effect']      = 'off'
-        d['gas_combustion']    = 'off'
-        d['solid_fuels']       = 'off'
-        d['thermal_scalar']    = 'off'
-        d['atmospheric_flows'] = 'off'
+        d['joule_effect']       = 'off'
+        d['gas_combustion']     = 'off'
+        d['solid_fuels']        = 'off'
+        d['thermal_scalar']     = 'off'
+        d['atmospheric_flows']  = 'off'
+        d['compressible_model'] = 'off'
 
         node, model = self.getThermalModel()
         if node:
@@ -168,7 +171,8 @@ class FluidCharacteristicsModel(Variables, Model):
                d['joule_effect'],      \
                d['thermal_scalar'],    \
                d['gas_combustion'],    \
-               d['solid_fuels']
+               d['solid_fuels'],    \
+               d['compressible_model']
 
 
     @Variables.noUndo
@@ -197,7 +201,10 @@ class FluidCharacteristicsModel(Variables, Model):
         self.isInList(tag, ('density', 'molecular_viscosity',
                             'specific_heat', 'thermal_conductivity',
                             'volumic_viscosity', 'dynamic_diffusion'))
-        self.isGreater(val, 0.)
+        if tag != 'volumic_viscosity':
+            self.isGreater(val, 0.)
+        else:
+            self.isPositiveFloat(val)
         node = self.node_fluid.xmlGetNode('property', name=tag)
         node.xmlSetData('initial_value', val)
 
@@ -390,7 +397,7 @@ class FluidCharacteristicsModelTestCase(ModelTest):
         from Pages.ThermalScalarModel import ThermalScalarModel
         ThermalScalarModel(self.case).setThermalModel('temperature_celsius')
         del ThermalScalarModel
-        assert mdl.getThermoPhysicalModel() == ('off', 'off', 'temperature_celsius', 'off', 'off'),\
+        assert mdl.getThermoPhysicalModel() == ('off', 'off', 'temperature_celsius', 'off', 'off', 'off'),\
         'Could not get thermophysical models in FluidCaracteristicsModel'
 
     def checkSetandGetInitialValue(self):

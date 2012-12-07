@@ -223,7 +223,7 @@ do inbcou = 1, nbccou
       iccfth = 7
       imodif = 0
 
-      call uscfth                                                   &
+      call cfther                                                   &
       !==========
     ( nvar   , nscal  ,                                              &
       iccfth , imodif ,                                              &

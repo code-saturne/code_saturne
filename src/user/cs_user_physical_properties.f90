@@ -822,7 +822,7 @@ subroutine uscfpv &
 
 ! To set a variable isobaric specific heat, the integer icp must
 ! have been set to 1: the value for icp is set automatically in the
-! subroutine 'uscfth', depending on the thermodynamics laws selected
+! subroutine 'cfther', depending on the thermodynamics laws selected
 ! by the user.
 
 ! To set a variable diffusivity for a given user-defined scalar, the
@@ -1141,12 +1141,12 @@ if (.false.) then
   enddo
 
   ! --- The isochoric specific heat is deduced from the isobaric specific
-  !     heat using the subroutine 'uscfth'.
+  !     heat using the subroutine 'cfther'.
 
   iccfth = 432
   imodif = 0
 
-  call uscfth                                                       &
+  call cfther                                                       &
   !==========
    ( nvar   , nscal  ,                                              &
      iccfth , imodif ,                                              &

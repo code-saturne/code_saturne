@@ -121,7 +121,7 @@ if ( ippmod(icompf).ge.0 ) then
   imodif = 0
   ii     = 1
   dblpre(1) = 0.d0
-  call uscfth                                                   &
+  call cfther                                                   &
   !==========
  ( ii , ii ,                                                      &
    iccfth , imodif  ,                                             &
