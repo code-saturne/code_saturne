@@ -767,16 +767,6 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm)
   nbivar(ippu) = nbivar(ippu) + niterf
   nbivar(ippv) = nbivar(ippv) + niterf
   nbivar(ippw) = nbivar(ippw) + niterf
-  if (abs(rnorm)/sqrt(3.d0).gt.epzero) then
-    resvar(ippu) = residu/rnorm
-    resvar(ippv) = residu/rnorm
-    resvar(ippw) = residu/rnorm
-  else
-    resvar(ippu) = 0.d0
-    resvar(ippv) = 0.d0
-    resvar(ippw) = 0.d0
-  endif
-
   ! Writing
   if (iwarnp.ge.3) then
      write(nfecra,1000) cnom(1), isweep, residu, rnorm
@@ -790,6 +780,16 @@ enddo
 ! --- Reconstruction loop (end)
 
 ! Writing: convergence
+if (abs(rnorm)/sqrt(3.d0).gt.epzero) then
+  resvar(ippu) = residu/rnorm
+  resvar(ippv) = residu/rnorm
+  resvar(ippw) = residu/rnorm
+else
+  resvar(ippu) = 0.d0
+  resvar(ippv) = 0.d0
+  resvar(ippw) = 0.d0
+endif
+
 if (iwarnp.ge.1) then
   if (residu.le.epsrsp*rnorm) then
     write(nfecra,1000) cnom(1),isweep-1,residu,rnorm
