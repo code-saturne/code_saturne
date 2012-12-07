@@ -62,10 +62,14 @@ AC_ARG_WITH(med-lib,
             [if test "x$with_med" = "xcheck"; then
                with_med=yes
              fi
-             MED_LDFLAGS="-L$with_med_lib"],
+             MED_LDFLAGS="-L$with_med_lib"
+             # Add the libdir to the runpath as MED libtool .la files might not be present
+             MEDRUNPATH="-R$with_med_lib"],
             [if test "x$with_med" != "xno" -a "x$with_med" != "xyes" \
 	          -a "x$with_med" != "xcheck"; then
                MED_LDFLAGS="-L$with_med/lib"
+               # Add the libdir to the runpath as MED libtool .la files might not be present
+               MEDRUNPATH="-R$with_med/lib"
              fi])
 
 if test "x$with_med" != "xno" -a "x$cs_have_hdf5" = "xno"; then
@@ -257,6 +261,7 @@ AC_SUBST(cs_have_med)
 AC_SUBST(MED_CPPFLAGS)
 AC_SUBST(MED_LDFLAGS)
 AC_SUBST(MED_LIBS)
+AC_SUBST(MEDRUNPATH)
 
 ])dnl
 
