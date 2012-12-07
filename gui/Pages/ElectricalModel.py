@@ -87,7 +87,8 @@ class ElectricalModel(Variables, Model):
         default['srrom']        = 0.
         default['scalingModel'] = "general_case"
         default['direction']    = "Z"
-        default['location']     = ""
+        default['location']     = 0
+        default['epsilon']      = 0.0002
 
         return default
 
@@ -315,7 +316,7 @@ class ElectricalModel(Variables, Model):
         """
         Return the relaxation coefficient for mass density
         """
-        value = self.node_joule.xmlGetInt('density_relaxation')
+        value = self.node_joule.xmlGetDouble('density_relaxation')
         if value == None:
             value = self.defaultElectricalValues()['srrom']
             self.setSRROM(value)
@@ -336,7 +337,7 @@ class ElectricalModel(Variables, Model):
         """
         Return the imposed power in watt
         """
-        value = self.node_joule.xmlGetInt('imposed_power')
+        value = self.node_joule.xmlGetDouble('imposed_power')
         if value == None:
             value = self.defaultElectricalValues()['power']
             self.setPower(value)
@@ -357,7 +358,7 @@ class ElectricalModel(Variables, Model):
         """
         Return the imposed current intensity
         """
-        value = self.node_joule.xmlGetInt('imposed_current')
+        value = self.node_joule.xmlGetDouble('imposed_current')
         if value == None:
             value = self.defaultElectricalValues()['power']
             self.setCurrent(value)
@@ -464,25 +465,33 @@ class ElectricalModel(Variables, Model):
 
 
     @Variables.noUndo
-    def getPlaneDefinition(self):
+    def getPlaneDefinition(self, coord):
         """
         Get plane of current intensity for "Electric variables" scaling
         """
+        self.isInList(coord, ('A', 'B', 'C', 'D', 'epsilon'))
         node = self.node_joule.xmlGetNode('recal_model')
-        s = node.xmlGetString('plane_definition')
-        if not s:
-            s = self.defaultElectricalValues()['location']
-            self.setPlaneDefinition(s)
-        return s
+        n = node.xmlInitNode('plane_definition')
+        value = n.xmlGetDouble(coord)
+        if value == None:
+            if coord == "epsilon":
+                value = self.defaultElectricalValues()['epsilon']
+            else:
+                value = self.defaultElectricalValues()['location']
+            self.setPlaneDefinition(coord, value)
+        return value
 
 
     @Variables.undoLocal
-    def setPlaneDefinition(self, plane):
+    def setPlaneDefinition(self, coord, val):
         """
         Put plane current intensity for "Electric variables" scaling
         """
+        self.isInList(coord, ('A', 'B', 'C', 'D', 'epsilon'))
+        self.isFloat(val)
         node = self.node_joule.xmlGetNode('recal_model')
-        node.xmlSetData('plane_definition', plane)
+        n = node.xmlInitNode('plane_definition')
+        n.xmlSetData(coord, val)
 
 
     @Variables.noUndo

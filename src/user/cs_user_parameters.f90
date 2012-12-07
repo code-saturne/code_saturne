@@ -2742,6 +2742,10 @@ endif
 
 icfgrp = 1
 
+ieos = 0
+
+xmasmr = 0.028966
+
 !----
 ! End
 !----
@@ -3400,9 +3404,13 @@ modrec = 1
 !       IDRECA (1, 2 ou 3) pour composante (x, y ou z)
 idreca = 3
 
-! Exemple : plan z = 3. et x <=6.
+! Exemple : plan z = 3.
 
-crit_reca = "plane[0, 0, -1, 3., epsilon = 0.0001] and X <= 6.0"
+crit_reca(1) = 0.
+crit_reca(2) = 0.
+crit_reca(3) = 1.
+crit_reca(4) = -3.
+crit_reca(5) = 0.0002
 
 ! Deallocate the temporary array
 deallocate(lstelt)

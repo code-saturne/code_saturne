@@ -305,7 +305,7 @@ void CS_PROCF (uieli1, UIELI1) (const int    *const ncelet,
                                       double *const puisim,
                                       int    *const modrec,
                                       int    *const idreca,
-                                      char   *const crit_reca);
+                                      double *const crit_reca);
 
 /*----------------------------------------------------------------------------
  * Electrical model : define plane for elreca
@@ -320,7 +320,7 @@ void CS_PROCF (uieli1, UIELI1) (const int    *const ncelet,
 
 void CS_PROCF (uielrc, UIELRC) (const int    *const ncelet,
                                       int    *const izreca,
-                                      char   *const crit_reca);
+                                      double *const crit_reca);
 
 /*----------------------------------------------------------------------------
  * Atmospheric flows: read of meteorological file of data

@@ -110,7 +110,11 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         self.connect(self.comboBoxJouleModel,       SIGNAL("activated(const QString&)"), self.slotJouleModel)
         self.connect(self.comboBoxScalingModel,     SIGNAL("activated(const QString&)"), self.slotScalingModel)
         self.connect(self.comboBoxDirection,        SIGNAL("clicked()"), self.slotDirection)
-        self.connect(self.lineEditPlaneDefinition,  SIGNAL("textChanged(const QString &)"), self.slotPlaneDef)
+        self.connect(self.lineEditPlaneDefinitionA, SIGNAL("textChanged(const QString &)"), self.slotPlaneDefA)
+        self.connect(self.lineEditPlaneDefinitionB, SIGNAL("textChanged(const QString &)"), self.slotPlaneDefB)
+        self.connect(self.lineEditPlaneDefinitionC, SIGNAL("textChanged(const QString &)"), self.slotPlaneDefC)
+        self.connect(self.lineEditPlaneDefinitionD, SIGNAL("textChanged(const QString &)"), self.slotPlaneDefD)
+        self.connect(self.lineEditEpsilon,          SIGNAL("textChanged(const QString &)"), self.slotPlaneDefEpsilon)
 
         # Validators
         validatorSRROM = DoubleValidator(self.lineEditSRROM, min=0.0, max=1.0)
@@ -119,9 +123,19 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         validatorPower.setExclusiveMin(False)
         validatorCurrent = DoubleValidator(self.lineEditCurrent, min=0.0)
         validatorCurrent.setExclusiveMin(False)
+        validatorDefinitionA = DoubleValidator(self.lineEditPlaneDefinitionA)
+        validatorDefinitionB = DoubleValidator(self.lineEditPlaneDefinitionB)
+        validatorDefinitionC = DoubleValidator(self.lineEditPlaneDefinitionC)
+        validatorDefinitionD = DoubleValidator(self.lineEditPlaneDefinitionD)
+        validatorEpsilon     = DoubleValidator(self.lineEditEpsilon)
         self.lineEditSRROM.setValidator(validatorSRROM)
         self.lineEditPower.setValidator(validatorPower)
         self.lineEditCurrent.setValidator(validatorCurrent)
+        self.lineEditPlaneDefinitionA.setValidator(validatorDefinitionA)
+        self.lineEditPlaneDefinitionB.setValidator(validatorDefinitionB)
+        self.lineEditPlaneDefinitionC.setValidator(validatorDefinitionC)
+        self.lineEditPlaneDefinitionD.setValidator(validatorDefinitionD)
+        self.lineEditEpsilon.setValidator(validatorEpsilon)
 
         # Initialize widget
         self.__initializeWidget()
@@ -186,8 +200,16 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
                     self.groupBoxRecalage.show()
                     direction = self.model.getDirection()
                     self.modelDirection.setItem(str_model=str(direction))
-                    definition = self.model.getPlaneDefinition()
-                    self.lineEditPlaneDefinition.setText(QString(str(definition)))
+                    definition = self.model.getPlaneDefinition("A")
+                    self.lineEditPlaneDefinitionA.setText(QString(str(definition)))
+                    definition = self.model.getPlaneDefinition("B")
+                    self.lineEditPlaneDefinitionB.setText(QString(str(definition)))
+                    definition = self.model.getPlaneDefinition("C")
+                    self.lineEditPlaneDefinitionC.setText(QString(str(definition)))
+                    definition = self.model.getPlaneDefinition("D")
+                    self.lineEditPlaneDefinitionD.setText(QString(str(definition)))
+                    definition = self.model.getPlaneDefinition("epsilon")
+                    self.lineEditEpsilon.setText(QString(str(definition)))
 
 
     @pyqtSignature("")
@@ -285,11 +307,53 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
 
 
     @pyqtSignature("const QString &")
-    def slotPlaneDef(self, text):
+    def slotPlaneDefA(self, text):
         """
-        Input Imposed Power
+        Input define plane
         """
-        self.model.setPlaneDefinition(text)
+        current, ok = text.toDouble()
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.model.setPlaneDefinition("A", current)
+
+
+    @pyqtSignature("const QString &")
+    def slotPlaneDefB(self, text):
+        """
+        Input define plane
+        """
+        current, ok = text.toDouble()
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.model.setPlaneDefinition("B", current)
+
+
+    @pyqtSignature("const QString &")
+    def slotPlaneDefC(self, text):
+        """
+        Input define plane
+        """
+        current, ok = text.toDouble()
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.model.setPlaneDefinition("C", current)
+
+
+    @pyqtSignature("const QString &")
+    def slotPlaneDefD(self, text):
+        """
+        Input define plane
+        """
+        current, ok = text.toDouble()
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.model.setPlaneDefinition("D", current)
+
+
+    @pyqtSignature("const QString &")
+    def slotPlaneDefEpsilon(self, text):
+        """
+        Input define plane
+        """
+        current, ok = text.toDouble()
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.model.setPlaneDefinition("epsilon", current)
 
 
     def tr(self, text):

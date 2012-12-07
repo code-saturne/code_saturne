@@ -1865,29 +1865,33 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                 for (ifac = 0; ifac < faces; ifac++)
                 {
                   ifbr = faces_list[ifac]- 1;
-                  rcodcl[vars->rtp[*ipotr -1] * (*nfabor) + ifbr] = boundaries->values[vars->rtp[*ipotr -1]][izone].val1 * (*coejou);
+                  rcodcl[(isca[*ipotr -1] -1) * (*nfabor) + ifbr] = boundaries->values[isca[*ipotr -1] -1][izone].val1 * (*coejou);
                   if (*ipoti > 0)
-                    rcodcl[vars->rtp[*ipoti -1] * (*nfabor) + ifbr] = boundaries->values[vars->rtp[*ipoti -1]][izone].val1 * (*coejou);
+                    rcodcl[(isca[*ipoti -1] -1) * (*nfabor) + ifbr] = boundaries->values[isca[*ipoti -1] -1][izone].val1 * (*coejou);
                 }
               }
             }
 
             if (cs_gui_strcmp(vars->model_value, "arc"))
             {
-              if (boundaries->type_code[*ipotr -1][izone] == DIRICHLET_IMPLICIT && *ielcor == 1)
+              if (boundaries->type_code[(isca[*ipotr -1] -1)][izone] == DIRICHLET_IMPLICIT && *ielcor == 1)
                 for (ifac = 0; ifac < faces; ifac++)
                 {
                   ifbr = faces_list[ifac]- 1;
-                  rcodcl[vars->rtp[*ipotr -1] * (*nfabor) + ifbr] = *dpot;
+                  icodcl[(isca[*ipotr-1]-1) *(*nfabor) + ifbr] = 5;
+                  rcodcl[(isca[*ipotr-1]-1) * (*nfabor) + ifbr] = *dpot;
                 }
-              if (boundaries->type_code[ipotva[0] -1][izone] == NEUMANN_IMPLICIT)
+              if (boundaries->type_code[(isca[ipotva[0] -1] -1)][izone] == NEUMANN_IMPLICIT)
                 for (ifac = 0; ifac < faces; ifac++)
                 {
                   ifbr = faces_list[ifac]- 1;
                   int iel = ifabor[ifbr];
-                  rcodcl[vars->rtp[ipotva[0] -1] * (*nfabor) + ifbr] = rtpa[vars->rtp[ipotva[0] -1]*(*ncelet) + iel-1];
-                  rcodcl[vars->rtp[ipotva[1] -1] * (*nfabor) + ifbr] = rtpa[vars->rtp[ipotva[1] -1]*(*ncelet) + iel-1];
-                  rcodcl[vars->rtp[ipotva[2] -1] * (*nfabor) + ifbr] = rtpa[vars->rtp[ipotva[2] -1]*(*ncelet) + iel-1];
+                  icodcl[(isca[ipotva[0] -1] -1) *(*nfabor) + ifbr] = 5;
+                  icodcl[(isca[ipotva[1] -1] -1) *(*nfabor) + ifbr] = 5;
+                  icodcl[(isca[ipotva[2] -1] -1) *(*nfabor) + ifbr] = 5;
+                  rcodcl[(isca[ipotva[0] -1] -1) * (*nfabor) + ifbr] = rtpa[(isca[ipotva[0] -1] -1) * (*ncelet) + iel-1];
+                  rcodcl[(isca[ipotva[1] -1] -1) * (*nfabor) + ifbr] = rtpa[(isca[ipotva[1] -1] -1) * (*ncelet) + iel-1];
+                  rcodcl[(isca[ipotva[2] -1] -1) * (*nfabor) + ifbr] = rtpa[(isca[ipotva[2] -1] -1) * (*ncelet) + iel-1];
                 }
             }
 
@@ -2430,29 +2434,33 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                 for (ifac = 0; ifac < faces; ifac++)
                 {
                   ifbr = faces_list[ifac]- 1;
-                  rcodcl[vars->rtp[*ipotr -1] * (*nfabor) + ifbr] = boundaries->values[vars->rtp[*ipotr -1]][izone].val1 * (*coejou);
+                  rcodcl[(isca[*ipotr -1] -1) * (*nfabor) + ifbr] = boundaries->values[isca[*ipotr -1] -1][izone].val1 * (*coejou);
                   if (*ipoti > 0)
-                    rcodcl[vars->rtp[*ipoti -1] * (*nfabor) + ifbr] = boundaries->values[vars->rtp[*ipoti -1]][izone].val1 * (*coejou);
+                    rcodcl[(isca[*ipoti -1] -1) * (*nfabor) + ifbr] = boundaries->values[isca[*ipoti -1] -1][izone].val1 * (*coejou);
                 }
               }
             }
 
             if (cs_gui_strcmp(vars->model_value, "arc"))
             {
-              if (boundaries->type_code[*ipotr -1][izone] == DIRICHLET_IMPLICIT && *ielcor == 1)
+              if (boundaries->type_code[(isca[*ipotr-1]-1)][izone] == DIRICHLET_IMPLICIT && *ielcor == 1)
                 for (ifac = 0; ifac < faces; ifac++)
                 {
                   ifbr = faces_list[ifac]- 1;
-                  rcodcl[vars->rtp[*ipotr -1] * (*nfabor) + ifbr] = *dpot;
+                  icodcl[(isca[*ipotr-1]-1) *(*nfabor) + ifbr] = 5;
+                  rcodcl[(isca[*ipotr-1]-1) * (*nfabor) + ifbr] = *dpot;
                 }
-              if (boundaries->type_code[ipotva[0] -1][izone] == NEUMANN_IMPLICIT)
+              if (boundaries->type_code[(isca[ipotva[0] -1] -1)][izone] == NEUMANN_IMPLICIT)
                 for (ifac = 0; ifac < faces; ifac++)
                 {
                   ifbr = faces_list[ifac]- 1;
                   int iel = ifabor[ifbr];
-                  rcodcl[vars->rtp[ipotva[0] -1] * (*nfabor) + ifbr] = rtpa[vars->rtp[ipotva[0] -1]*(*ncelet) + iel-1];
-                  rcodcl[vars->rtp[ipotva[1] -1] * (*nfabor) + ifbr] = rtpa[vars->rtp[ipotva[1] -1]*(*ncelet) + iel-1];
-                  rcodcl[vars->rtp[ipotva[2] -1] * (*nfabor) + ifbr] = rtpa[vars->rtp[ipotva[2] -1]*(*ncelet) + iel-1];
+                  icodcl[(isca[ipotva[0] -1] -1) *(*nfabor) + ifbr] = 5;
+                  icodcl[(isca[ipotva[1] -1] -1) *(*nfabor) + ifbr] = 5;
+                  icodcl[(isca[ipotva[2] -1] -1) *(*nfabor) + ifbr] = 5;
+                  rcodcl[(isca[ipotva[0] -1] -1) * (*nfabor) + ifbr] = rtpa[(isca[ipotva[0] -1] -1) * (*ncelet) + iel-1];
+                  rcodcl[(isca[ipotva[1] -1] -1) * (*nfabor) + ifbr] = rtpa[(isca[ipotva[1] -1] -1) * (*ncelet) + iel-1];
+                  rcodcl[(isca[ipotva[2] -1] -1) * (*nfabor) + ifbr] = rtpa[(isca[ipotva[2] -1] -1) * (*ncelet) + iel-1];
                 }
             }
         }
@@ -2538,29 +2546,33 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                 for (ifac = 0; ifac < faces; ifac++)
                 {
                   ifbr = faces_list[ifac]- 1;
-                  rcodcl[vars->rtp[*ipotr -1] * (*nfabor) + ifbr] = boundaries->values[vars->rtp[*ipotr -1]][izone].val1 * (*coejou);
+                  rcodcl[(isca[*ipotr -1] -1) * (*nfabor) + ifbr] = boundaries->values[isca[*ipotr -1] -1][izone].val1 * (*coejou);
                   if (*ipoti > 0)
-                    rcodcl[vars->rtp[*ipoti -1] * (*nfabor) + ifbr] = boundaries->values[vars->rtp[*ipoti -1]][izone].val1 * (*coejou);
+                    rcodcl[(isca[*ipoti -1] -1) * (*nfabor) + ifbr] = boundaries->values[isca[*ipoti -1] -1][izone].val1 * (*coejou);
                 }
               }
             }
 
             if (cs_gui_strcmp(vars->model_value, "arc"))
             {
-              if (boundaries->type_code[*ipotr -1][izone] == DIRICHLET_IMPLICIT && *ielcor == 1)
+              if (boundaries->type_code[(isca[*ipotr-1]-1)][izone] == DIRICHLET_IMPLICIT && *ielcor == 1)
                 for (ifac = 0; ifac < faces; ifac++)
                 {
                   ifbr = faces_list[ifac]- 1;
-                  rcodcl[vars->rtp[*ipotr -1] * (*nfabor) + ifbr] = *dpot;
+                  icodcl[(isca[*ipotr-1]-1) *(*nfabor) + ifbr] = 5;
+                  rcodcl[(isca[*ipotr-1]-1) * (*nfabor) + ifbr] = *dpot;
                 }
-              if (boundaries->type_code[ipotva[0] -1][izone] == NEUMANN_IMPLICIT)
+              if (boundaries->type_code[(isca[ipotva[0] -1] -1)][izone] == NEUMANN_IMPLICIT)
                 for (ifac = 0; ifac < faces; ifac++)
                 {
                   ifbr = faces_list[ifac]- 1;
                   int iel = ifabor[ifbr];
-                  rcodcl[vars->rtp[ipotva[0] -1] * (*nfabor) + ifbr] = rtpa[vars->rtp[ipotva[0] -1]*(*ncelet) + iel-1];
-                  rcodcl[vars->rtp[ipotva[1] -1] * (*nfabor) + ifbr] = rtpa[vars->rtp[ipotva[1] -1]*(*ncelet) + iel-1];
-                  rcodcl[vars->rtp[ipotva[2] -1] * (*nfabor) + ifbr] = rtpa[vars->rtp[ipotva[2] -1]*(*ncelet) + iel-1];
+                  icodcl[(isca[ipotva[0] -1] -1) *(*nfabor) + ifbr] = 5;
+                  icodcl[(isca[ipotva[1] -1] -1) *(*nfabor) + ifbr] = 5;
+                  icodcl[(isca[ipotva[2] -1] -1) *(*nfabor) + ifbr] = 5;
+                  rcodcl[(isca[ipotva[0] -1] -1) * (*nfabor) + ifbr] = rtpa[(isca[ipotva[0] -1] -1) * (*ncelet) + iel-1];
+                  rcodcl[(isca[ipotva[1] -1] -1) * (*nfabor) + ifbr] = rtpa[(isca[ipotva[1] -1] -1) * (*ncelet) + iel-1];
+                  rcodcl[(isca[ipotva[2] -1] -1) * (*nfabor) + ifbr] = rtpa[(isca[ipotva[2] -1] -1) * (*ncelet) + iel-1];
                 }
             }
         }
