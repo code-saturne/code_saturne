@@ -442,8 +442,6 @@ if (nswrsp.eq.-1) then
   inc = 0
 endif
 
-isweep = 1
-
 ! ---> INCREMENTATION ET RECONSTRUCTION DU SECOND MEMBRE
 
 !  On est entre avec un smb explicite base sur PVARA.
@@ -538,7 +536,9 @@ nswmod = max(nswrsp, 1)
 ! Reconstruction loop (beginning)
 !--------------------------------
 nbivar(ipp) = 0
-do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm)
+isweep = 1
+
+do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
 
   ! --- Solving on the increment dpvar
 

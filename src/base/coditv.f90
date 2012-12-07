@@ -545,7 +545,7 @@ nbivar(ippu) = 0
 nbivar(ippv) = 0
 nbivar(ippw) = 0
 
-do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm)
+do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
 
   ! --- Solving on the increment dpvar
 
