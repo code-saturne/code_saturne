@@ -721,11 +721,6 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm)
 
   ! Writing
   nbivar(ipp) = nbivar(ipp) + niterf
-  if (abs(rnorm).gt.epzero) then
-    resvar(ipp) = residu/rnorm
-  else
-    resvar(ipp) = 0.d0
-  endif
 
   ! Writing
   if (iwarnp.ge.3) then
@@ -741,6 +736,12 @@ enddo
 100 continue
 
 ! Writing: convergence
+if (abs(rnorm).gt.epzero) then
+  resvar(ipp) = residu/rnorm
+else
+  resvar(ipp) = 0.d0
+endif
+
 if (iwarnp.ge.1) then
   if (residu.le.epsrsp*rnorm) then
     write(nfecra,1000) cnom,isweep-1,residu,rnorm
