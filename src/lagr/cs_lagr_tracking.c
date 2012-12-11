@@ -3847,6 +3847,8 @@ CS_PROCF (prtput, PRTPUT)(const cs_int_t   *nbpmax,  /* n_particles max. */
       itepa[ (*jisor-1) * (*nbpmax) + i] = 0;
 
     }
+    itepa[ (*jgnum-1) * (*nbpmax) + i] = cur_part.global_num;
+
 
     // Data needed if the deposition model is activated
 
