@@ -1,3 +1,8 @@
+* 13/12/2012 - Jacques Fontaine <jacques-j.fontaine@edf.fr>
+  Fix in lagrangian module.
+  modified files:
+    src/lagr/lagcou.f90
+
 * 14/11/2012 - Yvan Fournier <yvan.fournier@edf.fr>
   Application name is ignored for Code_Saturne/Code_Saturne couplings, so reflect
   this in code and comments.
