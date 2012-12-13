@@ -1,3 +1,8 @@
+* 13/12/2012 - Jacques Fontaine <jacques-j.fontaine@edf.fr>
+  Fix in lagrangian module.
+  modified files:
+    src/lagr/lagcou.F
+
 * 16/10/2012 - Jacques Fontaine <jacques-j.fontaine@edf.fr>
   Fix bug in steady algorithm.
   modified files:

@@ -336,9 +336,9 @@ C
           DO IEL = 1,NCEL
 C
             TSLAG(IEL,ITSKE) = TSLAG(IEL,ITSKE)
-     &                       - ETTP(NPT,JUF) * TSLAG(IEL,ITSVX)
-     &                       - ETTP(NPT,JVF) * TSLAG(IEL,ITSVY)
-     &                       - ETTP(NPT,JWF) * TSLAG(IEL,ITSVZ)
+     &                       - RTP(IEL,IU(IPHAS)) * TSLAG(IEL,ITSVX)
+     &                       - RTP(IEL,IV(IPHAS)) * TSLAG(IEL,ITSVY)
+     &                       - RTP(IEL,IW(IPHAS)) * TSLAG(IEL,ITSVZ)
 C
           ENDDO
 C
