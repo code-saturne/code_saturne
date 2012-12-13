@@ -42,14 +42,13 @@ Delete.png \
 Document.png \
 EditableDocument.png \
 EditFile.png \
-ExecSATURNE.png \
 Executable.png \
 Folder.png \
+FolderRed.png \
 InfoCFDSTUDY.png \
 LaunchGUI.png \
 LaunchGUIwithOptions.png \
 MED_Module_Convert.png \
-MED_Module.png \
 mesh_group.png \
 mesh.png \
 mesh_tree_group.png \
@@ -63,13 +62,11 @@ SaveAs.png \
 Save.png \
 SetTreeLocation.png \
 SMESH_Module_Export.png \
-SMESH_Module.png \
 Study.png \
 TmpFile.png \
 UnknownDocument.png \
 UpdateObjBrowser.png \
 ViewFile.png \
 VISU_Module_Export.png \
-VISU_Module.png \
 VISU_Plot_Export.png \
 VISU_Plot.png
