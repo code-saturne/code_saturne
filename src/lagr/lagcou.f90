@@ -275,10 +275,10 @@ if (ltsdyn.eq.1) then
 
     do iel = 1,ncel
 
-      tslag(iel,itske) = tslag(iel,itske)                         &
-                       - ettp(npt,juf) * tslag(iel,itsvx)         &
-                       - ettp(npt,jvf) * tslag(iel,itsvy)         &
-                       - ettp(npt,jwf) * tslag(iel,itsvz)
+      tslag(iel,itske) = tslag(iel,itske)                       &
+                       - rtp(iel,iu) * tslag(iel,itsvx)         &
+                       - rtp(iel,iv) * tslag(iel,itsvy)         &
+                       - rtp(iel,iw) * tslag(iel,itsvz)
 
     enddo
 
