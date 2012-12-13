@@ -82,72 +82,89 @@ double precision w1(ncelet)
 
 ! Local variables
 
-integer          iel, ifac, init, inc, iccocg, ivar, iphydp
+integer          iel, ifac, init, inc, iccocg, iphydp
 integer          isou, ii, jj, nswrgp, imligp, iwarnp
+logical          ilved
 double precision climgp, prdtur, extrap
 double precision w1f, w2f, w3f, pfac
-double precision pondi, flux, somsur, epsrgp
+double precision pnd, flux, somsur, epsrgp
 
 double precision, allocatable, dimension(:) :: w7
-double precision, allocatable, dimension(:,:) :: grad
+double precision, allocatable, dimension(:,:,:) :: gradv
 
 !===============================================================================
 
 !===============================================================================
-! 1. INITIALISATION
+! 1. Initialization
 !===============================================================================
 
 ! Allocate a temporary for the gradient calculation
-allocate(grad(ncelet,3))
+allocate(gradv(ncelet,3,3))
 
 ! Allocate work arrays
 allocate(w7(ncelet))
 
 !===============================================================================
-! 2. CALCULATION OF THE TERM d2Ui/dxkdxj*d2Ui/dxkdxj
+! 2. Calculation of the term d2Ui/dxkdxj*d2Ui/dxkdxj
 !===============================================================================
 
 do iel = 1, ncel
   w1(iel) = 0.0d0
 enddo
 
+inc = 1
+iccocg = 1
+
+nswrgp = nswrgr(iu)
+epsrgp = epsrgr(iu)
+imligp = imligr(iu)
+iwarnp = iwarni(iu)
+climgp = climgr(iu)
+extrap = extrag(iu)
+
+iphydp = 0
+
+! gradv(iel, xyz, uvw)
+if (ivelco.eq.1) then
+
+  ilved = .false.
+
+  call grdvec &
+  !==========
+( iu     , imrgra , inc    , nswrgp , imligp ,                   &
+  iwarnp , nfecra ,                                              &
+  epsrgp , climgp , extrap ,                                     &
+  ilved  ,                                                       &
+  rtpa(1,iu) ,  coefau , coefbu,                                 &
+  gradv  )
+
+else
+
+  call grdvni &
+  !==========
+( iu  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
+  iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
+  rtpa(1,iu)   ,                                                 &
+  coefa(1,iclrtp(iu,icoef)), coefb(1,iclrtp(iu,icoef)),          &
+  gradv  )
+
+endif
+
+! Loop over u, v, w components
 do isou = 1, 3
 
-  if(isou.eq.1) ivar = iu
-  if(isou.eq.2) ivar = iv
-  if(isou.eq.3) ivar = iw
-
-  do iel=1,ncel
+  do iel = 1, ncel
     w7(iel) = 0.0d0
   enddo
-
-  inc = 1
-  iccocg = 1
-
-  nswrgp = nswrgr(ivar)
-  epsrgp = epsrgr(ivar)
-  imligp = imligr(ivar)
-  iwarnp = iwarni(ivar)
-  climgp = climgr(ivar)
-  extrap = extrag(ivar)
-
-  iphydp = 0
-
-  call grdcel &
-  !==========
- ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   rtpa(1,ivar)   , coefa(1,ivar) , coefb(1,ivar) ,               &
-   grad   )
 
   do ifac = 1, nfac
 
     ii = ifacel(1,ifac)
     jj = ifacel(2,ifac)
-    pondi = pond(ifac)
-    w1f = pondi * grad(ii,1) + (1.0d0 - pondi) * grad(jj,1)
-    w2f = pondi * grad(ii,2) + (1.0d0 - pondi) * grad(jj,2)
-    w3f = pondi * grad(ii,3) + (1.0d0 - pondi) * grad(jj,3)
+    pnd = pond(ifac)
+    w1f = pnd * gradv(ii,1,isou) + (1.0d0 - pnd) * gradv(jj,1,isou)
+    w2f = pnd * gradv(ii,2,isou) + (1.0d0 - pnd) * gradv(jj,2,isou)
+    w3f = pnd * gradv(ii,3,isou) + (1.0d0 - pnd) * gradv(jj,3,isou)
 
     somsur = surfac(1,ifac) + surfac(2,ifac) + surfac(3,ifac)
 
@@ -161,9 +178,9 @@ do isou = 1, 3
   do ifac = 1, nfabor
 
     ii = ifabor(ifac)
-    w1f = grad(ii,1)
-    w2f = grad(ii,2)
-    w3f = grad(ii,3)
+    w1f = gradv(ii,1,isou)
+    w2f = gradv(ii,2,isou)
+    w3f = gradv(ii,3,isou)
     somsur = surfbo(1,ifac) + surfbo(2,ifac) + surfbo(3,ifac)
     flux = (w1f + w2f + w3f)*somsur
     w7(ii) = w7(ii) + flux
@@ -177,11 +194,11 @@ do isou = 1, 3
 enddo
 
 ! Free memory
-deallocate(grad)
+deallocate(gradv)
 deallocate(w7)
 
 !----
-! FIN
+! End
 !----
 
 return
