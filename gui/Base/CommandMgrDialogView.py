@@ -149,7 +149,7 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
     """
     Open a dialog to start external programs and display its output.
     """
-    def __init__(self, parent, title, cmd_list, start_directory=""):
+    def __init__(self, parent, title, cmd_list, start_directory="", obj_salome=""):
         """
         Constructor. Must be overriden.
         """
@@ -168,6 +168,8 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
         self.proc = QProcess()
         if start_directory != None and start_directory != "":
             self.proc.setWorkingDirectory(QString(start_directory))
+
+        self.objBr = obj_salome
 
         self.connect(self.proc,
                      SIGNAL('readyReadStandardOutput()'),
@@ -223,6 +225,16 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
         """
         Public slot. Enable the close button of the dialog window.
         """
+        # if the GUI is launched through SALOME, update the object browser
+        # in order to display results
+        if self.objBr:
+            try:
+                import CFDSTUDYGUI_DataModel
+                r = CFDSTUDYGUI_DataModel.ScanChildren(self.objBr, "^RESU$")
+                CFDSTUDYGUI_DataModel.UpdateSubTree(r[0])
+            except:
+                pass
+
         QApplication.restoreOverrideCursor()
         self.pushButtonOK.setEnabled(True)
 
