@@ -158,6 +158,8 @@ use entsor
 use lagpar
 use lagran
 use mesh
+use ppincl
+use pointe
 
 !===============================================================================
 
@@ -182,13 +184,14 @@ double precision piil(nbpmax,3) , bx(nbpmax,3,2)
 double precision vagaus(nbpmax,*)
 double precision gradpr(ncelet,3) , gradvf(ncelet,9)
 double precision romp(nbpmax)
+double precision ustar
 
 ! Local variables
 
 integer          isens  , iel , mode, id, i0
 double precision depg(3),depl(3),vpart(3),vvue(3),tempf, romf
-double precision vflui(3),vdirn,vdirt,vdirtt,vpartl,vvuel,dxl, enertur
-double precision ggp(3), gdpr(3), piilp(3), tlp(3),bxp(3)
+double precision vflui(3),vflui1(3),vdirn,vdirt,vdirtt,vpartl,vvuel,dxl, enertur
+double precision ggp(3), gdpr(3), piilp(3), tlp,bxp
 
 double precision aa , bb , cc , dd , ee
 double precision aux1 , aux2 ,aux3 , aux4 , aux5 , aux6
@@ -201,17 +204,68 @@ double precision gama2 , omegam , omega2
 double precision grga2 , gagam , gaome
 double precision p11 , p21 , p22 , p31 , p32 , p33
 double precision grav(3) , ad1, ad2
-double precision ustar, lvisq, tvisq, depint
-
+double precision lvisq, tvisq, depint
+double precision c0, cl, visccf
+double precision energi , dissip , vit(3)
+double precision norm_vit , norm
+integer          iromf
 !===============================================================================
 
 !===============================================================================
 ! 0.  Memory management and Initialization
 !===============================================================================
 
+! Initializations to avoid compiler warning
+energi = 0.d0
+dissip = 0.d0
+norm_vit = 0.d0
 
 iel = itepa(ip,jisor)
 
+! Friction velocity
+ifac = itepa(ip,jdfac)
+ustar = uetbor(ifac)
+
+! Constants for the calculation of bxp and tlp
+c0   = 2.1d0
+cl   = 1.d0 / (0.5d0 + (3.d0/4.d0)*c0)
+
+! Pointer on the density w.r.t the flow
+if (ippmod(iccoal).ge.0 .or. ippmod(icfuel).ge.0) then
+  iromf = ipproc(irom1)
+else
+  iromf = ipproc(irom)
+endif
+
+romf = propce(iel,iromf)
+visccf = propce(iel,ipproc(iviscl)) / romf
+
+norm=sqrt(rtpa(iel,iu)**2 + rtpa(iel,iv)**2 + rtpa(iel,iw)**2)
+
+! Velocity norm w.r.t y+
+if (tepa(ip,jryplu).le.5.d0) then
+   norm_vit = tepa(ip,jryplu) * ustar
+else if ( tepa(ip,jryplu).gt.5.d0.and.tepa(ip,jryplu).le.30.d0) then
+   norm_vit = ( -3.05d0 + 5.d0 * log(tepa(ip,jryplu))) * ustar
+else if (tepa(ip,jryplu).gt.30.d0.and.tepa(ip,jryplu).lt.100.d0) then
+   norm_vit = (2.5d0 * log(tepa(ip,jryplu)) + 5.5d0) * ustar
+endif
+
+vit(1) = norm_vit * rtpa(iel,iu) / norm
+vit(2) = norm_vit * rtpa(iel,iv) / norm
+vit(3) = norm_vit * rtpa(iel,iw) / norm
+
+! Turbulent kinetic energy and dissipation w.r.t y+
+if (tepa(ip,jryplu).le.5.d0) then
+   energi = 0.1d0 * (tepa(ip,jryplu)**2) * ustar**2
+   dissip = 0.2d0 * ustar**4 / visccf
+else if (tepa(ip,jryplu).gt.5.d0.and.tepa(ip,jryplu).le.30.d0) then
+   energi = ustar**2 / (0.09d0)**0.5
+   dissip = 0.2d0 * ustar**4 / visccf
+else if (tepa(ip,jryplu).gt.30.d0.and.tepa(ip,jryplu).le.100.d0) then
+   energi = ustar**2 / (0.09d0)**0.5
+   dissip = ustar**4 / (0.41d0 * tepa(ip,jryplu) * visccf)
+endif
 
 !===============================================================================
 ! 2. Reference frame change:
@@ -259,8 +313,17 @@ call  lagprj                                                        &
 call  lagprj                                                        &
 !===========
     ( isens                 ,                                       &
+      vit(1)         , vit(2)         , vit(3)         ,            &
+      vflui1(1)      , vflui(2)       , vflui(3)       ,            &
+      dlgeo(ifac, 5) , dlgeo(ifac, 6) , dlgeo(ifac, 7) ,            &
+      dlgeo(ifac, 8) , dlgeo(ifac, 9) , dlgeo(ifac,10) ,            &
+      dlgeo(ifac,11) , dlgeo(ifac,12) , dlgeo(ifac,13)  )
+
+call  lagprj                                                        &
+!===========
+    ( isens                 ,                                       &
       rtpa(iel,iu)   , rtpa(iel,iv)   , rtpa(iel,iw)   ,            &
-      vflui(1)       , vflui(2)       , vflui(3)       ,            &
+      vflui(1)       , vflui1(2)      , vflui1(3)       ,            &
       dlgeo(ifac, 5) , dlgeo(ifac, 6) , dlgeo(ifac, 7) ,            &
       dlgeo(ifac, 8) , dlgeo(ifac, 9) , dlgeo(ifac,10) ,            &
       dlgeo(ifac,11) , dlgeo(ifac,12) , dlgeo(ifac,13)  )
@@ -268,66 +331,33 @@ call  lagprj                                                        &
 ! 2.5 - pressure gradient
 
 call  lagprj                                                        &
-!===========
-    ( isens          ,                                              &
-      gradpr(iel,1)  , gradpr(iel,2)  , gradpr(iel,3)  ,            &
-      gdpr(1)        , gdpr(2)        , gdpr(3)        ,            &
-      dlgeo(ifac, 5) , dlgeo(ifac, 6) , dlgeo(ifac, 7) ,            &
-      dlgeo(ifac, 8) , dlgeo(ifac, 9) , dlgeo(ifac,10) ,            &
-      dlgeo(ifac,11) , dlgeo(ifac,12) , dlgeo(ifac,13) )
+     !===========
+     ( isens          ,                                              &
+     gradpr(iel,1)  , gradpr(iel,2)  , gradpr(iel,3)  ,            &
+     gdpr(1)        , gdpr(2)        , gdpr(3)        ,            &
+     dlgeo(ifac, 5) , dlgeo(ifac, 6) , dlgeo(ifac, 7) ,            &
+     dlgeo(ifac, 8) , dlgeo(ifac, 9) , dlgeo(ifac,10) ,            &
+     dlgeo(ifac,11) , dlgeo(ifac,12) , dlgeo(ifac,13) )
 
 ! 2.6 - "piil" term
 
 call  lagprj                                                        &
-!===========
-    ( isens          ,                                              &
-      piil(ip,1)     , piil(ip,2)     , piil(ip,3)     ,            &
-      piilp(1)       , piilp(2)       , piilp(3)       ,            &
-      dlgeo(ifac, 5) , dlgeo(ifac, 6) , dlgeo(ifac, 7) ,            &
-      dlgeo(ifac, 8) , dlgeo(ifac, 9) , dlgeo(ifac,10) ,            &
-      dlgeo(ifac,11) , dlgeo(ifac,12) , dlgeo(ifac,13) )
+     !===========
+     ( isens          ,                                              &
+     piil(ip,1)     , piil(ip,2)     , piil(ip,3)     ,            &
+     piilp(1)       , piilp(2)       , piilp(3)       ,            &
+     dlgeo(ifac, 5) , dlgeo(ifac, 6) , dlgeo(ifac, 7) ,            &
+     dlgeo(ifac, 8) , dlgeo(ifac, 9) , dlgeo(ifac,10) ,            &
+     dlgeo(ifac,11) , dlgeo(ifac,12) , dlgeo(ifac,13) )
 
 ! 2.7 - tlag
 
-call  lagprj                                                        &
-!===========
-    ( isens          ,                                              &
-      tlag(ip,1)     , tlag(ip,2)     , tlag(ip,3)     ,            &
-      tlp(1)         , tlp(2)         , tlp(3)         ,            &
-      dlgeo(ifac, 5) , dlgeo(ifac, 6) , dlgeo(ifac, 7) ,            &
-      dlgeo(ifac, 8) , dlgeo(ifac, 9) , dlgeo(ifac,10) ,            &
-      dlgeo(ifac,11) , dlgeo(ifac,12) , dlgeo(ifac,13) )
-
-tlp(1)=abs(tlp(1))
-tlp(2)=abs(tlp(2))
-tlp(3)=abs(tlp(3))
-
-if ((abs(tlag(ip,1)-tlag(ip,2)) .le. 1.d-30) .and.                 &
-    (abs(tlag(ip,2)-tlag(ip,3)) .le. 1.d-30)) then
-  tlp(1)= tlag(ip,1)
-  tlp(2)= tlag(ip,1)
-  tlp(3)= tlag(ip,1)
-endif
+tlp = cl * energi / dissip
+tlp = max(tlp,epzero)
 
 ! 2.8 - bx
 
-call  lagprj                                                        &
-!===========
-    ( isens          ,                                              &
-      bx(ip,1,nor)   , bx(ip,2,nor)   , bx(ip,3,nor)   ,            &
-      bxp(1)         , bxp(2)         , bxp(3)         ,            &
-      dlgeo(ifac, 5) , dlgeo(ifac, 6) , dlgeo(ifac, 7) ,            &
-      dlgeo(ifac, 8) , dlgeo(ifac, 9) , dlgeo(ifac,10) ,            &
-      dlgeo(ifac,11) , dlgeo(ifac,12) , dlgeo(ifac,13)  )
-
-if ((abs(bx(ip,1,nor)-bx(ip,2,nor)) .le. 1.d-30) .and.             &
-    (abs(bx(ip,2,nor)-bx(ip,3,nor)) .le. 1.d-30)) then
-  bxp(1)= bx(ip,1,nor)
-  bxp(2)= bx(ip,1,nor)
-  bxp(3)= bx(ip,1,nor)
-endif
-
-
+bxp = sqrt(c0*dissip)
 
 !===============================================================================
 ! 3. Integration of the EDS on the particles
@@ -359,19 +389,19 @@ do id = 2,3
 
   i0 = id - 1
 
-  tci = piilp(id) * tlp(id) + vflui(id)
+  tci = piilp(id) * tlp + vflui(id)
   force = ( romf * gdpr(id) / romp(ip) + ggp(id) ) * taup(ip)
 
   aux1 = exp( -dtp / taup(ip))
-  aux2 = exp( -dtp / tlp(id) )
-  aux3 = tlp(id) / (tlp(id)-taup(ip))
+  aux2 = exp( -dtp / tlp )
+  aux3 = tlp / (tlp-taup(ip))
 
-  aux4 = tlp(id) / (tlp(id)+taup(ip))
-  aux5 = tlp(id) * (1.d0-aux2)
-  aux6 = bxp(id) * bxp(id) * tlp(id)
+  aux4 = tlp / (tlp+taup(ip))
+  aux5 = tlp * (1.d0-aux2)
+  aux6 = bxp * bxp * tlp
 
-  aux7 = tlp(id) - taup(ip)
-  aux8 = bxp(id) * bxp(id) * aux3**2
+  aux7 = tlp - taup(ip)
+  aux8 = bxp * bxp * aux3**2
 
 !---> Terms for the trajectory
 
@@ -407,10 +437,10 @@ do id = 2,3
   omegam = omegam * sqrt(aux6)
 
   omega2 = aux7                                                   &
-          * ( aux7*dtp - 2.d0 * (tlp(id)*aux5-taup(ip)*aa) )      &
-          + 0.5d0 * tlp (id)* tlp(id)*aux5 * (1.d0 + aux2)        &
+          * ( aux7*dtp - 2.d0 * (tlp*aux5-taup(ip)*aa) )      &
+          + 0.5d0 * tlp * tlp*aux5 * (1.d0 + aux2)        &
           + 0.5d0 * taup(ip) * taup(ip) * aa * (1.d0+aux1)        &
-          - 2.0d0 * aux4 * tlp(id) * taup(ip) * taup(ip)          &
+          - 2.0d0 * aux4 * tlp * taup(ip) * taup(ip)          &
                   * (1.d0 - aux1*aux2)
 
   omega2 = aux8 * omega2
@@ -435,16 +465,16 @@ do id = 2,3
 
 !---> Integral for particles velocity
 
-  aux9  = 0.5d0 * tlp(id) * (1.d0 - aux2*aux2)
+  aux9  = 0.5d0 * tlp * (1.d0 - aux2*aux2)
   aux10 = 0.5d0 * taup(ip) * (1.d0 - aux1*aux1)
-  aux11 = taup(ip) * tlp(id) * (1.d0 - aux1*aux2)                 &
-         / (taup(ip) + tlp(id))
+  aux11 = taup(ip) * tlp * (1.d0 - aux1*aux2)                 &
+         / (taup(ip) + tlp)
 
   grga2 = (aux9 - 2.d0*aux11 + aux10) * aux8
   gagam = (aux9 - aux11) * (aux8 / aux3)
-  gaome = ( (tlp(id) - taup(ip)) * (aux5 - aa)                    &
-          -  tlp(id) * aux9 - taup(ip) * aux10                    &
-          + (tlp(id) + taup(ip)) * aux11 ) * aux8
+  gaome = ( (tlp - taup(ip)) * (aux5 - aa)                    &
+          -  tlp * aux9 - taup(ip) * aux10                    &
+          + (tlp + taup(ip)) * aux11 ) * aux8
 
   if(p11.gt.epzero) then
     p31 = gagam / p11
