@@ -304,7 +304,10 @@ class SetTreeLocationDialogHandler(SetTreeLocationDialog):
 
             # create from study dir + study name
 
-            aStudyDirName = str(aNameLE.text().toUpper().toLatin1())
+            if aNameLE.text().toLatin1() != aNameLE.text():
+                raise DialogError, "Names must not contain special characters."
+
+            aStudyDirName = str(aNameLE.text().toLatin1())
 
             self.StudyPath = os.path.join(aStudyDir, aStudyDirName)
             self.StudyName = aStudyDirName
