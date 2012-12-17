@@ -109,7 +109,6 @@ from PyQt4.QtGui import QMessageBox
 
 logging.basicConfig()
 log = logging.getLogger("CFDSTUDYGUI_DataModel")
-#log.setLevel(logging.DEBUG)
 log.setLevel(logging.NOTSET)
 
 #-------------------------------------------------------------------------------

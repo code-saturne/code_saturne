@@ -53,9 +53,9 @@ from PyQt4.QtCore import Qt, QObject, QEvent, SIGNAL, SLOT
 #-------------------------------------------------------------------------------
 
 from CFDSTUDYGUI_Commons import CFD_Code, CFD_Saturne, CFD_Neptune, sgPyQt
-from CFDSTUDYGUI_Commons import LogModeOn, LogModeOff, LoggingMgr, LoggingAgent
+from CFDSTUDYGUI_Commons import LoggingMgr
 import CFDSTUDYGUI_DataModel
-from CFDSTUDYGUI_Management import CFDGUI_Management, _d_DockWindowsRuncase
+from CFDSTUDYGUI_Management import CFDGUI_Management
 
 #-------------------------------------------------------------------------------
 # log config
@@ -63,14 +63,19 @@ from CFDSTUDYGUI_Management import CFDGUI_Management, _d_DockWindowsRuncase
 
 logging.basicConfig()
 log = logging.getLogger("CFDSTUDYGUI_SolverGUI")
-log.setLevel(logging.DEBUG)
-#log.setLevel(logging.NOTSET)
+log.setLevel(logging.NOTSET)
 
 #-------------------------------------------------------------------------------
 # Global definitions
 #-------------------------------------------------------------------------------
 
 mw = None
+
+_c_CFDGUI = CFDGUI_Management()
+
+#-------------------------------------------------------------------------------
+# Function definitions
+#-------------------------------------------------------------------------------
 
 def getObjectBrowserDock():
     dock = None
@@ -80,12 +85,6 @@ def getObjectBrowserDock():
         dockTitle = str(dock.windowTitle())
         if (dockTitle == 'Object Browser'):
             return dock
-
-#-------------------------------------------------------------------------------
-# Function definitions
-#-------------------------------------------------------------------------------
-
-_c_CFDGUI = CFDGUI_Management()
 
 
 def tabObjectBrowser():
@@ -113,7 +112,7 @@ def updateObjectBrowser():
     tabObjectBrowser()
 
 
-def findDockWindow( xmlName, caseName, studyCFDName):
+def findDockWindow(xmlName, caseName, studyCFDName):
     """
     Find if the dockwindow corresponding to this xmlcase is already opened
     """
@@ -163,12 +162,13 @@ class CFDSTUDYGUI_SolverGUI(QObject):
                     return
 
         if aCase != None:
-            # object of DATA folder
             aChildList = CFDSTUDYGUI_DataModel.ScanChildren(aCase, "^DATA$")
             if not len(aChildList)== 1:
                 # no DATA folder
-                log.debug("CFDSTUDYGUI_SolverGUI.ExecGUI:There are not data folder in selected by user case")
+                mess = "There are not DATA directory  in the case"
+                QMessageBox.warning(None, "Warning: ", mess)
                 return None
+
             aStartPath = CFDSTUDYGUI_DataModel._GetPath(aChildList[0])
             if aStartPath != None and aStartPath != '':
                 os.chdir(aStartPath)
@@ -182,6 +182,16 @@ class CFDSTUDYGUI_SolverGUI(QObject):
 
     def isActive(self):
         return self._CurrentWindow != None
+
+
+    def okToContinue(self):
+        log.debug("okToContinue")
+        if self._CurrentWindow.okToContinue():
+            if self._CurrentWindow.case['probes']:
+                self._CurrentWindow.case['probes'].removeActors()
+            return True
+        else:
+            return False
 
 
     def onSaveXmlFile(self):
@@ -214,11 +224,11 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         return old_xml_file, xml_file
 
 
-    def getDockTitleName(self,xml_file):
+    def getDockTitleName(self, xml_file):
         """
         Build the Dock Title Name STUDY.CASE.file.xml with the entire file Name path
         """
-        lnames = string.split(xml_file,"/")
+        lnames = string.split(xml_file, "/")
         if len(lnames) < 4:
             return None
         xmlname   = lnames[-1]
@@ -239,13 +249,13 @@ class CFDSTUDYGUI_SolverGUI(QObject):
             self._CurrentWindow.openXterm()
 
 
-    def onDisplayCase(self):
-        log.debug("onDisplayCase")
-        _LoggingMgr.start(sys)
-        if self._CurrentWindow != None:
+    #def onDisplayCase(self):
+        #log.debug("onDisplayCase")
+        #_LoggingMgr.start(sys)
+        #if self._CurrentWindow != None:
 
-            self._CurrentWindow.displayCase()
-        _LoggingMgr.finish(sys)
+            #self._CurrentWindow.displayCase()
+        #_LoggingMgr.finish(sys)
 
 
     def onHelpAbout(self):
@@ -342,6 +352,8 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         case, splash = process_cmd_line(Args)
         mw = MainView(pkg, case, aCase)
 
+        # Put the standard panel of the MainView inside a QDockWidget
+        # in the SALOME Desktop
         aTitle = self.setWindowTitle_CFD(mw, aCase, Title)
         dsk = sgPyQt.getDesktop()
         dock = QDockWidget(aTitle)
@@ -350,26 +362,26 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         dock.setMinimumWidth(520)
         dsk.addDockWidget(Qt.RightDockWidgetArea, dock)
 
-        studyId = sgPyQt.getStudyId()
-
         dock.setVisible(True)
         dock.show()
 
+        # Put the QTreeView of the MainView which is already inside a QDockWidget
+        # in the SALOME Desktop
         BrowserTitle = aTitle  + " Browser"
         mw.dockWidgetBrowser.setWindowTitle(BrowserTitle)
-        dsk.addDockWidget(Qt.LeftDockWidgetArea,mw.dockWidgetBrowser)
+        dsk.addDockWidget(Qt.LeftDockWidgetArea, mw.dockWidgetBrowser)
 
         mw.dockWidgetBrowser.setVisible(True)
         mw.dockWidgetBrowser.show()
         mw.dockWidgetBrowser.raise_()
         dock.raise_()
 
-#MP Dock windows are managed by CFDGUI_Management class defined into CFDSTUDYGUI_Management.py
-
+        #Add Dock windows are managed by CFDGUI_Management class
+        studyId = sgPyQt.getStudyId()
         aStudyCFD = aCase.GetFather()
         aCaseCFD  = aCase
         xmlFileName = str(Title)
-        _c_CFDGUI.set_d_CfdCases(studyId, dock, mw.dockWidgetBrowser, mw, aStudyCFD, aCaseCFD, xmlFileName, sobjXML, None)
+        _c_CFDGUI.set_d_CfdCases(studyId, dock, mw.dockWidgetBrowser, mw, aStudyCFD, aCaseCFD, xmlFileName, sobjXML)
 
         self.connect(dock, SIGNAL("visibilityChanged(bool)"), self.setdockWindowBrowserActivated)
         self.connect(mw.dockWidgetBrowser, SIGNAL("visibilityChanged(bool)"),self.setdockWindowActivated)
@@ -387,92 +399,97 @@ class CFDSTUDYGUI_SolverGUI(QObject):
     def setdockWB(self, istoggled):
         studyId = sgPyQt.getStudyId()
         dock = self.sender().parent()
+        log.debug("setdockWB -> %s" % (dock,))
+
         if _c_CFDGUI != None:
-          dockWB = _c_CFDGUI.getdockWB(studyId,dock)
-          if dockWB != None:
-            dockWB.setVisible(dock.isVisible())
-            if istoggled: dockWB.setVisible(True)
-            #
-            if istoggled:
-              dock.show()
-              dock.raise_()
-              dockWB.show()
-              dockWB.raise_()
-            mw = _c_CFDGUI.getMW(studyId,dock)
-            self._CurrentWindow = mw
-            mw.activateWindow()
+            dockWB = _c_CFDGUI.getdockWB(studyId, dock)
+            if dockWB != None:
+                dockWB.setVisible(dock.isVisible())
+                if istoggled:
+                    dock.show()
+                    dock.raise_()
+                    dockWB.show()
+                    dockWB.raise_()
+                mw = _c_CFDGUI.getMW(studyId, dock)
+                self._CurrentWindow = mw
+                mw.activateWindow()
+                log.debug("setdockWB -> mw = %s" % (mw,))
 
 
     def setdock(self, istoggled):
         studyId = sgPyQt.getStudyId()
         dockWB = self.sender().parent()
+        log.debug("setdock -> %s" % (dockWB,))
+
         if _c_CFDGUI != None:
-          dock = _c_CFDGUI.getdock(studyId,dockWB)
-          if dock != None:
-            dock.setVisible(dockWB.isVisible())
-            if istoggled: dock.setVisible(True)
-            if istoggled:
-              dock.show()
-              dock.raise_()
-              dockWB.show()
-              dockWB.raise_()
-            mw = _c_CFDGUI.getMW(studyId,dock)
-            self._CurrentWindow = mw
-            mw.activateWindow()
+            dock = _c_CFDGUI.getdock(studyId, dockWB)
+            if dock != None:
+                dock.setVisible(dockWB.isVisible())
+                if istoggled:
+                    dock.show()
+                    dock.raise_()
+                    dockWB.show()
+                    dockWB.raise_()
+                mw = _c_CFDGUI.getMW(studyId, dock)
+                self._CurrentWindow = mw
+                mw.activateWindow()
+                log.debug("setdock -> mw = %s" % (mw,))
 
 
-    def setdockWindowBrowserActivated(self,visible):
+    def setdockWindowBrowserActivated(self, visible):
         """
-        mv is the Main CFD window allocated by MainView code
+        mw is the Main CFD window allocated by MainView code
         When we click on a cfd study window tab, the cfd study window appears and the associated CFD window browser raises too
         """
         studyId = sgPyQt.getStudyId()
         dock = self.sender()
+        log.debug("setdockWindowBrowserActivated -> %s" % (dock,))
+
         if not visible:
             return
-        if dock.isActiveWindow() == False:
-            return
+        #if dock.isActiveWindow() == False:
+            #return
         if _c_CFDGUI != None:
-          dockWB = _c_CFDGUI.getdockWB(studyId,dock)
-          if dockWB != None:
-            dockWB.activateWindow()
-            dockWB.setVisible(True)
-            dockWB.show()
-            dockWB.raise_()
-            mw = _c_CFDGUI.getMW(studyId,dock)
-            self._CurrentWindow = mw
-            mw.activateWindow()
-            ob = sgPyQt.getObjectBrowser()
-            # Clear the current selection in the SALOME object browser, which does not match with the shown dock window
-            ob.clearSelection()
+            dockWB = _c_CFDGUI.getdockWB(studyId, dock)
+            if dockWB != None:
+                dockWB.activateWindow()
+                dockWB.show()
+                dockWB.raise_()
+                mw = _c_CFDGUI.getMW(studyId, dock)
+                self._CurrentWindow = mw
+                mw.activateWindow()
+                log.debug("setdockWindowBrowserActivated -> mw = %s" % (mw,))
+                ob = sgPyQt.getObjectBrowser()
+                # Clear the current selection in the SALOME object browser, which does not match with the shown dock window
+                ob.clearSelection()
 
 
-    def setdockWindowActivated(self,visible):
+    def setdockWindowActivated(self, visible):
         """
         mv is the Main CFD window allocated by MainView code
         When we click on a  CFD window browser tab, the CFD window browser appears and the associated cfd study window raises too
         """
-        dsk = sgPyQt.getDesktop()
         studyId = sgPyQt.getStudyId()
         dockWB = self.sender()
+        log.debug("setdockWindowActivated -> %s" % (dockWB,))
 
         if not visible:
             return
-        if dockWB.isActiveWindow() == False:
-            return
+        #if dockWB.isActiveWindow() == False:
+            #return
         if _c_CFDGUI != None:
-          dock = _c_CFDGUI.getdock(studyId,dockWB)
-          if dock != None:
-            dock.activateWindow()
-            dock.setVisible(True)
-            dock.show()
-            dock.raise_()
-            mw = _c_CFDGUI.getMW(studyId,dock)
-            self._CurrentWindow = mw
-            mw.activateWindow()
-            ob = sgPyQt.getObjectBrowser()
-            # effacer la selection en cours
-            ob.clearSelection()
+            dock = _c_CFDGUI.getdock(studyId, dockWB)
+            if dock != None:
+                dock.activateWindow()
+                dock.show()
+                dock.raise_()
+                mw = _c_CFDGUI.getMW(studyId, dock)
+                self._CurrentWindow = mw
+                mw.activateWindow()
+                log.debug("setdockWindowActivated -> mw = %s" % (mw,))
+                ob = sgPyQt.getObjectBrowser()
+                # effacer la selection en cours
+                ob.clearSelection()
 
 
     def disconnectDockWindows(self):
@@ -485,16 +502,6 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         if _c_CFDGUI != None:
           _c_CFDGUI.hideDocks(studyId)
 
-#MP runcase dock window is managed independently of the Management class CFDGUI_Management because it is not attached to an xml case in the CFD GUI
-#MP to analyze: impact: CFDSTUDYGUI_CommandMgr.py (runTextEdit) and CFDSTUDYGUI_Management.py
-        if studyId not in _d_DockWindowsRuncase.keys():
-          return
-
-        for dock in _d_DockWindowsRuncase[studyId]:
-            dock.show()
-            dock.setVisible(False)
-            dock.toggleViewAction().setVisible(False)
-
 
     def connectDockWindows(self):
         """
@@ -502,20 +509,9 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         """
         studyId = sgPyQt.getStudyId()
         if _c_CFDGUI != None:
-          _c_CFDGUI.showDocks(studyId)
+            _c_CFDGUI.showDocks(studyId)
 
         updateObjectBrowser()
-
-#MP runcase dock window is managed independently of the Management class CFDGUI_Management because it is not attached to an xml case in the CFD GUI
-#MP to analyze: impact: CFDSTUDYGUI_CommandMgr.py (runTextEdit) and CFDSTUDYGUI_Management.py
-        if studyId not in _d_DockWindowsRuncase.keys():
-          return
-
-        if len(_d_DockWindowsRuncase[studyId]) != 0:
-          for dock in _d_DockWindowsRuncase[studyId]:
-            dock.show()
-            dock.setVisible(True)
-            dock.toggleViewAction().setVisible(True)
 
 
     def showDockWindows(self, studyId, xmlName, caseName, studyCFDName):
@@ -526,28 +522,28 @@ class CFDSTUDYGUI_SolverGUI(QObject):
             _c_CFDGUI.showDockWindows(studyId, xmlName, caseName, studyCFDName)
 
 
-    def getStudyCaseXmlNames(self,mw):
-        dsk = sgPyQt.getDesktop()
+    def getStudyCaseXmlNames(self, mw):
         studyId = sgPyQt.getStudyId()
         if _c_CFDGUI != None:
             studyCFDName, caseName, xmlName  = _c_CFDGUI.getStudyCaseXmlNames(studyId, mw)
         return studyCFDName, caseName, xmlName
 
 
-    def getCase(self,mw):
-        dsk = sgPyQt.getDesktop()
+    def getCase(self, mw):
         studyId = sgPyQt.getStudyId()
         if _c_CFDGUI != None:
             case  = _c_CFDGUI.getCase(studyId,mw)
         return case
 
 
-    def removeDockWindow(self, studyCFDName, caseName, xmlName=""):
+    def removeDockWindow(self, studyCFDName, caseName, xmlName):
         """
         Close the CFD_study_dock_windows from remove  popup menu in object browser
         """
-        log.debug("removeDockWindow -> caseName = %s" % caseName)
+        log.debug("removeDockWindow -> %s %s %s" % (studyCFDName, caseName, xmlName))
         dsk = sgPyQt.getDesktop()
         studyId = sgPyQt.getStudyId()
         if _c_CFDGUI != None:
-            _c_CFDGUI.delDock(dsk, studyId, studyCFDName, caseName, xmlName)
+           _c_CFDGUI.delDock(dsk, studyId, studyCFDName, caseName, xmlName)
+
+#-------------------------------------------------------------------------------

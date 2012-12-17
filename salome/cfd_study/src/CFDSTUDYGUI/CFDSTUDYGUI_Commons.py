@@ -84,8 +84,7 @@ UpdateScriptFolder  = -1002
 
 logging.basicConfig()
 log = logging.getLogger("CFDSTUDYGUI_Commons")
-log.setLevel(logging.DEBUG)
-#log.setLevel(logging.NOTSET)
+log.setLevel(logging.NOTSET)
 
 #-------------------------------------------------------------------------------
 # Functions definitions
