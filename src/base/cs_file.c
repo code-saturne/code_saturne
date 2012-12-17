@@ -2123,12 +2123,11 @@ cs_file_read_global(cs_file_t  *f,
 
   else if ((f->method > CS_FILE_STDIO_PARALLEL)) {
 
-    if (f->rank == 0) {
+    MPI_Status status;
+    int errcode = MPI_SUCCESS, count = 0;
 
-      MPI_Status status;
-      int errcode = MPI_SUCCESS, count = 0;
-
-      if (_mpi_io_positionning == CS_FILE_MPI_EXPLICIT_OFFSETS) {
+    if (_mpi_io_positionning == CS_FILE_MPI_EXPLICIT_OFFSETS) {
+      if (f->rank == 0) {
         errcode = MPI_File_read_at(f->fh,
                                    f->offset,
                                    buf,
@@ -2137,29 +2136,30 @@ cs_file_read_global(cs_file_t  *f,
                                    &status);
         MPI_Get_count(&status, MPI_BYTE, &count);
       }
+    }
 
-      else {
-        MPI_Datatype file_type;
-        MPI_Aint disps[1];
-        int lengths[1];
-        char datarep[] = "native";
-        lengths[0] = ni * size;
-        disps[0] = 0;
-        MPI_Type_create_hindexed(1, lengths, disps, MPI_BYTE, &file_type);
-        MPI_Type_commit(&file_type);
-        MPI_File_set_view(f->fh, f->offset, MPI_BYTE, file_type,
-                          datarep, f->info);
+    else {
+      MPI_Datatype file_type;
+      MPI_Aint disps[1];
+      int lengths[1];
+      char datarep[] = "native";
+      lengths[0] = ni * size;
+      disps[0] = 0;
+      MPI_Type_create_hindexed(1, lengths, disps, MPI_BYTE, &file_type);
+      MPI_Type_commit(&file_type);
+      MPI_File_set_view(f->fh, f->offset, MPI_BYTE, file_type,
+                        datarep, f->info);
+      if (f->rank == 0) {
         errcode = MPI_File_read(f->fh, buf, size*ni, MPI_BYTE, &status);
         MPI_Get_count(&status, MPI_BYTE, &count);
-        MPI_Type_free(&file_type);
       }
-
-      if (errcode != MPI_SUCCESS)
-        _mpi_io_error_message(f->name, errcode);
-
-      retval = count / size;
-
+      MPI_Type_free(&file_type);
     }
+
+    if (errcode != MPI_SUCCESS)
+      _mpi_io_error_message(f->name, errcode);
+
+    retval = count / size;
 
   }
 
@@ -2237,12 +2237,11 @@ cs_file_write_global(cs_file_t   *f,
 
   else if ((f->method > CS_FILE_STDIO_PARALLEL)) {
 
-    if (f->rank == 0) {
+    MPI_Status status;
+    int errcode = MPI_SUCCESS, count = 0;
 
-      MPI_Status status;
-      int errcode = MPI_SUCCESS, count = 0;
-
-      if (_mpi_io_positionning == CS_FILE_MPI_EXPLICIT_OFFSETS) {
+    if (_mpi_io_positionning == CS_FILE_MPI_EXPLICIT_OFFSETS) {
+      if (f->rank == 0) {
         errcode = MPI_File_write_at(f->fh,
                                     f->offset,
                                     copybuf,
@@ -2251,33 +2250,34 @@ cs_file_write_global(cs_file_t   *f,
                                     &status);
         MPI_Get_count(&status, MPI_BYTE, &count);
       }
+    }
 
-      else {
-        MPI_Datatype file_type;
-        MPI_Aint disps[1];
-        int lengths[1];
-        char datarep[] = "native";
-        lengths[0] = ni * size;
-        disps[0] = 0;
-        MPI_Type_create_hindexed(1, lengths, disps, MPI_BYTE, &file_type);
-        MPI_Type_commit(&file_type);
-        MPI_File_set_view(f->fh, f->offset, MPI_BYTE,
-                          file_type, datarep, f->info);
+    else {
+      MPI_Datatype file_type;
+      MPI_Aint disps[1];
+      int lengths[1];
+      char datarep[] = "native";
+      lengths[0] = ni * size;
+      disps[0] = 0;
+      MPI_Type_create_hindexed(1, lengths, disps, MPI_BYTE, &file_type);
+      MPI_Type_commit(&file_type);
+      MPI_File_set_view(f->fh, f->offset, MPI_BYTE,
+                        file_type, datarep, f->info);
+      if (f->rank == 0) {
         errcode = MPI_File_write(f->fh,
                                  copybuf,
                                  size*ni,
                                  MPI_BYTE,
                                  &status);
         MPI_Get_count(&status, MPI_BYTE, &count);
-        MPI_Type_free(&file_type);
       }
-
-      if (errcode != MPI_SUCCESS)
-        _mpi_io_error_message(f->name, errcode);
-
-      retval = count / size;
-
+      MPI_Type_free(&file_type);
     }
+
+    if (errcode != MPI_SUCCESS)
+      _mpi_io_error_message(f->name, errcode);
+
+    retval = count / size;
 
   }
 
