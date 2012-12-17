@@ -777,12 +777,14 @@ class Studies(object):
         if rep != "":
             rep_f = os.path.join(result, rep)
             rep_e = os.path.join(result, rep, 'error')
+
             if not os.path.isdir(rep_f):
                 msg = "Study %s case %s:\nthe directory %s does not exist.\nStop.\n" % \
                     (study_label, case_label, rep_f)
                 self.reporting(msg)
                 sys.exit(1)
-            if not os.path.isfile(rep_e):
+
+            if os.path.isfile(rep_e):
                 msg = "Study %s case %s:\nthe directory %s contains an error file.\nStop.\n" % \
                     (study_label, case_label, rep_f)
                 self.reporting(msg)
@@ -796,14 +798,25 @@ class Studies(object):
                     (study_label, case_label, result)
                 self.reporting(msg)
                 sys.exit(1)
+
             if len(filter(nodot, os.listdir(result))) > 1:
                 msg = "Study %s case %s:\nthere are several directories in %s\nStop.\n" % \
                     (study_label, case_label, result)
                 self.reporting(msg)
                 sys.exit(1)
 
+            rep = filter(nodot, os.listdir(result))[0]
+
+            rep_f = os.path.join(result, rep)
+            rep_e = os.path.join(result, rep, 'error')
+            if os.path.isfile(rep_e):
+                msg = "Study %s case %s:\nthe directory %s contains an error file.\nStop.\n" % \
+                    (study_label, case_label, rep_f)
+                self.reporting(msg)
+                sys.exit(1)
+
         # 3. Update the file of parameters with the name of the result directory
-            self.__parser.setAttribute(node, attr, filter(nodot, os.listdir(result))[0])
+            self.__parser.setAttribute(node, attr, rep)
         else:
             self.reporting('Error: check compare/script/plot/probe/resu/input failed.')
             sys.exit(1)
