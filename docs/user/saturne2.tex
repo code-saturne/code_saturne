@@ -943,7 +943,7 @@ the maximum, then to the minimum limit.\\
 \subsubsection{Turbulence}
 %==================================
 
-\motcleb{iturb}{ia}{0, 10, 20, 21, 30, 31, 40, 41, 42, 50, 60, 70}{-999}{O}{L1}
+\motcleb{iturb}{ia}{0, 10, 20, 21, 30, 31, 32, 40, 41, 42, 50, 51, 60, 70}{-999}{O}{L1}
 {indicator of the turbulence model {\tt iturb}\\
 \hspace*{1.3cm}= -999: not initalised. This value is not allowed and
 must be modified by the user\\
@@ -953,10 +953,12 @@ must be modified by the user\\
 \hspace*{1.3cm}= 21: $k-\varepsilon$ with linear production (Laurence \& Guimet)\\
 \hspace*{1.3cm}= 30: $R_{ij}-\varepsilon$ ``standard'' LRR (Launder, Reece \& Rodi)\\
 \hspace*{1.3cm}= 31: $R_{ij}-\varepsilon$ SSG (Speziale, Sarkar \& Gatski)\\
+\hspace*{1.3cm}= 32: $R_{ij}-\varepsilon$ EBRSM (elliptic blending)\\
 \hspace*{1.3cm}= 40: LES (Smagorinsky model) \\
 \hspace*{1.3cm}= 41: LES (dynamic model) \\
 \hspace*{1.3cm}= 42: LES (WALE model) \\
 \hspace*{1.3cm}= 50: v2-f, $\varphi$-model version\\
+\hspace*{1.3cm}= 51: v2-f, BL-v2/k version\\
 \hspace*{1.3cm}= 60: $k-\omega$, SST version \\
 \hspace*{1.3cm}= 70: Spalart-Allmaras \\
 always useful}
