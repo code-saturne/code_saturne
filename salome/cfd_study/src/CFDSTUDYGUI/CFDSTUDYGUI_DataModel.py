@@ -451,7 +451,7 @@ def _SetStudyLocation(theStudyPath, theCaseNames):
                 iter.Next()
             if len(theCaseNames) != 0 :
                 import string
-                CaseName_list = string.split(string.upper(theCaseNames),' ')
+                CaseName_list = string.split(theCaseNames, ' ')
 
                 for casename in CaseName_list :
                     if not casename == "" and casename not in objList :
