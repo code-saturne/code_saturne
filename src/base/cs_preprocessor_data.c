@@ -358,19 +358,19 @@ _set_block_ranges(cs_mesh_t          *mesh,
   mb->cell_bi = cs_block_dist_compute_sizes(rank_id,
                                             n_ranks,
                                             mb->min_rank_step,
-                                            min_block_size,
+                                            min_block_size/sizeof(cs_gnum_t),
                                             mesh->n_g_cells);
 
   mb->face_bi = cs_block_dist_compute_sizes(rank_id,
                                             n_ranks,
                                             mb->min_rank_step,
-                                            min_block_size,
+                                            min_block_size/(sizeof(cs_gnum_t)*2),
                                             mb->n_g_faces);
 
   mb->vertex_bi = cs_block_dist_compute_sizes(rank_id,
                                               n_ranks,
                                               mb->min_rank_step,
-                                              min_block_size,
+                                              min_block_size/sizeof(cs_real_t),
                                               mesh->n_g_vertices);
 
   for (i = 0; i < mb->n_perio; i++)
@@ -378,7 +378,7 @@ _set_block_ranges(cs_mesh_t          *mesh,
       = cs_block_dist_compute_sizes(rank_id,
                                     n_ranks,
                                     mb->min_rank_step,
-                                    min_block_size,
+                                    min_block_size/sizeof(cs_gnum_t),
                                     mb->n_g_per_face_couples[i]);
 }
 
