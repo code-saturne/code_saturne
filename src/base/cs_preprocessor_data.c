@@ -371,7 +371,7 @@ _set_block_ranges(cs_mesh_t          *mesh,
   mb->vertex_bi = cs_block_dist_compute_sizes(rank_id,
                                               n_ranks,
                                               mb->min_rank_step,
-                                              min_block_size/sizeof(cs_real_t),
+                                              min_block_size/(sizeof(cs_real_t)*3),
                                               mesh->n_g_vertices);
 
   for (i = 0; i < mb->n_perio; i++)
