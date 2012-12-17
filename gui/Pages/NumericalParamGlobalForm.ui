@@ -687,7 +687,7 @@ source terms in momentum equation</string>
              <item>
               <widget class="QLabel" name="labelImprovedPressure" >
                <property name="toolTip" >
-                <string>Code_Saturne key word: IPUCOU</string>
+                <string>Code_Saturne key word: IPHYDR</string>
                </property>
                <property name="text" >
                 <string>Improved pressure interpolation in stratified flow</string>
