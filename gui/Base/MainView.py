@@ -713,9 +713,9 @@ class MainView(object):
         if hasattr(self,'case'):
             filetypes = self.tr(self.package.code_name) + self.tr(" GUI files (*.xml);;""All Files (*)")
             fname = QFileDialog.getSaveFileName(self,
-                                  self.tr("Save File As"),
-                                  self.case['data_path'],
-                                  filetypes)
+                                                self.tr("Save File As"),
+                                                self.case['data_path'],
+                                                filetypes)
 
             if not fname.isEmpty():
                 f = str(fname)

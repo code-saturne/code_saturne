@@ -395,8 +395,10 @@ class Actors(object):
 
 
     def removeActors(self):
-        if label in self.labels():
-            self.remove(label)
+        for p in self.p:
+            self.render.RemoveActor(p.getLabelActor())
+            self.render.RemoveActor(p.getActor())
+        self.p = []
 
 
     def setRadius(self, r):
