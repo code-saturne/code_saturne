@@ -245,6 +245,61 @@ _write_probe_header_dat(cs_time_plot_t    *p,
 }
 
 /*----------------------------------------------------------------------------
+ * Write probe coordinates for CSV files
+ *
+ * parameters:
+ *   file_prefix      <-- file name prefix
+ *   plot_name        <-- plot name
+ *   n_probes         <-- number of probes associated with this plot
+ *   probe_list       <-- numbers (1 to n) of probes if filtered, or NULL
+ *   probe_coords     <-- probe coordinates
+ *----------------------------------------------------------------------------*/
+
+static void
+_write_probe_coords_csv(const char        *file_prefix,
+                        const char        *plot_name,
+                        int                n_probes,
+                        const int         *probe_list,
+                        const cs_real_t    probe_coords[])
+{
+  int i, probe_id;
+  char *file_name;
+  FILE *_f;
+
+  BFT_MALLOC(file_name,
+             strlen(file_prefix) + strlen(plot_name) + strlen("_coords") + 4 + 1,
+             char);
+
+  sprintf(file_name, "%s%s%s.csv", file_prefix, plot_name, "_coords");
+
+  _f = fopen(file_name, "w");
+  if (_f == NULL) {
+    bft_error(__FILE__, __LINE__, errno,
+              _("Error opening file: \"%s\""), file_name);
+    return;
+  }
+
+  fprintf(_f, "x, y, z\n");
+  for (i = 0; i < n_probes; i++) {
+    probe_id = i;
+    if (probe_list != NULL)
+      probe_id = probe_list[i] - 1;
+    fprintf(_f, "%14.7e, %14.7e, %14.7e\n",
+            probe_coords[probe_id*3],
+            probe_coords[probe_id*3 + 1],
+            probe_coords[probe_id*3 + 2]);
+  }
+
+  /* Close file or assign it ot handler depending on options */
+
+  if (fclose(_f) != 0)
+    bft_error(__FILE__, __LINE__, errno,
+              _("Error closing file: \"%s\""), file_name);
+
+  BFT_FREE(file_name);
+}
+
+/*----------------------------------------------------------------------------
  * Write file header for CSV files
  *
  * parameters:
@@ -294,7 +349,7 @@ _write_probe_header_csv(cs_time_plot_t    *p,
   }
   fprintf(_f, "\n");
 
-  /* Close file or assign it ot handler depending on options */
+  /* Close file or assign it to handler depending on options */
 
   if (p->buffer_steps[0] > 0) {
     if (fclose(_f) != 0)
@@ -995,8 +1050,13 @@ cs_time_plot_init_probe(const char             *plot_name,
     _write_probe_header_dat(p, n_probes, probe_list, probe_coords);
     break;
   case CS_TIME_PLOT_CSV:
+    _write_probe_coords_csv(file_prefix,
+                            plot_name,
+                            n_probes,
+                            probe_list,
+                            probe_coords);
     _write_probe_header_csv(p, n_probes, probe_list, probe_coords);
-  break;
+    break;
   default:
     break;
   }
