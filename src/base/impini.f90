@@ -2356,10 +2356,9 @@ write(nfecra,9900)
  7010 format(                                                     &
 ' --- Suite de calcul',                                         /,&
 '       ISUITE = ',4x,i10,    ' (1 : suite de calcul         )',/,&
-'       ILEAUX = ',4x,i10,    ' (1 : lecture  de suiamx aussi)',/,&
-'       IECAUX = ',4x,i10,    ' (1 : ecriture de suiavx aussi)',/,&
-                                                                /,&
-'       suiamx et suiavx sont les fichiers suite auxiliaires.)',/)
+'       ILEAUX = ',4x,i10,    ' (1 : lecture  de restart/auxiliary)',/,&
+'       IECAUX = ',4x,i10,    ' (1 : ecriture de checkpoint/auxiliary)',/,&
+                                                                /)
  7020 format(                                                     &
 '       ISCOLD(I) : Dans le calcul precedent, numero du',       /,&
 '                   scalaire correspondant au scalaire I du',   /,&
@@ -2409,11 +2408,10 @@ write(nfecra,9900)
 '    ----------------------',                                   /)
  7010 format(                                                     &
 ' --- Restarted calculation',                                   /,&
-'       ISUITE = ',4x,i10,    ' (1: restarted calculuation   )',/,&
-'       ILEAUX = ',4x,i10,    ' (1: also read  suiamx        )',/,&
-'       IECAUX = ',4x,i10,    ' (1: also write suiavx        )',/,&
-                                                                /,&
-'       suiamx and suiavx are the auxiliary restart files.',    /)
+'       ISUITE = ',4x,i10,    ' (1: restarted calculation    )',/,&
+'       ILEAUX = ',4x,i10,    ' (1: read  restart/auxiliary  )',/,&
+'       IECAUX = ',4x,i10,    ' (1: write checkpoint/auxiliary)',/,&
+                                                                /)
  7020 format(                                                     &
 '       ISCOLD(I): In the previous calculation, number of',     /,&
 '                  the scalar corresponding to scalar I in',    /,&
