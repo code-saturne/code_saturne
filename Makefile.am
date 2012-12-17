@@ -391,12 +391,14 @@ install-doc:
 # Generate ChangeLog
 
 changelog:
-	today=`date +%F`; \
-	start=`date +%Y`-01-01; \
-	svn2cl --reparagraph --include-rev --include-actions \
-      --authors=${top_srcdir}/extras/changelog/authors.xml \
-      --output=${top_srcdir}/ChangeLog \
-      ${top_srcdir} --revision {"$${today} 23:59"}:{"$${start} 00:00"}
+	if test -d ${top_srcdir}/.svn ; then \
+	  today=`date +%F`; \
+	  start=`date +%Y`-01-01; \
+	  svn2cl --reparagraph --include-rev --include-actions \
+          --authors=${top_srcdir}/extras/changelog/authors.xml \
+          --output=${top_srcdir}/ChangeLog \
+          ${top_srcdir} --revision {"$${today} 23:59"}:{"$${start} 00:00"} ; \
+	fi
 
 # Update Copyright
 
