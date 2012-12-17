@@ -266,8 +266,8 @@ endif
 
 if (nfin.eq.1) then
 
-  NAME = ' '
-  NAME = 'Trajectory'
+  name = ' '
+  name = 'postprocessing/Trajectory'
 
   !  0) ouverture du fichier .ensight.CASE :
 
