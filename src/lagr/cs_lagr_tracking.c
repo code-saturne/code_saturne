@@ -2482,7 +2482,6 @@ _local_propagation(cs_lagr_particle_t     *p_prev_particle,
 
           const char msg[]
             = "Error during the particle displacement (Interior face)";
-          bft_printf("avant message \n");
           _manage_error(failsafe_mode,
                         particle,
                         &error,
@@ -3117,7 +3116,9 @@ _sync_particle_sets(cs_lagr_halo_t           *lag_halo,
         fvm_periodicity_type_t  perio_type =
           fvm_periodicity_get_type(periodicity, tr_id);
 
-        fvm_periodicity_get_matrix(periodicity, tr_id, matrix);
+        int rev_id = fvm_periodicity_get_reverse_id(mesh->periodicity, tr_id);
+        
+        fvm_periodicity_get_matrix(periodicity, rev_id, matrix);
 
         /* Apply transformation to the coordinates in any case */
 
@@ -3200,63 +3201,68 @@ _sync_particle_sets(cs_lagr_halo_t           *lag_halo,
 
       /* Update if needed last_face_num */
 
-      if (cs_glob_n_ranks > 1) {
+      if (tr_id >= 0) // Same initialization as in previous algo.
+      {
+        cur_part.last_face_num = 0;
 
-        assert(face_ifs != NULL);
+      } else {
 
-        {
-          int  distant_rank, n_entities, id;
-          const int* local_num, * dist_num;
+        if (cs_glob_n_ranks > 1) {
 
-          const int search_rank = halo->c_domain_rank[rank];
-          const cs_interface_t  *interface = NULL;
-          const int  n_interfaces = cs_interface_set_size(face_ifs);
+          assert(face_ifs != NULL);
 
-          for (k = 0; k < n_interfaces; k++) {
+          {
+            int  distant_rank, n_entities, id;
+            const int* local_num, * dist_num;
 
-            interface = cs_interface_set_get(face_ifs,k);
+            const int search_rank = halo->c_domain_rank[rank];
+            const cs_interface_t  *interface = NULL;
+            const int  n_interfaces = cs_interface_set_size(face_ifs);
 
-            distant_rank = cs_interface_rank(interface);
+            for (k = 0; k < n_interfaces; k++) {
 
-            if (distant_rank == search_rank)
-              break;
+              interface = cs_interface_set_get(face_ifs,k);
 
-          }
+              distant_rank = cs_interface_rank(interface);
 
-          if (k == n_interfaces) {
-            bft_error(__FILE__, __LINE__, 0,
-                      _(" Cannot find the relative distant rank.\n"));
+              if (distant_rank == search_rank)
+                break;
 
-          }
-          else {
+            }
 
-            n_entities = cs_interface_size(interface);
-            local_num = cs_interface_get_elt_ids(interface);
-
-            id = cs_search_binary(n_entities, cur_part.last_face_num - 1, local_num);
-
-            if (id == -1)
+            if (k == n_interfaces) {
               bft_error(__FILE__, __LINE__, 0,
-                        _(" Cannot find the relative distant face num.\n"));
+                        _(" Cannot find the relative distant rank.\n"));
 
-            dist_num = cs_interface_get_match_ids(interface);
-            cur_part.last_face_num = dist_num[id] + 1;
+            }
+            else {
+
+              n_entities = cs_interface_size(interface);
+              local_num = cs_interface_get_elt_ids(interface);
+
+              id = cs_search_binary(n_entities, cur_part.last_face_num - 1, local_num);
+
+              if (id == -1)
+                bft_error(__FILE__, __LINE__, 0,
+                          _(" Cannot find the relative distant face num.\n"));
+
+              dist_num = cs_interface_get_match_ids(interface);
+              cur_part.last_face_num = dist_num[id] + 1;
+            }
+
           }
 
         }
+      }
 
-      }
-      else {
-        if (tr_id >= 0) // Same initialization as in previous algo.
-          cur_part.last_face_num = 0;
-      }
 
       if (tr_id >= 0) { /* Periodicity treatment */
 
         fvm_periodicity_type_t  perio_type =
           fvm_periodicity_get_type(periodicity, tr_id);
 
-        fvm_periodicity_get_matrix(periodicity, tr_id, matrix);
+        int rev_id = fvm_periodicity_get_reverse_id(mesh->periodicity, tr_id);
+                fvm_periodicity_get_matrix(periodicity, rev_id, matrix);
 
         /* Apply transformation to the coordinates in any case */
 
