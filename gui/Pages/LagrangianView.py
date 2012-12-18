@@ -374,7 +374,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         self.modelIPHYLA = ComboModel(self.comboBoxIPHYLA,2,1)
         self.modelIPHYLA.addItem(self.tr("No model"), 'off')
         self.modelIPHYLA.addItem(self.tr("Heat transfer and evaporation"), 'thermal')
-        # self.modelIPHYLA.addItem(self.tr("Pulverised coal model"), 'coal')
+        self.modelIPHYLA.addItem(self.tr("Pulverised coal model"), 'coal')
 
         # Connections
         self.connect(self.comboBoxIILAGR, SIGNAL("activated(const QString&)"), self.slotIILAGR)

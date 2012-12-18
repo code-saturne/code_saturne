@@ -461,9 +461,6 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         if model != 'off':
             self.__disableComboBox()
             self.comboBoxPulverizedCoal.setEnabled(True)
-            self.modelLagrangian.disableItem(str_model='lagrangian')
-        else:
-            self.modelLagrangian.enableItem(str_model='lagrangian')
 
         self.browser.configureTree(self.case)
 

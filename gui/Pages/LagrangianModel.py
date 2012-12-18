@@ -44,6 +44,7 @@ from Base.Common import *
 import Base.Toolbox as Tool
 from Base.XMLvariables import Model, Variables
 from Base.XMLmodel import ModelTest
+from Pages.CoalCombustionModel import CoalCombustionModel
 
 #-------------------------------------------------------------------------------
 # log config
