@@ -133,22 +133,6 @@ if (ip.gt.0) then
   call csexit (1)
 endif
 
-!--->Traitement de la periodicite
-
-if (iperio.eq.1) then
-
-  ip = 0
-  do iel = ncel+1,ncelet
-    if (nbrfac(iel).ne.1) then
-      ip = ip + 1
-    endif
-  enddo
-  if (ip.gt.0) then
-    write(nfecra,9001) ip
-    call csexit (1)
-  endif
-
-endif
 
 !-->Calcul de la dimension du tableau de connectivite
 
@@ -189,22 +173,6 @@ rewind(implal)
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
- 9001 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''EXECUTION DU MODULE LAGRANGIEN   ',/,&
-'@    =========                                               ',/,&
-'@  Il y a ',I10,' cellules du halo periodique qui            ',/,&
-'@   ne comportent pas qu''une unique face.                   ',/,&
-'@   Erreur rencontree dans LAGINI (module Lagrangien).       ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@  Verifier le maillage.                                     ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
 
 !----
 ! FIN
