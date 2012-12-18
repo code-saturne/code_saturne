@@ -247,6 +247,16 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         return string.join([studyname, casename, xmlname], ".")
 
 
+    def onUndo(self):
+        if self._CurrentWindow != None:
+            self._CurrentWindow.slotUndo()
+
+
+    def onRedo(self):
+        if self._CurrentWindow != None:
+            self._CurrentWindow.slotRedo()
+
+
     def onOpenShell(self):
         if self._CurrentWindow != None:
             self._CurrentWindow.openXterm()

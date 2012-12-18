@@ -133,6 +133,14 @@
             <source>CLOSE_CFD_GUI_ACTION_ICON</source>
             <translation>CloseGui.png</translation>
         </message>
+        <message>
+            <source>UNDO_CFD_GUI_ACTION_ICON</source>
+            <translation>edit-undo.png</translation>
+        </message>
+        <message>
+            <source>REDO_CFD_GUI_ACTION_ICON</source>
+            <translation>edit-redo.png</translation>
+        </message>
         <message>	
             <source>CHECK_COMPILATION_ACTION_ICON</source>
             <translation>CheckCompilation.png</translation>
@@ -148,10 +156,6 @@
         <message>	
             <source>EXPORT_IN_SMESH_ACTION_ICON</source>
             <translation>SMESH_Module_Export.png</translation>
-        </message>
-        <message>	
-            <source>CONVERT_IN_MED_ACTION_ICON</source>
-            <translation>MED_Module_Convert.png</translation>
         </message>
         <message>	
             <source>ECS_CONVERT_ACTION_ICON</source>

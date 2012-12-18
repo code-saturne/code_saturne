@@ -38,6 +38,8 @@ CFDSTUDY.png \
 CheckCompilation.png \
 CloseGui.png \
 Copy.png \
+edit-undo.png \
+edit-redo.png \
 Delete.png \
 Document.png \
 EditableDocument.png \

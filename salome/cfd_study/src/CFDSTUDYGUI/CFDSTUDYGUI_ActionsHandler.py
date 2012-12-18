@@ -76,16 +76,14 @@ log.setLevel(logging.NOTSET)
 # Global definitions
 #-------------------------------------------------------------------------------
 
-#global actions
-#CFDSTUDYMenu                 = 0
+# Actions
 SetStudyAction                = 1
 AddCaseAction                 = 2
 RunCaseAction                 = 3
 LaunchGUIAction               = 4
-OpenXMLCFDGUIAction           = 5
+OpenGUIAction                 = 5
 UpdateObjBrowserAction        = 6
 InfoCFDSTUDYAction            = 7
-CloseXMLCFDGUIAction          = 8
 
 #common actions
 RemoveAction                  = 20
@@ -99,8 +97,7 @@ CopyCaseFileAction            = 26
 #export/convert actions
 ExportInPostProAction         = 40
 ExportInSMESHAction           = 41
-ConvertInMEDAction            = 42
-ECSConvertAction              = 43
+ConvertMeshToMed              = 42
 
 #other actions
 CheckCompilationAction        = 50
@@ -125,15 +122,18 @@ DisplayTypeSHRINK              = 78
 #=====SOLVER ACTIONS
 #Common Actions
 SolverFileMenu                 = 100
-SolverSaveDataFileAction       = 101
-SolverSaveAsDataFileAction     = 102
+SolverSaveAction               = 101
+SolverSaveAsAction             = 102
+SolverCloseAction              = 103
+SolverUndoAction               = 104
+SolverRedoAction               = 105
 
 SolverToolsMenu                = 110
 SolverOpenShellAction          = 111
 SolverDisplayCurrentCaseAction = 112
 
 SolverHelpMenu                 = 130
-SolverHelpAboutAction          = 131
+SolverHelpAboutAction          = 131 
 
 #Help menu
 SolverHelpLicense              = 251
@@ -272,7 +272,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                                       ObjectTR.tr("LAUNCH_CFDSTUDY_GUI_ICON"))
         action_id = sgPyQt.actionId(action)
         self._ActionMap[action_id] = action
-        self._CommonActionIdMap[OpenXMLCFDGUIAction] = action_id
+        self._CommonActionIdMap[OpenGUIAction] = action_id
         self.connect(action, SIGNAL("activated()"), self.slotOpenCFD_GUI)
 
         action = sgPyQt.createAction(-1,\
@@ -467,15 +467,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         self._CommonActionIdMap[HideGroupMESHAction] = action_id
 
         action = sgPyQt.createAction(-1,\
-                                      ObjectTR.tr("CONVERT_IN_MED_ACTION_TEXT"),\
-                                      ObjectTR.tr("CONVERT_IN_MED_ACTION_TIP"),\
-                                      ObjectTR.tr("CONVERT_IN_MED_ACTION_SB"),\
-                                      ObjectTR.tr("CONVERT_IN_MED_ACTION_ICON"))
-        action_id = sgPyQt.actionId(action)
-        self._ActionMap[action_id] = action
-        self._CommonActionIdMap[ConvertInMEDAction] = action_id
-
-        action = sgPyQt.createAction(-1,\
                                       ObjectTR.tr("ECS_CONVERT_ACTION_TEXT"),\
                                       ObjectTR.tr("ECS_CONVERT_ACTION_TIP"),\
                                       ObjectTR.tr("ECS_CONVERT_ACTION_SB"),\
@@ -483,7 +474,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         self.connect(action, SIGNAL("activated()"), self.slotMeshConvertToMed)
         action_id = sgPyQt.actionId(action)
         self._ActionMap[action_id] = action
-        self._CommonActionIdMap[ECSConvertAction] = action_id
+        self._CommonActionIdMap[ConvertMeshToMed] = action_id
 
         #other actions
         action = sgPyQt.createAction(-1,\
@@ -522,7 +513,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         sgPyQt.createMenu(action, fileId, -1, 8, 1)
 
         # Save action
-        action = sgPyQt.createAction(SolverSaveDataFileAction,\
+        action = sgPyQt.createAction(SolverSaveAction,\
                                       ObjectTR.tr("SOLVER_SAVE_ACTION_TEXT"),\
                                       ObjectTR.tr("SOLVER_SAVE_ACTION_TIP"),\
                                       ObjectTR.tr("SOLVER_SAVE_ACTION_SB"),\
@@ -534,7 +525,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
         action_id = sgPyQt.actionId(action)
         self._ActionMap[action_id] = action
-        self._SolverActionIdMap[SolverSaveDataFileAction] = action_id
+        self._SolverActionIdMap[SolverSaveAction] = action_id
 
         # Save As action
         action = sgPyQt.createAction(-1,\
@@ -549,7 +540,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
         action_id = sgPyQt.actionId(action)
         self._ActionMap[action_id] = action
-        self._SolverActionIdMap[SolverSaveAsDataFileAction] = action_id
+        self._SolverActionIdMap[SolverSaveAsAction] = action_id
         action = sgPyQt.createSeparator()
         sgPyQt.createMenu(action, 1, 0, 2)
 
@@ -563,8 +554,30 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         sgPyQt.createTool(action, tool_id)
         action_id = sgPyQt.actionId(action)
         self._ActionMap[action_id] = action
-        self._SolverActionIdMap[CloseXMLCFDGUIAction] = action_id
+        self._SolverActionIdMap[SolverCloseAction] = action_id
         self.connect(action, SIGNAL("activated()"), self.slotCloseCFD_GUI)
+
+        # Add separator
+        action = sgPyQt.createSeparator()
+        sgPyQt.createTool(action, tool_id)
+
+        # Undo action
+        action = sgPyQt.createAction(-1, "Undo", "Undo", "Undo", \
+                                      ObjectTR.tr("UNDO_CFD_GUI_ACTION_ICON"))
+        sgPyQt.createTool(action, tool_id)
+        action_id = sgPyQt.actionId(action)
+        self._ActionMap[action_id] = action
+        self._SolverActionIdMap[SolverUndoAction] = action_id
+        self.connect(action, SIGNAL("activated()"), self.slotUndo)
+
+        # Redo action
+        action = sgPyQt.createAction(-1, "Redo", "Redo", "Redo", \
+                                      ObjectTR.tr("REDO_CFD_GUI_ACTION_ICON"))
+        sgPyQt.createTool(action, tool_id)
+        action_id = sgPyQt.actionId(action)
+        self._ActionMap[action_id] = action
+        self._SolverActionIdMap[SolverRedoAction] = action_id
+        self.connect(action, SIGNAL("activated()"), self.slotRedo)
 
         # Tools Menu
         action = sgPyQt.createSeparator()
@@ -720,7 +733,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
             if aStudy != None and aCase != None:
                 self.commonAction(LaunchGUIAction).setEnabled(CFDSTUDYGUI_DataModel.checkCaseLaunchGUI(aCase))
-                self.commonAction(OpenXMLCFDGUIAction).setEnabled(CFDSTUDYGUI_DataModel.checkCaseLaunchGUI(aCase))
+                self.commonAction(OpenGUIAction).setEnabled(CFDSTUDYGUI_DataModel.checkCaseLaunchGUI(aCase))
             else:
                 self.commonAction(LaunchGUIAction).setEnabled(False)
 
@@ -739,9 +752,11 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
         if sobj != None:
             if CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["DATAfileXML"]):
-                self.solverAction(CloseXMLCFDGUIAction).setEnabled(False)
-                self.solverAction(SolverSaveDataFileAction).setEnabled(False)
-                self.solverAction(SolverSaveAsDataFileAction).setEnabled(False)
+                self.solverAction(SolverCloseAction).setEnabled(False)
+                self.solverAction(SolverSaveAction).setEnabled(False)
+                self.solverAction(SolverSaveAsAction).setEnabled(False)
+                self.solverAction(SolverUndoAction).setEnabled(False)
+                self.solverAction(SolverRedoAction).setEnabled(False)
                 boo = True
 
                 xmlName      = sobj.GetName()
@@ -760,18 +775,22 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                                     dockListe, dockListeWB = CFDSTUDYGUI_SolverGUI._c_CFDGUI.getDockListes(studyId)
                                     for dock in dockListe:
                                         if dockName == dock.windowTitle():
-                                            self.commonAction(OpenXMLCFDGUIAction).setEnabled(False)
+                                            self.commonAction(OpenGUIAction).setEnabled(False)
                                             if studyId != sgPyQt.getStudyId():
-                                                self.solverAction(CloseXMLCFDGUIAction).setEnabled(False)
-                                                self.solverAction(SolverSaveDataFileAction).setEnabled(False)
-                                                self.solverAction(SolverSaveAsDataFileAction).setEnabled(False)
+                                                self.solverAction(SolverCloseAction).setEnabled(False)
+                                                self.solverAction(SolverSaveAction).setEnabled(False)
+                                                self.solverAction(SolverSaveAsAction).setEnabled(False)
+                                                self.solverAction(SolverUndoAction).setEnabled(False)
+                                                self.solverAction(SolverRedoAction).setEnabled(False)
                                             else:
-                                                self.solverAction(CloseXMLCFDGUIAction).setEnabled(True)
-                                                self.solverAction(SolverSaveDataFileAction).setEnabled(True)
-                                                self.solverAction(SolverSaveAsDataFileAction).setEnabled(True)
+                                                self.solverAction(SolverCloseAction).setEnabled(True)
+                                                self.solverAction(SolverSaveAction).setEnabled(True)
+                                                self.solverAction(SolverSaveAsAction).setEnabled(True)
+                                                self.solverAction(SolverUndoAction).setEnabled(True)
+                                                self.solverAction(SolverRedoAction).setEnabled(True)
                                             boo = False
                 if boo:
-                    self.commonAction(OpenXMLCFDGUIAction).setEnabled(True)
+                    self.commonAction(OpenGUIAction).setEnabled(True)
 
 
     def customPopup(self, id, popup):
@@ -807,8 +826,8 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         elif id == CFDSTUDYGUI_DataModel.dict_object["DATALaunch"]:
             popup.addAction(self.commonAction(LaunchGUIAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["DATAfileXML"]:
-            popup.addAction(self.commonAction(OpenXMLCFDGUIAction))
-            popup.addAction(self.solverAction(CloseXMLCFDGUIAction))
+            popup.addAction(self.commonAction(OpenGUIAction))
+            popup.addAction(self.solverAction(SolverCloseAction))
             popup.addAction(self.commonAction(CopyCaseFileAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["SRCFolder"]:
             popup.addAction(self.commonAction(CheckCompilationAction))
@@ -855,14 +874,13 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
              or id == CFDSTUDYGUI_DataModel.dict_object["MSHFile"] \
              or id == CFDSTUDYGUI_DataModel.dict_object["HexFile"] \
              or id == CFDSTUDYGUI_DataModel.dict_object["UnvFile"]:
-            popup.addAction(self.commonAction(ECSConvertAction))
+            popup.addAction(self.commonAction(ConvertMeshToMed))
         elif id == CFDSTUDYGUI_DataModel.dict_object["MEDFile"]:
             popup.addAction(self.commonAction(ExportInSMESHAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["MESHFile"]:
             popup.addAction(self.commonAction(ViewAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["DATFile"]:
             popup.addAction(self.commonAction(EditAction))
-            #popup.addAction(self.commonAction(ECSConvertAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["POSTFile"]:
             popup.addAction(self.commonAction(ViewAction))
         elif id == "VTKViewer":
@@ -1472,7 +1490,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         log.debug("CloseCFD_GUI %s %s %s" % (aStudyName, aCaseName, aXmlFileName))
         if self._SolverGUI.okToContinue():
             self._SolverGUI.removeDockWindow(aStudyName, aCaseName, aXmlFileName)
-            self.commonAction(OpenXMLCFDGUIAction).setEnabled(True)
+            self.commonAction(OpenGUIAction).setEnabled(True)
             self.updateActions()
 
 
@@ -1483,6 +1501,14 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         log.debug("slotCloseCFD_GUI")
         sobj = self._singleSelectedObject()
         self.CloseCFD_GUI(sobj)
+
+
+    def slotUndo(self):
+        self._SolverGUI.onUndo()
+
+
+    def slotRedo(self):
+        self._SolverGUI.onRedo()
 
 
     def slotRunGUI(self, study=None, case=None):
