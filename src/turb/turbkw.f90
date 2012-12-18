@@ -20,6 +20,45 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Function:
+! ---------
+
+!> \file turbkw.f90
+!>
+!> \brief Solving the \f$ k - \omega \f$ SST for incompressible flows
+!> or slightly compressible flows for one time step.
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     ncepdp        number of cells with head loss
+!> \param[in]     ncesmp        number of cells with mass source term
+!> \param[in]     icepdc        index of the ncepdp cells with head loss
+!> \param[in]     icetsm        index of cells with mass source term
+!> \param[in]     itypsm        mass source type for the variables (cf. ustsma)
+!> \param[in]     dt            time step (per cell)
+!> \param[in,out] rtp           calculated variables at cell centers
+!>                               (at the current time step)
+!> \param[in]     rtpa          calculated variables at cell centers
+!>                               (at the previous time step)
+!> \param[in]     propce        physical properties at cell centers
+!> \param[in]     propfa        physical properties at interior face centers
+!> \param[in]     propfb        physical properties at boundary face centers
+!> \param[in]     tslagr        coupling term of the lagangian module
+!> \param[in]     coefa, coefb  boundary conditions
+!>
+!> \param[in]     ckupdc        work array for the head loss
+!> \param[in]     smacel        values of the variables associated to the
+!>                               mass source
+!>                               (for ivar=ipr, smacel is the mass flux)
+!_______________________________________________________________________________
+
 subroutine turbkw &
 !================
 
@@ -28,47 +67,6 @@ subroutine turbkw &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    tslagr , coefa  , coefb  , ckupdc , smacel )
 
-!===============================================================================
-! FONCTION :
-! ----------
-
-! RESOLUTION DES EQUATIONS K-OMEGA SST 1 PHASE INCOMPRESSIBLE OU
-! RHO VARIABLE SUR UN PAS DE TEMPS
-
-!-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
-! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
-! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
-! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
-! itypsm           ! te ! <-- ! type de source de masse pour les               !
-! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! tslagr           ! tr ! <-- ! terme de couplage retour du                    !
-!(ncelet,*)        !    !     !     lagrangien                                 !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
-! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
-!  (ncepdp,6)      !    !     !                                                !
-! smacel           ! tr ! <-- ! valeur des variables associee a la             !
-! (ncesmp,*   )    !    !     !  source de masse                               !
-!                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================
@@ -83,7 +81,7 @@ use cstnum
 use cstphy
 use optcal
 use lagran
-use pointe, only: s2kw, divukw, ifapat, dispar
+use pointe, only: s2kw, divukw, ifapat, dispar, coefau, coefbu
 use parall
 use mesh
 
@@ -123,12 +121,14 @@ integer          iwarnp, ipp
 integer          iptsta
 integer          ipcroo, ipbroo, ipcvto, ipcvlo
 integer          imucpp, idftnp, iswdyp
+integer          ipcliu
+logical          ilved
 
 double precision rnorm , d2s3, divp23, epz2
 double precision deltk , deltw, a11, a12, a22, a21
 double precision unsdet, romvsd
 double precision prdtur, xk, xw, xeps, xnu
-double precision visct , rom, visclc, visctc, hint
+double precision visct , rho, visclc, visctc, hint
 double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
 double precision thetp1, thetak, thetaw, thets, thetap, epsrsp
 double precision tuexpk, tuexpw
@@ -138,33 +138,35 @@ double precision var, vrmin, vrmax
 double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: viscf, viscb
-double precision, allocatable, dimension(:) :: dam
-double precision, allocatable, dimension(:) :: smbrk, smbrw, rovsdt
+double precision, allocatable, dimension(:) :: smbrk, smbrw
 double precision, allocatable, dimension(:) :: tinstk, tinstw, xf1
 double precision, allocatable, dimension(:,:) :: gradk, grado, grad
-double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, allocatable, dimension(:) :: w1, w2
+double precision, allocatable, dimension(:) :: gdkgdw
 double precision, allocatable, dimension(:) :: w5, w6
-double precision, allocatable, dimension(:) :: w7, w8
+double precision, allocatable, dimension(:) :: prodk, prodw
+double precision, allocatable, dimension(:) :: gamk, gamw
+double precision, allocatable, dimension(:) :: usimpk, usimpw
+double precision, allocatable, dimension(:) :: w7
 double precision, allocatable, dimension(:) :: dpvar
 double precision, allocatable, dimension(:) :: rotfct
 
 !===============================================================================
 
 !===============================================================================
-! 1. INITIALISATION
+! 1.Initialization
 !===============================================================================
 
 ! Allocate temporary arrays for the turbulence resolution
 allocate(viscf(nfac), viscb(nfabor))
-allocate(dam(ncelet))
-allocate(smbrk(ncelet), smbrw(ncelet), rovsdt(ncelet))
+allocate(smbrk(ncelet), smbrw(ncelet))
 allocate(tinstk(ncelet), tinstw(ncelet), xf1(ncelet))
 
 ! Allocate work arrays
-allocate(w1(ncelet), w2(ncelet), w3(ncelet))
-allocate(w5(ncelet), w6(ncelet))
-allocate(w7(ncelet), w8(ncelet))
+allocate(w1(ncelet), w2(ncelet))
 allocate(dpvar(ncelet))
+allocate(gdkgdw(ncelet))
+allocate(prodk(ncelet), prodw(ncelet))
 
 epz2 = epzero**2
 
@@ -207,10 +209,13 @@ if(iwarni(ik).ge.1) then
   write(nfecra,1000)
 endif
 
+d2s3 = 2.d0/3.d0
+
+ipcliu = iclrtp(iu,icoef)
+
 !===============================================================================
-! 2. CALCUL DE dk/dxj.dw/dxj
-!      Le terme est stocke dans         W1
-!      En sortie de l'etape on conserve W1
+! 2.1 Compute dk/dxj.dw/dxj
+!     stored in gdkgdw
 !===============================================================================
 
 ! Allocate temporary arrays for gradients calculation
@@ -248,22 +253,19 @@ call grdcel &
    grado  )
 
 do iel = 1, ncel
-  w1(iel) = gradk(iel,1)*grado(iel,1) &
-          + gradk(iel,2)*grado(iel,2) &
-          + gradk(iel,3)*grado(iel,3)
+  gdkgdw(iel) = gradk(iel,1)*grado(iel,1) &
+              + gradk(iel,2)*grado(iel,2) &
+              + gradk(iel,3)*grado(iel,3)
 enddo
 
 ! Free memory
 deallocate(gradk, grado)
 
-!====================================================
-! 3. CALCUL DU COEFFICIENT DE PONDERATION F1
-!      Le terme est stocke dans         XF1
-!      En sortie de l'etape on conserve W1,XF1
-!====================================================
+!===============================================================================
+! 2.2. Compute the weight f1 (stored in xf1)
+!===============================================================================
 
-
-if(abs(icdpar).eq.2) then
+if (abs(icdpar).eq.2) then
   do iel = 1, ncel
     ifacpt = ifapat(iel)
     w2(iel) = (cdgfbo(1,ifacpt)-xyzcen(1,iel))**2 &
@@ -273,41 +275,63 @@ if(abs(icdpar).eq.2) then
   enddo
 else
   do iel = 1, ncel
-    w2(iel) =  max(dispar(iel),epzero)
+    w2(iel) = max(dispar(iel),epzero)
   enddo
 endif
 
-!     En cas d'ordre 2 on utilise les valeurs en n car le terme en (1-F1)*W1
-!     sera dans PROPCE. Du coup, on aura quand meme certaines "constantes"
-!     intervenant dans des termes en n+1/2 (ex sigma_k pour la diffusion) calcules
-!     a partir de F1 en n -> mais l'effet sur les "constantes" est faible
-!     -> a garder en tete si on fait vraiment de l'ordre 2 en temps en k-omega
+! En cas d'ordre 2 on utilise les valeurs en n car le terme en (1-f1)*gdkgdw
+! sera dans PROPCE. Du coup, on aura quand meme certaines "constantes"
+! intervenant dans des termes en n+1/2 (ex sigma_k pour la diffusion) calcules
+! a partir de f1 en n -> mais l'effet sur les "constantes" est faible
+! -> a garder en tete si on fait vraiment de l'ordre 2 en temps en k-omega
 do iel = 1, ncel
-  rom = propce(iel,ipcroo)
-  xnu = propce(iel,ipcvlo)/rom
+  rho = propce(iel,ipcroo)
+  xnu = propce(iel,ipcvlo)/rho
   xk = rtpa(iel,ik)
   xw  = rtpa(iel,iomg)
-  cdkw = 2*rom/ckwsw2/xw*w1(iel)
+  cdkw = 2*rho/ckwsw2/xw*gdkgdw(iel)
   cdkw = max(cdkw,1.d-20)
   xarg1 = max(sqrt(xk)/cmu/xw/w2(iel), 500.d0*xnu/xw/w2(iel)**2)
-  xarg1 = min(xarg1, 4.d0*rom*xk/ckwsw2/cdkw/w2(iel)**2)
+  xarg1 = min(xarg1, 4.d0*rho*xk/ckwsw2/cdkw/w2(iel)**2)
   xf1(iel) = tanh(xarg1**4)
 enddo
 
 !===============================================================================
-! 4. CALCUL DU TERME DE PRODUCTION
-!      Les termes sont stockes dans     TINSTK,TINSTW
-!      En sortie de l'etape on conserve W1,XF1,TINSTK,TINSTW
+! 3. Instationnary terms (stored in tinstk and tinstw)
 !===============================================================================
 
-d2s3 = 2.d0/3.d0
+do iel = 1, ncel
+  rho = propce(iel,ipcrom)
+  romvsd = rho*volume(iel)/dt(iel)
+  tinstk(iel) = istat(ik)*romvsd
+  tinstw(iel) = istat(iomg)*romvsd
+enddo
+
+!===============================================================================
+! 4. Compute production terms
+!     stored in: prodk,prodw
+!      En sortie de l'etape on conserve gdkgdw,xf1,prodk,tinstW
+!===============================================================================
+
 do iel = 1, ncel
   xk   = rtpa(iel,ik)
-  xeps = cmu*rtpa(iel,iomg)*xk
-  tinstk(iel) = s2kw(iel) - d2s3*divukw(iel)*divukw(iel)
-  tinstw(iel) = propce(iel,ipcvto)*tinstk(iel)                    &
-       -d2s3*propce(iel,ipcroo)*xk*divukw(iel)
-  tinstk(iel) = min(tinstw(iel),ckwc1*propce(iel,ipcroo)*xeps)
+  xw   = rtpa(iel,iomg)
+  xeps = cmu*xw*xk
+  visct = propce(iel,ipcvto)
+  rho = propce(iel,ipcroo)
+  prodw(iel) = visct*s2kw(iel)                    &
+             - d2s3*rho*xk*divukw(iel)
+
+  tinstw(iel) = tinstw(iel)                                                    &
+              + max(d2s3*rho*volume(iel)*(rho*xk/(visct*xw))*divukw(iel), 0.d0)
+
+  ! Take the min between prodw and the low Reynold one
+  if (prodw(iel).gt.ckwc1*rho*xeps) then
+    prodk(iel) = ckwc1*rho*xeps
+  else
+    prodk(iel) = prodw(iel)
+    tinstk(iel) = tinstk(iel) + max(d2s3*volume(iel)*rho*divukw(iel), 0.d0)
+  endif
 enddo
 
 !===============================================================================
@@ -322,15 +346,15 @@ if (irccor.eq.1) then
   ! Allocate an array for the rotation function
   allocate(rotfct(ncel))
 
-  ! Compute the rotation function (w1 array not used)
+  ! Compute the rotation function (gdkgdw array not used)
   call rotcor &
   !==========
   ( dt     , rtpa   , propce , coefa , coefb , &
-    rotfct , w1     )
+    rotfct , gdkgdw     )
 
   do iel = 1, ncel
-    tinstk(iel) = tinstk(iel)*rotfct(iel)
-    tinstw(iel) = tinstw(iel)*rotfct(iel)
+    prodk(iel) = prodk(iel)*rotfct(iel)
+    prodw(iel) = prodw(iel)*rotfct(iel)
   enddo
 
   ! rotfct array is used later in case of renforced coupling (ikecou = 1).
@@ -339,23 +363,20 @@ if (irccor.eq.1) then
 endif
 
 !===============================================================================
-! 6. CALCUL DU TERME DE GRAVITE
-!      Les termes sont stockes dans     TINSTK,TINSTW,W2
-!      En sortie de l'etape on conserve W1,W2,XF1,TINSTK,TINSTW
+! 6. Compute buoyancy terms
+!     stored in: prodk, prodw, w2
 !===============================================================================
 
-if(igrake.eq.1) then
+if (igrake.eq.1) then
 
   ! Allocate a temporary array for the gradient calculation
   allocate(grad(ncelet,3))
 
-! --- Terme de gravite G = BETA*G*GRAD(SCA)/PRDTUR/RHO
-!     Ici on calcule   G =-G*GRAD(RHO)/PRDTUR/RHO
+  ! --- Buoyant term:     G = Beta*g*GRAD(T)/PrT/rho
+  !     Here is computed: G =-g*GRAD(rho)/PrT/rho
 
   iccocg = 1
   inc = 1
-
-!     Le choix ci dessous a l'avantage d'etre simple
 
   nswrgp = nswrgr(ik)
   epsrgp = epsrgr(ik)
@@ -364,9 +385,8 @@ if(igrake.eq.1) then
   climgp = climgr(ik)
   extrap = extrag(ik)
 
-!     Conditions aux limites sur ROM : Dirichlet ROMB
-!       On utilise VISCB pour stocker le COEFB relatif a ROM
-!       On impose en Dirichlet (COEFA) la valeur ROMB
+  ! BCs on rho: Dirichlet ROMB
+  !  NB: viscb is used as COEFB
 
   do ifac = 1, nfabor
     viscb(ifac) = 0.d0
@@ -374,7 +394,7 @@ if(igrake.eq.1) then
 
   iivar = 0
 
-  call grdcel                                                     &
+  call grdcel &
   !==========
  ( iivar  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
@@ -382,21 +402,28 @@ if(igrake.eq.1) then
    grad   )
 
 
-!      Production et terme de gravite
-!        TINSTK=MIN(P,C1*EPS)+G et TINSTW=P+(1-CE3)*G
-!        On conserve G dans W2 pour la phase de couplage des termes sources
-
-  if(iscalt.gt.0.and.nscal.ge.iscalt) then
+  ! Buoyancy production
+  !   prodk=min(P,c1*eps)+G
+  !   prodw=P+(1-ce3)*G
+  if (iscalt.gt.0.and.nscal.ge.iscalt) then
     prdtur = sigmas(iscalt)
   else
     prdtur = 1.d0
   endif
 
   do iel = 1, ncel
+    rho = propce(iel,ipcroo)
+    visct = propce(iel,ipcvto)
+
     w2(iel) = -(grad(iel,1)*gx + grad(iel,2)*gy + grad(iel,3)*gz) / &
-               (propce(iel,ipcroo)*prdtur)
-    tinstw(iel)=tinstw(iel)+propce(iel,ipcvto)*max(w2(iel),zero)
-    tinstk(iel)=tinstk(iel)+propce(iel,ipcvto)*w2(iel)
+               (rho*prdtur)
+
+    prodw(iel) = prodw(iel)+visct*max(w2(iel),zero)
+    prodk(iel) = prodk(iel)+visct*w2(iel)
+
+    ! Implicit Buoyant terms when negativ
+    tinstk(iel) = tinstk(iel)                                        &
+                + max(-volume(iel)*visct/rtpa(iel,ik)*w2(iel), 0.d0)
   enddo
 
   ! Free memory
@@ -404,41 +431,83 @@ if(igrake.eq.1) then
 
 endif
 
+!===============================================================================
+! 7. Take user source terms into account
+!     explicit parts stored in: smbrk, smbrw
+!     implicit parts stored in: usimpk, usimpw
+!===============================================================================
 
-!===============================================================================
-! 7. PRISE EN COMPTE DES TERMES SOURCES UTILISATEURS
-!      Les termes sont stockes dans     SMBRK,SMBRW,DAM,W3
-!      En sortie de l'etape on conserve W1-3,XF1,TINSTK,TINSTW,SMBRK,SMBRW,DAM
-!===============================================================================
+allocate(usimpk(ncelet), usimpw(ncelet))
 
 do iel = 1, ncel
   smbrk(iel) = 0.d0
   smbrw(iel) = 0.d0
-  dam  (iel) = 0.d0
-  w3   (iel) = 0.d0
+  usimpk(iel) = 0.d0
+  usimpw(iel) = 0.d0
 enddo
 
-call ustskw                                                       &
+call ustskw &
 !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    ckupdc , smacel , s2kw   , divukw ,                            &
-   w1     , w2     , xf1    ,                                     &
-   smbrk  , smbrw  , dam    , w3     )
-!  ------   ------   ------   ------
+   gdkgdw , w2     , xf1    ,                                     &
+   smbrk  , smbrw  , usimpk , usimpw )
+
+! If source terms are extrapolated over time
+if (isto2t.gt.0) then
+
+  thetak = thetav(ik)
+  thetaw = thetav(iomg)
+
+  do iel = 1, ncel
+
+    ! Recover the value at time (n-1)
+    tuexpk = propce(iel,iptsta)
+    tuexpw = propce(iel,iptsta+1)
+
+    ! Save the values for the next time-step
+    propce(iel,iptsta) = smbrk(iel)
+    propce(iel,iptsta+1) = smbrw(iel)
+
+    ! Explicit Part
+    smbrk(iel) = - thets*tuexpk
+    smbrw(iel) = - thets*tuexpw
+    ! It is assumed that (-usimpk > 0) and though this term is implicit
+    smbrk(iel) = usimpk(iel)*rtpa(iel,ik) + smbrk(iel)
+    smbrw(iel) = usimpw(iel)*rtpa(iel,iomg) + smbrw(iel)
+
+    ! Implicit part
+    tinstk(iel) = tinstk(iel) -usimpk(iel)*thetak
+    tinstw(iel) = tinstw(iel) -usimpw(iel)*thetaw
+  enddo
+
+! If no extrapolation over time
+else
+  do iel = 1, ncel
+    ! Explicit Part
+    smbrk(iel) = smbrk(iel) + usimpk(iel)*rtpa(iel,ik)
+    smbrw(iel) = smbrw(iel) + usimpw(iel)*rtpa(iel,iomg)
+
+    ! Implicit part
+    tinstk(iel) = tinstk(iel) + max(-usimpk(iel),zero)
+    tinstw(iel) = tinstw(iel) + max(-usimpw(iel),zero)
+  enddo
+endif
+
 
 !===============================================================================
-! 8. ON FINALISE LE CALCUL DES TERMES SOURCES
+! 8. Finalization of explicit and implicit source terms
 
-!      Les termes sont stockes dans     SMBRK, SMBRW
-!      En sortie de l'etape on conserve SMBRK,SMBRW,DAM,W1-4
+!      Les termes sont stockes dans     smbrk, smbrw
+!      En sortie de l'etape on conserve smbrk,smbrw,gdkgdw-4
 !===============================================================================
 
 do iel = 1, ncel
 
   visct  = propce(iel,ipcvto)
-  rom    = propce(iel,ipcroo)
+  rho    = propce(iel,ipcroo)
   xk     = rtpa(iel,ik)
   xw     = rtpa(iel,iomg)
   xxf1   = xf1(iel)
@@ -446,88 +515,126 @@ do iel = 1, ncel
   xbeta  = xxf1*ckwbt1 + (1.d0-xxf1)*ckwbt2
 
   smbrk(iel) = smbrk(iel) + volume(iel)*(                         &
-       tinstk(iel)                                                &
-       -cmu*rom*xw*xk )
+                                          prodk(iel)              &
+                                        - cmu*rho*xw*xk )
 
-  smbrw(iel) = smbrw(iel) + volume(iel)*(                         &
-       rom*xgamma/visct*tinstw(iel)                               &
-       -xbeta*rom*xw**2                                           &
-       +2.d0*rom/xw*(1.d0-xxf1)/ckwsw2*w1(iel) )
+  smbrw(iel) = smbrw(iel)                                                &
+             + volume(iel)*(                                             &
+                             rho*xgamma/visct*prodw(iel)                 &
+                           - xbeta*rho*xw**2                             &
+                           + 2.d0*rho/xw*(1.d0-xxf1)/ckwsw2*gdkgdw(iel)  &
+                           )
 
 enddo
 
-!===============================================================================
-! 9. PRISE EN COMPTE DES TERMES D'ACCUMULATION DE MASSE ET
-!         DE LA DEUXIEME PARTIE DES TS UTILISATEURS (PARTIE EXPLICITE)
-!         STOCKAGE POUR EXTRAPOLATION EN TEMPS
-!      On utilise                       SMBRK,SMBRW
-!      En sortie de l'etape on conserve SMBRK,SMBRW,DAM,W2-4
-
-!    Remarque : l'extrapolation telle qu'elle est ecrite n'a pas grand
-!               sens si IKECOU=1
-!===============================================================================
-
-!     Si on extrapole les T.S.
-if(isto2t.gt.0) then
-
-  do iel = 1, ncel
-
-!       Sauvegarde pour echange
-    tuexpk = propce(iel,iptsta)
-!       Pour la suite et le pas de temps suivant
-    propce(iel,iptsta) = smbrk(iel)
-!       Termes dependant de la variable resolue et theta PROPCE
-    smbrk(iel) = - thets*tuexpk
-!       On suppose -DAM > 0 : on implicite
-!         le terme utilisateur dependant de la variable resolue
-    smbrk(iel) = dam(iel)*rtpa(iel,ik) + smbrk(iel)
-
-!       Sauvegarde pour echange
-    tuexpw = propce(iel,iptsta+1)
-!       Pour la suite et le pas de temps suivant
-    propce(iel,iptsta+1) = smbrw(iel)
-!       Termes dependant de la variable resolue et theta PROPCE
-    smbrw(iel) = - thets*tuexpw
-!       On suppose -W3 > 0 : on implicite
-!         le terme utilisateur dependant de la variable resolue
-    smbrw(iel) =  w3(iel)*rtpa(iel,iomg) + smbrw(iel)
-
-  enddo
-
-!     Si on n'extrapole pas les T.S.
-else
-  do iel = 1, ncel
-    smbrk(iel) = smbrk(iel) + dam(iel)*rtpa(iel,ik)
-    smbrw(iel) = smbrw(iel) + w3 (iel)*rtpa(iel,iomg)
+! If the solving of k-omega is uncoupled, negative source terms are implicited
+if (ikecou.eq.0) then
+  do iel=1,ncel
+    xw    = rtpa(iel,iomg)
+    xxf1  = xf1(iel)
+    xbeta = xxf1*ckwbt1 + (1.d0-xxf1)*ckwbt2
+    rho = propce(iel,ipcrom)
+    tinstk(iel) = tinstk(iel) + volume(iel)*cmu*rho*xw
+    tinstw(iel) = tinstw(iel) + volume(iel)*xbeta*rho*xw
   enddo
 endif
 
+! Free memory
+deallocate(gdkgdw)
+
 !===============================================================================
-! 9.1 PRISE EN COMPTE DES TERMES SOURCES LAGRANGIEN : PARTIE EXPLICITE
-!     COUPLAGE RETOUR
+! 9 Prise en compte des termes sources lagrangien
+!   couplage retour
 !===============================================================================
 
 !     Ordre 2 non pris en compte
 if (iilagr.eq.2 .and. ltsdyn.eq.1) then
 
-  do iel = 1,ncel
+  do iel = 1, ncel
 
-! Termes sources explicte et implicte sur k
-
+    ! Termes sources explicte et implicte sur k
     smbrk(iel)  = smbrk(iel) + tslagr(iel,itske)
 
-! Termes sources explicte sur omega : on reprend la constante CE4 directement
-!    du k-eps sans justification ... a creuser si necessaire           !
-
+    ! Termes sources explicte sur omega : on reprend la constante CE4 directement
+    !    du k-eps sans justification ... a creuser si necessaire
     smbrw(iel)  = smbrw(iel)                                      &
                 + ce4 *tslagr(iel,itske) * propce(iel,ipcroo)     &
                 /propce(iel,ipcvto)
+
+    ! Termes sources implicite sur k
+    tinstk(iel) = tinstk(iel) + max(-tslagr(iel,itsli),zero)
+
+    ! Termes sources implicte sur omega
+    tinstw(iel) = tinstw(iel)                                     &
+                + max( (-ce4*tslagr(iel,itske)/rtpa(iel,ik)) , zero)
   enddo
 
 endif
 
 !===============================================================================
-! 9.2 Re-set Boundary conditions flux coefficient for k and omega
+! 10. Mass source terms (Implicit and explicit parts)
+
+!===============================================================================
+
+if (ncesmp.gt.0) then
+
+  allocate(gamk(ncelet), gamw(ncelet))
+
+  ! Entier egal a 1 (pour navsto : nb de sur-iter)
+  iiun = 1
+
+  ! On incremente SMBRS par -Gamma RTPA et ROVSDT par Gamma (*theta)
+  ivar = ik
+
+  call catsma &
+  !==========
+ ( ncelet , ncel   , ncesmp , iiun   ,                            &
+   isto2t , thetav(ivar) ,                                        &
+   icetsm , itypsm(1,ivar) ,                                      &
+   volume , rtpa(1,ivar) , smacel(1,ivar) , smacel(1,ipr) ,       &
+   smbrk  , tinstk , gamk )
+
+  ivar = iomg
+
+  call catsma &
+  !==========
+ ( ncelet , ncel   , ncesmp , iiun   ,                            &
+   isto2t , thetav(ivar) ,                                        &
+   icetsm , itypsm(1,ivar) ,                                      &
+   volume , rtpa(1,ivar) , smacel(1,ivar) , smacel(1,ipr) ,       &
+   smbrw  , tinstw , gamw )
+
+  ! Si on extrapole les TS on met Gamma Pinj dans PROPCE
+  if(isto2t.gt.0) then
+    do iel = 1, ncel
+      propce(iel,iptsta  ) = propce(iel,iptsta  ) + gamk(iel)
+      propce(iel,iptsta+1) = propce(iel,iptsta+1) + gamw(iel)
+    enddo
+  !  Sinon on le met directement dans SMBR
+  else
+    do iel = 1, ncel
+      smbrk(iel) = smbrk(iel) + gamk(iel)
+      smbrw(iel) = smbrw(iel) + gamw(iel)
+    enddo
+  endif
+
+  !Free memory
+  deallocate(gamk, gamw)
+
+endif
+
+! Finalisation des termes sources
+if (isto2t.gt.0) then
+  thetp1 = 1.d0 + thets
+  do iel = 1, ncel
+    smbrk(iel) = smbrk(iel) + thetp1 * propce(iel,iptsta)
+    smbrw(iel) = smbrw(iel) + thetp1 * propce(iel,iptsta+1)
+  enddo
+endif
+
+
+!===============================================================================
+! 11.1 Re-set Boundary conditions flux coefficient for k and omega
 
 !     The definition of cofaf requires hint=(mu+muT/sigma)/distb where sigma
 !     is not constant in the k-omega model (and not directly accessible)
@@ -562,24 +669,25 @@ do ifac = 1, nfabor
 enddo
 
 !===============================================================================
-! 10. PRISE EN COMPTE DES TERMES DE CONV/DIFF DANS LE SECOND MEMBRE
+! 11.2 Prise en compte des termes de conv/diff dans le second membre pour le
+!      couplage renforcé k-omega (ikecou == 1)
 
-!      Tableaux de travail              W7, W8, W1, TINSTK, TINSTW
-!      Les termes sont stockes dans     W5 et W6, puis ajoutes a SMBRK, SMBRW
-!      En sortie de l'etape on conserve W2-6,SMBRK,SMBRW,DAM
+!      Tableaux de travail              w7
+!      Les termes sont stockes dans     w5 ET w6, PUIS AJOUTES A smbrk, smbrw
+!      En sortie de l'etape on conserve w2-6,smbrk,smbrw,usimpk
 !===============================================================================
 
-!     Ceci ne sert a rien si IKECOU n'est pas egal a 1
-
 if (ikecou.eq.1) then
+
+  allocate(w5(ncelet), w6(ncelet))
+  allocate(w7(ncelet))
 
   do iel = 1, ncel
     w5 (iel) = 0.d0
     w6 (iel) = 0.d0
   enddo
 
-! ---> Traitement de k
-
+  ! ---> Traitement de k
   ivar   = ik
 
   ipp    = ipprtp(ivar)
@@ -594,9 +702,9 @@ if (ikecou.eq.1) then
       xxf1 = xf1(iel)
       sigma = xxf1*ckwsk1 + (1.d0-xxf1)*ckwsk2
       w7(iel) = propce(iel,ipcvis)                                &
-           + idifft(ivar)*propce(iel,ipcvst)/sigma
+              + idifft(ivar)*propce(iel,ipcvst)/sigma
     enddo
-    call viscfa                                                   &
+    call viscfa &
     !==========
  ( imvisf ,                                                       &
    w7     ,                                                       &
@@ -647,16 +755,13 @@ if (ikecou.eq.1) then
    rvoid  , rvoid  ,                                              &
    w5     )
 
-
   if (iwarni(ivar).ge.2) then
     isqrt = 1
     call prodsc(ncel,isqrt,smbrk,smbrk,rnorm)
     write(nfecra,1100) chaine(1:8) ,rnorm
   endif
 
-
-! ---> Traitement de omega
-
+  ! ---> Traitement de omega
   ivar   = iomg
 
   ipp    = ipprtp(ivar)
@@ -670,9 +775,9 @@ if (ikecou.eq.1) then
       xxf1 = xf1(iel)
       sigma = xxf1*ckwsw1 + (1.d0-xxf1)*ckwsw2
       w7(iel) = propce(iel,ipcvis)                                &
-           + idifft(ivar)*propce(iel,ipcvst)/sigma
+              + idifft(ivar)*propce(iel,ipcvst)/sigma
     enddo
-    call viscfa                                                   &
+    call viscfa &
     !==========
  ( imvisf ,                                                       &
    w7     ,                                                       &
@@ -737,76 +842,11 @@ if (ikecou.eq.1) then
 endif
 
 !===============================================================================
-! 10. AJOUT DES TERMES SOURCES DE MASSE EXPLICITES
-
-!       Les parties implicites eventuelles sont conservees dans W7 et W8
-!         et utilisees dans la phase d'implicitation cv/diff
-
-!       Les termes sont stockes dans     SMBRK, SMBRW, W7, W8
-!       En sortie de l'etape on conserve W2-8,SMBRK,SMBRW,DAM
-!===============================================================================
-
-if (ncesmp.gt.0) then
-
-  do iel = 1, ncel
-    w7(iel) = 0.d0
-    w8(iel) = 0.d0
-  enddo
-
-!       Entier egal a 1 (pour navsto : nb de sur-iter)
-  iiun = 1
-
-!       On incremente SMBRS par -Gamma RTPA et ROVSDT par Gamma (*theta)
-  ivar = ik
-  call catsma &
-  !==========
- ( ncelet , ncel   , ncesmp , iiun   ,                            &
-                                 isto2t , thetav(ivar) ,   &
-   icetsm , itypsm(1,ivar) ,                                      &
-   volume , rtpa(1,ivar) , smacel(1,ivar) , smacel(1,ipr) ,       &
-   smbrk  , w7     , tinstk )
-  ivar = iomg
-  call catsma &
-  !==========
- ( ncelet , ncel   , ncesmp , iiun   ,                            &
-                                 isto2t , thetav(ivar) ,   &
-   icetsm , itypsm(1,ivar) ,                                      &
-   volume , rtpa(1,ivar) , smacel(1,ivar) , smacel(1,ipr) ,       &
-   smbrw  , w8     , tinstw )
-
-!       Si on extrapole les TS on met Gamma Pinj dans PROPCE
-  if(isto2t.gt.0) then
-    do iel = 1, ncel
-      propce(iel,iptsta  ) = propce(iel,iptsta  ) + tinstk(iel)
-      propce(iel,iptsta+1) = propce(iel,iptsta+1) + tinstw(iel)
-    enddo
-!       Sinon on le met directement dans SMBR
-  else
-    do iel = 1, ncel
-      smbrk(iel) = smbrk(iel) + tinstk(iel)
-      smbrw(iel) = smbrw(iel) + tinstw(iel)
-    enddo
-  endif
-
-endif
-
-!     Finalisation des termes sources
-if(isto2t.gt.0) then
-  thetp1 = 1.d0 + thets
-  do iel = 1, ncel
-    smbrk(iel) = smbrk(iel) + thetp1 * propce(iel,iptsta)
-    smbrw(iel) = smbrw(iel) + thetp1 * propce(iel,iptsta+1)
-  enddo
-endif
+! 11.3 k-omega coupling (ikecou == 1)
 
 !===============================================================================
-! 11. INCREMENTS DES TERMES SOURCES DANS LE SECOND MEMBRE
 
-!       Les termes sont stockes dans     SMBRK, SMBRW
-!       En sortie de l'etape on conserve W3-8,SMBRK,SMBRW
-!===============================================================================
-
-!     Ordre 2 non pris en compte
+!  Ordre 2 non pris en compte
 if(ikecou.eq.1) then
 
   ! Take into account, if necessary, the Spalart-Shur rotation/curvature
@@ -823,15 +863,15 @@ if(ikecou.eq.1) then
 
   do iel = 1, ncel
 
-    rom = propce(iel,ipcrom)
+    rho = propce(iel,ipcrom)
 
-!   RESOLUTION COUPLEE
+    ! RESOLUTION COUPLEE
 
-    romvsd     = 1.d0/(rom*volume(iel))
+    romvsd     = 1.d0/(rho*volume(iel))
     smbrk(iel) = smbrk(iel)*romvsd
     smbrw(iel) = smbrw(iel)*romvsd
     divp23     = d2s3*max(divukw(iel),zero)
-    produc     = w1(iel)*(s2kw(iel)-d2s3*divukw(iel)**2)+w2(iel)
+    produc     = w1(iel)*s2kw(iel)+w2(iel)
     xk         = rtpa(iel,ik)
     xw         = rtpa(iel,iomg)
     xxf1       = xf1(iel)
@@ -849,128 +889,50 @@ if(ikecou.eq.1) then
     deltk = ( a22*smbrk(iel) -a12*smbrw(iel) )*unsdet
     deltw = (-a21*smbrk(iel) +a11*smbrw(iel) )*unsdet
 
-!     NOUVEAU TERME SOURCE POUR CODITS
+    ! NOUVEAU TERME SOURCE POUR CODITS
 
-    romvsd = rom*volume(iel)/dt(iel)
+    romvsd = rho*volume(iel)/dt(iel)
 
     smbrk(iel) = romvsd*deltk
     smbrw(iel) = romvsd*deltw
 
   enddo
 
-endif
 
-!===============================================================================
-! 12. TERMES INSTATIONNAIRES
-
-!     Les termes sont stockes dans     TINSTK, TINSTW
-!     En sortie de l'etape on conserve SMBRK, SMBRW,  TINSTK, TINSTW
-!===============================================================================
-
-! --- PARTIE EXPLICITE
-
-!     on enleve la convection/diffusion au temps n a SMBRK et SMBRW
-!     s'ils ont ete calcules
-if (ikecou.eq.1) then
+  ! on enleve la convection/diffusion au temps n a SMBRK et SMBRW
+  ! s'ils ont ete calcules
   do iel = 1, ncel
     smbrk(iel) = smbrk(iel) - w5(iel)
     smbrw(iel) = smbrw(iel) - w6(iel)
   enddo
-endif
 
-! --- RHO/DT et DIV
-
-do iel = 1, ncel
-  rom = propce(iel,ipcrom)
-  romvsd = rom*volume(iel)/dt(iel)
-  tinstk(iel) = istat(ik)*romvsd
-  tinstw(iel) = istat(iomg)*romvsd
-enddo
-
-! --- Source de masse (le theta est deja inclus par catsma)
-if (ncesmp.gt.0) then
-  do iel = 1, ncel
-    tinstk(iel) = tinstk(iel) + w7(iel)
-    tinstw(iel) = tinstw(iel) + w8(iel)
-  enddo
-endif
-
-! --- Termes sources utilisateurs
-if(isto2t.gt.0) then
-  thetak = thetav(ik)
-  thetaw = thetav(iomg)
-  do iel = 1, ncel
-    tinstk(iel) = tinstk(iel) -dam(iel)*thetak
-    tinstw(iel) = tinstw(iel) -w3 (iel)*thetaw
-  enddo
-else
-  do iel = 1, ncel
-    tinstk(iel) = tinstk(iel) + max(-dam(iel),zero)
-    tinstw(iel) = tinstw(iel) + max(-w3 (iel),zero)
-  enddo
-endif
-
-! --- PRISE EN COMPTE DES TERMES LAGRANGIEN : COUPLAGE RETOUR
-
-!     Ordre 2 non pris en compte
-if (iilagr.eq.2 .and. ltsdyn.eq.1) then
-
-  do iel = 1,ncel
-
-! Termes sources implicite sur k
-
-    tinstk(iel) = tinstk(iel) + max(-tslagr(iel,itsli),zero)
-
-! Termes sources implicte sur omega
-
-    tinstw(iel) = tinstw(iel)                                     &
-          + max( (-ce4*tslagr(iel,itske)/rtpa(iel,ik)) , zero)
-
-  enddo
+  ! Free memory
+  deallocate(w5, w6)
+  deallocate(w7)
 
 endif
-
-! Si IKECOU=0, on implicite plus fortement k et omega
-
-if(ikecou.eq.0)then
-  do iel=1,ncel
-    xw    = rtpa(iel,iomg)
-    xxf1  = xf1(iel)
-    xbeta = xxf1*ckwbt1 + (1.d0-xxf1)*ckwbt2
-    rom = propce(iel,ipcrom)
-      tinstk(iel) = tinstk(iel) +                                 &
-         volume(iel)*cmu*rom*xw
-      tinstw(iel) = tinstw(iel) +                                 &
-         volume(iel)*xbeta*rom*xw
-  enddo
-endif
-
 
 !===============================================================================
-! 14. RESOLUTION
-
-!       On utilise                      SMBRK, SMBRW,  TINSTK, TINSTW
+! 14. Solving
 !===============================================================================
 
-! ---> Traitement de k
-
+! ---> turbulent kinetic (k) energy treatment
 ivar = ik
 iclvar = iclrtp(ivar,icoef )
 iclvaf = iclrtp(ivar,icoeff)
 
 ipp    = ipprtp(ivar)
 
-!     "VITESSE" DE DIFFUSION FACETTE
-
-if( idiff(ivar).ge. 1 ) then
+! Face viscosity
+if (idiff(ivar).ge. 1) then
 
   do iel = 1, ncel
     xxf1 = xf1(iel)
     sigma = xxf1*ckwsk1 + (1.d0-xxf1)*ckwsk2
     w1(iel) = propce(iel,ipcvis)                                  &
-                        + idifft(ivar)*propce(iel,ipcvst)/sigma
+             + idifft(ivar)*propce(iel,ipcvst)/sigma
   enddo
-  call viscfa                                                     &
+  call viscfa &
   !==========
  ( imvisf ,                                                       &
    w1     ,                                                       &
@@ -987,8 +949,7 @@ else
 
 endif
 
-!     RESOLUTION POUR K
-
+! Solving k
 iconvp = iconv (ivar)
 idiffp = idiff (ivar)
 ireslp = iresol(ivar)
@@ -1035,25 +996,22 @@ call codits &
    tinstk , smbrk  , rtp(1,ivar)     , dpvar  ,                   &
    rvoid  , rvoid  )
 
-! ---> Traitement de omega
-
+! ---> Omega treatment
 ivar = iomg
 iclvar = iclrtp(ivar,icoef )
 iclvaf = iclrtp(ivar,icoeff)
 
 ipp    = ipprtp(ivar)
 
-
-!     "VITESSE" DE DIFFUSION FACETTE
-
-if( idiff(ivar).ge. 1 ) then
+! Face viscosity
+if (idiff(ivar).ge. 1) then
   do iel = 1, ncel
     xxf1 = xf1(iel)
     sigma = xxf1*ckwsw1 + (1.d0-xxf1)*ckwsw2
     w1(iel) = propce(iel,ipcvis)                                  &
                         + idifft(ivar)*propce(iel,ipcvst)/sigma
   enddo
-  call viscfa                                                     &
+  call viscfa &
   !==========
  ( imvisf ,                                                       &
    w1     ,                                                       &
@@ -1070,8 +1028,7 @@ else
 
 endif
 
-! RESOLUTION POUR OMEGA
-
+! Solving omega
 iconvp = iconv (ivar)
 idiffp = idiff (ivar)
 ireslp = iresol(ivar)
@@ -1119,10 +1076,10 @@ call codits &
    rvoid  , rvoid  )
 
 !===============================================================================
-! 15. CLIPPING
+! 15. Clipping
 !===============================================================================
 
-!     Calcul des Min/Max avant clipping, pour affichage
+! Calcul des Min/Max avant clipping, pour affichage
 do ii = 1, 2
   if(ii.eq.1) then
     ivar = ik
@@ -1149,7 +1106,7 @@ do ii = 1, 2
 
 enddo
 
-!     On clippe simplement k et omega par valeur absolue
+! On clippe simplement k et omega par valeur absolue
 iclipk = 0
 iclipw = 0
 do iel = 1, ncel
@@ -1180,36 +1137,33 @@ endif
 
 ! ---  Stockage nb de clippings pour listing
 
-iclpmn(ipprtp(ik )) = iclipk
+iclpmn(ipprtp(ik)) = iclipk
 iclpmn(ipprtp(iomg)) = iclipw
-
 
 ! Free memory
 deallocate(viscf, viscb)
-deallocate(dam)
-deallocate(smbrk, smbrw, rovsdt)
+deallocate(smbrk, smbrw)
 deallocate(tinstk, tinstw, xf1)
-deallocate(w1, w2, w3)
-deallocate(w5, w6)
-deallocate(w7, w8)
+deallocate(w1, w2, usimpk, usimpw)
 deallocate(dpvar)
+deallocate(prodk, prodw)
 
 if (allocated(rotfct))  deallocate(rotfct)
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 #if defined(_CS_LANG_FR)
 
- 1000 format(/,                                                   &
-'   ** RESOLUTION DU K-OMEGA                     ',/,&
-'      ---------------------                     ',/)
+ 1000 format(/, &
+'   ** RESOLUTION DU K-OMEGA'                     ,/,&
+'      ---------------------'                     ,/)
  1100 format(1X,A8,' : BILAN EXPLICITE = ',E14.5)
 
 #else
 
- 1000 format(/,                                                   &
+ 1000 format(/, &
 '   ** SOLVING K-OMEGA'                           ,/,&
 '      ---------------'                           ,/)
  1100 format(1X,A8,' : EXPLICIT BALANCE = ',E14.5)
@@ -1217,7 +1171,7 @@ if (allocated(rotfct))  deallocate(rotfct)
 #endif
 
 !----
-! FIN
+! End
 !----
 
 return

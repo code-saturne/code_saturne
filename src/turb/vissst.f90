@@ -117,13 +117,12 @@ double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 ! Local variables
 
 integer          iel, iccocg, inc
-integer          ipcliu, ipcliv, ipcliw
+integer          ipcliu
 integer          ipcrom, ipcvis, ipcvst
 integer          nswrgp, imligp, iwarnp
 integer          ifacpt
 
-double precision s11, s22, s33
-double precision dudy, dudz, dvdx, dvdz, dwdx, dwdy
+double precision d1s3, d2s3
 double precision epsrgp, climgp, extrap
 double precision xk, xw, rom, xmu, xdist, xarg2, xf2
 
@@ -138,8 +137,6 @@ double precision, dimension(:,:,:), allocatable :: gradv
 ! 1.  INITIALISATION
 !===============================================================================
 
-! --- Memoire
-
 ! --- Rang des variables dans PROPCE (prop. physiques au centre)
 ipcvis = ipproc(iviscl)
 ipcvst = ipproc(ivisct)
@@ -148,13 +145,18 @@ ipcrom = ipproc(irom  )
 ! --- Rang des c.l. des variables dans COEFA COEFB
 !        (c.l. std, i.e. non flux)
 ipcliu = iclrtp(iu,icoef)
-ipcliv = iclrtp(iv,icoef)
-ipcliw = iclrtp(iw,icoef)
+
+d1s3 = 1.d0/3.d0
+d2s3 = 2.d0/3.d0
 
 !===============================================================================
-! 2.  CALCUL DES GRADIENTS DE VITESSE ET DE
-!       S2KW = 2* (S11**2+S22**2+S33**2+2*(S12**2+S13**2+S23**2)
+! 2. Compute the scalar s2kw rate SijSij and the trace of the velocity
+!    gradient
+
+!      (Sij^D) (Sij^D)  is stored in    s2kw (deviatoric s2kw tensor rate)
+!      tr(Grad u)       is stored in    divukw
 !===============================================================================
+
 
 ! Allocate temporary arrays for gradients calculation
 allocate(gradv(ncelet,3,3))
@@ -194,22 +196,23 @@ else
 
 endif
 
+! s2kw = Stain rate of the deviatoric part of the s2kw tensor
+!      = 2 (Sij^D).(Sij^D)
+! divukw   = trace of the velocity gradient
+!          = dudx + dvdy + dwdz
+
 do iel = 1, ncel
 
-  s11  = gradv(iel,1,1)
-  s22  = gradv(iel,2,2)
-  s33  = gradv(iel,3,3)
-  dudy = gradv(iel,2,1)
-  dudz = gradv(iel,3,1)
-  dvdx = gradv(iel,1,2)
-  dvdz = gradv(iel,3,2)
-  dwdx = gradv(iel,1,3)
-  dwdy = gradv(iel,2,3)
+  s2kw(iel) = 2.d0                                                           &
+    *( ( d2s3*gradv(iel,1,1) - d1s3*gradv(iel,2,2) - d1s3*gradv(iel,3,3))**2   &
+     + (-d1s3*gradv(iel,1,1) + d2s3*gradv(iel,2,2) - d1s3*gradv(iel,3,3))**2   &
+     + (-d1s3*gradv(iel,1,1) - d1s3*gradv(iel,2,2) + d2s3*gradv(iel,3,3))**2   &
+     )                                                                         &
+    + (gradv(iel,2,1) + gradv(iel,1,2))**2                                     &
+    + (gradv(iel,3,1) + gradv(iel,1,3))**2                                     &
+    + (gradv(iel,3,2) + gradv(iel,2,3))**2
 
-  s2kw (iel)  = 2.d0*(s11**2 + s22**2 + s33**2)                   &
-              + (dudy+dvdx)**2 + (dudz+dwdx)**2 + (dvdz+dwdy)**2
-
-  divukw(iel) = s11 + s22 + s33
+  divukw(iel) = gradv(iel,1,1) + gradv(iel,2,2) + gradv(iel,3,3)
 
 enddo
 
@@ -265,13 +268,12 @@ enddo
 ! Free memory
 deallocate(w1)
 
-!----
-! FORMAT
-!----
+!-------
+! Format
+!-------
 
-
 !----
-! FIN
+! End
 !----
 
 return
