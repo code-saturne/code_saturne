@@ -133,7 +133,7 @@ SolverOpenShellAction          = 111
 SolverDisplayCurrentCaseAction = 112
 
 SolverHelpMenu                 = 130
-SolverHelpAboutAction          = 131 
+SolverHelpAboutAction          = 131
 
 #Help menu
 SolverHelpLicense              = 251
