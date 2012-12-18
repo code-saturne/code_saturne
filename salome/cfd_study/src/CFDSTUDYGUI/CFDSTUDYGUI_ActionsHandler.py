@@ -184,7 +184,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         self._ActionMap = {}
         self._CommonActionIdMap = {}
         self._SolverActionIdMap = {}
-        self._SaturneActionIdMap = {}
+        self._HelpActionIdMap = {}
 
         self._SalomeSelection = sgPyQt.getSelection()
         self._SolverGUI = CFDSTUDYGUI_SolverGUI.CFDSTUDYGUI_SolverGUI()
@@ -285,7 +285,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         sgPyQt.createTool(action, tool_id)
         action_id = sgPyQt.actionId(action)
         self._ActionMap[action_id] = action
-        self._CommonActionIdMap[CloseXMLCFDGUIAction] = action_id
+        self._SolverActionIdMap[CloseXMLCFDGUIAction] = action_id
         self.connect(action, SIGNAL("activated()"), self.slotCloseCFD_GUI)
 
         action = sgPyQt.createAction(-1,\
@@ -593,7 +593,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         action = sgPyQt.createSeparator()
         sgPyQt.createMenu(action, SolverToolsMenu, 0, -1)
         #for auto hide last separator in tools menu
-        self._SaturneActionIdMap[0] = action_id
+        self._HelpActionIdMap[0] = action_id
 
         # Help menu: insert a Solver Menu Help to the Main Menu Help of Salome
 
@@ -602,7 +602,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
         action = sgPyQt.createSeparator()
         sgPyQt.createMenu(action, helpId)
-        #global SolverHelpMenu
         #Info: Solver Help Menu created at the end of the Menu Help of Salome(when we did not indicate a number)
         action_id = sgPyQt.createMenu("Code_Saturne NEPTUNE_CFD", helpId)
         self._SolverActionIdMap[SolverHelpMenu] = action_id
@@ -621,43 +620,43 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         sgPyQt.createMenu(action, self._SolverActionIdMap[SolverHelpMenu])
         action_id = sgPyQt.actionId(action)
         self._ActionMap[action_id] = action
-        self._SaturneActionIdMap[SolverHelpLicense] = action_id
+        self._HelpActionIdMap[SolverHelpLicense] = action_id
         self.connect(action, SIGNAL("activated()"), self.slotHelpLicense)
 
         # Guides menu
         action_id = sgPyQt.createMenu("Code_Saturne and NEPTUNE_CFD Guides", self._SolverActionIdMap[SolverHelpMenu])
-        self._SaturneActionIdMap[SolverHelpGuidesMenu] = action_id
+        self._HelpActionIdMap[SolverHelpGuidesMenu] = action_id
 
         m = "User guide"
         action = sgPyQt.createAction(SolverHelpUserGuide, m, m, m)
-        sgPyQt.createMenu(action, self._SaturneActionIdMap[SolverHelpGuidesMenu])
+        sgPyQt.createMenu(action, self._HelpActionIdMap[SolverHelpGuidesMenu])
         action_id = sgPyQt.actionId(action)
         self._ActionMap[action_id] = action
-        self._SaturneActionIdMap[SolverHelpUserGuide] = action_id
+        self._HelpActionIdMap[SolverHelpUserGuide] = action_id
         self.connect(action, SIGNAL("activated()"), self.slotHelpUserGuide)
 
         m = "Tutorial"
         action = sgPyQt.createAction(SolverHelpTutorial, m, m, m)
-        sgPyQt.createMenu(action, self._SaturneActionIdMap[SolverHelpGuidesMenu])
+        sgPyQt.createMenu(action, self._HelpActionIdMap[SolverHelpGuidesMenu])
         action_id = sgPyQt.actionId(action)
         self._ActionMap[action_id] = action
-        self._SaturneActionIdMap[SolverHelpTutorial] = action_id
+        self._HelpActionIdMap[SolverHelpTutorial] = action_id
         self.connect(action, SIGNAL("activated()"), self.slotHelpTutorial)
 
         m = "Theoretical guide"
         action = sgPyQt.createAction(SolverHelpTheory, m, m, m)
-        sgPyQt.createMenu(action, self._SaturneActionIdMap[SolverHelpGuidesMenu])
+        sgPyQt.createMenu(action, self._HelpActionIdMap[SolverHelpGuidesMenu])
         action_id = sgPyQt.actionId(action)
         self._ActionMap[action_id] = action
-        self._SaturneActionIdMap[SolverHelpTheory] = action_id
+        self._HelpActionIdMap[SolverHelpTheory] = action_id
         self.connect(action, SIGNAL("activated()"), self.slotHelpTheory)
 
         m = "Reference card"
         action = sgPyQt.createAction(SolverHelpRefcard, m, m, m)
-        sgPyQt.createMenu(action, self._SaturneActionIdMap[SolverHelpGuidesMenu])
+        sgPyQt.createMenu(action, self._HelpActionIdMap[SolverHelpGuidesMenu])
         action_id = sgPyQt.actionId(action)
         self._ActionMap[action_id] = action
-        self._SaturneActionIdMap[SolverHelpRefcard] = action_id
+        self._HelpActionIdMap[SolverHelpRefcard] = action_id
         self.connect(action, SIGNAL("activated()"), self.slotHelpRefcard)
 
 #        action_id = sgPyQt.createMenu(ObjectTR.tr("MESH_OR_GROUP_REPRESENTATION"), -1, -1)
@@ -725,7 +724,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             if a != SolverFileMenu and a != SolverToolsMenu and a != SolverHelpMenu:
                 self.solverAction(a).setEnabled(isActivatedView)
 
-        for a in self._SaturneActionIdMap:
+        for a in self._HelpActionIdMap:
             if a != SolverHelpGuidesMenu:
                 self.solverAction(a).setEnabled(isActivatedView)
                 if CFD_Code() == CFD_Neptune:
@@ -733,7 +732,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
         if sobj != None:
             if CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["DATAfileXML"]):
-                self.commonAction(CloseXMLCFDGUIAction).setEnabled(False)
+                self.solverAction(CloseXMLCFDGUIAction).setEnabled(False)
                 boo = True
 
                 xmlName      = sobj.GetName()
@@ -743,25 +742,25 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
                 listOfOpenSalomeStudies = CFDSTUDYGUI_DataModel._getlistOfOpenStudies()
 
-                if listOfOpenSalomeStudies <> [] and len(listOfOpenSalomeStudies) >=1:
+                if listOfOpenSalomeStudies != [] and len(listOfOpenSalomeStudies) >= 1:
                     for nameSalomeStudy in CFDSTUDYGUI_DataModel._getlistOfOpenStudies():
                         studyId = CFDSTUDYGUI_DataModel._getStudy_Id(nameSalomeStudy)
                         if CFDSTUDYGUI_SolverGUI._c_CFDGUI.d_CfdCases != {}:
                             if CFDSTUDYGUI_SolverGUI._c_CFDGUI.d_CfdCases.has_key(studyId):
                                 if CFDSTUDYGUI_SolverGUI._c_CFDGUI.d_CfdCases[studyId] != []:
-                                    dockListe,dockListeWB = CFDSTUDYGUI_SolverGUI._c_CFDGUI.getDockListes(studyId)
+                                    dockListe, dockListeWB = CFDSTUDYGUI_SolverGUI._c_CFDGUI.getDockListes(studyId)
                                     for dock in dockListe:
                                         if dockName == dock.windowTitle():
                                             self.commonAction(OpenXMLCFDGUIAction).setEnabled(False)
                                             if studyId != sgPyQt.getStudyId():
-                                                self.commonAction(CloseXMLCFDGUIAction).setEnabled(False)
+                                                self.solverAction(CloseXMLCFDGUIAction).setEnabled(False)
                                             else:
-                                                self.commonAction(CloseXMLCFDGUIAction).setEnabled(True)
+                                                self.solverAction(CloseXMLCFDGUIAction).setEnabled(True)
                                             boo = False
                 if boo:
                     self.commonAction(OpenXMLCFDGUIAction).setEnabled(True)
-        else:
-            self.commonAction(CloseXMLCFDGUIAction).setEnabled(True)
+        #else:
+            #self.solverAction(CloseXMLCFDGUIAction).setEnabled(True)
 
 
     def customPopup(self, id, popup):
@@ -798,7 +797,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             popup.addAction(self.commonAction(LaunchGUIAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["DATAfileXML"]:
             popup.addAction(self.commonAction(OpenXMLCFDGUIAction))
-            popup.addAction(self.commonAction(CloseXMLCFDGUIAction))
+            popup.addAction(self.solverAction(CloseXMLCFDGUIAction))
             popup.addAction(self.commonAction(CopyCaseFileAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["SRCFolder"]:
             popup.addAction(self.commonAction(CheckCompilationAction))
@@ -868,11 +867,11 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
                             CFDSTUDYGUI_DataModel.SetAutoColor(sobj.GetFather())
 
-                            for i in [DisplayMESHAction,HideMESHAction]:
+                            for i in [DisplayMESHAction, HideMESHAction]:
                                 popup.addAction(self.commonAction(i))
                                 self.commonAction(i).setEnabled(True)
 
-                        meshGroupObject,group = CFDSTUDYGUI_DataModel.getMeshFromGroup(sobj) # on teste et on recupere le groupe
+                        meshGroupObject, group = CFDSTUDYGUI_DataModel.getMeshFromGroup(sobj) # on teste et on recupere le groupe
 
                         if meshGroupObject <> None:
                             if len(self.l_color) == 0:
@@ -884,7 +883,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                                 x,y,z=a
                                 group.SetColor(SALOMEDS.Color(x,y,z))
 
-                            for i in [DisplayGroupMESHAction,DisplayOnlyGroupMESHAction,HideGroupMESHAction]:
+                            for i in [DisplayGroupMESHAction, DisplayOnlyGroupMESHAction, HideGroupMESHAction]:
                                 popup.addAction(self.commonAction(i))
                                 self.commonAction(i).setEnabled(True)
 
@@ -1463,7 +1462,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         if self._SolverGUI.okToContinue():
             self._SolverGUI.removeDockWindow(aStudyName, aCaseName, aXmlFileName)
             self.commonAction(OpenXMLCFDGUIAction).setEnabled(True)
-            self.commonAction(CloseXMLCFDGUIAction).setEnabled(False)
+            #self.solverAction(CloseXMLCFDGUIAction).setEnabled(False)
             self.updateActions()
 
 
@@ -2015,8 +2014,8 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
         if theId in self._SolverActionIdMap:
             action_id =  self._SolverActionIdMap[theId]
-        elif theId in self._SaturneActionIdMap:
-            action_id = self._SaturneActionIdMap[theId]
+        elif theId in self._HelpActionIdMap:
+            action_id = self._HelpActionIdMap[theId]
 
         if action_id == None:
             raise ActionError, "Invalid action id"
@@ -2036,8 +2035,8 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             action_id =  self._CommonActionIdMap[theId]
         elif theId in self._SolverActionIdMap:
             action_id =  self._SolverActionIdMap[theId]
-        elif theId in self._SaturneActionIdMap:
-            action_id = self._SaturneActionIdMap[theId]
+        elif theId in self._HelpActionIdMap:
+            action_id = self._HelpActionIdMap[theId]
 
         if action_id == None:
             raise ActionError, "Invalid action id"
