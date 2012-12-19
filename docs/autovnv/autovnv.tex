@@ -284,7 +284,7 @@ The comparison is activated if the option \texttt{-c, --compare} is present in
 the command line.
 
 In order to compare two checkpoint files, markups \texttt{<compare>} have to
-be added as a child of the condidered case. In the following exemple, a
+be added as a child of the considered case. In the following exemple, a
 checkpoint file comparison is switched on for the case \textit{Grid1} (for all
 variables, with the default threshold), whereas no comparison is planed for
 the case \textit{Grid2}. The comparison is done by the external
@@ -1297,6 +1297,19 @@ This file is not in accordance with XML specifications.
 The parsing syntax error is:
 
 my_case.xml:86:12: not well-formed (invalid token)
+\end{verbatim}
+\normalsize
+
+\item How to set a logarithmic scale ?
+
+The following raw commands have to be used:
+
+\small
+\begin{verbatim}
+<subplot id="2" title="Grid convergence" xlabel="Number of cells" ylabel="Error (\%)">
+    <plt_command>ax.set_xscale('log')</plt_command>
+    <plt_command>ax.set_yscale('log')</plt_command>
+</subplot>
 \end{verbatim}
 \normalsize
 
