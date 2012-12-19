@@ -150,28 +150,24 @@ dict_object["LOGSRCFile"]   = 100023
 dict_object["USERSFolder"]  = 100024
 dict_object["USRSRCFile"]   = 100025
 
-dict_object["RESUFolder"]  = 100030
-dict_object["RESUFile"]    = 100031
-dict_object["RESUSubFolder"] = 100032
-dict_object["RESSRCFolder"]  = 100033
-dict_object["RESSRCFile"]    = 100034
-dict_object["HISTFolder"]    = 100035
-dict_object["HISTFile"]      = 100036
-dict_object["PRETFolder"]    = 100037
-dict_object["SUITEFolder"]   = 100038
-dict_object["RESMEDFile"]    = 100039
-dict_object["RESXMLFile"]    = 100040
-dict_object["RESUSERFolder"] = 100041
+dict_object["RESUSubErrFolder"]  = 100029
+dict_object["RESUFolder"]     = 100030
+dict_object["RESUFile"]       = 100031
+dict_object["RESUSubFolder"]  = 100032
+dict_object["RESSRCFolder"]   = 100033
+dict_object["RESSRCFile"]     = 100034
+dict_object["HISTFolder"]     = 100035
+dict_object["HISTFile"]       = 100036
+dict_object["PRETFolder"]     = 100037
+dict_object["SUITEFolder"]    = 100038
+dict_object["RESMEDFile"]     = 100039
+dict_object["RESXMLFile"]     = 100040
+dict_object["POSTPROFolder"]  = 100041
 
 dict_object["SCRPTFolder"]    = 100050
 dict_object["SCRPTLanceFile"] = 100051
 dict_object["SCRPTScriptFile"]= 100052
 dict_object["SCRPTFile"]      = 100053
-dict_object["SCRPTStdLog"]    = 100054
-dict_object["SCRPTExtLog"]    = 100055
-
-dict_object["FICHEFolder"]    = 100060
-dict_object["FICHEFile"]      = 100061
 
 dict_object["MESHFolder"]     = 100070
 dict_object["MEDFile"]        = 100071
@@ -221,25 +217,21 @@ icon_collection[dict_object["USRSRCFile"]]     = "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICO
 icon_collection[dict_object["RESUFolder"]]     = "CFDSTUDY_FOLDER_OBJ_ICON"
 icon_collection[dict_object["RESUFile"]]       = "CFDSTUDY_DOCUMENT_OBJ_ICON"
 icon_collection[dict_object["RESUSubFolder"]]  = "CFDSTUDY_FOLDER_OBJ_ICON"
+icon_collection[dict_object["RESUSubErrFolder"]]  = "CFDSTUDY_FOLDER_RED_OBJ_ICON"
 icon_collection[dict_object["RESSRCFolder"]]   = "CFDSTUDY_FOLDER_OBJ_ICON"
 icon_collection[dict_object["RESSRCFile"]]     = "CFDSTUDY_DOCUMENT_OBJ_ICON"
 icon_collection[dict_object["HISTFolder"]]     = "CFDSTUDY_FOLDER_OBJ_ICON"
-icon_collection[dict_object["HISTFile"]]       = "VISU_OBJ_ICON"
+icon_collection[dict_object["HISTFile"]]       = "POST_FILE_ICON"
 icon_collection[dict_object["PRETFolder"]]     = "CFDSTUDY_FOLDER_OBJ_ICON"
 icon_collection[dict_object["SUITEFolder"]]    = "CFDSTUDY_FOLDER_OBJ_ICON"
-icon_collection[dict_object["RESUSERFolder"]]  = "CFDSTUDY_FOLDER_OBJ_ICON"
 icon_collection[dict_object["RESMEDFile"]]     = "VISU_OBJ_ICON"
 icon_collection[dict_object["RESXMLFile"]]     = "CFDSTUDY_EXECUTABLE_OBJ_ICON"
+icon_collection[dict_object["POSTPROFolder"]]  = "VISU_OBJ_ICON"
 
 icon_collection[dict_object["SCRPTFolder"]]    = "CFDSTUDY_FOLDER_OBJ_ICON"
 icon_collection[dict_object["SCRPTLanceFile"]] = "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
 icon_collection[dict_object["SCRPTScriptFile"]]= "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
 icon_collection[dict_object["SCRPTFile"]]      = "CFDSTUDY_DOCUMENT_OBJ_ICON"
-icon_collection[dict_object["SCRPTStdLog"]]    = "CFDSTUDY_SCRIPT_LOG_OBJ_ICON"
-icon_collection[dict_object["SCRPTExtLog"]]    = "CFDSTUDY_SCRIPT_LOG_OBJ_ICON"
-
-icon_collection[dict_object["FICHEFolder"]]    = "CFDSTUDY_FOLDER_OBJ_ICON"
-icon_collection[dict_object["FICHEFile"]]      = "CFDSTUDY_DOCUMENT_OBJ_ICON"
 
 icon_collection[dict_object["MESHFolder"]]     = "CFDSTUDY_FOLDER_OBJ_ICON"
 icon_collection[dict_object["MEDFile"]]        = "MESH_OBJ_ICON"
@@ -326,9 +318,11 @@ def _getStudy():
 def _getlistOfOpenStudies():
     return studyManager.GetOpenStudies()
 
+
 def _getStudy_Id(studyName) :
-    s=studyManager.GetStudyByName(studyName)
+    s = studyManager.GetStudyByName(studyName)
     return s._get_StudyId()
+
 
 def _getNewBuilder():
     study   = _getStudy()
@@ -550,8 +544,10 @@ def UpdateSubTree(theObject=None):
     @param theObject: branch of a tree of data to update.
     """
     if theObject != None:
+        log.debug("_RebuildTreeRecursively -> path: %s" % _GetPath(theObject))
         _RebuildTreeRecursively(theObject)
     else:
+        log.debug("UpdateStudy")
         _UpdateStudy()
     # --- update object browser from a thread different of the main thread is not safe !
     studyId = sgPyQt.getStudyId()
@@ -722,6 +718,7 @@ def _CreateObject(theFather, theBuilder, theName):
     attr.SetValue(theName)
     _FillObject(newChild, theFather, theBuilder)
 
+
 def _CreateItem(theFather,theNewName) :
     """
     Creates a child with name theNewName under theFather root into Object Browser
@@ -732,6 +729,7 @@ def _CreateItem(theFather,theNewName) :
     if theNewName not in ScanChildNames(theFather,  ".*") :
         theBuilder = _getNewBuilder()
         _CreateObject(theFather, theBuilder, theNewName)
+
 
 def _FillObject(theObject, theParent, theBuilder):
     """
@@ -764,9 +762,7 @@ def _FillObject(theObject, theParent, theBuilder):
                dirList.count("SCRIPTS"):
                 objectId = dict_object["Case"]
             else:
-                if name == "FICHE" or name == "REPORT":
-                    objectId = dict_object["FICHEFolder"]
-                elif name == "MESH":
+                if name == "MESH":
                     objectId = dict_object["MESHFolder"]
                 elif name == "POST":
                     objectId = dict_object["POSTFolder"]
@@ -799,8 +795,6 @@ def _FillObject(theObject, theParent, theBuilder):
                 objectId = dict_object["DATALaunch"]
             elif re.match("^dp_", name):
                 objectId = dict_object["DATAFile"]
-            #elif re.match(".*\.xml$", name):
-            #    objectId = dict_object["DATAfileXML"]
             else:
                 if os.path.isfile(path):
                     fd = os.open(path , os.O_RDONLY)
@@ -817,33 +811,46 @@ def _FillObject(theObject, theParent, theBuilder):
                             QMessageBox.warning(None, "File Error: ",mess)
                     f.close()
 
+    # parent is DRAFT folder
+    elif parentId == dict_object["DRAFTFolder"]:
+        draftParentFolder = os.path.basename(_GetPath(theParent.GetFather()))
+        if os.path.isfile(path):
+            if draftParentFolder == "DATA":
+                if re.match("^dp_", name):
+                    objectId = dict_object["DATADRAFTFile"]
+            elif draftParentFolder == "SRC":
+                if re.match(".*\.[fF]$", name) or \
+                    re.match(".*\.[fF]90$", name) or \
+                    re.match(".*\.for$", name) or \
+                    re.match(".*\.FOR$", name):
+                    objectId = dict_object["SRCDRAFTFile"]
+                elif re.match(".*\.c$", name):
+                    objectId = dict_object["SRCDRAFTFile"]
+                elif re.match(".*\.cxx$", name) or \
+                     re.match(".*\.cpp$", name):
+                    objectId = dict_object["SRCDRAFTFile"]
+                elif re.match(".*\.h$", name) or \
+                     re.match(".*\.hxx$", name) or \
+                     re.match(".*\.hpp$", name):
+                    objectId = dict_object["SRCDRAFTFile"]
+        elif os.path.isdir(path):
+            objectId = dict_object["OtherFolder"]
 
-    # parent is RESU folder
-    elif parentId == dict_object["RESUFolder"]:
-        if Trace():
-            print "Parent is RESU folder"
-            print "Path is:", path
-        if os.path.isdir(path):
-            if Trace():
-                print "Object is RESU sub folder"
-            objectId = dict_object["RESUSubFolder"]
-        else:
-            if re.match(".*\.med$", name):
-                objectId = dict_object["RESMEDFile"]
-            elif re.match(".*\.xml$", name):
-                objectId = dict_object["RESXMLFile"]
-            else:
-                objectId = dict_object["RESUFile"]
+    # parent is THCH folder
+    elif parentId == dict_object["THCHFolder"]:
+        if os.path.isfile(path):
+            if re.match("^dp_", name):
+                objectId = dict_object["THCHFile"]
+        elif os.path.isdir(path):
+            objectId = dict_object["OtherFolder"]
 
     # parent is SCRIPTS folder
     elif parentId == dict_object["SCRPTFolder"]:
         if os.path.isdir(path):
             objectId = dict_object["OtherFolder"]
         else:
-            if name == "runcase" or name == "runcase.py":
+            if name == "runcase":
                 objectId = dict_object["SCRPTLanceFile"]
-            elif re.match(".*~$", name):
-                objectId = dict_object["OtherFile"]
             else:
                 if os.path.isfile(path):
                     fd = os.open(path , os.O_RDONLY)
@@ -852,21 +859,10 @@ def _FillObject(theObject, theParent, theBuilder):
                     f.close()
                     if l[0:2] == "#!":
                         objectId = dict_object["SCRPTScriptFile"]
-                    elif re.match("runningstd\.\d{8}", name):
-                        objectId = dict_object["SCRPTStdLog"]
-                    elif re.match("runningext\.\d{8}", name):
-                        objectId = dict_object["SCRPTExtLog"]
                     else:
                         objectId = dict_object["SCRPTFile"]
                 else:
                     objectId = dict_object["OtherFile"]
-
-    # parent is FICHE folder
-    elif parentId == dict_object["FICHEFolder"]:
-        if os.path.isdir(path):
-            objectId = dict_object["OtherFolder"]
-        else:
-            objectId = dict_object["FICHEFile"]
 
     # parent is MESH folder
     elif parentId == dict_object["MESHFolder"]:
@@ -946,6 +942,14 @@ def _FillObject(theObject, theParent, theBuilder):
             else:
                 objectId = dict_object["OtherFolder"]
 
+    # parent is RESU folder
+    elif parentId == dict_object["RESUFolder"]:
+        if os.path.isdir(path):
+            if "error" in os.listdir(path):
+                objectId = dict_object["RESUSubErrFolder"]
+            else:
+                objectId = dict_object["RESUSubFolder"]
+
     # parent is RESULT SRC folder
     elif parentId == dict_object["RESSRCFolder"]:
         if os.path.isfile(path):
@@ -960,12 +964,9 @@ def _FillObject(theObject, theParent, theBuilder):
                 objectId = dict_object["RESSRCFile"]
 
     # parent is RESULT sub folder
-    elif parentId == dict_object["RESUSubFolder"]:
-        if Trace():
-            print "Parent is RESU folder or subfolder"
-            print "Path is:", path
+    elif parentId == dict_object["RESUSubFolder"] or parentId == dict_object["RESUSubErrFolder"]:
         if os.path.isdir(path):
-            if name == "src":
+            if name == "src_neptune" or name == "src_saturne":
                 objectId = dict_object["RESSRCFolder"]
             elif name == "monitoring":
                 objectId = dict_object["HISTFolder"]
@@ -973,9 +974,10 @@ def _FillObject(theObject, theParent, theBuilder):
                 objectId = dict_object["SUITEFolder"]
             elif name == "mesh_input":
                 objectId = dict_object["PRETFolder"]
-            if Trace():
-                print "Object is RESU sub folder"
-            objectId = dict_object["RESUSubFolder"]
+            elif name == "partition_output":
+                objectId = dict_object["PRETFolder"]
+            elif name == "postprocessing":
+                objectId = dict_object["POSTPROFolder"]
         else:
             if re.match(".*\.med$", name):
                 objectId = dict_object["RESMEDFile"]
@@ -983,57 +985,18 @@ def _FillObject(theObject, theParent, theBuilder):
                 objectId = dict_object["HISTFile"]
             elif re.match(".*\.xml$", name):
                 objectId = dict_object["RESXMLFile"]
-            else:
+            elif re.match(".*\.log$", name):
                 objectId = dict_object["RESUFile"]
-
-    # parent is DRAFT folder
-    elif parentId == dict_object["DRAFTFolder"]:
-        draftParentFolder = os.path.basename(_GetPath(theParent.GetFather()))
-        if os.path.isfile(path):
-            if draftParentFolder == "DATA":
-                if re.match("^dp_", name):
-                    objectId = dict_object["DATADRAFTFile"]
-            elif draftParentFolder == "SRC":
-                if re.match(".*\.[fF]$", name) or \
-                    re.match(".*\.[fF]90$", name) or \
-                    re.match(".*\.for$", name) or \
-                    re.match(".*\.FOR$", name):
-                    objectId = dict_object["SRCDRAFTFile"]
-                elif re.match(".*\.c$", name):
-                    objectId = dict_object["SRCDRAFTFile"]
-                elif re.match(".*\.cxx$", name) or \
-                     re.match(".*\.cpp$", name):
-                    objectId = dict_object["SRCDRAFTFile"]
-                elif re.match(".*\.h$", name) or \
-                     re.match(".*\.hxx$", name) or \
-                     re.match(".*\.hpp$", name):
-                    objectId = dict_object["SRCDRAFTFile"]
-        elif os.path.isdir(path):
-            objectId = dict_object["OtherFolder"]
-
-    # parent is THCH folder
-    elif parentId == dict_object["THCHFolder"]:
-        if os.path.isfile(path):
-            if re.match("^dp_", name):
-                objectId = dict_object["THCHFile"]
-        elif os.path.isdir(path):
-            objectId = dict_object["OtherFolder"]
+            elif re.match("listing$", name):
+                objectId = dict_object["RESUFile"]
+            elif re.match("error$", name):
+                objectId = dict_object["RESUFile"]
 
     # parent is HIST folder
     elif parentId == dict_object["HISTFolder"]:
         if os.path.isfile(path):
             if re.match(".*\.dat$", name) or re.match(".*\.csv$", name):
                 objectId = dict_object["HISTFile"]
-        elif os.path.isdir(path):
-            objectId = dict_object["OtherFolder"]
-
-    # parent is RES_USER folder
-    elif parentId == dict_object["RESUSERFolder"]:
-        if os.path.isfile(path):
-            if re.match(".*\.dat$", name) or re.match(".*\.csv$", name):
-                objectId = dict_object["HISTFile"]
-        elif os.path.isdir(path):
-            objectId = dict_object["OtherFolder"]
 
     if objectId == dict_object["OtherFile"]:
         if re.match(".*\.[fF]$", name) or \
@@ -1590,29 +1553,6 @@ def isLinkPathObject(theObject):
     return re.match("^->", attr.Value())
 
 
-#def execLog(aCmd):
-#    """
-#    Puts the result of a script in the Message Log Windows.
-#
-#    @type aCmd: C{String}
-#    @param aCmd: shell commande.
-#    """
-#    child_stdin, child_stdout, child_stderr = os.popen3(aCmd)
-#    child_stdin.close()
-#
-#    sys_message = child_stdout.read()
-#    if len(sys_message):
-#        if Trace(): print(sys_message)
-#        sgPyQt.message(sys_message)
-#    child_stdout.close()
-#
-#    sys_message = child_stderr.read()
-#    if len(sys_message):
-#        if Trace(): print(sys_message)
-#        sgPyQt.message(sys_message)
-#    child_stderr.close()
-
-
 def setCaseInProcess(theCasePath, isInProcess):
     """
     Udpates the case icon with I{Case} or I{CaseInProcess} in the Object Browser.
@@ -1796,6 +1736,7 @@ def SetAutoColor (meshSobjItem) :
         if mesh is not None:
             mesh.SetAutoColor(1)
 
+
 def getMeshFromGroup(meshGroupItem):
     """
     Get the mesh item owning the mesh group `meshGroupItem`.
@@ -1817,4 +1758,4 @@ def getMeshFromGroup(meshGroupItem):
         if group is not None: # The type of the object is ok
             meshObj = group.GetMesh()
             meshItem = salome.ObjectToSObject(meshObj)
-    return meshItem,group
+    return meshItem, group

@@ -42,6 +42,8 @@ from PyQt4.QtGui import QApplication, QCursor, QDialog, QLabel, QGridLayout, \
                         QCloseEvent, QTextEdit, QTextOption, QDockWidget, QWidget, QFont
 from PyQt4.QtCore import Qt, QObject, QVariant, SIGNAL, QEvent, QProcess, QString
 
+#from PyQt4.QtCore import QProcessEnvironment
+
 #-------------------------------------------------------------------------------
 # Salome modules
 #-------------------------------------------------------------------------------
@@ -52,9 +54,9 @@ from PyQt4.QtCore import Qt, QObject, QVariant, SIGNAL, QEvent, QProcess, QStrin
 
 import CFDSTUDYGUI_Commons, CFDSTUDYGUI_SolverGUI
 from CFDSTUDYGUI_Commons import sgPyQt, LoggingMgr
-#from CFDSTUDYGUI_SolverGUI import _d_DockWindowsRuncase
 from CFDSTUDYGUI_Management import _d_DockWindowsRuncase
 from ui_CFDSTUDYGUI_QProcessDialog import Ui_CFDSTUDYGUI_QProcessDialog
+import CFDSTUDYGUI_DataModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -63,12 +65,6 @@ from ui_CFDSTUDYGUI_QProcessDialog import Ui_CFDSTUDYGUI_QProcessDialog
 logging.basicConfig()
 log = logging.getLogger("CFDSTUDYGUI_CommandMgr")
 log.setLevel(logging.NOTSET)
-
-#-------------------------------------------------------------------------------
-# Global variables
-#-------------------------------------------------------------------------------
-
-StopEventType = -1000
 
 #-------------------------------------------------------------------------------
 # Classes definitions
@@ -278,7 +274,7 @@ class CFDSTUDYGUI_QProcessDialog(QDialog, Ui_CFDSTUDYGUI_QProcessDialog):
     """
     Advanced dialog.
     """
-    def __init__(self, parent, title, cmd_list, start_directory=""):
+    def __init__(self, parent, title, cmd_list, obj_directory="", start_directory=""):
         """
         Constructor
         """
@@ -292,7 +288,14 @@ class CFDSTUDYGUI_QProcessDialog(QDialog, Ui_CFDSTUDYGUI_QProcessDialog):
         if start_directory != None and start_directory != "":
             os.chdir(start_directory)
 
+        self.objBr = None
+        if obj_directory != None and obj_directory != "":
+            self.objBr = obj_directory
+
         self.proc = QProcess()
+        #env = QProcessEnvironment().systemEnvironment()
+        #self.proc.setProcessEnvironment(env)
+
         self.connect(self.proc, SIGNAL('readyReadStandardOutput()'), self.__readFromStdout)
         self.connect(self.proc, SIGNAL('readyReadStandardError()'),  self.__readFromStderr)
         self.procErrorFlag = False
@@ -352,8 +355,24 @@ class CFDSTUDYGUI_QProcessDialog(QDialog, Ui_CFDSTUDYGUI_QProcessDialog):
 
 
     def __finished(self):
+        if self.objBr:
+            CFDSTUDYGUI_DataModel.UpdateSubTree(self.objBr)
         QApplication.restoreOverrideCursor()
         self.pushButton.setEnabled(True)
+
+
+    def event(self, e):
+        if e.type() == 9999:
+            return QDialog.event(self, QCloseEvent())
+
+        if e.type() == 9998:
+            return QDialog.event(self, QCloseEvent())
+        if e.type() == QEvent.Close:
+            e.ignore()
+            return True
+
+        return QDialog.event(self, e)
+
 
 #-------------------------------------------------------------------------------
 #

@@ -149,15 +149,15 @@ class CFDSTUDYGUI_SolverGUI(QObject):
             #searching
             aTitle = sobjXML.GetName()
             if aCase != None:
-                if findDockWindow(aTitle,aCase.GetName(),aCase.GetFather().GetName()):
+                if findDockWindow(aTitle, aCase.GetName(), aCase.GetFather().GetName()):
                     fileN = str(aCase.GetFather().GetName() + "." + aCase.GetName()) + '.' + str(aTitle)
                     mess = "Case file " + fileN + " is already opened"
-                    QMessageBox.warning(None, "Warning: ",mess)
+                    QMessageBox.warning(None, "Warning: ", mess)
                     return
         else:
             aTitle = "unnamed"
             if aCase != None:
-                if findDockWindow(aTitle,aCase.GetName(),aCase.GetFather().GetName()):
+                if findDockWindow(aTitle, aCase.GetName(), aCase.GetFather().GetName()):
                     mess = "A case not finished to be set is already opened"
                     QMessageBox.warning(None, "Warning: ",mess)
                     return
@@ -518,25 +518,23 @@ class CFDSTUDYGUI_SolverGUI(QObject):
             dock.toggleViewAction().setVisible(True)
 
 
-    def showDockWindows(self, studyId,xmlName, caseName, studyCFDName):
+    def showDockWindows(self, studyId, xmlName, caseName, studyCFDName):
         """
         Find if the dockwindow corresponding to this xmlcase is already opened
         """
         if _c_CFDGUI != None:
-            _c_CFDGUI.showDockWindows(studyId,xmlName, caseName, studyCFDName)
+            _c_CFDGUI.showDockWindows(studyId, xmlName, caseName, studyCFDName)
 
 
     def getStudyCaseXmlNames(self,mw):
-
         dsk = sgPyQt.getDesktop()
         studyId = sgPyQt.getStudyId()
         if _c_CFDGUI != None:
-            studyCFDName,caseName,xmlName  = _c_CFDGUI.getStudyCaseXmlNames(studyId,mw)
-        return studyCFDName,caseName,xmlName
+            studyCFDName, caseName, xmlName  = _c_CFDGUI.getStudyCaseXmlNames(studyId, mw)
+        return studyCFDName, caseName, xmlName
 
 
     def getCase(self,mw):
-
         dsk = sgPyQt.getDesktop()
         studyId = sgPyQt.getStudyId()
         if _c_CFDGUI != None:
@@ -544,7 +542,7 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         return case
 
 
-    def removeDockWindow(self,studyCFDName, caseName, xmlName=""):
+    def removeDockWindow(self, studyCFDName, caseName, xmlName=""):
         """
         Close the CFD_study_dock_windows from remove  popup menu in object browser
         """
@@ -552,5 +550,4 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         dsk = sgPyQt.getDesktop()
         studyId = sgPyQt.getStudyId()
         if _c_CFDGUI != None:
-            _c_CFDGUI.delDock(dsk,studyId,studyCFDName, caseName, xmlName)
-            updateObjectBrowser()
+            _c_CFDGUI.delDock(dsk, studyId, studyCFDName, caseName, xmlName)
