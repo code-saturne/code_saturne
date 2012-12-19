@@ -181,12 +181,19 @@ class CFDSTUDYGUI_SolverGUI(QObject):
 
 
     def isActive(self):
-        return self._CurrentWindow != None
+        studyId = sgPyQt.getStudyId()
+        if _c_CFDGUI.getDocks(studyId) == {}:
+            self._CurrentWindow = None
+
+        if self._CurrentWindow != None:
+            return True
+        else:
+            return False
 
 
     def okToContinue(self):
         log.debug("okToContinue")
-        if self._CurrentWindow.okToContinue():
+        if self._CurrentWindow != None and self._CurrentWindow.okToContinue():
             if self._CurrentWindow.case['probes']:
                 self._CurrentWindow.case['probes'].removeActors()
             return True
@@ -213,10 +220,9 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         xml_file = None
 
         if self._CurrentWindow != None:
-            _sMainViewCase = self._CurrentWindow
-            old_xml_file = _sMainViewCase.case['xmlfile']
-            _sMainViewCase.fileSaveAs()
-            xml_file = _sMainViewCase.case['xmlfile']
+            old_xml_file = self._CurrentWindow.case['xmlfile']
+            self._CurrentWindow.fileSaveAs()
+            xml_file = self._CurrentWindow.case['xmlfile']
 
             if old_xml_file == "":
                 old_xml_file = None
@@ -242,82 +248,50 @@ class CFDSTUDYGUI_SolverGUI(QObject):
 
 
     def onOpenShell(self):
-        """
-        """
-        log.debug("onOpenShell")
         if self._CurrentWindow != None:
             self._CurrentWindow.openXterm()
 
 
-    #def onDisplayCase(self):
-        #log.debug("onDisplayCase")
-        #_LoggingMgr.start(sys)
-        #if self._CurrentWindow != None:
-
-            #self._CurrentWindow.displayCase()
-        #_LoggingMgr.finish(sys)
+    def onDisplayCase(self):
+        if self._CurrentWindow != None:
+            self._CurrentWindow.displayCase()
 
 
     def onHelpAbout(self):
-        log.debug("onHelpAbout")
         if self._CurrentWindow != None:
             self._CurrentWindow.displayAbout()
 
 
     def onSaturneHelpLicense(self):
-        """
-        """
-        log.debug("onSaturneHelpLicense")
         if self._CurrentWindow != None:
             self._CurrentWindow.displayLicence()
-        return
 
 
-    def onSaturneHelpCS(self):
-        """
-        """
-        log.debug("onSaturneHelpcs")
+    def onSaturneHelpManual(self):
         if self._CurrentWindow != None:
             if CFD_Code() == CFD_Saturne:
                 self._CurrentWindow.displayCSManual()
-        return
 
 
-    def onSaturneHelpSD(self):
-        """
-        """
-        log.debug("onSaturneHelpSD")
+    def onSaturneHelpTutorial(self):
         if self._CurrentWindow != None:
             if CFD_Code() == CFD_Saturne:
-                self._CurrentWindow.displayECSManual()
-        return
+                self._CurrentWindow.displayCSTutorial()
 
 
-    def onSaturneHelpCS_Kernel(self):
-        """
-        """
-        log.debug("onSaturneHelpCS_Kernel")
+    def onSaturneHelpKernel(self):
         if self._CurrentWindow != None:
             if CFD_Code() == CFD_Saturne:
                 self._CurrentWindow.displayCSKernel()
 
-        return
 
-
-    def onSaturneHelpCS_Infos(self):
-        """
-        """
-        log.debug("onSaturneHelpCS_INFOS")
+    def onSaturneHelpRefcard(self):
         if self._CurrentWindow != None:
             if CFD_Code() == CFD_Saturne:
-                self._CurrentWindow.displayECSInfos()
-
-        return
+                self._CurrentWindow.displayCSRefcard()
 
 
     def setWindowTitle_CFD(self,mw,aCase,baseTitleName):
-        """
-        """
         if aCase != None:
             fatherName = aCase.GetFather().GetName()
             aTitle = str(fatherName + "." + aCase.GetName()) + '.' + str(baseTitleName)
@@ -414,6 +388,8 @@ class CFDSTUDYGUI_SolverGUI(QObject):
                 self._CurrentWindow = mw
                 mw.activateWindow()
                 log.debug("setdockWB -> mw = %s" % (mw,))
+        else:
+            self._CurrentWindow = None
 
 
     def setdock(self, istoggled):
@@ -434,6 +410,8 @@ class CFDSTUDYGUI_SolverGUI(QObject):
                 self._CurrentWindow = mw
                 mw.activateWindow()
                 log.debug("setdock -> mw = %s" % (mw,))
+        else:
+            self._CurrentWindow = None
 
 
     def setdockWindowBrowserActivated(self, visible):
@@ -462,6 +440,8 @@ class CFDSTUDYGUI_SolverGUI(QObject):
                 ob = sgPyQt.getObjectBrowser()
                 # Clear the current selection in the SALOME object browser, which does not match with the shown dock window
                 ob.clearSelection()
+        else:
+            self._CurrentWindow = None
 
 
     def setdockWindowActivated(self, visible):
@@ -490,6 +470,8 @@ class CFDSTUDYGUI_SolverGUI(QObject):
                 ob = sgPyQt.getObjectBrowser()
                 # effacer la selection en cours
                 ob.clearSelection()
+        else:
+            self._CurrentWindow = None
 
 
     def disconnectDockWindows(self):

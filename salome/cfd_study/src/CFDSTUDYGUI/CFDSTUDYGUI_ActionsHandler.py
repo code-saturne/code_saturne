@@ -136,12 +136,12 @@ SolverHelpMenu                 = 130
 SolverHelpAboutAction          = 131
 
 #Help menu
-SaturneHelpLicenseAction        = 251
-SaturneHelpUserManualMenu       = 260
-SaturneHelpCodeSaturneAction    = 261
-SaturneHelpSolutionDomainAction = 262
-SaturneHelpCS_KernelAction      = 263
-SaturneHelpCS_InfosAction       = 264
+SolverHelpLicense              = 251
+SolverHelpGuidesMenu           = 260
+SolverHelpUserGuide            = 261
+SolverHelpTutorial             = 262
+SolverHelpTheory               = 263
+SolverHelpRefcard              = 264
 
 # ObjectTR is a convenient object for traduction purpose
 
@@ -604,12 +604,11 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         sgPyQt.createMenu(action, helpId)
         #global SolverHelpMenu
         #Info: Solver Help Menu created at the end of the Menu Help of Salome(when we did not indicate a number)
-        action_id = sgPyQt.createMenu(ObjectTR.tr("SOLVER_HELP_MENU_TEXT"),helpId)
+        action_id = sgPyQt.createMenu("Code_Saturne NEPTUNE_CFD", helpId)
         self._SolverActionIdMap[SolverHelpMenu] = action_id
-        action = sgPyQt.createAction(-1,\
-                                     ObjectTR.tr("SOLVER_HELPABOUT_ACTION_TEXT"),\
-                                     ObjectTR.tr("SOLVER_HELPABOUT_ACTION_TIP"),\
-                                     ObjectTR.tr("SOLVER_HELPABOUT_ACTION_SB"))
+
+        m = "About CFD"
+        action = sgPyQt.createAction(-1, m, m, m)
         action_id = sgPyQt.actionId(action)
         self._ActionMap[action_id] = action
         self._SolverActionIdMap[SolverHelpAboutAction] = action_id
@@ -617,63 +616,52 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         self.connect(action, SIGNAL("activated()"), self.slotHelpAbout)
         self._ActionMap[action_id].setVisible(True)
 
-        # Help menu
-        action = sgPyQt.createAction(SaturneHelpLicenseAction,\
-                                      ObjectTR.tr("SATURNE_HELPLICENSE_ACTION_TEXT"),\
-                                      ObjectTR.tr("SATURNE_HELPLICENSE_ACTION_TIP"),\
-                                      ObjectTR.tr("SATURNE_HELPLICENSE_ACTION_SB"))
+        m = "License"
+        action = sgPyQt.createAction(SolverHelpLicense, m, m, m)
         sgPyQt.createMenu(action, self._SolverActionIdMap[SolverHelpMenu])
         action_id = sgPyQt.actionId(action)
         self._ActionMap[action_id] = action
-        self._SaturneActionIdMap[SaturneHelpLicenseAction] = action_id
-        self.connect(action, SIGNAL("activated()"), self.slotSaturneHelpLicense)
+        self._SaturneActionIdMap[SolverHelpLicense] = action_id
+        self.connect(action, SIGNAL("activated()"), self.slotHelpLicense)
 
-        action_id = sgPyQt.createMenu(ObjectTR.tr("SATURNE_USERMANUAL_MENU_TEXT"),\
-                                      self._SolverActionIdMap[SolverHelpMenu])
-        self._SaturneActionIdMap[SaturneHelpUserManualMenu] = action_id
+        # Guides menu
+        action_id = sgPyQt.createMenu("Code_Saturne and NEPTUNE_CFD Guides", self._SolverActionIdMap[SolverHelpMenu])
+        self._SaturneActionIdMap[SolverHelpGuidesMenu] = action_id
 
-        action = sgPyQt.createAction(SaturneHelpCodeSaturneAction,\
-                                      ObjectTR.tr("SATURNE_HELP_CS_ACTION_TEXT"),\
-                                      ObjectTR.tr("SATURNE_HELP_CS_ACTION_TIP"),\
-                                      ObjectTR.tr("SATURNE_HELP_CS_ACTION_SB"))
-        sgPyQt.createMenu(action, self._SaturneActionIdMap[SaturneHelpUserManualMenu])
+        m = "User guide"
+        action = sgPyQt.createAction(SolverHelpUserGuide, m, m, m)
+        sgPyQt.createMenu(action, self._SaturneActionIdMap[SolverHelpGuidesMenu])
         action_id = sgPyQt.actionId(action)
         self._ActionMap[action_id] = action
-        self._SaturneActionIdMap[SaturneHelpCodeSaturneAction] = action_id
-        self.connect(action, SIGNAL("activated()"), self.slotSaturneHelpCS)
+        self._SaturneActionIdMap[SolverHelpUserGuide] = action_id
+        self.connect(action, SIGNAL("activated()"), self.slotHelpUserGuide)
 
-        action = sgPyQt.createAction(SaturneHelpSolutionDomainAction,\
-                                      ObjectTR.tr("SATURNE_HELP_SD_ACTION_TEXT"),\
-                                      ObjectTR.tr("SATURNE_HELP_SD_ACTION_TIP"),\
-                                      ObjectTR.tr("SATURNE_HELP_SD_ACTION_SB"))
-        sgPyQt.createMenu(action, self._SaturneActionIdMap[SaturneHelpUserManualMenu])
+        m = "Tutorial"
+        action = sgPyQt.createAction(SolverHelpTutorial, m, m, m)
+        sgPyQt.createMenu(action, self._SaturneActionIdMap[SolverHelpGuidesMenu])
         action_id = sgPyQt.actionId(action)
         self._ActionMap[action_id] = action
-        self._SaturneActionIdMap[SaturneHelpSolutionDomainAction] = action_id
-        self.connect(action, SIGNAL("activated()"), self.slotSaturneHelpSD)
+        self._SaturneActionIdMap[SolverHelpTutorial] = action_id
+        self.connect(action, SIGNAL("activated()"), self.slotHelpTutorial)
 
-        action = sgPyQt.createAction(SaturneHelpCS_KernelAction,\
-                                      ObjectTR.tr("SATURNE_HELPCS_KERNEL_ACTION_TEXT"),\
-                                      ObjectTR.tr("SATURNE_HELPCS_KERNEL_ACTION_TIP"),\
-                                      ObjectTR.tr("SATURNE_HELPCS_KERNEL_ACTION_SB"))
-        sgPyQt.createMenu(action, self._SaturneActionIdMap[SaturneHelpUserManualMenu])
+        m = "Theoretical guide"
+        action = sgPyQt.createAction(SolverHelpTheory, m, m, m)
+        sgPyQt.createMenu(action, self._SaturneActionIdMap[SolverHelpGuidesMenu])
         action_id = sgPyQt.actionId(action)
         self._ActionMap[action_id] = action
-        self._SaturneActionIdMap[SaturneHelpCS_KernelAction] = action_id
-        self.connect(action, SIGNAL("activated()"), self.slotSaturneHelpCS_Kernel)
+        self._SaturneActionIdMap[SolverHelpTheory] = action_id
+        self.connect(action, SIGNAL("activated()"), self.slotHelpTheory)
 
-        action = sgPyQt.createAction(SaturneHelpCS_InfosAction,\
-                                      ObjectTR.tr("SATURNE_HELPCS_INFOS_ACTION_TEXT"),\
-                                      ObjectTR.tr("SATURNE_HELPCS_INFOS_ACTION_TIP"),\
-                                      ObjectTR.tr("SATURNE_HELPCS_INFOS_ACTION_SB"))
-        sgPyQt.createMenu(action, self._SaturneActionIdMap[SaturneHelpUserManualMenu])
+        m = "Reference card"
+        action = sgPyQt.createAction(SolverHelpRefcard, m, m, m)
+        sgPyQt.createMenu(action, self._SaturneActionIdMap[SolverHelpGuidesMenu])
         action_id = sgPyQt.actionId(action)
         self._ActionMap[action_id] = action
-        self._SaturneActionIdMap[SaturneHelpCS_InfosAction] = action_id
-        self.connect(action, SIGNAL("activated()"), self.slotSaturneHelpCS_Infos)
+        self._SaturneActionIdMap[SolverHelpRefcard] = action_id
+        self.connect(action, SIGNAL("activated()"), self.slotHelpRefcard)
 
 #        action_id = sgPyQt.createMenu(ObjectTR.tr("MESH_OR_GROUP_REPRESENTATION"), -1, -1)
-#        self._CommonActionIdMap[SaturneHelpUserManualMenu] = action_id
+#        self._CommonActionIdMap[SolverHelpGuidesMenu] = action_id
 
         #action = sgPyQt.createAction(-1,\
                                       #ObjectTR.tr("MESH_OR_GROUP_REPRESENTATION_SHADED"),\
@@ -738,8 +726,10 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                 self.solverAction(a).setEnabled(isActivatedView)
 
         for a in self._SaturneActionIdMap:
-            if a != SaturneHelpUserManualMenu:
+            if a != SolverHelpGuidesMenu:
                 self.solverAction(a).setEnabled(isActivatedView)
+                if CFD_Code() == CFD_Neptune:
+                    self.solverAction(SolverHelpRefcard).setEnabled(False)
 
         if sobj != None:
             if CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["DATAfileXML"]):
@@ -921,21 +911,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             self.updateActions()
 
         QApplication.restoreOverrideCursor()
-
-
-    def enableHelpSaturne(self):
-        """
-        """
-        log.debug("enableHelpSaturne")
-        #FIXME: a implementer avec les tr
-        for a in self._SaturneActionIdMap:
-            if self.solverAction(a).text() in ["About",
-                                               "License",
-                                               "Code_Saturne",
-                                               "Solution domain",
-                                               "Code_Saturne kernel",
-                                               "Code_Saturne infos"]:
-                self.solverAction(a).setEnabled(True)
 
 
     def slotAddCase(self):
@@ -1463,24 +1438,23 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         Close into Salome the CFD GUI from an XML file whose name is sobj.GetName()
         """
         log.debug("CloseCFD_GUI")
-        if sobj != None:
-            if CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["DATAfileXML"]):
-                aXmlFileName = sobj.GetName()
-                aCase = CFDSTUDYGUI_DataModel.GetCase(sobj)
-                aStudy = CFDSTUDYGUI_DataModel.GetStudyByObj(sobj)
-                if aCase:
-                    aCaseName = aCase.GetName()
-                else:
-                    mess = "Error: "+ aXmlFileName + " file has no CFD Case into the Salome Object browser"
-                    QMessageBox.warning(None, "Warning", mess, QMessageBox.Ok, 0)
-                    return
+        if sobj != None and CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["DATAfileXML"]):
+            aXmlFileName = sobj.GetName()
+            aCase = CFDSTUDYGUI_DataModel.GetCase(sobj)
+            aStudy = CFDSTUDYGUI_DataModel.GetStudyByObj(sobj)
+            if aCase:
+                aCaseName = aCase.GetName()
+            else:
+                mess = "Error: "+ aXmlFileName + " file has no CFD Case into the Salome Object browser"
+                QMessageBox.warning(None, "Warning", mess, QMessageBox.Ok, 0)
+                return
 
-                if aStudy:
-                    aStudyName = aStudy.GetName()
-                else:
-                    mess = "Error: "+ aXmlFileName + " file has no CFD Study into the Salome Object browser"
-                    QMessageBox.warning(None, "Warning", mess, QMessageBox.Ok, 0)
-                    return
+            if aStudy:
+                aStudyName = aStudy.GetName()
+            else:
+                mess = "Error: "+ aXmlFileName + " file has no CFD Study into the Salome Object browser"
+                QMessageBox.warning(None, "Warning", mess, QMessageBox.Ok, 0)
+                return
         else:
             # close the active CFDGUI window with the icon button CLOSE_CFD_GUI_ACTION_ICON in the tool bar
             aStudyName, aCaseName, aXmlFileName = self._SolverGUI.getStudyCaseXmlNames(self._SolverGUI._CurrentWindow)
@@ -1890,7 +1864,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         new_sobj = None
         oldCase = self._SolverGUI.getCase(self._SolverGUI._CurrentWindow)
         oldStudy = CFDSTUDYGUI_DataModel.GetStudyByObj(oldCase)
-        old_xml_file,xml_file = self._SolverGUI.SaveAsXmlFile()
+        old_xml_file, xml_file = self._SolverGUI.SaveAsXmlFile()
         if old_xml_file == None and xml_file != None:
             #MP 25/04/2012 - A faire: tester si le fichier xml_file est deja ouvert dans une etude SALOME avec CFDSTUDYGUI_Management.py
             # classe CFDGUI_Management, methode findElem(xmlName, caseName, studyCFDName)
@@ -1999,39 +1973,24 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         self._SolverGUI.onHelpAbout()
 
 
-    def slotSaturneHelpLicense(self):
-        """
-        Redirects OpenShell method to GUI of current solver
-        """
+    def slotHelpLicense(self):
         self._SolverGUI.onSaturneHelpLicense()
 
 
-    def slotSaturneHelpCS(self):
-        """
-        Redirects OpenShell method to GUI of current solver
-        """
-        self._SolverGUI.onSaturneHelpCS()
+    def slotHelpUserGuide(self):
+        self._SolverGUI.onSaturneHelpManual()
 
 
-    def slotSaturneHelpSD(self):
-        """
-        Redirects OpenShell method to GUI of current solver
-        """
-        self._SolverGUI.onSaturneHelpSD()
+    def slotHelpTutorial(self):
+        self._SolverGUI.onSaturneHelpTutorial()
 
 
-    def slotSaturneHelpCS_Kernel(self):
-        """
-        Redirects OpenShell method to GUI of current solver
-        """
-        self._SolverGUI.onSaturneHelpCS_Kernel()
+    def slotHelpTheory(self):
+        self._SolverGUI.onSaturneHelpKernel()
 
 
-    def slotSaturneHelpCS_Infos(self):
-        """
-        Redirects OpenShell method to GUI of current solver
-        """
-        self._SolverGUI.onSaturneHelpCS_Infos()
+    def slotHelpRefcard(self):
+        self._SolverGUI.onSaturneHelpRefcard()
 
 
     def commonAction(self, theId):
