@@ -237,7 +237,7 @@ endif
 
 if( ntcabs.le.2 .and. isuite.eq.0 .and. (iphydr.eq.0.or.iphydr.eq.2)    &
                 .and. ippmod(icompf).lt.0                               &
-                .and. idilat .le.0                 ) then
+                .and. idilat .le.1                 ) then
 
   if(iwarni(ipr).ge.2) then
     write(nfecra,2000) ntcabs
