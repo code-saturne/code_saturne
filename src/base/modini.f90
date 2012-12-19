@@ -1215,9 +1215,9 @@ else
            relaxv(iep) = 1.d0
     else if (itytur.eq.6) then
       if (abs(relaxv(ik)+999.d0).lt.epzero)              &
-           relaxv(ik) = 0.7d0
+           relaxv(ik) = 1.d0
       if (abs(relaxv(iomg)+999.d0).lt.epzero)            &
-           relaxv(iomg) = 0.7d0
+           relaxv(iomg) = 1.d0
     endif
   endif
   if (iturb.eq.70) then
