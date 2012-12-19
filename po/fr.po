@@ -2976,7 +2976,7 @@ msgid ""
 " %s; variable: %2d; converged in %d sweeps\n"
 " %*s  normed residual: %11.4e; norm: %11.4e\n"
 msgstr ""
-" %s; variable : %2d; convergée en %d itératins\n"
+" %s; variable : %2d; convergée en %d itération(s)\n"
 " %*s  résidu normé : %11.4e; norme : %11.4e\n"
 
 #, c-format
