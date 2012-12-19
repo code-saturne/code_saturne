@@ -49,9 +49,13 @@
             <source>CFDSTUDY_CASE_IN_PROC_OBJ_ICON</source>
             <translation>CaseInProcess.png</translation>
         </message>
-        <message>	
+        <message>
             <source>CFDSTUDY_FOLDER_OBJ_ICON</source>
             <translation>Folder.png</translation>
+        </message>
+        <message>
+            <source>CFDSTUDY_FOLDER_RED_OBJ_ICON</source>
+            <translation>FolderRed.png</translation>
         </message>
         <message>	
             <source>CFDSTUDY_DOCUMENT_OBJ_ICON</source>
@@ -76,10 +80,6 @@
         <message>	
             <source>CFDSTUDY_DATA_XML_FILE_OBJ_ICON</source>
             <translation>LaunchGUI.png</translation>
-        </message>
-        <message>	
-            <source>VISU_OBJ_ICON</source>
-            <translation>VISU_Module.png</translation>
         </message>
         <message>	
             <source>MESH_OBJ_ICON</source>
@@ -136,6 +136,10 @@
         <message>	
             <source>CHECK_COMPILATION_ACTION_ICON</source>
             <translation>CheckCompilation.png</translation>
+        </message>
+        <message>	
+            <source>POST_FILE_ICON</source>
+            <translation>VISU_Plot.png</translation>
         </message>
         <message>	
             <source>EXPORT_IN_POSTPRO_ACTION_ICON</source>
