@@ -3102,7 +3102,7 @@ _order_elt_id(cs_interface_set_t  *ifs)
 
       cs_order_lnum_allocated(NULL,
                               itf->elt_id + start_id,
-                              order + start_id,
+                              order,
                               l);
 
       /* Update elt_id */
