@@ -270,23 +270,10 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                                       ObjectTR.tr("LAUNCH_CFDSTUDY_GUI_TIP"),\
                                       ObjectTR.tr("LAUNCH_CFDSTUDY_GUI_SB"),\
                                       ObjectTR.tr("LAUNCH_CFDSTUDY_GUI_ICON"))
-        #sgPyQt.createMenu(action, menu_id)
         action_id = sgPyQt.actionId(action)
         self._ActionMap[action_id] = action
         self._CommonActionIdMap[OpenXMLCFDGUIAction] = action_id
         self.connect(action, SIGNAL("activated()"), self.slotOpenCFD_GUI)
-
-        action = sgPyQt.createAction(-1,\
-                                      ObjectTR.tr("Close GUI"),\
-                                      ObjectTR.tr("CLOSE_CFD_GUI_ACTION_TIP"),\
-                                      ObjectTR.tr("CLOSE_CFD_GUI_ACTION_SB"),\
-                                      ObjectTR.tr("CLOSE_CFD_GUI_ACTION_ICON"))
-        #sgPyQt.createMenu(action, menu_id)
-        sgPyQt.createTool(action, tool_id)
-        action_id = sgPyQt.actionId(action)
-        self._ActionMap[action_id] = action
-        self._SolverActionIdMap[CloseXMLCFDGUIAction] = action_id
-        self.connect(action, SIGNAL("activated()"), self.slotCloseCFD_GUI)
 
         action = sgPyQt.createAction(-1,\
                                       ObjectTR.tr("LAUNCH_CFDSTUDY_CASE_TEXT"),\
@@ -294,7 +281,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                                       ObjectTR.tr("LAUNCH_CFDSTUDY_CASE_SB"),\
                                       ObjectTR.tr("LAUNCH_CFDSTUDY_CASE_ICON"))
         # Run Case popup on study CFD name in object Browser with slotRunCase
-        #sgPyQt.createMenu(action, menu_id)
         sgPyQt.createTool(action, tool_id)
         action_id = sgPyQt.actionId(action)
         self._ActionMap[action_id] = action
@@ -311,7 +297,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                                       ObjectTR.tr("UPDATE_CFDSTUDY_OBJBROWSER_SB"),\
                                       ObjectTR.tr("UPDATE_CFDSTUDY_OBJBROWSER_ICON"))
         sgPyQt.createMenu(action, menu_id)
-        sgPyQt.createTool(action, tool_id)
+        #sgPyQt.createTool(action, tool_id)
         action_id = sgPyQt.actionId(action)
         self._ActionMap[action_id] = action
         self._CommonActionIdMap[UpdateObjBrowserAction] = action_id
@@ -523,17 +509,19 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         # Solver actions
 
         # File menu
-        #Info: Find the menu File into the Main Menu Bar of Salome
-        fileId = sgPyQt.createMenu( ObjectTR.tr("MEN_DESK_FILE"), -1,-1)
-        #Info: create my menu into  menu File at position 7
-        action_id = sgPyQt.createMenu(ObjectTR.tr("SOLVER_FILE_MENU_TEXT"),fileId,-1,7,1)
+        # find the menu File into the Main Menu Bar of Salome
+        fileId = sgPyQt.createMenu( ObjectTR.tr("MEN_DESK_FILE"), -1, -1)
 
-        #Info: Warning: a Separator is a QMenu item (a trait)
-        #Info: create a separator after my menu in position 8
-        action = sgPyQt.createSeparator()
-        sgPyQt.createMenu(action, fileId,-1,8,1)
-
+        # create my menu into  menu File at position 7
+        action_id = sgPyQt.createMenu(ObjectTR.tr("SOLVER_FILE_MENU_TEXT"), fileId, -1, 7, 1)
         self._SolverActionIdMap[SolverFileMenu] = action_id
+
+        # warning: a Separator is a QMenu item (a trait)
+        # create a separator after my menu in position 8
+        action = sgPyQt.createSeparator()
+        sgPyQt.createMenu(action, fileId, -1, 8, 1)
+
+        # Save action
         action = sgPyQt.createAction(SolverSaveDataFileAction,\
                                       ObjectTR.tr("SOLVER_SAVE_ACTION_TEXT"),\
                                       ObjectTR.tr("SOLVER_SAVE_ACTION_TIP"),\
@@ -543,9 +531,12 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         sgPyQt.createTool(action, tool_id)
         sgPyQt.createMenu(action, self._SolverActionIdMap[SolverFileMenu], 100)
         self.connect(action, SIGNAL("activated()"), self.slotSaveDataFile)
+
         action_id = sgPyQt.actionId(action)
         self._ActionMap[action_id] = action
         self._SolverActionIdMap[SolverSaveDataFileAction] = action_id
+
+        # Save As action
         action = sgPyQt.createAction(-1,\
                                       ObjectTR.tr("SOLVER_SAVEAS_ACTION_TEXT"),\
                                       ObjectTR.tr("SOLVER_SAVEAS_ACTION_TIP"),\
@@ -555,17 +546,34 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         sgPyQt.createTool(action, tool_id)
         sgPyQt.createMenu(action, self._SolverActionIdMap[SolverFileMenu], 100)
         self.connect(action, SIGNAL("activated()"), self.slotSaveAsDataFile)
+
         action_id = sgPyQt.actionId(action)
         self._ActionMap[action_id] = action
         self._SolverActionIdMap[SolverSaveAsDataFileAction] = action_id
         action = sgPyQt.createSeparator()
         sgPyQt.createMenu(action, 1, 0, 2)
-        #Tools Menu
+
+        # close GUI action
+        action = sgPyQt.createAction(-1,\
+                                      ObjectTR.tr("Close GUI"),\
+                                      ObjectTR.tr("CLOSE_CFD_GUI_ACTION_TIP"),\
+                                      ObjectTR.tr("CLOSE_CFD_GUI_ACTION_SB"),\
+                                      ObjectTR.tr("CLOSE_CFD_GUI_ACTION_ICON"),
+                                      Qt.SHIFT+Qt.CTRL+Qt.Key_W)
+        sgPyQt.createTool(action, tool_id)
+        action_id = sgPyQt.actionId(action)
+        self._ActionMap[action_id] = action
+        self._SolverActionIdMap[CloseXMLCFDGUIAction] = action_id
+        self.connect(action, SIGNAL("activated()"), self.slotCloseCFD_GUI)
+
+        # Tools Menu
         action = sgPyQt.createSeparator()
         sgPyQt.createMenu(action, menu_id, 0, -1)
 
         action_id = sgPyQt.createMenu(ObjectTR.tr("SOLVER_TOOLS_MENU_TEXT"), menu_id)
         self._SolverActionIdMap[SolverToolsMenu] = action_id
+
+        # Open shell action
         action = sgPyQt.createAction(-1,\
                                       ObjectTR.tr("SOLVER_OPENSHELL_ACTION_TEXT"),\
                                       ObjectTR.tr("SOLVER_OPENSHELL_ACTION_TIP"),\
@@ -716,7 +724,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             else:
                 self.commonAction(LaunchGUIAction).setEnabled(False)
 
-
         #enable / disable solver actions
         isActivatedView = self._SolverGUI.isActive() # Main GUI Window is active
 
@@ -733,6 +740,8 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         if sobj != None:
             if CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["DATAfileXML"]):
                 self.solverAction(CloseXMLCFDGUIAction).setEnabled(False)
+                self.solverAction(SolverSaveDataFileAction).setEnabled(False)
+                self.solverAction(SolverSaveAsDataFileAction).setEnabled(False)
                 boo = True
 
                 xmlName      = sobj.GetName()
@@ -754,13 +763,15 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                                             self.commonAction(OpenXMLCFDGUIAction).setEnabled(False)
                                             if studyId != sgPyQt.getStudyId():
                                                 self.solverAction(CloseXMLCFDGUIAction).setEnabled(False)
+                                                self.solverAction(SolverSaveDataFileAction).setEnabled(False)
+                                                self.solverAction(SolverSaveAsDataFileAction).setEnabled(False)
                                             else:
                                                 self.solverAction(CloseXMLCFDGUIAction).setEnabled(True)
+                                                self.solverAction(SolverSaveDataFileAction).setEnabled(True)
+                                                self.solverAction(SolverSaveAsDataFileAction).setEnabled(True)
                                             boo = False
                 if boo:
                     self.commonAction(OpenXMLCFDGUIAction).setEnabled(True)
-        #else:
-            #self.solverAction(CloseXMLCFDGUIAction).setEnabled(True)
 
 
     def customPopup(self, id, popup):
@@ -1462,7 +1473,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         if self._SolverGUI.okToContinue():
             self._SolverGUI.removeDockWindow(aStudyName, aCaseName, aXmlFileName)
             self.commonAction(OpenXMLCFDGUIAction).setEnabled(True)
-            #self.solverAction(CloseXMLCFDGUIAction).setEnabled(False)
             self.updateActions()
 
 
@@ -1575,7 +1585,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             if CFDSTUDYGUI_SolverGUI.findDockWindow(str(aXmlFile), aCase.GetName(),aStudy.GetName()):
                 self.updateActions()
                 mess = aStudy.GetName() + " " + aCase.GetName() + ": " + aXmlFile + " is already launched"
-                #QMessageBox.information(None, "Information", mess, QMessageBox.Ok, QMessageBox.NoButton)
+                QMessageBox.information(None, "Information", mess, QMessageBox.Ok)
                 return
             aCmd.append('-p')
             aCmd.append(aXmlFile)
