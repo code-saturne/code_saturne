@@ -344,7 +344,7 @@ class ListingDialogView(CommandMgrDialogView):
     def __init__(self, parent, case, title, cmd_list):
         self.case = case
 
-        CommandMgrDialogView.__init__(self, parent, title, cmd_list, self.case['scripts_path'])
+        CommandMgrDialogView.__init__(self, parent, title, cmd_list, self.case['scripts_path'], self.case['salome'])
 
         self.connect(self.pushButtonStop,   SIGNAL('clicked()'), self.__slotStop)
         self.connect(self.pushButtonStopAt, SIGNAL('clicked()'), self.__slotStopAt)
@@ -754,7 +754,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         else:
             cs_exec_environment.run_command(cmd)
 
-        if key == 'localhost':
+        if self.case['salome'] or key == 'localhost':
             self.__updateRuncase(None)  # remove --id <id> from runcase
 
         os.chdir(prv_dir)
