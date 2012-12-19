@@ -72,8 +72,7 @@ from CFDSTUDYGUI_Commons import CheckCFD_CodeEnv
 
 logging.basicConfig()
 log = logging.getLogger("CFDSTUDYGUI")
-log.setLevel(logging.DEBUG)
-#log.setLevel(logging.NOTSET)
+log.setLevel(logging.NOTSET)
 
 #-------------------------------------------------------------------------------
 # Global definitions

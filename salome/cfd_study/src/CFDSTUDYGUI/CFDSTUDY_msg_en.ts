@@ -442,10 +442,6 @@
             <translation>Close CFD GUI</translation>
         </message>
         <message>
-            <source>CLOSE_CFD_GUI_ACTION_CONFIRM_MESS</source>
-            <translation>Do You want to close the CFD GUI %1 from this study?</translation>
-        </message>
-        <message>
             <source>VIEW_ACTION_TEXT</source>
             <translation>View</translation>
         </message>

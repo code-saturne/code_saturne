@@ -72,8 +72,7 @@ from CFDSTUDYGUI_Commons import CFD_Saturne, CFD_Neptune, CheckCFD_CodeEnv
 
 logging.basicConfig()
 log = logging.getLogger("CFDSTUDYGUI_DialogCollector")
-log.setLevel(logging.DEBUG)
-#log.setLevel(logging.NOTSET)
+log.setLevel(logging.NOTSET)
 
 #-------------------------------------------------------------------------------
 # Dialog definitions
