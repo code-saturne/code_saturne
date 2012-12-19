@@ -29,7 +29,6 @@ the graphical selection of the Groups.
 This module contains the following classes and function:
 - BoundaryGroup
 - VolumeGroup
-- runSolver
 """
 
 #-------------------------------------------------------------------------------
@@ -204,59 +203,5 @@ def VolumeGroup():
 
     log.debug("VolumeGroup -> %s" % str(local))
     return local
-
-
-#def VolumeGroupOld():
-#    """
-#    Import groups of cells.
-#    """
-#    if aSMESH_SO == None:
-#        return False
-#
-#    #loading IORs
-#    builder = aStudy.NewBuilder()
-#    if aSMESH_SO != None:
-#        aSMESHEngine = lcc.FindOrLoadComponent("FactoryServer", "SMESH")
-#        builder.LoadWith(aSMESH_SO, aSMESHEngine)
-#
-#    local = ""
-#    if sg.SelectedCount() > 0:
-#        for i in range (sg.SelectedCount()):
-#            entry = sg.getSelected(i)
-#            if entry != '':
-#                sobj = aStudy.FindObjectID(entry)
-#                if sobj !=  None:
-#                    anObjectDS = sobj.GetObject()
-#                    #check for smesh group
-#                    if anObjectDS !=  None:
-#                        #aSmeshObject = anObjectDS._narrow(smesh.SMESH_Group)
-#                        aSmeshObject = anObjectDS._narrow(smesh.SMESH_GroupBase)
-#                        if aSmeshObject != None and aSmeshObject.GetType() == smesh.VOLUME:
-#                            if not local:
-#                                local = aSmeshObject.GetName()
-#                            else:
-#                                local = local + ' or ' + aSmeshObject.GetName()
-#
-#    return local
-
-
-def runSolver(case, cmd):
-    """
-    Executing the Code_Saturne script runcase in background mode.
-    All output information catched by LogWindow.
-    """
-    import CFDSTUDYGUI_CommandMgr, CFDSTUDYGUI_DataModel
-
-    _CommandMgr = CFDSTUDYGUI_CommandMgr.CFDSTUDYGUI_CommandMgr()
-    aCase = case['salome']
-    aChList = CFDSTUDYGUI_DataModel.ScanChildren(aCase, "RESU")
-
-    if len(aChList) == 1:
-        _CommandMgr.runCommandDlg(aChList[0],
-                                  _CommandMgr.tr("STMSG_RUN_SCRIPT"),
-                                  cmd,
-                                  case['scripts_path'])
-    else:
-        raise ValueError("More than one RESU directory found!")
 
 #-------------------------------------------------------------------------------
