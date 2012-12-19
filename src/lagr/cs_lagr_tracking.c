@@ -3047,7 +3047,7 @@ _sync_particle_sets(cs_lagr_halo_t           *lag_halo,
           fvm_periodicity_get_type(periodicity, tr_id);
 
         int rev_id = fvm_periodicity_get_reverse_id(mesh->periodicity, tr_id);
-        
+
         fvm_periodicity_get_matrix(periodicity, rev_id, matrix);
 
         /* Apply transformation to the coordinates in any case */
