@@ -104,6 +104,8 @@ def process_cmd_line(argv, pkg):
 
     casedir = None
     param = None
+    data = None
+    src = None
 
     if options.param:
         param = os.path.basename(options.param)
@@ -115,6 +117,8 @@ def process_cmd_line(argv, pkg):
 
     if options.case:
         casedir = os.path.realpath(options.case)
+        data = os.path.join(casedir, 'DATA')
+        src = os.path.join(casedir, 'SRC')
 
     if not casedir:
         casedir = os.getcwd()
