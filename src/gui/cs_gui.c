@@ -2508,6 +2508,8 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
     iresol[j] = 0;
     imgr[j] = 1;
   }
+  cs_gui_variable_value(vars->name[0], "rhs_reconstruction", &tmp);
+  nswrsm[j] = (int) tmp;
 
   /* 1-b) for the other variables */
   for (i=1; i < k; i++) {
