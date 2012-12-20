@@ -268,6 +268,7 @@ class StandardItemModelScheme(QStandardItemModel):
                         self.tr("Slope\nTest"),
                         self.tr("Flux\nReconstruction"),
                         self.tr("RHS Sweep\nReconstruction")]
+        self.keys = ['label', 'ischcv', 'blencv', 'isstpc', 'ircflu', 'nswrsm']
         self.setColumnCount(len(self.headers))
 
         # Initialize the flags
@@ -308,43 +309,31 @@ class StandardItemModelScheme(QStandardItemModel):
             return QVariant()
 
         row = index.row()
+        column = index.column()
         dico = self.dataScheme[row]
+        key = self.keys[column]
+
+        if dico[key] == None:
+            return QVariant()
 
         if role == Qt.ToolTipRole:
-            if index.column() == 1:
-                return QVariant(self.tr("Code_Saturne keyword: ISCHCV"))
-            elif index.column() == 2:
-                return QVariant(self.tr("Code_Saturne keyword: BLENCV"))
-            elif index.column() == 3:
-                return QVariant(self.tr("Code_Saturne keyword: ISSTPC"))
-            elif index.column() == 4:
-                return QVariant(self.tr("Code_Saturne keyword: IRCFLU"))
-            elif index.column() == 5:
-                return QVariant(self.tr("Code_Saturne keyword: NSWRSM"))
+            if index.column() > 0:
+                return QVariant(self.tr("Code_Saturne keyword: " + key.upper()))
 
-        elif role == Qt.DisplayRole:
-            if index.column() == 0:
-                return QVariant(dico['label'])
-            elif index.column() == 1:
-                return QVariant(self.dicoM2V[dico['ischcv']])
-            elif index.column() == 2:
-                return QVariant(dico['blencv'])
-            elif index.column() == 5:
-                return QVariant(dico['nswrsm'])
+        elif role == Qt.DisplayRole and not column in [3, 4]:
+            if key == 'ischcv':
+                return QVariant(self.dicoM2V[dico[key]])
             else:
-                return QVariant()
+                return QVariant(dico[key])
 
-        elif role == Qt.CheckStateRole:
-            if index.column() == 3:
-                if dico['isstpc'] == 'on':
-                    return QVariant(Qt.Checked)
-                else:
-                    return QVariant(Qt.Unchecked)
-            elif index.column() == 4:
-                if dico['ircflu'] == 'on':
-                    return QVariant(Qt.Checked)
-                else:
-                    return QVariant(Qt.Unchecked)
+        elif role == Qt.CheckStateRole and column in [3, 4]:
+            st = None
+            if key in ['isstpc', 'ircflu']:
+                st = dico[key]
+            if st == 'on':
+                return QVariant(Qt.Checked)
+            else:
+                return QVariant(Qt.Unchecked)
 
         elif role == Qt.TextAlignmentRole:
             return QVariant(Qt.AlignCenter)
@@ -354,11 +343,11 @@ class StandardItemModelScheme(QStandardItemModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.NoItemFlags
 
         # disable item
         if (index.row(), index.column()) in self.disabledItem:
-            return Qt.ItemIsSelectable
+            return Qt.NoItemFlags
 
         if index.column() == 0:
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable
@@ -378,12 +367,18 @@ class StandardItemModelScheme(QStandardItemModel):
 
     def setData(self, index, value, role=None):
         row = index.row()
+        column = index.column()
         label = self.dataScheme[row]['label']
 
-        # set ISCHCV
-        if index.column() == 1:
-            self.dataScheme[row]['ischcv'] = self.dicoV2M[str(value.toString())]
+        # for Pressure, most fields are empty
+        if column > 0 and str(value.toString()) in ['', 'None']:
+            if (row, column) not in self.disabledItem:
+                self.disabledItem.append((row, column))
+            return False
 
+        # set ISCHCV
+        if column == 1:
+            self.dataScheme[row]['ischcv'] = self.dicoV2M[str(value.toString())]
             if self.dataScheme[row]['ischcv'] == "upwind":
                 if (row, 2) not in self.disabledItem:
                     self.disabledItem.append((row, 2))
@@ -403,13 +398,13 @@ class StandardItemModelScheme(QStandardItemModel):
             self.NPE.setBlendingFactor(label, self.dataScheme[row]['blencv'])
 
         # set BLENCV
-        elif index.column() == 2:
+        elif column == 2:
             if self.dataScheme[row]['ischcv'] != "upwind":
                 self.dataScheme[row]['blencv'], ok = value.toDouble()
                 self.NPE.setBlendingFactor(label, self.dataScheme[row]['blencv'])
 
         # set ISSTPC
-        elif index.column() == 3:
+        elif column == 3:
             if self.dataScheme[row]['ischcv'] != "upwind":
                 v, ok = value.toInt()
                 if v == Qt.Unchecked:
@@ -419,7 +414,7 @@ class StandardItemModelScheme(QStandardItemModel):
                 self.NPE.setSlopeTest(label, self.dataScheme[row]['isstpc'])
 
         # set IRCFLU
-        elif index.column() == 4:
+        elif column == 4:
             v, ok = value.toInt()
             if v == Qt.Unchecked:
                 self.dataScheme[row]['ircflu'] = "off"
@@ -427,8 +422,8 @@ class StandardItemModelScheme(QStandardItemModel):
                 self.dataScheme[row]['ircflu'] = "on"
             self.NPE.setFluxReconstruction(label, self.dataScheme[row]['ircflu'])
 
-        # set BLENCV
-        elif index.column() == 5:
+        # set NSWRSM
+        elif column == 5:
             self.dataScheme[row]['nswrsm'], ok = value.toInt()
             self.NPE.setRhsReconstruction(label, self.dataScheme[row]['nswrsm'])
 

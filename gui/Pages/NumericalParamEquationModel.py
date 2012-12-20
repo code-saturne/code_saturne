@@ -287,10 +287,7 @@ class NumericalParamEquatModel(Model):
         for node in self._getSchemeNodesList():
             for n in node:
                 if n['label'] == label:
-                    if n['name'] == 'pressure':
-                        raise ValueError("This method does not run with pressure")
-                    else:
-                        return n
+                    return n
         raise ValueError("This label does not exist: " + label)
 
 
@@ -341,8 +338,7 @@ class NumericalParamEquatModel(Model):
         list = []
         for node in self._getSchemeNodesList():
             for n in node:
-                if not self._isPressure(n):
-                    list.append(n['label'])
+                list.append(n['label'])
         return list
 
 
@@ -384,6 +380,8 @@ class NumericalParamEquatModel(Model):
     def getScheme(self, label):
         """ Return value of order scheme for variable labelled label """
         node = self._getSchemeLabelNode(label)
+        if self._isPressure(node):
+            return None
         value = self._defaultValues(label)['order_scheme']
         n = node.xmlGetNode('order_scheme')
         if n:
@@ -395,6 +393,8 @@ class NumericalParamEquatModel(Model):
     def getBlendingFactor(self, label):
         """ Return value of blending factor for variable labelled label """
         node = self._getSchemeLabelNode(label)
+        if self._isPressure(node):
+            return None
         value = node.xmlGetDouble('blending_factor')
         if value == None:
             value = self._defaultValues(label)['blending_factor']
@@ -405,6 +405,8 @@ class NumericalParamEquatModel(Model):
     def getSlopeTest(self, label):
         """ Return value of slope test for variable labelled label """
         node = self._getSchemeLabelNode(label)
+        if self._isPressure(node):
+            return None
         value = self._defaultValues(label)['slope_test']
         n = node.xmlGetNode('slope_test')
         if n:
@@ -416,6 +418,8 @@ class NumericalParamEquatModel(Model):
     def getFluxReconstruction(self, label):
         """ Return value of flux reconstruction for variable labelled label """
         node = self._getSchemeLabelNode(label)
+        if self._isPressure(node):
+            return None
         value = self._defaultValues()['flux_reconstruction']
         if node.xmlGetNode('flux_reconstruction'):
             value = node.xmlGetNode('flux_reconstruction')['status']
@@ -428,7 +432,10 @@ class NumericalParamEquatModel(Model):
         node = self._getSchemeLabelNode(label)
         value = node.xmlGetDouble('rhs_reconstruction')
         if value == None:
-            value = self._defaultValues(label)['rhs_reconstruction']
+            if self._isPressure(node): # temporary fix for probable mix between label and name
+                value = self._defaultValues('Pressure')['rhs_reconstruction']
+            else:
+                value = self._defaultValues(label)['rhs_reconstruction']
         return value
 
 
@@ -438,9 +445,11 @@ class NumericalParamEquatModel(Model):
         Put value of blending factor for variable labelled label
         only if it 's different of default value
         """
+        node = self._getSchemeLabelNode(label)
+        if self._isPressure(node):
+            return
         self.isGreaterOrEqual(value, 0.)
         self.isLowerOrEqual(value, 1.)
-        node = self._getSchemeLabelNode(label)
         scheme = self.getScheme(label)
         if scheme == self._defaultValues(label)['order_scheme']:
             if scheme == 'upwind':
