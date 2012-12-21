@@ -883,6 +883,7 @@ class OutputControlModel(Model):
         node['choice'] = choice
 
 
+    @Variables.undoLocal
     def addMonitoringPoint(self, x=0.0, y=0.0, z=0.0):
         """
         Public method.
@@ -904,6 +905,7 @@ class OutputControlModel(Model):
             self.__setCoordinates(num, coord, val)
 
 
+    @Variables.undoLocal
     def replaceMonitoringPointCoordinates(self, name, x=0.0, y=0.0, z=0.0):
         """
         Public method.
@@ -944,6 +946,7 @@ class OutputControlModel(Model):
                 lst[i] = lst[i] - 1
 
 
+    @Variables.undoLocal
     def deleteMonitoringPoint(self, num):
         """
         Public method.

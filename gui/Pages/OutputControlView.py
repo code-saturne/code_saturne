@@ -1174,6 +1174,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.groupBoxProbesDisplay.setEnabled(False)
 
         if self.case['salome'] and self.case['probes']:
+            self.case['probes'].removeActors()
             self.case['probes'].setTableView(self.tableViewPoints)
             self.groupBoxProbesDisplay.setChecked(self.case['probes'].getVisibility())
             self.groupBoxProbesDisplay.setEnabled(True)
@@ -1189,7 +1190,6 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             #self.connect(self.horizontalSliderX, SIGNAL("valueChanged(int)"), self.slotSlider)
             #self.connect(self.horizontalSliderY, SIGNAL("valueChanged(int)"), self.slotSlider)
             #self.connect(self.horizontalSliderZ, SIGNAL("valueChanged(int)"), self.slotSlider)
-
 
         for n in range(self.mdl.getNumberOfMonitoringPoints()):
             name = str(n+1)
