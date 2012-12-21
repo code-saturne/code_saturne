@@ -237,7 +237,7 @@ idistu = 1
 
 !     DIFFUSION TURBULENTE
 
-idiffl = 1
+idiffl = 0
 
 !     MODEL COMPLET
 
