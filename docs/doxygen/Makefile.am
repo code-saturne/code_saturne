@@ -27,7 +27,7 @@ mainpage.h images/icon.png examples/bft_error_example.c doxypy.py
 
 # Environment variables for LaTeX
 
-TEXINPUTS = $(top_srcdir)/docs/style/:
+TEXINPUTS = $(abs_top_srcdir)/docs/style/:
 
 # Overload doxygen executable
 
