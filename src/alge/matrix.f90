@@ -137,25 +137,25 @@ endif
 
 epsi = 1.d-7
 
-!omp parallel do
+!$omp parallel do
 do iel = 1, ncel
   da(iel) = rovsdt(iel)
 enddo
 if (ncelet.gt.ncel) then
-  !omp parallel do if (ncelet - ncel > thr_n_min)
+  !$omp parallel do if (ncelet - ncel > thr_n_min)
   do iel = ncel+1, ncelet
     da(iel) = 0.d0
   enddo
 endif
 
 if (isym.eq.2) then
-  !omp parallel do
+  !$omp parallel do
   do ifac = 1, nfac
     xa(ifac,1) = 0.d0
     xa(ifac,2) = 0.d0
   enddo
 else
-  !omp parallel do
+  !$omp parallel do
   do ifac = 1, nfac
     xa(ifac,1) = 0.d0
   enddo
@@ -327,7 +327,7 @@ endif
 !      decaler la diagonale)
 
 if (ndircp.le.0) then
-  !omp parallel do firstprivate(epsi)
+  !$omp parallel do firstprivate(epsi)
   do iel=1,ncel
     da(iel) = (1.d0+epsi)*da(iel)
   enddo
