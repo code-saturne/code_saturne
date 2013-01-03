@@ -1034,7 +1034,7 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
 
   if (iphydp == 0 || iphydp == 2) {
 
-    /* Pressure gradient coefficient ponderation activated */
+    /* Pressure gradient coefficient weighting activated */
 
     if (ipond > 0) {
 
@@ -1042,21 +1042,21 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
 
       for (g_id = 0; g_id < n_i_groups; g_id++) {
 
-#     pragma omp parallel for private(face_id, ii, jj, ktpond, pfac, fctb)
+#       pragma omp parallel for private(face_id, ii, jj, ktpond, pfac, fctb)
         for (t_id = 0; t_id < n_i_threads; t_id++) {
 
           for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-              face_id++) {
+               face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+               face_id++) {
 
             ii = i_face_cells[face_id][0] - 1;
             jj = i_face_cells[face_id][1] - 1;
 
-            ktpond = weight[face_id] * ktvar[ii]/
-              (weight[face_id] * ktvar[ii]
-              + (1.0-weight[face_id])* ktvar[jj]);
-            pfac  =      ktpond  * rhsv[ii][3]
-                  + (1.0-ktpond) * rhsv[jj][3];
+            ktpond =    weight[face_id] * ktvar[ii]
+                     / (       weight[face_id] * ktvar[ii]
+                        + (1.0-weight[face_id])* ktvar[jj]);
+            pfac  =        ktpond  * rhsv[ii][3]
+                    + (1.0-ktpond) * rhsv[jj][3];
             fctb[0] = pfac * i_face_normal[face_id][0];
             fctb[1] = pfac * i_face_normal[face_id][1];
             fctb[2] = pfac * i_face_normal[face_id][2];
@@ -1075,22 +1075,23 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
 
     }
     else {
+
       /* Contribution from interior faces */
 
       for (g_id = 0; g_id < n_i_groups; g_id++) {
 
-#     pragma omp parallel for private(face_id, ii, jj, pfac, fctb)
+#       pragma omp parallel for private(face_id, ii, jj, pfac, fctb)
         for (t_id = 0; t_id < n_i_threads; t_id++) {
 
           for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-              face_id++) {
+               face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+               face_id++) {
 
             ii = i_face_cells[face_id][0] - 1;
             jj = i_face_cells[face_id][1] - 1;
 
-            pfac  =      weight[face_id]  * rhsv[ii][3]
-                  + (1.0-weight[face_id]) * rhsv[jj][3];
+            pfac  =        weight[face_id]  * rhsv[ii][3]
+                    + (1.0-weight[face_id]) * rhsv[jj][3];
             fctb[0] = pfac * i_face_normal[face_id][0];
             fctb[1] = pfac * i_face_normal[face_id][1];
             fctb[2] = pfac * i_face_normal[face_id][2];
@@ -1107,7 +1108,7 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
 
       } /* loop on thread groups */
 
-    } /* loop on contribution for interior faces without ponderation */
+    } /* loop on contribution for interior faces without weighting */
 
     /* Contribution from boundary faces */
 
