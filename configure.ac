@@ -112,8 +112,6 @@ AC_PROG_SED
 AM_PROG_LEX
 AC_PROG_YACC
 
-AC_FC_LIBRARY_LDFLAGS
-
 # Debug or production compilation mode (debug by default) ?
 
 AC_ARG_ENABLE(debug,
@@ -430,6 +428,10 @@ AC_SUBST(cs_have_openmp)
 #------------------------------------------------------------------------------
 # Checks for libraries.
 #------------------------------------------------------------------------------
+
+# Now that compiler options are determined (relative notably to OpenMP),
+# determine which Fortran libraries are necessary to link.
+AC_FC_LIBRARY_LDFLAGS
 
 CS_AC_TEST_PLE(["1.0.0"])
 
