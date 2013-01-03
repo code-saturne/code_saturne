@@ -3976,8 +3976,6 @@ _matrix_tune_test(double                 t_measure,
         = (f_id >= CS_MATRIX_33_BLOCK_D) ? d_block_size : NULL;
       const int *_ed_block_size
         = (f_id >= CS_MATRIX_33_BLOCK) ? ed_block_size : NULL;
-      const cs_lnum_t _block_mult
-        = (_d_block_size != NULL) ? d_block_size[1] : 1;
       const bool sym_coeffs
         = (   f_id == CS_MATRIX_SCALAR_SYM
            || f_id == CS_MATRIX_33_BLOCK_D_SYM) ? true : false;
@@ -4517,7 +4515,6 @@ _build_variant_list(int                      n_fill_types,
                    CS_MATRIX_NATIVE,
                    n_fill_types,
                    fill_types,
-                   sym_flag,
                    2, /* ed_flag */
                    0, /* loop_length */
                    _mat_vec_p_l_native_omp,
