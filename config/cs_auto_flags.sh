@@ -321,7 +321,7 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
     cflags_default_hot="-O3"
     cflags_default_dbg="-g"
     cflags_default_prf="-pg"
-    cflags_default_omp="-qsmp=omp"
+    cflags_default_omp="-qsmp=omp -qthreaded"
 
     # Default  linker flags
     ldflags_default=""
@@ -730,7 +730,7 @@ if test "x$cs_cxx_compiler_known" != "xyes" ; then
     cxxflags_default_hot="-O3"
     cxxflags_default_dbg="-g"
     cxxflags_default_prf="-pg"
-    cxxflags_default_omp="-qsmp=omp"
+    cxxflags_default_omp="-qsmp=omp -qthreaded"
 
     # Adjust options for IBM Blue Gene cross-compiler
 
@@ -1106,7 +1106,7 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
     fcflags_default_dbg="-g"
     fcflags_default_opt="-O3"
     fcflags_default_prf="-pg"
-    fcflags_default_omp="-qsmp=omp"
+    fcflags_default_omp="-qsmp=omp -qthreaded"
 
     # Adjust options for IBM Blue Gene cross-compiler
 
