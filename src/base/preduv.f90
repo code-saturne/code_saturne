@@ -809,14 +809,14 @@ if((ncepdp.gt.0).and.(iphydr.eq.0)) then
    rtpa   , propce , propfa , propfb ,                            &
    coefa  , coefb  , ckupdc , trav   )
 
-  ! With porosity
-  if (iporos.eq.1) then
-    do iel = 1, ncel
-      trav(iel,1) = trav(iel,1)*porosi(iel)
-      trav(iel,2) = trav(iel,2)*porosi(iel)
-      trav(iel,3) = trav(iel,3)*porosi(iel)
-    enddo
-  endif
+    ! With porosity
+    if (iporos.eq.1) then
+      do iel = 1, ncel
+        trav(iel,1) = trav(iel,1)*porosi(iel)
+        trav(iel,2) = trav(iel,2)*porosi(iel)
+        trav(iel,3) = trav(iel,3)*porosi(iel)
+      enddo
+    endif
 
 !     Si on itere sur navsto, on utilise TRAVA ; sinon TRAV
     if(nterup.gt.1) then
@@ -865,14 +865,14 @@ if((ncepdp.gt.0).and.(iphydr.eq.0)) then
    rtpa   , propce , propfa , propfb ,                            &
    coefa  , coefb  , ckupdc , trav   )
 
-  ! With porosity
-  if (iporos.eq.1) then
-    do iel = 1, ncel
-      trav(iel,1) = trav(iel,1)*porosi(iel)
-      trav(iel,2) = trav(iel,2)*porosi(iel)
-      trav(iel,3) = trav(iel,3)*porosi(iel)
-    enddo
-  endif
+    ! With porosity
+    if (iporos.eq.1) then
+      do iel = 1, ncel
+        trav(iel,1) = trav(iel,1)*porosi(iel)
+        trav(iel,2) = trav(iel,2)*porosi(iel)
+        trav(iel,3) = trav(iel,3)*porosi(iel)
+      enddo
+    endif
 
 !     Si on extrapole les termes source en temps :
 !       PROPCE recoit les termes extradiagonaux et

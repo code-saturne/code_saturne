@@ -723,12 +723,12 @@ endif
 if((ncepdp.gt.0).and.(iphydr.eq.0)) then
 
   ! Les termes diagonaux sont places dans TRAV ou TRAVA,
-  !   La prise en compte de UVWK a partir de la seconde iteration
+  !   La prise en compte de uvwk a partir de la seconde iteration
   !   est faite directement dans coditv.
   if(iterns.eq.1) then
 
     ! On utilise temporairement TRAV comme tableau de travail.
-    ! Son contenu est stocke dans W7, W8 et W9 jusqu'apres tspdci
+    ! Son contenu est stocke dans W7, W8 et W9 jusqu'apres tspdcv
     do iel = 1,ncel
       w7(iel) = trav(1,iel)
       w8(iel) = trav(2,iel)
@@ -746,14 +746,14 @@ if((ncepdp.gt.0).and.(iphydr.eq.0)) then
    propce , propfa , propfb ,                                     &
    coefa  , coefb  , ckupdc , trav   )
 
-  ! With porosity
-  if (iporos.eq.1) then
-    do iel = 1, ncel
-      trav(iel,1) = trav(iel,1)*porosi(iel)
-      trav(iel,2) = trav(iel,2)*porosi(iel)
-      trav(iel,3) = trav(iel,3)*porosi(iel)
-    enddo
-  endif
+    ! With porosity
+    if (iporos.eq.1) then
+      do iel = 1, ncel
+        trav(iel,1) = trav(iel,1)*porosi(iel)
+        trav(iel,2) = trav(iel,2)*porosi(iel)
+        trav(iel,3) = trav(iel,3)*porosi(iel)
+      enddo
+    endif
     ! Si on itere sur navsto, on utilise TRAVA ; sinon TRAV
     if(nterup.gt.1) then
       do iel = 1, ncel
@@ -1658,7 +1658,7 @@ deallocate(fimp)
 deallocate(tsexp)
 deallocate(tsimp)
 !--------
-! FORMATS
+! Formats
 !--------
 #if defined(_CS_LANG_FR)
 
@@ -1673,7 +1673,7 @@ deallocate(tsimp)
 #endif
 
 !----
-! FIN
+! End
 !----
 
 return
