@@ -970,7 +970,7 @@ nswmpr = nswrsm(ipr)
 !       rtp(.,IPR) is the increment of the pressure
 !       drtp       is the increment of the increment between sweeps
 !       divu       is the initial divergence of the predicted mass flux
-do iel = 1,ncel
+do iel = 1, ncel
   rtp(iel,ipr) = 0.d0
   drtp(iel) = 0.d0
   presa(iel) = 0.d0
@@ -1111,11 +1111,7 @@ isweep = 1
 ! Writing
 if (iwarni(ipr).ge.2) then
   chaine = nomvar(ipp)
-  if (rnormp.gt.0.d0) then
-    write(nfecra,1440)chaine(1:16),isweep,residu/rnormp, relaxp
-  else
-    write(nfecra,1440)chaine(1:16),isweep,residu, relaxp
-  endif
+  write(nfecra,1400)chaine(1:16),isweep,residu, relaxp
 endif
 
 ! Dynamic relaxation initialization
@@ -1430,11 +1426,7 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
   ! Writing
   if (iwarni(ipr).ge.2) then
     chaine = nomvar(ipp)
-    if (rnormp.gt.0.d0) then
-      write(nfecra,1440)chaine(1:16),isweep,residu/rnormp, relaxp
-    else
-      write(nfecra,1440)chaine(1:16),isweep,residu, relaxp
-    endif
+    write(nfecra,1400)chaine(1:16),isweep,residu, relaxp
   endif
 
   ! Writing
@@ -1926,7 +1918,7 @@ if (iswdyp.ge.1) deallocate(adxk, adxkm1, dpvarm1, rhs0)
 '    < dI^k-1; R^k > = ',E12.5,' ||dI^k-1||^2 = ',E12.5                     ,/,&
 '   < dI^k-1; dI^k > = ',E12.5)
  1300 format(1X,A16,' : RESIDU DE NORMALISATION =', E14.6)
- 1440 format(1X,A16,' : SWEEP = ',I5,' NORME SECOND MEMBRE = ',E14.6,  &
+ 1400 format(1X,A16,' : SWEEP = ',I5,' NORME SECOND MEMBRE = ',E14.6,  &
              ', RELAXP = ',E14.6)
  1500 format ( &
  1X,A16,' : Current reconstruction sweep = ',I5                     ,/,&
@@ -1947,7 +1939,7 @@ if (iswdyp.ge.1) deallocate(adxk, adxkm1, dpvarm1, rhs0)
 '    < dI^k-1; R^k > = ',E12.5,' ||dI^k-1||^2 = ',E12.5                     ,/,&
 '   < dI^k-1; dI^k > = ',E12.5)
  1300 format(1X,A16,' : NORMED RESIDUALS = ', E14.6)
- 1440 format(1X,A16,' : SWEEP = ',I5,' RIGHT HAND SIDE NORM = ',E14.6, &
+ 1400 format(1X,A16,' : SWEEP = ',I5,' RIGHT HAND SIDE NORM = ',E14.6, &
              ', RELAXP = ',E14.6)
  1500 format ( &
  1X,A16,' : Current reconstruction sweep = ',I5                     ,/,&

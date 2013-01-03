@@ -691,7 +691,7 @@ else
 
   call grdpot &
   !==========
- ( ipr , imrgra , inc    , iccocg , nswrgp , imligp , iphydr ,    &
+ ( ipr    , imrgra , inc    , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    rvoid  ,                                                       &
    dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &

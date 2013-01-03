@@ -142,7 +142,7 @@ if (imrgra.lt.0) imrgrp = -imrgra
 ! The gradient of a potential (pressure, ...) is a vector
 
 idimtr = 0
-ipond =0
+ipond = 0
 
 !===============================================================================
 ! 1. Compute gradient
