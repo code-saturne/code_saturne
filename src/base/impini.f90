@@ -1026,7 +1026,7 @@ write(nfecra,9900)
 ' ** VISCOSITE SECONDAIRE',                                     /,&
 '    --------------------',                                     /)
  2620 format(                                                     &
-' --- Phase continue :', i10,                                   /,&
+' --- Phase continue :',                                        /,&
 '       IVISSE = ',4x,i10,    ' (1 : pris en compte          )',/)
 
 #else
@@ -1036,7 +1036,7 @@ write(nfecra,9900)
 ' ** SECONDARY VISCOSITY',                                      /,&
 '    -------------------',                                      /)
  2620 format(                                                     &
-' --- Continuous phase:', i10,                                  /,&
+' --- Continuous phase:',                                       /,&
 '       IVISSE = ',4x,i10,    ' (1: accounted for            )',/)
 
 #endif
