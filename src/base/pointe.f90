@@ -186,6 +186,9 @@ module pointe
   ! visten ! ncelet                  ! symmetric tensor cell visco
   double precision, allocatable, dimension(:,:) :: visten
 
+  ! dttens ! ncelet                  ! diagonal tensor cell tensor for pressure
+  double precision, allocatable, dimension(:,:) :: dttens
+
 contains
 
   !=============================================================================
@@ -197,6 +200,7 @@ contains
 ( ncelet , ncel   , ncelbr , nfac  , nfabor )
 
     use paramx
+    use numvar, only: ipr
     use parall
     use period
     use optcal
@@ -265,6 +269,17 @@ contains
 
     if (iok.eq.1) then
       allocate(visten(6,ncelet))
+    endif
+
+    ! Diagonal cell tensor for the pressure solving when needed
+    if (ncpdct.gt.0.or.ipucou.eq.1) then
+      if (ivelco.eq.0) then
+        idften(ipr) = 3
+        allocate(dttens(3,ncelet))
+      else
+        idften(ipr) = 6
+        allocate(dttens(6,ncelet))
+      endif
     endif
 
     ! Wall-distance calculation
@@ -343,6 +358,7 @@ contains
     if (allocated(coefau)) deallocate(coefau, cofafu, coefbu, cofbfu)
     if (allocated(porosi)) deallocate(porosi)
     if (allocated(visten)) deallocate(visten)
+    if (allocated(dttens)) deallocate(dttens)
     if (allocated(cfaale)) deallocate(cfaale, cfbale, claale, clbale)
     if (allocated(dispar)) deallocate(dispar)
     if (allocated(yplpar)) deallocate(yplpar)

@@ -128,7 +128,7 @@ integer          icliup, iclivp, icliwp, init
 integer          iflmas, iflmab, ipcrom, ipbrom
 integer          iflms1, iflmb1, iflmb0
 integer          nswrgp, imligp, iwarnp
-integer          nbrval, iappel, iescop, idtsca
+integer          nbrval, iappel, iescop
 integer          ndircp, icpt  , iecrw
 integer          numcpl
 double precision rnorm , rnorma, rnormi, vitnor
@@ -162,7 +162,6 @@ double precision, dimension(:,:), allocatable :: gradp
 double precision, dimension(:,:), allocatable :: vel
 double precision, dimension(:,:), allocatable :: vela
 double precision, dimension(:,:), allocatable :: mshvel
-double precision, dimension(:,:), allocatable :: tpucov
 double precision, dimension(:), allocatable :: coefap
 
 !===============================================================================
@@ -177,9 +176,6 @@ allocate(drtp(ncelet))
 allocate(trav(3,ncelet))
 allocate(vela(3,ncelet))
 allocate(vel(3,ncelet))
-if (ipucou.eq.1 .or. ncpdct.gt.0) then
-  allocate(tpucov(3,ncelet))
-endif
 
 ! Allocate other arrays, depending on user options
 
@@ -212,7 +208,7 @@ allocate(w1(ncelet))
 allocate(w7(ncelet), w8(ncelet), w9(ncelet))
 if (irnpnw.eq.1) allocate(w10(ncelet))
 
-! Interleaved value of vel and vela and tpucou
+! Interleaved value of vel and vela
 !$omp parallel do
 do iel = 1, ncelet
   vel (1,iel) = rtp (iel,iu)
@@ -336,7 +332,7 @@ call predvv &
   propfa(1,iflmas), propfb(1,iflmab),                            &
   tslagr , coefa  , coefb  , coefau , coefbu , cofafu , cofbfu , &
   ckupdc , smacel , frcxt  , grdphd ,                            &
-  trava  , ximpa  , uvwk   , dfrcxt , tpucov ,  trav  ,          &
+  trava  , ximpa  , uvwk   , dfrcxt , dttens ,  trav  ,          &
   viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
   w1     , w7     , w8     , w9     , w10    )
 
@@ -505,10 +501,11 @@ if (iprco.le.0) then
     rtpa(iel,iu) = vela(1,iel)
     rtpa(iel,iv) = vela(2,iel)
     rtpa(iel,iw) = vela(3,iel)
+    ! Store the diagonal part of dttens for postprocessing purpose
     if (ipucou.eq.1 .or. ncpdct.gt.0) then
-      tpucou(iel,1) = tpucov(1,iel)
-      tpucou(iel,2) = tpucov(2,iel)
-      tpucou(iel,3) = tpucov(3,iel)
+      tpucou(iel,1) = dttens(1,iel)
+      tpucou(iel,2) = dttens(2,iel)
+      tpucou(iel,3) = dttens(3,iel)
     endif
   enddo
 
@@ -517,7 +514,6 @@ if (iprco.le.0) then
   deallocate(vel)
   deallocate(vela)
   deallocate(coefap)
-  if (ipucou.eq.1 .or. ncpdct.gt.0) deallocate(tpucov)
 
   return
 
@@ -531,21 +527,16 @@ if (iwarni(iu).ge.1) then
   write(nfecra,1200)
 endif
 
-! --- Pas de temps scalaire ou pas
-idtsca = 0
-if ((ipucou.eq.1).or.(ncpdct.gt.0)) idtsca = 1
-
 call resopv &
 !==========
  ( nvar   , nscal  ,                                              &
    ncepdc , ncetsm ,                                              &
-   icepdc , icetsm , itypsm ,                                     &
-   isostd , idtsca ,                                              &
+   icepdc , icetsm , itypsm , isostd ,                            &
    dt     , rtp    , rtpa   , vel    , vela   ,                   &
    propce , propfa , propfb ,                                     &
    coefa  , coefb  , coefau , coefbu , coefap ,                   &
    ckupdc , smacel ,                                              &
-   frcxt  , dfrcxt , tpucov , trav   ,                            &
+   frcxt  , dfrcxt , dttens , trav   ,                            &
    viscf  , viscb  , viscfi , viscbi ,                            &
    drtp   , tslagr ,                                              &
    frchy  , dfrchy , trava  )
@@ -645,50 +636,52 @@ if (irevmc.eq.0) then
   !Free memory
   deallocate(gradp)
 
-  !     REACTUALISATION DU CHAMP DE VITESSES
-
+  ! Update the velocity field
+  !--------------------------
   thetap = thetav(ipr)
-  if (iphydr.eq.0.or.iphydr.eq.2) then
-    if (idtsca.eq.0) then
-      !$omp parallel do private(dtsrom, isou)
-      do iel = 1, ncel
-        dtsrom = -thetap*dt(iel)/propce(iel,ipcrom)
-        do isou = 1, 3
-          vel(isou,iel) = vel(isou,iel)+dtsrom*trav(isou,iel)
-        enddo
-      enddo
-    else
-      !$omp parallel do private(unsrom, isou)
-      do iel = 1, ncel
-        unsrom = -thetap/propce(iel,ipcrom)
-        ! tpucov is an interleaved array
-        do isou = 1, 3
-          vel(isou,iel) = vel(isou,iel) + unsrom*tpucov(isou,iel)*trav(isou,iel)
-        enddo
-      enddo
-    endif
-  else
-    if (idtsca.eq.0) then
+
+  ! Specific handling of hydrostatic pressure
+  !------------------------------------------
+  if (iphydr.eq.1) then
+
+    ! Scalar diffusion for the pressure
+    if (idften(ipr).eq.1) then
       !$omp parallel do private(dtsrom, isou)
       do iel = 1, ncel
         dtsrom = thetap*dt(iel)/propce(iel,ipcrom)
         do isou = 1, 3
-          vel(isou,iel) = vel(isou,iel)                           &
-             +dtsrom*(dfrcxt(iel,isou)-trav(isou,iel) )
+          vel(isou,iel) = vel(isou,iel)                            &
+                        + dtsrom*(dfrcxt(iel,isou)-trav(isou,iel))
         enddo
       enddo
-    else
-      !$omp parallel do private(unsrom, isou)
+
+    ! Tensorial diffusion for the pressure
+    else if (idften(ipr).eq.6) then
+      !$omp parallel do private(unsrom)
       do iel = 1, ncel
         unsrom = thetap/propce(iel,ipcrom)
-        ! tpucov is an interleaved array
-        do isou = 1, 3
-          vel(isou,iel) = vel(isou,iel)                         &
-               +unsrom*tpucov(isou,iel)                         &
-               *(dfrcxt(iel,isou)-trav(isou,iel))
-        enddo
+
+        vel(1, iel) = vel(1, iel)                                            &
+                    + unsrom*(                                               &
+                               dttens(1,iel)*(dfrcxt(iel,1)-trav(1,iel))     &
+                             + dttens(4,iel)*(dfrcxt(iel,2)-trav(2,iel))     &
+                             + dttens(6,iel)*(dfrcxt(iel,3)-trav(3,iel))     &
+                             )
+        vel(2, iel) = vel(2, iel)                                            &
+                    + unsrom*(                                               &
+                               dttens(4,iel)*(dfrcxt(iel,1)-trav(1,iel))     &
+                             + dttens(2,iel)*(dfrcxt(iel,2)-trav(2,iel))     &
+                             + dttens(5,iel)*(dfrcxt(iel,3)-trav(3,iel))     &
+                             )
+        vel(3, iel) = vel(3, iel)                                            &
+                    + unsrom*(                                               &
+                               dttens(6,iel)*(dfrcxt(iel,1)-trav(1,iel))     &
+                             + dttens(5,iel)*(dfrcxt(iel,2)-trav(2,iel))     &
+                             + dttens(3,iel)*(dfrcxt(iel,3)-trav(3,iel))     &
+                             )
       enddo
     endif
+
     ! Update external forces for the computation of the gradients
     !$omp parallel do
     do iel=1,ncel
@@ -709,6 +702,51 @@ if (irevmc.eq.0) then
         coefa(ifac,iclipr) = coefa(ifac,iclipr) + coefap(ifac)
       endif
     enddo
+
+
+  ! Standard handling of hydrostatic pressure
+  !------------------------------------------
+  else
+
+    ! Scalar diffusion for the pressure
+    if (idften(ipr).eq.1) then
+
+      !$omp parallel do private(dtsrom, isou)
+      do iel = 1, ncel
+        dtsrom = thetap*dt(iel)/propce(iel,ipcrom)
+        do isou = 1, 3
+          vel(isou,iel) = vel(isou,iel) - dtsrom*trav(isou,iel)
+        enddo
+      enddo
+
+    ! Tensorial diffusion for the pressure
+    else if (idften(ipr).eq.6) then
+
+      !$omp parallel do private(unsrom)
+      do iel = 1, ncel
+        unsrom = thetap/propce(iel,ipcrom)
+
+        vel(1, iel) = vel(1, iel)                              &
+                    - unsrom*(                                 &
+                               dttens(1,iel)*(trav(1,iel))     &
+                             + dttens(4,iel)*(trav(2,iel))     &
+                             + dttens(6,iel)*(trav(3,iel))     &
+                             )
+        vel(2, iel) = vel(2, iel)                              &
+                    - unsrom*(                                 &
+                               dttens(4,iel)*(trav(1,iel))     &
+                             + dttens(2,iel)*(trav(2,iel))     &
+                             + dttens(5,iel)*(trav(3,iel))     &
+                             )
+        vel(3, iel) = vel(3, iel)                              &
+                    - unsrom*(                                 &
+                               dttens(6,iel)*(trav(1,iel))     &
+                             + dttens(5,iel)*(trav(2,iel))     &
+                             + dttens(3,iel)*(trav(3,iel))     &
+                             )
+      enddo
+
+    endif
   endif
 endif
 
@@ -964,7 +1002,7 @@ if (iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
    esflum , esflub ,                                              &
    tslagr , coefa  , coefb  , coefau , coefbu , cofafu , cofbfu , &
    ckupdc , smacel , frcxt  , grdphd ,                            &
-   trava  , ximpa  , uvwk   , dfrcxt , tpucov , trav   ,          &
+   trava  , ximpa  , uvwk   , dfrcxt , dttens , trav   ,          &
    viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
    w1     , w7     , w8     , w9     , w10    )
 
@@ -1180,10 +1218,12 @@ do iel = 1, ncelet
   rtpa(iel,iu) = vela(1,iel)
   rtpa(iel,iv) = vela(2,iel)
   rtpa(iel,iw) = vela(3,iel)
+
+  ! Store the diagonal part of dttens for postprocessing purpose
   if (ipucou.eq.1 .or. ncpdct.gt.0) then
-    tpucou(iel,1) = tpucov(1,iel)
-    tpucou(iel,2) = tpucov(2,iel)
-    tpucou(iel,3) = tpucov(3,iel)
+    tpucou(iel,1) = dttens(1,iel)
+    tpucou(iel,2) = dttens(2,iel)
+    tpucou(iel,3) = dttens(3,iel)
   endif
 enddo
 
@@ -1192,7 +1232,6 @@ enddo
 deallocate(vel)
 deallocate(vela)
 deallocate(coefap)
-if (ipucou.eq.1 .or. ncpdct.gt.0) deallocate(tpucov)
 
 !--------
 ! Formats

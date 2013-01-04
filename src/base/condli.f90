@@ -1239,7 +1239,60 @@ do ifac = 1, nfabor
   distbf = distb(ifac)
 
   ! If a flux dt.grad P (W/m2) is set in cs_user_boundary
-  hint = dt(iel)/distbf
+  if (idften(ipr).eq.1) then
+    hint = dt(iel)/distbf
+  else if (idften(ipr).eq.3) then
+    hint = ( dttens(1, iel)*surfbo(1,ifac)**2              &
+           + dttens(2, iel)*surfbo(2,ifac)**2              &
+           + dttens(3, iel)*surfbo(3,ifac)**2              &
+           ) / (surfbn(ifac)**2 * distbf)
+  ! Symmetric tensor diffusivity
+  elseif (idften(ipr).eq.6) then
+
+    visci(1,1) = dttens(1,iel)
+    visci(2,2) = dttens(2,iel)
+    visci(3,3) = dttens(3,iel)
+    visci(1,2) = dttens(4,iel)
+    visci(2,1) = dttens(4,iel)
+    visci(2,3) = dttens(5,iel)
+    visci(3,2) = dttens(5,iel)
+    visci(1,3) = dttens(6,iel)
+    visci(3,1) = dttens(6,iel)
+
+    ! ||Ki.S||^2
+    viscis = ( visci(1,1)*surfbo(1,ifac)       &
+             + visci(1,2)*surfbo(2,ifac)       &
+             + visci(1,3)*surfbo(3,ifac))**2   &
+           + ( visci(2,1)*surfbo(1,ifac)       &
+             + visci(2,2)*surfbo(2,ifac)       &
+             + visci(2,3)*surfbo(3,ifac))**2   &
+           + ( visci(3,1)*surfbo(1,ifac)       &
+             + visci(3,2)*surfbo(2,ifac)       &
+             + visci(3,3)*surfbo(3,ifac))**2
+
+    ! IF.Ki.S
+    fikis = ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,1)   &
+            + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,1)   &
+            + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,1)   &
+            )*surfbo(1,ifac)                              &
+          + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,2)   &
+            + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,2)   &
+            + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,2)   &
+            )*surfbo(2,ifac)                              &
+          + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,3)   &
+            + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,3)   &
+            + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,3)   &
+            )*surfbo(3,ifac)
+
+    distfi = distb(ifac)
+
+    ! Take I" so that I"F= eps*||FI||*Ki.n when J" is in cell rji
+    ! NB: eps =1.d-1 must be consistent with vitens.f90
+    fikis = max(fikis, 1.d-1*sqrt(viscis)*distfi)
+
+    hint = viscis/surfbn(ifac)/fikis
+
+  endif
 
   ! On doit remodifier la valeur du  Dirichlet de pression de manière
   !  à retrouver P*. Car dans typecl.f90 on a travaillé avec la pression

@@ -521,7 +521,9 @@ endif
 !===============================================================================
 iok = 0
 do ivar = 1, nvar
-  if (idften(ivar).eq.6) iok = 1
+  if (ivar.ne.ipr) then
+    if (idften(ivar).eq.6) iok = 1
+  endif
 enddo
 
 do iscal = 1, nscal
