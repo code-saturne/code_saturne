@@ -194,7 +194,7 @@ class case:
 
         # Print process info
 
-        name = self.package.name
+        name = self.package.code_name
 
         if len(self.domains) == 1:
             if self.domains[0].n_procs > 1:
@@ -1137,7 +1137,7 @@ fi
 
         msg = \
             '\n' \
-            + '                      ' + self.package.name + ' is running\n' \
+            + '                      ' + self.package.code_name + ' is running\n' \
             + '                      ***********************\n' \
             + '\n' \
             + ' Version: ' + self.package.version + '\n' \
@@ -1289,7 +1289,7 @@ fi
 
         # Update error codes
 
-        name = self.package.name
+        name = self.package.code_name
 
         if retcode != 0:
             self.error = 'solver'
