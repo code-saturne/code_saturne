@@ -20,6 +20,62 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Function:
+! ---------
+
+!> \file projtv.f90
+!>
+!> \brief This function projects the external source termes to the faces
+!> in coherence with itrmav.f90 for the improved hydrostatic pressure
+!> algorithm (iphydr=1).
+!>
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     init           indicator
+!>                               - 1 initialize the mass flux to 0
+!>                               - 0 otherwise
+!> \param[in]     inc           indicator
+!>                               - 0 when solving an increment
+!>                               - 1 otherwise
+!> \param[in]     imrgra        indicator
+!>                               - 0 iterative gradient
+!>                               - 1 least square gradient
+!> \param[in]     nswrgp        number of reconstruction sweeps for the
+!>                               gradients
+!> \param[in]     imligp        clipping gradient method
+!>                               - < 0 no clipping
+!>                               - = 0 thank to neighbooring gradients
+!>                               - = 1 thank to the mean gradient
+!> \param[in]     ircflp        indicator
+!>                               - 1 flux reconstruction,
+!>                               - 0 otherwise
+!> \param[in]     iwarnp        verbosity
+!> \param[in]     extrap        coefficient for extrapolation of the gradient
+!> \param[in]     fextx,y,z     body force creating the hydrostatic pressure
+!> \param[in]     pvar          solved variable (pressure)
+!> \param[in]     cofaf         boundary condition array for the diffusion
+!>                               of the variable (Explicit part)
+!> \param[in]     cofbf         boundary condition array for the diffusion
+!>                               of the variable (Implicit part)
+!> \param[in]     viscf         \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+!>                               at interior faces for the r.h.s.
+!> \param[in]     viscb         \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
+!>                               at border faces for the r.h.s.
+!> \param[in]     viscel        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
+!> \param[in]     weighf        internal face weight between cells i j in case
+!>                               of tensor diffusion
+!> \param[in]     weighb        boundary face weight for cells i in case
+!>                               of tensor diffusion
+!> \param[in,out] flumas        mass flux at interior faces
+!> \param[in,out] flumab        mass flux at boundary faces
+!_______________________________________________________________________________
+
 subroutine projtv &
 !================
 
@@ -32,51 +88,6 @@ subroutine projtv &
    flumas , flumab , viscf  , viscb  ,                            &
    visel  )
 
-!===============================================================================
-! FONCTION :
-! ----------
-
-! PROJECTION SUR LES FACES DES TERMES DE FORCE EXTERIEURE
-! GENERANT UNE PRESSION HYDROSTATIQUE
-! EN FAIT, LE TERME CALCULE EST : DTij FEXTij.Sij
-!                                      ----   -
-! ET IL EST AJOUTE AU FLUX DE MASSE.
-! LE CALCUL EST FAIT DE MANIERE COMPATIBLE AVEC ITRMAS (POUR LES
-! FACES INTERNES) ET DE MANIERE A CORRIGER L'ERREUR SUR LA CL
-! DE PRESSION EN PAROI (dP/dn=0 n'est pas adapte en fait)
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! init             ! e  ! <-- ! > 0 : initialisation du flux de masse          !
-! inc              ! e  ! <-- ! indicateur = 0 resol sur increment             !
-!                  !    !     !              1 sinon                           !
-! imrgra           ! e  ! <-- ! indicateur = 0 gradrc 97                       !
-!                  ! e  ! <-- !            = 1 gradmc 99                       !
-! nswrgu           ! e  ! <-- ! nombre de sweep pour reconstruction            !
-!                  !    !     !             des gradients                      !
-! imligu           ! e  ! <-- ! methode de limitation du gradient              !
-!                  !    !     !  < 0 pas de limitation                         !
-!                  !    !     !  = 0 a partir des gradients voisins            !
-!                  !    !     !  = 1 a partir du gradient moyen                !
-! iwarnu           ! e  ! <-- ! niveau d'impression                            !
-! nfecra           ! e  ! <-- ! unite du fichier sortie std                    !
-! epsrgu           ! r  ! <-- ! precision relative pour la                     !
-!                  !    !     !  reconstruction des gradients 97               !
-! climgu           ! r  ! <-- ! coef gradient*distance/ecart                   !
-! cofbfp(nfabor    ! tr ! <-- ! tableaux des cond lim de pression              !
-! flumas(nfac)     ! tr ! <-- ! flux de masse aux faces internes               !
-! flumab(nfabor    ! tr ! <-- ! flux de masse aux faces de bord                !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================
@@ -118,12 +129,10 @@ double precision distbf,surfn
 !===============================================================================
 
 !===============================================================================
-! 1.  INITIALISATION
+! 1. Initialization
 !===============================================================================
 
-
-
-if( init.eq.1 ) then
+if (init.eq.1) then
   do ifac = 1, nfac
     flumas(ifac) = 0.d0
   enddo
@@ -137,12 +146,12 @@ elseif(init.ne.0) then
 endif
 
 !===============================================================================
-! 2.  CALCUL DU FLUX DE MASSE SANS TECHNIQUE DE RECONSTRUCTION
+! 2. Update mass flux without reconstruction technics
 !===============================================================================
 
 if( nswrgu.le.1 ) then
 
-!     FLUX DE MASSE SUR LES FACETTES FLUIDES
+  ! ---> Contribution from interior faces
 
   do ifac = 1, nfac
 
@@ -161,7 +170,7 @@ if( nswrgu.le.1 ) then
   enddo
 
 
-!     FLUX DE MASSE SUR LES FACETTES DE BORD
+  ! ---> Contribution from boundary faces
 
   do ifac = 1, nfabor
 
@@ -177,9 +186,11 @@ if( nswrgu.le.1 ) then
 
 
 else
+!===============================================================================
+! 3. Update mass flux WITH reconstruction technics
+!===============================================================================
 
-
-!     FLUX DE MASSE SUR LES FACETTES FLUIDES
+  ! ---> Contribution from interior faces
 
   do ifac = 1, nfac
 
@@ -218,7 +229,7 @@ else
   enddo
 
 
-!     FLUX DE MASSE SUR LES FACETTES DE BORD
+  ! ---> Contribution from boundary faces
 
   do ifac = 1, nfabor
 
@@ -236,22 +247,22 @@ endif
 
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 #if defined(_CS_LANG_FR)
 
- 1000 format('PROJTS APPELE AVEC INIT =',I10)
+ 1000 format('PROJTV appele avec INIT =',i10)
 
 #else
 
- 1000 format('PROJTS CALLED WITH INIT =',I10)
+ 1000 format('PROJTV called with INIT =',i10)
 
 #endif
 
 
 !----
-! FIN
+! End
 !----
 
 return
