@@ -5115,7 +5115,7 @@ cs_matrix_create_tuned(const cs_matrix_structure_t  *ms,
       m->loop_length = mv->loop_length;
       for (i = 0; i < CS_MATRIX_N_FILL_TYPES*2; i++) {
         if (mv->vector_multiply[i] != NULL)
-          m->vector_multiply[i/2][i%2] = mv->vector_multiply[i*2];
+          m->vector_multiply[i/2][i%2] = mv->vector_multiply[i];
       }
     }
   }
@@ -5879,8 +5879,7 @@ cs_matrix_variant_tuned(double                 t_measure,
         if (v->matrix_vector_cost[sub_id] > 0) {
           if (   v->matrix_vector_cost[sub_id] < r->matrix_vector_cost[sub_id]
               || r->matrix_vector_cost[sub_id] < 0) {
-            r->vector_multiply[sub_id + ed_flag]
-              = v->vector_multiply[sub_id + ed_flag];
+            r->vector_multiply[sub_id] = v->vector_multiply[sub_id];
             r->matrix_vector_cost[sub_id] = v->matrix_vector_cost[sub_id];
             r->loop_length = v->loop_length;
             cur_select[sub_id] = v_id;
