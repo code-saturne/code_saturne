@@ -20,6 +20,78 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Function:
+! ---------
+
+!> \file itrgrv.f90
+!>
+!> \brief This function adds the explicit part of the divergence of the
+!>  mass flux due to the pressure gradient (routine analog to diften.f90).
+!>
+!> More precisely, the divergence of the mass flux side
+!> \f$ \sum_{\fij \in \Facei{\celli}} \dot{m}_\fij \f$ is updated as follows:
+!> \f[
+!> \sum_{\fij \in \Facei{\celli}} \dot{m}_\fij
+!>  = \sum_{\fij \in \Facei{\celli}} \dot{m}_\fij
+!>  - \sum_{\fij \in \Facei{\celli}}
+!>    \left( \tens{\mu}_\fij \gradv_\fij P \cdot \vect{S}_\ij  \right)
+!> \f]
+!>
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     init           indicator
+!>                               - 1 initialize the mass flux to 0
+!>                               - 0 otherwise
+!> \param[in]     inc           indicator
+!>                               - 0 when solving an increment
+!>                               - 1 otherwise
+!> \param[in]     imrgra        indicator
+!>                               - 0 iterative gradient
+!>                               - 1 least square gradient
+!> \param[in]     iccocg        indicator
+!>                               - 1 re-compute cocg matrix (for iterativ gradients)
+!>                               - 0 otherwise
+!> \param[in]     nswrgp        number of reconstruction sweeps for the
+!>                               gradients
+!> \param[in]     imligp        clipping gradient method
+!>                               - < 0 no clipping
+!>                               - = 0 thank to neighbooring gradients
+!>                               - = 1 thank to the mean gradient
+!> \param[in]     ircflp        indicator
+!>                               - 1 flux reconstruction,
+!>                               - 0 otherwise
+!> \param[in]     iphydr        indicator
+!>                               - 1 hydrostatic pressure taken into account
+!>                               - 0 otherwise
+!> \param[in]     iwarnp        verbosity
+!> \param[in]     epsrgp        relative precision for the gradient
+!>                               reconstruction
+!> \param[in]     climgp        clipping coeffecient for the computation of
+!>                               the gradient
+!> \param[in]     extrap        coefficient for extrapolation of the gradient
+!> \param[in]     fextx,y,z     body force creating the hydrostatic pressure
+!> \param[in]     pvar          solved variable (pressure)
+!> \param[in]     cofaf         boundary condition array for the diffusion
+!>                               of the variable (Explicit part)
+!> \param[in]     cofbf         boundary condition array for the diffusion
+!>                               of the variable (Implicit part)
+!> \param[in]     viscf         \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+!>                               at interior faces for the r.h.s.
+!> \param[in]     viscb         \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
+!>                               at border faces for the r.h.s.
+!> \param[in]     viscel        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
+!> \param[in]     weighf        internal face weight between cells i j in case
+!>                               of tensor diffusion
+!> \param[in]     weighb        boundary face weight for cells i in case
+!>                               of tensor diffusion
+!> \param[in,out] diverg        divergence of the mass flux
+!_______________________________________________________________________________
 subroutine itrgrv &
 !================
 
@@ -32,64 +104,6 @@ subroutine itrgrv &
    visel  ,                                                       &
    diverg )
 
-!===============================================================================
-! FONCTION :
-! ----------
-
-! INCREMENTATION DE LA DIVERGENCE DU FLUX DE MASSE
-! A PARTIR DE GRAD(P)
-! grad(P) = GRADIENT FACETTE
-
-!  .          .        --         --->     -->
-!  m   =  m     - \    Visc   grad(P) . n
-!   ij     ij     /__      ij       ij   ij
-!                  j
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! init             ! e  ! <-- ! > 0 : initialisation du flux de masse          !
-! inc              ! e  ! <-- ! indicateur = 0 resol sur increment             !
-!                  !    !     !              1 sinon                           !
-! imrgra           ! e  ! <-- ! indicateur = 0 gradrc 97                       !
-!                  ! e  ! <-- !            = 1 gradmc 99                       !
-! iccocg           ! e  ! <-- ! indicateur = 1 pour recalcul de cocg           !
-!                  !    !     !              0 sinon                           !
-! nswrgp           ! e  ! <-- ! nombre de sweep pour reconstruction            !
-!                  !    !     !             des gradients                      !
-! imligp           ! e  ! <-- ! methode de limitation du gradient              !
-!                  !    !     !  < 0 pas de limitation                         !
-!                  !    !     !  = 0 a partir des gradients voisins            !
-!                  !    !     !  = 1 a partir du gradient moyen                !
-! iwarnp           ! i  ! <-- ! verbosity                                      !
-! iphydp           ! e  ! <-- ! indicateur de prise en compte de la            !
-!                  !    !     ! pression hydrostatique                         !
-! nfecra           ! e  ! <-- ! unite du fichier sortie std                    !
-! epsrgp           ! r  ! <-- ! precision relative pour la                     !
-!                  !    !     !  reconstruction des gradients 97               !
-! climgp           ! r  ! <-- ! coef gradient*distance/ecart                   !
-! extrap           ! r  ! <-- ! coef extrap gradient                           !
-! pvar  (ncelet    ! tr ! <-- ! variable (pression)                            !
-! coefap, b        ! tr ! <-- ! tableaux des cond lim pour pvar                !
-!   (nfabor)       !    !     !  sur la normale a la face de bord              !
-! cof*fp           ! tr ! <-- ! tableaux des cond lim pour pvar                !
-!   (nfabor)       !    !     !  sur la normale a la face de bord              !
-! viscf (nfac)     ! tr ! <-- ! "viscosite" face interne(dt*surf/dist          !
-! viscb (nfabor    ! tr ! <-- ! "viscosite" face de bord(dt*surf/dist          !
-! visel(3,ncelet)  ! tr ! <-- ! "viscosite" par cellule  dir x, y , z          !
-! diverg(ncelet    ! tr ! <-- ! divergence du flux de masse                    !
-! fextx,y,z        ! tr ! <-- ! force exterieure generant la pression          !
-!   (ncelet)       !    !     !  hydrostatique                                 !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================
@@ -139,7 +153,7 @@ double precision, allocatable, dimension(:,:) :: grad
 !===============================================================================
 
 !===============================================================================
-! 1. INITIALISATION
+! 1. Initialization
 !===============================================================================
 
 
@@ -167,7 +181,7 @@ endif
 
 
 !===============================================================================
-! 2.  INCREMENT DU FLUX DE MASSE SS TECHNIQUE DE RECONSTRUCTION
+! 2. Update mass flux without reconstruction technics
 !===============================================================================
 
 if (nswrgp.le.1) then
@@ -211,8 +225,7 @@ endif
 
 
 !===============================================================================
-! 3.  INCREMENTATION DU FLUX DE MASSE AVEC TECHNIQUE DE
-!         RECONSTRUCTION SI LE MAILLAGE EST NON ORTHOGONAL
+! 3. Update mass flux WITH reconstruction technics
 !===============================================================================
 
 if (nswrgp.gt.1) then
@@ -312,11 +325,11 @@ endif
 
 #if defined(_CS_LANG_FR)
 
- 1000 format('ITRGRV APPELE AVEC INIT = ',I10)
+ 1000 format('ITRGRV appele avec INIT = ',I10)
 
 #else
 
- 1000 format('ITRGRV CALLED WITH INIT = ',I10)
+ 1000 format('ITRGRV called with INIT = ',I10)
 
 #endif
 
