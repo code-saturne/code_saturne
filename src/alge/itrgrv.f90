@@ -328,8 +328,8 @@ if (nswrgp.gt.1) then
   ! Mass flow though boundary faces
 
   do ig = 1, ngrpb
-    !$omp parallel do private(ifac, ii, visci, fikdvi, i,                       &
-    !$omp                     pipp, pfacd, flux, pi) if(nfabor > thr_n_min)
+    !$omp parallel do private(ifac, ii, pi, visci, fikdvi, i, diippf,         &
+    !$omp                     pipp, pfac, flux) if(nfabor > thr_n_min)
     do it = 1, nthrdb
       do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
 
