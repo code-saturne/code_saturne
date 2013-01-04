@@ -92,16 +92,17 @@
 !> \param[in,out] flumas        mass flux at interior faces
 !> \param[in,out] flumab        mass flux at boundary faces
 !_______________________________________________________________________________
+
 subroutine itrmav &
 !================
 
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrgp , imligp ,          &
+ ( init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
    iphydp , iwarnp , nfecra ,                                     &
    epsrgp , climgp , extrap ,                                     &
    fextx  , fexty  , fextz  ,                                     &
    pvar   , coefap , coefbp , cofafp , cofbfp , viscf  , viscb  , &
-   visel  ,                                                       &
+   viscel ,                                                       &
+   weighf , weighb ,                                              &
    flumas , flumab )
 
 !===============================================================================
@@ -123,9 +124,9 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
 integer          init   , inc    , imrgra , iccocg
 integer          nswrgp , imligp
+integer          ircflp
 integer          iwarnp , iphydp , nfecra
 double precision epsrgp , climgp , extrap
 
@@ -133,18 +134,19 @@ double precision epsrgp , climgp , extrap
 double precision pvar(ncelet), coefap(nfabor), coefbp(nfabor)
 double precision cofafp(nfabor), cofbfp(nfabor)
 double precision viscf(nfac), viscb(nfabor)
-double precision visel(3,ncelet)
+double precision viscel(6,ncelet)
+double precision weighf(2,nfac), weighb(nfabor)
 double precision flumas(nfac), flumab(nfabor)
 double precision fextx(ncelet),fexty(ncelet),fextz(ncelet)
 
 ! Local variables
 
-integer          ifac, ii, jj, iij, iii
-double precision pfac,pip
-double precision dpxf  , dpyf  , dpzf
-double precision dijpfx, dijpfy, dijpfz
-double precision diipbx, diipby, diipbz
-double precision dijx  , dijy  , dijz
+integer          ifac, ii, jj, i
+double precision pfac
+double precision pi, pj
+double precision diippf(3), djjppf(3), pipp, pjpp
+double precision visci(3,3), viscj(3,3)
+double precision fikdvi, fjkdvi
 
 double precision rvoid(1)
 
@@ -225,7 +227,7 @@ if (nswrgp.gt.1) then
   ! ---> Periodicity and parallelism treatment of symmetric tensors
 
   if (irangp.ge.0.or.iperio.eq.1) then
-    call synvin(visel)
+    call syntis(viscel)
   endif
 
   ! Mass flow through interior faces
@@ -235,24 +237,63 @@ if (nswrgp.gt.1) then
     ii = ifacel(1,ifac)
     jj = ifacel(2,ifac)
 
-    dpxf = 0.5d0*(visel(1,ii)*grad(ii,1) + visel(1,jj)*grad(jj,1))
-    dpyf = 0.5d0*(visel(2,ii)*grad(ii,2) + visel(2,jj)*grad(jj,2))
-    dpzf = 0.5d0*(visel(3,ii)*grad(ii,3) + visel(3,jj)*grad(jj,3))
+    pi = pvar(ii)
+    pj = pvar(jj)
 
-    dijpfx = dijpf(1,ifac)
-    dijpfy = dijpf(2,ifac)
-    dijpfz = dijpf(3,ifac)
+    ! Recompute II" and JJ"
+    !----------------------
 
-!---> DIJ = IJ - (IJ.N) N
-    dijx = (xyzcen(1,jj)-xyzcen(1,ii))-dijpfx
-    dijy = (xyzcen(2,jj)-xyzcen(2,ii))-dijpfy
-    dijz = (xyzcen(3,jj)-xyzcen(3,ii))-dijpfz
+    visci(1,1) = viscel(1,ii)
+    visci(2,2) = viscel(2,ii)
+    visci(3,3) = viscel(3,ii)
+    visci(1,2) = viscel(4,ii)
+    visci(2,1) = viscel(4,ii)
+    visci(2,3) = viscel(5,ii)
+    visci(3,2) = viscel(5,ii)
+    visci(1,3) = viscel(6,ii)
+    visci(3,1) = viscel(6,ii)
 
-    flumas(ifac) = flumas(ifac)                                   &
-     + viscf(ifac)*( pvar(ii) -pvar(jj) )                         &
-     + ( dpxf * dijx                                              &
-     +   dpyf * dijy                                              &
-     +   dpzf * dijz )*surfan(ifac)/dist(ifac)
+    ! IF.Ki.S / ||Ki.S||^2
+    fikdvi = weighf(1,ifac)
+
+    ! II" = IF + FI"
+    do i = 1, 3
+      diippf(i) = cdgfac(i,ifac)-xyzcen(i,ii)          &
+                - fikdvi*( visci(i,1)*surfac(1,ifac)   &
+                         + visci(i,2)*surfac(2,ifac)   &
+                         + visci(i,3)*surfac(3,ifac) )
+    enddo
+
+    viscj(1,1) = viscel(1,jj)
+    viscj(2,2) = viscel(2,jj)
+    viscj(3,3) = viscel(3,jj)
+    viscj(1,2) = viscel(4,jj)
+    viscj(2,1) = viscel(4,jj)
+    viscj(2,3) = viscel(5,jj)
+    viscj(3,2) = viscel(5,jj)
+    viscj(1,3) = viscel(6,jj)
+    viscj(3,1) = viscel(6,jj)
+
+    ! FJ.Kj.S / ||Kj.S||^2
+    fjkdvi = weighf(2,ifac)
+
+    ! JJ" = JF + FJ"
+    do i = 1, 3
+      djjppf(i) = cdgfac(i,ifac)-xyzcen(i,jj)          &
+                + fjkdvi*( viscj(i,1)*surfac(1,ifac)   &
+                         + viscj(i,2)*surfac(2,ifac)   &
+                         + viscj(i,3)*surfac(3,ifac) )
+    enddo
+
+    ! p in I" and J"
+    pipp = pi + ircflp*( grad(ii,1)*diippf(1)   &
+                       + grad(ii,2)*diippf(2)   &
+                       + grad(ii,3)*diippf(3))
+    pjpp = pj + ircflp*( grad(jj,1)*djjppf(1)   &
+                       + grad(jj,2)*djjppf(2)   &
+                       + grad(jj,3)*djjppf(3))
+
+    flumas(ifac) = flumas(ifac) + viscf(ifac)*(pipp - pjpp)
 
   enddo
 
@@ -262,12 +303,39 @@ if (nswrgp.gt.1) then
 
     ii = ifabor(ifac)
 
-    diipbx = diipb(1,ifac)
-    diipby = diipb(2,ifac)
-    diipbz = diipb(3,ifac)
+    pi = pvar(ii)
 
-    pip = pvar(ii) + grad(ii,1)*diipbx + grad(ii,2)*diipby + grad(ii,3)*diipbz
-    pfac = inc*cofafp(ifac) + cofbfp(ifac)*pip
+    ! Recompute II"
+    !--------------
+
+    visci(1,1) = viscel(1,ii)
+    visci(2,2) = viscel(2,ii)
+    visci(3,3) = viscel(3,ii)
+    visci(1,2) = viscel(4,ii)
+    visci(2,1) = viscel(4,ii)
+    visci(2,3) = viscel(5,ii)
+    visci(3,2) = viscel(5,ii)
+    visci(1,3) = viscel(6,ii)
+    visci(3,1) = viscel(6,ii)
+
+    ! IF.Ki.S / ||Ki.S||^2
+    fikdvi = weighb(ifac)
+
+    ! II" = IF + FI"
+    do i = 1, 3
+      diippf(i) = cdgfbo(i,ifac) - xyzcen(i,ii)        &
+                - fikdvi*( visci(i,1)*surfbo(1,ifac)   &
+                         + visci(i,2)*surfbo(2,ifac)   &
+                         + visci(i,3)*surfbo(3,ifac) )
+    enddo
+
+    pipp = pi                               &
+         + ircflp*( grad(ii,1)*diippf(1)    &
+                  + grad(ii,2)*diippf(2)    &
+                  + grad(ii,3)*diippf(3))
+
+
+    pfac = inc*cofafp(ifac) + cofbfp(ifac)*pipp
 
     flumab(ifac) = flumab(ifac) + viscb(ifac)*pfac
 

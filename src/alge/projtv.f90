@@ -79,14 +79,14 @@
 subroutine projtv &
 !================
 
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , nswrgu , imligu ,                   &
-   iwarnu , nfecra ,                                              &
-   epsrgu , climgu ,                                              &
+ ( init   , inc    , imrgra , nswrgp , imligp , ircflp ,          &
+   iwarnp , nfecra ,                                              &
    fextx  , fexty  , fextz  ,                                     &
    cofbfp ,                                                       &
-   flumas , flumab , viscf  , viscb  ,                            &
-   visel  )
+   viscf  , viscb  ,                                              &
+   viscel ,                                                       &
+   weighf , weighb ,                                              &
+   flumas , flumab )
 
 !===============================================================================
 
@@ -104,27 +104,27 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
 integer          init   , inc    , imrgra
-integer          nswrgu , imligu
-integer          iwarnu , nfecra
-double precision epsrgu , climgu
+integer          nswrgp , imligp , ircflp
+integer          iwarnp , nfecra
 
-
-double precision pnd
 double precision fextx(ncelet),fexty(ncelet),fextz(ncelet)
 double precision viscf(nfac), viscb(nfabor)
-double precision visel(3,ncelet)
+double precision viscel(6,ncelet)
+double precision weighf(2,nfac), weighb(nfabor)
 double precision cofbfp(nfabor)
 double precision flumas(nfac), flumab(nfabor)
 
 ! Local variables
 
-integer          ifac, ii, jj, iii
-double precision dijpfx,dijpfy,dijpfz
-double precision diipx,diipy,diipz
-double precision djjpx,djjpy,djjpz
+integer          ifac, ii, jj, i
 double precision distbf,surfn
+double precision pi, pj
+double precision diippf(3), djjppf(3)
+double precision visci(3,3), viscj(3,3)
+double precision fikdvi, fjkdvi
+
+
 
 !===============================================================================
 
@@ -149,7 +149,7 @@ endif
 ! 2. Update mass flux without reconstruction technics
 !===============================================================================
 
-if( nswrgu.le.1 ) then
+if (nswrgp.le.1) then
 
   ! ---> Contribution from interior faces
 
@@ -169,7 +169,6 @@ if( nswrgu.le.1 ) then
 
   enddo
 
-
   ! ---> Contribution from boundary faces
 
   do ifac = 1, nfabor
@@ -183,7 +182,6 @@ if( nswrgu.le.1 ) then
          +fexty(ii)*surfbo(2,ifac)+fextz(ii)*surfbo(3,ifac) )
 
   enddo
-
 
 else
 !===============================================================================
@@ -197,54 +195,89 @@ else
     ii = ifacel(1,ifac)
     jj = ifacel(2,ifac)
 
-    pnd = pond(ifac)
+    ! Recompute II" and JJ"
+    !----------------------
 
-    dijpfx = dijpf(1,ifac)
-    dijpfy = dijpf(2,ifac)
-    dijpfz = dijpf(3,ifac)
+    visci(1,1) = viscel(1,ii)
+    visci(2,2) = viscel(2,ii)
+    visci(3,3) = viscel(3,ii)
+    visci(1,2) = viscel(4,ii)
+    visci(2,1) = viscel(4,ii)
+    visci(2,3) = viscel(5,ii)
+    visci(3,2) = viscel(5,ii)
+    visci(1,3) = viscel(6,ii)
+    visci(3,1) = viscel(6,ii)
 
-    surfn = surfan(ifac)
+    ! IF.Ki.S / ||Ki.S||^2
+    fikdvi = weighf(1,ifac)
 
-!     calcul de II' et JJ'
-    diipx = cdgfac(1,ifac)-xyzcen(1,ii)-(1.d0-pnd)*dijpfx
-    diipy = cdgfac(2,ifac)-xyzcen(2,ii)-(1.d0-pnd)*dijpfy
-    diipz = cdgfac(3,ifac)-xyzcen(3,ii)-(1.d0-pnd)*dijpfz
-    djjpx = cdgfac(1,ifac)-xyzcen(1,jj)+pnd*dijpfx
-    djjpy = cdgfac(2,ifac)-xyzcen(2,jj)+pnd*dijpfy
-    djjpz = cdgfac(3,ifac)-xyzcen(3,jj)+pnd*dijpfz
+    ! II" = IF + FI"
+    do i = 1, 3
+      diippf(i) = cdgfac(i,ifac)-xyzcen(i,ii)          &
+                - fikdvi*( visci(i,1)*surfac(1,ifac)   &
+                         + visci(i,2)*surfac(2,ifac)   &
+                         + visci(i,3)*surfac(3,ifac) )
+    enddo
 
-    flumas(ifac) =  flumas(ifac)                                  &
-         + viscf(ifac)*(                                          &
-           (cdgfac(1,ifac)-xyzcen(1,ii))*fextx(ii)                &
-          +(cdgfac(2,ifac)-xyzcen(2,ii))*fexty(ii)                &
-          +(cdgfac(3,ifac)-xyzcen(3,ii))*fextz(ii)                &
-          -(cdgfac(1,ifac)-xyzcen(1,jj))*fextx(jj)                &
-          -(cdgfac(2,ifac)-xyzcen(2,jj))*fexty(jj)                &
-          -(cdgfac(3,ifac)-xyzcen(3,jj))*fextz(jj) )              &
-         +surfn/dist(ifac)*0.5d0*(                                &
-       (djjpx-diipx)*(visel(1,ii)*fextx(ii)+visel(1,jj)*fextx(jj))  &
-      +(djjpy-diipy)*(visel(2,ii)*fexty(ii)+visel(2,jj)*fexty(jj))  &
-      +(djjpz-diipz)*(visel(3,ii)*fextz(ii)+visel(3,jj)*fextz(jj)))
+    viscj(1,1) = viscel(1,jj)
+    viscj(2,2) = viscel(2,jj)
+    viscj(3,3) = viscel(3,jj)
+    viscj(1,2) = viscel(4,jj)
+    viscj(2,1) = viscel(4,jj)
+    viscj(2,3) = viscel(5,jj)
+    viscj(3,2) = viscel(5,jj)
+    viscj(1,3) = viscel(6,jj)
+    viscj(3,1) = viscel(6,jj)
+
+    ! FJ.Kj.S / ||Kj.S||^2
+    fjkdvi = weighf(2,ifac)
+
+    ! JJ" = JF + FJ"
+    do i = 1, 3
+      djjppf(i) = cdgfac(i,ifac)-xyzcen(i,jj)          &
+                + fjkdvi*( viscj(i,1)*surfac(1,ifac)   &
+                         + viscj(i,2)*surfac(2,ifac)   &
+                         + viscj(i,3)*surfac(3,ifac) )
+    enddo
+
+    flumas(ifac) = flumas(ifac)                                            &
+                 + viscf(ifac)*(                                           &
+                                 fextx(ii)*(cdgfac(1,ifac)-xyzcen(1,ii))   &
+                               + fexty(ii)*(cdgfac(2,ifac)-xyzcen(2,ii))   &
+                               + fextz(ii)*(cdgfac(3,ifac)-xyzcen(3,ii))   &
+                               - fextx(jj)*(cdgfac(1,ifac)-xyzcen(1,jj))   &
+                               - fexty(jj)*(cdgfac(2,ifac)-xyzcen(2,jj))   &
+                               - fextz(jj)*(cdgfac(3,ifac)-xyzcen(3,jj))   &
+                               )                                           &
+                 + viscf(ifac)*ircflp*(                                    &
+                                      - fextx(ii)*diippf(1)                &
+                                      - fexty(ii)*diippf(2)                &
+                                      - fextz(ii)*diippf(3)                &
+                                      + fextx(jj)*djjppf(1)                &
+                                      + fexty(jj)*djjppf(2)                &
+                                      + fextz(jj)*djjppf(3)                &
+                                      )
 
   enddo
-
 
   ! ---> Contribution from boundary faces
 
   do ifac = 1, nfabor
 
     ii = ifabor(ifac)
+
     surfn = surfbn(ifac)
     distbf = distb(ifac)
 
-    flumab(ifac) = flumab(ifac)+viscb(ifac)*distbf/surfn          &
-         *cofbfp(ifac)*(fextx(ii)*surfbo(1,ifac)                  &
-         +fexty(ii)*surfbo(2,ifac)+fextz(ii)*surfbo(3,ifac) )
+    ! FIXME: wrong if dirichlet and viscel is really a tensor
+    flumab(ifac) = flumab(ifac)                                                &
+                 + viscb(ifac)*distbf/surfn*cofbfp(ifac)*(                     &
+                                      fextx(ii)*surfbo(1,ifac)                 &
+                                    + fexty(ii)*surfbo(2,ifac)                 &
+                                    + fextz(ii)*surfbo(3,ifac) )
 
   enddo
 endif
-
-
 
 !--------
 ! Formats
@@ -259,7 +292,6 @@ endif
  1000 format('PROJTV called with INIT =',i10)
 
 #endif
-
 
 !----
 ! End

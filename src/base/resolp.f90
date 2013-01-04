@@ -109,7 +109,7 @@ use entsor
 use cstphy
 use cstnum
 use optcal
-use pointe, only: itypfb
+use pointe, only: itypfb, dttens
 use albase
 use parall
 use period
@@ -409,7 +409,15 @@ if (iphydr.eq.1) then
       ! Neumann Boundary Conditions
       !----------------------------
 
-      hint = dt(iel)/distb(ifac)
+      if (idften(ipr).eq.1) then
+        hint = dt(iel)/distb(ifac)
+      else if (idften(ipr).eq.3) then
+        hint = ( dttens(1, iel)*surfbo(1,ifac)**2              &
+               + dttens(2, iel)*surfbo(2,ifac)**2              &
+               + dttens(3, iel)*surfbo(3,ifac)**2              &
+               ) / (surfbn(ifac)**2 * distb(ifac))
+      endif
+
       qimp = 0.d0
 
       call set_neumann_scalar &
@@ -867,7 +875,14 @@ if (iphydr.eq.1) then
              +(cdgfbo(2,ifac)-xyzcen(2,iel))*dfrcxt(iel,2)  &
              +(cdgfbo(3,ifac)-xyzcen(3,iel))*dfrcxt(iel,3)  &
              - phydr0
-        hint = dt(iel)/distb(ifac)
+        if (idften(ipr).eq.1) then
+          hint = dt(iel)/distb(ifac)
+        else if (idften(ipr).eq.3) then
+          hint = ( dttens(1, iel)*surfbo(1,ifac)**2              &
+                 + dttens(2, iel)*surfbo(2,ifac)**2              &
+                 + dttens(3, iel)*surfbo(3,ifac)**2              &
+                 ) / (surfbn(ifac)**2 * distb(ifac))
+        endif
         cofafp(ifac) = - hint*coefap(ifac)
       endif
     enddo

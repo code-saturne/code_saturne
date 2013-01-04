@@ -63,7 +63,6 @@
 !> \param[in]     itypsm        type of mass source term for the variables
 !> \param[in]     isostd        indicator of standard outlet and index
 !>                               of the reference outlet face
-!> \param[in]     idtsca        indicator of non scalar time step
 !> \param[in]     dt            time step (per cell)
 !> \param[in,out] rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
@@ -97,7 +96,7 @@ subroutine resopv &
 !================
 
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   icepdc , icetsm , itypsm , isostd , idtsca ,                   &
+   icepdc , icetsm , itypsm , isostd ,                            &
    dt     , rtp    , rtpa   , vel    , vela   ,                   &
    propce , propfa , propfb ,                                     &
    coefa  , coefb  , coefav , coefbv , coefap ,                   &
@@ -149,7 +148,7 @@ double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision frcxt(ncelet,3), dfrcxt(ncelet,3)
-double precision tpucou(ndim,ncelet), trav(3,ncelet)
+double precision tpucou(6, ncelet), trav(3,ncelet)
 double precision viscf(nfac), viscb(nfabor)
 double precision viscfi(nfac), viscbi(nfabor)
 double precision drtp(ncelet)
@@ -180,7 +179,6 @@ integer          nitmap, imgrp , ncymap, nitmgp
 integer          iinvpe, indhyd
 integer          itypfl
 integer          iesdep
-integer          idtsca
 integer          nagmax, npstmg
 integer          isou  , ibsize, iesize
 integer          imucpp, idftnp, iswdyp
@@ -196,6 +194,7 @@ double precision drom  , dronm1, relaxp
 double precision hint, qimp, qimpv(3), epsrsp, blencp
 double precision ressol, rnorm2
 double precision nadxkm1, nadxk, paxm1ax, paxm1rk, paxkrk, alph, beta
+double precision visci(3,3), fikis, viscis, distfi
 
 double precision rvoid(1)
 
@@ -209,6 +208,8 @@ double precision, allocatable, dimension(:) :: velflx, velflb, dpvar
 double precision, allocatable, dimension(:,:) :: coefar, cofafr
 double precision, allocatable, dimension(:,:,:) :: coefbr, cofbfr
 double precision, allocatable, dimension(:) :: adxk, adxkm1, dpvarm1, rhs0
+double precision, allocatable, dimension(:,:) :: weighf
+double precision, allocatable, dimension(:) :: weighb
 
 !===============================================================================
 
@@ -426,10 +427,59 @@ if (iphydr.eq.1) then
 
       iel = ifabor(ifac)
 
+      if (idften(ipr).eq.1) then
+        hint = dt(iel)/distb(ifac)
+      ! Symmetric tensor diffusivity
+      elseif (idften(ipr).eq.6) then
+
+        visci(1,1) =  tpucou(1,iel)
+        visci(2,2) = tpucou(2,iel)
+        visci(3,3) = tpucou(3,iel)
+        visci(1,2) = tpucou(4,iel)
+        visci(2,1) = tpucou(4,iel)
+        visci(2,3) = tpucou(5,iel)
+        visci(3,2) = tpucou(5,iel)
+        visci(1,3) = tpucou(6,iel)
+        visci(3,1) = tpucou(6,iel)
+
+        ! ||Ki.S||^2
+        viscis = ( visci(1,1)*surfbo(1,ifac)       &
+                 + visci(1,2)*surfbo(2,ifac)       &
+                 + visci(1,3)*surfbo(3,ifac))**2   &
+               + ( visci(2,1)*surfbo(1,ifac)       &
+                 + visci(2,2)*surfbo(2,ifac)       &
+                 + visci(2,3)*surfbo(3,ifac))**2   &
+               + ( visci(3,1)*surfbo(1,ifac)       &
+                 + visci(3,2)*surfbo(2,ifac)       &
+                 + visci(3,3)*surfbo(3,ifac))**2
+
+        ! IF.Ki.S
+        fikis = ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,1)   &
+                + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,1)   &
+                + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,1)   &
+                )*surfbo(1,ifac)                              &
+              + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,2)   &
+                + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,2)   &
+                + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,2)   &
+                )*surfbo(2,ifac)                              &
+              + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,3)   &
+                + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,3)   &
+                + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,3)   &
+                )*surfbo(3,ifac)
+
+        distfi = distb(ifac)
+
+        ! Take I" so that I"F= eps*||FI||*Ki.n when J" is in cell rji
+        ! NB: eps =1.d-1 must be consistent with vitens.f90
+        fikis = max(fikis, 1.d-1*sqrt(viscis)*distfi)
+
+        hint = viscis/surfbn(ifac)/fikis
+
+      endif
+
       ! Neumann Boundary Conditions
       !----------------------------
 
-      hint = dt(iel)/distb(ifac)
       qimp = 0.d0
 
       call set_neumann_scalar &
@@ -489,22 +539,33 @@ do iel = 1, ncel
   rovsdt(iel) = 0.d0
 enddo
 
-! ---> "VITESSE" DE DIFFUSION FACETTE
+! ---> Face diffusivity
+if (idiff(ipr).ge.1) then
 
-if( idiff(ipr).ge. 1 ) then
-  if (idtsca.eq.0) then
-    call viscfa                                                   &
+  ! Scalar diffusivity
+  if (idften(ipr).eq.1) then
+    call viscfa &
     !==========
  ( imvisf ,                                                       &
    dt     ,                                                       &
    viscf  , viscb  )
-  else
-    !interleaved version of visort
-    call viortv                                                   &
+
+  ! Tensor diffusivity
+  else if (idften(ipr).eq.6) then
+
+    ! Allocate temporary arrays
+    allocate(weighf(2,nfac))
+    allocate(weighb(nfabor))
+
+    iwarnp = iwarni(ipr)
+
+    call vitens &
     !==========
- ( imvisf ,                                                       &
-   tpucou ,                                                       &
-   viscf  , viscb  )
+   ( imvisf ,                      &
+     tpucou , iwarnp ,             &
+     weighf , weighb ,             &
+     viscf  , viscb  )
+
   endif
 else
   do ifac = 1, nfac
@@ -585,37 +646,68 @@ endif
 !     The RHS contains rho div(u*) and not div(rho u*)
 !     so this term will be add afterwards
 if (idilat.eq.4) then
-  if (idtsca.eq.0) then
+  if (idften(ipr).eq.1) then
     do iel = 1, ncel
       ardtsr  = arak*(dt(iel)/propce(iel,ipcrom))
       do isou = 1, 3
         trav(isou,iel) = ardtsr*trav(isou,iel)
       enddo
     enddo
-  else
-    do iel=1,ncel
+  else if (idften(ipr).eq.6) then
+    do iel = 1, ncel
       arsr  = arak/propce(iel,ipcrom)
-      do isou = 1, 3
-        trav(isou,iel) = arsr*tpucou(isou,iel)*trav(isou,iel)
-      enddo
+
+      trav(1,iel) = arsr*(                                 &
+                           tpucou(1,iel)*(trav(1,iel))     &
+                         + tpucou(4,iel)*(trav(2,iel))     &
+                         + tpucou(6,iel)*(trav(3,iel))     &
+                         )
+      trav(2,iel) = arsr*(                                 &
+                           tpucou(4,iel)*(trav(1,iel))     &
+                         + tpucou(2,iel)*(trav(2,iel))     &
+                         + tpucou(5,iel)*(trav(3,iel))     &
+                         )
+      trav(3,iel) = arsr*(                                 &
+                           tpucou(6,iel)*(trav(1,iel))     &
+                         + tpucou(5,iel)*(trav(2,iel))     &
+                         + tpucou(3,iel)*(trav(3,iel))     &
+                         )
+
     enddo
   endif
 
 ! Standard algorithm
 else
-  if (idtsca.eq.0) then
+  if (idften(ipr).eq.1) then
     do iel = 1, ncel
       ardtsr  = arak*(dt(iel)/propce(iel,ipcrom))
       do isou = 1, 3
         trav(isou,iel) = vel(isou,iel) + ardtsr*trav(isou,iel)
       enddo
     enddo
-  else
-    do iel=1,ncel
+  else if (idften(ipr).eq.6) then
+    do iel = 1, ncel
       arsr  = arak/propce(iel,ipcrom)
-      do isou = 1, 3
-        trav(isou,iel) = vel(isou,iel) + arsr*tpucou(isou,iel)*trav(isou,iel)
-      enddo
+
+      trav(1,iel) = vel(1,iel)                             &
+                  + arsr*(                                 &
+                           tpucou(1,iel)*(trav(1,iel))     &
+                         + tpucou(4,iel)*(trav(2,iel))     &
+                         + tpucou(6,iel)*(trav(3,iel))     &
+                         )
+      trav(2,iel) = vel(2,iel)                             &
+                  + arsr*(                                 &
+                           tpucou(4,iel)*(trav(1,iel))     &
+                         + tpucou(2,iel)*(trav(2,iel))     &
+                         + tpucou(5,iel)*(trav(3,iel))     &
+                         )
+      trav(3,iel) = vel(3,iel)                             &
+                  + arsr*(                                 &
+                           tpucou(6,iel)*(trav(1,iel))     &
+                         + tpucou(5,iel)*(trav(2,iel))     &
+                         + tpucou(3,iel)*(trav(3,iel))     &
+                         )
+
     enddo
   endif
 endif
@@ -664,8 +756,10 @@ if (iphydr.eq.1) then
   iwarnp = iwarni(ipr)
   epsrgp = epsrgr(ipr)
   climgp = climgr(ipr)
+  ircflp = ircflu(ipr)
 
-  if (idtsca.eq.0) then
+  ! Scalar diffusivity
+  if (idften(ipr).eq.1) then
     call projts &
     !==========
  ( nvar   , nscal  ,                                              &
@@ -677,18 +771,21 @@ if (iphydr.eq.1) then
    propfa(1,iflmas), propfb(1,iflmab) ,                           &
    viscf  , viscb  ,                                              &
    dt     , dt     , dt     )
-  else
+
+  ! Tensor diffusivity
+  else if (idften(ipr).eq.6) then
+
     call projtv &
     !==========
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , nswrgp , imligp ,                   &
-   iwarnp , nfecra ,                                              &
-   epsrgp , climgp ,                                              &
-   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
-   coefb(1,iclipf) ,                                              &
-   propfa(1,iflmas), propfb(1,iflmab) ,                           &
-   viscf  , viscb  ,                                              &
-   tpucou )
+  ( init   , inc    , imrgra , nswrgp , imligp , ircflp ,          &
+    iwarnp , nfecra ,                                              &
+    dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
+    coefb(1,iclipf) ,                                              &
+    viscf  , viscb  ,                                              &
+    tpucou ,                                                       &
+    weighf , weighb ,                                              &
+    propfa(1,iflmas), propfb(1,iflmab) )
+
   endif
 endif
 
@@ -696,7 +793,7 @@ init   = 0
 inc    = 1
 iccocg = 1
 
-if(arak.gt.0.d0) then
+if (arak.gt.0.d0) then
 
 ! --- Prise en compte de Arak : la viscosite face est multipliee
 !       Le pas de temps aussi. On retablit plus bas.
@@ -718,7 +815,9 @@ if(arak.gt.0.d0) then
     enddo
   endif
 
-  if (idtsca.eq.0) then
+  ! Scalar diffusivity
+  !-------------------
+  if (idften(ipr).eq.1) then
     do iel = 1, ncel
       dt(iel) = arak*dt(iel)
     enddo
@@ -744,7 +843,7 @@ if(arak.gt.0.d0) then
    dt     , dt     , dt     ,                                     &
    propfa(1,iflmas), propfb(1,iflmab))
 
-!     Projection du terme source pour oter la partie hydrostat de la pression
+    ! Projection du terme source pour oter la partie hydrostat de la pression
     if (iphydr.eq.1) then
       init   = 0
       inc    = 0
@@ -775,32 +874,37 @@ if(arak.gt.0.d0) then
 
     endif
 
-! --- Correction du pas de temps
+    ! --- Correction du pas de temps
     unsara = 1.d0/arak
     do iel = 1, ncel
       dt(iel) = dt(iel)*unsara
     enddo
 
-  else
+  ! Tensor diffusivity
+  !-------------------
+  else if (idften(ipr).eq.6) then
 
     do iel = 1, ncel
       tpucou(1,iel) = arak*tpucou(1,iel)
       tpucou(2,iel) = arak*tpucou(2,iel)
       tpucou(3,iel) = arak*tpucou(3,iel)
+      tpucou(4,iel) = arak*tpucou(4,iel)
+      tpucou(5,iel) = arak*tpucou(5,iel)
+      tpucou(6,iel) = arak*tpucou(6,iel)
     enddo
 
-    nswrgp = nswrgr(ipr )
-    imligp = imligr(ipr )
-    iwarnp = iwarni(ipr )
-    epsrgp = epsrgr(ipr )
-    climgp = climgr(ipr )
-    extrap = extrag(ipr )
+    nswrgp = nswrgr(ipr)
+    imligp = imligr(ipr)
+    iwarnp = iwarni(ipr)
+    epsrgp = epsrgr(ipr)
+    climgp = climgr(ipr)
+    extrap = extrag(ipr)
+    ircflp = ircflu(ipr)
 
-    call itrmav                                                   &
+    call itrmav &
     !==========
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
-   iwarnp , nfecra ,                                              &
+ ( init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
+   iphydr , iwarnp , nfecra ,                                     &
    epsrgp , climgp , extrap ,                                     &
    frcxt(1,1), frcxt(1,2), frcxt(1,3),                            &
    rtpa(1,ipr)  ,                                                 &
@@ -808,49 +912,52 @@ if(arak.gt.0.d0) then
    coefa(1,iclipf) , coefb(1,iclipf) ,                            &
    viscf  , viscb  ,                                              &
    tpucou ,                                                       &
+   weighf , weighb ,                                              &
    propfa(1,iflmas), propfb(1,iflmab) )
 
-!     Projection du terme source pour oter la partie hydrostat de la pression
-    if (iphydr.eq.1) then
-      init   = 0
-      inc    = 0
-      nswrgp = nswrgr(ipr)
-      imligp = imligr(ipr)
-      iwarnp = iwarni(ipr)
-      epsrgp = epsrgr(ipr)
-      climgp = climgr(ipr)
+   ! Projection du terme source pour oter la partie hydrostat de la pression
+   if (iphydr.eq.1) then
+     init   = 0
+     inc    = 0
+     nswrgp = nswrgr(ipr)
+     imligp = imligr(ipr)
+     iwarnp = iwarni(ipr)
+     epsrgp = epsrgr(ipr)
+     climgp = climgr(ipr)
 
-      ! A 0 boundary coefficient cofbfp is passed to projtv
-      ! to cancel boundary terms
-      do ifac = 1,nfabor
-        cofbfp(ifac) = 0.d0
-      enddo
+     ! A 0 boundary coefficient cofbfp is passed to projtv
+     ! to cancel boundary terms
+     do ifac = 1, nfabor
+       cofbfp(ifac) = 0.d0
+     enddo
 
-      call projtv &
-      !==========
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , nswrgp , imligp ,                   &
-   iwarnp , nfecra ,                                              &
-   epsrgp , climgp ,                                              &
-   frcxt(1,1), frcxt(1,2), frcxt(1,3),                            &
-   cofbfp ,                                                       &
-   propfa(1,iflmas), propfb(1,iflmab) ,                           &
-   viscf  , viscb  ,                                              &
-   tpucou )
+     call projtv &
+     !==========
+   ( init   , inc    , imrgra , nswrgp , imligp , ircflp ,          &
+     iwarnp , nfecra ,                                              &
+     frcxt(1,1), frcxt(1,2), frcxt(1,3),                            &
+     cofbfp ,                                                       &
+     viscf  , viscb  ,                                              &
+     tpucou ,                                                       &
+     weighf , weighb ,                                              &
+     propfa(1,iflmas), propfb(1,iflmab) )
 
-    endif
+   endif
 
-! --- Correction du pas de temps
+    ! --- Correction du pas de temps
     unsara = 1.d0/arak
     do iel = 1, ncel
       tpucou(1,iel) = unsara*tpucou(1,iel)
       tpucou(2,iel) = unsara*tpucou(2,iel)
       tpucou(3,iel) = unsara*tpucou(3,iel)
+      tpucou(4,iel) = unsara*tpucou(4,iel)
+      tpucou(5,iel) = unsara*tpucou(5,iel)
+      tpucou(6,iel) = unsara*tpucou(6,iel)
     enddo
 
   endif
 
-! --- Correction de la viscosite aux faces
+  ! --- Correction de la viscosite aux faces
   do ifac = 1, nfac
     viscf(ifac) = viscf(ifac)*unsara
   enddo
@@ -861,20 +968,26 @@ if(arak.gt.0.d0) then
   ! If Saturne/Saturne coupling, re-set the boundary face viscosity to
   ! the non-zero value
   if (nbrcpl.gt.0) then
-    if( idiff(ipr).ge. 1 ) then
-      if (idtsca.eq.0) then
-        call viscfa                                                   &
+    if (idiff(ipr).ge.1) then
+      if (idften(ipr).eq.1) then
+        call viscfa &
         !==========
      ( imvisf ,                                                       &
        dt     ,                                                       &
        viscf  , viscb  )
-      else
-        !interleaved version of visort
-        call viortv                                                   &
+
+      ! Tensor diffusivity
+      else if (idften(ipr).eq.6) then
+
+        iwarnp = iwarni(ipr)
+
+        call vitens &
         !==========
-     ( imvisf ,                                                       &
-       tpucou ,                                                       &
-       viscf  , viscb  )
+       ( imvisf ,                      &
+         tpucou , iwarnp ,             &
+         weighf , weighb ,             &
+         viscf  , viscb  )
+
       endif
     else
       do ifac = 1, nfac
@@ -926,14 +1039,63 @@ if (iphydr.eq.1) then
              +(cdgfbo(2,ifac)-xyzcen(2,iel))*dfrcxt(iel,2)  &
              +(cdgfbo(3,ifac)-xyzcen(3,iel))*dfrcxt(iel,3)  &
              - phydr0
-        hint = dt(iel)/distb(ifac)
+        if (idften(ipr).eq.1) then
+          hint = dt(iel)/distb(ifac)
+
+        ! Symmetric tensor diffusivity
+        elseif (idften(ipr).eq.6) then
+
+          visci(1,1) = tpucou(1,iel)
+          visci(2,2) = tpucou(2,iel)
+          visci(3,3) = tpucou(3,iel)
+          visci(1,2) = tpucou(4,iel)
+          visci(2,1) = tpucou(4,iel)
+          visci(2,3) = tpucou(5,iel)
+          visci(3,2) = tpucou(5,iel)
+          visci(1,3) = tpucou(6,iel)
+          visci(3,1) = tpucou(6,iel)
+
+          ! ||Ki.S||^2
+          viscis = ( visci(1,1)*surfbo(1,ifac)       &
+                   + visci(1,2)*surfbo(2,ifac)       &
+                   + visci(1,3)*surfbo(3,ifac))**2   &
+                 + ( visci(2,1)*surfbo(1,ifac)       &
+                   + visci(2,2)*surfbo(2,ifac)       &
+                   + visci(2,3)*surfbo(3,ifac))**2   &
+                 + ( visci(3,1)*surfbo(1,ifac)       &
+                   + visci(3,2)*surfbo(2,ifac)       &
+                   + visci(3,3)*surfbo(3,ifac))**2
+
+          ! IF.Ki.S
+          fikis = ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,1)   &
+                  + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,1)   &
+                  + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,1)   &
+                  )*surfbo(1,ifac)                              &
+                + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,2)   &
+                  + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,2)   &
+                  + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,2)   &
+                  )*surfbo(2,ifac)                              &
+                + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,3)   &
+                  + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,3)   &
+                  + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,3)   &
+                  )*surfbo(3,ifac)
+
+          distfi = distb(ifac)
+
+          ! Take I" so that I"F= eps*||FI||*Ki.n when J" is in cell rji
+          ! NB: eps =1.d-1 must be consistent with vitens.f90
+          fikis = max(fikis, 1.d-1*sqrt(viscis)*distfi)
+
+          hint = viscis/surfbn(ifac)/fikis
+
+        endif
+
         cofafp(ifac) = - hint*coefap(ifac)
       endif
     enddo
   endif
 
 endif
-
 
 !===============================================================================
 ! 6. Preparation of the Algebraic Multigrid
@@ -1138,8 +1300,9 @@ if (iswdyp.ge.1) then
   epsrgp = epsrgr(ipr)
   climgp = climgr(ipr)
   extrap = extrag(ipr)
+  ircflp = ircflu(ipr)
 
-  if (idtsca.eq.0) then
+  if (idften(ipr).eq.1) then
 
     call itrgrp &
     !==========
@@ -1155,13 +1318,12 @@ if (iswdyp.ge.1) then
    dt     , dt     , dt     ,                                     &
    rhs0   )
 
-  else
-    !interleaved tpucou array
+  else if (idften(ipr).eq.6) then
+
     call itrgrv &
     !==========
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
-   iwarnp , nfecra ,                                              &
+ ( init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
+   iphydr , iwarnp , nfecra ,                                     &
    epsrgp , climgp , extrap ,                                     &
    dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
    drtp   ,                                                       &
@@ -1169,6 +1331,7 @@ if (iswdyp.ge.1) then
    cofafp , coefb(1,iclipf) ,                                     &
    viscf  , viscb  ,                                              &
    tpucou ,                                                       &
+   weighf , weighb ,                                              &
    rhs0   )
 
   endif
@@ -1240,7 +1403,7 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
     climgp = climgr(ipr)
     extrap = extrag(ipr)
 
-    if (idtsca.eq.0) then
+    if (idften(ipr).eq.1) then
 
       call itrgrp &
       !==========
@@ -1256,13 +1419,12 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
      dt     , dt     , dt     ,                                     &
      adxk   )
 
-    else
-      !interleaved tpucou array
+    else if (idften(ipr).eq.6) then
+
       call itrgrv &
       !==========
-   ( nvar   , nscal  ,                                              &
-     init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
-     iwarnp , nfecra ,                                              &
+   ( init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
+     iphydr , iwarnp , nfecra ,                                     &
      epsrgp , climgp , extrap ,                                     &
      dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
      drtp   ,                                                       &
@@ -1270,6 +1432,7 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
      cofafp , coefb(1,iclipf) ,                                     &
      viscf  , viscb  ,                                              &
      tpucou ,                                                       &
+     weighf , weighb ,                                              &
      adxk   )
 
     endif
@@ -1374,7 +1537,7 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
   climgp = climgr(ipr)
   extrap = extrag(ipr)
 
-  if (idtsca.eq.0) then
+  if (idften(ipr).eq.1) then
 
     call itrgrp &
     !==========
@@ -1390,13 +1553,12 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
    dt     , dt     , dt     ,                                     &
    rhs    )
 
-  else
-    !interleaved tpucou array
+  else if (idften(ipr).eq.6) then
+
     call itrgrv &
     !==========
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
-   iwarnp , nfecra ,                                              &
+ ( init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
+   iphydr , iwarnp , nfecra ,                                     &
    epsrgp , climgp , extrap ,                                     &
    dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
    rtp(1,ipr)      ,                                              &
@@ -1404,6 +1566,7 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
    cofafp , coefb(1,iclipf) ,                                     &
    viscf  , viscb  ,                                              &
    tpucou ,                                                       &
+   weighf , weighb ,                                              &
    rhs    )
 
   endif
@@ -1496,7 +1659,7 @@ epsrgp = epsrgr(ipr)
 climgp = climgr(ipr)
 extrap = extrag(ipr)
 
-if (idtsca.eq.0) then
+if (idften(ipr).eq.1) then
   call itrmas &
   !==========
  ( nvar   , nscal  ,                                              &
@@ -1531,13 +1694,12 @@ if (idtsca.eq.0) then
    dt     , dt     , dt     ,                                     &
    propfa(1,iflmas), propfb(1,iflmab))
 
-else
-  ! tpucou array is interleaved
+else if (idften(ipr).eq.6) then
+
   call itrmav &
   !==========
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
-   iwarnp , nfecra ,                                              &
+ ( init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
+   iphydr , iwarnp , nfecra ,                                     &
    epsrgp , climgp , extrap ,                                     &
    dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
    presa  ,                                                       &
@@ -1545,6 +1707,7 @@ else
    cofafp , coefb(1,iclipf) ,                                     &
    viscf  , viscb  ,                                              &
    tpucou ,                                                       &
+   weighf , weighb ,                                              &
    propfa(1,iflmas), propfb(1,iflmab))
 
   ! The last increment is not reconstructed to fullfill exactly the continuity
@@ -1552,12 +1715,12 @@ else
   iccocg = 0
   nswrgp = 0
   inc = 0
+  ircflp = 0
 
   call itrmav &
   !==========
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
-   iwarnp , nfecra ,                                              &
+ ( init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
+   iphydr , iwarnp , nfecra ,                                     &
    epsrgp , climgp , extrap ,                                     &
    dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
    drtp   ,                                                       &
@@ -1565,6 +1728,7 @@ else
    coefa(1,iclipf) , coefb(1,iclipf) ,                            &
    viscf  , viscb  ,                                              &
    tpucou ,                                                       &
+   weighf , weighb ,                                              &
    propfa(1,iflmas), propfb(1,iflmab))
 
 endif
@@ -1646,21 +1810,71 @@ if (idilat.eq.4) then
   ! --- Boundary Conditions for the convective flux
   do ifac = 1, nfabor
 
-     iel = ifabor(ifac)
+    iel = ifabor(ifac)
 
-     ! Neumann Boundary Conditions
-     !----------------------------
+    ! Neumann Boundary Conditions
+    !----------------------------
 
-     qimpv(1) = 0.d0
-     qimpv(2) = 0.d0
-     qimpv(3) = 0.d0
-     hint = dt(iel)/distb(ifac)
+    qimpv(1) = 0.d0
+    qimpv(2) = 0.d0
+    qimpv(3) = 0.d0
 
-     call set_neumann_vector &
-          !=================
-        ( coefar(1,ifac)  , cofafr(1,ifac)  ,             &
-          coefbr(1,1,ifac), cofbfr(1,1,ifac),             &
-          qimpv           , hint             )
+    if (idften(ipr).eq.1) then
+      hint = dt(iel)/distb(ifac)
+
+    ! Symmetric tensor diffusivity
+    elseif (idften(ipr).eq.6) then
+
+      visci(1,1) = tpucou(1,iel)
+      visci(2,2) = tpucou(2,iel)
+      visci(3,3) = tpucou(3,iel)
+      visci(1,2) = tpucou(4,iel)
+      visci(2,1) = tpucou(4,iel)
+      visci(2,3) = tpucou(5,iel)
+      visci(3,2) = tpucou(5,iel)
+      visci(1,3) = tpucou(6,iel)
+      visci(3,1) = tpucou(6,iel)
+
+      ! ||Ki.S||^2
+      viscis = ( visci(1,1)*surfbo(1,ifac)       &
+               + visci(1,2)*surfbo(2,ifac)       &
+               + visci(1,3)*surfbo(3,ifac))**2   &
+             + ( visci(2,1)*surfbo(1,ifac)       &
+               + visci(2,2)*surfbo(2,ifac)       &
+               + visci(2,3)*surfbo(3,ifac))**2   &
+             + ( visci(3,1)*surfbo(1,ifac)       &
+               + visci(3,2)*surfbo(2,ifac)       &
+               + visci(3,3)*surfbo(3,ifac))**2
+
+      ! IF.Ki.S
+      fikis = ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,1)   &
+              + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,1)   &
+              + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,1)   &
+              )*surfbo(1,ifac)                              &
+            + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,2)   &
+              + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,2)   &
+              + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,2)   &
+              )*surfbo(2,ifac)                              &
+            + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,3)   &
+              + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,3)   &
+              + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,3)   &
+              )*surfbo(3,ifac)
+
+      distfi = distb(ifac)
+
+      ! Take I" so that I"F= eps*||FI||*Ki.n when J" is in cell rji
+      ! NB: eps =1.d-1 must be consistent with vitens.f90
+      fikis = max(fikis, 1.d-1*sqrt(viscis)*distfi)
+
+      hint = viscis/surfbn(ifac)/fikis
+
+    endif
+
+    call set_neumann_vector &
+         !=================
+       ( coefar(1,ifac)  , cofafr(1,ifac)  ,             &
+         coefbr(1,1,ifac), cofbfr(1,1,ifac),             &
+         qimpv           , hint             )
 
   enddo
 
@@ -1778,7 +1992,7 @@ if (idilat.eq.4) then
      cofafp , coefb(1,iclipf) ,                                     &
      velflx , velflb ,                                              &
      viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
-     rvoid  , rvoid  ,                                              &
+     weighf , weighb ,                                              &
      rovsdt , rhs    , drtp   , dpvar  ,                            &
      rvoid  , rvoid  )
 
@@ -1802,7 +2016,7 @@ if (idilat.eq.4) then
   climgp = climgr(ipr)
   extrap = extrag(ipr)
 
-  if (idtsca.eq.0) then
+  if (idften(ipr).eq.1) then
     call itrmas &
     !==========
  ( nvar   , nscal  ,                                              &
@@ -1837,14 +2051,12 @@ if (idilat.eq.4) then
    dt     , dt     , dt     ,                                     &
    propfa(1,iflmas), propfb(1,iflmab))
 
-  else
+  else if (idften(ipr).eq.6) then
 
-    ! tpucou array is interleaved
     call itrmav &
     !==========
-   ( nvar   , nscal  ,                                              &
-     init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
-     iwarnp , nfecra ,                                              &
+   ( init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
+     iphydr , iwarnp , nfecra ,                                     &
      epsrgp , climgp , extrap ,                                     &
      dfrcxt(1,1)     , dfrcxt(1,2)     , dfrcxt(1,3)     ,          &
      drtp   ,                                                       &
@@ -1852,6 +2064,7 @@ if (idilat.eq.4) then
      cofafp , coefb(1,iclipf) ,                                     &
      viscf  , viscb  ,                                              &
      tpucou ,                                                       &
+     weighf , weighb ,                                              &
      propfa(1,iflmas), propfb(1,iflmab))
 
     ! The last increment is not reconstructed to fullfill exactly the continuity
@@ -1862,9 +2075,8 @@ if (idilat.eq.4) then
 
     call itrmav &
     !==========
-   ( nvar   , nscal  ,                                              &
-     init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
-     iwarnp , nfecra ,                                              &
+   ( init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
+     iphydr , iwarnp , nfecra ,                                     &
      epsrgp , climgp , extrap ,                                     &
      dfrcxt(1,1)     , dfrcxt(1,2)     , dfrcxt(1,3)     ,          &
      dpvar  ,                                                       &
@@ -1872,6 +2084,7 @@ if (idilat.eq.4) then
      cofafp , coefb(1,iclipf) ,                                     &
      viscf  , viscb  ,                                              &
      tpucou ,                                                       &
+     weighf , weighb ,                                              &
      propfa(1,iflmas), propfb(1,iflmab))
 
   endif
@@ -1904,6 +2117,7 @@ deallocate(res, divu, presa)
 deallocate(gradp)
 deallocate(cofafp, coefbp, cofbfp)
 deallocate(rhs, rovsdt)
+if (allocated(weighf)) deallocate(weighf, weighb)
 if (iswdyp.ge.1) deallocate(adxk, adxkm1, dpvarm1, rhs0)
 
 !--------

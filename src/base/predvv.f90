@@ -150,7 +150,7 @@ double precision frcxt(ncelet,3), dfrcxt(ncelet,3)
 double precision grdphd(ncelet,3)
 double precision trava(ndim,ncelet)
 double precision ximpa(ndim,ndim,ncelet),uvwk(ndim,ncelet)
-double precision tpucou(ndim,ncelet)
+double precision tpucou(6, ncelet)
 double precision trav(3,ncelet)
 double precision viscf(*), viscb(nfabor)
 double precision viscfi(*), viscbi(nfabor)
@@ -204,6 +204,7 @@ double precision, dimension(:,:,:), allocatable :: fimp
 double precision, dimension(:,:), allocatable :: gavinj
 double precision, dimension(:,:), allocatable :: tsexp
 double precision, dimension(:,:,:), allocatable :: tsimp
+double precision, dimension(:,:), allocatable :: vect
 
 !===============================================================================
 
@@ -292,8 +293,8 @@ if (iappel.eq.1.and.iphydr.eq.1) then
       cpdc22 = ckupdc(ielpdc,2)
       cpdc33 = ckupdc(ielpdc,3)
       cpdc12 = ckupdc(ielpdc,4)
-      cpdc13 = ckupdc(ielpdc,5)
-      cpdc23 = ckupdc(ielpdc,6)
+      cpdc23 = ckupdc(ielpdc,5)
+      cpdc13 = ckupdc(ielpdc,6)
       dfrcxt(iel,1) = dfrcxt(iel,1) &
                     - propce(iel,ipcrom)*(cpdc11*vit1+cpdc12*vit2+cpdc13*vit3)
       dfrcxt(iel,2) = dfrcxt(iel,2) &
@@ -1164,8 +1165,8 @@ if(iappel.eq.1) then
       enddo
       ! Extra-diagonal part
       cpdc12 = ckupdc(ielpdc,4)
-      cpdc13 = ckupdc(ielpdc,5)
-      cpdc23 = ckupdc(ielpdc,6)
+      cpdc23 = ckupdc(ielpdc,5)
+      cpdc13 = ckupdc(ielpdc,6)
 
       fimp(1,2,iel) = fimp(1,2,iel) + romvom*cpdc12
       fimp(2,1,iel) = fimp(2,1,iel) + romvom*cpdc12
@@ -1432,33 +1433,16 @@ if(iappel.eq.1) then
 
   endif
 
-
-!     DANS LE CAS DE PERTES DE CHARGE, ON UTILISE LES TABLEAUX
-!     TPUCOU POUR LA PHASE D'IMPLICITATION
-!     Attention, il faut regarder s'il y a des pdc sur un proc quelconque,
-!       pas uniquement en local.
-!TODO modify the tpucou array for the correction step
-! in case of Coriolis force or head loss
-  if((ncpdct.gt.0).and.(ipucou.eq.0)) then
-    do iel = 1,ncel
-      do isou=1,3
-        tpucou(isou,iel) = dt(iel)
-      enddo
-    enddo
-    do ielpdc = 1, ncepdp
-      iel=icepdc(ielpdc)
-      do isou = 1, 3
-        tpucou(isou,iel) = 1.d0/(1.d0/dt(iel)+ckupdc(ielpdc,isou))
-      enddo
-    enddo
-  endif
-
   ! Velocity-pression coupling: compute the vector T, stored in tpucou,
   !  coditv is called, only one sweep is done, and tpucou is initialized
   !  by 0. so that the advection/diffusion added by bilscv is 0.
   !  nswrsp = -1 indicated that only one sweep is required and inc=0
   !  for boundary contitions on the weight matrix.
   if (ipucou.eq.1) then
+
+    ! Allocate temporary arrays for the velocity-pressure resolution
+    allocate(vect(3,ncelet))
+
     nswrsp = -1
     do iel = 1, ncel
       do isou = 1, 3
@@ -1467,7 +1451,7 @@ if(iappel.eq.1) then
     enddo
     do iel = 1, ncelet
       do isou = 1, 3
-        tpucou(isou,iel) = 0.d0
+        vect(isou,iel) = 0.d0
       enddo
     enddo
     iescap = 0
@@ -1484,21 +1468,27 @@ if(iappel.eq.1) then
    imgrp  , ncymxp , nitmfp , ippu   , ippv   , ippw   , iwarnp , &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
-   tpucou , tpucou ,                                              &
+   vect   , vect   ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
    flumas , flumab ,                                              &
    viscfi , viscbi , viscf  , viscb  , secvif , secvib ,          &
    fimp   ,                                                       &
    smbr   ,                                                       &
-   tpucou ,                                                       &
+   vect   ,                                                       &
    rvoid  )
 
     do iel = 1, ncelet
       rom = propce(iel,ipcrom)
       do isou = 1, 3
-        tpucou(isou,iel) = rom*tpucou(isou,iel)
+        tpucou(isou,iel) = rom*vect(isou,iel)
+      enddo
+      do isou = 4, 6
+        tpucou(isou,iel) = 0.d0
       enddo
     enddo
+
+    ! Free memory
+    deallocate(vect)
 
   endif
 

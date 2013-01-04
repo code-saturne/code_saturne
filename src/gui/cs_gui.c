@@ -4511,8 +4511,8 @@ void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
           ckupdc[1 * (*ncepdp) + ielpdc] = 0.5 * c22 * vit;
           ckupdc[2 * (*ncepdp) + ielpdc] = 0.5 * c33 * vit;
           ckupdc[3 * (*ncepdp) + ielpdc] = 0.5 * c12 * vit;
-          ckupdc[4 * (*ncepdp) + ielpdc] = 0.5 * c13 * vit;
-          ckupdc[5 * (*ncepdp) + ielpdc] = 0.5 * c23 * vit;
+          ckupdc[4 * (*ncepdp) + ielpdc] = 0.5 * c23 * vit;
+          ckupdc[5 * (*ncepdp) + ielpdc] = 0.5 * c13 * vit;
           ielpdc++;
         }
         BFT_FREE(cells_list);

@@ -40,7 +40,7 @@ subroutine itrmas &
 ! P = PRESSION, INCREMENT DE PRESSION, DOUBLE INCREMENT DE PRESSION
 ! grad(P) = GRADIENT FACETTE POUR L'INSTANT
 
-!  .          .               --->     -->
+!  .      .                --->     -->
 !  m   =  m     -  Visc   grad(P) . n
 !   ij     ij          ij       ij   ij
 

@@ -140,12 +140,15 @@ integer          iterns, inslst, icvrge, ivsvdr
 integer          iflmas, iflmab
 integer          italim, itrfin, itrfup, ineefl
 integer          nbzfmx, nozfmx
-integer          nturfl
+integer          nturfl, isou, ielpdc
 
 double precision cpcst , tditot, tdist2, tdist1, cvcst
 double precision xxp0, xyp0, xzp0
 double precision relaxk, relaxe, relaxw, relaxn
 double precision cosdto, sindto, omgnrm, rrotgb(3,3)
+double precision a11, a22, a33, a12, a23, a13
+double precision hdls11, hdls22, hdls33, hdls12, hdls23, hdls13
+double precision detinv
 
 integer          ipass
 data             ipass /0/
@@ -585,6 +588,61 @@ if (nbaste.gt.0.and.itrale.gt.nalinf) then
   call astpdt(dt, ncelet, ntrela)
   !==========
 endif
+
+! Compute the pseudo tensorial time step if needed for the pressure solving (ivelco=0)
+if (idften(ipr).eq.3) then
+  do iel = 1, ncel
+    do isou = 1, 3
+      dttens(isou, iel) = dt(iel)
+    enddo
+  enddo
+  do ielpdc = 1, ncepdc
+    iel = icepdc(ielpdc)
+    do isou = 1, 3
+      dttens(isou, iel) = 1.d0 / (1.d0/dt(iel) + ckupdc(ielpdc,isou))
+    enddo
+  enddo
+endif
+
+! Compute the pseudo tensorial time step if needed for the pressure solving (ivelco=1)
+if (idften(ipr).eq.6) then
+  do iel = 1, ncel
+    dttens(1, iel) = dt(iel)
+    dttens(2, iel) = dt(iel)
+    dttens(3, iel) = dt(iel)
+    dttens(4, iel) = 0.d0
+    dttens(5, iel) = 0.d0
+    dttens(6, iel) = 0.d0
+  enddo
+  do ielpdc = 1, ncepdc
+    iel = icepdc(ielpdc)
+
+    ! dttens = (1/dt + Kpdc)^-1
+    hdls11 = ckupdc(ielpdc, 1) + 1.d0/dt(iel)
+    hdls22 = ckupdc(ielpdc, 2) + 1.d0/dt(iel)
+    hdls33 = ckupdc(ielpdc, 3) + 1.d0/dt(iel)
+    hdls12 = ckupdc(ielpdc, 4)
+    hdls23 = ckupdc(ielpdc, 5)
+    hdls13 = ckupdc(ielpdc, 6)
+
+    a11 = hdls22*hdls33 - hdls23**2
+    a22 = hdls11*hdls33 - hdls13**2
+    a33 = hdls11*hdls22 - hdls12**2
+    a12 = hdls23*hdls13 - hdls12*hdls33
+    a23 = hdls12*hdls13 - hdls11*hdls23
+    a13 = hdls12*hdls23 - hdls22*hdls13
+
+    detinv = 1.d0 / (hdls11*a11 + hdls12*a12 + hdls13*a13)
+
+    dttens(1, iel) = a11 * detinv
+    dttens(2, iel) = a22 * detinv
+    dttens(3, iel) = a33 * detinv
+    dttens(4, iel) = a12 * detinv
+    dttens(5, iel) = a23 * detinv
+    dttens(6, iel) = a13 * detinv
+  enddo
+endif
+
 
 !===============================================================================
 !   RECALAGE DE LA PRESSION Pth ET MASSE VOLUMIQUE rho
