@@ -28,6 +28,7 @@ This GUI provides a simple way to display independante pages, in order to put
 informations in the XML document, which reflets the treated case.
 
 This module defines the following classes:
+- NewCaseDialogView
 - MainView
 
     @copyright: 1998-2009 EDF S.A., France
@@ -63,9 +64,11 @@ import cs_info
 
 try:
     from Base.MainForm import Ui_MainForm
+    from Base.NewCaseDialogForm import Ui_NewCaseDialogForm
 except:
     sys.path.insert(1, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "Base"))
     from Base.MainForm import Ui_MainForm
+    from Base.NewCaseDialogForm import Ui_NewCaseDialogForm
 
 from Base.IdView import IdView
 from Base.BrowserView import BrowserView
@@ -83,6 +86,7 @@ except:
 from Pages.WelcomeView import WelcomeView
 from Pages.IdentityAndPathesModel import IdentityAndPathesModel
 from Pages.XMLEditorView import XMLEditorView
+from Base.QtPage import setGreenColor
 
 
 #-------------------------------------------------------------------------------
@@ -92,6 +96,193 @@ from Pages.XMLEditorView import XMLEditorView
 logging.basicConfig()
 log = logging.getLogger("MainView")
 log.setLevel(GuiParam.DEBUG)
+
+#-------------------------------------------------------------------------------
+# New case dialog
+#-------------------------------------------------------------------------------
+
+class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
+    """
+    Advanced dialog
+    """
+    def __init__(self, parent, pkg):
+        """
+        Constructor
+        """
+        QDialog.__init__(self, parent)
+
+        Ui_NewCaseDialogForm.__init__(self)
+        self.setupUi(self)
+
+        self.package = pkg
+
+        self.createMesh = False
+        self.createPost = False
+        self.copyFrom = False
+        self.copyFromName = None
+        self.caseName = None
+
+        self.currentPath = str(QDir.currentPath())
+        self.model = QFileSystemModel(self)
+        self.model.setRootPath(self.currentPath)
+        self.model.setFilter(QDir.Dirs)
+
+        self.listViewDirectory.setModel(self.model)
+        self.listViewFolder.setModel(self.model)
+        self.listViewFolder.setSelectionMode(QAbstractItemView.NoSelection)
+
+        self.listViewDirectory.setRootIndex(self.model.index(self.currentPath))
+        self.listViewFolder.setRootIndex(self.model.index(self.currentPath))
+
+        self.lineEditCurrentPath.setText(QString(str(self.currentPath)))
+
+        self.connect(self.listViewDirectory,   SIGNAL("clicked(QModelIndex)"),         self.setRootIndex)
+        self.connect(self.listViewDirectory,   SIGNAL("doubleClicked(QModelIndex)"),   self.slotParentDirectory)
+        self.connect(self.lineEditCurrentPath, SIGNAL("textChanged(const QString &)"), self.slotChangeDirectory)
+        self.connect(self.lineEditCaseName,    SIGNAL("textChanged(const QString &)"), self.slotChangeName)
+        self.connect(self.checkBoxPost,        SIGNAL("clicked()"),                    self.slotPostStatus)
+        self.connect(self.checkBoxMesh,        SIGNAL("clicked()"),                    self.slotMeshStatus)
+        self.connect(self.checkBoxCopyFrom,    SIGNAL("clicked()"),                    self.slotCopyFromStatus)
+        self.connect(self.pushButtonCopyFrom,  SIGNAL("clicked()"),                    self.slotCopyFromCase)
+        self.connect(self.pushButtonCreate,    SIGNAL("clicked()"),                    self.slotCreateCase)
+
+
+    def setRootIndex(self, index):
+        if index.row() == 1 and index.column() == 0:
+            # ".." change directory
+            self.currentPath = os.path.abspath(os.path.join(self.currentPath, ".."))
+            self.model.setRootPath(self.currentPath)
+            self.listViewDirectory.setRootIndex(self.model.index(self.currentPath))
+            self.listViewFolder.setRootIndex(self.model.index(self.currentPath))
+        elif index != self.listViewFolder.rootIndex() and self.model.fileInfo(index).isDir():
+            self.listViewFolder.setRootIndex(index)
+        self.lineEditCurrentPath.setText(QString(str(self.currentPath)))
+
+
+    def slotParentDirectory(self, index):
+        if index.row() > 1:
+            self.currentPath = self.model.filePath(index)
+            self.model.setRootPath(self.currentPath)
+            self.listViewDirectory.setRootIndex(self.model.index(self.currentPath))
+            self.listViewFolder.setRootIndex(self.model.index(self.currentPath))
+        self.lineEditCurrentPath.setText(QString(str(self.currentPath)))
+
+
+    @pyqtSignature("const QString &")
+    def slotChangeDirectory(self, text):
+        """
+        change directory
+        """
+        if os.path.isdir(text):
+            self.currentPath = str(text)
+            self.model.setRootPath(self.currentPath)
+            self.listViewDirectory.setRootIndex(self.model.index(self.currentPath))
+            self.listViewFolder.setRootIndex(self.model.index(self.currentPath))
+
+
+    @pyqtSignature("const QString &")
+    def slotChangeName(self, text):
+        """
+        change case name
+        """
+        self.caseName = str(text)
+
+
+    @pyqtSignature("")
+    def slotPostStatus(self):
+        if self.checkBoxPost.isChecked():
+            self.createMesh = True
+        else:
+            self.createMesh = False
+
+
+    @pyqtSignature("")
+    def slotMeshStatus(self):
+        if self.checkBoxMesh.isChecked():
+            self.createPost = True
+        else:
+            self.createPost = False
+
+
+    @pyqtSignature("")
+    def slotCopyFromStatus(self):
+        if self.checkBoxCopyFrom.isChecked():
+            self.copyFrom = True
+            self.pushButtonCopyFrom.setEnabled(True)
+            setGreenColor(self.pushButtonCopyFrom, True)
+        else:
+            self.copyFrom = False
+            setGreenColor(self.pushButtonCopyFrom, False)
+            self.pushButtonCopyFrom.setEnabled(False)
+
+
+    @pyqtSignature("")
+    def slotCopyFromCase(self):
+        title = self.tr("Choose an existing case")
+
+        path = os.getcwd()
+        if os.path.isdir(path + "/../DATA"): path = path + "/../DATA"
+
+        dirName = QFileDialog.getExistingDirectory(self, title,
+                                                   path,
+                                                   QFileDialog.ShowDirsOnly |
+                                                   QFileDialog.DontResolveSymlinks)
+        if dirName.isEmpty() or dirName.isNull():
+            self.copyFromName = None
+        else:
+            self.copyFromName = str(dirName)
+            setGreenColor(self.pushButtonCopyFrom, False)
+
+
+    @pyqtSignature("")
+    def slotCreateCase(self):
+        if self.caseName == None or self.caseName == "":
+            msg = "name case not defined"
+            sys.stderr.write(msg + '\n')
+        elif self.copyFrom == True and self.copyFromName == None:
+            msg = "copy from case not defined"
+            sys.stderr.write(msg + '\n')
+        else:
+            exe = self.package.get_dir("bindir") + "/" + self.package.name + " create -c " + self.currentPath + "/" + self.caseName
+            if self.copyFrom == True:
+                exe = exe + " --copy-from=" + self.copyFromName
+
+            p = subprocess.Popen(exe,
+                                 shell=True,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+            output = p.communicate()
+            if p.returncode != 0:
+                sys.stderr.write(output[1] + '\n')
+
+            if self.createMesh == True:
+                path = self.currentPath + "/MESH"
+                os.mkdir(path)
+            if self.createPost == True:
+                path = self.currentPath + "/POST"
+                os.mkdir(path)
+
+            self.currentPath = self.currentPath + "/" + self.caseName + "/DATA"
+            self.model.setRootPath(self.currentPath)
+            self.listViewDirectory.setRootIndex(self.model.index(self.currentPath))
+            self.listViewFolder.setRootIndex(self.model.index(self.currentPath))
+            self.lineEditCurrentPath.setText(QString(str(self.currentPath)))
+
+
+    def accept(self):
+        """
+        Method called when user clicks 'OK'
+        """
+        os.chdir(self.currentPath)
+        QDialog.accept(self)
+
+
+    def reject(self):
+        """
+        Method called when user clicks 'Cancel'
+        """
+        QDialog.reject(self)
+
 
 #-------------------------------------------------------------------------------
 # Base Main Window
@@ -123,7 +314,6 @@ class MainView(object):
         """
         MainView.Instances = set([window for window \
                 in MainView.Instances if isAlive(window)])
-
 
 
     def ui_initialize(self):
@@ -408,20 +598,22 @@ class MainView(object):
         create new Code_Saturne case
         """
         if not hasattr(self, 'case'):
-            self.case = XMLengine.Case(package=self.package)
-            self.case.root()['version'] = self.XML_DOC_VERSION
-            self.initCase()
-            title = self.tr("New parameters set") + \
-                     " - " + self.tr(self.package.code_name) + self.tr(" GUI") \
-                     + " - " + self.package.version
-            self.setWindowTitle(title)
+            dialog = NewCaseDialogView(self, self.package)
+            if dialog.exec_():
+                self.case = XMLengine.Case(package=self.package)
+                self.case.root()['version'] = self.XML_DOC_VERSION
+                self.initCase()
+                title = self.tr("New parameters set") + \
+                         " - " + self.tr(self.package.code_name) + self.tr(" GUI") \
+                         + " - " + self.package.version
+                self.setWindowTitle(title)
 
-            self.Browser.configureTree(self.case)
-            self.dockWidgetBrowserDisplay(True)
+                self.Browser.configureTree(self.case)
+                self.dockWidgetBrowserDisplay(True)
 
-            self.case['salome'] = self.salome
-            self.scrollArea.setWidget(self.displayFisrtPage())
-            self.case['saved'] = "yes"
+                self.case['salome'] = self.salome
+                self.scrollArea.setWidget(self.displayFisrtPage())
+                self.case['saved'] = "yes"
 
         else:
             MainView(cmd_package=self.package, cmd_case="new case").show()

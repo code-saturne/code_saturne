@@ -44,7 +44,8 @@ BrowserForm.ui \
 CommandMgrLinesDisplayedDialogForm.ui \
 CommandMgrDialogForm.ui \
 IdForm.ui \
-MainForm.ui
+MainForm.ui \
+NewCaseDialogForm.ui
 
 # PyQt Resources files
 
