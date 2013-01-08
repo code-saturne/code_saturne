@@ -2520,6 +2520,7 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
     iresol[j] = 0;
     imgr[j] = 1;
   }
+  tmp = (double) nswrsm[j];
   cs_gui_variable_value(vars->name[0], "rhs_reconstruction", &tmp);
   nswrsm[j] = (int) tmp;
 
