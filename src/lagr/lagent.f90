@@ -1196,7 +1196,7 @@ call uslain                                                       &
    nlocnew ,                                                      &
    itypfb , itrifb , itepa  , ifrlag , iwork  ,                   &
    dt     , rtpa   , propce , propfa , propfb ,                   &
-   ettp   , tepa   , vagaus )
+   ettp   , tepa   , vagaus , ncmax  , nzmax  , iusloc )
 
 !   reinitialisation du compteur de nouvelles particules
 npt = nbpart
