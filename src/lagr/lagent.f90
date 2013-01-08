@@ -1202,7 +1202,8 @@ call uslain                                                       &
    nlocnew ,                                                      &
    itypfb , itrifb , itepa  , ifrlag , iwork  ,                   &
    dt     , rtpa   , propce , propfa , propfb ,                   &
-   ettp   , tepa   , vagaus , icocel , lndnod , itycel , dlgeo)
+   ettp   , tepa   , vagaus , icocel , lndnod , itycel , dlgeo,   &
+   ncmax  , nzmax  , iusloc )
 
 
 !===============================================================================

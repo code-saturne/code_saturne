@@ -483,7 +483,8 @@ subroutine uslain &
    nptnew ,                                                       &
    itypfb , itrifb , itepa  , ifrlag , injfac ,                   &
    dt     , rtpa   , propce , propfa , propfb ,                   &
-   ettp   , tepa   , vagaus , icocel , lndnod , itycel , dlgeo)
+   ettp   , tepa   , vagaus , icocel , lndnod , itycel , dlgeo,   &
+   ncmax  , nzmax  , iusloc )
 
 !===============================================================================
 ! Purpose:
@@ -547,6 +548,9 @@ subroutine uslain &
 ! (ncelet+1)       !    !     !    pointer of the icocel array                 !
 !  dlgeo           ! ra ! <-- ! array of the geometrical quantities            !
 !(nfabor,ngeol)    !    !     ! related to the boundary faces                  !
+! ncmax            ! i  ! <-- ! number of class                                !
+! nzmax            ! i  ! <-- ! number of zones                                !
+! iusloc           ! ia ! <-- ! local equivalent of the iuslag array           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -595,6 +599,9 @@ double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision vagaus(nbpmax,*)
 integer          icocel(lndnod) ,  itycel(ncelet+1)
 double precision dlgeo(nfabor,ngeol)
+
+integer ncmax, nzmax
+integer iusloc(ncmax, nzmax, ndlaim)
 
 ! Local variables
 
@@ -656,9 +663,9 @@ do ii = 1,nfrlag
   do iclas = 1, iusncl(izone)
 
 !         if new particles must enter the domain:
-    if (mod(ntcabs,iuslag(iclas,izone,ijfre)).eq.0) then
+    if (mod(ntcabs,iusloc(iclas,izone,ijfre)).eq.0) then
 
-      do ip = npt+1 , npt+iuslag(iclas,izone,ijnbp)
+      do ip = npt+1 , npt+iusloc(iclas,izone,ijnbp)
 
 !         number of the original boundary face of injection
 
@@ -685,7 +692,7 @@ do ii = 1,nfrlag
 
       enddo
 
-      npt = npt + iuslag(iclas,izone,ijnbp)
+      npt = npt + iusloc(iclas,izone,ijnbp)
 
     endif
 
