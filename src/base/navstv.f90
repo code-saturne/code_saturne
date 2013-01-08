@@ -412,7 +412,7 @@ if (iprco.le.0) then
     epsrgp , climgp , extrap ,                                     &
     propce(1,ipcrom), propfb(1,ipbrom),                            &
     mshvel ,                                                       &
-    cfaale , cfbale ,                                              &
+    claale , clbale ,                                              &
     intflx , bouflx )
 
     ! Here we need of the opposite of the mesh velocity.
