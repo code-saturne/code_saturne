@@ -20,6 +20,45 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Function:
+! ---------
+
+!> \file turrij.f90
+!>
+!> \brief Solving the \f$ R_{ij} - \epsilon \f$ for incompressible flows or
+!>  slightly compressible flows for one time step.
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     ncepdp        number of cells with head loss
+!> \param[in]     ncesmp        number of cells with mass source term
+!> \param[in]     icepdc        index of the ncepdp cells with head loss
+!> \param[in]     icetsm        index of cells with mass source term
+!> \param[in]     itypsm        mass source type for the variables (cf. ustsma)
+!> \param[in]     dt            time step (per cell)
+!> \param[in,out] rtp           calculated variables at cell centers
+!>                               (at the current time step)
+!> \param[in]     rtpa          calculated variables at cell centers
+!>                               (at the previous time step)
+!> \param[in]     propce        physical properties at cell centers
+!> \param[in]     propfa        physical properties at interior face centers
+!> \param[in]     propfb        physical properties at boundary face centers
+!> \param[in]     tslagr        coupling term of the lagangian module
+!> \param[in]     coefa, coefb  boundary conditions
+!>
+!> \param[in]     ckupdc        work array for the head loss
+!> \param[in]     smacel        values of the variables associated to the
+!>                               mass source
+!>                               (for ivar=ipr, smacel is the mass flux)
+!_______________________________________________________________________________
+
 subroutine turrij &
 !================
 
@@ -29,47 +68,6 @@ subroutine turrij &
    tslagr ,                                                       &
    coefa  , coefb  , ckupdc , smacel )
 
-!===============================================================================
-! FONCTION :
-! ----------
-
-! RESOLUTION DES EQUATIONS Rij-EPS 1 PHASE INCOMPRESSIBLE OU
-! RHO VARIABLE SUR UN PAS DE TEMPS
-
-!-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
-! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
-! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
-! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
-! itypsm           ! te ! <-- ! type de source de masse pour les               !
-! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! tslagr           ! tr ! <-- ! terme de couplage retour du                    !
-!(ncelet,*)        !    !     !     lagrangien                                 !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
-! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
-!  (ncepdp,6)      !    !     !                                                !
-! smacel           ! tr ! <-- ! valeur des variables associee a la             !
-! (ncesmp,*   )    !    !     !  source de masse                               !
-!                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================
@@ -123,9 +121,9 @@ double precision epsrgp, climgp, extrap
 
 logical          ilved
 
-double precision, allocatable, dimension(:) :: viscf, viscb, coefax
+double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: smbr, rovsdt
-double precision, allocatable, dimension(:,:,:) :: grdvit
+double precision, allocatable, dimension(:,:,:) :: grdvel
 double precision, allocatable, dimension(:,:) :: produc
 double precision, allocatable, dimension(:,:) :: gradu, gradv, gradw, gradro
 
@@ -136,23 +134,18 @@ double precision, pointer, dimension(:) :: tslage => null(), tslagi => null()
 !===============================================================================
 
 !===============================================================================
-! 1. INITIALISATION
+! 1. Initialization
 !===============================================================================
 
 ! Allocate temporary arrays for the turbulence resolution
 allocate(viscf(nfac), viscb(nfabor))
 allocate(smbr(ncelet), rovsdt(ncelet))
+allocate(grdvel(ncelet,3,3))
 
 ! Allocate other arrays, depending on user options
-if (abs(icdpar).eq.1.and.irijec.eq.1) then
-  allocate(coefax(nfabor))
-endif
 if (iturb.eq.30) then
   allocate(produc(6,ncelet))
-else
-  allocate(grdvit(ncelet,3,3))
 endif
-
 
 icliup = iclrtp(iu,icoef)
 iclivp = iclrtp(iv,icoef)
@@ -171,19 +164,50 @@ if(iwarni(iep).ge.1) then
   endif
 endif
 
+!===============================================================================
+! 2.1 Compute the velocity gradient
+! WARNING: grdvel(iel, xyz, uvw)
+!===============================================================================
 
-! Si iturb=30 (rij std) on stocke directement la production dans
-! le tableau produc
-! Si iturb=31 (SSG) ou 32 (EBRSM) on stocke le gradient de vitesse dans grdvit
+iccocg = 1
+inc    = 1
+
+nswrgp = nswrgr(iu)
+imligp = imligr(iu)
+iwarnp = iwarni(iu)
+epsrgp = epsrgr(iu)
+climgp = climgr(iu)
+extrap = extrag(iu)
+
+if (ivelco.eq.1) then
+
+  ilved = .false.
+
+  call grdvec &
+  !==========
+( iu     , imrgra , inc    , nswrgp , imligp ,                   &
+  iwarnp , nfecra ,                                              &
+  epsrgp , climgp , extrap ,                                     &
+  ilved  ,                                                       &
+  rtpa(1,iu) ,  coefau , coefbu,                                 &
+  grdvel  )
+
+else
+
+  call grdvni &
+  !==========
+( iu  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
+  iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
+  rtpa(1,iu)   , coefa(1,icliup) , coefb(1,icliup) ,             &
+  grdvel )
+
+endif
 
 !===============================================================================
-! 2.a CALCUL DU TENSEUR DE PRODUCTION POUR LE RIJ STANDARD
+! 2.2 Compute the production term for Rij LRR (iturb =30)
 !===============================================================================
 
 if (iturb.eq.30) then
-
-  !FIXME compute the velocity gradient in once.  ! Allocate temporary arrays for gradients calculation
-  allocate(gradu(ncelet,3), gradv(ncelet,3), gradw(ncelet,3))
 
   do ii = 1 , 6
     do iel = 1, ncel
@@ -191,168 +215,65 @@ if (iturb.eq.30) then
     enddo
   enddo
 
-! CALCUL DU GRADIENT DES 3 COMPOSANTES DE LA VITESSE
-
-  iccocg = 1
-  inc    = 1
-
-! GRADIENT SUIVANT X
-
-  nswrgp = nswrgr(iu)
-  imligp = imligr(iu)
-  iwarnp = iwarni(iu)
-  epsrgp = epsrgr(iu)
-  climgp = climgr(iu)
-  extrap = extrag(iu)
-
-  call grdcel &
-  !==========
- ( iu  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   rtpa(1,iu)   , coefa(1,icliup) , coefb(1,icliup) ,             &
-   gradu  )
-
-
   do iel = 1 , ncel
 
-    produc(1,iel) = produc(1,iel)                                 &
-         - 2.0d0*(rtpa(iel,ir11)*gradu(iel,1) +                   &
-                  rtpa(iel,ir12)*gradu(iel,2) +                   &
-                  rtpa(iel,ir13)*gradu(iel,3) )
+    ! grad u
+
+    produc(1,iel) = produc(1,iel)                                &
+                  - 2.0d0*(rtpa(iel,ir11)*grdvel(iel,1,1) +      &
+                           rtpa(iel,ir12)*grdvel(iel,2,1) +      &
+                           rtpa(iel,ir13)*grdvel(iel,3,1) )
 
     produc(4,iel) = produc(4,iel)                                 &
-         - (rtpa(iel,ir12)*gradu(iel,1) +                         &
-            rtpa(iel,ir22)*gradu(iel,2) +                         &
-            rtpa(iel,ir23)*gradu(iel,3) )
+                  - (rtpa(iel,ir12)*grdvel(iel,1,1) +             &
+                     rtpa(iel,ir22)*grdvel(iel,2,1) +             &
+                     rtpa(iel,ir23)*grdvel(iel,3,1) )
 
     produc(5,iel) = produc(5,iel)                                 &
-         - (rtpa(iel,ir13)*gradu(iel,1) +                         &
-            rtpa(iel,ir23)*gradu(iel,2) +                         &
-            rtpa(iel,ir33)*gradu(iel,3) )
+                  - (rtpa(iel,ir13)*grdvel(iel,1,1) +             &
+                     rtpa(iel,ir23)*grdvel(iel,2,1) +             &
+                     rtpa(iel,ir33)*grdvel(iel,3,1) )
 
-  enddo
-
-! Gradient suivant Y
-
-  nswrgp = nswrgr(iv)
-  imligp = imligr(iv)
-  iwarnp = iwarni(iv)
-  epsrgp = epsrgr(iv)
-  climgp = climgr(iv)
-  extrap = extrag(iv)
-
-  call grdcel &
-  !==========
- ( iv  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   rtpa(1,iv)   , coefa(1,iclivp) , coefb(1,iclivp) ,             &
-   gradv  )
-
-  do iel = 1 , ncel
+    ! grad v
 
     produc(2,iel) = produc(2,iel)                                 &
-         - 2.0d0*(rtpa(iel,ir12)*gradv(iel,1) +                   &
-                  rtpa(iel,ir22)*gradv(iel,2) +                   &
-                  rtpa(iel,ir23)*gradv(iel,3) )
+                  - 2.0d0*(rtpa(iel,ir12)*grdvel(iel,1,2) +       &
+                           rtpa(iel,ir22)*grdvel(iel,2,2) +       &
+                           rtpa(iel,ir23)*grdvel(iel,3,2) )
 
     produc(4,iel) = produc(4,iel)                                 &
-         - (rtpa(iel,ir11)*gradv(iel,1) +                         &
-            rtpa(iel,ir12)*gradv(iel,2) +                         &
-            rtpa(iel,ir13)*gradv(iel,3) )
+                  - (rtpa(iel,ir11)*grdvel(iel,1,2) +             &
+                     rtpa(iel,ir12)*grdvel(iel,2,2) +             &
+                     rtpa(iel,ir13)*grdvel(iel,3,2) )
 
     produc(6,iel) = produc(6,iel)                                 &
-         - (rtpa(iel,ir13)*gradv(iel,1) +                         &
-            rtpa(iel,ir23)*gradv(iel,2) +                         &
-            rtpa(iel,ir33)*gradv(iel,3) )
+                  - (rtpa(iel,ir13)*grdvel(iel,1,2) +             &
+                     rtpa(iel,ir23)*grdvel(iel,2,2) +             &
+                     rtpa(iel,ir33)*grdvel(iel,3,2) )
 
-  enddo
-
-! Gradient suivant Z
-
-  nswrgp = nswrgr(iw)
-  imligp = imligr(iw)
-  iwarnp = iwarni(iw)
-  epsrgp = epsrgr(iw)
-  climgp = climgr(iw)
-  extrap = extrag(iw)
-
-  call grdcel &
-  !==========
- ( iw  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   rtpa(1,iw)   , coefa(1,icliwp) , coefb(1,icliwp) ,             &
-   gradw  )
-
-  do iel = 1 , ncel
+    ! grad w
 
     produc(3,iel) = produc(3,iel)                                 &
-         - 2.0d0*(rtpa(iel,ir13)*gradw(iel,1) +                   &
-                  rtpa(iel,ir23)*gradw(iel,2) +                   &
-                  rtpa(iel,ir33)*gradw(iel,3) )
+                  - 2.0d0*(rtpa(iel,ir13)*grdvel(iel,1,3) +       &
+                           rtpa(iel,ir23)*grdvel(iel,2,3) +       &
+                           rtpa(iel,ir33)*grdvel(iel,3,3) )
 
     produc(5,iel) = produc(5,iel)                                 &
-         - (rtpa(iel,ir11)*gradw(iel,1) +                         &
-            rtpa(iel,ir12)*gradw(iel,2) +                         &
-            rtpa(iel,ir13)*gradw(iel,3) )
+                  - (rtpa(iel,ir11)*grdvel(iel,1,3) +             &
+                     rtpa(iel,ir12)*grdvel(iel,2,3) +             &
+                     rtpa(iel,ir13)*grdvel(iel,3,3) )
 
     produc(6,iel) = produc(6,iel)                                 &
-         - (rtpa(iel,ir12)*gradw(iel,1) +                         &
-            rtpa(iel,ir22)*gradw(iel,2) +                         &
-            rtpa(iel,ir23)*gradw(iel,3) )
+                  - (rtpa(iel,ir12)*grdvel(iel,1,3) +             &
+                     rtpa(iel,ir22)*grdvel(iel,2,3) +             &
+                     rtpa(iel,ir23)*grdvel(iel,3,3) )
 
   enddo
-
-  ! Free memory
-  deallocate(gradu, gradv, gradw)
-
-else
-
-!===============================================================================
-! 2.b Calcul du gradient de vitesse pour le Rij SSG et EBRSM
-!     ATTENTION: grdvit(iel,j,i) = dUi/dxj(IEL)
-!===============================================================================
-
-! CALCUL DU GRADIENT DES 3 COMPOSANTES DE LA VITESSE
-
-  iccocg = 1
-  inc    = 1
-
-  nswrgp = nswrgr(iu)
-  imligp = imligr(iu)
-  iwarnp = iwarni(iu)
-  epsrgp = epsrgr(iu)
-  climgp = climgr(iu)
-  extrap = extrag(iu)
-
-  if (ivelco.eq.1) then
-
-    ilved = .false.
-
-    call grdvec &
-    !==========
-  ( iu     , imrgra , inc    , nswrgp , imligp ,                   &
-    iwarnp , nfecra ,                                              &
-    epsrgp , climgp , extrap ,                                     &
-    ilved  ,                                                       &
-    rtpa(1,iu) ,  coefau , coefbu,                                 &
-    grdvit  )
-
-  else
-
-    call grdvni &
-    !==========
-  ( iu  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
-    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-    rtpa(1,iu)   , coefa(1,icliup) , coefb(1,icliup) ,             &
-    grdvit )
-
-  endif
 
 endif
 
-
 !===============================================================================
-! 3.  CALCUL DU GRADIENT DE ROM POUR LES TERMES DE GRAVITE
+! 3. Compute the density gradient for buoyant terms
 !===============================================================================
 
 if(igrari.eq.1) then
@@ -387,7 +308,7 @@ if(igrari.eq.1) then
     ipbroo = ipprob(iroma)
   endif
 
-  call grdcel                                                     &
+  call grdcel &
   !==========
  ( iivar  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
@@ -395,7 +316,6 @@ if(igrari.eq.1) then
    gradro )
 
 endif
-
 
 !===============================================================================
 ! 4.  Boucle sur les variables Rij (6 variables)
@@ -432,9 +352,9 @@ do isou = 1, 6
     gammap => smacel(1:ncesmp,ipr)
   endif
 
-  !     Rij-epsilon standard (LRR)
+  ! Rij-epsilon standard (LRR)
   if (iturb.eq.30) then
-    call resrij                                                   &
+    call resrij &
     !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   , isou   , ipp    ,                                     &
@@ -442,21 +362,22 @@ do isou = 1, 6
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , produc , gradro ,                            &
    ckupdc , smcelp , gammap ,                                     &
-   viscf  , viscb  , coefax ,                                     &
+   viscf  , viscb  ,                                              &
    tslage , tslagi ,                                              &
    smbr   , rovsdt )
 
+  ! Rij-epsilon SSG or EBRSM
   elseif (iturb.eq.31.or.iturb.eq.32) then
-    ! Rij-epsilon SSG or EBRSM
-    call resssg                                                   &
+
+    call resssg &
     !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   , isou   , ipp    ,                                     &
    icepdc , icetsm , itpsmp ,                                     &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , grdvit , gradro ,                            &
+   coefa  , coefb  , grdvel , gradro ,                            &
    ckupdc , smcelp , gammap ,                                     &
-   viscf  , viscb  , coefax ,                                     &
+   viscf  , viscb  ,                                              &
    tslage , tslagi ,                                              &
    smbr   , rovsdt )
   endif
@@ -464,7 +385,7 @@ do isou = 1, 6
 enddo
 
 !===============================================================================
-! 5.  RESOLUTION DE EPSILON
+! 5. Solve Epsilon
 !===============================================================================
 
 ivar   = iep
@@ -477,20 +398,20 @@ if (ncesmp.gt.0) then
   gammap => smacel(1:ncesmp,ipr)
 endif
 
-call reseps                                                       &
+call reseps &
 !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   , isou   , ipp    ,                                     &
    icepdc , icetsm , itpsmp ,                                     &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , grdvit , produc , gradro ,                   &
+   coefa  , coefb  , grdvel , produc , gradro ,                   &
    ckupdc , smcelp , gammap ,                                     &
    viscf  , viscb  ,                                              &
    tslagr ,                                                       &
    smbr   , rovsdt )
 
 !===============================================================================
-! 6. CLIPPING
+! 6. Clipping
 !===============================================================================
 
 if (iturb.eq.32) then
@@ -499,7 +420,7 @@ else
   iclip = 2
 endif
 
-call clprij                                                       &
+call clprij &
 !==========
  ( ncelet , ncel   , nvar   ,                                     &
    iclip  ,                                                       &
@@ -510,42 +431,41 @@ call clprij                                                       &
 deallocate(viscf, viscb)
 deallocate(smbr, rovsdt)
 if (allocated(gradro)) deallocate(gradro)
-if (allocated(coefax)) deallocate(coefax)
 if (allocated(produc)) deallocate(produc)
-if (allocated(grdvit)) deallocate(grdvit)
+deallocate(grdvel)
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 #if defined(_CS_LANG_FR)
 
- 1000 format(/,                                                   &
-'   ** RESOLUTION DU Rij-EPSILON LRR             ',/,&
-'      -----------------------------             ',/)
- 1001 format(/,                                                   &
-'   ** RESOLUTION DU Rij-EPSILON SSG             ',/,&
-'      -----------------------------             ',/)
- 1002 format(/,                                                   &
-'   ** RESOLUTION DU Rij-EPSILON EBRSM                        ',/,&
-'      --------------------------------------------           ',/)
+ 1000 format(/,                                      &
+'   ** RESOLUTION DU Rij-EPSILON LRR'             ,/,&
+'      -----------------------------'             ,/)
+ 1001 format(/,                                      &
+'   ** RESOLUTION DU Rij-EPSILON SSG'             ,/,&
+'      -----------------------------'             ,/)
+ 1002 format(/,                                      &
+'   ** RESOLUTION DU Rij-EPSILON EBRSM'           ,/,&
+'      -------------------------------'           ,/)
 
 #else
 
- 1000 format(/,                                                   &
+ 1000 format(/,                                      &
 '   ** SOLVING Rij-EPSILON LRR'                   ,/,&
 '      -----------------------'                   ,/)
- 1001 format(/,                                                   &
+ 1001 format(/,                                      &
 '   ** SOLVING Rij-EPSILON SSG'                   ,/,&
 '      -----------------------'                   ,/)
- 1002 format(/,                                                   &
-'   ** SOLVING Rij-EPSILON EBRSM                              ',/,&
-'      --------------------------------------                 ',/)
+ 1002 format(/,                                      &
+'   ** SOLVING Rij-EPSILON EBRSM'                 ,/,&
+'      -------------------------'                 ,/)
 
 #endif
 
 !----
-! FIN
+! End
 !----
 
 return

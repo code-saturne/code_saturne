@@ -210,6 +210,7 @@ coef = cwale**2 * radeux
 do iel = 1, ncel
 
   ! Dudx is interleaved, but not gradv...
+  ! gradv(iel, xyz, uvw)
   dudx(1,1) = gradv(iel,1,1)
   dudx(1,2) = gradv(iel,2,1)
   dudx(1,3) = gradv(iel,3,1)

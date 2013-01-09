@@ -183,15 +183,16 @@ endif
 
 do iel = 1, ncel
 
+  ! gradv(iel, xyz, uvw)
   s11  = gradv(iel,1,1)
   s22  = gradv(iel,2,2)
   s33  = gradv(iel,3,3)
-  dudy = gradv(iel,1,2)
-  dvdx = gradv(iel,2,1)
-  dudz = gradv(iel,1,3)
-  dwdx = gradv(iel,3,1)
-  dvdz = gradv(iel,2,3)
-  dwdy = gradv(iel,3,2)
+  dudy = gradv(iel,2,1)
+  dvdx = gradv(iel,1,2)
+  dudz = gradv(iel,3,1)
+  dwdx = gradv(iel,1,3)
+  dvdz = gradv(iel,3,2)
+  dwdy = gradv(iel,2,3)
 
   propce(iel,ipcvst) = s11**2 + s22**2 + s33**2       &
                      + 0.5d0*((dudy+dvdx)**2          &

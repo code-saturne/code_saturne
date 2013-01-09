@@ -26,8 +26,7 @@ subroutine rijech &
  ( nvar   , nscal  ,                                              &
    ivar   , isou   , ipp    ,                                     &
    rtp    , rtpa   , propce , propfa , propfb ,                   &
-   coefa  , coefb  , produc , smbr   ,                            &
-   coefax , coefbx )
+   coefa  , coefb  , produc , smbr   )
 
 !===============================================================================
 ! FONCTION :
@@ -58,8 +57,6 @@ subroutine rijech &
 ! produc           ! tr ! <-- ! production                                     !
 !  (6,ncelet)      !    !     !                                                !
 ! smbr(ncelet      ! tr ! <-- ! tableau de travail pour sec mem                !
-! coefax,coefbx    ! tr ! --- ! tableau de travail pour les cond.              !
-!  (nfabor)        !    !     !    aux limites de la dist. paroi               !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -99,7 +96,6 @@ double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision produc(6,ncelet)
 double precision smbr(ncelet)
-double precision coefax(nfabor), coefbx(nfabor)
 
 ! Local variables
 
@@ -117,6 +113,7 @@ double precision aa    , bb    , xnorme
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: produk, epsk
 double precision, allocatable, dimension(:) :: w2, w3, w4, w6
+double precision, allocatable, dimension(:) :: coefax, coefbx
 
 !===============================================================================
 
@@ -187,6 +184,9 @@ elseif(abs(icdpar).eq.1) then
 !       La distance a la paroi vaut 0 en paroi
 !         par definition et obeit a un flux nul ailleurs
 
+  ! Allocate temporary arrays
+  allocate(coefax(nfabor), coefbx(nfabor))
+
   do ifac = 1, nfabor
     if (itypfb(ifac).eq.iparoi .or. itypfb(ifac).eq.iparug) then
       coefax(ifac) = 0.0d0
@@ -219,6 +219,8 @@ elseif(abs(icdpar).eq.1) then
    dispar , coefax , coefbx ,                                     &
    grad   )
 
+  ! Free memory
+  deallocate(coefax, coefbx)
 
 !     Normalisation (attention, le gradient peut etre nul, parfois)
 

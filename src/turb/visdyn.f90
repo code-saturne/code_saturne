@@ -228,6 +228,7 @@ enddo
 
 do iel = 1, ncel
 
+  ! gradv(iel, xyz, uvw)
   s11   = gradv(iel,1,1)
   s22   = gradv(iel,2,2)
   s33   = gradv(iel,3,3)
