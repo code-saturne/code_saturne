@@ -114,9 +114,9 @@ _code_saturne() {
             ;;
         gui)
             case ${prev} in
-                -f|--file)  _filedir; return 0;;
+                -p|--file)  _filedir; return 0;;
                 -b|--batch) COMPREPLY=( ); return 0;;
-                *) cmdOpts="-f --file -n --new -z --no-splash";;
+                *) cmdOpts="-p --file -n --new -z --no-splash";;
             esac
             ;;
         info)
