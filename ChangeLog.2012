@@ -1,0 +1,841 @@
+2012-12-19 14:08  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4335] ., src/base/cs_interface.c: Merge rev. 4332 from trunk
+	  (fix parallel/periodic interface renumbering bug leading to some
+	  crashes).
+
+2012-12-17 15:07  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4308] ., preprocessor/appli/ecs_cmd.c: Merge rev. 4251 from
+	  trunk (fix preprocessor command line for MED when CGNS not
+	  present).
+
+2012-12-13 13:44  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4273] src/lagr/lagcou.f90: Merge rev. 4270 from trunk (fix in
+	  lagrangian module).
+
+2012-12-07 12:52  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4262] ., m4/cs_med.m4, preprocessor/appli/Makefile.am,
+	  src/apps/Makefile.am: Merge rev. 4259 from trunk (add rpath info
+	  for MED).
+
+2012-12-03 14:20  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4233] ., m4/cs_scotch.m4: Merge rev. 4230 from trunk (update
+	  PT-SCOTCH/SCOTCH detection for version 6.0).
+
+2012-11-23 13:37  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4207] ., po/fr.po, src/base/cs_post.c: Merge rev. 4204 from
+	  trunk (fix crash in moments postprocessing for sub-meshes).
+
+2012-11-07 17:40  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4135] extras/installer/install_saturne.py: Update installer
+	  script.
+
+2012-11-07 17:03  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4132] configure.ac: Bump release version to 2.2.3.
+
+2012-11-07 16:05  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4131] gui/Pages/BatchRunningView.py: Merge rev. 4128 from trunk
+	  (ensure GUI executes or submits run from SCRIPTS directory).
+
+2012-10-31 10:10  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4090] src/gui/cs_gui_boundary_conditions.c: Merge rev. 4080
+	  from trunk (remove dead code which generates a FPE).
+
+2012-10-29 13:19  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4063] src/base/modini.f90: Merge rev. 3555 from trunk
+	  (postrocess deformation with ALE).
+
+2012-10-29 09:27  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4061] ., libple/src/ple_locator.c: Merge rev. 4059 from trunk
+	  (Fix extra count in PLE flags exchange).
+
+2012-10-19 13:04  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4049] src/base/fldtri.f90: Merge rev. 3499 from trunk (Only map
+	  coefa/coafb to fields where boundary faces are present to avoid
+	  bounds-checking error).
+
+2012-10-18 16:17  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4043] ., libple/INSTALL, libple/config/ple_auto_flags.sh,
+	  libple/configure.ac, libple/sbin/bootstrap,
+	  libple/src/Makefile.am, libple/src/ple_locator.c,
+	  libple/src/ple_locator.h, libple/tests/Makefile.am: Merge rev.
+	  4038 from trunk (PLE library fixes) and sync. PLE with trunk.
+
+2012-10-17 12:55  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r4028] gui/Base/MainView.py: Merge rev. 3748 from trunk (replace
+	  deprecated signals in GUI for recent PyQt versions).
+
+2012-10-16 09:27  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r4017] src/base/dttvar.f90: Merge rev. 4014 from trunk (fix in
+	  steady algorithm).
+
+2012-09-03 14:28  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3828] ., src/fvm/fvm_to_medcoupling.cxx: Merge rev. 3824 from
+	  trunk (fix MEDCoupling plugin compilation when MPI is not used).
+
+2012-09-03 14:28  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3827] ., src/base/cs_file.c: Merge rev. 3818 from trunk (fix
+	  serializer bug occuring when some blocks are empty).
+
+2012-08-20 13:46  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r3792] src/base/fldini.f90: Merge rev. 3787 from trunk (fix a
+	  bug in computation of moments).
+
+2012-08-20 12:46  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3783] src/base/fldini.f90: Merge rev. 3780 from trunk (fixes
+	  for local time step and tpucou postprocessing.)
+
+2012-07-26 08:48  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3683] src/fvm/Makefile.am: Merge rev. 3681 from trunk (remove
+	  -dlopen flag for fvm_medcoupling plugin as it defeats the
+	  plugin's purpose).
+
+2012-07-25 08:48  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3664] bin/cs_package.py.in: Fix bug introduced by merge from
+	  rev. 3550.
+
+2012-07-24 15:51  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3658] src/apps/Makefile.am, src/bft/Makefile.am,
+	  src/mei/Makefile.am: Adjust build system so that installed
+	  libraries are the same as for previous releases on this branch.
+
+2012-07-24 15:49  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3657] src/fvm/fvm_part_to_block.c: Add consistency test in
+	  debug mode when passing index from partition to block.
+
+2012-07-23 14:39  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3634] config/cs_auto_flags.sh, configure.ac,
+	  libple/config/ple_auto_flags.sh, m4/cs_blas.m4, po/fr.po: Merge
+	  build system updates from trunk.
+
+2012-07-18 13:18  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3577] ., src/base/fldini.f90: Merge rev. 3575 from trunk (fix
+	  postprocessing of moments).
+
+2012-07-16 13:02  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3550] ., Makefile.am, bin/cs_compile.py, bin/cs_package.py.in,
+	  configure.ac, m4/cs_hdf5.m4, m4/cs_metis.m4, m4/cs_scotch.m4,
+	  src/apps/Makefile.am, src/bft/Makefile.am, src/mei/Makefile.am:
+	  Merge build scripts robustness improvements from trunk.
+
+2012-07-16 12:56  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3549] docs/install/install.tex: Update install documentation
+	  examples.
+
+2012-07-16 10:53  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3546] src/mesh/cs_join_util.c: Merge rev. 3545 from trunk (fix
+	  for mesh joining bug introduced in rev. 2824).
+
+2012-07-04 16:55  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3512] ., extras/changelog/authors.xml: Merge rev. 3511 from
+	  trunk (update authors for ChangeLog generation).
+
+2012-07-02 10:13  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3492] extras/installer/install_saturne.py: Installer; merge
+	  rev. 3491 from trunk (CGNS installed after HDF5).
+
+2012-06-19 09:42  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3467] ., bin/cs_exec_environment.py: Merge rev. 3466 from trunk
+	  (fix typo preventing run of solver from C-shell variant).
+
+2012-06-14 14:04  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3465] m4/cs_scotch.m4: Merge rev. 3464 from trunk (fix
+	  detection of SCOTCH).
+
+2012-05-11 07:59  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3419] bin/cs_create.py: Merge rev. 3302 from trunk (use package
+	  name for user_examples).
+
+2012-05-04 14:34  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r3404] src/base/navsto.f90, src/base/navstv.f90: Revert commit
+	  3364.
+
+2012-05-04 13:49  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3399] src/gui/cs_gui_radiative_transfer.c: Merge rev. 3398 from
+	  trunk (fix memory leak in radiative transfer with GUI).
+
+2012-05-03 16:28  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3388] src/fvm/fvm_to_med.c: Fix compilation bug when using MED
+	  2.3.
+
+2012-04-25 11:37  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3373] configure.ac, extras/installer/install_saturne.py: Bump
+	  version to 2.2.2.
+
+2012-04-25 11:20  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r3371] src/base/navsto.f90, src/base/navstv.f90: Merge rev.3364
+	  from trunk (Fix for ALE and rotating mesh when nterup>1).
+
+2012-04-25 10:43  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3367] src/base/cs_ale.c: Fix ALE displacement bug.
+
+2012-04-25 10:42  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3366] src/base/cs_ale.c: Revert spurious commit.
+
+2012-04-25 10:34  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3365] bin/cs_exec_environment.py, po/fr.po, src/base/cs_ale.c:
+	  Merge rev. 3363 from trunk (fix typo in script).
+
+2012-04-12 15:02  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3297] extras/installer/install_saturne.py: Update installer.
+
+2012-04-12 14:51  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3295] configure.ac: Bump version number to 2.2.1.
+
+2012-04-12 14:49  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3294] gui/Pages/FluidStructureInteractionView.py: Merge rev.
+	  3291 from trunk (fix GUI bug preventing negative structure
+	  displacements).
+
+2012-04-11 11:28  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3289] bin/cs_exec_environment.py: Merge rev. 3286 from trunk
+	  (fix for Sun Grid Engine environment).
+
+2012-04-11 11:28  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3288] src/user/cs_user_physical_properties.f90: Merge rev. 3286
+	  from trunk (ensure user examples are not applied by default).
+
+2012-04-04 14:18  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3268] src/user_examples/Makefile.in[DEL]: Remove unversioned
+	  file.
+
+2012-04-04 14:17  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3267] src/user_examples/Makefile.am: Merge rev. 3266 from trunk
+	  (user example code version number issue).
+
+2012-04-04 12:18  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3264] src/apps/cs_partition.c: Merge rev.3262 from trunk (fix
+	  for parallel partitioning with periodicity).
+
+2012-04-04 12:17  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3263] bin/cs_case.py, po/fr.po: Merge rev.3261 from trunk (fix
+	  in script for parallel partitioning).
+
+2012-03-29 18:02  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3246] bin/cs_create.py, configure.ac, po/fr.po,
+	  src/Makefile.am, src/user/cs_user_boundary_conditions.f90,
+	  src/user/cs_user_initialization.f90, src/user_examples[CPY],
+	  src/user_examples/Makefile.am[CPY],
+	  src/user_examples/cs_user_boundary_conditions-advanced.f90[CPY],
+	  src/user_examples/cs_user_boundary_conditions-atmospheric.f90[CPY],
+	  src/user_examples/cs_user_boundary_conditions-base.f90[CPY],
+	  src/user_examples/cs_user_boundary_conditions-compressible.f90[CPY],
+	  src/user_examples/cs_user_boundary_conditions-cooling_towers.f90[CPY],
+	  src/user_examples/cs_user_boundary_conditions-electric_arcs.f90[CPY],
+	  src/user_examples/cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.f90[CPY],
+	  src/user_examples/cs_user_boundary_conditions-fuel.f90[CPY],
+	  src/user_examples/cs_user_boundary_conditions-gas_3ptchem.f90[CPY],
+	  src/user_examples/cs_user_boundary_conditions-gas_ebu.f90[CPY],
+	  src/user_examples/cs_user_boundary_conditions-gas_libby_williams.f90[CPY],
+	  src/user_examples/cs_user_boundary_conditions-pulverized_coal.f90[CPY],
+	  src/user_examples/cs_user_boundary_conditions-pulverized_coal_lagrangian.f90[CPY],
+	  src/user_examples/cs_user_initialization-atmospheric.f90[CPY],
+	  src/user_examples/cs_user_initialization-base.f90[CPY],
+	  src/user_examples/cs_user_initialization-cooling_towers.f90[CPY],
+	  src/user_examples/cs_user_initialization-electric_arcs.f90[CPY],
+	  src/user_examples/cs_user_initialization-fuel.f90[CPY],
+	  src/user_examples/cs_user_initialization-gas_3ptchem.f90[CPY],
+	  src/user_examples/cs_user_initialization-gas_ebu.f90[CPY],
+	  src/user_examples/cs_user_initialization-gas_libby_williams.f90[CPY],
+	  src/user_examples/cs_user_initialization-pulverized_coal.f90[CPY],
+	  src/user_examples/cs_user_initialization-time_step.f90[CPY],
+	  src/user_examples/cs_user_initialization-unified_combustion_coal.f90[CPY]:
+	  Merge revs. 3244 and 3245 from trunk (move some^Cser examples to
+	  separate files).
+
+2012-03-29 09:19  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3242] src/fvm/fvm_to_cgns.c: Ensure modification from rev. 3240
+	  is used only with CGNS 3.0 or above.
+
+2012-03-28 16:33  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3241] src/user/cs_user_mesh.c: Remove whitespace.
+
+2012-03-28 16:33  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3240] docs/user/saturne1.tex, docs/user/saturne2.tex,
+	  src/fvm/fvm_to_cgns.c, src/fvm/fvm_to_cgns.h,
+	  src/fvm/fvm_writer.h, src/user/cs_user_postprocess.c: Merge rev.
+	  3237 from trunk (choice of ADF of HDF5 format for CGNS).
+
+2012-03-28 16:31  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3239] po/fr.po, src/fvm/fvm_to_med.c: Merge rev. 3236 from
+	  trunk (fixed MED output bug for meshes containing only vertices).
+
+2012-03-28 16:26  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3238] docs/user/saturne1.tex, po/fr.po, src/fvm/fvm_to_cgns.c:
+	  Merge rev. 3235 from trunk (several fixes for crashes in CGNS
+	  output).
+
+2012-03-26 08:06  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3228] src/gui/cs_gui_radiative_transfer.c: Merge rev. 3227 from
+	  trunk (fix array index for radiative transfer using GUI).
+
+2012-03-23 12:03  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3224] docs/user/saturne1.tex, docs/user/saturne2.tex,
+	  src/atmo/atini1.f90, src/atmo/atphyv.f90, src/base/condli.f90,
+	  src/base/cscini.f90, src/base/distyp.f90, src/base/impini.f90,
+	  src/base/iniini.f90, src/base/initi1.f90, src/base/inivar.f90,
+	  src/base/lecamp.f90, src/base/lecamx.f90, src/base/modini.f90,
+	  src/base/phyvar.f90, src/base/scalai.f90, src/base/varpos.f90,
+	  src/base/vericl.f90, src/base/verini.f90, src/cfbl/cfini1.f90,
+	  src/cogz/coini1.f90, src/comb/cs_coal_param.f90,
+	  src/comb/cs_fuel_param.f90, src/cplv/cpini1.f90,
+	  src/cplv/cplin1.f90, src/cplv/cplphy.f90, src/cplv/cpphyv.f90,
+	  src/ctwr/ctini1.f90, src/ctwr/ctphyv.f90, src/elec/elini1.f90,
+	  src/elec/elphyv.f90, src/pprt/ppphyv.f90, src/rayt/rayopt.f90,
+	  src/user/cs_user_boundary_conditions.f90,
+	  src/user/cs_user_fluid_structure_interaction.f90,
+	  src/user/cs_user_initialization.f90, src/user/cs_user_mesh.c,
+	  src/user/cs_user_parameters.f90,
+	  src/user/cs_user_particle_tracking.f90,
+	  src/user/cs_user_physical_properties.f90,
+	  src/user/cs_user_radiative_transfer.f90, src/user/usalcl.f90,
+	  src/user/uscfth.f90, src/user/uskpdc.f90, src/user/uslag1.f90,
+	  src/user/usray1.f90, src/user/usvpst.f90: Merge rev. 3221 from
+	  trunk (Update messages to account for renaming of user
+	  subroutines).
+
+2012-03-23 11:55  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3223] bin/cs_compile.py, bin/cs_create.py,
+	  src/user/Makefile.am, src/user/cs_user_coupling.c,
+	  src/user/cs_user_fluid_structure_interaction.f90[CPY],
+	  src/user/cs_user_modules.f90[CPY],
+	  src/user/cs_user_parameters.f90[CPY],
+	  src/user/cs_user_particle_tracking.f90[CPY],
+	  src/user/cs_user_physical_properties.f90[CPY],
+	  src/user/cs_user_radiative_transfer.f90[CPY],
+	  src/user/cs_user_source_terms.f90, src/user/usaste.f90[DEL],
+	  src/user/uscfpv.f90[DEL], src/user/uselph.f90[DEL],
+	  src/user/user_modules.f90[DEL], src/user/usini1.f90[DEL],
+	  src/user/uslabo.f90[DEL], src/user/usladp.f90[DEL],
+	  src/user/uslaed.f90[DEL], src/user/uslafe.f90[DEL],
+	  src/user/uslain.f90[DEL], src/user/uslapr.f90[DEL],
+	  src/user/uslaru.f90[DEL], src/user/uslast.f90[DEL],
+	  src/user/uslatc.f90[DEL], src/user/uslatp.f90[DEL],
+	  src/user/usphyv.f90[DEL], src/user/usray3.f90[DEL],
+	  src/user/usray4.f90[DEL], src/user/usray5.f90[DEL],
+	  src/user/ussmag.f90[DEL], src/user/usstru.f90[DEL],
+	  src/user/usvima.f90[DEL], src/user/usvist.f90[DEL]: Merge rev.
+	  3196 and rev. 3205 from trunk (renaming of user subroutine
+	  files).
+
+2012-03-23 11:00  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3222] po/fr.po, src/mesh/cs_mesh_location.c: Merge rev. 3220
+	  from trunk (fix for size computation of default mesh locations).
+
+2012-03-21 10:35  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3210] src/comb/cs_coal_noxst.f90: Remove whitespace.
+
+2012-03-21 10:27  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3207] configure.ac, extras/installer/install_saturne.py,
+	  src/comb/cs_coal_fp2st.f90, src/comb/cs_coal_noxst.f90,
+	  src/comb/cs_coal_physprop.f90, src/comb/cs_fuel_fp2st.f90,
+	  src/comb/cs_fuel_noxst.f90, src/comb/cs_fuel_physprop.f90,
+	  src/cplv/cpvarp.f90: Merge rev. 3206 from trunk (fixes for coal
+	  and fuel combustion).
+
+2012-03-20 14:10  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3194] bin/cs_package.py.in, src/alge/autmgr.f90: Merge rev.
+	  3193 from trunk (fix for alternate compute version).
+
+2012-03-16 17:19  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3181] src/mesh/cs_mesh_location.c: Merge rev. 3180 from trunk
+	  (fix in cs_mesh_location_build()).
+
+2012-03-05 10:15  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3152] extras/installer/install_saturne.py: Fix Code_Saturne
+	  version in installer.
+
+2012-03-05 10:10  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3150] extras/installer/install_saturne.py,
+	  extras/installer/setup: Merge rev. 3149 from trunk (update
+	  external libraries and comments in installer).
+
+2012-03-02 15:14  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3143] m4/cs_modules.m4: Merge rev. 3142 from trunk (test for
+	  environment modules in subshell).
+
+2012-03-02 14:57  David Monfort <david.monfort@edf.fr>
+
+	* [r3138] gui/Pages/BoundaryConditionsMeteoView.py: Merge rev. 3137
+	  from trunk (fix meteo boundary conditions setup in GUI).
+
+2012-03-02 10:31  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3133] extras/batch/batch.SLURM: Merge rev. 3132 from trunk
+	  (change default partition name for SLURM).
+
+2012-03-02 10:27  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3131] Makefile.am, docs/install/install.tex,
+	  extras/code_saturne.cfg[DEL],
+	  extras/code_saturne.cfg.template[CPY]: Merge rev. 3124 from trunk
+	  (move code_saturne.cfg to code_saturne.cfg.template).
+
+2012-02-27 17:11  David Monfort <david.monfort@edf.fr>
+
+	* [r3108] src/turb/turbsa.f90: Merge rev. 3104 from trunk (fix
+	  vorticity calculation in Spalart-Allmaras model).
+
+2012-02-27 17:11  David Monfort <david.monfort@edf.fr>
+
+	* [r3107] src/base/condli.f90: Remove trailing blanks
+
+2012-02-23 16:51  David Monfort <david.monfort@edf.fr>
+
+	* [r3091] src/base/distpr.f90: Merge rev. 2975 from trunk (fixes
+	  for the distance calculation).
+
+2012-02-23 16:48  David Monfort <david.monfort@edf.fr>
+
+	* [r3089] bin/cs_case_domain.py: Merge rev. 2994 from trunk (domain
+	  partitionning fixes in the scripts).
+
+2012-02-23 16:38  David Monfort <david.monfort@edf.fr>
+
+	* [r3087] src/base/condli.f90, src/base/tridim.f90: Merge rev. 3003
+	  from trunk (fixes velocity-components coupling).
+
+2012-02-23 16:13  David Monfort <david.monfort@edf.fr>
+
+	* [r3084] gui/Base/XMLinitialize.py,
+	  gui/Pages/OutputControlModel.py, gui/Pages/OutputControlView.py,
+	  gui/Pages/SolutionDomainModel.py, src/gui/cs_gui_output.c: Merge
+	  rev. 2964, 2977, 2978, 3048 and 3064:3066 from trunk (GUI fixes
+	  and improvement).
+
+2012-02-23 16:11  David Monfort <david.monfort@edf.fr>
+
+	* [r3082] docs/autovnv/autovnv.tex: Merve rev. 3043 from trunk
+	  (autovnv preprocessing example).
+
+2012-02-23 16:04  David Monfort <david.monfort@edf.fr>
+
+	* [r3080] bin/autovnv/Parser.py, bin/autovnv/Study.py,
+	  bin/autovnv/TexMaker.py, bin/cs_autovnv.py,
+	  docs/autovnv/autovnv.tex: Merge rev. 2987, 3034:3036, 3039, 3042,
+	  3047 and 3049 from trunk (autovnv fixes and improvement).
+
+2012-02-23 14:30  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3075] configure.ac, m4/cs_cgns.m4: Warn user that CGNS < 3.1
+	  support is deprecated.
+
+2012-02-23 13:02  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3071] configure.ac, m4/cs_med.m4: Warn user that MED 2.3
+	  support is deprecated.
+
+2012-02-23 13:01  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3070] configure.ac, m4/cs_med.m4: Revert spurious commit mixed
+	  with rev. 3068.
+
+2012-02-23 12:07  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3068] configure.ac, gui/Pages/SolutionVerifView.py,
+	  m4/cs_med.m4: Merge rev. 3067 from trunk (fix bugs in GUI mesh
+	  checking function).
+
+2012-02-22 17:44  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3059] m4/cs_salome.m4: Merge rev. 3058 from trunk (only warn
+	  when disabling MEDCoupling plugin).
+
+2012-02-22 17:22  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3056] src/base/cs_timer.c: Merge rev. 3055 from trunk (fix call
+	  to real-time clock test function).
+
+2012-02-22 17:18  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3054] m4/cs_salome.m4: Merge rev. 3053 from trunk (disable
+	  MEDCoupling plugin for static builds).
+
+2012-02-22 16:32  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3051] src/gui/cs_gui.c: Merge rev. 3050 from trunk (fix reading
+	  of frozen field option using GUI).
+
+2012-02-21 17:45  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3046] src/base/fldini.f90, src/base/fldtri.f90: Merge rev. 3045
+	  from trunk (fix mapping of fields for specific physics).
+
+2012-02-21 13:35  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3041] gui/Pages/CoalCombustionModel.py,
+	  gui/Pages/ConjugateHeatTransferModel.py,
+	  gui/Pages/ThermalScalarModel.py: Merge rev. 3040 from trunk
+	  (remove status flag from XML file's external_coupling tag to
+	  avoid inserting multiple instances of this tag due to different
+	  status settings).
+
+2012-02-20 14:37  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3037] src/gui/cs_gui_mesh.c: Merge rev. 3033 from trunk (fix
+	  crash in smoothing when GUI is not loaded).
+
+2012-02-20 11:06  David Monfort <david.monfort@edf.fr>
+
+	* [r3031] configure.ac: Merge rev. 3030 from trunk (disable shared
+	  libraries for Darwin os).
+
+2012-02-16 16:11  David Monfort <david.monfort@edf.fr>
+
+	* [r3027] gui/Pages/SolutionDomainForm.ui,
+	  gui/Pages/SolutionDomainModel.py,
+	  gui/Pages/SolutionDomainView.py, src/apps/cs_solver.c,
+	  src/gui/cs_gui_mesh.c, src/gui/cs_gui_mesh.h: Merge rev. 3004
+	  from trunk (add mesh smoothing feature GUI, for NEPTUNE_CFD).
+
+2012-02-16 14:05  David Monfort <david.monfort@edf.fr>
+
+	* [r3024] gui/Pages/OutputControlView.py: Fix monitoring points
+	  frequency management in the graphical interface (bis).
+
+2012-02-16 13:41  David Monfort <david.monfort@edf.fr>
+
+	* [r3022] gui/Pages/OutputControlModel.py: Fix monitoring points
+	  frequency management in the graphical interface.
+
+2012-02-16 13:34  David Monfort <david.monfort@edf.fr>
+
+	* [r3021] src/gui/cs_gui.c: Merge rev. 2993 from trunk (split a XML
+	  reader function for NEPTUNE_CFD).
+
+2012-02-16 13:27  David Monfort <david.monfort@edf.fr>
+
+	* [r3019] bin/autovnv/Parser.py, bin/autovnv/Study.py: Merge rev.
+	  2987 from trunk (some fixes for the autovnv tool).
+
+2012-02-14 18:06  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3013] gui/Pages/SolutionVerifView.py: Merge rev. 3012 from
+	  trunk (fix rename of postprocessing output to quality for mesh
+	  check).
+
+2012-02-14 18:00  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3011] gui/Pages/SolutionVerifView.py: Merge rev. 3010 from
+	  trunk (missing handling of periodicity for mesh check).
+
+2012-02-14 17:02  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3009] src/fvm/fvm_point_location.c: Merge rev. 3008 from trunk
+	  (allow smaller minimum denominator for point location).
+
+2012-02-14 13:05  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3007] src/fvm/fvm_point_location.c: Merge rev. 3006 from trunk
+	  (make point location near boundaries more robust).
+
+2012-02-13 16:12  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r3001] src/mesh/cs_join_util.c: Merge rev. 3000 from trunk (fix
+	  mesh joining regression from rev. 2824).
+
+2012-02-06 10:46  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r2991] src/base/cs_post.c: Merge rev. 2989 from trunk (fixes for
+	  postprocessing alias meshes).
+
+2012-02-06 10:45  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r2990] gui/Pages/ThermalScalarModel.py, src/base/dvvpst.f90:
+	  Merge rev. 2984 from trunk (Use English name for postprocessable
+	  input thermal flux.)
+
+2012-02-03 10:44  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r2985] src/base/cs_system_info.c: Merge rev. 2984 from trunk
+	  (fix port to non-linux based systems).
+
+2012-02-02 17:39  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r2981] src/mesh/cs_mesh.c: Merge rev. 2976 from trunk (fix crash
+	  in mesh output in parallel mode for some cases, especially when
+	  the mesh is only one cell thick in the periodic direction).
+
+2012-02-02 17:26  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r2980] src/base/iniusi.f90: Merge rev. 2978 from trunk (default
+	  to multigrid for pressure with GUI when page not visited).
+
+2012-02-02 17:25  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r2979] gui/Pages/SolutionVerifView.py: Merge rev. 2977 from
+	  trunk (mesh checking with GUI for existing mesh_input).
+
+2012-01-26 20:17  David Monfort <david.monfort@edf.fr>
+
+	* [r2971] .[CPY]: Branch version 2.2
+
+2012-01-26 15:42  David Monfort <david.monfort@edf.fr>
+
+	* [r2969] Fix missing memory allocation for some work arrays in the
+	  compressible module.
+
+2012-01-26 12:36  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r2968] CS-CS coupling avalaible in ivelco=1.
+
+2012-01-26 11:06  David Monfort <david.monfort@edf.fr>
+
+	* [r2966] Update French dictionnary.
+
+2012-01-26 11:05  David Monfort <david.monfort@edf.fr>
+
+	* [r2965] Remove trailing blanks.
+
+2012-01-26 11:04  David Monfort <david.monfort@edf.fr>
+
+	* [r2964] Fix a memory leak in the particles management in the XML
+	  reader (patch provided by Mathieu Guingo
+	  <mathieu.guingo@edf.fr>).
+
+2012-01-26 10:58  David Monfort <david.monfort@edf.fr>
+
+	* [r2963] Use the libtool dlopen directive only when the plugin is
+	  present.
+
+2012-01-26 09:13  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r2962] Transparent commit. Minor typos correction.
+
+2012-01-24 20:24  David Monfort <david.monfort@edf.fr>
+
+	* [r2960] Remove the multigrid algorithm by the default for eletric
+	  variables.
+
+2012-01-24 19:26  David Monfort <david.monfort@edf.fr>
+
+	* [r2957] Minor fixes for the time monitoring outputs.
+
+2012-01-24 19:15  David Monfort <david.monfort@edf.fr>
+
+	* [r2954] Minor fixes to the BL v2-k turbulence model (patch
+	  provided by Flavien Billard <flavien.billard@manchester.ac.uk>).
+
+2012-01-24 19:10  David Monfort <david.monfort@edf.fr>
+
+	* [r2953] Improve MEDCoupling detection when only the SALOME path
+	  is provided. Fix warnings related to a dlopen call by a correct
+	  cast. Use the libtool dlopen detection instead of ours.
+
+2012-01-24 18:17  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r2952] Fix crash in mesh output in serial mode for some cases
+	  (especially when the mesh is only one cell thick in the periodic
+	  direction). A similar bug in parallel mode is not fixed yet.
+
+2012-01-24 16:33  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r2951] Fix crash with probes in Lagrangian module.
+
+2012-01-24 13:26  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r2950] Remove several compilation warnings.
+
+2012-01-24 12:38  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r2949] Fix plugin loading/unloading when multiple writers use a
+	  same plugin.
+
+2012-01-24 09:08  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r2948] Update comments due to the renamming of usclim.
+
+2012-01-23 18:44  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r2947] Add field boundary condition coefficients information.
+
+2012-01-23 17:05  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r2946] Correct comments in cs_user_boundary_conditions.f90. No
+	  more "phases"!
+
+2012-01-23 16:22  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r2945] Use reserved name for temperature or enthalpy field.
+
+2012-01-23 11:10  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r2944] Renaming in resopv.f90 and add a comment on how to use
+	  the velocity components coupled solver.
+
+2012-01-18 17:18  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r2943] GUI: add warning box when Syrthes coupling is present and
+	  runcase was not updated.
+
+2012-01-18 13:31  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r2942] Add initial MEDCoupling output plugin writer.
+
+2012-01-18 13:25  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r2941] Add plugin mechanism when dlopen/dlsym/dlclose are
+	  available.
+
+2012-01-13 18:50  David Monfort <david.monfort@edf.fr>
+
+	* [r2940] Add missing ChangeLog file for 2011.
+
+2012-01-13 16:49  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r2935] GUI must load environment modules to avoid issues with
+	  subprocesses.
+
+2012-01-13 16:24  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r2934] Add postprocessing options for Syrthes in
+	  runcase_coupling.
+
+2012-01-13 14:16  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r2933] Interleaved ALE displacement array for ivelco=1.
+
+2012-01-13 12:31  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r2932] Add unit test for cs_interface_set_sum().
+
+2012-01-13 12:30  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r2931] Fix bug in cs_interface_set_sum() for non-interlaced
+	  case.
+
+2012-01-12 18:42  David Monfort <david.monfort@edf.fr>
+
+	* [r2928] Fix code/code coupling definition examples.
+
+2012-01-12 17:05  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r2926] Make detection of initial run directory more robust.
+
+2012-01-12 14:34  David Monfort <david.monfort@edf.fr>
+
+	* [r2924] Add a variable related to the Fortran modules directory
+	  so as to enable NEPTUNE_CFD to compile Code_Saturne Fortran
+	  files.
+
+2012-01-05 16:18  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r2923] Field logging presentation improvements.
+
+2012-01-05 16:14  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r2922] XML reader robustness improvement.
+
+2012-01-05 16:12  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r2921] Theory guide: New macro for space discretization to be
+	  consistent with sushi notations.
+
+2012-01-05 16:11  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r2920] Typo and style fixes.
+
+2012-01-05 15:49  David Monfort <david.monfort@edf.fr>
+
+	* [r2919] Move a static global constant in the correct block of the
+	  file.
+
+2012-01-04 14:40  David Monfort <david.monfort@edf.fr>
+
+	* [r2918] Bump copyright years to 1998-2012.
+
+2012-01-04 14:37  David Monfort <david.monfort@edf.fr>
+
+	* [r2917] Add an update-copyright rule to the top Makefile.am so as
+	  to automatically update the copyright years.
+
+2012-01-04 14:03  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r2916] In case of periodicity of rotation with Rij, the drdxyz
+	  array is now interleaved.
+
+2012-01-04 13:54  David Monfort <david.monfort@edf.fr>
+
+	* [r2914] Remove a spurious line that prevented a correct setup for
+	  radiative transfer modelling.
+
+2012-01-04 09:43  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r2913] Renaming and interleaved version of the local
+	  _apply_rotation_tensor function for the periodicity.
+
+2012-01-03 11:26  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r2912] Complete update from revision 2906.
+
+2012-01-03 11:22  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r2911] Fix missing braces in revision 2871.
+
