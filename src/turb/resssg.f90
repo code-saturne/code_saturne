@@ -29,7 +29,7 @@ subroutine resssg &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , grdvit , gradro ,                            &
    ckupdc , smcelp , gamma  ,                                     &
-   viscf  , viscb  , coefax ,                                     &
+   viscf  , viscb  ,                                              &
    tslage , tslagi ,                                              &
    smbr   , rovsdt )
 
@@ -77,9 +77,6 @@ subroutine resssg &
 ! gamma(ncesmp)    ! tr ! <-- ! valeur du flux de masse                        !
 ! viscf(nfac)      ! tr ! --- ! visc*surface/dist aux faces internes           !
 ! viscb(nfabor     ! tr ! --- ! visc*surface/dist aux faces de bord            !
-! coefax(nfabor    ! tr ! --- ! tab de trav pour cond.lim. paroi               !
-!                  ! tr ! --- !   attention : uniquement avec echo             !
-!                  ! tr ! --- !   de paroi et abs(icdpar) = 1                  !
 ! tslage(ncelet    ! tr ! <-- ! ts explicite couplage retour lagr.             !
 ! tslagi(ncelet    ! tr ! <-- ! ts implicite couplage retour lagr.             !
 ! smbr(ncelet      ! tr ! --- ! tableau de travail pour sec mem                !
@@ -129,7 +126,7 @@ double precision grdvit(ncelet,3,3)
 double precision gradro(ncelet,3)
 double precision ckupdc(ncepdp,6)
 double precision smcelp(ncesmp), gamma(ncesmp)
-double precision viscf(nfac), viscb(nfabor), coefax(nfabor)
+double precision viscf(nfac), viscb(nfabor)
 double precision tslage(ncelet),tslagi(ncelet)
 double precision smbr(ncelet), rovsdt(ncelet)
 
