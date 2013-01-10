@@ -449,6 +449,7 @@ CS_AC_TEST_HDF5
 CS_AC_TEST_CGNS
 CS_AC_TEST_MED
 CS_AC_TEST_CCM
+CS_AC_TEST_EOS
 CS_AC_TEST_ZLIB
 CS_AC_TEST_SALOME
 CS_AC_TEST_MEDCOUPLING
@@ -489,7 +490,7 @@ AC_SUBST(cs_have_frontend)
 AC_ARG_VAR([PYTHON], [the Python interpreter])
 AM_PATH_PYTHON(["2.4"])
 
-# On MinGW hosts, Automake/Python mixes Windows-style and GNU-style paths 
+# On MinGW hosts, Automake/Python mixes Windows-style and GNU-style paths
 # It seems better to use the standard way of installing Python modules,
 # as it is on Unix systems (whichever is chosen, Python modules will be
 # freezed by cx_freeze for Windows packaging).
@@ -918,6 +919,7 @@ echo " MEDCoupling support: "$cs_have_medcoupling""
 if test x$cs_have_medcoupling = xyes ; then
   echo " ParaMEDMEM support: "$cs_have_paramedmem""
 fi
+echo " EOS support: "$cs_have_eos""
 echo " SALOME GUI support: "$cs_have_salome_gui""
 echo " SALOME Kernel support: "$cs_have_salome_kernel""
 echo " Dynamic loader support (for YACS): "$cs_have_dlloader""

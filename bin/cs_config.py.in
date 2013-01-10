@@ -88,7 +88,7 @@ class config:
         # List of optionnal libraries
 
         self.optlibs = ['adf', 'blas', 'ccm', 'cgns', 'hdf5', 'libxml2',
-                        'med', 'medcoupling', 'paramedmem',
+                        'med', 'medcoupling', 'paramedmem', 'eos'
                         'metis', 'mpi', 'scotch']
         self.libs = {}
 
@@ -173,6 +173,13 @@ class config:
                          cppflags = "@PARAMEDMEM_CPPFLAGS@",
                          ldflags = "@PARAMEDMEM_LDFLAGS@",
                          libs = "@PARAMEDMEM_LIBS@")
+
+        self.libs['eos'] = \
+            prerequisite("EOS",
+                         have = "@cs_have_eos@",
+                         cppflags = "@EOS_CPPFLAGS@",
+                         ldflags = "@EOS_LDFLAGS@",
+                         libs = "@EOS_LIBS@")
 
         self.libs['metis'] = \
             prerequisite("METIS",

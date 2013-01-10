@@ -256,6 +256,8 @@ The list of third-party software usable with \CS is provided here:
       so \scotch or \ptscotch may be preferred (\CS may be built with both
       \metis and \scotch libraries).
 
+\item \texttt{eos-1.2} may be used for thermodynamical properties of fluids.
+
 \end{itemize}
 
 For developers, the GNU Autotools (Autoconf, Automake, Libtool) as
@@ -322,7 +324,7 @@ not provide these libraries, there are several alternatives:
       When this is finished, the local Python interpreter contains
       the PyQt4 bindings, and may be used by \CS's \texttt{configure}
       script by passing \texttt{PYTHON=<path\_to\_python\_executable}.
-     
+
 \item add Python Qt4 bindings as a Python extension module for an existing
       Python installation. This is a more elegant solution than the previous
       one, and avoids requiring rebuilding Python, but if the user does not
@@ -457,7 +459,7 @@ for example:
 Some older system's {\tt make} command may not support compilation
 in a directory different from the source directory ({\tt VPATH}
 support). In this case, installing and using the GNU {\tt gmake}
-tool instead of the native {\tt make} is recommended. 
+tool instead of the native {\tt make} is recommended.
 
 \subsection{Source trees obtained through a source code repository\label{sec:preparerepo}}
 
@@ -500,7 +502,7 @@ its own documentation.
 To obtain the full list of available configuration options,
 run: {\tt configure~--help}.
 
-Note that for all options starting with {\tt --enable-}, 
+Note that for all options starting with {\tt --enable-},
 there is a matching options with {\tt --disable-}. Similarly,
 for every {\tt --with-}, {\tt --without-} is also possible.
 
@@ -586,7 +588,7 @@ in which case making the build relocatable would be nonsense anyways,
 so this is not an issue.
 \footnote{In the special case of packaging the code, which
 may require both fine-grained control of the installation directories
-and the possibility to support options such as \texttt{dpgg}'s 
+and the possibility to support options such as \texttt{dpgg}'s
 \texttt{--instdir}, it is assumed the packager has sufficient knowledge to
 update both \emph{rpath} information and paths in scripts in the executables
 and python package directories of a non-relocatable build, and that the
@@ -637,7 +639,7 @@ contain different flags, so they are in conflict.
 
 Also, some MPI compiler wrappers may include optimization options
 used to build MPI, which may be different from those we wish to use
-that were passed. 
+that were passed.
 
 To avoid issues with MPI wrappers, it is possible to select an
 MPI library using the \texttt{--with-mpi} option to \texttt{configure}.
@@ -772,6 +774,7 @@ build on a cluster named \texttt{ivanoe}, using the Intel compilers
 \textcolor{Violet}{--with-ccm}=\textcolor{OliveGreen}{\$CS\_OPT}/libccmio-2.06.23/arch/ivanoe \textbackslash \\
 \textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-5.1.12/arch/ivanoe\_ompi \textbackslash \\
 \textcolor{Violet}{--with-metis}=\textcolor{OliveGreen}{\$CS\_OPT}/parmetis-4.0/arch/ivanoe\_ompi \textbackslash \\
+\textcolor{Violet}{--with-eos}/\textcolor{OliveGreen}{\$CS\_OPT}/eos-1.2.0/arch/ivanoe\_ompi \textbackslash \\
 \textcolor{red}{CC}=mpicc \textcolor{red}{FC}=ifort \textcolor{red}{CXX}=icpc
 }\end{minipage}}
 
@@ -1104,11 +1107,11 @@ library from an existing \CS install.
 
 If using the bash shell, you may source a bash completion file,
 so as to benefit from shell completion for \CS commands
-and options, either using 
+and options, either using
 
 \texttt{. <install-prefix>/etc/bash\_completion.d/code\_saturne}
 
-or 
+or
 
 \texttt{source <install-prefix>/etc/bash\_completion.d/code\_saturne}
 
