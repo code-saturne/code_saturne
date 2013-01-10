@@ -118,12 +118,13 @@ BEGIN_C_DECLS
  * Get output control value parameters.
  *
  * parameters:
- *   param                -->  name of the parameter
- *   keyword             <--   output control parameter
+ *   param               <--   name of the parameter
+ *   keyword             -->   output control parameter
  *----------------------------------------------------------------------------*/
 
-static void cs_gui_output_value(const char *const param,
-                                int  *const keyword)
+static void
+_output_value(const char  *const param,
+              int         *const keyword)
 {
   char *path = NULL;
   char *choice = NULL;
@@ -137,13 +138,14 @@ static void cs_gui_output_value(const char *const param,
     cs_xpath_add_attribute(&path, "status");
     if(cs_gui_get_status(path, &result)) *keyword = result;
 
-  } else {
+  }
+  else {
 
     cs_xpath_add_function_text(&path);
     if (cs_gui_get_int(path, &result)) *keyword = result;
 
-
   }
+
   BFT_FREE(choice);
   BFT_FREE(path);
 }
@@ -152,12 +154,13 @@ static void cs_gui_output_value(const char *const param,
  * Get output control value parameters for frequency output
  *
  * parameters:
- *   param                -->  name of the parameter
- *   keyword             <--   output control parameter
+ *   param               <--   name of the parameter
+ *   keyword             -->   output control parameter
  *----------------------------------------------------------------------------*/
 
-static void cs_gui_output_time_value(const char *const param,
-                                     double  *const keyword)
+static void
+_output_time_value(const char  *const param,
+                   double      *const keyword)
 {
   char *path = NULL;
   char *choice = NULL;
@@ -176,12 +179,16 @@ static void cs_gui_output_time_value(const char *const param,
 /*----------------------------------------------------------------------------
  * Return the output format and options for postprocessing.
  *
- * parameters:
- *   param           -->  "probe_format"
+ * parameters
+ *   param         -->  name of the parameter
+ *   keyword       <--  output keyword string
+ *   max_key_size  -->  maximum keyword size
  *----------------------------------------------------------------------------*/
 
-static char *
-_output_choice(const char *const param)
+static void
+_output_choice(const char  *const param,
+               char        *const keyword,
+               size_t             max_key_size)
 {
   char *path = NULL;
   char *choice = NULL;
@@ -191,25 +198,14 @@ _output_choice(const char *const param)
   cs_xpath_add_attribute(&path, "choice");
   choice = cs_gui_get_attribute_value(path);
   BFT_FREE(path);
-  return choice;
-}
 
-/*----------------------------------------------------------------------------
- * Get the output format and options for postprocessing.
- *
- * parameters:
- *   param                -->  name of the parameter
- *   keyword             <--   output control parameter
- *   size_key             -->  keyword string size
- *----------------------------------------------------------------------------*/
+  if (choice != NULL) {
+    strncpy(keyword, choice, max_key_size);
+    keyword[max_key_size] = '\0';
+  }
+  else
+    keyword[0] = '\0';
 
-static void cs_gui_output_choice(const char *const param,
-                                 char *const keyword,
-                                 const int  *const size_key)
-{
-  char *choice = NULL;
-  choice = _output_choice(param);
-  if (choice != NULL) cs_gui_strcpy_c2f(keyword, choice, *size_key);
   BFT_FREE(choice);
 }
 
@@ -217,13 +213,13 @@ static void cs_gui_output_choice(const char *const param,
  * Get postprocessing value status for surfacic variables
  *
  * parameters:
- *   name        <-- name of the parameter
- *   default_val <-- default value
+ *   name         --> name of the parameter
+ *   default_val  --> default value
  *----------------------------------------------------------------------------*/
 
 static bool
-cs_gui_surfacic_variable_post(const char  *name,
-                              bool         default_val)
+_surfacic_variable_post(const char  *name,
+                        bool         default_val)
 {
   int   result = 0;
   char *path = NULL;
@@ -252,15 +248,15 @@ cs_gui_surfacic_variable_post(const char  *name,
  * Get the attribute value from the xpath query.
  *
  * parameters:
- *   path          --> path for xpath query
- *   child         --> child markup
- *   keyword      <--  value of attribute node
+ *   path          <-- path for xpath query
+ *   child         <-- child markup
+ *   keyword       --> value of attribute node
  *----------------------------------------------------------------------------*/
 
 static void
-_attribute_value(char *      path,
-         const char *const child,
-                 int  *const keyword)
+_attribute_value(char                *path,
+                 const char    *const child,
+                 int           *const keyword)
 {
   int   result;
 
@@ -285,15 +281,15 @@ _attribute_value(char *      path,
  * Get the attribute value associated to a child markup from a variable.
  *
  * parameters:
- *   name          -->  name of the variable markup
- *   child         -->  child markup
- *   keyword      <--   value of attribute node contained in the child markup
+ *   name          <--  name of the variable markup
+ *   child         <--  child markup
+ *   keyword       -->  value of attribute node contained in the child markup
  *----------------------------------------------------------------------------*/
 
 static void
 cs_gui_variable_attribute(const char *const name,
                           const char *const child,
-                          int  *const keyword)
+                          int        *const keyword)
 {
   char *path = NULL;
 
@@ -305,15 +301,14 @@ cs_gui_variable_attribute(const char *const name,
 }
 
 /*-----------------------------------------------------------------------------
- * Retourne le nombre de sous-balises "probe recording" situees dans la balise
- * <variable>
+ * Return number of <probe recording> tags in the <variable> tag.
  *----------------------------------------------------------------------------*/
 
 static int cs_gui_variable_number_probes (const char *const variable)
 {
   char *path = NULL;
   char *choice = NULL;
-  int   nb_probes ;
+  int   nb_probes;
 
   path = cs_xpath_short_path();
   cs_xpath_add_element(&path, "variable");
@@ -322,9 +317,9 @@ static int cs_gui_variable_number_probes (const char *const variable)
   cs_xpath_add_attribute(&path, "choice");
   choice = cs_gui_get_attribute_value(path);
 
-  if (choice) {
+  if (choice)
     nb_probes = atoi(choice);
-  } else
+  else
     nb_probes = -1;
 
   BFT_FREE(choice);
@@ -334,15 +329,15 @@ static int cs_gui_variable_number_probes (const char *const variable)
 }
 
 /*-----------------------------------------------------------------------------
- * Return probe number for balice "probe_recording" for variable
+ * Return probe number for <probe_recording> tag for variable.
  *
  * parameters:
- *   variable   -->  name of variable
- *   num_probe  --> number of balise "probe_recording"
+ *   variable   <--  name of variable
+ *   num_probe  <--  number of <probe_recording> tags
  *----------------------------------------------------------------------------*/
 
 static int cs_gui_variable_probe_name (const char *const variable,
-                                       int         num_probe)
+                                       int               num_probe)
 {
   char *path = NULL;
   char *strvalue = NULL;
@@ -369,10 +364,10 @@ static int cs_gui_variable_probe_name (const char *const variable,
 }
 
 /*-----------------------------------------------------------------------------
- * Return label of variable
+ * Return variable label.
  *
  * parameters:
- *   variable   --> name of variable
+ *   variable   <-- name of variable
  *----------------------------------------------------------------------------*/
 
 static char *cs_gui_variable_label (const char *const variable)
@@ -393,11 +388,11 @@ static char *cs_gui_variable_label (const char *const variable)
 }
 
 /*-----------------------------------------------------------------------------
- * Copy a variable name to private variable names array
+ * Copy a variable name to private variable names array.
  *
  * parameters:
- *   varname        -->  name or label of the variable/scalar/property
- *   ipp            -->  index from the fortran array associated to varname
+ *   varname        <--  name or label of the variable/scalar/property
+ *   ipp            <--  index from the fortran array associated to varname
  *----------------------------------------------------------------------------*/
 
 static void
@@ -426,18 +421,21 @@ _gui_copy_varname(const char *varname, int ipp)
 
 /*-----------------------------------------------------------------------------
  * Post-processing options for variables (velocity, pressure, ...)
- *    the "globale" array is built in CSENSO
- *          globale[num_probe] = num_saturne_probe
- *      where num_saturne_probe is the probe number in the code
- *      num_probe and num_saturne_probe are different when some probes
- *        are de-activated in the XML file
+ *
+ * parameters:
+ *   property_name      <-- property name
+ *   ipp                <-- property id
+ *   ichrvr             --> chronogical output (1:yes/0:no)
+ *   ilisvr             --> listing output (1:yes/0:no)
+ *   ihisvr             --> histo output
+ *   nvppmx             <-- number of printed variables
  *----------------------------------------------------------------------------*/
 
 static void cs_gui_thermophysical_post(const char *const variable,
                                        const int         ipp,
-                                       int  *const ihisvr,
-                                       int  *const ilisvr,
-                                       int  *const ichrvr,
+                                       int        *const ihisvr,
+                                       int        *const ilisvr,
+                                       int        *const ichrvr,
                                        const int  *const nvppmx)
 {
   int   nb_probes;
@@ -460,7 +458,7 @@ static void cs_gui_thermophysical_post(const char *const variable,
   ihisvr[0 + (ipp - 1)] = nb_probes;
 
   if (nb_probes > 0) {
-    for (iprob =0; iprob < nb_probes; iprob++) {
+    for (iprob = 0; iprob < nb_probes; iprob++) {
       num_probe = cs_gui_variable_probe_name(variable, iprob+1);
       ihisvr[(iprob+1)*(*nvppmx) + (ipp - 1)] = num_probe;
     }
@@ -477,15 +475,15 @@ static void cs_gui_thermophysical_post(const char *const variable,
  * Get the attribute value associated to a child markup from a scalar.
  *
  * parameters:
- *   label         -->  name of the scalar markup
- *   child         -->  child markup
- *   keyword      <--   value of attribute node contained in the child markup
+ *   label         <--  name of the scalar markup
+ *   child         <--  child markup
+ *   keyword       -->  value of attribute node contained in the child markup
  *----------------------------------------------------------------------------*/
 
 static void
 cs_gui_scalar_attribute(const char *const label,
                         const char *const child,
-                        int  *const keyword)
+                        int        *const keyword)
 {
   char *path = NULL;
 
@@ -498,14 +496,14 @@ cs_gui_scalar_attribute(const char *const label,
 }
 
 /*-----------------------------------------------------------------------------
- * Number of sub-headers "probe_recording" for the user scalars
+ * Number of sub-headers <probe_recording> for the user scalars.
  *----------------------------------------------------------------------------*/
 
 static int cs_gui_scalar_number_probes(const int scalar_num)
 {
   char *path = NULL;
   char *choice = NULL;
-  int   nb_probes ;
+  int   nb_probes;
 
   path = cs_xpath_init_path();
   cs_xpath_add_element(&path, "additional_scalars");
@@ -517,7 +515,8 @@ static int cs_gui_scalar_number_probes(const int scalar_num)
   if (choice) {
     nb_probes = atoi(choice);
     BFT_FREE(choice);
-  } else
+  }
+  else
     nb_probes = -1;
 
   BFT_FREE(path);
@@ -527,11 +526,11 @@ static int cs_gui_scalar_number_probes(const int scalar_num)
 
 
 /*-----------------------------------------------------------------------------
- * Return probe number for number of balise  "probe_recording"
+ * Return probe number for number of <probe_recording> tags
  *
  * parameters:
- *   scalar_num  --> number of scalar
- *   num_probe   --> number of balise "probe_recording"
+ *   scalar_num  <-- number of scalar
+ *   num_probe   <-- number of <probe_recording> tags
  *----------------------------------------------------------------------------*/
 
 static int cs_gui_scalar_probe_name(const int scalar_num,
@@ -560,19 +559,23 @@ static int cs_gui_scalar_probe_name(const int scalar_num,
 
   return value;
 }
+
 /*-----------------------------------------------------------------------------
  * Post-processing options for scalars
- *    the "globale" array is built in CSENSO
- *          globale[num_probe] = num_saturne_probe
- *      where num_saturne_probe is the probe number in the code
- *      num_probe and num_saturne_probe are different when some probes
- *        are de-activated in the XML file
+ *
+ * parameters:
+ *   property_name      <-- property name
+ *   ipp                <-- property id
+ *   ichrvr             --> chronogical output (1:yes/0:no)
+ *   ilisvr             --> listing output (1:yes/0:no)
+ *   ihisvr             --> histo output
+ *   nvppmx             <-- number of printed variables
  *----------------------------------------------------------------------------*/
 
-static void cs_gui_scalar_post(const  int        num_sca,
-                               int *const ihisvr,
-                               int *const ilisvr,
-                               int *const ichrvr,
+static void cs_gui_scalar_post(const int         num_sca,
+                               int        *const ihisvr,
+                               int        *const ilisvr,
+                               int        *const ichrvr,
                                const  int *const ipprtp,
                                const  int *const isca,
                                const  int *const nvppmx)
@@ -584,7 +587,7 @@ static void cs_gui_scalar_post(const  int        num_sca,
 
   cs_var_t  *vars = cs_glob_var;
 
-  ipp = ipprtp[isca[num_sca] -1 ];
+  ipp = ipprtp[isca[num_sca] -1];
 
   if (ipp == 1) return;
 
@@ -616,17 +619,17 @@ static void cs_gui_scalar_post(const  int        num_sca,
  * Get the attribute value associated to a child markup from a scalar.
  *
  * parameters:
- *   model         -->  model markup
- *   name          -->  name of the scalar markup
- *   child         -->  child markup
- *   keyword      <--   value of attribute node contained in the child markup
+ *   model         <--  model markup
+ *   name          <--  name of the scalar markup
+ *   child         <--  child markup
+ *   keyword       -->  value of attribute node contained in the child markup
  *----------------------------------------------------------------------------*/
 
 static void
 cs_gui_model_scalar_output_status(const char *const model,
                                   const char *const name,
                                   const char *const child,
-                                  int  *const keyword)
+                                  int        *const keyword)
 {
   char *path = NULL;
 
@@ -641,15 +644,15 @@ cs_gui_model_scalar_output_status(const char *const model,
 }
 
 /*-----------------------------------------------------------------------------
- * Return number of sub balises "probe_recording" for model scalars
+ * Return number of sub balises "probe_recording" for model scalars.
  *
  * parameters:
- *   model      -->  Type of model
- *   name       -->  scalar name
+ *   model      <--  Type of model
+ *   name       <--  scalar name
  *----------------------------------------------------------------------------*/
 
-static int cs_gui_model_scalar_number_probes(const char* const model,
-                                             const char *const name)
+static int cs_gui_model_scalar_number_probes(const char  *const model,
+                                             const char  *const name)
 {
   char *path = NULL;
   char *choice = NULL;
@@ -667,7 +670,8 @@ static int cs_gui_model_scalar_number_probes(const char* const model,
   if (choice) {
     nb_probes = atoi(choice);
     BFT_FREE(choice);
-  } else
+  }
+  else
     nb_probes = -1;
 
   BFT_FREE(path);
@@ -676,12 +680,12 @@ static int cs_gui_model_scalar_number_probes(const char* const model,
 }
 
 /*-----------------------------------------------------------------------------
- * Return probe number for sub balise "probe_recording" for model scalar
+ * Return probe number for sub balise "probe_recording" for model scalar.
  *
  * parameters:
- *   model      --> type of model
- *   name       --> scalar name
- *   num_probe  --> number of balise "probe_recording"
+ *   model      <-- type of model
+ *   name       <-- scalar name
+ *   num_probe  <-- number of balise "probe_recording"
  *----------------------------------------------------------------------------*/
 
 static int cs_gui_model_scalar_probe_name (const char *const model,
@@ -716,18 +720,21 @@ static int cs_gui_model_scalar_probe_name (const char *const model,
 
 /*-----------------------------------------------------------------------------
  * Post-processing options for thermal and modelling scalars
- *    the "globale" array is built in CSENSO
- *          globale[num_probe] = num_saturne_probe
- *      where num_saturne_probe is the probe number in the code
- *      num_probe and num_saturne_probe are different when some probes
- *        are de-activated in the XML file
+ *
+ * parameters:
+ *   property_name      <-- property name
+ *   ipp                <-- property id
+ *   ichrvr             --> chronogical output (1:yes/0:no)
+ *   ilisvr             --> listing output (1:yes/0:no)
+ *   ihisvr             --> histo output
+ *   nvppmx             <-- number of printed variables
  *----------------------------------------------------------------------------*/
 
 static void cs_gui_model_scalar_post(const char  *const model,
                                      const int          num_sca,
-                                     int   *const ihisvr,
-                                     int   *const ilisvr,
-                                     int   *const ichrvr,
+                                     int         *const ihisvr,
+                                     int         *const ilisvr,
+                                     int         *const ichrvr,
                                      const int   *const ipprtp,
                                      const int   *const isca,
                                      const int   *const nvppmx)
@@ -772,16 +779,16 @@ static void cs_gui_model_scalar_post(const char  *const model,
  * Return status of the property for physical model
  *
  * parameters:
- *   model          --> type of model
- *   num_pro        --> property name
- *   value_type     --> type of value (listing_printing, postprocessing ..)
- *   keyword       <--  value for the Fortran array
+ *   model          <-- type of model
+ *   num_pro        <-- property name
+ *   value_type     <-- type of value (listing_printing, postprocessing ..)
+ *   keyword        --> value for the Fortran array
  *----------------------------------------------------------------------------*/
 
 static void cs_gui_model_property_output_status (const char *const model,
                                                  const char *const name,
                                                  const char *const value_type,
-                                                 int  *const keyword)
+                                                 int        *const keyword)
 {
   char *path = NULL;
   int   result;
@@ -798,17 +805,18 @@ static void cs_gui_model_property_output_status (const char *const model,
     *keyword = result;
   else
     *keyword = 1;
+
   BFT_FREE(path);
 }
 
 /*-----------------------------------------------------------------------------
  * Return probe number for sub balise "probe_recording" for physical model's
- * property
+ * property.
  *
  * parameters:
- *   model      --> type of model
- *   num_prop   --> number of property
- *   num_probe  --> number of balise "probe_recording"
+ *   model      <-- type of model
+ *   num_prop   <-- number of property
+ *   num_probe  <-- number of <probe_recording> tags
  *----------------------------------------------------------------------------*/
 
 static int cs_gui_model_property_probe_name(const char *const model,
@@ -842,11 +850,11 @@ static int cs_gui_model_property_probe_name(const char *const model,
 }
 
 /*-----------------------------------------------------------------------------
- * Return number of sub balises  "probe_recording" for propeety of model scalar
+ * Return number of sub balises <probe_recording> for property of model scalar.
  *
  * parameters:
- *   model    -->  Type of model
- *   num_sca  -->  scalar number
+ *   model    <--  type of model
+ *   num_sca  <--  scalar number
  *----------------------------------------------------------------------------*/
 
 static int cs_gui_model_property_number_probes(const char *const model,
@@ -854,7 +862,7 @@ static int cs_gui_model_property_number_probes(const char *const model,
 {
   char *path = NULL;
   char *choice = NULL;
-  int   nb_probes ;
+  int   nb_probes;
 
   path = cs_xpath_init_path();
   cs_xpath_add_element(&path, "thermophysical_models");
@@ -868,7 +876,8 @@ static int cs_gui_model_property_number_probes(const char *const model,
   if (choice) {
     nb_probes = atoi(choice);
     BFT_FREE(choice);
-  } else
+  }
+  else
     nb_probes = -1;
 
   BFT_FREE(path);
@@ -877,11 +886,11 @@ static int cs_gui_model_property_number_probes(const char *const model,
 }
 
 /*-----------------------------------------------------------------------------
- * Return the label model's property
+ * Return the label model's property.
  *
  * parameters:
- *   model             -->  modele
- *   num_prop          <--  property's number
+ *   model             <--  modele
+ *   num_prop          -->  property's number
  *----------------------------------------------------------------------------*/
 
 static char *cs_gui_get_model_property_label(const char *const model,
@@ -907,19 +916,22 @@ static char *cs_gui_get_model_property_label(const char *const model,
 
 /*-----------------------------------------------------------------------------
  * Post-processing options for properties
- *    the "globale" array is built in CSENSO
- *          globale[num_probe] = num_saturne_probe
- *      where num_saturne_probe is the probe number in the code
- *      num_probe and num_saturne_probe are different when some probes
- *        are de-activated in the XML file
+ *
+ * parameters:
+ *   property_name      <-- property name
+ *   ipp                <-- property id
+ *   ichrvr             --> chronogical output (1:yes/0:no)
+ *   ilisvr             --> listing output (1:yes/0:no)
+ *   ihisvr             --> histo output
+ *   nvppmx             <-- number of printed variables
  *----------------------------------------------------------------------------*/
 
 static void
 cs_gui_model_property_post (const char  *const model,
                             const int          num_prop,
-                            int   *const ihisvr,
-                            int   *const ilisvr,
-                            int   *const ichrvr,
+                            int         *const ihisvr,
+                            int         *const ilisvr,
+                            int         *const ichrvr,
                             const int   *const nvppmx)
 {
   int ipp;
@@ -958,7 +970,7 @@ cs_gui_model_property_post (const char  *const model,
       num_probe = cs_gui_model_property_probe_name(model,
                                                    vars->properties_name[num_prop],
                                                    iprob+1);
-      ihisvr[(iprob+1)*(*nvppmx) + (ipp - 1)] = num_probe;
+      ihisvr[(iprob + 1)*(*nvppmx) + (ipp - 1)] = num_probe;
     }
   }
 
@@ -971,17 +983,17 @@ cs_gui_model_property_post (const char  *const model,
 }
 
 /*-----------------------------------------------------------------------------
- * Return status of time average markup
+ * Return status of time average markup.
  *
  * parameters:
- *   property_name  --> label of property
- *   value_type     --> type of balise (listing_printing, postprocessing ..)
- *   keyword        <-- number of balise "probe_recording"
+ *   property_name  <-- label of property
+ *   value_type     <-- type of balise (listing_printing, postprocessing, ...)
+ *   keyword        --> number of balise "probe_recording"
  *----------------------------------------------------------------------------*/
 
 static void cs_gui_time_average_status(const char *const property_name,
                                        const char *const value_type,
-                                       int  *const keyword)
+                                       int        *const keyword)
 {
   char *path = NULL;
   int   result;
@@ -1002,10 +1014,10 @@ static void cs_gui_time_average_status(const char *const property_name,
 
 
 /*-----------------------------------------------------------------------------
- * Return number of probes for time average of property
+ * Return number of probes for time average of property.
  *
  * parameters:
- *   property_name -->  label of property
+ *   property_name    <--  label of property
  *----------------------------------------------------------------------------*/
 
 static int cs_gui_time_average_number_probes(const char *const property_name)
@@ -1024,7 +1036,8 @@ static int cs_gui_time_average_number_probes(const char *const property_name)
   if (choice) {
     nb_probes = atoi(choice);
     BFT_FREE(choice);
-  } else
+  }
+  else
     nb_probes = -1;
 
   BFT_FREE(path);
@@ -1034,11 +1047,11 @@ static int cs_gui_time_average_number_probes(const char *const property_name)
 
 /*-----------------------------------------------------------------------------
  * Return probe number for sub balise "probe_recording" for time average of
- * properties
+ * properties.
  *
  * parameters:
- *   property_name    --> label of property
- *   num_probe        --> number of balise "probe_recording"
+ *   property_name    <-- label of property
+ *   num_probe        <-- number of balise "probe_recording"
  *----------------------------------------------------------------------------*/
 
 static int cs_gui_time_average_probe_name(const char *const property_name,
@@ -1069,20 +1082,23 @@ static int cs_gui_time_average_probe_name(const char *const property_name,
 }
 
 /*-----------------------------------------------------------------------------
- * Post-processing options for temporal averaging
- *    the "globale" array is built in CSENSO
- *          globale[num_probe] = num_saturne_probe
- *      where num_saturne_probe is the probe number in the code
- *      num_probe and num_saturne_probe are different when some probes
- *        are de-activated in the XML file
+ * Post-processing options for temporal averaging.
+ *
+ * parameters:
+ *   property_name      <-- property name
+ *   ipp                <-- property id
+ *   ichrvr             --> chronogical output (1:yes/0:no)
+ *   ilisvr             --> listing output (1:yes/0:no)
+ *   ihisvr             --> histo output
+ *   nvppmx             <-- number of printed variables
  *----------------------------------------------------------------------------*/
 
-static void cs_gui_time_average_post (const char *const property_name,
-                                      const int         ipp,
-                                      int  *const ichrvr,
-                                      int  *const ilisvr,
-                                      int  *const ihisvr,
-                                      const int  *const nvppmx)
+static void cs_gui_time_average_post(const char *const property_name,
+                                     const int         ipp,
+                                     int        *const ichrvr,
+                                     int        *const ilisvr,
+                                     int        *const ihisvr,
+                                     const int  *const nvppmx)
 {
   int nb_probes;
   int iprob;
@@ -1118,7 +1134,7 @@ static void cs_gui_time_average_post (const char *const property_name,
  * Return the label attribute of a property markup.
  *
  * parameters:
- *   property_name        -->  name of the property
+ *   property_name        <--  name of the property
  *----------------------------------------------------------------------------*/
 
 static char *cs_gui_properties_label(const char *const property_name)
@@ -1139,12 +1155,12 @@ static char *cs_gui_properties_label(const char *const property_name)
 }
 
 /*-----------------------------------------------------------------------------
- * Return status of thr property markup
+ * Return status of thr property markup.
  *
  * parameters:
- *   property_name  --> name of property
- *   value_type     --> type of balise (listing_printing, postprocessing ..)
- *   keyword        <-- number of balise "probe_recording"
+ *   property_name  <-- name of property
+ *   value_type     <-- type of balise (listing_printing, postprocessing, ...)
+ *   keyword        --> number of balise "probe_recording"
  *----------------------------------------------------------------------------*/
 
 static void cs_gui_properties_status(const char *const property_name,
@@ -1169,17 +1185,17 @@ static void cs_gui_properties_status(const char *const property_name,
 }
 
 /*-----------------------------------------------------------------------------
- * Return number of probes for property
+ * Return number of probes for property.
  *
  * parameters:
- *   property_name  --> name of property
+ *   property_name  <-- name of property
  *----------------------------------------------------------------------------*/
 
 static int cs_gui_properties_number_probes(const char *const property_name)
 {
   char *path = NULL;
   char *choice = NULL;
-  int   nb_probes ;
+  int   nb_probes;
 
   path = cs_xpath_short_path();
   cs_xpath_add_element(&path, "property");
@@ -1191,7 +1207,8 @@ static int cs_gui_properties_number_probes(const char *const property_name)
   if (choice) {
     nb_probes = atoi(choice);
     BFT_FREE(choice);
-  } else
+  }
+  else
     nb_probes = -1;
 
   BFT_FREE(path);
@@ -1203,8 +1220,8 @@ static int cs_gui_properties_number_probes(const char *const property_name)
  * Return probe number for sub balise "probe_recording" for properties
  *
  * parameters:
- *   property_name   --> name of property
- *   num_probe       --> number of balise "probe_recording"
+ *   property_name   <-- name of property
+ *   num_probe       <-- number of balise <probe_recording>
  *----------------------------------------------------------------------------*/
 
 static int cs_gui_properties_probe_name(const char *const property_name,
@@ -1236,18 +1253,21 @@ static int cs_gui_properties_probe_name(const char *const property_name,
 
 /*-----------------------------------------------------------------------------
  * Post-processing options for physical properties
- *    the "globale" array is built in CSENSO
- *          globale[num_probe] = num_saturne_probe
- *      where num_saturne_probe is the probe number in the code
- *      num_probe and num_saturne_probe are different when some probes
- *        are de-activated in the XML file
+ *
+ * parameters:
+ *   property_name      <-- property name
+ *   ipp                <-- property id
+ *   ichrvr             --> chronogical output (1:yes/0:no)
+ *   ilisvr             --> listing output (1:yes/0:no)
+ *   ihisvr             --> histo output
+ *   nvppmx             <-- number of printed variables
  *----------------------------------------------------------------------------*/
 
 static void cs_gui_properties_post(const char *const property_name,
                                    const int         ipp,
-                                   int  *const ichrvr,
-                                   int  *const ilisvr,
-                                   int  *const ihisvr,
+                                   int        *const ichrvr,
+                                   int        *const ilisvr,
+                                   int        *const ihisvr,
                                    const int  *const nvppmx)
 {
   int nb_probes;
@@ -1286,13 +1306,12 @@ static void cs_gui_properties_post(const char *const property_name,
 
 }
 
-
 /*-----------------------------------------------------------------------------
- * Return a single coordinate of a monitoring probe
+ * Return a single coordinate of a monitoring probe.
  *
  * parameters
- *   num_probe            -->  number aka name of the monitoring probe
- *   probe_coord          -->  one coordinate of the monitoring probe
+ *   num_probe            <--  number aka name of the monitoring probe
+ *   probe_coord          <--  one coordinate of the monitoring probe
  *----------------------------------------------------------------------------*/
 
 static double cs_gui_probe_coordinate(const int         num_probe,
@@ -1301,7 +1320,7 @@ static double cs_gui_probe_coordinate(const int         num_probe,
   char  *path = NULL;
   double result = 0.0;
 
-  assert(num_probe>0);
+  assert(num_probe > 0);
 
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 2, "analysis_control", "output");
@@ -1318,11 +1337,12 @@ static double cs_gui_probe_coordinate(const int         num_probe,
 
   return result;
 }
+
 /*----------------------------------------------------------------------------
- * return the location of a mesh
+ * Return the location of a mesh.
  *
  * parameters:
- *   num                -->  number of a mesh
+ *   num                <--  number of a mesh
  *----------------------------------------------------------------------------*/
 
 static char *cs_gui_output_mesh_location(int  const num)
@@ -1340,11 +1360,12 @@ static char *cs_gui_output_mesh_location(int  const num)
   BFT_FREE(path);
   return location;
 }
+
 /*----------------------------------------------------------------------------
- * return the frequency of a writer
+ * Return the frequency of a writer.
  *
  * parameters:
- *   num                -->  number of the writer
+ *   num                <--  number of the writer
  *----------------------------------------------------------------------------*/
 
 static double cs_gui_output_writer_frequency(int  const num)
@@ -1376,19 +1397,19 @@ static double cs_gui_output_writer_frequency(int  const num)
 }
 
 /*----------------------------------------------------------------------------
- * return an option for a mesh or a writer call by a number
+ * Return an option for a mesh or a writer call by a number.
  *
  * parameters:
- *   type                 -->  'writer' or 'mesh'
- *   choice               -->  type of option to get
- *   option               -->  the option needed
- *   num                  -->  number of the mesh or the writer
+ *   type                 <--  'writer' or 'mesh'
+ *   choice               <--  type of option to get
+ *   option               <--  the option needed
+ *   num                  <--  number of the mesh or the writer
  *----------------------------------------------------------------------------*/
 
 static char *cs_gui_output_type_options(const char *const type,
                                         const char *const choice,
                                         const char *const option,
-                                        int  const num)
+                                        int         const num)
 {
   char *path = NULL;
   char *description = NULL;
@@ -1400,7 +1421,8 @@ static char *cs_gui_output_type_options(const char *const type,
 
   if (cs_gui_strcmp(option, "frequency") && choice == NULL) {
     description = cs_gui_get_text_value(path);
-  } else {
+  }
+  else {
     cs_xpath_add_attribute(&path, choice);
     description = cs_gui_get_attribute_value(path);
   }
@@ -1416,11 +1438,11 @@ static char *cs_gui_output_type_options(const char *const type,
 }
 
 /*----------------------------------------------------------------------------
- * return the id of a writer associated with a mesh
+ * Return the id of a writer associated with a mesh.
  *
  * parameters:
- *   num_mesh                  -->  number of the mesh or the writer
- *   num_writer                  -->  number of the mesh or the writer
+ *   num_mesh                <--  number of the given mesh
+ *   num_writer              <--  number of the associated writer
  *----------------------------------------------------------------------------*/
 
 static int cs_gui_output_associate_mesh_writer(int  const num_mesh,
@@ -1445,17 +1467,17 @@ static int cs_gui_output_associate_mesh_writer(int  const num_mesh,
 }
 
 /*----------------------------------------------------------------------------
- * return a choice for a mesh or a writer call by a number
+ * Return a choice for a mesh or a writer call by a number.
  *
  * parameters:
- *   type                -->   'writer' or 'mesh'
- *   choice              -->   the option needed
- *   num                 -->   the number of the mesh or writer
+ *   type                <--   'writer' or 'mesh'
+ *   choice              <--   the option needed
+ *   num                 <--   the number of the mesh or writer
  *----------------------------------------------------------------------------*/
 
 static char *cs_gui_output_type_choice(const char *const type,
                                        const char *const choice,
-                                       int  const num)
+                                       int         const num)
 {
   char *path = NULL;
   char *description = NULL;
@@ -1471,15 +1493,15 @@ static char *cs_gui_output_type_choice(const char *const type,
 }
 
 /*-----------------------------------------------------------------------------
- * Initialize mei tree and check for symbols existence
+ * Initialize mei tree and check for symbols existence.
  *
  * parameters:
- *   formula        -->  mei formula
- *   symbols        -->  array of symbol to check
+ *   formula        <--  mei formula
+ *   symbols        <--  array of symbol to check
  *   symbol_size    -->  number of symbol in symbols
  *----------------------------------------------------------------------------*/
 
-static mei_tree_t *_init_mei_tree(const int num,
+static mei_tree_t *_init_mei_tree(const int        num,
                                   const cs_int_t  *ntcabs,
                                   const cs_real_t *ttcabs)
 {
@@ -1497,8 +1519,8 @@ static mei_tree_t *_init_mei_tree(const int num,
   mei_tree_t *tree = mei_tree_new(formula);
 
   /* add commun variables */
-  mei_tree_insert(tree, "niter",   *ntcabs );
-  mei_tree_insert(tree, "t",    *ttcabs);
+  mei_tree_insert(tree, "niter", *ntcabs );
+  mei_tree_insert(tree, "t", *ttcabs);
 
   /* try to build the interpreter */
   if (mei_tree_builder(tree))
@@ -1512,20 +1534,24 @@ static mei_tree_t *_init_mei_tree(const int num,
   return tree;
 }
 
+/*============================================================================
+ * Public Fortran function definitions
+ *============================================================================*/
+
 /*----------------------------------------------------------------------------
  * activation of a writer depending of a formula
  *
  * Fortran Interface:
  *
- * SUBROUTINE uinpst (ttcabs, ntcabs)
+ * subroutine uinpst (ttcabs, ntcabs)
  * *****************
  *
- * INTEGER          UREF   <--   reference velocity
- * DOUBLE          ALMAX  <--   reference length
+ * integer         uref   -->   reference velocity
+ * double          almax  -->   reference length
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uinpst, UINPST) ( const cs_int_t  *ntcabs,
-                                 const cs_real_t *ttcabs)
+void CS_PROCF (uinpst, UINPST) (const cs_int_t  *ntcabs,
+                                const cs_real_t *ttcabs)
 {
   int i, id, nwriter;
   int iactive;
@@ -1533,7 +1559,7 @@ void CS_PROCF (uinpst, UINPST) ( const cs_int_t  *ntcabs,
   char *id_s;
   mei_tree_t *ev_formula  = NULL;
   nwriter = cs_gui_get_tag_number("/analysis_control/output/writer", 1);
-  for (i=1; i <= nwriter; i++) {
+  for (i = 1; i <= nwriter; i++) {
     id = 0;
     id_s = cs_gui_output_type_choice("writer","id",i);
     if (id_s != NULL) {
@@ -1557,7 +1583,7 @@ void CS_PROCF (uinpst, UINPST) ( const cs_int_t  *ntcabs,
 }
 
 /*----------------------------------------------------------------------------
- * Input/output treatment
+ * Determine output options.
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
@@ -1580,18 +1606,15 @@ void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
   int ipp;
   cs_var_t  *vars = cs_glob_var;
   char fmtprb[16];
-  int size_fmtprb = sizeof(fmtprb) - 1;
 
-  cs_gui_output_value("auxiliary_restart_file_writing", iecaux);
-  cs_gui_output_value("listing_printing_frequency", ntlist);
-  cs_gui_output_value("probe_recording_frequency", nthist);
-  cs_gui_output_time_value("probe_recording_frequency_time", frhist);
-  cs_gui_output_choice("probe_format", fmtprb, &size_fmtprb);
+  _output_value("auxiliary_restart_file_writing", iecaux);
+  _output_value("listing_printing_frequency", ntlist);
+  _output_value("probe_recording_frequency", nthist);
+  _output_time_value("probe_recording_frequency_time", frhist);
+
+  _output_choice("probe_format", fmtprb, sizeof(fmtprb) - 1);
 
   /* Time plot (probe) format */
-  for (i = strlen(fmtprb) - 1; i > 0 && fmtprb[i] == ' '; i--)
-    fmtprb[i] = '\0';
-
   if (!strcmp(fmtprb, "DAT"))
     *tplfmt = 1;
   else if (!strcmp(fmtprb, "CSV"))
@@ -1602,48 +1625,50 @@ void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
   for (i = 0; i < 6; i++)
     ipstdv[i] = 0;
 
-  if (cs_gui_surfacic_variable_post("effort", true))
+  if (_surfacic_variable_post("effort", true))
     ipstdv[0] += 1;
-  if (cs_gui_surfacic_variable_post("effort_tangential", false))
+  if (_surfacic_variable_post("effort_tangential", false))
     ipstdv[0] += 2;
-  if (cs_gui_surfacic_variable_post("effort_normal", false))
+  if (_surfacic_variable_post("effort_normal", false))
     ipstdv[0] += 4;
 
-  if (cs_gui_surfacic_variable_post("yplus", true))
+  if (_surfacic_variable_post("yplus", true))
     ipstdv[1] = 1;
-  if (cs_gui_surfacic_variable_post("tplus", true))
+  if (_surfacic_variable_post("tplus", true))
     ipstdv[2] = 1;
-  if (cs_gui_surfacic_variable_post("thermal_flux", true))
+  if (_surfacic_variable_post("thermal_flux", true))
     ipstdv[3] = 1;
-  if (cs_gui_surfacic_variable_post("boundary_temperature", true))
+  if (_surfacic_variable_post("boundary_temperature", true))
     ipstdv[4] = 1;
-  if (cs_gui_surfacic_variable_post("boundary_layer_nusselt", true))
+  if (_surfacic_variable_post("boundary_layer_nusselt", true))
     ipstdv[5] = 1;
 
   *ncapt = cs_gui_get_tag_number("/analysis_control/output/probe", 1);
-  for (i=0; i < *ncapt; i++) {
+  for (i = 0; i < *ncapt; i++) {
     xyzcap[0 + i*3] = cs_gui_probe_coordinate(i+1, "probe_x");
     xyzcap[1 + i*3] = cs_gui_probe_coordinate(i+1, "probe_y");
     xyzcap[2 + i*3] = cs_gui_probe_coordinate(i+1, "probe_z");
   }
+
   /* Velocity and turbulence output */
-  for (i=0; i < vars->nvar - vars->nscaus - vars->nscapp; i++) {
+  for (i = 0; i < vars->nvar - vars->nscaus - vars->nscapp; i++) {
     ipp = ipprtp[vars->rtp[i]];
     cs_gui_thermophysical_post(vars->name[i],
                                ipp,
                                ihisvr, ilisvr, ichrvr,
                                nvppmx);
   }
+
   /* User scalar */
   if (vars->nscaus > 0 ) {
-    for (i=0 ; i < vars->nscaus; i++) {
+    for (i = 0; i < vars->nscaus; i++) {
       cs_gui_scalar_post(i, ihisvr, ilisvr, ichrvr,
                          ipprtp, isca, nvppmx);
     }
   }
   /* Specific physics scalars */
   if (vars->nscapp > 0) {
-    for (i=0 ; i < vars->nscapp; i++) {
+    for (i = 0; i < vars->nscapp; i++) {
       j = iscapp[i]-1 ;
       cs_gui_model_scalar_post(vars->model, j,
                                ihisvr, ilisvr, ichrvr,
@@ -1653,12 +1678,12 @@ void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
 
   /* Physical properties */
   if (vars->nsalpp > 0) {
-    for (i=0 ; i < vars->nsalpp; i++) {
+    for (i = 0; i < vars->nsalpp; i++) {
       cs_gui_model_property_post(vars->model, i,
                                  ihisvr, ilisvr, ichrvr, nvppmx);
     }
   }
-  for (i=vars->nsalpp ; i < vars->nprop ; i++) {
+  for (i = vars->nsalpp; i < vars->nprop; i++) {
     if (vars->ntimaver != 0 && i >= vars->nprop - vars->ntimaver) {
       cs_gui_time_average_post(vars->properties_name[i],
                                vars->properties_ipp[i],
@@ -1684,12 +1709,12 @@ void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
   bft_printf("--frhist = %i\n", *frhist);
   bft_printf("--ncapt  = %i\n", *ncapt);
   bft_printf("--tplfmt = %i\n", *tplfmt);
-  for (i = 0; i < *ncapt; i++) {
+  for (i=0; i < *ncapt; i++) {
     bft_printf("--xyzcap[%i][0] = %f\n", i, xyzcap[0 +i*3]);
     bft_printf("--xyzcap[%i][1] = %f\n", i, xyzcap[1 +i*3]);
     bft_printf("--xyzcap[%i][2] = %f\n", i, xyzcap[2 +i*3]);
   }
-  for (i=0; i < vars->nvar - vars->nscaus - vars->nscapp; i++){
+  for (i = 0; i < vars->nvar - vars->nscaus - vars->nscapp; i++){
     ipp = ipprtp[vars->rtp[i]];
     bft_printf("-->variable ipprtp[%i] = %s\n", ipp, vars->name[i]);
     bft_printf("--ichrvr[%i] = %i \n", ipp, ichrvr[ipp-1]);
@@ -1700,7 +1725,7 @@ void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
         bft_printf("--ihisvr[%i][%i]= %i \n", j+1, ipp,
                    ihisvr[(j+1)*(*nvppmx) + (ipp-1)]);
   }
-  for (i=0 ; i < vars->nscaus + vars->nscapp ; i++) {
+  for (i = 0; i < vars->nscaus + vars->nscapp ; i++) {
     ipp = ipprtp[isca[i] -1];
     bft_printf("-->scalar ipprtp[%i]: %s\n", ipp, vars->label[i]);
     bft_printf("--ichrvr[%i] = %i \n", ipp, ichrvr[ipp-1]);
@@ -1711,22 +1736,26 @@ void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
         bft_printf("--ihisvr[%i][%i]= %i \n", j+1, ipp,
                    ihisvr[(j+1)*(*nvppmx) + (ipp-1)]);
   }
-  for (i=0 ; i<vars->nprop ; i++) {
+  for (i = 0; i<vars->nprop ; i++) {
     ipp = vars->properties_ipp[i];
     bft_printf("-->properties_name[%i]: %s\n", i, vars->properties_name[i]);
     bft_printf("--ichrvr[%i] = %i \n", ipp, ichrvr[ipp-1]);
     bft_printf("--ilisvr[%i] = %i \n", ipp, ilisvr[ipp-1]);
     bft_printf("--ihisvr[0][%i]= %i \n", ipp, ihisvr[0 + (ipp-1)]);
     if (ihisvr[0 + (ipp-1)]>0)
-      for (j=0; j<ihisvr[0 + (ipp-1)]; j++)
+      for (j = 0; j<ihisvr[0 + (ipp-1)]; j++)
         bft_printf("--ihisvr[%i][%i]= %i \n", j+1, ipp,
                    ihisvr[(j+1)*(*nvppmx) + (ipp-1)]);
   }
 #endif
 }
 
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
 /*----------------------------------------------------------------------------
- * Input/output treatment
+ * Define postprocessing meshes using an XML file.
  *----------------------------------------------------------------------------*/
 
 void
@@ -1767,7 +1796,7 @@ cs_gui_postprocess_meshes(void)
     cs_xpath_add_element(&path, "writer");
     n_writers = cs_gui_get_nb_element(path);
     BFT_MALLOC(writer_ids, n_writers, int);
-    for (j=0; j <= n_writers-1; j++){
+    for (j = 0; j <= n_writers-1; j++) {
       id_writer = cs_gui_output_associate_mesh_writer(i,j+1);
       writer_ids[j] = id_writer;
     }
@@ -1778,7 +1807,7 @@ cs_gui_postprocess_meshes(void)
       cs_post_define_surface_mesh(id, label, location, NULL,
                                   add_groups, auto_vars,
                                   n_writers, writer_ids);
-    } else if(cs_gui_strcmp(type, "boundary_faces")){
+    } else if(cs_gui_strcmp(type, "boundary_faces")) {
       cs_post_define_surface_mesh(id, label, NULL, location,
                                   add_groups, auto_vars,
                                   n_writers, writer_ids);
@@ -1795,7 +1824,7 @@ cs_gui_postprocess_meshes(void)
 }
 
 /*----------------------------------------------------------------------------
- * Input/output treatment
+ * Define postprocessing writers using an XML file.
  *----------------------------------------------------------------------------*/
 
 void
