@@ -41,13 +41,6 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/*=============================================================================
- * Public function prototypes
- *============================================================================*/
-
-void cs_gui_postprocess_writers(void);
-void cs_gui_postprocess_meshes(void);
-
 /*============================================================================
  * Public function prototypes for Fortran API
  *============================================================================*/
@@ -57,11 +50,11 @@ void cs_gui_postprocess_meshes(void);
  *
  * Fortran Interface:
  *
- * SUBROUTINE uinpst (ttcabs, ntcabs)
+ * subroutine uinpst (ttcabs, ntcabs)
  * *****************
  *
- * INTEGER          UREF   <--   reference velocity
- * DOUBLE          ALMAX  <--   reference length
+ * integer          uref  <-- reference velocity
+ * double          almax  <-- reference length
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uinpst, UINPST) (const cs_int_t  *ntcabs,
@@ -69,7 +62,7 @@ void CS_PROCF (uinpst, UINPST) (const cs_int_t  *ntcabs,
 
 
 /*----------------------------------------------------------------------------
- * Input/output treatment
+ * Determine output options
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
@@ -87,6 +80,24 @@ void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
                                 const cs_int_t  *iscapp,
                                 const cs_int_t  *ipprtp,
                                 cs_real_t       *xyzcap);
+
+/*============================================================================
+ * Public function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Define postprocessing meshes using an XML file.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_postprocess_meshes(void);
+
+/*----------------------------------------------------------------------------
+ * Define postprocessing writers using an XML file.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_postprocess_writers(void);
 
 /*----------------------------------------------------------------------------*/
 
