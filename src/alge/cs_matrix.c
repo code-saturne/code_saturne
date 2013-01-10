@@ -5720,7 +5720,7 @@ cs_matrix_variant_tuned(double                 t_measure,
   double speedup, max_speedup;
   double t_speedup[CS_MATRIX_N_TYPES][CS_MATRIX_N_FILL_TYPES];
   double t_overhead[CS_MATRIX_N_TYPES][CS_MATRIX_N_FILL_TYPES];
-  int cur_select[8];
+  int cur_select[CS_MATRIX_N_FILL_TYPES*2];
 
   int                    _n_fill_types_default = 3;
   cs_matrix_fill_type_t  _fill_types_default[] = {CS_MATRIX_SCALAR,
@@ -5855,7 +5855,7 @@ cs_matrix_variant_tuned(double                 t_measure,
   strncpy(r->name, cs_matrix_type_name[t_id_max], 31);
   r->type = t_id_max;
 
-  for (sub_id = 0; sub_id < CS_MATRIX_N_FILL_TYPES; sub_id++)
+  for (sub_id = 0; sub_id < _n_fill_types*2; sub_id++)
     cur_select[sub_id] = -1;
 
   for (v_id = 0; v_id < n_variants; v_id++) {
@@ -5882,7 +5882,7 @@ cs_matrix_variant_tuned(double                 t_measure,
             r->vector_multiply[sub_id] = v->vector_multiply[sub_id];
             r->matrix_vector_cost[sub_id] = v->matrix_vector_cost[sub_id];
             r->loop_length = v->loop_length;
-            cur_select[sub_id] = v_id;
+            cur_select[f_id*2 + ed_flag] = v_id;
           }
         }
 
@@ -5927,17 +5927,16 @@ cs_matrix_variant_tuned(double                 t_measure,
 
         int count_tot = 0;
 
-        sub_id = _fill_types[f_id]*2 + ed_flag;
-
         for (v_id = 0; v_id < n_variants; v_id++)
-          count_tot += (select_sum[v_id*step + sub_id]);
+          count_tot += (select_sum[v_id*step + f_id*2 + ed_flag]);
 
         if (count_tot > 0) {
+          sub_id = _fill_types[f_id]*2 + ed_flag;
           cs_log_printf(CS_LOG_PERFORMANCE,
                         _("\n  -%s:\n"),
                         _(_matrix_operation_name[sub_id]));
           for (v_id = 0; v_id < n_variants; v_id++) {
-            int scount = select_sum[v_id*step + sub_id];
+            int scount = select_sum[v_id*step + f_id*2 + ed_flag];
             if (scount > 0) {
               char title[36] =  {""};
               v = m_variant + v_id;
@@ -5963,11 +5962,9 @@ cs_matrix_variant_tuned(double                 t_measure,
 
     for (f_id = 0; f_id < _n_fill_types; f_id++) {
       for (ed_flag = 0; ed_flag < 2; ed_flag++) {
-
-        sub_id = _fill_types[f_id]*2 + ed_flag;
-
-        v_id = cur_select[sub_id];
+        v_id = cur_select[f_id*2 + ed_flag];
         if (v_id > -1) {
+          sub_id = _fill_types[f_id]*2 + ed_flag;
           v = m_variant + v_id;
           cs_log_printf(CS_LOG_PERFORMANCE,
                         _("  %-44s : %s\n"),
