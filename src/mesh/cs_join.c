@@ -661,8 +661,8 @@ _get_local_o2n_vtx_gnum(cs_join_param_t    param,
 {
   cs_lnum_t  i, shift, rank;
 
-  cs_lnum_t  *send_shift = NULL, *recv_shift = NULL;
-  cs_lnum_t  *send_count = NULL, *recv_count = NULL;
+  int        *send_shift = NULL, *recv_shift = NULL;
+  int        *send_count = NULL, *recv_count = NULL;
   cs_gnum_t  *send_glist = NULL, *recv_glist = NULL;
   cs_gnum_t  *new_gnum_by_block = *p_o2n_vtx_gnum;
   cs_gnum_t  *new_local_gnum = NULL;
@@ -684,8 +684,8 @@ _get_local_o2n_vtx_gnum(cs_join_param_t    param,
 
   /* Request the new vtx gnum related to the initial vtx gnum */
 
-  BFT_MALLOC(send_count, n_ranks, cs_lnum_t);
-  BFT_MALLOC(recv_count, n_ranks, cs_lnum_t);
+  BFT_MALLOC(send_count, n_ranks, int);
+  BFT_MALLOC(recv_count, n_ranks, int);
 
   for (i = 0; i < n_ranks; i++)
     send_count[i] = 0;
@@ -706,8 +706,8 @@ _get_local_o2n_vtx_gnum(cs_join_param_t    param,
 
   MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, mpi_comm);
 
-  BFT_MALLOC(send_shift, n_ranks + 1, cs_lnum_t);
-  BFT_MALLOC(recv_shift, n_ranks + 1, cs_lnum_t);
+  BFT_MALLOC(send_shift, n_ranks + 1, int);
+  BFT_MALLOC(recv_shift, n_ranks + 1, int);
 
   send_shift[0] = 0;
   recv_shift[0] = 0;
@@ -727,7 +727,7 @@ _get_local_o2n_vtx_gnum(cs_join_param_t    param,
 
   for (i = 0; i < mesh->n_vertices; i++) {
 
-    rank = (mesh->global_vtx_num[i] - 1)/block_info.size;
+    rank = (mesh->global_vtx_num[i] - 1)/(cs_gnum_t)(block_info.size);
     shift = send_shift[rank] + send_count[rank];
     send_glist[shift] = mesh->global_vtx_num[i];  /* Old global number */
     send_count[rank] += 1;
@@ -737,7 +737,7 @@ _get_local_o2n_vtx_gnum(cs_join_param_t    param,
   if (param.perio_type != FVM_PERIODICITY_NULL) {
 
     for (i = 0; i < select->n_vertices; i++) {
-      rank = (select->per_v_couples[2*i+1] - 1)/block_info.size;
+      rank = (select->per_v_couples[2*i+1] - 1)/(cs_gnum_t)(block_info.size);
       shift = send_shift[rank] + send_count[rank];
       send_glist[shift] = select->per_v_couples[2*i+1]; /* Old global num. */
       send_count[rank] += 1;
