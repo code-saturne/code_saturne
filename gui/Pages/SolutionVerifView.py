@@ -31,7 +31,7 @@ This module contains the following class:
 # Standard modules
 #-------------------------------------------------------------------------------
 
-import os, logging, subprocess
+import os, logging
 import string, shutil
 
 #-------------------------------------------------------------------------------
@@ -85,7 +85,6 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
         self.case = case
         self.case2 = case2
         self.case.undoStopGlobal()
-        self.cs = self.case['package'].get_solver()
         self.mdl = SolutionDomainModel(self.case)
         self.out2 = OutputControlModel(self.case2)
 
@@ -132,7 +131,7 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
 
             for meshNode in nodeList:
 
-                cmd = self.case['package'].get_preprocessor()
+                cmd = []
 
                 mesh   = meshNode['name']
                 format = meshNode['format']
@@ -142,29 +141,31 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
                 if not os.path.isabs(mesh) and self.case['mesh_path'] != None:
                     mesh = os.path.join(self.case['mesh_path'], mesh)
                 if meshNode['num']:
-                    cmd += ' --num ' + meshNode['num']
+                    cmd = cmd + ['--num', meshNode['num']]
                 if meshNode['reorient'] == 'on':
-                    cmd += ' --reorient'
+                    cmd.append('--reorient')
                 if meshNode['grp_fac']:
-                    cmd += ' --grp-fac ' + meshNode['grp_fac']
+                    cmd = cmd + ['--grp-fac', meshNode['grp_fac']]
                 if meshNode['grp_cel']:
-                    cmd += ' --grp-cel ' + meshNode['grp_cel']
+                    cmd = cmd + ['--grp-cel', meshNode['grp_cel']]
 
                 # Define postprocessing output for errors and warnings.
 
                 if self.fmt in ('med', 'cgns'):
-                    cmd += ' --post-error ' + self.fmt
+                    cmd = cmd + ['--post-error', self.fmt]
                 else:
-                    cmd += ' --post-error ensight'
+                    cmd = cmd + ['--post-error', 'ensight']
 
-                cmd += ' --case preprocess'
+                str_add = '_%02d' % (len(self.preprocess_cmd)+1)
+
+                cmd = cmd + ['--case', 'preprocess'+str_add]
                 if len(nodeList) > 1:
-                    str_add = '_%02d' % (len(self.preprocess_cmd) + 1)
-                    cmd += str_add
-                    cmd += ' --out ' + os.path.join('mesh_input', 'mesh' + str_add)
-                cmd += ' ' + mesh
+                    cmd = cmd + ['--out',
+                                 os.path.join('mesh_input', 'mesh'+str_add)]
 
-                log.debug("ecs_cmd = %s" % cmd)
+                cmd.append(mesh)
+
+                log.debug("ecs_cmd = %s" % str(cmd))
 
                 self.preprocess_cmd.append(cmd)
 
@@ -175,7 +176,23 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
 
     def __preProcess(self):
 
-        cmd = self.preprocess_cmd.pop(0)
+
+        # Modify the PATH for relocatable installation
+
+        import sys
+
+        if self.case['package'].config.features['relocatable'] == "yes":
+            if sys.platform.startswith("win"):
+                env = QProcessEnvironment.systemEnvironment()
+                saved_path = env.value('PATH')
+                env.insert("PATH",
+                           self.case['package'].get_dir('bindir') + ";" + \
+                           env.value("PATH"))
+                self.proc.setProcessEnvironment(env)
+
+        # Prepare command
+
+        args = self.preprocess_cmd.pop(0)
         nodelist = self.mdl.node_meshes.xmlGetNodeList('mesh', 'name')
 
         if len(self.preprocess_cmd) < len(nodelist):
@@ -183,7 +200,8 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
                             SIGNAL('finished(int, QProcess::ExitStatus)'),
                             self.__preProcess)
 
-        self.proc.start(cmd)
+        self.proc.start(QString(self.case['package'].get_preprocessor()),
+                        QStringList(args))
 
         # Run Preprocessor
 
@@ -197,6 +215,13 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
             self.connect(self.proc,
                          SIGNAL('finished(int, QProcess::ExitStatus)'),
                          self.__ecsPostTreatment)
+
+        # Reset the PATH to its previous value
+
+        if self.case['package'].config.features['relocatable'] == "yes":
+            if sys.platform.startswith("win"):
+                env.insert("PATH", saved_path)
+                self.proc.setProcessEnvironment(env)
 
 
     def __ecsPostTreatment(self):
@@ -213,18 +238,40 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
 
     def __csProcess(self):
 
+        # Modify the PATH for relocatable installation
+
+        import sys
+
+        if self.case['package'].config.features['relocatable'] == "yes":
+            if sys.platform.startswith("win"):
+                env = QProcessEnvironment.systemEnvironment()
+                saved_path = env.value('PATH')
+                env.insert("PATH",
+                           self.case['package'].get_dir('bindir') + ";" + \
+                           env.value("PATH"))
+                self.proc.setProcessEnvironment(env)
+
         # Run Kernel
         self.disconnect(self.proc,
                         SIGNAL('finished(int, QProcess::ExitStatus)'),
                         self.__ecsPostTreatment)
 
         self.case2.xmlSaveDocument()
-        args = ' --quality --log 0 --param ' + self.case2['xmlfile']
-        self.proc.start(self.cs + args)
+        args = ['--quality', '--log', '0', '--param', self.case2['xmlfile']]
+
+        self.proc.start(QString(self.case['package'].get_solver()),
+                        QStringList(args))
 
         self.connect(self.proc,
                      SIGNAL('finished(int, QProcess::ExitStatus)'),
                      self.__csPostTreatment)
+
+        # Reset the PATH to its previous value
+
+        if self.case['package'].config.features['relocatable'] == "yes":
+            if sys.platform.startswith("win"):
+                env.insert("PATH", saved_path)
+                self.proc.setProcessEnvironment(env)
 
 
     def __csPostTreatment(self):

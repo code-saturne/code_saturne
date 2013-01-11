@@ -36,7 +36,6 @@ import sys
 import shutil
 import stat
 
-import cs_config
 import cs_compile
 import cs_xml_reader
 
@@ -748,22 +747,22 @@ class domain(base_domain):
 
             # Build command
 
-            cmd = self.package.get_preprocessor()
+            cmd = [self.package.get_preprocessor()]
 
             if (type(m) == tuple):
                 for opt in m[1:]:
-                    cmd += ' ' + opt
+                    cmd.append(opt)
 
             if (mesh_id != None):
                 mesh_id += 1
-                cmd += ' --log preprocessor_%02d.log' % (mesh_id)
-                cmd += ' --out ' + os.path.join('mesh_input',
-                                                'mesh_%02d' % (mesh_id))
+                cmd = cmd + ['--log', 'preprocessor_%02d.log' % (mesh_id)]
+                cmd = cmd + ['--out', os.path.join('mesh_input',
+                                                   'mesh_%02d' % (mesh_id))]
             else:
-                cmd += ' --log'
-                cmd += ' --out mesh_input'
+                cmd = cmd + ['--log']
+                cmd = cmd + ['--out', 'mesh_input']
 
-            cmd += ' ' + mesh_path
+            cmd.append(mesh_path)
 
             # Run command
 
@@ -804,7 +803,7 @@ class domain(base_domain):
         args = ''
 
         if self.param != None:
-            args += ' --param ' + self.param
+            args += ' --param "' + self.param + '"'
 
         if self.logging_args != None:
             args += ' ' + self.logging_args
@@ -813,7 +812,7 @@ class domain(base_domain):
             args += ' ' + self.solver_args
 
         if self.name != None:
-            args += ' --mpi --app-name ' + self.name
+            args += ' --mpi --app-name "' + self.name + '"'
         elif self.n_procs > 1:
             args += ' --mpi'
 
@@ -908,7 +907,7 @@ class domain(base_domain):
 
         # Determine files from this stage to ignore or to possibly remove
 
-        for f in [self.package.solver, 'run_solver.sh', 'run_solver.bat']:
+        for f in [self.package.solver, self.package.runsolver]:
             if f in dir_files:
                 purge_list.append(f)
         purge_list.extend(fnmatch.filter(dir_files, 'core*'))

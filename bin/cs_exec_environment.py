@@ -114,7 +114,7 @@ def write_export_env(fd, var, value):
     """
 
     if sys.platform.startswith('win'):
-        export_cmd = 'set ' + var + '="' + value
+        export_cmd = 'set ' + var + '=' + value
     else:
         if get_shell_type()[-3:] == 'csh': # handle C-type shells
             export_cmd = 'setenv ' + var + ' ' + value
@@ -130,8 +130,10 @@ def write_prepend_path(fd, var, user_path):
     Write the correct command so as to export PATH-type variables.
     """
 
+    # Caution: Windows PATH must NOT must double-quoted to account for blanks
+    # =======  in paths,contrary to UNIX systems
     if sys.platform.startswith('win'):
-        export_cmd = 'set ' + var + '="' + user_path + '";%' + var + '%'
+        export_cmd = 'set ' + var + '=' + user_path + ';%' + var + '%'
     else:
         if get_shell_type()[-3:] == 'csh': # handle C-type shells
             export_cmd = 'setenv ' + var + ' "' + user_path + '":$' + var
@@ -174,20 +176,27 @@ def run_command(cmd, pkg = None, echo = False,
     Run a command.
     """
     if echo == True:
-        stdout.write(cmd + '\n')
+        if type(cmd) == 'str':
+            stdout.write(str(cmd) + '\n')
+        else:
+            l = ''
+            for s in cmd:
+                if (s.find(' ') > -1):
+                    l += ' ' + '"' + s + '"'
+                else:
+                    l += ' ' + s
+            stdout.write(l.strip() + '\n')
 
     # Modify the PATH for relocatable installation: add Code_Saturne "bindir"
 
-    import cs_config
-    cfg = cs_config.config()
-
-    if cfg.features['relocatable'] == "yes" and pkg != None:
-        if sys.platform.startswith("win"):
-            sep = ";"
-        else:
-            sep = ":"
-        saved_path = os.environ['PATH']
-        os.environ['PATH'] = pkg.get_dir('bindir') + sep + saved_path
+    if pkg != None:
+        if pkg.config.features['relocatable'] == "yes":
+            if sys.platform.startswith("win"):
+                sep = ";"
+            else:
+                sep = ":"
+            saved_path = os.environ['PATH']
+            os.environ['PATH'] = pkg.get_dir('bindir') + sep + saved_path
 
     # As a workaround for a bug in which the standard output an error
     # are "lost" (observed in an apparently random manner, with Python 2.4),
@@ -199,17 +208,21 @@ def run_command(cmd, pkg = None, echo = False,
     if (stderr != sys.stderr):
         kwargs['stderr'] = stderr
 
-    p = subprocess.Popen(cmd,
-                         shell=True,
-                         executable=get_shell_type(),
-                         **kwargs)
+    if type(cmd) == 'str':
+        p = subprocess.Popen(cmd,
+                             shell=True,
+                             executable=get_shell_type(),
+                             **kwargs)
+    else:
+        p = subprocess.Popen(cmd, **kwargs)
 
     p.communicate()
 
     # Reset the PATH to its previous value
 
-    if cfg.features['relocatable'] == "yes" and pkg != None:
-        os.environ['PATH'] = saved_path
+    if pkg != None:
+        if pkg.config.features['relocatable'] == "yes":
+            os.environ['PATH'] = saved_path
 
     return p.returncode
 
@@ -251,13 +264,13 @@ def set_modules(pkg):
     Set environment modules if present.
     """
 
-    if pkg.env_modules == "no":
+    if pkg.config.env_modules == "no":
         return
 
-    cmd_prefix = pkg.env_modulecmd
+    cmd_prefix = pkg.config.env_modulecmd
 
     cmds = ['purge']
-    for m in pkg.env_modules.strip().split():
+    for m in pkg.config.env_modules.strip().split():
         cmds.append('load ' + m)
     for cmd in cmds:
         (output, error) = subprocess.Popen([cmd_prefix, 'python'] + cmd.split(),
@@ -784,8 +797,8 @@ class mpi_environment:
         # but in the case of srun, which uses a -n<n_procs> instead
         # of -n <n_procs> syntax, setting it to ' -n' will be enough.
 
-        self.type = pkg.mpi_type
-        self.bindir = pkg.mpi_bindir
+        self.type = pkg.config.libs['mpi'].variant
+        self.bindir = pkg.config.libs['mpi'].bindir
 
         self.gen_hostsfile = None
         self.del_hostsfile = None

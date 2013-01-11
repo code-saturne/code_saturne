@@ -233,6 +233,7 @@ if test "x$auto_flags" = "xyes" ; then
   AC_SUBST(FCFLAGS_HOT)
 
   AC_SUBST(LDRPATH)
+
 fi
 
 # Add some preprocessor flags to include additional system features
@@ -284,15 +285,14 @@ fi
 # take effect whether the result is true or not (maybe due to a bug),
 # so we directly use autoconf's enable_shared variable.
 
-if test "x$cs_ibm_bg_type" = "xL" -o "x$cs_ibm_bg_type" = "xP" \
-     -o "$host_os" = cygwin -o "$host_os" = mingw32 ; then
+if test "x$cs_ibm_bg_type" = "xL" -o "x$cs_ibm_bg_type" = "xP"; then
    enable_shared=no
 fi
 AC_SUBST(enable_shared)
 
 # Initialize libtool.
 
-LT_INIT
+LT_INIT([win32-dll])
 
 # On some systems, such as Mac OS X in static mode, limitations
 # of the linker require special handling for user user subroutines
@@ -358,6 +358,9 @@ AC_SUBST(cs_have_long_gnum)
 
 # Check for Fortran module generation
 CS_AC_TEST_FC_MOD
+
+# Needed for some portability of some libtool-related macros
+AM_PROG_AR
 
 #------------------------------------------------------------------------------
 # Determine OpenMP support
@@ -463,6 +466,12 @@ if test x$cs_have_med_link_cxx = xyes ; then
 elif test x$cs_have_medcoupling = xyes -o x$cs_have_paramedmem = xyes ; then
   cs_have_link_cxx=yes
 fi
+if test $cs_have_link_cxx = yes ; then
+  CS_LD=$CXX
+else
+  CS_LD=$CC
+fi
+AC_SUBST(CS_LD)
 AM_CONDITIONAL(HAVE_LINK_CXX, test x$cs_have_link_cxx = xyes)
 
 #------------------------------------------------------------------------------
@@ -573,6 +582,11 @@ path = app.applicationDirPath()
 sys.stdout.write(path)]"
 
   PYPATH=`${PYTHON} -c "${prog}"`
+
+  # On Cygwin hosts, the PATH does not seem to be correctly found
+  if test "$host_os" = cygwin ; then
+     PYPATH=/usr/lib/python$PYTHON_VERSION/site-packages/PyQt4
+  fi
 
   AC_ARG_VAR([PYUIC4], [PyQt4 user interfaces compiler])
   AC_ARG_VAR([PYRCC4], [PyQt4 resources compiler])

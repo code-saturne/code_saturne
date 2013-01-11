@@ -125,23 +125,79 @@ def process_cmd_line(argv, pkg):
 
 #-------------------------------------------------------------------------------
 
+def get_compiler(pkg, compiler):
+
+    # First, handle the standard "non relocatable" case
+    if pkg.config.features['relocatable'] == "no":
+        return pkg.config.compilers[compiler]
+
+    # On Windows, compilers are installed in "bindir" for DLL search
+    if sys.platform.startswith("win"):
+        bindir = os.path.dirname(pkg.scriptdir)
+        return os.path.join(bindir, pkg.config.compilers[compiler])
+
+    # On Linux systems, one assumes compilers are installed in the system
+    else:
+        return pkg.config.compilers[compiler]
+
+#-------------------------------------------------------------------------------
+
+def get_flags(pkg, flag):
+
+    cmd_line = []
+
+    # Build the command line, and split possible multiple arguments
+    # in lists, assuming at this step no white-space in paths or names
+    for lib in pkg.config.deplibs:
+        if (pkg.config.libs[lib].have == "yes"
+            and (not pkg.config.libs[lib].dynamic_load)):
+            cmd_line += pkg.config.libs[lib].flags[flag].split()
+
+    # Add CPPFLAGS and LDFLAGS information for the current package
+    if flag == 'cppflags':
+        cmd_line.insert(0, "-I" + pkg.get_dir("pkgincludedir"))
+    elif flag == 'ldflags':
+        cmd_line.insert(0, "-L" + pkg.get_dir("libdir"))
+
+    # Add CPPFLAGS information when PLE is "internal"
+    if pkg.config.libs['ple'].variant == "internal" and flag == 'cppflags':
+        cmd_line.insert(0, "-I" + pkg.get_dir("includedir"))
+
+    # On Windows, flags must be adapted so as to handle the relocation
+    # of system headers (together with the compiler)
+    if sys.platform.startswith("win"):
+        for i in range(len(cmd_line)):
+            s = cmd_line[i]
+            for p in ["-I/mingw", "-Ic:/mingw"]:
+                s_tmp = s.replace(p, "-I" + pkg.get_dir("prefix"))
+            for p in ["-L/mingw", "-Lc:/mingw"]:
+                s_tmp = s.replace(p, "-L" + pkg.get_dir("prefix"))
+            cmd_line[i] = s_tmp
+
+    return cmd_line
+
+#-------------------------------------------------------------------------------
+
 def so_dirs_path(flags, pkg):
     """
     Assemble path for shared libraries in nonstandard directories.
     """
-    retval = " " + pkg.rpath
+    retval = pkg.config.rpath.split(" ")
     count = 0
 
     pkg_lib = os.path.join(pkg.get_dir('libdir'), pkg.name)
     if os.path.isdir(pkg_lib):
-        retval = retval + ":" + pkg_lib
+        retval[1] +=  [":" + pkg_lib]
         count += 1
 
-    args = flags.split(" ")
+    if type(flags) == 'str':
+        args = flags.split(" ")
+    else:
+        args = flags
 
     for arg in args:
         if arg[0:2] == '-L' and arg[0:10] != '-L/usr/lib' and arg[0:6] != '-L/lib':
-            retval = retval + ":" + arg[2:]
+            retval[1] += ":" + arg[2:]
             count += 1
 
     if count == 0:
@@ -186,17 +242,13 @@ def compile_and_link(pkg, srcdir, destdir,
     # no multiple definitions are allowable in static mode;
     # in this case, extract archive, then overwrite with user files.
 
-    p_libs = pkg.get_flags('libs')
-    if pkg.special_user_link == 'ar_x':
+    p_libs = get_flags(pkg, 'libs')
+    if pkg.config.special_user_link == 'ar_x':
         if force_link or (len(c_files) + len(cxx_files) + len(f_files)) > 0:
-            i = p_libs.find(' ')
-            if (i > 0):
-                lib0 = os.path.join(pkg.get_dir('libdir'), 'lib' + p_libs[2:i] + '.a')
-                p_libs = p_libs[i+1:]
-            else:
-                lib0 = os.path.join(pkg.get_dir('libdir'), 'lib' + p_libs[2:] + '.a')
-                p_libs = ''
-            cmd = 'ar x ' + lib0
+            lib0 = os.path.join(pkg.get_dir('libdir'),
+                                'lib' + p_libs[0][2:] + '.a')
+            p_libs = [lib0] + p_libs[1:]
+            cmd = ['ar', 't', lib0]
             if run_command(cmd, pkg=pkg, echo=True,
                            stdout=stdout, stderr=stderr) != 0:
                 retval = 1
@@ -206,18 +258,18 @@ def compile_and_link(pkg, srcdir, destdir,
     for f in c_files:
         if (retval != 0 and not keep_going):
             break
-        cmd = pkg.get_compiler('cc')
+        cmd = [get_compiler(pkg, 'cc')]
         if opt_cflags != None:
-            cmd = cmd + " " + opt_cflags
+            cmd = cmd + opt_cflags.split()
         if len(h_files) > 0:
-            cmd = cmd + " -I" + srcdir
-        cmd = cmd + " -I" + pkg.get_dir('pkgincludedir')
+            cmd = cmd + ["-I", srcdir]
+        cmd.append('-DHAVE_CONFIG_H')
         if f == 'cs_base.c':
-            cmd = cmd + ' -DLOCALEDIR=\\"' + pkg.get_dir('localedir') \
-                      + '\\" -DPKGDATADIR=\\"' + pkg.get_dir('pkgdatadir') + '\\"'
-        cmd = cmd + " " + pkg.get_flags('cppflags')
-        cmd = cmd + " " + pkg.get_flags('cflags')
-        cmd = cmd + " -c " + os.path.join(srcdir, f)
+            cmd = cmd + ['-DLOCALEDIR=\\"' + pkg.get_dir('localedir') + '\\"', \
+                         '-DPKGDATADIR=\\"' + pkg.get_dir('pkgdatadir') + '\\"']
+        cmd = cmd + get_flags(pkg, 'cppflags')
+        cmd = cmd + pkg.config.flags['cflags'].split()
+        cmd = cmd + ["-c", os.path.join(srcdir, f)]
         if run_command(cmd, pkg=pkg, echo=True,
                        stdout=stdout, stderr=stderr) != 0:
             retval = 1
@@ -225,15 +277,14 @@ def compile_and_link(pkg, srcdir, destdir,
     for f in cxx_files:
         if (retval != 0 and not keep_going):
             break
-        cmd = pkg.get_compiler('cxx')
+        cmd = [get_compiler(pkg, 'cxx')]
         if opt_cxxflags != None:
-            cmd = cmd + " " + opt_cxxflags
+            cmd = cmd + opt_cxxflags.split()
         if len(hxx_files) > 0:
-            cmd = cmd + " -I" + srcdir
-        cmd = cmd + " -I" + pkg.get_dir('pkgincludedir')
-        cmd = cmd + " " + pkg.get_flags('cppflags')
-        cmd = cmd + " " + pkg.get_flags('cxxflags')
-        cmd = cmd + " -c " + os.path.join(srcdir, f)
+            cmd = cmd + ["-I", srcdir]
+        cmd = cmd + get_flags(pkg, 'cppflags')
+        cmd = cmd + pkg.config.flags['cxxflags'].split()
+        cmd = cmd + ["-c", os.path.join(srcdir, f)]
         if run_command(cmd, pkg=pkg, echo=True,
                        stdout=stdout, stderr=stderr) != 0:
             retval = 1
@@ -246,34 +297,35 @@ def compile_and_link(pkg, srcdir, destdir,
     for f in f_files:
         if (retval != 0 and not keep_going):
             break
-        cmd = pkg.get_compiler('fc')
+        cmd = [get_compiler(pkg, 'fc')]
         if opt_fcflags != None:
-            cmd = cmd + " " + opt_fcflags
-        cmd = cmd + " -I" + srcdir
-        if pkg.fcmodinclude != "-I":
-            cmd += " " + pkg.fcmodinclude + srcdir
-        cmd = cmd + " -I" + pkg.get_flags('fcmoddir')
-        if pkg.fcmodinclude != "-I":
-            cmd += " " + pkg.fcmodinclude + pkg.get_flags('fcmoddir')
-        cmd = cmd + " " + pkg.get_flags('fcflags')
-        cmd = cmd + " -c " + os.path.join(srcdir, f)
+            cmd = cmd + opt_fcflags.split()
+        cmd = cmd + ["-I", srcdir]
+        if pkg.config.fcmodinclude != "-I":
+            cmd = cmd + [pkg.config.fcmodinclude, srcdir]
+        cmd = cmd + ["-I", pkg.get_dir('pkgincludedir')]
+        if pkg.config.fcmodinclude != "-I":
+            cmd = cmd + [pkg.config.fcmodinclude, pkg.get_dir('pkgincludedir')]
+        cmd = cmd + pkg.config.flags['fcflags'].split()
+        cmd = cmd + ["-c", os.path.join(srcdir, f)]
         if run_command(cmd, pkg=pkg, echo=True,
                        stdout=stdout, stderr=stderr) != 0:
             retval = 1
 
     if retval == 0 and (force_link or (len(c_files) + len(cxx_files) + len(f_files)) > 0):
-        cmd = pkg.get_compiler('ld')
-        cmd = cmd + " -o " + exec_name
+        cmd = [get_compiler(pkg, 'ld')]
+        cmd = cmd + ["-o", exec_name]
         if (len(c_files) + len(cxx_files) + len(f_files)) > 0:
-          cmd = cmd + " *.o"
-        cmd = cmd + " -L" + pkg.get_dir('libdir')
+            dir_files = os.listdir(temp_dir)
+            o_files = fnmatch.filter(dir_files, '*.o')
+            cmd = cmd + o_files
         if opt_libs != None:
             if len(opt_libs) > 0:
-                cmd = cmd + " " + opt_libs
-        cmd = cmd + " " + pkg.get_flags('ldflags') + " " + p_libs
-        cmd = cmd + " " + pkg.get_flags('deplibs')
-        if pkg.rpath != "":
-            cmd = cmd + " " + so_dirs_path(cmd, pkg)
+                cmd.append(opt_libs)
+        cmd = cmd + get_flags(pkg, 'ldflags')
+        cmd = cmd + p_libs
+        if pkg.config.rpath != "":
+            cmd += so_dirs_path(cmd, pkg)
         if run_command(cmd, pkg=pkg, echo=True,
                        stdout=stdout, stderr=stderr) != 0:
             retval = 1

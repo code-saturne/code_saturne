@@ -271,13 +271,13 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
                                  QMessageBox.Yes|QMessageBox.No)
 
         if r == QMessageBox.Yes:
-            self.__killChilds()
+            self.__killChildren()
             self.proc.kill()
 
 
-    def __killChilds(self):
+    def __killChildren(self):
         """
-        Private slot. Find and kill all childs of the spawned subprocess.
+        Private slot. Find and kill all children of the spawned subprocess.
         """
         cmd = "ps eo pid,ppid --sort=pid --no-headers"
         psraw = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.readlines()

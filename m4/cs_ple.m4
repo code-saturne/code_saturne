@@ -159,8 +159,16 @@ if test "x$with_ple" != "xno" ; then
   unset saved_LDFLAGS
   unset saved_LIBS
 
+  ple_type="external"
+
+else
+
+  ple_type="internal"
+
 fi
 
+
+AC_SUBST(ple_type)
 AC_SUBST(PLE_CPPFLAGS)
 AC_SUBST(PLE_LDFLAGS)
 AC_SUBST(PLE_LIBS)

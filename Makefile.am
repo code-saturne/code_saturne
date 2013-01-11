@@ -32,19 +32,10 @@ endif
 
 if HAVE_INTERNAL_PLE
 PLE = libple
-PLE_CPPFLAGS_TMP = -I$(includedir)
-else
-PLE_CPPFLAGS_TMP = $(PLE_CPPFLAGS)
 endif
 
 if HAVE_SALOME_KERNEL
 SALOME = salome
-endif
-
-if HAVE_MKL
-  CPPFLAGS_BLAS =  $(BLAS_CPPFLAGS)
-  LDFLAGS_BLAS = $(BLAS_LDFLAGS) $(BLASRUNPATH)
-  LIBS_BLAS = $(BLAS_LIBS)
 endif
 
 SUBDIRS = $(PLE) $(PREPRO) src $(SALOME) po docs $(GUI) tests
@@ -162,35 +153,12 @@ ACLOCAL_AMFLAGS = -I m4
 # through Makefile targets rather than through configure, and
 # cites its own automate and autoheader as examples.
 
-if HAVE_LINK_CXX
-CS_LD=$(CXX)
-else
-CS_LD=$(CC)
-endif
-
-CSCPPFLAGS = $(PLE_CPPFLAGS_TMP) $(CGNS_CPPFLAGS) $(MED_CPPFLAGS) \
-$(HDF5_CPPFLAGS) $(MPI_CPPFLAGS) $(LIBXML2_CPPFLAGS) $(CPPFLAGS_BLAS)
-
-CSCFLAGS = $(CFLAGS) $(CFLAGS_DBG) $(CFLAGS_OPT)
-CSCXXFLAGS = $(CXXFLAGS) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT)
-CSFCFLAGS = $(FCFLAGS) $(FCFLAGS_DBG) $(FCFLAGS_OPT)
-
-CSLDFLAGS = $(PLE_LDFLAGS) $(CGNS_LDFLAGS) $(MED_LDFLAGS) $(HDF5_LDFLAGS) \
-$(CCM_LDFLAGS) $(EOS_LDFLAGS) \
-$(METIS_LDFLAGS) $(SCOTCH_LDFLAGS) $(MPI_LDFLAGS) $(LIBXML2_LDFLAGS) \
-$(LDFLAGS_BLAS)
-
-CSLIBS = $(PLE_LIBS) $(CGNS_LIBS) $(MED_LIBS) $(HDF5_LIBS) \
-$(CCM_LIBS) $(EOS_LIBS) \
-$(METIS_LIBS) $(SCOTCH_LIBS) $(MPI_LIBS) $(LIBXML2_LIBS) \
-$(LIBS_BLAS)
-
 edit_python = sed \
 	-e 's|@PYTHON[@]|$(PYTHON)|g' \
 	-e 's|@pkgpythondir[@]|$(pkgpythondir)|g' \
 	-e 's|@relocatable[@]|$(relocatable)|g'
 
-edit_config = sed \
+edit_package = sed \
 	-e 's|@prefix[@]|$(prefix)|g' \
 	-e 's|@exec_prefix[@]|$(exec_prefix)|g' \
 	-e 's|@bindir[@]|$(bindir)|g' \
@@ -208,35 +176,6 @@ edit_config = sed \
 	-e 's|@docdir[@]|$(docdir)|g' \
 	-e 's|@pdfdir[@]|$(pdfdir)|g' \
 	-e 's|@sysconfdir[@]|$(sysconfdir)|g' \
-	-e 's|@mpi_type[@]|$(mpi_type)|g' \
-	-e 's|@mpi_bindir[@]|$(mpi_bindir)|g' \
-	-e 's|@mpi_libdir[@]|$(mpi_libdir)|g' \
-	-e 's|@cs_env_modules[@]|$(cs_env_modules)|g' \
-	-e 's|@CC[@]|$(CC)|g' \
-	-e 's|@CS_LD[@]|$(CS_LD)|g' \
-	-e 's|@CXX[@]|$(CXX)|g' \
-	-e 's|@FC[@]|$(FC)|g' \
-	-e 's|@CS_CPPFLAGS[@]|$(CSCPPFLAGS)|g' \
-	-e 's|@CS_CFLAGS[@]|$(CSCFLAGS)|g' \
-	-e 's|@CS_CXXFLAGS[@]|$(CSCXXFLAGS)|g' \
-	-e 's|@CS_FCFLAGS[@]|$(CSFCFLAGS)|g' \
-	-e 's|@CS_LDFLAGS[@]|$(CSLDFLAGS)|g' \
-	-e 's|@CS_LIBS[@]|$(CSLIBS)|g' \
-	-e 's|@PLE_CPPFLAGS[@]|$(PLE_CPPFLAGS_TMP)|g' \
-	-e 's|@PLE_LDFLAGS[@]|$(PLE_LDFLAGS)|g' \
-	-e 's|@PLE_LIBS[@]|$(PLE_LIBS)|g' \
-	-e 's|@LDFLAGS[@]|$(LDFLAGS)|g' \
-	-e 's|@LIBINTL[@]|$(LIBINTL)|g' \
-	-e 's|@LIBS[@]|$(LIBS)|g' \
-	-e 's|@FCLIBS[@]|$(FCLIBS)|g' \
-	-e 's|@FCMODINCLUDE[@]|$(FCMODINCLUDE)|g' \
-	-e 's|@LDRPATH[@]|$(LDRPATH)|g' \
-	-e 's|@cs_special_user_link[@]|$(cs_special_user_link)|g' \
-	-e 's|@MODULECMD[@]|$(MODULECMD)|g' \
-	-e 's|@PYTHON[@]|$(PYTHON)|g' \
-	-e 's|@PYUIC4[@]|$(PYUIC4)|g' \
-	-e 's|@PYRCC4[@]|$(PYRCC4)|g' \
-	-e 's|@USE_NLS[@]|$(USE_NLS)|g' \
 	-e 's|@PACKAGE_NAME[@]|$(PACKAGE_NAME)|g' \
 	-e 's|@PACKAGE_TARNAME[@]|$(PACKAGE_TARNAME)|g' \
 	-e 's|@PACKAGE_VERSION[@]|$(PACKAGE_VERSION)|g' \
@@ -244,11 +183,7 @@ edit_config = sed \
 	-e 's|@PACKAGE_BUGREPORT[@]|$(PACKAGE_BUGREPORT)|g' \
 	-e 's|@PACKAGE_URL[@]|$(PACKAGE_URL)|g' \
 	-e 's|@SALOME_KERNEL[@]|$(SALOME_KERNEL)|g' \
-	-e 's|@SALOME_GUI[@]|$(SALOME_GUI)|g' \
-	-e 's|@SALOME_YACS[@]|$(SALOME_YACS)|g' \
-	-e 's|@SALOMEENVCMD[@]|$(SALOMEENVCMD)|g' \
-	-e 's|@SALOMEPRE[@]|$(SALOMEPRE)|g' \
-	-e 's|@SALOMERUN[@]|$(SALOMERUN)|g'
+	-e 's|@SALOMEENVCMD[@]|$(SALOMEENVCMD)|g'
 
 bin/code_saturne bin/runcase_coupling: Makefile
 	rm -f $@ $@.tmp
@@ -263,7 +198,7 @@ bin/cs_package.py bin/runcase_aster: Makefile
 	$(MKDIR_P) bin
 	srcdir=''; \
 	test -f ./$@.in || srcdir=$(srcdir)/; \
-	$(edit_config) $${srcdir}$@.in >$@.tmp
+	$(edit_package) $${srcdir}$@.in >$@.tmp
 	mv $@.tmp $@
 
 bin/code_saturne: $(srcdir)/bin/code_saturne.in

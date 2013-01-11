@@ -469,10 +469,8 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
         if self.case['scripts_path']:
             if not self.case['batch']:
-                if 'runcase' in os.listdir(self.case['scripts_path']):
-                    self.case['batch'] = 'runcase'
-                elif 'runcase.bat' in os.listdir(self.case['scripts_path']):
-                    self.case['batch'] = 'runcase.bat'
+                if self.case['package'].runcase in os.listdir(self.case['scripts_path']):
+                    self.case['batch'] = self.case['package'].runcase
 
 
         # Get batch type
@@ -764,11 +762,10 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         Return an id.
         """
-        cmd = os.path.join(self.case['package'].get_dir('bindir'),
-                           self.case['package'].name)
-        cmd += " run --suggest-id"
+        cmd = [os.path.join(self.case['package'].get_dir('bindir'),
+                            self.case['package'].name)]
+        cmd = cmd + ["run", "--suggest-id"]
         r_title = subprocess.Popen(cmd,
-                                   shell=True,
                                    stdout=subprocess.PIPE).stdout.read()[:-1]
         r_id = os.path.join(self.case['resu_path'], r_title)
 
@@ -787,9 +784,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         Update the command line in the launcher C{runcase}.
         """
-        runcase = os.path.join(self.case['scripts_path'], "runcase")
-        if sys.platform.startswith('win'):
-            runcase = runcase + '.bat'
+        runcase = self.case['batch']
 
         try:
             run_ref_f = file(runcase, mode='r')

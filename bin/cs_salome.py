@@ -39,7 +39,6 @@ import os, sys
 from optparse import OptionParser
 
 import cs_exec_environment
-from cs_config import config
 
 #-------------------------------------------------------------------------------
 # Processes the passed command line arguments
@@ -75,9 +74,7 @@ export CFDSTUDY_ROOT_DIR PYTHONPATH;
 %(runsalome)s --modules=%(modules)s
 """
 
-    cfg = config()
-
-    if cfg.have_salome == "no":
+    if pkg.config.have_salome == "no":
         sys.stderr.write("SALOME is not available in this installation.\n")
         sys.exit(1)
 
@@ -98,6 +95,7 @@ export CFDSTUDY_ROOT_DIR PYTHONPATH;
     process_cmd_line(argv, pkg)
 
     retcode = cs_exec_environment.run_command(cmd,
+                                              shell=True,
                                               stdout=None,
                                               stderr=None)
 

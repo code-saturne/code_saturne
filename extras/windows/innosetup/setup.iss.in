@@ -38,7 +38,7 @@
 #define HAVE_MPI "@cs_have_mpi@"
 #define HAVE_SCOTCH "@cs_have_scotch@"
 
-#define GCC_VERSION "4.7.0"
+#define GCC_VERSION "4.7.2"
 #define PYTHON_VERSION "2.7"
 
 #define Install "."
@@ -314,6 +314,7 @@ Source: "{#MinGW}\include\metis.h"; DestDir: "{app}\include"; Flags: ignoreversi
 Source: "{#MinGW}\lib\libmetis.dll.a"; DestDir: "{app}\lib"; Flags: ignoreversion; Components: dev\metis
 #endif
 #if HAVE_MPI == "yes"
+Source: "{#MinGW}\bin\mpicsync.exe"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core
 Source: "{#MinGW}\bin\mpiexec.exe"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core
 Source: "{#MinGW}\bin\msmpi.dll"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core
 Source: "{#MinGW}\bin\smpd.exe"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core
@@ -333,10 +334,10 @@ Source: "{#Install}\include\code_saturne\*"; DestDir: "{app}\include\code_saturn
 Source: "{#Install}\include\ple_*"; DestDir: "{app}\include"; Flags: ignoreversion; Components: dev\saturne
 Source: "{#Install}\lib\libple.dll.a"; DestDir: "{app}\lib"; Flags: ignoreversion; Components: dev\saturne
 Source: "{#Install}\lib\libsaturne.a"; DestDir: "{app}\lib"; Flags: ignoreversion; Components: dev\saturne
-Source: "{#Install}\libexec\code_saturne\cs_check_syntax.exe"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core
-Source: "{#Install}\libexec\code_saturne\cs_io_dump.exe"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core
-Source: "{#Install}\libexec\code_saturne\cs_preprocess.exe"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core
-Source: "{#Install}\libexec\code_saturne\cs_solver.exe"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core
+Source: "{#Install}\libexec\code_saturne\cs_check_syntax.exe"; DestDir: "{app}\libexec\code_saturne"; Flags: ignoreversion; Components: core
+Source: "{#Install}\libexec\code_saturne\cs_io_dump.exe"; DestDir: "{app}\libexec\code_saturne"; Flags: ignoreversion; Components: core
+Source: "{#Install}\libexec\code_saturne\cs_preprocess.exe"; DestDir: "{app}\libexec\code_saturne"; Flags: ignoreversion; Components: core
+Source: "{#Install}\libexec\code_saturne\cs_solver.exe"; DestDir: "{app}\libexec\code_saturne"; Flags: ignoreversion; Components: core
 Source: "{#Install}\share\code_saturne\*"; DestDir: "{app}\share\code_saturne"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: core
 #if HAVE_PDF == "yes"
 Source: "{#Install}\share\doc\code_saturne\autovnv.pdf"; DestDir: "{app}\share\doc\code_saturne"; Flags: ignoreversion; Components: help\pdf

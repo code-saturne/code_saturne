@@ -54,13 +54,13 @@ def adaptation(adaptation, saturne_script, case_dir):
     cmd = os.path.join(homard_prefix, 'saturne_homard')
 
     if adaptation == '-help':
-        cmd += ' -help'
+        cmd.append('-help')
         cs_exec_environment.run_command(cmd)
         sys.exit(0)
     else:
-        homard_options=' -v'
-        cmd += ' -Saturne_Script ' + saturne_script + ' ' + case_dir
-        cmd += ' -Pilotage_Adaptation ' + adaptation + homard_options
+        homard_options = '-v'
+        cmd = cmd + ['-Saturne_Script', saturne_script, case_dir]
+        cmd = cmd + ['-Pilotage_Adaptation', adaptation, homard_options]
 
     if cs_exec_environment.run_command(cmd) != 0:
         sys.exit(0)
@@ -502,9 +502,9 @@ class case:
         if homard_prefix != None:
             s.write('  HOMARD          : ' + homard_prefix + '\n')
             s.write(hline)
-        s.write('  MPI path       : ' + self.package_compute.mpi_bindir + '\n')
-        if len(self.package.mpi_type) > 0:
-            s.write('  MPI type       : ' + self.package_compute.mpi_type + '\n')
+        s.write('  MPI path       : ' + self.package_compute.config.libs['mpi'].bindir + '\n')
+        if len(self.package_compute.config.libs['mpi'].variant) > 0:
+            s.write('  MPI type       : ' + self.package_compute.config.libs['mpi'].variant + '\n')
         s.write(hline)
         s.write('  User           : ' + exec_env.user  + '\n')
         s.write(hline)
@@ -598,13 +598,7 @@ class case:
         """
         Determine name of solver script file.
         """
-
-        if sys.platform.startswith('win'):
-            script = 'run_solver.bat'
-        else:
-            script = 'run_solver.sh'
-
-        return os.path.join(self.exec_dir, script)
+        return os.path.join(self.exec_dir, self.package.runsolver)
 
     #---------------------------------------------------------------------------
 
@@ -621,16 +615,16 @@ class case:
             s_args = d.solver_command()
             if len(cmd) > 0:
                 cmd += ' : '
-            cmd += '-n ' + str(d.n_procs) + ' -wdir ' + s_args[0] \
-                + ' ' + s_args[1] + s_args[2]
+            cmd += '-n ' + str(d.n_procs) + ' -wdir "' + s_args[0] + '"' \
+                + ' "' + s_args[1] + '"' + s_args[2]
             app_id += 1
 
         for d in self.domains:
             s_args = d.solver_command(app_id=app_id)
             if len(cmd) > 0:
                 cmd += ' : '
-            cmd += '-n ' + str(d.n_procs) + ' -wdir ' + s_args[0] \
-                + ' ' + s_args[1] + s_args[2]
+            cmd += '-n ' + str(d.n_procs) + ' -wdir "' + s_args[0] + '"' \
+                + ' "' + s_args[1] + '"' + s_args[2]
             app_id += 1
 
         return cmd
@@ -652,15 +646,15 @@ class case:
 
         for d in self.syr_domains:
             s_args = d.solver_command()
-            cmd = '-n ' + str(d.n_procs) + ' -wdir ' + s_args[0] \
-                + ' ' + s_args[1] + s_args[2] + '\n'
+            cmd = '-n ' + str(d.n_procs) + ' -wdir "' + s_args[0] + '"' \
+                + ' "' + s_args[1] + '"' + s_args[2] + '\n'
             e.write(cmd)
             app_id += 1
 
         for d in self.domains:
             s_args = d.solver_command()
-            cmd = '-n ' + str(d.n_procs) + ' -wdir ' + s_args[0] \
-                + ' ' + s_args[1] + s_args[2] + '\n'
+            cmd = '-n ' + str(d.n_procs) + ' -wdir "' + s_args[0] + '"' \
+                + ' "' + s_args[1] + '"' + s_args[2] + '\n'
             e.write(cmd)
             app_id += 1
 
@@ -700,8 +694,8 @@ class case:
             nr += d.n_procs
             e.write(test_pf + str(nr) + test_sf)
             s_args = d.solver_command()
-            e.write('  cd ' + s_args[0] + '\n')
-            e.write('  ' + s_args[1] + s_args[2] + ' $@\n')
+            e.write('  cd "' + s_args[0] + '"\n')
+            e.write('  "' + s_args[1] + '"' + s_args[2] + ' $@\n')
             if app_id == 0:
                 test_pf = 'el' + test_pf
             app_id += 1
@@ -710,8 +704,8 @@ class case:
             nr += d.n_procs
             e.write(test_pf + str(nr) + test_sf)
             s_args = d.solver_command(app_id=app_id)
-            e.write('  cd ' + s_args[0] + '\n')
-            e.write('  ' + s_args[1] + s_args[2] + ' $@\n')
+            e.write('  cd "' + s_args[0] + '"\n')
+            e.write('  "' + s_args[1] + '"' + s_args[2] + ' $@\n')
             if app_id == 0:
                 test_pf = 'el' + test_pf
             app_id += 1
@@ -822,7 +816,7 @@ class case:
 
         e.close()
 
-        cmd = self.package.cc + ' -o ' + o_path + ' -g ' + e_path
+        cmd = [self.package.cc, '-o', o_path, '-g', e_path]
 
         sys.stdout.write('\n'
                          'Generating MPMD launcher:\n\n')
@@ -890,22 +884,30 @@ fi
 
         # Set environment modules if necessary
 
-        if self.package_compute.env_modules != "no":
+        if self.package_compute.config.env_modules != "no":
             s.write('module purge\n')
-            for m in self.package_compute.env_modules.strip().split():
+            for m in self.package_compute.config.env_modules.strip().split():
                 s.write('module load ' + m + '\n')
             s.write('\n')
+
+        # Set PATH for Windows DLL search PATH
+        # It should not harm in other circumstances
+
+        cs_exec_environment.write_script_comment(s,
+            'Ensure the correct command is found:\n')
+        cs_exec_environment.write_prepend_path(s, 'PATH',
+                                               self.package.get_dir("bindir"))
 
         # Add MPI directories to PATH if in nonstandard path
 
         cs_exec_environment.write_script_comment(s,
             'Export paths here if necessary or recommended.\n')
-        if len(self.package_compute.mpi_bindir) > 0:
+        if len(self.package_compute.config.libs['mpi'].bindir) > 0:
             cs_exec_environment.write_prepend_path(s, 'PATH',
-                self.package_compute.mpi_bindir)
-        if len(self.package_compute.mpi_libdir) > 0:
+                self.package_compute.config.libs['mpi'].bindir)
+        if len(self.package_compute.config.libs['mpi'].libdir) > 0:
             cs_exec_environment.write_prepend_path(s, 'LD_LIBRARY_PATH',
-                self.package_compute.mpi_libdir)
+                self.package_compute.config.libs['mpi'].libdir)
         s.write('\n')
 
         # Boot MPI daemons if necessary
@@ -948,9 +950,9 @@ fi
 
             s_args = self.domains[0].solver_command()
 
-            s.write('cd ' + s_args[0] + '\n\n')
+            s.write('cd "' + s_args[0] + '"\n\n')
             cs_exec_environment.write_script_comment(s, 'Run solver.\n')
-            s.write(mpi_cmd + s_args[1] + mpi_cmd_args + s_args[2])
+            s.write(mpi_cmd + '"' + s_args[1] + '"' + mpi_cmd_args + s_args[2])
             if sys.platform.startswith('linux'):
                 s.write(' $YACS_ARGS')
             s.write(' ' + cs_exec_environment.get_script_positional_args() +
@@ -1283,7 +1285,7 @@ fi
 
         # Now run the calculation
 
-        s_path = self.solver_script_path()
+        s_path = [self.solver_script_path()]
 
         retcode = cs_exec_environment.run_command(s_path)
 
@@ -1367,7 +1369,7 @@ fi
         n_domains = len(self.domains) + len(self.syr_domains)
         if n_domains > 1 and self.error == '':
             dir_files = os.listdir(self.exec_dir)
-            for f in ['run_solver.sh', 'run_solver.bat',
+            for f in [self.package.runsolver,
                       'mpmd_configfile', 'mpmd_exec.sh']:
                 if f in dir_files:
                     try:

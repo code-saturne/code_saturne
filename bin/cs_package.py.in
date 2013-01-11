@@ -31,12 +31,21 @@
 import os
 import sys
 
+import cs_config
+
+
 # Package information
 #--------------------
 
 class package:
 
     def __init__(self, scriptdir = None):
+
+        # System configuration (compilers, pre-requisites, ...)
+
+        self.config = cs_config.config()
+
+        # Package information
 
         self.name = "@PACKAGE_NAME@"
         self.tarname = "@PACKAGE_TARNAME@"
@@ -47,41 +56,16 @@ class package:
 
         self.code_name = "Code_Saturne"
 
-        self.preprocessor = "cs_preprocess"
-        self.solver = "cs_solver"
-        self.check_syntax = "cs_check_syntax"
-        self.io_dump = "cs_io_dump"
-        self.guiname = "SaturneGUI"
+        self.preprocessor = "cs_preprocess" + self.config.exeext
+        self.solver = "cs_solver" + self.config.exeext
+        self.check_syntax = "cs_check_syntax" + self.config.exeext
+        self.io_dump = "cs_io_dump" + self.config.exeext
+        self.guiname = "SaturneGUI" + self.config.shext
+        self.runcase = "runcase" + self.config.shext
+        self.runsolver = "run_solver" + self.config.shext
         self.configfile = "code_saturne.cfg"
         self.scratchdir = 'tmp_Saturne'
         self.srcdir = 'src_saturne'
-
-        # Compilers, flags and special commands
-
-        # PLE library can be an internal or external library
-        # Its flags are included in other build flags,
-        # but are made available here for "code_saturne config".
-
-        self.compilers = {'cc': "@CC@",
-                          'cxx': "@CXX@",
-                          'fc': "@FC@",
-                          'ld': "@CS_LD@"}
-
-        self.flags = {'cppflags': "-DHAVE_CONFIG_H @CS_CPPFLAGS@",
-                      'cflags': "@CS_CFLAGS@",
-                      'cxxflags': "@CS_CXXFLAGS@",
-                      'fcflags': "@CS_FCFLAGS@",
-                      'fcmoddir': "@pkgincludedir@",
-                      'ldflags': "@CS_LDFLAGS@",
-                      'libs': "-lsaturne @CS_LIBS@",
-                      'deplibs': "@LDFLAGS@ @LIBINTL@ @LIBS@ @FCLIBS@",
-                      'ple_cppflags': "@PLE_CPPFLAGS@",
-                      'ple_ldflags': "@PLE_LDFLAGS@",
-                      'ple_libs': "@PLE_LIBS@"}
-
-        self.fcmodinclude = "@FCMODINCLUDE@"
-        self.rpath = "@LDRPATH@"
-        self.special_user_link = "@cs_special_user_link@"
 
         # Installation directories
 
@@ -90,7 +74,7 @@ class package:
         self.dirs = {'prefix': ("", "@prefix@"),
                      'exec_prefix': ("", "@exec_prefix@"),
                      'bindir': ("bin", "@bindir@"),
-                     'includedir': ("incude", "@includedir@"),
+                     'includedir': ("include", "@includedir@"),
                      'pkgincludedir': (os.path.join("include", self.name),
                                        "@pkgincludedir@"),
                      'libdir': ("lib", "@libdir@"),
@@ -118,80 +102,15 @@ class package:
                                 "@pdfdir@"),
                      'sysconfdir': ("etc", "@sysconfdir@")}
 
-        # Execution environment
-
-        self.mpi_type = "@mpi_type@"
-        self.mpi_bindir = "@mpi_bindir@"
-        self.mpi_libdir = "@mpi_libdir@"
-
-        self.env_modules = "@cs_env_modules@"
-        self.env_modulecmd = "@MODULECMD@"
-
     def get_dir(self, installdir):
 
-        import cs_config
-        cfg = cs_config.config()
-
         # First, handle the standard "non relocatable" case
-        if cfg.features['relocatable'] == "no":
+        if self.config.features['relocatable'] == "no":
             return self.dirs[installdir][1]
-
-        # On Windows, executables are installed in "bindir" for DLL search
-        if sys.platform.startswith("win") and \
-                installdir in ("libexecdir", "pkglibexecdir"):
-            installdir = "bindir"
 
         bindir = os.path.dirname(self.scriptdir)
         prefix = os.path.dirname(bindir)
         return os.path.join(prefix, self.dirs[installdir][0])
-
-    def get_compiler(self, compiler):
-
-        import cs_config
-        cfg = cs_config.config()
-
-        # First, handle the standard "non relocatable" case
-        if cfg.features['relocatable'] == "no":
-            return self.compilers[compiler]
-
-        # On Windows, compilers are installed in "bindir" for DLL search
-        if sys.platform.startswith("win"):
-            bindir = os.path.dirname(self.scriptdir)
-            return os.path.join(bindir, self.compilers[compiler])
-
-        # On Linux systems, one assumes compilers are installed in the system
-        else:
-            return self.compilers[compiler]
-
-    def get_flags(self, flag):
-
-        import cs_config
-        cfg = cs_config.config()
-
-        # First, handle the standard "non relocatable" case
-        if cfg.features['relocatable'] == "no":
-            return self.flags[flag]
-
-        # On Windows, flags must be adapted so as to handle the relocation
-        # of system headers (together with the compiler)
-        if sys.platform.startswith("win"):
-            tmp_flags = self.flags[flag]
-            for p in ["-I/mingw", "-Ic:/mingw"]:
-                tmp_flags = tmp_flags.replace(p, "-I" + self.get_dir("prefix"))
-            for p in ["-L/mingw", "-Lc:/mingw"]:
-                tmp_flags = tmp_flags.replace(p, "-L" + self.get_dir("prefix"))
-
-        # Now, handle special cases for relocatable installation
-        if flag == "cppflags":
-            tmp_flags = "-I" + self.get_dir("pkgincludedir") + " " + tmp_flags
-        elif flag == "ple_cppflags":
-            tmp_flags = "-I" + self.get_dir("includedir") + " " + tmp_flags
-        elif flag == "fcmoddir":
-            tmp_flags = self.get_dir("pkgincludedir")
-        elif flag == "ple_ldflags":
-            tmp_flags = "-L" + self.get_dir("libdir") + " " + tmp_flags
-
-        return tmp_flags
 
     def get_preprocessor(self):
 

@@ -221,7 +221,8 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
         title = self.tr("Choose an existing case")
 
         path = os.getcwd()
-        if os.path.isdir(path + "/../DATA"): path = path + "/../DATA"
+        dataPath = os.path.join(path, "..", "DATA")
+        if os.path.isdir(dataPath): path = datapath
 
         dirName = QFileDialog.getExistingDirectory(self, title,
                                                    path,
@@ -243,12 +244,13 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
             msg = "copy from case not defined"
             sys.stderr.write(msg + '\n')
         else:
-            exe = self.package.get_dir("bindir") + "/" + self.package.name + " create -c " + self.currentPath + "/" + self.caseName
+            cmd = [os.path.join(self.package.get_dir("bindir"), self.package.name),
+                   'create', '-c',
+                   os.path.join(self.currentPath, self.caseName)]
             if self.copyFrom == True:
-                exe = exe + " --copy-from=" + self.copyFromName
+                cmd += ['--copy-from=', self.copyFromName]
 
-            p = subprocess.Popen(exe,
-                                 shell=True,
+            p = subprocess.Popen(cmd,
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
             output = p.communicate()
@@ -256,13 +258,15 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
                 sys.stderr.write(output[1] + '\n')
 
             if self.createMesh == True:
-                path = self.currentPath + "/MESH"
+                path = os.path.join(self.currentPath, "MESH")
                 os.mkdir(path)
             if self.createPost == True:
-                path = self.currentPath + "/POST"
+                path = os.path.join(self.currentPath, "POST")
                 os.mkdir(path)
 
-            self.currentPath = self.currentPath + "/" + self.caseName + "/DATA"
+            self.currentPath = os.path.join(self.currentPath,
+                                            self.caseName,
+                                            "DATA")
             self.model.setRootPath(self.currentPath)
             self.listViewDirectory.setRootIndex(self.model.index(self.currentPath))
             self.listViewFolder.setRootIndex(self.model.index(self.currentPath))
@@ -779,7 +783,8 @@ class MainView(object):
             path = self.case['data_path']
         else:
             path = os.getcwd()
-            if os.path.isdir(path + "/../DATA"): path = path + "/../DATA"
+            dataPath = os.path.join(path, "..", "DATA")
+            if os.path.isdir(dataPath): path = dataPath
 
         filetypes = self.tr(self.package.code_name) + self.tr(" GUI files (*.xml);;""All Files (*)")
 
@@ -966,11 +971,12 @@ class MainView(object):
                        ('resu_path',     'RESU'),
                        ('user_src_path', 'SRC'),
                        ('scripts_path',  'SCRIPTS')]:
-            self.IdPthMdl.setPathI(p,file_dir + '/' + rep)
+            self.IdPthMdl.setPathI(p, os.path.join(file_dir, rep))
         self.IdPthMdl.setRelevantSubdir("yes", "")
 
         self.IdPthMdl.setPathI('mesh_path',
-                               os.path.abspath(os.path.split(file_dir)[0] + '/' + 'MESH'))
+                               os.path.join(os.path.abspath(os.path.split(file_dir)[0],
+                                                            'MESH')))
         self.case['batch'] =  self.batch_file
         del IdentityAndPathesModel
 
@@ -1042,7 +1048,7 @@ class MainView(object):
 
             self.batchFileUpdate()
 
-            batch = self.case['scripts_path'] + "/" + self.case['batch']
+            batch = os.path.join(self.case['scripts_path'], self.case['batch'])
             f = open(batch, 'w')
             f.writelines(self.batch_lines)
             f.close()
@@ -1232,7 +1238,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         self.salome      = cmd_salome
         self.batch_type  = cs_batch_type
         self.batch       = None
-        self.batch_file  = 'runcase'
+        self.batch_file  = cmd_package.runcase
         self.batch_lines = []
         self.package     = cmd_package
 

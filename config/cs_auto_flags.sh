@@ -229,9 +229,6 @@ if test "x$cs_gcc" = "xgcc"; then
   esac
 
   case "$host_os" in
-    cygwin)
-    cflags_default="`echo $cflags_default | sed -e 's/c99/gnu99/g'`"
-    ;;
     mingw32)
     cflags_default="$cflags_default -Wno-format -Wno-pedantic-ms-format"
     ;;

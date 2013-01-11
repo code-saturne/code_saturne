@@ -31,8 +31,6 @@ import os
 import os.path
 import sys
 
-import cs_config
-
 from cs_case_domain import *
 from cs_case import *
 

@@ -226,7 +226,7 @@ if test "x$ple_disable_shared" = "xyes" ; then
 fi
 AC_SUBST(enable_shared)
 
-LT_INIT
+LT_INIT([win32-dll])
 
 #------------------------------------------------------------------------------
 # Checks for libraries.

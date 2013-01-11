@@ -496,8 +496,6 @@ class Study:
         # Write a wrapper for GUI launching
 
         guiscript = os.path.join(data, self.package.guiname)
-        if sys.platform.startswith('win'):
-            guiscript = guiscript + '.bat'
 
         fd = open(guiscript, 'w')
         cs_exec_environment.write_shell_shebang(fd)

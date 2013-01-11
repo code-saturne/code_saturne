@@ -39,10 +39,11 @@ from optparse import OptionParser
 
 class prerequisite:
 
-    def __init__(self, name, have = "no", variant = None,
+    def __init__(self, name, have = "no",
+                 variant = None, dynamic_load = False,
                  prefix = None, execprefix = None,
-                 includedir = None, libdir = None,
-                 cppflags = None, ldflags = None, libs = None, deplibs = None):
+                 bindir = None, includedir = None, libdir = None,
+                 flags = None):
 
         # Library name
         self.name = name
@@ -50,20 +51,21 @@ class prerequisite:
         # Have
         self.have = have
 
+        # Loaded dynamically on demand (linked separately)
+        self.dynamic_load = dynamic_load
+
         # Library variant
         self.variant = variant
 
         # Library installation directories
         self.prefix = prefix
         self.execprefix = execprefix
+        self.bindir = bindir
         self.includedir = includedir
         self.libdir = libdir
 
-        # Library build
-        self.cppflags = cppflags
-        self.ldflags = ldflags
-        self.libs = libs
-        self.deplibs = deplibs
+        # Library build (dictionnary {cppflags, ldflags, libs})
+        self.flags = flags
 
     def print_config(self):
 
@@ -85,18 +87,53 @@ class config:
                             'long-gnum', 'nls']
         self.features = {}
 
-        # List of optionnal libraries
+        # List of mandatory and optionnal libraries to link with
+        # The order is important so as to have a coherent link command
 
-        self.optlibs = ['adf', 'blas', 'ccm', 'cgns', 'hdf5', 'libxml2',
-                        'med', 'medcoupling', 'paramedmem', 'eos'
-                        'metis', 'mpi', 'scotch']
-        self.libs = {}
+        self.deplibs = ['saturne',                    # Code_Saturne
+                        'ple',                        # PLE
+                        'eos',                        # Equations of state
+                        'cgns', 'med', 'hdf5', 'ccm', # Mesh filters
+                        'medcoupling', 'paramedmem',  # MED coupling
+                        'metis', 'scotch',            # Partionning libraries
+                        'mpi',                        # MPI
+                        'libxml2',                    # XML reader
+                        'blas',                       # BLAS (benchmark use)
+                        'system']                     # User & system libraries
+
+        # Compilers, flags and special commands
+
+        self.compilers = {'cc': "@CC@",
+                          'cxx': "@CXX@",
+                          'fc': "@FC@",
+                          'ld': "@CS_LD@"}
+
+        self.flags = {'cflags': "@CFLAGS@ @CFLAGS_DBG@ @CFLAGS_OPT@",
+                      'cxxflags': "@CXXFLAGS@ @CXXFLAGS_DBG@ @CXXFLAGS_OPT@",
+                      'fcflags': "@FCFLAGS@ @FCFLAGS_DBG@ @FCFLAGS_OPT@"}
+
+        self.fcmodinclude = "@FCMODINCLUDE@"
+        self.rpath = "@LDRPATH@"
+        self.special_user_link = "@cs_special_user_link@"
+
+        # Constants for system-dependant file extensions
+        if sys.platform.startswith("win"):
+            self.exeext = ".exe"
+            self.shext = ".bat"
+        else:
+            self.exeext = ""
+            self.shext = ""
 
         # Python-related information
 
         self.python = "@PYTHON@"
         self.pyuic4 = "@PYUIC4@"
         self.pyrcc4 = "@PYRCC4@"
+
+        # Execution environment
+
+        self.env_modules = "@cs_env_modules@"
+        self.env_modulecmd = "@MODULECMD@"
 
         # SALOME-related information
 
@@ -116,96 +153,136 @@ class config:
         self.features['long-gnum'] = "@cs_have_long_gnum@"
         self.features['nls'] = '@USE_NLS@'
 
+        # Now, one can setup the prerequisites information
+
+        self.libs = {}
+
+        # Setup Code_Saturne libraries
+        # Here, CPPFLAGS and LDFLAGS will be provided by a get_dir method
+
+        self.libs['saturne'] = \
+            prerequisite("Code_Saturne",
+                         have = "yes",
+                         flags = {'cppflags': "",
+                                  'ldflags': "",
+                                  'libs': "-lsaturne"})
+
+        # Setup PLE library
+        # Here, the variant (internal or external) will be used to add
+        # paths to the command line
+
+        self.libs['ple'] = \
+            prerequisite("PLE",
+                         have = "yes",
+                         variant = "@ple_type@",
+                         flags = {'cppflags': "@PLE_CPPFLAGS@",
+                                  'ldflags': "@PLE_LDFLAGS@",
+                                  'libs': "@PLE_LIBS@"})
+
+        # Setup user and system libraries
+
+        self.libs['system'] = \
+            prerequisite("System",
+                         have = "yes",
+                         flags = {'cppflags': "@CPPFLAGS@",
+                                  'ldflags': "@LDFLAGS@",
+                                  'libs': "@LIBINTL@ @LIBS@ @FCLIBS@"})
+
         # Setup the optionnal libraries
 
         self.libs['blas'] = \
             prerequisite("BLAS",
                          have = "@cs_have_blas@",
-                         cppflags = "@BLAS_CPPFLAGS@",
-                         ldflags = "@BLAS_LDFLAGS@",
-                         libs = "@BLAS_LIBS@")
+                         flags = {'cppflags': "@BLAS_CPPFLAGS@",
+                                  'ldflags': "@BLAS_LDFLAGS@",
+                                  'libs': "@BLAS_LIBS@"})
 
         self.libs['ccm'] = \
             prerequisite("CCM",
                          have = "@cs_have_ccm@",
-                         cppflags = "@CCM_CPPFLAGS@",
-                         ldflags = "@CCM_LDFLAGS@",
-                         libs = "@CCM_LIBS@")
+                         flags = {'cppflags': "@CCM_CPPFLAGS@",
+                                  'ldflags': "@CCM_LDFLAGS@",
+                                  'libs': "@CCM_LIBS@"})
 
         self.libs['cgns'] = \
             prerequisite("CGNS",
                          have = "@cs_have_cgns@",
-                         cppflags = "@CGNS_CPPFLAGS@",
-                         ldflags = "@CGNS_LDFLAGS@",
-                         libs = "@CGNS_LIBS@")
+                         flags = {'cppflags': "@CGNS_CPPFLAGS@",
+                                  'ldflags': "@CGNS_LDFLAGS@",
+                                  'libs': "@CGNS_LIBS@"})
 
         self.libs['hdf5'] = \
             prerequisite("HDF5",
                          have = "@cs_have_hdf5@",
-                         cppflags = "@HDF5_CPPFLAGS@",
-                         ldflags = "@HDF5_LDFLAGS@",
-                         libs = "@HDF5_LIBS@")
+                         flags = {'cppflags': "@HDF5_CPPFLAGS@",
+                                  'ldflags': "@HDF5_LDFLAGS@",
+                                  'libs': "@HDF5_LIBS@"})
 
         self.libs['libxml2'] = \
             prerequisite("LibXml2",
                          have = "@cs_have_libxml2@",
-                         cppflags = "@LIBXML2_CPPFLAGS@",
-                         ldflags = "@LIBXML2_LDFLAGS@",
-                         libs = "@LIBXML2_LIBS@")
+                         flags = {'cppflags': "@LIBXML2_CPPFLAGS@",
+                                  'ldflags': "@LIBXML2_LDFLAGS@",
+                                  'libs': "@LIBXML2_LIBS@"})
 
         self.libs['med'] = \
             prerequisite("MED",
                          have = "@cs_have_med@",
-                         cppflags = "@MED_CPPFLAGS@",
-                         ldflags = "@MED_LDFLAGS@",
-                         libs = "@MED_LIBS@")
+                         flags = {'cppflags': "@MED_CPPFLAGS@",
+                                  'ldflags': "@MED_LDFLAGS@",
+                                  'libs': "@MED_LIBS@"})
 
         self.libs['medcoupling'] = \
             prerequisite("MEDCOUPLING",
                          have = "@cs_have_medcoupling@",
-                         cppflags = "@MEDCOUPLING_CPPFLAGS@",
-                         ldflags = "@MEDCOUPLING_LDFLAGS@",
-                         libs = "@MEDCOUPLING_LIBS@")
+                         dynamic_load = True,
+                         flags = {'cppflags': "@MEDCOUPLING_CPPFLAGS@",
+                                  'ldflags': "@MEDCOUPLING_LDFLAGS@",
+                                  'libs': "@MEDCOUPLING_LIBS@"})
 
         self.libs['paramedmem'] = \
             prerequisite("PARAMEDMEM",
                          have = "@cs_have_paramedmem@",
-                         cppflags = "@PARAMEDMEM_CPPFLAGS@",
-                         ldflags = "@PARAMEDMEM_LDFLAGS@",
-                         libs = "@PARAMEDMEM_LIBS@")
+                         dynamic_load = True,
+                         flags = {'cppflags': "@PARAMEDMEM_CPPFLAGS@",
+                                  'ldflags': "@PARAMEDMEM_LDFLAGS@",
+                                  'libs': "@PARAMEDMEM_LIBS@"})
 
         self.libs['eos'] = \
             prerequisite("EOS",
                          have = "@cs_have_eos@",
-                         cppflags = "@EOS_CPPFLAGS@",
-                         ldflags = "@EOS_LDFLAGS@",
-                         libs = "@EOS_LIBS@")
+                         flags = {'cppflags': "@EOS_CPPFLAGS@",
+                                  'ldflags': "@EOS_LDFLAGS@",
+                                  'libs': "@EOS_LIBS@"})
 
         self.libs['metis'] = \
             prerequisite("METIS",
                          have = "@cs_have_metis@",
-                         cppflags = "@METIS_CPPFLAGS@",
-                         ldflags = "@METIS_LDFLAGS@",
-                         libs = "@METIS_LIBS@")
+                         flags = {'cppflags': "@METIS_CPPFLAGS@",
+                                  'ldflags': "@METIS_LDFLAGS@",
+                                  'libs': "@METIS_LIBS@"})
 
         self.libs['mpi'] = \
             prerequisite("MPI",
                          have = "@cs_have_mpi@",
-                         cppflags = "@MPI_CPPFLAGS@",
-                         ldflags = "@MPI_LDFLAGS@",
-                         libs = "@MPI_LIBS@")
+                         variant = "@mpi_type@",
+                         bindir = "@mpi_bindir@",
+                         libdir = "@mpi_libdir@",
+                         flags = {'cppflags': "@MPI_CPPFLAGS@",
+                                  'ldflags': "@MPI_LDFLAGS@",
+                                  'libs': "@MPI_LIBS@"})
 
         self.libs['scotch'] = \
             prerequisite("SCOTCH",
                          have = "@cs_have_scotch@",
-                         cppflags = "@SCOTCH_CPPFLAGS@",
-                         ldflags = "@SCOTCH_LDFLAGS@",
-                         libs = "@SCOTCH_LIBS@")
+                         flags = {'cppflags': "@SCOTCH_CPPFLAGS@",
+                                  'ldflags': "@SCOTCH_LDFLAGS@",
+                                  'libs': "@SCOTCH_LIBS@"})
 
 
     def print_config(self):
 
-        for lib in self.optlibs:
+        for lib in self.deplibs:
             self.libs[lib].print_config()
 
 #-------------------------------------------------------------------------------
@@ -275,9 +352,6 @@ def process_cmd_line(argv):
     parser.add_option("--libs", dest="libs", metavar="<lib>",
                       help="librairies used (e.g. -l<libname>, ...)")
 
-    parser.add_option("--deplibs", dest="deplibs", metavar="<lib>",
-                      help="dependency librairies used (e.g. -l<libname>, ...)")
-
     parser.set_defaults(print_cc=False)
     parser.set_defaults(print_cxx=False)
     parser.set_defaults(print_fc=False)
@@ -296,7 +370,6 @@ def process_cmd_line(argv):
     parser.set_defaults(cppflags=None)
     parser.set_defaults(ldflags=None)
     parser.set_defaults(libs=None)
-    parser.set_defaults(deplibs=None)
 
     (options, args) = parser.parse_args(argv)
 
@@ -317,39 +390,20 @@ Compilers and associated options:
   cc = %(cc)s
   cxx = %(cxx)s
   fc = %(fc)s
-  cppflags = %(cppflags)s
   cflags = %(cflags)s
   cxxflags = %(cxxflags)s
   fcflags = %(fcflags)s
-  ldflags = %(ldflags)s
-  libs = %(libs)s
   rpath = %(rpath)s\
 """
 
     return msg \
-        % { 'cc':pkg.compilers['cc'], 'cxx': pkg.compilers['cxx'],
-            'fc':pkg.compilers['fc'],
-            'cppflags':pkg.flags['cppflags'], 'cflags':pkg.flags['cflags'],
-            'cxxflags':pkg.flags['cxxflags'],
-            'fcflags':pkg.flags['fcflags'], 'ldflags':pkg.flags['ldflags'],
-            'libs':pkg.flags['libs'], 'rpath':pkg.rpath }
-
-#-------------------------------------------------------------------------------
-
-def get_config_mpi(pkg):
-    """
-    Get the configuration information.
-    """
-    msg = """\
-MPI library information:
-  mpi_lib.type = %(mpi_type)s
-  mpi_lib.bindir = %(mpi_bindir)s
-  mpi_lib.libdir = %(mpi_libdir)s\
-"""
-
-    return msg \
-        % { 'mpi_type':pkg.mpi_type, 'mpi_bindir':pkg.mpi_bindir,
-            'mpi_libdir':pkg.mpi_libdir }
+        % { 'cc':pkg.config.compilers['cc'],
+            'cxx': pkg.config.compilers['cxx'],
+            'fc':pkg.config.compilers['fc'],
+            'cflags':pkg.config.flags['cflags'],
+            'cxxflags':pkg.config.flags['cxxflags'],
+            'fcflags':pkg.config.flags['fcflags'],
+            'rpath':pkg.config.rpath }
 
 #-------------------------------------------------------------------------------
 # Main
@@ -362,55 +416,54 @@ def main(argv, pkg):
 
     opts = process_cmd_line(argv)
 
-    cfg = config()
+    cfg = pkg.config
 
-    if opts.print_cc  == True: print(pkg.compilers['cc'])
-    if opts.print_cxx == True: print(pkg.compilers['cxx'])
-    if opts.print_fc  == True: print(pkg.compilers['fc'])
+    if opts.print_cc  == True: print(cfg.compilers['cc'])
+    if opts.print_cxx == True: print(cfg.compilers['cxx'])
+    if opts.print_fc  == True: print(cfg.compilers['fc'])
 
-    if opts.print_cflags   == True: print(pkg.flags['cflags'])
-    if opts.print_cxxflags == True: print(pkg.flags['cxxflags'])
-    if opts.print_fcflags  == True: print(pkg.flags['fcflags'])
+    if opts.print_cflags   == True: print(cfg.flags['cflags'])
+    if opts.print_cxxflags == True: print(cfg.flags['cxxflags'])
+    if opts.print_fcflags  == True: print(cfg.flags['fcflags'])
 
-    if opts.print_rpath == True: print(pkg.rpath)
+    if opts.print_rpath == True: print(cfg.rpath)
 
     if opts.print_python  == True: print(cfg.python)
     if opts.print_pyuic4  == True: print(cfg.pyuic4)
     if opts.print_pyrcc4  == True: print(cfg.pyrcc4)
 
     if opts.have is not None:
-        if opts.have in cfg.optlibs: print(cfg.libs[opts.have].have)
+        if opts.have in cfg.deplibs: print(cfg.libs[opts.have].have)
         if opts.have in cfg.optfeatures: print(cfg.features[opts.have])
 
     if opts.cppflags is not None:
+        # Specific handling of Code_Saturne has pkgincludedir has to be
+        # correctly expended. Likewise for PLE, if internal version is used
         if opts.cppflags == "saturne":
-            print("@CPPFLAGS@ -I" + pkg.get_dir("pkgincludedir"))
+            print("-I" + pkg.get_dir("pkgincludedir"))
         elif opts.cppflags == "ple":
-            print(pkg.flags['ple_cppflags'])
+            if cfg.libs['ple'].variant == "internal":
+                print("-I" + pkg.get_dir("includedir"))
+            else:
+                print(cfg.libs[opts.cppflags].flags['cppflags'])
         else:
-            print(cfg.libs[opts.cppflags].cppflags)
+            print(cfg.libs[opts.cppflags].flags['cppflags'])
 
     if opts.ldflags is not None:
+        # Specific handling of Code_Saturne has pkgincludedir has to be
+        # correctly expended. Likewise for PLE, if internal version is used
         if opts.ldflags == "saturne":
             print("-L" + pkg.get_dir("libdir"))
         elif opts.ldflags == "ple":
-            print(pkg.flags['ple_ldflags'])
+            if cfg.libs['ple'].variant == "internal":
+                print("-L" + pkg.get_dir("libdir"))
+            else:
+                print(cfg.libs[opts.cppflags].flags['ldflags'])
         else:
-            print(cfg.libs[opts.ldflags].ldflags)
+            print(cfg.libs[opts.ldflags].flags['ldflags'])
 
     if opts.libs is not None:
-        if opts.libs == "saturne":
-            print("-lsaturne")
-        elif opts.libs == "ple":
-            print(pkg.flags['ple_libs'])
-        else:
-            print(cfg.libs[opts.libs].libs)
-
-    if opts.deplibs is not None:
-        if opts.deplibs == "saturne":
-            print("@LDFLAGS@ @LIBS@ @FCLIBS@")
-        else:
-            print(cfg.libs[opts.deplibs].deplibs)
+        print(cfg.libs[opts.libs].flags['libs'])
 
 if __name__ == '__main__':
     import sys
