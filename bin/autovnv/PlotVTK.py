@@ -306,12 +306,14 @@ class Builder(object):
             self.cam.SetFocalPoint(self.opt.center[0],
                                    self.opt.center[1],
                                    self.opt.center[2])
+            self.cam.SetPosition(self.opt.center[0] - self.opt.normal[0],
+                                 self.opt.center[1] - self.opt.normal[1],
+                                 self.opt.center[2] - self.opt.normal[2])
         else:
             self.cam.SetFocalPoint(0,0,0)
-
-        self.cam.SetPosition(-1 * self.opt.normal[0],
-                             -1 * self.opt.normal[1],
-                             -1 * self.opt.normal[2])
+            self.cam.SetPosition(-1 * self.opt.normal[0],
+                                 -1 * self.opt.normal[1],
+                                 -1 * self.opt.normal[2])
 
         if self.opt.axes:
             axes.SetXAxisVisibility(1)
