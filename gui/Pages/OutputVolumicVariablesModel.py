@@ -439,7 +439,13 @@ class OutputVolumicVariablesModel(Model):
         self.isInList(label, self.getLabelsList())
         nb = len(string.split(list))
         if nb == len(self.getVariableProbeList()):
-            return
+            for nodeList in self.listNodeVolum:
+                for node in nodeList:
+                    if node['label'] == label:
+                        try:
+                            node.xmlRemoveChild('probes')
+                        except:
+                            pass
         else:
             for nodeList in self.listNodeVolum:
                 for node in nodeList:
