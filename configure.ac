@@ -360,7 +360,7 @@ AC_SUBST(cs_have_long_gnum)
 CS_AC_TEST_FC_MOD
 
 # Needed for some portability of some libtool-related macros
-AM_PROG_AR
+m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 
 #------------------------------------------------------------------------------
 # Determine OpenMP support
