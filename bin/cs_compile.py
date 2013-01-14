@@ -187,10 +187,10 @@ def so_dirs_path(flags, pkg):
 
     pkg_lib = os.path.join(pkg.get_dir('libdir'), pkg.name)
     if os.path.isdir(pkg_lib):
-        retval[1] +=  [":" + pkg_lib]
+        retval[1] +=  ":" + pkg_lib
         count += 1
 
-    if type(flags) == 'str':
+    if type(flags) == str:
         args = flags.split(" ")
     else:
         args = flags

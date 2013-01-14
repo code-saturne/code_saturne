@@ -208,7 +208,7 @@ def run_command(cmd, pkg = None, echo = False,
     if (stderr != sys.stderr):
         kwargs['stderr'] = stderr
 
-    if type(cmd) == 'str':
+    if type(cmd) == str:
         p = subprocess.Popen(cmd,
                              shell=True,
                              executable=get_shell_type(),

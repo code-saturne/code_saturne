@@ -81,11 +81,11 @@ export CFDSTUDY_ROOT_DIR PYTHONPATH;
     # Skipped modules (version 6.3.0): YACS,JOBMANAGER,HOMARD,OPENTURNS
     default_modules = "GEOM,SMESH,MED,CFDSTUDY,PARAVIS,VISU"
 
-    run_cmd = cfg.salome_run
+    run_cmd = pkg.config.salome_run
     if not run_cmd:
         run_cmd = "${KERNEL_ROOT_DIR}/bin/salome/envSalome.py python ${KERNEL_ROOT_DIR}/bin/salome/runSalome.py"
 
-    cmd = template % {'salomeenv': cfg.salome_env,
+    cmd = template % {'salomeenv': pkg.config.salome_env,
                       'prefix': pkg.get_dir('prefix'),
                       'pythondir': pkg.get_dir('pythondir'),
                       'pkgpythondir': pkg.get_dir('pkgpythondir'),
@@ -95,7 +95,6 @@ export CFDSTUDY_ROOT_DIR PYTHONPATH;
     process_cmd_line(argv, pkg)
 
     retcode = cs_exec_environment.run_command(cmd,
-                                              shell=True,
                                               stdout=None,
                                               stderr=None)
 
