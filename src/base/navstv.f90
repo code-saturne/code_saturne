@@ -286,7 +286,8 @@ endif
 ! 1. Prediction of the mass flux in case of Low Mach compressible algorithm
 !===============================================================================
 
-if (idilat.eq.2.or.idilat.eq.3) then
+if ((idilat.eq.2.or.idilat.eq.3).and. &
+    (ntcabs.gt.1.or.isuite.gt.0)) then
 
   call predfl &
   !==========
