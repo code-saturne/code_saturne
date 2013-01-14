@@ -614,11 +614,11 @@ _global_spread(cs_lnum_t              block_size,
                cs_gnum_t              glob_vtx_tag[],
                cs_gnum_t              prev_glob_vtx_tag[],
                cs_gnum_t              recv2glob[],
-               cs_lnum_t              send_count[],
-               cs_lnum_t              send_shift[],
+               int                    send_count[],
+               int                    send_shift[],
                cs_gnum_t              send_glob_buffer[],
-               cs_lnum_t              recv_count[],
-               cs_lnum_t              recv_shift[],
+               int                    recv_count[],
+               int                    recv_shift[],
                cs_gnum_t              recv_glob_buffer[])
 {
   bool  ret_value;
@@ -738,11 +738,11 @@ static void
 _parall_tag_init(cs_gnum_t              n_g_vertices_to_treat,
                  const cs_join_mesh_t  *work,
                  cs_lnum_t             *p_block_size,
-                 cs_lnum_t             *p_send_count[],
-                 cs_lnum_t             *p_send_shift[],
+                 int                   *p_send_count[],
+                 int                   *p_send_shift[],
                  cs_gnum_t             *p_send_glob_buf[],
-                 cs_lnum_t             *p_recv_count[],
-                 cs_lnum_t             *p_recv_shift[],
+                 int                   *p_recv_count[],
+                 int                   *p_recv_shift[],
                  cs_gnum_t             *p_recv_glob_buf[],
                  cs_gnum_t             *p_recv2glob[],
                  cs_gnum_t             *p_glob_vtx_tag[],
@@ -752,8 +752,8 @@ _parall_tag_init(cs_gnum_t              n_g_vertices_to_treat,
 
   cs_lnum_t  n_vertices = work->n_vertices;
   cs_lnum_t  block_size = 0, left_over = 0;
-  cs_lnum_t  *send_count = NULL, *recv_count = NULL;
-  cs_lnum_t  *send_shift = NULL, *recv_shift = NULL;
+  int        *send_count = NULL, *recv_count = NULL;
+  int        *send_shift = NULL, *recv_shift = NULL;
   cs_gnum_t  *recv2glob = NULL;
   cs_gnum_t  *recv_glob_buffer = NULL, *send_glob_buffer = NULL;
   cs_gnum_t  *glob_vtx_tag = NULL, *prev_glob_vtx_tag = NULL;
@@ -781,10 +781,10 @@ _parall_tag_init(cs_gnum_t              n_g_vertices_to_treat,
 
   /* Allocate and define send/recv_count/shift */
 
-  BFT_MALLOC(send_count, n_ranks, cs_lnum_t);
-  BFT_MALLOC(recv_count, n_ranks, cs_lnum_t);
-  BFT_MALLOC(send_shift, n_ranks + 1, cs_lnum_t);
-  BFT_MALLOC(recv_shift, n_ranks + 1, cs_lnum_t);
+  BFT_MALLOC(send_count, n_ranks, int);
+  BFT_MALLOC(recv_count, n_ranks, int);
+  BFT_MALLOC(send_shift, n_ranks + 1, int);
+  BFT_MALLOC(recv_shift, n_ranks + 1, int);
 
   send_shift[0] = 0;
   recv_shift[0] = 0;
@@ -797,8 +797,8 @@ _parall_tag_init(cs_gnum_t              n_g_vertices_to_treat,
     send_count[rank] += 1;
   }
 
-  MPI_Alltoall(&(send_count[0]), 1, CS_MPI_LNUM,
-               &(recv_count[0]), 1, CS_MPI_LNUM, mpi_comm);
+  MPI_Alltoall(send_count, 1, MPI_INT,
+               recv_count, 1, MPI_INT, mpi_comm);
 
   /* Build index */
 
@@ -908,8 +908,8 @@ _tag_equiv_vertices(cs_gnum_t              n_g_vertices_tot,
     bool  go_on;
 
     cs_lnum_t  block_size = 0;
-    cs_lnum_t  *send_count = NULL, *recv_count = NULL;
-    cs_lnum_t  *send_shift = NULL, *recv_shift = NULL;
+    int        *send_count = NULL, *recv_count = NULL;
+    int        *send_shift = NULL, *recv_shift = NULL;
     cs_gnum_t  *recv2glob = NULL;
     cs_gnum_t  *recv_glob_buffer = NULL, *send_glob_buffer = NULL;
     cs_gnum_t  *glob_vtx_tag = NULL, *prev_glob_vtx_tag = NULL;
@@ -1017,10 +1017,10 @@ _tag_equiv_vertices(cs_gnum_t              n_g_vertices_tot,
 static void
 _build_parall_merge_structures(const cs_join_mesh_t    *work,
                                const cs_gnum_t          vtx_tag[],
-                               cs_lnum_t                send_count[],
-                               cs_lnum_t                send_shift[],
-                               cs_lnum_t                recv_count[],
-                               cs_lnum_t                recv_shift[],
+                               int                      send_count[],
+                               int                      send_shift[],
+                               int                      recv_count[],
+                               int                      recv_shift[],
                                cs_join_vertex_t        *p_vtx_merge_data[],
                                cs_join_gset_t         **p_merge_set)
 {
@@ -1158,10 +1158,10 @@ _build_parall_merge_structures(const cs_join_mesh_t    *work,
 static void
 _exchange_merged_vertices(const cs_join_mesh_t  *work,
                           const cs_gnum_t        vtx_tag[],
-                          cs_lnum_t              send_count[],
-                          cs_lnum_t              send_shift[],
-                          cs_lnum_t              recv_count[],
-                          cs_lnum_t              recv_shift[],
+                          int                    send_count[],
+                          int                    send_shift[],
+                          int                    recv_count[],
+                          int                    recv_shift[],
                           cs_join_vertex_t       vtx_merge_data[])
 {
   cs_lnum_t  i;
@@ -2275,8 +2275,8 @@ _keep_global_vtx_evolution(cs_lnum_t               n_iwm_vertices,
     cs_gnum_t  ii;
     cs_lnum_t  shift, rank, n_recv_elts;
 
-    cs_lnum_t  *send_shift = NULL, *recv_shift = NULL;
-    cs_lnum_t  *send_count = NULL, *recv_count = NULL;
+    int        *send_shift = NULL, *recv_shift = NULL;
+    int        *send_count = NULL, *recv_count = NULL;
     cs_gnum_t  *send_glist = NULL, *recv_glist = NULL;
 
     cs_join_block_info_t  block_info = cs_join_get_block_info(init_max_vtx_gnum,
@@ -2294,8 +2294,8 @@ _keep_global_vtx_evolution(cs_lnum_t               n_iwm_vertices,
 
     /* Send new vtx global number to the related rank = the good block */
 
-    BFT_MALLOC(send_count, n_ranks, cs_lnum_t);
-    BFT_MALLOC(recv_count, n_ranks, cs_lnum_t);
+    BFT_MALLOC(send_count, n_ranks, int);
+    BFT_MALLOC(recv_count, n_ranks, int);
 
     for (i = 0; i < n_ranks; i++)
       send_count[i] = 0;
@@ -3289,14 +3289,14 @@ cs_join_merge_vertices(cs_join_param_t        param,
 #if defined(HAVE_MPI)
   if (n_ranks > 1) { /* Parallel mode: we work by block */
 
-    cs_lnum_t  *send_count = NULL, *recv_count = NULL;
-    cs_lnum_t  *send_shift = NULL, *recv_shift = NULL;
+    int  *send_count = NULL, *recv_count = NULL;
+    int  *send_shift = NULL, *recv_shift = NULL;
     cs_join_vertex_t  *vtx_merge_data = NULL;
 
-    BFT_MALLOC(send_count, n_ranks, cs_lnum_t);
-    BFT_MALLOC(recv_count, n_ranks, cs_lnum_t);
-    BFT_MALLOC(send_shift, n_ranks+1, cs_lnum_t);
-    BFT_MALLOC(recv_shift, n_ranks+1, cs_lnum_t);
+    BFT_MALLOC(send_count, n_ranks, int);
+    BFT_MALLOC(recv_count, n_ranks, int);
+    BFT_MALLOC(send_shift, n_ranks+1, int);
+    BFT_MALLOC(recv_shift, n_ranks+1, int);
 
     /* Build a merge list in parallel */
 
