@@ -176,7 +176,7 @@ def run_command(cmd, pkg = None, echo = False,
     Run a command.
     """
     if echo == True:
-        if type(cmd) == 'str':
+        if type(cmd) == str:
             stdout.write(str(cmd) + '\n')
         else:
             l = ''
