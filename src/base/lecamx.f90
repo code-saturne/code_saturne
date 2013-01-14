@@ -2862,7 +2862,7 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : LECTURE DU FICHIER SUITE PRINCIPAL          ',/,&
+'@ @@ ATTENTION : LECTURE DU FICHIER SUITE AUXILIAIRE         ',/,&
 '@    =========                                               ',/,&
 '@      DONNEES AMONT MULTIPHASIQUES                          ',/,&
 '@                                                            ',/,&
@@ -3118,7 +3118,7 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ WARNING : WHEN READING THE MAIN RESTARTING FILE       ',/,  &
+'@ @@ WARNING: WHEN READING THE AUXILIARY RESTART FILE        ',/,&
 '@    =========                                               ',/,&
 '@      CHECKPOINT DATA ARE MULTIPHASE                        ',/,&
 '@                                                            ',/,&

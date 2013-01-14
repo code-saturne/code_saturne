@@ -1241,8 +1241,8 @@ return
 '@      les dimensions suivantes :                            ',/,&
 '@                                                            ',/,&
 '@                NVAR     NSCAL    NSCAUS    NSCAPP          ',/,&
-'@  AMONT : ',5I10                                             ,/,&
-'@  ACTUEL: ',5I10                                             ,/,&
+'@  AMONT : ',4I10                                             ,/,&
+'@  ACTUEL: ',4I10                                             ,/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -1347,8 +1347,8 @@ return
 '@      the following dimensions:                             ',/,&
 '@                                                            ',/,&
 '@                NVAR     NSCAL    NSCAUS    NSCAPP          ',/,&
-'@ PREVIOUS:',5I10                                             ,/,&
-'@ CURRENT :',5I10                                             ,/,&
+'@ PREVIOUS:',4I10                                             ,/,&
+'@ CURRENT :',4I10                                             ,/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
