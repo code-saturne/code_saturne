@@ -2416,9 +2416,9 @@ cs_restart_read_section(cs_restart_t           *restart,
     }
   }
   else if (header.elt_type == CS_UINT32 || header.elt_type == CS_UINT64) {
-    if (val_type = CS_TYPE_cs_gnum_t)
+    if (val_type == CS_TYPE_cs_gnum_t)
       cs_io_set_cs_gnum(&header, restart->fh);
-    else if (val_type = CS_TYPE_cs_int_t)
+    else if (val_type == CS_TYPE_cs_int_t)
       cs_io_set_cs_lnum(&header, restart->fh);
     else {
       bft_printf(_("  %s: section \"%s\" is not of global number type.\n"),
