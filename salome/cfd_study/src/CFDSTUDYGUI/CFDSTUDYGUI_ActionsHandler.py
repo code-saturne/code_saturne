@@ -1815,15 +1815,10 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         if not self.DialogCollector.CopyDialog.result() == QDialog.Accepted:
             return
 
-        # update Object Browser
         # aDirPath: path directory where the xml file is copied
         aDirPath = self.DialogCollector.CopyDialog.destCaseName()
         aDirObject = CFDSTUDYGUI_DataModel.findMaxDeepObject(aDirPath)
-
-        if aDirObject != None:
-            self.updateObjBrowser(CFDSTUDYGUI_DataModel.GetCase(aDirObject))
-
-        # BUG si je fais directement: self.updateObjBrowser(aDirObject)
+        self.updateObjBrowser(aDirObject)
 
 
     def slotCheckCompilation(self):
