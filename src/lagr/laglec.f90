@@ -439,6 +439,8 @@ endif
 
 nberro = 0
 
+nomite(jgnum) = 'glob_num_'
+
 if (nbclst.gt.0) then
   nomite(jclst) = 'numero_groupe_statistiques'
 endif
