@@ -144,6 +144,8 @@ if test "x$GCC" = "xyes"; then
     cs_gcc=icc
   elif test -n "`$CC --version 2>&1 | grep PathScale`" ; then
     cs_gcc=pathcc
+  elif test -n "`$CC --version 2>&1 | grep Open64`" ; then
+    cs_gcc=open64
   else
     cs_gcc=gcc
   fi
@@ -266,6 +268,58 @@ elif test "x$cs_gcc" = "xicc"; then
       cflags_default_ext="-fp-model extended"
       ;;
   esac
+
+# Otherwise, are we using pathcc ?
+#---------------------------------
+
+elif test "x$cs_gcc" = "xpathcc"; then
+
+  $CC --version 2>&1 | grep 'PathScale' > /dev/null
+  if test "$?" = "0" ; then
+
+    echo "compiler '$CC' is PathScale C compiler"
+
+    # Version strings for logging purposes and known compiler flag
+    $CC --version > $outfile 2>&1
+    cs_ac_cc_version=`grep -i Compiler $outfile`
+    cs_cc_compiler_known=yes
+
+    # Default compiler flags
+    cflags_default="-c99 -noswitcherror"
+    cflags_default="-std=c99 -funsigned-char -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused -Wunused-value"
+    cflags_default_dbg="-g"
+    cflags_default_opt="-O2"
+    cflags_default_hot="-Ofast"
+    cflags_default_prf=""
+    cflags_default_omp="-openmp"
+
+  fi
+
+# Otherwise, are we using opencc ?
+#---------------------------------
+
+elif test "x$cs_gcc" = "xopen64"; then
+
+  $CC --version 2>&1 | grep 'Open64' > /dev/null
+  if test "$?" = "0" ; then
+
+    echo "compiler '$CC' is Open64 C compiler"
+
+    # Version strings for logging purposes and known compiler flag
+    $CC --version > $outfile 2>&1
+    cs_ac_cc_version=`grep -i Compiler $outfile`
+    cs_cc_compiler_known=yes
+
+    # Default compiler flags
+    cflags_default="-std=c99"
+    cflags_default="-std=c99 -funsigned-char -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused -Wunused-value"
+    cflags_default_dbg="-g"
+    cflags_default_opt="-O2"
+    cflags_default_hot="-Ofast"
+    cflags_default_prf=""
+    cflags_default_omp="-openmp"
+
+  fi
 
 fi
 
@@ -391,34 +445,6 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
     ldflags_default_prf="-h profile_generate"
 
   fi
-fi
-
-# Otherwise, are we using pathcc ?
-#---------------------------------
-
-if test "x$cs_cc_compiler_known" != "xyes" ; then
-
-  $CC --version 2>&1 | grep 'PathScale' > /dev/null
-  if test "$?" = "0" ; then
-
-    echo "compiler '$CC' is PathScale C compiler"
-
-    # Version strings for logging purposes and known compiler flag
-    $CC --version > $outfile 2>&1
-    cs_ac_cc_version=`grep -i Compiler $outfile`
-    cs_cc_compiler_known=yes
-
-    # Default compiler flags
-    cflags_default="-c99 -noswitcherror"
-    cflags_default="-std=c99 -funsigned-char -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused -Wunused-value"
-    cflags_default_dbg="-g"
-    cflags_default_opt="-O2"
-    cflags_default_hot="-Ofast"
-    cflags_default_prf=""
-    cflags_default_omp="-openmp"
-
-  fi
-
 fi
 
 # Compiler still not identified
@@ -755,6 +781,32 @@ if test "x$cs_cxx_compiler_known" != "xyes" ; then
   fi
 fi
 
+# Otherwise, are we using the Cray compiler ?
+#------------------------------------------
+
+if test "x$cs_cxx_compiler_known" != "xyes" ; then
+
+  $CXX -V 2>&1 | grep 'Cray C++' > /dev/null
+  if test "$?" = "0" ; then
+
+    echo "compiler '$CXX' is Cray C++"
+
+    # Version strings for logging purposes and known compiler flag
+    cs_ac_cxx_version=`$CXX -V 2>&1 | grep "Cray C++" | head -1`
+    cs_cxx_compiler_known=yes
+
+    # Default compiler flags
+    cxxflags_default=""                        # "-h c99" by default
+    cxxflags_default_opt="-O2"
+    cxxflags_default_hot="-O3"
+    cxxflags_default_dbg="-g"
+    cfxxlags_default_prf="-h profile_generate" # resulting code must be run under CrayPat
+    cfxxlags_default_omp="-h omp"              # default: use "-h noomp" to disable
+
+  fi
+
+fi
+
 # Otherwise, are we using pathcc ?
 #---------------------------------
 
@@ -782,27 +834,28 @@ if test "x$cs_cxx_compiler_known" != "xyes" ; then
 
 fi
 
-# Otherwise, are we using the Cray compiler ?
-#------------------------------------------
+# Otherwise, are we using openCC ?
+#---------------------------------
 
 if test "x$cs_cxx_compiler_known" != "xyes" ; then
 
-  $CXX -V 2>&1 | grep 'Cray C++' > /dev/null
+  $CXX --version 2>&1 | grep 'Open64' > /dev/null
   if test "$?" = "0" ; then
 
-    echo "compiler '$CXX' is Cray C++"
+    echo "compiler '$CXX' is Open64"
 
     # Version strings for logging purposes and known compiler flag
-    cs_ac_cxx_version=`$CXX -V 2>&1 | grep "Cray C++" | head -1`
+    $CXX --version > $outfile 2>&1
+    cs_ac_cxx_version=`grep -i Compiler $outfile`
     cs_cxx_compiler_known=yes
 
     # Default compiler flags
-    cxxflags_default=""                        # "-h c99" by default
-    cxxflags_default_opt="-O2"
-    cxxflags_default_hot="-O3"
+    cxxflags_default="-ansi -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused -Wunused-value"
     cxxflags_default_dbg="-g"
-    cfxxlags_default_prf="-h profile_generate" # resulting code must be run under CrayPat
-    cfxxlags_default_omp="-h omp"              # default: use "-h noomp" to disable
+    cxxflags_default_opt="-O2"
+    cxxflags_default_hot="-Ofast"
+    cxxflags_default_prf=""
+    cxxflags_default_omp="-openmp"
 
   fi
 
@@ -1059,32 +1112,6 @@ fi
 
 if test "x$cs_fc_compiler_known" != "xyes" ; then
 
-  # Are we using pathf95 ?
-  #---------------------
-
-  $FC --version 2>&1 | grep 'PathScale' > /dev/null
-
-  if test "$?" = "0" ; then
-
-    echo "compiler '$FC' is PathScale Fortran compiler"
-
-    # Version strings for logging purposes and known compiler flag
-    $FC --version > $outfile 2>&1
-    cs_ac_fc_version=`grep 'PathScale' $outfile`
-    cs_fc_compiler_known=yes
-
-    fcflags_default="-Wall -Wno-unused -cpp"
-    fcflags_default_dbg="-g -ffortran-bounds-check"
-    fcflags_default_opt="-O"
-    fcflags_default_hot="-fast"
-    fcflags_default_prf=""
-    fcflags_default_omp="-openmp"
-
-  fi
-fi
-
-if test "x$cs_fc_compiler_known" != "xyes" ; then
-
   # Are we using xlf ?
   #-------------------
 
@@ -1153,6 +1180,58 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
     fcflags_default_opt="-O2"
     fcflags_default_prf="-h profile_generate" # resulting code must be run under CrayPat
     fcflags_default_omp="-h omp"              # default: use "-h noomp" to disable
+
+  fi
+fi
+
+if test "x$cs_fc_compiler_known" != "xyes" ; then
+
+  # Are we using pathf95 ?
+  #---------------------
+
+  $FC --version 2>&1 | grep 'PathScale' > /dev/null
+
+  if test "$?" = "0" ; then
+
+    echo "compiler '$FC' is PathScale Fortran compiler"
+
+    # Version strings for logging purposes and known compiler flag
+    $FC --version > $outfile 2>&1
+    cs_ac_fc_version=`grep 'PathScale' $outfile`
+    cs_fc_compiler_known=yes
+
+    fcflags_default="-Wall -Wno-unused -cpp"
+    fcflags_default_dbg="-g -ffortran-bounds-check"
+    fcflags_default_opt="-O"
+    fcflags_default_hot="-fast"
+    fcflags_default_prf=""
+    fcflags_default_omp="-openmp"
+
+  fi
+fi
+
+if test "x$cs_fc_compiler_known" != "xyes" ; then
+
+  # Are we using openf95?
+  #---------------------
+
+  $FC --version 2>&1 | grep 'Open64' > /dev/null
+
+  if test "$?" = "0" ; then
+
+    echo "compiler '$FC' is Open64 Fortran compiler"
+
+    # Version strings for logging purposes and known compiler flag
+    $FC --version > $outfile 2>&1
+    cs_ac_fc_version=`grep 'Open64' $outfile`
+    cs_fc_compiler_known=yes
+
+    fcflags_default="-Wall -Wno-unused -cpp -fno-second-underscore"
+    fcflags_default_dbg="-g -ffortran-bounds-check"
+    fcflags_default_opt="-O"
+    fcflags_default_hot="-fast"
+    fcflags_default_prf=""
+    fcflags_default_omp="-openmp"
 
   fi
 fi

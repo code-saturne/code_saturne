@@ -79,6 +79,10 @@ if test "x$GCC" = "xyes"; then
   # Intel compiler passes as GCC but may be recognized by version string
   if test -n "`$CC --version | grep icc`" ; then
     ple_gcc=icc
+  elif test -n "`$CC --version 2>&1 | grep PathScale`" ; then
+    ple_gcc=pathcc
+  elif test -n "`$CC --version 2>&1 | grep Open64`" ; then
+    ple_gcc=open64
   else
     ple_gcc=gcc
   fi
@@ -181,6 +185,56 @@ elif test "x$ple_gcc" = "xicc"; then
   cflags_default_opt="-O2"
   cflags_default_prf="-p"
 
+# Otherwise, are we using pathcc ?
+#---------------------------------
+
+elif test "x$ple_cc_compiler_known" != "xyes" ; then
+
+  $CC --version 2>&1 | grep 'PathScale' > /dev/null
+  if test "$?" = "0" ; then
+
+    echo "compiler '$CC' is PathScale C compiler"
+
+    # Version strings for logging purposes and known compiler flag
+    $CC --version > $outfile 2>&1
+    ple_ac_cc_version=`grep -i Compiler $outfile`
+    ple_cc_compiler_known=yes
+
+    # Default compiler flags
+    cflags_default="-c99 -noswitcherror"
+    cflags_default="-std=c99 -funsigned-char -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused -Wunused-value"
+    cflags_default_dbg="-g"
+    cflags_default_opt="-O2"
+    cflags_default_prf=""
+
+  fi
+
+# Otherwise, are we using opencc ?
+#---------------------------------
+
+elif test "x$ple_gcc" = "xopen64"; then
+
+  $CC --version 2>&1 | grep 'Open64' > /dev/null
+  if test "$?" = "0" ; then
+
+    echo "compiler '$CC' is Open64 C compiler"
+
+    # Version strings for logging purposes and known compiler flag
+    $CC --version > $outfile 2>&1
+    ple_ac_cc_version=`grep -i Compiler $outfile`
+    ple_cc_compiler_known=yes
+
+    # Default compiler flags
+    cflags_default="-std=c99"
+    cflags_default="-std=c99 -funsigned-char -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused -Wunused-value"
+    cflags_default_dbg="-g"
+    cflags_default_opt="-O2"
+    cflags_default_prf=""
+
+  fi
+
+fi
+
 fi
 
 # Otherwise, are we using pgcc ?
@@ -261,7 +315,6 @@ if test "x$ple_compiler_known" != "xyes" ; then
         cppflags_default=""
         cflags_default=""
         cflags_default_opt="-O3"
-        cflags_default_hot="-O3 -qhot"
         cflags_default_dbg="-g"
       fi
     fi
@@ -287,10 +340,8 @@ if test "x$ple_cc_compiler_known" != "xyes" ; then
     # Default compiler flags
     cflags_default=""                        # "-h c99" by default
     cflags_default_opt="-O2"
-    cflags_default_hot="-O3"
     cflags_default_dbg="-g"
     cflags_default_prf="-h profile_generate" # resulting code must be run under CrayPat
-    cflags_default_omp="-h omp"              # default: use "-h noomp" to disable
 
     # Default  linker flags
     ldflags_default=""
@@ -299,33 +350,6 @@ if test "x$ple_cc_compiler_known" != "xyes" ; then
     ldflags_default_prf="-h profile_generate"
 
   fi
-fi
-
-# Otherwise, are we using pathcc ?
-#---------------------------------
-
-if test "x$ple_cc_compiler_known" != "xyes" ; then
-
-  $CC --version 2>&1 | grep 'PathScale' > /dev/null
-  if test "$?" = "0" ; then
-
-    echo "compiler '$CC' is PathScale C compiler"
-
-    # Version strings for logging purposes and known compiler flag
-    $CC --version > $outfile 2>&1
-    ple_ac_cc_version=`grep -i Compiler $outfile`
-    ple_cc_compiler_known=yes
-
-    # Default compiler flags
-    cflags_default="-c99 -noswitcherror"
-    cflags_default="-std=c99 -funsigned-char -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused -Wunused-value"
-    cflags_default_dbg="-g"
-    cflags_default_opt="-O2"
-    cflags_default_prf=""
-    cflags_default_omp="-openmp"
-
-  fi
-
 fi
 
 # Compiler still not identified
