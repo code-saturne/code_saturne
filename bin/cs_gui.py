@@ -63,6 +63,7 @@ if list(map(int, PYQT_VERSION_STR.split("."))) < [4, 3, 0]:
 # Application modules
 #-------------------------------------------------------------------------------
 
+import cs_config
 from Base.MainView import MainView
 import Base.MainView
 
@@ -129,6 +130,25 @@ def main(argv, pkg):
     else:
         icons_path = os.path.join(pkg.get_dir('pkgpythondir'), 'core', 'icons')
         sys.path.insert(1, os.path.join(pkg.get_dir('pkgpythondir'), 'core'))
+
+    # Test if EOS modules could be imported
+    cfg = cs_config.config()
+    if cfg.libs['eos'].have == "yes":
+        eosprefix = cfg.libs['eos'].prefix
+        try:
+            from distutils import sysconfig
+            eospath = os.path.join(sysconfig.get_python_lib(0, 0, prefix=eosprefix), 'eos')
+        except Exception:
+            eospath = ''
+
+        if sys.platform.startswith('win'):
+            eospath = os.path.join(eosprefix,
+                          'lib', 'python' + sys.version[:3], 'site-packages',
+                          'eos')
+
+        if eospath:
+            if os.path.isdir(eospath) and not eospath in sys.path:
+                sys.path.insert(0, eospath)
 
     case, spl = process_cmd_line(argv)
 

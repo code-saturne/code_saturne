@@ -251,6 +251,7 @@ class config:
         self.libs['eos'] = \
             prerequisite("EOS",
                          have = "@cs_have_eos@",
+                         prefix="@eos_prefix@",
                          flags = {'cppflags': "@EOS_CPPFLAGS@",
                                   'ldflags': "@EOS_LDFLAGS@",
                                   'libs': "@EOS_LIBS@"})

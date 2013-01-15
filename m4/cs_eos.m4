@@ -103,6 +103,7 @@ fi
 AM_CONDITIONAL(HAVE_EOS, test x$cs_have_eos = xyes)
 
 AC_SUBST(cs_have_eos)
+AC_SUBST(eos_prefix, [${with_eos}])
 AC_SUBST(EOS_CPPFLAGS)
 AC_SUBST(EOS_LDFLAGS)
 AC_SUBST(EOS_LIBS)
