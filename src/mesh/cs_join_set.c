@@ -584,8 +584,10 @@ cs_join_gset_create_from_tag(cs_int_t         n_elts,
   cs_lnum_t  *order = NULL;
   cs_join_gset_t  *set = NULL;
 
-  if (n_elts == 0)
-    return  NULL;
+  if (n_elts == 0) {
+    set = cs_join_gset_create(n_elts);
+    return  set;
+  }
 
   /* Order tag */
 
