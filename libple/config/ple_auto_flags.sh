@@ -235,8 +235,6 @@ elif test "x$ple_gcc" = "xopen64"; then
 
 fi
 
-fi
-
 # Otherwise, are we using pgcc ?
 #-------------------------------
 
