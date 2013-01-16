@@ -94,8 +94,8 @@ class XMLmodel(Variables):
             if model in ('Rij-EBRSM'):
                 nodeList.append(nodeTurb.xmlGetNode('variable', name='turb_alpha'))
 
-        elif model in ('BL-v2/k'):
-            for var in ('turb_k', 'turb_eps', 'turb_phi', 'turb_al'):
+        elif model in ('v2f-BL-v2/k'):
+            for var in ('turb_k', 'turb_eps', 'turb_phi', 'turb_alpha'):
                 nodeList.append(nodeTurb.xmlGetNode('variable', name=var))
 
         elif model in ('k-omega-SST'):
@@ -118,7 +118,7 @@ class XMLmodel(Variables):
                      'k-epsilon',
                      'k-epsilon-PL',
                      'k-omega-SST',
-                     'BL-v2/k',
+                     'v2f-BL-v2/k',
                      'Rij-epsilon',
                      'Rij-SSG',
                      'Rij-EBRSM',

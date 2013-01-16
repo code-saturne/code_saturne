@@ -2218,7 +2218,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                             rcodcl[vars->rtp[11] * (*nfabor) + ifbr] = mei_tree_lookup(ev_formula,"alpha");
                         }
                     }
-                    else if (cs_gui_strcmp(model, "BL-v2/k"))
+                    else if (cs_gui_strcmp(model, "v2f-BL-v2/k"))
                     {
                         const char *symbols[] = {"k", "eps", "phi", "al"};
 

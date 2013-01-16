@@ -383,7 +383,7 @@ alpha =  1.;
                 self.__boundary.setTurbFormula(result)
                 setGreenColor(self.pushButtonTurb, False)
 
-        elif turb_model == 'BL-v2/k':
+        elif turb_model == 'v2f-BL-v2/k':
 
             exp = self.__boundary.getTurbFormula()
             if not exp:

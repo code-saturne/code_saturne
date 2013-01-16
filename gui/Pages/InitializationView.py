@@ -395,7 +395,7 @@ alpha = 1.;"""
                 self.init.setTurbFormula(self.zone, result)
                 setGreenColor(self.sender(), False)
 
-        elif turb_model == 'BL-v2/k':
+        elif turb_model == 'v2f-BL-v2/k':
             exp = self.init.getTurbFormula(self.zone, turb_model)
             exa = """#example
 
@@ -811,7 +811,7 @@ nusa = (cmu * k)/eps;;"""
                               'Rij-epsilon',
                               'Rij-SSG',
                               'Rij-EBRSM',
-                              'BL-v2/k',
+                              'v2f-BL-v2/k',
                               'k-omega-SST',
                               'Spalart-Allmaras'):
             for item in self.turb_group:

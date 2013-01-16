@@ -597,7 +597,7 @@ R23 = 0.;
 eps = 0.;
 alpha = 0.;"""
 
-        elif turb_model == 'BL-v2/k':
+        elif turb_model == 'v2f-BL-v2/k':
             formula = """k = 0.;
 eps = 0.;
 phi = 0.;

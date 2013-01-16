@@ -139,7 +139,7 @@ r23 = 0.;
 k = 0.5*(r11+r22+r33);
 eps = k^1.5*cmu/almax;
 alpha = 1.;"""
-        elif turb_model == 'BL-v2/k':
+        elif turb_model == 'v2f-BL-v2/k':
             formula = """cmu = 0.22;
 k = 1.5*(0.02*uref)^2;
 eps = k^1.5*cmu/almax;
