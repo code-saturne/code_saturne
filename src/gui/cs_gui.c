@@ -1874,6 +1874,8 @@ void CS_PROCF (csisca, CSISCA) (int *const iscavr)
  * INTEGER          IVISLS  <--   indicator for the user scalar viscosity
  * INTEGER          ISCALT  <-->  number of the user thermal scalar if any
  * INTEGER          ISCSTH  <-->  type of the user thermal scalar
+ * INTEGER          ISCA     -->  indirection array for scalar number
+ * INTEGER          ITEMPK   -->  rtp index for temperature (in K)
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csivis, CSIVIS) (int *const iscavr,
