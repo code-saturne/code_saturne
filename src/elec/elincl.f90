@@ -133,7 +133,7 @@ module elincl
   !     IDRECA : defnition de la compsante a recaler
   !     CRIT_RECA : define criteria for recal
 
-  character*150, save :: crit_reca
+  double precision, save :: crit_reca(5)
   integer, save ::           ielcor, modrec, idreca
   integer, allocatable, dimension(:) :: izreca
 

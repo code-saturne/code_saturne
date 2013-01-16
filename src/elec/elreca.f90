@@ -239,17 +239,13 @@ if ( ippmod(ielarc).ge.1 ) then
     elcou  = 0.d0
     do ifac = 1, nfac
       ok = .true.
-      do idir = 1, 3
-        if (idir.ne.idreca) then
-          if (abs(surfac(idir,ifac)) .le. 1.d-8) then
-            ok = .false.
-          endif
-        endif
-      enddo
+      if (abs(surfac(idreca, ifac)) .le. 1.d-8) then
+        ok = .false.
+      endif
       if (ok .eqv. .true.) then
         iel = ifacel(1,ifac)
-        if (izreca(iel).gt.0) then
-          elcou = elcou + propce(iel,ipcdc3) * surfac(idreca,ifac)
+        if (izreca(iel) .gt. 0) then
+          elcou = elcou + propce(iel,ipcdc3) * surfac(idreca,ifac) / 2.d0
         endif
       endif
     enddo
@@ -271,7 +267,7 @@ if ( ippmod(ielarc).ge.1 ) then
     dtj = 1.d15
     dtjm =dtj
     delhsh = 0.d0
-    cdtj= 80.d0
+    cdtj= 20.d0
 
     do iel = 1, ncel
       if(propce(iel,ipproc(irom)).ne.0.d0)                     &

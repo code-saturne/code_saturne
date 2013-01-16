@@ -2288,7 +2288,7 @@ void CS_PROCF (uieli1, UIELI1) (const int    *const ncelet,
                                       double *const puisim,
                                       int    *const modrec,
                                       int    *const idreca,
-                                      char   *const crit_reca)
+                                      double *const crit_reca)
 {
   char *path   = NULL;
   int   status = 0;
@@ -2365,15 +2365,66 @@ void CS_PROCF (uieli1, UIELI1) (const int    *const ncelet,
         BFT_FREE(path);
         BFT_FREE(choice);
 
+        double val;
         path = cs_xpath_init_path();
-        cs_xpath_add_elements(&path, 4, "thermophysical_models",
+        cs_xpath_add_elements(&path, 5, "thermophysical_models",
                                         "joule_effect",
                                         "recal_model",
-                                        "plane_definition");
+                                        "plane_definition",
+                                        "A");
         cs_xpath_add_function_text(&path);
-        *crit_reca = cs_gui_get_text_value(path);
-
+        if (!cs_gui_get_double(path, &val))
+          bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
         BFT_FREE(path);
+        crit_reca[0] = val;
+
+        path = cs_xpath_init_path();
+        cs_xpath_add_elements(&path, 5, "thermophysical_models",
+                                        "joule_effect",
+                                        "recal_model",
+                                        "plane_definition",
+                                        "B");
+        cs_xpath_add_function_text(&path);
+        if (!cs_gui_get_double(path, &val))
+          bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+        BFT_FREE(path);
+        crit_reca[1] = val;
+
+        path = cs_xpath_init_path();
+        cs_xpath_add_elements(&path, 5, "thermophysical_models",
+                                        "joule_effect",
+                                        "recal_model",
+                                        "plane_definition",
+                                        "C");
+        cs_xpath_add_function_text(&path);
+        if (!cs_gui_get_double(path, &val))
+          bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+        BFT_FREE(path);
+        crit_reca[2] = val;
+
+        path = cs_xpath_init_path();
+        cs_xpath_add_elements(&path, 5, "thermophysical_models",
+                                        "joule_effect",
+                                        "recal_model",
+                                        "plane_definition",
+                                        "D");
+        cs_xpath_add_function_text(&path);
+        if (!cs_gui_get_double(path, &val))
+          bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+        BFT_FREE(path);
+        crit_reca[3] = val;
+
+        path = cs_xpath_init_path();
+        cs_xpath_add_elements(&path, 5, "thermophysical_models",
+                                        "joule_effect",
+                                        "recal_model",
+                                        "plane_definition",
+                                        "epsilon");
+        cs_xpath_add_function_text(&path);
+        if (!cs_gui_get_double(path, &val))
+          bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+        BFT_FREE(path);
+        crit_reca[4] = val;
       }
     }
     BFT_FREE(path);
@@ -2401,16 +2452,38 @@ void CS_PROCF (uieli1, UIELI1) (const int    *const ncelet,
 
 void CS_PROCF (uielrc, UIELRC) (const int    *const ncelet,
                                       int    *const izreca,
-                                      char   *const crit_reca)
+                                      double *const crit_reca)
 {
   /* build list of cells */
   int  c_id         = 0;
   cs_lnum_t  *cells_list  = NULL;
   cs_lnum_t  cells = 0;
+  char *crit = NULL;
 
   BFT_MALLOC(cells_list, *ncelet, int);
+  BFT_MALLOC(crit, 66, char*);
+
+  char cVal[10];
+
+  strcpy(crit, "plane[");
+  sprintf(cVal, "%f", crit_reca[0]);
+  strcat(crit, cVal);
+  strcat(crit, ",");
+  sprintf(cVal, "%f", crit_reca[1]);
+  strcat(crit, cVal);
+  strcat(crit, ",");
+  sprintf(cVal, "%f", crit_reca[2]);
+  strcat(crit, cVal);
+  strcat(crit, ",");
+  sprintf(cVal, "%f", crit_reca[3]);
+  strcat(crit, cVal);
+  strcat(crit, ",epsilon=");
+  sprintf(cVal, "%6f", crit_reca[4]);
+  strcat(crit, cVal);
+  strcat(crit, "]");
+
   c_id = fvm_selector_get_list(cs_glob_mesh->select_cells,
-                               crit_reca,
+                               crit,
                                &cells,
                                cells_list);
 
@@ -2429,6 +2502,7 @@ void CS_PROCF (uielrc, UIELRC) (const int    *const ncelet,
   for (int j=0; j < cells; j++)
     izreca[cells_list[j]] = 1;
   BFT_FREE(cells_list);
+  BFT_FREE(crit);
 
 }
 
@@ -2807,11 +2881,6 @@ void CS_PROCF (uielpr, UIELPR) (const int *const nsalpp,
       strcpy(vars->properties_name[n++], "TS_radia");
     }
   }
-
-  vars->properties_ipp[n] = ipppro[ipproc[ivisls[*ipotr -1] -1] -1];
-  vars->propce[n] = ipproc[ivisls[*ipotr -1] -1] -1;
-  BFT_MALLOC(vars->properties_name[n], strlen("Sigma") +1, char);
-  strcpy(vars->properties_name[n++], "Sigma");
 
   BFT_FREE(name);
   BFT_FREE(snumpp);

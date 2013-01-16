@@ -156,11 +156,6 @@ if ( ippmod(ielion).ge.1 ) then
 
 endif
 
-! Conductivite Electrique
-
-iprop         = iprop + 1
-ivisls(ipotr) = iprop
-
 ! ----  Nb de variables algebriques (ou d'etat)
 !         propre a la physique particuliere NSALPP
 !         total NSALTO
@@ -239,11 +234,6 @@ if ( ippmod(ielion).ge.1 ) then
   ipppro(iprop)  = ipppst
 
 endif
-
-! Conductivite Electrique
-
-iprop                 = iprop + 1
-ipproc(ivisls(ipotr)) = iprop
 
 nproce = iprop
 
