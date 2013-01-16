@@ -3945,7 +3945,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
             }
 
             else if (cs_gui_strcmp(model, "v2f-BL-v2/k")) {
-              const char *symbols[] = {"k", "eps", "phi", "al"};
+              const char *symbols[] = {"k", "eps", "phi", "alpha"};
               if (mei_tree_find_symbols(ev_formula_turb, 4, symbols))
                 bft_error(__FILE__, __LINE__, 0, _("Error: can not find the required symbol: %s\n"),
                           "k, eps, phi of al");
@@ -3959,7 +3959,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
                 rtp[vars->rtp[4] * (*ncelet) + iel] = mei_tree_lookup(ev_formula_turb, "k");
                 rtp[vars->rtp[5] * (*ncelet) + iel] = mei_tree_lookup(ev_formula_turb, "eps");
                 rtp[vars->rtp[6] * (*ncelet) + iel] = mei_tree_lookup(ev_formula_turb, "phi");
-                rtp[vars->rtp[7] * (*ncelet) + iel] = mei_tree_lookup(ev_formula_turb, "al");
+                rtp[vars->rtp[7] * (*ncelet) + iel] = mei_tree_lookup(ev_formula_turb, "alpha");
               }
             }
 

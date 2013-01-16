@@ -409,7 +409,7 @@ al = 0.;
             req = [('k', "turbulent energy"),
             ('eps', "turbulent dissipation"),
             ('phi', "variable phi in v2f model"),
-            ('al', "variable a in v2f model")]
+            ('alpha', "variable alpha in v2f model")]
             sym = [('rho0', 'density (reference value)'),
                    ('mu0', 'viscosity (reference value)'),
                    ('cp0', 'specific heat (reference value)'),

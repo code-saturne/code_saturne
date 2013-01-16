@@ -415,11 +415,11 @@ d2s3 = 2/3;
 k   = ustar2/sqrt(cmu);
 eps = ustar2^1.5/(kappa*dh*0.1);
 phi = d2s3;
-al = 0;"""
+alpha = 0;"""
             req = [('k', "turbulent energy"),
             ('eps', "turbulent dissipation"),
             ('phi', "variable phi in v2f model"),
-            ('al', "variable a in v2f model")]
+            ('alpha', "variable alpha in v2f model")]
             sym = [('x','cell center coordinate'),
                    ('y','cell center coordinate'),
                    ('z','cell center coordinate'),
