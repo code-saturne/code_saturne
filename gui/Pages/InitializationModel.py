@@ -77,7 +77,7 @@ class InitializationModel(Model):
         self.Turb_var_List = ('turb_k', 'turb_eps',
                               'component_R11', 'component_R22', 'component_R33',
                               'component_R12', 'component_R13', 'component_R23',
-                              'turb_phi', 'turb_fb', 'turb_omega', 'turb_nusa',
+                              'turb_phi', 'turb_al', 'turb_omega', 'turb_nusa',
                               'turb_alpha')
 
         self.turb = TurbulenceModel(self.case)
@@ -139,12 +139,12 @@ r23 = 0.;
 k = 0.5*(r11+r22+r33);
 eps = k^1.5*cmu/almax;
 alpha = 1.;"""
-        elif turb_model == 'v2f-phi':
+        elif turb_model == 'v2f-BL-v2/k':
             formula = """cmu = 0.22;
 k = 1.5*(0.02*uref)^2;
 eps = k^1.5*cmu/almax;
 phi = 2./3.;
-fb = 0.;"""
+al = 0.;"""
         elif turb_model == 'k-omega-SST':
             formula = """k = 1.5*(0.02*uref)^2;
 omega = k^0.5/almax;"""

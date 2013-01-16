@@ -1698,7 +1698,7 @@ void CS_PROCF (csturb, CSTURB) (int    *const iturb,
     *iturb = 50;
     cs_gui_advanced_options_turbulence("scale_model", ideuch);
     cs_gui_advanced_options_turbulence("gravity_terms", igrake);
-  } else if (cs_gui_strcmp(model, "BL-v2/k")) {
+  } else if (cs_gui_strcmp(model, "v2f-BL-v2/k")) {
     *iturb = 51;
     cs_gui_advanced_options_turbulence("scale_model", ideuch);
     cs_gui_advanced_options_turbulence("gravity_terms", igrake);
@@ -2189,8 +2189,8 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
     strcpy(cs_glob_var->name[n++], "turb_phi");
 
     cs_glob_var->rtp[n] = *ial  -1;
-    BFT_MALLOC(cs_glob_var->name[n], strlen("turb_al")+1, char);
-    strcpy(cs_glob_var->name[n++], "turb_al");
+    BFT_MALLOC(cs_glob_var->name[n], strlen("turb_alpha")+1, char);
+    strcpy(cs_glob_var->name[n++], "turb_alpha");
 
   } else if (*iturb == 60) {
 
@@ -3931,11 +3931,11 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
               }
             }
 
-            else if (cs_gui_strcmp(model, "v2f-phi")) {
-              const char *symbols[] = {"k", "eps", "phi", "fb"};
+            else if (cs_gui_strcmp(model, "v2f-BL-v2/k")) {
+              const char *symbols[] = {"k", "eps", "phi", "alpha"};
               if (mei_tree_find_symbols(ev_formula_turb, 4, symbols))
                 bft_error(__FILE__, __LINE__, 0, _("Error: can not find the required symbol: %s\n"),
-                          "k, eps, phi of fb");
+                          "k, eps, phi of al");
 
               for (icel = 0; icel < cells; icel++) {
                 iel = cells_list[icel]-1;
@@ -3946,7 +3946,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
                 rtp[vars->rtp[4] * (*ncelet) + iel] = mei_tree_lookup(ev_formula_turb, "k");
                 rtp[vars->rtp[5] * (*ncelet) + iel] = mei_tree_lookup(ev_formula_turb, "eps");
                 rtp[vars->rtp[6] * (*ncelet) + iel] = mei_tree_lookup(ev_formula_turb, "phi");
-                rtp[vars->rtp[7] * (*ncelet) + iel] = mei_tree_lookup(ev_formula_turb, "fb");
+                rtp[vars->rtp[7] * (*ncelet) + iel] = mei_tree_lookup(ev_formula_turb, "alpha");
               }
             }
 

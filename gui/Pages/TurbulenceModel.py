@@ -78,7 +78,7 @@ class TurbulenceModel(Variables, Model):
                             'Rij-epsilon',
                             'Rij-SSG',
                             'Rij-EBRSM',
-                            'v2f-phi',
+                            'v2f-BL-v2/k',
                             'k-omega-SST',
                             'Spalart-Allmaras',
                             'LES_Smagorinsky',
@@ -98,9 +98,8 @@ class TurbulenceModel(Variables, Model):
                                'turb_k',
                                'turb_eps',
                                'turb_phi',
-                               'turb_fb',
-                               'turb_omega',
                                'turb_alpha',
+                               'turb_omega',
                                'turb_nusa']
 
 
@@ -249,8 +248,8 @@ class TurbulenceModel(Variables, Model):
             NumericalParamEquatModel(self.case).setSchemeDefaultValues()
             del NumericalParamEquatModel
 
-        elif model_turb == 'v2f-phi':
-            lst = ('turb_k', 'turb_eps', 'turb_phi', 'turb_fb')
+        elif model_turb == 'v2f-BL-v2/k':
+            lst = ('turb_k', 'turb_eps', 'turb_phi', 'turb_alpha')
             for v in lst:
                 self.setNewTurbulenceVariable(self.node_turb, v)
             self.setNewProperty(self.node_turb, 'turb_viscosity')
@@ -389,11 +388,11 @@ class TurbulenceModel(Variables, Model):
                 nodeList.append(self.node_turb.xmlGetNode('variable', name=var))
             if model == 'Rij-EBRSM':
                 nodeList.append(self.node_turb.xmlGetNode('variable', name='turb_alpha'))
-        elif model == 'v2f-phi':
+        elif model == 'v2f-BL-v2/k':
             nodeList.append(self.node_turb.xmlGetNode('variable', name='turb_k'))
             nodeList.append(self.node_turb.xmlGetNode('variable', name='turb_eps'))
             nodeList.append(self.node_turb.xmlGetNode('variable', name='turb_phi'))
-            nodeList.append(self.node_turb.xmlGetNode('variable', name='turb_fb'))
+            nodeList.append(self.node_turb.xmlGetNode('variable', name='turb_alpha'))
         elif model == 'k-omega-SST':
             nodeList.append(self.node_turb.xmlGetNode('variable', name='turb_k'))
             nodeList.append(self.node_turb.xmlGetNode('variable', name='turb_omega'))
@@ -575,12 +574,12 @@ class TurbulenceModelTestCase(ModelTest):
     def checkSetV2F(self):
         """Check whether the v2f phi turbulence model could be set"""
         mdl = TurbulenceModel(self.case)
-        mdl.setTurbulenceModel('v2f-phi')
-        doc = '''<turbulence model="v2f-phi">
+        mdl.setTurbulenceModel('v2f-BL-v2/k')
+        doc = '''<turbulence model="v2f-BL-v2/k">
                 <variable label="TurbEner" name="turb_k"/>
                 <variable label="Dissip" name="turb_eps"/>
                 <variable label="phi" name="turb_phi"/>
-                <variable label="fb" name="turb_fb"/>
+                <variable label="alpha" name="turb_alpha"/>
                 <property label="TurbVisc" name="turb_viscosity"/>
                 <initialization choice="reference_velocity">
                   <reference_velocity>1.0</reference_velocity>

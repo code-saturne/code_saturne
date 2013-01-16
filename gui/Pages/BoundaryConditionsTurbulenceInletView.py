@@ -383,7 +383,7 @@ alpha =  1.;
                 self.__boundary.setTurbFormula(result)
                 setGreenColor(self.pushButtonTurb, False)
 
-        elif turb_model == 'v2f-phi':
+        elif turb_model == 'v2f-BL-v2/k':
 
             exp = self.__boundary.getTurbFormula()
             if not exp:
@@ -415,11 +415,11 @@ d2s3 = 2/3;
 k   = ustar2/sqrt(cmu);
 eps = ustar2^1.5/(kappa*dh*0.1);
 phi = d2s3;
-fb = 0;"""
+alpha = 0;"""
             req = [('k', "turbulent energy"),
             ('eps', "turbulent dissipation"),
             ('phi', "variable phi in v2f model"),
-            ('fb', "variable f in v2f model")]
+            ('alpha', "variable alpha in v2f model")]
             sym = [('x','cell center coordinate'),
                    ('y','cell center coordinate'),
                    ('z','cell center coordinate'),
