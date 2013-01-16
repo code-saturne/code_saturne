@@ -115,7 +115,6 @@ class SolverChoiceDelegate(QItemDelegate):
 
     def createEditor(self, parent, option, index):
         editor = QComboBox(parent)
-        editor.addItem(QString("Automatic"))
         editor.addItem(QString("Conjugate gradient"))
         editor.addItem(QString("Jacobi"))
         editor.addItem(QString("BI-CGSTAB"))
