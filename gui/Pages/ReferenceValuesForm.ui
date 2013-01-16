@@ -116,7 +116,7 @@
         <item>
          <widget class="QLabel" name="labelV0">
           <property name="toolTip">
-           <string>Code_Saturne key word: P0</string>
+           <string>Code_Saturne key word: V0</string>
           </property>
           <property name="text">
            <string>Reference value for velocity</string>
@@ -126,7 +126,7 @@
         <item>
          <widget class="QLineEdit" name="lineEditV0">
           <property name="toolTip">
-           <string>Code_Saturne key word: P0</string>
+           <string>Code_Saturne key word: V0</string>
           </property>
          </widget>
         </item>
@@ -185,7 +185,7 @@
         <item>
          <widget class="QLabel" name="labelL0">
           <property name="toolTip">
-           <string>Code_Saturne key word: P0</string>
+           <string>Code_Saturne key word: L0</string>
           </property>
           <property name="text">
            <string>Reference length</string>
@@ -198,7 +198,7 @@
         <item>
          <widget class="QLineEdit" name="lineEditL0">
           <property name="toolTip">
-           <string>Code_Saturne key word: P0</string>
+           <string>Code_Saturne key word: L0</string>
           </property>
          </widget>
         </item>
@@ -488,7 +488,7 @@
         <item>
          <widget class="QLabel" name="labelMassMolar">
           <property name="toolTip">
-           <string>Code_Saturne key word: WMOLME</string>
+           <string>Code_Saturne key word: XMASML</string>
           </property>
           <property name="text">
            <string>Mass molar reference</string>
@@ -498,7 +498,7 @@
         <item>
          <widget class="QLineEdit" name="lineEditMassMolar">
           <property name="toolTip">
-           <string>Code_Saturne key word: WMOLME</string>
+           <string>Code_Saturne key word: XMASML</string>
           </property>
          </widget>
         </item>

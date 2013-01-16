@@ -428,7 +428,7 @@ enddo
 ! --- Calcul de l'entropie au centre des cellules et affectation a W1
 iccfth = 6
 imodif = 0
-call uscfth                                                       &
+call cfther                                                       &
 !==========
  ( nvar   , nscal  ,                                              &
    iccfth , imodif ,                                              &
@@ -444,7 +444,7 @@ endif
 ! --- Calcul de dt*Beta/Rho au centre des cellules et affectation a W2
 iccfth = 162
 imodif = 0
-call uscfth                                                       &
+call cfther                                                       &
 !==========
  ( nvar   , nscal  ,                                              &
    iccfth , imodif ,                                              &

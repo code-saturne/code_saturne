@@ -342,7 +342,7 @@ endif
 '@  On peut modifier les bornes des variables rho et energie  ',/,&
 '@  dans uscfx1, mais ce n''est pas conseille.                ',/,&
 '@  Il est preferable de gerer les depassements éventuels     ',/,&
-'@  au moyen du sous programme uscfth (arret du calcul en fin ',/,&
+'@  au moyen du sous programme cfther (arret du calcul en fin ',/,&
 '@  de pas de temps en cas de depassement).                   ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&

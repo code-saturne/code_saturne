@@ -149,49 +149,6 @@ if ( isuite.eq.0 ) then
 
   if ( ipass.eq.1 ) then
 
-! ----- Initialisations par defaut
-
-!     ON MET LA TEMPERATURE A T0
-    do iel = 1, ncel
-      rtp(iel,isca(itempk)) = t0
-    enddo
-
-!     On initialise Cv, rho et l'energie
-    iccfth = 0
-    imodif = 1
-
-    call uscfth                                                 &
-    !==========
- ( nvar   , nscal  ,                                              &
-   iccfth , imodif ,                                              &
-   dt     , rtp    , rtp    , propce , propfa , propfb ,          &
-   w1     , w2     , w3     , w4     )
-
-!     On initialise la diffusivite thermique
-    visls0(ienerg) = visls0(itempk)/cv0
-
-    if(ivisls(ienerg).gt.0) then
-      if(ivisls(itempk).gt.0) then
-        if(icv.gt.0) then
-          do iel = 1, ncel
-            propce(iel,ipproc(ivisls(ienerg))) =         &
-                 propce(iel,ipproc(ivisls(itempk)))        &
-                 / propce(iel,ipproc(icv))
-          enddo
-        else
-          do iel = 1, ncel
-            propce(iel,ipproc(ivisls(ienerg))) =         &
-                 propce(iel,ipproc(ivisls(itempk))) / cv0
-          enddo
-        endif
-      else
-        do iel = 1, ncel
-          propce(iel,ipproc(ivisls(ienerg))) =         &
-               visls0(itempk) / propce(iel,ipproc(icv))
-        enddo
-      endif
-    endif
-
 ! ----- On donne la main a l'utilisateur
 
     call cs_user_initialization &
@@ -237,7 +194,7 @@ else
     iccfth = 0
     imodif = 1
 
-    call uscfth                                                 &
+    call cfther                                                 &
     !==========
  ( nvar   , nscal  ,                                              &
    iccfth , imodif ,                                              &

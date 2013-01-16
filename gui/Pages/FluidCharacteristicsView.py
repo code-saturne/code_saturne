@@ -152,6 +152,7 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
             list = [('density', 'Rho'),
                     ('molecular_viscosity', 'Mu'),
                     ('specific_heat', 'Cp'),
+                    ('thermal_conductivity', 'Al'),
                     ('volumic_viscosity', 'Viscv0'),
                     ('dynamic_diffusion', 'Diftl0')]
         elif CoalCombustionModel(self.case).getCoalCombustionModel() != 'off':
@@ -179,7 +180,7 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
             self.list_scalars.append((s, self.tr("Additional scalar")))
 
         # Particular Widget initialization taking into account of "Calculation Features"
-        mdl_atmo, mdl_joule, mdl_thermal, mdl_gas, mdl_coal = self.mdl.getThermoPhysicalModel()
+        mdl_atmo, mdl_joule, mdl_thermal, mdl_gas, mdl_coal, mdl_comp = self.mdl.getThermoPhysicalModel()
 
         # Combo models
 
@@ -189,7 +190,6 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         self.modelAl       = ComboModel(self.comboBoxAl, 3, 1)
         self.modelDiff     = ComboModel(self.comboBoxDiff, 2, 1)
         self.modelNameDiff = ComboModel(self.comboBoxNameDiff,1,1)
-        self.modelCv       = ComboModel(self.comboBoxCv, 3, 1)
         self.modelViscv0   = ComboModel(self.comboBoxViscv0, 3, 1)
         self.modelDiftl0   = ComboModel(self.comboBoxDiftl0, 3, 1)
 
@@ -225,9 +225,6 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
 
         self.modelDiff.addItem(self.tr('constant'), 'constant')
         self.modelDiff.addItem(self.tr('user law'), 'user_law')
-        self.modelCv.addItem(self.tr('constant'), 'constant')
-        self.modelCv.addItem(self.tr('user law'), 'user_law')
-        self.modelCv.addItem(self.tr('user subroutine (cs_user_physical_properties)'), 'variable')
         self.modelViscv0.addItem(self.tr('constant'), 'constant')
         self.modelViscv0.addItem(self.tr('user law'), 'user_law')
         self.modelViscv0.addItem(self.tr('user subroutine (cs_user_physical_properties)'), 'variable')
@@ -275,7 +272,6 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         validatorCp     = DoubleValidator(self.lineEditCp, min = 0.0)
         validatorAl     = DoubleValidator(self.lineEditAl, min = 0.0)
         validatorDiff   = DoubleValidator(self.lineEditDiff, min = 0.0)
-        validatorCv     = DoubleValidator(self.lineEditCv, min = 0.0)
         validatorViscv0 = DoubleValidator(self.lineEditViscv0, min = 0.0)
         validatorDiftl0 = DoubleValidator(self.lineEditDiftl0, min = 0.0)
 
@@ -284,7 +280,6 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         validatorCp.setExclusiveMin(True)
         validatorAl.setExclusiveMin(True)
         validatorDiff.setExclusiveMin(True)
-        validatorCv.setExclusiveMin(True)
         validatorDiftl0.setExclusiveMin(True)
 
         self.lineEditRho.setValidator(validatorRho)
@@ -292,7 +287,6 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         self.lineEditCp.setValidator(validatorCp)
         self.lineEditAl.setValidator(validatorAl)
         self.lineEditDiff.setValidator(validatorDiff)
-        self.lineEditCv.setValidator(validatorCv)
         self.lineEditViscv0.setValidator(validatorViscv0)
         self.lineEditDiftl0.setValidator(validatorDiftl0)
 
@@ -311,10 +305,7 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
                 self.pushButtonDiff.setEnabled(True)
                 setGreenColor(self.pushButtonDiff, True)
 
-        self.labelCv.setText(QString(self.tr("Deduce from the \nisobaric specific heat")))
-
         #compressible
-        self.groupBoxCv.hide()
         self.groupBoxViscv0.hide()
 
         # combustion
@@ -343,7 +334,8 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
             __line.setText(QString(str(self.mdl.getInitialValue(tag))))
 
         # no 'thermal_conductivity' if not Joule and not Thermal scalar and not
-        if mdl_joule == 'off' and mdl_thermal == 'off' and mdl_atmo == 'off':
+        if mdl_joule == 'off' and mdl_thermal == 'off' and mdl_atmo == 'off' and\
+           CompressibleModel(self.case).getCompressibleModel() == 'off':
             self.groupBoxAl.hide()
 
         if mdl_gas != 'off' or mdl_coal != 'off':
@@ -398,15 +390,13 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
                     __button.setEnabled(False)
 
             # Compressible Flows
-            if CompressibleModel(self.case).getCompressibleModel() != 'off':
+            if mdl_comp != 'off':
                 if tag == 'density':
                     __model.setItem(str_model='variable')
                     __combo.setEnabled(False)
                     __button.setEnabled(False)
                     self.mdl.setPropertyMode(tag, 'variable')
-                    __line.setText(QString(str("")))
-                    __line.setEnabled(False)
-                self.groupBoxCv.hide()
+                    __line.setEnabled(True)
                 self.groupBoxViscv0.hide()
                 if tag == 'specific_heat':
                     __model.setItem(str_model='constant')
@@ -416,10 +406,9 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
                     self.groupBoxCp.setTitle(QString('Isobaric specific heat'))
                 if tag == 'volumic_viscosity':
                     __model.setItem(str_model='constant')
-                    __combo.setEnabled(False)
+                    __combo.setEnabled(True)
                     __button.setEnabled(False)
                     self.mdl.setPropertyMode(tag, 'constant')
-                self.groupBoxCv.show()
                 self.groupBoxViscv0.show()
             else:
                 if tag == 'specific_heat':

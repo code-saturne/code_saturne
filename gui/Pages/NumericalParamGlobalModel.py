@@ -79,7 +79,12 @@ class NumericalParamGlobalModel(Model):
         self.default['gradient_reconstruction'] = 0
         self.default['time_scheme_order'] = 1
         self.default['velocity_pressure_algo'] ='simplec'
-        self.default['piso_sweep_number'] = 2
+        from Pages.CompressibleModel import CompressibleModel
+        if CompressibleModel(self.case).getCompressibleModel() != 'off':
+            self.default['piso_sweep_number'] = 1
+        else:
+            self.default['piso_sweep_number'] = 2
+        del CompressibleModel
         return self.default
 
 

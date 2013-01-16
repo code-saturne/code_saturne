@@ -49,7 +49,6 @@ from Pages.NumericalParamGlobalForm import Ui_NumericalParamGlobalForm
 import Base.QtPage as QtPage
 from Pages.NumericalParamGlobalModel import NumericalParamGlobalModel
 from Pages.SteadyManagementModel import SteadyManagementModel
-from Pages.CompressibleModel import CompressibleModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -136,19 +135,9 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         else:
             self.checkBoxIPUCOU.setChecked(False)
 
-        status_compressible = CompressibleModel(self.case).getCompressibleModel()
-        if status_compressible != 'off':
-            self.labelICFGRP.show()
-            self.checkBoxICFGRP.show()
-            self.line_4.show()
-            if self.model.getHydrostaticEquilibrium() == 'on':
-                self.checkBoxICFGRP.setChecked(True)
-            else:
-                self.checkBoxICFGRP.setChecked(False)
-        else:
-            self.labelICFGRP.hide()
-            self.checkBoxICFGRP.hide()
-            self.line_4.hide()
+        import Pages.FluidCharacteristicsModel as FluidCharacteristics
+        fluid = FluidCharacteristics.FluidCharacteristicsModel(self.case)
+        modl_atmo, modl_joul, modl_thermo, modl_gas, modl_coal, modl_comp = fluid.getThermoPhysicalModel()
 
         if self.model.getHydrostaticPressure() == 'on':
             self.checkBoxImprovedPressure.setChecked(True)
@@ -159,9 +148,6 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         self.modelEXTRAG.setItem(str_model=self.model.getWallPressureExtrapolation())
         self.modelIMRGRA.setItem(str_model=self.model.getGradientReconstruction())
 
-        import Pages.FluidCharacteristicsModel as FluidCharacteristics
-        fluid = FluidCharacteristics.FluidCharacteristicsModel(self.case)
-        modl_atmo, modl_joul, modl_thermo, modl_gas, modl_coal = fluid.getThermoPhysicalModel()
         if modl_joul != 'off' or modl_gas != 'off' or modl_coal != 'off':
             self.labelSRROM.show()
             self.lineEditSRROM.show()
@@ -181,6 +167,42 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
             self.spinBoxNTERUP.show()
         else:
             self.spinBoxNTERUP.hide()
+
+        if modl_comp != 'off':
+            self.labelICFGRP.show()
+            self.checkBoxICFGRP.show()
+            self.line_4.show()
+            if self.model.getHydrostaticEquilibrium() == 'on':
+                self.checkBoxICFGRP.setChecked(True)
+            else:
+                self.checkBoxICFGRP.setChecked(False)
+            self.checkBoxIPUCOU.hide()
+            self.labelIPUCOU.hide()
+            self.lineEditRELAXP.hide()
+            self.labelRELAXP.hide()
+            self.checkBoxImprovedPressure.hide()
+            self.labelImprovedPressure.hide()
+            self.line_2.hide()
+            self.line_5.hide()
+            self.line_7.hide()
+            self.line_8.hide()
+            self.labelNTERUP.setText(QString("Velocity-Pressure algorithm\nsub-iterations on Navier-Stokes"))
+            self.comboBoxNTERUP.hide()
+            self.spinBoxNTERUP.show()
+        else:
+            self.labelICFGRP.hide()
+            self.checkBoxICFGRP.hide()
+            self.line_4.hide()
+            self.checkBoxIPUCOU.show()
+            self.labelIPUCOU.show()
+            self.lineEditRELAXP.show()
+            self.labelRELAXP.show()
+            self.checkBoxImprovedPressure.show()
+            self.labelImprovedPressure.show()
+            self.line_2.show()
+            self.line_5.show()
+            self.line_7.show()
+            self.line_8.show()
 
         value = self.model.getPisoSweepNumber()
         self.spinBoxNTERUP.setValue(value)

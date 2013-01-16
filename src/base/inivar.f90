@@ -101,7 +101,7 @@ integer          iel
 integer          iccfth
 integer          iclip , ipp  , iok   , ii
 integer          idtcm , ipcmom, iiptot
-integer          ibormo(nbmomx)
+integer          ibormo(nbmomx), imodif
 
 double precision valmax, valmin, vfmin , vfmax
 double precision vdtmax, vdtmin
@@ -113,6 +113,7 @@ double precision xxp0, xyp0, xzp0
 double precision xalmin, xalmax
 
 double precision rvoid(1)
+double precision, allocatable, dimension(:) :: w1, w2, w3, w4
 
 !===============================================================================
 
@@ -133,7 +134,50 @@ iok = 0
 
 iusini = 1
 
-!   - Interface Code_Saturne
+if  (ippmod(icompf).ge.0) then
+  allocate(w1(ncelet), w2(ncelet), w3(ncelet),w4(ncelet))
+
+  do iel = 1, ncel
+    rtp(iel,isca(itempk)) = t0
+  enddo
+
+  iccfth = 0
+  imodif = 1
+    call cfther                                                   &
+    !==========
+    ( nvar   , nscal  ,                                              &
+      iccfth , imodif ,                                              &
+      dt     , rtp    , rtp   , propce , propfa , propfb ,           &
+      w1     , w2     , w3    , w4     )
+    deallocate(w1, w2, w3, w4)
+!     On initialise la diffusivite thermique
+    visls0(ienerg) = visls0(itempk)/cv0
+
+    if(ivisls(ienerg).gt.0) then
+      if(ivisls(itempk).gt.0) then
+        if(icv.gt.0) then
+          do iel = 1, ncel
+            propce(iel,ipproc(ivisls(ienerg))) =         &
+                 propce(iel,ipproc(ivisls(itempk)))        &
+                 / propce(iel,ipproc(icv))
+          enddo
+        else
+          do iel = 1, ncel
+            propce(iel,ipproc(ivisls(ienerg))) =         &
+                 propce(iel,ipproc(ivisls(itempk))) / cv0
+          enddo
+        endif
+      else
+        do iel = 1, ncel
+          propce(iel,ipproc(ivisls(ienerg))) =         &
+               visls0(itempk) / propce(iel,ipproc(icv))
+        enddo
+      endif
+    endif
+
+endif
+
+! - Interface Code_Saturne
 !     ======================
 
 if (iihmpr.eq.1) then
@@ -145,6 +189,18 @@ if (iihmpr.eq.1) then
                almax, xyzcen, rtp)
   !==========
   call uisterm (ncelet, isuite, isca, iscold, xyzcen)
+
+  if  (ippmod(icompf).ge.0) then
+    allocate(w1(ncelet), w2(ncelet), w3(ncelet),w4(ncelet))
+    imodif = 1
+    call cfther                                                   &
+    !==========
+    ( nvar   , nscal  ,                                              &
+      iccfth , imodif ,                                              &
+      dt     , rtp    , rtp   , propce , propfa , propfb ,           &
+      w1     , w2     , w3    , w4     )
+    deallocate(w1, w2, w3, w4)
+  endif
 
 endif
 

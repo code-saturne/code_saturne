@@ -110,6 +110,11 @@ class NumericalParamEquatModel(Model):
         else:
             self.default['order_scheme'] = 'centered'
             self.default['blending_factor'] = 1.
+        from Pages.CompressibleModel import CompressibleModel
+        if CompressibleModel(self.case).getCompressibleModel() != 'off':
+            self.default['order_scheme'] = 'upwind'
+            self.default['blending_factor'] = 0.
+        del CompressibleModel
 
         if TurbulenceModel(self.case).getTurbulenceModel() in \
             ('LES_Smagorinsky', 'LES_dynamique', 'LES_WALE'):
@@ -183,9 +188,20 @@ class NumericalParamEquatModel(Model):
 
 
     def _getElectricalScalarsNodes(self):
-        """ Private method: return list of meteo scalar's nodes """
+        """ Private method: return list of electric scalar's nodes """
         nodList = []
         node = self.node_models.xmlGetNode('joule_effect', 'model')
+        if not node: return []
+        model = node['model']
+        if model != 'off':
+            nodList = node.xmlGetNodeList('scalar')
+        return nodList
+
+
+    def _getCompressibleScalarsNodes(self):
+        """ Private method: return list of compressible scalar's nodes """
+        nodList = []
+        node = self.node_models.xmlGetNode('compressible_model', 'model')
         if not node: return []
         model = node['model']
         if model != 'off':
@@ -217,6 +233,7 @@ class NumericalParamEquatModel(Model):
                      self._getGasScalarsNodes(),
                      self._getMeteoScalarsNodes(),
                      self._getElectricalScalarsNodes(),
+                     self._getCompressibleScalarsNodes(),
                      self._getAdditionalScalarNodes()):
             self.var_clip.append(part)
         return self.var_clip
@@ -233,6 +250,7 @@ class NumericalParamEquatModel(Model):
                      self._getGasScalarsNodes(),
                      self._getMeteoScalarsNodes(),
                      self._getElectricalScalarsNodes(),
+                     self._getCompressibleScalarsNodes(),
                      self._getAdditionalScalarNodes()):
             self.var_shem.append(part)
         return self.var_shem
@@ -249,6 +267,7 @@ class NumericalParamEquatModel(Model):
                      self._getMeteoScalarsNodes(),
                      self._getElectricalScalarsNodes(),
                      self._getAdditionalScalarNodes(),
+                     self._getCompressibleScalarsNodes(),
                      self._getAleVariablesNodes()):
             self.var_solv.append(part)
         return self.var_solv
@@ -327,9 +346,18 @@ class NumericalParamEquatModel(Model):
     def getSolverList(self):
         """ Return the variables label list for solver parameters """
         list = []
+        from Pages.CompressibleModel import CompressibleModel
+        comp_model = CompressibleModel(self.case).getCompressibleModel()
+        del CompressibleModel
+
         for node in self._getSolverNodesList():
             for n in node:
-                list.append(n['label'])
+                if self._isPressure(n):
+                    if comp_model == 'off':
+                        list.append(n['label'])
+                else:
+                    list.append(n['label'])
+
         return list
 
 

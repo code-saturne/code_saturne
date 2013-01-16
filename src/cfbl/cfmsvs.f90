@@ -132,7 +132,7 @@ enddo
 ! --- Calcul de c2 et affectation a W1
 iccfth = 126
 imodif = 0
-call uscfth                                                       &
+call cfther                                                       &
 !==========
  ( nvar   , nscal  ,                                              &
    iccfth , imodif ,                                              &

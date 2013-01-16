@@ -113,7 +113,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.modelGasCombustionModel = QtPage.ComboModel(self.comboBoxGasCombustionModel,3,1)
         self.modelPulverizedCoal     = QtPage.ComboModel(self.comboBoxPulverizedCoal,3,1)
         self.modelJouleEffect        = QtPage.ComboModel(self.comboBoxJouleEffect,3,1)
-        self.modelCompressible       = QtPage.ComboModel(self.comboBoxCompressible,4,1)
+        self.modelCompressible       = QtPage.ComboModel(self.comboBoxCompressible,3,1)
 
         self.modelSteadyFlow.addItem(self.tr("steady flow"), "on")
         self.modelSteadyFlow.addItem(self.tr("unsteady flow"), "off")
@@ -144,7 +144,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.modelCompressible.addItem(self.tr("off"), 'off')
         self.modelCompressible.addItem(self.tr("Perfect gas with constant gamma"), 'constant_gamma')
         self.modelCompressible.addItem(self.tr("Perfect gas with variable gamma"), 'variable_gamma')
-        self.modelCompressible.addItem(self.tr("Van Der Waals"), 'van_der_waals')
+        #self.modelCompressible.addItem(self.tr("Van Der Waals"), 'van_der_waals')
 
         # Connect signals to slots
 
@@ -194,6 +194,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         compressible = self.comp.getCompressibleModel()
         self.modelCompressible.setItem(str_model=compressible)
+        self.modelCompressible.disableItem(str_model='variable_gamma')
 
         # Multi-phase flow and coal combustion
         # WARNING: the 'coal_lagr' model is deprecated

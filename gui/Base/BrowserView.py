@@ -757,7 +757,6 @@ Calculation management
 
         elif node7['model']!= 'off':
             self.setRowClose(self.tr('Thermal model'))
-            self.setRowClose(self.tr('Turbulence models'))
 
         else:
             self.setRowOpen(self.tr('Thermal model'))

@@ -479,7 +479,7 @@ if( idiff(ivar).ge. 1 ) then
 !     Terme complementaire au centre des cellules
   iccfth = 7
   imodif = 0
-  call uscfth                                                     &
+  call cfther                                                     &
   !==========
  ( nvar   , nscal  ,                                              &
    iccfth , imodif ,                                              &
@@ -672,7 +672,7 @@ call clpsca                                                       &
 !       et actions correctives éventuelles.
   iccfth = -4
   imodif = 0
-  call uscfth                                                     &
+  call cfther                                                     &
   !==========
  ( nvar   , nscal  ,                                              &
    iccfth , imodif ,                                              &
@@ -703,7 +703,7 @@ endif
 ! --- Calcul de P et T au centre des cellules
   iccfth = 24
   imodif = 0
-  call uscfth                                                     &
+  call cfther                                                     &
   !==========
  ( nvar   , nscal  ,                                              &
    iccfth , imodif ,                                              &
