@@ -876,7 +876,7 @@ do ifac = 1, nfabor
 
             ! In the viscous sub-layer
             else
-              hflui = visclc / distbf
+              hflui = (visclc + visctc) / distbf
             endif
           endif
 
