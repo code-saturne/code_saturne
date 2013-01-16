@@ -2223,7 +2223,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                         const char *symbols[] = {"k", "eps", "phi", "alpha"};
 
                         if (mei_tree_find_symbols(ev_formula, 4, symbols))
-                            bft_error(__FILE__, __LINE__, 0, _("Error: can not find the required symbol: %s\n"), "k, eps, phi of al");
+                            bft_error(__FILE__, __LINE__, 0, _("Error: can not find the required symbol: %s\n"), "k, eps, phi of alpha");
 
                         for (ifac = 0; ifac < faces; ifac++)
                         {
