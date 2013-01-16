@@ -1055,7 +1055,7 @@ _default_p_rank(cs_block_dist_info_t  *p_bi,
   free_particle_io_num = fvm_io_num_create_from_scan(n_free_particles);
   free_particle_num = fvm_io_num_get_global_num(free_particle_io_num);
 
-  /* Determine rank based on global numbering with SFC ordering */
+  /* Determine rank based on global numbering */
   for (i = 0; i < n_free_particles; i++) {
     default_rank[free_particle_ids[i]]
       =    ((free_particle_num[i] - 1) / free_particle_bi.block_size)
