@@ -124,7 +124,7 @@ class GasCombustionModel(Variables, Model):
                                            'Rij-epsilon',
                                            'Rij-SSG',
                                            'Rij-EBRSM',
-                                           'v2f-phi',
+                                           'BL-v2/k',
                                            'k-omega-SST',
                                            'Spalart-Allmaras'):
             gasCombustionList = ('off',)

@@ -395,7 +395,7 @@ alpha = 1.;"""
                 self.init.setTurbFormula(self.zone, result)
                 setGreenColor(self.sender(), False)
 
-        elif turb_model == 'v2f-phi':
+        elif turb_model == 'BL-v2/k':
             exp = self.init.getTurbFormula(self.zone, turb_model)
             exa = """#example
 
@@ -404,12 +404,12 @@ k = 1.5*(0.02*uref)^2;
 eps = k^1.5*cmu/almax;
 
 phi = 2./3.;
-fb = 0.;
+al = 0.;
 """
             req = [('k', "turbulent energy"),
             ('eps', "turbulent dissipation"),
             ('phi', "variable phi in v2f model"),
-            ('fb', "variable f in v2f model")]
+            ('al', "variable a in v2f model")]
             sym = [('rho0', 'density (reference value)'),
                    ('mu0', 'viscosity (reference value)'),
                    ('cp0', 'specific heat (reference value)'),
@@ -811,7 +811,7 @@ nusa = (cmu * k)/eps;;"""
                               'Rij-epsilon',
                               'Rij-SSG',
                               'Rij-EBRSM',
-                              'v2f-phi',
+                              'BL-v2/k',
                               'k-omega-SST',
                               'Spalart-Allmaras'):
             for item in self.turb_group:

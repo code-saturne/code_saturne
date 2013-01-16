@@ -2218,12 +2218,12 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                             rcodcl[vars->rtp[11] * (*nfabor) + ifbr] = mei_tree_lookup(ev_formula,"alpha");
                         }
                     }
-                    else if (cs_gui_strcmp(model, "v2f-phi"))
+                    else if (cs_gui_strcmp(model, "BL-v2/k"))
                     {
-                        const char *symbols[] = {"k", "eps", "phi", "fb"};
+                        const char *symbols[] = {"k", "eps", "phi", "al"};
 
                         if (mei_tree_find_symbols(ev_formula, 4, symbols))
-                            bft_error(__FILE__, __LINE__, 0, _("Error: can not find the required symbol: %s\n"), "k, eps, phi of fb");
+                            bft_error(__FILE__, __LINE__, 0, _("Error: can not find the required symbol: %s\n"), "k, eps, phi of al");
 
                         for (ifac = 0; ifac < faces; ifac++)
                         {
@@ -2235,7 +2235,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                             rcodcl[vars->rtp[4] * (*nfabor) + ifbr] = mei_tree_lookup(ev_formula, "k");
                             rcodcl[vars->rtp[5] * (*nfabor) + ifbr] = mei_tree_lookup(ev_formula, "eps");
                             rcodcl[vars->rtp[6] * (*nfabor) + ifbr] = mei_tree_lookup(ev_formula, "phi");
-                            rcodcl[vars->rtp[7] * (*nfabor) + ifbr] = mei_tree_lookup(ev_formula, "fb");
+                            rcodcl[vars->rtp[7] * (*nfabor) + ifbr] = mei_tree_lookup(ev_formula, "al");
                         }
                     }
                     else if (cs_gui_strcmp(model, "k-omega-SST"))

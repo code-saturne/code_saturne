@@ -119,7 +119,7 @@ class LagrangianModel(Model):
                          'Rij-epsilon',
                          'Rij-SSG',
                          'Rij-EBRSM',
-                         'v2f-phi',
+                         'BL-v2/k',
                          'k-omega-SST',
                          'Spalart-Allmaras'):
             return ('off',)

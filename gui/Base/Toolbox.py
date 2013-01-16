@@ -287,7 +287,7 @@ def dicoLabel(name):
                             ('component_R13',        "R13",       "R13"),
                             ('component_R23',        "R23",       "R23"),
                             ('turb_phi',             "phi",       "phi"),
-                            ('turb_fb',              "f_barre",   "f_bar"),
+                            ('turb_al',              "al",        "al"),
                             ('turb_omega',           "omega",     "omega"),
                             ('turb_nusa',            "nusa",      "nusa"),
                             ('turb_alpha',           "alpha",     "alpha"),
