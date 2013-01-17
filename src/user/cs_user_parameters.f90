@@ -1782,8 +1782,10 @@ endif
 
 if (.false.) then
 
-  ! GGDH for the scalar:
-  iturt(1) = 10
+  ! GGDH for all the scalars:
+  do jj = 1, nscaus
+    iturt(jj) = 10
+  enddo
 
 endif
 
