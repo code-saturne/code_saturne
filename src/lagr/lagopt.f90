@@ -61,6 +61,7 @@ subroutine lagopt
 !===============================================================================
 
 use paramx
+use parall
 use dimens
 use numvar
 use entsor
@@ -734,6 +735,13 @@ endif
 if (iensi2.lt.0 .or. iensi2.gt.1) then
   write(nfecra,2031) iensi2
   iok = iok + 1
+endif
+
+if (irangp.ge.0) then
+   if (iensi1.gt.0 .or. iensi2.gt.0) then
+      write(nfecra,3015)
+      iok = iok + 1
+   endif
 endif
 
 !     NBVIS NVISLA
@@ -3451,6 +3459,24 @@ endif
 '@                                                            ',/,&
 '@  Verifier les valeurs de idepst et nordre dans la          ',/,&
 '@  subroutine USLAG1.                                        ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+
+ 3015 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''EXECUTION DU MODULE LAGRANGIEN   ',/,&
+'@    =========                                               ',/,&
+'@    LE POST TRAITEMENT DES PARTICULES EN MODE TRAJECTOIRE   ',/,&
+'@    (IENSI1 = 1) OU DEPLACEMENT (IENSI2 = 1) N''EST PAS     ',/,&
+'@    COMPATIBLE AVEC UN CALCUL PARALLELE DANS CETTE VERSION  ',/,&
+'@    DE CODE_SATURNE                                         ',/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
