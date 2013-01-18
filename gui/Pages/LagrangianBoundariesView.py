@@ -169,7 +169,7 @@ class StandardItemModelBoundaries(QStandardItemModel):
                        "deposit2" : self.tr("Deposition") },
             "inlet" : { "inlet" : self.tr("Particles inlet") },
             "outlet" : { "outlet" : self.tr("Particles outlet") },
-            "symmetry" : { "bounce" : self.tr("Particles rebound") }
+            "symmetry" : { "part_symmetry" : self.tr("Particles zero-flux") }
             }
 
         self.dicoV2M = {}

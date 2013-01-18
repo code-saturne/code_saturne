@@ -1329,6 +1329,7 @@ void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
                                 const int *const idepfa,
                                 const int *const iencrl,
                                 const int *const irebol,
+                                const int *const isymtl,
                                 const int *const iphyla,
                                 const int *const ijnbp,
                                 const int *const ijfre,
@@ -1418,6 +1419,9 @@ void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
 
       else if(cs_gui_strcmp(interaction, "bounce"))
         iusclb[izone] = *irebol;
+
+      else if(cs_gui_strcmp(interaction, "part_symmetry"))
+        iusclb[izone] = *isymtl;
 
       else if(cs_gui_strcmp(interaction, "deposit1"))
         iusclb[izone] = *idepo1;

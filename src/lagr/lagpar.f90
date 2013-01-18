@@ -127,13 +127,13 @@ module lagpar
   integer         idepo1     , idepo2
   integer         iencrl     , jbord1     , jbord2
   integer         jbord3     , jbord4     , jbord5
-  integer         idepfa
+  integer         idepfa     , isymtl
 
   parameter      (ientrl =  1, isortl =  2, irebol =  3)
   parameter      (idepo1 =  4, idepo2 =  5)
   parameter      (iencrl =  7, jbord1 =  8, jbord2 =  9)
   parameter      (jbord3 = 10, jbord4 = 11, jbord5 = 12)
-  parameter      (idepfa = 13)
+  parameter      (idepfa = 13, isymtl = 14)
 
   !=============================================================================
 

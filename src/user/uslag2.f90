@@ -323,7 +323,7 @@ iusncl(izone) = nbclas
 !                 (useful only if iensi2 = 1)
 !     = idepfa -> deposition of the particle with DLVO forces
 !     = iencrl -> fouling (coal only iphyla = 2)
-
+!     = isymtl -> symmetry condition for the particles (zero flux)
 
 !     Array iczpar:
 !     ============

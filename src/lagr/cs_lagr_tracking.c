@@ -337,7 +337,8 @@ enum {
   CS_LAGR_IDEPO1 = 4,
   CS_LAGR_IDEPO2 = 5,
   CS_LAGR_IENCRL = 7,
-  CS_LAGR_IDEPFA = 13
+  CS_LAGR_IDEPFA = 13,
+  CS_LAGR_ISYMTL = 14,
 };
 
 /* State where a particle can be. */
@@ -2186,6 +2187,46 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
   }
 
   else if (bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IREBOL) {
+
+    cs_real_t  face_norm[3] = {face_normal[0]/face_area,
+                               face_normal[1]/face_area,
+                               face_normal[2]/face_area};
+
+    move_particle = 1;
+    particle_state = CS_LAGR_PART_TO_SYNC;
+    particle.cur_cell_num = cs_glob_mesh->b_face_cells[face_id];
+
+    for (k = 0; k < 3; k++)
+      prev_particle.coord[k] = intersect_pt[k];
+
+    /* Modify the ending point. */
+
+    for (k = 0; k < 3; k++)
+      depl[k] = particle.coord[k] - intersect_pt[k];
+
+    tmp = CS_ABS(_get_dot_prod(depl, face_norm));
+    tmp *= 2.0;
+
+    for (k = 0; k < 3; k++)
+      particle.coord[k] -= tmp * face_norm[k];
+
+    /* Modify particle velocity and velocity seen */
+
+    tmp = CS_ABS(_get_dot_prod(particle.velocity, face_norm));
+    tmp *= 2.0;
+
+    for (k = 0; k < 3; k++)
+      particle.velocity[k] -= tmp * face_norm[k];
+
+    tmp = CS_ABS(_get_dot_prod(particle.velocity_seen, face_norm));
+    tmp *= 2.0;
+
+    for (k = 0; k < 3; k++)
+      particle.velocity_seen[k] -= tmp * face_norm[k];
+
+  }
+
+  else if (bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_ISYMTL) {
 
     cs_real_t  face_norm[3] = {face_normal[0]/face_area,
                                face_normal[1]/face_area,

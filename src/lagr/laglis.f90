@@ -250,6 +250,8 @@ do ii = 1,nfrlag
     CHCOND = 'FOULING'
   else if ( iusclb(nb) .eq. idepfa) then
     CHCOND = 'DLVO CONDITIONS'
+  else if ( iusclb(nb) .eq. isymtl) then
+    CHCOND = 'DLVO CONDITIONS'
   else
     CHCOND = 'USER'
   endif

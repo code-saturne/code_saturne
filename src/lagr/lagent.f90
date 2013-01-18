@@ -218,7 +218,7 @@ if (iihmpr.eq.1) then
   !==========
  ( nfabor, nozppm, nbclst,                                        &
    ientrl, isortl, idepo1, idepo2,                                &
-   idepfa, iencrl, irebol, iphyla,                                &
+   idepfa, iencrl, irebol, isymtl, iphyla,                        &
    ijnbp,  ijfre,  iclst,  ijuvw,  iuno,   iupt,   ivpt,   iwpt,  &
    ijprpd, ipoit,  idebt,  ijprdp, idpt,   ivdpt,                 &
    iropt,  ijprtp, itpt,   icpt,   iepsi,                         &
@@ -411,7 +411,7 @@ do ii = 1,nfrlag
   nb = ilflag(ii)
   if ( iusclb(nb).ne.ientrl .and. iusclb(nb).ne.isortl .and.      &
        iusclb(nb).ne.irebol .and. iusclb(nb).ne.idepo1 .and.      &
-       iusclb(nb).ne.idepo2 .and.                                 &
+       iusclb(nb).ne.idepo2 .and. iusclb(nb).ne.isymtl .and.      &
        iusclb(nb).ne.iencrl .and. iusclb(nb).ne.jbord1 .and.      &
        iusclb(nb).ne.jbord2 .and. iusclb(nb).ne.jbord3 .and.      &
        iusclb(nb).ne.jbord4 .and. iusclb(nb).ne.jbord5 .and.      &
@@ -1573,6 +1573,7 @@ endif
 '@   = IENTRL  zone d''injection de particules                ',/,&
 '@   = ISORTL  sortie du domaine                              ',/,&
 '@   = IREBOL  rebond des particules                          ',/,&
+'@   = ISYMTL  flux nul pour les particules  (symetrie)       ',/,&
 '@   = IDEPO1  deposition definitive                          ',/,&
 '@   = IDEPO2  deposition definitive mais la particule reste  ',/,&
 '@             en memoire                                     ',/,&
