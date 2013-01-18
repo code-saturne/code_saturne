@@ -85,6 +85,7 @@ class LagrangianModel(Model):
         default['carrier_field_stationary']            = "off"
         default['particles_max_number']                = 1000000
         default['continuous_injection']                = "off"
+        default['deposition_submodel']                 = "off"
         default['particles_models']                    = "off"
         default['thermal']                             = "off"
         default['evaporation']                         = "off"
@@ -280,6 +281,29 @@ class LagrangianModel(Model):
         if not status:
             status = self.defaultParticlesValues()['continuous_injection']
             self.setContinuousInjection(status)
+        return status
+
+
+    @Variables.undoLocal
+    def setDepositionSubmodel(self, status):
+        """
+        Update the status for the particle deposition submodel.
+        """
+        self.isOnOff(status)
+        node_deposition = self.node_lagr.xmlInitChildNode('deposition_submodel', 'status')
+        node_deposition['status'] = status
+
+
+    @Variables.noUndo
+    def getDepositionSubmodel(self):
+        """
+        Return status for the particle deposition submodel.
+        """
+        node_deposition = self.node_lagr.xmlInitChildNode('deposition_submodel', 'status')
+        status = node_deposition['status']
+        if not status:
+            status = self.defaultParticlesValues()['deposition_submodel']
+            self.setDepositionSubmodel(status)
         return status
 
 
@@ -869,6 +893,22 @@ class LagrangianTestCase(ModelTest):
 
         assert mdl.node_lagr == self.xmlNodeFromString(doc), \
             'Could not set values for continuous injection status'
+
+    def checkDepositionSubmodel(self):
+        """Check whether the particle deposition model could be set and get."""
+        mdl = LagrangianModel(self.case)
+        status = mdl.getDepositionSubmodel()
+
+        assert status == mdl.defaultParticlesValues()['deposition_submodel'], \
+            'Could not get default values for particle deposition model status'
+
+        mdl.setDepositionSubmodel('on')
+        doc = """<lagrangian model="off">
+                      <deposition_submodel status="on"/>
+                 </lagrangian>"""
+
+        assert mdl.node_lagr == self.xmlNodeFromString(doc), \
+            'Could not set values for particle deposition model status'
 
 
     def checkParticlesModel(self):

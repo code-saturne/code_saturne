@@ -797,6 +797,7 @@ void CS_PROCF(cfname, CFNAME)
  * INTEGER          NBPMAX     <--   maximum number of particles
  * INTEGER          ISTTIO     <--   stationnary calculus
  * INTEGER          INJCON     <--   continuous injection of particles
+ * INTEGER          IDEPST     <--   particle deposition submodel
  * INTEGER          IPHYLA     <--   physical model for particles
  * INTEGER          IDPVAR     <--   equation on diameter if iphyla = 1
  * INTEGER          IMPVAR     <--   equation on mass if iphyla = 1
@@ -856,6 +857,7 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
                                 int *const nbpmax,
                                 int *const isttio,
                                 int *const injcon,
+                                int *const idepst,
                                 int *const iphyla,
                                 int *const idpvar,
                                 int *const itpvar,
@@ -936,6 +938,10 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
   _get_status(isuila, 2, "lagrangian", "restart");
   _get_status(isttio, 2, "lagrangian", "carrier_field_stationary");
   _get_status(injcon, 2, "lagrangian", "continuous_injection");
+  _get_status(idepst, 2, "lagrangian", "deposition_submodel");
+
+  bft_printf("idepst = %d",*idepst);
+
   _get_int(nbpmax,    2, "lagrangian", "particles_max_number");
 
   /* Particles model */
@@ -1198,6 +1204,7 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
   bft_printf("--nbpmax = %i\n", *nbpmax);
   bft_printf("--isttio = %i\n", *isttio);
   bft_printf("--injcon = %i\n", *injcon);
+  bft_printf("--idepst = %i\n", *idepst);
   bft_printf("--iphyla = %i\n", *iphyla);
   switch(*iphyla) {
   case 0:

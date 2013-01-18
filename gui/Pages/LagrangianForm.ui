@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>986</width>
-    <height>805</height>
+    <height>998</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -495,16 +495,6 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="0">
-           <widget class="QLabel" name="labelLTSMAS">
-            <property name="toolTip">
-             <string>Code_Saturne key word: LTSMAS</string>
-            </property>
-            <property name="text">
-             <string>Two-way coupling for mass (evaporation)</string>
-            </property>
-           </widget>
-          </item>
           <item row="2" column="1">
            <widget class="QCheckBox" name="checkBoxLTSMAS">
             <property name="toolTip">
@@ -538,6 +528,16 @@
             </property>
            </widget>
           </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="labelLTSMAS">
+            <property name="toolTip">
+             <string>Code_Saturne key word: LTSMAS</string>
+            </property>
+            <property name="text">
+             <string>Two-way coupling for mass (evaporation)</string>
+            </property>
+           </widget>
+          </item>
          </layout>
         </item>
         <item>
@@ -548,6 +548,65 @@
           <property name="sizeHint" stdset="0">
            <size>
             <width>31</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item>
+      <widget class="QGroupBox" name="groupBox_turbdepo">
+       <property name="title">
+        <string>Turbulent deposition modeling</string>
+       </property>
+       <layout class="QHBoxLayout" name="horizontalLayout_9">
+        <item>
+         <spacer name="horizontalSpacer_6">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <layout class="QGridLayout" name="gridLayout_6">
+          <item row="0" column="0">
+           <widget class="QLabel" name="labelIENCRA_2">
+            <property name="toolTip">
+             <string>Code_Saturne key word: IDEPST</string>
+            </property>
+            <property name="text">
+             <string>Particle deposition sub-model</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QCheckBox" name="checkBoxIDEPST">
+            <property name="toolTip">
+             <string>Code_Saturne key word: IDEPST</string>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_5">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
             <height>20</height>
            </size>
           </property>
@@ -634,7 +693,7 @@
      </item>
     </layout>
    </item>
-   <item row="1" column="0">
+   <item row="2" column="0">
     <spacer>
      <property name="orientation">
       <enum>Qt::Vertical</enum>

@@ -382,6 +382,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         self.connect(self.checkBoxISTTIO, SIGNAL("clicked()"), self.slotISTTIO)
         self.connect(self.lineEditNBPMAX, SIGNAL("textChanged(const QString &)"), self.slotNBPMAX)
         self.connect(self.checkBoxINJCON, SIGNAL("clicked()"), self.slotINJCON)
+        self.connect(self.checkBoxIDEPST, SIGNAL("clicked()"), self.slotIDEPST)
         self.connect(self.comboBoxIPHYLA, SIGNAL("activated(const QString&)"), self.slotIPHYLA)
         self.connect(self.checkBoxITPVAR, SIGNAL("clicked()"), self.slotITPVAR)
         #self.connect(self.lineEditTPPART, SIGNAL("textChanged(const QString &)"), self.slotTPPART)
@@ -444,6 +445,12 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.checkBoxINJCON.setChecked(True)
         else:
             self.checkBoxINJCON.setChecked(False)
+
+        status = self.model.getDepositionSubmodel()
+        if status == "on":
+            self.checkBoxIDEPST.setChecked(True)
+        else:
+            self.checkBoxIDEPST.setChecked(False)
 
         if ( model == "frozen" ):
             self.labelISTTIO.setDisabled(True)
@@ -545,6 +552,17 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.model.setContinuousInjection("on")
         else:
             self.model.setContinuousInjection("off")
+
+
+    @pyqtSignature("")
+    def slotIDEPST(self):
+        """
+        Input IDEPST.
+        """
+        if self.checkBoxIDEPST.isChecked():
+            self.model.setDepositionSubmodel("on")
+        else:
+            self.model.setDepositionSubmodel("off")
 
 
     @pyqtSignature("const QString&")

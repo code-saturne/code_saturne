@@ -359,7 +359,7 @@ if (iihmpr.eq.1) then
 
   call uilag1                                                      &
   !==========
- ( iilagr, isuila, isuist, nbpmax, isttio, injcon,                 &
+ ( iilagr, isuila, isuist, nbpmax, isttio, injcon, idepst,         &
    iphyla, idpvar, itpvar, impvar,                                 &
    iencra, tprenc, visref, enc1, enc2,                             &
    nstits, ltsdyn, ltsmas, ltsthe,                                 &
