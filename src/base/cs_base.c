@@ -591,9 +591,8 @@ _get_path(const char  *dir_path,
 #if defined(HAVE_GETCWD)
 
     /*
-      Then, try to guess a relative path, knowing that executables can be:
-      - in libexecdir/code_saturne [default]
-      - in bin [windows]
+      Then, try to guess a relative path, knowing that executables are
+      located in libexecdir/code_saturne
     */
 
     else {
@@ -610,11 +609,7 @@ _get_path(const char  *dir_path,
                     _("Error querying working directory.\n"));
       }
 
-#if defined(WIN32) || defined(_WIN32)
-      rel_path = "/../";
-#else
       rel_path = "/../../";
-#endif
 
     }
 #endif /* defined(HAVE_GETCWD) */
