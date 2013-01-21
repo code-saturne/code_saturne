@@ -282,6 +282,7 @@ def compile_and_link(pkg, srcdir, destdir,
             cmd = cmd + opt_cxxflags.split()
         if len(hxx_files) > 0:
             cmd = cmd + ["-I", srcdir]
+        cmd.append('-DHAVE_CONFIG_H')
         cmd = cmd + get_flags(pkg, 'cppflags')
         cmd = cmd + pkg.config.flags['cxxflags'].split()
         cmd = cmd + ["-c", os.path.join(srcdir, f)]
