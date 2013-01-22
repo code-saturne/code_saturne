@@ -281,7 +281,7 @@ class Variables:
             use when call another class function
             """
             if self.case.record_global == True:
-                self.case.undoGlobal()
+                self.case.undoGlobal(f, c)
                 self.case.undoStop()
                 r = f(self, *c, **d)
                 self.case.undoStart()
@@ -294,7 +294,7 @@ class Variables:
     @staticmethod
     def undoLocal(f):
         def _wrapper2(self, *c, **d):
-            self.case.undo(f)
+            self.case.undo(f, c)
             return f(self, *c, **d)
         return _wrapper2
 

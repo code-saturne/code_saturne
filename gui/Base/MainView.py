@@ -31,7 +31,7 @@ This module defines the following classes:
 - NewCaseDialogView
 - MainView
 
-    @copyright: 1998-2009 EDF S.A., France
+    @copyright: 1998-2013 EDF S.A., France
     @author: U{EDF R&D<mailto:saturne-support@edf.fr>}
     @license: GNU GPL v2, see COPYING for details.
 """
@@ -407,10 +407,8 @@ class MainView(object):
 
         self.statusbar.setSizeGripEnabled(False)
         self.statusbar.showMessage(self.tr("Ready"), 5000)
-#        self.setMaximumSize(QSize(700, 600))
-#        self.setMinimumSize(QSize(700, 600))
-        self.actionRedo.setEnabled(True)
-        self.actionUndo.setEnabled(True)
+        self.actionRedo.setEnabled(False)
+        self.actionUndo.setEnabled(False)
 
 
     def loadInitialFile(self):
@@ -619,6 +617,7 @@ class MainView(object):
                 self.scrollArea.setWidget(self.displayFisrtPage())
                 self.case['saved'] = "yes"
 
+                self.connect(self.case, SIGNAL("undo"), self.slotUndoRedoView)
         else:
             MainView(cmd_package=self.package, cmd_case="new case").show()
 
@@ -766,6 +765,8 @@ class MainView(object):
             self.initializeBatchRunningWindow()
             self.currentEntry = 'Prepare batch calculation'
 
+        self.connect(self.case, SIGNAL("undo"), self.slotUndoRedoView)
+
 
     @pyqtSignature("")
     def fileOpen(self):
@@ -892,6 +893,8 @@ class MainView(object):
         self.case['undo'] = []
         self.case['redo'] = []
 
+        self.slotUndoRedoView()
+
         log.debug("fileSave(): ok")
 
         msg = self.tr("%s saved" % file_name)
@@ -929,6 +932,8 @@ class MainView(object):
                 # force to blank after save
                 self.case['undo'] = []
                 self.case['redo'] = []
+
+                self.slotUndoRedoView()
 
             else:
                 msg = self.tr("Saving aborted")
@@ -1345,6 +1350,8 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
             self.case['current_index'] = last_record[2]
             self.case['current_tab'] = last_record[3]
 
+            self.slotUndoRedoView()
+
             p = displaySelectedPage(last_record[0],
                                     self,
                                     self.case,
@@ -1374,6 +1381,8 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
             self.case['current_index'] = last_record[2]
             self.case['current_tab'] = last_record[3]
 
+            self.slotUndoRedoView()
+
             p = displaySelectedPage(last_record[0],
                                     self,
                                     self.case,
@@ -1381,6 +1390,19 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
                                     study=self.Id,
                                     tree=self.Browser)
             self.scrollArea.setWidget(p)
+
+
+    @pyqtSignature("")
+    def slotUndoRedoView(self):
+        if self.case['undo']:
+            self.actionUndo.setEnabled(True)
+        else:
+            self.actionUndo.setEnabled(False)
+
+        if self.case['redo']:
+            self.actionRedo.setEnabled(True)
+        else:
+            self.actionRedo.setEnabled(False)
 
 
 #-------------------------------------------------------------------------------
