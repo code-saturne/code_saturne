@@ -1629,6 +1629,40 @@ subroutines. In the case that a parameter is specified in the interface
  case setup \texttt{code\_saturne~create}.
 
 %==================================
+\subsubsection{Example routines}
+%==================================
+
+Some user subroutines may be used for many different user definitions. As
+including enough examples in those subroutines would make them very
+difficult to read, these routines provided as templates only, with
+separate examples in a case's \texttt{EXAMPLES} subdirectory of its
+\texttt{SRC} directory.
+
+Example file names are defined by inserting the name of the matching example
+in the file name. For example, a basic example for
+\texttt{cs\_user\_boundary\_conditions.f90} is provided in \\
+\texttt{cs\_user\_boundary\_conditions-base.f90}, while an example dedicated
+to atmospheric flows is provided in
+{cs\_user\_boundary\_conditions-atmospheric.f90}.
+
+The user is encouraged to check which examples are available, and to study
+those relevant to a given setup.
+
+Template user subroutines contain three sections the user may need to define,
+marked by the following strings:
+
+\begin{itemize}
+\item \texttt{INSERT\_VARIABLE\_DEFINITIONS\_HERE}
+\item \texttt{INSERT\_ADDITIONAL\_INITIALIZATION\_CODE\_HERE}
+\item \texttt{INSERT\_MAIN\_CODE\_HERE}
+\end{itemize}
+
+Comparing template and example files with a graphical file comparison tool
+should help the user highlight the matching sections from the examples,
+so it is recommended as good practice for those not already very familiar
+with those user subroutines.
+
+%==================================
 \subsubsection{Main variables}
 %==================================
 
@@ -3029,7 +3063,7 @@ user subroutines, a collection of utility subroutines is provided. The aim is to
 define a subset of the mesh, for example:
 
 \begin{list}{-}{}
-\item boundary regions (cf. \texttt{cs\_user\_boundary\_conditions}, \texttt{uscpcl},
+\item boundary regions (cf. \texttt{cs\_user\_boundary\_conditions}, \texttt{usalcl},
 \texttt{usray2}, \texttt{uslag2},...),
 \item volumic initialization (cf. \texttt{cs\_user\_initialization},...),
 \item head-loss region (cf. \texttt{uskpdc}),
@@ -8329,11 +8363,10 @@ in the table of the ``Equation parameters'' item.
 \end{center}
 \end{figure}
 
-When the GUI is not used, \texttt{usativ} allows to initialise or modify
- (in case of a restarted calculation) the calculation variables and the 
-values of the time step. It plays a similar role as \texttt{cs\_user\_initialization} for 
-the additional variables introduced with the air-cooling module. The 
-quantities that can be initialised here in user-selected zones are:
+When the GUI is not used, \texttt{cs\_user\_initialization} allows to initialise or modify
+(in case of a restarted calculation) the calculation variables and the values of
+the time step. The quantities that can be initialised here in user-selected
+zones are:
 \begin{list}{-}{}
  \item the air velocity with the array \texttt{rtp(iel,iu)} (with
  \texttt{iv} and \texttt{iw} for the other components),
@@ -8358,14 +8391,7 @@ atmospherical calculations. These parameters are for instance:
 \subsubsection{Management of the boundary conditions}
 %==================================
 
-The user subroutine \texttt{usatcl} allows to define the boundary conditions of the variables
- unknown by \texttt{cs\_user\_boundary\_conditions}. It is called at each time step. Boundary conditions are 
-applied to mesh faces selected using the subroutine '\texttt{getfbr}' for instance. For 
-each type of boundary condition, these faces are grouped as physical zones characterised
- by an arbitrary number \texttt{izone} chosen by the user. If a boundary condition is 
-retrieved from a meteorological profile, the variable \texttt{iprofm(izone)} of the zone
- must be set to 1.\\
-Examples are provided in \texttt{usatcl}.
+All boundary conditions are managed by the general \texttt{cs\_user\_boundary\_conditions} subroutine. For each type of boundary condition, faces should be grouped as physical zones characterised by an arbitrary number \texttt{izone} chosen by the user. If a boundary condition is retrieved from a meteorological profile, the variable \texttt{iprofm(izone)} of the zone must be set to 1.\\
 
 %==================================
 \subsection{Cooling tower modelling}
