@@ -1,17 +1,679 @@
+Release 2.0.7 (future)
+======================
 
-2011-07-19: Release of Code_Saturne version 2.0.2.
-2011-01-17: Release of Code_Saturne version 2.0.1.
-2010-08-20: Release of Code_Saturne version 2.0.0.
-2010-06-22: Release of Code_Saturne version 2.0.0-rc2
-2010-02-19: Release of Code_Saturne version 2.0.0-rc1
-2009-07-29: Release of Code_Saturne version 2.0.0-beta2
-2009-05-26: Release of Code_Saturne version 2.0.0-beta1
+Changes:
+--------
 
-2008-11-28: Release of Code_Saturne version 1.4.0
-2008-08-22: Release of Code_Saturne version 1.4.b
-2008-06-17: Release of Code_Saturne version 1.4.a
+- Application name is ignored for Code_Saturne/Code_Saturne couplings, so reflect
+  this in code and comments.
 
-2008-11-27: Release of Code_Saturne version 1.3.3
-2008-04-16: Release of Code_Saturne version 1.3.2
-2007-11-28: Release of Code_Saturne version 1.3.1
-2007-08-02: Release of Code_Saturne version 1.3.0
+- GUI: replace deprecated "activated" signals by "triggered" for compatibility
+  with recent Qt and PyQT versions.
+
+Bug fixes:
+----------
+
+- Fix in lagrangian module for k-epsilon production computation.
+
+- Fix old bug in steady algorithm due to dependency of pseudo-time step
+  computation on logging frequency.
+
+
+Release 2.0.6 (24 Jul 2012)
+===========================
+
+Changes:
+--------
+
+- Port to Blue Gene/Q (except for code coupling).
+
+- Update build scripts so as to avoid issues using the GNU gold linker.
+  Building using non-shared optional libraries now requires using the
+  --disable-shared configure option.
+
+- GUI: backport handling of batch systems from version 2.2.
+  This should help avoid mistakenly running the code on a cluster's
+  front-end nodes, as well as provide additional comfort.
+
+- Disable dynamic loader by default, as it is not used by any operational
+  functionnality of this version.
+
+Bug fixes:
+----------
+
+  Fix memory leaks in radiative transfer and particles when using GUI.
+
+  Fix GUI bug preventing setting negative internal structure displacement values.
+
+  Fix for Sun Grid Engine Environment.
+
+
+Release 2.0.5 (26 Mar 2012)
+===========================
+
+Changes:
+--------
+
+- Update external library versions and comments in the installer.
+
+- Revert changes to the enthalpy calculation from version 2.4.
+
+- Update default queue name for SLURM to match that of the EDF IVANOE cluster.
+
+Bug fixes:
+----------
+
+- Fix array index bug for radiative transfer using GUI.
+
+- Test for environment modules in subshell to preserve environment variables.
+
+- Fix meteo boundary conditions setup with GUI.
+
+- Fix installation issue with modules causing errors with code_saturne compile.
+
+- Fix a priori detection of process rank for MPMD when using
+  mpirun/mpiexec (and not srun) under SLURM.
+
+- Fix module command use in for cs_solver generation.
+
+
+Release 2.0.4 (13 Dec 2011)
+===========================
+
+Bug Fixes:
+----------
+
+- Fixes and improvements in the Libby-Williams models for the enthalpy
+  calculation.
+
+- Improve the module environment detection.
+
+- Fix crash when using inlet velocity formula using MEI.
+
+
+Release 2.0.3 (21 Oct 2011)
+===========================
+
+Changes:
+--------
+
+- Remove threaded-version of BLAS library detection since MKL threaded version
+  (with Intel 11.1 compilers) proved to be 150 times slower than without BLAS
+  or with non-threaded BLAS in some configurations (probably due to oversubscription
+  of threads).
+
+- Use specific intracommunicator instead of MPI_COMM_WORLD for coupling with
+  SYRTHES 3, to avoid bug due to non-contiguous MPMD rank-numbering on
+  BLue Gene/P or similar machines.
+
+- Update MEI dependency to 1.0.3 (correct version number) in the installer.
+
+- Update keywords documentation.
+
+Bug fixes:
+----------
+
+- Fix typo leading to bug using MPICH2 with Python scripts.
+
+- Simplify reading of face -> vertex index blocks from preprocessor
+  output file to improve robustness (based on trunk).
+
+
+Release 2.0.2 (19 Jul 2011)
+===========================
+
+Changes:
+--------
+
+- Enable build with MED 3.0 (based on 2.9) as well as with MED 2.3.
+
+- Enable build with CGNS 3.1 as well as CGNS 2.5.
+
+- Print additional MPI environment info for Blue Gene/P.
+
+- Various fixes to coupling with SYRTHES 3 to enable coupling on Blue Gene/P.
+
+- Add an installation documentation.
+
+- Add extra libraries required by FVM (as determined by "fvm-config --libs").
+  after HDF5, MED, or CGNS, as the latter may depend on the former.
+  This fixes a compilation issue on Blue Gene/P using MED and its C++ dependencies.
+
+- Implement the correct behaviour to handle thermal wall-function in
+  the framework of the scalable wall-functions.
+
+- Add a libtool rpath option to handle non-libtoolized libraries.
+
+- Added detection and handling of environment modules. The configuration
+  detected at configure/build time are saved and applied when compiling
+  user subroutines or when running a calculation script. A --with-modules
+  configure option allows overriding of automatic detection.
+
+- Try to determine batch system used at configure time, so as to install
+  runcase scripts with only the required batch template.
+
+- Add SLURM support and improve batch system handling support.
+
+- Try to use the same shell as the user's current shell in generated
+  scripts used by the Python runcase script.
+
+- Replace the drag'n drop feature in the graphical interface by a more
+  intuitive add/remove mechanism for the profile and time average pages.
+
+- Port to (IVANOE) IBM iDataPlex cluster.
+
+- Deactivate debugging code in parallel mesh joining.
+
+- Update MPI environment for legacy runcase.
+
+- Update format and library documentation links.
+
+- Allow a higher number of processors in the GUI.
+
+- Do not define the total pressure pointer with the compressible module and
+  add relevant test when missing. The XML reader is not protected yet, uiprop
+  routine, however it shouldn't be an issue until the combustion module
+  setup is available within the graphical interface.
+
+Minor Changes:
+--------------
+
+- Add timing information for mesh input I/O.
+
+- Update memory logging units and translations.
+
+- Print additional MPI environment info for Blue Gene/P.
+
+- Implement the correct behaviour to handle thermal wall-function in
+
+- Remove references to (non-operational) Homard support.
+
+- Improve MPI auto-detection in Debian-based environments.
+
+- Add "-log" option to syrthes coupling wrapper so as to redirect output.
+  This replaces redirection from shell as a precaution against problems with
+  I/O redirection in MPI environments.
+
+- BLAS detection now handles Intel MKL 10.3 distributed with ICC 12.
+
+Bug fixes:
+----------
+
+- Added several user-provided patches relative to the Lagrangian module.
+  As 2 of those patches affect rarely-used options and have not been tested
+  with multiple option combinations yet, they are currently provided in the
+  patches directory, not as defaults.
+
+- Make parsing of syrthes.env files more robust.
+
+- Fix bug when reading the variance of volumetric statistics from a restart file.
+
+- Add conditional compilation to work around gcc 4.1 bug with Fortran pointers.
+
+- Various fixes to coupling with SYRTHES 3 to enable coupling on Blue Gene/P.
+  This includes adding an optional pset_size argument for the SYRTHES domain
+  in the Python runcase to allow starting SYRTHES on a whole processor set,
+  as required by mpiexec on this machine.
+
+- Ensure MPICH2 environment variables are tested before those of MPICH1.
+
+- Fix double relaxation bug in multigrid for symmetric matrixes.
+
+- Missing Cmu constant logging in the listing for k-omega SST model.
+
+- GUI: fix error when selecting an invalid preprocessor log file in the boundary
+  conditions definition.
+
+- Minor fixes for atmospheric modelling.
+
+- Use proper association of Fortran pointers to account for source terms.
+
+- Fix the gradient calculation (least-square method) when the mesh is
+  moving (we know compute the geometric quantities at each pass).
+
+- Fix memory allocation for the time-step calculation with the compressible
+  algorithm. This memory bug had no impact on the calculations because the
+  temporary arrays were defined at the end of the macro-array RA.
+
+- Fix the order of arguments in a call to grdcel in usvist.
+
+- Correct access to ivsext and thetvs arrays depending on the scalar number
+  and not the phase number.
+
+- Workaround for apparent bug in some Python libraries leading to loss
+  of standard and error output of "code_saturne compile" command
+  (so far observed only with Python 2.4, at least on RHEL).
+
+- Fix possible error in MPI environment handling with Python script.
+
+- Fix the profile page view in the interface when one modifies the data.
+
+- Fix bounds checking issues with Intel Fortran compiler.
+
+- Remove unused array in the joining algorithm.
+
+- Fix missing synchronization of periodic cell families in serial build.
+
+- Fix detection of number of processors with LSF.
+
+- Minor corrections in the theory manual.
+
+- Change some tests to avoid issues when checking for array boundaries.
+
+- Fix a bug in the XML creation when defining several classes of coal.
+
+- Correct array size bug in libsyrcs leading to crashes in parallel.
+
+- Fix several issues in the modelling of the interaction between a particle
+  and a wall (some related to the particles velocity and kinetic energy).
+
+- Fix a missing pointer update for post-processing variables in the gas
+  combustion module.
+
+- Correct possible memory leak in case of matrix deep copy.
+
+
+Release 2.0.1 (17 Jan 2011)
+===========================
+
+- Add a developpers guide with coding standards.
+
+- Do not buffer standard output and error when executing subprocess.
+
+Minor Changes:
+--------------
+
+- Handle processor list under LSF when LSB_MCPU_HOSTS is used instead
+  of LSB_HOSTS
+
+- Update the compilation flags detection according to Subversion trunk.
+
+- Remove calls to deprecated bft_fp_trap_set() function.
+
+Bug fixes:
+----------
+
+- Remove memory usage field from PBS batch template and
+  fix handling of PBS batch directives by GUI.
+
+- Fix the XML definition for boundary conditions with exterior exchange
+  coefficient.
+
+- Fix issues when removing the a particle which has exited the fluid domain.
+
+- Fix a wrong indirection (using Fortran numbering instead of C) when
+  calculating the head loss coefficients from the graphical user interface.
+
+- Correct mesh reading bug when FVM is compiled with --enable-long-gnum.
+
+- Correct bug in which runcase was not saved in results.
+
+- Fix array arguments to MPI_Reduce for memory summary.
+
+- Fix generation of PyQt resource files.
+
+- Fix a crash when cutting warped faces with periodicity.
+
+- Fix two small bugs in the Python automatic installer (MEI use and Fortran
+  compiler).
+
+- Fix EXTRA_DIST variables in the documentation.
+
+- Fix the info command of code_saturne.
+
+- Fix the copying of the ALE and Lagrangian monitoring files.
+
+
+Release 2.0.0 (20 Aug 2010)
+===========================
+
+Code_Saturne 2.0 is a major (fully validated) production release, replacing
+version 1.3 (which is to be maintained until the release of version 3.0).
+
+- Correct value for the diffusion coefficient in k-omega SST.
+
+- Move the mass-flux update in case of a rotating mesh, only relevant when
+  disabling the pressure reconstruction (no impact on current simulations).
+
+- Translate variable and property names in the example Xml files.
+
+- Several bug fixes and minor improvements (see ChangeLog for details).
+
+
+Release 2.0.0-rc1 (22 Jun 2010)
+===============================
+
+- By-pass a possible bug with the flush Fortran 2003 statement on BG systems.
+
+- Make the particles output compliant with EnSight 6 format and improve the
+  robustness of the output for visualizing with ParaView.
+
+- Revert a changeset regarding the turbulence relaxation (k/epsilon/omega) to
+  avoid stability issues in some calculations. This still needs to be
+  investigated in order to have a correct unsteadyness when needed.
+
+- Under HP-UX, handle both hppa and Itanium systems.
+
+- Miscellaneous improvements for the parallel joining algorithm,
+  added the periodicity "joining" handling in parallel by the solver.
+
+- Several bug fixes and minor improvements (see ChangeLog for details).
+
+
+Release 2.0.0-rc1 (19 Feb 2010)
+===============================
+
+- English translation of more Fortran subroutines headers.
+
+- Move upwards the definition of additional scalars in the GUI because the
+  physical properties can depend on them.
+
+- Change the behaviour of the xml file relatively to the time step min/max
+  factor so that it corrresponds to what is given by the user in the gui.
+
+- Add rotor/stator interaction (specific interpolation) for relative frame
+  calculation.
+
+- Add new interpolation schemes to code/code coupling for
+  rotor/stator interaction modelling.
+
+- Improve robustness for wall boundary conditions for atmospheric modelling.
+
+- Use new discovery mechanism for coupling applications.
+
+- Remove hyphens and dots from variable names defined by the GUI.
+
+- Rename the main script in code_saturne to avoid a conflict
+  with the cs executable of csound package.
+
+- Set the relaxation factor between P0/P1 interpolations to 0.95 in multigrid
+  algorithm in order to stabilize the algorithm in some calculations.
+
+- Set the aggregation limit to 3 instead of 8 in the multigrid solver
+  for better robustness (but slightly lower performance).
+
+- Upgrade to FVM 0.15
+
+- The space-filling-curve algorithm for backup domain splitting is activated
+  by default.
+
+- Add a mpi_io option to the command line so that one can use FVM compiled
+  with MPI/IO support and decide at runtime which type of I/O to use.
+
+- Merge the preprocessor user guide into Code_Saturne user guide.
+
+- Add a new Python runcase script with more code coupling capabilities
+  and better handling of MPI and batch environments. This scipt is enabled by
+  the --new-runcase option to the "code_saturne create" command.
+  The GUI still only handles the legacy (shell) script.
+
+- Disable by default the multigrid algorithm for the potential vector
+  in MHD as it does not seem to work correctly.
+
+- Many GUI improvements and fixes.
+
+- Several bug fixes and minor improvements (see ChangeLog for details).
+
+
+Release 2.0.0-beta1 (29 Jul 2009)
+=================================
+
+- Move loop on velocity/pressure system so that it includes
+  the boundary conditions calculation.
+
+- Use selection mechanism for exchange zone definition.
+
+- Improve cooling tower module.
+
+- Information on SYRTHES installation and compilers can now be
+  given after Code_Saturne installation.
+
+- Fix a wrong assumed behaviour on x86_64 and IA64 computers
+  in the particles tracking algorithm. One assumed that the internal
+  FP precision was always 80 bits (true for FPU x87 coprocessor on
+  x86 processors but wrong with SSE optimizations)...
+  This is a short term fix (assembler + compiler-dependent option).
+
+- Add Coriolis source terms in standard calculations.
+
+- Do not relax turbulent variables (k/epsilon/omega) in unsteady
+  simulations.
+
+- Adapt 1d-profiles file to SALOME format for title and labels.
+
+- Add radiative transfer support for fuel combustion.
+
+- Add a space-filling-curve algorithm for parallel partitioning.
+  This algorithm is based on a Morton curve.
+
+- On Linux systems, use fenv library to trap floating point exceptions.
+
+- Add parall mesh joining feature in the Kernel (by default, the legacy
+  joining feature from the Preprocessor is still used.
+
+- Add non-neutral atmosphere modelling (both dry and humid, though
+  humid atmosphere modelling is not yet fully functional).
+
+- When detecting a divergence in the linear system solver stage, abort
+  and write graphical data of the given matrix (rhs, diagonal, ...).
+
+- Simplify running a SYRTHES 3 / Code_Saturne coupling through sockets.
+
+- Add a mesh category for an easier management of user-defined
+  post-processing.
+
+- Add a new turbulence model for LES: the WALE model.
+
+- Fix when testing for radiative transfer.
+
+- Enable the multigrid algorithm for the diffusion equation in the
+  electric arcs, Lagrangian, radiative transfer (P1 model) and ALE modules.
+
+- Replace all the different user scripts by a single one.
+
+- The GUI is now based on QT4 rather than Tk, and is now part of the
+  kernel source tree to simplify version control and installation.
+
+- The Syrthes coupling library is now included in the kernel source
+  tree for easier versioning and installation.
+
+- Several bug fixes and minor improvements (see ChangeLog for details).
+
+
+Release 2.0.0-beta1 (26 May 2009)
+=================================
+
+- Add a quick reference card documentation.
+
+- Add man pages for the main scripts to the documentation.
+
+- Do not compile the code if there is no user file.
+
+- Create a graphical post-processing view of the boundary
+
+- New build system, based on the GNU Autotools.
+
+- Conversion of all the Fortran files (headers included)
+  form fixed F77 format to free f90 format. A small-case
+  extension is used so that one can, in the future, skip the
+  preprocessing stage.
+
+- Change the mesh quality verification behaviour. The different
+  gradient calculation modes are now done in one pass. Thus, only
+  one option remains for the command line (-q, with no sub-option).
+
+- The kernel is now able to post-process edges for a given
+  mesh via the PSTEDG subroutine. This functionnality is
+  thus removed from the preprocessor.
+
+- English translation of many C source files.
+
+- Add cell renumbering capability and re-organize face renumbering.
+
+- SYRTHES coupling upgraded to syr_cs 2.3.0.
+
+- Upgrade checkpoint/restart to allow MPI-IO.
+
+- Several bug fixes and minor improvements (see ChangeLog for details).
+
+
+Release 1.4.0 (28 Nov. 2008)
+============================
+
+Code_Saturne 1.4 is an intermediate development release, very similar to
+version 1.3.3 except for the items below:
+
+- Add atmospheric flow modelling for neutral atmosphere flows.
+
+- Always set the head loss tensor to be a full symmetric tensor
+  in order to ease the setup within the Graphical User Interface
+  (NCKPDC has been removed and replaced by the constant 6).
+
+- Make the test on the convergence of the gradient reconstruction
+  method dimensionless if the maximum control volume is greater
+  than 1 (useful for some atmospheric simulations).
+
+- Remove the forcing to ASCII mode for post-processing when
+  the calculation is in verification mode.
+
+- Remove the pipe communication mode for SYRTHES coupling.
+
+- Add oxycombustion and fuel classes management.
+
+- Separate preprocessing from partitioning. There is now a single
+  preprocessor_output file, so that mesh joining does not need to be run again
+  for a different number of processors.
+
+- Preprocessor output, partitioning, and restart files a now use a common
+  binary format (independent of the number of processors), which may be
+  written or read using MPI-IO (not enabled for restart files yet).
+
+- Scripts translation and improvements.
+
+- The reconstruction of the right-hand side has now its own precision
+  parameter (EPSRSM) instead of using EPSILO.
+
+- Re-write of the algebric multigrid algorithm for the resolution of
+  the of pressure equation. The algorithm works in serial and parallel,
+  and is now the default, leading to run-times reduced by a factor or
+  2 to 3 on average.
+
+- Add wet cooling tower heat exchange specific physics model.
+
+- The size of the work arrays IA and RA is now defined with a Fortran
+  user file and no more via the scripts, making them independent of
+  the number of sub-domains in case of a parallel run.
+
+- Simplified the command line option for a parallel runs.
+
+- Several bug fixes and minor improvements (see ChangeLog for details).
+
+
+Release 1.3.3 (27 Nov 2008)
+===========================
+
+- Upgrade dependencies to FVM 0.12.0 and BFT 1.0.8.
+
+- Upgrade SYRTHES to 3.4.2 version (syr_cs 2.1.0).  Restarting
+  from SYRTHES 3.3 is not possible due to incompatible format.
+
+- Add a QUALITY_ASSURANCE file which precises if the current
+  version of Code_Saturne is validated under EDF quality
+  assurance.
+
+- Portability updates.
+
+- Add a patch directory in which the user can find
+  some untested patches fixing tricky issues.
+
+- Updating the halos at the beginning of an outer iteration is now
+  done on extended halos (reducing error with rotational periodicity).
+
+- Improved mesh and coherency tests.
+
+- Added localization (French or English) to the Code_Saturne Kernel
+  and translated all scripts to English.
+
+- Several bug fixes (see ChangeLog for details).
+
+
+Release 1.3.2 (16 Apr 2008)
+===========================
+
+- Port to BlueGene/P and Cray XT
+
+- Update FVM API to take into account some particular cases
+  where two periodicities are not commutative.
+
+- Add a warning when changing the mesh vertices coordinates along
+  with periodicity, which can break the periodicity parameters.
+
+- Correct distance use at the first time-step when using the k-w SST
+  model and the old algorithm to compute the wall distance.
+
+- Change the behaviour when trying to get a list of cells or faces
+  with the selector. Revert to the old behaviour when the selection
+  was done through the mesh properties. A warning is issued instead
+  of an error when the criteria returns an empty selection.
+
+- Move unmaintained macros files to aux/macros_old.
+
+- Make Code_Saturne stop when a Lagrangian calculation is run with the
+  steady-state algorithm.
+
+- Change the name Syrthes to SYRTHES following the trademark registration.
+
+- Add documentation on faces/cells selection with GETxxx via fvm_selector
+
+- Add comments on steady-state algorithm IDTVAR=-1.
+
+- Add a temporary "tmp_Saturne/$ETUDE.$CAS.$DATE" directory when running
+  a case in $TMPDIR (when defined by the system) to avoid an issue
+  with the linux distribution CAELinux
+
+- Complete reorganisation of the theory documentation to follow the template
+  of the user and tutorial documents
+
+- Variant for Intel compiler on Itanium only, optimizations by BULL.
+
+- Rename the Preprocessor listing from listenv to listpre.
+
+- Portability improvements in scripts.
+
+- Several bug fixes (see ChangeLog for details).
+
+
+Release 1.3.1 (28 Nov 2007)
+===========================
+
+- Storage on preprocessor files in a subdirectory of
+  the temporary execution directory.
+
+- Added code_Saturne tutorial.
+
+- synchronization with Syrthes only if ITRALE>0 in caltri.F
+
+- creation of erreur_n*** files only for processor 0 and the
+  processors receiving a segmentation fault or floating point
+  exception message.
+
+- change of kernel options "couleur" and "groupe" to "color"
+  and "group" for Syrthes options.
+
+- modification of residue test to detect when conjugate
+  gradient diverges.
+
+- Several bug fixes (see ChangeLog for details).
+
+
+Release 1.3.0 (2 Aug 2007)
+==========================
+
+Code_Saturne 1.3 is a major (fully validated) production release.
+Release 1.3.0 is the feature-freeze release, and versions 1.3.1
+and 1.3.2 are validation bug-fix versions. 1.3.3 is the first production
+version of Code_Saturne 1.3.
+
+This version of the code is also the first version of Code_Saturne distributed
+under a free software (GPL + LGPL) licence.
+
