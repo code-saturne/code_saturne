@@ -912,7 +912,7 @@ epsdp  = 1.0d-12
 !                  to take into account the balance between the pressure gradient
 !                  and source terms
 !
-!              2 : hydrostatic pressure computation with a apriori qdm equation
+!              2 : hydrostatic pressure computation with a apriori momentum equation
 !                  to obtain a hydrostatic pressure taking into account the imbalance
 !                  between the pressure gradient and the gravity source term
 

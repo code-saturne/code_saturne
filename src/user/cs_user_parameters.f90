@@ -973,7 +973,7 @@ subroutine usipgl &
 !                  !    !     ! the pressure gradient and the gravity and      !
 !                  !    !     ! head-loss terms                                !
 ! ialgce           ! i  ! <-- ! option for the method of calculation of        !
-!                  !    !     !  cell centers                                  !
+!                  !    !     ! cell centers                                   !
 ! iescal(nesmax)   ! ia ! <-- ! flag for activation of error estimators for    !
 !                  !    !     ! Navier-Stokes                                  !
 !__________________!____!_____!________________________________________________!

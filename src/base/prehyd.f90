@@ -72,7 +72,7 @@
 !> \param[in]     propfa        physical properties at interior face centers
 !> \param[in]     propfb        physical properties at boundary face centers
 !> \param[in,out] prhyd         hydrostatic pressure predicted with
-!>                              the a priori qdm equation reduced
+!>                              the a priori momentum equation reduced
 !>                              \f$ P_{hydro} \f$
 !> \param[out]    grdphd         the a priori hydrostatic pressure gradient
 !>                              \f$ \partial _x (P_{hydro}) \f$
