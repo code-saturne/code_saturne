@@ -1037,11 +1037,16 @@ if test "$?" = "0" ; then
 
   # Default compiler flags
   fcflags_default="-x f95-cpp-input -Wall -Wno-unused"
-  fcflags_default_dbg="-g -fbounds-check"
+  fcflags_default_dbg="-g -fcheck=bounds"
   fcflags_default_opt="-O"
   fcflags_default_hot="-O2"
   fcflags_default_prf="-pg"
   fcflags_default_omp="-fopenmp"
+
+  case "$cs_fc_vendor-$cs_fc_version" in
+    gfortran-4.[234]*)
+    fcflags_default_dbg="`echo $fcflags_default_dbg | sed -e 's/-fcheck=bounds/-fbounds-check/g'`"
+  esac
 
 fi
 
