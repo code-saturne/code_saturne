@@ -58,6 +58,12 @@ from xml.sax import make_parser
 from Base.Toolbox import GuiParam
 
 #-------------------------------------------------------------------------------
+# Third-party modules
+#-------------------------------------------------------------------------------
+
+from PyQt4.QtCore import QObject, SIGNAL
+
+#-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
 
@@ -1117,13 +1123,14 @@ class XMLDocument(XMLElement):
 # XML utility functions
 #-------------------------------------------------------------------------------
 
-class Case(Dico, XMLDocument):
+class Case(Dico, XMLDocument, QObject):
     def __init__(self, package=None, file_name=""):
         """
         Instantiate a new dico and a new xml doc
         """
         Dico.__init__(self)
         XMLDocument.__init__(self, case=self)
+        QObject.__init__(self)
 
         self['package'] = package
         rootNode = '<' + self['package'].code_name +'_GUI study="" case="" version="2.0"/>'
@@ -1138,6 +1145,7 @@ class Case(Dico, XMLDocument):
             self['saved'] = "yes"
 
         self.record_func_prev = None
+        self.record_argument_prev = None
         self.record_local = False
         self.record_global = True
         self.xml_prev = ""
@@ -1221,25 +1229,50 @@ class Case(Dico, XMLDocument):
         self.record_global = True
 
 
-    def undoGlobal(self):
+    def undoGlobal(self, f, c):
         if self['current_page'] != '' and self.record_local == False and self.record_global == True:
             if self.xml_prev != self.toString() or self.xml_prev == "":
-                self['undo'].append([self['current_page'], self.toString(), self['current_index'], self['current_tab']])
-                self['redo'] = []
-                self.xml_prev = self.toString()
-                self.record_func_prev = None
+                # control if function have same arguments
+                # last argument is value
+                same = True
+                if self.record_argument_prev == None:
+                    same = False
+                elif len(c) >= 2:
+                    for i in range(0, len(c)-1):
+                        if c[i] != self.record_argument_prev[i]:
+                            same = False
+
+                if same:
+                    pass
+                else:
+                    self['undo'].append([self['current_page'], self.toString(), self['current_index'], self['current_tab']])
+                    self.xml_prev = self.toString()
+                    self.record_func_prev = None
+                    self.record_argument_prev = c
+                    self.emit(SIGNAL("undo"))
 
 
-    def undo(self, f):
+    def undo(self, f, c):
         if self['current_page'] != '' and self.record_local == False and self.record_global == True:
             if self.xml_prev != self.toString():
-                if self.record_func_prev == f:
-                    self['redo'] = []
+                # control if function have same arguments
+                # last argument is value
+                same = True
+                if self.record_argument_prev == None:
+                    same = False
+                elif len(c) >= 2:
+                    for i in range(0, len(c)-1):
+                        if c[i] != self.record_argument_prev[i]:
+                            same = False
+
+                if self.record_func_prev == f and same:
+                    pass
                 else:
                     self.record_func_prev = f
+                    self.record_argument_prev = c
                     self['undo'].append([self['current_page'], self.toString(), self['current_index'], self['current_tab']])
-                    self['redo'] = []
                     self.xml_prev = self.toString()
+                    self.emit(SIGNAL("undo"))
 
 
 #-------------------------------------------------------------------------------
