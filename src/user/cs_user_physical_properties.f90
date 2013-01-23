@@ -800,7 +800,7 @@ subroutine uscfpv &
 !     . the molecular viscosity (set to viscl0)
 !     . the volumetric molecular viscosity (set to viscv0)
 !     . the molecular thermal conductivity (set to visls0(itempk))
-!   - in the user subroutines 'usiniv' and 'uscfxi'; ex.:
+!   - in the user subroutine 'cs_user_initialization'; ex.:
 !     . the unknown variables (null by default)
 
 ! This subroutine allows the user to set the cell values for:
@@ -815,7 +815,7 @@ subroutine uscfpv &
 
 ! The density ** must not ** be set here: for the compressible scheme,
 ! it is one of the unknowns, and it can be initialized as such in the user
-! subroutine 'uscfxi' (rtp array).
+! subroutine 'cs_user_initialization' (rtp array).
 
 ! The turbulent viscosity ** must not ** be modified here (to modify this
 ! variable, use the user subroutine 'usvist')

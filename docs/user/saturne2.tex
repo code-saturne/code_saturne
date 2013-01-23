@@ -887,7 +887,7 @@ an initial calculation run with a non-constant time step
 in the case of a restart calculation in which the type of
 time step has been changed (for instance, {\tt idtvar}=1 in the new
 calculation and {\tt idtvar}=0 or 2 in the previous calculation): see
-\texttt{usiniv}}
+\texttt{cs\_user\_initialization}}
 
 \motcle{dtmin}{r}{positive or null real number}{\tt 0.1*dtref}{O}{L2}
 {lower limit for the calculated time step when non-constant time step is activated\\
@@ -2408,7 +2408,7 @@ the standard physics) ({\tt ivisls(iscal)} $>$ 0)\\
 therefore defined as $\lambda/C_p$ where $\lambda$ and $C_p$ are the
 conductivity and specific heat. When using the Graphical Inteface, $\lambda$ and
 $C_p$ are specified separately, and {\tt visls0} is calculated automatically\\
-With the compressible module, {\tt visls0} (given in \texttt{uscfxi2}) is directly the
+With the compressible module, {\tt visls0} (given in \texttt{uscfx2}) is directly the
 thermal conductivity $W.m^{-1}.K^{-1}$\\
 With gas or coal combustion, the molecular diffusivity of the enthalpy
 ($kg.m^{-1}.s^{-1}$) must be specified by the user in the variable {\tt diftl0}
@@ -2494,7 +2494,7 @@ used for the initialisation of the turbulence\\
 negative value: not initialised\\
 useful if and only if {\tt iturb}= 20, 21, 30, 31, 50 or 60 (RANS model)
 and the turbulence is not initialised somewhere
-else (restart file or subroutine \texttt{usiniv})}
+else (restart file or subroutine \texttt{cs\_user\_initialization})}
 
 
 \minititre{Basic constants of the $k-\varepsilon$ and the other RANS models}
@@ -2971,7 +2971,8 @@ Useful if \texttt{ielcor}=1}
 %==================================
 
 The key words used in the global settings are quite few. They are
-found in the subroutines \texttt{uscfx1} and \texttt{uscfx2} (see the
+found in the subroutines \texttt{uscfx1} and \texttt{uscfx2}, in
+the \texttt{cs\_user\_parameters.f90} file (see the
 description of these user subroutines, \S\ref{prg_uscfx12}).
 
 \motcleb{icfgrp}{ia}{0 or 1}{1}{C}{L1}

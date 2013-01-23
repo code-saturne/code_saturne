@@ -298,8 +298,9 @@ file being directly placed in \texttt{STUDY/RESU\_COUPLING/20110509-1920}
   case SOLID1 in a study STUDY} \\
 \multicolumn{2}{l}{\texttt{STUDY/runcase\_coupling}}&{coupled launch script}\\
 \multicolumn{2}{l}{\texttt{STUDY/SOLID1/DATA:}}&{\bf \syrthes data}\\
-&        \texttt{syrthes.data}                &\syrthes data file \\
-&        \texttt{syrthes.env}                 &\syrthes configuration file\\
+&        \texttt{syrthes\_data.syd}          &\syrthes data file \\
+&        \texttt{syrthes.py}                 &\syrthes script\\
+&        \texttt{usr\_examples}              &\syrthes user subroutine examples\\
 \multicolumn{2}{l}{\texttt{STUDY/RESU\_COUPLING/20110509-1920/SOLID1:}}&{\bf results
  (file names defined in \texttt{syrthes.env})}\\
 &        \texttt{src}                &\syrthes user subroutines
@@ -308,13 +309,13 @@ file being directly placed in \texttt{STUDY/RESU\_COUPLING/20110509-1920}
 &        \texttt{listsyr}            &execution log\\
 &        \texttt{geoms}              &\syrthes \ solid geometry file\\
 &        \texttt{histos1}            &\syrthes chronological records at
-                                                  specified probes\\
+                                               specified monitoring points\\
 &        \texttt{resus1}             &\syrthes calculation restart file (1 time step)\\
 &        \texttt{resusc1}            &\syrthes chronological solid
                                       post-processing file\\
 &                                    &(may be transformed into the {\em EnSight}
-                                      format\\
-&                                    &with the {\em syrthes2ensight} utility)\\
+                                      or {\em MED} format with the {\em syrthes4ensight}\\
+                                      or {\em syrthes4med30} utility)\\
 \end{tabular}
 \end{table}
 
@@ -372,20 +373,18 @@ prepare and run a standard case:
 
 \item Check the version of \CS set for use in the environment variables
 (\texttt{code\_saturne~info --version}). If it does not correspond to
-the desired version, update the \texttt{.profile} file to set the environment
-variables correctly. Log out of the session and
-log in again to take the modifications into account properly (cf.
+the desired version, update the user profile or aliases to get the
+required version, logging out of the session and in again if necessary (cf.
 \S\ref{prg_environementCS}).
 
 \item Prepare the different directories using the \texttt{code\_saturne~create}
 command (see \S\ref{prg_cscreate}).
 
-\item It is recommendned to place the mesh(es) in the directory \texttt{MESH},
+\item It is recommended to place the mesh(es) in the directory \texttt{MESH},
 but they may be selected from other directories. Make sure they are
 in a format compliant with \CS (see \S\ref{prg_maillages}). There can be
 several meshes in case of mesh joining or coupling with
-\syrthes\footnote{\syrthes 3 uses meshes composed of 10-node tetrahedra (vertices
-and centers of edges, \syrthes 4 uses meshes composed of 4-node tetrahedra}.
+\syrthes\footnote{\syrthes 4 uses meshes composed of 4-node tetrahedra}.
 
 \item Go to the directory \texttt{DATA} and launch the
       Graphical User Interface using the command \texttt{./SaturneGUI}.
@@ -403,19 +402,42 @@ compulsory.
 
 \begin{list}{}{}
 
-\item {\bf For the standard physics:}
+\item {\bf For all physics:}
 
     \begin{list}{}{}
         \item {\em compulsory without Graphical User Interface:}
         \begin{list}{-}{}
-            \item \texttt{cs\_user\_parameters.f90} to specify the calculation parameters
+            \item \texttt{usipph} (in \texttt{cs\_user\_parameters.f90}) to
+              specify the turbulence model (and whether $C_p$ is uniform or not)
+
+            \item \texttt{usipsu} (in \texttt{cs\_user\_parameters.f90}) to
+              define most user parameters
 
             \item \texttt{cs\_user\_boundary\_conditions} to manage the boundary conditions
         \end{list}
 
+        \item {\em  very useful without Graphical User Interface:}
+        \begin{list}{-}{}
+            \item \texttt{usinsc} (in \texttt{cs\_user\_parameters.f90}) to
+              define user scalars (species)
+
+            \item \texttt{usipsc} (in \texttt{cs\_user\_parameters.f90}) to
+              define parameters depending on the number of user scalars.
+
+            \item \texttt{usipgl} (in \texttt{cs\_user\_parameters.f90}) to
+              define some global parameters (error indicators, \texttt{idilat}
+              (variable density), \texttt{ipucou} (reinforced velocity-pressure
+              coupling), and \texttt{iphydr} (improved pressure interpolation in
+              stratified flow)
+
+            \item \texttt{usipes} (in \texttt{cs\_user\_parameters.f90}) to
+              define monitoring points and additional parameters for results outputs
+        \end{list}
+
         \item {\em  very useful:}
         \begin{list}{-}{}
-            \item \texttt{usphyv} to manage the variable physical
+            \item \texttt{usphyv} (in
+              \texttt{cs\_user\_physical\_properties.f90}) to manage variable physical
                   properties (fluid density, viscosity ...)
 
             \item \texttt{cs\_user\_initialization} to manage the non-standard initialisations
@@ -428,15 +450,8 @@ compulsory.
     \begin{list}{}{}
         \item {\em compulsory:}
         \begin{list}{-}{}
-            \item \texttt{cs\_user\_parameters.f90} to specify the calculation parameters
-
             \item \texttt{usppmo} to select a specific physics module and
                combustion model
-
-            \item \texttt{usebuc}, \texttt{usd3pc} or \texttt{uslwcc}
-                  (depending on the selected combustion model) to manage the
-                  boundary conditions of {\em all variables} ({\em i.e.} not only
-              the ones related to the combustion model)
         \end{list}
 
         \item {\em very useful:}
@@ -446,11 +461,6 @@ compulsory.
                to specify the calculation options
                    for the variables
                    corresponding to combustion model
-
-            \item   \texttt{usebui}, \texttt{usd3pi} or \texttt{uslwci}
-              (depending on the selected combustion model)
-                   to manage the initialisation of the variables
-                   corresponding to the combustion model
         \end{list}
     \end{list}
 
@@ -459,14 +469,7 @@ compulsory.
     \begin{list}{}{}
         \item {\em compulsory without Graphical User Interface:}
         \begin{list}{-}{}
-            \item \texttt{cs\_user\_parameters.f90} to specify the calculation parameters
-
             \item \texttt{usppmo} to select the specific physics module
-
-            \item \texttt{uscpcl} or \texttt{uscplc} (depending on the
-                  specific physics module) to manage the
-                  boundary conditions of {\em all variables} ({\em i.e.} not only
-              the ones related to the specific physics module)
         \end{list}
 
         \item {\em very useful:}
@@ -475,9 +478,6 @@ compulsory.
                to specify the calculation options
                    for the variables
                    corresponding to the specific physics module
-
-            \item \texttt{uscpiv} to manage the initialisation of the
-                   variables corresponding to the specific physics module
         \end{list}
     \end{list}
 
@@ -488,15 +488,9 @@ compulsory.
     \begin{list}{}{}
        \item {\em compulsory:}
         \begin{list}{-}{}
-            \item \texttt{cs\_user\_parameters.f90} to specify the calculation parameters
-
             \item \texttt{usppmo} to select the specific physics module
 
-            \item \texttt{uselcl} to manage the boundary conditions of {\em all
-              variables} ({\em i.e.} not only
-              the ones related to the electric module)
-
-            \item \texttt{useliv} to initialise the enthalpy in
+            \item \texttt{cs\_user\_initialization} to initialise the enthalpy in
                   case of Joule effect
 
             \item \texttt{uselph} to define the physical
@@ -508,8 +502,6 @@ compulsory.
             \item  \texttt{useli1} to manage the options related
                    to the variables corresponding to the electric module
 
-            \item   \texttt{useliv} to manage the initialisation of the
-                   variables corresponding to the electric module
         \end{list}
     \end{list}
 
@@ -519,24 +511,7 @@ compulsory.
     \begin{list}{}{}
         \item {\em compulsory:}
         \begin{list}{-}{}
-            \item \texttt{cs\_user\_parameters.f90} to specify the calculation parameters
-
             \item \texttt{usppmo} to select the specific physics module
-
-            \item \texttt{usfucl} to manage the
-                  boundary conditions of {\em all variables} ({\em i.e.} not only
-              the ones related to the specific physics module)
-        \end{list}
-
-        \item {\em very useful:}
-        \begin{list}{-}{}
-            \item  \texttt{usfui1}
-               to specify the calculation options
-                   for the variables
-                   corresponding to the specific physics module
-
-            \item \texttt{usfuiv} to manage the initialisation of the
-                   variables corresponding to the specific physics module
         \end{list}
     \end{list}
 
@@ -561,19 +536,14 @@ physics)\\
 
 (not accessible through the Graphical User Interface in version \verscs)
     \begin{list}{}{}
-        \item {\em compulsory:}
+        \item {\em compulsory without Graphical User Interface:}
         \begin{list}{-}{}
             \item \texttt{uscfx1} and \texttt{uscfx2} to manage the
                   calculation parameters
 
-            \item \texttt{uscfcl} to manage the boundary conditions
+            \item \texttt{cs\_user\_boundary\_conditions} to manage the
+                  boundary conditions
 
-            \item \texttt{uscfth} to define the thermodynamics.
-        \end{list}
-
-        \item {\em very useful:}
-        \begin{list}{-}{}
-                \item \texttt{uscfxi} to manage non-standard initialisations of the variables
         \end{list}
     \end{list}
 
@@ -1627,6 +1597,40 @@ subroutines. In the case that a parameter is specified in the interface
  is taken into acount. For this reason, all the examples of
  user subroutines are placed in the \texttt{REFERENCE} directory by the
  case setup \texttt{code\_saturne~create}.
+
+%==================================
+\subsubsection{Example routines}
+%==================================
+
+Some user subroutines may be used for many different user definitions. As
+including enough examples in those subroutines would make them very
+difficult to read, these routines provided as templates only, with
+separate examples in a case's \texttt{EXAMPLES} subdirectory of its
+\texttt{SRC} directory.
+
+Example file names are defined by inserting the name of the matching example
+in the file name. For example, a basic example for
+\texttt{cs\_user\_boundary\_conditions.f90} is provided in \\
+\texttt{cs\_user\_boundary\_conditions-base.f90}, while an example dedicated
+to atmospheric flows is provided in
+{cs\_user\_boundary\_conditions-atmospheric.f90}.
+
+The user is encouraged to check which examples are available, and to study
+those relevant to a given setup.
+
+Template user subroutines contain three sections the user may need to define,
+marked by the following strings:
+
+\begin{itemize}
+\item \texttt{INSERT\_VARIABLE\_DEFINITIONS\_HERE}
+\item \texttt{INSERT\_ADDITIONAL\_INITIALIZATION\_CODE\_HERE}
+\item \texttt{INSERT\_MAIN\_CODE\_HERE}
+\end{itemize}
+
+Comparing template and example files with a graphical file comparison tool
+should help the user highlight the matching sections from the examples,
+so it is recommended as good practice for those not already very familiar
+with those user subroutines.
 
 %==================================
 \subsubsection{Main variables}
@@ -3029,7 +3033,7 @@ user subroutines, a collection of utility subroutines is provided. The aim is to
 define a subset of the mesh, for example:
 
 \begin{list}{-}{}
-\item boundary regions (cf. \texttt{cs\_user\_boundary\_conditions}, \texttt{uscpcl},
+\item boundary regions (cf. \texttt{cs\_user\_boundary\_conditions}, \texttt{usalcl},
 \texttt{usray2}, \texttt{uslag2},...),
 \item volumic initialization (cf. \texttt{cs\_user\_initialization},...),
 \item head-loss region (cf. \texttt{uskpdc}),
@@ -4173,12 +4177,6 @@ time step. The user subroutine \texttt{cs\_user\_initialization} allows to modif
 \texttt{dt} which contains the value of the time step read from the restart file
 (array whose size is \texttt{ncelet}, defined at the cell centers whatever the
 chosen time step type is).
-
-{\em WARNING: to initialise the variables in the framework of a
-specific physics module} (\texttt{nscapp.gt.0}), 
-one of the subroutines
-\texttt{usebui}, \texttt{usd3pi}, \texttt{uslwci} or \texttt{uscpiv} 
-should be used (depending on the activated module) instead of \texttt{cs\_user\_initialization}.
 
 %==================================
 \subsection{Manage boundary conditions}
@@ -6240,7 +6238,7 @@ study case. Their content is described below.
 %==================================
 \subsubsubsection{Initialisation of the variables}\label{sec:Ini-coal}
 %==================================
-For coal combustion, it is possible to initialise the specific variables in the Graphical User Interface (GUI) or in the subroutines \texttt{usebui, usd3pi, uslwci} and \texttt{uscpiv}. In the GUI, when a coal combustion physics is selected in the item ``Calculation features'' under the heading ``Thermophysical models'', an additional item appears:``Pulverized coal combustion''. In this item the user can define coal types, its composition, the oxydant and reactions parameters, see figs. \ref{fig:Ini-coal1} to \ref{fig:Ini-coal5}.
+For coal combustion, it is possible to initialise the specific variables in the Graphical User Interface (GUI) or in the subroutine \texttt{cs\_user\_initialization}. In the GUI, when a coal combustion physics is selected in the item ``Calculation features'' under the heading ``Thermophysical models'', an additional item appears:``Pulverized coal combustion''. In this item the user can define coal types, its composition, the oxydant and reactions parameters, see figs. \ref{fig:Ini-coal1} to \ref{fig:Ini-coal5}.
 
 \begin{figure}[!ht]
 \begin{center}
@@ -6282,7 +6280,8 @@ For coal combustion, it is possible to initialise the specific variables in the 
 \end{center}
 \end{figure}
 
-If the user deals with gas combustion or if he (or she) does not want to use the GUI for coal combustion, the subroutines \texttt{usebui, usd3pi, uslwci} and \texttt{uscpiv} are used (only during the calculation initialisation).\\
+If the user deals with gas combustion or if he (or she) does not want to use the
+GUI for coal combustion, the subroutine \texttt{cs\_user\_initialization} must be used (only during the calculation initialisation).\\
 In this section, ``specific physics'' will refer to gas combustion or
 to pulverised coal combustion.
 
@@ -6353,10 +6352,10 @@ For coal combustion, it is possible to manage the boundary conditions in the Gra
 \end{center}
 \end{figure}
 
-For gas combustion or if the GUI is not used for coal combustion, the use of \texttt{usebuc} (called at every time step),
-\texttt {usd3pc}, \texttt{uslwcc}, \texttt{uscpcl} or \texttt{uscplc} is as
+For gas combustion or if the GUI is not used for coal combustion, the use of
+\texttt{cs\_user\_boundary\_conditions} (called at every time step) is as
 mandatory as \texttt{cs\_user\_parameters.f90} and \texttt{usppmo} to run a calculation involving specific physics. The way of using them is the same as using
-\texttt{cs\_user\_boundary\_conditions} in the framework of standard calculations, that is, run several loops on the boundary faces lists (cf. \S\ref{fvm_selector})
+ in the framework of standard calculations, that is, run several loops on the boundary faces lists (cf. \S\ref{fvm_selector})
 marked out by their colors, groups, or  geometrical criterion, where
 the type of face, the type of boundary condition for each variable and
 eventually the value of each variable are defined.
@@ -6677,36 +6676,26 @@ $\rho^{n+1}=\texttt{srrom}*\rho^{n}+(1-\texttt{srrom})\rho^{n+1}$\\
 %==================================
 \subsubsection{Initialisation of transported variables}
 %==================================
-To initialise or modify (in case of a continuation) values of transported variables and of the time step, the subroutine \texttt{usfuiv} is used. It is similar to \texttt{cs\_user\_initialization}. It is called at the beginning of every computation (new or continuation) before the time loop.
+To initialise or modify (in case of a continuation) values of transported
+variables and of the time step, the standard subroutine \texttt{cs\_user\_initialization} is used.
 
 Physical properties are stored in \texttt{propce} (cell center), \texttt{propfa} (inner face) and \texttt{propfb}. For instance, \texttt{propce(iel, ipproc(irom  ))} is \texttt{rom(iel)}, the mean density (in $kg.m^{-3}$), and \texttt{propfa(ifac,ipprof(ifluma(ivar)))} is \texttt{flumas(IFAC,IVAR)}, the convective flux of the variable \texttt{ivar}.\\
 Physical properties (\texttt{rom, viscl, cp, ...}) are computed in \texttt{ppphyv} and are not to be modified here.
 
-All cells can be identified by using the subroutine '\texttt{getcel}'. All boundary faces may be identified using the '\texttt{getfbr}' subroutine. All internal faces may be identified using the '\texttt{getfac}' subroutine. Details of the syntax of these three subroutines are given in \texttt{usfuiv}.
-
-In \texttt{usfuiv} the user initialise quantities related to the turbulent model chosen, and to gaseous species and droplets compositions. Exemples are provided in the subroutine.
+The \texttt{cs\_user\_initialization-fuel.f90} example illustrates how the user
+may initialise quantities related to gaseous species and droplets compositions
+in addition to the chosen turbulent model.
 
 %==================================
 \subsubsection{Boundary conditions}
 %==================================
-Boundary conditions are defined on a per-face basis in \texttt{usfucl}. Boundary faces may be identified using the '\texttt{getfbr}' subroutine. \texttt{usfucl} is very similar to \texttt{uscpcl}, see Section \ref{sec:coal-cl}. Boundary conditions may be assigned in two ways:
+Boundary conditions are defined as usual on a per-face basis in
+\texttt{cs\_user\_boundary\_conditions}. They may be assigned in two ways:
 \begin{list}{.}{}
 \item for ``standard'' boundary conditions (inlet, free outlet, wall, symmetry): a code is defined in the array \texttt{itypfb} (of dimensions equal to the number of boundary faces). This code will then be used by a non-user subroutine to assign the conditions.
-\item for ``non-standard'' conditions: see details given in \texttt{usfucl}.
+\item for ``non-standard'' conditions: see details given in
+  \texttt{cs\_user\_boundary\_conditions-fuel.f90} example.
 \end{list}
-
-%==================================
-\subsubsection{Initialisation of the options of the variables}
-%==================================
-
-The presence of a fuel combustion module variable in the listing, {\itshape histo} files, and the output frequency are set in the subroutine \texttt{usfui1}. If the vectors below are not allocated, default values will be used:
-\begin{list}{-}{}
-\item \texttt{ichrvr}: chronological output (1:yes / 0:no)
-\item \texttt{ilisvr}: listing output (1:yes / 0:no)
-\item \texttt{ihisvr}: {\itshape histo} output (number of probes and probe numbers), if $= -1$, every probes defined in \texttt{cs\_user\_parameters.f90} will be found in the {\itshape histo} files
-\end{list}
-
-Calculation options such as a the relaxation parameter the for density (recommended when starting a combustion computation but forbidden for unstationnary computations) can also be set, as well as physical constants like the the laminar viscosity for the enthalpy.
 
 %==================================
 \subsection{Radiative thermal transfers in semi-transparent gray media}
@@ -7644,23 +7633,11 @@ the volumetric viscosity the following pieces of information:
 \noindent
 \textit{Subroutine called every time step.}
 
-The use of \texttt{uscfcl}
-is compulsory when running a calculation that uses the compressible module, just
-as it is in both \texttt{cs\_user\_parameters.f90} and \texttt{usppmo}. The
-way of using it is the same as the way of using
-\texttt{cs\_user\_boundary\_conditions} in the framework of standard calculations, that is to
-say several loops on the boundary faces lists (cf. \S\ref{fvm_selector})
-marked out by their colors, groups, or  geometrical criterion, where
-the type of face, the type of boundary condition for each variable and
-eventually the value of each variable are defined.
+The \texttt{cs\_user\_boundary\_conditions} subroutine may be used with
+the compressible module to define (or redefine) boundary conditions.
 
-{\em WARNING: in the case of a calculation using the compressible
-module, the boundary conditions of all the variables are defined here,
-even those of the eventual user scalars: {\em \texttt{cs\_user\_boundary\_conditions}} is not
-used at all.}
-
-In the compressible module, the different available boundary conditions
-are the followings:
+With the compressible module, the different available boundary condition types
+are the following:
 
 \begin{list}{-}{}
   \item inlet/outlet for which everything is known
@@ -7675,36 +7652,13 @@ are the followings:
 \subsubsection{Initialisation of the variables}
 %==================================
 
-The subroutine \texttt{uscfxi}, called during the calculation initialisation,
- is used to initialise some variables specific to the
-specific physics activated {\em via} \texttt{usppmo}.  As usual,
-the user may have access to several geometric variables to discriminate
-between different initialisation zones if needed.
-
-{\em WARNING: in the case of a specific physics modeling, all the
-variables are initialised here: {\em \texttt{cs\_user\_initialization}} is not used at
-all.}
-
-This subroutine works like \texttt{cs\_user\_initialization} for velocity,
-turbulence and passive scalars. Concerning pressure, density,
-temperature and specific total energy, only 2 variables out of the 4 are
-independant. The user may also initialise the variable pair he wants
+The subroutine works like \texttt{cs\_user\_initialization} may be used for
+advanced initialization of velocity, turbulence and passive scalars. Concerning
+pressure, density, temperature and specific total energy, only 2 variables out
+of the 4 are independant. The user may also initialise the variable pair he wants
 (apart from temperature-energy) and the two other variables will be
 calculated automatically by giving the right value to the variable
-\texttt{iccfth} used for the call to \texttt{uscfth}.
-
-%==================================
-\subsubsection{Thermodynamics}
-%==================================
-
-\noindent
-\textit{The subroutine \texttt{uscfth} is called several times at each time step
- (boundary conditions, physical properties, solving of the energy equation, ...).}
-
-This subroutine is used to set the thermodynamics parameters. By
-default, the perfect gas laws are implemented. If the user needs to use
-other laws (perfect gas with variable Gamma, Van der Waals), he (or she) must
-modify this subroutine.
+\texttt{iccfth} used for the call to \texttt{cfther}.
 
 %==================================
 \subsubsection{Management of variable physical properties}
@@ -7727,17 +7681,10 @@ the whole variation range of the variables.
 \noindent
 \textit{subroutine called only at the initialisation of the calculation}
 
-The subroutine \texttt{useliv} allows the user to initialise some of the specific
- physics variables
- prompted via \texttt{usppmo}. It is called only during the initialisation of
- the calculation. The user has access, as usual, to many geometric variables so
+The subroutine \texttt{cs\_user\_initialization} allows the user to initialise some of the specific physics variables prompted via \texttt{usppmo}. It is called only during the initialisation of the calculation. The user has access, as usual, to many geometric variables so
  that the zones can be treated separately if needed.
 
-{\em WARNING: For the specific physics, it is here that all variables are initialised:
- \texttt{cs\_user\_initialization} is not used}
-
-This subroutine works like \texttt{cs\_user\_initialization}. The values of potential and its
-constituents are initialised if required.
+The values of potential and its constituents are initialised if required.
 
 It should be noted that the enthalpy is relevant.
 
@@ -7777,7 +7724,7 @@ routine. Examples are given which are to be adapted by the user. If the temperat
 to be determined to calculate the physical properties, the solved variable, enthalpy must
  be deduced. The prefered temperature-enthalpy law can be selected in the subruotine
  \texttt{usthht} (an example of the interpolation is given from the law table. This
-subroutine can be re-used for the initialisation of the variables(\texttt{useliv}))
+subroutine can be re-used for the initialisation of the variables(\texttt{cs\_user\_initialization}))
  For the electric arc module, the physical properties are interpolated from the data file
  \texttt{dp\_ELE} supplied by the user. Modifications are generally not necessary.
 
@@ -7785,25 +7732,8 @@ subroutine can be re-used for the initialisation of the variables(\texttt{useliv
 \subsubsection{Boundary Conditions}
 %==================================
 
-\minititre{Subroutine \texttt{uselcl}}
-\noindent
-\textit {subroutine called at each time step.}
-
-As much as \texttt{cs\_user\_parameters.f90} and \texttt{usppmo}, the use of \texttt{usecl}
-is required to run an electric calculation. The main use is the same as
-occurs in \texttt{cs\_user\_boundary\_conditions} for the standard \CS calculations, for which 
-different loops on the boundary faces is defined. Each faces list is
-built with the use of selection criteria (cf. \S\ref{fvm_selector}),
-and is referenced by their group(s), their color(s) or geometrical
-criterions. The face type, the boundary conditions for each variable,
-and finally the value of each variable or imposed flow are fixed.
-
-{\em WARNING:for the electric module, the boundary conditions of all
- the variables are defined here,
-even for those of the eventual user scalars: {\em \texttt{cs\_user\_boundary\_conditions}} is not
-used at all.}
-
-For the electric module, each boundary face is associated with a number
+For the electric module, in \texttt{cs\_user\_boundary\_conditions}, each
+boundary face should be associated with a number
  \texttt{izone} \footnote{\texttt{izone} must be less than the maximum
  value allowed by the code, \texttt{nozzppm}. This is fixed at 2000 in \texttt
 {ppvar} and cannot be modified.}(the color \texttt{icoul} for example) in
@@ -7832,8 +7762,9 @@ effect module) or the current (electric arc module) from the imposed values
  used. \texttt{coejou} is the coefficient by which the potential difference is
  multiplied to obtain the desired power dissipation. By default this begins at
  1 and is updated automatically. If \texttt{ielcor}=1 (see \texttt
-{useli1}), multiply the imposed potentials in \texttt{uselcl} by \texttt{coejou}
- at each time step to achieve the desired power dissipation.
+{useli1}), multiply the imposed potentials in
+\texttt{cs\_user\_boundary\_conditions} by \texttt{coejou} at each time step to
+achieve the desired power dissipation.
  \end{list}
 
  {\em WARNING: In alternative current, attention should be paid to the values of potential
@@ -7861,13 +7792,9 @@ there is only 1 varialbe for the potential,  called "real potential". Pay attent
  such ambiguity).
 \end{list}
 
-\minititre{Subroutine \texttt{usetcl}}
-\noindent
-\textit{Subroutine called every time step.}
+\minititre{Additions for transformers}
 
-This subroutine is compulsory when the electrical module is used. It
- manages the boundary conditions for variables unknown by \texttt{cs\_user\_boundary\_conditions}.
- It calculates:
+The following additional boundary conditions must be defined for tansformers:
 \begin{list}{$\bullet$}{}
 \item  the intensity at each electrode
 \item  the voltage on each termin of transformers. To achieve it, the intensity,
@@ -7958,11 +7885,6 @@ $\rho^{n+1}=\texttt{srrom}*\rho^{n}+(1-\texttt{srrom})\rho^{n}$\\
 {Post-processing output}
 %==================================
 
-The subroutine \texttt{uselen} allows the addition on $n$ variables in the
- preprocessing output and
- works like the subroutine \texttt{usvpst} (with the electric module, it is however also
- possible to use \texttt{usvpst}. It is called at each chronological output
-
 The algebraic variables related to the electric module are provided by default provided
  that they are not explicitely contained in the \texttt{propce} array:
 \begin{list}{-}{}
@@ -7979,10 +7901,8 @@ specifically for the electric arc module with \texttt{ippmod(ielarc)}=2~:
 \item magnetic field in $T$ (\vect{B} = \vect{rot}\,\vect{A})
 \end{list}
 
-If it is convenient for the user, there is no need to add this subroutine into the
- SRC directory: the post-processing will be done automatically (at the same frequency
- (\texttt{NTCHR}) as the other calculation variables)
-
+The post-processing output will be created automatically (on all ouptut volume
+meshes for which the automatic output of main variables is active).
 
 %==================================
 \subsection{\CS-\CS coupling}
@@ -7991,24 +7911,23 @@ If it is convenient for the user, there is no need to add this subroutine into t
 \noindent
 \textit{Subroutine called once during the calculation initialisation.}
 
-This user subroutine \texttt{ussatc} is used to couple \CS with itself.
+This user function \texttt{cs\_user\_saturne\_coupling} (in
+ \texttt{cs\_user\_coupling.c} is used to couple \CS with itself.
  It is used for turbomachine applications for instance, the first \CS managing
  the fluid around the rotor and the other the fluid around the stator.
-In the case of a coupling between two \CS instances, the \texttt{numsat}
- and \texttt{namsat} arguments of the subroutine '\texttt{defsat}' are ignored.
+In the case of a coupling between two \CS instances, first argument \texttt{saturne\_name}
+ of the function '\texttt{cs\_sat\_coupling\_define}' is ignored.
  In case of multiple couplings, a coupling will be matched with available \CS
- instances prioritarily based on the \texttt{namsat} (\CS instance name) argument,
- then on the \texttt{numsat} (\CS instance application number) argument.\\
-If \texttt{namsat} is empty, matching will be based on \texttt{numsat} only.\\
-The arguments of '\texttt{defsat}' are:
+ instances based on that argument, which should match the directory name for the
+ given couplde domain..\\
+The arguments of '\texttt{cs\_sat\_coupling\_define}' are:
 \begin{list}{-}{}
-\item \texttt{numsat}: the matching \CS application \texttt{id}, or $-1$,
-\item \texttt{namsat}: the matching \CS application name,
-\item \texttt{crtcsu}: the cell selection criteria for support,
-\item \texttt{crtfsu}: the boundary face selection criteria for support (not functional),
-\item \texttt{crtccp}: the cell selection criteria for coupled cells,
-\item \texttt{crtfcp}: the boundary face selection criteria for coupled faces,
-\item \texttt{iwarns}: the verbosity level.
+\item \texttt{saturne\_name}: the matching \CS application name,
+\item \texttt{volume\_sup\_criteria}: the cell selection criteria for support,
+\item \texttt{boundary\_sup\_criteria}: the boundary face selection criteria for support (not functional),
+\item \texttt{volume\_cpl\_criteria}: the cell selection criteria for coupled cells,
+\item \texttt{boundary\_cpl\_criteria}: the boundary face selection criteria for coupled faces,
+\item \texttt{verbosity}: the verbosity level.
 \end{list}
 
 
@@ -8329,11 +8248,10 @@ in the table of the ``Equation parameters'' item.
 \end{center}
 \end{figure}
 
-When the GUI is not used, \texttt{usativ} allows to initialise or modify
- (in case of a restarted calculation) the calculation variables and the 
-values of the time step. It plays a similar role as \texttt{cs\_user\_initialization} for 
-the additional variables introduced with the air-cooling module. The 
-quantities that can be initialised here in user-selected zones are:
+When the GUI is not used, \texttt{cs\_user\_initialization} allows to initialise or modify
+(in case of a restarted calculation) the calculation variables and the values of
+the time step. The quantities that can be initialised here in user-selected
+zones are:
 \begin{list}{-}{}
  \item the air velocity with the array \texttt{rtp(iel,iu)} (with
  \texttt{iv} and \texttt{iw} for the other components),
@@ -8358,14 +8276,7 @@ atmospherical calculations. These parameters are for instance:
 \subsubsection{Management of the boundary conditions}
 %==================================
 
-The user subroutine \texttt{usatcl} allows to define the boundary conditions of the variables
- unknown by \texttt{cs\_user\_boundary\_conditions}. It is called at each time step. Boundary conditions are 
-applied to mesh faces selected using the subroutine '\texttt{getfbr}' for instance. For 
-each type of boundary condition, these faces are grouped as physical zones characterised
- by an arbitrary number \texttt{izone} chosen by the user. If a boundary condition is 
-retrieved from a meteorological profile, the variable \texttt{iprofm(izone)} of the zone
- must be set to 1.\\
-Examples are provided in \texttt{usatcl}.
+All boundary conditions are managed by the general \texttt{cs\_user\_boundary\_conditions} subroutine. For each type of boundary condition, faces should be grouped as physical zones characterised by an arbitrary number \texttt{izone} chosen by the user. If a boundary condition is retrieved from a meteorological profile, the variable \texttt{iprofm(izone)} of the zone must be set to 1.\\
 
 %==================================
 \subsection{Cooling tower modelling}
@@ -8389,17 +8300,12 @@ The subroutine \texttt{uscti1} contains calculation parameters such as:
 \subsubsection{Initialisation of the variables}
 %==================================
 
-The subroutine \texttt{usctiv} allows to initialise or modify 
-(in case of a restarted calculation) the calculation variables and the
- values of the time step. It is called only during the calculation 
-initialisation. It plays a similar role as \texttt{cs\_user\_initialization} for the 
-additional variables introduced with the air-cooling module. The 
-quantities that can be initialised here in user-selected zones are:
+With the additional variables introduced with the air-cooling module, the
+following quantities may be initialized by  \texttt{cs\_user\_initialization} in
+user selected zones in addition to the usual quantities:
 \begin{list}{-}{}
  \item the air temperature by filling the array \texttt{rtp(iel,isca(ihumid))},
  \item the air humidity by filling the array \texttt{rtp(iel,isca(itemp4))},
- \item the air velocity by filling the array \texttt{rtp(iel,iu)} (with
- \texttt{iv} and \texttt{iw} for the other components),
 \end{list}
 where \texttt{iel} can be an element found in a list returned by the routine
  '\texttt{getcel}'.
@@ -8421,23 +8327,3 @@ The subroutine \texttt{usctdz} is used to define the exchange zones of a cooling
 \end{list}
 These arguments are passed to the subroutine '\texttt{defct}' along with a 
 geometrical selection criterion.
-
-%==================================
-\subsubsection{Management of the boundary conditions}
-%==================================
-
-The subroutine \texttt{usctcl}, called at each time step, allows to define 
-the boundary conditions of the variables unknown by \texttt{cs\_user\_boundary\_conditions}. Boundary
- conditions are applied to mesh faces selected using the subroutine \texttt{getfbr}
- for instance. For each type of boundary condition, these faces are grouped as 
-physical zones characterised by an arbitrary number \texttt{izone} chosen by the
- user. The list of boundary conditions offered in this module is given below:
-\begin{list}{-}{}
- \item Dirichlet,
- \item flux density (velocities, pressure, scalar),
- \item sliding wall (velocity),
- \item friction (velocity),
- \item roughness (velocity),
- \item free inlet/outlet (velocity),
- \item symmetry.
-\end{list}
