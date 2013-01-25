@@ -798,8 +798,8 @@ do while (iterns.le.nterup)
     iindef, ientre, iesicf, isspcf, ierucf, isopcf,                &
     iparoi, iparug, isymet, isolib, isca  ,                        &
     ipr   , irho  , itempk, ienerg,                                &
-    iqimp,  icalke, ientat, ientcp, inmoxy, ientfu,                &
-    ientox, ientgb, ientgf, iprofm,                                &
+    iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
+    ientfu, ientgb, ientgf, iprofm,                                &
     coejou, dpot,   rtpa,   ielcor,                                &
     ipotr,  ipoti,  ipotva, ncelet,                                &
     itypfb, izfppp, icodcl,                                        &
