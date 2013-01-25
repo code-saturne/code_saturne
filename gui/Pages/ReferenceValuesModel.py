@@ -86,7 +86,8 @@ class ReferenceValuesModel(Model):
         default['reference_temperature'] = 1273.15
         default['fuel_temperature']      = 436.
         default['oxydant_temperature']   = 353.
-        if self.getParticularPhysical() == "atmo":
+        if (self.getParticularPhysical() == "atmo" or
+	    self.getParticularPhysical() == "gas"):
             default['reference_temperature'] = 293.15
         # mass molar for dry air
         default['reference_mass_molar'] = 28.966e-3
@@ -224,7 +225,7 @@ class ReferenceValuesModel(Model):
         value = self.node_reference.xmlGetDouble('oxydant_temperature')
         if not value :
             value = self.defaultValues()['oxydant_temperature']
-            self.setTemperature(value)
+            self.setTempOxydant(value)
         return value
 
 
@@ -245,7 +246,7 @@ class ReferenceValuesModel(Model):
         value = self.node_reference.xmlGetDouble('fuel_temperature')
         if not value :
             value = self.defaultValues()['fuel_temperature']
-            self.setTemperature(value)
+            self.setTempFuel(value)
         return value
 
 
