@@ -87,7 +87,7 @@ class ReferenceValuesModel(Model):
         default['fuel_temperature']      = 436.
         default['oxydant_temperature']   = 353.
         if (self.getParticularPhysical() == "atmo" or
-	    self.getParticularPhysical() == "gas"):
+            self.getParticularPhysical() == "gas"):
             default['reference_temperature'] = 293.15
         # mass molar for dry air
         default['reference_mass_molar'] = 28.966e-3
