@@ -147,7 +147,6 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         gas_comb = GasCombustionModel(self.case).getGasCombustionModel()
         if gas_comb == 'd3p':
             self.groupBoxTempd3p.show()
-            self.groupBoxTemperature.hide()
             t_oxy  = self.mdl.getTempOxydant()
             t_fuel = self.mdl.getTempFuel()
             self.lineEditOxydant.setText(QString(str(t_oxy)))
