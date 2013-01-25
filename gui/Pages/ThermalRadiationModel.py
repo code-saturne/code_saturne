@@ -49,7 +49,7 @@ from Pages.OutputControlModel import OutputControlModel
 # ThermalRadiation model class
 #-------------------------------------------------------------------------------
 
-class ThermalRadiationModel(Model):
+class ThermalRadiationModel(Variables, Model):
 
     def __init__(self, case):
         """
