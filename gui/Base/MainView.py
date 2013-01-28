@@ -421,7 +421,7 @@ class MainView(object):
             self.scrollArea.setWidget(self.displayFisrtPage())
             self.case['saved'] = "yes"
 
-                self.connect(self.case, SIGNAL("undo"), self.slotUndoRedoView)
+            self.connect(self.case, SIGNAL("undo"), self.slotUndoRedoView)
         else:
             MainView(cmd_package=self.package, cmd_case="new case").show()
 
