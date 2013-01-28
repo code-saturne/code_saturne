@@ -206,10 +206,6 @@ if test "x$cs_gcc" = "xgcc"; then
       esac
       ;;
 
-    *alphaev6|*alphaev67|*alphaev68|*alphaev7)
-      cflags_default_opt="-mcpu=ev6 -O"
-      ;;
-
   esac
 
   # Modify default flags depending on gcc version (as older versions
@@ -659,10 +655,6 @@ if test "x$cs_gxx" = "xg++"; then
             ;;
           esac
       esac
-      ;;
-
-    *alphaev6|*alphaev67|*alphaev68|*alphaev7)
-      cxxflags_default_opt="-mcpu=ev6 -O"
       ;;
 
   esac
