@@ -151,13 +151,15 @@ double precision propfa(nfac,*), propfb(nfabor,*)
 
 ! Local variables
 
-integer          ivart, iclvar, iel
+integer          ivart, iclvar, iel, ifac
 integer          ipcrom, ipbrom, ipcvis, ipccp
 integer          ipcvsl, ith, iscal, ii
 double precision vara, varb, varc, varam, varbm, varcm, vardm
 double precision                   varal, varbl, varcl, vardl
 double precision                   varac, varbc
 double precision xrtp
+
+double precision, dimension(:), pointer :: coefap, coefbp
 
 !===============================================================================
 
@@ -173,10 +175,6 @@ if (1.eq.1) return
 !===============================================================================
 ! 0. Initializations to keep
 !===============================================================================
-
-! --- Memory initialization
-
-
 
 !===============================================================================
 
@@ -289,17 +287,25 @@ if (.false.) then
   ! at ALL boundary faces.
   !    ===
 
-  ! ibrom = 1
-  ! do ifac = 1, nfabor
-  !   iel = ifabor(ifac)
-  !   xrtp = coefa(ifac)+rtp(iel, ivart)*coefb(ifac)
-  !   propfb(ifac, ipbrom) = xrtp * (vara*xrtp+varb) + varc
-  ! enddo
+  if (.false.) then
 
-  ! ifabor(ifac) is the cell adjacent to the boundary face
+    ! Boundary condition coefficients
+    call field_get_coefa_s(ivarfl(ivart), coefap)
+    call field_get_coefb_s(ivarfl(ivart), coefbp)
 
-  ! Caution: ibrom = 1 is necessary for the law to be taken
-  !                           into account.
+    ! Caution: ibrom = 1 is necessary for the law to be taken
+    !                           into account.
+    ibrom = 1
+
+    do ifac = 1, nfabor
+
+      ! ifabor(ifac) is the cell adjacent to the boundary face
+      iel = ifabor(ifac)
+      xrtp = coefap(ifac) + rtp(iel, ivart)*coefbp(ifac)
+      propfb(ifac, ipbrom) = xrtp * (vara*xrtp+varb) + varc
+    enddo
+
+  endif ! --- Test on .false.
 
 endif ! --- Test on .false.
 
@@ -629,9 +635,9 @@ endif ! --- Test on .false.
 
 !===============================================================================
 
-!===============================================================================
+!--------
 ! Formats
-!----
+!--------
 
 #if defined(_CS_LANG_FR)
 
@@ -929,8 +935,6 @@ endif
 !===============================================================================
 ! 1. Mandatory initializations
 !===============================================================================
-
-! --- Memory initialization
 
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet), w3(ncelet))
@@ -1328,10 +1332,9 @@ if (1.eq.1) then
   call csexit (1)
 endif
 
-
-!----
+!--------
 ! Formats
-!----
+!--------
 
  1000 format(                                                     &
 '@',/,                                                            &
@@ -1440,7 +1443,6 @@ endif
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)
-
 
 !----
 ! End
@@ -1901,7 +1903,7 @@ endif
 !     CETTE OPTION N'EST PAS ACTIVABLE
 
 !--------
-! FORMATS
+! Formats
 !--------
 
  1000 format(/,                                                   &
@@ -1909,7 +1911,7 @@ endif
 '                      le calcul des proprietes physiques.',/)
 
 !----
-! FIN
+! End
 !----
 
 return
@@ -2015,8 +2017,9 @@ integer          iel, iccocg, inc
 integer          ipcrom, ipcvst
 double precision dudx, dudy, dudz, sqdu, visct, rom
 
-double precision, dimension(:), pointer :: coefap, coefbp
-double precision, allocatable, dimension(:,:) :: grad
+double precision, dimension(:,:), pointer :: coefav
+double precision, dimension(:,:,:), pointer :: coefbv
+double precision, allocatable, dimension(:,:,:) :: gradv
 
 !===============================================================================
 
@@ -2039,10 +2042,9 @@ if (.true.) return
 ! 1.2 Initialization
 !=============================================================================
 
-! --- Memory
-
 ! Allocate work arrays
-allocate(grad(ncelet,3))
+! First component is for x,y,z  and the 2nd for u,v,w
+allocate(gradv(ncelet,3,3))
 
 ! --- Physical quantity numbers in PROPCE (physical quantities defined
 !     at each cell center)
@@ -2056,20 +2058,21 @@ ipcrom = ipproc(irom  )
 iccocg = 1
 inc = 1
 
-! Note: this example should produce an error if used with ivelco = 1,
+! Note: this example should produce an error if used with ivelco = 0,
 !       so it should be updated
 
-call field_get_coefa_s(ivarfl(iu), coefap)
-call field_get_coefb_s(ivarfl(iu), coefbp)
+! Boundary condition pointers for gradients and advection
+call field_get_coefa_v(ivarfl(iu), coefav)
+call field_get_coefb_v(ivarfl(iu), coefbv)
 
-call grdcel &
+call grdvec &
 !==========
  ( iu  , imrgra , inc    , iccocg ,                      &
    nswrgr(iu) , imligr(iu) ,                             &
    iwarni(iu) , nfecra ,                                 &
    epsrgr(iu) , climgr(iu) , extrag(iu) ,                &
-   rtpa(1,iu) , coefap , coefbp ,                        &
-   grad   )
+   rtpa(1,iu) , coefav , coefbv ,                        &
+   gradv  )
 
 !===============================================================================
 ! 1.4 Computation of the dynamic viscosity
@@ -2077,26 +2080,26 @@ call grdcel &
 
 do iel = 1, ncel
 
-! --- Current dynamic viscosity and fluid density
+  ! --- Current dynamic viscosity and fluid density
   visct = propce(iel,ipcvst)
   rom   = propce(iel,ipcrom)
 
-! --- Various computations
-  dudx = grad(iel,1)
-  dudy = grad(iel,2)
-  dudz = grad(iel,3)
+  ! --- Various computations
+  dudx = gradv(iel,1,1)
+  dudy = gradv(iel,2,1)
+  dudz = gradv(iel,3,1)
   sqdu = sqrt(dudx**2+dudy**2+dudz**2)
 
-! --- Computation of the new dynamic viscosity
+  ! --- Computation of the new dynamic viscosity
   visct = max (visct,rom*sqdu)
 
-! --- Store the new computed dynamic viscosity
+  ! --- Store the new computed dynamic viscosity
   propce(iel,ipcvst) = visct
 
 enddo
 
 ! Free memory
-deallocate(grad)
+deallocate(gradv)
 
 !--------
 ! Formats
@@ -2225,8 +2228,6 @@ if (.true.) return
 ! 1.  INITIALISATION
 !===============================================================================
 
-! --- Memoire
-
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 
@@ -2259,7 +2260,7 @@ call cfiltr ( w1     , smagor , w2     , w3     )
 deallocate(w1, w2, w3)
 
 !----
-! FIN
+! End
 !----
 
 return
