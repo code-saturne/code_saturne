@@ -26,7 +26,7 @@
 
 !> \file alelav.f90
 !>
-!> \brief This subroutine perform the solving of a Poisson equation
+!> \brief This subroutine performs the solving of a Poisson equation
 !> on the mesh velocity for ALE module.
 !>
 !-------------------------------------------------------------------------------

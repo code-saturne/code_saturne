@@ -20,6 +20,34 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Function:
+! ---------
+
+!> \file alemav.f90
+!>
+!> \brief This subroutine updates the mesh in the ALE framework.
+!>
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     itrale        number of the current ALE iteration
+!> \param[in]     dt            time step (per cell)
+!> \param[in]     impale        indicator of node displacement
+!> \param[in]     ialtyb        ALE Boundary type
+!> \param[in,out] rtp, rtpa     calculated variables at cell centers
+!>                               (at current and previous time steps)
+!> \param[in]     propce        physical properties at cell centers
+!> \param[in]     propfa        physical properties at interior face centers
+!> \param[in]     propfb        physical properties at boundary face centers
+!> \param[in]     coefa, coefb  boundary conditions
+!> \param[in,out] depale        nodes displacements
+!> \param[in,out] xyzno0        nodes coordinates of the initial mesh
+!_______________________________________________________________________________
 subroutine alemav &
 !================
 
@@ -29,38 +57,6 @@ subroutine alemav &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , depale , xyzno0 )
 
-!===============================================================================
-! FONCTION :
-! ----------
-
-! Update mesh in the ALE framework
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! itrale           ! e  ! <-- ! numero d'iteration pour l'ale                  !
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! impale(nnod)     ! te ! <-- ! indicateur de delacement impose                !
-! ialtyb(nfabor)   ! ia ! <-- ! Boundary type                                  !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
-! depale(nnod,3    ! tr ! <-- ! deplacement aux noeuds                         !
-! xyzno0(3,nnod    ! tr ! <-- ! coordonnees noeuds maillage initial            !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 
 !===============================================================================
 
@@ -196,17 +192,17 @@ if (itrale.eq.0) then
   enddo
 endif
 !--------
-! FORMATS
+! Formats
 !--------
 
  1000 format(/,                                                   &
 ' ------------------------------------------------------------',/,&
                                                               /,/,&
-'  MISE A JOUR DU MAILLAGE (ALE)                              ',/,&
-'  =============================                              ',/)
+'  Update the mesh (ALE)'                                      ,/,&
+'  ====================='                                      ,/)
 
 !----
-! FIN
+! End
 !----
 
 end subroutine
