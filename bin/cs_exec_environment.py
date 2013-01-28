@@ -66,6 +66,8 @@ def separate_args(s):
     """
     Separate arguments that may contain whitespace, depending on whether
     whitespace is protected or not by ", ', and \ characters.
+    If quotes are found after the beginning of a string, such as in
+    --option="string 1", do not remove them.
     """
 
     l = []
@@ -81,26 +83,24 @@ def separate_args(s):
             else:
                 if s[i] == '\\':
                     protected = True
-                elif s[i] == '"':
-                    if in_quotes == '"':
+                elif s[i] == '"' or s[i] == "'":
+                    if in_quotes == s[i]:
+                        a += s[i]
                         in_quotes = ''
-                        l.append(a)
-                        a = ''
+                    elif in_quotes != '':
+                            a += s[i]
                     else:
-                        in_quotes = '"'
-                elif s[i] == "'":
-                    if in_quotes == "'":
-                        in_quotes = ''
-                        l.append(a)
-                        a = ''
-                    else:
-                        in_quotes = "'"
+                        a += s[i]
+                        in_quotes = s[i]
                 elif in_quotes != '':
-                   a += s[i]
+                    a += s[i]
                 elif (s[i] == ' ' or s[i] == '\t'):
-                   if a != '':
-                       l.append(a)
-                       a = ''
+                    if a != '':
+                        if (a[0] == a[-1:]) and (a[0] == '"' or a[0] == "'"):
+                            l.append(a[1:-1])
+                        else:
+                            l.append(a)
+                        a = ''
                 else:
                     a += s[i]
 
@@ -114,11 +114,19 @@ def separate_args(s):
 def enquote_arg(s):
     """
     Add quotes around argument if it contains whitespace, leave it
-    unchanged otherwise.
+    unchanged otherwise; if the argument already contains unprotected
+    quotes, do not add any more (so for example --option="string 1"
+    is unchanged).
     """
 
     if s:
         if (s.find(' ') > -1):
+            protect = False
+            for i in range(len(s)):
+                if s[i] == '\\':
+                    protect = not protect
+                if not protect and s[i] == '"':
+                    return s
             return '"' + s + '"'
         else:
             return s
