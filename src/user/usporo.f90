@@ -22,23 +22,27 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Function:
+! ---------
+
+!> \file usporo.f90
+!>
+!> \brief This function computes the porosity (volume factor \f$ \epsilon \f$
+!> when porosity module is activated (iporos = 1 in cs_user_parameters.f90).
+!>
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!_______________________________________________________________________________
+
 subroutine usporo
 !================
 
-!===============================================================================
-! Function :
-! ----------
-! Compute the porosity (volume factor) when module is activated (iporos = 1)
-!-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -74,7 +78,7 @@ if(1.eq.1) return
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 !===============================================================================
 
-! Example: fixe a linear porosity profil
+! Example: fixe a linear by part porosity profile
 
 do iel = 1, ncel
   x = xyzcen(1,iel)
@@ -86,21 +90,12 @@ do iel = 1, ncel
 
   porosi(iel) = hc
 
-! TODO move elsewhere
-!  if (porosi(iel).lt.0.d0) then
-!    write(nfecra,*) 'Negative porosity'
-!    call csexit(1)
-!  elseif (porosi(iel).gt.1.d0) then
-!    write(nfecra,*) 'Porosity stricly greater than 1.0'
-!    call csexit(1)
-!  endif
-
   pormin = min(pormin,porosi(iel))
   pormax = max(pormax,porosi(iel))
 enddo
 
 ! Periodicity and parallelism treatment
-if(irangp.ge.0) then
+if (irangp.ge.0) then
   call parmax (pormax)
   call parmin (pormin)
 endif
