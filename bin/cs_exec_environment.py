@@ -62,6 +62,71 @@ def abs_exec_path(path):
 
 #---------------------------------------------------------------------------
 
+def separate_args(s):
+    """
+    Separate arguments that may contain whitespace, depending on whether
+    whitespace is protected or not by ", ', and \ characters.
+    """
+
+    l = []
+    if s:
+        a = ''
+        sep = False
+        protected = False
+        in_quotes = ''
+        for i in range(len(s)):
+            if protected:
+                a += s[i]
+                protected = False
+            else:
+                if s[i] == '\\':
+                    protected = True
+                elif s[i] == '"':
+                    if in_quotes == '"':
+                        in_quotes = ''
+                        l.append(a)
+                        a = ''
+                    else:
+                        in_quotes = '"'
+                elif s[i] == "'":
+                    if in_quotes == "'":
+                        in_quotes = ''
+                        l.append(a)
+                        a = ''
+                    else:
+                        in_quotes = "'"
+                elif in_quotes != '':
+                   a += s[i]
+                elif (s[i] == ' ' or s[i] == '\t'):
+                   if a != '':
+                       l.append(a)
+                       a = ''
+                else:
+                    a += s[i]
+
+        if a != '':
+            l.append(a)
+
+    return l
+
+#---------------------------------------------------------------------------
+
+def enquote_arg(s):
+    """
+    Add quotes around argument if it contains whitespace, leave it
+    unchanged otherwise.
+    """
+
+    if s:
+        if (s.find(' ') > -1):
+            return '"' + s + '"'
+        else:
+            return s
+    else:
+        return s
+
+#---------------------------------------------------------------------------
+
 def get_shell_type():
     """
     Get name of current shell if available.

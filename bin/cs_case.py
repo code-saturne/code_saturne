@@ -615,16 +615,16 @@ class case:
             s_args = d.solver_command()
             if len(cmd) > 0:
                 cmd += ' : '
-            cmd += '-n ' + str(d.n_procs) + ' -wdir "' + s_args[0] + '"' \
-                + ' "' + s_args[1] + '"' + s_args[2]
+            cmd += '-n ' + str(d.n_procs) + ' -wdir ' + s_args[0] \
+                + ' ' + s_args[1] + s_args[2]
             app_id += 1
 
         for d in self.domains:
             s_args = d.solver_command(app_id=app_id)
             if len(cmd) > 0:
                 cmd += ' : '
-            cmd += '-n ' + str(d.n_procs) + ' -wdir "' + s_args[0] + '"' \
-                + ' "' + s_args[1] + '"' + s_args[2]
+            cmd += '-n ' + str(d.n_procs) + ' -wdir ' + s_args[0] + \
+                + ' ' + s_args[1] + s_args[2]
             app_id += 1
 
         return cmd
@@ -646,15 +646,15 @@ class case:
 
         for d in self.syr_domains:
             s_args = d.solver_command()
-            cmd = '-n ' + str(d.n_procs) + ' -wdir "' + s_args[0] + '"' \
-                + ' "' + s_args[1] + '"' + s_args[2] + '\n'
+            cmd = '-n ' + str(d.n_procs) + ' -wdir ' + s_args[0] \
+                + ' ' + s_args[1] + s_args[2] + '\n'
             e.write(cmd)
             app_id += 1
 
         for d in self.domains:
             s_args = d.solver_command()
-            cmd = '-n ' + str(d.n_procs) + ' -wdir "' + s_args[0] + '"' \
-                + ' "' + s_args[1] + '"' + s_args[2] + '\n'
+            cmd = '-n ' + str(d.n_procs) + ' -wdir ' + s_args[0] \
+                + ' ' + s_args[1] + s_args[2] + '\n'
             e.write(cmd)
             app_id += 1
 
@@ -694,8 +694,8 @@ class case:
             nr += d.n_procs
             e.write(test_pf + str(nr) + test_sf)
             s_args = d.solver_command()
-            e.write('  cd "' + s_args[0] + '"\n')
-            e.write('  "' + s_args[1] + '"' + s_args[2] + ' $@\n')
+            e.write('  cd ' + s_args[0] + '\n')
+            e.write('  ' + s_args[1] + s_args[2] + ' $@\n')
             if app_id == 0:
                 test_pf = 'el' + test_pf
             app_id += 1
@@ -704,8 +704,8 @@ class case:
             nr += d.n_procs
             e.write(test_pf + str(nr) + test_sf)
             s_args = d.solver_command(app_id=app_id)
-            e.write('  cd "' + s_args[0] + '"\n')
-            e.write('  "' + s_args[1] + '"' + s_args[2] + ' $@\n')
+            e.write('  cd ' + s_args[0] + '\n')
+            e.write('  ' + s_args[1] + s_args[2] + ' $@\n')
             if app_id == 0:
                 test_pf = 'el' + test_pf
             app_id += 1
@@ -779,7 +779,7 @@ class case:
             e.write('    const char *filename = "' + s_args[0] + '";\n')
 
             a_s = '    char *const argv[] = {"' + arg0 + '"'
-            for arg in s_args[2].split(' ')[1:]:
+            for arg in cs_exec_environment.separate_arg(s_args[2]):
                 a_s += ', "' + arg + '"'
             a_s += ', (char *)NULL};\n'
             e.write(a_s)
@@ -799,7 +799,7 @@ class case:
             e.write('    const char *filename = "' + s_args[0] + '";\n')
 
             a_s = '    char *const argv[] = {"' + arg0 + '"'
-            for arg in s_args[2].split(' ')[1:]:
+            for arg in cs_exec_environment.separate_arg(s_args[2]):
                 a_s += ', "' + arg + '"'
             a_s += ', (char *)NULL};\n'
             e.write(a_s)
@@ -873,8 +873,7 @@ class case:
 
         if sys.platform.startswith('linux'):
             yacs_test = \
-"""
-# Detect and handle running under SALOME YACS module.
+""" # Detect and handle running under SALOME YACS module.
 YACS_ARG=
 if test "$SALOME_CONTAINERNAME" != "" -a "$CFDRUN_ROOT_DIR" != "" ; then
   YACS_ARG="--yacs-module=${CFDRUN_ROOT_DIR}"/lib/salome/libCFD_RunExelib.so
@@ -952,7 +951,7 @@ fi
 
             s.write('cd "' + s_args[0] + '"\n\n')
             cs_exec_environment.write_script_comment(s, 'Run solver.\n')
-            s.write(mpi_cmd + '"' + s_args[1] + '"' + mpi_cmd_args + s_args[2])
+            s.write(mpi_cmd + s_args[1] + mpi_cmd_args + s_args[2])
             if sys.platform.startswith('linux'):
                 s.write(' $YACS_ARGS')
             s.write(' ' + cs_exec_environment.get_script_positional_args() +

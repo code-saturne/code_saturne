@@ -40,6 +40,7 @@ import cs_compile
 import cs_xml_reader
 
 from cs_exec_environment import run_command, source_shell_script
+from cs_exec_environment import enquote_arg, separate_args
 
 #===============================================================================
 # Utility functions
@@ -283,7 +284,7 @@ class base_domain:
         executable path, and associated command-line arguments.
         """
 
-        return self.exec_dir, self.solver_path, ''
+        return enquote_arg(self.exec_dir), enquote_arg(self.solver_path), ''
 
     #---------------------------------------------------------------------------
 
@@ -795,15 +796,15 @@ class domain(base_domain):
         executable path, and associated command-line arguments.
         """
 
-        wd = self.exec_dir              # Working directory
-        exec_path = self.solver_path    # Executable
+        wd = enquote_arg(self.exec_dir)              # Working directory
+        exec_path = enquote_arg(self.solver_path)    # Executable
 
         # Build kernel command-line arguments
 
         args = ''
 
         if self.param != None:
-            args += ' --param "' + self.param + '"'
+            args += ' --param ' + enquote_arg(self.param)
 
         if self.logging_args != None:
             args += ' ' + self.logging_args
@@ -812,15 +813,17 @@ class domain(base_domain):
             args += ' ' + self.solver_args
 
         if self.name != None:
-            args += ' --mpi --app-name "' + self.name + '"'
+            args += ' --mpi --app-name ' + enquote_arg(self.name)
         elif self.n_procs > 1:
             args += ' --mpi'
 
         # Adjust for Valgrind if used
 
         if self.valgrind != None:
-            args = self.solver_path + ' ' + args
-            exec_path = self.valgrind + ' '
+            args = enquote_arg(self.solver_path) + ' ' + args
+            exec_path = ''
+            for a in separate_args(self.valgrind):
+               exec_path += enquote_arg(a) + ' '
 
         return wd, exec_path, args
 
@@ -1079,22 +1082,24 @@ class syrthes_domain(base_domain):
 
         args = ''
 
-        args += ' -d ' + self.syrthes_case.data_file
+        args += ' -d ' + enquote_arg(self.syrthes_case.data_file)
         args += ' -n ' + str(self.syrthes_case.n_procs)
 
         if self.syrthes_case.n_procs_ray > 0:
             args += ' -r ' + str(self.n_procs_ray)
 
-        args += ' --name ' + self.name
+        args += ' --name ' + enquote_arg(self.name)
 
         # Output to a logfile
-        args += ' --log ' + self.logfile
+        args += ' --log ' + enquote_arg(self.logfile)
 
         # Adjust for Valgrind if used
 
         if self.valgrind != None:
-            args = self.solver_path + ' ' + args
-            exec_path = self.valgrind
+            args = enquote_arg(self.solver_path) + ' ' + args
+            exec_path = ''
+            for a in separate_args(self.valgrind):
+               exec_path += enquote_arg(a) + ' '
 
         return wd, exec_path, args
 
