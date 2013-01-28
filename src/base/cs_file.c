@@ -147,6 +147,7 @@ BEGIN_C_DECLS
        Per-process standard C IO (for reading only)
   \var CS_FILE_MPI_INDEPENDENT
        Non-collective MPI-IO with independent file open and close
+       (for reading only)
   \var CS_FILE_MPI_NON_COLLECTIVE
        Non-collective MPI-IO with collective file open and close
   \var CS_FILE_MPI_COLLECTIVE
@@ -537,10 +538,16 @@ _file_open(cs_file_t  *f)
 
   switch (f->mode) {
   case CS_FILE_MODE_APPEND:
-    f->sh = fopen(f->name, "ab");
+    if (f->rank == 0)
+      f->sh = fopen(f->name, "ab");
+    else
+      f->sh = fopen(f->name, "a+b");
     break;
   case CS_FILE_MODE_WRITE:
-    f->sh = fopen(f->name, "wb");
+    if (f->rank == 0)
+      f->sh = fopen(f->name, "wb");
+    else
+      f->sh = fopen(f->name, "a+b");
     break;
   default:
     assert(f->mode == CS_FILE_MODE_READ);
@@ -1252,7 +1259,10 @@ _mpi_file_open(cs_file_t       *f,
 
   else if (f->mode == CS_FILE_MODE_WRITE) {
     int rank;
-    amode = MPI_MODE_WRONLY | MPI_MODE_CREATE;
+    if (f->method == CS_FILE_MPI_INDEPENDENT && f->rank > 0)
+      amode = MPI_MODE_WRONLY;
+    else
+      amode = MPI_MODE_WRONLY | MPI_MODE_CREATE;
     MPI_Comm_rank(f->comm, &rank);
     if (rank < 1)
       _file_clear(f);
@@ -1264,20 +1274,9 @@ _mpi_file_open(cs_file_t       *f,
   /* Open file (for independent access, only on rank 0 initially) */
 
   if (f->io_comm != MPI_COMM_NULL) {
-
-    if (   f->method <= CS_FILE_MPI_INDEPENDENT
-        && f->rank == 0) {
-      retval = MPI_File_open(MPI_COMM_SELF, f->name, amode, f->info, &(f->fh));
-      if (retval == MPI_SUCCESS)
-        retval = MPI_File_get_position(f->fh, &(f->offset));
-
-    }
-    else {
-      retval = MPI_File_open(f->io_comm, f->name, amode, f->info, &(f->fh));
-      if (retval == MPI_SUCCESS)
-        retval = MPI_File_get_position(f->fh, &(f->offset));
-    }
-
+    retval = MPI_File_open(f->io_comm, f->name, amode, f->info, &(f->fh));
+    if (retval == MPI_SUCCESS)
+      retval = MPI_File_get_position(f->fh, &(f->offset));
   }
 
   if (retval != MPI_SUCCESS)
@@ -1393,8 +1392,6 @@ _mpi_file_read_block_noncoll(cs_file_t  *f,
 {
   cs_gnum_t gcount = (global_num_end - global_num_start)*size;
   size_t retval = 0;
-
-  assert(gcount == 0 || f->fh != MPI_FILE_NULL);
 
   if (f->fh == MPI_FILE_NULL)
     return retval;
@@ -1591,8 +1588,6 @@ _mpi_file_write_block_noncoll(cs_file_t  *f,
 {
   cs_gnum_t gcount = (global_num_end - global_num_start)*size;
   size_t retval = 0;
-
-  assert(gcount == 0 || f->fh != MPI_FILE_NULL);
 
   if (f->fh == MPI_FILE_NULL)
     return retval;
@@ -1864,6 +1859,8 @@ cs_file_open(const char        *name,
 
   f->mode = mode;
   f->method = method;
+  _access_method(method, (mode != CS_FILE_MODE_READ));
+
   f->rank = 0;
   f->n_ranks = 1;
 
@@ -1910,8 +1907,12 @@ cs_file_open(const char        *name,
     errcode = _file_open(f);
 
 #if defined(HAVE_MPI_IO)
-  else if (   f->method > CS_FILE_MPI_INDEPENDENT
-           || f->rank == 0)
+  if (f->method == CS_FILE_MPI_INDEPENDENT) {
+    f->io_comm = MPI_COMM_SELF;
+    if (f->rank == 0)
+      errcode = _mpi_file_open(f, f->mode);
+  }
+  else if (f->method > CS_FILE_MPI_INDEPENDENT)
     errcode = _mpi_file_open(f, f->mode);
 #endif
 
@@ -2230,8 +2231,14 @@ cs_file_write_global(cs_file_t   *f,
     _buf = copybuf;
   }
 
-  if (f->rank == 0 && f->sh != NULL && f->method <= CS_FILE_STDIO_PARALLEL)
-    retval = _file_write(f, _buf, size, ni);
+  if (f->rank == 0 && f->sh != NULL && f->method <= CS_FILE_STDIO_PARALLEL) {
+    if (f->method == CS_FILE_STDIO_PARALLEL) {
+      if (_file_seek(f, f->offset, CS_FILE_SEEK_SET) != 0)
+        retval = 0;
+    }
+    if (retval != 0)
+      retval = _file_write(f, _buf, size, ni);
+  }
 
 #if defined(HAVE_MPI_IO)
 
@@ -2800,7 +2807,7 @@ cs_file_dump(const cs_file_t  *f)
              "N ranks:                     %d\n"
              "Swap endian:                 %d\n"
              "Serial handle:               %p\n",
-             f->name, mode_name[f->mode], access_name[f->method],
+             f->name, mode_name[f->mode], access_name[f->method-1],
              f->rank, f->n_ranks, (int)(f->swap_endian),
              (const void *)f->sh);
 

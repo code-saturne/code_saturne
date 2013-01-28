@@ -112,7 +112,6 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
 
         self.modelBlockIOWrite.addItem(self.tr("Default"), 'default')
         self.modelBlockIOWrite.addItem(self.tr("Standard I/O, serial"), 'stdio serial')
-        self.modelBlockIOWrite.addItem(self.tr("MPI I/O, independent"), 'mpi independent')
         self.modelBlockIOWrite.addItem(self.tr("MPI I/O, non-collective"), 'mpi noncollective')
         self.modelBlockIOWrite.addItem(self.tr("MPI I/O, collective"), 'mpi collective')
 

@@ -50,7 +50,7 @@ _create_test_data(void)
   double farray[30];
 
 #if defined(HAVE_MPI)
-  int mpi_flag, rank;
+  int mpi_flag;
   MPI_Comm comm = MPI_COMM_NULL;
 #endif
 
@@ -70,12 +70,13 @@ _create_test_data(void)
 #if defined(HAVE_MPI)
   MPI_Initialized(&mpi_flag);
   if (mpi_flag != 0) {
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     comm = MPI_COMM_WORLD;
   }
   f = cs_file_open("file_test_data",
                    CS_FILE_MODE_WRITE,
-                   0,
+                   CS_FILE_STDIO_SERIAL,
+                   MPI_INFO_NULL,
+                   comm,
                    comm);
 #else
   f = cs_file_open("file_test_data",
@@ -105,7 +106,7 @@ main (int argc, char *argv[])
   int ibuf[30];
   double dbuf[30];
   cs_gnum_t i;
-  int test_id;
+  int a_id, p_id;
   int size = 1;
   int rank = 0;
   size_t retval = 0;
@@ -114,15 +115,21 @@ main (int argc, char *argv[])
   cs_file_off_t off1 = -1, off2 = -1;
   cs_file_t *f = NULL;
 
-
 #if defined(HAVE_MPI_IO)
-  const int n_hints = 3;
-  const int hints[3] = {CS_FILE_NO_MPI_IO,
-                        CS_FILE_EXPLICIT_OFFSETS,
-                        CS_FILE_INDIVIDUAL_POINTERS};
+  const int n_pos = 2;
+  const int n_access = 5;
+  const cs_file_access_t access[5] = {CS_FILE_STDIO_SERIAL,
+                                      CS_FILE_STDIO_PARALLEL,
+                                      CS_FILE_MPI_INDEPENDENT,
+                                      CS_FILE_MPI_NON_COLLECTIVE,
+                                      CS_FILE_MPI_COLLECTIVE};
+  const cs_file_mpi_positionning_t pos[2] = {CS_FILE_MPI_EXPLICIT_OFFSETS,
+                                             CS_FILE_MPI_INDIVIDUAL_POINTERS};
 #else
-  const int n_hints = 1;
-  const int hints[1] = {CS_FILE_NO_MPI_IO};
+  const int n_pos = 1;
+  const int n_access = 1;
+  const int access[1] = {CS_FILE_STDIO_SERIAL};
+  const cs_file_mpi_positionning_t pos[1] = {CS_FILE_MPI_EXPLICIT_OFFSETS};
 #endif
 
 #if defined(HAVE_MPI)
@@ -165,189 +172,214 @@ main (int argc, char *argv[])
     strcpy(mem_trace_name, "cs_file_test_mem");
   bft_mem_init(mem_trace_name);
 
-  if (rank == 0)
-    _create_test_data();
+  _create_test_data();
 
   /* Loop on tests */
 
-  for (test_id = 0; test_id < n_hints; test_id++) {
+  for (a_id = 0; a_id < n_access; a_id++) {
 
-    if (rank == 0)
-      bft_printf("Running test: %d\n"
-                 "-------------\n\n", test_id);
+    for (p_id = 0; p_id < n_pos; p_id++) {
 
-    sprintf(output_file_name, "output_data_%d", test_id+1);
+      if (access[a_id] >= CS_FILE_MPI_INDEPENDENT) {
 
-    /* Read and seek/set tests */
-    /*-------------------------*/
+        cs_file_set_mpi_io_positionning(pos[p_id]);
+
+        if (rank == 0)
+          bft_printf("Running test: %d-%d\n"
+                     "-------------\n\n", a_id, p_id);
+
+        sprintf(output_file_name, "output_data_%d_%d", a_id+1, p_id+1);
+
+      }
+      else {
+
+        if (rank == 0)
+          bft_printf("Running test: %d\n"
+                     "-------------\n\n", a_id);
+
+        sprintf(output_file_name, "output_data_%d", a_id+1);
+      }
+
+      /* Read and seek/set tests */
+      /*-------------------------*/
 
 #if defined(HAVE_MPI)
 
-    f = cs_file_open("file_test_data",
-                     CS_FILE_MODE_READ,
-                     hints[test_id],
-                     MPI_COMM_WORLD);
+      f = cs_file_open("file_test_data",
+                       CS_FILE_MODE_READ,
+                       access[a_id],
+                       MPI_INFO_NULL,
+                       MPI_COMM_WORLD,
+                       MPI_COMM_WORLD);
 
 #else
 
-    f = cs_file_open("file_test_data",
-                     CS_FILE_MODE_READ,
-                     hints[test_id]);
+      f = cs_file_open("file_test_data",
+                       CS_FILE_MODE_READ,
+                       access[a_id]);
 
 #endif /* (HAVE_MPI) */
 
-    cs_file_set_big_endian(f);
+      cs_file_set_big_endian(f);
 
-    cs_file_dump(f);
+      cs_file_dump(f);
 
-    retval = cs_file_read_global(f, buf, 1, 80);
+      retval = cs_file_read_global(f, buf, 1, 80);
 
-    bft_printf("rank %d, readbuf = %s (returned %d)\n\n",
-               rank, buf, (int)retval);
+      bft_printf("rank %d, readbuf = %s (returned %d)\n\n",
+                 rank, buf, (int)retval);
 
-    for (i = 0; i < 30; i++)
-      ibuf[i] = 0;
+      for (i = 0; i < 30; i++)
+        ibuf[i] = 0;
 
-    retval = cs_file_read_block(f, ibuf, sizeof(int), 1,
-                                block_start, block_end);
-
-#if defined(HAVE_MPI) /* Serialize dump */
-    if (rank > 0)
-      MPI_Recv(&sync, 1, MPI_INT, rank - 1, 0, MPI_COMM_WORLD, &status);
-#endif
-
-    bft_printf("\nRead by rank %d (returned %d):\n\n", rank, (int)retval);
-    for (i = block_start; i < block_end; i++)
-      bft_printf("  ival[%d] = %d\n", (int)i, (int)(ibuf[i-block_start]));
-
-#if defined(HAVE_MPI)
-    if (rank < size - 1)
-      MPI_Send(&sync, 1, MPI_INT, rank + 1, 0, MPI_COMM_WORLD);
-#endif
-
-    off1 = cs_file_tell(f);
-
-    retval = cs_file_read_block(f, dbuf, sizeof(double), 2,
-                                block_start_2, block_end_2);
-
-    off2 = cs_file_tell(f);
+      retval = cs_file_read_block(f, ibuf, sizeof(int), 1,
+                                  block_start, block_end);
 
 #if defined(HAVE_MPI) /* Serialize dump */
-    if (rank > 0)
-      MPI_Recv(&sync, 1, MPI_INT, rank - 1, 0, MPI_COMM_WORLD, &status);
+      if (rank > 0)
+        MPI_Recv(&sync, 1, MPI_INT, rank - 1, 9876, MPI_COMM_WORLD, &status);
 #endif
 
-    bft_printf("\nOffsets saved by rank %d: %ld, %ld\n\n",
-               rank, (long)off1, (long)off2);
-
-    bft_printf("\nRead by rank %d (returned %d):\n\n", rank, (int)retval);
-    for (i = block_start_2; i < block_end_2; i++) {
-      bft_printf("  dval[%d] = %f\n", (int)(i*2 - 1),
-                 (dbuf[(i-block_start_2)*2]));
-      bft_printf("  dval[%d] = %f\n", (int)(i*2),
-                 (dbuf[(i-block_start_2)*2+1]));
-    }
+      bft_printf("\nRead by rank %d (returned %d):\n\n", rank, (int)retval);
+      for (i = block_start; i < block_end; i++)
+        bft_printf("  ival[%d] = %d\n", (int)i, (int)(ibuf[i-block_start]));
 
 #if defined(HAVE_MPI)
-    if (rank < size - 1)
-      MPI_Send(&sync, 1, MPI_INT, rank + 1, 0, MPI_COMM_WORLD);
+      if (rank < size - 1)
+        MPI_Send(&sync, 1, MPI_INT, rank + 1, 9876, MPI_COMM_WORLD);
 #endif
 
-#if defined(HAVE_MPI)
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
-    bft_printf("barrier passed by rank %d\n", rank);
+      off1 = cs_file_tell(f);
 
-    retval = cs_file_read_global(f, buf, 1, 80);
-    bft_printf("rank %d, buf = %s (returned %d)\n", rank, buf, (int)retval);
+      retval = cs_file_read_block(f, dbuf, sizeof(double), 2,
+                                  block_start_2, block_end_2);
 
-    /* Test seek by re-reading at saved offset */
-
-    cs_file_seek(f, off1, CS_FILE_SEEK_SET);
-
-    memset(dbuf, 0, (block_end - block_start)*sizeof(double));
-    retval = cs_file_read_block(f, dbuf, sizeof(double), 1,
-                                block_start, block_end);
+      off2 = cs_file_tell(f);
 
 #if defined(HAVE_MPI) /* Serialize dump */
-    if (rank > 0)
-      MPI_Recv(&sync, 1, MPI_INT, rank - 1, 0, MPI_COMM_WORLD, &status);
+      if (rank > 0)
+        MPI_Recv(&sync, 1, MPI_INT, rank - 1, 9876, MPI_COMM_WORLD, &status);
 #endif
 
-    bft_printf("\nRe-read by rank %d (returned %d):\n\n", rank, (int)retval);
-    for (i = block_start; i < block_end; i++)
-      bft_printf("  dval[%d] = %f\n", (int)i, (dbuf[i-block_start]));
+      bft_printf("\nRead by rank %d (returned %d):\n\n", rank, (int)retval);
+      for (i = block_start_2; i < block_end_2; i++) {
+        bft_printf("  dval[%d] = %f\n", (int)(i*2 - 1),
+                   (dbuf[(i-block_start_2)*2]));
+        bft_printf("  dval[%d] = %f\n", (int)(i*2),
+                   (dbuf[(i-block_start_2)*2+1]));
+      }
 
 #if defined(HAVE_MPI)
-    if (rank < size - 1)
-      MPI_Send(&sync, 1, MPI_INT, rank + 1, 0, MPI_COMM_WORLD);
+      if (rank < size - 1)
+        MPI_Send(&sync, 1, MPI_INT, rank + 1, 9876, MPI_COMM_WORLD);
 #endif
 
-    cs_file_seek(f, off2, CS_FILE_SEEK_SET);
+#if defined(HAVE_MPI)
+      MPI_Barrier(MPI_COMM_WORLD);
+#endif
+      bft_printf("barrier passed by rank %d\n", rank);
 
-    retval = cs_file_read_global(f, buf, 1, 80);
-    bft_printf("rank %d, re-read buf = %s (returned %d)\n",
-               rank, buf, (int)retval);
+      bft_printf("\nOffsets saved by rank %d: %ld, %ld\n\n",
+                 rank, (long)off1, (long)off2);
 
-    f = cs_file_free(f);
+      retval = cs_file_read_global(f, buf, 1, 80);
+      bft_printf("rank %d, buf = %s (returned %d)\n", rank, buf, (int)retval);
 
-    /* Write tests */
-    /*-------------*/
+      /* Test seek by re-reading at saved offset */
+
+      cs_file_seek(f, off1, CS_FILE_SEEK_SET);
+
+      memset(dbuf, 0, (block_end_2 - block_start_2)*sizeof(double));
+      retval = cs_file_read_block(f, dbuf, sizeof(double), 1,
+                                  block_start_2, block_end_2);
+
+#if defined(HAVE_MPI) /* Serialize dump */
+      if (rank > 0)
+        MPI_Recv(&sync, 1, MPI_INT, rank - 1, 9876, MPI_COMM_WORLD, &status);
+#endif
+
+      bft_printf("\nRe-read by rank %d (returned %d):\n\n", rank, (int)retval);
+      for (i = block_start; i < block_end; i++)
+        bft_printf("  dval[%d] = %f\n", (int)i, (dbuf[i-block_start]));
+
+#if defined(HAVE_MPI)
+      if (rank < size - 1)
+        MPI_Send(&sync, 1, MPI_INT, rank + 1, 9876, MPI_COMM_WORLD);
+#endif
+
+      cs_file_seek(f, off2, CS_FILE_SEEK_SET);
+
+      retval = cs_file_read_global(f, buf, 1, 80);
+      bft_printf("rank %d, re-read buf = %s (returned %d)\n",
+                 rank, buf, (int)retval);
+
+      f = cs_file_free(f);
+
+      /* Write tests */
+      /*-------------*/
 
 #if defined(HAVE_MPI)
 
-    f = cs_file_open(output_file_name,
-                     CS_FILE_MODE_WRITE,
-                     hints[test_id],
-                     MPI_COMM_WORLD);
+      f = cs_file_open(output_file_name,
+                       CS_FILE_MODE_WRITE,
+                       access[a_id],
+                       MPI_INFO_NULL,
+                       MPI_COMM_WORLD,
+                       MPI_COMM_WORLD);
 
 #else
 
-    f = cs_file_open(output_file_name,
-                     CS_FILE_MODE_WRITE,
-                     hints[test_id]);
+      f = cs_file_open(output_file_name,
+                       CS_FILE_MODE_WRITE,
+                       access[a_id]);
 
 #endif /* (HAVE_MPI) */
 
-    cs_file_set_big_endian(f);
+      cs_file_set_big_endian(f);
 
-    cs_file_dump(f);
+      cs_file_dump(f);
 
-    sprintf(buf, "fvm test file");
-    for (i = strlen(buf); i < 80; i++)
-      buf[i] = '\0';
+      sprintf(buf, "fvm test file");
+      for (i = strlen(buf); i < 80; i++)
+        buf[i] = '\0';
 
-    retval = cs_file_write_global(f, buf, 1, 80);
+      retval = cs_file_write_global(f, buf, 1, 80);
 
-    bft_printf("rank %d, wrote %d global values.\n", rank, (int)retval);
+      if (rank == 0)
+        bft_printf("rank %d, wrote %d global values.\n", rank, (int)retval);
 
-    for (i = block_start_2; i < block_end_2; i++) {
-      ibuf[(i-block_start_2)*2] = i*2 - 1;
-      ibuf[(i-block_start_2)*2 + 1] = i*2;
+      for (i = block_start_2; i < block_end_2; i++) {
+        ibuf[(i-block_start_2)*2] = i*2 - 1;
+        ibuf[(i-block_start_2)*2 + 1] = i*2;
+      }
+      for (i = block_start; i < block_end; i++)
+        dbuf[i-block_start] = i;
+
+      retval = cs_file_write_block(f, ibuf, sizeof(int), 2,
+                                   block_start_2, block_end_2);
+
+      bft_printf("rank %d, wrote %d block values.\n", rank, (int)retval);
+
+      retval = cs_file_write_block_buffer(f, dbuf, sizeof(double), 1,
+                                          block_start, block_end);
+
+      bft_printf("rank %d, wrote %d block (buffer) values.\n",
+                 rank, (int)retval);
+
+      sprintf(buf, "fvm test file end");
+      for (i = strlen(buf); i < 80; i++)
+        buf[i] = '\0';
+
+      retval = cs_file_write_global(f, buf, 1, 80);
+
+      if (rank == 0)
+        bft_printf("rank %d, wrote %d global values.\n", rank, (int)retval);
+
+      f = cs_file_free(f);
+
+      if (access[a_id] < CS_FILE_MPI_INDEPENDENT)
+        break;
     }
-    for (i = block_start; i < block_end; i++)
-      dbuf[i-block_start] = i;
-
-    retval = cs_file_write_block(f, ibuf, sizeof(int), 2,
-                                 block_start_2, block_end_2);
-
-    bft_printf("rank %d, wrote %d block values.\n", rank, (int)retval);
-
-    retval = cs_file_write_block_buffer(f, dbuf, sizeof(double), 1,
-                                        block_start, block_end);
-
-    bft_printf("rank %d, wrote %d block (buffer) values.\n",
-               rank, (int)retval);
-
-    sprintf(buf, "fvm test file end");
-    for (i = strlen(buf); i < 80; i++)
-      buf[i] = '\0';
-
-    retval = cs_file_write_global(f, buf, 1, 80);
-
-    bft_printf("rank %d, wrote %d global values.\n", rank, (int)retval);
-
-    f = cs_file_free(f);
   }
 
   /* We are finished */
