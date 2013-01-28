@@ -79,7 +79,7 @@ implicit none
 integer          mode
 double precision eh,tp
 double precision xesp(ngazem)
-double precision f1mc(ncharm),f2mc(ncharm)
+double precision f1mc(*),f2mc(*) ! size ncharm or ncharm2
 
 ! Local variables
 
