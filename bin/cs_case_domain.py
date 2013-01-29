@@ -915,6 +915,10 @@ class domain(base_domain):
                 purge_list.append(f)
         purge_list.extend(fnmatch.filter(dir_files, 'core*'))
 
+        f = 'scratch3.lag'
+        if f in dir_files:
+            purge_list.append(f)
+
         for f in purge_list:
             dir_files.remove(f)
             if purge:
