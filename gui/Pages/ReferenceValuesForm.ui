@@ -467,7 +467,7 @@
    <item row="5" column="0">
     <widget class="QGroupBox" name="groupBoxMassMolar">
      <property name="title">
-      <string>Mass molar molecular reference</string>
+      <string>Molar mass reference</string>
      </property>
      <layout class="QGridLayout">
       <item row="0" column="0">
@@ -491,7 +491,7 @@
            <string>Code_Saturne key word: XMASML</string>
           </property>
           <property name="text">
-           <string>Mass molar reference</string>
+           <string>Molar mass reference</string>
           </property>
          </widget>
         </item>

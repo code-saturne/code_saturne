@@ -89,7 +89,7 @@ class ReferenceValuesModel(Model):
         if (self.getParticularPhysical() == "atmo" or
             self.getParticularPhysical() == "gas"):
             default['reference_temperature'] = 293.15
-        # mass molar for dry air
+        # molar mass for dry air
         default['reference_mass_molar'] = 28.966e-3
 
         return default
@@ -253,7 +253,7 @@ class ReferenceValuesModel(Model):
     @Variables.undoLocal
     def setMassemol(self, value):
         """
-        Set reference mass molar.
+        Set reference molar mass.
         """
         self.isGreater(value, 0.0)
         self.node_reference.xmlSetData('mass_molar', value)
@@ -262,7 +262,7 @@ class ReferenceValuesModel(Model):
     @Variables.noUndo
     def getMassemol(self):
         """
-        Get reference mass molar.
+        Get reference molar mass.
         """
         value = self.node_reference.xmlGetDouble('mass_molar')
         if not value :
