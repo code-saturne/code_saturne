@@ -292,7 +292,7 @@ if (nfin.eq.1) then
   fich(ii2+1:ii2+13) = '.ensight.geom'
   ii2 = ii2 + 13
 
-  write(impla2, 5013) fich (ii1:ii2)
+  write(impla2, 5013) 'Trajectory.ensight.geom'
   write(impla2, 5014)
 
   open(unit=impla1, file=fich (ii1:ii2),                        &
