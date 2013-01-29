@@ -187,7 +187,7 @@ double precision, allocatable, dimension(:):: energt
 
 
 integer nrangpp, ii
-integer nbpartall
+integer nbpartall, nbpper
 
 ! NOMBRE DE PASSAGES DANS LA ROUTINE
 
@@ -880,10 +880,11 @@ endif
 ! 17. NOMBRE DE PARITICULES PERDUES (SUITES COMPRISES)
 !===============================================================================
 
+nbpper = nbperr
 if (irangp .ge. 0) then
-  call parcpt(nbperr)
+  call parcpt(nbpper)
 endif
-nbpert = nbpert + nbperr
+nbpert = nbpert + nbpper
 
 !===============================================================================
 ! 18. ECRITURE SUR FICHIERS DES INFORMATIONS SUR LE NOMBRE DE PARTICULES
