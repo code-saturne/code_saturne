@@ -691,7 +691,7 @@ endif
 ! Visualization
 !===============================================================================
 
-if (irangp.lt.0 .or. ntcabs.lt.ntmabs) return
+if (irangp.ge.0 .or. ntcabs.lt.ntmabs) return
 
 nfin = 1
 
