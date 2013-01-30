@@ -1694,6 +1694,18 @@ if (ippmod(icompf).ge.0) then
     write(nfecra,8000)t0,p0
     iok = iok + 1
   endif
+  if (visls0(itempk).le.0.d0) then
+    write(nfecra,8010) visls0(itempk)
+    iok = iok + 1
+  endif
+  if (viscv0.lt.0.d0) then
+    write(nfecra,8020) viscv0
+    iok = iok + 1
+  endif
+  if (ieos.ne.1.and.ieos.ne.2) then
+    write(nfecra,8030) 'IEOS (Equation of state. )',ieos
+  iok = iok + 1
+  endif
 endif
 
 !===============================================================================
@@ -4248,6 +4260,57 @@ endif
 '@                   P0 = ', e14.5,                             /,&
 '@',                                                            /,&
 '@  Le calcul ne sera pas execute.',                            /,&
+'@',                                                            /,&
+'@  Verifier les parametres donnes via l''interface',           /,&
+'@    ou cs_user_parameters.f90.',                              /,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
+ 8010 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
+'@    =========   MODULE COMPRESSIBLE                         ',/,&
+'@                                                            ',/,&
+'@    LA CONDUCTIVITE THERMIQUE DOIT ETRE                     ',/,&
+'@    UN REEL POSITIF STRICTEMENT                             ',/,&
+'@    ELLE A POUR VALEUR ',E12.4                               ,/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@  Verifier uscfx2.                                          ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 8020 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
+'@    =========   MODULE COMPRESSIBLE                         ',/,&
+'@                                                            ',/,&
+'@    LA VISCOSITE EN VOLUME DOIT ETRE                        ',/,&
+'@    UN REEL POSITIF                                         ',/,&
+'@    ELLE A POUR VALEUR ',E12.4                               ,/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@  Verifier uscfx2.                                          ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 8030 format(                                                     &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
+'@    =========',                                               /,&
+'@',    a33,                          ' DOIT ETRE UN ENTIER',   /,&
+'@    EGAL A 1 OU 2',                                           /,&
+'@    IL VAUT ICI', i10,                                        /,&
+'@',                                                            /,&
+'@  Le calcul ne peut etre execute.',                           /,&
 '@',                                                            /,&
 '@  Verifier les parametres donnes via l''interface',           /,&
 '@    ou cs_user_parameters.f90.',                              /,&
@@ -6867,6 +6930,59 @@ endif
 '@                   P0 = ', e14.5,                             /,&
 '@',                                                            /,&
 '@  Computation CAN NOT run',                                   /,&
+'@',                                                            /,&
+'@ Check the input data given through the User Interface',      /,&
+'@   or in cs_user_parameters.f90.',                            /,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
+ 8010 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
+'@    =========',                                               /,&
+'@               COMPRESSIBLE FLOW MODULE',                     /,&
+'@                                                            ',/,&
+'@    THE THERMAL CONDUCTIVITY MUST BE                        ',/,&
+'@    A STRICTLY POSITIVE REAL NUMBER                         ',/,&
+'@    IT HAS VALUE ',E12.4                                     ,/,&
+'@                                                            ',/,&
+'@  Computation CAN NOT run                                   ',/,&
+'@                                                            ',/,&
+'@  Check uscfx2.                                             ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 8020 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
+'@    =========',                                               /,&
+'@               COMPRESSIBLE FLOW MODULE',                     /,&
+'@                                                            ',/,&
+'@    THE VOLUMIC VISCOSITY MUST BE                           ',/,&
+'@    A STRICTLY POSITIVE REAL NUMBER                         ',/,&
+'@    IT HAS VALUE ',E12.4                                     ,/,&
+'@                                                            ',/,&
+'@  Computation CAN NOT run                                   ',/,&
+'@                                                            ',/,&
+'@  Check uscfx2.                                             ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+8030 format(                                                     &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
+'@    =========',                                               /,&
+'@',    a33,                          ' MUST BE AN INTEGER',   /, &
+'@    EQUAL TO 1 OR 2',                                         /,&
+'@   IT HAS VALUE', i10,                                        /,&
+'@',                                                            /,&
+'@   The calculation could NOT run.',                           /,&
 '@',                                                            /,&
 '@ Check the input data given through the User Interface',      /,&
 '@   or in cs_user_parameters.f90.',                            /,&

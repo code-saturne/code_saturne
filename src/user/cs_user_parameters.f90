@@ -2681,6 +2681,7 @@ subroutine uscfx1
 !===============================================================================
 
 use paramx
+use ihmpre
 use dimens
 use numvar
 use optcal
@@ -2714,7 +2715,7 @@ implicit none
 !       thus the default (library reference) version stops immediately.
 !===============================================================================
 
-if (1.eq.1) then
+if (iihmpr.eq.0) then
   write(nfecra,9000)
   call csexit (1)
 endif
@@ -2739,14 +2740,25 @@ endif
 ! 1. Scheme options
 !===============================================================================
 
+if (iihmpr.eq.0) then   !  Remove test to set values here when also using GUI.
+
+! Equation of state choice
+! --> ieos = 1: Perfect gas with constant Gamma
+! --> ieos = 2: Perfect gas with variable Gamma (please fill-in the source code
+!               cfther in this case, otherwise it won't work!)
+  ieos = 1
+
+! Molar mass of the gas (kg/mol)
+!     For example with dry air, xmasml is around 28.8d-3 kg/mol
+  if (ieos.eq.1) then
+    xmasmr = 0.028966
+  endif
+
 ! Specify if the hydrostatic equilibrium must be accounted for
 !     (yes = 1 , no = 0)
+  icfgrp = 1
 
-icfgrp = 1
-
-ieos = 0
-
-xmasmr = 0.028966
+endif
 
 !----
 ! End
@@ -2794,6 +2806,7 @@ subroutine uscfx2
 !===============================================================================
 
 use paramx
+use ihmpre
 use dimens
 use numvar
 use optcal
@@ -2822,7 +2835,7 @@ implicit none
 !       thus the default (library reference) version stops immediately.
 !===============================================================================
 
-if (1.eq.1) then
+if (iihmpr.eq.0) then
   write(nfecra,9000)
   call csexit (1)
 endif
@@ -2847,12 +2860,14 @@ endif
 ! 1. Physical properties
 !===============================================================================
 
+if (iihmpr.eq.0) then   !  Remove test to set values here when also using GUI.
+
 ! --> Molecular thermal conductivity
 
 !       constant  : ivisls = 0
 !       variable  : ivisls = 1
 
-ivisls(itempk) = 0
+  ivisls(itempk) = 0
 
 !       Reference molecular thermal conductivity
 !       visls0 = lambda0  (molecular thermal conductivity, W/(m K))
@@ -2860,7 +2875,7 @@ ivisls(itempk) = 0
 !       WARNING: visls0 must be strictly positive
 !         (set a realistic value here even if conductivity is variable)
 
-visls0(itempk) = 3.d-2
+  visls0(itempk) = 3.d-2
 
 !       If the molecular thermal conductivity is variable, its values
 !         must be provided in the user subroutine 'uscfpv'
@@ -2874,12 +2889,13 @@ visls0(itempk) = 3.d-2
 !       iviscv = 0 : uniform  in space and constant in time
 !              = 1 : variable in space and time
 
-iviscv = 0
-viscv0 = 0.d0
+  iviscv = 0
+  viscv0 = 0.d0
 
 !       If the volumetric molecular viscosity is variable, its values
 !         must be provided in the user subroutine 'uscfpv'
 
+endif
 
 !----
 ! End

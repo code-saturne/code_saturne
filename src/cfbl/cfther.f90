@@ -250,24 +250,8 @@ double precision cstgr(npmax)
 
 !===============================================================================
 
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-!===============================================================================
-
-!===============================================================================
-! 0.  This test allows the user to ensure that the version of this subroutine
-!       used is that from his case definition, and not that from the library.
-!     However, this subroutine may not be mandatory,
-!       thus the default (library reference) version returns immediately.
-!===============================================================================
-
-if (1.eq.1) return
-
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
-
 !===============================================================================
 ! 0. Initialization.
-!    No user input required.
 !===============================================================================
 
 ! Error indicator (stop if non zero)
@@ -287,14 +271,8 @@ endif
 ifac0 = imodif
 
 !===============================================================================
-! 1. Thermodynamic law choice
-!    User input required.
+! 1. Cp and Cv variable or not (depends on the equation of state)
 !===============================================================================
-
-! --> ieos = 1: Perfect gas with constant Gamma
-! --> ieos = 2: Perfect gas with variable Gamma
-! --> ieos = 3: Van Der Waals
-
 
 ! Warning: once the thermodynamic law has been chosen,
 ! =======  the remainder of the user subroutine must be modified
@@ -344,20 +322,15 @@ call field_get_coefa_v(ivarfl(iu), coefav)
 
 if (ieos.eq.1) then
 
-!===============================================================================
-! 2.1. Parameters to be completed by the user
-!===============================================================================
-
 ! --- Molar mass of the gas (kg/mol)
-    ! For example with dry air, xmasml is around 28.8d-3 kg/mol
+    ! The value is put in xmasml
 
   if (iccfth.ge.0) then
     xmasml = xmasmr
   endif
 
 !===============================================================================
-! 2.2. Default laws
-!      No user input required.
+! 2.1. Default laws
 !===============================================================================
 
 ! --- Calculation of the constant gamagp
@@ -1200,9 +1173,9 @@ elseif (ieos.eq.2) then
 
       ! Calculation of the molar mass of the mixture at cell centers
       do iel = 1, ncel
-        xmasm1(iel) = 1.d0 / ( rtp(iel,isca(1))/cstgr(1)          &
-                             + rtp(iel,isca(2))/cstgr(2)          &
-                             + rtp(iel,isca(3))/cstgr(3) )
+          xmasm1(iel) = 1.d0 / ( rtp(iel,isca(1))/cstgr(1)          &
+                               + rtp(iel,isca(2))/cstgr(2)          &
+                               + rtp(iel,isca(3))/cstgr(3) )
       enddo
 
       ! Calculation of the equivalent gamma of the mixture at cell centers

@@ -1498,15 +1498,15 @@ void CS_PROCF (uippmo, UIPPMO)(int *const ippmod,
     {
       if (cs_gui_strcmp(vars->model_value, "constant_gamma")){
         ippmod[*icompf - 1] = 0;
-        *ieos = 0;
+        *ieos = 1;
       }
       else if (cs_gui_strcmp(vars->model_value, "variable_gamma'")){
         ippmod[*icompf - 1] = 0;
-        *ieos = 1;
+        *ieos = 2;
       }
       else if (cs_gui_strcmp(vars->model_value, "van_der_waals")){
         ippmod[*icompf - 1] = 0;
-        *ieos = 2;
+        *ieos = 3;
       }
       else
         bft_error(__FILE__, __LINE__, 0,

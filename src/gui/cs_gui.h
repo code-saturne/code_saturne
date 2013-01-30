@@ -347,10 +347,13 @@ void CS_PROCF (csphys, CSPHYS) (const    int *const nmodpp,
                                       double *const ro0,
                                       double *const viscl0,
                                       double *const viscv0,
+                                      double *const visls0,
                                       double *const cp0,
                                       double *const t0,
                                       double *const p0,
-                                      double *const xmasmr);
+                                      double *const xmasmr,
+                                const    int *const isca,
+                                         int *const itempk);
 
 /*----------------------------------------------------------------------------
  * User scalar min and max values for clipping.

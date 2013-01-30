@@ -176,16 +176,6 @@ endif
 
 ibrom = 0
 
-if (ippmod(iphpar).ge.1) then
-  call ppphyv &
-  !==========
- ( nvar   , nscal  ,                                              &
-   ibrom  ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  )
-
-endif
-
 
 ! - Interface Code_Saturne
 !   ======================
@@ -206,6 +196,16 @@ call usphyv &
   ibrom  ,                                                       &
   dt     , rtp    , rtpa   ,                                     &
   propce , propfa , propfb )
+
+if (ippmod(iphpar).ge.1) then
+  call ppphyv &
+  !==========
+ ( nvar   , nscal  ,                                              &
+   ibrom  ,                                                       &
+   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   coefa  , coefb  )
+
+endif
 
 !===============================================================================
 ! 5. Density defined by a perfect gas equation of state
