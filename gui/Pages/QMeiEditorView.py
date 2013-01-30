@@ -200,7 +200,7 @@ class QMeiEditorView(QDialog, Ui_QMeiDialog):
         predif += self.tr("<br>"\
                   "<big><u>Useful functions:</u></big><br>"\
                   "<b>cos</b>: cosine<br>"\
-                  "<b>sin</b>: sinus<br>"\
+                  "<b>sin</b>: sine<br>"\
                   "<b>tan</b>: tangent<br>"\
                   "<b>exp</b>: exponential<br>"\
                   "<b>sqrt</b>: square root<br>"\
