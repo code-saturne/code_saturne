@@ -1924,11 +1924,11 @@ void CS_PROCF (csivis, CSIVIS) (int *const iscavr,
 
   if (cs_gui_strcmp(vars->model, "compressible_model"))
   {
-    ivisls[isca[*itempk] -1] = 0;
+    ivisls[*itempk -1] = 0;
 
     char *prop_choice = _properties_choice("thermal_conductivity");
     if (cs_gui_strcmp(prop_choice, "user_law"))
-      ivisls[isca[*itempk] -1] = 1;
+      ivisls[*itempk -1] = 1;
     BFT_FREE(prop_choice);
   }
 }
@@ -2727,11 +2727,14 @@ void CS_PROCF (csphys, CSPHYS)
           double *const ro0,
           double *const viscl0,
           double *const viscv0,
+          double *const visls0,
           double *const cp0,
           double *const t0,
           double *const p0,
-          double *const xmasmr
-  )
+          double *const xmasmr,
+    const    int *const isca,
+             int *const itempk)
+  
 {
   int choice;
 
@@ -2755,8 +2758,10 @@ void CS_PROCF (csphys, CSPHYS)
   cs_gui_properties_value("density", ro0);
   cs_gui_properties_value("molecular_viscosity", viscl0);
   cs_gui_properties_value("specific_heat", cp0);
-  if (cs_gui_strcmp(vars->model, "compressible_model"))
+  if (cs_gui_strcmp(vars->model, "compressible_model")) {
     cs_gui_properties_value("volumic_viscosity", viscv0);
+    cs_gui_properties_value("thermal_conductivity", &visls0[*itempk -1]);
+  }
 
   cs_gui_reference_initialization("pressure", p0);
 
@@ -4950,9 +4955,6 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
     cs_gui_add_mei_time(cs_timer_wtime() - time0);
   }
 
-  if (cs_gui_strcmp(vars->model, "compressible_model"))
-    cs_gui_properties_value("thermal_conductivity", &visls0[isca[*itempk] -1]);
-
   /* law for scalar diffusivity */
 
   for (j = 0; j < *nscaus; j++)
@@ -5093,7 +5095,6 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
 
         tmp = mei_evaluate(ev_viscv);
         propce[ipccp * (*ncelet) + iel] = mei_tree_lookup(ev_viscv, "viscv0");
-        printf("visco0 = %f\n", propce[ipccp * (*ncelet) + iel]);
       }
 
       mei_tree_destroy(ev_viscv);

@@ -196,6 +196,14 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.modelCompressible.setItem(str_model=compressible)
         self.modelCompressible.disableItem(str_model='variable_gamma')
 
+        if compressible != 'off':
+            self.modelSteadyFlow.setItem(str_model='off')
+            self.comboBoxSteadyFlow.setEnabled(False)
+            self.comboBoxLagrangian.setEnabled(False)
+
+        if self.std.getSteadyFlowManagement() == 'on':
+            self.comboBoxCompressible.setEnabled(False)
+
         # Multi-phase flow and coal combustion
         # WARNING: the 'coal_lagr' model is deprecated
 
@@ -351,8 +359,10 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         if steady == 'on':
             self.modelLagrangian.disableItem(str_model='lagrangian')
+            self.comboBoxCompressible.setEnabled(False)
         else:
             self.modelLagrangian.enableItem(str_model='lagrangian')
+            self.comboBoxCompressible.setEnabled(True)
 
         self.std.setSteadyFlowManagement(steady)
         self.browser.configureTree(self.case)
@@ -504,6 +514,27 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         model = self.__stringModelFromCombo('Compressible')
         self.comp.setCompressibleModel(model)
+
+        if model != 'off':
+            self.__disableComboBox()
+            self.modelSteadyFlow.setItem(str_model='off')
+            self.comboBoxSteadyFlow.setEnabled(False)
+            self.comboBoxLagrangian.setEnabled(False)
+            self.comboBoxCompressible.setEnabled(True)
+        else:
+            self.comboBoxSteadyFlow.setEnabled(True)
+            self.comboBoxLagrangian.setEnabled(True)
+
+            if self.turb.getTurbulenceModel() not in ('k-epsilon',
+                                                      'k-epsilon-PL',
+                                                      'Rij-epsilon',
+                                                      'Rij-SSG',
+                                                      'Rij-EBRSM',
+                                                      'v2f-BL-v2/k',
+                                                      'k-omega-SST',
+                                                      'Spalart-Allmaras'):
+                self.comboBoxGasCombustionModel.setEnabled(False)
+                self.comboBoxPulverizedCoal.setEnabled(False)
 
         self.browser.configureTree(self.case)
 

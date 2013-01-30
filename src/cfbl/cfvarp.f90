@@ -104,6 +104,10 @@ if ( ippmod(icompf).ge.0 ) then
   ivisls(itempk) = 0
   visls0(itempk) = epzero
 
+! ---- Viscosite dynamique de reference relative au scalaire IENERG
+  ivisls(ienerg) = 0
+  visls0(ienerg) = epzero
+
 ! ---- Initialisation par defaut de la viscosite en volume (cste)
   iviscv = 0
   viscv0 = 0.d0
@@ -141,41 +145,10 @@ if ( ippmod(icompf).ge.0 ) then
 !   - Interface Code_Saturne
 !     ======================
 !     Construction de l'indirection entre la numerotation du noyau et XML
-if (iihmpr.eq.1) then
-   call uicfsc(irho, ienerg, itempk)
-   call csvvva(iviscv)
-endif
-
-  call uscfx2
-  !==========
-
-
-!===============================================================================
-! 4. TRAITEMENT ET VERIFICATION DES DONNEES FOURNIES PAR L'UTILISATEUR
-!===============================================================================
-
-! ---- Viscosite dynamique de reference relative au scalaire IENERG
-  if(ivisls(itempk).gt.0 .or. icv.gt.0) then
-    ivisls(ienerg) = 1
-  else
-    ivisls(ienerg) = 0
+  if (iihmpr.eq.1) then
+    call uicfsc(irho, ienerg, itempk)
+    call csvvva(iviscv)
   endif
-
-  visls0(ienerg) = epzero
-
-  iok = 0
-
-  if(visls0(itempk).le.0.d0) then
-    write(nfecra,1000) visls0(itempk)
-    iok = 1
-  endif
-
-  if(viscv0.lt.0.d0) then
-    write(nfecra,2000) viscv0
-    iok = 1
-  endif
-
-  if(iok.gt.0) call csexit (1)
 
 endif
 
@@ -183,40 +156,6 @@ endif
 ! FORMATS
 !--------
 
- 1000 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========   MODULE COMPRESSIBLE                         ',/,&
-'@                                                            ',/,&
-'@    LA CONDUCTIVITE THERMIQUE DOIT ETRE                     ',/,&
-'@    UN REEL POSITIF STRICTEMENT                             ',/,&
-'@    ELLE A POUR VALEUR ',E12.4                               ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier uscfx2.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 2000 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========   MODULE COMPRESSIBLE                         ',/,&
-'@                                                            ',/,&
-'@    LA VISCOSITE EN VOLUME DOIT ETRE                        ',/,&
-'@    UN REEL POSITIF                                         ',/,&
-'@    ELLE A POUR VALEUR ',E12.4                               ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier uscfx2.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
 
 return
 end subroutine

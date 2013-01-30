@@ -202,10 +202,6 @@ if( (iescal(iespre).ne.0) .or.                            &
   write(nfecra,4000)
   call csexit (1)
 endif
-!       IESCAL(IESPRE) = 0
-!       IESCAL(IESDER) = 0
-!       IESCAL(IESCOR) = 0
-!       IESCAL(IESTOT) = 0
 
 !===============================================================================
 ! 3. OPTIONS DE CALCUL PAR DEFAUT

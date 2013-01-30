@@ -84,7 +84,7 @@ implicit none
 
 ! Local variables
 
-integer          ii, iscal , nmodpp
+integer          ii, iscal , nmodpp, iok
 integer          nscmax, nesmax, nscusi
 integer          ieepre, ieeder, ieecor, ieetot, iihmpu
 integer          ialgce
@@ -188,6 +188,13 @@ if (iihmpr.eq.1) then
 
 endif
 
+if ( ippmod(icompf).ge.0) then
+!     For compressible model, call to uscfx1 to get ieos.
+!     With ihm, ieos has been read below in the call to uippmo. 
+  call uscfx1
+  !==========
+endif
+
 !   - Sous-programme utilisateur
 !     ==========================
 
@@ -260,6 +267,19 @@ iihmpu = iihmpr
 call usipsc(nscmax , nscusi , iihmpu , nfecra , iscavr , ivisls)
 !==========
 
+if ( ippmod(icompf).ge.0) then
+!     For compressible model, call to uscfx2 to get ivisls(itempk) et iviscv.
+!     With ihm, iviscv has been read below in the first call to varpos (csvvva)
+!     and ivisl(itempk) below in the call to csivis.
+  call uscfx2
+  !==========
+!     Dynamic viscosity of reference of the scalar total energy (ienerg).
+  if(ivisls(itempk).gt.0 .or. icv.gt.0) then
+    ivisls(ienerg) = 1
+  else
+    ivisls(ienerg) = 0
+  endif
+endif
 !===============================================================================
 ! 3. INITIALISATION DE PARAMETRES "GLOBAUX"
 !===============================================================================
@@ -401,12 +421,13 @@ if (iihmpr.eq.1) then
   if (idtvar.ge.0) relaxv(ipr) = relaxp
 
 !     Gravite, prop. phys
-  call csphys                                                     &
+  call csphys                                                         &
   !==========
-             (nmodpp,                                             &
-              irovar, ivivar, icorio,                             &
-              gx, gy, gz, omegax, omegay, omegaz ,                &
-              ro0, viscl0, viscv0, cp0, t0, p0, xmasmr)
+             (nmodpp,                                                 &
+              irovar, ivivar, icorio,                                 &
+              gx, gy, gz, omegax, omegay, omegaz ,                    &
+              ro0, viscl0, viscv0, visls0, cp0, t0,                   &
+              p0, xmasmr, isca, itempk)
 
 !     Scamin, scamax
   call cssca2(iscavr, scamin, scamax)
@@ -450,6 +471,19 @@ call clmopt(mltmmn, mltmgl, mltmmr, mltmst, mlttyp)
 
 call indsui(isuite)
 !==========
+
+
+if ( ippmod(icompf).ge.0) then
+!      For compressible model, call to uscfx2 to get visls0(itempk), viscv0.
+!      With ihm, visls0(itempk) and viscv0 have been read below in the call
+!      to csphys. 
+  call uscfx2
+  !==========
+!      For compressible model, call to uscfx1 to get xmasmr.
+!      With ihm, xmasmr has been read below in the call to csphys.
+  call uscfx1
+  !==========
+endif
 
 ! Choose if the 3x3 dimensionless matrix cocg is computed for the iterative
 ! algorithm and the Least squares method for ivelco = 1.

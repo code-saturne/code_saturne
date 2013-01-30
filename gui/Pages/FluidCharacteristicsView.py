@@ -395,6 +395,8 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
                     __model.setItem(str_model='variable')
                     __combo.setEnabled(False)
                     __button.setEnabled(False)
+                    __combo.hide()
+                    __button.hide()
                     self.mdl.setPropertyMode(tag, 'variable')
                     __line.setEnabled(True)
                 self.groupBoxViscv0.hide()
