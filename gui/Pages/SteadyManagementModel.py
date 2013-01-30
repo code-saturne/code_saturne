@@ -94,6 +94,11 @@ class SteadyManagementModel(Model):
             self.getZeroIteration()
             self.getNbIter()
             self.getRelaxCoefficient()
+            from Pages.NumericalParamGlobalModel import NumericalParamGlobalModel
+            model = NumericalParamGlobalModel(self.case).getVelocityPressureAlgorithm()
+            if model == 'piso':
+                self.case.xmlRemoveChild('velocity_pressure_algo')
+            del NumericalParamGlobalModel
         else:
             mdl_time.setTimePassing(0)
             # Treatment of SIMPLE algorithm

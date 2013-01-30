@@ -158,8 +158,10 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         status = SteadyManagementModel(self.case).getSteadyFlowManagement()
         if status == 'on':
             self.modelNTERUP.enableItem(str_model = 'simple')
+            self.modelNTERUP.disableItem(str_model = 'piso')
         else:
             self.modelNTERUP.disableItem(str_model = 'simple')
+            self.modelNTERUP.enableItem(str_model = 'piso')
 
         self.modelNTERUP.setItem(str_model=algo)
 
