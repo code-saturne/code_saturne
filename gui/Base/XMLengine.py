@@ -556,7 +556,7 @@ class XMLElement:
         # "B. Floating Point Arithmetic: Issues and Limitations
         #  http://www.python.org/doc/current/tut/node14.html"
         #
-        if type(textNode) == float: textNode = str("%g" % (textNode))
+        if type(textNode) == float: textNode = str("%.12g" % (textNode))
 
         nodeList = self._childNodeList(tag, *attrList, **kwargs)
         elementList = []
