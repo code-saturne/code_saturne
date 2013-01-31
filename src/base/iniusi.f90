@@ -190,7 +190,7 @@ endif
 
 if ( ippmod(icompf).ge.0) then
 !     For compressible model, call to uscfx1 to get ieos.
-!     With ihm, ieos has been read below in the call to uippmo. 
+!     With ihm, ieos has been read below in the call to uippmo.
   call uscfx1
   !==========
 endif
@@ -476,7 +476,7 @@ call indsui(isuite)
 if ( ippmod(icompf).ge.0) then
 !      For compressible model, call to uscfx2 to get visls0(itempk), viscv0.
 !      With ihm, visls0(itempk) and viscv0 have been read below in the call
-!      to csphys. 
+!      to csphys.
   call uscfx2
   !==========
 !      For compressible model, call to uscfx1 to get xmasmr.
