@@ -2734,7 +2734,7 @@ void CS_PROCF (csphys, CSPHYS)
           double *const xmasmr,
     const    int *const isca,
              int *const itempk)
-  
+
 {
   int choice;
 
