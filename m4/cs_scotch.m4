@@ -130,7 +130,7 @@ if test "x$with_scotch" != "xno" ; then
 #endif
 ]])],
                       [cs_scotch_ge_6=yes
-                       SCOTCH_LIBS="-lptscotch -lptscotcherr -lscotch -scotcherr"],
+                       SCOTCH_LIBS="-lptscotch -lptscotcherr -lscotch -lscotcherr"],
                       [])
 
     for cs_scotch_ladd in "$cs_scotch_l0" "$cs_scotch_l1" "$cs_scotch_l2" "$cs_scotch_l3" "$cs_scotch_l4" "$cs_scotch_l5" 
