@@ -102,7 +102,7 @@ p, li { white-space: pre-wrap; }
           <item>
            <widget class="QLineEdit" name="lineEditOMEGAX" >
             <property name="toolTip" >
-             <string>Code_Saturne key word: GX</string>
+             <string>Code_Saturne key word: OMEGAX</string>
             </property>
            </widget>
           </item>
@@ -155,7 +155,7 @@ p, li { white-space: pre-wrap; }
           <item>
            <widget class="QLineEdit" name="lineEditOMEGAY" >
             <property name="toolTip" >
-             <string>Code_Saturne key word: GY</string>
+             <string>Code_Saturne key word: OMEGAY</string>
             </property>
            </widget>
           </item>
@@ -208,7 +208,7 @@ p, li { white-space: pre-wrap; }
           <item>
            <widget class="QLineEdit" name="lineEditOMEGAZ" >
             <property name="toolTip" >
-             <string>Code_Saturne key word: GZ</string>
+             <string>Code_Saturne key word: OMEGAZ</string>
             </property>
            </widget>
           </item>

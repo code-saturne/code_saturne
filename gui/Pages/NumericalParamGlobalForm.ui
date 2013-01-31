@@ -687,7 +687,7 @@ source terms in momentum equation</string>
              <item>
               <widget class="QLabel" name="labelImprovedPressure" >
                <property name="toolTip" >
-                <string>Code_Saturne key word: IPHYDR</string>
+                <string>Code_Saturne key word: IPHYDR and ICALHY</string>
                </property>
                <property name="text" >
                 <string>Improved pressure interpolation in stratified flow</string>
@@ -710,7 +710,7 @@ source terms in momentum equation</string>
              <item>
               <widget class="QCheckBox" name="checkBoxImprovedPressure" >
                <property name="toolTip" >
-                <string>Code_Saturne key word: IPHYDR</string>
+                <string>Code_Saturne key word: IPHYDR and ICALHY</string>
                </property>
                <property name="text" >
                 <string/>
@@ -769,7 +769,7 @@ source terms in momentum equation</string>
           <item>
            <widget class="QLabel" name="labelNTERUP" >
             <property name="toolTip" >
-             <string>Code_Saturne key word: EXTRAG</string>
+             <string>Code_Saturne key word: IDTVAR</string>
             </property>
             <property name="text" >
              <string>Velocity-Pressure algorithm</string>
@@ -792,7 +792,7 @@ source terms in momentum equation</string>
           <item>
            <widget class="QComboBox" name="comboBoxNTERUP" >
             <property name="toolTip" >
-             <string>Code_Saturne key word: NTERUP</string>
+             <string>Code_Saturne key word: IDTVAR</string>
             </property>
            </widget>
           </item>
