@@ -3989,9 +3989,6 @@ CS_PROCF (prtput, PRTPUT)(const cs_int_t   *nbpmax,  /* n_particles max. */
 
   } /* End of loop on particles */
 
-  /* New number of particles to be visualized*/
-  *nbvis = k;
-
   /* New number of particles */
   *nbpart= set->n_particles;
 
