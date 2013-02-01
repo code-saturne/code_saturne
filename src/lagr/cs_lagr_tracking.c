@@ -85,8 +85,7 @@ BEGIN_C_DECLS
 #define  N_GEOL 13
 #define  CS_LAGR_MIN_COMM_BUF_SIZE  10
 #define  CS_LAGR_MAX_PROPAGATION_LOOPS  30
-#define  N_VAR_PART_STRUCT  21
-#define  N_VAR_PART_COAL     1
+#define  N_VAR_PART_STRUCT  30
 #define  N_VAR_PART_HEAT     1
 #define  N_VAR_PART_AUX      1
 
@@ -140,32 +139,29 @@ typedef struct {
   cs_real_t   velocity[3];
   cs_real_t   velocity_seen[3];
 
-  /* Deposition submodel parameters */
+  /* Deposition submodel additional parameters */
+
   cs_real_t   yplus;
   cs_real_t   interf;
   cs_lnum_t   close_face_id;
   cs_lnum_t   marko_val;
 
+  /* Coal combustion additional parameters */
+
+  cs_real_t   temp;            /* jhp */
+  cs_real_t   fluid_temp;      /* jtf */
+  cs_real_t   coal_mass;       /* jmch */
+  cs_real_t   coke_mass;       /* jmck */
+  cs_real_t   cp;              /* jcp */
+
+  cs_real_t   shrinking_diam;  /* jrdck */
+  cs_real_t   initial_diam;    /* jrd0p */
+  cs_real_t   initial_density; /* jrr0p */
+
+  cs_lnum_t   coal_number;     /* jinch */
+
+
 } cs_lagr_particle_t;
-
-/* Particle description for simulation with coal */
-/* --------------------------------------------- */
-
-typedef struct { /* Defined if IPHYLA == 2 */
-
-  int         coal_number;
-
-  cs_real_t   temp;
-  cs_real_t   fluid_temp;
-  cs_real_t   cp;
-  cs_real_t   coal_mass;
-  cs_real_t   coke_mass;
-  cs_real_t   coke_diameter;
-  cs_real_t   coke_fraction;
-
-  /* 2 others left */
-
-} cs_lagr_coal_particle_t;
 
 
 /* Particle description for simulation with heat transfert */
@@ -209,8 +205,6 @@ typedef struct {
 
   cs_lagr_particle_t       *particles;  /* Main  particle description */
 
-  cs_lagr_coal_particle_t  *coal_desc;  /* Additional description for study
-                                           with coal */
   cs_lagr_heat_particle_t  *heat_desc;  /* Additional description for study
                                            with heat transfert */
   cs_lagr_aux_particle_t   *aux_desc;   /* Additional description for study
@@ -320,7 +314,7 @@ typedef struct {
                         CS_LAGR_PHYS_COAL,
                         CS_LAGR_PHYS_HEAT... */
   int  n_stat_classes;
-  int   n_user_variables;
+  int  n_user_variables;
 
 } cs_lagr_param_t;
 
@@ -379,7 +373,6 @@ enum {X, Y, Z};  /* Used for _get_norm() and _get_dot_prod() */
 
 #if defined(HAVE_MPI)
 static  MPI_Datatype  _CS_MPI_PARTICLE;
-static  MPI_Datatype  _CS_MPI_COAL_PARTICLE;
 static  MPI_Datatype  _CS_MPI_HEAT_PARTICLE;
 static  MPI_Datatype  _CS_MPI_AUX_PARTICLE;
 #endif
@@ -566,9 +559,13 @@ _define_particle_datatype(void)
 
   int  count = 0;
   int  blocklengths[N_VAR_PART_STRUCT]
-    = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3, 3, 1, 1, 1, 1};
+    = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1, 3, 3, 3, 1, 1, 1, 1 ,
+       1, 1, 1, 1, 1, 1, 1, 1, 1  };
   MPI_Aint  displacements[N_VAR_PART_STRUCT]
-    = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ,
+       0, 0, 0, 0, 0, 0, 0, 0, 0};
   MPI_Datatype  types[N_VAR_PART_STRUCT] = {CS_MPI_GNUM,
                                             CS_MPI_LNUM,
                                             CS_MPI_LNUM,
@@ -590,6 +587,15 @@ _define_particle_datatype(void)
                                             CS_MPI_REAL,
                                             CS_MPI_LNUM,
                                             CS_MPI_LNUM,
+                                            CS_MPI_REAL,
+                                            CS_MPI_REAL,
+                                            CS_MPI_REAL,
+                                            CS_MPI_REAL,
+                                            CS_MPI_REAL,
+                                            CS_MPI_REAL,
+                                            CS_MPI_REAL,
+                                            CS_MPI_REAL,
+                                            CS_MPI_LNUM
   };
 
   /* Initialize a default particle */
@@ -615,10 +621,25 @@ _define_particle_datatype(void)
     part.velocity_seen[j] = 0.0;
   }
 
+  /* Deposition submodel */
+
   part.yplus = 0.0;
   part.interf = 0.0;
   part.close_face_id = 0;
   part.marko_val = 0;
+
+  /* Coal combustion */
+
+  part.temp = 0.0;
+  part.fluid_temp = 0.0;
+  part.coal_mass = 0.0;
+  part.coke_mass = 0.0;
+  part.cp = 0.0;
+  part.shrinking_diam = 0.0;
+  part.initial_diam = 0.0;
+  part.initial_density = 0.0;
+  part.coal_number = 0;
+
 
   /* Define array of displacements */
 
@@ -643,6 +664,15 @@ _define_particle_datatype(void)
   MPI_Get_address(&part.interf, displacements + count++);
   MPI_Get_address(&part.close_face_id, displacements + count++);
   MPI_Get_address(&part.marko_val, displacements + count++);
+  MPI_Get_address(&part.temp, displacements + count++);
+  MPI_Get_address(&part.fluid_temp, displacements + count++);
+  MPI_Get_address(&part.coal_mass, displacements + count++);
+  MPI_Get_address(&part.coke_mass, displacements + count++);
+  MPI_Get_address(&part.cp, displacements + count++);
+  MPI_Get_address(&part.shrinking_diam, displacements + count++);
+  MPI_Get_address(&part.initial_diam, displacements + count++);
+  MPI_Get_address(&part.initial_density, displacements + count++);
+  MPI_Get_address(&part.coal_number, displacements + count++);
 
   assert(count == N_VAR_PART_STRUCT);
 
@@ -650,7 +680,6 @@ _define_particle_datatype(void)
     displacements[i] -= displacements[0];
 
   assert(fabs(displacements[0]) < 1e-15);
-
 
   /* Create new datatype */
 
@@ -662,30 +691,6 @@ _define_particle_datatype(void)
   return new_type;
 }
 
-/*----------------------------------------------------------------------------
- * Create a MPI_Datatype which maps coal particle characteristics.
- *
- * parameters:
- *
- * returns:
- *  a MPI_Datatype
- *----------------------------------------------------------------------------*/
-static MPI_Datatype
-_define_coal_particle_datatype(void)
-{
-  MPI_Datatype  new_type;
-
-  int  blocklengths[N_VAR_PART_COAL] = {1};
-  MPI_Aint  displacements[N_VAR_PART_COAL] = {0};
-  MPI_Datatype  types[N_VAR_PART_COAL] = {CS_MPI_GNUM};
-
-  MPI_Type_create_struct(N_VAR_PART_COAL,
-                         blocklengths, displacements, types, &new_type);
-
-  MPI_Type_commit(&new_type);
-
-  return new_type;
-}
 
 /*----------------------------------------------------------------------------
  * Create a MPI_Datatype which maps heat particle characteristics.
@@ -743,7 +748,6 @@ static void
 _delete_particle_datatypes(void)
 {
   MPI_Type_free(&_CS_MPI_PARTICLE);
-  MPI_Type_free(&_CS_MPI_COAL_PARTICLE);
   MPI_Type_free(&_CS_MPI_HEAT_PARTICLE);
   MPI_Type_free(&_CS_MPI_AUX_PARTICLE);
 }
@@ -787,15 +791,11 @@ _create_particle_set(const cs_lnum_t n_particles_max)
     new_set->particles[i].next_id = i+1;
   }
 
-  new_set->coal_desc = NULL;
   new_set->heat_desc = NULL;
   new_set->aux_desc = NULL;
 
   if (cs_glob_lagr_param.physic_mode == 1)
     BFT_MALLOC(new_set->heat_desc, n_particles_max, cs_lagr_heat_particle_t);
-
-  else if (cs_glob_lagr_param.physic_mode == 2)
-    BFT_MALLOC(new_set->coal_desc, n_particles_max, cs_lagr_coal_particle_t);
 
   if (   cs_glob_lagr_param.n_user_variables > 0
       || cs_glob_lagr_param.n_stat_classes > 0)
@@ -821,9 +821,6 @@ _destroy_particle_set(cs_lagr_particle_set_t *set)
     return set;
 
   BFT_FREE(set->particles);
-
-  if (set->coal_desc != NULL)
-    BFT_FREE(set->coal_desc);
 
   if (set->heat_desc != NULL)
     BFT_FREE(set->heat_desc);
@@ -932,7 +929,6 @@ _resize_particle_set(cs_lagr_particle_set_t  **p_particle_set,
 
     BFT_REALLOC(particle_set->particles, n_particles_max, cs_lagr_particle_t);
 
-    particle_set->coal_desc = NULL;
     particle_set->heat_desc = NULL;
     particle_set->aux_desc = NULL;
 
@@ -940,11 +936,6 @@ _resize_particle_set(cs_lagr_particle_set_t  **p_particle_set,
       BFT_REALLOC(particle_set->heat_desc,
                   n_particles_max,
                   cs_lagr_heat_particle_t);
-
-    else if (cs_glob_lagr_param.physic_mode == 2)
-      BFT_REALLOC(particle_set->coal_desc,
-                  n_particles_max,
-                  cs_lagr_coal_particle_t);
 
     if (   cs_glob_lagr_param.n_user_variables > 0
         || cs_glob_lagr_param.n_stat_classes > 0)
@@ -3547,7 +3538,6 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t  *n_particles_max,
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
     _CS_MPI_PARTICLE = _define_particle_datatype();
-    _CS_MPI_COAL_PARTICLE = _define_coal_particle_datatype();
     _CS_MPI_HEAT_PARTICLE = _define_heat_particle_datatype();
     _CS_MPI_AUX_PARTICLE = _define_aux_particle_datatype();
     }
@@ -3603,8 +3593,19 @@ CS_PROCF (prtget, PRTGET)(const cs_lnum_t   *nbpmax,  /* n_particles max. */
                           const cs_lnum_t   *jrinpf,
                           const cs_lnum_t   *jdfac,
                           const cs_lnum_t   *jimark,
-                          cs_lnum_t         *idepst
+                          cs_lnum_t         *idepst,
+                          cs_lnum_t         *iphyla,
+                          const cs_lnum_t   *jhp,
+                          const cs_lnum_t   *jtf,
+                          const cs_lnum_t   *jmch,
+                          const cs_lnum_t   *jmck,
+                          const cs_lnum_t   *jcp,
+                          const cs_lnum_t   *jrdck,
+                          const cs_lnum_t   *jrd0p,
+                          const cs_lnum_t   *jrr0p,
+                          const cs_lnum_t   *jinch        
 )
+
 {
   cs_lnum_t  i, id;
 
@@ -3796,6 +3797,92 @@ CS_PROCF (prtget, PRTGET)(const cs_lnum_t   *nbpmax,  /* n_particles max. */
 
     }
 
+  /* Data needed if the coal combustion is activated */
+    if (*iphyla ==2) {
+
+      /* ettp and ettpa arrays */
+
+      id = (*jhp - 1) * (*nbpmax) + i;
+      cur_part.temp = ettp[id];
+      prev_part.temp = ettpa[id];
+
+      id = (*jtf - 1) * (*nbpmax) + i;
+      cur_part.fluid_temp = ettp[id];
+      prev_part.fluid_temp = ettpa[id];
+
+      id = (*jmch-1) * (*nbpmax) + i;
+      cur_part.coal_mass = ettp[id];
+      prev_part.coal_mass = ettpa[id];
+
+      id = (*jmck-1) * (*nbpmax) + i;
+      cur_part.coke_mass = ettp[id];
+      prev_part.coke_mass = ettpa[id];
+
+      id = (*jcp-1) * (*nbpmax) + i;
+      cur_part.cp = ettp[id];
+      prev_part.cp = ettpa[id];
+
+      /* tepa array */
+
+      id = (*jrdck - 1) * (*nbpmax) + i;
+      cur_part.shrinking_diam = tepa[id];
+
+      id = (*jrd0p - 1) * (*nbpmax) + i;
+      cur_part.initial_diam = tepa[id];
+
+      id = (*jrr0p - 1) * (*nbpmax) + i;
+      cur_part.initial_density = tepa[id];
+
+      /* itepa array */
+
+      id = (*jinch - 1) * (*nbpmax) + i;
+      cur_part.coal_number = itepa[id];
+    }
+
+    else {
+
+    /* ettp and ettpa arrays */
+
+      id = (*jhp - 1) * (*nbpmax) + i;
+      cur_part.temp = 0.0;
+      prev_part.temp = 0.0;
+
+      id = (*jtf - 1) * (*nbpmax) + i;
+      cur_part.fluid_temp = 0.0;
+      prev_part.fluid_temp = 0.0;
+
+      id = (*jmch-1) * (*nbpmax) + i;
+      cur_part.coal_mass = 0.0;
+      prev_part.coal_mass = 0.0;
+
+      id = (*jmck-1) * (*nbpmax) + i;
+      cur_part.coke_mass = 0.0;
+      prev_part.coke_mass = 0.0;
+
+      id = (*jcp-1) * (*nbpmax) + i;
+      cur_part.cp = 0.0;
+      prev_part.cp = 0.0;
+
+      /* tepa array */
+
+      id = (*jrdck - 1) * (*nbpmax) + i;
+      cur_part.shrinking_diam = 0.0;
+
+      id = (*jrd0p - 1) * (*nbpmax) + i;
+      cur_part.initial_diam = 0.0;
+
+      id = (*jrr0p - 1) * (*nbpmax) + i;
+      cur_part.initial_density = 0.0;
+
+      /* itepa array */
+
+      id = (*jinch - 1) * (*nbpmax) + i;
+      cur_part.coal_number = 0;
+
+
+    } /* iphyla == 2 */
+
+
     /* Update structures */
 
     set->particles[i] = cur_part;
@@ -3864,7 +3951,18 @@ CS_PROCF (prtput, PRTPUT)(const cs_int_t   *nbpmax,  /* n_particles max. */
                           const cs_int_t   *jrinpf,
                           const cs_int_t   *jdfac,
                           const cs_int_t   *jimark,
-                          cs_int_t         *idepst)
+                          cs_int_t         *idepst,
+                          cs_lnum_t         *iphyla,
+                          const cs_lnum_t   *jhp,
+                          const cs_lnum_t   *jtf,
+                          const cs_lnum_t   *jmch,
+                          const cs_lnum_t   *jmck,
+                          const cs_lnum_t   *jcp,
+                          const cs_lnum_t   *jrdck,
+                          const cs_lnum_t   *jrd0p,
+                          const cs_lnum_t   *jrr0p,
+                          const cs_lnum_t   *jinch
+)
 {
   cs_lnum_t  i, j, k, id , nbp;
 
@@ -3911,6 +4009,50 @@ CS_PROCF (prtput, PRTPUT)(const cs_int_t   *nbpmax,  /* n_particles max. */
 
       itepa[(*jdfac - 1) * (*nbpmax) + i]  = cur_part.close_face_id + 1;
       itepa[(*jimark - 1) * (*nbpmax) + i]  = cur_part.marko_val;
+
+    }
+
+    // Data needed if coal combustion is activated
+
+    if (*iphyla == 2) {
+
+      /* ettp and ettpa arrays */
+
+      id = (*jhp - 1) * (*nbpmax) + i;
+      ettp[id] = cur_part.temp;
+      ettpa[id] = prev_part.temp;
+
+      id = (*jtf - 1) * (*nbpmax) + i;
+      ettp[id] = cur_part.fluid_temp;
+      ettpa[id] = prev_part.fluid_temp;
+
+      id = (*jmch - 1) * (*nbpmax) + i;
+      ettp[id] = cur_part.coal_mass;
+      ettpa[id] = prev_part.coal_mass;
+
+      id = (*jmck - 1) * (*nbpmax) + i;
+      ettp[id] = cur_part.coke_mass;
+      ettpa[id] = prev_part.coke_mass;
+
+      id = (*jcp - 1) * (*nbpmax) + i;
+      ettp[id] = cur_part.cp;
+      ettpa[id] = prev_part.cp;
+
+      /* tepa array */
+
+      id = (*jrdck - 1) * (*nbpmax) + i;
+      tepa[id] = cur_part.shrinking_diam;
+
+      id = (*jrd0p - 1) * (*nbpmax) + i;
+      tepa[id] = cur_part.initial_diam;
+
+      id = (*jrr0p - 1) * (*nbpmax) + i;
+      tepa[id] = cur_part.initial_density;
+
+      /* itepa array */
+
+      id = (*jinch - 1) * (*nbpmax) + i;
+      itepa[id] = cur_part.coal_number;
 
     }
 

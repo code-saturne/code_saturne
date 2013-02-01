@@ -706,9 +706,11 @@ endif
    jisor  , jgnum  , jrpoi  , jrtsp  , jdp    , jmp    ,          &
    jxp    , jyp    , jzp    ,                                     &
    jup    , jvp    , jwp    ,                                     &
-   juf    , jvf    , jwf    , jtaux  , jryplu,                    &
+   juf    , jvf    , jwf    , jtaux  , jryplu ,                   &
    jrinpf , jdfac  ,                                              &
-   jimark , idepst)
+   jimark , idepst , iphyla ,                                     &
+   jhp    , jtf    , jmch   , jmck   , jcp   ,                    &
+   jrdck  , jrd0p  , jrr0p  , jinch )
 
 
   call dplprt                                                     &
@@ -717,7 +719,7 @@ endif
    nvisbr , inbr  , inbrbd,                                       &
    iflm   , iflmbd, iang  , iangbd, ivit  ,  ivitbd,              &
    nusbor , iusb,   vislen,  dlgeo , rtp , iu    ,                &
-   iv     , iw  ,   idepst , energt)
+   iv     , iw  ,   idepst , energt )
 
 
 
@@ -730,8 +732,11 @@ endif
    ibord  ,                                                       &
    jisor  , jgnum  , jrpoi  , jrtsp  , jdp    ,                   &
    jmp    , jxp    , jyp    , jzp    ,                            &
-   jup    , jvp    , jwp    , juf    , jvf    , jwf , jtaux,      &
-   jryplu , jrinpf , jdfac  , jimark , idepst )
+   jup    , jvp    , jwp    , juf    , jvf    , jwf    , jtaux,   &
+   jryplu , jrinpf , jdfac  , jimark , idepst , iphyla ,          &
+   jhp    , jtf    , jmch   , jmck   , jcp   ,                    &
+   jrdck  , jrd0p  , jrr0p  , jinch )
+
 
   if (ierr.eq.1) then
     ntmabs = ntcabs

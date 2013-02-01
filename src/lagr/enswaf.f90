@@ -504,8 +504,8 @@ if (ivisck.eq.1) then
   FICH = ' '
   fich = entet
   call verlon (fich,ii1,ii2,lpos)
-  FICH(II2+1:II2+7) = '.mck'
-  ii2 = ii2 + 7
+  FICH(II2+1:II2+4) = '.mck'
+  ii2 = ii2 + 4
   WRITE (NAME,'(I4.4)') ITLAG
   call verlon (name,n1,n2,lpos)
   fich(ii2+1:ii2+lpos) = name(n1:n2)

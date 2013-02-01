@@ -101,7 +101,17 @@ CS_PROCF (prtget, PRTGET)(const cs_int_t   *nbpmax,  /* n_particles max. */
                           const cs_int_t   *jrinpf,
                           const cs_int_t   *jdfac,
                           const cs_int_t   *jimark,
-                          cs_int_t         *idepst
+                          cs_int_t         *idepst,
+                          cs_lnum_t        *iphyla,
+                          const cs_lnum_t  *jhp,
+                          const cs_lnum_t  *jtf,
+                          const cs_lnum_t  *jmch,
+                          const cs_lnum_t  *jmck,
+                          const cs_lnum_t  *jcp,
+                          const cs_lnum_t  *jrdck,
+                          const cs_lnum_t  *jrd0p,
+                          const cs_lnum_t  *jrr0p,
+                          const cs_lnum_t  *jinch
 );
 
 /*----------------------------------------------------------------------------
@@ -149,7 +159,17 @@ CS_PROCF (prtput, PRTPUT)(const cs_int_t   *nbpmax,  /* n_particles max. */
                           const cs_int_t   *jrinpf,
                           const cs_int_t   *jdfac,
                           const cs_int_t   *jimark,
-                          cs_int_t         *idepst
+                          cs_int_t         *idepst,
+                          cs_lnum_t        *iphyla,
+                          const cs_lnum_t  *jhp,
+                          const cs_lnum_t  *jtf,
+                          const cs_lnum_t  *jmch,
+                          const cs_lnum_t  *jmck,
+                          const cs_lnum_t  *jcp,
+                          const cs_lnum_t  *jrdck,
+                          const cs_lnum_t  *jrd0p,
+                          const cs_lnum_t  *jrr0p,
+                          const cs_lnum_t  *jinch
 );
 
 /*----------------------------------------------------------------------------
