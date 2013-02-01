@@ -213,9 +213,8 @@ endif
 icfgrp = 1
 
 
-! ---> Masse volumique variable et viscosite constante (pour les suites)
+! ---> Masse volumique variable (pour les suites)
 irovar = 1
-ivivar = 0
 
 !===============================================================================
 ! 4. ON REDONNE LA MAIN A L'UTLISATEUR
@@ -225,7 +224,7 @@ if (iihmpr.eq.1) then
   call cscfgp(icfgrp)
 endif
 
-call uscfx1
+call uscfx2
 !==========
 
 !===============================================================================
@@ -395,7 +394,7 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier uscfx1.                                          ',/,&
+'@  Verifier uscfx2.                                          ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

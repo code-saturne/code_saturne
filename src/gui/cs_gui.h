@@ -544,6 +544,7 @@ void CS_PROCF(uiiniv, UIINIV) (const int         *ncelet,
  * DOUBLE PRECISION CP0      -->  specific heat reference value
  * DOUBLE PRECISION VISCL0   -->  dynamic viscosity reference value
  * DOUBLE PRECISION VISLS0   -->  diffusion coefficient of the scalars
+ * DOUBLE PRECISION VISCV0   -->  volumic viscosity
  * DOUBLE PRECISION RTP      -->  variables and scalars array
  * DOUBLE PRECISION PROPCE   <--  cell properties array
  *----------------------------------------------------------------------------*/
@@ -570,6 +571,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
                               const cs_real_t        cp0[],
                               const cs_real_t        viscl0[],
                               const cs_real_t        visls0[],
+                              const cs_real_t        viscv0[],
                               const cs_real_t        rtp[],
                                     cs_real_t        propce[]);
 

@@ -688,7 +688,7 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         User formula for volumic viscosity
         """
         exp = self.mdl.getFormula('volumic_viscosity')
-        req = [('Viscv', 'Volumic viscosity')]
+        req = [('viscv', 'Volumic viscosity')]
         exa = FluidCharacteristicsView.volumic_viscosity
         symbols_viscv0 = []
         for s in self.list_scalars:

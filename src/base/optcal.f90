@@ -556,8 +556,7 @@ module optcal
   !                       variables par l'utilisateur
   !          iusini = 1 passage dans usiniv ou ppiniv
   !                   0 pas de passage (ni iusini ni ppiniv)
-  !          iuscfp = 1 passage dans uscfpv
-  !                   0 pas de passage
+  !          iuscfp = 1 n'est plus utile et est ignore
 
   integer, save :: iusini, iuscfp
 

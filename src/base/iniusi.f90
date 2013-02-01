@@ -190,7 +190,7 @@ endif
 
 if ( ippmod(icompf).ge.0) then
 !     For compressible model, call to uscfx1 to get ieos.
-!     With ihm, ieos has been read below in the call to uippmo.
+!     With GUI, ieos has been read below in the call to uippmo.
   call uscfx1
   !==========
 endif
@@ -268,10 +268,11 @@ call usipsc(nscmax , nscusi , iihmpu , nfecra , iscavr , ivisls)
 !==========
 
 if ( ippmod(icompf).ge.0) then
-!     For compressible model, call to uscfx2 to get ivisls(itempk) et iviscv.
-!     With ihm, iviscv has been read below in the first call to varpos (csvvva)
+!     For compressible model, call to uscfx1 to get ivisls(itempk) et iviscv.
+!     With GUI, iviscv has been read below in the first call to varpos (csvvva)
 !     and ivisl(itempk) below in the call to csivis.
-  call uscfx2
+
+  call uscfx1
   !==========
 !     Dynamic viscosity of reference of the scalar total energy (ienerg).
   if(ivisls(itempk).gt.0 .or. icv.gt.0) then
@@ -359,7 +360,6 @@ call usalin
 !      2ieme passage
 call varpos(nmodpp)
 !==========
-
 
 !===============================================================================
 ! 4. INITIALISATION DE PARAMETRES UTILISATEUR SUPPLEMENTAIRES
@@ -474,14 +474,11 @@ call indsui(isuite)
 
 
 if ( ippmod(icompf).ge.0) then
-!      For compressible model, call to uscfx2 to get visls0(itempk), viscv0.
-!      With ihm, visls0(itempk) and viscv0 have been read below in the call
-!      to csphys.
+!      For compressible model, call to uscfx2 to get visls0(itempk), viscv0,
+!      xmasmr and ivivar
+!      With GUI, visls0(itempk), viscv0, xmasmr and ivivar have been read
+!      below in the call to csphys.
   call uscfx2
-  !==========
-!      For compressible model, call to uscfx1 to get xmasmr.
-!      With ihm, xmasmr has been read below in the call to csphys.
-  call uscfx1
   !==========
 endif
 
