@@ -4971,7 +4971,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
         if (cs_gui_strcmp(prop_choice, "user_law"))
           user_law = 1;
         BFT_FREE(prop_choice);
-      }  
+      }
 
       if (user_law)
       {

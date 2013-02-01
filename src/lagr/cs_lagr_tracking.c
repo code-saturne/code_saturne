@@ -3603,7 +3603,7 @@ CS_PROCF (prtget, PRTGET)(const cs_lnum_t   *nbpmax,  /* n_particles max. */
                           const cs_lnum_t   *jrdck,
                           const cs_lnum_t   *jrd0p,
                           const cs_lnum_t   *jrr0p,
-                          const cs_lnum_t   *jinch        
+                          const cs_lnum_t   *jinch
 )
 
 {
