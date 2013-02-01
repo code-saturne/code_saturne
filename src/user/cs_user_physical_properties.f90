@@ -925,7 +925,6 @@ double precision, allocatable, dimension(:) :: w1, w2, w3
 !===============================================================================
 
 if (1.eq.1) then
-  iuscfp = 0
   return
 endif
 

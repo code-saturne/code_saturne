@@ -1657,7 +1657,7 @@ endif
 !       we MUST NOT set variables 'irovar' and 'ivivar' here, as
 !       they are defined automatically.
 !     Nonetheless, for the compressible case, ivivar may be modified
-!       in the uscfx1 user subroutine.
+!       in the uscfx2 user subroutine.
 
 !     When no specific physics module is active, we may specify if the
 !         density and the molecular viscosity
@@ -2661,8 +2661,13 @@ subroutine uscfx1
 
 !    User subroutine.
 
-!    Initialize non standard options for the compressible flow scheme.
+!    Initialize non standard options for the compressible flow scheme such
+!    what kind of equation of state must be used.
 
+!    In addition to options set in the user subroutine 'uscfx2' (or in
+!    the GUI): this subroutine allows to set switches to indicate if the
+!    volumetric viscosity and the conductivity are constants, their
+!    values being given in the subroutine 'uscfx2'.
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -2748,15 +2753,17 @@ if (iihmpr.eq.0) then   !  Remove test to set values here when also using GUI.
 !               cfther in this case, otherwise it won't work!)
   ieos = 1
 
-! Molar mass of the gas (kg/mol)
-!     For example with dry air, xmasml is around 28.8d-3 kg/mol
-  if (ieos.eq.1) then
-    xmasmr = 0.028966
-  endif
+! --> Molecular thermal conductivity
+!       constant  : ivisls = 0
+!       variable  : ivisls = 1
 
-! Specify if the hydrostatic equilibrium must be accounted for
-!     (yes = 1 , no = 0)
-  icfgrp = 1
+  ivisls(itempk) = 0
+
+! --> Volumetric molecular viscosity
+!       iviscv = 0 : uniform  in space and constant in time
+!              = 1 : variable in space and time
+
+  iviscv = 0
 
 endif
 
@@ -2780,12 +2787,16 @@ subroutine uscfx2
 
 !    User subroutine.
 
-!    Set options for viscosity and conductivity for compressible flow.
+!    Set values for the reference volumic viscosity, the reference
+!    conductivity and the molar mass for compressible flow.
+
+!    Initialize non standard options for the compressible flow scheme such
+!    as the hydrostatic equilibrium.
 
 !    In addition to options set in the user subroutine 'uscfx1' (or in
-!    the GUI): this subroutine allows to set switches to indicate if the
-!    volumetric viscosity and the conductivity are constants. If they are,
-!    the subroutines allows to set their values.
+!    the GUI): this subroutine allows to set a switch to indicate if the
+!    molecular viscosity is constant, its values being given in the user
+!    subroutine 'usipsu'.
 
 
 !-------------------------------------------------------------------------------
@@ -2862,14 +2873,13 @@ endif
 
 if (iihmpr.eq.0) then   !  Remove test to set values here when also using GUI.
 
-! --> Molecular thermal conductivity
+! --> Molecular viscosity
+!       constant  : ivivar = 0
+!       variable  : ivivar = 1
 
-!       constant  : ivisls = 0
-!       variable  : ivisls = 1
+  ivivar = 0
 
-  ivisls(itempk) = 0
-
-!       Reference molecular thermal conductivity
+! --> Reference molecular thermal conductivity
 !       visls0 = lambda0  (molecular thermal conductivity, W/(m K))
 
 !       WARNING: visls0 must be strictly positive
@@ -2880,20 +2890,29 @@ if (iihmpr.eq.0) then   !  Remove test to set values here when also using GUI.
 !       If the molecular thermal conductivity is variable, its values
 !         must be provided in the user subroutine 'uscfpv'
 
-
 ! --> Volumetric molecular viscosity
 
 !       Reference volumetric molecular viscosity
 
 !       viscv0 = kappa0  (volumetric molecular viscosity, kg/(m s))
-!       iviscv = 0 : uniform  in space and constant in time
-!              = 1 : variable in space and time
 
-  iviscv = 0
   viscv0 = 0.d0
 
 !       If the volumetric molecular viscosity is variable, its values
 !         must be provided in the user subroutine 'uscfpv'
+
+! --> Molar mass of the gas (kg/mol)
+
+!       For example with dry air, xmasml is around 28.8d-3 kg/mol
+  if (ieos.eq.1) then
+    xmasmr = 0.028966
+  endif
+
+! --> Hydrostatic equilibrium
+
+!       Specify if the hydrostatic equilibrium must be accounted for
+!         (yes = 1 , no = 0)
+  icfgrp = 1
 
 endif
 
