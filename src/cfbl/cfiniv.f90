@@ -173,14 +173,6 @@ if ( isuite.eq.0 ) then
            * rtp(iel,isca(irho))
     enddo
 
-! ----- Initialisation de la viscosite en volume
-
-    if(iviscv.gt.0) then
-      do iel = 1, ncel
-        propce(iel,ipproc(iviscv)) = viscv0
-      enddo
-    endif
-
   endif
 
 else

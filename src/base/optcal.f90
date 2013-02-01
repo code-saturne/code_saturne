@@ -556,10 +556,8 @@ module optcal
   !                       variables par l'utilisateur
   !          iusini = 1 passage dans usiniv ou ppiniv
   !                   0 pas de passage (ni iusini ni ppiniv)
-  !          iuscfp = 1 passage dans uscfpv
-  !                   0 pas de passage
 
-  integer, save :: iusini, iuscfp
+  integer, save :: iusini
 
   ! Parametres numeriques pour le calcul de la distance a la paroi
 

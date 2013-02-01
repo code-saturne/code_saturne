@@ -186,7 +186,7 @@ if (iihmpr.eq.1) then
 ( ncel, ncelet, nscaus,                                         &
   irom, iviscl, icp,    ivisls, irovar, ivivar,                 &
   isca, iscalt, iscsth, iscavr, ipproc, iviscv, itempk,         &
-  p0  , t0    , ro0   , cp0   , viscl0, visls0,                 &
+  p0  , t0    , ro0   , cp0   , viscl0, visls0, viscv0,         &
   rtp,    propce)
 endif
 
@@ -965,17 +965,17 @@ endif
 '@ @@ ATTENTION : ARRET LORS DU CALCUL DES GRANDEURS PHYSIQUES',/,&
 '@    =========',                                               /,&
 '@    MODULE COMPRESSIBLE',                                     /,&
-'@    INCOHERENCE ENTRE USCFPV ET USCFX1 POUR',                 /,&
+'@    INCOHERENCE ENTRE USCFPV ET USCFX2 POUR',                 /,&
 '@                                    LA VISCOSITE MOLECULAIRE',/,&
 '@',                                                            /,&
 '@  En compressible la viscosite moleculaire est constante par',/,&
 '@     defaut (IVIVAR=0) et la valeur de IVIVAR n''a',   /,&
-'@     pas ete modifiee dans uscfx1. Pourtant, on a modifie',   /,&
+'@     pas ete modifiee dans uscfx2. Pourtant, on a modifie',   /,&
 '@     les valeurs de la viscosite moleculaire dans uscfpv.',   /,&
 '@',                                                            /,&
 '@  Le calcul ne sera pas execute.',                            /,&
 '@',                                                            /,&
-'@  Verifier uscfx1 et uscfpv.',                                /,&
+'@  Verifier uscfx2 et uscfpv.',                                /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -1180,17 +1180,17 @@ endif
 '@',                                                            /,&
 '@ @@ WARNING: ABORT IN THE PHYSICAL QUANTITIES COMPUTATION',   /,&
 '@    ========',                                                /,&
-'@    INCOHERENCY BETWEEN USCFPV AND USCFX1 FOR',               /,&
+'@    INCOHERENCY BETWEEN USCFPV AND USCFX2 FOR',               /,&
 '@                                     THE MOLECULAR VISCOSITY',/,&
 '@',                                                            /,&
 '@  In the compressible module, the molecular viscosity is',    /,&
 '@     constant by default (IVIVAR=0) and the value',    /,&
-'@     of IVIVAR  has not been modified in uscfx1. Yet, its',   /,&
+'@     of IVIVAR  has not been modified in uscfx2. Yet, its',   /,&
 '@     value has been modified in uscfpv.',                     /,&
 '@',                                                            /,&
 '@  The calculation will not be run.',                          /,&
 '@',                                                            /,&
-'@  Verify uscfx1 and uscfpv.',                                 /,&
+'@  Verify uscfx2 and uscfpv.',                                 /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)

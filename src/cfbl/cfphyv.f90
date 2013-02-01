@@ -117,25 +117,10 @@ save             ipass
 ! 2. ON DONNE LA MAIN A L'UTILISATEUR
 !===============================================================================
 
-iuscfp = 1
 call uscfpv                                                       &
 !==========
  ( nvar   , nscal  ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb )
-
-!     Si IUSCFP = 0, l'utilisateur n'a pas inclus le ss pgm uscfpv dans
-!       ses sources. C'est une erreur si Cp, Cv ou Lambda est variable.
-!     On se contente de faire le test au premier passage.
-if(ipass.eq.0) then
-  ipass = ipass + 1
-  if((ivisls(itempk).gt.0.or.                            &
-       icp.gt.0.or.icv.gt.0).and.iuscfp.eq.0) then
-    write(nfecra,1000)                                          &
-         ivisls(itempk),icp,icv
-    call csexit (1)
-    !==========
-  endif
-endif
 
 !===============================================================================
 ! 3. MISE A JOUR DE LAMBDA/CV
@@ -227,29 +212,6 @@ enddo
 ! FORMATS
 !--------
 
- 1000 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''EXECUTION (MODULE COMPRESSIBLE)  ',/,&
-'@    =========                                               ',/,&
-'@                                                            ',/,&
-'@  Une ou plusieurs des propriétés suivantes a été déclarée  ',/,&
-'@    variable (repérée ci-dessous par un indicateur non nul) ',/,&
-'@    et une loi doit être fournie dans uscfpv.               ',/,&
-'@         propriété                               indicateur ',/,&
-'@     - conductivité thermique                    ',I10       ,/,&
-'@     - capacité calorifique à pression constante ',I10       ,/,&
-'@     - capacité calorifique à volume constant    ',I10       ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Renseigner uscfpv ou déclarer les propriétés constantes et',/,&
-'@    uniformes (uscfx2 pour la conductivité thermique,       ',/,&
-'@    cfther pour les capacités calorifiques).                ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  2000 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
