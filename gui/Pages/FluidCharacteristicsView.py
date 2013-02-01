@@ -407,10 +407,12 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
                     self.mdl.setPropertyMode(tag, 'constant')
                     self.groupBoxCp.setTitle(QString('Isobaric specific heat'))
                 if tag == 'volumic_viscosity':
-                    __model.setItem(str_model='constant')
                     __combo.setEnabled(True)
-                    __button.setEnabled(False)
-                    self.mdl.setPropertyMode(tag, 'constant')
+                    c = self.mdl.getPropertyMode(tag)
+                    if c == 'user_law':
+                        __button.setEnabled(True)
+                    else:
+                        __button.setEnabled(False)
                 self.groupBoxViscv0.show()
             else:
                 if tag == 'specific_heat':
