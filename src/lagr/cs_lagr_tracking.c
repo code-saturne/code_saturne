@@ -2370,7 +2370,8 @@ _local_propagation(cs_lagr_particle_t     *p_prev_particle,
                    const cs_lnum_t  *iv,
                    const cs_lnum_t  *iw,
                    cs_lnum_t               *idepst,
-                           cs_real_t               energt[])
+                   cs_real_t               energt[],
+                   cs_lnum_t               ipass)
 {
   cs_lnum_t  i, j, k;
   cs_real_t  depl[3];
@@ -2415,6 +2416,8 @@ _local_propagation(cs_lagr_particle_t     *p_prev_particle,
 
     if (n_loops > CS_LAGR_MAX_PROPAGATION_LOOPS) { /* Manage error */
 
+      if (ipass == 1) {
+
       const char msg[] = "Max number of loops reached in particle displacement";
       _manage_error(failsafe_mode,
                     particle,
@@ -2422,6 +2425,7 @@ _local_propagation(cs_lagr_particle_t     *p_prev_particle,
                     &n_failed_particles,
                     &failed_particle_weight,
                     msg);
+      }
 
       move_particle  = CS_LAGR_PART_MOVE_OFF;
       particle_state = CS_LAGR_PART_ERR;
@@ -2519,7 +2523,7 @@ _local_propagation(cs_lagr_particle_t     *p_prev_particle,
                                 particle,
                                 &error);
 
-        if (error == 1) {
+        if (error == 1 && ipass == 1) {
 
           const char msg[]
             = "Error during the particle displacement (Interior face)";
@@ -2782,7 +2786,7 @@ _local_propagation(cs_lagr_particle_t     *p_prev_particle,
 
         face_num = -face_num;
 
-        if (error == 1) {
+        if (error == 1 && ipass == 1) {
 
           const char msg[]
             = "Error during the particle displacement (Boundary face)";
@@ -4167,6 +4171,13 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_n_particles,
       cs_lagr_particle_t*  cur_part = &set->particles[j];
       cs_lagr_particle_t*  prev_part = &prev_set->particles[j];
 
+      /* Local copies of the current and previous particles state vectors
+         to be used in case of the first pass of _local_propagation fails */
+
+      cs_lagr_particle_t prev_part_aux = *prev_part;
+      cs_lagr_particle_t cur_part_aux = *cur_part;
+
+
       if (cur_part->state == CS_LAGR_PART_TO_SYNC)
         cur_part->state = _local_propagation(prev_part,
                                              cur_part,
@@ -4191,7 +4202,51 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_n_particles,
                                              dlgeo,
                                              rtp, iu, iv ,iw,
                                              idepst,
-                                             energt);
+                                             energt,
+                                             0);
+
+
+      if (cur_part->state == CS_LAGR_PART_ERR) {
+
+        /* If the first pass failed, a second call of _local_propagation_
+           is performed with a (local) modification of the coordinate of the particle
+           at the previous time step */
+
+        cs_real_t* xyzcen = cs_glob_mesh_quantities->cell_cen;
+
+        for (int k = 0; k < 3; k++) {
+          prev_part_aux.coord[k] = xyzcen[3* (prev_part->cur_cell_num - 1) + k];
+          cur_part->cur_cell_num = cur_part_aux.cur_cell_num;
+        }
+
+        cur_part->state = _local_propagation(&prev_part_aux,
+                                             cur_part,
+                                             scheme_order,
+                                             failsafe_mode,
+                                             boundary_stat,
+                                             &n_failed_particles,
+                                             &failed_particle_weight,
+                                             iensi3,
+                                             nvisbr,
+                                             inbr,
+                                             inbrbd,
+                                             iflm,
+                                             iflmbd,
+                                             iang,
+                                             iangbd,
+                                             ivit,
+                                             ivitbd,
+                                             nusbor,
+                                             iusb,
+                                             visc_length,
+                                             dlgeo,
+                                             rtp, iu, iv ,iw,
+                                             idepst,
+                                             energt,
+                                             1);
+
+      }
+
 
       prev_part->state = cur_part->state;
       j = cur_part->next_id;
