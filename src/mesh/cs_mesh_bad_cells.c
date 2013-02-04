@@ -123,8 +123,6 @@ static int  _type_flag_visualize[] = {0, 0};
 static void
 _compute_ortho_norm(const cs_mesh_t             *mesh,
                     const cs_mesh_quantities_t  *mesh_quantities,
-                    cs_real_t                    i_face_ortho[],
-                    cs_real_t                    b_face_ortho[],
                     unsigned                     bad_cell_flag[])
 {
   cs_lnum_t  i, face_id, cell1, cell2;
@@ -133,7 +131,7 @@ _compute_ortho_norm(const cs_mesh_t             *mesh,
   cs_real_t  face_center[3];
   cs_real_t  face_normal[3], vect[3];
 
-  double  cos_alpha;
+  double  cos_alpha, i_face_ortho, b_face_ortho;
 
   const cs_lnum_t  dim = 3;
 
@@ -165,9 +163,9 @@ _compute_ortho_norm(const cs_mesh_t             *mesh,
 
     cos_alpha = _COSINE_3D(vect, face_normal);
 
-    i_face_ortho[face_id] = cos_alpha;
+    i_face_ortho = cos_alpha;
 
-    if (i_face_ortho[face_id] < 0.1) {
+    if (i_face_ortho < 0.1) {
       bad_cell_flag[cell1] = bad_cell_flag[cell1] | _type_flag_mask[0];
       bad_cell_flag[cell2] = bad_cell_flag[cell2] | _type_flag_mask[0];
     }
@@ -201,11 +199,10 @@ _compute_ortho_norm(const cs_mesh_t             *mesh,
 
     cos_alpha = _COSINE_3D(vect, face_normal);
 
-    b_face_ortho[face_id] = cos_alpha;
+    b_face_ortho = cos_alpha;
 
-    if (b_face_ortho[face_id] < 0.1) {
+    if (b_face_ortho < 0.1)
       bad_cell_flag[cell1] = bad_cell_flag[cell1] | _type_flag_mask[0];
-    }
   }
 
   if (mesh->halo != NULL)
@@ -229,24 +226,14 @@ _compute_ortho_norm(const cs_mesh_t             *mesh,
  *----------------------------------------------------------------------------*/
 
 static void
-_compute_weighting_offsetting(const cs_mesh_t         *mesh,
-                              const cs_mesh_quantities_t  *mesh_quantities,
-                              cs_real_t                weighting[],
-                              cs_real_t                offsetting[],
-                              unsigned                 bad_cell_flag[])
+_compute_offsetting(const cs_mesh_t             *mesh,
+                    const cs_mesh_quantities_t  *mesh_quantities,
+                    unsigned                     bad_cell_flag[])
 {
-  cs_lnum_t  i, face_id, cell1, cell2;
-  cs_real_t  intersection;
-  cs_real_t  cell_center1[3], cell_center2[3];
-  cs_real_t  face_center[3], face_normal[3];
-  cs_real_t  v0[3], v1[3], v2[3];
+  cs_lnum_t  face_id, cell1, cell2;
+  double  of_n, off_1, off_2;
 
-  double  coef0 = 0, coef1 = 0, coef2 = 0;
-
-  const cs_lnum_t  dim = 3;
-
-  /* Compute weighting coefficient */
-  /*-------------------------------*/
+  const cs_real_t *v_of, *v_n;
 
   /* Loop on interior faces */
 
@@ -255,55 +242,21 @@ _compute_weighting_offsetting(const cs_mesh_t         *mesh,
     cell1 = mesh->i_face_cells[2 * face_id] - 1;
     cell2 = mesh->i_face_cells[2 * face_id + 1] - 1;
 
-    /* Get information on mesh quantities */
+    /* Compute center offsetting coefficient,
+       in a manner consistent with iterative gradient reconstruction */
 
-    for (i = 0; i < dim; i++) {
+    v_of = &(mesh_quantities->dofij[face_id*3]);
+    v_n = &(mesh_quantities->i_face_normal[face_id*3]);
+    of_n = fabs(_DOT_PRODUCT_3D(v_of, v_n));
 
-      /* Center of gravity for each cell */
-      cell_center1[i] = mesh_quantities->cell_cen[cell1*dim + i];
-      cell_center2[i] = mesh_quantities->cell_cen[cell2*dim + i];
+    off_1 = 1 - pow(of_n / mesh_quantities->cell_vol[cell1], 1/3.);
+    off_2 = 1 - pow(of_n / mesh_quantities->cell_vol[cell2], 1/3.);
 
-      /* Face center coordinates */
-      face_center[i] = mesh_quantities->i_face_cog[face_id*dim + i];
-
-      /* Surface vector (orthogonal to the face) */
-      face_normal[i] = mesh_quantities->i_face_normal[face_id*dim + i];
-    }
-
-    /* Compute weighting coefficient with two approaches. Keep the max value. */
-
-    for (i = 0; i < dim; i++) {
-      v0[i] = cell_center2[i] - cell_center1[i];
-      v1[i] = face_center[i] - cell_center1[i];
-      v2[i] = cell_center2[i] - face_center[i];
-    }
-
-    coef0 = _DOT_PRODUCT_3D(v0, face_normal);
-    coef1 = _DOT_PRODUCT_3D(v1, face_normal)/coef0;
-    coef2 = _DOT_PRODUCT_3D(v2, face_normal)/coef0;
-
-    weighting[face_id] = CS_MAX(coef1, coef2);
-
-    /* Compute center offsetting coefficient */
-    /*---------------------------------------*/
-
-    /* Compute intersection between face and segment defined by the two cell
-       centers */
-
-    for (i = 0; i < dim; i++) {
-      intersection =  (1 - weighting[face_id]) * cell_center1[i]
-                         + weighting[face_id]  * cell_center2[i];
-      v1[i] = intersection - face_center[i];
-      v2[i] = cell_center2[i] - cell_center1[i];
-    }
-
-    offsetting[face_id] = 1 - sqrt(  _DOT_PRODUCT_3D(v1, v1)
-                                   / _MODULE_3D(face_normal));
-
-    if (offsetting[face_id] < 0.1) {
+    if (off_1 < 0.1)
       bad_cell_flag[cell1] = bad_cell_flag[cell1] | _type_flag_mask[1];
+    if (off_2 < 0.1)
       bad_cell_flag[cell2] = bad_cell_flag[cell2] | _type_flag_mask[1];
-    }
+
   }
 
   if (mesh->halo != NULL)
@@ -329,9 +282,9 @@ _compute_weighting_offsetting(const cs_mesh_t         *mesh,
 static void
 _compute_least_squares(const cs_mesh_t             *mesh,
                        const cs_mesh_quantities_t  *mesh_quantities,
-                       cs_real_t                    lsq[],
                        unsigned                     bad_cell_flag[])
 {
+  cs_real_t lsq;
   const cs_lnum_t  dim = mesh->dim;
   const cs_lnum_t  n_cells = mesh->n_cells;
   const cs_lnum_t  n_cells_wghosts = mesh->n_cells_with_ghosts;
@@ -495,9 +448,9 @@ _compute_least_squares(const cs_mesh_t             *mesh,
       max_diag = fmax(max_diag, fabs(eigenvalues[i]));
     }
 
-    lsq[cell_id] = min_diag / max_diag;
+    lsq = min_diag / max_diag;
 
-    if (lsq[cell_id] < 0.1) {
+    if (lsq < 0.1) {
       bad_cell_flag[cell_id] = _type_flag_mask[2];
     }
   }
@@ -527,9 +480,9 @@ _compute_least_squares(const cs_mesh_t             *mesh,
 static void
 _compute_volume_ratio(const cs_mesh_t             *mesh,
                       const cs_mesh_quantities_t  *mesh_quantities,
-                      cs_real_t                    vol_ratio[],
                       unsigned                     bad_cell_flag[])
 {
+  double vol_ratio;
   cs_real_t *volume = mesh_quantities->cell_vol;
 
   cs_lnum_t   face_id, cell1, cell2;
@@ -542,10 +495,10 @@ _compute_volume_ratio(const cs_mesh_t             *mesh,
     cell1 = mesh->i_face_cells[2 * face_id] - 1;
     cell2 = mesh->i_face_cells[2 * face_id + 1] - 1;
 
-    vol_ratio[face_id] = fmin(volume[cell1] / volume[cell2],
-                              volume[cell2] / volume[cell1 ]);
+    vol_ratio = fmin(volume[cell1] / volume[cell2],
+                     volume[cell2] / volume[cell1]);
 
-    if (vol_ratio[face_id] < 0.1*0.1) {
+    if (vol_ratio < 0.1*0.1) {
       bad_cell_flag[cell1] = _type_flag_mask[3];
       bad_cell_flag[cell2] = _type_flag_mask[3];
     }
@@ -782,11 +735,9 @@ void
 cs_mesh_bad_cells_detect(const cs_mesh_t       *mesh,
                          cs_mesh_quantities_t  *mesh_quantities)
 {
-  double  *working_array = NULL;
   unsigned *bad_cell_flag = NULL;
 
   const cs_lnum_t  n_i_faces = mesh->n_i_faces;
-  const cs_lnum_t  n_b_faces = mesh->n_b_faces;
   const cs_lnum_t  n_cells = mesh->n_cells;
   const cs_lnum_t  n_cells_wghosts = mesh->n_cells_with_ghosts;
 
@@ -837,20 +788,8 @@ cs_mesh_bad_cells_detect(const cs_mesh_t       *mesh,
 
   if (_type_flag_compute[call_type] & CS_BAD_CELL_ORTHO_NORM) {
 
-    cs_real_t  *i_face_ortho = NULL, *b_face_ortho = NULL;
-
-    BFT_MALLOC(working_array, n_i_faces + n_b_faces, cs_real_t);
-
-    for (i = 0; i < n_i_faces + n_b_faces; i++)
-      working_array[i] = 0.;
-
-    i_face_ortho = working_array;
-    b_face_ortho = working_array + n_i_faces;
-
     _compute_ortho_norm(mesh,
                         mesh_quantities,
-                        i_face_ortho,
-                        b_face_ortho,
                         bad_cell_flag);
 
     ibad = 0;
@@ -872,8 +811,6 @@ cs_mesh_bad_cells_detect(const cs_mesh_t       *mesh,
                (unsigned long long)ibad,
                (double)ibad / (double)n_cells_tot * 100.0);
 
-    BFT_FREE(working_array);
-
   }
 
   /* Condition 2: Orthogonal A-Frame */
@@ -881,22 +818,9 @@ cs_mesh_bad_cells_detect(const cs_mesh_t       *mesh,
 
   if (_type_flag_compute[call_type] & CS_BAD_CELL_OFFSET) {
 
-    cs_real_t  *weighting = NULL, *offsetting = NULL;
-
-    /* Only defined on interior faces */
-    BFT_MALLOC(working_array, 2*n_i_faces, cs_real_t);
-
-    for (i = 0; i < 2*n_i_faces; i++)
-      working_array[i] = 0.;
-
-    weighting = working_array;
-    offsetting = working_array + n_i_faces;
-
-    _compute_weighting_offsetting(mesh,
-                                  mesh_quantities,
-                                  weighting,
-                                  offsetting,
-                                  bad_cell_flag);
+    _compute_offsetting(mesh,
+                        mesh_quantities,
+                        bad_cell_flag);
 
     ibad = 0;
     for (i = 0; i < n_cells; i++) {
@@ -917,8 +841,6 @@ cs_mesh_bad_cells_detect(const cs_mesh_t       *mesh,
                (unsigned long long)ibad,
                (double)ibad / (double)n_cells_tot * 100.0);
 
-    BFT_FREE(working_array);
-
   }
 
   /* Condition 3: Least Squares Gradient */
@@ -926,18 +848,8 @@ cs_mesh_bad_cells_detect(const cs_mesh_t       *mesh,
 
   if (_type_flag_compute[call_type] & CS_BAD_CELL_LSQ_GRAD) {
 
-    cs_real_t  *lsq = NULL;
-
-    BFT_MALLOC(working_array, n_cells_wghosts, cs_real_t);
-
-    for (i = 0; i < n_cells_wghosts; i++)
-      working_array[i] = 0.;
-
-    lsq = working_array;
-
     _compute_least_squares(mesh,
                            mesh_quantities,
-                           lsq,
                            bad_cell_flag);
 
     ibad = 0;
@@ -959,8 +871,6 @@ cs_mesh_bad_cells_detect(const cs_mesh_t       *mesh,
                (unsigned long long)ibad,
                (double)ibad / (double)n_cells_tot * 100.0);
 
-    BFT_FREE(working_array);
-
   }
 
   /* Condition 4: Volume Ratio */
@@ -968,18 +878,8 @@ cs_mesh_bad_cells_detect(const cs_mesh_t       *mesh,
 
   if (_type_flag_compute[call_type] & CS_BAD_CELL_RATIO) {
 
-    cs_real_t  *vol_ratio = NULL;
-
-    BFT_MALLOC(working_array, n_i_faces, cs_real_t);
-
-    for (i = 0; i < n_i_faces; i++)
-      working_array[i] = 0.;
-
-    vol_ratio = working_array;
-
     _compute_volume_ratio(mesh,
                           mesh_quantities,
-                          vol_ratio,
                           bad_cell_flag);
 
     ibad = 0;
@@ -1000,8 +900,6 @@ cs_mesh_bad_cells_detect(const cs_mesh_t       *mesh,
     bft_printf(_("    Number of bad cells detected: %llu --> %3.0f %%\n"),
                (unsigned long long)ibad,
                (double)ibad / (double)n_cells_tot * 100.0);
-
-    BFT_FREE(working_array);
 
   }
 
