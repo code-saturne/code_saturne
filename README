@@ -34,7 +34,7 @@ Parallel code coupling capabilities are also provided by the FVM library.
 Code_Saturne can be coupled to EDF's thermal software SYRTHES (conjugate
 heat transfer). It can also produce output usable by EDF's structural analysis
 software Code_Aster, in particular in the SALOME platform. SYRTHES and
-Code_Aster are developped by EDF and distributed under GNU GPL licence.
+Code_Aster are developed by EDF and distributed under GNU GPL licence.
 
 Copying
 =======

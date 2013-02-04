@@ -782,7 +782,7 @@ Architectural changes
 - New LaTeX classes are added.
   A new plan is added in the theory guide.
   A note on basic rules to write the theory guide is added in the
-  developper guide.
+  developer guide.
 
 - Improve documentation tools detection and add a doc rule at the top level
   directory, and rename the doc directory to docs to avoid Makefile
@@ -977,8 +977,8 @@ User and pre/post processing changes
 
 - Add the possibility of setting up a frequency output in seconds in the GUI.
 
-- Remove all the occurences of the user and developper arrays. User should now
-  use the user_modules.f90 suggested in the user files, and developpers should
+- Remove all the occurences of the user and developer arrays. User should now
+  use the user_modules.f90 suggested in the user files, and developers should
   use allocatable arrays in one of the modules (see src/Makefile.am).
 
 - Transform user files for joining, periodicity, mesh modification,
@@ -1050,7 +1050,7 @@ User and pre/post processing changes
 Architectural changes
 ---------------------
 
-- Add a developpers guide with coding standards.
+- Add a developers guide with coding standards.
 
 - Add an installation documentation.
 
@@ -1136,7 +1136,7 @@ Architectural changes
   avoid bugs in which iphas was not re-set to 1 after a previous loop on
   phases.
 
-- Add a developpers guide with coding standards.
+- Add a developers guide with coding standards.
 
 - Remove the vectorization directives (when forced) so as to simplify
   the code maintainance and since we do not have  access to a vector

@@ -37,7 +37,7 @@ subroutine atmcls &
 ! --------
 ! Compute u*, q0, e0, (momentum, sensible heat and latent heat fluxes)
 !   for a non neutral atmospheric surface layer using the explicit formula
-!   developped for the ECMWF by Louis (1982)
+!   developed for the ECMWF by Louis (1982)
 
 !-------------------------------------------------------------------------------
 ! Arguments

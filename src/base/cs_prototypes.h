@@ -69,7 +69,7 @@ extern void CS_PROCF (csinit, CSINIT)
 );
 
 /*----------------------------------------------------------------------------
- * Developper function for output of variables on a post-processing mesh
+ * Developer function for output of variables on a post-processing mesh
  *----------------------------------------------------------------------------*/
 
 extern void CS_PROCF (dvvpst, DVVPST)

@@ -129,8 +129,8 @@ for the directory where you want to install Code_Saturne.
 
       --with-libxml2=...    for Libxml2 support
       PYTHON=...            for specific Python executable
-      PYUIC4=...            for PyQt4 developper tools pyuic4
-      PYRCC4=...            for PyQt4 developper tools pyrcc4
+      PYUIC4=...            for PyQt4 developer tools pyuic4
+      PYRCC4=...            for PyQt4 developer tools pyrcc4
 
       # Run-time options
 
