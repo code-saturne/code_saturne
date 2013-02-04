@@ -38,17 +38,14 @@
 #include <float.h>
 
 /*----------------------------------------------------------------------------
- * BFT and FVM library headers
- *----------------------------------------------------------------------------*/
-
-#include <bft_mem.h>
-#include <bft_error.h>
-#include <bft_printf.h>
-
-/*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft_mem.h"
+#include "bft_error.h"
+#include "bft_printf.h"
+
+#include "cs_halo.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_parall.h"
@@ -210,6 +207,12 @@ _compute_ortho_norm(const cs_mesh_t             *mesh,
       bad_cell_flag[cell1] = bad_cell_flag[cell1] | _type_flag_mask[0];
     }
   }
+
+  if (mesh->halo != NULL)
+    cs_halo_sync_untyped(mesh->halo,
+                         CS_HALO_EXTENDED,
+                         sizeof(unsigned),
+                         bad_cell_flag);
 }
 
 /*----------------------------------------------------------------------------
@@ -302,6 +305,12 @@ _compute_weighting_offsetting(const cs_mesh_t         *mesh,
       bad_cell_flag[cell2] = bad_cell_flag[cell2] | _type_flag_mask[1];
     }
   }
+
+  if (mesh->halo != NULL)
+    cs_halo_sync_untyped(mesh->halo,
+                         CS_HALO_EXTENDED,
+                         sizeof(unsigned),
+                         bad_cell_flag);
 }
 
 /*----------------------------------------------------------------------------
@@ -494,6 +503,12 @@ _compute_least_squares(const cs_mesh_t             *mesh,
   }
 
   BFT_FREE(w1);
+
+  if (mesh->halo != NULL)
+    cs_halo_sync_untyped(mesh->halo,
+                         CS_HALO_EXTENDED,
+                         sizeof(unsigned),
+                         bad_cell_flag);
 }
 
 /*----------------------------------------------------------------------------
@@ -535,6 +550,12 @@ _compute_volume_ratio(const cs_mesh_t             *mesh,
       bad_cell_flag[cell2] = _type_flag_mask[3];
     }
   }
+
+  if (mesh->halo != NULL)
+    cs_halo_sync_untyped(mesh->halo,
+                         CS_HALO_EXTENDED,
+                         sizeof(unsigned),
+                         bad_cell_flag);
 }
 
 /*----------------------------------------------------------------------------
