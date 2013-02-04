@@ -28,38 +28,99 @@ This section presents the continuous equations. It is no substitutes for the
 specific sub-sections of this documentation: the purpose here is mainly to
 provide an overview before more detailed reading.
 
-In the following, $\rho $ stands for the density, $\vect{u}$ for the
-velocity field. A mass source term, $\Gamma $ , may present, but in most
-cases the right-hand side of the Mass equation is $\Gamma =0$. 
+The continuous equations can be obtained applying budget on the mass,
+momentum, or again on mass of a scalar. An useful theorem, the so-called
+Leibniz theorem, states that the variation of the integral of a given field $A$ 
+over a moving domain $\Omega$ reads:
+
+ \begin{equation}\label{eq:goveq:leibnitz_th}
+\begin{array}{r c l}
+\displaystyle \DP{} \left( \int_{\vol{} } A \dd \vol{} \right) &=& 
+\displaystyle \int_{\vol{} }\der{A}{t} \dd \vol{} + \int_{\partial \vol{}} A  \variav \cdot  \dd \vect{S},
+\end{array}
+ \end{equation}
+ where $\variav$ is the velocity of the boundary of $\Omega$. 
+
+Let now apply \eqref{eq:goveq:leibnitz_th} to a fluid volume\footnote{%
+A fluid volume consists of fluid particles, that is to say it moves with the fluid velocity.
+},
+so $\partial \Omega$ moves with the fluid velocity denoted by $\vect{u}$, and to the field
+$A= \rho$, where $\rho$ denotes the density:
+%
+ \begin{equation}\label{eq:goveq:leibnitz_th_mass}
+\begin{array}{r c l}
+\displaystyle \DP{} \left( \int_{\vol{}} \rho \dd \vol{}\right) &=& 
+\displaystyle \int_{\vol{}} \der{\rho}{t} \dd \vol{} + \int_{\partial \vol{}} \rho  \vect{u} \cdot  \dd \vect{S}, \\
+\displaystyle &=&
+\displaystyle \int_{\vol{ }} \der{\rho}{t} + \dive \left( \rho \vect{u} \right)  \dd \vol{},
+\end{array}
+ \end{equation}
+the second line is obtained using Green relation. In \eqref{eq:goveq:leibnitz_th_mass}, the term
+$\DP{} \left( \int_{\vol{} }\rho \dd \vol{}\right) $ is zero because\footnote{
+it can be non-zero in some rare cases when fluid is created by a chemical reaction for instance.
+}
+ it is the variation of the mass of a fluid volume. This equality is true for any fluid volume, so
+ if the density field and the velocity field are sufficiently regular then the \textbf{continuity} equation holds:
+ 
+\begin{equation}\label{eq:mass0}
+\dfrac{\partial \rho}{\partial t} + \dive(\rho \vect{u})=0.
+\end{equation}
+
+Equation \eqref{eq:mass0} could be slightly generalized to cases where a mass source term $\Gamma$ 
+exists:
+\begin{equation}\label{eq:mass}
+\dfrac{\partial \rho}{\partial t} + \dive(\rho \vect{u})=\Gamma,
+\end{equation}
+but $\Gamma$ is generally taken to $0$.
 \nomenclature[grho]{$\rho$}{density field \nomunit{$kg.m^{-3}$}}
 \nomenclature[rut1]{$\vect{u}$}{velocity field \nomunit{$m.s^{-1}$}}
 \nomenclature[ggamma ]{$\Gamma$}{mass source term}
-The continuity equation (also called mass equation) is displayed in \eqref{eq:mass}.
 
-\begin{equation}\label{eq:mass}
-\dfrac{\partial \rho}{\partial t} + \dive(\rho \vect{u})=\Gamma.
-\end{equation}
+The same procedure on the momentum gives:
+\begin{equation}\label{eq:goveq:leibnitz_th_momentum}
+\begin{array}{r c l}
+\displaystyle \DP{} \left( \int_{\vol{} }\rho \vect{u} \dd \vol{}\right) &=& 
+\displaystyle \int_{\vol{} }\der{\left( \rho \vect{u} \right) }{t} \dd \vol{} + \int_{\partial \vol{}}  \vect{u}\otimes \left( \rho \vect{u} \right) \cdot  \dd \vect{S}, \\
+\displaystyle &=&
+\displaystyle \int_{\vol{ }} \der{\left( \rho \vect{u} \right) }{t} + \dive \left( \vect{u} \otimes \rho \vect{u} \right)  \dd \vol{},
+\end{array}
+ \end{equation} 
+once again, the Green relation has been used to obtain the second line. One then invokes Newton's second law
+stating that the variation of momentum is equal to the external forces:
+\begin{equation}\label{eq:goveq:leibnitz_th_momentum2}
+\begin{array}{r c l}
+\displaystyle \DP{} \left( \int_{\vol{}} \rho \vect{u} \dd \vol{}\right) &=& 
+\displaystyle 
+\underbrace{
+\int_{\partial \vol{}}  \tens{\sigma} \cdot  \dd \vect{S}
+}_{
+\text{ boundary force }
+}
++
+\underbrace{
+\int_{\vol{} }\rho \vect{g} \dd \vol{}
+}_{
+\text{ volume force }
+}
+, \\
+\displaystyle &=&
+\displaystyle \int_{\vol{ }} \divv \left( \tens{\sigma} \right) + \rho \vect{g}  \dd \vol{},
+\end{array}
+ \end{equation} 
+where $\tens{\sigma}$ is the Cauchy stress tensor\footnote{
+$\tens{\sigma} \cdot \dd \vect{S}$ represents the forces exerted on the surface element
+$ \dd \vect{S} $ by the exterior of the domain $\Omega$.
+}, $\vect{g}$ is the gravity field. Other source of momentum can be added in particular case, such 
+as head losses or Coriolis forces for instance.
 
-In fact, to compute a given unknown $\varia$ (and in particular for the
-velocity prediction),
-\nomenclature[gphi]{$\varia$}{scalar unknown field}
- the equation 
-$\displaystyle \frac{\partial \rho}{\partial t} + \dive(\rho \vect{u}) = \Gamma$ 
-is used to re-write the term 
-$\displaystyle \frac{\partial \left( \rho \phi \right)}{\partial t}$ as follows:
-\begin{equation*}
-\dfrac{\partial \left( \rho \varia \right)}{\partial t} = \rho \dfrac{\partial  \varia}{\partial t} - \varia \,\dive(\rho \vect{u})
-+ \Gamma\,\varia^{in}.
-\end{equation*}
-The possible variations in time of the density are however
-not taken into account in the pressure correction step.
-
-The momentum equation is:
+Finally, bringing \eqref{eq:goveq:leibnitz_th_momentum} and \eqref{eq:goveq:leibnitz_th_momentum2} all together 
+the \textbf{momentum} equation is obtained:
 \begin{equation}\label{eq:momentum}
 \dfrac{\partial }{\partial t}(\rho \vect{u})
 +\divv \left( \vect{u}\otimes \rho \vect{u} \right)
-=\divv \left( \tens{\sigma} \right) +\vect{ST}_{\vect{u}}-\tens{K}\,\vect{u},
+=\divv \left( \tens{\sigma} \right) +\rho \vect{g} +\vect{ST}_{\vect{u}}-\tens{K}\,\vect{u} + \Gamma \vect{u}^{in},
 \end{equation}
+%
 where $\vect{ST}_{\vect{u}}$ and $\tens{K}\,\vect{u}$ stand for explicit and implicit additional 
 momentum Source Terms
 \nomenclature[rstut1]{$\vect{ST}_{\vect{u}}$}{explicit additional momemtum Source Termes \nomunit{$kg.m^{-2}.s^{-2}$}}
@@ -67,394 +128,220 @@ momentum Source Terms
 \nomenclature[gsigmat2]{$\tens{\sigma}$}{total stress tensor \nomunit{$Pa$}}
  which may be prescribed by the user (head loss, $\Gamma \vect{u}^{in}$ 
 contribution associated with a user-prescribed mass source term...).
+Note that $\tens{K}$ is a symmetric positive tensor, by definition. 
 
-$\tens{K}$ is a symmetric positive tensor, by definition. 
-
-\begin{itemize}
- \item For laminar flow, $\tens{\sigma}$ is the stress tensor:
-\begin{equation}
-\tens{\sigma}=\tens{\tau}-P\tens{Id}
-\end{equation}%
-where $\tens{\tau}$ is the viscous stress tensor,
-\nomenclature[rp ]{$P$}{pressure field \nomunit{$Pa$}}
-\nomenclature[gtaut2]{$\tens{\tau}$}{viscous stress tensor, which is the deviatoric part of the stress tensor \nomunit{$Pa$}}
- defined for a Newtonian fluid from $\mu =\mu_l $ (dynamic molecular viscosity) 
-\nomenclature[gmu]{$\mu$}{dynamic viscosity \nomunit{$kg.m^{-1}.s^{-1}$}}
-\nomenclature[gmul]{$\mu_l$}{dynamic molecular viscosity \nomunit{$kg.m^{-1}.s^{-1}$}}
-and $\tens{S}$ (strain rate tensor) as:
-\nomenclature[rst2]{$\tens{S}$}{strain rate tensor \nomunit{$s^{-1}$}}
+In order to make the set of Equations \eqref{eq:mass} and \eqref{eq:momentum} closed, the Newtonian state law
+linking the stress tensor $\tens{\sigma}$ to the velocity field (more precisely to the rate of strain tensor $\tens{S}$)
+is introduced: 
 %
 \begin{equation}\label{eq:base_introd_tau}
-\tens{\tau}=2\,\mu \ \deviator{\tens{S}} = 2\,\mu \ \tens{S}-\frac{2}{3}\mu \ \trace{\tens{S}}\ \tens{Id},
+\tens{\tau}=2 \mu \deviator{\tens{S}} = 2 \mu  \tens{S}-\frac{2}{3}\mu  \trace \left(\tens{S} \right) \tens{Id},
 \end{equation}
+%
+where $\mu =\mu_l $ is called  the dynamic molecular viscosity, 
+\nomenclature[gmu]{$\mu$}{dynamic viscosity \nomunit{$kg.m^{-1}.s^{-1}$}}
+\nomenclature[gmul]{$\mu_l$}{dynamic molecular viscosity \nomunit{$kg.m^{-1}.s^{-1}$}}
+whereas $\tens{\tau}$ is the viscous stress tensor and the pressure field are defined as:
+%
+\begin{equation}
+\left\lbrace
+\begin{array}{r c l}
+P &=& -\dfrac{1}{3} \trace \left( \tens{\sigma} \right), \\
+\tens{\sigma} & = & \tens{\tau}-P\tens{Id}.
+\end{array}
+\right.
+\end{equation}
+%
+\nomenclature[rp ]{$P$}{pressure field \nomunit{$Pa$}}
+\nomenclature[gtaut2]{$\tens{\tau}$}{viscous stress tensor, which is the deviatoric part of the stress tensor \nomunit{$Pa$}}
+and $\tens{S}$ , the strain rate tensor, as:
+\begin{equation}\label{eq:base_introd_strainrate}
+ \tens{S}=\frac{1}{2} \left( \gradt \, \vect{u}+ \transpose{\gradt \, \vect{u}} \right).
+\end{equation}
+%
+\nomenclature[rst2]{$\tens{S}$}{strain rate tensor \nomunit{$s^{-1}$}}
 %
 \nomenclature[odeviator]{$\deviator{ \left(\tens{.} \right)}$}{deviatoric part of a tensor}
 \nomenclature[otrace]{$\trace{ \left(\tens{.}\right)}$}{trace of a tensor}
 %
-with
-\begin{equation}\label{eq:base_introd_strainrate}
- \tens{S}=\frac{1}{2} \left( \gradt \, \vect{u}+ \transpose{\gradt \vect{u}} \right).
-\end{equation}
-
-\item For turbulent flow, $\displaystyle \tens{\sigma}$ also accounts
-for the turbulent Reynolds stress tensor (correlations of the velocity
-fluctuations arising from the non linear convective term). The modelling of
-the latter depends upon the turbulence model adopted:
+Injecting Equation \eqref{eq:base_introd_tau} into the momentum Equation \eqref{eq:momentum} and combining 
+it with the continuity Equation \eqref{eq:mass} give the Navier Stokes equations:
 %
-\begin{itemize}
-\item with an eddy-viscosity model (\emph{EVM}) such as the $k-\varepsilon $ 
-model, the closure requires a turbulent viscosity $\mu _{t}$. 
-With formally the same definition for $\tens{\tau}$ as in Equation \eqref{eq:base_introd_tau},
- but with $\mu =\mu _{l}+\mu _{t}$, $\tens{\sigma}$ reads:
-\begin{equation}
-\tens{\sigma}=\tens{\tau}-(P+\frac{2}{3}\rho k)\tens{Id}
-\end{equation}
-
-\item with the \emph{LES} approach, the definition for $\tens{\sigma}$
-remains the same as for the \emph{EVM}, above, but the turbulent viscosity $\mu
-_{t} $ now accounts only for the sub-grid effects.
-
-\item with a Differential Reynolds Stress Model (\emph{DRSM}), the
-components of the Reynolds stress tensor $\tens{R}$ are solved as extra
-variables during the simulation, and are readily available for the momentum
-equation, so one obtains, with $\mu =\mu _{l}$ in the definition of $%
-\tens{\tau}$ (Equation \eqref{eq:base_introd_tau}):
-\begin{equation}
-\tens{\sigma}=\tens{\tau}-P\tens{Id}-\rho \tens{R}
-\end{equation}
-%
-\end{itemize}
-\end{itemize}
-
-In the following, only three standard types of turbulence models are
-described, as representatives of the types of equations that need to be
-dicretized. 
-% TODO A more detailed description of available turbulence models is
-% described in section 
-%TODO(?? Turbulence Models??)
-
-%-------------------------------------------------------------------------------
-\section{Turbulence modelling}
-\subsection{Equations for the variables $k$ and $\varepsilon$
-(standard $k-\varepsilon$ model)}
-
-\begin{equation}
-\left\{
+\begin{equation}\label{eq:navier_stokes_conservative}
+\left\lbrace
 \begin{array}{r c l}
-\displaystyle\frac{\partial }{\partial t}(\rho k)+\dive\left[ \rho \vect{u}%
-\,k- \left( \mu +\frac{\mu _{t}}{\sigma _{k}} \right)\grad{k}\right] 
-&=&
-\mathcal{P}+\mathcal{G}-\rho \varepsilon +\Gamma k^{in}+ST_{k}, \\
-\displaystyle\frac{\partial }{\partial t}(\rho \varepsilon )+\dive\left[
-\rho \vect{u}\,\varepsilon -(\mu +\frac{\mu _{t}}{\sigma _{\varepsilon }})%
-\grad{\varepsilon}\right] &=&C_{\varepsilon _{1}}\frac{\varepsilon }{k}\left[
-\mathcal{P}+(1-C_{\varepsilon _{3}})\mathcal{G}\right] -\rho C_{\varepsilon
-_{2}}\frac{\varepsilon ^{2}}{k}+\Gamma \varepsilon ^{in}+ST_{\varepsilon },%
-\end{array}%
+\dfrac{\partial \rho}{\partial t} + \dive \left( \rho \vect{u} \right) &=& \Gamma, \\
+\dfrac{\partial }{\partial t}(\rho \vect{u})
++\divv \left( \vect{u}\otimes \rho \vect{u} \right)
+&=& - \grad P 
++ \divv \left( \mu  \left[ \gradt \, \vect{u} + \transpose{\gradt \, \vect{u}} - \dfrac{2}{3} \trace \left(\gradt \, \vect{u} \right) \tens{Id} \right]   \right) 
++\rho \vect{g}
+ +\vect{ST}_{\vect{u}}-\tens{K}\,\vect{u} + \Gamma \vect{u}^{in},
+\end{array}
 \right.
 \end{equation}
-\nomenclature[rk]{$k$}{turbulent kinetic energy \nomunit{$m^{2}.s^{-2}$}}
-\nomenclature[gepslion]{$ \varepsilon $}{turbulent kinetic energy dissipation \nomunit{$m^{2}.s^{-3}$}}
-\nomenclature[rproduction]{$\mathcal{P}$}{turbulent kinetic energy production \nomunit{$kg.m^{-1}.s^{-3}$}}
-where $\mathcal{P}$ is the production term created by mean shear:
-%
-\begin{equation}
-\begin{array}{rcl}
-\mathcal{P} & = & \displaystyle -\rho \tens{R} : \gradt \, \vect{u}
-= -\left[-2 \mu_t \deviator{\tens{S}}%
-+ \frac{2}{3}\rho k \tens{1}\right] : \tens{S}, \\
-& = & \displaystyle \mu_t \left[ 2\left(\frac{\partial u}{\partial x}%
-\right)^2+ 2\left(\frac{\partial v}{\partial y}\right)^2+ 2\left(\frac{%
-\partial w}{\partial z}\right)^2+ \left(\frac{\partial u}{\partial y}+\frac{%
-\partial v}{\partial x}\right)^2+ \left(\frac{\partial u}{\partial z}+\frac{%
-\partial w}{\partial x}\right)^2+ \left(\frac{\partial v}{\partial z}+\frac{%
-\partial w}{\partial y}\right)^2 \right] \\
-&&-\frac{2}{3}\mu_t \left( \dive\vect{u} \right)^2-\frac{2}{3}
-\rho k \dive \left( \vect{u} \right),
+
+The left hand side of the momentum part of  Equation \eqref{eq:navier_stokes_conservative} can be rewritten using the continuity Equation \eqref{eq:mass}:
+\begin{equation}\label{eq:goveqn:conservative_non_conservative}
+\dfrac{\partial }{\partial t}(\rho \vect{u}) +\divv \left( \vect{u}\otimes \rho \vect{u} \right)
+ = 
+\rho \der{\vect{u}}{t} + 
+\underbrace{
+\der{\rho}{t} \vect{u}  
+}_{
+\left[ \Gamma  -  \dive \left(\rho \vect{u} \right) \right]  \vect{u} 
+}
++ \dive \left(\rho \vect{u} \right) \vect{u} 
++ 
+\underbrace{
+\gradt \, \vect{u} \cdot \left( \rho \vect{u} \right)
+}_{
+\text{convection}
+} .
+\end{equation}
+
+Then Navier Stokes equations reads as a non-conservative form:
+\begin{equation}\label{eq:navier_stokes_laminar}
+\left\lbrace
+\begin{array}{r c l}
+\dfrac{\partial \rho}{\partial t} + \dive \left( \rho \vect{u} \right) &=& \Gamma, \\
+\rho \der{\vect{u} }{t} 
++
+\gradt \, \vect{u} \cdot \left( \rho \vect{u}\right)
+&=& - \grad P 
++ \divv \left( \mu  \left[ \gradt \, \vect{u} + \transpose{\gradt \, \vect{u}} - \dfrac{2}{3} \trace \left(\gradt \, \vect{u} \right) \tens{Id} \right]   \right) 
++ \rho \vect{g}
+ +\vect{ST}_{\vect{u}}-\tens{K}\,\vect{u} + \Gamma \left( \vect{u}^{in} - \vect{u} \right),
 \end{array}
+\right.
 \end{equation}
-\nomenclature[rbuoyancy]{$\mathcal{G}$}{turbulent kinetic energy buoyancy term \nomunit{$kg.m^{-1}.s^{-3}$}}
-and
-$\mathcal{G}$ is the production term created by gravity effects: 
+This formulation will be used in the following. Note that the convective term is nothing else but 
+$ \gradt \, \vect{u} \cdot \left( \rho \vect{u}\right) = \divv \left( \vect{u}\otimes \rho \vect{u} \right) -\dive \left(  \rho \vect{u} \right) \vect{u} $,
+this relationship should be conserved by the space-discretized scheme (see \chaptername~\ref{chapter:spadis}).
+
+%-------------------------------------------------------------------------
+\paragraph{Turbulent flows with a Reynolds Average Navier-Stokes approach (\emph{RANS}):}
+When the flow becomes turbulent, the \emph{RANS} approach is to consider the 
+velocity field $\vect{u}$ as stochastic and then splat into a mean field denoted by $\overline{\vect{u}}$ and
+a fluctuating field $\vect{u}^\prime$:
 \begin{equation}
-\displaystyle \mathcal{G}= \frac{1}{\rho}\frac{\mu_t}{\sigma_t} \grad \rho \, . \, \vect{g}.
-\end{equation}
-
-The turbulent viscosity is: 
-\begin{equation}
-\displaystyle \mu_t=\rho C_\mu\frac{k^2}{%
-\varepsilon}.
-\end{equation}
-\nomenclature[rstk]{$ST_{k}$}{additional turbulent kinetic energy source term \nomunit{$kg.m^{-1}.s^{-3}$}}
-\nomenclature[rstepsilon]{$ST_{\varepsilon}$}{additional turbulent dissipation source term \nomunit{$kg.m^{-1}.s^{-4}$}}
-$ST_{\varphi }$ ($\varphi =k$ or $\varepsilon $) stands for the additional
-source terms prescribed by the user (in rare cases only).
-
-The constants of the model are given in the Table (\ref{tab:k_epsilon_constants}):
-\begin{table}[htp]
-\centering
-\begin{tabular}{p{0,8cm}|p{0,8cm}|p{0,8cm}|p{0,8cm}|p{0,8cm}}
-$C_\mu$ & $C_{\varepsilon_1}$ & $C_{\varepsilon_2}$ & $\sigma_k$ & $%
-\sigma_\varepsilon$ \\ \hline
-$0,09$ & $1,44$ & $1,92$ & $1$ & $1,3$ 
-\end{tabular}%
-\caption{Standard $k-\varepsilon$ model constants \cite{Launder:1972}.\label{tab:k_epsilon_constants}}
-\end{table}
-\nomenclature[rcmu]{$C_\mu$}{eddy viscosity constant}
-\nomenclature[rcepsilon1]{$C_{\varepsilon_1}$}{constant of the standard $k-\varepsilon$ model}
-\nomenclature[rcepsilon2]{$C_{\varepsilon_2}$}{constant of the standard $k-\varepsilon$ model}
-\nomenclature[rcepsilon3]{$C_{\varepsilon_3}$}{constant of the standard $k-\varepsilon$ model depending on the buoyancy term}
-
-$C_{\varepsilon_3}=0$ if $\mathcal{G}\geqslant0$ (unstable stratification)
-and $C_{\varepsilon_3}=1$ if $\mathcal{G}\leqslant0$ (stable stratification).
-
-%-------------------------------------------------------------------------------
-\subsection{Equations for the Reynolds stress tensor components $R_{ij}$ 
-and $\varepsilon$ (\emph{LRR} model)}
+\vect{u} = \overline{\vect{u}} + \vect{u}^\prime . 
+\end{equation} 
+The Reynolds average operator $\overline{\left( \cdot\right)}$ is applied to Navier-Stokes Equation \eqref{eq:navier_stokes}:
 %
-\nomenclature[rrt2]{$\tens{R}$}{Reynolds stress tensor \nomunit{$m^{2}.s^{-2}$}}
-\nomenclature[rrij]{$R_{ij}$}{componant $ij$ of the Reynolds stress tensor \nomunit{$m^{2}.s^{-2}$}}
+\begin{equation}\label{eq:reynolds}
+\left\lbrace
+\begin{array}{r c l}
+\dfrac{\partial \rho}{\partial t} + \dive \left( \rho \overline{\vect{u}} \right) &=& \Gamma, \\
+\rho \der{ \overline{\vect{u}} }{t} 
++
+\gradt \, \overline{\vect{u}} \cdot \left( \rho \overline{\vect{u}}\right)
+&=& - \grad \overline{P} 
++ \divv \left( \mu  \left[ \gradt \, \overline{\vect{u}} + \transpose{\gradt \, \overline{\vect{u}}} - \dfrac{2}{3} \trace \left(\gradt \, \overline{\vect{u}} \right) \tens{Id} \right]   \right) 
++ \rho \vect{g}
+- \divv \left(\rho \tens{R} \right)
+ +\vect{ST}_{\vect{u}}-\tens{K}\,\overline{\vect{u}} + \Gamma \left( \overline{\vect{u}}^{in} - \overline{\vect{u}} \right),
+\end{array}
+\right.
+\end{equation}
+%
+Only the mean field fields $\overline{\vect{u}}$ and $\overline{P}$ are computed. 
+An additional term $\tens{R}$ appears in the Reynolds Equations \eqref{eq:reynolds} which is by definition the covariance tensor of the fluctuating
+velocity field and called the Reynolds stress tensor:
+%
+\begin{equation}\label{eq:def_reynolds_stress-tensor}
+\tens{R} \equiv \overline{\vect{u}^\prime \otimes \vect{u}^ \prime}.
+\end{equation}
+the latter requires a closure modelling which depends the turbulence model adopted. Two major types of modelling exist:
 
+\begin{enumerate}[ label=\roman{*}/, ref=(\roman{*})]
+\item Eddy Viscosity Models (\emph{EVM}) which assume that the Reynolds stress tensor is aligned with
+the strain rate tensor of the mean flow ($\overline{\tens{S}} \equiv \frac{1}{2} \left( \gradt \, \vect{u}+ \transpose{\gradt \, \vect{u}} \right)$):
+%
+\begin{equation}\label{eq:goveqn:evm_hypothesis}
+\rho \tens{R} = \dfrac{2}{3}\rho  k \tens{Id} - 2 \mu_T \deviator{\overline{\tens{S}}},
+\end{equation}
+where the turbulent kinetic energy $k$ is defined by:
+%
+\begin{equation}\label{eq:goveqn:tke_def}
+k \equiv \dfrac{1}{2} \trace \left( \tens{R}\right),
+\end{equation}
+and $\mu_T$ is called the dynamic turbulent viscosity and must be modelled.
+Note that the viscous part $\mu_T\deviator{\overline{\tens{S}}}$ of the Reynolds stresses is simply added to the viscous part of the
+stress tensor $\mu_l\deviator{\overline{\tens{S}}}$ so that the momentum equation for the mean velocity is similar to the one of a laminar
+flow with a variable viscosity $\mu = \mu_l +\mu_T$. 
+ Five \emph{EVM} are available in \CS:
+$k-\varepsilon$, $k-\varepsilon$ with Linear Production (\emph{LP}), $k-\omega$ \emph{SST}, Spalart Allmaras, and an Elliptic Blending model (\emph{EB-EVM}) $Bl-v^2-k$ 
+
+\item Differential Reynolds Stress Models (\emph{DRSM}) which solve
+a transport equation on the components of the Reynolds stress tensor $\tens{R}$ 
+during the simulation, and are readily available for the momentum
+equation \eqref{eq:reynolds}. Three \emph{DRSM} models are available in \CS: $R_{ij}-\varepsilon$ proposed by Launder Reece and Rodi (\emph{LRR}) in \cite{launder:},
+$R_{ij}-\varepsilon$ proposed by Spezial Sarkar and Gatski (\emph{SSG}) in \cite{spezial:} and an Elliptic Blending version \emph{EB-RSM} (see \cite{}).
+%
+
+\end{enumerate}
+
+
+%-------------------------------------------------------------------------
+\paragraph{Large Eddy Simulation (\emph{LES}):}
+the \emph{LES} approach consists in filtering the $\vect{u}$ field using an operator denoted by $\widetilde{\left(\cdot \right)} $.
+Applying the latter filter to the Navier-Stokes Equations \eqref{eq:navier_stokes} gives:
+%
+\begin{equation}\label{eq:navier_stokes_les}
+\left\lbrace
+\begin{array}{r c l}
+\dfrac{\partial \rho}{\partial t} + \dive \left( \rho \widetilde{\vect{u}} \right) &=& \Gamma, \\
+\rho \der{ \widetilde{\vect{u}} }{t} 
++
+\gradt \, \widetilde{\vect{u}} \cdot \left( \rho \widetilde{\vect{u}}\right)
+&=& - \grad \widetilde{P} 
++ \divv \left( 2 \mu  \deviator{\widetilde{\tens{S}}}   \right) 
++ \rho \vect{g}
+- \divv \left( \rho \widetilde{\vect{u}^\prime \otimes \vect{u}^\prime } \right)
+ +\vect{ST}_{\vect{u}}-\tens{K}\,\widetilde{\vect{u}} + \Gamma \left( \widetilde{\vect{u}}^{in} - \widetilde{\vect{u}} \right),
+\end{array}
+\right.
+\end{equation}
+where $\vect{u}^\prime$ are non-filtered fluctuations. An eddy viscosity hypothesis is done on the additional
+resulting tensor:
 \begin{equation}
-\left\{
-\begin{array}{rcll}
-\displaystyle\frac{\partial }{\partial t} \left(\rho \tens{R} \right)
-+\divt \left( \tens{R} \otimes \rho \vect{u}-\mu \gradtt \tens{R} \right) 
-& = & \tens{\mathcal{P}} + \tens{G}+ \tens{\Phi} + \tens{\mathit{d}}
--\rho \tens{\varepsilon} & \displaystyle+\Gamma \tens{R}^{in}+\tens{ST}_{R_{ij}},
+\widetilde{\vect{u}^\prime \otimes \vect{u}^\prime }  = \dfrac{2}{3} k \tens{Id} - 2 \mu_T \deviator{\widetilde{\tens{S}}},
+\end{equation}
+%
+where the above turbulent viscosity $\mu_T$ now accounts only for sub-grid effects.
+
+%-----------------------------------------------
+\paragraph{Formulation for laminar, RANS or LES calculation:}
+for sake of simplicity, in all cases, the computed velocity field will be denoted by $\vect{u}$ even if 
+it is about \emph{RANS} velocity field $\overline{\vect{u}}$ or \emph{LES} velocity field $\widetilde{\vect{u}}$.
+
+Moreover, a manipulation on the right hand side of the momentum is  performed to change the meaning
+of the pressure field. let $P^\star$ be the dynamic pressure field defined by:
+%
+\begin{equation}\label{eq:dynamic_pressure_def}
+P^\star = P - \rho_0 \vect{g} \cdot \vect{x} + \dfrac{2}{3} \rho k,
+\end{equation}
+where $\rho_0$ is a reference constant density field. Then the continuity and the momentum equations
+read:
+ %
+ \begin{equation}\label{eq:navier_stokes}
+\left\lbrace
+\begin{array}{r c l}
+\dfrac{\partial \rho}{\partial t} + \dive \left( \rho \vect{u} \right) &=& \Gamma, \\
+\rho \der{\vect{u} }{t} 
++
+\gradt \, \vect{u} \cdot \left( \rho \vect{u}\right)
+&=& - \grad P^\star 
++ \divv \left( 2\left( \mu_l  +  \mu_T \right) \deviator{\tens{S}}   \right) 
+- \divv \left(\rho \tens{R} - 2 \mu_T \deviator{\tens{S}} \right)
++ \left( \rho -\rho_0 \right)\vect{g}
 \\
-\displaystyle\frac{\partial }{\partial t}(\rho \varepsilon )
-+\dive\left(\rho \vect{u}\,\varepsilon -\mu \grad{\varepsilon}\right) 
-& = & \displaystyle \mathit{{d}+C_{\varepsilon _{1}}\frac{\varepsilon }{k}\left[ \mathcal{P}%
-+G_{\varepsilon }\right] -\rho C_{\varepsilon _{2}}\frac{\varepsilon ^{2}}{k}} 
-& \displaystyle+\Gamma \varepsilon ^{in}+ST_{\varepsilon },
-\end{array}%
+ &+&\vect{ST}_{\vect{u}}-\tens{K}\,\vect{u} + \Gamma \left( \vect{u}^{in} - \vect{u} \right).
+\end{array}
 \right.
 \end{equation}
-\nomenclature[rproductiont2]{$\tens{\mathcal{P}}$}{turbulent production tensor \nomunit{$kg.m^{-1}.s^{-3}$}}
-\nomenclature[rbuoyancyt2]{$\tens{\mathcal{G}}$}{turbulent buoyancy production tensor \nomunit{$kg.m^{-1}.s^{-3}$}}
-where
-$\tens{\mathcal{P}}$ stands for the turbulence production tensor associated
-with mean flow strain-rate and $\tens{\mathcal{G}}$ is stands for the
-production- tensor associated with buoyancy effects:
-\begin{equation}
-\begin{array}{r c l}
-\displaystyle \tens{ \mathcal{P}} & = & \displaystyle-\rho \left[ \tens{R} \cdot \gradt \, \vect{u} 
-+ \gradt \, \vect{u}  \cdot \tens{R}\right], \\
-\tens{ \mathcal{G}} & = &
-\displaystyle \frac{3}{2}\frac{C_{\mu }}{\sigma _{t}}
-\frac{k}{\varepsilon }
-\left[\vect{r} \otimes \vect{g} +\vect{g} \otimes \vect{r}  \right].
-\end{array}
-\end{equation}
-where $ \vect{r} \equiv \tens{R} \cdot \grad  \rho$ and 
-$G_{\varepsilon }= \Max \left(0, \, \frac{1}{2}\trace \tens{\mathcal{G}}\right)$.
-\nomenclature[rrt1]{$\vect{r}$}{vector of the Reynolds stress tensor times the density gradient}
-\nomenclature[rbuoyancyepsilon]{$G_{\varepsilon }$}{turbulent buoyancy term for dissipation}
 
-With these definition the following relations hold:
-\begin{equation}
-\begin{array}{r c l}
-\displaystyle k &=&\frac{1}{2} \trace{\tens{R}}, \\
-\mathcal{P} &=&\frac{1}{2} \trace \left( \tens{\mathcal{P}} \right) ,
-\end{array}
-\end{equation}
-
-$\tens{\Phi}$ is the term representing pressure-velocity correlations:
-\nomenclature[gphit2]{$\tens{\Phi}$}{pressure-velocity correlation tensor \nomunit{$kg.s^{-3}$}}
-\begin{equation}
-\displaystyle \tens{\Phi} = \tens{\phi_{1}}+ \tens{\phi_{2}}+ \tens{\phi_{3}}+ \tens{\phi_{w}},
-\end{equation}%
-%
-\begin{equation}
-\begin{array}{r c l}
-\tens{\phi_{1}} &=& \displaystyle -\rho \,C_{1}\frac{\varepsilon }{k}%
-\deviator{\tens{R}}, \\
-\tens{\phi_{2}} &=& -\rho \,C_{2} 
-\deviator{\tens{\mathcal{P}}}, \\
-\tens{\phi_{3}} &=& -C_{3} \deviator{ \tens{G} }.
-\end{array}
-\end{equation}
-
-The term $\tens{\phi_{w}}$ is called ``wall echo term'' (by default, it is not
-accounted for: see \fort{turrij} \ref{ap:turrij}).
-
-The dissipation term, $\tens{\varepsilon}$ , is considered isotropic:
-\nomenclature[gepsilont2]{$\tens{\varepsilon}$}{turbulent kinetic energy dissipation tensor \nomunit{$m^{2}.s^{-3}$}}
-\begin{equation}
-\displaystyle \tens{\varepsilon}=\frac{2}{3}\ \varepsilon \tens{1}.
-\end{equation}
-
-The turbulent diffusion terms are:
-\begin{equation}
-\begin{array}{r c l}
-\tens{d} & = & C_{S} \displaystyle \divt \left( \rho \frac{k}{\varepsilon }%
-\tens{R} \cdot \gradtt \tens{R} \right), \\
-d & = & C_{\varepsilon }\displaystyle \dive \left( \rho \frac{k}{\varepsilon} 
-\tens{R} \cdot \grad \varepsilon \right).
-\end{array}
-\end{equation}
-
-In the rare event of mass sources, $\Gamma R_{ij}^{in}$ and $\Gamma
-\varepsilon ^{i}$ are the corresponding injection terms. $ST_{R_{ij}}$ and $%
-ST_{\varepsilon }$ are also rarely used additional source terms that can
-prescribed by the user.
-
-\begin{table}[!htp]
-\begin{center}
-\begin{tabular}{p{0,8cm}|p{0,8cm}|p{0,8cm}|p{0,8cm}|p{0,8cm}|p{0,8cm}|p{0,8cm}|p{0,8cm}|p{0,8cm}|p{0,8cm}}
-$C_\mu$ & $C_{\varepsilon}$ & $C_{\varepsilon_1}$ & $C_{\varepsilon_2}$ & $%
-C_1$ & $C_2$ & $C_3$ & $C_S$ & $C^{\prime}_1$ & $C^{\prime}_2$ \\ \hline
-$0,09$ & $0,18$ & $1,44$ & $1,92$ & $1,8$ & $0,6$ & $0,55$ & $0.22$ & $0,5$
-& $0,3$ 
-\end{tabular}
-\end{center}
-\caption{Model constants of the \emph{LRR}??? $R_{ij}-\varepsilon$ model \cite{Launder:????}.}
-\end{table}
-
-%-------------------------------------------------------------------------------
-\subsection{Definition of turbulent eddy viscosity for \emph{LES}}
-
-\begin{description}
- \item[Smagorinsky model] 
-\begin{equation}
-\mu_{t}=\rho \, \left( C_{s}\,\overline{\Delta } \right)^{2}
-\sqrt{2\overline{\tens{S}} \,: \, \overline{\tens{S}}},
-\end{equation}%
-\nomenclature[odotproductdouble]{$:$}{double dot product}
-%
-where $\overline{\tens{S}}$ the filtered strain rate tensor components:
-
-\begin{equation}
-\overline{\tens{S}}= \symmetric{\overline{\tens{S}}} =
-\frac{1}{2} \left[ \gradt \vect{\overline{u}} + \transpose{\left( \gradt \, \vect{\overline{u}} \right)}
-\right].
-\end{equation}
-%
-\nomenclature[osymmetric]{$\symmetric{ \left(\tens{.}\right)}$}{symmetric part of a tensor}
-%
-Here, $\overline{u_{i}}$ stands for the $i^{th}$ resolved velocity component
-\footnote{%
-In the case of implicit filtering, the discretization in space introduces a
-spectral low pass filter: only the structures larger that twice the size of
-the cells are accounted for. Those structures are called ''the resolved
-scales'', whereas the rest, $u_{i}-\overline{u_{i}}$, is referred to as
-''unresolved scales'' or ''sub-grid scales''. The influence of the
-unresolved scales on the resolved scales have to be modelled.}. 
-
-$C$ is the Smagorinsky constant. Its theoretical value is $0.18$ for
-homogeneous isotropic turbulence, but the value $0.065$ is classic for
-channel flow. 
-
-$\overline{\Delta }$ is the filter width associated with the finite volume
-formulation (implicit filtering which corresponds to the integration over a
-cell). The value recommended for hexahedral cells is: $\overline{\Delta }
-=2 \norm{\vol{\celli}}^{\frac{1}{3}}$where $\norm{\vol{\celli}}$ is the volume of the cell $\celli$.
-
-\item[Classic dynamic model]
-A second filter is introduced: it is an explicit filter with a
-characteristic width $\widetilde{\Delta }$ superior to that of the implicit
-filter ($\overline{\Delta }$). If $\varia$ is a discrete variable defined over
-the computational domain, the variable obtained after applying the explicit
-filter to $\varia$ is noted $\tilde{\varia}$. Moreover, with:
-
-\begin{equation}
-\begin{array}{ r c l}
-\tens{L} & = &\widetilde{\overline{\vect{u}} \otimes \overline{\vect{u}}}
--\widetilde{\overline{\vect{u}}} \otimes \widetilde{\overline{ \vect{u}}}, \\
-\tens{\tau} & = & \overline{ \vect{u} \otimes \vect{u}}-\overline{\vect{u}} \otimes \overline{ \vect{u}}, \\
-\tens{T} &= &\widetilde{\overline{ \vect{u} \otimes \vect{u}}}-\widetilde{\overline{\vect{u}}} \otimes
-\widetilde{\overline{ \vect{u}}},
-\end{array}
-\end{equation}
-Germano identity reads:
-\begin{equation}
-\tens{L} = \tens{T}-\widetilde{\tens{\tau}}.
-\end{equation}
-
-Both dynamic models described herafter rely on the estimation of the tensors
-$\tens{T}$ and $\tens{\tau}$ as functions of the filter widths and of the
-strain rate tensor (Smagorinsky model). The following modelling is adopted%
-\footnote{$\delta_{ij}$ stands for the Kroeneker symbol.}:
-
-\begin{equation}
-\begin{array}{ r c l}
-T_{ij}-\frac{1}{3}\trace \tens{T} \delta_{ij} &=& -2 C \widetilde{\Delta}^2 |\widetilde{%
-\overline{D_{ij}}}| \widetilde{\overline{D_{ij}}}, \\
-\tau_{ij}-\frac{1}{3} \tens{\tau } \delta_{ij} &=& -2 C^* \overline{\Delta}^2 |%
-\overline{D_{ij}}| \overline{D_{ij}} ,
-\end{array}
-\end{equation}
-where 
-$\overline{u}$ stands for the ``implicit-filtered" value of a variable $u$
-defined at the centres of the cells and $\overline{u}$ represents the
-``explicit-filtered" value associated with the variable $u$. It follows that
-the numerical computation of $L_{ij}$ is possible, since it requires the
-explicit filtering to be applied to implicitly filtered variables only 
-(\textit{i.e.} to the variables explicitly computed).
-
-On the following assumption:
-
-\begin{equation}
-C = C^*,
-\end{equation}
-and assuming that $C^*$ is only slightly non-uniform, so that it can be
-taken out of the explicit filtering operator, the following equation is
-obtained:
-
-\begin{equation}
-\deviator{\tens{L}} =  C \left(
-\tens{ \alpha}- \tens{\widetilde{\beta}} \right),
-\end{equation}
-with:
-\begin{equation}
-\begin{array}{rcl}
-\alpha_{ij} &=& -2 \widetilde{\Delta}^2 |\widetilde{\overline{D_{ij}}}|
-\widetilde{\overline{D_{ij}}} , \\
-\beta_{ij} &=& -2 \overline{\Delta}^2 |\overline{D_{ij}}| \overline{D_{ij}}.
-\end{array}
-\end{equation}
-
-Since we are left with six equations to determine one single variable, the
-least square method is used\footnote{$L_{kk}$ has no effect for
-incompressible flows.}. With:
-\begin{equation}
-\tens{E} = \tens{L}-C \left( \tens{\alpha} - \tens{\widetilde{\beta}} \right),
-\end{equation}
-the value for $C$ is obtained by solving the following equation:
-\begin{equation}
-\frac{\partial \tens{E} : \tens{E}}{\partial C} = 0.
-\end{equation}
-
-Finally:
-\begin{equation}
-C = \frac{ \tens{M} : \tens{L} }{ \tens{M} : \tens{M}},
-\end{equation}
-with
-\begin{equation}
-\tens{M} = \tens{\alpha} - \tens{\widetilde{\beta}}.
-\end{equation}
-
-This method allows to calculate the Smagorinsky "constant" dynamically at
-each time step and at each cell. However, the value obtained for $C$ can be
-subjected to strong variations. Hence, this approach is often restricted to
-flows presenting one or more homogeneous directions (Homogeneous Isotropic
-Turbulence, 2D flows presenting an homogeneous span-wise direction...):
-indeed, in such cases, the model can be (and is) stabilized by replacing $C$
-by an average value of $C$ computed over the homogeneous direction(s).
-
-For a general case (without any homogeneous direction), a specific averaging
-is introduced to stabilize the model: for any given cell of the mesh, the
-averaged Smagorinsky constant is obtained as an average of $C$ over the
-"extended neighbourhood" of the cell (the set of cells that share at least
-one vertex with the cell considered). More precisely, the average value
-(also denoted $C$ hereafter) is calculated as indicated below:
-
-\begin{equation}
-C = \frac{\widetilde{ \tens{M} : \tens{L}}} {\widetilde{ \tens{M} : \tens{M}}}
-\end{equation}
-
-\end{description}
 
 %-------------------------------------------------------------------------------
 \section{Thermal equations}
@@ -466,26 +353,26 @@ The energy equation reads:
  \rho \DP{e} = -\divs \left(\underline{q''} \right) +q'''-P \divs \left( \vect{u} \right) + \mu S^2,
 \label{eq:energy}
 \end{equation}
-where 
-\begin{itemize}
-       \item $e$ is the specific internal energy
-       \item $\underline{u}$ is the velocity vector
-       \item $\underline{q''}$ is the heat flux vector, the Fourier law of heat conduction gives: $\displaystyle \underline{q''}=-\lambda \grad T$
-       \item $q'''$ is the dissipation rate or rate of internal heat generation
-       \item $S^2$ is scalar strain rate defined by
-	  \begin{equation}
-	    \begin{array}{rcl}
-	      S^2 & = & 2 \deviator{\tens{S}} : \deviator{\tens{S}}.
-	    \end{array}
-	  \end{equation}
-      \end{itemize}
+where $e$ is the specific internal energy,
+$\vect{q''}$ is the heat flux vector,
+$q'''$ is the dissipation rate or rate of internal heat generation and
+$S^2$ is scalar strain rate defined by
+\begin{equation}
+  S^2  =  2 \deviator{\tens{S}} : \deviator{\tens{S}}.
+ \end{equation}
+
+The Fourier law of heat conduction gives:
+\begin{equation}
+ \displaystyle \vect{q''}=-\lambda \grad T,
+\end{equation}
+where $\lambda$ is the thermal conductivity and $T$ is the temperature field.
 
 %-------------------------------------------------------------------------------
 \subsection{Enthalpy equation}
 
 Thermodynamics definition of enthalpy gives:
 \begin{equation}
- h=e+ \dfrac{1}{\rho} P.
+ h \equiv e+ \dfrac{1}{\rho} P.
 \end{equation}
 
 Applying the Lagrangian derivative $\DP{}$ to $h$:
@@ -494,70 +381,54 @@ Applying the Lagrangian derivative $\DP{}$ to $h$:
 \end{equation}
 %
 then
-\begin{align}
-  \rho \DP{h} &= \divs \left( \lambda \grad T \right) +q'''-P\divs \vect{u} + \mu S^2 + \DP{P} -\frac{P}{\rho}\DP{\rho}, \\
-  \rho \DP{h} &= \divs \left( \lambda \grad T \right) +q''' + \mu  S^2 + \DP{P} - \frac{P}{\rho} \left(\underbrace{\DP{\rho} + \rho \divs \underline{u}}_{\displaystyle =0} \right), \\
-  \rho \DP{h} &= \divs \left( \lambda \grad T \right) +q''' + \mu  S^2 + \DP{P}. 
-\label{eq:enthalpyT}
-\end{align}
-
-To have only enthalpy in equation, one can use:
-\begin{itemize}
- \item for ideal gas: $\displaystyle \dd h=C_p \dd T$,
- \item for incompressible liquid: $\displaystyle \dd h=C_p \dd T + \dfrac{1}{\rho} \dd P$.
-\end{itemize}
-
-If the incompressible liquid hypothesis is used, the equation \ref{eq:enthalpyT} becomes:
-\begin{equation}
- \rho \DP{h} = \divs \left( \dfrac{\lambda}{C_p} \left(\grad h -\frac{\grad P}{\rho}\right)\right) +q''' + \mu S^2 + \DP{P}.
-\label{eq:enthalpyH}
+\begin{equation}\label{eq:enthalpyT}
+\begin{array}{r c l}
+  \rho \DP{h} &=& \divs \left( \lambda \grad T \right) +q'''-P\divs \vect{u} + \mu S^2 + \DP{P} -\frac{P}{\rho}\DP{\rho}, \\
+   &=& \divs \left( \lambda \grad T \right) +q''' + \mu  S^2 + \DP{P} - \frac{P}{\rho} \left(\underbrace{\DP{\rho} + \rho \divs \underline{u}}_{\displaystyle =0} \right), \\
+   &=& \divs \left( \lambda \grad T \right) +q''' + \mu  S^2 + \DP{P}. 
+\end{array}
 \end{equation}
+
+To express \eqref{eq:enthalpyT} only in terms of $h$ and not $T$, some thermodynamics relationships can be used.
+For a pure substance, Maxwell's relations give:
+%
+\begin{equation}\label{eq:goveqn:dh_dt_dp}
+  \dd h=C_p \dd T + \frac{1}{\rho} \left( 1-\beta T \right)\dd P,
+\end{equation}
+%
+where $\beta$ is the thermal expansion coefficient defined by:
+\begin{equation}
+ \beta= -\frac{1}{\rho}  \left.\der{\rho}{T}\right|_P.
+\end{equation}
+
+The equation \eqref{eq:enthalpyT} then becomes:
+\begin{equation}\label{eq:enthalpyH}
+ \rho \DP{h} = \divs \left( \dfrac{\lambda}{C_p} \left(\grad h -\dfrac{1-\beta T }{\rho}\grad P\right)\right) +q''' + \mu S^2 + \DP{P}.
+\end{equation}
+
+\begin{remark}
+Note that for incompressible flows, $\beta T$ is negligible compared to $1$. Moreover, for ideal gas, $\beta = 1/T$ so the following relationship holds
+\begin{equation}
+ \dd h=C_p \dd T
+\end{equation}
+%
+\end{remark}
 
 %-------------------------------------------------------------------------------
 \subsection{Temperature equation}
 
-In order to rearrange the enthalpy Equation (\ref{eq:enthalpyT}) in terms of temperature, one can use:
-\begin{equation}
- \dd h = T \dd s + \frac{1}{\rho} \dd P.
-\end{equation}
-
-The entropy $s$ can be written as:
-\begin{equation}
- \dd s = \left.\der{s}{T}\right|_P \dd T + \left.\der{s}{P}\right|_T \dd P.
-\label{eq:Ds}
-\end{equation}
-
-Using Maxwell's relations, for a pure substance we can obtain:
-\begin{equation}
- \dd s = \frac{C_p}{T} \dd T - \left.\der{\left( 1/\rho \right)}{T}\right|_P  \dd P.
-\label{eq:Ds_maxwell}
-\end{equation}
-
-In the r.h.s. of Equation \eqref{eq:Ds}, the second term becomes:
+In order to rearrange the enthalpy Equation (\ref{eq:enthalpyT}) in terms of temperature \eqref{eq:goveqn:dh_dt_dp} is used:
 \begin{equation}
  \left.\der{s}{P}\right|_T = -  \left.\der{(1/\rho)}{T}\right|_P = \frac{1}{\rho^2} \left.\der{\rho}{T}\right|_P=-\frac{\beta}{\rho},
 \end{equation}
-where $\beta$ is the thermal expansion coefficient is defined by:
+and also:
+%
 \begin{equation}
- \beta= -\frac{1}{\rho}  \left.\der{\rho}{T}\right|_P,
+\dfrac{\lambda}{C_p} \left(\grad h -\dfrac{1-\beta T }{\rho}\grad P\right) = \lambda \grad T,
 \end{equation}
 %
-the Maxwell's relations give also:
-\begin{equation}
- \left.\der{s}{T}\right|_P= \frac{C_p}{T}.
-\end{equation}
-
-Combining all this equations, we obtain:
-\begin{equation}
-  \dd h=C_p \dd T + \frac{1}{\rho} \left( 1-\beta T \right)\dd P.
-\end{equation}
-
-So the l.h.s. of Equation \eqref{eq:enthalpyT} becomes:
-\begin{equation}
- \rho \DP{h} = \rho C_p \DP{T} + \left( 1-\beta T \right)\DP{P},
-\end{equation}
-%
- then,
+ and Equation \eqref{eq:enthalpyH} becomes:
+ %
 \begin{equation}
   \rho C_p \DP{T}=  \divs \left( \lambda \grad T \right) + \beta T \DP{P} +q''' + \mu S^2.
 \label{eq:T_all}
@@ -570,12 +441,7 @@ The Eq. \eqref{eq:T_all} can be reduce using some hypothesis, for example:
   \rho C_p \DP{T}=  \divs \left( \lambda \grad T \right) + \DP{P} +q''' + \mu S^2.
 \end{equation}
 
- \item If the fluid is incompressible, $\beta=0$ and it becomes:
-\begin{equation}
-  \rho C_p \DP{T}=  \divs \left( \lambda \grad T \right) +q''' + \mu S^2.
-\end{equation}
-
- \item If the fluid is incompressible, $q'''=0$ and $\mu \phi=0$,  it becomes:
+ \item If the fluid is incompressible, $\beta=0$, $q'''=0 $ and we generally neglect $\mu S^2$  so that it becomes:
 \begin{equation}
   \rho C_p \DP{T}=  \divs \left( \lambda \grad T \right).
 \end{equation}

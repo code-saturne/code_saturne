@@ -65,6 +65,7 @@ resolp.tex \
 spadis.tex \
 thermo.tex \
 timstp.tex \
+turbul.tex \
 summary.tex \
 turbke.tex \
 turrij.tex \

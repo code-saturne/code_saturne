@@ -31,8 +31,8 @@ The time scheme is a $\theta$-scheme:
 \begin{equation}
 \left\{%
 \begin{array}{ll}
-\theta = 1 & \text{for an implicit first order Euler scheme} \\
-\theta = \frac{1}{2} & \text{for second order Crank-Nicolson scheme}%
+\theta = 1 & \text{for an implicit first order Euler scheme}, \\
+\theta = \frac{1}{2} & \text{for second order Crank-Nicolson scheme}.
 \end{array}
 \right.
 \end{equation}
@@ -46,7 +46,7 @@ is carried out to couple the source terms. For the Reynolds stress model,
 the variables (turbulent stresses and dissipation) are solved sequentially,
 without coupling.
 
-Next, the equations for the ``scalars'' (enthalpy, temperature, tracers,
+Next, the equations for the \emph{scalars} (enthalpy, temperature, tracers,
 concentrations, mass fractions...) are solved, also with a $\theta$-scheme.
 
 Finally, all the variables are updated and another time step may start.
@@ -57,33 +57,26 @@ form; the mass equation ($\frac{\partial \rho } {\partial t}+ \dive(\rho
 \vect{u}) = \Gamma$ see Equation (\ref{eq:mass})) has been used to split the time derivative:
 %
 \begin{equation}\label{eq:transport_eq_scalar}
-\rho \frac {\partial \varia}{\partial t} + \dive  \left( \varia \rho \vect{u} \right) 
+\rho \der{\varia}{t} + \grad \varia \cdot \left(\rho \vect{u} \right) 
 - \dive \left(\rho \vect{u} \right) \varia
 - \dive \left(K \grad \varia \right) = S_{i}\left(\Phi, \, \varphi\right) \varia + S_{e}\left(\Phi,\varphi \right) 
++ \Gamma \left( \varia - \varia^{in} \right).
 \end{equation}
-In this equation:
+In Equation~\ref{eq:transport_eq_scalar}, $\Phi$ represents the physical properties such as $(\rho,K,\mu_{t},...)$,
+$\varphi$ represents the variables of the problem such as $(\vect{u},k,\epsilon,...)$,
+$S_{i}\left(\Phi, \, \varphi \right) \varia$ is the linear part of the source terms
+and 
+$S_{e} \left(\Phi, \, \varphi \right)$  includes all other source terms.
 
-\begin{tabular}{ll}
-$\Phi$ & : represents the physical properties $(\rho,K,\mu_{t},...)$ \\
-$\varphi$ & : represents the variables of the problem $(\vect{u}%
-,k,\epsilon,...)$ \\
-$S_{i}\left(\Phi, \, \varphi \right) \varia$ & : represents the linear part of the source terms
-\\
-$S_{e} \left(\Phi, \, \varphi \right)$ & : includes all other source terms \\
-$\dive \left(\rho\,\vect{u}\right) \varia$ & : is the term associated with ``mass
-accumulation''%
-\end{tabular}
-
-The time at which the different quantities are evaluated is indicated below:
+Therefore, four different time stepping are used, they all defined at which the quantities are evaluated:
 %
-\begin{description}
-\item[$\Phi$:] the time considered is defined by the time scheme applied
-to the physical properties.
-\item[$\rho\,\vect{u}$:] the time considered is defined by the
-time scheme applied to the mass flux.
-\item[$S_{e}\left(\Phi, \, \varphi \right)$:] the time considered is defined by the time
-scheme applied to the explicit source terms.
-\end{description}
+\begin{enumerate}[ label=\roman{*}/, ref=(\roman{*})]
+\item $\theta$ is the time stepping applied to the variable $\varia^{n+\theta} \equiv \theta \varia^{n+1} + \left( 1 - \theta \right) \varia^n$,
+\item $\theta_\Phi$ is the time stepping applied to the physical properties,
+\item $\theta_F$ is the time stepping applied to the mass flux,
+\item $\theta_S$ is the time stepping applied to the source terms,
+\end{enumerate}
+%
 
 If $\theta=1/2$, or if an extrapolation is used, the time step $\Delta t$ is
 constant in time and uniform in space.
@@ -101,16 +94,15 @@ time scheme (in this case, the time step is assumed to be constant).
 
 Under a more general form, this reads:
 \begin{equation}
-\Phi \equiv \Phi^{n+\theta_{\Phi}}=(1+\theta_{\Phi})\,\Phi^{n}-
-\theta_{\Phi}\,\Phi^{n-1}
+ \Phi^{n+\theta_{\Phi}} \equiv(1+\theta_{\Phi})\,\Phi^{n}- \theta_{\Phi}\,\Phi^{n-1},
 \end{equation}
 
 \begin{equation}
 \left\{%
 \begin{array}{ll}
-\theta_{\Phi} = 0 & \text{standard explicit formulation} \\
-\theta_{\Phi} = 1/2 & \text{second order extrapolation at } n+1/2 \\
-\theta_{\Phi} = 1 & \text{first order extrapolation at } n+1%
+\theta_{\Phi} = 0 & \text{standard explicit formulation} ,\\
+\theta_{\Phi} = 1/2 & \text{second order extrapolation at } n+1/2, \\
+\theta_{\Phi} = 1 & \text{first order extrapolation at } n+1.
 \end{array}
 \right.
 \end{equation}
@@ -128,21 +120,22 @@ and scalars (standard scheme).
 also for the equations for turbulence and scalars.
 
 \item taken at $n+\theta_{F}$ (second order if $\theta_{F}=1/2$). To
-solve the momentum equations, $\left(\rho\,\vect{u}\right)^{n-2+\theta_{F}}$ and $%
-\left(\rho\,\vect{u}\right)^{n-1+\theta_{F}}$ are known. Hence, the value at $%
-n+\theta_{F}$ is obtained as a result of the following extrapolation:
+solve the momentum equations, $\left(\rho\,\vect{u}\right)^{n-2+\theta_{F}}$ and 
+$\left(\rho\,\vect{u}\right)^{n-1+\theta_{F}}$ are known. Hence, the value at 
+$n+\theta_{F}$ is obtained as a result of the following extrapolation:
 \begin{equation}
-\left(\rho\,\vect{u}\right)^{n+\theta_{F}}= 2\,\,\left(\rho\,\vect{u}%
-\right)^{n-1+\theta_{F}} -\,\,\left(\rho\,\vect{u}\right)^{n-2+\theta_{F}}
+\left(\rho\vect{u}\right)^{n+\theta_{F}}
+= 2 \left(\rho \vect{u}\right)^{n-1+\theta_{F}} 
+- \left(\rho \vect{u}\right)^{n-2+\theta_{F}}.
 \end{equation}
-At the end of this phase (after the pressure correction step), $\left(\rho\,%
-\vect{u}\right)^{n+1}$ is known and the following interpolation is used to
+At the end of this phase (after the pressure correction step), 
+$\left(\rho\,\vect{u}\right)^{n+1}$ is known and the following interpolation is used to
 determine the mass flux at $n+\theta_{F}$ that will be adopted for the
 equations for turbulence and scalars:
 \begin{equation}
-\left(\rho\,\vect{u}\right)^{n+\theta_{F}}= \frac{1}{2-\theta_{F}}\,\left(\rho\,%
-\vect{u}\right)^{n+1} +\frac{1-\theta_{F}}{2-\theta_{F}}\,\left(\rho\,\vect{u}%
-\right)^{n-1+\theta_{F}}
+\left(\rho\,\vect{u}\right)^{n+\theta_{F}}= \dfrac{1}{2-\theta_{F}}
+   \left(\rho \vect{u}\right)^{n+1}
++\frac{1-\theta_{F}}{2-\theta_{F}} \left(\rho \vect{u}\right)^{n-1+\theta_{F}}.
 \end{equation}
 \end{itemize}
 
@@ -153,24 +146,23 @@ As for the physical properties, the \textbf{explicit} source terms are:
 \begin{itemize}
 \item explicit:
 \begin{equation}
-\left[ S_{e} \left(\Phi , \, \varphi \right) \right]^{n}=S_{e}\left(\Phi ^{n+\theta_{\Phi }}, \, \varphi
-^{n} \right)
+\left[ S_{e} \left(\Phi , \, \varphi \right) \right]^{n}=S_{e}\left(\Phi ^{n+\theta_{\Phi }}, \, \varphi^{n} \right),
 \end{equation}
 
 \item extrapolated at $n+\theta _{S}$ using the Adams-Bashforth scheme:
 \begin{equation}
 \left[ S_{e} \left(\Phi , \, \varphi \right) \right]^{n+\theta _{S}}=\left(1+\theta _{S}\right)\,
-S_{e}\left(\Phi^{n}, \, \varphi^{n}\right)-\theta _{S}\,S_{e} \left(\Phi ^{n-1} , \,\varphi ^{n-1}\right)
+S_{e}\left(\Phi^{n}, \, \varphi^{n}\right)-\theta _{S}\,S_{e} \left(\Phi ^{n-1} , \,\varphi ^{n-1}\right) .
 \end{equation}
 \end{itemize}
 
 By default, to be consistent and preserve the order of convergence in time,
 the implicit source terms are discretized with the same scheme as that used
-for convection-diffusion of the unknown considered, \emph{i.e.} taken at $%
-n+\theta $:
+for convection-diffusion of the unknown considered, \emph{i.e.} taken at 
+$n+\theta $:
 \begin{equation}
-\lbrack S_{i}(\Phi ,\varphi ) \varia]^{n+\theta }=S_{i}(\Phi ^{n+\theta _{\Phi
-}},\varphi ^{n})\,[\theta \varia^{n+1}+(1-\theta )\varia^{n}]
+\left[ S_{i} \left(\Phi , \, \varphi \right) \varia \right]^{n+\theta }
+= S_{i}(\Phi^{n+\theta _{\Phi}} , \, \varphi^{n}) \,\left[ \theta \varia^{n+1}+\left(1-\theta \right)\varia^{n} \right].
 \end{equation}
 
 \begin{remark}
@@ -185,38 +177,33 @@ For the sake of clarity, it is assumed hereafter that, unless otherwise
 explicitly stated, the mass flux is taken at $n+\theta_F$ and the physical
 properties are taken at $n+\theta_\Phi$, with $\theta_F$ and $\theta_\Phi$
 dependant upon the specific schemes selected for the mass flux and the
-physical properties respectively.
+physical properties respectively and all $\theta$s are denoted by $\theta$.
 
 Under a general form, the discrete counterpart of Equation~(\ref{eq:transport_eq_scalar}) at
 $n+\theta$ reads:
 \begin{equation}
-\begin{array}{r @{\,}c@{\,}l cl}
-\displaystyle \frac{\rho}{\Delta t} \left(\varia^{n+1}-\varia^{n}\right)
-&+& \dive \left(\varia^{n+\theta}(\rho \vect{u})  \right)
-- \dive \left( K \grad \varia^{n+\theta} \right) &=&
-\left[S_{i}(\Phi, \, \varphi) \varia \right]^{n+\theta} + \left[S_{e}(\Phi, \, \varphi) \right]^{n+\theta_{S}}  \\
-&-& \dive \left(\rho \vect{u} \right) \varia^{n+\theta}
-\end{array}
+\displaystyle \dfrac{\rho}{\Delta t} \left(\varia^{n+1}-\varia^{n}\right)
++ \grad\varia^{n+\theta} \cdot \left(\rho \vect{u} \right)
+- \dive \left( K \grad \varia^{n+\theta} \right) =
+\left[ S_{i}(\Phi, \, \varphi) \varia \right]^{n+\theta} + \left[S_{e}(\Phi, \, \varphi) \right]^{n+\theta_{S}} .
 \end{equation}
 
 Using the standard $\theta$-scheme $\varia^{n+\theta}=\theta \varia^{n+1}+\left(1-\theta \right)
 \varia^{n}$, the equation reads:
 \begin{equation}
-\begin{array}{r @{\,}c@{\,}lcl}
+\begin{array}{rcl}
 \displaystyle \dfrac{\rho}{\Delta t} \left( \varia^{n+1}-\varia^{n} \right)
-+ \theta \left[ \right. 
-&&\dive \left( \varia^{n+1}(\rho \vect{u}) \right) 
-- \dive \left( K \grad \varia^{n+1} \right)  
++ \theta \left[ 
+\grad \varia^{n+1} \cdot \left( \rho \vect{u} \right) 
+- \dive \left( K \grad \varia^{n+1} \right)   \right]
 &=& 
 - \left(1-\theta\right) \left[ 
-\dive \left( \varia^{n} (\rho \vect{u}) \right) 
-- \dive \left(\rho\vect{u} \right) \varia^{n}
+\grad \varia^{n} \cdot \left( \rho \vect{u} \right) 
 - \dive \left( K \grad \varia^{n}\right) 
 \right]
  \\
- &-& \left. \dive \left(\rho\vect{u} \right) \varia^{n+1} \right] 
 &+& S_{i}\left(\Phi , \,\varphi^n\right)\left[\theta \varia^{n+1}+ \left(1-\theta \right) \varia^{n}\right] 
-+ \left[ S_{e}(\Phi, \, \varphi)\right]^{n+\theta_{S}}
++ \left[ S_{e}(\Phi, \, \varphi)\right]^{n+\theta_{S}}.
 \end{array}
 \end{equation}
 
@@ -234,9 +221,9 @@ implicit Euler time stepping or a second order Crank Nicolson time stepping.
 The set of equations to be solved is
 \begin{equation}\label{eq:time_stepping_navier_stokes}
 \left\{\begin{array}{l}
-\displaystyle\frac{\partial}{\partial t}(\rho \vect{u}) + \divv\left( \vect{u} \otimes \rho\vect{u}  \right)
-=\divv(\tens{\sigma}) + \vect{ST}_u - \tens{K}\,\vect{u} + \rho \vect{g} + \Gamma \vect{u}^{in}\\
-\dfrac{\partial \rho}{\partial t} + \dive\left( \rho \vect{u} \right) = \Gamma
+\displaystyle \rho \der{\vect{u}}{t} + \gradt \, \vect{u} \cdot \left( \rho\vect{u}  \right)
+=\divv(\tens{\sigma}) - \divv(\rho \tens{R}) + \vect{ST}_u - \tens{K}\,\vect{u} + \rho \vect{g} + \Gamma \left( \vect{u}^{in} - \vect{u} \right), \\
+\dfrac{\partial \rho}{\partial t} + \dive\left( \rho \vect{u} \right) = \Gamma.
 \end{array}\right.
 \end{equation}
 %
@@ -246,9 +233,9 @@ $[\,\vect{ST}_u-\tens{K}\,\vect{u} + \rho \vect{g} \,]$  are sources terms (note
  %
 \begin{equation}
 \left\{\begin{array}{r c l}
-\tens{\sigma} &=& \tens{\tau} - P\tens{Id}  \\%FIXME +Rij
-\tens{\tau} & =& 2 \mu  \tens{S} +   \left( \kappa - \dfrac{2}{3}\mu \right)   \trace \left( \tens{S} \right) \tens{Id}\\
-\tens{S} &=& \dfrac{1}{2} \left( \gradt \vect{u}+\transpose{\gradt\vect{u}} \right)
+\tens{\sigma} &=& \tens{\tau} - P\tens{Id} , \\%FIXME +Rij
+\tens{\tau} & =& 2 \mu  \tens{S} +   \left( \kappa - \dfrac{2}{3}\mu \right)   \trace \left( \tens{S} \right) \tens{Id} ,\\
+\tens{S} &=& \dfrac{1}{2} \left( \gradt \, \vect{u}+\transpose{\gradt \, \vect{u}} \right) .
 \end{array}\right.
 \end{equation}
  where  $\mu$ is the dynamic molecular viscosity
@@ -261,8 +248,8 @@ A fractional step scheme is used to solve the mass and momentum equations
 (see Chorin \cite{Chorin:????}). 
 
 The first step (predictor step) provides predicted velocity
-components: they are determined sequentially and without coupling between
-each other. The mass equation is taken into account during the second step
+components: they are determined in a coupled way solving a $3 \ncell \times 3 \ncell $ system. 
+The mass equation is taken into account during the second step
 (corrector step): a pressure Poisson equation is solved and the mass fluxes
 at the cell faces are updated.
 
@@ -272,19 +259,17 @@ the momentum equation of \eqref{eq:time_stepping_navier_stokes}
 
 \begin{equation}
 \begin{array}{rcl}
-\displaystyle \rho \dfrac{\partial \underline {u} } {\partial t} 
+\displaystyle \rho \der{ \vect {u} } { t} 
 +
 \underbrace {
-\divv \left( \underline{u} \otimes  \rho\underline{u} \right)
--
-\dive \left( \rho \vect{u} \right) \vect{u}
+\gradt \,  \underline{u} \cdot \left( \rho\vect{u} \right)
 }_{
-\mathrm{convection}
+\text{convection}
 }%end underbrace
 &= & \underbrace{
 \divv \left(\mu\ \gradt \, \vect{u} \right)
 }_{
-\mathrm{diffusion}
+\text{diffusion}
 }%end underbrace
  + 
 \underbrace{
@@ -295,7 +280,7 @@ the momentum equation of \eqref{eq:time_stepping_navier_stokes}
 \underbrace{ 
 -  \frac{2}{3} \grad \left( \mu\ \trace \left( \gradt \, \vect{u}  \right) \right)
 }_{
-\mathrm{secondary viscosity}
+\text{secondary viscosity}
 }% end underbrace
 \\
  &-& \grad \left( P \right)
@@ -303,7 +288,7 @@ the momentum equation of \eqref{eq:time_stepping_navier_stokes}
  + \left( \rho -\rho_0 \right) \vect{g} \\
 &\displaystyle +&
 \underbrace{
-\Gamma(\underline{u}_{\,i}-\underline{u})
+\Gamma \left( \vect{u}^{in}-\vect{u} \right)
 }_{
 \text{Mass source term}
 }%end underbrace
