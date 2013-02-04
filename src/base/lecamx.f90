@@ -54,8 +54,6 @@ subroutine lecamx &
 ! nnod             ! e  ! <-- ! nombre de noeuds                               !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! jturb            ! te ! <-- ! modeles de turb calcul precedent               !
-! jturbt           ! te ! <-- ! modeles de flux turb calcul precedent          !
 ! dt(ncelet)       ! tr ! --> ! pas de temps                                   !
 ! rtp              ! tr ! --> ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant        )          !
@@ -152,7 +150,7 @@ integer          impamx
 integer          nfmtsc, nfmtfl, nfmtmo, nfmtch, nfmtcl
 integer          nfmtst
 integer          numflu(nvarmx)
-integer          jturb , jtytur, jale, jturbt, jtyturt(nscamx)
+integer          jturb , jtytur, jale
 integer          ngbstr(2)
 double precision d2s3  , tsrii , cdtcm
 double precision tmpstr(27)
@@ -539,16 +537,6 @@ if(nscal.gt.0) then
       endif
     endif
 
-    rubriq = 'flux_turbulent_ce'//car4
-    itysup = 0
-    nbval  = 1
-    irtyp  = 1
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-                jturbt,ierror)
-    ! If the old calculation has no turbulent flux model, set it to 0
-    if (ierror.ne.0) jturbt = 0
-    if (iturt(iscal).ne.jturbt) write(nfecra,8221) iturt(iscal), jturbt
-    jtyturt(iscal) = jturbt/10
   enddo
 
 !     Pour les variances, il suffit de dire qu'on a initialise ou non
@@ -2892,27 +2880,6 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8221 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : LECTURE DU FICHIER SUITE AUXILIAIRE         ',/,&
-'@    =========                                               ',/,&
-'@      REPRISE  DE CALCUL           AVEC ITURT = ',I4         ,/,&
-'@      A PARTIR D''UN CALCUL REALISE AVEC ITURT = ',I4        ,/,&
-'@                                                            ',/,&
-'@    Le modele de flux turbulent a ete modifie.              ',/,&
-'@                                                            ',/,&
-'@    Il est conseille cependant de                           ',/,&
-'@      verifier la valeur de ITURT                           ',/,&
-'@                                                            ',/,&
-'@    Verifier que le fichier suite auxiliaire utilise        ',/,&
-'@      correspond bien au cas traite                         ',/,&
-'@                                                            ',/,&
-'@    Le calcul se poursuit...                                ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  8300 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -3148,27 +3115,6 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8221 format( &
-'@'                                                            ,/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@'                                                            ,/,&
-'@ @@ WARNING : WHEN READING THE AUXILIARY RESTART FILE'       ,/,&
-'@    ========='                                               ,/,&
-'@      THE RUN RESTARTED            WITH ITURT = ',I4         ,/,&
-'@      FROM RUN CONDUCTED WITH           ITURT = ',I4         ,/,&
-'@'                                                            ,/,&
-'@    The turbulent flux model has changed.'                   ,/,&
-'@'                                                            ,/,&
-'@    It is advised however in this case to'                   ,/,&
-'@      verify the value of ITURT'                             ,/,&
-'@'                                                            ,/,&
-'@    Verify that the auxiliary restart file being used'       ,/,&
-'@      corresponds  to the present case.'                     ,/,&
-'@'                                                            ,/,&
-'@    The run will continue...'                                ,/,&
-'@'                                                            ,/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@'                                                            ,/)
  8300 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&

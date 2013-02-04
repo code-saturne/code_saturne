@@ -92,6 +92,7 @@ use cs_fuel_incl
 use elincl
 use ppcpfu
 use cplsat
+use field
 
 !===============================================================================
 
@@ -118,6 +119,7 @@ double precision frcxt(ncelet,3), prhyd(ncelet)
 integer          nbmom2
 parameter       (nbmom2=nbmomx*2)
 
+character*80     fname
 character        rubriq*64,car2*2,car4*4,car54*54
 character        cindfp*2,cindfs*4,cindff*4,cindfm*4
 character        cindfc*2,cindfl*4
@@ -128,7 +130,7 @@ character        nomcli(nvarmx)*18
 character        cstruc(nstrmx)*2, cindst*2
 character        ficsui*32
 integer          nphas
-integer          ivar  , iscal , imom
+integer          ivar  , iscal , imom, f_id
 integer          idecal, iclapc, icha  , icla
 integer          ii    , ivers , idtm  , idtcm
 integer          iclvar, iclvaf, iptsna, iptsta, iptsca
@@ -450,9 +452,8 @@ elseif (iturb.eq.70) then
 endif
 if (nscal.gt.0) then
   do iscal = 1, nscal
-
     !  ---> Turbulent flux model
-    rubriq = 'flux_turbulent'//cscal(iscal)
+    rubriq = 'turbulent_flux_model'//cscal(iscal)
     itysup = 0
     nbval  = 1
     irtyp  = 1
@@ -482,6 +483,22 @@ do ivar = 1, nvar
               rtp(1,ivar),ierror)
   nberro=nberro+ierror
 
+enddo
+
+do iscal = 1, nscal
+  if (ityturt(iscal).eq.2 .or. ityturt(iscal).eq.3) then
+    !  ---> Turbulent flux model
+    ivar = isca(iscal)
+    call field_get_name(ivarfl(ivar), fname)
+    ! Index of the corresponding turbulent flux
+    call field_get_id(trim(fname)//'_turbulent_flux_ce', f_id)
+    rubriq = trim(fname)//'_turbulent_flux_ce'
+    itysup = 1
+    nbval  = 3
+    irtyp  = 2
+    call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,       &
+                iturt(iscal),ierror)
+  endif
 enddo
 
 if (nberro.ne.0) then
@@ -766,16 +783,6 @@ if (iecaux.eq.1) then
 !     leur diffusivite (on ne l'ecrit pas pour les variances)
   if (nscal.gt.0) then
     do iscal = 1, nscal
-
-      !  ---> Turbulent flux model
-      rubriq = 'flux_turbulent'//cscal(iscal)
-      itysup = 0
-      nbval  = 1
-      irtyp  = 1
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-           iturt(iscal),ierror)
-      nberro=nberro+ierror
-
       if(ivsext(iscal).gt.0.and.ivisls(iscal).gt.0.and.           &
          (iscavr(iscal).le.0.or.iscavr(iscal).gt.nscal) ) then
         ! Cell diffusivity
