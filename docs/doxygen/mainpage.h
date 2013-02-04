@@ -90,7 +90,7 @@
   rule, functions provided by BFT should provide added portability
   or functionnality when compared to their \c libc or Posix counterparts
   (when such counterparts exist), as simple wrapping with no added
-  functionnality only makes code less readable to an experienced developper
+  functionnality only makes code less readable to an experienced developer
   and is to be avoided.
 
   Subsets of BFT may be used independently if desired, and are orthogonal,

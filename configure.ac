@@ -72,7 +72,7 @@ AM_GNU_GETTEXT_VERSION([0.18.1])
 # Warnings can be activated at bootstrap with 'autoreconf -vi --warnings=all'
 AM_INIT_AUTOMAKE([foreign tar-pax])
 
-# Enable maintainer mode by default for a developper checkout
+# Enable maintainer mode by default for a developer checkout
 AS_IF([test -d ${srcdir}/.svn -o -d ${srcdir}/.git],
       [AM_MAINTAINER_MODE([enable])],
       [AM_MAINTAINER_MODE([disable])])
@@ -571,7 +571,7 @@ sys.exit(0)]"
 
 fi
 
-# Test for PyQt4 developper tools
+# Test for PyQt4 developer tools
 if test "x$cs_have_gui" = "xyes" ; then
 
   # Try to find PyQt4 tools through Python interpreter
@@ -612,7 +612,7 @@ fi
 # Checks for Qt tools.
 #------------------------------------------------------------------------------
 
-# Test for Qt4 developper tools
+# Test for Qt4 developer tools
 if test "x$cs_have_gui" = "xyes" ; then
 
   AC_ARG_VAR([LRELEASE], [Qt message files generator])
@@ -856,7 +856,7 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  salome/cfd_study/src/CFDSTUDYGUI/Makefile
                  docs/Makefile docs/doxygen/Makefile docs/style/csvers.tex
                  docs/autovnv/Makefile docs/autovnv/graphics/Makefile
-                 docs/developper/Makefile docs/developper/graphics/Makefile
+                 docs/developer/Makefile docs/developer/graphics/Makefile
                  docs/install/Makefile
                  docs/refcard/Makefile docs/refcard/graphics/Makefile
                  docs/theory/Makefile docs/theory/graphics/Makefile

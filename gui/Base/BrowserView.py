@@ -797,7 +797,7 @@ Calculation management
 
 
     def __hideRow(self):
-        """Only for developpement purpose"""
+        """Only for developement purpose"""
 
 
     def tr(self, text):

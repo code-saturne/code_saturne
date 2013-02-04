@@ -81,7 +81,7 @@ AH_BOTTOM([#endif /* __PLE_CONFIG_PRIV_H__ */])
 PLE_AC_CONFIG_PUBL_INIT([ple_config.h])
 PLE_AC_CONFIG_PUBL_VERBATIM([ple_licence_c_comment])
 
-# Enable maintainer mode by default for a developper checkout
+# Enable maintainer mode by default for a developer checkout
 AS_IF([test -d ${srcdir}/.svn -o -d ${srcdir}/.git],
       [AM_MAINTAINER_MODE([enable])],
       [AM_MAINTAINER_MODE([disable])])

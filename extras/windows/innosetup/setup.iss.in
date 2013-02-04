@@ -331,7 +331,7 @@ Source: "{#Install}\libexec\code_saturne\cs_solver.exe"; DestDir: "{app}\bin"; F
 Source: "{#Install}\share\code_saturne\*"; DestDir: "{app}\share\code_saturne"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: core
 #if HAVE_PDF == "yes"
 Source: "{#Install}\share\doc\code_saturne\autovnv.pdf"; DestDir: "{app}\share\doc\code_saturne"; Flags: ignoreversion; Components: help\pdf
-Source: "{#Install}\share\doc\code_saturne\developper.pdf"; DestDir: "{app}\share\doc\code_saturne"; Flags: ignoreversion; Components: help\pdf
+Source: "{#Install}\share\doc\code_saturne\developer.pdf"; DestDir: "{app}\share\doc\code_saturne"; Flags: ignoreversion; Components: help\pdf
 Source: "{#Install}\share\doc\code_saturne\install.pdf"; DestDir: "{app}\share\doc\code_saturne"; Flags: ignoreversion; Components: help\pdf
 Source: "{#Install}\share\doc\code_saturne\refcard.pdf"; DestDir: "{app}\share\doc\code_saturne"; Flags: ignoreversion; Components: help\pdf
 Source: "{#Install}\share\doc\code_saturne\theory.pdf"; DestDir: "{app}\share\doc\code_saturne"; Flags: ignoreversion; Components: help\pdf
