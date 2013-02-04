@@ -248,9 +248,6 @@ case "$host_os" in
   darwin*)
     CPPFLAGS="${CPPFLAGS} -D_DARWIN_C_SOURCE"
     ;;
-  osf*)
-    CPPFLAGS="${CPPFLAGS} -D_OSF_SOURCE"
-    ;;
   hpux*)
     CPPFLAGS="${CPPFLAGS} -D_HPUX_SOURCE"
     ;;
@@ -290,10 +287,7 @@ if test "x$cs_ibm_bg_type" = "xL" -o "x$cs_ibm_bg_type" = "xP"; then
 fi
 AC_SUBST(enable_shared)
 
-# Initialize libtool.
-
-LT_INIT([win32-dll])
-
+# In static mode, multiple definitions must be allowed for the linker.
 # On some systems, such as Mac OS X in static mode, limitations
 # of the linker require special handling for user user subroutines
 # (due to not handling multiple definitions in the case of Mac OS X).
@@ -301,15 +295,31 @@ LT_INIT([win32-dll])
 # (if necessary) to the Python package.
 
 cs_special_user_link=
-case "$host_os" in
-  darwin*)
-    if test "x$enable_shared" = "xno" ; then
+if test "x$enable_shared" = "xno" ; then
+  case "$host_os" in
+    linux* | *bsd* | solaris2.* )
+      if test "x$auto_flags" = "xyes" ; then
+        LDFLAGS="${LDLAGS} -Wl,--allow-multiple-definition"
+      fi
+      ;;
+    darwin*)
       cs_special_user_link='ar_x'
-    fi
-    ;;
-esac
-
+      ;;
+  esac
+else
+  case "$host_os" in
+    linux* )
+      if test "x$auto_flags" = "xyes" ; then
+        LDFLAGS="${LDLAGS} -Wl,-export-dynamic"
+      fi
+      ;;
+  esac
+fi
 AC_SUBST(cs_special_user_link)
+
+# Initialize libtool.
+
+LT_INIT([win32-dll])
 
 #------------------------------------------------------------------------------
 # Checks for typedefs, structures, and compiler characteristics.
