@@ -26,35 +26,37 @@
 
 !> \file prehyd.f90
 !>
-!> \brief Compute a "a priori" hydrostatic pressure and its gradient associated
-!> before the Navier Stokes equations (prediction and correction steps).
+!> \brief Compute an "a priori" hydrostatic pressure and its gradient associated
+!> before the Navier Stokes equations
+!> (prediction and correction steps \ref{navstv.f90}).
 !>
-!> This function computes a hysdrostatic pressure \f$ P_{hydro} \f$ solving the
-!> a priori reduced momentum equation:
+!> This function computes a hydrostatic pressure \f$ P_{hydro} \f$ solving an
+!> a priori simplified momentum equation:
 !> \f[
-!> \rho^n \dfrac{(u^{hydro} - u^n)}{\Delta t} =
-!>                                   \rho ^n\vect{g}^n - \nabla P_{hydro}
+!> \rho^n \dfrac{(\vect{u}^{hydro} - \vect{u}^n)}{\Delta t} =
+!> \rho^n \vect{g}^n - \grad P_{hydro}
 !> \f]
-!> and using the mass conservative equation as following:
+!> and using the mass equation as following:
 !> \f[
-!> \rho ^n \divs \left(  \delta \vect{u}_{hydro} \right) = 0
+!> \rho^n \divs \left( \delta \vect{u}_{hydro} \right) = 0
 !> \f]
 !> with: \f$ \delta \vect{u}_{hydro} = ( \vect{u}^{hydro} - \vect{u}^n) \f$
 !>
-!> finally, we resolve the reduced momentum equation below:
+!> finally, we resolve the simplified momentum equation below:
 !> \f[
-!> \divs \left( k_t \grad P_{hydro} \right) = \divs \left(\vect{g}\right)
+!> \divs \left( K \grad P_{hydro} \right) = \divs \left(\vect{g}\right)
 !> \f]
-!> with the diffusion coefficient (\f$ k_t \f$) defined as :
+!> with the diffusion coefficient (\f$ K \f$) defined as:
 !> \f[
-!>      k_t := \dfrac{1}{\rho^n}
+!>      K \equiv \dfrac{1}{\rho^n}
 !> \f]
-!> and the hydrostatic pressure boundary condition:
+!> with a Neumann boundary condition on the hydrostatic pressure:
 !> \f[
-!> \left( k_t \grad P_{hydro} \cdot \vect{n}\right )_{b} =
-!>                                   \left( \vect{g} \cdot \vec{n} \right)_{b}
+!>    D_\fib \left( K, \, P_{hydro} \right) =
+!>    \vect{g} \cdot \vect{n}_\ib
 !> \f]
-!>
+!> (see the theory guide for more details on the boundary condition
+!>  formulation).
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
