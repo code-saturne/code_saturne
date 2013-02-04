@@ -969,7 +969,7 @@ _conjugate_gradient_sr(const char             *var_name,
   /* Preliminary calculations */
   /*--------------------------*/
 
-  sles_name = _(cs_sles_type_name[CS_SLES_PCG]);
+  sles_name = _(cs_sles_type_name[CS_SLES_PCG_SR]);
 
   n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
   n_rows = cs_matrix_get_n_rows(a) * diag_block_size;
