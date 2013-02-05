@@ -22,6 +22,56 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Purpose:
+! -------
+
+!> \file cs_user_postprocess_var.f90
+!> \brief Output additional variables on a postprocessing mesh.
+!>
+!> Several "automatic" postprocessing meshes may be defined:
+!> - The volume mesh (ipart=-1) if 'ichrvl' = 1
+!> - The boundary mesh (ipart=-2) if 'ichrbo' = 1
+!> - SYRTHES coupling surface (ipart < -2) if 'ichrsy' = 1
+!> - Cooling tower exchange zone meshes (ipart < -2) if 'ichrze' = 1
+!>
+!> Additional meshes (cells or faces) may also be defined through the GUI or
+!> using the cs_user_postprocess_meshes() function from the
+!> cs_user_postprocess.c file.
+!>
+!> This subroutine is called once for each post-processing mesh
+!> (with a different value of 'ipart') for each time step at which output
+!> on this mesh is active.
+!
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     ipart         number of the post-processing mesh (< 0 or > 0)
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     nvlsta        number of Lagrangian statistical variables
+!> \param[in]     ncelps        number of cells in post-processing mesh
+!> \param[in]     nfacps        number of interior faces in post-process. mesh
+!> \param[in]     nfbrps        number of boundary faces in post-process. mesh
+!> \param[in]     itypps        global presence flag (0 or 1) for cells (1),
+!>                              interior faces (2), or boundary faces (3) in
+!>                              post-processing mesh
+!> \param[in]     lstcel        list of cells in post-processing mesh
+!> \param[in]     lstfac        list of interior faces in post-processing mesh
+!> \param[in]     lstfbr        list of boundary faces in post-processing mesh
+!> \param[in]     dt            time step (per cell)
+!> \param[in]     rtp, rtpa     calculated variables at cell centers
+!>                               (at current and previous time steps)
+!> \param[in]     propce        physical properties at cell centers
+!> \param[in]     propfa        physical properties at interior face centers
+!> \param[in]     propfb        physical properties at boundary face centers
+!> \param[in]     statis        statistic values (Lagrangian)
+!_______________________________________________________________________________
+
 subroutine usvpst &
 !================
 
@@ -34,58 +84,7 @@ subroutine usvpst &
    statis )
 
 !===============================================================================
-! Purpose:
-! -------
 
-!    User subroutine.
-
-!    Output additional variables on a postprocessing mesh.
-
-! Several "automatic" postprocessing meshes may be defined:
-! - The volume mesh (ipart=-1) if 'ichrvl' = 1
-! - The boundary mesh (ipart=-2) if 'ichrbo' = 1
-! - SYRTHES coupling surface (ipart < -2) if 'ichrsy' = 1
-! - Cooling tower exchange zone meshes (ipart < -2) if 'ichrze' = 1
-!
-! Additional meshes (cells or faces) may also be defined through the GUI or
-! using the cs_user_postprocess_meshes() function from the
-! cs_user_postprocess.c file.
-
-! This subroutine is called once for each post-processing mesh
-! (with a different value of 'ipart') for each time step at which output
-! on this mesh is active.
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! ipart            ! i  ! <-- ! number of the post-processing mesh (< 0 or > 0)!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! nvlsta           ! i  ! <-- ! number of Lagrangian statistical variables     !
-! ncelps           ! i  ! <-- ! number of cells in post-processing mesh        !
-! nfacps           ! i  ! <-- ! number of interior faces in post-process. mesh !
-! nfbrps           ! i  ! <-- ! number of boundary faces in post-process. mesh !
-! itypps(3)        ! ia ! <-- ! global presence flag (0 or 1) for cells (1),   !
-!                  !    !     ! interior faces (2), or boundary faces (3) in   !
-!                  !    !     ! post-processing mesh                           !
-! lstcel(ncelps)   ! ia ! <-- ! list of cells in post-processing mesh          !
-! lstfac(nfacps)   ! ia ! <-- ! list of interior faces in post-processing mesh !
-! lstfbr(nfbrps)   ! ia ! <-- ! list of boundary faces in post-processing mesh !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! statis           ! ra ! <-- ! statistic values (Lagrangian)                  !
-!  (ncelet, nvlsta)!    !     !                                                !
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================

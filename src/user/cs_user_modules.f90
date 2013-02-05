@@ -22,14 +22,20 @@
 
 !-------------------------------------------------------------------------------
 
-! User-defined modules
+!===============================================================================
+! Purpose:
+! -------
 
-! This file is compiled before all other user Fortran files.
-! To ensure this, it must not be renamed.
-
-! The user may define an arbitrary number of modules here, even though
-! only one is defined in the example.
-
+!> \file cs_user_modules.f90
+!>
+!> \brief User-defined module: it allows to create any user array.
+!>
+!> This file is compiled before all other user Fortran files.
+!> To ensure this, it must not be renamed.
+!>
+!> The user may define an arbitrary number of modules here, even though
+!> only one is defined in the example.
+!
 !-------------------------------------------------------------------------------
 
 module user_module

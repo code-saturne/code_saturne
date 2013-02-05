@@ -31,6 +31,84 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Purpose:
+! -------
+
+!> \file cs_user_source_terms.f90
+!>
+!> \brief Additional right-hand side source terms
+!>
+!> \brief Additional right-hand side source terms for velocity components equation
+!> (Navier-Stokes)
+!>
+!> \section use  Usage
+!>
+!> The routine is called if the coulped solving of the velocity components is
+!> turned on (\c ivelco=1).
+!>
+!> The additional source term is decomposed into an explicit part (\c crvexp) and
+!> an implicit part (\c crvimp) that must be provided here.
+!> The resulting equation solved by the code for a velocity is:
+!> \f[
+!>  \rho \norm{\vol{\celli}} \DP{\vect{u}} + ....
+!>   = \tens{crvimp} \vect{u} + \vect{crvexp}
+!> \f]
+!>
+!> Note that \c crvexp and \c crvimp are defined after the Finite Volume integration
+!> over the cells, so they include the "volume" term. More precisely:
+!>   - crvexp is expressed in kg.m/s2
+!>   - crvimp is expressed in kg/s
+!>
+!> The \c crvexp and \c crvimp arrays are already initialized to 0
+!> before entering the
+!> the routine. It is not needed to do it in the routine (waste of CPU time).
+!>
+!> For stability reasons, \CS will not add -crvimp directly to the
+!> diagonal of the matrix, but Max(-crvimp,0). This way, the crvimp term is
+!> treated implicitely only if it strengthens the diagonal of the matrix.
+!> However, when using the second-order in time scheme, this limitation cannot
+!> be done anymore and -crvimp is added directly. The user should therefore test
+!> the negativity of crvimp by himself.
+!>
+!> When using the second-order in time scheme, one should supply:
+!>   - crvexp at time n
+!>   - crvimp at time n+1/2
+!>
+!> The selection of cells where to apply the source terms is based on a
+!> \ref getcel command. For more info on the syntax of the \ref getcel command,
+!> refer to the user manual or to the comments on the similar command
+!> \ref getfbr in the routine \ref cs_user_boundary_conditions.
+!
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     ncepdp        number of cells with head loss terms
+!> \param[in]     ncssmp        number of cells with mass source terms
+!> \param[in]     ivar          index number of the current variable
+!> \param[in]     icepdc        index number of cells with head loss terms
+!> \param[in]     icetsm        index number of cells with mass source terms
+!> \param[in]     itypsm        type of mass source term for each variable
+!>                               (see \ref ustsma)
+!> \param[in]     dt            time step (per cell)
+!> \param[in]     rtpa          calculated variables at cell centers
+!>                               (preceding time steps)
+!> \param[in]     propce        physical properties at cell centers
+!> \param[in]     propfa        physical properties at interior face centers
+!> \param[in]     propfb        physical properties at boundary face centers
+!> \param[in]     ckupdc        head loss coefficient
+!> \param[in]     smacel        value associated to each variable in the mass
+!>                               source terms or mass rate (see \ref ustsma)
+!> \param[out]    crvexp        explicit part of the source term
+!> \param[out]    crvimp        implicit part of the source term
+!_______________________________________________________________________________
+
 subroutine ustsnv &
 !================
 
@@ -41,82 +119,6 @@ subroutine ustsnv &
    ckupdc , smacel ,                                              &
    crvexp , crvimp )
 
-!===============================================================================
-! Purpose:
-! -------
-
-!    User subroutine.
-
-!    Additional right-hand side source terms for velocity components equation
-!    (Navier-Stokes)
-
-!
-! Usage
-! -----
-! The routine is called if the coulped solving of the velocity components is
-! turned on (ivelco=1).
-!
-! The additional source term is decomposed into an explicit part (crvexp) and
-! an implicit part (crvimp) that must be provided here.
-! The resulting equation solved by the code for a velocity is:
-!
-!  rho*volume*du/dt + .... = crvimp*u + crvexp
-!
-! Note that crvexp and crvimp are defined after the Finite Volume integration
-! over the cells, so they include the "volume" term. More precisely:
-!   - crvexp is expressed in kg.m/s2
-!   - crvimp is expressed in kg/s
-!
-! The crvexp and crvimp arrays are already initialized to 0 before entering the
-! the routine. It is not needed to do it in the routine (waste of CPU time).
-!
-! For stability reasons, Code_Saturne will not add -crvimp directly to the
-! diagonal of the matrix, but Max(-crvimp,0). This way, the crvimp term is
-! treated implicitely only if it strengthens the diagonal of the matrix.
-! However, when using the second-order in time scheme, this limitation cannot
-! be done anymore and -crvimp is added directly. The user should therefore test
-! the negativity of crvimp by himself.
-!
-! When using the second-order in time scheme, one should supply:
-!   - crvexp at time n
-!   - crvimp at time n+1/2
-!
-!
-! The selection of cells where to apply the source terms is based on a getcel
-! command. For more info on the syntax of the getcel command, refer to the
-! user manual or to the comments on the similar command getfbr in the routine
-! cs_user_boundary_conditions.
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ncepdp           ! i  ! <-- ! number of cells with head loss terms           !
-! ncssmp           ! i  ! <-- ! number of cells with mass source terms         !
-! ivar             ! i  ! <-- ! index number of the current variable           !
-! icepdc(ncepdp)   ! ia ! <-- ! index number of cells with head loss terms     !
-! icetsm(ncesmp)   ! ia ! <-- ! index number of cells with mass source terms   !
-! itypsm           ! ia ! <-- ! type of mass source term for each variable     !
-!  (ncesmp,nvar)   !    !     !  (see ustsma)                                  !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (preceding time steps)                        !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! ckupdc(ncepdp,6) ! ra ! <-- ! head loss coefficient                          !
-! smacel           ! ra ! <-- ! value associated to each variable in the mass  !
-!  (ncesmp,nvar)   !    !     !  source terms or mass rate (see ustsma)        !
-! crvexp           ! ra ! --> ! explicit part of the source term               !
-! crvimp           ! ra ! --> ! implicit part of the source term               !
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
