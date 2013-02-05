@@ -650,7 +650,8 @@ else if (iturb.eq.50) then
     xnu  = propce(iel,ipcvlo)/rho
     xeps = rtpa(iel,iep)
     xk   = rtpa(iel,ik)
-    xphi = max(xphi, rtpa(iel,iphi))
+    xphi = rtpa(iel,iphi)
+    xphi = max(xphi, epzero)
     ceps1= 1.4d0*(1.d0+cv2fa1*sqrt(1.d0/xphi))
     ttke = xk / xeps
     ttmin = cv2fct*sqrt(xnu/xeps)
