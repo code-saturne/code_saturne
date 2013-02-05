@@ -21,7 +21,7 @@
 !-------------------------------------------------------------------------------
 
 !> \file numvar.f90
-!> Module for variable numbering
+!> \brief Module for variable numbering
 
 module numvar
 
@@ -31,35 +31,31 @@ module numvar
 
   !=============================================================================
 
-  ! Position des variables
-  !  ( dans rtp, rtpa )
-
-  ! ipr                        pression
-  ! iu   iv   iw               vitesse(x,y,z)
-  ! ik                         energie turbulente en k-epsilon
-  ! ir11, ir22, ir33, ...
-  ! ... ir12, ir13, ir23       tensions de Reynolds en Rij
-  ! iep                        Dissipation turbulente
-  ! iphi, ifb, ial             variables phi et f_barre du v2f phi-model
-  ! iomg                       variable omega du k-omega SST
-  ! inusa                      variable nu du Spalart-Allmaras
-  ! isca(i)                    scalaire numero i
-  ! iscapp(i)                  no du scalaire physique particuliere i
-  ! nscaus                     nbre de scalaires utilisateur
-  ! nscapp                     nbre de scalaires physique particuliere
-  ! nscasp                     number of species scalars
-  ! iuma, ivma, iwma           Vitesse de maillage en ALE
-
-  integer, save :: ipr ,                                        &
-                   iu  , iv    , iw  ,                          &
-                   ik  , iep   ,                                &
-                   ir11, ir22  , ir33,                          &
-                   ir12, ir13  , ir23,                          &
-                   iphi, ifb   , ial , iomg,                    &
-                   inusa,                                       &
-                   isca(nscamx), iscapp(nscamx),                &
-                   nscaus      , nscapp        , nscasp  ,      &
-                   iuma        , ivma          , iwma
+  integer, save :: ipr       !< pressure
+  integer, save :: iu        !< velocity component \f$ u_x \f$
+  integer, save :: iv        !< velocity component \f$ u_y \f$
+  integer, save :: iw        !< velocity component \f$ u_z \f$
+  integer, save :: ik        !< turbulent kinetic energy \f$ k \f$
+  integer, save :: iep       !< turbulent dissipation \f$ \varepsilon \f$
+  integer, save :: ir11      !< Reynolds stress component \f$ R_{xx} \f$
+  integer, save :: ir22      !< Reynolds stress component \f$ R_{yy} \f$
+  integer, save :: ir33      !< Reynolds stress component \f$ R_{zz} \f$
+  integer, save :: ir12      !< Reynolds stress component \f$ R_{xy} \f$
+  integer, save :: ir23      !< Reynolds stress component \f$ R_{yz} \f$
+  integer, save :: ir13      !< Reynolds stress component \f$ R_{zz} \f$
+  integer, save :: iphi      !< variable \f$ \phi \f$ of the \f$ \phi-f_b \f$ model
+  integer, save :: ifb       !< variable \f$ f_b \f$ of the \f$ \phi-f_b \f$ model
+  integer, save :: ial       !< variable \f$ \alpha \f$ of the \f$ Bl-v^2-k \f$ model
+  integer, save :: iomg      !< variable \f$ \omega \f$ of the \f$ k-\omega \f$ SST
+  integer, save :: inusa     !< variable \f$ \widetilde{\nu}_T \f$ of the Spalart Allmaras
+  integer, save :: isca(nscamx) !< isca(i) is the index of the scalar i
+  integer, save :: iscapp(nscamx) !< iscapp(i) is the index of the specific physics scalar i
+  integer, save :: nscaus    !< number of user scalars
+  integer, save :: nscapp    !< number of specific physics scalars
+  integer, save :: nscasp    !< number of species scalars
+  integer, save :: iuma      !< mesh velocity component \f$ w_x \f$
+  integer, save :: ivma      !< mesh velocity component \f$ w_y \f$
+  integer, save :: iwma      !< mesh velocity component \f$ w_z \f$
 
   ! Position des proprietes (physiques ou numeriques)
   !  (dans propce, propfa et propfb)
