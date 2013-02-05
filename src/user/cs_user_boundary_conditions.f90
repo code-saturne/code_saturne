@@ -339,7 +339,7 @@
 !> - Mass flux (for convecting 'ivar'):     \c propfb(ifac, ipprob(ifluma(ivar)))
 !> - For other values: take as an approximation the value in the adjacent cell
 !>                     i.e. as above with \c iel = ifabor(ifac).
-
+!>
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -378,7 +378,7 @@
 !>                                 (negative if gain) in w/m2 or roughtness
 !>                                 in m if icodcl=6
 !>                                 -# for the velocity \f$ (\mu+\mu_T)
-!>                                    \gradv \vect{u} \cdot \vect{n}  \f$
+!>                                    \gradt \, \vect{u} \cdot \vect{n}  \f$
 !>                                 -# for the pressure \f$ \Delta t
 !>                                    \grad P \cdot \vect{n}  \f$
 !>                                 -# for a scalar \f$ cp \left( K +
