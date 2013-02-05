@@ -1237,7 +1237,7 @@ class Case(Dico, XMLDocument, QObject):
                 same = True
                 if self.record_argument_prev == None:
                     same = False
-                elif len(c) >= 2:
+                elif (len(c) == len(self.record_argument_prev) and len(c) >= 2):
                     for i in range(0, len(c)-1):
                         if c[i] != self.record_argument_prev[i]:
                             same = False
@@ -1260,7 +1260,7 @@ class Case(Dico, XMLDocument, QObject):
                 same = True
                 if self.record_argument_prev == None:
                     same = False
-                elif len(c) >= 2:
+                elif (len(c) == len(self.record_argument_prev) and len(c) >= 2):
                     for i in range(0, len(c)-1):
                         if c[i] != self.record_argument_prev[i]:
                             same = False
