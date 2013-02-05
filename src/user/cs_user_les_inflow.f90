@@ -30,36 +30,36 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Purpose:
+! -------
+
+!> \file cs_user_les_inflow.f90
+!>
+!> \brief Generation of synthetic turbulence at LES inlets
+!>
+!> \brief Generation of synthetic turbulence at LES inlets initialization
+!>
+!> \c nent and \c isuisy might be defined.
+!>
+!> \c nent = Number of inlets
+!> \c isuisy = 1: Reading of the LES inflow module restart file
+!>           = 0: not activated (synthetic turbulence reinitialized)
+!>
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[out]    nent          number of synthetic turbulence inlets
+!_______________________________________________________________________________
+
 subroutine cs_user_les_inflow_init (nent)
 !=================================
 
 !===============================================================================
-! Purpose :
-! --------
-
-! Generation of synthetic turbulence at LES inlets
-
-! Definition of global caracteristics of synthetic turbulence inlets
-
-! nent and isuisy might be defined.
-
-! nent = Number of inlets
-! isuisy = 1: Reading of the LES inflow module restart file
-!        = 0: not activated (synthetic turbulence reinitialized)
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
-!__________________!____!_____!________________________________________________!
-! nent             ! i  ! --> ! number of synthetic turbulence inlets          !
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
-
 
 !===============================================================================
 ! Module files
@@ -102,6 +102,75 @@ end subroutine cs_user_les_inflow_init
 
 !===============================================================================
 
+!===============================================================================
+! Purpose :
+! --------
+
+!> \brief Definition of the caracteristics of the synthetic turbulence inlet
+!>  \c nument
+!>
+!> For each LES inlet, the following parameters might be defined:
+!>
+!>  1. Data relatve to the method employed
+!>
+!>    - typent indicates the synthetic turbulence method:
+!>
+!>       - 0: laminar, no turbulent fluctations
+!>       - 1: random gaussian noise
+!>       - 2: Batten method, based on Fourier mode decomposition
+!>       - 3: Synthetic Eddy Method (SEM)
+!>       .
+!>
+!>    - nelent indicates the number of "entities" relative to the method
+!>       (usefull only for the Batten method and the SEM):
+!>
+!>       - for Batten : number of Fourier modes of the turbulent fluctuations
+!>       - for SEM    : number of synthetic eddies building the fluctuations
+!>       .
+!>
+!>    - iverbo indicates the verbosity level (listing)
+!>
+!>       -   0  no specific output
+!>       - > 0 additionnal output (only for SEM)
+!>       .
+!>
+!>
+!>  2. Data relative to the LES inflow boundary faces
+!>
+!>     - nfbent: number of boundary faces of the LES inflow
+!>     - lfbent: list of boundary faces of the LES inflow
+!>
+!>
+!>  3. Data relative to the flow
+!>
+!>     - vitent(3): reference mean velocity vector
+!>     - enrent   : reference turbulent kinetic energy
+!>     - dspent   : reference dissipation rate
+!>
+!>       \remarks
+!>       - dspent usefull only for typent = 2 (Batten) or typent = 3 (SEM).
+!>       - Strictly positive values are required for enrent and dspent.
+!>       - Accurate specification of the statistics of the flow at LES inlet
+!>         can be made via the user subroutine cs_user_les_inflow_advanced.
+!>
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nument        id of the inlet
+!> \param[out]    typent        type of inflow method at the inlet
+!> \param[out]    nelent        numb. of entities of the inflow meth
+!> \param[out]    iverbo        verbosity level
+!> \param[out]    nfbent        numb. of bound. faces of the inlet
+!> \param[out]    lfbent        list of bound. faces of the inlet
+!> \param[out]    vitent        ref. mean velocity at the inlet
+!> \param[out]    enrent        ref. turb. kin. ener. at the inlet
+!> \param[out]    dspent        ref. turb. dissipation at the inlet
+!_______________________________________________________________________________
+
 subroutine cs_user_les_inflow_define &
 !===================================
 ( nument, typent, nelent, iverbo,                                             &
@@ -109,75 +178,6 @@ subroutine cs_user_les_inflow_define &
   vitent, enrent, dspent                                                      &
 )
 
-!===============================================================================
-! Purpose :
-! --------
-
-! Generation of synthetic turbulence at LES inlets
-
-! Definition of the caracteristics of the synthetic turbulence inlet 'nument'
-
-! For each LES inlet, the following parameters might be defined:
-
-!  1. Data relatve to the method employed
-
-!     * typent indicates the synthetic turbulence method:
-
-!         0 : laminar, no turbulent fluctations
-!         1 : random gaussian noise
-!         2 : Batten method, based on Fourier mode decomposition
-!         3 : Synthetic Eddy Method (SEM)
-
-!     * nelent indicates the number of "entities" relative to the method
-!       (usefull only for the Batten method and the SEM):
-
-!         for Batten : number of Fourier modes of the turbulent fluctuations
-!         for SEM    : number of synthetic eddies building the fluctuations
-
-!     * iverbo indicates the verbosity level (listing)
-
-!          0  no specific output
-!         > 0 additionnal output (only for SEM)
-
-
-!  2. Data relative to the LES inflow boundary faces
-
-!       nfbent: number of boundary faces of the LES inflow
-!       lfbent: list of boundary faces of the LES inflow
-
-
-!  3. Data relative to the flow
-
-!       vitent(3): reference mean velocity vector
-!       enrent   : reference turbulent kinetic energy
-!       dspent   : reference dissipation rate
-
-!       Note :
-!       ----
-!       - dspent usefull only for typent = 2 (Batten) or typent = 3 (SEM).
-!       - Strictly positive values are required for enrent and dspent.
-!       - Accurate specification of the statistics of the flow at LES inlet
-!         can be made via the user subroutine cs_user_les_inflow_advanced.
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
-!__________________!____!_____!________________________________________________!
-! nument           ! i  ! <-- ! id of the inlet                                !
-! typent           ! i  ! --> ! type of inflow method at the inlet             !
-! nelent           ! i  ! --> ! numb. of entities of the inflow meth           !
-! iverbo           ! i  ! --> ! verbosity level                                !
-! nfbent           ! i  ! --> ! numb. of bound. faces of the inlet             !
-! lfbent           ! ra ! --> ! list of bound. faces of the inlet              !
-! vitent           ! ra ! --> ! ref. mean velocity at the inlet                !
-! enrent           ! r  ! --> ! ref. turb. kin. ener. at the inlet             !
-! dspent           ! r  ! --> ! ref. turb. dissipation at the inlet            !
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -232,6 +232,62 @@ end subroutine cs_user_les_inflow_define
 
 !===============================================================================
 
+!===============================================================================
+! Purpose :
+! --------
+
+!> \brief Generation of synthetic turbulence at LES inlets advanced mode
+!>
+!> Accurate definition of mean velocity, Reynolds stresses and dissipation
+!> rate for each boundary face of the synthetic turbulence inlet \c nument
+!>
+!> \section Usage
+!> \code
+!>   uvwent(ndim,nfbent) ! mean velocity vector
+!>   rijent(   6,nfbent) ! Reynolds stresses!
+!>   epsent(     nfbent) ! dissipation rate
+!> \endcode
+!>
+!> \c rijent components are ordonned as follows: 11, 22, 33, 12, 13, 23
+!>
+!> Arrays are initialized before this subroutine is called by
+!> (see the user subroutine \ref cs_user_les_inflow_define):
+!>   \code
+!>     uvwent(idim,ifac) = vitent(idim)
+!>
+!>     rijent(1,ifac)    = 2.d0/3.d0*enrent
+!>     rijent(2,ifac)    = 2.d0/3.d0*enrent
+!>     rijent(3,ifac)    = 2.d0/3.d0*enrent
+!>     rijent(4,ifac)    = 0.d0
+!>     rijent(5,ifac)    = 0.d0
+!>     rijent(6,ifac)    = 0.d0
+!>
+!>     epsent(ifac)      = dspent
+!>   \endcode
+!>
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nument        id of the inlet
+!> \param[in]     nfbent        numb. of bound. faces of the inlet
+!> \param[in]     nvar          number of variables
+!> \param[in]     nscal         number of scalars
+!> \param[in]     lfbent        list of bound. faces of the inlet
+!> \param[in]     dt            time step
+!> \param[in]     rtpa          variables at cells (previous)
+!> \param[in]     rtp           variables at cells
+!> \param[in]     propce        physical properties at cells
+!> \param[in]     propfa        physical properties at faces
+!> \param[in]     propfb        physical properties at bound. faces
+!> \param[out]    uent          mean velocity at the inlet faces
+!> \param[out]    rijent        turb. kin. ener. at the inlet faces
+!> \param[out]    epsent        turb. dissipation at the inlet faces
+!_______________________________________________________________________________
+
 subroutine cs_user_les_inflow_advanced &
 !=====================================
 
@@ -241,63 +297,6 @@ subroutine cs_user_les_inflow_advanced &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    uvwent , rijent , epsent )
 
-!===============================================================================
-! Purpose :
-! --------
-
-!    User subroutine.
-
-!    Generation of synthetic turbulence at LES inlets
-
-!    Accurate definition of mean velocity, Reynolds stresses and dissipation
-!    rate for each boundary face of the synthetic turbulence inlet 'nument'
-
-! Usage
-! -----
-!     uvwent(ndim,nfbent) : mean velocity vector
-!     rijent(   6,nfbent) : Reynolds stresses!
-!     epsent(     nfbent) : dissipation rate
-
-!    rijent components are ordonned as follow : 11, 22, 33, 12, 13, 23
-
-!    Arrays are initialized before this subroutine is called by
-!    (see the user subroutine cs_user_les_inflow_define):
-
-!       uvwent(idim,ifac) = vitent(idim)
-
-!       rijent(1,ifac)    = 2.d0/3.d0*enrent
-!       rijent(2,ifac)    = 2.d0/3.d0*enrent
-!       rijent(3,ifac)    = 2.d0/3.d0*enrent
-!       rijent(4,ifac)    = 0.d0
-!       rijent(5,ifac)    = 0.d0
-!       rijent(6,ifac)    = 0.d0
-
-!       epsent(ifac)      = dspent
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
-!__________________!____!_____!________________________________________________!
-! nument           ! i  ! --> ! id of the inlet                                !
-! nfbent           ! i  ! --> ! numb. of bound. faces of the inlet             !
-! nvar             ! i  ! --> ! number of variables                            !
-! nscal            ! i  ! --> ! number of scalars                              !
-! lfbent           ! i  ! --> ! list of bound. faces of the inlet              !
-! dt               ! r  ! --> ! time step                                      !
-! rtpa             ! ra ! --> ! variables at cells (previous)                  !
-! rtp              ! ra ! --> ! variables at cells                             !
-! propce           ! ra ! --> ! physical properties at cells                   !
-! propfa           ! ra ! --> ! physical properties at faces                   !
-! propfb           ! ra ! --> ! physical properties at bound. faces            !
-! uent             ! ra ! <-- ! mean velocity at the inlet faces               !
-! rijent           ! ra ! <-- ! turb. kin. ener. at the inlet faces            !
-! epsent           ! ra ! <-- ! turb. dissipation at the inlet faces           !
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================

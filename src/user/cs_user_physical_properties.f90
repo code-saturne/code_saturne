@@ -22,6 +22,85 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Purpose:
+! -------
+
+!> \file cs_user_physical_properties.f90
+!> \brief Definition of physical variable laws.
+!>
+!> usphyv
+!> \brief Definition of physical variable laws.
+!>
+!> \section Warning
+!>
+!> It is \b forbidden to modify turbulent viscosity \c visct here
+!> (a specific subroutine is dedicated to that: \ref usvist)
+!>
+!> - icp = 1 must \b{ have been specified }
+!>    in \ref usipph if we wish to define a variable specific heat
+!>    cp (otherwise: memory overwrite).
+!>
+!> - ivisls = 1 must \b{ have been specified }
+!>    in \ref usipsc if we wish to define a variable viscosity
+!>    \c viscls (otherwise: memory overwrite).
+!>
+!>
+!> \remarks
+!>  - This routine is called at the beginning of each time step
+!>    Thus, \b{ AT THE FIRST TIME STEP } (non-restart case), the only
+!>    values initialized before this call are those defined
+!>      - in the GUI or  \ref usipsu (cs_user_parameters.f90)
+!>             - density    (initialized at \c ro0)
+!>             - viscosity  (initialized at \c viscl0)
+!>      - in the GUI or \ref cs_user_initialization
+!>             - calculation variables (initialized at 0 by defaut
+!>             or to the value given in the GUI or in \ref cs_user_initialization)
+!>
+!>  - We may define here variation laws for cell properties, for:
+!>     - density:                                    rom    kg/m3
+!>     - density at boundary faces:                  romb   kg/m3)
+!>     - molecular viscosity:                        viscl  kg/(m s)
+!>     - specific heat:                              cp     J/(kg degrees)
+!>     - diffusivities associated with scalars:      visls kg/(m s)
+!>
+!> \b Warning: if the scalar is the temperature, visls corresponds
+!> to its conductivity (Lambda) in W/(m K)
+!>
+!>
+!> The types of boundary faces at the previous time step are available
+!>   (except at the first time step, where arrays \c itypfb and \c itrifb have
+!>   not been initialized yet)
+!>
+!> It is recommended to keep only the minimum necessary in this file
+!>   (i.e. remove all unused example code)
+!>
+!>
+!> \section cell_id Cells identification
+!>
+!> Cells may be identified using the \ref getcel subroutine.
+!> The syntax of this subroutine is described in the
+!> \ref cs_user_boundary_conditions subroutine,
+!> but a more thorough description can be found in the user guide.
+!
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     ibrom         indicator of filling of romb array
+!> \param[in]     dt            time step (per cell)
+!> \param[in]     rtp, rtpa     calculated variables at cell centers
+!> \param[in]                    (at current and previous time steps)
+!> \param[in]     propce        physical properties at cell centers
+!> \param[in]     propfa        physical properties at interior face centers
+!> \param[in]     propfb        physical properties at boundary face centers
+!_______________________________________________________________________________
+
 subroutine usphyv &
 !================
 
@@ -30,95 +109,6 @@ subroutine usphyv &
    dt     , rtp    , rtpa   ,                                     &
    propce , propfa , propfb )
 
-!===============================================================================
-! Purpose:
-! -------
-
-!    User subroutine.
-
-!    Definition of physical variable laws.
-
-! Warning:
-! -------
-
-! It is forbidden to modify turbulent viscosity "visct" here
-!       =========
-!    (a specific subroutine is dedicated to that: usvist)
-
-
-! icp = 1 must have been specified
-!                ========================
-!    in usipph if we wish to define a variable specific heat
-!    cp (otherwise: memory overwrite).
-
-
-! ivisls = 1 must have been specified
-!                   ========================
-!    in usipsc if we wish to define a variable viscosity
-!    viscls (otherwise: memory overwrite).
-
-
-! Notes:
-! -----
-
-! This routine is called at the beginning of each time step
-
-!    Thus, AT THE FIRST TIME STEP (non-restart case), the only
-!    values initialized before this call are those defined
-!      - in the GUI or usipsu (cs_user_parameters.f90)
-!             . density    (initialized at ro0)
-!             . viscosity  (initialized at viscl0)
-!      - in the GUI or cs_user_initialization
-!             . calculation variables (initialized at 0 by defaut
-!             or to the value given in the GUI or in cs_user_initialization)
-
-! We may define here variation laws for cell properties, for:
-!     - density                                    rom    kg/m3
-!         (possibly also at boundary faces         romb   kg/m3)
-!     - molecular viscosity                        viscl  kg/(m s)
-!     - specific heat                              cp     J/(kg degrees)
-!     - "diffusivities" associated with scalars    visls kg/(m s)
-! Warning if the scalar is the temperature, visls corresponds
-! to its conductivity (Lambda) in W/(m K)
-
-
-! The types of boundary faces at the previous time step are available
-!   (except at the first time step, where arrays itypfb and itrifb have
-!   not been initialized yet)
-
-
-! It is recommended to keep only the minimum necessary in this file
-!   (i.e. remove all unused example code)
-
-
-! Cells identification
-! ====================
-
-! Cells may be identified using the 'getcel' subroutine.
-! The syntax of this subroutine is described in the
-! 'cs_user_boundary_conditions' subroutine,
-! but a more thorough description can be found in the user guide.
-
-
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ibrom            ! te ! <-- ! indicateur de remplissage de romb              !
-!        !    !     !                                                !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -134,7 +124,6 @@ use entsor
 use parall
 use period
 use mesh
-use field
 
 !===============================================================================
 
@@ -776,6 +765,86 @@ end subroutine usphyv
 
 !===============================================================================
 
+!===============================================================================
+! Purpose:
+! -------
+
+!> uscfpv
+!> \brief  Set (variable) physical properties for the compressible flow scheme.
+!>
+!> \section des Description
+!>
+!> This subroutine replaces the user subroutine \ref usphyv for the
+!> compressible flow scheme.
+!>
+!> This subroutine is called at the beginning of each time step.
+!>
+!> At the very first time step (not at restart), the only variables that
+!> have been initialized are those provided:
+!>   - in the GUI and in the user subroutines \ref usipsu and \ref uscfx2; ex.:
+!>     - the density             (set to ro0)
+!>     - the molecular viscosity (set to viscl0)
+!>     - the volumetric molecular viscosity (set to viscv0)
+!>     - the molecular thermal conductivity (set to visls0(itempk))
+!>   - in the user subroutine \ref cs_user_initialization; ex.:
+!>     - the unknown variables (null by default)
+!>
+!> This subroutine allows the user to set the cell values for:
+!>   - the molecular viscosity:                            viscl  kg/(m s)
+!>   - the isobaric specific heat
+!>   (\f$ C_p = \left. \dfrac{\dd h}{\dd T}\right|_P \f$): cp     J/(kg degree)
+!>   - the molecular thermal conductivity:                 lambda W/(m degree)
+!>   - the molecular diffusivity for user-defined scalars: viscls kg/(m s)
+!>
+!> \section Warnings
+!>
+!> The density \b{ must not } be set here: for the compressible scheme,
+!> it is one of the unknowns, and it can be initialized as such in the user
+!> subroutine \ref cs_user_initialization (rtp array).
+!>
+!> The turbulent viscosity \b{ must not } be modified here (to modify this
+!> variable, use the user subroutine \ref usvist)
+!>
+!> To set a variable isobaric specific heat, the integer \c icp must
+!> have been set to 1: the value for \c icp is set automatically in the
+!> subroutine \ref cfther, depending on the thermodynamics laws selected
+!> by the user.
+!>
+!> To set a variable diffusivity for a given user-defined scalar, the
+!> variable \c ivisls(scalar_number) must have been set to 1 in the user
+!> subroutine \ref usipsc or in the GUI (otherwise, a memory problem is
+!> expected).
+!>
+!> Examples are provided in the present subroutine (but they do not have
+!> any physical signification).
+!>
+!> \section cell_id Cells identification
+!>
+!> Cells may be identified using the \ref getcel subroutine.
+!> The syntax of this subroutine is described in the
+!> \ref cs_user_boundary_conditions subroutine,
+!> but a more thorough description can be found in the user guide.
+!>
+!> The type of the boundary faces at the previous time step is available
+!> (except at the first time step, since the arrays \c itypfb and \c itrifb have
+!> not yet been set);
+!
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     dt            time step (per cell)
+!> \param[in]     rtpR, rtpa    calculated variables at cell centers
+!>                               (at current and preceding time steps)
+!> \param[in,out] propce        physical properties at cell centers
+!> \param[in]     propfa        physical properties at interior face centers
+!> \param[in]     propfb        physical properties at boundary face centers
+!_______________________________________________________________________________
 
 subroutine uscfpv &
 !================
@@ -783,95 +852,6 @@ subroutine uscfpv &
  ( nvar   , nscal  ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb )
 
-!===============================================================================
-! Purpose:
-! -------
-
-!    User subroutine.
-
-!    Set (variable) physical properties for the compressible flow scheme.
-
-
-! Description
-! ===========
-
-! This subroutine replaces the user subroutine 'usphyv' for the
-! compressible flow scheme.
-
-! This subroutine is called at the beginning of each time step.
-
-! At the very first time step (not at restart), the only variables that
-! have been initialized are those provided:
-!   - in the GUI and in the user subroutines 'usipsu' and 'uscfx2'; ex.:
-!     . the density             (set to ro0)
-!     . the molecular viscosity (set to viscl0)
-!     . the volumetric molecular viscosity (set to viscv0)
-!     . the molecular thermal conductivity (set to visls0(itempk))
-!   - in the user subroutine 'cs_user_initialization'; ex.:
-!     . the unknown variables (null by default)
-
-! This subroutine allows the user to set the cell values for:
-!   - the molecular viscosity                            viscl  kg/(m s)
-!   - the isobaric specific heat (cp=dh/dT|P)            cp     J/(kg degree)
-!   - the molecular thermal conductivity                 lambda W/(m degree)
-!   - the molecular diffusivity for user-defined scalars viscls kg/(m s)
-
-
-! Warnings
-! ========
-
-! The density ** must not ** be set here: for the compressible scheme,
-! it is one of the unknowns, and it can be initialized as such in the user
-! subroutine 'cs_user_initialization' (rtp array).
-
-! The turbulent viscosity ** must not ** be modified here (to modify this
-! variable, use the user subroutine 'usvist')
-
-! To set a variable isobaric specific heat, the integer icp must
-! have been set to 1: the value for icp is set automatically in the
-! subroutine 'cfther', depending on the thermodynamics laws selected
-! by the user.
-
-! To set a variable diffusivity for a given user-defined scalar, the
-! variable ivisls(scalar_number) must have been set to 1 in the user
-! subroutine 'usipsc' or in the GUI (otherwise, a memory problem is
-! expected).
-
-! Examples are provided in the present subroutine (but they do not have
-! any physical signification).
-
-
-! Cells identification
-! ====================
-
-! Cells may be identified using the 'getcel' subroutine.
-! The syntax of this subroutine is described in the
-! 'cs_user_boundary_conditions' subroutine,
-! but a more thorough description can be found in the user guide.
-
-! The type of the boundary faces at the previous time step is available
-! (except at the first time step, since the arrays itypfb and itrifb have
-! not yet been set);
-
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and preceding time steps)         !
-! propce(ncelet, *)! ra ! <-> ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -889,7 +869,6 @@ use ppppar
 use ppthch
 use ppincl
 use mesh
-use field
 
 !===============================================================================
 
@@ -927,6 +906,7 @@ double precision, allocatable, dimension(:) :: w1, w2, w3
 !===============================================================================
 
 if (1.eq.1) then
+  iuscfp = 0
   return
 endif
 
@@ -1543,7 +1523,6 @@ subroutine uselph &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ibrom            ! te ! <-- ! indicateur de remplissage de romb              !
-!        !    !     !                                                !
 ! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
@@ -1573,7 +1552,6 @@ use ppthch
 use ppincl
 use elincl
 use mesh
-use field
 
 !===============================================================================
 
@@ -1922,6 +1900,50 @@ end subroutine uselph
 
 !===============================================================================
 
+!===============================================================================
+! Purpose:
+! -------
+
+!> usvist
+!> \brief Modify turbulent viscosity
+!>
+!> This subroutine is called at beginning of each time step
+!> after the computation of the turbulent viscosity
+!> (physical quantities have already been computed in \ref usphyv).
+!>
+!> Turbulent viscosity \f$ \mu_T \f$ (kg/(m s)) can be modified.
+!>
+!> A modification of the turbulent viscosity can lead to very
+!> significant differences betwwen solutions and even give wrong
+!> results.
+!>
+!> This subroutine is therefore reserved to expert users.
+!
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     ncepdp        number of cells with head loss
+!> \param[in]     ncesmp        number of cells with mass source term
+!> \param[in]     icepdc        head loss cell numbering
+!> \param[in]     icetsm        numbering of cells with mass source term
+!> \param[in]     itypsm        kind of mass source for each variable
+!>                               (cf. \ref ustsma)
+!> \param[in]     dt            time step (per cell)
+!> \param[in]     rtp, rtpa     calculated variables at cell centers
+!>                               (at current and previous time steps)
+!> \param[in,out] propce        physical properties at cell centers
+!> \param[in]     propfa        physical properties at interior face centers
+!> \param[in]     propfb        physical properties at boundary face centers
+!> \param[in]     ckupdc        work array for head loss terms
+!> \param[in]     smacel        values of variables related to mass source
+!>                              term. If ivar=ipr, smacel=mass flux
+!_______________________________________________________________________________
 
 subroutine usvist &
 !================
@@ -1931,54 +1953,6 @@ subroutine usvist &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    ckupdc , smacel )
 
-!===============================================================================
-! Purpose:
-! -------
-
-! User subroutine.
-
-! Modify turbulent viscosity
-
-! This subroutine is called at beginning of each time step
-! after the computation of the turbulent viscosity
-! (physical quantities have already been computed in usphyv)
-
-! Turbulent viscosity VISCT (kg/(m s)) can be modified
-
-! A modification of the turbulent viscosity can lead to very
-! significant differences betwwen solutions and even give wrong
-! results
-
-! This subroutine is therefore reserved to expert users
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ncepdp           ! i  ! <-- ! number of cells with head loss
-! ncesmp           ! i  ! <-- ! number of cells with mass source term
-! icepdc(ncelet    ! te ! <-- ! head loss cell numbering                       !
-! icetsm(ncesmp    ! te ! <-- ! numbering of cells with mass source term       !
-! itypsm           ! te ! <-- ! kind of mass source for each variable          !
-! (ncesmp,nvar)    !    !     !  (cf. ustsma)                                  !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! ckupdc           ! ra ! <-- ! work array for head loss terms                 !
-!  (ncepdp,6)      !    !     !                                                !
-! smacel           ! ra ! <-- ! values of variables related to mass source     !
-! (ncesmp,*   )    !    !     ! term. If ivar=ipr, smacel=mass flux            !
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -2193,7 +2167,6 @@ use cstphy
 use entsor
 use parall
 use mesh
-use field
 
 !===============================================================================
 
@@ -2272,6 +2245,53 @@ end subroutine ussmag
 
 !===============================================================================
 
+!===============================================================================
+! Purpose:
+! -------
+
+!> usvima
+!> \brief User subroutine dedicated the use of ALE
+!>  (Arbitrary Lagrangian Eulerian Method): fills mesh viscosity arrays.
+!>
+!> This subroutine is called at the beginning of each time step.
+!>
+!> Here one can modify mesh viscosity value to prevent cells and nodes
+!> from huge displacements in awkward areas, such as boundary layer for example.
+!>
+!> IF variable IORTVM = 0, mesh viscosity modeling is isotropic therefore VISCMX
+!> array only needs to be filled.
+!> IF variable IORTVM = 1, mesh viscosity modeling is orthotropic therefore
+!> all arrays VISCMX, VISCMY and VISCMZ need to be filled.
+!>
+!> Note that VISCMX, VISCMY and VISCMZ arrays are initialized at the first time step
+!> to the value of 1.
+!>
+!> \section cell_id Cells identification
+!>
+!> Cells may be identified using the \ref getcel subroutine.
+!> The syntax of this subroutine is described in the
+!> \ref cs_user_boundary_conditions subroutine,
+!> but a more thorough description can be found in the user guide.
+!
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     dt            time step (per cell)
+!> \param[in]     rtp, rtpa     calculated variables at cell centers
+!>                               (at current and preceding time steps)
+!> \param[in]     propce        physical properties at cell centers
+!> \param[in]     propfa        physical properties at interior face centers
+!> \param[in]     propfb        physical properties at boundary face centers
+!> \param[out]    viscmx        mesh viscosity in X direction
+!> \param[out]    viscmy        mesh viscosity in Y direction
+!> \param[out]    viscmz        mesh viscosity in Z direction
+!_______________________________________________________________________________
 
 subroutine usvima &
 !================
@@ -2280,56 +2300,6 @@ subroutine usvima &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    viscmx , viscmy , viscmz )
 
-!===============================================================================
-! Purpose:
-! -------
-
-!    User subroutine dedicated the use of ALE (Arbitrary Lagrangian Eulerian Method) :
-!                 fills mesh viscosity arrays.
-
-
-!    This subroutine is called at the beginning of each time step.
-
-!    Here one can modify mesh viscosity value to prevent cells and nodes
-!    from huge displacements in awkward areas, such as boundary layer for example.
-
-!    IF variable IORTVM = 0, mesh viscosity modeling is isotropic therefore VISCMX
-!    array only needs to be filled.
-!    IF variable IORTVM = 1, mesh viscosity modeling is orthotropic therefore
-!    all arrays VISCMX, VISCMY and VISCMZ need to be filled.
-
-!    Note that VISCMX, VISCMY and VISCMZ arrays are initialized at the first time step
-!    to the value of 1.
-
-! Cells identification
-! ====================
-
-! Cells may be identified using the 'getcel' subroutine.
-! The syntax of this subroutine is described in the
-! 'cs_user_boundary_conditions' subroutine,
-! but a more thorough description can be found in the user guide.
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and preceding time steps)         !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! viscmx(ncelet)    ! ra ! <-- ! mesh viscosity in X direction                 !
-! viscmy(ncelet)    ! ra ! <-- ! mesh viscosity in Y direction                 !
-! viscmz(ncelet)    ! ra ! <-- ! mesh viscosity in Z direction                 !
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -2347,7 +2317,6 @@ use parall
 use period
 use albase
 use mesh
-use field
 
 !===============================================================================
 

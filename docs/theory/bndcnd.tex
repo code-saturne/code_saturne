@@ -49,7 +49,8 @@ The other variables
 (the physical properties for instance) have a different treatment which will 
 not be detailed here (for instance, for the density, the user defines 
 directly the values at the boundary. This information is then stored; one 
-is referred to \fort{cs\_user\_physical\_properties} or \fort{phyvar} for more information).
+is referred to \fort{cs\_user\_physical\_properties} (see the \href{../../../doxygen/src/html/cs_user_physical_properties_8f90}{programmers reference of the dedicated subroutine})
+ or \fort{phyvar} for more information).
 },
 the user has to define the boundary conditions at every boundary face.
 
@@ -58,7 +59,8 @@ or Dirichlet type (then the value of the field is prescribed), or mixed type, al
 called Robin type (then a combination of the value at the boundary and the flux
 is imposed).
 
-The code (see the \href{../../../doxygen/src/html/condli_8f90.html}{local doxygen documentation}) transforms the boundary conditions provided by the user
+The code (see the \href{../../../doxygen/src/html/condli_8f90.html}{programmers reference of the dedicated subroutine})
+ transforms the boundary conditions provided by the user
  into two internal formats of representation of the boundary 
  conditions. 
  

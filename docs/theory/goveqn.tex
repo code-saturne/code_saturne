@@ -28,6 +28,7 @@ This section presents the continuous equations. It is no substitutes for the
 specific sub-sections of this documentation: the purpose here is mainly to
 provide an overview before more detailed reading.
 
+\paragraph{Balance methodology:}
 The continuous equations can be obtained applying budget on the mass,
 momentum, or again on mass of a scalar. An useful theorem, the so-called
 Leibniz theorem, states that the variation of the integral of a given field $A$ 
@@ -39,8 +40,11 @@ over a moving domain $\Omega$ reads:
 \displaystyle \int_{\vol{} }\der{A}{t} \dd \vol{} + \int_{\partial \vol{}} A  \variav \cdot  \dd \vect{S},
 \end{array}
  \end{equation}
- where $\variav$ is the velocity of the boundary of $\Omega$. 
+ where $\variav$ is the velocity of the boundary of $\Omega$ and $\partial \Omega$ is the boundary of $\Omega$ with a outward surface element $\dd \vect{S}$. 
 
+%-----------------------------------------------
+\subsection{Laminar flows}
+\paragraph{Mass equation:}
 Let now apply \eqref{eq:goveq:leibnitz_th} to a fluid volume\footnote{%
 A fluid volume consists of fluid particles, that is to say it moves with the fluid velocity.
 },
@@ -52,7 +56,7 @@ $A= \rho$, where $\rho$ denotes the density:
 \displaystyle \DP{} \left( \int_{\vol{}} \rho \dd \vol{}\right) &=& 
 \displaystyle \int_{\vol{}} \der{\rho}{t} \dd \vol{} + \int_{\partial \vol{}} \rho  \vect{u} \cdot  \dd \vect{S}, \\
 \displaystyle &=&
-\displaystyle \int_{\vol{ }} \der{\rho}{t} + \dive \left( \rho \vect{u} \right)  \dd \vol{},
+\displaystyle \int_{\vol{ }} \left( \der{\rho}{t} + \dive \left( \rho \vect{u} \right) \right) \dd \vol{},
 \end{array}
  \end{equation}
 the second line is obtained using Green relation. In \eqref{eq:goveq:leibnitz_th_mass}, the term
@@ -76,6 +80,7 @@ but $\Gamma$ is generally taken to $0$.
 \nomenclature[rut1]{$\vect{u}$}{velocity field \nomunit{$m.s^{-1}$}}
 \nomenclature[ggamma ]{$\Gamma$}{mass source term}
 
+\paragraph{Momentum equation:}
 The same procedure on the momentum gives:
 \begin{equation}\label{eq:goveq:leibnitz_th_momentum}
 \begin{array}{r c l}
@@ -134,7 +139,7 @@ In order to make the set of Equations \eqref{eq:mass} and \eqref{eq:momentum} cl
 linking the stress tensor $\tens{\sigma}$ to the velocity field (more precisely to the rate of strain tensor $\tens{S}$)
 is introduced: 
 %
-\begin{equation}\label{eq:base_introd_tau}
+\begin{equation}\label{eq:goveqn:newtonian_fluid}
 \tens{\tau}=2 \mu \deviator{\tens{S}} = 2 \mu  \tens{S}-\frac{2}{3}\mu  \trace \left(\tens{S} \right) \tens{Id},
 \end{equation}
 %
@@ -164,7 +169,11 @@ and $\tens{S}$ , the strain rate tensor, as:
 \nomenclature[odeviator]{$\deviator{ \left(\tens{.} \right)}$}{deviatoric part of a tensor}
 \nomenclature[otrace]{$\trace{ \left(\tens{.}\right)}$}{trace of a tensor}
 %
-Injecting Equation \eqref{eq:base_introd_tau} into the momentum Equation \eqref{eq:momentum} and combining 
+Note that a fluid for which \eqref{eq:goveqn:newtonian_fluid} holds are called a Newtonian fluid, it is generally the case
+for water, air, but not the case of a paint because the stresses does not depends linearly of the strain rate.
+
+\paragraph{Navier Stokes equations:}
+Injecting Equation \eqref{eq:goveqn:newtonian_fluid} into the momentum Equation \eqref{eq:momentum} and combining 
 it with the continuity Equation \eqref{eq:mass} give the Navier Stokes equations:
 %
 \begin{equation}\label{eq:navier_stokes_conservative}
@@ -220,7 +229,7 @@ $ \gradt \, \vect{u} \cdot \left( \rho \vect{u}\right) = \divv \left( \vect{u}\o
 this relationship should be conserved by the space-discretized scheme (see \chaptername~\ref{chapter:spadis}).
 
 %-------------------------------------------------------------------------
-\paragraph{Turbulent flows with a Reynolds Average Navier-Stokes approach (\emph{RANS}):}
+\subsection{Turbulent flows with a Reynolds Average Navier-Stokes approach (\emph{RANS}):}
 When the flow becomes turbulent, the \emph{RANS} approach is to consider the 
 velocity field $\vect{u}$ as stochastic and then splat into a mean field denoted by $\overline{\vect{u}}$ and
 a fluctuating field $\vect{u}^\prime$:
@@ -271,7 +280,7 @@ Note that the viscous part $\mu_T\deviator{\overline{\tens{S}}}$ of the Reynolds
 stress tensor $\mu_l\deviator{\overline{\tens{S}}}$ so that the momentum equation for the mean velocity is similar to the one of a laminar
 flow with a variable viscosity $\mu = \mu_l +\mu_T$. 
  Five \emph{EVM} are available in \CS:
-$k-\varepsilon$, $k-\varepsilon$ with Linear Production (\emph{LP}), $k-\omega$ \emph{SST}, Spalart Allmaras, and an Elliptic Blending model (\emph{EB-EVM}) $Bl-v^2-k$ 
+$k-\varepsilon$, $k-\varepsilon$ with Linear Production (\emph{LP}), $k-\omega$ \emph{SST}, Spalart Allmaras, and an Elliptic Blending model (\emph{EB-EVM}) $Bl-v^2-k$.
 
 \item Differential Reynolds Stress Models (\emph{DRSM}) which solve
 a transport equation on the components of the Reynolds stress tensor $\tens{R}$ 
@@ -283,8 +292,8 @@ $R_{ij}-\varepsilon$ proposed by Spezial Sarkar and Gatski (\emph{SSG}) in \cite
 \end{enumerate}
 
 
-%-------------------------------------------------------------------------
-\paragraph{Large Eddy Simulation (\emph{LES}):}
+%-----------------------------------------------
+\subsection{Large Eddy Simulation (\emph{LES}):}
 the \emph{LES} approach consists in filtering the $\vect{u}$ field using an operator denoted by $\widetilde{\left(\cdot \right)} $.
 Applying the latter filter to the Navier-Stokes Equations \eqref{eq:navier_stokes} gives:
 %
@@ -311,8 +320,8 @@ resulting tensor:
 %
 where the above turbulent viscosity $\mu_T$ now accounts only for sub-grid effects.
 
-%-----------------------------------------------
-\paragraph{Formulation for laminar, RANS or LES calculation:}
+%-------------------------------------------------------------
+\subsection{Formulation for laminar, RANS or LES calculation:}
 for sake of simplicity, in all cases, the computed velocity field will be denoted by $\vect{u}$ even if 
 it is about \emph{RANS} velocity field $\overline{\vect{u}}$ or \emph{LES} velocity field $\widetilde{\vect{u}}$.
 
