@@ -172,7 +172,7 @@ for time average calculation</string>
             </property>
             <property name="text" >
              <string>If restart, number in preceding calculation
-of the time average to use to initalize
+of the time average to use to initialize
 the current selected time average.
 </string>
             </property>
