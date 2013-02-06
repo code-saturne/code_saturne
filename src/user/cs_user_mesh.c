@@ -540,7 +540,7 @@ cs_user_mesh_thinwall(cs_mesh_t  *mesh)
     BFT_FREE(i_face_normal);
 
     mesh->class_defs = fvm_group_class_set_destroy(mesh->class_defs);
-    fvm_selector_destroy(mesh->select_i_faces);
+    mesh->select_i_faces = fvm_selector_destroy(mesh->select_i_faces);
   }
 }
 
