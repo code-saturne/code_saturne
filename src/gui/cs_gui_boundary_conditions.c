@@ -1766,6 +1766,24 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                 ientgf[zone_nbr-1] = boundaries->ientgf[izone];
                 tkent[zone_nbr-1]  = boundaries->tkent[izone];
                 fment[zone_nbr-1]  = boundaries->fment[izone];
+
+                if (cs_gui_strcmp(choice_v, "flow1_formula") || cs_gui_strcmp(choice_v, "flow2_formula") )
+                {
+                    mei_tree_insert(boundaries->velocity[izone], "t", *ttcabs);
+                    mei_tree_insert(boundaries->velocity[izone], "dt", *dtref);
+                    mei_tree_insert(boundaries->velocity[izone], "iter", *ntcabs);
+                    mei_evaluate(boundaries->velocity[izone]);
+
+                    if (cs_gui_strcmp(choice_v, "flow1_formula"))
+                       qimp[zone_nbr-1] = mei_tree_lookup(boundaries->velocity[izone], "q_m");
+                    else if (cs_gui_strcmp(choice_v, "flow2_formula"))
+                       qimp[zone_nbr-1] = mei_tree_lookup(boundaries->velocity[izone], "q_v");
+                }
+                else
+                {
+                    qimp[zone_nbr-1] = boundaries->qimp[izone];
+                }
+
             }
             else if (cs_gui_strcmp(vars->model, "compressible_model"))
             {
