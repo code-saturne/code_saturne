@@ -32,19 +32,10 @@
 !>
 !> \section loc_var Local variables to be added
 !>
-!> \code
-!> integer          ifac, iel, ii, ivar
-!> integer          izone
-!> integer          ilelt, nlelt
-!> double precision uref2, d2s3
-!> double precision rhomoy, xdh, xustar2
-!> double precision xitur
-!> double precision xkent, xeent
+!> \snippet src/user_examples/cs_user_boundary_conditions-advanced.f90 loc_var_dec
 !>
-!> integer, allocatable, dimension(:) :: lstelt
-!> \endcode
 !>
-!> \section ex_1 Example of specific boundary conditions fully defined by the user
+!> \subsection ex_1 Example 1
 !>
 !> Example of specific boundary conditions fully defined by the user,
 !> on the basis of wall conditions.
@@ -53,65 +44,21 @@
 !>   - a Dirichlet condition on velocity (sliding wall with no-slip condition)
 !>   - a Dirichlet condition on the first scalar.
 !>
-!> \code
-!> call getfbr('1234', nlelt, lstelt)
-!> !==========
-!> do ilelt = 1, nlelt
+!> \snippet src/user_examples/cs_user_boundary_conditions-advanced.f90 example_1
 !>
-!>   ifac = lstelt(ilelt)
 !>
-!>   itypfb(ifac) = iparoi
+!> \subsection ex_2 Example 2
 !>
-!>   icodcl(ifac,iu )  = 1
-!>   rcodcl(ifac,iu,1) = 1.d0
-!>   rcodcl(ifac,iu,2) = rinfin
-!>   rcodcl(ifac,iu,3) = 0.d0
-!>   icodcl(ifac,iv )  = 1
-!>   rcodcl(ifac,iv,1) = 0.d0
-!>   rcodcl(ifac,iv,2) = rinfin
-!>   rcodcl(ifac,iv,3) = 0.d0
-!>   icodcl(ifac,iw )  = 1
-!>   rcodcl(ifac,iw,1) = 0.d0
-!>   rcodcl(ifac,iw,2) = rinfin
-!>   rcodcl(ifac,iw,3) = 0.d0
-!>
-!>   ivar = isca(1)
-!>   icodcl(ifac,ivar )  = 1
-!>   rcodcl(ifac,ivar,1) = 10.d0
-!>   rcodcl(ifac,ivar,2) = rinfin
-!>   rcodcl(ifac,ivar,3) = 0.d0
-!>
-!> enddo
-!> \endcode
-!>
-!> \section ex_2 Example of specific boundary conditions fully defined by the user
 !>  Example of specific boundary conditions fully defined by the user,
 !>  with no definition of a specific type.
 !>  We prescribe at group '5678' a homogeneous Neumann condition for
 !>  all variables.
 !>
-!> \code
-!> call getfbr('5678', nlelt, lstelt)
-!> !==========
-!> do ilelt = 1, nlelt
+!> \snippet src/user_examples/cs_user_boundary_conditions-advanced.f90 example_2
 !>
-!>   ifac = lstelt(ilelt)
 !>
-!>   ! CAUTION: the value of itypfb must be assigned to iindef
+!> \subsection ex_3 Example 3
 !>
-!>   itypfb(ifac) = iindef
-!>
-!>   do ii = 1, nvar
-!>     icodcl(ifac,ii )  = 3
-!>     rcodcl(ifac,ii,1) = 0.d0
-!>     rcodcl(ifac,ii,2) = rinfin
-!>     rcodcl(ifac,ii,3) = 0.d0
-!>   enddo
-!>
-!> enddo
-!> \endcode
-!>
-!> \section ex_3 Example of specific boundary conditions fully defined by the user
 !> Example of specific boundary conditions fully defined by the user,
 !> with the definition of a specific type, for example for future
 !> selection (mass flow computation, specific logging, ...)
@@ -119,35 +66,7 @@
 !> all variables, except for the first
 !> scalar, for which we select a homogeneous Dirichlet.
 !>
-!> \code
-!> call getfbr('6789', nlelt, lstelt)
-!> !==========
-!> do ilelt = 1, nlelt
-!>
-!>   ifac = lstelt(ilelt)
-!>
-!>   ! CAUTION: the value of itypfb must be different from
-!>   !          iparoi, ientre, isymet, isolib, iindef,
-!>   !          greater than or equal to 1, and
-!>   !          less than or equal to ntypmx;
-!>   !          these integers are defined in paramx.h
-!>
-!>   itypfb(ifac) = 89
-!>
-!>   do ii = 1, nvar
-!>     icodcl(ifac,ii )  = 3
-!>     rcodcl(ifac,ii,1) = 0.d0
-!>     rcodcl(ifac,ii,2) = rinfin
-!>     rcodcl(ifac,ii,3) = 0.d0
-!>   enddo
-!>
-!>   icodcl(ifac,isca(1) )  = 1
-!>   rcodcl(ifac,isca(1),1) = 0.d0
-!>   rcodcl(ifac,isca(1),2) = rinfin
-!>   rcodcl(ifac,isca(1),3) = 0.d0
-!>
-!> enddo
-!> \endcode
+!> \snippet src/user_examples/cs_user_boundary_conditions-advanced.f90 example_3
 !>
 !-------------------------------------------------------------------------------
 
@@ -249,6 +168,8 @@ double precision propfa(nfac,*), propfb(nfabor,*)
 double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
+
+!< [loc_var_dec]
 integer          ifac, iel, ii, ivar
 integer          izone
 integer          ilelt, nlelt
@@ -258,6 +179,7 @@ double precision xitur
 double precision xkent, xeent
 
 integer, allocatable, dimension(:) :: lstelt
+!< [loc_var_dec]
 
 
 !===============================================================================
@@ -286,6 +208,7 @@ d2s3 = 2.d0/3.d0
 !   - a Dirichlet condition on velocity (sliding wall with no-slip condition)
 !   - a Dirichlet condition on the first scalar.
 
+!< [example_1]
 call getfbr('1234', nlelt, lstelt)
 !==========
 do ilelt = 1, nlelt
@@ -314,12 +237,14 @@ do ilelt = 1, nlelt
   rcodcl(ifac,ivar,3) = 0.d0
 
 enddo
+!< [example_1]
 
 ! Example of specific boundary conditions fully defined by the user,
 ! with no definition of a specific type.
 ! We prescribe at group '5678' a homogeneous Neumann condition for
 ! all variables.
 
+!< [example_2]
 call getfbr('5678', nlelt, lstelt)
 !==========
 do ilelt = 1, nlelt
@@ -338,6 +263,7 @@ do ilelt = 1, nlelt
   enddo
 
 enddo
+!< [example_2]
 
 ! Example of specific boundary conditions fully defined by the user,
 ! with the definition of a specific type, for example for future
@@ -346,6 +272,7 @@ enddo
 ! all variables, except for the first
 ! scalar, for which we select a homogeneous Dirichlet.
 
+!< [example_3]
 call getfbr('6789', nlelt, lstelt)
 !==========
 do ilelt = 1, nlelt
@@ -373,6 +300,7 @@ do ilelt = 1, nlelt
   rcodcl(ifac,isca(1),3) = 0.d0
 
 enddo
+!< [example_3]
 
 !--------
 ! Formats
