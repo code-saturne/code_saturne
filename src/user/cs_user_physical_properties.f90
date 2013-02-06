@@ -123,6 +123,7 @@ use cstphy
 use entsor
 use parall
 use period
+use field
 use mesh
 
 !===============================================================================
@@ -868,6 +869,7 @@ use period
 use ppppar
 use ppthch
 use ppincl
+use field
 use mesh
 
 !===============================================================================
@@ -1550,6 +1552,7 @@ use ppppar
 use ppthch
 use ppincl
 use elincl
+use field
 use mesh
 
 !===============================================================================
@@ -2165,6 +2168,7 @@ use optcal
 use cstphy
 use entsor
 use parall
+use field
 use mesh
 
 !===============================================================================
@@ -2315,6 +2319,7 @@ use entsor
 use parall
 use period
 use albase
+use field
 use mesh
 
 !===============================================================================
