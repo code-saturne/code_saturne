@@ -112,8 +112,6 @@ integer          f_id
 double precision d2s3, d2s3xk
 double precision rval
 
-double precision, allocatable, dimension(:) :: w1, w2, w3
-
 double precision, dimension(:,:), pointer :: xut
 
 !===============================================================================
@@ -982,8 +980,7 @@ if (nscal.gt.0) then
         call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp, &
                     rtp(1,ivar),ierror)
         nberro=nberro+ierror
-
-        rubriq = 'flux_turbulent_ce'//car4
+        rubriq = 'turbulent_flux_model'//car4
         itysup = 0
         nbval  = 1
         irtyp  = 1
@@ -1010,43 +1007,22 @@ if (nscal.gt.0) then
         write(nfecra,9511)rubrik
       endif
     endif
-    if (ityturt(iscal).eq.3) then
+    if (ityturt(iscal).eq.2 .or. ityturt(iscal).eq.3) then
 
-      allocate(w1(ncelet), w2(ncelet), w3(ncelet))
-
-      ! Name of the scalar ivar
-      call field_get_name(ivarfl(ivar), fname)
+      ! Name of the previous scalar ivar
+      call field_get_name(ivarfl(iscold(iscal)), fname)
+      rubriq = trim(fname)//'_turbulent_flux_ce'
 
       ! Index of the corresponding turbulent flux
-      call field_get_id(trim(fname)//'_turbulent_flux', f_id)
-
+      call field_get_name(ivarfl(ivar), fname)
+      call field_get_id(trim(fname)//'_turbulent_flux_ce', f_id)
       call field_get_val_v(f_id, xut)
 
       itysup = 1
-      nbval  = 1
+      nbval  = 3
       irtyp  = 2
-      rubriq = 'ut_ce_phase'//car4
-      call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-           w1,ierror)
+      call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,xut,ierror)
       nberro=nberro+ierror
-
-      rubriq = 'vt_ce_phase'//car4
-      call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-           w2,ierror)
-      nberro=nberro+ierror
-
-      rubriq = 'wt_ce_phase'//car4
-      call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-           w3,ierror)
-      nberro=nberro+ierror
-
-      do iel = 1, ncel
-        xut(1,iel) = w1(iel)
-        xut(2,iel) = w2(iel)
-        xut(3,iel) = w3(iel)
-      enddo
-
-      deallocate(w1, w2, w3)
 
     endif
   enddo
