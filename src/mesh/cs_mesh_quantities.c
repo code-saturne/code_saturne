@@ -2024,6 +2024,7 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
                    "volume.\n"));
     }
 }
+
 /*----------------------------------------------------------------------------
  * Compute mesh quantities -> vectors II' and JJ'
  *
@@ -2224,6 +2225,23 @@ cs_mesh_quantities_check_vol(const cs_mesh_t             *mesh,
       bft_error(__FILE__, __LINE__, 0,
                 _(fmt), (unsigned long long)error_count);
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Update mesh quantities relative to extended ghost cells when the
+ * neighborhood is reduced.
+ *
+ * parameters:
+ *   mesh            <-- pointer to a cs_mesh_t structure
+ *   mesh_quantities <-> pointer to a cs_mesh_quantities_t structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_quantities_reduce_extended(const cs_mesh_t       *mesh,
+                                   cs_mesh_quantities_t  *mesh_quantities)
+{
+  if (cs_glob_mesh_quantities_compute_cocg_lsq == 1)
+    _compute_cell_cocg_lsq(mesh, mesh_quantities);
 }
 
 /*----------------------------------------------------------------------------

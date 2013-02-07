@@ -320,6 +320,19 @@ cs_mesh_quantities_check_vol(const cs_mesh_t             *mesh,
                              int                          allow_error);
 
 /*----------------------------------------------------------------------------
+ * Update mesh quantities relative to extended ghost cells when the
+ * neighborhood is reduced.
+ *
+ * parameters:
+ *   mesh            <-- pointer to a cs_mesh_t structure
+ *   mesh_quantities <-> pointer to a cs_mesh_quantities_t structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_quantities_reduce_extended(const cs_mesh_t       *mesh,
+                                   cs_mesh_quantities_t  *mesh_quantities);
+
+/*----------------------------------------------------------------------------
  * Dump a cs_mesh_quantities_t structure
  *
  * parameters:
