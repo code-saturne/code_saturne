@@ -305,12 +305,12 @@ if (iccfth.eq.-1) then
 endif
 
 call field_get_coefa_s(ivarfl(ipr), coefap)
-call field_get_coefa_s(ivarfl(ipr), coefbp)
+call field_get_coefb_s(ivarfl(ipr), coefbp)
 
 call field_get_coefa_s(ivarfl(irh), coefar)
 
 call field_get_coefa_s(ivarfl(itk), coefat)
-call field_get_coefa_s(ivarfl(itk), coefbt)
+call field_get_coefb_s(ivarfl(itk), coefbt)
 
 call field_get_coefa_s(ivarfl(ien), coefae)
 
