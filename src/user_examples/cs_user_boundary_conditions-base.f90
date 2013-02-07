@@ -33,7 +33,7 @@
 !>
 !> \section loc_var Local variables to be added
 !>
-!> \snippet src/user_examples/cs_user_boundary_conditions-base.f90 loc_var_dec
+!> \snippet cs_user_boundary_conditions-base.f90 loc_var_dec
 !>
 !>
 !> \subsection ex_1 Example 1
