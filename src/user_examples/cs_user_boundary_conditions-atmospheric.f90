@@ -487,8 +487,9 @@ rugt=0.1d0
 !===============================================================================
 
 ! --- For boundary faces of color 11,
-!       assign an inlet boundary condition for all phases prescribed from the meteo profile
-!       with automatic choice between inlet/ outlet according to the meteo profile
+!       assign an inlet boundary condition for all phases prescribed from the
+!       meteo profile with automatic choice between inlet/ outlet according to
+!       the meteo profile
 
 call getfbr('11',nlelt,lstelt)
 !==========
@@ -499,17 +500,21 @@ do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
 
-!     - Zone to which the face belongs
+  ! - Zone to which the face belongs
   izfppp(ifac) = izone
 
-!     - Boundary conditions are prescribed from the meteo profile
+  ! - CAUTION: do not assign boundary condition type (itypfb(ifac))
+  !            as it is automatically set by the code.
+
+  ! - Boundary conditions are prescribed from the meteo profile
   iprofm(izone) = 1
 
 enddo
 
 
 ! ---For boundary faces of color 21,
-!     assign an inlet boundary condition for all phases prescribed from the meteo profile
+!     assign an inlet boundary condition for all phases prescribed from the
+!     meteo profile
 
 call getfbr('21',nlelt,lstelt)
 !==========
@@ -520,13 +525,13 @@ do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
 
-!     - Zone to which the face belongs
+  ! - Zone to which the face belongs
   izfppp(ifac) = izone
 
-!     - Boundary conditions are prescribed from the meteo profile
+  ! - Boundary conditions are prescribed from the meteo profile
   iprofm(izone) = 1
 
-!     - Assign inlet boundary conditions
+  ! - Assign inlet boundary conditions
   itypfb(ifac) = ientre
 
 enddo
@@ -546,13 +551,13 @@ do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
 
-!     - Zone to which the face belongs
+  ! - Zone to which the face belongs
   izfppp(ifac) = izone
 
-!     - Boundary conditions are prescribed from the meteo profile
+  ! - Boundary conditions are prescribed from the meteo profile
   iprofm(izone) = 1
 
-!     - Dynamical variables are prescribed with a rough log law
+  ! - Dynamical variables are prescribed with a rough log law
   zent=cdgfbo(3,ifac)
 
   ustar=xkappa*xuref/log((zref+rugd)/rugd)
@@ -614,7 +619,7 @@ do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
 
-!     - Zone to which the zone belongs
+  ! - Zone to which the zone belongs
   izfppp(ifac) = izone
 
   ! Outlet: zero flux for velocity and temperature, prescribed pressure
@@ -640,16 +645,16 @@ do ilelt = 1, nlelt
   !       rough friction for velocities (+ turbulent variables)
   !       zero flux for scalars
 
-!     - Zone to which the zone belongs
+  ! - Zone to which the zone belongs
   izfppp(ifac) = izone
 
   itypfb(ifac)   = iparug
 
-  !     Roughness for velocity: rugd
+  ! Roughness for velocity: rugd
   rcodcl(ifac,iu,3) = rugd
 
-  !     Roughness for scalars (if required):
-  !   rcodcl(ifac,iv,3) = rugd
+  ! Roughness for scalars (if required):
+  ! rcodcl(ifac,iv,3) = rugd
 
 
   if(iscalt.ne.-1) then
@@ -679,7 +684,7 @@ do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
 
-!     - Zone to which the zone belongs
+  ! - Zone to which the zone belongs
   izfppp(ifac) = izone
 
   itypfb(ifac)   = isymet
