@@ -22,6 +22,143 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Purpose:
+! -------
+
+!> \file cs_user_extra_operations-energy_balance.f90
+!>
+!> \brief This is an example of cs_user_extra_operations.f90 which
+!>  performs an energy balance.
+!>
+!>
+!> \section loc_var Local variables to be added
+!>
+!> \snippet cs_user_extra_operations-energy_balance.f90 loc_var_dec
+!>
+!>
+!> \subsection ex_1 Example 1
+!>
+!> This example computes energy balance relative to temperature
+!> We assume that we want to compute balances  (convective and diffusive)
+!> at the boundaries of the calculation domain represented below
+!> (with boundaries marked by colors).
+!>
+!> The scalar considered if the temperature. We will also use the
+!> specific heat (to obtain balances in Joules)
+!>
+!>
+!> Domain and associated boundary colors:
+!> - 2, 4, 7 : adiabatic walls
+!> - 6       : wall with fixed temperature
+!> - 3       : inlet
+!> - 5       : outlet
+!> - 1       : symmetry
+!>
+!>
+!> To ensure calculations have physical meaning, it is best to use
+!> a spatially uniform time step (\ref idtvar = 0 or 1).
+!> In addition, when restarting a calculation, the balance is
+!> incorrect if \ref inpdt0 = 1 (visct not initialized and t(n-1) not known)
+!>
+!>
+!> Temperature variable
+!> - ivar = \ref isca(\ref  iscalt) (use rtp(iel, ivar))
+!>
+!> Boundary coefficients coefap/coefbp are those of \ref ivarfl(ivar)
+!>
+!>
+!> The balance at time step n is equal to:
+!>
+!> \f[
+!> \begin{array}{r c l}
+!> Blance^n &=& \displaystyle
+!>              \sum_{\celli=1}^{\ncell}
+!>                 \norm{\vol{\celli}} C_p \rho_\celli
+!>                 \left(T_\celli^{n-1} -T_\celli^n \right)  \\
+!>          &+& \displaystyle
+!>              \sum_{\fib}
+!>                 C_p \Delta t_\celli \norm{\vect{S}_\ib}
+!>                 \left(A_\ib^f + B_\ib^f T_\celli^n \right) \\
+!>          &+& \displaystyle
+!>              \sum_{\fib}
+!>                 C_p \Delta t_\celli \dot{m}_\ib
+!>                 \left(A_\ib^g + B_\ib^g T_\celli^n \right)
+!> \end{array}
+!> \f]
+!>
+!> The first term is negative if the amount of energy in the volume
+!> has decreased (it is 0 in a steady regime).
+!>
+!> The other terms (convection, diffusion) are positive if the amount
+!> of energy in the volume has increased due to boundary conditions.
+!>
+!> In a steady regime, a positive balance thus indicates an energy gain.
+!>
+!>
+!> With \f$ \rho \f$ (\c rom) calculated using the density law from the
+!> \ref usphyv subroutine, for example:
+!>
+!> \f[
+!> \rho^{n-1}_\celli = P_0 / \left( R T_\celli^{n-1} + T_0 \right)
+!> \f]
+!> where \f$ R\f$ is \c rr and \f$ T_0 \f$ is \c tkelv.
+!>
+!>
+!> \f$ C_p \f$ and \f$ \lambda/C_p \f$ may vary.
+!>
+!>
+!> Here is the corresponding code:
+!>
+!> \snippet cs_user_extra_operations-energy_balance.f90 example_1
+!>
+!>
+!> \remark
+!> The approach may be used for the balance of any other scalar (but the
+!> balances are not in Joules and the specific heat is not used)
+!> In this case:
+!> - replace \ref iscalt by the number iscal of the required scalar,
+!>   \c iscal having an allowed range of 1 to nscal.
+!> - set \c ipccp to 0 independently of the value of \c icp
+!>   and use 1 instead of \c cp0
+!>
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     nbpmax        max. number of particles allowed
+!> \param[in]     nvp           number of particle-defined variables
+!> \param[in]     nvep          number of real particle properties
+!> \param[in]     nivep         number of integer particle properties
+!> \param[in]     ntersl        number of return coupling source terms
+!> \param[in]     nvlsta        number of Lagrangian statistical variables
+!> \param[in]     nvisbr        number of boundary statistics
+!> \param[in]     itepa         integer particle attributes
+!>                                (containing cell, ...)
+!> \param[in]     dt            time step (per cell)
+!> \param[in]     rtp, rtpa     calculated variables at cell centers
+!>                               (at current and previous time steps)
+!> \param[in]     propce        physical properties at cell centers
+!> \param[in]     propfa        physical properties at interior face centers
+!> \param[in]     propfb        physical properties at boundary face centers
+!> \param[in]     ettp, ettpa   particle-defined variables
+!> \param[in]                    (at current and previous time steps)
+!> \param[in]     tepa          real particle properties
+!> \param[in]                    (statistical weight, ...
+!> \param[in]     statis        statistic means
+!> \param[in]     stativ        accumulator for variance of volume statisitics
+!> \param[in]     tslagr        Lagrangian return coupling term
+!> \param[in]                    on carrier phase
+!> \param[in]     parbor        particle interaction properties
+!> \param[in]                    on boundary faces
+!_______________________________________________________________________________
+
+
 subroutine cs_user_extra_operations &
 !==================================
 
@@ -31,54 +168,6 @@ subroutine cs_user_extra_operations &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    ettp   , ettpa  , tepa   , statis , stativ , tslagr , parbor )
 
-!===============================================================================
-! Purpose:
-! -------
-
-!    User subroutine.
-
-!    Called at end of each time step, very general purpose
-!    (i.e. anything that does not have another dedicated user subroutine)
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! nbpmax           ! i  ! <-- ! max. number of particles allowed               !
-! nvp              ! i  ! <-- ! number of particle-defined variables           !
-! nvep             ! i  ! <-- ! number of real particle properties             !
-! nivep            ! i  ! <-- ! number of integer particle properties          !
-! ntersl           ! i  ! <-- ! number of return coupling source terms         !
-! nvlsta           ! i  ! <-- ! number of Lagrangian statistical variables     !
-! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
-! itepa            ! ia ! <-- ! integer particle attributes                    !
-!  (nbpmax, nivep) !    !     !   (containing cell, ...)                       !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! ettp, ettpa      ! ra ! <-- ! particle-defined variables                     !
-!  (nbpmax, nvp)   !    !     !  (at current and previous time steps)          !
-! tepa             ! ra ! <-- ! real particle properties                       !
-!  (nbpmax, nvep)  !    !     !  (statistical weight, ...                      !
-! statis           ! ra ! <-- ! statistic means                                !
-!  (ncelet, nvlsta)!    !     !                                                !
-! stativ(ncelet,   ! ra ! <-- ! accumulator for variance of volume statisitics !
-!        nvlsta -1)!    !     !                                                !
-! tslagr           ! ra ! <-- ! Lagrangian return coupling term                !
-!  (ncelet, ntersl)!    !     !  on carrier phase                              !
-! parbor           ! ra ! <-- ! particle interaction properties                !
-!  (nfabor, nvisbr)!    !     !  on boundary faces                             !
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -127,6 +216,7 @@ double precision parbor(nfabor,nvisbr)
 
 ! Local variables
 
+!< [loc_var_dec]
 integer          iel    , ifac   , ivar
 integer          iel1   , iel2   , ieltsm
 integer          iortho
@@ -151,6 +241,7 @@ integer, allocatable, dimension(:) :: lstelt
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: treco
+!< [loc_var_dec]
 
 !===============================================================================
 ! Initialization
@@ -160,112 +251,9 @@ double precision, allocatable, dimension(:) :: treco
 allocate(lstelt(max(ncel,nfac,nfabor)))
 
 !===============================================================================
-! Example: compute energy balance relative to temperature
-! -------------------------------------------------------
 
-! We assume that we want to compute balances  (convective and diffusive)
-! at the boundaries of the calculation domain represented below
-! (with boundaries marked by colors).
-
-! The scalar considered if the temperature. We will also use the
-! specific heat (to obtain balances in Joules)
-
-
-! Domain and associated boundary colors
-! -------------------------------------
-!                  6
-!      --------------------------
-!      |                        |
-!      |                        |
-!   7  |           1            | 5
-!      |     ^                  |
-!      |     |                  |
-!      --------------------------
-
-!         2  3             4
-
-! 2, 4, 7 : adiabatic walls
-! 6       : wall with fixed temperature
-! 3       : inlet
-! 5       : outlet
-! 1       : symmetry
-
-!-------------------------------------------------------------------------------
-
-! To ensure calculations have physical meaning, it is best to use
-! a spatially uniform time step (idtvar = 0 or 1).
-! In addition, when restarting a calculation, the balance is
-! incorrect if inpdt0 = 1 (visct not initialized and t(n-1) not known)
-
-!-------------------------------------------------------------------------------
-
-! Temperature variable: ivar = isca(iscalt) (use rtp(iel, ivar))
-
-!             boundary coefficients coefap/coefbp are those of ivarfl(ivar)
-
-!-------------------------------------------------------------------------------
-
-! The balance at time step n is equal to:
-
-!        n        iel=ncelet           n-1
-! balance  =   sum { volume(iel)*cp*rom(iel)*(rtpa(iel,ivar)-rtp(iel,ivar)) }
-!                 iel=1
-
-!                 ifac=nfabor
-!            + sum {
-!                 ifac=1
-
-!                     surfbn(ifac)*dt(ifabor(ifac))*cp
-!                   * [  coefaf(ifac)
-!                      + coefbf(ifac)*rtp(ifabor(ifac,ivar))]
-!                  }
-
-!                 ifac=nfabor
-!            + sum {
-!                 ifac=1
-!                     dt(ifabor(ifac))*cp
-!                   * rtp(ifabor(ifac,ivar))*(-flumab(ifac))
-!                  }
-
-! The first term is negative if the amount of energy in the volume
-! has decreased (it is 0 in a steady regime).
-
-! The other terms (convection, diffusion) are positive if the amount
-! of energy in the volume has increased due to boundary conditions.
-
-! In a steady regime, a positive balance thus indicates an energy gain.
-
-!-------------------------------------------------------------------------------
-
-! With 'rom' calculated using the density law from the usphyv subroutine,
-! for example:
-
-!    n-1
-! rom(iel) = p0 / [rr * (rtpa(iel,ivar) + tkelv)]
-
-!-------------------------------------------------------------------------------
-
-! Cp and lambda/Cp may be variable
-
-!-------------------------------------------------------------------------------
-
-! Adaptation to an arbitrary scalar
-! ---------------------------------
-
-! The approach may be used for the balance of any other scalar (but the
-! balances are not in Joules and the specific heat is not used)
-
-! In this case:
-
-! - replace iscalt by the number iscal of the required scalar,
-!   iscal having an allowed range of 1 to nscal.
-
-! - set ipccp to 0 independently of the value of icp and use 1 instead of cp0
-
-!===============================================================================
-
+!< [example_1]
 ! The balance is not valid if inpdt0=1
-
 if (inpdt0.eq.0) then
 
   ! 2.1 Initialization
@@ -885,6 +873,7 @@ if (inpdt0.eq.0) then
    '------------------------------------------------------------')
 
 endif ! End of test on inpdt0
+!< [example_1]
 
 ! Deallocate the temporary array
 deallocate(lstelt)
