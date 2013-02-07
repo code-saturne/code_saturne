@@ -952,15 +952,15 @@ CS_PROCF (redvse, REDVSE) (const cs_real_t  *anomax)
  *
  * parameters:
  *   mesh            <-> pointer to mesh structure
- *   mesh_quantities <-- associated mesh quantities
+ *   mesh_quantities <-> associated mesh quantities
  *   non_ortho_max   <-- non-orthogonality angle (rad) above which cells
  *                       are selected for the extended neighborhood
  *----------------------------------------------------------------------------*/
 
 void
-cs_ext_neighborhood_reduce(cs_mesh_t                   *mesh,
-                           const cs_mesh_quantities_t  *mesh_quantities,
-                           double                       non_ortho_max)
+cs_ext_neighborhood_reduce(cs_mesh_t             *mesh,
+                           cs_mesh_quantities_t  *mesh_quantities,
+                           double                 non_ortho_max)
 {
   cs_int_t  i, face_id, cell_id, cell_i, cell_j;
   cs_gnum_t  init_cell_cells_connect_size;
@@ -1197,6 +1197,7 @@ cs_ext_neighborhood_reduce(cs_mesh_t                   *mesh,
 
   } /* If _first_call == 0 */
 
+  cs_mesh_quantities_reduce_extended(mesh, mesh_quantities);
 }
 
 /*----------------------------------------------------------------------------

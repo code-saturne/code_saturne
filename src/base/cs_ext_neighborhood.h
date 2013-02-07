@@ -82,15 +82,15 @@ CS_PROCF (redvse, REDVSE) (const cs_real_t  *anomax);
  *
  * parameters:
  *   mesh            <-> pointer to mesh structure
- *   mesh_quantities <-- associated mesh quantities
+ *   mesh_quantities <-> associated mesh quantities
  *   non_ortho_max   <-- non-orthogonality angle (rad) above which cells
  *                       are selected for the extended neighborhood
  *----------------------------------------------------------------------------*/
 
 void
-cs_ext_neighborhood_reduce(cs_mesh_t                   *mesh,
-                           const cs_mesh_quantities_t  *mesh_quantities,
-                           double                       non_ortho_max);
+cs_ext_neighborhood_reduce(cs_mesh_t             *mesh,
+                           cs_mesh_quantities_t  *mesh_quantities,
+                           double                 non_ortho_max);
 
 /*----------------------------------------------------------------------------
  * Create the  "cell -> cells" connectivity.
