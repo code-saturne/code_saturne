@@ -41,7 +41,11 @@ style/csdoc.sty \
 style/csindex.sty \
 style/csmacros.sty \
 style/csvers.tex.in \
-style/logocs.png \
+style/cs_logo_black.pdf \
+style/cs_logo_flux.pdf \
+style/cs_logo_wire_black.pdf \
+style/cs_logo_bubble.pdf \
+style/cs_logo_wave.pdf \
 style/logoedf.png
 
 # Macro-rules so as to compile/install both PDF and HTML outputs
