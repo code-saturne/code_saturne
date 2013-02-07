@@ -140,6 +140,14 @@ enddo
 
 !         Upwind necessaire pour le schema utilise
 
+! --- Segregated or coupled solver for the velocity components:
+!       only the segregated one is possible with the compressible module.
+!       ivelco is imposed to 0.
+
+if (ivelco.ne.0) then
+  write(nfecra,6000) ivelco
+  ivelco = 0
+endif
 
 ! 1.3 Variable courante : nom, sortie chrono, suivi listing, sortie hist
 ! ======================================================================
@@ -275,6 +283,8 @@ endif
 ! FORMATS
 !--------
 
+#if defined(_CS_LANG_FR)
+
  1000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -316,7 +326,6 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
-
  2000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -346,7 +355,6 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
-
  3000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -373,7 +381,7 @@ endif
 '@    PHYSIQUE PARTICULIERE (COMPRESSIBLE) DEMANDEE           ',/,&
 '@                                                            ',/,&
 '@  Les estimateurs ne sont pas compatibles avec le module    ',/,&
-'@    compressible                                            ',/,&
+'@    compressible.                                           ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
@@ -398,6 +406,174 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
+6000 format(                                                      &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@ ATTENTION :      A L''ENTREE DES DONNEES',                /,&
+'@    =========',                                               /,&
+'@   EN COMPRESSIBLE',                                          /,&
+'@   CONCERNANT LE COUPLAGE DES COMPOSANTES DE VITESSE',        /,&
+'@   LA SEULE VALEUR POSSIBLE POUR LE PARAMETRE IVELCO EST 0',  /,&
+'@' ,                                                           /,&
+'@   IVELCO A ETE IMPOSE ICI A', I10,                           /,&
+'@   IL EST DONC REMIS A 0',                                    /,&
+'@',                                                            /,&
+'@  Le calcul sera execute',                                    /,&
+'@',                                                            /,&
+'@  Il est conseille de verifier les parametres donnes via',    /,&
+'@  cs_user_parameters.f90.',                                   /,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
+
+#else
+
+ 1000 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING : STOP WHILE READING INPUT DATAS                ',/,&
+'@    =========                                               ',/,&
+'@    SPECIFIC PHYSICS MODULES (COMPRESSIBLE) SET             ',/,&
+'@                                                            ',/,&
+'@  The value of ISCALT is set automatically.                 ',/,&
+'@                                                            ',/,&
+'@  The user should not give a value for it, however          ',/,&
+'@    it has been given the following value:                  ',/,&
+'@    ISCALT = ',I10                                           ,/,&
+'@                                                            ',/,&
+'@  The calculation could NOT run.                            ',/,&
+'@                                                            ',/,&
+'@  Check parameters.                                         ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 1001 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING : STOP WHILE READING INPUT DATAS                ',/,&
+'@    =========                                               ',/,&
+'@    SPECIFIC PHYSICS MODULES (COMPRESSIBLE) SET             ',/,&
+'@                                                            ',/,&
+'@  The values of ISCSTH are set automatically.               ',/,&
+'@                                                            ',/,&
+'@  The user should not set a value for them, however         ',/,&
+'@    for the scalar ',I10   ,' corresponding to the specific ',/,&
+'@    physics scalar ',I10   ,' we have                       ',/,&
+'@    ISCSTH(',I10   ,') = ',I10                               ,/,&
+'@                                                            ',/,&
+'@  The calculation could NOT run.                            ',/,&
+'@                                                            ',/,&
+'@  Check parameters.                                         ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 2000 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING : STOP WHILE READING INPUT DATAS                ',/,&
+'@    =========                                               ',/,&
+'@    SPECIFIC PHYSICS MODULES (COMPRESSIBLE) SET             ',/,&
+'@                                                            ',/,&
+'@  The bounds of the variables density, energy or temperature',/,&
+'@    have been modified :                                    ',/,&
+'@                                                            ',/,&
+'@                      SCAMIN        SCAMAX                  ',/,&
+'@  density     ',2E14.5                                       ,/,&
+'@  energy      ',2E14.5                                       ,/,&
+'@  temperature ',2E14.5                                       ,/,&
+'@                                                            ',/,&
+'@  The bounds of these variables should not be modified.     ',/,&
+'@  It is possible to modify the bounds of the variables      ',/,&
+'@  density or energy in uscfx2, but it is not recommended.   ',/,&
+'@  It is advised to manage the possible overshoot by the     ',/,&
+'@  use of the subroutine cfther (stop of the calculation     ',/,&
+'@  at the end of the time step in case of an overshoot).     ',/,&
+'@                                                            ',/,&
+'@  The calculation could NOT run.                            ',/,&
+'@                                                            ',/,&
+'@  Check parameters.                                         ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 3000 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING : STOP WHILE READING INPUT DATAS                ',/,&
+'@    =========                                               ',/,&
+'@    SPECIFIC PHYSICS MODULES (COMPRESSIBLE) SET             ',/,&
+'@                                                            ',/,&
+'@  The option IPUCOU = ',I10                                  ,/,&
+'@    is not compatible with the compressible module          ',/,&
+'@                                                            ',/,&
+'@  The calculation could NOT run.                            ',/,&
+'@                                                            ',/,&
+'@  Impose IPUCOU = 0.                                        ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 4000 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING : STOP WHILE READING INPUT DATAS                ',/,&
+'@    =========                                               ',/,&
+'@    SPECIFIC PHYSICS MODULES (COMPRESSIBLE) SET             ',/,&
+'@                                                            ',/,&
+'@  The error estimators are not compatible with the          ',/,&
+'@    compressible module.                                    ',/,&
+'@                                                            ',/,&
+'@  The calculation could NOT run.                            ',/,&
+'@                                                            ',/,&
+'@  Impose IESCAL(.) = 0.                                     ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 5000 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING : STOP WHILE READING INPUT DATAS                ',/,&
+'@    =========                                               ',/,&
+'@    SPECIFIC PHYSICS MODULES (COMPRESSIBLE) SET             ',/,&
+'@                                                            ',/,&
+'@    ',A6,' MUST BE AN INTEGER EGAL TO 0 OR 1                ',/,&
+'@    IT HAS VALUE',I10                                        ,/,&
+'@                                                            ',/,&
+'@  The calculation could NOT run.                            ',/,&
+'@                                                            ',/,&
+'@  Check uscfx2.                                             ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 6000 format(                                                     &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@   WARNING :      WHEN READING INPUT DATA',                /,&
+'@    =========',                                               /,&
+'@   FOR COMPRESSIBLE MODEL',                                   /,&
+'@   AND THE CHOICE FOR VELOCITY COMPONENTS COUPLING',          /,&
+'@   THE ONLY POSSIBLE VALUE FOR THE PARAMETER IVELCO IS 0',    /,&
+'@' ,                                                           /,&
+'@   IVELCO IS IMPOSED HERE AS', I10,                           /,&
+'@   IT IS THEN REPLACED BY 0',                                 /,&
+'@',                                                            /,&
+'@  computation will go on',                                    /,&
+'@',                                                            /,&
+'@ Check the input data given in cs_user_parameters.f90.',      /,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
+
+#endif
 
 return
 end subroutine
+
+
+
