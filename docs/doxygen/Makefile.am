@@ -31,20 +31,20 @@ TEXINPUTS = $(abs_top_srcdir)/docs/style/:
 
 # Overload doxygen executable
 
-DOXYGEN = export TEXINPUTS="$(TEXINPUTS)"; \
+DOXYGENCMD = export TEXINPUTS="$(TEXINPUTS)"; \
   srcdir="$(top_srcdir)" builddir="$(top_builddir)" \
-  doxygen
+  $(DOXYGEN)
 
 doxygen-pre:
-	$(DOXYGEN) $(top_srcdir)/docs/doxygen/Doxyfile-pre
+	$(DOXYGENCMD) $(top_srcdir)/docs/doxygen/Doxyfile-pre
 
 doxygen-src:
-	$(DOXYGEN) $(top_srcdir)/docs/doxygen/Doxyfile-src
+	$(DOXYGENCMD) $(top_srcdir)/docs/doxygen/Doxyfile-src
 
 doxygen-ui:
-	$(DOXYGEN) $(top_srcdir)/docs/doxygen/Doxyfile-ui
+	$(DOXYGENCMD) $(top_srcdir)/docs/doxygen/Doxyfile-ui
 
-doxygen: doxygen-pre doxygen-src doxygen-ui
+doxygen: doxygen-src doxygen-ui
 
 html-local: doxygen
 
@@ -62,7 +62,10 @@ distclean-local:
 
 install-html-local:
 	$(MKDIR_P) "$(DESTDIR)$(htmldir)/doxygen"
-	\cp -R pre/html $(DESTDIR)$(htmldir)/doxygen/pre
+	if test -d pre/html; \
+	then \
+	  \cp -R pre/html $(DESTDIR)$(htmldir)/doxygen/pre ;\
+	fi
 	\cp -R src/html $(DESTDIR)$(htmldir)/doxygen/src
 	\cp -R ui/html  $(DESTDIR)$(htmldir)/doxygen/ui
 
