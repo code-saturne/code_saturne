@@ -3450,12 +3450,6 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
     e1ch[icha] = _get_E1_energy_of_activation(icha+1);
     e2ch[icha] = _get_E2_energy_of_activation(icha+1);
 
-    /* ---- Repartition de l'azote entre HCN et NH3 */
-    crepn1[icha] = _get_nitrogen_partition_in_HCN_NH3_reaction_1(icha+1);
-    crepn1[*ncharb+icha] = 1-crepn1[icha];
-    crepn2[icha] = _get_nitrogen_partition_in_HCN_NH3_reaction_2(icha+1);
-    crepn2[*ncharb+icha] = 1-crepn2[icha];
-
     /*  ---- Parametres combustion heterogene pour O2
         (modele a sphere retrecissante) */
     ahetch[icha] = _get_pre_exponential_constant(icha+1,"O2");
@@ -3487,6 +3481,12 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
     if (*ieqnox) {
       qpr[icha] = _get_nitrogen_fraction(icha+1);
       fn[icha] = _get_nitrogen_concentration(icha+1);
+
+      /* ---- Repartition de l'azote entre HCN et NH3 */
+      crepn1[icha] = _get_nitrogen_partition_in_HCN_NH3_reaction_1(icha+1);
+      crepn1[*ncharb+icha] = 1-crepn1[icha];
+      crepn2[icha] = _get_nitrogen_partition_in_HCN_NH3_reaction_2(icha+1);
+      crepn2[*ncharb+icha] = 1-crepn2[icha];
     }
   }
 
