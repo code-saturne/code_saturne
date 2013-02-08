@@ -158,6 +158,8 @@ class ComboModel:
             str_model = self.dicoV2M[str_view]
             index = self.items.index(str_model)
             self.__deleteItem(index)
+        self.combo.removeItem(index)
+        self.last = self.last - 1
 
 
     def __deleteItem(self, index):
