@@ -175,8 +175,12 @@ module optcal
   !  isstpc : indicateur sans ou avec test de pente
   !     = 1 : sans test de pente
   !     = 0 : avec test de pente
+  !  iflxmw : method to compute interior mass flux due to ALE mesh velocity
+  !     = 1 : based on cell center mesh velocity
+  !     = 0 : based on nodes displacement
 
   integer, save ::          ischcv(nvarmx), isstpc(nvarmx)
+  integer, save ::          iflxmw
   double precision, save :: blencv(nvarmx)
 
   ! Reconstruction des gradients et des seconds membres
