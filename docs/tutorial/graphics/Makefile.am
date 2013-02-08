@@ -28,32 +28,76 @@ FIGFILES =
 
 # Other files
 
-OTHERFILES = \
-c2_p1.jpg c2_p2.jpg c2_p3.jpg c2_p4.jpg c2_p5.jpg c2_p6.jpg c2_p7.jpg \
-c5_config.jpg cas1_t_10.jpg cas1_t_1.jpg cas1_t_20.jpg cas1_t_29.jpg \
-case3_p10.jpg case3_p1.jpg case3_p2.jpg case3_p3.jpg case3_p4.jpg \
-case3_p5.jpg case3_p6.jpg case3_p7.jpg case3_p8.jpg case3_p9.jpg \
-case4_p1.jpg case4_p2.jpg case4_p3.jpg case4_p4.jpg case4_p5.jpg \
-case4_p6.jpg case5_01.jpg case5_02.jpg case5_03.jpg case5_04.jpg \
-case5_05.jpg case5_06.jpg case5_07.jpg case5_08.jpg case5_09.jpg \
-color_Snimbus.jpg density_law.png evotemp_case3.png \
-fig01.jpg fig02.jpg fig03.jpg fig04.jpg fig05.jpg fig06.jpg fig07.jpg \
-fig08.jpg fig09.jpg \
-head_loss0.png head_loss1.png head_loss2.png head_loss3.png head_loss4.png \
-head_loss5.png \
-moytemp.png probe9.png \
-V-10.png V-11.png V-12.png V-13.png V-14.png V-15.png V-16.png V-17.png \
-V-18.png V-1.png V-20.png V-21.png V-22.png V-23.png V-24.png V-25.png \
-V-27.png V-28.png V-29.png V-2.png V-30.png V-31.png V-32.png V-33.png \
-V-34bis.png V-34.png V-35.png V-36.png V-37.png V-38.png V-39.png V-3.png \
-V-40.png V-41.png V-43.png V-44.png V-45.png V-46.png V-47.png V-48.png \
-V-49.png V-4.png V-50.png V-51.png V-52.png V-53.png V-54.png V-56.png \
-V-57.png V-58.png V-59.png V-5.png V-60bis.png V-60.png V-61.png V-62.png \
-V-63.png V-64.png V-65.png V-66.png V-67.png V-68.png V-69bis.png V-69.png \
-V-6.png V-70.png V-71.png V-72.png V-73bis.png V-73.png V-74bis.png V-74.png \
-V-75.png V-76bis.png V-76.png V-7.png V-8.png V-9.png \
-viscosity_law.png \
-case3.cmd evotemp_case3.agr probe9.agr
+OTHERFILES =\
+case1_fig01.jpg       case2_p1.jpg     case3_p5.jpg  case4_p4.jpg\
+case1_fig02.jpg       case2_p2.jpg     case3_p6.jpg  case4_p5.jpg\
+case1_fig03.jpg       case2_p3.jpg     case3_p7.jpg  case4_p6.jpg\
+case1_fig04_t_10.jpg  case2_p4.jpg     case3_p8.jpg  evotemp_case3.agr \
+case1_fig04_t_1.jpg   case2_p5.jpg     case3_p9.jpg  evotemp_case3.png \
+case1_fig04_t_20.jpg  case2_p6.jpg     case3_probe9.agr \
+case1_fig04_t_29.jpg  case3_fig01.jpg  case3_probe9.png \
+case2_fig01.jpg       case3_p10.jpg    case4_fig01.jpg  \
+case2_fig02.jpg       case3_p1.jpg     case4_moytemp.png\
+case2_fig03.jpg       case3_p2.jpg     case4_p1.jpg\
+case2_fig04.jpg       case3_p3.jpg     case4_p2.jpg\
+case2_p0.jpg          case3_p4.jpg     case4_p3.jpg\
+case5_config.jpg      case5_color_Snimbus.jpg case5_01.jpg\
+case5_02.jpg case5_03.jpg case5_04.jpg case5_05.jpg\
+case5_06.jpg case5_07.jpg case5_08.jpg case5_09.jpg\
+case6_geometry-3rond2d.png case6_solid-mesh-color.png\
+case6_color-fluid-mesh.png case6_Visu2d-solid-temp.png\
+case6_Visu2d_Temp_fluid.png case6_Visu2d_Vec_fluid.png\
+case6_Visu2D-coupling-temp00.png case6_Visu2D-coupling-Vec00.png\
+case1_V-20.png  case1_V-31.png  case1_V-7.png\
+case1_V-10.png  case1_V-21.png  case1_V-32.png\
+case1_V-8.png   case1_V-11.png  case1_V-22.png\
+case1_V-33.png  case1_V-9.png   case1_V-12.png\
+case1_V-23.png  case1_V-34.png  case1_V-13.png\
+case1_V-24.png  case1_V-35.png  case1_V-14.png\
+case1_V-25.png  case1_V-36.png  case1_V-15.png\
+case1_V-26.png  case1_V-37.png  case1_V-16.png\
+case1_V-27.png  case1_V-38.png  case1_V-17.png\
+case1_V-28.png  case1_V-3.png   case1_V-18.png\
+case1_V-29.png  case1_V-4.png   case1_V-19.png\
+case1_V-2.png   case1_V-5.png   case1_V-1.png \
+case1_V-30.png  case1_V-6.png\
+case2_V-10.png  case2_V-18.png  case2_V-25.png  case2_V-4.png\
+case2_V-11.png  case2_V-19.png  case2_V-26.png  case2_V-5.png\
+case2_V-12.png  case2_V-1.png   case2_V-27.png  case2_V-6.png\
+case2_V-13.png  case2_V-20.png  case2_V-28.png  case2_V-7.png\
+case2_V-14.png  case2_V-21.png  case2_V-29.png  case2_V-8.png\
+case2_V-15.png  case2_V-22.png  case2_V-2.png   case2_V-9.png\
+case2_V-16.png  case2_V-23.png  case2_V-30.png\
+case2_V-17.png  case2_V-24.png  case2_V-3.png\
+case3-V1.png    case3-V2.png case3-V3.png\
+case3-V4.png    case3-V5.png case3-V6.png\
+case3-V7.png    case4_V-3.png   case4_V-4.png\
+case4_V-5-paraview.png case4_V-1.png   case4_V-2.png\
+case5-V13.png                case5-V7.png\
+case5-V5b.png                case5-V8.png\
+case5-V1.png                 case5-V9.png\
+case5-V2.png                 case5-V3.png\
+case5-V10.png                case5-V4.png\
+case5-V11.png                case5-V5.png\
+case5-V12.png                case5-V6.png\
+case6_fluidcoupling_V-1.png  case6_solidcoupling_V-3.png\
+case6_fluidcoupling_V-2.png  case6_solid_V-10.png\
+case6_fluidcoupling_V-3.png  case6_solid_V-11.png\
+case6_fluid_V-10.png         case6_solid_V-12.png\
+case6_fluid_V-11.png         case6_solid_V-13.png\
+case6_fluid_V-1-2.png        case6_solid_V-14.png\
+case6_fluid_V-1.png          case6_solid_V-15.png\
+case6_fluid_V-2.png          case6_solid_V-1.png\
+case6_fluid_V-3.png          case6_solid_V-2.png\
+case6_fluid_V-4.png          case6_solid_V-3.png\
+case6_fluid_V-5.png          case6_solid_V-4.png\
+case6_fluid_V-6.png          case6_solid_V-5.png\
+case6_fluid_V-7.png          case6_solid_V-6.png\
+case6_fluid_V-8.png          case6_solid_V-7.png\
+case6_fluid_V-9.png          case6_solid_V-8.png\
+case6_solidcoupling_V-1.png  case6_solid_V-9.png\
+case6_solidcoupling_V-2.png  case6_visu_solid-00.png\
+case6_visu_fluid-00.png      case6_visu_fluid-01.png
 
 # Distributed files
 

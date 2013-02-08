@@ -2,7 +2,7 @@
 
 % This file is part of Code_Saturne, a general-purpose CFD tool.
 %
-% Copyright (C) 1998-2013 EDF S.A.
+% Copyright (C) 1998-2011 EDF S.A.
 %
 % This program is free software; you can redistribute it and/or modify it under
 % the terms of the GNU General Public License as published by the Free Software
@@ -48,7 +48,7 @@ the top left horizontal junction to the right vertical outlet.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=9cm,height=6cm]{fig04}
+\includegraphics[width=9cm,height=6cm]{case2_fig01}
 \caption{Geometry of the complete domain}
 \label{figante21}
 \end{center}
@@ -90,7 +90,7 @@ passive scalar ... but it is only for simplification purposes} and their values 
 variable in cases 3 and 4:
 \begin{itemize}
         \item density: $\rho = 725.735\ kg.m^{-3}$
-        \item dynamic viscosity: $\mu = 0.895\times10^{-4}\ kg.m^{-1}.s^{-1}$
+        \item dynamic viscosity: $\mu = 0.895\times10^{-4}\ kg.m^{-1}.s^{-1} = 8.951\times10^{-5}\ Pa.s$
         \item heat capacity: $C_{p} = 5\,483\ J.kg^{-1}.\mbox{\degresC}^{-1}$
         \item Thermal Conductivity $ = 0.02495\ W.m^{-1}.K^{-1}$
 \end{itemize}
@@ -107,7 +107,7 @@ studies. This is a deliberate choice so that tutorial calculations run fast.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=8.65cm,height=7.4cm]{fig05}
+\includegraphics[width=8.65cm,height=7.4cm]{case2_fig02}
 \caption{View of the full domain mesh with zoom on the joining regions}
 \label{figante22}
 \end{center}
@@ -125,7 +125,7 @@ of \CS (in order to deal with hanging nodes)
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=3.6cm,height=6.4cm]{fig06}
+\includegraphics[width=3.6cm,height=6.4cm]{case2_fig03}
 \caption{Colors of the boundary faces}
 \label{figante23}
 \end{center}
@@ -147,11 +147,19 @@ CASE 2 & unsteady flow, additionnal passive scalar, output management \\
 CASE 3 & same as case 2 with time dependent boundary conditions, \\
  &       fluid density depending on the temperature and calculation restart\\
 \hline
-CASE 4 & same as case 3 with head loss, parallelism and spatial average \\
+CASE 4 & same as case 3 with head losses, parallelism and spatial average \\
 \hline
 \end{tabular}
 \end{center}
-
+~\\
+\textbf{Remark:}
+%--------------------------------------------------------------------------------------
+In this case, you must add three meshes which have to be
+joined. In order to join the three meshes, you must add a selection criteria
+in the box {\itshape Selection criteria}. In this case, only faces of colors
+5, 24 and 32 are liable to be joined (different colors can be entered on a
+single line, separated by comma).\\
+You can verify the quality of your mesh in  {\itshape Mesh quality criteria}.
 
 %--------------------------------------------------------------------------------------
 \section{CASE 2: Passive scalar with various boundary conditions and output management}
@@ -229,15 +237,23 @@ wall\_6 & Dirichlet  & 40 \\
 The ``wall\_1'' to ``wall\_6'' regions are defined as follows, through color
 references and geometric localization:
 \begin{center}
-\begin{tabular}{c|c}
+\begin{tabular}{|c|c|}
+\hline
 Label & Color and geometric parameters \\
 \hline
-wall\_1 & 24 and $0.1\leqslant X$ and $X\leqslant 0.5$ \\
+\hline
+wall\_1 & 24 and $0.1\leqslant x$ and $x\leqslant 0.5$ \\
+\hline
 wall\_2 & 2 or 3 \\
+\hline
 wall\_3 & 4 or 7 or 21 or 22 or 23 \\
-wall\_4 & 6 and $Y>1$ \\
-wall\_5 & 6 and $Y\leqslant1$ \\
+\hline
+wall\_4 & 6 and $y>1$ \\
+\hline
+wall\_5 & 6 and $y\leqslant1$ \\
+\hline
 wall\_6 & 31 or 33 \\
+\hline
 \end{tabular}
 \end{center}
 
@@ -277,6 +293,8 @@ Interface without using any user Fortran files.
 \hline
 \multicolumn{2}{|c|}{Calculation control parameters} \\
 \hline
+Pressure-Velocity coupling & SIMPLEC algorithm \\
+\hline
 Number of iterations & $300$ \\
 \hline
 Reference time step & $0.05$ \\
@@ -286,8 +304,8 @@ Output period for post-processing files& $2$ \\
 \end{tabular}\\
 \end{center}
 
-In order to join the separate meshes into a single domain, colors 5, 24 and 32
-will have to be joined through the Graphical Interface.
+% In order to join the separate meshes into a single domain, colors 5, 24 and 32
+% will have to be joined through the Graphical Interface.
 
 
 
@@ -315,12 +333,12 @@ on probes  1, 2, 6, 7 and 8.
 
 \begin{figure}[htp]
 \parbox{8cm}{%
-\centerline{\includegraphics[width=4cm,height=6.8cm]{fig07}}}
+\centerline{\includegraphics[width=4cm,height=6.8cm]{case2_fig04}}}
 \parbox{7cm}{%
 \begin{center}
 \begin{tabular}{|c|c|c|c|}
 \hline
-Points & X(m) & Y(m) & Z(m)\\
+Probe n$^o$. & x (m) & y (m) & z (m)\\
 \hline
 1 & -0.25 & 2.25 & 0 \\
 \hline
@@ -358,7 +376,7 @@ conditions defined earlier can be checked.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=14cm,height=11cm]{c2_p7}
+\includegraphics[width=14cm,height=11cm]{case2_p0}
 \caption{View of the boundary domain colored by the scalar\_2 variable - Case 2}
 \label{fige1_e2}
 \end{center}
@@ -370,12 +388,12 @@ calculation. They were plotted from the post-processing files, with EnSight.
 \begin{figure}
 \begin{center}
 \begin{tabular}{cc}
-\includegraphics[width=6cm,height=6cm]{c2_p1} &
-\includegraphics[width=6cm,height=6cm]{c2_p2} \\
-\includegraphics[width=6cm,height=6cm]{c2_p3} &
-\includegraphics[width=6cm,height=6cm]{c2_p4} \\
-\includegraphics[width=6cm,height=6cm]{c2_p5} &
-\includegraphics[width=6cm,height=6cm]{c2_p6} \\
+\includegraphics[width=6cm,height=6cm]{case2_p1} &
+\includegraphics[width=6cm,height=6cm]{case2_p2} \\
+\includegraphics[width=6cm,height=6cm]{case2_p3} &
+\includegraphics[width=6cm,height=6cm]{case2_p4} \\
+\includegraphics[width=6cm,height=6cm]{case2_p5} &
+\includegraphics[width=6cm,height=6cm]{case2_p6} \\
 \end{tabular}
 \caption{Water velocity field colored by temperature at different time steps - Case 2}
 \label{fige2_e2}

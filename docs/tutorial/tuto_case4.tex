@@ -2,7 +2,7 @@
 
 % This file is part of Code_Saturne, a general-purpose CFD tool.
 %
-% Copyright (C) 1998-2013 EDF S.A.
+% Copyright (C) 1998-2012 EDF S.A.
 %
 % This program is free software; you can redistribute it and/or modify it under
 % the terms of the GNU General Public License as published by the Free Software
@@ -20,22 +20,30 @@
 
 %-------------------------------------------------------------------------------
 
-\section{SOLUTION FOR CASE 4}
-This case is similar to case 3, with the following differences:\\
-\hspace*{1cm}$\bullet\ $parallel computation on 2 processors\\
-\hspace*{1cm}$\bullet\ $head loss\\
-\hspace*{1cm}$\bullet\ $calculation of a spatial average\\
-\hspace*{1cm}$\bullet\ $dealing with a user results file
+\section{Solution for case4}
+This case is similar to \texttt{case3}, with the following differences:
 
-The head loss is defined in the Graphical User Interface. Go to {\itshape Volume regions definition} under the heading {\itshape Volume conditions}. Click on ``Add'', unselect ``Initialization'' and select ``Head losses'' in the box named {\itshape Nature}. In the box named {\itshape Label}, name the head loss region. Define the limits of the head losses region in {\itshape Selection criteria}. The associated character string to enter is as follows:
-``$0.2 <= X$ and $0.4 >= X$ and $-0.75 <= Y$ and $-0.25 >= Y$''
+\hspace*{1cm}$\bullet\ $ \textbf{Step 1}: define head losses in the fluid domain,\\
+\hspace*{1cm}$\bullet\ $ \textbf{Step 2}: compute the spatial average of temperature scalar,\\
+\hspace*{1cm}$\bullet\ $ \textbf{Step 3}: parallel computation on 2 processors,\\
+\hspace*{1cm}$\bullet\ $ \textbf{Step 4}: dealing with a user results file.
+
+$\bullet$ \textbf{Step 1-1}: Define the head losses in the Graphical User Interface (GUI). \\
+Go to {\itshape Volume regions definition} under the heading {\itshape Volume conditions}.
+Click on {\bf``Add''}, unselect ``Initialization'' and select {\bf``Head losses''} in the box named {\itshape Nature}.
+In the box named {\itshape Label}, name the head losses region. \\
+Define the limits of the head losses region in {\itshape Selection criteria}.
+The associated character string to enter is as below:\\
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+``$0.2 <= x$ and $0.4 >= x$ and $-0.75 <= y$ and $-0.25 >= y$''
+}\end{minipage} }
 
 \begin{figure}[h!]
 \begin{center}
 \begin{tabular}{c}
-\includegraphics[width=9cm]{head_loss0} \\
+\includegraphics[width=8cm]{case4_V-1} \\
 \\
-\includegraphics[width=9cm]{head_loss3}
+\includegraphics[width=8cm]{case4_V-2}
 \end{tabular}
 \caption{Creation of head losses region}
 \label{fig_hl1}
@@ -43,50 +51,68 @@ The head loss is defined in the Graphical User Interface. Go to {\itshape Volume
 \end{figure}
 
 \newpage
-To specify the head losses coefficients go to the item {\itshape Head losses} and select the name of the head losses volume region. In this example, the coefficient is isotropic so that we use the same value for each $\alpha_{ii}$. Please note that $\alpha_{ii}=2 \times K_{ii}$, therefore if $K_{ii}=10^4$, $\alpha_{ii}=2 \ 10^4$.
+$\bullet$ \textbf{Step 1-2}:  Specify the head losses coefficients $\alpha_{ii}$.\\
+To specify the head losses coefficients go to the {\itshape Head losses} item
+and select the name of the head losses volume region.
+In this example, the coefficient is isotropic so that we use the same value
+for each $\alpha_{ii}$. Please note that $\alpha_{ii}=2 \times K_{ii}$, therefore if
+$K_{ii}=10^4$, $\alpha_{ii}=2 \ 10^4$.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{head_loss5}
+\includegraphics[width=9cm]{case4_V-3}
 \caption{Head losses coefficients}
 \label{fig_hl2}
 \end{center}
 \end{figure}
 
-\newpage
-The calculation of the spatial average is done in the {\itshape usproj.f90}
-routine. Refer to the example file in the
-directory \texttt{examples} for the complete {\itshape usproj.f90} file.
+%\newpage
+$\bullet$ \textbf{Step 2}:  compute the spatial average of temperature \textbf{TempC}\\
+The computation of the spatial average is done in the \texttt{cs\_user\_extra\_operations.f90}
+routine.\\
 
-The other two changes are controlled in the item
-{\itshape Prepare batch analysis}.
+$\bullet$ Remark: Refer to the example files in the subdirectory \texttt{SRC/EXAMPLES} which names are:\\
+\fbox{\begin{minipage}{\textwidth}\texttt{                  \\
+ cs\_user\_extra\_operations-energy\_balance.f90            \\
+ cs\_user\_extra\_operations-extract\_1d\_profile.f90       \\
+ cs\_user\_extra\_operations-force\_temperature.f90         \\
+ cs\_user\_extra\_operations-global\_efforts.f90            \\
+ cs\_user\_extra\_operations-parallel\_operations.f90       \\
+ cs\_user\_extra\_operations-print\_statistical\_moment.f90
+}\end{minipage} }
 
+To correctly complet your \texttt{cs\_user\_extra\_operations.f90} routine
+(copied in the \texttt{SRC} directory), you can use mainly these examples files:
+\texttt{cs\_user\_extra\_operations-print\_statistical\_moment.f90} and
+\texttt{cs\_user\_extra\_operations-extract\_1d\_profile.f90}.
+
+$\bullet$ \textbf{Step 3}: choose a computation with 2 processors \\
+This modification will be done in the {\itshape Prepare batch analysis} item.\\
 To run the calculation on two processors, simply change the number of processors
 indicator to 2. The launch script will automatically deal with the rest.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{V-66}
+\includegraphics[width=9cm]{case4_V-4} % 12cm
 \caption{Number of processors}
 \label{fig1_e4}
 \end{center}
 \end{figure}
 
-
 \newpage
-As seen in paragraph \ref{prg_case4}, the file ``moy.dat'' created by
-{\itshape usproj.f90} will be written in the temporary execution directory. It
-must be identified in the launch script in order to be automatically copied in
-the RESU directory (More precisely, a RES\_USERS.xxxxxxxx directory will be
-created in the RESU folder, in which the file will be copied).
+$\bullet$ \textbf{Step 4}:  dealing with a user results file \textbf{``moy.dat''}\\
+The new user file ``moy.dat'' created by \texttt{cs\_user\_extra\_operations.f90}
+will be written directly in the \texttt{yyyymmdd-hhmm} results subdirectory created
+at the end of the computation in the \texttt{RESU} directory.
 
-Click on the icon {\itshape New user result file} to enter the associated dialog window.
-Enter the file name ``moy.dat'' in the field. Further file names can be added. When finished,
-click on {\itshape OK}.
+$\bullet$ Remark : We do not have to specify the name of the new user file in the
+Graphical User Interface (GUI), like in previous \CS versions. \\
+The name of the new user file had to be identified in the launch script in order
+to be automatically copied in the \texttt{RESU} directory, this is not requested.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=5cm]{V-67}
+\includegraphics[width=11cm]{case4_V-5-paraview}
 \caption{User results files}
 \label{fig2_e4}
 \end{center}
