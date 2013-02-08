@@ -1,5 +1,5 @@
 /*============================================================================
- * Define (conforming or non-conforming) mesh joinings.
+ * Define postprocessing output.
  *============================================================================*/
 
 /* VERS */
@@ -570,7 +570,7 @@ cs_user_postprocess_meshes(void)
   if (false) {
 
     const int n_writers = 1;
-    const int writer_ids[] = {2};  /* Associate to writer 1 */
+    const int writer_ids[] = {2};  /* Associate to writer 2 */
 
     /* Define postprocessing mesh */
 
