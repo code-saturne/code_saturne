@@ -2,7 +2,7 @@
 
 % This file is part of Code_Saturne, a general-purpose CFD tool.
 %
-% Copyright (C) 1998-2013 EDF S.A.
+% Copyright (C) 1998-2011 EDF S.A.
 %
 % This program is free software; you can redistribute it and/or modify it under
 % the terms of the GNU General Public License as published by the Free Software
@@ -20,32 +20,34 @@
 
 %-------------------------------------------------------------------------------
 
-\section{SOLUTION FOR CASE 2}
+\section{Solution for case2}
 This case corresponds to a new study, in which there will be three calculation
-cases (cases 2, 3 and 4). All of them can be created in a single {\itshape
-code\_saturne create} command, or additional cases can be added later. To test both
-possibilities, first create the study directory, with cases directories CAS2
-and CAS4:\\
-{\itshape code\_saturne create -s FULL\_DOMAIN CAS2 CAS4}\\
-then go in the study directory and add the CAS3 directory:\\
-{\itshape cd FULL\_DOMAIN}\\
-{\itshape code\_saturne create -c CAS3}
+cases (cases 2, 3 and 4).
+We can create one case in a single \texttt{code\_saturne create} command and
+additional cases can be added later.
+To test this functionality, first create the study directory, with case
+subdirectory \texttt{case2}, as below:\\
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ {\color{blue}code\_saturne create -s full\_domain -c case2}\\
+\$ cd full\_domain
+}\end{minipage} }
 
-Go to the DATA directory in CAS2,
-open a new case and select the meshes to use. Click on the
-heading {\itshape Calculation environment} then on the item {\itshape Meshes selection}. In this case the three meshes have to be
-joined. So don't delete any mesh and activate the {\itshape Join meshes} option by clicking in the box. Additional information appears on the page. If it is
-left untouched, the \CS Preprocessor will test all the boundary faces for
-potential joining (based on geometrical criteria). To make mesh joining more
-efficient, this analysis can be restricted to a sub-set of boundary faces. This
-is the case in the present calculation, since only faces of colors 5, 24 and 32
-are liable to be joined.
+Go to the \texttt{DATA} directory in \texttt{case2}, open a new case and select
+the meshes to use.
 
-Click on the {\itshape New} icon to enter the list of colors to be joined.
+Click on the heading {\itshape Calculation environment} then on the {\itshape Meshes selection} item.
+In this case, you must add three meshes which have to be joined.
+
+In order to join the three meshes, you must add a selection criteria in the
+box {\itshape Selection criteria}. In this case, only faces of colors 5, 24 and 32
+are liable to be joined (different colors can be entered on a single line, separated by comma).
+
+Click on the {\bf +} icon to enter the list of colors to be joined in the
+{\itshape Face joining (optional)} item.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{V-40}
+\includegraphics[width=12cm]{case2_V-1}
 \caption{Meshes: list of meshes}
 \label{fig2_e2}
 \end{center}
@@ -53,89 +55,115 @@ Click on the {\itshape New} icon to enter the list of colors to be joined.
 
 
 \newpage
-Fill the array
-{\itshape References} for the color reference to be joined: 5, 24 and 32.
-(different colors can be entered on a single line, separated by blanks).
-
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{V-41}
+\includegraphics[width=12cm]{case2_V-2}
 \caption{Join a Mesh}
-\label{fig5_e2}
+\label{fig4_e2}
 \end{center}
 \end{figure}
 
+\newpage
+You can now verify the quality of your mesh.
+\begin{figure}[h!]
+\begin{center}
+\includegraphics[width=12cm]{case2_V-3}
+\caption{Mesh quality criteria}
+\label{fig4_e2}
+\end{center}
+\end{figure}
 
 \newpage
 In this case ``Unsteady flow'' must be selected in the
-{\itshape Analysis features} item.
+{\itshape Calculation features} item.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{V-43}
+\includegraphics[width=12cm]{case2_V-4}
 \caption{Thermophysical models - Analysis features - Unsteady flow}
 \label{fig6_e2}
 \end{center}
 \end{figure}
 
-The rest of the heading {\itshape Thermophysical models} is identical to case
-1.
+The rest of the heading {\itshape Thermophysical models} is identical to \texttt{case1}.
 
 
 \newpage
 To add an additional scalar, click on the
-{\itshape Definition and Initialization} item under the
-{\itshape Additional scalars} heading.
-The characteristics of the thermal scalar are still the
-same. Its initial value is 20\degresC\ and it can vary between
-0\degresC\ and 400\degresC.
-
-To create an additional scalar, click on {\itshape Add}, then enter:\\
-\hspace*{1cm}$\bullet\ $its {\itshape Name}: scalar\_2\\
-\hspace*{1cm}$\bullet\ $its {\itshape Initial value}: 10\\
-\hspace*{1cm}$\bullet\ $its {\itshape Minimal value}: 0\\
-\hspace*{1cm}$\bullet\ $its {\itshape Maximal value}: 400
-
+{\itshape Species transport} item under the
+{\itshape Thermophysical models} heading.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{V-44}
-\caption{Additional scalar - User scalar definition}
+\includegraphics[width=12cm]{case2_V-5}
+\caption{Additional scalar}
 \label{fig8_e2}
 \end{center}
 \end{figure}
 
 
 \newpage
-In the item {\itshape Physical properties}, still under the heading
-{\itshape Additional scalars}, specify the diffusion coefficient of this new
-scalar. Click on the scalar name to highlight it, then enter the value in the
-box. In this case, the value is
-$0.895\times 10^{-4}\ m^{2}.s^{-1}$
+The heading of {\itshape Physical properties} is identical to \texttt{case1}.\\
+In the {\itshape Fluid properties} item, still under the heading {\itshape Physical properties},
+specify the diffusion coefficient of this new scalar.
+
+Click on the scalar name to highlight it, then enter the value in the box.
+In this case, the species diffusion coefficient value is {\bf 0.855} ($\times 10^{-5}\ m^{2}.s^{-1}$)
+for the \texttt{scalar2} scalar to solve.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{V-45}
-\caption{Additional scalar - User scalar physical properties}
+\includegraphics[width=12cm]{case2_V-6}
+\caption{Fluid properties}
 \label{fig9_e2}
 \end{center}
 \end{figure}
 
+\newpage
+\textbf{Initialization:}\\
+To initialize variables at the instant $t=0\ s$, go to the {\itshape Initialization}
+item under the heading {\itshape Volume conditions}.
+
+Here the velocity, the thermal scalar and the turbulence can be initialized.
+In this case, the default values can be kept: zero velocity, an initial temperature of
+{\bf 20}\degresC\  and a turbulence level based on a reference velocity of {\bf 1} ($m.s^{-1}$).
+You must also initialize the \texttt{scalar2} species at {\bf 10}\degresC.
+
+Specific zones can be defined with different initializations. In this case, only the
+default ``all cells'' is used.
+\begin{figure}[h!]
+\begin{center}
+\includegraphics[width=12cm]{case2_V-7}
+\caption{Initialization}
+\label{fig9_e2}
+\end{center}
+\end{figure}
+\newpage
+\begin{figure}[h!]
+\begin{center}
+\includegraphics[width=12cm]{case2_V-8}
+\caption{Initialization- Species}
+\label{fig9_e2}
+\end{center}
+\end{figure}
 
 \newpage
-Create the boundary zones. The procedure is the same as in case 1, but the
-colors are different. Note that colors 5 and 32 have completely disappeared in
-the joining process (they are now internal faces and are not considered as
-boundaries), while some boundary faces of color 24 remain.\\
-Create the inlet, outlet
-and symmetry boundary zones with the following colors:\\
-\hspace*{1cm}$\bullet\ $inlet: color 1\\
-\hspace*{1cm}$\bullet\ $outlet: color 34\\
-\hspace*{1cm}$\bullet\ $symmetry: colors 8 9 28 29 38 39\\
+$\bullet${\bf Create the boundary zones}:\\
+The procedure is the same as in case 1, but the colors are different.
+Note that colors 5 and 32 have completely disappeared in the joining process
+(they are now internal faces and are not considered as boundaries), while some
+boundary faces of color 24 remain.
+
+Create the inlet, outlet and symmetry boundary zones with the following colors:\\
+\fbox{\begin{minipage}{\textwidth}\texttt{    \\
+ - inlet~~~: ''1''\\
+ - outlet~~: ''34''\\
+ - symmetry: ''8 or 9 or 28 or 29 or 38 or 39''
+}\end{minipage} }
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{V-46}
+\includegraphics[width=12cm]{case2_V-9}
 \caption{Creation of the boundary zones}
 \label{fig10_e2}
 \end{center}
@@ -148,27 +176,37 @@ corresponding wall boundary regions must therefore be created, following the
 data in the following table.
 
 \begin{center}
-\begin{tabular}{cccc}
-Label & Zone & Nature & Localization \\
+\begin{tabular}{|c|c|c|c|}
+\hline
+Label & Zone & Nature & Selection criteria \\
+\hline
+\hline
 wall\_2 & 5 & wall & 2 or 3 \\
+\hline
 wall\_3 & 6 & wall & 4 or 7 or 21 or 22 or 23 \\
-wall\_4 & 7 & wall & 6 and Y$>$1 \\
-wall\_5 & 8 & wall & 6 and Y$\leqslant$1 \\
+\hline
+wall\_4 & 7 & wall & 6 and y$>$1 \\
+\hline
+wall\_5 & 8 & wall & 6 and y$\leqslant$1 \\
+\hline
 wall\_6 & 9 & wall & 31 or 33 \\
+\hline
 \end{tabular}
 \end{center}
 
 The ``wall\_1'' region combines color and geometrical criteria. The associated
-character string to enter in the ``Selection criteria'' box is as follows:\\
-``24 and 0.1$<$=X and 0.5$>$=X''\footnote{Note that, due to the joining process,
-there are in fact no boundary faces of color 24 with X coordinate outside the
-[0.1;0.5] intervalle. The geometrical criterium is therefore not
-necessary. It is presented here to show the capacity of the face selection
-module}.
+character string to enter in the ``Selection criteria'' box\footnote{Note that, due to the joining process,
+there are in fact no boundary faces of color 24 with x coordinate outside the
+[0.1;0.5] interval. The geometrical criterium is therefore not necessary.
+It is presented here to show the capacity of the face selection module.}
+ is as follows:\\
+\fbox{\begin{minipage}{\textwidth}\texttt{
+''24 and 0.1 <= x and 0.5 >= x''
+}\end{minipage} }
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=10cm]{V-47}
+\includegraphics[width=10cm]{case2_V-10}
 \caption{Creation of a wall boundary region}
 \label{fig11_e2}
 \end{center}
@@ -177,11 +215,11 @@ module}.
 
 \newpage
 Define the other wall boundary zones. The faces of color 6 have to be divided in
-two separate zones, based on a geometrical criterium on $Y$.
+two separate zones, based on a geometrical criterium on $y$.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=9cm]{V-48}
+\includegraphics[width=9cm]{case2_V-11}
 \caption{Creation of wall boundary regions}
 \label{fig152_e2}
 \end{center}
@@ -190,27 +228,41 @@ two separate zones, based on a geometrical criterium on $Y$.
 
 \newpage
 The dynamic boundary conditions are the same as in case 1 for the inlet, and
-there are still no sliding walls.
-
+there are still no sliding walls.\\
+\fbox{\begin{minipage}{\textwidth}\texttt{
+- {\bf Inlet:}
+}\end{minipage} }
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{V-49}
-\caption{Dynamic variables boundary: inlet}
-\label{fig16_e2}
+\includegraphics[width=12cm]{case2_V-12}
+\caption{Dynamic variables boundary: Inlet}
+\end{center}
+\end{figure}
+\newpage
+
+\fbox{\begin{minipage}{\textwidth}\texttt{
+- {\bf Outlet:}
+}\end{minipage} }
+\begin{figure}[h!]
+\begin{center}
+\includegraphics[width=12cm]{case2_V-13}
+\caption{Dynamic variables boundary: Outlet}
 \end{center}
 \end{figure}
 
-
 \newpage
-To configure the scalar boundary conditions on the walls, select individually each wall in the item {\itshape Boundary conditions}.
-On all the walls, a default homogeneous prescribed flux is set for
-temperature, and prescribed values are specified for the passive scalar,
-according to the following table:
+To configure the scalar boundary conditions on the walls, select individually each
+wall in the {\itshape Boundary conditions} item.
+
+On all the walls, a default homogeneous \texttt{prescribed flux} is set for temperature,
+and \texttt{prescribed values} are
+specified for the passive scalar, named \texttt{scalar2}, according to the following table:\\
 \begin{center}
 \begin{tabular}{|c|c|c|}
 \hline
-Wall & Nature & Value \\
+Wall & Nature & \texttt{Scalar2} value \\
+\hline
 \hline
 wall\_1 & Prescribed value  & 0 \\
 \hline
@@ -229,65 +281,134 @@ wall\_6 & Prescribed value  & 40 \\
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=9cm]{V-50}
+\includegraphics[width=9cm]{case2_V-14}
 \caption{Scalars boundaries: wall\_5}
 \label{fig21_e2}
 \end{center}
 \end{figure}
 
-
-\newpage
-Click on {\itshape inlet}, to set the inlet values for the scalars: 300\degresC\
-for temperature and 200 for the passive scalar.
-
-\begin{figure}[h!]
-\begin{center}
-\includegraphics[width=8cm]{V-51}
-\caption{Scalars boundaries: inlet}
-\label{fig22_e2}
-\end{center}
-\end{figure}
-
-
 \newpage
 Some calculation parameters now need to be defined.
-Go to the item {\itshape Time step} under the heading
-{\itshape Numerical parameters}. In our case the time step is
-{\itshape Uniform and constant}. Set the number of iterations to 300 and the
-reference time step to $0.05\ s$.
-
+Go to the {\itshape Global parameters} item under the heading
+{\itshape Numerical parameters}.
+In our case the Pressure-Velocity algorithm is  {\itshape SIMPLEC}.
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{V-52}
+\includegraphics[width=12cm]{case2_V-15}
 \caption{Time step setting}
 \label{fig23_e2}
 \end{center}
 \end{figure}
 
-No change is needed in the {\itshape Equation parameters} and {\itshape Global parameters} items.
+\newpage
+Go to the {\itshape Equations parameters} item under the heading
+{\itshape Numerical parameters}. You can define the maximum and
+minimun value for the \texttt{TempC} and for the \texttt{scalar2} scalars.
+\begin{figure}[h!]
+\begin{center}
+\includegraphics[width=12cm]{case2_V-16}
+\caption{Clipping}
+\label{fig24_e2}
+\end{center}
+\end{figure}
 
 \newpage
-Go to the item {\itshape Output control} under the heading {\itshape Calculation control} to set the output parameters.
+Go to the {\itshape Time step} item under the heading
+{\itshape Numerical parameters}. In our case the time step is
+{\itshape Constant}. Set the number of iterations to {\bf 300} and the
+reference time step to {\bf 0.05} ($s$).
+\begin{figure}[h!]
+\begin{center}
+\includegraphics[width=12cm]{case2_V-17}
+\caption{Time step setting}
+\label{fig24_e2}
+\end{center}
+\end{figure}
 
-Keep the default value for the output listing frequency.
+% No change is needed in the {\itshape Equation parameters} and {\itshape Global parameters} items.
 
-For the Post-processing, select the third option (output every 'n' time steps)
-and set the value of 'n' to 2.
+\newpage
+Go to the {\itshape Output control} item under the heading {\itshape Calculation control} to set the output parameters.
+In the {\itshape Output control} item, keep the default value for the output listing frequency.
+\begin{figure}[h!]
+\begin{center}
+\includegraphics[width=12cm]{case2_V-18}
+\caption{Output control: log frequency}
+\label{fig23a_e2}
+\end{center}
+\end{figure}
 
-Activate the post-processing on the boundary faces by ticking the
-{\itshape Domain boundary post processing} box. The EnSight format file will
-contain an additional part, composed of the boundary faces, on which boundary
-conditions and some other variables can be visualized. This allows to check if
-the boundary conditions for the passive scalar have been properly set.
+
+\newpage
+For the Post-processing, go to the {\itshape Writer} item and click on ``results``.
+\begin{figure}[h!]
+\begin{center}
+\includegraphics[width=12cm]{case2_V-19}
+\caption{Output control: Writer}
+\label{fig23b_e2}
+\end{center}
+\end{figure}
+\newpage
+Now you can select the third option in the {\itshape Frequency (output every 'n' time steps)} item
+and set the value of 'n' to {\bf 2}. By default, the boundary faces are selected.
+\begin{figure}[h!]
+\begin{center}
+\includegraphics[width=12cm]{case2_V-20}
+\caption{Output control: results}
+\label{fig23c_e2}
+\end{center}
+\end{figure}
+
+\newpage
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{V-53}
+\includegraphics[width=12cm]{case2_V-21}
+\caption{Output control: frequency}
+\label{fig23d_e2}
+\end{center}
+\end{figure}
+
+\newpage
+You can also choose the format. In this case, you will choose the \ensight format.
+\begin{figure}[h!]
+\begin{center}
+\includegraphics[width=12cm]{case2_V-22}
+\caption{Output control: format}
+\label{fig23e_e2}
+\end{center}
+\end{figure}
+
+\newpage
+
+Go to the {\itshape{Mesh}} item.
+\begin{figure}[h!]
+\begin{center}
+\includegraphics[width=12cm]{case2_V-23}
+\caption{Output control: mesh}
+\label{fig23f_e2}
+\end{center}
+\end{figure}
+
+\newpage
+You can click on the {\itshape Fluid domain Mesh Name } item and new options will appear.
+\begin{figure}[h!]
+\begin{center}
+\includegraphics[width=12cm]{case2_V-24}
 \caption{Output control: post-processing}
 \label{fig24_e2}
 \end{center}
 \end{figure}
 
+\newpage
+You can associated a mesh with several writers.
+\begin{figure}[h!]
+\begin{center}
+\includegraphics[width=12cm]{case2_V-25}
+\caption{Output control:associated writers}
+\label{fig24_e2}
+\end{center}
+\end{figure}
 
 \newpage
 In this case, chronological records on specified monitoring probes are needed.
@@ -296,7 +417,7 @@ To define the probes, click on the
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{V-54}
+\includegraphics[width=12cm]{case2_V-26}
 \caption{Output control: monitoring points}
 \label{fig25_e2}
 \end{center}
@@ -305,15 +426,17 @@ To define the probes, click on the
 
 
 \newpage
-Click on ``Add'' and enter the coordinates of the monitoring points you want to define. For the first point:\\
-\hspace*{1cm}$\bullet\ X = -0.25\ m$\\
-\hspace*{1cm}$\bullet\ Y = 2.25\ m$\\
-\hspace*{1cm}$\bullet\ Z = 0\ m$
+Click on {\bf ``+''} and enter the coordinates of the monitoring points you want to define.
+
+For the first probe:\\
+\fbox{\begin{minipage}{\textwidth}\texttt{    \\
+ Probe (1) : x = -0.25 (m) ; y = 2.25 (m) ; z = 0.0 (m)
+}\end{minipage} }
 
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=8cm]{V-56}
+\includegraphics[width=8cm]{case2_V-27}
 \caption{Output controls: monitoring points - $1^{st}$ point}
 \label{fig27_e2}
 \end{center}
@@ -322,56 +445,56 @@ Click on ``Add'' and enter the coordinates of the monitoring points you want to 
 
 \newpage
 Repeat the procedure for the other probes. Their coordinates are indicated in
-the following table (the Z coordinate is always 0).
+the following table (the z coordinate is always 0).
 \begin{center}
-\begin{tabular}{|c|c|c|}
+\begin{tabular}{|l|l|l|}
 \hline
-Points & X(m) & Y(m) \\
+Probe n$^o$. & x (m) & y (m) \\
 \hline
-2 & 0.05 & 2.25 \\
 \hline
-3 & 0.05 & 2.75 \\
+2 & 0.05 & ~2.25 \\
 \hline
-4 & 0.05 & 0.5 \\
+3 & 0.05 & ~2.75 \\
+\hline
+4 & 0.05 & ~0.50 \\
 \hline
 5 & 0.05 & -0.25 \\
 \hline
 6 & 0.75 & -0.25 \\
 \hline
-7 & 0.75 & 0.25 \\
+7 & 0.75 & ~0.25 \\
 \hline
-8 & 0.75 & 0.75 \\
+8 & 0.75 & ~0.75 \\
 \hline
 \end{tabular}
 \end{center}
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=9cm]{V-57}
+\includegraphics[width=9cm]{case2_V-28}
 \caption{Output control: monitoring points}
 \label{fig28_e2}
 \end{center}
 \end{figure}
 
-Remember to save the Xml file regularly.
+Remember to save the \texttt{xml} file regularly.
 
 
 \newpage
-Go to the item {\itshape Volume solution control} to define which variables will
+Go to the {\itshape Volume solution control} item to define which variables will
 appear in the listing, the post-processing and the chronological records.
 
-Uncheck the boxes in front of the {\itshape Pressure}, {\itshape Tubulent energy}
-and {\itshape Dissipation} variables, in the {\itshape  Print in listing}
-column. Information on these three variables will not appear in the output
-listing anymore.
+Uncheck the boxes in front of the {\itshape Pressure}, {\itshape Tubulent Energy}
+and {\itshape Dissipation} variables, in the {\itshape  Print in listing} column.
+Information on these three variables will not appear in the output listing anymore.
 
-Uncheck the boxes in front of the {\itshape Courant number} and {\itshape
-Fourier number} variables in the {\itshape Post-processing} column. These
-variables will be removed from the post-processing results.
+Uncheck the boxes in front of the {\itshape Courant number} and {\itshape Fourier number}
+variables in the {\itshape Post-processing} column. These variables will be removed from
+the post-processing results.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{V-58}
+\includegraphics[width=12cm]{case2_V-29}
 \caption{Solution control - Output configuration}
 \label{fig29_e2}
 \end{center}
@@ -379,19 +502,19 @@ variables will be removed from the post-processing results.
 
 
 \newpage
-Delete all the probe numbers for the {\itshape total\_pressure} variable. No
-chronological record will be created for this variable. As for the
-{\itshape VelocitX} variable, only select probes  1, 2, 6, 7 and 8. Time
-evolution on the other probes will not be recorded.
+Delete all the probe numbers for the {\itshape total\_pressure} variable.
+No chronological record will be created for this variable.
+
+As for the {\itshape VelocityX} variable, only select probes  1, 2, 6, 7 and 8.
+Time evolution on the other probes will not be recorded.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=10cm]{V-59}
+\includegraphics[width=10cm]{case2_V-30}
 \caption{Solution control - Probes}
 \label{fig30_e2}
 \end{center}
 \end{figure}
-
 
 Switch to the {\itshape Calculation management} heading to prepare the launch
 script and run the calculation.

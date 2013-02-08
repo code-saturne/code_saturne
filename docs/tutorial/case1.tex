@@ -2,7 +2,7 @@
 
 % This file is part of Code_Saturne, a general-purpose CFD tool.
 %
-% Copyright (C) 1998-2013 EDF S.A.
+% Copyright (C) 1998-2012 EDF S.A.
 %
 % This program is free software; you can redistribute it and/or modify it under
 % the terms of the GNU General Public License as published by the Free Software
@@ -22,7 +22,27 @@
 
 \section{General description}
 %----------------
+The first thing to do before running \CS is to prepare the computation
+directories. In this first example, the study directory \texttt{T\_junction/} will be
+created, containing a single calculation sub-directory \texttt{case1}.
+This is done by typing the command:\\
+\fbox{\begin{minipage}{\textwidth}\texttt{                    \\
+\$ {\color{blue}code\_saturne create -s T\_junction -c case1}
+}\end{minipage} }
+%\begin{center}
+%\end{center}
+The mesh files should be copied in the directory \texttt{MESH/} as below:\\
+\fbox{\begin{minipage}{\textwidth}\texttt{                    \\
+\$ cd T\_junction/MESH/                                        \\
+\$ cp ITECH\_CS\_training\_2012/meshes/1-simple\_junction/downcomer.des .
+}\end{minipage} }
 
+The \CS Graphic User Interface (GUI) is launched by typing the following command
+lines:\\
+\fbox{\begin{minipage}{\textwidth}\texttt{     \\
+\$ {\color{blue} cd T\_junction/case1/DATA}    \\
+\$ {\color{blue} ./SaturneGUI \&}
+}\end{minipage} }
 
         \subsection{Objective}
 %-----------------------------
@@ -42,11 +62,12 @@ the fluid density is not taken into account in this first example.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=9cm,height=8cm]{fig01}
+\includegraphics[width=9cm,height=8cm]{case1_fig01}
 \caption{Geometry of the downcomer}
 \label{figante11}
 \end{center}
 \end{figure}
+
 
         \subsection{Characteristics}
 %----------------------------------
@@ -73,7 +94,7 @@ Water characteristics are considered constant and their values taken at
 300\degresC\ and $150\times 10^{5}\ Pa$:
 \begin{itemize}
         \item density: $\rho = 725.735\ kg.m^{-3}$
-        \item dynamic viscosity: $\mu = 0.895\times10^{-4}\ kg.m^{-1}.s^{-1}$
+        \item dynamic viscosity: $\mu = 0.895\times10^{-4}\ kg.m^{-1}.s^{-1}= 8.951\times10^{-5}\ Pa.s$
         \item specific heat: $C_{p} = 5\,483\ J.kg^{-1}.\mbox{\degresC}^{-1}$
         \item Thermal Conductivity $ = 0.02495\ W.m^{-1}.K^{-1}$
 \end{itemize}
@@ -90,7 +111,7 @@ a deliberate choice so that tutorial calculations run fast.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=8cm,height=7cm]{fig02}
+\includegraphics[width=8cm,height=7cm]{case1_fig02}
 \caption{Geometry of the downcomer}
 \label{figante12}
 \end{center}
@@ -99,7 +120,7 @@ a deliberate choice so that tutorial calculations run fast.
 Note that here the case is two-dimensional but \CS always operates on three-dimensional
 mesh elements (cells). The present mesh is composed of a layer of hexahedrons
 created from the 2D mesh shown on figure \ref{figante12} by
-extrusion (elevation) in the $Z$ direction. The virtual planes
+extrusion (elevation) in the $z$ direction. The virtual planes
 parallel to $Oxy$ will have ``sliding'' (``symmetry'') conditions to account for
 the two-dimensional character of the configuration.\\
 
@@ -118,7 +139,7 @@ as "color" or "reference".
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=2.5cm,height=6cm]{fig03}
+\includegraphics[width=2.5cm,height=6cm]{case1_fig03}
 \caption{Colors of the boundary faces}
 \label{figante13}
 \end{center}
@@ -196,6 +217,8 @@ Interface without using any user Fortran files.
 \hline
 \multicolumn{2}{|c|}{Calculation control parameters} \\
 \hline
+Pressure-Velocity coupling & SIMPLE algorithm \\
+\hline
 Number of iterations & $30$ \\
 \hline
 Relaxation coefficient & $0.9$ \\
@@ -219,14 +242,14 @@ indication of the rapidity of convergence towards the (physical) steady state.
 
 \begin{figure}[h]
 \parbox{0.5\textwidth}{%
-\includegraphics[width=4cm]{cas1_t_1}}
+\includegraphics[width=4cm]{case1_fig04_t_1}}
 \parbox{0.5\textwidth}{%
-\includegraphics[width=4cm]{cas1_t_10}}
+\includegraphics[width=4cm]{case1_fig04_t_10}}
 \vspace*{0.5cm}
 \parbox{0.5\textwidth}{%
-\includegraphics[width=4cm]{cas1_t_20}}
+\includegraphics[width=4cm]{case1_fig04_t_20}}
 \parbox{0.5\textwidth}{%
-\includegraphics[width=4cm]{cas1_t_29}}
+\includegraphics[width=4cm]{case1_fig04_t_29}}
 \caption{\label{fige1_e1}Water velocity field colored by temperature at different time steps}
 \end{figure}
 

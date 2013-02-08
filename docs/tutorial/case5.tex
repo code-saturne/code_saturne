@@ -41,7 +41,7 @@ figure \ref{config}.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=9cm,height=4.5cm]{c5_config}
+\includegraphics[width=9cm,height=4.5cm]{case5_config}
 \caption{Geometry of the case}
 \label{config}
 \end{center}
@@ -112,7 +112,7 @@ contains 16\,320 elements.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=10cm]{color_Snimbus}
+\includegraphics[width=10cm]{case5_color_Snimbus}
 \caption{Colors of the boundary faces}
 \label{fige1_e5}
 \end{center}
@@ -283,34 +283,45 @@ profil32: & $x=3.2\qquad$ & $y=0\qquad$ & $-0.2 \leqslant z \leqslant 0.2$ ($m$)
         \subsection{User routines}
 %---------------------------------
 
-The following routines have to be copied from the folder SRC/REFERENCE/base into the
-folder SRC\footnote{only when they appear in the SRC directory will they be
-taken into account by the code}: usdpst.f90, usvpst.f90 and usmpst.f90
+The following filess must to be copied from the folder \texttt{SRC/REFERENCE/base} into the
+folder \texttt{SRC}\footnote{only when they appear in the \texttt{SRC} directory will they be
+taken into account by the code}: {\bfseries cs\_user\_postprocess.c} and
+{\bfseries cs\_user\_postprocess\_var.f90}.
 
 In this test case, advanced post-processing features will be used. A clip
 plane will be created, along the symmetry plane of the domain, on which the
 temperature will be written. This plane will be added to the standard
-``writer'' ({\em i.e.} it will be an extra part in the standard CHR.ENSIGHT
-case). The periodicity of output on the standard writer will be 10 iterations.\\
+``writer'' ({\em i.e.} it will be an extra part in the standard \texttt{RESULTS.case}
+output). The periodicity of output on the standard writer will be 10 iterations.\\
 An additional writer will also be created, with a periodicity of 5
 iterations. It will only contain one part ({\em i.e.} one sub-mesh): the set
 cells where the temperature is lower than 21\degresC. The temperature will be
 written on this part. The interest of this part is that it is time dependent
 as for the cells it contains.
 
-Three Fortran routines will be used:
+The following user functions and subroutines will be used:
 
-$\bullet$ {\bfseries usdpst.f90}\\
-This routine is called only once, at the beginning of the calculation. It allows
-to define the different writers and parts.
+$\bullet$ {\bfseries cs\_user\_postprocess\_meshes} (in {\bfseries cs\_user\_postprocess.c})\\
+This function is called only once, at the beginning of the calculation. It allows
+to define the different writers and parts. In this function, adapt the example
+using the {\bfseries cs\_post\_define\_volume\_mesh\_by\_func}, replacing \texttt{He\_fraction\_05}
+with \texttt{T\_lt\_21} (do not forget to set the enclosing test to \texttt{true}).
+If argument matching {\em the automatic variables output} is set
+to {\em true}, all variables (including temperature) postprocessed on the main output will be added
+to this one. For finer control, we set it to {\em false} here, and we will use a user-defined
+output with {\bfseries cs\_user\_postprocess\_var}.
+The associated writer list should contain writer 1, which may be created either using
+the GUI, or the {\bfseries cs\_user\_postprocess\_writers} (in the same file). Make sure
+this writers allows for {\em transient connectivity}.
+The {\bfseries \_he\_fraction\_05\_select} near the beginning of the file must also
+be adapted, renaming it to {\bfseries \_t\_lt\_21\_select}, and adapting its contents
+(mainly calling {\bfseries cs\_field\_by\_name} on {\em temperature} instead of {\em He\_fraction},
+and replacing {\em $>$ 5.e-2} with {\em $<$ 21}). This selection function is called automatically at each
+output time step so as to update the selected sub-mesh.
 
-$\bullet$ {\bfseries usmpst.f90}\\
-This routine is called at each time step. It allows to redefine the content of
-certain parts using any variable, especially the temperature for this case.
-
-$\bullet$ {\bfseries usvpst.f90}\\
+$\bullet$ {\bfseries cs\_user\_postprocess\_var.f90}\\
 This routine is called at each time step. It allows to specify which variable
-will be written on which part.
+will be written on which part (in this case, temperature).
 
 
         \subsection{Results}
@@ -333,7 +344,6 @@ different time steps. The evolution of the stratification is clearly visible.
 \label{fige2_e5}
 \end{center}
 \end{figure}
-
 
 
 Figure \ref{fige4_e5} shows the cells where the temperature

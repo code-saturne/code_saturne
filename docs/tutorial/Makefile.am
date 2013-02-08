@@ -34,6 +34,7 @@ case2.tex \
 case3.tex \
 case4.tex \
 case5.tex \
+case6.tex \
 intro.tex \
 tuto_case1.tex \
 tuto_case2.tex \
@@ -76,7 +77,7 @@ pdf-local:
 
 clean-local:
 	-rm -f *.out *.log *.aux *.toc *.lof *.lot \
-	 *.ilg *.idx *.bbl *.blg *.ind *.sym *.nsy 
+	 *.ilg *.idx *.bbl *.blg *.ind *.sym *.nsy
 
 install-pdf-local:
 	$(MKDIR_P) "$(DESTDIR)$(pdfdir)"

@@ -2,7 +2,7 @@
 
 % This file is part of Code_Saturne, a general-purpose CFD tool.
 %
-% Copyright (C) 1998-2013 EDF S.A.
+% Copyright (C) 1998-2012 EDF S.A.
 %
 % This program is free software; you can redistribute it and/or modify it under
 % the terms of the GNU General Public License as published by the Free Software
@@ -22,10 +22,10 @@
 
 \newpage
 %-------------------------------------------------------------
-\section{CASE 4: Head loss, parallelism and spatial average}
+\section{CASE 4: Head losses, parallelism and spatial average}
 %-------------------------------------------------------------
 \label{prg_case4}%
-This case will be run in parallel on two processors. Head loss will be used to
+This case will be run in parallel on two processors. Head losses will be used to
 simulate the presence of an obstacle in the flow and the spatial average of the
 temperature will be calculated at each time step.
 
@@ -92,15 +92,23 @@ wall\_6 & Dirichlet  & 40 \\
 The ``wall\_1'' to ``wall\_6'' regions are defined as follows, through color
 references and geometric localization:
 \begin{center}
-\begin{tabular}{c|c}
+\begin{tabular}{|c|c|}
+\hline
 Label & Color and geometric parameters \\
 \hline
-wall\_1 & 24 and $0.1\leqslant X$ and $X\leqslant 0.5$ \\
+\hline
+wall\_1 & 24 and $0.1\leqslant x$ and $x\leqslant 0.5$ \\
+\hline
 wall\_2 & 2 or 3 \\
+\hline
 wall\_3 & 4 or 7 or 21 or 22 or 23 \\
-wall\_4 & 6 and $Y>1$ \\
-wall\_5 & 6 and $Y\leqslant1$ \\
+\hline
+wall\_4 & 6 and $y > 1$ \\
+\hline
+wall\_5 & 6 and $y\leqslant1$ \\
+\hline
 wall\_6 & 31 or 33 \\
+\hline
 \end{tabular}
 \end{center}
 
@@ -120,7 +128,7 @@ Colors & Conditions \\
 \hline
 2 3 4 6 7 21 22 23 31 33 & Wall \\
 \hline
-24 for $0.1 \leq X \leq 0.5$ & Wall \\
+24 for $0.1 \leq x \leq 0.5$ & Wall \\
 \hline
 8 9 28 29 38 39 & Symmetry \\
 \hline
@@ -133,7 +141,7 @@ Colors & Conditions \\
         \subsection{Variable Density}
 %---------------------------------
 In this case the density is a function of temperature, the variation law is defined
- in the Graphical User Interface although it can also be defined in a Fortran user 
+ in the Graphical User Interface although it can also be defined in a Fortran user
 routine. The expression is:
 \begin{equation}
 \rho = T.(A.T + B) + C
@@ -146,18 +154,21 @@ set to a non-zero value. $\vect{g} = -9.81 \vect{e}_y$ will be specified in the
 Graphical Interface.
 
 
-        \subsection{Head loss}
+        \subsection{Head losses}
 %-----------------------------
 
-To simulate the presence of an obstacle $0.20\ m$ large and $0.5\ m$ high in the
-vessel, a zone of head loss will be created in the domain (fig \ref{figante41}).
-The head loss zone is located between the coordinates $X=0.2\ m$ and $X=0.4\ m$,
-and $Y=-0.75\ m$ and $Y=-0.25\ m$. The head loss coefficient to apply is $10^4$
+To simulate the presence of an obstacle $0.20$ ($m$) large and $0.5$ ($m$) high in the
+vessel, a zone of head losses will be created in the domain (fig \ref{figante41}).
+
+The head losses zone is located between the coordinates $x=0.2$ ($m$) and $x= 0.4$ ($m$),
+and $y = -0.75$ ($m$) and $y = -0.25$ ($m$).
+
+The head losses coefficient to apply is $K _{ii}=10^4 = \tfrac{1}{2}~\alpha _{ii}$
 and is isotropic.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=10cm,height=8cm]{fig09}
+\includegraphics[width=10cm,height=8cm]{case4_fig01}
 \caption{Full domain geometry with the obstacle}
 \label{figante41}
 \end{center}
@@ -182,7 +193,8 @@ Reference time step & $0.05$ \\
 \hline
 Output period for post-processing files& $2$ \\
 \hline
-The calculation will be run in parallel on 2 processors \\
+The calculation will be run in parallel & 2 procs. \\
+\hline
 \end{tabular}\\
 \end{center}
 
@@ -193,16 +205,24 @@ will have to be joined through the Graphical Interface.
         \subsection{User routines}
 %---------------------------------
 
-The following routines have to be copied from the folder SRC/REFERENCE/base into the
-folder SRC\footnote{only when they appear in the SRC directory will they be
-taken into account by the code}: usclim.f90 and usproj.f90.
+The following routines have to be copied from the folder \textbf{SRC/REFERENCE/} into the
+folder \textbf{SRC/}\footnote{only when they appear in the SRC directory will they be
+taken into account by the code.}: \texttt{cs\_user\_boundary\_conditions.f90} and
+\texttt{cs\_user\_extra\_operations.f90}.
+%==DS==new
+%usclim.f90 and usproj.f90.
+We can find and copy some basic and specific boundary conditions examples in the folder
+\textbf{SRC/EXAMPLES/} to correctly impose the \CS boundary conditions.
+%==DS==new
 
-$\bullet$ {\bfseries usclim.f90}\\
-This routine allows to define advanced boundary conditions on the boundary
-faces. Even if usclim.f90 is used, all boundary conditions have to be defined in
-the Graphical User Interface. Only the conditions that differ from this first
-definition need to appear in usclim.f90. The boundary conditions defined in usclim.f90
-will replace those specified in the Graphical Interface.
+$\bullet$ {\bfseries cs\_user\_boundary\_conditions.f90}\\
+This routine allows to define advanced boundary conditions on the boundary faces.
+
+Even if cs\_user\_boundary\_conditions.f90 is used, all boundary conditions have
+to be defined in the Graphical User Interface (GUI). Only the conditions that differ
+from this first definition need to appear in cs\_user\_boundary\_conditions.f90.
+The boundary conditions defined in cs\_user\_boundary\_conditions.f90 will replace those
+specified in the Graphical Interface.
 
 In this case, the temperature at entry is supposed variable in time, following
 the law:
@@ -217,30 +237,31 @@ where $T$ is the temperature in \degresC\ and $t$ is the time in $s$.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=9cm,height=6.4cm]{probe9}
+\includegraphics[width=9cm,height=6.4cm]{case3_probe9}
 \caption{Time evolution of the temperature at inlet}
 \label{figp9_e4}
 \end{center}
 \end{figure}
 
 
-$\bullet$ {\bfseries usproj.f90}\\
+$\bullet$ {\bfseries cs\_user\_extra\_operations.f90}\\
 This routine is called at the end of each time step and has access to the whole
 set of variables of the code. It is therefore useful for many user-specific
 post-processing, including the calculation of a spatial average in the present
 case.\\
 The spatial average of the temperature will be calculated at each time step and
-the result wrote in a file named ``moy.dat''. The values are saved in order
+the result wrote in a file named \texttt{``moy.dat''}. The values are saved in order
 to draw the time evolution of the average temperature.
 
 Beware when calculating the average. Since the calculation is running in
 parallel, computing the sum of the temperatures on ``all the cells'' will only
 yield for each processor the sum on the cells managed by this processor. In
-order to obtain the full sum, the parallelism routine PARSOM must be used (see
-example).
+order to obtain the full sum, the parallelism routine \texttt{parsom} must be
+used (see example in the cs\_user\_extra\_operations-parallel\_operations.f90 routine).
 
-\textbf{Note:} usproj.f90 contains many examples. They should be removed before
-running the case.
+\textbf{Remark:} \texttt{cs\_user\_extra\_operations-xxx.f90} are different example routines
+present in the subdirectory  \texttt{SRC/EXAMPLES}. They should be removed from the \texttt{SRC/}
+before running the case.
 
 
         \subsection{Output management}
@@ -250,7 +271,7 @@ The output management is the same as in case 3.
 
 \begin{figure}[htp]
 \parbox{8cm}{%
-\centerline{\includegraphics[width=4cm,height=6.8cm]{fig08}}}
+\centerline{\includegraphics[width=4cm,height=6.8cm]{case3_fig01}}}
 \parbox{7cm}{%
 \begin{center}
 \begin{tabular}{|c|c|c|c|}
@@ -282,7 +303,7 @@ Points & X(m) & Y(m) & Z(m)\\
 \label{figante42}
 \end{figure}
 
-In this case, the {\itshape Pressure}, the {\itshape Tubulent energy} and the
+In this case, the {\itshape Pressure}, the {\itshape Tubulent Energy} and the
 {\itshape Dissipation} will be removed from the listing file.
 
 The {\itshape Courant number} (CFL) and {\itshape Fourier number} will be
@@ -307,7 +328,7 @@ Figure \ref{fige2_e4} shows the evolution of the spatial average of the temperat
 
 \begin{figure}[h]
 \begin{center}
-\includegraphics[width=9cm]{moytemp}
+\includegraphics[width=9cm]{case4_moytemp}
 \caption{Evolution of spatial average of the temperature as a function of time}
 \label{fige2_e4}
 \end{center}

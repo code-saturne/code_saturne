@@ -1,0 +1,701 @@
+# Grace project file
+#
+@version 50118
+@page size 792, 612
+@page scroll 5%
+@page inout 5%
+@link page off
+@map font 8 to "Courier", "Courier"
+@map font 10 to "Courier-Bold", "Courier-Bold"
+@map font 11 to "Courier-BoldOblique", "Courier-BoldOblique"
+@map font 9 to "Courier-Oblique", "Courier-Oblique"
+@map font 4 to "Helvetica", "Helvetica"
+@map font 6 to "Helvetica-Bold", "Helvetica-Bold"
+@map font 7 to "Helvetica-BoldOblique", "Helvetica-BoldOblique"
+@map font 15 to "Helvetica-Narrow", "Helvetica-Narrow"
+@map font 16 to "Helvetica-Narrow-Bold", "Helvetica-Narrow-Bold"
+@map font 17 to "Helvetica-Narrow-BoldOblique", "Helvetica-Narrow-BoldOblique"
+@map font 18 to "Helvetica-Narrow-Oblique", "Helvetica-Narrow-Oblique"
+@map font 5 to "Helvetica-Oblique", "Helvetica-Oblique"
+@map font 20 to "NewCenturySchlbk-Bold", "NewCenturySchlbk-Bold"
+@map font 21 to "NewCenturySchlbk-BoldItalic", "NewCenturySchlbk-BoldItalic"
+@map font 22 to "NewCenturySchlbk-Italic", "NewCenturySchlbk-Italic"
+@map font 23 to "NewCenturySchlbk-Roman", "NewCenturySchlbk-Roman"
+@map font 24 to "Palatino-Bold", "Palatino-Bold"
+@map font 25 to "Palatino-BoldItalic", "Palatino-BoldItalic"
+@map font 26 to "Palatino-Italic", "Palatino-Italic"
+@map font 27 to "Palatino-Roman", "Palatino-Roman"
+@map font 12 to "Symbol", "Symbol"
+@map font 2 to "Times-Bold", "Times-Bold"
+@map font 3 to "Times-BoldItalic", "Times-BoldItalic"
+@map font 1 to "Times-Italic", "Times-Italic"
+@map font 0 to "Times-Roman", "Times-Roman"
+@map font 33 to "ZapfChancery-MediumItalic", "ZapfChancery-MediumItalic"
+@map font 13 to "ZapfDingbats", "ZapfDingbats"
+@map font 35 to "LMCaps10-Italic", "LMCaps10-Italic"
+@map font 36 to "LMCaps10-Regular", "LMCaps10-Regular"
+@map font 37 to "LMRoman10-Bold", "LMRoman10-Bold"
+@map font 38 to "LMRoman10-BoldItalic", "LMRoman10-BoldItalic"
+@map font 39 to "LMRoman10-Italic", "LMRoman10-Italic"
+@map font 40 to "LMRoman10-Regular", "LMRoman10-Regular"
+@map font 41 to "LMRomanDemi10-Italic", "LMRomanDemi10-Italic"
+@map font 42 to "LMRomanDemi10-Regular", "LMRomanDemi10-Regular"
+@map font 43 to "LMSans10-Bold", "LMSans10-Bold"
+@map font 44 to "LMSans10-BoldItalic", "LMSans10-BoldItalic"
+@map font 45 to "LMSans10-Italic", "LMSans10-Italic"
+@map font 46 to "LMSans10-Regular", "LMSans10-Regular"
+@map font 47 to "LMSansDemiCond10-Italic", "LMSansDemiCond10-Italic"
+@map font 48 to "LMSansDemiCond10-Regular", "LMSansDemiCond10-Regular"
+@map font 49 to "LMSlanted10-BoldItalic", "LMSlanted10-BoldItalic"
+@map font 50 to "LMSlanted10-Italic", "LMSlanted10-Italic"
+@map font 51 to "LMTypewriter10", "LMTypewriter10"
+@map font 52 to "LMTypewriter10-Italic", "LMTypewriter10-Italic"
+@map font 53 to "LMTypewriterCaps10-Regular", "LMTypewriterCaps10-Regular"
+@map font 54 to "LMTypewriterSlanted10-Italic", "LMTypewriterSlanted10-Italic"
+@map font 55 to "LMTypewriterVarWd10", "LMTypewriterVarWd10"
+@map font 56 to "LMTypewriterVarWd10-Italic", "LMTypewriterVarWd10-Italic"
+@map font 57 to "TeX-tipa10", "TeX-tipa10"
+@map font 58 to "TeX-tipa12", "TeX-tipa12"
+@map font 59 to "TeX-tipa17", "TeX-tipa17"
+@map font 60 to "TeX-tipa8", "TeX-tipa8"
+@map font 61 to "TeX-tipa9", "TeX-tipa9"
+@map font 62 to "TeX-tipab10", "TeX-tipab10"
+@map font 63 to "TeX-tipabs10", "TeX-tipabs10"
+@map font 64 to "TeX-tipabx10", "TeX-tipabx10"
+@map font 65 to "TeX-tipabx12", "TeX-tipabx12"
+@map font 66 to "TeX-tipabx8", "TeX-tipabx8"
+@map font 67 to "TeX-tipabx9", "TeX-tipabx9"
+@map font 68 to "TeX-tipasb10", "TeX-tipasb10"
+@map font 69 to "TeX-tipasi10", "TeX-tipasi10"
+@map font 70 to "TeX-tipasl10", "TeX-tipasl10"
+@map font 71 to "TeX-tipasl12", "TeX-tipasl12"
+@map font 72 to "TeX-tipasl8", "TeX-tipasl8"
+@map font 73 to "TeX-tipasl9", "TeX-tipasl9"
+@map font 74 to "TeX-tipass10", "TeX-tipass10"
+@map font 75 to "TeX-tipass12", "TeX-tipass12"
+@map font 76 to "TeX-tipass17", "TeX-tipass17"
+@map font 77 to "TeX-tipass8", "TeX-tipass8"
+@map font 78 to "TeX-tipass9", "TeX-tipass9"
+@map font 79 to "TeX-tipats10", "TeX-tipats10"
+@map font 80 to "TeX-tipatt10", "TeX-tipatt10"
+@map font 81 to "TeX-tipatt12", "TeX-tipatt12"
+@map font 82 to "TeX-tipatt8", "TeX-tipatt8"
+@map font 83 to "TeX-tipatt9", "TeX-tipatt9"
+@map font 84 to "TeX-tipx10", "TeX-tipx10"
+@map font 85 to "TeX-tipx12", "TeX-tipx12"
+@map font 86 to "TeX-tipx17", "TeX-tipx17"
+@map font 87 to "TeX-tipx8", "TeX-tipx8"
+@map font 88 to "TeX-tipx9", "TeX-tipx9"
+@map font 89 to "TeX-tipxb10", "TeX-tipxb10"
+@map font 90 to "TeX-tipxbs10", "TeX-tipxbs10"
+@map font 91 to "TeX-tipxbx10", "TeX-tipxbx10"
+@map font 92 to "TeX-tipxbx12", "TeX-tipxbx12"
+@map font 93 to "TeX-tipxbx8", "TeX-tipxbx8"
+@map font 94 to "TeX-tipxbx9", "TeX-tipxbx9"
+@map font 95 to "TeX-tipxsb10", "TeX-tipxsb10"
+@map font 96 to "TeX-tipxsi10", "TeX-tipxsi10"
+@map font 97 to "TeX-tipxsl10", "TeX-tipxsl10"
+@map font 98 to "TeX-tipxsl12", "TeX-tipxsl12"
+@map font 99 to "TeX-tipxsl8", "TeX-tipxsl8"
+@map font 100 to "TeX-tipxsl9", "TeX-tipxsl9"
+@map font 101 to "TeX-tipxss10", "TeX-tipxss10"
+@map font 102 to "TeX-tipxss12", "TeX-tipxss12"
+@map font 103 to "TeX-tipxss17", "TeX-tipxss17"
+@map font 104 to "TeX-tipxss8", "TeX-tipxss8"
+@map font 105 to "TeX-tipxss9", "TeX-tipxss9"
+@map font 106 to "TeX-tipxts10", "TeX-tipxts10"
+@map font 107 to "TeX-tipxtt10", "TeX-tipxtt10"
+@map font 108 to "TeX-tipxtt12", "TeX-tipxtt12"
+@map font 109 to "TeX-tipxtt8", "TeX-tipxtt8"
+@map font 110 to "TeX-tipxtt9", "TeX-tipxtt9"
+@map font 111 to "TeX-xipa10", "TeX-xipa10"
+@map font 112 to "TeX-xipab10", "TeX-xipab10"
+@map font 113 to "TeX-xipabs10", "TeX-xipabs10"
+@map font 114 to "TeX-xipasb10", "TeX-xipasb10"
+@map font 115 to "TeX-xipasi10", "TeX-xipasi10"
+@map font 116 to "TeX-xipasl10", "TeX-xipasl10"
+@map font 117 to "TeX-xipass10", "TeX-xipass10"
+@map font 118 to "TeX-xipx10", "TeX-xipx10"
+@map font 119 to "TeX-xipxb10", "TeX-xipxb10"
+@map font 120 to "TeX-xipxbs10", "TeX-xipxbs10"
+@map font 121 to "TeX-xipxsb10", "TeX-xipxsb10"
+@map font 122 to "TeX-xipxsi10", "TeX-xipxsi10"
+@map font 123 to "TeX-xipxsl10", "TeX-xipxsl10"
+@map font 124 to "TeX-xipxss10", "TeX-xipxss10"
+@map color 0 to (255, 255, 255), "white"
+@map color 1 to (0, 0, 0), "black"
+@map color 2 to (255, 0, 0), "red"
+@map color 3 to (0, 255, 0), "green"
+@map color 4 to (0, 0, 255), "blue"
+@map color 5 to (255, 255, 0), "yellow"
+@map color 6 to (188, 143, 143), "brown"
+@map color 7 to (220, 220, 220), "grey"
+@map color 8 to (148, 0, 211), "violet"
+@map color 9 to (0, 255, 255), "cyan"
+@map color 10 to (255, 0, 255), "magenta"
+@map color 11 to (255, 165, 0), "orange"
+@map color 12 to (114, 33, 188), "indigo"
+@map color 13 to (103, 7, 72), "maroon"
+@map color 14 to (64, 224, 208), "turquoise"
+@map color 15 to (0, 139, 0), "green4"
+@reference date 0
+@date wrap off
+@date wrap year 1950
+@default linewidth 1.0
+@default linestyle 1
+@default color 1
+@default pattern 1
+@default font 0
+@default char size 1.000000
+@default symbol size 1.000000
+@default sformat "%.8g"
+@background color 0
+@page background fill on
+@timestamp off
+@timestamp 0.03, 0.03
+@timestamp color 1
+@timestamp rot 0
+@timestamp font 0
+@timestamp char size 1.000000
+@timestamp def "Wed Sep  5 18:03:42 2007"
+@r0 off
+@link r0 to g0
+@r0 type above
+@r0 linestyle 1
+@r0 linewidth 1.0
+@r0 color 1
+@r0 line 0, 0, 0, 0
+@r1 off
+@link r1 to g0
+@r1 type above
+@r1 linestyle 1
+@r1 linewidth 1.0
+@r1 color 1
+@r1 line 0, 0, 0, 0
+@r2 off
+@link r2 to g0
+@r2 type above
+@r2 linestyle 1
+@r2 linewidth 1.0
+@r2 color 1
+@r2 line 0, 0, 0, 0
+@r3 off
+@link r3 to g0
+@r3 type above
+@r3 linestyle 1
+@r3 linewidth 1.0
+@r3 color 1
+@r3 line 0, 0, 0, 0
+@r4 off
+@link r4 to g0
+@r4 type above
+@r4 linestyle 1
+@r4 linewidth 1.0
+@r4 color 1
+@r4 line 0, 0, 0, 0
+@g0 on
+@g0 hidden false
+@g0 type XY
+@g0 stacked false
+@g0 bar hgap 0.000000
+@g0 fixedpoint off
+@g0 fixedpoint type 0
+@g0 fixedpoint xy 0.000000, 0.000000
+@g0 fixedpoint format general general
+@g0 fixedpoint prec 6, 6
+@with g0
+@    world 0, 0, 15, 410
+@    stack world 0, 0, 0, 0
+@    znorm 1
+@    view 0.150000, 0.150000, 1.150000, 0.850000
+@    title ""
+@    title font 0
+@    title size 1.500000
+@    title color 1
+@    subtitle ""
+@    subtitle font 0
+@    subtitle size 1.000000
+@    subtitle color 1
+@    xaxes scale Normal
+@    yaxes scale Normal
+@    xaxes invert off
+@    yaxes invert off
+@    xaxis  on
+@    xaxis  type zero false
+@    xaxis  offset 0.000000 , 0.000000
+@    xaxis  bar on
+@    xaxis  bar color 1
+@    xaxis  bar linestyle 1
+@    xaxis  bar linewidth 1.0
+@    xaxis  label "Time (s)"
+@    xaxis  label layout para
+@    xaxis  label place auto
+@    xaxis  label char size 1.000000
+@    xaxis  label font 0
+@    xaxis  label color 1
+@    xaxis  label place normal
+@    xaxis  tick on
+@    xaxis  tick major 1
+@    xaxis  tick minor ticks 1
+@    xaxis  tick default 6
+@    xaxis  tick place rounded true
+@    xaxis  tick in
+@    xaxis  tick major size 1.000000
+@    xaxis  tick major color 1
+@    xaxis  tick major linewidth 1.0
+@    xaxis  tick major linestyle 1
+@    xaxis  tick major grid off
+@    xaxis  tick minor color 1
+@    xaxis  tick minor linewidth 1.0
+@    xaxis  tick minor linestyle 1
+@    xaxis  tick minor grid off
+@    xaxis  tick minor size 0.500000
+@    xaxis  ticklabel on
+@    xaxis  ticklabel format general
+@    xaxis  ticklabel prec 5
+@    xaxis  ticklabel formula ""
+@    xaxis  ticklabel append ""
+@    xaxis  ticklabel prepend ""
+@    xaxis  ticklabel angle 0
+@    xaxis  ticklabel skip 0
+@    xaxis  ticklabel stagger 0
+@    xaxis  ticklabel place normal
+@    xaxis  ticklabel offset auto
+@    xaxis  ticklabel offset 0.000000 , 0.010000
+@    xaxis  ticklabel start type auto
+@    xaxis  ticklabel start 0.000000
+@    xaxis  ticklabel stop type auto
+@    xaxis  ticklabel stop 0.000000
+@    xaxis  ticklabel char size 1.000000
+@    xaxis  ticklabel font 0
+@    xaxis  ticklabel color 1
+@    xaxis  tick place both
+@    xaxis  tick spec type none
+@    yaxis  on
+@    yaxis  type zero false
+@    yaxis  offset 0.000000 , 0.000000
+@    yaxis  bar on
+@    yaxis  bar color 1
+@    yaxis  bar linestyle 1
+@    yaxis  bar linewidth 1.0
+@    yaxis  label "Temperatue (°C)"
+@    yaxis  label layout para
+@    yaxis  label place auto
+@    yaxis  label char size 1.000000
+@    yaxis  label font 0
+@    yaxis  label color 1
+@    yaxis  label place normal
+@    yaxis  tick on
+@    yaxis  tick major 25
+@    yaxis  tick minor ticks 1
+@    yaxis  tick default 6
+@    yaxis  tick place rounded true
+@    yaxis  tick in
+@    yaxis  tick major size 1.000000
+@    yaxis  tick major color 1
+@    yaxis  tick major linewidth 1.0
+@    yaxis  tick major linestyle 1
+@    yaxis  tick major grid off
+@    yaxis  tick minor color 1
+@    yaxis  tick minor linewidth 1.0
+@    yaxis  tick minor linestyle 1
+@    yaxis  tick minor grid off
+@    yaxis  tick minor size 0.500000
+@    yaxis  ticklabel on
+@    yaxis  ticklabel format general
+@    yaxis  ticklabel prec 5
+@    yaxis  ticklabel formula ""
+@    yaxis  ticklabel append ""
+@    yaxis  ticklabel prepend ""
+@    yaxis  ticklabel angle 0
+@    yaxis  ticklabel skip 0
+@    yaxis  ticklabel stagger 0
+@    yaxis  ticklabel place normal
+@    yaxis  ticklabel offset auto
+@    yaxis  ticklabel offset 0.000000 , 0.010000
+@    yaxis  ticklabel start type auto
+@    yaxis  ticklabel start 0.000000
+@    yaxis  ticklabel stop type auto
+@    yaxis  ticklabel stop 0.000000
+@    yaxis  ticklabel char size 1.000000
+@    yaxis  ticklabel font 0
+@    yaxis  ticklabel color 1
+@    yaxis  tick place both
+@    yaxis  tick spec type none
+@    altxaxis  off
+@    altyaxis  off
+@    legend on
+@    legend loctype view
+@    legend 0.7, 0.6
+@    legend box color 1
+@    legend box pattern 1
+@    legend box linewidth 1.0
+@    legend box linestyle 1
+@    legend box fill color 0
+@    legend box fill pattern 1
+@    legend font 0
+@    legend char size 1.000000
+@    legend color 1
+@    legend length 4
+@    legend vgap 1
+@    legend hgap 1
+@    legend invert false
+@    frame type 0
+@    frame linestyle 1
+@    frame linewidth 1.0
+@    frame color 1
+@    frame pattern 1
+@    frame background color 0
+@    frame background pattern 0
+@    s0 hidden false
+@    s0 type xy
+@    s0 symbol 0
+@    s0 symbol size 1.000000
+@    s0 symbol color 2
+@    s0 symbol pattern 1
+@    s0 symbol fill color 2
+@    s0 symbol fill pattern 0
+@    s0 symbol linewidth 1.0
+@    s0 symbol linestyle 1
+@    s0 symbol char 65
+@    s0 symbol char font 0
+@    s0 symbol skip 0
+@    s0 line type 1
+@    s0 line linestyle 1
+@    s0 line linewidth 2.0
+@    s0 line color 2
+@    s0 line pattern 1
+@    s0 baseline type 0
+@    s0 baseline off
+@    s0 dropline off
+@    s0 fill type 0
+@    s0 fill rule 0
+@    s0 fill color 1
+@    s0 fill pattern 1
+@    s0 avalue off
+@    s0 avalue type 2
+@    s0 avalue char size 1.000000
+@    s0 avalue font 0
+@    s0 avalue color 1
+@    s0 avalue rot 0
+@    s0 avalue format general
+@    s0 avalue prec 3
+@    s0 avalue prepend ""
+@    s0 avalue append ""
+@    s0 avalue offset 0.000000 , 0.000000
+@    s0 errorbar on
+@    s0 errorbar place both
+@    s0 errorbar color 2
+@    s0 errorbar pattern 1
+@    s0 errorbar size 1.000000
+@    s0 errorbar linewidth 1.0
+@    s0 errorbar linestyle 1
+@    s0 errorbar riser linewidth 1.0
+@    s0 errorbar riser linestyle 1
+@    s0 errorbar riser clip off
+@    s0 errorbar riser clip length 0.100000
+@    s0 comment "Cols 2:11"
+@    s0 legend  "Probe 9 (on the inlet)"
+@target G0.S0
+@type xy
+0.05 21.87448
+0.1 24.80304
+0.15 28.3831
+0.2 32.39843
+0.25 36.7148
+0.3 41.24174
+0.35 47.0577
+0.4 52.91886
+0.45 58.73529
+0.5 64.44579
+0.55 70.01413
+0.6 75.4281
+0.65 80.6935
+0.7 85.82727
+0.75 90.8539
+0.8 95.80162
+0.85 100.6981
+0.9 105.5688
+0.95 110.4339
+1 115.3096
+1.05 120.2044
+1.1 125.1252
+1.15 130.0725
+1.2 135.0429
+1.25 140.0325
+1.3 145.0361
+1.35 150.0488
+1.4 155.0671
+1.45 160.0867
+1.5 165.1042
+1.55 170.1196
+1.6 175.1301
+1.65 180.1363
+1.7 185.1394
+1.75 190.1393
+1.8 195.137
+1.85 200.1334
+1.9 205.1295
+1.95 210.1257
+2 215.1232
+2.05 220.1204
+2.1 225.1174
+2.15 230.1149
+2.2 235.1141
+2.25 240.1126
+2.3 245.1108
+2.35 250.1087
+2.4 255.1068
+2.45 260.1027
+2.5 265.0978
+2.55 270.0923
+2.6 275.0854
+2.65 280.0775
+2.7 285.071
+2.75 290.0646
+2.8 295.0594
+2.85 300.0547
+2.9 305.0518
+2.95 310.0487
+3 315.0497
+3.05 320.0545
+3.1 325.0626
+3.15 330.0715
+3.2 335.0844
+3.25 340.0989
+3.3 345.1112
+3.35 350.1249
+3.4 355.1394
+3.45 360.154
+3.5 365.17
+3.55 370.1837
+3.6 375.1967
+3.65 380.21
+3.7 385.2255
+3.75 390.2438
+3.8 395.2595
+3.85 400
+3.9 400
+3.95 400
+4 400
+4.05 400
+4.1 400
+4.15 400
+4.2 400
+4.25 400
+4.3 400
+4.35 400
+4.4 400
+4.45 400
+4.5 400
+4.55 400
+4.6 400
+4.65 400
+4.7 400
+4.75 400
+4.8 400
+4.85 400
+4.9 400
+4.95 400
+5 400
+5.05 400
+5.1 400
+5.15 400
+5.2 400
+5.25 400
+5.3 400
+5.35 400
+5.4 400
+5.45 400
+5.5 400
+5.55 400
+5.6 400
+5.65 400
+5.7 400
+5.75 400
+5.8 400
+5.85 400
+5.9 400
+5.95 400
+6 400
+6.05 400
+6.1 400
+6.15 400
+6.2 400
+6.25 400
+6.3 400
+6.35 400
+6.4 400
+6.45 400
+6.5 400
+6.55 400
+6.6 400
+6.65 400
+6.7 400
+6.75 400
+6.8 400
+6.85 400
+6.9 400
+6.95 400
+7 400
+7.05 400
+7.1 400
+7.15 400
+7.2 400
+7.25 400
+7.3 400
+7.35 400
+7.4 400
+7.45 400
+7.5 400
+7.55 400
+7.6 400
+7.65 400
+7.7 400
+7.75 400
+7.8 400
+7.85 400
+7.9 400
+7.95 400
+8 400
+8.05 400
+8.1 400
+8.15 400
+8.2 400
+8.25 400
+8.3 400
+8.35 400
+8.4 400
+8.45 400
+8.5 400
+8.55 400
+8.6 400
+8.65 400
+8.7 400
+8.75 400
+8.8 400
+8.85 400
+8.9 400
+8.95 400
+9 400
+9.05 400
+9.1 400
+9.15 400
+9.2 400
+9.25 400
+9.3 400
+9.35 400
+9.4 400
+9.45 400
+9.5 400
+9.55 400
+9.6 400
+9.65 400
+9.7 400
+9.75 400
+9.8 400
+9.85 400
+9.9 400
+9.95 400
+10 400
+10.05 400
+10.1 400
+10.15 400
+10.2 400
+10.25 400
+10.3 400
+10.35 400
+10.4 400
+10.45 400
+10.5 400
+10.55 400
+10.6 400
+10.65 400
+10.7 400
+10.75 400
+10.8 400
+10.85 400
+10.9 400
+10.95 400
+11 400
+11.05 400
+11.1 400
+11.15 400
+11.2 400
+11.25 400
+11.3 400
+11.35 400
+11.4 400
+11.45 400
+11.5 400
+11.55 400
+11.6 400
+11.65 400
+11.7 400
+11.75 400
+11.8 400
+11.85 400
+11.9 400
+11.95 400
+12 400
+12.05 400
+12.1 400
+12.15 400
+12.2 400
+12.25 400
+12.3 400
+12.35 400
+12.4 400
+12.45 400
+12.5 400
+12.55 400
+12.6 400
+12.65 400
+12.7 400
+12.75 400
+12.8 400
+12.85 400
+12.9 400
+12.95 400
+13 400
+13.05 400
+13.1 400
+13.15 400
+13.2 400
+13.25 400
+13.3 400
+13.35 400
+13.4 400
+13.45 400
+13.5 400
+13.55 400
+13.6 400
+13.65 400
+13.7 400
+13.75 400
+13.8 400
+13.85 400
+13.9 400
+13.95 400
+14 400
+14.05 400
+14.1 400
+14.15 400
+14.2 400
+14.25 400
+14.3 400
+14.35 400
+14.4 400
+14.45 400
+14.5 400
+14.55 400
+14.6 400
+14.65 400
+14.7 400
+14.75 400
+14.8 400
+14.85 400
+14.9 400
+14.95 400
+15 400
+&

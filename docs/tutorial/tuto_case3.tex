@@ -2,7 +2,7 @@
 
 % This file is part of Code_Saturne, a general-purpose CFD tool.
 %
-% Copyright (C) 1998-2013 EDF S.A.
+% Copyright (C) 1998-2011 EDF S.A.
 %
 % This program is free software; you can redistribute it and/or modify it under
 % the terms of the GNU General Public License as published by the Free Software
@@ -20,23 +20,38 @@
 
 %-------------------------------------------------------------------------------
 
-\section{SOLUTION FOR CASE 3}
+\section{Solution for case3}
 
-Only a few elements are different from case 2.
+Only a few elements are different from \texttt{case2}.
 
-In this case the density becomes variable. Go to the item
-{\itshape Fluid properties} under the heading
-{\itshape Physical properties} and change the nature of the density from
-{\itshape constant} to {\itshape user law}. Click on the highlighted icon and define the user law in the window that pops up. Follow the format used in the tab ``Examples''.
+In this case the density becomes variable.
+Go to the {\itshape Fluid properties} item under the heading, {\itshape Physical properties}
+and change the nature of the density from \texttt{constant} to \texttt{ user law}.
+
+The user law of the density is defined as following in the \CS (GUI):\\
+\fbox{\begin{minipage}{\textwidth}\texttt{    \\
+rho = TempC * ( -4.668E-03*TempC - 5.0754E-02 ) + 1000.9 ;
+}\end{minipage} }
+
+Click on the highlighted icon and define the user law in the window that pops up.
+Follow the format used in the {\itshape Examples} tab.
 
 \begin{figure}[h!]
 \begin{center}
 \begin{tabular}{c}
-\includegraphics[width=9cm]{V-60} \\
-\\
-\includegraphics[width=9cm]{V-60bis}
+\includegraphics[width=9cm]{case3-V1}
 \end{tabular}
 \caption{Fluid properties - Variable density}
+\end{center}
+\end{figure}
+
+\newpage
+\begin{figure}[h!]
+\begin{center}
+\begin{tabular}{c}
+\includegraphics[width=9cm]{case3-V2}
+\end{tabular}
+\caption{Fluid properties - Variable density - User expression}
 \label{fig1_e3}
 \end{center}
 \end{figure}
@@ -44,12 +59,15 @@ In this case the density becomes variable. Go to the item
 \newpage
 As the density is variable, the influence of gravity has to be considered. In the
 heading {\itshape Physical properties} go to
-{\itshape Gravity, hydrostatic pressure} and set the value of each component of
-the gravity vector.
+{\itshape Gravity} and set the value of each component of the gravity vector.
+
+\fbox{\begin{minipage}{\textwidth}\texttt{    \\
+g\_x = 0.0 ; g\_y = -9.81 ; g\_z = 0.0
+}\end{minipage} }
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{V-61}
+\includegraphics[width=12cm]{case3-V3}
 \caption{Fluid properties - Gravity}
 \label{fig2_e3}
 \end{center}
@@ -63,16 +81,17 @@ Add a monitoring point close to the entry boundary condition in the
 \begin{center}
 \begin{tabular}{|c|c|c|c|}
 \hline
-Points & X(m) & Y(m) & Z(m)\\
+Probe & x (m) & y (m) & z (m)\\
 \hline
-9 & -0.5 & 2.25 & 0 \\
+\hline
+9 & -0.5 & 2.25 & 0.0 \\
 \hline
 \end{tabular}
 \end{center}
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{V-62}
+\includegraphics[width=12cm]{case3-V4}
 \caption{New monitoring probe}
 \label{fig3_e3}
 \end{center}
@@ -83,68 +102,78 @@ Points & X(m) & Y(m) & Z(m)\\
 After completing the interface, before running the calculation,
 some Fortran user routines need to be modified.
 
-Go to the folder SRC/REFERENCE/base and copy {\itshape usclim.f90} in the SRC directory.
+Go to the folder SRC/REFERENCE/base and copy {\texttt cs\_user\_boundary\_conditions.f90} in the SRC directory.
 
-\textbf{usclim.f90}\\
-In this case, {\itshape usclim.f90} is used to specify the time dependent boundary
-condition for
-the temperature. Refer to the comments in the routine or to the \CS user manual
+$\bullet$ \textbf{\texttt{cs\_user\_boundary\_conditions.f90}}:\\
+In this case, {\texttt cs\_user\_boundary\_conditions.f90} is used to specify the time dependent boundary
+condition for the temperature. Refer to the comments in the routine or to the \CS user manual
 for more information on this routine.\\
-In our case, you need to identify the boundary faces of color 1. The command\\
-\texttt{call getfbr('1',nlelt,lstelt)}
-will return an integer \texttt{nlelt}, corresponding to the number of boundary faces of
-color 1, and an integer array \texttt{lstelt} containing the list of the \texttt{nlelt} boundary
-faces of color 1. Note that the string '1' can be more complex and combine
-different colors, group references or geometrical criteria, with the same syntax
+
+In our case, you need to identify the boundary faces of color \textbf{'1'}.\\
+The command \texttt{call getfbr('1',nlelt,lstelt)} will return an integer \texttt{nlelt}, corresponding
+to the number of boundary faces of color 1, and an integer array \texttt{lstelt} containing the list
+of the \texttt{nlelt} boundary faces of color 1.
+
+$\bullet$ {\bf Remark}: Note that the string '1' \textbf{can be more complex and combine
+different colors, group references or geometrical criteria}, with the same syntax
 as in the Graphical Interface.
 
 For each boundary face \texttt{ifac} in the list, the Dirichlet value is given in the
 multi-dimension array \texttt{rcodcl} as follows:
-\begin{verbatim}
-if (ttcabs.lt.3.8d0) then
-  do ielt = 1, nlelt
-    ifac = lstelt(ielt)
-    rcodcl(ifac,isca(1),1) = 20.d0 + 100.d0*ttcabs
-  enddo
-else
-  do ielt = 1, nlelt
-    ifac = lstelt(ielt)
-    rcodcl(ifac,isca(1),1) = 400.d0
-  enddo
-endif
-\end{verbatim}
-\texttt{isca(1)} refers to the first scalar and \texttt{ttcabs} is the current physical time.
 
-See the example file in the directory \texttt{examples} for the complete
-{\itshape usclim.f90} file.
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+if (ttcabs.lt.3.8d0) then \\
+  do ielt = 1, nlelt      \\
+    ifac = lstelt(ielt)   \\
+    rcodcl(ifac,isca(1),1) = 20.d0 + 100.d0*ttcabs \\
+  enddo\\
+else \\
+  do ielt = 1, nlelt                \\
+    ifac = lstelt(ielt)             \\
+    rcodcl(ifac,isca(1),1) = 400.d0 \\
+  enddo \\
+endif \\
+}\end{minipage} }
 
-Note that, although the inlet boundary conditions for temperature are specified
-in the {\itshape usclim.f90} file, it is necessary to specify them also in the
-Graphical Interface. The value given in the Interface can be anything, it will
-be overwritten by the Fortran routine.
+%\begin{verbatim}
+%\end{verbatim}}
 
-After updating the Fortran file, run the calculation as explained in case
-2.
 
+\textbf{\texttt{isca(1)}} refers to the first scalar and {\textbf\texttt{ttcabs}}
+is the current physical time.
+
+See the example \texttt{cs\_user\_boundary\_conditions-base.f90} file in the subdirectory
+\texttt{SRC/EXAMPLES} to complet correctly your boundary conditions for this \texttt{case3}.
+
+$\bullet$ Remark: Note that, although the inlet boundary conditions for temperature are
+specified in the \texttt{cs\_user\_boundary\_conditions.f90} file, it is necessary to
+specify them also in the Graphical Interface.\\
+
+\textbf{The value given in the Interface can be anything, it will be overwritten by the
+Fortran routine}.
+
+After updating the Fortran file, run the calculation as explained in
+\texttt{case2}.
 
 \newpage
+
 When a calculation is finished, \CS stores all the necessary elements to
 continue the computation in another execution, with total continuity. These
-elements are stored in several files, grouped in a RESTART.xxxxxxxx directory, in
-the RESU directory.
+elements are stored in several files, grouped in
+a \texttt{yyyymmdd-hhmm/checkpoint} subdirectory, in the \texttt{RESU} directory.
 
 In this case, after the first calculation is finished, a second calculation will
 be run, starting from the results of the first one.
 
-
-Go directly on the item {\itshape Start/Restart} under the heading
+Go directly on the {\itshape Start/Restart} item under the heading
 {\itshape Calculation management}.  Activate the {\itshape Calculation restart}
-by ticking the ``on'' box. Then click on the folder icon next to it to specify
-the restart files to use.
+by clicking the \textbf{``on''} box.
+
+Then click on the folder icon next to it to specify the restart files to use.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{V-63}
+\includegraphics[width=12cm]{case3-V5}
 \caption{Start / Restart}
 \label{fig4_e3}
 \end{center}
@@ -153,12 +182,13 @@ the restart files to use.
 
 \newpage
 A window opens, with the architecture of the study sub-directories. Open the
-RESU folder and click on the folder RESTART.xxxxxxxx (where xxxxxxxx corresponds
-to the reference of the first calculation). Then click on {\itshape Validate}.
+\texttt{RESU} folder and click on the folder \texttt{yyyymmdd-hhmm/checkpoint}
+(where \texttt{yyyymmdd-hhmm} corresponds to the reference of the first calculation results).
+Then click on {\itshape Validate}.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=10cm]{V-64}
+\includegraphics[width=10cm]{case3-V6}
 \caption{Start / Restart - Selection of the restart directory}
 \label{fig5_e3}
 \end{center}
@@ -166,7 +196,8 @@ to the reference of the first calculation). Then click on {\itshape Validate}.
 
 
 \newpage
-Go to the {\itshape Time step} item under the heading {\itshape Numerical parameters} and change the number of iterations. It must be the total number of
+Go to the {\itshape Time step} item under the heading {\itshape Numerical parameters}
+and change the number of iterations. It must be the total number of
 iterations, from the beginning of the first calculation.\\
 
 The first calculation was done with 300 iterations and another 400 iterations
@@ -174,7 +205,7 @@ are needed for the present case. Therefore the value 700 must be entered.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{V-65}
+\includegraphics[width=12cm]{case3-V7}
 \caption{Time step}
 \label{fig6_e3}
 \end{center}
