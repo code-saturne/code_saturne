@@ -88,7 +88,7 @@ def xmlChecker(filename):
         p = make_parser()
         p.setContentHandler(ContentHandler())
         p.parse(filename)
-    except Exception as e:
+    except Exception:
         f = os.path.basename(filename)
         m = "%s file reading error. \n\n"\
             "This file is not in accordance with XML specifications.\n\n"\
