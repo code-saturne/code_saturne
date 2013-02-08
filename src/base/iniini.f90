@@ -693,6 +693,10 @@ do ii = 1, nvarmx
   isstpc(ii) = -999
 enddo
 
+! Method to compute interior mass flux due to ALE mesh velocity
+! default: based on cell center mesh velocity
+iflxmw = 1
+
 ! --- Reconstruction des gradients
 !       On donne les valeurs par defaut
 !       Pour la methode de limitation, on decidera plus tard

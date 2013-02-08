@@ -20,6 +20,49 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Function:
+! ---------
+
+!> \file navstv.f90
+!>
+!> \brief Solving of NS equations for incompressible or slightly compressible
+!> flows for one time step. Both convection-diffusion and continuity steps are
+!> performed.  The velocity components are solved together in once.
+!>
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     iterns        index of the iteration on Navier-Stokes
+!> \param[in]     icvrge        indicator of convergence
+!> \param[in]     isostd        indicator of standar outlet
+!>                               +index of the reference face
+!> \param[in]     dt            time step (per cell)
+!> \param[in]     tpucou        velocity-pressure coupling (interleaved)
+!> \param[in,out] rtp, rtpa     calculated variables at cell centers
+!>                               (at current and previous time steps)
+!> \param[in]     propce        physical properties at cell centers
+!> \param[in]     propfa        physical properties at interior face centers
+!> \param[in]     propfb        physical properties at boundary face centers
+!> \param[in]     coefa, coefb  boundary conditions
+!> \param[in]     frcxt         external force generating the hydrostatic
+!>                              pressure
+!> \param[in]     prhyd         hydrostatic pressure predicted at cell centers
+!> \param[in]     tslagr        terme de couplage retour du
+!>                                  lagrangien
+!> \param[in]     trava         work array for pressure velocity coupling
+!> \param[in]     ximpa         work array for pressure velocity coupling
+!> \param[in]     uvwk          work array for pressure velocity coupling
+!_______________________________________________________________________________
+
+
 subroutine navstv &
 !================
 
@@ -28,52 +71,6 @@ subroutine navstv &
    dt     , tpucou , rtp    , rtpa   , propce , propfa , propfb , &
    tslagr , coefa  , coefb  , frcxt  , prhyd  ,                   &
    trava  , ximpa  , uvwk   )
-
-!===============================================================================
-! FONCTION :
-! ----------
-
-! Solving of NS equations for incompressible or slightly compressible flows for
-! one time step. Both convection-diffusion and continuity steps are performed.
-! The velocity components are solved together in once.
-
-!-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! iterns           ! e  ! <-- ! numero d'iteration sur navsto                  !
-! icvrge           ! e  ! <-- ! indicateur de convergence du pnt fix           !
-! isostd           ! te ! <-- ! indicateur de sortie standard                  !
-!    (nfabor+1)    !    !     !  +numero de la face de reference               !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! tpucou(ncelet,3) ! ra ! <-- ! velocity-pressure coupling (interleaved)       !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
-! frcxt(ncelet,3)  ! tr ! <-- ! force exterieure generant la pression          !
-!                  !    !     !  hydrostatique                                 !
-! prhyd(ncelet)    ! tr ! <-- ! hydrostatic pressure predicted at cell centers !
-! tslagr           ! tr ! <-- ! terme de couplage retour du                    !
-!(ncelet,*)        !    !     !     lagrangien                                 !
-! trava            ! tr ! <-- ! tableau de travail pour couplage               !
-!(3,ncelet)        !    !     ! vitesse pression par point fixe                !
-! ximpa            ! tr ! <-- ! tableau de travail pour couplage               !
-!(3,3,ncelet)      !    !     ! vitesse pression par point fixe                !
-! uvwk             ! tr ! <-- ! tableau de travail pour couplage u/p           !
-!(3,ncelet)        !    !     ! sert a stocker la vitesse de                   !
-!                  !    !     ! l'iteration precedente                         !
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
 
 !===============================================================================
 
@@ -129,7 +126,7 @@ integer          iflmas, iflmab, ipcrom, ipbrom
 integer          iflms1, iflmb1, iflmb0
 integer          nswrgp, imligp, iwarnp
 integer          nbrval, iappel, iescop
-integer          ndircp, icpt  , iecrw
+integer          ndircp, icpt
 integer          numcpl
 double precision rnorm , rnorma, rnormi, vitnor
 double precision dtsrom, unsrom, surf  , rhom, rovolsdt
@@ -422,24 +419,24 @@ if (iprco.le.0) then
       propfb(ifac,iflmab) = propfb(ifac,iflmab) - bouflx(ifac)
     enddo
 
-    !$omp parallel do private(iecrw, ddepx, ddepy, ddepz, icpt, ii, inod, &
+    !$omp parallel do private(ddepx, ddepy, ddepz, icpt, ii, inod, &
     !$omp                     iel1, iel2, dtfac, rhofac)
     do ifac = 1, nfac
-      iecrw = 0
       ddepx = 0.d0
       ddepy = 0.d0
       ddepz = 0.d0
       icpt  = 0
       do ii = ipnfac(ifac),ipnfac(ifac+1)-1
         inod = nodfac(ii)
-        if (impale(inod).eq.0) iecrw = iecrw + 1
         icpt = icpt + 1
         ddepx = ddepx + disala(1,inod) + xyzno0(1,inod)-xyznod(1,inod)
         ddepy = ddepy + disala(2,inod) + xyzno0(2,inod)-xyznod(2,inod)
         ddepz = ddepz + disala(3,inod) + xyzno0(3,inod)-xyznod(3,inod)
       enddo
-      ! For inner vertices, the mass flux due to the mesh displacement is
-      !  recomputed from the nodes displacement
+      ! Compute the mass flux using the nodes displacement
+      if (iflxmw.eq.0) then
+        ! For inner vertices, the mass flux due to the mesh displacement is
+        !  recomputed from the nodes displacement
         iel1 = ifacel(1,ifac)
         iel2 = ifacel(2,ifac)
         dtfac = 0.5d0*(dt(iel1) + dt(iel2))
@@ -448,6 +445,9 @@ if (iprco.le.0) then
               ddepx*surfac(1,ifac)                                &
              +ddepy*surfac(2,ifac)                                &
              +ddepz*surfac(3,ifac) )/dtfac/icpt
+      else
+        propfa(ifac,iflmas) = propfa(ifac,iflmas) - intflx(ifac)
+      endif
     enddo
 
     ! Free memory
@@ -799,24 +799,24 @@ if (iale.eq.1) then
     propfb(ifac,iflmab) = propfb(ifac,iflmab) - bouflx(ifac)
   enddo
 
-  !$omp parallel do private(iecrw, ddepx, ddepy, ddepz, icpt, ii, inod, &
+  !$omp parallel do private(ddepx, ddepy, ddepz, icpt, ii, inod, &
   !$omp                     iel1, iel2, dtfac, rhofac)
   do ifac = 1, nfac
-    iecrw = 0
     ddepx = 0.d0
     ddepy = 0.d0
     ddepz = 0.d0
     icpt  = 0
     do ii = ipnfac(ifac),ipnfac(ifac+1)-1
       inod = nodfac(ii)
-      if (impale(inod).eq.0) iecrw = iecrw + 1
       icpt = icpt + 1
       ddepx = ddepx + disala(1,inod) + xyzno0(1,inod)-xyznod(1,inod)
       ddepy = ddepy + disala(2,inod) + xyzno0(2,inod)-xyznod(2,inod)
       ddepz = ddepz + disala(3,inod) + xyzno0(3,inod)-xyznod(3,inod)
     enddo
-    ! For inner vertices, the mass flux due to the mesh displacement is
-    !  recomputed from the nodes displacement
+    ! Compute the mass flux using the nodes displacement
+    if (iflxmw.eq.0) then
+      ! For inner vertices, the mass flux due to the mesh displacement is
+      !  recomputed from the nodes displacement
       iel1 = ifacel(1,ifac)
       iel2 = ifacel(2,ifac)
       dtfac = 0.5d0*(dt(iel1) + dt(iel2))
@@ -825,6 +825,9 @@ if (iale.eq.1) then
             ddepx*surfac(1,ifac)                                &
            +ddepy*surfac(2,ifac)                                &
            +ddepz*surfac(3,ifac) )/dtfac/icpt
+    else
+      propfa(ifac,iflmas) = propfa(ifac,iflmas) - intflx(ifac)
+    endif
   enddo
 
   ! Free memory
