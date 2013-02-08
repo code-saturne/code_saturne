@@ -1425,15 +1425,16 @@ fi
 
             if d.user_locals:
                 m = 'define_case_parameters'
+                c = globals()['case']
                 if m in d.user_locals.keys():
-                    eval(m + '(self)', globals(), d.user_locals)
+                    eval(m + '(case)', globals(), d.user_locals)
                     del d.user_locals[m]
-                if hasattr(self, 'scratchdir'):
-                    scratchdir = self.scratchdir
-                    del(self.scratchdir)
-                if hasattr(self, 'n_procs'):
-                    n_procs = int(self.n_procs)
-                    del(self.n_procs)
+                if hasattr(c, 'scratchdir'):
+                    scratchdir = c.scratchdir
+                    del(c.scratchdir)
+                if hasattr(c, 'n_procs'):
+                    n_procs = int(c.n_procs)
+                    del(c.n_procs)
 
         # Define scratch directory
 
