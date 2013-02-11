@@ -40,16 +40,6 @@
 !>                               - 0: arithmetic
 !>                               - 1: harmonic
 !> \param[in]     w1            cell viscosity symmetric tensor
-!> \param[in]     iwarnp        verbosity
-!> \param[out]    weighf        inner face weight between cells i and j
-!>                              \f$ \frac{\vect{IF} \cdot \tens{K}_\celli}
-!>                                       {\norm{\tens{K}_\celli \cdot \vect{S}}^2} \f$
-!>                              and
-!>                              \f$ \frac{\vect{FJ} \cdot \tens{K}_\cellj}
-!>                                       {\norm{\tens{K}_\cellj \cdot \vect{S}}^2} \f$
-!> \param[out]    weighb        boundary face weight
-!>                              \f$ \frac{\vect{IF} \cdot \tens{K}_\celli}
-!>                                       {\norm{\tens{K}_\celli \cdot \vect{S}}^2} \f$
 !> \param[out]    viscf         inner face tensor viscosity
 !>                               (times surface divided distance)
 !> \param[out]    viscb         inner face viscosity
@@ -57,7 +47,6 @@
 !_______________________________________________________________________________
 
 subroutine vistnv &
-!================
  ( imvisf ,                                                       &
    w1     ,                                                       &
    viscf  , viscb )
@@ -81,7 +70,7 @@ implicit none
 
 ! Arguments
 
-integer          imvisf, iwarnp
+integer          imvisf
 
 double precision w1(6,ncelet)
 double precision viscf(3,3,nfac), viscb(nfabor)

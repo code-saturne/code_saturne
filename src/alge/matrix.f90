@@ -80,11 +80,9 @@
 !> \param[out]    da            diagonal part of the matrix
 !> \param[out]    xa            extra interleaved diagonal part of the matrix
 !_______________________________________________________________________________
-!
+
 
 subroutine matrix &
-!================
-
  ( ncelet , ncel   , nfac   , nfabor ,                            &
    iconvp , idiffp , ndircp , isym   , nfecra ,                   &
    thetap , imucpp ,                                              &

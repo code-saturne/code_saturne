@@ -52,8 +52,6 @@
 !_______________________________________________________________________________
 
 subroutine resrit &
-!================
-
  ( nvar   , nscal  ,                                              &
    iscal  , xcpp   , xut    , xuta   ,                            &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &

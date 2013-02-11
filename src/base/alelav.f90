@@ -48,8 +48,6 @@
 !_______________________________________________________________________________
 
 subroutine alelav &
-!================
-
  ( nvar   , nscal  ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  )

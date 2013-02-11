@@ -52,8 +52,8 @@
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     ivar          index of the current variable
 !> \param[in]     itypfl        indicator (take rho into account or not)
-!>                               - 1 compute \$f \rho\vect{u}\cdot\vect{S} \f$
-!>                               - 0 compute \$f \vect{u}\cdot\vect{S} \f$
+!>                               - 1 compute \f$ \rho\vect{u}\cdot\vect{S} \f$
+!>                               - 0 compute \f$ \vect{u}\cdot\vect{S} \f$
 !> \param[in]     iflmb0        the mass flux is set to 0 on walls and
 !>                               symmetries if = 1
 !> \param[in]     init          the mass flux is initialize to 0 if > 0
@@ -88,8 +88,6 @@
 !_______________________________________________________________________________
 
 subroutine inimav &
-!================
-
  ( nvar   , nscal  ,                                              &
    ivar   , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrgu , imligu ,          &

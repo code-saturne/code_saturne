@@ -4414,7 +4414,7 @@ cs_post_init_writers(void)
  * those related to couplings) may be defined between this call and a
  * time loop.
  *
- * \param[in]  check_flag  mask used for additional output
+ * \param[in]  check_mask  mask used for additional output
  */
 /*----------------------------------------------------------------------------*/
 

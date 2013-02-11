@@ -50,8 +50,6 @@
 !_______________________________________________________________________________
 
 subroutine d3pphy &
-!================
-
  ( nvar   , nscal  ,                                              &
    ibrom  , izfppp ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &

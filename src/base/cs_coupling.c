@@ -306,7 +306,7 @@ cs_coupling_get_sync_flag(void)
  *   PLE_COUPLING_USER_3        User definable flag
  *   PLE_COUPLING_USER_4        User definable flag
  *
- * \param[in]  flags  synchronization flag to apply to couplings
+ * \param[in]  flag  synchronization flag to apply to couplings
  */
 /*----------------------------------------------------------------------------*/
 

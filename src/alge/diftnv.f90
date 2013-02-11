@@ -64,7 +64,9 @@
 !> \param[in]     imrgra        indicator
 !>                               - 0 iterative gradient
 !>                               - 1 least square gradient
-!> \param[in]     ipp*          index of the variable for post-processing
+!> \param[in]     ippu          index of the variable for post-processing
+!> \param[in]     ippv          index of the variable for post-processing
+!> \param[in]     ippw          index of the variable for post-processing
 !> \param[in]     iwarnp        verbosity
 !> \param[in]     epsrgp        relative precision for the gradient
 !>                               reconstruction
@@ -80,6 +82,10 @@
 !>                               - thetap = 1: implicit scheme
 !> \param[in]     pvar          solved variable (current time step)
 !> \param[in]     pvara         solved variable (previous time step)
+!> \param[in]     coefav        boundary condition array for the variable
+!>                               (Explicit part)
+!> \param[in]     coefbv        boundary condition array for the variable
+!>                               (Impplicit part)
 !> \param[in]     cofafv        boundary condition array for the diffusion
 !>                               of the variable (Explicit part)
 !> \param[in]     cofbfv        boundary condition array for the diffusion
@@ -92,8 +98,6 @@
 !_______________________________________________________________________________
 
 subroutine diftnv &
-!================
-
  ( idtvar , ivar   , nswrgp , imligp , ircflp ,          &
    inc    , imrgra ,                                     &
    ippu   , ippv   , ippw   , iwarnp ,                   &

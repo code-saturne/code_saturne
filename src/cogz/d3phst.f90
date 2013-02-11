@@ -50,8 +50,6 @@
 !_______________________________________________________________________________
 
 subroutine d3phst &
-!================
-
  ( ncelet , ncel   , indpdf ,                                     &
    dirmin , dirmax , fdeb   , ffin   , hrec   ,                   &
    fm     , hm     ,                                              &

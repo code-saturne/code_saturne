@@ -67,7 +67,7 @@
 !> \param[in]     iccocg        indicator
 !>                               - 1 re-compute cocg matrix (for iterativ gradients)
 !>                               - 0 otherwise
-!> \param[in]     ipp*          index of the variable for post-processing
+!> \param[in]     ipp           index of the variable for post-processing
 !> \param[in]     iwarnp        verbosity
 !> \param[in]     epsrgp        relative precision for the gradient
 !>                               reconstruction
@@ -83,9 +83,13 @@
 !>                               - thetap = 1: implicit scheme
 !> \param[in]     pvar          solved variable (current time step)
 !> \param[in]     pvara         solved variable (previous time step)
-!> \param[in]     cofaf         boundary condition array for the diffusion
+!> \param[in]     coefap        boundary condition array for the variable
+!>                               (Explicit part)
+!> \param[in]     coefbp        boundary condition array for the variable
+!>                               (Impplicit part)
+!> \param[in]     cofafp        boundary condition array for the diffusion
 !>                               of the variable (Explicit part)
-!> \param[in]     cofbf         boundary condition array for the diffusion
+!> \param[in]     cofbfp        boundary condition array for the diffusion
 !>                               of the variable (Implicit part)
 !> \param[in]     viscf         \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
 !>                               at interior faces for the r.h.s.
@@ -100,8 +104,6 @@
 !_______________________________________________________________________________
 
 subroutine diften &
-!================
-
  ( idtvar , ivar   , nswrgp , imligp , ircflp ,          &
    inc    , imrgra , iccocg , ipp    , iwarnp , epsrgp , &
    climgp , extrap , relaxp , thetap ,                   &

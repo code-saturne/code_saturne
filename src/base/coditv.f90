@@ -121,7 +121,6 @@
 !> \param[in]     idftnp        indicator
 !>                               - 1 the diffusivity is scalar
 !>                               - 6 the diffusivity is a symmetric tensor
-
 !> \param[in]     iswdyp        indicator
 !>                               - 0 no dynamic relaxation
 !>                               - 1 dynamic relaxation depending on
@@ -132,10 +131,15 @@
 !> \param[in]     imgrp         indicator
 !>                               - 0 no multi-grid
 !>                               - 1 otherwise
-!> \param[in]     ipp*          index of the variable for post-processing
+!> \param[in]     ncymxp        max. number of multigrid cycles
+!> \param[in]     nitmfp        number of equivalent iterations on fine mesh
+!> \param[in]     ippu          index of the variable for post-processing
+!> \param[in]     ippv          index of the variable for post-processing
+!> \param[in]     ippw          index of the variable for post-processing
 !> \param[in]     iwarnp        verbosity
 !> \param[in]     blencp        fraction of upwinding
 !> \param[in]     epsilp        precision pour resol iter
+!> \param[in]     epsrsp        relative precision for the iterative process
 !> \param[in]     epsrgp        relative precision for the gradient
 !>                               reconstruction
 !> \param[in]     climgp        clipping coeffecient for the computation of
@@ -155,13 +159,13 @@
 !>                               If you sub-iter on Navier-Stokes, then
 !>                               it allows to initialize by something else than
 !>                               pvara (usually pvar=pvara)
-!> \param[in]     coefap        boundary condition array for the variable
+!> \param[in]     coefav        boundary condition array for the variable
 !>                               (Explicit part)
-!> \param[in]     coefbp        boundary condition array for the variable
+!> \param[in]     coefbv        boundary condition array for the variable
 !>                               (Impplicit part)
-!> \param[in]     cofafp        boundary condition array for the diffusion
+!> \param[in]     cofafv        boundary condition array for the diffusion
 !>                               of the variable (Explicit part)
-!> \param[in]     cofbfp        boundary condition array for the diffusion
+!> \param[in]     cofbfv        boundary condition array for the diffusion
 !>                               of the variable (Implicit part)
 !> \param[in]     flumas        mass flux at interior faces
 !> \param[in]     flumab        mass flux at boundary faces
@@ -181,8 +185,6 @@
 !_______________________________________________________________________________
 
 subroutine coditv &
-!================
-
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisep ,          &

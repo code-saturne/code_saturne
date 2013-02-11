@@ -156,7 +156,7 @@ BEGIN_C_DECLS
   \enum cs_file_mpi_positionning_t
 
   \brief MPI-IO positionning methods
-  \detail It is not always known whether a performance or robustness
+  \details It is not always known whether a performance or robustness
           difference is to be expected using explicit file offsets
           or individual file pointers. Perusal of a sampling of ROMIO
           code would seem to indicate that no difference is to be

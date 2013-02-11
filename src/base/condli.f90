@@ -125,7 +125,6 @@
 !_______________________________________________________________________________
 
 subroutine condli &
-!================
  ( nvar   , nscal  , iterns ,                                     &
    isvhb  , isvtb  ,                                              &
    icodcl , isostd ,                                              &
@@ -2755,10 +2754,6 @@ end subroutine
 ! Local functions
 !===============================================================================
 
-subroutine set_dirichlet_scalar &
-           !===================
- ( coefa , cofaf, coefb , cofbf, pimp  , hint, hext)
-
 !-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
@@ -2772,6 +2767,9 @@ subroutine set_dirichlet_scalar &
 !> \param[in]     hint          Internal exchange coefficient
 !> \param[in]     hext          External exchange coefficient (10^30 by default)
 !_______________________________________________________________________________
+
+subroutine set_dirichlet_scalar &
+ ( coefa , cofaf, coefb , cofbf, pimp  , hint, hext)
 
 !===============================================================================
 ! Module files
@@ -2821,10 +2819,6 @@ end subroutine
 
 !===============================================================================
 
-subroutine set_dirichlet_vector &
-           !===================
- ( coefa , cofaf, coefb , cofbf, pimpv  , hint , hextv)
-
 !-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
@@ -2838,6 +2832,9 @@ subroutine set_dirichlet_vector &
 !> \param[in]     hint          Internal exchange coefficient
 !> \param[in]     hextv         External exchange coefficient (10^30 by default)
 !_______________________________________________________________________________
+
+subroutine set_dirichlet_vector &
+ ( coefa , cofaf, coefb , cofbf, pimpv  , hint , hextv)
 
 !===============================================================================
 ! Module files
@@ -2916,10 +2913,6 @@ end subroutine
 
 !===============================================================================
 
-subroutine set_dirichlet_vector_ggdh &
-           !========================
- ( coefa , cofaf, coefb , cofbf, pimpv  , hint , hextv)
-
 !-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
@@ -2933,6 +2926,9 @@ subroutine set_dirichlet_vector_ggdh &
 !> \param[in]     hint          Internal exchange coefficient
 !> \param[in]     hextv         External exchange coefficient (10^30 by default)
 !_______________________________________________________________________________
+
+subroutine set_dirichlet_vector_ggdh &
+ ( coefa , cofaf, coefb , cofbf, pimpv  , hint , hextv)
 
 !===============================================================================
 ! Module files
@@ -2995,10 +2991,6 @@ end subroutine
 
 !===============================================================================
 
-subroutine set_neumann_scalar &
-           !=================
- ( coefa , cofaf, coefb , cofbf, qimp  , hint)
-
 !-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
@@ -3011,6 +3003,9 @@ subroutine set_neumann_scalar &
 !> \param[in]     qimp          Flux value to impose
 !> \param[in]     hint          Internal exchange coefficient
 !_______________________________________________________________________________
+
+subroutine set_neumann_scalar &
+ ( coefa , cofaf, coefb , cofbf, qimp  , hint)
 
 !===============================================================================
 ! Module files
@@ -3041,10 +3036,6 @@ end subroutine
 
 !===============================================================================
 
-subroutine set_neumann_vector &
-         !==================
- ( coefa , cofaf, coefb , cofbf, qimpv  , hint)
-
 !-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
@@ -3057,6 +3048,9 @@ subroutine set_neumann_vector &
 !> \param[in]     qimpv         Flux value to impose
 !> \param[in]     hint          Internal exchange coefficient
 !_______________________________________________________________________________
+
+subroutine set_neumann_vector &
+ ( coefa , cofaf, coefb , cofbf, qimpv  , hint)
 
 !===============================================================================
 ! Module files
@@ -3104,10 +3098,6 @@ end subroutine
 
 !===============================================================================
 
-subroutine set_neumann_vector_ggdh &
-         !========================
- ( coefa , cofaf, coefb , cofbf, qimpv  , hint)
-
 !-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
@@ -3120,6 +3110,9 @@ subroutine set_neumann_vector_ggdh &
 !> \param[in]     qimpv         Flux value to impose
 !> \param[in]     hint          Internal exchange coefficient
 !_______________________________________________________________________________
+
+subroutine set_neumann_vector_ggdh &
+ ( coefa , cofaf, coefb , cofbf, qimpv  , hint)
 
 !===============================================================================
 ! Module files
@@ -3187,25 +3180,23 @@ end subroutine
 
 !===============================================================================
 
-subroutine set_generalized_sym_scalar &
-           !=========================
- ( coefau, cofafu,                                                &
-   coefav, cofafv,                                                &
-   coefaw, cofafw,                                                &
-   coefbu, cofbfu,                                                &
-   coefbv, cofbfv,                                                &
-   coefbw, cofbfw,                                                &
-   pimpv , qimpv , vect  , hint, normal)
-
 !-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[out]    coefa*        explicit BC coefficient for gradients
-!> \param[out]    cofaf*        explicit BC coefficient for diffusive flux
-!> \param[out]    coefb*        implicit BC coefficient for gradients
-!> \param[out]    cofbf*        implicit BC coefficient for diffusive flux
+!> \param[out]    coefau        explicit BC coefficient for gradients
+!> \param[out]    cofafu        explicit BC coefficient for diffusive flux
+!> \param[out]    coefav        explicit BC coefficient for gradients
+!> \param[out]    cofafv        explicit BC coefficient for diffusive flux
+!> \param[out]    coefaw        explicit BC coefficient for gradients
+!> \param[out]    cofafw        explicit BC coefficient for diffusive flux
+!> \param[out]    coefbu        implicit BC coefficient for gradients
+!> \param[out]    cofbfu        implicit BC coefficient for diffusive flux
+!> \param[out]    coefbv        implicit BC coefficient for gradients
+!> \param[out]    cofbfv        implicit BC coefficient for diffusive flux
+!> \param[out]    coefbw        implicit BC coefficient for gradients
+!> \param[out]    cofbfw        implicit BC coefficient for diffusive flux
 !> \param[in]     pimpv         Dirichlet value to impose on the normal
 !>                              component
 !> \param[in]     qimpv         Flux value to impose on the
@@ -3214,6 +3205,15 @@ subroutine set_generalized_sym_scalar &
 !> \param[in]     hint          Internal exchange coefficient
 !> \param[in]     normal        normal
 !_______________________________________________________________________________
+
+subroutine set_generalized_sym_scalar &
+ ( coefau, cofafu,                                                &
+   coefav, cofafv,                                                &
+   coefaw, cofafw,                                                &
+   coefbu, cofbfu,                                                &
+   coefbv, cofbfv,                                                &
+   coefbw, cofbfw,                                                &
+   pimpv , qimpv , vect  , hint, normal)
 
 !===============================================================================
 ! Module files
@@ -3293,10 +3293,6 @@ end subroutine set_generalized_sym_scalar
 
 !===============================================================================
 
-subroutine set_generalized_sym_vector &
-           !=========================
- ( coefa , cofaf, coefb , cofbf, pimpv, qimpv, hint, normal)
-
 !-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
@@ -3313,6 +3309,9 @@ subroutine set_generalized_sym_vector &
 !> \param[in]     hint          Internal exchange coefficient
 !> \param[in]     normal        normal
 !_______________________________________________________________________________
+
+subroutine set_generalized_sym_vector &
+ ( coefa , cofaf, coefb , cofbf, pimpv, qimpv, hint, normal)
 
 !===============================================================================
 ! Module files
@@ -3363,10 +3362,6 @@ end subroutine set_generalized_sym_vector
 
 !===============================================================================
 
-subroutine set_convective_outlet_scalar &
-           !===========================
- ( coefa , cofaf, coefb , cofbf, pimp  , cfl   , hint)
-
 !-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
@@ -3380,6 +3375,9 @@ subroutine set_convective_outlet_scalar &
 !> \param[in]     cfl           Local Courant number used to convect
 !> \param[in]     hint          Internal exchange coefficient
 !_______________________________________________________________________________
+
+subroutine set_convective_outlet_scalar &
+ ( coefa , cofaf, coefb , cofbf, pimp  , cfl   , hint)
 
 !===============================================================================
 ! Module files
@@ -3410,10 +3408,6 @@ end subroutine
 
 !===============================================================================
 
-subroutine set_convective_outlet_vector &
-           !===========================
- ( coefa , cofaf, coefb , cofbf, pimpv  , cflv  , hint)
-
 !-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
@@ -3427,6 +3421,9 @@ subroutine set_convective_outlet_vector &
 !> \param[in]     cflv          Local Courant number used to convect
 !> \param[in]     hint          Internal exchange coefficient
 !_______________________________________________________________________________
+
+subroutine set_convective_outlet_vector &
+ ( coefa , cofaf, coefb , cofbf, pimpv  , cflv  , hint)
 
 !===============================================================================
 ! Module files
@@ -3478,10 +3475,6 @@ end subroutine
 
 !===============================================================================
 
-subroutine set_convective_outlet_vector_ggdh &
-           !================================
- ( coefa , cofaf, coefb , cofbf, pimpv  , cflv  , hint )
-
 !-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
@@ -3495,6 +3488,9 @@ subroutine set_convective_outlet_vector_ggdh &
 !> \param[in]     cflv          Local Courant number used to convect
 !> \param[in]     hint          Internal exchange coefficient
 !_______________________________________________________________________________
+
+subroutine set_convective_outlet_vector_ggdh &
+ ( coefa , cofaf, coefb , cofbf, pimpv  , cflv  , hint )
 
 !===============================================================================
 ! Module files

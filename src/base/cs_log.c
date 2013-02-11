@@ -209,13 +209,15 @@ _log_strpad(char        *dest,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \fn size_t cs_log_strlen(const char  *str)
+ *
  * \brief Count printable length of a character string.
  *
  * This should also include UTF-8 strings.
  *
  * \param[in]  str  pointer to printable string
  *
- * \return  printable length of character string
+ * \return  printable length of character string.
  *----------------------------------------------------------------------------*/
 
 size_t

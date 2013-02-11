@@ -64,7 +64,7 @@
 !> before entering the
 !> the routine. It is not needed to do it in the routine (waste of CPU time).
 !>
-!> For stability reasons, \CS will not add -crvimp directly to the
+!> For stability reasons, Code_Saturne will not add -crvimp directly to the
 !> diagonal of the matrix, but Max(-crvimp,0). This way, the crvimp term is
 !> treated implicitely only if it strengthens the diagonal of the matrix.
 !> However, when using the second-order in time scheme, this limitation cannot
@@ -90,7 +90,7 @@
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     ncepdp        number of cells with head loss terms
-!> \param[in]     ncssmp        number of cells with mass source terms
+!> \param[in]     ncesmp        number of cells with mass source terms
 !> \param[in]     ivar          index number of the current variable
 !> \param[in]     icepdc        index number of cells with head loss terms
 !> \param[in]     icetsm        index number of cells with mass source terms
@@ -110,8 +110,6 @@
 !_______________________________________________________________________________
 
 subroutine ustsnv &
-!================
-
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   ,                                                       &
    icepdc , icetsm , itypsm ,                                     &

@@ -36,6 +36,8 @@
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[in]     itrale        number of the current ALE iteration
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     impale        indicator of node displacement
 !> \param[in]     ialtyb        ALE Boundary type
@@ -49,8 +51,6 @@
 !> \param[in,out] xyzno0        nodes coordinates of the initial mesh
 !_______________________________________________________________________________
 subroutine alemav &
-!================
-
  ( itrale ,                                                       &
    nvar   , nscal  ,                                              &
    impale , ialtyb ,                                              &
