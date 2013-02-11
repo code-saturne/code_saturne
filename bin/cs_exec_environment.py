@@ -896,7 +896,6 @@ class mpi_environment:
                                'MPICH1':self.__init_mpich1__,
                                'OpenMPI':self.__init_openmpi__,
                                'LAM_MPI':self.__init_lam__,
-                               'BGL_MPI':self.__init_bgl__,
                                'BGP_MPI':self.__init_bgp__,
                                'BGQ_MPI':self.__init_bgq__,
                                'HP_MPI':self.__init_hp_mpi__,
