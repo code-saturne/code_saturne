@@ -611,6 +611,8 @@ void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
  * INTEGER          NTMABS   -->  max iterations numbers
  * INTEGER          NTCABS   -->  current iteration number
  * DOUBLE PRECISION TTCABS   -->  current physical time
+ * DOUBLE PRECISION TTMABS   -->  max physical time
+ * DOUBLE PRECISION TTPABS   -->  physical time at calculation beginning
  * DOUBLE PRECISION XYZCEN   -->  cell's gravity center
  * DOUBLE PRECISION RTP      -->  variables and scalars array
  * DOUBLE PRECISION PROPCE   -->  property array
@@ -621,6 +623,8 @@ void CS_PROCF (uiprof, UIPROF)(const int    *const ncelet,
                                const int    *const ntmabs,
                                const int    *const ntcabs,
                                const double *const ttcabs,
+                               const double *const ttmabs,
+                               const double *const ttpabs,
                                const double *const xyzcen,
                                const double *const rtp,
                                const double *const propce);

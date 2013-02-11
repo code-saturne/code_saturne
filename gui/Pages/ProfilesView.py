@@ -199,9 +199,10 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         self.DropList.setEditTriggers(QAbstractItemView.NoEditTriggers)
 
         # Combo items
-        self.modelFreq = ComboModel(self.comboBoxFreq, 2, 1)
+        self.modelFreq = ComboModel(self.comboBoxFreq, 3, 1)
         self.modelFreq.addItem(self.tr("at the end of the calculation"), "end")
         self.modelFreq.addItem(self.tr("at each 'n' time steps"), "frequency")
+        self.modelFreq.addItem(self.tr("Output every 'x' seconds"), 'time_value')
 
         self.modelFormat = ComboModel(self.comboBoxFormat, 2, 1)
         self.modelFormat.addItem(self.tr(".dat"), "DAT")
@@ -223,6 +224,10 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         validatorFreq.setExclusiveMin(True)
         self.lineEditFreq.setValidator(validatorFreq)
 
+        validatorFreqT = DoubleValidator(self.lineEditFreqTime, min=0.)
+        validatorFreqT.setExclusiveMin(True)
+        self.lineEditFreqTime.setValidator(validatorFreqT)
+
         validatorNbPoint = IntValidator(self.lineEditNbPoint, min=0)
         self.lineEditNbPoint.setValidator(validatorNbPoint)
 
@@ -243,7 +248,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         #update list of profiles for view from xml file
         for lab in self.mdl.getProfilesLabelsList():
             self.entriesNumber = self.entriesNumber + 1
-            label, title, format, list, freq, formula, nb_point = self.mdl.getProfileData(lab)
+            label, title, format, list, choice, freq, formula, nb_point = self.mdl.getProfileData(lab)
             self.__insertProfile(label, list)
 
         setGreenColor(self.pushButtonFormula, True)
@@ -283,14 +288,28 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         if choice == "end":
             nfreq = -1
             self.lineEditFreq.setText(QString(str(nfreq)))
+            self.lineEditFreq.show()
+            self.lineEditFreqTime.hide()
             self.lineEditFreq.setDisabled(True)
             self.labelBaseName.setText(QString("Filename"))
 
-        if choice == "frequency":
+        elif choice == "frequency":
+            self.lineEditFreq.show()
+            self.lineEditFreqTime.hide()
             nfreq, ok = self.lineEditFreq.text().toInt()
             if nfreq == -1: nfreq = 1
             self.lineEditFreq.setEnabled(True)
             self.lineEditFreq.setText(QString(str(nfreq)))
+            self.labelBaseName.setText(QString("Filename"))
+
+        elif choice == "time_value":
+            self.lineEditFreq.hide()
+            self.lineEditFreqTime.show()
+            if self.lineEditFreqTime.text() == "":
+                nfreq = 1.
+            else:
+                nfreq, ok = self.lineEditFreqTime.text().toDouble()
+            self.lineEditFreqTime.setText(QString(str(nfreq)))
             self.labelBaseName.setText(QString("Filename"))
 
         return choice, nfreq
@@ -309,8 +328,8 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         Return info from the argument entry.
         """
         label = self.modelProfile.getLabel(row)
-        lab, title, format, list, freq, formula, nb_point = self.mdl.getProfileData(label)
-        return label, title, format, list, freq, formula, nb_point
+        lab, title, format, list, choice, freq, formula, nb_point = self.mdl.getProfileData(label)
+        return label, title, format, list, choice, freq, formula, nb_point
 
 
     def __insertProfile(self, label, list):
@@ -363,7 +382,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
             nb_point, ok = self.lineEditNbPoint.text().toInt()
             formula = self.line_formula
 
-            self.mdl.setProfile(label, title, format, var_prof, freq, formula, nb_point)
+            self.mdl.setProfile(label, title, format, var_prof, choice, freq, formula, nb_point)
             self.__eraseEntries()
 
 
@@ -379,7 +398,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
             msg   = self.tr("You must select an existing profile")
             QMessageBox.information(self, title, msg)
         else:
-            label, title, format, list, freq, formula, nb_point = self.__infoProfile(row)
+            label, title, format, list, choice, freq, formula, nb_point = self.__infoProfile(row)
             self.modelProfile.deleteRow(row)
             self.mdl.deleteProfile(label)
             self.__eraseEntries()
@@ -397,7 +416,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
             msg   = self.tr("You must select an existing profile")
             QMessageBox.information(self, title, msg)
         else:
-            old_label, title, format, vlist, freq, formula, nb_point = self.__infoProfile(row)
+            old_label, title, format, vlist, choice, freq, formula, nb_point = self.__infoProfile(row)
 
             var_prof = [str(s) for s in self.modelDrop.stringList()]
             log.debug("slotEditProfile -> %s" % (var_prof,))
@@ -430,7 +449,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
                 nb_point, ok = self.lineEditNbPoint.text().toInt()
                 formula = self.line_formula
 
-                self.mdl.replaceProfile(old_label, new_label, title, format, var_prof, freq, formula, nb_point)
+                self.mdl.replaceProfile(old_label, new_label, title, format, var_prof, choice, freq, formula, nb_point)
                 self.__eraseEntries()
 
 
@@ -442,22 +461,32 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         row = index.row()
         log.debug("slotSelectProfile -> %s" % (row,))
 
-        label, title, format, liste, freq, formula, nb_point = self.__infoProfile(row)
+        label, title, format, liste, choice, freq, formula, nb_point = self.__infoProfile(row)
         self.line_formula = formula
 
         self.lineEditTitle.setText(QString(str(title)))
         self.lineEditBaseName.setText(QString(str(label)))
         self.modelFormat.setItem(str_model=format)
 
-        if freq >= 1:
-            self.modelFreq.setItem(str_model='frequency')
+        self.modelFreq.setItem(str_model=choice)
+        if choice == "end":
+            self.lineEditFreq.show()
+            self.lineEditFreqTime.hide()
+            self.lineEditFreq.setText(QString(str("-1")))
+            self.lineEditFreq.setDisabled(True)
+            self.labelBaseName.setText(QString("Filename"))
+
+        elif choice == "frequency":
+            self.lineEditFreq.show()
+            self.lineEditFreqTime.hide()
             self.lineEditFreq.setEnabled(True)
             self.lineEditFreq.setText(QString(str(freq)))
             self.labelBaseName.setText(QString("Filename"))
-        else:
-            self.modelFreq.setItem(str_model='end')
-            self.lineEditFreq.setText(QString(str("-1")))
-            self.lineEditFreq.setDisabled(True)
+
+        elif choice == "time_value":
+            self.lineEditFreq.hide()
+            self.lineEditFreqTime.show()
+            self.lineEditFreqTime.setText(QString(str(freq)))
             self.labelBaseName.setText(QString("Filename"))
 
         self.lineEditNbPoint.setText(QString(str(nb_point)))
@@ -496,6 +525,8 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         self.lineEditBaseName.setText(QString(str("")))
         self.lineEditNbPoint.setText(QString(str("")))
 
+        self.lineEditFreq.show()
+        self.lineEditFreqTime.hide()
         self.modelFreq.setItem(str_model='end')
         self.lineEditFreq.setText(QString(str("-1")))
         self.lineEditFreq.setDisabled(True)

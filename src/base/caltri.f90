@@ -855,7 +855,7 @@ if (itrale.gt.0) then
     call uiprof                                                   &
     !==========
   ( ncelet , ncel,                                                &
-    ntmabs, ntcabs, ttcabs,                                       &
+    ntmabs, ntcabs, ttcabs, ttmabs, ttpabs,                       &
     xyzcen, ra(irtp), ra(ipropc) )
   endif
 

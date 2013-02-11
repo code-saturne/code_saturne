@@ -181,13 +181,12 @@ class ProfilesModel(Model):
 
 
     @Variables.undoGlobal
-    def setProfile(self, label, title, format, lst, freq, formula, NbPoint):
+    def setProfile(self, label, title, format, lst, choice, freq, formula, NbPoint):
         """
         Public method.
         Sets data to create one profile named I{label}.
         """
         self.isNotInList(label, self.getProfilesLabelsList())
-        self.isInt(freq)
         self.isInt(NbPoint)
 
         label_xml = label + self.suffix
@@ -196,6 +195,7 @@ class ProfilesModel(Model):
         for var in lst:
             self.isInList(var, self.__var_prop_list)
             node.xmlAddChild('var_prop', name=self.dicoLabel2Name[var])
+        node.xmlSetData('output_type', choice)
         node.xmlSetData('output_frequency', freq)
         node['title'] = title
         self.__setFormula(label, formula)
@@ -203,7 +203,7 @@ class ProfilesModel(Model):
 
 
     @Variables.undoGlobal
-    def replaceProfile(self, old_label, label, title, format, lst, freq, formula, NbPoint):
+    def replaceProfile(self, old_label, label, title, format, lst, choice, freq, formula, NbPoint):
         """
         Public method.
         Replaces data from I{old_label} profile
@@ -212,7 +212,6 @@ class ProfilesModel(Model):
         self.isInList(old_label,self.getProfilesLabelsList())
         if label != old_label:
             self.isNotInList(label, self.getProfilesLabelsList())
-        self.isInt(freq)
         self.isInt(NbPoint)
 
         old_label_xml = old_label + self.suffix
@@ -227,6 +226,7 @@ class ProfilesModel(Model):
                 self.isInList(var, self.__var_prop_list)
                 node.xmlAddChild('var_prop', name=self.dicoLabel2Name[var])
             node['label'] = label_xml
+            node.xmlSetData('output_type', choice)
             node.xmlSetData('output_frequency', freq)
             node['title'] = title
             self.__setFormula(label, formula)
@@ -257,7 +257,11 @@ class ProfilesModel(Model):
         lst = []
         label_xml = label + self.suffix
         node = self.node_prof.xmlGetNode('profile', label=label_xml)
-        freq = node.xmlGetInt('output_frequency')
+        choice = node.xmlGetString('output_type')
+        if choice == "time_value":
+            freq = node.xmlGetDouble('output_frequency')
+        else:
+            freq = node.xmlGetInt('output_frequency')
         title = node['title']
         format = 'DAT'
         f_node = node.xmlGetChildNode('format')
@@ -272,7 +276,7 @@ class ProfilesModel(Model):
         label_xml = node['label']
         label = label_xml
 
-        return label, title, format, lst, freq, formula, NbPoint
+        return label, title, format, lst, choice, freq, formula, NbPoint
 
 
 #-------------------------------------------------------------------------------

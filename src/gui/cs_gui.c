@@ -1555,6 +1555,33 @@ static double _get_profile_coordinate(const int id, const char *const x)
 }
 
 /*----------------------------------------------------------------------------
+ * Return the type of output frequency for 1D profile
+ *
+ * parameters:
+ *   id           -->  number of average
+ *----------------------------------------------------------------------------*/
+
+static char *_get_profile_output_type(const int id)
+{
+    char *path = NULL;
+    char *name = NULL;
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path, 2, "analysis_control", "profiles");
+    cs_xpath_add_element_num(&path, "profile", id + 1);
+    cs_xpath_add_element(&path, "output_type");
+    cs_xpath_add_function_text(&path);
+
+    name = cs_gui_get_text_value(path);
+    if (name == NULL)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Invalid xpath: %s\n name not found"), path);
+    BFT_FREE(path);
+
+    return name;
+}
+
+/*----------------------------------------------------------------------------
  * Get output format for 1D profile
  *
  * parameters:
@@ -5236,6 +5263,8 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
  * INTEGER          NTMABS   -->  max iterations numbers
  * INTEGER          NTCABS   -->  current iteration number
  * DOUBLE PRECISION TTCABS   -->  current physical time
+ * DOUBLE PRECISION TTMABS   -->  max physical time
+ * DOUBLE PRECISION TTPABS   -->  physical time at calculation beginning
  * DOUBLE PRECISION XYZCEN   -->  cell's gravity center
  * DOUBLE PRECISION RTP      -->  variables and scalars array
  * DOUBLE PRECISION PROPCE   -->  property array
@@ -5246,6 +5275,8 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
                                 const int    *const ntmabs,
                                 const int    *const ntcabs,
                                 const double *const ttcabs,
+                                const double *const ttmabs,
+                                const double *const ttpabs,
                                 const double *const xyzcen,
                                 const double *const rtp,
                                 const double *const propce)
@@ -5256,16 +5287,20 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
   char *name = NULL;
   char *path = NULL;
   char *formula = NULL;
+  char *output_type = NULL;
 
   int output_format = 0;
   int fic_nbr = 0;
   int i, ii, iii, j;
   int npoint, iel1, irang1, iel, irangv;
   int nvar_prop, nvar_prop4, output_frequency;
+  double time_output;
   double x1 = 0., y1 = 0., z1 = 0.;
   double xx, yy, zz, xyz[3];
   double a, aa;
   double *array;
+  static int ipass = 0;
+  bool status;
 
   mei_tree_t *ev_formula  = NULL;
 
@@ -5281,12 +5316,25 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
 
     /* for each profile, check the output frequency */
 
-    output_frequency = _get_profile_coordinate(i, "output_frequency");
     output_format = _get_profile_format(i);
+    output_type = _get_profile_output_type(i);
+    time_output = 0.;
+    status = false;
 
-    if ((output_frequency == -1 && *ntmabs == *ntcabs) ||
-        (output_frequency > 0 && (*ntcabs % output_frequency) == 0)) {
+    if (cs_gui_strcmp(output_type, "time_value")) {
+      time_output = _get_profile_coordinate(i, "output_frequency");
+      int ifreqs = (int)((*ttcabs - *ttpabs) / time_output);
+      if ((ifreqs > ipass) || (*ttcabs >= *ttmabs && *ttmabs > 0.))
+        status = true;
+    } else {
+      output_frequency = (int) _get_profile_coordinate(i, "output_frequency");
+      if ((*ntmabs == *ntcabs) || (output_frequency > 0 && (*ntcabs % output_frequency) == 0))
+        status = true;
+    }
 
+    if (status) {
+
+      ipass++;
       path = cs_xpath_init_path();
       cs_xpath_add_elements(&path, 2, "analysis_control", "profiles");
       cs_xpath_add_element_num(&path, "profile", i+1);
@@ -5321,7 +5369,7 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
         filename = _get_profile("label", i);
         title    = _get_profile("title", i);
 
-        if (output_frequency > 0) {
+        if (output_frequency > 0 || time_output > 0.) {
 
           char buf1[5];
           const char buffer[5] = "%.4i";

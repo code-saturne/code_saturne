@@ -266,6 +266,14 @@ class XMLinit(Variables):
         # Profiles
         compt = 0
         for node in self.case.xmlGetNodeList('profile'):
+            if node:
+                n = node.xmlGetNode("output_type")
+                if n == None:
+                    freq = node.xmlGetInt("output_frequency")
+                    if freq == -1:
+                        node.xmlSetData('output_type', "end")
+                    else:
+                        node.xmlSetData('output_type', "frequency")
             nodeInit = node.xmlGetNode('x1')
             if nodeInit:
                 node.xmlRemoveNode()
