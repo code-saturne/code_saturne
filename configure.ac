@@ -297,7 +297,7 @@ AC_SUBST(enable_shared)
 cs_special_user_link=
 if test "x$enable_shared" = "xno" ; then
   case "$host_os" in
-    linux* | *bsd* | solaris2.* )
+    linux* | *bsd* | solaris2.* | cnk* )
       if test "x$auto_flags" = "xyes" ; then
         LDFLAGS="${LDLAGS} -Wl,--allow-multiple-definition"
       fi
