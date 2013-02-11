@@ -37,7 +37,6 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     iterns        index of the iteration on Navier-Stokes
@@ -64,8 +63,6 @@
 
 
 subroutine navstv &
-!================
-
  ( nvar   , nscal  , iterns , icvrge , itrale ,                   &
    isostd ,                                                       &
    dt     , tpucou , rtp    , rtpa   , propce , propfa , propfb , &

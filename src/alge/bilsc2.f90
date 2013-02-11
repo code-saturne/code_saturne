@@ -52,8 +52,6 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
 !> \param[in]     idtvar        indicator of the temporal scheme
 !> \param[in]     ivar          index of the current variable
 !> \param[in]     iconvp        indicator
@@ -103,13 +101,13 @@
 !>                               - thetap = 1: implicit scheme
 !> \param[in]     pvar          solved variable (current time step)
 !> \param[in]     pvara         solved variable (previous time step)
-!> \param[in]     coefa         boundary condition array for the variable
+!> \param[in]     coefap        boundary condition array for the variable
 !>                               (Explicit part)
-!> \param[in]     coefb         boundary condition array for the variable
+!> \param[in]     coefbp        boundary condition array for the variable
 !>                               (Impplicit part)
-!> \param[in]     cofaf         boundary condition array for the diffusion
+!> \param[in]     cofafp        boundary condition array for the diffusion
 !>                               of the variable (Explicit part)
-!> \param[in]     cofbf         boundary condition array for the diffusion
+!> \param[in]     cofbfp        boundary condition array for the diffusion
 !>                               of the variable (Implicit part)
 !> \param[in]     flumas        mass flux at interior faces
 !> \param[in]     flumab        mass flux at boundary faces
@@ -121,8 +119,6 @@
 !_______________________________________________________________________________
 
 subroutine bilsc2 &
-!================
-
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    ipp    , iwarnp ,                                              &
@@ -151,7 +147,6 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
 integer          idtvar
 integer          ivar   , iconvp , idiffp , nswrgp , imligp
 integer          ircflp , ischcp , isstpp

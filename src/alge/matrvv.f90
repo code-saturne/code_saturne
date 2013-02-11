@@ -78,8 +78,6 @@
 !_______________________________________________________________________________
 
 subroutine matrvv &
-!================
-
  ( ncelet , ncel   , nfac   , nfabor ,                            &
    iconvp , idiffp , ndircp , isym   , nfecra ,                   &
    thetap ,                                                       &

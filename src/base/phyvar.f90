@@ -31,7 +31,7 @@
 !>
 !> Some user subroutines are called which allows the setting of \f$ \rho \f$,
 !> \f$ \mu \f$, etc.
-
+!>
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -52,8 +52,6 @@
 
 
 subroutine phyvar &
-!================
-
  ( nvar   , nscal  ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  )

@@ -88,8 +88,6 @@
 !_______________________________________________________________________________
 
 subroutine cs_user_initialization &
-!================================
-
  ( nvar   , nscal  ,                                              &
    dt     , rtp    , propce , propfa , propfb )
 

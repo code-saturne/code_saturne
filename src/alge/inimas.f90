@@ -61,8 +61,8 @@
 !>                               - 2 if we deal with a tensor field such as the
 !>                                 Reynolds stresses
 !> \param[in]     itypfl        indicator (take rho into account or not)
-!>                               - 1 compute \$f \rho\vect{u}\cdot\vect{S} \f$
-!>                               - 0 compute \$f \vect{u}\cdot\vect{S} \f$
+!>                               - 1 compute \f$ \rho\vect{u}\cdot\vect{S} \f$
+!>                               - 0 compute \f$ \vect{u}\cdot\vect{S} \f$
 !> \param[in]     iflmb0        the mass flux is set to 0 on walls and
 !>                               symmetries if = 1
 !> \param[in]     init          the mass flux is initialize to 0 if > 0
@@ -94,17 +94,23 @@
 !> \param[in]     ux            variable in the x direction
 !> \param[in]     uy            variable in the y direction
 !> \param[in]     uz            variable in the z direction
-!> \param[in]     coefa*        boundary condition array for the variable
-!>                               (Explicit part - for the component * )
-!> \param[in]     coefb*        boundary condition array for the variable
-!>                               (Impplicit part - for the component *)
+!> \param[in]     coefax        boundary condition array for the variable
+!>                               (Explicit part - for the component x)
+!> \param[in]     coefay        boundary condition array for the variable
+!>                               (Explicit part - for the component y)
+!> \param[in]     coefaz        boundary condition array for the variable
+!>                               (Explicit part - for the component z)
+!> \param[in]     coefbx        boundary condition array for the variable
+!>                               (Impplicit part - for the component x)
+!> \param[in]     coefby        boundary condition array for the variable
+!>                               (Impplicit part - for the component y)
+!> \param[in]     coefbz        boundary condition array for the variable
+!>                               (Impplicit part - for the component z)
 !> \param[in,out] flumas        interior mass flux \f$ \dot{m}_\fij \f$
 !> \param[in,out] flumab        border mass flux \f$ \dot{m}_\fib \f$
 !_______________________________________________________________________________
 
 subroutine inimas &
-!================
-
  ( nvar   , nscal  ,                                              &
    ivar1  , ivar2  , ivar3  , imaspe , itypfl ,                   &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgu , imligu , &

@@ -24,7 +24,7 @@
 ! Function:
 ! ---------
 
-!> \fn getfac
+!> \fn subroutine getfac
 !> \brief Build the list of interior faces matching a criteria string.
 !-------------------------------------------------------------------------------
 
@@ -35,12 +35,10 @@
 !______________________________________________________________________________!
 !> \param[in]     fstr          criteria string
 !> \param[out]    facnb         number of selected faces
-!> \param[out     faces         selected faces
+!> \param[out]    faces         selected faces
 !_______________________________________________________________________________
 
 subroutine getfac &
-!=================
-
  ( fstr , facnb, faces)
 
 !===============================================================================
@@ -88,12 +86,10 @@ end subroutine
 !______________________________________________________________________________!
 !> \param[in]     fstr          criteria string
 !> \param[out]    facnb         number of selected faces
-!> \param[out     faces         selected faces
+!> \param[out]    faces         selected faces
 !_______________________________________________________________________________
 
 subroutine getfbr &
-!=================
-
  ( fstr , facnb, faces)
 
 !===============================================================================
@@ -141,13 +137,11 @@ end subroutine
 !______________________________________________________________________________!
 !> \param[in]     fstr          criteria string
 !> \param[out]    cellnb        number of selected cells
-!> \param[out     cells         selected cells
+!> \param[out]    cells         selected cells
 !_______________________________________________________________________________
 
 
 subroutine getcel &
-!=================
-
  ( fstr , cellnb, cells)
 
 !===============================================================================
@@ -202,8 +196,6 @@ end subroutine
 !_______________________________________________________________________________
 
 subroutine getceb &
-!=================
-
  ( fstr , ifacnb, bfacnb, ifaces, bfaces )
 
 !===============================================================================
@@ -255,8 +247,6 @@ end subroutine
 !_______________________________________________________________________________
 
 subroutine getfam &
-!=================
-
  ( fstr , famnb, families)
 
 !===============================================================================

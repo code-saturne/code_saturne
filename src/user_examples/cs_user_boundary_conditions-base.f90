@@ -165,8 +165,6 @@
 
 
 subroutine cs_user_boundary_conditions &
-!=====================================
-
  ( nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &

@@ -47,6 +47,7 @@
 !> - an iterative process is used to solve the Poisson equation.
 !> - if the coefficient arak is set to 1, the the Rhie & Chow filter is
 !>   activated.
+!>
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -93,8 +94,6 @@
 !_______________________________________________________________________________
 
 subroutine resopv &
-!================
-
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm , isostd ,                            &
    dt     , rtp    , rtpa   , vel    , vela   ,                   &

@@ -56,12 +56,10 @@
 !>                               - 1 flux reconstruction,
 !>                               - 0 otherwise
 !> \param[in]     iwarnp        verbosity
-!> \param[in]     extrap        coefficient for extrapolation of the gradient
-!> \param[in]     fextx,y,z     body force creating the hydrostatic pressure
-!> \param[in]     pvar          solved variable (pressure)
-!> \param[in]     cofaf         boundary condition array for the diffusion
-!>                               of the variable (Explicit part)
-!> \param[in]     cofbf         boundary condition array for the diffusion
+!> \param[in]     fextx         body force creating the hydrostatic pressure
+!> \param[in]     fexty         body force creating the hydrostatic pressure
+!> \param[in]     fextz         body force creating the hydrostatic pressure
+!> \param[in]     cofbfp        boundary condition array for the diffusion
 !>                               of the variable (Implicit part)
 !> \param[in]     viscf         \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
 !>                               at interior faces for the r.h.s.
@@ -77,8 +75,6 @@
 !_______________________________________________________________________________
 
 subroutine projtv &
-!================
-
  ( init   , inc    , imrgra , nswrgp , imligp , ircflp ,          &
    iwarnp , nfecra ,                                              &
    fextx  , fexty  , fextz  ,                                     &

@@ -332,8 +332,6 @@
 !_______________________________________________________________________________
 
 subroutine usalcl &
-!================
-
  ( itrale ,                                                       &
    nvar   , nscal  ,                                              &
    icodcl , itypfb , ialtyb , impale ,                            &

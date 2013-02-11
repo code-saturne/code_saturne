@@ -35,7 +35,7 @@
 !
 !> - at the second call, a global estimator on Navier Stokes is computed.
 !>   This second call is done after the correction step (resopv).
-
+!>
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -77,7 +77,6 @@
 !>                               velocity pressure coupling
 !> \param[in]     trav          right hand side for the normalizing
 !>                               the residual
-
 !> \param[in]     viscf         visc*surface/dist aux faces internes
 !> \param[in]     viscb         visc*surface/dist aux faces de bord
 !> \param[in]     viscfi        idem viscf pour increments
@@ -89,7 +88,6 @@
 !_______________________________________________________________________________
 
 subroutine predvv &
-!================
  ( iappel ,                                                       &
    nvar   , nscal  , iterns , ncepdp , ncesmp ,                   &
    icepdc , icetsm , itypsm ,                                     &

@@ -50,8 +50,6 @@
 !_______________________________________________________________________________
 
 subroutine d3pint &
-!================
-
  ( indpdf ,                                                       &
    dirmin , dirmax , fdeb   , ffin   , hrec   , tpdf ,            &
    rtp    , propce , w1      )

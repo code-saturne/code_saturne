@@ -74,8 +74,6 @@
 !_______________________________________________________________________________
 
 subroutine vericl &
-!================
-
  ( nvar   , nscal  ,                                              &
    icodcl ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &

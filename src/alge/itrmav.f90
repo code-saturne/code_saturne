@@ -65,7 +65,7 @@
 !> \param[in]     ircflp        indicator
 !>                               - 1 flux reconstruction,
 !>                               - 0 otherwise
-!> \param[in]     iphydr        indicator
+!> \param[in]     iphydp        indicator
 !>                               - 1 hydrostatic pressure taken into account
 !>                               - 0 otherwise
 !> \param[in]     iwarnp        verbosity
@@ -74,11 +74,17 @@
 !> \param[in]     climgp        clipping coeffecient for the computation of
 !>                               the gradient
 !> \param[in]     extrap        coefficient for extrapolation of the gradient
-!> \param[in]     fextx,y,z     body force creating the hydrostatic pressure
+!> \param[in]     fextx         body force creating the hydrostatic pressure
+!> \param[in]     fexty         body force creating the hydrostatic pressure
+!> \param[in]     fextz         body force creating the hydrostatic pressure
 !> \param[in]     pvar          solved variable (pressure)
-!> \param[in]     cofaf         boundary condition array for the diffusion
+!> \param[in]     coefap        boundary condition array for the variable
+!>                               (Explicit part)
+!> \param[in]     coefbp        boundary condition array for the variable
+!>                               (Impplicit part)
+!> \param[in]     cofafp        boundary condition array for the diffusion
 !>                               of the variable (Explicit part)
-!> \param[in]     cofbf         boundary condition array for the diffusion
+!> \param[in]     cofbfp        boundary condition array for the diffusion
 !>                               of the variable (Implicit part)
 !> \param[in]     viscf         \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
 !>                               at interior faces for the r.h.s.
@@ -94,8 +100,6 @@
 !_______________________________________________________________________________
 
 subroutine itrmav &
-!================
-
  ( init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
    iphydp , iwarnp , nfecra ,                                     &
    epsrgp , climgp , extrap ,                                     &

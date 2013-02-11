@@ -44,8 +44,6 @@
 !_______________________________________________________________________________
 
 subroutine post_boundary_thermal_flux &
-!====================================
-
  ( nfbrps , lstfbr ,                                              &
    rtp    , propce , propfb ,                                     &
    bflux )
@@ -250,8 +248,6 @@ end subroutine post_boundary_thermal_flux
 !_______________________________________________________________________________
 
 subroutine post_boundary_temperature &
-!====================================
-
  ( nfbrps , lstfbr ,                                              &
    rtp    , propce , propfb ,                                     &
    btemp )
@@ -421,8 +417,6 @@ end subroutine post_boundary_temperature
 !_______________________________________________________________________________
 
 subroutine post_boundary_nusselt &
-!===============================
-
  ( nfbrps , lstfbr ,                                              &
    rtp    , propce , propfb ,                                     &
    bnussl )
@@ -636,8 +630,6 @@ end subroutine post_boundary_nusselt
 !_______________________________________________________________________________
 
 subroutine post_efforts &
-!======================
-
  ( nfbrps , lstfbr ,                                                    &
    effort )
 
@@ -712,8 +704,6 @@ end subroutine post_efforts
 !_______________________________________________________________________________
 
 subroutine post_efforts_normal &
-!=============================
-
  ( nfbrps , lstfbr ,                                              &
    effnrm )
 
@@ -792,8 +782,6 @@ end subroutine post_efforts_normal
 !_______________________________________________________________________________
 
 subroutine post_efforts_tangential &
-!=================================
-
  ( nfbrps , lstfbr ,                                              &
    effort )
 

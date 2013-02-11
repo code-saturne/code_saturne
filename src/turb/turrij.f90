@@ -60,8 +60,6 @@
 !_______________________________________________________________________________
 
 subroutine turrij &
-!================
-
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &

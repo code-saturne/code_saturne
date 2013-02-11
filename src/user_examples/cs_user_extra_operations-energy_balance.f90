@@ -160,8 +160,6 @@
 
 
 subroutine cs_user_extra_operations &
-!==================================
-
  ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvep   , nivep  , ntersl , nvlsta , nvisbr , &
    itepa  ,                                                       &

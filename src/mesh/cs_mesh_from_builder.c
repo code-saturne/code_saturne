@@ -1594,8 +1594,8 @@ _decompose_data_l(cs_mesh_t          *mesh,
 /*!
  * \brief Transfer mesh builder to mesh structure.
  *
- * \param[in, out]  mesh      pointer to mesh structure
- * \param[in, out]  mb        pointer to mesh builder structure
+ * \param[in, out]  mesh          pointer to mesh structure
+ * \param[in, out]  mesh_builder  pointer to mesh builder structure
  */
 /*----------------------------------------------------------------------------*/
 

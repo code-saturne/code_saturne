@@ -79,8 +79,6 @@
 
 
 subroutine clsyvt &
-!================
-
  ( nvar   , nscal  ,                                              &
    icodcl ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &

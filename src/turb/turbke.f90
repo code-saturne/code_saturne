@@ -61,8 +61,6 @@
 !_______________________________________________________________________________
 
 subroutine turbke &
-!================
-
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &

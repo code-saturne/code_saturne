@@ -37,18 +37,18 @@
 !> It is \b forbidden to modify turbulent viscosity \c visct here
 !> (a specific subroutine is dedicated to that: \ref usvist)
 !>
-!> - icp = 1 must \b{ have been specified }
+!> - icp = 1 must <b> have been specified </b>
 !>    in \ref usipph if we wish to define a variable specific heat
 !>    cp (otherwise: memory overwrite).
 !>
-!> - ivisls = 1 must \b{ have been specified }
+!> - ivisls = 1 must <b> have been specified </b>
 !>    in \ref usipsc if we wish to define a variable viscosity
 !>    \c viscls (otherwise: memory overwrite).
 !>
 !>
 !> \remarks
 !>  - This routine is called at the beginning of each time step
-!>    Thus, \b{ AT THE FIRST TIME STEP } (non-restart case), the only
+!>    Thus, <b> AT THE FIRST TIME STEP </b> (non-restart case), the only
 !>    values initialized before this call are those defined
 !>      - in the GUI or  \ref usipsu (cs_user_parameters.f90)
 !>             - density    (initialized at \c ro0)
@@ -102,8 +102,6 @@
 !_______________________________________________________________________________
 
 subroutine usphyv &
-!================
-
  ( nvar   , nscal  ,                                              &
    ibrom  ,                                                       &
    dt     , rtp    , rtpa   ,                                     &
@@ -799,11 +797,11 @@ end subroutine usphyv
 !>
 !> \section Warnings
 !>
-!> The density \b{ must not } be set here: for the compressible scheme,
+!> The density <b> must not </b> be set here: for the compressible scheme,
 !> it is one of the unknowns, and it can be initialized as such in the user
 !> subroutine \ref cs_user_initialization (rtp array).
 !>
-!> The turbulent viscosity \b{ must not } be modified here (to modify this
+!> The turbulent viscosity <b> must not </b> be modified here (to modify this
 !> variable, use the user subroutine \ref usvist)
 !>
 !> To set a variable isobaric specific heat, the integer \c icp must
@@ -848,8 +846,6 @@ end subroutine usphyv
 !_______________________________________________________________________________
 
 subroutine uscfpv &
-!================
-
  ( nvar   , nscal  ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb )
 
@@ -1948,8 +1944,6 @@ end subroutine uselph
 !_______________________________________________________________________________
 
 subroutine usvist &
-!================
-
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -2297,8 +2291,6 @@ end subroutine ussmag
 !_______________________________________________________________________________
 
 subroutine usvima &
-!================
-
  ( nvar   , nscal  ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    viscmx , viscmy , viscmz )

@@ -611,7 +611,7 @@ contains
   !> \param[in]  id            field id
   !> \param[in]  have_flux_bc  if .true., flux BC coefficients
   !>                           (coefaf and coefbf) are added
-  !> \param[in]  have_flux_bc  if .true., BC coefficients used in divergence
+  !> \param[in]  have_mom_bc   if .true., BC coefficients used in divergence
   !>                           term (coefad and coefbd) are added
 
   subroutine field_allocate_bc_coeffs(id, have_flux_bc, have_mom_bc)
@@ -650,7 +650,7 @@ contains
   !> \param[in]  id            field id
   !> \param[in]  have_flux_bc  if .true., flux BC coefficients
   !>                           (coefaf and coefbf) are initialize
-  !> \param[in]  have_flux_bc  if .true., BC coefficients used in divergence
+  !> \param[in]  have_mom_bc   if .true., BC coefficients used in divergence
   !>                           term (coefad and coefbd) are initialized
 
   subroutine field_init_bc_coeffs(id, have_flux_bc, have_mom_bc)
@@ -726,7 +726,7 @@ contains
 
   !> \param[in]   f_id     field id
   !> \param[in]   k_id     id of associated key
-  !> \param[out]  k_value  integer value associated with key id for this field
+  !> \param[out]  is_set   is .true. if the field is set
 
   subroutine field_is_key_set(f_id, k_id, is_set)
 

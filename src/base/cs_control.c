@@ -72,7 +72,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
- * \file cs_control_file.c
+ * \file cs_control.c
  *
  *  \brief Handle control file usable for interactive change of stop,
  *         post-processing or checkpoint behavior.

@@ -57,7 +57,6 @@
 !_______________________________________________________________________________
 
 subroutine cs_user_les_inflow_init (nent)
-!=================================
 
 !===============================================================================
 
@@ -172,7 +171,6 @@ end subroutine cs_user_les_inflow_init
 !_______________________________________________________________________________
 
 subroutine cs_user_les_inflow_define &
-!===================================
 ( nument, typent, nelent, iverbo,                                             &
   nfbent, lfbent,                                                             &
   vitent, enrent, dspent                                                      &
@@ -283,14 +281,12 @@ end subroutine cs_user_les_inflow_define
 !> \param[in]     propce        physical properties at cells
 !> \param[in]     propfa        physical properties at faces
 !> \param[in]     propfb        physical properties at bound. faces
-!> \param[out]    uent          mean velocity at the inlet faces
+!> \param[out]    uvwent        mean velocity at the inlet faces
 !> \param[out]    rijent        turb. kin. ener. at the inlet faces
 !> \param[out]    epsent        turb. dissipation at the inlet faces
 !_______________________________________________________________________________
 
 subroutine cs_user_les_inflow_advanced &
-!=====================================
-
  ( nument , nfbent ,                                              &
    nvar   , nscal ,                                               &
    lfbent ,                                                       &

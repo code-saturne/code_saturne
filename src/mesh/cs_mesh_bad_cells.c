@@ -641,11 +641,11 @@ _bad_cells_post_function(void       *mesh,
  * may not always accept both a fixed and time-varying instance of a
  * given variable.
  *
- * \param [in]  type_flag_mask   criterion type mask (0 for all)
- * \param [in]  compute          0: never compute;
+ * \param[in]   type_flag_mask   criterion type mask (0 for all)
+ * \param[in]   compute          0: never compute;
  *                               1: compute at initialization;
  *                               2: compute at each time step
- *              visualize        0: never visualize
+ * \param[in]   visualize        0: never visualize
  *                               1: visualize at initialization;
  *                               2: visualize at each time step
  */

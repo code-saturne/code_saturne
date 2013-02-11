@@ -162,15 +162,13 @@ contains
   !> \param[in]  var_dim        1 for scalar, 3 for vector, 6/9 for tensor
   !> \param[in]  interleaved    .true. if values interleaved
   !>                            (ignored if scalar)
-  !> \param[in]  interleaved    if a vector or tensor, true for interlaced
-  !>                            values, false otherwise
   !> \param[in]  use_parent     .true. if values are defined on "parent" mesh,
   !>                            .false. if values are defined directly on
   !>                            post-processing mesh
   !> \param[in]  nt_cur_abs     current time step number, or -1 if
   !>                            time-independent
   !> \param[in]  t_cur_abs      current physical time
-  !> \param[in]  cell_vals      cell values array
+  !> \param[in]  cel_vals       cell values array
   !> \param[in]  i_face_vals    interior face values array
   !> \param[in]  b_face_vals    boundary face values array
 

@@ -64,7 +64,6 @@
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
-!-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
 !  mode           name          role                                           !
@@ -124,10 +123,13 @@
 !> \param[in]     imgrp         indicator
 !>                               - 0 no multi-grid
 !>                               - 1 otherwise
+!> \param[in]     ncymxp        max. number of multigrid cycles
+!> \param[in]     nitmfp        number of equivalent iterations on fine mesh
 !> \param[in]     ipp           index of the variable for post-processing
 !> \param[in]     iwarnp        verbosity
 !> \param[in]     blencp        fraction of upwinding
 !> \param[in]     epsilp        precision pour resol iter
+!> \param[in]     epsrsp        relative precision for the iterative process
 !> \param[in]     epsrgp        relative precision for the gradient
 !>                               reconstruction
 !> \param[in]     climgp        clipping coeffecient for the computation of
@@ -181,8 +183,6 @@
 !_______________________________________________________________________________
 
 subroutine codits &
-!================
-
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &

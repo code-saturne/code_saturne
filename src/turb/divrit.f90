@@ -50,7 +50,6 @@
 !_______________________________________________________________________________
 
 subroutine divrit &
-!================
  ( nvar   , nscal  ,                                              &
    iscal  , itspdv ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &

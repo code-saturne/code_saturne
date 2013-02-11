@@ -116,13 +116,13 @@
 !>                               - thetap = 1: implicit scheme
 !> \param[in]     pvar          solved variable (current time step)
 !> \param[in]     pvara         solved variable (previous time step)
-!> \param[in]     coefa         boundary condition array for the variable
+!> \param[in]     coefap        boundary condition array for the variable
 !>                               (Explicit part)
-!> \param[in]     coefb         boundary condition array for the variable
+!> \param[in]     coefbp        boundary condition array for the variable
 !>                               (Impplicit part)
-!> \param[in]     cofaf         boundary condition array for the diffusion
+!> \param[in]     cofafp        boundary condition array for the diffusion
 !>                               of the variable (Explicit part)
-!> \param[in]     cofbf         boundary condition array for the diffusion
+!> \param[in]     cofbfp        boundary condition array for the diffusion
 !>                               of the variable (Implicit part)
 !> \param[in]     flumas        mass flux at interior faces
 !> \param[in]     flumab        mass flux at boundary faces
@@ -140,8 +140,6 @@
 !_______________________________________________________________________________
 
 subroutine bilsca &
-!================
-
  ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &

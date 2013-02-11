@@ -80,8 +80,6 @@
 !_______________________________________________________________________________
 
 subroutine sootsc &
-!================
-
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
