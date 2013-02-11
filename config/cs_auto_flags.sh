@@ -383,19 +383,13 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
     if test "$?" = "0" ; then
       # Default compiler flags (we assume that MPI wrappers are used)
       cs_ibm_bg_type=`grep 'Blue Gene' $outfile | sed -e 's/.*Blue Gene\/\([A-Z]\).*/\1/'`
-      if test "x$cs_ibm_bg_type" = "xL" ; then
-        cppflags_default="-I/bgl/BlueLight/ppcfloor/bglsys/include"
-        cflags_default="-qlanglvl=stdc99"
-        cflags_default_opt="-O3"
-        cflags_default_hot="-O3 -qhot"
-        cflags_default_dbg="-g"
-      elif test "x$cs_ibm_bg_type" = "xP" ; then
+      if test "x$cs_ibm_bg_type" = "xP" ; then
         cppflags_default="-I/bgsys/drivers/ppcfloor/arch/include"
         cflags_default="-qlanglvl=extc99"
         cflags_default_opt="-O3"
         cflags_default_hot="-O3 -qhot"
         cflags_default_dbg="-g"
-      else
+      elif test -f /bgsys/drivers/ppcfloor/cnk/bin/bgq_kernel.elf ; then
         cs_ibm_bg_type="Q"
         cppflags_default=""
         cflags_default=""                    # "-qlanglvl=extc99" by default
@@ -749,12 +743,7 @@ if test "x$cs_cxx_compiler_known" != "xyes" ; then
     grep 'Blue Gene' $outfile > /dev/null
     if test "$?" = "0" ; then
       # Default compiler flags (we assume that MPI wrappers are used)
-      if test "x$cs_ibm_bg_type" = "xL" ; then
-        cxxflags_default=""
-        cxxflags_default_opt="-O3"
-        cxxflags_default_hot="-O3 -qhot"
-        cxxflags_default_dbg="-g"
-      elif test "x$cs_ibm_bg_type" = "xP" ; then
+      if test "x$cs_ibm_bg_type" = "xP" ; then
         cxxflags_default=""
         cxxflags_default_opt="-O3"
         cxxflags_default_hot="-O3 -qhot"
@@ -1133,12 +1122,7 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
     if test "$?" = "0" ; then
 
       # Default compiler flags (we assume that MPI wrappers are used)
-      if test "$cs_ibm_bg_type" = "L" ; then
-        fcflags_default="-qextname -qsuffix=cpp=f90"
-        fcflags_default_dbg="-g"
-        fcflags_default_opt="-O3"
-        fcflags_default_hot="-O3 -qhot"
-      elif test "$cs_ibm_bg_type" = "P" ; then
+      if test "$cs_ibm_bg_type" = "P" ; then
         fcflags_default="-qextname -qsuffix=cpp=f90"
         fcflags_default_dbg="-g"
         fcflags_default_opt="-O3"

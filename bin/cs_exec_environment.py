@@ -856,7 +856,6 @@ MPI_MPMD_none       = 0
 MPI_MPMD_mpiexec    = (1<<0) # mpiexec colon-separated syntax
 MPI_MPMD_configfile = (1<<1) # mpiexec -configfile syntax
 MPI_MPMD_script     = (1<<2)
-MPI_MPMD_execve     = (1<<3)
 
 class mpi_environment:
 
@@ -1285,30 +1284,6 @@ class mpi_environment:
         # Info commands
 
         self.info_cmds = ['laminfo -all']
-
-    #---------------------------------------------------------------------------
-
-    def __init_bgl__(self, p, resource_info=None, wdir = None):
-
-        """
-        Initialize for Blue Gene/L environment.
-        """
-
-        # Set base executable path
-
-        self.mpiexec = '/bgl/BlueLight/ppcfloor/bglsys/mpi/mpirun'
-
-        # Determine processor count and MPMD handling
-
-        self.mpiexec_n = None
-        self.mpmd = MPI_MPMD_execve
-
-        # Other options to add
-
-        self.mpiexec_exe = '-exe'
-        self.mpiexec_args = '-args'
-
-        # Info commands
 
     #---------------------------------------------------------------------------
 

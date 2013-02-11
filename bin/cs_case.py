@@ -724,115 +724,6 @@ class case:
 
     #---------------------------------------------------------------------------
 
-    def generate_solver_execve_launcher(self, n_procs, mpi_env):
-        """
-        Generate execve-based launcher (for machines such as Blue Gene/L).
-        """
-
-        e_path = os.path.join(self.exec_dir, 'mpmd_exec.c')
-        o_path = os.path.join(self.exec_dir, 'mpmd_exec')
-        e = open(e_path, 'w')
-
-        e.write('#include <stdio.h>\n'
-                '#include <stdlib.h>\n'
-                '#include <unistd.h>\n\n'
-                'int\n'
-                'main(const int argc, char *const argv[], char *const envp[])\n'
-                '{\n')
-
-        e.write('  /* Get MPI rank before MPI_Init() is called (as MPI_Init\n'
-                '     may be called only once, by the called program). */\n\n'
-                '  int rank = -1;\n\n')
-
-        e.write('#if defined(__blrts__)  /* IBM Blue Gene/L, pid() = rank */\n'
-                '  rank = (int)getpid();\n'
-                '#endif\n\n')
-
-        e.write('  if (getenv("OMPI_MCA_ns_nds_vpid") != NULL) /* OpenMPI */\n'
-                '    rank = atoi(getenv("OMPI_MCA_ns_nds_vpid"));\n'
-                '  else if (getenv("OMPI_COMM_WORLD_RANK") != NULL)\n'
-                '    rank = atoi(getenv("OMPI_COMM_WORLD_RANK"));\n'
-                '  else if (getenv("SLURM_PROCID") != NULL) /* under SLURM */\n'
-                '    rank = atoi(getenv("SLURM_PROCID"));\n'
-                '  else if (getenv("PMI_RANK") != NULL) /* MPICH 2 */\n'
-                '    rank = atoi(getenv("PMI_RANK"));\n'
-                '  else if (getenv("LAMRANK") != NULL) /* LAM-MPI */\n'
-                '    rank = atoi(getenv("LAMRANK"));\n'
-                '  else if (getenv("GMPI_ID") != NULL) /* MPICH-GM */\n'
-                '    rank = atoi(getenv("GMPI_ID"));\n\n')
-
-        e.write('  if (rank == -1)\n'
-                '    return EXIT_FAILURE;\n\n')
-
-        e.write('  /* Launch appropriate executable */\n\n')
-
-        app_id = 0
-        nr = 0
-
-        for d in self.syr_domains:
-
-            nr += d.n_procs
-            s_args = self.domains[0].solver_command()
-            arg0 = os.path.split(s_args[1])[1]
-
-            e.write('  else if (rank < ' + str(nr) + ') {\n')
-            e.write('    const char *filename = "' + s_args[0] + '";\n')
-
-            a_s = '    char *const argv[] = {"' + arg0 + '"'
-            for arg in cs_exec_environment.separate_arg(s_args[2]):
-                a_s += ', "' + arg + '"'
-            a_s += ', (char *)NULL};\n'
-            e.write(a_s)
-            e.write('    chdir("' + s_args[0] + '");\n')
-            e.write('    execve(filename, argv, envp);\n'
-                    '  }\n')
-
-            app_id += 1
-
-        for d in self.domains:
-
-            nr += d.n_procs
-            s_args = self.domains[0].solver_command()
-            arg0 = os.path.split(s_args[1])[1]
-
-            e.write('  else if (rank < ' + str(nr) + ') {\n')
-            e.write('    const char *filename = "' + s_args[0] + '";\n')
-
-            a_s = '    char *const argv[] = {"' + arg0 + '"'
-            for arg in cs_exec_environment.separate_arg(s_args[2]):
-                a_s += ', "' + arg + '"'
-            a_s += ', (char *)NULL};\n'
-            e.write(a_s)
-            e.write('    chdir("' + s_args[0] + '");\n')
-            e.write('    execve(filename, argv, envp);\n'
-                    '  }\n')
-
-            app_id += 1
-
-        e.write('\n'
-                '  /* We should not arrive here. */\n'
-                '  return EXIT_FAILURE;\n'
-                '}\n')
-
-        e.close()
-
-        cmd = [self.package.cc, '-o', o_path, '-g', e_path]
-
-        sys.stdout.write('\n'
-                         'Generating MPMD launcher:\n\n')
-
-        retcode = cs_exec_environment.run_command(cmd, pkg=self.package,
-                                                  echo = True)
-
-        sys.stdout.write('\n')
-
-        if retcode != 0:
-            raise RunCaseError(' Error generating MPMD launcher.\n')
-
-        return o_path
-
-    #---------------------------------------------------------------------------
-
     def generate_solver_script(self, exec_env):
         """
         Generate localexec file.
@@ -974,9 +865,6 @@ fi
 
             elif mpi_env.mpmd & cs_exec_environment.MPI_MPMD_script:
                 e_path = self.generate_solver_mpmd_script(n_procs, mpi_env)
-
-            elif mpi_env.mpmd & cs_exec_environment.MPI_MPMD_execve:
-                e_path = self.generate_solver_execve_launcher(n_procs, mpi_env)
 
             else:
                 raise RunCaseError(' No allowed MPI MPMD mode defined.\n')
