@@ -1922,8 +1922,8 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
 
         for index in selectionModel.selectedRows():
             name = str(index.row() + 1)
+            print name
             X, Y, Z = self.mdl.getMonitoringPointCoordinates(name)
-            self.__insertMonitoringPoint(name, X, Y, Z)
             new_name = str(probe_number + idx)
             self.__insertMonitoringPoint(new_name, X, Y, Z)
 
