@@ -441,22 +441,24 @@ enddo
 
 !
 ! Transformation des coef de repartition de l'azote en HCN etNH3
-!
-do icha = 1, ncharb
-  if ( nch(icha) .gt. 0.D0 ) then
-    som1 = crepn1(1,icha)+crepn1(2,icha)
-    som2 = crepn2(1,icha)+crepn2(2,icha)
-    if ( som1 .lt. 0.D0 .or. som2 .lt. 0.D0 ) then
-       write(nfecra,9971) ICHA
-       call csexit(1)
-    endif
-    crepn1(1,icha)= crepn1(1,icha)/som1
-    crepn1(2,icha)= crepn1(2,icha)/som1
-    crepn2(1,icha)= crepn2(1,icha)/som2
-    crepn2(2,icha)= crepn2(2,icha)/som2
-  endif
-enddo
 
+!
+if ( ieqnox .eq. 1 ) then
+  do icha = 1, ncharb
+    if ( nch(icha) .gt. 0.D0 ) then
+      som1 = crepn1(1,icha)+crepn1(2,icha)
+      som2 = crepn2(1,icha)+crepn2(2,icha)
+      if ( som1 .lt. 0.D0 .or. som2 .lt. 0.D0 ) then
+         write(nfecra,9971) ICHA
+         call csexit(1)
+      endif
+      crepn1(1,icha)= crepn1(1,icha)/som1
+      crepn1(2,icha)= crepn1(2,icha)/som1
+      crepn2(1,icha)= crepn2(1,icha)/som2
+      crepn2(2,icha)= crepn2(2,icha)/som2
+    endif
+  enddo
+endif
 
 ! ------ Transformation par la formule de Schaff du
 !        PCI sur sec en PCI sur pur LORSQUE IPCI = 1
