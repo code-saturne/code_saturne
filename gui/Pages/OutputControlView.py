@@ -1113,6 +1113,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.connect(self.pushButtonDeleteAssociatedWriter, SIGNAL("clicked()"), self.slotDeleteAssociatedWriter)
         self.connect(self.toolButtonAdd, SIGNAL("clicked()"), self.slotAddMonitoringPoint)
         self.connect(self.toolButtonDelete, SIGNAL("clicked()"), self.slotDeleteMonitoringPoints)
+        self.connect(self.toolButtonDuplicate, SIGNAL("clicked()"), self.slotDuplicateMonitoringPoints)
         self.connect(self.comboBoxHisto, SIGNAL("activated(const QString&)"), self.slotMonitoringPoint)
         self.connect(self.lineEditHisto, SIGNAL("textChanged(const QString &)"), self.slotMonitoringPointFrequency)
         self.connect(self.lineEditFRHisto, SIGNAL("textChanged(const QString &)"), self.slotMonitoringPointFrequencyTime)
@@ -1185,11 +1186,9 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.connect(self.groupBoxProbesDisplay, SIGNAL("clicked(bool)"), self.slotProbesDisplay)
             self.connect(self.lineEditProbesRadius, SIGNAL("textChanged(const QString &)"), self.slotProbesRadius)
 
-            # FIXME
-            ##self.connect(self.case['probes'], SIGNAL("actorSelected()"), self.slotSalomeHandlerSelectActors)
-            #self.connect(self.horizontalSliderX, SIGNAL("valueChanged(int)"), self.slotSlider)
-            #self.connect(self.horizontalSliderY, SIGNAL("valueChanged(int)"), self.slotSlider)
-            #self.connect(self.horizontalSliderZ, SIGNAL("valueChanged(int)"), self.slotSlider)
+        self.toolButtonDuplicate.setEnabled(False)
+        if self.mdl.getNumberOfMonitoringPoints() > 0:
+            self.toolButtonDuplicate.setEnabled(True)
 
         for n in range(self.mdl.getNumberOfMonitoringPoints()):
             name = str(n+1)
@@ -1868,6 +1867,8 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         n = self.mdl.getNumberOfMonitoringPoints()
         self.__insertMonitoringPoint(n, QString('0'), QString('0'), QString('0'))
 
+        self.toolButtonDuplicate.setEnabled(True)
+
         if self.case['salome']:
             self.__salomeHandlerAddMonitoringPoint(n, 0., 0., 0.)
 
@@ -1899,6 +1900,37 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
 
         if self.case['salome']:
             self.__salomeHandlerDeleteMonitoringPoint(l2)
+
+        if self.mdl.getNumberOfMonitoringPoints() == 0:
+            self.toolButtonDuplicate.setEnabled(False)
+
+
+    @pyqtSignature("")
+    def slotDuplicateMonitoringPoints(self):
+        """
+        Duplicate monitoring points selected with these coordinates in the list in the Hlist
+        """
+        log.debug("slotDuplicateMonitoringPoints ")
+
+        l1 = []
+        l2 = []
+        selectionModel = self.tableViewPoints.selectionModel()
+
+        probe_number = self.mdl.getNumberOfMonitoringPoints()
+
+        idx = 1
+
+        for index in selectionModel.selectedRows():
+            name = str(index.row() + 1)
+            X, Y, Z = self.mdl.getMonitoringPointCoordinates(name)
+            self.__insertMonitoringPoint(name, X, Y, Z)
+            new_name = str(probe_number + idx)
+            self.__insertMonitoringPoint(new_name, X, Y, Z)
+
+            if self.case['salome']:
+                self.__salomeHandlerAddMonitoringPoint(probe_number + idx, X, Y, Z)
+
+            idx = idx + 1
 
 
     def __salomeHandlerAddMonitoringPoint(self, name, X, Y, Z):
