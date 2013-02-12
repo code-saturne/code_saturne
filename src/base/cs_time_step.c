@@ -93,7 +93,7 @@ BEGIN_C_DECLS
         maximum absolute time
 */
 
-/*! \cond 0 (start ignore by Doxygen) */
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
  * Macro definitions
@@ -136,7 +136,7 @@ cs_f_time_step_get_pointers(int     **nt_prev,
  * Fortran wrapper function definitions
  *============================================================================*/
 
-/*! \cond 0 (start ignore by Doxygen) */
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*----------------------------------------------------------------------------
  * Get pointers to members of the global time step structure.

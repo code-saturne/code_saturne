@@ -181,7 +181,7 @@ typedef struct {
  * Set of variables to synchronize single elements
  *---------------------------------------------------------------------------*/
 
-/*! \cond 0 (start ignore by Doxygen) */
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 typedef struct {
 

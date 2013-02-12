@@ -62,7 +62,7 @@ BEGIN_C_DECLS
 
 typedef struct _cs_ctwr_zone_t cs_ctwr_zone_t;
 
-/*! \cond 0 (start ignore by Doxygen) */
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /* Cooling tower exchange zone structure definition */
 /*--------------------------------------------------*/

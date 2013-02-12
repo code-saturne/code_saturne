@@ -130,7 +130,7 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/*! \cond 0 (start ignore by Doxygen) */
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /* Field key definitions */
 
@@ -522,7 +522,7 @@ _cs_field_free_str(void)
  * Fortran wrapper function definitions
  *============================================================================*/
 
-/*! \cond 0 (start ignore by Doxygen) */
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*----------------------------------------------------------------------------
  * Return the id of a defined field based on its name.

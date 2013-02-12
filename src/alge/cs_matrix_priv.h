@@ -39,7 +39,7 @@
 
 BEGIN_C_DECLS
 
-/*! \cond 0 (start ignore by Doxygen) */
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
  * Macro definitions

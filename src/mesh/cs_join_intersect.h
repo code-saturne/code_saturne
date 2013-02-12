@@ -56,7 +56,7 @@ BEGIN_C_DECLS
  * Macro and type definitions
  *===========================================================================*/
 
-/*! \cond 0 (start ignore by Doxygen) */
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /* Definition of a structure defining an intersection */
 /* -------------------------------------------------- */

@@ -177,7 +177,7 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/*! \cond 0 (start ignore by Doxygen) */
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /* Specific (forced) writer output times */
 /*---------------------------------------*/
@@ -2489,7 +2489,7 @@ _cs_post_output_fields(cs_post_mesh_t   *post_mesh,
  * Fortran wrapper function definitions
  *============================================================================*/
 
-/*! \cond 0 (start ignore by Doxygen) */
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*----------------------------------------------------------------------------
  * Update "active" or "inactive" flag of writers based on the time step.
