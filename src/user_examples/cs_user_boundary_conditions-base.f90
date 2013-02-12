@@ -26,97 +26,8 @@
 ! Function:
 ! ---------
 
-!> \file cs_user_boundary_conditions-base.f90
-!>
-!> \brief Basic example of cs_user_boundary_conditions subroutine.f90
-!>
-!>
-!> \section loc_var Local variables to be added
-!>
-!> \snippet cs_user_boundary_conditions-base.f90 loc_var_dec
-!>
-!>
-!> \subsection ex_1 Example 1
-!>
-!> Set a a Dirichlet value on the three components of \f$ \vect{u} \f$
-!> on the faces with the selection criterium '2 and x < 0.01' and set a Dirichlet
-!> to all the scalars \f$ \varia \f$.
-!>
-!> Turbulence example computed using equations valid for a pipe.
-!>
-!> We will be careful to specify a hydraulic diameter adapted
-!> to the current inlet.
-!>
-!> We will also be careful if necessary to use a more precise
-!> formula for the dynamic viscosity use in the calculation of
-!> the Reynolds number (especially if it is variable, it may be
-!> useful to take the law from 'usphyv'. Here, we use by default
-!> the 'viscl0" value.
-!>
-!> Regarding the density, we have access to its value at boundary
-!> faces (romb) so this value is the one used here (specifically,
-!> it is consistent with the processing in 'usphyv', in case of
-!> variable density)
-!>
-!> \snippet src/user_examples/cs_user_boundary_conditions-base.f90 example_1
-!>
-!>
-!> \subsection ex_2 Example 2
-!>
-!> Set a a Dirichlet value on the three components of \f$ \vect{u} \f$
-!> on the faces with the selection criterium '3' and set a Dirichlet
-!> to all the scalars \f$ \varia \f$.
-!>
-!> Turbulence example computed using turbulence intensity data.
-!>
-!> We will be careful to specify a hydraulic diameter adapted
-!> to the current inlet.
-!>
-!> Calculation of \f$ k \f$ and \f$ \varepsilon \f$
-!> at the inlet (xkent and xeent) using
-!> the turbulence intensity and standard laws for a circular pipe
-!> (their initialization is not needed here but is good practice)
-!>
-!> \snippet src/user_examples/cs_user_boundary_conditions-base.f90 example_2
-!>
-!>
-!> \subsection ex_3 Example 3
-!>
-!> Outlet:
-!>  - zero flux for velocity and temperature, prescribed pressure
-!>  - Note that the pressure will be set to P0 at the first
-!>  - free outlet face (isolib)
-!>
-!> \snippet src/user_examples/cs_user_boundary_conditions-base.f90 example_3
-!>
-!>
-!> \subsection ex_4 Example 4
-!>
-!> Wall:
-!> - zero flow (zero flux for pressure)
-!> - friction for velocities (+ turbulent variables)
-!> - zero flux for scalars
-!>
-!> \snippet src/user_examples/cs_user_boundary_conditions-base.f90 example_4
-!>
-!>
-!> \subsection ex_5 Example 5
-!>
-!> Assign a rough wall to boundary faces of group '7'
-!> Wall:
-!> - zero flow (zero flux for pressure)
-!> - rough friction for velocities (+ turbulent variables)
-!> - zero flux for scalars
-!>
-!> \snippet src/user_examples/cs_user_boundary_conditions-base.f90 example_5
-!>
-!>
-!> \subsection ex_6 Example 6
-!>
-!> Assign a symmetry to boundary faces of group '4'
-!> \snippet src/user_examples/cs_user_boundary_conditions-base.f90 example_6
-!>
-!>
+! Basic example of cs_user_boundary_conditions subroutine.f90
+!
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -234,9 +145,11 @@ integer, allocatable, dimension(:) :: lstelt
 ! Initialization
 !===============================================================================
 
+!< [init]
 allocate(lstelt(nfabor))  ! temporary array for boundary faces selection
 
 d2s3 = 2.d0/3.d0
+!< [init]
 
 !===============================================================================
 ! Assign boundary conditions to boundary faces here
@@ -559,7 +472,9 @@ enddo
 ! End
 !----
 
+!< [finalize]
 deallocate(lstelt)  ! temporary array for boundary faces selection
+!< [finalize]
 
 return
 end subroutine cs_user_boundary_conditions

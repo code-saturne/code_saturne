@@ -24,7 +24,8 @@
 ! Function:
 ! ---------
 
-!> \fn subroutine getfac
+!> \file cs_selector_f2c subroutine getfac
+
 !> \brief Build the list of interior faces matching a criteria string.
 !-------------------------------------------------------------------------------
 
@@ -75,7 +76,6 @@ end subroutine
 ! Function:
 ! ---------
 
-!> \fn getfbr
 !> \brief Build the list of boundary faces matching a criteria string.
 !-------------------------------------------------------------------------------
 
@@ -126,7 +126,6 @@ end subroutine
 ! Function:
 ! ---------
 
-!> \fn getcel
 !> \brief Build the list of cells matching a criteria string.
 !-------------------------------------------------------------------------------
 
@@ -178,7 +177,6 @@ end subroutine
 ! Function:
 ! ---------
 
-!> \fn getceb
 !> \brief Build the lists of faces at the boundary of cells matching a
 !> criteria string.
 !-------------------------------------------------------------------------------
@@ -232,7 +230,6 @@ end subroutine
 ! Function:
 ! ---------
 
-!> \fn getfam
 !> \brief Build the list of mesh element families matching a criteria string.
 !-------------------------------------------------------------------------------
 

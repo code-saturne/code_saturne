@@ -46,6 +46,16 @@
   file in the toplevel source directory if you are not familiar
   with configuration scripts generated through GNU autoconf and automake.
 
+  \section Sub-libraries
+
+  See \ref BFT and \ref FVM
+
+  \section user_sources User sources, functions, and subroutines
+
+  Boundary condition definitions \ref cs_user_boundary_conditions_examples.
+
+  \page BFT
+
   \section BFT
 
   The "Base Functions and Types" library is intended to simplify and enhance
@@ -76,6 +86,9 @@
   but the user may define and set other error handlers with different
   behavior.
 
+  Error handling may also be modified by writing a specific error handler
+  (see bft_error_handler_example).
+
   \subsection intro_add_func Added functionnality
 
   BFT functions similar to \c libc functions add functionnality such
@@ -103,6 +116,8 @@
   to a given type of environment, these functions should return 0.
   The user should thus check for the return values of such functions,
   but the API is guaranteed.
+
+  \page FVM
 
   \section FVM
 
@@ -202,4 +217,5 @@
   for output, this being done on the fly (so as to avoid a complete
   memory copy). This allows working around possible lack of support for
   these complex elements in certain tools or formats.
+
 */

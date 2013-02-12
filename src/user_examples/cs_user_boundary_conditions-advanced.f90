@@ -28,45 +28,7 @@
 
 !> \file cs_user_boundary_conditions-advanced.f90
 !>
-!> \brief Advanced example of cs_user_boundary_conditions.f90 subroutine
-!>
-!> \section loc_var Local variables to be added
-!>
-!> \snippet src/user_examples/cs_user_boundary_conditions-advanced.f90 loc_var_dec
-!>
-!>
-!> \subsection ex_1 Example 1
-!>
-!> Example of specific boundary conditions fully defined by the user,
-!> on the basis of wall conditions.
-!> selection (mass flow computation, specific logging, ...)
-!> We prescribe for group '1234' a wall, with in addition:
-!>   - a Dirichlet condition on velocity (sliding wall with no-slip condition)
-!>   - a Dirichlet condition on the first scalar.
-!>
-!> \snippet src/user_examples/cs_user_boundary_conditions-advanced.f90 example_1
-!>
-!>
-!> \subsection ex_2 Example 2
-!>
-!>  Example of specific boundary conditions fully defined by the user,
-!>  with no definition of a specific type.
-!>  We prescribe at group '5678' a homogeneous Neumann condition for
-!>  all variables.
-!>
-!> \snippet src/user_examples/cs_user_boundary_conditions-advanced.f90 example_2
-!>
-!>
-!> \subsection ex_3 Example 3
-!>
-!> Example of specific boundary conditions fully defined by the user,
-!> with the definition of a specific type, for example for future
-!> selection (mass flow computation, specific logging, ...)
-!> We prescribe for group '6789' a homogeneous Neumann condition for
-!> all variables, except for the first
-!> scalar, for which we select a homogeneous Dirichlet.
-!>
-!> \snippet src/user_examples/cs_user_boundary_conditions-advanced.f90 example_3
+!> Advanced example of cs_user_boundary_conditions.f90 subroutine
 !>
 !-------------------------------------------------------------------------------
 
@@ -186,9 +148,11 @@ integer, allocatable, dimension(:) :: lstelt
 ! Initialization
 !===============================================================================
 
+!< [init]
 allocate(lstelt(nfabor))  ! temporary array for boundary faces selection
 
 d2s3 = 2.d0/3.d0
+!< [init]
 
 !===============================================================================
 ! Assign boundary conditions to boundary faces here
@@ -308,7 +272,9 @@ enddo
 ! End
 !----
 
+!< [finalize]
 deallocate(lstelt)  ! temporary array for boundary faces selection
+!< [finalize]
 
 return
 end subroutine cs_user_boundary_conditions
