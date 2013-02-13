@@ -322,7 +322,7 @@
 !>       entering the subroutine.
 !>
 !>
-!>\subsubsection cell_id Cells identification of some variables
+!> \subsubsection cell_id Cells identification of some variables
 !>
 !> Cell values  (let \c iel = \c ifabor(ifac))
 !>

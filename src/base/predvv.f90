@@ -32,9 +32,9 @@
 !>
 !> - at the first call, the predicted velocities are computed and also
 !>   an estimator on the predicted velocity is computed.
-!
+!>
 !> - at the second call, a global estimator on Navier Stokes is computed.
-!>   This second call is done after the correction step (resopv).
+!>   This second call is done after the correction step (\ref resopv).
 !>
 !-------------------------------------------------------------------------------
 
@@ -83,7 +83,10 @@
 !> \param[in]     viscbi        idem viscb pour increments
 !> \param[in]     secvif        secondary viscosity at interior faces
 !> \param[in]     secvib        secondary viscosity at boundary faces
-!> \param[in]     w*            working array (TODO to be removed)
+!> \param[in]     w1            working array
+!> \param[in]     w7            working array
+!> \param[in]     w8            working array
+!> \param[in]     w9            working array
 !> \param[in]     xnormp        workig array for the norm of the pressure
 !_______________________________________________________________________________
 

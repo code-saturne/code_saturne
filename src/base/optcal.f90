@@ -33,225 +33,351 @@ module optcal
 
   !=============================================================================
 
-  ! Definition des equations
-  !   istat
-  !     = 1 prise en compte du terme instationnaire
-  !     = 0 prise en compte du terme instationnaire
-  !   iconv
-  !     = 1 prise en compte de la convection
-  !     = 0 non prise en compte de la convection
-  !   idiff
-  !     = 1 prise en compte de la diffusion (moleculaire et turbulente)
-  !     = 0 non prise en compte de la diffusion (moleculaire et turbulente)
-  !   idifft : si idiff = 1
-  !     = 1 prise en compte de la diffusion turbulente
-  !     = 0 non prise en compte de la diffusion turbulente
-  !   idften
-  !     = 1 scalar diffusivity
-  !     = 3 orthotropic diffusivity
-  !     = 6 symmetric tensor diffusivity
-  !   iswdyn
-  !     = 0 no dynamic relaxation
-  !     = 1 dynamic relaxation depending on
-  !       \$f \delta \varia^k \f$
-  !     = 2 dynamic relaxation depending on
-  !       \$f \delta \varia^k \f$  and
-  !       \$f \delta \varia^{k-1} \f$
+  !----------------------------------------------------------------------------
+  ! Equation types
+  !----------------------------------------------------------------------------
 
-  integer, save :: istat(nvarmx), iconv(nvarmx), idiff(nvarmx), idifft(nvarmx),&
-                   idften(nvarmx), iswdyn(nvarmx)
+  !> \defgroup equation_types Equation types
 
-  ! Proprietes physiques rho et viscl constantes ou variables
-  !    =1 variable, =0 constant
-  !     sert lors des lectures de fichier suite pour eviter d'ecraser
-  !     la valeur fournie par la valeur de l'ancien calcul.
-  integer, save :: irovar, ivivar
+  !> \addtogroup equation_types
+  !> \{
 
-  ! Algorithm to take into account the density variation in time
+  !> take non-stationary term into account:
+  !>    - 1 prise en compte du terme instationnaire
+  !>    - 0 prise en compte du terme instationnaire
+  integer, save :: istat(nvarmx)
 
-  !     idilat = 0 : boussinesq algorithm with constant density
-  !              1 : dilatable steady algorithm (default)
-  !              2 : dilatable unsteady algorithm
-  !              3 : low-Mach algorithm
-  !
-  !           epsdp: parameter of diagonal pressure strengthening
+  !> take convection into account:
+  !>    - 1 prise en compte de la convection
+  !>    - 0 non prise en compte de la convection
+  integer, save :: iconv(nvarmx)
 
-  integer, save :: idilat
+  !> take diffusion into account:
+  !>    - 1: true
+  !>    - 0: false
+  integer, save :: idiff(nvarmx)
 
-  double precision, save :: epsdp
+  !> take turbulent diffusion into account:
+  !>    - 1: true
+  !>    - 0: false
+  integer, save :: idifft(nvarmx)
 
-  ! Schema en temps
+  !> type of diffusivity:
+  !>    - 1: scalar diffusivity
+  !>    - 3: orthotropic diffusivity
+  !>    - 6: symmetric tensor diffusivity
+  integer, save :: idften(nvarmx)
 
-  !  ischtp : indicateur de schema en temps
-  !     = 2 : ordre 2
-  !     = 1 : standard
-  !  istmpf : indicateur de schema flux de masse
-  !     = 2 theta schema avec theta > 0 (= 0.5 : ordre 2)
-  !     = 0 theta schema avec theta = 0 (explicite)
-  !     = 1 schema standard v1.0
-  !  nterup : nombre d'iteration sur navier-stokes pour couplage vitesse/
-  !           pression
-  !  isno2t : indicateur d'extrapolation de termes sources Navier Stokes
-  !           pour le schema en temps
-  !  isto2t : indicateur d'extrapolation de termes sources des grandeurs
-  !           turbulentes pour le schema en temps
-  !  isso2t : indicateur d'extrapolation de termes sources des scalaires
-  !           pour le theta schema en temps
-  !  iroext : indicateur d'extrapolation de la masse volumique
-  !           pour le schema en temps
-  !  iviext : indicateur d'extrapolation de la viscosite totale
-  !           pour le schema en temps
-  !  ivsext : indicateur d'extrapolation de la diffusivite scalaire
+  !> variable density field \f$ \rho \f$:
+  !>    - 1: true
+  !>    - 0: false
+  integer, save :: irovar
 
-  !  initvi : =1 si viscosite totale relue dans un suite
+  !> variable viscosity field \f$ \mu \f$:
+  !>    - 1: true
+  !>    - 0: false
+  integer, save :: ivivar
 
-  !  initro : =1 si masse volumique relue dans un suite
+  !> \}
 
-  !  icpext : indicateur d'extrapolation de la masse volumique
-  !           pour le schema en temps
+  !----------------------------------------------------------------------------
+  ! Time stepping
+  !----------------------------------------------------------------------------
 
-  !  initcp : =1 si  chaleur specifique relue dans un suite
-  !  initvs : =1 si  diffusivite scalaire relue dans un suite
+  !> \defgroup time_stepping Time stepping
 
-  !  thetav : ponderation entre les pas de temps n et n+1 pour les
-  !           variable principales
-  !     = 1 : schema Euler implicite
-  !     =1/2: schema centre en temps
+  !> \addtogroup time_stepping
+  !> \{
 
-  !  thetsn : schema en temps pour les termes sources de Navier Stokes
-  !     = 0 : viscosite secondaire explicite
-  !     =1/2: viscosite secondaire extrapolee en n+1/2
-  !     = 1 : viscosite secondaire extrapolee en n+1
-  !  thetst : schema en temps pour les termes sources des grandeurs turbulentes
-  !     = 0 : viscosite secondaire explicite
-  !     =1/2: viscosite secondaire extrapolee en n+1/2
-  !     = 1 : viscosite secondaire extrapolee en n+1
-  !  thetss : schema en temps pour les termes sources des scalaires
-  !     = 0 : viscosite secondaire explicite
-  !     =1/2: viscosite secondaire extrapolee en n+1/2
-  !     = 1 : viscosite secondaire extrapolee en n+1
-  !  thetfl : schema en temps pour le flux de masse
-  !     = 0 : flux de masse explicite
-  !     =1/2: flux de masse extrapole en n+1/2
-  !     = 1 : flux de masse extrapole en n+1
-  !  thetvi : schema en temps pour la viscosite totale
-  !     = 0 : viscosite totale explicite
-  !     =1/2: viscosite totale extrapolee en n+1/2
-  !     = 1 : viscosite totale extrapolee en n+1
-  !  thetro : schema en temps pour la masse volumique
-  !     = 0 : masse volumique totale explicite
-  !     =1/2: masse volumique totale extrapolee en n+1/2
-  !     = 1 : masse volumique extrapolee en n+1
-  !  thetcp : schema en temps pour la masse volumique
-  !     = 0 : chaleur specifique totale explicite
-  !     =1/2: chaleur specifique totale extrapolee en n+1/2
-  !     = 1 : chaleur specifique extrapolee en n+1
-  !  epsup  : tests de convergence du systeme vitesse/pression quand ce
-  !           dernier est resolu par sous-iterations (point fixe)
-  !  xnrmu  : norme de u(k+1) - u(k)
-  !  xnrmu0 : norme de u(0)
+  !> time order of time stepping
+  !>    - 2: 2nd order
+  !>    - 1: 1st order (default)
+  integer, save ::          ischtp
 
-  integer, save ::          nterup,                         &
-                            ischtp, istmpf,                 &
-                            isno2t, isto2t, isso2t(nscamx), &
-                            iroext,                         &
-                            iviext, icpext, ivsext(nscamx), &
-                            initro, initvi,                 &
-                            initcp, initvs(nscamx)
-  double precision, save :: thetav(nvarmx), thetsn, thetst, &
-                            thetss(nscamx),                 &
-                            thetfl, thetro, thetvi,         &
-                            thetcp, thetvs(nscamx), epsup , &
-                            xnrmu0, xnrmu
+  !> time order of the mass flux scheme
+  !>    - 2: theta scheme with theta > 0 (theta=0.5 means 2nd order)
+  !>    - 0: theta scheme with theta = 0 (explicit)
+  !>    - 1: implicit scheme (default)
+  integer, save ::          istmpf
 
-  ! Schema convectif
+  !> number of interations on the pressure-velocity coupling on Navier-Stokes
+  !> (for the PISO algorithm)
+  integer, save ::          nterup
 
-  !  blencv : 100*(1-blencv) est le pourcentage d'upwind
-  !     = 1 : pas d'upwind en dehors du test de pente
-  !     = 0 : upwind
-  !  ischcv : schema convectif centre ou second order
-  !     = 1 : centre
-  !     = 0 : second order
-  !  isstpc : indicateur sans ou avec test de pente
-  !     = 1 : sans test de pente
-  !     = 0 : avec test de pente
-  !  iflxmw : method to compute interior mass flux due to ALE mesh velocity
-  !     = 1 : based on cell center mesh velocity
-  !     = 0 : based on nodes displacement
+  !> extrapolation of source terms in the Navier-Stokes equations
+  !>    - 1: true
+  !>    - 0: false (default)
+  integer, save ::          isno2t
 
-  integer, save ::          ischcv(nvarmx), isstpc(nvarmx)
-  integer, save ::          iflxmw
+  !> extrapolation of turbulent quantities
+  !>    - 1: true
+  !>    - 0: false (default)
+  integer, save ::          isto2t
+
+  !> extrapolation of source terms in the transport equation of scalars
+  !>    - 1: true
+  !>    - 0: false (default)
+  integer, save ::          isso2t(nscamx)
+
+  !> extrapolation of the density field
+  !>    - 1: true
+  !>    - 0: false (default)
+  integer, save ::          iroext
+
+  !> extrapolation of the total viscosity field
+  !>    - 1: true
+  !>    - 0: false (default)
+  integer, save ::          iviext
+
+  !> extrapolation of the scpecific heat field \f$ C_p \f$
+  !>    - 1: true
+  !>    - 0: false (default)
+  integer, save ::          icpext
+
+  !> extrapolation of the scalar diffusivity
+  !>    - 1: true
+  !>    - 0: false (default)
+  integer, save ::          ivsext(nscamx)
+
+  !> initvi : =1 si viscosite totale relue dans un suite
+  integer, save ::          initvi
+
+  !> initro : =1 si masse volumique relue dans un suite
+  integer, save ::          initro
+
+  !> initcp : =1 si  chaleur specifique relue dans un suite
+  integer, save ::          initcp
+
+  !> initvs : =1 si  diffusivite scalaire relue dans un suite
+  integer, save ::          initvs(nscamx)
+
+  !> \f$ \theta \f$-scheme for the main variables
+  !>    -  0 : explicit
+  !>    - 1/2: extrapolated in n+1/2
+  !>    -  1 : extrapolated in n+1
+  double precision, save :: thetav(nvarmx)
+
+  !> \f$ \theta_S \f$-scheme for the source terms in the Navier-Stokes equations
+  !>    -  0 : second viscosity explicit
+  !>    - 1/2: second viscosity extrapolated in n+1/2
+  !>    -  1 : second viscosity extrapolated in n+1
+  double precision, save :: thetsn
+
+  !> \f$ \theta \f$-scheme for the source terms of turbulent equations
+  !>    -  0 : explicit
+  !>    - 1/2: extrapolated in n+1/2
+  !>    -  1 : extrapolated in n+1
+  double precision, save :: thetst
+
+  !> \f$ \theta \f$-scheme for the source terms of transport equations of scalars
+  !>    -  0 : explicit
+  !>    - 1/2: extrapolated in n+1/2
+  !>    -  1 : extrapolated in n+1
+  double precision, save :: thetss(nscamx)
+
+  !> \f$ \theta \f$-scheme for the mass flux
+  !>    -  0 : explicit
+  !>    - 1/2: extrapolated in n+1/2
+  !>    -  1 : extrapolated in n+1
+  double precision, save :: thetfl
+
+  !> \f$ \theta \f$-scheme for the total viscosity
+  !>    -  0 : explicit
+  !>    - 1/2: extrapolated in n+1/2
+  !>    -  1 : extrapolated in n+1
+  double precision, save :: thetvi
+
+  !> \f$ \theta \f$-scheme for the density field
+  !>    -  0 : explicit
+  !>    - 1/2: extrapolated in n+1/2
+  !>    -  1 : extrapolated in n+1
+  double precision, save :: thetro
+
+  !> \f$ \theta \f$-scheme for the scpecific heat field
+  !>    -  0 : explicit
+  !>    - 1/2: extrapolated in n+1/2
+  !>    -  1 : extrapolated in n+1
+  double precision, save :: thetcp
+
+  !> \f$ \theta \f$-scheme for the diffusivity
+  !>    -  0 : explicit
+  !>    - 1/2: extrapolated in n+1/2
+  !>    -  1 : extrapolated in n+1
+  double precision, save :: thetvs(nscamx)
+
+  !> relative precision for the convergence test of the iterative process on
+  !> pressure-velocity coupling (PISO)
+  double precision, save :: epsup
+
+  !> norm  of the increment \f$ \vect{u}^{k+1} - \vect{u}^k \f$
+  !> of the iterative process on pressure-velocity coupling (PISO)
+  double precision, save :: xnrmu
+
+  !> norm of \f$ \vect{u}^0 \f$ (used by PISO algorithm)
+  double precision, save :: xnrmu0
+
+  !> \}
+
+  !----------------------------------------------------------------------------
+  ! Space discretisation
+  !----------------------------------------------------------------------------
+
+  !> \defgroup space_discretisation Space discretisation
+
+  !> \addtogroup space_discretisation
+  !> \{
+
+  !> \defgroup conv_scheme Convective scheme
+  !> \addtogroup conv_scheme
+  !> \{
+
+  !> percentage of upwind:
+  !>    - 1: no upwind (except if the slope test is activated)
+  !>    - 0: total upwind
   double precision, save :: blencv(nvarmx)
 
-  ! Reconstruction des gradients et des seconds membres
-  !   imrgra : methode de recontruction des gradients
-  !     = 0  : recontruction 97
-  !     = 1  : moindres carres 99
-  !     = 2  : moindres carres support etendu complet
-  !     = 3  : moindres carres avec selection du support etendu
-  !     = 4  : reconstruction 97 avec initialisation moindres carres
-  !   anomax : angle de non orthogonalite des faces en radian au dela duquel
-  !            on retient dans le support etendu des cellules voisines
-  !            de la face les cellules dont un noeud est sur la face
-  !   nswrgr : nombre de sweeps de reconstruction des gradients 97
-  !   nswrsm : nombre de sweeps de reconstruction des seconds membres
-  !   epsrgr : precision pour la   reconstruction des gradients 97
-  !   epsrsm : precision pour la   reconstruction des seconds membres
-  !   imligr : limitation des gradients
-  !     < 0  : pas de limitation des gradients
-  !     = 0  : premier ordre
-  !     = 1  : second ordre
-  !   climgr : facteur de limitation (>=1, =1 : forte limitation)
-  !   ircflu : reconstruction des flux aux faces
-  !     = 0  : non
-  !     = 1  : oui
-  !   extrag : extrapolation des gradients au bord (0 <= extrag <= 1)
-  !     = 0  : non
-  !     = 1  : oui
+  !> type of convective scheme
+  !>    - 1: centre
+  !>    - 0: second order
+  integer, save ::          ischcv(nvarmx)
 
-  integer, save ::          imrgra, nswrgr(nvarmx), nswrsm(nvarmx),   &
-                            imligr(nvarmx)        , ircflu(nvarmx)
+  !> switch off the slope test:
+  !>    - 1: swich off the slope test
+  !>    - 0: swich on the slope test
+  integer, save ::          isstpc(nvarmx)
 
-  double precision, save :: anomax ,                                  &
-                            epsrgr(nvarmx), epsrsm(nvarmx),           &
-                            climgr(nvarmx), extrag(nvarmx)
+  !> method to compute interior mass flux due to ALE mesh velocity
+  !>    - 1: based on cell center mesh velocity
+  !>    - 0: based on nodes displacement
+  integer, save ::          iflxmw
 
-  ! Solveurs iteratifs
-  !   nitmax : nombre d'iterations max
-  !   epsilo : precision relative cherchee
-  !   iresol
-  !     =-1 : calcule automatiquement (0 si iconv=0, 1 sinon)
-  !     = 0 : gradient conjugue
-  !     = 1 : Jacobi
-  !     = 2 : bi-CGSTAB
-  !    et on ajoute ipol*1000 ou ipol est le degre du polynome de
-  !       preconditionnement de Neumann
-  !     en pratique, il semble que ce preconditonnement ne soit pas efficace
-  !        on gagne 10% cpu sur un cas, on perd 3% sur un autre avec ipol=1
-  !        on perd avec ipol=2
-  !        ces valeurs ont ete obtenues sur de petits cas.
-  !   idircl : decalage de la diagonale de la matrice s'il n'y a pas de Dirichlet
-  !     = 0 : non
-  !     = 1 : oui
-  !     le code calcule automatiquement pour chaque variable ndircl, nombre de
-  !        CL de Dirichlet, et en deduit s'il doit decaler ou pas la diagonale
+  !> \}
 
-  integer, save ::          nitmax(nvarmx),iresol(nvarmx),idircl(nvarmx),   &
-                            ndircl(nvarmx)
+  !> \defgroup gradient_calculation Gradient calculation
+  !> \addtogroup gradient_calculation
+  !> \{
 
+  !> type of gradient reconstruction
+  !>    - 0: iterative process
+  !>    - 1: standard least suqare methode
+  !>    - 2: least suqare methode with extended neighbourhood
+  !>    - 3: least suqare methode with reduced extended neighbourhood
+  !>    - 4: iterative precess initialized by the least square methode
+  integer, save ::          imrgra
+
+  !> anomax : angle de non orthogonalite des faces en radian au dela duquel
+  !> on retient dans le support etendu des cellules voisines
+  !> de la face les cellules dont un noeud est sur la face
+  double precision, save :: anomax
+
+  !> max number of iterations for the iterative gradient
+  integer, save ::          nswrgr(nvarmx)
+
+  !> relative precision of the iterative gradient calculation
+  double precision, save :: epsrgr(nvarmx)
+
+  !> type of gradient clipping
+  !>    - < 0: no clipping
+  !>    -   0: first order
+  !>    -   1: second order
+  integer, save ::          imligr(nvarmx)
+
+  !>   climgr : facteur de limitation (>=1, =1 : forte limitation)
+  double precision, save :: climgr(nvarmx)
+
+  !> gradient extrapolation at the boundary
+  !>    - 0: false
+  !>    - 1: true
+  double precision, save :: extrag(nvarmx)
+
+  !> \}
+
+  !> \defgroup diffusive_scheme Diffusive scheme
+  !> \addtogroup diffusive_scheme
+  !> \{
+
+  !> face flux reconstruction:
+  !>    - 0: false
+  !>    - 1: true
+  integer, save ::          ircflu(nvarmx)
+
+  !> face viscosity field interpolation
+  !>    - 1: harmonic
+  !>    - 0: arithmetic (default)
+  integer, save :: imvisf
+
+  !> \}
+
+  !> \defgroup iterative_process Iterative process for the convection diffusion equation
+  !> \addtogroup iterative_process
+  !> \{
+
+  !> max number of iteration for the iterative process used to solved
+  !> the convection diffusion equations
+  integer, save ::          nswrsm(nvarmx)
+
+  !> relative precision of the iterative process used to solved
+  !> the convection diffusion equations
+  double precision, save :: epsrsm(nvarmx)
+
+  !> dynamic relaxation type:
+  !>    - 0 no dynamic relaxation
+  !>    - 1 dynamic relaxation depending on \f$ \delta \varia^k \f$
+  !>    - 2 dynamic relaxation depending on \f$ \delta \varia^k \f$ and \f$ \delta \varia^{k-1} \f$
+  integer, save :: iswdyn(nvarmx)
+
+  !> \}
+
+  !> \defgroup linear_solver Linear solver
+  !> \addtogroup linear_solver
+  !> \{
+
+  !> maximal number of iteration for the linear solver
+  integer, save ::          nitmax(nvarmx)
+
+  !> relative precision of the linear solver
   double precision, save :: epsilo(nvarmx)
 
-  ! Multigrille
-  !   imgr
-  !     = 0 pas de multigrille
-  !     = 1        multigrille algebrique
-  !   ncymax : nombre max de cycles
-  !   nitmgf : nombre d'iter sur maillage fin
-  !   rlxp1  :
+  !> type of linear solver
+  !>    - (-1): automatic choice
+  !>    -    0: conjugate gradient
+  !>    -    1: Jacobi
+  !>    -    2: bi-CGSTAB
+  !> \remark
+  !>  we add ipol*1000 to iresol(ivar) where ipol is the degree of the polynome
+  !>  of Neumann preconditionning.
+  integer, save ::          iresol(nvarmx)
 
-  integer, save ::          imgr(nvarmx), ncymax(nvarmx), nitmgf(nvarmx)
+  !> strengthen of the diagonal part of the matrix if no Dirichlet is set
+  !>    - 0: false
+  !>    - 1: true
+  !> \remark
+  !> the code computes automatically for each variable the number of Dirichlet
+  !> BCs
+  integer, save ::          idircl(nvarmx)
+
+  !> number of Dirichlet BCs
+  integer, save ::          ndircl(nvarmx)
+
+  !> multigrid algorithm
+  !>    - 0: false
+  !>    - 1: algebraic multigrid
+  integer, save ::          imgr(nvarmx)
+
+  !> maximal number of cycles in the multigrid algorithm
+  integer, save ::          ncymax(nvarmx)
+
+  !> number of iterations on the finer mesh
+  integer, save ::          nitmgf(nvarmx)
+
+  !> relaxation parameter for the multigrid
   double precision, save :: rlxp1
 
+  !> \}
+
+  !> \}
+
+  !TODO doxygen it
   ! Gestion du calcul
   !   isuite : suite de calcul
   !     = 0 pour sfs
@@ -267,7 +393,14 @@ module optcal
   integer, save :: isuite , ileaux, iecaux, iscold(nscamx),        &
                    isuit1 , isuict, isuivo, isuisy
 
-  ! Time step
+  !----------------------------------------------------------------------------
+  ! Time stepping options
+  !----------------------------------------------------------------------------
+
+  !> \defgroup time_step_options Time step options and variables
+
+  !> \addtogroup time_step_options
+  !> \{
 
   !> Absolute time step number for previous calculation.
   integer(c_int), pointer, save :: ntpabs
@@ -289,273 +422,403 @@ module optcal
   !> Maximum absolute time.
   real(c_double), pointer, save :: ttmabs
 
-  ! Option pas de temps
-  !   inpdt0 : indicateur "zero pas de temps"
-  !     = 0 : calcul standard
-  !     = 1 : pour ne faire aucun pas de temps (0 sinon)
-  !             pour les calculs non suite :
-  !               on saute uniquement les resolutions (Navier-Stokes,
-  !               turbulence, scalaires...)
-  !             pour les calculs suite :
-  !               on saute les resolutions (navier-stokes,
-  !               turbulence, scalaires...) et le calcul des proprietes
-  !               physiques, les conditions aux limites (les grandeurs
-  !               sont lues dans le fichier suite)
-  !   idtvar : pas de temps variable
-  !     = -1 : algorithme stationnaire
-  !     =  0 : pas de temps constant
-  !     =  1 : pas de temps uniforme en espace et variable en temps
-  !     =  2 : pas de temps variable en espace et variable en temps
-  !   iptlro : limitation du pas de temps liee aux effets de densite
-  !     = 0 : non
-  !     = 1 : oui
-  !   coumax : nombre de Courant         maximum        (idtvar non nul)
-  !   foumax : nombre de         Fourier maximum        (idtvar non nul)
-  !   varrdt : variation relative permise de dt         (idtvar non nul)
-  !   dtmin, dtmax : valeur limite min et max de dt     (idtvar non nul)
-  !       prendre pour dtmax = max (ld/ud, sqrt(lt/(gdelta rho/rho)), ...)
-  !   cdtvar : coef multiplicatif pour le pas de temps de chaque variable
-  !         pour u,v,w,p il est inutilise
-  !         pour k,e    on prend la meme valeur : celle de k
-  !         pour Rij, e on prend la meme valeur : celle de r11
-  !   relaxv : relaxation des variables (1 pas de relax)
-  !   relxst : coefficient de relaxation de base stationnaire
+  !> indicator "zero time step"
+  !>    - 0: standard calculation
+  !>    - 1: to simulate no time step
+  !>         - pour les calculs non suite :
+  !>           on saute uniquement les resolutions (Navier-Stokes,
+  !>           turbulence, scalaires...)
+  !>         - pour les calculs suite :
+  !>           on saute les resolutions (navier-stokes,
+  !>           turbulence, scalaires...) et le calcul des proprietes
+  !>           physiques, les conditions aux limites (les grandeurs
+  !>           sont lues dans le fichier suite)
+  integer, save ::          inpdt0
 
-  integer, save ::          inpdt0, idtvar,iptlro
-  double precision, save :: dtref,coumax,foumax,                  &
-                            dtmin,dtmax ,varrdt,cdtvar(nvarmx),   &
-                            relaxv(nvarmx), relxst
+  !> Clip the time step with respect to the buoyant effects
+  !>    - 0: false
+  !>    - 1: true
+  integer, save ::          iptlro
 
+  !> option for a variable time step
+  !>    - -1: stationary algorithm
+  !>    -  0: constant time step
+  !>    -  1: time step constant in space but variable in time
+  !>    -  2: variable time step in space and in time
+  integer, save ::          idtvar
+
+  !> reference time step
+  double precision, save :: dtref
+
+  !> maximum Courant number (when idtvar is different from 0)
+  double precision, save :: coumax
+
+  !> maximum Fourier number (when idtvar is different from 0)
+  double precision, save :: foumax
+
+  !> relative allowed variation of dt (when idtvar is different from 0)
+  double precision, save :: varrdt
+
+  !> minimum value of dt (when idtvar is different from 0).
+  !> Take dtmin = min (ld/ud, sqrt(lt/(gdelta rho/rho)), ...)
+  double precision, save :: dtmin
+
+  !> maximum value of dt (when idtvar is different from 0).
+  !> Take dtmax = max (ld/ud, sqrt(lt/(gdelta rho/rho)), ...)
+  double precision, save :: dtmax
+
+  !> multiplicator coefficient for the time step of each variable
+  !>    - useless for u,v,w,p
+  !>    - for k,e     the same value is taken (value of k)
+  !>    - for Rij, e  the same value is taken (value of r11)
+  double precision, save :: cdtvar(nvarmx)
+
+  !> relaxation of variables (1 stands fo no relaxation)
+  double precision, save :: relaxv(nvarmx)
+
+  !> relaxation coefficient for the stationary algorithm
+  double precision, save :: relxst
+
+  !> \}
+
+  !----------------------------------------------------------------------------
   ! turbulence
-  !  iturb
-  !    = 0  pas de turbulence
-  !    = 10 longueur de melange
-  !    = 20, 21 k-epsilon
-  !         * 20 modele standard
-  !         * 21 modele a production lineaire
-  !    = 30, 31 Rij-epsilon
-  !         * 30 modele standard (LRR)
-  !         * 31 modele ssg
-  !    = 40, 41, 42 les
-  !         * 40 modele de Smagorinsky constant
-  !         * 41 modele de Smagorinsky dynamique "classique"
-  !         * 42 modele de Smagorinsky dynamique de "Piomelli et Liu"
-  !    = 50 v2f phi-model
-  !    = 60 k-omega sst
-  !    = 70 Spalart-Allmaras
-  !  itytur
-  !    = int(iturb/10) pour distinguer rapidement les classes de modeles
-  !  irccor
-  !    = 0 no rotation/curvature correction for an eddy viscosity turbulence
-  !        model
-  !    = 1 activate rotation/curvature correction for an eddy viscosity
-  !        turbulence model
-  !  itycor
-  !    = 1 Cazalbou correction: default when irccor = 1 and itytur = 2 or 5
-  !    = 2 Spalart-Shur correction: default when irccor = 1 and
-  !        iturb = 60 or 70
-  !  ideuch
-  !    = 0 une echelle       (deux echelles = faux)
-  !    = 1 deux echelles     (deux echelles = vrai)
-  !    = 2 deux echelles limitation de yplus a ypluli (scalable wall function)
-  !  iwallt
-  !    = 0 exchange coefficient correlation not use by default
-  !    = 1 exchange coefficient computed with a correlation
-  !  ilogpo
-  !    = 0 une echelle  avec loi en puissance
-  !    = 1 une echelles avec loi log
-  !  iclkep
-  !    = 0 clipping en valeur absolue de k et epsilon
-  !    = 1 clipping couple k-epsilon base sur des relations physiques
-  !  igrhok
-  !    = 1     prise en compte de 2/3 rho grad k dans navier stokes
-  !    = 0 non prise en compte de 2/3 rho grad k dans navier stokes
-  !  igrake
-  !    = 1 gravite dans k-epsilon
-  !    = 0 sinon
-  !  igrari
-  !    = 1 gravite dans Rij-epsilon
-  !    = 0 sinon
-  !  iscalt numero du scalaire qui tient lieu de temperature
-  !    donc variable isca(iscalt)
-  !  ikecou
-  !    = 1 k-epsilon couple en increments
-  !    = 0 sinon
-  !  irijnu
-  !         = 1 viscosite dans la matrice en increments de vitesse (Rij)
-  !         = 0 sinon
-  !  irijrb
-  !         = 1 traitement precis de Rij au bord, voir condli      (Rij)
-  !         = 0 sinon
-  !  idifre
-  !         = 1 traitement complet de la diagonale du tenseur de
-  !             diffusion de Rij et epsilon (Rij)
-  !         = 0 traitement simplifie
-  !  iclsyr
-  !         = 1 implicitation partielle de Rij dans les cl de symetrie
-  !         = 0 pas d'implicitation
-  !  iclptr
-  !         = 1 implicitation partielle de Rij et epsilon dans les cl
-  !             de paroi turbulente
-  !         = 0 pas d'implicitation
-  !  idries : amortissement de type Van Driest a la paroi
-  !         = 0 sans amortissement
-  !         = 1 avec amortissement
-  !  ivrtex : utilisation de la methode des vortex
-  !         = 0 sans methode des vortex
-  !         = 1 avec methode des vortex
+  !----------------------------------------------------------------------------
 
-  integer, save :: iturb , itytur,                 &
-                   irccor, itycor,                 &
-                   ideuch, iwallt, ilogpo, iclkep, &
-                   igrhok, igrake,                 &
-                   iscalt, ikecou,                 &
-                   irijnu, irijrb, irijec,         &
-                   igrari, idifre, iclsyr,         &
-                   iclptr, idries, ivrtex
+  !> \defgroup turbulence turbulence options
 
-  ! ivisse prise en compte de -2/3 grad(mu div(u)) + div(mu (grad_t(u)))
+  !> \addtogroup turbulence
+  !> \{
 
+  !> turbulence model
+  !>    - 0: no turbulence model (laminar flow)
+  !>    - 10: mixing length model
+  !>    - 20: standard \f$ k-\varepsilon \f$ model
+  !>    - 21: \f$ k-\varepsilon \f$ model with Linear Production (LP) correction
+  !>    - 30: \f$ R_{ij}-\epsilon \f$ (LRR)
+  !>    - 31: \f$ R_{ij}-\epsilon \f$ (SSG)
+  !>    - 32: \f$ R_{ij}-\epsilon \f$ (EBRSM)
+  !>    - 40: LES (constant Smagorinsky model)
+  !>    - 41: LES ("classical" dynamic Smagorisky model)
+  !>    - 42: LES (dynamic Smagorinsky of "Piomelli and Liu")
+  !>    - 50: v2f phi-model
+  !>    - 51: v2f \f$ BL-v^2-k \f$
+  !>    - 60: \f$ k-\omega \f$ SST
+  !>    - 70: Spalart-Allmaras model
+  integer, save :: iturb
+
+  !> Class of turbulence model (integer value iturb/10)
+  integer, save :: itytur
+
+  !> Activation of rotation/curvature correction for an eddy viscosity turbulence models
+  !>    - 0: false
+  !>    - 1: true
+  integer, save :: irccor
+
+  !> Type of rotation/curvature correction for an eddy viscosity turbulence models
+  !>    - 1 Cazalbou correction (default when irccor=1 and itytur=2 or 5)
+  !>    - 2 Spalart-Shur correction (default when irccor=1 and iturb=60 or 70)
+  integer, save :: itycor
+
+  !>  Wall functions
+  !>    - 0: one scale of friction velocities
+  !>    - 1: two scale of friction velocities
+  !>    - 2: scalable wall functions
+  integer, save :: ideuch
+
+  !> exchange coefficient correlation
+  !>    - 0: not use by default
+  !>    - 1: exchange coefficient computed with a correlation
+  integer, save :: iwallt
+
+  !> wall function with
+  !>    - 0 a power lay (deprecated)
+  !>    - 1 a log lay
+  integer, save :: ilogpo
+
+  !> clipping of k and epsilon
+  !>    - 0 absolute value clipping
+  !>    - 1 coupled clipping based on physical relationships
+  integer, save :: iclkep
+
+  !> take \f$ 2/3 \rho \grad k \f$ in the momentum equation
+  !>    - 1: true
+  !>    - 0: false (default)
+  integer, save :: igrhok
+
+  !> buoyant term in \f$ k- \varepsilon \f$
+  !>    - 1: true (default if \f$ \rho \f$ is variable)
+  !>    - 0: false
+  integer, save :: igrake
+
+  !> buoyant term in \f$ R_{ij}- \varepsilon \f$
+  !>    - 1: true (default if \f$ \rho \f$ is variable)
+  !>    - 0: false
+  integer, save :: igrari
+
+  !> index of the thermal scalar (temperature, energy of enthalpy),
+  !> the index of the corresponding variable is isca(iscalt)
+  integer, save :: iscalt
+
+  !> partially coupled version of \f$ k-\varepsilon \f$ (only for iturb=20)
+  !>    - 1: true (default)
+  !>    - 0: false
+  integer, save :: ikecou
+
+  !> pseudo eddy viscosity in the matrix of momentum equation to partially
+  !> implicit \$f \divv \left( \rho \tens{R} \right) \f$
+  !>    - 1: true
+  !>    - 0: false (default)
+  integer, save :: irijnu
+
+  !> accurate treatment of \f$ \tens{R} \f$ at the boundary (see \ref condli)
+  !>    - 1: true
+  !>    - 0: false (default)
+  integer, save :: irijrb
+
+  !> wall echo term of \f$ \tens{R} \f$
+  !>    - 1: true
+  !>    - 0: false (default)
+  integer, save :: irijec
+
+  !> whole treatment of the diagonal part of the dissusion tensor of
+  !> \f$ \tens{R} \f$ and \f$ \varepsilon \f$
+  !>    - 1: true (default)
+  !>    - 0: simplified treatment
+  integer, save :: idifre
+
+  !> partial implicitation of symmetry BCs of \f$ \tens{R} \f$
+  !>    - 1: true (default)
+  !>    - 0: false
+  integer, save :: iclsyr
+
+  !> partial implicitation of wall BCs of \f$ \tens{R} \f$
+  !>    - 1: true
+  !>    - 0: false (default)
+  integer, save :: iclptr
+
+  !> Van Driest smoothing at the wall (only for itytur=4)
+  !>    - 1: true
+  !>    - 0: false
+  integer, save :: idries
+
+  !> vortex method (in LES)
+  !>    - 1: true
+  !>    - 0: false (default)
+  integer, save :: ivrtex
+
+  !> turbulent flux model for \f$ \overline{\varia^\prime \vect{u}^\prime} \f$
+  !> for any scalar \f$ \varia \f$, iturt(isca)
+  !>    - 0: SGDH
+  !>    - 10: GGDH
+  !>    - 20: AFM
+  !>    - 30: DFM (Transport equation modelized)
+  integer, save :: iturt(nscamx)
+  !    - 11: EB-GGDH
+  !    - 21: EB-AFM
+  !    - 31: EB-DFM
+
+  !> class turbulent flux model (=iturt/10)
+  integer, save :: ityturt(nscamx)
+
+  !> index of the turbulent flux for the scalar iscal
+  integer, save :: ifltur(nscamx)
+
+  !> number of variable plus number of turbulent fluxes
+  !> (used by the Boundary Conditions)
+  integer, save :: nvarcl
+
+  !> \}
+
+  !----------------------------------------------------------------------------
+  ! Stokes
+  !----------------------------------------------------------------------------
+
+  !> \defgroup stokes Stokes options
+
+  !> \addtogroup stokes
+  !> \{
+
+  !> take \f$ \divs \left( \mu \transpose{\gradt \, \vect{u}} - 2/3 \mu \trace{\gradt \, \vect{u}} \right) \f$
+  !> into account in the momentum equation
+  !>    - 1: true (default)
+  !>    - 0: false
   integer, save :: ivisse
 
-  ! Stokes
-  !   irevmc
-  !     = 2 pour reconstruction des vitesses de type rt0
-  !     = 1 pour reconstruction des vitesses avec gradient de l'increment
-  !           de pression par moindres carres
-  !     = 0 sinon
-  !   iprco
-  !     = 0 pour calcul sans pression continuite
-  !     = 1 pour calcul avec pression continuite
-  !   arak proportion d'Arakawa (1 pour Arakawa complet)
-  !   relaxv relaxation des variables (1 pas de relax)
-  !   rnormp normalisation pour la convergence de resolp
+  !> Reconstruction of the velocity field with the updated pressure option
+  !>    - 2: least square methode (deprecated, only if ivelco=0)
+  !>    - 1: least square methode on the pressure increment (deprecated, only if ivelco=0)
+  !>    - 0: default
+  integer, save ::          irevmc
 
-  integer, save ::          irevmc, iprco , irnpnw
-  double precision, save :: rnormp, arak
+  !> Compute the pressure step thanks to the continuity equation
+  !>    - 1: true (default)
+  !>    - 0: false
+  integer, save ::          iprco
 
-  !   ivelco
-  !     = 1 resolution couplee des composantes de vitesse
-  !     = 0 resolution decouplee des composantes de vitesse (Standard)
+  !> Compute the normed residual for the pressure step in the prediction step
+  !>    - 1: true (default)
+  !>    - 0: false
+  integer, save ::          irnpnw
 
+  !> normed residual for the pressure step
+  double precision, save :: rnormp
+
+  !> Arakawa multiplicator for the Rhie and Chow filter (1 by default)
+  double precision, save :: arak
+
+  !> coupled velocity components solver
+  !>    - 1: true (default)
+  !>    - 0: segregated (deprecated)
   integer, save :: ivelco
 
-  !   iporos
-  !     = 1 Taking porosity into account
-  !     = 0 Standard algorithm (Without porosity)
-
-  integer, save :: iporos
-
-  ! ipucou algorithme couplage instationnaire vitesse/pression
-
+  !> Pseudo coupled pressure-velocity solver
+  !>    - 1: true
+  !>    - 0: false (default)
   integer, save :: ipucou
 
-  ! iccvfg calcul a champ de vitesse fige
-
+  !> calculation with a fixed velocity field
+  !>    - 1: true
+  !>    - 0: false (default)
   integer, save :: iccvfg
 
-  ! Calcul de la viscosite
+  !> Algorithm to take into account the density variation in time
+  !>    - 1: dilatable steady algorithm (default)
+  !>    - 2: dilatable unsteady algorithm
+  !>    - 3: low-Mach algorithm
+  !>    - 4: algorithm for fire
+  !    - 0: boussinesq algorithm with constant density
+  integer, save :: idilat
 
-  integer, save :: imvisf
+  !> parameter of diagonal pressure strengthening
+  double precision, save :: epsdp
 
-  ! modele de flux turbulent u'T' pour un scalaire T
-  !  iturt
-  !    = 0  SGDH
-  !    = 10 GGDH
-  !    = 20 AFM
-  !    = 30 DFM (Transport equation modelized)
-  !    = 11 EB-GGDH
-  !    = 21 EB-AFM
-  !    = 31 EB-DFM
-  !  ityturt
-  !    = int(iturt/10) pour distinguer rapidement les classes de modeles
-  !  ifltur
-  !    = index of the turbulent flux for the scalar iscal.
-  !  nvarcl
-  !    = number of variable plus number of turbulent fluxes
-
-  integer, save :: iturt(nscamx) , ityturt(nscamx), ifltur(nscamx), nvarcl
-
+  !TODO doxygen
   ! Type des conditions limites et index min et max
   !                 des sous listes defaces de bord
-
   integer, save :: idebty(ntypmx), ifinty(ntypmx)
 
-  !  itrbrb = 1 traitement precis de la temperature au bord, voir condli
-  !             (utilise pour couplage syrthes)
-  !         = 0 sinon
-  !  icpsyr = 1 si scalaire couple a syrthes
-  !    donc pour le moment vaut 1 pour iscalt uniquement
+  !> accurate treatment of the wall temperature
+  !>    - 1: true
+  !>    - 0: false (default)
+  !> (see \ref condli, usefull in case of coupling with syrthes)
+  integer, save :: itbrrb
 
-  integer, save :: itbrrb, icpsyr(nscamx)
+  !> indicates if the scalar isca is coupled with syrthes
+  !>    - 1: coupled with syrthes
+  !>    - 0: uncoupled
+  !>
+  !> \remark
+  !> only one scalar can be coupled with syrthes
+  integer, save :: icpsyr(nscamx)
 
-  !   Prise en compte de l'equilibre entre le gradient de pression
-  !        et les termes sources de gravite et de perte de charge
+  !> improve hydrostatic pressure algorithm
+  !>    - 1: impose the equilibrium of the hydrostaic part of the pressure with any external force, even head losses
+  !>    - 2: compute an hydrostatic pressure due to buoyancy forces before the prediction step
+  !>    - 0: no treatment (default)
+  integer, save :: iphydr
 
-  !     iphydr = 0 algorithme sans prise en compte de l'equilibre
-  !            = 1 algorithme avec prise en compte de l'equilibre
-  !     icalhy = 0 pas de calcul de la pression hydrostatique pour les
-  !                dirichlets de pression en sortie
-  !            = 1        calcul de la pression hydrostatique pour les
-  !                Dirichlets de pression en sortie
+  !> compute the hydrostatic pressure in order to compute the Dirichlet
+  !> conditions on the pressure at outlets
+  !>    - 1: true
+  !>    - 0: false (default)
+  integer, save :: icalhy
 
-  integer, save :: iphydr, icalhy
-
+  !TODO doxygen
   ! icond: Handling condensation source terms
   !        1: condensation source terms activated
   !        2: condensation source terms with metal structures activated
   !        0: by default (without condensation source terms)
-
   integer, save :: icond
 
-  !   Calcul des estimateurs
-
+  !> compute error estimators
+  !>    - 1: true
+  !>    - 0: false (default)
   integer, save :: iescal(nestmx)
 
-  !   Calcul des moyennes temporelles (calcul des moments)
+  !> \}
 
-  !  nbmomt : nombre de moyennes demandees
-  !  nbdtcm : nombre de tableaux ncel pour le temps cumule
-  !  ntdmom : numero du pas de temps initial pour le calcul du moment
-  !  ttdmom : temps initial pour le calcul du moment
-  !  imoold : numero de l'ancien moment correspondant en cas de suite
-  !  icmome : pointeur pour les moments (donne un numero de propriete)
-  !           s'utilise ainsi propce(iel,ipproc(icmome(imom)))
-  !  idtmom : numero du temps cumule associe aux moments
-  !           ce numero va de 1 a n pour les temps cumules non uniformes
-  !                     et de -1 a -p pour les temps cumules uniformes
-  !           s'utilise ainsi :
-  !              si idtmom(imom) > 0 propce(iel,ipropc(icdtmo(idtmom(imom))))
-  !              si idtmom(imom) < 0 dtcmom(-idtmom(imom))
-  !  idfmom : numero des variables composant le moment idfmom(jj,imom)
-  !  idgmom : degre du moment
-  !  icdtmo : numero de propriete du temps cumule (voir idtmom)
-  !  ippmom : repere pour le post si on doit diviser la variable
-  !           par un temps cumule (voir memtri et usvpst)
-  !  dtcmom : valeur du pas de temps cumule quand il est uniforme (voir idtmom).
+  !----------------------------------------------------------------------------
+  ! Temporal mean and moments calculation
+  !----------------------------------------------------------------------------
 
-  integer, save ::          nbmomt, nbdtcm,                                 &
-                            ntdmom(nbmomx), imoold(nbmomx),                 &
-                            icmome(nbmomx), idtmom(nbmomx),                 &
-                            idfmom(ndgmox,nbmomx),          idgmom(nbmomx), &
-                            icdtmo(nbmomx), ippmom(nvppmx)
-  double precision, save :: dtcmom(nbmomx), ttdmom(nbmomx)
+  !> \defgroup mean_moments Temporal mean and moments calculation
 
-  ! Indicateur pertes de charge global (ie somme sur les processeurs
-  !   de ncepdc)
+  !> \addtogroup mean_moments
+  !> \{
 
+  !> number of moments
+  integer, save ::          nbmomt
+
+  !> nombre de tableaux ncel pour le temps cumule
+  integer, save ::          nbdtcm
+
+  !> index of the initial time step for computing the moment
+  integer, save ::          ntdmom(nbmomx)
+
+  !> numero de l'ancien moment correspondant en cas de suite
+  integer, save ::          imoold(nbmomx)
+
+  !> icmome : pointeur pour les moments (donne un numero de propriete)
+  !>           s'utilise ainsi propce(iel,ipproc(icmome(imom)))
+  integer, save ::          icmome(nbmomx)
+
+  !> numero du temps cumule associe aux moments
+  !> ce numero va de 1 a n pour les temps cumules non uniformes
+  !> et de -1 a -p pour les temps cumules uniformes
+  !> s'utilise ainsi
+  !>    - si idtmom(imom) > 0 propce(iel,ipropc(icdtmo(idtmom(imom))))
+  !>    - si idtmom(imom) < 0 dtcmom(-idtmom(imom))
+  integer, save ::          idtmom(nbmomx)
+
+  !> numero des variables composant le moment idfmom(jj,imom)
+  integer, save ::          idfmom(ndgmox,nbmomx)
+
+  !> moment degree
+  integer, save ::          idgmom(nbmomx)
+
+  !> numero de propriete du temps cumule (voir idtmom)
+  integer, save ::          icdtmo(nbmomx)
+
+  !> repere pour le post si on doit diviser la variable
+  !> par un temps cumule (see \ref memtri and \ref usvpst)
+  integer, save ::          ippmom(nvppmx)
+
+  !> valeur du pas de temps cumule quand il est uniforme (see \ref idtmom).
+  double precision, save :: dtcmom(nbmomx)
+
+  !> initial time for computing the moment
+  double precision, save :: ttdmom(nbmomx)
+
+  !> \}
+
+  !----------------------------------------------------------------------------
+  ! Additional source terms
+  !----------------------------------------------------------------------------
+
+  !> \defgroup additional_source_terms Additional source terms
+
+  !> \addtogroup additional_source_terms
+  !> \{
+
+  !> Indicateur pertes de charge global (ie somme sur les processeurs
+  !>   de ncepdc)
   integer, save :: ncpdct
 
-  ! Indicateur module thermique 1d global (ie somme sur les processeurs
-  !   de nfpt1d)
-
+  !> Indicateur module thermique 1d global (ie somme sur les processeurs
+  !>   de nfpt1d)
   integer, save :: nfpt1t
 
-  ! Indicateur termes sources de masse global (ie somme sur les processeurs
-  !   de ncetsm)
-
+  !> Indicateur termes sources de masse global (ie somme sur les processeurs
+  !>   de ncetsm)
   integer, save :: nctsmt
 
+  !> take the porosity fomulation into account
+  !>    - 1: Taking porosity into account
+  !>    - 0: Standard algorithm (Without porosity)
+  integer, save :: iporos
+
+  !TODO move it elsewhere?
   ! Indicateur de passage dans l'initialisation des
   !                       variables par l'utilisateur
   !          iusini = 1 passage dans usiniv ou ppiniv
@@ -563,92 +826,162 @@ module optcal
 
   integer, save :: iusini
 
-  ! Parametres numeriques pour le calcul de la distance a la paroi
+  !> \}
 
-  ! ineedy : = 1 distance a la paroi est necessaire pour le calcul
-  !          = 0 distance a la paroi n'est pas necessaire
-  ! imajdy : = 1 distance a la paroi a ete mise a jour
-  !          = 0 distance a la paroi n'a pas ete mise a jour
-  ! icdpar : = 1 calcul standard (et relecture en suite de calcul)
-  !          = 2 calcul ancien   (et relecture en suite de calcul)
-  !          =-1 forcer le recalcul en suite (par calcul standard)
-  !          =-2 forcer le recalcul en suite (par calcul ancien)
-  ! nitmay : nombre max d'iterations pour les resolutions iteratives
-  ! nswrsy : nombre de sweep pour reconstruction des s.m.
-  ! nswrgy : nombre de sweep pour reconstruction des gradients
-  ! imligy : methode de limitation du gradient
-  ! ircfly : indicateur pour reconstruction des flux
-  ! ischcy : indicateur du schema en espace
-  ! isstpy : indicateur pour test de pente
-  ! imgrpy : multigrille
-  ! iwarny : niveau d'impression
-  ! ntcmxy : nombre max d'iteration pour la convection de y
+  !----------------------------------------------------------------------------
+  ! Numerical parameters for the wall distance calculation
+  !----------------------------------------------------------------------------
 
-  integer, save :: ineedy, imajdy, icdpar,    &
-                   nitmay, nswrsy, nswrgy,    &
-                   imligy, ircfly, ischcy,    &
-                   isstpy, imgrpy, iwarny,    &
-                   ntcmxy
+  !> \defgroup num_wall_distance Numerical parameters for the wall distance calculation
+
+  !> \addtogroup num_wall_distance
+  !> \{
+
+  !> ineedy : = 1 distance a la paroi est necessaire pour le calcul
+  !>          = 0 distance a la paroi n'est pas necessaire
+  integer, save :: ineedy
+
+  !> imajdy : = 1 distance a la paroi a ete mise a jour
+  !>          = 0 distance a la paroi n'a pas ete mise a jour
+  integer, save :: imajdy
+
+  !> icdpar : = 1 calcul standard (et relecture en suite de calcul)
+  !>          = 2 calcul ancien   (et relecture en suite de calcul)
+  !>          =-1 forcer le recalcul en suite (par calcul standard)
+  !>          =-2 forcer le recalcul en suite (par calcul ancien)
+  integer, save :: icdpar
+
+  !> nitmay : nombre max d'iterations pour les resolutions iteratives
+  integer, save :: nitmay
+
+  !> nswrsy : nombre de sweep pour reconstruction des s.m.
+  integer, save :: nswrsy
+
+  !> nswrgy : nombre de sweep pour reconstruction des gradients
+  integer, save :: nswrgy
+
+  !> imligy : methode de limitation du gradient
+  integer, save :: imligy
+
+  !> ircfly : indicateur pour reconstruction des flux
+  integer, save :: ircfly
+
+  !> ischcy : indicateur du schema en espace
+  integer, save :: ischcy
+
+  !> isstpy : indicateur pour test de pente
+  integer, save :: isstpy
+
+  !> imgrpy : multigrille
+  integer, save :: imgrpy
+
+  !> iwarny : niveau d'impression
+  integer, save :: iwarny
+
+  !> ntcmxy : nombre max d'iteration pour la convection de y
+  integer, save :: ntcmxy
 
   ! blency : 1 - proportion d'upwind
+  double precision, save :: blency
+
   ! epsily : precision pour resolution iterative
+  double precision, save :: epsily
+
   ! epsrsy : precision pour la reconstruction du second membre
+  double precision, save :: epsrsy
+
   ! epsrgy : precision pour la reconstruction des gradients
+  double precision, save :: epsrgy
+
   ! climgy : coef gradient*distance/ecart
+  double precision, save :: climgy
+
   ! extray : coef d'extrapolation des gradients
+  double precision, save :: extray
+
   ! coumxy : valeur max   du courant pour equation convection
+  double precision, save :: coumxy
+
   ! epscvy : precision pour convergence equation convection stationnaire
+  double precision, save :: epscvy
+
   ! yplmxy : valeur max   de yplus au dessus de laquelle l'amortissement de
   !          Van Driest est sans effet et donc pour laquelle un calcul de
   !          yplus moins precis est suffisant
+  double precision, save :: yplmxy
 
-  double precision, save :: blency, epsily, epsrsy,    &
-                            epsrgy, climgy, extray,    &
-                            coumxy, epscvy, yplmxy
-
+  !TODO move it elsewhere?
   ! Parametres numeriques pour le calcul des efforts aux bords
 
-  ! ineedf : = 1 on calcule les efforts aux parois
-  !          = 0 on ne calcule pas les efforts aux parois
-
+  !> ineedf : = 1 on calcule les efforts aux parois
+  !>          = 0 on ne calcule pas les efforts aux parois
   integer, save :: ineedf
 
-  ! Constantes pour les scalaires
+  !> \}
 
-  ! iscsth :
-  !   -1 : de type temperature en C (      Cp pour la loi de paroi)
-  !    0 : scalaire passif      (ie pas de Cp pour la loi de paroi)
-  !    1 : de type temperature en K (      Cp pour la loi de paroi)
-  !    2 : enthalpie            (ie pas de Cp pour la loi de paroi)
-  !    3 : energie (en compressible, pas de Cp pour la loi de paroi)
-  !      la distinction C/K sert en rayonnement
-  ! ivisls : si positif strictement, indique que la viscosite associee
-  !            au scalaire est variable, et la valeur est le numero
-  !            d'ordre de la viscosite dans le tableau des viscosites
-  !            variables
-  ! ivissa : comme ivisls sauf que sert au stockage de la viscosite au
-  !          pas de temps precedent
-  ! iclvfl : 0 : clipping des variances a zero
-  !          1 : clipping des variances a zero et a f(1-f)
-  !          2 : clipping des variances a max(zero,scamin) et scamax
-  ! iscavr : numero du scalaire associe a la variance ou zero
-  !          si le scalaire n'est pas une variance
-  ! iscasp : 0 : le scalaire associe n est pas une espece
-  !          1 : le scalaire associe est une espece
-  ! scamin, scamax : min et max pour clipping des scalaires
-  !                  on ne clippe que si scamin < scamax
-  ! visls0 : viscosite des scalaires si constante
-  ! sigmas : prandtl des scalaires
-  ! wmolsp : molar fraction for multi-species scalars
-  !          wmolsp(0) is associated to the deduced species.
-  ! rvarfl : coeff de dissipation des variances
-  ! ctheta : coefficient des modeles de flux turbulents GGDH et AFM
+  !----------------------------------------------------------------------------
+  ! Transported scalars parameters
+  !----------------------------------------------------------------------------
 
-  integer, save ::          iscsth(nscamx), ivisls(nscamx), ivissa(nscamx),  &
-                            iclvfl(nscamx), iscavr(nscamx), iscasp(nscamx)
-  double precision, save :: scamin(nscamx), scamax(nscamx),                  &
-                            visls0(nscamx), sigmas(nscamx), wmolsp(0:nscamx),&
-                            rvarfl(nscamx), ctheta(nscamx)
+  !> \defgroup scalar_params Transported scalars parameters
+
+  !> \addtogroup scalar_params
+  !> \{
+
+  !> iscsth
+  !>   -1 : de type temperature en C (      Cp pour la loi de paroi)
+  !>    0 : scalaire passif      (ie pas de Cp pour la loi de paroi)
+  !>    1 : de type temperature en K (      Cp pour la loi de paroi)
+  !>    2 : enthalpie            (ie pas de Cp pour la loi de paroi)
+  !>    3 : energie (en compressible, pas de Cp pour la loi de paroi)
+  !>      la distinction C/K sert en rayonnement
+  integer, save ::          iscsth(nscamx)
+
+  !> ivisls : si positif strictement, indique que la viscosite associee
+  !>            au scalaire est variable, et la valeur est le numero
+  !>            d'ordre de la viscosite dans le tableau des viscosites
+  !>            variables
+  integer, save ::          ivisls(nscamx)
+
+  !> ivissa : comme ivisls sauf que sert au stockage de la viscosite au
+  !>          pas de temps precedent
+  integer, save ::          ivissa(nscamx)
+
+  !> iclvfl : 0 : clipping des variances a zero
+  !>          1 : clipping des variances a zero et a f(1-f)
+  !>          2 : clipping des variances a max(zero,scamin) et scamax
+  integer, save ::          iclvfl(nscamx)
+
+  !> iscavr : numero du scalaire associe a la variance ou zero
+  !>          si le scalaire n'est pas une variance
+  integer, save ::          iscavr(nscamx)
+
+  !> iscasp : 0 : le scalaire associe n est pas une espece
+  !>          1 : le scalaire associe est une espece
+  integer, save ::          iscasp(nscamx)
+
+  !> scamin, scamax : min et max pour clipping des scalaires
+  !>                  on ne clippe que si scamin < scamax
+  double precision, save :: scamin(nscamx), scamax(nscamx)
+
+  !> visls0 : viscosite des scalaires si constante
+  double precision, save :: visls0(nscamx)
+
+  !> sigmas : prandtl des scalaires
+  double precision, save :: sigmas(nscamx)
+
+  !> molar fraction for multi-species scalars
+  !> \remarks
+  !> wmolsp(0) is associated to the deduced species.
+  double precision, save :: wmolsp(0:nscamx)
+
+  !> rvarfl : coeff de dissipation des variances
+  double precision, save :: rvarfl(nscamx)
+
+  !> ctheta : coefficient des modeles de flux turbulents GGDH et AFM
+  double precision, save :: ctheta(nscamx)
+
+  !> \}
 
   !=============================================================================
 
