@@ -26,102 +26,9 @@
 ! Purpose:
 ! -------
 
-!> \file cs_user_extra_operations-energy_balance.f90
-!>
-!> \brief This is an example of cs_user_extra_operations.f90 which
-!>  performs an energy balance.
-!>
-!>
-!> \section loc_var Local variables to be added
-!>
-!> \snippet cs_user_extra_operations-energy_balance.f90 loc_var_dec
-!>
-!>
-!> \subsection ex_1 Example 1
-!>
-!> This example computes energy balance relative to temperature
-!> We assume that we want to compute balances  (convective and diffusive)
-!> at the boundaries of the calculation domain represented below
-!> (with boundaries marked by colors).
-!>
-!> The scalar considered if the temperature. We will also use the
-!> specific heat (to obtain balances in Joules)
-!>
-!>
-!> Domain and associated boundary colors:
-!> - 2, 4, 7 : adiabatic walls
-!> - 6       : wall with fixed temperature
-!> - 3       : inlet
-!> - 5       : outlet
-!> - 1       : symmetry
-!>
-!>
-!> To ensure calculations have physical meaning, it is best to use
-!> a spatially uniform time step (\ref idtvar = 0 or 1).
-!> In addition, when restarting a calculation, the balance is
-!> incorrect if \ref inpdt0 = 1 (visct not initialized and t(n-1) not known)
-!>
-!>
-!> Temperature variable
-!> - ivar = \ref isca(\ref  iscalt) (use rtp(iel, ivar))
-!>
-!> Boundary coefficients coefap/coefbp are those of \ref ivarfl(ivar)
-!>
-!>
-!> The balance at time step n is equal to:
-!>
-!> \f[
-!> \begin{array}{r c l}
-!> Blance^n &=& \displaystyle
-!>              \sum_{\celli=1}^{\ncell}
-!>                 \norm{\vol{\celli}} C_p \rho_\celli
-!>                 \left(T_\celli^{n-1} -T_\celli^n \right)  \\
-!>          &+& \displaystyle
-!>              \sum_{\fib}
-!>                 C_p \Delta t_\celli \norm{\vect{S}_\ib}
-!>                 \left(A_\ib^f + B_\ib^f T_\celli^n \right) \\
-!>          &+& \displaystyle
-!>              \sum_{\fib}
-!>                 C_p \Delta t_\celli \dot{m}_\ib
-!>                 \left(A_\ib^g + B_\ib^g T_\celli^n \right)
-!> \end{array}
-!> \f]
-!>
-!> The first term is negative if the amount of energy in the volume
-!> has decreased (it is 0 in a steady regime).
-!>
-!> The other terms (convection, diffusion) are positive if the amount
-!> of energy in the volume has increased due to boundary conditions.
-!>
-!> In a steady regime, a positive balance thus indicates an energy gain.
-!>
-!>
-!> With \f$ \rho \f$ (\c rom) calculated using the density law from the
-!> \ref usphyv subroutine, for example:
-!>
-!> \f[
-!> \rho^{n-1}_\celli = P_0 / \left( R T_\celli^{n-1} + T_0 \right)
-!> \f]
-!> where \f$ R\f$ is \c rr and \f$ T_0 \f$ is \c tkelv.
-!>
-!>
-!> \f$ C_p \f$ and \f$ \lambda/C_p \f$ may vary.
-!>
-!>
-!> Here is the corresponding code:
-!>
-!> \snippet cs_user_extra_operations-energy_balance.f90 example_1
-!>
-!>
-!> \remark
-!> The approach may be used for the balance of any other scalar (but the
-!> balances are not in Joules and the specific heat is not used)
-!> In this case:
-!> - replace \ref iscalt by the number iscal of the required scalar,
-!>   \c iscal having an allowed range of 1 to nscal.
-!> - set \c ipccp to 0 independently of the value of \c icp
-!>   and use 1 instead of \c cp0
-!>
+! This is an example of cs_user_extra_operations.f90 which
+! performs an energy balance.
+
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -245,8 +152,10 @@ double precision, allocatable, dimension(:) :: treco
 ! Initialization
 !===============================================================================
 
+!< [init]
 ! Allocate a temporary array for cells or interior/boundary faces selection
 allocate(lstelt(max(ncel,nfac,nfabor)))
+!< [init]
 
 !===============================================================================
 
@@ -873,8 +782,10 @@ if (inpdt0.eq.0) then
 endif ! End of test on inpdt0
 !< [example_1]
 
+!< [finalize]
 ! Deallocate the temporary array
 deallocate(lstelt)
+!< [finalize]
 
 return
 end subroutine cs_user_extra_operations

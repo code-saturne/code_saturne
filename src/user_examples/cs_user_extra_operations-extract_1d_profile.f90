@@ -26,40 +26,9 @@
 ! Purpose:
 ! -------
 
-!> \file cs_user_extra_operations-extract_1d_profile.f90
-!>
-!> \brief This is an example of cs_user_extra_operations.f90 which
-!>  performs 1D profile.
-!>
-!>
-!> \section loc_var Local variables to be added
-!>
-!> \snippet cs_user_extra_operations-extract_1d_profile.f90 loc_var_dec
-!>
-!>
-!> \subsection ex_1 Example 1
-!>
-!>  We seek here to extract the profile of U, V, W, k and epsilon on an
-!>  arbitrary 1D curve based on a curvilear abscissa.
-!>  The profile is described in the 'profile.dat' file (do not forget to
-!>  define it as user data in the run script).
-!>
-!>  - the curve used here is the segment: [(0;0;0),(0;0.1;0)], but the
-!>    generalization to an arbitrary curve is simple.
-!>  - the routine handles parallelism an periodicity, as well as the different
-!>    turbulence models.
-!>  - the 1D curve is discretized into 'npoint' points. For each of these
-!>    points, we search for the closest cell center and we output the variable
-!>    values at this cell center. For better consistency, the coordinate
-!>    which is output is that of the cell center (instead of the initial point).
-!>  - we avoid using the same cell multiple times (in case several points
-!>    an the curve are associated with the same cell).
-!>
-!> Here is the corresponding code:
-!>
-!> \snippet cs_user_extra_operations-extract_1d_profile.f90 example_1
-!>
-!>
+! This is an example of cs_user_extra_operations.f90 which
+! performs 1D profile.
+
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
