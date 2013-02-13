@@ -183,11 +183,14 @@ def so_dirs_path(flags, pkg):
     Assemble path for shared libraries in nonstandard directories.
     """
     retval = pkg.config.rpath.split(" ")
+    i = len(retval) - 1
+    if i < 0:
+        return
     count = 0
 
     pkg_lib = os.path.join(pkg.get_dir('libdir'), pkg.name)
     if os.path.isdir(pkg_lib):
-        retval[1] +=  ":" + pkg_lib
+        retval[i] +=  ":" + pkg_lib
         count += 1
 
     if type(flags) == str:
@@ -197,7 +200,7 @@ def so_dirs_path(flags, pkg):
 
     for arg in args:
         if arg[0:2] == '-L' and arg[0:10] != '-L/usr/lib' and arg[0:6] != '-L/lib':
-            retval[1] += ":" + arg[2:]
+            retval[i] += ":" + arg[2:]
             count += 1
 
     if count == 0:
