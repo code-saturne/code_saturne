@@ -21,8 +21,23 @@ do
          $d/m4/wchar_t.m4 $d/m4/wint_t.m4 $d/m4/xsize.m4
 done
 
-# Simply run autoreconf
-autoreconf -vi $@
+# Simply run autoreconf.
+
+# If only gettext 0.17 is available, allow it by modifying configure.ac temporarily,
+# but otherwise prefer 0.18.
+
+cs_gettext_version=`gettext --version | head -1 | sed -e s/gettext.*0/0/`
+case $cs_gettext_version in
+  0.17*)
+    cp -p configure.ac configure.ac.tmp
+    sed -e s/AM_GNU_GETTEXT_VERSION.*/AM_GNU_GETTEXT_VERSION\(\[$cs_gettext_version\]\)/g ./configure.ac.tmp > configure.ac
+    autoreconf -vif $@
+    \mv configure.ac.tmp configure.ac
+    ;;
+  *)
+    autoreconf -vif $@
+    ;;
+esac
 
 # Remove cache directory
 \rm -rf autom4te.cache
