@@ -851,11 +851,15 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
     BFT_FREE(el_list);
     BFT_FREE(exterior_coords);
 
-    bft_error(__FILE__, __LINE__, 0,
-              _("Coupling with SYRTHES impossible:\n"
-                "%llu element centers from mesh \"%s\"\n"
-                "not located on SYRTHES mesh."),
-              (unsigned long long)n_ext, coupled_mesh_name);
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf(_("Coupling with SYRTHES impossible:\n"
+                 "%llu element centers from mesh \"%s\"\n"
+                 "not located on SYRTHES mesh."),
+               (unsigned long long)n_ext, coupled_mesh_name);
+
+    /* Ensure clean stop */
+
+    cs_coupling_set_sync_flag(PLE_COUPLING_STOP);
 
   }
 

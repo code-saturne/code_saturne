@@ -306,6 +306,10 @@ cs_coupling_get_sync_flag(void)
  *   PLE_COUPLING_USER_3        User definable flag
  *   PLE_COUPLING_USER_4        User definable flag
  *
+ * To force stopping, PLE_COUPLING_STOP may be set. In this case,
+ * the calculation will stop at the first synchronization, even if
+ * this function is called again with another flag.
+ *
  * \param[in]  flag  synchronization flag to apply to couplings
  */
 /*----------------------------------------------------------------------------*/
@@ -313,7 +317,9 @@ cs_coupling_get_sync_flag(void)
 void
 cs_coupling_set_sync_flag(int flag)
 {
-  _cs_coupling_sync_flag = flag;
+  int stop_mask = _cs_coupling_sync_flag & PLE_COUPLING_STOP;
+
+  _cs_coupling_sync_flag = flag | stop_mask;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -385,6 +391,7 @@ cs_coupling_sync_apps(int      flags,
     int i;
 
     int sync_flags = 0;
+    int stop_mask = _cs_coupling_sync_flag & PLE_COUPLING_STOP;
     int leader_id = -1;
     double ts_min = -1.;
 
@@ -413,7 +420,7 @@ cs_coupling_sync_apps(int      flags,
       if (sync_flags & reset_flags[i])
         sync_flags -= reset_flags[i];
     }
-    sync_flags = sync_flags | flags;
+    sync_flags = sync_flags | flags | stop_mask;
 
     if (current_ts_id >= *max_ts_id)
       sync_flags = sync_flags | PLE_COUPLING_STOP;
