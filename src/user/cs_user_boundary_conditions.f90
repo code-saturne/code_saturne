@@ -322,7 +322,7 @@
 !>       entering the subroutine.
 !>
 !>
-!>\subsubsection cell_id Cells identification of some variables
+!> \subsubsection cell_id Cells identification of some variables
 !>
 !> Cell values  (let \c iel = \c ifabor(ifac))
 !>
@@ -339,7 +339,6 @@
 !> - Mass flux (for convecting 'ivar'):     \c propfb(ifac, ipprob(ifluma(ivar)))
 !> - For other values: take as an approximation the value in the adjacent cell
 !>                     i.e. as above with \c iel = ifabor(ifac).
-!>
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -508,3 +507,7 @@ deallocate(lstelt)  ! temporary array for boundary faces selection
 
 return
 end subroutine cs_user_boundary_conditions
+
+!> \section examples Examples
+!>   Several examples are provided
+!>   \ref cs_user_boundary_conditions_examples "here".

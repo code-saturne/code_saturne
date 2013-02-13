@@ -28,6 +28,7 @@
  * Standard C library and BFT headers
  */
 
+/*! [my_error_handler_headers] */
 #include <assert.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -39,6 +40,7 @@
 #endif
 
 #include "bft_intl.h"
+/*! [my_error_handler_headers] */
 #include "bft_error.h"
 
 /*-----------------------------------------------------------------------------*/
@@ -68,6 +70,7 @@ extern "C" {
  *   arg_ptr:        --> variable argument list based on format string.
  */
 
+/*! [my_error_handler_body] */
 void
 my_error_handler(const char     *const file_name,
                  const int             line_num,
@@ -104,6 +107,7 @@ my_error_handler(const char     *const file_name,
 
   exit(EXIT_FAILURE);
 }
+/*! [my_error_handler_body] */
 
 /*-----------------------------------------------------------------------------*/
 

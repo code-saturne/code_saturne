@@ -77,29 +77,18 @@ extern "C" {
  * \param [in, out] arg_ptr   pointer to variable argument list based on format
  *                            string.
  *
- * \dontinclude bft_error_example.c
- *
  * In an MPI environment, it is recommended to replace the default
  * error handler. This requires using the following headers:
  *
- * \skip include
- * \until bft_error.h
+ * \snippet bft_error_example.c my_error_handler_headers
  *
  * An error handler function similar to the BFT default with MPI-awareness
  * added looks like:
  *
- * \skipline void
- * \until exit(EXIT_FAILURE)
- * \line }
+ * \snippet bft_error_example.c my_error_handler_body
  *
  * In a more complex environment, \c MPI_COMM_WORLD could be replaced
  * by another communicator.
- */
-
-/*!
- * \example bft_error_example.c
- *
- * This is an example of an MPI-aware error handler.
  */
 
 /*-----------------------------------------------------------------------------
