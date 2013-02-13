@@ -963,8 +963,9 @@ fi
             self.run_id = now.strftime('%Y%m%d-%H%M')
 
         for d in self.domains:
-            if d.adaptation:
-                adaptation(d.adaptation, saturne_script, self.case_dir)
+            if hasattr(d, 'adaptation'):
+                if d.adaptation:
+                    adaptation(d.adaptation, saturne_script, self.case_dir)
 
         # Now that all domains are defined, set result copy mode
 
@@ -1005,7 +1006,7 @@ fi
         if mpi_environment != None:
             exec_env.mpi_env = mpi_environment
 
-        # Transfer parameters MPI parameters from user scripts here
+        # Transfer parameters MPI parameters from user scripts here.
 
         if len(self.domains) == 1 and len(self.syr_domains) == 0:
             d = self.domains[0]
@@ -1015,7 +1016,7 @@ fi
                     eval(m + '(exec_env.mpi_env)', locals(), d.user_locals)
                     del d.user_locals[m]
 
-        # Compute number of processors
+        # Compute number of processors.
 
         n_procs_tot = self.distribute_procs(exec_env.resources.n_procs)
 
@@ -1045,31 +1046,24 @@ fi
 
         self.print_procs_distribution()
 
-        # Prepare SYRTHES domains
-        # (possible now that the exact number of processors is known)
-
-        for d in self.syr_domains:
-            d.prepare_data()
-
-        # Compile user subroutines if necessary.
+        # Compile user subroutines if necessary
+        # (for some domain types, such as for Syrthes, this may be done later,
+        # during the general prepare_data stage).
 
         need_compile = False
 
         for d in self.domains:
-            d.copy_user_script()
+            if not hasattr(d, 'needs_compile'):
+                continue
             if d.needs_compile() == True:
-                need_compile = True
-
-        if need_compile == True:
-
-            msg = \
-                " ****************************************\n" \
-                "  Compiling user subroutines and linking\n" \
-                " ****************************************\n\n"
-            sys.stdout.write(msg)
-            sys.stdout.flush()
-
-            for d in self.domains:
+                if need_compile == False: # Print banner on first pass
+                    need_compile = True
+                    msg = \
+                        " ****************************************\n" \
+                        "  Compiling user subroutines and linking\n" \
+                        " ****************************************\n\n"
+                    sys.stdout.write(msg)
+                    sys.stdout.flush()
                 d.compile_and_link()
 
         # Setup data
@@ -1082,10 +1076,9 @@ fi
         sys.stdout.flush()
 
         for d in self.domains:
-            d.copy_preprocessor_data()
-
-        for d in self.domains:
-            d.copy_solver_data()
+            d.prepare_data()
+        for d in self.syr_domains:
+            d.prepare_data()
 
         sys.stdout.write('\n'
                          ' ***************************\n'
@@ -1096,7 +1089,7 @@ fi
         self.summary_init(exec_env)
 
         for d in self.domains:
-            d.run_preprocessor()
+            d.preprocess()
             if len(d.error) > 0:
                 self.error = d.error
         for d in self.syr_domains:
@@ -1265,10 +1258,7 @@ fi
                         pass
 
         for d in self.domains:
-            d.copy_preprocessor_results()
-
-        for d in self.domains:
-            d.copy_solver_results()
+            d.copy_results()
 
         for d in self.syr_domains:
             d.copy_results()

@@ -509,17 +509,6 @@ class domain(base_domain):
 
     #---------------------------------------------------------------------------
 
-    def copy_user_script(self):
-        """
-        Copy the user script to the execution directory
-        """
-        user_scripts = os.path.join(self.data_dir, 'cs_user_scripts.py')
-        if os.path.isfile(user_scripts):
-            dest = os.path.join(self.result_dir, 'cs_user_scripts.py')
-            shutil.copy2(user_scripts, dest)
-
-    #---------------------------------------------------------------------------
-
     def compile_and_link(self):
         """
         Compile and link user subroutines if necessary
@@ -579,26 +568,18 @@ class domain(base_domain):
 
     #---------------------------------------------------------------------------
 
-    def copy_preprocessor_data(self):
+    def prepare_data(self):
         """
-        Copy preprocessor data to execution directory
+        Copy data to the execution directory
         """
 
-        # If we are using a prior preprocessing, simply link to it here
+        # If we are using a previous preprocessing, simply link to it here
         if self.mesh_input:
             mesh_input = os.path.expanduser(self.mesh_input)
             if not os.path.isabs(mesh_input):
                 mesh_input = os.path.join(self.case_dir, mesh_input)
             link_path = os.path.join(self.exec_dir, 'mesh_input')
             self.symlink(mesh_input, link_path)
-            return
-
-    #---------------------------------------------------------------------------
-
-    def copy_solver_data(self):
-        """
-        Copy solver data to the execution directory
-        """
 
         if not self.exec_solver:
             return
@@ -613,8 +594,9 @@ class domain(base_domain):
         for f in dir_files:
             src = os.path.join(self.data_dir, f)
             if os.path.isfile(src):
-                shutil.copy2(src,
-                             os.path.join(self.exec_dir, f))
+                shutil.copy2(src, os.path.join(self.exec_dir, f))
+                if f == 'cs_user_scripts.py':  # Copy user script to results now
+                    shutil.copy2(src,  os.path.join(self.result_dir, f))
 
         # Call user script if necessary
 
@@ -660,7 +642,7 @@ class domain(base_domain):
 
     #---------------------------------------------------------------------------
 
-    def run_preprocessor(self):
+    def preprocess(self):
         """
         Runs the preprocessor in the execution directory
         """
@@ -829,53 +811,7 @@ class domain(base_domain):
 
     #---------------------------------------------------------------------------
 
-    def copy_preprocessor_results(self):
-        """
-        Retrieve preprocessor results from the execution directory
-        and remove preprocessor input files if necessary.
-        """
-
-        if self.mesh_input:
-            return
-
-        # Determine if we should purge the execution directory
-
-        purge = True
-        if self.error == 'preprocess':
-            purge = False
-
-        # Copy log file(s) first
-
-        if len(self.meshes) == 1:
-            f = os.path.join(self.exec_dir, 'preprocessor.log')
-            if os.path.isfile(f):
-                self.copy_result(f, purge)
-        else:
-            mesh_id = 0
-            for m in self.meshes:
-                mesh_id += 1
-                f = os.path.join(self.exec_dir,
-                                 'preprocessor_%02d.log' % (mesh_id))
-                if os.path.isfile(f):
-                    self.copy_result(f, purge)
-
-        # Copy output if required (only purge if we have no further
-        # errors, as it may be necessary for future debugging).
-
-        if self.error != '':
-            purge = False
-
-        f = os.path.join(self.exec_dir, 'mesh_input')
-
-        if not self.exec_solver:
-            if os.path.isfile(f) or os.path.isdir(f):
-                self.copy_result(f, purge)
-        elif purge:
-            self.purge_result(f)
-
-    #---------------------------------------------------------------------------
-
-    def copy_solver_results(self):
+    def copy_results(self):
         """
         Retrieve solver results from the execution directory
         """
@@ -892,7 +828,7 @@ class domain(base_domain):
 
         dir_files = os.listdir(self.exec_dir)
 
-        # Determine if we should purge the execution directory
+        # Only purge if we have no errors, to allow for future debugging.
 
         valid_dir = False
         purge = True
@@ -904,7 +840,12 @@ class domain(base_domain):
 
         purge_list = []
 
-        for f in ['mesh_input', 'restart', 'partition_input']:
+        f = 'mesh_input'
+        if not self.mesh_input and self.exec_solver:
+            if f in dir_files:
+                purge_list.append(f)
+
+        for f in ['restart', 'partition_input']:
             if f in dir_files:
                 purge_list.append(f)
 
