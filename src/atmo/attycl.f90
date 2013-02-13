@@ -261,15 +261,19 @@ do ifac = 1, nfabor
 
           !  Humid Atmosphere
           if ( ippmod(iatmos).eq.2 ) then
-            call intprf &
-            !==========
-            (nbmett, nbmetm, ztmet, tmmet, qvmet, zent, ttcabs, qvent )
-            rcodcl(ifac,isca(iscapp(itotwt)),1) = qvent
+            if (rcodcl(ifac,isca(itotwt),1).gt.rinfin*0.5d0)  then
+              call intprf &
+              !==========
+              (nbmett, nbmetm, ztmet, tmmet, qvmet, zent, ttcabs, qvent )
+              rcodcl(ifac,isca(itotwt),1) = qvent
+            endif
 
-            call intprf &
-            !==========
-            (nbmett, nbmetm, ztmet, tmmet, ncmet, zent, ttcabs, ncent )
-            rcodcl(ifac,isca(iscapp(intdrp)),1) = ncent
+            if (rcodcl(ifac,isca(intdrp),1).gt.rinfin*0.5d0)  then
+              call intprf &
+              !==========
+              (nbmett, nbmetm, ztmet, tmmet, ncmet, zent, ttcabs, ncent )
+              rcodcl(ifac,isca(intdrp),1) = ncent
+            endif
           endif
 
       endif
