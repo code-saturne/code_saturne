@@ -161,6 +161,10 @@ cs_coupling_get_sync_flag(void);
  *   PLE_COUPLING_USER_3        User definable flag
  *   PLE_COUPLING_USER_4        User definable flag
  *
+ * To force stopping, PLE_COUPLING_STOP may be set. In this case,
+ * the calculation will stop at the first synchronization, even if
+ * this function is called again with another flag.
+ *
  * parameters:
  *   flag <-- synchronization flag to apply to couplings
  *----------------------------------------------------------------------------*/
