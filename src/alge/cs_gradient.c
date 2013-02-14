@@ -373,6 +373,7 @@ _l2_norm_3(cs_lnum_t              n_elts,
  *
  * parameters:
  *   m              <-- pointer to associated mesh structure
+ *   halo_type      <-- halo type (extended or not)
  *   idimtr         <-- 0 if ivar does not match a vector or tensor
  *                        or there is no periodicity of rotation
  *                      1 for velocity, 2 for Reynolds stress
@@ -382,20 +383,21 @@ _l2_norm_3(cs_lnum_t              n_elts,
 
 static void
 _sync_scalar_gradient_halo(const cs_mesh_t  *m,
+                           cs_halo_type_t    halo_type,
                            int               idimtr,
                            cs_real_3_t       dpdxyz[])
 {
   if (m->halo != NULL) {
     if (idimtr == 0) {
       cs_halo_sync_var_strided
-        (m->halo, CS_HALO_STANDARD, (cs_real_t *)dpdxyz, 3);
+        (m->halo, halo_type, (cs_real_t *)dpdxyz, 3);
       if (m->n_init_perio > 0)
         cs_halo_perio_sync_var_vect
-          (m->halo, CS_HALO_STANDARD, (cs_real_t *)dpdxyz, 3);
+          (m->halo, halo_type, (cs_real_t *)dpdxyz, 3);
     }
     else
       cs_halo_sync_components_strided(m->halo,
-                                      CS_HALO_STANDARD,
+                                      halo_type,
                                       CS_HALO_ROTATION_IGNORE,
                                       (cs_real_t *)dpdxyz,
                                       3);
@@ -1228,7 +1230,7 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
 
   /* Synchronize halos */
 
-   _sync_scalar_gradient_halo(m, idimtr, dpdxyz);
+  _sync_scalar_gradient_halo(m, CS_HALO_EXTENDED, idimtr, dpdxyz);
 }
 
 /*----------------------------------------------------------------------------
@@ -1816,7 +1818,7 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
 
     /* Synchronize halos */
 
-    _sync_scalar_gradient_halo(m, idimtr, dpdxyz);
+    _sync_scalar_gradient_halo(m, CS_HALO_STANDARD, idimtr, dpdxyz);
 
     /* Convergence test */
 
@@ -2521,7 +2523,7 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
 
   /* Synchronize halos */
 
-  _sync_scalar_gradient_halo(m, idimtr, dpdxyz);
+  _sync_scalar_gradient_halo(m, CS_HALO_STANDARD, idimtr, dpdxyz);
 }
 
 /*----------------------------------------------------------------------------
