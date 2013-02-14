@@ -41,7 +41,7 @@ especially in the case of polyhedral cells that do not have a regular shape.}%
 ).
 
 Let $\ncell$ be the number of cells, then each discretized field $\varia$ has $\ncell$ degrees of freedom,
-which are denoted by $\varia_\celli$, $\celli \in \left[ 1 , \, \cdots , \, \ncell \right]$ given by definitionby:
+which are denoted by $\varia_\celli$, $\celli \in \left[ 1 , \, \cdots , \, \ncell \right]$ given by definition by:
 \begin{equation}\label{eq:spadis:variai_def}
 \varia_\celli \equiv \dfrac{1}{\norm{\vol{\celli}}}\int_{\vol{\celli}} \varia \dd \vol{}.
 \end{equation}
@@ -54,14 +54,14 @@ by the value of the field in $\centi$, the cell center of $\vol{\celli}$:
 
 %-------------------------
 \paragraph{$0^{th}$-order terms:}
-Then, terms of \textbf{order $0$} (\emph{i.e.} terms that are not a space
-derivative) are integrated to introduce their average over the cell. For
+Then, terms of \textbf{order $0$} (\emph{i.e.} terms that are not space
+derivatives) are integrated to introduce their average over the cell. For
 example, $\rho \vect{g}$ becomes $\norm{\vol{\celli}} \rho_{\celli} \vect{g}$. 
 \nomenclature[gomegaiv]{$\norm{\vol{\celli}}$}{volume of the cell $\celli$ \nomunit{$m^{3}$}}
 In this expression, $\norm{\vol{\celli}}$ is the measure of cell volume $\vol{\celli}$ and 
 $\rho_{\celli}$ denotes the average of $\rho $ over the control volume
 (the cell) $\vol{\celli}$ applying \eqref{eq:spadis:variai_def}. 
-\nomenclature[riu]{$\centi$}{center of $\vol{\celli}$}
+\nomenclature[riu]{$\centi$}{centre of $\vol{\celli}$}
 
 %-----------------------------------------
 \paragraph{Divergence operator--conservative gradient terms:}
@@ -93,7 +93,7 @@ In expression \eqref{eq:spadis:green_relation}, face values of the field $\varia
 \end{equation}
 %
 so that the relationship \eqref{eq:spadis:green_relation} is exact. As the field $\varia$ is linear over the face $\face$,  
-$\varia_\face$ can be associated to the face center $\centf$:
+$\varia_\face$ can be associated to the face centre $\centf$:
 \begin{equation}\label{eq:spadis:variaf_id}
 \varia_\centf = \varia_\face.
 \end{equation}
@@ -101,17 +101,17 @@ $\varia_\face$ can be associated to the face center $\centf$:
 In the following sections, faces $\Face{\celli}$ are usually split into two categories: the interior faces $\fij \in \Facei{\celli}$ separating
 two neighbouring cells $\celli$ and $\cellj$; and the boundary faces $\fib \in \Faceb{\celli}$. 
 Outward (with respect to the cell $\celli$) normals are respectively denoted  $\vect{S}_\ij$ and $\vect{S}_\ib$, 
-which means that $\vect{S}_\ij$ is orientated from $\celli$ toward $\cellj$. 
+which means that $\vect{S}_\ij$ is oriented from $\celli$ toward $\cellj$. 
 
 Then $\varia_{\centf}$ is expressed as an average of the degree of freedom, which are for the interface $\fij$ the value of $\varia_\celli$ 
 and $\varia_\cellj$ but also the gradients in these cells. The use of gradients to reach an higher order in space is called \emph{reconstruction} 
-in the coming sections. The detailed computation of $\int_{\vol{\celli}} \dive \left( \varia \tens{1}\right) \dd \Omega $ is given in
+in the coming sections. The detailed computation of $\int_{\vol{\celli}} \divv \left( \varia \tens{1}\right) \dd \Omega $ is given in
  \S~\ref{sec:spadis:iteratif_gradient}. 
 %
 \nomenclature[rpij]{$P_{\fij}$}{average of the pressure field on the interface between the neighbouring cells $\celli$ and $\cellj$ \nomunit{$Pa$}}
 \nomenclature[rfu]{$\centf$}{center of the face $\fij$ between cells $\celli$ and $\cellj$}
  
- %----------------------
+ %-----------------------------------------------
 \paragraph{Convection operator--mass flux terms:}
  Let us now focus on the convective term $\dive \left( \varia \rho \vect{u}\right)$. This term and the
  non-stationary term $ \der{ \left( \rho \varia \right) }{ t} $ will be treated
@@ -145,8 +145,8 @@ Moreover, the non-stationary and convection terms are usually written in a \emph
 \displaystyle \sum_{\face \in \Face{\celli}} \left(\varia_\face - \varia_\celli \right) \left(\rho \vect{u}\right)_\face \cdot \vect{S}_{\iface},
  \end{array}
  \end{equation}
-the second line is obtained using once again Green relation. In formula \eqref{eq:spadis:convection_def}, one still have to express the face value
- $\varia_\face$ and also the value of the mass flux $\left(\rho \vect{u}\right)_\face\cdot \vect{S}_{\iface}$: all the convective schemes (\emph{upwind, centred, SOLU, etc.}) are presented in \S~\ref{sec:spadis:convection}. Let $\dot{m}_\iface$ be the outgoing
+the second line is obtained using once again Green relation. In formula \eqref{eq:spadis:convection_def}, one still has to express the face value
+ $\varia_\face$ and also the value of the mass flux $\left(\rho \vect{u}\right)_\face\cdot \vect{S}_{\iface}$: all the available convective schemes (\emph{upwind, centred, SOLU, etc.}) are presented in \S~\ref{sec:spadis:convection}. Let $\dot{m}_\iface$ be the outgoing
  mass flux from cell $\celli$ through the face $\face$:
  %
   \begin{equation}\label{eq:spadis:massflux_def}
@@ -163,9 +163,9 @@ where $C_\iface \left(  \dot{m}_\iface  , \, \varia\right)$ is defined by:
 C_\iface \left(\dot{m}_\face , \, \varia \right) \equiv  \left(\varia_\face - \varia_\celli \right) \dot{m}_\iface.
  \end{equation}
 
- %-------------------------------------
+ %----------------------------------------------
 \paragraph{Laplacian operator--diffusive terms:}
-Let discretize the diffusive term $\dive \left(  K \grad \varia  \right) $:
+Let us discretize the diffusive term $\dive \left(  K \grad \varia  \right) $:
 %
  \begin{equation}\label{eq:spadis:diffusion_def}
  \begin{array}{r c l}
@@ -194,9 +194,9 @@ D_\ij \left( K_\fij , \, \varia\right) = - D_\ji \left( K_\fij , \, \varia\right
 The diffusion operator can be extended to anisotropic tensor diffusivity $\tens{K}$.
  \end{remark}
  
- %-------------------------------
+ %---------------------------------------
  \paragraph{More geometrical quantities:}
-To end up the general description of the discretized operators, let introduce some geometrical 
+To end up the general description of the discretized operators, let us introduce some geometrical 
 quantities which will be used during the approximation process of linking face fluxes to 
 cell centred quantities. 
 % fa modification : reconstruction is compulsory for consistence
@@ -238,7 +238,7 @@ Note that the distances  $\overline{\centip \centjp}$ and $\overline{\centf \cen
 \overline{\centf \centjp} & \equiv & \dfrac{\vect{\centf \centjp} \cdot \vect{S}_\ij}{\norm{\vect{S}_\ij}},
 \end{array}
 \end{equation}
-and are supposed to be positive if the mesh is \emph{star-shaped}. Note also that $\alpha_\ij$ is orientated from $\celli$ to $\cellj$ and 
+and are supposed to be positive if the mesh is \emph{star-shaped}. Note also that $\alpha_\ij$ is oriented from $\celli$ to $\cellj$ and 
 %
 \begin{equation}
 \alpha_\ij + \alpha_\ji = 1.
@@ -277,7 +277,7 @@ Note that $C_\ib \left( \dot{m}_\ib , \, \varia \right)$ makes appear the bounda
 \end{equation}
 
 
-The value of the convective flux $C_\ij $ depends on the numerical scheme. Three different types of convection schemes are available in \CS.
+The value of the convective flux $ C_\ij \left(\dot{m}_\fij , \, \varia \right) $ depends on the numerical scheme. Three different types of convection schemes are available in \CS.
 
 %-------------------------------------------------------------------------------
 \subsection{Upwind}
@@ -363,7 +363,7 @@ Using the notations adopted in \S~\ref{sec:spadis:notations},
 the explicit budget corresponding to the integration over a cell
 $\vol{\celli}$ of the diffusive term $\dive \left( K \grad \varia \right) $
 has been written as a sum of the
-numerical fluxes $D_\ij \left( K_\fij , \, \varia \right)$ calculated at the interior faces,
+numerical fluxes $D_\ij \left( K_\fij , \, \varia \right)$ calculated at the internal faces,
  and the numerical fluxes $D_\ib \left( K_\fib , \, \varia \right)$ calculated at the
 boundary faces of the computational domain $\Omega$ defined by Equation~\eqref{eq:spadis:diffusion_flux}.
 
@@ -377,7 +377,7 @@ D_\ib  \equiv A_\ib^f + B_\ib^f \varia_\centip.
 The value of the diffusive flux $D_\ij $ depends on the \emph{reconstruction} of the field $\varia$ and also on the interpolation at the face  of the diffusivity $K$ from the cell values. Two interpolations are available:
 %
 \begin{enumerate}[ label=\roman{*}/, ref=(\roman{*})]
-\item an \emph{harmonic} interpolation which reads:
+\item a \emph{harmonic} interpolation which reads:
 \begin{equation}
 K_\fib^{harmonic} \equiv  \dfrac{K_\celli K_\cellj}{\alpha_\ij K_\celli + \left( 1 - \alpha_\ij\right)K_\cellj}
 \end{equation}
@@ -386,8 +386,8 @@ K_\fib^{harmonic} \equiv  \dfrac{K_\celli K_\cellj}{\alpha_\ij K_\celli + \left(
 K_\fib^{arithmetic} \equiv  \dfrac{1}{2} \left( K_\celli + K_\cellj\right)
 \end{equation}
 \end{enumerate}
-Note that to ensure flux continuity at the interior faces $\fij$, one should use the \emph{harmonic} mean, 
-whereas the \emph{harmonic} mean is set as the default option because it has been proven to be more robust numerically.
+Note that to ensure flux continuity at the internal faces $\fij$, one should use the \emph{harmonic} mean, 
+whereas the \emph{arithmetic} mean is set as the default option because it has been proven to be more robust numerically.
 
 %-------------------------------------------------------------------------------
 \subsection{Without reconstruction}
@@ -438,7 +438,7 @@ function. It is quick, but less accurate.
 \begin{figure}[!htbcp]
 \centering
 \mbox{
-\subfigure[Interior face]{
+\subfigure[Internal face]{
 \includegraphics[width=0.4\textwidth]{facette}
 } \,
 \subfigure[Boundary face]{
@@ -469,6 +469,11 @@ In order to take the mesh non-orthogonality into account, a Taylor series ($1^{s
 \varia_{\fij}\,{\vect S_{\ij }} 
 +\sum\limits_{ \fib \in \Faceb{\celli}} 
 \varia_{\fib}\,{\vect S_{\ib }}, \\
+&=& \displaystyle
+ \sum\limits_{ \fij \in \Facei{\celli}} 
+\varia_{\centf}\,{\vect S_{\ij }} 
++\sum\limits_{ \fib \in \Faceb{\celli}} 
+\varia_{\centf}\,{\vect S_{\ib }}, \\
 &\simeq &  \displaystyle 
 \sum\limits_{ \fij \in \Facei{\celli}} \left[ \varia_{\cento}+ \grad_{\cento} \varia \cdot \vect{\cento \centf} \right] \vect{S}_{\ij}+
 \sum\limits_{ \fib \in \Faceb{\celli}} \left[ \epsilon_{\delta \varia} A_{\fib} + B_{\fib} \varia_{\ipf} \right] \vect{S}_{\ib} ,\\
@@ -490,7 +495,7 @@ Then a homogeneous condition has to be imposed.
  to $1$ for the variable itself in order to take 
 correctly the boundary condition into account.
 
-Using the following $1^{st}$-order approximation
+Using the following $1^{st}$-order in space approximation
 \begin{equation}\notag
 \left\{\begin{array}{r c l}
 \grad_{\fij} \varia & = & \displaystyle \dfrac{1}{2}\left[ \grad_{\centi} \varia + \grad_{\centj} \varia \right],\\
@@ -561,7 +566,7 @@ hence
 
 \begin{remark}
 The non-reconstructed gradient is denoted by $ \grad_\celli^{NRec} \varia  $, and is then 
-very easy to compute thank to the Equation \eqref{eq:spadis:gradrc_nonrecontruit}.
+very easy to compute thanks to the Equation \eqref{eq:spadis:gradrc_nonrecontruit}.
 However, it is neither accurate nor consistent on a non-orthogonal mesh.
 \end{remark}
 
@@ -704,7 +709,7 @@ The idea is to evaluate the gradient of the variable at the cell faces using the
 The method is supposed to be not as robust as the \emph{iterative} process presented in \S~\ref{sec:spadis:iteratif_gradient}, 
 but much more efficient.
 
-Let introduce $\grad_\fij \varia \cdot \vect{d}_\ij$  an estimation at the interior face $\fij$
+Let introduce $\grad_\fij \varia \cdot \vect{d}_\ij$  an estimation at the internal face $\fij$
 of the gradient projected in the direction $\vect{d}_{ij}$ (which will be chosen afterwards).
 Let also define the analogous quantity for boundary faces $\fib$: $\grad_\fib \varia \cdot \vect{d}_\ib$
  ($\vect{d}_\ib$ will also be chosen afterwards).
@@ -741,7 +746,7 @@ as $\variav_{\min}$ such that $\mathcal{F}_\celli \left( \variav_{\min}\right)$ 
 In order to solve the systems for each cell $\celli$ separately from one to an other,
 vectors $\vect{d}_\ij$ and $\vect{d}_\ib$ are chosen so that the quantities 
 $\grad_{\fij} \varia   \cdot \vect{d}_\ij $ and $\grad_{\fib} \varia   \cdot \vect{d}_\ib $
-does not depend on neighbouring  cell gradients  $\grad_{\cellj} \varia $.
+do not depend on neighbouring  cell gradients  $\grad_{\cellj} \varia $.
 The following choice makes it possible:
 \begin{equation}\label{eq:spadis:gradmc_scalar_d_choice}
 \begin{array}{r c l}
@@ -750,7 +755,7 @@ The following choice makes it possible:
 \end{array}
 \end{equation}
 
-Thus, for interior faces $\fij$, $\vect{d}_\ij$ is the normalized vector joining 
+Thus, for internal faces $\fij$, $\vect{d}_\ij$ is the normalized vector joining 
 the centres $\centi$ and $\centj$ oriented from cell $\celli$ to $\cellj$.
 The quantity  $\grad_{\fij} \varia   \cdot \vect{d}_\ij$ is given by:
 \begin{equation}
@@ -761,7 +766,7 @@ For boundary faces, the choice $\vect{d}_\ib$ to be the outward normal implies:
 \begin{equation}
 \grad_{\fib} \varia   \cdot \vect{d}_\ib =\dfrac{\varia_\fib - \varia_\centip }{\norm{\vect{\centip \centf}}},
 \end{equation}
-where $\varia_\fib$ is expressed thank to the boundary conditions (see \chaptername~\ref{chapter:bndcnd}) and 
+where $\varia_\fib$ is expressed thanks to the boundary conditions (see \chaptername~\ref{chapter:bndcnd}) and 
 the value $\varia_\centip $ is given by formula \eqref{eq:spadis:reconstruction_ip_jp} recalled hereafter:
 %
 \begin{equation}\label{eq:spadis:gradmc_bound_value}
@@ -840,7 +845,7 @@ A^g_\fib +\left(B^g_\fib -1 \right) \varia_\celli
 
 A $3\times 3$ system for each cell $\celli$ 
 is got by writing  $\der{\mathcal{F}_\celli}{\variav }
-\left( \grad_\celli \varia \right)= 0$:
+\left( \grad_\celli \varia \right)= \vect{0}$:
 %
 \begin{equation}\label{eq:spadis:gradmc_matrix}
 \grad_\celli \varia \cdot \tens{C}_\celli = \vect{R}_\celli ,
@@ -900,7 +905,7 @@ A^g_\fib +\left(B^g_\fib -1 \right) \varia_\celli
 }{
 \norm{\vect{\centip \centf}}
 } 
-\left( \vect{n}_\ib -  \dfrac{B^g_\fib -1 }{\norm{\vect{\centip \centf}}} \vect{\centi \centip} \right),
+\left( \vect{n}_\ib -  \dfrac{B^g_\fib -1 }{\norm{\vect{\centip \centf}}} \vect{\centi \centip} \right).
 \end{array}\right.
 \end{equation}
 
@@ -909,9 +914,9 @@ A^g_\fib +\left(B^g_\fib -1 \right) \varia_\celli
 \item Note that the $3\times3$ $\tens{C}_\celli$ tensor is symmetric.
 \item For cells $\celli$ having at least a boundary face $\fib$, the tensor $\tens{C}_\celli$ must be recomputed at each time step,
 for the other, the tensor $\tens{C}_\celli$ only have to be recomputed when the mesh is updated (in ALE for instance).
-\item If the user chooses to not reconstruct the gradients (which introduce a lack of consistency on non-orthogonal meshes),
-then the gradient is computed thank to formula \eqref{eq:spadis:gradrc_nonrecontruit}.
-\item For meshes highly non-orthogonal, an extended support\footnote{
+\item If the user chooses not to reconstruct the gradients (which introduces a lack of consistency on non-orthogonal meshes),
+then the gradient is computed thanks to formula \eqref{eq:spadis:gradrc_nonrecontruit}.
+\item For highly non-orthogonal meshes, an extended support\footnote{
 the support is the set of neighbouring cells used in the cell gradient computation.
 } can be used (see different support in \figurename~\ref{fig:spadis:gradmc_support}) and can drastically improve the results when using tetrahedral meshes. 
 \end{enumerate}

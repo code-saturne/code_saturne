@@ -33,6 +33,11 @@ module optcal
 
   !=============================================================================
 
+  !> \defgroup optcal Module for calculation options
+
+  !> \addtogroup optcal
+  !> \{
+
   !----------------------------------------------------------------------------
   ! Equation types
   !----------------------------------------------------------------------------
@@ -981,6 +986,8 @@ module optcal
 
   !> ctheta : coefficient des modeles de flux turbulents GGDH et AFM
   double precision, save :: ctheta(nscamx)
+
+  !> \}
 
   !> \}
 
