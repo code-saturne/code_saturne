@@ -332,9 +332,16 @@ changelog:
 	  today=`date +%F`; \
 	  start=`date +%Y`-01-01; \
 	  svn2cl --reparagraph --include-rev --include-actions \
-          --authors=${top_srcdir}/extras/changelog/authors.xml \
-          --output=${top_srcdir}/ChangeLog \
-          ${top_srcdir} --revision {"$${today} 23:59"}:{"$${start} 00:00"} ; \
+	  --authors=${top_srcdir}/extras/changelog/authors.xml \
+	  --output=${top_srcdir}/ChangeLog \
+	  ${top_srcdir} --revision {"$${today} 23:59"}:{"$${start} 00:00"} ; \
+        elif test -d ${top_srcdir}/.git ; then \
+	  start=`date +%Y`-01-01; \
+	  git --no-pager --git-dir=${top_srcdir}/.git --work-tree=${top_srcdir} log \
+	    --since={$${start}} --no-merges --date-order --date=iso \
+	    --format="%n%cd %aN <%ce> %n%n%x09* [%H]%n%w(82,8,8)%s" --name-status > ${top_srcdir}/ChangeLog ; \
+	else \
+	  echo "ChangeLog must be generated from a Subversion or git working copy."  > ${top_srcdir}/ChangeLog ; \
 	fi
 
 # Update Copyright
