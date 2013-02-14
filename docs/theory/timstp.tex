@@ -68,7 +68,7 @@ $S_{i}\left(\Phi, \, \varphi \right) \varia$ is the linear part of the source te
 and 
 $S_{e} \left(\Phi, \, \varphi \right)$  includes all other source terms.
 
-Therefore, four different time stepping are used, they all defined at which the quantities are evaluated:
+Therefore, four different time steppings are used, they all define the time at which the quantities are evaluated:
 %
 \begin{enumerate}[ label=\roman{*}/, ref=(\roman{*})]
 \item $\theta$ is the time stepping applied to the variable $\varia^{n+\theta} \equiv \theta \varia^{n+1} + \left( 1 - \theta \right) \varia^n$,
@@ -81,7 +81,7 @@ Therefore, four different time stepping are used, they all defined at which the 
 If $\theta=1/2$, or if an extrapolation is used, the time step $\Delta t$ is
 constant in time and uniform in space.
 
-\subsection{Physical properties}
+\subsection{Physical properties $\Phi$}
 
 The physical properties of the flow (density, viscosity, specific heat...)
 are:
@@ -157,7 +157,7 @@ S_{e}\left(\Phi^{n}, \, \varphi^{n}\right)-\theta _{S}\,S_{e} \left(\Phi ^{n-1} 
 \end{itemize}
 
 By default, to be consistent and preserve the order of convergence in time,
-the implicit source terms are discretized with the same scheme as that used
+the implicit source terms are discretized with the same scheme as that is used
 for convection-diffusion of the unknown considered, \emph{i.e.} taken at 
 $n+\theta $:
 \begin{equation}
@@ -176,7 +176,7 @@ at $n+1$ , this to enhance stability.
 For the sake of clarity, it is assumed hereafter that, unless otherwise
 explicitly stated, the mass flux is taken at $n+\theta_F$ and the physical
 properties are taken at $n+\theta_\Phi$, with $\theta_F$ and $\theta_\Phi$
-dependant upon the specific schemes selected for the mass flux and the
+dependent upon the specific schemes selected for the mass flux and the
 physical properties respectively and all $\theta$s are denoted by $\theta$.
 
 Under a general form, the discrete counterpart of Equation~(\ref{eq:transport_eq_scalar}) at
@@ -191,7 +191,7 @@ $n+\theta$ reads:
 Using the standard $\theta$-scheme $\varia^{n+\theta}=\theta \varia^{n+1}+\left(1-\theta \right)
 \varia^{n}$, the equation reads:
 \begin{equation}
-\begin{array}{rcl}
+\begin{array}{r @{\,} c @{\,} l}
 \displaystyle \dfrac{\rho}{\Delta t} \left( \varia^{n+1}-\varia^{n} \right)
 + \theta \left[ 
 \grad \varia^{n+1} \cdot \left( \rho \vect{u} \right) 
@@ -223,7 +223,7 @@ The set of equations to be solved is
 \left\{\begin{array}{l}
 \displaystyle \rho \der{\vect{u}}{t} + \gradt \, \vect{u} \cdot \left( \rho\vect{u}  \right)
 =\divv(\tens{\sigma}) - \divv(\rho \tens{R}) + \vect{ST}_u - \tens{K}\,\vect{u} + \rho \vect{g} + \Gamma \left( \vect{u}^{in} - \vect{u} \right), \\
-\dfrac{\partial \rho}{\partial t} + \dive\left( \rho \vect{u} \right) = \Gamma.
+\dfrac{\partial \rho}{\partial t} + \dive\left( \rho \vect{u} \right) = \Gamma ,
 \end{array}\right.
 \end{equation}
 %
@@ -234,7 +234,7 @@ $[\,\vect{ST}_u-\tens{K}\,\vect{u} + \rho \vect{g} \,]$  are sources terms (note
 \begin{equation}
 \left\{\begin{array}{r c l}
 \tens{\sigma} &=& \tens{\tau} - P\tens{Id} , \\%FIXME +Rij
-\tens{\tau} & =& 2 \mu  \tens{S} +   \left( \kappa - \dfrac{2}{3}\mu \right)   \trace \left( \tens{S} \right) \tens{Id} ,\\
+\tens{\tau} & =& 2 \mu  \tens{S} +   \left( \kappa - \dfrac{2}{3}\mu \right)   \trace \left( \tens{S} \right) \tens{1} ,\\
 \tens{S} &=& \dfrac{1}{2} \left( \gradt \, \vect{u}+\transpose{\gradt \, \vect{u}} \right) .
 \end{array}\right.
 \end{equation}

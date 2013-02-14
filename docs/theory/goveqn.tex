@@ -24,13 +24,13 @@
 \section{Continuous mass and momentum equations}
 %-------------------------------------------------------------------------------
 
-This section presents the continuous equations. It is no substitutes for the
+This section presents the continuous equations. It is no substitute for the
 specific sub-sections of this documentation: the purpose here is mainly to
 provide an overview before more detailed reading.
 
 \paragraph{Balance methodology:}
 The continuous equations can be obtained applying budget on the mass,
-momentum, or again on mass of a scalar. An useful theorem, the so-called
+momentum, or again on mass of a scalar. A useful theorem, the so-called
 Leibniz theorem, states that the variation of the integral of a given field $A$ 
 over a moving domain $\Omega$ reads:
 
@@ -87,7 +87,7 @@ The same procedure on the momentum gives:
 \displaystyle \DP{} \left( \int_{\vol{} }\rho \vect{u} \dd \vol{}\right) &=& 
 \displaystyle \int_{\vol{} }\der{\left( \rho \vect{u} \right) }{t} \dd \vol{} + \int_{\partial \vol{}}  \vect{u}\otimes \left( \rho \vect{u} \right) \cdot  \dd \vect{S}, \\
 \displaystyle &=&
-\displaystyle \int_{\vol{ }} \der{\left( \rho \vect{u} \right) }{t} + \dive \left( \vect{u} \otimes \rho \vect{u} \right)  \dd \vol{},
+\displaystyle \int_{\vol{ }} \der{\left( \rho \vect{u} \right) }{t} + \divv \left( \vect{u} \otimes \rho \vect{u} \right)  \dd \vol{},
 \end{array}
  \end{equation} 
 once again, the Green relation has been used to obtain the second line. One then invokes Newton's second law
@@ -128,7 +128,7 @@ the \textbf{momentum} equation is obtained:
 %
 where $\vect{ST}_{\vect{u}}$ and $\tens{K}\,\vect{u}$ stand for explicit and implicit additional 
 momentum Source Terms
-\nomenclature[rstut1]{$\vect{ST}_{\vect{u}}$}{explicit additional momemtum Source Termes \nomunit{$kg.m^{-2}.s^{-2}$}}
+\nomenclature[rstut1]{$\vect{ST}_{\vect{u}}$}{explicit additional momemtum source terms \nomunit{$kg.m^{-2}.s^{-2}$}}
 \nomenclature[rkt2]{$\tens{K}$}{tensor of the velocity head loss \nomunit{$kg.m^{-3}.s^{-1}$}}
 \nomenclature[gsigmat2]{$\tens{\sigma}$}{total stress tensor \nomunit{$Pa$}}
  which may be prescribed by the user (head loss, $\Gamma \vect{u}^{in}$ 
@@ -136,11 +136,11 @@ contribution associated with a user-prescribed mass source term...).
 Note that $\tens{K}$ is a symmetric positive tensor, by definition. 
 
 In order to make the set of Equations \eqref{eq:mass} and \eqref{eq:momentum} closed, the Newtonian state law
-linking the stress tensor $\tens{\sigma}$ to the velocity field (more precisely to the rate of strain tensor $\tens{S}$)
+linking the deviatoric part of the stress tensor $\tens{\sigma}$ to the velocity field (more precisely to the rate of strain tensor $\tens{S}$)
 is introduced: 
 %
 \begin{equation}\label{eq:goveqn:newtonian_fluid}
-\tens{\tau}=2 \mu \deviator{\tens{S}} = 2 \mu  \tens{S}-\frac{2}{3}\mu  \trace \left(\tens{S} \right) \tens{Id},
+\tens{\tau}=2 \mu \deviator{\tens{S}} = 2 \mu  \tens{S}-\frac{2}{3}\mu  \trace \left(\tens{S} \right) \tens{1},
 \end{equation}
 %
 where $\mu =\mu_l $ is called  the dynamic molecular viscosity, 
@@ -152,7 +152,7 @@ whereas $\tens{\tau}$ is the viscous stress tensor and the pressure field are de
 \left\lbrace
 \begin{array}{r c l}
 P &=& -\dfrac{1}{3} \trace \left( \tens{\sigma} \right), \\
-\tens{\sigma} & = & \tens{\tau}-P\tens{Id}.
+\tens{\sigma} & = & \tens{\tau}-P\tens{1}.
 \end{array}
 \right.
 \end{equation}
@@ -169,12 +169,12 @@ and $\tens{S}$ , the strain rate tensor, as:
 \nomenclature[odeviator]{$\deviator{ \left(\tens{.} \right)}$}{deviatoric part of a tensor}
 \nomenclature[otrace]{$\trace{ \left(\tens{.}\right)}$}{trace of a tensor}
 %
-Note that a fluid for which \eqref{eq:goveqn:newtonian_fluid} holds are called a Newtonian fluid, it is generally the case
-for water, air, but not the case of a paint because the stresses does not depends linearly of the strain rate.
+Note that a fluid for which \eqref{eq:goveqn:newtonian_fluid} holds isS called a Newtonian fluid, it is generally the case
+for water, air, but not the case of a paint because the stresses do not depend linearly on the strain rate.
 
-\paragraph{Navier Stokes equations:}
+\paragraph{Navier-Stokes equations:}
 Injecting Equation \eqref{eq:goveqn:newtonian_fluid} into the momentum Equation \eqref{eq:momentum} and combining 
-it with the continuity Equation \eqref{eq:mass} give the Navier Stokes equations:
+it with the continuity Equation \eqref{eq:mass} give the Navier-Stokes equations:
 %
 \begin{equation}\label{eq:navier_stokes_conservative}
 \left\lbrace
@@ -209,7 +209,7 @@ The left hand side of the momentum part of  Equation \eqref{eq:navier_stokes_con
 } .
 \end{equation}
 
-Then Navier Stokes equations reads as a non-conservative form:
+Then the Navier-Stokes equations read in non-conservative form:
 \begin{equation}\label{eq:navier_stokes_laminar}
 \left\lbrace
 \begin{array}{r c l}
@@ -229,14 +229,14 @@ $ \gradt \, \vect{u} \cdot \left( \rho \vect{u}\right) = \divv \left( \vect{u}\o
 this relationship should be conserved by the space-discretized scheme (see \chaptername~\ref{chapter:spadis}).
 
 %-------------------------------------------------------------------------
-\subsection{Turbulent flows with a Reynolds Average Navier-Stokes approach (\emph{RANS}):}
+\subsection{Turbulent flows with a Reynolds-Averaged Navier-Stokes approach (\emph{RANS}):}
 When the flow becomes turbulent, the \emph{RANS} approach is to consider the 
 velocity field $\vect{u}$ as stochastic and then splat into a mean field denoted by $\overline{\vect{u}}$ and
 a fluctuating field $\vect{u}^\prime$:
 \begin{equation}
 \vect{u} = \overline{\vect{u}} + \vect{u}^\prime . 
 \end{equation} 
-The Reynolds average operator $\overline{\left( \cdot\right)}$ is applied to Navier-Stokes Equation \eqref{eq:navier_stokes}:
+The Reynolds average operator $\overline{\left( \cdot\right)}$ is applied to Navier-Stokes Equation \eqref{eq:navier_stokes_conservative}:
 %
 \begin{equation}\label{eq:reynolds}
 \left\lbrace
@@ -248,13 +248,15 @@ The Reynolds average operator $\overline{\left( \cdot\right)}$ is applied to Nav
 &=& - \grad \overline{P} 
 + \divv \left( \mu  \left[ \gradt \, \overline{\vect{u}} + \transpose{\gradt \, \overline{\vect{u}}} - \dfrac{2}{3} \trace \left(\gradt \, \overline{\vect{u}} \right) \tens{Id} \right]   \right) 
 + \rho \vect{g}
-- \divv \left(\rho \tens{R} \right)
- +\vect{ST}_{\vect{u}}-\tens{K}\,\overline{\vect{u}} + \Gamma \left( \overline{\vect{u}}^{in} - \overline{\vect{u}} \right),
+- \divv \left(\rho \tens{R} \right) \\
+&+& 
+\displaystyle
+\vect{ST}_{\vect{u}}-\tens{K}\,\overline{\vect{u}} + \Gamma \left( \overline{\vect{u}}^{in} - \overline{\vect{u}} \right),
 \end{array}
 \right.
 \end{equation}
 %
-Only the mean field fields $\overline{\vect{u}}$ and $\overline{P}$ are computed. 
+Only the mean fields $\overline{\vect{u}}$ and $\overline{P}$ are computed. 
 An additional term $\tens{R}$ appears in the Reynolds Equations \eqref{eq:reynolds} which is by definition the covariance tensor of the fluctuating
 velocity field and called the Reynolds stress tensor:
 %
@@ -268,7 +270,7 @@ the latter requires a closure modelling which depends the turbulence model adopt
 the strain rate tensor of the mean flow ($\overline{\tens{S}} \equiv \frac{1}{2} \left( \gradt \, \vect{u}+ \transpose{\gradt \, \vect{u}} \right)$):
 %
 \begin{equation}\label{eq:goveqn:evm_hypothesis}
-\rho \tens{R} = \dfrac{2}{3}\rho  k \tens{Id} - 2 \mu_T \deviator{\overline{\tens{S}}},
+\rho \tens{R} = \dfrac{2}{3}\rho  k \tens{1} - 2 \mu_T \deviator{\overline{\tens{S}}},
 \end{equation}
 where the turbulent kinetic energy $k$ is defined by:
 %
@@ -286,7 +288,7 @@ $k-\varepsilon$, $k-\varepsilon$ with Linear Production (\emph{LP}), $k-\omega$ 
 a transport equation on the components of the Reynolds stress tensor $\tens{R}$ 
 during the simulation, and are readily available for the momentum
 equation \eqref{eq:reynolds}. Three \emph{DRSM} models are available in \CS: $R_{ij}-\varepsilon$ proposed by Launder Reece and Rodi (\emph{LRR}) in \cite{launder:},
-$R_{ij}-\varepsilon$ proposed by Spezial Sarkar and Gatski (\emph{SSG}) in \cite{spezial:} and an Elliptic Blending version \emph{EB-RSM} (see \cite{}).
+$R_{ij}-\varepsilon$ proposed by Spezial, Sarkar and Gatski (\emph{SSG}) in \cite{spezial:} and an Elliptic Blending version \emph{EB-RSM} (see \cite{}).
 %
 
 \end{enumerate}
@@ -294,7 +296,7 @@ $R_{ij}-\varepsilon$ proposed by Spezial Sarkar and Gatski (\emph{SSG}) in \cite
 
 %-----------------------------------------------
 \subsection{Large Eddy Simulation (\emph{LES}):}
-the \emph{LES} approach consists in filtering the $\vect{u}$ field using an operator denoted by $\widetilde{\left(\cdot \right)} $.
+The \emph{LES} approach consists in spatially filtering the $\vect{u}$ field using an operator denoted by $\widetilde{\left(\cdot \right)} $.
 Applying the latter filter to the Navier-Stokes Equations \eqref{eq:navier_stokes} gives:
 %
 \begin{equation}\label{eq:navier_stokes_les}
@@ -312,7 +314,7 @@ Applying the latter filter to the Navier-Stokes Equations \eqref{eq:navier_stoke
 \end{array}
 \right.
 \end{equation}
-where $\vect{u}^\prime$ are non-filtered fluctuations. An eddy viscosity hypothesis is done on the additional
+where $\vect{u}^\prime$ are non-filtered fluctuations. An eddy viscosity hypothesis is made on the additional
 resulting tensor:
 \begin{equation}
 \widetilde{\vect{u}^\prime \otimes \vect{u}^\prime }  = \dfrac{2}{3} k \tens{Id} - 2 \mu_T \deviator{\widetilde{\tens{S}}},
@@ -322,7 +324,7 @@ where the above turbulent viscosity $\mu_T$ now accounts only for sub-grid effec
 
 %-------------------------------------------------------------
 \subsection{Formulation for laminar, RANS or LES calculation:}
-for sake of simplicity, in all cases, the computed velocity field will be denoted by $\vect{u}$ even if 
+For the sake of simplicity, in all cases, the computed velocity field will be denoted by $\vect{u}$ even if 
 it is about \emph{RANS} velocity field $\overline{\vect{u}}$ or \emph{LES} velocity field $\widetilde{\vect{u}}$.
 
 Moreover, a manipulation on the right hand side of the momentum is  performed to change the meaning
@@ -416,9 +418,9 @@ The equation \eqref{eq:enthalpyT} then becomes:
 \end{equation}
 
 \begin{remark}
-Note that for incompressible flows, $\beta T$ is negligible compared to $1$. Moreover, for ideal gas, $\beta = 1/T$ so the following relationship holds
+Note that for incompressible flows, $\beta T$ is negligible compared to $1$. Moreover, for ideal gas, $\beta = 1/T$ so the following relationship holds:
 \begin{equation}
- \dd h=C_p \dd T
+ \dd h=C_p \dd T.
 \end{equation}
 %
 \end{remark}
@@ -443,7 +445,7 @@ and also:
 \label{eq:T_all}
 \end{equation}
 
-The Eq. \eqref{eq:T_all} can be reduce using some hypothesis, for example:
+The Eq. \eqref{eq:T_all} can be reduced using some hypothesis, for example:
 \begin{itemize}
  \item If the fluid is an ideal gas, $\beta=\dfrac{1}{T}$ and it becomes:
 \begin{equation}

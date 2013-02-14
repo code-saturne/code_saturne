@@ -35,7 +35,7 @@ a method to determine the value of the first order spatial derivatives
 at the boundary is then required 
  (more exactly, the fluxes that depend upon it are required,
  such as the stresses or the thermal fluxes at the wall);
-\item calculation of the cell  gradients: the variable at the boundary faces
+\item calculation of the cell  gradients: the variables at the boundary faces
  are required (more generally, the discrete terms of the equations which depend
 upon the gradient inside boundary cells are required, such as the pressure gradient or
 the transpose gradient terms in the Navier-Stokes equations). 
@@ -49,7 +49,7 @@ The other variables
 (the physical properties for instance) have a different treatment which will 
 not be detailed here (for instance, for the density, the user defines 
 directly the values at the boundary. This information is then stored; one 
-is referred to \fort{cs\_user\_physical\_properties} (see the \href{../../../doxygen/src/html/cs_user_physical_properties_8f90}{programmers reference of the dedicated subroutine})
+is referred to \fort{cs\_user\_physical\_properties} (see the \doxygenfile{cs_user_physical_properties_8f90}{programmers reference of the dedicated subroutine})
  or \fort{phyvar} for more information).
 },
 the user has to define the boundary conditions at every boundary face.
@@ -65,8 +65,8 @@ The code (see the \href{../../../doxygen/src/html/condli_8f90.html}{programmers 
  conditions. 
  
  A particular treatment is performed on walls:
- wall functions are used to model the fluid behaviour in the neighbourhood of the wall.
- Wall could be of smooth type or rough type. The modellization will be detailed in the
+ wall functions are used to model the fluid behaviour in the vincinity of the wall.
+ Wall could be of smooth type or rough type. The modelling will be detailed in the
  coming sections.
  
 A particular treatment on symmetry boundaries is also performed for vectors and tensors
@@ -110,7 +110,7 @@ they are directly setted by the code. These standard boundary conditions are:
 (and should therefore be given by the user) 
 and to a homogeneous Neumann on the pressure field. 
 
-\item[Outlet:] it correspond to an homogeneous Neumann boundary condition on all the transported variables.
+\item[Outlet:] it correspond to a homogeneous Neumann boundary condition on all the transported variables.
 For the pressure field, a Dirichlet boundary condition which is expected to mimic $\displaystyle\frac{\partial^2 P}{\partial n \partial \tau}=0$ for any vector  $\vect{\tau}$ collinear to the outlet. This condition means that the pressure
 profile does not vary in the direction of the outlet. Warning: if the outgoing mass-flux is negative, 
 \emph{i.e.} if the outlet becomes an inlet, then the mass-flux is clipped to zero. Moreover, given
@@ -126,10 +126,10 @@ A similar treatment using wall functions is done on every transported variable i
 The boundary condition on the pressure field is a homogeneous Neumann by default, but could
 be an extrapolation of the gradient if wanted.
 
-\item[Symmetries:] This condition corresponds to an homogeneous Neumann for the scalar fields 
-(such as the pressure field or the Temperature field for instance). For vectors, such as the velocity, it corresponds
+\item[Symmetries:] This condition corresponds to a homogeneous Neumann for the scalar fields 
+(such as the pressure field or the temperature field for instance). For vectors, such as the velocity, it corresponds
 to impose a zero Dirichlet on the component normal to the boundary, and a homogeneous Neumann
-on the tangential components. Thus, this condition couple the  vector components if the symmetry faces are not
+on the tangential components. Thus, this condition couples the  vector components if the symmetry faces are not
 aligned with the axis. The boundary condition for tensors, such as the Reynolds stresses, will be detailed in the following sections.
 \end{description}
 
@@ -150,7 +150,7 @@ $\rho$ is the density of the fluid, $\left( \rho \vect{u} \right)$ the convectiv
 conductivity and $S$ any additional source terms. 
 Note that $K$ is the sum of molecular and turbulent diffusivity in case of RANS modelling with an eddy viscosity model. 
 The dimension of $K$ for different variables is displayed in \tablename~\ref{tab:bdncnd:diffusivity}.
-The value of $C$ is $1$ for all the variables except for the temperature where is value is the specific heat $C_p$.
+The value of $C$ is $1$ for all the variables except for the temperature where $C$ is the specific heat $C_p$.
 If the variable $\varia$ is the variance of an other scalar, then its diffusivity
 is deduced from the scalar itself. 
 
@@ -269,7 +269,7 @@ B^f_\ib & = & h_{eq},
 \end{array}
 \end{equation}
 where $h_{eq} $ is defined by $h_{eq}=\dfrac{h_{int} h_{ext}}{ h_{int} + h_{ext}}$.
-Note that this case reduced to the basic one if $h_{ext}$ tends to the infinity.
+Note that this case reduces to the basic one if $h_{ext}$ tends to the infinity.
 Also note that an outgoing flux is counted positively.
 
 \begin{remark}
@@ -353,7 +353,7 @@ $\varia$   & scalar               & unity of ($\varia$)       &$K \,\grad \varia
 \subsection{Outlet boundary condition on the pressure}\label{Base_Condli_Sortie_Pression}
 
 In this section the boundary condition on the pressure at the outlet is detailed. Some
-assumptions are done to derive this boundary condition which consist of a Dirichlet
+assumptions are made to derive this boundary condition which consists of a Dirichlet
 (combined with a homogeneous Neumann on the velocity) based on the pressure field
 at the previous time step.
 On basic configurations such as a channel or a pipe where the outlet is orthogonal 
@@ -403,7 +403,7 @@ the value $P_0$ at a given face $\fib$.
 
  Before computing the pairs of boundary condition coefficients, a step of checking is performed. Basically, 
 the code checks that the user has given a boundary condition to all boundary faces, and that 
-setting between all the variables is compatible (see \tablename~\ref{tab:ICODCLadm_condli}).
+the setting between all the variables is compatible (see \tablename~\ref{tab:ICODCLadm_condli}).
 
 
 

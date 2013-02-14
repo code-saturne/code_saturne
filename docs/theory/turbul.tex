@@ -4,7 +4,7 @@ In this section eddy viscosity hypothesis is made which states that the Reynolds
 is aligned with the rate of strain $\tens{S}$:
 %
 \begin{equation}
-\tens{R} = \dfrac{2}{3}k \tens{Id} - 2 \mu_T \deviator{\tens{S}}
+\rho  \tens{R} = \dfrac{2}{3} \rho k \tens{1} - 2 \mu_T \deviator{\tens{S}}
 \end{equation} 
 
 %-------------------------------------------------------------------------------
@@ -13,16 +13,19 @@ is aligned with the rate of strain $\tens{S}$:
 \begin{equation}
 \left\{
 \begin{array}{r c l}
-\displaystyle\frac{\partial }{\partial t}(\rho k)+\dive\left[ \rho \vect{u}%
-\,k- \left( \mu +\frac{\mu _{t}}{\sigma _{k}} \right)\grad{k}\right] 
-&=&
+\displaystyle
+\rho \der{k }{t} + \grad k \cdot \left( \rho \vect{u} \right) 
+- \divs \left[ \left( \mu +\frac{\mu _{t}}{\sigma _{k}} \right)\grad{k}\right] 
+&=&\displaystyle
 \mathcal{P}+\mathcal{G}-\rho \varepsilon +\Gamma k^{in}+ST_{k}, \\
-\displaystyle\frac{\partial }{\partial t}(\rho \varepsilon )+\dive\left[
-\rho \vect{u}\,\varepsilon -(\mu +\frac{\mu _{t}}{\sigma _{\varepsilon }})%
-\grad{\varepsilon}\right] &=&C_{\varepsilon _{1}}\frac{\varepsilon }{k}\left[
+\displaystyle
+\rho \der{ \varepsilon }{t} + \grad \varepsilon \cdot \left(\rho \vect{u} \right)
+-\divs \left[ \left( \mu +\frac{\mu _{t}}{\sigma _{\varepsilon }} \right) \grad{\varepsilon}\right] 
+&=& \displaystyle
+C_{\varepsilon _{1}}\frac{\varepsilon }{k}\left[
 \mathcal{P}+(1-C_{\varepsilon _{3}})\mathcal{G}\right] -\rho C_{\varepsilon
-_{2}}\frac{\varepsilon ^{2}}{k}+\Gamma \varepsilon ^{in}+ST_{\varepsilon },%
-\end{array}%
+_{2}}\frac{\varepsilon ^{2}}{k}+\Gamma \varepsilon ^{in}+ST_{\varepsilon },
+\end{array}
 \right.
 \end{equation}
 \nomenclature[rk]{$k$}{turbulent kinetic energy \nomunit{$m^{2}.s^{-2}$}}
@@ -33,16 +36,12 @@ where $\mathcal{P}$ is the production term created by mean shear:
 \begin{equation}
 \begin{array}{rcl}
 \mathcal{P} & = & \displaystyle -\rho \tens{R} : \gradt \, \vect{u}
-= -\left[-2 \mu_t \deviator{\tens{S}}%
+= -\left[-2 \mu_t \deviator{\tens{S}}
 + \frac{2}{3}\rho k \tens{1}\right] : \tens{S}, \\
-& = & \displaystyle \mu_t \left[ 2\left(\frac{\partial u}{\partial x}%
-\right)^2+ 2\left(\frac{\partial v}{\partial y}\right)^2+ 2\left(\frac{%
-\partial w}{\partial z}\right)^2+ \left(\frac{\partial u}{\partial y}+\frac{%
-\partial v}{\partial x}\right)^2+ \left(\frac{\partial u}{\partial z}+\frac{%
-\partial w}{\partial x}\right)^2+ \left(\frac{\partial v}{\partial z}+\frac{%
-\partial w}{\partial y}\right)^2 \right] \\
-&&-\frac{2}{3}\mu_t \left( \dive\vect{u} \right)^2-\frac{2}{3}
-\rho k \dive \left( \vect{u} \right),
+& = & \displaystyle
+2 \mu_t  \deviator{\tens{S}}: \deviator{\tens{S}} 
+-\dfrac{2}{3}
+\rho k \trace \left( \gradt \,\vect{u} \right),
 \end{array}
 \end{equation}
 \nomenclature[rbuoyancy]{$\mathcal{G}$}{turbulent kinetic energy buoyancy term \nomunit{$kg.m^{-1}.s^{-3}$}}
@@ -52,23 +51,23 @@ $\mathcal{G}$ is the production term created by gravity effects:
 \displaystyle \mathcal{G}= \frac{1}{\rho}\frac{\mu_t}{\sigma_t} \grad \rho \cdot \vect{g}.
 \end{equation}
 
-The turbulent viscosity is: 
+The dynamic turbulent viscosity reads: 
 \begin{equation}
 \displaystyle \mu_t=\rho C_\mu\frac{k^2}{%
 \varepsilon}.
 \end{equation}
 \nomenclature[rstk]{$ST_{k}$}{additional turbulent kinetic energy source term \nomunit{$kg.m^{-1}.s^{-3}$}}
 \nomenclature[rstepsilon]{$ST_{\varepsilon}$}{additional turbulent dissipation source term \nomunit{$kg.m^{-1}.s^{-4}$}}
-$ST_{\varphi }$ ($\varphi =k$ or $\varepsilon $) stands for the additional
+$ST_{k}$ and $ST_{\varepsilon}$ stand for the additional
 source terms prescribed by the user (in rare cases only).
 
 The constants of the model are given in the Table (\ref{tab:k_epsilon_constants}):
-\begin{table}[htp]
+\begin{table}[!htp]
 \centering
 \begin{tabular}{p{0,8cm}|p{0,8cm}|p{0,8cm}|p{0,8cm}|p{0,8cm}}
 $C_\mu$ & $C_{\varepsilon_1}$ & $C_{\varepsilon_2}$ & $\sigma_k$ & $%
 \sigma_\varepsilon$ \\ \hline
-$0,09$ & $1,44$ & $1,92$ & $1$ & $1,3$ 
+$0.09$ & $1.44$ & $1.92$ & $1.0$ & $1.3$ 
 \end{tabular}%
 \caption{Standard $k-\varepsilon$ model constants \cite{Launder:1972}.\label{tab:k_epsilon_constants}}
 \end{table}
@@ -90,11 +89,167 @@ work in progress
 
 %-------------------------------------------------------------------------------
 \subsection{Spalart-Allmaras model}
-work in progress
+The Spalart-Allmaras turbulence model \cite{Spalart:1994} is an \emph{EVM} \emph{RANS} model developped in the $90$'s in aeronautics, and is therefore well suited
+for studing a flow around an airplane wing for instance.
+
+%--------------------------------
+\subsubsection{Model description}
+It consists of a transport equation of a scalar $\tilde{nu}$ dirctly linked to the turbulent viscosity $\mu_T$. 
+
+More recently, this modele has been extended by Aupoix \cite{Aupoix:2003} to rough wall for studing atmospheric flows. It was also successfully applied to flow in turbo-machinery where variants of this model has been developped. 
+
+The transport equation of $\tilde{\nu}$ (pseudo turbulent viscosity, which tends to it far from walls) reads\footnote{
+the present formulation is a simplified one presented by Aupoix \cite{Aupoix:2003} where transition terms have been neglected.
+}
+\begin{equation}\label{eq:turbul:SA_used}
+\rho \der{\tilde{\nu}}{ t} + \grad \tilde{\nu} \cdot\left( \rho \vect{u} \right)
+= c_{b1} \rho  \tilde{S} \tilde{\nu}
+- c_{w1}f_{w} \rho \left( \dfrac{\tilde{\nu}}{d} \right)^2
++ \dfrac{1}{ \sigma} \left[ \divs \left( (\mu + \rho \tilde{\nu}) \grad \tilde{\nu} \right)
++ c_{b2} \rho \left| \grad \tilde{\nu} \right| ^2 
+  \right]
+  + \Gamma \left( \tilde{\nu}^{in} - \tilde{\nu}^n \right) +ST^{imp} \tilde{\nu} +ST^{exp}
+\end{equation}
+%
+where $\tilde{\nu}^{in}$ is the injection value of $\tilde{\nu}$ in case of any mass source term, and $ST^{imp}_{\tilde{\nu}}$ and $ST^{exp}_{\tilde{\nu}}$ 
+are respectivly the implicit and explicit additional user source terms and
+where
+%
+\begin{equation}\label{eq:def_fun_SA}
+\begin{array}{ r c l}
+\mu_T & =& \rho f_{v1} \tilde{\nu} \\
+f_{v1} &=& \dfrac{\chi^3 }{\chi^3+ c_{v1}^3} \\
+\chi & = & \dfrac{\tilde{\nu}}{ \nu} \\
+\tilde{S} &=& \Omega + \dfrac{\tilde{\nu}}{ \kappa ^2 d^2} f_{v2} \\
+f_{v2} &=& 1 - \dfrac{ \tilde{\nu}}{\nu + \tilde{\nu} f_{v1}} \\
+f_w &=& g \left[ \dfrac{1+ c_{w3}^6 }{g^6+ c_{w3}^6} \right]^\frac{1}{6} \\
+g &=& r +c_{w2} \left( r^6 -r \right) \\
+r &=& \min \left[ \dfrac{ \tilde{\nu} }{ \tilde{S} \kappa^ 2 d^2 } ; \; 10 \right]
+\end{array}
+\end{equation}
+%
+The constantes are defined in \tablename~\ref{tab:const_SA}.
+
+\begin{table}[!htbc]
+\centering
+$
+\begin{array}{c | c | c | c | c | c | c | c }
+\sigma      & c_{b1} & c_{b2} & \kappa & c_{w2} & c_{w3} & c_{v1} & c_{w1} \\
+\hline
+\frac{2}{3} & 0.1355 & 0.622  & 0.41   & 0.3    & 2      & 7.1    & \dfrac{c_{b1}}{ \kappa^2}+ \dfrac{1+c_{b2}}{ \sigma}  
+\end{array}
+$
+\caption{Constantes of the Spalart Allmaras model.\label{tab:const_SA}}
+\end{table}
+
+%----------------------------
+\subsubsection{Time stepping}
+
+Equation \eqref{eq:turbul:SA_used} can be rewritten with the $\theta$-scheme presented in \chaptername~\ref{chapter:timstp} as
+%
+\begin{equation}\label{eq:turbul:SA_time}
+\begin{array}{c}
+\overbrace{
+\left[ \dfrac{\rho}{\Delta t} + \max \left( c_{w1} f_{w} \rho  \dfrac{\tilde{\nu}^n}{d^2} - c_{b1}\rho \tilde{S} , \, 0 \right) - \theta T_s^{imp} + \theta \Gamma^n \right] 
+}^{\texttt{implicit term}}
+\delta \tilde{\nu}^{n+1}
+%
+\\
++ \theta
+\left(
+\underbrace{
+ \grad \delta \tilde{\nu}^{n+1} \cdot \left( \rho \vect{u} \right) 
+}_{
+\texttt{implicit part of the convection}
+}
+- 
+\underbrace{
+\divs \left[ \dfrac{\mu + \rho \tilde{\nu}}{\sigma} \grad \delta \tilde{\nu}^{n+1} \right] 
+}_{
+\texttt{implicit part of the diffusion}
+}
+\right) 
+\\
+= 
+\\
+- \grad \tilde{\nu}^{n} \cdot \left( \rho \vect{u} \right) 
++ 
+\divs \left[ \dfrac{\mu + \rho \tilde{\nu}}{\sigma} \grad \tilde{\nu}^{n} \right] 
+\\
++
+c_{b1} \rho \tilde{S} \tilde{\nu}^n
+- c_{w1}f_{w}\rho \left( \dfrac{\tilde{\nu}}{d} \right)^2
++ \dfrac{c_{b2}\rho}{ \sigma} 
+ \left| \grad \tilde{\nu} \right| ^2 
+ + \Gamma \left( \tilde{\nu}^{in} - \tilde{\nu}^n \right) +ST^{imp} \tilde{\nu}^n +ST^{exp}
+\end{array}
+\end{equation}
+where $\delta \tilde{\nu}^{n+1} \equiv \tilde{\nu}^{n+1} - \tilde{\nu}^{n}$.
+
+\begin{remark}
+The term $\left( c_{w1} f_{w} \rho  \dfrac{\tilde{\nu}^n}{d^2} - c_{b1}\rho \tilde{S} \right)$ has been implicited 
+so that $\tilde{\nu} $ does not require any clipping to remain positive if an \emph{upwind} convective scheme and no flux 
+reconstruction are chosen.
+\end{remark}
+
+
+%----------------------------------
+\subsubsection{Boundary conditions}
+
+\paragraph{Smooth walls:}
+the boundary condition on $\tilde{\nu}$ is a standard zero Dirichlet boundary condition on the walls 
+(see \chaptername~\ref{chapter:bndcnd} for the encoding of standard Dirichlet conditions).
+
+Note that the model gives a log law outside of the viscous sub-layer, \emph{i.e.}:
+\begin{equation}
+\begin{array}{r c l}
+\tilde{\nu} & \simeq & \kappa u^\star d \\
+\tilde{S} & \simeq & \dfrac{u^\star}{ \kappa d} 
+\end{array}
+\end{equation}
+
+\paragraph{Rough walls:}
+In case of rough walls, let us define:
+\begin{equation}
+\begin{array}{rcl}
+\chi_{rough} & = & \chi + c_{R1} \dfrac{h_s}{d_{rug}} \\
+d_{rough} & = & d + d_0 \\
+d_0     & = & \exp \left( -8.5 \kappa \right) h_s \simeq 0.03 h_s
+\end{array}
+\end{equation}
+%
+where $h_s$ is the roughness size. The Dirichlet boundary conditions 
+is replaced by the following Neumann boundary condition:
+%
+\begin{equation}\label{eq:eq_neumann_nu}
+\left. \der{\tilde{ \nu}}{n} \right|_\fib = \dfrac{\left. \tilde{ \nu}\right|_\fib }{ d_0}
+\end{equation}
+%
+A developpment in series in then written:
+\begin{equation}\label{eq:eq_neumann_nu_vf}
+ \tilde{\nu}_\fib = \tilde{\nu}_{\centip} -   \grad_\fib \tilde{ \nu} \cdot \vect{\centip \centf} 
+\end{equation}
+Finally, that is a Robbin type boundary condition formulated as follows in \CS:
+which reads as follows in \CS:
+\begin{equation}\label{eq:eq_neumann_nu_coef}
+ \tilde{\nu}_\fib = A^g_\fib - B^g_\fib \tilde{\nu}_\centip
+\end{equation}
+with $A^g_\fib=0$ and
+%
+\begin{equation}\label{eq:eq_neumann_nu_coefb}
+ B^g_\fib = \dfrac{d_0}{d_0 + \overline{\centip \centf} } 
+\end{equation}
+
+\paragraph{Inlet:} 
+the profile of $\tilde{\nu}$ is imposed, the value is deduced from the profiles imposed on $k$ and $\varepsilon$ for a $k-\varepsilon$turbulence 
+model assuming $\tilde{\nu } \simeq \nu_T$.
+
+
 
 %-------------------------------------------------------------------------------
 \section{Differential Reynolds Stress Models (\emph{DRSM})}
-
+In this section, the presented models solve a differential transport equation
+on the Reynolds' stresses tensor.
 %-------------------------------------------------------------------------------
 \subsection{Equations for the Reynolds stress tensor components $R_{ij}$ 
 and $\varepsilon$ (\emph{LRR} model)}
@@ -105,14 +260,22 @@ and $\varepsilon$ (\emph{LRR} model)}
 \begin{equation}
 \left\{
 \begin{array}{rcll}
-\displaystyle\frac{\partial }{\partial t} \left(\rho \tens{R} \right)
-+\divt \left( \tens{R} \otimes \rho \vect{u}-\mu \gradtt \tens{R} \right) 
-& = & \tens{\mathcal{P}} + \tens{G}+ \tens{\Phi} + \tens{\mathit{d}}
+\displaystyle
+ \rho \der{\tens{R}}{t} 
++ \gradtt \, \tens{R} \cdot \left( \rho \vect{u} \right)
+- \divt \left( \mu \gradtt \,\tens{R} \right) 
+& = & 
+\displaystyle
+\tens{\mathit{d}} +
+\tens{\mathcal{P}} + \tens{G}+ \tens{\Phi} 
 -\rho \tens{\varepsilon} & \displaystyle+\Gamma \tens{R}^{in}+\tens{ST}_{R_{ij}},
 \\
-\displaystyle\frac{\partial }{\partial t}(\rho \varepsilon )
-+\dive\left(\rho \vect{u}\,\varepsilon -\mu \grad{\varepsilon}\right) 
-& = & \displaystyle \mathit{{d}+C_{\varepsilon _{1}}\frac{\varepsilon }{k}\left[ \mathcal{P}%
+\displaystyle
+\rho \der{\varepsilon }{t}
++ \grad \varepsilon \cdot \left( \rho \vect{u} \right)
+- \dive\left(\mu \grad{\varepsilon}\right) 
+& = & \displaystyle 
+\mathit{{d}+C_{\varepsilon _{1}}\frac{\varepsilon }{k}\left[ \mathcal{P}%
 +G_{\varepsilon }\right] -\rho C_{\varepsilon _{2}}\frac{\varepsilon ^{2}}{k}} 
 & \displaystyle+\Gamma \varepsilon ^{in}+ST_{\varepsilon },
 \end{array}%
@@ -139,7 +302,7 @@ $G_{\varepsilon }= \Max \left(0, \, \frac{1}{2}\trace \tens{\mathcal{G}}\right)$
 \nomenclature[rrt1]{$\vect{r}$}{vector of the Reynolds stress tensor times the density gradient}
 \nomenclature[rbuoyancyepsilon]{$G_{\varepsilon }$}{turbulent buoyancy term for dissipation}
 
-With these definition the following relations hold:
+With these definitions the following relations hold:
 \begin{equation}
 \begin{array}{r c l}
 \displaystyle k &=&\frac{1}{2} \trace{\tens{R}}, \\
@@ -150,21 +313,21 @@ With these definition the following relations hold:
 $\tens{\Phi}$ is the term representing pressure-velocity correlations:
 \nomenclature[gphit2]{$\tens{\Phi}$}{pressure-velocity correlation tensor \nomunit{$kg.s^{-3}$}}
 \begin{equation}
-\displaystyle \tens{\Phi} = \tens{\phi_{1}}+ \tens{\phi_{2}}+ \tens{\phi_{3}}+ \tens{\phi_{w}},
+\displaystyle \tens{\Phi} = \tens{\phi}_{1}+ \tens{\phi}_{2}+ \tens{\phi}_{3}+ \tens{\phi}_{w},
 \end{equation}%
 %
 \begin{equation}
 \begin{array}{r c l}
-\tens{\phi_{1}} &=& \displaystyle -\rho \,C_{1}\frac{\varepsilon }{k}%
+\tens{\phi}_{1} &=& \displaystyle -\rho \,C_{1}\frac{\varepsilon }{k}%
 \deviator{\tens{R}}, \\
-\tens{\phi_{2}} &=& -\rho \,C_{2} 
+\tens{\phi}_{2} &=& -\rho \,C_{2} 
 \deviator{\tens{\mathcal{P}}}, \\
-\tens{\phi_{3}} &=& -C_{3} \deviator{ \tens{G} }.
+\tens{\phi}_{3} &=& -C_{3} \deviator{ \tens{G} }.
 \end{array}
 \end{equation}
 
-The term $\tens{\phi_{w}}$ is called ``wall echo term'' (by default, it is not
-accounted for: see \fort{turrij} \ref{ap:turrij}).
+The term $\tens{\phi}_{w}$ is called \emph{wall echo term} (by default, it is not
+accounted for: see \doxygenfile{turrij_8f90}{htm programmer's documentation of the subroutine} and the appendix \ref{ap:turrij}).
 
 The dissipation term, $\tens{\varepsilon}$ , is considered isotropic:
 \nomenclature[gepsilont2]{$\tens{\varepsilon}$}{turbulent kinetic energy dissipation tensor \nomunit{$m^{2}.s^{-3}$}}
@@ -176,7 +339,7 @@ The turbulent diffusion terms are:
 \begin{equation}
 \begin{array}{r c l}
 \tens{d} & = & C_{S} \displaystyle \divt \left( \rho \frac{k}{\varepsilon }%
-\tens{R} \cdot \gradtt \tens{R} \right), \\
+\tens{R} \cdot \gradtt \, \tens{R} \right), \\
 d & = & C_{\varepsilon }\displaystyle \dive \left( \rho \frac{k}{\varepsilon} 
 \tens{R} \cdot \grad \varepsilon \right).
 \end{array}
@@ -192,8 +355,8 @@ prescribed by the user.
 \begin{tabular}{p{0,8cm}|p{0,8cm}|p{0,8cm}|p{0,8cm}|p{0,8cm}|p{0,8cm}|p{0,8cm}|p{0,8cm}|p{0,8cm}|p{0,8cm}}
 $C_\mu$ & $C_{\varepsilon}$ & $C_{\varepsilon_1}$ & $C_{\varepsilon_2}$ & $%
 C_1$ & $C_2$ & $C_3$ & $C_S$ & $C^{\prime}_1$ & $C^{\prime}_2$ \\ \hline
-$0,09$ & $0,18$ & $1,44$ & $1,92$ & $1,8$ & $0,6$ & $0,55$ & $0.22$ & $0,5$
-& $0,3$ 
+$0.09$ & $0.18$ & $1.44$ & $1.92$ & $1.8$ & $0.6$ & $0.55$ & $0.22$ & $0.5$
+& $0.3$ 
 \end{tabular}
 \end{center}
 \caption{Model constants of the \emph{LRR}??? $R_{ij}-\varepsilon$ model \cite{Launder:????}.}
@@ -204,11 +367,7 @@ $0,09$ & $0,18$ & $1,44$ & $1,92$ & $1,8$ & $0,6$ & $0,55$ & $0.22$ & $0,5$
 
 %-------------------------------------------------------------------------------
 \subsection{Standard Smagorinsky model}
-\subsection{Dynamic Smagorinsky model}
-\subsection{WALE model}
 
-\begin{description}
- \item[Smagorinsky model] 
 \begin{equation}
 \mu_{t}=\rho \, \left( C_{s}\,\overline{\Delta } \right)^{2}
 \sqrt{2\overline{\tens{S}} \,: \, \overline{\tens{S}}},
@@ -219,7 +378,7 @@ where $\overline{\tens{S}}$ the filtered strain rate tensor components:
 
 \begin{equation}
 \overline{\tens{S}}= \symmetric{\overline{\tens{S}}} =
-\frac{1}{2} \left[ \gradt \vect{\overline{u}} + \transpose{\left( \gradt \, \vect{\overline{u}} \right)}
+\frac{1}{2} \left[ \gradt \, \vect{\overline{u}} + \transpose{\left( \gradt \, \vect{\overline{u}} \right)}
 \right].
 \end{equation}
 %
@@ -243,7 +402,8 @@ formulation (implicit filtering which corresponds to the integration over a
 cell). The value recommended for hexahedral cells is: $\overline{\Delta }
 =2 \norm{\vol{\celli}}^{\frac{1}{3}}$where $\norm{\vol{\celli}}$ is the volume of the cell $\celli$.
 
-\item[Classic dynamic model]
+%-------------------------------------------------------------------------------
+\subsection{Dynamic Smagorinsky model}
 A second filter is introduced: it is an explicit filter with a
 characteristic width $\widetilde{\Delta }$ superior to that of the implicit
 filter ($\overline{\Delta }$). If $\varia$ is a discrete variable defined over
@@ -278,12 +438,12 @@ T_{ij}-\frac{1}{3}\trace \tens{T} \delta_{ij} &=& -2 C \widetilde{\Delta}^2 |\wi
 \end{array}
 \end{equation}
 where 
-$\overline{u}$ stands for the ``implicit-filtered" value of a variable $u$
+$\overline{u}$ stands for the \emph{implicit-filtered} value of a variable $u$
 defined at the centres of the cells and $\overline{u}$ represents the
-``explicit-filtered" value associated with the variable $u$. It follows that
+\emph{explicit-filtered} value associated with the variable $u$. It follows that
 the numerical computation of $L_{ij}$ is possible, since it requires the
 explicit filtering to be applied to implicitly filtered variables only 
-(\textit{i.e.} to the variables explicitly computed).
+(\emph{i.e.} to the variables explicitly computed).
 
 On the following assumption:
 
@@ -308,7 +468,8 @@ with:
 \end{equation}
 
 Since we are left with six equations to determine one single variable, the
-least square method is used\footnote{$L_{kk}$ has no effect for
+least square method is used\footnote{
+$\trace \tens{L}$ has no effect for
 incompressible flows.}. With:
 \begin{equation}
 \tens{E} = \tens{L}-C \left( \tens{\alpha} - \tens{\widetilde{\beta}} \right),
@@ -331,14 +492,14 @@ This method allows to calculate the Smagorinsky "constant" dynamically at
 each time step and at each cell. However, the value obtained for $C$ can be
 subjected to strong variations. Hence, this approach is often restricted to
 flows presenting one or more homogeneous directions (Homogeneous Isotropic
-Turbulence, 2D flows presenting an homogeneous span-wise direction...):
-indeed, in such cases, the model can be (and is) stabilized by replacing $C$
+Turbulence, 2D flows presenting an homogeneous span-wise direction...).
+Indeed, in such cases, the model can be (and is) stabilized by replacing $C$
 by an average value of $C$ computed over the homogeneous direction(s).
 
 For a general case (without any homogeneous direction), a specific averaging
 is introduced to stabilize the model: for any given cell of the mesh, the
 averaged Smagorinsky constant is obtained as an average of $C$ over the
-"extended neighbourhood" of the cell (the set of cells that share at least
+"extended neighbouring" of the cell (the set of cells that share at least
 one vertex with the cell considered). More precisely, the average value
 (also denoted $C$ hereafter) is calculated as indicated below:
 
@@ -346,11 +507,8 @@ one vertex with the cell considered). More precisely, the average value
 C = \frac{\widetilde{ \tens{M} : \tens{L}}} {\widetilde{ \tens{M} : \tens{M}}}
 \end{equation}
 
-\end{description}
 
 %-------------------------------------------------------------------------------
-\subsection{Dynamic Smagorinsky model}
-work in progress
 \subsection{WALE model}
 work in progress
 
