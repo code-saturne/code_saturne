@@ -259,7 +259,7 @@ do isou = 1, 3
    grad   )
 
   !$omp parallel do
-  do iel = 1, ncelet
+  do iel = 1, ncel
     w6(iel) = 1.d0
   enddo
 
@@ -272,11 +272,16 @@ do isou = 1, 3
     enddo
   enddo
 
+  ! Ghost cells must be updated before the loop on faces.
+
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synsca(w6)
+    !==========
+  endif
+
 ! --- Assemblage sur les faces internes
 
   do idim = 1, 3
-
-! On a echange le gradient dans grdcel et vistot plus haut
 
     if (idim.eq.1) then
       !$omp parallel do
@@ -318,8 +323,6 @@ do isou = 1, 3
 
     if (irangp.ge.0.or.iperio.eq.1) then
       call synsca(w4)
-      !==========
-      call synsca(w6)
       !==========
     endif
 
