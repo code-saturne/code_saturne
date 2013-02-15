@@ -13,6 +13,9 @@ Changes:
 Bug fixes:
 ----------
 
+- Add missing parallel synchronization that could contribute to minor
+  differences between parallel and serial computations.
+
 - Fix in lagrangian module for k-epsilon production computation.
 
 - Fix old bug in steady algorithm due to dependency of pseudo-time step
