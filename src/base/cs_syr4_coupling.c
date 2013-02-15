@@ -557,6 +557,8 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
 
   }
 
+  BFT_FREE(coupled_mesh_name);
+
   if (syr_coupling->verbosity > 0) {
     bft_printf(" [ok]\n");
     bft_printf_flush();
@@ -676,6 +678,9 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
     bft_printf(" [ok]\n");
     bft_printf_flush();
   }
+
+  if (location_elts != coupling_ent->elts)
+    fvm_nodal_destroy(location_elts);
 
   if (elt_centers != NULL)
     BFT_FREE(elt_centers);
@@ -855,18 +860,13 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
     bft_printf(_("Coupling with SYRTHES impossible:\n"
                  "%llu element centers from mesh \"%s\"\n"
                  "not located on SYRTHES mesh."),
-               (unsigned long long)n_ext, coupled_mesh_name);
+               (unsigned long long)n_ext, fvm_nodal_get_name(coupling_ent->elts));
 
     /* Ensure clean stop */
 
     cs_coupling_set_sync_flag(PLE_COUPLING_STOP);
 
   }
-
-  if (location_elts != coupling_ent->elts)
-    fvm_nodal_destroy(location_elts);
-
-  BFT_FREE(coupled_mesh_name);
 
   return coupling_ent;
 }
@@ -1423,7 +1423,19 @@ cs_syr4_coupling_init_mesh(cs_syr4_coupling_t  *syr_coupling)
 
   _exchange_sync(syr_coupling, op_name_send, op_name_recv);
 
-  if (strcmp(op_name_recv, "coupling:start"))
+  if (!strcmp(op_name_recv, "coupling:error:location")) {
+
+    cs_coupling_set_sync_flag(PLE_COUPLING_STOP);
+
+    cs_base_warn(__FILE__, __LINE__);
+
+    bft_printf(_(" Message received from SYRTHES: \"%s\"\n"
+                 " indicates meshes have not been matched correctly.\n\n"
+                 " The calculation will not run.\n\n"),
+               op_name_recv);
+
+  }
+  else if (strcmp(op_name_recv, "coupling:start"))
     bft_error(__FILE__, __LINE__, 0,
               _(" Message received from SYRTHES: \"%s\"\n"
                 " indicates an error or is unexpected."),
