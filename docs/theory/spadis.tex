@@ -430,6 +430,8 @@ iterative process to handle with non-orthogonalities. It is robust but requires
 computational effort. The second one, the least square method, minimizes a 
 function. It is quick, but less accurate.
 
+For both methods, the adaptation to gradients of vectorial fields is also presented.
+
 %-------------------------------------------------------------------------------
 \subsection{Standard method: iterative process}\label{sec:spadis:iteratif_gradient}
 
@@ -451,10 +453,10 @@ Sketch of geometrical quantities.
 \end{figure}
 
 Notations of the geometrical quantities are recalled in \figurename~\ref{fig:geom_gradrc}.
-To compute the cell gradient $\grad_{\celli} \varia $ of the scalar field $\varia$.
-By definition, it reads:
+To compute the cell gradient $\grad_{\celli} \varia $ of the scalar field $\varia$ let us
+start by its definition:
 \begin{equation}
-\norm{\vol{\celli}} \grad_{\celli} \varia \equiv  \displaystyle \int_{\vol{\celli}}{\grad \varia \, \dd \vol{} }.
+\norm{\vol{\celli}} \grad_{\celli} \varia \equiv  \displaystyle \int_{\vol{\celli}}{\grad \varia \, \dd \vol{} } = \int_{\partial \vol{\celli}} \varia \dd \vect{S}.
 \end{equation}
 
 
@@ -668,7 +670,7 @@ R^{k+1}_{\celli ,y}\\
 \displaystyle
 R^{k+1}_{\celli ,z}
 \end{array}\right]
-}_{\vect{R}^{k+1}_{\celli}} . 
+}_{\vect{R}^{k+1}_{\celli}} , 
 \end{equation}
 %
 with:
@@ -698,6 +700,167 @@ The invert of the matrix $\tens{C}_{\celli}$ is used to compute $\left( \delta \
 and so $\left( \grad^{k+1}_{\celli} \varia \right)$. The iterative process stops as soon as the Euclidean norm of the right-hand-side $\vect{R}^{k+1}_{\celli}$ tends toward zero (\emph{i.e.} when the Euclidean norm
 of $\left( \delta \grad^{k}_{\celli} \varia \right)$ tends to zero) or when the number of iterations reaches the maximal number of iterations.
 
+%-------------------------------------------------------------------------------
+\subsection{Standard method: iterative process for vectorial fields}\label{sec:spadis:iteratif_gradient_vectors}
+In this section, the adaptation of the calculation presented in \S~\ref{sec:spadis:iteratif_gradient} is adapted to 
+vectorial fields. Some minor modifications are required, especially for the boundary condition treatment, but the core of the 
+formulae are the very similar. The notations of the geometrical quantities are recalled in \figurename~\ref{fig:geom_gradrc}.
+
+The definition of $\gradt_{\celli} \variav $ reads:
+\begin{equation}
+\norm{\vol{\celli}} \gradt_{\celli} \variav \equiv  \displaystyle \int_{\vol{\celli}}{\gradt \, \variav \, \dd \vol{} } = \int_{\partial \vol{\celli}} \variav \otimes \dd \vect{S}.
+\end{equation}
+
+The same Taylor series as \eqref{eq:compute_gradrc1} of $\gradt_{\celli} \variav$ is used:
+
+\begin{equation}\label{eq:compute_gradrv1}
+\begin{array}{r c l}
+\norm{\vol{\celli}} \gradt_{\celli} \variav &  
+\equiv & \displaystyle
+\int_{\vol{\celli}}{\gradt \, \variav \, \dd \vol{} }
+= \sum\limits_{ \fij \in \Facei{\celli}} 
+\variav_{\fij} \otimes {\vect S_{\ij }} 
++\sum\limits_{ \fib \in \Faceb{\celli}} 
+\variav_{\fib} \otimes {\vect S_{\ib }}, \\
+&=& \displaystyle
+ \sum\limits_{ \fij \in \Facei{\celli}} 
+\variav_{\centf} \otimes {\vect S_{\ij }} 
++\sum\limits_{ \fib \in \Faceb{\celli}} 
+\variav_{\centf} \otimes {\vect S_{\ib }}, \\
+&\simeq &  \displaystyle 
+\sum\limits_{ \fij \in \Facei{\celli}} \left[ \variav_{\cento}+ \gradt_{\cento} \variav \cdot \vect{\cento \centf} \right] \otimes \vect{S}_{\ij}+
+\sum\limits_{ \fib \in \Faceb{\celli}} \left[ \epsilon_{\delta \variav} \vect{A}_{\fib} + \tens{B}_{\fib} \cdot \variav_{\ipf} \right] \otimes\vect{S}_{\ib} ,\\
+ & = &\displaystyle 
+\sum\limits_{ \fij \in \Facei{\celli}} 
+\left[
+\left( \alpha_{\ij} \variav_\centi +
+(1 - \alpha_{\ij}) \variav_\centj \right) \right] \otimes \vect{S}_{\ij} +
+\sum\limits_{ \fij \in \Facei{i}} \left[
+\gradt_{\fij} \variav  \cdot  \vect{\cento \centf} \right] \otimes \vect{S}_{\ij} \\
+&+&\displaystyle 
+\sum\limits_{ \fib \in \Faceb{\celli}} \left[ \epsilon_{\delta \variav} \vect{A}_{\fib} + \tens{B}_{\fib} \cdot \variav_{\ipf} \right] \otimes \vect{S}_{\ib} .
+\end{array}
+\end{equation}
+
+Once again, the variable $\epsilon_{\delta \variav}$ is set to $0$ for an increment of a variable,
+ to $1$ for the variable itself in order to take 
+correctly the boundary condition into account.
+
+The same $1^{st}$-order in space approximation as in the scalar gradient calculation is used:
+\begin{equation*}
+\left\{\begin{array}{r c l}
+\gradt_{\fij} \variav & = & \displaystyle \dfrac{1}{2}\left[ \gradt_{\centi} \variav + \gradt_{\centj} \variav \right],\\
+\variav_{\ipf} &= & \variav_{\centi} + \gradt_{\centi} \variav \cdot \vect{\centi \centip } .
+\end{array}\right .
+\end{equation*}
+Equation \eqref{eq:compute_gradrv1} becomes:
+%
+\begin{equation*}
+\begin{array}{r c l}
+\norm{\vol{\celli}} \gradt_{\celli} \variav &=&
+\displaystyle
+\sum\limits_{\fij \in \Facei{\celli}}
+\left[\alpha_{\ij} \variav_\celli
++ (1 - \alpha_{\ij}) \variav_\cellj  + \frac{1}{2}  
+\left( \gradt_\celli \variav +\gradt_\cellj \variav \right) \cdot \vect{\cento \centf }  \right] \otimes {\vect S_{\ij}}\\
+&+& \displaystyle
+\sum\limits_{\fib \in \Faceb{\celli}}
+\left[ \epsilon_{\delta \variav}\vect{A}_{\fib} +
+\tens{B}_{\fib} \cdot \variav_{\celli} + \tens{B}_{\fib} \cdot \left( \gradt_{\celli} \variav \cdot \vect{\centi \centip} \right)
+\right] \otimes \vect{S}_{\ib}.
+\end{array}
+\end{equation*}
+
+Note that, there is no simple possibility here to bring 
+ $\gradt_\celli \variav$ terms all together on the left hand side, because the term 
+ $ \tens{B}_{\fib} \cdot \left( \gradt_{\celli} \variav \right) \cdot \left( \vect{\centi \centip} 
+\otimes \vect{S}_{\ib} \right)$ cannot be factorised easily, and thus will be explicit:
+%
+\begin{equation}\label{eq:gradrv_recontruit}
+\begin{array}{r c l}
+\displaystyle
+\norm{\vol{\celli}} \gradt_{\celli} \variav -
+\sum\limits_{ \fij \in \Facei{\celli}} \frac{1}{2} \gradt_\celli \variav \cdot \left( \vect{\cento \centf} \otimes \vect{S}_{\ij} \right)
+&=& 
+\displaystyle
+\sum\limits_{\fij \in \Facei{\celli}}\left[
+(\alpha_{\ij} \variav_\celli + (1 - \alpha_{\ij}) \variav_\cellj)\right] \otimes \vect{S}_{\ij} \\
+&+&
+\displaystyle
+\sum\limits_{\fij \in \Facei{\celli}} \frac{1}{2} \gradt_\cellj \variav \cdot \left( \vect{\cento \centf} \otimes \vect{S}_{\ij} \right) \\
+&+&
+\displaystyle
+\sum\limits_{\fib \in \Faceb{\celli}}\left[ \epsilon_{\delta \variav} \vect{A}_{\fib} + \tens{B}_{\fib} \cdot \variav_\celli \right] \otimes \vect{S}_{\ib}
++
+\sum\limits_{ \fib \in \Faceb{\celli}} \tens{B}_{\fib} \gradt_\celli \variav \cdot \left( \vect{\centi \centip}  \otimes \vect{S}_{\ib} \right)
+.
+\end{array}
+\end{equation}
+
+\subsubsection{Without reconstruction}
+Without reconstruction, the vectorial gradient reads:
+\begin{equation}\label{eq:spadis:gradrv_nonrecontruit}
+\gradt_\celli^{NRec} \variav= \dfrac{1}{\norm{\vol{\celli}}} \left[
+  \sum\limits_{\fij \in \Facei{\celli}} \left[\alpha_{\ij} \variav_\centi + (1 - \alpha_{\ij}) \variav_\centj) \right] \otimes \vect S_{\ij} 
++\sum\limits_{\fib \in \Faceb{\celli}}(\epsilon_{\delta \variav} \vect{A}_{\fib} + \tens{B}_{\fib} \cdot \varia_\centi
+)\otimes  \vect{S}_{\ib} \right].
+\end{equation}
+
+\subsubsection{Handling with reconstruction: iterative process}
+
+The series $\left( \delta \gradt_\celli^k \variav \right)_{k \in \mathbb{N}}$ is defined by:
+%
+\begin{equation}
+\left\{\begin{array}{r c l}
+\delta \gradt_\celli^0 \variav &=& \gradt_\celli^{NRec} \variav, \\
+\delta \gradt_\celli^{k+1} \variav &= &\gradt_\celli^{k+1} \variav - \gradt_\celli^k \variav ,
+\end{array}\right.
+\end{equation}
+
+A system similar to Equation \eqref{eq:gradrc_recontruit_increment} is obtained 
+for each cell $\celli$
+%
+\begin{equation}\label{eq:eq_systeme_matriciel_gradrv}
+\delta \gradt_\celli^{k+1} \variav 
+\cdot
+\tens{C}_{\celli}
+=
+\tens{R}^{k+1}_{\celli} 
+\end{equation}
+%
+with:
+%
+\begin{equation}\label{eq:eq_second_membre_gradrv}
+\left\{\begin{array}{rcl}
+\tens{C}_\celli  &=& 
+\displaystyle
+ \tens{1} -
+\dfrac{1}{\norm{\vol{\celli}}}\sum\limits_{ \fij \in \Facei{\celli}} \frac{1}{2}  \vect{\cento \centf} \otimes \vect{S}_{\ij} 
+,\\
+\tens{R}^{k+1}_{\celli} &=&
+\displaystyle 
+ -  \grad_{\celli}^{k} \varia 
+ + \dfrac{1}{\norm{\vol{\celli}}}
+\sum\limits_{\fij \in \Facei{\celli}}\left[
+(\alpha_{\ij} \varia_\celli + (1 - \alpha_{\ij}) \varia_\cellj)\right] \vect{S}_{\ij} \\
+&+& \displaystyle
+ \dfrac{1}{\norm{\vol{\celli}}}
+\sum\limits_{\fij \in \Facei{\celli}} \frac{1}{2} 
+\left(\grad_\celli^k \varia + \grad_\cellj^k \varia \right) \cdot \left( \vect{\cento \centf} \otimes \vect{S}_{\ij} \right) \\
+&+& \displaystyle 
+ \dfrac{1}{\norm{\vol{\celli}}}
+\sum\limits_{\fib \in \Faceb{\celli}}\left[ \epsilon_{\delta \varia} A_{\fib} 
++ B_{\fib} \left( \varia_\celli + \grad_\celli^k \varia \cdot \vect{\centi \centip} \right)  \right] \vect{S}_{\ib} .
+\end{array}\right.
+\end{equation}
+
+\begin{remark}
+Note that the matrix $\tens{C}_{\celli}$ in \eqref{eq:eq_second_membre_gradrv} is not the same as in \eqref{eq:eq_second_membre_gradrc}. First of all,
+there is no boundary term and thus its invert has not to be recomputed at each iteration (except if the mesh is not modified). This matrix thus  only
+measure the quality of the mesh (if the mesh is orthogonal, $\tens{C}_{\celli} = \tens{1}$ for all cells).
+Secondly, this matrix is dimensionless, whereas in \eqref{eq:eq_second_membre_gradrc} $\tens{C}_\celli$ has the dimension of a volume. This choice has 
+been motivated to minimize truncature errors.
+\end{remark}
 
 %-------------------------------------------------------------------------------
 \subsection{Least-square method}\label{sec:spadis:least_square_gradient}
@@ -928,6 +1091,102 @@ the support is the set of neighbouring cells used in the cell gradient computati
 \end{figure}
 
 
+%-------------------------------------------------------------------------------
+\subsection{Least-square method for vectorial fields}\label{sec:spadis:least_square_gradient_vectors}
+%
+In this section, the adaptation of the calculation presented in \S~\ref{sec:spadis:least_square_gradient} is adapted to 
+vectorial fields. Some minor modifications are required, especially for the boundary condition treatment, but the core of the 
+formulae are the very similar. The notations of the geometrical quantities are recalled in \figurename~\ref{fig:geom_gradrc}.
+
+The functional to be minimized is defined by
+%
+\begin{equation}\label{eq:spadis:gradmv_function}
+\mathcal{F}_\celli
+\left( \variat \right) =
+\dfrac{1}{2}\sum\limits_{\cellj \in \Neigh{\celli}  }
+\norm{
+ \variat   \cdot \vect{d}_\ij  -  \gradt_{\fij} \variav   \cdot \vect{d}_\ij 
+}^2+
+\dfrac{1}{2}\sum\limits_{ \fib \in \Faceb{\celli}}
+\norm{
+ \variat   \cdot \vect{d}_\ib  -  \gradt_{\fib} \variav   \cdot \vect{d}_\ib
+}^2,
+\end{equation}
+
+To minimize $\mathcal{F}_\celli$, derivatives with respect to the components of the 
+vector $\variat  $ are computed, the resulting system is solved and $\gradt_\celli \variav$ is defined 
+as $\variat_{\min}$ such that $\mathcal{F}_\celli \left( \variat_{\min}\right)$ is minimum.
+
+In order to obtain a simple system, the same choice as in \eqref{eq:spadis:gradmc_scalar_d_choice} is made on $\vect{d}_\ij$.
+Concerning $\vect{d}_\ib$, an other choice ensuring that $\grad_{\fib} \varia   \cdot \vect{d}_\ib $ does not
+depend on $\grad_{\celli} \varia $ is made:
+%
+\begin{equation}\label{eq:spadis:gradmv_scalar_d_choice}
+\begin{array}{r c l}
+\vect{d}_\ij &=& \dfrac{\vect{\centi \centj}}{\norm{\vect{\centi \centj}}}, \\
+\vect{d}_\ib &=& \dfrac{\vect{\centi \centf}}{\norm{\vect{\centi \centf}}} .
+\end{array}
+\end{equation}
+
+Thus, for internal faces $\fij$, $\vect{d}_\ij$ is still the normalized vector joining 
+the centres $\centi$ and $\centj$ oriented from cell $\celli$ to $\cellj$.
+The quantity  $\gradt_{\fij} \variav   \cdot \vect{d}_\ij$ is given by:
+\begin{equation}
+\gradt_{\fij} \variav   \cdot \vect{d}_\ij =\dfrac{\variav_\cellj - \variav_\celli }{\norm{\vect{\centi \centj}}}.
+\end{equation}
+
+For boundary faces, the choice $\vect{d}_\ib$ implies:
+\begin{equation}
+\gradt_{\fib} \variav   \cdot \vect{d}_\ib =\dfrac{\variav_\fib - \variav_\celli }{\norm{\vect{\centi \centf}}},
+\end{equation}
+where $\variav_\fib$ is expressed thanks to the boundary conditions (see \chaptername~\ref{chapter:bndcnd}).
+
+Then we cancel the derivatives of 
+$\mathcal{F}_\celli \left( \variat \right)$ with respect to the $ \variat$ components:
+
+
+A $3\times 3$ system for each cell $\celli$ 
+is got by writing  $\der{\mathcal{F}_\celli}{\variat }
+\left( \gradt_\celli \variav \right)= \tens{0}$:
+%
+\begin{equation}\label{eq:spadis:gradmv_matrix}
+\gradt_\celli \variav \cdot \tens{C}_\celli = \tens{R}_\celli ,
+\end{equation}
+with
+%
+\begin{equation}
+\left\{
+\begin{array}{r c l}
+\tens{C}_\celli &=&
+\displaystyle
+ \sum\limits_{\cellj \in \Neigh{\celli} } 
+ \vect{d}_\ij \otimes \vect{d}_\ij
++
+\sum\limits_{\fib \in \Faceb{\celli}}
+\vect{d}_\ib \otimes  \vect{d}_\ib ,
+\\
+\tens{R}_\celli &=&
+\displaystyle
+\sum\limits_{ \cellj \in \Neigh{\celli} }
+ \gradt_{\fij} \variav   \cdot \left( \vect{d}_\ij \otimes \vect{d}_\ij \right)
++
+\sum\limits_{ \fib \in \Faceb{\celli}}
+\dfrac{  
+\vect{A}^g_\fib +\left(\tens{B}^g_\fib -\tens{1} \right) \cdot \variav_\celli 
+}{
+\norm{\vect{\centi \centf}}
+} 
+\otimes
+\vect{d}_\ib .
+\end{array}\right.
+\end{equation}
+%
+
+
+\begin{remark}
+Note that the $3\times3$ $\tens{C}_\celli$ tensor is  slightly different from \eqref{eq:spadis:gradmc_matrix} and does not depend
+ on boundary condition coefficients (and thus does not require re-computation if the mesh is not modified. 
+\end{remark}
 
 
 

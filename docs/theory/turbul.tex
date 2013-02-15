@@ -89,14 +89,14 @@ work in progress
 
 %-------------------------------------------------------------------------------
 \subsection{Spalart-Allmaras model}
-The Spalart-Allmaras turbulence model \cite{Spalart:1994} is an \emph{EVM} \emph{RANS} model developped in the $90$'s in aeronautics, and is therefore well suited
-for studing a flow around an airplane wing for instance.
+The Spalart-Allmaras turbulence model \cite{Spalart:1994} is an \emph{EVM} \emph{RANS} model developed in the $90$'s in aeronautics, and is therefore well suited
+for studying a flow around an air-plane wing for instance.
 
 %--------------------------------
 \subsubsection{Model description}
 It consists of a transport equation of a scalar $\tilde{nu}$ dirctly linked to the turbulent viscosity $\mu_T$. 
 
-More recently, this modele has been extended by Aupoix \cite{Aupoix:2003} to rough wall for studing atmospheric flows. It was also successfully applied to flow in turbo-machinery where variants of this model has been developped. 
+More recently, this model has been extended by Aupoix \cite{Aupoix:2003} to rough wall for studying atmospheric flows. It was also successfully applied to flow in turbo-machinery where variants of this model has been developed. 
 
 The transport equation of $\tilde{\nu}$ (pseudo turbulent viscosity, which tends to it far from walls) reads\footnote{
 the present formulation is a simplified one presented by Aupoix \cite{Aupoix:2003} where transition terms have been neglected.
@@ -112,7 +112,7 @@ the present formulation is a simplified one presented by Aupoix \cite{Aupoix:200
 \end{equation}
 %
 where $\tilde{\nu}^{in}$ is the injection value of $\tilde{\nu}$ in case of any mass source term, and $ST^{imp}_{\tilde{\nu}}$ and $ST^{exp}_{\tilde{\nu}}$ 
-are respectivly the implicit and explicit additional user source terms and
+are respectively the implicit and explicit additional user source terms and
 where
 %
 \begin{equation}\label{eq:def_fun_SA}
@@ -128,7 +128,7 @@ r &=& \min \left[ \dfrac{ \tilde{\nu} }{ \tilde{S} \kappa^ 2 d^2 } ; \; 10 \righ
 \end{array}
 \end{equation}
 %
-The constantes are defined in \tablename~\ref{tab:const_SA}.
+The constants are defined in \tablename~\ref{tab:const_SA}.
 
 \begin{table}[!htbc]
 \centering
@@ -139,7 +139,7 @@ $
 \frac{2}{3} & 0.1355 & 0.622  & 0.41   & 0.3    & 2      & 7.1    & \dfrac{c_{b1}}{ \kappa^2}+ \dfrac{1+c_{b2}}{ \sigma}  
 \end{array}
 $
-\caption{Constantes of the Spalart Allmaras model.\label{tab:const_SA}}
+\caption{Constants of the Spalart Allmaras model.\label{tab:const_SA}}
 \end{table}
 
 %----------------------------
@@ -187,7 +187,7 @@ c_{b1} \rho \tilde{S} \tilde{\nu}^n
 where $\delta \tilde{\nu}^{n+1} \equiv \tilde{\nu}^{n+1} - \tilde{\nu}^{n}$.
 
 \begin{remark}
-The term $\left( c_{w1} f_{w} \rho  \dfrac{\tilde{\nu}^n}{d^2} - c_{b1}\rho \tilde{S} \right)$ has been implicited 
+The term $\left( c_{w1} f_{w} \rho  \dfrac{\tilde{\nu}^n}{d^2} - c_{b1}\rho \tilde{S} \right)$ is implicit 
 so that $\tilde{\nu} $ does not require any clipping to remain positive if an \emph{upwind} convective scheme and no flux 
 reconstruction are chosen.
 \end{remark}
@@ -225,7 +225,7 @@ is replaced by the following Neumann boundary condition:
 \left. \der{\tilde{ \nu}}{n} \right|_\fib = \dfrac{\left. \tilde{ \nu}\right|_\fib }{ d_0}
 \end{equation}
 %
-A developpment in series in then written:
+A development in series in then written:
 \begin{equation}\label{eq:eq_neumann_nu_vf}
  \tilde{\nu}_\fib = \tilde{\nu}_{\centip} -   \grad_\fib \tilde{ \nu} \cdot \vect{\centip \centf} 
 \end{equation}
@@ -327,7 +327,7 @@ $\tens{\Phi}$ is the term representing pressure-velocity correlations:
 \end{equation}
 
 The term $\tens{\phi}_{w}$ is called \emph{wall echo term} (by default, it is not
-accounted for: see \doxygenfile{turrij_8f90}{htm programmer's documentation of the subroutine} and the appendix \ref{ap:turrij}).
+accounted for: see \doxygenfile{turrij_8f90}{html programmer's documentation of the subroutine} and the appendix \ref{ap:turrij}).
 
 The dissipation term, $\tens{\varepsilon}$ , is considered isotropic:
 \nomenclature[gepsilont2]{$\tens{\varepsilon}$}{turbulent kinetic energy dissipation tensor \nomunit{$m^{2}.s^{-3}$}}
@@ -424,7 +424,7 @@ Germano identity reads:
 \tens{L} = \tens{T}-\widetilde{\tens{\tau}}.
 \end{equation}
 
-Both dynamic models described herafter rely on the estimation of the tensors
+Both dynamic models described hereafter rely on the estimation of the tensors
 $\tens{T}$ and $\tens{\tau}$ as functions of the filter widths and of the
 strain rate tensor (Smagorinsky model). The following modelling is adopted%
 \footnote{$\delta_{ij}$ stands for the Kroeneker symbol.}:
