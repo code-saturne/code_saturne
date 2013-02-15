@@ -289,33 +289,6 @@ else
   enddo
 endif
 
-!    Pour la periodicite de rotation, il faut avoir calcule
-!      le gradient avec grdcel. La seule solution consiste donc a
-!      echanger VISTOT puis a faire le produit, y compris sur les
-!      cellules halo (calcul sur le halo, exceptionnellement).
-!    Pour le parallelisme, on s'aligne sur la sequence ainsi definie.
-
-! ---> TRAITEMENT DU PARALLELISME
-
-if(irangp.ge.0) then
-  call parcom (vistot)
-  !==========
-endif
-
-! ---> TRAITEMENT DE LA PERIODICITE
-
-if(iperio.eq.1) then
-  idimte = 0
-  itenso = 0
-  call percom                                                     &
-  !==========
-( idimte , itenso ,                                               &
-  vistot , vistot , vistot ,                                      &
-  vistot , vistot , vistot ,                                      &
-  vistot , vistot , vistot )
-endif
-
-
 !===============================================================================
 ! 2.  CALCUL DES TERMES EN GRAD_TRANSPOSE
 !===============================================================================
@@ -356,40 +329,55 @@ do isou = 1, 3
    w4     , w4     , w4     ,                                     &
    rtpa(1,ivar)    , coefa(1,iclvar) , coefb(1,iclvar) ,          &
    w1     , w2     , w3     ,                                     &
-!        ------   ------   ------
+   !-----   ------   ------
    w4     , w5     , w6     ,                                     &
    rdevel , rtuser , ra     )
 
 
-  do iel = 1, ncelet
+  do iel = 1, ncel
     w6(iel) = 1.d0
   enddo
   do ifac = 1, nfabor
     w6(ifabor(ifac)) = 0.d0
   enddo
 
+! --- Traitement du parallelisme
+
+  if(irangp.ge.0) then
+    call parcom (w6)
+    !==========
+  endif
+
+! --- Traitement de la periodicite
+
+  if(iperio.eq.1) then
+    idimte = 0
+    itenso = 0
+    call percom                                                   &
+    !==========
+    ( idimte , itenso ,                                           &
+      w6     , w6     , w6    ,                                   &
+      w6     , w6     , w6    ,                                   &
+      w6     , w6     , w6    )
+  endif
+
 ! --- Assemblage sur les faces internes
 
   do idim = 1, 3
 
-! On a echange le gradient dans grdcel et vistot plus haut
-
     if(idim.eq.1) then
-      do iel = 1, ncelet
+      do iel = 1, ncel
         w4(iel) = vistot(iel)*w1(iel)
       enddo
     elseif(idim.eq.2) then
-      do iel = 1, ncelet
+      do iel = 1, ncel
         w4(iel) = vistot(iel)*w2(iel)
       enddo
     elseif(idim.eq.3) then
-      do iel = 1, ncelet
+      do iel = 1, ncel
         w4(iel) = vistot(iel)*w3(iel)
       enddo
     endif
-
-
-
 
 ! On initialise TRAV(NCEL+1, NCELET)
 !     (valeur bidon, mais pas NaN : les calculs sur le halo sont
@@ -400,7 +388,25 @@ do isou = 1, 3
       enddo
     endif
 
+! --- Traitement du parallelisme
 
+    if(irangp.ge.0) then
+      call parcom (w4)
+      !==========
+    endif
+
+    ! ---> Traitement de la periodicite
+
+    if(iperio.eq.1) then
+      idimte = 0
+      itenso = 0
+      call percom                                                 &
+      !==========
+      ( idimte , itenso ,                                         &
+        w4     , w4     , w4    ,                                 &
+        w4     , w4     , w4    ,                                 &
+        w4     , w4     , w4    )
+    endif
 
     if(ivecti.eq.1) then
 
@@ -408,8 +414,6 @@ do isou = 1, 3
       do ifac = 1, nfac
         ii = ifacel(1,ifac)
         jj = ifacel(2,ifac)
-!MO             VECFAC = SURFAC(ISOU,IFAC)
-!MO     &                  *(POND(IFAC)*W4(II)+(1.D0-POND(IFAC))*W4(JJ))
         vecfac = surfac(isou,ifac)*(w4(ii)+w4(jj))*0.5d0
         trav(ii,idim) = trav(ii,idim) + vecfac*w6(ii)
         trav(jj,idim) = trav(jj,idim) - vecfac*w6(jj)
@@ -421,35 +425,12 @@ do isou = 1, 3
       do ifac = 1, nfac
         ii = ifacel(1,ifac)
         jj = ifacel(2,ifac)
-!MO             VECFAC = SURFAC(ISOU,IFAC)
-!MO     &                  *(POND(IFAC)*W4(II)+(1.D0-POND(IFAC))*W4(JJ))
         vecfac = surfac(isou,ifac)*(w4(ii)+w4(jj))*0.5d0
         trav(ii,idim) = trav(ii,idim) + vecfac*w6(ii)
         trav(jj,idim) = trav(jj,idim) - vecfac*w6(jj)
       enddo
 
     endif
-
-
-! --- Assemblage sur les faces de bord
-
-!MO          IF(IVECTB.EQ.1) THEN
-!MOC
-!MO!CDIR NODEP
-!MO            DO IFAC = 1, NFABOR
-!MO             II = IFABOR(IFAC)
-!MO             TRAV(II,IDIM) = TRAV(II,IDIM) + SURFBO(ISOU,IFAC)*W4(II)
-!MO            ENDDO
-!MOC
-!MO          ELSE
-!MOC
-!MOC VECTORISATION NON FORCEE
-!MO            DO IFAC = 1, NFABOR
-!MO             II = IFABOR(IFAC)
-!MO             TRAV(II,IDIM) = TRAV(II,IDIM) + SURFBO(ISOU,IFAC)*W4(II)
-!MO            ENDDO
-!MOC
-!MO          ENDIF
 
   enddo
 
@@ -467,8 +448,6 @@ enddo
 do ifac = 1, nfac
   ii = ifacel(1,ifac)
   jj = ifacel(2,ifac)
-!MO        ROMF = POND(IFAC)*PROPCE(II,IPCROM)
-!MO     &      + (1.D0-POND(IFAC))*PROPCE(JJ,IPCROM)
   romf = (propce(ii,ipcrom)+propce(jj,ipcrom))*0.5d0
   viscf(ifac) = propfa(ifac,iflmas)/romf
 enddo
@@ -528,7 +507,6 @@ endif
 do ifac = 1, nfac
   ii = ifacel(1,ifac)
   jj = ifacel(2,ifac)
-!MO        VISCF (IFAC) = (POND(IFAC)*W4(II)+(1.D0-POND(IFAC))*W4(JJ))
   viscf (ifac) = (w4(ii)+w4(jj))*0.5d0
 enddo
 

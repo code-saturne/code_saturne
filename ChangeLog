@@ -1,3 +1,9 @@
+* 15/02/2013 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add missing parallel synchronization that could contribute to minor
+  differences between parallel and serial computations.
+  modified files:
+    src/base/vissec.f90
+
 * 13/12/2012 - Jacques Fontaine <jacques-j.fontaine@edf.fr>
   Fix in lagrangian module.
   modified files:
