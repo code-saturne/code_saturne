@@ -320,32 +320,6 @@ C
         ENDDO
       ENDIF
 C
-C    Pour la periodicite de rotation, il faut avoir calcule
-C      le gradient avec grdcel. La seule solution consiste donc a
-C      echanger VISTOT puis a faire le produit, y compris sur les
-C      cellules halo (calcul sur le halo, exceptionnellement).
-C    Pour le parallelisme, on s'aligne sur la sequence ainsi definie.
-C
-C ---> TRAITEMENT DU PARALLELISME
-C
-      IF(IRANGP.GE.0) THEN
-        CALL PARCOM (VISTOT)
-C       ===========
-      ENDIF
-C
-C ---> TRAITEMENT DE LA PERIODICITE
-C
-      IF(IPERIO.EQ.1) THEN
-        IDIMTE = 0
-        ITENSO = 0
-        CALL PERCOM
-C       ===========
-     &( IDIMTE , ITENSO ,
-     &  VISTOT , VISTOT , VISTOT ,
-     &  VISTOT , VISTOT , VISTOT ,
-     &  VISTOT , VISTOT , VISTOT )
-      ENDIF
-C
 C
 C=======================================================================
 C 2.  CALCUL DES TERMES EN GRAD_TRANSPOSE
@@ -392,12 +366,32 @@ C        ------   ------   ------
      &   RDEVEL , RTUSER , RA     )
 C
 C
-        DO IEL = 1, NCELET
+        DO IEL = 1, NCEL
           W6(IEL) = 1.D0
         ENDDO
         DO IFAC = 1, NFABOR
           W6(IFABOR(IFAC)) = 0.D0
         ENDDO
+C
+C ---> TRAITEMENT DU PARALLELISME
+C
+        IF(IRANGP.GE.0) THEN
+          CALL PARCOM (W6)
+C         ===========
+        ENDIF
+C
+C ---> TRAITEMENT DE LA PERIODICITE
+C
+        IF(IPERIO.EQ.1) THEN
+          IDIMTE = 0
+          ITENSO = 0
+          CALL PERCOM
+C         ===========
+     &  ( IDIMTE , ITENSO ,
+     &    W6     , W6     , W6     ,
+     &    W6     , W6     , W6     ,
+     &    W6     , W6     , W6     )
+        ENDIF
 C
 C --- Assemblage sur les faces internes
 C
@@ -406,20 +400,39 @@ C
 C On a echange le gradient dans grdcel et vistot plus haut
 C
           IF(IDIM.EQ.1) THEN
-            DO IEL = 1, NCELET
+            DO IEL = 1, NCEL
               W4(IEL) = VISTOT(IEL)*W1(IEL)
             ENDDO
           ELSEIF(IDIM.EQ.2) THEN
-            DO IEL = 1, NCELET
+            DO IEL = 1, NCEL
               W4(IEL) = VISTOT(IEL)*W2(IEL)
             ENDDO
           ELSEIF(IDIM.EQ.3) THEN
-            DO IEL = 1, NCELET
+            DO IEL = 1, NCEL
               W4(IEL) = VISTOT(IEL)*W3(IEL)
             ENDDO
           ENDIF
 C
 C
+C ---> TRAITEMENT DU PARALLELISME
+C
+          IF(IRANGP.GE.0) THEN
+            CALL PARCOM (W4)
+C           ===========
+          ENDIF
+C
+C ---> TRAITEMENT DE LA PERIODICITE
+C
+          IF(IPERIO.EQ.1) THEN
+            IDIMTE = 0
+            ITENSO = 0
+            CALL PERCOM
+C         ===========
+     &    ( IDIMTE , ITENSO ,
+     &      W4     , W4     , W4     ,
+     &      W4     , W4     , W4     ,
+     &      W4     , W4     , W4     )
+          ENDIF
 C
 C
 C On initialise TRAV(NCEL+1, NCELET)
@@ -430,8 +443,7 @@ C      par principe denue de sens, sauf exception)
               TRAV(IEL,IDIM) = 0.D0
             ENDDO
           ENDIF
-C
-C
+
 C
           IF(IVECTI.EQ.1) THEN
 C
