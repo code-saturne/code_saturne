@@ -79,11 +79,14 @@ fi
 dnl So as to correctly set TEXINPUTS environment variable, one needs to use
 dnl the system dependant path separator
 if test "$host_os" = mingw32 ; then
-  cs_path_sep=';'
+  cs_tex_path_end=
+  cs_tex_path_sep=';'
 else
-  cs_path_sep=':'
+  cs_tex_path_end=':'
+  cs_tex_path_sep=':'
 fi
-AC_SUBST([cs_path_sep])
+AC_SUBST([cs_tex_path_end])
+AC_SUBST([cs_tex_path_sep])
 
 AM_CONDITIONAL(HAVE_LATEX, [test $cs_have_latex = yes])
 

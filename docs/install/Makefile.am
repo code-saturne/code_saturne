@@ -42,7 +42,7 @@ EXTRA_DIST = $(TEXMAIN) $(TEXOTHERS) $(TEXINPUTFILES)
 
 # Environment variables for LaTeX
 
-TEXINPUTS = $(top_srcdir)/docs/style/$(cs_path_sep)$(top_builddir)/docs/style/$(cs_path_sep)$(srcdir)//$(cs_path_sep)$(builddir)//$(cs_path_sep)
+TEXINPUTS = $(top_srcdir)/docs/style/$(cs_tex_path_sep)$(top_builddir)/docs/style/$(cs_tex_path_sep)$(srcdir)//$(cs_tex_path_sep)$(builddir)//$(cs_tex_path_end)
 BIBINPUTS = $(top_srcdir)/docs/style/
 BSTINPUTS = $(top_srcdir)/docs/style/
 

@@ -27,7 +27,7 @@ mainpage.h images/icon.png examples/bft_error_example.c doxypy.py
 
 # Overload doxygen executable
 
-DOXYGENCMD = export TEXINPUTS="$(abs_top_srcdir)/docs/style/$(cs_path_sep)"; \
+DOXYGENCMD = export TEXINPUTS="$(abs_top_srcdir)/docs/style/$(cs_tex_path_end)"; \
   srcdir="$(top_srcdir)" builddir="$(top_builddir)" "$(DOXYGEN)"
 
 doxygen-pre:
