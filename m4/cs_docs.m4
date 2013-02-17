@@ -121,11 +121,11 @@ AC_DEFUN([CS_AC_TEST_SPHINX],[
 
 cs_have_sphinx=yes
 
-AC_ARG_VAR([SPHINX], [Sphinx documentation tool])
+AC_ARG_VAR([SPHINXBUILD], [Sphinx documentation tool])
 
 dnl where is sphinx ?
-AC_PATH_PROG(SPHINX, sphinx-build) 
-if test "x$SPHINX" = "x"; then
+AC_PATH_PROG(SPHINXBUILD, sphinx-build) 
+if test "x$SPHINXBUILD" = "x"; then
   AC_MSG_WARN(sphinx-build not found)
   cs_have_sphinx=no
 fi
