@@ -116,6 +116,10 @@ AC_PROG_LN_S
 
 AM_PROG_CC_C_O
 
+# Needed to use Microsoft archiver lib.exe
+# It copies the ar-lib script, similar to the compile script
+m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
+
 # Debug or production compilation mode (debug by default) ?
 
 AC_ARG_ENABLE(debug,

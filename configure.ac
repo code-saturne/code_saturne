@@ -112,6 +112,10 @@ AC_PROG_SED
 AM_PROG_LEX
 AC_PROG_YACC
 
+# Needed to use Microsoft archiver lib.exe
+# It copies the ar-lib script, similar to the compile script
+m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
+
 # Debug or production compilation mode (debug by default) ?
 
 AC_ARG_ENABLE(debug,
@@ -368,9 +372,6 @@ AC_SUBST(cs_have_long_gnum)
 
 # Check for Fortran module generation
 CS_AC_TEST_FC_MOD
-
-# Needed for some portability of some libtool-related macros
-m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 
 #------------------------------------------------------------------------------
 # Determine OpenMP support
