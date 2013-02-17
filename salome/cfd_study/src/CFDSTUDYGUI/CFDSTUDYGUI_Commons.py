@@ -161,10 +161,10 @@ def CheckCFD_CodeEnv(code):
 
     if iok:
         pkg = package()
-        prefix = pkg.dirs['prefix'][1]
+        prefix = pkg.get_dir('prefix')
         log.debug("CheckCFD_CodeEnv -> prefix = %s" % (prefix))
 
-        bindir = pkg.dirs['bindir'][1]
+        bindir = pkg.get_dir('bindir')
         log.debug("CheckCFD_CodeEnv -> prefix = %s" % (bindir))
 
         if not os.path.exists(prefix):
@@ -176,13 +176,6 @@ def CheckCFD_CodeEnv(code):
                 mess2 =  ObjectTR.tr("ENV_DLG_INVALID_DIRECTORY")
                 mess = mess + mess2.arg(bindir)
                 iok = False
-            else:
-                if not os.path.isfile(os.path.join(bindir, "code_saturne")) and \
-                not os.path.isfile(os.path.join(bindir, "neptune_cfd")):
-                    iok = False
-                    mess3 = ObjectTR.tr("ENV_DLG_INVALID_FILE")
-                    mess4 = ObjectTR.tr("ENV_DLG_INVALID_FILE")
-                    mess = mess + mess3.arg(code).arg(os.path.join(bindir, "code_saturne")) + " and " +  mess4.arg(code).arg(os.path.join(bindir, "neptune_cfd"))
 
     log.debug("CheckCFD_CodeEnv -> %s = %s" % (code, iok))
     log.debug("CheckCFD_CodeEnv -> %s: %s" % (code, mess))
@@ -196,13 +189,13 @@ def BinCode():
     if CFD_Code() == CFD_Saturne:
         from cs_package import package
         pkg = package()
-        bindir = pkg.dirs['bindir'][1]
+        bindir = pkg.get_dir('bindir')
         if os.path.isfile(os.path.join(bindir, "code_saturne")):
             b = os.path.join(bindir, "code_saturne")
     elif CFD_Code() == CFD_Neptune:
         from nc_package import package
         pkg = package()
-        bindir = pkg.dirs['bindir'][1]
+        bindir = pkg.get_dir('bindir')
         if os.path.isfile(os.path.join(bindir, "neptune_cfd")):
             b = os.path.join(bindir, "neptune_cfd")
 

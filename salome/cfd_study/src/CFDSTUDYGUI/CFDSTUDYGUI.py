@@ -51,7 +51,6 @@ import SalomePyQt
 from SalomePyQt import WT_ObjectBrowser, WT_PyConsole, WT_LogWindow
 import SALOMEDS
 import SALOMEDS_Attributes_idl
-import libSalomePy
 
 #-------------------------------------------------------------------------------
 # Application modules
@@ -138,11 +137,6 @@ def views():
     #winList = "OCCViewer"
     #winList = "Plot2d"
     #winList = ""
-
-    #MP ren1 = libSalomePy.getRenderer()
-    ###ren1.GradientBackgroundOn()
-    #MP ren1.SetBackground(0.6, 0.6, 0.7)
-    ###ren1.SetBackground2(0.1, 0.2, 0.4)
 
     return winList
 

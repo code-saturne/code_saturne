@@ -151,7 +151,7 @@ class InfoDialogHandler(InfoDialog):
 
         pkg = package()
         self.labelVersionValue.setText(pkg.version)
-        self.labelPrefixValue.setText(pkg.dirs['prefix'][1])
+        self.labelPrefixValue.setText(pkg.get_dir('prefix'))
         _SetCFDCode(code)
 
 
@@ -167,7 +167,7 @@ class InfoDialogHandler(InfoDialog):
 
         pkg = package()
         self.labelVersionValue.setText(pkg.version)
-        self.labelPrefixValue.setText(pkg.dirs['prefix'][1])
+        self.labelPrefixValue.setText(pkg.get_dir('prefix'))
 
 
 #-----------------------------------------------------------------------------------------------------------

@@ -48,6 +48,7 @@ libSalomeIDLCFDSTUDY_la_CXXFLAGS = $(SALOME_INCLUDES) $(SALOME_GUI_CPPFLAGS) \
 
 libSalomeIDLCFDSTUDY_la_LIBADD  = \
 	$(SALOME_GUI_LDFLAGS) -lSalomeIDLGUI \
+	$(SALOME_KERNEL_LDFLAGS) -lSalomeIDLKernel \
 	@CORBA_LIBS@
 
 libSalomeIDLCFDSTUDY_la_LDFLAGS = -no-undefined -version-info=0:0:0
