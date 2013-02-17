@@ -40,12 +40,16 @@ AC_DEFUN([CS_AC_TEST_LATEX],[
 
 cs_have_latex=yes
 
+AC_ARG_VAR([PDFLATEX], [LaTeX PDF generator tool])
+
 dnl where is pdflatex ?
 AC_PATH_PROG(PDFLATEX, [pdflatex]) 
 if test "x$PDFLATEX" = "x"; then
   AC_MSG_WARN(pdflatex not found)
   cs_have_latex=no
 fi
+
+AC_ARG_VAR([BIBTEX], [LaTeX references tool])
 
 dnl where is bibtex ?
 AC_PATH_PROG(BIBTEX, [bibtex])
@@ -54,6 +58,8 @@ if test "x$BIBTEX" = "x"; then
   cs_have_latex=no
 fi
 
+AC_ARG_VAR([MAKEINDEX], [LaTeX indexes tool])
+
 dnl where is makeindex ?
 AC_PATH_PROG(MAKEINDEX, [makeindex]) 
 if test "x$MAKEINDEX" = "x"; then
@@ -61,12 +67,23 @@ if test "x$MAKEINDEX" = "x"; then
   cs_have_latex=no
 fi
 
+AC_ARG_VAR([FIG2DEV], [Xfig translation tool])
+
 dnl where is fig2dev ?
 AC_PATH_PROG(FIG2DEV, [fig2dev]) 
 if test "x$FIG2DEV" = "x"; then
   AC_MSG_WARN(fig2dev not found)
   cs_have_latex=no
 fi
+
+dnl So as to correctly set TEXINPUTS environment variable, one needs to use
+dnl the system dependant path separator
+if test "$host_os" = mingw32 ; then
+  cs_path_sep=';'
+else
+  cs_path_sep=':'
+fi
+AC_SUBST([cs_path_sep])
 
 AM_CONDITIONAL(HAVE_LATEX, [test $cs_have_latex = yes])
 
@@ -79,6 +96,8 @@ AM_CONDITIONAL(HAVE_LATEX, [test $cs_have_latex = yes])
 AC_DEFUN([CS_AC_TEST_DOXYGEN],[
 
 cs_have_doxygen=yes
+
+AC_ARG_VAR([DOXYGEN], [source code documentation generator])
 
 dnl where is doxygen ?
 AC_PATH_PROG(DOXYGEN, [doxygen]) 
@@ -98,6 +117,8 @@ AM_CONDITIONAL(HAVE_DOXYGEN, [test $cs_have_doxygen = yes])
 AC_DEFUN([CS_AC_TEST_SPHINX],[
 
 cs_have_sphinx=yes
+
+AC_ARG_VAR([SPHINX], [Sphinx documentation tool])
 
 dnl where is sphinx ?
 AC_PATH_PROG(SPHINX, sphinx-build) 

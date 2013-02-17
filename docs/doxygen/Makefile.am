@@ -25,15 +25,10 @@
 EXTRA_DIST = Doxyfile-pre Doxyfile-src Doxyfile-ui \
 mainpage.h images/icon.png examples/bft_error_example.c doxypy.py
 
-# Environment variables for LaTeX
-
-TEXINPUTS = $(abs_top_srcdir)/docs/style/:
-
 # Overload doxygen executable
 
-DOXYGENCMD = export TEXINPUTS="$(TEXINPUTS)"; \
-  srcdir="$(top_srcdir)" builddir="$(top_builddir)" \
-  $(DOXYGEN)
+DOXYGENCMD = export TEXINPUTS="$(abs_top_srcdir)/docs/style/$(cs_path_sep)"; \
+  srcdir="$(top_srcdir)" builddir="$(top_builddir)" "$(DOXYGEN)"
 
 doxygen-pre:
 	$(DOXYGENCMD) $(top_srcdir)/docs/doxygen/Doxyfile-pre
@@ -65,8 +60,8 @@ install-html-local:
 	if test -d pre/html; \
 	then \
 	  \cp -R pre/html $(DESTDIR)$(htmldir)/doxygen/pre ;\
-	fi
-	\cp -R src/html $(DESTDIR)$(htmldir)/doxygen/src
+	fi ;\
+	\cp -R src/html $(DESTDIR)$(htmldir)/doxygen/src ;\
 	\cp -R ui/html  $(DESTDIR)$(htmldir)/doxygen/ui
 
 uninstall-local:

@@ -86,15 +86,15 @@ SUBDIRS = graphics .
 
 # Environment variables for LaTeX
 
-TEXINPUTS = $(top_srcdir)/docs/style/:$(top_builddir)/docs/style/:$(srcdir)//:$(builddir)//:
-BIBINPUTS = $(top_srcdir)/docs/style/:
-BSTINPUTS = $(top_srcdir)/docs/style/:
+TEXINPUTS = $(top_srcdir)/docs/style/$(cs_path_sep)$(top_builddir)/docs/style/$(cs_path_sep)$(srcdir)//$(cs_path_sep)$(builddir)//$(cs_path_sep)
+BIBINPUTS = $(top_srcdir)/docs/style/
+BSTINPUTS = $(top_srcdir)/docs/style/
 
 # LaTeX commands
 
-PDFLATEX = export TEXINPUTS="$(TEXINPUTS)"; pdflatex
-BIBTEX = export BIBINPUTS="$(BIBINPUTS)"; bibtex
-INDEX = makeindex
+PDFLATEXCMD = export TEXINPUTS="$(TEXINPUTS)"; "$(PDFLATEX)"
+BIBTEXCMD = export BIBINPUTS="$(BIBINPUTS)"; "$(BIBTEX)"
+MAKEINDEXCMD = "$(MAKEINDEX)"
 
 # Generated documents (pdf and index files)
 
@@ -107,11 +107,11 @@ INDEXMAIN = $(TEXMAIN:.tex=.nls)
 # so that they handle generation from LaTeX documents.
 
 pdf-local:
-	@$(PDFLATEX) $(TEXMAIN)
-	@$(PDFLATEX) $(TEXMAIN)
-	@$(BIBTEX) $(BIBMAIN)
-	@$(INDEX) $(GLOSSMAIN) -s nomencl.ist -o $(INDEXMAIN)
-	@$(PDFLATEX) $(TEXMAIN)
+	@$(PDFLATEXCMD) $(TEXMAIN)
+	@$(PDFLATEXCMD) $(TEXMAIN)
+	@$(BIBTEXCMD) $(BIBMAIN)
+	@$(MAKEINDEXCMD) $(GLOSSMAIN) -s nomencl.ist -o $(INDEXMAIN)
+	@$(PDFLATEXCMD) $(TEXMAIN)
 
 clean-local:
 	-rm -f *.out *.log *.aux *.toc *.lof *.lot \

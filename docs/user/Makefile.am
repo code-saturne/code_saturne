@@ -46,16 +46,16 @@ SUBDIRS = graphics .
 
 # Environment variables for LaTeX
 
-TEXINPUTS = $(top_srcdir)/docs/style/:$(top_builddir)/docs/style/:$(srcdir)//:$(builddir)//:
-BIBINPUTS = $(top_srcdir)/docs/style/:
-BSTINPUTS = $(top_srcdir)/docs/style/:
-INDEXSTYLE = $(top_srcdir)/docs/style/:
+TEXINPUTS = $(top_srcdir)/docs/style/$(cs_path_sep)$(top_builddir)/docs/style/$(cs_path_sep)$(srcdir)//$(cs_path_sep)$(builddir)//$(cs_path_sep)
+BIBINPUTS = $(top_srcdir)/docs/style/
+BSTINPUTS = $(top_srcdir)/docs/style/
+INDEXSTYLE = $(top_srcdir)/docs/style/
 
 # LaTeX commands
 
-PDFLATEX = export TEXINPUTS="$(TEXINPUTS)"; pdflatex
-BIBTEX = export BIBINPUTS="$(BIBINPUTS)"; bibtex
-MAKEINDEX = export INDEXSTYLE="$(INDEXSTYLE)"; makeindex
+PDFLATEXCMD = export TEXINPUTS="$(TEXINPUTS)"; "$(PDFLATEX)"
+BIBTEXCMD = export BIBINPUTS="$(BIBINPUTS)"; "$(BIBTEX)"
+MAKEINDEXCMD = export INDEXSTYLE="$(INDEXSTYLE)"; "$(MAKEINDEX)"
 
 # Generated documents (pdf and index files)
 
@@ -66,11 +66,11 @@ IDXMAIN = $(TEXMAIN:.tex=.idx)
 # so that they handle generation from LaTeX documents.
 
 pdf-local:
-	@$(PDFLATEX) $(TEXMAIN)
-	@$(PDFLATEX) $(TEXMAIN)
-	@$(MAKEINDEX) $(IDXMAIN) -s csindex.sty
-	@$(PDFLATEX) $(TEXMAIN)
-	@$(PDFLATEX) $(TEXMAIN)
+	@$(PDFLATEXCMD) $(TEXMAIN)
+	@$(PDFLATEXCMD) $(TEXMAIN)
+	@$(MAKEINDEXCMD) $(IDXMAIN) -s csindex.sty
+	@$(PDFLATEXCMD) $(TEXMAIN)
+	@$(PDFLATEXCMD) $(TEXMAIN)
 
 clean-local:
 	-rm -f *.out *.log *.aux *.toc *.lof *.lot \

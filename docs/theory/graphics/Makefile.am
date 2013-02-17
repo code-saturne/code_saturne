@@ -98,8 +98,12 @@ PDF_FIGFILES = $(FIGFILES:.fig=.pdf)
 
 SUFFIXES = .fig .pdf
 
+# On Windows, fig2dev may be broken and generate a file named "-" instead
+# of the target. Thus, we try to renamed such files if they exist.
+
 .fig.pdf:
-	fig2dev -L pdf $< > $@
+	"$(FIG2DEV)" -L pdf $< > $@
+	test -f - && \mv -f - $@
 
 # One redefines here the standard pdf targets of automake
 # so that they handle generation from LaTeX documents.

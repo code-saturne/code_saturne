@@ -349,9 +349,7 @@ Source: "{#Install}\share\doc\code_saturne\tutorial.pdf"; DestDir: "{app}\share\
 Source: "{#Install}\share\doc\code_saturne\user.pdf"; DestDir: "{app}\share\doc\code_saturne"; Flags: ignoreversion; Components: help\pdf
 #endif
 #if HAVE_DOXYGEN == "yes"
-Source: "{#Install}\share\doc\code_saturne\doxygen\pre\*"; DestDir: "{app}\share\doc\code_saturne\doxygen\pre"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: help\doxygen
 Source: "{#Install}\share\doc\code_saturne\doxygen\src\*"; DestDir: "{app}\share\doc\code_saturne\doxygen\src"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: help\doxygen
-Source: "{#Install}\share\doc\code_saturne\doxygen\ui\*"; DestDir: "{app}\share\doc\code_saturne\doxygen\ui"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: help\doxygen
 #endif
 #if HAVE_LOCALE == "yes"
 Source: "{#Install}\share\locale\*"; DestDir: "{app}\share\locale"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: core

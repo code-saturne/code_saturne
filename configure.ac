@@ -651,16 +651,6 @@ AM_CONDITIONAL(HAVE_GUI, [test "x$cs_have_gui" = "xyes"])
 AC_SUBST(cs_have_gui)
 
 #------------------------------------------------------------------------------
-# Checks for documentation tools
-#------------------------------------------------------------------------------
-
-AC_ARG_VAR([DOXYGEN], [source code documentation generator])
-
-if test "x$DOXYGEN" = "x" ; then
-  AC_PATH_PROGS([DOXYGEN], [doxygen])
-fi
-
-#------------------------------------------------------------------------------
 # Checks for header files.
 #------------------------------------------------------------------------------
 
