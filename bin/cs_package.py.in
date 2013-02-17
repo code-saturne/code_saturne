@@ -108,8 +108,18 @@ class package:
         if self.config.features['relocatable'] == "no":
             return self.dirs[installdir][1]
 
-        bindir = os.path.dirname(self.scriptdir)
-        prefix = os.path.dirname(bindir)
+        # Second, check is CS_ROOT_DIR is set
+        prefix = os.getenv('CS_ROOT_DIR')
+
+        # Third, assume that SALOME is being used
+        if prefix == None:
+            prefix = os.getenv('CFDSTUDY_ROOT_DIR')
+
+        # Last, assume that code_saturne main script is used
+        if prefix == None:
+            bindir = os.path.dirname(self.scriptdir)
+            prefix = os.path.dirname(bindir)
+
         return os.path.join(prefix, self.dirs[installdir][0])
 
     def get_preprocessor(self):

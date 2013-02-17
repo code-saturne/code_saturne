@@ -133,8 +133,8 @@ def get_compiler(pkg, compiler):
 
     # On Windows, compilers are installed in "bindir" for DLL search
     if sys.platform.startswith("win"):
-        bindir = os.path.dirname(pkg.scriptdir)
-        return os.path.join(bindir, pkg.config.compilers[compiler])
+        return os.path.join(pkg.get_dir('bindir'),
+                            pkg.config.compilers[compiler])
 
     # On Linux systems, one assumes compilers are installed in the system
     else:

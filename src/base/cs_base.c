@@ -588,6 +588,13 @@ _get_path(const char  *dir_path,
       rel_path = "/";
     }
 
+    /* Second try with an environment variable CFDSTUDY_ROOT_DIR */
+
+    else if (getenv("CFDSTUDY_ROOT_DIR") != NULL) {
+      cs_root_dir = getenv("CFDSTUDY_ROOT_DIR");
+      rel_path = "/";
+    }
+
 #if defined(HAVE_GETCWD)
 
     /*
