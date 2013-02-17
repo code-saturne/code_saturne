@@ -109,7 +109,7 @@ SUFFIXES = .fig .pdf
 
 .fig.pdf:
 	"$(FIG2DEV)" -L pdf $< > $@
-	test -f - && \mv -f - $@
+	@if test -f - ; then \mv -f - $@ ; fi
 
 # One redefines here the standard pdf targets of automake
 # so that they handle generation from LaTeX documents.
