@@ -299,13 +299,19 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         model = self.gas.getGasCombustionModel()
         if model != 'off':
             self.groupBoxGasCombustion.show()
+            inlet_type = self.__boundary.getInletGasCombustionType()
+            self.modelTypeInletGasComb.setItem(str_model = inlet_type)
+
             if model == 'd3p':
                 self.lineEditTemperatureGasComb.hide()
                 self.labelTemperature_2.hide()
                 self.labelUnitTemp.hide()
                 self.lineEditFraction.setEnabled(False)
                 f = self.__boundary.setMeanMixtureFraction(1)
-                self.lineEditFraction.setText(QString(str(1)))
+                if inlet_type == 'oxydant':
+                    self.lineEditFraction.setText(QString(str(1)))
+                else:
+                    self.lineEditFraction.setText(QString(str(0)))
             else :
                 self.lineEditTemperatureGasComb.show()
                 self.labelTemperature_2.show()
@@ -315,9 +321,6 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
                 self.lineEditFraction.setEnabled(True)
                 f = self.__boundary.getMeanMixtureFraction()
                 self.lineEditFraction.setText(QString(str(f)))
-
-            inlet_type = self.__boundary.getInletGasCombustionType()
-            self.modelTypeInletGasComb.setItem(str_model = inlet_type)
         else:
             self.groupBoxGasCombustion.hide()
 

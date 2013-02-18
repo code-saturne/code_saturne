@@ -51,6 +51,7 @@ from Base.Toolbox import GuiParam
 from Base.QtPage import DoubleValidator, ComboModel
 from Pages.LocalizationModel import LocalizationModel, Zone
 from Pages.Boundary import Boundary
+from Pages.DefineUserScalarsModel import DefineUserScalarsModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -78,14 +79,18 @@ class BoundaryConditionsMeteoView(QWidget, Ui_BoundaryConditionsMeteoForm):
         self.setupUi(self)
 
 
-    def setup(self, case, velocityWidget, turbulenceWidget):
+    def setup(self, case, velocityWidget, turbulenceWidget, scalarsWidget):
         """
         Setup the widget.
         """
         self.__case = case
         self.velocityWidget = velocityWidget
         self.turbulenceWidget = turbulenceWidget
+        self.scalarsWidget = scalarsWidget
         self.__boundary = None
+
+        sca_mo  = DefineUserScalarsModel(self.__case)
+        self.species_list = sca_mo.getUserScalarLabelsList()
 
         self.__case.undoStopGlobal()
 
@@ -119,6 +124,7 @@ class BoundaryConditionsMeteoView(QWidget, Ui_BoundaryConditionsMeteoForm):
                 self.checkBoxAutoNature.setEnabled(True)
                 self.velocityWidget.hideWidget()
                 self.turbulenceWidget.hideWidget()
+                self.scalarsWidget.groupBoxMeteo.hide()
             else:
                 self.checkBoxReadData.setChecked(False)
                 self.checkBoxAutoNature.setEnabled(False)
@@ -154,6 +160,7 @@ class BoundaryConditionsMeteoView(QWidget, Ui_BoundaryConditionsMeteoForm):
             self.checkBoxAutoNature.setEnabled(True)
             self.velocityWidget.hideWidget()
             self.turbulenceWidget.hideWidget()
+            self.scalarsWidget.groupBoxMeteo.hide()
         else:
             self.__boundary.setMeteoDataStatus('off')
             self.checkBoxAutoNature.setChecked(False)
@@ -162,6 +169,7 @@ class BoundaryConditionsMeteoView(QWidget, Ui_BoundaryConditionsMeteoForm):
             if self.__boundary.getNature() == "meteo_inlet":
                 self.velocityWidget.showWidget(self.__b)
                 self.turbulenceWidget.showWidget(self.__b)
+                self.scalarsWidget.showWidget(self.__b)
             else:
                 self.velocityWidget.hideWidget()
                 self.turbulenceWidget.hideWidget()
