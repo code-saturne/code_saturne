@@ -52,6 +52,7 @@ from Pages.LocalizationModel import LocalizationModel, Zone
 from Pages.DefineUserScalarsModel import DefineUserScalarsModel
 from Pages.ThermalScalarModel import ThermalScalarModel
 from Pages.QMeiEditorView import QMeiEditorView
+from Pages.Boundary import Boundary
 
 #-------------------------------------------------------------------------------
 # log config
@@ -181,15 +182,21 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
 
         self.meteo_list = ""
         self.meteo_list = self.sca_mo.getMeteoScalarsList()
-        if self.meteo_list:
-            self.groupBoxMeteo.show()
-            self.modelMeteo = ComboModel(self.comboBoxMeteo, 1, 1)
-            for m in self.meteo_list:
-                self.modelMeteo.addItem(self.tr(m), m)
-            self.meteo = self.meteo_list[0]
-            self.modelMeteo.setItem(str_model = self.meteo)
-        else:
-            self.groupBoxMeteo.hide()
+
+        self.groupBoxMeteo.hide()
+
+        if (self.meteo_list and (self.nature == 'inlet' or self.nature == 'outlet')):
+            label = self.__boundary.getLabel()
+            nature = "meteo_" + self.nature
+            bb = Boundary(nature, label, self.__case)
+
+            if bb.getMeteoDataStatus() == 'off':
+                self.groupBoxMeteo.show()
+                self.modelMeteo = ComboModel(self.comboBoxMeteo, 1, 1)
+                for m in self.meteo_list:
+                    self.modelMeteo.addItem(self.tr(m), m)
+                self.meteo = self.meteo_list[0]
+                self.modelMeteo.setItem(str_model = self.meteo)
 
         self.model_th = self.therm.getThermalScalarModel()
         if self.model_th != 'off':
@@ -294,35 +301,40 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.pushButtonMeteo.setEnabled(False)
         setGreenColor(self.pushButtonMeteo, False)
 
-        if self.meteo_list:
-            self.meteo_type = self.__boundary.getScalarChoice(self.meteo)
-            self.modelTypeMeteo.setItem(str_model = self.meteo_type)
-            self.labelValueMeteo.setText('Value')
-            self.groupBoxMeteo.setTitle('Meteo')
+        if (self.meteo_list and (self.nature == 'inlet' or self.nature == 'outlet')):
+            label = self.__boundary.getLabel()
+            nature = "meteo_" + self.nature
+            bb = Boundary(nature, label, self.__case)
 
-            if self.meteo_type in ('dirichlet', 'exchange_coefficient', 'neumann'):
-                self.labelValueMeteo.show()
-                self.lineEditValueMeteo.show()
+            if bb.getMeteoDataStatus() == 'off':
+                self.meteo_type = self.__boundary.getScalarChoice(self.meteo)
+                self.modelTypeMeteo.setItem(str_model = self.meteo_type)
+                self.labelValueMeteo.setText('Value')
+                self.groupBoxMeteo.setTitle('Meteo')
 
-                if self.meteo_type == 'exchange_coefficient':
-                    self.lineEditExMeteo.show()
-                    self.labelExMeteo.show()
-                    v = self.__boundary.getScalarValue(self.meteo, 'dirichlet')
-                    w = self.__boundary.getScalarValue(self.meteo, 'exchange_coefficient')
-                    self.lineEditValueMeteo.setText(QString(str(v)))
-                    self.lineEditExMeteo.setText(QString(str(w)))
-                else:
-                    v = self.__boundary.getScalarValue(self.meteo, self.meteo_type)
-                    self.lineEditValueMeteo.setText(QString(str(v)))
+                if self.meteo_type in ('dirichlet', 'exchange_coefficient', 'neumann'):
+                    self.labelValueMeteo.show()
+                    self.lineEditValueMeteo.show()
 
-            if self.meteo_type == 'neumann':
-                self.labelValueMeteo.setText('Flux')
-                if self.nature == 'outlet':
-                    self.groupBoxMeteo.setTitle('Meteo for backflow')
+                    if self.meteo_type == 'exchange_coefficient':
+                        self.lineEditExMeteo.show()
+                        self.labelExMeteo.show()
+                        v = self.__boundary.getScalarValue(self.meteo, 'dirichlet')
+                        w = self.__boundary.getScalarValue(self.meteo, 'exchange_coefficient')
+                        self.lineEditValueMeteo.setText(QString(str(v)))
+                        self.lineEditExMeteo.setText(QString(str(w)))
+                    else:
+                        v = self.__boundary.getScalarValue(self.meteo, self.meteo_type)
+                        self.lineEditValueMeteo.setText(QString(str(v)))
 
-            if self.meteo_type in ('exchange_coefficient_formula', 'dirichlet_formula', 'neumann_formula'):
-                self.pushButtonMeteo.setEnabled(True)
-                setGreenColor(self.pushButtonMeteo, True)
+                if self.meteo_type == 'neumann':
+                    self.labelValueMeteo.setText('Flux')
+                    if self.nature == 'outlet':
+                        self.groupBoxMeteo.setTitle('Meteo for backflow')
+
+                if self.meteo_type in ('exchange_coefficient_formula', 'dirichlet_formula', 'neumann_formula'):
+                    self.pushButtonMeteo.setEnabled(True)
+                    setGreenColor(self.pushButtonMeteo, True)
 
 
     def showWidget(self, boundary):

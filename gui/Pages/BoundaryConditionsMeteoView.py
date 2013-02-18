@@ -124,7 +124,6 @@ class BoundaryConditionsMeteoView(QWidget, Ui_BoundaryConditionsMeteoForm):
                 self.checkBoxAutoNature.setEnabled(True)
                 self.velocityWidget.hideWidget()
                 self.turbulenceWidget.hideWidget()
-                self.scalarsWidget.groupBoxMeteo.hide()
             else:
                 self.checkBoxReadData.setChecked(False)
                 self.checkBoxAutoNature.setEnabled(False)
@@ -173,6 +172,7 @@ class BoundaryConditionsMeteoView(QWidget, Ui_BoundaryConditionsMeteoForm):
             else:
                 self.velocityWidget.hideWidget()
                 self.turbulenceWidget.hideWidget()
+                self.scalarsWidget.showWidget(self.__b)
 
 
     def __slotAutoNature(self, bool):
