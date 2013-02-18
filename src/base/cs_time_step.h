@@ -116,6 +116,21 @@ cs_time_step_define_prev(int     nt_prev,
 void
 cs_time_step_increment(double  dt);
 
+/*----------------------------------------------------------------------------
+ * Redefine the current time values.
+ *
+ * Remark: Using cs_time_step_increment() is preferred, but this function
+ *         may be required for reverting to a previous time step.
+ *
+ * parameters:
+ *   nt_cur <-- current time step number
+ *   t_cur  <-- current physical time
+ *----------------------------------------------------------------------------*/
+
+void
+cs_time_step_redefine_cur(int     nt_cur,
+                          double  t_cur);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

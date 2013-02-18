@@ -238,5 +238,25 @@ cs_time_step_increment(double  dt)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Redefine the current time values.
+ *
+ * \remark Using \ref cs_time_step_increment is preferred, but this function
+ *         may be required for reverting to a previous time step.
+ *
+ * \param[in]  nt_cur  current time step number
+ * \param[in]  t_cur   current physical time
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_time_step_redefine_cur(int     nt_cur,
+                          double  t_cur)
+{
+  _time_step.nt_cur = nt_cur;
+  _time_step.t_cur = t_cur;
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
