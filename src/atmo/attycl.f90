@@ -119,8 +119,10 @@ double precision rcodcl(nfabor,nvarcl,3)
 ! Local variables
 
 integer          ifac, izone
+integer          ipbrom, icke, iel, ipcvis
 double precision d2s3, zent, vs, xuent, xvent
 double precision xkent, xeent, tpent, qvent,ncent
+double precision dhy, rhomoy, uref2, ustar2, viscla, xiturb
 
 !===============================================================================
 !===============================================================================
@@ -135,6 +137,9 @@ xvent = 0.d0
 xkent = 0.d0
 xeent = 0.d0
 tpent = 0.d0
+
+ipbrom = ipprob(irom  )
+ipcvis = ipproc(iviscl)
 
 !===============================================================================
 ! 2.  SI IPROFM = 1 : CHOIX ENTREE/SORTIE SUIVANT LE PROFIL METEO SI
@@ -280,6 +285,59 @@ do ifac = 1, nfabor
 
     endif
 
+  else
+  ! when you don't read meteo DATA
+    if ( itypfb(ifac).eq.ientre ) then
+      if ( icalke(izone).ne.0 ) then
+
+        uref2 = rcodcl(ifac,iu,1)**2                         &
+              + rcodcl(ifac,iv,1)**2                         &
+              + rcodcl(ifac,iw,1)**2
+        uref2 = max(uref2,epzero)
+        rhomoy = propfb(ifac,ipbrom)
+        iel    = ifabor(ifac)
+        viscla = propce(iel,ipcvis)
+        icke   = icalke(izone)
+        dhy    = dh(izone)
+        xiturb = xintur(izone)
+        ustar2 = 0.d0
+        xkent = epzero
+        xeent = epzero
+        if (icke.eq.1) then
+          call keendb                                               &
+          !==========
+          ( uref2, dhy, rhomoy, viscla, cmu, xkappa,                &
+            ustar2, xkent, xeent )
+        else if (icke.eq.2) then
+          call keenin                                               &
+          !==========
+          ( uref2, xiturb, dhy, cmu, xkappa, xkent, xeent )
+        endif
+
+        if (itytur.eq.2) then
+          rcodcl(ifac,ik,1)  = xkent
+          rcodcl(ifac,iep,1) = xeent
+        elseif (itytur.eq.3) then
+          rcodcl(ifac,ir11,1) = d2s3*xkent
+          rcodcl(ifac,ir22,1) = d2s3*xkent
+          rcodcl(ifac,ir33,1) = d2s3*xkent
+          rcodcl(ifac,ir12,1) = 0.d0
+          rcodcl(ifac,ir13,1) = 0.d0
+          rcodcl(ifac,ir23,1) = 0.d0
+          rcodcl(ifac,iep,1)  = xeent
+        elseif (iturb.eq.50) then
+          rcodcl(ifac,ik,1)   = xkent
+          rcodcl(ifac,iep,1)  = xeent
+          rcodcl(ifac,iphi,1) = d2s3
+          rcodcl(ifac,ifb,1)  = 0.d0
+        elseif (iturb.eq.60) then
+          rcodcl(ifac,ik,1)   = xkent
+          rcodcl(ifac,iomg,1) = xeent/cmu/xkent
+        elseif (iturb.eq.70) then
+          rcodcl(ifac,inusa,1) = cmu*xkent**2/xeent
+        endif
+      endif
+    endif
   endif
 
 enddo
