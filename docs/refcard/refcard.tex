@@ -60,7 +60,7 @@ creation to the post-processing. Complete information for each
 \refword{info}\\
 Get information on \CS. Open the documentation (user, theory,
 tutorial).\\
-\textit{e.g.} \texttt{code\_saturne info --guide=\emph{user}}\\
+\textit{e.g.} \texttt{code\_saturne info --guide \emph{user}}\\
 
 \refword{config}\\
 Get information on the configuration and installation of \CS.\\
@@ -68,16 +68,21 @@ Get information on the configuration and installation of \CS.\\
 
 \refword{create}\\
 Create a \CS template study or case.\\
-\textit{e.g.} \texttt{code\_saturne create --nogui --study=\emph{test}}\\
+\textit{e.g.} \texttt{code\_saturne create --study \emph{study1} --case \emph{case1}}\\
 
 \refword{gui}\\
 Launch \CS graphical user interface.\\
-\textit{e.g.} \texttt{code\_saturne gui --file=\emph{xmlfile}}\\
+\textit{e.g.} \texttt{code\_saturne gui --file \emph{xmlfile}}\\
 
 \refword{compile}\\
 Create a specific solver executable when some user subroutines are
 present.\\
 \textit{e.g.} \texttt{code\_saturne compile --test}\\
+
+\refword{autovnv}\\
+Launch the auto-Validation tool.\\
+\textit{e.g.} \texttt{code\_saturne autovnv --file \emph{xmlfile} --run}\\
+
 
 % User subroutines
 % ----------------
@@ -88,28 +93,28 @@ Here below are the most useful user subroutines to run a standard
 simulation. Some of them are useless if the graphical user interface
 is used.\\
 
-\refword{usini1.f90}\\
+\refword{cs\_user\_parameters.f90}\\
 Initialization of the main keywords.\\
 
-\refword{usclim.f90}\\
+\refword{cs\_user\_boundary\_conditions.f90}\\
 Management of the boundary conditions.\\
 
-\refword{usphyv.f90}\\
+\refword{cs\_user\_physical\_properties.f90}\\
 Management of the variable physical properties.\\
 
-\refword{usiniv.f90}\\
+\refword{cs\_user\_initialization.f90}\\
 Non-standard initialization of the variables.\\
 
-\refword{usproj.f90}\\
+\refword{cs\_user\_extra\_operations.f90}\\
 User project files.\\
 
 \refword{uskpdc.f90}\\
 Management of the head loss.\\
 
-\refword{usts**.f90}\\
+\refword{cs\_user\_source\_terms.f90}\\
 User source terms related subroutines.\\
 
-\refword{us*pst.f90}\\
+\refword{cs\_user\_postprocess\_var.f90}\\
 Post-processing related subroutines.\\
 
 % Main variables

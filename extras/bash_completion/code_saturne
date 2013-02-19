@@ -108,7 +108,7 @@ _code_saturne() {
                 -s|--study)    COMPREPLY=( ); return 0;;
                 --syrthes|--aster) COMPREPLY=( ); return 0;;
                 --copy-from)   _filedir -d; return 0;;
-                *) cmdOpts="-s --study -c --case --nogui --noref --copy-from \
+                *) cmdOpts="-s --study -c --case --noref --copy-from \
                      --syrthes --aster -q --quiet -v --verbose";;
             esac
             ;;
