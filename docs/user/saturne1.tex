@@ -2711,7 +2711,7 @@ needs to be given to allow the construction of this connectivity. See note 3
 of section \ref{prg_dimensions})}
 
 \variab{nbpmax}{nbpmax}{i}{Maximum number of particles
-simultaneously acceptable in the calculation domain}
+simultaneously allowed in the calculation domain}
 
 \variab{nvp}{nvp}{i}{Number of variables describing the particles for
 which a stochastic differential equation (SDE) is solved}
@@ -2736,7 +2736,7 @@ statistical variables}
 \variab{nusbor}{nusbor}{i}{Number of supplementary user boundary statistical
 variables}
 
-\variab{nvgaus}{nvgaus}{i}{Number of gaussian random variables}
+\variab{nvgaus}{nvgaus}{i}{Number of Gaussian random variables}
 
 \minititre{Lagrangian arrays}
 
@@ -2775,7 +2775,7 @@ related to the particles: either at the previous stage if the Lagrangian
 scheme is a second-order, or at the previous time step if the Lagrangian
 scheme is a first-order}
 
-\variablist{itepa}{itepa(nbpmax,nivep)}{ia}{Integer state variables
+\variablist{itepa}{itepa(nbpmax,nivep)}{ia}{Integer variables
 related to the particles. They are marked out by the following ``pointers'':
 \begin{list}{$\rightarrow$}{}
 \item \texttt{jisor}: Number of the current cell containing the particle; this
@@ -2784,7 +2784,7 @@ related to the particles. They are marked out by the following ``pointers'':
 \end{list}
 }
 
-\variablist{tepa}{tepa(nbpmax,nvep)}{ra}{Real state variables
+\variablist{tepa}{tepa(nbpmax,nvep)}{ra}{Real variables
 related to the particles. They are marked out by the following ``pointers'':
 \begin{list}{$\rightarrow$}{}
 \item \texttt{jrtsp}: particle residence time
@@ -2833,15 +2833,10 @@ coupling on the continuous phase)}
 coal particles (useful in the case of backward coupling on the
 continuous phase)}
 
-\variablist{statis}{statis(ncelet,nvlsta)}{ra}{Volumetric statistics
-related to the dispersed phase; these statistics are the kind of results
-expected with the Lagrangian module. It is from these statistics that we
-obtain information concerning the particle cloud (the particle
-trajectories should only be observed for illustrastive purpose); they
-are marked out by the following ``pointers'':
+\variablist{statis}{statis(ncelet,nvlsta)}{ra}{Averages of the volumetric
+variables related to the dispersed phase They can be accessed by the following ``pointers'':
 \begin{list}{$\rightarrow$}{}
 \item \texttt{ilvx,ilvy,ilvz}: mean dispersed phase velocity
-\item \texttt{ilvx2,ilvy2,ilvz2}: dispersed phase velocity standard deviation
 \item \texttt{ilfv}: dispersed phase volumetric concentration
 \item \texttt{ilpd}: sum of the statistical weights
 \item \texttt{iltp}: dispersed phase temperature (\degresC)
@@ -2854,6 +2849,10 @@ are marked out by the following ``pointers'':
 \item \texttt{ilvu(ii): ii\textit{th}} supplementary user volumetric statistics
 \end{list}
 }
+
+\variablist{statis}{stativ(ncelet,nvlsta)}{ra}{Variances of the volumetric variables
+related to the dispersed phase. they can be accessed by using the same ``pointers'' as
+the ones used for the \texttt{stativ} array.}
 
 \variablist{parbor}{parbor(nfabor,nvisbr)}{ra}{Boundary statistics
 related the dispersed phase; after every particle/boundary
@@ -2890,8 +2889,6 @@ continuous phase. These source terms are marked out by the following
       for the light and heavy volatile matters
 \item \texttt{itsco}: source term for the carbon released during
       heterogeneous combustion
-\item \texttt{itsf}: source term for the air variance (not used at the
-      present time)
 \end{list}}
 
 \variab{croule}{croule(ncelet)}{ra}{Importance function for the
@@ -7112,13 +7109,11 @@ these options are global to all \syrthes and \CS couplings.
 
 \begin{itemize} 
 
-\item[-] The particle-tracking (or Lagrangian) module enables the simulation of poly-dispersed particulate flows, by calculating the trajectories of individual particles, mainly characterized by their diameter and density (if no heat or mass transfer between particle and fluid is activated). 
+\item[-] The particle-tracking (or Lagrangian) module enables the simulation of poly-dispersed particulate flows, by calculating the trajectories of individual particles, mainly characterized by their diameter and density (if no heat nor mass transfer between particle and fluid are activated). 
 
 \item[-] The standard use of the particle-tracking module follows the \textbf{Moments/PDF approach} : the instantaneous properties of the underlying flow needed to calculate the particle motion are reconstructed from the averaged values (obtained by Reynolds-Averaged Navier-Stokes simulation) by using stochastic processes. The statistics of interest are then obtained through Monte-Carlo simulation.
 
 \item[-] As a consequence, is is important to emphasize that the most important (and physically meaningful) results of a particle-tracking calculation following the Moments/PDF approach are \mbox{\textbf{statistics}}. Volume and surface statistics, steady or unsteady, can be calculated. Individual particle trajectories (as 1D, \textit{EnSight}-readable cases) and displacements (as \textit{EnSight}-readable animations) can also be provided, but only for illustrative purposes.   
-                                                                                                                                                                                                              
-\item[-] WARNING: Up to now, parallelism is not compatible with the Lagrangian module. This compatibility will be soon implemented. It is however possible, in the framework of a Lagrangian calculation on a frozen field, to carry out as a first step the calculation of the continuous phase using parallelism, and to conduct in a second step the Lagrangian calculation by doing a restart on only one processor.
 
 \end{itemize}
 
@@ -7136,17 +7131,15 @@ The activation of the particle-tracking module is performed either:
 %==================================
 \subsubsection{Basic guidelines for standard simulations}
 %==================================
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
-Except from the cases where the flow conditions depend on the time, it is generally recommended to perform a first Lagrangian calculation whose aim is to reach a steady-state (i.e. to reach a time starting from which the relevant statistics do not depend on time anymore). In a second step, a calculation restart is done to calculate the statistics. When the single-phase flow is steady and the particle volume fraction is low enough to neglect their influence on the continuous phase behavior, it is recommended to perform a Lagrangian calculation on a frozen field.\\
+                                                                                                                       
+Except for cases in which the flow conditions depend on time, it is generally recommended to perform a first Lagrangian calculation whose aim is to reach a steady-state (i.e. to reach a time starting from which the relevant statistics do not depend on time anymore). In a second step, a calculation restart is done to calculate the statistics. When the single-phase flow is steady and the particle volume fraction is low enough to neglect the particles influence on the continuous phase behavior, it is recommended to perform a Lagrangian calculation on a frozen field.\\
 
- It is then possible to calculate steady-state volumetric statistics and to give a statistical weight higher than 1 to the particles, in order to reduce the number to treat while keeping the right concentrations. Otherwise, when the continuous phase flow is stationary, but the two-coupling coupling must be taken into consideration, it is still possible to activate stationary statistics. \\
-                                                                                                                                                                                                                                                                                                 
+It is then possible to calculate steady-state volumetric statistics and to give a statistical weight higher than 1 to the particles, in order to reduce the number of simulated (``numerical'') particles to treat while keeping the right concentrations. Otherwise, when the continuous phase flow is stationary, but the two-coupling coupling must be taken into consideration, it is still possible to activate stationary statistics. \\                                                                                                                                                                                                                   
 When the continuous phase flow is non-stationary, it is no longer possible to use stationary statistics. To have correct statistics at every moment in the whole calculation domain, it is imperative to have an established particle seeding and it is recommended (when it is possible) not to impose statistical weights different from the unity. \\
 
-Finally, when the complete model is used for the turbulent dispersion modeling, the user must make sure that the volumetric statistics are directly used for the calculation of the locally undisturbed fluid flow field.\\ 
+Finally, when the so-called complete model is used for turbulent dispersion modeling, the user must make sure that the volumetric statistics are directly used for the calculation of the locally undisturbed fluid flow field.\\ 
 
-When the thermal evolution of the particles is activated, the associated particulate scalars are always the inclusion temperature and the locally
-undisturbed fluid flow temperature expressed in degrees Celsius, whatever the thermal scalar associated with the continuous phase is (temperature or enthalpy). If the
+When the thermal evolution of the particles is activated, the associated particulate scalars are always the inclusion temperature and the locally undisturbed fluid flow temperature expressed in degrees Celsius, whatever the thermal scalar associated with the continuous phase is (temperature or enthalpy). If the
 thermal scalar associated with the continuous phase is the temperature in Kelvin, the unit change is done automatically. If the thermal scalar associated with the continuous phase is the enthalpy, the enthalpy-temperature conversion subroutine \texttt{usthht} must be completed for \texttt{mode}=1, and must express temperatures in degrees Celsius. In all cases, the thermal backward coupling of the dispersed phase on the continuous phase is adapted to the thermal scalar transported by the fluid.
 
 
@@ -7156,8 +7149,7 @@ thermal scalar associated with the continuous phase is the temperature in Kelvin
 
 \minititre{Use of the GUI}
 
-In the GUI, the selection of the Lagrangian module activates the heading \texttt{Particle and droplets tracking} in the tree menu. The initialization is performed in the three items included in 
-this heading:
+In the GUI, the selection of the Lagrangian module activates the heading \texttt{Particle and droplets tracking} in the tree menu. The initialization is performed in the three items included in this heading:
 %
 \begin{itemize}
  \item [$\bullet$] \texttt{Global settings}. Here, the user defines the kind of Euler/Lagrange multi-phase treatment, the main parameters, the specific physics associated with the particles and advanced numerical options, see figs. \ref {fig:Ini-Lag1} to \ref {fig:Ini-Lag3}.

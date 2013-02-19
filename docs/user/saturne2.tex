@@ -2536,8 +2536,6 @@ useful if and only if {\tt iturb}= 20, 21 or 30
 case of two-way coupling\\
 useful in case of Lagrangian modeling, in $k-\varepsilon$ and $R_{ij}-\varepsilon$
 with two-way coupling}
-%c'est aussi implante en k-omega mais en ``imitant''le k-eps et sans aucune verif
-% ... et d'ailleurs ca ne marche pas !!
 
 \motcle{sigmak}{r}{real number $>$ 0}{1.0}{O}{L3}
 {Prandtl number for $k$ with $k-\varepsilon$ and v2f models\\
@@ -3052,8 +3050,8 @@ Most of these key words may be modified in the user subroutines
 not to modify those belonging to the level L3.
 
 First of all, it should be noted that the Lagrangian module is compliant with
-all the RANS turbulence models and with laminar flows. However, the particule
-turbulent diffusion is not specially adapted to the second order
+almost all the RANS turbulence models and with laminar flows. However, the standard particle
+turbulent dispersion model does not take fully advantage of the second-order
 $R_{ij}-\varepsilon$ models. The same isotropic model is used as in the
 $k-\varepsilon$ models, with $k$ calculated from the trace of $R_{ij}$. Also,
 two-way coupling is not compatible with the $k-\omega$ SST model.
@@ -3067,13 +3065,10 @@ the different values correspond to the following modelings: \\
 \hspace*{1.3cm} = 1 Lagrangian two-phase flow in one-way coupling (no influence of
 the particles on the continuous phase)\\
 \hspace*{1.3cm} = 2 Lagrangian two-phase flow with two-way coupling (influence of
-the particles on the dynamics of the continuous phase).
-It must be noted that the two-way coupling is taken
-into account only for the first eulerian phase. Dynamics,
-temperature and mass may be coupled independently\\
+the particles on the dynamics of the continuous phase). Dynamics, temperature and mass may be coupled independently.
 \hspace*{1.3cm} = 3 Lagrangian two-phase flow on frozen continuous phase. This option can
 only be used in case of a calculation restart. All the
-eulerian fields are frozen (including the scalar fields). This option
+Eulerian fields are frozen (including the scalar fields). This option
 automatically implies \texttt{iccvfg} = 1\\
 always useful}
 
@@ -3126,7 +3121,7 @@ then \texttt{isttio}=1 automatically)}
 this option allows to inject particles continuously during the duration of the
 Lagrangian time step \texttt{dtp\index{dtp}} rather than only once at the
 beginning of the Lagrangian iteration. It helps avoiding the fractioning of
-the particle cloud close to the injection areas}
+the particles cloud close to the injection areas}
 
 \motcleb{iroule}{i}{0, 1}{0}{O}{L1}
 {activates (=1) or not (=0) of the particle cloning/fusion technique
