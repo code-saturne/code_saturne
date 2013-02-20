@@ -185,8 +185,10 @@ class DefineUserScalarsModel(Variables, Model):
                 new_name = nprop['name']
                 if old_name:
                     for no in self.case.xmlGetNodeList('formula'):
-                        f = no.xmlGetTextNode().replace(old_name, new_name)
-                        no.xmlSetTextNode(f)
+                        txt = no.xmlGetTextNode()
+                        if txt != None:
+                            f = txt.replace(old_name, new_name)
+                            no.xmlSetTextNode(f)
 
 
     def __setScalarDiffusivity(self, scalar_label, coeff_label):
