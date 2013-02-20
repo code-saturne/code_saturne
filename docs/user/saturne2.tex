@@ -2973,6 +2973,18 @@ found in the subroutines \texttt{uscfx1} and \texttt{uscfx2}, in
 the \texttt{cs\_user\_parameters.f90} file (see the
 description of these user subroutines, \S\ref{prg_uscfx12}).
 
+\motcleb{ieos}{i}{1}{1}{C}{L1}
+{\texttt{ieos} indicates the equation of state. Only perfect gas with a constant adiabatic coefficient,
+\texttt{ieos=1} is available, but the user can complete the subroutine 
+\texttt{cfther}, wich is not a user subroutine, to add new equations of state.\\
+always useful
+}
+
+\motcleb{xmasmr}{r}{1}{1}{C}{L1}
+{\texttt{xmasmr} is the molar mass of the perfect gas in kg/mol (\texttt{ieos=1})\\
+always useful
+}
+
 \motcleb{icfgrp}{ia}{0 or 1}{1}{C}{L1}
 {\texttt{icfgrp} indicates if the boundary
 conditions should take into account (=1) or not (=0) the hydrostatic balance.\\
@@ -3013,7 +3025,7 @@ with $M = \displaystyle\frac{\vect{u}_i \cdot \vect{n}}{c_i}$, internal
 \end{list}
 }
 
-\motcleb{iviscv}{ia}{0 or 1}{\texttt{0}}{C}{L1}
+\motcleb{iviscv}{i}{0 or 1}{\texttt{0}}{C}{L1}
 {\texttt{iviscv=0} indicates that
 the volume viscosity is constant and equal to the reference volume viscosity
 \texttt{viscv0}.\\
@@ -3027,14 +3039,14 @@ The volume viscosity $\kappa$ is defined by the formula expressing the stress:
 \end{equation}
 }
 
-\motcleb{viscv0}{ra}{real number $\ge$ 0}{0}{O}{L1}
+\motcleb{viscv0}{r}{real number $\ge$ 0}{0}{O}{L1}
 {\texttt{viscv0} is the reference volume
 viscosity (noted $\kappa$ in the equation expressing $\tens{\sigma}$ in the
 paragraph dedicated to \texttt{iviscv})\\
 always useful, it is the used value, unless the user specifies the volume
 viscosity in the user subroutine \texttt{uscfpv}}
 
-\motcle{igrdpp}{i}{0 or 1}{0}{O}{L3}
+\motcle{igrdpp}{i}{0 or 1}{1}{O}{L3}
 {indicates whether the pressure should be updated (=1) or not (=0) after the
 solution of the acoustic equation\\
 always useful}
