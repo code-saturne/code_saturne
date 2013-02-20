@@ -516,7 +516,7 @@ do ilelt = 1, nlelt
   !     calculees automatiquement
 
   !  ** Choisir les 2 variables a imposer et effacer les autres
-  !     (elles sont calculees par les lois thermodynamiques dans uscfth)
+  !     (elles sont calculees par les lois thermodynamiques dans cfther)
 
   ! Pressure (in Pa)
   rcodcl(ifac,ipr,1) = 5.d5
