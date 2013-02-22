@@ -1,40 +1,34 @@
 !-------------------------------------------------------------------------------
 
-!                      Code_Saturne version 2.1.0-alpha1
+!                      Code_Saturne version 3.0.0-betaR4445
 !                      --------------------------
-
-!     This file is part of the Code_Saturne Kernel, element of the
-!     Code_Saturne CFD tool.
-
-!     Copyright (C) 1998-2009 EDF S.A., France
-
-!     contact: saturne-support@edf.fr
-
-!     The Code_Saturne Kernel is free software; you can redistribute it
-!     and/or modify it under the terms of the GNU General Public License
-!     as published by the Free Software Foundation; either version 2 of
-!     the License, or (at your option) any later version.
-
-!     The Code_Saturne Kernel is distributed in the hope that it will be
-!     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-!     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-!     GNU General Public License for more details.
-
-!     You should have received a copy of the GNU General Public License
-!     along with the Code_Saturne Kernel; if not, write to the
-!     Free Software Foundation, Inc.,
-!     51 Franklin St, Fifth Floor,
-!     Boston, MA  02110-1301  USA
+! This file is part of Code_Saturne, a general-purpose CFD tool.
+!
+! Copyright (C) 1998-2013 EDF S.A.
+!
+! This program is free software; you can redistribute it and/or modify it under
+! the terms of the GNU General Public License as published by the Free Software
+! Foundation; either version 2 of the License, or (at your option) any later
+! version.
+!
+! This program is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+! FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+! details.
+!
+! You should have received a copy of the GNU General Public License along with
+! this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 !-------------------------------------------------------------------------------
 
-subroutine usclim &
-!================
+subroutine cs_user_boundary_conditions &
+!=====================================
 
  ( nvar   , nscal  ,                                              &
-   icodcl , itrifb , itypfb ,                                     &
+   icodcl , itrifb , itypfb , izfppp ,                            &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , rcodcl )
+   rcodcl )
 
 !===============================================================================
 ! Purpose:
@@ -50,7 +44,7 @@ subroutine usclim &
 
 ! Here one defines boundary conditions on a per-face basis.
 
-! Boundary faces may be identified using the 'getfbr' subroutine.
+! Boundary faces may be selected using the 'getfbr' subroutine.
 
 !  getfbr(string, nelts, eltlst):
 !  - string is a user-supplied character string containing selection criteria;
@@ -76,8 +70,7 @@ subroutine usclim &
 ! and 'getcel' subroutines (respectively). Their syntax are identical to
 ! 'getfbr' syntax.
 
-! For a more thorough description of the criteria syntax, it can be referred
-! to the user guide.
+! For a more thorough description of the criteria syntax, see the user guide.
 
 
 ! Boundary condition types
@@ -90,10 +83,10 @@ subroutine usclim &
 !    -----------------------------------
 
 !     (inlet, free outlet, wall, symmetry), one defines a code in the 'itypfb'
-!     array (of dimensions number of boundary faces, number of phases).
+!     array (of dimensions number of boundary faces).
 !     This code will then be used by a non-user subroutine to assign the
-!     following conditions (scalars in particular will receive the conditions
-!     of the phase to which they are assigned). Thus:
+!     following conditions.
+!     Thus:
 
 !     Code      |  Boundary type
 !     --------------------------
@@ -103,7 +96,7 @@ subroutine usclim &
 !      iparoi   |   Wall (smooth)
 !      iparug   |   Rough wall
 
-!     These integers are defined elsewhere (in paramx.h header).
+!     These integers are defined elsewhere (in paramx.f90 module).
 !     Their value is greater than or equal to 1 and less than or  equal to
 !     ntypmx (value fixed in paramx.h)
 
@@ -287,6 +280,36 @@ subroutine usclim &
 !       the code).
 
 
+! Boundary condition types for compressible flows
+! ===============================================
+
+! For compressible flows, only predefined boundary conditions may
+! be assigned
+
+!    iparoi, isymet, iesicf, isspcf, isopcf, ierucf, ieqhcf
+
+!    iparoi : standard wall
+!    isymet : standard symmetry
+
+!    iesicf, isspcf, isopcf, ierucf, ieqhcf : inlet/outlet
+
+! For inlets/outlets, we can prescribe
+!  a value for turbulence and passive scalars in rcodcl(.,.,1)
+!  for the case in which the mass flux is incoming. If this is not
+!  done, a zero flux condition is applied.
+
+! iesicf : prescribed inlet/outlet (for example supersonic inlet)
+!         the user prescribes the velocity and all thermodynamic variables
+! isspcf : supersonic outlet
+!         the user does not prescribe anything
+! isopcf : subsonic outlet with prescribed pressure
+!         the user presribes the pressure
+! ierucf : subsonic inlet with prescribed velocity and density
+!         the user prescribes the velocity and density
+! ieqhcf : subsonic inlet with prescribed mass and enthalpy flow
+!         to be implemented
+
+
 ! Consistency rules
 ! =================
 
@@ -355,16 +378,15 @@ subroutine usclim &
 !                  !    !     ! = 6  -> roughness and u.n=0 (velocity)         !
 !                  !    !     ! = 9  -> free inlet/outlet (velocity)           !
 !                  !    !     !         inflowing possibly blocked             !
-! itrifb           ! ia ! <-- ! indirection for boundary faces ordering        !
-! itypfb           ! ia ! --> ! boundary face types                            !
+! itrifb(nfabor)   ! ia ! <-- ! indirection for boundary faces ordering        !
+! itypfb(nfabor)   ! ia ! --> ! boundary face types                            !
+! izfppp(nfabor)   ! ia ! --> ! boundary face zone number                      !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! rcodcl           ! ra ! --> ! boundary condition values                      !
 !  (nfabor,nvar,3) !    !     ! rcodcl(1) = Dirichlet value                    !
 !                  !    !     ! rcodcl(2) = exterior exchange coefficient      !
@@ -395,6 +417,17 @@ use entsor
 use parall
 use period
 use ihmpre
+use ppppar
+use ppthch
+use coincl
+use cpincl
+use ppincl
+use ppcpfu
+use atincl
+use atsoil
+use ctincl
+use elincl
+use cs_fuel_incl
 use mesh
 
 !===============================================================================
@@ -405,24 +438,17 @@ implicit none
 
 integer          nvar   , nscal
 
-integer          icodcl(nfabor,nvar)
+integer          icodcl(nfabor,nvarcl)
 integer          itrifb(nfabor), itypfb(nfabor)
+integer          izfppp(nfabor)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision rcodcl(nfabor,nvar,3)
+double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
-
-integer          ielt
-integer          ifac, iel, ii, ivar, iphas
-integer          ilelt, nlelt
-double precision uref2, d2s3
-double precision rhomoy, dh, ustar2
-double precision xintur
-double precision xkent, xeent
+integer          ifac, iel, ilelt, nlelt
 
 integer, allocatable, dimension(:) :: lstelt
 
@@ -430,50 +456,45 @@ integer, allocatable, dimension(:) :: lstelt
 
 
 !===============================================================================
-! 1.  Initialization
+! Initialization
 !===============================================================================
 
-! Allocate a temporary array for boundary faces selection
-allocate(lstelt(nfabor))
-
-
-d2s3 = 2.d0/3.d0
+allocate(lstelt(nfabor))  ! temporary array for boundary faces selection
 
 !===============================================================================
-! 2.  Assign boundary conditions to boundary faces here
+! Assign boundary conditions to boundary faces here
 
-!     One may use selection criteria to filter boundary case subsets
-!       Loop on faces from a subset
-!         Set the boundary condition for each face
+! For each subset:
+! - use selection criteria to filter boundary faces of a given subset
+! - loop on faces from a subset
+!   - set the boundary condition for each face
 !===============================================================================
 
-! --- For boundary faces of color 1,
-!     assign an inlet
 call getfbr('1', nlelt, lstelt)
 !==========
 
 if (ttcabs.lt.3.8d0) then
-  do ielt = 1, nlelt
-    ifac = lstelt(ielt)
+
+  do ilelt = 1, nlelt
+    ifac = lstelt(ilelt)
     rcodcl(ifac,isca(1),1) = 20.d0 + 100.d0*ttcabs
   enddo
 else
-  do ielt = 1, nlelt
-    ifac = lstelt(ielt)
+  do ilelt = 1, nlelt
+    ifac = lstelt(ilelt)
     rcodcl(ifac,isca(1),1) = 400.d0
   enddo
 endif
 
-!----
+!--------
 ! Formats
-!----
+!--------
 
 !----
 ! End
 !----
 
-! Deallocate the temporary array
-deallocate(lstelt)
+deallocate(lstelt)  ! temporary array for boundary faces selection
 
 return
-end subroutine
+end subroutine cs_user_boundary_conditions

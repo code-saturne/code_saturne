@@ -1,10 +1,10 @@
-<?xml version="1.0" encoding="utf-8"?><Code_Saturne_GUI case="case5" study="3-stratified_junction" version="2.0">
+<?xml version="1.0" encoding="utf-8"?><Code_Saturne_GUI case="fluid" study="4-2Ddisks" version="2.0">
 	<solution_domain>
 		<volumic_conditions>
 			<zone head_losses="off" id="1" initialization="on" label="all_cells" mass_source_term="off" momentum_source_term="off" scalar_source_term="off" thermal_source_term="off">all[]</zone>
 		</volumic_conditions>
 		<meshes_list>
-			<mesh name="sn_total.des"/>
+			<mesh name="3rond2d_fluide.des"/>
 		</meshes_list>
 		<faces_cutting status="off"/>
 		<mesh_smoothing status="off"/>
@@ -45,10 +45,9 @@ w = 0;</formula>
 		</velocity_pressure>
 		<reference_values>
 			<pressure>101325</pressure>
-			<velocity>0.03183</velocity>
-			<temperature>1273.15</temperature>
+			<velocity>1</velocity>
 		</reference_values>
-		<turbulence model="k-epsilon-PL">
+		<turbulence model="k-epsilon">
 			<variable label="TurbEner" name="turb_k">
 				<rhs_reconstruction>1</rhs_reconstruction>
 			</variable>
@@ -74,7 +73,15 @@ w = 0;</formula>
 			<absorption_coefficient type="constant">0</absorption_coefficient>
 		</radiative_transfer>
 		<conjugate_heat_transfer>
-			<external_coupling/>
+			<external_coupling>
+				<syrthes>
+					<syrthes_name>SYRTHES</syrthes_name>
+					<verbosity>0</verbosity>
+					<visualization>1</visualization>
+					<projection_axis>Z</projection_axis>
+					<selection_criteria>1</selection_criteria>
+				</syrthes>
+			</external_coupling>
 		</conjugate_heat_transfer>
 		<compressible_model model="off"/>
 		<gas_combustion model="off"/>
@@ -96,35 +103,29 @@ w = 0;</formula>
 	<physical_properties>
 		<fluid_properties>
 			<property choice="user_law" label="Density" name="density">
-				<initial_value>998.671</initial_value>
-				<formula>A = -4.0668e-3;
-B = -5.0754e-2;
-C = 1000.9;
-rho = TempC * (A*TempC + B) + C ;</formula>
+				<initial_value>1.17862</initial_value>
+				<formula>rho = p0 / (287*(TempC + 273.0));</formula>
 			</property>
-			<property choice="user_law" label="LamVisc" name="molecular_viscosity">
-				<initial_value>0.001445</initial_value>
-				<formula>AM = -3.4016e-9;
-BM = 6.2332e-7;
-CM= -4.557e-5;
-DM = 1.6935e-3;
-mu = TempC * (TempC *(AM*TempC + BM) + CM) +DM;</formula>
+			<property choice="constant" label="LamVisc" name="molecular_viscosity">
+				<listing_printing status="off"/>
+				<postprocessing_recording status="off"/>
+				<initial_value>1.83e-05</initial_value>
 			</property>
 			<property choice="constant" label="SpecHeat" name="specific_heat">
 				<listing_printing status="off"/>
 				<postprocessing_recording status="off"/>
-				<initial_value>4182.88</initial_value>
+				<initial_value>1017.24</initial_value>
 			</property>
 			<property choice="constant" label="ThermalCond" name="thermal_conductivity">
 				<listing_printing status="off"/>
 				<postprocessing_recording status="off"/>
-				<initial_value>0.601498</initial_value>
+				<initial_value>0.02495</initial_value>
 			</property>
 		</fluid_properties>
 		<gravity>
 			<gravity_x>0</gravity_x>
-			<gravity_y>0</gravity_y>
-			<gravity_z>-9.81</gravity_z>
+			<gravity_y>-9.81</gravity_y>
+			<gravity_z>0</gravity_z>
 		</gravity>
 		<omega>
 			<omega_x>0</omega_x>
@@ -134,57 +135,28 @@ mu = TempC * (TempC *(AM*TempC + BM) + CM) +DM;</formula>
 	</physical_properties>
 	<additional_scalars>
 		<scalar label="TempC" name="temperature_celsius" type="thermal">
-			<formula zone_id="1">TempC = 38.5;</formula>
+			<formula zone_id="1">TempC = 20;</formula>
 			<rhs_reconstruction>1</rhs_reconstruction>
-			<min_value>18.6</min_value>
-			<max_value>38.5</max_value>
+			<min_value>-273.15</min_value>
+			<max_value>1e+12</max_value>
 			<blending_factor>1</blending_factor>
 		</scalar>
 	</additional_scalars>
 	<boundary_conditions>
-		<boundary label="cold_inlet" name="1" nature="inlet">2</boundary>
-		<boundary label="wall" name="2" nature="wall">5</boundary>
-		<boundary label="hot_inlet" name="3" nature="inlet">6</boundary>
-		<boundary label="outlet" name="4" nature="outlet">7</boundary>
-		<inlet label="cold_inlet">
-			<velocity_pressure choice="norm" direction="normal">
-				<norm>0.03183</norm>
-				<direction_x>0</direction_x>
-				<direction_y>0</direction_y>
-				<direction_z>1</direction_z>
+		<boundary label="BC_1" name="1" nature="wall">1</boundary>
+		<boundary label="BC_3" name="3" nature="symmetry">2 or 3</boundary>
+		<wall label="BC_1">
+			<velocity_pressure choice="off">
+				<dirichlet name="velocity_U">0</dirichlet>
+				<dirichlet name="velocity_V">0</dirichlet>
+				<dirichlet name="velocity_W">0</dirichlet>
 			</velocity_pressure>
-			<turbulence choice="hydraulic_diameter">
-				<hydraulic_diameter>0.4</hydraulic_diameter>
-			</turbulence>
-			<scalar choice="dirichlet" label="TempC" name="temperature_celsius" type="thermal">
-				<dirichlet>18.6</dirichlet>
-			</scalar>
-		</inlet>
-		<wall label="wall">
-			<velocity_pressure choice="off"/>
-			<scalar choice="neumann" label="TempC" name="temperature_celsius" type="thermal">
-				<neumann>0</neumann>
+			<scalar choice="exchange_coefficient" label="TempC" name="temperature_celsius" type="thermal">
+				<dirichlet>0</dirichlet>
+				<exchange_coefficient>10</exchange_coefficient>
 			</scalar>
 		</wall>
-		<inlet label="hot_inlet">
-			<velocity_pressure choice="norm" direction="normal">
-				<norm>0.03183</norm>
-				<direction_x>0</direction_x>
-				<direction_y>0</direction_y>
-				<direction_z>1</direction_z>
-			</velocity_pressure>
-			<turbulence choice="hydraulic_diameter">
-				<hydraulic_diameter>0.4</hydraulic_diameter>
-			</turbulence>
-			<scalar choice="dirichlet" label="TempC" name="temperature_celsius" type="thermal">
-				<dirichlet>38.5</dirichlet>
-			</scalar>
-		</inlet>
-		<outlet label="outlet">
-			<scalar choice="neumann" label="TempC" name="temperature_celsius" type="thermal">
-				<neumann>0</neumann>
-			</scalar>
-		</outlet>
+		<symmetry label="BC_3"/>
 		<variable/>
 	</boundary_conditions>
 	<analysis_control>
@@ -194,7 +166,7 @@ mu = TempC * (TempC *(AM*TempC + BM) + CM) +DM;</formula>
 				<format name="ensight" options="binary"/>
 				<directory name="postprocessing"/>
 				<time_dependency choice="fixed_mesh"/>
-				<frequency period="time_step">10</frequency>
+				<frequency period="time_step">25</frequency>
 			</writer>
 			<mesh id="-1" label="Fluid domain" type="cells">
 				<all_variables status="on"/>
@@ -209,75 +181,28 @@ mu = TempC * (TempC *(AM*TempC + BM) + CM) +DM;</formula>
 			<listing_printing_frequency>1</listing_printing_frequency>
 			<probe_recording_frequency>1</probe_recording_frequency>
 			<probe_format choice="DAT"/>
-			<probe name="1" status="on">
-				<probe_x>0.010025</probe_x>
-				<probe_y>0.01534</probe_y>
-				<probe_z>-0.011765</probe_z>
-			</probe>
-			<probe name="2" status="on">
-				<probe_x>1.625</probe_x>
-				<probe_y>0.01534</probe_y>
-				<probe_z>-0.031652</probe_z>
-			</probe>
-			<probe name="3" status="on">
-				<probe_x>3.225</probe_x>
-				<probe_y>0.01534</probe_y>
-				<probe_z>-0.031652</probe_z>
-			</probe>
-			<probe name="4" status="on">
-				<probe_x>3.8726</probe_x>
-				<probe_y>0.047481</probe_y>
-				<probe_z>7.25</probe_z>
-			</probe>
 		</output>
-		<profiles>
-			<profile label="profile16" title="profile1p6">
-				<format name="DAT"/>
-				<var_prop name="temperature_celsius"/>
-				<output_frequency>-1</output_frequency>
-				<formula>x = 1.6;
-y = 0;
-z = -0.2 &lt;=z &lt;=0.2;</formula>
-				<points>0</points>
-			</profile>
-			<profile label="profile32" title="profile3p2">
-				<format name="DAT"/>
-				<var_prop name="temperature_celsius"/>
-				<output_frequency>-1</output_frequency>
-				<formula>x = 3.2;
-y = 0;
-z = -0.2 &lt;=z &lt;=0.2;</formula>
-				<points>0</points>
-			</profile>
-		</profiles>
+		<profiles/>
 		<time_averages/>
 		<time_parameters>
-			<time_step_ref>1</time_step_ref>
-			<iterations>100</iterations>
-			<time_passing>1</time_passing>
+			<time_step_ref>0.5</time_step_ref>
+			<iterations>1200</iterations>
+			<time_passing>0</time_passing>
 			<property label="CourantNb" name="courant_number"/>
 			<property label="FourierNb" name="fourier_number"/>
-			<thermal_time_step status="on"/>
+			<thermal_time_step status="off"/>
 			<zero_time_step status="off"/>
-			<property label="LocalTime" name="local_time_step">
-				<postprocessing_recording status="off"/>
-				<probes choice="0"/>
-			</property>
-			<max_courant_num>20</max_courant_num>
-			<max_fourier_num>60</max_fourier_num>
-			<time_step_min_factor>0.01</time_step_min_factor>
-			<time_step_max_factor>70</time_step_max_factor>
-			<time_step_var>0.1</time_step_var>
 		</time_parameters>
 		<steady_management status="off"/>
 	</analysis_control>
 	<calculation_management>
 		<start_restart>
 			<frozen_field status="off"/>
+			<restart path="../RESU_COUPLING/20130215-1710/fluid/checkpoint"/>
 		</start_restart>
 		<partitioning/>
 		<block_io/>
-		<n_procs>2</n_procs>
+		<n_procs>1</n_procs>
 	</calculation_management>
 	<lagrangian model="off"/>
 </Code_Saturne_GUI>
