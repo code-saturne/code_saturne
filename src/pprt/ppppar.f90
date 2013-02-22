@@ -42,7 +42,7 @@ module ppppar
   !    nclcpm --> Nombre total de classes
 
   integer    ncharm  , ncpcmx   , nclcpm
-  parameter (ncharm=3, ncpcmx=10, nclcpm=ncharm*ncpcmx)
+  parameter (ncharm=5, ncpcmx=10, nclcpm=ncharm*ncpcmx)
 
   !=============================================================================
 
