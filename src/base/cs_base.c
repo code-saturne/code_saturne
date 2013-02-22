@@ -308,6 +308,15 @@ _cs_base_exit(int status)
 
     MPI_Initialized(&mpi_flag);
 
+#if (MPI_VERSION >= 2)
+    if (mpi_flag != 0) {
+      int finalized_flag;
+      MPI_Finalized(&finalized_flag);
+      if (finalized_flag != 0)
+        mpi_flag = 0;
+    }
+#endif
+
     if (mpi_flag != 0) {
 
       if (status != EXIT_SUCCESS)
