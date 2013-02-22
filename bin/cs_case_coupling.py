@@ -101,13 +101,16 @@ def coupling(package,
     sat_domains = []
     syr_domains = []
     nep_domains = []
+    ast_domain = None
+    fsi_coupler = None
 
     if domains == None:
         raise RunCaseError('No domains defined.')
 
     for d in domains:
 
-        if (d.get('script') == None or d.get('domain') == None):
+        if ((d.get('script') == None or d.get('domain') == None) \
+            and d.get('coupler') == None):
             msg = 'Check your coupling definition.\n'
             msg += 'script or domain key is missing.'
             raise RunCaseError(msg)
@@ -182,8 +185,45 @@ def coupling(package,
             nep_domains.append(dom)
 
         elif (d.get('solver') == 'Code_Aster' or d.get('solver') == 'Aster'):
-            err_str = 'Code_Aster code coupling not handled yet.\n'
-            raise RunCaseError(err_str)
+
+            if ast_domain:
+                err_str = 'Only 1 Code_Aster domain is currently handled\n'
+                raise RunCaseError(err_str)
+
+            try:
+                dom = aster_domain(package,
+                                   name = d.get('domain'),
+                                   param = d.get('script'))
+
+            except Exception:
+                err_str = 'Cannot create Code_Aster domain.\n'
+                err_str += ' domain = ' + d.get('domain') + '\n'
+                err_str += ' script = ' + d.get('script') + '\n'
+                raise RunCaseError(err_str)
+
+            ast_domain = dom
+
+        elif (d.get('coupler') == 'FSI_coupler'):
+
+            if fsi_coupler:
+                err_str = 'Only 1 FSI coupler is currently handled\n'
+                raise RunCaseError(err_str)
+
+            try:
+                fsi_coupler = {'max_time_steps' : d.get('max_time_steps'),
+                               'n_sub_iterations' : d.get('n_sub_iterations'),
+                               'time_step' : d.get('time_step'),
+                               'start_time' : d.get('start_time'),
+                               'epsilon' : d.get('epsilon')}
+
+            except Exception:
+                err_str = 'Cannot create FSI coupler\n'
+                err_str += '  max_time_steps = ' + d.get('max_time_steps') + '\n'
+                err_str += '  n_sub_iterations = ' + d.get('n_sub_iterations' + '\n')
+                err_str += '  time_step = ' + d.get('time_step') + '\n'
+                err_str += '  start_time = ' + d.get('start_time') + '\n'
+                err_str += '  epsilon = ' + d.get('epsilon') + '\n'
+                raise RunCaseError(err_str)
 
         else:
             err_str = 'Unknown code type : ' + d.get('solver') + '.\n'
@@ -195,7 +235,9 @@ def coupling(package,
              package_compute = package_compute,
              case_dir = casedir,
              domains = sat_domains + nep_domains,
-             syr_domains = syr_domains)
+             syr_domains = syr_domains,
+             ast_domain = ast_domain,
+             fsi_coupler = fsi_coupler)
 
     msg = ' Coupling execution between: \n'
     if use_saturne == True:
@@ -204,6 +246,9 @@ def coupling(package,
         msg += '   o SYRTHES      [' + str(len(syr_domains)) + ' domain(s)];\n'
     if use_neptune == True:
         msg += '   o NEPTUNE_CFD  [' + str(len(nep_domains)) + ' domain(s)];\n'
+    if ast_domain or fsi_coupler:
+        msg += '   o Code_Aster   [1 domain(s)];\n'
+        msg += '                  [1 coupler(s)];\n'
     sys.stdout.write(msg+'\n')
 
     return c

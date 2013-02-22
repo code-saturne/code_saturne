@@ -253,7 +253,7 @@ class Study:
                 sys.exit(1)
 
         # Creating coupling structure
-        if len(self.cases) + len(self.syr_case_names) > 1:
+        if len(self.cases) + len(self.syr_case_names) > 1 or self.ast_case_name:
             self.create_coupling(repbase)
 
 
@@ -298,19 +298,7 @@ class Study:
         c = os.path.join(repbase, self.ast_case_name)
         os.mkdir(c)
 
-        # All the following should be merged with create_coupling asap.
-
-        resu = os.path.join(repbase, 'RESU_COUPLING')
-        os.mkdir(resu)
-
         datadir = self.package.get_dir("pkgdatadir")
-        try:
-            shutil.copy(os.path.join(datadir, 'runcase_aster'),
-                        os.path.join(repbase, 'runcase_coupling'))
-        except:
-            sys.stderr.write("Cannot copy runcase_coupling script: " + \
-                             os.path.join(datadir, 'runcase_coupling') + ".\n")
-            sys.exit(1)
         try:
             shutil.copy(os.path.join(datadir, 'salome', 'fsi.export'),
                         os.path.join(repbase, self.ast_case_name))
@@ -318,39 +306,6 @@ class Study:
             sys.stderr.write("Cannot copy fsi.export file: " + \
                              os.path.join(datadir, 'salome', 'fsi.export') + ".\n")
             sys.exit(1)
-
-        config = configparser.ConfigParser()
-        config.read([self.package.get_configfile(),
-                     os.path.expanduser('~/.' + self.package.configfile)])
-        asterhome = config.get('install', 'aster')
-
-        runcase = os.path.join(repbase, 'runcase_coupling')
-        runcase_tmp = runcase + '.tmp'
-
-        kwd1 = re.compile('CASEDIRNAME')
-        kwd2 = re.compile('CASENAME')
-        kwd3 = re.compile('ASTERNAME')
-        kwd4 = re.compile('STUDYNAME')
-        kwd5 = re.compile('ASTERHOME')
-
-        runcase_tmp = runcase + '.tmp'
-
-        fd  = open(runcase, 'r')
-        fdt = open(runcase_tmp,'w')
-
-        for line in fd:
-            line = re.sub(kwd1, repbase, line)
-            line = re.sub(kwd2, self.cases[0], line)
-            line = re.sub(kwd3, self.ast_case_name, line)
-            line = re.sub(kwd4, self.name, line)
-            line = re.sub(kwd5, asterhome, line)
-            fdt.write(line)
-
-        fd.close()
-        fdt.close()
-
-        shutil.move(runcase_tmp, runcase)
-        make_executable(runcase)
 
 
     def create_coupling(self, repbase):
@@ -405,6 +360,30 @@ class Study:
                                # (ex.: postprocessing with '-v ens' or '-v med')
 """
             template = re.sub(e_dom, c, template)
+            dict_str += template
+
+        if self.ast_case_name is not None:
+
+            template = \
+"""
+    ,
+    {'solver': 'Code_Aster',
+     'domain': 'DOMAIN',
+     'script': 'fsi.export'}
+"""
+            template = re.sub(e_dom, self.ast_case_name, template)
+            dict_str += template
+
+            template = \
+"""
+    ,
+    {'coupler': 'FSI_coupler',
+     'max_time_steps': 10,
+     'n_sub_iterations': 1,
+     'time_step': 0.0001,
+     'start_time': 0.0,
+     'epsilon': 0.00001}
+"""
             dict_str += template
 
         # Result directory for coupling execution

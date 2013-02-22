@@ -79,7 +79,9 @@ class case:
                  package_compute = None,      # package for compute environment
                  case_dir = None,
                  domains = None,
-                 syr_domains = None):
+                 syr_domains = None,
+                 ast_domain = None,
+                 fsi_coupler = None):
 
         # Package specific information
 
@@ -109,7 +111,22 @@ class case:
         else:
             self.syr_domains = (syr_domains,)
 
-        # Check names in case of multiple domains
+        if ast_domain == None:
+            self.ast_domains = ()
+        else:
+            self.ast_domains = (ast_domain,)
+
+        self.fsi_coupler = fsi_coupler
+
+        # Mark fluid domains as coupled with Code_Aster if coupling is present.
+        # This should be improved by migrating tests to the executable, to better
+        # handle cases were only some domains are coupled.
+        # For now, we assume that the first CFD domain is the coupled one.
+
+        if fsi_coupler:
+            self.domains[0].fsi_aster = True
+
+        # Check names in case of multiple domains (coupled by MPI)
 
         n_domains = len(self.domains) + len(self.syr_domains)
 
@@ -150,6 +167,8 @@ class case:
             d.set_case_dir(self.case_dir)
         for d in self.syr_domains:
             d.set_case_dir(self.case_dir)
+        for d in self.ast_domains:
+            d.set_case_dir(self.case_dir)
 
         # Mesh directory for default study structure
 
@@ -169,12 +188,16 @@ class case:
         for d in self.syr_domains:
             if d.exec_solver:
                 n_exec_solver += 1
+        for d in self.ast_domains:
+            if d.exec_solver:
+                n_exec_solver += 1
 
         if n_exec_solver == 0:
             self.exec_solver = False
-        elif n_exec_solver < len(self.domains) + len(self.syr_domains):
+        elif n_exec_solver <   len(self.domains) + len(self.syr_domains) \
+                             + len(self.ast_domains):
             err_str = 'In case of multiple domains (i.e. code coupling), ' \
-                + 'all or no domains must execute its solver.\n'
+                + 'all or no domains must execute their solver.\n'
             raise RunCaseError(err_str)
 
         # Date or other name
@@ -222,6 +245,19 @@ class case:
                     + str(d.n_procs) + ' processes.\n'
                 sys.stdout.write(msg)
 
+        if len(self.ast_domains) == 1:
+            if self.ast_domains[0].n_procs > 1:
+                msg = ' Parallel Code_Aster on ' \
+                    + str(self.ast_domains[0].n_procs) + ' processes.\n'
+            else:
+                msg = ' Single processor Code_Aster simulation.\n'
+            sys.stdout.write(msg)
+        else:
+            for d in self.ast_domains:
+                msg = ' Code_Aster domain ' + d.name + ' on ' \
+                    + str(d.n_procs) + ' processes.\n'
+                sys.stdout.write(msg)
+
         sys.stdout.write('\n')
 
     #---------------------------------------------------------------------------
@@ -241,6 +277,15 @@ class case:
             np_list.append(d.get_n_procs())
 
         for d in self.syr_domains:
+            np_list.append(d.get_n_procs())
+
+        # Code_Aster is handled in a specific manner: processes are counted
+        # against the total, but the coupler is not, and processes will not by
+        # run by the same mpiexec instance (TODO: check/improve how this interacts
+        # with resource managers, so that some nodes are not oversubscribed while
+        # others are unused).
+
+        for d in self.ast_domains:
             np_list.append(d.get_n_procs())
 
         n_procs_tot = 0
@@ -378,7 +423,7 @@ class case:
             self.exec_dir = os.path.join(self.exec_prefix, exec_dir_name)
         else:
             r = os.path.join(self.case_dir, 'RESU')
-            if len(self.domains) + len(self.syr_domains) > 1:
+            if len(self.domains) + len(self.syr_domains) + len(self.ast_domains) > 1:
                 r += '_COUPLING'
             self.exec_dir = os.path.join(r, exec_basename)
 
@@ -396,6 +441,8 @@ class case:
         for d in self.domains:
             d.set_exec_dir(self.exec_dir)
         for d in self.syr_domains:
+            d.set_exec_dir(self.exec_dir)
+        for d in self.ast_domains:
             d.set_exec_dir(self.exec_dir)
 
     #---------------------------------------------------------------------------
@@ -426,7 +473,7 @@ class case:
                 os.makedirs(self.exec_dir)
 
         elif (  len(os.listdir(self.exec_dir))
-              > len(self.domains) + len(self.syr_domains)):
+              > len(self.domains) + len(self.syr_domains) + len(self.ast_domains)):
             err_str = \
                 '\nWorking/results directory: ' + self.exec_dir \
                 + ' not empty.\n' \
@@ -457,6 +504,9 @@ class case:
             d.set_result_dir(name, self.result_dir)
 
         for d in self.syr_domains:
+            d.set_result_dir(name, self.result_dir)
+
+        for d in self.ast_domains:
             d.set_result_dir(name, self.result_dir)
 
     #---------------------------------------------------------------------------
@@ -525,6 +575,9 @@ class case:
             d.summary_info(s)
             s.write(hline)
         for d in self.syr_domains:
+            d.summary_info(s)
+            s.write(hline)
+        for d in self.ast_domains:
             d.summary_info(s)
             s.write(hline)
 
@@ -599,6 +652,140 @@ class case:
         Determine name of solver script file.
         """
         return os.path.join(self.exec_dir, self.package.runsolver)
+
+    #---------------------------------------------------------------------------
+
+    def generate_fsi_scheme(self):
+        """
+        "Creating YACS coupling scheme.
+        """
+
+        sys.stdout.write('Creating YACS coupling scheme.\n')
+
+        cfd_d = self.domains[0]
+        ast_d = self.ast_domains[0]
+
+        ast_mesh_name = ast_d.mesh
+        ast_comm = ast_d.comm
+
+        c = self.fsi_coupler
+
+        pkgdatadir = self.package.dirs['pkgdatadir'][1]
+        s_path = os.path.join(pkgdatadir, 'salome', 'fsi_yacs_scheme.xml')
+        s = open(s_path, 'r')
+        template = s.read()
+        s.close()
+
+        import re
+
+        e_re = re.compile('@AST_WORKINGDIR@')
+        template = re.sub(e_re, ast_d.exec_dir, template)
+
+        e_re = re.compile('@COCAS_WORKINGDIR@')
+        template = re.sub(e_re, self.exec_dir, template)
+
+        e_re = re.compile('@CFD_WORKINGDIR@')
+        template = re.sub(e_re, cfd_d.exec_dir, template)
+
+        e_re = re.compile('@AST_MAIL@')
+        template = re.sub(e_re, ast_mesh_name, template)
+
+        e_re = re.compile('@NBPDTM@')
+        template = re.sub(e_re, str(c['max_time_steps']), template)
+
+        e_re = re.compile('@NBSSIT@')
+        template = re.sub(e_re, str(c['n_sub_iterations']), template)
+
+        e_re = re.compile('@DTREF@')
+        template = re.sub(e_re, str(c['time_step']), template)
+
+        e_re = re.compile('@TTINIT@')
+        template = re.sub(e_re, str(c['start_time']), template)
+
+        e_re = re.compile('@EPSILO@')
+        template = re.sub(e_re, str(c['epsilon']), template)
+
+        e_re = re.compile('@COMM_FNAME@')
+        template = re.sub(e_re, ast_comm, template)
+
+        s_path = os.path.join(self.exec_dir, 'fsi_yacs_scheme.xml')
+        s = open(s_path, 'w')
+        s.write(template)
+        s.close()
+
+        # Now generate application
+
+        if self.package.config.have_salome == "no":
+            raise RunCaseError("SALOME is not available in this installation.\n")
+
+        template = """\
+%(salomeenv)s;
+PYTHONPATH=%(pythondir)s/salome:%(pkgpythondir)s${PYTHONPATH:+:$PYTHONPATH};
+export PYTHONPATH;
+${KERNEL_ROOT_DIR}/bin/salome/appli_gen.py --prefix=%(applidir)s --config=%(configdir)s
+"""
+
+        cmd = template % {'salomeenv': self.package.config.salome_env,
+                          'pythondir': self.package.get_dir('pythondir'),
+                          'pkgpythondir': self.package.get_dir('pkgpythondir'),
+                          'applidir': os.path.join(self.exec_dir, 'appli'),
+                          'configdir': os.path.join(self.package.dirs['pkgdatadir'][1],
+                                                    'salome',
+                                                    'fsi_appli_config.xml')}
+
+        retcode = cs_exec_environment.run_command(cmd,
+                                                  stdout=None,
+                                                  stderr=None)
+
+
+    #---------------------------------------------------------------------------
+
+    def generate_yacs_wrappers(self):
+        """
+        Generate wrappers for YACS.
+        """
+
+        apps = [('FSI_SATURNE.exe', os.path.join(self.exec_dir, 'cfd_by_yacs'))]
+
+        i = 0
+        for d in self.ast_domains:
+            if len(self.ast_domains) == 1:
+                apps.append(('FSI_ASTER.exe',
+                             os.path.join(d.exec_dir, 'aster_by_yacs')))
+            else:
+                i = i+1
+                apps.append(('FSI_ASTER' + str(i) + '.exe',
+                             os.path.join(d.exec_dir, 'aster_by_yacs')))
+
+        bin_dir = os.path.join(self.exec_dir, 'bin')
+        if not os.path.isdir(bin_dir):
+            os.mkdir(bin_dir)
+
+        for a in apps:
+
+            s_path = os.path.join(bin_dir, a[0])
+            s = open(s_path                     , 'w')
+
+            cs_exec_environment.write_shell_shebang(s)
+
+            s_cmds = \
+"""
+# Get SALOME variables from launcher
+
+export SALOME_CONTAINER=$1
+export SALOME_CONTAINERNAME=$2
+export SALOME_INSTANCE=$3
+
+"""
+            s.write(s_cmds)
+
+            s.write(a[1] + '\n')
+
+            s.close
+
+            oldmode = (os.stat(s_path)).st_mode
+            newmode = oldmode | (stat.S_IXUSR)
+            os.chmod(s_path, newmode)
 
     #---------------------------------------------------------------------------
 
@@ -724,91 +911,19 @@ class case:
 
     #---------------------------------------------------------------------------
 
-    def generate_solver_script(self, exec_env):
+    def solver_script_body(self, n_procs, mpi_env, s):
         """
-        Generate localexec file.
+        Write commands to solver script.
         """
-
-        # If n_procs not already given by environment, determine it
-
-        n_procs = exec_env.resources.n_procs
-        mpi_env = exec_env.mpi_env
-
-        if n_procs == None:
-            n_procs = 0
-            for d in self.syr_domains:
-                n_procs += d.n_procs
-
-        n_mpi_syr = 0
-        for d in self.syr_domains:
-            n_mpi_syr += 1
 
         # Determine if an MPMD syntax (mpiexec variant) will be used
 
         mpiexec_mpmd = False
-        if len(self.domains) > 1 or n_mpi_syr > 0:
+        if len(self.domains) > 1 or len(self.syr_domains) > 0:
             if mpi_env.mpmd & cs_exec_environment.MPI_MPMD_mpiexec:
                 mpiexec_mpmd = True
             elif mpi_env.mpmd & cs_exec_environment.MPI_MPMD_configfile:
                 mpiexec_mpmd = True
-
-        # Initialize simple solver command script
-
-        s_path = self.solver_script_path()
-        s = open(s_path, 'w')
-
-        cs_exec_environment.write_shell_shebang(s)
-
-        # Add detection and handling of SALOME YACS module if run from
-        # this environment (only available on Linux platforms).
-
-        if sys.platform.startswith('linux'):
-            yacs_test = \
-""" # Detect and handle running under SALOME YACS module.
-YACS_ARG=
-if test "$SALOME_CONTAINERNAME" != "" -a "$CFDRUN_ROOT_DIR" != "" ; then
-  YACS_ARG="--yacs-module=${CFDRUN_ROOT_DIR}"/lib/salome/libCFD_RunExelib.so
-fi
-"""
-            s.write(yacs_test + '\n')
-
-        # Set environment modules if necessary
-
-        if self.package_compute.config.env_modules != "no":
-            s.write('module purge\n')
-            for m in self.package_compute.config.env_modules.strip().split():
-                s.write('module load ' + m + '\n')
-            s.write('\n')
-
-        # Set PATH for Windows DLL search PATH
-        # It should not harm in other circumstances
-
-        cs_exec_environment.write_script_comment(s,
-            'Ensure the correct command is found:\n')
-        cs_exec_environment.write_prepend_path(s, 'PATH',
-                                               self.package.get_dir("bindir"))
-
-        # Add MPI directories to PATH if in nonstandard path
-
-        cs_exec_environment.write_script_comment(s,
-            'Export paths here if necessary or recommended.\n')
-        if len(self.package_compute.config.libs['mpi'].bindir) > 0:
-            cs_exec_environment.write_prepend_path(s, 'PATH',
-                self.package_compute.config.libs['mpi'].bindir)
-        if len(self.package_compute.config.libs['mpi'].libdir) > 0:
-            cs_exec_environment.write_prepend_path(s, 'LD_LIBRARY_PATH',
-                self.package_compute.config.libs['mpi'].libdir)
-        s.write('\n')
-
-        # Boot MPI daemons if necessary
-
-        if mpi_env.gen_hostsfile != None:
-            cs_exec_environment.write_script_comment(s, 'Generate hostsfile.\n')
-            s.write(mpi_env.gen_hostsfile + ' || exit $?\n\n')
-
-        if n_procs > 1 and mpi_env.mpiboot != None:
-            cs_exec_environment.write_script_comment(s, 'Boot MPI daemons.\n')
-            s.write(mpi_env.mpiboot + ' || exit $?\n\n')
 
         # Start assembling command
 
@@ -843,8 +958,6 @@ fi
             s.write('cd "' + s_args[0] + '"\n\n')
             cs_exec_environment.write_script_comment(s, 'Run solver.\n')
             s.write(mpi_cmd + s_args[1] + mpi_cmd_args + s_args[2])
-            if sys.platform.startswith('linux'):
-                s.write(' $YACS_ARGS')
             s.write(' ' + cs_exec_environment.get_script_positional_args() +
                     '\n')
 
@@ -870,6 +983,143 @@ fi
                 raise RunCaseError(' No allowed MPI MPMD mode defined.\n')
 
             s.write(mpi_cmd + e_path + '\n')
+
+    #---------------------------------------------------------------------------
+
+    def fsi_script_body(self, s):
+        """
+        Generate script body for Code_Aster FSI coupling.
+        """
+
+        template = """\
+%(salomeenv)s;
+export PATH=%(exec_dir)s/bin:$PATH
+appli=%(exec_dir)s/appli
+$appli/runSession killSalome.py
+unset PYTHONHOME
+$appli/runAppli -t
+$appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
+echo "exit \$?" >> $localexec
+
+"""
+        s.write(template % {'salomeenv': self.package.config.salome_env,
+                            'exec_dir': self.exec_dir})
+
+    #---------------------------------------------------------------------------
+
+    def generate_fsi_scripts(self, n_procs, mpi_env):
+        """
+        # Generate scripts for Code_Aster domains and YACS wrappers
+        # Script per Code_Aster domain generated
+        """
+
+        # Generate simple solver command script
+
+        s_path = os.path.join(self.exec_dir, 'cfd_by_yacs')
+        s = open(s_path, 'w')
+
+        cs_exec_environment.write_shell_shebang(s)
+
+        self.solver_script_body(n_procs-1, mpi_env, s)
+
+        cs_exec_environment.write_export_env(s, 'CS_RET',
+                                             cs_exec_environment.get_script_return_code())
+
+        if sys.platform.startswith('win'):
+            s.write('\nexit %CS_RET%\n')
+        else:
+            s.write('\nexit $CS_RET\n')
+        s.close()
+
+        # Generate additional scripts
+
+        for d in self.ast_domains:
+            d.generate_script()
+
+        self.generate_yacs_wrappers()
+
+        oldmode = (os.stat(s_path)).st_mode
+        newmode = oldmode | (stat.S_IXUSR)
+        os.chmod(s_path, newmode)
+
+        return s_path
+
+    #---------------------------------------------------------------------------
+
+    def generate_solver_script(self, exec_env):
+        """
+        Generate localexec file.
+        """
+
+        # Initialize simple solver command script
+
+        s_path = self.solver_script_path()
+
+        s = open(s_path, 'w')
+
+        cs_exec_environment.write_shell_shebang(s)
+
+        # If n_procs not already given by environment, determine it
+
+        n_procs = exec_env.resources.n_procs
+        mpi_env = exec_env.mpi_env
+
+        if n_procs == None:
+            n_procs = 0
+            for d in self.syr_domains:
+                n_procs += d.n_procs
+
+        # Handle environment modules if used
+
+        if self.package_compute.config.env_modules != "no":
+            s.write('module purge\n')
+            for m in self.package_compute.config.env_modules.strip().split():
+                s.write('module load ' + m + '\n')
+                s.write('\n')
+
+        # Set PATH for Windows DLL search PATH
+        # It should not harm in other circumstances
+
+        if sys.platform.startswith('win'):
+            cs_exec_environment.write_script_comment(s,
+                'Ensure the correct command is found:\n')
+            cs_exec_environment.write_prepend_path(s,
+                                                   'PATH',
+                                                   self.package.get_dir("bindir"))
+
+        # Add MPI directories to PATH if in nonstandard path
+
+        cs_exec_environment.write_script_comment(s,
+            'Export paths here if necessary or recommended.\n')
+        mpi_bindir = self.package_compute.config.libs['mpi'].bindir
+        if len(mpi_bindir) > 0:
+            cs_exec_environment.write_prepend_path(s, 'PATH', mpi_bindir)
+        mpi_libdir = self.package_compute.config.libs['mpi'].libdir
+        if len(mpi_libdir) > 0:
+            cs_exec_environment.write_prepend_path(s,
+                                                   'LD_LIBRARY_PATH',
+                                                   mpi_libdir)
+        s.write('\n')
+
+        # Boot MPI daemons if necessary
+
+        if mpi_env.gen_hostsfile != None:
+            cs_exec_environment.write_script_comment(s, 'Generate hostsfile.\n')
+            s.write(mpi_env.gen_hostsfile + ' || exit $?\n\n')
+
+        if n_procs > 1 and mpi_env.mpiboot != None:
+            cs_exec_environment.write_script_comment(s, 'Boot MPI daemons.\n')
+            s.write(mpi_env.mpiboot + ' || exit $?\n\n')
+
+        # Generate script body
+
+        if self.ast_domains:
+            self.generate_fsi_scheme()
+            self.fsi_script_body(s)
+            self.generate_fsi_scripts(n_procs, mpi_env)
+
+        else:
+            self.solver_script_body(n_procs, mpi_env, s)
 
         # Obtain return value (or sum thereof)
 
@@ -906,7 +1156,7 @@ fi
         Create a stamp file in the scripts directory, rename it, or destroy it.
         """
 
-        # Create a temporary file for SALOME (equivalent to "ficstp")
+        # Create a temporary file for SALOME (equivalent to "control_file")
 
         src_tmp_name = None
         dest_tmp_name = None
@@ -1078,6 +1328,8 @@ fi
         for d in self.domains:
             d.prepare_data()
         for d in self.syr_domains:
+            d.prepare_data()
+        for d in self.ast_domains:
             d.prepare_data()
 
         sys.stdout.write('\n'
