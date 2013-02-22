@@ -112,6 +112,13 @@ AC_PROG_SED
 AM_PROG_LEX
 AC_PROG_YACC
 
+if test "x$CC" = "x" ; then
+  AC_MSG_FAILURE([cannot find C compiler])
+fi
+if test "x$FC" = "x" ; then
+  AC_MSG_FAILURE([cannot find Fortran compiler])
+fi
+
 # Debug or production compilation mode (debug by default) ?
 
 AC_ARG_ENABLE(debug,
