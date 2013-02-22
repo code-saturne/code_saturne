@@ -39,6 +39,7 @@ gui_ale_mei.png \
 gui_atmo_read.png \
 gui_bc_parameters.png \
 gui_bc_regions.png \
+gui_calculation_features.png \
 gui_case_dir.png \
 gui_coal_bc.png \
 gui_coal_classes.png \
@@ -48,14 +49,16 @@ gui_coal_oxydant.png \
 gui_coal_reaction.png \
 gui_coal_solution_control.png \
 gui_coal_time_average.png \
+gui_coriolis.png \
 gui_density_law.png \
 gui_fluid_props.png \
 gui_formula_button.png \
 gui_formula_interface.png \
 gui_global_res_parameters.png \
-gui_gravity_hyd_pressure.png \
+gui_gravity.png \
 gui_head_loss_coeffs.png \
 gui_head_loss_regions.png \
+gui_initialisation.png \
 gui_lagr_bc.png \
 gui_lagr_global_advanced.png \
 gui_lagr_global_settings_coal.png \
@@ -66,11 +69,11 @@ gui_mesh_join.png \
 gui_mesh_periodicity.png \
 gui_mobile_mesh.png \
 gui_numerical_parameters.png \
-gui_output_1d_profiles.png \
 gui_output_log.png \
 gui_output_meshes.png \
+gui_output_profiles.png \
 gui_output_writers.png \
-gui_phys_prop_ref_pressure.png \
+gui_phys_prop_reference_values.png \
 gui_prepare_execution.png \
 gui_rad_transf_do_advanced.png \
 gui_rad_transf_do_params.png \
@@ -82,13 +85,10 @@ gui_rad_transf_wall_model.png \
 gui_rad_transf_wall_params.png \
 gui_syrthes_coupling.png \
 gui_thermal_scalar.png \
-gui_thermo_phys_models.png \
 gui_time_averages.png \
 gui_time_step.png \
 gui_turbulence_models.png \
 gui_user_scal_def_init.png \
-gui_user_scal_phys_props.png \
-gui_volume_regions.png \
 halo.pdf \
 rota_perio_parall.jpg
 
