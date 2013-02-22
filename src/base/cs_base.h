@@ -339,6 +339,19 @@ cs_base_get_localedir(void);
 const char *
 cs_base_get_pkgdatadir(void);
 
+/*----------------------------------------------------------------------------
+ * Return a string providing loadable library path information.
+ *
+ * This is normally the path determined upon configuration, but may be
+ * adapted for movable installs using the CS_ROOT_DIR environment variable.
+ *
+ * returns:
+ *   package loadable library (plugin) path
+ *----------------------------------------------------------------------------*/
+
+const char *
+cs_base_get_pkglibdir(void);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

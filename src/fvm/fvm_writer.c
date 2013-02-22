@@ -51,6 +51,7 @@
 #include "fvm_nodal.h"
 #include "fvm_nodal_priv.h"
 
+#include "cs_base.h"
 #include "cs_file.h"
 #include "cs_timer.h"
 
@@ -123,10 +124,10 @@ static fvm_writer_format_t _fvm_writer_format_list[5] = {
     NULL                               /* flush_func */
   },
 
-  /* MED 2.3 or 3.0 writer */
+  /* MED 3.0 writer */
   {
     "MED",
-    "2.3 +",
+    "3.0 +",
     (  FVM_WRITER_FORMAT_USE_EXTERNAL
      | FVM_WRITER_FORMAT_HAS_POLYGON
      | FVM_WRITER_FORMAT_HAS_POLYHEDRON),
@@ -161,7 +162,7 @@ static fvm_writer_format_t _fvm_writer_format_list[5] = {
   /* CGNS writer */
   {
     "CGNS",
-    "2.5 +",
+    "3.1 +",
     (  FVM_WRITER_FORMAT_USE_EXTERNAL
      | FVM_WRITER_FORMAT_HAS_POLYGON),
     FVM_WRITER_FIXED_MESH,
@@ -367,11 +368,14 @@ static void
 _load_plugin(fvm_writer_format_t  *wf)
 {
   char  *lib_path = NULL;
+  const char *pkglibdir = cs_base_get_pkglibdir();
 
   /* Open from shared library */
 
-  BFT_MALLOC(lib_path, 3 + strlen(wf->dl_name) + 3 + 1, char);
-  sprintf(lib_path, "%s.so", wf->dl_name);
+  BFT_MALLOC(lib_path,
+             strlen(pkglibdir) + 1 + 3 + strlen(wf->dl_name) + 3 + 1,
+             char);
+  sprintf(lib_path, "%s%c%s.so", pkglibdir, DIR_SEPARATOR, wf->dl_name);
 
   wf->dl_lib = dlopen(lib_path, RTLD_LAZY);
 

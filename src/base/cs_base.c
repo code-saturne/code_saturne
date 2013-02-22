@@ -149,8 +149,10 @@ static _cs_base_sighandler_t cs_glob_base_sigcpu_save = SIG_DFL;
 
 static const char _cs_base_build_localedir[] = LOCALEDIR;
 static const char _cs_base_build_pkgdatadir[] = PKGDATADIR;
+static const char _cs_base_build_pkglibdir[] = PKGLIBDIR;
 static char *_cs_base_env_localedir = NULL;
 static char *_cs_base_env_pkgdatadir = NULL;
+static char *_cs_base_env_pkglibdir = NULL;
 
 /* Log file */
 
@@ -567,9 +569,9 @@ _cs_base_sig_fatal(int  signum)
  *----------------------------------------------------------------------------*/
 
 static const char *
-_get_path(const char  *dir_path,
-          const char  *build_path,
-          char        *env_path)
+_get_path(const char   *dir_path,
+          const char   *build_path,
+          char        **env_path)
 {
 #if defined(HAVE_RELOCATABLE)
   {
@@ -578,8 +580,8 @@ _get_path(const char  *dir_path,
 
     /* Allow for displacable install */
 
-    if (env_path != NULL)
-      return env_path;
+    if (*env_path != NULL)
+      return *env_path;
 
     /* First try with an environment variable CS_ROOT_DIR */
 
@@ -621,14 +623,14 @@ _get_path(const char  *dir_path,
     }
 #endif /* defined(HAVE_GETCWD) */
 
-    BFT_MALLOC(env_path,
+    BFT_MALLOC(*env_path,
                strlen(cs_root_dir) + strlen(rel_path) + strlen(dir_path) + 1,
                char);
-    strcpy(env_path, cs_root_dir);
-    strcat(env_path, rel_path);
-    strcat(env_path, dir_path);
+    strcpy(*env_path, cs_root_dir);
+    strcat(*env_path, rel_path);
+    strcat(*env_path, dir_path);
 
-    return env_path;
+    return *env_path;
   }
 #endif /* defined(HAVE_RELOCATABLE) */
 
@@ -1427,6 +1429,7 @@ cs_base_mem_finalize(void)
 
     BFT_FREE(_cs_base_env_localedir);
     BFT_FREE(_cs_base_env_pkgdatadir);
+    BFT_FREE(_cs_base_env_pkglibdir);
     BFT_FREE(_bft_printf_file_name);
 
     bft_mem_end();
@@ -1812,7 +1815,7 @@ cs_base_get_localedir(void)
 {
   return _get_path("share/locale",
                    _cs_base_build_localedir,
-                   _cs_base_env_localedir);
+                   &_cs_base_env_localedir);
 }
 
 /*----------------------------------------------------------------------------
@@ -1827,7 +1830,25 @@ cs_base_get_pkgdatadir(void)
 {
   return _get_path("share/" PACKAGE_NAME,
                    _cs_base_build_pkgdatadir,
-                   _cs_base_env_pkgdatadir);
+                   &_cs_base_env_pkgdatadir);
+}
+
+/*----------------------------------------------------------------------------
+ * Return a string providing loadable library path information.
+ *
+ * This is normally the path determined upon configuration, but may be
+ * adapted for movable installs using the CS_ROOT_DIR environment variable.
+ *
+ * returns:
+ *   package loadable library (plugin) path
+ *----------------------------------------------------------------------------*/
+
+const char *
+cs_base_get_pkglibdir(void)
+{
+  return _get_path("lib/" PACKAGE_NAME,
+                   _cs_base_build_pkglibdir,
+                   &_cs_base_env_pkglibdir);
 }
 
 /*----------------------------------------------------------------------------*/
