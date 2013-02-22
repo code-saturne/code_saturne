@@ -112,6 +112,13 @@ AC_PROG_SED
 AM_PROG_LEX
 AC_PROG_YACC
 
+if test "x$CC" = "x" ; then
+  AC_MSG_FAILURE([cannot find C compiler])
+fi
+if test "x$FC" = "x" ; then
+  AC_MSG_FAILURE([cannot find Fortran compiler])
+fi
+
 # Needed to use Microsoft archiver lib.exe
 # It copies the ar-lib script, similar to the compile script
 m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
