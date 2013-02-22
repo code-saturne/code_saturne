@@ -505,7 +505,7 @@ module optcal
   !>    - 32: \f$ R_{ij}-\epsilon \f$ (EBRSM)
   !>    - 40: LES (constant Smagorinsky model)
   !>    - 41: LES ("classical" dynamic Smagorisky model)
-  !>    - 42: LES (dynamic Smagorinsky of "Piomelli and Liu")
+  !>    - 42: LES (WALE)
   !>    - 50: v2f phi-model
   !>    - 51: v2f \f$ BL-v^2-k \f$
   !>    - 60: \f$ k-\omega \f$ SST
