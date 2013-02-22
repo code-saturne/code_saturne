@@ -1,62 +1,48 @@
-
-/* Code_Saturne version 2.1.0-alpha1 */
-
 /*============================================================================
- *
- *     This file is part of the Code_Saturne Kernel, element of the
- *     Code_Saturne CFD tool.
- *
- *     Copyright (C) 1998-2013 EDF S.A., France
- *
- *     contact: saturne-support@edf.fr
- *
- *     The Code_Saturne Kernel is free software; you can redistribute it
- *     and/or modify it under the terms of the GNU General Public License
- *     as published by the Free Software Foundation; either version 2 of
- *     the License, or (at your option) any later version.
- *
- *     The Code_Saturne Kernel is distributed in the hope that it will be
- *     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
- *     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *     GNU General Public License for more details.
- *
- *     You should have received a copy of the GNU General Public License
- *     along with the Code_Saturne Kernel; if not, write to the
- *     Free Software Foundation, Inc.,
- *     51 Franklin St, Fifth Floor,
- *     Boston, MA  02110-1301  USA
- *
+ * Define postprocessing output.
  *============================================================================*/
 
-/*============================================================================
- * Define (conforming or non-conforming) mesh joinings.
- *============================================================================*/
+/* Code_Saturne version 3.0.0 */
 
-#if defined(HAVE_CONFIG_H)
-#include "cs_config.h"
-#endif
+/*
+  This file is part of Code_Saturne, a general-purpose CFD tool.
+
+  Copyright (C) 1998-2013 EDF S.A.
+
+  This program is free software; you can redistribute it and/or modify it under
+  the terms of the GNU General Public License as published by the Free Software
+  Foundation; either version 2 of the License, or (at your option) any later
+  version.
+
+  This program is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+  details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+  Street, Fifth Floor, Boston, MA 02110-1301, USA.
+*/
+
+/*----------------------------------------------------------------------------*/
+
+#include "cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *----------------------------------------------------------------------------*/
-
-#include "bft_mem.h"
-
-/*----------------------------------------------------------------------------
- * FVM library headers
- *----------------------------------------------------------------------------*/
-
-#include "fvm_writer.h"
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft_mem.h"
+#include "bft_error.h"
+
+#include "fvm_writer.h"
+
 #include "cs_base.h"
+#include "cs_field.h"
 #include "cs_mesh.h"
 #include "cs_selector.h"
 
@@ -71,6 +57,63 @@
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
+
+/*============================================================================
+ * Local (user defined) function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Example function for selection of cells with a temperature below 21
+ * degrees.
+ *
+ * parameters:
+ *   input    <-> pointer to input (unused here)
+ *   n_cells  --> number of selected cells
+ *   cell_ids --> array of selected cell ids (0 to n-1 numbering)
+ *----------------------------------------------------------------------------*/
+
+static void
+_t_lt_21_select(void        *input,
+                cs_lnum_t   *n_cells,
+                cs_lnum_t  **cell_ids)
+{
+  cs_lnum_t i;
+
+  cs_lnum_t _n_cells = 0;
+  cs_lnum_t *_cell_ids = NULL;
+
+  const cs_mesh_t *m = cs_glob_mesh;
+
+  cs_field_t *f = cs_field_by_name("temperature"); /* Get access to field */
+
+  if (f == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "No field with name \"temperature\" defined");
+
+  /* Before time loop, field is defined, but has no values yet,
+     so ignore that case (postprocessing mesh will be initially empty) */
+
+  if (f->val != NULL) {
+
+    BFT_MALLOC(_cell_ids, m->n_cells, cs_lnum_t); /* Allocate selection list */
+
+    for (i = 0; i < m->n_cells; i++) {
+      if (f->val[i] < 21) {
+        _cell_ids[_n_cells] = i;
+        _n_cells += 1;
+      }
+    }
+
+    BFT_REALLOC(_cell_ids, _n_cells, cs_lnum_t); /* Adjust size (good practice,
+                                                    but not required) */
+
+  }
+
+  /* Set return values */
+
+  *n_cells = _n_cells;
+  *cell_ids = _cell_ids;
+}
 
 /*============================================================================
  * User function definitions
@@ -117,41 +160,26 @@ cs_user_postprocess_writers(void)
    * or commas) from the following list:
    *   'text'              (text format, for EnSight)
    *   'big_endian'        (forces binary EnSight output to 'big-endian' mode)
+   *   'adf'               (use ADF file type, for CGNS)
+   *   'hdf5'              (force HDF5 file type, usual the default for CGNS)
    *   'discard_polygons'  (ignore polygon-type faces)
    *   'discard_polyhedra' (ignore polyhedron-type cells)
    *   'divide_polygons'   (subdivides polygon-type faces)
    *   'divide_polyhedra'  (subdivides polyhedron-type cells)
    *   'split_tensors'     (writes tensors as separate scalars) */
 
-  /* Default writer time dependency */
-
-  fvm_writer_time_dep_t   time_dep = FVM_WRITER_FIXED_MESH;
-
-  /* Default time step or physical time based output frequencies */
-
-  cs_bool_t  output_at_end = true;
-  int        ntchr = -1;
-  double     frchr = -1.0;
-
-  /* Default output format and options */
-
-  const char format_name[] = "EnSight Gold";
-  const char format_options[] = "";
-
   /* Define additional writers */
   /* ------------------------- */
 
-  ntchr = 5;
-
   cs_post_define_writer(1,                            /* writer_id */
-                        "tinf21",                     /* writer name */
+                        "user",                       /* writer name */
                         "postprocessing",             /* directory name */
                         "EnSight Gold",               /* format name */
-                        "discard_polygons, discard_polyhedra",
-                        FVM_WRITER_TRANSIENT_CONNECT,
-                        output_at_end,
-                        ntchr,
-                        frchr);
+                        "",                           /* format options */
+                        FVM_WRITER_TRANSIENT_CONNECT, /* time dependency */
+                        true,                         /* output at end */
+                        5,                            /* time step frequency */
+                        -1);                          /* Time value frequency */
 }
 
 /*----------------------------------------------------------------------------
@@ -165,82 +193,39 @@ cs_user_postprocess_writers(void)
 void
 cs_user_postprocess_meshes(void)
 {
-  /* Post-processing meshes may be defined using one of several functions,
-   * whose protypes are defined in cs_post.h; these functions are:
+  /* Advanced volume mesh element selection is possible using
+   * cs_post_define_volume_mesh_by_func(), which allows defining
+   * meshes using user-defined element lists.
    *
-   * Functions simplest to use are cs_post_define_volume_mesh() and
-   * cs_post_define_surface_mesh(), which allow defining volume or surface
-   * post-processing meshes using selection criteria.
-   *
-   * parameters for cs_post_define_volume_mesh():
-   *   mesh_id        <-- id of mesh to define (< 0 reserved, > 0 for user)
-   *   mesh_name      <-- associated mesh name
-   *   cell_criteria  <-- selection criteria for cells
-   *   add_groups     <-- if true, add group information if present
-   *   auto_variables <-- if true, automatic output of main variables
-   *   n_writers      <-- number of associated writers
-   *   writer_ids     <-- ids of associated writers
-   *
-   * parameters for cs_post_define_surface_mesh():
-   *   mesh_id         <-- id of mesh to define (< 0 reserved, > 0 for user)
-   *   mesh_name       <-- associated mesh name
-   *   i_face_criteria <-- selection criteria for interior faces
-   *   b_face_criteria <-- selection criteria for boundary faces
-   *   add_groups      <-- if true, add group information if present
-   *   auto_variables  <-- if true, automatic output of main variables
-   *   n_writers       <-- number of associated writers
-   *   writer_ids      <-- ids of associated writers
-   *
-   * If no writer is associated to a mesh, it is not output, and its
-   * construction may be avoided altogether (at least when defined
-   * by one of the above functions).
-   *
-   * More advanced functions are described along with examples below. */
+   * parameters for cs_post_define_volume_mesh_by_func():
+   *   mesh_id           <-- id of mesh to define (< 0 reserved, > 0 for user)
+   *   mesh_name         <-- associated mesh name
+   *   cell_select_func  <-- pointer to cells selection function
+   *   cell_select_input <-> pointer to optional input data for the cell
+   *                         selection function, or NULL
+   *   time_varying      <-- if true, try to redefine mesh at each output time
+   *   add_groups        <-- if true, add group information if present
+   *   auto_variables    <-- if true, automatic output of main variables
+   *   n_writers         <-- number of associated writers
+   *   writer_ids          <-- ids of associated writers */
 
-  /*--------------------------------------------------------------------------*/
+  /* Build a (time varying) volume mesh containing cells
+     with values of field named "temperature" > < 21 */
 
-  /* Select interior faces with y = 0. */
+  const int n_writers = 1;
+  const int writer_ids[] = {1};  /* Associate to writer 1 */
 
-  if (true) {
+  /* Define postprocessing mesh */
 
-    const int n_writers = 2;
-    const int writer_ids[] = {-1};  /* Associate to default writer */
-
-    /* Select cells with y = 0 */
-    const char *interior_criteria = "plane[0, -1, 0, 0.0, "
-                                    "epsilon = 0.0001]";
-    const char *boundary_criteria = NULL;
-
-    cs_post_define_surface_mesh(1,               /* mesh id */
-                                "Cut 1",
-                                interior_criteria,
-                                boundary_criteria,
-                                false, /* add_groups */
-                                false, /* auto_variables */
-                                n_writers,
-                                writer_ids);
-
-  }
-
-  /*--------------------------------------------------------------------------*/
-
-  /* Select no cells, will select cells with T < 21 degrees in 'usmpst' */
-
-  if (true) {
-
-    const int n_writers = 1;
-    const int writer_ids[] = {1};  /* Associate to writer 1 */
-  
-    cs_post_define_volume_mesh(2,                 /* mesh id */
-                               "celTinf21",
-                               NULL,
-                               false,             /* add_groups */
-                               true,              /* auto_variables */
-                               n_writers,
-                               writer_ids);
-  
-  }
-
+  cs_post_define_volume_mesh_by_func(1,               /* mesh id */
+                                     "T_lt_21",
+                                     _t_lt_21_select,
+                                     NULL,            /* _t_lt_21_select input */
+                                     true,            /* time varying */
+                                     false,           /* add_groups */
+                                     false,           /* auto_variables */
+                                     n_writers,
+                                     writer_ids);
 }
 
 /*----------------------------------------------------------------------------
@@ -259,49 +244,6 @@ cs_user_postprocess_activate(int     nt_max_abs,
                              int     nt_cur_abs,
                              double  t_cur_abs)
 {
-  /* Use the cs_post_activate_writer() function to force the
-   * "active" or "inactive" flag for a specific writer or for all
-   * writers for the current time step.
-
-   * the parameters for cs_post_activate_writer() are:
-   *   writer_id <-- writer id, or 0 for all writers
-   *   activate  <-- false to deactivate, true to activate */
-
-  if (false) { /* example: deactivate all output before time step 1000 */
-
-    if (nt_max_abs < 1000) {
-      int writer_id = 0; /* 0: all writers */
-      cs_post_activate_writer(writer_id, false);
-    }
-
-  }
-}
-
-/*============================================================================
- * Fortran-callable wrapper for user function definitions (do not remove).
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * User override of default frequency or calculation end based output.
- *
- * Fortran interface:
- *
- * subroutine pstusn (ntmabs, ntcabs, ttcabs)
- * *****************
- *
- * integer          ntmabs      : <-- : maximum time step number
- * integer          ntcabs      : <-- : current time step number
- * double precision ttcabs      : <-- : absolute time at the current time step
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (pstusn, PSTUSN)
-(
- const cs_int_t  *ntmabs,
- const cs_int_t  *ntcabs,
- const cs_real_t *ttcabs
-)
-{
-  cs_user_postprocess_activate(*ntmabs, *ntcabs, *ttcabs);
 }
 
 /*----------------------------------------------------------------------------*/
