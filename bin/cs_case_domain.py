@@ -804,7 +804,7 @@ class domain(base_domain):
         if hasattr(self, 'fsi_aster'):
             if not sys.platform.startswith('linux'):
                 raise RunCaseError(' Coupling with Code_Aster only avalaible on Linux.')
-            salome_module = os.path.join(self.package_compute.dirs['libdir'][1],
+            salome_module = os.path.join(self.package_compute.get_dir('libdir'),
                                          'salome',
                                          'libFSI_SATURNEExelib.so')
             if os.path.isfile(salome_module):
@@ -1324,7 +1324,7 @@ class aster_domain(base_domain):
         template = re.sub(e_re, e_subst, template)
 
         e_re = re.compile('Execution/E_SUPERV.py')
-        e_subst = os.path.join(self.package.dirs['pythondir'][1],
+        e_subst = os.path.join(self.package.get_dir('pythondir'),
                                'salome',
                                'FSI_ASTER_component.py')
         template = re.sub(e_re, e_subst, template)

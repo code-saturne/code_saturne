@@ -670,7 +670,7 @@ class case:
 
         c = self.fsi_coupler
 
-        pkgdatadir = self.package.dirs['pkgdatadir'][1]
+        pkgdatadir = self.package.get_dir('pkgdatadir')
         s_path = os.path.join(pkgdatadir, 'salome', 'fsi_yacs_scheme.xml')
         s = open(s_path, 'r')
         template = s.read()
@@ -729,7 +729,7 @@ ${KERNEL_ROOT_DIR}/bin/salome/appli_gen.py --prefix=%(applidir)s --config=%(conf
                           'pythondir': self.package.get_dir('pythondir'),
                           'pkgpythondir': self.package.get_dir('pkgpythondir'),
                           'applidir': os.path.join(self.exec_dir, 'appli'),
-                          'configdir': os.path.join(self.package.dirs['pkgdatadir'][1],
+                          'configdir': os.path.join(self.package.get_dir('pkgdatadir'),
                                                     'salome',
                                                     'fsi_appli_config.xml')}
 
