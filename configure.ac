@@ -447,6 +447,35 @@ fi
 AC_SUBST(cs_have_openmp)
 
 #------------------------------------------------------------------------------
+# Checks for Python support.
+#------------------------------------------------------------------------------
+
+AC_ARG_VAR([PYTHON], [the Python interpreter])
+AM_PATH_PYTHON(["2.4"])
+
+# On MinGW hosts, Automake/Python mixes Windows-style and GNU-style paths
+# It seems better to use the standard way of installing Python modules,
+# as it is on Unix systems (whichever is chosen, Python modules will be
+# freezed by cx_freeze for Windows packaging).
+# So, we choose to override some Python paths.
+if test "$host_os" = mingw32 ; then
+
+  AC_MSG_NOTICE([Overriding Python paths on MinGW hosts])
+
+  am_cv_python_pythondir=\${prefix}/lib/python$PYTHON_VERSION/site-packages
+  AC_MSG_CHECKING([for $PYTHON script directory])
+  pythondir=$am_cv_python_pythondir
+  pkgpythondir=\${pythondir}/$PACKAGE
+  AC_MSG_RESULT([$pythondir])
+
+  am_cv_python_pyexecdir=\${exec_prefix}/lib/python$PYTHON_VERSION/site-packages
+  AC_MSG_CHECKING([for $PYTHON extension module directory])
+  pyexecdir=$am_cv_python_pyexecdir
+  pkgpyexecdir=\${pyexecdir}/$PACKAGE
+  AC_MSG_RESULT([$pyexecdir])
+fi
+
+#------------------------------------------------------------------------------
 # Checks for libraries.
 #------------------------------------------------------------------------------
 
@@ -509,35 +538,6 @@ AC_ARG_ENABLE(frontend, [AS_HELP_STRING([--disable-frontend],
 )
 AM_CONDITIONAL(HAVE_FRONTEND, test x$cs_have_frontend = xyes)
 AC_SUBST(cs_have_frontend)
-
-#------------------------------------------------------------------------------
-# Checks for Python support.
-#------------------------------------------------------------------------------
-
-AC_ARG_VAR([PYTHON], [the Python interpreter])
-AM_PATH_PYTHON(["2.4"])
-
-# On MinGW hosts, Automake/Python mixes Windows-style and GNU-style paths
-# It seems better to use the standard way of installing Python modules,
-# as it is on Unix systems (whichever is chosen, Python modules will be
-# freezed by cx_freeze for Windows packaging).
-# So, we choose to override some Python paths.
-if test "$host_os" = mingw32 ; then
-
-  AC_MSG_NOTICE([Overriding Python paths on MinGW hosts])
-
-  am_cv_python_pythondir=\${prefix}/lib/python$PYTHON_VERSION/site-packages
-  AC_MSG_CHECKING([for $PYTHON script directory])
-  pythondir=$am_cv_python_pythondir
-  pkgpythondir=\${pythondir}/$PACKAGE
-  AC_MSG_RESULT([$pythondir])
-
-  am_cv_python_pyexecdir=\${exec_prefix}/lib/python$PYTHON_VERSION/site-packages
-  AC_MSG_CHECKING([for $PYTHON extension module directory])
-  pyexecdir=$am_cv_python_pyexecdir
-  pkgpyexecdir=\${pyexecdir}/$PACKAGE
-  AC_MSG_RESULT([$pyexecdir])
-fi
 
 #------------------------------------------------------------------------------
 # Enables Code_Saturne graphical user interface
