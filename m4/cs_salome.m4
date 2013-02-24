@@ -188,6 +188,8 @@ AC_ARG_WITH(salome-kernel,
 
 if test "x$with_salome_kernel" != "xno" ; then
 
+  cs_have_salome_kernel=yes
+
   saved_CPPFLAGS="$CPPFLAGS"
   saved_LDFLAGS="$LDFLAGS"
   saved_LIBS="$LIBS"
@@ -201,26 +203,22 @@ if test "x$with_salome_kernel" != "xno" ; then
   SALOME_KERNEL_CPPFLAGS="-I$SALOME_KERNEL/include/salome"
   SALOME_KERNEL_IDL="-I$SALOME_KERNEL/idl/salome"
   SALOME_KERNEL_LDFLAGS="-L$SALOME_KERNEL/lib/salome"
-  SALOME_KERNEL_LIBS="-lCalciumC"
+  CALCIUM_LIBS="-lCalciumC"
   
   CPPFLAGS="${CPPFLAGS} ${SALOME_KERNEL_CPPFLAGS}"
   LDFLAGS="${LDFLAGS} ${SALOME_KERNEL_LDFLAGS}"
-  LIBS="${LIBS} ${SALOME_KERNEL_LIBS}"
+  LIBS="${LIBS} ${CALCIUM_LIBS}"
 
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <calcium.h>]],
   			             [[int iret = cp_fin(0, 0);]])],
-                    [cs_have_salome_kernel=yes
-                     AC_MSG_RESULT([compatible SALOME kernel found])],
-                    [cs_have_salome_kernel=no
-                     if test "x$with_salome_kernel" != "xcheck" ; then
-                       AC_MSG_FAILURE([SALOME support is requested, but test for SALOME failed!])
-                     else
-                       AC_MSG_WARN([no SALOME support])
-                     fi
+                    [cs_have_calcium=yes
+                     AC_MSG_RESULT([CALCIUM support])],
+                    [cs_have_calcium=no
+                     AC_MSG_WARN([no CALCIUM support])
                     ])
 
   if test "x$cs_have_salome_kernel" = "xno"; then
-    SALOME_KERNEL_LIBS=""
+    CALCIUM_LIBS=""
   fi
 
   CPPFLAGS="$saved_CPPFLAGS"
@@ -240,7 +238,11 @@ AC_SUBST(SALOME_KERNEL_IDL)
 AC_SUBST(SALOME_KERNEL_LDFLAGS)
 AC_SUBST(SALOME_KERNEL_LIBS)
 
+AC_SUBST(cs_have_calcium)
+AC_SUBST(CALCIUM_LIBS)
+
 AM_CONDITIONAL(HAVE_SALOME_KERNEL, test x$cs_have_salome_kernel = xyes)
+AM_CONDITIONAL(HAVE_CALCIUM, test x$cs_have_calcium = xyes)
 
 ])dnl
 
