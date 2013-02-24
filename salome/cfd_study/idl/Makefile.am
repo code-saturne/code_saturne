@@ -43,15 +43,15 @@ nodist_libSalomeIDLCFDSTUDY_la_SOURCES = \
 nodist_salomeinclude_HEADERS = CFDSTUDY_Gen.hh
 
 libSalomeIDLCFDSTUDY_la_CXXFLAGS = $(SALOME_INCLUDES) $(SALOME_GUI_CPPFLAGS) \
-	@CORBA_CXXFLAGS@ \
-	@CORBA_INCLUDES@
+	$(CORBA_CXXFLAGS) \
+	$(CORBA_INCLUDES)
 
 libSalomeIDLCFDSTUDY_la_LIBADD  = \
 	$(SALOME_GUI_LDFLAGS) -lSalomeIDLGUI \
 	$(SALOME_KERNEL_LDFLAGS) -lSalomeIDLKernel \
-	@CORBA_LIBS@
+	$(CORBA_LIBS)
 
-libSalomeIDLCFDSTUDY_la_LDFLAGS = -no-undefined -version-info=0:0:0
+libSalomeIDLCFDSTUDY_la_LDFLAGS = -bindir $(bindir) -no-undefined -version-info=0:0:0
 
 SUFFIXES = .idl .hh SK.cc
 

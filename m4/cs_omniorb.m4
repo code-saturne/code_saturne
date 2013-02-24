@@ -96,19 +96,24 @@ then
     osf*)
       # AC_DEFINE(__osf1__)
       __OSVERSION__=5
-      AC_DEFINE([__OSVERSION__], [5], [Description])
+      AC_DEFINE([__OSVERSION__], [5], [OmniORB OS version])
       OMNIORB_CXXFLAGS="$OMNIORB_CXXFLAGS -D__osf1__"
       ;;
     solaris*)
       # AC_DEFINE(__sunos__)
       __OSVERSION__=5
-      AC_DEFINE([__OSVERSION__], [5], [Description])
+      AC_DEFINE([__OSVERSION__], [5], [OmniORB OS version])
       OMNIORB_CXXFLAGS="$OMNIORB_CXXFLAGS -D__sunos__"
       ;;
-   linux*)
+    mingw*)
+      # AC_DEFINE(__WIN32__)
+      __OSVERSION__=4
+      AC_DEFINE([__OSVERSION__], [4], [OmniORB OS version])
+      OMNIORB_CXXFLAGS="$OMNIORB_CXXFLAGS -D__WIN32__"
+    linux*)
       # AC_DEFINE(__linux__)
       __OSVERSION__=2
-      AC_DEFINE([__OSVERSION__], [2], [Description])
+      AC_DEFINE([__OSVERSION__], [2], [OmniORB OS version])
       OMNIORB_CXXFLAGS="$OMNIORB_CXXFLAGS -D__linux__"
       ;;
   esac
@@ -134,8 +139,13 @@ then
     OMNIORB_RFLAGS="-R$OMNIORB_LIB"
   fi
 
+  if test $host_os = mingw32 ; then
+    OMNILIBSUFFIX="_rt"
+  else
+    OMNILIBSUFFIX=""
+  fi
   LIBS_old=$LIBS
-  LIBS="$LIBS $OMNIORB_LDFLAGS -lomnithread"
+  LIBS="$LIBS $OMNIORB_LDFLAGS -lomnithread$OMNILIBSUFFIX"
 
   CXXFLAGS_old=$CXXFLAGS
   CXXFLAGS="$CXXFLAGS $OMNIORB_CXXFLAGS $OMNIORB_INCLUDES"
@@ -170,11 +180,11 @@ then
 
   LIBS_old=$LIBS
   OMNIORB_LIBS="$OMNIORB_LDFLAGS"
-  OMNIORB_LIBS="$OMNIORB_LIBS -lomniORB${OMNIORB_VERSION}"
-  OMNIORB_LIBS="$OMNIORB_LIBS -lomniDynamic${OMNIORB_VERSION}"
-  OMNIORB_LIBS="$OMNIORB_LIBS -lCOS${OMNIORB_VERSION}"
-  OMNIORB_LIBS="$OMNIORB_LIBS -lCOSDynamic${OMNIORB_VERSION}"
-  OMNIORB_LIBS="$OMNIORB_LIBS -lomnithread"
+  OMNIORB_LIBS="$OMNIORB_LIBS -lomniORB${OMNIORB_VERSION}$OMNILIBSUFFIX"
+  OMNIORB_LIBS="$OMNIORB_LIBS -lomniDynamic${OMNIORB_VERSION}$OMNILIBSUFFIX"
+  OMNIORB_LIBS="$OMNIORB_LIBS -lCOS${OMNIORB_VERSION}$OMNILIBSUFFIX"
+  OMNIORB_LIBS="$OMNIORB_LIBS -lCOSDynamic${OMNIORB_VERSION}$OMNILIBSUFFIX"
+  OMNIORB_LIBS="$OMNIORB_LIBS -lomnithread$OMNILIBSUFFIX"
   OMNIORB_LIBS="$OMNIORB_LIBS ${OMNIORB_RFLAGS}"
   if test $OMNIORB_VERSION = 3 ; then
     OMNIORB_LIBS="$OMNIORB_LIBS -ltcpwrapGK"
