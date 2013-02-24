@@ -293,7 +293,8 @@ fi
 # take effect whether the result is true or not (maybe due to a bug),
 # so we directly use autoconf's enable_shared variable.
 
-if test "x$cs_ibm_bg_type" = "xL" -o "x$cs_ibm_bg_type" = "xP"; then
+if test "x$cs_ibm_bg_type" = "xL" -o "x$cs_ibm_bg_type" = "xP" \
+   -o "$host_os" = mingw32 ; then
    enable_shared=no
 fi
 AC_SUBST(enable_shared)
