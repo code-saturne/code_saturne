@@ -110,6 +110,7 @@ then
       __OSVERSION__=4
       AC_DEFINE([__OSVERSION__], [4], [OmniORB OS version])
       OMNIORB_CXXFLAGS="$OMNIORB_CXXFLAGS -D__WIN32__"
+      ;;
     linux*)
       # AC_DEFINE(__linux__)
       __OSVERSION__=2
@@ -128,7 +129,7 @@ then
 
 fi
 
-if test "x$omniORB_ok" = "xyes" 
+if test "x$omniORB_ok" = "xyes"
 then
   if test "x$OMNIORB_LIB" = "x/usr/lib"
   then
@@ -172,7 +173,7 @@ fi
 
 
 dnl omniORB_ok=yes
-if test "x$omniORB_ok" = "xyes" 
+if test "x$omniORB_ok" = "xyes"
 then
 
   AC_CHECK_LIB(socket,socket, LIBS="-lsocket $LIBS",,)
@@ -207,7 +208,7 @@ then
   omniORB_ok="$salome_cv_lib_omniorb3"
 
   omniORB_ok=yes
-  if test "x$omniORB_ok" = "xno" 
+  if test "x$omniORB_ok" = "xno"
   then
     AC_MSG_RESULT(omniORB library linking failed)
     omniORB_ok=no
@@ -219,7 +220,7 @@ then
 fi
 
 
-if test "x$omniORB_ok" = "xyes" 
+if test "x$omniORB_ok" = "xyes"
 then
 
   OMNIORB_IDLCXXFLAGS="-Wba -nf -I${OMNIORB_ROOT}/idl"
@@ -232,7 +233,7 @@ then
 
   OMNIORB_IDL_CLN_H=.hh
   OMNIORB_IDL_CLN_CXX=SK.cc
-  OMNIORB_IDL_CLN_OBJ=SK.o 
+  OMNIORB_IDL_CLN_OBJ=SK.o
   AC_SUBST(OMNIORB_IDL_CLN_H)
   AC_SUBST(OMNIORB_IDL_CLN_CXX)
   AC_SUBST(OMNIORB_IDL_CLN_OBJ)
@@ -248,7 +249,7 @@ then
   OMNIORB_IDL_TIE_CXX=
   AC_SUBST(OMNIORB_IDL_TIE_H)
   AC_SUBST(OMNIORB_IDL_TIE_CXX)
-  
+
   AC_DEFINE([OMNIORB], [], [Description])
 
   CORBA_HAVE_POA=1
@@ -283,7 +284,7 @@ AC_MSG_RESULT(for omniORB: $omniORB_ok)
 # Save cache
 AC_CACHE_SAVE
 
-if test "x$omniORB_ok" = "xyes" 
+if test "x$omniORB_ok" = "xyes"
 then
 
   CXXFLAGS_old=$CXXFLAGS
