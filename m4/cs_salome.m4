@@ -188,7 +188,8 @@ AC_ARG_WITH(salome-kernel,
 
 if test "x$with_salome_kernel" != "xno" ; then
 
-  cs_have_salome_kernel=yes
+  #cs_have_salome_kernel=yes
+  cs_have_salome_kernel=no
 
   saved_CPPFLAGS="$CPPFLAGS"
   saved_LDFLAGS="$LDFLAGS"
@@ -204,7 +205,7 @@ if test "x$with_salome_kernel" != "xno" ; then
   SALOME_KERNEL_IDL="-I$SALOME_KERNEL/idl/salome"
   SALOME_KERNEL_LDFLAGS="-L$SALOME_KERNEL/lib/salome"
   CALCIUM_LIBS="-lCalciumC"
-  
+
   CPPFLAGS="${CPPFLAGS} ${SALOME_KERNEL_CPPFLAGS}"
   LDFLAGS="${LDFLAGS} ${SALOME_KERNEL_LDFLAGS}"
   LIBS="${LIBS} ${CALCIUM_LIBS}"
@@ -290,7 +291,7 @@ if test x"$with_salome_gui" != xno ; then
   SALOME_GUI_IDL="-I$SALOME_GUI/idl/salome"
   SALOME_GUI_LDFLAGS="-L$SALOME_GUI/lib/salome"
   SALOME_GUI_LIBS=
-  
+
 else
   cs_have_salome_gui=no
 fi
@@ -350,7 +351,7 @@ if test x"$with_salome_yacs" != xno ; then
   SALOME_YACS_IDL="-I$SALOME_YACS/idl/salome"
   SALOME_YACS_LDFLAGS="-L$SALOME_YACS/lib/salome"
   SALOME_YACS_LIBS=
-  
+
 else
   cs_have_salome_yacs=no
 fi
@@ -511,7 +512,7 @@ MEDCouplingUMesh *m = MEDCouplingUMesh::New();]])
                    ],
                    [ AC_DEFINE([HAVE_MEDCOUPLING], 1, [MEDCoupling support])
                      cs_have_medcoupling=yes
-                   ], 
+                   ],
                    [ AC_MSG_WARN([no MEDCoupling support]) ],
                   )
 
@@ -535,7 +536,7 @@ InterpKernelDEC *dec = new InterpKernelDEC(procs_source, procs_target);]])
                    ],
                    [ AC_DEFINE([HAVE_PARAMEDMEM], 1, [ParaMEDMEM support])
                      cs_have_paramedmem=yes
-                   ], 
+                   ],
                    [ AC_MSG_WARN([no ParaMEDMEM support]) ],
                   )
 
