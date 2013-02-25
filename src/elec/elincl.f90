@@ -159,9 +159,9 @@ subroutine init_elec
   use mesh
   implicit none
   integer iel
-  allocate(izreca(ncelet))
+  allocate(izreca(nfac))
 
-  do iel = 1, ncelet
+  do iel = 1, nfac
     izreca(iel) = 0
   enddo
 

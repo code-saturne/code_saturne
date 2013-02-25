@@ -2455,12 +2455,11 @@ void CS_PROCF (uielrc, UIELRC) (const int    *const ncelet,
                                       double *const crit_reca)
 {
   /* build list of cells */
-  int  c_id         = 0;
-  cs_lnum_t  *cells_list  = NULL;
-  cs_lnum_t  cells = 0;
   char *crit = NULL;
 
-  BFT_MALLOC(cells_list, *ncelet, int);
+  cs_lnum_t   n_selected_faces = 0;
+  cs_lnum_t  *selected_faces = NULL;
+
   BFT_MALLOC(crit, 66, char*);
 
   char cVal[10];
@@ -2482,26 +2481,16 @@ void CS_PROCF (uielrc, UIELRC) (const int    *const ncelet,
   strcat(crit, cVal);
   strcat(crit, "]");
 
-  c_id = fvm_selector_get_list(cs_glob_mesh->select_cells,
-                               crit,
-                               &cells,
-                               cells_list);
+  BFT_MALLOC(selected_faces, cs_glob_mesh->n_i_faces, cs_lnum_t);
 
-  if (fvm_selector_n_missing(cs_glob_mesh->select_cells, c_id) > 0)
-  {
-    const char *missing
-      = fvm_selector_get_missing(cs_glob_mesh->select_cells, c_id, 0);
-    cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("The group or attribute \"%s\" in the selection\n"
-          "criteria:\n"
-          "\"%s\"\n"
-          " does not correspond to any cell.\n"),
-        missing, crit_reca);
-  }
+  cs_selector_get_i_face_list(crit,
+                             &n_selected_faces,
+                              selected_faces);
 
-  for (int j=0; j < cells; j++)
-    izreca[cells_list[j]] = 1;
-  BFT_FREE(cells_list);
+  for (int j=0; j < n_selected_faces; j++)
+    izreca[selected_faces[j]] = 1;
+
+  BFT_FREE(selected_faces);
   BFT_FREE(crit);
 
 }
