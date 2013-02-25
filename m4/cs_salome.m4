@@ -159,6 +159,11 @@ AS_IF([test $cs_have_salome_kernel = yes -o $cs_have_salome_gui = yes],
       [CS_AC_TEST_OMNIORB
        CS_AC_TEST_CORBA])
 
+AM_CONDITIONAL(HAVE_SALOME,
+               test $cs_have_salome_kernel = yes \
+                 -a $cs_have_salome_gui = yes \
+                 -a $omniORB_ok = yes)
+
 ])dnl
 
 # CS_AC_TEST_SALOME_KERNEL
@@ -188,8 +193,7 @@ AC_ARG_WITH(salome-kernel,
 
 if test "x$with_salome_kernel" != "xno" ; then
 
-  #cs_have_salome_kernel=yes
-  cs_have_salome_kernel=no
+  cs_have_salome_kernel=yes
 
   saved_CPPFLAGS="$CPPFLAGS"
   saved_LDFLAGS="$LDFLAGS"

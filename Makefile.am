@@ -34,7 +34,7 @@ if HAVE_INTERNAL_PLE
 PLE = libple
 endif
 
-if HAVE_SALOME_KERNEL
+if HAVE_SALOME
 SALOME = salome
 endif
 
