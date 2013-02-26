@@ -986,7 +986,7 @@ endif
 if (ideuch.eq.-999) then
   if (iturb.eq. 0.or.                                     &
       iturb.eq.10.or.                                     &
-      itytur.eq.4.or.                                     &
+      itytur.eq.4.or.itytur.eq.5.or.iturb.eq.32.or.       &
       iturb.eq.70) then
     ideuch = 0
   else
