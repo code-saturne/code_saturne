@@ -90,9 +90,8 @@ def xmlChecker(filename):
         p.parse(filename)
     except Exception:
         f = os.path.basename(filename)
-        m = "%s file reading error. \n\n"\
-            "This file is not in accordance with XML specifications.\n\n"\
-            "The parsing syntax error is:\n\n%s" % (f, e)
+        raise Exception("%s file reading error. \n\n"
+                        "This file is not in accordance with XML specifications.\n\n" % (f))
 
     return m
 
