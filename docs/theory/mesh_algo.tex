@@ -21,24 +21,16 @@
 %-------------------------------------------------------------------------------
 
 \nopagebreak
-%==================================
-\section*{Geometric Algorithms\label{sec:algo}}
-%==================================
 
 In this chapter, we will describe algorithms used for several
 operations done by \CS.
 
-\subsection*{Geometric Quantities\label{sec:geo_quant}}
+\section*{Geometric Quantities\label{sec:geo_quant}}
 
-Face normals (whose lengths are equal to face surfaces) as well
-as face centers of gravity and cell centers are computed directly
-by the kernel, though face normals may also be computed by the
-preprocessor for conforming joining.
+\subsection*{Normals and Face Centers%
+             \label{sec:geo_quant.normal}}
 
-\subsubsection*{Normals and Face Centers%
-                \label{sec:geo_quant.normal}}
-
-To calculate face normals, we taken care to use an algorithm
+To calculate face normals, we take care to use an algorithm
 that is correct for any planar simple polygon, including non-convex cases.
 The principle is as follows: take an arbitrary point $P_a$ in the
 same plane as the polygon, then compute the sum of the vector normals
@@ -68,7 +60,7 @@ the chosen point is on the polygon's plane.
 \label{fig:algo.grd_fac.triangles}
 \end{figure}
 
-A face's center is equal to the weighted center $G$ of triangles
+A face's center is defined as the weighted center $G$ of triangles
 $T_i$ defined as $\{P_a, P_i, P_{i+1}\}$ and whose centers are
 noted $G_i$. Let $O$ be the center of the coordinate system and
 $\overrightarrow{n_f}$ the face normal, then:
@@ -96,7 +88,7 @@ Stoke's formula) with the contribution obtained from the separate
 triangles $\{P_a, P_i, P_{i+1}\}$, and we translate the initial center
 of gravity along the face normal axis so as to obtain the same contribution.
 
-\subsubsection*{Cell Centers%
+\subsection*{Cell Centers%
                \label{sec:geo_quant.cdgcel}}
 
 If we consider that in theory, the Finite Volume method uses constant
@@ -157,7 +149,7 @@ We see here that the vertex-based algorithm tends to increase
 non-orthogonality of faces, compared to the present
 face-based algorithm.
 
-\subsection*{Conforming Joining\label{sec:join}}
+\section*{Conforming Joining\label{sec:join}}
 
 The use of non conforming meshes is one of \CS's key features, and
 the associated algorithms constitute the most complex part of the
@@ -198,7 +190,7 @@ splits the larger face into pieces that do not contain holes.
 \label{fig:algo.join.possible}
 \end{figure}
 
-\subsubsection*{Robustness Factors%
+\subsection*{Robustness Factors%
                \label{sec:join.robust}}
 
 We have sought to build a joining algorithm that could function with
@@ -237,13 +229,13 @@ The algorithm must not leave gaps where none are desired.
 
 \end{enumerate}
 
-\subsubsection*{Basic Principle\label{sec:join.principe}}
+\subsection*{Basic Principle\label{sec:join.principe}}
 
 Let us consider two surfaces to join, as in figure \ref{fig:algo.join.curv}:
 We seek to determine the intersections of the edges of the mesh faces,
 and to split these edges at those intersections, as shown on figure
 \ref{fig:algo.join.curv2}. We will describe more precisely what we
-mean by ``intersection'' of two edges in a later subsection, as
+mean by ``intersection'' of two edges in a later section, as
 the notion involves spanning of small gaps in our case.
 
 \begin{figure}[!h]
@@ -289,7 +281,7 @@ All that is required at this stage is to merge those two sub-faces,
 conserving the properties of both. The merged sub-face thus belongs to
 two cells, and becomes an internal face. The joining is thus finalized.
 
-\subsubsection*{Simplification of Face Joinings\label{sec:join.simplif}}
+\subsection*{Simplification of Face Joinings\label{sec:join.simplif}}
 
 For a finite-volume code such as \CS, it is best that faces belonging
 to one same cell have neighboring sizes. This is hard to ensure
@@ -326,7 +318,7 @@ After simplification, we have the following situation:
 \label{fig:algo.join.simpl2}
 \end{figure}
 
-\subsubsection*{Processing\label{sec:join.process}}
+\subsection*{Processing\label{sec:join.process}}
 
 The algorithm's starting point is the search for intersections
 of edges belonging to the faces selected for joining. In 3D, we
@@ -404,7 +396,7 @@ intersection. These cases are shown on figure
 \label{fig:algo.join.edgeint_type}
 \end{figure}
 
-\subsubsection*{Problems Arising From the Merging of Two Neighboring Vertices
+\subsection*{Problems Arising From the Merging of Two Neighboring Vertices
                 \label{sec:join.pb_merge}}
 
 If we have determined that a vertex $V_1$ should be merged with a
@@ -476,7 +468,7 @@ with another intersection.
 \label{fig:algo.merging.pb_3}
 \end{figure}
 
-\subsubsection*{Algorithm Optimization\label{sec:join.optim}}
+\subsection*{Algorithm Optimization\label{sec:join.optim}}
 
 Certain factors influence both memory and CPU requirements. We always
 try to optimize both, with a slight priority regarding memory
@@ -499,7 +491,7 @@ is built. Assigning the global ids of the matching faces to the bounding boxes
 ensures the search results are usable independently of the distribution
 across MPI ranks.
 
-\subsubsection*{Influence on mesh quality\label{sec:join.quality}}
+\subsection*{Influence on mesh quality\label{sec:join.quality}}
 
 It is preferable for a FV solver such as \CS that the mesh be as
 ``orthogonal'' as possible (a face is perfectly orthogonal when the
@@ -594,7 +586,7 @@ The second stage consists of flipping edges so that the final
 triangulation is constrained Delaunay, which leads to a
 more regular triangulation.
 
-\subsection*{Initial triangulation\label{sec:triangle_ini}}
+\section*{Initial triangulation\label{sec:triangle_ini}}
 
 \begin{figure}[!h]
 \centerline{
@@ -625,7 +617,7 @@ with $P_5$, that is $(P_0, P_3, P_5)$.
 Once this triangle is removed, the remaining polygon is a triangle,
 and its handling is trivial.
 
-\subsection*{Improving the Triangulation\label{sec:triangle_delaunay}}
+\section*{Improving the Triangulation\label{sec:triangle_delaunay}}
 
 We show on figures \ref{fig:algo.decoup_ex_1} and \ref{fig:algo.decoup_ex_2}
 two examples of a triangulation on similar polygons whose vertices are
@@ -714,7 +706,7 @@ principle is to mitigate the local defects by averaging
 the mesh quality. It moves vertices using an iterative
 process which is expected to converge to a mesh with better averaged 
 warping criteria.
-\subsection*{Warping criterion in \CS\label{sec:warping_criterion}}
+\section*{Warping criterion in \CS\label{sec:warping_criterion}}
 The warp face quality criterion in \CS represents the non coplanarity 
 in space of $N$ points $P_{i=1:N}$ $(N > 3)$.
 
@@ -731,7 +723,7 @@ $$\forall f \in \mathcal{M}, \qquad warp_{f} = 90 -
 \overrightarrow{P_{i}P_{i+1}},\overrightarrow{n_{f}})
 \right)\right)\frac{180}{\pi}$$
 
-\subsection*{Unwarping method\label{sec:unwarping_method}}
+\section*{Unwarping method\label{sec:unwarping_method}}
 The principle of unwarping algorithm is to move vertices in the midplane of the
 faces using an iterating process. At each iteration the algorithm tries to
 approach vertices from the midplane of the face without increasing the warping
@@ -758,7 +750,7 @@ Moreover, if a small and a large face are neighbours, the large face contributio
 imposes a too big displacement to the shared vertices and the warping criterion
 can be deteriorated.
 
-\subsubsection*{Displacements control\label{sec:unwarping_mvt}}
+\subsection*{Displacements control\label{sec:unwarping_mvt}}
 The weighting coefficients shown below allow us to reduce the conflicting
 contributions and equilibrate the contributions between small and large faces.
 \paragraph*{Face weighting}
@@ -822,7 +814,7 @@ warp_{f}}\lambda^{f_{j}}_{P_{i}},\; Md)
 \end{equation*}
 
 
-\subsubsection*{Stop criterion\label{sec:unwarping_stop}}
+\subsection*{Stop criterion\label{sec:unwarping_stop}}
 The algorithm automatically stops according to the warp face criterion.
 
 \paragraph*{$1^{st}$ case: the algorithm converges}
@@ -844,7 +836,7 @@ The obtained mesh is the result of the $(i-1)^{th}$ iteration.
 \paragraph*{$3^{rd}$ case: the maximum number of iterations is reached}
 The algorithm stops after $N_{max}$ iterations ($51$ by default in \CS). 
 
-\subsubsection*{Specific treatment for boundary faces
+\subsection*{Specific treatment for boundary faces
 \label{sec:unwarping_border}}
 The unwarping algorithm may modify the mesh geometry. The function
 \texttt{fit\_by\_feature} allows to fix boundary faces according to a feature angle.
