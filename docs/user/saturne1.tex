@@ -61,9 +61,7 @@ elements) and may have structural non-conformities (hanging nodes).
 as shown on figure \ref{Fig_elements}:
 \begin{itemize}
 \item the Kernel module is the numerical solver
-\item the Preprocessor module is in charge of mesh import
-for parallel computing (optional, but highly recommended for parallel
-performance)\\
+\item the Preprocessor module is in charge of mesh import\\
 \end{itemize}
 
 \begin{figure}[!h]
@@ -118,7 +116,7 @@ The second thing is to prepare the computation directories. For instance, the st
 \begin{center}
 \texttt{code\_saturne create -s T\_JUNCTION}\
 \end{center}
-The mesh files should be copied in the directory \texttt{MESH} (but it may be selected from another directory, see \S\ref{prg_stepbystepcalculation}), and the Fortran user files necessary for the calculation in the directory \texttt{CASE1/SRC}.  Finally, the calculation data file \texttt{case\_name.xml} read by the GUI should be copied to the directory \texttt{CASE1/DATA}.
+The mesh files should be copied in the directory \texttt{MESH} (but they may be selected from another directory, see \S\ref{prg_stepbystepcalculation}), and the Fortran user files necessary for the calculation in the directory \texttt{CASE1/SRC}.  Finally, the calculation data file \texttt{case\_name.xml} read by the GUI should be copied to the directory \texttt{CASE1/DATA}.
 Once these steps completed, the user should go in the directory \texttt{CASE1/DATA} and type de command line \texttt{./SaturneGUI case\_name.xml} to load the calculation file into the interface. A window similar to fig.\ref{fig3_e1} will appear. Click on the heading ``Calculation management'', select the heading ``Prepare batch calculation'', see fig.\ref{fig43_e1}. After having chosen the number of processors, press ``start calculation'' to run the calculation.
 
 \begin{figure}[!ht]
@@ -147,7 +145,7 @@ following points in\\
 \texttt{CASE1/RESU/<YYYYMMDD-hhmm>}:
 \begin{list}{$\bullet$}{}
 \item  if the calculation stops in the pre-processor, the user should check for error messages in the file \texttt{preprocessor*.log}.
-\item if the problem is related to boundary conditions, the user should visualise the file \texttt{error.ensight} with {\em EnSight} or {\em Paraview},
+\item if the problem is related to boundary conditions, the user should visualise the file \texttt{error.ensight} with {\em EnSight} or {\em ParaView},
 \item if the calculation stops in the \CS core, the user should look for messages at the end of the files \texttt{listing} and \texttt{error*}. In addition, the user can track the following keywords in the listing. They are specific error signals:
   \begin{list}{-}{}
   \item  \texttt{SIGFPE}: a floating point exception occurred. It happens when there is a division by 0, when the calculation did not converge, or when a real number reached a value over $10^{300}$. Depending on the architecture \CS is running
@@ -171,13 +169,15 @@ In order to easily find the problem, it is also advised to use a debug version o
 %==================================
 \label{prg_environementCS}
 
-In order to use \CS, every user must define the following alias (in their \texttt{.bashrc}, 
+In order to use \CS, every user should define the following alias (in their \texttt{.bashrc}, 
 or equivalent, or \texttt{.alias} file, depending on the environment):
 \begin{center}
 \texttt{alias cs='\$\{install\_directory\}/bin/code\_saturne'}
 \end{center}
 where \texttt{install\_directory} is the base directory where
-\CS and its components have been installed\footnote{At EDF R\&D, \texttt{/home/saturne/Code\_Saturne/\verscs} is used}.
+\CS and its components have been installed\footnote{Without this step, using the absolte path is still possible}.
+
+This step may be skipped if \texttt{\$\{install\_directory\}} is in a standard location (such as \texttt{/usr} or \texttt{/usr/local}.
 
 
 %==================================
@@ -210,7 +210,7 @@ An optional study directory containing:
 \begin{list}{$\bullet$}{}
 \item A directory \texttt{MESH} containing the mesh(es)
       necessary for the study
-\item A directory \texttt{POST} for the potential post-processing routines (not
+\item A directory \texttt{POST} for the potential post-processing scripts (not
 used directly by the code)
 \item One or several calculation directories
 \end{list}
@@ -229,7 +229,7 @@ sent to \texttt{RESU} after a calculation are  placed in a subdirectory
 named after that run's ``id'', which is by default based on the run date
 and time, using the format: \texttt{YYYYMMDD-hhmm}.
 It is also possible to force a specific run id, using the \texttt{--id}
-option to \texttt{code\_saturne run}.
+option of \texttt{code\_saturne run}.
 \end{list}
 
 \noindent
@@ -658,10 +658,9 @@ accumulate and may hinder the correct operation of the machine.\\
 %==================================
 \label{prg_executionmodes}%
 As explained before, \CS is composed of two main modules, the Preprocessor and the
-Kernel. The Preprocessor reads the meshes.
+Kernel (solver). The Preprocessor reads the meshes.
 The resulting data is transfered to the Kernel through specific
-files, named \texttt{mesh\_input} and \texttt{domain\_number\_*}, where
-\texttt{*} is the number of processors used. In a standard calculation, the files
+files, named \texttt{mesh\_input}, or placed in a directory of that name when multiple meshes are imported. In a standard calculation, the files
 are not copied from the temporary execution directory to the results directory,
 as they have no interest for data analysis, and are considered ``internal''
 files, whose format or contents is not guaranteed not to change between \CS versions.
@@ -671,8 +670,6 @@ large amount of memory. The launch scripts therefore allows specifically
 choosing which modules to run, either through the GUI or through the
 \texttt{cs\_user\_scripts.py} file:
 
-\sloppy
-
 \hspace*{0.5cm} If a {mesh\_input} file or directory is defined (which may be
 either a {mesh\_input} from a previous Preprocessor run or a {mesh\_output}
 from a previous solver run), the script will copy or link it to
@@ -681,18 +678,30 @@ the execution directory, and the Preprocessor will not be run again.
 \hspace*{0.5cm} If \texttt{domain.exec\_kernel = False}, the Kernel will not
 be run. This is useful when only the mesh import stage is required.
 
-\fussy
+In a similar manner, the Kernel accepts several command-line options relative to execution mode, notably \texttt{domain.solver\_args\_kernel = '--preprocess'} or \texttt{'--quality'}, restricting the run to the preprocessing stages, or preprocessing stages augmented by mesh quality criteria computation. Whenever the preprocessing stages defined lead to an effective mesh modifiaction, a \texttt{mesh\_output} file is produced, which can be used directly as an input for a successive calculation.
 
-It is encouraged to separate the mesh import and calculation runs, as
-this speeds up calculations by not re-importing meshes for each run.
-For some configurations, such as IBM Blue Gene machines with different
-front-end an compute nodes, mesh import may be impossible on the
-compute nodes (as the Preprocessor does not run in parallel, and may require
-too much memory), so mesh import should be
-run separately on the front-end nodes, while later calculation stages
-should be run on compute nodes.
+The GUI presents the range of possibilities as 4 execution modes:
 
-Note also that if the code was built only with a serial partitioning library,
+\begin{list}{$\bullet$}{}
+
+\item {\bf mesh import}: the Preprocessor is run to transform one or more meshes into an internal \texttt{mesh\_input} file (or directory in case of multiple meshes).
+
+\item {\bf mesh preprocessing}: the Kernel is run in preprocessing mode, so as to handle all mesh modification operations, such as joining, periodicity, smoothing, etc. If a \texttt{mesh\_input} file or directory is provided, it is used directly. Otherwise, mesh import is run first.
+
+\item {\bf mesh quality criteria}: similar to preprocessing, with the addition of mesh quality criteria computation, and postprocessing output of those criteria. Some additional mesh consistency checks ae also run.
+
+\item {\bf standard}: this includes preprocessing, followed by a standard computation.
+
+\end{list}
+
+Note that to allow preprocessing in multiple passes, all defined preprocessing operations are run even on previously preprocessed meshes. In most cases, those will not produce additional changes (such as joining already joined meshes), but in the case of mesh smoothing, they might lead to small changes. So when using a previously preprocessed mesh it is recommended not to define any preprocessing stage.
+
+It is encouraged to separate the preprocessing and calculation runs, as
+this not only speeds up calculations, but also ensures that the mesh is identical, regardless of the architecture or number of processors it is run on. Indeed, when running the same pre-processing stages such as mesh joining on a different machien or a different number of processors, very minor floating-point truncation errors may lead to very slightly different preprocessed meshes.
+
+Note also that mesh partitioning is done directly by the Kernel. Depending on the partitioning algorithm used, a partition map (\texttt{partition\_output/domain\_number\_*}) may be output, allowing the use of the same partitioning in an ulterior calculation. By default, this file is output when using graph-based partitioners, which may use randomization and do not guarantee a reproducible output, and is not output when using a deterministic space-filling curve based partition.
+
+If the code was built only with a serial partitioning library,
 graph-based partitioning may best be run in a serial pre-processing stage.
 In some cases, serial partitioning might also provide better partitioning
 quality then parallel partitioning, so if both are available, comparing
@@ -704,7 +713,7 @@ expected to run for many iterations.
 %==================================
 \label{prg_control_file}%
 During a calculation, it is possible to change the limit time step number
-(\texttt{ntmabs}) specified through the Interface or in \texttt{cs\_user\_parameters.f90}.
+(\texttt{ntmabs}) specified through the GUI or in \texttt{cs\_user\_parameters.f90}.
 To do so, a file named \texttt{control\_file} must be placed in the
 execution directory (see \S\ref{prg_temporarydirectory}).
 This file must contain a line indicating the value of the new limit
@@ -717,8 +726,8 @@ way whenever they wish.
 
 The \texttt{control\_file} may also contain a few other commands:
 
-\begin{tabular}[top]{|p{8.5cm}%
-                     |>{\PreserveBackslash\raggedright\hspace{0pt}}p{10.5cm}|}
+\begin{tabular}[top]{|p{6.5cm}%
+                     |>{\PreserveBackslash\raggedright\hspace{0pt}}p{8.5cm}|}
 \hline
 \texttt{max\_time\_step}                   & $<$time\_step\_number$>$ \\
 \texttt{max\_time\_value}                  & $<$time\_value$>$ \\
@@ -755,39 +764,25 @@ If no case name is given, a default case directory called \texttt{CASE1} is
 created.
 
 \noindent
-\texttt{code\_saturne~create --case DEBIT3 --case DEBIT4}\\
+\texttt{code\_saturne~create --case Flow3 --case Flow4}\\
 executed in the directory \texttt{STUDY} adds the case directories
-\texttt{DEBIT3} and \texttt{DEBIT4}.
+\texttt{Flow3} and \texttt{Flow4}. Whenever multiple cases are created simultaneously, it is assumed they may be coupled, so a \texttt{runcase\_coupling} file and \texttt{RESU\_COUPLING} directory are also created.
 
 In the directory \texttt{DATA}, the \texttt{code\_saturne~create} command
-places a subdirectory \texttt{THCH} containing examples of thermochemical data
-files used for pulverised coal combustion,
-gas combustion or electric arc. The file to be used for the calculation must be
-copied directly in the \texttt{DATA} directory and its name must be referenced
-in the launch script in the variable THERMOCHEMISTRY\_DATA. All other files in
-the \texttt{DATA} or in the \texttt{THCH} will be ignored.\\
+places a subdirectory \texttt{REFERENCE} containing examples of thermochemical data files used for pulverised coal combustion, gas combustion, electric arcs, or a meteo profile. The file to be used for the calculation must be copied directly in the \texttt{DATA} directory and its name may either need to beunchanged, or be referenced using the GUI or using the \texttt{usppmo} subroutine in \texttt{cs\_user\_parameters.f90}. As a rule of thumb, all files in \texttt{DATA} except for \texttt{SaturneGUI} are copied, but subdirectories are not.\\
 The \texttt{code\_saturne~create} command also places in the directory
 \texttt{DATA} the launch script for the Graphical User Interface:
 \texttt{SaturneGUI}.
 
-
 In the directory \texttt{SRC}, the \texttt{code\_saturne~create} command creates a
 subdirectory \texttt{REFERENCE} containing all the available user subroutines,
-classified by module type:  \texttt{base},
-\texttt{cfbl}, \texttt{cogz}, \texttt{cplv}, \texttt{elec}, \texttt{fuel},
-\texttt{lagr}, \texttt{pprt} and \texttt{rayt} and the subdirectory \texttt{EXAMPLES} 
-containing examples of user subroutines.
+and the subdirectory \texttt{EXAMPLES} containing examples of user subroutines.
 Only the user subroutines placed directly under
 the directory \texttt{SRC} will be considered. The others will be ignored.
 
-In the directory \texttt{SCRIPTS}, the \texttt{code\_saturne~create} command copies and
-pre-fills an example of the launch script: \texttt{runcase}.
-The study, case and user name are filled
-automatically in the launch script, as are the paths leading to the
-different directories. Other parameters must be specified in the script
-(see \S\ref{prg_runcase}),
-especially the mesh file(s) to use, but everything can be specified
-through the Graphical Interface.
+In the directory \texttt{SCRIPTS}, the \texttt{code\_saturne~create} command copies an example of the launch script: \texttt{runcase}.
+The XML file may be specified in the script (see \S\ref{prg_runcase}),
+and using the GUI sets it automatically.
 
 \smallskip \noindent
 
@@ -834,10 +829,11 @@ other than MED or CGNS, which use specific external libraries) on most machines.
 \subsubsection{Formats supported for input\label{sec:formats_in}}
 %==================================
 
-\subsubsubsection{NOPO/\simail (INRIA/SIMULOG)%
+\subsubsubsection{NOPO/\simail (INRIA/Distene)%
 \label{fmtdesc:des}}
 
-This format is output by \simail. We do not
+This format is output by \simail, which was used heavily at EDF up until
+a few years ago. We do not
 currently handle cylindrical or spherical coordinates, but it seems that
 \simail always outputs meshes in Cartesian coordinates, even if points
 have been defined in another system. Most ``classical'' element types
@@ -1081,14 +1077,11 @@ partial values), assigning materials to elements, defining rigid
 motion, or defining per-processor mesh parts with ghost cells for
 parallel runs. Note that some libraries allowing direct \ensightg support
 do not necessarily support the whole format specification.
-Especially, VTK does not support material types, and has only recently
-added support for polyhedral elements in \ensightg files (interpreted
-as convex point sets in \paraview versions 2.4 to 2.8, and as true
-polyhedra starting with \paraview version 2.10).
+Especially, VTK does not support material types.
 Also, both \ensightg (8.2 and above) and VTK allow for automatic distribution,
 reducing the usefulness of pre-distributed meshes with per-processor files.
 
-Note than when using ParaView, if multiple parts (i.e. meshes) are
+Note than when using \paraview, if multiple parts (i.e. meshes) are
 present in a give case, using the ``Extract Blocks'' filter is
 required to separate those parts and obtain a proper visualization.
 The VisIt software does not seem to handle multiple parts in an \ensight case,
@@ -1121,7 +1114,7 @@ Zone selection:    & possibility of defining element materials (not used), or
                      interpret part number as group name if vertex IDs are
                      given\\
 \hline
-Compatibility:     & files readable by \ensight 7.4 to 9.0, as well as tools
+Compatibility:     & files readable by \ensight 7.4 to 10.0, as well as tools
                      based on the \href{http://www.vtk.org}{\vtk} library,
                      especially \paraview\ (\url{http://www.paraview.org})\\
 \hline
@@ -1380,7 +1373,7 @@ The main options are:
 \begin{list}{$\bullet$}{}
 \item \texttt{--help}: gives a summary of the different command line options
 
-\item \texttt{<mesh>}: the last argumen is used to specify the name of the mesh file.
+\item \texttt{<mesh>}: the last argument is used to specify the name of the mesh file.
 The launch script automatically calls the Preprocessor for every
 mesh in the \texttt{MESHES[]} list specified by th user.
 
@@ -1465,9 +1458,9 @@ output of the processors of rank 1 to $N-1$ are directed to the files
 This option can be specified in the \texttt{domain.logging\_args} field
 of the user script.
 
-\item \texttt{-p xxx} or \texttt{--param xxx}: specifies the name of the GUI
+\item \texttt{-p <filename>} or \texttt{--param <filename>}: specifies the name of the GUI
 parameter file to use for the calculation.\\
-The value of \texttt{xxx} is to be defined by the \texttt{--param} option
+The value of \texttt{<filename>} is to be defined by the \texttt{--param} option
 of \texttt{code\_saturne run}, either directly or in the standard \texttt{runcase}
 script (the file will be searched for in the \texttt{data} directory, though
 an absolute path name may also be defined).
@@ -1548,7 +1541,7 @@ This file contains several Python functions:
 \label{prg_gui}%
 A Graphical User Interface is available with \CS.
 This Interface creates or reads an XML file according to
-a specific \CS syntax which is then interpreted by the code.
+a specific \CS schema which is then interpreted by the code.
 
 In version \verscs, the Graphical Interface manages calculation parameters,
 standard initialisation values and boundary
@@ -1590,7 +1583,7 @@ The Graphical User Interface is launched with the \texttt{./SaturneGUI} command
 in the directory \texttt{DATA}. The first step is
 then to load an existing parameter file (in order to modify it) or to
 open a new one. The headings to be filled for a standard calculation are the
-followings:
+following:
 
 \begin{list}{-}{}
 \item Identity and paths: definition of the calculation directories
@@ -1613,11 +1606,12 @@ followings:
       the use of a formulae interpreter.
 
 \item Volume conditions: initialisation of the variables, and definition of
-      the zones where to apply head loss.
+      the zones where to apply head losses or source terms.
 
 \item Boundary conditions: definition of the boundary conditions for
       each variable. The colors of the boundary faces may be read
-      directly from a ``listing'' file created by the Preprocessor.
+      directly from a ``preprocessor.log*'' files created by the \pcs
+      or a ``listing'' file from a previous Kernel run.
 
 \item Numerical parameters: number and type of time step, advanced parameters
       for the numerical solution of the equations.
@@ -1642,11 +1636,10 @@ up of some simple calculations with the \CS Interface.
 
 To launch \CS using an XML parameter file,
 the name of the file must
-be given to the variable \texttt{PARAM} in the launch script (see
-\S\ref{prg_runcase}). When the launch
+be given using the \texttt{--param} option of \texttt{code\_saturne run} in
+the launch script (see \S\ref{prg_runcase}). When the launch
 script is edited from the Interface (Calculation management $\rightarrow$
-Prepare batch analysis), the PARAM section is filled automatically as are the
-other parameters specified through the Interface.
+Prepare batch analysis), this option is set automatically.
 
 %==================================
 \subsection{User subroutines}
@@ -2561,7 +2554,10 @@ Modules containing user arrays accessible from all user subroutines may
 be defined in the \texttt{user\_modules.f90} file. This file is
 compiled before any other Fortran user file, to ensure modules
 may be acessed in other user subroutines using the \texttt{use <module>}
-construct.
+construct. It may contain any routines or variables the user needs,
+and contains no predefined routines or variables (i.e. the only
+specificity of this file is that a file with this name is compiled before
+all others).
 
 %==================================
 \subsubsubsection{Parallelism and periodicity}
@@ -2744,7 +2740,7 @@ rather than a classical boundary condition.
 Some particular points should be reminded:
 \begin{list}{-}{}
 \item Periodicity can also work when the periodic boundaries are meshed
-      differently (periodicity of non-conforming faces), {\it apart} from
+      differently (periodicity of non-conforming faces), {\it except} for
       the case of a 180 degree rotation periodicity with faces coupled
       on the rotation axis.
 \item rotation periodicity is incompatible with
@@ -3216,8 +3212,8 @@ as colors. Most tools allow only one color per face or element.
             are present \emph{and} vertex ids are given in an
             Ensight Gold file, the part number is interpreted as
             a color number by the Preprocessor.
-      \item The MED format allows integer ``attributes'', though
-            many tools working with this format ignore those
+      \item The MED 2.3 model allowed integer ``attributes'', though
+            many tools working with this format ignored those
             and only handle groups.
       \end{list}
 \item groups.
@@ -3358,9 +3354,9 @@ may thus lead to reduced performance.
 \section{Importing and Preprocessing Meshes}
 %==================================
 
-Importing and preprocessing meshes is done both by the
-\pcs module, which is used to import meshes, and using
-preprocessing functions of the code Kernel.
+Importing meshes is done by the \pcs module, while and preprocessing
+is done mainly by the code Kernel (except for element orientation
+checking, which is done by the \pcs).
 
 The \pcs module of \CS reads the
 mesh file(s) (under any supported format) and translates the necessary
@@ -3370,17 +3366,14 @@ When multiple meshes are used, the \pcs is called once per mesh,
 and each resulting output is added in a \texttt{mesh\_input}
 directory (instead of a single \texttt{mesh\_input} file).
 
-The executable of the \pcs module is \texttt{cs\_preprocess},
-and the most useful options and sub-options are described briefly here.
+The executable of the \pcs module is \texttt{cs\_preprocess}, and
+is normally called through the run script, so it is not in standard paths
+(it is at \texttt{<prefix>/libexec/code\_saturne/cs\_preprocess}).
+Its most useful options and sub-options are described briefly here.
 To obtain a complete and up-to-date list of options and environment
 variables, use the following command:
-\texttt{cs\_preprocess~-h} or \texttt{cs\_preprocess~--help}. Many options,
-such as this one, accept a short and a long version.
-
-For the main options, the launch script \texttt{runcase} contains
-corresponding variables, that are used to define options for the
-\pcs. This way, the user only has to define these variables
-and does not detailed knowledge of the \pcs command line.
+\texttt{cs\_preprocess~-h} or \texttt{cs\_preprocess~--help}.
+Many options, such as this one, accept a short and a long version.
 
 Nonetheless, it may be useful to call the \pcs manually
 in certain situations, especially for frequent verification when
@@ -3527,11 +3520,14 @@ The following optional libraries may be used:
 \item \med-file library. In its absence, \hyperref[fmtdesc:med]{\med}
       format is simply deactivated.
 
+\item libCCMIO library. In its absence, \hyperref[fmtdesc:ccm]{CCM}
+      format is simply deactivated.
+
 \item Read compressed files using Zlib. With this option, it is
       possible to diretly read mesh files compressed with a
       \emph{gzip} type algorithm and bearing a \emph{.gz} extension.
       This is limited to formats not already based on an external
-      library (i.e. it is not usable with CGNS or \med files),
+      library (i.e. it is not usable with CGNS, \med, or CCM files),
       and has memory and CPU time overhead, but may be practical.
       Without this library, files must be uncompressed before use.
 
@@ -3620,9 +3616,9 @@ intersection distance for a given vertex is based on the length of
 the shortest incident edge, multiplied by $r$. The maximum intersection
 at a given point along an edge is interpolated from that at its
 vertices, as shown on the left of figure \ref{fig_join_tolerance}; \\
-\texttt{lane} $c$ &
+\texttt{plane} $c$ &
 assigns the maximum angle between normals for two faces to be
-considered coplanar ($25$\degresC by default);
+considered coplanar ($25^{\circ}$ by default);
 this parameter is used in the second stage of the algorithm, to
 reconstruct conforming faces, as shown on the right of figure
 \ref{fig_join_tolerance}.\\
@@ -3679,11 +3675,14 @@ periodicities.
 The setting of these parameters is done in the user subroutine \texttt{cs\_user\_join} (called once). The user can specify the parameters used for the joining of different meshes. Below is given the list of the standard parameters which can me modified:
 \begin{list}{-}{}
 \item \texttt{fract}: the initial tolerance radius associated to each vertex is equal to the lenght of the shortest incident edge, multiplied by this fraction,
-\item \texttt{plane}: when subdividing faces, 2 faces are considered coplanar and may be joined if the angle between their unit normals (in degree) does not exceed this parameter,
+\item \texttt{plane}: when subdividing faces, 2 faces are considered coplanar and may be joined if the angle between their unit normals (in degrees) does not exceed this parameter,
 \item \texttt{iwarnj}: the associated verbosity level (debug level if over 3).
 \end{list}
 In the call of the function \texttt{cs\_join\_add}, a selection criteria for
 mesh faces to be joined is specified.
+
+The call to the function '\texttt{cs\_join\_set\_advanced\_param}' allows defining parameters not available through the GUI.
+
 The list of advanced modifiable parameters is given below:
 \begin{list}{-}{}
 \item \texttt{mtf}: a merge tolerance factor, used to locally modify the tolerance associated to each vertex before the merge step. Depending on its value, four scenarii are possible:
@@ -3716,13 +3715,12 @@ The following are advanced parameters used in the search algorithm for face inte
 \item \texttt{tmb}: the tree maximum boxes is the maximum number of bounding boxes (BB) which can be linked to a leaf of the tree (not necessary true for the deepest level),
 \item \texttt{tmr}: the tree maximum ratio. The building of the tree structure stops when the number of bounding boxes is superior to the product of \texttt{tmr} with the number of faces to locate. This is an efficient parameter to reduce memory consumption.
 \end{list}
-The call to the function '\texttt{cs\_join\_set\_advanced\_param}' allows defining parameters not available through the GUI.
 
 %==================================
 \subsubsection{Parameters for periodicity}
 %==================================
 
-Periodicities can be set directly in the Graphical User Interface (GUI) or using the user subroutine \texttt{cs\_user\_periodicity} (called once during the calculation initialisation). In both cases, the user can choose between 3 types of periodicities: translation, rotation, or mixed (see fig. \ref{fig:periodicities}).
+Periodicities can be set directly in the Graphical User Interface (GUI) or using the user function \texttt{cs\_user\_periodicity} (called once during the calculation initialisation). In both cases, the user can choose between 3 types of periodicities: translation, rotation, or mixed (see fig. \ref{fig:periodicities}).
 Then specific parameters must be set.
 
 \begin{figure}[!h]
@@ -3739,25 +3737,25 @@ As periodicity is an extension of mesh joining, all parameters (whether basic or
 \subsubsection{Modification of the mesh geometry}
 %==================================
 \noindent
-\textit{Subroutines called only once during the calculation initialisation.}
+\textit{Functions called only once during the calculation initialisation.}
 
-The user subroutine \texttt{cs\_user\_mesh\_input} allows a detailed
+The user function \texttt{cs\_user\_mesh\_input} allows a detailed
 selection of imported meshes read, reading files multiple times,
 applying geometric transformations, and renaming groups.
 
-The user subroutine \texttt{cs\_user\_mesh\_modify} may be used
+The user function \texttt{cs\_user\_mesh\_modify} may be used
 for advanced modification of the main \texttt{cs\_mesh\_t}} structure.
 
-{\em WARNING: Caution must be exercised when using this subroutine
+{\em WARNING: Caution must be exercised when using this function
 along with periodicity. Indeed, the periodicity parameters are not
 updated accordingly, meaning that the periodicity may be unadapted
 after one changes the mesh vertex coordinates. It is particularly
 true when one rescales the mesh. Rescaling should thus be done
 in a separate run, before defining periodicity.}
 
-The user subroutine \texttt{cs\_user\_mesh\_thinwall} allows
+The user function \texttt{cs\_user\_mesh\_thinwall} allows
 insertion of thin walls in the calculation mesh. Currently, this
-subroutine simply transforms the selected internal faces into boundary
+function simply transforms the selected internal faces into boundary
 faces, on which boundary conditions can (and must) be applied.
 
 Faces on each side of a thin wall will share the same vertices,
@@ -3769,7 +3767,7 @@ output mesh.
 \subsection{Mesh smoothing utilities}
 %==================================
 \noindent
-\textit{Subroutine called once only during the calculation initialisation.}
+\textit{Function called once only during the calculation initialisation.}
 
 The smoothing utilities may be useful when the calculation mesh has local
 defects. 
@@ -3780,7 +3778,7 @@ results quality.
 The user function \texttt{cs\_user\_mesh\_smoothe} allows to use different
 smoothing functions detailed below.
 
-{\em WARNING 1: Caution must be exercised when using this subroutine
+{\em WARNING 1: Caution must be exercised when using this function
 along with periodicity. Indeed, the periodicity parameters are not
 currently updated accordingly, meaning that the periodicity may be
 unadapted after one changes the mesh vertex coordinates. It is particularly
@@ -3914,7 +3912,7 @@ but this behavior is rare.
 \subsection{Initialisation of the main parameters}
 %==================================
 
-This operation is done in the Graphical User Interface (GUI) or by using the user subroutine \\ \texttt{cs\_user\_parameters.f90}.
+This operation is done in the Graphical User Interface (GUI) or by using the user subroutines in \\ \texttt{cs\_user\_parameters.f90}.
 In the GUI, the initialisation is performed by filling the parameters displayed in figs. \ref{gui_calculation_features} 
 to \ref{gui_output_profiles}. If the option 'Mobile mesh' is activated in fig. \ref{gui_mobile_mesh}, 
 please see Section \ref{sec:ALE} for more details. The headings filled for the initialisation of the main parameters 
@@ -5599,6 +5597,7 @@ mesh, or ``part'' created. The arguments of the function
                \item {\em EnSight Gold} ({\em EnSight} also accepted)
                \item {\em MED}
                \item {\em CGNS}
+               \item {\em CCM} (only for the full volume and boundary meshes)
          \end{list}
 The options are not case-sensitive, so {\em EnSight} or {\em CGNS} are valid, too.
        \item \texttt{fmt\_opts}: character string containing a list of
@@ -5725,7 +5724,7 @@ of the functions called are suppressed automatically.
 
 The additional variables to post-process on the defined meshes
 will be specified in the subroutine \texttt{usvpst} in the 
-\texttt{cs\_user\_postprocess\_var} file.
+\texttt{cs\_user\_postprocess\_var.f90} file.
 
 {\em WARNING In the parallel case, some meshes may not contain any
 local elements on a given processor. This is not a problem at all, as
@@ -5771,7 +5770,7 @@ use the following test:\\
 %==================================
 
 For the mesh parts defined using the GUI or in \texttt{cs\_user\_postprocess.c},
-the \texttt{usvpst} subroutine  of \texttt{cs\_user\_postprocess\_var} file
+the \texttt{usvpst} subroutine  of \texttt{cs\_user\_postprocess\_var.f90} file
 may be used to specify the variables to
 post-process (called for each ``part'', at every active time step of an
 associated ``writer'', see \texttt{cs\_user\_postprocess.c}.
@@ -5835,10 +5834,7 @@ The output of a given variable is generated by means of a call to the subroutine
 The user may refer to the example, which presents the different ways of
 generating an output of a variable.
 
-{\em WARNING: Apart from the time-independent variables, it is not
-recommended to generate the same variables at every call
-(corresponding to an active time step) for a given mesh, because the
-post-processing tool may have difficulties to deal with such a case. To
+{\em Note: To
 generate outputs of different variables on the same mesh with different
 frequencies, it is recommended to create an alias of this mesh and to
 associate it with a different ``writer'' using the GUI or in
@@ -5852,7 +5848,7 @@ The subroutine \texttt{cs\_user\_extra\_operations} is called at the end
 of every time step. It is used to print of modify any variable at the end
 of every time step.
 
-Several examples are given in te dircetory \texttt{EXAMPLES}:
+Several examples are given in the dircetory \texttt{EXAMPLES}:
 \begin{list}{-}{}
 \item Calculation of a thermal balance at  the boundaries and in the
       domain (including the mass source terms)
@@ -5865,8 +5861,8 @@ see fig. \ref{gui_output_profiles})
 
 \item Printing of a moment
 
-\item Utilisation of utility
-      subroutines useful in the case of a parallel calculation
+\item Usage of utility
+      subroutines in the case of a parallel calculation
       (calculation of a sum on the processors, of a maximum, ...)
 \end{list}
 
@@ -5899,7 +5895,7 @@ The interface and the subroutine \texttt{cs\_user\_parameters.f90} allow to mana
 ``automatic'' chronological record files in an autonomous way:
 position of the probes, printing frequency and related variables. The
 results are written in a different file for each variable. These files
-are written in {\em xmgrace} or {\em gnuplot}} format and contain the profiles corresponding to
+are written in text (readable by {\em xmgrace} or {\em gnuplot}}) or CSV format and contain the profiles corresponding to
 every probe. This type of output format may not be well adapted if, for
 instance, the number of probes is too high. The subroutine
 \texttt{ushist}, called at each time step, allows then to personalise the output format of the
@@ -7103,7 +7099,7 @@ consistent with the example of the intensity boundary conditions given when the 
 
 
 %==================================
-\subsection{Conjugate heat transfers}
+\subsection{Conjugate heat transfer}
 %==================================
 %========================================
 \subsubsection{Thermal module in a 1D wall}
@@ -7134,7 +7130,7 @@ defined as (\texttt{iscalt}$>0$).
 
 \bigskip
 
-This procedure  is called twice,on initialisation and again at each time step.
+This procedure  is called twice, at initialisation and again at each time step.
 
 \begin{list}{$\bullet$}{}
 \item The 1st call (initialisation) all the boundary faces that will be treated
@@ -7201,7 +7197,7 @@ The $3^{rd}$ call, done at each time step, allows to impose boundary conditions
 \subsubsection{Fluid-Thermal coupling with \syrthes}
 %==================================
 When the user wishes to couple \CS with \syrthes to include heat transfers, it can be 
-done in the Graphical User Interface (GUI) or in the
+done with the Graphical User Interface (GUI) or the
 \texttt{cs\_syrthes\_coupling} user function.
 In the GUI, to set such a coupling, a thermal scalar must be 
 selected first in the item ``Thermal scalar'' under the heading ``Thermophysical models''.
@@ -7221,7 +7217,7 @@ If the function \texttt{cs\_user\_syrthes\_coupling} is used, the user must
 specify the arguments passed to the '\texttt{cs\_syr\_coupling\_define}' function.
  These arguments are:
 \begin{list}{-}{}
- \item \texttt{syrthes\_name} is the matching \syrthes application name,
+ \item \texttt{syrthes\_name} is the matching \syrthes application name (useful only when more than one \syrthes and one \CS domain are present),
  \item \texttt{boundary\_criteria} is the surface selection criteria,
  \item \texttt{volume\_criteria} is the volume selection criteria,
  \item \texttt{projection\_axis}: ' ' if the user wishes to use a 3D standard coupling,
@@ -8096,23 +8092,21 @@ The arguments of '\texttt{cs\_sat\_coupling\_define}' are:
 %==================================
 
 \noindent
-\textit{???Subroutine called only once or at each iteration???.}
+\textit{Subroutine called only once}
 
 The subroutine \texttt{usaste} belongs to the module dedicated to external
  Fluid-Structure coupling with \textit{Code\_Aster}. Here one defines the boundary
  faces coupled with \textit{Code\_Aster} and the fluid forces components which are
  given to structural calculation. When using external coupling with \textit{Code\_Aster},
- structure number necessarily needs to be negative; the references of coupled faces being
+ structure numbers necessarily need to be negative; the references of coupled faces being
  i.e. -1, -2, etc...
 The subroutine performs the following operations:
 \begin{list}{-}{}
  \item '\texttt{getfbr}' is called to get a list of elements matching a 
-geometrical criterion or reference number then a colour (negative value) is associated
+geometrical criterion or reference number then a structure number (negative value) is associated
  to these elements.
  \item the value passed to \texttt{asddlf}, for user-chosen component, for every negative
- colour, defines the movement imposed to the external structure.
- \item the user specify with the value of \texttt{isyncp} if \CS and \textit{Code\_Aster}
- use synchronised chronological output or not.
+ structure number, defines the movement imposed to the external structure.
 \end{list}
 
 %==================================
