@@ -412,21 +412,21 @@ endif
 ! 4. Add the divergence of the thermal flux to the thermal transport equation
 !===============================================================================
 
-if ((ityturt(iscal).eq.2.or.ityturt(iscal).eq.3)) then 
+if ((ityturt(iscal).eq.2.or.ityturt(iscal).eq.3)) then
   allocate(divut(ncelet))
-  
+
   init = 1
-  
+
   call divmas &
   !==========
    ( ncelet , ncel   , nfac  , nfabor , init   , nfecra ,          &
      ifacel , ifabor ,                                             &
      thflxf , thflxb , divut )
-  
+
   do iel = 1, ncel
     smbrs(iel) = smbrs(iel) - divut(iel)
   enddo
-  
+
   ! Free memory
   deallocate(divut)
 
