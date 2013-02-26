@@ -207,13 +207,13 @@ endif
 
 #if defined(_CS_LANG_FR)
 
- 1000 format('ATTENTION VARIABLE PHI'                             &
+ 1000 format('ATTENTION VARIABLE PHI',                            &
      'VALEUR MAXIMALE PHYSIQUE DE 2 DEPASSEE SUR ',I10,           &
      ' CELLULES')
 
 #else
 
- 1000 format('WARNING VARIABLE PHI'                               &
+ 1000 format('WARNING VARIABLE PHI',                              &
      'MAXIMUM PHYSICAL VALUE OF 2 EXCEEDED FOR ',I10,             &
      ' CELLS')
 

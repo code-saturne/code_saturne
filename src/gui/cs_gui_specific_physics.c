@@ -2461,7 +2461,7 @@ void CS_PROCF (uielrc, UIELRC) (const int    *const ncelet,
   char *crit = NULL;
 
   BFT_MALLOC(cells_list, *ncelet, int);
-  BFT_MALLOC(crit, 66, char*);
+  BFT_MALLOC(crit, 66, char);
 
   char cVal[10];
 
