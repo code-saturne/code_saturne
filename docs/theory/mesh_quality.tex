@@ -1,0 +1,110 @@
+%-------------------------------------------------------------------------------
+
+% This file is part of Code_Saturne, a general-purpose CFD tool.
+%
+% Copyright (C) 1998-2013 EDF S.A.
+%
+% This program is free software; you can redistribute it and/or modify it under
+% the terms of the GNU General Public License as published by the Free Software
+% Foundation; either version 2 of the License, or (at your option) any later
+% version.
+%
+% This program is distributed in the hope that it will be useful, but WITHOUT
+% ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+% FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+% details.
+%
+% You should have received a copy of the GNU General Public License along with
+% this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+% Street, Fifth Floor, Boston, MA 02110-1301, USA.
+
+%-------------------------------------------------------------------------------
+
+\nopagebreak
+
+\section*{Flagging of bad cells\label{sec:bad_cells}}
+
+No current meshing tool that we know of is capable of generating a complex mesh
+in reasonable time without some cells of bad ``quality''.
+To reduce the number of iterations required to obtain an acceptable mesh, we may
+try to flag the few bad quality cells that are considered almost unavoidable, so
+as to limit their impact on the solver's robustness.
+
+As of the current version of \CS, no specific treatment is done, but ``bad cells''
+are marked, so as as to allow the user to know where to expect issues with the mesh.
+
+By default, the mesh quality is inspected at the very beginnig of every
+calculation. The estimated quality is defined by at least five criteria:
+
+\begin{itemize}
+\item[$\bullet$] the cell's non-orthogonality,
+\item[$\bullet$] the cell's offset,
+\item[$\bullet$] the cell's distorsion (or least-squares gradient criteria),
+\item[$\bullet$] the cell's volume ratio,
+\item[$\bullet$] ``guilt by association'',
+\item[$\bullet$] and possibly supplementary user criteria.
+\end{itemize}
+
+Supplementary user criteria will not be discussed here but an example of how to
+define them is provided in the user subroutine \texttt{cs\_user\_mesh.c}.\\
+
+As a rule of thumb users need to be aware that bad cells could lead to a
+degradation of the solution quality, or worse, to a failed calculation.
+Generally, a cell quality is degraded by non-conforming joining operations, especially
+when joined cells have different sizes or thicknesses, but even painstakingly
+built block-structured meshes may have cells of bad quality when they involve
+a combination of warping, anisotropy and refinement variation.
+
+\subsection*{Cell non-orthogonality}
+
+For a finite volume solver, the mesh cells should be as ``orthogonal'' as
+possible. Consequently, the compliance with this criterion is of particular
+interest in order to avoid the degradation of the solution quality.\\
+A cell's non-orthogonality relative to a face is evaluated as:
+\[Q_{ortho} = \frac{\vec{d}.\vec{S}}{||\vec{d}||~||\vec{S}||}\]
+where \(\vec{d}\) is a distance vector between two consecutive cell centers and
+\(\vec{S}\) is the surface vector normal to the face.\\
+Orthogonal cells have a value of \(Q_{ortho}\) which tends towards $1.0$.
+Therefore, a cell is flagged bad if \(Q_{ortho} < 0.1\) for any of its faces.
+
+\subsection*{Cell offset}
+
+A cell's offset (relative to a face) is evaluated in a manner consistent with
+iterative gradient recontruction:
+\[Q_{offset} = 1 - \left(\frac{|\vec{OF}.\vec{S}|}{V}\right)^{1/3}\]
+where \(S\) is the cell's volume, \(\vec{S}\) is the surface normal to the face, and
+\(\vec{OF}\) is the difference between the face's center and its
+intersection with the segment joining adjacent cell centers.
+
+Orthogonal cells have a value of \(Q_{offset}\) which tends towards $1.0$.
+Therefore, a cell is flagged bad if \(Q_{offset} < 0.1\) for any of its faces.
+
+\subsection*{Cell distorsion}
+
+This criterion evaluates a distorsion level based on least squares gradient
+computation. As a first step, the geometric matrix containing information on distance
+vectors between neighboring cells is built (see the construction of the C matrix
+in the least squares gradient computation for more details). In a second step,
+the matrix's eigenvalues are estimated using a Jacobi transformation method.
+The min/max eigenvalues ratio is used as the cell's distorsion criteria:
+\[Q_{LSQ} = \frac{min(|C_{egv}|)}{max(|C_{egv}|)}\]
+where \(C_{egv}\) are the eigenvalues of the geometric matrix build according to
+the least squares gradient computation.\\
+Cubic cells have a value of \(Q_{LSQ}\) which tends towards $1.0$.
+Therefore, a cell is flagged bad if \(Q_{LSQ} < 0.1\).
+
+\subsection*{Cell volume ratio}
+
+A cell's volume ratio criteria gives an estimation of cell's caracteristic size
+continuity. It is evaluated as:
+\[Q_{vol} = min\left(\frac{V_{1}}{V_{2}}, \frac{V_{2}}{V_{1}}\right)\]
+where \(V_{1}\) and \(V_{2}\) are the respective volumes of two neighboring cells.\\
+Neighboring cells with the same size have a value of \(Q_{vol}\) which tends
+towards $1.0$.
+Therefore, two neighboring cells are flagged bad if \(Q_{vol} < 0.1^{2}\).
+
+\subsection*{Guilt by association}
+
+Once we have finished with determining which cells are flagged "bad", the last
+step is to mark initially ``good'' cells (according to the above criteria) as
+``bad'' when all their neighbors are flagged ``bad''.
