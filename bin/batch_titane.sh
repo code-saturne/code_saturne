@@ -1,6 +1,6 @@
 #
-# BATCH OPTIONS FOR CEA'S CCRT (Titane or Platine)
-# ================================================
+# BATCH OPTIONS FOR CEA CCRT's Titane cluster
+# ===========================================
 #
 #MSUB -n 2
 #MSUB -T 300
