@@ -2460,7 +2460,7 @@ void CS_PROCF (uielrc, UIELRC) (const int    *const ncelet,
   cs_lnum_t   n_selected_faces = 0;
   cs_lnum_t  *selected_faces = NULL;
 
-  BFT_MALLOC(crit, 66, char*);
+  BFT_MALLOC(crit, 66, char);
 
   char cVal[10];
 
@@ -2484,7 +2484,7 @@ void CS_PROCF (uielrc, UIELRC) (const int    *const ncelet,
   BFT_MALLOC(selected_faces, cs_glob_mesh->n_i_faces, cs_lnum_t);
 
   cs_selector_get_i_face_list(crit,
-                             &n_selected_faces,
+                              &n_selected_faces,
                               selected_faces);
 
   for (int j=0; j < n_selected_faces; j++)
