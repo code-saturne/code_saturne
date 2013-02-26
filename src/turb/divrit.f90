@@ -258,6 +258,8 @@ if (ityturt(iscal).ne.3) then
     !  Turbulent time-scale (constant in AFM)
     if (iturt(iscal).eq.20) then
       xtt = xk/xe
+    else
+      xtt = xk/xe
     endif
 
     ! Compute thermal flux u'T'
@@ -342,8 +344,8 @@ if (ityturt(iscal).ne.3) then
     coefat , coefbt ,                                     &
     thflxf , thflxb )
 
-  deallocate (coefat)
-  deallocate (coefbt)
+  deallocate(coefat)
+  deallocate(coefbt)
   deallocate(w1)
 
 !===============================================================================
@@ -410,23 +412,28 @@ endif
 ! 4. Add the divergence of the thermal flux to the thermal transport equation
 !===============================================================================
 
-allocate(divut(ncelet))
+if ((ityturt(iscal).eq.2.or.ityturt(iscal).eq.3)) then 
+  allocate(divut(ncelet))
+  
+  init = 1
+  
+  call divmas &
+  !==========
+   ( ncelet , ncel   , nfac  , nfabor , init   , nfecra ,          &
+     ifacel , ifabor ,                                             &
+     thflxf , thflxb , divut )
+  
+  do iel = 1, ncel
+    smbrs(iel) = smbrs(iel) - divut(iel)
+  enddo
+  
+  ! Free memory
+  deallocate(divut)
 
-init = 1
-
-call divmas &
-!==========
- ( ncelet , ncel   , nfac  , nfabor , init   , nfecra ,          &
-   ifacel , ifabor ,                                             &
-   thflxf , thflxb , divut )
-
-do iel = 1, ncel
-  smbrs(iel) = smbrs(iel) - divut(iel)
-enddo
+endif
 
 ! Free memory
 deallocate(gradv)
-deallocate(divut)
 deallocate(gradt)
 deallocate(thflxf)
 deallocate(thflxb)
