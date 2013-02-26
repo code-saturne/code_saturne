@@ -109,18 +109,55 @@ double precision, allocatable, dimension(:) :: vistot, viscf, viscb
 double precision, allocatable, dimension(:) :: coefap, coefbp
 double precision, allocatable, dimension(:) :: cofafp, cofbfp
 double precision, allocatable, dimension(:) :: whsad
+double precision, allocatable, dimension(:) :: xcpp
 
 !===============================================================================
 
 ! Memory allocation
 allocate(vistot(ncelet))
 allocate(viscf(nfac), viscb(nfabor))
+allocate(xcpp(ncelet))
 
 do iscal = 1, nscal
 
   ! Index for variable
   ivar = isca(iscal)
 
+  if (iscalt.gt.0) then
+    if (ivar.eq.isca(iscalt) .or. iscavr(iscal).eq.iscalt) then
+      if (abs(iscsth(iscalt)).eq.1) then
+        imucpp = 1
+      else
+        imucpp = 0
+      endif
+    else
+      imucpp = 0
+    endif
+  else
+    imucpp = 0
+  endif
+
+  if (imucpp.eq.0) then
+    do iel = 1, ncel
+      xcpp(iel) = 1.d0
+    enddo
+  elseif (imucpp.eq.1) then
+    if (icp.gt.0) then
+      do iel = 1, ncel
+        xcpp(iel) = propce(iel,ipproc(icp))
+      enddo
+   else
+      do iel = 1, ncel
+        xcpp(iel) = cp0
+      enddo
+    endif
+  endif
+
+  ! Handle parallelism and periodicity
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synsca(xcpp)
+  endif
+  !
   ! Index for Boundary conditions
   iclvar = iclrtp(ivar,icoef)
   iclvaf = iclrtp(ivar,icoeff)
@@ -134,7 +171,6 @@ do iscal = 1, nscal
   isstpp = isstpc(ivar)
   inc    = 1
   iccocg = 1
-  imucpp = 0
   idftnp = 1 !idften(ivar)!FIXME when activating GGDH
   ippvar = ipprtp(ivar)
   iwarnp = iwarni(ivar)
@@ -171,12 +207,12 @@ do iscal = 1, nscal
     if(ipcvsl.eq.0)then
       do iel = 1, ncel
         vistot(iel) = visls0(iscal)                                     &
-           + idifft(ivar)*max(propce(iel,ipcvst),zero)/sigmas(iscal)
+           + idifft(ivar)*xcpp(iel)*max(propce(iel,ipcvst),zero)/sigmas(iscal)
       enddo
     else
       do iel = 1, ncel
         vistot(iel) = propce(iel,ipcvsl)                                &
-           + idifft(ivar)*max(propce(iel,ipcvst),zero)/sigmas(iscal)
+           + idifft(ivar)*xcpp(iel)*max(propce(iel,ipcvst),zero)/sigmas(iscal)
       enddo
     endif
 
@@ -270,7 +306,7 @@ do iscal = 1, nscal
     coefa(1,iclvar) , coefb(1,iclvar) ,                            &
     coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
     propfa(1,iflmas), propfb(1,iflmab),                            &
-    viscf  , viscb  , rvoid  , rvoid  ,                            &
+    viscf  , viscb  , rvoid  , xcpp   ,                            &
     rvoid  , rvoid  ,                                              &
     propce(1,ipproc(iustdy(iscal))) )
 
@@ -281,6 +317,7 @@ enddo
 ! Free memory
 deallocate(viscf, viscb)
 deallocate(vistot)
+deallocate(xcpp)
 
 !----
 ! Formats
