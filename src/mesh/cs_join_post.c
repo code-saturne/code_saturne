@@ -439,10 +439,10 @@ cs_join_post_after_merge(cs_join_param_t          join_param,
   sel_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
                                             mesh_name,
                                             false, /* include families */
-                                            join_select->n_faces,
                                             0,
-                                            join_select->faces,
-                                            NULL);
+                                            join_select->n_faces,
+                                            NULL,
+                                            join_select->faces);
 
   cs_post_define_existing_mesh(sel_mesh_id,
                                sel_mesh,
