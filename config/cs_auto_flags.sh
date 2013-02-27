@@ -731,7 +731,7 @@ if test "x$cs_cxx_compiler_known" != "xyes" ; then
     cs_cxx_compiler_known=yes
 
     # Default compiler flags
-    cxxflags_default="-q64"
+    cxxflags_default="-q64 -qlanglvl=redefmac"
     cxxflags_default_opt="-O3"
     cxxflags_default_hot="-O3"
     cxxflags_default_dbg="-g"
