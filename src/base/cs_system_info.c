@@ -59,7 +59,7 @@
 #include <common/bgp_personality_inlines.h>
 #endif
 
-#if defined(__bgq__)
+#if defined(__bgq__) && defined(__xlc__)
 #include <spi/include/kernel/location.h>
 #endif
 
@@ -197,7 +197,7 @@ cs_system_info(void)
 #if defined(__bgp__)
   _BGP_Personality_t personality;
   Kernel_GetPersonality(&personality, sizeof(personality));
-#elif defined(__bgq__)
+#elif defined(__bgq__) && defined(__xlc__)
   Personality_t personality;
   Kernel_GetPersonality(&personality, sizeof(personality));
 #endif
@@ -241,7 +241,7 @@ cs_system_info(void)
 
 #if defined(__bgp__)
   ram = personality.DDR_Config.DDRSizeMB;
-#elif defined(__bgq__)
+#elif defined(__bgq__) && defined(__xlc__)
   ram = personality.DDR_Config.DDRSizeMB;
 #elif defined(__linux__) \
    && defined(HAVE_SYS_SYSINFO_H) && defined(HAVE_SYSINFO)
@@ -337,7 +337,7 @@ cs_system_info(void)
                  personality.Network_Config.Znodes);
     }
 
-#   elif defined(__bgq__)
+#   elif defined(__bgq__) && defined(__xlc__)
 
     {
       int a_torus, b_torus, c_torus, d_torus, e_torus;
