@@ -98,7 +98,9 @@ class TurbulenceAdvancedOptionsDialogView(QDialog, Ui_TurbulenceAdvancedOptionsD
         self.checkBoxGravity.setEnabled(True)
         self.comboBoxScales.setEnabled(True)
 
-        if default['model'] == 'Spalart-Allmaras':
+        if default['model'] == 'Spalart-Allmaras' or \
+           default['model'] == 'v2f-BL-v2/k' or \
+           default['model'] == 'Rij-EBRSM':
             self.modelScales = QtPage.ComboModel(self.comboBoxScales, 1, 1)
             self.modelScales.addItem(self.tr("One scale model"), '0')
             self.checkBoxGravity.setChecked(False)
