@@ -136,182 +136,6 @@ cs_renumber_i_faces_type_t _i_faces_algorithm = CS_RENUMBER_I_FACES_MULTIPASS;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Redistribute scalar values in case of renubering
- *
- * This is the case when the mesh is read in the obsolete 'slc' format.
- *
- * parameters:
- *   n_elts   <--  Number of elements
- *   renum    <--  Pointer to renumbering array (new -> old, 1 to n)
- *   val      <->  Pointer to array of vector values
- *   tmp_val  <->  Working array (size n_elts)
- *----------------------------------------------------------------------------*/
-
-static void
-_update_elt_scalar(cs_int_t         n_elts,
-                   const cs_int_t  *renum,
-                   cs_real_t       *val,
-                   cs_real_t       *tmp_val)
-{
-  cs_int_t  elt_id, tmp_elt_id;
-
-  for (elt_id = 0; elt_id < n_elts; elt_id++) {
-    tmp_elt_id = renum[elt_id] - 1;
-    tmp_val[elt_id] = val[tmp_elt_id];
-  }
-
-  memcpy(val, tmp_val, n_elts*sizeof(cs_real_t));
-}
-
-/*----------------------------------------------------------------------------
- * Redistribute vector values in case of renubering
- *
- * This is the case when the mesh is read in the obsolete 'slc' format.
- *
- * parameters:
- *   n_elts   <--  Number of elements
- *   renum    <--  Pointer to renumbering array (new -> old, 1 to n)
- *   val      <->  Pointer to array of vector values
- *   tmp_val  <->  Working array (size n_elts)
- *----------------------------------------------------------------------------*/
-
-static void
-_update_elt_vector(cs_int_t         n_elts,
-                   const cs_int_t  *renum,
-                   cs_real_t       *val,
-                   cs_real_t       *tmp_val)
-{
-  int  dim_id;
-  cs_int_t  elt_id, tmp_elt_id;
-
-  for (elt_id = 0; elt_id < n_elts; elt_id++) {
-    for (dim_id = 0; dim_id < 3; dim_id++) {
-      tmp_elt_id = renum[elt_id] - 1;
-      tmp_val[elt_id*3 + dim_id] = val[tmp_elt_id*3 + dim_id];
-    }
-  }
-
-  memcpy(val, tmp_val, n_elts*3*sizeof(cs_real_t));
-}
-
-/*----------------------------------------------------------------------------
- * Update cell quantities in case they were built before renumbering.
- *
- * This is the case when the mesh is read in the obsolete 'slc' format.
- *
- * parameters:
- *   mesh            <-> Pointer to global mesh structure
- *   mesh_quantities <-> Pointer to global mesh quantities structure
- *   renum           <-- Cells renumbering array (new -> old)
- *----------------------------------------------------------------------------*/
-
-static void
-_update_cell_quantities(cs_mesh_t             *mesh,
-                        cs_mesh_quantities_t  *mesh_quantities,
-                        const cs_int_t        *renum)
-{
-  cs_real_t  *tmp_val = NULL;
-
-  if (mesh == NULL && mesh_quantities == NULL)
-    return;
-
-  /* Allocate Work arrays */
-
-  BFT_MALLOC(tmp_val, mesh->n_cells*3, cs_real_t);
-
-  /* Cells */
-
-  if (renum != NULL) {
-
-    if (mesh_quantities->cell_cen != NULL)
-      _update_elt_vector(mesh->n_cells,
-                         renum,
-                         mesh_quantities->cell_cen,
-                         tmp_val);
-
-    if (mesh_quantities->cell_vol != NULL)
-      _update_elt_scalar(mesh->n_cells,
-                         renum,
-                         mesh_quantities->cell_vol,
-                         tmp_val);
-
-  }
-
-  /* Free Work array */
-
-  BFT_FREE(tmp_val);
-}
-
-/*----------------------------------------------------------------------------
- * Update face quantities in case they were build before renumbering.
- *
- * This is the case when the mesh is read in the obsolete 'slc' format.
- *
- * parameters:
- *   mesh            <-> Pointer to global mesh structure
- *   mesh_quantities <-> Pointer to global mesh quantities structure
- *   renum_i         <-- Interior faces renumbering array (new -> old)
- *   renum_b         <-- Boundary faces renumbering array (new -> old)
- *----------------------------------------------------------------------------*/
-
-static void
-_update_face_quantities(cs_mesh_t             *mesh,
-                        cs_mesh_quantities_t  *mesh_quantities,
-                        const cs_int_t        *renum_i,
-                        const cs_int_t        *renum_b)
-{
-  cs_real_t  *tmp_val = NULL;
-  cs_int_t  n_val_max = CS_MAX(mesh->n_i_faces, mesh->n_b_faces) * 3;
-
-  if (mesh == NULL && mesh_quantities == NULL)
-    return;
-
-  /* Allocate Work arrays */
-
-  BFT_MALLOC(tmp_val, n_val_max, cs_real_t);
-
-  /* Interior faces */
-
-  if (renum_i != NULL) {
-
-    if (mesh_quantities->i_face_normal != NULL)
-      _update_elt_vector(mesh->n_i_faces,
-                         renum_i,
-                         mesh_quantities->i_face_normal,
-                         tmp_val);
-
-    if (mesh_quantities->i_face_cog != NULL)
-      _update_elt_vector(mesh->n_i_faces,
-                         renum_i,
-                         mesh_quantities->i_face_cog,
-                         tmp_val);
-
-  }
-
-  /* Boundary Faces */
-
-  if (renum_b != NULL) {
-
-    if (mesh_quantities->b_face_normal != NULL)
-      _update_elt_vector(mesh->n_b_faces,
-                         renum_b,
-                         mesh_quantities->b_face_normal,
-                         tmp_val);
-
-    if (mesh_quantities->b_face_cog != NULL)
-      _update_elt_vector(mesh->n_b_faces,
-                         renum_b,
-                         mesh_quantities->b_face_cog,
-                         tmp_val);
-
-  }
-
-  /* Free Work arrays */
-
-  BFT_FREE(tmp_val);
-}
-
-/*----------------------------------------------------------------------------
  * Redistribute family (group class) ids in case of renubering
  *
  * This is the case when the mesh is read in the obsolete 'slc' format.
@@ -389,13 +213,11 @@ _update_global_num(size_t             n_elts,
  *
  * parameters:
  *   mesh            <-> Pointer to global mesh structure
- *   mesh_quantities <-> Pointer to global mesh quantities structure
  *   renum           <-- Cells renumbering array (new -> old)
  *----------------------------------------------------------------------------*/
 
 static void
 _cs_renumber_update_cells(cs_mesh_t             *mesh,
-                          cs_mesh_quantities_t  *mesh_quantities,
                           const cs_int_t        *renum)
 {
   cs_int_t  ii, jj, kk, face_id, n_vis, start_id, start_id_old;
@@ -500,10 +322,6 @@ _cs_renumber_update_cells(cs_mesh_t             *mesh,
 
   _update_global_num(n_cells, renum, &(mesh->global_cell_num));
 
-  /* Update cell quantities if present */
-
-  _update_cell_quantities(mesh, mesh_quantities, renum);
-
   /* Update parent cell numbers for post-processing meshes
      that may already have been built; Post-processing meshes
      built after renumbering will have correct parent numbers */
@@ -566,14 +384,12 @@ _update_face_vertices(cs_int_t         n_faces,
  *
  * parameters:
  *   mesh            <-> Pointer to global mesh structure
- *   mesh_quantities <-> Pointer to global mesh quantities structure
  *   renum_i         <-- Interior faces renumbering array (new -> old)
  *   renum_b         <-- Boundary faces renumbering array (new -> old)
  *----------------------------------------------------------------------------*/
 
 static void
 _cs_renumber_update_faces(cs_mesh_t             *mesh,
-                          cs_mesh_quantities_t  *mesh_quantities,
                           const cs_lnum_t       *renum_i,
                           const cs_lnum_t       *renum_b)
 {
@@ -650,13 +466,6 @@ _cs_renumber_update_faces(cs_mesh_t             *mesh,
 
     _update_global_num(n_b_faces, renum_b, &(mesh->global_b_face_num));
   }
-
-  /* Update associated face quantities if present */
-
-  _update_face_quantities(mesh,
-                          mesh_quantities,
-                          renum_i,
-                          renum_b);
 
   /* Update parent face numbers for post-processing meshes
      that may already have been built; Post-processing meshes
@@ -876,12 +685,10 @@ _display_histograms_double(int           n_vals,
  *
  * parameters:
  *   mesh            <->  Pointer to global mesh structure
- *   mesh_quantities <->  Pointer to global mesh quantities structure
  *----------------------------------------------------------------------------*/
 
 static void
-_renumber_for_threads_ibm(cs_mesh_t             *mesh,
-                          cs_mesh_quantities_t  *mesh_quantities)
+_renumber_for_threads_ibm(cs_mesh_t  *mesh)
 {
 }
 
@@ -2442,13 +2249,11 @@ _log_threading_info(const char  *elt_type_name,
  * Groups may then be built, containing only cells of a given color.
  *
  * parameters:
- *   mesh            <->  Pointer to global mesh structure
- *   mesh_quantities <->  Pointer to global mesh quantities structure
+ *   mesh  <->  Pointer to global mesh structure
  *----------------------------------------------------------------------------*/
 
 static void
-_renumber_for_threads(cs_mesh_t             *mesh,
-                      cs_mesh_quantities_t  *mesh_quantities)
+_renumber_for_threads(cs_mesh_t  *mesh)
 {
   int  update_c = 0, update_fi = 0, update_fb = 0;
   int  n_i_groups = 1, n_b_groups = 1;
@@ -2593,13 +2398,11 @@ _renumber_for_threads(cs_mesh_t             *mesh,
 
   if (renum_i != NULL || renum_b != NULL)
     _cs_renumber_update_faces(mesh,
-                              mesh_quantities,
                               renum_i,
                               renum_b);
 
   if (renum_c != NULL)
     _cs_renumber_update_cells(mesh,
-                              mesh_quantities,
                               renum_c);
 
   /* Now free remaining arrays */
@@ -2623,15 +2426,13 @@ _renumber_for_threads(cs_mesh_t             *mesh,
  *
  * parameters:
  *   mesh            <->  Pointer to global mesh structure
- *   mesh_quantities <->  Pointer to global mesh quantities structure
  *
  * returns:
  *   1 if renumbering was tried, 0 otherwise.
  *----------------------------------------------------------------------------*/
 
 static int
-_renumber_for_vectorizing(cs_mesh_t             *mesh,
-                          cs_mesh_quantities_t  *mesh_quantities)
+_renumber_for_vectorizing(cs_mesh_t  *mesh)
 {
   int _ivect[2] = {0, 0};
   cs_int_t   ivecti = 0, ivectb = 0;
@@ -2710,7 +2511,6 @@ _renumber_for_vectorizing(cs_mesh_t             *mesh,
       _renum_b = renum_b;
 
     _cs_renumber_update_faces(mesh,
-                              mesh_quantities,
                               _renum_i,
                               _renum_b);
 
@@ -2975,6 +2775,56 @@ _renumber_test(cs_mesh_t  *mesh)
               (unsigned long long)(face_errors[1]));
 }
 
+/*----------------------------------------------------------------------------
+ * Renumber mesh elements for vectorization or OpenMP depending on code
+ * options and target machine.
+ *
+ * Currently, only the legacy vectorizing renumbering is handled.
+ *
+ * parameters:
+ *   mesh  <->  Pointer to global mesh structure
+ *
+ *----------------------------------------------------------------------------*/
+
+static void
+_renumber_mesh(cs_mesh_t  *mesh)
+{
+  int retval = 0;
+  const char *p = NULL;
+
+  /* Initialization */
+
+  if (_cs_renumber_n_threads < 1)
+    _cs_renumber_n_threads = cs_glob_n_threads;
+
+  p = getenv("CS_RENUMBER");
+
+  if (p != NULL) {
+
+    if (strcmp(p, "off") == 0) {
+      bft_printf(_("\n Mesh renumbering off.\n\n"));
+      return;
+    }
+
+#if defined(HAVE_IBM_RENUMBERING_LIB)
+    if (strcmp(p, "IBM") == 0) {
+      bft_printf("\n Use IBM Mesh renumbering.\n\n");
+      _renumber_for_threads_ibm(mesh);
+      _renumber_test(mesh);
+      return;
+    }
+#endif
+
+  }
+
+  /* Try vectorizing first, then renumber for Cache / OpenMP */
+
+  retval = _renumber_for_vectorizing(mesh);
+
+  if (retval == 0)
+    _renumber_for_threads(mesh);
+}
+
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -3084,8 +2934,6 @@ cs_renumber_get_i_face_algorithm(void)
  * \brief Renumber mesh elements for vectorization or OpenMP depending on code
  * options and target machine.
  *
- * Currently, only the legacy vectorizing renumbering is handled.
- *
  * \param[in, out]  mesh             Pointer to global mesh structure
  * \param[in, out]  mesh_quantities  Pointer to global mesh quantities
  *                                   structure
@@ -3096,40 +2944,14 @@ void
 cs_renumber_mesh(cs_mesh_t             *mesh,
                  cs_mesh_quantities_t  *mesh_quantities)
 {
-  int retval = 0;
-  const char *p = NULL;
+  bool quantities_computed = false;
 
-  /* Initialization */
-
-  if (_cs_renumber_n_threads < 1)
-    _cs_renumber_n_threads = cs_glob_n_threads;
-
-  p = getenv("CS_RENUMBER");
-
-  if (p != NULL) {
-
-    if (strcmp(p, "off") == 0) {
-      bft_printf(_("\n Mesh renumbering off.\n\n"));
-      return;
-    }
-
-#if defined(HAVE_IBM_RENUMBERING_LIB)
-    if (strcmp(p, "IBM") == 0) {
-      bft_printf("\n Use IBM Mesh renumbering.\n\n");
-      _renumber_for_threads_ibm(mesh, mesh_quantities);
-      _renumber_test(mesh);
-      return;
-    }
-#endif
-
+  if (mesh_quantities != NULL) {
+    if (mesh_quantities->cell_cen != NULL)
+      quantities_computed = true;
   }
 
-  /* Try vectorizing first, then renumber for Cache / OpenMP */
-
-  retval = _renumber_for_vectorizing(mesh, mesh_quantities);
-
-  if (retval == 0)
-    _renumber_for_threads(mesh, mesh_quantities);
+  _renumber_mesh(mesh);
 
   if (mesh->i_face_numbering == NULL)
     mesh->i_face_numbering = cs_numbering_create_default(mesh->n_i_faces);
@@ -3139,6 +2961,9 @@ cs_renumber_mesh(cs_mesh_t             *mesh,
   _renumber_test(mesh);
 
   _log_bandwidth_info(mesh, _("volume mesh"));
+
+  if (quantities_computed)
+    cs_mesh_quantities_compute(mesh, mesh_quantities);
 }
 
 /*----------------------------------------------------------------------------*/

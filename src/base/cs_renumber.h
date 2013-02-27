@@ -136,8 +136,6 @@ cs_renumber_get_i_face_algorithm(void);
  * Renumber mesh elements for vectorization or OpenMP depending on code
  * options and target machine.
  *
- * Currently, only the legacy vectorizing renumbering is handled.
- *
  * parameters:
  *   mesh            <->  Pointer to global mesh structure
  *   mesh_quantities <->  Pointer to global mesh quantities structure
