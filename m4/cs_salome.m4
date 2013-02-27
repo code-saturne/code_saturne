@@ -212,7 +212,7 @@ if test "x$with_salome_kernel" != "xno" ; then
 
   CPPFLAGS="${CPPFLAGS} ${SALOME_KERNEL_CPPFLAGS}"
   LDFLAGS="${LDFLAGS} ${SALOME_KERNEL_LDFLAGS}"
-  LIBS="${LIBS} ${CALCIUM_LIBS}"
+  LIBS="${CALCIUM_LIBS} ${LIBS}"
 
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <calcium.h>]],
   			             [[int iret = cp_fin(0, 0);]])],

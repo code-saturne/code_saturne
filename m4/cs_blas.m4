@@ -118,7 +118,7 @@ if test "x$with_blas" != "xno" ; then
         fi
 
         LDFLAGS="${saved_LDFLAGS} ${BLAS_LDFLAGS}"
-        LIBS=" ${saved_LIBS} ${BLAS_LIBS}"
+        LIBS=" ${BLAS_LIBS} ${saved_LIBS}"
 
         AC_MSG_CHECKING([for smp ESSL BLAS])
         AC_LINK_IFELSE([AC_LANG_PROGRAM([],
@@ -141,7 +141,7 @@ if test "x$with_blas" != "xno" ; then
         fi
 
         LDFLAGS="${saved_LDFLAGS} ${BLAS_LDFLAGS}"
-        LIBS=" ${saved_LIBS} ${BLAS_LIBS}"
+        LIBS=" ${BLAS_LIBS} ${saved_LIBS}"
 
         AC_MSG_CHECKING([for ESSL BLAS])
         AC_LINK_IFELSE([AC_LANG_PROGRAM([],
@@ -197,7 +197,7 @@ if test "x$with_blas" != "xno" ; then
 
       CPPFLAGS="${saved_CPPFLAGS} ${BLAS_CPPFLAGS}"
       LDFLAGS="${saved_LDFLAGS} ${BLAS_LDFLAGS}${mkl_sub_lib}"
-      LIBS=" ${saved_LIBS} ${BLAS_LIBS}"
+      LIBS=" ${BLAS_LIBS} ${saved_LIBS}"
 
       AC_MSG_CHECKING([for threaded MKL BLAS])
       AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mkl_cblas.h>]],
@@ -225,7 +225,7 @@ if test "x$with_blas" != "xno" ; then
 
       CPPFLAGS="${saved_CPPFLAGS} ${BLAS_CPPFLAGS}"
       LDFLAGS="${saved_LDFLAGS} ${BLAS_LDFLAGS}${mkl_sub_lib}"
-      LIBS=" ${saved_LIBS} ${BLAS_LIBS}"
+      LIBS=" ${BLAS_LIBS} ${saved_LIBS}"
 
       AC_MSG_CHECKING([for MKL BLAS])
       AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mkl_blas.h>]],
@@ -254,7 +254,7 @@ if test "x$with_blas" != "xno" ; then
 
       CPPFLAGS="${saved_CPPFLAGS} ${BLAS_CPPFLAGS}"
       LDFLAGS="${saved_LDFLAGS} ${BLAS_LDFLAGS}"
-      LIBS=" ${saved_LIBS} ${BLAS_LIBS}"
+      LIBS=" ${BLAS_LIBS} ${saved_LIBS}"
 
       AC_MSG_CHECKING([for threaded ATLAS BLAS])
       AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <cblas.h>]],
@@ -275,7 +275,7 @@ if test "x$with_blas" != "xno" ; then
 
       CPPFLAGS="${saved_CPPFLAGS} ${BLAS_CPPFLAGS}"
       LDFLAGS="${saved_LDFLAGS} ${BLAS_LDFLAGS}"
-      LIBS=" ${saved_LIBS} ${BLAS_LIBS}"
+      LIBS=" ${BLAS_LIBS} ${saved_LIBS}"
 
       AC_MSG_CHECKING([for ATLAS BLAS])
       AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <cblas.h>]],
@@ -298,7 +298,7 @@ if test "x$with_blas" != "xno" ; then
 
       CPPFLAGS="${saved_CPPFLAGS} ${BLAS_CPPFLAGS}"
       LDFLAGS="${saved_LDFLAGS} ${BLAS_LDFLAGS}"
-      LIBS=" ${saved_LIBS} ${BLAS_LIBS}"
+      LIBS=" ${BLAS_LIBS} ${saved_LIBS}"
 
       AC_MSG_CHECKING([for threaded ACML BLAS])
       AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <acml.h>]],
@@ -319,7 +319,7 @@ if test "x$with_blas" != "xno" ; then
 
       CPPFLAGS="${saved_CPPFLAGS} ${BLAS_CPPFLAGS}"
       LDFLAGS="${saved_LDFLAGS} ${BLAS_LDFLAGS}"
-      LIBS=" ${saved_LIBS} ${BLAS_LIBS}"
+      LIBS=" ${BLAS_LIBS} ${saved_LIBS}"
 
       AC_MSG_CHECKING([for ACML BLAS])
       AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <acml.h>]],
@@ -344,7 +344,7 @@ if test "x$with_blas" != "xno" ; then
 
     CPPFLAGS="${saved_CPPFLAGS} ${BLAS_CPPFLAGS}"
     LDFLAGS="${saved_LDFLAGS} ${BLAS_LDFLAGS}"
-    LIBS=" ${saved_LIBS} ${BLAS_LIBS}"
+    LIBS=" ${BLAS_LIBS} ${saved_LIBS}"
 
     AC_MSG_CHECKING([for legacy C BLAS])
     AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <cblas.h>]],

@@ -76,7 +76,7 @@ if test "x$with_cgns" != "xno" ; then
   CGNS_LIBS="-lcgns"
   CPPFLAGS="${CPPFLAGS} ${CGNS_CPPFLAGS}"
   LDFLAGS="${LDFLAGS} ${CGNS_LDFLAGS} $HDF5_LDFLAGS"
-  LIBS="${LIBS} ${CGNS_LIBS} $HDF5_LIBS"
+  LIBS="${CGNS_LIBS} $HDF5_LIBS ${LIBS}"
 
   # Check that a header file exists and that the version is compatible
   #-------------------------------------------------------------------

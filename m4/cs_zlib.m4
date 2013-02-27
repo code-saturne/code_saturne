@@ -70,7 +70,7 @@ if test "x$with_zlib" != "xno" ; then
 
   CPPFLAGS="${CPPFLAGS} ${ZLIB_CPPFLAGS}"
   LDFLAGS="${LDFLAGS} ${ZLIB_LDFLAGS}"
-  LIBS="${LIBS} -lz"
+  LIBS="-lz ${LIBS}"
 
   AC_MSG_CHECKING([for Zlib])
   AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <zlib.h>]],

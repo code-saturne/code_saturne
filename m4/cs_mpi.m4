@@ -119,7 +119,7 @@ if test "x$with_mpi" != "xno" ; then
   AC_MSG_CHECKING([for MPI (MPI compiler wrapper test)])
   CPPFLAGS="$saved_CPPFLAGS $MPI_CPPFLAGS"
   LDFLAGS="$saved_LDFLAGS $MPI_LDFLAGS"
-  LIBS="$saved_LIBS $MPI_LIBS"
+  LIBS="$MPI_LIBS $saved_LIBS"
   AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
                  [[ MPI_Init(0, (void *)0); ]])],
                  [AC_DEFINE([HAVE_MPI], 1, [MPI support])
@@ -277,7 +277,7 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
           *)
             MPI_LIBS="-lmpich -lopa -lmpl -lrt -lpthread";;
         esac
-        LIBS="$saved_LIBS $MPI_LIBS"
+        LIBS="$MPI_LIBS $saved_LIBS"
         AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
                      [[ MPI_Init(0, (void *)0); ]])],
                      [AC_DEFINE([HAVE_MPI], 1, [MPI support])
@@ -291,7 +291,7 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
             *)
               MPI_LIBS="-lmpich -lopa -lmpl -lpthread";;
           esac
-          LIBS="$saved_LIBS $MPI_LIBS"
+          LIBS="$MPI_LIBS $saved_LIBS"
           AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
                        [[ MPI_Init(0, (void *)0); ]])],
                        [AC_DEFINE([HAVE_MPI], 1, [MPI support])
@@ -306,7 +306,7 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
         AC_MSG_CHECKING([for MPICH1)])
         # First try (simplest)
         MPI_LIBS="-lmpich $PTHREAD_LIBS"
-        LIBS="$saved_LIBS $MPI_LIBS"
+        LIBS="$MPI_LIBS $saved_LIBS"
         AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
                        [[ MPI_Init(0, (void *)0); ]])],
                        [AC_DEFINE([HAVE_MPI], 1, [MPI support])
@@ -315,7 +315,7 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
         if test "x$cs_have_mpi" = "xno"; then
           # Second try (with lpmpich)
           MPI_LIBS="-Wl,-lpmpich -Wl,-lmpich -Wl,-lpmpich -Wl,-lmpich"
-          LIBS="$saved_LIBS $MPI_LIBS"
+          LIBS="$MPI_LIBS $saved_LIBS"
           AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
                          [[ MPI_Init(0, (void *)0); ]])],
                          [AC_DEFINE([HAVE_MPI], 1, [MPI support])
@@ -334,7 +334,7 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
           *)
             MPI_LIBS="-lmpi -llam -lpthread";;
         esac
-        LIBS="$saved_LIBS $MPI_LIBS"
+        LIBS="$MPI_LIBS $saved_LIBS"
         AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
                        [[ MPI_Init(0, (void *)0); ]])],
                        [AC_DEFINE([HAVE_MPI], 1, [MPI support])
@@ -348,7 +348,7 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
             *)
               MPI_LIBS="-lmpi -llam -lutil -ldl -lpthread";;
           esac
-          LIBS="$saved_LIBS $MPI_LIBS"
+          LIBS="$MPI_LIBS $saved_LIBS"
           AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
                          [[ MPI_Init(0, (void *)0); ]])],
                          [AC_DEFINE([HAVE_MPI], 1, [MPI support])
@@ -365,7 +365,7 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
           mingw32)
             MPI_LIBS="-lmsmpi";;
         esac
-        LIBS="$saved_LIBS $MPI_LIBS"
+        LIBS="$MPI_LIBS $saved_LIBS"
         AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
                        [[ MPI_Init(0, (void *)0); ]])],
                        [AC_DEFINE([HAVE_MPI], 1, [MPI support])
@@ -382,7 +382,7 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
           MPI_LIBS="-lmpi $PTHREAD_LIBS"
         fi
         LDFLAGS="$saved_LDFLAGS $MPI_LDFLAGS"
-        LIBS="$saved_LIBS $MPI_LIBS"
+        LIBS="$MPI_LIBS $saved_LIBS"
         AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
                        [[ MPI_Init(0, (void *)0); ]])],
                        [AC_DEFINE([HAVE_MPI], 1, [MPI support])

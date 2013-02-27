@@ -78,7 +78,7 @@ if test "x$with_metis" != "xno" ; then
   CPPFLAGS="${CPPFLAGS} ${METIS_CPPFLAGS} ${MPI_CPPFLAGS}"
   LDFLAGS="${LDFLAGS} ${METIS_LDFLAGS} ${MPI_LDFLAGS}"
   METIS_LIBS="-lparmetis -lm"
-  LIBS="${LIBS} ${METIS_LIBS} ${MPI_LIBS}"
+  LIBS="${METIS_LIBS} ${MPI_LIBS} ${LIBS}"
 
   # Test for METIS headers
 
@@ -111,7 +111,7 @@ if test "x$with_metis" != "xno" ; then
     METIS_LIBS="-lmetis -lm"
     CPPFLAGS="${saved_CPPFLAGS} ${METIS_CPPFLAGS}"
     LDFLAGS="${saved_LDFLAGS} ${METIS_LDFLAGS}"
-    LIBS="${savedLIBS} ${METIS_LIBS}"
+    LIBS="${METIS_LIBS} ${savedLIBS}"
 
     AC_CHECK_LIB(metis, METIS_PartGraphKway, 
                  [ AC_DEFINE([HAVE_METIS], 1, [use METIS ])

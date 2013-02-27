@@ -136,7 +136,7 @@ if test "x$with_scotch" != "xno" ; then
     for cs_scotch_ladd in "$cs_scotch_l0" "$cs_scotch_l1" "$cs_scotch_l2" "$cs_scotch_l3" "$cs_scotch_l4" "$cs_scotch_l5" 
     do
       if test "x$cs_have_ptscotch" = "xno" ; then
-        LIBS="${saved_LIBS} ${SCOTCH_LIBS} ${cs_scotch_ladd} ${MPI_LIBS}"
+        LIBS="${SCOTCH_LIBS} ${cs_scotch_ladd} ${MPI_LIBS} ${saved_LIBS}"
         AC_LINK_IFELSE([AC_LANG_PROGRAM(
 [[#include <stdio.h>
 #include <stdint.h>
@@ -183,7 +183,7 @@ if test "x$with_scotch" != "xno" ; then
     for cs_scotch_ladd in "$cs_scotch_l0" "$cs_scotch_l1" "$cs_scotch_l2" "$cs_scotch_l3" "$cs_scotch_l4" "$cs_scotch_l5" 
     do
       if test "x$cs_have_scotch" = "xno" ; then
-        LIBS="${saved_LIBS} ${SCOTCH_LIBS} ${cs_scotch_ladd}"
+        LIBS="${SCOTCH_LIBS} ${cs_scotch_ladd} ${saved_LIBS}"
         AC_LINK_IFELSE([AC_LANG_PROGRAM(
 [[#include <stdio.h>
 #include <stdint.h>

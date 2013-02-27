@@ -94,7 +94,7 @@ if test "x$with_hdf5" != "xno" ; then
   HDF5_LIBS="-lhdf5 $PTHREAD_LIBS"
   
   LDFLAGS="${LDFLAGS} ${HDF5_LDFLAGS}"
-  LIBS="${LIBS} ${HDF5_LIBS}"
+  LIBS="${HDF5_LIBS} ${LIBS}"
 
   AC_CHECK_LIB(hdf5, H5Fopen, 
                [ AC_DEFINE([HAVE_HDF5], 1, [HDF5 file support])

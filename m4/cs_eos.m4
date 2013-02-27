@@ -75,7 +75,7 @@ if test "x$with_eos" != "xno" ; then
   EOS_LIBS="-lCCLanguageAPI -lCCEOSAPI"
   CPPFLAGS="${CPPFLAGS} ${EOS_CPPFLAGS}"
   LDFLAGS="${LDFLAGS} ${EOS_LDFLAGS}"
-  LIBS="${LIBS} ${EOS_LIBS}"
+  LIBS="${EOS_LIBS} ${LIBS}"
 
   # Check that EOS files exist
   AC_LANG_PUSH([C++])
