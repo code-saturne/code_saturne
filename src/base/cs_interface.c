@@ -4601,6 +4601,245 @@ cs_interface_set_sum(cs_interface_set_t  *ifs,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Update to maximum value for elements associated with an
+ * interface set.
+ *
+ * On input, the variable array should contain local contributions. On output,
+ * contributions from matching elements on parallel or periodic boundaries
+ * have been added.
+ *
+ * Only the values of elements belonging to the interfaces are modified.
+ *
+ * \param[in]       ifs        pointer to a fvm_interface_set_t structure
+ * \param[in]       n_elts     number of elements in var buffer
+ * \param[in]       stride     number of values (non interlaced) by entity
+ * \param[in]       interlace  true if variable is interlaced (for stride > 1)
+ * \param[in]       datatype   type of data considered
+ * \param[in, out]  var        variable buffer
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_interface_set_max(cs_interface_set_t  *ifs,
+                     cs_lnum_t            n_elts,
+                     cs_lnum_t            stride,
+                     bool                 interlace,
+                     cs_datatype_t        datatype,
+                     void                *var)
+{
+  int i;
+  cs_lnum_t j, k, l;
+  int stride_size = cs_datatype_size[datatype]*stride;
+  unsigned char *buf = NULL;
+
+  BFT_MALLOC(buf, cs_interface_set_n_elts(ifs)*stride_size, unsigned char);
+
+  if (stride < 2 || interlace)
+    cs_interface_set_copy_array(ifs,
+                                datatype,
+                                stride,
+                                true, /* src_on_parent */
+                                var,
+                                buf);
+
+  else
+    _interface_set_copy_array_ni(ifs,
+                                 datatype,
+                                 n_elts,
+                                 stride,
+                                 var,
+                                 buf);
+
+  /* Now increment values */
+
+  switch (datatype) {
+
+  case CS_CHAR:
+    for (i = 0, j = 0; i < ifs->size; i++) {
+      cs_interface_t *itf = ifs->interfaces[i];
+      char *v = var;
+      const char *p = (const char *)buf + j*stride;
+      if (stride < 2 || interlace) {
+        for (k = 0; k < itf->size; k++) {
+          cs_lnum_t elt_id = itf->elt_id[k];
+          for (l = 0; l < stride; l++)
+            v[elt_id*stride + l] = CS_MAX(v[elt_id*stride + l],
+                                          p[k*stride + l]);
+        }
+      }
+      else {
+        for (k = 0; k < itf->size; k++) {
+          cs_lnum_t elt_id = itf->elt_id[k];
+          for (l = 0; l < stride; l++)
+            v[elt_id + l*n_elts] = CS_MAX(v[elt_id + l*n_elts],
+                                          p[k*stride + l]);
+        }
+      }
+      j += itf->size;
+    }
+    break;
+
+  case CS_FLOAT:
+    for (i = 0, j = 0; i < ifs->size; i++) {
+      cs_interface_t *itf = ifs->interfaces[i];
+      float *v = var;
+      const float *p = (const float *)buf + j*stride;
+      if (stride < 2 || interlace) {
+        for (k = 0; k < itf->size; k++) {
+          cs_lnum_t elt_id = itf->elt_id[k];
+          for (l = 0; l < stride; l++)
+            v[elt_id*stride + l] = CS_MAX(v[elt_id*stride + l],
+                                          p[k*stride + l]);
+        }
+      }
+      else {
+        for (k = 0; k < itf->size; k++) {
+          cs_lnum_t elt_id = itf->elt_id[k];
+          for (l = 0; l < stride; l++)
+            v[elt_id + l*n_elts] = CS_MAX(p[k*stride + l],
+                                          v[elt_id + l*n_elts]);
+        }
+      }
+      j += itf->size;
+    }
+    break;
+
+  case CS_DOUBLE:
+    for (i = 0, j = 0; i < ifs->size; i++) {
+      cs_interface_t *itf = ifs->interfaces[i];
+      double *v = var;
+      const double *p = (const double *)buf + j*stride;
+      if (stride < 2 || interlace) {
+        for (k = 0; k < itf->size; k++) {
+          cs_lnum_t elt_id = itf->elt_id[k];
+          for (l = 0; l < stride; l++)
+            v[elt_id*stride + l] = CS_MAX(v[elt_id*stride + l],
+                                          p[k*stride + l]);
+        }
+      }
+      else {
+        for (k = 0; k < itf->size; k++) {
+          cs_lnum_t elt_id = itf->elt_id[k];
+          for (l = 0; l < stride; l++)
+            v[elt_id + l*n_elts] = CS_MAX(v[elt_id + l*n_elts],
+                                          p[k*stride + l]);
+        }
+      }
+      j += itf->size;
+    }
+    break;
+
+  case CS_INT32:
+    for (i = 0, j = 0; i < ifs->size; i++) {
+      cs_interface_t *itf = ifs->interfaces[i];
+      int32_t *v = var;
+      const int32_t *p = (const int32_t *)buf + j*stride;
+      if (stride < 2 || interlace) {
+        for (k = 0; k < itf->size; k++) {
+          cs_lnum_t elt_id = itf->elt_id[k];
+          for (l = 0; l < stride; l++)
+            v[elt_id*stride + l] = CS_MAX(v[elt_id*stride + l],
+                                          p[k*stride + l]);
+        }
+      }
+      else {
+        for (k = 0; k < itf->size; k++) {
+          cs_lnum_t elt_id = itf->elt_id[k];
+          for (l = 0; l < stride; l++)
+            v[elt_id + l*n_elts] = CS_MAX(v[elt_id + l*n_elts],
+                                          p[k*stride + l]);
+        }
+      }
+      j += itf->size;
+    }
+    break;
+
+  case CS_INT64:
+    for (i = 0, j = 0; i < ifs->size; i++) {
+      cs_interface_t *itf = ifs->interfaces[i];
+      int64_t *v = var;
+      const int64_t *p = (const int64_t *)buf + j*stride;
+      if (stride < 2 || interlace) {
+        for (k = 0; k < itf->size; k++) {
+          cs_lnum_t elt_id = itf->elt_id[k];
+          for (l = 0; l < stride; l++)
+            v[elt_id*stride + l] = CS_MAX(v[elt_id*stride + l],
+                                          p[k*stride + l]);
+        }
+      }
+      else {
+        for (k = 0; k < itf->size; k++) {
+          cs_lnum_t elt_id = itf->elt_id[k];
+          for (l = 0; l < stride; l++)
+            v[elt_id + l*n_elts] = CS_MAX(v[elt_id + l*n_elts],
+                                          p[k*stride + l]);
+        }
+      }
+      j += itf->size;
+    }
+    break;
+
+  case CS_UINT32:
+    for (i = 0, j = 0; i < ifs->size; i++) {
+      cs_interface_t *itf = ifs->interfaces[i];
+      uint32_t *v = var;
+      const uint32_t *p = (const uint32_t *)buf + j*stride;
+      if (stride < 2 || interlace) {
+        for (k = 0; k < itf->size; k++) {
+          cs_lnum_t elt_id = itf->elt_id[k];
+          for (l = 0; l < stride; l++)
+            v[elt_id*stride + l] = CS_MAX(v[elt_id*stride + l],
+                                          p[k*stride + l]);
+        }
+      }
+      else {
+        for (k = 0; k < itf->size; k++) {
+          cs_lnum_t elt_id = itf->elt_id[k];
+          for (l = 0; l < stride; l++)
+            v[elt_id + l*n_elts] = CS_MAX(v[elt_id + l*n_elts],
+                                          p[k*stride + l]);
+        }
+      }
+      j += itf->size;
+    }
+    break;
+
+  case CS_UINT64:
+    for (i = 0, j = 0; i < ifs->size; i++) {
+      cs_interface_t *itf = ifs->interfaces[i];
+      uint64_t *v = var;
+      const uint64_t *p = (const uint64_t *)buf + j*stride;
+      if (stride < 2 || interlace) {
+        for (k = 0; k < itf->size; k++) {
+          cs_lnum_t elt_id = itf->elt_id[k];
+          for (l = 0; l < stride; l++)
+            v[elt_id*stride + l] = CS_MAX(v[elt_id*stride + l],
+                                          p[k*stride + l]);
+        }
+      }
+      else {
+        for (k = 0; k < itf->size; k++) {
+          cs_lnum_t elt_id = itf->elt_id[k];
+          for (l = 0; l < stride; l++)
+            v[elt_id + l*n_elts] = CS_MAX(v[elt_id + l*n_elts],
+                                          p[k*stride + l]);
+        }
+      }
+      j += itf->size;
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _("Called cs_interface_set_max with unhandled datatype (%d)."),
+              (int)datatype);
+  }
+
+  BFT_FREE(buf);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Add matching element id information to an interface set.
  *
  * This information is required by calls to cs_interface_get_dist_ids(),

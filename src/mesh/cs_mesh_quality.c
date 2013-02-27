@@ -727,6 +727,13 @@ _vtx_from_max_face(const cs_mesh_t     *mesh,
 
   } /* If there are values to distribute */
 
+  if (mesh->vtx_interfaces != NULL)
+    cs_interface_set_max(mesh->vtx_interfaces,
+                         mesh->n_vertices,
+                         1,
+                         true,
+                         CS_REAL_TYPE,
+                         vtx_val);
 }
 
 /*============================================================================
