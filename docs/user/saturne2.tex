@@ -2942,7 +2942,8 @@ user subroutine \S\ref{prg_useli1}).
 tuned at each time step in order to reach a user-specified target dissipated
 power \texttt{puisim} (Joule effect) or a user-specified target current
 intensity \texttt{couimp} (electric arc)\\
-the boundary condition tuning is controlled by the subroutine \texttt{uselrc}\\
+the boundary condition tuning is controlled by subroutines \texttt{elreca} or
+\texttt{uselrc}\\
 alway useful}
 
 \motcleb{couimp}{r}{real number $\geqslant 0$}{0}{O}{L1}
@@ -2972,15 +2973,19 @@ conditions for the potential must be expressed with \texttt{dpot}
 (\texttt{uselcl}). The tuning can be controlled in \texttt{uselrc}\\
 useful if \texttt{ielcor}=1}
 
-\motcle{coejou}{r}{real number $\geqslant 0$}{1}{O}{L2}
-{only with the Joule effect, \texttt{coejou} can be used if the user does not
-wish to use \texttt{dpot}; \texttt{coejou} is the coefficient to be applied
-to the initial potential difference to reach the target dissipated power.
-Its value is automatically initialised to 1 and is updated during the
-calculation. In order for the correct power to be reached, the boundary
-conditions for the potential must be expressed with \texttt{coejou}
-(\texttt{uselcl}). The tuning can be controlled in \texttt{uselrc}\\
-Useful if \texttt{ielcor}=1}
+\motcleb{modrec}{i}{0, 1, 2}{1}{O}{L1}
+{when \texttt{ielcor}=0, we use user function \texttt{uselrc} for boundary condition tuning\\
+when \texttt{ielcor}=1, we use standard model for boundary condition tuning\\
+when \texttt{ielcor}=2, we use plane scaling model for boundary condition tuning. In this case, we need
+define plane and current density component used to}
+
+\motcleb{idreca}{i}{1, 2, 3}{3}{O}{L1}
+{define current density component used to calculate current in plane\\
+useful if \texttt{modrec}=2}
+
+\motcleb{crit\_reca}{r}{real number $\geqslant 0$}{0}{O}{L1}
+{define plane coordinates component used to calculate current in plane\\
+useful if \texttt{modrec}=2}
 
 %=================================================
 \subsection{Compressible module: specificities}
@@ -2993,7 +2998,7 @@ description of these user subroutines, \S\ref{prg_uscfx12}).
 
 \motcleb{ieos}{i}{1}{1}{C}{L1}
 {\texttt{ieos} indicates the equation of state. Only perfect gas with a constant adiabatic coefficient,
-\texttt{ieos=1} is available, but the user can complete the subroutine 
+\texttt{ieos=1} is available, but the user can complete the subroutine
 \texttt{cfther}, wich is not a user subroutine, to add new equations of state.\\
 always useful
 }
