@@ -57,6 +57,7 @@ introd.tex \
 itrmas.tex \
 matrix.tex \
 mesh_algo.tex \
+mesh_quality.tex \
 navsto.tex \
 operat.tex \
 preduv.tex \
