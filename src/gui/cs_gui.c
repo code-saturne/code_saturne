@@ -5342,7 +5342,7 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
       cs_xpath_add_function_text(&path);
       formula = cs_gui_get_text_value(path);
       ev_formula = mei_tree_new(formula);
-      mei_tree_insert(ev_formula, "t", 0.0);
+      mei_tree_insert(ev_formula, "s", 0.0);
 
       /* try to build the interpreter */
 
@@ -5440,7 +5440,7 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
       for (ii = 0; ii < npoint; ii++) {
 
         aa = ii*a;
-        mei_tree_insert(ev_formula,"t",aa);
+        mei_tree_insert(ev_formula,"s",aa);
         mei_evaluate(ev_formula);
 
         xyz[0] = mei_tree_lookup(ev_formula,"x");

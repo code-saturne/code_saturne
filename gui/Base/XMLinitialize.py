@@ -267,6 +267,10 @@ class XMLinit(Variables):
         compt = 0
         for node in self.case.xmlGetNodeList('profile'):
             if node:
+                n = node.xmlGetNode('formula')
+                f=n.xmlGetTextNode().replace("t", "s")
+                n.xmlSetTextNode(f)
+            if node:
                 n = node.xmlGetNode("output_type")
                 if n == None:
                     freq = node.xmlGetInt("output_frequency")

@@ -541,14 +541,14 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         """
         exp = self.line_formula
         exa = """#example: a line segment
-#(t, the parameter is always between 0 and 1)
-x = 2*t + 3.2;
+#(s, the parameter is always between 0 and 1)
+x = 2*s + 3.2;
 y = 2;
-z = -0.5*t+5;"""
+z = -0.5*s+5;"""
         req = [('x', "x formula"),
                ('y', "y formula"),
                ('z', "z formula")]
-        sym = [('t', 'parameter')]
+        sym = [('s', 'parameter')]
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
