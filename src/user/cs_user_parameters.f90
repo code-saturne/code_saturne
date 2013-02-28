@@ -431,7 +431,7 @@ if (ixmlpu.eq.0) then
 
   ! Electric arcs
 
-  if (ippmod(ielarc).eq.1) then
+  if (ippmod(ielarc).ge.1) then
 
     ficfpp = 'dp_ELE'
 
