@@ -436,25 +436,23 @@ else if (igrake.eq.1) then
   endif
 
   ! smbr* store mu_TxS**2
-  if (itytur.eq.2) then
-    do iel = 1, ncel
-      rho   = propce(iel,ipcroo)
-      visct = propce(iel,ipcvto)
-      xeps = rtpa(iel,iep )
-      xk   = rtpa(iel,ik )
-      ttke = xk / xeps
+  do iel = 1, ncel
+    rho   = propce(iel,ipcroo)
+    visct = propce(iel,ipcvto)
+    xeps = rtpa(iel, iep)
+    xk   = rtpa(iel, ik)
+    ttke = xk / xeps
 
-      gravke = -(grad(iel,1)*gx + grad(iel,2)*gy + grad(iel,3)*gz) &
-             / (rho*prdtur)
+    gravke = -(grad(iel,1)*gx + grad(iel,2)*gy + grad(iel,3)*gz) &
+           / (rho*prdtur)
 
-      ! Implicit Buoyant terms when negativ
-      tinstk(iel) = tinstk(iel) + max(-rho*volume(iel)*cmu*ttke*gravke, 0.d0)
+    ! Implicit Buoyant terms when negativ
+    tinstk(iel) = tinstk(iel) + max(-rho*volume(iel)*cmu*ttke*gravke, 0.d0)
 
-      ! Explicit Buoyant terms
-      smbre(iel) = smbre(iel) + visct*max(gravke, zero)
-      smbrk(iel) = smbrk(iel) + visct*gravke
-    enddo
-  endif
+    ! Explicit Buoyant terms
+    smbre(iel) = smbre(iel) + visct*max(gravke, zero)
+    smbrk(iel) = smbrk(iel) + visct*gravke
+  enddo
 
   ! Free memory
   deallocate(grad)
