@@ -110,7 +110,7 @@ double precision depale(nnod,3), xyzno0(3,nnod)
 ! Local variables
 
 integer          ifac, iel
-integer          ii, inod, iecrw, icpt, ierror
+integer          ii, inod, iecrw, icpt, ierror(4), icoder(4), irkerr
 double precision ddepx, ddepy, ddepz
 double precision srfbnf, rnx, rny, rnz
 double precision rcodcx, rcodcy, rcodcz, rcodsn
@@ -122,6 +122,17 @@ double precision rcodcx, rcodcy, rcodcz, rcodsn
 ! 1.  INITIALISATIONS
 !===============================================================================
 
+irkerr = -1
+
+ierror(1) = 0
+ierror(2) = 0
+ierror(3) = 0
+ierror(4) = 0
+
+icoder(1) = -1
+icoder(2) = -1
+icoder(3) = -1
+icoder(4) = -1
 
 ! Mise a zero des RCODCL non specifies
 do ifac = 1, nfabor
@@ -138,19 +149,24 @@ enddo
 !===============================================================================
 !  (valeur 0 autorisee)
 
-ierror = 0
 do ifac = 1, nfabor
   if (ialtyb(ifac).ne.0      .and.                                &
       ialtyb(ifac).ne.ibfixe .and.                                &
       ialtyb(ifac).ne.igliss .and.                                &
       ialtyb(ifac).ne.ifresf .and.                                &
       ialtyb(ifac).ne.ivimpo ) then
-    write(nfecra,1000)ifac,iprfml(ifmfbr(ifac),1),                &
-         ialtyb(ifac)
-    ierror = ierror + 1
+    if (ialtyb(ifac).gt.0) then
+      ialtyb(ifac) = -ialtyb(ifac)
+    endif
+    ierror(1) = ierror(1) + 1
   endif
 enddo
 
+if (irangp.ge.0) call parcmx(ierror(1))
+if(ierror(1).ne.0) then
+  write(nfecra,1000)
+  call bcderr(ialtyb)
+endif
 
 !===============================================================================
 ! 3.  CONVERSION EN RCODCL ICODCL
@@ -267,23 +283,26 @@ do ifac = 1, nfabor
   if (icodcl(ifac,iuma).ne.1 .and.                                &
       icodcl(ifac,iuma).ne.3 .and.                                &
       icodcl(ifac,iuma).ne.4 ) then
-    write(nfecra,2000) ifac,iprfml(ifmfbr(ifac),1),               &
-         icodcl(ifac,iuma)
-    ierror = ierror + 1
+    if (ialtyb(ifac).gt.0) then
+      ialtyb(ifac) = -ialtyb(ifac)
+    endif
+    ierror(1) = ierror(1) + 1
   endif
   if (icodcl(ifac,ivma).ne.1 .and.                                &
       icodcl(ifac,ivma).ne.3 .and.                                &
       icodcl(ifac,ivma).ne.4 ) then
-    write(nfecra,2001) ifac,iprfml(ifmfbr(ifac),1),               &
-         icodcl(ifac,ivma)
-    ierror = ierror + 1
+    if (ialtyb(ifac).gt.0) then
+      ialtyb(ifac) = -ialtyb(ifac)
+    endif
+    ierror(2) = ierror(2) + 1
   endif
   if (icodcl(ifac,iwma).ne.1 .and.                                &
       icodcl(ifac,iwma).ne.3 .and.                                &
       icodcl(ifac,iwma).ne.4 ) then
-    write(nfecra,2002) ifac,iprfml(ifmfbr(ifac),1),               &
-         icodcl(ifac,iwma)
-    ierror = ierror + 1
+    if (ialtyb(ifac).gt.0) then
+      ialtyb(ifac) = -ialtyb(ifac)
+    endif
+    ierror(3) = ierror(3) + 1
   endif
 
   if ( ( icodcl(ifac,iuma).eq.4 .or.                              &
@@ -292,17 +311,47 @@ do ifac = 1, nfabor
        ( icodcl(ifac,iuma).ne.4 .or.                              &
          icodcl(ifac,ivma).ne.4 .or.                              &
          icodcl(ifac,iwma).ne.4    ) ) then
-    write(nfecra,3000) ifac,iprfml(ifmfbr(ifac),1),               &
-         icodcl(ifac,iuma),icodcl(ifac,ivma),icodcl(ifac,iwma)
-    ierror = ierror + 1
+    if (ialtyb(ifac).gt.0) then
+      ialtyb(ifac) = -ialtyb(ifac)
+    endif
+    ierror(4) = ierror(4) + 1
+  endif
+
+  if (ialtyb(ifac).lt.0) then
+    irkerr = irangp
+    icoder(1) = -ialtyb(ifac)
+    icoder(2) = icodcl(ifac,iuma)
+    icoder(3) = icodcl(ifac,iuma)
+    icoder(4) = icodcl(ifac,iuma)
   endif
 
 enddo
 
-if (ierror.gt.0) then
+if (irangp.ge.0) call parimx(4, ierror)
+
+if (ierror(1).gt.0) then
+  write(nfecra,2000) 'x', 'iuma'
+endif
+if (ierror(2).gt.0) then
+  ierror(1) = 1
+  write(nfecra,2000) 'y', 'ivma'
+endif
+if (ierror(3).gt.0) then
+  ierror(1) = 1
+  write(nfecra,2000) 'z', 'iwma'
+endif
+if (ierror(4).gt.0) then
+  ierror(1) = 1
+  if (irangp.ge.0) then
+    call parimx(1, irkerr)
+    call parbci(irkerr, 4, icoder)
+    write(nfecra,3000) icoder(1), icoder(2), icoder(3), icoder(4)
+  endif
+endif
+
+if (ierror(1).gt.0) then
   write(nfecra,4000)
-  call csexit(1)
-  !==========
+  call bcderr(ialtyb)
 endif
 
 !===============================================================================
@@ -370,77 +419,117 @@ enddo
 !===============================================================================
 ! FORMATS
 !===============================================================================
-!TODO translate it in English
- 1000 format(                                                           &
-'@                                                            ',/,&
-'@ METHODE ALE                                                ',/,&
-'@ TYPE DE BORD NON RECONNU                                   ',/,&
-'@   FACE ',I10   ,' ; PROPRIETE 1 :',I10                      ,/,&
-'@     ALTYB FACE : ', I10                                     ,/,&
-'@                                                            '  )
- 2000 format(                                                           &
-'@                                                            ',/,&
-'@ METHODE ALE                                                ',/,&
-'@ TYPE DE CONDITION A LA LIMITE NON RECONNU POUR LA VITESSE  ',/,&
-'@   DE MAILLAGE SELON X (IUMA)                               ',/,&
-'@   FACE ',I10   ,' ; PROPRIETE 1 :',I10                      ,/,&
-'@     ICODCL : ', I10                                         ,/,&
-'@                                                            ',/,&
-'@ Les seules valeurs autorisees pour ICODCL sont             ',/,&
-'@   1 : Dirichlet                                            ',/,&
-'@   3 : Neumann                                              ',/,&
-'@   4 : Glissement                                           ',/,&
-'@                                                            '  )
- 2001 format(                                                           &
-'@                                                            ',/,&
-'@ METHODE ALE                                                ',/,&
-'@ TYPE DE CONDITION A LA LIMITE NON RECONNU POUR LA VITESSE  ',/,&
-'@   DE MAILLAGE SELON Y (IVMA)                               ',/,&
-'@   FACE ',I10   ,' ; PROPRIETE 1 :',I10                      ,/,&
-'@     ICODCL : ', I10                                         ,/,&
-'@                                                            ',/,&
-'@ Les seules valeurs autorisees pour ICODCL sont             ',/,&
-'@   1 : Dirichlet                                            ',/,&
-'@   3 : Neumann                                              ',/,&
-'@   4 : Glissement                                           ',/,&
-'@                                                            '  )
- 2002 format(                                                           &
-'@                                                            ',/,&
-'@ METHODE ALE                                                ',/,&
-'@ TYPE DE CONDITION A LA LIMITE NON RECONNU POUR LA VITESSE  ',/,&
-'@   DE MAILLAGE SELON Z (IWMA)                               ',/,&
-'@   FACE ',I10   ,' ; PROPRIETE 1 :',I10                      ,/,&
-'@     ICODCL : ', I10                                         ,/,&
-'@                                                            ',/,&
-'@ Les seules valeurs autorisees pour ICODCL sont             ',/,&
-'@   1 : Dirichlet                                            ',/,&
-'@   3 : Neumann                                              ',/,&
-'@   4 : Glissement                                           ',/,&
-'@                                                            '  )
- 3000 format(                                                           &
-'@                                                            ',/,&
-'@ METHODE ALE                                                ',/,&
-'@ INCOHERENCE DANS LES TYPES DE CONDITIONS A LA LIMITE       ',/,&
-'@   POUR LA VITESSE DE MAILLAGE                              ',/,&
-'@   FACE ',I10   ,' ; PROPRIETE 1 :',I10                      ,/,&
-'@     ICODCL(.,IUMA) : ', I10                                 ,/,&
-'@     ICODCL(.,IVMA) : ', I10                                 ,/,&
-'@     ICODCL(.,IWMA) : ', I10                                 ,/,&
-'@                                                            ',/,&
-'@ Si une composante est traitee en glissement (ICODCL=4),    ',/,&
-'@   toutes les composantes doivent etre traitees en          ',/,&
-'@   glissement.                                              ',/,&
-'@                                                            '  )
- 4000 format(                                                           &
-'@                                                            ',/,&
-'@ METHODE ALE                                                ',/,&
-'@ INCOHERENCE DANS LES CONDITIONS AUX LIMITES POUR LA VITESSE',/,&
-'@   DE MAILLAGE                                              ',/,&
-'@   (cf. message(s) ci-dessus)                               ',/,&
-'@                                                            ',/,&
-'@ Verifier usalcl.f90                                        ',/,&
-'@                                                            '  )
 
+#if defined(_CS_LANG_FR)
+
+ 1000 format(                                                     &
+'@'                                                            ,/,&
+'@ METHODE ALE'                                                ,/,&
+'@'                                                            ,/,&
+'@ Au moins une face de bord a un type de bord non reconnu.'  ,/,&
+'@    Le calcul ne sera pas execute.'                          ,/,&
+'@'                                                            ,/,&
+'@ Verifier les conditions aux limites dans l''Interface'      ,/,&
+'@    ou dans usalcl.f90.'                                     ,/,&
+'@'                                                              )
+ 2000 format(                                                     &
+'@'                                                            ,/,&
+'@ METHODE ALE'                                                ,/,&
+'@'                                                            ,/,&
+'@ Au moins une face de bord a un type de condition a la'      ,/,&
+'@    limite (icodcl) non reconnu pour la vitesse de maillage' ,/,&
+'@    selon' ,a1,' (',a4,').'                                  ,/,&
+'@'                                                            ,/,&
+'@ Les seules valeurs autorisees pour icodcl sont'             ,/,&
+'@   1 : Dirichlet'                                            ,/,&
+'@   3 : Neumann'                                              ,/,&
+'@   4 : Glissement'                                           ,/,&
+'@'                                                              )
+ 3000 format(                                                     &
+'@'                                                            ,/,&
+'@ METHODE ALE'                                                ,/,&
+'@'                                                            ,/,&
+'@ Incoherence dans les types de conditions a la limite'       ,/,&
+'@   pour la vitesse de maillage.'                              ,/,&
+'@'                                                            ,/,&
+'@ Au moins une face de bord a les conditions aux limites'     ,/,&
+'@   suivantes :'                                              ,/,&
+'@'                                                            ,/,&
+'@   itypcl : ',i10                                            ,/,&
+'@   icodcl(.,iuma) : ', i10                                   ,/,&
+'@   icodcl(.,ivma) : ', i10                                   ,/,&
+'@   icodcl(.,iwma) : ', i10                                   ,/,&
+'@'                                                            ,/,&
+'@ Si une composante est traitee en glissement (icodcl=4),'    ,/,&
+'@   toutes les composantes doivent etre traitees en'          ,/,&
+'@   glissement.'                                              ,/,&
+'@'                                                              )
+ 4000 format(                                                     &
+'@'                                                            ,/,&
+'@ METHODE ALE'                                                ,/,&
+'@'                                                            ,/,&
+'@ Incoherence dans les conditions aux limites pour la vitesse',/,&
+'@   de maillage'                                              ,/,&
+'@   (cf. message(s) ci-dessus)'                               ,/,&
+'@'                                                            ,/,&
+'@ Verifier dans l''interface ou dans usalcl.f90'              ,/,&
+'@'                                                              )
+
+#else
+
+ 1000 format(                                                     &
+'@'                                                            ,/,&
+'@ ALE METHOD'                                                 ,/,&
+'@'                                                            ,/,&
+'@ At least one boundary face has an unknown boundary type.'   ,/,&
+'@'                                                            ,/,&
+'@    The calculation will not be run.'                        ,/,&
+'@'                                                            ,/,&
+'@ Check boundary conditions in the GUI or in usalcl.f90.'     ,/,&
+'@'                                                              )
+ 2000 format(                                                     &
+'@'                                                            ,/,&
+'@ ALE METHOD'                                                 ,/,&
+'@'                                                            ,/,&
+'@ At least one boundary face has a boundary condition type'   ,/,&
+'@    (icodcl) which is not recognized for mesh velocity'      ,/,&
+'@    along' ,a1,' (',a4,').'                                  ,/,&
+'@'                                                            ,/,&
+'@ The only allowed values for icodcl are'                     ,/,&
+'@   1 : Dirichlet'                                            ,/,&
+'@   3 : Neumann'                                              ,/,&
+'@   4 : Slip'                                                 ,/,&
+'@'                                                              )
+ 3000 format(                                                     &
+'@'                                                            ,/,&
+'@ ALE METHOD'                                                 ,/,&
+'@'                                                            ,/,&
+'@ Inconsistency in boundary condition types'                  ,/,&
+'@   for mesh velocity.'                                       ,/,&
+'@'                                                            ,/,&
+'@ At least one boundary face has the following boundary'      ,/,&
+'@   conditions:'                                              ,/,&
+'@'                                                            ,/,&
+'@   itypcl : ',i10                                            ,/,&
+'@   icodcl(.,iuma) : ', i10                                   ,/,&
+'@   icodcl(.,ivma) : ', i10                                   ,/,&
+'@   icodcl(.,iwma) : ', i10                                   ,/,&
+'@'                                                            ,/,&
+'@ If one component has slip conditions(icodcl=4),'            ,/,&
+'@   all components must have slip conditions.'                ,/,&
+'@'                                                              )
+ 4000 format(                                                     &
+'@'                                                            ,/,&
+'@ ALE METHOD'                                                 ,/,&
+'@'                                                            ,/,&
+'@ Inconsistency in boundary condition types'                  ,/,&
+'@   for mesh velocity.'                                       ,/,&
+'@   (cf. message(s) above)'                                   ,/,&
+'@'                                                            ,/,&
+'@ Check boundary conditions in the GUI or in usalcl.f90.'     ,/,&
+'@'                                                              )
+
+#endif
 
 return
 end subroutine

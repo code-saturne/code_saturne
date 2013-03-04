@@ -353,7 +353,7 @@ call typecl &
 call vericl                                                       &
 !==========
  ( nvar   , nscal  ,                                              &
-   icodcl ,                                                       &
+   itypfb , icodcl ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , rcodcl )
 
