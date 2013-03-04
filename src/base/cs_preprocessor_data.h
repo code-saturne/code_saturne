@@ -57,19 +57,15 @@ BEGIN_C_DECLS
  *
  * Fortran Interface:
  *
- * subroutine ledevi(nfml nprfml, iperio, iperot)
+ * subroutine ledevi(iperio, iperot)
  * *****************
  *
- * integer          nfml        : <-- : Number of families
- * integer          nprfml      : <-- : Number of properties per family
  * integer          iperio      : <-- : Periodicity indicator
  * integer          iperot      : <-- : Number of rotation periodicities
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF(ledevi, LEDEVI)(cs_int_t  *nfml,
-                         cs_int_t  *nprfml,
-                         cs_int_t  *iperio,
+CS_PROCF(ledevi, LEDEVI)(cs_int_t  *iperio,
                          cs_int_t  *iperot);
 
 /*============================================================================

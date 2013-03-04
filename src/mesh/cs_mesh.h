@@ -187,31 +187,6 @@ extern cs_mesh_t *cs_glob_mesh; /* Pointer to main mesh structure */
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Return the group number corresponding to a given name. If the group exists,
- * the number corresponds to the group rank (starting from 1) in the list of
- * the meshe's groups, multiplied by -1. This numbering is that used in
- * family (group class) description array IPRFML(NFML, NPRFML).
- *
- * If the group of the given name is not found, 9999 is returned.
- *
- * Fortran interface:
- *
- * FUNCTION NUMGRP (NAME, LEN)
- * ***************
- *
- * CHARACTER*       NAME        : <-- : Name of the group
- * INTEGER          LEN         : <-- : Group name length
- *----------------------------------------------------------------------------*/
-
-cs_int_t CS_PROCF (numgrp, NUMGRP)
-(
- const char       *name,    /* <-- Group name */
- const cs_int_t   *len      /* <-- Name length */
- CS_ARGF_SUPP_CHAINE        /*     (possible 'length' arguments added
-                                   by many Fortran compilers) */
-);
-
-/*----------------------------------------------------------------------------
  * Update a scalar array in case of parallelism and/or periodicity.
  *
  * Fortran interface:
@@ -676,17 +651,6 @@ cs_mesh_sync_var_sym_tens(cs_real_t  *var);
 
 void
 cs_mesh_clean_families(cs_mesh_t  *mesh);
-
-/*----------------------------------------------------------------------------
- * Add colors to group class descriptions for group names which are
- * convertible to integers.
- *
- * parameters
- *   mesh <-> pointer to mesh structure
- *----------------------------------------------------------------------------*/
-
-void
-cs_mesh_build_colors(cs_mesh_t  *mesh);
 
 /*----------------------------------------------------------------------------
  * Define group classes for a mesh based on its family definitions.

@@ -160,6 +160,7 @@ extern void CS_PROCF (majgeo, MAJGEO)
  const cs_int_t   *nfacgb,  /* <-- global number of interior faces */
  const cs_int_t   *nfbrgb,  /* <-- global number of boundary faces */
  const cs_int_t   *nsomgb,  /* <-- global number of vertices */
+ const cs_int_t   *nfml,    /* <-- number of families */
  const cs_int_t   *nthrdi,  /* <-- max threads per interior faces group */
  const cs_int_t   *nthrdb,  /* <-- max threads per boundary faces group */
  const cs_int_t   *ngrpi,   /* <-- number of interior face groups */
@@ -170,7 +171,6 @@ extern void CS_PROCF (majgeo, MAJGEO)
  const cs_int_t    ifabor[],  /* <-- boundary faces -> cells connectivity */
  const cs_int_t    ifmfbr[],  /* <-- boundary face families */
  const cs_int_t    ifmcel[],  /* <-- cell families */
- const cs_int_t    iprfml[],  /* <-- list of family properties */
  const cs_int_t    ipnfac[],  /* <-- interior faces -> vertices index */
  const cs_int_t    nodfac[],  /* <-- interior faces -> vertices connectivity */
  const cs_int_t    ipnfbr[],  /* <-- boundary faces -> vertices index */

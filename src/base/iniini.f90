@@ -387,7 +387,6 @@ ncelet = 0
 nfac   = 0
 nfabor = 0
 nfml   = 0
-nprfml = 0
 nnod   = 0
 lndfac = 0
 lndfbr = 0
@@ -404,7 +403,7 @@ iperot = 0
 
 ! Get mesh metadata.
 
-call ledevi(nfml, nprfml, iperio, iperot)
+call ledevi(iperio, iperot)
 !==========
 
 call tstjpe(iperio, iperot)

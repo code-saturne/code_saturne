@@ -25,8 +25,8 @@ subroutine majgeo &
 
  ( ncel2  , ncele2 , nfac2  , nfabo2 , nsom2  ,                   &
    lndfa2 , lndfb2 , ncelb2 , ncelg2 , nfacg2 , nfbrg2 , nsomg2 , &
-   nthdi2 , nthdb2 , ngrpi2 , ngrpb2 , idxfi  , idxfb  ,          &
-   iface2 , ifabo2 , ifmfb2 , ifmce2 , iprfm2 ,                   &
+   nfml2  , nthdi2 , nthdb2 , ngrpi2 , ngrpb2 , idxfi  , idxfb  , &
+   iface2 , ifabo2 , ifmfb2 , ifmce2 ,                            &
    ipnfa2 , nodfa2 , ipnfb2 , nodfb2 , icelb2 ,                   &
    volmn2 , volmx2 , voltt2 ,                                     &
    xyzce2 , surfa2 , surfb2 , cdgfa2 , cdgfb2 , xyzno2 ,          &
@@ -60,11 +60,13 @@ subroutine majgeo &
 ! nthdb2           ! i  ! <-- ! nb. max de threads par groupe de faces de bord !
 ! ngrpi2           ! i  ! <-- ! nb. groupes de faces interieures               !
 ! ngrpb2           ! i  ! <-- ! nb. groupes de faces de bord                   !
-! idxfi            ! i  ! <-- ! index pour faces internes                      !
+! nfml2            ! i  ! <-- ! number of families                             !
+! idxfi            ! ia ! <-- ! index pour faces internes                      !
 ! idxfb            ! ia ! <-- ! index pour faces de bord                       !
 ! iface2           ! ia ! <-- ! interior face->cells connectivity              !
 ! ifabo2           ! ia ! <-- ! boundary face->cells connectivity              !
-! icelb2           ! ia ! <-- ! boundary cell list                             !
+! ifmfb2           ! ia ! <-- ! boundary face family number                    !
+! ifmce2           ! ia ! <-- ! cell family number                             !
 ! volmn2           ! r  ! <-- ! Minimum control volume                         !
 ! volmx2           ! r  ! <-- ! Maximum control volume                         !
 ! voltt2           ! r  ! <-- ! Total   control volume                         !
@@ -111,6 +113,7 @@ integer, intent(in) :: ncel2, ncele2, nfac2, nfabo2, nsom2
 integer, intent(in) :: lndfa2, lndfb2
 integer, intent(in) :: ncelb2
 integer, intent(in) :: ncelg2, nfacg2 , nfbrg2, nsomg2
+integer, intent(in) :: nfml2
 integer, intent(in) :: nthdi2, nthdb2
 integer, intent(in) :: ngrpi2, ngrpb2
 
@@ -119,7 +122,6 @@ integer, dimension(*), intent(in) :: idxfi, idxfb
 integer, dimension(2,nfac2), target :: iface2
 integer, dimension(ncele2), target :: ifmce2
 integer, dimension(nfabo2), target :: ifabo2, ifmfb2
-integer, dimension(nfml,nprfml), target :: iprfm2
 integer, dimension(nfac2+1), target :: ipnfa2
 integer, dimension(lndfa2), target :: nodfa2
 integer, dimension(nfabo2+1), target :: ipnfb2
@@ -164,6 +166,8 @@ nnod = nsom2
 
 ncelbr = ncelb2
 
+nfml = nfml2
+
 !===============================================================================
 ! 2. Global sizes
 !===============================================================================
@@ -189,7 +193,6 @@ ifabor => ifabo2(1:nfabor)
 
 ifmfbr => ifmfb2(1:nfabor)
 ifmcel => ifmce2(1:ncelet)
-iprfml => iprfm2(1:nfml,1:nprfml)
 
 ipnfac => ipnfa2(1:nfac+1)
 nodfac => nodfa2(1:lndfac)

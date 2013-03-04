@@ -188,7 +188,6 @@ endif
 ! --- Dimensions
 
 write(nfecra,1500)
-write(nfecra,1510) nprfml,nfml
 write(nfecra,1520) nvar,nscal,nscaus,nscapp,                      &
                    nproce,nprofa,nprofb
 
@@ -201,10 +200,6 @@ write(nfecra,9900)
                                                                 /,&
 ' ** DIMENSIONS',                                               /,&
 '    ----------',                                               /)
- 1510 format(                                                     &
-' --- Geometrie',                                               /,&
-'       NPRFML = ',4x,i10,    ' (Nb de proprietes de famille )',/,&
-'       NFML   = ',4x,i10,    ' (Nb de familles              )',/)
  1520 format(                                                     &
 ' --- Physique',                                                /,&
 '       NVAR   = ',4x,i10,    ' (Nb de variables             )',/,&
@@ -221,10 +216,6 @@ write(nfecra,9900)
                                                                 /,&
 ' ** DIMENSIONS',                                               /,&
 '    ----------',                                               /)
- 1510 format(                                                     &
-' --- Geometry',                                                /,&
-'       NPRFML = ',4x,i10,    ' (Nb max. family properties   )',/,&
-'       NFML   = ',4x,i10,    ' (Nb families                 )',/)
  1520 format(                                                     &
 ' --- Physics',                                                 /,&
 '       NVAR   = ',4x,i10,    ' (Nb variables                )',/,&

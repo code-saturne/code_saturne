@@ -45,8 +45,7 @@ module mesh
   integer, save :: lndfac  !< size of nodfac indexed array
   integer, save :: lndfbr  !< size of nodfbr indexed array
 
-  integer, save :: nprfml  !< number of families (group classes)
-  integer, save :: nfml    !< number of properties per family (group class)
+  integer, save :: nfml    !< number of families (group classes)
 
   !> interior faces -> cells connectivity
   integer, dimension(:,:), pointer :: ifacel
@@ -68,7 +67,6 @@ module mesh
 
   integer, dimension(:), pointer :: ifmfbr    !< boundary face family numbers
   integer, dimension(:), pointer :: ifmcel    !< cell family numbers
-  integer, dimension(:,:), pointer :: iprfml  !< property numbers per family
 
   !> list of cells adjacent to boundary faces
   integer, dimension(:), pointer :: icelbr

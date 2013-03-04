@@ -360,8 +360,7 @@ cs_run(void)
 
   }
 
-  /* Now that mesh modification is finished, save mesh if modified
-     (do this before building colors, which adds internal groups) */
+  /* Now that mesh modification is finished, save mesh if modified */
 
   cs_user_mesh_save(cs_glob_mesh); /* Disable or force */
 
@@ -394,9 +393,8 @@ cs_run(void)
   cs_renumber_mesh(cs_glob_mesh,
                    cs_glob_mesh_quantities);
 
-  /* Initialize group classes and insert colors if possible */
+  /* Initialize group classes */
 
-  cs_mesh_build_colors(cs_glob_mesh);
   cs_mesh_init_group_classes(cs_glob_mesh);
 
   /* Print info on mesh */
@@ -513,6 +511,7 @@ cs_run(void)
                                   &n_g_i_faces,
                                   &n_g_b_faces,
                                   &n_g_vertices,
+                                  &(cs_glob_mesh->n_families),
                                   &nthrdi,
                                   &nthrdb,
                                   &ngrpi,
@@ -523,7 +522,6 @@ cs_run(void)
                                   cs_glob_mesh->b_face_cells,
                                   cs_glob_mesh->b_face_family,
                                   cs_glob_mesh->cell_family,
-                                  cs_glob_mesh->family_item,
                                   cs_glob_mesh->i_face_vtx_idx,
                                   cs_glob_mesh->i_face_vtx_lst,
                                   cs_glob_mesh->b_face_vtx_idx,
