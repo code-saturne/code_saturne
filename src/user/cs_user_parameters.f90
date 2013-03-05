@@ -725,7 +725,7 @@ end subroutine usinsc
 subroutine usipsc &
 !================
 
- ( nscmax, nscaus, ixmlpu, nfecra, iscavr, ivisls )
+ ( nscmax, nscaus, ixmlpu, nfecra, iscavr, iscadr, ivisls )
 
 
 !===============================================================================
@@ -746,6 +746,7 @@ subroutine usipsc &
 !                  !    !     ! used (1: yes, 0: no)                           !
 ! nfecra           ! i  ! <-- ! Fortran unit number for standard output        !
 ! iscavr(nscmax)   ! ia ! <-- ! associated scalar number for variance scalars  !
+! iscadr(nscmax)   ! ia ! <-- ! is the scalar a drift scalar?                  !
 ! ivisls(nscmax)   ! ia ! <-> ! uniform scalar diffusivity flag                !
 !__________________!____!_____!________________________________________________!
 
@@ -758,8 +759,10 @@ subroutine usipsc &
 ! Module files
 !===============================================================================
 
+use optcal, only: DRIFT_SCALAR_THERMOPHORESIS, DRIFT_SCALAR_TURBOPHORESIS, &
+                  DRIFT_SCALAR_CENTRIFUGALFORCE
 
-! No module should appear here
+! No other module should appear here
 
 
 !===============================================================================
@@ -770,6 +773,7 @@ implicit none
 
 integer nscmax, nscaus, ixmlpu, nfecra
 integer iscavr(nscmax), ivisls(nscmax)
+integer iscadr(nscmax)
 
 ! Local variables
 
@@ -855,6 +859,41 @@ if (.false.) then
     endif
 
   enddo
+
+endif
+
+! --- Scalar with a drift (iscadr(iscal)>=1) or without drift
+!       (iscadr(iscal)=0, default option) for each USER scalar.
+!
+! --- Then, for each scalar with a drift, add a flag to specify if
+!     specific terms have to be taken into account:
+!       - thermophoresis terms:
+!       iscadr(iscal) = ior(iscadr(iscal), DRIFT_SCALAR_THERMOPHORESIS)
+!       - turbophoresis terms:
+!       iscadr(iscal) = ior(iscadr(iscal), DRIFT_SCALAR_TURBOPHORESIS)
+!       - centrifugal force terms:
+!       iscadr(iscal) = ior(iscadr(iscal), DRIFT_SCALAR_CENTRIFUGALFORCE)
+
+if (.false.) then
+
+  if (nscaus.ge.1) then
+
+    iscal = 1
+    iscadr(iscal) = 1
+
+    if (.false.) then
+      iscadr(iscal) = ior(iscadr(iscal), DRIFT_SCALAR_THERMOPHORESIS)
+    endif
+
+    if (.false.) then
+      iscadr(iscal) = ior(iscadr(iscal), DRIFT_SCALAR_TURBOPHORESIS)
+    endif
+
+    if (.false.) then
+      iscadr(iscal) = ior(iscadr(iscal), DRIFT_SCALAR_CENTRIFUGALFORCE)
+    endif
+
+  endif
 
 endif
 

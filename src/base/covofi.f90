@@ -210,8 +210,8 @@ else
   ipcroa = 0
 endif
 ipcvst = ipproc(ivisct)
-iflmas = ipprof(ifluma(ivar ))
-iflmab = ipprob(ifluma(ivar ))
+iflmas = ipprof(ifluma(ivar))
+iflmab = ipprob(ifluma(ivar))
 if (ivisls(iscal).gt.0) then
   ipcvsl = ipproc(ivisls(iscal))
 else
@@ -769,6 +769,21 @@ else
                   + istat(ivar)*xcpp(iel)*propce(iel,ipcrho)*volume(iel)/dt(iel) &
                   ) * porosi(iel)
   enddo
+
+endif
+
+! Scalar with a Drift:
+! compute the convective flux
+!----------------------------
+
+if (iscadr(iscal).gt.0) then
+
+ call driflu &
+ !=========
+ ( nvar   , nscal  ,                                              &
+   iscal  ,                                                       &
+   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   rovsdt , smbrs  )
 
 endif
 

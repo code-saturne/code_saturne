@@ -307,6 +307,28 @@ do ii = 1, nscal
         call field_set_key_int(iflid, keyvis, iopchr)
       endif
     endif
+
+    ! Additional fields for Drift scalars
+    if (iscadr(ii).gt.0) then
+
+      ! Relaxation time
+      f_name = trim(name)//'_taup'
+      call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, iflid)
+      call field_set_key_int(iflid, keycpl, 1)
+      if (ichrvr(ipprtp(ivar)) .eq. 1) then
+        call field_set_key_int(iflid, keyvis, iopchr)
+      endif
+
+      ! Interaction time particle--eddies
+      f_name = trim(name)//'_taufpt'
+      call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, iflid)
+      call field_set_key_int(iflid, keycpl, 1)
+      if (ichrvr(ipprtp(ivar)) .eq. 1) then
+        call field_set_key_int(iflid, keyvis, iopchr)
+      endif
+
+    endif
+
   endif
 
 enddo

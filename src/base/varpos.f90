@@ -685,7 +685,12 @@ if(ipass.eq.2) then
     ifluma(inusa)= iprop
   endif
   do iscal = 1, nscal
-    ifluma(isca(iscal)) = ifluma(iu)
+    if (iscadr(iscal).gt.0) then
+      iprop = iprop + 1
+      ifluma(isca(iscal)) = iprop
+    else
+      ifluma(isca(iscal)) = ifluma(iu)
+    endif
   enddo
 
   if (iale.eq.1) then
