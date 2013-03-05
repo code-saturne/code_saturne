@@ -164,7 +164,6 @@ d2s3 = 2.d0/3.d0
 
 !< [example_1]
 call getfbr('2 and x < 0.01', nlelt, lstelt)
-!==========
 
 do ilelt = 1, nlelt
 
@@ -178,8 +177,8 @@ do ilelt = 1, nlelt
   rcodcl(ifac,iw,1) = 1.1d0
 
   uref2 = rcodcl(ifac,iu,1)**2  &
-       +rcodcl(ifac,iv,1)**2  &
-       +rcodcl(ifac,iw,1)**2
+        + rcodcl(ifac,iv,1)**2  &
+        + rcodcl(ifac,iw,1)**2
   uref2 = max(uref2,1.d-12)
 
   !   Turbulence example computed using equations valid for a pipe.
@@ -204,12 +203,12 @@ do ilelt = 1, nlelt
   !     and of k and epsilon at the inlet (xkent and xeent) using
   !     standard laws for a circular pipe
   !     (their initialization is not needed here but is good practice).
-  rhomoy = propfb(ifac,ipprob(irom))
+  rhomoy  = propfb(ifac,ipprob(irom))
   xustar2 = 0.d0
-  xkent  = epzero
-  xeent  = epzero
+  xkent   = epzero
+  xeent   = epzero
 
-  call keendb                                            &
+  call keendb &
   !==========
 ( uref2, xdh, rhomoy, viscl0, cmu, xkappa,   &
   xustar2, xkent, xeent )
@@ -262,7 +261,7 @@ enddo
 
 !< [example_2]
 call getfbr('3', nlelt, lstelt)
-!==========
+
 do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
@@ -275,8 +274,8 @@ do ilelt = 1, nlelt
   rcodcl(ifac,iw,1) = 1.1d0
 
   uref2 = rcodcl(ifac,iu,1)**2   &
-       +rcodcl(ifac,iv,1)**2   &
-       +rcodcl(ifac,iw,1)**2
+        + rcodcl(ifac,iv,1)**2   &
+        + rcodcl(ifac,iw,1)**2
   uref2 = max(uref2,1.d-12)
 
   ! Turbulence example computed using turbulence intensity data.
@@ -286,7 +285,7 @@ do ilelt = 1, nlelt
 
   ! Hydraulic diameter
 
-  xdh     = 0.075d0
+  xdh   = 0.075d0
   ! Turbulence intensity
   xitur = 0.02d0
 
@@ -296,7 +295,7 @@ do ilelt = 1, nlelt
   xkent  = epzero
   xeent  = epzero
 
-  call keenin                                                   &
+  call keenin &
   !==========
 ( uref2, xitur, xdh, cmu, xkappa, xkent, xeent )
 
@@ -348,7 +347,7 @@ enddo
 
 !< [example_3]
 call getfbr('outlet', nlelt, lstelt)
-!==========
+
 do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
@@ -357,7 +356,7 @@ do ilelt = 1, nlelt
   !         Note that the pressure will be set to P0 at the first
   !         free outlet face (isolib)
 
-  itypfb(ifac)   = isolib
+  itypfb(ifac) = isolib
 
 enddo
 !< [example_3]
@@ -366,7 +365,7 @@ enddo
 
 !< [example_4]
 call getfbr('5', nlelt, lstelt)
-!==========
+
 do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
@@ -375,7 +374,7 @@ do ilelt = 1, nlelt
   !       friction for velocities (+ turbulent variables)
   !       zero flux for scalars
 
-  itypfb(ifac)   = iparoi
+  itypfb(ifac) = iparoi
 
   ! If sliding wall with velocity u = 1:
   ! rcodcl(ifac, iu, 1) = 1.d0
@@ -385,21 +384,21 @@ do ilelt = 1, nlelt
   if (nscal.gt.0) then
 
     ! If temperature prescribed to 20 with wall law (scalar ii=1):
-    ! ii = 1
-    ! icodcl(ifac, isca(ii))   = 5
-    ! rcodcl(ifac, isca(ii), 1) = 20.d0
+    ii = 1
+    icodcl(ifac, isca(ii))    = 5
+    rcodcl(ifac, isca(ii), 1) = 20.d0
 
     ! If temperature prescribed to 50 with no wall law (simple Dirichlet)
     !   with exchange coefficient 8 (scalar ii=2):
-    ! ii = 2
-    ! icodcl(ifac, isca(ii))    = 1
-    ! rcodcl(ifac, isca(ii),1)  = 50.d0
-    ! rcodcl(ifac, isca(ii), 2) = 8.d0
+    ii = 2
+    icodcl(ifac, isca(ii))    = 1
+    rcodcl(ifac, isca(ii),1)  = 50.d0
+    rcodcl(ifac, isca(ii), 2) = 8.d0
 
     ! If flux prescribed to 4.d0 (scalar ii=3):
-    ! ii = 3
-    ! icodcl(ifac, isca(ii))    = 3
-    ! rcodcl(ifac, isca(ii), 3) = 4.D0
+    ii = 3
+    icodcl(ifac, isca(ii))    = 3
+    rcodcl(ifac, isca(ii), 3) = 4.d0
 
   endif
 enddo
@@ -409,7 +408,7 @@ enddo
 
 !< [example_5]
 call getfbr('7', nlelt, lstelt)
-!==========
+
 do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
@@ -418,30 +417,30 @@ do ilelt = 1, nlelt
   !       rough friction for velocities (+ turbulent variables)
   !       zero flux for scalars
 
-  itypfb(ifac)   = iparug
+  itypfb(ifac) = iparug
 
   ! Roughness for velocity: 1cm
   rcodcl(ifac,iu,3) = 0.01d0
 
   ! Roughness for scalar (if required): 1cm
-  ! rcodcl(ifac,iv,3) = 0.01d0
+  rcodcl(ifac,iv,3) = 0.01d0
 
   ! If sliding wall with velocity u = 1:
-  ! rcodcl(ifac, iu, 1) = 1.d0
+  rcodcl(ifac, iu, 1) = 1.d0
 
   ! If sliding wall with velocity u = 0: nothing to do
   if (nscal.gt.0) then
 
     ! If temperature prescribed to 20 (scalar ii=1)
     ! (with thermal roughness specified in rcodcl(ifac,iv,3)) :
-    ! ii = 1
-    ! icodcl(ifac, isca(ii))   = 6
-    ! rcodcl(ifac, isca(ii), 1) = 20.d0
+    ii = 1
+    icodcl(ifac, isca(ii))    = 6
+    rcodcl(ifac, isca(ii), 1) = 20.d0
 
     ! If flux prescribed to 4.d0 (scalar ii=3):
-    ! ii = 3
-    ! icodcl(ifac, isca(ii))    = 3
-    ! rcodcl(ifac, isca(ii), 3) = 4.D0
+    ii = 3
+    icodcl(ifac, isca(ii))    = 3
+    rcodcl(ifac, isca(ii), 3) = 4.d0
 
   endif
 
@@ -452,14 +451,14 @@ enddo
 
 !< [example_6]
 call getfbr('4', nlelt, lstelt)
-!==========
+
 do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
 
   ! Symmetries
 
-  itypfb(ifac)   = isymet
+  itypfb(ifac) = isymet
 
 enddo
 !< [example_6]
