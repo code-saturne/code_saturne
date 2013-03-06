@@ -2382,24 +2382,32 @@ The main numerical variables and ``pointers'' are displayed below.
 
 \variab{coefa}{coefa(nfabor,*)}{ra}{Boundary conditions: see note 2}
 
-\variab{coefav}{coefau(3,nfabor)}{ra}{Boundary conditions for the velocity vector with
-velocity components coupled algorithm (\texttt{ivelco=1}): see note 2}
+\variab{coefau}{coefau(3,nfabor)}{ra}{Boundary conditions for the velocity vector with
+the coupled velocity components algorithm (\texttt{ivelco=1}): see note 2}
+
+\variab{cofafu}{cofafu(3,nfabor)}{ra}{Boundary conditions for the velocity diffusion flux with
+the coupled velocity components algorithm (\texttt{ivelco=1}): see note 2}
 
 \variab{coefb}{coefb(nfabor,*)}{ra}{Boundary conditions: see note 2}
 
-\variab{coefbv}{coefbu(3,nfabor)}{ra}{Boundary conditions for the velocity vector with
-velocity components coupled algorithm (\texttt{ivelco=1}): see note 2}
+\variab{coefbu}{coefbu(3,nfabor)}{ra}{Boundary conditions for the velocity vector with
+the coupled velocity components algorithm (\texttt{ivelco=1}): see note 2}
 
-\variab{iclrtp}{iclrtp(nvarmx,2)}{ia}{For each variable \texttt{ivar}
+\variab{cofbfu}{cofbfu(3,nfabor)}{ra}{Boundary conditions for the velocity diffusion flux with
+the coupled velocity components algorithm (\texttt{ivelco=1}): see note 2}
+
+\variab{iclrtp}{iclrtp(nvarmx,3)}{ia}{For each variable \texttt{ivar}
 (1$\leqslant$ivar$\leqslant$nvar$\leqslant$nvarmx), rank in \texttt{coefa} and
 \texttt{coefb} of the boundary conditions. See note 2}
 
 \variab{icoef}{icoef}{i}{Rank in \texttt{iclrtp} of the rank in \texttt{coefa}
-and \texttt{coefb} of the ``standard'' boundary conditions. See note 2}
+and \texttt{coefb} of the gradient boundary conditions. See note 2}
 
 \variab{icoeff}{icoeff}{i}{Rank in \texttt{iclrtp} of the rank in \texttt{coefa}
-and \texttt{coefb} of the ``flow'' type boundary conditions, reserved for
-developers. See note 2}
+and \texttt{coefb} of the diffusive flux type boundary conditions. See note 2}
+
+\variab{icoefr}{icoefr}{i}{Rank in \texttt{iclrtp} of the rank in \texttt{coefa}
+and \texttt{coefb} of the divergence type boundary conditions (especially for Reynolds stresses in the momentum equation). See note 2}
 
 \variab{ifmfbr}{ifmfbr(nfabor)}{ia}{Family number of the boundary
 faces. See note 1}
@@ -2407,10 +2415,11 @@ faces. See note 1}
 \variab{iprfml}{iprfml(nfml,nprfml)}{ia}{Properties of the
 families of referenced entities. See note 1}
 
-\variab{isympa}{isympa(nfabor)}{i}{Integer to mark out the ``wall'' (\texttt{itypfb=iparoi}
-or \texttt{iparug}) or ``symmetry'' (\texttt{itypfb=isymet}) boundary faces where the
-mass flow has to be canceled (these faces are impermeable). For instance,
-if the face \texttt{ifac} is a wall or symmetry face,
+\variab{isympa}{isympa(nfabor)}{i}{Integer to mark out the %FIXME``wall'' (\texttt{itypfb=iparoi} or \texttt{iparug}) or 
+``symmetry'' (\texttt{itypfb=isymet}) boundary faces where the
+mass flow has to be canceled when the ALE module is swiched off (these faces are impermeable). For instance,
+if the face \texttt{ifac} is %FIXME a wall or 
+symmetry face,
 \texttt{isympa(ifac)=0}, otherwise \texttt{isympa(ifac)=1}}
 
 \variab{itrifb}{itrifb(nfabor)}{ia}{Indirection array allowing to
@@ -2428,7 +2437,7 @@ in the case of a LES calculation with van Driest-wall damping}
 face (type \texttt{itypfb=iparoi} or \texttt{iparug}) which is closest
 to the center of a given volume when necessary
 ($R_{ij}-\varepsilon$ with wall echo, LES with van Driest-wall damping,
-or SST $k-\omega$ turbulence model) and when \texttt{icdpar=2}.
+or $k-\omega$ (SST) turbulence model) and when \texttt{icdpar=2}.
 The number of the wall face which is the closest to
 the center of the cell \texttt{iel} is \texttt{ifapat(iel1)}.
 This calculation method is not compatible with parallelism and periodicity}
@@ -2436,7 +2445,7 @@ This calculation method is not compatible with parallelism and periodicity}
 \variab{dispar}{dispar(ncelet)}{ra}{Distance between the center of
 a given volume and the closest wall, when it is necessary
 ($R_{ij}-\varepsilon$ with wall echo,
-LES with van Driest-wall damping, or SST $k-\omega$ turbulence model)
+LES with van Driest-wall damping, or $k-\omega$ (SST) turbulence model)
 and when \texttt{icdpar=1}. The distance between the center of the cell
 \texttt{iel} and the closest wall is \texttt{dispar(iel)}}
 
@@ -2454,7 +2463,8 @@ subroutine \texttt{uskpdc}}
 
 \variab{ckupdc}{ckupdc(ncepdc,6)}{ra}{Value of the
 coefficients of the pressure drop tensor of the
-\texttt{ncepdc} cells in which a pressure drop is imposed.
+\texttt{ncepdc} cells in which a pressure drop is imposed. Note the 6 values are
+sorted as follows: (k11, k22, k33, k12, k23, k33).
 See \texttt{ickpdc} and the user subroutine \texttt{uskpdc}}
 
 \variab{ncepdc}{ncepdc}{ia}{Number of cells in
@@ -2511,11 +2521,11 @@ by \texttt{eppt1d(ii)}, with
 
 \variab{ifmcel}{ifmcel(ncelet)}{ia}{Family number of the elements. See note 1}
 
-\variab{s2kw}{s2kw(ncelet)}{ra}{Square of the norm of the deformation
-rate tensor ($S^2=2S_{ij}S_{ij}$). This array is defined only
-with the $k-\omega$ SST turbulence model}
+\variab{s2kw}{s2kw(ncelet)}{ra}{Square of the norm of the deviatoric part of the deformation
+rate tensor ($S^2=2S_{ij}^D S_{ij}^D$). This array is defined only
+with the $k-\omega$ (SST) turbulence model}
 
-\variab{divukw}{divukw}{ia}{Divergence of the velocity. In the
+\variab{divukw}{divukw}{ia}{Divergence of the velocity. More precisely it is the trace of the velocity gradient (and not a finite volume divergence term). In the
 cell \texttt{iel},  $div(\vect{u})$ is given by \texttt{divukw(iel1)}.
 This array is defined only with the $k-\omega$ SST turbulence model
 (because in this case it may be calculated at the same time as $S^2$)}
@@ -2524,29 +2534,55 @@ This array is defined only with the $k-\omega$ SST turbulence model
 \texttt{rtpa}, \texttt{propce}, \texttt{tpucou}}
 
 \minititre{Note: boundary conditions}
-The boundary conditions in \CS boil down to determine a value for the
-current variable $\phi$ at the boundary faces, that is to say $\phi_f$,
-value expressed as a function of $\phi_{I'}$, value of $\phi$ in I',
+The \textbf{gradient} boundary conditions in \CS boil down to determine a value for the
+current variable $\varia$ at the boundary faces $\fib$, that is to say $\varia_\fib$,
+value expressed as a function of $\varia_{\centip}$, value of $\varia$ in $\centip$,
 projection of the center of the adjacent cell on the straight line
 perpendicular to the boundary face and crossing its center:
-$\phi_f=A_{\phi,f}+B_{\phi,f}\phi_{I'}$.  \\
-For a face \texttt{ifac}, the pair of coefficients $A_{\phi,f},B_{\phi,f}$ is
-stored in \texttt{coefa(ifac,iclvar)} and\\
-\texttt{coefb(ifac,iclvar)}, where the integer \texttt{iclvar=iclrtp(ivar,ijcl)}
-determines the rank in \texttt{coefa} and \texttt{coefb} of the set of boundary
-conditions of the variable \texttt{ivar}. \\
-The second index of the array \texttt{iclrtp} allows to have several sets of
-boundary conditions for each variable. The ``standard'' boundary
-conditions are determined by \texttt{ijcl=icoef}, where \texttt{icoef} is a
-parameter which is fixed automatically by the code, and can be accessed to in the
-``module'' \texttt{numvar}. More specificic or advanced boundary
-conditions can be accessed to with \texttt{ijcl=icoeff}. \\
-In practice, for a variable \texttt{ivar} whose value $\phi_{I'}$ in a
-boundary cell is known, the value at the corresponding boundary face
-\texttt{ifac} is: \\
-\mbox{$\phi_f$=\texttt{coefa(ifac,iclvar)+coefb(ifac,iclvar)} $\phi_{I'}$}
-with \texttt{iclvar=iclrtp(ivar,icoef)}
+\begin{equation}
+\varia_\fib=A_{\fib}^g +B_{\fib}^g \varia_{\centip}.
+\end{equation}
 
+For a face \texttt{ifac}, the pair of coefficients $A_{\fib}^g , \, B_{\fib}^g$ is
+stored in \texttt{coefa(ifac,iclvar)} and
+\texttt{coefb(ifac,iclvar)}, where the integer \texttt{iclvar=iclrtp(ivar,icoef)}
+determines the rank in \texttt{coefa} and \texttt{coefb} of the set of boundary
+gradient conditions of the variable \texttt{ivar}. 
+
+The \textbf{flux} boundary conditions in \CS boil down to determine the value of the diffusive
+flux of the
+current variable $\varia$ at the boundary faces $\fib$, that is to say
+ $D_{\ib} \left(K_\fib, \, \varia \right)$,
+value expressed as a function of $\varia_{\centip}$, value of $\varia$ in $\centip$,
+projection of the center of the adjacent cell on the straight line
+perpendicular to the boundary face and crossing its center:
+\begin{equation}
+D_{\ib} \left(K_\fib, \, \varia \right) = A_{\fib}^f +B_{\fib}^f \varia_{\centip}.
+\end{equation}
+
+For a face \texttt{ifac}, the pair of coefficients $A_{\fib}^f , \, B_{\fib}^f$ is
+stored in \texttt{coefa(ifac,iclvaf)} and
+\texttt{coefb(ifac,iclvaf)}, where the integer \texttt{iclvaf=iclrtp(ivar,icoeff)}
+determines the rank in \texttt{coefa} and \texttt{coefb} of the set of boundary
+diffusive flux conditions of the variable \texttt{ivar}. 
+
+The \textbf{divergence} boundary conditions in \CS boil down to determine a value for the
+current variable $\varia$ (mainly the Reynolds stress components, the divergence $\divv \left(\tens{R} \right)$ used in the calculation of the momentum equation) at the boundary faces $\fib$, 
+that is to say $\varia_\fib$,
+value expressed as a function of $\varia_{\centip}$, value of $\varia$ in $\centip$,
+projection of the center of the adjacent cell on the straight line
+perpendicular to the boundary face and crossing its center:
+\begin{equation}
+\varia_\fib=A_{\fib}^d +B_{\fib}^d \varia_{\centip}.
+\end{equation}
+
+For a face \texttt{ifac}, the pair of coefficients $A_{\fib}^d , \, B_{\fib}^d$ is
+stored in \texttt{coefa(ifac,iclvrr)} and
+\texttt{coefb(ifac,iclvrr)}, where the integer \texttt{iclvrr=iclrtp(ivar,icoefr)}
+determines the rank in \texttt{coefa} and \texttt{coefb} of the set of boundary
+divergence conditions of the variable \texttt{ivar}. 
+
+\clearpage
 %==================================
 \subsubsubsection{User arrays}
 %==================================
@@ -4239,13 +4275,19 @@ chosen time step type is).
 \subsection{Manage boundary conditions}
 %==================================
 \label{prg_boundaryconditions}
-The boundary conditions can be specified in the Graphical User Interface (GUI) under the heading ``Boundary conditions'' or in the user subroutine \texttt{cs\_user\_boundary\_conditions} called every time step. With the GUI, each region and the type of boundary condition associated to it are defined in fig. \ref{fig:??_GUI}. Then, the parameters of the boundary condition are specified in fig. \ref{fig:??_GUI}. The colors of the boundary faces may be read directly from a ``listing'' file created by the Preprocessor. This file can be generated directly by the interface under the heading ``Definition of boundary regions $\rightarrow$ Add from Preprocessor listing $\rightarrow$ import groups and references from Preprocessor listing'', see fig. \ref{fig:19_GUI}.
+The boundary conditions can be specified in the Graphical User Interface (GUI) under the heading ``Boundary conditions'' 
+or in the user subroutine \texttt{cs\_user\_boundary\_conditions} called every time step. 
+With the GUI, each region and the type of boundary condition associated to it are defined in 
+\figurename~\ref{fig:gui_bc_regions}. Then, the parameters of the boundary condition are specified
+ in \figurename~\ref{fig:gui_bc_parameters}. The colors of the boundary faces may be read directly from 
+a ``listing'' file created by the Preprocessor. This file can be generated directly by the interface 
+under the heading ``Definition of boundary regions $\rightarrow$ Add from Preprocessor listing $\rightarrow$ import groups and references from Preprocessor listing'', see fig. \ref{fig:19_GUI}.
 %
 \begin{figure}[!ht]
 \begin{center}
 \includegraphics[width=13cm]{gui_bc_regions}
 \caption{Definition of the boundary conditions}
-\label{gui_bc_regions}
+\label{fig:gui_bc_regions}
 \end{center}
 \end{figure}
 %
@@ -4253,18 +4295,19 @@ The boundary conditions can be specified in the Graphical User Interface (GUI) u
 \begin{center}
 \includegraphics[width=13cm]{gui_bc_parameters}
 \caption{Parameters of the boundary conditions}
-\label{gui_bc_parameters}
+\label{fig:gui_bc_parameters}
 \end{center}
 \end{figure}
 
 \texttt{cs\_user\_boundary\_conditions} is the second compulsory subroutine for every calculation launched
 without interface (except in the case of specific physics where the
-corresponding boundary condition user subroutine must be used)  \\
-When the subroutine is used, \texttt{cs\_user\_boundary\_conditions} is used to define complex
-boundary conditions (input profiles, conditions varying in time, ...)
-which could not be specified by the means of the interface, and only these
-need to be defined. In the case of a calculation launched without the
-interface, all the boundary conditions must appear in \texttt{cs\_user\_boundary\_conditions}.\\
+corresponding boundary condition user subroutine must be used).
+
+When using the interface, only complex boundary conditions (input profiles, conditions varying in time, ...)
+need to be defined with \texttt{cs\_user\_boundary\_conditions}.
+In the case of a calculation launched without the
+interface, all the boundary conditions must appear in \texttt{cs\_user\_boundary\_conditions}.
+
 \texttt{cs\_user\_boundary\_conditions} is essentially constituted of loops on boundary
 face subsets. Several sequences
 of \verb+call getfbr+ \verb+('criterion', nlelt, lstelt)+ (cf.
@@ -4326,7 +4369,7 @@ The standard key words used by the indicator \texttt{itypfb} are:
 \begin{list}{$\rightarrow$}{}
 \item the eventual sliding wall velocity of the face is
       found in \texttt{rcodcl(ifac,ivar,1)} (\texttt{ivar} being
-      \texttt{iu}, \texttt{iv} or \texttt{iw)}. The initial
+      \texttt{iu}, \texttt{iv} or \texttt{iw}). The initial
       values of \texttt{rcodcl(ifac,ivar,1)} are zero for
       the three velocity components (and therefore are to be specified
       only if the velocity is not equal to zero). \\
@@ -4382,7 +4425,7 @@ The standard key words used by the indicator \texttt{itypfb} are:
       is zero flux.
 \end{list}
 \end{list}
-\item If \texttt{itypfb=isymet}: symmetry face (or wall without friction)
+\item If \texttt{itypfb=isymet}: symmetry face (or wall without friction).
 \begin{list}{$\rightarrow$}{}
 \item Nothing to be writen in \texttt{icodcl} and  \texttt{rcodcl}.
 \end{list}
@@ -4391,7 +4434,7 @@ The standard key words used by the indicator \texttt{itypfb} are:
       inlet/outlet with forced pressure)
 \begin{list}{$\rightarrow$}{}
 \item The pressure is always treated with a Dirichlet condition, calculated
-      with the constraint $\displaystyle \frac{d}{dn}\left(\frac{dP}{d\tau}\right)=0$.
+      with the constraint $\displaystyle \frac{\partial }{\partial n}\left(\frac{ \partial P}{\partial \tau}\right)=0$.
       The pressure is set to $P_0$ at the first \texttt{isolib} face met.
       The pressure calibration is always done on a single face, even if there are
       several outlets.
@@ -4405,7 +4448,7 @@ The standard key words used by the indicator \texttt{itypfb} are:
       and turbulent quantities.
 \end{list}
 
-\item If \texttt{itypfb=iindef}: undefined type face (non-standard case)
+\item If \texttt{itypfb=iindef}: undefined type face (non-standard case).
 \begin{list}{$\rightarrow$}{}
 \item Coding is done in a non-standard way by filling both arrays \texttt{rcodcl} and
       \texttt{icodcl} (see \S\ref{prg_clnonstandard}).
@@ -4505,6 +4548,23 @@ must be filled as follows:
 
 \end{list}
 
+\item If \texttt{icodcl(ifac,ivar)=2}: radiative outlet at the face \texttt{ifac}
+      for the variable \texttt{ivar}. It reads $ \dfrac{\partial \varia }{\partial t} + C \dfrac{\partial \varia}{\partial n} = 0 $, where $C$ is a to be defined celerity of radition.
+
+\begin{list}{$\rightarrow$}{}
+\item \texttt{rcodcl(ifac,ivar,3)} is not used.
+
+\item \texttt{rcodcl(ifac,ivar,1)} is the flux value of \texttt{ivar} at the cell center $\centip$,
+      projection of the center of the adjacent cell on the straight line
+      perpendicular to the boundary face and crossing its center,
+      at the previous time step.
+      It corresponds to:
+\item \texttt{rcodcl(ifac,ivar,2)} is CFL number based on the parameter $C$,
+      the distance to the boundary $\centip \centf$ and the time step:  
+      $CFL = \dfrac{C dt }{\centip \centf}$,
+
+\end{list}
+
 \item If \texttt{icodcl(ifac,ivar)=3}: flux condition at the face \texttt{ifac}
       for the variable \texttt{ivar}.
 
@@ -4565,7 +4625,7 @@ $\displaystyle -(\lambda_\varphi+\frac{\mu_t}{\sigma_\varphi})\grad\varphi\cdot\
       the case of a sliding wall, the three components of the sliding
       velocity are given by (\texttt{rcodcl(ifac,iu,1)},
       \texttt{rcodcl(ifac,iv,1)}, and \\\texttt{rcodcl(ifac,iw,1)}).\\
-{\em WARNING: the wall sliding velocity must belong to the boundary face
+      {\em WARNING: the wall sliding velocity must belong to the boundary face
       plane. For safety, the code uses only the projection of this
       velocity on the face. Therefore, if the velocity vector specified
       by the user does not belong to the face plane, the wall sliding velocity really
@@ -4582,10 +4642,26 @@ $\displaystyle -(\lambda_\varphi+\frac{\mu_t}{\sigma_\varphi})\grad\varphi\cdot\
 \item If \texttt{icodcl(ifac,ivar)}=9: free outlet condition for the
       velocity. This condition is only applicable to velocity
       components.\\
-If the mass flow at the face is negative, this condition is equivalent
+      If the mass flow at the face is negative, this condition is equivalent
       to a zero-flux condition.\\
-If the mass flow at the face is positive, the velocity at the face is set to zero (but not the mass flow).\\
+      If the mass flow at the face is positive, the velocity at the face is set to zero (but not the mass flow).\\
 \texttt{rcodcl} is not used.
+
+\item If \texttt{icodcl(ifac,ivar)}=14: generalized symmetry boundary condition for vectors (Marangoni       effect for the velocity for instance). 
+      This condition is only applicable to vectors and set a Dirichlet boundary condition on the normal
+      component and a Neumann condition on the tangential components.\\
+      If the three components are  \texttt{ivar1, ivar2, ivar3}, the required values are:
+
+\begin{list}{$\rightarrow$}{}
+      \item \texttt{rcodcl(ifac,ivar1,1)}: Dirichlet value in the $x$ direction.
+      \item \texttt{rcodcl(ifac,ivar2,1)}: Dirichlet value in the $y$ direction.
+      \item \texttt{rcodcl(ifac,ivar3,1)}: Dirichlet value in the $z$ direction.
+      \item \texttt{rcodcl(ifac,ivar1,3)}: flux value for the $x$ direction.
+      \item \texttt{rcodcl(ifac,ivar2,3)}: flux value for the $y$ direction.
+      \item \texttt{rcodcl(ifac,ivar3,3)}: flux value for the $z$ direction.
+\end{list}
+      Therefore, the code automatically compute the boundary condition to impose to th normal and to
+      the tangential components.
 
 \end{list}
 
@@ -8083,7 +8159,7 @@ This initialisation can be performed in the Graphical User Interface (GUI)
  or in the subroutines \texttt{usalin} and \texttt{usstr1}. First of all,
  in the GUI when the ``Mobile mesh'' is selected in the ``Thermophysical models''
  heading, additional options are displayed. The user must choose a type of mesh
- viscosity and how to describe its spatial distribution, see fig. \ref{fig:Ini-ale}.
+ viscosity and how to describe its spatial distribution, see \figurename~\ref{fig:Ini-ale}.
 
 \begin{figure}[ht]
 \begin{center}
@@ -8097,19 +8173,19 @@ The following paragraphs are relevant if the GUI is not used.
 
 \minititre{Subroutine \texttt{usalin}}
 \noindent
-\textit{Subroutine called at the start.}
+\textit{Subroutine called at the beginning.}
 This subroutine completes \texttt{cs\_user\_parameters.f90}.
 
-\texttt{usalin} allows to set option for the ale module, and in
-particular to active the ale module
+\texttt{usalin} allows to set options for the ALE module, and in
+particular to active the ALE module (\texttt{iale=1}).
 
 \minititre{Subroutine \texttt{usstr1}}
 
-\texttt{usstr1} allows to specify for the structure module the
+\texttt{usstr1} This subroutine reads in \texttt{cs\_user\_fluid\_structure\_interaction.f90}. It allows to specify for the structure module the
 following pieces of information:
 \begin{list}{-}{}
-  \item number of structure (\texttt{nbstru}).
-  \item initial value of deplacement, velocity and acceleration
+  \item the index of the structure, (\texttt{idfstr(ifac)} where \texttt{ifac} is the index of the face). Then the total number of structures \texttt{nbstru} is automatically computed by the code. Be carefull, the value must belong to 1, ..., \texttt{nbstru}.
+  \item the initial value of deplacement, velocity and acceleration
     (\texttt{xstr0}, \texttt{xstreq} and \texttt{vstr0}).
 \end{list}
 
@@ -8117,11 +8193,8 @@ Below is a list of the different variables that might be modified:
 
 \begin{list}{$\bullet$}{}
 
-\item{\texttt{nbstru}} \\
-{the number of structures}
-
-\item{\texttt{idfstr(i)}} \\
-{index of the structure, where I is the index of the face}
+\item{\texttt{idfstr(ifac)}} \\
+{the index of the structure, (\texttt{idfstr(ifac)} where \texttt{ifac} is the index of the face), 0 if the face is not coupled to any structure.}
 
 \item{\texttt{xstr0(i,k)}} \\
 {initial position of a structure, where \texttt{i} is the dimension of space
@@ -8137,15 +8210,15 @@ and \texttt{k} the index of the structure }
 \end{list}
 
 %==================================
-\subsubsection{Boundary conditions of velocity mesh}
+\subsubsection{Boundary conditions of mesh velocity}
 %==================================
 The boundary conditions can be managed with the Graphical User Interface (GUI)
  or with the subroutine \texttt{usalcl} (called at each time step). In the GUI,
  when the item ``Mobile mesh'' is activated  the item ``Fluid structure interaction''
  appears under the heading ``Boundary conditions''. Two types of Fluid-structure
  coupling are offered. The first one is internal, using a simplified structure
- model and the second is external with \textit{Code\_Aster}, see figs.
- \ref{fig:CL-ale1} and  \ref{fig:CL-ale2}.
+ model and the second is external with \textit{Code\_Aster}, see \figurename~
+ \ref{fig:CL-ale1} and \figurename~\ref{fig:CL-ale2}.
 %
 \begin{figure}[ht]
 \begin{center}
@@ -8170,46 +8243,51 @@ the ale module just as it is in \texttt{cs\_user\_parameters.f90}. The way of us
 is the same as the way of using \texttt{cs\_user\_boundary\_conditions} in the framework of
 standard calculations, that is to say a loop on the boundary faces
 marked out by their colour (or more generally by a property of their
-family), where the type of boundary condition of velocity mesh for
+family), where the type of boundary condition of mesh velocity for
 each variable are defined.
 
 The main numerical variables are described below.
 
 \variab{ialtyb}{ialtyb(nfabor)}{ia}{In the ale module, the user
-defines the velocity mesh from the colour of the boundary faces, or
+defines the mesh velocity from the colour of the boundary faces, or
 more generally from their properties (colours, groups, ...), from the
 boundary conditions defined in \texttt{cs\_user\_boundary\_conditions}, or even from their
 coordinates. To do so, the array \texttt{ialtyb(nfabor)} gives for each face
-\texttt{ifac} the velocity mesh boundary condition types marked out by the key
+\texttt{ifac} the mesh velocity boundary condition types marked out by the key
 words \texttt{ivimpo\index{ivimpo}}, \texttt{igliss\index{igliss}},
-\texttt{ibfixe\index{ibfixe}}
+\texttt{ibfixe\index{ibfixe}} or \texttt{ifresf\index{ifresf}}}.
 
 \begin{list}{$\bullet$}{}
 
-\item If \texttt{ialtyb=ivimpo}: imposed velocity.
+\item If \texttt{ialtyb(ifac) = ivimpo}: imposed velocity.
 
 \begin{list}{$\rightarrow$}{}
 \item In the case where all the nodes of a face have a imposed displacement,
  it is not necessary to fill the tables with boundary conditions
- velocity mesh for this face, they will be erased. In the other case,
+ mesh velocity for this face, they will be erased. In the other case,
  the value of the Dirichlet must be given in \texttt{rcodcl(ifac,ivar,1)} for
- every value of \texttt{ivar} (\texttt{iuma}, \texttt{ivma} and \texttt{iwma})
+ every value of \texttt{ivar} (\texttt{iuma}, \texttt{ivma} and \texttt{iwma}).
  The other boxes of \texttt{rcodcl} and \texttt{icodcl} are completed automatically.
 
- The tangential velocity mesh is taken like a tape speed under the
- boundary conditions of wall for the fluid, except if wall velocity
- was specified by the user in the interface or cs\_user\_boundary\_conditions (in which case
+ The tangential mesh velocity is taken like a tape speed under the
+ boundary conditions of wall for the fluid, except if wall fluid velocity
+ was specified by the user in the interface or \texttt{cs\_user\_boundary\_conditions} (in which case
  it is this speed which is considered).
 \end{list}
 
- \item if \texttt{ialtyb(nfac) = ibfixe}: fixed wall
+ \item if \texttt{ialtyb(ifac) = ibfixe}: fixed wall
 \begin{list}{$\rightarrow$}{}
  \item the velocity is null.
 \end{list}
 
- \item if \texttt{ialtyb(nfac) = igliss}:  sliding wall
+ \item if \texttt{ialtyb(ifac) = igliss}: sliding wall
 \begin{list}{$\rightarrow$}{}
-\item the tangential velocity is not used.
+\item symmetry boundary condition on the mesh velocity vector, which means an homogenous Neumann on the tangential mesh velocity and a zero Dirichlet on the normal mesh velocity.
+\end{list}
+
+ \item if \texttt{ialtyb(ifac) = ifrsf}: free-surface
+\begin{list}{$\rightarrow$}{}
+\item an imposed mesh velocity so that the fluid mass flux is equal to the mesh displacement to mimic free-surface automatically. Note that the boundary condition on the fluid velocity must be set separatelly (homogeneous Neumann for instance).
 \end{list}
 
 \end{list}
@@ -8220,7 +8298,7 @@ words \texttt{ivimpo\index{ivimpo}}, \texttt{igliss\index{igliss}},
 %==================================
 
 The user subroutine \texttt{usvima} is used along the ALE (Arbitrary Lagrangian Eulerian
- Method) module, it fills mesh viscosity arrays. It is called at each time step.
+ Method) module, and fills mesh viscosity arrays. It is called at each time step.
 The user can modify mesh viscosity values to prevent cells and nodes from huge
  displacements in awkward areas, such as boundary layer for example.
 If \texttt{iortvm} = 0, the mesh viscosity modelling is considered as isotropic and
@@ -8234,17 +8312,17 @@ Note that \texttt{viscmx}, \texttt{viscmy} and \texttt{viscmz} arrays are initia
 \subsubsection{Fluid - Structure internal coupling}\label{sec:ALE}
 %==================================
 
-In the subroutine \texttt{usstru} the user provides the parameters of two other subroutines.
+In the subroutine \texttt{cs\_user\_fluid\_structure\_interaction} the user provides the parameters of two other subroutines.
 \texttt{usstr1} is called at the beginning of the calculation. It is used to define
  and initialise the internal structures where Fluid-Structure coupling occurs.
-For each boundary face \texttt{ifac}, \texttt{idfstr(ifac)} is the number of the structure
+For each boundary face \texttt{ifac}, \texttt{idfstr(ifac)} is the index of the structure
  the face belongs to (if \texttt{idfstr(ifac)} = 0, the face \texttt{ifac} doesn't belong
- to any structure). When using internal coupling, structure number necessarily needs to be
- positive. The number of "internal" structures is automatically defined with the maximum
+ to any structure). When using internal coupling, structure index necessarily needs to be
+ strictly positive and smaller than the number of structures. The number of "internal" structures is automatically defined with the maximum
  value of the \texttt{idfstr} table, meaning that internal structure numbers must be defined
  sequentially with positive values, beginning with integer value '1'.
 
-For each internal structure one can define here:
+For each internal structure one can define:
 \begin{list}{-}{}
  \item an initial velocity \texttt{vstr0}
  \item an initial displacement \texttt{xstr0} (i.e. \texttt{xstr0} is the value of the
@@ -8252,7 +8330,7 @@ For each internal structure one can define here:
  \item a displacement compared to equilibrium  \texttt{xstreq} (i.e. \texttt{xstreq}
  is the initial displacement of the internal structure compared to its position at
  equilibrium; at each time step t and for a displacement \text{xstr}(t), the associated
- internal structure will undergo a force $-k*(\text{}(t)+XSTREQ)$ due to the spring).
+ internal structure will undergo a force $-k*(\text{}t+XSTREQ)$ due to the spring).
 \end{list}
 \text{xstr0} and \text{vstr0} are initialised with the value 0.
 When starting a calculation using ALE, or re-starting a calculation with ALE, based
@@ -8269,8 +8347,8 @@ When \texttt{ihistr} is set to 1, the code writes in the output the history of t
 The second subroutine, \text{usstr2}, is called at each iteration. One defines in this
  subroutine structural parameters (considered as potentially time dependent): i.e.,
  mass m \text{xmstru}, friction coefficients c \text{xcstru}, and stiffness k \text{xkstru}.
- \text{forstr} array gives fluid stresses acting on each internal structure. Moreover it's
- possible to take external forces (gravity for example ) into account, too.
+ \text{forstr} array gives fluid stresses acting on each internal structure. Moreover it is also
+ possible to take external forces (gravity for example ) into account.
 \begin{list}{.}{}
  \item \text{xstr} array indicates the displacement of the structure compared to it
 s position in initial mesh,
@@ -8281,7 +8359,7 @@ s position in initial mesh,
 \text{xstr}, \text{xstr0} and \text{vstr} are \text{DATA} tables that can be used to
  define arrays Mass, Friction and Stiffness. Those are not to be modidfied.
 
-The 3D structural equation that is solved is the following one :
+The 3D structural equation that is solved is the following one:
 \begin{equation}\label{eq:FluidStruct}
 \displaystyle
 \tens{m}.\partial_{tt}\vect{x}+\tens{c}.\partial_{t}\vect{x}+\tens{k}.\left(\vect{x}+\vect{x_0}\right)=\vect{f},
@@ -8300,7 +8378,7 @@ Note that the time step used to solve this equation, \text{dtstr}, can be
 \subsection{Management of the structure property}
 %==================================
 
-The use of \texttt{usstr2} is mandatory to run a calculation using the ale
+The use of \texttt{usstr2} is mandatory to run a calculation using the ALE 
  module with a structure module. It is called at each time step.
 
 For each structure, the system that will be solved is:
@@ -8315,7 +8393,7 @@ where
  \item $M$ is the mass stucture (\texttt{xmstru}).
  \item $C$ is the dumping coefficient of the stucture (\texttt{xcstru}).
  \item $K$ is the spring constant or force constant of the stucture (\texttt{xkstru}).
- \item $x_{0}$ is the initial position
+ \item $x_{0}$ is the initial position.
 \end{list}
 
 Below is a list of the different variables that might be modified:
