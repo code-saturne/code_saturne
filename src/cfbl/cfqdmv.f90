@@ -248,8 +248,8 @@ if (iphydr.eq.1) then
       cpdc22 = ckupdc(ielpdc,2)
       cpdc33 = ckupdc(ielpdc,3)
       cpdc12 = ckupdc(ielpdc,4)
-      cpdc13 = ckupdc(ielpdc,5)
-      cpdc23 = ckupdc(ielpdc,6)
+      cpdc23 = ckupdc(ielpdc,5)
+      cpdc13 = ckupdc(ielpdc,6)
       dfrcxt(iel,1) = dfrcxt(iel,1)                   &
  -rtp(iel,isca(irho))*(cpdc11*vit1+cpdc12*vit2+cpdc13*vit3)
       dfrcxt(iel,2) = dfrcxt(iel,2)                   &
