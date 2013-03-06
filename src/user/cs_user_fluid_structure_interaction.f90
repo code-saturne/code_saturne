@@ -103,8 +103,6 @@ implicit none
 
 ! Arguments
 
-integer          nbstru
-
 integer          idfstr(nfabor)
 
 double precision aexxst, bexxst, cfopre
@@ -124,7 +122,6 @@ integer, allocatable, dimension(:) :: lstelt
 
 
 if (1.eq.1) then
-  nbstru = 0
   return
 endif
 
