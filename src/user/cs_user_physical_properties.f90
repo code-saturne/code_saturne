@@ -272,7 +272,7 @@ if (.false.) then
   ! following lines of code (voluntarily deactived, as the must be used
   ! with caution):
 
-  ! Note that when we prscribe the density at the boundary, it must be done
+  ! Note that when we prescribe the density at the boundary, it must be done
   ! at ALL boundary faces.
   !    ===
 
