@@ -8420,20 +8420,49 @@ constant and \texttt{k} the index of the structure.}
 %==================================
 \subsection{Management of the Atmospheric module}
 %==================================
+
+The selection can be done in the Graphical User Interface (GUI)
+ under the heading ``Thermophysical models'' item ``Calculation features''
+or in the routine usppmo as described in the section ``Advanced modelling setup''.
+ 
+One of the followind atmospheric flow model can be selected:
+\begin{list}{-}{}
+ \item ``constant density'' : no thermal variable, to simulate neutral atmosphere,
+ \item ``dry atmosphere'' : potential temperature is used as thermal variable to simulate dry stratified
+atmospheric flows,
+ \item ``humid atmosphere'' : liquid potential temperature, total water content, and droplet number are
+used to simulate stratified atmospheric flows with water (liquid and vapor) together with phase changes.
+The model is described in (Bouzereau, 2004).
+\end{list}
+
+When one of the atmospheric option is selected, it activates an item under the same heading:
+``Atmospheric flows'' where the path leading to a file containing meteorological data can be specified, see
+ fig. \ref {fig:Ini-atmo}. An example is given in the DATA/REFERENCE/meteo file.
+
+The user can  use the standard set of \CS boundary conditions but is warned that even small 
+inconsistencies can create very large buoyancy forces and spurious circulations.
+
+Alternatively, the meteorological profile can be used to initialize the fields and to set up the inlet boundary
+conditions. Optionally, the inlet can be detected automatically according to the direction of the wind given 
+in the meteorological file. This is often used for the lateral boundaries of the atmospheric domain.
+
+WARNING : the definition of the potential temperature (and the liquid potential temperature) requires that the
+vertical component of the gravity is set at GZ=-9.81 (GX=GY=0) otherwise pressure and density are not 
+correctly computed.
+
 %==================================
 \subsubsection{Initialisation of the variables}
 %==================================
 
-The initialisation can be done in the Graphical User Interface (GUI)
- or in the subroutine \texttt{usativ} (called only during the calculation
- initialisation). Under the heading ``Thermophysical models'', when in the
- item ``Calculation features'' one of the atmospheric flow model is selected,
- it activates an item under the same heading:``Atmospheric flows'' where the
- path leading to a file containing meteorological data must be specified, see
- fig. \ref {fig:Ini-atmo}. In addition is the atmospheric flow model chosen is
- the ``dry atmosphere'', an option appear the item ``Time step'' under the
- heading ``Numerical parameters'' plus an additional variable ``PotTemp''
-in the table of the ``Equation parameters'' item.
+If a meteorological file is given, it is used by default for intializing the
+variables. If not the standard intialization is performed.
+The initialisation can be modified in the Graphical User Interface (GUI)
+ or in the subroutine \texttt{cs\_user\_initialization\_atmospheric} example.  
+In addition if the atmospheric flow model chosen is
+  ``dry atmosphere'',  the additional variable ``PotTemp'' appear below the other
+code variables. For the ``humid atmosphere'', the additional variables are :
+``LiqPotTemp'', ``TotWater'' and ``NbDrop''.
+
 
 \begin{figure}[ht]
 \begin{center}
@@ -8443,35 +8472,23 @@ in the table of the ``Equation parameters'' item.
 \end{center}
 \end{figure}
 
-When the GUI is not used, \texttt{cs\_user\_initialization} allows to initialise or modify
+When the GUI is not used, \texttt{cs\_user\_initialization\_atmospheric} example (called only during the calculation
+ initialisation) allows to initialise or modify
 (in case of a restarted calculation) the calculation variables and the values of
-the time step. The quantities that can be initialised here in user-selected
-zones are:
-\begin{list}{-}{}
- \item the air velocity with the array \texttt{rtp(iel,iu)} (with
- \texttt{iv} and \texttt{iw} for the other components),
- \item the air temperature with the array \texttt{rtp(iel,isca(ihumid))},
- \item turbulent quantities depending on the turbulent model selected.
-\end{list}
-The example provided in the user file performs the initialisation of the
+the time step. 
+The example provided in the user file performs the initialisation of the 
 variables from meteorological profiles using the interpolation routine \texttt{intprf}.
-
-%==================================
-\subsubsection{Non standard options}
-%==================================
-The subroutine \texttt{usati1} initialises non-standard parameters for
-atmospherical calculations. These parameters are for instance:
-\begin{list}{-}{}
- \item \texttt{imeteo},
- \item \texttt{irovar} for each phase,
- \item \texttt{ivivar} for each phase.
-\end{list}
 
 %==================================
 \subsubsection{Management of the boundary conditions}
 %==================================
 
-All boundary conditions are managed by the general \texttt{cs\_user\_boundary\_conditions} subroutine. For each type of boundary condition, faces should be grouped as physical zones characterised by an arbitrary number \texttt{izone} chosen by the user. If a boundary condition is retrieved from a meteorological profile, the variable \texttt{iprofm(izone)} of the zone must be set to 1.\\
+Boundary conditions can be set with the GUI, including the automatic use of the meteorological 
+profile for inlets.
+If not managed by the GUI, the boundary conditions must be managed by the \texttt{cs\_user\_boundary\_conditions\_atmospheric} subroutine
+which gives various examples . For each type of boundary condition, faces should be grouped as physical zones characterised 
+by an arbitrary number \texttt{izone} chosen by the user. If a boundary condition is retrieved from a meteorological profile,
+ the variable \texttt{iprofm(izone)} of the zone must be set to 1.
 
 %==================================
 %\subsection{Cooling tower modelling}
