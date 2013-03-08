@@ -1136,7 +1136,7 @@ fi
 
         msg = \
             '\n' \
-            + '                      ' + self.package.name + ' is running\n' \
+            + '                      ' + self.package.code_name + ' is running\n' \
             + '                      ***********************\n' \
             + '\n' \
             + ' Version: ' + self.package.version + '\n' \
