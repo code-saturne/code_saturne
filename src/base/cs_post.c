@@ -2290,7 +2290,7 @@ _boundary_submeshes_by_group(const cs_mesh_t   *mesh,
  *   moment_id  <-- id of associated moment divisor:
  *                  - if moment_id == -1, the field is not a moment;
  *                  - if moment_id >= 0, it is the field id for the divisor;
- *                  - if moment_id < 1, (-1 -moment_id) is the moment id
+ *                  - if moment_id < -1, (-1 -moment_id) is the moment id
  *                    in the Fortran "dtcmom" array of the optcal module
  *   n_elts     <-- local number of elements
  *   elt_list   <-- list of cells (1 to n), or NULL
@@ -2317,7 +2317,7 @@ _cs_post_build_moment(const cs_field_t  *f,
     denom = fd->val;
     d_mult = 1;
   }
-  else if (moment_id < 0) {
+  else if (moment_id < -1) {
     denom = &(_cs_post_cumulative_mom_time[(- moment_id - 1) - 1]);
     /* d_mult = 0 is set above */
   }
@@ -2439,9 +2439,9 @@ _cs_post_output_fields(cs_post_mesh_t   *post_mesh,
 
         int moment_id = cs_field_get_key_int(f, moment_key_id);
 
-        /* if moment_id == 1, the field is not a moment;
-           if moment_id >= 0, it is the field id for the divisor;
-           if moment_id < 1, (-1 -moment_id) is the moment id in "dtcmom" */
+        /* if moment_id == -1, the field is not a moment;
+           if moment_id > 0, it is the field id for the divisor;
+           if moment_id < -1, (-1 -moment_id) is the moment id in "dtcmom" */
 
         if (moment_id != -1) {
           const cs_lnum_t n_elts = (location_id == CS_MESH_LOCATION_CELLS) ?
