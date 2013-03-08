@@ -317,10 +317,10 @@ do ii = 1, npromx
   iapro(ii ) = 0
 enddo
 
-! For moments, this key defined the division by time mode
+! For moments, this key defines the division by time mode
 !  = 0: no division
-!  > 0: field id for cumulative dt (property)
-!  < 0: -id in dtcmom of cumulative dt (uniform)
+!  > 0: property number for cumulative dt (property)
+!  < 0: position in dtcmom of cumulative dt (uniform)
 
 do imom = 1, nbmomt
   ! property id matching moment
@@ -330,17 +330,39 @@ do imom = 1, nbmomt
   endif
 enddo
 
+! Mark moment accumulators
+
+do imom = 1, nbmomt
+  idtnm = idtmom(imom)
+  if (idtnm.gt.0) then
+    iprop = ipproc(icdtmo(idtnm))
+    iapro(iprop) = -idtnm
+  endif
+enddo
+
 ! The choice made in VARPOS specifies that we will only be interested in
 ! properties at cell centers (no mass flux, nor density at the boundary).
 
+imom = 0
 do iprop = 1, nproce
   name = nomvar(ipppro(iprop))
-  if (name(1:4) .eq. '    ') then
-    write(name, '(a, i3.3)') 'property_', iprop
-  endif
   if (iapro(iprop).eq.0) then
+    if (name(1:4) .eq. '    ') then
+      write(name, '(a, i3.3)') 'property_', iprop
+    endif
     itycat = FIELD_PROPERTY
   else
+    if (iapro(iprop).gt.0) then
+      imom = imom + 1
+      if (name(1:4) .eq. '    ') then
+        write(name, '(a, i3.3)') 'moment_', imom
+      endif
+    else if (iapro(iprop).lt.0) then
+      imom = imom + 1
+      if (name(1:4) .eq. '    ') then
+        write(name, '(a, i3.3)') 'accumulator_', -iapro(iprop)
+      endif
+    endif
     itycat = FIELD_PROPERTY + FIELD_ACCUMULATOR
   endif
   call field_create(name, itycat, ityloc, idim1, ilved, inoprv, iprpfl(iprop))
@@ -362,8 +384,8 @@ do imom = 1, nbmomt
   ! dt type and number
   idtnm = idtmom(imom)
   ikeyvl = -1
-  if(idtnm.gt.0) then
-    ikeyvl = iprpfl((icdtmo(idtnm)))
+  if (idtnm.gt.0) then
+    ikeyvl = iprpfl(ipproc(icdtmo(idtnm)))
   elseif(idtnm.lt.0) then
     ikeyvl = idtnm - 1
   endif
