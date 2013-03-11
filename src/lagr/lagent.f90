@@ -813,8 +813,8 @@ endif
 npt = nbpart
 
 !     pour chaque zone de bord:
-do ii = 1,nfrlag
-  nb = ilflag(ii)
+do ii = 1,nfrtot
+  nb = ilftot(ii)
 
 !       pour chaque classe :
   do nc = 1, iusncl(nb)
