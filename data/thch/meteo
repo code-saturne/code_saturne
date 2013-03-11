@@ -1,42 +1,59 @@
-/ METEO FILE
+/ METEO FILE EXAMPLE
+/ (free comment lines )
 /---------------------------------------------------------
 / The format of the file is important and is the following:
 / --------------------------------------------------------
-/ year (integer), quantile (integer), hour (integer), minute (integer), second (dble prec) of the profile
-/ location of the meteo profile in the domaine (x,y) (double precision)
-/ sea level pressure (double precision)
+/ year (integer), quantile (integer), hour (integer), minute (integer), second (dble precision) of the profile
+/ location of the meteo profile in the domaine (x,y) in m (double precision)
+/ sea level pressure (Pa) (double precision)
+/
 / temperature profile: 
-/ number of altitudes (integer)
-/ alt.,temperature  in celcius,humidity in kg/kg (double precision)
+/ number of levels (integer)
+/ for each level :
+/ altitude(m), temperature(°C),humidity(kg/kg),number of droplet(n/cm3) (double)
+/
 / wind profile:
-/ number of altitudes (integer)
-/ alt.,u,v,k,eps (double precision)
-/ NO LINE AT THE END OF THE FILE
+/ number of levels (integer)
+/ for each level :
+/ altitude (m),u(m/s),v(m/s),k(m2/s2),eps(m2/s3) (double precision)
+/
+/ NO EMPY LINE AT THE END OF THE FILE
 / ---------------------------------------------------------
 / ---------------------------------------------------------
+/
 / year, quantile, hour, minute, second of the profile:
+/
 2007, 17, 7, 23 , 8.
+/
 / location of the meteo profile in the domaine (x,y):
+/
   0.0000E+00   0.0000E+00
-/Sea level pressure
+/
+/Sea level pressure :
+/
 100350.
-/temperature profile: number of altitudes,(alt.,T in celcius,H in kg/kg )
+/
+/ Temperature profile: number of levels,(altitude of each level in m, 
+/ temperature(°C), humidity(kg/kg) and number of droplet(n/cm3)) 
+/                   
 14
-  0.50  14.7000  0.0000
-  2.00  14.7000  0.0000
-  4.00  14.7000  0.0000
-  6.00  14.7000  0.0000
-  8.00  14.7000  0.0000
- 15.00  14.7000  0.0000
- 25.00  14.7000  0.0000
- 35.00  14.7000  0.0000
- 45.00  14.7000  0.0000
- 70.00  14.7000  0.0000
-120.00  14.7000  0.0000
-180.00  14.7000  0.0000
-250.00  14.7000  0.0000
-500.00  14.7000  0.0000
-/ wind profile: number  of altitudes,(alt.,u,v,k,eps)
+  0.50  14.7000  0.0000 0.000
+  2.00  14.7000  0.0000 0.000
+  4.00  14.7000  0.0000 0.000
+  6.00  14.7000  0.0000 0.000
+  8.00  14.7000  0.0000 0.000
+ 15.00  14.7000  0.0000 0.000
+ 25.00  14.7000  0.0000 0.000
+ 35.00  14.7000  0.0000 0.000
+ 45.00  14.7000  0.0000 0.000
+ 70.00  14.7000  0.0000 0.000
+120.00  14.7000  0.0000 0.000
+180.00  14.7000  0.0000 0.000
+250.00  14.7000  0.0000 0.000
+500.00  14.7000  0.0000 0.000
+/
+/ Wind profile: number  of levels,(alt.,u,v,k,eps)
+/
 15
   0.50   3.882   0.000    2.5040E+00    2.7128E+00
   1.00   5.196   0.000    2.5040E+00    1.4797E+00
