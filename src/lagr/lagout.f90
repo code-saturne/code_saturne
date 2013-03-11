@@ -153,7 +153,7 @@ character        rubriq*64 , car4*4
 character        nomnvl(nvplmx)*60 , nomtsl(nvplmx)*60
 character        nomite(nvplmx)*64 , nomrte(nvplmx)*64
 character        ficsui*32
-integer          ierror , irtyp  , itysup , nbval
+integer          ierror , nbval, itysup , irtyp  , irfsup, idbase
 integer          ivers  , ilecec
 integer          nfin   , iforce , icha   , ii
 integer          itrav1
@@ -354,8 +354,15 @@ irtyp  = 1
 do ii = 1, nivep
   if (ii .ne. jisor) then
     rubriq = nomite(ii)
-    call ecrsui(impavl, rubriq, len(rubriq), itysup, nbval, irtyp,  &
-                itepa(1,ii), ierror)
+    if (ii.eq.jdfac) then
+      idbase = 1
+      irfsup = 3
+      call ecisui(impavl, rubriq, len(rubriq), itysup, irfsup, idbase,  &
+                  itepa(1,ii), ierror)
+    else
+      call ecrsui(impavl, rubriq, len(rubriq), itysup, nbval, irtyp,  &
+                  itepa(1,ii), ierror)
+    endif
   endif
 enddo
 

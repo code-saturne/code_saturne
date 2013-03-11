@@ -1086,7 +1086,7 @@ _default_p_rank(cs_block_dist_info_t  *p_bi,
  *                              :     : 0: default interval
  *                              :     : -1: checkpoint at end
  *                              :     : -2: no checkpoint
- * double precisionsttsuit      : <-- : if> 0, checkpoint time interval
+ * double precision ttsuit      : <-- : if> 0, checkpoint time interval
  * double precision wtsuit      : <-- : if> 0, checkpoint wall time interval
  *----------------------------------------------------------------------------*/
 
@@ -1732,6 +1732,190 @@ void CS_PROCF (ecpsui, ECPSUI)
                                        *nbpart,
                                        ipcell,
                                        coopar);
+
+  /* Free memory if necessary */
+
+  cs_base_string_f_to_c_free(&bufname);
+}
+
+/*----------------------------------------------------------------------------
+ * Read a referenced location id section from a restart file.
+ *
+ * The section read from file contains the global ids matching the local
+ * element ids of a given location. Global id's are transformed to local
+ * ids by this function.
+ *
+ * In case global ids read do not match those of local elements,
+ * id_base - 1 is assigned to the corresponding local ids.
+ *
+ * Fortran interface
+ *
+ * subroutine leisui (numsui, nomrub, lngnom, itysup, irfsup, idbase, tabid, &
+ * *****************
+ *                    ierror)
+ *
+ * integer          numsui      : <-- : Restart file number
+ * character*       nomrub      : <-- : Section name
+ * integer          lngnom      : <-- : Section name length
+ * integer          itysup      : <-- : Location type:
+ *                              :     :  0: scalar (no location)
+ *                              :     :  1: cells
+ *                              :     :  2: interior faces
+ *                              :     :  3: boundary faces
+ *                              :     :  4: vertices (if available)
+ * integer          irfsup      : <-- : Referenced location type:
+ *                              :     :  0: scalar (no location)
+ *                              :     :  1: cells
+ *                              :     :  2: interior faces
+ *                              :     :  3: boundary faces
+ *                              :     :  4: vertices (if available)
+ * integer          idbase      : <-- : base of referenced entity id numbers
+ *                              :     : (usually 0 or 1)
+ * (?)              tabid       : <-> : Array of ids to read
+ * integer          ierror      : --> : 0: success, < 0: error code
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (leisui, LEISUI)
+(
+ const cs_int_t   *numsui,
+ const char       *nomrub,
+ const cs_int_t   *lngnom,
+ const cs_int_t   *itysup,
+ const cs_int_t   *irfsup,
+ const cs_int_t   *idbase,
+       void       *tabid,
+       cs_int_t   *ierror
+ CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
+                                         by many Fortran compilers) */
+)
+{
+  char    *bufname;
+
+  cs_restart_t  *restart;
+  int  location_id;
+  cs_restart_val_type_t  val_type;
+
+  cs_int_t irtype = 1;
+
+  *ierror = CS_RESTART_SUCCESS;
+
+  /* Handle name for C API */
+
+  bufname = cs_base_string_f_to_c_create(nomrub, *lngnom);
+
+  /* Handle other arguments for C API */
+
+  _section_f77_to_c(numsui,
+                    itysup,
+                    &irtype,
+                    &restart,
+                    &location_id,
+                    &val_type,
+                    ierror);
+
+  assert(val_type = CS_TYPE_cs_int_t);
+
+  if (*ierror < CS_RESTART_SUCCESS)
+    return;
+
+  /* Read section */
+
+  *ierror = cs_restart_read_ids(restart,
+                                bufname,
+                                location_id,
+                                *irfsup,
+                                *idbase,
+                                tabid);
+
+  /* Free memory if necessary */
+
+  cs_base_string_f_to_c_free(&bufname);
+}
+
+/*----------------------------------------------------------------------------
+ * Write a referenced location id section to a restart file.
+ *
+ * The section written to file contains the global ids matching the
+ * local element ids of a given location.
+ *
+ * Fortran interface
+ *
+ * subroutine ecisui (numsui, nomrub, lngnom, itysup, irfsup, idbase, tabid, &
+ * *****************
+ *                    ierror)
+ *
+ * integer          numsui      : <-- : Restart file number
+ * character*       nomrub      : <-- : Section name
+ * integer          lngnom      : <-- : Section name length
+ * integer          itysup      : <-- : Location type:
+ *                              :     :  0: scalar (no location)
+ *                              :     :  1: cells
+ *                              :     :  2: interior faces
+ *                              :     :  3: boundary faces
+ *                              :     :  4: vertices (if available)
+ * integer          irfsup      : <-- : Referenced location type:
+ *                              :     :  0: scalar (no location)
+ *                              :     :  1: cells
+ *                              :     :  2: interior faces
+ *                              :     :  3: boundary faces
+ *                              :     :  4: vertices (if available)
+ * integer          idbase      : <-- : base of referenced entity id numbers
+ *                              :     : (usually 0 or 1)
+ * (?)              tabid       : <-- : Array of ids to write
+ * integer          ierror      : --> : 0: success, < 0: error code
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (ecisui, ECRSUI)
+(
+ const cs_int_t   *numsui,
+ const char       *nomrub,
+ const cs_int_t   *lngnom,
+ const cs_int_t   *itysup,
+ const cs_int_t   *irfsup,
+ const cs_int_t   *idbase,
+ const cs_int_t   *tabid,
+       cs_int_t   *ierror
+ CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
+                                         by many Fortran compilers) */
+)
+{
+  char *bufname;
+
+  cs_restart_t  *restart;
+  int  location_id;
+  cs_restart_val_type_t  val_type;
+
+  cs_int_t irtype = 1;
+
+  *ierror = CS_RESTART_SUCCESS;
+
+  /* Handle name for C API */
+
+  bufname = cs_base_string_f_to_c_create(nomrub, *lngnom);
+
+  /* Handle other arguments for C API */
+
+  _section_f77_to_c(numsui,
+                    itysup,
+                    &irtype,
+                    &restart,
+                    &location_id,
+                    &val_type,
+                    ierror);
+
+  assert(val_type = CS_TYPE_cs_int_t);
+
+  if (*ierror < CS_RESTART_SUCCESS)
+    return;
+
+  /* Write section */
+
+  cs_restart_write_ids(restart,
+                       bufname,
+                       location_id,
+                       *irfsup,
+                       *idbase,
+                       tabid);
 
   /* Free memory if necessary */
 
@@ -2860,7 +3044,6 @@ cs_restart_read_particles(cs_restart_t  *restart,
 
   if (cs_glob_n_ranks > 1) {
 
-    cs_lnum_t i;
     cs_gnum_t *g_part_cell_num;
 
     BFT_MALLOC(g_part_cell_num, n_particles, cs_gnum_t);
@@ -3034,6 +3217,204 @@ cs_restart_write_particles(cs_restart_t     *restart,
   BFT_FREE(global_part_cell_num);
 
   return loc_id;
+}
+
+/*----------------------------------------------------------------------------
+ * Read a referenced location id section from a restart file.
+ *
+ * The section read from file contains the global ids matching the local
+ * element ids of a given location. Global id's are transformed to local
+ * ids by this function.
+ *
+ * In case global referenced ids read do not match those of local elements,
+ * id_base - 1 is assigned to the corresponding local ids.
+ *
+ * parameters:
+ *   restart         <-- associated restart file pointer
+ *   sec_name        <-- section name
+ *   location_id     <-- id of location on which id_ref is defined
+ *   ref_location_id <-- id of referenced location
+ *   ref_id_base     <-- base of location entity id numbers (usually 0 or 1)
+ *   ref_id          --> array of location entity ids
+ *
+ * returns: 0 (CS_RESTART_SUCCESS) in case of success,
+ *          or error code (CS_RESTART_ERR_xxx) in case of error
+ *----------------------------------------------------------------------------*/
+
+int
+cs_restart_read_ids(cs_restart_t     *restart,
+                    const char       *sec_name,
+                    int               location_id,
+                    int               ref_location_id,
+                    cs_lnum_t         ref_id_base,
+                    cs_lnum_t        *ref_id)
+{
+  cs_lnum_t  n_ents = 0;
+  cs_gnum_t  *g_num;
+
+  _location_t  *ref_location = NULL;
+
+  int retcode = CS_RESTART_SUCCESS;
+
+  assert(restart != NULL);
+
+  /* Local number of elements for location id */
+
+  if (location_id == 0)
+    n_ents = 1;
+
+  else if (location_id > 0 && location_id <= (int)(restart->n_locations))
+    n_ents = restart->location[ref_location_id-1].n_ents;
+
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              _("Location number %d given for restart file\n"
+                "\"%s\" is not valid."),
+              (int)location_id, restart->name);
+
+  if (ref_location_id > 0 && ref_location_id <= (int)(restart->n_locations))
+    ref_location = restart->location + ref_location_id-1;
+
+  else if (ref_location_id != 0)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Location number %d given for restart file\n"
+                "\"%s\" is not valid."),
+              (int)location_id, restart->name);
+
+  /* Transform local to global ids */
+
+  BFT_MALLOC(g_num, n_ents, cs_gnum_t);
+
+  /* Read associated data */
+
+  retcode = cs_restart_read_section(restart,
+                                    sec_name,
+                                    location_id,
+                                    1,
+                                    CS_TYPE_cs_gnum_t,
+                                    g_num);
+
+  if (retcode == CS_RESTART_SUCCESS) {
+
+    double timing[2];
+
+    timing[0] = cs_timer_wtime();
+
+    if (ref_location_id == 0) {
+      cs_lnum_t i;
+      for (i = 0; i < n_ents; i++)
+        ref_id[i] = g_num[i] + ref_id_base - 1;
+    }
+
+    else /* if location_id > 0 */
+      cs_block_to_part_global_to_local(n_ents,
+                                       ref_id_base,
+                                       ref_location->n_ents,
+                                       false,
+                                       ref_location->ent_global_num,
+                                       g_num,
+                                       ref_id);
+
+    timing[1] = cs_timer_wtime();
+    _restart_wtime[restart->mode] += timing[1] - timing[0];
+
+  }
+
+  BFT_FREE(g_num);
+
+  /* Return */
+
+  return retcode;
+}
+
+/*----------------------------------------------------------------------------
+ * Write a referenced location id section to a restart file.
+ *
+ * The section written to file contains the global ids matching the
+ * local element ids of a given location.
+ *
+ * parameters:
+ *   restart         <-- associated restart file pointer
+ *   sec_name        <-- section name
+ *   location_id     <-- id of location on which id_ref is defined
+ *   ref_location_id <-- id of referenced location
+ *   ref_id_base     <-- base of location entity id numbers (usually 0 or 1)
+ *   ref_id          <-- array of location entity ids
+ *----------------------------------------------------------------------------*/
+
+void
+cs_restart_write_ids(cs_restart_t           *restart,
+                     const char             *sec_name,
+                     int                     location_id,
+                     int                     ref_location_id,
+                     cs_lnum_t               ref_id_base,
+                     const cs_lnum_t        *ref_id)
+{
+  double timing[2];
+  cs_lnum_t i, n_ents = 0;
+  cs_gnum_t  *g_num;
+
+  _location_t   *ref_location = NULL;
+
+  assert(restart != NULL);
+
+  /* Local number of elements for location id */
+
+  if (location_id == 0)
+    n_ents = 1;
+
+  else if (location_id > 0 && location_id <= (int)(restart->n_locations))
+    n_ents = restart->location[ref_location_id-1].n_ents;
+
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              _("Location number %d given for restart file\n"
+                "\"%s\" is not valid."),
+              (int)location_id, restart->name);
+
+  if (ref_location_id > 0 && ref_location_id <= (int)(restart->n_locations))
+    ref_location = restart->location + ref_location_id-1;
+
+  else if (ref_location_id != 0)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Location number %d given for restart file\n"
+                "\"%s\" is not valid."),
+              (int)location_id, restart->name);
+
+  /* Transform local to global ids */
+
+  timing[0] = cs_timer_wtime();
+
+  BFT_MALLOC(g_num, n_ents, cs_gnum_t);
+
+  if (ref_location_id == 0) {
+    for (i = 0; i < n_ents; i++)
+      g_num[0] = ref_id[0] - ref_id_base + 1;
+  }
+
+  else { /* if location_id > 0 */
+    for (i = 0; i < n_ents; i++) {
+      if (ref_id[i] >= ref_id_base)
+        g_num[i] = ref_location->ent_global_num[ref_id[i] - ref_id_base];
+      else
+        g_num[i] = 0;
+    }
+
+  }
+
+  timing[1] = cs_timer_wtime();
+  _restart_wtime[restart->mode] += timing[1] - timing[0];
+
+  /* Write associated data */
+
+  cs_restart_write_section(restart,
+                           sec_name,
+                           location_id,
+                           1,
+                           CS_TYPE_cs_gnum_t,
+                           g_num);
+
+  BFT_FREE(g_num);
 }
 
 /*----------------------------------------------------------------------------

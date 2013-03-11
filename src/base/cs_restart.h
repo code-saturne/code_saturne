@@ -418,6 +418,104 @@ void CS_PROCF (ecpsui, ECPSUI)
                                          by many Fortran compilers) */
 );
 
+/*----------------------------------------------------------------------------
+ * Read a referenced location id section from a restart file.
+ *
+ * The section read from file contains the global ids matching the local
+ * element ids of a given location. Global id's are transformed to local
+ * ids by this function.
+ *
+ * In case global ids read do not match those of local elements,
+ * id_base - 1 is assigned to the corresponding local ids.
+ *
+ * Fortran interface
+ *
+ * subroutine leisui (numsui, nomrub, lngnom, itysup, irfsup, idbase, tabid, &
+ * *****************
+ *                    ierror)
+ *
+ * integer          numsui      : <-- : Restart file number
+ * character*       nomrub      : <-- : Section name
+ * integer          lngnom      : <-- : Section name length
+ * integer          itysup      : <-- : Location type:
+ *                              :     :  0: scalar (no location)
+ *                              :     :  1: cells
+ *                              :     :  2: interior faces
+ *                              :     :  3: boundary faces
+ *                              :     :  4: vertices (if available)
+ * integer          irfsup      : <-- : Referenced location type:
+ *                              :     :  0: scalar (no location)
+ *                              :     :  1: cells
+ *                              :     :  2: interior faces
+ *                              :     :  3: boundary faces
+ *                              :     :  4: vertices (if available)
+ * integer          idbase      : <-- : base of referenced entity id numbers
+ *                              :     : (usually 0 or 1)
+ * (?)              tabid       : <-> : Array of ids to read
+ * integer          ierror      : --> : 0: success, < 0: error code
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (leisui, LEISUI)
+(
+ const cs_int_t   *numsui,
+ const char       *nomrub,
+ const cs_int_t   *lngnom,
+ const cs_int_t   *itysup,
+ const cs_int_t   *irfsup,
+ const cs_int_t   *idbase,
+       void       *tabid,
+       cs_int_t   *ierror
+ CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
+                                         by many Fortran compilers) */
+ );
+
+/*----------------------------------------------------------------------------
+ * Write a referenced location id section to a restart file.
+ *
+ * The section written to file contains the global ids matching the
+ * local element ids of a given location.
+ *
+ * Fortran interface
+ *
+ * subroutine ecisui (numsui, nomrub, lngnom, itysup, irfsup, idbase, tabid, &
+ * *****************
+ *                    ierror)
+ *
+ * integer          numsui      : <-- : Restart file number
+ * character*       nomrub      : <-- : Section name
+ * integer          lngnom      : <-- : Section name length
+ * integer          itysup      : <-- : Location type:
+ *                              :     :  0: scalar (no location)
+ *                              :     :  1: cells
+ *                              :     :  2: interior faces
+ *                              :     :  3: boundary faces
+ *                              :     :  4: vertices (if available)
+ * integer          irfsup      : <-- : Referenced location type:
+ *                              :     :  0: scalar (no location)
+ *                              :     :  1: cells
+ *                              :     :  2: interior faces
+ *                              :     :  3: boundary faces
+ *                              :     :  4: vertices (if available)
+ * integer          idbase      : <-- : base of referenced entity id numbers
+ *                              :     : (usually 0 or 1)
+ * (?)              tabid       : <-- : Array of ids to write
+ * integer          ierror      : --> : 0: success, < 0: error code
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (ecisui, ECRSUI)
+(
+ const cs_int_t   *numsui,
+ const char       *nomrub,
+ const cs_int_t   *lngnom,
+ const cs_int_t   *itysup,
+ const cs_int_t   *irfsup,
+ const cs_int_t   *idbase,
+ const cs_int_t   *tabid,
+       cs_int_t   *ierror
+ CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
+                                         by many Fortran compilers) */
+);
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -698,6 +796,59 @@ cs_restart_write_particles(cs_restart_t     *restart,
                            cs_lnum_t         n_particles,
                            const cs_lnum_t  *particle_cell_num,
                            const cs_real_t  *particle_coords);
+
+/*----------------------------------------------------------------------------
+ * Read a referenced location id section from a restart file.
+ *
+ * The section read from file contains the global ids matching the local
+ * element ids of a given location. Global id's are transformed to local
+ * ids by this function.
+ *
+ * In case global referenced ids read do not match those of local elements,
+ * id_base - 1 is assigned to the corresponding local ids.
+ *
+ * parameters:
+ *   restart         <-- associated restart file pointer
+ *   sec_name        <-- section name
+ *   location_id     <-- id of location on which id_ref is defined
+ *   ref_location_id <-- id of referenced location
+ *   ref_id_base     <-- base of location entity id numbers (usually 0 or 1)
+ *   ref_id          --> array of location entity ids
+ *
+ * returns: 0 (CS_RESTART_SUCCESS) in case of success,
+ *          or error code (CS_RESTART_ERR_xxx) in case of error
+ *----------------------------------------------------------------------------*/
+
+int
+cs_restart_read_ids(cs_restart_t     *restart,
+                    const char       *sec_name,
+                    int               location_id,
+                    int               ref_location_id,
+                    cs_lnum_t         ref_id_base,
+                    cs_lnum_t        *ref_id);
+
+/*----------------------------------------------------------------------------
+ * Write a referenced location id section to a restart file.
+ *
+ * The section written to file contains the global ids matching the
+ * local element ids of a given location.
+ *
+ * parameters:
+ *   restart         <-- associated restart file pointer
+ *   sec_name        <-- section name
+ *   location_id     <-- id of location on which id_ref is defined
+ *   ref_location_id <-- id of referenced location
+ *   ref_id_base     <-- base of location entity id numbers (usually 0 or 1)
+ *   ref_id          <-- array of location entity ids
+ *----------------------------------------------------------------------------*/
+
+void
+cs_restart_write_ids(cs_restart_t           *restart,
+                     const char             *sec_name,
+                     int                     location_id,
+                     int                     ref_location_id,
+                     cs_lnum_t               ref_id_base,
+                     const cs_lnum_t        *ref_id);
 
 /*----------------------------------------------------------------------------
  * Print statistics associated with restart files
