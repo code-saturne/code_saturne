@@ -200,7 +200,7 @@ elseif (itytur.eq.3) then
   if (iturb.eq.32) then
     nfld = nfld + 1
     ifvar(nfld) = ial
-    fname(nfld) = 'alphap'
+    fname(nfld) = 'alpha'
   endif
 elseif (itytur.eq.5) then
   nfld = nfld + 1
