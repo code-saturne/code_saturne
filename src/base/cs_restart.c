@@ -1903,7 +1903,7 @@ void CS_PROCF (ecisui, ECRSUI)
                     &val_type,
                     ierror);
 
-  assert(val_type = CS_TYPE_cs_int_t);
+  assert(val_type == CS_TYPE_cs_int_t);
 
   if (*ierror < CS_RESTART_SUCCESS)
     return;
@@ -3300,7 +3300,7 @@ cs_restart_read_ids(cs_restart_t     *restart,
 
     timing[0] = cs_timer_wtime();
 
-    if (ref_location_id == 0) {
+    if (ref_location_id == 0 || ref_location->ent_global_num == NULL) {
       cs_lnum_t i;
       for (i = 0; i < n_ents; i++)
         ref_id[i] = g_num[i] + ref_id_base - 1;
@@ -3393,11 +3393,21 @@ cs_restart_write_ids(cs_restart_t           *restart,
   }
 
   else { /* if location_id > 0 */
-    for (i = 0; i < n_ents; i++) {
-      if (ref_id[i] >= ref_id_base)
-        g_num[i] = ref_location->ent_global_num[ref_id[i] - ref_id_base];
-      else
-        g_num[i] = 0;
+    if (ref_location->ent_global_num != NULL) {
+      for (i = 0; i < n_ents; i++) {
+        if (ref_id[i] >= ref_id_base)
+          g_num[i] = ref_location->ent_global_num[ref_id[i] - ref_id_base];
+        else
+          g_num[i] = 0;
+      }
+    }
+    else {
+      for (i = 0; i < n_ents; i++) {
+        if (ref_id[i] >= ref_id_base)
+          g_num[i] = ref_id[i] - ref_id_base + 1;
+        else
+          g_num[i] = 0;
+      }
     }
 
   }
