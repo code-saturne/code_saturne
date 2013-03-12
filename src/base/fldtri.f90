@@ -181,6 +181,10 @@ elseif (itytur.eq.3) then
   ifvar(nfld) = ir23
   nfld = nfld + 1
   ifvar(nfld) = iep
+  if (iturb.eq.32) then
+    nfld = nfld + 1
+    ifvar(nfld) = ial
+  endif
 elseif (itytur.eq.5) then
   nfld = nfld + 1
   ifvar(nfld) = ik
