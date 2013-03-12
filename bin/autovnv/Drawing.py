@@ -552,7 +552,7 @@ class Plotter(object):
             try:
                 execfile("./tmp.py")
             except:
-                print "Error with the matplotlib command: %s" % cmd
+                print("Error with the matplotlib command: %s" % cmd)
             os.remove("./tmp.py")
 
         plt.hold(True)
@@ -629,7 +629,7 @@ class Plotter(object):
             try:
                 execfile("./tmp.py")
             except:
-                print "Error with the matplotlib command: %s" % cmd
+                print("Error with the matplotlib command: %s" % cmd)
             os.remove("./tmp.py")
 
         # Layout
@@ -678,7 +678,7 @@ class Plotter(object):
                 try:
                     execfile("./tmp.py")
                 except:
-                    print "Error with the matplotlib command: %s" % cmd
+                    print("Error with the matplotlib command: %s" % cmd)
                 os.remove("./tmp.py")
 
 

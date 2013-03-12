@@ -82,16 +82,16 @@ class Parser(object):
         try:
             self.doc =  minidom.parse(XMLFileName)
         except:
-            print "No file of parameters or error in the name of the file or error in the syntax of the xml.\n"
+            print("No file of parameters or error in the name of the file or error in the syntax of the xml.\n")
             msg =  xmlChecker(self.filename)
             if msg:
-                print msg
+                print(msg)
             sys.exit(1)
 
         self.root = self.doc.firstChild
 
         if self.root.nodeName != "autovnv":
-            print XMLFileName + ": Wrong XML file. The Root markup is not autovnv.\n"
+            print(XMLFileName + ": Wrong XML file. The Root markup is not autovnv.\n")
             sys.exit(1)
 
 
@@ -113,7 +113,7 @@ class Parser(object):
             log.debug("__checkDirectory(): %s" % dir)
             return dir
         else:
-            print "Directory: %s does not exists." % dir
+            print("Directory: %s does not exist." % dir)
             sys.exit(1)
 
 
@@ -133,7 +133,7 @@ class Parser(object):
             current = l.item(0)
             data = current.firstChild.data
         else:
-            print "Error: in getDataFromNode several markup %s found." %  childName
+            print("Error: in getDataFromNode several markup %s found." %  childName)
             sys.exit(1)
 
         return data
@@ -169,7 +169,7 @@ class Parser(object):
         elif len(l) == 1:
             return l.item(0)
         else:
-            print "Error: in getChild several markup %s found." %  childname
+            print("Error: in getChild several markup %s found." %  childname)
             sys.exit(1)
 
 
@@ -221,7 +221,7 @@ class Parser(object):
                 if label not in labels:
                     labels.append(label)
                 else:
-                    print "Study: %s is repeted in the xml file of paramaters" % label
+                    print("Study: %s is repeted in the xml file of paramaters" % label)
                     sys.exit(1)
         return labels
 

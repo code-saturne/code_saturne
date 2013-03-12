@@ -135,7 +135,7 @@ class Case(object):
         try:
             f = file(run_ref, mode = 'r')
         except IOError:
-            print "Error: can not open %s\n" % run_ref
+            print("Error: can not open %s\n" % run_ref)
             sys.exit(1)
 
         lines = f.readlines()
@@ -148,7 +148,7 @@ class Case(object):
                     exe = name
 
         if not exe:
-            print "Error: name of the executable for the case %s not found. Stop." % self.label
+            print("Error: name of the executable for the case %s not found. Stop." % self.label)
             sys.exit(1)
 
         if exe == "code_saturne":
@@ -189,8 +189,8 @@ class Case(object):
                     try:
                         case = Case(package = self.pkg, file_name = fp)
                     except:
-                        print "Parameters file reading error.\n"
-                        print "This file is not in accordance with XML specifications."
+                        print("Parameters file reading error.\n")
+                        print("This file is not in accordance with XML specifications.")
                         sys.exit(1)
 
                     case['xmlfile'] = fp
@@ -209,7 +209,7 @@ class Case(object):
         try:
             f = file(ref, mode = 'r')
         except IOError:
-            print "Error: can not open %s\n" % ref
+            print("Error: can not open %s\n" % ref)
             sys.exit(1)
 
         lines = f.readlines()
@@ -229,7 +229,7 @@ class Case(object):
         try:
             f = file(ref, mode = 'r')
         except IOError:
-            print "Error: can not open %s\n" % ref
+            print("Error: can not open %s\n" % ref)
             sys.exit(1)
 
         lines = f.readlines()
@@ -295,7 +295,7 @@ class Case(object):
         try:
             f = file(run_ref, mode = 'r')
         except IOError:
-            print "Error: can not open %s\n" % run_ref
+            print("Error: can not open %s\n" % run_ref)
             sys.exit(1)
 
         for line in f.readlines():
@@ -308,7 +308,7 @@ class Case(object):
         try:
             f = file(run_new, mode = 'r')
         except IOError:
-            print "Error: can not open %s\n" % run_new
+            print("Error: can not open %s\n" % run_new)
             sys.exit(1)
 
         lines = f.readlines()
@@ -441,7 +441,7 @@ class Study(object):
         self.__dest = os.path.join(self.__parser.getDestination(), study)
 
         if not os.path.isdir(self.__repo):
-            print "Error: the directory %s does not exist" % self.__repo
+            print("Error: the directory %s does not exist" % self.__repo)
             sys.exit(1)
 
         self.Cases = []
@@ -451,7 +451,7 @@ class Study(object):
         # build the list of the cases
         self.cases = parser.getCasesLabel(study)
         if not self.cases:
-            print "\n\n\nWarning: no case defined in %s study\n\n\n" % study
+            print("\n\n\nWarning: no case defined in %s study\n\n\n" % study)
         else:
             for data in self.__parser.getCasesKeywords(self.__study):
                 c = Case(pkg,
@@ -529,7 +529,7 @@ class Study(object):
                       + os.path.join(self.__repo, c.label)
                 retval, t = run_command(cmd, self.__log)
             else:
-                print "Warning: the case %s already exists in the destination." % c.label
+                print("Warning: the case %s already exists in the destination." % c.label)
 
         os.chdir(repbase)
 
@@ -1037,7 +1037,7 @@ class Studies(object):
                                 ff = os.path.join(dd, l, case.label, "RESU", d, f)
 
                                 if not os.path.isfile(ff):
-                                    print "\n\nWarning: this file does not exist: %s\n\n" % ff
+                                    print("\n\nWarning: this file does not exist: %s\n\n" % ff)
                                 else:
                                     doc2.addInput(ff)
 

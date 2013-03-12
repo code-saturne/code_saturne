@@ -390,7 +390,7 @@ Opening input file: "RESU/20110217-2233/checkpoint/main"
     doc  = Report2(dest, "r2")
     v    = []
     info = msg.replace("\"", " ").replace(";", " ").replace(":", " ").split()
-    print info
+    print(info)
     repo = "RESU/20110217-2231/checkpoint/main"
     dest = "RESU/20110217-2233/checkpoint/main"
 
@@ -398,7 +398,7 @@ Opening input file: "RESU/20110217-2233/checkpoint/main"
         if info[i][:4] == 'Diff':
             if info[i-3] not in ['i4', 'u4']:
                 v.append([info[i-7].replace("_", "\_"), info[i+3], info[i+5]])
-    print v
+    print(v)
     doc.add_row(v, "MYSTUDY", "MYCASE", threshold)
     doc.close()
 

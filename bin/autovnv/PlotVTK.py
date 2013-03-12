@@ -237,7 +237,7 @@ class Builder(object):
         ds = self.readData(self.opt.time_step)
 
         if not ds.GetCellData().HasArray(self.opt.variable):
-            print "Error: variable %s not found." % self.opt.variable
+            print("Error: variable %s not found." % self.opt.variable)
             sys.exit(1)
 
         convert = self.convertCell2Point(ds)
@@ -338,7 +338,7 @@ class Builder(object):
             try:
                 execfile("./tmp.py")
             except:
-                print "Error with the vtk command: %s" % cmd
+                print("Error with the vtk command: %s" % cmd)
             os.remove("./tmp.py")
 
         self.win = vtk.vtkRenderWindow()
@@ -529,7 +529,7 @@ class Builder(object):
         if not array:
             self.mapper.SetScalarModeToDefault()
             self.mapper.SetInterpolateScalarsBeforeMapping(1)
-            print "Variable name not found in data set."
+            print("Variable name not found in data set.")
             flag = False
 
         if flag:
