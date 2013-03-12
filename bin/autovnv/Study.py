@@ -135,7 +135,7 @@ class Case(object):
         try:
             f = file(run_ref, mode = 'r')
         except IOError:
-            print "Error: can not opening %s\n" % run_ref
+            print "Error: can not open %s\n" % run_ref
             sys.exit(1)
 
         lines = f.readlines()
@@ -189,7 +189,7 @@ class Case(object):
                     try:
                         case = Case(package = self.pkg, file_name = fp)
                     except:
-                        print "File of parameters reading error.\n"
+                        print "Parameters file reading error.\n"
                         print "This file is not in accordance with XML specifications."
                         sys.exit(1)
 
@@ -209,7 +209,7 @@ class Case(object):
         try:
             f = file(ref, mode = 'r')
         except IOError:
-            print "Error: can not opening %s\n" % ref
+            print "Error: can not open %s\n" % ref
             sys.exit(1)
 
         lines = f.readlines()
@@ -229,7 +229,7 @@ class Case(object):
         try:
             f = file(ref, mode = 'r')
         except IOError:
-            print "Error: can not opening %s\n" % ref
+            print "Error: can not open %s\n" % ref
             sys.exit(1)
 
         lines = f.readlines()
@@ -295,7 +295,7 @@ class Case(object):
         try:
             f = file(run_ref, mode = 'r')
         except IOError:
-            print "Error: can not opening %s\n" % run_ref
+            print "Error: can not open %s\n" % run_ref
             sys.exit(1)
 
         for line in f.readlines():
@@ -308,15 +308,22 @@ class Case(object):
         try:
             f = file(run_new, mode = 'r')
         except IOError:
-            print "Error: can not opening %s\n" % run_new
+            print "Error: can not open %s\n" % run_new
             sys.exit(1)
 
         lines = f.readlines()
         f.close()
 
         for i in range(len(lines)):
+            l = lines[i].strip()
+            if len(l) == 0:
+                continue
+            if l[0] == '#':
+                continue
             if re.search(r'^\\' + self.exe, lines[i]):
                 lines[i] = run_cmd + " --id=" + run_id
+            elif re.search(r' cd ', lines[i]): # do not switch to batch submit directory
+                lines[i] = '# ' + lines[i]
 
         f = file(run_new, mode = 'w')
         f.writelines(lines)
