@@ -138,6 +138,7 @@ character        nomite(nvplmx)*64 , nomrte(nvplmx)*64
 character        ficsui*32
 integer          ncelok , nfaiok , nfabok , nsomok
 integer          ierror , irtyp  , itysup , ipasup, nbval
+integer          irfsup , idbase
 integer          ilecec , nberro , ivers
 integer          mvls   , ivar   , ip     , icha
 integer          ifac   , iel    , ii     , iok
@@ -538,8 +539,15 @@ irtyp  = 1
 do ivar = 1, nivep
   if (ivar.ne.jisor .or. ivers.lt.112) then
     rubriq = nomite(ivar)
-    call lecsui(impaml,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-               itepa(1,ivar),ierror)
+    if (ivar.eq.jdfac) then
+      idbase = 1
+      irfsup = 3
+      call leisui(impaml,rubriq,len(rubriq),itysup,irfsup,idbase,   &
+                  itepa(1,ivar),ierror)
+    else
+      call lecsui(impaml,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                  itepa(1,ivar),ierror)
+    endif
     nberro = nberro+ierror
   endif
 enddo
