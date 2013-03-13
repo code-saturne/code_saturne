@@ -378,8 +378,8 @@ class Setup:
             Package(name="NCS",
                     description="Code_Saturne Kernel",
                     package="ncs",
-                    version="2.0.6",
-                    archive="ncs-2.0.6.tar.gz",
+                    version="2.0.7",
+                    archive="ncs-2.0.7.tar.gz",
                     url=url_cs)
 
         p = self.packages['ncs']
@@ -404,8 +404,8 @@ class Setup:
             Package(name="CGNS",
                     description="CFD General Notation System",
                     package="cgnslib",
-                    version="3.1.3",
-                    archive="cgnslib_3.1.3-4.tar.gz",
+                    version="3.1.4",
+                    archive="cgnslib_3.1.4.tar.gz",
                     url="http://sourceforge.net/projects/cgns/files/cgnslib_3.1/%s/download")
 
         p = self.packages['cgns']
@@ -419,8 +419,8 @@ class Setup:
             Package(name="MED",
                     description="Model for Exchange of Data",
                     package="med",
-                    version="3.0.5",
-                    archive="med-3.0.5.tar.gz",
+                    version="3.0.6",
+                    archive="med-3.0.6.tar.gz",
                     url="http://files.salome-platform.org/Salome/other/%s")
 
         p = self.packages['med']
@@ -432,9 +432,9 @@ class Setup:
             Package(name="MPI",
                     description="Message Passing Interface",
                     package="openmpi",
-                    version="1.4.5",
-                    archive="openmpi-1.4.5.tar.gz",
-                    url="http://www.open-mpi.org/software/ompi/v1.4/downloads/%s")
+                    version="1.6.3",
+                    archive="openmpi-1.6.3.tar.gz",
+                    url="http://www.open-mpi.org/software/ompi/v1.6/downloads/%s")
 
         # Libxml2 library (possible mirror at "ftp://fr.rpmfind.net/pub/libxml/%s")
 
@@ -1098,10 +1098,12 @@ syrthes   %(syrthes)s
 #   For Linux workstations, MPI, HDF5, and even MED
 # packages may be available through the package manager.
 # HDF5 is also often available on large systems such as
-# IBM Blue Gene or Cray XT.
+# IBM Blue Gene or Cray XT/XE/XK.
 #
-#   For massively parallel architectures, it is
-# recommended to use the system's default MPI library.
+#   For clusters using high-speed networks,  it is highly
+# recommended to use the system's default MPI library, as
+# this is already configured to use the correct drivers,
+# and to support the local resource manager.
 #
 #   Libxml2 is needed to read xml files output by the
 # Graphical User Interface, and swig is needed by the

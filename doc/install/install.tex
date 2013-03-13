@@ -284,9 +284,6 @@ The list of third-party software usable with \CS is provided here:
       with this library may be from 10\% to 50\% faster than using the
       built-in space-filling curve based partitioning.
 
-      Though broadly available, the license is quite restrictive,
-      so \scotch may be preferred.
-
 \item \scotch is an alternative mesh partitioning library, and may also
       be used by the ECS (\pcs) package.
       quality is usually slightly higher than that obtained with \metis,
@@ -815,8 +812,8 @@ use the following commands:
 \textbackslash \\
 \textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.1/arch/ivanoe \textbackslash \\
 \textcolor{Violet}{--with-ccm}=\textcolor{OliveGreen}{\$CS\_OPT}/libccmio-2.6.19/arch/ivanoe \textbackslash \\
-\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-5.1.11/arch/ivanoe \textbackslash \\
-\textcolor{Violet}{--with-metis}=\textcolor{OliveGreen}{\$CS\_OPT}/parmetis-3.2/arch/ivanoe \textbackslash \\
+\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-6.0/arch/ivanoe \textbackslash \\
+\textcolor{Violet}{--with-metis}=\textcolor{OliveGreen}{\$CS\_OPT}/metis-5.0/arch/ivanoe \textbackslash \\
 \textcolor{red}{CC}=icc \\
 \$ make -j 4 \&\& make install \&\& make clean\\
 \$ cd ..
@@ -1048,8 +1045,8 @@ The \pcs only needs to be built for the front-end nodes
 \textbackslash \\
 \textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.1/arch/frontend \textbackslash \\
 \textcolor{Violet}{--with-ccm}=\textcolor{OliveGreen}{\$CS\_OPT}/libccmio-2.6.1/arch/frontend \textbackslash \\
-\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-5.1.11/arch/frontend \textbackslash \\
-\textcolor{Violet}{--with-metis}=\textcolor{OliveGreen}{\$CS\_OPT}/metis-5.0rc1/arch/frontend \textbackslash \\
+\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-6.0/arch/frontend \textbackslash \\
+\textcolor{Violet}{--with-metis}=\textcolor{OliveGreen}{\$CS\_OPT}/metis-5.0/arch/frontend \textbackslash \\
 \textcolor{red}{CC\_ADD}="-m64" \textbackslash \\
 \textcolor{red}{LD\_ADD}="-m64"
 }\end{minipage}}
@@ -1295,7 +1292,7 @@ The \pcs only needs to be built for the front-end nodes:
 \textbackslash \\
 \textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.1/arch/bgq\_fen \textbackslash \\
 \textcolor{Violet}{--with-ccm}=\textcolor{OliveGreen}{\$CS\_OPT}/libccmio-2.6.1/arch/bgq\_fen \textbackslash \\
-\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-5.1.12/arch/bgq\_fen \textbackslash \\
+\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-6.0/arch/bgq\_fen \textbackslash \\
 \textcolor{Violet}{--without-metis}
 }\end{minipage}}
 
