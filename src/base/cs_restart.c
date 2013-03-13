@@ -1813,7 +1813,7 @@ void CS_PROCF (leisui, LEISUI)
                     &val_type,
                     ierror);
 
-  assert(val_type = CS_TYPE_cs_int_t);
+  assert(val_type == CS_TYPE_cs_int_t);
 
   if (*ierror < CS_RESTART_SUCCESS)
     return;
@@ -1865,7 +1865,7 @@ void CS_PROCF (leisui, LEISUI)
  * integer          ierror      : --> : 0: success, < 0: error code
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (ecisui, ECRSUI)
+void CS_PROCF (ecisui, ECISUI)
 (
  const cs_int_t   *numsui,
  const char       *nomrub,
@@ -3264,7 +3264,7 @@ cs_restart_read_ids(cs_restart_t     *restart,
     n_ents = 1;
 
   else if (location_id > 0 && location_id <= (int)(restart->n_locations))
-    n_ents = restart->location[ref_location_id-1].n_ents;
+    n_ents = restart->location[location_id-1].n_ents;
 
   else
     bft_error(__FILE__, __LINE__, 0,
@@ -3364,7 +3364,7 @@ cs_restart_write_ids(cs_restart_t           *restart,
     n_ents = 1;
 
   else if (location_id > 0 && location_id <= (int)(restart->n_locations))
-    n_ents = restart->location[ref_location_id-1].n_ents;
+    n_ents = restart->location[location_id-1].n_ents;
 
   else
     bft_error(__FILE__, __LINE__, 0,
