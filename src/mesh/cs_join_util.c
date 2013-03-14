@@ -249,6 +249,9 @@ _destroy_join_sync(cs_join_sync_t   **sync)
 {
   cs_join_sync_t  *_sync = *sync;
 
+  if (_sync == NULL)
+    return;
+
   if (_sync->array != NULL)
     BFT_FREE(_sync->array);
   if (_sync->ranks != NULL)
@@ -1332,6 +1335,7 @@ _add_coupled_edges(cs_interface_set_t   *ifs,
   const int  n_interfaces = cs_interface_set_size(ifs);
   const cs_interface_t  *interface = NULL;
 
+  assert(s_edges != NULL);
   assert(c_edges != NULL);
 
   /* Exchange number of single edges */
@@ -1592,6 +1596,8 @@ _filter_edge_element(cs_join_select_t   *selection,
   const int  loc_rank = CS_MAX(cs_glob_rank_id, 0);
 
   assert(cs_glob_n_ranks > 1);
+  assert(c_edges != NULL);
+  assert(s_edges != NULL);
 
   /* Allocate MPI buffers used for exchanging data */
 
@@ -1751,6 +1757,9 @@ _get_missing_edges(cs_lnum_t            b_f2v_idx[],
   cs_gnum_t  n_l_elts, n_g_elts;
 
   cs_lnum_t  *sel_v2v_idx = NULL, *sel_v2v_lst = NULL;
+
+  assert(ifs != NULL);
+  assert(selection != NULL);
 
   /* Define single edge element */
 

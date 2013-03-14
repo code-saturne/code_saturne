@@ -1229,6 +1229,8 @@ _update_face_state(cs_join_select_t        *selection,
   cs_join_state_t  v_state, f_state;
   bool  have_new;
 
+  assert(selection != NULL);
+
   cs_join_state_t  *states = NULL;
 
   BFT_MALLOC(states, mesh->n_vertices, cs_join_state_t);
@@ -4362,6 +4364,9 @@ cs_join_update_mesh_after_merge(cs_join_param_t        join_param,
   cs_lnum_t  *o2n_vtx_id = NULL, *join2mesh_vtx_id = NULL;
   edge_builder_t  *edge_builder = NULL;
 
+  assert(join_select != NULL);
+  assert(join_mesh != NULL);
+
   const cs_lnum_t  n_bm_vertices = mesh->n_vertices; /* bm: before merge */
 
   edge_builder = _init_edge_builder(join_select, mesh);
@@ -4601,6 +4606,7 @@ cs_join_update_mesh_after_split(cs_join_param_t          join_param,
 
   assert(mesh != NULL);
   assert(join_mesh != NULL);
+  assert(mesh_builder != NULL);
 
   /* Get new subfaces evolution */
 
@@ -4865,6 +4871,8 @@ void
 cs_join_update_mesh_clean(cs_join_param_t   param,
                           cs_mesh_t        *mesh)
 {
+  assert(mesh != NULL);
+
   cs_lnum_t  i, j, s, e, n_vertices, n_init_vertices, connect_size;
 
   cs_lnum_t  connect_shift = 0;

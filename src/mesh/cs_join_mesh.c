@@ -631,6 +631,8 @@ _define_vertices(cs_join_param_t        param,
 
   cs_join_vertex_t  *vertices = NULL;
 
+  assert(selection != NULL);
+
   const int  n_ranks = cs_glob_n_ranks;
 
   /*
@@ -951,6 +953,8 @@ _remove_empty_edges(cs_join_mesh_t  *mesh,
   cs_lnum_t  shift = 0, n_simplified_faces = 0;
   cs_lnum_t  *new_face_vtx_idx = NULL;
 
+  assert(mesh != NULL);
+
   BFT_MALLOC(new_face_vtx_idx, mesh->n_faces + 1, cs_lnum_t);
 
   new_face_vtx_idx[0] = 1;
@@ -1051,6 +1055,8 @@ _remove_degenerate_edges(cs_join_mesh_t  *mesh,
                make ... A1 -A1 ... appear); We thus run as many passes
                as necessary on a given face.
   */
+
+  assert(mesh != NULL);
 
   cs_lnum_t  i, j, k, count, n_face_vertices;
 
@@ -1220,6 +1226,7 @@ _count_new_added_vtx_to_edge(cs_lnum_t               v1_num,
   assert(new_v1_num > 0);
   assert(new_v2_num > 0);
   assert(edge_index != NULL);
+  assert(edges != NULL);
 
   /* Find the related edge */
 
@@ -1278,6 +1285,8 @@ _add_new_vtx_to_edge(cs_lnum_t               v1_num,
 {
   cs_lnum_t  new_v1_num = old2new[v1_num-1] + 1;
   cs_lnum_t  shift = *p_shift;
+
+  assert(edges != NULL);
 
   /* Add first vertex num to the connectivity list */
 
@@ -1422,7 +1431,7 @@ cs_join_mesh_create_vtx_datatype(void)
  *
  * parameters:
  *   in        <--  input vertices
- *   inout     <->  in/out vertices (vertex with the min. toelrance)
+ *   inout     <->  in/out vertices (vertex with the min. tolerance)
  *   len       <--  size of input array
  *   datatype  <--  MPI_datatype associated to cs_join_vertex_t
  *---------------------------------------------------------------------------*/
@@ -1434,6 +1443,8 @@ cs_join_mesh_mpi_vertex_min(cs_join_vertex_t   *in,
                             MPI_Datatype       *datatype)
 {
   int  i, j;
+
+  assert(in != NULL && inout != NULL);
 
   for (i = 0; i < *len; i++) {
 
@@ -1483,6 +1494,8 @@ cs_join_mesh_mpi_vertex_max(cs_join_vertex_t   *in,
                             MPI_Datatype       *datatype)
 {
   int  i, j;
+
+  assert(in != NULL && inout != NULL);
 
   for (i = 0; i < *len; i++) {
 
@@ -1673,6 +1686,8 @@ cs_join_mesh_create_from_subset(const char            *mesh_name,
 
   cs_join_mesh_t  *mesh = NULL;
 
+  assert(parent_mesh != NULL);
+
   /* Get the selected vertices relative to the subset selection */
 
   BFT_MALLOC(select_vtx_id, parent_mesh->n_vertices, cs_lnum_t);
@@ -1849,6 +1864,8 @@ cs_join_mesh_create_from_select(const char              *name,
 
   cs_join_vertex_t  *vertices = NULL;
   cs_join_mesh_t  *mesh = NULL;
+
+  assert(selection != NULL);
 
   mesh = cs_join_mesh_create(name);
 
@@ -2046,6 +2063,8 @@ cs_join_mesh_minmax_tol(cs_join_param_t    param,
   cs_lnum_t  i;
   cs_join_vertex_t  _min, _max, g_min, g_max;
 
+  assert(mesh != NULL);
+
   const int  n_ranks = cs_glob_n_ranks;
 
   _min.state = CS_JOIN_STATE_UNDEF;
@@ -2139,6 +2158,9 @@ cs_join_mesh_exchange(int                    n_ranks,
                       cs_join_mesh_t        *recv_mesh,
                       MPI_Comm               comm)
 {
+  assert(send_mesh != NULL);
+  assert(recv_mesh != NULL);
+
   int  i, j, rank, shift, start, end, face_id, vtx_id, vtx_count;
   int  local_rank;
 
@@ -2637,6 +2659,7 @@ cs_join_mesh_sync_vertices(cs_join_mesh_t  *mesh)
   const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
 
   assert(n_ranks > 1);
+  assert(mesh != NULL);
 
   /* Get the max global number */
 
@@ -2882,6 +2905,7 @@ void
 cs_join_mesh_clean(cs_join_mesh_t  *mesh,
                    int              verbosity)
 {
+  assert(mesh != NULL);
 
   /* Delete empty edge:
        These edges are generated during the merge step. If two vertices

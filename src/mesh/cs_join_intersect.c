@@ -2667,6 +2667,11 @@ cs_join_add_equiv_from_edges(cs_join_param_t               param,
   double  *tol_lst = NULL;
   FILE  *logfile = cs_glob_join_log;
 
+  assert(mesh != NULL);
+  assert(edges != NULL);
+  assert(inter_edges != NULL);
+  assert(vtx_equiv != NULL);
+
   int  n_break_counter = 0, n_max_breaks = 0;
 
   if (inter_edges != NULL) {
@@ -2903,6 +2908,7 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
   assert(mesh != NULL);
   assert(part != NULL);
   assert(part->n_edges == n_edges);
+  assert(edges != NULL);
 
   block_info = cs_join_get_block_info(edges->n_g_edges,
                                       n_ranks,
@@ -3209,11 +3215,11 @@ cs_join_inter_edges_block_to_part(cs_gnum_t                     n_g_edges,
   const cs_join_block_info_t  block_info = cs_join_get_block_info(n_g_edges,
                                                                   n_ranks,
                                                                   local_rank);
-
   /* Sanity check */
 
   assert(block != NULL);
   assert((size_t)(block->n_edges) == block_info.local_size);
+  assert(part != NULL);
 
   /* Allocate parameters for MPI functions */
 
@@ -3439,6 +3445,9 @@ cs_join_intersect_update_struct(int                      verbosity,
   cs_join_inter_edges_t  *new_inter_edges = NULL;
   cs_join_vertex_t  *new_vertices = NULL;
 
+  assert(edges != NULL);
+  assert(mesh != NULL);
+
   const cs_lnum_t  n_edges = edges->n_edges;
   const cs_lnum_t  n_init_vertices = mesh->n_vertices;
 
@@ -3656,6 +3665,10 @@ cs_join_intersect_edges(cs_join_param_t         param,
 
   assert(mesh != NULL);
   assert(edges != NULL);
+  assert(edge_edge_vis != NULL);
+
+  assert(vtx_eset != NULL);
+  assert(inter_set != NULL);
 
   if (param.verbosity > 3)
     fprintf(logfile, "  Parallel intersection criterion: %8.5e\n",
@@ -3965,6 +3978,10 @@ cs_join_intersect_face_to_edge(const cs_join_mesh_t   *mesh,
 {
   cs_lnum_t  i, j, k, edge_num, edge_id, shift;
 
+  assert(mesh != NULL);
+  assert(edges != NULL);
+  assert(face_visib != NULL);
+
   cs_lnum_t  size = 0, size_max = 0;
   cs_lnum_t  *count = NULL, *face2edge_idx = NULL, *face2edge_lst = NULL;
   cs_gnum_t  *tmp = NULL;
@@ -4182,6 +4199,9 @@ cs_join_inter_edges_dump(FILE                         *f,
   fprintf(f, "  max_sub_size: %10d\n\n", inter_edges->max_sub_size);
 
   for (i = 0; i < inter_edges->n_edges; i++) {
+
+    assert(edges != NULL);
+    assert(mesh != NULL);
 
     cs_lnum_t  v1_num = edges->def[2*i];
     cs_lnum_t  v2_num = edges->def[2*i+1];

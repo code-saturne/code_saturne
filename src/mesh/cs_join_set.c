@@ -382,6 +382,8 @@ void
 cs_join_eset_check_size(cs_lnum_t         request_size,
                         cs_join_eset_t  **equiv_set)
 {
+  assert(equiv_set != NULL);
+
   cs_join_eset_t  *eset = *equiv_set;
 
   if (eset == NULL)
@@ -431,6 +433,8 @@ cs_join_eset_destroy(cs_join_eset_t  **equiv_set)
 void
 cs_join_eset_clean(cs_join_eset_t  **eset)
 {
+  assert(eset != NULL);
+
   int  i;
   cs_lnum_t  prev, current;
 
@@ -1553,6 +1557,8 @@ cs_join_gset_robin_sync(cs_join_gset_t  *loc_set,
   cs_gnum_t  *send_buffer = NULL, *recv_buffer = NULL;
   cs_join_gset_t  *sync_set = NULL;
 
+  assert(loc_set != NULL);
+
   MPI_Comm_rank(comm, &local_rank);
   MPI_Comm_size(comm, &n_ranks);
   _n_ranks = n_ranks;
@@ -1735,6 +1741,7 @@ cs_join_gset_robin_update(const cs_join_gset_t  *sync_set,
   /* Sanity checks */
 
   assert(sync_set != NULL);
+  assert(loc_set != NULL);
 
   /* Build a cs_join_block_info_t structure */
 
@@ -1961,6 +1968,8 @@ cs_join_gset_block_sync(cs_gnum_t        max_gnum,
   cs_gnum_t  *send_buffer = NULL, *recv_buffer = NULL;
   cs_join_gset_t  *sync_set = NULL;
 
+  assert(loc_set != NULL);
+
   if (max_gnum == 0)
     return  sync_set;
 
@@ -2141,6 +2150,7 @@ cs_join_gset_block_update(cs_gnum_t              max_gnum,
 
   /* Sanity checks */
 
+  assert(loc_set != NULL);
   assert(sync_set != NULL);
 
   /* Build a cs_join_block_info_t structure */
