@@ -404,8 +404,8 @@ class Setup:
             Package(name="CGNS",
                     description="CFD General Notation System",
                     package="cgnslib",
-                    version="3.1.4",
-                    archive="cgnslib_3.1.4.tar.gz",
+                    version="3.1.3",
+                    archive="cgnslib_3.1.3-4.tar.gz",
                     url="http://sourceforge.net/projects/cgns/files/cgnslib_3.1/%s/download")
 
         p = self.packages['cgns']
