@@ -2920,6 +2920,7 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
 
   for (i = 0; i < n_edges; i++) {
     rank = (part->edge_gnum[i] - 1)/block_info.size;
+    assert(rank >= 0 && rank < n_ranks);
     send_count[rank] += 2;
   }
 
@@ -2952,6 +2953,7 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
   for (i = 0; i < n_edges; i++) {
 
     rank = (part->edge_gnum[i] - 1)/block_info.size;
+    assert(rank >= 0 && rank < n_ranks);
     shift = send_shift[rank] + send_count[rank];
     send_glist[shift] = part->edge_gnum[i];
     send_glist[shift+1] = part->index[i+1] - part->index[i];
@@ -3225,6 +3227,7 @@ cs_join_inter_edges_block_to_part(cs_gnum_t                     n_g_edges,
 
   for (i = 0; i < part->n_edges; i++) {
     rank = (part->edge_gnum[i] - 1)/(cs_gnum_t)(block_info.size);
+    assert(rank >= 0 && rank < n_ranks);
     send_count[rank] += 1;
   }
 
@@ -3257,6 +3260,7 @@ cs_join_inter_edges_block_to_part(cs_gnum_t                     n_g_edges,
   for (i = 0; i < part->n_edges; i++) {
 
     rank = (part->edge_gnum[i] - 1)/block_info.size;
+    assert(rank >= 0 && rank < n_ranks);
     shift = recv_rank_index[rank] + send_count[rank];
     glist_to_recv[shift] = part->edge_gnum[i];
     send_count[rank] += 1;

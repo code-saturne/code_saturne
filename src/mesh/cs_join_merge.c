@@ -2828,7 +2828,7 @@ _get_faces_to_send(cs_lnum_t         n_faces,
 
   block_info = cs_join_get_block_info(n_g_faces, n_ranks, local_rank);
   start_gnum = block_info.first_gnum;
-  end_gnum = block_info.first_gnum + block_info.local_size;
+  end_gnum = block_info.first_gnum + (cs_gnum_t)block_info.local_size;
 
   /* Compact init. global face distribution. Remove ranks without face
      at the begining */

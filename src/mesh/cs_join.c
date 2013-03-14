@@ -692,6 +692,7 @@ _get_local_o2n_vtx_gnum(cs_join_param_t    param,
 
   for (i = 0; i < mesh->n_vertices; i++) {
     rank = (mesh->global_vtx_num[i] - 1)/(cs_gnum_t)(block_info.size);
+    assert(rank >= 0 && rank < n_ranks);
     send_count[rank] += 1;
   }
 
@@ -699,6 +700,7 @@ _get_local_o2n_vtx_gnum(cs_join_param_t    param,
 
     for (i = 0; i < select->n_vertices; i++) {
       rank = (select->per_v_couples[2*i+1] - 1)/(cs_gnum_t)(block_info.size);
+      assert(rank >= 0 && rank < n_ranks);
       send_count[rank] += 1;
     }
 

@@ -706,7 +706,7 @@ cs_join_gset_create_from_tag(cs_lnum_t        n_elts,
  *   init_array <-- initial values of set->g_list
  *
  * returns:
- *   a new allocated cs_join_gset_t structure
+ *   a new allocated cs_join_gset_t structure, or NULL if it would be empty
  *---------------------------------------------------------------------------*/
 
 cs_join_gset_t *
@@ -1544,9 +1544,9 @@ cs_join_gset_t *
 cs_join_gset_robin_sync(cs_join_gset_t  *loc_set,
                         MPI_Comm         comm)
 {
-  int  i, j, shift, elt_id;
-  int  rank, local_rank, n_ranks, n_recv_elts, n_sub_elts;
-  cs_gnum_t  gnum;
+  int  shift, rank, local_rank, n_ranks, n_recv_elts;
+  cs_lnum_t i, j, elt_id, n_sub_elts;
+  cs_gnum_t g_ent_num, _n_ranks;
 
   cs_lnum_t  *send_count = NULL, *recv_count = NULL;
   cs_lnum_t  *send_shift = NULL, *recv_shift = NULL;
@@ -1555,6 +1555,7 @@ cs_join_gset_robin_sync(cs_join_gset_t  *loc_set,
 
   MPI_Comm_rank(comm, &local_rank);
   MPI_Comm_size(comm, &n_ranks);
+  _n_ranks = n_ranks;
 
   /* Allocate parameters for MPI functions */
 
@@ -1571,7 +1572,7 @@ cs_join_gset_robin_sync(cs_join_gset_t  *loc_set,
   /* Synchronize list definition for each global element */
 
   for (i = 0; i < loc_set->n_elts; i++) {
-    rank = (loc_set->g_elts[i] - 1) % n_ranks;
+    rank = (loc_set->g_elts[i] - 1) % _n_ranks;
     send_count[rank] += 1;
   }
 
@@ -1599,7 +1600,7 @@ cs_join_gset_robin_sync(cs_join_gset_t  *loc_set,
 
   for (i = 0; i < loc_set->n_elts; i++) {
 
-    rank = (loc_set->g_elts[i] - 1) % (cs_gnum_t)n_ranks;
+    rank = (loc_set->g_elts[i] - 1) % _n_ranks;
     n_sub_elts = loc_set->index[i+1] - loc_set->index[i];
     send_count[rank] += 2 + n_sub_elts;
 
@@ -1625,16 +1626,16 @@ cs_join_gset_robin_sync(cs_join_gset_t  *loc_set,
 
   for (i = 0; i < loc_set->n_elts; i++) {
 
-    gnum = loc_set->g_elts[i];
-    rank = (gnum - 1) % (cs_gnum_t)n_ranks;
+    g_ent_num = loc_set->g_elts[i];
+    rank = (g_ent_num - 1) % _n_ranks;
     shift = send_shift[rank] + send_count[rank];
     n_sub_elts = loc_set->index[i+1] - loc_set->index[i];
 
-    send_buffer[shift++] = gnum;
+    send_buffer[shift++] = g_ent_num;
     send_buffer[shift++] = n_sub_elts;
 
     for (j = 0; j < n_sub_elts; j++)
-      send_buffer[shift + j] = loc_set->g_list[loc_set->index[i] + j];
+      send_buffer[shift + j] = loc_set->g_list[loc_set->index[i] + (cs_gnum_t)j];
 
     send_count[rank] += 2 + n_sub_elts;
 
@@ -1723,9 +1724,9 @@ cs_join_gset_robin_update(const cs_join_gset_t  *sync_set,
                           cs_join_gset_t        *loc_set,
                           MPI_Comm               comm)
 {
-  int  i, j, k, shift, elt_id, start, end;
-  int  rank, local_rank, n_ranks, n_sub_elts, n_recv_elts;
-  cs_gnum_t  gnum, _n_ranks;
+  int  rank, local_rank, n_ranks, n_sub_elts, n_recv_elts, shift;
+  cs_lnum_t  i, j, k, elt_id, start, end;
+  cs_gnum_t  g_ent_num, _n_ranks;
 
   cs_lnum_t  *send_count = NULL, *recv_count = NULL;
   cs_lnum_t  *send_shift = NULL, *recv_shift = NULL, *wanted_rank_index = NULL;
@@ -1781,11 +1782,11 @@ cs_join_gset_robin_update(const cs_join_gset_t  *sync_set,
 
   for (i = 0; i < loc_set->n_elts; i++) {
 
-    gnum = loc_set->g_elts[i];
-    rank = (gnum - 1) % _n_ranks;
+    g_ent_num = loc_set->g_elts[i];
+    rank = (g_ent_num - 1) % _n_ranks;
     shift = send_shift[rank] + send_count[rank];
 
-    send_buffer[shift] = gnum;
+    send_buffer[shift] = g_ent_num;
     send_count[rank] += 1;
 
   }
@@ -1889,10 +1890,9 @@ cs_join_gset_robin_update(const cs_join_gset_t  *sync_set,
 
   while (i < n_recv_elts) {
 
-    gnum = recv_buffer[i++];
+    assert(loc_set->g_elts[j] = recv_buffer[i]);
 
-    assert(loc_set->g_elts[j] = gnum);
-
+    i++;
     n_sub_elts = recv_buffer[i++];
     loc_set->index[j+1] = n_sub_elts;
 
@@ -1913,10 +1913,10 @@ cs_join_gset_robin_update(const cs_join_gset_t  *sync_set,
 
   while (i < n_recv_elts) {
 
-    gnum = recv_buffer[i++];
-    n_sub_elts = recv_buffer[i++];
+    assert(loc_set->g_elts[j] = recv_buffer[i]);
 
-    assert(loc_set->g_elts[j] = gnum);
+    i++;
+    n_sub_elts = recv_buffer[i++];
 
     for (k = 0; k < n_sub_elts; k++)
       loc_set->g_list[loc_set->index[j] + k] = recv_buffer[i + k];
@@ -1950,9 +1950,10 @@ cs_join_gset_block_sync(cs_gnum_t        max_gnum,
                         cs_join_gset_t  *loc_set,
                         MPI_Comm         comm)
 {
-  int  i, j, shift, block_id;
-  int  rank, local_rank, n_ranks, n_recv_elts, n_sub_elts;
-  cs_gnum_t  gnum;
+  int  block_id;
+  int  rank, local_rank, n_ranks, n_recv_elts, shift;
+  cs_lnum_t i, j, n_sub_elts;
+  cs_gnum_t g_ent_num, _n_ranks;
   cs_join_block_info_t  block_info;
 
   cs_lnum_t  *send_count = NULL, *recv_count = NULL, *counter = NULL;
@@ -1965,6 +1966,7 @@ cs_join_gset_block_sync(cs_gnum_t        max_gnum,
 
   MPI_Comm_rank(comm, &local_rank);
   MPI_Comm_size(comm, &n_ranks);
+  _n_ranks = n_ranks;
 
   block_info = cs_join_get_block_info(max_gnum, n_ranks, local_rank);
 
@@ -2010,12 +2012,12 @@ cs_join_gset_block_sync(cs_gnum_t        max_gnum,
 
   for (i = 0; i < loc_set->n_elts; i++) {
 
-    gnum = loc_set->g_elts[i];
-    rank = (gnum - 1)/(cs_gnum_t)(block_info.size);
+    g_ent_num = loc_set->g_elts[i];
+    rank = (g_ent_num - 1)/(cs_gnum_t)(block_info.size);
     shift = send_shift[rank] + send_count[rank];
     n_sub_elts = loc_set->index[i+1] - loc_set->index[i];
 
-    send_buffer[shift++] = gnum;
+    send_buffer[shift++] = g_ent_num;
     send_buffer[shift++] = n_sub_elts;
 
     for (j = 0; j < n_sub_elts; j++)
@@ -2124,9 +2126,10 @@ cs_join_gset_block_update(cs_gnum_t              max_gnum,
                           cs_join_gset_t        *loc_set,
                           MPI_Comm               comm)
 {
-  int  i, j, k, shift, block_id, start, end;
+  int  shift, block_id;
   int  rank, local_rank, n_ranks, n_sub_elts, n_recv_elts;
-  cs_gnum_t  gnum;
+  cs_lnum_t i, j, k, start, end;
+  cs_gnum_t g_ent_num, _n_ranks;
   cs_join_block_info_t  block_info;
 
   cs_lnum_t  *send_count = NULL, *recv_count = NULL;
@@ -2144,6 +2147,7 @@ cs_join_gset_block_update(cs_gnum_t              max_gnum,
 
   MPI_Comm_rank(comm, &local_rank);
   MPI_Comm_size(comm, &n_ranks);
+  _n_ranks = n_ranks;
 
   block_info = cs_join_get_block_info(max_gnum, n_ranks, local_rank);
 
@@ -2163,7 +2167,7 @@ cs_join_gset_block_update(cs_gnum_t              max_gnum,
   /* Get a synchronized list definition for each global element */
 
   for (i = 0; i < loc_set->n_elts; i++) {
-    rank = (loc_set->g_elts[i] - 1)/block_info.size;
+    rank = (loc_set->g_elts[i] - 1)/(cs_gnum_t)block_info.size;
     send_count[rank] += 1;
   }
 
@@ -2187,11 +2191,11 @@ cs_join_gset_block_update(cs_gnum_t              max_gnum,
 
   for (i = 0; i < loc_set->n_elts; i++) {
 
-    gnum = loc_set->g_elts[i];
-    rank = (gnum - 1)/block_info.size;
+    g_ent_num = loc_set->g_elts[i];
+    rank = (g_ent_num - 1) / (cs_gnum_t)block_info.size;
     shift = send_shift[rank] + send_count[rank];
 
-    send_buffer[shift] = gnum;
+    send_buffer[shift] = g_ent_num;
     send_count[rank] += 1;
 
   }
@@ -2290,10 +2294,9 @@ cs_join_gset_block_update(cs_gnum_t              max_gnum,
 
   while (i < n_recv_elts) {
 
-    gnum = recv_buffer[i++];
+    assert(loc_set->g_elts[j] = recv_buffer[i]);
 
-    assert(loc_set->g_elts[j] = gnum);
-
+    i++;
     n_sub_elts = recv_buffer[i++];
     loc_set->index[j+1] = n_sub_elts;
 
@@ -2314,10 +2317,10 @@ cs_join_gset_block_update(cs_gnum_t              max_gnum,
 
   while (i < n_recv_elts) {
 
-    gnum = recv_buffer[i++];
-    n_sub_elts = recv_buffer[i++];
+    assert(loc_set->g_elts[j] = recv_buffer[i]);
 
-    assert(loc_set->g_elts[j] = gnum);
+    i++;
+    n_sub_elts = recv_buffer[i++];
 
     for (k = 0; k < n_sub_elts; k++)
       loc_set->g_list[loc_set->index[j] + k] = recv_buffer[i + k];

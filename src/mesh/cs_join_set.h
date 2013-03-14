@@ -221,7 +221,7 @@ cs_join_gset_create_from_tag(cs_lnum_t        n_elts,
  *   init_array <-- initial values of set->g_list
  *
  * returns:
- *   a new allocated cs_join_gset_t structure
+ *   a new allocated cs_join_gset_t structure, or NULL if it would be empty
  *---------------------------------------------------------------------------*/
 
 cs_join_gset_t *
