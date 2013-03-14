@@ -254,9 +254,11 @@ The list of third-party software usable with \CS is provided here:
       quality is usually slightly lower than that obtained with \scotch or
       \ptscotch, but these libraries are faster.
 
-      Though broadly available, the license is quite restrictive,
-      so \scotch or \ptscotch may be preferred (\CS may be built with both
-      \metis and \scotch libraries).
+      Though broadly available, the \parmetis license is quite restrictive,
+      so \ptscotch may be preferred (\CS may be built with both
+      \metis and \scotch libraries). Also, the \metis licence was changed
+      in March 2013 to the Apache 2 licence, so it would not be surprising
+      for future \parmetis versions to follow.
 
 \item \texttt{eos-1.2} may be used for thermodynamical properties of fluids.
 
@@ -774,7 +776,7 @@ build on a cluster named \texttt{ivanoe}, using the Intel compilers
 \textbackslash \\
 \textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.1/arch/ivanoe \textbackslash \\
 \textcolor{Violet}{--with-ccm}=\textcolor{OliveGreen}{\$CS\_OPT}/libccmio-2.06.23/arch/ivanoe \textbackslash \\
-\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-5.1.12/arch/ivanoe\_ompi \textbackslash \\
+\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-6.0/arch/ivanoe\_ompi \textbackslash \\
 \textcolor{Violet}{--with-metis}=\textcolor{OliveGreen}{\$CS\_OPT}/parmetis-4.0/arch/ivanoe\_ompi \textbackslash \\
 \textcolor{Violet}{--with-eos}/\textcolor{OliveGreen}{\$CS\_OPT}/eos-1.2.0/arch/ivanoe\_ompi \textbackslash \\
 \textcolor{red}{CC}=mpicc \textcolor{red}{FC}=ifort \textcolor{red}{CXX}=icpc
@@ -850,7 +852,7 @@ For an example, let us start with the front-end build:
 \textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.0/arch/frontend
 \textbackslash \\
 \textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.1/arch/frontend \textbackslash \\
-\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-5.1.11/arch/frontend \textbackslash \\
+\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-6.0/arch/frontend \textbackslash \\
 \textcolor{red}{PYTHON}=\textcolor{OliveGreen}{\$CS\_OPT}/python/arch/frontend/bin/python \textbackslash \\
 \textcolor{red}{CFLAGS}="-m64" \textcolor{red}{FCFLAGS}="-m64" \textcolor{red}{CXXFLAGS}="-m64"
 }\end{minipage}}
@@ -876,7 +878,7 @@ compute nodes:
 \textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.0/arch/bgp
 \textbackslash \\
 \textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.1/arch/bgp \textbackslash \\
-\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-5.1.11/arch/bgp \textbackslash \\
+\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-6.0/arch/bgp \textbackslash \\
 \textcolor{Violet}{
 --disable-sockets --disable-dlloader -disable-nls \textbackslash \\
 --disable-frontend --enable-long-gnum \textbackslash
@@ -972,7 +974,7 @@ For an example, let us start with the front-end build:
 \textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.0/arch/frontend
 \textbackslash \\
 \textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.1/arch/frontend \textbackslash \\
-\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-5.1.12/arch/frontend \\
+\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-6.0/arch/frontend \\
 }\end{minipage}}
 
 For the compute node, we use the same version of Python (which
@@ -990,7 +992,7 @@ compute nodes:
 \textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.9/arch/bgq \textbackslash \\
 \textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.0/arch/bgq \textbackslash \\
 \textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.1/arch/bgq \textbackslash \\
-\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-5.1.12/arch/bgq \textbackslash \\
+\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-6.0/arch/bgq \textbackslash \\
 \textcolor{Violet}{
 --disable-sockets --disable-dlloader -disable-nls \textbackslash \\
 --disable-frontend --enable-long-gnum \textbackslash
