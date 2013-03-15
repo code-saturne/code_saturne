@@ -4905,7 +4905,170 @@ $ is the derivative in the direction normal to the
  \texttt{phidat}.
 \end{list}
 
-\subsubsubsection{Synthetic eddy method}
+\subsubsubsection{Synthetic Eddy Method}
+The user file \texttt{cs\_user\_les\_inflow.f90} allows to generate the
+non-stationary boundary conditions for the LES by the Synthetic Eddy
+Method.
+The basic principle of this method is illustrated in figure
+\ref{sem_principle}: the turbulent fluctuations at the inlet are generated
+by a set of synthetic eddies advected accross the inlet
+boundaries. The eddies evolve in a virtual ``box'' surrounding the inlet
+boudaries and each of them contributes to the normalized velocity
+fluctuations, depending on its relative position with the inlet faces
+and on a form function characterizing the shape of the eddies. By this
+way, the Synthetic Eddy Method provides a coherent flow with a target
+mean velocity and target Reynolds stresses at LES inlet.
+
+\begin{figure}
+\centering
+\includegraphics[width=0.6\linewidth]{graphics/sem_principle.pdf}
+\put(-95,147){$\mathbf{U}_c$}
+\put(-35,40){$v'^{SEM}$}
+\put(-185,48){$\mathcal{S}$}
+\put(-232,83){$\mathcal{B}$}
+\caption{\label{sem_principle}Illustration of the principle of the
+  Synthetic Eddy Method, with $\mathcal{S}$ the inlet boundary,
+  $\mathcal{B}$ the virtual box and $\mathbf{U}_c$ the advection
+  velocity of the eddies}
+\end{figure}
+
+{\bf \underline{WARNING}}: As for laminar or RANS inlets, the type of
+boundary for LES inlets is \texttt{ientre}. It has to be specified in
+the GUI or in the \texttt{cs\_user\_boundary\_conditions}
+surboutine. On the contrary, if Dirichlet values are given for these
+faces in the GUI or in the \texttt{cs\_user\_boundary\_conditions}
+subroutine (\texttt{rcodcl(ifac,ivar,1)} array), they are erased by
+those provided by the Synthetic Eddy Method.
+
+In the current version of \CS, the Synthetic Eddy Method is not
+available through the GUI but only throug the
+\texttt{cs\_user\_les\_inflow.f90} user file. The user file contains 3
+subroutines:
+
+\begin{itemize}
+\item \texttt{cs\_user\_les\_inflow\_init} (mandatory): global definition
+  of synthetic turbulence inlets
+\item \texttt{cs\_user\_les\_inflow\_define} (mandatory): specific
+  definition of each synthetic turbulence inlet
+\item \texttt{cs\_user\_les\_inflow\_advanced} (not mandatory): advanced
+  definition of each synthetic turbulence inlet
+\end{itemize}
+
+\texttt{cs\_user\_les\_inflow\_init}: this subroutine defines
+some global parameters shared by all LES inlets. These parameters are:
+
+\begin{itemize}
+\item \texttt{nent}: number of LES inlet boundaries
+\item \texttt{isuisy}: in case of a restart calculation, it indicates if
+  the synthetic turbulence is re-initialize (0) or read from the
+  previous calculation (1). In that case, the checkpoint folder must
+  contain the \texttt{les\_inflow} restart file. This file is
+  generated during a computation with synthetic turbulence, at the
+  same physical times as the main and auxiliary restart files.
+\end{itemize}
+
+\texttt{cs\_user\_les\_inflow\_define}: this subroutine defines
+the specific parameters of each LES inlet. These parameters are:
+
+\begin{itemize}
+\item \texttt{typent}: type of LES inflow method. The Synthetic Eddy
+  Method corresponds to \texttt{typent=3}. For the sake of
+  comparision, other methods can be selected through this user file
+  (see remark 2).
+
+\item \texttt{nelent}: number of synthetic eddies in the ``box''. This
+  parameter might be adjusted, depending on the case (in particular
+  the size of the inlet plane and the level of turbulence). As a
+  general rule, the greater is the better since an insufficient number
+  can lead to an intermittent signal while some numerical tests have
+  shown that this parameter does not have a great influence beyond a
+  threshold value. Given the inlet of size $h^2$ of a shear flow at a
+  given Reynolds number $Re=u_\tau h/\nu$, an appropriate number of
+  eddies can be evaluated by $(Re/50)^3$ ($Re$ and 50 approximates
+  respectively the size, in wall unit, of the largest and the smallest
+  synthetic eddy. Note the latter can depend on the grid size, see
+  remark 1).
+
+\item \texttt{iverbo}: level of verbosity in the
+  listing. \texttt{iverbo=1} provides mainly informations about the
+  size of the eddies and the size of the ``box'' surrounding the inlet
+  boundary.
+
+\item \texttt{nfbent} and \texttt{lfbent}: number and list of boundary
+  faces composing the LES inlet boundary.
+
+\item \texttt{vitent}: reference mean velocity at inlet. This
+  parameter imposes the target mean velocity at inlet. A finer (non
+  homogeneous) definition of the mean velocity can be done in the
+  \texttt{cs\_user\_les\_inflow\_advanced} subroutine (see below).
+
+\item \texttt{enrent}: reference turbulence kinetic energy $k$ at
+  inlet. This parameter imposes the target Reynolds stresses $R_{ij}$
+  at inlet, computed by $R_{ij}=\frac{2}{3}k\delta_{ij}$ (isotropy). A
+  finer (non isotropic and/or non homogeneous) definition of the
+  Reynolds stresses can be done in the
+  \texttt{cs\_user\_les\_inflow\_advanced} subroutine (see below).
+
+\item \texttt{dspent}: reference dissipation rate $\varepsilon$ at
+  inlet. This parameter is used to compute the size of the syntetic
+  eddies (see remark 1). A finer (non homogeneous) definition of
+  the dissipation rate can be done in the
+  \texttt{cs\_user\_les\_inflow\_advanced} subroutine (see below).
+\end{itemize}
+
+\texttt{cs\_user\_les\_inflow\_advanced}: this optional subroutine
+enables to give an accurate (non homogeneous) specification of inflow
+statistics: mean velocity (\texttt{uvwent} array), Reynolds stresses
+(\texttt{rijent} array) and dissipation rate (\texttt{epsent}
+array). In that case, this accurate specification replaces the
+one given in \texttt{cs\_user\_les\_inflow\_define} subroutine
+(\texttt{vitent}, \texttt{enrent} and \texttt{dspent} variables).
+
+{\bf \underline{REMARK 1}}: The specification of the dissipation rate
+$\varepsilon$ at inlet is used to compute the size $\sigma_i$ of the
+synthetic eddies in the $i$ cartesian direction. One have:
+$$\sigma_i=\max\left\{C\frac{\big(\frac{3}{2}R_{ii}\big)^{3/2}}{\varepsilon},\Delta\right\},\qquad
+C=0.5.$$
+$\Delta$ is a reference size of the grid, in order to assume that all
+synthetic eddies are discretized. In the implementation of \CS, it is
+computed at each inlet boundary face $F$ as:
+$$\Delta=2\max_{i\le3,V\in\mathcal{V}}\Big\{\big|x_i^V-x_i^C\big|\Big\}$$
+with $\mathcal{V}$ the subset of the vertices of the boundary face $F$
+and $C$ the cell adjacent to $F$.
+
+{\bf \underline{REMARK 2}}: For the sake of comparison, others LES inflow methods are
+available through the 
+\texttt{cs\_user\_les\_inflow.f90} user file, in addition to the
+Synthetic Eddy Method:
+
+\begin{itemize}
+\item The Batten method corresponds to \texttt{typent=2} in
+  \texttt{cs\_user\_les\_inflow\_define} subroutine. With this method,
+  the inflow velocity signal is the superposition of several Fourier
+  modes. The number of modes is indicated through the
+  \texttt{nelent} keyword. As   for Synthetic Eddy Method, the mean
+  velocity, the turbulent kinetic energy and the dissipation rate have
+  to be specified at inlet: either giving their reference values
+  (\texttt{vitent}, \texttt{enrent} and \texttt{dspent}) in the
+  \texttt{cs\_user\_les\_inflow\_define} subroutine, either providing
+  an accurate local description in the
+  \texttt{cs\_user\_les\_inflow\_advanced} subroutine.
+
+\item \texttt{typent=1}: turbulent fluctations are given by a gaussian
+  noise. The mean velocity and Reynolds stresses have to be specified
+  (in \texttt{cs\_user\_les\_inflow\_define} or in
+  \texttt{cs\_user\_les\_inflow\_advanced}). The other parameters of
+  the user subroutines are useless. The turbulent fluctuations
+  provided by this method are much less realistic than those provided
+  by the Synthetic Eddy Method or the Batten method. Especially for
+  low Reynolds number flows, this could lead to the rapid dissipation
+  of this fluctuations and the laminarization of the flow.
+
+\item \texttt{typent=0}: No fluctuation. This method does not require
+  any parameter. It should be reserved to regions where the flow is
+  laminar.
+\end{itemize}
+
 %==================================
 \subsection{Manage the variable physical properties}
 %==================================
