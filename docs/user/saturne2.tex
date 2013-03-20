@@ -25,7 +25,7 @@
 \section{Key word list}
 %==================================
 %==================================
-\label{prg_motscles}
+\label{sec:prg_motscles}
 
 The key words are classified under headings. For each key word of the Kernel of \CS,
 the following data are given:
@@ -51,7 +51,7 @@ the following data are given:
       non-allowed value is given (generally $-999$ or $-10^{12}$), to force the
       user to specify a value. If he does not do it, the code may:
 \begin{list}{-}{}
-\item automatically use a recommended value (for instance, automatical
+\item automatically use a recommended value (for instance, automatic
       choice of the variables for which chronological records will be
       generated).
 
@@ -165,24 +165,24 @@ useful in case of gas or pulverised coal combustion}
 \minititre{Lagrangian}
 
 \motcle{impla1}{i}{strictly positive integer}{50}{O}{L3}
-{unit of a file specific to Lagrangian modeling\\
-useful in case of Lagrangian modeling}
+{unit of a file specific to Lagrangian modelling\\
+useful in case of Lagrangian modelling}
 
 \motcle{impla2}{i}{strictly positive integer}{51}{O}{L3}
-{unit of a file specific to Lagrangian modeling\\
-useful in case of Lagrangian modeling}
+{unit of a file specific to Lagrangian modelling\\
+useful in case of Lagrangian modelling}
 
 \motcle{impla3}{i}{strictly positive integer}{52}{O}{L3}
-{unit of a file specific to Lagrangian modeling\\
-useful in case of Lagrangian modeling}
+{unit of a file specific to Lagrangian modelling\\
+useful in case of Lagrangian modelling}
 
 \motcle{impla4}{i}{strictly positive integer}{53}{O}{L3}
-{unit of a file specific to Lagrangian modeling\\
-useful in case of Lagrangian modeling}
+{unit of a file specific to Lagrangian modelling\\
+useful in case of Lagrangian mode ling}
 
 \motcle{impla5}{ia}{strictly positive integer}{54 to 68}{O}{L3}
-{units of files specific Lagrangian modeling, 15-dimension array\\
-useful in case of Lagrangian modeling}
+{units of files specific Lagrangian modelling, 15-dimension array\\
+useful in case of Lagrangian modelling}
 
 
 %==================================
@@ -196,12 +196,12 @@ are defined using the GUI or \\
 $\bullet\quad$The post-processing files can be of the following formats: {\em Ensight Gold},
 {\em MED} or {\em CGNS}. The use of the two latter formats depends on
 the installation of the corresponding external libraries.\\
-$\bullet\quad$For each quantity (problem unknow, preselected numerical
+$\bullet\quad$For each quantity (problem unknown, preselected numerical
 variable or preselected physical parameter), the user specifies if a
 post-processing output is wanted. The output frequency can be set.\\
 
 \motcleb{ichrvr}{ia}{-999, 0 or 1}{-999}{O}{L1}
-{for each quantity defined at the cell centers (physical or numerical
+{for each quantity defined at the cell centres (physical or numerical
 variable), indicator of whether it should be post-processed or not \\
 \hspace*{1.3cm}= -999: not initialised. By default, the post-processed
 quantities are the unknowns (pressure, velocity, $k$, $\varepsilon$,
@@ -273,7 +273,7 @@ specified with  {\tt ihisvr(n, j$>$1)}\\
 always useful, must be inferior or equal to {\tt ncapt}\\
 \hspace*{.5cm} $\bullet$ {\tt ihisvr(n, j$>$1)}: index-numbers of the probes
 used for the variable $n$\\
-(with $j$$\leqslant${\tt ihisvr(n,1)+1)}\\
+(with $j \leqslant${\tt ihisvr(n,1)+1)}\\
 \hspace*{1.3cm}= -999: by default: if {\tt ihisvr(n, 1)} $\ne$
 -999, the  code stops. Otherwise, refer to the description of the case
 {\tt ihisvr(n, 1)}=-999\\
@@ -325,7 +325,7 @@ i.e.} there are probes ({\tt ncapt}$>$0) there is {\tt n} for which
 {\tt ihisvr(n, 1)} $\ne$ 0)}
 
 \minititre{Non-standard use through \texttt{ushist}}
-(see p.\pageref{prg_ushist})
+(see p.~\pageref{sec:prg_ushist})
 
 \motcle{impush}{ia}{strictly positive integer}{33 to 32+\texttt{nushmx}=49}{O}{L3}
 {units of the user chronological record files\\
@@ -353,7 +353,7 @@ useful if and only if the subroutine \texttt{ushist} is used}
 %==================================
 
 The code allows the calculation of time averages of the type
-$<f_1*f_2...*f_n>$. The variables $f_i$ (defined at the cell centers)
+$<f_1*f_2...*f_n>$. The variables $f_i$ (defined at the cell centres)
 which may be taken into account are the followings:
 \begin{list}{-}{}
 \item the solved calculation variables (velocity, pressure ...),
@@ -371,7 +371,7 @@ recommended to refer first to the user examples for subroutine
 does not contain the time averages directly, but only the cumulated value
 of the product $f_1*f_2...*f_n$ of the selected
 variables $f_i$. The division by the cumulated duration is done only
-before the writing of the results. See also page \pageref{prg_moyennes}.
+before the writing of the results. See also page \pageref{sec:prg_moyennes}.
 
 To calculate $p$ time averages of the type $<f_1*f_2...*f_{n(imom)}>$,
 the user must:
@@ -559,7 +559,7 @@ always useful}
 
 \motcle{ntpabs}{i}{integer}{0, read}{O}{L3}
 {number of the last time step in the previous calculation. In the case of
-a restart calculation, {\tt ntpabs} is read from the restart file. Otherwhise
+a restart calculation, {\tt ntpabs} is read from the restart file. Otherwise
 it is initialised to 0\\
 always useful\\
 {\tt ntpabs} is initialised automatically by the code, its value is not to
@@ -590,7 +590,7 @@ its value is not to be modified by the user}
 \motcle{ttpabs}{r}{positive or null real number}{0, read}{O}{L3}
 {simulation physical time at the last time step of the previous
 calculation. In the case of a restart calculation, {\tt ttpabs} is read from
-the restart file. Otherwhise it is initialised to 0.\\
+the restart file. Otherwise it is initialised to 0.\\
 always useful\\
 {\tt ttcabs} is initialised automatically by the code, its value is not to
 be modified by the user}
@@ -648,9 +648,9 @@ useful if and only if {\tt nscal} $\geqslant$ 1}
 \hspace*{1.3cm}= -10: not specified. By default, the code chooses
 {\tt iscsth(iscal)}=0 for the scalars apart from {\tt iscalt}\\
 \hspace*{1.3cm}= -1: temperature in degrees Celsius (use only in case of
-radiation modeling)\\
+radiation modelling)\\
 \hspace*{1.3cm}= 0: passive scalar\\
-\hspace*{1.3cm}= 1: temperature (in Kelvin if the radiation modeling is
+\hspace*{1.3cm}= 1: temperature (in Kelvin if the radiation modelling is
 activated)\\
 \hspace*{1.3cm}= 2: enthalpy\\
 \hspace*{1.3cm}= 3: total energy (this value is automatically chosen by the code
@@ -658,8 +658,8 @@ when using the compressible module, it must never be used otherwise and must
 never be specified by the user)\\
 useful if and only if {\tt nscal} $\geqslant$ 1. The distinction between
 {\tt iscsth(iscal)} = -1 or 1 (respectively degrees Celsius or Kelvin) is
-useful only in case of radiation modeling. For calculations without
-radiation modeling, use {\tt iscsth(iscal)}=1 for the temperature. When a
+useful only in case of radiation modelling. For calculations without
+radiation modelling, use {\tt iscsth(iscal)}=1 for the temperature. When a
 particular physics module is activated (gas combustion, pulverised coal,
 electricity or compressible), the user must not modify {\tt iscsth} (the choice
 is made automatically: the solved variable is the enthalpy or the total energy).\\
@@ -717,7 +717,7 @@ useful in case of coupling with \syrthes}
 {for each unknown {\tt ivar} to calculate, indicates if
 non-stationary terms are present ({\tt istat(ivar)}=1) or not (0) in the matrices.\\
 By default, {\tt istat} is set to 0 for the pressure (variable {\tt ivar=ipr})
-or $\overline{f}$ in v2f modeling (variable {\tt ivar=ifb}) and set to
+or $\overline{f}$ in v2f modelling (variable {\tt ivar=ifb}) and set to
 1 for the other unknowns.\\
 useful for all the unknowns}
 
@@ -725,7 +725,7 @@ useful for all the unknowns}
 {for each unknown {\tt ivar} to calculate, indicates if the
 convection is taken into account ({\tt iconv(ivar)}=1) or not (0).\\
 By default, {\tt iconv} is set to 0 for the pressure (variable {\tt ivar=ipr})
-or $\overline{f}$ in v2f modeling (variable {\tt ivar=ifb}) and set to
+or $\overline{f}$ in v2f modelling (variable {\tt ivar=ifb}) and set to
 1 for the other unknowns.\\
 useful for all the unknowns}
 
@@ -745,9 +745,9 @@ useful for all the unknowns }
 of the matrix should be slightly shifted ({\tt idircl(ivar)}=1) or not (0) if there
 is no Dirichlet boundary condition and if {\tt istat}=0. Indeed, in such a case,
 the matrix for the general advection/diffusion equation is singular. A slight
-shift in the diagonal will make it invertable again.\\
+shift in the diagonal will make it invertible again.\\
 By default, {\tt idircl} is set to 1 for all the unknowns, except $\overline{f}$ in
-v2f modeling, since its equation contains another diagonal term that ensures
+v2f modelling, since its equation contains another diagonal term that ensures
 the regularity of the matrix.\\
 useful for all the unknowns}
 
@@ -892,7 +892,7 @@ the maximum, then to the minimum limit.\\
 
 \motcleb{iturb}{ia}{0, 10, 20, 21, 30, 31, 32, 40, 41, 42, 50, 51, 60, 70}{-999}{O}{L1}
 {indicator of the turbulence model {\tt iturb}\\
-\hspace*{1.3cm}= -999: not initalised. This value is not allowed and
+\hspace*{1.3cm}= -999: not initialised. This value is not allowed and
 must be modified by the user\\
 \hspace*{1.3cm}= 0: laminar\\
 \hspace*{1.3cm}= 10: mixing length (not valided)\\
@@ -935,16 +935,16 @@ known flaw of the standard $k-\varepsilon$ model which overestimates the
 turbulence level in case of strong velocity gradients (stopping point).\\
 With LES, the wall functions are usually not greatly adapted. It is generally more advisable
 (if possible) to refine the mesh towards the wall so that the first cell is in the
-viscous sublayer, where the boundary conditions are simple natural no-slip conditions.\\
+viscous sub-layer, where the boundary conditions are simple natural no-slip conditions.\\
 Concerning the LES model, the user may refer to the subroutine
 \texttt{ussmag} for complements about the dynamic model. Its usage
 and the interpretation of its results require particular attention.
 In addition, the user must pay further attention when using the dynamic
 model with the least squares method based on a partial extended
-neighborhood ({\tt imrgra}=3). Indeed, the results may be degraded if the user
+neighbourhood ({\tt imrgra}=3). Indeed, the results may be degraded if the user
 does not implement his own way of averaging the dynamic constant in
 \texttt{ussmag} (\textit{i.e.} if the user keeps the local average based
-on the extended neighborhood).\\
+on the extended neighbourhood).\\
 
 \motcleb{iturt}{ia}{0, 10, 20 or 30}{0}{O}{L1}
 {indicator of the turbulent flux model $ \overline{\varia^\prime \vect{u}^\prime}$
@@ -953,7 +953,7 @@ for any scalar $\varia$\\
 \hspace*{1.3cm}= 10: Generalized Gradient Hypothesis\\
 \hspace*{1.3cm}= 20: Algebraic Flux Model\\
 \hspace*{1.3cm}= 30: Differential Flux Model (transport equations of the turbulent flux)\\
-GGDH, AFM and DFM are only availables when a second order closure is used {\tt iturb}=30, 31, 32.
+GGDH, AFM and DFM are only available when a second order closure is used {\tt iturb}=30, 31, 32.
 }
 
 \motcle{ideuch}{ia}{0, 1 or 2}{0 or 1}{O}{L2}
@@ -1010,8 +1010,8 @@ is taken into account\\ ({\tt igrhok}=1) or not (0) in the velocity
 equation\\
 useful if and only if {\tt iturb} = 20, 21, 50 or 60.\\
 This term may generate
-non-physical velocities at the wall. When it is not explicitely taken into
-account, it is implicitely included into the pressure.}
+non-physical velocities at the wall. When it is not explicitly taken into
+account, it is implicitly included into the pressure.}
 
 \motcle{ikecou}{ia}{0 or 1}{0 or 1}{O}{L3}
 {indicates if the coupling of the source terms of
@@ -1094,7 +1094,7 @@ due to this.}
 
 \motcle{irijnu}{ia}{0 or 1}{0}{O}{L3}
 {addition ({\tt irijnu}=1) or not (0) of a
-turbulent viscosity in the matrix of the incermental system solved
+turbulent viscosity in the matrix of the incremental system solved
 for the velocity in $R_{ij}-\varepsilon$ models. The goal is to improve
 the stability of the calculation. The usefulness of {\tt irijnu}=1 has
 however not been clearly demonstrated.\\
@@ -1136,7 +1136,7 @@ useful if {\tt iturb}=40, 41 or 42
 {{\tt idries} activates (1) or not (0) the van
 Driest wall-damping for the Smagorinsky constant (the Smagorinsky
 constant is multiplied by the damping function
-$1-e^{-y^+/{\tt cdries}}$, where $y^+$ designates the adimensional
+$1-e^{-y^+/{\tt cdries}}$, where $y^+$ designates the non-dimensional
 distance to the nearest wall). The default value is 1 for the
 Smagorinsky model and 0 for the dynamic model.\\
 the van Driest wall-damping requires the knowledge of the distance to the
@@ -1200,13 +1200,13 @@ useful if and only if {\tt iturb} = 41}
 %==================================
 
 By default, the standard time scheme is a first-order.
-A second-order scheme is activated automatically with LES modeling.
+A second-order scheme is activated automatically with LES modelling.
 On the other hand, when ``specific physics'' (gas combustion, pulverised coal,
 compressible module) are activated, the second-order scheme is not allowed.
 
 In the current version, the second-order time scheme is not compatible
 with the estimators ({\tt iescal}), the velocity-pressure coupling
-({\tt ipucou}), the modeling of hydrostatic pressure ({\tt icalhy} and
+({\tt ipucou}), the modelling of hydrostatic pressure ({\tt icalhy} and
 {\tt iphydr}) and the time- or space-variable time step ({\tt idtvar}).
 
 Also, in the case of a rotation periodicity, a proper second-order is not
@@ -1530,20 +1530,20 @@ useful if {\tt nscal}$>$1}
 {indicates the type of gradient reconstruction (one method for all the
 variables)\\
 \hspace*{1.3cm}= 0: iterative reconstruction of the non-orthogonalities\\
-\hspace*{1.3cm}= 1: least squares method based on the first neighbor cells
+\hspace*{1.3cm}= 1: least squares method based on the first neighbour cells
 (cells which share a face with the treated cell)\\
 \hspace*{1.3cm}= 2: least squares method based on the extended neighborhood
 (cells which share a node with the treated cell)\\
 \hspace*{1.3cm}= 3: least squares method based on a partial extended
-neighborhood (all first neighbors plus the extended neighborhood cells that
+neighbourhood (all first neighbours plus the extended neighbourhood cells that
 are connected to a face where the non-orthogonality angle is larger than
 parameter {\tt anomax})\\
 \hspace*{1.3cm}= 4: iterative reconstruction with initialisation using the least
-squares method (first neighbors)\\
+squares method (first neighbours)\\
 \hspace*{1.3cm}= 5: iterative reconstruction with initialisation using the least
-squares method based on an extended neighborhood\\
+squares method based on an extended neighbourhood\\
 \hspace*{1.3cm}= 6: iterative reconstruction with initialisation using the least
-squares method based on a partial extended neighborhood\\
+squares method based on a partial extended neighbourhood\\
 if {\tt imrgra} fails due to probable mesh quality problems, it is usually effective
 to use {\tt imrgra}=3. Moreover, {\tt imrgra}=3 is usually faster than
 {\tt imrgra}=0 (but with less feedback on its use).\\
@@ -1594,14 +1594,14 @@ The only possible values of {\tt extrag(ipr)} are:\\
 \hspace*{1.3cm}= 0.5: improved homogeneous Neumann, calculated at
 second-order in the case of an orthogonal mesh and at first-order otherwise\\
 \hspace*{1.3cm}= 1: gradient extrapolation (gradient at the boundary face
-equal to the gradient in the neighbor cell), calculated at
+equal to the gradient in the neighbour cell), calculated at
 second-order in the case of an orthogonal mesh and at first-order otherwise\\
 {\tt extrag} often allows to correct the non-physical velocities that
 appear on horizontal walls when density is variable and there is gravity.
 It is strongly advised to keep {\tt extrag}=0 for the variables apart from
 pressure. See also {\tt iphydr}.\\
 In practice, only the values 0 and 1 are allowed. The
-value 0.5 isn't allowed by default (but the lock can be overridden if
+value 0.5 is not allowed by default (but the lock can be overridden if
 necessary, contact the development team).\\
 always useful}
 
@@ -1609,9 +1609,9 @@ always useful}
 {limit non-orthogonality angle used to restrict the extended neighborhood for
 the gradient calculation with {\tt imrgra}=3.\\
 {\tt anomax}=0 will yield the same result as {\tt imrgra}=2 (full extended
-neighborhood). {\tt anomax}=$\pi/2$ will yield the same result as
+neighbourhood). {\tt anomax}=$\pi/2$ will yield the same result as
 {\tt imrgra}=1
-(first neighbors only)\footnote{except for pathological cases where the
+(first neighbours only)\footnote{except for pathological cases where the
 non-orthogonality angle of a face would be larger than $\pi/2$}\\
 useful if and only if {\tt imrgra}=3}
 
@@ -1647,7 +1647,7 @@ always useful}
 \motcle{nitmax}{ia}{integer $>$ 0}{10000}{O}{L3}
 {for each unknown {\tt ivar}, maximum number of iterations for the solution of
 the linear systems: {\tt nitmax(ivar)}\\
-when the algebraic multigrid option is activated for the variable {\tt ivar}
+when the algebraic multi-grid option is activated for the variable {\tt ivar}
 ({\tt imgr(ivar)}=1), {\tt nitmax(ivar)} is the maximum number of iterations
 for the solution on the coarsest mesh\\
 always useful}
@@ -1663,42 +1663,42 @@ always useful}
 
 \motcle{imgr}{ia}{0 or 1}{0}{O}{L3}
 {for each unknown {\tt ivar}, indicates the use ({\tt imgr(ivar)}=1) or not
-(=0) of the algebraic multigrid method for the solution of the linear systems\\
+(=0) of the algebraic multi-grid method for the solution of the linear systems\\
 {\tt imgr(ivar)} can be set independently for every variable\\
 always useful. Generally, its use is designed for the variable ``pressure'' in
 case of meshes with strongly stretched cells. It is recommended not to modify
 {\tt imgr}}
 
 \motcle{ncegrm}{i}{integer $>$ 0}{30}{O}{L3}
-{for the multigrid method, maximum number of cells on the coarsest grid\\
+{for the multi-grid method, maximum number of cells on the coarsest grid\\
 useful if and only if {\tt imgr(ivar)} = 1 for at least one variable {\tt ivar}}
 
 \motcle{ncymax}{ia}{integer $>$ 0}{100}{O}{L3}
 {for each unknown {\tt ivar}, {\tt ncymax(ivar)} is the maximum number of
-cycles when using the multigrid method.\\
+cycles when using the multi-grid method.\\
 useful if and only if {\tt imgr(ivar)} = 1}
 
 \motcle{ngrmax}{i}{1$\leqslant$ integer $\leqslant${\tt ngrmmx} }{{\tt ngrmmx}}{O}{L3}
-{when using the multigrid method, maximum number of grid levels\\
+{when using the multi-grid method, maximum number of grid levels\\
 useful if and only if {\tt imgr(ivar)} = 1 for at least one variable {\tt ivar}}
 
 \motcle{ncymax}{ia}{integer $>$ 0}{10}{O}{L3}
 {for each unknown {\tt ivar}, {\tt ncymax(ivar)} is the maximum number of
- multigrid cycles.\\
+ multi-grid cycles.\\
 useful if and only if {\tt imgr(ivar)} = 1}
 
 \motcle{nitmgf}{ia}{integer $>$ 0}{10}{O}{L3}
 {for each unknown {\tt ivar}, {\tt nitmgf(ivar)} is the maximum number of
-iterations on all grids except for the coarsest when the multigrid method is
+iterations on all grids except for the coarsest when the multi-grid method is
 used; the resolution on the coarsest grid uses {\tt nitmax}.\\
 useful if and only if {\tt imgr(ivar)} = 1}
 
 \motcle{rlxp1}{r}{0 $\leqslant$ real $\leqslant$ 1}{0.95}{O}{L3}
-{relaxation parameter for the multigrid.
+{relaxation parameter for the multi-grid.
 }
 
 \minititre{Warning}
-The algebraic multigrid method has only been tested for
+The algebraic multi-grid method has only been tested for
 the ``pressure'' variable ({\tt imgr(ipr)}=1).
 
 %==================================
@@ -1737,7 +1737,6 @@ the order in space to decrease quickly.}
 %==================================
 \subsubsection{Pressure-continuity step}
 %==================================
-
 
 \motcle{iprco}{i}{0 or 1}{1}{O}{L3}
 {indicates if the pressure-continuity step is taken into account (1) or
@@ -1922,7 +1921,7 @@ $$ \eta^{\,tot}_{\,i,k}(\vect{u}^{\,n+1})= {|\Omega_i|}^{\,(k-2)/2}\ ||\vect{\ma
 _{{I\hspace{-.25em}L}^{2}(\Omega_i)}$$
 
 The mass flux in the convective term is recalculated from $\vect{u}^{n+1}$
-expressed at the cell centers (and not taken from the updated mass flow at the
+expressed at the cell centres (and not taken from the updated mass flow at the
 faces).\\
 
 As for the prediction estimator:\\
@@ -1958,14 +1957,13 @@ instance, EsPre2 is the estimator {\tt iespre} calculated with {\tt iescal}=2.\\
 always useful}
 
 
-
 %==================================
 \subsubsection{Calculation of the distance to the wall}
 %==================================
 
 \motcle{icdpar}{i}{-1, 1, -2 or 2}{-1}{O}{L2}
 {specifies the method used to calculate the distance to the wall $y$ and the
-adimensional distance $y^+$ for all the
+non-dimensional distance $y^+$ for all the
 cells of the calculation domain (when necessary):\\
 \hspace*{1.3cm}= 1: standard algorithm (based on a Poisson equation for $y$ and
 convection equation for $y^+$),
@@ -2009,7 +2007,7 @@ if you need to override this limitation.}
 
 The following options are related to {\tt icdpar}=1 or -1. The options of
 level 2 are described first. Some options are used only in the case of
-the calculation of the adimensional distance to the wall $y^+$ (LES model with
+the calculation of the non-dimensional distance to the wall $y^+$ (LES model with
 van Driest damping). Most of these key words are simple copies of the
 key words for the numerical options of the general equations, with a potentially
 specific value in the case of the calculation of the distance to the wall.\\
@@ -2021,7 +2019,7 @@ detailled the outputs\\
 useful when {\tt icdpar}=1 or -1}
 
 \motcle{ntcmxy}{i}{positive integer}{1000}{O}{L2}
-{number of pseudo-time iterations for the calculation of the adimensional
+{number of pseudo-time iterations for the calculation of the non-dimensional
 distance to the wall $y^+$\\
 useful when {\tt icdpar}=1 or -1 for the calculation of $y^+$}
 
@@ -2058,7 +2056,7 @@ useful when {\tt icdpar}=1 or -1 for the calculation of $y^+$}
 
 \motcle{imgrpy}{i}{0 or 1}{0}{O}{L3}
 {indicates whether the algebraic
-multigrid method should be used ({\tt imgr(ivar)}=1) or not (0): corresponds
+multi-grid method should be used ({\tt imgr(ivar)}=1) or not (0): corresponds
 to {\tt imgr}\\
 useful when {\tt icdpar}=1 or -1}
 
@@ -2091,17 +2089,17 @@ corresponds to {\tt extrag}\\
 useful when {\tt icdpar}=1 or -1}
 
 \motcle{coumxy}{r}{strictly positive real number}{5000}{O}{L3}
-{Target Courant number for the calculation of the adimensional distance
+{Target Courant number for the calculation of the non-dimensional distance
 to the wall\\
 useful when {\tt icdpar}=1 or -1 for the calculation of $y^+$}
 
 \motcle{epscvy}{r}{strictly positive real number}{$10^{-8}$}{O}{L3}
 {relative precision for the convergence of the pseudo-transient regime
-for the calculation of the adimensional distance to the wall\\
+for the calculation of the non-dimensional distance to the wall\\
 useful when {\tt icdpar}=1 or -1  for the calculation of $y^+$}
 
 \motcle{yplmxy}{r}{real number}{200}{O}{L3}
-{value of the adimensional distance to the wall above which the
+{value of the non-dimensional distance to the wall above which the
 calculation of the distance is not necessary (for the damping)\\
 useful when {\tt icdpar}=1 or -1 for the calculation of $y^+$}
 
@@ -2137,7 +2135,7 @@ always useful (it is seldom advised, but it can prove very useful, for instance,
 in case of flows with weak convection effects and highly variable viscosity)}
 
 \motcleb{nterup}{i}{real number $>$ 0}{1}{O}{L2}
-{number of interations on the pressure-velocity coupling on Navier-Stokes (for the PISO algorithm).
+{number of iterations on the pressure-velocity coupling on Navier-Stokes (for the PISO algorithm).
 useful for unsteady algorithm
 }
 
@@ -2193,7 +2191,7 @@ always useful}
 
 
 %====================================================================================
-\subsection{Numerical, physical and modeling parameters}
+\subsection{Numerical, physical and modelling parameters}
 %=============================================================================
 \subsubsection{Numeric Parameters}
 %================================
@@ -2282,7 +2280,7 @@ always useful}
 \motcleb{ro0}{ra}{real number $\geqslant$ 0}{\tt -grand*10}{C}{L1}
 {{\tt ro0} is the reference density\\
 negative value: not initialised\\
-its value is not used in gas or coal combustion modeling (it
+its value is not used in gas or coal combustion modelling (it
 will be calculated following the perfect gas law, with $P0$ and $T0$). With the
 compressible module, it is also not used by the code, but it may be (and often
 is) referenced by the user in user subroutines; it is therefore better to
@@ -2313,7 +2311,7 @@ always useful, it is the used value unless the user specifies the
 viscosity in the subroutine \texttt{usphyv}}
 
 \motcleb{srrom}{r}{$0 \leqslant \text{r\'eel} < 1$}{\tt -grand or 0}{c or O}{L1}
-{With gas combustion, pulversied coal or the electric module, {\tt srrom}
+{With gas combustion, pulverised coal or the electric module, {\tt srrom}
  is the sub-relaxation coefficient for the density, following the formula:\\
 $\rho^{n+1}$\,=\,srrom\,$\rho^n$+(1-srrom)\,$\rho^{n+1}$\\
 hence, with a zero value, there is no sub-relaxation.
@@ -2327,7 +2325,7 @@ With gas combustion, pulverised coal or electric arc, {\tt ssrom} is
 automatically used after the second time-step. With Joule effect,
 the user decides whether or not it will be used in \texttt{uselph}
 from the coding law giving the density.}\\
-always useful with gas combustion, pulversized coal or the electric module.
+always useful with gas combustion, pulverized coal or the electric module.
 
 \motcleb{p0}{ra}{real number}{$1.013e-5$}{O}{L1}
 {{\tt p0} is the reference pressure for the total
@@ -2363,11 +2361,11 @@ outlet conditions (as it is in most configurations),
 coordinates of the reference outlet face ({\em i.e.} the code will automatically
 select a
 reference outlet boundary face and set {\tt xyzp0} so that $P$ equals {\tt p0} at this
-face). Nontheless, if {\tt xyzp0} is pecified by the user, the calculation will remain
+face). Nonetheless, if {\tt xyzp0} is specified by the user, the calculation will remain
 correct\\
 when direct Dirichlet conditions are specified by the user (specific value set
 on specific boundary faces), it is better to specify the corresponding reference
-point ({\em i.e.} specifiy where the total pressure is {\tt p0}). This way, the
+point ({\em i.e.} specify where the total pressure is {\tt p0}). This way, the
 boundary conditions for the reduced pressure will be close to {\tt pred0}, ensuring an
 optimal precision in the resolution. If {\tt xyzp0} is not specified, the reduced
 pressure will be shifted, but the calculations will remain correct.\\
@@ -2379,7 +2377,7 @@ always useful, except with the compressible module}
 {{\tt t0} is the reference temperature \\
 useful for the specific physics gas or coal combustion (initialisation
 of the density), for the electricity modules to initialise the domain
-temperature and for the comperssible module (initialisations). It must be given
+temperature and for the compressible module (initialisations). It must be given
 in Kelvin.}
 
 \motcleb{cp0}{ra}{real number $>$ 0}{\tt -grand*10}{O}{L1}
@@ -2406,7 +2404,7 @@ make {\tt icp} designate the effective index-number of the property
 $C_p$ is then specified by the user in the appropriate subroutine
 (\texttt{usphyv} for the standard physics) and stored in the array\\
 {\tt propce(iel,ipproc(icp))}
-({\em see p.\pageref{prg_propvar} for specific conditions of use})\\
+({\em see p.~\pageref{sec:prg_propvar} for specific conditions of use})\\
 useful if there is 1$\leqslant$N$\leqslant${\tt nscal} so that {\tt iscsth(n)}=1
 (there is a scalar ``temperature'') or with the compressible module for non
 perfect gases}
@@ -2441,7 +2439,7 @@ make {\tt ivisls(iscal)} designate the effective index-number of the property
 is then specified by the user in the appropriate subroutine
 (\texttt{usphyv} for the standard physics) and stored in the array\\
 {\tt propce(iel,ipproc(ivisls))}
-({\em see p.\pageref{prg_propvar} for specific conditions of use})\\
+({\em see p.~\pageref{sec:prg_propvar} for specific conditions of use})\\
 useful if 1$\leqslant${\tt n}$\leqslant${\tt nscal}}
 
 
@@ -2449,7 +2447,7 @@ useful if 1$\leqslant${\tt n}$\leqslant${\tt nscal}}
 {molecular diffusivity for the enthalpy ($kg.m^{-1}.s^{-1}$) for gas or coal
 combustion (the code then automatically sets {\tt visls0} to {\tt diftl0} for the scalar
 representing the enthalpy)\\
-always useflu for gas or coal combustion}
+always useful for gas or coal combustion}
 
 \motcleb{scamin}{ra}{real number}{\tt grand}{O}{L1}
 {{\tt scamin(iscal)} is the lower limit value for the scalar {\tt iscal}. At each time step,
@@ -2487,7 +2485,7 @@ useful if and only if there is 1$\leqslant${\tt iscal}$\leqslant$ {\tt nscal} su
 
 
 %==================================
-\subsubsection{Modeling parameters}
+\subsubsection{modelling parameters}
 %==================================
 
 \motcleb{xlomlg}{ra}{real number $>$ 0}{\tt -grand*10}{O}{L1}
@@ -2525,7 +2523,7 @@ useful if and only if {\tt iturb}$\geqslant$10
 
 \motcle{cmu}{r}{real number $>$ 0}{0.09}{O}{L3}
 {constant $C_\mu$ for all the RANS turbulence models except for the v2f model
-(see {\tt cv2fmu\index{cv2fmu}} for the value of $C_\mu$ in case of v2f modeling)\\
+(see {\tt cv2fmu\index{cv2fmu}} for the value of $C_\mu$ in case of v2f modelling)\\
 useful if and only if {\tt iturb}= 20,
 21, 30, 31 or 60 ($k-\varepsilon$, $R_{ij}-\varepsilon$ or $k-\omega$)}
 
@@ -2548,7 +2546,7 @@ useful if and only if {\tt iturb}= 20, 21 or 30
 \motcle{ce4}{r}{real number $>$ 0}{1.2}{O}{L3}
 {constant $C_{\varepsilon 4}$ for the interfacial term (Lagrangian module) in
 case of two-way coupling\\
-useful in case of Lagrangian modeling, in $k-\varepsilon$ and $R_{ij}-\varepsilon$
+useful in case of Lagrangian modelling, in $k-\varepsilon$ and $R_{ij}-\varepsilon$
 with two-way coupling}
 %c'est aussi implante en k-omega mais en ``imitant''le k-eps et sans aucune verif
 % ... et d'ailleurs ca ne marche pas !!
@@ -2793,7 +2791,7 @@ level L1.
 \motcleb{iirayo}{ia}{0, 1, 2}{0}{O}{L1}
 {{\tt iirayo} activates ($>0$) or deactivates
 (=0) the radiation module\\
-The different values correspond to the following modelings:\\
+The different values correspond to the following modellings:\\
 \hspace*{1.3cm} = 1: discrete ordinates
 (standard option for radiation in semi-transparent media)\\
 \hspace*{1.3cm} = 2: ``P-1'' model\\
@@ -2827,7 +2825,7 @@ useful if and only if the radiation module is activated}
 propagation with the DOM model ({\tt iirayo}=1)\\
 no other possible value, because of the way the directions are calculated\\
 the calculation with 32 directions may break the symmetry of
-physically axisymmetric cases (but the cost in CPU time is much lower
+physically axi-symmetric cases (but the cost in CPU time is much lower
  than with 128 directions)\\
 useful if and only if the radiation module is activated with the DOM method}
 
@@ -2928,7 +2926,7 @@ The electric module is composed of a Joule effect module
 The Joule effect module is designed to take into account the Joule effect
 (for instance in glass furnaces) with real or complex potential in the
 enthalpy equation. The Laplace forces are not taken into account in the
-impluse momentum equation. Specific boundary conditions can be applied to
+impulse momentum equation. Specific boundary conditions can be applied to
 account for the coupled effect of transformers (offset) in glass furnaces.
 
 The electric arc module is designed to take into account the Joule effect
@@ -2996,7 +2994,7 @@ description of these user subroutines, \S\ref{prg_uscfx12}).
 \motcleb{ieos}{i}{1}{1}{C}{L1}
 {\texttt{ieos} indicates the equation of state. Only perfect gas with a constant adiabatic coefficient,
 \texttt{ieos=1} is available, but the user can complete the subroutine 
-\texttt{cfther}, wich is not a user subroutine, to add new equations of state.\\
+\texttt{cfther}, which is not a user subroutine, to add new equations of state.\\
 always useful
 }
 
@@ -3074,7 +3072,7 @@ always useful}
 %==================================================
 \subsection{Lagrangian multiphase flows}
 %==================================================
-\label{prg_motscles_lagr}
+\label{sec:prg_motscles_lagr}
 
 Most of these key words may be modified in the user subroutines
 \texttt{uslag1}, \texttt{uslag2}, \texttt{uslaen},
@@ -3093,7 +3091,7 @@ two-way coupling is not compatible with the $k-\omega$ SST model.
 
 \motcleb{iilagr}{I}{0, 1, 2, 3}{0}{C}{L1}
 {activates ($>$0) or deactivates (=0) the Lagrangian module\\
-the different values correspond to the following modelings: \\
+the different values correspond to the following modellings: \\
 \hspace*{1.3cm} = 1 Lagrangian two-phase flow in one-way coupling (no influence of
 the particles on the continuous phase)\\
 \hspace*{1.3cm} = 2 Lagrangian two-phase flow with two-way coupling (influence of
@@ -3275,7 +3273,7 @@ combustion\\
 useful if \texttt{iilagr} = 2}
 
 %==================================================
-\subsubsection{Numerical modeling}
+\subsubsection{Numerical modelling}
 %==================================================
 
 \motcle{nordre}{i}{1, 2}{2}{O}{L2}
