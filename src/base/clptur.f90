@@ -653,8 +653,6 @@ do ifac = 1, nfabor
       else
         iuntur = 0
         inlami = inlami + 1
-        ! On annule uk pour annuler les CL
-        uk = 0.d0
 
         ! On recalcule les valeurs fausses
         !  en une  echelle  : uet et yplus sont faux
@@ -986,7 +984,11 @@ do ifac = 1, nfabor
       iclvar = iclk
       iclvaf = iclkf
 
-      pimp = uk**2/sqrcmu
+      if (iuntur.eq.1) then
+        pimp = uk**2/sqrcmu
+      else
+        pimp = 0.d0
+      endif
       hint = (visclc+visctc/sigmak)/distbf
 
       call set_dirichlet_scalar &
@@ -1006,9 +1008,9 @@ do ifac = 1, nfabor
 
       ! If yplus=0, uiptn is set to 0 to avoid division by 0.
       ! By the way, in this case: iuntur=0
-      if (yplus.gt.epzero) then !FIXME use iuntur
+      if (yplus.gt.epzero.and.iuntur.eq.1) then !FIXME use only iuntur
         pimp = distbf*4.d0*uk**5*romc**2/           &
-            (xkappa*visclc**2*(yplus+dplus)**2) !FIXME
+            (xkappa*visclc**2*(yplus+dplus)**2)
 
         qimp = -pimp*hint !TODO transform it, it is only to be fully equivalent
       else
@@ -1119,9 +1121,11 @@ do ifac = 1, nfabor
           coefa(ifac,iclvrr) = coefa(ifac,iclvar)
           coefb(ifac,iclvrr) = coefb(ifac,iclvar)
 
-          coefa(ifac,iclvar) = coefa(ifac,iclvar)  -                  &
-                             (eloglo(jj,1)*eloglo(kk,2)+              &
-                              eloglo(jj,2)*eloglo(kk,1))*bldr12*uet*uk
+          if (iuntur.eq.1) then
+            coefa(ifac,iclvar) = coefa(ifac,iclvar)  -                  &
+                               (eloglo(jj,1)*eloglo(kk,2)+              &
+                                eloglo(jj,2)*eloglo(kk,1))*bldr12*uet*uk
+          endif
 
           ! If laminar: zero Reynolds' stresses
           if (iuntur.eq.0) then
@@ -1150,7 +1154,7 @@ do ifac = 1, nfabor
 
         ! Si yplus=0, on met coefa a 0 directement pour eviter une division
         ! par 0.
-        if (yplus.gt.epzero) then
+        if (yplus.gt.epzero.and.iuntur.eq.1) then
           pimp = distbf*4.d0*uk**5*romc**2/           &
                 (xkappa*visclc**2*(yplus+dplus)**2)
         else
@@ -1636,7 +1640,7 @@ do ifac = 1, nfabor
 
           else
             ! y+/T+ *PrT
-            yptp = hint/prdtl
+            yptp = 1.d0/prdtl
             hflui = hint
           endif
 
