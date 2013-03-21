@@ -1018,6 +1018,11 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             self.labelClass.show()
             self.comboBoxClass.show()
 
+            # update runcase (compute class specific to ivanoe)
+            self.jmdl.dictValues['job_class'] = str(self.comboBoxClass.currentText())
+            if len(self.jmdl.dictValues['job_class']) > 0:
+                self.jmdl.updateBatchFile('job_class')
+
         if self.job_group != None:
             self.labelJobGroup.show()
             self.lineEditJobGroup.setText(QString(self.job_group))
