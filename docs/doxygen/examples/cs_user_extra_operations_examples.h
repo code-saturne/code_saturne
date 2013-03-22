@@ -31,7 +31,7 @@
   \section intro Introduction
 
   This page provides several examples of code blocks that may be used
-  to perform energy balnce, 1D profiles, etc.
+  to perform energy balance, 1D profiles, etc.
   in \ref cs_user_boundary_conditions.
 
 

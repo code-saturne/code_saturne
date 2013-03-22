@@ -152,6 +152,42 @@
   \snippet src/user_examples/cs_user_boundary_conditions-base.f90 example_6
 
 
+  \subsection channel_inlet Infinite channel inlet
+
+  \subsubsection channel_inlet_loc_var Local variables to be added
+
+  The following local variables need to be defined for the examples
+  in this section:
+
+  \snippet src/user_examples/cs_user_boundary_conditions-auto_inlet_profile.f90 loc_var_dec
+
+  \subsubsection channel_inlet_init Initialization and finalization
+
+  Initialization and finalization is similar to that of the base examples
+
+  \subsubsection channel_inlet_example_1 Body
+
+  Here, we define an inlet boundary condition for a very long channel or duct
+  with a section matching the boundary faces of group 'INLET'.
+
+  We fix a mean inlet velocity, and use a feedback loop assuming a fixed-point type
+  behavior will allow us to reach a state matching that of a very long inlet channel.
+
+  \warning We assume other boundary conditions are defined before this one
+  (ideally, using the GUI).
+  
+  \warning We also assume that the mesh is orthogonal at the inlet, and we are using a RANS
+  (not LES) computation.
+  to the current inlet.
+
+  For EBRSM of V2f models, to avoid laminarization at the inlet, the initial velocity
+  (at the first time step) is divided by 10 on inlet faces adjacent to the boundary, so
+  as to ensure a velocity gradient and turbulent production. Otherwise, the initialization
+  may fail.
+
+  \snippet src/user_examples/cs_user_boundary_conditions-auto_inlet_profile.f90 example_1
+
+
   \subsection advanced_examples Advanced examples
 
   \subsubsection advanced_loc_var Local variables to be added

@@ -3290,14 +3290,14 @@ puisim = 0.d0
 !     Initial Potential Difference (positive value)
 dpot = 0.d0
 
-! ---> Modele pour le recalage de l'intensite (arc electrique)
-!       MODREC = 1 : modele standard
-!       MODREC = 2 : modele avec un plan de recalage
+! ---> Model for scaling intensity (electric arcs)
+!       MODREC = 0 : user defined
+!       MODREC = 1 : standard model
+!       MODREC = 2 : resetting plane model for electromagnetic quantities
 modrec = 1
 
-! ---> Definition du plan de recalage et de la composante
-!                 lorsque MODREC = 2
-!       IDRECA (1, 2 ou 3) pour composante (x, y ou z)
+! ---> Define current density component used to calculate current when MODREC = 2
+!       IDRECA (1, 2 or 3) for component (x, y or z)
 idreca = 3
 
 ! Exemple : plan z = 3.

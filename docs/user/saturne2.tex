@@ -142,7 +142,7 @@ useful if and only if {\tt ivrtex=1}}
 
 \motcle{impfpp}{i}{strictly positive integer}{25}{O}{L3}
 {unit of the thermochemical data file\\
-useful in case of gas or pulverised coal combustion or electric arc}
+useful in case of gas or pulverised coal combustion or electric arcs}
 
 \motcle{ficfpp}{c}{string of 32 characters}{\tt dp\_tch}{O}{L3}
 {name of the thermochemical data file. The launch script is designed to copy the
@@ -2319,9 +2319,9 @@ With combustion and pulversied coal, {\tt srrom} is initialised to {\tt -grand}
 and the user must specify a proper value through the Interface or the
 initialisation subroutines (\texttt{usd3p1},
  \texttt{usebu1}, \texttt{uslwc1}, \texttt{uscpi1} or
-\texttt{uscpl1}).With the electric module, {\tt srrom} is initialised in to 0
+\texttt{uscpl1}). With the electric module, {\tt srrom} is initialised in to 0
 and may be modified by the user in \texttt{useli1}.\\
-With gas combustion, pulverised coal or electric arc, {\tt ssrom} is
+With gas combustion, pulverised coal or electric arcs, {\tt ssrom} is
 automatically used after the second time-step. With Joule effect,
 the user decides whether or not it will be used in \texttt{uselph}
 from the coding law giving the density.}\\
@@ -2426,7 +2426,7 @@ With gas or coal combustion, the molecular diffusivity of the enthalpy
 ($kg.m^{-1}.s^{-1}$) must be specified by the user in the variable {\tt diftl0}
 (\texttt{usebu1}, \texttt{usd3p1}, \texttt{uslwc1}, \texttt{uscpi1}, \texttt{uscpl1})\\
 With the electric module, for the Joule effect, the diffusivity is specified by
-the user in \texttt{uselph} (even if it is constant). For the electric arc, it
+the user in \texttt{uselph} (even if it is constant). For the electric arcs, it
 is calculated from the thermochemical data file}}
 
 \motcleb{ivisls}{ia}{positive or zero integer}{0}{O}{L1}
@@ -2916,11 +2916,11 @@ useful if and only if the radiation module is activated}
 useful if and only if the radiation module is activated}
 
 %==================================
-\subsection{Electric module (Joule effect and electric arc): specificities}
+\subsection{Electric module (Joule effect and electric arcs): specificities}
 %==================================
 
 The electric module is composed of a Joule effect module
-(\texttt{ippmod(ieljou)\index{ieljou}}) and an electric arc module
+(\texttt{ippmod(ieljou)\index{ieljou}}) and an electric arcs module
 (\texttt{ippmod(ielarc)\index{ielarc}}).
 
 The Joule effect module is designed to take into account the Joule effect
@@ -2929,7 +2929,7 @@ enthalpy equation. The Laplace forces are not taken into account in the
 impulse momentum equation. Specific boundary conditions can be applied to
 account for the coupled effect of transformers (offset) in glass furnaces.
 
-The electric arc module is designed to take into account the Joule effect
+The electric arcs module is designed to take into account the Joule effect
 (only with real potential) in the enthalpy equation. The Laplace forces
 are taken into account in the impulse momentum equation.
 
@@ -2941,17 +2941,17 @@ user subroutine \S\ref{prg_useli1}).
 {when \texttt{ielcor}=1, the boundary conditions for the potential will be
 tuned at each time step in order to reach a user-specified target dissipated
 power \texttt{puisim} (Joule effect) or a user-specified target current
-intensity \texttt{couimp} (electric arc)\\
+intensity \texttt{couimp} (electric arcs)\\
 the boundary condition tuning is controlled by the subroutine \texttt{uselrc}\\
 alway useful}
 
 \motcleb{couimp}{r}{real number $\geqslant 0$}{0}{O}{L1}
-{with the electric arc module, \texttt{couimp} is the target current intensity ($A$)
+{with the electric arcs module, \texttt{couimp} is the target current intensity ($A$)
 for the calculations with boundary condition tuning for the potential\\
 the target intensity will be reached if the boundary conditions are expressed
 using the variable \texttt{dpot} or if the initial boundary conditions are multiplied by
 the variable \texttt{coejou}\\
-useful with the electric arc module if \texttt{ielcor}=1}
+useful with the electric arcs module if \texttt{ielcor}=1}
 
 \motcleb{puisim}{r}{real number $\geqslant 0$}{0}{O}{L1}
 {with the Joule effect module, \texttt{puisim} is the target dissipated power ($W$)
@@ -2966,7 +2966,7 @@ useful with the Joule effect module if \texttt{ielcor}=1}
 calculations with boundary conditions tuning for the potential. This value is
 initialised set by the user (\texttt{useli1}). It is then automatically tuned
 depending on the value of dissipated power (Joule effect module) or the
-intensity of current (electric arc module).
+intensity of current (electric arcs module).
 In order for the correct power or intensity to be reached, the boundary
 conditions for the potential must be expressed with \texttt{dpot}
 (\texttt{uselcl}). The tuning can be controlled in \texttt{uselrc}\\
