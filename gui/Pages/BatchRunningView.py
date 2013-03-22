@@ -349,9 +349,11 @@ class ListingDialogView(CommandMgrDialogView):
         self.connect(self.pushButtonStop,   SIGNAL('clicked()'), self.__slotStop)
         self.connect(self.pushButtonStopAt, SIGNAL('clicked()'), self.__slotStopAt)
 
-        self.exec_dir = ""
+        self.scratch_dir = ""
+        self.result_dir = ""
         self.suffix   = ""
         self.listing  = "listing"
+        self.n_lines = 0
 
         self.slotProcess()
 
@@ -370,6 +372,7 @@ class ListingDialogView(CommandMgrDialogView):
             str = QString()
             s = QString(str.fromUtf8(ba.data()))[:-1]
             self.logText.append(s)
+            self.n_lines += 1
             self.__execDir(s)
 
 
@@ -377,16 +380,30 @@ class ListingDialogView(CommandMgrDialogView):
         """
         Private method. Find the directory of the code execution.
         """
-        if self.suffix:
+        # Work and result directories printed in first lines of log.
+
+        if self.n_lines > 15:
             return
 
         # Read directly the run directory from the sdtout of the code.
-        if not self.exec_dir:
+
+        if not self.scratch_dir:
+            if s.indexOf(QString("Working directory")) != -1:
+                self.scratch_dir = "Working directory"
+                return
+        elif self.scratch_dir == "Working directory":
+            self.scratch_dir = string.join(str(s).split(), ' ')
+            title = os.path.basename(self.scratch_dir)
+            self.setWindowTitle(title)
+            self.suffix = title
+            return
+
+        if not self.result_dir:
             if s.indexOf(QString("Result directory")) != -1:
-                self.exec_dir = "Result directory"
-        elif self.exec_dir == "Result directory":
-            self.exec_dir = string.join(str(s).split(), ' ')
-            title = os.path.basename(self.exec_dir)
+                self.result_dir = "Result directory"
+        elif self.result_dir == "Result directory":
+            self.result_dir = string.join(str(s).split(), ' ')
+            title = os.path.basename(self.result_dir)
             self.setWindowTitle(title)
             self.suffix = title
 
@@ -396,7 +413,13 @@ class ListingDialogView(CommandMgrDialogView):
         Private method. Stops the code.
         """
         line = "\n" + str(iter) + "\n\n"
-        fstp = os.path.join(self.exec_dir, "control_file")
+        if self.scratch_dir:
+            exec_dir = self.scratch_dir
+        elif self.result_dir:
+            exec_dir = self.result_dir
+        else:
+            return
+        fstp = os.path.join(exec_dir, "control_file")
         f = open(fstp, 'w')
         f.write(line)
         f.close()
