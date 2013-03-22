@@ -1,4 +1,4 @@
-Release 3.0.0 (unreleased)
+Release 3.0.0 (22 Mar 2013)
 ==========================
 
 Changes:
@@ -6,7 +6,7 @@ Changes:
 
 - Many documentation updates.
 
-- Lagrangian deposition submodel: improvement parallel handling of the
+- Lagrangian deposition submodel: improved parallel handling of the
   deposition submodel.
 
 - Always perform the first iteration of the iterative processes (to prevent
