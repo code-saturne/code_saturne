@@ -112,6 +112,11 @@ The first thing to do before running \CS is to define an alias to the \texttt{co
 \begin{center}
 \texttt{alias cs='\$\{prefix\}/bin/code\_saturne'}.
 \end{center}
+When using the \emph{bash} shell, a completion file may be sourced so as to
+allow for syntax auto-completion: 
+\begin{center}
+\texttt{source \$\{prefix\}/etc/bash\_completion.d/code\_saturne'}.
+\end{center}
 The second thing is to prepare the computation directories. For instance, the study directory \texttt{T\_JUNCTION}, containing a single calculation directory CASE1, will be created by typing the command (see \S\ref{sec:prg_cscreate}):\
 \begin{center}
 \texttt{code\_saturne create -s T\_JUNCTION}\
@@ -3079,7 +3084,7 @@ zones, variables \texttt{ientat}, \texttt{ientfl}, \texttt{inmoxy}, \texttt{timp
 , \texttt{qimpfl},
 \item for the electric module: the tuned potential difference \texttt{dpot}%
 \index{\texttt{dpot}}
-and, for the electric arc module, the tuning coefficient \texttt{coejou}%
+and, for the electric arcs module, the tuning coefficient \texttt{coejou}%
 \index{\texttt{coejou}}
 (when the boundary conditions are tuned), the Joule source term for the enthalpy
 (with the Joule effect is activated) and the Laplace forces (with the electric
@@ -5711,7 +5716,7 @@ There are three types of symbol \\
 
 \texttt{cos}: cosine
 
-\texttt{sin}: sinus
+\texttt{sin}: sine
 
 \texttt{tan}: tangent
 
@@ -6277,7 +6282,7 @@ initialised at -1, which means that no specific physics is activated.
                       module, with transport of $H_2$
                 \item \texttt{ippmod(icpl3c)} =-1 module not activated
          \end{list}
-       \item Electric arc module (Joule effect and Laplace forces):
+       \item Electric arcs module (Joule effect and Laplace forces):
              indicator {\bf \tt ippmod(ielarc\index{ielarc})}
         \begin{list}{$\rightarrow$}{}
                \item \texttt{ippmod(ielarc)} = 1 determination of the magnetic field by
@@ -6547,7 +6552,7 @@ study case. Their content is described below.
        \item Example of file for the heavy fuel combustion: \texttt{DP\_FUE\_new} (see
              the example in \texttt{DATA/REFERENCE}).
 
-       \item Example of file for the electric arc: \texttt{dp\_ELE} (see
+       \item Example of file for the electric arcs: \texttt{dp\_ELE} (see
              array \ref{tab:dpELE}).
 
 \begin{table}[htbp]
@@ -6588,7 +6593,7 @@ study case. Their content is described below.
         &                    &    \texttt{xkabel\index{xkabel}} & Absorption coefficient (radiation)                 \\   \hline
 \end{tabular}
 }
-\caption{Example of file for the electric arc module:
+\caption{Example of file for the electric arcs module:
  \texttt{dp\_ELE}}\label{tab:dpELE}
 \end{center}
 \end{table}
@@ -6599,8 +6604,8 @@ study case. Their content is described below.
 
 
 %==================================
-\subsection{Pulverised
-  coal and gas combustion module}
+\subsection[Pulverised coal and gas combustion module]
+{Pulverised coal and gas combustion module (needs update)}
 %==================================
 %==================================
 \subsubsubsection{Initialisation of the variables}\label{sec:Ini-coal}
@@ -8066,14 +8071,14 @@ specific heat without modifying the equation of state in the subroutine \texttt{
 a user subroutine.
 
 %==================================
-\subsection{Management of the electric arc module}
+\subsection{Management of the electric arcs module}
 %==================================
 
 %==================================
-\subsubsection{Activating the electric arc module}\label{sec:acti-lag}
+\subsubsection{Activating the electric arcs module}\label{sec:acti-lag}
 %==================================
 
-The activation of the electric arc module is performed either:
+The activation of the electric arcs module is performed either:
 %
 \begin{itemize}
  \item [$\bullet$] in the Graphical User Interface (GUI): \texttt{Calculation features} $\rightarrow$ \texttt{Elecrical models}
@@ -8095,7 +8100,7 @@ The values of potential and its constituents are initialised if required.
 It should be noted that the enthalpy is relevant.
 
 \begin{list}{-}{}
-\item For the electric arc module, the enthalpy value is taken from the temperature
+\item For the electric arcs module, the enthalpy value is taken from the temperature
  of reference \texttt{t0} (given in \texttt{cs\_user\_parameters.f90}) from the temperature-enthalpy
  tables
  supplied in the data file \texttt{dp\_ELE.} The user must not intervene here.
@@ -8130,7 +8135,7 @@ to be determined to calculate the physical properties, the solved variable, enth
  be deduced. The preferred temperature-enthalpy law can be selected in the subroutine
  \texttt{usthht} (an example of the interpolation is given from the law table. This
 subroutine can be re-used for the initialisation of the variables(\texttt{cs\_user\_initialization}))
- For the electric arc module, the physical properties are interpolated from the data file
+ For the electric arcs module, the physical properties are interpolated from the data file
  \texttt{dp\_ELE} supplied by the user. Modifications are generally not necessary.
 
 %==================================
@@ -8150,12 +8155,12 @@ boundary face should be associated with a number
  the classical scalar).
 
 Furthermore, if one wishes to slow down the power dissipation (Joule
-effect module) or the current (electric arc module) from the imposed values
+effect module) or the current (electric arcs module) from the imposed values
 \texttt{(puismp\index{puismp}} and \texttt{couimp\index{couimp}} respectively),
  they can be changed by the potential scalar as shown below:
 
 \begin{list}{-}{}
-\item For the electric arc, the imposed potential difference can be a fixed variable:
+\item For the electric arcs, the imposed potential difference can be a fixed variable:
  for example, the cathode can be fixed at 0 and the potential at the anode
  contains the variable \texttt{dpot}. This variable is initialised in
 \texttt{useli1} (in \texttt{cs\_user\_parameters.f90})
@@ -8163,7 +8168,7 @@ effect module) or the current (electric arc module) from the imposed values
  \texttt{useli1}), \texttt{dpot} is updated automatically during the
  calculation to obtain the required current.
 \item For the Joule module effect, \texttt{dpot} is again used with the same
- signification as in the electric arc module. If \texttt{dpot} is not wanted
+ signification as in the electric arcs module. If \texttt{dpot} is not wanted
  in the setting of the boundary conditions, the variable \texttt{coejou} can be
  used. \texttt{coejou} is the coefficient by which the potential difference is
  multiplied to obtain the desired power dissipation. By default this begins at
@@ -8221,20 +8226,20 @@ The subroutine \texttt{useli1} (in \texttt{cs\_user\_parameters.f90})
 \begin{list}{$\bullet$}{}
 \item to give the coefficient of relaxation of the density \texttt{srrom}:\\
 $\rho^{n+1}=\texttt{srrom}*\rho^{n}+(1-\texttt{srrom})\rho^{n}$\\
-(for the electric arc, the sub-relaxation is taken into account during the 2nd time
+(for the electric arcs, the sub-relaxation is taken into account during the 2nd time
  step; for the Joule effect the sub relaxation is not accounted for unless the user
  specifies in \texttt{uselph}
 
 \item indicates if the data will be fixed in the power dissipation or
  in the current, done in \texttt{ielcor}.
-\item target current fixed as \texttt{couimp} (electric arc module)
+\item target current fixed as \texttt{couimp} (electric arcs module)
  or the power dissipation \texttt{puism} (Joule module effect).
 \item Fix the initial value of potential difference \texttt{dpot},
  the for the calculations with a single fixed parameter as \texttt{couimp}
  or \texttt{puism}.
 \item Define type of scaling model for electric arcs \texttt{modrec}. If scaling
-by plane define is choosen then \texttt{idreca} define the current density component
-and \texttt{crit\_reca} the plane used to scale.
+by a resetting plane is choosen then \texttt{idreca} defines the current density component
+and \texttt{crit\_reca} the plane used for resetting of electromagnetic variables.
 \end{list}
 
 %==================================
@@ -8253,7 +8258,7 @@ specifically for the Joule module effect with \texttt{ippmod(ieljou)}=2~:
 \item gradient of imaginary potential in $V m^{-1}$
 \item density of real current in $A m^{-2}$
 \end{list}
-specifically for the electric arc module with \texttt{ippmod(ielarc)}=2~:
+specifically for the electric arcs module with \texttt{ippmod(ielarc)}=2~:
 \begin{list}{-}{}
 \item magnetic field in $T$ (\vect{B} = \vect{rot}\,\vect{A})
 \end{list}

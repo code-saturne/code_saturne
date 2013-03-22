@@ -69,6 +69,7 @@ EXTRA_DIST =
 examplefiles = \
 cs_user_boundary_conditions-advanced.f90 \
 cs_user_boundary_conditions-atmospheric.f90 \
+cs_user_boundary_conditions-auto_inlet_profile.f90 \
 cs_user_boundary_conditions-base.f90 \
 cs_user_boundary_conditions-compressible.f90 \
 cs_user_boundary_conditions-cooling_towers.f90 \

@@ -3301,13 +3301,12 @@ puisim = 0.d0
 dpot = 0.d0
 
 ! ---> Model for scaling intensity (electric arcs)
-!       MODREC = 0 : user define
+!       MODREC = 0 : user defined
 !       MODREC = 1 : standard model
-!       MODREC = 2 : plane scaling model
+!       MODREC = 2 : resetting plane model for electromagnetic quantities
 modrec = 1
 
-! ---> Define current density component used to calculate current
-!                 when MODREC = 2
+! ---> Define current density component used to calculate current when MODREC = 2
 !       IDRECA (1, 2 or 3) for component (x, y or z)
 idreca = 3
 
