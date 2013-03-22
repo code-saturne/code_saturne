@@ -1016,26 +1016,30 @@ class Studies(object):
                         elif self.__compare:
                             doc2.appendLine("No difference between the repository and the destination.")
 
-                    nodes = self.__parser.getChilds(case.node, "input")
-                    if nodes:
-                        doc2.appendLine("\\subsection{Results for case %s}" % case.label)
-                        for node in nodes:
-                            f, dest, repo = self.__parser.getInput(node)
-                            doc2.appendLine("\\subsubsection{%s}" % f)
+                    if case.plot == "on" and case.is_run != "KO":
+                        nodes = self.__parser.getChilds(case.node, "input")
+                        if nodes:
+                            doc2.appendLine("\\subsection{Results for case %s}" % case.label)
+                            for node in nodes:
+                                f, dest, repo = self.__parser.getInput(node)
+                                doc2.appendLine("\\subsubsection{%s}" % f)
 
-                            if dest:
-                                d = dest
-                                dd = self.dest
-                            elif repo:
-                                d = repo
-                                dd = self.repo
+                                if dest:
+                                    d = dest
+                                    dd = self.dest
+                                elif repo:
+                                    d = repo
+                                    dd = self.repo
+                                else:
+                                    d = ""
+                                    dd = ""
 
-                            ff = os.path.join(dd, l, case.label, "RESU", d, f)
+                                ff = os.path.join(dd, l, case.label, "RESU", d, f)
 
-                            if not os.path.isfile(ff):
-                                print "\n\nWarning: this file does not exist: %s\n\n" % ff
-                            else:
-                                doc2.addInput(ff)
+                                if not os.path.isfile(ff):
+                                    print "\n\nWarning: this file does not exist: %s\n\n" % ff
+                                else:
+                                    doc2.addInput(ff)
 
             attached_files.append(doc2.close())
 
