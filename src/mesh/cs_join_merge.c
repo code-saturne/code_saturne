@@ -48,6 +48,7 @@
 
 #include "fvm_io_num.h"
 
+#include "cs_block_dist.h"
 #include "cs_log.h"
 #include "cs_order.h"
 #include "cs_search.h"
@@ -2272,25 +2273,32 @@ _keep_global_vtx_evolution(cs_lnum_t               n_iwm_vertices,
 #if defined(HAVE_MPI) /* Parallel treatment */
   if (n_ranks > 1) {
 
-    cs_gnum_t  ii;
     cs_lnum_t  shift, rank, n_recv_elts;
+    cs_lnum_t  block_size = 0;
 
     int        *send_shift = NULL, *recv_shift = NULL;
     int        *send_count = NULL, *recv_count = NULL;
     cs_gnum_t  *send_glist = NULL, *recv_glist = NULL;
 
-    cs_join_block_info_t  block_info = cs_join_get_block_info(init_max_vtx_gnum,
-                                                              n_ranks,
-                                                              local_rank);
+    cs_block_dist_info_t  bi = cs_block_dist_compute_sizes(local_rank,
+                                                           n_ranks,
+                                                           1,
+                                                           0,
+                                                           init_max_vtx_gnum);
 
     MPI_Comm  mpi_comm = cs_glob_mpi_comm;
 
+    if (bi.gnum_range[1] > bi.gnum_range[0])
+      block_size = bi.gnum_range[1] - bi.gnum_range[0];
+
     /* Initialize o2n_vtx_gnum */
 
-    BFT_MALLOC(o2n_vtx_gnum, block_info.local_size, cs_gnum_t);
+    BFT_MALLOC(o2n_vtx_gnum, block_size, cs_gnum_t);
 
-    for (ii = 0; ii < block_info.local_size; ii++)
-      o2n_vtx_gnum[ii] = block_info.first_gnum + ii;
+    for (i = 0; i < block_size; i++) {
+      cs_gnum_t g_id = i;
+      o2n_vtx_gnum[i] = bi.gnum_range[0] + g_id;
+    }
 
     /* Send new vtx global number to the related rank = the good block */
 
@@ -2301,7 +2309,7 @@ _keep_global_vtx_evolution(cs_lnum_t               n_iwm_vertices,
       send_count[i] = 0;
 
     for (i = 0; i < n_iwm_vertices; i++) {
-      rank = (iwm_vtx_gnum[i] - 1)/(cs_gnum_t)(block_info.size);
+      rank = (iwm_vtx_gnum[i] - 1)/(cs_gnum_t)(bi.block_size);
       send_count[rank] += 2;
     }
 
@@ -2330,7 +2338,7 @@ _keep_global_vtx_evolution(cs_lnum_t               n_iwm_vertices,
 
     for (i = 0; i < n_iwm_vertices; i++) {
 
-      rank = (iwm_vtx_gnum[i] - 1)/(cs_gnum_t)(block_info.size);
+      rank = (iwm_vtx_gnum[i] - 1)/(cs_gnum_t)(bi.block_size);
       shift = send_shift[rank] + send_count[rank];
 
       send_glist[shift] = iwm_vtx_gnum[i];  /* Old global number */
@@ -2358,10 +2366,10 @@ _keep_global_vtx_evolution(cs_lnum_t               n_iwm_vertices,
 
         cs_gnum_t  o_gnum = recv_glist[i];
         cs_gnum_t  n_gnum = recv_glist[i+1];
-        cs_lnum_t  id = o_gnum - block_info.first_gnum;
+        cs_lnum_t  id = o_gnum - bi.gnum_range[0];
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-        if (o2n_vtx_gnum[id] != block_info.first_gnum + id)
+        if (o2n_vtx_gnum[id] != bi.gnum_range[0] + id)
           assert(o2n_vtx_gnum[id] == n_gnum);
 #endif
 
@@ -2808,8 +2816,7 @@ _get_faces_to_send(cs_lnum_t         n_faces,
                    cs_lnum_t        *p_send_faces[])
 {
   cs_lnum_t  i, rank, shift, reduce_rank;
-  cs_gnum_t  start_gnum, end_gnum;
-  cs_join_block_info_t  block_info;
+  cs_block_dist_info_t  bi;
 
   cs_lnum_t  reduce_size = 0;
   cs_lnum_t  *send_rank_index = NULL, *send_faces = NULL;
@@ -2826,9 +2833,11 @@ _get_faces_to_send(cs_lnum_t         n_faces,
 
   /* Compute block_size */
 
-  block_info = cs_join_get_block_info(n_g_faces, n_ranks, local_rank);
-  start_gnum = block_info.first_gnum;
-  end_gnum = block_info.first_gnum + (cs_gnum_t)block_info.local_size;
+  bi = cs_block_dist_compute_sizes(local_rank,
+                                   n_ranks,
+                                   1,
+                                   0,
+                                   n_g_faces);
 
   /* Compact init. global face distribution. Remove ranks without face
      at the begining */
@@ -2863,7 +2872,7 @@ _get_faces_to_send(cs_lnum_t         n_faces,
 
   for (i = 0; i < n_faces; i++) {
 
-    if (face_gnum[i] >= start_gnum && face_gnum[i] < end_gnum) {
+    if (face_gnum[i] >= bi.gnum_range[0] && face_gnum[i] < bi.gnum_range[1]) {
 
       /* The current face is a "main" face for the local rank */
 
@@ -2894,7 +2903,7 @@ _get_faces_to_send(cs_lnum_t         n_faces,
 
   for (i = 0; i < n_faces; i++) {
 
-    if (face_gnum[i] >= start_gnum && face_gnum[i] < end_gnum) {
+    if (face_gnum[i] >= bi.gnum_range[0] && face_gnum[i] < bi.gnum_range[1]) {
 
       /* The current face is a "main" face for the local rank */
 

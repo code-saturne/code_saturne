@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2013-02-22 18:01+0100\n"
+"POT-Creation-Date: 2013-03-21 18:23+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -4839,6 +4839,10 @@ msgid "Called cs_interface_set_sum with unhandled datatype (%d)."
 msgstr ""
 
 #, c-format
+msgid "Called cs_interface_set_max with unhandled datatype (%d)."
+msgstr ""
+
+#, c-format
 msgid ""
 "Error reading file: \"%s\".\n"
 "File format is not the correct version.\n"
@@ -6079,7 +6083,7 @@ msgstr ""
 " ** Traitement du maillage pour le couplage SYRTHES \"%s\"\n"
 "\n"
 
-#, fuzzy, c-format
+#, c-format
 msgid ""
 " Message received from SYRTHES: \"%s\"\n"
 " indicates meshes have not been matched correctly.\n"
@@ -6088,7 +6092,10 @@ msgid ""
 "\n"
 msgstr ""
 " Le message reçu de SYRTHES: \"%s\"\n"
-" indique une erreur ou est inattendu."
+" indique que les maillages ne correspondent pas correctement.\n"
+"\n"
+" Le calcul ne sera pas exécuté.\n"
+"\n"
 
 #, c-format
 msgid ""
@@ -8754,14 +8761,6 @@ msgid ""
 msgstr ""
 "\n"
 "  Nombre global de faces après subdivision : %10llu\n"
-
-#, c-format
-msgid ""
-" Inconsistent values between:\n"
-"    block_info.local_size  %8ld\n"
-"    builder->n_faces:      %8ld\n"
-" These values should be equal.\n"
-msgstr ""
 
 #, c-format
 msgid ""

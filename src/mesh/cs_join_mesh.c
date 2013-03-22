@@ -2644,7 +2644,7 @@ cs_join_mesh_sync_vertices(cs_join_mesh_t  *mesh)
   cs_lnum_t  i, rank, shift, start, end;
   double  min_tol;
   cs_gnum_t  ref_gnum, l_max_gnum, g_max_gnum;
-  cs_join_block_info_t  block_info;
+  cs_block_dist_info_t  bi;
 
   int  *send_shift = NULL, *recv_shift = NULL;
   int  *send_count = NULL, *recv_count = NULL;
@@ -2669,9 +2669,11 @@ cs_join_mesh_sync_vertices(cs_join_mesh_t  *mesh)
 
   MPI_Allreduce(&l_max_gnum, &g_max_gnum, 1, CS_MPI_GNUM, MPI_MAX, mpi_comm);
 
-  block_info = cs_join_get_block_info(g_max_gnum,
-                                      n_ranks,
-                                      local_rank);
+  bi = cs_block_dist_compute_sizes(local_rank,
+                                   n_ranks,
+                                   1,
+                                   0,
+                                   g_max_gnum);
 
   BFT_MALLOC(send_count, n_ranks, int);
   BFT_MALLOC(recv_count, n_ranks, int);
@@ -2680,7 +2682,7 @@ cs_join_mesh_sync_vertices(cs_join_mesh_t  *mesh)
     send_count[i] = 0;
 
   for (i = 0; i < mesh->n_vertices; i++) {
-    rank = (mesh->vertices[i].gnum - 1)/(cs_gnum_t)(block_info.size);
+    rank = (mesh->vertices[i].gnum - 1)/(cs_gnum_t)(bi.block_size);
     send_count[rank] += 1;
   }
 
@@ -2706,7 +2708,7 @@ cs_join_mesh_sync_vertices(cs_join_mesh_t  *mesh)
     send_count[i] = 0;
 
   for (i = 0; i < mesh->n_vertices; i++) {
-    rank = (mesh->vertices[i].gnum - 1)/(cs_gnum_t)(block_info.size);
+    rank = (mesh->vertices[i].gnum - 1)/(cs_gnum_t)(bi.block_size);
     shift = send_shift[rank] + send_count[rank];
     send_vertices[shift] = mesh->vertices[i];
     send_count[rank] += 1;
@@ -2763,7 +2765,7 @@ cs_join_mesh_sync_vertices(cs_join_mesh_t  *mesh)
     send_count[i] = 0;
 
   for (i = 0; i < mesh->n_vertices; i++) {
-    rank = (mesh->vertices[i].gnum - 1)/block_info.size;
+    rank = (mesh->vertices[i].gnum - 1)/bi.block_size;
     shift = send_shift[rank] + send_count[rank];
     mesh->vertices[i] = send_vertices[shift];
     send_count[rank] += 1;

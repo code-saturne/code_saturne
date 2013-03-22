@@ -42,6 +42,7 @@
 
 #include "fvm_io_num.h"
 
+#include "cs_block_dist.h"
 #include "cs_join_util.h"
 #include "cs_order.h"
 #include "cs_search.h"
@@ -1961,7 +1962,9 @@ cs_join_gset_block_sync(cs_gnum_t        max_gnum,
   int  rank, local_rank, n_ranks, n_recv_elts, shift;
   cs_lnum_t i, j, n_sub_elts;
   cs_gnum_t g_ent_num, _n_ranks;
-  cs_join_block_info_t  block_info;
+  cs_block_dist_info_t  bi;
+
+  cs_lnum_t block_size = 0;
 
   cs_lnum_t  *send_count = NULL, *recv_count = NULL, *counter = NULL;
   cs_lnum_t  *send_shift = NULL, *recv_shift = NULL;
@@ -1977,7 +1980,14 @@ cs_join_gset_block_sync(cs_gnum_t        max_gnum,
   MPI_Comm_size(comm, &n_ranks);
   _n_ranks = n_ranks;
 
-  block_info = cs_join_get_block_info(max_gnum, n_ranks, local_rank);
+  bi = cs_block_dist_compute_sizes(local_rank,
+                                   n_ranks,
+                                   1,
+                                   0,
+                                   max_gnum);
+
+  if (bi.gnum_range[1] > bi.gnum_range[0])
+    block_size = bi.gnum_range[1] - bi.gnum_range[0];
 
   /* Allocate parameters for MPI functions */
 
@@ -1995,7 +2005,7 @@ cs_join_gset_block_sync(cs_gnum_t        max_gnum,
 
   for (i = 0; i < loc_set->n_elts; i++) {
 
-    rank = (loc_set->g_elts[i] - 1)/block_info.size;
+    rank = (loc_set->g_elts[i] - 1)/bi.block_size;
     n_sub_elts = loc_set->index[i+1] - loc_set->index[i];
     send_count[rank] += 2 + n_sub_elts;
 
@@ -2022,7 +2032,7 @@ cs_join_gset_block_sync(cs_gnum_t        max_gnum,
   for (i = 0; i < loc_set->n_elts; i++) {
 
     g_ent_num = loc_set->g_elts[i];
-    rank = (g_ent_num - 1)/(cs_gnum_t)(block_info.size);
+    rank = (g_ent_num - 1)/(cs_gnum_t)(bi.block_size);
     shift = send_shift[rank] + send_count[rank];
     n_sub_elts = loc_set->index[i+1] - loc_set->index[i];
 
@@ -2053,10 +2063,12 @@ cs_join_gset_block_sync(cs_gnum_t        max_gnum,
   /* Define sync_set: a distributed cs_join_gset_t structure which
      synchronize data over the ranks */
 
-  sync_set = cs_join_gset_create(block_info.local_size);
+  sync_set = cs_join_gset_create(block_size);
 
-  for (i = 0; i < sync_set->n_elts; i++)
-    sync_set->g_elts[i] = block_info.first_gnum + i;
+  for (i = 0; i < sync_set->n_elts; i++) {
+    cs_gnum_t g_id = i;
+    sync_set->g_elts[i] = bi.gnum_range[0] + g_id;
+  }
 
   /* Fill sync_set->index and define a new recv_count for the next comm. */
 
@@ -2064,7 +2076,7 @@ cs_join_gset_block_sync(cs_gnum_t        max_gnum,
 
   while (i < n_recv_elts) {
 
-    block_id = recv_buffer[i++] - block_info.first_gnum;
+    block_id = recv_buffer[i++] - bi.gnum_range[0];
 
     assert(sync_set->g_elts[block_id] == recv_buffer[i-1]);
 
@@ -2094,7 +2106,7 @@ cs_join_gset_block_sync(cs_gnum_t        max_gnum,
 
   while (i < n_recv_elts) {
 
-    block_id = recv_buffer[i++] - block_info.first_gnum;
+    block_id = recv_buffer[i++] - bi.gnum_range[0];
     shift = sync_set->index[block_id] + counter[block_id];
 
     n_sub_elts = recv_buffer[i++];
@@ -2139,7 +2151,7 @@ cs_join_gset_block_update(cs_gnum_t              max_gnum,
   int  rank, local_rank, n_ranks, n_sub_elts, n_recv_elts;
   cs_lnum_t i, j, k, start, end;
   cs_gnum_t g_ent_num, _n_ranks;
-  cs_join_block_info_t  block_info;
+  cs_block_dist_info_t  bi;
 
   cs_lnum_t  *send_count = NULL, *recv_count = NULL;
   cs_lnum_t  *send_shift = NULL, *recv_shift = NULL, *wanted_rank_index = NULL;
@@ -2159,7 +2171,11 @@ cs_join_gset_block_update(cs_gnum_t              max_gnum,
   MPI_Comm_size(comm, &n_ranks);
   _n_ranks = n_ranks;
 
-  block_info = cs_join_get_block_info(max_gnum, n_ranks, local_rank);
+  bi = cs_block_dist_compute_sizes(local_rank,
+                                   n_ranks,
+                                   1,
+                                   0,
+                                   max_gnum);
 
   /* Allocate parameters for MPI functions */
 
@@ -2177,7 +2193,7 @@ cs_join_gset_block_update(cs_gnum_t              max_gnum,
   /* Get a synchronized list definition for each global element */
 
   for (i = 0; i < loc_set->n_elts; i++) {
-    rank = (loc_set->g_elts[i] - 1)/(cs_gnum_t)block_info.size;
+    rank = (loc_set->g_elts[i] - 1)/(cs_gnum_t)bi.block_size;
     send_count[rank] += 1;
   }
 
@@ -2202,7 +2218,7 @@ cs_join_gset_block_update(cs_gnum_t              max_gnum,
   for (i = 0; i < loc_set->n_elts; i++) {
 
     g_ent_num = loc_set->g_elts[i];
-    rank = (g_ent_num - 1) / (cs_gnum_t)block_info.size;
+    rank = (g_ent_num - 1) / (cs_gnum_t)bi.block_size;
     shift = send_shift[rank] + send_count[rank];
 
     send_buffer[shift] = g_ent_num;
@@ -2224,7 +2240,7 @@ cs_join_gset_block_update(cs_gnum_t              max_gnum,
 
     for (i = wanted_rank_index[rank]; i < wanted_rank_index[rank+1]; i++) {
 
-      block_id = wanted_elts[i] - block_info.first_gnum;
+      block_id = wanted_elts[i] - bi.gnum_range[0];
       n_sub_elts = sync_set->index[block_id+1] - sync_set->index[block_id];
 
       send_count[rank] +=  2 + n_sub_elts; /* glob. num,
@@ -2256,7 +2272,7 @@ cs_join_gset_block_update(cs_gnum_t              max_gnum,
     for (i = wanted_rank_index[rank]; i < wanted_rank_index[rank+1]; i++) {
 
       shift = send_shift[rank] + send_count[rank];
-      block_id = wanted_elts[i] - block_info.first_gnum;
+      block_id = wanted_elts[i] - bi.gnum_range[0];
 
       start = sync_set->index[block_id];
       end = sync_set->index[block_id+1];

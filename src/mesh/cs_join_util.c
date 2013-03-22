@@ -2311,66 +2311,6 @@ cs_join_select_create(const char  *selection_criteria,
 }
 
 /*----------------------------------------------------------------------------
- * Define a set of parameters to control a contiguous distribution by block.
- *
- * parameters:
- *   n_g_elts   <-- global number of elements to treat
- *   n_ranks    <-- number of ranks in the MPI communicator related to the
- *                  cs_join_block_info_t structure to create
- *   local_rank <-- rank in the MPI communicator related to the
- *                  cs_join_block_info_t structure to create
- *
- * returns:
- *   a new defined cs_join_block_info_t structure
- *---------------------------------------------------------------------------*/
-
-cs_join_block_info_t
-cs_join_get_block_info(cs_gnum_t  n_g_elts,
-                       int        n_ranks,
-                       int        local_rank)
-{
-  size_t  block_size, n_treat_elts;
-  cs_gnum_t  first_glob_num, last_glob_num;
-  cs_gnum_t  _local_rank, _block_size;
-
-  cs_join_block_info_t  block_info;
-
-  /* Compute block_size */
-
-  block_size = n_g_elts/n_ranks;
-  if (n_g_elts % n_ranks > 0)
-    block_size++;
-
-  _local_rank = local_rank; /* Help ensure 64-bit arithmetic for long gnum */
-  _block_size = block_size;
-
-  first_glob_num = _local_rank * block_size + 1;
-  last_glob_num = first_glob_num + _block_size;
-
-  if (last_glob_num > n_g_elts) {
-
-    if (first_glob_num > n_g_elts) /* n_ranks > n_g_elts */
-      n_treat_elts = 0;
-    else
-      n_treat_elts = n_g_elts - first_glob_num + 1;
-
-  }
-  else
-    n_treat_elts = block_size;
-
-  block_info.n_g_elts = n_g_elts;
-  block_info.first_gnum = first_glob_num;
-
-  block_info.size = block_size;
-  block_info.local_size = n_treat_elts;
-
-  block_info.n_ranks = n_ranks;
-  block_info.local_rank = local_rank;
-
-  return  block_info;
-}
-
-/*----------------------------------------------------------------------------
  * Extract vertices from a selection of faces.
  *
  * parameters:

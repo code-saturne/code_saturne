@@ -51,6 +51,7 @@
 #include "fvm_neighborhood.h"
 #include "fvm_io_num.h"
 
+#include "cs_block_dist.h"
 #include "cs_join_mesh.h"
 #include "cs_join_set.h"
 #include "cs_join_util.h"
@@ -2884,10 +2885,9 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
   cs_lnum_t  i, j, rank, shift, sub_shift;
   cs_lnum_t  send_list_size, recv_list_size;
   cs_lnum_t  send_inter_list_size, recv_inter_list_size;
-  cs_gnum_t  ii;
-  cs_join_block_info_t  block_info;
+  cs_block_dist_info_t  bi;
 
-  cs_lnum_t  _max = 0;
+  cs_lnum_t  _max = 0, block_size = 0;
   cs_lnum_t  *new_index = NULL, *shift_ref = NULL;
   cs_lnum_t  *send_shift = NULL, *recv_shift = NULL;
   cs_lnum_t  *send_count = NULL, *recv_count = NULL;
@@ -2900,7 +2900,7 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
   MPI_Datatype  MPI_JOIN_EXCH_INTER = _create_exch_inter_datatype();
 
   const int  n_ranks = cs_glob_n_ranks;
-  const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
+  const int  local_rank = cs_glob_rank_id;
   const cs_lnum_t  n_edges = edges->n_edges;
 
   /* Sanity check */
@@ -2910,9 +2910,14 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
   assert(part->n_edges == n_edges);
   assert(edges != NULL);
 
-  block_info = cs_join_get_block_info(edges->n_g_edges,
-                                      n_ranks,
-                                      local_rank);
+  bi = cs_block_dist_compute_sizes(local_rank,
+                                   n_ranks,
+                                   1,
+                                   0,
+                                   edges->n_g_edges);
+
+  if (bi.gnum_range[1] > bi.gnum_range[0])
+    block_size = bi.gnum_range[1] - bi.gnum_range[0];
 
   /* Allocate parameters for MPI functions */
 
@@ -2925,7 +2930,7 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
   /* Count number of edges to send */
 
   for (i = 0; i < n_edges; i++) {
-    rank = (part->edge_gnum[i] - 1)/block_info.size;
+    rank = (part->edge_gnum[i] - 1)/(cs_gnum_t)(bi.block_size);
     assert(rank >= 0 && rank < n_ranks);
     send_count[rank] += 2;
   }
@@ -2958,7 +2963,7 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
 
   for (i = 0; i < n_edges; i++) {
 
-    rank = (part->edge_gnum[i] - 1)/block_info.size;
+    rank = (part->edge_gnum[i] - 1)/(cs_gnum_t)(bi.block_size);
     assert(rank >= 0 && rank < n_ranks);
     shift = send_shift[rank] + send_count[rank];
     send_glist[shift] = part->edge_gnum[i];
@@ -3017,7 +3022,7 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
     cs_lnum_t  start = part->index[i];
     cs_lnum_t  end = part->index[i+1];
 
-    rank = (part->edge_gnum[i] - 1)/(cs_gnum_t)(block_info.size);
+    rank = (part->edge_gnum[i] - 1)/(cs_gnum_t)(bi.block_size);
     shift = send_shift[rank] + send_inter_count[rank];
 
     for (j = start; j < end; j++) {
@@ -3044,36 +3049,38 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
   /* Synchronize the definition of each edge.
      Define a new cs_join_inter_edges_t struct. */
 
-  block = cs_join_inter_edges_create(block_info.local_size);
+  block = cs_join_inter_edges_create(block_size);
 
-  for (ii = 0; ii < block_info.local_size; ii++)
-    block->edge_gnum[ii] = block_info.first_gnum + ii;
+  for (i = 0; i < block_size; i++) {
+    cs_gnum_t g_id = i;
+    block->edge_gnum[i] = bi.gnum_range[0] + g_id;
+  }
 
   /* First scan : fill index_ref */
 
   for (i = 0; i < recv_list_size; i+= 2) {
 
-    cs_gnum_t  num = recv_glist[i] - block_info.first_gnum + 1;
+    cs_gnum_t  num = recv_glist[i] - bi.gnum_range[0] + 1;
     cs_lnum_t  n_sub_elts = recv_glist[i+1];
 
-    assert(num <= block_info.local_size);
+    assert(num <= (cs_gnum_t)block_size);
     block->index[num] += n_sub_elts;
 
   }
 
-  BFT_MALLOC(shift_ref, block_info.local_size, cs_lnum_t);
+  BFT_MALLOC(shift_ref, block_size, cs_lnum_t);
 
-  for (ii = 0; ii < block_info.local_size; ii++) {
-    block->index[ii+1] += block->index[ii];
-    shift_ref[ii] = block->index[ii];
+  for (i = 0; i < block_size; i++) {
+    block->index[i+1] += block->index[i];
+    shift_ref[i] = block->index[i];
   }
 
   BFT_MALLOC(block->vtx_glst,
-             block->index[block_info.local_size],
+             block->index[block_size],
              cs_gnum_t);
 
   BFT_MALLOC(block->abs_lst,
-             block->index[block_info.local_size],
+             block->index[block_size],
              float);
 
   /* Second scan : fill buffers */
@@ -3082,10 +3089,10 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
 
   for (i = 0; i < recv_list_size; i+= 2) {
 
-    cs_gnum_t  block_id = recv_glist[i] - block_info.first_gnum;
+    cs_gnum_t  block_id = recv_glist[i] - bi.gnum_range[0];
     cs_lnum_t  n_sub_elts = recv_glist[i+1];
 
-    assert(block_id < block_info.local_size);
+    assert(block_id < (cs_gnum_t)block_size);
 
     for (j = 0; j < n_sub_elts; j++) {
 
@@ -3115,9 +3122,9 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
   /* Compact block */
 
   shift = 0;
-  for (ii = 0; ii < block_info.local_size; ii++) {
+  for (i = 0; i < block_size; i++) {
 
-    for (j = block->index[ii]; j < shift_ref[ii]; j++) {
+    for (j = block->index[i]; j < shift_ref[i]; j++) {
 
       block->vtx_glst[shift] = block->vtx_glst[j];
       block->abs_lst[shift] = block->abs_lst[j];
@@ -3127,30 +3134,30 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
 
   }
 
-  BFT_MALLOC(new_index, block_info.local_size + 1, cs_lnum_t);
+  BFT_MALLOC(new_index, block_size + 1, cs_lnum_t);
 
   new_index[0] = 0;
-  for (ii = 0; ii < block_info.local_size; ii++)
-    new_index[ii+1] = new_index[ii] + shift_ref[ii] - block->index[ii];
+  for (i = 0; i < block_size; i++)
+    new_index[i+1] = new_index[i] + shift_ref[i] - block->index[i];
 
   BFT_FREE(block->index);
 
   block->index = new_index;
 
-  BFT_REALLOC(block->vtx_glst, block->index[block_info.local_size], cs_gnum_t);
-  BFT_REALLOC(block->abs_lst, block->index[block_info.local_size], float);
+  BFT_REALLOC(block->vtx_glst, block->index[block_size], cs_gnum_t);
+  BFT_REALLOC(block->abs_lst, block->index[block_size], float);
 
   /* Sort intersection by increasing curvilinear abscissa for each edge */
 
-  for (ii = 0; ii < block_info.local_size; ii++)
-    _max = CS_MAX(_max, new_index[ii+1] - new_index[ii]);
+  for (i = 0; i < block_size; i++)
+    _max = CS_MAX(_max, new_index[i+1] - new_index[i]);
 
   block->max_sub_size = _max;
 
-  for (ii = 0; ii < block_info.local_size; ii++) {
+  for (i = 0; i < block_size; i++) {
 
-    cs_lnum_t  start = block->index[ii];
-    cs_lnum_t  end = block->index[ii+1];
+    cs_lnum_t  start = block->index[i];
+    cs_lnum_t  end = block->index[i+1];
 
     if (end - start > 0)
       _adapted_gshellsort(start, end, block->abs_lst, block->vtx_glst);
@@ -3211,15 +3218,26 @@ cs_join_inter_edges_block_to_part(cs_gnum_t                     n_g_edges,
   MPI_Comm  mpi_comm = cs_glob_mpi_comm;
 
   const int  n_ranks = cs_glob_n_ranks;
-  const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
-  const cs_join_block_info_t  block_info = cs_join_get_block_info(n_g_edges,
-                                                                  n_ranks,
-                                                                  local_rank);
+  const int  local_rank = cs_glob_rank_id;
+  const cs_block_dist_info_t  bi = cs_block_dist_compute_sizes(local_rank,
+                                                               n_ranks,
+                                                               1,
+                                                               0,
+                                                               n_g_edges);
+
   /* Sanity check */
 
   assert(block != NULL);
-  assert((size_t)(block->n_edges) == block_info.local_size);
   assert(part != NULL);
+
+#if defined(DEBUG) && !defined(NDEBUG)
+  {
+    cs_lnum_t  block_size = 0;
+    if (bi.gnum_range[1] > bi.gnum_range[0])
+      block_size = bi.gnum_range[1] - bi.gnum_range[0];
+    assert(block->n_edges == block_size);
+  }
+#endif
 
   /* Allocate parameters for MPI functions */
 
@@ -3232,7 +3250,7 @@ cs_join_inter_edges_block_to_part(cs_gnum_t                     n_g_edges,
   /* Count number of edges we want to receive */
 
   for (i = 0; i < part->n_edges; i++) {
-    rank = (part->edge_gnum[i] - 1)/(cs_gnum_t)(block_info.size);
+    rank = (part->edge_gnum[i] - 1)/(cs_gnum_t)(bi.block_size);
     assert(rank >= 0 && rank < n_ranks);
     send_count[rank] += 1;
   }
@@ -3265,7 +3283,7 @@ cs_join_inter_edges_block_to_part(cs_gnum_t                     n_g_edges,
 
   for (i = 0; i < part->n_edges; i++) {
 
-    rank = (part->edge_gnum[i] - 1)/block_info.size;
+    rank = (part->edge_gnum[i] - 1)/(cs_gnum_t)bi.block_size;
     assert(rank >= 0 && rank < n_ranks);
     shift = recv_rank_index[rank] + send_count[rank];
     glist_to_recv[shift] = part->edge_gnum[i];
@@ -3289,7 +3307,7 @@ cs_join_inter_edges_block_to_part(cs_gnum_t                     n_g_edges,
 
     for (i = send_rank_index[rank]; i < send_rank_index[rank+1]; i++) {
 
-      cs_gnum_t  s_id = glist_to_send[i] - block_info.first_gnum;
+      cs_gnum_t  s_id = glist_to_send[i] - bi.gnum_range[0];
 
       nsubs_to_send[i] = block->index[s_id+1] - block->index[s_id];
 
@@ -3339,7 +3357,7 @@ cs_join_inter_edges_block_to_part(cs_gnum_t                     n_g_edges,
 
     for (i = send_rank_index[rank]; i < send_rank_index[rank+1]; i++) {
 
-      cs_gnum_t  s_id = glist_to_send[i] - block_info.first_gnum;
+      cs_gnum_t  s_id = glist_to_send[i] - bi.gnum_range[0];
       cs_lnum_t  start = block->index[s_id];
       cs_lnum_t  end = block->index[s_id+1];
 

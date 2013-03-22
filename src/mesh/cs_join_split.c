@@ -47,6 +47,7 @@
 #include "fvm_io_num.h"
 #include "fvm_periodicity.h"
 
+#include "cs_block_dist.h"
 #include "cs_order.h"
 #include "cs_search.h"
 #include "cs_join_post.h"
@@ -1626,7 +1627,7 @@ _get_subface_gnum(face_builder_t         *builder,
  *---------------------------------------------------------------------------*/
 
 static void
-_update_mesh_after_split(cs_join_block_info_t    block_info,
+_update_mesh_after_split(cs_block_dist_info_t    bi,
                          face_builder_t         *builder,
                          cs_join_mesh_t        **mesh,
                          cs_join_gset_t        **p_o2n_hist)
@@ -1634,12 +1635,15 @@ _update_mesh_after_split(cs_join_block_info_t    block_info,
   cs_lnum_t  i, j, k, id, shift, n_subfaces, o_id;
   cs_gnum_t  prev, cur;
 
-  cs_lnum_t  n_new_faces = 0;
+  cs_lnum_t  n_new_faces = 0, block_size = 0;
   char  *new_mesh_name = NULL;
   cs_lnum_t  *subfaces = NULL;
   cs_lnum_t  *order = NULL;
   cs_join_gset_t  *o2n_hist = NULL;
   cs_join_mesh_t  *init_mesh = *mesh, *new_mesh = NULL;
+
+  if (bi.gnum_range[1] > bi.gnum_range[0])
+    block_size = bi.gnum_range[1] - bi.gnum_range[0];
 
   /* Sanity checks */
 
@@ -1656,13 +1660,13 @@ _update_mesh_after_split(cs_join_block_info_t    block_info,
 
   BFT_FREE(new_mesh_name);
 
-  if ((int)block_info.local_size != builder->n_faces)
+  if (block_size != builder->n_faces)
     bft_error(__FILE__, __LINE__, 0,
-              _(" Inconsistent values between:\n"
-                "    block_info.local_size  %8ld\n"
-                "    builder->n_faces:      %8ld\n"
-                " These values should be equal.\n"),
-              (long)block_info.local_size, (long)builder->n_faces);
+              " Inconsistent values between:\n"
+              "    block_size             %8ld\n"
+              "    builder->n_faces:      %8ld\n"
+              " These values should be equal.\n",
+              (long)block_size, (long)builder->n_faces);
 
   /* Compute the number of new faces */
 
@@ -1761,18 +1765,20 @@ _update_mesh_after_split(cs_join_block_info_t    block_info,
   /* Create a structure in which we keep a history of global
      face numbering for each new face */
 
-  o2n_hist = cs_join_gset_create(block_info.local_size);
+  o2n_hist = cs_join_gset_create(block_size);
 
-  if (block_info.local_size > 0) {
+  if (block_size > 0) {
 
     assert(builder != NULL);
-    assert(builder->n_faces == (cs_lnum_t)block_info.local_size);
+    assert(builder->n_faces == block_size);
 
     /* Historic is a part of the data held in builder structure */
 
-    for (i = 0; i < (cs_lnum_t)block_info.local_size; i++)
-      /* store old glob. face num. */
-      o2n_hist->g_elts[i] = block_info.first_gnum + (cs_gnum_t)i;
+    /* store old glob. face num. */
+    for (i = 0; i < block_size; i++) {
+      cs_gnum_t g_id = i;
+      o2n_hist->g_elts[i] = bi.gnum_range[0] + g_id;
+    }
 
     for (i = 0; i < builder->n_faces + 1; i++)
       o2n_hist->index[i] = builder->face_index[i];
@@ -1833,9 +1839,10 @@ cs_join_split_faces(cs_join_param_t          param,
   cs_lnum_t  fid, j, face_s, subface_s, block_id, vid;
   cs_gnum_t  vgnum;
   cs_join_split_error_t  code;
-  cs_join_block_info_t  block_info;
+  cs_block_dist_info_t  bi;
 
   cs_lnum_t  _n_problems = 0, n_face_problems = 0, n_max_face_vertices = 6;
+  cs_lnum_t  block_size = 0;
   cs_lnum_t  *e2f_idx = NULL, *e2f_lst = NULL;
   cs_join_gset_t  *_old2new_history = NULL;
   cs_join_rset_t  *open_cycle = NULL, *edge_traversed_twice = NULL;
@@ -1871,9 +1878,16 @@ cs_join_split_faces(cs_join_param_t          param,
 
   /* Compute block_size */
 
-  block_info = cs_join_get_block_info(w->n_g_faces, n_ranks, local_rank);
+  bi = cs_block_dist_compute_sizes(local_rank,
+                                   n_ranks,
+                                   1,
+                                   0,
+                                   w->n_g_faces);
 
-  builder = _create_face_builder(block_info.local_size);
+  if (bi.gnum_range[1] > bi.gnum_range[0])
+    block_size = bi.gnum_range[1] - bi.gnum_range[0];
+
+  builder = _create_face_builder(block_size);
 
   /*
      We only have to treat faces for the current rank's block because the
@@ -1884,7 +1898,7 @@ cs_join_split_faces(cs_join_param_t          param,
 
   for (fid = 0, block_id = 0; fid < n_init_faces; fid++) {
 
-    int  block_rank = (w->face_gnum[fid] - 1)/(cs_gnum_t)(block_info.size);
+    int  block_rank = (w->face_gnum[fid] - 1)/(cs_gnum_t)(bi.block_size);
 
     if (block_rank == local_rank) { /* This face is a "main" face for the
                                        local rank */
@@ -2202,7 +2216,7 @@ cs_join_split_faces(cs_join_param_t          param,
      For each new sub-face we maintain a relation between new and old
      face global number. Update also face state */
 
-  _update_mesh_after_split(block_info,
+  _update_mesh_after_split(bi,
                            builder,
                            &w,
                            &_old2new_history);

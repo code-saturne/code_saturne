@@ -46,6 +46,7 @@
 
 #include "fvm_periodicity.h"
 
+#include "cs_block_dist.h"
 #include "cs_join_intersect.h"
 #include "cs_join_merge.h"
 #include "cs_join_mesh.h"
@@ -425,7 +426,7 @@ _build_join_structures(cs_join_t            *this_join,
                    &work_face_normal,
                    &edge_edge_vis);
 
-  /* log performance info of previosu step here only to simplify
+  /* log performance info of previous step here only to simplify
      "pretty printing". */
 
   cs_log_printf(CS_LOG_PERFORMANCE,
@@ -668,17 +669,18 @@ _get_local_o2n_vtx_gnum(cs_join_param_t    param,
   cs_gnum_t  *new_local_gnum = NULL;
 
   const int  n_ranks = cs_glob_n_ranks;
-  const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
+  const int  local_rank = cs_glob_rank_id;
 
-  cs_join_block_info_t  block_info = cs_join_get_block_info(init_max_vtx_gnum,
-                                                            n_ranks,
-                                                            local_rank);
+  cs_block_dist_info_t  bi = cs_block_dist_compute_sizes(local_rank,
+                                                         n_ranks,
+                                                         1,
+                                                         0,
+                                                         init_max_vtx_gnum);
 
-  MPI_Comm  mpi_comm = cs_glob_mpi_comm;
+  MPI_Comm  comm = cs_glob_mpi_comm;
 
   if (param.perio_type != FVM_PERIODICITY_NULL)
-    BFT_MALLOC(new_local_gnum, mesh->n_vertices + select->n_vertices,
-               cs_gnum_t);
+    BFT_MALLOC(new_local_gnum, mesh->n_vertices + select->n_vertices, cs_gnum_t);
   else
     BFT_MALLOC(new_local_gnum, mesh->n_vertices, cs_gnum_t);
 
@@ -691,7 +693,7 @@ _get_local_o2n_vtx_gnum(cs_join_param_t    param,
     send_count[i] = 0;
 
   for (i = 0; i < mesh->n_vertices; i++) {
-    rank = (mesh->global_vtx_num[i] - 1)/(cs_gnum_t)(block_info.size);
+    rank = (mesh->global_vtx_num[i] - 1)/(cs_gnum_t)(bi.block_size);
     assert(rank >= 0 && rank < n_ranks);
     send_count[rank] += 1;
   }
@@ -699,14 +701,14 @@ _get_local_o2n_vtx_gnum(cs_join_param_t    param,
   if (param.perio_type != FVM_PERIODICITY_NULL) {
 
     for (i = 0; i < select->n_vertices; i++) {
-      rank = (select->per_v_couples[2*i+1] - 1)/(cs_gnum_t)(block_info.size);
+      rank = (select->per_v_couples[2*i+1] - 1)/(cs_gnum_t)(bi.block_size);
       assert(rank >= 0 && rank < n_ranks);
       send_count[rank] += 1;
     }
 
   }
 
-  MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, mpi_comm);
+  MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, comm);
 
   BFT_MALLOC(send_shift, n_ranks + 1, int);
   BFT_MALLOC(recv_shift, n_ranks + 1, int);
@@ -729,7 +731,7 @@ _get_local_o2n_vtx_gnum(cs_join_param_t    param,
 
   for (i = 0; i < mesh->n_vertices; i++) {
 
-    rank = (mesh->global_vtx_num[i] - 1)/(cs_gnum_t)(block_info.size);
+    rank = (mesh->global_vtx_num[i] - 1)/(cs_gnum_t)(bi.block_size);
     shift = send_shift[rank] + send_count[rank];
     send_glist[shift] = mesh->global_vtx_num[i];  /* Old global number */
     send_count[rank] += 1;
@@ -739,7 +741,7 @@ _get_local_o2n_vtx_gnum(cs_join_param_t    param,
   if (param.perio_type != FVM_PERIODICITY_NULL) {
 
     for (i = 0; i < select->n_vertices; i++) {
-      rank = (select->per_v_couples[2*i+1] - 1)/(cs_gnum_t)(block_info.size);
+      rank = (select->per_v_couples[2*i+1] - 1)/(cs_gnum_t)(bi.block_size);
       shift = send_shift[rank] + send_count[rank];
       send_glist[shift] = select->per_v_couples[2*i+1]; /* Old global num. */
       send_count[rank] += 1;
@@ -749,14 +751,14 @@ _get_local_o2n_vtx_gnum(cs_join_param_t    param,
 
   MPI_Alltoallv(send_glist, send_count, send_shift, CS_MPI_GNUM,
                 recv_glist, recv_count, recv_shift, CS_MPI_GNUM,
-                mpi_comm);
+                comm);
 
   /* Send back to the original rank the new global vertex number */
 
   for (rank = 0; rank < n_ranks; rank++) {
 
     for (i = recv_shift[rank]; i < recv_shift[rank+1]; i++) {
-      shift = recv_glist[i] - block_info.first_gnum;
+      shift = recv_glist[i] - bi.gnum_range[0];
       recv_glist[i] = new_gnum_by_block[shift];
     }
 
@@ -764,14 +766,14 @@ _get_local_o2n_vtx_gnum(cs_join_param_t    param,
 
   MPI_Alltoallv(recv_glist, recv_count, recv_shift, CS_MPI_GNUM,
                 send_glist, send_count, send_shift, CS_MPI_GNUM,
-                mpi_comm);
+                comm);
 
   for (i = 0; i < n_ranks; i++)
     send_count[i] = 0;
 
   for (i = 0; i < mesh->n_vertices; i++) {
 
-    rank = (mesh->global_vtx_num[i] - 1)/(cs_gnum_t)(block_info.size);
+    rank = (mesh->global_vtx_num[i] - 1)/(cs_gnum_t)(bi.block_size);
     shift = send_shift[rank] + send_count[rank];
     new_local_gnum[i] = send_glist[shift];  /* New global number */
     send_count[rank] += 1;
@@ -781,7 +783,7 @@ _get_local_o2n_vtx_gnum(cs_join_param_t    param,
   if (param.perio_type != FVM_PERIODICITY_NULL) {
 
     for (i = 0; i < select->n_vertices; i++) {
-      rank = (select->per_v_couples[2*i+1] - 1)/(cs_gnum_t)(block_info.size);
+      rank = (select->per_v_couples[2*i+1] - 1)/(cs_gnum_t)(bi.block_size);
       shift = send_shift[rank] + send_count[rank];
       new_local_gnum[mesh->n_vertices + i] = send_glist[shift]; /* New glob num. */
       send_count[rank] += 1;
@@ -1121,16 +1123,16 @@ _prepare_update_after_split(cs_join_t          *this_join,
 
       cs_join_gset_t  *n2o_sync_block = NULL;
 
-      MPI_Comm  mpi_comm = cs_glob_mpi_comm;
+      MPI_Comm  comm = cs_glob_mpi_comm;
 
       n2o_sync_block = cs_join_gset_block_sync(local_jmesh->n_g_faces,
                                                n2o_hist,
-                                               mpi_comm);
+                                               comm);
 
       cs_join_gset_block_update(local_jmesh->n_g_faces,
                                 n2o_sync_block,
                                 n2o_hist,
-                                mpi_comm);
+                                comm);
 
       cs_join_gset_destroy(&n2o_sync_block);
 

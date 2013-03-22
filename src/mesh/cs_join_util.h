@@ -271,26 +271,6 @@ typedef struct {
 
 } cs_join_t;
 
-/*----------------------------------------------------------------------------
- * Structure used to store information about a block distribution
- *---------------------------------------------------------------------------*/
-
-typedef struct {
-
-  cs_gnum_t   n_g_elts;    /* Global number of elements to distribute */
-  cs_gnum_t   first_gnum;  /* Global number of the element in the local block */
-
-  int  n_ranks;            /* Number of processes in the communicator used
-                              to define the current distribution */
-  int  local_rank;         /* Id of the current process in the communicator
-                              used to define the current distribution */
-
-  size_t  size;            /* Size of block for the given set of parameters */
-  size_t  local_size;      /* Number of global elements to treat on the local
-                              rank according to the distribution */
-
-} cs_join_block_info_t;
-
 /*=============================================================================
  * Global variables
  *===========================================================================*/
@@ -358,25 +338,6 @@ cs_join_destroy(cs_join_t  **join);
 cs_join_select_t *
 cs_join_select_create(const char  *selection_criteria,
                       int          verbosity);
-
-/*----------------------------------------------------------------------------
- * Define a set of parameters to control a contiguous distribution by block.
- *
- * parameters:
- *   n_g_elts   <-- global number of elements to treat
- *   n_ranks    <-- number of ranks in the MPI communicator related to the
- *                  cs_join_block_info_t structure to create
- *   local_rank <-- rank in the MPI communicator related to the
- *                  cs_join_block_info_t structure to create
- *
- * returns:
- *   a newly defined cs_join_block_info_t structure
- *---------------------------------------------------------------------------*/
-
-cs_join_block_info_t
-cs_join_get_block_info(cs_gnum_t  n_g_elts,
-                       int        n_ranks,
-                       int        local_rank);
 
 /*----------------------------------------------------------------------------
  * Extract vertices from a selection of faces.
