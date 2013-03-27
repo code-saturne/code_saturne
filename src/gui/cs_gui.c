@@ -3538,24 +3538,24 @@ void CS_PROCF(uisterm, UISTERM)(const int          *ncelet,
             crvimp = mei_tree_lookup(ev_formula,"Su");
             crvexp = mei_tree_lookup(ev_formula,"dSudu");
 
-            aaa[1*(*ncelet)+iel] = mei_tree_lookup(ev_formula,"Su");
-            aaa[2*(*ncelet)+iel] = mei_tree_lookup(ev_formula,"Sv");
-            aaa[3*(*ncelet)+iel] = mei_tree_lookup(ev_formula,"Sw");
-            aaa[4*(*ncelet)+iel] = mei_tree_lookup(ev_formula,"dSudu");
-            aaa[5*(*ncelet)+iel] = mei_tree_lookup(ev_formula,"dSvdv");
-            aaa[6*(*ncelet)+iel] = mei_tree_lookup(ev_formula,"dSwdw");
+            aaa[0*(*ncelet)+iel] = mei_tree_lookup(ev_formula,"Su");
+            aaa[1*(*ncelet)+iel] = mei_tree_lookup(ev_formula,"Sv");
+            aaa[2*(*ncelet)+iel] = mei_tree_lookup(ev_formula,"Sw");
+            aaa[3*(*ncelet)+iel] = mei_tree_lookup(ev_formula,"dSudu");
+            aaa[4*(*ncelet)+iel] = mei_tree_lookup(ev_formula,"dSvdv");
+            aaa[5*(*ncelet)+iel] = mei_tree_lookup(ev_formula,"dSwdw");
           }
           mei_tree_destroy(ev_formula);
         }
         else {
           for (icel = 0; icel < cells; icel++) {
             iel = cells_list[icel]-1;
+            aaa[0*(*ncelet)+iel] = 0.;
             aaa[1*(*ncelet)+iel] = 0.;
             aaa[2*(*ncelet)+iel] = 0.;
             aaa[3*(*ncelet)+iel] = 0.;
             aaa[4*(*ncelet)+iel] = 0.;
             aaa[5*(*ncelet)+iel] = 0.;
-            aaa[6*(*ncelet)+iel] = 0.;
           }
         }
       }
