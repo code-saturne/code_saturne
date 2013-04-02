@@ -208,7 +208,7 @@ if (ntcabs.eq.1) then
 
     if (iturb.eq.32 .or. itytur.eq.5) then
       rcodcl(ifac,iu,1) = fmprsc/10.d0
-    endif    
+    endif
 
     uref2 = rcodcl(ifac,iu,1)**2  &
           + rcodcl(ifac,iv,1)**2  &
