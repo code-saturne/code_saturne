@@ -250,8 +250,8 @@ def compile_and_link(pkg, srcdir, destdir,
         if force_link or (len(c_files) + len(cxx_files) + len(f_files)) > 0:
             lib0 = os.path.join(pkg.get_dir('libdir'),
                                 'lib' + p_libs[0][2:] + '.a')
-            p_libs = [lib0] + p_libs[1:]
-            cmd = ['ar', 't', lib0]
+            p_libs = p_libs[1:]
+            cmd = ['ar', 'x', lib0]
             if run_command(cmd, pkg=pkg, echo=True,
                            stdout=stdout, stderr=stderr) != 0:
                 retval = 1
