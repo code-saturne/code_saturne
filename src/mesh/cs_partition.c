@@ -1001,13 +1001,25 @@ _cell_rank_by_sfc(cs_gnum_t                 n_g_cells,
      cells assigned if possible */
 
   if ((cs_lnum_t)((n_g_cells - 1) % block_size) < n_ranks - 1) {
-    int max_rank = n_ranks - 1;
-    double _block_size = n_g_cells / (double)n_ranks;
-    for (i = 0; i < n_cells; i++) {
-      cell_rank[i] = (((cell_num[i] - 1) / _block_size) + 0.5);
-      if (cell_rank[i] > max_rank)
-        cell_rank[i] = max_rank;
+
+    cs_gnum_t cells_per_rank = n_g_cells / n_ranks;
+    cs_lnum_t rmdr = n_g_cells - cells_per_rank * (cs_gnum_t)n_ranks;
+
+    if (rmdr == 0){
+      for (i = 0; i < n_cells; i++)
+        cell_rank[i] = (cell_num[i] - 1) / cells_per_rank;
     }
+    else {
+      cs_gnum_t n_ranks_rmdr = n_ranks - rmdr;
+      cs_gnum_t n_ranks_cells_per_rank = n_ranks_rmdr * cells_per_rank;
+      for (i = 0; i < n_cells; i++) {
+        if ((cell_num[i] - 1)  <  n_ranks_cells_per_rank)
+          cell_rank[i] = (cell_num[i] -1 ) / cells_per_rank;
+        else
+          cell_rank[i] = (cell_num[i]+n_ranks_rmdr-1) / (cells_per_rank+1);
+      }
+    }
+
   }
   else {
     for (i = 0; i < n_cells; i++)
