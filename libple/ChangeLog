@@ -1,3 +1,23 @@
+2012-10-29  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* Release of PLE 1.0.3
+
+	* Fix a test for "locate on closest" and another for empty realloc.
+
+2012-10-29  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* Release of PLE 1.0.2
+
+	* Fix extra count (should be 3, not 4) in PLE flags exchange in ple_locator.c
+
+2012-10-18  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* Fixes for mixed "locate on closest / do not locate on closest" cases.
+
+2012-08-09  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* Avoid deprecated MPI datatypes to prepare for MPI 3.
+
 2011-11-29  Yvan Fournier <yvan.fournier@edf.fr>
 
 	* Fix link problem in PLE unit tests.
@@ -14,6 +34,12 @@
 2011-06-27  Yvan Fournier <yvan.fournier@edf.fr>
 
 	* Improve robustness of MPI detection tests.
+
+2011-06-26  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* Release of PLE 1.0.1
+
+	* Use same FLAGS as parent Code_Saturne build.
 
 2011-06-24  Yvan Fournier <yvan.fournier@edf.fr>
 
