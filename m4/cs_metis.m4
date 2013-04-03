@@ -80,22 +80,16 @@ if test "x$with_metis" != "xno" ; then
   METIS_LIBS="-lparmetis -lm"
   LIBS="${METIS_LIBS} ${MPI_LIBS} ${LIBS}"
 
-  # Test for METIS headers
-
-  AC_CHECK_HEADERS([metis.h],
-                   [], 
-                   [ AC_MSG_WARN([METIS header not found or usable])
-                   ],
-                   []
-                  )
-
   # Test for ParMetis first
 
   AC_LINK_IFELSE([AC_LANG_PROGRAM(
 [[#include <stdio.h>
 #include <mpi.h>
 #include <parmetis.h>]],
-[[  MPI_Comm comm = MPI_COMM_WORLD;
+[[#if PARMETIS_MAJOR_VERSION < 4
+# error ParMETIS 4.0 or above required.
+#endif
+  MPI_Comm comm = MPI_COMM_WORLD;
   ParMETIS_V3_PartKway((void *)0, (void *)0, (void *)0, (void *)0,     
                       (void *)0, (void *)0, (void *)0, (void *)0, (void *)0,
                       (void *)0, (void *)0, (void *)0, (void *)0, (void *)0,
@@ -113,13 +107,18 @@ if test "x$with_metis" != "xno" ; then
     LDFLAGS="${saved_LDFLAGS} ${METIS_LDFLAGS}"
     LIBS="${METIS_LIBS} ${savedLIBS}"
 
-    AC_CHECK_LIB(metis, METIS_PartGraphKway, 
-                 [ AC_DEFINE([HAVE_METIS], 1, [use METIS ])
-                   cs_have_metis=yes
-                 ], 
-                 [ AC_MSG_WARN([do not use METIS])
-                 ],
-                 )
+    AC_LINK_IFELSE([AC_LANG_PROGRAM(
+[[#include <stdio.h>
+#include <metis.h>]],
+[[#if METIS_VER_MAJOR < 5
+# error METIS 5.0 or above required.
+#endif
+  METIS_PartGraphKway((void *)0, (void *)0, (void *)0,
+                      (void *)0, (void *)0, (void *)0, (void *)0,
+                      (void *)0, (void *)0, (void *)0, (void *)0,
+                      (void *)0, (void *)0); ]])],
+[cs_have_metis=yes],
+[cs_have_metis=no])
 
     if test "x$cs_have_metis" = "xno"; then
       METIS_CPPFLAGS=""

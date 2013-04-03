@@ -53,43 +53,15 @@ extern "C" {
 #endif
 
 #if defined(HAVE_PARMETIS)
-
 #include <parmetis.h>
-
 #endif
 
-#if defined(HAVE_METIS_H)
-
+#if defined(HAVE_METIS)
 #include <metis.h>
-
-#else
-
-/* Caution:
-   --------
-   File included by <metis.h> for METIS 4.0 lead to compilation
-   errors on Linux in C99 mode due to redeclaration of functions from
-   <stdlib.h>, so we include our own prototypes here.
-   Also, ParMETIS's parmetis.h does not include prototypes for
-   direct calling of METIS functions, so we also include prototypes
-   in this case. */
-
-#if !defined(IDXTYPE_INT)
-typedef int idxtype;
 #endif
-
-void METIS_PartGraphRecursive(int *, idxtype *, idxtype *, idxtype *, idxtype *,
-                              int *, int *, int *, int *, int *, idxtype *);
-void METIS_PartGraphKway(int *, idxtype *, idxtype *, idxtype *, idxtype *,
-                         int *, int *, int *, int *, int *, idxtype *);
-
-#endif /* defined(HAVE_METIS_H) */
 
 #ifdef __cplusplus
 }
-#endif
-
-#if defined(METIS_API) /* METIS 5.0rc1 and above */
-#define idxtype idx_t
 #endif
 
 #endif /* defined(HAVE_METIS) || defined(HAVE_PARMETIS) */
@@ -1325,20 +1297,20 @@ _metis_cell_cells(size_t       n_cells,
                   size_t       n_faces,
                   cs_gnum_t    start_cell,
                   cs_gnum_t   *face_cells,
-                  idxtype    **cell_idx,
-                  idxtype    **cell_neighbors)
+                  idx_t      **cell_idx,
+                  idx_t      **cell_neighbors)
 {
   size_t i, id_0, id_1;
 
   cs_gnum_t  c_num[2];
 
-  idxtype  *n_neighbors;
-  idxtype  *_cell_idx;
-  idxtype  *_cell_neighbors;
+  idx_t  *n_neighbors;
+  idx_t  *_cell_idx;
+  idx_t  *_cell_neighbors;
 
   /* Count and allocate arrays */
 
-  BFT_MALLOC(n_neighbors, n_cells, idxtype);
+  BFT_MALLOC(n_neighbors, n_cells, idx_t);
 
   for (i = 0; i < n_cells; i++)
     n_neighbors[i] = 0;
@@ -1360,14 +1332,14 @@ _metis_cell_cells(size_t       n_cells,
       n_neighbors[c_num[1] - start_cell] += 1;
   }
 
-  BFT_MALLOC(_cell_idx, n_cells + 1, idxtype);
+  BFT_MALLOC(_cell_idx, n_cells + 1, idx_t);
 
   _cell_idx[0] = 0;
 
   for (i = 0; i < n_cells; i++)
     _cell_idx[i + 1] = _cell_idx[i] + n_neighbors[i];
 
-  BFT_MALLOC(_cell_neighbors, _cell_idx[n_cells], idxtype);
+  BFT_MALLOC(_cell_neighbors, _cell_idx[n_cells], idx_t);
 
   for (i = 0; i < n_cells; i++)
     n_neighbors[i] = 0;
@@ -1411,36 +1383,30 @@ _metis_cell_cells(size_t       n_cells,
  *----------------------------------------------------------------------------*/
 
 static void
-_part_metis(size_t    n_cells,
-            int       n_parts,
-            idxtype  *cell_idx,
-            idxtype  *cell_neighbors,
-            int      *cell_part)
+_part_metis(size_t   n_cells,
+            int      n_parts,
+            idx_t   *cell_idx,
+            idx_t   *cell_neighbors,
+            int     *cell_part)
 {
   size_t i;
   double  start_time, end_time;
 
-#if defined(METIS_API) /* METIS 5.0rc1 and above */
-  idxtype   _n_constraints = 1;
-#else
-  idxtype wgtflag    = 0; /* No weighting for faces or cells */
-  idxtype numflag    = 0; /* 1 to n numbering (Fortran type) */
-  idxtype options[5] = {0, 3, 1, 1, 0}; /* By default if options[0] = 0 */
-#endif
+  idx_t   _n_constraints = 1;
 
-  idxtype    edgecut    = 0; /* <-- Number of faces on partition */
+  idx_t    edgecut    = 0; /* <-- Number of faces on partition */
 
-  idxtype   _n_cells = n_cells;
-  idxtype   _n_parts = n_parts;
-  idxtype  *_cell_part = NULL;
+  idx_t   _n_cells = n_cells;
+  idx_t   _n_parts = n_parts;
+  idx_t  *_cell_part = NULL;
 
   start_time = cs_timer_wtime();
 
-  if (sizeof(idxtype) == sizeof(int))
-    _cell_part = (idxtype *)cell_part;
+  if (sizeof(idx_t) == sizeof(int))
+    _cell_part = (idx_t *)cell_part;
 
   else
-    BFT_MALLOC(_cell_part, n_cells, idxtype);
+    BFT_MALLOC(_cell_part, n_cells, idx_t);
 
   if (n_parts < 8) {
 
@@ -1448,8 +1414,6 @@ _part_metis(size_t    n_cells,
                  " Partitioning %llu cells to %d domains"
                  "   (METIS_PartGraphRecursive).\n"),
                (unsigned long long)n_cells, n_parts);
-
-#if defined(METIS_API) /* METIS 5.0rc1 and above */
 
     METIS_PartGraphRecursive(&_n_cells,
                              &_n_constraints,
@@ -1465,22 +1429,6 @@ _part_metis(size_t    n_cells,
                              &edgecut,
                              _cell_part);
 
-#else
-
-    METIS_PartGraphRecursive(&_n_cells,
-                             cell_idx,
-                             cell_neighbors,
-                             NULL,       /* vwgt:   cell weights */
-                             NULL,       /* adjwgt: face weights */
-                             &wgtflag,
-                             &numflag,
-                             &_n_parts,
-                             options,
-                             &edgecut,
-                             _cell_part);
-
-#endif /* defined(METIS_API) */
-
   }
 
   else {
@@ -1489,8 +1437,6 @@ _part_metis(size_t    n_cells,
                  " Partitioning %llu cells to %d domains\n"
                  "  (METIS_PartGraphKway).\n"),
                (unsigned long long)n_cells, n_parts);
-
-#if defined(METIS_API) /* METIS 5.0rc1 and above */
 
     METIS_PartGraphKway(&_n_cells,
                         &_n_constraints,
@@ -1506,22 +1452,6 @@ _part_metis(size_t    n_cells,
                         &edgecut,
                         _cell_part);
 
-#else
-
-    METIS_PartGraphKway(&_n_cells,
-                        cell_idx,
-                        cell_neighbors,
-                        NULL,       /* vwgt:   cell weights */
-                        NULL,       /* adjwgt: face weights */
-                        &wgtflag,
-                        &numflag,
-                        &_n_parts,
-                        options,
-                        &edgecut,
-                        _cell_part);
-
-#endif /* defined(METIS_API) */
-
   }
 
   end_time = cs_timer_wtime();
@@ -1536,7 +1466,7 @@ _part_metis(size_t    n_cells,
                 "  METIS_PartGraphKway:        %.3g s\n",
                 (double)(end_time - start_time));
 
-  if (sizeof(idxtype) != sizeof(int)) {
+  if (sizeof(idx_t) != sizeof(int)) {
     for (i = 0; i < n_cells; i++)
       cell_part[i] = _cell_part[i];
     BFT_FREE(_cell_part);
@@ -1564,8 +1494,8 @@ static void
 _part_parmetis(cs_gnum_t   n_g_cells,
                cs_gnum_t   cell_range[2],
                int         n_parts,
-               idxtype    *cell_idx,
-               idxtype    *cell_neighbors,
+               idx_t      *cell_idx,
+               idx_t      *cell_neighbors,
                int        *cell_part,
                MPI_Comm    comm)
 {
@@ -1576,33 +1506,33 @@ _part_parmetis(cs_gnum_t   n_g_cells,
 
   int       n_ranks;
   size_t    n_cells = cell_range[1] - cell_range[0];
-  idxtype   vtxstart = cell_range[0] - 1;
-  idxtype   vtxend = cell_range[1] - 1;
-  idxtype  *vtxdist = NULL;
-  idxtype  *_cell_part = NULL;
-  MPI_Datatype mpi_idxtype = MPI_DATATYPE_NULL;
+  idx_t     vtxstart = cell_range[0] - 1;
+  idx_t     vtxend = cell_range[1] - 1;
+  idx_t    *vtxdist = NULL;
+  idx_t    *_cell_part = NULL;
+  MPI_Datatype mpi_idx_t = MPI_DATATYPE_NULL;
 
   start_time = cs_timer_wtime();
 
   MPI_Comm_size(comm, &n_ranks);
 
-  /* Adjust mpi_idxtype if necessary */
+  /* Adjust mpi_idx_t if necessary */
 
-  if (sizeof(idxtype) == sizeof(short))
-    mpi_idxtype = MPI_SHORT;
-  else if (sizeof(idxtype) == sizeof(int))
-    mpi_idxtype = MPI_INT;
-  else if (sizeof(idxtype) == sizeof(long))
-    mpi_idxtype = MPI_LONG; /* standard ParMETIS 3.1.1 only short or int */
+  if (sizeof(idx_t) == sizeof(short))
+    mpi_idx_t = MPI_SHORT;
+  else if (sizeof(idx_t) == sizeof(int))
+    mpi_idx_t = MPI_INT;
+  else if (sizeof(idx_t) == sizeof(long))
+    mpi_idx_t = MPI_LONG; /* standard ParMETIS 3.1.1 only short or int */
   else {
     assert(0); /* porting error, possible with future or modified ParMETIS */
   }
 
-  if (sizeof(idxtype) == sizeof(int))
+  if (sizeof(idx_t) == sizeof(int))
     _cell_part = cell_part;
 
   else
-    BFT_MALLOC(_cell_part, n_cells, idxtype);
+    BFT_MALLOC(_cell_part, n_cells, idx_t);
 
   bft_printf(_("\n"
                " Partitioning %llu cells to %d domains on %d ranks\n"
@@ -1611,24 +1541,22 @@ _part_parmetis(cs_gnum_t   n_g_cells,
 
   /* Build vtxdist */
 
-  BFT_MALLOC(vtxdist, n_ranks + 1, idxtype);
+  BFT_MALLOC(vtxdist, n_ranks + 1, idx_t);
 
-  MPI_Allgather(&vtxstart, 1, mpi_idxtype,
-                vtxdist, 1, mpi_idxtype, comm);
-  MPI_Allreduce(&vtxend, vtxdist + n_ranks, 1, mpi_idxtype, MPI_MAX, comm);
+  MPI_Allgather(&vtxstart, 1, mpi_idx_t,
+                vtxdist, 1, mpi_idx_t, comm);
+  MPI_Allreduce(&vtxend, vtxdist + n_ranks, 1, mpi_idx_t, MPI_MAX, comm);
 
   /* Call ParMETIS partitioning */
 
-#if (PARMETIS_MAJOR_VERSION == 4)
-
   {
     int      j;
-    idxtype  _edgecut = 0;
-    idxtype  _n_parts = n_parts;
-    idxtype  ncon     = 1; /* number of weights for each vertex */
-    idxtype  options[3] = {0, 1, 15}; /* By default if options[0] = 0 */
-    idxtype  numflag  = 0; /* 0 to n-1 numbering (C type) */
-    idxtype  wgtflag  = 0; /* No weighting for faces or cells */
+    idx_t  _edgecut = 0;
+    idx_t  _n_parts = n_parts;
+    idx_t  ncon     = 1; /* number of weights for each vertex */
+    idx_t  options[3] = {0, 1, 15}; /* By default if options[0] = 0 */
+    idx_t  numflag  = 0; /* 0 to n-1 numbering (C type) */
+    idx_t  wgtflag  = 0; /* No weighting for faces or cells */
 
     real_t wgt = 1.0/n_parts;
     real_t ubvec[]  = {1.5};
@@ -1666,37 +1594,6 @@ _part_parmetis(cs_gnum_t   n_g_cells,
 
   }
 
-#else
-
-  {
-    int  _edgecut = 0;
-    int  ncon       = 0; /* number of weights for each vertex */
-    int  options[3] = {0, 1, 15}; /* By default if options[0] = 0 */
-    int  numflag    = 0; /* 0 to n-1 numbering (C type) */
-    int  wgtflag    = 0; /* No weighting for faces or cells */
-
-    ParMETIS_V3_PartKway
-      (vtxdist,
-       cell_idx,
-       cell_neighbors,
-       NULL,       /* vwgt:   cell weights */
-       NULL,       /* adjwgt: face weights */
-       &wgtflag,
-       &numflag,
-       &ncon,
-       &n_parts,
-       NULL,       /* tpwgts: size ncon, vtx weight fraction */
-       NULL,       /* ubvec: size ncon, vtx imbalance */
-       options,
-       &_edgecut,
-       _cell_part,
-       &comm);
-
-    edgecut = _edgecut;
-  }
-
-#endif
-
   end_time = cs_timer_wtime();
 
   BFT_FREE(vtxdist);
@@ -1716,7 +1613,7 @@ _part_parmetis(cs_gnum_t   n_g_cells,
                 "  ParMETIS_V3_PartKway:       %.3g s\n",
                 (double)(end_time - start_time));
 
-  if (sizeof(idxtype) != sizeof(int)) {
+  if (sizeof(idx_t) != sizeof(int)) {
     for (i = 0; i < n_cells; i++)
       cell_part[i] = _cell_part[i];
     BFT_FREE(_cell_part);
@@ -3234,7 +3131,7 @@ cs_partition(cs_mesh_t             *mesh,
 
     int  i;
     cs_timer_t  t2;
-    idxtype  *cell_idx = NULL, *cell_neighbors = NULL;
+    idx_t  *cell_idx = NULL, *cell_neighbors = NULL;
 
     _metis_cell_cells(n_cells,
                       n_faces,
