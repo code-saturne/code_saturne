@@ -249,7 +249,7 @@ _ple_mem_realloc_default(void        *ptr,
 
   p_ret = realloc(ptr, realloc_size);
 
-  if (size != 0 && p_ret == NULL)
+  if (realloc_size != 0 && p_ret == NULL)
     ple_error(file_name, line_num, errno,
               _("Failure to reallocate \"%s\" (%lu bytes)"),
               var_name, (unsigned long)realloc_size);

@@ -814,7 +814,7 @@ _locate_closest_distant(ple_locator_t                *this_locator,
       double _min_dist = _extents_min_distance(dim,
                                                p_extents,
                                                recvbuf + (j*stride2));
-      if (recvbuf[j*stride2] > recvbuf[(j+1)*stride2])
+      if (_min_dist > min_max_dist)
         send_flag[j] = 0;
       else if (_min_dist <= min_max_dist)
         send_flag[j] = 1;
