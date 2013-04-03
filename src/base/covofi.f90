@@ -103,6 +103,7 @@ use lagpar
 use lagran
 use radiat
 use field
+use ihmpre, only: iihmpr
 use mesh
 use parall
 use period
@@ -284,6 +285,12 @@ do iel = 1, ncel
   rovsdt(iel) = 0.d0
   smbrs(iel) = 0.d0
 enddo
+
+if (iihmpr.eq.1) then
+  call uitssc &
+  !==========
+  ( iscal  , rtp(1,ivar), smbrs  , rovsdt )
+endif
 
 call ustssc &
 !==========

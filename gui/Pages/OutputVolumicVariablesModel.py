@@ -462,6 +462,24 @@ class OutputVolumicVariablesModel(Model):
                             node.xmlRemoveChild('listing_printing')
 
 
+    @Variables.noUndo
+    def getVariableLabel(self, name) :
+        """
+        return label of name variable
+        """
+        for variableType in ('variable', 'property', 'scalar') :
+            node = self.case.xmlGetNode(variableType, name = name)
+            if node != None:
+                break
+
+        if node != None:
+            label = node['label']
+            return label
+        else :
+            msg = "This variable " + name + " doesn't exist"
+            raise ValueError, msg
+
+
     @Variables.undoLocal
     def setPostStatus(self, label, status):
         """

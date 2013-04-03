@@ -450,25 +450,43 @@ void CS_PROCF(cfnmva, CFNMVA)
 void CS_PROCF(nvamem, NVAMEM) (void);
 
 /*----------------------------------------------------------------------------
- * Variables and user scalars initialization.
+ * User momentum source terms.
  *
  * Fortran Interface:
  *
- * subroutine uisterm (ncelet, isuite, isca, iscold, rtp)
+ * subroutine uitsnv (ncelet, vel, tsexp, tsimp)
  * *****************
  *
  * integer          ncelet   -->  number of cells with halo
- * integer          isuite   -->  restart indicator
- * integer          isca     -->  indirection array for scalar number
- * integer          iscold   -->  scalar number for restart
- * DOUBLE PRECISION XYZCEN   -->  cell's gravity center
+ * double precision vel      -->  fluid velocity
+ * double precision tsexp    <--  explicit source terms
+ * double precision tsimp    <--  implicit source terms
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(uisterm, UISTERM) (const int          *ncelet,
-                                 const int          *isuite,
-                                 const int           isca[],
-                                 const int           iscold[],
-                                 const double *const xyzcen);
+void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t *restrict vel,
+                              cs_real_3_t       *restrict tsexp,
+                              cs_real_33_t      *restrict tsimp);
+
+
+/*----------------------------------------------------------------------------
+ * User scalar source terms.
+ *
+ * Fortran Interface:
+ *
+ * subroutine uitssc (iscal, pvar, tsexp, tsimp)
+ * *****************
+ *
+ * integer          iscal    --> index of the corresponding scalar
+ * double precision pvar     -->  scalar
+ * double precision tsexp    <--  explicit source terms
+ * double precision tsimp    <--  implicit source terms
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(uitssc, UITSSC)(const int                  *iscal,
+                              const cs_real_t   *restrict pvar,
+                              cs_real_t         *restrict tsexp,
+                              cs_real_t         *restrict tsimp);
+
 
 /*----------------------------------------------------------------------------
  * Variables and user scalars initialization.

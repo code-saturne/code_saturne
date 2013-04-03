@@ -125,6 +125,7 @@ use ppppar
 use ppthch
 use ppincl
 use cplsat
+use ihmpre, only: iihmpr
 use mesh
 
 !===============================================================================
@@ -973,10 +974,14 @@ ipp  = ipprtp(iu)
 ! FIXME with porosity
 if(iterns.eq.1) then
 
-  call ustsnv                                                     &
+  if (iihmpr.eq.1) then
+    call uitsnv (vel, tsexp, tsimp)
+  endif
+
+  call ustsnv &
   !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iu   ,                                                       &
+   iu   ,                                                         &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    ckupdc , smacel , tsexp  , tsimp  )
