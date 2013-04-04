@@ -77,7 +77,7 @@ if test "x$with_metis" != "xno" ; then
 
   CPPFLAGS="${CPPFLAGS} ${METIS_CPPFLAGS} ${MPI_CPPFLAGS}"
   LDFLAGS="${LDFLAGS} ${METIS_LDFLAGS} ${MPI_LDFLAGS}"
-  METIS_LIBS="-lparmetis -lm"
+  METIS_LIBS="-lparmetis -lmetis -lm"
   LIBS="${LIBS} ${METIS_LIBS} ${MPI_LIBS}"
 
   # Test for METIS headers
