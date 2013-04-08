@@ -211,7 +211,7 @@ if (ipass.eq.1) then
           call undscr(inam1, inam2, nomhis)
           !==========
 
-          tplnum = nptpl +(ipas-1)*2*nvlsta + ipp
+          tplnum = nptpl +(ipas-1)*2*nvlsta + ipp + 1
 
           call tppini(tplnum, nomhis, nompre, tplfmt, idtvar, nthsav, tplflw, &
           !==========
@@ -288,7 +288,7 @@ if (modhis.eq.0 .or. modhis.eq.1) then
         ncap = ncapt
 
         if (irangp.le.0 .and. ncap.gt.0) then
-          tplnum = nptpl + (ipas-1)*2*nvlsta + il
+          tplnum = nptpl + (ipas-1)*2*nvlsta + il + 1
           call tplwri(tplnum, tplfmt, ncap, ntcabs, ttcabs, varcap)
           !==========
         endif
@@ -346,7 +346,7 @@ if (modhis.eq.0 .or. modhis.eq.1) then
         ncap = ncapt
 
         if (irangp.le.0 .and. ncap.gt.0) then
-          tplnum = nptpl + (ipas-1)*2*nvlsta + il + nvlsta
+          tplnum = nptpl + (ipas-1)*2*nvlsta + il + nvlsta + 1
           call tplwri(tplnum, tplfmt, ncap, ntcabs, ttcabs, varcap)
           !==========
         endif
@@ -382,7 +382,7 @@ if (modhis.eq.2) then
         endif
 
         if (iokhis.eq.1) then
-          tplnum = nptpl + (ipas-1)*2*nvlsta + ipp
+          tplnum = nptpl + (ipas-1)*2*nvlsta + ipp + 1
           call tplend(tplnum, tplfmt)
           !==========
         endif

@@ -1043,7 +1043,7 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
       i++;
       _copy_mean_varname("Part_vol_frac", i);
       _copy_variance_varname("var_Part_vol_frac", i);
-      ihslag[i] = 1;
+      ihslag[i-1] = 1;
     }
 
     _get_char_post("volume", "Part_velocity_X", iactvx);
@@ -1052,7 +1052,7 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
       i++;
       _copy_mean_varname("Part_velocity_X", i);
       _copy_variance_varname("var_Part_velocity_X", i);
-      ihslag[i] = 1;
+      ihslag[i-1] = 1;
     }
 
     _get_char_post("volume", "Part_velocity_Y", iactvy);
@@ -1061,7 +1061,7 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
       i++;
       _copy_mean_varname("Part_velocity_Y", i);
       _copy_variance_varname("var_Part_velocity_X", i);
-      ihslag[i] = 1;
+      ihslag[i-1] = 1;
     }
 
     _get_char_post("volume", "Part_velocity_Z", iactvz);
@@ -1070,7 +1070,7 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
       i++;
       _copy_mean_varname("Part_velocity_Z", i);
       _copy_variance_varname("var_Part_velocity_Z", i);
-      ihslag[i] = 1;
+      ihslag[i-1] = 1;
     }
 
     _get_char_post("volume", "Part_resid_time", iactts);
@@ -1079,7 +1079,7 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
       i++;
       _copy_mean_varname("Part_resid_time", i);
       _copy_variance_varname("var_Part_resid_time", i);
-      ihslag[i] = 1;
+      ihslag[i-1] = 1;
     }
 
     if (*iphyla == 1) {
@@ -1088,7 +1088,7 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
         i++;
         label = _get_char_post("volume",  "mean_temperature",  &record_ind);
         if (label) _copy_mean_varname(label, i);
-        ihslag[i] = list_ind;
+        ihslag[i-1] = list_ind;
 
         label = _get_char_post("volume", "variance_temperature",  &record_ind);
         if (label) _copy_variance_varname(label, i);
@@ -1098,7 +1098,7 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
         i++;
         label = _get_char_post("volume", "mean_diameter",  &record_ind);
         if (label) _copy_mean_varname(label, i);
-        ihslag[i] = list_ind;
+        ihslag[i-1] = list_ind;
 
         label = _get_char_post("volume", "variance_diameter",  &record_ind);
         if (label) _copy_variance_varname(label, i);
@@ -1125,7 +1125,7 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
       i++;
       label = _get_char_post("volume", "mean_raw_coal_mass_fraction",  &record_ind);
       if (label) _copy_mean_varname(label, i);
-      ihslag[i] = list_ind;
+      ihslag[i-1] = list_ind;
 
       label = _get_char_post("volume", "variance_raw_coal_mass_fraction",  &record_ind);
       if (label) _copy_variance_varname(label, i);
@@ -1133,7 +1133,7 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
       i++;
       label = _get_char_post("volume", "mean_char_mass_fraction",  &record_ind);
       if (label) _copy_mean_varname(label, i);
-      ihslag[i] = list_ind;
+      ihslag[i-1] = list_ind;
 
       label = _get_char_post("volume", "variance_char_mass_fraction",  &record_ind);
       if (label) _copy_variance_varname(label, i);
@@ -1142,7 +1142,7 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
     i++;
     _get_char_post("volume", "Part_statis_weight",  &record_ind);
     _copy_mean_varname("Part_statis_weight", i);
-    ihslag[i] = 1;
+    ihslag[i-1] = 1;
   }
 
   _get_status(iensi3, 3, "lagrangian", "statistics", "boundary");
@@ -1263,7 +1263,7 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
     /*
     bft_printf("--i        nomlag             nomlav              ihslag\n");
     for (i=1; i <= 5; i++)
-      bft_printf("  %i %30s %30s %5i\n", i, nomlag[i], nomlav[i], ihslag[i]);
+      bft_printf("  %i %30s %30s %5i\n", i, nomlag[i-1], nomlav[i-1], ihslag[i-1]);
     i = 5;
     if (*iphyla == 1) {
       if (*itpvar == 1) {
