@@ -171,7 +171,7 @@ integer          imucpp, idftnp, iswdyp
 
 double precision epsrgp, blencp, climgp, epsilp, extrap, epsrsp
 double precision sx, sy, sz, domega
-double precision sxt(ndirs8), syt(ndirs8), szt(ndirs8)
+double precision sxt(ndirs8), syt(ndirs8), szt(ndirs8), angsol(ndirs8)
 double precision aa
 double precision relaxp, thetap
 
@@ -237,11 +237,9 @@ ireso1 = 1
 
 ndirs = ndirec/8
 
-domega = pi /(2 *ndirs)
-
 call raydir                                                       &
 !==========
-     (sxt, syt, szt, ndirs)
+     (sxt, syt, szt, angsol, ndirs)
 
 !===============================================================================
 !                                              / -> ->
@@ -261,6 +259,7 @@ do ii = -1,1,2
         sx = ii *sxt (idir)
         sy = jj *syt (idir)
         sz = kk *szt (idir)
+        domega = angsol(idir)
 
         do ifac = 1,nfabor
           aa = sx * surfbo(1,ifac)                                &
@@ -337,6 +336,7 @@ do ii = -1,1,2
         sx = ii * sxt(idir)
         sy = jj * syt(idir)
         sz = kk * szt(idir)
+        domega = angsol(idir)
 
         kdir = kdir + 1
 

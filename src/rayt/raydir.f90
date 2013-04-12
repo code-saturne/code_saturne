@@ -23,7 +23,7 @@
 subroutine raydir &
 !================
 
-  ( sx,sy,sz,ndirs )
+  ( sx,sy,sz,angsol,ndirs )
 
 !===============================================================================
 ! FONCTION :
@@ -42,6 +42,7 @@ subroutine raydir &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 !sx,sy,sz          ! r  ! --> ! cosinus directeurs du rayonnement              !
+!angsol            ! r  ! --> ! angle solide associe a une direction           !
 !  ndirs           ! e  ! ->  ! nombre de directions par 1/8 de                !
 !                  !    !     ! sphere                                         !
 !__________________!____!_____!________________________________________________!
@@ -63,55 +64,128 @@ implicit none
 ! Arguments
 
 integer          ndirs
-double precision sx(ndirs),sy(ndirs),sz(ndirs)
+double precision sx(ndirs),sy(ndirs),sz(ndirs),angsol(ndirs)
 
 ! Local variables
 
-double precision  teta(6,3)
-double precision  phi1,teta1
-integer           ii,kk,nray,jray,iia,iib
+double precision  vec(10), poids(5)
 
 !===============================================================================
 
-data teta                                                                 &
- / .785398d0,  .785398d0,  .785398d0, 1.256637d0,  .300162d0,  .448799d0, &
-   .785398d0, 1.256637d0, 1.427996d0,  .999598d0, 1.374447d0, 1.121997d0, &
-   .785398d0,  .314159d0,  .142800d0,  .205855d0,  .571199d0,  .785398d0 /
+! Quadrature T2 : 32 directions
 
-!===============================================================================
+if (ndirs.eq.4) then
 
-!    0 - INITIALISATION
-!        --------------
-!  FORMULE : NDIRS = 3*NRAY -2
+  vec(1) = 0.2357022604
+  vec(2) = 0.9428090416
+  vec(3) = 0.5773502692
+  poids(1) = 0.5512855984
+  poids(2) = 0.3398369095
 
-if (ndirs.eq.4)  nray = 2
-if (ndirs.eq.16) nray = 6
+  sx(1)   = vec(1)
+  sx(2)   = vec(2)
+  sx(3)   = vec(3)
+  sx(4)   = vec(1)
+  sy(1:2) = vec(1)
+  sy(3)   = vec(3)
+  sy(4)   = vec(2)
+  sz(1)   = vec(2)
+  sz(2)   = vec(1)
+  sz(3)   = vec(3)
+  sz(4)   = vec(1)
+  angsol(1) = poids(2)
+  angsol(2) = poids(2)
+  angsol(3) = poids(1)
+  angsol(4) = poids(2)
 
-!    1 - CALCUL  DES COSINUS DIRECTEURS
-!        ------------------------------
+! Quadrature T4 : 128 directions
 
-sz(1 ) = cos(atan(tan(teta(1,3))/cos(teta(1,1))))
-sy(1 ) = sz(1 )
-sx(1 ) = sz(1 )
+elseif (ndirs.eq.16) then
 
-jray = 1
+  vec(1)  = 0.0990147543
+  vec(2)  = 0.4923659639
+  vec(3)  = 0.2357022604
+  vec(4)  = 0.1230914910
+  vec(5)  = 0.8616404369
+  vec(6)  = 0.6804138174
+  vec(7)  = 0.5773502692
+  vec(8)  = 0.2721655270
+  vec(9)  = 0.9901475430
+  vec(10) = 0.9428090416
 
-do ii = 0,2
+  poids(1) =0.0526559083
+  poids(2) =0.0995720042
+  poids(3) =0.0880369928
+  poids(4) =0.1320249278
+  poids(5) =0.1552108150
 
-  iia = 3 + ii
-  iib = 1 + ii
-  if (iia.gt.3) iia = iia-3
+  sx(1)   = vec(1)
+  sx(2)   = vec(2)
+  sx(3)   = vec(3)
+  sx(4)   = vec(4)
+  sx(5)   = vec(5)
+  sx(6)   = vec(6)
+  sx(7)   = vec(7)
+  sx(8)   = vec(8)
+  sx(9)   = vec(4)
+  sx(10)  = vec(9)
+  sx(11)  = vec(10)
+  sx(12)  = vec(5)
+  sx(13)  = vec(6)
+  sx(14)  = vec(2)
+  sx(15)  = vec(3)
+  sx(16)  = vec(1)
+  sy(1)   = vec(1)
+  sy(2)   = vec(4)
+  sy(3)   = vec(3)
+  sy(4)   = vec(2)
+  sy(5)   = vec(4)
+  sy(6)   = vec(8)
+  sy(7)   = vec(7)
+  sy(8)   = vec(6)
+  sy(9)   = vec(5)
+  sy(10)  = vec(1)
+  sy(11)  = vec(3)
+  sy(12)  = vec(2)
+  sy(13)  = vec(6)
+  sy(14)  = vec(5)
+  sy(15)  = vec(10)
+  sy(16)  = vec(9)
+  sz(1)   = vec(9)
+  sz(2)   = vec(5)
+  sz(3)   = vec(10)
+  sz(4)   = vec(5)
+  sz(5)   = vec(2)
+  sz(6)   = vec(6)
+  sz(7)   = vec(7)
+  sz(8)   = vec(6)
+  sz(9)   = vec(2)
+  sz(10)  = vec(1)
+  sz(11)  = vec(3)
+  sz(12)  = vec(4)
+  sz(13)  = vec(8)
+  sz(14)  = vec(4)
+  sz(15)  = vec(3)
+  sz(16)  = vec(1)
 
-  do kk = 2,nray
-    jray = jray+1
-    teta1 = teta(kk,iib)
-    phi1 = atan(tan(teta(kk,iia))/cos(teta(kk,iib)))
-    sx(jray) = sin(phi1)*cos(teta1)
-    sy(jray) = sin(phi1)*sin(teta1)
-    sz(jray) = cos(phi1)
-  enddo
+  angsol(1) = poids(1)
+  angsol(2) = poids(2)
+  angsol(3) = poids(3)
+  angsol(4) = poids(2)
+  angsol(5) = poids(2)
+  angsol(6) = poids(4)
+  angsol(7) = poids(5)
+  angsol(8) = poids(4)
+  angsol(9) = poids(2)
+  angsol(10) = poids(1)
+  angsol(11) = poids(3)
+  angsol(12) = poids(2)
+  angsol(13) = poids(4)
+  angsol(14) = poids(2)
+  angsol(15) = poids(3)
+  angsol(16) = poids(1)
 
-enddo
+endif
 
 return
 
