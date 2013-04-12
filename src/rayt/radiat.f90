@@ -87,10 +87,18 @@ module radiat
 
   integer, save ::           idiver
 
-  !--> parametre sur le nombre de directions de discretisation angulaire
+  !--> index of the quadrature and number of directions for a single octant
 
-  integer     ndirs8
-  parameter ( ndirs8 = 16 )
+  integer, save ::           i_quadrature, ndirs
+
+  !--> parameter assiociated to the Tn
+
+  integer, save :: ndirec
+
+  !--> directions of angular values of the quadrature sx, sy, sz
+  !    and weight of the solid angle associated
+
+  double precision, dimension(:), allocatable :: sx, sy, sz, angsol
 
   !--> suite de calcul (0 : non, 1 : oui)
 
@@ -99,14 +107,6 @@ module radiat
   !--> frequence de passage dans le module (=1 si tous les pas de temps)
 
   integer, save ::           nfreqr
-
-  !--> nombre de bandes spectrales
-
-  integer, save :: nbande
-
-  !--> nombre de directions de discretisation angulaire
-
-  integer, save :: ndirec
 
   !--> Informations sur les zones frontieres
 
@@ -149,6 +149,73 @@ module radiat
               iepsp    , ifnetp   , ifconp   , ihconp
   parameter ( itparp=1 , iqincp=2 , ixlamp=3 , iepap=4  , &
               iepsp=5  , ifnetp=6 , ifconp=7 , ihconp=8 )
+
+  !=============================================================================
+
+contains
+
+  !=============================================================================
+
+  ! Allocate arrays
+
+  subroutine init_quadrature(ndirs)
+
+    ! Arguments
+
+    integer, intent(in) :: ndirs
+
+    ! Local variables
+
+    integer :: err = 0
+
+    if (.not.allocated(sx)) then
+      allocate(sx(ndirs), stat=err)
+    endif
+
+    if (.not.allocated(sy)) then
+      allocate(sy(ndirs), stat=err)
+    endif
+
+    if (.not.allocated(sz)) then
+      allocate(sz(ndirs), stat=err)
+    endif
+
+    if (.not.allocated(angsol)) then
+      allocate(angsol(ndirs), stat=err)
+    endif
+
+    if (err /= 0) then
+      write (*, *) "Error allocating array."
+      call csexit(err)
+    endif
+
+    return
+
+  end subroutine init_quadrature
+
+  !=============================================================================
+
+  ! Free related arrays
+
+  subroutine finalize_quadrature
+
+    if (allocated(sx)) then
+      deallocate(sx)
+    endif
+
+    if (allocated(sy)) then
+      deallocate(sy)
+    endif
+
+    if (allocated(sz)) then
+      deallocate(sz)
+    endif
+
+    if (allocated(angsol)) then
+      deallocate(angsol)
+    endif
+
+  end subroutine finalize_quadrature
 
   !=============================================================================
 

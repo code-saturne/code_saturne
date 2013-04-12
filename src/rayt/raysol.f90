@@ -135,7 +135,7 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
+integer          nvar, nscal
 
 integer          itypfb(nfabor)
 
@@ -165,13 +165,12 @@ integer          iconv1, idiff1, ndirc1, ireso1
 integer          nitmap, nswrsp, nswrgp, iwarnp
 integer          imgr1 , imligp, ircflp, ischcp, isstpp, iescap
 integer          ncymap, nitmgp
-integer          idir  , ndirs , kdir  , ipp   , inum
+integer          idir  , kdir  , ipp   , inum
 integer          ii, jj, kk, idtva0, ivar0
 integer          imucpp, idftnp, iswdyp
 
 double precision epsrgp, blencp, climgp, epsilp, extrap, epsrsp
-double precision sx, sy, sz, domega
-double precision sxt(ndirs8), syt(ndirs8), szt(ndirs8)
+double precision sxt, syt, szt, domegat
 double precision aa
 double precision relaxp, thetap
 
@@ -231,19 +230,6 @@ iconv1 = 1
 ireso1 = 1
 
 !===============================================================================
-! 2. Choix du nombre de directions et calcul des coordonnees SX,SY,SZ
-!===============================================================================
-
-
-ndirs = ndirec/8
-
-domega = pi /(2 *ndirs)
-
-call raydir                                                       &
-!==========
-     (sxt, syt, szt, ndirs)
-
-!===============================================================================
 !                                              / -> ->
 ! 3. CORRECTION DES C.L. POUR RESPECTER : PI= /  S. N DOMEGA
 !                                            /2PI
@@ -258,16 +244,18 @@ do ii = -1,1,2
     do kk = -1,1,2
       do idir = 1,ndirs
 
-        sx = ii *sxt (idir)
-        sy = jj *syt (idir)
-        sz = kk *szt (idir)
+        sxt = ii *sx (idir)
+        syt = jj *sy (idir)
+        szt = kk *sz (idir)
+
+        domegat = angsol(idir)
 
         do ifac = 1,nfabor
-          aa = sx * surfbo(1,ifac)                                &
-             + sy * surfbo(2,ifac)                                &
-             + sz * surfbo(3,ifac)
+          aa = sxt * surfbo(1,ifac)                                &
+             + syt * surfbo(2,ifac)                                &
+             + szt * surfbo(3,ifac)
           aa = aa / surfbn(ifac)
-          snplus(ifac) =snplus(ifac) +0.5d0 *(-aa+abs(aa)) *domega
+          snplus(ifac) = snplus(ifac) + 0.5d0 * (-aa+abs(aa)) * domegat
         enddo
 
       enddo
@@ -332,11 +320,12 @@ kdir = 0
 do ii = -1,1,2
   do jj = -1,1,2
     do kk = -1,1,2
-      do idir = 1,ndirs
+      do idir = 1, ndirs
 
-        sx = ii * sxt(idir)
-        sy = jj * syt(idir)
-        sz = kk * szt(idir)
+        sxt = ii * sx(idir)
+        syt = jj * sy(idir)
+        szt = kk * sz(idir)
+        domegat = angsol(idir)
 
         kdir = kdir + 1
 
@@ -378,16 +367,16 @@ do ii = -1,1,2
 
         do ifac = 1,nfac
           flurds(ifac) =                                          &
-               + sx*surfac(1,ifac)                                &
-               + sy*surfac(2,ifac)                                &
-               + sz*surfac(3,ifac)
+               + sxt * surfac(1,ifac)                             &
+               + syt * surfac(2,ifac)                             &
+               + szt * surfac(3,ifac)
         enddo
 
         do ifac = 1,nfabor
           flurdb(ifac) =                                          &
-               + sx*surfbo(1,ifac)                                &
-               + sy*surfbo(2,ifac)                                &
-               + sz*surfbo(3,ifac)
+               + sxt * surfbo(1,ifac)                             &
+               + syt * surfbo(2,ifac)                             &
+               + szt * surfbo(3,ifac)
         enddo
 
 !===============================================================================
@@ -397,7 +386,7 @@ do ii = -1,1,2
 ! Dans le cas d'un theta-schema on met theta = 1
 ! Pas de relaxation en stationnaire non plus
 
-        thetap = 1.0d0
+        thetap = 1.d0
         idtva0 = 0
 
         call codits &
@@ -421,11 +410,11 @@ do ii = -1,1,2
 !===============================================================================
 
         do iel = 1,ncel
-          aa = ru(iel) *domega
+          aa = ru(iel) * domegat
           sa(iel) = sa(iel) + aa
-          qx(iel) = qx(iel) + aa * sx
-          qy(iel) = qy(iel) + aa * sy
-          qz(iel) = qz(iel) + aa * sz
+          qx(iel) = qx(iel) + aa * sxt
+          qy(iel) = qy(iel) + aa * syt
+          qz(iel) = qz(iel) + aa * szt
         enddo
 
 !===============================================================================
@@ -434,12 +423,12 @@ do ii = -1,1,2
 
         do ifac = 1,nfabor
 
-          aa = sx * surfbo(1,ifac)                                &
-             + sy * surfbo(2,ifac)                                &
-             + sz * surfbo(3,ifac)
+          aa = sxt * surfbo(1,ifac)                                &
+             + syt * surfbo(2,ifac)                                &
+             + szt * surfbo(3,ifac)
           aa = aa / surfbn(ifac)
 
-          aa = 0.5d0 *(aa+abs(aa)) *domega
+          aa = 0.5d0 *(aa+abs(aa)) *domegat
 
           snplus(ifac) = snplus(ifac) + aa
 

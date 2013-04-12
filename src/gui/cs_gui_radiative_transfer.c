@@ -461,6 +461,7 @@ _cs_gui_copy_varname(const char *varname, int ipp)
 
 void CS_PROCF (uiray1, UIRAY1) (int *const iirayo,
                                 int *const isuird,
+                                int *const i_quad,
                                 int *const ndirec,
                                 int *const nfreqr,
                                 int *const idiver,
@@ -481,6 +482,7 @@ void CS_PROCF (uiray1, UIRAY1) (int *const iirayo,
     if (*iirayo)
     {
         _radiative_transfer_char("restart", isuird);
+        _radiative_transfer_int("quadrature", i_quad);
         _radiative_transfer_int("directions_number", ndirec);
         _radiative_transfer_int("frequency", nfreqr);
         _radiative_transfer_int("thermal_radiative_source_term", idiver);
@@ -493,6 +495,7 @@ void CS_PROCF (uiray1, UIRAY1) (int *const iirayo,
     if (*iirayo)
     {
         bft_printf("--isuird = %d\n", *isuird);
+        bft_printf("--quadra = %d\n", *i_quad);
         bft_printf("--ndirec = %d\n", *ndirec);
         bft_printf("--nfreqr = %d\n", *nfreqr);
         bft_printf("--idiver = %d\n", *idiver);

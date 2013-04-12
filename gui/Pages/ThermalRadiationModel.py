@@ -59,8 +59,7 @@ class ThermalRadiationModel(Variables, Model):
 
         self.node_models = self.case.xmlGetNode('thermophysical_models')
         self.node_ray    = self.node_models.xmlInitNode('radiative_transfer')
-        self.node_Coal   = self.node_models.xmlGetNode('solid_fuels')
-        self.node_gas    = self.node_models.xmlGetNode('gas_combustion')
+        self.node_Coal   = self.node_models.xmlGetNode('pulverized_coal')
 
         self.radiativeModels = ('off', 'dom', 'p-1')
         self.optionsList = [0, 1, 2]
@@ -76,14 +75,14 @@ class ThermalRadiationModel(Variables, Model):
         self.c_prop['emission']                   = self.tr("Emission")
         self.c_prop['absorption_coefficient']     = self.tr("Absorption_coefficient")
 
-        self.b_prop['wall_temp']                  = self.tr("Wall_temperature")
-        self.b_prop['flux_incident']              = self.tr("Flux_incident")
-        self.b_prop['thickness']                  = self.tr("Thickness")
-        self.b_prop['wall_thermal_conductivity']  = self.tr("Thermal_conductivity")
-        self.b_prop['emissivity']                 = self.tr("Emissivity")
-        self.b_prop['flux_net']                   = self.tr("Flux_net")
-        self.b_prop['flux_convectif']             = self.tr("Flux_convectif")
-        self.b_prop['coeff_ech_conv']             = self.tr("Coeff_ech_convectif")
+        self.b_prop['wall_temp']              = self.tr("Wall_temperature")
+        self.b_prop['flux_incident']          = self.tr("Flux_incident")
+        self.b_prop['thickness']              = self.tr("Thickness")
+        self.b_prop['thermal_conductivity']   = self.tr("Thermal_conductivity")
+        self.b_prop['emissivity']             = self.tr("Emissivity")
+        self.b_prop['flux_net']               = self.tr("Flux_net")
+        self.b_prop['flux_convectif']         = self.tr("Flux_convectif")
+        self.b_prop['coeff_ech_conv']         = self.tr("Coeff_ech_convectif")
 
         self.classesNumber = 0
         self.isCoalCombustion()
@@ -93,7 +92,7 @@ class ThermalRadiationModel(Variables, Model):
         """
         Return the name and the defaul label for cells properties.
         """
-        for k, v in list(self.c_prop.items()):
+        for k, v in self.c_prop.items():
             if k in ('absorption', 'emission', 'radiative_source_term', 'absorption_coefficient'):
                 for classe in range(1, self.classesNumber+1):
                     k = '%s_%2.2i' % (k, classe)
@@ -115,7 +114,8 @@ class ThermalRadiationModel(Variables, Model):
         """
         default = {}
         default['radiative_model']   = "off"
-        default['directions_number'] = 32
+        default['quadrature']        = 1
+        default['directions_number'] = 3
         default['restart_status']    = 'off'
         default['type_coef']         = 'constant'
         default['value_coef']        = 0.0
@@ -131,7 +131,7 @@ class ThermalRadiationModel(Variables, Model):
         """
         dico = {}
         rayName = ['srad',     'qrad',     'absorp',  'emiss',    'coefAb',
-                    'wall_temp', 'flux_incident', 'wall_thermal_conductivity', 'thickness',
+                    'wall_temp', 'flux_incident', 'thermal_conductivity', 'thickness',
                     'emissivity', 'flux_net',      'flux_convectif',  'coeff_ech_conv']
 
         raylabF = ['Srad',       'Qrad',          'Absorp',     'Emiss',    'CoefAb',
@@ -188,39 +188,27 @@ class ThermalRadiationModel(Variables, Model):
 
     def isCoalCombustion(self):
         """
-        Return 0 if solid_fuels's attribute model is 'off',
+        Return 0 if pulverized_coal's attribute model is 'off',
         return 1 if it's different
         """
         value = 0
         if self.node_Coal and self.node_Coal.xmlGetAttribute('model') != 'off':
             value = 1
-            import Pages.CoalCombustionModel as CoalCombustionModel
-            model = CoalCombustionModel.CoalCombustionModel(self.case)
-            coalsNumber = model.getCoalNumber()
-            self.classesNumber = model.getClassesNumber()
-
-        return value
-
-
-    def isGasCombustion(self):
-        """
-        Return 0 if gas combustion attribute model is 'off',
-        return 1 if it's different
-        """
-        value = 0
-        if self.node_gas and self.node_gas.xmlGetAttribute('model') != 'off':
-            value = 1
+            import Pages.CoalThermoChemistry as CoalThermoChemistry
+            model = CoalThermoChemistry.CoalThermoChemistryModel("dp_FCP", self.case)
+            coalsNumber = model.getCoals().getCoalNumber()
+            self.classesNumber = sum(model.getCoals().getClassesNumberList())
 
         return value
 
 
     def _setVariable_ray(self):
         if self.getRadiativeModel() != "off":
-            for k, v in list(self.__volumeProperties().items()):
+            for k, v in self.__volumeProperties().items():
                 if not self.node_ray.xmlGetNode('property', name=k):
                     self.node_ray.xmlInitNode('property', label=v, name=k)
 
-            for k, v in list(self.__boundaryProperties().items()):
+            for k, v in self.__boundaryProperties().items():
                 if not self.node_ray.xmlGetNode('property', name=k):
                     self.node_ray.xmlInitNode('property', label=v, name=k, support='boundary')
 
@@ -248,15 +236,24 @@ class ThermalRadiationModel(Variables, Model):
             self._setVariable_ray()
             self._setBoundCond()
             self._updateModelParameters(model)
-            if self.isGasCombustion():
-                self.setNewProperty(self.node_gas, "KABS")
-                self.setNewProperty(self.node_gas, "TEMP4")
-                self.setNewProperty(self.node_gas, "TEMP3")
-        else:
-            if self.isGasCombustion():
-                self.node_gas.xmlRemoveChild('property',  name = "KABS")
-                self.node_gas.xmlRemoveChild('property',  name = "TEMP4")
-                self.node_gas.xmlRemoveChild('property',  name = "TEMP3")
+
+
+    @Variables.noUndo
+    def getQuadrature(self):
+        """ Return value of the quadrature """
+        nb = self.node_ray.xmlGetInt('quadrature')
+        if nb == None:
+            nb = self._defaultValues()['quadrature']
+            self.setQuadrature(nb)
+        return nb
+
+
+    @Variables.undoLocal
+    def setQuadrature(self, val):
+        """ Put value of the selected quadrature """
+        self.isIntInList(val, [1, 2, 3, 4, 5, 6])
+        self.isInList(self.getRadiativeModel(), ('off', 'dom'))
+        self.node_ray.xmlSetData('quadrature', val)
 
 
     @Variables.noUndo
@@ -272,7 +269,7 @@ class ThermalRadiationModel(Variables, Model):
     @Variables.undoLocal
     def setNbDir(self, val):
         """ Put value of number of directions """
-        self.isIntInList(val, [32, 128])
+        self.isInt(val)
         self.isInList(self.getRadiativeModel(), ('off', 'dom'))
         self.node_ray.xmlSetData('directions_number', val)
 
@@ -329,9 +326,10 @@ class ThermalRadiationModel(Variables, Model):
         Return value of absorption coefficient
         """
         if self.isCoalCombustion():
-            import Pages.CoalCombustionModel as CoalCombustionModel
-            model = CoalCombustionModel.CoalCombustionModel(self.case)
-            val = model.getAbsorptionCoeff()
+            import Pages.CoalThermoChemistry as CoalThermoChemistry
+            model = CoalThermoChemistry.CoalThermoChemistryModel("dp_FCP", self.case)
+            model.load()
+            val = model.radiativTransfer.getAbsorptionCoeff()
         else :
             self.getTypeCoeff()
             node = self.node_ray.xmlGetNode('absorption_coefficient', 'type')
@@ -349,9 +347,11 @@ class ThermalRadiationModel(Variables, Model):
         """
         self.isPositiveFloat(val)
         if self.isCoalCombustion():
-            import Pages.CoalCombustionModel as CoalCombustionModel
-            model = CoalCombustionModel.CoalCombustionModel(self.case)
-            model.setAbsorptionCoeff(val)
+            import Pages.CoalThermoChemistry as CoalThermoChemistry
+            model = CoalThermoChemistry.CoalThermoChemistryModel("dp_FCP", self.case)
+            model.load()
+            model.radiativTransfer.setAbsorptionCoeff(val)
+            model.save()
 
         t = self.getTypeCoeff()
         self.node_ray.xmlSetData('absorption_coefficient', val, type=t)
@@ -465,7 +465,8 @@ class ThermalRadiationTestCase(ModelTest):
         """
         mdl = ThermalRadiationModel(self.case)
         mdl.node_Coal['model'] = 'off'
-        assert mdl.isCoalCombustion() != 1, 'Could not verify solid_fuels is "on"'
+        assert mdl.isCoalCombustion() != 1, 'Could not verify pulverized_coal is "on"'
+
 
     def checkSetandGetRadiativeModel(self):
         """
@@ -481,7 +482,7 @@ class ThermalRadiationTestCase(ModelTest):
                     <property label="CoefAb" name="coefAb"/>
                     <property label="Wall_temp" name="wall_temp" support="boundary"/>
                     <property label="Flux_incident" name="flux_incident" support="boundary"/>
-                    <property label="Th_conductivity" name="wall_thermal_conductivity" support="boundary"/>
+                    <property label="Th_conductivity" name="thermal_conductivity" support="boundary"/>
                     <property label="Thickness" name="thickness" support="boundary"/>
                     <property label="Emissivity" name="emissivity" support="boundary"/>
                     <property label="Flux_net" name="flux_net" support="boundary"/>
@@ -489,43 +490,14 @@ class ThermalRadiationTestCase(ModelTest):
                     <property label="Coeff_ech_conv" name="coeff_ech_conv" support="boundary"/>
                     <restart status="off"/>
                     <absorption_coefficient type="constant">0</absorption_coefficient>
-                    <directions_number>32</directions_number>
+                    <quadrature>1</quadrature>
+                    <directions_number>3</directions_number>
                  </radiative_transfer>'''
         assert mdl.node_ray == self.xmlNodeFromString(doc), \
             'Could not set model in ThermalRadiationModel'
         assert mdl.getRadiativeModel() == 'dom', \
             'Could not get model in ThermalRadiationModel'
 
-    def checkSetandgetNbDir(self):
-        """
-        Check whether the ThermalRadiationModel class could be set and get
-        number of directions
-        """
-        mdl = ThermalRadiationModel(self.case)
-        mdl.setRadiativeModel('dom')
-        mdl.setNbDir(128)
-        doc = '''<radiative_transfer model="dom">
-                    <property label="Srad" name="srad"/>
-                    <property label="Qrad" name="qrad"/>
-                    <property label="Absorp" name="absorp"/>
-                    <property label="Emiss" name="emiss"/>
-                    <property label="CoefAb" name="coefAb"/>
-                    <property label="Wall_temp" name="wall_temp" support="boundary"/>
-                    <property label="Flux_incident" name="flux_incident" support="boundary"/>
-                    <property label="Th_conductivity" name="wall_thermal_conductivity" support="boundary"/>
-                    <property label="Thickness" name="thickness" support="boundary"/>
-                    <property label="Emissivity" name="emissivity" support="boundary"/>
-                    <property label="Flux_net" name="flux_net" support="boundary"/>
-                    <property label="Flux_convectif" name="flux_convectif" support="boundary"/>
-                    <property label="Coeff_ech_conv" name="coeff_ech_conv" support="boundary"/>
-                    <restart status="off"/>
-                    <absorption_coefficient type="constant">0</absorption_coefficient>
-                    <directions_number>128</directions_number>
-                 </radiative_transfer>'''
-        assert mdl.node_ray == self.xmlNodeFromString(doc), \
-            'Could not set number of directions in ThermalRadiationModel'
-        assert mdl.getNbDir() == 128, \
-            'Could not get number of directions in ThermalRadiationModel'
 
     def checkSetandGetRestart(self):
         """
@@ -542,7 +514,7 @@ class ThermalRadiationTestCase(ModelTest):
                     <property label="CoefAb" name="coefAb"/>
                     <property label="Wall_temp" name="wall_temp" support="boundary"/>
                     <property label="Flux_incident" name="flux_incident" support="boundary"/>
-                    <property label="Th_conductivity" name="wall_thermal_conductivity" support="boundary"/>
+                    <property label="Th_conductivity" name="thermal_conductivity" support="boundary"/>
                     <property label="Thickness" name="thickness" support="boundary"/>
                     <property label="Emissivity" name="emissivity" support="boundary"/>
                     <property label="Flux_net" name="flux_net" support="boundary"/>
@@ -550,7 +522,8 @@ class ThermalRadiationTestCase(ModelTest):
                     <property label="Coeff_ech_conv" name="coeff_ech_conv" support="boundary"/>
                     <restart status="on"/>
                     <absorption_coefficient type="constant">0</absorption_coefficient>
-                    <directions_number>32</directions_number>
+                    <quadrature>1</quadrature>
+                    <directions_number>3</directions_number>
                  </radiative_transfer>'''
         assert mdl.node_ray == self.xmlNodeFromString(doc), \
             'Could not set restart in ThermalRadiationModel'
@@ -573,7 +546,7 @@ class ThermalRadiationTestCase(ModelTest):
                     <property label="CoefAb" name="coefAb"/>
                     <property label="Wall_temp" name="wall_temp" support="boundary"/>
                     <property label="Flux_incident" name="flux_incident" support="boundary"/>
-                    <property label="Th_conductivity" name="wall_thermal_conductivity" support="boundary"/>
+                    <property label="Th_conductivity" name="thermal_conductivity" support="boundary"/>
                     <property label="Thickness" name="thickness" support="boundary"/>
                     <property label="Emissivity" name="emissivity" support="boundary"/>
                     <property label="Flux_net" name="flux_net" support="boundary"/>
@@ -581,7 +554,8 @@ class ThermalRadiationTestCase(ModelTest):
                     <property label="Coeff_ech_conv" name="coeff_ech_conv" support="boundary"/>
                     <restart status="off"/>
                     <absorption_coefficient type="variable">0</absorption_coefficient>
-                    <directions_number>32</directions_number>
+                    <quadrature>1</quadrature>
+                    <directions_number>3</directions_number>
                  </radiative_transfer>'''
         assert mdl.node_ray == self.xmlNodeFromString(doc), \
             'Could not set type of absorption coefficient in ThermalRadiationModel'
@@ -604,7 +578,7 @@ class ThermalRadiationTestCase(ModelTest):
                     <property label="CoefAb" name="coefAb"/>
                     <property label="Wall_temp" name="wall_temp" support="boundary"/>
                     <property label="Flux_incident" name="flux_incident" support="boundary"/>
-                    <property label="Th_conductivity" name="wall_thermal_conductivity" support="boundary"/>
+                    <property label="Th_conductivity" name="thermal_conductivity" support="boundary"/>
                     <property label="Thickness" name="thickness" support="boundary"/>
                     <property label="Emissivity" name="emissivity" support="boundary"/>
                     <property label="Flux_net" name="flux_net" support="boundary"/>
@@ -612,7 +586,8 @@ class ThermalRadiationTestCase(ModelTest):
                     <property label="Coeff_ech_conv" name="coeff_ech_conv" support="boundary"/>
                     <restart status="off"/>
                     <absorption_coefficient type="constant">0.77</absorption_coefficient>
-                    <directions_number>32</directions_number>
+                    <quadrature>1</quadrature>
+                    <directions_number>3</directions_number>
                  </radiative_transfer>'''
         assert mdl.node_ray == self.xmlNodeFromString(doc),\
             'Could not set value of absorption coefficient in ThermalRadiationModel'
@@ -635,7 +610,7 @@ class ThermalRadiationTestCase(ModelTest):
                     <property label="CoefAb" name="coefAb"/>
                     <property label="Wall_temp" name="wall_temp" support="boundary"/>
                     <property label="Flux_incident" name="flux_incident" support="boundary"/>
-                    <property label="Th_conductivity" name="wall_thermal_conductivity" support="boundary"/>
+                    <property label="Th_conductivity" name="thermal_conductivity" support="boundary"/>
                     <property label="Thickness" name="thickness" support="boundary"/>
                     <property label="Emissivity" name="emissivity" support="boundary"/>
                     <property label="Flux_net" name="flux_net" support="boundary"/>
@@ -643,7 +618,8 @@ class ThermalRadiationTestCase(ModelTest):
                     <property label="Coeff_ech_conv" name="coeff_ech_conv" support="boundary"/>
                     <restart status="off"/>
                     <absorption_coefficient type="constant">0.0</absorption_coefficient>
-                    <directions_number>32</directions_number>
+                    <quadrature>1</quadrature>
+                    <directions_number>3</directions_number>
                     <frequency>12</frequency>
                  </radiative_transfer>'''
         assert mdl.node_ray == self.xmlNodeFromString(doc),\
@@ -667,7 +643,7 @@ class ThermalRadiationTestCase(ModelTest):
                     <property label="CoefAb" name="coefAb"/>
                     <property label="Wall_temp" name="wall_temp" support="boundary"/>
                     <property label="Flux_incident" name="flux_incident" support="boundary"/>
-                    <property label="Th_conductivity" name="wall_thermal_conductivity" support="boundary"/>
+                    <property label="Th_conductivity" name="thermal_conductivity" support="boundary"/>
                     <property label="Thickness" name="thickness" support="boundary"/>
                     <property label="Emissivity" name="emissivity" support="boundary"/>
                     <property label="Flux_net" name="flux_net" support="boundary"/>
@@ -675,7 +651,8 @@ class ThermalRadiationTestCase(ModelTest):
                     <property label="Coeff_ech_conv" name="coeff_ech_conv" support="boundary"/>
                     <restart status="off"/>
                     <absorption_coefficient type="constant">0.0</absorption_coefficient>
-                    <directions_number>32</directions_number>
+                    <quadrature>1</quadrature>
+                    <directions_number>3</directions_number>
                     <intensity_resolution_listing_printing>1</intensity_resolution_listing_printing>
                  </radiative_transfer>'''
         assert mdl.node_ray == self.xmlNodeFromString(doc),\
@@ -699,7 +676,7 @@ class ThermalRadiationTestCase(ModelTest):
                     <property label="CoefAb" name="coefAb"/>
                     <property label="Wall_temp" name="wall_temp" support="boundary"/>
                     <property label="Flux_incident" name="flux_incident" support="boundary"/>
-                    <property label="Th_conductivity" name="wall_thermal_conductivity" support="boundary"/>
+                    <property label="Th_conductivity" name="thermal_conductivity" support="boundary"/>
                     <property label="Thickness" name="thickness" support="boundary"/>
                     <property label="Emissivity" name="emissivity" support="boundary"/>
                     <property label="Flux_net" name="flux_net" support="boundary"/>
@@ -707,7 +684,8 @@ class ThermalRadiationTestCase(ModelTest):
                     <property label="Coeff_ech_conv" name="coeff_ech_conv" support="boundary"/>
                     <restart status="off"/>
                     <absorption_coefficient type="constant">0.0</absorption_coefficient>
-                    <directions_number>32</directions_number>
+                    <quadrature>1</quadrature>
+                    <directions_number>3</directions_number>
                     <temperature_listing_printing>2</temperature_listing_printing>
                  </radiative_transfer>'''
         assert mdl.node_ray == self.xmlNodeFromString(doc),\
@@ -731,7 +709,7 @@ class ThermalRadiationTestCase(ModelTest):
                     <property label="CoefAb" name="coefAb"/>
                     <property label="Wall_temp" name="wall_temp" support="boundary"/>
                     <property label="Flux_incident" name="flux_incident" support="boundary"/>
-                    <property label="Th_conductivity" name="wall_thermal_conductivity" support="boundary"/>
+                    <property label="Th_conductivity" name="thermal_conductivity" support="boundary"/>
                     <property label="Thickness" name="thickness" support="boundary"/>
                     <property label="Emissivity" name="emissivity" support="boundary"/>
                     <property label="Flux_net" name="flux_net" support="boundary"/>
@@ -739,7 +717,8 @@ class ThermalRadiationTestCase(ModelTest):
                     <property label="Coeff_ech_conv" name="coeff_ech_conv" support="boundary"/>
                     <restart status="off"/>
                     <absorption_coefficient type="constant">0.0</absorption_coefficient>
-                    <directions_number>32</directions_number>
+                    <quadrature>1</quadrature>
+                    <directions_number>3</directions_number>
                     <thermal_radiative_source_term>2</thermal_radiative_source_term>
                  </radiative_transfer>'''
         assert mdl.node_ray == self.xmlNodeFromString(doc),\

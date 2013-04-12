@@ -1037,7 +1037,7 @@ if (iirayo.gt.0) then
 
   write(nfecra,2640) iirayo, iscalt, iscsth(iscalt)
 
-  write(nfecra,2650) isuird, nfreqr, ndirec,                      &
+  write(nfecra,2650) isuird, nfreqr, i_quadrature,                &
                      idiver, imodak, iimpar, iimlum
   write(nfecra,2660)
 
@@ -1064,7 +1064,7 @@ endif
 ' --- Options :',                                               /,&
 '       ISUIRD = ',4x,i10,    ' (0 : pas de suite ; 1 : suite)',/,&
 '       NFREQR = ',4x,i10,    ' (Frequence pass. rayonnement )',/,&
-'       NDIREC = ',4x,i10,    ' (32 ou 128 directions(si DOM))',/,&
+'       i_quadrature = ',4x,i4,' (nbr de quadrature (si DOM) )',/,&
 '       IDIVER = ',4x,i10,    ' (0 1 ou 2: calcul TS radiatif)',/,&
 '       IMODAK = ',4x,i10,    ' (1: modak coef absor; 0 sinon)',/,&
 '       IIMPAR = ',4x,i10,    ' (0 1 ou 2: impr Tempera paroi)',/,&
@@ -1089,7 +1089,7 @@ endif
 ' --- Options:',                                                /,&
 '       ISUIRD = ',4x,i10,    ' (0: no restart; 1: restart   )',/,&
 '       NFREQR = ',4x,i10,    ' (Radiation pass frequency    )',/,&
-'       NDIREC = ',4x,i10,    ' (32 or 128 directions(if DOM))',/,&
+'       i_quadrature = ',4x,i4,' (quadrature number (if DOM) )',/,&
 '       IDIVER = ',4x,i10,    ' (0 1 or 2: compute radiat. ST)',/,&
 '       IMODAK = ',4x,i10,    ' (1: modak absor coef; 0 else )',/,&
 '       IIMPAR = ',4x,i10,    ' (0 1 or 2: print wall temp.  )',/,&

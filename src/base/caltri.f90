@@ -1230,6 +1230,8 @@ if (iilagr.gt.0) then
 
 endif
 
+call finalize_quadrature
+
 call finalize_aux_arrays
 
 if (ippmod(iatmos).ge.0) then

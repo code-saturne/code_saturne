@@ -161,9 +161,21 @@ if (ipass.eq.2) then
 
   nfreqr = 1
 
-  !-->  NOMBRE DE DIRECTIONS : 32 OU 128 (UTILE UNIQUEMENT SI IIRAYO=1)
+  !-->  Quadrature Sn (n(n+2) directions)
+  !
+  ! 1 : S4 (24 directions)
+  ! 2 : S6 (48 directions)
+  ! 3 : S8 (80 directions)
+  !
+  !-->  Quadrature Tn (8n^2 directions)
+  !
+  ! 4 : T2 (32 directions)
+  ! 5 : T2 (128 directions)
+  ! 6 : Tn (8*ndirec^2 directions)
 
-  ndirec = 32
+  i_quadrature = 4
+
+  ndirec =  3
 
   !-->  INITIALISATION DU MODE DE CALCUL DU TERME SOURCE RADIATIF EXPLICITE
   !     IDIVER = 0 => CALCUL SEMI-ANALYTIQUE
@@ -188,6 +200,10 @@ if (ipass.eq.2) then
   !           = 1 : CALCUL AUTOMATIQUE (MODELE DE MODAK)
 
   imodak = 0
+
+  !nband = 1
+
+  !ngauss = 1
 
 endif
 

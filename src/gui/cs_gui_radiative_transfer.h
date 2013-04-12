@@ -47,6 +47,7 @@ BEGIN_C_DECLS
 
 void CS_PROCF (uiray1, UIRAY1) (int *const iirayo,
                                 int *const isuird,
+                                int *const i_quad,
                                 int *const ndirec,
                                 int *const nfreqr,
                                 int *const idiver,

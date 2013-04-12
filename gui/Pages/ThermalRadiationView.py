@@ -190,15 +190,19 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
         # Combo models
 
         self.modelRadModel   = QtPage.ComboModel(self.comboBoxRadModel, 3, 1)
-        self.modelDirection  = QtPage.ComboModel(self.comboBoxDirection, 2, 1)
+        self.modelDirection  = QtPage.ComboModel(self.comboBoxQuadrature, 6, 1)
         self.modelAbsorption = QtPage.ComboModel(self.comboBoxAbsorption, 3, 1)
 
         self.modelRadModel.addItem("No radiative transfers", 'off')
         self.modelRadModel.addItem("Discrete ordinates method", 'dom')
         self.modelRadModel.addItem("P-1 Model", 'p-1')
 
-        self.modelDirection.addItem("32")
-        self.modelDirection.addItem("128")
+        self.modelDirection.addItem("24 directions (S4)",   "1")
+        self.modelDirection.addItem("48 directions (S6)",   "2")
+        self.modelDirection.addItem("80 directions (S8)",   "3")
+        self.modelDirection.addItem("32 directions (T2)",   "4")
+        self.modelDirection.addItem("128 directions (T4)",  "5")
+        self.modelDirection.addItem("8n^2 directions (Tn)", "6")
 
         # Connections
 
@@ -211,9 +215,12 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
         self.connect(self.radioButtonOff,
                      SIGNAL("clicked()"),
                      self.slotStartRestart)
-        self.connect(self.comboBoxDirection,
+        self.connect(self.comboBoxQuadrature,
                      SIGNAL("activated(const QString&)"),
                      self.slotDirection)
+        self.connect(self.lineEditNdirec,
+                     SIGNAL("textChanged(const QString &)"),
+                     self.slotNdirec)
         self.connect(self.comboBoxAbsorption,
                      SIGNAL("activated(const QString&)"),
                      self.slotTypeCoefficient)
@@ -228,6 +235,9 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
 
         validatorCoeff = QtPage.DoubleValidator(self.lineEditCoeff, min=0.0)
         self.lineEditCoeff.setValidator(validatorCoeff)
+
+        validatorNdir = QtPage.IntValidator(self.lineEditNdirec, min=3)
+        self.lineEditNdirec.setValidator(validatorNdir)
 
         self.modelAbsorption.addItem('constant',                   'constant')
         self.modelAbsorption.addItem('user subroutine (usray3)',   'variable')
@@ -283,7 +293,14 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
                 self.frameDirection.hide()
             elif model == 'dom':
                 self.frameDirection.show()
-                self.modelDirection.setItem(str_model=str(self.mdl.getNbDir()))
+                n = self.mdl.getQuadrature()
+                self.modelDirection.setItem(str_model=str(n))
+
+                if str(n) == "6":
+                    self.lineEditNdirec.setEnabled(True)
+                    self.lineEditNdirec.setText(QString(str(self.mdl.getNbDir())))
+                else:
+                    self.lineEditNdirec.setEnabled(False)
 
         self.browser.configureTree(self.case)
 
@@ -302,8 +319,23 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
     def slotDirection(self, text):
         """
         """
+        n = int(self.modelDirection.dicoV2M[str(text)])
+        self.mdl.setQuadrature(n)
+
+        if n == 6:
+            self.lineEditNdirec.setEnabled(True)
+            self.lineEditNdirec.setText(QString(str(self.mdl.getNbDir())))
+        else:
+            self.lineEditNdirec.setEnabled(False)
+
+
+    @pyqtSignature("const QString &")
+    def slotNdirec(self, text):
+        """
+        """
         n, ok = text.toInt()
-        self.mdl.setNbDir(n)
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.mdl.setNbDir(n)
 
 
     @pyqtSignature("const QString &")

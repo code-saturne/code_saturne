@@ -2065,7 +2065,7 @@ if (ipass.eq.4) then
       ipppro(iprop)        = ipppst
 
       iprop                = iprop + 1
-      ipproc(icak(irphas))  = iprop
+      ipproc(icak(irphas)) = iprop
       ipppst               = ipppst + 1
       ipppro(iprop)        = ipppst
 

@@ -128,13 +128,10 @@ isuird = -1
 
 nfreqr = -1
 
-!-->  NOMBRE DE DIRECTIONS : 32 OU 128
+!-->  NUMERO DE LA QUADRATURE ET PARAMETRE DE LA Tn
 
+i_quadrature = 1
 ndirec = -1
-
-!-->  NOMBRE DE BANDES SPECTRALES (PAS UTILISE)
-
-nbande = 1
 
 !-->  POURCENTAGE DE CELLULES OU L'ON ADMET QUE LA LONGUEUR OPTIQUE DEPASSE
 !       L'UNITE POUR LE MODELE P-1
@@ -162,8 +159,8 @@ iimlum = -1
 
 if (iihmpr.eq.1) then
 
-  call uiray1(iirayo, isuird, ndirec, nfreqr, idiver, iimpar, iimlum)
-  !==========
+  call uiray1(iirayo, isuird, i_quadrature, ndirec, nfreqr, idiver, iimpar, iimlum)
+!  ==========
 
 endif
 
@@ -406,11 +403,20 @@ if (iirayo.gt.0) then
     iok = iok + 1
   endif
 
-! --> NDIREC
-!     Choix entre 32 et 128 directions (cf raysol)
+! --> i_quadrature
+!     Selection de la quadrature
   if (iirayo.eq.1) then
-    if (ndirec.ne.32 .and. ndirec.ne.128 ) then
-      write(nfecra,4020) ndirec
+    if (i_quadrature.lt.1 .or. i_quadrature.gt.6) then
+      write(nfecra, 4015) i_quadrature
+      iok = iok + 1
+    endif
+  endif
+
+! --> NDIREC
+!     Parametre Quadrature Tn
+  if (iirayo.eq.1 .and. i_quadrature.eq.6) then
+    if (ndirec.lt.3) then
+      write(nfecra, 4020) ndirec
       iok = iok + 1
     endif
   endif
@@ -446,6 +452,13 @@ if(iok.ne.0) then
   call csexit (1)
   !==========
 endif
+
+!===============================================================================
+! 4. Quadrature initialization
+!===============================================================================
+
+call raydir
+!==========
 
 !===============================================================================
 ! 5. POST-PROCESSING
@@ -684,16 +697,37 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
+ 4015 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : RAYONNEMENT : ARRET A L''ENTREE DES DONNEES ',/,&
+'@    =========                                               ',/,&
+'@    LE NUMERO DE LA QUADRATURE DOIT ETRE ENTRE 1 ET 6 :     ',/,&
+'@        S4 = 1                                              ',/,&
+'@        S6 = 2                                              ',/,&
+'@        S8 = 3                                              ',/,&
+'@        T2 = 4                                              ',/,&
+'@        T4 = 5                                              ',/,&
+'@        Tn = 6                                              ',/,&
+'@                                                            ',/,&
+'@    Il vaut ici i_quadrature = ',I10                         ,/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@  Verifier usray1.                                          ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
  4020 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
 '@ @@ ATTENTION : RAYONNEMENT : ARRET A L''ENTREE DES DONNEES ',/,&
 '@    =========                                               ',/,&
-'@    NOMBRE DE DIRECTIONS NON ADMISSIBLE                     ',/,&
+'@    LE PARAMETRE n DE LA QUADRATURE Tn DOIT ETRE >= 3       ',/,&
 '@                                                            ',/,&
-'@  Le nombre de directions doit etre 32 ou 128 (NDIREC)      ',/,&
-'@    Il vaut ici NDIREC = ',I10                               ,/,&
+'@    Il vaut ici ndirec = ',I10                               ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
