@@ -851,6 +851,40 @@ export SALOME_INSTANCE=$3
 
     #---------------------------------------------------------------------------
 
+    def generate_solver_mpmd_configfile_bgq(self, n_procs, mpi_env):
+        """
+        Generate MPMD mpiexec config file fo BG/Q.
+        """
+
+        e_path = os.path.join(self.exec_dir, 'mpmd_configfile')
+        e = open(e_path, 'w')
+
+        rank_id = 0
+
+        for d in self.syr_domains:
+            cmd = '#mpmdbegin %d-%d\n' % (rank_id, rank_id + d.n_procs)
+            e.write(cmd)
+            s_args = d.solver_command()
+            cmd = '#mpmdcmd' + s_args[1] + s_args[2] + ' -wdir ' + s_args[0] + '\n'
+            e.write(cmd)
+            e.write('#mpmdend\n')
+            rank_id += d.n_procs
+
+        for d in self.domains:
+            cmd = '#mpmdbegin %d-%d\n' % (rank_id, rank_id + d.n_procs)
+            e.write(cmd)
+            s_args = d.solver_command()
+            cmd = '#mpmdcmd' + s_args[1] + s_args[2] + ' -wdir ' + s_args[0] + '\n'
+            e.write(cmd)
+            e.write('#mpmdend\n')
+            rank_id += d.n_procs
+
+        e.close()
+
+        return e_path
+
+    #---------------------------------------------------------------------------
+
     def generate_solver_mpmd_script(self, n_procs, mpi_env):
         """
         Generate MPMD dispatch file.
@@ -972,9 +1006,14 @@ export SALOME_INSTANCE=$3
 
             elif mpi_env.mpmd & cs_exec_environment.MPI_MPMD_configfile:
 
-                e_path = self.generate_solver_mpmd_configfile(n_procs,
-                                                              mpi_env)
-                e_path = '-configfile ' + e_path
+                if mpi_env.type == 'BGQ_MPI':
+                    e_path = self.generate_solver_mpmd_configfile_bgq(n_procs,
+                                                                      mpi_env)
+                    e_path = '--mapping ' + e_path
+                else:
+                    e_path = self.generate_solver_mpmd_configfile(n_procs,
+                                                                  mpi_env)
+                    e_path = '-configfile ' + e_path
 
             elif mpi_env.mpmd & cs_exec_environment.MPI_MPMD_script:
                 e_path = self.generate_solver_mpmd_script(n_procs, mpi_env)

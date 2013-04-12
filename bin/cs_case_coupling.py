@@ -95,7 +95,7 @@ def coupling(package,
     if config.has_option('install', 'compute_versions'):
         compute_versions = config.get('install', 'compute_versions').split(':')
         if compute_versions[0]:
-            package_compute = pkg.get_alternate_version(compute_versions[0])
+            package_compute = package.get_alternate_version(compute_versions[0])
 
     # Initialize code domains
     sat_domains = []

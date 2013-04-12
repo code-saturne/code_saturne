@@ -36,6 +36,10 @@
 #include <string.h>
 #include <time.h>
 
+#if defined(__bgq__)
+#include <unistd.h>
+#endif
+
 #if defined(HAVE_MPI)
 #include <mpi.h>
 #endif
@@ -220,6 +224,7 @@ cs_opts_define(int         argc,
   /* Local variables */
 
   const char *s;
+  const char *s_param = NULL;
   int arg_id = 0, argerr = 0;
 
   const char moduleoptbase[] = "--yacs-module=";
@@ -260,6 +265,24 @@ cs_opts_define(int         argc,
         }
       }
     }
+
+#if defined(__bgq__)
+
+    else if (strcmp(s, "--wdir") == 0) {
+      if (arg_id + 1 < argc) {
+        s = argv[++arg_id];
+        if (chdir(s) != 0) {
+          fprintf(stderr, _("Error switching to directory \"%s\":\n\n"
+                            "%s\n"),
+                  s, strerror(errno));
+          cs_exit(EXIT_FAILURE);
+        }
+      }
+      else
+        argerr = 1;
+    }
+
+#endif
 
     else if (strcmp(s, "--log") == 0) {
       int n1 = 0;
@@ -304,15 +327,13 @@ cs_opts_define(int         argc,
 
     else if (strcmp(s, "-p") == 0 || strcmp(s, "--param") == 0) {
       if (arg_id + 1 < argc) {
-        s = argv[++arg_id];
-#if defined(HAVE_LIBXML2)
-        argerr = cs_gui_load_file(s);
-#else
+        s_param = argv[++arg_id];
+#if !defined(HAVE_LIBXML2)
         fprintf(stderr, _("%s was built without XML support,\n"
                           "so parameter file \"%s\" may not be loaded.\n"),
-                argv[0], s);
+                argv[0], s_param);
         cs_exit(EXIT_FAILURE);
-#endif /* defined(HAVE_LIBXML2) */
+#endif /* !defined(HAVE_LIBXML2) */
       }
       else
         argerr = 1;
@@ -375,6 +396,14 @@ cs_opts_define(int         argc,
     else
       cs_exit(EXIT_SUCCESS);
   }
+
+#if defined(HAVE_LIBXML2)
+  if (cs_gui_load_file(s_param) != 0) {
+    fprintf(stderr, _("Error loading parameter file \"%s\".\n"),
+            s_param);
+    cs_exit(EXIT_FAILURE);
+  }
+#endif
 
   /* If application name has not been defined, use working directory
      base name as default. */

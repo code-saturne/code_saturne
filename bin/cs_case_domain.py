@@ -1031,8 +1031,8 @@ class syrthes_domain(base_domain):
         executable path, and associated command-line arguments.
         """
 
-        wd = self.exec_dir              # Working directory
-        exec_path = self.solver_path    # Executable
+        wd = enquote_arg(self.exec_dir)              # Working directory
+        exec_path = enquote_arg(self.solver_path)    # Executable
 
         # Build kernel command-line arguments
 

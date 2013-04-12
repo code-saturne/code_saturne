@@ -1320,6 +1320,8 @@ class mpi_environment:
         # Determine processor count and MPMD handling
 
         self.mpiexec_n = ' --np '
+        self.mpmd = MPI_MPMD_configfile
+
         rm = None
         ppn = 1
         if resource_info != None:
@@ -1334,7 +1336,6 @@ class mpi_environment:
             if ppn != 1:
                 self.mpiexec_n_per_node = ' --ranks-per-node ' + str(ppn)
             self.mpiexec_separator = ':'
-        self.mpmd = None
 
         # Other options to add
 
