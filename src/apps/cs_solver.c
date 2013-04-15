@@ -33,8 +33,9 @@
    _GNU_SOURCE must be defined before including any headers, to ensure
    the correct feature macros are defined first. */
 
-#if defined(__linux__) || defined(__linux) || defined(linux)
-#if    (!defined(__ia64__) && !defined(__blrts__) && !defined(__bg__)) \
+#if (   (defined(__linux__) || defined(__linux) || defined(linux)) \
+     && !defined(__bg__))
+#if    (!defined(__ia64__) && !defined(__blrts__)) \
     || defined(DEBUG)
 #define _GNU_SOURCE
 #endif

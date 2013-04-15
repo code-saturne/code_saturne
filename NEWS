@@ -4,6 +4,9 @@ Release 3.0.1 (future)
 Changes:
 --------
 
+- Do not trap floating-point exceptions even for debug builds on Blue Gene/Q
+  to avoid issues.
+
 - Add Code_Saturne and Syrthes Code_Coupling (MPMD) support for Blue Gene/Q.
 
 Bug fixes:
