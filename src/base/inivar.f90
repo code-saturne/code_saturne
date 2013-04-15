@@ -187,8 +187,6 @@ if (iihmpr.eq.1) then
                iccfth, ipr, irho, itempk, ienerg,  &
                ro0, cp0, viscl0, visls0, uref,     &
                almax, xyzcen, rtp)
-  !==========
-  call uisterm (ncelet, isuite, isca, iscold, xyzcen)
 
   if  (ippmod(icompf).ge.0) then
     allocate(w1(ncelet), w2(ncelet), w3(ncelet),w4(ncelet))

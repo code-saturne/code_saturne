@@ -53,6 +53,7 @@ from Pages.DefineUserScalarsModel import DefineUserScalarsModel
 from Pages.LocalizationModel import VolumicLocalizationModel, LocalizationModel
 from Pages.SourceTermsModel import SourceTermsModel
 from Pages.QMeiEditorView import QMeiEditorView
+from Pages.OutputVolumicVariablesModel import OutputVolumicVariablesModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -86,6 +87,7 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
         self.therm   = ThermalScalarModel(self.case)
         self.th_sca  = DefineUserScalarsModel(self.case)
         self.volzone = LocalizationModel('VolumicZone', self.case)
+        self.m_out   = OutputVolumicVariablesModel(self.case)
 
 
         # 0/ Read label names from XML file
@@ -207,17 +209,33 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
         """
         exp = self.mdl.getMomentumFormula(self.zone)
         if not exp:
-            exp = """Su = 0;\nSv = 0;\nSw = 0;\ndSudu = 0;\ndSvdv = 0;\ndSwdw = 0;\n"""
+            exp = """Su = 0;\nSv = 0;\nSw = 0;\ndSudu = 0;\ndSudv = 0;\ndSudw = 0;\n
+                     dSvdu = 0;\ndSvdv = 0;\ndSvdw = 0;\n
+                     dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
         exa = """#example: """
         req = [('Su', "x velocity"),
         ('Sv', "y velocity"),
         ('Sw', "z velocity"),
-        ('dSudu', "x velocity derivative"),
-        ('dSvdv', "y velocity derivative"),
-        ('dSwdw', "z velocity derivative")]
+        ('dSudu', "x component x velocity derivative"),
+        ('dSudv', "x component y velocity derivative"),
+        ('dSudw', "x component z velocity derivative"),
+        ('dSvdu', "y component x velocity derivative"),
+        ('dSvdv', "y component y velocity derivative"),
+        ('dSvdw', "y component z velocity derivative"),
+        ('dSwdu', "z component x velocity derivative"),
+        ('dSwdv', "z component y velocity derivative"),
+        ('dSwdw', "z component z velocity derivative")]
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
+
+        label = self.m_out.getVariableLabel("velocity_U")
+        sym.append( (label, 'X velocity component'))
+        label = self.m_out.getVariableLabel("velocity_V")
+        sym.append( (label, 'Y velocity component'))
+        label = self.m_out.getVariableLabel("velocity_W")
+        sym.append( (label, 'Z velocity component'))
+
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
                                 expression = exp,
@@ -244,6 +262,10 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
+
+        label = self.m_out.getVariableLabel(self.scalar)
+        sym.append( (label, 'current species'))
+
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
                                 expression = exp,
