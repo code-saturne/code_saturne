@@ -1,3 +1,25 @@
+Release 3.0.1 (future)
+======================
+
+Changes:
+--------
+
+- Add Code_Saturne and Syrthes Code_Coupling (MPMD) support for Blue Gene/Q.
+
+Bug fixes:
+----------
+
+- GUI: fix initialization in user source terms.
+
+- GUI: fix Lagrangian probes setup.
+
+- Fix T2 and T4 quadratures for radiative model.
+
+- PLE library: fix a test for "locate on closest" and another for empty realloc
+  (update to version 1.0.3).
+
+- Build: fix detection of ParMETIS in case of static libraries.
+
 Release 3.0.0 (22 Mar 2013)
 ==========================
 
