@@ -337,7 +337,7 @@ elseif (i_quadrature.eq.6) then   ! Quadrature Tn : 8 n^2 directions
 
  ! la position y pour chaque point d'un niveau augmente de 1/(3*(nbpoint+1)/2) dans une meme colonne de triangle.
  ! on remplit donc les points en y par colonne (diagonale allant du haut vers bas gauche)
- 
+
   jj = 0
   int1 = 0
   do tri = 1, nbpoint
