@@ -287,9 +287,14 @@ do iel = 1, ncel
 enddo
 
 if (iihmpr.eq.1) then
-  call uitssc &
-  !==========
-  ( iscal  , rtp(1,ivar), smbrs  , rovsdt )
+
+  if (iscal.ne.iscalt) then
+    call uitssc &
+    ( iscal  , rtp(1,ivar), smbrs  , rovsdt )
+  else
+    call uitsth &
+    ( iscal  , rtp(1,ivar), smbrs  , rovsdt )
+  endif
 endif
 
 call ustssc &

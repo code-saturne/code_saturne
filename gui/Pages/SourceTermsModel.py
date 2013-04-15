@@ -151,7 +151,7 @@ class SourceTermsModel(Model):
         Set the formula for tharmal scalars.
         """
         self.__verifyZone(zone)
-        self.isInList(scalar, ['TempC', 'TempK', 'Enthalpie'])
+        self.isInList(scalar, ['TempC', 'TempK', 'Enthalpy'])
         node = self.node_sterm
         if not node:
             msg = "There is an error: this node " + str(node) + "should be existed"
@@ -168,7 +168,7 @@ class SourceTermsModel(Model):
         Return the formula for thermal scalars.
         """
         self.__verifyZone(zone)
-        self.isInList(scalar, ['TempC', 'TempK', 'Enthalpie'])
+        self.isInList(scalar, ['TempC', 'TempK', 'Enthalpy'])
         node = self.node_sterm
         if not node:
             msg = "There is an error: this node " + str(node) + "should be existed"

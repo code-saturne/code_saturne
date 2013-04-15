@@ -489,6 +489,25 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *iscal,
 
 
 /*----------------------------------------------------------------------------
+ * Thermal scalar source terms.
+ *
+ * Fortran Interface:
+ *
+ * subroutine uitsth (iscal, pvar, tsexp, tsimp)
+ * *****************
+ *
+ * integer          iscal    --> index of the corresponding scalar
+ * double precision pvar     -->  scalar
+ * double precision tsexp    <--  explicit source terms
+ * double precision tsimp    <--  implicit source terms
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(uitsth, UITSTH)(const int                  *iscal,
+                              const cs_real_t   *restrict pvar,
+                              cs_real_t         *restrict tsexp,
+                              cs_real_t         *restrict tsimp);
+
+/*----------------------------------------------------------------------------
  * Variables and user scalars initialization.
  *
  * Fortran Interface:
