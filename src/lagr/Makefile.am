@@ -58,6 +58,7 @@ cs_lagr_utils.c \
 diverv.f90 \
 enslag.f90 \
 enswaf.f90 \
+lagadh.f90 \
 lagaff.f90 \
 lagbar.f90 \
 lagcar.f90 \

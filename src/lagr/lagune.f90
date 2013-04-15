@@ -250,13 +250,7 @@ if ((idepst.eq.1).and.(ipass.eq.1)) then
    allocate(vislen(nfabor))
 endif
 
-!do ip = 1, nbpart
-!   if (tepa(ip,jryplu).lt.100) then
-!      write(nfecra,*) "ip = ",ip
-!      write(nfecra,*) "yplus = ",tepa(ip,jryplu)
-!      write(nfecra,*) "marko = ",itepa(ip,jimark)
-!   endif
-!enddo
+
 
 
 !===============================================================================
@@ -708,9 +702,12 @@ endif
    jup    , jvp    , jwp    ,                                     &
    juf    , jvf    , jwf    , jtaux  , jryplu ,                   &
    jrinpf , jdfac  ,                                              &
-   jimark , idepst , iphyla ,                                     &
+   jimark , idepst , ireent,                                      &
+   iphyla ,                                                       &
    jhp    , jtf    , jmch   , jmck   , jcp   ,                    &
-   jrdck  , jrd0p  , jrr0p  , jinch )
+   jrdck  , jrd0p  , jrr0p  , jinch  ,                            &
+   jdepo  , jnbasg , jnbasp , jfadh  , jmfadh)
+
 
 
   call dplprt                                                     &
@@ -719,8 +716,7 @@ endif
    nvisbr , inbr  , inbrbd,                                       &
    iflm   , iflmbd, iang  , iangbd, ivit  ,  ivitbd,              &
    nusbor , iusb,   vislen,  dlgeo , rtp , iu    ,                &
-   iv     , iw  ,   idepst , energt )
-
+   iv     , iw  ,   idepst , ireent , energt)
 
 
   call prtput                                                     &
@@ -732,10 +728,12 @@ endif
    ibord  ,                                                       &
    jisor  , jgnum  , jrpoi  , jrtsp  , jdp    ,                   &
    jmp    , jxp    , jyp    , jzp    ,                            &
-   jup    , jvp    , jwp    , juf    , jvf    , jwf    , jtaux,   &
-   jryplu , jrinpf , jdfac  , jimark , idepst , iphyla ,          &
+   jup    , jvp    , jwp    , juf    , jvf    , jwf , jtaux,      &
+   jryplu , jrinpf , jdfac  , jimark , idepst , ireent,           &
+   iphyla ,                                                       &
    jhp    , jtf    , jmch   , jmck   , jcp   ,                    &
-   jrdck  , jrd0p  , jrr0p  , jinch )
+   jrdck  , jrd0p  , jrr0p  , jinch  ,                            &
+   jdepo  , jnbasg , jnbasp , jfadh  , jmfadh)
 
 
   if (ierr.eq.1) then
@@ -758,6 +756,23 @@ if (nor.eq.nordre) then
       tepa(npt,jrtsp) = tepa(npt,jrtsp) + dtp
     endif
   enddo
+
+endif
+
+!===============================================================================
+! 11.  CALCUL DE L'ADHESION SI MODELE DE REENTRAINEMENT
+!===============================================================================
+
+if (ireent.gt.0) then
+
+  call lagadh                                                     &
+  !==========
+ ( nvar   , nscal  ,                                              &
+   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+   ntersl , nvlsta , nvisbr ,                                     &
+   itepa  ,                                                       &
+   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
+   ettp   , tepa )
 
 endif
 

@@ -85,7 +85,7 @@ BEGIN_C_DECLS
 #define  N_GEOL 13
 #define  CS_LAGR_MIN_COMM_BUF_SIZE  10
 #define  CS_LAGR_MAX_PROPAGATION_LOOPS  30
-#define  N_VAR_PART_STRUCT  30
+#define  N_VAR_PART_STRUCT  35
 #define  N_VAR_PART_HEAT     1
 #define  N_VAR_PART_AUX      1
 
@@ -124,7 +124,7 @@ typedef struct {
                                 1   : particle has to be synchronized
                                 2   : particle treated. End of displacement */
   int         visualized;    /* -1  : particle not visualized in displacement
-                                      or trajectory mode
+                                or trajectory mode
                                 1   : particle visualized */
 
   cs_lnum_t   prev_id;  /* id in particle set of the previous particle */
@@ -145,6 +145,14 @@ typedef struct {
   cs_real_t   interf;
   cs_lnum_t   close_face_id;
   cs_lnum_t   marko_val;
+  cs_lnum_t   depo;                  /* jdepo   */
+
+  /* Resuspension model additional parameters */
+
+  cs_lnum_t   nb_large_asperities;   /* jnbasg  */
+  cs_lnum_t   nb_small_asperities;   /* jnbasg  */
+  cs_real_t   adhesion_force;        /* jfadh   */
+  cs_real_t   adhesion_torque;       /* jmfadh  */
 
   /* Coal combustion additional parameters */
 
@@ -159,6 +167,8 @@ typedef struct {
   cs_real_t   initial_density; /* jrr0p */
 
   cs_lnum_t   coal_number;     /* jinch */
+
+
 
 
 } cs_lagr_particle_t;
@@ -561,11 +571,15 @@ _define_particle_datatype(void)
   int  blocklengths[N_VAR_PART_STRUCT]
     = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
        1, 1, 1, 1, 3, 3, 3, 1, 1, 1, 1 ,
-       1, 1, 1, 1, 1, 1, 1, 1, 1  };
+       1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1};
+
   MPI_Aint  displacements[N_VAR_PART_STRUCT]
     = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ,
-       0, 0, 0, 0, 0, 0, 0, 0, 0};
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0};
+
   MPI_Datatype  types[N_VAR_PART_STRUCT] = {CS_MPI_GNUM,
                                             CS_MPI_LNUM,
                                             CS_MPI_LNUM,
@@ -587,6 +601,11 @@ _define_particle_datatype(void)
                                             CS_MPI_REAL,
                                             CS_MPI_LNUM,
                                             CS_MPI_LNUM,
+                                            CS_MPI_LNUM,
+                                            CS_MPI_LNUM,
+                                            CS_MPI_LNUM,
+                                            CS_MPI_REAL,
+                                            CS_MPI_REAL,
                                             CS_MPI_REAL,
                                             CS_MPI_REAL,
                                             CS_MPI_REAL,
@@ -627,6 +646,15 @@ _define_particle_datatype(void)
   part.interf = 0.0;
   part.close_face_id = 0;
   part.marko_val = 0;
+  part.depo = 0;
+
+
+  /* Resuspension submodel */
+
+  part.nb_large_asperities = 0;
+  part.nb_small_asperities = 0;
+  part.adhesion_force = 0.;
+  part.adhesion_torque = 0.;
 
   /* Coal combustion */
 
@@ -664,6 +692,12 @@ _define_particle_datatype(void)
   MPI_Get_address(&part.interf, displacements + count++);
   MPI_Get_address(&part.close_face_id, displacements + count++);
   MPI_Get_address(&part.marko_val, displacements + count++);
+  MPI_Get_address(&part.depo, displacements + count++);
+  MPI_Get_address(&part.nb_large_asperities, displacements + count++);
+  MPI_Get_address(&part.nb_small_asperities, displacements + count++);
+  MPI_Get_address(&part.adhesion_force, displacements + count++);
+  MPI_Get_address(&part.adhesion_torque, displacements + count++);
+
   MPI_Get_address(&part.temp, displacements + count++);
   MPI_Get_address(&part.fluid_temp, displacements + count++);
   MPI_Get_address(&part.coal_mass, displacements + count++);
@@ -1980,7 +2014,8 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
                const cs_lnum_t      *ivitbd,
                const cs_lnum_t      *nusbor,
                cs_lnum_t             iusb[],
-               cs_real_t             energt[])
+               cs_real_t             energt[],
+               cs_lnum_t             *ireent)
 
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
@@ -2004,6 +2039,7 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
   cs_lnum_t  error = 0; /* FIXME: Not very useful -> _manage_error() */
   cs_lnum_t  particle_state = -999;
   cs_lnum_t  depch = 1; /* Indicator of mass flux calculation */
+  const cs_real_t  pi = 3.14159265358979323846;
 
   cs_lagr_track_builder_t  *builder = _particle_track_builder;
   cs_lagr_bdy_condition_t  *bdy_conditions = _lagr_bdy_conditions;
@@ -2088,21 +2124,52 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
   else if (bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IDEPO2) {
 
     move_particle = CS_LAGR_PART_MOVE_OFF;
-    particle.cur_cell_num =  - particle.cur_cell_num; /* Store a negative value */
+
+    if (*ireent == 0) {
+
+      particle.cur_cell_num =  - particle.cur_cell_num; /* Store a negative value */
+
+      for (k = 0; k < 3; k++) {
+        particle.velocity[k] = 0.0;
+        particle.velocity_seen[k] = 0.0;
+      }
+
+    } else if (*ireent == 1) {
+
+      particle.depo = 1;
+
+      for (k = 0; k < 3; k++) {
+        particle.velocity[k] = 0.0;
+        particle.velocity_seen[k] = 0.0;
+      }
+
+      /* Retrieve the normalized trajectory vector */
+
+      cs_real_t norm = _get_norm(depl);
+      cs_real_t norm_traj[3] = {1./norm * depl[0], 1./norm * depl[1], 1./norm * depl[2]};
+
+      cs_real_t face_norm[3] = {face_normal[0]/face_area,
+                                 face_normal[1]/face_area,
+                                 face_normal[2]/face_area};
+
+
+      /* Retrieve the impact angle */
+
+      cs_real_t imp_ang = acos(_get_dot_prod(norm_traj, face_norm));
+
+      /* Relocate the particle at the correct distance ( = R_p) above the impacted wall */
+
+    for (k = 0; k < 3; k++)
+      particle.coord[k] = intersect_pt[k] - norm_traj[k] * 0.5 * particle.diameter / sin(0.5 * pi - imp_ang);
+
+    }
 
     _particle_set->n_part_dep += 1;
     _particle_set->weight_dep += particle.stat_weight;
 
     particle_state = CS_LAGR_PART_STICKED;
 
-    /* For post-processing purpose */
-
-    for (k = 0; k < 3; k++) {
-      particle.coord[k] = intersect_pt[k];
-      particle.velocity[k] = 0.0;
-      particle.velocity_seen[k] = 0.0;
-    }
-  }
+   }
 
   else if (bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IDEPFA) {
 
@@ -2139,9 +2206,9 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
       /* The particle mass flux is not calculated */
       depch = 0;
 
-            cs_real_t  face_norm[3] = {face_normal[0]/face_area,
-                                   face_normal[1]/face_area,
-                                   face_normal[2]/face_area};
+      cs_real_t  face_norm[3] = {face_normal[0]/face_area,
+                                 face_normal[1]/face_area,
+                                 face_normal[2]/face_area};
 
       move_particle = 1;
       particle_state = CS_LAGR_PART_TO_SYNC;
@@ -2281,9 +2348,9 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
 
   if (*iensi3 > 0) {
     if  (   bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IDEPO1
-         || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IDEPO2
-         || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IDEPFA
-         || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IREBOL) {
+            || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IDEPO2
+            || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IDEPFA
+            || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IREBOL) {
 
       /* Number of particle-boundary interactions  */
       if (*inbrbd > 0)
@@ -2361,6 +2428,7 @@ _local_propagation(cs_lagr_particle_t     *p_prev_particle,
                    const cs_lnum_t  *iv,
                    const cs_lnum_t  *iw,
                    cs_lnum_t               *idepst,
+                   cs_lnum_t               *ireent,
                    cs_real_t               energt[],
                    cs_lnum_t               ipass)
 {
@@ -2606,8 +2674,8 @@ _local_propagation(cs_lagr_particle_t     *p_prev_particle,
 
 
               particle.velocity_seen[0] = particle.velocity_seen[0] * face_norm[0] +
-                particle.velocity_seen[1] * face_norm[1] +
-                particle.velocity_seen[2] * face_norm[2];
+                                          particle.velocity_seen[1] * face_norm[1] +
+                                          particle.velocity_seen[2] * face_norm[2];
 
             }
 
@@ -2833,7 +2901,8 @@ _local_propagation(cs_lagr_particle_t     *p_prev_particle,
                              ivitbd,
                              nusbor,
                              iusb,
-                             energt);
+                             energt,
+                             ireent);
 
           if (scheme_order == 2)
             particle.switch_order_1 = CS_LAGR_SWITCH_ON;
@@ -3594,6 +3663,7 @@ CS_PROCF (prtget, PRTGET)(const cs_lnum_t   *nbpmax,  /* n_particles max. */
                           const cs_lnum_t   *jdfac,
                           const cs_lnum_t   *jimark,
                           cs_lnum_t         *idepst,
+                          cs_lnum_t         *ireent,
                           cs_lnum_t         *iphyla,
                           const cs_lnum_t   *jhp,
                           const cs_lnum_t   *jtf,
@@ -3603,7 +3673,12 @@ CS_PROCF (prtget, PRTGET)(const cs_lnum_t   *nbpmax,  /* n_particles max. */
                           const cs_lnum_t   *jrdck,
                           const cs_lnum_t   *jrd0p,
                           const cs_lnum_t   *jrr0p,
-                          const cs_lnum_t   *jinch
+                          const cs_lnum_t   *jinch,
+                          const cs_lnum_t   *jdepo,
+                          const cs_lnum_t   *jnbasg,
+                          const cs_lnum_t   *jnbasp,
+                          const cs_lnum_t   *jfadh,
+                          const cs_lnum_t   *jmfadh
 )
 
 {
@@ -3776,6 +3851,9 @@ CS_PROCF (prtget, PRTGET)(const cs_lnum_t   *nbpmax,  /* n_particles max. */
     /* Data needed if the deposition model is activated */
     if (*idepst > 0) {
 
+      id = (*jdepo -1) * (*nbpmax) + i;
+      cur_part.depo = itepa[id];
+
       id = (*jryplu-1) * (*nbpmax) + i;
       cur_part.yplus = tepa[id];
 
@@ -3788,16 +3866,43 @@ CS_PROCF (prtget, PRTGET)(const cs_lnum_t   *nbpmax,  /* n_particles max. */
       id = (*jimark -1) * (*nbpmax) + i;
       cur_part.marko_val = itepa[id];
 
-    }
-    else {
+    } else {
 
+      cur_part.depo = 0;
       cur_part.yplus = 10000;
       cur_part.close_face_id = -1;
       cur_part.marko_val = -1;
 
     }
 
-  /* Data needed if the coal combustion is activated */
+    /* Data needed if the resuspension model is activated */
+
+    if (*ireent > 0) {
+
+      id = (*jnbasg -1) * (*nbpmax) + i;
+      cur_part.nb_large_asperities = itepa[id];
+
+      id = (*jnbasp -1) * (*nbpmax) + i;
+      cur_part.nb_small_asperities = itepa[id];
+
+      id = (*jfadh -1) * (*nbpmax) + i;
+      cur_part.adhesion_force = tepa[id];
+
+      id = (*jmfadh -1) * (*nbpmax) + i;
+      cur_part.adhesion_torque = tepa[id];
+
+    } else {
+
+      cur_part.nb_large_asperities = 0;
+      cur_part.nb_small_asperities = 0;
+      cur_part.adhesion_force = 0.;
+      cur_part.adhesion_torque = 0.;
+
+    }
+
+
+
+    /* Data needed if the coal combustion is activated */
     if (*iphyla ==2) {
 
       /* ettp and ettpa arrays */
@@ -3841,7 +3946,7 @@ CS_PROCF (prtget, PRTGET)(const cs_lnum_t   *nbpmax,  /* n_particles max. */
 
     else {
 
-    /* ettp and ettpa arrays */
+      /* ettp and ettpa arrays */
 
       id = (*jhp - 1) * (*nbpmax) + i;
       cur_part.temp = 0.0;
@@ -3952,6 +4057,7 @@ CS_PROCF (prtput, PRTPUT)(const cs_int_t   *nbpmax,  /* n_particles max. */
                           const cs_int_t   *jdfac,
                           const cs_int_t   *jimark,
                           cs_int_t         *idepst,
+                          cs_int_t         *ireent,
                           cs_lnum_t         *iphyla,
                           const cs_lnum_t   *jhp,
                           const cs_lnum_t   *jtf,
@@ -3961,7 +4067,12 @@ CS_PROCF (prtput, PRTPUT)(const cs_int_t   *nbpmax,  /* n_particles max. */
                           const cs_lnum_t   *jrdck,
                           const cs_lnum_t   *jrd0p,
                           const cs_lnum_t   *jrr0p,
-                          const cs_lnum_t   *jinch
+                          const cs_lnum_t   *jinch,
+                          const cs_lnum_t   *jdepo,
+                          const cs_lnum_t   *jnbasg,
+                          const cs_lnum_t   *jnbasp,
+                          const cs_lnum_t   *jfadh,
+                          const cs_lnum_t   *jmfadh
 )
 {
   cs_lnum_t  i, j, k, id , nbp;
@@ -4008,7 +4119,25 @@ CS_PROCF (prtput, PRTPUT)(const cs_int_t   *nbpmax,  /* n_particles max. */
       tepa[ (*jrinpf - 1) * (*nbpmax) + i] = cur_part.interf;
 
       itepa[(*jdfac - 1) * (*nbpmax) + i]  = cur_part.close_face_id + 1;
+
       itepa[(*jimark - 1) * (*nbpmax) + i]  = cur_part.marko_val;
+
+      itepa[(*jdepo - 1) * (*nbpmax) + i]  = cur_part.depo;
+
+
+    }
+
+    // Data needed if the resuspension model is activated
+
+    if (*ireent > 0) {
+
+      itepa[(*jnbasg - 1) * (*nbpmax) + i]  = cur_part.nb_large_asperities;
+
+      itepa[(*jnbasp - 1) * (*nbpmax) + i]  = cur_part.nb_small_asperities;
+
+      tepa[(*jfadh - 1) * (*nbpmax) + i]  = cur_part.adhesion_force;
+
+      tepa[(*jmfadh - 1) * (*nbpmax) + i]  = cur_part.adhesion_torque;
 
     }
 
@@ -4270,6 +4399,7 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_n_particles,
                           const cs_lnum_t  *iv,
                           const cs_lnum_t  *iw,
                           cs_lnum_t        *idepst,
+                          cs_lnum_t        *ireent,
                           cs_real_t         energt[])
 {
   cs_lnum_t  i, j;
@@ -4344,6 +4474,7 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_n_particles,
                                              dlgeo,
                                              rtp, iu, iv ,iw,
                                              idepst,
+                                             ireent,
                                              energt,
                                              0);
 
@@ -4384,6 +4515,7 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_n_particles,
                                              dlgeo,
                                              rtp, iu, iv ,iw,
                                              idepst,
+                                             ireent,
                                              energt,
                                              1);
 

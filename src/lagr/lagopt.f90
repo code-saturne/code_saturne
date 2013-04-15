@@ -1164,8 +1164,17 @@ endif
 
 if ( idepst .eq. 1 ) then
   nvep  = nvep  + 2
-  nivep = nivep + 7
+  nivep = nivep + 8
 endif
+
+! Modele de remise en suspension : 2 tableaux supp dans TEPA  : JFADH , JMFADH
+!                                  2 tableaux supp dans ITEPA
+
+if ( ireent .eq. 1 ) then
+  nvep  = nvep  + 2
+  nivep = nivep + 2
+endif
+
 
 !-->  VARIABLES UTILISATEURS SUPPLEMENTAIRES : NVLS
 
@@ -1307,6 +1316,14 @@ if ( idepst .eq. 1 ) then
   irf    = jrinpf
 endif
 
+! Modele de remise en suspension : 2 tableaux supp dans TEPA  : JFADH et JMFADH
+
+if ( ireent .eq. 1 ) then
+  jfadh = irf + 1
+  jmfadh = jfadh + 1
+  irf    = jmfadh
+endif
+
 
 if (irf.ne.nvep) then
   write(nfecra,3005) irf, nvep
@@ -1346,9 +1363,9 @@ if (iphyla.eq.2) then
   irf   = jinch
 endif
 
-! Modele de Deposition :  tableaux supp dans ITEPA : MARKO
-!                                                    JDIEL
-!                                                    JDFAC
+! Modele de Deposition :  tableaux supp dans itepa : marko
+!                                                    jdiel
+!                                                    jdfac
 
 
 if ( idepst .eq. 1 ) then
@@ -1356,13 +1373,23 @@ if ( idepst .eq. 1 ) then
   jdiel  = jimark + 1
   jdfac  = jdiel  + 1
   jdifel = jdfac  + 1
-  jtraj  = jdifel + 1
+  jdepo  = jdifel + 1
+  jtraj  = jdepo  + 1
   jptdet = jtraj  + 1
   jinjst = jptdet + 1
   irf    = jinjst
 endif
 
+! Modele de resuspension : 2 tableaux supp dans ITEPA : jnbasg, jnbasp
+!
+!
 
+
+if ( ireent .eq. 1 ) then
+  jnbasg  = irf    + 1
+  jnbasp = jnbasg + 1
+  irf    = jnbasp
+endif
 
 if (irf.ne.nivep) then
   write(nfecra,3006) irf, nivep

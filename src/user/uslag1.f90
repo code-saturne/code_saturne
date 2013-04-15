@@ -630,6 +630,34 @@ lamvbr = 0
 
 idepst = 0
 
+
+
+!===============================================================================
+! 12bis. Activation of resuspension model
+!===============================================================================
+
+!--> Activation of the resuspension model
+
+!    (default off: 0 ; on: 1)
+
+!     CAUTION: OPTION FOR DEVELOPERS ONLY
+!     =========
+
+ireent = 0
+
+!--> Parameters of the particle resuspension model
+
+espasg = 20.d-6
+
+denasp = 6.36d13
+
+modyeq = 266.d9
+
+rayasp = 5.d-9
+
+rayasg = 2.d-6
+
+
 !===============================================================================
 ! 13. Post-processing
 !===============================================================================

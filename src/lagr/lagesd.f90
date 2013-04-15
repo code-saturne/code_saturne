@@ -383,7 +383,15 @@ call lagcli                                                       &
      tepa(ip,jryplu),tepa(ip,jrinpf), enertur, ggp(1), vflui(1),  &
      gdpr(1), piilp(1), depint )
 
+if (itepa(ip,jdepo).eq.1) then
+   depl(1) = 0.d0
+   vpart(1) = 0.d0
+endif
+
+
 !  Integration in the 2 other directions
+
+if (itepa(ip,jdepo).eq.0) then
 
 do id = 2,3
 
@@ -509,6 +517,27 @@ do id = 2,3
 
 enddo
 
+else
+
+   if (ireent.eq.1) then
+
+      do id = 2,3
+         vpart(id) = vflui(id)
+         vvue(id) =  vflui(id)
+         depl(id) = vpart(id) * dtref
+      enddo
+
+   else
+
+      do id = 2,3
+         vpart(id) = 0.d0
+         vvue(id) = 0.d0
+         depl(id) = 0.d0
+      enddo
+
+   endif
+
+endif
 
 !===============================================================================
 ! 3. Reference frame change:

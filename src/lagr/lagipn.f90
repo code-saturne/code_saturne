@@ -285,6 +285,9 @@ if (idepst.eq.1) then
          ettp(npt,jwf) = rtp(iel,iw)
       endif
 
+      ! No deposited particles at the injection
+      itepa(npt,jdepo) = 0
+
    enddo
 endif
 

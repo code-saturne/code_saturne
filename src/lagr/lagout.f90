@@ -345,6 +345,12 @@ if (idepst.eq.1) then
   nomite(jtraj) = 'traj_particules'
   nomite(jptdet) = 'ptdet_particules'
   nomite(jinjst) = 'indic_stat'
+  nomite(jdepo) = 'part_depo'
+endif
+
+if (ireent.eq.1) then
+   nomite(jnbasg) = 'nb_ls_aspe'
+   nomite(jnbasp) = 'nb_sms_aspe'
 endif
 
 itysup = ipasup
@@ -405,6 +411,11 @@ endif
 if (idepst.eq.1) then
   nomrte(jryplu) = 'yplus_particules'
   nomrte(jrinpf) = 'dx_particules'
+endif
+
+if (ireent.eq.1) then
+   nomrte(jfadh) = 'force_adhesion'
+   nomrte(jmfadh) = 'moment_adhesion'
 endif
 
 itysup = ipasup

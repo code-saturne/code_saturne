@@ -109,7 +109,7 @@ module lagran
 
 
 
-  ! 4.1 Particules deposition submodel (Guingo & Minier, 2008)
+  ! 4.1 Particules deposition submodel
   !==================================
 
 
@@ -133,6 +133,26 @@ module lagran
 
   integer, save ::   jimark , jdiel  , jdfac , jdifel , jtraj , jptdet , jinjst
   integer, save ::   jryplu , jrinpf
+
+  ! 4.2 Resuspension model
+  !=======================
+
+  !     IREENT = 0 : no resuspension model
+  !            = 1 : resuspension model
+
+  integer, save ::         ireent
+
+  ! Additional pointers in the ITEPA array
+  ! ITEPA contains the particule state
+
+  integer, save ::   jroll , jnbasg , jnbasp , jdepo
+  integer, save ::   jfadh , jmfadh
+
+  ! Parameters of the particle resuspension model
+
+   double precision, save :: espasg , denasp, modyeq , rayasp, rayasg
+   double precision, save :: dnbres
+   integer, save :: nbpres
 
   !=============================================================================
   ! 5. Pas de temps Lagrangien
@@ -448,7 +468,6 @@ module lagran
   double precision cstfar
   parameter(cstfar = 9.648d4)
 
-
 !    Vacuum permittivity (F/m):
 
   double precision epsvid
@@ -458,6 +477,16 @@ module lagran
 
   double precision kboltz
   parameter(kboltz = 1.38d-23)
+
+!    Cut-off distance for adhesion forces (assumed to be the Born distance) (m)
+
+  double precision dcutof
+  parameter(dcutof = 1.65d-10)
+
+!    Characteristic retardation wavelength (m) for Hamaker constant
+
+  double precision lambwl
+  parameter(lambwl = 1000.d-9)
 
   !=============================================================================
   ! 13. Mouvement brownien
