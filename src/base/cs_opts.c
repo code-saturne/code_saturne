@@ -145,6 +145,11 @@ _arg_env_help(const char  *name)
 
   fprintf
     (e, _(" --version         print version number\n"));
+
+#if defined(__bgq__)
+  fprintf
+    (e, _(" -wdir, --wdir     <path> working directory\n"));
+#endif
 }
 
 /*----------------------------------------------------------------------------
@@ -268,7 +273,7 @@ cs_opts_define(int         argc,
 
 #if defined(__bgq__)
 
-    else if (strcmp(s, "--wdir") == 0) {
+    else if (strcmp(s, "-wdir") == 0 || strcmp(s, "--wdir") == 0) {
       if (arg_id + 1 < argc) {
         s = argv[++arg_id];
         if (chdir(s) != 0) {
@@ -398,10 +403,12 @@ cs_opts_define(int         argc,
   }
 
 #if defined(HAVE_LIBXML2)
-  if (cs_gui_load_file(s_param) != 0) {
-    fprintf(stderr, _("Error loading parameter file \"%s\".\n"),
-            s_param);
-    cs_exit(EXIT_FAILURE);
+  if (s_param != NULL) {
+    if (cs_gui_load_file(s_param) != 0) {
+      fprintf(stderr, _("Error loading parameter file \"%s\".\n"),
+              s_param);
+      cs_exit(EXIT_FAILURE);
+    }
   }
 #endif
 

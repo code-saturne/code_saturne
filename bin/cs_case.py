@@ -862,24 +862,31 @@ export SALOME_INSTANCE=$3
         rank_id = 0
 
         for d in self.syr_domains:
-            cmd = '#mpmdbegin %d-%d\n' % (rank_id, rank_id + d.n_procs)
+            cmd = '#mpmdbegin %d-%d\n' % (rank_id, rank_id + d.n_procs - 1)
             e.write(cmd)
             s_args = d.solver_command()
-            cmd = '#mpmdcmd' + s_args[1] + s_args[2] + ' -wdir ' + s_args[0] + '\n'
+            cmd = '#mpmdcmd ' + s_args[1] + s_args[2] + ' -wdir ' + s_args[0] + '\n'
             e.write(cmd)
             e.write('#mpmdend\n')
             rank_id += d.n_procs
 
         for d in self.domains:
-            cmd = '#mpmdbegin %d-%d\n' % (rank_id, rank_id + d.n_procs)
+            cmd = '#mpmdbegin %d-%d\n' % (rank_id, rank_id + d.n_procs - 1)
             e.write(cmd)
             s_args = d.solver_command()
-            cmd = '#mpmdcmd' + s_args[1] + s_args[2] + ' -wdir ' + s_args[0] + '\n'
+            cmd = '#mpmdcmd ' + s_args[1] + s_args[2] + ' -wdir ' + s_args[0] + '\n'
             e.write(cmd)
             e.write('#mpmdend\n')
             rank_id += d.n_procs
 
         e.close()
+
+        # NOTE: adding :
+        # e.write('#mapping ABCDET\n')
+        # before closing seems to help in some cases where the mapping file is
+        # not interpreted correctly, but is not always required;
+        # with driver V1R2M0_17, reading of the mapping file seems fragile
+        # and subject to random failures, but this seems to be a BG/Q issue.
 
         return e_path
 
@@ -953,7 +960,7 @@ export SALOME_INSTANCE=$3
         # Determine if an MPMD syntax (mpiexec variant) will be used
 
         mpiexec_mpmd = False
-        if len(self.domains) > 1 or len(self.syr_domains) > 0:
+        if len(self.domains) + len(self.syr_domains) > 1:
             if mpi_env.mpmd & cs_exec_environment.MPI_MPMD_mpiexec:
                 mpiexec_mpmd = True
             elif mpi_env.mpmd & cs_exec_environment.MPI_MPMD_configfile:
@@ -1001,6 +1008,9 @@ export SALOME_INSTANCE=$3
 
             if mpi_env.mpmd & cs_exec_environment.MPI_MPMD_mpiexec:
 
+                if mpi_env.mpiexec_separator != None:
+                    mpi_cmd += mpi_env.mpiexec_separator + ' '
+
                 e_path = self.generate_solver_mpmd_mpiexec(n_procs,
                                                            mpi_env)
 
@@ -1009,13 +1019,26 @@ export SALOME_INSTANCE=$3
                 if mpi_env.type == 'BGQ_MPI':
                     e_path = self.generate_solver_mpmd_configfile_bgq(n_procs,
                                                                       mpi_env)
-                    e_path = '--mapping ' + e_path
+                    if mpi_env.mpiexec == 'srun':
+                        mpi_cmd += '--launcher-opts=\'--mapping ' + e_path + '\' '
+                    else:
+                        mpi_cmd += '--mapping ' + e_path + ' '
+                    if mpi_env.mpiexec_separator != None:
+                        mpi_cmd += mpi_env.mpiexec_separator + ' '
+                    mpi_cmd += self.package_compute.get_solver()
+
                 else:
                     e_path = self.generate_solver_mpmd_configfile(n_procs,
                                                                   mpi_env)
-                    e_path = '-configfile ' + e_path
+                    mpi_cmd += '-configfile ' + e_path
+
+                e_path = ''
 
             elif mpi_env.mpmd & cs_exec_environment.MPI_MPMD_script:
+
+                if mpi_env.mpiexec_separator != None:
+                    mpi_cmd += mpi_env.mpiexec_separator + ' '
+
                 e_path = self.generate_solver_mpmd_script(n_procs, mpi_env)
 
             else:
