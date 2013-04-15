@@ -3345,8 +3345,8 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
       for (icla = iclag; icla < iclag + nclpch[icha]; icla++)
         diam20[icla]=  xx*pow((-log(1.-rf[icla-iclag])),(1./qq))*1.e-6; // en metres
 
-      bft_printf("** Rosin-Rammeler results for the coal %i **\n"
-                 "[ Checking of the Rosin-Rammeler law ]\n"
+      bft_printf("** Rosin-Rammler results for the coal %i **\n"
+                 "[ Checking of the Rosin-Rammler law ]\n"
                  "Diameter       refus given      refus computed\n\n", icha+1);
 
       for (icla = 0; icla< nbrf; icla++)
@@ -3359,7 +3359,7 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
         bft_printf("%f     %f     %f \n", refus[icla], dprefus[icla],
             xx*pow((-log(refus[icla])),(1./qq)));
 
-      bft_printf("\nDiameters computed by the Rosin-Rammeler law\n");
+      bft_printf("\nDiameters computed by the Rosin-Rammler law\n");
 
       for (icla = iclag; icla <iclag+nclpch[icha]; icla ++)
         bft_printf("%d     %f \n", icla-iclag, diam20[icla]);
