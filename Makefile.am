@@ -43,6 +43,8 @@ $(ac_aux_dir)/py-compile
 EXTRA_DIST = \
 COMPATIBILITY \
 QUALITY_ASSURANCE \
+po/Makevars.template \
+po/Rules-install \
 sbin/backup \
 sbin/bootstrap \
 sbin/clean \
@@ -116,6 +118,9 @@ $(edit_scripts): Makefile
 bin/code_saturne: $(srcdir)/bin/code_saturne.in 
 bin/cs_config.py: bin/cs_config.py.in 
 bin/runcase.py: $(srcdir)/bin/runcase.py.in 
+
+CLEANFILES = $(edit_scripts)
+EXTRA_DIST += bin/code_saturne.in bin/cs_config.py.in bin/runcase.py.in
 
 # Install binary scripts
 

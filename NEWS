@@ -285,7 +285,7 @@ Bug fixes:
 Release 2.0.1 (17 Jan 2011)
 ===========================
 
-- Add a developpers guide with coding standards.
+- Add a developers guide with coding standards.
 
 - Do not buffer standard output and error when executing subprocess.
 

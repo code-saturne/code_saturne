@@ -2,6 +2,27 @@
   Release of Code_Saturne 2.0.7.
 
 * 16/04/2013 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix "make dist" target.
+  modified files:
+    Makefile.am
+    gui/Base/Makefile.am
+    libsyrcs/Makefile.am
+
+* 16/04/2013 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix spelling of developer (was developper).
+  modified files:
+    configure.ac
+    bin/cs_info.py
+    doc/Makefile.am
+    doc/user/saturne1.tex
+    extras/installer/README.txt
+    users/base/usini1.f90
+  renamed directory
+    doc/developper -> doc/developer
+  renamed file:
+    doc/developper/developper.tex -> doc/developer/developer.tex
+
+* 16/04/2013 - Yvan Fournier <yvan.fournier@edf.fr>
   Add Code_Saturne and Syrthes Code_Coupling (MPMD) support for Blue Gene/Q.
   This is only available with the new (Python) runcase script.
   modified files:

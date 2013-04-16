@@ -26,6 +26,11 @@ AM_CPPFLAGS = @BFT_CPPFLAGS@  @FVM_CPPFLAGS@ @MPI_CPPFLAGS@
 AM_CFLAGS =
 AM_LDFLAGS =
 
+noinst_HEADERS = \
+syr_comm.h \
+syr_coupling.h \
+syr_defs.h
+
 # Library source files
 
 lib_LTLIBRARIES = libsyrcs.la

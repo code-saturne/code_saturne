@@ -46,6 +46,13 @@ MainForm.ui
 QRCFILES = \
 resource_base.qrc
 
+# Distribute icons directory, resources files and user interface files
+
+EXTRA_DIST = \
+icons \
+$(UIFILES) \
+$(QRCFILES)
+
 # Generated files
 
 FORMS = $(UIFILES:.ui=.py)
