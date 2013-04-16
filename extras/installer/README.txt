@@ -244,7 +244,7 @@ for the directory where you want to install Code_Saturne.
       --with-mpi=...          for MPI
       --with-syrthes=...      for SYRTHES coupling
       --with-python-exec=...  for specific Python executable
-      --with-pyqt4-exec=...   for PyQt4 developper tools
+      --with-pyqt4-exec=...   for PyQt4 developer tools
       CC=...           to specify the compiler if necessary
                          (especially if mpicc should be used, to get
                           the proper links to MPI libraries)

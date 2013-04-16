@@ -22,7 +22,7 @@
 
 # Main LaTeX document
 
-TEXMAIN = developper.tex
+TEXMAIN = developer.tex
 
 # Other LaTex document
 

@@ -20,8 +20,8 @@
 #   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #-------------------------------------------------------------------------------
 
-#SUBDIRS = howto refcard theory tutorial user developper install
-SUBDIRS = refcard theory tutorial user developper install
+#SUBDIRS = howto refcard theory tutorial user developer install
+SUBDIRS = refcard theory tutorial user developer howto install
 
 EXTRA_DIST = \
 style/csdoc.sty \

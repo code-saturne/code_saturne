@@ -2112,7 +2112,7 @@ subroutine ustbtr &
 
 ! User subroutine to define the sizes of macro-arrays ia and ra,
 !   of user arrays ituser and rtuser,
-!   of developper arrays idevel and rdevel.
+!   of developer arrays idevel and rdevel.
 
 !-------------------------------------------------------------------------------
 ! Arguments

@@ -357,7 +357,7 @@ AM_PATH_PYTHON([$cs_python_version])
 #------------------------------------------------------------------------------
 
 AC_ARG_WITH(pyqt4-exec, [AS_HELP_STRING([--with-pyqt4-exec=PATH],
-                                        [specify prefix directory for PyQt4 developper tools (pyuic4 and pyrcc4)])],
+                                        [specify prefix directory for PyQt4 developer tools (pyuic4 and pyrcc4)])],
                         [PYQT4_EXE=${withval}],
                         [PYQT4_EXE=none])dnl
 
@@ -387,7 +387,7 @@ sys.exit(0)]"
 
 fi
 
-# Test for PyQt4 developper tools
+# Test for PyQt4 developer tools
 if test "x$have_gui" == "xyes" ; then
 
   if test "x${PYQT4_EXE}" == "xnone" ; then
@@ -564,7 +564,7 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  gui/Makefile gui/Base/Makefile gui/Pages/Makefile
                  doc/Makefile doc/style/csvers.tex
                  doc/howto/Makefile doc/howto/graphics/Makefile
-                 doc/developper/Makefile doc/developper/graphics/Makefile
+                 doc/developer/Makefile doc/developer/graphics/Makefile
                  doc/install/Makefile
                  doc/refcard/Makefile doc/refcard/graphics/Makefile
                  doc/theory/Makefile doc/theory/graphics/Makefile

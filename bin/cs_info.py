@@ -71,7 +71,7 @@ def process_cmd_line(argv):
 
     parser.add_option("-g", "--guide", dest="guides", type="string",
                       metavar="<guide>", action="append",
-                      help="open a manual [refcard, user, theory, tutorial, developper]")
+                      help="open a manual [refcard, user, theory, tutorial, developer]")
 
     parser.add_option("--version", dest="version",
                       action="store_true",
