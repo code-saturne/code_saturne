@@ -1,8 +1,11 @@
-Release 2.0.7 (future)
-======================
+Release 2.0.7 (16 Apr 2013)
+===========================
 
 Changes:
 --------
+
+- Add Code_Saturne and Syrthes Code_Coupling (MPMD) support for Blue Gene/Q.
+  This is only available with the new (Python) runcase script.
 
 - Do not trap floating-point exceptions even for debug builds on Blue Gene/Q
   to avoid issues.

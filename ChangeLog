@@ -1,3 +1,22 @@
+* 16/04/2013 - Yvan Fournier <yvan.fournier@edf.fr>
+  Release of Code_Saturne 2.0.7.
+
+* 16/04/2013 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add Code_Saturne and Syrthes Code_Coupling (MPMD) support for Blue Gene/Q.
+  This is only available with the new (Python) runcase script.
+  modified files:
+    bin/cs_exec_environment.py
+    bin/cs_case.py
+    po/fr.po
+    libsyrcs/syr_cs.c
+    src/base/cs_opts.c
+
+* 16/04/2013 - Yvan Fournier <yvan.fournier@edf.fr>
+  Do not trap floating-point exceptions even for debug builds on Blue Gene/Q
+  to avoid issues.
+  modified files:
+    src/apps/cs_solver.c
+
 * 15/02/2013 - Yvan Fournier <yvan.fournier@edf.fr>
   Add missing parallel synchronization that could contribute to minor
   differences between parallel and serial computations.
