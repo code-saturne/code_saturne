@@ -4,6 +4,9 @@ Release 2.0.7 (future)
 Changes:
 --------
 
+- Do not trap floating-point exceptions even for debug builds on Blue Gene/Q
+  to avoid issues.
+
 - Application name is ignored for Code_Saturne/Code_Saturne couplings, so reflect
   this in code and comments.
 
