@@ -1,12 +1,13 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR Free Software Foundation, Inc.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# translation of fr.po to
+# French translations for code_saturne package.
+# Copyright (C) 2008-2013 EDF S.A.
+# This file is distributed under the same license as Code_Saturne.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
+"Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2013-03-22 17:30+0100\n"
+"POT-Creation-Date: 2013-04-16 08:55+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -5216,8 +5217,22 @@ msgid " --version         print version number\n"
 msgstr " --version         affiche le numéro de version\n"
 
 #, c-format
+msgid " -wdir, --wdir     <path> working directory\n"
+msgstr ""
+
+#, c-format
 msgid "%s version %s\n"
 msgstr "%s version %s\n"
+
+#, c-format
+msgid ""
+"Error switching to directory \"%s\":\n"
+"\n"
+"%s\n"
+msgstr ""
+"Erreur au changement de répertoire \"%s\" :\n"
+"\n"
+"%s\n"
 
 #, c-format
 msgid ""
@@ -5238,6 +5253,10 @@ msgid ""
 "%s was built without dynamic loader support,\n"
 "so module file \"%s\" may not be loaded.\n"
 msgstr ""
+
+#, c-format
+msgid "Error loading parameter file \"%s\".\n"
+msgstr "Erreur à la lecture du fichier de paramètres \"%s\".\n"
 
 msgid ""
 "\n"
@@ -7828,6 +7847,14 @@ msgstr ""
 "critère de sélection:\n"
 "\"%s\"\n"
 " ne correspond à aucune cellule.\n"
+
+#, c-format
+msgid ""
+"Error: can not find the required symbol: %s\n"
+"%s\n"
+"%s\n"
+"%s\n"
+msgstr ""
 
 #, c-format
 msgid "Unable to open the file: %s\n"
