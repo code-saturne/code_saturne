@@ -130,10 +130,10 @@ ilved  = .true.
 
 call grdvec &
 !==========
-( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-  iwarnp , nfecra ,                                              &
-  epsrgp , climgp , extrap ,                                     &
-  vela   , ilved  , coefav , coefbv ,                            &
+( ivar   , imrgra , inc    , nswrgp , imligp ,                   &
+  iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
+  ilved  ,                                                       &
+  vela   , coefav , coefbv ,                                     &
   gradv)
 
 
