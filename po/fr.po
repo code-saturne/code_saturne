@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ncs 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2012-05-07 11:45+0200\n"
+"POT-Creation-Date: 2013-04-15 22:23+0200\n"
 "PO-Revision-Date: 2011-08-24 11:58+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -108,7 +108,7 @@ msgstr ""
 "\n"
 " Destruction des structures et clôture du calcul\n"
 
-#: src/base/cs_base.c:232
+#: src/base/cs_base.c:236
 #, c-format
 msgid ""
 "Fatal error: bft_printf() called on a message of size %d\n"
@@ -117,7 +117,7 @@ msgstr ""
 "Erreur fatale: bft_printf() appellé sur message de taille %d\n"
 "alors que le tampon d'impression est de taille %d."
 
-#: src/base/cs_base.c:408
+#: src/base/cs_base.c:412
 #, c-format
 msgid ""
 "\n"
@@ -126,7 +126,7 @@ msgstr ""
 "\n"
 "Erreur système : %s\n"
 
-#: src/base/cs_base.c:410
+#: src/base/cs_base.c:414
 #, c-format
 msgid ""
 "\n"
@@ -137,7 +137,7 @@ msgstr ""
 "%s:%d: Erreur fatale.\n"
 "\n"
 
-#: src/base/cs_base.c:430
+#: src/base/cs_base.c:434
 msgid ""
 "\n"
 "\n"
@@ -151,27 +151,27 @@ msgstr ""
 "------------------------------\n"
 "\n"
 
-#: src/base/cs_base.c:437
+#: src/base/cs_base.c:441
 #, c-format
 msgid "Theoretical current allocated memory:   %llu kB\n"
 msgstr "Mémoire dynamique instrumentée théorique : %llu ko\n"
 
-#: src/base/cs_base.c:441
+#: src/base/cs_base.c:445
 #, c-format
 msgid "Theoretical maximum allocated memory:   %llu kB\n"
 msgstr "Mémoire dynamique instrumentée théorique : %llu ko\n"
 
-#: src/base/cs_base.c:451
+#: src/base/cs_base.c:455
 #, c-format
 msgid "Maximum program memory measure:         %llu kB\n"
 msgstr "Mémoire programme mesurée maximale:        %llu ko\n"
 
-#: src/base/cs_base.c:459
+#: src/base/cs_base.c:463
 #, c-format
 msgid "Current program memory measure:         %llu kB\n"
 msgstr "Mémoire programme mesurée courante:        %llu ko\n"
 
-#: src/base/cs_base.c:521
+#: src/base/cs_base.c:525
 msgid ""
 "\n"
 "Call stack:\n"
@@ -179,7 +179,7 @@ msgstr ""
 "\n"
 "Pile d'appels :\n"
 
-#: src/base/cs_base.c:549
+#: src/base/cs_base.c:553
 msgid ""
 "End of stack\n"
 "\n"
@@ -187,7 +187,7 @@ msgstr ""
 "Fin de la pile\n"
 "\n"
 
-#: src/base/cs_base.c:567
+#: src/base/cs_base.c:571
 msgid ""
 "SIGHUP signal (hang-up) intercepted.\n"
 "--> computation interrupted.\n"
@@ -195,7 +195,7 @@ msgstr ""
 "Signal SIGHUP (déconnexion) intercepté.\n"
 "--> calcul interrompu.\n"
 
-#: src/base/cs_base.c:573
+#: src/base/cs_base.c:577
 msgid ""
 "SIGINT signal (Control+C or equivalent) received.\n"
 "--> computation interrupted by user.\n"
@@ -203,7 +203,7 @@ msgstr ""
 "Signal SIGINT (Control+C ou équivalent) reçu.\n"
 "--> calcul interrompu par l'utilisateur.\n"
 
-#: src/base/cs_base.c:578
+#: src/base/cs_base.c:582
 msgid ""
 "SIGTERM signal (termination) received.\n"
 "--> computation interrupted by environment.\n"
@@ -211,24 +211,24 @@ msgstr ""
 "Signal SIGTERM (terminaison) reçu.\n"
 "--> calcul interrompu par l'environnement.\n"
 
-#: src/base/cs_base.c:583
+#: src/base/cs_base.c:587
 msgid "SIGFPE signal (floating point exception) intercepted!\n"
 msgstr "Signal SIGFPE (exception en virgule flottante) intercepté !\n"
 
-#: src/base/cs_base.c:588
+#: src/base/cs_base.c:592
 msgid "SIGSEGV signal (forbidden memory area access) intercepted!\n"
 msgstr "Signal SIGSEGV (accès à une zone mémoire interdite) intercepté !\n"
 
-#: src/base/cs_base.c:594
+#: src/base/cs_base.c:598
 msgid "SIGXCPU signal (CPU time limit reached) intercepted.\n"
 msgstr "Signal SIGXCPU (temps CPU limite atteint) intercepté.\n"
 
-#: src/base/cs_base.c:600
+#: src/base/cs_base.c:604
 #, c-format
 msgid "Signal %d intercepted!\n"
 msgstr "Signal %d intercepté !\n"
 
-#: src/base/cs_base.c:658
+#: src/base/cs_base.c:662
 #, c-format
 msgid ""
 "\n"
@@ -239,7 +239,7 @@ msgstr ""
 "Erreur MPI (communicateur %s):\n"
 "%s\n"
 
-#: src/base/cs_base.c:661
+#: src/base/cs_base.c:665
 #, c-format
 msgid ""
 "\n"
@@ -250,7 +250,7 @@ msgstr ""
 "Erreur MPI :\n"
 "%s\n"
 
-#: src/base/cs_base.c:776
+#: src/base/cs_base.c:780
 #, c-format
 msgid ""
 " Sub-routine calling iasize:                %s\n"
@@ -265,7 +265,7 @@ msgstr ""
 "\n"
 " ----> Définir iasize au moins égale à %d entiers)."
 
-#: src/base/cs_base.c:820
+#: src/base/cs_base.c:824
 #, c-format
 msgid ""
 " Sub-routine calling rasize:             %s\n"
@@ -280,15 +280,15 @@ msgstr ""
 "\n"
 " ----> Définir rasize au moins égale à %d réels)."
 
-#: src/base/cs_base.c:1130
+#: src/base/cs_base.c:1138
 msgid "Total memory used:                       "
 msgstr "Consommation mémoire totale mesurée :     "
 
-#: src/base/cs_base.c:1131
+#: src/base/cs_base.c:1139
 msgid "Theoretical instrumented dynamic memory: "
 msgstr "Mémoire dynamique instrumentée théorique :"
 
-#: src/base/cs_base.c:1135
+#: src/base/cs_base.c:1143
 msgid ""
 "\n"
 "Memory use summary:\n"
@@ -298,22 +298,22 @@ msgstr ""
 "Bilan de l'occupation mémoire :\n"
 "\n"
 
-#: src/base/cs_base.c:1198
+#: src/base/cs_base.c:1206
 #, c-format
 msgid "  %s %12.3f %cB\n"
 msgstr "  %s %12.3f %co\n"
 
-#: src/base/cs_base.c:1203
+#: src/base/cs_base.c:1211
 #, c-format
 msgid "                             local minimum: %12.3f %cB  (rank %d)\n"
 msgstr "                             minimum local : %12.3f %co  (rang %d)\n"
 
-#: src/base/cs_base.c:1206
+#: src/base/cs_base.c:1214
 #, c-format
 msgid "                             local maximum: %12.3f %cB  (rank %d)\n"
 msgstr "                             maximum local : %12.3f %co  (rang %d)\n"
 
-#: src/base/cs_base.c:1246
+#: src/base/cs_base.c:1254
 #, c-format
 msgid ""
 "\n"
@@ -332,7 +332,7 @@ msgstr ""
 "   Mémoire de travail maximale locale demandée %12.3f %co\n"
 "                                      utilisée %12.3f %co\n"
 
-#: src/base/cs_base.c:1283
+#: src/base/cs_base.c:1291
 msgid ""
 "\n"
 "Calculation time summary:\n"
@@ -340,7 +340,7 @@ msgstr ""
 "\n"
 "Bilan des temps de calcul :\n"
 
-#: src/base/cs_base.c:1297
+#: src/base/cs_base.c:1305
 #, c-format
 msgid ""
 "\n"
@@ -349,12 +349,12 @@ msgstr ""
 "\n"
 "  Temps CPU utilisateur : %12.3f s\n"
 
-#: src/base/cs_base.c:1299
+#: src/base/cs_base.c:1307
 #, c-format
 msgid "  System CPU time:     %12.3f s\n"
 msgstr "  Temps CPU système :     %12.3f s\n"
 
-#: src/base/cs_base.c:1304
+#: src/base/cs_base.c:1312
 #, c-format
 msgid ""
 "\n"
@@ -363,12 +363,12 @@ msgstr ""
 "\n"
 "  Temps CPU :             %12.3f s\n"
 
-#: src/base/cs_base.c:1313
+#: src/base/cs_base.c:1321
 #, c-format
 msgid "  Total CPU time:      %12.3f s\n"
 msgstr "  Temps CPU cumulé :      %12.3f s\n"
 
-#: src/base/cs_base.c:1324
+#: src/base/cs_base.c:1332
 #, c-format
 msgid ""
 "\n"
@@ -377,92 +377,92 @@ msgstr ""
 "\n"
 "  Temps écoulé :          %12.3f s\n"
 
-#: src/base/cs_base.c:1327
+#: src/base/cs_base.c:1335
 #, c-format
 msgid "  CPU / elapsed time   %12.3f\n"
 msgstr "  Temps CPU / écoulé      %12.3f\n"
 
-#: src/base/cs_base.c:1433
+#: src/base/cs_base.c:1441
 msgid "Local case configuration:\n"
 msgstr "Configuration locale du cas :\n"
 
-#: src/base/cs_base.c:1435
+#: src/base/cs_base.c:1443
 msgid "Date:              "
 msgstr "Date :             "
 
-#: src/base/cs_base.c:1443
+#: src/base/cs_base.c:1451
 msgid "System:            "
 msgstr "Système :          "
 
-#: src/base/cs_base.c:1445
+#: src/base/cs_base.c:1453
 msgid "Machine:           "
 msgstr "Machine :          "
 
-#: src/base/cs_base.c:1449
+#: src/base/cs_base.c:1457
 msgid "Processor:         "
 msgstr "Processeur :       "
 
-#: src/base/cs_base.c:1452
+#: src/base/cs_base.c:1460
 msgid "Memory:            "
 msgstr "Mémoire :          "
 
-#: src/base/cs_base.c:1453
+#: src/base/cs_base.c:1461
 msgid "MB"
 msgstr "Mo"
 
-#: src/base/cs_base.c:1456
+#: src/base/cs_base.c:1464
 msgid "User:              "
 msgstr "Utilisateur :      "
 
-#: src/base/cs_base.c:1460
+#: src/base/cs_base.c:1468
 msgid "Directory:         "
 msgstr "Répertoire :       "
 
-#: src/base/cs_base.c:1467
+#: src/base/cs_base.c:1475
 msgid "SMP mode"
 msgstr ""
 
-#: src/base/cs_base.c:1468
+#: src/base/cs_base.c:1476
 msgid "Virtual-node mode"
 msgstr ""
 
-#: src/base/cs_base.c:1469
+#: src/base/cs_base.c:1477
 msgid "Dual mode"
 msgstr ""
 
-#: src/base/cs_base.c:1470
+#: src/base/cs_base.c:1478
 msgid "Unknown mode"
 msgstr ""
 
-#: src/base/cs_base.c:1480 src/base/cs_base.c:1515
+#: src/base/cs_base.c:1488 src/base/cs_base.c:1526
 msgid "MPI ranks:         "
 msgstr "Rangs MPI :        "
 
-#: src/base/cs_base.c:1482
+#: src/base/cs_base.c:1490
 msgid "pset size:         "
 msgstr ""
 
-#: src/base/cs_base.c:1484
+#: src/base/cs_base.c:1492
 msgid "Torus dimensions:  "
 msgstr "Dimensions du tore : "
 
-#: src/base/cs_base.c:1494
+#: src/base/cs_base.c:1505
 msgid "MPI ranks:           "
 msgstr "Rangs MPI :          "
 
-#: src/base/cs_base.c:1496
+#: src/base/cs_base.c:1507
 msgid "MPI_COMM_WORLD size: "
 msgstr ""
 
-#: src/base/cs_base.c:1504
+#: src/base/cs_base.c:1515
 msgid "Block shape:         "
 msgstr "Forme de bloc :      "
 
-#: src/base/cs_base.c:1511
+#: src/base/cs_base.c:1522
 msgid "Torus links enabled: "
 msgstr "Liens du tore actifs :"
 
-#: src/base/cs_base.c:1545
+#: src/base/cs_base.c:1556
 #, c-format
 msgid ""
 "\n"
@@ -945,7 +945,7 @@ msgstr ""
 "Écriture de %d valeurs de type %s, dep_temps %s\n"
 "        (temps %f, itération %d) ..."
 
-#: src/base/cs_calcium.c:475 src/base/cs_sat_coupling.c:276
+#: src/base/cs_calcium.c:475 src/base/cs_sat_coupling.c:265
 #: src/base/cs_syr3_comm.c:223 src/base/cs_syr4_coupling.c:210
 msgid "[ok]\n"
 msgstr "[ok]\n"
@@ -969,7 +969,7 @@ msgstr ""
 "Support de librairies partagées non disponible.\n"
 "Impossible de charger : %s\n"
 
-#: src/base/cs_coupling.c:123
+#: src/base/cs_coupling.c:121
 msgid ""
 "\n"
 "Applications accessible through MPI:\n"
@@ -980,7 +980,7 @@ msgstr ""
 "Applications accessibles grâce à MPI :\n"
 "--------------------------------------\n"
 
-#: src/base/cs_coupling.c:150
+#: src/base/cs_coupling.c:148
 #, c-format
 msgid ""
 "  %d; type:      \"%s\"%s\n"
@@ -3905,12 +3905,12 @@ msgstr "vectorisation"
 msgid "threads"
 msgstr ""
 
-#: src/base/cs_opts.c:114
+#: src/base/cs_opts.c:118
 #, c-format
 msgid "Usage: %s [options]\n"
 msgstr "Utilisation : %s [options]\n"
 
-#: src/base/cs_opts.c:116
+#: src/base/cs_opts.c:120
 #, c-format
 msgid ""
 "\n"
@@ -3921,42 +3921,18 @@ msgstr ""
 "Options de la ligne de commandes :\n"
 "\n"
 
-#: src/base/cs_opts.c:118
+#: src/base/cs_opts.c:122
 #, c-format
 msgid ""
-" --solcom          stand-alone kernel with \"geomet\" mesh in\n"
-"                   SolCom format (obsolete)\n"
+" --benchmark       elementary operations performance\n"
+"                   [--mpitrace] operations done only once\n"
+"                                for light MPI traces\n"
 msgstr ""
-" --solcom          noyau autonome avec maillage \"geomet\" au\n"
-"                   format SolCom (obsolète)\n"
+" --benchmark       performance des opérations élémentaires\n"
+"                   [--mpitrace] opérations effectuées une seule\n"
+"                                fois pour traces MPI légères\n"
 
-#: src/base/cs_opts.c:121
-#, c-format
-msgid ""
-" --mpi             use MPI for parallelism or coupling\n"
-"                   [appnum]: number of this application in\n"
-"                             case of code coupling (default: 0)\n"
-msgstr ""
-" --mpi             calcul parallèle ou couplé via MPI ;\n"
-"                   [appnum] : numéro de cette application en cas de\n"
-"                              couplage de codes (défaut : 0)\n"
-
-#: src/base/cs_opts.c:125
-#, c-format
-msgid ""
-" --mpi-io          <mode> set parallel I/O behavior\n"
-"                     off: do not use MPI-IO\n"
-"                     eo:  MPI-IO with explicit offsets\n"
-"                          (default if available)\n"
-"                     ip:  MPI-IO with individual file pointers\n"
-msgstr ""
-
-#: src/base/cs_opts.c:131
-#, c-format
-msgid " -q, --quality     mesh quality verification mode\n"
-msgstr " -q, --quality     vérification de la qualité du maillage\n"
-
-#: src/base/cs_opts.c:133
+#: src/base/cs_opts.c:126
 #, c-format
 msgid ""
 " --cwf             <criterion> cut warped faces\n"
@@ -3968,18 +3944,37 @@ msgstr ""
 "                    -post : active le post-traitement lié au \n"
 "                            découpage des faces\n"
 
-#: src/base/cs_opts.c:137
+#: src/base/cs_opts.c:131
 #, c-format
 msgid ""
-" --benchmark       elementary operations performance\n"
-"                   [--mpitrace] operations done only once\n"
-"                                for light MPI traces\n"
+" -h, --help        this help message\n"
+"\n"
 msgstr ""
-" --benchmark       performance des opérations élémentaires\n"
-"                   [--mpitrace] opérations effectuées une seule\n"
-"                                fois pour traces MPI légères\n"
+" -h, --help        appel de l'aide (cet affichage)\n"
+"\n"
 
-#: src/base/cs_opts.c:141
+#: src/base/cs_opts.c:134
+#, c-format
+msgid ""
+" --mpi             use MPI for parallelism or coupling\n"
+"                   [appnum]: number of this application in\n"
+"                             case of code coupling (default: 0)\n"
+msgstr ""
+" --mpi             calcul parallèle ou couplé via MPI ;\n"
+"                   [appnum] : numéro de cette application en cas de\n"
+"                              couplage de codes (défaut : 0)\n"
+
+#: src/base/cs_opts.c:138
+#, c-format
+msgid ""
+" --mpi-io          <mode> set parallel I/O behavior\n"
+"                     off: do not use MPI-IO\n"
+"                     eo:  MPI-IO with explicit offsets\n"
+"                          (default if available)\n"
+"                     ip:  MPI-IO with individual file pointers\n"
+msgstr ""
+
+#: src/base/cs_opts.c:145
 #, c-format
 msgid ""
 " --log             output redirection for rank -1 or 0:\n"
@@ -3990,7 +3985,7 @@ msgstr ""
 "                     0 : sortie standard\n"
 "                     1 : sorties dans \"listing\" (défaut)\n"
 
-#: src/base/cs_opts.c:145
+#: src/base/cs_opts.c:149
 #, c-format
 msgid ""
 " --logp            output redirection for rank > 0:\n"
@@ -4005,47 +4000,57 @@ msgstr ""
 "                         indépendants, type deboggeur)\n"
 "                     1 : sorties dans \"listing_n<rang>\"\n"
 
-#: src/base/cs_opts.c:151
+#: src/base/cs_opts.c:155
 #, c-format
 msgid " -p, --param       <file_name> parameter file\n"
 msgstr " -p, --param       <nom_du_fichier> fichier de paramètres\n"
 
-#: src/base/cs_opts.c:154
+#: src/base/cs_opts.c:158
+#, c-format
+msgid " -q, --quality     mesh quality verification mode\n"
+msgstr " -q, --quality     vérification de la qualité du maillage\n"
+
+#: src/base/cs_opts.c:161
+#, c-format
+msgid ""
+" --solcom          stand-alone kernel with \"geomet\" mesh in\n"
+"                   SolCom format (obsolete)\n"
+msgstr ""
+" --solcom          noyau autonome avec maillage \"geomet\" au\n"
+"                   format SolCom (obsolète)\n"
+
+#: src/base/cs_opts.c:164
 #, c-format
 msgid ""
 " --syr-socket      enable sockets for SYRTHES 3 coupling\n"
 "                   <port_num> port number on rank 0\n"
 msgstr ""
 
-#: src/base/cs_opts.c:158
+#: src/base/cs_opts.c:168
 #, c-format
 msgid " --version         print version number\n"
 msgstr " --version         affiche le numéro de version\n"
 
-#: src/base/cs_opts.c:160
+#: src/base/cs_opts.c:172
 #, c-format
-msgid ""
-" -h, --help        this help message\n"
-"\n"
+msgid " -wdir, --wdir     <path> working directory\n"
 msgstr ""
-" -h, --help        appel de l'aide (cet affichage)\n"
-"\n"
 
-#: src/base/cs_opts.c:173
+#: src/base/cs_opts.c:186
 #, c-format
 msgid "%s version %s\n"
 msgstr "%s version %s\n"
 
-#: src/base/cs_opts.c:326
+#: src/base/cs_opts.c:339
 msgid "command: \n"
 msgstr "commande : \n"
 
-#: src/base/cs_opts.c:341
+#: src/base/cs_opts.c:354
 #, c-format
 msgid "  build %s\n"
 msgstr "  build %s\n"
 
-#: src/base/cs_opts.c:345
+#: src/base/cs_opts.c:358
 #, c-format
 msgid ""
 "  MPI version %d.%d (%s)\n"
@@ -4054,7 +4059,7 @@ msgstr ""
 "  Version MPI %d.%d (%s)\n"
 "\n"
 
-#: src/base/cs_opts.c:348
+#: src/base/cs_opts.c:361
 #, c-format
 msgid ""
 "  MPI version %d.%d\n"
@@ -4063,33 +4068,49 @@ msgstr ""
 "  Version MPI %d.%d\n"
 "\n"
 
-#: src/base/cs_opts.c:596
+#: src/base/cs_opts.c:610
 #, c-format
 msgid ""
 "%s was built without MPI support,\n"
 "so option \"%s\" may not be used.\n"
 msgstr ""
 
-#: src/base/cs_opts.c:647
+#: src/base/cs_opts.c:624
+#, c-format
+msgid ""
+"Error switching to directory \"%s\":\n"
+"\n"
+"%s\n"
+msgstr ""
+"Erreur au changement vers le répertoire \"%s\" :\n"
+"\n"
+"%s\n"
+
+#: src/base/cs_opts.c:677
 #, c-format
 msgid ""
 "%s was built without XML support,\n"
 "so parameter file \"%s\" may not be loaded.\n"
 msgstr ""
 
-#: src/base/cs_opts.c:706
+#: src/base/cs_opts.c:736
 #, c-format
 msgid ""
 "%s was built without socket support,\n"
 "so option \"%s\" may not be used.\n"
 msgstr ""
 
-#: src/base/cs_opts.c:723
+#: src/base/cs_opts.c:753
 #, c-format
 msgid ""
 "%s was built without dynamic loader support,\n"
 "so module file \"%s\" may not be loaded.\n"
 msgstr ""
+
+#: src/base/cs_opts.c:799
+#, c-format
+msgid "Error loading parameter file \"%s\".\n"
+msgstr "Erreur au chargement du fichier de paramètres : \"%s\".\n"
 
 #: src/base/cs_perio.c:344
 #, c-format
@@ -4580,27 +4601,25 @@ msgstr ""
 "  Temps écoulé pour la lecture :    %12.3f\n"
 "  Temps écoulé pour l'écriture :    %12.3f\n"
 
-#: src/base/cs_sat_coupling.c:231
+#: src/base/cs_sat_coupling.c:221
 #, c-format
 msgid ""
 " Code_Saturne coupling:\n"
 "   coupling id:              %d\n"
-"   local name:               \"%s\"\n"
 "   local number:             %d\n"
 "\n"
 msgstr ""
 " Couplage Code_Saturne :\n"
 "   id de couplage :             %d\n"
-"   nom local :                  \"%s\"\n"
 "   numéro local :               %d\n"
 "\n"
 
-#: src/base/cs_sat_coupling.c:266
+#: src/base/cs_sat_coupling.c:255
 #, c-format
 msgid " Code_Saturne coupling %d: initializing MPI communication ... "
 msgstr " Couplage Code_Saturne %d : initialisation de la communication MPI ..."
 
-#: src/base/cs_sat_coupling.c:277 src/base/cs_syr3_comm.c:224
+#: src/base/cs_sat_coupling.c:266 src/base/cs_syr3_comm.c:224
 #: src/base/cs_syr4_coupling.c:211
 #, c-format
 msgid ""
@@ -4608,13 +4627,11 @@ msgid ""
 "\n"
 msgstr "Rangs locaux = [%d..%d], rangs distants = [%d..%d].\n"
 
-#: src/base/cs_sat_coupling.c:362
+#: src/base/cs_sat_coupling.c:341
 #, c-format
 msgid ""
 " Code_Saturne coupling:\n"
 "   coupling id:              %d\n"
-"   local name:               \"%s\"\n"
-"   distant application name: \"%s\"\n"
 "   local number:             %d\n"
 "   MPI application number:   %d\n"
 "   MPI root rank:            %d\n"
@@ -4623,35 +4640,33 @@ msgid ""
 msgstr ""
 " Couplage Code_Saturne :\n"
 "   id de couplage :             %d\n"
-"   nom local :                  \"%s\"\n"
-"   nom d'application distante : \"%s\"\n"
 "   numéro local :               %d\n"
 "   numéro d'application MPI :   %d\n"
 "   rang racine MPI :            %d\n"
 "   nombre de rangs MPI :        %d\n"
 "\n"
 
-#: src/base/cs_sat_coupling.c:1016 src/base/cs_sat_coupling.c:1231
-#: src/base/cs_sat_coupling.c:1298 src/base/cs_sat_coupling.c:1373
-#: src/base/cs_sat_coupling.c:1434 src/base/cs_sat_coupling.c:1504
-#: src/base/cs_sat_coupling.c:1602 src/base/cs_sat_coupling.c:1681
-#: src/base/cs_sat_coupling.c:1772 src/base/cs_sat_coupling.c:1848
-#: src/base/cs_sat_coupling.c:1916
+#: src/base/cs_sat_coupling.c:961 src/base/cs_sat_coupling.c:1176
+#: src/base/cs_sat_coupling.c:1243 src/base/cs_sat_coupling.c:1318
+#: src/base/cs_sat_coupling.c:1379 src/base/cs_sat_coupling.c:1449
+#: src/base/cs_sat_coupling.c:1547 src/base/cs_sat_coupling.c:1626
+#: src/base/cs_sat_coupling.c:1717 src/base/cs_sat_coupling.c:1793
+#: src/base/cs_sat_coupling.c:1861
 #, c-format
 msgid "Impossible coupling number %d; there are %d couplings"
 msgstr "Numéro de couplage %d impossible ;  on a %d couplages"
 
-#: src/base/cs_sat_coupling.c:1063
+#: src/base/cs_sat_coupling.c:1008
 #, c-format
 msgid "coupled_cells_%d"
 msgstr ""
 
-#: src/base/cs_sat_coupling.c:1074
+#: src/base/cs_sat_coupling.c:1019
 #, c-format
 msgid "coupled_faces_%d"
 msgstr ""
 
-#: src/base/cs_sat_coupling.c:1311
+#: src/base/cs_sat_coupling.c:1256
 #, c-format
 msgid ""
 "Coupling %d: inconsistent arguments for LELCPL()\n"
@@ -4662,7 +4677,7 @@ msgstr ""
 "On a indiqué NCECPL = %d et NFBCPL = %d.\n"
 "On devrait avoir les valeurs %d et %d pour ce couplage."
 
-#: src/base/cs_sat_coupling.c:1386
+#: src/base/cs_sat_coupling.c:1331
 #, c-format
 msgid ""
 "Coupling %d: inconsistent arguments for LELNCP()\n"
@@ -4673,7 +4688,7 @@ msgstr ""
 "On a indiqué NCENCP = %d et NFBNCP = %d.\n"
 "On devrait avoir les valeurs %d et %d pour ce couplage."
 
-#: src/base/cs_sat_coupling.c:1528
+#: src/base/cs_sat_coupling.c:1473
 #, c-format
 msgid ""
 "Coupling %d: inconsistent arguments for COOCPL()\n"
@@ -4684,13 +4699,13 @@ msgstr ""
 "On a indiqué ITYDIS = %d et NBRPTS = %d.\n"
 "On devrait avoir la valeur %d pour NBRPTS."
 
-#: src/base/cs_sat_coupling.c:1609
+#: src/base/cs_sat_coupling.c:1554
 msgid ""
 "The centred interpolation scheme is not available\n"
 "when coupling cells"
 msgstr ""
 
-#: src/base/cs_sat_coupling.c:1620
+#: src/base/cs_sat_coupling.c:1565
 #, c-format
 msgid ""
 "Coupling %d: inconsistent arguments for PNDCPL().\n"
@@ -4701,7 +4716,7 @@ msgstr ""
 "On a indiqué ITYLOC = %d et NBRPTS = %d.\n"
 "On devrait avoir la valeur %d pour NBRPTS."
 
-#: src/base/cs_sat_coupling.c:1698
+#: src/base/cs_sat_coupling.c:1643
 #, c-format
 msgid ""
 "Coupling %d: inconsistent arguments for VARCPL()\n"
@@ -4712,7 +4727,7 @@ msgstr ""
 "On a indiqué ITYVAR = %d et NBRDIS = %d.\n"
 "On devrait avoir la valeur 0 ou %d pour NBRDIS."
 
-#: src/base/cs_sat_coupling.c:1705
+#: src/base/cs_sat_coupling.c:1650
 #, c-format
 msgid ""
 "Coupling %d: inconsistent arguments for VARCPL()\n"
@@ -4723,7 +4738,7 @@ msgstr ""
 "On a indiqué ITYVAR = %d et NBRLOC = %d.\n"
 "On devrait avoir la valeur 0 ou %d pour NBRLOC."
 
-#: src/base/cs_sat_coupling.c:2077
+#: src/base/cs_sat_coupling.c:2014
 msgid ""
 "At least 1 Code_Saturne coupling was defined for which\n"
 "no communication with a Code_Saturne instance is possible."

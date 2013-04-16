@@ -590,6 +590,52 @@ class case:
 
     #---------------------------------------------------------------------------
 
+    def generate_solver_mpmd_configfile_bgq(self, n_procs, mpi_env):
+        """
+        Generate MPMD mpiexec config file fo BG/Q.
+        """
+
+        e_path = os.path.join(self.exec_dir, 'mpmd_configfile')
+        e = open(e_path, 'w')
+
+        rank_id = 0
+
+        app_id = 0
+
+        for d in self.syr_domains:
+            if d.coupling_mode == 'MPI':
+                cmd = '#mpmdbegin %d-%d\n' % (rank_id, rank_id + d.n_procs - 1)
+                e.write(cmd)
+                s_args = d.solver_args(app_id=app_id)
+                cmd = '#mpmdcmd ' + s_args[1] + s_args[2] + ' -wdir ' + s_args[0] + '\n'
+                e.write(cmd)
+                e.write('#mpmdend\n')
+                rank_id += d.n_procs
+                app_id += 1
+
+        for d in self.domains:
+            cmd = '#mpmdbegin %d-%d\n' % (rank_id, rank_id + d.n_procs - 1)
+            e.write(cmd)
+            s_args = d.solver_args(app_id=app_id)
+            cmd = '#mpmdcmd ' + s_args[1] + s_args[2] + ' -wdir ' + s_args[0] + '\n'
+            e.write(cmd)
+            e.write('#mpmdend\n')
+            rank_id += d.n_procs
+
+        e.write('#mapping ABCDET\n')
+
+        # NOTE: adding the mapping line above ssems to help in some cases where
+        # the mapping file is not interpreted correctly, but seems not to be
+        # always required (the documentation is minimalistic);
+        # with driver V1R2M0_17, reading of the mapping file seems fragile
+        # and subject to random failures, but this seems to be a BG/Q issue.
+
+        e.close()
+
+        return e_path
+
+    #---------------------------------------------------------------------------
+
     def get_shell_name(self):
         """
         Get name of current shell if available.
@@ -910,19 +956,44 @@ class case:
 
             if mpi_env.mpmd & cs_exec_environment.MPI_MPMD_mpiexec:
 
+                if mpi_env.mpiexec_separator != None:
+                    mpi_cmd += mpi_env.mpiexec_separator + ' '
+
                 e_path = self.generate_solver_mpmd_mpiexec(n_procs,
                                                            mpi_env)
 
             elif mpi_env.mpmd & cs_exec_environment.MPI_MPMD_configfile:
 
-                e_path = self.generate_solver_mpmd_configfile(n_procs,
-                                                              mpi_env)
-                e_path = '-configfile ' + e_path
+                if mpi_env.type == 'BGQ_MPI':
+                    e_path = self.generate_solver_mpmd_configfile_bgq(n_procs,
+                                                                      mpi_env)
+                    if mpi_env.mpiexec == 'srun':
+                        mpi_cmd += '--launcher-opts=\'--mapping ' + e_path + '\' '
+                    else:
+                        mpi_cmd += '--mapping ' + e_path + ' '
+                    if mpi_env.mpiexec_separator != None:
+                        mpi_cmd += mpi_env.mpiexec_separator + ' '
+                    mpi_cmd += os.path.join(cs_config.dirs.bindir, 'cs_solver')
+
+                else:
+                    e_path = self.generate_solver_mpmd_configfile(n_procs,
+                                                                  mpi_env)
+                    mpi_cmd += '-configfile ' + e_path
+
+                e_path = ''
 
             elif mpi_env.mpmd & cs_exec_environment.MPI_MPMD_script:
+
+                if mpi_env.mpiexec_separator != None:
+                    mpi_cmd += mpi_env.mpiexec_separator + ' '
+
                 e_path = self.generate_solver_mpmd_script(n_procs, mpi_env)
 
             elif mpi_env.mpmd & cs_exec_environment.MPI_MPMD_execve:
+
+                if mpi_env.mpiexec_separator != None:
+                    mpi_cmd += mpi_env.mpiexec_separator + ' '
+
                 e_path = self.generate_solver_execve_launcher(n_procs, mpi_env)
 
             else:

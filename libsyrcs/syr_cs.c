@@ -42,6 +42,11 @@
 #include <string.h>
 #include <unistd.h>
 
+#if defined(__bgq__)
+#include <errno.h>
+#include <unistd.h>
+#endif
+
 #if defined(HAVE_MPI)
 #include <mpi.h>
 #endif
@@ -176,6 +181,11 @@ syr_cs_loc_aidelc(char  *nom,
        "                    0 : impression des entetes des messages\n"
        "                    n : impression des entetes des messages ainsi\n"
        "                        que des n premiers et derniers elements\n");
+#if defined(__bgq__)
+    fprintf
+      (e,
+       " -wdir <chemin> :  repertoire de travail\n");
+#endif
     fprintf
       (e,
        " -h :              appel de l'aide (cet affichage)\n\n");
@@ -301,7 +311,7 @@ main(int argc,
   int echo_comm = -1;        /* Communication verbosity */
   syr_comm_type_t type_comm = SYR_COMM_TYPE_NULL; /* Communication type */
   char **sock_str = NULL;    /* strings for server sockets description */
-  char *log_name = NULL;         /* name of log file (default: log to stdout) */
+  char *log_name = NULL;     /* name of log file (default: log to stdout) */
 
   /* Initialize error handler */
 
@@ -394,6 +404,21 @@ main(int argc,
     }
     else if (strcmp(s, "-log") == 0)
       log_name = syr_cs_loc_argstr(++numarg, argc, argv, &argerr);
+#if defined(__bgq__)
+    else if (strcmp(s, "-wdir") == 0) {
+      if (numarg + 1 < argc && *(argv[numarg + 1]) != '-') {
+        char *wdir = syr_cs_loc_argstr(++numarg, argc, argv, &argerr);
+        if (chdir(wdir) != 0)
+          bft_error(__FILE__, __LINE__, 0,
+                    "Erreur au changement de repertoire \"%s\":\n\n"
+                    "%s\n",
+                    wdir, strerror(errno));
+      }
+      else
+        argerr = 1;
+    }
+
+#endif
     else if (strcmp(s, "-h") == 0) {
       syr_cs_loc_aidelc(argv[0], 2);
       syr_exit(EXIT_SUCCESS);
