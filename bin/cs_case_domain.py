@@ -878,6 +878,9 @@ class domain(base_domain):
         Retrieve solver results from the execution directory
         """
 
+        if not self.exec_solver:
+            return
+
         # Call user script
 
         if self.user_locals:
