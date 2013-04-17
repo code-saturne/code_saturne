@@ -4776,6 +4776,16 @@ cs_post_write_vars(int     nt_cur_abs,
   /* Free memory */
 
   BFT_FREE(num_ent_parent);
+
+  /* Flush writers if necessary */
+
+  for (i = 0; i < _cs_post_n_writers; i++) {
+    writer = _cs_post_writers + i;
+    if (writer->active == 1) {
+      if (writer->writer != NULL)
+        fvm_writer_flush(writer->writer);
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------*/
