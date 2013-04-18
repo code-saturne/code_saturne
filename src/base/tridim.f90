@@ -755,8 +755,10 @@ do iscal = 1, nscal
 enddo
 
 ! Allocate temporary arrays for boundary conditions
-allocate(icodcl(nfabor,nvarcl))
-allocate(rcodcl(nfabor,nvarcl,3))
+if (italim .eq. 1) then
+  allocate(icodcl(nfabor,nvarcl))
+  allocate(rcodcl(nfabor,nvarcl,3))
+endif
 if (isvhb.gt.0) then
   allocate(hbord(nfabor))
 endif
