@@ -298,6 +298,8 @@ void CS_PROCF (pondcp, PONDCP)
  * INTEGER          NBRLOC         : --> : number of values to receive
  * INTEGER          ITYVAR         : --> : 1 : variables defined at cells
  *                                 :     : 2 : variables defined at faces
+ * INTEGER          STRIDE         : --> : 1 : for scalars
+ *                                 :     : 3 : for vectors
  * DOUBLE PRECISION VARDIS(*)      : --> : distant variable(to send)
  * DOUBLE PRECISION VARLOC(*)      : <-- : local variable (to receive)
  *----------------------------------------------------------------------------*/
@@ -308,6 +310,7 @@ void CS_PROCF (varcpl, VARCPL)
  const cs_int_t  *nbrdis,
  const cs_int_t  *nbrloc,
  const cs_int_t  *ityvar,
+ const cs_int_t  *stride,
        cs_real_t *vardis,
        cs_real_t *varloc
 );

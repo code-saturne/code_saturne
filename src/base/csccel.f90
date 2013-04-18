@@ -102,6 +102,7 @@ integer          ncecpl , nfbcpl , ncencp , nfbncp
 integer          ncedis , nfbdis
 integer          ncecpg , ncedig
 integer          ityloc , ityvar
+integer          stride
 
 integer, allocatable, dimension(:) :: lcecpl , lfbcpl
 integer, allocatable, dimension(:) :: locpts
@@ -206,10 +207,13 @@ do numcpl = 1, nbrcpl
 !       (rien a envoyer, rien a recevoir)
   if (ncedig.gt.0.or.ncecpg.gt.0) then
 
-    call varcpl                                                   &
+    ! for 1-D exchange
+    stride = 1
+
+    call varcpl &
     !==========
-  ( numcpl , ncedis , ncecpl , ityvar ,                           &
-    rvdis  ,                                                  &
+  ( numcpl , ncedis , ncecpl , ityvar , stride ,                  &
+    rvdis  ,                                                      &
     rvcel  )
 
   endif
