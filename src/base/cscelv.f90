@@ -108,13 +108,14 @@ integer          ncecpl , nfbcpl , ncencp , nfbncp
 integer          ncedis , nfbdis
 integer          ncecpg , ncedig
 integer          ityloc , ityvar
+integer          stride
 
 integer, allocatable, dimension(:) :: lcecpl , lfbcpl
 integer, allocatable, dimension(:) :: locpts
 
 double precision, allocatable, dimension(:,:) :: coopts , djppts , dofpts
 double precision, allocatable, dimension(:) :: pndpts
-double precision, allocatable, dimension(:) :: rvdis , rvcel
+double precision, allocatable, dimension(:,:) :: rvdis, rvcel
 
 !===============================================================================
 
@@ -160,8 +161,8 @@ do numcpl = 1, nbrcpl
   allocate(pndpts(ncedis))
 
   ! Allocate temporary arrays for variables exchange
-  allocate(rvdis(ncedis))
-  allocate(rvcel(ncecpl))
+  allocate(rvdis(3, ncedis))
+  allocate(rvcel(3, ncecpl))
 
   call coocpl &
   !==========
@@ -213,9 +214,12 @@ do numcpl = 1, nbrcpl
 !       (rien a envoyer, rien a recevoir)
   if (ncedig.gt.0.or.ncecpg.gt.0) then
 
-    call varcpl                                                   &
+    ! for vectorial exchange
+    stride = 3
+
+    call varcpl &
     !==========
-  ( numcpl , ncedis , ncecpl , ityvar ,                           &
+  ( numcpl , ncedis , ncecpl , ityvar , stride ,                  &
     rvdis  ,                                                      &
     rvcel  )
 
