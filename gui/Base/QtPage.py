@@ -164,8 +164,8 @@ class ComboModel:
         """
         Delete the item specified with its index
         """
-        str_view  = self.items[index]
-        str_model = self.dicoV2M[str_view]
+        str_model  = self.items[index]
+        str_view = self.dicoM2V[str_model]
         del self.items[index]
         del self.dicoV2M[str_view]
         del self.dicoM2V[str_model]
