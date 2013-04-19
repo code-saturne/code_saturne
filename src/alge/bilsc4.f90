@@ -1338,6 +1338,11 @@ if (ivisep.eq.1) then
        .or.(ifaccp.eq.1.and.ityp.eq.icscpl)) bndcel(ifabor(ifac)) = 0.d0
   enddo
 
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synsca(bndcel)
+    !==========
+  endif
+
   ! ---> Interior faces
 
   do ig = 1, ngrpi

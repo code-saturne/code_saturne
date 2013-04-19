@@ -209,25 +209,6 @@ else
   enddo
 endif
 
-!    Pour la periodicite de rotation, il faut avoir calcule
-!      le gradient avec grdcel. La seule solution consiste donc a
-!      echanger VISTOT puis a faire le produit, y compris sur les
-!      cellules halo (calcul sur le halo, exceptionnellement).
-!    Pour le parallelisme, on s'aligne sur la sequence ainsi definie.
-
-if (irangp.ge.0.or.iperio.eq.1) then
-  call synsca(vistot)
-  !==========
-endif
-
-! Synchronization of the porosity array
-if (iporos.eq.1) then
-  if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(porosi)
-    !==========
-  endif
-endif
-
 !===============================================================================
 ! 2.  CALCUL DES TERMES EN GRAD_TRANSPOSE
 !===============================================================================
@@ -299,17 +280,17 @@ do isou = 1, 3
 
     if (idim.eq.1) then
       !$omp parallel do
-      do iel = 1, ncelet
+      do iel = 1, ncel
         w4(iel) = vistot(iel)*grad(iel,1)
       enddo
     elseif (idim.eq.2) then
       !$omp parallel do
-      do iel = 1, ncelet
+      do iel = 1, ncel
         w4(iel) = vistot(iel)*grad(iel,2)
       enddo
     elseif (idim.eq.3) then
       !$omp parallel do
-      do iel = 1, ncelet
+      do iel = 1, ncel
         w4(iel) = vistot(iel)*grad(iel,3)
       enddo
     endif
@@ -317,7 +298,7 @@ do isou = 1, 3
     ! With porosity
     if (iporos.eq.1) then
       !$omp parallel do
-      do iel = 1, ncelet
+      do iel = 1, ncel
         w4(iel) = w4(iel)*porosi(iel)
       enddo
     endif
@@ -330,6 +311,16 @@ do isou = 1, 3
       do iel = ncel+1, ncelet
         trav(iel,idim) = 0.d0
       enddo
+    endif
+
+    ! If ghost cells are present, they must be updated before the
+    ! loop on faces.
+
+    if (irangp.ge.0.or.iperio.eq.1) then
+      call synsca(w4)
+      !==========
+      call synsca(w6)
+      !==========
     endif
 
     do ig = 1, ngrpi
