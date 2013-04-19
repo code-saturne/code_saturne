@@ -51,7 +51,6 @@ import logging
 from Base.Toolbox import GuiParam
 
 import CFDSTUDYGUI
-import CFDSTUDYGUI_ProcessMgr
 from CFDSTUDYGUI_DataModel import _getStudy, _getEngine
 from CFDSTUDYGUI_Commons import sg, sgPyQt
 from salome import lcc
