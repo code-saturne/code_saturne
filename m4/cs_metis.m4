@@ -100,7 +100,8 @@ if test "x$with_metis" != "xno" ; then
                       (void *)0, (void *)0, (void *)0, (void *)0, (void *)0,
                       (void *)0, (void *)0, (void *)0, (void *)0, (void *)0,
                       &comm); ]])],
-[cs_have_parmetis=yes],
+[cs_have_parmetis=yes
+ cs_have_metis=yes],
 [cs_have_parmetis=no])
 
   # Test for METIS second

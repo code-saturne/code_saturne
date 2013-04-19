@@ -144,6 +144,7 @@ if test "x$with_scotch" != "xno" ; then
 #include <ptscotch.h>]],
 [[ SCOTCH_dgraphInit((void *)0, MPI_COMM_WORLD); ]])],
 [cs_have_ptscotch=yes
+ cs_have_scotch=yes
  SCOTCH_LIBS_ADD="${cs_scotch_ladd}"],
 [cs_have_ptscotch=no])
       fi
