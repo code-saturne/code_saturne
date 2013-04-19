@@ -1055,6 +1055,7 @@ ntcmxy = 1000
 
 blency = 0.0d0
 epsily = 1.0d-8
+epsrsy = 1.0d-5
 epsrgy = 1.0d-5
 climgy = 1.5d0
 extray = 0.0d0
