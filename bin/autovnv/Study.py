@@ -61,39 +61,6 @@ def nodot(item):
 
 #-------------------------------------------------------------------------------
 
-class RunThread(threading.Thread):
-    """
-    Run an external script as a simple thread.
-    """
-
-    def __init__(self, cmd, rlog):
-
-        self.__cmd = cmd
-        self.__log = rlog
-        self.__retcode = -999
-        self.__time = 0.0
-        threading.Thread.__init__ (self, target=self.run)
-        self.__stopevent = threading.Event()
-
-    def run(self):
-        try:
-            if not self.__stopevent.isSet():
-                self.__retcode, self.__time = self.__runcommand()
-        except:
-            if not self.__stopevent.is_set():
-                self.__retcode, self.__time = self.__runcommand()
-
-    def stop(self):
-        self.__stopevent.set()
-        return self.__retcode, self.__time
-
-    def __runcommand(self):
-        retcode, t = run_command(self.__cmd, self.__log)
-        self.__stopevent.wait(1.0)
-        return retcode, t
-
-#-------------------------------------------------------------------------------
-
 class Case(object):
     def __init__(self, pkg, rlog, diff, study, data, repo, dest):
         """
@@ -346,10 +313,6 @@ class Case(object):
         self.__updateRuncase(run_id)
 
         error, self.is_time = run_command("./runcase", self.__log)
-        #t1 = RunThread("runcase", self.__log)
-        #t1.start()
-        #t1.join()
-        #error, self.is_time = t1.stop()
 
         if not error:
             self.is_run = "OK"
