@@ -100,6 +100,7 @@ integer          ncecpl , nfbcpl , ncencp , nfbncp
 integer          ncedis , nfbdis
 integer          nfbcpg , nfbdig
 integer          ityloc , ityvar
+integer          stride
 
 integer, allocatable, dimension(:) :: lcecpl , lfbcpl , lcencp , lfbncp
 integer, allocatable, dimension(:) :: locpts
@@ -226,10 +227,12 @@ do numcpl = 1, nbrcpl
 
     do ivarcp = 1, nvarto(numcpl)
 
+      stride = 1
+
       call varcpl &
       !==========
-    ( numcpl , nfbdis , nfbcpl , ityvar , &
-      rvdis(1, ivarcp) ,             &
+    ( numcpl , nfbdis , nfbcpl , ityvar , stride , &
+      rvdis(1, ivarcp) ,                           &
       rvfbr(1, ivarcp) )
 
     enddo
