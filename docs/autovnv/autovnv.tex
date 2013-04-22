@@ -205,8 +205,8 @@ in the \textbf{destination}. The selection is done with the markups
     <destination>/home/dupond/codesaturne/MyDestination</destination>
 
     <study label="MyStudy1" status="on">
-        <case label="Grid1" status="on" compute="on" post="off"/>
-        <case label="Grid2" status="off" compute="on" post="off"/>
+        <case label="Grid1" run_id="Grid1" status="on" compute="on" post="off"/>
+        <case label="Grid2" run_id="Grid2" status="off" compute="on" post="off"/>
     </study>
     <study label="MyStudy2" status="off">
         <case label="k-eps" status="on" compute="on" post="off"/>
@@ -223,11 +223,20 @@ The attributes are:
 activate or desactivate the markup;
 \item \texttt{compute}: must be equal to \texttt{on} or \texttt{off},
 activate or desactivate the computation of the case;
-\item \texttt{post}: must nb equal to \texttt{on} or \texttt{off},
-activate or desactivate the post-processing of the case.
+\item \texttt{post}: must be equal to \texttt{on} or \texttt{off},
+activate or desactivate the post-processing of the case;
+\item \texttt{run\_id}: label of the directory in which the result
+is stored. If this attribut is missing or set to \texttt{run\_id=""}, an
+automatic value will be proposed by the code.
 \end{list}
 
-All these attributes are mandatory.
+Only the attributes \texttt{label}, \texttt{status}, \texttt{compute}
+and \texttt{post} are mandatory.
+
+If the directory specified by the attribute \texttt{run\_id} already exists,
+the comptutation is not performed again. For the post-processing step, the existing
+results are taking into accout only if no error file is detected in the
+directory.
 
 With the attribute \texttt{status}, a single case or a complete study can be
 switched off. In the above example, only the case \texttt{Grid1} of the study

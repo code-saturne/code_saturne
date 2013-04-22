@@ -78,6 +78,7 @@ class Case(object):
         self.label      = data['label']
         self.compute    = data['compute']
         self.plot       = data['post']
+        self.run_id     = data['run_id']
 
         self.is_compil  = "not done"
         self.is_run     = "not done"
@@ -304,11 +305,33 @@ class Case(object):
         home = os.getcwd()
         os.chdir(os.path.join(self.__dest, self.label, 'SCRIPTS'))
 
-        run_id, run_dir = self.__suggest_run_id()
+        if self.run_id:
+            run_id = self.run_id
+            run_dir = os.path.join(self.__dest, self.label, "RESU", run_id)
 
-        while os.path.isdir(run_dir):
-            time.sleep(5)
+            if os.path.isdir(run_dir):
+                print("Warning: the directory %s already exists in the destination." % run_dir)
+
+                if os.path.isfile(os.path.join(run_dir, "error")):
+                    self.is_run = "KO"
+                    self.is_time = 0.
+                    error = 1
+                else:
+                    self.is_run = "OK"
+                    self.is_time = 0.
+                    error = 0
+                os.chdir(home)
+
+                return error
+
+        else:
             run_id, run_dir = self.__suggest_run_id()
+
+            while os.path.isdir(run_dir):
+                time.sleep(5)
+                run_id, run_dir = self.__suggest_run_id()
+
+        self.run_id = run_id
 
         self.__updateRuncase(run_id)
 
@@ -321,7 +344,7 @@ class Case(object):
 
         os.chdir(home)
 
-        return error, run_id
+        return error
 
 
     def compare(self, r, d, threshold, args):
@@ -715,12 +738,12 @@ class Studies(object):
                 for case in s.Cases:
                     if case.compute == 'on' and case.is_compil != "KO":
                         self.reporting('    - running %s ...' % case.label, True)
-                        error, run_id = case.run()
+                        error = case.run()
                         if not error:
-                            if not run_id:
+                            if not case.run_id:
                                 self.reporting('    - run %s --> Warning suffixe is not read' % case.label)
 
-                            self.reporting('    - run %s --> OK (%s s) in %s' % (case.label, case.is_time, run_id))
+                            self.reporting('    - run %s --> OK (%s s) in %s' % (case.label, case.is_time, case.run_id))
                             self.__parser.setAttribute(case.node, "compute", "off")
 
                             # update dest="" attribute
@@ -732,7 +755,7 @@ class Studies(object):
                             n6 = self.__parser.getChilds(case.node, "input")
                             for n in n1 + n2 + n3 + n4 + n5 + n6:
                                 if self.__parser.getAttribute(n, "dest") == "":
-                                    self.__parser.setAttribute(n, "dest", run_id)
+                                    self.__parser.setAttribute(n, "dest", case.run_id)
                         else:
                             self.reporting('    - run %s --> FAILED' % case.label)
 
