@@ -115,7 +115,7 @@ double precision uvwk(ndim,ncelet)
 
 ! Local variables
 
-integer          iccocg, inc, iel, iel1, iel2, ifac, imax
+integer          iccocg, inc, iel, iel1, iel2, ifac, imax, imaxt
 integer          ii    , inod, itypfl
 integer          isou, ivar, iitsm
 integer          iclipr, iclipf
@@ -126,7 +126,7 @@ integer          nswrgp, imligp, iwarnp
 integer          nbrval, iappel, iescop
 integer          ndircp, icpt
 integer          numcpl
-double precision rnorm , rnorma, rnormi, vitnor
+double precision rnorm , rnormt, rnorma, rnormi, vitnor
 double precision dtsrom, unsrom, surf  , rhom, rovolsdt
 double precision epsrgp, climgp, extrap, xyzmax(3)
 double precision thetap, xdu, xdv, xdw
@@ -1103,14 +1103,24 @@ if (iwarni(iu).ge.1) then
   write(nfecra,2100)rnorm
 
   rnorm = -1.d0
-  !$omp parallel do private(vitnor, rnorm, imax)
+  imax = 1
+  !$omp parallel private(vitnor, rnormt, imaxt)
+  rnormt = -1.d0
+  !$omp do
   do iel = 1, ncel
     vitnor = sqrt(vel(1,iel)**2+vel(2,iel)**2+vel(3,iel)**2)
-    if (vitnor.ge.rnorm) then
-      rnorm = vitnor
-      imax  = iel
+    if (vitnor.ge.rnormt) then
+      rnormt = vitnor
+      imaxt  = iel
     endif
   enddo
+  !$omp critical
+  if (rnormt .gt. rnorm) then
+    rnormt = rnorm
+    imax = imaxt
+  endif
+  !$omp end critical
+  !$omp end parallel
 
   xyzmax(1) = xyzcen(1,imax)
   xyzmax(2) = xyzcen(2,imax)
