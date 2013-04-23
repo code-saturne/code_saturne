@@ -87,6 +87,7 @@ class Case(object):
         self.is_compare = "not done"
         self.threshold  = "default"
         self.diff_value = []
+        self.run_dir    = ""
 
         self.exe, self.pkg = self.__get_exe()
 
@@ -331,7 +332,8 @@ class Case(object):
                 time.sleep(5)
                 run_id, run_dir = self.__suggest_run_id()
 
-        self.run_id = run_id
+        self.run_id  = run_id
+        self.run_dir = run_dir
 
         self.__updateRuncase(run_id)
 
@@ -518,6 +520,18 @@ class Study(object):
                 print("Warning: the case %s already exists in the destination." % c.label)
 
         os.chdir(repbase)
+
+
+    def getRunDirectories(self):
+        list_cases = []
+        list_dir   = []
+
+        for case in self.Cases:
+            if case.is_run != "KO":                    
+                list_cases.append(case.label)
+                list_dir.append(case.run_dir)
+
+        return string.join(list_cases), string.join(list_dir)
 
 #-------------------------------------------------------------------------------
 
@@ -809,7 +823,10 @@ class Studies(object):
                 sys.exit(1)
 
         # 3. Update the file of parameters with the name of the result directory
-            self.__parser.setAttribute(node, attr, rep)
+            if node:
+                self.__parser.setAttribute(node, attr, rep)
+            return rep
+
         else:
             self.reporting('Error: check compare/script/plot/probe/resu/input failed.')
             sys.exit(1)
@@ -897,6 +914,33 @@ class Studies(object):
                             self.reporting('    - script %s --> OK (%s s)' % (cmd, t))
                         else:
                             self.reporting('    - script %s not found' % cmd)
+
+
+    def postpro(self):
+        """
+        Launch external additional scripts with arguments.
+        """
+        for l, s in self.studies:
+            for case in s.Cases:
+                if case.is_run != "KO":
+                    if case.run_dir == "":
+                        resu = os.path.join(self.dest, l, case.label, 'RESU')
+                        rep = self.__check_dir(l, case.label, None, resu, "", "dest")
+                        case.run_id = rep
+                        case.run_dir = os.path.join(result, rep)
+
+            self.reporting('  o Postprocessing cases of study: ' + l)
+            script, label, nodes, args = self.__parser.getPostPro(l)
+            for i in range(len(label)):
+                if script[i]:
+                    cmd = os.path.join(self.dest, l, "POST", label[i])
+                    if os.path.isfile(cmd):
+                        list_cases, list_dir = s.getRunDirectories()
+                        cmd += " " + args[i] + " -c " + list_cases + " -d " + list_dir + " -s " + l
+                        retcode, t = run_command(cmd, self.__log)
+                        self.reporting('    - postpro %s --> OK (%s s)' % (cmd, t))
+                    else:
+                        self.reporting('    - postpro %s not found' % cmd)
 
 
     def check_plot(self, destination=True):

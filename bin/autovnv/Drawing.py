@@ -455,7 +455,7 @@ class Plotter(object):
                         curve = Probes(f, fig, ycol)
                         self.curves.append(curve)
 
-        # Read the files of results
+        # Read the files of results of cases
         for case in study_object.Cases:
             if case.plot == "on" and case.is_run != "KO":
                 for node in self.parser.getChilds(case.node, "data"):
@@ -478,8 +478,27 @@ class Plotter(object):
                                          study_label,
                                          case.label, "RESU",
                                          d, "monitoring", file_name)
+
                         if not os.path.isfile(f):
                             raise ValueError, "\n\nThis file does not exist: %s\n\n" % f
+
+                    for nn in plots:
+                        curve = Plot(nn, self.parser, f)
+                        curve.setMeasurement(False)
+                        self.curves.append(curve)
+
+        # Read the files of results of postpro
+        script, label, nodes, args = self.parser.getPostPro(study_label)
+        for i in range(len(label)):
+            if script[i]:
+                for node in self.parser.getChilds(nodes[i], "data"):
+                    plots, file_name, dest, repo = self.parser.getResult(node)
+
+                    dd = self.parser.getDestination()
+                    f = os.path.join(dd, study_label, "POST", file_name)
+
+                    if not os.path.isfile(f):
+                        raise ValueError, "\n\nThis file does not exist: %s\n\n" % f
 
                     for nn in plots:
                         curve = Plot(nn, self.parser, f)

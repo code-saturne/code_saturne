@@ -544,6 +544,42 @@ class Parser(object):
         return nodes, files
 
 
+    def getPostPro(self, l):
+        """
+        Read:
+            <study label='STUDY' status='on'>
+                <case label='CASE1' status='on' compute="on" post="on"/>
+                <postpro label="script_post.py" args="" status="on">
+                    <data file="profile.dat">
+                        <plot fig="1" xcol="1" ycol="2" legend="Grid 1"/>
+                    </data>
+                </postpro>
+            </study>
+
+        Return the list of files of postpro.
+        @type l: C{String}
+        @param l: label of a study
+        @rtype: C{List}
+        @return: C{List} of list of nodes <postpro>
+        """
+        scripts, labels, nodes, args = [], [], [], []
+
+        for node in self.getStudyNode(l).getElementsByTagName("postpro"):
+            if str(node.attributes["status"].value) == 'on':
+                scripts.append(True)
+            else:
+                scripts.append(False)
+
+            labels.append(str(node.attributes["label"].value))
+            nodes.append(node)
+            try:
+                args.append(str(node.attributes["args"].value))
+            except:
+                args.append("")
+
+        return scripts, labels, nodes, args
+
+
     def getSubplots(self, studyLabel):
         return self.getStudyNode(studyLabel).getElementsByTagName("subplot")
 
