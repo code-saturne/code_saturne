@@ -698,14 +698,15 @@ class case:
             e.write('#mpmdend\n')
             rank_id += d.n_procs
 
-        e.close()
+        e.write('#mapping ABCDET\n')
 
-        # NOTE: adding :
-        # e.write('#mapping ABCDET\n')
-        # before closing seems to help in some cases where the mapping file is
-        # not interpreted correctly, but is not always required;
+        # NOTE: adding the mapping line above seems to help in some cases where
+        # the mapping file is not interpreted correctly, but seems not to be
+        # always required (the documentation is minimalistic);
         # with driver V1R2M0_17, reading of the mapping file seems fragile
-        # and subject to random failures, but this seems to be a BG/Q issue.
+        # and subject to random failures unless this line is added.
+
+        e.close()
 
         return e_path
 
