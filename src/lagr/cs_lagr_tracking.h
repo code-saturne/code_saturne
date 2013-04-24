@@ -117,7 +117,8 @@ CS_PROCF (prtget, PRTGET)(const cs_int_t   *nbpmax,  /* n_particles max. */
                           const cs_lnum_t  *jnbasg,
                           const cs_lnum_t  *jnbasp,
                           const cs_lnum_t  *jfadh,
-                          const cs_lnum_t  *jmfadh
+                          const cs_lnum_t  *jmfadh,
+                          const cs_lnum_t  *jndisp
 );
 
 /*----------------------------------------------------------------------------
@@ -181,7 +182,8 @@ CS_PROCF (prtput, PRTPUT)(const cs_int_t   *nbpmax,  /* n_particles max. */
                           const cs_lnum_t  *jnbasg,
                           const cs_lnum_t  *jnbasp,
                           const cs_lnum_t  *jfadh,
-                          const cs_lnum_t  *jmfadh
+                          const cs_lnum_t  *jmfadh,
+                          const cs_lnum_t  *jndisp
 );
 
 /*----------------------------------------------------------------------------

@@ -1167,11 +1167,11 @@ if ( idepst .eq. 1 ) then
   nivep = nivep + 8
 endif
 
-! Modele de remise en suspension : 2 tableaux supp dans TEPA  : JFADH , JMFADH
+! Modele de remise en suspension : 3 tableaux supp dans TEPA  : JFADH , JMFADH, JNDISP
 !                                  2 tableaux supp dans ITEPA
 
 if ( ireent .eq. 1 ) then
-  nvep  = nvep  + 2
+  nvep  = nvep  + 3
   nivep = nivep + 2
 endif
 
@@ -1316,12 +1316,13 @@ if ( idepst .eq. 1 ) then
   irf    = jrinpf
 endif
 
-! Modele de remise en suspension : 2 tableaux supp dans TEPA  : JFADH et JMFADH
+! Modele de remise en suspension : 3 tableaux supp dans TEPA  : JFADH, JMFADH, JNDISP
 
 if ( ireent .eq. 1 ) then
   jfadh = irf + 1
   jmfadh = jfadh + 1
-  irf    = jmfadh
+  jndisp = jmfadh + 1
+  irf    = jndisp
 endif
 
 

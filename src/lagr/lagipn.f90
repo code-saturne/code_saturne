@@ -289,6 +289,22 @@ if (idepst.eq.1) then
       itepa(npt,jdepo) = 0
 
    enddo
+
+   ! Initialization of the additional "pointers"
+   ! for the resuspension model
+
+   if (ireent.gt.0) then
+
+      tepa(npt,jfadh) = 0.d0
+      tepa(npt,jmfadh) = 0.d0
+
+      itepa(npt,jnbasg) = 0
+      itepa(npt,jnbasp) = 0
+
+      tepa(npt,jndisp) = 0.d0
+
+   endif
+
 endif
 
 ! Free memory

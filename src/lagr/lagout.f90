@@ -416,6 +416,7 @@ endif
 if (ireent.eq.1) then
    nomrte(jfadh) = 'force_adhesion'
    nomrte(jmfadh) = 'moment_adhesion'
+   nomrte(jndisp) = 'disp_norm'
 endif
 
 itysup = ipasup

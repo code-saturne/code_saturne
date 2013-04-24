@@ -706,7 +706,7 @@ endif
    iphyla ,                                                       &
    jhp    , jtf    , jmch   , jmck   , jcp   ,                    &
    jrdck  , jrd0p  , jrr0p  , jinch  ,                            &
-   jdepo  , jnbasg , jnbasp , jfadh  , jmfadh)
+   jdepo  , jnbasg , jnbasp , jfadh  , jmfadh, jndisp)
 
 
 
@@ -733,7 +733,7 @@ endif
    iphyla ,                                                       &
    jhp    , jtf    , jmch   , jmck   , jcp   ,                    &
    jrdck  , jrd0p  , jrr0p  , jinch  ,                            &
-   jdepo  , jnbasg , jnbasp , jfadh  , jmfadh)
+   jdepo  , jnbasg , jnbasp , jfadh  , jmfadh, jndisp)
 
 
   if (ierr.eq.1) then
@@ -765,7 +765,7 @@ endif
 
 if (ireent.gt.0) then
 
-  call lagadh                                                     &
+  call lagres                                                     &
   !==========
  ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &

@@ -95,6 +95,7 @@ lagout.f90 \
 lagphy.f90 \
 lagpoi.f90 \
 lagprj.f90 \
+lagres.f90 \
 lagrus.f90 \
 lagsta.f90 \
 lagstf.f90 \

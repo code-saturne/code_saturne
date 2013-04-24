@@ -142,11 +142,11 @@ module lagran
 
   integer, save ::         ireent
 
-  ! Additional pointers in the ITEPA array
+  ! Additional pointers in the ITEPA and TEPA array
   ! ITEPA contains the particule state
 
   integer, save ::   jroll , jnbasg , jnbasp , jdepo
-  integer, save ::   jfadh , jmfadh
+  integer, save ::   jfadh , jmfadh , jndisp
 
   ! Parameters of the particle resuspension model
 

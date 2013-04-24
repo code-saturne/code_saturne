@@ -209,6 +209,15 @@ double precision c0, cl, visccf
 double precision energi , dissip , vit(3)
 double precision norm_vit , norm
 integer          iromf
+
+! Local variables for the resuspension model
+
+double precision drag(3), drag_norm      ! Hydrodynamic drag on a deposited particle
+double precision tordrg(3), tordrg_norm  ! Hydrodynamic torque on a deposited particle
+
+double precision omep(3)  ! Angular velocity of the rolling particle
+double precision dome(3)  ! Time increment of the angular velocity of the deposited particle
+
 !===============================================================================
 
 !===============================================================================
@@ -383,7 +392,7 @@ call lagcli                                                       &
      tepa(ip,jryplu),tepa(ip,jrinpf), enertur, ggp(1), vflui(1),  &
      gdpr(1), piilp(1), depint )
 
-if (itepa(ip,jdepo).eq.1) then
+if (itepa(ip,jdepo).gt.0) then
    depl(1) = 0.d0
    vpart(1) = 0.d0
 endif
@@ -393,141 +402,271 @@ endif
 
 if (itepa(ip,jdepo).eq.0) then
 
-do id = 2,3
+   do id = 2,3
 
-  i0 = id - 1
+      i0 = id - 1
 
-  tci = piilp(id) * tlp + vflui(id)
-  force = ( romf * gdpr(id) / romp(ip) + ggp(id) ) * taup(ip)
+      tci = piilp(id) * tlp + vflui(id)
+      force = ( romf * gdpr(id) / romp(ip) + ggp(id) ) * taup(ip)
 
-  aux1 = exp( -dtp / taup(ip))
-  aux2 = exp( -dtp / tlp )
-  aux3 = tlp / (tlp-taup(ip))
+      aux1 = exp( -dtp / taup(ip))
+      aux2 = exp( -dtp / tlp )
+      aux3 = tlp / (tlp-taup(ip))
 
-  aux4 = tlp / (tlp+taup(ip))
-  aux5 = tlp * (1.d0-aux2)
-  aux6 = bxp * bxp * tlp
+      aux4 = tlp / (tlp+taup(ip))
+      aux5 = tlp * (1.d0-aux2)
+      aux6 = bxp * bxp * tlp
 
-  aux7 = tlp - taup(ip)
-  aux8 = bxp * bxp * aux3**2
+      aux7 = tlp - taup(ip)
+      aux8 = bxp * bxp * aux3**2
 
-!---> Terms for the trajectory
+      !---> Terms for the trajectory
 
-  aa = taup(ip) * (1.d0 - aux1)
-  bb = (aux5 - aa) * aux3
-  cc = dtp - aa - bb
+      aa = taup(ip) * (1.d0 - aux1)
+      bb = (aux5 - aa) * aux3
+      cc = dtp - aa - bb
 
-  ter1x = aa * vpart(id)
-  ter2x = bb * vvue(id)
-  ter3x = cc * tci
-  ter4x = (dtp - aa) * force
+      ter1x = aa * vpart(id)
+      ter2x = bb * vvue(id)
+      ter3x = cc * tci
+      ter4x = (dtp - aa) * force
 
-!---> Terms for the flow-seen velocity
+      !---> Terms for the flow-seen velocity
 
-  ter1f = vvue(id) * aux2
-  ter2f = tci * (1.d0-aux2)
+      ter1f = vvue(id) * aux2
+      ter2f = tci * (1.d0-aux2)
 
-!---> Terms for the particles velocity
+      !---> Terms for the particles velocity
 
-  dd = aux3 * (aux2 - aux1)
-  ee = 1.d0 - aux1
+      dd = aux3 * (aux2 - aux1)
+      ee = 1.d0 - aux1
 
-  ter1p = vpart(id) * aux1
-  ter2p = vvue(id) * dd
-  ter3p = tci * (ee-dd)
-  ter4p = force * ee
+      ter1p = vpart(id) * aux1
+      ter2p = vvue(id) * dd
+      ter3p = tci * (ee-dd)
+      ter4p = force * ee
 
-!---> (2.3) Coefficients computation for the stochastic integrals:
+      !---> (2.3) Coefficients computation for the stochastic integrals:
 
-  gama2  = 0.5d0 * (1.d0 - aux2*aux2 )
-  omegam = 0.5d0 * aux4 * ( aux5 - aux2*aa )                      &
-          -0.5d0 * aux2 * bb
-  omegam = omegam * sqrt(aux6)
+      gama2  = 0.5d0 * (1.d0 - aux2*aux2 )
+      omegam = 0.5d0 * aux4 * ( aux5 - aux2*aa )                      &
+           -0.5d0 * aux2 * bb
+      omegam = omegam * sqrt(aux6)
 
-  omega2 = aux7                                                   &
-          * ( aux7*dtp - 2.d0 * (tlp*aux5-taup(ip)*aa) )      &
-          + 0.5d0 * tlp * tlp*aux5 * (1.d0 + aux2)        &
-          + 0.5d0 * taup(ip) * taup(ip) * aa * (1.d0+aux1)        &
-          - 2.0d0 * aux4 * tlp * taup(ip) * taup(ip)          &
-                  * (1.d0 - aux1*aux2)
+      omega2 = aux7                                                   &
+           * ( aux7*dtp - 2.d0 * (tlp*aux5-taup(ip)*aa) )      &
+           + 0.5d0 * tlp * tlp*aux5 * (1.d0 + aux2)        &
+           + 0.5d0 * taup(ip) * taup(ip) * aa * (1.d0+aux1)        &
+           - 2.0d0 * aux4 * tlp * taup(ip) * taup(ip)          &
+           * (1.d0 - aux1*aux2)
 
-  omega2 = aux8 * omega2
+      omega2 = aux8 * omega2
 
-  if (abs(gama2).gt.epzero) then
+      if (abs(gama2).gt.epzero) then
 
-    p21 = omegam / sqrt(gama2)
-    p22 = omega2 - p21**2
-    p22 = sqrt( max(zero,p22) )
+         p21 = omegam / sqrt(gama2)
+         p22 = omega2 - p21**2
+         p22 = sqrt( max(zero,p22) )
 
-  else
-    p21 = 0.d0
-    p22 = 0.d0
-  endif
+      else
+         p21 = 0.d0
+         p22 = 0.d0
+      endif
 
-  ter5x = p21 * vagaus(ip,i0) + p22 * vagaus(ip,3+i0)
+      ter5x = p21 * vagaus(ip,i0) + p22 * vagaus(ip,3+i0)
 
-!---> Integral for the flow-seen velocity
+      !---> Integral for the flow-seen velocity
 
-  p11 = sqrt( gama2*aux6 )
-  ter3f = p11*vagaus(ip,i0)
+      p11 = sqrt( gama2*aux6 )
+      ter3f = p11*vagaus(ip,i0)
 
-!---> Integral for particles velocity
+      !---> Integral for particles velocity
 
-  aux9  = 0.5d0 * tlp * (1.d0 - aux2*aux2)
-  aux10 = 0.5d0 * taup(ip) * (1.d0 - aux1*aux1)
-  aux11 = taup(ip) * tlp * (1.d0 - aux1*aux2)                 &
-         / (taup(ip) + tlp)
+      aux9  = 0.5d0 * tlp * (1.d0 - aux2*aux2)
+      aux10 = 0.5d0 * taup(ip) * (1.d0 - aux1*aux1)
+      aux11 = taup(ip) * tlp * (1.d0 - aux1*aux2)                 &
+           / (taup(ip) + tlp)
 
-  grga2 = (aux9 - 2.d0*aux11 + aux10) * aux8
-  gagam = (aux9 - aux11) * (aux8 / aux3)
-  gaome = ( (tlp - taup(ip)) * (aux5 - aa)                    &
-          -  tlp * aux9 - taup(ip) * aux10                    &
-          + (tlp + taup(ip)) * aux11 ) * aux8
+      grga2 = (aux9 - 2.d0*aux11 + aux10) * aux8
+      gagam = (aux9 - aux11) * (aux8 / aux3)
+      gaome = ( (tlp - taup(ip)) * (aux5 - aa)                    &
+           -  tlp * aux9 - taup(ip) * aux10                    &
+           + (tlp + taup(ip)) * aux11 ) * aux8
 
-  if(p11.gt.epzero) then
-    p31 = gagam / p11
-  else
-    p31 = 0.d0
-  endif
+      if(p11.gt.epzero) then
+         p31 = gagam / p11
+      else
+         p31 = 0.d0
+      endif
 
-  if(p22.gt.epzero) then
-    p32 = (gaome-p31*p21) / p22
-  else
-    p32 = 0.d0
-  endif
+      if(p22.gt.epzero) then
+         p32 = (gaome-p31*p21) / p22
+      else
+         p32 = 0.d0
+      endif
 
-  p33 = grga2 - p31**2 - p32**2
-  p33 = sqrt( max(zero,p33) )
+      p33 = grga2 - p31**2 - p32**2
+      p33 = sqrt( max(zero,p33) )
 
-  ter5p =  p31 * vagaus(ip,i0)                                   &
-         + p32 * vagaus(ip,3+i0)                                 &
-         + p33 * vagaus(ip,6+i0)
+      ter5p =  p31 * vagaus(ip,i0)                                   &
+           + p32 * vagaus(ip,3+i0)                                 &
+           + p33 * vagaus(ip,6+i0)
 
-!---> trajectory
+      !---> trajectory
 
-  depl(id) = ter1x + ter2x + ter3x + ter4x + ter5x
+      depl(id) = ter1x + ter2x + ter3x + ter4x + ter5x
 
-!---> flow-seen velocity
+      !---> flow-seen velocity
 
-  vvue(id) = ter1f + ter2f + ter3f
+      vvue(id) = ter1f + ter2f + ter3f
 
-!---> particles velocity
+      !---> particles velocity
+      vpart(id) = ter1p + ter2p + ter3p + ter4p + ter5p
 
-  vpart(id) = ter1p + ter2p + ter3p + ter4p + ter5p
-
-enddo
+   enddo
 
 else
 
-   if (ireent.eq.1) then
+   do id = 2,3
+
+      i0 = id - 1
+
+      tci = piilp(id) * tlp + vflui(id)
+      force = ( romf * gdpr(id) / romp(ip) + ggp(id) ) * taup(ip)
+
+      aux1 = exp( -dtp / taup(ip))
+      aux2 = exp( -dtp / tlp )
+      aux3 = tlp / (tlp-taup(ip))
+
+      aux4 = tlp / (tlp+taup(ip))
+      aux5 = tlp * (1.d0-aux2)
+      aux6 = bxp * bxp * tlp
+
+
+      !---> Terms for the flow-seen velocity
+
+      ter1f = vvue(id) * aux2
+      ter2f = tci * (1.d0-aux2)
+
+      !---> (2.3) Coefficients computation for the stochastic integrals:
+
+      gama2  = 0.5d0 * (1.d0 - aux2*aux2 )
+
+      !---> Integral for the flow-seen velocity
+
+      p11 = sqrt( gama2*aux6 )
+      ter3f = p11*vagaus(ip,i0)
+
+      !---> flow-seen velocity
+
+      vvue(id) = ter1f + ter2f + ter3f
+
+      !---> particles velocity
+      vpart(id) = 0.d0
+
+      !---> trajectory
+
+      depl(id) = 0.d0
+
+   enddo
+
+endif
+
+
+if (ireent.eq.1) then
+
+   if (itepa(ip,jdepo).gt.0) then
+
+      ! Resuspension model
+
+      ! Calculation of the hydrodynamic drag and torque
+      ! applied on the deposited particle
+
+      drag(1) = 3.d0 * pi * ettp(ip,jdp) * (vvue(1) - vpart(1)) * visccf * romf * 3.39d0
+      tordrg(1) = 0.0d0
 
       do id = 2,3
-         vpart(id) = vflui(id)
-         vvue(id) =  vflui(id)
-         depl(id) = vpart(id) * dtref
+         drag(id) = 3.d0 * pi * ettp(ip,jdp) * (vvue(id)-vpart(id)) * visccf * romf * 1.7d0
+         tordrg(id) = 1.4d0 * drag(id) * ettp(ip,jdp) * 0.5d0
       enddo
 
-   else
+
+      ! Is there direct wall-normal lift-off of the particle ?
+
+      if ((abs(drag(1)).gt.tepa(ip,jfadh)).and.(drag(1).lt.0.d0)) then
+
+         ! The particle is resuspended
+
+         itepa(ip,jdepo) = 0
+
+         tepa(ip,jfadh) = 0.d0
+         tepa(ip,jmfadh) = 0.d0
+
+         itepa(ip,jnbasg) = 0
+         itepa(ip,jnbasp) = 0
+
+         tepa(ip,jndisp) = 0.d0
+
+         vpart(1) = min(- 1.d0 / ettp(ip,jmp) * abs(drag(1) -  tepa(ip,jfadh)) * dtref, 1.d-3)
+         vpart(2) = 0.d0
+         vpart(3) = 0.d0
+
+      else  ! No direct normal lift-off
+
+         ! Calculation of the norm of the hydrodynamic torque and drag (tangential)
+
+         drag_norm = sqrt(drag(2)**2 + drag(3)**2)
+         tordrg_norm = sqrt(tordrg(2)**2 + tordrg(3)**2)
+
+         if (tordrg_norm.gt.tepa(ip,jmfadh)) then
+
+            ! The hydrodynamic torque overcomes the adhesion torque
+            ! --> The particle starts rolling
+
+            itepa(ip,jdepo) = 2
+
+            vpart(1) = 0.0d0
+
+            do id = 2,3
+
+               omep(id) = vpart(id) / (ettp(ip,jdp) * 0.5d0)
+               dome(id) = (tordrg_norm-tepa(ip,jmfadh))                               &
+                    /((7.d0/5.d0)*ettp(ip,jmp)*(ettp(ip,jdp) * 0.5d0)**2)
+
+               omep(id) = omep(id) + dome(id) * dtref * drag(id) / drag_norm
+
+               vpart(id) = ettp(ip,jdp) * 0.5d0 * omep(id)
+
+               if (abs(vpart(id)).gt.abs(vvue(id))) then
+
+                  ! The velocity of the rolling particle cannot
+                  ! exceed the surrounding fluid velocity
+
+                  vpart(id) = vvue(id)
+
+               endif
+
+               depl(id) = vpart(id) * dtref
+
+            enddo  ! do id = 2,3
+
+
+         else
+
+            ! The particle is not set into motion
+            ! the flag is set to  10
+
+            itepa(ip,jdepo) = 10
+
+         endif ! if (tordrg ..)
+
+      endif
+
+     endif
+
+else  ! if ireent.eq.0 --> Motionless deposited particle
+
+   if (itepa(ip,jdepo).gt.0) then
 
       do id = 2,3
          vpart(id) = 0.d0
@@ -538,6 +677,8 @@ else
    endif
 
 endif
+
+
 
 !===============================================================================
 ! 3. Reference frame change:
@@ -584,9 +725,10 @@ call lagprj                                                       &
 ! 5. Computation of the new particle position
 !===============================================================================
 
-ettp(ip,jxp)=ettp(ip,jxp)+depg(1)
-ettp(ip,jyp)=ettp(ip,jyp)+depg(2)
-ettp(ip,jzp)=ettp(ip,jzp)+depg(3)
+   ettp(ip,jxp)=ettp(ip,jxp)+depg(1)
+   ettp(ip,jyp)=ettp(ip,jyp)+depg(2)
+   ettp(ip,jzp)=ettp(ip,jzp)+depg(3)
+
 
 !===============================================================================
 

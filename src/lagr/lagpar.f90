@@ -37,7 +37,7 @@ module lagpar
   !     NCHARM2 : NOMBRE MAXIMAL DE CLASSES DE CHARBON (voir cpincl.f90)
 
   integer         ncharm2
-  parameter      (ncharm2 = 3)
+  parameter      (ncharm2 = 5)
 
   !     NCLSTM : NOMBRE MAXIMUM DE STATISTIQUES VOLUMIQUE PAR GROUPE
 
