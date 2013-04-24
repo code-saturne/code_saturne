@@ -2286,8 +2286,12 @@ _local_propagation(cs_lagr_particle_t     *p_prev_particle,
   for (k = 0; k < 3; k++)
     depl[k] = particle.coord[k] - prev_particle.coord[k];
 
-  if (fabs(depl[0]) < 1e-15 && fabs(depl[1]) < 1e-15 && fabs(depl[2]) < 1e-15)
+  if (fabs(depl[0]) < 1e-15 && fabs(depl[1]) < 1e-15 && fabs(depl[2]) < 1e-15) {
+
     move_particle = CS_LAGR_PART_MOVE_OFF;
+    particle_state = CS_LAGR_PART_TREATED;
+
+  }
 
   /*  particle_state is defined at the top of this file */
 
