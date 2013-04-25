@@ -26,7 +26,7 @@ subroutine lecamx &
  ( ndim   , ncelet , ncel   , nfac   , nfabor , nnod   ,          &
    nvar   , nscal  ,                                              &
    dt     , rtp    , propce , propfa , propfb ,                   &
-   coefa  , coefb  , frcxt  )
+   coefa  , coefb  , frcxt  , prhyd  )
 
 !===============================================================================
 
