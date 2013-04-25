@@ -3984,13 +3984,6 @@ CS_PROCF (prtget, PRTGET)(const cs_lnum_t   *nbpmax,  /* n_particles max. */
 
   }
 
-  /* Visualization information to on if needed */
-
-  if (*nbvis > 0) {
-    for (i = 0; i < *nbvis; i++)
-      set->particles[liste[i]-1].visualized = 1;
-  }
-
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
   bft_printf("\n PARTICLE SET AFTER PRTGET\n");
@@ -4244,12 +4237,6 @@ CS_PROCF (prtput, PRTPUT)(const cs_int_t   *nbpmax,  /* n_particles max. */
 
     /* Next particle id to treat */
 
-    /* Visualization information */
-
-    if (cur_part.visualized == 1) {
-      liste[k] = i + 1;
-      k++;
-    }
 
     j = cur_part.next_id;
 

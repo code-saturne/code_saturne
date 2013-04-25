@@ -184,80 +184,85 @@ endif
 
 if ((mod(ipass-1, nvisla).eq.0 .or. iforce.gt.0) .and. nfin.eq.0) then
 
-  do nl = 1, nbvis
+  do np = 1, nbpart
 
-    np = liste(nl)
+      do nl = 1, nbvis
 
-    if ((np.ge.1 .and. iforce.eq.0) .or. (iforce.eq.np)) then
+        if (itepa(np,jgnum).eq.liste(nl)) then
 
-      ! sortie du domaine ?
-      if (itepa(np, jisor).gt.0) then
+           if ((np.ge.1 .and. iforce.eq.0) .or. (iforce.eq.np)) then
 
-        !--->incrementation du nombre d'enregistrement pour la particule NP :
-        nplist(nl) = nplist(nl)+1
+               ! sortie du domaine ?
+              if (itepa(np, jisor).gt.0) then
 
-        if (nplist(nl).gt.nlmax) nlmax = nplist(nl)
+                  !--->incrementation du nombre d'enregistrement pour la particule NP :
+                 nplist(nl) = nplist(nl)+1
 
-        !--->numero de liste :
-        write(impla3) nl
+                 if (nplist(nl).gt.nlmax) nlmax = nplist(nl)
 
-        !--->coordonnees de la particule NP :
-        write(impla3) ettp(np, jxp), ettp(np, jyp), ettp(np, jzp)
+                  !--->numero de liste :
+                 write(impla3) nl
 
-        !--->vitesse du fluide vu :
-        if (ivisv1.eq.1) then
-          write(impla3) ettp(np, juf), ettp(np, jvf), ettp(np, jwf)
+                 !--->coordonnees de la particule NP :
+                 write(impla3) ettp(np, jxp), ettp(np, jyp), ettp(np, jzp)
+
+                 !--->vitesse du fluide vu :
+                 if (ivisv1.eq.1) then
+                    write(impla3) ettp(np, juf), ettp(np, jvf), ettp(np, jwf)
+                 endif
+
+                 !--->vitesse de la particule :
+                 if (ivisv2.eq.1) then
+                    write(impla3) ettp(np, jup), ettp(np, jvp), ettp(np, jwp)
+                 endif
+
+                 !--->temps de sejour :
+                 if (ivistp.eq.1) then
+                    write(impla3) tepa(np, jrtsp)
+                 endif
+
+                 !--->diametre :
+                 if (ivisdm.eq.1) then
+                    write(impla3) ettp(np, jdp)
+                 endif
+
+                 !--->masse :
+                 if (ivismp.eq.1) then
+                    write(impla3) ettp(np, jmp)
+                 endif
+
+                 !--->temperature :
+                 if (iviste.eq.1) then
+                    write(impla3) ettp(np, jtp)
+                 endif
+
+                 !--->Specifique charbon :
+                 ! Temperature
+                 if (ivishp.eq.1) then
+                    write(impla3) ettp(np, jhp)
+                 endif
+                 ! Diametre du coeur retrecisant
+                 if (ivisdk.eq.1) then
+                    write(impla3) tepa(np, jrdck)
+                 endif
+                 ! Masse charbon reactif
+                 if (ivisch.eq.1) then
+                    write(impla3) ettp(np, jmch)
+                 endif
+                 ! Masse de coke
+                 if (ivisck.eq.1) then
+                    write(impla3) ettp(np, jmck)
+                 endif
+
+              endif
+
+           endif
+
         endif
 
-        !--->vitesse de la particule :
-        if (ivisv2.eq.1) then
-          write(impla3) ettp(np, jup), ettp(np, jvp), ettp(np, jwp)
-        endif
-
-        !--->temps de sejour :
-        if (ivistp.eq.1) then
-          write(impla3) tepa(np, jrtsp)
-        endif
-
-        !--->diametre :
-        if (ivisdm.eq.1) then
-            write(impla3) ettp(np, jdp)
-        endif
-
-        !--->masse :
-        if (ivismp.eq.1) then
-          write(impla3) ettp(np, jmp)
-        endif
-
-        !--->temperature :
-        if (iviste.eq.1) then
-          write(impla3) ettp(np, jtp)
-        endif
-
-        !--->Specifique charbon :
-        ! Temperature
-        if (ivishp.eq.1) then
-          write(impla3) ettp(np, jhp)
-        endif
-        ! Diametre du coeur retrecisant
-        if (ivisdk.eq.1) then
-          write(impla3) tepa(np, jrdck)
-        endif
-        ! Masse charbon reactif
-        if (ivisch.eq.1) then
-          write(impla3) ettp(np, jmch)
-        endif
-        ! Masse de coke
-        if (ivisck.eq.1) then
-          write(impla3) ettp(np, jmck)
-        endif
-
-      endif
-
-    endif
+     enddo
 
   enddo
-
 endif
 
 !===============================================================================

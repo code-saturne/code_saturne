@@ -138,13 +138,16 @@ if ( (mod(ipwaf-1,nvisla).eq.0 .and. nfin.eq.0)   .or.            &
 
 !-->Nombre de particules a visualisees encore presentent dans le domaine
 
-  npt = 0
-  do nl = 1,nbvis
-    np = liste(nl)
-    if (np.ge.1) then
-      if (itepa(np,jisor).ne.0) npt = npt + 1
-    endif
-  enddo
+   npt = 0
+   do np = 1, nbpart
+      do nl = 1,nbvis
+         if (itepa(np,jgnum).eq.liste(nl)) then
+            if (np.ge.1) then
+               if (itepa(np,jisor).ne.0) npt = npt + 1
+            endif
+         endif
+      enddo
+   enddo
 
 !-->Y a t-il encore des particules a visualiser ?
 
@@ -186,17 +189,20 @@ if ( (mod(ipwaf-1,nvisla).eq.0 .and. nfin.eq.0)   .or.            &
 
 !-->Ecriture des points
 
-  do nl = 1,nbvis
-    np = liste(nl)
-    if (np.ge.1) then
-      if (itepa(np,jisor).ne.0) then
-        write(impla1,'(I8,3E12.5)') &
-                  np,               &
-        ettp(np,jxp),               &
-        ettp(np,jyp),               &
-        ettp(np,jzp)
-      endif
-    endif
+  do np = 1, nbpart
+     do nl = 1,nbvis
+        if (itepa(np,jgnum).eq.liste(nl)) then
+           if (np.ge.1) then
+              if (itepa(np,jisor).ne.0) then
+                 write(impla1,'(I8,3E12.5)') &
+                      np,               &
+                      ettp(np,jxp),               &
+                      ettp(np,jyp),               &
+                      ettp(np,jzp)
+              endif
+           endif
+        endif
+     enddo
   enddo
 
 !-->Ecriture de la geometrie Ensight
@@ -207,14 +213,18 @@ if ( (mod(ipwaf-1,nvisla).eq.0 .and. nfin.eq.0)   .or.            &
   WRITE(IMPLA1,'(I8)') NPT
 
   ipt = 0
-  do nl = 1,nbvis
-    np = liste(nl)
-    if (np.ge.1) then
-      if (itepa(np,jisor).ne.0) then
-        ipt = ipt + 1
-        write(impla1,'(2I8)') ipt , np
-      endif
-    endif
+  do np = 1, nbpart
+
+     do nl = 1,nbvis
+        if (itepa(np,jgnum).eq.liste(nl)) then
+           if (np.ge.1) then
+              if (itepa(np,jisor).ne.0) then
+                 ipt = ipt + 1
+                 write(impla1,'(2I8)') ipt , np
+              endif
+           endif
+        endif
+     enddo
   enddo
   close(impla1)
 
@@ -232,15 +242,18 @@ endif
 if (ivistp.eq.1) then
 
   ipt = 0
-  do nl = 1,nbvis
-    np = liste(nl)
-    if (np.ge.1) then
-      if (itepa(np,jisor).ne.0) then
-        ipt = ipt + 1
-        trav(ipt,1) = tepa(np,jrtsp)
-      endif
-    endif
- enddo
+  do np = 1, nbpart
+     do nl = 1,nbvis
+        if (itepa(np,jgnum).eq.liste(nl)) then
+           if (np.ge.1) then
+              if (itepa(np,jisor).ne.0) then
+                 ipt = ipt + 1
+                 trav(ipt,1) = ettp(np,jrtsp)
+              endif
+           endif
+        endif
+     enddo
+  enddo
 
   FICH = ' '
   fich = entet
@@ -268,15 +281,19 @@ endif
 
 if (iviste.eq.1) then
 
+
   ipt = 0
-  do nl = 1,nbvis
-    np = liste(nl)
-    if (np.ge.1) then
-      if (itepa(np,jisor).ne.0) then
-        ipt = ipt + 1
-        trav(ipt,1) = ettp(np,jtp)
-      endif
-    endif
+  do np = 1, nbpart
+     do nl = 1,nbvis
+        if (itepa(np,jgnum).eq.liste(nl)) then
+           if (np.ge.1) then
+              if (itepa(np,jisor).ne.0) then
+                 ipt = ipt + 1
+                 trav(ipt,1) = ettp(np,jtp)
+              endif
+           endif
+        endif
+     enddo
   enddo
 
   FICH = ' '
@@ -305,15 +322,19 @@ endif
 
 if (ivisdm.eq.1) then
 
+
   ipt = 0
-  do nl = 1,nbvis
-    np = liste(nl)
-    if (np.ge.1) then
-      if (itepa(np,jisor).ne.0) then
-        ipt = ipt + 1
-        trav(ipt,1) = ettp(np,jdp)
-      endif
-    endif
+  do np = 1, nbpart
+     do nl = 1,nbvis
+        if (itepa(np,jgnum).eq.liste(nl)) then
+           if (np.ge.1) then
+              if (itepa(np,jisor).ne.0) then
+                 ipt = ipt + 1
+                 trav(ipt,1) = ettp(np,jdp)
+              endif
+           endif
+        endif
+     enddo
   enddo
 
   FICH = ' '
@@ -343,14 +364,17 @@ endif
 if (ivismp.eq.1) then
 
   ipt = 0
-  do nl = 1,nbvis
-    np = liste(nl)
-    if (np.ge.1) then
-      if (itepa(np,jisor).ne.0) then
-        ipt = ipt + 1
-        trav(ipt,1) = ettp(np,jmp)
-      endif
-    endif
+  do np = 1, nbpart
+     do nl = 1,nbvis
+        if (itepa(np,jgnum).eq.liste(nl)) then
+           if (np.ge.1) then
+              if (itepa(np,jisor).ne.0) then
+                 ipt = ipt + 1
+                 trav(ipt,1) = ettp(np,jmp)
+              endif
+           endif
+        endif
+     enddo
   enddo
 
   FICH = ' '
@@ -380,15 +404,19 @@ endif
 if (ivishp.eq.1) then
 
   ipt = 0
-  do nl = 1,nbvis
-    np = liste(nl)
-    if (np.ge.1) then
-      if (itepa(np,jisor).ne.0) then
-        ipt = ipt + 1
-        trav(ipt,1) = ettp(np,jhp)
-      endif
-    endif
+  do np = 1, nbpart
+     do nl = 1,nbvis
+        if (itepa(np,jgnum).eq.liste(nl)) then
+           if (np.ge.1) then
+              if (itepa(np,jisor).ne.0) then
+                 ipt = ipt + 1
+                 trav(ipt,1) = ettp(np,jhp)
+              endif
+           endif
+        endif
+     enddo
   enddo
+
 
   FICH = ' '
   fich = entet
@@ -417,14 +445,17 @@ endif
 if (ivisdk.eq.1) then
 
   ipt = 0
-  do nl = 1,nbvis
-    np = liste(nl)
-    if (np.ge.1) then
-      if (itepa(np,jisor).ne.0) then
-        ipt = ipt + 1
-        trav(ipt,1) = tepa(np,jrdck)
-      endif
-    endif
+  do np = 1, nbpart
+     do nl = 1,nbvis
+        if (itepa(np,jgnum).eq.liste(nl)) then
+           if (np.ge.1) then
+              if (itepa(np,jisor).ne.0) then
+                 ipt = ipt + 1
+                 trav(ipt,1) = tepa(np,jrdck)
+              endif
+           endif
+        endif
+     enddo
   enddo
 
   FICH = ' '
@@ -454,14 +485,17 @@ endif
 if (ivisch.eq.1) then
 
   ipt = 0
-  do nl = 1,nbvis
-    np = liste(nl)
-    if (np.ge.1) then
-      if (itepa(np,jisor).ne.0) then
-        ipt = ipt + 1
-        trav(ipt,1) = ettp(np,jmch)
-      endif
-    endif
+  do np = 1, nbpart
+    do nl = 1,nbvis
+       if (itepa(np,jgnum).eq.liste(nl)) then
+          if (np.ge.1) then
+             if (itepa(np,jisor).ne.0) then
+                ipt = ipt + 1
+                trav(ipt,1) = ettp(np,jmch)
+             endif
+          endif
+       endif
+    enddo
   enddo
 
   FICH = ' '
@@ -491,14 +525,17 @@ endif
 if (ivisck.eq.1) then
 
   ipt = 0
-  do nl = 1,nbvis
-    np = liste(nl)
-    if (np.ge.1) then
-      if (itepa(np,jisor).ne.0) then
-        ipt = ipt + 1
-        trav(ipt,1) = ettp(np,jmck)
-      endif
-    endif
+  do np = 1, nbpart
+    do nl = 1,nbvis
+       if (itepa(np,jgnum).eq.liste(nl)) then
+          if (np.ge.1) then
+             if (itepa(np,jisor).ne.0) then
+                ipt = ipt + 1
+                trav(ipt,1) = ettp(np,jmck)
+             endif
+          endif
+       endif
+    enddo
   enddo
 
   FICH = ' '
@@ -528,17 +565,21 @@ endif
 if (ivisv1.eq.1) then
 
   ipt = 0
-  do nl = 1,nbvis
-    np = liste(nl)
-    if (np.ge.1) then
-      if (itepa(np,jisor).ne.0) then
-        ipt = ipt + 1
-        trav(ipt,1) = ettp(np,juf)
-        trav(ipt,2) = ettp(np,jvf)
-        trav(ipt,3) = ettp(np,jwf)
-      endif
-    endif
+  do np = 1, nbpart
+    do nl = 1,nbvis
+       if (itepa(np,jgnum).eq.liste(nl)) then
+          if (np.ge.1) then
+             if (itepa(np,jisor).ne.0) then
+                ipt = ipt + 1
+                trav(ipt,1) = ettp(np,juf)
+                trav(ipt,2) = ettp(np,jvf)
+                trav(ipt,3) = ettp(np,jwf)
+             endif
+          endif
+       endif
+    enddo
   enddo
+
 
   FICH = ' '
   fich = entet
@@ -567,17 +608,21 @@ endif
 if (ivisv2.eq.1) then
 
   ipt = 0
-  do nl = 1,nbvis
-    np = liste(nl)
-    if (np.ge.1) then
-      if (itepa(np,jisor).ne.0) then
-        ipt = ipt + 1
-        trav(ipt,1) = ettp(np,jup)
-        trav(ipt,2) = ettp(np,jvp)
-        trav(ipt,3) = ettp(np,jwp)
-      endif
-    endif
+  do np = 1, nbpart
+    do nl = 1,nbvis
+       if (itepa(np,jgnum).eq.liste(nl)) then
+          if (np.ge.1) then
+             if (itepa(np,jisor).ne.0) then
+                ipt = ipt + 1
+                trav(ipt,1) = ettp(np,jup)
+                trav(ipt,2) = ettp(np,jvp)
+                trav(ipt,3) = ettp(np,jwp)
+             endif
+          endif
+       endif
+    enddo
   enddo
+
 
   FICH = ' '
   fich = entet
