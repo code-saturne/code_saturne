@@ -680,7 +680,7 @@ endif
  ( nbpmax , nbpart , dnbpar , liste  , nbvis  ,                   &
    ettp   , ettpa  , itepa  , tepa   ,                            &
    ibord  , indep  ,                                              &
-   jisor  , jrpoi  , jrtsp  , jdp    , jmp    ,                   &
+   jisor  , jgnum  , jrpoi  , jrtsp  , jdp    , jmp    ,          &
    jxp    , jyp    , jzp    ,                                     &
    jup    , jvp    , jwp    ,                                     &
    juf    , jvf    , jwf    , jtaux  , jryplu,                    &
@@ -704,7 +704,7 @@ endif
    liste  , nbvis,                                                &
    ettp   , ettpa  , itepa  , tepa   ,                            &
    ibord  ,                                                       &
-   jisor  , jrpoi  , jrtsp  , jdp    ,                            &
+   jisor  , jgnum  , jrpoi  , jrtsp  , jdp    ,                   &
    jmp    , jxp    , jyp    , jzp    ,                            &
    jup    , jvp    , jwp    , juf    , jvf    , jwf , jtaux,      &
    jryplu , jrinpf , jdfac  , jimark , idepst )

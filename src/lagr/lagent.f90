@@ -171,7 +171,10 @@ integer, allocatable, dimension(:) :: ilftot
 
 double precision unif(1), offset, rapsurf
 integer irp, ipart, jj, kk, nfrtot, nlocnew, nbpartall
-
+integer, save :: counter
+integer          ipass
+data             ipass /0/
+save             ipass
 !===============================================================================
 
 !===============================================================================
@@ -1197,6 +1200,22 @@ call uslain                                                       &
    itypfb , itrifb , itepa  , ifrlag , iwork  ,                   &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    ettp   , tepa   , vagaus , ncmax  , nzmax  , iusloc )
+
+!===============================================================================
+! 7bis. NUMEROTATION GLOBALE
+!===============================================================================
+ipass = ipass + 1
+
+if (ipass .eq. 1) counter = 1
+
+do npt = npar1,npar2
+  if (irangp.lt.0) then
+    itepa(npt,jgnum) = counter
+  else
+    itepa(npt,jgnum) = nbpmax * irangp + counter
+  endif
+    counter = counter + 1
+enddo
 
 !   reinitialisation du compteur de nouvelles particules
 npt = nbpart

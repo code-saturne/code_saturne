@@ -452,6 +452,8 @@ endif
 
 nberro = 0
 
+nomite(jgnum) = 'glob_num_'
+
 if (nbclst.gt.0) then
   nomite(jclst) = 'numero_groupe_statistiques'
 endif
@@ -547,6 +549,11 @@ do ivar = 1, nivep
     else
       call lecsui(impaml,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                   itepa(1,ivar),ierror)
+
+      if ((ivar.eq.jgnum) .and. (ierror.eq.-6)) then
+      ! jgnum not necessary to perform a particle restart
+         ierror = 0
+      endif
     endif
     nberro = nberro+ierror
   endif

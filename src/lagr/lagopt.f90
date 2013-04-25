@@ -1113,7 +1113,7 @@ call lagtri
 
 nvp   = 12
 nvep  = 2
-nivep = 1
+nivep = 2
 
 if (nbclst.gt.0) then
 
@@ -1332,7 +1332,9 @@ endif
 jinch = 0
 
 jisor = 1
-irf   = jisor
+
+jgnum = 2
+irf = jgnum
 
 if (nbclst .gt. 0) then
   jclst = irf + 1

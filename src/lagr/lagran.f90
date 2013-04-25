@@ -201,7 +201,7 @@ module lagran
   !   -------
   !     JINCH       : NUMERO DU CHARBON DE LA PARTICULE
 
-  integer, save ::           jisor, jinch , jclst
+  integer, save ::           jisor, jinch , jclst , jgnum
 
   !    NVLS         : NOMBRE DE VARIABLES UTILISATEUR SUPPLEMENTAIRES
   !                   (DEJA CONTENU DANS NVP et NVP1)

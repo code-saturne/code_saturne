@@ -329,6 +329,9 @@ enddo
 ! Caracteristiques et infos particulaires (ENTIERS)
 
 nomite(jisor) = 'indicateur_'
+
+nomite(jgnum) = 'glob_num_'
+
 if (iphyla.eq.2) then
   nomite(jinch) = 'numero_charbon'
 endif
