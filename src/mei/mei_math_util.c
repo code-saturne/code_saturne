@@ -175,25 +175,17 @@ _user_data_reader(const char *filename)
   saveptr = buff;  /* keep the pointer for free memory */
   strcpy(buff, filename);
 
-  /* first call of strtok_r for initialization */
+  /* first call of strtok for initialization */
 
-#if defined(HAVE_STRTOK_R)
-  ext = strtok_r(buff, ".", &buff);
-#else
   ext = strtok(buff, ".");
-#endif
 
   do {
-#if defined(HAVE_STRTOK_R)
-    ext = strtok_r(NULL, ".", &buff);
-#else
     ext = strtok(NULL, ".");
-#endif
 
     if (_user_data_strcmp(ext, "dat"))
     {
-      BFT_MALLOC(separator, 2, char);
-      strcpy(separator, " ");
+      BFT_MALLOC(separator, 4, char);
+      strcpy(separator, " \t");
       break;
 
     } else if (_user_data_strcmp(ext, "csv")) {
@@ -253,20 +245,12 @@ _user_data_reader(const char *filename)
   BFT_MALLOC(buff, SIZE_MAX, char);
   saveptr = buff;
 
-#if defined(HAVE_STRTOK_R)
-  string_tok = strtok_r(line, separator, &buff);
-#else
   string_tok = strtok(line, separator);
-#endif
 
   while (string_tok != NULL) {
-#if defined(HAVE_STRTOK_R)
-    string_tok = strtok_r(NULL, separator, &buff);
-#else
-    string_tok = strtok(NULL, separator);
-#endif
-    if (!_user_data_strcmp(string_tok, "\n"))
+    if (strncmp(string_tok, "\n", 1))
       nb_col += 1;
+    string_tok = strtok(NULL, separator);
   }
   BFT_FREE(saveptr);
 
@@ -311,11 +295,7 @@ _user_data_reader(const char *filename)
 
         BFT_MALLOC(buff, SIZE_MAX, char);
         saveptr = buff;
-#if defined(HAVE_STRTOK_R)
-        string_tok = strtok_r(line, separator, &buff);
-#else
         string_tok = strtok(line, separator);
-#endif
 
         if (string_tok != NULL) {
           row += 1;
@@ -327,11 +307,7 @@ _user_data_reader(const char *filename)
                         filename, i+1, string_tok);
 
           for (int j = 2; j < nb_col + 1; j++) {
-#if defined(HAVE_STRTOK_R)
-            string_tok = strtok_r(NULL, separator, &buff);
-#else
             string_tok = strtok(NULL, separator);
-#endif
 
             if (string_tok == NULL || _user_data_strcmp(string_tok, "\n")) {
               bft_error(__FILE__, __LINE__, 0,
