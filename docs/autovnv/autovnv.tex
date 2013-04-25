@@ -257,7 +257,7 @@ which a symbolic link is used.
 \end{list}
 
 
-\subsection{Run cases}
+\subsection{Run cases}\ref{sec:run}
 
 The computations are activated if the option \texttt{-r, --run} is present in
 the command line.
@@ -288,6 +288,32 @@ After the computation, if no error occurs, the attribute \texttt{compute} is set
 to \texttt{"off"} in the copy of the file of parameters in the
 \textbf{destination}. It is allow to restart \textsc{Autovnv} without re-run
 successfull previous computations.
+
+Note that it is allowed to run several times the same case in a given study.
+The case has to be repeated in the file of parameters:
+
+\small
+\begin{verbatim}
+<?xml version="1.0"?>
+<autovnv>
+    <repository>/home/dupond/codesaturne/MyRepository</repository>
+    <destination>/home/dupond/codesaturne/MyDestination</destination>
+
+    <study label="MyStudy1" status="on">
+        <case label="CASE1" run_id="Grid1" status="on" compute="on" post="on">
+            <prepro label="grid.py" args="-m grid1.med -p cas.xml" status="on"/>
+        </case>
+        <case label="CASE1" run_id="Grid2" status="on" compute="on" post="on"/>
+            <prepro label="grid.py" args="-m grid2.med -p cas.xml" status="on"/>
+        </case>
+    </study>
+</autovnv>
+\end{verbatim}
+\normalsize
+
+If nothing is done, the case is repeated without modifications. In order to modify
+the setup between two runs of the same case, an external script has to be used for
+change the related setup (see sections \ref{sec:prepro} and \ref{sec:tricks}).
 
 \subsection{Compare checkpoint files}
 
@@ -375,7 +401,7 @@ VelocityY &0.364351 &0.00764912 &1.0e-3 \\
 \end{longtable}
 \end{center}
 
-\subsection{Run external additional preprocessing scripts with arguments}
+\subsection{Run external additional preprocessing scripts with options}\label{sec:prepro}
 
 The markup \texttt{<prepro>} has to be added as a child of the condidered case.
 
@@ -394,10 +420,16 @@ The attributes are:
 \item \texttt{label}: the name of the file of the considered script;
 \item \texttt{status}: must be equal to \texttt{on} or \texttt{off}:
 activate or desactivate the markup;
-\item \texttt{args}: the command line to pass to the script.
+\item \texttt{args}: additional options to pass to the script.
 \end{list}
 
 Only the attributes \texttt{label} and \texttt{status} are mandatory.
+
+An addionnal option \texttt{"-c"} (or \texttt{"--case"}) is given by
+default with the path of the current case as argument (see exemple in
+section \ref{sec:tricks} for decoding options).
+
+Note that all options must be processed by the script itself.
 
 Several calls of the same script or to different scripts are permitted:
 \small
@@ -411,70 +443,14 @@ Several calls of the same script or to different scripts are permitted:
 \end{verbatim}
 \normalsize
 
-All preprocessing scripts must be in the \texttt{MESH} directory from
-the current study in the \textbf{repository}.
+All preprocessing scripts are first searched in the \texttt{MESH} directory
+from the current study in the \textbf{repository}. If a script is not found,
+it is searched in the directories of te current case.
 The main objectif of running such external scripts is to create or modify
-meshes.
+meshes or to modify the current setup of the related case (see section
+\ref{sec:trick}).
 
-The flollowing example shows how to create a mesh with a SALOME command file:
-\small
-\begin{verbatim}
-<study label="STUDY" status="on">
-    <case label="CASE1" status="on" compute="on" post="on">
-        <prepro label="salome.sh" args="-t -u my_mesh.py" status="on"/>
-    </case>
-</study>
-\end{verbatim}
-\normalsize
-
-with the script \texttt{salome.sh} (depending of the local installation of
-SALOME):
-\small
-\begin{verbatim}
-#!/bin/bash
-
-export ROOT_SALOME=/home/salome/salome-640/Salome-V6_4_0-c7-v2
-source /home/salome/salome-640/Salome-V6_4_0-c7-v2/salome_prerequisites_V6_4_0_appli.sh
-source /home/salome/salome-640/Salome-V6_4_0-c7-v2/salome_modules_V6_4_0.sh
-
-/home/salome/salome-640/appli_V6_4_0/bin/salome/runSalome $*
-\end{verbatim}
-\normalsize
-
-and the script of SALOME commands \texttt{my\_mesh.py}:
-\small
-\begin{verbatim}
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-import geompy
-import smesh
-
-# create a box
-box = geompy.MakeBox(0., 0., 0., 100., 200., 300.)
-idbox = geompy.addToStudy(box, "box")
-
-# create a mesh
-tetra = smesh.Mesh(box, "MeshBox")
-
-algo1D = tetra.Segment()
-algo1D.NumberOfSegments(7)
-
-algo2D = tetra.Triangle()
-algo2D.MaxElementArea(800.)
-
-algo3D = tetra.Tetrahedron(smesh.NETGEN)
-algo3D.MaxElementVolume(900.)
-
-# compute the mesh
-tetra.Compute()
-
-# export the mesh in a MED file
-tetra.ExportMED("./my_mesh.med")
-\end{verbatim}
-\normalsize
-
-\subsection{Run external additional postprocessing scripts with arguments}
+\subsection{Run external additional postprocessing scripts with options for a case}
 
 The launch of external scripts is activated if the option \texttt{-p, --post}
 is present in the command line.
@@ -578,7 +554,54 @@ if __name__ == '__main__':
 \end{verbatim}
 \normalsize
 
-\subsection{Post-processing: curves}
+\subsection{Run external additional postprocessing scripts with options for a study}
+
+The launch of external scripts is activated if the option \texttt{-p, --post}
+is present in the command line.
+
+The purpose of this functionality is to create new data based on several
+runs of cases, and to plot them (see section \ref{sec:curves}).
+
+The markup \texttt{<postpro>} has to be added as a child of the condidered study.
+
+\small
+\begin{verbatim}
+<study label='STUDY' status='on'>
+    <case label='CASE1' status='on' compute="on" post="on"/>
+    <postpro label='Grid2' status="on" arg="-n 100">
+        <data file="profile.dat">
+            <plot fig="1" xcol="1" ycol="2" legend="Grid level 2" fmt='b-p'/>
+            <plot fig="2" xcol="1" ycol="3" legend="Grid level 2" fmt='b-p'/>
+        </data>
+    </postpro>
+</study>
+\end{verbatim}
+\normalsize
+
+The attributes are:
+\begin{list}{$\bullet$}{}
+\item \texttt{label}: the name of the file of the considered script;
+\item \texttt{status}: must be equal to \texttt{on} or \texttt{off}:
+activate or desactivate the markup;
+\item \texttt{args}: the additional options to pass to the script;
+\end{list}
+
+Only the attributes \texttt{label} and \texttt{status} are mandatory.
+
+The options given to the script in the command line are:
+\begin{list}{$\bullet$}{}
+\item \texttt{-s} or \texttt{--study}: label of the current study;
+\item \texttt{-c} or \texttt{--cases}: string which contains the list of the cases
+\item \texttt{-d} or \texttt{--directories}: string which contains the list
+of the directories of results.
+\end{list}
+Additional options can be pass to the script throught the attributes \texttt{args}.
+
+Note that all options must be processed by the script itself.
+
+Several calls of the same script or to different scripts are permitted.
+
+\subsection{Post-processing: curves}\label{sec:curves}
 
 The post-processing is activated if the option \texttt{-p, --post} is present
 in the command line.
@@ -1324,7 +1347,153 @@ The following raw commands have to be used:
 \end{verbatim}
 \normalsize
 
+\item How to create a mesh automatically with SALOME ?
+
+The flollowing example shows how to create a mesh with a SALOME command file:
+\small
+\begin{verbatim}
+<study label="STUDY" status="on">
+    <case label="CASE1" status="on" compute="on" post="on">
+        <prepro label="salome.sh" args="-t -u my_mesh.py" status="on"/>
+    </case>
+</study>
+\end{verbatim}
+\normalsize
+
+with the script \texttt{salome.sh} (depending of the local installation of
+SALOME):
+\small
+\begin{verbatim}
+#!/bin/bash
+
+export ROOT_SALOME=/home/salome/salome-640/Salome-V6_4_0-c7-v2
+source /home/salome/salome-640/Salome-V6_4_0-c7-v2/salome_prerequisites_V6_4_0_appli.sh
+source /home/salome/salome-640/Salome-V6_4_0-c7-v2/salome_modules_V6_4_0.sh
+
+/home/salome/salome-640/appli_V6_4_0/bin/salome/runSalome $*
+\end{verbatim}
+\normalsize
+
+and the script of SALOME commands \texttt{my\_mesh.py}:
+\small
+\begin{verbatim}
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import geompy
+import smesh
+
+# create a box
+box = geompy.MakeBox(0., 0., 0., 100., 200., 300.)
+idbox = geompy.addToStudy(box, "box")
+
+# create a mesh
+tetra = smesh.Mesh(box, "MeshBox")
+
+algo1D = tetra.Segment()
+algo1D.NumberOfSegments(7)
+
+algo2D = tetra.Triangle()
+algo2D.MaxElementArea(800.)
+
+algo3D = tetra.Tetrahedron(smesh.NETGEN)
+algo3D.MaxElementVolume(900.)
+
+# compute the mesh
+tetra.Compute()
+
+# export the mesh in a MED file
+tetra.ExportMED("./my_mesh.med")
+\end{verbatim}
+\normalsize
+
+\item How to make a grid convergence study ?
+
+The following exemple show how to run twice the same case, with a new mesh:
+
+\small
+\begin{verbatim}
+<case compute="on" label="CANON" run_id="50CELLS" post="on" status="on">
+    <prepro label="grid.py" args="-m canon50.des.gz -p supercanon.xml" status="on"/>
+        <data dest="" file="probes_Pressure.dat">
+        <plot fig="1" fmt="r-s" legend="Grid level 1" xcol="1" ycol="2"/>
+        <plot fig="2" fmt="r-s" xcol="1" ycol="3"/>
+    </data>
+</case>
+
+<case compute="on" label="CANON" run_id="500CELLS" post="on" status="on">
+    <prepro label="grid.py" args="-m canon500.des.gz -p supercanon.xml" status="on"/>
+    <data dest="" file="probes_Pressure.dat">
+        <plot fig="1" fmt="b-d" legend="Grid level 2" xcol="1" ycol="2"/>
+        <plot fig="2" fmt="b-d" xcol="1" ycol="3"/>
+    </data>
+</case>
+\end{verbatim}
+\normalsize
+
+In order to change the name of the mesh inside the file of parameters of
+the code a script \texttt{grid.py} has to be written in the directory
+\texttt{MESH} of the study or in the directory \texttt{DATA} of the related
+case:
+
+\small
+\begin{verbatim}
+#!/usr/bin/env python
+import os, sys
+import string
+from optparse import OptionParser
+sys.path.append('/home/dupond/code/lib/python2.7/site-packages/code_saturne')
+sys.path.append('/home/dupond/code/lib/python2.7/site-packages/code_saturne/Base')
+sys.path.append('/home/dupond/code/python2.7/site-packages/code_saturne/Pages')
+
+def process_cmd_line(argv):
+    """Processes the passed command line arguments."""
+    parser = OptionParser(usage="usage: %prog [options]")
+
+    parser.add_option("-c", "--case", dest="case", type="string",
+                      help="Directory of the current case")
+
+    parser.add_option("-p", "--param", dest="param", type="string",
+                      help="Name f the file of parameters")
+
+    parser.add_option("-m", "--mesh", dest="mesh", type="string",
+                      help="Name of the new mesh")
+
+    (options, args) = parser.parse_args(argv)
+    return options
+
+def main(options):
+    from cs_package import package
+    from Base.XMLengine import Case
+    from Base.XMLinitialize import XMLinit
+    from Pages.SolutionDomainModel import SolutionDomainModel
+
+    fp = os.path.join(options.case, "DATA", options.param)
+    if os.path.isfile(fp):
+        try:
+            case = Case(package = package(), file_name = fp)
+        except:
+            print("Parameters file reading error.\n")
+            print("This file is not in accordance with XML specifications.")
+            sys.exit(1)
+
+        case['xmlfile'] = fp
+        case.xmlCleanAllBlank(case.xmlRootNode())
+        XMLinit(case).initialize()
+        s = SolutionDomainModel(case)
+        l = s.getMeshList()
+        s.delMesh(l[0])
+        s.addMesh((options.mesh, None))
+        case.xmlSaveDocument()
+
+if __name__ == '__main__':
+    options = process_cmd_line(sys.argv[1:])
+    main(options)
+\end{verbatim}
+\normalsize
+
 \end{list}
+
 
 %
 \end{document}

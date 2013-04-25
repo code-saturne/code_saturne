@@ -246,14 +246,12 @@ def runAutoverif(pkg, opt_f, opt_v, opt_u, opt_r, opt_c, opt_p, opt_to):
 
     studies.compilation()
 
-    # Preprocessing
-
-    studies.prepro()
-
-    # Update and run all cases
+    # Preprocessing and run all cases
 
     if opt_r:
         studies.run()
+
+    # Compare checkpoint files
 
     if opt_c:
         studies.check_compare()
@@ -264,6 +262,7 @@ def runAutoverif(pkg, opt_f, opt_v, opt_u, opt_r, opt_c, opt_p, opt_to):
     if opt_p:
         studies.check_script()
         studies.scripts()
+        studies.postpro()
         studies.check_plot()
         studies.postpro()
         studies.plot()
@@ -273,8 +272,6 @@ def runAutoverif(pkg, opt_f, opt_v, opt_u, opt_r, opt_c, opt_p, opt_to):
     studies.reporting(" -----------------")
 
     # Reporting
-    # TODO : *) inserer les images vtk dans le pdf
-    #        *) temps de calcul
 
     attached_file = studies.build_reports("report_global", "report_detailed")
     if opt_to:

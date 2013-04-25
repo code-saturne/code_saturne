@@ -718,26 +718,35 @@ class Studies(object):
             sys.exit(1)
 
 
-    def prepro(self):
+    def prepro(self, l, s, case):
         """
         Launch external additional scripts with arguments.
         """
-        for l, s in self.studies:
-            self.reporting('  o Script prepro study: ' + l)
-            for case in s.Cases:
-                pre, label, nodes, args = self.__parser.getPrepro(case.node)
-                for i in range(len(label)):
-                    if pre[i]:
-                        cmd = os.path.join(self.dest, l, "MESH", label[i])
-                        if os.path.isfile(cmd):
-                            cmd += " " + args[i]
-                            repbase = os.getcwd()
-                            os.chdir(os.path.join(self.dest, l, "MESH"))
-                            retcode, t = run_command(cmd, self.__log)
-                            os.chdir(repbase)
-                            self.reporting('    - script %s --> OK (%s s)' % (cmd, t))
-                        else:
-                            self.reporting('    - script %s not found' % cmd)
+        pre, label, nodes, args = self.__parser.getPrepro(case.node)
+        for i in range(len(label)):
+            if pre[i]:
+                # search if the script is the directoty MESH
+                # if not, the script is searched in the directories of the current case
+                cmd = os.path.join(self.dest, l, "MESH", label[i])
+                if not os.path.isfile(cmd):                
+                    filePath = ""
+                    for root, dirs, fs in os.walk(os.path.join(self.dest, l, case.label)):
+                        if label[i] in fs:
+                            filePath = root
+                            break
+
+                    cmd = os.path.join(filePath, label[i])
+
+                if os.path.isfile(cmd):
+                    cmd += " " + args[i]
+                    cmd += " -c " + os.path.join(self.dest, l, case.label)
+                    repbase = os.getcwd()
+                    os.chdir(os.path.join(self.dest, l, "MESH"))
+                    retcode, t = run_command(cmd, self.__log)
+                    os.chdir(repbase)
+                    self.reporting('    - script %s --> OK (%s s)' % (cmd, t))
+                else:
+                    self.reporting('    - script %s not found' % cmd)
 
 
     def run(self):
@@ -746,10 +755,11 @@ class Studies(object):
         Warning, if the makup of the case is repeated in the xml file of parameters,
         the run of the case is also repeated.
         """
-        if self.__running:
-            for l, s in self.studies:
-                self.reporting('  o Run study: ' + l)
-                for case in s.Cases:
+        for l, s in self.studies:
+            self.reporting('  o Script prepro and run for study: ' + l)
+            for case in s.Cases:
+                self.prepro(l, s, case)
+                if self.__running:
                     if case.compute == 'on' and case.is_compil != "KO":
                         self.reporting('    - running %s ...' % case.label, True)
                         error = case.run()
@@ -921,6 +931,7 @@ class Studies(object):
         Launch external additional scripts with arguments.
         """
         for l, s in self.studies:
+            # build the list of the results directories of the current study
             for case in s.Cases:
                 if case.is_run != "KO":
                     if case.run_dir == "":
