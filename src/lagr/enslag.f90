@@ -313,7 +313,7 @@ if (nfin.eq.1) then
         iostat=ios, err=99)
     rewind(unit=impla5(1), err=99)
 
-    write(impla2, 5015) fich (ii1:ii2)
+    write(impla2, 5015) fich (ii1+15:ii2)
 
   endif
 
@@ -329,7 +329,7 @@ if (nfin.eq.1) then
          iostat=ios, err=99)
     rewind(unit=impla5(2), err=99)
 
-    write(impla2, 5016) fich (ii1:ii2)
+    write(impla2, 5016) fich (ii1+15:ii2)
 
   endif
 
@@ -345,7 +345,7 @@ if (nfin.eq.1) then
          iostat=ios, err=99)
     rewind(unit=impla5(3), err=99)
 
-    write(impla2, 5017) fich (ii1:ii2)
+    write(impla2, 5017) fich (ii1+15:ii2)
 
   endif
 
@@ -361,7 +361,7 @@ if (nfin.eq.1) then
          iostat=ios, err=99)
     rewind(unit=impla5(4), err=99)
 
-    write(impla2, 5018) fich (ii1:ii2)
+    write(impla2, 5018) fich (ii1+15:ii2)
 
   endif
 
@@ -377,7 +377,7 @@ if (nfin.eq.1) then
          iostat=ios, err=99)
     rewind(unit=impla5(5), err=99)
 
-    write(impla2, 5019) fich (ii1:ii2)
+    write(impla2, 5019) fich (ii1+15:ii2)
 
   endif
 
@@ -393,7 +393,7 @@ if (nfin.eq.1) then
          iostat=ios, err=99)
     rewind(unit=impla5(6), err=99)
 
-    write(impla2, 5020) fich (ii1:ii2)
+    write(impla2, 5020) fich (ii1+15:ii2)
 
   endif
 
@@ -409,7 +409,7 @@ if (nfin.eq.1) then
          iostat=ios, err=99)
     rewind(unit=impla5(7), err=99)
 
-    write(impla2, 5021) fich (ii1:ii2)
+    write(impla2, 5021) fich (ii1+15:ii2)
 
   endif
 
@@ -425,7 +425,7 @@ if (nfin.eq.1) then
          iostat=ios, err=99)
     rewind(unit=impla5(8), err=99)
 
-    write(impla2, 5022) fich (ii1:ii2)
+    write(impla2, 5022) fich (ii1+15:ii2)
 
   endif
 
@@ -441,7 +441,7 @@ if (nfin.eq.1) then
          iostat=ios, err=99)
     rewind(unit=impla5(9), err=99)
 
-    write(impla2, 5023) fich (ii1:ii2)
+    write(impla2, 5023) fich (ii1+15:ii2)
 
   endif
 
@@ -457,7 +457,7 @@ if (nfin.eq.1) then
          iostat=ios, err=99)
     rewind(unit=impla5(10), err=99)
 
-    write(impla2, 5024) fich (ii1:ii2)
+    write(impla2, 5024) fich (ii1+15:ii2)
 
   endif
 
