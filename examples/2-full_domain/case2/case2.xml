@@ -217,11 +217,8 @@ w = 0;</formula>
 			</scalar>
 		</wall>
 		<inlet label="inlet">
-			<velocity_pressure choice="norm" direction="coordinates">
+			<velocity_pressure choice="norm" direction="normal">
 				<norm>1</norm>
-				<direction_x>0</direction_x>
-				<direction_y>0</direction_y>
-				<direction_z>0</direction_z>
 			</velocity_pressure>
 			<turbulence choice="hydraulic_diameter">
 				<hydraulic_diameter>0.5</hydraulic_diameter>

@@ -187,9 +187,9 @@ Interface. However, the calculation of the spatial average is defined by a user 
 \hline
 \multicolumn{2}{|c|}{Parameters of calculation control} \\
 \hline
-Number of iterations & $300$ \\
+Number of iterations & $900$ \\
 \hline
-Reference time step & $0.05$ \\
+Reference time step & $0.01$ \\
 \hline
 Output period for post-processing files& $2$ \\
 \hline
@@ -201,6 +201,9 @@ The calculation will be run in parallel & 2 procs. \\
 In order to join the separate meshes into a single domain, colors 5, 24 and 32
 will have to be joined through the Graphical Interface.
 
+Note that the time step has been reduced because of the head losses: the pressure step is more difficult
+to be solved in presence of head losses.
+
 
         \subsection{User routines}
 %---------------------------------
@@ -209,11 +212,8 @@ The following routines have to be copied from the folder \textbf{SRC/REFERENCE/}
 folder \textbf{SRC/}\footnote{only when they appear in the SRC directory will they be
 taken into account by the code.}: \texttt{cs\_user\_boundary\_conditions.f90} and
 \texttt{cs\_user\_extra\_operations.f90}.
-%==DS==new
-%usclim.f90 and usproj.f90.
 We can find and copy some basic and specific boundary conditions examples in the folder
 \textbf{SRC/EXAMPLES/} to correctly impose the \CS boundary conditions.
-%==DS==new
 
 $\bullet$ {\bfseries cs\_user\_boundary\_conditions.f90}\\
 This routine allows to define advanced boundary conditions on the boundary faces.
