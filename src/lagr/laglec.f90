@@ -530,6 +530,7 @@ if (iphyla.eq.2) then
   nomrte(jrdck) = 'diametre_coeur_retrecissant_charbon'
   nomrte(jrd0p) = 'diametre_initial_charbon'
   nomrte(jrr0p) = 'masse_volumique_initial_charbon'
+  nomrte(jrhock) ='masse_volumique_coke'
 endif
 
 ! Deposition submodel

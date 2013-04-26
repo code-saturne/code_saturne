@@ -212,8 +212,10 @@ module lagran
   !     JRDCK       : DIAMETRE DU COEUR RETRECISSANT
   !     JRD0P       : DIAMETRE INITIAL DES PARTICULES
   !     JRR0P       : MASSE VOLUMIQUE INITIALE DES PARTICULES
+  !     JRHOCK      : MASSE VOLUMIQUE DU COKE
 
-  integer, save ::           jrtsp, jrpoi, jreps, jrd0p, jrr0p, jrdck
+
+  integer, save ::           jrtsp, jrpoi, jreps, jrd0p, jrr0p, jrdck, jrhock
 
   !   Tableau ITEPA
   !   ^^^^^^^^^^^^^

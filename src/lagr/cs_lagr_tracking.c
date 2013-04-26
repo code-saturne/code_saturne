@@ -85,7 +85,7 @@ BEGIN_C_DECLS
 #define  N_GEOL 13
 #define  CS_LAGR_MIN_COMM_BUF_SIZE  10
 #define  CS_LAGR_MAX_PROPAGATION_LOOPS  30
-#define  N_VAR_PART_STRUCT  36
+#define  N_VAR_PART_STRUCT  37
 #define  N_VAR_PART_HEAT     1
 #define  N_VAR_PART_AUX      1
 
@@ -168,6 +168,7 @@ typedef struct {
   cs_real_t   initial_density; /* jrr0p */
 
   cs_lnum_t   coal_number;     /* jinch */
+  cs_real_t   char_density;    /* jrhock */
 
 
 
@@ -573,13 +574,13 @@ _define_particle_datatype(void)
     = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
        1, 1, 1, 1, 3, 3, 3, 1, 1, 1, 1 ,
        1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-       1, 1, 1, 1, 1};
+       1, 1, 1, 1, 1, 1};
 
   MPI_Aint  displacements[N_VAR_PART_STRUCT]
     = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ,
        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-       0, 0, 0, 0, 0};
+       0, 0, 0, 0, 0, 0};
 
   MPI_Datatype  types[N_VAR_PART_STRUCT] = {CS_MPI_GNUM,
                                             CS_MPI_LNUM,
@@ -616,7 +617,8 @@ _define_particle_datatype(void)
                                             CS_MPI_REAL,
                                             CS_MPI_REAL,
                                             CS_MPI_REAL,
-                                            CS_MPI_LNUM
+                                            CS_MPI_LNUM,
+                                            CS_MPI_REAL
   };
 
   /* Initialize a default particle */
@@ -670,7 +672,7 @@ _define_particle_datatype(void)
   part.initial_diam = 0.0;
   part.initial_density = 0.0;
   part.coal_number = 0;
-
+  part.char_density = 0.;
 
   /* Define array of displacements */
 
@@ -712,6 +714,7 @@ _define_particle_datatype(void)
   MPI_Get_address(&part.initial_diam, displacements + count++);
   MPI_Get_address(&part.initial_density, displacements + count++);
   MPI_Get_address(&part.coal_number, displacements + count++);
+  MPI_Get_address(&part.char_density, displacements + count++);
 
   assert(count == N_VAR_PART_STRUCT);
 
@@ -3660,6 +3663,7 @@ CS_PROCF (prtget, PRTGET)(const cs_lnum_t   *nbpmax,  /* n_particles max. */
                           const cs_lnum_t   *jrd0p,
                           const cs_lnum_t   *jrr0p,
                           const cs_lnum_t   *jinch,
+                          const cs_lnum_t   *jrhock,
                           const cs_lnum_t   *jdepo,
                           const cs_lnum_t   *jnbasg,
                           const cs_lnum_t   *jnbasp,
@@ -3927,6 +3931,9 @@ CS_PROCF (prtget, PRTGET)(const cs_lnum_t   *nbpmax,  /* n_particles max. */
       id = (*jrr0p - 1) * (*nbpmax) + i;
       cur_part.initial_density = tepa[id];
 
+      id = (*jrhock - 1) * (*nbpmax) + i;
+      cur_part.char_density = tepa[id];
+
       /* itepa array */
 
       id = (*jinch - 1) * (*nbpmax) + i;
@@ -4050,6 +4057,7 @@ CS_PROCF (prtput, PRTPUT)(const cs_int_t   *nbpmax,  /* n_particles max. */
                           const cs_lnum_t   *jrd0p,
                           const cs_lnum_t   *jrr0p,
                           const cs_lnum_t   *jinch,
+                          const cs_lnum_t   *jrhock,
                           const cs_lnum_t   *jdepo,
                           const cs_lnum_t   *jnbasg,
                           const cs_lnum_t   *jnbasp,
@@ -4163,6 +4171,9 @@ CS_PROCF (prtput, PRTPUT)(const cs_int_t   *nbpmax,  /* n_particles max. */
 
       id = (*jrr0p - 1) * (*nbpmax) + i;
       tepa[id] = cur_part.initial_density;
+
+      id = (*jrhock - 1) * (*nbpmax) + i;
+      tepa[id] = cur_part.char_density;
 
       /* itepa array */
 

@@ -705,7 +705,7 @@ endif
    jimark , idepst , ireent,                                      &
    iphyla ,                                                       &
    jhp    , jtf    , jmch   , jmck   , jcp   ,                    &
-   jrdck  , jrd0p  , jrr0p  , jinch  ,                            &
+   jrdck  , jrd0p  , jrr0p  , jinch  , jrhock ,                   &
    jdepo  , jnbasg , jnbasp , jfadh  , jmfadh, jndisp)
 
 
@@ -732,7 +732,7 @@ endif
    jryplu , jrinpf , jdfac  , jimark , idepst , ireent,           &
    iphyla ,                                                       &
    jhp    , jtf    , jmch   , jmck   , jcp   ,                    &
-   jrdck  , jrd0p  , jrr0p  , jinch  ,                            &
+   jrdck  , jrd0p  , jrr0p  , jinch  , jrhock ,                   &
    jdepo  , jnbasg , jnbasp , jfadh  , jmfadh, jndisp)
 
 

@@ -1148,9 +1148,9 @@ else if (iphyla.eq.2) then
 
 !     TEPA :
 !     ----
-!       3 VARIABLES D'ETATS REELLES SUPPLEMENTAIRES : Dck, D0P, R0P
+!       4 VARIABLES D'ETATS REELLES SUPPLEMENTAIRES : Dck, D0P, R0P, RHOCK
 
-  nvep = nvep + 3
+  nvep = nvep + 4
 
 !     ITEPA :
 !     -----
@@ -1286,11 +1286,14 @@ endif
 !     JRDCK       : DIAMETRE DU COEUR RETRECISSANT
 !     JRD0P       : DIAMETRE INITIAL DES PARTICULES
 !     JRR0P       : MASSE VOLUMIQUE INITIALE DES PARTICULES
+!     JRHOCK      : MASSE VOLUMIQUE DU COKE
+
 
 jreps = 0
 jrdck = 0
 jrr0p = 0
 jrr0p = 0
+jrhock = 0
 
 jrtsp = 1
 jrpoi = 2
@@ -1305,7 +1308,8 @@ if (iphyla.eq.2) then
   jrdck = irf   + 1
   jrd0p = jrdck + 1
   jrr0p = jrd0p + 1
-  irf   = jrr0p
+  jrhock = jrr0p + 1
+  irf   = jrhock
 endif
 
 ! Modele de deposition : 2 tableaux supp dans TEPA  : YPLUS et DX

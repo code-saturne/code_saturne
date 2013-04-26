@@ -147,7 +147,7 @@ double precision aux1 , aux2 , aux3 , aux4 , aux5 , aux6
 double precision ter1 , ter2 , ter3 , diamp2, dd2
 double precision tpk , tfk , skc , skdd , se , po2
 double precision ho2tf , hctp , hcotp , den , sherw
-double precision coef , mp0 , d6spi , dpis6 , d1s3 , d2s3
+double precision coef , mp0 , d6spi , dpis6 , d1s3 , d2s3, mckmax,mv
 double precision gamdv1(ncharm2) , gamdv2(ncharm2)
 double precision f1mc(ncharm2) , f2mc(ncharm2)
 double precision coefe(ngazem)
@@ -281,6 +281,20 @@ do icha = 1,ncharb
   endif
 enddo
 
+do npt = 1,nbpart
+  if (itepa(npt,jisor).gt.0) then
+
+    icha = itepa(npt,jinch)
+
+    mp0  = dpis6 * (tepa(npt,jrd0p)**3) * rho0ch(icha)
+    mv = mp0 -ettpa(npt,jmch)-xashch(icha)*mp0 -ettpa(npt,jmck)
+
+    if ( ettpa(npt,jmch).ge.(1.d-3*ettpa(npt,jmp)) ) then
+       tepa(npt,jrhock)=rho0ch(icha)- d6spi/(tepa(npt,jrd0p)**3)/(1.d0-xashch(icha))*mv
+    endif
+  endif
+enddo
+
 !===============================================================================
 ! 6. Calcul du diametre du coeur retrecissant
 !===============================================================================
@@ -292,7 +306,7 @@ do npt = 1,nbpart
     tepa(npt,jrdck) =                                             &
              ( (d6spi / ( 1.d0-xashch(icha)) )                    &
               *( ettp(npt,jmch)/rho0ch(icha)                      &
-              +ettp(npt,jmck)/rhock(icha) ) )**d1s3
+              +ettp(npt,jmck)/tepa(npt,jrhock)))**d1s3
   endif
 enddo
 
@@ -354,7 +368,7 @@ do npt = 1,nbpart
 ! --- Calcul de (Surface efficace)/(Mck**2/3) : SE
 
     se =  ( pi*(1.d0-xashch(icha)) )**d1s3                        &
-        * ( 6.d0/rhock(icha)       )**d2s3
+        * ( 6.d0/   tepa(npt,jrhock)    )**d2s3
 
 ! --- Calcul de la GamHET/(Mck**2/3)
 
@@ -461,22 +475,25 @@ if (nor.eq.1) then
 
       icha = itepa(npt,jinch)
 
-      aux1 = skp1(npt) * (1.d0-y1ch(icha)) * ettpa(npt,jmch)      &
-           + skp2(npt) * (1.d0-y2ch(icha)) * ettpa(npt,jmch)
+      aux1 = -(skp1(npt) * (1.d0-y1ch(icha))      &
+             + skp2(npt) * (1.d0-y2ch(icha)))      &
+                       / (skp1(npt)+skp2(npt))
 
       if ( ettpa(npt,jmck).gt.precis ) then
 
         aux2 = ettpa(npt,jmck)**d1s3
         aux3 = aux2 + d2s3 *gamhet(npt) *dtp
 
-        ter1 = (aux1*aux2-gamhet(npt)*ettpa(npt,jmck)) *dtp/aux3
+        ter1 = (aux1*(ettp(npt,jmch)-ettpa(npt,jmch))*aux2-gamhet(npt)*ettpa(npt,jmck)*dtp) /aux3
 
         tsvar(npt,jmck) = 0.5d0 * ter1
 
         ettp(npt,jmck) = ettpa(npt,jmck) + ter1
 
       else
-        ter1 = aux1 * dtp
+
+        ter1 = aux1*(ettp(npt,jmch)-ettpa(npt,jmch))
+
         tsvar(npt,jmck) = 0.5d0 * ter1
         ettp(npt,jmck) = ettpa(npt,jmck) + ter1
       endif
@@ -494,22 +511,25 @@ else if (nor.eq.2) then
 
       icha = itepa(npt,jinch)
 
-      aux1 = skp1(npt) * (1.d0-y1ch(icha)) * ettp(npt,jmch)       &
-           + skp2(npt) * (1.d0-y2ch(icha)) * ettp(npt,jmch)
+      aux1 = -(skp1(npt) * (1.d0-y1ch(icha))      &
+             + skp2(npt) * (1.d0-y2ch(icha)))      &
+                       / (skp1(npt)+skp2(npt))
 
       if ( ettpa(npt,jmck).gt.precis ) then
 
         aux2 = ettpa(npt,jmck)**d1s3
         aux3 = aux2 + d2s3 *gamhet(npt) *dtp
 
-        ter1 = ( aux1 *aux2 -gamhet(npt) *ettpa(npt,jmck))        &
-             * dtp / aux3
+
+        ter1 = (aux1*(ettp(npt,jmch)-ettpa(npt,jmch))*aux2-gamhet(npt)*ettpa(npt,jmck)*dtp) /aux3
 
         ettp(npt,jmck) = ettpa(npt,jmck)                          &
                             +tsvar(npt,jmck)+0.5d0*ter1
 
       else
-        ter1 = aux1*dtp
+
+        ter1 = aux1*(ettp(npt,jmch)-ettpa(npt,jmch))
+
         ettp(npt,jmck) = ettpa(npt,jmck)                          &
                            + tsvar(npt,jmck) + 0.5d0*ter1
       endif
@@ -610,7 +630,7 @@ do npt = 1,nbpart
 
     tepa(npt,jrdck) = ( (d6spi/(1.d0-xashch(icha)) )              &
                     *   ( ettp(npt,jmch)/rho0ch(icha)             &
-                        + ettp(npt,jmck)/rhock(icha) ) )**d1s3
+                        + ettp(npt,jmck)/tepa(npt,jrhock) ))**d1s3
   endif
 enddo
 
