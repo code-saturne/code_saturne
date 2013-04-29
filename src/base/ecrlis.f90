@@ -301,11 +301,11 @@ do ipp = 2, nvppmx
     chainc(ic:ic+12) = chain(1:12)
     ic=ic+12
     chain = ' '
-    write(chain,3000) varmin
+    write(chain,3000) varmin(ipp)
     chainc(ic:ic+12) = chain(1:12)
     ic=ic+14
     chain = ' '
-    write(chain,3000) varmax
+    write(chain,3000) varmax(ipp)
     chainc(ic:ic+12) = chain(1:12)
     ic=ic+16
     ipuvw = 0
