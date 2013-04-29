@@ -117,9 +117,9 @@ double precision adhesion_energ
 
 ! Local variables
 
-integer nbasg, nbasp, np
+integer nbasg, nbasp, np, ntmp(1)
 
-double precision step, rpart
+double precision step, rpart, rtmp(1)
 double precision paramh, nmoyap, nmoyag, scovag, scovap
 double precision dismin, distcc, distp
 double precision udlvor(2), uvdwsp, uvdwss, uedlsp, uedlss
@@ -171,7 +171,8 @@ if (itepa(ip,jnbasg).gt.1) then
    if (nmoyag.gt.600.d0) then
       nbasg = ceiling(nmoyag)
    else
-      call fische(1, nmoyag, nbasg)
+     call fische(1, nmoyag, ntmp)
+     nbasg = ntmp(1)
    endif
 
    nbasg = max(1,nbasg)
@@ -200,7 +201,8 @@ if (nbasg.eq.0) then
       if (nmoyap.gt.600.d0) then
          nbasp = ceiling(nmoyap)
       else
-         call fische(1, nmoyap, nbasp)
+         call fische(1, nmoyap, ntmp)
+         nbasp = ntmp(1)
       endif
       nbasp = max(1,nbasp)
 
@@ -236,7 +238,8 @@ else
       if (nmoyap.gt.600.d0) then
          nbasp = ceiling(nmoyap)
       else
-         call fische(1, nmoyap, nbasp)
+         call fische(1, nmoyap, ntmp)
+         nbasp = ntmp(1)
       endif
       nbasp = max(1,nbasp)
    else
@@ -325,7 +328,8 @@ endif
 !
 ! Calculation of adhesion torques exerted on the particle
 
-call zufall(1,dismom)
+call zufall(1,rtmp)
+dismom = rtmp(1)
 
 if (nbasg.gt.0) then
    dismom = dismom * sqrt((2.0d0*rpart+rayasg)*rayasg)
