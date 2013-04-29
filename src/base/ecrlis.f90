@@ -96,7 +96,7 @@ integer          ipuvw
 integer          icmin, icmax
 integer          nbrval
 integer          idivdt, ixmsdt, iel
-double precision petit,xyzmin(3),xyzmax(3), varmin, varmax
+double precision petit,xyzmin(3),xyzmax(3), varmin(nvppmx), varmax(nvppmx)
 character*200    chain, chainc
 
 double precision, dimension(:), allocatable, target :: momtmp
@@ -114,8 +114,8 @@ petit  =-grand
 
 do ipp = 2, nvppmx
   if (ilisvr(ipp).eq.1) then
-    varmin = grand
-    varmax = petit
+    varmin(ipp) = grand
+    varmax(ipp) = petit
     ira = abs(ipp2ra(ipp))
 
     ! For moments, we must divide by the cumulative time
@@ -137,8 +137,8 @@ do ipp = 2, nvppmx
     endif
 
     do icel = 1, ncel
-      if (varptr(icel).lt.varmin) varmin = varptr(icel)
-      if (varptr(icel).gt.varmax) varmax = varptr(icel)
+      if (varptr(icel).lt.varmin(ipp)) varmin(ipp) = varptr(icel)
+      if (varptr(icel).gt.varmax(ipp)) varmax(ipp) = varptr(icel)
     enddo
 
     if (idivdt.ne.0) then
@@ -146,9 +146,9 @@ do ipp = 2, nvppmx
     endif
 
     if (irangp.ge.0) then
-      call parmin (varmin)
+      call parmin (varmin(ipp))
       !==========
-      call parmax (varmax)
+      call parmax (varmax(ipp))
       !==========
     endif
 
