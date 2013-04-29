@@ -171,12 +171,11 @@ module entsor
 
   integer, save :: ntlist
 
-  ! Parametres de suivi de calcul, min-max, clipmin, clipmax
+  ! Parametres de suivi de calcul, clipmin, clipmax
 
   integer, save :: iclpmn(nvppmx) , iclpmx(nvppmx)
 
-  double precision, save ::  varmin(nvppmx) , varmax(nvppmx),     &
-                             varmna(nvppmx) , varmxa(nvppmx)
+  double precision, save ::  varmna(nvppmx) , varmxa(nvppmx)
 
   ! Parametres de convergence, norme du second membre, nombre iterations
   ! residu norme, derive.

@@ -332,8 +332,6 @@ do ii = 1, nvppmx
 enddo
 
 do ii = 1, nvppmx
-  varmin(ii) = 0.d0
-  varmax(ii) = 0.d0
   varmna(ii) = 0.d0
   varmxa(ii) = 0.d0
 enddo

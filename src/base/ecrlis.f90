@@ -96,7 +96,7 @@ integer          ipuvw
 integer          icmin, icmax
 integer          nbrval
 integer          idivdt, ixmsdt, iel
-double precision petit,xyzmin(3),xyzmax(3)
+double precision petit,xyzmin(3),xyzmax(3), varmin, varmax
 character*200    chain, chainc
 
 double precision, dimension(:), allocatable, target :: momtmp
@@ -106,7 +106,6 @@ double precision, dimension(:), pointer :: varptr => null()
 ! 0. INITIALISATIONS LOCALES
 !===============================================================================
 
-
 petit  =-grand
 
 !================================================
@@ -114,9 +113,9 @@ petit  =-grand
 !================================================
 
 do ipp = 2, nvppmx
-  if(ilisvr(ipp).eq.1) then
-    varmin(ipp) = grand
-    varmax(ipp) = petit
+  if (ilisvr(ipp).eq.1) then
+    varmin = grand
+    varmax = petit
     ira = abs(ipp2ra(ipp))
 
     ! For moments, we must divide by the cumulative time
@@ -138,8 +137,8 @@ do ipp = 2, nvppmx
     endif
 
     do icel = 1, ncel
-      if(varptr(icel).lt.varmin(ipp)) varmin(ipp) = varptr(icel)
-      if(varptr(icel).gt.varmax(ipp)) varmax(ipp) = varptr(icel)
+      if (varptr(icel).lt.varmin) varmin = varptr(icel)
+      if (varptr(icel).gt.varmax) varmax = varptr(icel)
     enddo
 
     if (idivdt.ne.0) then
@@ -147,9 +146,9 @@ do ipp = 2, nvppmx
     endif
 
     if (irangp.ge.0) then
-      call parmin (varmin(ipp))
+      call parmin (varmin)
       !==========
-      call parmax (varmax(ipp))
+      call parmax (varmax)
       !==========
     endif
 
@@ -302,11 +301,11 @@ do ipp = 2, nvppmx
     chainc(ic:ic+12) = chain(1:12)
     ic=ic+12
     chain = ' '
-    write(chain,3000) varmin(ipp)
+    write(chain,3000) varmin
     chainc(ic:ic+12) = chain(1:12)
     ic=ic+14
     chain = ' '
-    write(chain,3000) varmax(ipp)
+    write(chain,3000) varmax
     chainc(ic:ic+12) = chain(1:12)
     ic=ic+16
     ipuvw = 0
@@ -342,17 +341,12 @@ do ipp = 2, nvppmx
     endif
 
     write(nfecra,'(A)') chainc(1:ic)
-!MO          ICLPMN(IPP) = 0
-!MO          ICLPMX(IPP) = 0
   endif
 enddo
 
 write(nfecra,1110)
 write(nfecra,*) ' '
 write(nfecra,*) ' '
-
-
-
 
 write(nfecra,1150)
 write(nfecra,1160)
@@ -361,10 +355,10 @@ write(nfecra,1160)
 
 do ipp = 2, nvppmx
   ipuvw = 0
-  if(ipp.eq.ipprtp(ipr) .or.                             &
-       ipp.eq.ipprtp(iu ) .or.                             &
-       ipp.eq.ipprtp(iv ) .or.                             &
-       ipp.eq.ipprtp(iw ) ) then
+  if (ipp.eq.ipprtp(ipr) .or.       &
+      ipp.eq.ipprtp(iu ) .or.       &
+      ipp.eq.ipprtp(iv ) .or.       &
+      ipp.eq.ipprtp(iw )) then
     ipuvw = 1
   endif
   !   En v2f on ne clippe jamais f_barrre, on ne l'affiche donc pas
@@ -374,8 +368,8 @@ do ipp = 2, nvppmx
   !   En ALE on ne clippe pas la vitesse de maillage
   if (iale.eq.1) then
     if (ipp.eq.ipprtp(iuma) .or.                                &
-         ipp.eq.ipprtp(ivma) .or.                                &
-         ipp.eq.ipprtp(iwma)) ipuvw = 1
+        ipp.eq.ipprtp(ivma) .or.                                &
+        ipp.eq.ipprtp(iwma)) ipuvw = 1
   endif
   !   Compressible
   if(ippmod(icompf).ge.0) then
