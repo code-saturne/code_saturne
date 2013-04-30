@@ -499,7 +499,7 @@ ecs_loc_pre_gmsh__lit_elements(ecs_maillage_t  *maillage,
   for (ient = ECS_ENTMAIL_FAC; ient < ECS_N_ENTMAIL; ient++) {
 
     ECS_MALLOC(elt_val_color_ent[ient],   nbr_elt, ecs_int_t);
-    ECS_MALLOC(elt_pos_som_ent[ient],     nbr_elt, ecs_size_t);
+    ECS_MALLOC(elt_pos_som_ent[ient],     nbr_elt + 1, ecs_size_t);
 
     elt_pos_som_ent[ient][0] = 1;
   }
