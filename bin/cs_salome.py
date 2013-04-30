@@ -38,6 +38,7 @@ import os, sys
 
 from optparse import OptionParser
 
+import cs_config
 import cs_exec_environment
 
 #-------------------------------------------------------------------------------
@@ -85,10 +86,30 @@ export CFDSTUDY_ROOT_DIR PYTHONPATH;
     if not run_cmd:
         run_cmd = "${KERNEL_ROOT_DIR}/bin/salome/envSalome.py python ${KERNEL_ROOT_DIR}/bin/salome/runSalome.py"
 
+    path = pkg.get_dir('pkgpythondir')
+    if pkg.name == 'neptune_cfd':
+        cspath = os.path.join(pkg.get_dir('csdir'), "lib",
+                                                   "python" + sys.version[:3],
+                                                   "site-packages", "code_saturne")
+        path = path+":"+cspath
+
+        # Test if EOS modules could be imported
+        cfg = cs_config.config()
+        if cfg.libs['eos'].have == "yes":
+            eosprefix = cfg.libs['eos'].prefix
+            try:
+                from distutils import sysconfig
+                eospath = os.path.join(sysconfig.get_python_lib(0, 0, prefix=eosprefix), 'eos')
+            except Exception:
+                eospath = ''
+            if eospath:
+                if os.path.isdir(eospath) and not eospath in sys.path:
+                    path = path+":"+eospath
+
     cmd = template % {'salomeenv': pkg.config.salome_env,
                       'prefix': pkg.get_dir('prefix'),
                       'pythondir': pkg.get_dir('pythondir'),
-                      'pkgpythondir': pkg.get_dir('pkgpythondir'),
+                      'pkgpythondir': path,
                       'runsalome': run_cmd,
                       'modules': default_modules}
 
