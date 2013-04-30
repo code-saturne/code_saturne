@@ -34,6 +34,7 @@ from string import *
 #-------------------------------------------------------------------------------
 
 import matplotlib
+matplotlib.use("Agg")
 
 #-------------------------------------------------------------------------------
 # matplotlib config
@@ -49,7 +50,7 @@ rcParams['ytick.labelsize'] = 'large'
 rcParams['figure.dpi']      = 200
 rcParams['figure.figsize']  = (4,4)
 rcParams['font.family']     = 'sans-serif'
-rcParams['text.usetex']     = True
+#rcParams['text.usetex']     = True
 
 #-------------------------------------------------------------------------------
 # additional colors
