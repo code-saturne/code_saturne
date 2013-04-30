@@ -268,6 +268,7 @@ npencr = 0
 nbpout = 0
 nbperr = 0
 nbpdep = 0
+nbpres = 0
 
 dnbpnw = 0.d0
 dnpcsu = 0.d0
@@ -277,6 +278,8 @@ dnpenc = 0.d0
 dnbpou = 0.d0
 dnbper = 0.d0
 dnbdep = 0.d0
+dnbres = 0.d0
+
 
 !-->Sur Champ fige Lagrangien : RTPA = RTP
 !   Rem : cette boucle pourrait etre faite au 1er passage

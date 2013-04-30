@@ -132,10 +132,10 @@ double precision statis(ncelet,nvlsta)
 
 double precision dnbpr
 
-integer nbpartall, nbpoutall, nbperrall, nbpdepall
+integer nbpartall, nbpoutall, nbperrall, nbpdepall, nbpresall
 
 double precision dnbparall, dnbperall, dnbpouall
-double precision dnbdepall, dnbpnwall
+double precision dnbdepall, dnbpnwall, dnbresall
 
 ! NOMBRE DE PASSAGES DANS LA ROUTINE
 
@@ -164,12 +164,15 @@ nbpartall = nbpart
 nbpoutall = nbpout
 nbperrall = nbperr
 nbpdepall = nbpdep
+nbpresall = nbpres
 
 dnbparall = dnbpar
 dnbpouall = dnbpou
 dnbperall = dnbper
 dnbdepall = dnbdep
 dnbpnwall = dnbpnw
+dnbresall = dnbres
+
 
 if (irangp.ge.0) then
 
@@ -177,12 +180,14 @@ if (irangp.ge.0) then
    call parcpt(nbpoutall)
    call parcpt(nbperrall)
    call parcpt(nbpdepall)
+   call parcpt(nbpresall)
 
    call parsom(dnbparall)
    call parsom(dnbpouall)
    call parsom(dnbperall)
    call parsom(dnbdepall)
    call parsom(dnbpnwall)
+   call parsom(dnbresall)
 
 endif
 
@@ -205,6 +210,8 @@ if (irangp.le.0) then
     elseif ( iroule .ne. 1 .and.                                  &
            (iphyla.eq.2 .and. iencra.eq.1) ) then
       write(implal,1002)
+    elseif (ireent.gt.0) then
+      write(implal,1004)
     else
       write(implal,1003)
     endif
@@ -231,7 +238,7 @@ if (irangp.le.0) then
 
     write(implal,2000) iplas,(dtp*iplas),                         &
          nbpartall        , dnbparall        ,                    &
-         nbpnew        ,dnbpnwall        ,                    &
+         nbpnew        ,dnbpnwall        ,                        &
          nbpoutall-nbperrall , dnbpouall-dnbperall ,              &
          nbpdepall        , dnbdepall        ,                    &
          nbperrall        , dnbperall        ,                    &
@@ -246,7 +253,7 @@ if (irangp.le.0) then
 
     write(implal,2001) iplas,(dtp*iplas),                         &
          nbpartall     , dnbparall        ,                       &
-         nbpnew        ,dnbpnwall        ,                              &
+         nbpnew        ,dnbpnwall        ,                        &
          nbpoutall-nbperrall , dnbpouall-dnbperall ,              &
          nbpdepall        , dnbdepall        ,                    &
          nbperrall        , dnbperall        ,                    &
@@ -260,18 +267,29 @@ if (irangp.le.0) then
 
     write(implal,2002) iplas,(dtp*iplas),                         &
          nbpartall     , dnbparall        ,                       &
-         nbpnew        ,dnbpnwall        ,                           &
+         nbpnew        ,dnbpnwall        ,                        &
          nbpoutall-nbperrall , dnbpouall-dnbperall ,              &
          nbpdepall        , dnbdepall        ,                    &
          nbperrall        , dnbperall        ,                    &
          dnbpr         ,                                          &
          npencr        , dnpenc
 
+  elseif (ireent.gt.0) then
+
+    write(implal,2004) iplas,(dtp*iplas),                         &
+         nbpartall     , dnbparall        ,                       &
+         nbpnew        ,dnbpnwall        ,                        &
+         nbpoutall-nbperrall , dnbpouall-dnbperall ,              &
+         nbpdepall        , dnbdepall        ,                    &
+         nbpresall        , dnbresall        ,                    &
+         nbperrall        , dnbperall        ,                    &
+         dnbpr
+
   else
 
     write(implal,2003) iplas,(dtp*iplas),                         &
          nbpartall     , dnbparall        ,                       &
-         nbpnew        ,dnbpnwall        ,                           &
+         nbpnew        ,dnbpnwall        ,                        &
          nbpoutall-nbperrall , dnbpouall-dnbperall ,              &
          nbpdepall        , dnbdepall        ,                    &
          nbperrall        , dnbperall        ,                    &
@@ -406,10 +424,37 @@ endif
        '# colonne 13 : % de part. perdues'                    ,/, &
        '# ')
 
+
+ 1004 format('# ** INFORMATIONS SUR LE CALCUL LAGRANGIEN     ',/, &
+       '#    -------------------------------------     '      ,/, &
+       '#                                              '      ,/, &
+       '# colonne  1 : numero de pas de temps          '      ,/, &
+       '# colonne  2 : temps physique                  '      ,/, &
+       '# colonne  3 : nbre inst. de part.             '      ,/, &
+       '# colonne  4 : nbre inst. de part. (avec poids)'      ,/, &
+       '# colonne  5 : nbre inst. de part. injectees   '      ,/, &
+       '# colonne  6 : nbre inst. de part. injectees   '        , &
+       ' (avec poids)'                                        ,/, &
+       '# colonne  7 : nbre inst. de part. sorties, ou deposees et supprimees',/,&
+       '# colonne  8 : nbre inst. de part. sorties, ou deposees et supprimees',  &
+       ' (avec poids)'                                        ,/, &
+       '# colonne  9 : nbre inst. de part. deposees'          ,/, &
+       '# colonne 10 : nbre inst. de part. deposees'            , &
+       ' (avec poids)'                                        ,/, &
+       '# colonne 11 : nbre inst. de part. resuspendues'      ,/, &
+       '# colonne 12 : nbre inst. de part. resuspendues'        , &
+       ' (avec poids)'                                        ,/, &
+       '# colonne 13 : nbre inst. de part. perdues (reperage) ',/,&
+       '# colonne 14 : nbre inst. de part. perdues'             , &
+        ' (reperage, avec poids)'                             ,/, &
+       '# colonne 15 : % de part. perdues'                    ,/, &
+       '# ')
+
  2000 format(1x,i8,2x,e10.4,2x,5(i8,2x,e10.4),2x,e10.4,4(i8,2x,e10.4))
  2001 format(1x,i8,2x,e10.4,2x,5(i8,2x,e10.4),2x,e10.4,3(i8,2x,e10.4))
  2002 format(1x,i8,2x,e10.4,2x,5(i8,2x,e10.4),2x,e10.4,1(i8,2x,e10.4))
  2003 format(1x,i8,2x,e10.4,2x,5(i8,2x,e10.4),2x,e10.4)
+ 2004 format(1x,i8,2x,e10.4,2x,6(i8,2x,e10.4),2x,e10.4)
 
 !====
 ! FIN

@@ -132,9 +132,10 @@ character        chcond*16
 double precision, allocatable, dimension(:) :: tabvr
 
 integer nbpartall, nbpoutall, nbperrall, nbpdepall
+integer nbpresall
 
 double precision dnbparall, dnbperall, dnbpouall
-double precision dnbdepall, dnbpnwall
+double precision dnbdepall, dnbpnwall, dnbresall
 
 integer          ipass
 data             ipass /0/
@@ -184,12 +185,14 @@ nbpartall = nbpart
 nbpoutall = nbpout
 nbperrall = nbperr
 nbpdepall = nbpdep
+nbpresall = nbpres
 
 dnbparall = dnbpar
 dnbpouall = dnbpou
 dnbperall = dnbper
 dnbdepall = dnbdep
 dnbpnwall = dnbpnw
+dnbresall = dnbres
 
 if (irangp.ge.0) then
 
@@ -197,12 +200,14 @@ if (irangp.ge.0) then
    call parcpt(nbpoutall)
    call parcpt(nbperrall)
    call parcpt(nbpdepall)
+   call parcpt(nbpresall)
 
    call parsom(dnbparall)
    call parsom(dnbpouall)
    call parsom(dnbperall)
    call parsom(dnbdepall)
    call parsom(dnbpnwall)
+   call parsom(dnbresall)
 
 endif
 
@@ -224,6 +229,11 @@ if (iphyla.eq.2 .and. iencra.eq.1) then
 endif
 write(nfecra,1033) nbpoutall-nbperr, (dnbpou-dnbper)
 write(nfecra,1039) nbpdepall, dnbdepall
+
+if (ireent.gt.0) then
+write(nfecra,1040) nbpresall, dnbresall
+endif
+
 write(nfecra,1035) nbperrall, dnbperall
 write(nfecra,1036) nbpartall, dnbparall
 if (nbptot.gt.0) then
@@ -466,6 +476,7 @@ endif
 1037 format('ln  which have undergone cloning             ',I8,3X,E14.5)
 1038 format('ln  coal particles fouled                    ',I8,3X,E14.5)
 1039 format('ln  deposited                                ',I8,3X,E14.5)
+1040 format('ln  resuspended                              ',I8,3X,E14.5)
 1050 format('% of lost particles (restart(s) included) :  ',E10.4)
 
 2000 format('   Volume statistics :')

@@ -194,6 +194,11 @@ do ip = 1, nbpart
                   ettp(ip,jvp) = - norm_velocity / norm_face * surfbo(2, itepa(ip,jdfac))
                   ettp(ip,jwp) = - norm_velocity / norm_face * surfbo(3, itepa(ip,jdfac))
 
+                  ! Update of the number and weight of resuspended particles
+
+                  nbpres = nbpres + 1
+                  dnbres = dnbres + tepa(ip, jrpoi)
+
                endif
 
             endif
@@ -245,6 +250,10 @@ do ip = 1, nbpart
                   ettp(ip,jvp) = - norm_velocity / norm_face * surfbo(2, itepa(ip,jdfac))
                   ettp(ip,jwp) = - norm_velocity / norm_face * surfbo(3, itepa(ip,jdfac))
 
+                  ! Update of the number and weight of resuspended particles
+
+                  nbpres = nbpres + 1
+                  dnbres = dnbres + tepa(ip, jrpoi)
 
                endif
 

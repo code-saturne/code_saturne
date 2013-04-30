@@ -61,6 +61,8 @@ module lagran
 
   !     NBPDEP/DNBDEP : NOMBRE DE PARTICULES DEPOSEES
 
+  !     NBPRES/DNBRES : NOMBRE DE PARTICULES RESUSPENDUES
+
   !     NBPERT : NOMBRE DE PARTICULES ELIMINEES EN ERREUR DANS
   !                LE CALCUL DEPUIS LE DEBUT, SUITES COMPRISES
 
@@ -82,8 +84,9 @@ module lagran
 
 
   integer, save ::           nbpart , nbpnew , nbperr , nbptot , nbpout ,   &
-                             nbpert , ndepot , nbpdep
-  double precision, save ::  dnbpar , dnbpnw , dnbper , dnbpou, dnbdep
+                             nbpert , ndepot , nbpdep , nbpres
+  double precision, save ::  dnbpar , dnbpnw , dnbper , dnbpou, dnbdep,     &
+                             dnbres
 
   integer, save ::           npclon , npkill , npcsup
   double precision, save ::  dnpclo , dnpkil , dnpcsu
@@ -151,8 +154,6 @@ module lagran
   ! Parameters of the particle resuspension model
 
    double precision, save :: espasg , denasp, modyeq , rayasp, rayasg
-   double precision, save :: dnbres
-   integer, save :: nbpres
 
   !=============================================================================
   ! 5. Pas de temps Lagrangien

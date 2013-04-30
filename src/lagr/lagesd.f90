@@ -611,6 +611,11 @@ if (ireent.eq.1) then
          vpart(2) = 0.d0
          vpart(3) = 0.d0
 
+         ! Update of the number and weight of resuspended particles
+
+         nbpres = nbpres + 1
+         dnbres = dnbres + tepa(ip, jrpoi)
+
       else  ! No direct normal lift-off
 
          ! Calculation of the norm of the hydrodynamic torque and drag (tangential)
