@@ -141,7 +141,7 @@ def CheckCFD_CodeEnv(code):
         except ImportError,e:
             mess = ObjectTR.tr("INFO_DLG_INVALID_ENV").arg(code) + e.__str__()
             if "cs_package" in e.__str__():
-                mess = mess + " ; Check for  cs_package file in Code_Saturne python package"
+                mess = mess + " ; Check for cs_package file in Code_Saturne python package"
             elif "code_saturne" in e.__str__():
                 mess = mess + " ; Check PYTHONPATH then your installation "
             iok = False
@@ -152,7 +152,7 @@ def CheckCFD_CodeEnv(code):
         except ImportError,e:
             mess = ObjectTR.tr("INFO_DLG_INVALID_ENV").arg(code) + e.__str__()
             if "nc_package" in e.__str__():
-                mess = mess + " ; Check for  nc_package file in NEPTUNE_CFD python package"
+                mess = mess + " ; Check for nc_package file in NEPTUNE_CFD python package"
             elif "neptune_cfd" in e.__str__():
                 mess = mess + " ; Check PYTHONPATH then your installation "
             iok = False

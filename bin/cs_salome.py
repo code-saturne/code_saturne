@@ -38,7 +38,6 @@ import os, sys
 
 from optparse import OptionParser
 
-import cs_config
 import cs_exec_environment
 
 #-------------------------------------------------------------------------------
@@ -94,9 +93,8 @@ export CFDSTUDY_ROOT_DIR PYTHONPATH;
         path = path+":"+cspath
 
         # Test if EOS modules could be imported
-        cfg = cs_config.config()
-        if cfg.libs['eos'].have == "yes":
-            eosprefix = cfg.libs['eos'].prefix
+        if pkg.config.libs['eos'].have == "yes":
+            eosprefix = pkg.config.libs['eos'].prefix
             try:
                 from distutils import sysconfig
                 eospath = os.path.join(sysconfig.get_python_lib(0, 0, prefix=eosprefix), 'eos')

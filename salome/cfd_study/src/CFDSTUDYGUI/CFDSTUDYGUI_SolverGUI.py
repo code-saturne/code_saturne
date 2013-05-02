@@ -316,8 +316,6 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         """
         log.debug("lauchGUI")
         from cs_gui import process_cmd_line
-        from cs_package import package
-        from Base.MainView import MainView
 
         if CFD_Code() == CFD_Saturne:
             from cs_package import package
