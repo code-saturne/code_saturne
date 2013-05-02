@@ -938,7 +938,7 @@ class Studies(object):
                         resu = os.path.join(self.dest, l, case.label, 'RESU')
                         rep = self.__check_dir(l, case.label, None, resu, "", "dest")
                         case.run_id = rep
-                        case.run_dir = os.path.join(result, rep)
+                        case.run_dir = os.path.join(resu, rep)
 
             self.reporting('  o Postprocessing cases of study: ' + l)
             script, label, nodes, args = self.__parser.getPostPro(l)
