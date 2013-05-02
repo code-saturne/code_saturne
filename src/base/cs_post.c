@@ -55,6 +55,7 @@
 #include "cs_parall.h"
 #include "cs_prototypes.h"
 #include "cs_selector.h"
+#include "cs_timer.h"
 #include "cs_time_step.h"
 
 /*----------------------------------------------------------------------------
@@ -4803,23 +4804,33 @@ cs_post_finalize(void)
   /* Timings */
 
   for (i = 0; i < _cs_post_n_writers; i++) {
-    double m_wtime = 0.0, m_cpu_time = 0.0, c_wtime = 0.0, c_cpu_time = 0.;
+    cs_timer_counter_t m_time, f_time, a_time;
     fvm_writer_t *writer = (_cs_post_writers + i)->writer;
+    CS_TIMER_COUNTER_INIT(m_time);
+    CS_TIMER_COUNTER_INIT(f_time);
+    CS_TIMER_COUNTER_INIT(a_time);
     if (writer != NULL) {
       fvm_writer_get_times(writer,
-                           &m_wtime, &m_cpu_time, &c_wtime, &c_cpu_time);
+                           &m_time, &f_time, &a_time);
       cs_log_printf(CS_LOG_PERFORMANCE,
                     _("\n"
                       "Writing of \"%s\" (%s) summary:\n"
                       "\n"
                       "  CPU time for meshes:              %12.3f\n"
                       "  CPU time for variables:           %12.3f\n"
+                      "  CPU time forcing output:          %12.3f\n"
                       "\n"
                       "  Elapsed time for meshes:          %12.3f\n"
-                      "  Elapsed time for variables:       %12.3f\n"),
+                      "  Elapsed time for variables:       %12.3f\n"
+                      "  Elapsed time forcing output:      %12.3f\n"),
                     fvm_writer_get_name(writer),
                     fvm_writer_get_format(writer),
-                    m_cpu_time, c_cpu_time, m_wtime, c_wtime);
+                    m_time.cpu_nsec*1e-9,
+                    f_time.cpu_nsec*1e-9,
+                    a_time.cpu_nsec*1e-9,
+                    m_time.wall_nsec*1e-9,
+                    f_time.wall_nsec*1e-9,
+                    a_time.wall_nsec*1e-9);
     }
   }
 

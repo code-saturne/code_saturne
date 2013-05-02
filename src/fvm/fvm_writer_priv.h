@@ -35,6 +35,9 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_defs.h"
+#include "cs_timer.h"
+
 #include "fvm_defs.h"
 #include "fvm_nodal.h"
 #include "fvm_writer.h"
@@ -177,10 +180,9 @@ struct _fvm_writer_t {
   fvm_writer_time_dep_t   time_dep;       /* Geometry time dependency */
   void                   *format_writer;  /* Format-specific writer */
 
-  double                  mesh_wtime;     /* Meshes output Wall-clock time */
-  double                  mesh_cpu_time;  /* Meshes output CPU time */
-  double                  field_wtime;    /* Fields output Wall-clock time */
-  double                  field_cpu_time; /* Fields output CPU time */
+  cs_timer_counter_t      mesh_time;      /* Meshes output timer */
+  cs_timer_counter_t      field_time;     /* Fields output timer */
+  cs_timer_counter_t      flush_time;     /* output "completion" timer */
 
 };
 

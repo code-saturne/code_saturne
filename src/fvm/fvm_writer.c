@@ -955,10 +955,9 @@ fvm_writer_init(const char             *name,
   this_writer->time_dep = CS_MIN(time_dependency,
                                  this_writer->format->max_time_dep);
 
-  this_writer->mesh_wtime = 0.;
-  this_writer->mesh_cpu_time = 0.;
-  this_writer->field_wtime = 0.;
-  this_writer->field_cpu_time = 0.;
+  CS_TIMER_COUNTER_INIT(this_writer->mesh_time);
+  CS_TIMER_COUNTER_INIT(this_writer->field_time);
+  CS_TIMER_COUNTER_INIT(this_writer->flush_time);
 
   /* Initialize format-specific writer */
 
@@ -1186,15 +1185,14 @@ void
 fvm_writer_export_nodal(fvm_writer_t        *this_writer,
                         const fvm_nodal_t   *mesh)
 {
-  double w_start, w_end, cpu_start, cpu_end;
+  cs_timer_t  t0, t1;
 
   fvm_writer_export_nodal_t  *export_nodal_func = NULL;
 
   assert(this_writer != NULL);
   assert(this_writer->format != NULL);
 
-  w_start = cs_timer_wtime();
-  cpu_start = cs_timer_cpu_time();
+  t0 = cs_timer_time();
 
   export_nodal_func = this_writer->format->export_nodal_func;
 
@@ -1202,11 +1200,9 @@ fvm_writer_export_nodal(fvm_writer_t        *this_writer,
     export_nodal_func(this_writer->format_writer,
                       mesh);
 
-  w_end = cs_timer_wtime();
-  cpu_end = cs_timer_cpu_time();
+  t1 = cs_timer_time();
 
-  this_writer->mesh_wtime += (w_end - w_start);
-  this_writer->mesh_cpu_time += (cpu_end - cpu_start);
+  cs_timer_counter_add_diff(&(this_writer->mesh_time), &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------
@@ -1248,15 +1244,14 @@ fvm_writer_export_field(fvm_writer_t                 *this_writer,
                         double                        time_value,
                         const void             *const field_values[])
 {
-  double w_start, w_end, cpu_start, cpu_end;
+  cs_timer_t  t0, t1;
 
   fvm_writer_export_field_t  *export_field_func = NULL;
 
   assert(this_writer != NULL);
   assert(this_writer->format != NULL);
 
-  w_start = cs_timer_wtime();
-  cpu_start = cs_timer_cpu_time();
+  t0 = cs_timer_time();
 
   export_field_func = this_writer->format->export_field_func;
 
@@ -1274,11 +1269,9 @@ fvm_writer_export_field(fvm_writer_t                 *this_writer,
                       time_value,
                       field_values);
 
-  w_end = cs_timer_wtime();
-  cpu_end = cs_timer_cpu_time();
+  t1 = cs_timer_time();
 
-  this_writer->field_wtime += (w_end - w_start);
-  this_writer->field_cpu_time += (cpu_end - cpu_start);
+  cs_timer_counter_add_diff(&(this_writer->field_time), &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------
@@ -1291,6 +1284,7 @@ fvm_writer_export_field(fvm_writer_t                 *this_writer,
 void
 fvm_writer_flush(fvm_writer_t  *this_writer)
 {
+
   fvm_writer_flush_t  *flush_func = NULL;
 
   assert(this_writer != NULL);
@@ -1298,39 +1292,45 @@ fvm_writer_flush(fvm_writer_t  *this_writer)
 
   flush_func = this_writer->format->flush_func;
 
-  if (flush_func != NULL)
+  if (flush_func != NULL) {
+
+    cs_timer_t  t0, t1;
+
+    t0 = cs_timer_time();
+
     flush_func(this_writer->format_writer);
+
+    t1 = cs_timer_time();
+
+    cs_timer_counter_add_diff(&(this_writer->flush_time), &t0, &t1);
+
+  }
 }
 
 /*----------------------------------------------------------------------------
- * Return accumulated wall-clock and CPU times associated with mesh and
- * field exports for a given writer.
+ * Return accumulated times associated with output for a given writer.
  *
  * parameters:
- *   this_writer      <-- pointer to mesh and field output writer
- *   mesh_wtime       --> Meshes output Wall-clock time (or NULL)
- *   mesh_cpu_time    --> Meshes output CPU time (or NULL)
- *   field_wtime      --> Fields output Wall-clock time (or NULL)
- *   field_cpu_time   --> Fields output CPU time (or NULL)
+ *   this_writer <-- pointer to mesh and field output writer
+ *   mesh_time   --> Meshes output time (or NULL)
+ *   field_time  --> Fields output time (or NULL)
+ *   flush_time  --> remaining (applying output) time (or NULL)
  *----------------------------------------------------------------------------*/
 
 void
-fvm_writer_get_times(fvm_writer_t  *this_writer,
-                     double        *mesh_wtime,
-                     double        *mesh_cpu_time,
-                     double        *field_wtime,
-                     double        *field_cpu_time)
+fvm_writer_get_times(fvm_writer_t        *this_writer,
+                     cs_timer_counter_t  *mesh_time,
+                     cs_timer_counter_t  *field_time,
+                     cs_timer_counter_t  *flush_time)
 {
   assert(this_writer != NULL);
 
-  if (mesh_wtime != NULL)
-    *mesh_wtime = this_writer->mesh_wtime;
-  if (mesh_cpu_time != NULL)
-    *mesh_cpu_time = this_writer->mesh_cpu_time;
-  if (field_wtime != NULL)
-    *field_wtime = this_writer->field_wtime;
-  if (field_cpu_time != NULL)
-    *field_cpu_time = this_writer->field_cpu_time;
+  if (mesh_time != NULL)
+    *mesh_time = this_writer->mesh_time;
+  if (field_time != NULL)
+    *field_time = this_writer->field_time;
+  if (flush_time != NULL)
+    *flush_time = this_writer->flush_time;
 }
 
 /*----------------------------------------------------------------------------*/

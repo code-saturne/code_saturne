@@ -31,6 +31,9 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_defs.h"
+#include "cs_timer.h"
+
 #include "fvm_defs.h"
 #include "fvm_nodal.h"
 
@@ -400,23 +403,20 @@ void
 fvm_writer_flush(fvm_writer_t  *this_writer);
 
 /*----------------------------------------------------------------------------
- * Return accumulated wall-clock and CPU times associated with mesh and
- * field exports for a given writer.
+ * Return accumulated times associated with output for a given writer.
  *
  * parameters:
- *   this_writer      <-- pointer to mesh and field output writer
- *   mesh_wtime       --> Meshes output Wall-clock time (or NULL)
- *   mesh_cpu_time    --> Meshes output CPU time (or NULL)
- *   field_wtime      --> Fields output Wall-clock time (or NULL)
- *   field_cpu_time   --> Fields output CPU time (or NULL)
+ *   this_writer <-- pointer to mesh and field output writer
+ *   mesh_time   --> Meshes output time (or NULL)
+ *   field_time  --> Fields output time (or NULL)
+ *   flush_time  --> remaining (applying output) time (or NULL)
  *----------------------------------------------------------------------------*/
 
 void
-fvm_writer_get_times(fvm_writer_t  *this_writer,
-                     double        *mesh_wtime,
-                     double        *mesh_cpu_time,
-                     double        *field_wtime,
-                     double        *field_cpu_time);
+fvm_writer_get_times(fvm_writer_t        *this_writer,
+                     cs_timer_counter_t  *mesh_time,
+                     cs_timer_counter_t  *field_time,
+                     cs_timer_counter_t  *flush_time);
 
 /*----------------------------------------------------------------------------*/
 
