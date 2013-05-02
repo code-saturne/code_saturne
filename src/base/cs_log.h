@@ -46,6 +46,7 @@ BEGIN_C_DECLS
 
 typedef enum {
 
+  CS_LOG_DEFAULT,      /* Default (main) log */
   CS_LOG_SETUP,        /* Calculation setup and options log */
   CS_LOG_PERFORMANCE,  /* Performance log */
   CS_LOG_N_TYPES       /* Number of log file types */

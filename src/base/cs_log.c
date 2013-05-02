@@ -44,6 +44,7 @@
 
 #include "bft_error.h"
 #include "bft_mem.h"
+#include "bft_printf.h"
 
 #include "cs_base.h"
 #include "cs_timer.h"
@@ -68,8 +69,9 @@ BEGIN_C_DECLS
 
 static bool  _cs_log_atexit_set = false;
 
-static FILE* _cs_log[] = {NULL, NULL};
-static const char* _cs_log_name[] = {"setup.log",
+static FILE* _cs_log[] = {NULL, NULL, NULL};
+static const char* _cs_log_name[] = {"",
+                                     "setup.log",
                                      "performance.log"};
 
 /*============================================================================
@@ -354,14 +356,31 @@ cs_log_printf(cs_log_t     log,
 
   if (cs_glob_rank_id > 0)
     return 0;
-  else if (_cs_log[log] == NULL)
-    _open_log(log);
 
-  va_start(arg_ptr, format);
+  if (log != CS_LOG_DEFAULT) {
 
-  retval = vfprintf(_cs_log[log], format, arg_ptr);
+    if (_cs_log[log] == NULL && log != CS_LOG_DEFAULT)
+      _open_log(log);
 
-  va_end(arg_ptr);
+    va_start(arg_ptr, format);
+
+    retval = vfprintf(_cs_log[log], format, arg_ptr);
+
+    va_end(arg_ptr);
+
+  }
+
+  else {
+
+    bft_printf_proxy_t *_printf_proxy = bft_printf_proxy_get();
+
+    va_start(arg_ptr, format);
+
+    retval = _printf_proxy(format, arg_ptr);
+
+    va_end(arg_ptr);
+
+  }
 
   return retval;
 }
@@ -387,15 +406,21 @@ cs_log_printf_flush(cs_log_t log)
   int i;
   int retval = 0;
 
-  if (log < CS_LOG_N_TYPES)
-    retval = fflush(_cs_log[log]);
+  if (log < CS_LOG_N_TYPES) {
+    if (log == CS_LOG_DEFAULT)
+      retval = bft_printf_flush();
+    else if (_cs_log[log] != NULL)
+      retval = fflush(_cs_log[log]);
+  }
 
   else {
     for (i = 0; i < CS_LOG_N_TYPES; i++) {
-      retval = fflush(_cs_log[i]);
+      if (_cs_log[log] != NULL)
+        retval = fflush(_cs_log[i]);
       if (retval != 0)
         break;
     }
+    retval = bft_printf_flush();
   }
 
   return retval;
