@@ -43,9 +43,18 @@ import SMESH
 import CFDSTUDYGUI_DataModel
 
 try:
-    from libvtkRenderingPython import *
+    from libvtkRenderingCorePython import *
+    from libvtkFiltersSourcesPython import *
 except:
-    from vtkRenderingPython import *
+    try:
+        from vtkRenderingCorePython import *
+        from vtkFiltersSourcesPython import *
+    except:
+        # for compatibility with salome 6.6
+        try:
+            from libvtkRenderingPython import *
+        except:
+            from vtkRenderingPython import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -191,17 +200,26 @@ class ProbeActor(ActorBase):
         self.polyData.SetPoints(self.points)
 
         self.__glyph = vtk.vtkGlyph3D()
-        self.__glyph.SetInput(self.polyData)
-        self.__glyph.SetSource(self.__sphere.GetOutput())
+        try:
+            self.__glyph.SetInputData(self.polyData)
+        except:
+            # for compatibility with salome 6.6
+            self.__glyph.SetInput(self.polyData)
+
+        try:
+            self.__glyph.SetSourceConnection(self.__sphere.GetOutputPort())
+        except:
+            # for compatibility with salome 6.6
+            self.__glyph.SetSource(self.__sphere.GetOutput())
 
         self.__mapper = vtk.vtkPolyDataMapper()
-        self.__mapper.SetInput(self.__glyph.GetOutput())
+        self.__mapper.SetInputConnection(self.__glyph.GetOutputPort(0))
 
         self.actor.SetMapper(self.__mapper)
         self.render.AddActor(self.actor)
 
         self.__labelMapper = vtk.vtkPolyDataMapper()
-        self.__labelMapper.SetInputConnection(self.labels.GetOutputPort())
+        self.__labelMapper.SetInputConnection(self.labels.GetOutputPort(0))
         self.labelActor.SetMapper(self.__labelMapper)
         self.labelActor.SetProperty(self.labelProp)
         scale = 1.5 * self.radius
@@ -270,7 +288,11 @@ class ProfilActor(ActorBase):
         #self.polyData.GetCellData().AddArray(edgeColors)
 
         self.__tubes = vtk.vtkTubeFilter()
-        self.__tubes.SetInput(self.polyData)
+        try:
+            self.__tubes.SetInputData(self.polyData)
+        except:
+            # for compatibility with salome 6.6
+            self.__tubes.SetInput(self.polyData)
         self.__tubes.SetVaryRadius(0)
         self.__tubes.SetRadius(self.radius)
         self.__tubes.CappingOff()
@@ -278,13 +300,13 @@ class ProfilActor(ActorBase):
         self.__tubes.SetGenerateTCoordsToOff()
 
         self.__mapper = vtk.vtkPolyDataMapper()
-        self.__mapper.SetInputConnection(self.__tubes.GetOutputPort())
+        self.__mapper.SetInputConnection(self.__tubes.GetOutputPort(0))
 
         self.actor.SetMapper(self.__mapper)
         self.render.AddActor(self.actor)
 
         self.__labelMapper = vtk.vtkPolyDataMapper()
-        self.__labelMapper.SetInputConnection(self.labels.GetOutputPort())
+        self.__labelMapper.SetInputConnection(self.labels.GetOutputPort(0))
         self.labelActor.SetMapper(self.__labelMapper)
         self.labelActor.SetProperty(self.labelProp)
         scale = 7.5 * self.radius
