@@ -422,7 +422,7 @@ endif
 
 !-->Gestion du pas de temps Lagrangien
 
-dtp = dtref
+dtp = dt(1)
 
 !-->Incrementation du TEMPS COURANT LAGRANGIEN
 
