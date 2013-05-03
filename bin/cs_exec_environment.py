@@ -402,7 +402,7 @@ def source_rcfile(pkg):
 
     if config.has_option('install', 'rcfile'):
         rcfile = config.get('install', 'rcfile')
-        if not os.file.isabs(rcfile):
+        if not os.path.isabs(rcfile):
             rcfile = '~/.' + rcfile
         source_shell_script(rcfile)
 
