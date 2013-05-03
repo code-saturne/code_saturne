@@ -9,6 +9,8 @@ Changes:
 
 - Add Code_Saturne and Syrthes Code_Coupling (MPMD) support for Blue Gene/Q.
 
+- Update SALOME detection for EDF builds of SALOME 7.
+
 Bug fixes:
 ----------
 
@@ -16,10 +18,27 @@ Bug fixes:
 
 - GUI: fix Lagrangian probes setup.
 
-- Fix T2 and T4 quadratures for radiative model.
+- MEI: fix 1d interpolation for fluid properties.
+
+- Fix typo preventing use of rcfile in code_saturne.cfg.
+
+- Fix crash in Gmsh reader.
+
+- Fix reallocation bug when sub-iterations are used for structures.
+
+- Fix in the cell code-code coupling with coupled velocity components.
+
+- Lagrangian particle tracking fixes:
+  - fix management of the list of post-processed particles;
+  - fix for writing of trajectories;
+  - fix for trajectories of motionless particles.
+
+- Radiative model: fix T2 and T4 quadratures.
 
 - PLE library: fix a test for "locate on closest" and another for empty realloc
   (update to version 1.0.3).
+
+- Build: fix use of -Wl,--allow-multiple-definition link flag for static builds.
 
 - Build: fix detection of ParMETIS in case of static libraries.
 
