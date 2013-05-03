@@ -1005,7 +1005,7 @@ _cell_rank_by_sfc(cs_gnum_t                 n_g_cells,
     cs_gnum_t cells_per_rank = n_g_cells / n_ranks;
     cs_lnum_t rmdr = n_g_cells - cells_per_rank * (cs_gnum_t)n_ranks;
 
-    if (rmdr == 0){
+    if (rmdr == 0) {
       for (i = 0; i < n_cells; i++)
         cell_rank[i] = (cell_num[i] - 1) / cells_per_rank;
     }
@@ -1014,9 +1014,9 @@ _cell_rank_by_sfc(cs_gnum_t                 n_g_cells,
       cs_gnum_t n_ranks_cells_per_rank = n_ranks_rmdr * cells_per_rank;
       for (i = 0; i < n_cells; i++) {
         if ((cell_num[i] - 1)  <  n_ranks_cells_per_rank)
-          cell_rank[i] = (cell_num[i] -1 ) / cells_per_rank;
+          cell_rank[i] = (cell_num[i] - 1) / cells_per_rank;
         else
-          cell_rank[i] = (cell_num[i]+n_ranks_rmdr-1) / (cells_per_rank+1);
+          cell_rank[i] = (cell_num[i] + n_ranks_rmdr - 1) / (cells_per_rank + 1);
       }
     }
 
@@ -2663,6 +2663,66 @@ _read_cell_rank(cs_mesh_t          *mesh,
 }
 
 /*----------------------------------------------------------------------------*
+ * Define a naive partitioning by blocks.
+ *
+ * parameters:
+ *   mesh      <-- pointer to mesh structure
+ *   mb        <-- pointer to mesh builder structure
+ *   cell_part --> assigned cell partition
+ *----------------------------------------------------------------------------*/
+
+static void
+_block_partititioning(const cs_mesh_t          *mesh,
+                      const cs_mesh_builder_t  *mb,
+                      int                      *cell_part)
+{
+  cs_lnum_t i;
+
+  int  n_ranks = cs_glob_n_ranks;
+  cs_lnum_t block_size = mesh->n_g_cells / n_ranks;
+  cs_lnum_t n_cells = mb->cell_bi.gnum_range[1] - mb->cell_bi.gnum_range[0];
+
+  if (mesh->n_g_cells % n_ranks)
+    block_size += 1;
+
+  /* Use variable block size if necessary so that all ranks have some
+     cells assigned if possible */
+
+  if ((cs_lnum_t)((mesh->n_g_cells - 1) % block_size) < n_ranks - 1) {
+
+    cs_gnum_t cells_per_rank = mesh->n_g_cells / n_ranks;
+    cs_lnum_t rmdr = mesh->n_g_cells - cells_per_rank * (cs_gnum_t)n_ranks;
+
+    if (rmdr == 0) {
+      for (i = 0; i < n_cells; i++) {
+        cs_gnum_t cell_num = mb->cell_bi.gnum_range[0] + i;
+        cell_part[i] = (cell_num - 1) / cells_per_rank;
+      }
+    }
+    else {
+      cs_gnum_t n_ranks_rmdr = n_ranks - rmdr;
+      cs_gnum_t n_ranks_cells_per_rank = n_ranks_rmdr * cells_per_rank;
+      for (i = 0; i < n_cells; i++) {
+        cs_gnum_t cell_num = mb->cell_bi.gnum_range[0] + i;
+        if ((cell_num - 1)  <  n_ranks_cells_per_rank)
+          cell_part[i] = (cell_num - 1) / cells_per_rank;
+        else
+          cell_part[i] = (cell_num + n_ranks_rmdr - 1) / (cells_per_rank + 1);
+      }
+    }
+
+  }
+
+  else {
+    for (i = 0; i < n_cells; i++) {
+      cs_gnum_t cell_num = mb->cell_bi.gnum_range[0] + i;
+      cell_part[i] = ((cell_num - 1) / block_size);
+    }
+  }
+
+}
+
+/*----------------------------------------------------------------------------*
  * Indicate if a usable graph partitioning algorithm is available
  * for a given partitioning stage.
  *
@@ -3092,13 +3152,6 @@ cs_partition(cs_mesh_t             *mesh,
       return;
   }
 
-  /* Return if partitioning is deactivated */
-
-  if (_part_algorithm[stage] == CS_PARTITION_BLOCK) {
-    mb->have_cell_rank = false;
-    return;
-  }
-
   (void)cs_timer_wtime();
 
   /* Print header */
@@ -3432,6 +3485,16 @@ cs_partition(cs_mesh_t             *mesh,
                       n_ranks,
                       cell_part);
     }
+
+  }
+
+  /* Naive partitioner */
+
+  else if (_algorithm == CS_PARTITION_BLOCK) {
+
+    BFT_MALLOC(cell_part, n_cells, int);
+
+    _block_partititioning(mesh, mb, cell_part);
 
   }
 
