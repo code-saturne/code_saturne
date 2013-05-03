@@ -299,6 +299,10 @@ if test "x$cs_ibm_bg_type" = "xL" -o "x$cs_ibm_bg_type" = "xP" \
 fi
 AC_SUBST(enable_shared)
 
+# Initialize libtool.
+
+LT_INIT([win32-dll])
+
 # In static mode, multiple definitions must be allowed for the linker.
 # On some systems, such as Mac OS X in static mode, limitations
 # of the linker require special handling for user user subroutines
@@ -311,7 +315,7 @@ if test "x$enable_shared" = "xno" ; then
   case "$host_os" in
     linux* | *bsd* | solaris2.* | cnk* )
       if test "x$auto_flags" = "xyes" ; then
-        LDFLAGS="${LDLAGS} -Wl,--allow-multiple-definition"
+        LDFLAGS="${LDFLAGS} -Wl,--allow-multiple-definition"
       fi
       ;;
     darwin*)
@@ -322,16 +326,12 @@ else
   case "$host_os" in
     linux* )
       if test "x$auto_flags" = "xyes" ; then
-        LDFLAGS="${LDLAGS} -Wl,-export-dynamic"
+        LDFLAGS="${LDFLAGS} -Wl,-export-dynamic"
       fi
       ;;
   esac
 fi
 AC_SUBST(cs_special_user_link)
-
-# Initialize libtool.
-
-LT_INIT([win32-dll])
 
 #------------------------------------------------------------------------------
 # Checks for typedefs, structures, and compiler characteristics.
