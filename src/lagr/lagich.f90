@@ -302,11 +302,14 @@ enddo
 do npt = 1,nbpart
   if (itepa(npt,jisor).gt.0) then
     icha = itepa(npt,jinch)
-
-    tepa(npt,jrdck) =                                             &
+    if ( ettpa(npt,jmch).ge.(1.d-3*ettpa(npt,jmp)) ) then
+     tepa(npt,jrdck) = tepa(npt,jrd0p)
+    else
+     tepa(npt,jrdck) =                                             &
              ( (d6spi / ( 1.d0-xashch(icha)) )                    &
               *( ettp(npt,jmch)/rho0ch(icha)                      &
               +ettp(npt,jmck)/tepa(npt,jrhock)))**d1s3
+    endif
   endif
 enddo
 
@@ -627,10 +630,14 @@ endif
 do npt = 1,nbpart
   if (itepa(npt,jisor).gt.0) then
     icha = itepa(npt,jinch)
-
-    tepa(npt,jrdck) = ( (d6spi/(1.d0-xashch(icha)) )              &
-                    *   ( ettp(npt,jmch)/rho0ch(icha)             &
-                        + ettp(npt,jmck)/tepa(npt,jrhock) ))**d1s3
+    if ( ettpa(npt,jmch).ge.(1.d-3*ettpa(npt,jmp)) ) then
+     tepa(npt,jrdck) = tepa(npt,jrd0p)
+    else
+     tepa(npt,jrdck) =                                             &
+             ( (d6spi / ( 1.d0-xashch(icha)) )                    &
+              *( ettp(npt,jmch)/rho0ch(icha)                      &
+              +ettp(npt,jmck)/tepa(npt,jrhock)))**d1s3
+    endif
   endif
 enddo
 
