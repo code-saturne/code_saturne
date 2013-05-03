@@ -1,5 +1,5 @@
-Release 3.0.1 (future)
-======================
+Release 3.0.1 (03 May 2013)
+===========================
 
 Changes:
 --------
@@ -18,6 +18,9 @@ Bug fixes:
 
 - GUI: fix Lagrangian probes setup.
 
+- Partitioning: avoid crash in block (naive) partition when there are less
+  mesh I/O blocks than ranks.
+
 - MEI: fix 1d interpolation for fluid properties.
 
 - Fix typo preventing use of rcfile in code_saturne.cfg.
@@ -29,6 +32,7 @@ Bug fixes:
 - Fix in the cell code-code coupling with coupled velocity components.
 
 - Lagrangian particle tracking fixes:
+  - Use time step value of dt(1) instead of dtref, to allow a varying time step.
   - fix management of the list of post-processed particles;
   - fix for writing of trajectories;
   - fix for trajectories of motionless particles.

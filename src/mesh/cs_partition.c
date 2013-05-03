@@ -2754,6 +2754,51 @@ _read_cell_rank(cs_mesh_t          *mesh,
 }
 
 /*----------------------------------------------------------------------------*
+ * Define a naive partitioning by blocks.
+ *
+ * parameters:
+ *   mesh      <-- pointer to mesh structure
+ *   mb        <-- pointer to mesh builder structure
+ *   cell_rank --> assigned cell rank
+ *----------------------------------------------------------------------------*/
+
+static void
+_block_partititioning(const cs_mesh_t          *mesh,
+                      const cs_mesh_builder_t  *mb,
+                      int                      *cell_rank)
+{
+  cs_lnum_t i;
+
+  int  n_ranks = cs_glob_n_ranks;
+  cs_lnum_t block_size = mesh->n_g_cells / n_ranks;
+  cs_lnum_t n_cells = mb->cell_bi.gnum_range[1] - mb->cell_bi.gnum_range[0];
+
+  if (mesh->n_g_cells % n_ranks)
+    block_size += 1;
+
+  /* Use variable block size if necessary so that all ranks have some
+     cells assigned if possible */
+
+  if ((cs_lnum_t)((mesh->n_g_cells - 1) % block_size) < n_ranks - 1) {
+    int max_rank = n_ranks - 1;
+    double _block_size = mesh->n_g_cells / (double)n_ranks;
+    for (i = 0; i < n_cells; i++) {
+      cs_gnum_t cell_num = mb->cell_bi.gnum_range[0] + i;
+      cell_rank[i] = (((cell_num - 1) / _block_size) + 0.5);
+      if (cell_rank[i] > max_rank)
+        cell_rank[i] = max_rank;
+    }
+  }
+  else {
+    for (i = 0; i < n_cells; i++) {
+      cs_gnum_t cell_num = mb->cell_bi.gnum_range[0] + i;
+      cell_rank[i] = ((cell_num - 1) / block_size);
+    }
+  }
+
+}
+
+/*----------------------------------------------------------------------------*
  * Indicate if a usable graph partitioning algorithm is available
  * for a given partitioning stage.
  *
@@ -3183,13 +3228,6 @@ cs_partition(cs_mesh_t             *mesh,
       return;
   }
 
-  /* Return if partitioning is deactivated */
-
-  if (_part_algorithm[stage] == CS_PARTITION_BLOCK) {
-    mb->have_cell_rank = false;
-    return;
-  }
-
   (void)cs_timer_wtime();
 
   /* Print header */
@@ -3523,6 +3561,16 @@ cs_partition(cs_mesh_t             *mesh,
                       n_ranks,
                       cell_part);
     }
+
+  }
+
+  /* Naive partitioner */
+
+  else if (_algorithm == CS_PARTITION_BLOCK) {
+
+    BFT_MALLOC(cell_part, n_cells, int);
+
+    _block_partititioning(mesh, mb, cell_part);
 
   }
 
