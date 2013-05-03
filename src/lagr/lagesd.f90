@@ -212,11 +212,16 @@ integer          iromf
 
 ! Local variables for the resuspension model
 
-double precision drag(3), drag_norm      ! Hydrodynamic drag on a deposited particle
+double precision drag(3)                 ! Hydrodynamic drag on a deposited particle
 double precision tordrg(3), tordrg_norm  ! Hydrodynamic torque on a deposited particle
 
 double precision omep(3)  ! Angular velocity of the rolling particle
 double precision dome(3)  ! Time increment of the angular velocity of the deposited particle
+
+double precision scalax
+
+double precision iner_tor,  cst_1,  cst_4, adh_tor(3),vpart0(3)
+double precision kk, kkk
 
 !===============================================================================
 
@@ -294,6 +299,9 @@ call  lagprj                                                        &
        dlgeo(ifac, 5) , dlgeo(ifac, 6) , dlgeo(ifac, 7) ,           &
        dlgeo(ifac, 8) , dlgeo(ifac, 9) , dlgeo(ifac,10) ,           &
        dlgeo(ifac,11) , dlgeo(ifac,12) , dlgeo(ifac,13)  )
+
+vpart0(2) = vpart(2)
+vpart0(3) = vpart(3)
 
 ! 2.2 - flow-seen velocity
 
@@ -561,13 +569,6 @@ else
 
       vvue(id) = ter1f + ter2f + ter3f
 
-      !---> particles velocity
-      vpart(id) = 0.d0
-
-      !---> trajectory
-
-      depl(id) = 0.d0
-
    enddo
 
 endif
@@ -607,7 +608,7 @@ if (ireent.eq.1) then
 
          tepa(ip,jndisp) = 0.d0
 
-         vpart(1) = min(- 1.d0 / ettp(ip,jmp) * abs(drag(1) -  tepa(ip,jfadh)) * dtref, 1.d-3)
+         vpart(1) = min(- 1.d0 / ettp(ip,jmp) * abs(drag(1) -  tepa(ip,jfadh)) * dtp, 1.d-3)
          vpart(2) = 0.d0
          vpart(3) = 0.d0
 
@@ -620,27 +621,39 @@ if (ireent.eq.1) then
 
          ! Calculation of the norm of the hydrodynamic torque and drag (tangential)
 
-         drag_norm = sqrt(drag(2)**2 + drag(3)**2)
          tordrg_norm = sqrt(tordrg(2)**2 + tordrg(3)**2)
 
-         if (tordrg_norm.gt.tepa(ip,jmfadh)) then
+         adh_tor(2) = - tepa(ip,jmfadh) / tordrg_norm * tordrg(2)
+         adh_tor(3) = - tepa(ip,jmfadh) / tordrg_norm * tordrg(3)
 
-            ! The hydrodynamic torque overcomes the adhesion torque
-            ! --> The particle starts rolling
+         do id = 2,3
+
+            iner_tor = (7.d0/5.d0)*ettp(ip,jmp)*(ettp(ip,jdp) * 0.5d0)**2
+
+            cst_4 = 6 * pi * visccf * romf * 1.7 * 1.4 * (ettp(ip,jdp) * 0.5d0)**2
+
+            cst_1 = cst_4 * (ettp(ip,jdp) * 0.5d0) / iner_tor
+
+            vpart0(id) = vpart(id)
+
+            vpart(id) = (vpart0(id) - vvue(id) - adh_tor(id) / cst_4)* exp( - cst_1 * dtp) &
+                 + (vvue(id) + adh_tor(id) / cst_4)
+
+         enddo
+
+         scalax = vpart(2) * vvue(2) + vpart(3) * vvue(3)
+
+         if (scalax.gt.0.d0) then
+
+            ! The calculated particle velocity is aligned
+            ! with the flow seen
+            ! --> The particle starts or keep on rolling
 
             itepa(ip,jdepo) = 2
 
             vpart(1) = 0.0d0
 
             do id = 2,3
-
-               omep(id) = vpart(id) / (ettp(ip,jdp) * 0.5d0)
-               dome(id) = (tordrg_norm-tepa(ip,jmfadh))                               &
-                    /((7.d0/5.d0)*ettp(ip,jmp)*(ettp(ip,jdp) * 0.5d0)**2)
-
-               omep(id) = omep(id) + dome(id) * dtref * drag(id) / drag_norm
-
-               vpart(id) = ettp(ip,jdp) * 0.5d0 * omep(id)
 
                if (abs(vpart(id)).gt.abs(vvue(id))) then
 
@@ -651,23 +664,29 @@ if (ireent.eq.1) then
 
                endif
 
-               depl(id) = vpart(id) * dtref
+               kk = vpart0(id) - vvue(id) - adh_tor(id) / cst_4
+               kkk = vvue(id) + adh_tor(id) / cst_4
 
-            enddo  ! do id = 2,3
-
+              depl(id) = ((cst_1 * kkk * dtp + kk) * exp( cst_1 * dtp) - kk) * &
+                             exp(- cst_1 * dtp) / cst_1
+            enddo
 
          else
 
-            ! The particle is not set into motion
-            ! the flag is set to  10
+            ! The particle is not set into motion or stops
+            ! the flag is set to  10 and velocity and displacement are null
 
             itepa(ip,jdepo) = 10
+            do id = 2,3
+               depl(id) = 0.d0
+               vpart(id) = 0.d0
+            enddo
 
-         endif ! if (tordrg ..)
+         endif ! if (scalax..)
 
       endif
 
-     endif
+   endif
 
 else  ! if ireent.eq.0 --> Motionless deposited particle
 
@@ -714,6 +733,8 @@ call lagprj                                                       &
       dlgeo(ifac, 5) , dlgeo(ifac, 6) , dlgeo(ifac, 7) ,          &
       dlgeo(ifac, 8) , dlgeo(ifac, 9) , dlgeo(ifac,10) ,          &
       dlgeo(ifac,11) , dlgeo(ifac,12) , dlgeo(ifac,13)  )
+
+
 
 ! 3.3 - flow-seen velocity
 

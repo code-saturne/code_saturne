@@ -775,7 +775,7 @@ if (ireent.gt.0) then
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   ettp   , tepa )
+   ettp   , ettpa  , tepa )
 
 endif
 

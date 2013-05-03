@@ -28,7 +28,7 @@ subroutine lagres &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   ettp   , tepa   )
+   ettp   , ettpa  , tepa   )
 
 !===============================================================================
 
@@ -68,6 +68,8 @@ subroutine lagres &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! ettp             ! tr ! <-- ! tableaux des variables liees                   !
 !  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
+! ettpa            ! tr ! <-- ! tableaux des variables liees                   !
+!  (nbpmax,nvp)    !    !     !   aux particules etape precedente              !
 ! tepa             ! tr ! <-- ! info particulaires (reels)                     !
 ! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
 !__________________!____!_____!________________________________________________!
@@ -109,7 +111,8 @@ integer          itepa(nbpmax,nivep)
 double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*) , propfb(nfabor,*)
-double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
+double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
+double precision tepa(nbpmax,nvep)
 
 ! Local variables
 
@@ -118,10 +121,19 @@ double precision kinetic_energy
 double precision  adhesion_energ
 double precision norm_velocity, norm_face
 
+
+double precision omep, domep
+double precision v_part_t, v_part_t_dt, v_part_inst
+double precision sub_dt
+
 ! ==========================================================================
 ! 0.    initialization
 ! ==========================================================================
 
+
+! ==========================================================================
+! 1.    Resuspension sub model
+! ==========================================================================
 
 do ip = 1, nbpart
 
@@ -155,6 +167,8 @@ do ip = 1, nbpart
 
          ! If the particle has a displacement approximately
          ! equal to a diameter, recalculation of the adhesion force
+
+         tepa(ip,jndisp) = 0.d0
 
          call lagadh                                                     &
               ( ip   , nvar   , nscal  ,                                 &
@@ -209,7 +223,7 @@ do ip = 1, nbpart
 
          ii = 1
 
-         do while ((ii.le.ndiam).and.(itepa(ip,jdepo).ne.0))
+         do while ((ii.le.ndiam).and.(itepa(ip,jdepo).eq.2))
 
             call lagadh                                                     &
                  ( ip   , nvar   , nscal  ,                                 &
@@ -218,6 +232,44 @@ do ip = 1, nbpart
                  itepa  ,                                                   &
                  dt     , rtpa   , rtp    , propce , propfa , propfb ,      &
                  ettp   , tepa   , adhesion_energ)
+
+            ! Reconstruct an estimate of the particle velocity
+            ! at the current sub-time-step assuming linear variation
+            ! (constant acceleration)
+
+            v_part_t = sqrt( ettpa(ip,jup) ** 2                         &
+                           + ettpa(ip,jvp) ** 2                         &
+                           + ettpa(ip,jwp) ** 2)
+
+            v_part_t_dt = sqrt( ettp(ip,jup) ** 2                       &
+                              + ettp(ip,jvp) ** 2                       &
+                              + ettp(ip,jwp) ** 2)
+
+            sub_dt = dtp / ndiam
+
+            v_part_inst =  v_part_t + sub_dt * (v_part_t_dt + v_part_t) / dtp
+
+            ! Reconstruct an estimate of the angular velocity
+            ! at the current sub-time-step
+
+            omep = v_part_inst / (ettp(ip,jdp) * 0.5d0)
+
+            ! Variation of the angular velocity due to
+            ! the update of the adhesion torque
+
+            domep = tepa(ip,jmfadh)                                &
+                 /((7.d0/5.d0)*ettp(ip,jmp)*(ettp(ip,jdp) * 0.5d0)**2)
+
+            if ((domep * sub_dt) .gt. omep) then
+
+               itepa(ip,jdepo) = 10
+
+               ettp(ip,jup) = 0.d0
+               ettp(ip,jvp) = 0.d0
+               ettp(ip,jwp) = 0.d0
+
+            endif
+
 
             if ((test_colli.eq.1) .and. (itepa(ip,jnbasg).gt.0)) then
 
@@ -254,6 +306,11 @@ do ip = 1, nbpart
 
                   nbpres = nbpres + 1
                   dnbres = dnbres + tepa(ip, jrpoi)
+
+               endif
+
+               if (itepa(ip,jnbasg).eq.0) then
+                  test_colli = 1
 
                endif
 
