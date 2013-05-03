@@ -236,7 +236,7 @@ if (irangp.le.0) then
   if ( iroule.ge.1 .and.                                          &
        (iphyla.eq.2 .and. iencra.eq.1) ) then
 
-    write(implal,2000) iplas,(dtp*iplas),                         &
+    write(implal,2000) iplas,ttcabs,                              &
          nbpartall        , dnbparall        ,                    &
          nbpnew        ,dnbpnwall        ,                        &
          nbpoutall-nbperrall , dnbpouall-dnbperall ,              &
@@ -251,7 +251,7 @@ if (irangp.le.0) then
   elseif ( iroule.ge.1 .and.                                      &
          (iphyla.ne.2 .or. iencra.ne.1) ) then
 
-    write(implal,2001) iplas,(dtp*iplas),                         &
+    write(implal,2001) iplas,ttcabs,                              &
          nbpartall     , dnbparall        ,                       &
          nbpnew        ,dnbpnwall        ,                        &
          nbpoutall-nbperrall , dnbpouall-dnbperall ,              &
@@ -265,7 +265,7 @@ if (irangp.le.0) then
   elseif ( iroule.lt.1 .and.                                      &
          (iphyla.eq.2 .and. iencra.eq.1) ) then
 
-    write(implal,2002) iplas,(dtp*iplas),                         &
+    write(implal,2002) iplas,ttcabs,                              &
          nbpartall     , dnbparall        ,                       &
          nbpnew        ,dnbpnwall        ,                        &
          nbpoutall-nbperrall , dnbpouall-dnbperall ,              &
@@ -276,7 +276,7 @@ if (irangp.le.0) then
 
   elseif (ireent.gt.0) then
 
-    write(implal,2004) iplas,(dtp*iplas),                         &
+    write(implal,2004) iplas,ttcabs,                              &
          nbpartall     , dnbparall        ,                       &
          nbpnew        ,dnbpnwall        ,                        &
          nbpoutall-nbperrall , dnbpouall-dnbperall ,              &
@@ -287,7 +287,7 @@ if (irangp.le.0) then
 
   else
 
-    write(implal,2003) iplas,(dtp*iplas),                         &
+    write(implal,2003) iplas  ,ttcabs,                            &
          nbpartall     , dnbparall        ,                       &
          nbpnew        ,dnbpnwall        ,                        &
          nbpoutall-nbperrall , dnbpouall-dnbperall ,              &
