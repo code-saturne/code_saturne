@@ -52,7 +52,10 @@ except Exception: # email version 4.0 (Python2 from Python 2.5)
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from autovnv.Study import Studies
+# Do not import Autovnv yet, as it pulls Python packages such as
+# matplotlib or vtk which may not be in the standard path, and may need
+# sourcing of a specific environment (which itself is delayed in case
+# the main and coputation packages are not the same).
 
 #-------------------------------------------------------------------------------
 # Processes the passed command line arguments
@@ -183,6 +186,15 @@ def runAutoverif(pkg, opt_f, opt_v, opt_u, opt_r, opt_c, opt_p, opt_to):
       7. plot result
       8. reporting by mail
     """
+
+    # Source environment if required before importing Autovnv modules, as it
+    # pulls Python packages such as matplotlib or vtk which may not be in the
+    # standard path.
+    from cs_exec_environment import set_modules, source_rcfile
+    set_modules(pkg)
+    source_rcfile(pkg)
+
+    from autovnv.Study import Studies
 
     # Scripts
 

@@ -217,6 +217,50 @@ def write_prepend_path(fd, var, user_path):
 
 #-------------------------------------------------------------------------------
 
+def clean_path(path):
+    """
+    Remove duplicates from path.
+    """
+
+    # Case for a string
+
+    if type(path) == str:
+
+        if not path:
+            return ''
+
+        if sys.platform.startswith('win'):
+            s = ';'
+        else:
+            s = ':'
+
+        vals = path.split(s)
+
+        clean_path(vals)
+
+        value = ''
+        for v in vals:
+            if value:
+                value += s + v
+            else:
+                value = v
+
+        return value
+
+    # Case for a list
+
+    elif type(path) == list:
+
+        i = len(path) - 1
+        while i > -1:
+            if path.count(i) > 1 or not path[i]:
+                path.pop(i)
+            i -= 1
+
+    return path
+
+#-------------------------------------------------------------------------------
+
 def get_script_positional_args():
     """
     Write the positional arguments with a newline character.
@@ -380,8 +424,24 @@ def source_shell_script(path):
     output = p.communicate()[0]
 
     for line in output.splitlines():
+
         (key, _, value) = line.partition("=")
+
+        # For paths, cleanup (remove multiple values) first
+        if key[-4:] == 'PATH':
+            value = clean_path(value)
+
+        # Add key, value
         os.environ[key] = value
+
+        # additional handling for Python path
+        if key == 'PYTHONPATH':
+            vals = value.split(':')
+            vals.reverse()
+            for v in vals:
+                if v:
+                    sys.path.insert(0, v)
+            sys.path = clean_path(sys.path)
 
 #-------------------------------------------------------------------------------
 
