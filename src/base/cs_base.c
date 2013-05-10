@@ -942,34 +942,69 @@ cs_base_logfile_head(int    argc,
   /* Define MPI Information */
 
 #if defined(MPI_SUBVERSION)
-#if defined(OPEN_MPI)
+
+  char mpi_vendor_lib[32] = "";
+  char mpi_lib[32] = "";
+
+  /* Base MPI library information */
+
+#if defined(MPI_VENDOR_NAME)
+
 #if defined(OMPI_MAJOR_VERSION)
-  char mpi_lib[32];
-  snprintf(mpi_lib, 31, "Open MPI %d.%d.%d",
-          OMPI_MAJOR_VERSION, OMPI_MINOR_VERSION, OMPI_RELEASE_VERSION);
-  mpi_lib[31] = '\0';
+  snprintf(mpi_lib, 31, "%s %d.%d.%d",
+           MPI_VENDOR_NAME,
+           OMPI_MAJOR_VERSION, OMPI_MINOR_VERSION, OMPI_RELEASE_VERSION);
+#elif defined(MPICH2_VERSION)
+  snprintf(mpi_lib, 31, "%s %s", MPI_VENDOR_NAME, MPICH2_VERSION);
+#elif defined(MPICH_VERSION)
+  snprintf(mpi_lib, 31, "%s %s", MPI_VENDOR_NAME, MPICH_VERSION);
 #else
-  const char mpi_lib[] = "Open MPI";
+  snprintf(mpi_lib, 31, "%s", MPI_VENDOR_NAME);
 #endif
-#elif defined(MSMPI_VER)
-  const char mpi_lib[] = "MSMPI";
+
+#elif defined(OPEN_MPI)
+#if defined(OMPI_MAJOR_VERSION)
+  snprintf(mpi_lib, 31, "Open MPI %d.%d.%d",
+           OMPI_MAJOR_VERSION, OMPI_MINOR_VERSION, OMPI_RELEASE_VERSION);
+#else
+  snprintf(mpi_lib, 31, "Open MPI");
+#endif
+
 #elif defined(MPICH2)
 #if defined(MPICH2_VERSION)
-  char mpi_lib[32];
   snprintf(mpi_lib, 31, "MPICH2 %s", MPICH2_VERSION);
-  mpi_lib[31] = '\0';
 #else
-  const char mpi_lib[] = "MPICH2";
+  snprintf(mpi_lib, 31, "MPICH2");
 #endif
-#elif defined(LAM_MPI)
-  const char mpi_lib[] = "LAM/MPI";
 #elif defined(MPICH_NAME)
-  const char mpi_lib[] = "MPICH";
-#elif defined(HP_MPI)
-  const char mpi_lib[] = "HP-MPI";
-#elif defined(MPI_SUBVERSION)
-  const char *mpi_lib = NULL;
+#if defined(MPICH_VERSION)
+  snprintf(mpi_lib, 31, "MPICH %s", MPICH_VERSION);
+#else
+  snprintf(mpi_lib, 31, "MPICH");
 #endif
+
+#elif defined(LAM_MPI)
+#if defined(LAM_VERSION)
+  snprintf(mpi_lib, 31, "LAM/MPI %s", LAM_VERSION);
+#else
+  snprintf(mpi_lib, 31, "LAM/MPI");
+#endif
+#endif
+
+  mpi_lib[31] = '\0';
+
+  /* Possible additional MPI vendor information */
+
+#if defined(MVAPICH2_VERSION)
+  snprintf(mpi_vendor_lib, 31, "MVAPICH2 %s", MVAPICH2_VERSION);
+#elif defined(MSMPI_VER)
+  snprintf(mpi_vendor_lib, 31, "MS-MPI");
+#elif defined(HP_MPI)
+  snprintf(mpi_vendor_lib, 31, "HP-MPI");
+#endif
+
+  mpi_vendor_lib[31] = '\0';
+
 #endif /* defined(MPI_SUBVERSION) */
 
   /* Determine compilation date */
@@ -1017,12 +1052,22 @@ cs_base_logfile_head(int    argc,
   bft_printf(_("  build %s\n"), str);
 
 #if defined(MPI_SUBVERSION)
-  if (mpi_lib != NULL)
-    bft_printf(_("  MPI version %d.%d (%s)\n\n"),
-               MPI_VERSION, MPI_SUBVERSION, mpi_lib);
-  else
-    bft_printf(_("  MPI version %d.%d\n\n"),
-               MPI_VERSION, MPI_SUBVERSION);
+  if (mpi_vendor_lib[0] != '\0') {
+    if (mpi_lib[0] != '\0')
+      bft_printf(_("  MPI version %d.%d (%s, based on %s)\n\n"),
+                 MPI_VERSION, MPI_SUBVERSION, mpi_vendor_lib, mpi_lib);
+    else
+      bft_printf(_("  MPI version %d.%d (%s)\n\n"),
+                 MPI_VERSION, MPI_SUBVERSION, mpi_vendor_lib);
+  }
+  else {
+    if (mpi_lib[0] != '\0')
+      bft_printf(_("  MPI version %d.%d (%s)\n\n"),
+                 MPI_VERSION, MPI_SUBVERSION, mpi_lib);
+    else
+      bft_printf(_("  MPI version %d.%d\n\n"),
+                 MPI_VERSION, MPI_SUBVERSION);
+  }
 #endif
 
   bft_printf("\n");
@@ -1074,14 +1119,18 @@ cs_base_mpi_init(int    *argc,
 
   use_mpi = true;
 
-#elif defined(MPICH2) || defined(MSMPI_VER)
+#elif defined(MPICH) || defined(MPICH2) || defined(MSMPI_VER)
 
   /* Notes: Microsoft MPI is based on standard MPICH2 */
 
   if (getenv("PMI_RANK") != NULL)
     use_mpi = true;
 
-#elif defined(MPICH_NAME)
+  else if (getenv("PCMPI") != NULL) /* Platform MPI */
+    use_mpi = true;
+
+#if defined(MPICH_NAME)
+#if (MPICH_NAME == 1)
 
   /*
     Using standard MPICH1 1.2.x with the p4 (default) mechanism,
@@ -1103,6 +1152,9 @@ cs_base_mpi_init(int    *argc,
 
   if (getenv("GMPI_ID") != NULL) /* In case we are using MPICH-GM */
     use_mpi = true;
+
+#endif /* End for MPICH-1 or variants */
+#endif
 
 #elif defined(LAM_MPI)
   if (getenv("LAMRANK") != NULL)

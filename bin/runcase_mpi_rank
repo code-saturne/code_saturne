@@ -32,28 +32,14 @@
 # MPI_RANK=`runcase_mpi_rank $@`
 #
 # Mainly useful to launch MPMD applications
-# like coupling within MPI 1.2 environment
-# which does not have a command like mpiexec
-# (or some appschemes as LAM)
+# like coupling within MPI environments
+# which do not have a command like mpiexec.
 
-# On HP AlphaServer cluster (CCRT: Chrome)
-if [ "$RMS_RANK" != "" ] ; then
-  MPI_RANK="$RMS_RANK"
+# Current systems
+# ---------------
 
-# On Opteron or Itanium cluster under Linux with Slurm (CCRT: Platine, Tantale)
-elif [ "$SLURM_PROCID" != "" ] ; then
-  MPI_RANK="$SLURM_PROCID"
-
-# On Opteron cluster under Linux MPICH-GM (EDF Chatou cluster)
-elif [ "$GMPI_ID" != "" ] ; then
-  MPI_RANK="$GMPI_ID"
-
-# On EDF MFTT cluster under Linux with MPI Scali (SCI network)
-elif [ "$SCAMPI_PROCESS_PARAM" != "" ] ; then
-  MPI_RANK=`echo $SCAMPI_PROCESS_PARAM | cut -f4 -d' '`
-
-# For MPICH2 (it also provides the mpiexec command)
-elif [ "$PMI_RANK" != "" ] ; then
+# For MPICH2 or MPICH-3 (which also provides the mpiexec command)
+if [ "$PMI_RANK" != "" ] ; then
   MPI_RANK="$PMI_RANK"
 
 # For Open MPI (it also provides the mpiexec command)
@@ -62,17 +48,49 @@ elif [ "$OMPI_MCA_ns_nds_vpid" != "" ] ; then # Open MPI 1.2
 elif [ "$OMPI_COMM_WORLD_RANK" != "" ] ; then # Open MPI 1.3
   MPI_RANK="$OMPI_COMM_WORLD_RANK"
 
+# Otherwise, with SLURM
+elif [ "$PMI_ID" != "" ] ; then
+  MPI_RANK="$PMI_ID"
+elif [ "$SLURM_PROCID" != "" ] ; then
+  MPI_RANK="$SLURM_PROCID"
+
+# Current systems for which we have no access (so trust docs)
+# -------------------------------------------
+
+# For IBM Platform MPI
+elif [ "$MPI_RANKID" != "" ] ; then
+  MPI_RANK="$MPI_RANKID"
+
+# For IBM PE
+elif [ "$MP_CHILD" != "" ] ; then
+  MPI_RANK="$MP_CHILD"
+
+# Obsolete systems (are any of those still used somewhere ?)
+# ----------------
+
+# For MVAPICH 1.1
+elif [ "$SMPIRUN_RANK" != "" ] ; then
+  MPI_RANK="$MPIRUN_RANK"
+
 # For LAM 7.1 (an appschema can also be used)
 elif [ "$LAMRANK" != "" ] ; then
   MPI_RANK="$LAMRANK"
 
-# On IBM machine with MVAPICH (following a test "Computing on Demand")
-elif [ "$SMPIRUN_RANK" != "" ] ; then
-  MPI_RANK="$MPIRUN_RANK"
+# On HP AlphaServer cluster (CCRT: Chrome)
+elif [ "$RMS_RANK" != "" ] ; then
+  MPI_RANK="$RMS_RANK"
 
-# On cluster with HP-MPI (CCRT: Tantale, old system)
+# On Opteron cluster under Linux MPICH-GM
+elif [ "$GMPI_ID" != "" ] ; then
+  MPI_RANK="$GMPI_ID"
+
+# On cluster with HP-MPI (has become Platform MPI since)
 elif [ "$MPI_PROC" != "" ] ; then
   MPI_RANK=`echo $MPI_PROC | cut -f 2 -d,`
+
+# On cluster under Linux with Scali MPI (bought by Platform computing)
+elif [ "$SCAMPI_PROCESS_PARAM" != "" ] ; then
+  MPI_RANK=`echo $SCAMPI_PROCESS_PARAM | cut -f4 -d' '`
 
 # For "standard" MPICH 1.2 (with "usual" chp4 communication)
 else
