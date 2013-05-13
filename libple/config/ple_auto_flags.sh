@@ -161,6 +161,12 @@ if test "x$ple_gcc" = "xgcc"; then
       ;;
   esac
 
+  case "$host_os" in
+    mingw32)
+    cflags_default="$cflags_default -Wno-format -Wno-pedantic-ms-format"
+    ;;
+  esac
+
 # Otherwise, are we using icc ?
 #------------------------------
 
@@ -242,7 +248,7 @@ if test "x$ple_compiler_known" != "xyes" ; then
     echo "compiler '$CC' is Portland Group pgcc"
 
     # Version strings for logging purposes and known compiler flag
-    $CC -V conftest.c > $outfile 2>&1
+    $CC -V > $outfile 2>&1
     ple_ac_cc_version=`grep -i pgcc $outfile`
     ple_compiler_known=yes
 
