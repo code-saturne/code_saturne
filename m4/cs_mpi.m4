@@ -209,63 +209,63 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
     fi
   fi
   if test "x$mpi_type" = "x"; then
-    AC_EGREP_CPP([msmpi],
+    AC_EGREP_CPP([cs_msmpi],
                  [
                   #include <mpi.h>
                   #ifdef MSMPI_VER
-                  msmpi
+                  cs_msmpi
                   #endif
                   ],
                  [mpi_type=MSMPI])
   fi
   if test "x$mpi_type" = "x"; then
-    AC_EGREP_CPP([mpich2],
-                 [
-                  #include <mpi.h>
-                  #ifdef MPICH2
-                  mpich2
-                  #endif
-                  ],
-                 [mpi_type=MPICH2])
-  fi
-  if test "x$mpi_type" = "x"; then
-    AC_EGREP_CPP([mpich],
+    AC_EGREP_CPP([cs_mpich],
                  [
                   #include <mpi.h>
                   #ifdef MPICH_NAME
                   #if (MPICH_NAME >= 3)
-                  mpich
+                  cs_mpich
                   #endif
                   #endif
                   ],
                  [mpi_type=MPICH])
   fi
   if test "x$mpi_type" = "x"; then
-    AC_EGREP_CPP([ompi],
+    AC_EGREP_CPP([cs_mpich2],
+                 [
+                  #include <mpi.h>
+                  #ifdef MPICH2
+                  cs_mpich2
+                  #endif
+                  ],
+                 [mpi_type=MPICH2])
+  fi
+  if test "x$mpi_type" = "x"; then
+    AC_EGREP_CPP([cs_ompi],
                  [
                   #include <mpi.h>
                   #ifdef OMPI_MAJOR_VERSION
-                  ompi
+                  cs_ompi
                   #endif
                   ],
                   [mpi_type=OpenMPI])
   fi
   if test "x$mpi_type" = "x"; then
-    AC_EGREP_CPP([mpibull2],
+    AC_EGREP_CPP([cs_mpibull2],
                  [
                   #include <mpi.h>
                   #ifdef MPIBULL2_NAME
-                  mpibull2
+                  cs_mpibull2
                   #endif
                   ],
                   [mpi_type=MPIBULL2])
   fi
   if test "x$mpi_type" = "x"; then
-    AC_EGREP_CPP([lam_mpi],
+    AC_EGREP_CPP([cs_lam_mpi],
                  [
                   #include <mpi.h>
                   #ifdef LAM_MPI
-                  lam_mpi
+                  cs_lam_mpi
                   #endif
                   ],
                   [mpi_type=LAM_MPI])
@@ -281,11 +281,11 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
                   [mpi_type=HP_MPI])
   fi
   if test "x$mpi_type" = "x"; then
-    AC_EGREP_CPP([mpich1],
+    AC_EGREP_CPP([cs_mpich1],
                  [
                   #include <mpi.h>
                   #ifdef MPICH
-                  mpich1
+                  cs_mpich1
                   #endif
                   ],
                  [mpi_type=MPICH1])
@@ -320,9 +320,9 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
                        if test $? = 0 ; then
                          mpi_type=Intel_MPI
                          AC_DEFINE([MPI_VENDOR_NAME], "Intel MPI", [MPI vendor name])
-                       fi
-                       unset cs_mpisupport
+                       fi  
                      fi
+                     unset cs_mpisupport
                      ;;
   esac
 
@@ -385,8 +385,8 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
         AC_MSG_RESULT($cs_have_mpi)
         ;;
 
-      *) # General case include OpenMPI, whose dynamic libraries
-         # make it easy to detect.
+      *) # General case includes OpenMPI, whose dynamic libraries
+         # usually make it easy to detect.
         AC_MSG_CHECKING([for MPI (basic test)])
 
         if test "$MPI_LIBS" = "" ; then

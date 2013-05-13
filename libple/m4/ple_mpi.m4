@@ -128,63 +128,63 @@ if test "x$ple_have_mpi_header" = "xyes" -a  "x$ple_have_mpi" = "xno" ; then
   CPPFLAGS="$saved_CPPFLAGS $MPI_CPPFLAGS"
   mpi_h_type=""
   if test "x$mpi_h_type" = "x"; then
-    AC_EGREP_CPP([msmpi],
+    AC_EGREP_CPP([ple_msmpi],
                  [
                   #include <mpi.h>
                   #ifdef MSMPI_VER
-                  msmpi
+                  ple_msmpi
                   #endif
                   ],
                  [mpi_h_type=MSMPI])
   fi
   if test "x$mpi_h_type" = "x"; then
-    AC_EGREP_CPP([mpich2],
-                 [
-                  #include <mpi.h>
-                  #ifdef MPICH2
-                  mpich2
-                  #endif
-                  ],
-                 [mpi_h_type=MPICH2])
-  fi
-  if test "x$mpi_h_type" = "x"; then
-    AC_EGREP_CPP([mpich],
+    AC_EGREP_CPP([ple_mpich],
                  [
                   #include <mpi.h>
                   #ifdef MPICH_NAME
                   #if (MPICH_NAME >= 3)
-                  mpich
+                  ple_mpich
                   #endif
                   #endif
                   ],
                  [mpi_h_type=MPICH])
   fi
   if test "x$mpi_h_type" = "x"; then
-    AC_EGREP_CPP([ompi],
+    AC_EGREP_CPP([ple_mpich2],
+                 [
+                  #include <mpi.h>
+                  #ifdef MPICH2
+                  ple_mpich2
+                  #endif
+                  ],
+                 [mpi_h_type=MPICH2])
+  fi
+  if test "x$mpi_h_type" = "x"; then
+    AC_EGREP_CPP([ple_ompi],
                  [
                   #include <mpi.h>
                   #ifdef OMPI_MAJOR_VERSION
-                  ompi
+                  ple_ompi
                   #endif
                   ],
                   [mpi_h_type=OpenMPI])
   fi
   if test "x$mpi_h_type" = "x"; then
-    AC_EGREP_CPP([lam_mpi],
+    AC_EGREP_CPP([ple_lam_mpi],
                  [
                   #include <mpi.h>
                   #ifdef LAM_MPI
-                  lam_mpi
+                  ple_lam_mpi
                   #endif
                   ],
                   [mpi_h_type=LAM_MPI])
   fi
   if test "x$mpi_h_type" = "x"; then
-    AC_EGREP_CPP([mpich1],
+    AC_EGREP_CPP([ple_mpich1],
                  [
                   #include <mpi.h>
                   #ifdef MPICH
-                  mpich1
+                  ple_mpich1
                   #endif
                   ],
                  [mpi_h_type=MPICH1])
@@ -255,8 +255,8 @@ if test "x$ple_have_mpi_header" = "xyes" -a  "x$ple_have_mpi" = "xno" ; then
         AC_MSG_RESULT($ple_have_mpi)
         ;;
 
-      *) # General case include OpenMPI, whose dynamic libraries
-         # make it easy to detect.
+      *) # General case includes OpenMPI, whose dynamic libraries
+         # usually make it easy to detect.
         AC_MSG_CHECKING([for MPI (basic test)])
 
         if test "$MPI_LIBS" = "" ; then
