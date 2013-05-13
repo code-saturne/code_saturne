@@ -1,4 +1,4 @@
-dnl Copyright (C) 2005-2010 EDF
+dnl Copyright (C) 2005-2013 EDF
 dnl
 dnl This file is part of the PLE software package.  For license
 dnl information, see the COPYING file in the top level directory of the
@@ -252,6 +252,62 @@ if test "x$ple_have_mpi_header" = "xyes" -a  "x$ple_have_mpi" = "xno" ; then
                        [AC_DEFINE([HAVE_MPI], 1, [MPI support])
                         ple_have_mpi=yes],
                        [ple_have_mpi=no])
+        AC_MSG_RESULT($ple_have_mpi)
+        ;;
+
+      MPICH1)
+        AC_MSG_CHECKING([for MPICH1)])
+        # First try (simplest)
+        MPI_LIBS="-lmpich $PTHREAD_LIBS"
+        LIBS="$MPI_LIBS $saved_LIBS"
+        AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
+                       [[ MPI_Init(0, (void *)0); ]])],
+                       [AC_DEFINE([HAVE_MPI], 1, [MPI support])
+                        ple_have_mpi=yes],
+                       [ple_have_mpi=no])
+        if test "x$ple_have_mpi" = "xno"; then
+          # Second try (with lpmpich)
+          MPI_LIBS="-Wl,-lpmpich -Wl,-lmpich -Wl,-lpmpich -Wl,-lmpich"
+          LIBS="$MPI_LIBS $saved_LIBS"
+          AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
+                         [[ MPI_Init(0, (void *)0); ]])],
+                         [AC_DEFINE([HAVE_MPI], 1, [MPI support])
+                          ple_have_mpi=yes],
+                         [ple_have_mpi=no])
+        fi
+        AC_MSG_RESULT($ple_have_mpi)
+        ;;
+
+      LAM_MPI)
+        AC_MSG_CHECKING([for LAM/MPI)])
+        # First try (without MPI-IO)
+        case $host_os in
+          freebsd*)
+            MPI_LIBS="-lmpi -llam $PTHREAD_LIBS";;
+          *)
+            MPI_LIBS="-lmpi -llam -lpthread";;
+        esac
+        LIBS="$MPI_LIBS $saved_LIBS"
+        AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
+                       [[ MPI_Init(0, (void *)0); ]])],
+                       [AC_DEFINE([HAVE_MPI], 1, [MPI support])
+                        ple_have_mpi=yes],
+                       [ple_have_mpi=no])
+        if test "x$ple_have_mpi" = "xno"; then
+          # Second try (with MPI-IO)
+          case $host_os in
+            freebsd*)
+              MPI_LIBS="-lmpi -llam -lutil -ldl $PTHREAD_LIBS";;
+            *)
+              MPI_LIBS="-lmpi -llam -lutil -ldl -lpthread";;
+          esac
+          LIBS="$MPI_LIBS $saved_LIBS"
+          AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
+                         [[ MPI_Init(0, (void *)0); ]])],
+                         [AC_DEFINE([HAVE_MPI], 1, [MPI support])
+                          ple_have_mpi=yes],
+                         [ple_have_mpi=no])
+        fi
         AC_MSG_RESULT($ple_have_mpi)
         ;;
 
