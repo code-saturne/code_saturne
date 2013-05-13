@@ -788,14 +788,17 @@ class mpi_environment:
         init_method = self.__init_other__
 
         if len(self.type) > 0:
-            mpi_env_by_type = {'MPICH2':self.__init_mpich2__,
-                               'MPICH1':self.__init_mpich1__,
+            mpi_env_by_type = {'MPICH':self.__init_mpich2_3__,
+                               'MPICH2':self.__init_mpich2_3__,
+                               'Intel_MPI':self.__init_mpich2_3__,
                                'OpenMPI':self.__init_openmpi__,
+                               'BullxMPI':self.__init_openmpi__,
                                'LAM_MPI':self.__init_lam__,
                                'BGL_MPI':self.__init_bgl__,
                                'BGP_MPI':self.__init_bgp__,
                                'BGQ_MPI':self.__init_bgq__,
                                'HP_MPI':self.__init_hp_mpi__,
+                               'MPICH1':self.__init_mpich1__,
                                'MPIBULL2':self.__init_mpibull2__}
             if self.type in mpi_env_by_type:
                 init_method = mpi_env_by_type[self.type]
@@ -808,22 +811,92 @@ class mpi_environment:
 
     #---------------------------------------------------------------------------
 
-    def __init_mpich2__(self, p, resource_info=None, wdir = None):
+    def __get_mpich2_3_default_pm__(self, mpiexec_path):
 
         """
-        Initialize for MPICH2 environment.
+        Try to determine the program manager for MPICH2 or MPICH-3.
+        """
 
-        MPICH2 allows for 4 different process managers, all or some
+        # Only smpd is supported on Windows, so that one is easy.
+
+        if sys.platform.startswith('win'):
+            return 'smpd'
+
+        # Check if we have a suffix which is self-explanatory
+
+        i = mpiexec_path.rfind('.')
+
+        if i > -1:
+            suffix = mpiexec_path[i+1:]
+
+        if suffix in ['hydra', 'smpd', 'mpd', 'gforker', 'remshell']:
+            return suffix
+
+        # Use mpichversion/mpich2version preferentially
+
+        infoname = os.path.join(os.path.split(mpiexec_path)[0],
+                                'mpichversion')
+        if not os.path.isfile(infoname):
+            infoname = os.path.join(os.path.split(mpiexec_path)[0],
+                                    'mpich2version')
+
+        if os.path.isfile(infoname):
+
+            # If program managers were specified at configure time,
+            # the first is the default
+
+            info = get_command_outputs(infoname + ' -configure')
+            i = info.find('-with-pm=')
+            if i > -1:
+                s = info[i + 8:]
+                for pm in ['hydra', 'smpd', 'mpd', 'gforker', 'remshell']:
+                    if s[0:len(pm)] == pm_c:
+                        return pm
+
+            # Otherwise, we know the default changed with MPICH2 1.3,
+            # from MPD to Hydra.
+
+            info = get_command_outputs(infoname + ' -version')
+            v = info.rstrip().split('\t')[1].split('.')
+            if int(v[0]) == 1 and int(v[1]) < 3:
+                return 'mpd'
+            else:
+                return 'hydra'
+
+        # If MPICH2 / MPICH-3 info is not available, try
+        # to determine this in another way
+
+        info = get_command_outputs(mpiexec_path + ' -help')
+        if info.find('Hydra') > -1:
+            return 'hydra'
+        elif info.find(' smpd ') > -1:
+            return 'smpd'
+        elif info.find('-usize') > -1:
+            return 'gforker' # might also be remshell
+
+        sys.stderr.write('Warning:\n'
+                         + '   Unable to determine MPICH program manager:'
+                         + ' assume "Hydra".\n\n')
+
+        return 'hydra'
+
+    #---------------------------------------------------------------------------
+
+    def __init_mpich2_3__(self, p, resource_info=None, wdir = None):
+
+        """
+        Initialize for MPICH-3 environment.
+
+        MPICH2 and MPICH-3 allow for 4 different process managers, all or some
         of which may be built depending on installation options:
 
-        - HYDRA is the default starting with MPICH2-1.3, and is available
-          in MPICH2-1.2. It natively uses existing daemons on the system
-          such as ssh, SLURM, PBS, etc.
+        - HYDRA is the default on Unix-type systems. It natively uses
+          existing daemons on the system such as ssh, SLURM, PBS, etc.
 
-        - MPD is the traditional process manager, which consists of a
-          ring of daemons. A hostsfile may be defined to start this
-          ring (a machinefile may still be used for mpiexec for
-          finer control, though we do not use it here).
+        - MPD was the traditional process manager, until it was deprecated
+          in MPICH2-1.3. It consists of a ring of daemons. A hostsfile may
+          be defined to start this ring (a machinefile may still be used for
+          mpiexec for finer control, though we do not use it here).
           We try to test if such a ring is already running, and
           start and stop it if this is not the case.
 
@@ -835,48 +908,37 @@ class mpi_environment:
         - gforker is a simple manager that creates all processes on
           a single machine (the equivalent seem possible with HYDRA
           using "mpiexec -bootstrap fork")
+
+        - remsh is a very simple version of mpiexec which makes use of
+          the ssh command to start processes on a collection of
+          machines. It ignores the command line options which control
+          the environment variables given to MPI programs.
+          A hostsfile by name of machines should contain the list
+          of machines on which to run, one machine name per line
+          (machines may be listed multiple times if necessary).
         """
 
         # Determine base executable paths
 
-        # Also try to determine if mpiexec is that of MPD or of another
-        # process manager, using the knowledge that MPD's mpiexec
-        # is a Python script, while other MPICH2 mpiexec's are binary.
-        # We could have a false positive if another wrapper is used,
-        # but we still need to find mpdboot.
-        # In a similar fashion, we may determine if we are using the
-        # Hydra process manager, as the 'mpiexec --help' will contain
-        # a 'Hydra' string.
-
-        # Also, mpirun is a wrapper to mpdboot + mpiexec + mpiallexec,
+        # Using mpd,  mpirun is a wrapper to mpdboot + mpiexec + mpiallexec,
         # so it does not require running mpdboot and mpdallexit separately.
 
-        launcher_names = ['mpiexec.mpich2', 'mpiexec',
-                          'mpiexec.hydra', 'mpiexec.mpd', 'mpiexec.gforker',
-                          'mpirun.mpich2', 'mpirun']
-        pm = ''
+        # Executables suffixes 'mpich' or 'mpich2' may occur in case
+        # of Linux distribution packaging, while 'hydra', 'mpd', 'smpd',
+        # 'gforker', and 'remshell' are defined by the standard MPICH
+        # install and determine the associated launcher.
 
+        launcher_names = ['mpiexec.mpich', 'mpiexec.mpich2', 'mpiexec',
+                          'mpiexec.hydra', 'mpiexec.mpd', 'mpiexec.smpd',
+                          'mpiexec.gforker', 'mpiexec.remshell',
+                          'mpirun.mpich2', 'mpirun.mpich2', 'mpirun']
+
+        pm = ''
         for d in p:
             for name in launcher_names:
                 absname = os.path.join(d, name)
                 if os.path.isfile(absname):
-                    # Try to determine launcher type
-                    basename = os.path.basename(name)
-                    if basename in ['mpiexec.mpich2', 'mpiexec',
-                                    'mpirun.mpich2', 'mpirun']:
-                        info = get_command_outputs(absname)
-                        if info.find('Hydra') > -1:
-                            pm = 'hydra'
-                        elif info.find(' mpd ') > -1:
-                            pm = 'mpd'
-                        elif info.find('-usize') > -1:
-                            pm = 'gforker'
-                    elif basename == 'mpiexec.hydra':
-                        pm = 'hydra'
-                    elif basename == 'mpiexec.mpd':
-                        pm = 'mpd'
-                    elif basename == 'mpiexec.gforker':
-                        pm = 'gforker'
+                    pm = self.__get_mpich2_3_default_pm__(absname)
                     # Set launcher name
                     if d == self.bindir:
                         self.mpiexec = absname
@@ -889,6 +951,21 @@ class mpi_environment:
         if (self.mpiexec == None):
             basename = 'mpiexec'
             self.mpiexec = 'mpiexec'
+
+        # Determine if SMPD should be handled
+
+        if pm == 'smpd':
+
+            smpdpath = 'smpd'
+            if os.path.isfile(os.path.join(d, 'smpd')):
+                if d == self.bindir:
+                    smpdpath = os.path.join(d, 'smpd')
+            if sys.platform.startswith('win'):
+                self.mpiboot = smpdpath + ' -start'
+                self.mpihalt = smpdpath + ' -stop'
+            else:
+                self.mpiboot = smpdpath + ' -s'
+                self.mpihalt = smpdpath + ' -shutdown'
 
         # Determine if MPD should be handled
         # (if we are using a root MPD, no need for setup)
@@ -933,7 +1010,23 @@ class mpi_environment:
         if resource_info != None:
             rm = resource_info.manager
 
-        if pm == 'mpd':
+        if pm == 'hydra':
+            # Nothing to do for resource managers directly handled by Hydra
+            if rm not in ['PBS', 'LOADL', 'LSF', 'SGE', 'SLURM']:
+                hostsfile = resource_info.get_hosts_file(wdir)
+                if hostsfile != None:
+                    self.mpiexec += ' -f ' + hostsfile
+
+            if (resource_info != None):
+                ppn = resource_info.n_procs_per_node()
+                if ppn != 1:
+                    self.mpiexec_n_per_node = ' -ppn ' + str(ppn)
+
+        elif pm == 'smpd':
+            hostsfile = resource_info.get_hosts_file(wdir)
+            if hostsfile != None:
+                self.mpiboot += ' --file=' + hostsfile
+        elif pm == 'mpd':
             if rm == 'SLURM':
                 # This requires linking with SLURM's implementation
                 # of the PMI library.
@@ -955,18 +1048,6 @@ class mpi_environment:
                 if hostsfile != None:
                     self.mpiboot += ' --file=' + hostsfile
 
-        elif pm == 'hydra':
-            # Nothing to do for resource managers directly handled by Hydra
-            if rm not in ['PBS', 'LOADL', 'LSF', 'SGE', 'SLURM']:
-                hostsfile = resource_info.get_hosts_file(wdir)
-                if hostsfile != None:
-                    self.mpiexec += ' -f ' + hostsfile
-
-            if (resource_info != None):
-                ppn = resource_info.n_procs_per_node()
-                if ppn != 1:
-                    self.mpiexec_n_per_node = ' -ppn ' + str(ppn)
-
         elif pm == 'gforker':
             hosts = False
             hostslist = resource_info.get_hosts_list()
@@ -979,15 +1060,15 @@ class mpi_environment:
             if hosts == True:
                 sys.stderr.write('Warning:\n'
                                  + '   Hosts list will be ignored by'
-                                 + ' MPICH2 gforker program manager.\n\n')
+                                 + ' MPICH gforker program manager.\n\n')
 
         # Finalize mpiboot and mpihalt commands.
-        # We use 'mpdtrace' to determine if a ring is already running,
+        # With MPD, we use 'mpdtrace' to determine if a ring is already running,
         # and mpdlistjobs to determine if other jobs are still running.
         # This means that a hostsfile will be ignored if an MPD ring
         # is already running, but will avoid killing other running jobs.
 
-        if self.mpiboot != None:
+        if self.mpiboot != None and pm == 'mpd':
             self.mpiboot = \
                 mpdtrace + ' > /dev/null 2>&1\n' \
                 + 'if test $? != 0 ; then ' + self.mpiboot + ' ; fi'
@@ -997,7 +1078,10 @@ class mpi_environment:
 
         # Info commands
 
-        self.info_cmds = ['mpich2version']
+        if self.type == 'MPICH':
+            self.info_cmds = ['mpichversion']
+        if self.type == 'MPICH2':
+            self.info_cmds = ['mpich2version']
 
     #---------------------------------------------------------------------------
 
@@ -1120,11 +1204,14 @@ class mpi_environment:
     def __init_lam__(self, p, resource_info=None, wdir = None):
         """
         Initialize for LAM/MPI environment.
+        We choose to use the mpiexec command, which wraps lamboot,
+        mpirun, and lamhalt, and provides for a basically standard
+        mpiexec syntax.
         """
 
         # Determine base executable paths
 
-        launcher_names = ['mpiexec.lam', 'mpirun.lam', 'mpiexec', 'mpirun']
+        launcher_names = ['mpiexec.lam', 'mpiexec']
 
         for d in p:
             for name in launcher_names:
@@ -1138,43 +1225,23 @@ class mpi_environment:
             if self.mpiexec != None:
                 break
 
-        if os.path.isfile(os.path.join(d, 'lamboot')):
-            if d == self.bindir:
-                self.mpiboot = os.path.join(d, 'lamboot')
-                self.mpihalt = os.path.join(d, 'lamhalt')
-            else:
-                self.mpiboot = 'lamboot'
-                self.mpihalt = 'lamhalt'
-
         # Determine processor count and MPMD handling
 
         launcher_base = os.path.basename(self.mpiexec)
 
-        if launcher_base[:7] == 'mpiexec':
-            self.mpiexec_n = ' -n '
-            self.mpmd = MPI_MPMD_mpiexec | MPI_MPMD_script
-        elif launcher_base[:7] == 'mpirun':
-            self.mpiexec_n = ' -np '
-            self.mpmd = MPI_MPMD_script
-
-        # Determine options to add
-
-        if self.mpiboot != None:
-            self.mpiboot += ' -v'
-            self.mpihalt += ' -v'
+        self.mpiexec_n = ' -n '
+        self.mpmd = MPI_MPMD_mpiexec | MPI_MPMD_script
 
         # Resource manager info
 
+        hostsfile = None
         if resource_info != None:
             hostsfile = resource_info.get_hosts_file(wdir)
-            if hostsfile != None and self.mpiboot != None:
-                self.mpiboot += ' ' + hostsfile
-                self.mpihalt += ' ' + hostsfile
 
-        # Finalize mpiboot and mpihalt commands
-
-        if self.mpiboot != None:
-            self.mpiboot += '|| exit $?'
+        if hostsfile != None:
+            self.mpiexec += ' --machinefile ' + hostsfile
+        else:
+            self.mpiexec += ' --boot'
 
         # Info commands
 

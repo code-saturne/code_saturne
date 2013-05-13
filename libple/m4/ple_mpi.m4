@@ -12,10 +12,6 @@ dnl PLE source distribution.
 
 AC_DEFUN([PLE_AC_TEST_MPI], [
 
-saved_CPPFLAGS="$CPPFLAGS"
-saved_LDFLAGS="$LDFLAGS"
-saved_LIBS="$LIBS"
-
 ple_have_mpi=no
 ple_have_mpi_header=no
 ple_have_mpi_one_sided=no
@@ -36,7 +32,7 @@ AC_ARG_WITH(mpi-include,
              fi
              MPI_CPPFLAGS="-I$with_mpi_include"],
             [if test "x$with_mpi" != "xno" -a "x$with_mpi" != "xyes" \
-	          -a "x$with_mpi" != "xcheck"; then
+                  -a "x$with_mpi" != "xcheck"; then
                MPI_CPPFLAGS="-I$with_mpi/include"
              fi])
 
@@ -48,7 +44,7 @@ AC_ARG_WITH(mpi-lib,
              fi
              MPI_LDFLAGS="-L$with_mpi_lib"],
             [if test "x$with_mpi" != "xno" -a "x$with_mpi" != "xyes" \
-	          -a "x$with_mpi" != "xcheck"; then
+                  -a "x$with_mpi" != "xcheck"; then
                MPI_LDFLAGS="-L$with_mpi/lib"
              fi])
 
@@ -71,12 +67,16 @@ fi
 
 if test "x$with_mpi" != "xno" ; then
 
+  saved_CPPFLAGS="$CPPFLAGS"
+  saved_LDFLAGS="$LDFLAGS"
+  saved_LIBS="$LIBS"
+
   # MPI Compiler wrapper test
 
   AC_MSG_CHECKING([for MPI (MPI compiler wrapper test)])
   CPPFLAGS="$saved_CPPFLAGS $MPI_CPPFLAGS"
   LDFLAGS="$saved_LDFLAGS $MPI_LDFLAGS"
-  LIBS="$saved_LIBS $MPI_LIBS"
+  LIBS="$MPI_LIBS $saved_LIBS"
   AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
                  [[ MPI_Init(0, (void *)0); ]])],
                  [AC_DEFINE([HAVE_MPI], 1, [MPI support])
@@ -128,41 +128,53 @@ if test "x$ple_have_mpi_header" = "xyes" -a  "x$ple_have_mpi" = "xno" ; then
   CPPFLAGS="$saved_CPPFLAGS $MPI_CPPFLAGS"
   mpi_h_type=""
   if test "x$mpi_h_type" = "x"; then
-    AC_EGREP_CPP([mpich2],
+    AC_EGREP_CPP([ple_mpich],
+                 [
+                  #include <mpi.h>
+                  #ifdef MPICH_NAME
+                  #if (MPICH_NAME >= 3)
+                  ple_mpich
+                  #endif
+                  #endif
+                  ],
+                 [mpi_h_type=MPICH])
+  fi
+  if test "x$mpi_h_type" = "x"; then
+    AC_EGREP_CPP([ple_mpich2],
                  [
                   #include <mpi.h>
                   #ifdef MPICH2
-                  mpich2
+                  ple_mpich2
                   #endif
                   ],
                  [mpi_h_type=MPICH2])
   fi
   if test "x$mpi_h_type" = "x"; then
-    AC_EGREP_CPP([ompi],
+    AC_EGREP_CPP([ple_ompi],
                  [
                   #include <mpi.h>
                   #ifdef OMPI_MAJOR_VERSION
-                  ompi
+                  ple_ompi
                   #endif
                   ],
                   [mpi_h_type=OpenMPI])
   fi
   if test "x$mpi_h_type" = "x"; then
-    AC_EGREP_CPP([lam_mpi],
+    AC_EGREP_CPP([ple_lam_mpi],
                  [
                   #include <mpi.h>
                   #ifdef LAM_MPI
-                  lam_mpi
+                  ple_lam_mpi
                   #endif
                   ],
                   [mpi_h_type=LAM_MPI])
   fi
   if test "x$mpi_h_type" = "x"; then
-    AC_EGREP_CPP([mpich1],
+    AC_EGREP_CPP([ple_mpich1],
                  [
                   #include <mpi.h>
                   #ifdef MPICH
-                  mpich1
+                  ple_mpich1
                   #endif
                   ],
                  [mpi_h_type=MPICH1])
@@ -170,8 +182,8 @@ if test "x$ple_have_mpi_header" = "xyes" -a  "x$ple_have_mpi" = "xno" ; then
 
   # Add a specific preprocessor directive to skip the MPI C++ bindings
   case $mpi_h_type in
-    OpenMPI) MPI_CPPFLAGS="$MPI_CPPFLAGS -DOMPI_SKIP_MPICXX" ;;
-    MPICH2)  MPI_CPPFLAGS="$MPI_CPPFLAGS -DMPICH_SKIP_MPICXX" ;;
+    OpenMPI)         MPI_CPPFLAGS="$MPI_CPPFLAGS -DOMPI_SKIP_MPICXX" ;;
+    MPICH | MPICH2)  MPI_CPPFLAGS="$MPI_CPPFLAGS -DMPICH_SKIP_MPICXX" ;;
   esac
 
   # If only MPI headers have been detected so far (i.e. we are
@@ -183,8 +195,8 @@ if test "x$ple_have_mpi_header" = "xyes" -a  "x$ple_have_mpi" = "xno" ; then
 
     case $mpi_h_type in
 
-      MPICH2)
-        AC_MSG_CHECKING([for MPICH2])
+      MPICH | MPICH2)
+        AC_MSG_CHECKING([for MPICH-3 or MPICH2])
         # First try (with ROMIO)
         case $host_os in
           mingw32)
@@ -194,7 +206,7 @@ if test "x$ple_have_mpi_header" = "xyes" -a  "x$ple_have_mpi" = "xno" ; then
           *)
             MPI_LIBS="-lmpich -lopa -lmpl -lrt -lpthread";;
         esac
-        LIBS="$saved_LIBS $MPI_LIBS"
+        LIBS="$MPI_LIBS $saved_LIBS"
         AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
                      [[ MPI_Init(0, (void *)0); ]])],
                      [AC_DEFINE([HAVE_MPI], 1, [MPI support])
@@ -208,7 +220,7 @@ if test "x$ple_have_mpi_header" = "xyes" -a  "x$ple_have_mpi" = "xno" ; then
             *)
               MPI_LIBS="-lmpich -lopa -lmpl -lpthread";;
           esac
-          LIBS="$saved_LIBS $MPI_LIBS"
+          LIBS="$MPI_LIBS $saved_LIBS"
           AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
                        [[ MPI_Init(0, (void *)0); ]])],
                        [AC_DEFINE([HAVE_MPI], 1, [MPI support])
@@ -222,7 +234,7 @@ if test "x$ple_have_mpi_header" = "xyes" -a  "x$ple_have_mpi" = "xno" ; then
         AC_MSG_CHECKING([for MPICH1)])
         # First try (simplest)
         MPI_LIBS="-lmpich $PTHREAD_LIBS"
-        LIBS="$saved_LIBS $MPI_LIBS"
+        LIBS="$MPI_LIBS $saved_LIBS"
         AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
                        [[ MPI_Init(0, (void *)0); ]])],
                        [AC_DEFINE([HAVE_MPI], 1, [MPI support])
@@ -231,7 +243,7 @@ if test "x$ple_have_mpi_header" = "xyes" -a  "x$ple_have_mpi" = "xno" ; then
         if test "x$ple_have_mpi" = "xno"; then
           # Second try (with lpmpich)
           MPI_LIBS="-Wl,-lpmpich -Wl,-lmpich -Wl,-lpmpich -Wl,-lmpich"
-          LIBS="$saved_LIBS $MPI_LIBS"
+          LIBS="$MPI_LIBS $saved_LIBS"
           AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
                          [[ MPI_Init(0, (void *)0); ]])],
                          [AC_DEFINE([HAVE_MPI], 1, [MPI support])
@@ -250,7 +262,7 @@ if test "x$ple_have_mpi_header" = "xyes" -a  "x$ple_have_mpi" = "xno" ; then
           *)
             MPI_LIBS="-lmpi -llam -lpthread";;
         esac
-        LIBS="$saved_LIBS $MPI_LIBS"
+        LIBS="$MPI_LIBS $saved_LIBS"
         AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
                        [[ MPI_Init(0, (void *)0); ]])],
                        [AC_DEFINE([HAVE_MPI], 1, [MPI support])
@@ -264,7 +276,7 @@ if test "x$ple_have_mpi_header" = "xyes" -a  "x$ple_have_mpi" = "xno" ; then
             *)
               MPI_LIBS="-lmpi -llam -lutil -ldl -lpthread";;
           esac
-          LIBS="$saved_LIBS $MPI_LIBS"
+          LIBS="$MPI_LIBS $saved_LIBS"
           AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
                          [[ MPI_Init(0, (void *)0); ]])],
                          [AC_DEFINE([HAVE_MPI], 1, [MPI support])
@@ -274,7 +286,6 @@ if test "x$ple_have_mpi_header" = "xyes" -a  "x$ple_have_mpi" = "xno" ; then
         AC_MSG_RESULT($ple_have_mpi)
         ;;
 
-      
       *) # General case include OpenMPI, whose dynamic libraries
          # make it easy to detect.
         AC_MSG_CHECKING([for MPI (basic test)])
@@ -283,7 +294,7 @@ if test "x$ple_have_mpi_header" = "xyes" -a  "x$ple_have_mpi" = "xno" ; then
           MPI_LIBS="-lmpi $PTHREAD_LIBS"
         fi
         LDFLAGS="$saved_LDFLAGS $MPI_LDFLAGS"
-        LIBS="$saved_LIBS $MPI_LIBS"
+        LIBS="$MPI_LIBS $saved_LIBS"
         AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
                        [[ MPI_Init(0, (void *)0); ]])],
                        [AC_DEFINE([HAVE_MPI], 1, [MPI support])
@@ -329,14 +340,6 @@ fi
 
 AM_CONDITIONAL(HAVE_MPI, test x$ple_have_mpi = xyes)
 AM_CONDITIONAL(HAVE_MPI_ONE_SIDED, test x$ple_have_mpi_one_sided = xyes)
-
-CPPFLAGS="$saved_CPPFLAGS"
-LDFLAGS="$saved_LDFLAGS"
-LIBS="$saved_LIBS"
-
-unset saved_CPPFLAGS
-unset saved_LDFLAGS
-unset saved_LIBS
 
 AC_SUBST(MPI_CPPFLAGS)
 AC_SUBST(MPI_LDFLAGS)
