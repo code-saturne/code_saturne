@@ -1,6 +1,6 @@
 # Shell script
 
-# Copyright (C) 2005-2012 EDF
+# Copyright (C) 2005-2013 EDF
 
 # This file is part of the PLE software package.  For license
 # information, see the COPYING file in the top level directory of the
@@ -140,10 +140,6 @@ if test "x$ple_gcc" = "xgcc"; then
       esac
       ;;
 
-    *alphaev6|*alphaev67|*alphaev68|*alphaev7)
-      cflags_default_opt="-mcpu=ev6 -O"
-      ;;
-
   esac
 
   # Modify default flags depending on gcc version (as older versions
@@ -166,8 +162,8 @@ if test "x$ple_gcc" = "xgcc"; then
   esac
 
   case "$host_os" in
-    *cygwin)
-    cflags_default="`echo $cflags_default | sed -e 's/c99/gnu99/g'`"
+    mingw32)
+    cflags_default="$cflags_default -Wno-format -Wno-pedantic-ms-format"
     ;;
   esac
 
@@ -252,7 +248,7 @@ if test "x$ple_compiler_known" != "xyes" ; then
     echo "compiler '$CC' is Portland Group pgcc"
 
     # Version strings for logging purposes and known compiler flag
-    $CC -V conftest.c > $outfile 2>&1
+    $CC -V > $outfile 2>&1
     ple_ac_cc_version=`grep -i pgcc $outfile`
     ple_compiler_known=yes
 

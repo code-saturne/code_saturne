@@ -30,7 +30,7 @@ m4_define([ple_licence_c_comment],
   This file is part of the "Parallel Location and Exchange" library,
   intended to provide mesh or particle-based code coupling services.
 
-  Copyright (C) 2005-2012  EDF
+  Copyright (C) 2005-2013  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -49,7 +49,7 @@ m4_define([ple_licence_c_comment],
 
 m4_define([ple_major_version], [1])
 m4_define([ple_minor_version], [0])
-m4_define([ple_release_version], [3])
+m4_define([ple_release_version], [4])
 m4_define([ple_version_extra], [])
 m4_define([ple_version_string],
           [ple_major_version.ple_minor_version.ple_release_version@&t@ple_version_extra])
@@ -115,6 +115,10 @@ AC_PROG_INSTALL
 AC_PROG_LN_S
 
 AM_PROG_CC_C_O
+
+# Needed to use Microsoft archiver lib.exe
+# It copies the ar-lib script, similar to the compile script
+m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 
 # Debug or production compilation mode (debug by default) ?
 
@@ -226,7 +230,7 @@ if test "x$ple_disable_shared" = "xyes" ; then
 fi
 AC_SUBST(enable_shared)
 
-LT_INIT
+LT_INIT([win32-dll])
 
 #------------------------------------------------------------------------------
 # Checks for libraries.

@@ -1,4 +1,4 @@
-dnl Copyright (C) 2005-2010 EDF
+dnl Copyright (C) 2005-2013 EDF
 dnl
 dnl This file is part of the PLE software package.  For license
 dnl information, see the COPYING file in the top level directory of the
@@ -128,6 +128,16 @@ if test "x$ple_have_mpi_header" = "xyes" -a  "x$ple_have_mpi" = "xno" ; then
   CPPFLAGS="$saved_CPPFLAGS $MPI_CPPFLAGS"
   mpi_h_type=""
   if test "x$mpi_h_type" = "x"; then
+    AC_EGREP_CPP([ple_msmpi],
+                 [
+                  #include <mpi.h>
+                  #ifdef MSMPI_VER
+                  ple_msmpi
+                  #endif
+                  ],
+                 [mpi_h_type=MSMPI])
+  fi
+  if test "x$mpi_h_type" = "x"; then
     AC_EGREP_CPP([ple_mpich],
                  [
                   #include <mpi.h>
@@ -230,6 +240,21 @@ if test "x$ple_have_mpi_header" = "xyes" -a  "x$ple_have_mpi" = "xno" ; then
         AC_MSG_RESULT($ple_have_mpi)
         ;;
 
+      MSMPI)
+        AC_MSG_CHECKING([for MSMPI])
+        case $host_os in
+          mingw32)
+            MPI_LIBS="-lmsmpi";;
+        esac
+        LIBS="$MPI_LIBS $saved_LIBS"
+        AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
+                       [[ MPI_Init(0, (void *)0); ]])],
+                       [AC_DEFINE([HAVE_MPI], 1, [MPI support])
+                        ple_have_mpi=yes],
+                       [ple_have_mpi=no])
+        AC_MSG_RESULT($ple_have_mpi)
+        ;;
+
       MPICH1)
         AC_MSG_CHECKING([for MPICH1)])
         # First try (simplest)
@@ -286,8 +311,8 @@ if test "x$ple_have_mpi_header" = "xyes" -a  "x$ple_have_mpi" = "xno" ; then
         AC_MSG_RESULT($ple_have_mpi)
         ;;
 
-      *) # General case include OpenMPI, whose dynamic libraries
-         # make it easy to detect.
+      *) # General case includes OpenMPI, whose dynamic libraries
+         # usually make it easy to detect.
         AC_MSG_CHECKING([for MPI (basic test)])
 
         if test "$MPI_LIBS" = "" ; then

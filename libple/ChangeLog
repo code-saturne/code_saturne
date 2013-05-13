@@ -1,3 +1,7 @@
+2013-05-13  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* Updates in build scripts and MPI detection.
+
 2012-10-29  Yvan Fournier <yvan.fournier@edf.fr>
 
 	* Release of PLE 1.0.3
