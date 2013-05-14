@@ -1,76 +1,91 @@
 ==============================================================
-*Code_Saturne* tutorial : **turbulent mixing in a T-junction**
+*Code_Saturne* tutorial: **turbulent mixing in a T-junction**
 ==============================================================
 
 ----------------
-1. Introduction
+Introduction
 ----------------
 
-This tutorial provides a complete complete course with *Code_Saturne*.
+This tutorial provides a complete course with *Code_Saturne*.
 
-This tutorial is covering the following items :
- - first, creation of the CAD design with the module **Geometry**
- - then the meshing step with the module **Mesh**
- - in order to do a CFD calculation, use of *Code_Saturne* through the module **CFDSTUDY** 
- - at last, post processing of the results with the module **Post-Pro**
+This tutorial is covering the following items:
 
-The proposed case is on turbulent mixing between cold and hot water inside a pipe. The pipe is composed with a T-junction and an elbow.
-This exercise is inspired from a more complex study of thermal fatigue caused by the turbulent mixing of hot and cold flows just upstream of the elbow. Of course, the case is very simplified here.
+- first, creation of the CAD design with the module **Geometry**
+- then the meshing step with the module **Mesh**
+- in order to do a CFD calculation, do a setup of *Code_Saturne* through the module **CFDSTUDY**
+- at last, some elements for the post processing of the results with the module **Paravis**
+
+The proposed case is on turbulent mixing between cold and hot water inside a
+pipe. The pipe is composed with a T-junction and an elbow. This exercise is
+inspired from a more complex study of thermal fatigue caused by the turbulent
+mixing of hot and cold flows just upstream of the elbow. Of course, the case is
+very simplified here.
 
 .. image:: images/T_PIPE/t-pipe-problem.png
   :align: center
 
-Main tube:
- - internal diameter d = 0.3 m
- - first  section: length = 1,0 m
- - second section: elbow, rayon = 0,5 m
- - third  section: length = 0,5 m
-
-Hot inlet:
- - internal diameter d = 0,2 m
- - section: length = 0,5 m
-
 ----------------
-2. Prerequisites
+Open SALOME
 ----------------
 
-Before starting the SALOME platform, it is necessary to update the environment variable **PYTHONPATH** so that the module **CFDSTUDY** knows the details of the installation of *Code_Saturne*. In order to do that, one should indicate in the variable PYTHONPATH where are the additional Python modules related to *Code_Saturne*. For example (sh ):
+The command to open salome is ``./code_saturne salome``. For information about
+installation of *Code_Saturne* with SALOME, please consult the installation guide
+of *Code_Saturne*.
 
-export PYTHONPATH=/home/login/Code_Saturne/2.0/lib/python2.4/site-packages:$PYTHONPATH
+-------------------------------------
+CAD design with the module Geometry
+-------------------------------------
 
-If you want to put mathematical formula in the GUI of *Code_Saturne* the PYTHONPATH variable should be updating once again, in order to indicate the Python API of the **MEI** librarie of *Code_Saturne*. For example:
+The CAD model is built by extrusion of disks along paths (i.e. lines and wires).
+We need to define two paths for the two tubes, and two disks which are faces
+built on circles. The two volumes obtained are regrouped into one volume
+(fusion).
 
-export PYTHONPATH=/home/login/Code_Saturne/2.0/lib/python2.4/site-packages/mei:$PYTHONPATH
-
-- **Note**: the version of python must be the same between Salome and *Code_Saturne*.
-
----------------------------
-3. CAD design with Geometry
----------------------------
-
-The geometry is built by extrusion of disks along paths (i.e. lines and wires). We need to define two paths for the two tubes, and two disks which are faces built on circles. The two volumes obtained are regrouped into one volume (fusion).
-
-After the construction of the solid, we have to define the **boundary conditions zones** for the CFD calculation: that is to say two inlet faces, the outlet face, and the internal wall of the tubes.
+After the construction of the solid, we have to define the **boundary conditions
+zones** for the CFD calculation: that is to say two inlet faces, the outlet
+face, and the internal wall of the tubes.
 
 - **Note**: objects graphical manipulation in the 3D view (rotation, zoom, translation) can be done with *<Ctrl> + mouse buttons*.
 
 Activate the module **Geometry**.
 
-3.1. Points, lines and wire
-===========================
+~~~~~~~~~~~~~~~~~~~~~~
+Points, lines and wire
+~~~~~~~~~~~~~~~~~~~~~~
 
-- Creation of points: select the menu **"New Entity > Basic > Point"** or click the toolbar button **"Create a Point"**. In the dialog window for the creation of the points create the following entities:
+- Creation of points: open the Notebook: **"File > Notebook"** and add the
+  following variables:
+
+     =============  ==============
+     Variable_Name  Variable_Value
+     =============  ==============
+     P1             -0.14
+     P2              0.1
+     P3              0.095
+     P4              0.171
+     P5              0.24
+     P6              0.076
+     radius          0.036
+     =============  ==============
+
+  .. image:: images/T_PIPE/t-pipe-geom-notebook.png
+    :align: center
+    :width: 11cm
+
+  Select the menu **"New Entity > Basic > Point"** or click
+  the toolbar button **"Create a Point"**. In the dialog window for the creation
+  of the points create the following entities:
 
      ========     ======  ======  =====
       Name         X      Y       Z
      ========     ======  ======  =====
-     Vertex_1     -0.14   0       0
-     Vertex_2      0      0       0 
-     Vertex_3      0.076  0       0
-     Vertex_4      0      0.1     0
-     Vertex_5      0.076  0.095   0
-     Vertex_6      0.171  0.095   0
-     Vertex_7      0.171  0.24    0
+     Vertex_1     P1      0       0
+     Vertex_2     0       0       0
+     Vertex_3     P6      0       0
+     Vertex_4     0       P2      0
+     Vertex_5     P6      P3      0
+     Vertex_6     P4      P3      0
+     Vertex_7     P4      P5      0
      ========     ======  ======  =====
 
   The points are not visible without a zoom. After 3 or 4 new points, use the mouse wheel to zoom in.
@@ -83,7 +98,7 @@ Activate the module **Geometry**.
 
   .. image:: images/T_PIPE/t-pipe-geom-line.png
     :align: center
-  .. :width: 11cm
+    :width: 11cm
 
   Three lines must be defined:
 
@@ -100,7 +115,7 @@ Activate the module **Geometry**.
 
   .. image:: images/T_PIPE/t-pipe-geom-arc-mode.png
     :align: center
-  .. :width: 10cm
+    :width: 10cm
 
   Then the arc must be defined:
 
@@ -121,23 +136,25 @@ Activate the module **Geometry**.
 
 - **Note**: in order to create this wire, we could use also the menu **"New Entity > Sketch"**.
 
-3.2. Faces and pipes 
-=====================
+
+~~~~~~~~~~~~~~~~~~~~~~
+Faces and pipes
+~~~~~~~~~~~~~~~~~~~~~~
 
 - Creation of the two disks: open the dialog window with the menu **"New Entity > Primitive > Disk"**. For each disk,
   in the dialog window, select the second mode of creation (i.e. with a center point, a vector and a radius).
 
   .. image:: images/T_PIPE/t-pipe-geom-disk-mode.png
     :align: center
-  .. :width: 10cm
+    :width: 10cm
 
   In the hierarchical geometric entities, these disks are faces.
 
      ========  ============  ===========  ======
       Name     Center Point  Vector       Radius
      ========  ============  ===========  ======
-     Disk_1    Vertex_1      Line_1       0.036
-     Disk_1    Vertex_4      Line_2       0.036
+     Disk_1    Vertex_1      Line_1       radius
+     Disk_2    Vertex_4      Line_2       radius
      ========  ============  ===========  ======
 
   .. image:: images/T_PIPE/t-pipe-geom-disk1.png
@@ -159,8 +176,12 @@ Activate the module **Geometry**.
   .. image:: images/T_PIPE/t-pipe-geom-pipe1.png
     :align: center
 
-3.3. Fusion of the two pipes
-============================
+  .. image:: images/T_PIPE/t-pipe-geom-pipe2.png
+    :align: center
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+Fusion of the two pipes
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - At that stage, we have build two separate solids. We must fuse these two solids into a single one.
   In order to do this fusion, select the menu **"Operations > Boolean > Fuse"**. Then rename the new object as *Pipe*
@@ -174,28 +195,31 @@ Activate the module **Geometry**.
 
   .. image:: images/T_PIPE/t-pipe-geom-pipe-fuse.png
     :align: center
-  .. :width: 11cm
+    :width: 11cm
 
-- Use the menus **"Measures > Check"** and **"Measures > What is"** to verify the object *Pipe*. It must be constituted of a single solid.
+- Use the menus **"Measures > Check shape"** and **"Measures > What is"** to verify the object *Pipe*. It must be constituted of a single solid.
 
   .. image:: images/T_PIPE/t-pipe-geom-pipe_check.png
     :align: center
 
 
-3.4. Groups for boundary conditions definition
-==============================================
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Groups for boundary conditions definition
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Fisrt, choose the *shading* view mode instead of the *wireframe* view mode, in order to select faces in the menu **"View > Display Mode"**.
 
 In the **Object Browser**, select the *Pipe* object, use popup menus **"Show only"** and **"Create group"**.
 
 .. image:: images/T_PIPE/t-pipe-geom-pipe_create_group-popup.png
   :align: center 
-.. :width: 6cm
+  :width: 6cm
 
-Select faces as shape (3rd button under Shape Type: one can select Vertices, Edges, Faces or Solids on a shape):
+Select faces as shape type (3rd choice under **Shape Type** header: one can select Vertices, Edges, Faces or Solids on a shape):
 
 .. image:: images/T_PIPE/t-pipe-geom-pipe_create_group-shape_type.png
   :align: center 
-.. :width: 10cm
+  :width: 10cm
 
 Give the name *Inlet1* to the new group and highlight (right click in the 3D view) the face corresponding to *Inlet1* on the *Pipe*. Then, push button *"Add"* (the number below identifies the face into the main shape), and apply. To be able to select a face, you may have to rotate the shape: *<Ctrl> + right click*.
 
@@ -213,33 +237,40 @@ Proceed as above for the 3 other groups: *Inlet2*, *Outlet* and *Wall*. For face
 .. image:: images/T_PIPE/t-pipe-geom-pipe_create_group_Wall.png
   :align: center
 
-Tips: choose the *shading* view mode insteed of the *wireframe* view mode, in order to select faces.
-
 The CAD model (i.e. *Pipe*) is ready for meshing. Save your study (**"File > Save"** or *<Ctrl> + S*).
 
 ----------
-4. Meshing
+Meshing
 ----------
 
 In the scope of this tutorial, only the simplest way to mesh a CAD model is shown.
 
 Activate the module **Mesh**.
 
-4.1. Meshing with tetrahedrons, Netgen algorithm
-================================================
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Mesh with a layer of prisms on *Wall*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - Select the *Pipe* object in **Object Browser**, then select menu **"Mesh > Create Mesh"**.
 
-- In **"3D"** tab, select option **"Netgen 1D-2D-3D"** (nothing to do in the other tabs).
+- In **"3D"** tab, select option **"(Tetrahedron) Netgen"**.
 
-- Click on the only active button on **"Hypothesis"** line, and select **"NETGEN 3D Parameters"**.
+- Click on the only active button on **"Add Hypothesis"** line, and select **"Viscous Layer"**.
 
-- The **"Max. size"** corresponds to the maximal edge length of the tetrahedrons. Set the size is to 0.05.
-  The **"Fineness"** governs the curves meshing. A fineness equal to **"fine**" will give approximately 6000 tetrahedrons,
-  which is fine for this exercise.
+- Click on the only active button on **"Add Hypothesis"** line, and select **"Viscous Layer"**.
+  Set the **"Total thickness"** to 0.015 and the **"Number of layers"** to 3. Then add the Faces
+  without layers: select in the Object Browser the groups *Inlet1*, *Inlet2* and *Outlet* in *Geometry*
+  and click on the **Add** button.
 
 .. image:: images/T_PIPE/t-pipe-mesh-pipe_create_mesh.png
   :align: center
+
+- In **"2D"** tab, select option **"Netgen 1D-2D"** (nothing to do in the other tabs 1D and 0D).
+
+- Click on the only active button on **"Hypothesis"** line, and select **"NETGEN 2D Parameters"**.
+
+- The **"Max. size"** and the **"Min. size"** correspond to the maximal and minimal edge length of the tetrahedrons. Set the sizes to 0.025 and 0.012.
+  The **"Fineness"** governs the curves meshing: set fineness equal to **"Very fine**", and finally select **"Allow Quadrangles"**.
 
 - After accepting the dialogs, select the new mesh in the **Object Browser** *Mesh_1*, and compute it by selecting
   the popup menu **"Compute"** or the toolbar button **"Compute"**.
@@ -249,57 +280,63 @@ Activate the module **Mesh**.
 .. image:: images/T_PIPE/t-pipe-mesh-pipe_mesh_created.png
   :align: center
 
-4.2. Groups on the mesh for boundary conditions definition
-==========================================================
+- **Note**: for a full tetrahedrons mesh, in **"3D"** tab just select option **"Netgen 1D-2D-3D"** (nothing to do in the other tabs),
+  and fit hypothesis by clicking on the only active button on **"Hypothesis"** line, and select **"NETGEN 3D Parameters"**.
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Groups on the mesh for boundary conditions definition
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The groups defined on the CAD model for the boundary condition zones must have their counterparts in the mesh.
 
 - Select the mesh *Mesh_1* in **Object Browser**, rename the mesh as *Pipe* with the popup menu **"Rename"**.
-- Always with the mesh selected, create groups from Geometry (popup menu **"Create Groups from Geometry"**).
+- With the mesh still selected, create groups from Geometry (popup menu **"Create Groups from Geometry"**).
   In the **Object Browser** select the 4 groups defined on the CAD model. They appear in the dialog window. Apply.
 
-.. image:: images/T_PIPE/t-pipe-mesh-pipe_create_group_2.png
+.. image:: images/T_PIPE/t-pipe-mesh-pipe_create_group1.png
   :align: center
 
-- Display only the 3 groups corresponding to inlets and outlet, with the geometry in wireframe:
+- Display only the 3 groups corresponding to inlets and outlet:
 
-.. image:: images/T_PIPE/t-pipe-mesh-pipe_create_group_3.png
+.. image:: images/T_PIPE/t-pipe-mesh-pipe_create_group2.png
   :align: center
 
 - Save the mesh in a MED file. Click left on mesh *Pipe* in **Object Browser** and select **"Export to MED File"**,
   and use the name *Pipe.med*.
 
-Tips: verify that all faces belong to a single group.
+Warning: verify that all faces belong to a single group.
 
 The mesh *Pipe* is ready for a CFD calculation. Save your study (**"File > Save"** or *<Ctrl> + S*).
 
 --------------------------------------
-5. CFD calculation with *Code_Saturne*
+CFD calculation with *Code_Saturne*
 --------------------------------------
 
 Activate the module **CFDSTUDY**.
 
 .. image:: ../images/CFDSTUDY_activation.png
   :align: center
-.. :width: 12cm
+  :width: 12cm
 
-- Click on **"New"**. A dialog window displays information about *Code_Saturne* installation.
+Click on **"New"**. A dialog window displays information about *Code_Saturne* installation.
 
 .. image:: ../images/CFDSTUDY_info.png
   :align: center
-.. :width: 10cm
+  :width: 10cm
 
-If the installation of *Code_Saturne* is not found (see section 2) the following error
+If the installation of *Code_Saturne* is not found the following error
 message is displayed:
 
 .. image:: ../images/CFDSTUDY_activation-error.png
   :align: center
-.. :width: 6cm
+  :width: 6cm
 
-5.1. CFD study and case creation
-================================
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+CFD study and case creation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-By convention, CFD calculations with *Code_Saturne* are organized in studies. Several calculations that share the same meshes and data sets,
+By convention, CFD calculations with *Code_Saturne* are organized in studies and cases. Several calculations that share the same meshes and data sets,
 define a study for *Code_Saturne*. Each data set defined in a case.
 
 - Create a CFD study and a case by selecting the menu **"CFDSTUDY > Set CFD study location"** (or the equivalent button in the toolbar).
@@ -309,27 +346,29 @@ define a study for *Code_Saturne*. Each data set defined in a case.
 
   .. image:: images/T_PIPE/t-pipe-study_location.png
     :align: center
-  .. :width: 10cm
+    :width: 10cm
 
   The new study directory with the new case is created with its sub directories and files.
+  Move the mesh file *Pipe.med* in the directoty MESH of the sudy.
 
 - The **Object Browser** reflects the study structure on the directory :
 
   .. image:: images/T_PIPE/t-pipe-browser.png
     :align: center
-  .. :width: 3cm
+    :width: 5cm
 
-5.2. Open the *Code_Saturne* GUI
-================================
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Open the *Code_Saturne* GUI
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - Open the *Code_Saturne* GUI by selecting *CASE1* or *SaturneGUI* with the left mouse button in **Object Browser** and
   click right on menu **"Launch GUI"**:
 
   .. image:: images/T_PIPE/t-pipe-browser-GUI.png
     :align: center
-  .. :width: 3cm
+    :width: 3cm
 
-- Then a window dialog appear, click on **"Activate"**. The *Code_Saturne* GUI open itself in the Salome dekstop.
+- Then a window dialog appear, click on **"Activate"**. The *Code_Saturne* GUI open itself in the SALOME dekstop.
 
   .. image:: images/T_PIPE/t-pipe-open_GUI.png
     :align: center 
@@ -337,14 +376,15 @@ define a study for *Code_Saturne*. Each data set defined in a case.
 On the left dockWidget, the salome **Object Browser** and the navigation tree of the GUI are grouped on tabs.
 When an item of the tree is selected, the corresponding panel raises in the GUI.
 
-5.3. Define the CFD calculation
-===============================
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Define the CFD calculation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Now we start to input data for the CFD calculation definition.
 In the scope of this tutorial, we do not have to explore all the panels of the tree (from top to bottom),
-because lot of default values are good, so we just have to fill a few panels.
+because lot of default values are adapted to this case, so we just have to fill a few panels.
 
-5.3.1 Location of the mesh file
+Location of the mesh file
 -------------------------------
 
 Open **"Meshes selection"**.
@@ -352,232 +392,232 @@ Use **"Add"** button to open a file dialog, and select the MED file previously s
 
 .. image:: images/T_PIPE/t-pipe-cfd-mesh-selection.png 
   :align: center
-.. :width: 5cm
+  :width: 5cm
 
 .. image:: images/T_PIPE/t-pipe-cfd-mesh-selection1.png 
   :align: center
-.. :width: 11cm
+  :width: 11cm
 
-5.3.2 Mesh quality criteria
+
+Mesh quality criteria
 -------------------------------
 
 Open **"Mesh quality criteria"**.
-Verify that the **"Post-processing format"** is choosen to MED.
+Verify that the **"Post-processing format"** is choosen to Ensight Gold.
 Click on **"Check mesh"** button.
 
 .. image:: images/T_PIPE/t-pipe-cfd-mesh-quality-criteria3.png
   :align: center
-.. :width: 5cm
+  :width: 5cm
 
 .. image:: images/T_PIPE/t-pipe-cfd-mesh-quality-criteria.png
   :align: center
-.. :width: 11cm
+  :width: 11cm
 
 The GUI displays a listing with information about quality. Then, refresh
-the **Object Browser** with the toolbar button **"Updating Object browser"**. There are two new
-MED file in the directory *RESU*: *PREPROCESSOR.med* and *QUALITY.med*.
+the **Object Browser** with the toolbar button **"Updating Object browser"**. There are new
+directories *check_mesh/postprocessing* in the *RESU* directory.
 
-.. image:: images/T_PIPE/t-pipe-cfd-mesh-quality-criteria1.png
-  :align: center
-.. :width: 6cm
-
-The file *PREPROCESSOR.med* contains information on groups location.
-The file *QUALITY.med* contains quality criteria as fields.
-In order to visualize these quality criteria, export *QUALITY.med* in the **Post-Pro** module
-(click right and select **"Export in Post-Pro"**).
-
-.. image:: images/T_PIPE/t-pipe-cfd-exportInPostPro.png
-  :align: center
-.. :width: 4cm
-
-Then activate the module **"Post-Pro"**, select the criteria to display (for example
-click left and select **"Scalar Map"**):
+The file *BOUNDARY_GROUPS.case* and *MESH_GROUPS.case* contain information on groups location.
+The file *QUALITY.case* contains quality criteria as fields.
+In order to visualize these quality criteria, we have to open the **Paravis** module
+and open the *QUALITY.case* file from the *postprocessing* directory.
 
 .. image:: images/T_PIPE/t-pipe-cfd-mesh-quality-criteria2.png
   :align: center
-.. :width: 8cm
 
 After exploring mesh quality criteria, re-activate the module **CFDSTUDY** in order
 to continue the data input.
 
-5.3.3 Thermophysical models
+Thermophysical models
 ---------------------------
 
 Open **"Thermal model"** and choose *Tempreature (Celsius)*.
 
 .. image:: images/T_PIPE/t-pipe-cfd-temperature1.png 
   :align: center
-.. :width: 5cm
+  :width: 5cm
 
 .. image:: images/T_PIPE/t-pipe-cfd-temperature.png 
   :align: center
-.. :width: 11cm
+  :width: 11cm
 
-5.3.4 Fluid properties
+Fluid properties
 ----------------------
+
+.. image:: images/T_PIPE/t-pipe-cfd-fluid-properties.png
+  :align: center
+  :width: 5cm
 
 Open **"Fluid properties"**.
 
-.. image:: images/T_PIPE/t-pipe-cfd-fluid-properties.png 
-  :align: center
-.. :width: 5cm
+- Set reference values for water at 19 degrees Celsius:
 
-Here the tutorial proposes two options:
+    - density: 998 kg/m3
+    - viscosity: 0.001 Pa.s
+    - Specific heat: 4181 J/kg/K
+    - thermal conductivity: 0.6 W/m/K
 
-5.3.4.1 Constant properties
-```````````````````````````
+  .. image:: images/T_PIPE/t-pipe-cfd-fluid-properties-all.png
+    :align: center
+    :width: 11cm
 
-- Use constants for water at 19 degrees Celsius.
-
-.. image:: images/T_PIPE/t-pipe-cfd-all-properties.png
-  :align: center
-.. :width: 11cm
-
-5.3.4.2 Variable properties
-```````````````````````````
-
-- *This section is optional*.
-  User laws are proposed for density, viscosity and thermal conductivity.
-  Fisrt, fill all properties like the section above, and then
+- User laws are imposed for density, viscosity and thermal conductivity.
   For density, viscosity and thermal conductivity, select **"user law"**, and open the window dialog
   in order to give the associated formula:
 
   - density: ``rho = 1000.94843 - 0.049388484 * TempC -0.000415645022 * TempC^2;``
 
-  .. image:: images/T_PIPE/t-pipe-cfd-mei-rho.png
-    :align: center
-  .. :width: 11cm
+    .. image:: images/T_PIPE/t-pipe-cfd-mei-rho.png
+      :align: center
+      :width: 11cm
 
   - viscosity: ``mu = 0.0015452 - 3.2212e-5 * TempC + 2.45422e-7 * TempC^2;``
 
-  .. image:: images/T_PIPE/t-pipe-cfd-mei-mu.png
-    :align: center
-  .. :width: 11cm
+    .. image:: images/T_PIPE/t-pipe-cfd-mei-mu.png
+      :align: center
+      :width: 11cm
 
   - thermal conductivity: ``lambda = 0.57423867 + 0.01443305 * TempC - 9.01853355e-7 * TempC^2;``
 
-  .. image:: images/T_PIPE/t-pipe-cfd-mei-lambda.png
-    :align: center
-  .. :width: 11cm
+    .. image:: images/T_PIPE/t-pipe-cfd-mei-lambda.png
+      :align: center
+      :width: 11cm
 
   To take into account the effects of buoyancy, we have to impose a non-zero gravity.
 
   .. image:: images/T_PIPE/t-pipe-cfd-gravity.png
     :align: center
-  .. :width: 5cm
+    :width: 5cm
 
   .. image:: images/T_PIPE/t-pipe-cfd-gravity1.png
     :align: center
-  .. :width: 11cm
+    :width: 11cm
 
-5.3.5 Initialization
+Initialization
 --------------------
 
 The initial temperature of the water in the pipe is set to 19 degrees.
 
 .. image:: images/T_PIPE/t-pipe-cfd-initialization.png
   :align: center
-.. :width: 5cm
+  :width: 5cm
 
 .. image:: images/T_PIPE/t-pipe-cfd-initialization-temp.png
   :align: center
-.. :width: 11cm
+  :width: 11cm
 
-5.3.6 Boundary conditions
+Boundary conditions
 -------------------------
 
-5.3.6.1 Define locations graphicaly
-```````````````````````````````````
+Define locations graphically
+`````````````````````````````````````
 
 - Open **"Definition of boundary regions"**.
 
 .. image:: images/T_PIPE/t-pipe-cfd-boundary-selection.png 
   :align: center
-.. :width: 5cm
+  :width: 5cm
 
 Highlight successively each group of the mesh *Pipe*, by selecting the name of the group in the **Object Browser** or by clicking
 the group in the VTK scene. When the group is highlighted, click on the **"Add from Salome"** button.
 
 .. image:: images/T_PIPE/t-pipe-cfd-boundary-selection_3.png 
   :align: center
-.. :width: 11cm
+  :width: 11cm
 
-By default the nature of each new imported group is *Wall*. Double click in the cell of the nature in order to edit it. In the same way, edit the label of the boundary condition zone.
+By default the nature of each new imported group is *Wall*. *Double click* in the cell of the nature in order to edit it. In the same way, edit the label of the boundary condition zone.
 
 .. image:: images/T_PIPE/t-pipe-cfd-boundary-selection_2.png 
   :align: center
-.. :width: 11cm
+  :width: 11cm
 
-5.3.6.2 Boundary conditions values
+Boundary conditions values
 ```````````````````````````````````
 
-- Open **"Boundary conditions"**. For each inlet, give norm for the velocity, the hydraulic diameter for the turbulence, and the prescribed value for the temperature.
+- Open **"Boundary conditions"**. For each inlet, give norm for the velocity, the hydraulic diameter for the turbulence, and the prescribed value for the temperature, as shown on the figures below.
 
 .. image:: images/T_PIPE/t-pipe-cfd-boundary-selection_1.png
   :align: center
-.. :width: 5cm
+  :width: 5cm
 
 .. image:: images/T_PIPE/t-pipe-cfd-boundary-values_1.png
   :align: center
-.. :width: 11cm
+  :width: 11cm
 
 .. image:: images/T_PIPE/t-pipe-cfd-boundary-values_2.png
   :align: center
-.. :width: 11cm
+  :width: 11cm
 
 
-5.3.7 Numerical parameters
+Numerical parameters
 --------------------------
 
-5.3.7.1 Time step
-`````````````````
+Global parameters
+`````````````````````````
 
-- In the **"Time step"** heading, set 0.0002 s for the time step. The number of iterations is set to 1000.
+- The default gradient calculation method is changed to *Iterative method with Least Squares initialization*.
 
-.. image:: images/T_PIPE/t-pipe-cfd-time-step.png
+.. image:: images/T_PIPE/t-pipe-cfd-global-parameters.png
   :align: center
-.. :width: 5cm
+  :width: 5cm
 
-.. image:: images/T_PIPE/t-pipe-cfd-time-step_1.png
+.. image:: images/T_PIPE/t-pipe-cfd-global-parameters_1.png
   :align: center
-.. :width: 11cm
+  :width: 11cm
 
-5.3.7.2 Equation parameters
+Equation parameters
 ```````````````````````````
 
-- In order to save computation time, in the **"Solver"** tab, the precision is increase to 0.00001
+- In order to save computation time, in the **"Solver"** tab, the precision is increase to 1.e-5
   (select all the concerned cells, and *<Shift> + double right click* to edit all cells in a single time).
 
   .. image:: images/T_PIPE/t-pipe-cfd-eqn-parameters.png
     :align: center
-  .. :width: 5cm
+    :width: 5cm
 
   .. image:: images/T_PIPE/t-pipe-cfd-eqn-parameters_1.png
     :align: center
-  .. :width: 11cm
+    :width: 11cm
 
--  In the **"Scheme"** tab, the convective scheme for the temperature is set to *Upwind*.
+-  In the **"Scheme"** tab, the convective scheme for the velocity is set to *SOLU* and for the turbulent variables and the temperature is set to *Upwind*.
 
   .. image:: images/T_PIPE/t-pipe-cfd-eqn-upwind.png
     :align: center
-  .. :width: 11cm
+    :width: 11cm
 
 
-5.3.7.3 Global parameters
-`````````````````````````
+Time step
+`````````````````
 
-- The default gradient calculation method is changed for *Least Squares method over partial extended cell neighborhood*, which is better for full tetrahedrons mesh.
+- In the **"Time step"** heading, set 0.0001 s for the time step. The number of iterations is set to 2000.
 
-.. image:: images/T_PIPE/t-pipe-cfd-global-parameters.png
+.. image:: images/T_PIPE/t-pipe-cfd-time-step.png
   :align: center
-.. :width: 5cm
+  :width: 5cm
 
-.. image:: images/T_PIPE/t-pipe-cfd-global-parameters_1.png
+.. image:: images/T_PIPE/t-pipe-cfd-time-step_1.png
   :align: center
-.. :width: 11cm
+  :width: 11cm
 
-5.3.8 Calculation control: define monitoring points
----------------------------------------------------
+Calculation control
+-------------------------
+
+.. image:: images/T_PIPE/t-pipe-cfd-probes.png
+  :align: center
+  :width: 5cm
+
+Writer
+`````````````````
+
+In the **"Output control"** heading, tab **"Writer"**, define a frequency for the post-processing output, in order to do temporal animation with results.
+
+.. image:: images/T_PIPE/t-pipe-cfd-output-writer.png
+  :align: center
+  :width: 11cm
+
+Define monitoring points
+`````````````````````````````
 
 The purpose of the monitoring points is to record for each time step, the value of selected variables.
 It allows to control stability and convergence of the calculation.
@@ -599,128 +639,59 @@ It allows to control stability and convergence of the calculation.
      12           0.171   0.113   -0.036
      ========     ======  ======  =====
 
-.. image:: images/T_PIPE/t-pipe-cfd-probes.png
-  :align: center
-.. :width: 5cm
+The positions of the monitoring points are displayed on the SALOME view. The probes radius is set to 0.005 m.
 
 .. image:: images/T_PIPE/t-pipe-cfd-probes_1.png
   :align: center
-.. :width: 11cm
+  :width: 11cm
+
+.. image:: images/T_PIPE/t-pipe-cfd-probes_2.png
+  :align: center
+  :width: 11cm
+
+The format to be choosen (*dat* or *csv*) depends of the software which will plot the curves. For **Paravis**, *csv* must be selected.
 
 
-5.4 Calculation
-===============
+Calculation
+-------------------------
 
-Select **"Prepare batch calculation"**.
+Select **"Prepare batch calculation"** heading.
 
 .. image:: images/T_PIPE/t-pipe-cfd-calculation-selection.png 
   :align: center  
-.. :width: 5cm
+  :width: 5cm
 
 .. image:: images/T_PIPE/t-pipe-cfd-calculation-selection_1.png 
   :align: center  
-.. :width: 11cm
+  :width: 11cm
 
 Before running *Code_Saturne*, save the case file (toolbar button or **"File > Code_Saturne > Save as
-data xml file"** or *<Shif> + <Ctrl> + S*), with the name "tjunction.xml" (extension .xml must be explicit).
+data xml file"** or *<Shif> + <Ctrl> + S*), with the name "tjunction.xml" (extension .xml could be ommited).
 It is possible to see the listing in real time, in order to do that in the **"Advanced Options"** the option
 *to listing* must be replaced by *to standard output*.
 
 .. image:: images/T_PIPE/t-pipe-cfd-calculation-selection_2.png 
   :align: center
-.. :width: 12cm
+  :width: 12cm
 
-Click on Button **"Code Saturne batch running"**.
-
-When the calculation is finished (success or error), a new folder appears in the **Object Browser**, in "RESU" folder under "CASE1". The **Object Browser** looks like:
-
-.. image:: images/T_PIPE/t-pipe-cfd-calculation-browser.png 
-  :align: center
-.. :width: 8cm
-
-Export the result *chr.med* and the probes files (extension *.dat*) into the **Post-Pro** module,
-with the popup menu **"Export in Post Pro"**.
-
-.. image:: images/T_PIPE/t-pipe-cfd-exportInPostPro.png
-  :align: center
-.. :width: 4cm
-
-In case of troubles, check these causes:
-
-- the **Object Browser** does not reflect correctly the study
-  (try the popup menu **"Update Object Browser"** on  *PIPESTUDY*
-
-- the **Object Browser** is not correctly refreshed (popup menu *Refresh* in the **Object Browser**),
-
-- if nothing, look at the temporary directory for the calculation, in $HOME/tmp_Saturne. Listings of compilation and execution are here.
+Click on Button **"Code_Saturne batch running"**. A popup window raises during the computation. When the computation is completed, click on **OK** to close the window.
 
 ----------------------------------
-6. Post processing of the solution
+Post processing of results
 ----------------------------------
 
-6.1 Create curves for the monitoring points
-===========================================
+In this section only the loading of the data in **Paravis** and the first steps are covered.
 
-First, export in the **Post-Pro** module the files of monitoring points (extension *.dat*) to be created.
-For example, export the monitoring points concerning the temperature: *probes_TempC.dat* :
+Activate the module **Paravis**, then load the RESULTS.case by clicking the menu **File > Open ParaView file**. Click on the green button *Apply*. Now the data are loaded.
 
-.. image:: images/T_PIPE/t-pipe-visu-probes-export.png
-  :align: center
-.. :width: 5cm
+If more than a single mesh is present in the data (aka Part with the Ensight vocabulary), the filter *Extract Block* should be apply;
+select: **Filters > Alphabetical > Extract Block**. Then, in the *Propeties* tab, select the checkbox corresponding to the mesh to display, and click on the green button *Apply*.
 
-Then activate the **Post-Pro** module. Select the popup menu **"Create Curves"** (*click left* on *TempC*)
+It is possible to project cell data to the vertex; select **Filters > Alphabetical > Cell Data to Point Data**, and click on the green button *Apply*.
 
-.. image:: images/T_PIPE/t-pipe-visu-probes-curves.png
-  :align: center
-.. :width: 8cm
+Finally, select in the *Display* tab the variable to color the mesh.
 
-In the dialog window **"Setup Plot 2d"** click on the two marked buttons:
 
-.. image:: images/T_PIPE/t-pipe-visu-probes-setup-plot2D.png
-  :align: center
 
-**Post-Pro** ask if *Do you want to choose all items with the same units for vertical axis?*. Answer *Yes* and click *Ok*.
 
-.. image:: images/T_PIPE/t-pipe-visu-probes-setup-plot2D_1.png
-  :align: center
 
-6.2 Visualisation of colored maps
-=================================
-
-First, export in the **Post-Pro** module the results file *chr.med*.
-
-.. image:: images/T_PIPE/t-pipe-visu-chr-export.png
-  :align: center
-.. :width: 5cm
-
-Activate the **Post-Pro** module. Select the variable (*TempC*) and the time step (*0.2* here) to display.
-The select the popup menu **"ScalarMap"**, **"IsoSurfaces"** or **"CutPlanes"** (*click left* on *TempC*).
-
-.. image:: images/T_PIPE/t-pipe-visu-chr-colored-map.png
-  :align: center
-.. :width: 8cm
-
-.. image:: images/T_PIPE/t-pipe-visu-chr-colored-map_1.png
-  :align: center
-
-.. image:: images/T_PIPE/t-pipe-visu-chr-colored-map_2.png
-  :align: center
-
-.. image:: images/T_PIPE/t-pipe-visu-chr-colored-map_3.png
-  :align: center
-
-6.3 Velocity vector and streamlines
-====================================
-
-Select the *Velocity* and the time step (*0.2* here) to display.
-The select the popup menu **"Vectors"** or **"StreamLines"** (*click left* on *Velocity*).
-
-.. image:: images/T_PIPE/t-pipe-visu-chr-velocity.png
-  :align: center
-.. :width: 8cm
-
-.. image:: images/T_PIPE/t-pipe-visu-chr-velocity_1.png
-  :align: center
-
-.. image:: images/T_PIPE/t-pipe-visu-chr-streamlines.png
-  :align: center
