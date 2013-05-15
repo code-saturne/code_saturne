@@ -260,6 +260,7 @@ ek = 0.d0
 rcprod = 0.d0
 uiptn = 0.d0
 uiptnf = 0.d0
+yp1 = 0.d0
 
 ! --- Constants
 uet = 1.d0
