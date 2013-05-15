@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2013-05-03 12:08+0200\n"
+"POT-Creation-Date: 2013-05-15 18:40+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3998,6 +3998,14 @@ msgstr "commande : \n"
 #, c-format
 msgid "  build %s\n"
 msgstr "  build %s\n"
+
+#, c-format
+msgid ""
+"  MPI version %d.%d (%s, based on %s)\n"
+"\n"
+msgstr ""
+"  Version MPI %d.%d (%s, basée sur %s)\n"
+"\n"
 
 #, c-format
 msgid ""
