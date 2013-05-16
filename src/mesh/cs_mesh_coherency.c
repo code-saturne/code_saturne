@@ -33,22 +33,15 @@
 #include <stdio.h>
 #include <float.h>
 #include <assert.h>
-
-/*----------------------------------------------------------------------------
- * BFT library headers
- *----------------------------------------------------------------------------*/
-
-#include <bft_mem.h>
-#include <bft_error.h>
-#include <bft_printf.h>
-
-/*----------------------------------------------------------------------------
- * FVM library headers
- *----------------------------------------------------------------------------*/
+#include <string.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
+
+#include "bft_mem.h"
+#include "bft_error.h"
+#include "bft_printf.h"
 
 #include "cs_halo.h"
 #include "cs_halo_perio.h"
@@ -72,8 +65,6 @@ BEGIN_C_DECLS
 /*=============================================================================
  * Local Macro definitions
  *============================================================================*/
-
-#define CS_MESH_COHERENCY_TOLERANCE  0.05
 
 /*============================================================================
  *  Global static variables
@@ -108,6 +99,61 @@ _check_ifacel(void)
 
 }
 
+/*----------------------------------------------------------------------------
+ * Check that bounding boxes of 2 related cells intersect.
+ *
+ * parameters:
+ *   halo_name <-- name of halo type
+ *   cell_id1  <-- id of first cell
+ *   cell_id2  <-- id of second cell
+ *   emin      <-- minimum coordinates of bounding boxes for cells
+ *   emax      <-- maximum coordinates of bounding boxes for cells
+ *----------------------------------------------------------------------------*/
+
+static void
+_check_bounding_boxes(const char        *halo_type,
+                      cs_lnum_t          cell_id1,
+                      cs_lnum_t          cell_id2,
+                      const cs_real_3_t  emin[],
+                      const cs_real_3_t  emax[])
+{
+  int i;
+
+  for (i = 0; i < 3; i++) {
+
+    cs_real_t  delta1 = (emax[cell_id1][i] - emin[cell_id1][i])  * 0.5025;
+    cs_real_t  delta2 = (emax[cell_id2][i] - emin[cell_id2][i])  * 0.5025;
+    cs_real_t  mean1 = (emax[cell_id1][i] + emin[cell_id1][i])  * 0.5;
+    cs_real_t  mean2 = (emax[cell_id2][i] + emin[cell_id2][i])  * 0.5;
+    cs_real_t  bmin1 = mean1 - delta1;
+    cs_real_t  bmax1 = mean1 + delta1;
+    cs_real_t  bmin2 = mean2 - delta2;
+    cs_real_t  bmax2 = mean2 + delta2;
+
+    if (! (   (mean2 >= mean1 && bmin2 < bmax1)
+           || (mean2 <  mean1 && bmin1 < bmax2))) {
+
+      bft_error(__FILE__, __LINE__, 0,
+                _("\nCoherency error in %s halo\n"
+                  "between cell %ld with:\n"
+                  "  bounding box min:  [%12.6g %12.6g %12.6g]\n"
+                  "               max:  [%12.6g %12.6g %12.6g]\n"
+                  "and     cell %ld with:\n"
+                  "  bounding box min:  [%12.6g %12.6g %12.6g]\n"
+                  "               max:  [%12.6g %12.6g %12.6g]"),
+                (long)cell_id1+1,
+                emin[cell_id1][0], emin[cell_id1][1], emin[cell_id1][2],
+                emax[cell_id1][0], emax[cell_id1][1], emax[cell_id1][2],
+                (long)cell_id2+1,
+                emin[cell_id2][0], emin[cell_id2][1], emin[cell_id2][2],
+                emax[cell_id2][0], emax[cell_id2][1], emax[cell_id2][2]);
+
+    }
+
+  }
+
+}
+
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
@@ -119,17 +165,11 @@ _check_ifacel(void)
 void
 cs_mesh_coherency_check(void)
 {
-  cs_int_t  i, j, coord_id, cell_id, face_id, vtx_id;
-  cs_real_t  test, delta_mean, delta_neighbor;
-  cs_real_t  _min, _max, coord;
+  cs_lnum_t  i, j, k, cell_id, face_id;
 
-  cs_real_t delta_mean_mult = 1.0;
-
-  cs_real_t  *minmax_buffer = NULL, *compute_buffer = NULL;
-  cs_real_t  *min = NULL, *max = NULL, *mean = NULL, *delta = NULL;
+  cs_real_3_t  *emin = NULL, *emax = NULL;
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
-  const cs_mesh_quantities_t  *mesh_quantities = cs_glob_mesh_quantities;
   const cs_int_t  n_cells = mesh->n_cells;
   const cs_int_t  n_cells_with_ghosts = mesh->n_cells_with_ghosts;
 
@@ -145,278 +185,204 @@ cs_mesh_coherency_check(void)
 
   /* allocate and initialize buffers */
 
-  BFT_MALLOC(minmax_buffer, 2*n_cells, cs_real_t);
-  BFT_MALLOC(compute_buffer, 6*n_cells_with_ghosts, cs_real_t);
-
-  min = minmax_buffer;
-  max = minmax_buffer + n_cells;
-  mean = compute_buffer;
-  delta = compute_buffer + 3*n_cells_with_ghosts;
+  BFT_MALLOC(emin, n_cells_with_ghosts, cs_real_3_t);
+  BFT_MALLOC(emax, n_cells_with_ghosts, cs_real_3_t);
 
   /* Loop on coordinates */
 
   bft_printf(_("    Coherency criteria definition\n"));
 
-  for (coord_id = 0; coord_id < 3; coord_id++) {
-
-    for (i = 0; i < n_cells; i++) {
-      min[i] = DBL_MAX;
-      max[i] =-DBL_MAX;
+  for (cell_id = 0; cell_id < n_cells_with_ghosts; cell_id++) {
+    for (i = 0; i < 3; i++) {
+      emin[cell_id][i] =  DBL_MAX;
+      emax[cell_id][i] = -DBL_MAX;
     }
+  }
 
-    for (i = 0; i < n_cells_with_ghosts; i++) {
-      mean[3*i + coord_id] = DBL_MIN;
-      delta[3*i + coord_id] = DBL_MIN;
-    }
+  /* Loop on internal faces */
 
-    /* Loop on internal faces */
+  for (face_id = 0; face_id < mesh->n_i_faces; face_id++) {
 
-    for (face_id = 0; face_id < mesh->n_i_faces; face_id++) {
+    const cs_lnum_t *face_vtx_idx = mesh->i_face_vtx_idx;
+    const cs_lnum_t *face_vtx_lst = mesh->i_face_vtx_lst;
 
-      const cs_int_t *face_vtx_idx = mesh->i_face_vtx_idx;
-      const cs_int_t *face_vtx_lst = mesh->i_face_vtx_lst;
+    cs_real_t _min[3] = {DBL_MAX, DBL_MAX, DBL_MAX};
+    cs_real_t _max[3] = {-DBL_MAX, -DBL_MAX, -DBL_MAX};
 
-      _min = DBL_MAX;
-      _max =-DBL_MAX;
+    for (i = face_vtx_idx[face_id]-1; i < face_vtx_idx[face_id+1]-1; i++) {
 
-      for (i = face_vtx_idx[face_id]-1; i < face_vtx_idx[face_id+1]-1; i++) {
+      cs_lnum_t vtx_id = face_vtx_lst[i]-1;
+      const cs_real_t *coord = vtx_coord + (3*vtx_id);
 
-        vtx_id = face_vtx_lst[i]-1;
-        coord = vtx_coord[3*vtx_id + coord_id];
-        _min = CS_MIN(_min, coord);
-        _max = CS_MAX(_max, coord);
-
+      for (j = 0; j < 3; j++) {
+        _min[j] = CS_MIN(_min[j], coord[j]);
+        _max[j] = CS_MAX(_max[j], coord[j]);
       }
 
-      for (j = 0; j < 2; j++) {
+    }
 
-        cell_id = ifacel[2*face_id + j] - 1;
+    for (j = 0; j < 2; j++) {
 
-        if (cell_id < n_cells) {
-          max[cell_id] = CS_MAX(max[cell_id], _max);
-          min[cell_id] = CS_MIN(min[cell_id], _min);
-        }
+      cell_id = ifacel[2*face_id + j] - 1;
 
+      for (k = 0; k < 3; k++) {
+        emin[cell_id][k] = CS_MIN(emin[cell_id][k], _min[k]);
+        emax[cell_id][k] = CS_MAX(emax[cell_id][k], _max[k]);
       }
 
-    } /* End of loop on internal faces */
+    }
 
-    /* Loop on border faces */
+  } /* End of loop on internal faces */
 
-    for (face_id = 0; face_id < mesh->n_b_faces; face_id++) {
+  /* Loop on border faces */
 
-      const cs_int_t *face_vtx_idx = mesh->b_face_vtx_idx;
-      const cs_int_t *face_vtx_lst = mesh->b_face_vtx_lst;
+  for (face_id = 0; face_id < mesh->n_b_faces; face_id++) {
 
-      _min = DBL_MAX;
-      _max =-DBL_MAX;
+    const cs_lnum_t *face_vtx_idx = mesh->b_face_vtx_idx;
+    const cs_lnum_t *face_vtx_lst = mesh->b_face_vtx_lst;
 
-      for (i = face_vtx_idx[face_id]-1; i < face_vtx_idx[face_id+1]-1; i++) {
+    cs_real_t _min[3] = {DBL_MAX, DBL_MAX, DBL_MAX};
+    cs_real_t _max[3] = {-DBL_MAX, -DBL_MAX, -DBL_MAX};
 
-        vtx_id = face_vtx_lst[i]-1;
-        coord = vtx_coord[3*vtx_id + coord_id];
-        _min = CS_MIN(_min, coord);
-        _max = CS_MAX(_max, coord);
+    for (i = face_vtx_idx[face_id]-1; i < face_vtx_idx[face_id+1]-1; i++) {
 
+      cs_lnum_t vtx_id = face_vtx_lst[i]-1;
+      const cs_real_t *coord = vtx_coord + (3*vtx_id);
+
+      for (j = 0; j < 3; j++) {
+        _min[j] = CS_MIN(_min[j], coord[j]);
+        _max[j] = CS_MAX(_max[j], coord[j]);
       }
 
       cell_id = bfacel[face_id] - 1;
 
-      assert(cell_id < n_cells);
-      max[cell_id] = CS_MAX(max[cell_id], _max);
-      min[cell_id] = CS_MIN(min[cell_id], _min);
-
-    } /* End of loop on border faces */
-
-    /* Compute mean and delta for this coordinate */
-
-    for (cell_id = 0; cell_id < n_cells; cell_id++) {
-
-      mean[3*cell_id + coord_id] = (max[cell_id] + min[cell_id])/2;
-      delta[3*cell_id + coord_id] = max[cell_id] - min[cell_id];
-
-      assert(delta[3*cell_id + coord_id] > 0);
+      for (j = 0; j < 3; j++) {
+        emin[cell_id][j] = CS_MIN(emin[cell_id][j], _min[j]);
+        emax[cell_id][j] = CS_MAX(emax[cell_id][j], _max[j]);
+      }
 
     }
 
-  } /* End of loop on coordinates */
+  } /* End of loop on border faces */
 
   /* Synchronize variable */
 
   if (mesh->halo != NULL) {
-
-    cs_halo_sync_var_strided(mesh->halo, mesh->halo_type, mean, 3);
-    cs_halo_sync_var_strided(mesh->halo, mesh->halo_type, delta, 3);
-
+    cs_halo_sync_var_strided(mesh->halo, mesh->halo_type, (cs_real_t *)emin, 3);
+    cs_halo_sync_var_strided(mesh->halo, mesh->halo_type, (cs_real_t *)emax, 3);
   }
 
   /* Synchronization for periodicity */
 
   if (mesh->n_init_perio > 0) {
-
-    cs_real_t *delta_buffer;
-
-    BFT_MALLOC(delta_buffer, 3*n_cells_with_ghosts, cs_real_t);
-
-    /* De-interlace delta arrays for periodicity exchange;
-       Also add factor of 1.8 (> sqrt(3)) as the longest diagonal
-       of a box of side 1 is sqrt(3), and may find itself aligned
-       with axes after rotation. */
-
-    if (mesh->have_rotation_perio == 1) {
-
-      delta_mean_mult = 1.0/1.8;
-
-      for (cell_id = 0; cell_id < n_cells_with_ghosts; cell_id++) {
-        cs_real_t delta_max = delta[3*cell_id];
-        if (delta[3*cell_id + 1] > delta_max)
-          delta_max = delta[3*cell_id + 1];
-        if (delta[3*cell_id + 2] > delta_max)
-          delta_max = delta[3*cell_id + 2];
-        delta_max *= 1.8;
-        delta_buffer[                        cell_id] = delta_max;
-        delta_buffer[  n_cells_with_ghosts + cell_id] = delta_max;
-        delta_buffer[2*n_cells_with_ghosts + cell_id] = delta_max;
-      }
-
-    }
-    else {
-
-      for (coord_id = 0; coord_id < 3; coord_id++) {
-        for (cell_id = 0; cell_id < n_cells_with_ghosts; cell_id++)
-          delta_buffer[coord_id*n_cells_with_ghosts + cell_id]
-            = delta[3*cell_id + coord_id];
-      }
-
-    }
-
-    cs_halo_perio_sync_var_vect_ni(mesh->halo,
-                                   mesh->halo_type,
-                                   delta_buffer,
-                                   delta_buffer +   n_cells_with_ghosts,
-                                   delta_buffer + 2*n_cells_with_ghosts);
-
-    for (coord_id = 0; coord_id < 3; coord_id++) {
-      for (cell_id = n_cells; cell_id < n_cells_with_ghosts; cell_id++)
-          delta[3*cell_id + coord_id] =
-            delta_buffer[coord_id*n_cells_with_ghosts + cell_id];
-    }
-
-    BFT_FREE(delta_buffer);
-
-    cs_halo_perio_sync_coords(mesh->halo, mesh->halo_type, mean);
-
+    cs_halo_perio_sync_coords(mesh->halo, mesh->halo_type, (cs_real_t *)emin);
+    cs_halo_perio_sync_coords(mesh->halo, mesh->halo_type, (cs_real_t *)emax);
   }
 
-  for (coord_id = 0; coord_id < 3; coord_id++) {
+  /* For rotational periodicity, things are more complex, as
+     rotation of a bounding box is implied */
 
-    bft_printf(_("    Coherency verification on coordinates %d\n"),
-               coord_id+1);
+  if (mesh->have_rotation_perio) {
 
-    /* Test coherency on the standard neighborhood */
+    int corner;
 
-    for (face_id = 0; face_id < mesh->n_i_faces; face_id++) {
+    cs_real_3_t  *smin = NULL, *smax = NULL;
+    cs_real_3_t  *c_coords = NULL;
 
-      cs_int_t  cell_id1 = ifacel[2*face_id] - 1;
-      cs_int_t  cell_id2 = ifacel[2*face_id + 1] - 1;
-      cs_real_t  delta1 = CS_ABS(delta[3*cell_id1 + coord_id]);
-      cs_real_t  delta2 = CS_ABS(delta[3*cell_id2 + coord_id]);
-      cs_real_t  mean1 = mean[3*cell_id1 + coord_id];
-      cs_real_t  mean2 = mean[3*cell_id2 + coord_id];
+    /* allocate and initialize buffers */
 
-      delta_mean = CS_ABS(mean2 - mean1)*delta_mean_mult;
-      delta_neighbor = (delta1 + delta2)/2.;
+    BFT_MALLOC(smin, n_cells_with_ghosts, cs_real_3_t);
+    BFT_MALLOC(smax, n_cells_with_ghosts, cs_real_3_t);
+    BFT_MALLOC(c_coords, n_cells_with_ghosts, cs_real_3_t);
 
-      test = (1 + CS_MESH_COHERENCY_TOLERANCE)*delta_neighbor - delta_mean;
+    memcpy(smin, emin, n_cells_with_ghosts*sizeof(cs_real_3_t));
+    memcpy(smax, emax, n_cells_with_ghosts*sizeof(cs_real_3_t));
 
-      if (test < 0) {
+    /* Reset min/max in halo */
 
-        cs_real_t  *cell_cen = mesh_quantities->cell_cen;
+    for (cell_id = mesh->n_cells; cell_id < n_cells_with_ghosts; cell_id++) {
+      for (i = 0; i < 3; i++) {
+        emin[cell_id][i] =  DBL_MAX;
+        emax[cell_id][i] = -DBL_MAX;
+      }
+    }
 
-        bft_printf(_("\nInfo on cell 1: %d\n"
-                     " cell center: %12.3g %12.3g %12.3g\n"
-                     " delta:       %12.3g\n"
-                     " box center:  %12.3g\n"),
-                   cell_id1+1, cell_cen[3*cell_id1], cell_cen[3*cell_id1+1],
-                   cell_cen[3*cell_id1+2], delta1, mean1);
+    for (corner = 0; corner < 8; corner++) {
 
-        bft_printf(_("\nInfo on cell 2: %d\n"
-                     " cell center: %12.3g %12.3g %12.3g\n"
-                     " delta:       %12.3g\n"
-                     " box center:  %12.3g\n"),
-                   cell_id2+1, cell_cen[3*cell_id2], cell_cen[3*cell_id2+1],
-                   cell_cen[3*cell_id2+2], delta2, mean2);
-        bft_printf_flush();
+      cs_real_3_t *px = (((corner+1) % 4) < 2) ? smin : smax;
+      cs_real_3_t *py = ((corner % 4) < 2) ? smin : smax;
+      cs_real_3_t *pz = (corner < 4) ? smin : smax;
 
-        bft_error(__FILE__, __LINE__, 0,
-                  _("\nCoherency error in standard halo\n"
-                    "between cells %d and %d: test = %g\n"
-                    "(delta = %g, delta_mean = %g)\n"),
-                  cell_id1+1, cell_id2+1, test, delta_neighbor, delta_mean);
+      for (cell_id = 0; cell_id < n_cells_with_ghosts; cell_id++) {
+        c_coords[cell_id][0] = px[cell_id][0];
+        c_coords[cell_id][1] = py[cell_id][1];
+        c_coords[cell_id][2] = pz[cell_id][2];
+      }
+
+      cs_halo_sync_var_strided
+        (mesh->halo, mesh->halo_type, (cs_real_t *)c_coords, 3);
+      cs_halo_perio_sync_coords
+        (mesh->halo, mesh->halo_type, (cs_real_t *)c_coords);
+
+      for (cell_id = mesh->n_cells; cell_id < n_cells_with_ghosts; cell_id++) {
+        for (j = 0; j < 3; j++) {
+          emin[cell_id][j] = CS_MIN(emin[cell_id][j], c_coords[cell_id][j]);
+          emax[cell_id][j] = CS_MAX(emax[cell_id][j], c_coords[cell_id][j]);
+        }
+      }
+
+    }
+
+    BFT_FREE(smin);
+    BFT_FREE(smax);
+    BFT_FREE(c_coords);
+
+  } /* end of additional updates for rotational periodicity */
+
+  bft_printf(_("    Coherency verification on coordinates\n"));
+
+  /* Test coherency on the standard neighborhood */
+
+  for (face_id = 0; face_id < mesh->n_i_faces; face_id++) {
+
+    cs_lnum_t  cell_id1 = ifacel[2*face_id] - 1;
+    cs_lnum_t  cell_id2 = ifacel[2*face_id + 1] - 1;
+
+    _check_bounding_boxes(_("standard"),
+                          cell_id1,
+                          cell_id2,
+                          (const cs_real_3_t *)emin,
+                          (const cs_real_3_t *)emax);
+
+  } /* End of loop on internal faces */
+
+  if (mesh->cell_cells_idx != NULL) {
+
+    cs_lnum_t  *cell_cells_idx = mesh->cell_cells_idx;
+
+    for (cell_id = 0; cell_id < n_cells; cell_id++) {
+
+      for (i = cell_cells_idx[cell_id]-1;
+           i < cell_cells_idx[cell_id+1]-1; i++) {
+
+        cs_lnum_t  cell_id2 = mesh->cell_cells_lst[i] - 1;
+
+        _check_bounding_boxes(_("extended"),
+                              cell_id,
+                              cell_id2,
+                              (const cs_real_3_t *)emin,
+                              (const cs_real_3_t *)emax);
 
       }
 
-    } /* End of loop on internal faces */
+    } /* End of loop on cells */
 
-    if (mesh->cell_cells_idx != NULL) {
-
-      cs_int_t  *cell_cells_idx = mesh->cell_cells_idx;
-
-      for (cell_id = 0; cell_id < n_cells; cell_id++) {
-
-        for (i = cell_cells_idx[cell_id]-1;
-             i < cell_cells_idx[cell_id+1]-1; i++) {
-
-          cs_int_t  cell_id2 = mesh->cell_cells_lst[i] - 1;
-          cs_real_t  delta1 = CS_ABS(delta[3*cell_id + coord_id]);
-          cs_real_t  delta2 = CS_ABS(delta[3*cell_id2 + coord_id]);
-          cs_real_t  mean1 = mean[3*cell_id + coord_id];
-          cs_real_t  mean2 = mean[3*cell_id2 + coord_id];
-
-          delta_mean = CS_ABS(mean2 - mean1)*delta_mean_mult;
-          delta_neighbor = (delta1 + delta2)/2.;
-
-          test = (1 + CS_MESH_COHERENCY_TOLERANCE)*delta_neighbor - delta_mean;
-
-          if (test < 0) {
-
-            cs_real_t  *cell_cen = mesh_quantities->cell_cen;
-
-            bft_printf(_("\nInfo on cell 1: %d\n"
-                         " cell center: %12.3g %12.3g %12.3g\n"
-                         " delta:       %12.3g\n"
-                         " box center:  %12.3g\n"),
-                       cell_id+1, cell_cen[3*cell_id], cell_cen[3*cell_id+1],
-                       cell_cen[3*cell_id+2], delta1, mean1);
-
-            bft_printf(_("\nInfo on cell 2: %d\n"
-                         " cell center: %12.3g %12.3g %12.3g\n"
-                         " delta:       %12.3g\n"
-                         " box center:  %12.3g\n"),
-                       cell_id2+1, cell_cen[3*cell_id2], cell_cen[3*cell_id2+1],
-                       cell_cen[3*cell_id2+2], delta2, mean2);
-            bft_printf_flush();
-
-            bft_error(__FILE__, __LINE__, 0,
-                      _("\nCoherency error in extended halo\n"
-                        "between cells %d and %d: test = %g\n"
-                        "(delta = %g, delta_mean = %g)\n"),
-                      cell_id+1, cell_id2+1, test, delta_neighbor, delta_mean);
-
-          }
-
-        }
-
-      } /* End of loop on cells */
-
-    } /* End of treatment of the exetended neighborhood */
-
-  } /* End of loop on coordinates */
+  } /* End of treatment of the exetended neighborhood */
 
   /* Free memory */
 
-  BFT_FREE(compute_buffer);
-  BFT_FREE(minmax_buffer);
+  BFT_FREE(emin);
+  BFT_FREE(emax);
 
   bft_printf(_(" End of coherency check of the mesh structure.\n"));
 
