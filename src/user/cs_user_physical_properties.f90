@@ -41,7 +41,7 @@
 !>    in \ref usipph if we wish to define a variable specific heat
 !>    cp (otherwise: memory overwrite).
 !>
-!> - ivisls = 1 must <b> have been specified </b>
+!> - ivisls = 1 must <b> have been specified </b>
 !>    in \ref usipsc if we wish to define a variable viscosity
 !>    \c viscls (otherwise: memory overwrite).
 !>
