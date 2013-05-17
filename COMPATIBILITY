@@ -24,6 +24,7 @@ might still be compatible.
 * libxml2: >= 2.6.19  - (necessary to read files built with the GUI)
 * Metis: >= 5.0       - (for optimised domain decomposition)
 * Par Metis: >= 4.0   - (for optimised domain decomposition)
+* (PT-)Scotch >= 6    - (for optimised domain decomposition)
 * CGNS: >= 3.1        - (to read or write CGNS files)
 * MED:  >= 3.0        - (to read or write MED/SALOME files)
 * hdf5: > 1.6.4       - (necessary for the MED and CGNS libraries)
