@@ -36,6 +36,9 @@ import logging
 # Application modules import
 #-------------------------------------------------------------------------------
 
+from cs_exec_environment import run_command
+from cs_exec_environment import separate_args
+
 #-------------------------------------------------------------------------------
 # log config.
 #-------------------------------------------------------------------------------
@@ -47,14 +50,14 @@ log.setLevel(logging.NOTSET)
 
 #-------------------------------------------------------------------------------
 
-def run_command(_c, _log):
+def run_autovnv_command(_c, _log):
     """
     Run command with arguments.
     Redirection of the stdout or stderr of the command.
     """
     assert type(_c) == str or type(_c) == unicode
 
-    log.debug("run_command: %s" % _c)
+    log.debug("run_autovnv_command: %s" % _c)
 
     try:
         _log.seek(0, os.SEEK_END)
@@ -68,9 +71,12 @@ def run_command(_c, _log):
                 (_t, str(retcode), _c, os.getcwd())
 
     _l = ""
+
+    cmd = separate_args(_c)
+
     try:
         t1 = time.time()
-        retcode = subprocess.call(_c.split(), stdout=_log, stderr=_log)
+        retcode = run_command(cmd, stdout=_log, stderr=_log)
         t2 = time.time()
 
         if retcode < 0:

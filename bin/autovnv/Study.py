@@ -43,7 +43,7 @@ from autovnv.Parser import Parser
 from autovnv.TexMaker import Report1, Report2
 from autovnv.Drawing import Plotter
 from autovnv.PlotVTK import PlotVTK
-from autovnv.Command import run_command
+from autovnv.Command import run_autovnv_command
 
 #-------------------------------------------------------------------------------
 # log config.
@@ -337,7 +337,7 @@ class Case(object):
 
         self.__updateRuncase(run_id)
 
-        error, self.is_time = run_command("./runcase", self.__log)
+        error, self.is_time = run_autovnv_command("./runcase", self.__log)
 
         if not error:
             self.is_run = "OK"
@@ -470,7 +470,7 @@ class Study(object):
         # Create study if necessary
         if not os.path.isdir(self.__dest):
             cmd = self.__main_exe + " create --quiet --study " + self.__dest
-            retval, t = run_command(cmd, self.__log)
+            retval, t = run_autovnv_command(cmd, self.__log)
             shutil.rmtree(os.path.join(self.__dest, "CASE1"))
 
             # Link meshes and copy other files
@@ -515,7 +515,7 @@ class Study(object):
                 cmd = e + " create --case " + c.label  \
                       + " --quiet --noref --copy-from "    \
                       + os.path.join(self.__repo, c.label)
-                retval, t = run_command(cmd, self.__log)
+                retval, t = run_autovnv_command(cmd, self.__log)
             else:
                 print("Warning: the case %s already exists in the destination." % c.label)
 
@@ -742,7 +742,7 @@ class Studies(object):
                     cmd += " -c " + os.path.join(self.dest, l, case.label)
                     repbase = os.getcwd()
                     os.chdir(os.path.join(self.dest, l, "MESH"))
-                    retcode, t = run_command(cmd, self.__log)
+                    retcode, t = run_autovnv_command(cmd, self.__log)
                     os.chdir(repbase)
                     self.reporting('    - script %s --> OK (%s s)' % (cmd, t))
                 else:
@@ -920,7 +920,7 @@ class Studies(object):
                             if dest[i]:
                                 d = os.path.join(self.dest, l, case.label, "RESU", dest[i])
                                 cmd += " -d " + d
-                            retcode, t = run_command(cmd, self.__log)
+                            retcode, t = run_autovnv_command(cmd, self.__log)
                             self.reporting('    - script %s --> OK (%s s)' % (cmd, t))
                         else:
                             self.reporting('    - script %s not found' % cmd)
@@ -947,8 +947,8 @@ class Studies(object):
                     cmd = os.path.join(self.dest, l, "POST", label[i])
                     if os.path.isfile(cmd):
                         list_cases, list_dir = s.getRunDirectories()
-                        cmd += " " + args[i] + " -c " + list_cases + " -d " + list_dir + " -s " + l
-                        retcode, t = run_command(cmd, self.__log)
+                        cmd += ' ' + args[i] + ' -c "' + list_cases + '" -d "' + list_dir + '" -s ' + l
+                        retcode, t = run_autovnv_command(cmd, self.__log)
                         self.reporting('    - postpro %s --> OK (%s s)' % (cmd, t))
                     else:
                         self.reporting('    - postpro %s not found' % cmd)

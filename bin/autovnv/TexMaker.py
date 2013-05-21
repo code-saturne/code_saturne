@@ -32,7 +32,7 @@ import os
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from autovnv.Command import run_command
+from autovnv.Command import run_autovnv_command
 
 #-------------------------------------------------------------------------------
 
@@ -164,7 +164,7 @@ class TexWriter(object):
         Buld the pdf file, and clean the temporary files.
         """
         cmd = "pdflatex " + self.__filename + ".tex"
-        r, t = run_command(cmd, self.__log)
+        r, t = run_autovnv_command(cmd, self.__log)
 
         for suffixe in ["tex", "log", "aux"]:
             f = self.__filename + "." + suffixe

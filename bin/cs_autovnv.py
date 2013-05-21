@@ -274,7 +274,6 @@ def runAutoverif(pkg, opt_f, opt_v, opt_u, opt_r, opt_c, opt_p, opt_to):
     if opt_p:
         studies.check_script()
         studies.scripts()
-        studies.postpro()
         studies.check_plot()
         studies.postpro()
         studies.plot()
