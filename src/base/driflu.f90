@@ -37,7 +37,7 @@
 !______________________________________________________________________________!
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
-!> \param[in]     iscal         index of the current drift scalar
+!> \param[in]     iflid         index of the current drift scalar field
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     rtp           calculated variables at cell centers
 !>                               (at current time step)
@@ -46,14 +46,17 @@
 !> \param[in]     propce        physical properties at cell centers
 !> \param[in,out] propfa        physical properties at interior face centers
 !> \param[in,out] propfb        physical properties at boundary face centers
+!> \param[in,out] imasfl        scalar mass flux at interior face centers
+!> \param[in,out] bmasfl        scalar mass flux at boundary face centers
 !> \param[in,out] rovsdt        Non stationnary term and mass aggregation term
 !> \param[in,out] smbrs         right hand side for the scalar iscal
 !______________________________________________________________________________
 
 subroutine driflu &
 ( nvar   , nscal  ,                                              &
-  iscal  ,                                                       &
+  iflid  ,                                                       &
   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+  imasfl , bmasfl ,                                              &
   rovsdt , smbrs  )
 
 !===============================================================================
@@ -82,11 +85,12 @@ implicit none
 ! Arguments
 
 integer          nvar   , nscal
-integer          iscal
+integer          iflid
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
+double precision imasfl(nfac), bmasfl(ndimfb)
 double precision rovsdt(ncelet), smbrs(ncelet)
 
 ! Local variables
@@ -104,6 +108,7 @@ integer          isou  , jsou
 integer          f_id
 integer          iflmb0, idftnp, iphydp, ivisep, itypfl
 integer          ipbrom
+integer          keysca, iscal, keydri, iscdri
 
 double precision epsrgp, climgp, extrap, blencp, epsilp
 double precision thetap
@@ -133,6 +138,18 @@ double precision, dimension(:,:,:), pointer :: coefbv, cofbfv
 !===============================================================================
 
 !===============================================================================
+! 0. Key words for fields
+!===============================================================================
+
+! Key id for scalar id
+call field_get_key_id("scalar_id", keysca)
+call field_get_key_int(iflid, keysca, iscal)
+
+! Key id for drift scalar
+call field_get_key_id("drift_scalar_model", keydri)
+call field_get_key_int(iflid, keydri, iscdri)
+
+!===============================================================================
 ! 1. Initialization
 !===============================================================================
 
@@ -156,17 +173,13 @@ endif
 call field_get_name(ivarfl(ivar), fname)
 
 ! Index of the corresponding relaxation time (taup)
-call field_get_id(trim(fname)//'_taup', f_id)
+call field_get_id('drift_tau_'//trim(fname), f_id)
 call field_get_val_s(f_id, taup)
 
 ! Index of the corresponding interaction time particle--eddies (taufpt)
-call field_get_id(trim(fname)//'_taufpt', f_id)
-call field_get_val_s(f_id, taufpt)
-
-! Handle parallelism and periodicity
-if (irangp.ge.0.or.iperio.eq.1) then
-  call synsca(taup)
-  call synsca(taufpt)
+if (btest(iscdri, DRIFT_SCALAR_TURBOPHORESIS)) then
+  call field_get_id('drift_turb_tau_'//trim(fname), f_id)
+  call field_get_val_s(f_id, taufpt)
 endif
 
 ! Vector containing all the additional convective terms
@@ -203,7 +216,7 @@ enddo
 ! 3. Computation of the turbophorese terms
 !===============================================================================
 
-if (iand(iscadr(iscal), DRIFT_SCALAR_TURBOPHORESIS).eq.1.and.iturb.ne.0) then
+if (btest(iscdri, DRIFT_SCALAR_TURBOPHORESIS).and.iturb.ne.0) then
 
   ! The diagonal part is easy to implicit (Grad (K) . n = (K_j - K_i)/IJ)
 
@@ -309,7 +322,7 @@ endif
 ! 4. Centrifugal force (particular derivative Du/Dt)
 !===============================================================================
 
-if (iand(iscadr(iscal), DRIFT_SCALAR_CENTRIFUGALFORCE).eq.1) then
+if (btest(iscdri, DRIFT_SCALAR_CENTRIFUGALFORCE)) then
 
   do iel = 1, ncel
     vel(1, iel) = rtp(iel, iu)
@@ -375,7 +388,7 @@ endif
 ! 5. Electrophoresis term
 !===============================================================================
 
-if (iand(iscadr(iscal), DRIFT_SCALAR_ELECTROPHORESIS).eq.1) then
+if (btest(iscdri, DRIFT_SCALAR_ELECTROPHORESIS)) then
 
   !TODO
   call csexit(1)
@@ -393,7 +406,7 @@ do ifac = 1, nfabor
     coefa1(isou, ifac) = 0.d0
     do jsou = 1, 3
       if (isou.eq.jsou) then
-        coefb1(isou, jsou, ifac) = 0.d0
+        coefb1(isou, jsou, ifac) = 0.d0 !FIXME Dirichlet or Neumann ?
       else
         coefb1(isou, jsou, ifac) = 0.d0
       endif
@@ -426,11 +439,11 @@ call inimav &
    flumas , flumab )
 
 do ifac = 1, nfac
-  propfa(ifac,iflmas) = propfa(ifac,ipprof(ifluma(iu))) + flumas(ifac)
+  imasfl(ifac) = propfa(ifac,ipprof(ifluma(iu))) + flumas(ifac)
 enddo
 
 do ifac = 1, nfabor
-  propfb(ifac,iflmab) = propfb(ifac,ipprob(ifluma(iu))) + flumab(ifac)
+  bmasfl(ifac) = propfb(ifac,ipprob(ifluma(iu))) + flumab(ifac)
 enddo
 
 !===============================================================================

@@ -59,12 +59,49 @@ use ppincl
 use ppcpfu
 use ihmpre
 use cs_coal_incl
+use field
 
 !===============================================================================
 
 implicit none
 
-integer        icla,  is, icha, isc , is1
+integer          icla,  is, icha, isc , is1
+integer          f_id, itycat, ityloc, idim1, idim3
+integer          keyccl, keydri, keyvis, keylbl
+integer          iscdri, iopchr
+
+logical          ilved, iprev, inoprv
+
+character*80     f_name, name
+
+!===============================================================================
+! 0. Definitions for fields
+!===============================================================================
+
+! The itycat variable is used to define field categories. It is used in Fortran
+! code with hard-coded values, but in the C API, those values are based on
+! (much clearer) category mask definitions in cs_field.h.
+
+itycat = FIELD_INTENSIVE + FIELD_VARIABLE  ! for most variables
+ityloc = 1 ! variables defined on cells
+idim1  = 1
+idim3  = 3
+ilved  = .false.   ! not interleaved by default
+iprev  = .true.    ! variables have previous value
+inoprv = .false.   ! variables have no previous value
+iopchr = 1         ! Postprocessing level for variables
+
+name = 'post_vis'
+call field_get_key_id(name, keyvis)
+
+name = 'label'
+call field_get_key_id(name, keylbl)
+
+! Key id of the coal scalar class
+call field_get_key_id("scalar_class", keyccl)
+
+! Key id for drift scalar
+call field_get_key_id("drift_scalar_model", keydri)
 
 !===============================================================================
 ! 1. DEFINITION DES POINTEURS
@@ -74,80 +111,400 @@ integer        icla,  is, icha, isc , is1
 is = 1
 ihm   = iscapp(is)
 
-! ---> Variables propres a la phase dispersee
+! Activate the drift: 0 (no activation), 1 (activation)
+iscdri = i_coal_drift
+
+! Dispersed phase variables
+!--------------------------
 
 do icla = 1, nclacp
   is = 1+icla
+  ! Field number of particle
   inp(icla) = iscapp(is)
+  write(f_name,'(a5,i2.2)')'Np_CP' ,icla
+  call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+  call field_set_key_str(f_id, keylbl, f_name)
+  ! Set the index of the scalar class in the field structure
+  call field_set_key_int(f_id, keyccl, icla)
+
+  ! Scalar with drift: DO create additional mass flux
+  if (i_coal_drift.eq.1) then
+    iscdri = ibset(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+    call field_set_key_int(f_id, keydri, iscdri)
+  endif
+
+  ! For post-processing
+  call field_set_key_int(f_id, keyvis, iopchr)
+
   is = 1+1*nclacp+icla
+  ! Field Xch
   ixch(icla)= iscapp(is)
+  write(f_name,'(a6,i2.2)')'Xch_CP' ,icla
+  call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+  call field_set_key_str(f_id, keylbl, f_name)
+  ! Set the index of the scalar class in the field structure
+  call field_set_key_int(f_id, keyccl, icla)
+
+  ! Scalar with drift: BUT Do NOT create additional mass flux
+  if (i_coal_drift.eq.1) then
+    iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+    call field_set_key_int(f_id, keydri, iscdri)
+  endif
+
+  ! For post-processing
+  call field_set_key_int(f_id, keyvis, iopchr)
+
   is = 1+2*nclacp+icla
+  ! Field xck
   ixck(icla) = iscapp(is)
-  if ( ippmod(iccoal) .eq. 1 ) then
+  write(f_name,'(a6,i2.2)')'xck_cp' ,icla
+  call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+  call field_set_key_str(f_id, keylbl, f_name)
+  ! Set the index of the scalar class in the field structure
+  call field_set_key_int(f_id, keyccl, icla)
+
+  ! Scalar with drift: BUT Do NOT create additional mass flux
+  if (i_coal_drift.eq.1) then
+    iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+    call field_set_key_int(f_id, keydri, iscdri)
+  endif
+
+  ! For post-processing
+  call field_set_key_int(f_id, keyvis, iopchr)
+
+  ! With drying
+  if (ippmod(iccoal).eq.1) then
     is = 1+3*nclacp+icla
+    ! Field Xwt
     ixwt(icla) = iscapp(is)
+    write(f_name,'(a6,i2.2)')'Xwt_CP', icla
+    call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+    call field_set_key_str(f_id, keylbl, f_name)
+    ! Set the index of the scalar class in the field structure
+    call field_set_key_int(f_id, keyccl, icla)
+
+    ! Scalar with drift: BUT Do NOT create additional mass flux
+    if (i_coal_drift.eq.1) then
+      iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+      call field_set_key_int(f_id, keydri, iscdri)
+    endif
+
+    ! For post-processing
+    call field_set_key_int(f_id, keyvis, iopchr)
+
     is = 1+4*nclacp+icla
+    ! Field h2
     ih2(icla) = iscapp(is)
+    write(f_name,'(a6,i2.2)')'Ent_CP' ,icla
+    call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+    call field_set_key_str(f_id, keylbl, f_name)
+    ! Set the index of the scalar class in the field structure
+    call field_set_key_int(f_id, keyccl, icla)
+
+    ! Scalar with drift: BUT Do NOT create additional mass flux
+    if (i_coal_drift.eq.1) then
+      iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+      call field_set_key_int(f_id, keydri, iscdri)
+    endif
+
+    ! For post-processing
+    call field_set_key_int(f_id, keyvis, iopchr)
+
   else
     is = 1+3*nclacp+icla
+    ! Field h2
     ih2(icla) = iscapp(is)
+    write(f_name,'(a6,i2.2)')'Ent_CP' ,icla
+    call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+    call field_set_key_str(f_id, keylbl, f_name)
+    ! Set the index of the scalar class in the field structure
+    call field_set_key_int(f_id, keyccl, icla)
+
+    ! Scalar with drift: BUT Do NOT create additional mass flux
+    if (i_coal_drift.eq.1) then
+      iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+      call field_set_key_int(f_id, keydri, iscdri)
+    endif
+
+    ! For post-processing
+    call field_set_key_int(f_id, keyvis, iopchr)
+
   endif
 enddo
-! ---> Variables propres a la phase continue
-!
+
+! Continuous phase variables
+!---------------------------
+
+! Class index for the gas scalars
+icla = -1
+
 ! Matiere volatiles legeres (F8) et lourdes (F9)
 is1 = is
 do icha = 1, ncharb
-  is          = is1+icha
+  is = is1+icha
+  ! Field Fr_mv1
   if1m(icha)  = iscapp(is)
+  write(f_name,'(a6,i2.2)')'Fr_mv1' ,icha
+  call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+  call field_set_key_str(f_id, keylbl, f_name)
+  ! Set the index of the scalar class in the field structure
+  call field_set_key_int(f_id, keyccl, icla)
+
+  ! The first gas salar contains the drift flux, the others
+  ! Scalar with drift: DO create additional mass flux
+  if (i_coal_drift.eq.1) then
+    if (icha.eq.1) then
+      iscdri = ibset(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+    ! Scalar with drift: BUT Do NOT create additional mass flux
+    else
+      iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+    endif
+    call field_set_key_int(f_id, keydri, iscdri)
+  endif
+
+  ! For post-processing
+  call field_set_key_int(f_id, keyvis, iopchr)
+
   is          = is1+ncharb+icha
+  ! Field Fr_mv2
   if2m(icha)  = iscapp(is)
+  write(f_name,'(a6,i2.2)')'Fr_mv2' ,icha
+  call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+  call field_set_key_str(f_id, keylbl, f_name)
+  ! Set the index of the scalar class in the field structure
+  call field_set_key_int(f_id, keyccl, icla)
+
+  ! Scalar with drift: BUT Do NOT create additional mass flux
+  if (i_coal_drift.eq.1) then
+    iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+    call field_set_key_int(f_id, keydri, iscdri)
+  endif
+
+  ! For post-processing
+  call field_set_key_int(f_id, keyvis, iopchr)
 enddo
+
 ! Oxydant 2
 if ( noxyd .ge. 2 ) then
   is = is+1
+  ! Field FR_OXYD2
   if4m  = iscapp(is)
+  f_name = 'FR_OXYD2'
+  call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+  call field_set_key_str(f_id, keylbl, f_name)
+  ! Set the index of the scalar class in the field structure
+  call field_set_key_int(f_id, keyccl, icla)
+
+  ! Scalar with drift: BUT Do NOT create additional mass flux
+  if (i_coal_drift.eq.1) then
+    iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+    call field_set_key_int(f_id, keydri, iscdri)
+  endif
+
+  ! For post-processing
+  call field_set_key_int(f_id, keyvis, iopchr)
 endif
+
 ! Oxydant 3
 if ( noxyd .ge. 3 ) then
   is = is+1
+  ! Field FR_OXYD3
   if5m  = iscapp(is)
+  f_name = 'FR_OXYD3'
+  call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+  call field_set_key_str(f_id, keylbl, f_name)
+  ! Set the index of the scalar class in the field structure
+  call field_set_key_int(f_id, keyccl, icla)
+
+  ! Scalar with drift: BUT Do NOT create additional mass flux
+  if (i_coal_drift.eq.1) then
+    iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+    call field_set_key_int(f_id, keydri, iscdri)
+  endif
+
+  ! For post-processing
+  call field_set_key_int(f_id, keyvis, iopchr)
 endif
+
 ! Humidite
-if (ippmod(iccoal) .eq. 1 ) then
+if (ippmod(iccoal).eq.1) then
   is = is+1
+  ! Field FR_H20
   if6m  = iscapp(is)
+  f_name = 'FR_H2O'
+  call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+  call field_set_key_str(f_id, keylbl, f_name)
+  ! Set the index of the scalar class in the field structure
+  call field_set_key_int(f_id, keyccl, icla)
+
+  ! Scalar with drift: BUT Do NOT create additional mass flux
+  if (i_coal_drift.eq.1) then
+    iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+    call field_set_key_int(f_id, keydri, iscdri)
+  endif
+
+  ! For post-processing
+  call field_set_key_int(f_id, keyvis, iopchr)
 endif
+
 ! Produits de la combustion du coke par O2
 is = is+1
+! Field FR_HET_O2
 if7m  = iscapp(is)
+f_name = 'FR_HET_O2'
+call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+call field_set_key_str(f_id, keylbl, f_name)
+! Set the index of the scalar class in the field structure
+call field_set_key_int(f_id, keyccl, icla)
+
+! Scalar with drift: BUT Do NOT create additional mass flux
+if (i_coal_drift.eq.1) then
+  iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+  call field_set_key_int(f_id, keydri, iscdri)
+endif
+
+! For post-processing
+call field_set_key_int(f_id, keyvis, iopchr)
+
 ! Produits de la combustion du coke par CO2
-if ( ihtco2 .eq. 1 ) then
+if (ihtco2.eq.1) then
   is = is+1
+  ! Field FR_HET_CO2
   if8m  = iscapp(is)
+  f_name = 'FR_HET_CO2'
+  call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+  call field_set_key_str(f_id, keylbl, f_name)
+  ! Set the index of the scalar class in the field structure
+  call field_set_key_int(f_id, keyccl, icla)
+
+  ! Scalar with drift: BUT Do NOT create additional mass flux
+  if (i_coal_drift.eq.1) then
+    iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+    call field_set_key_int(f_id, keydri, iscdri)
+  endif
+
+  ! For post-processing
+  call field_set_key_int(f_id, keyvis, iopchr)
 endif
+
 ! Produits de la combustion du coke par H2O
-if ( ihth2o .eq. 1 ) then
+if (ihth2o.eq.1) then
   is = is+1
+  ! Field FR_HET_CO2
   if9m  = iscapp(is)
+  f_name = 'FR_HET_H2O'
+  call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+  call field_set_key_str(f_id, keylbl, f_name)
+  ! Set the index of the scalar class in the field structure
+  call field_set_key_int(f_id, keyccl, icla)
+
+  ! Scalar with drift: BUT Do NOT create additional mass flux
+  if (i_coal_drift.eq.1) then
+    iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+    call field_set_key_int(f_id, keydri, iscdri)
+  endif
+
+  ! For post-processing
+  call field_set_key_int(f_id, keyvis, iopchr)
 endif
+
 ! variance
 is = is+1
-ifvp2m  = iscapp(is)
+! Field Var_F1F2
+ifvp2m = iscapp(is)
+f_name = 'Var_F1F2'
+call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+call field_set_key_str(f_id, keylbl, f_name)
+! Set the index of the scalar class in the field structure
+call field_set_key_int(f_id, keyccl, icla)
+
+! Scalar with drift: BUT Do NOT create additional mass flux
+if (i_coal_drift.eq.1) then
+  iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+  call field_set_key_int(f_id, keydri, iscdri)
+endif
+
+! For post-processing
+call field_set_key_int(f_id, keyvis, iopchr)
+
 ! Transport du CO ou du CO2
-if ( ieqco2 .ge. 1 ) then
+if (ieqco2.ge.1) then
   is    = is+1
+  ! Field
   iyco2 = iscapp(is)
+  f_name = 'FR_CO2'
+  call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+  call field_set_key_str(f_id, keylbl, f_name)
+  ! Set the index of the scalar class in the field structure
+  call field_set_key_int(f_id, keyccl, icla)
+
+  ! Scalar with drift: BUT Do NOT create additional mass flux
+  if (i_coal_drift.eq.1) then
+    iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+    call field_set_key_int(f_id, keydri, iscdri)
+  endif
+
+  ! For post-processing
+  call field_set_key_int(f_id, keyvis, iopchr)
 endif
+
 ! Transport du NOx : HCN, NOx et Tair
-if ( ieqnox .eq. 1 ) then
+if (ieqnox.eq.1) then
   is     = is+1
+  ! Field
   iyhcn  = iscapp(is)
+  f_name = 'FR_HCN'
+  call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+  call field_set_key_str(f_id, keylbl, f_name)
+  ! Set the index of the scalar class in the field structure
+  call field_set_key_int(f_id, keyccl, icla)
+
+  ! Scalar with drift: BUT Do NOT create additional mass flux
+  if (i_coal_drift.eq.1) then
+    iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+    call field_set_key_int(f_id, keydri, iscdri)
+  endif
+
+  ! For post-processing
+  call field_set_key_int(f_id, keyvis, iopchr)
+
   is     = is+1
+  ! Field
   iyno   = iscapp(is)
+  f_name =  'FR_NO'
+  call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+  call field_set_key_str(f_id, keylbl, f_name)
+  ! Set the index of the scalar class in the field structure
+  call field_set_key_int(f_id, keyccl, icla)
+
+  ! Scalar with drift: BUT Do NOT create additional mass flux
+  if (i_coal_drift.eq.1) then
+    iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+    call field_set_key_int(f_id, keydri, iscdri)
+  endif
+
+  ! For post-processing
+  call field_set_key_int(f_id, keyvis, iopchr)
+
   is     = is+1
+  ! Field
   ihox   = iscapp(is)
+  f_name =  'Enth_Ox'
+  call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+  call field_set_key_str(f_id, keylbl, f_name)
+  ! Set the index of the scalar class in the field structure
+  call field_set_key_int(f_id, keyccl, icla)
+
+  ! Scalar with drift: BUT Do NOT create additional mass flux
+  if (i_coal_drift.eq.1) then
+    iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+    call field_set_key_int(f_id, keydri, iscdri)
+  endif
+
+  ! For post-processing
+  call field_set_key_int(f_id, keyvis, iopchr)
 endif
+
 !   - Interface Code_Saturne
 !     ======================
 !     Construction de l'indirection entre la numerotation du noyau et XML

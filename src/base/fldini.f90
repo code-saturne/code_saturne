@@ -82,9 +82,11 @@ implicit none
 integer          ii, ippu, ippv, ippw, ivar, iprop
 integer          imom, idtnm
 integer          keyvis, keylbl, keycpl, iflid, ikeyid, ikeyvl, iopchr
+integer          keysca
 integer          nfld, itycat, ityloc, idim1, idim3
 logical          ilved, iprev, inoprv
 integer          ifvar(nvppmx), iapro(npromx)
+integer          f_id, kimasf, kbmasf
 
 character*80     name
 character*32     name1, name2, name3
@@ -119,8 +121,16 @@ call field_get_key_id(name, keylbl)
 name = 'coupled'
 call field_get_key_id(name, keycpl)
 
-! Postprocessing level for variables
+! Key id for scalar id
+call field_get_key_id("scalar_id", keysca)
 
+! Key id for the inner mass flux id
+call field_get_key_id("inner_mass_flux_id", kimasf)
+
+! Key id for the boundary mass flux id
+call field_get_key_id("boundary_mass_flux_id", kbmasf)
+
+! Postprocessing level for variables
 iopchr = 1
 
 !===============================================================================
@@ -294,11 +304,25 @@ do ii = 1, nscal
     else
       name = nomvar(ipprtp(ivar))
     endif
-    call field_create(name, itycat, ityloc, idim1, ilved, iprev, ivarfl(ivar))
-    call field_set_key_str(ivarfl(ivar), keylbl, nomvar(ipprtp(ivar)))
-    if (ichrvr(ipprtp(ivar)) .eq. 1) then
-      call field_set_key_int(ivarfl(ivar), keyvis, iopchr)
+
+    ! Test if the field has already been defined
+    call field_get_id(trim(name), f_id)
+
+    ! If not already created
+    if (f_id.eq.-1) then
+      call field_create(name, itycat, ityloc, idim1, ilved, iprev, ivarfl(ivar))
+      call field_set_key_str(ivarfl(ivar), keylbl, nomvar(ipprtp(ivar)))
+      if (ichrvr(ipprtp(ivar)).eq.1) then
+        call field_set_key_int(ivarfl(ivar), keyvis, iopchr)
+      endif
+    ! It already exists
+    else
+      ivarfl(ivar) = f_id
     endif
+
+    ! Set the "scalar_id" key word (inverse of isca(ii))
+    call field_set_key_int(ivarfl(ivar), keysca, ii)
+
     if (ityturt(ii).gt.0) then
       f_name = trim(name)//'_turbulent_flux'
       call field_create(f_name, itycat, ityloc, idim3, .true., iprev, iflid)
@@ -308,26 +332,7 @@ do ii = 1, nscal
       endif
     endif
 
-    ! Additional fields for Drift scalars
-    if (iscadr(ii).gt.0) then
-
-      ! Relaxation time
-      f_name = trim(name)//'_taup'
-      call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, iflid)
-      call field_set_key_int(iflid, keycpl, 1)
-      if (ichrvr(ipprtp(ivar)) .eq. 1) then
-        call field_set_key_int(iflid, keyvis, iopchr)
-      endif
-
-      ! Interaction time particle--eddies
-      f_name = trim(name)//'_taufpt'
-      call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, iflid)
-      call field_set_key_int(iflid, keycpl, 1)
-      if (ichrvr(ipprtp(ivar)) .eq. 1) then
-        call field_set_key_int(iflid, keyvis, iopchr)
-      endif
-
-    endif
+    ! Additional fields for Drift scalars is done in addfld
 
   endif
 
@@ -447,6 +452,48 @@ endif
 if (ichrvr(ipptx).gt.0) then
   call field_set_key_int(iflid, keyvis, ichrvr(ipptx))
 endif
+
+! Inner Mass flux field
+!----------------------
+
+itycat = FIELD_EXTENSIVE + FIELD_PROPERTY
+ityloc = 2 ! inner faces
+
+! Mass flux for the class on interior faces
+f_name = 'inner_mass_flux'
+if (ifluaa(ipr).eq.-1) then
+  call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+else
+  call field_create(f_name, itycat, ityloc, idim1, ilved, iprev, f_id)
+endif
+call field_set_key_str(f_id, keylbl, f_name)
+
+! The same mass flux for every variable, an other mass flux
+! might be defined afterwards in addfld.f90
+do ivar = 1, nvar
+  call field_set_key_int(ivarfl(ivar), kimasf, f_id)
+enddo
+
+! Boundary Mass flux field
+!-------------------------
+
+itycat = FIELD_EXTENSIVE + FIELD_PROPERTY
+ityloc = 3 ! boundary faces
+
+! Mass flux for the class on interior faces
+f_name = 'boundary_mass_flux'
+if (ifluaa(ipr).eq.-1) then
+  call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+else
+  call field_create(f_name, itycat, ityloc, idim1, ilved, iprev, f_id)
+endif
+call field_set_key_str(f_id, keylbl, f_name)
+
+! The same mass flux for every variable, an other mass flux
+! might be defined afterwards in addfld.f90
+do ivar = 1, nvar
+  call field_set_key_int(ivarfl(ivar), kbmasf, f_id)
+enddo
 
 ! Additional fields
 !------------------

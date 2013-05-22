@@ -55,6 +55,8 @@ module ppincl
   ! ---- Modeles propres a la combustion charbon pulverise couplee Lagrangien
   integer ::  icpl3c
   integer ::  iccoal
+  ! ---- Coal with drift (0: without drift (default), 1: with)
+  integer ::  i_coal_drift
 
   ! ---- Modeles propres a la combustion fuel
   integer ::  icfuel

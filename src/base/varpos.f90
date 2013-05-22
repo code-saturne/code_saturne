@@ -252,7 +252,6 @@ if(ipass.eq.1) then
     enddo
 
     call ppvarp
-    !==========
 
   endif
 
@@ -652,7 +651,7 @@ if(ipass.eq.2) then
 !   Proprietes des variables : flux de masse porteur
 
   iprofl = iprop
-  iprop               = iprop + 1
+  iprop  = iprop + 1
   ifluma(ipr ) = iprop
   ifluma(iu  ) = iprop
   ifluma(iv  ) = iprop
@@ -685,12 +684,7 @@ if(ipass.eq.2) then
     ifluma(inusa)= iprop
   endif
   do iscal = 1, nscal
-    if (iscadr(iscal).gt.0) then
-      iprop = iprop + 1
-      ifluma(isca(iscal)) = iprop
-    else
-      ifluma(isca(iscal)) = ifluma(iu)
-    endif
+    ifluma(isca(iscal)) = iprop
   enddo
 
   if (iale.eq.1) then

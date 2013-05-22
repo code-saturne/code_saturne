@@ -986,10 +986,11 @@ module optcal
   !> ctheta : coefficient des modeles de flux turbulents GGDH et AFM
   double precision, save :: ctheta(nscamx)
 
-  !> indicator for Drift scalars
-  !>    - 1: scalar with a Drift
-  !>    - 0: standard scalar
-  integer, save :: iscadr(nscamx)
+  !> flag for computing the drift mass flux:
+  !> (for coal classes for instance, only the first
+  !>  scalar of a class compute the drift flux of the class
+  !>  and the other scalars use it without recomputing it)
+  integer :: DRIFT_SCALAR_ADD_DRIFT_FLUX
 
   !> flag for activating thermophoresis for drift scalars
   integer :: DRIFT_SCALAR_THERMOPHORESIS
@@ -1003,10 +1004,11 @@ module optcal
   !> flag for activating the centrifugal force for drift scalars
   integer :: DRIFT_SCALAR_CENTRIFUGALFORCE
 
+  parameter (DRIFT_SCALAR_ADD_DRIFT_FLUX=1)
   parameter (DRIFT_SCALAR_THERMOPHORESIS=2)
-  parameter (DRIFT_SCALAR_TURBOPHORESIS=4)
-  parameter (DRIFT_SCALAR_ELECTROPHORESIS=8)
-  parameter (DRIFT_SCALAR_CENTRIFUGALFORCE=16)
+  parameter (DRIFT_SCALAR_TURBOPHORESIS=3)
+  parameter (DRIFT_SCALAR_ELECTROPHORESIS=4)
+  parameter (DRIFT_SCALAR_CENTRIFUGALFORCE=5)
 
   !> \}
 

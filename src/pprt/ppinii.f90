@@ -86,6 +86,7 @@ do ipp = 1, nmodmx
 enddo
 
 isoot = -1
+i_coal_drift = 0
 
 ! ---> Initialisation pour la combustion gaz
 !       Variables transportees

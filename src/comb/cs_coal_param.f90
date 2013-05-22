@@ -288,6 +288,8 @@ if (iihmpr.ne.1) then
   ilisvr(ipp)  = 1
   ihisvr(ipp,1)= -1
 
+!TODO remove once the field are totally deployed, up to now
+!     it is used to not create twice the same field.
 ! ---- Variables propres a la phase dispersee
 
   do icla = 1, nclacp

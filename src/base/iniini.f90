@@ -469,7 +469,6 @@ do iscal = 1, nscamx
   isca  (iscal) = 0
   iscapp(iscal) = 0
   iscasp(iscal) = 0
-  iscadr(iscal) = 0
 enddo
 
 ! --- Initialisation par defaut des commons pour la physique particuliere

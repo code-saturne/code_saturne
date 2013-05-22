@@ -26,7 +26,7 @@
 ! Purpose:
 ! -------
 
-!> \file cs_user_physical_properties-scalar-drift.f90
+!> \file cs_user_physical_properties-coal_drift.f90
 !> \brief Definition of physical variable laws for scalars with a drift.
 !>
 !-------------------------------------------------------------------------------
@@ -69,7 +69,8 @@ use entsor
 use parall
 use period
 use field
-use lagran, only: kboltz
+use ppincl
+use cpincl
 use mesh
 
 !===============================================================================
@@ -91,15 +92,31 @@ double precision propfa(nfac,*), propfb(nfabor,*)
 !< [loc_var_dec]
 integer          ivart, iel, ifac
 integer          ipcrom, ipbrom, ipcvis, ipccp
-integer          ipcvsl, iscal, iflid, iscdri
-integer          f_id, keydri, nfld, keysca
-double precision diamp, rhop, cuning
-double precision xrtp, xk, xeps, beta1
+integer          ipcvsl, ivar
+integer          f_id
+integer          iclapc, idecal
+integer          ll
+integer          ipcte1, icla, iromf
+integer          iscdri, keydri, iflid, nfld, keyccl
+
+double precision xrtp
+double precision aa1, bb1, cc1, dd1
+double precision aa2, bb2, cc2, dd2
+double precision aa3, bb3, cc3, dd3
+double precision aa4, bb4, cc4, dd4
+double precision aa5, bb5, cc5, dd5
+double precision aa6, bb6, cc6, dd6
+double precision aa7, bb7, cc7, dd7
+double precision visco_O2, visco_CO, visco_H2, visco_N2
+double precision visco_SO2, visco_NH3, visco_CO2
+double precision g
 
 character*80     fname
 
+double precision, allocatable, dimension(:) :: x1, visco
+
 double precision, dimension(:), pointer :: taup
-double precision, dimension(:), pointer :: taufpt
+double precision, dimension(:), pointer :: taupg
 !< [loc_var_dec]
 
 !===============================================================================
@@ -110,12 +127,13 @@ double precision, dimension(:), pointer :: taufpt
 
 !< [init]
 ipcvis = ipproc(iviscl)
+allocate(x1(ncelet), visco(ncelet))
 
 ! Key id for drift scalar
 call field_get_key_id("drift_scalar_model", keydri)
 
-! Key id for scalar id
-call field_get_key_id("scalar_id", keysca)
+! Key id of the coal scalar class
+call field_get_key_id("scalar_class", keyccl)
 
 ! Number of fields
 call field_get_n_fields(nfld)
@@ -127,144 +145,202 @@ call field_get_n_fields(nfld)
 !   ====================================================
 
 !===============================================================================
-!  Example: If thermophorese is required, one MUST set the diffusivity
+!  Example:
 !  =======
-!  (Brownian motion) to be variable in space and set the proper relation
-!  between the molecular diffusivity and T:
-!  ex: Kb x T x cuning /(3*pi*diamp(iscal)*propce(iel,ipcvis))
 !===============================================================================
 
-!    Excluding:
-!      - temperature, enthalpy (handled above)
-!      - fluctuation variances (property equal to that of the associated scalar)
-!
-!    Below, we define the same diffusivity law for all scalars (except the
-!      ones excluded above).
-!    Values of this property must be defined at cell centers
 !  ===================================================================
 
 !< [example_1]
 
-! Loop over fields which are scalar with a drift
-do iflid = 0, nfld
+g = sqrt(gx**2 + gy**2 + gz**2)
+
+! Temperature
+ipcte1 = ipproc(itemp1)
+
+! Gas density
+iromf = ipproc(irom1)
+
+! First initialization
+if (ntcabs.le.1) then
+  do iel = 1, ncel
+    visco(iel) = viscl0
+    propce(iel,iromf) = ro0
+    do icla = 1, nclacp
+      propce(iel,ipproc(irom2(icla)))  = ro0
+      propce(iel,ipproc(idiam2(icla))) = diam20(icla)
+    enddo
+  enddo
+endif
+
+!----------------Gas viscosity function of temperature--------------------------
+!
+!--------------------------1-O2 2-CO 3-H2 4-N2 5-SO2 6-NH3 7-CO2----------------
+
+aa1 = 4.0495d-6
+bb1 = 6.22d-8
+cc1 = -2.3032d-11
+dd1 = 4.4077d-15
+
+aa2 = 9.9987d-6
+bb2 = 5.1578d-8
+cc2 = -1.8383d-11
+dd2 = 3.33307d-15
+
+aa3 = 2.894d-6
+bb3 = 2.22508d-8
+cc3 = -8.041d-12
+dd3 = 1.4619d-15
+
+aa4 = 4.3093d-6
+bb4 = 5.0516d-8
+cc4 = -1.7869d-11
+dd4 = 3.2136d-15
+
+aa5 = -1.9889d-6
+bb5 = 5.365d-8
+cc5 = -1.4286d-11
+dd5 = 2.1639d-15
+
+aa6 = -1.293d-6
+bb6 = 4.1194d-8
+cc6 = -1.772d-11
+dd6 = 1.8699d-15
+
+aa7 = 4.4822d-7
+bb7 = 5.4327d-8
+cc7 = -1.7581d-11
+dd7 = 2.9979d-15
+
+!-------------------------------------------------------------------------------
+!      law                    mu   = a + b T + c T**2 + d T**3
+!      so      propce(iel, ipcvis) = a +b*xrtp+c*xrtp**2 + d*xrtp**3
+!-------------------------------------------------------------------------------
+
+if (ntcabs.gt.1) then
+  do iel = 1, ncel
+
+    xrtp = propce(iel,ipcte1)
+    visco_O2  = aa1 + xrtp*bb1 + cc1*xrtp**2 + dd1*xrtp**3
+    visco_CO  = aa2 + xrtp*bb2 + cc2*xrtp**2 + dd2*xrtp**3
+    visco_H2  = aa3 + xrtp*bb3 + cc3*xrtp**2 + dd3*xrtp**3
+    visco_N2  = aa4 + xrtp*bb4 + cc4*xrtp**2 + dd4*xrtp**3
+    visco_SO2 = aa5 + xrtp*bb5 + cc5*xrtp**2 + dd5*xrtp**3
+    visco_NH3 = aa6 + xrtp*bb6 + cc6*xrtp**2 + dd6*xrtp**3
+    visco_CO2 = aa7 + xrtp*bb7 + cc7*xrtp**2 + dd7*xrtp**3
+
+    ! Viscosity of the mixing
+    visco(iel) = ( propce(iel,ipproc(iym1(8))) * visco_O2                     &
+                 + propce(iel,ipproc(iym1(3))) * visco_CO                     &
+                 + propce(iel,ipproc(iym1(5))) * visco_H2                     &
+                 + propce(iel,ipproc(iym1(12)))* visco_N2                     &
+                 + propce(iel,ipproc(iym1(11)))* visco_SO2                    &
+                 + propce(iel,ipproc(iym1(7))) * visco_NH3                    &
+                 + propce(iel,ipproc(iym1(9))) * visco_CO2 )/                 &
+                 ( propce(iel,ipproc(iym1(8))) + propce(iel,ipproc(iym1(3)))  &
+                 + propce(iel,ipproc(iym1(5))) + propce(iel,ipproc(iym1(12))) &
+                 + propce(iel,ipproc(iym1(11)))+ propce(iel,ipproc(iym1(7)))  &
+                 + propce(iel,ipproc(iym1(9))))
+
+  enddo
+endif
+
+! Compute x1 = 1 - sum x2
+do iel = 1, ncel
+
+  x1(iel) = 1.d0
+
+  do icla = 1, nclacp
+    x1(iel) = x1(iel) - propce(iel,ipproc(ix2(icla))) !FIXME is propce(iel,ipproc(ix2(icla))) initialized ?
+  enddo
+
+enddo
+
+! All gas scalars have the same drift as if1m(1)
+!-----------------------------------------------
+
+do iflid = 0, nfld-1
+
+  ! Index of the scalar class (<0 if the scalar belongs to the gas phase)
+  call field_get_key_int(iflid, keyccl, icla)
 
   call field_get_key_int(iflid, keydri, iscdri)
 
-  ! We only handle here scalar with a drift
-  if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
+  ! We only handle here one scalar with a drift per gas class
+  if (icla.le.-1.and.btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
 
     ! Position of variables, coefficients
     ! -----------------------------------
 
-    ! Index of the scalar
-    call field_get_key_int(iflid, keysca, iscal)
+    ! Name of the drift scalar
+    call field_get_name(iflid, fname)
 
-    ! --- Number of the thermal variable
-    if (iscalt.gt.0) then
-      ivart = isca(iscalt)
-    else
-      write(nfecra,9010) iscalt
-      call csexit (1)
-    endif
+    ! Index of the corresponding "relaxation time" (taupg) for the gas
+    ! WARNING: for the gas, this tau might be negative
+    call field_get_id('drift_tau_'//trim(fname), f_id)
+    call field_get_val_s(f_id, taupg)
 
-    ! --- Rank of scalar's diffusivity (Brownian motion)
-    !     in 'propce', physical properties at element centers: 'ipcvsl'
+    ! Initialize to 0
+    do iel = 1, ncel
+      taupg(iel) = 0.d0
+    enddo
 
-    if (ivisls(iscal).gt.0) then
-      ipcvsl = ipproc(ivisls(iscal))
-    else
-      ipcvsl = 0
-    endif
+  endif
+enddo
 
-    ! --- Coefficients of drift scalar CHOSEN BY THE USER
-    !       Values given here are fictitious
+! Loop over coal particle classes
+! We only handle here coal class with a drift
+!--------------------------------------------
 
-    ! diamp: is the diameter of the particle class
-    ! cuning: is the Cuningham correction factor
-    ! rhop: particle density
-    diamp = 1.d-4
-    cuning = 1.d0
-    rhop = 1.d4
+do iflid = 0, nfld-1
 
-    ! Name of the scalar with a drift
+  ! index of the coal particle class
+  call field_get_key_int(iflid, keyccl, icla)
+
+  call field_get_key_int(iflid, keydri, iscdri)
+
+  ! We only handle here one scalar with a drift per particle class
+  if (icla.ge.1.and.btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
+
+    ! Position of variables, coefficients
+    ! -----------------------------------
+
+    ! Name of the drift scalar
     call field_get_name(iflid, fname)
 
     ! Index of the corresponding relaxation time (taup)
     call field_get_id('drift_tau_'//trim(fname), f_id)
     call field_get_val_s(f_id, taup)
 
-    ! Index of the corresponding interaction time particle--eddies (taufpt)
-    if (btest(iscdri, DRIFT_SCALAR_TURBOPHORESIS)) then
-      call field_get_id('drift_turb_tau_'//trim(fname), f_id)
-      call field_get_val_s(f_id, taufpt)
-    endif
-
     ! Computation of the relaxation time of the particles
+    ! the drift is therefore v_g = tau_p * g
     !----------------------------------------------------
 
-    if (diamp.le.1.d-6) then
-      ! Cuningham's correction for submicronic particules
-      do iel = 1, ncel
-        taup(iel) = cuning*diamp**2*rhop/(18.d0*propce(iel,ipcvis))
-      enddo
-    else
-      do iel = 1, ncel
-        taup(iel) = diamp**2*rhop/(18.d0*propce(iel,ipcvis))
-      enddo
-    endif
-
-    ! Compute the interaction time particle--eddies (tau_fpt)
-    !--------------------------------------------------------
-
-    if (btest(iscdri, DRIFT_SCALAR_TURBOPHORESIS)) then
-
-      ! k-epsilon or v2-f models
-      if (itytur.eq.2 .or. itytur.eq.5) then
-        do iel = 1, ncel
-          xk = rtp(iel,ik)
-          xeps = rtp(iel,iep)
-          taufpt(iel) = (3.d0/2.d0)*(cmu/sigmas(iscal))*xk/xeps
-        enddo
-
-      ! Rij-epsilon models
-      else if (itytur.eq.3) then
-        beta1  = 0.5d0+3.d0/(4.d0*xkappa)
-        do iel = 1, ncel
-          xk = 0.5d0*( rtp(iel,ir11)                    &
-                      +rtp(iel,ir22)                    &
-                      +rtp(iel,ir33) )
-          xeps = rtp(iel,iep)
-          taufpt(iel) = xk/xeps/beta1
-        enddo
-
-      ! k-omega models
-      else if (iturb.eq.60) then
-        do iel = 1, ncel
-          xk = rtp(iel,ik)
-          xeps = cmu*xk*rtp(iel,iomg)
-          taufpt(iel) = (3.d0/2.d0)*(cmu/sigmas(iscal))*xk/xeps
-        enddo
-      endif
-
-    endif
-
-    ! Brownian diffusion at cell centers
-    !-----------------------------------
-
-    ! --- Stop if the diffusivity is not variable
-    if (ipcvsl.le.0) then
-      write(nfecra,1010) iscal, iscal, ivisls(iscal)
-      call csexit (1)
-    endif
-
     do iel = 1, ncel
-      xrtp = rtp(iel,ivart)
-      propce(iel,ipcvsl) = kboltz*xrtp*cuning/(3.d0*pi*diamp*propce(iel,ipcvis))
+
+      ! Simple model for Low Reynolds Numbers
+      taup(iel) = x1(iel) * propce(iel,ipproc(irom2(icla)))          &
+                          * propce(iel,ipproc(idiam2(icla)))**2      &
+                          / (18.d0*visco(iel))
+
     enddo
 
-  endif ! --- Tests on drift scalar
+    ! Drift for the gas:
+    ! tau_pg = - Sum_i X2_i v_gi
+    do iel = 1, ncel
+
+      taupg(iel) = taupg(iel)                                       &
+                 - ( taup(iel) * propce(iel,ipproc(ix2(icla))) )
+
+    enddo
+
+  endif
 enddo
+
 !< [example_1]
+
+!Free memory
+deallocate(x1, visco)
 
 !===============================================================================
 

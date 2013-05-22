@@ -20,9 +20,61 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine covofi &
-!================
+!===============================================================================
+! Function:
+! ---------
 
+!> \file covofi.f90
+!>
+!> \brief This subroutine performs the solving the convection/diffusion
+!> equation (with eventually source terms and/or drift) for a scalar quantity
+!> over a time step.
+!>
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     ncepdp        number of cells with head loss
+!> \param[in]     ncesmp        number of cells with mass source term
+!> \param[in]     iscal         scalar number
+!> \param[in]     itspdv        indicator to compute production/dissipation
+!>                              terms for a variance:
+!>                               - 0: no
+!>                               - 1: yes
+!> \param[in]     icepdc        index of cells with head loss
+!> \param[in]     icetsm        index of cells with mass source term
+!> \param[in]     itypsm        type of mass source term for the variables
+!> \param[in]     dt            time step (per cell)
+!> \param[in,out] rtp, rtpa     calculated variables at cell centers
+!>                               (at current and previous time steps)
+!> \param[in]     propce        physical properties at cell centers
+!> \param[in,out] propfa        physical properties at interior face centers
+!> \param[in,out] propfb        physical properties at boundary face centers
+!> \param[in]     tslagr        coupling term for the Lagrangian module
+!> \param[in]     coefa, coefb  boundary conditions
+!> \param[in]     ckupdc        work array for the head loss
+!> \param[in]     smacel        variable value associated to the mass source
+!>                               term (for ivar=ipr, smacel is the mass flux
+!>                               \f$ \Gamma^n \f$)
+!> \param[in]     frcxt         external forces making hydrostatic pressure
+!> \param[in]     dfrcxt        variation of the external forces
+!> \param[in]                    making the hydrostatic pressure
+!> \param[in]     tpucou        non scalar time step in case of
+!>                               velocity pressure coupling
+!> \param[in]     trav          right hand side for the normalizing
+!>                               the residual
+!> \param[in]     viscf         visc*surface/dist aux faces internes
+!> \param[in]     viscb         visc*surface/dist aux faces de bord
+!> \param[in]     smbrs         tableau de travail
+!> \param[in]     rovsdt        tableau de travail
+!_______________________________________________________________________________
+
+subroutine covofi &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  , itspdv ,                                              &
    icepdc , icetsm , itypsm ,                                     &
@@ -31,54 +83,6 @@ subroutine covofi &
    viscf  , viscb  ,                                              &
    smbrs  , rovsdt )
 
-!===============================================================================
-! FONCTION :
-! ----------
-
-! Solving the advection/diffusion equation (with source terms) for a scalar
-! quantity over a time step
-
-!-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
-! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
-! iscal            ! i  ! <-- ! scalar number                                  !
-! itspdv           ! e  ! <-- ! calcul termes sources prod et dissip           !
-!                  !    !     !  (0 : non , 1 : oui)                           !
-! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
-! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
-! itypsm           ! te ! <-- ! type de source de masse pour les               !
-! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! tslagr           ! tr ! <-- ! terme de couplage retour du                    !
-!(ncelet,*)        !    !     !     lagrangien                                 !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
-! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
-!  (ncepdp,6)      !    !     !                                                !
-! smacel           ! tr ! <-- ! valeur des variables associee a la             !
-! (ncesmp,*   )    !    !     !  source de masse                               !
-!                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
-! viscf(nfac)      ! tr ! --- ! visc*surface/dist aux faces internes           !
-! viscb(nfabor     ! tr ! --- ! visc*surface/dist aux faces de bord            !
-! smbrs(ncelet     ! tr ! --- ! tableau de travail pour sec mem                !
-! rovsdt(ncelet    ! tr ! --- ! tableau de travail pour terme instat           !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================
@@ -147,7 +151,7 @@ integer          iconvp, idiffp, ndircp, ireslp, nitmap
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
 integer          imucpp, idftnp, iswdyp
-integer          f_id
+integer          iflid , f_id, keydri, kimasf, kbmasf, iscdri
 
 double precision epsrgp, climgp, extrap, relaxp, blencp, epsilp
 double precision epsrsp
@@ -170,12 +174,33 @@ double precision, allocatable, dimension(:) :: xcpp
 double precision, allocatable, dimension(:) :: srcmas
 
 double precision, dimension(:,:), pointer :: xut
+double precision, dimension(:), pointer :: imasfl, bmasfl
 
 !===============================================================================
 
 !===============================================================================
 ! 1. Initialization
 !===============================================================================
+
+! Index of the field
+iflid = ivarfl(isca(iscal))
+
+! Key id for drift scalar
+call field_get_key_id("drift_scalar_model", keydri)
+
+! Key id for the inner mass flux id
+call field_get_key_id("inner_mass_flux_id", kimasf)
+! Id of the mass flux
+call field_get_key_int(iflid, kimasf, iflmas)
+! Pointer to the internal mass flux
+call field_get_val_s(iflmas, imasfl)
+
+! Key id for the boundary mass flux id
+call field_get_key_id("boundary_mass_flux_id", kbmasf)
+! Id of the mass flux
+call field_get_key_int(iflid, kbmasf, iflmab)
+! Pointer to the Boundary mass flux
+call field_get_val_s(iflmab, bmasfl)
 
 ! Allocate temporary arrays
 allocate(w1(ncelet))
@@ -211,8 +236,7 @@ else
   ipcroa = 0
 endif
 ipcvst = ipproc(ivisct)
-iflmas = ipprof(ifluma(ivar))
-iflmab = ipprob(ifluma(ivar))
+
 if (ivisls(iscal).gt.0) then
   ipcvsl = ipproc(ivisls(iscal))
 else
@@ -788,15 +812,16 @@ endif
 ! compute the convective flux
 !----------------------------
 
-if (iscadr(iscal).gt.0) then
+call field_get_key_int(iflid, keydri, iscdri)
 
+if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
  call driflu &
  !=========
  ( nvar   , nscal  ,                                              &
-   iscal  ,                                                       &
+   iflid  ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   imasfl , bmasfl ,                                              &
    rovsdt , smbrs  )
-
 endif
 
 !===============================================================================
@@ -840,7 +865,7 @@ call codits &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
    coefa(1,iclvar) , coefb(1,iclvar) ,                            &
    coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
-   propfa(1,iflmas), propfb(1,iflmab),                            &
+   imasfl , bmasfl ,                                              &
    viscf  , viscb  , viscce , viscf  , viscb  , viscce ,          &
    weighf , weighb ,                                              &
    rovsdt , smbrs  , rtp(1,ivar)     , dpvar  ,                   &

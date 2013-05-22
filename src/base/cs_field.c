@@ -203,6 +203,9 @@ static const char *_type_flag_name[] = {N_("intensive"),
  *============================================================================*/
 
 int
+cs_f_field_n_fields(void);
+
+int
 cs_f_field_id_by_name(const char *name);
 
 void
@@ -523,6 +526,19 @@ _cs_field_free_str(void)
  *============================================================================*/
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
+/*----------------------------------------------------------------------------
+ * Return the number of defined fields.
+ *
+ * return:
+ *   number of defined fields.
+ *----------------------------------------------------------------------------*/
+
+int
+cs_f_field_n_fields(void)
+{
+  return cs_field_n_fields();
+}
 
 /*----------------------------------------------------------------------------
  * Return the id of a defined field based on its name.
@@ -2632,6 +2648,12 @@ cs_field_define_keys_base(void)
   cs_field_define_key_int("log", 0, 0);
   cs_field_define_key_int("coupled", 0, CS_FIELD_VARIABLE);
   cs_field_define_key_int("moment_dt", -1, CS_FIELD_PROPERTY);
+
+  cs_field_define_key_int("drift_scalar_model", 0, 0);
+  cs_field_define_key_int("inner_mass_flux_id", 0, 0);
+  cs_field_define_key_int("boundary_mass_flux_id", 0, 0);
+  cs_field_define_key_int("scalar_id", 0, 0); //inverse of the isca(iscal) array
+  cs_field_define_key_int("scalar_class", 0, 0);
 }
 
 /*----------------------------------------------------------------------------*/

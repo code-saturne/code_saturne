@@ -133,6 +133,17 @@ module field
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function obtaining the number of fields
+
+    function cs_f_field_n_fields() result(id) &
+      bind(C, name='cs_f_field_n_fields')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int)                                           :: id
+    end function cs_f_field_n_fields
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function obtaining a field's id by its name
 
     function cs_f_field_id_by_name(name) result(id) &
@@ -282,13 +293,13 @@ module field
 
     ! Interface to C function obtaining a field key id by its name
 
-    function cs_field_key_id_try(name) result(id) &
+    function cs_f_field_key_id_try(name) result(id) &
       bind(C, name='cs_field_key_id_try')
       use, intrinsic :: iso_c_binding
       implicit none
       character(kind=c_char, len=1), dimension(*), intent(in)  :: name
       integer(c_int)                                           :: id
-    end function cs_field_key_id_try
+    end function cs_f_field_key_id_try
 
     !---------------------------------------------------------------------------
 
@@ -430,6 +441,27 @@ contains
     return
 
   end subroutine field_create
+
+  !=============================================================================
+
+  !> \brief  Return the number of defined fields.
+
+  !> \param[out] nfld           number of field
+
+  subroutine field_get_n_fields(nfld)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer, intent(out)         :: nfld
+
+    nfld = cs_f_field_n_fields()
+
+    return
+
+  end subroutine field_get_n_fields
 
   !=============================================================================
 
@@ -778,7 +810,7 @@ contains
 
     c_name = trim(name)//c_null_char
 
-    c_id = cs_field_key_id_try(c_name)
+    c_id = cs_f_field_key_id_try(c_name)
     id = c_id
 
     return

@@ -226,6 +226,10 @@ endif
 !        if = 0    module activated
 !        if = 1    with drying
 
+!     Activate the drift for the coal scalars
+!        i_coal_drift = 0  not activated (default)
+!        i_coal_drift = 1  activated
+
 if (ixmlpu.eq.0) then
 
   ippmod(iccoal) = -1
@@ -725,7 +729,7 @@ end subroutine usinsc
 subroutine usipsc &
 !================
 
- ( nscmax, nscaus, ixmlpu, nfecra, iscavr, iscadr, ivisls )
+ ( nscmax, nscaus, ixmlpu, nfecra, iscavr, ivisls )
 
 
 !===============================================================================
@@ -746,7 +750,6 @@ subroutine usipsc &
 !                  !    !     ! used (1: yes, 0: no)                           !
 ! nfecra           ! i  ! <-- ! Fortran unit number for standard output        !
 ! iscavr(nscmax)   ! ia ! <-- ! associated scalar number for variance scalars  !
-! iscadr(nscmax)   ! ia ! <-- ! is the scalar a drift scalar?                  !
 ! ivisls(nscmax)   ! ia ! <-> ! uniform scalar diffusivity flag                !
 !__________________!____!_____!________________________________________________!
 
@@ -759,10 +762,7 @@ subroutine usipsc &
 ! Module files
 !===============================================================================
 
-use optcal, only: DRIFT_SCALAR_THERMOPHORESIS, DRIFT_SCALAR_TURBOPHORESIS, &
-                  DRIFT_SCALAR_CENTRIFUGALFORCE
-
-! No other module should appear here
+! No module should appear here
 
 
 !===============================================================================
@@ -773,7 +773,6 @@ implicit none
 
 integer nscmax, nscaus, ixmlpu, nfecra
 integer iscavr(nscmax), ivisls(nscmax)
-integer iscadr(nscmax)
 
 ! Local variables
 
@@ -859,41 +858,6 @@ if (.false.) then
     endif
 
   enddo
-
-endif
-
-! --- Scalar with a drift (iscadr(iscal)>=1) or without drift
-!       (iscadr(iscal)=0, default option) for each USER scalar.
-!
-! --- Then, for each scalar with a drift, add a flag to specify if
-!     specific terms have to be taken into account:
-!       - thermophoresis terms:
-!       iscadr(iscal) = ior(iscadr(iscal), DRIFT_SCALAR_THERMOPHORESIS)
-!       - turbophoresis terms:
-!       iscadr(iscal) = ior(iscadr(iscal), DRIFT_SCALAR_TURBOPHORESIS)
-!       - centrifugal force terms:
-!       iscadr(iscal) = ior(iscadr(iscal), DRIFT_SCALAR_CENTRIFUGALFORCE)
-
-if (.false.) then
-
-  if (nscaus.ge.1) then
-
-    iscal = 1
-    iscadr(iscal) = 1
-
-    if (.false.) then
-      iscadr(iscal) = ior(iscadr(iscal), DRIFT_SCALAR_THERMOPHORESIS)
-    endif
-
-    if (.false.) then
-      iscadr(iscal) = ior(iscadr(iscal), DRIFT_SCALAR_TURBOPHORESIS)
-    endif
-
-    if (.false.) then
-      iscadr(iscal) = ior(iscadr(iscal), DRIFT_SCALAR_CENTRIFUGALFORCE)
-    endif
-
-  endif
 
 endif
 
@@ -2004,7 +1968,9 @@ implicit none
 ! Local variables
 
 logical       ilved, inoprv
-integer       fldid, keyvis, idim1, iflpst, itycat, ityloc
+integer       f_id, keyvis, idim1, iflpst, itycat, ityloc, iscdri, iscal
+integer       keydri
+
 
 !===============================================================================
 
@@ -2016,6 +1982,52 @@ if (1.eq.1) return
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
+
+! --- Scalar with a drift (key work "drift_scalar_model">0) or without drift
+!       ((key work "drift_scalar_model"=0, default option) for each USER scalar.
+!       - to specify that a scalar have a drift and need the drift computation:
+!       iscdri = ibset(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+!
+! --- Then, for each scalar with a drift, add a flag to specify if
+!     specific terms have to be taken into account:
+!       - thermophoresis terms:
+!       iscdri = ibset(iscdri, DRIFT_SCALAR_THERMOPHORESIS)
+!       - turbophoresis terms:
+!       iscdri = ibset(iscdri, DRIFT_SCALAR_TURBOPHORESIS)
+!       - centrifugal force terms:
+!       iscdri = ibset(iscdri, DRIFT_SCALAR_CENTRIFUGALFORCE)
+
+if (.false.) then
+
+  ! Key id for drift scalar
+  call field_get_key_id("drift_scalar_model", keydri)
+
+  if (nscaus.ge.1) then
+
+    iscdri = 1
+    iscdri = ibset(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+
+    if (.false.) then
+      iscdri = ibset(iscdri, DRIFT_SCALAR_THERMOPHORESIS)
+    endif
+
+    if (.false.) then
+      iscdri = ibset(iscdri, DRIFT_SCALAR_TURBOPHORESIS)
+    endif
+
+    if (.false.) then
+      iscdri = ibset(iscdri, DRIFT_SCALAR_CENTRIFUGALFORCE)
+    endif
+
+    iscal = 1
+    f_id = ivarfl(isca(iscal))
+
+    ! Set the key word "drift_scalar_model" into the field structure
+    call field_set_key_int(f_id, keydri, iscdri)
+
+  endif
+
+endif
 
 ! Example: force postprocessing of projection of some variables at boundary
 !          with no reconstruction.
@@ -2029,18 +2041,18 @@ if (.false.) then
 
   call field_get_key_id('post_vis', keyvis)
 
-  fldid = ivarfl(iu)
-  call field_get_key_int(fldid, keyvis, iflpst)
+  f_id = ivarfl(iu)
+  call field_get_key_int(f_id, keyvis, iflpst)
   if (iand(iflpst, 2) .eq. 0) then
     iflpst = ior(iflpst, 2)
-    call field_set_key_int(fldid, keyvis, iflpst)
+    call field_set_key_int(f_id, keyvis, iflpst)
   endif
 
-  fldid = ivarfl(ipr)
-  call field_get_key_int(fldid, keyvis, iflpst)
+  f_id = ivarfl(ipr)
+  call field_get_key_int(f_id, keyvis, iflpst)
   if (iand(iflpst, 2) .eq. 0) then
     iflpst = ior(iflpst, 2)
-    call field_set_key_int(fldid, keyvis, iflpst)
+    call field_set_key_int(f_id, keyvis, iflpst)
   endif
 
 endif
@@ -2063,14 +2075,14 @@ if (.false.) then
   ilved = .true. ! interleaved
   inoprv = .false. ! no previous time step values needed
 
-  call field_get_id('tplus', fldid)
-  if (fldid.lt.0) then
-    call field_create('tplus', itycat, ityloc, idim1, ilved, inoprv, fldid)
+  call field_get_id('tplus', f_id)
+  if (f_id.lt.0) then
+    call field_create('tplus', itycat, ityloc, idim1, ilved, inoprv, f_id)
   endif
 
-  call field_get_id('tstar', fldid)
-  if (fldid.lt.0) then
-    call field_create('tstar', itycat, ityloc, idim1, ilved, inoprv, fldid)
+  call field_get_id('tstar', f_id)
+  if (f_id.lt.0) then
+    call field_create('tstar', itycat, ityloc, idim1, ilved, inoprv, f_id)
   endif
 
 endif
