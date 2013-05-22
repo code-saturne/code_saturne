@@ -418,7 +418,7 @@ enddo
 init   = 0
 inc    = 1
 iflmb0 = 0
-itypfl = 1
+itypfl = 0 ! drift has already been multiplied by rho
 nswrgp = nswrgr(ivar)
 imligp = imligr(ivar)
 iwarnp = iwarni(ivar)
