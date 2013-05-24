@@ -427,8 +427,10 @@ class OutputVolumicVariablesModel(Model):
         self._updateBoundariesNodes(old_label, new_label)
 
         for node in self.case.xmlGetNodeList('formula'):
-            f = node.xmlGetTextNode().replace(old_label, new_label)
-            node.xmlSetTextNode(f)
+            f = node.xmlGetTextNode()
+            if f:
+                f.replace(old_label, new_label)
+                node.xmlSetTextNode(f)
 
 
     def _updateBoundariesNodes(self, old_label, new_label):
