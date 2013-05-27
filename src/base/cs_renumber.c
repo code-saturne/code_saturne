@@ -1987,10 +1987,12 @@ _renum_b_faces_no_share_cell_across_thread(cs_mesh_t   *mesh,
       cs_lnum_t f_id = renum_b[end_id - 1] - 1;
       cs_lnum_t c_num = mesh->b_face_cells[f_id];
       f_id = renum_b[end_id] - 1;
-      while (   end_id < mesh->n_b_faces
-             && mesh->b_face_cells[f_id] == c_num) {
+      while (mesh->b_face_cells[f_id] == c_num) {
         end_id += 1;
-        f_id = renum_b[end_id] - 1;
+        if (end_id < mesh->n_b_faces)
+          f_id = renum_b[end_id] - 1;
+        else
+          break;
       }
     }
 
