@@ -41,29 +41,6 @@
      <height>20</height>
     </rect>
    </property>
-   <widget class="QMenu" name="menu_File">
-    <property name="title">
-     <string>&amp;File</string>
-    </property>
-    <widget class="QMenu" name="menuRecent">
-     <property name="title">
-      <string>Recent file</string>
-     </property>
-     <property name="icon">
-      <iconset resource="resource_base.qrc">
-       <normaloff>:/icons/22x22/format-justify-fill.png</normaloff>:/icons/22x22/format-justify-fill.png</iconset>
-     </property>
-    </widget>
-    <addaction name="fileNewAction"/>
-    <addaction name="fileOpenAction"/>
-    <addaction name="menuRecent"/>
-    <addaction name="separator"/>
-    <addaction name="fileSaveAction"/>
-    <addaction name="fileSaveAsAction"/>
-    <addaction name="separator"/>
-    <addaction name="fileCloseAction"/>
-    <addaction name="fileQuitAction"/>
-   </widget>
    <widget class="QMenu" name="menuO_ptions">
     <property name="title">
      <string>&amp;Tools</string>
@@ -110,6 +87,30 @@
     <addaction name="separator"/>
     <addaction name="backgroundColorAction"/>
     <addaction name="actionFont"/>
+   </widget>
+   <widget class="QMenu" name="menu_File">
+    <property name="title">
+     <string>&amp;File</string>
+    </property>
+    <widget class="QMenu" name="menuRecent">
+     <property name="title">
+      <string>Recent file</string>
+     </property>
+     <property name="icon">
+      <iconset resource="resource_base.qrc">
+       <normaloff>:/icons/22x22/format-justify-fill.png</normaloff>:/icons/22x22/format-justify-fill.png</iconset>
+     </property>
+    </widget>
+    <addaction name="caseNewAction"/>
+    <addaction name="fileNewAction"/>
+    <addaction name="fileOpenAction"/>
+    <addaction name="menuRecent"/>
+    <addaction name="separator"/>
+    <addaction name="fileSaveAction"/>
+    <addaction name="fileSaveAsAction"/>
+    <addaction name="separator"/>
+    <addaction name="fileCloseAction"/>
+    <addaction name="fileQuitAction"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Edit"/>
@@ -490,6 +491,21 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+Z</string>
+   </property>
+  </action>
+  <action name="caseNewAction">
+   <property name="icon">
+    <iconset resource="resource_base.qrc">
+     <normaloff>:/icons/22x22/document-new.png</normaloff>:/icons/22x22/document-new.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;New case</string>
+   </property>
+   <property name="toolTip">
+    <string>New case</string>
+   </property>
+   <property name="statusTip">
+    <string>Open a new case.</string>
    </property>
   </action>
  </widget>

@@ -128,44 +128,58 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
         self.model.setFilter(QDir.Dirs)
 
         self.listViewDirectory.setModel(self.model)
-        self.listViewFolder.setModel(self.model)
-        self.listViewFolder.setSelectionMode(QAbstractItemView.NoSelection)
+        self.modelFolder = QStringListModel()
+        self.listViewFolder.setModel(self.modelFolder)
 
         self.listViewDirectory.setRootIndex(self.model.index(self.currentPath))
-        self.listViewFolder.setRootIndex(self.model.index(self.currentPath))
 
         self.lineEditCurrentPath.setText(QString(str(self.currentPath)))
 
-        self.connect(self.listViewDirectory,   SIGNAL("clicked(QModelIndex)"),         self.setRootIndex)
         self.connect(self.listViewDirectory,   SIGNAL("doubleClicked(QModelIndex)"),   self.slotParentDirectory)
+        self.connect(self.listViewFolder,      SIGNAL("clicked(QModelIndex)"),         self.slotSelectFolder)
         self.connect(self.lineEditCurrentPath, SIGNAL("textChanged(const QString &)"), self.slotChangeDirectory)
         self.connect(self.lineEditCaseName,    SIGNAL("textChanged(const QString &)"), self.slotChangeName)
         self.connect(self.checkBoxPost,        SIGNAL("clicked()"),                    self.slotPostStatus)
         self.connect(self.checkBoxMesh,        SIGNAL("clicked()"),                    self.slotMeshStatus)
         self.connect(self.checkBoxCopyFrom,    SIGNAL("clicked()"),                    self.slotCopyFromStatus)
         self.connect(self.pushButtonCopyFrom,  SIGNAL("clicked()"),                    self.slotCopyFromCase)
-        self.connect(self.pushButtonCreate,    SIGNAL("clicked()"),                    self.slotCreateCase)
 
 
-    def setRootIndex(self, index):
+    def slotParentDirectory(self, index):
         if index.row() == 1 and index.column() == 0:
             # ".." change directory
             self.currentPath = os.path.abspath(os.path.join(self.currentPath, ".."))
             self.model.setRootPath(self.currentPath)
             self.listViewDirectory.setRootIndex(self.model.index(self.currentPath))
-            self.listViewFolder.setRootIndex(self.model.index(self.currentPath))
-        elif index != self.listViewFolder.rootIndex() and self.model.fileInfo(index).isDir():
-            self.listViewFolder.setRootIndex(index)
-        self.lineEditCurrentPath.setText(QString(str(self.currentPath)))
-
-
-    def slotParentDirectory(self, index):
-        if index.row() > 1:
+        elif index.row() > 1:
             self.currentPath = self.model.filePath(index)
             self.model.setRootPath(self.currentPath)
             self.listViewDirectory.setRootIndex(self.model.index(self.currentPath))
-            self.listViewFolder.setRootIndex(self.model.index(self.currentPath))
         self.lineEditCurrentPath.setText(QString(str(self.currentPath)))
+
+        # construct list of study in current directory
+        cpath = QDir(str(self.currentPath))
+        cpath.setFilter(QDir.Dirs | QDir.NoSymLinks)
+        lst = []
+        self.modelFolder.setStringList(QStringList())
+        for name in cpath.entryList():
+            stud = True
+            base = os.path.abspath(os.path.join(self.currentPath, str(name)))
+            for rep in ['DATA',
+                        'RESU',
+                        'SRC',
+                        'SCRIPTS']:
+                directory = os.path.abspath(os.path.join(base, rep))
+                if not(os.path.isdir(directory)):
+                    stud = False
+            if stud:
+                lst.append(name)
+        self.modelFolder.setStringList(lst)
+
+
+    def slotSelectFolder(self, index):
+        if index.row() > 1:
+            self.lineEditCaseName.setText(QString(self.model.fileName(index)))
 
 
     @pyqtSignature("const QString &")
@@ -177,7 +191,6 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
             self.currentPath = str(text)
             self.model.setRootPath(self.currentPath)
             self.listViewDirectory.setRootIndex(self.model.index(self.currentPath))
-            self.listViewFolder.setRootIndex(self.model.index(self.currentPath))
 
 
     @pyqtSignature("const QString &")
@@ -236,7 +249,10 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
 
 
     @pyqtSignature("")
-    def slotCreateCase(self):
+    def accept(self):
+        """
+        Method called when user clicks 'OK'
+        """
         if self.caseName == None or self.caseName == "":
             msg = "name case not defined"
             sys.stderr.write(msg + '\n')
@@ -269,16 +285,10 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
                                             "DATA")
             self.model.setRootPath(self.currentPath)
             self.listViewDirectory.setRootIndex(self.model.index(self.currentPath))
-            self.listViewFolder.setRootIndex(self.model.index(self.currentPath))
             self.lineEditCurrentPath.setText(QString(str(self.currentPath)))
 
-
-    def accept(self):
-        """
-        Method called when user clicks 'OK'
-        """
-        os.chdir(self.currentPath)
-        QDialog.accept(self)
+            os.chdir(self.currentPath)
+            QDialog.accept(self)
 
 
     def reject(self):
@@ -345,6 +355,7 @@ class MainView(object):
         # connections
 
         self.connect(self.fileOpenAction,   SIGNAL("triggered()"),   self.fileOpen)
+        self.connect(self.caseNewAction,    SIGNAL("triggered()"),   self.caseNew)
         self.connect(self.fileNewAction,    SIGNAL("triggered()"),   self.fileNew)
         self.connect(self.menuRecent,       SIGNAL("aboutToShow()"), self.updateRecentFileMenu)
         self.connect(self.fileSaveAction,   SIGNAL("triggered()"),   self.fileSave)
@@ -423,7 +434,7 @@ class MainView(object):
 
         if self.cmd_case == "new case":
             MainView.NextId += 1
-            self.fileNew()
+            self.caseNew()
             self.dockWidgetBrowserDisplay(True)
 
         # 2) existing case
@@ -594,6 +605,34 @@ class MainView(object):
 
     @pyqtSignature("")
     def fileNew(self):
+        """
+        Public slot.
+
+        create new Code_Saturne case
+        """
+        if not hasattr(self, 'case'):
+            self.case = XMLengine.Case(package=self.package)
+            self.case.root()['version'] = self.XML_DOC_VERSION
+            self.initCase()
+            title = self.tr("New parameters set") + \
+                     " - " + self.tr(self.package.code_name) + self.tr(" GUI") \
+                     + " - " + self.package.version
+            self.setWindowTitle(title)
+
+            self.Browser.configureTree(self.case)
+            self.dockWidgetBrowserDisplay(True)
+
+            self.case['salome'] = self.salome
+            self.scrollArea.setWidget(self.displayFisrtPage())
+            self.case['saved'] = "yes"
+
+            self.connect(self.case, SIGNAL("undo"), self.slotUndoRedoView)
+        else:
+            MainView(cmd_package=self.package, cmd_case="new case").show()
+
+
+    @pyqtSignature("")
+    def caseNew(self):
         """
         Public slot.
 
