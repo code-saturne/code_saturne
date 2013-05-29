@@ -110,6 +110,7 @@ CS_PROCF (cfiltr, CFILTR)(cs_real_t  var[],
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_int_t  n_cells = mesh->n_cells;
+  const cs_int_t  n_cells_ext = mesh->n_cells_with_ghosts;
   const cs_int_t  *cell_cells_idx = mesh->cell_cells_idx;
   const cs_int_t  *cell_cells_lst = mesh->cell_cells_lst;
   const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
@@ -123,7 +124,7 @@ CS_PROCF (cfiltr, CFILTR)(cs_real_t  var[],
 
   /* Allocate and initialize working buffers */
 
-  for (i = 0; i < n_cells; i++) {
+  for (i = 0; i < n_cells_ext; i++) {
     wbuf1[i] = 0;
     wbuf2[i] = 0;
   }
