@@ -320,8 +320,12 @@ do iel = 1, ncel
   prodw(iel) = visct*s2kw(iel)                    &
              - d2s3*rho*xk*divukw(iel)
 
-  tinstw(iel) = tinstw(iel)                                                    &
-              + max(d2s3*rho*volume(iel)*(rho*xk/(visct*xw))*divukw(iel), 0.d0)
+  ! The negative part is implicited
+  xxf1   = xf1(iel)
+  xgamma = xxf1*ckwgm1 + (1.d0-xxf1)*ckwgm2
+  tinstw(iel) = tinstw(iel)                                         &
+              + max( d2s3*rho*volume(iel)                           &
+                   *(rho*xgamma*xk/(visct*xw))*divukw(iel), 0.d0)
 
   ! Take the min between prodw and the low Reynold one
   if (prodw(iel).gt.ckwc1*rho*xeps) then
@@ -499,7 +503,7 @@ endif
 ! 8. Finalization of explicit and implicit source terms
 
 !      Les termes sont stockes dans     smbrk, smbrw
-!      En sortie de l'etape on conserve smbrk,smbrw,gdkgdw-4
+!      En sortie de l'etape on conserve smbrk,smbrw,gdkgdw
 !===============================================================================
 
 do iel = 1, ncel
@@ -523,6 +527,8 @@ do iel = 1, ncel
                            + 2.d0*rho/xw*(1.d0-xxf1)/ckwsw2*gdkgdw(iel)  &
                            )
 
+  tinstw(iel) = tinstw(iel) + volume(iel)*max(-2.d0*rho/xw**2*(1.d0-xxf1) &
+                                              /ckwsw2*gdkgdw(iel), 0.d0)
 enddo
 
 ! If the solving of k-omega is uncoupled, negative source terms are implicited
@@ -533,7 +539,7 @@ if (ikecou.eq.0) then
     xbeta = xxf1*ckwbt1 + (1.d0-xxf1)*ckwbt2
     rho = propce(iel,ipcrom)
     tinstk(iel) = tinstk(iel) + volume(iel)*cmu*rho*xw
-    tinstw(iel) = tinstw(iel) + volume(iel)*xbeta*rho*xw
+    tinstw(iel) = tinstw(iel) + 2.d0*volume(iel)*xbeta*rho*xw
   enddo
 endif
 
