@@ -89,7 +89,7 @@ in the momentum equation.
 
 In expression \eqref{eq:spadis:green_relation}, face values of the field $\varia$ appear. They are defined as:
 \begin{equation}\label{eq:spadis:variaf_def}
-\varia_\face \equiv \int_{\face} \varia \dd S,
+\varia_\face \equiv \dfrac{1}{\norm{\vect{S}}_\face} \int_{\face} \varia \dd S,
 \end{equation}
 %
 so that the relationship \eqref{eq:spadis:green_relation} is exact. As the field $\varia$ is linear over the face $\face$,  
@@ -370,15 +370,15 @@ boundary faces of the computational domain $\Omega$ defined by Equation~\eqref{e
 Note that $D_\ib \left( K_\fib , \, \varia \right)$ makes appear the \textbf{diffusion} boundary conditions of the field $\varia$
  and are described in detail in \chaptername~\ref{chapter:bndcnd}. The value of flux $D_\ib $ of the $\varia_\fib$ is expressed as follows:
  %
-\begin{equation}%TODO use recall
-D_\ib  \equiv A_\ib^f + B_\ib^f \varia_\centip.
+\begin{equation}\label{eq:spadis:boundary_flux}%TODO use recall
+\dfrac{D_\ib}{\norm{\vect{S}}_\fib}  \equiv A_\ib^f + B_\ib^f \varia_\centip.
 \end{equation}
 
 The value of the diffusive flux $D_\ij $ depends on the \emph{reconstruction} of the field $\varia$ and also on the interpolation at the face  of the diffusivity $K$ from the cell values. Two interpolations are available:
 %
 \begin{enumerate}[ label=\roman{*}/, ref=(\roman{*})]
 \item a \emph{harmonic} interpolation which reads:
-\begin{equation}
+\begin{equation}\label{eq:spadis:harmonic_viscosity}
 K_\fib^{harmonic} \equiv  \dfrac{K_\celli K_\cellj}{\alpha_\ij K_\celli + \left( 1 - \alpha_\ij\right)K_\cellj}
 \end{equation}
 \item an \emph{arithmetic} interpolation which reads:
