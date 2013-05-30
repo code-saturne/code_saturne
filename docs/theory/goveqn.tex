@@ -282,13 +282,13 @@ Note that the viscous part $\mu_T\deviator{\overline{\tens{S}}}$ of the Reynolds
 stress tensor $\mu_l\deviator{\overline{\tens{S}}}$ so that the momentum equation for the mean velocity is similar to the one of a laminar
 flow with a variable viscosity $\mu = \mu_l +\mu_T$. 
  Five \emph{EVM} are available in \CS:
-$k-\varepsilon$, $k-\varepsilon$ with Linear Production (\emph{LP}), $k-\omega$ \emph{SST}, Spalart Allmaras, and an Elliptic Blending model (\emph{EB-EVM}) $Bl-v^2-k$.
+$k-\varepsilon$, $k-\varepsilon$ with Linear Production (\emph{LP}), $k-\omega$ \emph{SST}, Spalart Allmaras, and an Elliptic Blending model (\emph{EB-EVM}) $Bl-v^2-k$ (\cite{Billard:2012}).
 
 \item Differential Reynolds Stress Models (\emph{DRSM}) which solve
 a transport equation on the components of the Reynolds stress tensor $\tens{R}$ 
 during the simulation, and are readily available for the momentum
-equation \eqref{eq:reynolds}. Three \emph{DRSM} models are available in \CS: $R_{ij}-\varepsilon$ proposed by Launder Reece and Rodi (\emph{LRR}) in \cite{launder:},
-$R_{ij}-\varepsilon$ proposed by Spezial, Sarkar and Gatski (\emph{SSG}) in \cite{spezial:} and an Elliptic Blending version \emph{EB-RSM} (see \cite{}).
+equation \eqref{eq:reynolds}. Three \emph{DRSM} models are available in \CS: $R_{ij}-\varepsilon$ proposed by Launder Reece and Rodi (\emph{LRR}) in \cite{Launder:1975},
+$R_{ij}-\varepsilon$ proposed by Speziale, Sarkar and Gatski (\emph{SSG}) in \cite{Speziale:1991} and an Elliptic Blending version \emph{EB-RSM} (see \cite{Manceau:2002}).
 %
 
 \end{enumerate}
