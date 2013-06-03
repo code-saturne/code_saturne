@@ -1214,7 +1214,7 @@ _get_absorption_coefficient(void) /*ici un char*/
   double   result;
 
   path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path,2,"thermophysical_models", "solid_fuels");
+  cs_xpath_add_elements(&path,2,"thermophysical_models", "radiative_transfer");
   cs_xpath_add_element(&path,"absorption_coefficient");
   cs_xpath_add_function_text(&path);
 
