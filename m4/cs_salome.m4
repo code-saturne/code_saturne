@@ -51,69 +51,48 @@ AC_ARG_WITH(salome,
 
 if test "x$with_salome" != "xno" ; then
 
-  # Environment if the SALOMEENV or SALOMEPRE variables were defined
-  # (for compatibility with Code_Saturne 2.1.1 configure options)
-
-  if test "x$SALOMEENV" != "x" -o "x$SALOMEPRE" != "x" ; then
-
-    # If only one of the 2 variables is defined, define the other
-    if test -z "$SALOMEENV"; then
-      SALOMEENV=$(find $with_salome -maxdepth 1 -name envSalome*.sh 2>/dev/null)
+  # Recommended environment file for salome-platform.org installer builds
+  if test "x$SALOMEENVCMD" = "x"; then
+    salome_env=$(find $with_salome -maxdepth 2 -name salome.sh | tail -1 2>/dev/null)
+    if test "x$salome_env" != "x"; then
+      SALOMEENVCMD=". $salome_env"
     fi
-    if test -z "$SALOMEPRE"; then
-      SALOMEPRE=$(find $with_salome -maxdepth 1 -name prerequis*.sh 2>/dev/null)
-    fi
+  fi
 
-    SALOMEENVCMD=". $SALOMEPRE ; . $SALOMEENV"
-
-  # Environment if the path given is that of the Salome install
-
-  else
-
-    # Recommended environment file for salome-platform.org installer builds
-    if test "x$SALOMEENVCMD" = "x"; then
-      salome_env=$(find $with_salome -maxdepth 2 -name salome.sh | tail -1 2>/dev/null)
-      if test "x$salome_env" != "x"; then
-        SALOMEENVCMD=". $salome_env"
+  # Environment for EDF or "universal binaries" type build for Salome 6.4 to 7.0
+  # Note that ROOT_SALOME is required but not exported in all cases.
+  if test "x$SALOMEENVCMD" = "x"; then
+    salome_env=$(find $with_salome -maxdepth 1 -name salome_modules*.sh 2>/dev/null)
+    if test "x$salome_env" != "x"; then
+      salome_pre=$(find $with_salome -maxdepth 1 -name salome_prerequisites_*appli.sh 2>/dev/null)
+      if test "x$salome_pre" != "x"; then
+        SALOMEENVCMD=". $salome_pre; export ROOT_SALOME=$with_salome; . $salome_env"
+        SALOMEPRE="$salome_pre"
       fi
     fi
+  fi
 
-    # Environment for EDF or "universal binaries" type build for Salome 6.4 to 7.0
-    # Note that ROOT_SALOME is required but not exported in all cases.
-    if test "x$SALOMEENVCMD" = "x"; then
-      salome_env=$(find $with_salome -maxdepth 1 -name salome_modules*.sh 2>/dev/null)
-      if test "x$salome_env" != "x"; then
-        salome_pre=$(find $with_salome -maxdepth 1 -name salome_prerequisites_*appli.sh 2>/dev/null)
-        if test "x$salome_pre" != "x"; then
-          SALOMEENVCMD=". $salome_pre; export ROOT_SALOME=$with_salome; . $salome_env"
-          SALOMEPRE="$salome_pre"
-        fi
+  # Environment file for EDF builds for Salome 6.3
+  if test "x$SALOMEENVCMD" = "x"; then
+    salome_env=$(find $with_salome -maxdepth 1 -name envSalome*.sh 2>/dev/null)
+    if test "x$salome_env" != "x"; then
+      salome_pre=$(find $with_salome -maxdepth 1 -name prerequis*.sh 2>/dev/null)
+      if test "x$salome_pre" != "x"; then
+        SALOMEENVCMD=". $salome_pre;. $salome_env"
+        SALOMEPRE="$salome_pre"
       fi
     fi
-
-    # Environment file for EDF builds for Salome 6.3
-    if test "x$SALOMEENVCMD" = "x"; then
-      salome_env=$(find $with_salome -maxdepth 1 -name envSalome*.sh 2>/dev/null)
-      if test "x$salome_env" != "x"; then
-        salome_pre=$(find $with_salome -maxdepth 1 -name prerequis*.sh 2>/dev/null)
-        if test "x$salome_pre" != "x"; then
-          SALOMEENVCMD=". $salome_pre;. $salome_env"
-          SALOMEPRE="$salome_pre"
-        fi
-      fi
-
-    fi
-
-    if test "x$SALOMERUN" = "x"; then
-      if test -f "$ROOT_SALOME/runSalome"; then
-        SALOMERUN="$ROOT_SALOME/runSalome"
-      fi
-    fi
-
-    unset salome_pre
-    unset salome_env
 
   fi
+
+  if test "x$SALOMERUN" = "x"; then
+    if test -f "$ROOT_SALOME/runSalome"; then
+      SALOMERUN="$ROOT_SALOME/runSalome"
+    fi
+  fi
+
+  unset salome_pre
+  unset salome_env
 
   KERNEL_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $KERNEL_ROOT_DIR)
   GUI_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $GUI_ROOT_DIR)
