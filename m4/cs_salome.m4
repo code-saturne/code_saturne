@@ -127,6 +127,9 @@ if test "x$with_salome" != "xno" ; then
   if test x"$salome_pre_rootdir" = x; then
     salome_pre_rootdir=$(eval $SALOMEENVCMD ; echo $PREREQUIS_ROOT_DIR)
   fi
+  if test x"$salome_pre_rootdir" = x; then
+    salome_pre_rootdir=$(eval $SALOMEENVCMD ; echo $INST_ROOT)
+  fi
 
   # Make sure omniidl will correcly work by forcing PYTHONPATH
   OMNIIDLPYTHONPATH=$(for d in `find $salome_pre_rootdir -name omniidl_be`
