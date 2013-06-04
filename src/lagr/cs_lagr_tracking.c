@@ -4634,6 +4634,9 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_n_particles,
 void
 cs_lagr_destroy(void)
 {
+  if (_particle_set == NULL)
+    return;
+
   /* Destroy particle sets */
 
   _prev_particle_set = _destroy_particle_set(_prev_particle_set);

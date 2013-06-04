@@ -90,6 +90,7 @@
 #include "cs_gui_particles.h"
 #include "cs_io.h"
 #include "cs_join.h"
+#include "cs_lagr_tracking.h"
 #include "cs_log.h"
 #include "cs_mesh.h"
 #include "cs_mesh_coherency.h"
@@ -625,6 +626,10 @@ cs_run(void)
 
   cs_field_destroy_all();
   cs_field_destroy_all_keys();
+
+  /* Free Lagrangian related structures */
+
+  cs_lagr_destroy();
 
   /* Free main mesh after printing some statistics */
 
