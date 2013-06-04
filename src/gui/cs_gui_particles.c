@@ -920,17 +920,16 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
   char *path1 = NULL;
 
   attr = _get_attr("model", 1, "lagrangian");
-  if (attr == NULL || cs_gui_strcmp(attr, "off"))
+  if (attr == NULL || cs_gui_strcmp(attr, "off")) {
     *iilagr = 0;
-  BFT_FREE(attr);
-
-  if (*iilagr == 0) {
+    BFT_FREE(attr);
 #if _XML_DEBUG_
     bft_printf("==>UILAG1\n");
     bft_printf("--iilagr = %i\n", *iilagr);
 #endif
     return;
   }
+  BFT_FREE(attr);
 
   /* Global settings */
 
