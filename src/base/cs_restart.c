@@ -2600,23 +2600,13 @@ cs_restart_read_section(cs_restart_t           *restart,
     }
   }
   else if (header.elt_type == CS_UINT32 || header.elt_type == CS_UINT64) {
-    if (val_type == CS_TYPE_cs_gnum_t)
-      cs_io_set_cs_gnum(&header, restart->fh);
-    else if (val_type == CS_TYPE_cs_int_t)
-      cs_io_set_cs_lnum(&header, restart->fh);
-    else {
+    if (val_type != CS_TYPE_cs_gnum_t && val_type != CS_TYPE_cs_int_t) {
       bft_printf(_("  %s: section \"%s\" is not of global number type.\n"),
                  restart->name, sec_name);
       return CS_RESTART_ERR_VAL_TYPE;
     }
   }
   else if (header.elt_type == CS_FLOAT || header.elt_type == CS_DOUBLE) {
-    if (sizeof(cs_real_t) != cs_datatype_size[header.elt_type]) {
-      if (sizeof(cs_real_t) == cs_datatype_size[CS_FLOAT])
-        header.elt_type = CS_FLOAT;
-      else
-        header.elt_type = CS_DOUBLE;
-    }
     if (val_type != CS_TYPE_cs_real_t) {
       bft_printf(_("  %s: section \"%s\" is not of floating-point type.\n"),
                  restart->name, sec_name);
@@ -2627,6 +2617,23 @@ cs_restart_read_section(cs_restart_t           *restart,
   /* Now set position in file to read data */
 
   cs_io_set_indexed_position(restart->fh, &header, rec_id);
+
+  /* Now define conversion info */
+
+  if (header.elt_type == CS_UINT32 || header.elt_type == CS_UINT64) {
+    if (val_type == CS_TYPE_cs_gnum_t)
+      cs_io_set_cs_gnum(&header, restart->fh);
+    else if (val_type == CS_TYPE_cs_int_t)
+      cs_io_set_cs_lnum(&header, restart->fh);
+  }
+  else if (header.elt_type == CS_FLOAT || header.elt_type == CS_DOUBLE) {
+    if (sizeof(cs_real_t) != cs_datatype_size[header.elt_type]) {
+      if (sizeof(cs_real_t) == cs_datatype_size[CS_FLOAT])
+        header.elt_type = CS_FLOAT;
+      else
+        header.elt_type = CS_DOUBLE;
+    }
+  }
 
   /* Section contents */
   /*------------------*/
