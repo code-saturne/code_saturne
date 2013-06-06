@@ -2023,9 +2023,10 @@ endif
 '@    La valeur minimale de yplus doit etre inferieure a la   ',/,&
 '@      valeur limite YPLULI = ',E14.5                         ,/,&
 '@                                                            ',/,&
-'@    Observer la repartition de yplus en paroi (sous Ensight ',/,&
-'@      par exemple) pour determiner dans quelle mesure la    ',/,&
-'@      qualite des resultats est susceptible d etre affectee.')
+'@    Observer la repartition de yplus en paroi (sous EnSight ',/,&
+'@      ou ParaView par exemple) pour determiner dans quelle  ',/,&
+'@      mesure la qualite des resultats est susceptible d etre',/,&
+'@      affectee.')
 
  2030 format(                                                     &
 '@                                                            ',/,&
@@ -2044,9 +2045,10 @@ endif
 '@    La valeur minimale de yplus doit etre inferieure a la   ',/,&
 '@      valeur limite YPLULI = ',E14.5                         ,/,&
 '@                                                            ',/,&
-'@    Observer la repartition de yplus en paroi (sous Ensight ',/,&
-'@      par exemple) pour determiner dans quelle mesure la    ',/,&
-'@      qualite des resultats est susceptible d etre affectee.')
+'@    Observer la repartition de yplus en paroi (sous EnSight ',/,&
+'@      ou ParaView par exemple) pour determiner dans quelle  ',/,&
+'@      mesure la qualite des resultats est susceptible d etre',/,&
+'@      affectee.')
 
  2040 format(                                                     &
 '@                                                            ',/,&
@@ -2064,9 +2066,10 @@ endif
 '@    La valeur minimale de yplus doit etre superieure a la   ',/,&
 '@      valeur limite YPLULI = ',E14.5                         ,/,&
 '@                                                            ',/,&
-'@    Observer la repartition de yplus en paroi (sous Ensight ',/,&
-'@      par exemple) pour determiner dans quelle mesure la    ',/,&
-'@      qualite des resultats est susceptible d etre affectee.')
+'@    Observer la repartition de yplus en paroi (sous EnSight ',/,&
+'@      ou ParaView par exemple) pour determiner dans quelle  ',/,&
+'@      mesure la qualite des resultats est susceptible d etre',/,&
+'@      affectee.')
  2050 format(                                                     &
 '@                                                            ',/,&
 '@    Ce message ne s''affiche qu''aux deux premieres         ',/,&
@@ -2140,8 +2143,8 @@ endif
 '@      limit value YPLULI = ',E14.5                           ,/,&
 '@                                                            ',/,&
 '@    Have a look at the distribution of yplus at the wall    ',/,&
-'@      (with EnSight for example) to conclude on the way     ',/,&
-'@      the results quality might be affected.                ')
+'@      (with EnSight or ParaView for example) to conclude on ',/,&
+'@      the way the results quality might be affected.        ')
 
  2030 format(                                                     &
 '@                                                            ',/,&
@@ -2161,8 +2164,8 @@ endif
 '@      limit value YPLULI = ',E14.5                           ,/,&
 '@                                                            ',/,&
 '@    Have a look at the distribution of yplus at the wall    ',/,&
-'@      (with EnSight for example) to conclude on the way     ',/,&
-'@      the results quality might be affected.                ')
+'@      (with EnSight or ParaView for example) to conclude on ',/,&
+'@      the way the results quality might be affected.        ')
 
  2040 format(                                                     &
 '@                                                            ',/,&
@@ -2181,8 +2184,8 @@ endif
 '@      limit value YPLULI = ',E14.5                           ,/,&
 '@                                                            ',/,&
 '@    Have a look at the distribution of yplus at the wall    ',/,&
-'@      (with EnSight for example) to conclude on the way     ',/,&
-'@      the results quality might be affected.                ')
+'@      (with EnSight or ParaView for example) to conclude on ',/,&
+'@      the way the results quality might be affected.        ')
  2050 format(                                                     &
 '@                                                            ',/,&
 '@    This warning is only printed at the first two           ',/,&
