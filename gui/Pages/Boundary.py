@@ -246,9 +246,11 @@ class InletBoundary(Boundary):
                 self.getScalarValue(label,'dirichlet')
 
         from Pages.CoalCombustionModel import CoalCombustionModel
-        if CoalCombustionModel(self.case).getCoalCombustionModel() =="off":
+        from Pages.CompressibleModel import CompressibleModel
+        if CoalCombustionModel(self.case).getCoalCombustionModel() == "off":
             self.boundNode.xmlRemoveChild('coal')
-            self.boundNode.xmlRemoveChild('temperature')
+            if CompressibleModel(self.case).getCompressibleModel() == "off":
+                self.boundNode.xmlRemoveChild('temperature')
 
 
     def __defaultValues(self):
