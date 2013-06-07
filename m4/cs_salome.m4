@@ -72,6 +72,20 @@ if test "x$with_salome" != "xno" ; then
     fi
   fi
 
+  # Environment file for EDF builds using YAMM
+  if test "x$SALOMEENVCMD" = "x"; then
+    if test -f "$with_salome/salome_modules.sh" ; then
+      salome_env="$with_salome/salome_modules.sh"
+    fi
+    if test "x$salome_env" != "x" -a -f "$with_salome/salome_prerequis.sh" ; then
+      salome_pre="$with_salome/salome_prerequis.sh"
+      if test "x$salome_pre" != "x"; then
+        SALOMEENVCMD=". $salome_pre;. $salome_env"
+        SALOMEPRE="$salome_pre"
+      fi
+    fi
+  fi
+
   # Environment file for EDF builds for Salome 6.3
   if test "x$SALOMEENVCMD" = "x"; then
     salome_env=$(find $with_salome -maxdepth 1 -name envSalome*.sh 2>/dev/null)
@@ -101,32 +115,21 @@ if test "x$with_salome" != "xno" ; then
 
   OMNIIDL=$(eval $SALOMEENVCMD ; which omniidl)
 
-  # SALOME prequisites root directory environment variable
-  salome_pre_rootdir=$(eval $SALOMEENVCMD ; echo $PREREQUISITES_ROOT_DIR)
-  if test x"$salome_pre_rootdir" = x; then
-    salome_pre_rootdir=$(eval $SALOMEENVCMD ; echo $PREREQUIS_ROOT_DIR)
-  fi
-  if test x"$salome_pre_rootdir" = x; then
-    salome_pre_rootdir=$(eval $SALOMEENVCMD ; echo $INST_ROOT)
-  fi
+  # Make sure omniidl will work by forcing PYTHONPATH
+  # Note that we must ensure we are using SALOME's python here, so use "python" with the sourced
+  # environment and PATH ratther than $PYTHON here.
 
-  # Make sure omniidl will correcly work by forcing PYTHONPATH
-  OMNIIDLPYTHONPATH=$(for d in `find $salome_pre_rootdir -name omniidl_be`
-do
-  dirname `ls $d/../_omniidlmodule.so 2>/dev/null` 2>/dev/null
-done)
-
-  # Make sure Python backend of omniidl will be found
-  OMNIIDLPYBE=$(for d in `find $salome_pre_rootdir -name omniidl_be`
-do
-  dirname `ls $d/python.py 2>/dev/null` 2>/dev/null
-done)
+  if test "x$OMNIIDLPYTHONPATH" = "x"; then
+   OMNIIDLPYTHONPATH=$(eval $SALOMEENVCMD ; python -B "$srcdir/build-aux/cs_config_test.py" pythonpath_filter _omniidlmodule.so _omniidlmodule.so)
+  fi
+  if test "x$OMNIIDLLDLIBPATH" = "x"; then
+    OMNIIDLLDLIBPATH=$(eval $SALOMEENVCMD ; python -B "$srcdir/build-aux/cs_config_test.py" ld_library_path_filter libpython*)
+  fi
 
 fi
 
-  unset salome_pre_root_dir
-
 AC_SUBST(OMNIIDLPYTHONPATH)
+AC_SUBST(OMNIIDLLDLIBPATH)
 
 AC_ARG_VAR([SALOMEENVCMD], [SALOME environment setting commands])
 AC_ARG_VAR([SALOMERUN], [SALOME main script (usually runSalome or runAppli)])
