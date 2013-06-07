@@ -244,7 +244,7 @@ if ( isuite.eq.0 ) then
   ! two remaining variables that need to be computed, using the
   ! indicator iccfth.
 
-  call uscfth                                                   &
+  call cfther                                                    &
   !==========
 ( nvar   , nscal  ,                                              &
   iccfth , imodif ,                                              &
