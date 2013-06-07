@@ -248,6 +248,9 @@ ipass = ipass + 1
 
 if ((idepst.eq.1).and.(ipass.eq.1)) then
    allocate(vislen(nfabor))
+   do ifac = 1, nfabor
+     vislen(ifac) = grand
+   enddo
 endif
 
 
