@@ -742,7 +742,9 @@ class Studies(object):
                     cmd += " -c " + os.path.join(self.dest, l, case.label)
                     repbase = os.getcwd()
                     os.chdir(os.path.join(self.dest, l, "MESH"))
-                    retcode, t = run_autovnv_command(cmd, self.__log)
+                    # prepro external script might need the pythondir
+                    pdir = case.pkg.get_dir('pkgpythondir')
+                    retcode, t = run_autovnv_command(cmd, self.__log, pythondir = pdir)
                     os.chdir(repbase)
                     self.reporting('    - script %s --> OK (%s s)' % (cmd, t))
                 else:

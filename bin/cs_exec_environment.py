@@ -288,7 +288,7 @@ def get_script_return_code():
 #-------------------------------------------------------------------------------
 
 def run_command(cmd, pkg = None, echo = False,
-                stdout = sys.stdout, stderr = sys.stderr):
+                stdout = sys.stdout, stderr = sys.stderr, env = None):
     """
     Run a command.
     """
@@ -329,9 +329,10 @@ def run_command(cmd, pkg = None, echo = False,
         p = subprocess.Popen(cmd,
                              shell=True,
                              executable=get_shell_type(),
+                             env = env,
                              **kwargs)
     else:
-        p = subprocess.Popen(cmd, **kwargs)
+        p = subprocess.Popen(cmd, env = env, **kwargs)
 
     p.communicate()
 

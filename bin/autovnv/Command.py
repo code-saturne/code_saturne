@@ -38,6 +38,7 @@ import logging
 
 from cs_exec_environment import run_command
 from cs_exec_environment import separate_args
+from cs_exec_environment import enquote_arg
 
 #-------------------------------------------------------------------------------
 # log config.
@@ -50,7 +51,7 @@ log.setLevel(logging.NOTSET)
 
 #-------------------------------------------------------------------------------
 
-def run_autovnv_command(_c, _log):
+def run_autovnv_command(_c, _log, pythondir = None):
     """
     Run command with arguments.
     Redirection of the stdout or stderr of the command.
@@ -74,9 +75,16 @@ def run_autovnv_command(_c, _log):
 
     cmd = separate_args(_c)
 
+    env = os.environ.copy()
+
+    if pythondir:
+        pythondir = enquote_arg(pythondir)
+        pythonpath = pythondir + ':' + env.get("PYTHONPATH", '')
+        env.update([("PYTHONPATH", pythonpath)])
+
     try:
         t1 = time.time()
-        retcode = run_command(cmd, stdout=_log, stderr=_log)
+        retcode = run_command(cmd, stdout=_log, stderr=_log, env=env)
         t2 = time.time()
 
         if retcode < 0:
