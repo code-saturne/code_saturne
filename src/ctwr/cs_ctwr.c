@@ -938,15 +938,13 @@ void CS_PROCF (lecctw, LECCTW)
  * Post process variables associated with exchange area
  *
  * parameters:
- *   ct                  -->  Void pointer to cooling tower function
- *   nt_cur_abs          -->  Current time step
- *   t_cur_abs           -->  Current time value
+ *   ct  <--  Void pointer to cooling tower function
+ *   ts  <--  time step status structure, or NULL
  *----------------------------------------------------------------------------*/
 
 static void
-_cs_ctwr_post_function(void       *ct,
-                       cs_int_t    nt_cur_abs,
-                       cs_real_t   t_cur_abs)
+_cs_ctwr_post_function(void                  *ct,
+                       const cs_time_step_t  *ts)
 {
   const cs_ctwr_zone_t  *_ct = ct;
 
@@ -958,11 +956,10 @@ _cs_ctwr_post_function(void       *ct,
                       false,
                       false,
                       CS_POST_TYPE_cs_real_t,
-                      nt_cur_abs,
-                      t_cur_abs,
                       _ct->teau,
                       NULL,
-                      NULL);
+                      NULL,
+                      ts);
 
     cs_post_write_var(_ct->post_mesh_id,
                       _("Flux water"),
@@ -970,11 +967,10 @@ _cs_ctwr_post_function(void       *ct,
                       false,
                       false,
                       CS_POST_TYPE_cs_real_t,
-                      nt_cur_abs,
-                      t_cur_abs,
                       _ct->fem,
                       NULL,
-                      NULL);
+                      NULL,
+                      ts);
 
   }
 

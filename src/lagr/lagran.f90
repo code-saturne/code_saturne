@@ -566,37 +566,17 @@ module lagran
   !=============================================================================
   ! 16. Visu
 
-  !... NBVIS  : nombre de particules a visualiser a l instant t
-  !    LISTE  : numero des particules a visualiser
-  !    LIST0  : sauvegarde de LISTE pour post-processing trajectoires
-  !    NPLIST : nombre d enregistrement par particule
-  !    NVISLA : periode d aquisition
-
-  integer, save ::           nbvis, liste(nliste), list0(nliste),            &
-                             nplist(nliste), nvisla
-
   !... Type de visualisation :
-  !    IENSI1 : trajectoires
-  !    IENSI2 : deplacements
   !    IENSI3 : interaction particules/frontieres
 
-  integer, save ::           iensi1 , iensi2 , iensi3
+  integer, save ::           iensi3
 
-  !... Contenu des flichiers resultats
+  !... Contenu des fichiers resultats
 
 
   integer, save ::           ivisv1 , ivisv2 , ivistp ,                      &
                              ivisdm , iviste , ivismp ,                      &
-                             ivishp , ivisch , ivisck , ivisdk
-
-  !... visualisation de type deplacement
-  !    ITLAG : nombre d enregistrement
-  !    TIMLAG : temps physiques lagrangien pour la visualisation
-
-
-  integer, save ::           itlag
-  double precision, save ::  timlag(9999)
-
+                             ivisch , ivisck , ivisdk
 
   !=============================================================================
 
@@ -819,6 +799,32 @@ contains
     enddo
 
   end subroutine lagr_define_zone_class_param
+
+  !=============================================================================
+
+  !> \brief Return Lagrangian model status.
+
+  !> \param[out]   model     0 without Lagrangian, 1 or 2 with Lagrangian
+  !> \param[out]   restart   1 for Lagrangian restart, 0 otherwise
+  !> \param[out]   frozen    1 for frozen Eulerian flow, 0 otherwise
+
+  subroutine lagr_status(model, restart, frozen)  &
+    bind(C, name='cs_lagr_status')
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer(c_int), intent(out) :: model, restart, frozen
+
+    model = iilagr
+    restart = isuila
+    frozen = isttio
+
+    return
+
+  end subroutine lagr_status
 
   !=============================================================================
 

@@ -155,7 +155,7 @@ character        nomite(nvplmx)*64 , nomrte(nvplmx)*64
 character        ficsui*32
 integer          ierror , nbval, itysup , irtyp  , irfsup, idbase
 integer          ivers  , ilecec
-integer          nfin   , iforce , icha   , ii
+integer          icha   , ii
 integer          itrav1
 integer          ipas   , jj
 integer          impavl , impvls, inmcoo, ipasup
@@ -707,41 +707,6 @@ if ( (istala.eq.1 .and. iplas.ge.idstnt) .or.                     &
 9999 continue
 
   write(nfecra,7014)
-
-endif
-
-!===============================================================================
-! Visualization
-!===============================================================================
-
-if (irangp.ge.0 .or. ntcabs.lt.ntmabs) return
-
-nfin = 1
-
-!-->Stockage des trajectoires au format Ensight Gold
-
-if (iensi1.eq.1) then
-
-  iforce = 0
-  call enslag                                                     &
-  !==========
-   ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
-     nfin   , iforce ,                                            &
-     itepa  ,                                                     &
-     ettp   , tepa   )
-
-endif
-
-!-->Stockage des deplacements au format Ensight Gold
-
-if (iensi2.eq.1) then
-
-  call enswaf                                                     &
-  !==========
-   ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
-     nfin   ,                                                     &
-     itepa  ,                                                     &
-     ettp   , tepa   )
 
 endif
 

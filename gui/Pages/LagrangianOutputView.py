@@ -77,19 +77,7 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
         self.case.undoStopGlobal()
         self.model = LagrangianOutputModel(self.case)
 
-        # Combo model
-        self.modelNTLAL = ComboModel(self.comboBoxNTLAL,3,1)
-        self.modelNTLAL.addItem(self.tr("No output"), 'None')
-        self.modelNTLAL.addItem(self.tr("Output listing at each time step"), 'At each step')
-        self.modelNTLAL.addItem(self.tr("Output every 'n' time steps"), 'Frequency_l')
-
         # Connections
-        self.connect(self.checkBoxIENSI1, SIGNAL("clicked()"),    self.slotIENSI1)
-        self.connect(self.checkBoxIENSI2, SIGNAL("clicked()"),    self.slotIENSI2)
-        self.connect(self.lineEditNBVIS,  SIGNAL("textChanged(const QString &)"), self.slotNBVIS)
-        self.connect(self.lineEditNVISLA, SIGNAL("textChanged(const QString &)"), self.slotNVISLA)
-        self.connect(self.comboBoxNTLAL,  SIGNAL("activated(const QString&)"),    self.slotChoiceNTLAL)
-        self.connect(self.lineEditNTLAL,  SIGNAL("textChanged(const QString &)"), self.slotNTLAL)
         self.connect(self.checkBoxIVISV1, SIGNAL("clicked()"),    self.slotIVISV1)
         self.connect(self.checkBoxIVISV2, SIGNAL("clicked()"),    self.slotIVISV2)
         self.connect(self.checkBoxIVISTP, SIGNAL("clicked()"),    self.slotIVISTP)
@@ -101,61 +89,7 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
         self.connect(self.checkBoxIVISCH, SIGNAL("clicked()"),    self.slotIVISCH)
         self.connect(self.checkBoxIVISCK, SIGNAL("clicked()"),    self.slotIVISCK)
 
-        validatorNBVIS  = IntValidator(self.lineEditNBVIS, min=0)
-        self.lineEditNBVIS.setValidator(validatorNBVIS)
-
-        validatorNVISLA = IntValidator(self.lineEditNVISLA, min=0)
-        #setExclusive
-        self.lineEditNVISLA.setValidator(validatorNVISLA)
-
-        validatorNTLAL = IntValidator(self.lineEditNTLAL)
-        self.lineEditNTLAL.setValidator(validatorNTLAL)
-
         # initialize Widgets
-
-        # post processing info to display
-        status = self.model.getTrajectoryStatus()
-        if status == "on":
-            self.checkBoxIENSI1.setChecked(True)
-        else:
-            self.checkBoxIENSI1.setChecked(False)
-
-        status = self.model.getParticlesStatus()
-        if status == "on":
-            self.checkBoxIENSI2.setChecked(True)
-        else:
-            self.checkBoxIENSI2.setChecked(False)
-
-        self.modelFormat = ComboModel(self.comboBoxFormat,1,1)
-        format = self.model.getPostProcessingFormat()
-        self.modelFormat.addItem(format)
-        self.modelFormat.setItem(str_model=format)
-        self.comboBoxFormat.setDisabled(True)
-
-        self.modelOption = ComboModel(self.comboBoxOptions,1,1)
-        option = self.model.getPostProcessingOption()
-        self.modelOption.addItem(option)
-        self.modelOption.setItem(str_model=option)
-        self.comboBoxOptions.setDisabled(True)
-
-        npart = self.model.getDisplayParticlesValue()
-        self.lineEditNBVIS.setText(QString(str(npart)))
-
-        period = self.model.getPostProcessingFrequency()
-        self.lineEditNVISLA.setText(QString(str(period)))
-
-        period = self.model.getListingFrequency()
-        if period == -1:
-            m = "None"
-        elif period == 1:
-            m = "At each step"
-        else:
-            m = "Frequency_l"
-        self.lineEditNTLAL.setText(QString(str(period)))
-        t = self.modelNTLAL.dicoM2V[m]
-        self.modelNTLAL.setItem(str_model = m)
-        self.slotChoiceNTLAL(t)
-
         status = self.model.getFluidVelocityStatus()
         if status == "on":
             self.checkBoxIVISV1.setChecked(True)
@@ -231,104 +165,6 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
             self.checkBoxIVISCK.setChecked(False)
 
         self.case.undoStartGlobal()
-
-
-    @pyqtSignature("")
-    def slotIENSI1(self):
-        """
-        Input IENSI1.
-        """
-        if self.checkBoxIENSI1.isChecked():
-            self.model.setTrajectoryStatus("on")
-        else:
-            self.model.setTrajectoryStatus("off")
-
-
-    @pyqtSignature("")
-    def slotIENSI2(self):
-        """
-        Input IENSI2.
-        """
-        if self.checkBoxIENSI2.isChecked():
-            self.model.setParticlesStatus("on")
-        else:
-            self.model.setParticlesStatus("off")
-
-
-    @pyqtSignature("const QString&")
-    def slotNBVIS(self, text):
-        """
-        Input NBVIS.
-        """
-        if self.sender().validator().state == QValidator.Acceptable:
-            value, ok = text.toInt()
-            log.debug("slotNBVIS value = %i "%value)
-            self.model.setDisplayParticlesValue(value)
-
-
-    @pyqtSignature("const QString&")
-    def slotNBVIS(self, text):
-        """
-        Input NBVIS.
-        """
-        if self.sender().validator().state == QValidator.Acceptable:
-            value, ok = text.toInt()
-            self.model.setDisplayParticlesValue(value)
-
-
-    @pyqtSignature("const QString&")
-    def slotChoiceNVISLA(self, text):
-        """
-        Input NVISLA.
-        """
-        log.debug("slotChoiceNVISLA text = %s " %str(text))
-
-
-    @pyqtSignature("const QString&")
-    def slotNVISLA(self, text):
-        """
-        Input NVISLA.
-        """
-        log.debug("slotNVISLA text = %s " %str(text))
-
-
-    @pyqtSignature("const QString&")
-    def slotChoiceNTLAL(self, text):
-        """
-        Input NTLAL.
-        """
-        listing = self.modelNTLAL.dicoV2M[str(text)]
-        log.debug("slotChoiceNTLAL-> listing = %s" % listing)
-
-        if listing == "None":
-            ntlist = -1
-            self.model.setListingFrequency(ntlist)
-            self.lineEditNTLAL.setText(QString(str(ntlist)))
-            self.lineEditNTLAL.setDisabled(True)
-
-        elif listing == "At each step":
-            ntlist = 1
-            self.model.setListingFrequency(ntlist)
-            self.lineEditNTLAL.setText(QString(str(ntlist)))
-            self.lineEditNTLAL.setDisabled(True)
-
-        elif listing == "Frequency_l":
-            self.lineEditNTLAL.setEnabled(True)
-            ntlist, ok = self.lineEditNTLAL.text().toInt()
-            if ntlist < 1:
-                ntlist = 1
-                self.model.setListingFrequency(ntlist)
-                self.lineEditNTLAL.setText(QString(str(ntlist)))
-
-
-    @pyqtSignature("const QString&")
-    def slotNTLAL(self, text):
-        """
-        Input NTLAL.
-        """
-        if self.sender().validator().state == QValidator.Acceptable:
-            period, ok = text.toInt()
-            self.model.setListingFrequency(period)
 
 
     @pyqtSignature("")

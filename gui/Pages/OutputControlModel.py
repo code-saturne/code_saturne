@@ -62,7 +62,9 @@ class OutputControlModel(Model):
         """
         self.case = case
         node_control  = self.case.xmlGetNode('analysis_control')
+        node_lagr = self.case.root().xmlInitNode('lagrangian', 'model')
         self.node_out = node_control.xmlInitNode('output')
+        self.node_out_lag = node_lagr.xmlInitChildNode('output')
 
 
     def defaultInitialValues(self):
@@ -116,6 +118,27 @@ class OutputControlModel(Model):
         """
         self.isInt(freq)
         self.node_out.xmlSetData('listing_printing_frequency', freq)
+
+
+    @Variables.noUndo
+    def getListingFrequencyLagrangian(self):
+        """
+        Return the frequency for printing listing for lagrangian variables
+        """
+        f = self.node_out_lag.xmlGetInt('listing_printing_frequency')
+        if f == None:
+            f = self.defaultInitialValues()['listing_printing_frequency']
+            self.setListingFrequencyLagrangian(f)
+        return f
+
+
+    @Variables.undoLocal
+    def setListingFrequencyLagrangian(self, freq):
+        """
+        Set the frequency for printing listing for lagrangian variables
+        """
+        self.isInt(freq)
+        self.node_out_lag.xmlSetData('listing_printing_frequency', freq)
 
 
     def defaultWriterValues(self):
@@ -203,6 +226,29 @@ class OutputControlModel(Model):
             node.xmlInitNode('format', name = 'ensight', options = 'binary')
             node.xmlInitNode('directory', name = 'postprocessing')
             node.xmlInitNode('time_dependency', choice = 'fixed_mesh')
+
+
+    def addDefaultLagrangianWriter(self):
+        """Public method.
+        Input new lagrangian writer
+        """
+        node = self.node_out.xmlGetNode('writer', 'label', id = "-3")
+        if node == None:
+            nodeL = self.node_out.xmlInitNode('writer', id = "-3", label = 'particles')
+            nodeL.xmlInitNode('frequency', period = 'none')
+            nodeL.xmlInitNode('output_at_end', status = 'on')
+            nodeL.xmlInitNode('format', name = 'ensight', options = 'binary')
+            nodeL.xmlInitNode('directory', name = 'postprocessing')
+            nodeL.xmlInitNode('time_dependency', choice = 'transient_connectivity')
+
+        node = self.node_out.xmlGetNode('writer', 'label', id = "-4")
+        if node == None:
+            nodeT = self.node_out.xmlInitNode('writer', id = "-4", label = 'trajectories')
+            nodeT.xmlInitNode('frequency', period = 'none')
+            nodeT.xmlInitNode('output_at_end', status = 'on')
+            nodeT.xmlInitNode('format', name = 'ensight', options = 'binary')
+            nodeT.xmlInitNode('directory', name = 'postprocessing')
+            nodeT.xmlInitNode('time_dependency', choice = 'fixed_mesh')
 
 
     def __deleteWriter(self, writer_id):
@@ -488,8 +534,10 @@ class OutputControlModel(Model):
         """Return the default values"""
         default = {}
         default['type'] = "cells"
+        default['particles_type'] = "particles"
         default['all_variables'] = "on"
         default['location'] = "all[]"
+        default['density'] = 1.
 
         return default
 
@@ -504,7 +552,7 @@ class OutputControlModel(Model):
         return mesh
 
 
-    def __defaultMeshLabelAndId(self):
+    def __defaultMeshLabelAndId(self, basename='mesh'):
         """
         Private method.
         Return a default id and label for a new mesh.
@@ -520,11 +568,11 @@ class OutputControlModel(Model):
             next_id = max(user_table) +1
         else:
             next_id = 1
-        next_label = 'mesh(' + str(next_id) + ')'
+        next_label = basename + '(' + str(next_id) + ')'
         n = next_id
         while next_label in self.getMeshLabelList():
             n = n+1
-            next_label = 'mesh(' + str(n) + ')'
+            next_label = basename + '(' + str(n) + ')'
         return str(next_id), next_label
 
 
@@ -538,7 +586,7 @@ class OutputControlModel(Model):
             if int(node['id']) > 0 :
                 n = n + 1
                 if node['label'] == 'mesh('+ node['id'] + ')':
-                    node['label'] ='mesh_'+ str(n) + ')'
+                    node['label'] ='mesh('+ str(n) + ')'
                 node['id'] = str(n)
 
 
@@ -552,6 +600,22 @@ class OutputControlModel(Model):
             self.node_out.xmlInitNode('mesh', id = i,label = l)
         self.getMeshAllVariablesStatus(i)
         self.getMeshType(i)
+        self.getMeshLocation(i)
+
+        return i
+
+
+    def addLagrangianMesh(self):
+        """Public method.
+        Input a new user mesh
+        """
+
+        i, l = self.__defaultMeshLabelAndId(basename = 'particles')
+        if l not in self.getMeshIdList():
+            self.node_out.xmlInitNode('mesh', id = i,label = l)
+        self.getMeshAllVariablesStatus(i)
+        self.getLagrangianMeshType(i)
+        self.getMeshDensity(i)
         self.getMeshLocation(i)
 
         return i
@@ -579,6 +643,22 @@ class OutputControlModel(Model):
             node2.xmlInitNode('location')
             node2.xmlSetData('location', 'all[]')
             node2.xmlInitNode('writer', id = '-1')
+
+
+    def addDefaultLagrangianMesh(self):
+        """Public method.
+        Input default particles mesh
+        """
+        list_mesh = self.getMeshIdList()
+        node1 = self.node_out.xmlInitNode('mesh', id = "-3",
+                                          label = 'particles',
+                                          type = 'particles')
+        node1.xmlInitNode('all_variables', status = 'on')
+        node1.xmlInitNode('location')
+        node1.xmlSetData('location','all[]')
+        node1.xmlInitNode('density')
+        node1.xmlSetData('density', 1)
+        node1.xmlInitNode('writer', id = '-3')
 
 
     def __deleteMesh(self, mesh_id):
@@ -666,6 +746,31 @@ class OutputControlModel(Model):
 
 
     @Variables.noUndo
+    def getLagrangianMeshType(self, mesh_id):
+        """
+        Return the type of a mesh
+        """
+        self.isInList(mesh_id, self.getMeshIdList())
+        n = self.node_out.xmlGetNode('mesh', id = mesh_id)
+        mesh_type = n['type']
+        if mesh_type == None:
+            mesh_type = self.defaultMeshValues()['particles_type']
+            self.setLagrangianMeshType(mesh_id, mesh_type)
+        return mesh_type
+
+
+    @Variables.undoLocal
+    def setLagrangianMeshType(self, mesh_id, mesh_type):
+        """
+        Set the type of a mesh
+        """
+        self.isInList(mesh_id, self.getMeshIdList())
+        self.isInList(mesh_type, ('particles', 'trajectories'))
+        node = self.node_out.xmlGetNode('mesh', id = mesh_id)
+        node['type'] = mesh_type
+
+
+    @Variables.noUndo
     def getMeshAllVariablesStatus(self, mesh_id):
         """
         Return the all_variables status of a mesh
@@ -714,6 +819,30 @@ class OutputControlModel(Model):
         self.isInList(mesh_id, self.getMeshIdList())
         node = self.node_out.xmlGetNode('mesh', id = mesh_id)
         node.xmlSetData('location', location)
+
+
+    @Variables.noUndo
+    def getMeshDensity(self, mesh_id):
+        """
+        Return the density of a lagrangian mesh
+        """
+        self.isInList(mesh_id, self.getMeshIdList())
+        node = self.node_out.xmlGetNode('mesh', id = mesh_id)
+        den = node.xmlGetString('density')
+        if den == '':
+            den = self.defaultMeshValues()['density']
+            self.setMeshDensity(mesh_id, den)
+        return den
+
+
+    @Variables.undoLocal
+    def setMeshDensity(self, mesh_id, density):
+        """
+        Set the density of a lagrangian mesh
+        """
+        self.isInList(mesh_id, self.getMeshIdList())
+        node = self.node_out.xmlGetNode('mesh', id = mesh_id)
+        node.xmlSetData('density', density)
 
 
     @Variables.noUndo

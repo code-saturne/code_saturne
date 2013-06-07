@@ -1351,43 +1351,7 @@ do ii = 1,nfrlag
 enddo
 
 !===============================================================================
-! 10. IMPRESSIONS POUR POST-PROCESSING EN MODE TRAJECTOIRES
-!===============================================================================
-
-if ( iensi1.eq.1 ) then
-
-  nfin = 0
-
-!   reinitialisation du compteur de nouvelles particules
-  npt = nbpart
-
-!       pour chaque zone de bord :
-  do ii = 1, nfrlag
-    nb = ilflag(ii)
-
-!         pour chaque classe :
-    do nc = 1, iusncl(nb)
-
-!           si de nouvelles particules doivent entrer :
-      if (mod(ntcabs,iuslag(nc,nb,ijfre)).eq.0) then
-
-        do ip = npt+1 , npt+iusloc(nc,nb,ijnbp)
-          call enslag                                             &
-          !==========
-           ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,         &
-             nfin   , ip     ,                                    &
-             itepa  ,                                             &
-             ettp   , tepa   )
-        enddo
-        npt = npt + iusloc(nc,nb,ijfre)
-
-      endif
-    enddo
-  enddo
-endif
-
-!===============================================================================
-! 11. NOUVEAU NOMBRE DE PARTICULES TOTAL
+! 10. NOUVEAU NOMBRE DE PARTICULES TOTAL
 !===============================================================================
 
 !     NBPART : NOMBRE DE PARTICULES PRESENTES DANS LE DOMAINE

@@ -300,6 +300,9 @@ typedef char     cs_byte_t;     /* Byte (untyped memory unit) */
 
 typedef cs_lnum_t  cs_lnum_2_t[2];      /* Vector of 2 local numbers */
 
+typedef double     cs_coord_3_t[3];     /* Vector of 3 real (coordinate)
+                                           values */
+
 typedef cs_real_t  cs_real_2_t[2];      /* Vector of 2 real values */
 typedef cs_real_t  cs_real_3_t[3];      /* Vector of 3 real values */
 typedef cs_real_t  cs_real_4_t[4];      /* Vector of 4 real values */

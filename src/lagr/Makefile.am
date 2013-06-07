@@ -44,6 +44,7 @@ AM_LDFLAGS =
 # Public header files (to be installed)
 
 pkginclude_HEADERS = \
+cs_lagr_extract.h \
 cs_lagr_tracking.h \
 cs_lagr_utils.h \
 cs_lagr_perio.h
@@ -52,12 +53,11 @@ cs_lagr_perio.h
 
 noinst_LTLIBRARIES = libcslagr.la
 libcslagr_la_SOURCES = \
+cs_lagr_extract.c \
 cs_lagr_tracking.c \
 cs_lagr_perio.c \
 cs_lagr_utils.c \
 diverv.f90 \
-enslag.f90 \
-enswaf.f90 \
 lagadh.f90 \
 lagaff.f90 \
 lagbar.f90 \
@@ -100,7 +100,6 @@ lagrus.f90 \
 lagsta.f90 \
 lagstf.f90 \
 lagswe.f90 \
-lagtri.f90 \
 lagune.f90
 libcslagr_la_LDFLAGS = -no-undefined
 

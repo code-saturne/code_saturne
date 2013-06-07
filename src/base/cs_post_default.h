@@ -66,17 +66,27 @@ BEGIN_C_DECLS
  * *****************
  *                  ( ntcabs,
  *                    nvar,   nscal,  nvlsta, nvisbr,
+ *                    nbpmax, nvp, nvp1, nvep, nivep,
  *                    ttcabs,
+ *                    itepa,
  *                    dt,     rtpa,   rtp,    propce, propfa, propfb,
  *                    coefa,  coefb,
- *                    statce, stativ, statfb)
+ *                    statce, stativ, statfb,
+ *                    ettp, ettpa, tepa )
  *
  * integer          ntcabs      : --> : current time step number
  * integer          nvar        : <-- : number of variables
  * integer          nscal       : <-- : number of scalars
  * integer          nvlsta      : <-- : number of statistical variables (lagr)
  * integer          nvisbr      : <-- : number of boundary stat. variables (lagr)
+ * integer          nbpmax      : <-- : maximum number of particles allowed
+ * integer          nvp         : <-- : number of particle variables
+ * integer          nvp1        : <-- : nvp less position, fluid and
+ *                              :     : particle velocity
+ * integer          nvep        : <-- : number of real particle attributes
+ * integer          nivep       : <-- : number of interger particle attributes
  * double precision ttcabs      : <-- : current physical time
+ * integer          itepa       : <-- : integer particle attributes
  * double precision dt          : <-- : local time step
  * double precision rtpa        : <-- : cell variables at previous time step
  * double precision rtp         : <-- : cell variables
@@ -97,7 +107,13 @@ void CS_PROCF (pstvar, PSTVAR)
  const cs_int_t   *nscal,
  const cs_int_t   *nvlsta,
  const cs_int_t   *nvisbr,
+ const cs_int_t   *nbpmax,
+ const cs_int_t   *nvp,
+ const cs_int_t   *nvp1,
+ const cs_int_t   *nvep,
+ const cs_int_t   *nivep,
  const cs_real_t  *ttcabs,
+ const cs_int_t    itepa[],
  const cs_real_t   dt[],
  const cs_real_t   rtpa[],
  const cs_real_t   rtp[],
@@ -109,6 +125,40 @@ void CS_PROCF (pstvar, PSTVAR)
  const cs_real_t   statce[],
  const cs_real_t   stativ[],
  const cs_real_t   statfb[]
+);
+
+/*----------------------------------------------------------------------------
+ * Define which Lagragian variables should be postprocessed
+ *
+ * Fortran interface:
+ *
+ * subroutine lagpvr
+ * *****************
+ *                  ( ivisv1, ivisv2, ivistp, ivisdm, iviste,
+ *                    ivismp, ivisdk, ivisch, ivisck )
+ *
+ * integer          ivisv1      : <-- : display of variable 'fluid velocity'
+ * integer          ivisv2      : <-- : display of variable 'particles velocity'
+ * integer          ivistp      : <-- : display of variable 'resident time'
+ * integer          ivisdm      : <-- : display of variable 'particle diameter'
+ * integer          iviste      : <-- : display of variable 'particle temperature'
+ * integer          ivismp      : <-- : display of variable 'particle mass'
+ * integer          ivisdk      : <-- : display of variable 'core diameter of part.'
+ * integer          ivisch      : <-- : display of variable 'mass of reactive coal'
+ * integer          ivisck      : <-- : display of variable 'mass of char'
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (lagpvr, LAGPVR)
+(
+ const cs_int_t  *ivisv1,
+ const cs_int_t  *ivisv2,
+ const cs_int_t  *ivistp,
+ const cs_int_t  *ivisdm,
+ const cs_int_t  *iviste,
+ const cs_int_t  *ivismp,
+ const cs_int_t  *ivisdk,
+ const cs_int_t  *ivisch,
+ const cs_int_t  *ivisck
 );
 
 /*============================================================================

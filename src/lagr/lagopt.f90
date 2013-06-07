@@ -252,30 +252,6 @@ idirla = 0
 
 ilapoi = 0
 
-!     POSTPROCESSING MODE : TRAJECTOIRES
-
-iensi1 = 0
-
-!     POSTPROCESSING MODE : DEPLACEMENTS
-
-iensi2 = 0
-
-!     NOMBRE DE PARTICULES A VISUALISER MAXIMUM=NLISTE
-
-nbvis  = 20
-
-!     FREQUENCE D'AQUISITION DES DONNEES A VISUALISER
-
-nvisla = 1
-
-!     INITIALISATION  : PAR DEFAUT ON NE VISUALISE AUCUNE PARTICULE
-
-do ii = 1, nliste
-  liste(ii) = -1
-  list0(ii) = -1
-  nplist(ii) = 0
-enddo
-
 !     POSTPROCESSING VARIABLE : VITESSE DU FLUIDE VU
 
 ivisv1  = 0
@@ -299,10 +275,6 @@ ivismp  = 0
 !     POSTPROCESSING VARIABLE : TEMPERATURE
 
 iviste  = 0
-
-!     POSTPROCESSING VARIABLE : TEMPERATURE CHARBON
-
-ivishp  = 0
 
 !     POSTPROCESSING VARIABLE : DIAMETRE DU COEUR RETRECISSANT
 
@@ -363,10 +335,9 @@ if (iihmpr.eq.1) then
    iphyla, idpvar, itpvar, impvar,                                 &
    iencra, tprenc, visref, enc1, enc2,                             &
    nstits, ltsdyn, ltsmas, ltsthe,                                 &
-   nordre, idistu, idiffl, modcpl, idirla,                         &
-   iensi1, iensi2, ntlal,  nbvis, nvisla,                          &
+   nordre, idistu, idiffl, modcpl, idirla, ntlal,                  &
    ivisv1, ivisv2, ivistp, ivisdm, iviste,                         &
-   ivismp, ivishp, ivisdk, ivisch, ivisck,                         &
+   ivismp, ivisdk, ivisch, ivisck,                                 &
    istala, nbclst, seuil, idstnt,  nstist,                         &
    ihslag, iensi3, seuilf, nstbor,                                 &
    inbrbd, iflmbd, iangbd, ivitbd, iencbd, imoybr,                 &
@@ -376,10 +347,6 @@ if (iihmpr.eq.1) then
     call cfname(1, nomlag(ii), len(nomlag(ii)), ii)
     call cfname(2, nomlav(ii), len(nomlav(ii)), ii)
     call cfname(3, nombrd(ii), len(nombrd(ii)), ii)
-  enddo
-
-  do ii = 1, nbvis
-    liste(ii) = ii
   enddo
 
 endif
@@ -726,89 +693,52 @@ endif
 if (iok.ne.0) call csexit (1)
               !==========
 
-!     IENSI1 IENSI2
+! ivisv1 ivisv2 ivistp ivisdm iviste
 
-if (iensi1.lt.0 .or. iensi1.gt.1) then
-  write(nfecra,2030) iensi1
+if (ivisv1.lt.0 .or. ivisv1.gt.1) then
+  write(nfecra,2040) ivisv1
   iok = iok + 1
 endif
-if (iensi2.lt.0 .or. iensi2.gt.1) then
-  write(nfecra,2031) iensi2
+if (ivisv2.lt.0 .or. ivisv2.gt.1) then
+  write(nfecra,2041) ivisv2
   iok = iok + 1
 endif
-
-if (irangp.ge.0) then
-   if (iensi1.gt.0 .or. iensi2.gt.0) then
-      write(nfecra,3015)
-      iok = iok + 1
-   endif
+if (ivistp.lt.0 .or. ivistp.gt.1) then
+  write(nfecra,2042) ivistp
+  iok = iok + 1
+endif
+if (ivisdm.lt.0 .or. ivisdm.gt.1) then
+  write(nfecra,2043) ivisdm
+  iok = iok + 1
+endif
+if (iphyla.eq.1 .and. itpvar.eq.1) then
+  if (iviste.lt.0 .or. iviste.gt.1) then
+    write(nfecra,2044) iviste
+    iok = iok + 1
+  endif
+else
+  iviste = 0
 endif
 
-!     NBVIS NVISLA
+!  ivisdk ivisch ivisck
 
-if (iensi1.eq.1 .or. iensi2.eq.1) then
-  if (nbvis.gt.nbpmax .or. nbvis.gt.nliste .or.  nbvis.lt.0) then
-    write(nfecra,2032) nbpmax, nliste, nbvis
+if (iphyla.eq.2) then
+  if (ivisdk.lt.0 .or. ivisdk.gt.1) then
+    write(nfecra,2046) ivisdk
     iok = iok + 1
   endif
-  if (nvisla.le.0 ) then
-    write(nfecra,2033) nvisla
+  if (ivisch.lt.0 .or. ivisch.gt.1) then
+    write(nfecra,2047) ivisch
     iok = iok + 1
   endif
-
-!     IVISV1 IVISV2 IVISTP IVISDM IVISTE
-
-  if (ivisv1.lt.0 .or. ivisv1.gt.1) then
-    write(nfecra,2040) ivisv1
+  if (ivisck.lt.0 .or. ivisck.gt.1) then
+    write(nfecra,2048) ivisck
     iok = iok + 1
   endif
-  if (ivisv2.lt.0 .or. ivisv2.gt.1) then
-    write(nfecra,2041) ivisv2
-    iok = iok + 1
-  endif
-  if (ivistp.lt.0 .or. ivistp.gt.1) then
-    write(nfecra,2042) ivistp
-    iok = iok + 1
-  endif
-  if (ivisdm.lt.0 .or. ivisdm.gt.1) then
-    write(nfecra,2043) ivisdm
-    iok = iok + 1
-  endif
-  if (iphyla.eq.1 .and. itpvar.eq.1) then
-    if (iviste.lt.0 .or. iviste.gt.1) then
-      write(nfecra,2044) iviste
-      iok = iok + 1
-     endif
-  else
-    iviste = 0
-  endif
-
-!       IVISHP IVISDK IVISCH IVISCK
-
-  if (iphyla.eq.2) then
-    if (ivishp.lt.0 .or. ivishp.gt.1) then
-      write(nfecra,2045) ivishp
-      iok = iok + 1
-    endif
-    if (ivisdk.lt.0 .or. ivisdk.gt.1) then
-      write(nfecra,2046) ivisdk
-      iok = iok + 1
-    endif
-    if (ivisch.lt.0 .or. ivisch.gt.1) then
-      write(nfecra,2047) ivisch
-      iok = iok + 1
-    endif
-    if (ivisck.lt.0 .or. ivisck.gt.1) then
-      write(nfecra,2048) ivisck
-      iok = iok + 1
-    endif
-  else
-    ivishp = 0
-    ivisdk = 0
-    ivisch = 0
-    ivisck = 0
-  endif
-
+else
+  ivisdk = 0
+  ivisch = 0
+  ivisck = 0
 endif
 
 !     IENSI3 NSTBOR
@@ -1083,28 +1013,6 @@ npts =  0
 !     Initialisation du sous-pas
 
 nor = 0
-
-!     NOMBRE D'ENREGISTREMENT POUR LE POST DEPLACEMENT (ENSWAF)
-
-itlag = 0
-
-!     TEMPS PHYSIQUE LAGRANGIEN POUR LE POST (ENSWAF)
-
-do ii = 1,9999
-  timlag(ii) = 0.d0
-enddo
-
-!     FINALISATION DE LA LISTE DE PARTICULES A VISUALISER
-
-do ii = nbvis+1, nliste
-  liste (ii) = -1
-enddo
-
-!    les trous, les repetitions dans le tableau LISTE seront
-!    suprimes, et les numeros seront ranges par ordre croissant.
-
-call lagtri
-!==========
 
 ! ------------------------------------------------
 ! 3.2 DIMENSIONS DES TABLEAUX LIEES AUX PARTICULES
@@ -1822,6 +1730,12 @@ if (ltsthe.eq.1) then
   endif
 
 endif
+
+! Postprocessing options
+
+call lagpvr(ivisv1, ivisv2, ivistp, ivisdm, iviste, &
+!==========
+            ivismp, ivisdk, ivisch, ivisck)
 
 !===============================================================================
 
@@ -2808,87 +2722,6 @@ endif
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
- 2030 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''EXECUTION DU MODULE LAGRANGIEN   ',/,&
-'@    =========                                               ',/,&
-'@    L''INDICATEUR DE POST-PROCESSING EN MODE TRAJECTOIRES   ',/,&
-'@      A UNE VALEUR NON PERMISE (LAGOPT).                    ',/,&
-'@                                                            ',/,&
-'@    IENSI1 DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1             ',/,&
-'@       IL VAUT ICI IENSI1 = ', I10                           ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier la valeur de IENSI1 dans la subroutine USLAG1.   ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 2031 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''EXECUTION DU MODULE LAGRANGIEN   ',/,&
-'@    =========                                               ',/,&
-'@    L''INDICATEUR DE POST-PROCESSING EN MODE DEPLACEMENTS   ',/,&
-'@      PARTICULAIRES A UNE VALEUR NON PERMISE (LAGOPT).      ',/,&
-'@                                                            ',/,&
-'@    IENSI2 DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1             ',/,&
-'@       IL VAUT ICI IENSI2 = ', I10                           ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier la valeur de IENSI2 dans la subroutine USLAG1.   ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 2032 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''EXECUTION DU MODULE LAGRANGIEN   ',/,&
-'@    =========                                               ',/,&
-'@    LE NOMBRE DE PARTICULE A VISUALISER EN POST-PROCESSING  ',/,&
-'@      A UNE VALEUR NON PERMISE (LAGOPT).                    ',/,&
-'@                                                            ',/,&
-'@    NBVIS DEVRAIT ETRE UN ENTIER SUPERIEUR OU EGAL A 0      ',/,&
-'@       INFERIEUR AU NOMBRE MAX DE PARTICULES NBPMAX = ',I10  ,/,&
-'@       INFERIEUR AU PARAMETRE NLISTE = ',I10                 ,/,&
-'@                                                            ',/,&
-'@       IL VAUT ICI NBVIS = ', I10                            ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier la valeur de NBVIS dans la subroutine USLAG1.    ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 2033 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''EXECUTION DU MODULE LAGRANGIEN   ',/,&
-'@    =========                                               ',/,&
-'@    L''INDICATEUR DE LA FREQUENCE D''ACQUISITION DES DONNES ',/,&
-'@       POUR LES SORTIES DE POST-PROCESSING EN               ',/,&
-'@       MODE TRAJECTOIRES OU MODE DEPLACEMENTS               ',/,&
-'@       A UNE VALEUR NON PERMISE (LAGOPT).                   ',/,&
-'@                                                            ',/,&
-'@    NVISLA DEVRAIT ETRE UN ENTIER SUPERIEUR OU EGAL A 1     ',/,&
-'@       IL VAUT ICI NVISLA = ', I10                           ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier la valeur de NVISLA dans la subroutine USLAG1.   ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
  2040 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -2985,26 +2818,6 @@ endif
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
 '@  Verifier la valeur de IVISTE dans la subroutine USLAG1.   ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 2045 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''EXECUTION DU MODULE LAGRANGIEN   ',/,&
-'@    =========                                               ',/,&
-'@    L''INDICATEUR DE POST-PROCESSING SUR LA VARIABLE        ',/,&
-'@       "TEMPERATURE OU ENTHALPIE DES PARTICULES DE CHARBON" ',/,&
-'@       A UNE VALEUR NON PERMISE (LAGOPT).                   ',/,&
-'@                                                            ',/,&
-'@    IVISHP DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1             ',/,&
-'@       IL VAUT ICI IVISHP = ', I10                           ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier la valeur de IVISHP dans la subroutine USLAG1.   ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -3501,25 +3314,6 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
-
-
- 3015 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''EXECUTION DU MODULE LAGRANGIEN   ',/,&
-'@    =========                                               ',/,&
-'@    LE POST TRAITEMENT DES PARTICULES EN MODE TRAJECTOIRE   ',/,&
-'@    (IENSI1 = 1) OU DEPLACEMENT (IENSI2 = 1) N''EST PAS     ',/,&
-'@    COMPATIBLE AVEC UN CALCUL PARALLELE DANS CETTE VERSION  ',/,&
-'@    DE CODE_SATURNE                                         ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
 
 
 return

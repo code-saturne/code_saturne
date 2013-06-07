@@ -3402,99 +3402,62 @@ useful if \texttt{istala}=1\\
 its value is not to be modified by the user}
 
 %==================================================
-\subsubsection{Display of trajectories and particle movements}
+\subsubsection{Display of particles and trajectories}
 %==================================================
 
-\motcleb{iensi1}{i}{0, 1}{0}{O}{L1}
-{activation (=1) or not (=0) of the post-processing in trajectory mode\\
-this option generates files allowing to display the trajectory of
-some pre-selected particles in the \textit{EnSight6} format\\
-always useful\\
-{\em Warning: this option very expensive with regards to CPU time and may
-generate very large files}}
+The definition of the particle visualization output meshes
+itself is done with that of all other postprocessing mesh zones, either
+using the GUI, or the \texttt{cs\_user\_postprocess\_meshes} function of
+\texttt{cs\_user\_postprocess.c}.
 
-\motcleb{iensi2}{i}{0, 1}{0}{O}{L1}
-{activation (=1) or not (=0) of the post-processing in movement
-mode\\
-This option generates files allowing to display the movement of
-some pre-selected particles in the \textit{EnSight6} format\\
-always useful\\
-{\em Warning: this option very expensive with regards to CPU time and may
-generate very large files}}
-
-\motcleb{nbvis}{i}{positive integer}{nliste}{O}{L1}
-{number of particles selected for post-processing display in trajectory or
-movement mode\\
-\texttt{nbvis} must be lower than \texttt{nbpmax} and \texttt{nliste}
-(set to 500 in \texttt{lagpar} and
-not to be modified)\\
-useful if \texttt{iensi1} = 1 or \texttt{iensi2} = 1}
-
-\motcleb{nvisla}{i}{strictly positive integer}{1}{O}{L1}
-{output period for the post-processing in trajectory or
-movement mode\\
-may be useful to diminish the size of the post-processing files\\
-useful if \texttt{iensi1} = 1 or \texttt{iensi2} = 1}
-
-\motcleb{liste}{ia}{positive integers}{between 1 and 500}{O}{L1}
-{contains the index-numbers of the particles selected for the display in
-trajectory or movement mode\\
-useful if \texttt{iensi1} = 1 or \texttt{iensi2} = 1}
+The following options determine which variables are output on those particle
+or particle trajectory segment output meshes for which the ``automatic output''
+is activated.
 
 \motcleb{ivisv1}{i}{0, 1}{0}{O}{L1}
 {associates (=1) or not (=0) the variable ``velocity of the locally
-undisturbed fluid flow field'' with the display in trajectory or
-movement mode\\
-useful if \texttt{iensi1} = 1 or \texttt{iensi2} = 1}
+undisturbed fluid flow field'' with the output of particles or trajectories\\
+always useful}
 
 \motcleb{ivisv2}{i}{0, 1}{0}{O}{L1}
 {associates (=1) or not (=0) the variable ``particle velocity''
-with the display in trajectory or movement mode\\
-useful if \texttt{iensi1} = 1 or \texttt{iensi2} = 1}
+with the output of particles or trajectories\\
+always useful}
 
 \motcleb{ivistp}{i}{0, 1}{0}{O}{L1}
 {associates (=1) or not (=0) the variable ``residence time''
-with the display in trajectory or movement mode\\
-useful if \texttt{iensi1} = 1 or \texttt{iensi2} = 1}
+with the output of particles or trajectories\\
+always useful}
 
 \motcleb{ivisdm}{i}{0, 1}{0}{O}{L1}
 {associates (=1) or not (=0) the variable ``particle diameter''
-with the display in trajectory or movement mode\\
-useful if \texttt{iensi1} = 1 or \texttt{iensi2} = 1}
+with the output of particles or trajectories\\
+always useful}
 
 \motcleb{iviste}{i}{0, 1}{0}{O}{L1}
 {associates (=1) or not (=0) the variable ``particle temperature''
-with the display in trajectory or movement mode\\
-useful if \texttt{iensi1} = 1 or \texttt{iensi2} = 1}
+with the output of particles or trajectories\\
+always useful}
 
 \motcleb{ivismp}{i}{0, 1}{0}{O}{L1}
 {associates (=1) or not (=0) the variable ``particle mass''
-with the display in trajectory or movement mode\\
-useful if \texttt{iensi1} = 1 or \texttt{iensi2} = 1}
-
-\motcleb{ivishp}{i}{0, 1}{0}{O}{L1}
-{associates (=1) or not (=0) the variable ``temperature of the coal particles''
-with the display in trajectory or movement mode\\
-useful if \texttt{iensi1} = 1 or \texttt{iensi2} = 1, if and only
-if \texttt{iphyla} = 2}
+with the output of particles or trajectories\\
+always useful}
 
 \motcleb{ivisdk}{i}{0, 1}{0}{O}{L1}
 {associates (=1) or not (=0) the variable ``shrinking core diameter of
-the coal particles'' with the display in trajectory or movement mode\\
-useful if \texttt{iensi1} = 1 or \texttt{iensi2} = 1, if and only if
-\texttt{iphyla} = 2}
+the coal particles'' with the output of particles or trajectories\\
+useful only if \texttt{iphyla} = 2}
 
 \motcleb{ivisch}{i}{0, 1}{0}{O}{L1}
 {associates (=1) or not (=0) the variable ``mass of reactive coal of the
-coal particles'' with the display in trajectory or movement mode\\
-useful if \texttt{iensi1} = 1 or \texttt{iensi2} = 1, if and only if
-\texttt{iphyla} = 2}
+coal particles'' with the output of particles or trajectories\\
+useful only if \texttt{iphyla} = 2}
 
 \motcleb{ivisck}{i}{0, 1}{0}{O}{L1}
-{associates (=1) or not (=0) the variable ``mass of char of the
-coal particles'' with the display in trajectory or movement mode\\
-useful if \texttt{iensi1} = 1 or \texttt{iensi2} = 1, if and only if
-\texttt{iphyla} = 2}
+{associates (=1) or not (=0) the variable ``mass of coal of the
+coal particles'' with the output of particles or trajectories\\
+useful only if \texttt{iphyla} = 2}
 
 %==================================================
 \subsubsection{Display of the particle/boundary interactions and the statistics at the boundaries}

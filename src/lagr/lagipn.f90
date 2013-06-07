@@ -123,7 +123,7 @@ double precision tu , d2s3
 
 double precision, allocatable, dimension(:) :: w1
 
-double precision  lvisq, tvisq , ypp
+double precision  lvisq, ypp
 double precision  d3 , vpart, vvue
 double precision  px , py , pz , distp , d1
 double precision  dismin,dismax, ustar, visccf,depint , romf
@@ -241,7 +241,6 @@ if (idepst.eq.1) then
 
                ustar = uetbor(ifac)
                lvisq = visccf / ustar
-               tvisq =  visccf / (ustar * ustar)
 
                px = ettp(npt,jxp)
                py = ettp(npt,jyp)

@@ -3207,8 +3207,9 @@ cs_join_create_new_vertices(int                     verbosity,
       bft_error(__FILE__, __LINE__, 0,
                 _("  Inconsistent value found in cs_join_vertex_t struct.:\n"
                   "    Vertex %d is defined by:\n"
-                  "      %u - [%7.4le, %7.4le, %7.4le] - %lg\n"),
-                i, vtx.gnum, vtx.coord[0], vtx.coord[1], vtx.coord[2],
+                  "      %llu - [%7.4le, %7.4le, %7.4le] - %lg\n"),
+                i, (unsigned long long)vtx.gnum,
+                vtx.coord[0], vtx.coord[1], vtx.coord[2],
                 vtx.tolerance);
 
   } /* End of loop on vertices */

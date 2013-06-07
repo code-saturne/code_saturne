@@ -659,121 +659,41 @@ rayasg = 2.d-6
 
 
 !===============================================================================
-! 13. Post-processing
+! 13. Variables to visualize on the trajectories or the particles
+!
+!     See also cs_user_postprocess_mesh in cs_user_postprocess.c to define
+!     the associated visualization particle or trajectory segment meshes.
 !===============================================================================
 
-! 13.1 Post-processing of the trajectories and particle displacements
+! For all the following variables, a value of 0 means "off", and 1 means "on"
 
-
-!     CAUTION: COMPUTATIONALLY EXPENSIVE
-!     ^^^^^^^^^^
-
-!   13.1.1 Generic parameters
-!   ~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-!     Trajectory mode
-!     (default off: 0 ; on: 1)
-
-iensi1 = 0
-
-!     Particle-displacement mode
-!     (default off: 0 ; on: 1)
-
-iensi2 = 0
-
-
-!     Maximal number of particles to visualize = nliste
-!     (default nbvis=nliste)
-!     Be careful, nbvis must not be greater than nbpmax nor nliste
-
-nbvis = nliste
-
-!     Acquisition period of the data to visualize
-!     (default nvisla = 1)
-
-nvisla = 1
-
-!     The liste array contains the numbers of particles that we want to
-!     visualize (by default liste(...) = -1, no particle to visualize)
-!     Be careful, if the number is negative, there is no visualization)
-!
-!     Example 1: the user wants to track the first nbvis
-
-do ii = 1, nbvis
-  liste(ii) = ii
-enddo
-
-!   > Example 2:
-!     I want to track 3 5 67 23 1 76 35 36 ...etc..
-
-!     liste(1) = 3
-!     liste(2) = 5
-!     liste(3) = 67
-!     liste(4) = 23
-!     liste(5) = 1
-!     liste(6) = 76
-!     liste(7) = 35
-!     liste(8) = 36
-!     ...etc...
-
-!   > Remark: the holes, the repetitions of the liste array will be deleted,
-!             and the numbers will be sorted in increasing order
-!
-!
-
-!   13.1.2 Variables to visualize on the trajectories or the particles
-!   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-!     Variable: velocity of the flow seen
-!     (default off: 0 ; on: 1)
-
+! velocity of the flow seen
 ivisv1  = 0
 
-!     Variable: particle velocity
-!     (default off: 0 ; on: 1)
-
+! particle velocity
 ivisv2  = 0
 
-!     Variable: residence time
-!     (default off: 0 ; on: 1)
-
+! residence time
 ivistp  = 0
 
-!     Variable: diameter
-!     (default off: 0 ; on: 1)
-
+! diameter
 ivisdm  = 0
 
-!     Variable: temperature
-!     (default off: 0 ; on: 1)
+! temperature
 if (iphyla.eq.1 .and. itpvar.eq.1) iviste  = 0
 
-!     Variable: mass
-!     (default off: 0 ; on: 1)
-
+! mass
 ivismp  = 0
-
 
 if (iphyla.eq.2) then
 
-!       Variable coal: temperature in Celsius degrees
-!       (default off: 0 ; on: 1)
-
-  ivishp = 0
-
-!       Variable coal: diameter of the shrinking core
-!       (default off: 0 ; on: 1)
-
+  ! coal: diameter of the shrinking core
   ivisdk  = 0
 
-!       Variable coal: mass of reactive coal
-!       (default off: 0 ; on: 1)
-
+  ! coal: mass of reactive coal
   ivisch  = 0
 
-!       Variable coal: mass of coke
-!       (default off: 0 ; on: 1)
-
+  ! coal: mass of coke
   ivisck  = 0
 
 endif

@@ -253,11 +253,11 @@ dnbpar = dnbpar + dnpclo
 !!$   dnpars ,                                                       &
 !!$   ettp   , ettpa  , tepa   )
 
-if ( npars.ne.(npkill+npcsup) ) then
-  write(nfecra,9000)
-  call csexit(1)
-  !==========
-endif
+! if ( npars.ne.(npkill+npcsup) ) then
+!   write(nfecra,9000)
+!   call csexit(1)
+!   !==========
+! endif
 
 !-------
 ! FORMAT

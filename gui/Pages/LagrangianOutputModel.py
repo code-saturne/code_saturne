@@ -82,20 +82,12 @@ class LagrangianOutputModel(Model):
         Return a dictionnary which contains default values.
         """
         default = {}
-        default['listing_printing_frequency'] = 1
-        default['postprocessing_frequency']   = 1
-        default['postprocessing_format']      = "EnSight"
-        default['postprocessing_options']     = "ascii"
-        default['particles']                  = "off"
-        default['trajectory']                 = "off"
-        default['number_of_particles']        = 500
         default['resident_time']              = "off"
         default['diameter']                   = "off"
         default['temperature']                = "off"
         default['velocity_particles']         = "off"
         default['velocity_fluid_seen']        = "off"
         default['mass']                       = "off"
-        default['coal_temperature']           = "off"
         default['shrinking_core_diameter']    = "off"
         default['raw_coal_mass_fraction']     = "off"
         default['char_mass_fraction']         = "off"
@@ -107,190 +99,6 @@ class LagrangianOutputModel(Model):
         Set variables and properties if lagrangian model is on.
         """
         self.node_output = self.node_lagr.xmlInitChildNode('output')
-
-##         default = self._defaultLagrangianOutputValues()['listing_printing_frequency']
-##         node = self.node_output.xmlInitChildNode('listing_printing_frequency')
-##         node.xmlSetTextNode(str(default))
-
-##         default = self._defaultLagrangianOutputValues()['postprocessing_frequency']
-##         node = self.node_output.xmlInitChildNode('postprocessing_frequency')
-##         node.xmlSetTextNode(str(default))
-
-##         default = self._defaultLagrangianOutputValues()['postprocessing_format']
-##         self.node_output.xmlInitChildNode('postprocessing_format', choice=default)
-
-##         default = self._defaultLagrangianOutputValues()['postprocessing_options']
-##         self.node_output.xmlInitChildNode('postprocessing_options', choice=default)
-
-##         default = self._defaultLagrangianOutputValues()['particles']
-##         self.node_output.xmlInitChildNode('particles', status=default)
-
-##         default = self._defaultLagrangianOutputValues()['trajectory']
-##         self.node_output.xmlInitChildNode('trajectory', status=default)
-
-##         default = self._defaultLagrangianOutputValues()['number_of_particles']
-##         node = self.node_output.xmlInitChildNode('number_of_particles')
-##         node.xmlSetTextNode(str(default))
-
-##         default = self._defaultLagrangianOutputValues()['resident_time']
-##         self.node_output.xmlInitChildNode('resident_time', status=default)
-
-##         default = self._defaultLagrangianOutputValues()['diameter']
-##         self.node_output.xmlInitChildNode('diameter', status=default)
-
-##         default = self._defaultLagrangianOutputValues()['velocity_particles']
-##         self.node_output.xmlInitChildNode('velocity_particles', status=default)
-
-##         default = self._defaultLagrangianOutputValues()['velocity_fluid_seen']
-##         self.node_output.xmlInitChildNode('velocity_fluid_seen', status=default)
-
-##         default = self._defaultLagrangianOutputValues()['mass']
-##         self.node_output.xmlInitChildNode('mass', status=default)
-
-##         default = self._defaultLagrangianOutputValues()['shrinking_core_diameter']
-##         self.node_output.xmlInitChildNode('shrinking_core_diameter', status=default)
-
-##         default = self._defaultLagrangianOutputValues()['raw_coal_mass_fraction']
-##         self.node_output.xmlInitChildNode('raw_coal_mass_fraction', status=default)
-
-##         default = self._defaultLagrangianOutputValues()['char_mass_fraction']
-##         self.node_output.xmlInitChildNode('char_mass_fraction', status=default)
-
-
-    @Variables.undoLocal
-    def setTrajectoryStatus(self, status):
-        """
-        Update the trajectory mode status markup from the XML document.
-        """
-        self.isOnOff(status)
-        node_traj = self.node_lagr.xmlInitNode('trajectory', 'status')
-        node_traj['status'] = status
-
-
-    @Variables.noUndo
-    def getTrajectoryStatus(self):
-        """
-        Return status for trajectory mode.
-        """
-        node_traj = self.node_output.xmlInitChildNode('trajectory', 'status')
-        status = node_traj['status']
-        if not status:
-            status = self._defaultLagrangianOutputValues()['trajectory']
-            self.setTrajectoryStatus(status)
-        return status
-
-
-    @Variables.undoLocal
-    def setParticlesStatus(self, status):
-        """
-        Update the particles mode status markup from the XML document.
-        """
-        self.isOnOff(status)
-        node_part = self.node_output.xmlInitChildNode('particles', 'status')
-        node_part['status'] = status
-
-
-    @Variables.noUndo
-    def getParticlesStatus(self):
-        """
-        Return status for particles mode.
-        """
-        node_part = self.node_output.xmlInitChildNode('particles', 'status')
-        status = node_part['status']
-        if not status:
-            status = self._defaultLagrangianOutputValues()['particles']
-            self.setParticlesStatus(status)
-        return status
-
-
-    @Variables.undoLocal
-    def setDisplayParticlesValue(self, value):
-        """
-        Update value of particles for post-processing display.
-        """
-        self.isInt(value)
-        self.isGreaterOrEqual(value, 0)
-        self.node_output.xmlSetData('number_of_particles', value)
-
-
-    @Variables.noUndo
-    def getDisplayParticlesValue(self):
-        """
-        Return the value of particles for post-processing display.
-        """
-        npart = self.node_output.xmlGetInt('number_of_particles')
-        if npart == None:
-            npart = self._defaultLagrangianOutputValues()['number_of_particles']
-            self.setDisplayParticlesValue(npart)
-        return npart
-
-
-    @Variables.undoLocal
-    def setListingFrequency(self, value):
-        """
-        Update the value for listing frequency.
-        """
-        self.isInt(value)
-        self.isGreaterOrEqual(value, -1)
-        self.node_output.xmlSetData('listing_printing_frequency', value)
-
-
-    @Variables.noUndo
-    def getListingFrequency(self):
-        """
-        Return the value for listing frequency.
-        """
-        freq = self.node_output.xmlGetInt('listing_printing_frequency')
-        if freq == None:
-            freq = self._defaultLagrangianOutputValues()['listing_printing_frequency']
-            self.setListingFrequency(freq)
-        return freq
-
-
-    @Variables.undoLocal
-    def setPostProcessingFrequency(self, value):
-        """
-        Update the value for post-processing frequency.
-        """
-        self.isInt(value)
-        self.isGreaterOrEqual(value, 0)
-        self.node_output.xmlSetData('postprocessing_frequency', value)
-
-
-    @Variables.noUndo
-    def getPostProcessingFrequency(self):
-        """
-        Return the value for post-processing frequency.
-        """
-        freq = self.node_output.xmlGetInt('postprocessing_frequency')
-        if freq == None:
-            freq = self._defaultLagrangianOutputValues()['postprocessing_frequency']
-            self.setPostProcessingFrequency(freq)
-        return freq
-
-
-    @Variables.noUndo
-    def getPostProcessingFormat(self):
-        """
-        Return the value for post-processing format.
-        """
-        node_format = self.node_output.xmlInitChildNode('postprocessing_format', 'choice')
-        format = node_format['choice']
-        if not format:
-            format = self._defaultLagrangianOutputValues()['postprocessing_format']
-        return format
-
-
-    @Variables.noUndo
-    def getPostProcessingOption(self):
-        """
-        Return the value for post-processing options.
-        """
-        node_format = self.node_output.xmlInitChildNode('postprocessing_options', 'choice')
-        format = node_format['choice']
-        if not format:
-            format = self._defaultLagrangianOutputValues()['postprocessing_options']
-        return format
 
 
     @Variables.undoLocal
@@ -444,35 +252,6 @@ class LagrangianOutputModel(Model):
 
 
     @Variables.undoLocal
-    def setCoalParticleTemperatureStatus(self, status):
-        """
-        Update the status markup from the XML document to associate the variable
-        'temperature of the coal particles' with the display (trajectory or particles) mode.
-        """
-        self.isOnOff(status)
-        node_temp = self.node_output.xmlInitChildNode('coal_temperature', 'status')
-        node_temp['status'] = status
-
-
-    @Variables.noUndo
-    def getCoalParticleTemperatureStatus(self):
-        """
-        Return status for association of the variable 'temperature of the coal particles'
-        with the display.
-        """
-        node_temp = self.node_output.xmlInitChildNode('coal_temperature', 'status')
-        status = node_temp['status']
-        if not status:
-            status = self._defaultLagrangianOutputValues()['coal_temperature']
-            self.setParticleTemperatureStatus(status)
-        return status
-        if not status:
-            status = self._defaultLagrangianOutputValues()['mass']
-            self.setParticleMassStatus(status)
-        return status
-
-
-    @Variables.undoLocal
     def setCoalParticleDiameterStatus(self, status):
         """
         Update the status markup from the XML document to associate the variable
@@ -590,19 +369,6 @@ class LagrangianOutputTestCase(unittest.TestCase):
         model = LagrangianOutputModel(self.case)
         doc = """
         <output>
-        <listing_printing_frequency>
-                1
-        </listing_printing_frequency>
-        <postprocessing_frequency>
-                1
-        </postprocessing_frequency>
-        <postprocessing_format choice="EnSight"/>
-        <postprocessing_options choice="ascii"/>
-        <particles status="off"/>
-        <trajectory status="off"/>
-        <number_of_particles>
-                500
-        </number_of_particles>
         <resident_time status="off"/>
         <diameter status="off"/>
         <velocity_particles status="off"/>
@@ -636,42 +402,6 @@ class LagrangianOutputTestCase(unittest.TestCase):
             'Could not set values for'
 
 
-    def checkSetandGetPostProcessingFrequency(self):
-        """
-        Check whether the postprocessing frequency method could be set and get
-        """
-        mdl = LagrangianOutputModel(self.case)
-        value = mdl.getPostProcessingFrequency()
-        assert value == 1 ,\
-        'Could not get default value for postprocessing_frequency'
-        mdl.setPostProcessingFrequency(1234)
-        doc = """
-        <postprocessing_frequency>
-        1234
-        </postprocessing_frequency>
-        """
-
-        assert mdl.node_output.xmlInitChildNode('postprocessing_frequency') == self.xmlNodeFromString(doc) ,\
-            'Could not set values for'
-
-
-    def checkSetandGetTrajectoryStatus(self):
-        """
-        Check whether the trajectory method could be set and get
-        """
-        mdl = LagrangianOutputModel(self.case)
-        status = mdl.getTrajectoryStatus()
-        assert status == 'off' ,\
-        'Could not get default values for trajectory status'
-        mdl.setTrajectoryStatus('on')
-        doc = """
-        <trajectory status="on"/>
-        """
-
-        assert mdl.node_output.xmlInitChildNode('trajectory') == self.xmlNodeFromString(doc) ,\
-            'Could not set values for trajectory status'
-
-
     def checkSetandGetParticlesStatus(self):
         """
         Check whether the particles mode method could be set and get
@@ -687,25 +417,6 @@ class LagrangianOutputTestCase(unittest.TestCase):
 
         assert mdl.node_output.xmlInitChildNode('particles') == self.xmlNodeFromString(doc) ,\
             'Could not set values for particles mode status'
-
-
-    def checkSetandGetDisplayParticlesValue(self):
-        """
-        Check whether the particles to be display method could be set and get
-        """
-        mdl = LagrangianOutputModel(self.case)
-        value = mdl.getDisplayParticlesValue()
-        assert value == 500 ,\
-        'Could not get default value for '
-        mdl.setDisplayParticlesValue(123456789)
-        doc = """
-        <number_of_particles>
-        123456789
-        </number_of_particles>
-        """
-
-        assert mdl.node_output.xmlInitChildNode('number_of_particles') == self.xmlNodeFromString(doc) ,\
-            'Could not set values for'
 
 
     def checkSetandGetFluidVelocityStatus(self):
@@ -809,23 +520,6 @@ class LagrangianOutputTestCase(unittest.TestCase):
 
         assert mdl.node_output.xmlInitChildNode('mass') == self.xmlNodeFromString(doc) ,\
             'Could not set values for mass status'
-
-
-    def checkSetandGetCoalParticleTemperatureStatus(self):
-        """
-        Check whether the method for 'temperature of the coal particles'
-        association with display could be set and get
-        """
-        mdl = LagrangianOutputModel(self.case)
-        status = mdl.getCoalParticleTemperatureStatus()
-        assert status == 'off' ,\
-        'Could not get default values for status'
-        mdl.setCoalParticleTemperatureStatus('on')
-        doc = """
-        """
-
-        assert mdl.node_output.xmlInitChildNode('') == self.xmlNodeFromString(doc) ,\
-            'Could not set values for status'
 
 
     def checkSetandGetCoalParticleDiameterStatus(self):

@@ -2722,13 +2722,9 @@ if (iilagr.ne.0) then
 
   write(nfecra,8142) nordre, ilapoi
 
-  write(nfecra,8150) iensi1, iensi2
-  if (iensi1.eq.1 .or. iensi2.eq.1) then
-    write(nfecra,8155) nbvis, nvisla, ivisv1, ivisv2,             &
-                       ivistp, ivisdm, iviste, ivismp
-    if (iphyla.eq.2) then
-      write(nfecra,8156) ivishp, ivisdk, ivisch, ivisck
-    endif
+  write(nfecra,8155) ivisv1, ivisv2, ivistp, ivisdm, iviste, ivismp
+  if (iphyla.eq.2) then
+    write(nfecra,8156) ivisdk, ivisch, ivisck
   endif
 
   write(nfecra,8160) iensi3
@@ -2815,14 +2811,8 @@ endif
 '       NORDRE = ',4x,i10,    ' (1 ou 2 ordre schema en temps)',/,&
 '       ILAPOI = ',4x,i10,    ' (1 corr. vit instantannees   )'  )
 
- 8150 format(                                                     &
-' --- Options Postprocessing Trajectoires/Deplacement :',       /,&
-'       IENSi1 = ',4x,i10,    ' (1 : post mode trajectoires  )',/,&
-'       IENSi2 = ',4x,i10,    ' (1 : post mode deplacements  )'  )
-
  8155 format(                                                     &
-'       NBVIS  = ',4x,i10,    ' (nb part max visualisables   )',/,&
-'       NVISLA = ',4x,i10,    ' (periode d acquisition, 0 non)',/,&
+' --- Options Postprocessing Trajectoires/Particules :',        /,&
 '       IVISV1 = ',4x,i10,    ' (1 : vitesse fluide vu, 0 non)',/,&
 '       IVISV2 = ',4x,i10,    ' (1 : vitesse particule, 0 non)',/,&
 '       IVISTP = ',4x,i10,    ' (1 : temps de sejour,   0 non)',/,&
@@ -2831,7 +2821,6 @@ endif
 '       IVISMP = ',4x,i10,    ' (1 : masse particule,   0 non)'  )
 
  8156 format(                                                     &
-'       IVISHP = ',4x,i10,    ' (1 : temp/enthal pour charbon)',/,&
 '       IVISDK = ',4x,i10,    ' (1 : diam coeur retrecissant )',/,&
 '       IVISCH = ',4x,i10,    ' (1 : masse de charbon actif  )',/,&
 '       IVISCK = ',4x,i10,    ' (1 : masse de coke           )'  )
@@ -2924,14 +2913,8 @@ endif
 '       NORDRE = ',4x,i10,    ' (1 or 2 time scheme order    )',/,&
 '       ILAPOI = ',4x,i10,    ' (1 inst. velcity corr.       )'  )
 
- 8150 format(                                                     &
-' --- Trajectory/displacement postprocessing options:',         /,&
-'       IENSi1 = ',4x,i10,    ' (1: post trajectories mode   )',/,&
-'       IENSi2 = ',4x,i10,    ' (1: post displcaments mode   )'  )
-
  8155 format(                                                     &
-'       NBVIS  = ',4x,i10,    ' (max nb visualizatlbe parts  )',/,&
-'       NVISLA = ',4x,i10,    ' (acquisition period, 0 none  )',/,&
+' --- Trajectory/particle     postprocessing options:',         /,&
 '       IVISV1 = ',4x,i10,    ' (1: fluid velocity vu, 0 none)', /&
 '       IVISV2 = ',4x,i10,    ' (1: particle velocity, 0 none)',/,&
 '       IVISTP = ',4x,i10,    ' (1: resident time,     0 none)',/,&
@@ -2940,7 +2923,6 @@ endif
 '       IVISMP = ',4x,i10,    ' (1: particle mass,     0 none)'  )
 
  8156 format(                                                     &
-'       IVISHP = ',4x,i10,    ' (1: temp/enthalpy for coal   )',/,&
 '       IVISDK = ',4x,i10,    ' (1: shrinking core diameter  )',/,&
 '       IVISCH = ',4x,i10,    ' (1: active coal mass         )',/,&
 '       IVISCK = ',4x,i10,    ' (1: coke mass                )'  )

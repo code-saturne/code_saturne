@@ -427,7 +427,6 @@ Volume conditions
 Particles and droplets tracking
     Global settings
     Statistics
-    Output
 Boundary conditions
     Definition of boundary regions
     Boundary conditions
@@ -444,6 +443,7 @@ Calculation control
     Output control
     Volume solution control
     Surface solution control
+    Lagrangian solution control
     Profiles
 Calculation management
     Start/Restart

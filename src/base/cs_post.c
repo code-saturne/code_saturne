@@ -44,10 +44,12 @@
 #include "bft_printf.h"
 
 #include "fvm_nodal.h"
+#include "fvm_nodal_append.h"
 #include "fvm_writer.h"
 
 #include "cs_base.h"
 #include "cs_field.h"
+#include "cs_lagr_extract.h"
 #include "cs_log.h"
 #include "cs_mesh.h"
 #include "cs_mesh_connect.h"
@@ -217,7 +219,8 @@ typedef enum {
   CS_POST_LOCATION_CELL,         /* Values located at cells */
   CS_POST_LOCATION_I_FACE,       /* Values located at interior faces */
   CS_POST_LOCATION_B_FACE,       /* Values located at boundary faces */
-  CS_POST_LOCATION_VERTEX        /* Values located at vertices */
+  CS_POST_LOCATION_VERTEX,       /* Values located at vertices */
+  CS_POST_LOCATION_PARTICLE      /* Values located at particles */
 
 } cs_post_location_t;
 
@@ -263,29 +266,34 @@ typedef struct {
                                             mesh, > 0 for user mesh */
 
   char                   *name;          /* Mesh name */
-  char                   *criteria[3];   /* Base selection criteria for
-                                            cells, interior faces, and
-                                            boundary faces respectively */
-  cs_post_elt_select_t   *sel_func[3];   /* Advanced selection functions for
-                                            cells, interior faces, and
-                                            boundary faces respectively */
-  void                   *sel_input[3];  /* Advanced selection input for
-                                            cells, interior faces, and
-                                            boundary faces respectively */
-  int                     ent_flag[3];   /* Presence of cells (ent_flag[0],
+  char                   *criteria[4];   /* Base selection criteria for
+                                            cells, interior faces,
+                                            boundary faces, and particles
+                                            respectively */
+  cs_post_elt_select_t   *sel_func[4];   /* Advanced selection functions for
+                                            cells, interior faces,
+                                            boundary faces, and particles
+                                            respectively */
+  void                   *sel_input[4];  /* Advanced selection input for
+                                            matching selection functions */
+  int                     ent_flag[4];   /* Presence of cells (ent_flag[0],
                                             interior faces (ent_flag[1]),
-                                            or boundary faces (ent_flag[2])
+                                            boundary faces (ent_flag[2]),
+                                            or particles (ent_flag[3] = 1
+                                            for particles, 2 for trajectories)
                                             on one processor at least */
 
   int                     cat_id;        /* Optional category id as regards
                                             variables output (-1 as base
                                             volume mesh, -2 as base boundary
-                                            mesh, 0 by default) */
+                                            mesh, -4 as particles mesh,
+                                            0 by default) */
 
   int                     alias;         /* If > -1, index in array of
                                             post-processing meshes of the
                                             first mesh sharing the same
                                             exportable mesh */
+  int                     edges_ref;     /* Base mesh for edges mesh */
 
   bool                    add_groups;    /* Add group information if present */
 
@@ -297,6 +305,9 @@ typedef struct {
 
   cs_lnum_t               n_i_faces;     /* N. associated interior faces */
   cs_lnum_t               n_b_faces;     /* N. associated boundary faces */
+
+  double                  density;       /* Particles density in case
+                                            of particle mesh */
 
   const fvm_nodal_t      *exp_mesh;      /* Associated exportable mesh */
   fvm_nodal_t            *_exp_mesh;     /* Associated exportable mesh,
@@ -327,18 +338,24 @@ static const cs_real_t  *_cs_post_cumulative_mom_time = NULL;
 
 static bool        _cs_post_domain = true;
 
-/* Array of exportable meshes associated with post-processing */
-/* (meshes -1 and -2 reserved, so free ids start at -2)*/
+/* Flag for stable numbering of particles */
 
-static int              _cs_post_min_mesh_id = -2;
+static bool        _number_particles_by_coord = false;
+
+/* Array of exportable meshes associated with post-processing;
+   meshes -1 (volume), -2 (boundary), and -3 (particles)
+   are reserved, so free ids start under -3) */
+
+static int              _cs_post_min_mesh_id = -3;
 static int              _cs_post_n_meshes = 0;
 static int              _cs_post_n_meshes_max = 0;
 static cs_post_mesh_t  *_cs_post_meshes = NULL;
 
 /* Array of writers for post-processing; */
-/* writers -1 (default) and -2 (show errors) are reserved */
+/* writers -1 (default), -2 (show errors), -3 (particles default),
+   and -4 (trajectories default) are reserved */
 
-static int                _cs_post_min_writer_id = -2;
+static int                _cs_post_min_writer_id = -4;
 static int                _cs_post_n_writers = 0;
 static int                _cs_post_n_writers_max = 0;
 static cs_post_writer_t  *_cs_post_writers = NULL;
@@ -896,6 +913,44 @@ _cs_post_mesh_id_try(int  mesh_id)
 }
 
 /*----------------------------------------------------------------------------
+ * Return indicator base on Lagrangian calculation status:
+ *
+ * parameters:
+ *   ts            <-- time step structure, or NULL
+ *
+ * returns:
+ *   0 if Lagrangian model is not active
+ *   1 if Lagrangian model is active but no particle data is ready
+ *   2 if current but not previous particle data is present
+ *   3 if current and previous particle data is present
+ *----------------------------------------------------------------------------*/
+
+static int
+_lagragian_needed(const cs_time_step_t  *ts)
+{
+  int _model, _restart, _frozen;
+  int retval = 0;
+
+  cs_lagr_status(&_model, &_restart, &_frozen);
+
+  if (_model != 0) {
+
+    retval = 1;
+
+    if (ts != NULL) {
+      int _nt_start = (_restart) ? ts->nt_prev : ts->nt_prev + 1;
+      if (ts->nt_cur == _nt_start)
+        retval = 2;
+      else if (ts->nt_cur > _nt_start)
+        retval = 3;
+    }
+
+  }
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
  * Add or select a post-processing mesh, do basic initialization, and return
  * a pointer to the associated structure.
  *
@@ -903,6 +958,7 @@ _cs_post_mesh_id_try(int  mesh_id)
  *   mesh_id      <-- requested mesh id
  *   time_varying <-- if true, mesh may be redefined over time if associated
  *                    writers allow it
+ *   particles    <-- 0 for standard mesh, 1 for particles, 2 for trajectories
  *   n_writers    <-- number of associated writers
  *   writer_ids   <-- ids of associated writers
  *
@@ -913,6 +969,7 @@ _cs_post_mesh_id_try(int  mesh_id)
 static cs_post_mesh_t *
 _predefine_mesh(int        mesh_id,
                 bool       time_varying,
+                int        particles,
                 int        n_writers,
                 const int  writer_ids[])
 {
@@ -935,7 +992,7 @@ _predefine_mesh(int        mesh_id,
       post_mesh = _cs_post_meshes + i;
 
       BFT_FREE(post_mesh->name);
-      for (j = 0; j < 3; j++)
+      for (j = 0; j < 4; j++)
         BFT_FREE(post_mesh->criteria[j]);
       BFT_FREE(post_mesh->writer_id);
 
@@ -976,6 +1033,7 @@ _predefine_mesh(int        mesh_id,
   post_mesh->name = NULL;
   post_mesh->cat_id = mesh_id;
   post_mesh->alias = -1;
+  post_mesh->edges_ref = -1;
 
   post_mesh->n_writers = 0;
   post_mesh->writer_id = NULL;
@@ -984,7 +1042,7 @@ _predefine_mesh(int        mesh_id,
 
   post_mesh->add_groups = false;
 
-  for (j = 0; j < 3; j++) {
+  for (j = 0; j < 4; j++) {
     post_mesh->criteria[j] = NULL;
     post_mesh->sel_func[j] = NULL;
     post_mesh->sel_input[j] = NULL;
@@ -993,6 +1051,8 @@ _predefine_mesh(int        mesh_id,
 
   post_mesh->n_i_faces = 0;
   post_mesh->n_b_faces = 0;
+
+  post_mesh->density = 1.;
 
   post_mesh->exp_mesh = NULL;
   post_mesh->_exp_mesh = NULL;
@@ -1011,23 +1071,64 @@ _predefine_mesh(int        mesh_id,
   post_mesh->n_writers = n_writers;
   BFT_MALLOC(post_mesh->writer_id, n_writers, int);
 
-  for (i = 0; i < n_writers; i++) {
+  /* Non-Lagrangian mesh */
 
-    fvm_writer_time_dep_t mod_flag;
-    int _writer_id = _cs_post_writer_id(writer_ids[i]);
-    cs_post_writer_t  *writer = _cs_post_writers + _writer_id;
+  if (particles == 0) {
 
-    post_mesh->writer_id[i] = _writer_id;
+    for (i = 0; i < n_writers; i++) {
 
-    if (writer->wd != NULL)
-      mod_flag = writer->wd->time_dep;
-    else
-      mod_flag = fvm_writer_get_time_dep(writer->writer);
+      fvm_writer_time_dep_t mod_flag;
+      int _writer_id = _cs_post_writer_id(writer_ids[i]);
+      cs_post_writer_t  *writer = _cs_post_writers + _writer_id;
 
-    if (mod_flag < post_mesh->mod_flag_min)
-      post_mesh->mod_flag_min = mod_flag;
-    if (mod_flag > post_mesh->mod_flag_max)
-      post_mesh->mod_flag_max = mod_flag;
+      post_mesh->writer_id[i] = _writer_id;
+
+      if (writer->wd != NULL)
+        mod_flag = writer->wd->time_dep;
+      else
+        mod_flag = fvm_writer_get_time_dep(writer->writer);
+
+      if (mod_flag < post_mesh->mod_flag_min)
+        post_mesh->mod_flag_min = mod_flag;
+      if (mod_flag > post_mesh->mod_flag_max)
+        post_mesh->mod_flag_max = mod_flag;
+
+    }
+
+  }
+
+  /* Lagrangian mesh */
+
+  else {
+
+    fvm_writer_time_dep_t mod_type = (particles == 2) ?
+      FVM_WRITER_FIXED_MESH : FVM_WRITER_TRANSIENT_CONNECT;
+
+    post_mesh->ent_flag[3] = particles;
+
+    post_mesh->mod_flag_min = FVM_WRITER_TRANSIENT_CONNECT;
+    post_mesh->mod_flag_max = FVM_WRITER_TRANSIENT_CONNECT;
+
+    for (i = 0, j = 0; i < n_writers; i++) {
+
+      fvm_writer_time_dep_t mod_flag;
+      int _writer_id = _cs_post_writer_id(writer_ids[i]);
+      cs_post_writer_t  *writer = _cs_post_writers + _writer_id;
+
+      if (writer->wd != NULL)
+        mod_flag = writer->wd->time_dep;
+      else
+        mod_flag = fvm_writer_get_time_dep(writer->writer);
+
+      if (mod_flag == mod_type)
+        post_mesh->writer_id[j++] = _writer_id;
+
+    }
+
+    if (j < n_writers) {
+      post_mesh->n_writers = j;
+      BFT_MALLOC(post_mesh->writer_id, j, int);
+    }
 
   }
 
@@ -1053,7 +1154,7 @@ _free_mesh(int _mesh_id)
   BFT_FREE(post_mesh->writer_id);
   post_mesh->n_writers = 0;
 
-  for (i = 0; i < 3; i++)
+  for (i = 0; i < 4; i++)
     BFT_FREE(post_mesh->criteria[i]);
 
   BFT_FREE(post_mesh->name);
@@ -1080,7 +1181,7 @@ _free_mesh(int _mesh_id)
 static void
 _check_mesh_cat_id(cs_post_mesh_t  *post_mesh)
 {
-  if (post_mesh->cat_id == -1 || post_mesh->cat_id == -1) {
+  if (post_mesh->cat_id == -1 || post_mesh->cat_id == -2) {
     const int *ef = post_mesh->ent_flag;
     if (ef[0] == 1 && ef[1] == 0 && ef[2] == 0)
       post_mesh->cat_id = -1;
@@ -1213,7 +1314,7 @@ _define_export_mesh(cs_post_mesh_t  *post_mesh,
   /* Global indicators of mesh entity type presence;
      updated only if the mesh is not totally empty (for time-depending
      meshes, empty at certain times, we want to know the last type
-     of entity used in USMPST) */
+     of entity used) */
 
   for (i = 0; i < 3; i++) {
     if (glob_flag[i] == 0)
@@ -1247,87 +1348,327 @@ _define_export_mesh(cs_post_mesh_t  *post_mesh,
 }
 
 /*----------------------------------------------------------------------------
+ * Create a particles post-processing mesh;
+ *
+ * parameters:
+ *   post_mesh     <-> pointer to partially initialized post-processing mesh
+ *   n_particles   <-- number of associated particles
+ *   particle_list <-> list of associated particles
+ *   ts            <-- time step structure, or NULL
+ *----------------------------------------------------------------------------*/
+
+static void
+_define_particle_export_mesh(cs_post_mesh_t        *post_mesh,
+                             cs_lnum_t              n_particles,
+                             cs_lnum_t              particle_list[],
+                             const cs_time_step_t  *ts)
+{
+  /* local variables */
+
+  fvm_nodal_t  *exp_mesh = NULL;
+
+  assert(ts != NULL);
+
+  /* Create associated structure */
+
+  {
+    cs_lagr_particle_set_t  *p_set = NULL, *p_set_prev = NULL;
+    cs_gnum_t *global_num = NULL;
+    cs_coord_3_t *coords = NULL;
+    fvm_io_num_t  *io_num = NULL;
+
+    cs_lagr_get_particle_sets(&p_set, &p_set_prev);
+
+    /* Particle positions */
+
+    if (post_mesh->ent_flag[3] == 1) {
+
+      assert(ts->nt_cur > -1);
+
+      exp_mesh = fvm_nodal_create(post_mesh->name, 3);
+
+      BFT_MALLOC(coords, n_particles, cs_coord_3_t);
+
+      cs_lagr_get_particle_values(p_set,
+                                  CS_LAGR_COORDS,
+                                  CS_REAL_TYPE,
+                                  3,
+                                  n_particles,
+                                  particle_list,
+                                  coords);
+
+      fvm_nodal_define_vertex_list(exp_mesh, n_particles, NULL);
+      fvm_nodal_transfer_vertices(exp_mesh, (cs_coord_t *)coords);
+
+    }
+
+    /* Particle trajectories */
+
+    else if (post_mesh->ent_flag[3] == 2) {
+
+      cs_lnum_t i;
+      cs_lnum_t  *vertex_num;
+      char *mesh_name;
+
+      assert(ts->nt_cur > 0);
+
+      BFT_MALLOC(mesh_name, strlen(post_mesh->name) + 32, char);
+      sprintf(mesh_name, "%s_%05d", post_mesh->name, ts->nt_cur);
+
+      exp_mesh = fvm_nodal_create(mesh_name, 3);
+
+      BFT_FREE(mesh_name);
+
+      BFT_MALLOC(vertex_num, n_particles*2, cs_lnum_t);
+
+      for (i = 0; i < n_particles*2; i++)
+        vertex_num[i] = i+1;
+
+      BFT_MALLOC(coords, n_particles*2, cs_coord_3_t);
+
+      cs_lagr_get_trajectory_values(p_set,
+                                    p_set_prev,
+                                    CS_LAGR_COORDS,
+                                    CS_REAL_TYPE,
+                                    3,
+                                    n_particles,
+                                    particle_list,
+                                    coords);
+
+      fvm_nodal_append_by_transfer(exp_mesh,
+                                   n_particles,
+                                   FVM_EDGE,
+                                   NULL,
+                                   NULL,
+                                   NULL,
+                                   vertex_num,
+                                   NULL);
+
+      fvm_nodal_transfer_vertices(exp_mesh, (cs_coord_t *)coords);
+
+      if (post_mesh->nt_last < ts->nt_cur)
+        post_mesh->nt_last = -2;
+    }
+
+    /* Build global numbering if required */
+
+    if (_number_particles_by_coord)
+      io_num = fvm_io_num_create_from_sfc((const cs_coord_t *)coords,
+                                          3,
+                                          n_particles,
+                                          FVM_IO_NUM_SFC_MORTON_BOX);
+    else if (cs_glob_n_ranks > 1)
+      io_num = fvm_io_num_create_from_scan(n_particles);
+
+    if (io_num != NULL) {
+
+      global_num = fvm_io_num_transfer_global_num(io_num);
+      fvm_io_num_destroy(io_num);
+
+      if (post_mesh->ent_flag[3] == 1) {
+
+        fvm_nodal_init_io_num(exp_mesh, global_num, 0);
+        BFT_FREE(global_num);
+
+      }
+      else if (post_mesh->ent_flag[3] == 2) {
+
+        cs_lnum_t i;
+        cs_gnum_t *g_coord_num;
+
+        fvm_nodal_init_io_num(exp_mesh, global_num, 1);
+
+        BFT_MALLOC(g_coord_num, n_particles*2, cs_gnum_t);
+        for (i = 0; i < n_particles; i++) {
+          g_coord_num[i*2] = global_num[i]*2 - 1;
+          g_coord_num[i*2+1] = global_num[i]*2;
+        }
+        BFT_FREE(global_num);
+
+        fvm_nodal_init_io_num(exp_mesh, g_coord_num, 0);
+
+        BFT_FREE(g_coord_num);
+
+      }
+
+    }
+
+  }
+
+  /* Fix category id */
+
+  if (post_mesh->cat_id < 0)
+    post_mesh->cat_id = -3;
+
+  /* Link to newly created mesh */
+
+  post_mesh->exp_mesh = exp_mesh;
+  post_mesh->_exp_mesh = exp_mesh;
+}
+
+/*----------------------------------------------------------------------------
  * Initialize a post-processing mesh based on its selection criteria
  * or selection functions.
  *
  * parameters:
  *   post_mesh <-> pointer to partially initialized post-processing mesh
+ *   ts        <-- time step structure
  *----------------------------------------------------------------------------*/
 
 static void
-_define_mesh(cs_post_mesh_t *post_mesh)
-{
-  cs_lnum_t i;
-  cs_lnum_t n_cells = 0, n_i_faces = 0, n_b_faces = 0;
-  cs_lnum_t *cell_list = NULL, *i_face_list = NULL, *b_face_list = NULL;
+_define_mesh(cs_post_mesh_t        *post_mesh,
+             const cs_time_step_t  *ts)
 
+{
   const cs_mesh_t *mesh = cs_glob_mesh;
 
   assert(post_mesh != NULL);
 
-  /* Define element lists based on selection criteria */
+  assert(post_mesh->exp_mesh == NULL);
 
-  if (post_mesh->criteria[0] != NULL) {
-    const char *criteria = post_mesh->criteria[0];
-    if (!strcmp(criteria, "all[]"))
-      n_cells = mesh->n_cells;
-    else {
-      BFT_MALLOC(cell_list, mesh->n_cells, cs_lnum_t);
-      cs_selector_get_cell_list(criteria, &n_cells, cell_list);
-    }
-  }
-  else if (post_mesh->sel_func[0] != NULL) {
-    cs_post_elt_select_t *sel_func = post_mesh->sel_func[0];
-    sel_func(post_mesh->sel_input[0], &n_cells, &cell_list);
-    for (i = 0; i < n_cells; i++)
-      cell_list[i] += 1;
-  }
+  /* Edges mesh */
 
-  if (post_mesh->criteria[1] != NULL) {
-    const char *criteria = post_mesh->criteria[1];
-    if (!strcmp(criteria, "all[]"))
-      n_i_faces = mesh->n_i_faces;
-    else {
-      BFT_MALLOC(i_face_list, mesh->n_i_faces, cs_lnum_t);
-      cs_selector_get_i_face_list(criteria, &n_i_faces, i_face_list);
-    }
-  }
-  else if (post_mesh->sel_func[1] != NULL) {
-    cs_post_elt_select_t *sel_func = post_mesh->sel_func[1];
-    sel_func(post_mesh->sel_input[1], &n_i_faces, &i_face_list);
-    for (i = 0; i < n_i_faces; i++)
-      i_face_list[i] += 1;
+  if (post_mesh->edges_ref > -1) {
+
+    fvm_nodal_t *exp_edges = NULL;
+    cs_post_mesh_t *post_base
+      = _cs_post_meshes + _cs_post_mesh_id(post_mesh->edges_ref);
+
+    /* if base mesh structure is not built yet, force its build now */
+
+    if (post_base->exp_mesh == NULL)
+      _define_mesh(post_base, ts);
+
+    /* Copy mesh edges to new mesh structure */
+
+    exp_edges = fvm_nodal_copy_edges(post_mesh->name, post_mesh->exp_mesh);
+
+    /* Create mesh and assign to structure */
+
+    post_mesh->exp_mesh = exp_edges;
+    post_mesh->_exp_mesh = exp_edges;
   }
 
-  if (post_mesh->criteria[2] != NULL) {
-    const char *criteria = post_mesh->criteria[2];
-    if (!strcmp(criteria, "all[]"))
-      n_b_faces = mesh->n_b_faces;
-    else {
-      BFT_MALLOC(b_face_list, mesh->n_b_faces, cs_lnum_t);
-      cs_selector_get_b_face_list(criteria, &n_b_faces, b_face_list);
+  /* Standard (non-particle) meshes */
+
+  else if (post_mesh->ent_flag[3] == 0) {
+
+    cs_lnum_t i;
+    cs_lnum_t n_cells = 0, n_i_faces = 0, n_b_faces = 0;
+    cs_lnum_t *cell_list = NULL, *i_face_list = NULL, *b_face_list = NULL;
+
+    /* Define element lists based on selection criteria */
+
+    if (post_mesh->criteria[0] != NULL) {
+      const char *criteria = post_mesh->criteria[0];
+      if (!strcmp(criteria, "all[]"))
+        n_cells = mesh->n_cells;
+      else {
+        BFT_MALLOC(cell_list, mesh->n_cells, cs_lnum_t);
+        cs_selector_get_cell_list(criteria, &n_cells, cell_list);
+      }
     }
-  }
-  else if (post_mesh->sel_func[2] != NULL) {
-    cs_post_elt_select_t *sel_func = post_mesh->sel_func[2];
-    sel_func(post_mesh->sel_input[2], &n_b_faces, &b_face_list);
-    for (i = 0; i < n_b_faces; i++)
+    else if (post_mesh->sel_func[0] != NULL) {
+      cs_post_elt_select_t *sel_func = post_mesh->sel_func[0];
+      sel_func(post_mesh->sel_input[0], &n_cells, &cell_list);
+      for (i = 0; i < n_cells; i++)
+        cell_list[i] += 1;
+    }
+
+    if (post_mesh->criteria[1] != NULL) {
+      const char *criteria = post_mesh->criteria[1];
+      if (!strcmp(criteria, "all[]"))
+        n_i_faces = mesh->n_i_faces;
+      else {
+        BFT_MALLOC(i_face_list, mesh->n_i_faces, cs_lnum_t);
+        cs_selector_get_i_face_list(criteria, &n_i_faces, i_face_list);
+      }
+    }
+    else if (post_mesh->sel_func[1] != NULL) {
+      cs_post_elt_select_t *sel_func = post_mesh->sel_func[1];
+      sel_func(post_mesh->sel_input[1], &n_i_faces, &i_face_list);
+      for (i = 0; i < n_i_faces; i++)
+        i_face_list[i] += 1;
+    }
+
+    if (post_mesh->criteria[2] != NULL) {
+      const char *criteria = post_mesh->criteria[2];
+      if (!strcmp(criteria, "all[]"))
+        n_b_faces = mesh->n_b_faces;
+      else {
+        BFT_MALLOC(b_face_list, mesh->n_b_faces, cs_lnum_t);
+        cs_selector_get_b_face_list(criteria, &n_b_faces, b_face_list);
+      }
+    }
+    else if (post_mesh->sel_func[2] != NULL) {
+      cs_post_elt_select_t *sel_func = post_mesh->sel_func[2];
+      sel_func(post_mesh->sel_input[2], &n_b_faces, &b_face_list);
+      for (i = 0; i < n_b_faces; i++)
       b_face_list[i] += 1;
+    }
+
+    /* Define mesh based on current arguments */
+
+    _define_export_mesh(post_mesh,
+                        n_cells,
+                        n_i_faces,
+                        n_b_faces,
+                        cell_list,
+                        i_face_list,
+                        b_face_list);
+
+    BFT_FREE(cell_list);
+    BFT_FREE(i_face_list);
+    BFT_FREE(b_face_list);
+
   }
 
-  /* Define mesh based on current arguments */
+  /* Particle (Lagrangian) mesh */
 
-  _define_export_mesh(post_mesh,
-                      n_cells,
-                      n_i_faces,
-                      n_b_faces,
-                      cell_list,
-                      i_face_list,
-                      b_face_list);
+  else if (post_mesh->ent_flag[3] != 0 && ts != NULL) {
 
-  BFT_FREE(cell_list);
-  BFT_FREE(i_face_list);
-  BFT_FREE(b_face_list);
+    cs_lnum_t n_post_particles = 0, n_particles = cs_lagr_get_n_particles();
+    cs_lnum_t *particle_list = NULL;
+
+    if (post_mesh->criteria[3] != NULL) {
+
+      cs_lnum_t n_cells = 0;
+      cs_lnum_t *cell_list = NULL;
+      const char *criteria = post_mesh->criteria[3];
+
+      if (!strcmp(criteria, "all[]"))
+        n_cells = mesh->n_cells;
+      else {
+        BFT_MALLOC(cell_list, mesh->n_cells, cs_lnum_t);
+        cs_selector_get_cell_list(criteria, &n_cells, cell_list);
+      }
+      if (n_cells < mesh->n_cells || post_mesh->density < 1.) {
+        BFT_MALLOC(particle_list, n_particles, cs_lnum_t);
+        cs_lagr_get_particle_list(n_cells,
+                                  cell_list,
+                                  post_mesh->density,
+                                  &n_post_particles,
+                                  particle_list);
+        BFT_REALLOC(particle_list, n_post_particles, cs_lnum_t);
+      }
+      else
+        n_post_particles = n_particles;
+      BFT_FREE(cell_list);
+    }
+
+    else if (post_mesh->sel_func[3] != NULL) {
+      cs_post_elt_select_t *sel_func = post_mesh->sel_func[4];
+      sel_func(post_mesh->sel_input[0], &n_post_particles, &particle_list);
+    }
+
+    _define_particle_export_mesh(post_mesh,
+                                 n_post_particles,
+                                 particle_list,
+                                 ts);
+
+    BFT_FREE(particle_list);
+  }
+
 }
 
 /*----------------------------------------------------------------------------
@@ -1337,10 +1678,12 @@ _define_mesh(cs_post_mesh_t *post_mesh)
  *
  * parameters:
  *   post_mesh <-- pointer to postprocessing mesh structure
+ *   ts        <-- time step structure
  *----------------------------------------------------------------------------*/
 
 static void
-_redefine_mesh(cs_post_mesh_t  *post_mesh)
+_redefine_mesh(cs_post_mesh_t        *post_mesh,
+               const cs_time_step_t  *ts)
 {
   /* local variables */
 
@@ -1358,7 +1701,7 @@ _redefine_mesh(cs_post_mesh_t  *post_mesh)
 
   /* Define new mesh */
 
-  _define_mesh(post_mesh);
+  _define_mesh(post_mesh, ts);
 
   /* Update possible aliases */
 
@@ -1588,22 +1931,32 @@ _cs_post_write_domain(fvm_writer_t       *writer,
 /*----------------------------------------------------------------------------
  * Output a post-processing mesh using associated writers.
  *
+ * If the time step structure argument passed is NULL, a time-independent
+ * output will be assumed.
+ *
  * parameters:
  *   post_mesh  <-> pointer to post-processing mesh
- *   nt_cur_abs <-- current time step number
- *   t_cur_abs  <-- current physical time
+ *   ts         <-- time step structure, or NULL
  *----------------------------------------------------------------------------*/
 
 static void
-_cs_post_write_mesh(cs_post_mesh_t  *post_mesh,
-                    int              nt_cur_abs,
-                    double           t_cur_abs)
+_cs_post_write_mesh(cs_post_mesh_t        *post_mesh,
+                    const cs_time_step_t  *ts)
 {
   int  j;
   fvm_writer_time_dep_t  time_dep;
   bool  write_mesh = false;
 
   cs_post_writer_t *writer = NULL;
+
+  const int nt_cur = (ts != NULL) ? ts->nt_cur : -1;
+  const double t_cur = (ts != NULL) ? ts->t_cur : 0.;
+
+  /* Special case: particle trajectories can not be
+     output before time stepping starts */
+
+  if (post_mesh->ent_flag[3] == 2 && nt_cur < 1)
+    return;
 
   /* Loop on writers */
 
@@ -1618,12 +1971,12 @@ _cs_post_write_mesh(cs_post_mesh_t  *post_mesh,
 
     write_mesh = false;
 
-    if (time_dep == FVM_WRITER_FIXED_MESH) {
+    if (time_dep == FVM_WRITER_FIXED_MESH && post_mesh->ent_flag[3] != 2) {
       if (post_mesh->nt_last < -1)
         write_mesh = true;
     }
     else {
-      if (post_mesh->nt_last < nt_cur_abs && writer->active == 1)
+      if (post_mesh->nt_last < nt_cur && writer->active == 1)
         write_mesh = true;
     }
 
@@ -1633,16 +1986,16 @@ _cs_post_write_mesh(cs_post_mesh_t  *post_mesh,
         _init_writer(writer);
 
       if (post_mesh->exp_mesh == NULL)
-        _define_mesh(post_mesh);
+        _define_mesh(post_mesh, ts);
 
       _divide_poly(post_mesh, writer);
 
-      fvm_writer_set_mesh_time(writer->writer, nt_cur_abs, t_cur_abs);
+      fvm_writer_set_mesh_time(writer->writer, nt_cur, t_cur);
       fvm_writer_export_nodal(writer->writer, post_mesh->exp_mesh);
 
-      if (nt_cur_abs >= 0) {
-        writer->n_last = nt_cur_abs;
-        writer->t_last = t_cur_abs;
+      if (nt_cur >= 0) {
+        writer->n_last = nt_cur;
+        writer->t_last = t_cur;
       }
 
     }
@@ -1651,12 +2004,12 @@ _cs_post_write_mesh(cs_post_mesh_t  *post_mesh,
 
       _cs_post_write_domain(writer->writer,
                             post_mesh->exp_mesh,
-                            nt_cur_abs,
-                            t_cur_abs);
+                            nt_cur,
+                            t_cur);
 
-      if (nt_cur_abs >= 0) {
-        writer->n_last = nt_cur_abs;
-        writer->t_last = t_cur_abs;
+      if (nt_cur >= 0) {
+        writer->n_last = nt_cur;
+        writer->t_last = t_cur;
       }
 
     }
@@ -1664,7 +2017,7 @@ _cs_post_write_mesh(cs_post_mesh_t  *post_mesh,
   }
 
   if (write_mesh == true)
-    post_mesh->nt_last = nt_cur_abs;
+    post_mesh->nt_last = nt_cur;
 }
 
 /*----------------------------------------------------------------------------
@@ -2373,20 +2726,18 @@ _cs_post_build_moment(const cs_field_t  *f,
  *   cell_list   <-- list of cells (1 to n) of post-processing mesh
  *   i_face_list <-- list of interior faces (1 to n) of post-processing mesh
  *   b_face_list <-- list of boundary faces (1 to n) of post-processing mesh
- *   nt_cur_abs  <-- current time step number
- *   t_cur_abs   <-- current physical time
+ *   ts          <-- time step status structure, or NULL
  *----------------------------------------------------------------------------*/
 
 static void
-_cs_post_output_fields(cs_post_mesh_t   *post_mesh,
-                       cs_lnum_t         n_cells,
-                       cs_lnum_t         n_i_faces,
-                       cs_lnum_t         n_b_faces,
-                       const cs_lnum_t   cell_list[],
-                       const cs_lnum_t   i_face_list[],
-                       const cs_lnum_t   b_face_list[],
-                       int               nt_cur_abs,
-                       double            t_cur_abs)
+_cs_post_output_fields(cs_post_mesh_t        *post_mesh,
+                       cs_lnum_t              n_cells,
+                       cs_lnum_t              n_i_faces,
+                       cs_lnum_t              n_b_faces,
+                       const cs_lnum_t        cell_list[],
+                       const cs_lnum_t        i_face_list[],
+                       const cs_lnum_t        b_face_list[],
+                       const cs_time_step_t  *ts)
 {
   /* Output for cell mesh */
   /*----------------------*/
@@ -2471,11 +2822,10 @@ _cs_post_output_fields(cs_post_mesh_t   *post_mesh,
                         interleaved,
                         use_parent,
                         CS_POST_TYPE_cs_real_t,
-                        nt_cur_abs,
-                        t_cur_abs,
                         cell_val,
                         NULL,
-                        b_face_val);
+                        b_face_val,
+                        ts);
 
       if (_val != NULL)
         BFT_FREE(_val);
@@ -2539,17 +2889,21 @@ cs_f_post_write_var(int               mesh_id,
   cs_post_type_t var_type
     = (sizeof(cs_real_t) == 8) ? CS_POST_TYPE_double : CS_POST_TYPE_float;
 
+  const cs_time_step_t  *ts = cs_glob_time_step;
+
+  if (nt_cur_abs < 0) /* Allow forcing of time-independent output */
+    ts = NULL;
+
   cs_post_write_var(mesh_id,
                     var_name,
                     var_dim,
                     interlace,
                     use_parent,
                     var_type,
-                    nt_cur_abs,
-                    t_cur_abs,
                     cel_vals,
                     i_face_vals,
-                    b_face_vals);
+                    b_face_vals,
+                    ts);
 }
 
 /*! \endcond (end ignore by Doxygen) */
@@ -2723,7 +3077,7 @@ cs_post_define_volume_mesh(int          mesh_id,
 
   cs_post_mesh_t *post_mesh = NULL;
 
-  post_mesh = _predefine_mesh(mesh_id, false, n_writers, writer_ids);
+  post_mesh = _predefine_mesh(mesh_id, false, 0, n_writers, writer_ids);
 
   /* Define mesh based on current arguments */
 
@@ -2784,7 +3138,7 @@ cs_post_define_volume_mesh_by_func(int                    mesh_id,
 
   cs_post_mesh_t *post_mesh = NULL;
 
-  post_mesh = _predefine_mesh(mesh_id, time_varying, n_writers, writer_ids);
+  post_mesh = _predefine_mesh(mesh_id, time_varying, 0, n_writers, writer_ids);
 
   /* Define mesh based on current arguments */
 
@@ -2829,7 +3183,7 @@ cs_post_define_surface_mesh(int          mesh_id,
 
   cs_post_mesh_t *post_mesh = NULL;
 
-  post_mesh = _predefine_mesh(mesh_id, false, n_writers, writer_ids);
+  post_mesh = _predefine_mesh(mesh_id, false, 0, n_writers, writer_ids);
 
   /* Define mesh based on current arguments */
 
@@ -2901,7 +3255,7 @@ cs_post_define_surface_mesh_by_func(int                    mesh_id,
 
   cs_post_mesh_t *post_mesh = NULL;
 
-  post_mesh = _predefine_mesh(mesh_id, time_varying, n_writers, writer_ids);
+  post_mesh = _predefine_mesh(mesh_id, time_varying, 0, n_writers, writer_ids);
 
   /* Define mesh based on current arguments */
 
@@ -2917,6 +3271,135 @@ cs_post_define_surface_mesh_by_func(int                    mesh_id,
   post_mesh->add_groups = (add_groups != 0) ? true : false;
   if (auto_variables)
     post_mesh->cat_id = -2;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a particles post-processing mesh.
+ *
+ * Such a mesh is always time-varying, and will only be output by writers
+ * defined with the FVM_WRITER_TRANSIENT_CONNECT option.
+ *
+ * If the trajectory_mode argument is set to true, this logic is reversed,
+ * and output will only occur for writers defined with the
+ * FVM_WRITER_FIXED_MESH option. In this case, a submesh consisting of
+ * trajectory segments for the current time step will be added to
+ * the output at each output time step.
+ *
+ * \param[in]  mesh_id         id of mesh to define
+ *                             (< 0 reserved, > 0 for user)
+ * \param[in]  mesh_name       associated mesh name
+ * \param[in]  cell_criteria   selection criteria for cells containing
+ *                             particles, or NULL.
+ * \param[in]  density         fraction of the particles in the selected area
+ *                             which should be output (0 < density <= 1)
+ * \param[in]  trajectory      if true, activate trajectory mode
+ * \param[in]  auto_variables  if true, automatic output of main variables
+ * \param[in]  n_writers       number of associated writers
+ * \param[in]  writer_ids      ids of associated writers
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_define_particles_mesh(int          mesh_id,
+                              const char  *mesh_name,
+                              const char  *cell_criteria,
+                              double       density,
+                              bool         trajectory,
+                              bool         auto_variables,
+                              int          n_writers,
+                              const int    writer_ids[])
+{
+  /* Call common initialization */
+
+  int flag = (trajectory) ? 2 : 1;
+  cs_post_mesh_t *post_mesh = NULL;
+
+  post_mesh = _predefine_mesh(mesh_id, true, flag, n_writers, writer_ids);
+
+  /* Define mesh based on current arguments */
+
+  BFT_MALLOC(post_mesh->name, strlen(mesh_name) + 1, char);
+  strcpy(post_mesh->name, mesh_name);
+
+  if (cell_criteria != NULL) {
+    BFT_MALLOC(post_mesh->criteria[3], strlen(cell_criteria) + 1, char);
+    strcpy(post_mesh->criteria[3], cell_criteria);
+  }
+
+  post_mesh->add_groups = false;
+
+  post_mesh->density = CS_MIN(density, 1.);
+  post_mesh->density = CS_MAX(post_mesh->density, 0.);
+
+  if (auto_variables)
+    post_mesh->cat_id = -1;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a particles post-processing mesh using a selection function.
+ *
+ * The selection may be updated over time steps.
+ *
+ * Such a mesh is always time-varying, and will only be output by writers
+ * defined with the FVM_WRITER_TRANSIENT_CONNECT option.
+ *
+ * If the trajectory_mode argument is set to true, this logic is reversed,
+ * and output will only occur for writers defined with the
+ * FVM_WRITER_FIXED_MESH option. In this case, a submesh consisting of
+ * trajectory segments for the current time step will be added to
+ * the output at each output time step.
+ *
+ * Note: if the p_select_input pointer is non-NULL, it must point
+ * to valid data when the selection function is called, so
+ * that value or structure should not be temporary (i.e. local);
+ *
+ * \param[in]  mesh_id         id of mesh to define
+ *                             (< 0 reserved, > 0 for user)
+ * \param[in]  mesh_name       associated mesh name
+ * \param[in]  p_select_func   pointer to particles selection function
+ * \param[in]  p_select_input  pointer to optional input data for the particles
+ *                             selection function, or NULL
+ * \param[in]  trajectory      if true, activate trajectory mode
+ * \param[in]  auto_variables  if true, automatic output of main variables
+ * \param[in]  n_writers       number of associated writers
+ * \param[in]  writer_ids      ids of associated writers
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_define_particles_mesh_by_func(int                    mesh_id,
+                                      const char            *mesh_name,
+                                      cs_post_elt_select_t  *p_select_func,
+                                      void                  *p_select_input,
+                                      bool                   trajectory,
+                                      bool                   auto_variables,
+                                      int                    n_writers,
+                                      const int              writer_ids[])
+{
+  /* Call common initialization */
+
+  int flag = (trajectory) ? 2 : 1;
+  cs_post_mesh_t *post_mesh = NULL;
+
+  post_mesh = _predefine_mesh(mesh_id, true, flag, n_writers, writer_ids);
+
+  /* Define mesh based on current arguments */
+
+  BFT_MALLOC(post_mesh->name, strlen(mesh_name) + 1, char);
+  strcpy(post_mesh->name, mesh_name);
+
+  post_mesh->sel_func[3] = p_select_func;
+  post_mesh->sel_input[3] = p_select_input;
+  post_mesh->ent_flag[3] = 1;
+
+  post_mesh->add_groups = false;
+
+  post_mesh->density = 1.;
+
+  if (auto_variables)
+    post_mesh->cat_id = -3;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2974,7 +3457,8 @@ cs_post_define_alias_mesh(int        mesh_id,
 
   /* Call common initialization */
 
-  post_mesh = _predefine_mesh(mesh_id, true, n_writers, writer_ids);
+  post_mesh = _predefine_mesh(mesh_id, true, ref_mesh->ent_flag[3],
+                              n_writers, writer_ids);
 
   /* Define mesh based on current arguments */
 
@@ -2989,8 +3473,8 @@ cs_post_define_alias_mesh(int        mesh_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Create a post-processing mesh associated with an existing exportable mesh
- * representation.
+ * \brief Create a post-processing mesh associated with an existing exportable
+ * mesh representation.
  *
  * If the exportable mesh is not intended to be used elsewhere, one can choose
  * to transfer its property to the post-processing mesh, which will then
@@ -3049,7 +3533,7 @@ cs_post_define_existing_mesh(int           mesh_id,
 
   /* Initialization of base structure */
 
-  post_mesh = _predefine_mesh(mesh_id, true, n_writers, writer_ids);
+  post_mesh = _predefine_mesh(mesh_id, true, 0, n_writers, writer_ids);
 
   /* Assign mesh to structure */
 
@@ -3152,37 +3636,19 @@ cs_post_define_edges_mesh(int        mesh_id,
   /* local variables */
 
   cs_post_mesh_t *post_mesh = NULL;
-  fvm_nodal_t *exp_edges = NULL;
-  const fvm_nodal_t *exp_mesh = NULL;
-  const char *exp_name = NULL;
 
   cs_post_mesh_t *post_base
     = _cs_post_meshes + _cs_post_mesh_id(base_mesh_id);
 
-  /* if base mesh structure is not built yet, force its build now */
-
-  if (exp_mesh == NULL)
-    _define_mesh(post_base);
-
-  exp_mesh = post_base->exp_mesh;
-  exp_name = fvm_nodal_get_name(exp_mesh);
-
   /* Add and initialize base structure */
 
-  post_mesh = _predefine_mesh(mesh_id, true, n_writers, writer_ids);
+  post_mesh = _predefine_mesh(mesh_id, true, 0, n_writers, writer_ids);
 
-  BFT_MALLOC(post_mesh->name, strlen(exp_name) + strlen(_(" edges")) + 1, char);
-  strcpy(post_mesh->name, exp_name);
+  BFT_MALLOC(post_mesh->name,
+             strlen(post_base->name) + strlen(_(" edges")) + 1,
+             char);
+  strcpy(post_base->name, post_base->name);
   strcat(post_mesh->name, _(" edges"));
-
-  /* Copy mesh edges to new mesh structure */
-
-  exp_edges = fvm_nodal_copy_edges(post_mesh->name, exp_mesh);
-
-  /* Create mesh and assign to structure */
-
-  post_mesh->exp_mesh = exp_edges;
-  post_mesh->_exp_mesh = exp_edges;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3776,14 +4242,15 @@ cs_post_add_writer_t_value(int     writer_id,
 /*!
  * \brief Output post-processing meshes using associated writers.
  *
- * \param[in]  nt_cur_abs  current time step number
- * \param[in]  t_cur_abs   current physical time
+ * If the time step structure argument passed is NULL, a time-independent
+ * output will be assumed.
+ *
+ * \param[in]  ts  time step status structure, or NULL
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_post_write_meshes(int     nt_cur_abs,
-                     double  t_cur_abs)
+cs_post_write_meshes(const cs_time_step_t  *ts)
 {
   int  i;
   cs_post_mesh_t  *post_mesh;
@@ -3792,9 +4259,7 @@ cs_post_write_meshes(int     nt_cur_abs,
 
   for (i = 0; i < _cs_post_n_meshes; i++) {
     post_mesh = _cs_post_meshes + i;
-    _cs_post_write_mesh(post_mesh,
-                        nt_cur_abs,
-                        t_cur_abs);
+    _cs_post_write_mesh(post_mesh, ts);
   }
 
   /* Now reduce mesh definitions if not required anymore
@@ -3823,30 +4288,27 @@ cs_post_write_meshes(int     nt_cur_abs,
  * \param[in]  use_parent   true if values are defined on "parent" mesh,
  *                          false if values are defined on post-processing mesh
  * \param[in]  var_type     variable's data type
- * \param[in]  nt_cur_abs   current time step number
- * \param[in]  t_cur_abs    current physical time
  * \param[in]  cel_vals     cell values
  * \param[in]  i_face_vals  interior face values
  * \param[in]  b_face_vals  boundary face values
+ * \param[in]  ts           time step status structure, or NULL
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_post_write_var(int              mesh_id,
-                  const char      *var_name,
-                  int              var_dim,
-                  bool             interlace,
-                  bool             use_parent,
-                  cs_post_type_t   var_type,
-                  int              nt_cur_abs,
-                  double           t_cur_abs,
-                  const void      *cel_vals,
-                  const void      *i_face_vals,
-                  const void      *b_face_vals)
+cs_post_write_var(int                    mesh_id,
+                  const char            *var_name,
+                  int                    var_dim,
+                  bool                   interlace,
+                  bool                   use_parent,
+                  cs_post_type_t         var_type,
+                  const void            *cel_vals,
+                  const void            *i_face_vals,
+                  const void            *b_face_vals,
+                  const cs_time_step_t  *ts)
 {
   cs_lnum_t  i;
   int        _mesh_id;
-
 
   cs_interlace_t  _interlace;
   cs_datatype_t    datatype;
@@ -3864,6 +4326,9 @@ cs_post_write_var(int              mesh_id,
                                NULL, NULL, NULL,
                                NULL, NULL, NULL,
                                NULL, NULL, NULL};
+
+  const int nt_cur = (ts != NULL) ? ts->nt_cur : -1;
+  const double t_cur = (ts != NULL) ? ts->t_cur : 0.;
 
   /* Initializations */
 
@@ -4032,13 +4497,13 @@ cs_post_write_var(int              mesh_id,
                               n_parent_lists,
                               parent_num_shift,
                               datatype,
-                              (int)nt_cur_abs,
-                              (double)t_cur_abs,
+                              nt_cur,
+                              t_cur,
                               (const void * *)var_ptr);
 
-      if (nt_cur_abs >= 0) {
-        writer->n_last = nt_cur_abs;
-        writer->t_last = t_cur_abs;
+      if (nt_cur >= 0) {
+        writer->n_last = nt_cur;
+        writer->t_last = t_cur;
       }
 
     }
@@ -4064,23 +4529,21 @@ cs_post_write_var(int              mesh_id,
  *                         false otherwise
  * \param[in]  use_parent  true if values are defined on "parent" mesh,
  *                         false if values are defined on post-processing mesh
- * \param[in]  var_type    <-- variable's data type
- * \param[in]  nt_cur_abs  <-- current time step number
- * \param[in]  t_cur_abs   <-- current physical time
- * \param[in]  vtx_vals    <-- vertex values
+ * \param[in]  var_type    variable's data type
+ * \param[in]  vtx_vals    vertex values
+ * \param[in]  ts          time step status structure, or NULL
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_post_write_vertex_var(int              mesh_id,
-                         const char      *var_name,
-                         int              var_dim,
-                         bool             interlace,
-                         bool             use_parent,
-                         cs_post_type_t   var_type,
-                         int              nt_cur_abs,
-                         double           t_cur_abs,
-                         const void      *vtx_vals)
+cs_post_write_vertex_var(int                    mesh_id,
+                         const char            *var_name,
+                         int                    var_dim,
+                         bool                   interlace,
+                         bool                   use_parent,
+                         cs_post_type_t         var_type,
+                         const void            *vtx_vals,
+                         const cs_time_step_t  *ts)
 {
   cs_lnum_t  i;
   int        _mesh_id;
@@ -4097,6 +4560,9 @@ cs_post_write_vertex_var(int              mesh_id,
   const void  *var_ptr[9] = {NULL, NULL, NULL,
                              NULL, NULL, NULL,
                              NULL, NULL, NULL};
+
+  const int nt_cur = (ts != NULL) ? ts->nt_cur : -1;
+  const double t_cur = (ts != NULL) ? ts->t_cur : 0.;
 
   /* Initializations */
 
@@ -4153,18 +4619,160 @@ cs_post_write_vertex_var(int              mesh_id,
                               n_parent_lists,
                               parent_num_shift,
                               datatype,
-                              (int)nt_cur_abs,
-                              (double)t_cur_abs,
+                              nt_cur,
+                              t_cur,
                               (const void * *)var_ptr);
 
-      if (nt_cur_abs >= 0) {
-        writer->n_last = nt_cur_abs;
-        writer->t_last = t_cur_abs;
+      if (nt_cur >= 0) {
+        writer->n_last = nt_cur;
+        writer->t_last = t_cur;
       }
 
     }
 
   }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Output an existing lagrangian particle attribute at particle
+ * positions or trajectory endpoints of a particle mesh using
+ * associated writers.
+ *
+ * \param[in]  mesh_id     id of associated mesh
+ * \param[in]  attr_id     associated particle attribute id
+ * \param[in]  var_name    name of variable to output
+ * \param[in]  ts          time step status structure, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_write_particle_values(int                    mesh_id,
+                              int                    attr_id,
+                              const char            *var_name,
+                              const cs_time_step_t  *ts)
+{
+  int  _mesh_id, i;
+  cs_post_mesh_t  *post_mesh;
+  cs_post_writer_t  *writer;
+
+  cs_lagr_particle_set_t  *p_set = NULL, *p_set_prev = NULL;
+
+  cs_lagr_attribute_t  attr = attr_id;
+
+  cs_lnum_t    n_particles = 0, n_pts = 0;
+  cs_lnum_t    parent_num_shift[1]  = {0};
+  cs_lnum_t   *particle_list = NULL;
+
+  size_t  extents, size;
+  ptrdiff_t  displ;
+  cs_datatype_t datatype;
+  int  stride;
+  unsigned char *vals = NULL;
+
+  int nt_cur = (ts != NULL) ? ts->nt_cur : -1;
+  double t_cur = (ts != NULL) ? ts->t_cur : 0.;
+
+  const void  *var_ptr[1] = {NULL};
+
+  /* Initializations */
+
+  _mesh_id = _cs_post_mesh_id_try(mesh_id);
+
+  if (_mesh_id < 0)
+    return;
+
+  post_mesh = _cs_post_meshes + _mesh_id;
+
+  if (post_mesh->ent_flag[3] == 0 || post_mesh->exp_mesh == NULL)
+    return;
+
+  n_particles = cs_lagr_get_n_particles();
+  cs_lagr_get_particle_sets(&p_set, &p_set_prev);
+
+  assert(p_set != NULL);
+
+  /* Get attribute values info, returning if not present */
+
+  cs_lagr_get_attr_info(attr, &extents, &size, &displ, &datatype, &stride);
+
+  if (stride == 0)
+    return;
+
+  assert(ts->nt_cur > -1);
+
+  /* Allocate work arrays */
+
+  n_pts = fvm_nodal_get_n_entities(post_mesh->exp_mesh, 0);
+
+  BFT_MALLOC(vals, n_pts*size, unsigned char);
+
+  var_ptr[0] = vals;
+
+  if (n_pts != n_particles) {
+    int parent_dim = (post_mesh->ent_flag[3] == 2) ? 1 : 0;
+    BFT_MALLOC(particle_list, n_particles, cs_lnum_t);
+    fvm_nodal_get_parent_num(post_mesh->exp_mesh, parent_dim, particle_list);
+  }
+
+  /* Particle values */
+
+  if (post_mesh->ent_flag[3] == 1)
+    cs_lagr_get_particle_values(p_set,
+                                attr,
+                                datatype,
+                                stride,
+                                n_pts,
+                                particle_list,
+                                vals);
+
+  else if (post_mesh->ent_flag[3] == 2) {
+    nt_cur = -1; t_cur = 0.;
+    cs_lagr_get_trajectory_values(p_set,
+                                  p_set_prev,
+                                  attr,
+                                  datatype,
+                                  stride,
+                                  n_pts/2,
+                                  particle_list,
+                                  vals);
+  }
+
+  BFT_FREE(particle_list);
+
+  /* Effective output: loop on writers */
+  /*-----------------------------------*/
+
+  for (i = 0; i < post_mesh->n_writers; i++) {
+
+    writer = _cs_post_writers + post_mesh->writer_id[i];
+
+    if (writer->active == 1) {
+
+      fvm_writer_export_field(writer->writer,
+                              post_mesh->exp_mesh,
+                              var_name,
+                              FVM_WRITER_PER_NODE,
+                              stride,
+                              CS_INTERLACE,
+                              0, /* n_parent_lists, */
+                              parent_num_shift,
+                              datatype,
+                              nt_cur,
+                              t_cur,
+                              (const void * *)var_ptr);
+
+      if (nt_cur >= 0) {
+        writer->n_last = nt_cur;
+        writer->t_last = t_cur;
+      }
+
+    }
+
+  }
+
+  BFT_FREE(vals);
 
 }
 
@@ -4391,6 +4999,36 @@ cs_post_init_writers(void)
                           -1,               /* time step output frequency */
                           -1.0);            /* time value output frequency */
 
+  /* Additional writers for Lagrangian output */
+
+  if (_lagragian_needed(NULL)) {
+
+    /* Particles */
+
+    if (!cs_post_writer_exists(-3))
+      cs_post_define_writer(-3,                   /* writer_id */
+                            "particles",          /* writer name */
+                            _cs_post_dirname,
+                            "EnSight Gold",       /* format name */
+                            "",                   /* format options */
+                            FVM_WRITER_TRANSIENT_CONNECT,
+                            true,                 /* output at end */
+                            -1,                   /* time step frequency */
+                            -1.0);                /* time value frequency */
+
+    if (!cs_post_writer_exists(-4))
+      cs_post_define_writer(-4,                    /* writer_id */
+                            "trajectories",        /* writer name */
+                            _cs_post_dirname,
+                            "EnSight Gold",        /* format name */
+                            "",                    /* format options */
+                            FVM_WRITER_FIXED_MESH,
+                            true,                  /* output at end */
+                            1,                     /* time step frequency */
+                            -1.0);                 /* time value frequency */
+
+  }
+
   /* Print info on writers */
 
   _writer_info();
@@ -4447,6 +5085,22 @@ cs_post_init_meshes(int check_mask)
                                 1,
                                 writer_ids);
 
+  /* Additional writers for Lagrangian output */
+
+  if (_lagragian_needed(NULL)) {
+    if (!cs_post_mesh_exists(-3)) {
+      const int _writer_ids[] = {-3};
+      cs_post_define_particles_mesh(-3,
+                                    _("Particles"),
+                                    "all[]",
+                                    1.0,    /* density */
+                                    false,  /* trajectory */
+                                    true,   /* auto_variables */
+                                    1,
+                                    _writer_ids);
+    }
+  }
+
   /* Remove meshes which are associated with no writer and not aliased */
 
   _clear_unused_meshes();
@@ -4477,11 +5131,11 @@ cs_post_init_meshes(int check_mask)
       if (post_mesh->alias > -1) {
         cs_post_mesh_t  *ref_mesh = _cs_post_meshes + post_mesh->alias;
         if (ref_mesh->exp_mesh == NULL)
-          _define_mesh(ref_mesh);
+          _define_mesh(ref_mesh, NULL);
         post_mesh->exp_mesh = ref_mesh->exp_mesh;
       }
       else
-        _define_mesh(post_mesh);
+        _define_mesh(post_mesh, NULL);
     }
   }
 
@@ -4504,7 +5158,7 @@ cs_post_init_meshes(int check_mask)
 
   for (i = 0; i < _cs_post_n_meshes; i++) {
     cs_post_mesh_t  *post_mesh = _cs_post_meshes + i;
-    _cs_post_write_mesh(post_mesh, -1, 0.0);
+    _cs_post_write_mesh(post_mesh, NULL);
   }
 
   /* Now reduce mesh definitions if not required anymore
@@ -4523,16 +5177,14 @@ cs_post_init_meshes(int check_mask)
  * \brief Loop on post-processing meshes to output variables.
  *
  * This handles all default fields output, as well as all
- * registred output functions.
+ * registered output functions.
  *
- * \param[in]  nt_cur_abs  current time step number
- * \param[in]  t_cur_abs   current physical time
+ * \param[in]  ts  time step status structure, or NULL
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_post_write_vars(int     nt_cur_abs,
-                   double  t_cur_abs)
+cs_post_write_vars(const cs_time_step_t  *ts)
 {
   /* local variables */
 
@@ -4562,6 +5214,9 @@ cs_post_write_vars(int     nt_cur_abs,
   if (j == _cs_post_n_writers)
     return;
 
+  const int nt_cur = (ts != NULL) ? ts->nt_cur : -1;
+  const double t_cur = (ts != NULL) ? ts->t_cur : 0.;
+
   /* Possible modification of post-processing meshes */
   /*-------------------------------------------------*/
 
@@ -4585,7 +5240,7 @@ cs_post_write_vars(int     nt_cur_abs,
         && post_mesh->alias < 0
         && post_mesh->id > 0
         && post_mesh->mod_flag_min == FVM_WRITER_TRANSIENT_CONNECT)
-      _redefine_mesh(post_mesh);
+      _redefine_mesh(post_mesh, ts);
 
   }
 
@@ -4614,16 +5269,16 @@ cs_post_write_vars(int     nt_cur_abs,
   /* Output of meshes or vertex displacement field if necessary */
   /*------------------------------------------------------------*/
 
-  cs_post_write_meshes(nt_cur_abs, t_cur_abs);
+  cs_post_write_meshes(ts);
 
   if (_cs_post_deformable == true)
-    _cs_post_write_displacements(nt_cur_abs, t_cur_abs);
+    _cs_post_write_displacements(nt_cur, t_cur);
 
   /* Output of variables by registered function instances */
   /*------------------------------------------------------*/
 
   for (i = 0; i < _cs_post_n_output_tp; i++)
-    _cs_post_f_output_tp[i](_cs_post_i_output_tp[i], nt_cur_abs, t_cur_abs);
+    _cs_post_f_output_tp[i](_cs_post_i_output_tp[i], ts);
 
   /* Output of variables associated with post-processing meshes */
   /*------------------------------------------------------------*/
@@ -4742,8 +5397,7 @@ cs_post_write_vars(int     nt_cur_abs,
         _cs_post_output_fields(post_mesh,
                                n_cells, n_i_faces, n_b_faces,
                                cell_list, i_face_list, b_face_list,
-                               nt_cur_abs,
-                               t_cur_abs);
+                               ts);
 
       /* Output of variables by registered function instances */
       /*------------------------------------------------------*/
@@ -4759,8 +5413,7 @@ cs_post_write_vars(int     nt_cur_abs,
                                  cell_list,
                                  i_face_list,
                                  b_face_list,
-                                 nt_cur_abs,
-                                 t_cur_abs);
+                                 ts);
 
       /* In case of mixed interior and boundary faces, free
          additional arrays */
@@ -4787,6 +5440,18 @@ cs_post_write_vars(int     nt_cur_abs,
         fvm_writer_flush(writer->writer);
     }
   }
+
+  /* Free Lagrangian meshes if necessary */
+
+  for (i = 0; i < _cs_post_n_meshes; i++) {
+    post_mesh = _cs_post_meshes + i;
+    if (post_mesh->ent_flag[3]) {
+      post_mesh->exp_mesh = NULL;
+      if (post_mesh->_exp_mesh != NULL)
+        post_mesh->_exp_mesh = fvm_nodal_destroy(post_mesh->_exp_mesh);
+    }
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4849,7 +5514,7 @@ cs_post_finalize(void)
     if (post_mesh->_exp_mesh != NULL)
       fvm_nodal_destroy(post_mesh->_exp_mesh);
     BFT_FREE(post_mesh->name);
-    for (j = 0; j < 3; j++)
+    for (j = 0; j < 4; j++)
       BFT_FREE(post_mesh->criteria[j]);
     BFT_FREE(post_mesh->writer_id);
   }
@@ -5168,7 +5833,7 @@ cs_post_init_error_writer_cells(void)
 
     mesh_id = cs_post_get_free_mesh_id();
 
-    post_mesh = _predefine_mesh(mesh_id, false, 1, &writer_id);
+    post_mesh = _predefine_mesh(mesh_id, false, 0, 1, &writer_id);
 
     /* Define mesh based on current arguments */
 
@@ -5185,7 +5850,7 @@ cs_post_init_error_writer_cells(void)
                         NULL,
                         NULL);
 
-    _cs_post_write_mesh(post_mesh, -1, 0.0);
+    _cs_post_write_mesh(post_mesh, NULL);
 
   }
 

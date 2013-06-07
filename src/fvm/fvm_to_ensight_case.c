@@ -281,7 +281,7 @@ _add_var(fvm_to_ensight_case_t       *const this_case,
 {
   char line[1024], description[50];
   int i, l;
-  int remain_len, prefix_len, base_len, postfix_len;
+  int prefix_len, base_len, postfix_len;
 
   fvm_to_ensight_case_var_t  *var;
 
@@ -395,7 +395,6 @@ _add_var(fvm_to_ensight_case_t       *const this_case,
 
   /* Create (current) file name. */
 
-  remain_len = 1024 - strlen(line);
   prefix_len =   strlen(this_case->file_name_prefix)
                - this_case->dir_name_length + 1;
   base_len = strlen(name);
@@ -805,12 +804,18 @@ fvm_to_ensight_case_add_part(fvm_to_ensight_case_t  *const this_case,
   if (i < this_case->n_parts)
     i = 0;
 
-  else {
+  else if (this_case->n_parts < 65000) {
     this_case->n_parts += 1;
     BFT_REALLOC(this_case->part_name, this_case->n_parts, char *);
     BFT_MALLOC(this_case->part_name[i], strlen(part_name) + 1, char);
     strcpy(this_case->part_name[i], part_name);
     i += 1;
+  }
+
+  else {
+    bft_error(__FILE__, __LINE__, 0,
+              _("The number of EnSight parts must not exceed 65000."));
+    i = -1;
   }
 
   return i;

@@ -149,9 +149,9 @@ double precision dlgeo(nfabor,ngeol)
 ! Local variables
 
 integer          ip     , npt    , iok
-integer          nfin   , npars  , iel    , ivf
+integer          npars  , iel    , ivf
 integer          npar1  , npar2
-integer          iforce , iitslg
+integer          iitslg
 integer          modntl , iromf
 
 double precision dnpars
@@ -301,11 +301,17 @@ if (iplar.eq.1) then
 
   call lagbeg                                                     &
   !==========
- ( nbpmax , iphyla , nvls, nbclst , icocel , itycel , lndnod )
+ ( nbpmax , iphyla , idepst , ireent ,                            &
+   nvls   , nbclst , icocel , itycel ,                            &
+   jisor  , jgnum  , jrpoi  , jrtsp  , jdp    , jmp    ,          &
+   jxp    , jyp    , jzp    , jup    , jvp    , jwp    ,          &
+   juf    , jvf    , jwf    , jtaux  , jryplu ,                   &
+   jrinpf , jdfac  , jimark ,                                     &
+   jtp    , jhp    , jtf    , jmch   , jmck   , jcp    ,          &
+   jrdck  , jrd0p  , jrr0p  , jinch  , jrhock , jreps  ,          &
+   jdepo  , jnbasg , jnbasp , jfadh  , jmfadh , jndisp)
 
-!
 ! --> if the deposition model is activated
-!
 
   if (idepst.ge.1) then
 
@@ -669,25 +675,25 @@ endif
 
 if (nor.eq.1) then
 
-!--> Si on est en instationnaire, RAZ des statistiques aux frontieres
+  !--> Si on est en instationnaire, RAZ des statistiques aux frontieres
 
-if (iensi3.eq.1) then
+  if (iensi3.eq.1) then
 
-  if (isttio.eq.0 .or. (isttio.eq.1 .and. iplas.le.nstbor)) then
-    tstatp = 0.d0
-    npstf = 0
-    do ii = 1,nvisbr
-      do ifac = 1,nfabor
-        parbor(ifac,ii) = 0.d0
+    if (isttio.eq.0 .or. (isttio.eq.1 .and. iplas.le.nstbor)) then
+      tstatp = 0.d0
+      npstf = 0
+      do ii = 1,nvisbr
+        do ifac = 1,nfabor
+          parbor(ifac,ii) = 0.d0
+        enddo
       enddo
-    enddo
+    endif
+
+    tstatp = tstatp + dtp
+    npstf  = npstf  + 1
+    npstft = npstft + 1
+
   endif
-
-  tstatp = tstatp + dtp
-  npstf  = npstf  + 1
-  npstft = npstft + 1
-
-endif
 
   call getbdy                                                     &
   !==========
@@ -697,46 +703,24 @@ endif
 
   call prtget                                                     &
   !==========
- ( nbpmax , nbpart , dnbpar , liste  , nbvis  ,                   &
+ ( nbpmax , nbpart ,                                              &
    ettp   , ettpa  , itepa  , tepa   ,                            &
-   ibord  , indep  ,                                              &
-   jisor  , jgnum  , jrpoi  , jrtsp  , jdp    , jmp    ,          &
-   jxp    , jyp    , jzp    ,                                     &
-   jup    , jvp    , jwp    ,                                     &
-   juf    , jvf    , jwf    , jtaux  , jryplu ,                   &
-   jrinpf , jdfac  ,                                              &
-   jimark , idepst , ireent,                                      &
-   iphyla ,                                                       &
-   jhp    , jtf    , jmch   , jmck   , jcp   ,                    &
-   jrdck  , jrd0p  , jrr0p  , jinch  , jrhock ,                   &
-   jdepo  , jnbasg , jnbasp , jfadh  , jmfadh, jndisp)
-
-
+   ibord  , indep  )
 
   call dplprt                                                     &
   !==========
  ( nbpart , dnbpar, nordre, parbor, iensi3,                       &
-   nvisbr , inbr  , inbrbd,                                       &
+   inbr   , inbrbd,                                               &
    iflm   , iflmbd, iang  , iangbd, ivit  ,  ivitbd,              &
    nusbor , iusb,   vislen,  dlgeo , rtp , iu    ,                &
-   iv     , iw  ,   idepst , ireent , energt)
-
+   iv     , iw  ,   energt)
 
   call prtput                                                     &
   !==========
  ( nbpmax , nbpart , dnbpar , nbpout , dnbpou , nbperr , dnbper,  &
    nbpdep , dnbdep ,                                              &
-   liste  , nbvis,                                                &
    ettp   , ettpa  , itepa  , tepa   ,                            &
-   ibord  ,                                                       &
-   jisor  , jgnum  , jrpoi  , jrtsp  , jdp    ,                   &
-   jmp    , jxp    , jyp    , jzp    ,                            &
-   jup    , jvp    , jwp    , juf    , jvf    , jwf , jtaux,      &
-   jryplu , jrinpf , jdfac  , jimark , idepst , ireent,           &
-   iphyla ,                                                       &
-   jhp    , jtf    , jmch   , jmck   , jcp   ,                    &
-   jrdck  , jrd0p  , jrr0p  , jinch  , jrhock ,                   &
-   jdepo  , jnbasg , jnbasp , jfadh  , jmfadh, jndisp)
+   ibord  )
 
 
   if (ierr.eq.1) then
@@ -874,30 +858,11 @@ call uslast                                                       &
 
  20   continue
 
-nfin = 0
-
-!-->Stockage des trajectoires au format Ensight Gold
-
-if (iensi1.eq.1) then
-
-  iforce = 0
-
-  call enslag                                                     &
-  !==========
-   ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
-     nfin   , iforce ,                                            &
-     itepa  ,                                                     &
-     ettp   , tepa   )
-endif
-
-if (iensi2.eq.1) then
-  call enswaf                                                     &
-  !==========
-   ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
-     nfin   ,                                                     &
-     itepa  ,                                                     &
-     ettp   , tepa   )
-endif
+call ucdprt                                                        &
+!==========
+ ( nbpmax , nbpart , dnbpar , nbpout , dnbpou , nbperr ,           &
+   dnbper , nbpdep , dnbdep,                                       &
+   ettp   , ettpa  , itepa  , tepa   , ibord  , indep  )
 
 !===============================================================================
 ! 17. NOMBRE DE PARITICULES PERDUES (SUITES COMPRISES)

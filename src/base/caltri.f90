@@ -878,7 +878,7 @@ if (iale.eq.1 .and. inpdt0.eq.0) then
 
   if (itrale.eq.0 .or. itrale.gt.nalinf) then
 
-    if(ivelco.eq.0) then
+    if (ivelco.eq.0) then
 
       call alemaj &
       !==========
@@ -1037,8 +1037,8 @@ call cs_user_postprocess_activate(ntmabs, ntcabs, ttcabs)
 ! Standard visualization output
 !===============================================================================
 
-!     Si ITRALE=0 on desactive tous les writers (car la geometrie n'a pas ete
-!       ecrite)
+! If ITRALE=0, deactivate all writers, as geometry has not
+!              been output yet.
 if (itrale.eq.0) then
   call post_activate_writer(0, .false.)
 endif
@@ -1047,9 +1047,11 @@ call pstvar                                                       &
 !==========
  ( ntcabs ,                                                       &
    nvar   , nscal  , nvlsta , nvisbr ,                            &
+   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ttcabs ,                                                       &
+   itepa  ,                                                       &
    ra(idt)    , ra(irtpa) , ra(irtp) ,                            &
-   ra(ipropc) , propfa , propfb ,                                 &
+   ra(ipropc) , propfa    , propfb   ,                            &
    coefa  , coefb  ,                                              &
    statis , stativ , parbor )
 

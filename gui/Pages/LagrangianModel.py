@@ -148,7 +148,13 @@ class LagrangianModel(Model):
         Update the lagrangian module status markup.
         """
         self.isOnOff(status)
+        old_status = self.node_lagr['model']
         self.node_lagr['model'] = status
+        from Pages.OutputControlModel import OutputControlModel
+        if status != 'off':
+            OutputControlModel(self.case).addDefaultLagrangianWriter()
+            OutputControlModel(self.case).addDefaultLagrangianMesh()
+        del OutputControlModel
 
 
     @Variables.noUndo

@@ -169,10 +169,6 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         import Pages.LagrangianStatisticsView as Page
         thisPage = Page.LagrangianStatisticsView(root, case)
 
-    elif page_name == tr("Output"):
-        import Pages.LagrangianOutputView as Page
-        thisPage = Page.LagrangianOutputView(root, case)
-
     elif page_name == tr("Definition of boundary regions"):
         import Pages.LocalizationView as Page
         thisPage = Page.BoundaryLocalizationView(root, case, tree)
@@ -212,6 +208,10 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
     elif page_name == tr("Surface solution control"):
         import Pages.OutputSurfacicVariablesView as Page
         thisPage = Page.OutputSurfacicVariablesView(root, case)
+
+    elif page_name == tr("Lagrangian solution control"):
+        import Pages.LagrangianOutputView as Page
+        thisPage = Page.LagrangianOutputView(root, case)
 
     elif page_name == tr("Profiles"):
         import Pages.ProfilesView as Page

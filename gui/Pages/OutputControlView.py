@@ -58,9 +58,8 @@ from OutputControlForm import Ui_OutputControlForm
 import Base.QtPage as QtPage
 from Base.QtPage import ComboModel, DoubleValidator, RegExpValidator, setGreenColor
 from Pages.OutputControlModel import OutputControlModel
-from Pages.ConjugateHeatTransferModel import ConjugateHeatTransferModel
-from Pages.MobileMeshModel import MobileMeshModel
 from Pages.QMeiEditorView import QMeiEditorView
+from Pages.LagrangianModel import LagrangianModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -230,23 +229,31 @@ class TypeMeshDelegate(QItemDelegate):
     """
     Use of a combo box in the table.
     """
-    def __init__(self, parent=None, xml_model=None):
+    def __init__(self, parent=None, xml_model=None, typ=0):
         super(TypeMeshDelegate, self).__init__(parent)
         self.parent = parent
         self.mdl = xml_model # TODO review this
+        self.lag = typ
 
 
     def createEditor(self, parent, option, index):
         editor = QComboBox(parent)
-        editor.addItem(QString("cells"))
-        editor.addItem(QString("interior faces"))
-        editor.addItem(QString("boundary faces"))
+        if self.lag == 0:
+            editor.addItem(QString("cells"))
+            editor.addItem(QString("interior faces"))
+            editor.addItem(QString("boundary faces"))
+        else:
+            editor.addItem(QString("particles"))
+            editor.addItem(QString("trajectories"))
         editor.installEventFilter(self)
         return editor
 
 
     def setEditorData(self, comboBox, index):
-        dico = {"cells": 0, "interior_faces": 1, "boundary_faces": 2}
+        if self.lag == 0:
+            dico = {"cells": 0, "interior_faces": 1, "boundary_faces": 2}
+        else:
+            dico = {"particles": 0, "trajectories": 1}
         row = index.row()
         string = index.model().dataMesh[row]['type']
         idx = dico[string]
@@ -322,6 +329,42 @@ class LocationSelectorDelegate(QItemDelegate):
 
 
 #-------------------------------------------------------------------------------
+# QLineEdit delegate for density
+#-------------------------------------------------------------------------------
+
+class DensitySelectorDelegate(QItemDelegate):
+    def __init__(self, parent, mdl):
+        super(DensitySelectorDelegate, self).__init__(parent)
+        self.parent = parent
+        self.mdl = mdl
+
+
+    def createEditor(self, parent, option, index):
+        editor = QLineEdit(parent)
+        validator = QtPage.DoubleValidator(editor, min=0., max=1.)
+        editor.setValidator(validator)
+        return editor
+
+
+    def setEditorData(self, editor, index):
+        self.value = index.model().data(index, Qt.DisplayRole).toString()
+        editor.setText(self.value)
+
+
+    def setModelData(self, editor, model, index):
+        value = editor.text()
+
+        if str(value) == "" :
+           title = self.tr("Warning")
+           msg   = self.tr("Please give a density")
+           QMessageBox.information(self.parent, title, msg)
+           return
+
+        if str(value) != "" :
+            model.setData(index, QVariant(value), Qt.DisplayRole)
+
+
+#-------------------------------------------------------------------------------
 # Combo box delegate for the variance
 #-------------------------------------------------------------------------------
 
@@ -329,9 +372,10 @@ class AssociatedWriterDelegate(QItemDelegate):
     """
     Use of a combo box in the table.
     """
-    def __init__(self, parent):
+    def __init__(self, parent, lag = 0):
         super(AssociatedWriterDelegate, self).__init__(parent)
         self.parent   = parent
+        self.lagrangian = lag
 
 
     def createEditor(self, parent, option, index):
@@ -344,7 +388,13 @@ class AssociatedWriterDelegate(QItemDelegate):
     def setEditorData(self, editor, index):
         l1 = index.model().mdl.getWriterLabelList()
         for s in l1:
-            self.modelCombo.addItem(s, s)
+            idx = index.model().mdl.getWriterIdFromLabel(s)
+            if self.lagrangian == 0:
+                if int(idx) > -2:
+                    self.modelCombo.addItem(s, s)
+            else:
+                if int(idx) > 0 or int(idx) == -3 or int(idx) == -4:
+                    self.modelCombo.addItem(s, s)
 
 
     def setModelData(self, comboBox, model, index):
@@ -384,18 +434,18 @@ class StandardItemModelMesh(QStandardItemModel):
                        "interior_faces" : 'interior faces',
                        "boundary_faces": 'boundary faces'}
         for id in self.mdl.getMeshIdList():
-            row = self.rowCount()
-            self.setRowCount(row + 1)
-
             dico  = {}
             dico['name'] = self.mdl.getMeshLabel(id)
             dico['id'] = id
             dico['type'] = self.mdl.getMeshType(id)
             dico['location'] = self.mdl.getMeshLocation(id)
 
-            self.dataMesh.append(dico)
-            if int(id) < 0:
-                self.defaultItem.append(row)
+            if dico['type'] in ["cells", "interior_faces", "boundary_faces"]:
+                row = self.rowCount()
+                self.setRowCount(row + 1)
+                self.dataMesh.append(dico)
+                if int(id) < 0:
+                    self.defaultItem.append(row)
             log.debug("populateModel-> dataSolver = %s" % dico)
 
 
@@ -491,6 +541,169 @@ class StandardItemModelMesh(QStandardItemModel):
         dico['name'] = name
         dico['id'] = mesh_id
         dico['type'] = mesh_type
+        dico['location'] = location
+        self.dataMesh.append(dico)
+
+        row = self.rowCount()
+        self.setRowCount(row + 1)
+
+
+    def getItem(self, row):
+        return self.dataMesh[row]
+
+
+    def getData(self, row, column):
+        return self.dataMesh[row][column]
+
+
+    def deleteAllData(self):
+        """
+        Destroy the contents of the list.
+        """
+        self.dataMesh = []
+        self.setRowCount(0)
+
+#-------------------------------------------------------------------------------
+# QStandardItemModel for Lagrangian Mesh QTableView
+#-------------------------------------------------------------------------------
+
+class StandardItemModelLagrangianMesh(QStandardItemModel):
+    def __init__(self, mdl):
+        """
+        """
+        QStandardItemModel.__init__(self)
+
+        self.setColumnCount(5)
+        self.dataMesh = []
+        self.mdl = mdl
+        self.defaultItem = []
+        self.populateModel()
+
+
+    def populateModel(self):
+
+        self.dicoV2M= {"particles": 'particles',
+                       "trajectories": 'trajectories'}
+        self.dicoM2V= {"particles" : 'particles',
+                       "trajectories": 'trajectories'}
+        for idx in self.mdl.getMeshIdList():
+            dico  = {}
+            dico['name'] = self.mdl.getMeshLabel(idx)
+            dico['id'] = idx
+            dico['type'] = self.mdl.getLagrangianMeshType(idx)
+            dico['density'] = self.mdl.getMeshDensity(idx)
+            dico['location'] = self.mdl.getMeshLocation(idx)
+
+            if dico['type'] in ['particles', 'trajectories']:
+                row = self.rowCount()
+                self.setRowCount(row + 1)
+                self.dataMesh.append(dico)
+                if int(idx) < 0:
+                    self.defaultItem.append(row)
+            log.debug("populateModel-> dataSolver = %s" % dico)
+
+
+    def data(self, index, role):
+        if not index.isValid():
+            return QVariant()
+
+        if role == Qt.DisplayRole:
+
+            row = index.row()
+            col = index.column()
+            dico = self.dataMesh[row]
+
+            if index.column() == 0:
+                return QVariant(dico['name'])
+            elif index.column() == 1:
+                return QVariant(dico['id'])
+            elif index.column() == 2:
+                return QVariant(self.dicoM2V[dico['type']])
+            elif index.column() == 3:
+                return QVariant(dico['density'])
+            elif index.column() == 4:
+                return QVariant(dico['location'])
+            else:
+                return QVariant()
+
+        elif role == Qt.TextAlignmentRole:
+            if index.column() != 4:
+                return QVariant(Qt.AlignCenter)
+            else:
+                return QVariant(Qt.AlignLeft | Qt.AlignVCenter)
+
+        return QVariant()
+
+
+    def flags(self, index):
+        if not index.isValid():
+            return Qt.ItemIsEnabled
+        # default item
+        col_id = index.column()
+        if index.row() in self.defaultItem:
+            if col_id == 1 or col_id == 2:
+                return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+        else:
+            if col_id == 1:
+                return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+        return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+
+
+    def headerData(self, section, orientation, role):
+        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+            if section == 0:
+                return QVariant(self.tr("Name"))
+            elif section == 1:
+                return QVariant(self.tr("Id"))
+            elif section == 2:
+                return QVariant(self.tr("Type"))
+            elif section == 3:
+                return QVariant(self.tr("Density"))
+            elif section == 4:
+                return QVariant(self.tr("Selection Criteria"))
+        return QVariant()
+
+
+    def setData(self, index, value, role=None):
+
+        # Update the row in the table
+        row = index.row()
+        col = index.column()
+
+        # Label
+        if col == 0:
+            old_plabel = self.dataMesh[row]['name']
+            new_plabel = str(value.toString())
+            self.dataMesh[row]['name'] = new_plabel
+            self.mdl.setMeshLabel(str(self.dataMesh[row]['id']), new_plabel)
+
+        if index.column() == 2:
+            self.dataMesh[row]['type'] = self.dicoV2M[str(value.toString())]
+            self.mdl.setLagrangianMeshType(self.dataMesh[row]['id'], self.dataMesh[row]['type'])
+
+        if index.column() == 3:
+            self.dataMesh[row]['density'] = str(value.toString())
+            self.mdl.setMeshDensity(self.dataMesh[row]['id'], self.dataMesh[row]['density'])
+
+        if index.column() == 4:
+            new_location = str(value.toString())
+            self.dataMesh[row]['location'] = new_location
+            self.mdl.setMeshLocation(self.dataMesh[row]['id'], new_location)
+
+        self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"),
+                  index, index)
+        return True
+
+
+    def newData(self, name, mesh_id, mesh_type, density, location):
+        """
+        Add a new 'item' into the table.
+        """
+        dico = {}
+        dico['name'] = name
+        dico['id'] = mesh_id
+        dico['type'] = mesh_type
+        dico['density'] = density
         dico['location'] = location
         self.dataMesh.append(dico)
 
@@ -988,9 +1201,13 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.case.undoStopGlobal()
         self.mdl = OutputControlModel(self.case)
 
+        # lagrangian model
+        self.lag_mdl = LagrangianModel(self.case)
+
         # Combo models
 
         self.modelOutput         = QtPage.ComboModel(self.comboBoxOutput,3,1)
+        self.modelNTLAL          = QtPage.ComboModel(self.comboBoxNTLAL,3,1)
         self.modelFrequency      = QtPage.ComboModel(self.comboBoxFrequency,4,1)
         self.modelTimeDependency = QtPage.ComboModel(self.comboBoxTimeDependency,3,1)
         self.modelFormat         = QtPage.ComboModel(self.comboBoxFormat,2,1)
@@ -1002,6 +1219,10 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.modelOutput.addItem(self.tr("No output"), 'None')
         self.modelOutput.addItem(self.tr("Output listing at each time step"), 'At each step')
         self.modelOutput.addItem(self.tr("Output every 'n' time steps"), 'Frequency_l')
+
+        self.modelNTLAL.addItem(self.tr("No output"), 'None')
+        self.modelNTLAL.addItem(self.tr("Output listing at each time step"), 'At each step')
+        self.modelNTLAL.addItem(self.tr("Output every 'n' time steps"), 'Frequency_l')
 
         self.modelFrequency.addItem(self.tr("No periodic output"), 'none')
         self.modelFrequency.addItem(self.tr("Output every 'n' time steps"), 'time_step')
@@ -1066,6 +1287,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         delegate_format = FormatWriterDelegate(self.tableViewWriter, self.mdl)
         self.tableViewWriter.setItemDelegateForColumn(2, delegate_format)
 
+        # mesh tab
         self.modelMesh = StandardItemModelMesh(self.mdl)
         self.tableViewMesh.setModel(self.modelMesh)
         self.tableViewMesh.resizeColumnToContents(0)
@@ -1077,26 +1299,52 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.tableViewMesh.horizontalHeader().setResizeMode(0, QHeaderView.ResizeToContents)
         self.tableViewMesh.horizontalHeader().setResizeMode(1, QHeaderView.ResizeToContents)
         self.tableViewMesh.horizontalHeader().setResizeMode(2, QHeaderView.ResizeToContents)
-        self.tableViewMesh.horizontalHeader().setResizeMode(2, QHeaderView.ResizeToContents)
         self.tableViewMesh.horizontalHeader().setStretchLastSection(True)
 
         delegate_label_mesh = LabelMeshDelegate(self.tableViewMesh)
         self.tableViewMesh.setItemDelegateForColumn(0, delegate_label_mesh)
-        delegate_type = TypeMeshDelegate(self.tableViewMesh, self.mdl)
+        delegate_type = TypeMeshDelegate(self.tableViewMesh, self.mdl, 0)
         self.tableViewMesh.setItemDelegateForColumn(2, delegate_type)
         delegate_location = LocationSelectorDelegate(self.tableViewMesh, self.mdl)
         self.tableViewMesh.setItemDelegateForColumn(3, delegate_location)
+
+        # lagrangian mesh tab
+        self.modelLagrangianMesh = StandardItemModelLagrangianMesh(self.mdl)
+        self.tableViewLagrangianMesh.setModel(self.modelLagrangianMesh)
+        self.tableViewLagrangianMesh.resizeColumnToContents(0)
+        self.tableViewLagrangianMesh.resizeRowsToContents()
+        self.tableViewLagrangianMesh.setAlternatingRowColors(True)
+        self.tableViewLagrangianMesh.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.tableViewLagrangianMesh.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.tableViewLagrangianMesh.setEditTriggers(QAbstractItemView.DoubleClicked)
+        self.tableViewLagrangianMesh.horizontalHeader().setResizeMode(0, QHeaderView.ResizeToContents)
+        self.tableViewLagrangianMesh.horizontalHeader().setResizeMode(1, QHeaderView.ResizeToContents)
+        self.tableViewLagrangianMesh.horizontalHeader().setResizeMode(2, QHeaderView.ResizeToContents)
+        self.tableViewLagrangianMesh.horizontalHeader().setResizeMode(3, QHeaderView.ResizeToContents)
+        self.tableViewLagrangianMesh.horizontalHeader().setStretchLastSection(True)
+
+        delegate_label_lag_mesh = LabelMeshDelegate(self.tableViewLagrangianMesh)
+        self.tableViewLagrangianMesh.setItemDelegateForColumn(0, delegate_label_lag_mesh)
+        delegate_lag_type = TypeMeshDelegate(self.tableViewLagrangianMesh, self.mdl, 1)
+        self.tableViewLagrangianMesh.setItemDelegateForColumn(2, delegate_lag_type)
+        delegate_lag_density = DensitySelectorDelegate(self.tableViewLagrangianMesh, self.mdl)
+        self.tableViewLagrangianMesh.setItemDelegateForColumn(3, delegate_lag_density)
+        delegate_lag_location = LocationSelectorDelegate(self.tableViewLagrangianMesh, self.mdl)
+        self.tableViewLagrangianMesh.setItemDelegateForColumn(4, delegate_lag_location)
 
         # Connections
 
         self.connect(self.modelWriter,     SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), self.dataChanged)
         self.connect(self.tableViewMesh, SIGNAL("clicked(const QModelIndex &)"), self.slotSelectMesh)
+        self.connect(self.tableViewLagrangianMesh, SIGNAL("clicked(const QModelIndex &)"), self.slotSelectLagrangianMesh)
         self.connect(self.tableViewWriter, SIGNAL("clicked(const QModelIndex &)"), self.slotSelectWriter)
         self.connect(self.comboBoxOutput, SIGNAL("activated(const QString&)"), self.slotOutputListing)
         self.connect(self.comboBoxTimeDependency, SIGNAL("activated(const QString&)"), self.slotWriterTimeDependency)
         self.connect(self.checkBoxOutputEnd, SIGNAL("clicked()"), self.slotWriterOutputEnd)
         self.connect(self.checkBoxAllVariables, SIGNAL("clicked()"), self.slotAllVariables)
+        self.connect(self.checkBoxAllLagrangianVariables, SIGNAL("clicked()"), self.slotAllLagrangianVariables)
         self.connect(self.lineEditNTLIST, SIGNAL("textChanged(const QString &)"), self.slotListingFrequency)
+        self.connect(self.lineEditNTLAL,  SIGNAL("textChanged(const QString &)"), self.slotNTLAL)
         self.connect(self.comboBoxFrequency, SIGNAL("activated(const QString&)"), self.slotWriterFrequencyChoice)
         self.connect(self.lineEditFrequency, SIGNAL("textChanged(const QString &)"), self.slotWriterFrequency)
         self.connect(self.lineEditFrequencyTime, SIGNAL("textChanged(const QString &)"), self.slotWriterFrequencyTime)
@@ -1111,6 +1359,10 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.connect(self.pushButtonDeleteMesh, SIGNAL("clicked()"), self.slotDeleteMesh)
         self.connect(self.pushButtonAddAssociatedWriter, SIGNAL("clicked()"), self.slotAddAssociatedWriter)
         self.connect(self.pushButtonDeleteAssociatedWriter, SIGNAL("clicked()"), self.slotDeleteAssociatedWriter)
+        self.connect(self.pushButtonAddLagrangianMesh, SIGNAL("clicked()"), self.slotAddLagrangianMesh)
+        self.connect(self.pushButtonDeleteLagrangianMesh, SIGNAL("clicked()"), self.slotDeleteLagrangianMesh)
+        self.connect(self.pushButtonAddAssociatedLagrangianWriter, SIGNAL("clicked()"), self.slotAddAssociatedLagrangianWriter)
+        self.connect(self.pushButtonDeleteAssociatedLagrangianWriter, SIGNAL("clicked()"), self.slotDeleteAssociatedLagrangianWriter)
         self.connect(self.toolButtonAdd, SIGNAL("clicked()"), self.slotAddMonitoringPoint)
         self.connect(self.toolButtonDelete, SIGNAL("clicked()"), self.slotDeleteMonitoringPoints)
         self.connect(self.toolButtonDuplicate, SIGNAL("clicked()"), self.slotDuplicateMonitoringPoints)
@@ -1120,9 +1372,11 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.connect(self.comboBoxProbeFmt, SIGNAL("activated(const QString&)"), self.slotOutputProbeFmt)
         self.connect(self.tabWidget, SIGNAL("currentChanged(int)"), self.slotchanged)
 
+
         # Validators
 
         validatorNTLIST = QtPage.IntValidator(self.lineEditNTLIST, min=1)
+        validatorNTLAL = QtPage.IntValidator(self.lineEditNTLAL)
         validatorFrequency = QtPage.IntValidator(self.lineEditFrequency, min=1)
         validatorNTHIST = QtPage.IntValidator(self.lineEditHisto, min=1)
         validatorFrequencyTime = QtPage.DoubleValidator(self.lineEditFrequencyTime)
@@ -1131,6 +1385,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         validatorRadius.setExclusiveMin(True)
 
         self.lineEditNTLIST.setValidator(validatorNTLIST)
+        self.lineEditNTLAL.setValidator(validatorNTLAL)
         self.lineEditFrequency.setValidator(validatorFrequency)
         self.lineEditHisto.setValidator(validatorNTHIST)
         self.lineEditFrequencyTime.setValidator(validatorFrequencyTime)
@@ -1150,6 +1405,27 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         t = self.modelOutput.dicoM2V[m]
         self.lineEditNTLIST.setText(QString(str(ntlist)))
         self.slotOutputListing(t)
+
+        if self.lag_mdl.getLagrangianStatus() != 'off':
+            self.groupBoxListingParticles.show()
+            period = self.mdl.getListingFrequencyLagrangian()
+            if period == -1:
+                m = "None"
+            elif period == 1:
+                m = "At each step"
+            else:
+                m = "Frequency_l"
+            self.modelNTLAL.setItem(str_model = m)
+            t = self.modelNTLAL.dicoM2V[m]
+            self.lineEditNTLAL.setText(QString(str(period)))
+            self.slotChoiceNTLAL(t)
+
+            # lagrangian mesh
+            self.tabWidget.setTabEnabled(3, True)
+        else:
+            self.groupBoxListingParticles.hide()
+            # lagrangian mesh
+            self.tabWidget.setTabEnabled(3, False)
 
         # Initialisation of the monitoring points files
 
@@ -1198,23 +1474,23 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 self.__salomeHandlerAddMonitoringPoint(name, X, Y, Z)
 
         # Writer initialisation
-
         self.groupBoxFrequency.hide()
         self.groupBoxTimeDependency.hide()
         self.groupBoxOptions.hide()
 
         # Mesh initialisation
-
         self.groupBoxVariable.hide()
         self.groupBoxAssociatedWriter.hide()
 
-        # values of probes format
+        # Mesh initialisation
+        self.groupBoxLagrangianVariable.hide()
+        self.groupBoxAssociatedLagrangianWriter.hide()
 
+        # values of probes format
         fmt = self.mdl.getMonitoringPointFormat()
         self.modelProbeFmt.setItem(str_model=fmt)
 
         # tabWidget active
-
         self.tabWidget.setCurrentIndex(self.case['current_tab'])
 
         self.case.undoStartGlobal()
@@ -1247,6 +1523,35 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 self.lineEditNTLIST.setText(QString(str(ntlist)))
 
 
+    @pyqtSignature("const QString&")
+    def slotChoiceNTLAL(self, text):
+        """
+        INPUT choice of the output listing for lagrangian variables
+        """
+        listing = self.modelNTLAL.dicoV2M[str(text)]
+        log.debug("slotChoiceNTLAL-> listing = %s" % listing)
+
+        if listing == "None":
+            ntlist = -1
+            self.mdl.setListingFrequencyLagrangian(ntlist)
+            self.lineEditNTLAL.setText(QString(str(ntlist)))
+            self.lineEditNTLAL.setDisabled(True)
+
+        elif listing == "At each step":
+            ntlist = 1
+            self.mdl.setListingFrequencyLagrangian(ntlist)
+            self.lineEditNTLAL.setText(QString(str(ntlist)))
+            self.lineEditNTLAL.setDisabled(True)
+
+        elif listing == "Frequency_l":
+            self.lineEditNTLAL.setEnabled(True)
+            ntlist, ok = self.lineEditNTLAL.text().toInt()
+            if ntlist < 1:
+                ntlist = 1
+                self.mdl.setListingFrequencyLagrangian(ntlist)
+                self.lineEditNTLAL.setText(QString(str(ntlist)))
+
+
     @pyqtSignature("const QString &")
     def slotListingFrequency(self, text):
         """
@@ -1256,6 +1561,17 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         if self.sender().validator().state == QValidator.Acceptable:
             log.debug("slotListingFrequency-> NTLIST = %s" % n)
             self.mdl.setListingFrequency(n)
+
+
+    @pyqtSignature("const QString &")
+    def slotNTLAL(self, text):
+        """
+        Input the frequency of the listing output for lagrangian variables
+        """
+        n, ok = text.toInt()
+        if self.sender().validator().state == QValidator.Acceptable:
+            log.debug("slotNTLAL-> NTLIST = %s" % n)
+            self.mdl.setListingFrequencyLagrangian(n)
 
 
     def __insertWriter(self, name, writer_id, format, directory):
@@ -1318,6 +1634,8 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.tableViewMesh.clearSelection()
         self.groupBoxVariable.hide()
         self.groupBoxAssociatedWriter.hide()
+        self.groupBoxLagrangianVariable.hide()
+        self.groupBoxAssociatedLagrangianWriter.hide()
 
 
     @pyqtSignature("const QModelIndex &, const QModelIndex &")
@@ -1344,7 +1662,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.modelAssociatedWriter = StandardItemModelAssociatedWriter(self, self.mdl, mesh_id)
             self.tableViewAssociatedWriter.horizontalHeader().setResizeMode(QHeaderView.Stretch)
 
-            delegate_associated_writer = AssociatedWriterDelegate(self.tableViewAssociatedWriter)
+            delegate_associated_writer = AssociatedWriterDelegate(self.tableViewAssociatedWriter, 0)
             self.tableViewAssociatedWriter.setItemDelegateForColumn(0, delegate_associated_writer)
 
             self.tableViewAssociatedWriter.reset()
@@ -1358,9 +1676,31 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 writer_row = writer_row +1
 
 
+    def showAssociatedLagrangianWriterTable(self):
+        cindex = self.tableViewLagrangianMesh.currentIndex()
+        if cindex != (-1,-1):
+            row = cindex.row()
+            mesh_id = self.modelLagrangianMesh.getItem(row)['id']
+
+            self.modelAssociatedLagrangianWriter = StandardItemModelAssociatedWriter(self, self.mdl, mesh_id)
+            self.tableViewAssociatedLagrangianWriter.horizontalHeader().setResizeMode(QHeaderView.Stretch)
+
+            delegate_associated_writer = AssociatedWriterDelegate(self.tableViewAssociatedLagrangianWriter, 1)
+            self.tableViewAssociatedLagrangianWriter.setItemDelegateForColumn(0, delegate_associated_writer)
+
+            self.tableViewAssociatedLagrangianWriter.reset()
+            self.modelAssociatedLagrangianWriter = StandardItemModelAssociatedWriter(self, self.mdl, mesh_id)
+            self.tableViewAssociatedLagrangianWriter.setModel(self.modelAssociatedLagrangianWriter)
+            self.modelAssociatedLagrangianWriter.deleteAllData()
+            writer_row = 0
+            for n in self.mdl.getAssociatedWriterIdList(mesh_id):
+                label = self.mdl.getWriterLabel(n)
+                self.__insertAssociatedLagrangianWriter(label)
+                writer_row = writer_row +1
+
+
     @pyqtSignature("const QModelIndex&")
     def slotSelectWriter(self, index):
-        # model = HeadLossesModel(self.case)
         cindex = self.tableViewWriter.currentIndex()
         if cindex != (-1,-1):
             row = cindex.row()
@@ -1368,6 +1708,11 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.groupBoxFrequency.show()
             self.groupBoxTimeDependency.show()
             self.groupBoxOptions.show()
+
+            if writer_id == "-3" or writer_id == "-4":
+                self.comboBoxTimeDependency.setEnabled(False)
+            else:
+                self.comboBoxTimeDependency.setEnabled(True)
 
             frequency_choice = self.mdl.getWriterFrequencyChoice(writer_id)
             self.modelFrequency.setItem(str_model=frequency_choice)
@@ -1632,6 +1977,13 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.modelMesh.newData(name, mesh_id, mesh_type, selection)
 
 
+    def __insertLagrangianMesh(self, name, mesh_id, mesh_type, density, selection):
+        """
+        Add a new 'item' into the Hlist.
+        """
+        self.modelLagrangianMesh.newData(name, mesh_id, mesh_type, density, selection)
+
+
     @pyqtSignature("")
     def slotAddMesh(self):
         """
@@ -1666,6 +2018,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.mdl.deleteMesh(lst)
 
         self.modelMesh.deleteAllData()
+        self.modelLagrangianMesh.deleteAllData()
         list_mesh = []
         for mesh in self.mdl.getMeshIdList():
             if int(mesh) > 0:
@@ -1676,18 +2029,88 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 label = self.mdl.getMeshLabel(mesh)
                 mesh_type = self.mdl.getMeshType(mesh)
                 location = self.mdl.getMeshLocation(mesh)
-                self.__insertMesh(label, mesh, mesh_type, location)
+                if mesh_type != "particles":
+                    self.__insertMesh(label, mesh, mesh_type, location)
+                else:
+                    density = self.mdl.getMeshDensity(mesh)
+                    self.__insertLagrangianMesh(label, mesh, mesh_type, density, location)
         for mesh in list_mesh:
             new_id = new_id + 1
             label = self.mdl.getMeshLabel(mesh)
             mesh_type = self.mdl.getMeshType(mesh)
             location = self.mdl.getMeshLocation(mesh)
-            self.__insertMesh(label, str(new_id), mesh_type, location)
+            if mesh_type != "particles":
+                self.__insertMesh(label, str(new_id), mesh_type, location)
+            else:
+                density = self.mdl.getMeshDensity(mesh)
+                self.__insertLagrangianMesh(label, str(new_id), mesh_type, density, location)
+
+
+    @pyqtSignature("")
+    def slotAddLagrangianMesh(self):
+        """
+        Add one monitoring point with these coordinates in the list in the Hlist
+        The number of the monitoring point is added at the precedent one
+        """
+        mesh_id = self.mdl.addLagrangianMesh()
+        self.__insertLagrangianMesh(self.mdl.getMeshLabel(mesh_id),
+                                    mesh_id,
+                                    self.mdl.getLagrangianMeshType(mesh_id),
+                                    self.mdl.getMeshDensity(mesh_id),
+                                    self.mdl.getMeshLocation(mesh_id))
+
+
+    @pyqtSignature("")
+    def slotDeleteLagrangianMesh(self):
+        """
+        Just delete the current selected entries from the Hlist and
+        of course from the XML file.
+        """
+        lst = []
+        selectionModel = self.tableViewLagrangianMesh.selectionModel()
+        for index in selectionModel.selectedRows():
+            mesh_id = self.modelLagrangianMesh.getItem(index.row())['id']
+            if int(mesh_id) < 0:
+                title = self.tr("Warning")
+                msg   = self.tr("You can't delete a default mesh\n"
+                                "(but you may disassociate it from all writers).")
+                QMessageBox.information(self, title, msg)
+                return
+            lst.append(str(mesh_id))
+
+        self.mdl.deleteMesh(lst)
+
+        self.modelMesh.deleteAllData()
+        self.modelLagrangianMesh.deleteAllData()
+        list_mesh = []
+        for mesh in self.mdl.getMeshIdList():
+            if int(mesh) > 0:
+                list_mesh.append(mesh)
+        new_id = 0
+        for mesh in self.mdl.getMeshIdList():
+            if int(mesh) < 0:
+                label = self.mdl.getMeshLabel(mesh)
+                mesh_type = self.mdl.getMeshType(mesh)
+                location = self.mdl.getMeshLocation(mesh)
+                if mesh_type != "particles":
+                    self.__insertMesh(label, mesh, mesh_type, location)
+                else:
+                    density = self.mdl.getMeshDensity(mesh)
+                    self.__insertLagrangianMesh(label, mesh, mesh_type, density, location)
+        for mesh in list_mesh:
+            new_id = new_id + 1
+            label = self.mdl.getMeshLabel(mesh)
+            mesh_type = self.mdl.getMeshType(mesh)
+            location = self.mdl.getMeshLocation(mesh)
+            if mesh_type != "particles":
+                self.__insertMesh(label, str(new_id), mesh_type, location)
+            else:
+                density = self.mdl.getMeshDensity(mesh)
+                self.__insertLagrangianMesh(label, str(new_id), mesh_type, density, location)
 
 
     @pyqtSignature("const QModelIndex&")
     def slotSelectMesh(self, index):
-        #model = HeadLossesModel(self.case)
         cindex = self.tableViewMesh.currentIndex()
         if cindex != (-1,-1):
             row = cindex.row()
@@ -1708,6 +2131,28 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.showAssociatedWriterTable()
 
 
+    @pyqtSignature("const QModelIndex&")
+    def slotSelectLagrangianMesh(self, index):
+        cindex = self.tableViewLagrangianMesh.currentIndex()
+        if cindex != (-1,-1):
+            row = cindex.row()
+            mesh_id = self.modelLagrangianMesh.getItem(row)['id']
+            self.groupBoxLagrangianVariable.show()
+            self.groupBoxAssociatedLagrangianWriter.show()
+            if int(mesh_id) < 0:
+                self.checkBoxAllLagrangianVariables.setEnabled(False)
+                self.checkBoxAllLagrangianVariables.setChecked(True)
+                self.mdl.setMeshAllVariablesStatus(mesh_id,"on")
+            else:
+                self.checkBoxAllLagrangianVariables.setEnabled(True)
+                all_variables = self.mdl.getMeshAllVariablesStatus(mesh_id)
+                if all_variables == 'on':
+                    self.checkBoxAllLagrangianVariables.setChecked(True)
+                else :
+                    self.checkBoxAllLagrangianVariables.setChecked(False)
+            self.showAssociatedLagrangianWriterTable()
+
+
     @pyqtSignature("")
     def slotAllVariables(self):
         """
@@ -1723,11 +2168,33 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 self.mdl.setMeshAllVariablesStatus(mesh_id, "off")
 
 
+    @pyqtSignature("")
+    def slotAllLagrangianVariables(self):
+        """
+        Input INPDT0.
+        """
+        cindex = self.tableViewLagrangianMesh.currentIndex()
+        if cindex != (-1,-1):
+            row = cindex.row()
+            mesh_id = self.modelLagrangianMesh.getItem(row)['id']
+            if self.checkBoxAllLagrangianVariables.isChecked():
+                self.mdl.setMeshAllVariablesStatus(mesh_id, "on")
+            else:
+                self.mdl.setMeshAllVariablesStatus(mesh_id, "off")
+
+
     def __insertAssociatedWriter(self, name):
         """
         Add a new 'item' into the Hlist.
         """
         self.modelAssociatedWriter.newItem(name)
+
+
+    def __insertAssociatedLagrangianWriter(self, name):
+        """
+        Add a new 'item' into the Hlist.
+        """
+        self.modelAssociatedLagrangianWriter.newItem(name)
 
 
     @pyqtSignature("")
@@ -1773,6 +2240,51 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 for associated_writer in list_associated_writer:
                     label = self.mdl.getWriterLabel(associated_writer)
                     self.__insertAssociatedWriter(label)
+
+
+    @pyqtSignature("")
+    def slotAddAssociatedLagrangianWriter(self):
+        """
+        Add one monitoring point with these coordinates in the list in the Hlist
+        The number of the monitoring point is added at the precedent one
+        """
+        cindex = self.tableViewLagrangianMesh.currentIndex()
+        if cindex != (-1,-1):
+            row = cindex.row()
+            mesh_id = self.modelLagrangianMesh.getItem(row)['id']
+            associated_writer_id = self.mdl.addAssociatedWriter(mesh_id)
+            if associated_writer_id == None:
+                title = self.tr("Warning")
+                msg   = self.tr("Please create another writer\n"\
+                                "before adding a new associated writer.")
+                QMessageBox.information(self, title, msg)
+                return
+            self.__insertAssociatedLagrangianWriter(self.mdl.getWriterLabel(associated_writer_id))
+
+
+    @pyqtSignature("")
+    def slotDeleteAssociatedLagrangianWriter(self):
+        """
+        Just delete the current selected entries from the Hlist and
+        of course from the XML file.
+        """
+        cindex = self.tableViewLagrangianMesh.currentIndex()
+        if cindex != (-1,-1):
+            row = cindex.row()
+            mesh_id = self.modelLagrangianMesh.getItem(row)['id']
+            selectionModel = self.tableViewAssociatedLagrangianWriter.selectionModel()
+            for index in selectionModel.selectedRows():
+                writer_label = self.modelAssociatedLagrangianWriter.getItem(index.row())
+                writer_id = self.mdl.getWriterIdFromLabel(writer_label)
+                self.mdl.deleteAssociatedWriter(mesh_id, writer_id)
+
+                self.modelAssociatedLagrangianWriter.deleteAllData()
+                list_associated_writer = []
+                for associated_writer in self.mdl.getAssociatedWriterIdList(mesh_id):
+                    list_associated_writer.append(associated_writer)
+                for associated_writer in list_associated_writer:
+                    label = self.mdl.getWriterLabel(associated_writer)
+                    self.__insertAssociatedLagrangianWriter(label)
 
 
     @pyqtSignature("const QString &")
@@ -1922,7 +2434,6 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
 
         for index in selectionModel.selectedRows():
             name = str(index.row() + 1)
-            print name
             X, Y, Z = self.mdl.getMonitoringPointCoordinates(name)
             new_name = str(probe_number + idx)
             self.__insertMonitoringPoint(new_name, X, Y, Z)

@@ -1362,6 +1362,32 @@ static char *cs_gui_output_mesh_location(int  const num)
 }
 
 /*----------------------------------------------------------------------------
+ * Return the density for a particle mesh.
+ *
+ * parameters:
+ *   num                <--  number of a mesh
+ *----------------------------------------------------------------------------*/
+
+static double cs_gui_output_particle_density(int  const num)
+{
+  char *path = NULL;
+  double result = 1.;
+
+  double density = 1.;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "analysis_control", "output");
+  cs_xpath_add_element_num(&path, "mesh", num);
+  cs_xpath_add_element(&path, "density");
+  cs_xpath_add_function_text(&path);
+  if (cs_gui_get_double(path, &result))
+    density = result;
+
+  BFT_FREE(path);
+  return density;
+}
+
+/*----------------------------------------------------------------------------
  * Return the frequency of a writer.
  *
  * parameters:
@@ -1811,6 +1837,17 @@ cs_gui_postprocess_meshes(void)
       cs_post_define_surface_mesh(id, label, NULL, location,
                                   add_groups, auto_vars,
                                   n_writers, writer_ids);
+    } else if(cs_gui_strcmp(type, "boundary_faces")) {
+      cs_post_define_surface_mesh(id, label, NULL, location,
+                                  add_groups, auto_vars,
+                                  n_writers, writer_ids);
+    } else if(   cs_gui_strcmp(type, "particles")
+              || cs_gui_strcmp(type, "trajectories")) {
+      bool trajectory = cs_gui_strcmp(type, "trajectories") ? true : false;
+      double density = cs_gui_output_particle_density(i);
+      cs_post_define_particles_mesh(id, label, location,
+                                    density, trajectory, auto_vars,
+                                    n_writers, writer_ids);
     }
 
     BFT_FREE(writer_ids);

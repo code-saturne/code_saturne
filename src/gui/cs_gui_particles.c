@@ -802,7 +802,7 @@ void CS_PROCF(cfname, CFNAME)
  * INTEGER          IDPVAR     <--   equation on diameter if iphyla = 1
  * INTEGER          IMPVAR     <--   equation on mass if iphyla = 1
  * INTEGER          ITPVAR     <--   equation on temperature if iphyla = 1
- * INTEGER          IENCRA     <--   coal fouliing if iphyla = 2
+ * INTEGER          IENCRA     <--   coal fouling if iphyla = 2
  * DOUBLE           TPRENC     <--   particle coal temperature if iphyla = 2
  * DOUBLE           VISREF     <--   particle critical viscosity if iphyla = 2
  * DOUBLE           ENC1       <--   Watt and Fereday coefficient 1
@@ -816,18 +816,13 @@ void CS_PROCF(cfname, CFNAME)
  * INTEGER          IDIFFL     <--   particle fluid diffusion
  * INTEGER          MODCPL     <--   complete turbulent dispersion model
  * INTEGER          IDIRLA     <--   direction of the complete model
- * INTEGER          IENSI1     <--   post-processing in trajectory mode
- * INTEGER          IENSI2     <--   post-processing in movement mode
  * INTEGER          NTLAL      <--   listing printing frequency
- * INTEGER          NBVIS      <--   number of particles for display
- * INTEGER          NVISLA     <--   output period for post-processing
  * INTEGER          IVISV1     <--   display of variable 'fluid velocity'
  * INTEGER          IVISV2     <--   display of variable 'particles velocity'
  * INTEGER          IVISTP     <--   display of variable 'resident time'
  * INTEGER          IVISDM     <--   display of variable 'particle diameter'
  * INTEGER          IVISTE     <--   display of variable 'particle temperature'
  * INTEGER          IVISMP     <--   display of variable 'particle mass'
- * INTEGER          IVISHP     <--   display of variable 'coal temp. particle'
  * INTEGER          IVISDK     <--   display of variable 'core diameter of part.'
  * INTEGER          IVISCH     <--   display of variable 'mass of reactive coal'
  * INTEGER          IVISCK     <--   display of variable 'mass of char'
@@ -876,18 +871,13 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
                                 int *const idiffl,
                                 int *const modcpl,
                                 int *const idirla,
-                                int *const iensi1,
-                                int *const iensi2,
                                 int *const ntlal,
-                                int *const nbvis,
-                                int *const nvisla,
                                 int *const ivisv1,
                                 int *const ivisv2,
                                 int *const ivistp,
                                 int *const ivisdm,
                                 int *const iviste,
                                 int *const ivismp,
-                                int *const ivishp,
                                 int *const ivisdk,
                                 int *const ivisch,
                                 int *const ivisck,
@@ -1003,8 +993,6 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
 
   /* Output */
 
-  _get_status(iensi1, 3, "lagrangian", "output", "trajectory");
-  _get_status(iensi2, 3, "lagrangian", "output", "particles");
   _get_status(ivisv1, 3, "lagrangian", "output", "velocity_fluid_seen");
   _get_status(ivisv2, 3, "lagrangian", "output", "velocity_particles");
   _get_status(ivistp, 3, "lagrangian", "output", "resident_time");
@@ -1013,14 +1001,11 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
   _get_status(ivismp, 3, "lagrangian", "output", "mass");
 
   if (*iphyla == 2) {
-    _get_status(ivishp, 3, "lagrangian", "output", "coal_temperature");
     _get_status(ivisdk, 3, "lagrangian", "output", "shrinking_core_diameter");
     _get_status(ivisch, 3, "lagrangian", "output", "raw_coal_mass_fraction");
     _get_status(ivisck, 3, "lagrangian", "output", "char_mass_fraction");
   }
 
-  _get_int(nbvis,  3, "lagrangian", "output", "number_of_particles");
-  _get_int(nvisla, 3, "lagrangian", "output", "postprocessing_frequency");
   _get_int(ntlal,  3, "lagrangian", "output", "listing_printing_frequency");
 
   /* Statistics */
@@ -1234,8 +1219,6 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
   bft_printf("--modcpl = %i\n", *modcpl);
   bft_printf("--idirla = %i\n", *idirla);
 
-  bft_printf("--iensi1 = %i\n", *iensi1);
-  bft_printf("--iensi2 = %i\n", *iensi2);
   bft_printf("--ivisv1 = %i\n", *ivisv1);
   bft_printf("--ivisv2 = %i\n", *ivisv2);
   bft_printf("--ivistp = %i\n", *ivistp);
@@ -1244,14 +1227,10 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
   bft_printf("--ivismp = %i\n", *ivismp);
 
   if (*iphyla == 2) {
-    bft_printf("--ivishp = %i\n", *ivishp);
     bft_printf("--ivisdk = %i\n", *ivisdk);
     bft_printf("--ivisch = %i\n", *ivisch);
     bft_printf("--ivisck = %i\n", *ivisck);
   }
-
-  bft_printf("--nbvis  = %i\n", *nbvis);
-  bft_printf("--nvisla = %i\n", *nvisla);
 
   bft_printf("--isuist = %i\n", *isuist);
   bft_printf("--nbclst = %i\n", *nbclst);

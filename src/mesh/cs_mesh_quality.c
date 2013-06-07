@@ -45,6 +45,7 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
+#include "cs_interface.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_post.h"
@@ -882,7 +883,7 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
      For the moment, we export the mesh at this stage; this should be moved
      once PSTEMA has been moved from CALTRI to an earlier step. */
 
-  cs_post_write_meshes(1,0);
+  cs_post_write_meshes(NULL);
 
   cs_post_activate_writer(0, 1);
 
@@ -941,9 +942,8 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
                           false,
                           true,
                           CS_POST_TYPE_cs_real_t,
-                          -1,
-                          0.0,
                           face_to_cell,
+                          NULL,
                           NULL,
                           NULL);
 
@@ -962,9 +962,8 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
                                  false,
                                  true,
                                  CS_POST_TYPE_cs_real_t,
-                                 -1,
-                                 0.0,
-                                 face_to_vtx);
+                                 face_to_vtx,
+                                 NULL);
       }
 
     } /* End of post-processing on volume */
@@ -976,11 +975,10 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
                         false,
                         true,
                         CS_POST_TYPE_cs_real_t,
-                        -1,
-                        0.0,
                         NULL,
                         NULL,
-                        b_face_warping);
+                        b_face_warping,
+                        NULL);
 
     BFT_FREE(working_array);
 
@@ -1032,9 +1030,8 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
                           false,
                           true,
                           CS_POST_TYPE_cs_real_t,
-                          -1,
-                          0.0,
                           face_to_cell,
+                          NULL,
                           NULL,
                           NULL);
 
@@ -1048,9 +1045,8 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
                                  false,
                                  true,
                                  CS_POST_TYPE_cs_real_t,
-                                 -1,
-                                 0.0,
-                                 face_to_vtx);
+                                 face_to_vtx,
+                                 NULL);
 
       }
       if (face_to_cell != NULL) {
@@ -1062,9 +1058,8 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
                           false,
                           true,
                           CS_POST_TYPE_cs_real_t,
-                          -1,
-                          0.0,
                           face_to_cell,
+                          NULL,
                           NULL,
                           NULL);
 
@@ -1078,9 +1073,8 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
                                  false,
                                  true,
                                  CS_POST_TYPE_cs_real_t,
-                                 -1,
-                                 0.0,
-                                 face_to_vtx);
+                                 face_to_vtx,
+                                 NULL);
 
       }
 
@@ -1138,9 +1132,8 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
                           false,
                           true,
                           CS_POST_TYPE_cs_real_t,
-                          -1,
-                          0.0,
                           face_to_cell,
+                          NULL,
                           NULL,
                           NULL);
 
@@ -1154,9 +1147,8 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
                                  false,
                                  true,
                                  CS_POST_TYPE_cs_real_t,
-                                 -1,
-                                 0.0,
-                                 face_to_vtx);
+                                 face_to_vtx,
+                                 NULL);
       }
 
     } /* End of post-processing on volume */
@@ -1168,11 +1160,10 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
                         false,
                         true,
                         CS_POST_TYPE_cs_real_t,
-                        -1,
-                        0.0,
                         NULL,
                         NULL,
-                        b_face_ortho);
+                        b_face_ortho,
+                        NULL);
 
     BFT_FREE(working_array);
 
@@ -1201,9 +1192,8 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
                         false,
                         true,
                         CS_POST_TYPE_cs_real_t,
-                        -1,
-                        0.0,
                         mesh_quantities->cell_vol,
+                        NULL,
                         NULL,
                         NULL);
 

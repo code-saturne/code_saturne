@@ -305,11 +305,10 @@ cs_gradient_quality(void)
                       false,                   /* interlace */
                       true,                    /* use_parent */
                       CS_POST_TYPE_cs_real_t,
-                      -1,                      /* nt_cur_abs */
-                      0.,                      /* t_cur_abs */
                       grad,                    /* cel_vals */
                       NULL,                    /* i_face_vals */
-                      NULL);                   /* b_face_vals */
+                      NULL,                    /* b_face_vals */
+                      NULL);                   /* time step */
 
     /* Compute absolute error */
 
@@ -323,11 +322,10 @@ cs_gradient_quality(void)
                       false,                   /* interlace */
                       true,                    /* use_parent */
                       CS_POST_TYPE_cs_real_t,
-                      -1,                      /* nt_cur_abs */
-                      0.,                      /* t_cur_abs */
                       grad,                    /* cel_vals */
                       NULL,                    /* i_face_vals */
-                      NULL);                   /* b_face_vals */
+                      NULL,                    /* b_face_vals */
+                      NULL);                   /* time step */
 
   } /* End of loop on tests */
 

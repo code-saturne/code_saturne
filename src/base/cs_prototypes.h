@@ -347,6 +347,20 @@ cs_lagr_define_zone_class_param(cs_int_t         class_id,
                                 const cs_int_t   i_cs_params[],
                                 const cs_real_t  r_cs_params[]);
 
+/*----------------------------------------------------------------------------
+ * Return Lagrangian model status.
+ *
+ * parameters:
+ *   model_flag   --> 0 without Lagrangian, 1 or 2 with Lagrangian
+ *   restart_flag --> 1 for Lagrangian restart, 0 otherwise
+ *   frozen_flag  --> 1 for frozen Eulerian flow, 0 otherwise
+ *----------------------------------------------------------------------------*/
+
+void
+cs_lagr_status(int  *model_flag,
+               int  *restart_flag,
+               int  *frozen_flag);
+
 /*============================================================================
  *  User function prototypes
  *============================================================================*/

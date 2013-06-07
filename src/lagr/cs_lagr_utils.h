@@ -2,7 +2,7 @@
 #define __CS_LAGR_UTILS_H__
 
 /*============================================================================
- * Utilitarian functions for the diphasic lagrangian module
+ * Utility functions for the diphasic lagrangian module
  *============================================================================*/
 
 /*
@@ -31,7 +31,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base.h"
+#include "cs_defs.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -46,38 +46,38 @@ BEGIN_C_DECLS
  * two vertices are identical.
  *
  * parameters:
- *   p             --> X, Y, Z coordinates of the vertex P
- *   q             --> X, Y, Z coordinates of the vertex Q
+ *   p             <-- X, Y, Z coordinates of the vertex P
+ *   q             <-- X, Y, Z coordinates of the vertex Q
  *
  * returns:
- *  1 if the two vertices are identical otherwise 0
+ *   1 if the two vertices are identical otherwise 0
  *----------------------------------------------------------------------------*/
 
 int
-cs_lagrang_check_colocalization(double  p[3],
-                                double  q[3]);
+cs_lagrang_check_colocalization(const double  p[3],
+                                const double  q[3]);
 
 /*----------------------------------------------------------------------------
  * Look for coordinate system orientation to locate particles in relation to
  * faces.
  *
  * parameters:
- *  p1            --> X, Y, Z coordinate of the first vertex
- *  p2            --> X, Y, Z coordinate of the second vertex
- *  p3            --> X, Y, Z coordinate of the third vertex
- *  p4            --> X, Y, Z coordinate of the fourth vertex
- *  perturbation  <-> an indicator if perturbation is used (1: true, 0: false)
+ *   p1            <-- X, Y, Z coordinate of the first vertex
+ *   p2            <-- X, Y, Z coordinate of the second vertex
+ *   p3            <-- X, Y, Z coordinate of the third vertex
+ *   p4            <-- X, Y, Z coordinate of the fourth vertex
+ *   perturbation  <-- an indicator if perturbation is used (1: true, 0: false)
  *
  * returns:
- *  an indicator on the orientation of the tetrahedron [p1, p2, p3, p4]
+ *   an indicator on the orientation of the tetrahedron [p1, p2, p3, p4]
  *----------------------------------------------------------------------------*/
 
 int
-cs_lagrang_tetra_orientation(double      p1[3],
-                             double      p2[3],
-                             double      p3[3],
-                             double      p4[3],
-                             int         perturbation);
+cs_lagrang_tetra_orientation(const double  p1[3],
+                             const double  p2[3],
+                             const double  p3[3],
+                             const double  p4[3],
+                             int           perturbation);
 
 /*----------------------------------------------------------------------------*/
 

@@ -859,21 +859,20 @@ _multigrid_add_post(cs_multigrid_t  *mg,
  * Post process variables associated with Multigrid hierarchy
  *
  * parameters:
- *   mgh        <-- multigrid hierarchy
- *   nt_cur_abs <-- current time step
- *   t_cur_abs  <-- current time value
+ *   mgh <-- multigrid hierarchy
+ *   ts  <-- time step status structure
  *----------------------------------------------------------------------------*/
 
 static void
-_cs_multigrid_post_function(void       *mgh,
-                            cs_int_t    nt_cur_abs,
-                            cs_real_t   t_cur_abs)
+_cs_multigrid_post_function(void                  *mgh,
+                            const cs_time_step_t  *ts)
 {
   int ii;
   size_t name_len;
   char *var_name = NULL;
   cs_multigrid_t *mg = mgh;
   const char *base_name = NULL;
+  const int nt_cur = (ts != NULL) ? ts->nt_cur : -1;
 
   /* Return if necessary structures inconsistent or have been destroyed */
 
@@ -894,7 +893,7 @@ _cs_multigrid_post_function(void       *mgh,
   for (ii = 0; ii < mg->n_levels_post; ii++) {
 
     sprintf(var_name, "mg %s %2d %3d",
-            base_name, (int)(ii+1), (int)nt_cur_abs);
+            base_name, (ii+1), nt_cur);
 
     cs_post_write_var(-1,
                       var_name,
@@ -902,9 +901,8 @@ _cs_multigrid_post_function(void       *mgh,
                       false,
                       true,
                       CS_POST_TYPE_int,
-                      -1,
-                      0.0,
                       mg->post_cell_num[ii],
+                      NULL,
                       NULL,
                       NULL);
 
@@ -913,7 +911,7 @@ _cs_multigrid_post_function(void       *mgh,
     if (mg->post_cell_rank != NULL) {
 
       sprintf(var_name, "rk %s %2d %3d",
-              base_name, (int)(ii+1), (int)nt_cur_abs);
+              base_name, (ii+1), nt_cur);
 
       cs_post_write_var(-1,
                         var_name,
@@ -921,9 +919,8 @@ _cs_multigrid_post_function(void       *mgh,
                         false,
                         true,
                         CS_POST_TYPE_int,
-                        -1,
-                        0.0,
                         mg->post_cell_rank[ii],
+                        NULL,
                         NULL,
                         NULL);
 

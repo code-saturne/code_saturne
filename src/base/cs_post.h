@@ -77,7 +77,7 @@ typedef enum {
  * Function pointer to elements selection definition.
  *
  * Each function of this sort may be used to select a given type of element,
- * usually cells, interior faces, or boundary faces.
+ * usually cells, interior faces, boundary faces, or particles.
  *
  * If non-empty and not containing all elements, a list of elements of the
  * main mesh should be allocated (using BFT_MALLOC) and defined by this
@@ -115,15 +115,13 @@ typedef void
  *   or similar before the data pointed to goes out of scope.
  *
  * parameters:
- *   input      <-> pointer to optional (untyped) value or structure.
- *   nt_cur_abs <-- current time step number
- *   t_cur_abs  <-- absolute time at the current time step
+ *   input <-> pointer to optional (untyped) value or structure.
+ *   ts    <-- time step status structure, or NULL
  *----------------------------------------------------------------------------*/
 
 typedef void
-(cs_post_time_dep_output_t) (void       *input,
-                             int         nt_cur_abs,
-                             cs_real_t   t_cur_abs);
+(cs_post_time_dep_output_t) (void                  *input,
+                             const cs_time_step_t  *ts);
 
 /*----------------------------------------------------------------------------
  * Function pointer associated with a specific post-processing output
@@ -144,32 +142,29 @@ typedef void
  *   mesh_id     <-- id of the output mesh for the current call
  *   cat_id      <-- category id of the output mesh for the current call
  *   ent_flag    <-- indicate global presence of cells (ent_flag[0]), interior
- *                   faces (ent_flag[1]), or boundary faces (ent_flag[2])
+ *                   faces (ent_flag[1]), boundary faces (ent_flag[2]),
+ *                   or particles (ent_flag[3])
  *   n_cells     <-- local number of cells of post_mesh
  *   n_i_faces   <-- local number of interior faces of post_mesh
  *   n_b_faces   <-- local number of boundary faces of post_mesh
  *   cell_list   <-- list of cells (1 to n) of post-processing mesh
  *   i_face_list <-- list of interior faces (1 to n) of post-processing mesh
  *   b_face_list <-- list of boundary faces (1 to n) of post-processing mesh
- *   nt_cur_abs  <-- current time step number
- *   t_cur_abs   <-- current physical time
- *   nt_cur_abs  <-- current time step number
- *   t_cur_abs   <-- absolute time at the current time step
+ *   ts          <-- time step status structure, or NULL
  *----------------------------------------------------------------------------*/
 
 typedef void
-(cs_post_time_mesh_dep_output_t) (void             *input,
-                                  int               mesh_id,
-                                  int               cat_id,
-                                  int               ent_flag[3],
-                                  cs_lnum_t         n_cells,
-                                  cs_lnum_t         n_i_faces,
-                                  cs_lnum_t         n_b_faces,
-                                  const cs_lnum_t   cell_list[],
-                                  const cs_lnum_t   i_face_list[],
-                                  const cs_lnum_t   b_face_list[],
-                                  int               nt_cur_abs,
-                                  cs_real_t         t_cur_abs);
+(cs_post_time_mesh_dep_output_t) (void                  *input,
+                                  int                    mesh_id,
+                                  int                    cat_id,
+                                  int                    ent_flag[4],
+                                  cs_lnum_t              n_cells,
+                                  cs_lnum_t              n_i_faces,
+                                  cs_lnum_t              n_b_faces,
+                                  const cs_lnum_t        cell_list[],
+                                  const cs_lnum_t        i_face_list[],
+                                  const cs_lnum_t        b_face_list[],
+                                  const cs_time_step_t  *ts);
 
 /*=============================================================================
  * Global variables
@@ -347,6 +342,83 @@ cs_post_define_surface_mesh_by_func(int                    mesh_id,
                                     bool                   auto_variables,
                                     int                    n_writers,
                                     const int              writer_ids[]);
+
+/*----------------------------------------------------------------------------
+ * Define a particles post-processing mesh.
+ *
+ * Such a mesh is always time-varying, and will only be output by writers
+ * defined with the FVM_WRITER_TRANSIENT_CONNECT option.
+ *
+ * If the trajectory_mode argument is set to true, this logic is reversed,
+ * and output will only occur for writers defined with the
+ * FVM_WRITER_FIXED_MESH option. In this case, a submesh consisting of
+ * trajectory segments for the current time step will be added to
+ * the output at each output time step.
+ *
+ * parameters:
+ *   mesh_id        <-- id of mesh to define (< 0 reserved, > 0 for user)
+ *   mesh_name      <-- associated mesh name
+ *   cell_criteria  <-- selection criteria for cells containing particles,
+ *                      or NULL.
+ *   density        <-- fraction of the particles in the selected area
+ *                      which should be output (0 < density <= 1)
+ *   trajectory     <-- if true, activate trajectory mode
+ *   auto_variables <-- if true, automatic output of main variables
+ *   n_writers      <-- number of associated writers
+ *   writer_ids     <-- ids of associated writers
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_define_particles_mesh(int          mesh_id,
+                              const char  *mesh_name,
+                              const char  *cell_criteria,
+                              double       density,
+                              bool         trajectory,
+                              bool         auto_variables,
+                              int          n_writers,
+                              const int    writer_ids[]);
+
+/*----------------------------------------------------------------------------
+ * Define a particles post-processing mesh using a selection function.
+ *
+ * The selection may be updated over time steps.
+ *
+ * Such a mesh is always time-varying, and will only be output by writers
+ * defined with the FVM_WRITER_TRANSIENT_CONNECT option.
+ *
+ * If the trajectory_mode argument is set to true, this logic is reversed,
+ * and output will only occur for writers defined with the
+ * FVM_WRITER_FIXED_MESH option. In this case, a submesh consisting of
+ * trajectory segments for the current time step will be added to
+ * the output at each output time step.
+ *
+ * Note: if the p_select_input pointer is non-NULL, it must point
+ * to valid data when the selection function is called, so
+ * that value or structure should not be temporary (i.e. local);
+ *
+ * parameters:
+ *   mesh_id        <-- id of mesh to define (< 0 reserved, > 0 for user)
+ *   mesh_name      <-- associated mesh name
+ *   p_select_func  <-- pointer to particles selection function
+ *   p_select_input <-> pointer to optional input data for the particles
+ *                      selection function, or NULL
+ *   density        <-- fraction of the particles in the selected area
+ *                      which should be output (0 < density <= 1)
+ *   trajectory     <-- if true, activate trajectory mode
+ *   auto_variables <-- if true, automatic output of main variables
+ *   n_writers      <-- number of associated writers
+ *   writer_ids     <-- ids of associated writers
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_define_particles_mesh_by_func(int                    mesh_id,
+                                      const char            *mesh_name,
+                                      cs_post_elt_select_t  *p_select_func,
+                                      void                  *p_select_input,
+                                      bool                   trajectory,
+                                      bool                   auto_variables,
+                                      int                    n_writers,
+                                      const int              writer_ids[]);
 
 /*----------------------------------------------------------------------------
  * Create an alias to a post-processing mesh.
@@ -733,13 +805,11 @@ cs_post_activate_writer(int   writer_id,
  * Output post-processing meshes using associated writers.
  *
  * parameters:
- *   nt_cur_abs <-- current time step number
- *   t_cur_abs  <-- current physical time
+ *   ts <-- time step status structure
  *----------------------------------------------------------------------------*/
 
 void
-cs_post_write_meshes(int     nt_cur_abs,
-                     double  t_cur_abs);
+cs_post_write_meshes(const cs_time_step_t  *ts);
 
 /*----------------------------------------------------------------------------
  * Output a variable defined at cells or faces of a post-processing mesh
@@ -753,25 +823,23 @@ cs_post_write_meshes(int     nt_cur_abs,
  *   use_parent  <-- true if values are defined on "parent" mesh,
  *                   false if values are defined on post-processing mesh
  *   var_type    <-- variable's data type
- *   nt_cur_abs  <-- current time step number
- *   t_cur_abs   <-- current physical time
  *   cel_vals    <-- cell values
  *   i_face_vals <-- interior face values
  *   b_face_vals <-- boundary face values
+ *   ts          <-- time step status structure, or NULL
  *----------------------------------------------------------------------------*/
 
 void
-cs_post_write_var(int              mesh_id,
-                  const char      *var_name,
-                  int              var_dim,
-                  bool             interlace,
-                  bool             use_parent,
-                  cs_post_type_t   var_type,
-                  int              nt_cur_abs,
-                  double           t_cur_abs,
-                  const void      *cel_vals,
-                  const void      *i_face_vals,
-                  const void      *b_face_vals);
+cs_post_write_var(int                    mesh_id,
+                  const char            *var_name,
+                  int                    var_dim,
+                  bool                   interlace,
+                  bool                   use_parent,
+                  cs_post_type_t         var_type,
+                  const void            *cel_vals,
+                  const void            *i_face_vals,
+                  const void            *b_face_vals,
+                  const cs_time_step_t  *ts);
 
 /*----------------------------------------------------------------------------
  * Output a variable defined at vertices of a post-processing mesh using
@@ -785,21 +853,37 @@ cs_post_write_var(int              mesh_id,
  *   use_parent <-- true if values are defined on "parent" mesh,
  *                  false if values are defined on post-processing mesh
  *   var_type   <-- variable's data type
- *   nt_cur_abs <-- current time step number
- *   t_cur_abs  <-- current physical time
  *   vtx_vals   <-- vertex values
+ *   ts          <-- time step status structure, or NULL
  *----------------------------------------------------------------------------*/
 
 void
-cs_post_write_vertex_var(int              mesh_id,
-                         const char      *var_name,
-                         int              var_dim,
-                         bool             interlace,
-                         bool             use_parent,
-                         cs_post_type_t   var_type,
-                         int              nt_cur_abs,
-                         double           t_cur_abs,
-                         const void      *vtx_vals);
+cs_post_write_vertex_var(int                    mesh_id,
+                         const char            *var_name,
+                         int                    var_dim,
+                         bool                   interlace,
+                         bool                   use_parent,
+                         cs_post_type_t         var_type,
+                         const void            *vtx_vals,
+                         const cs_time_step_t  *ts);
+
+/*----------------------------------------------------------------------------
+ * Output an existing lagrangian particle attribute at particle
+ * positions or trajectory endpoints of a particle mesh using
+ * associated writers.
+ *
+ * parameters:
+ *   mesh_id  <-- id of associated mesh
+ *   attr     <-- associated particle attribute id
+ *   var_name <-- name of variable to output
+ *   ts       <-- time step status structure, or NULL
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_write_particle_values(int                    mesh_id,
+                              int                    attr_id,
+                              const char            *var_name,
+                              const cs_time_step_t  *ts);
 
 /*----------------------------------------------------------------------------
  * Update references to parent mesh of post-processing meshes in case of
@@ -884,13 +968,11 @@ cs_post_init_meshes(int check_mask);
  * registred output functions.
  *
  * parameters:
- *   nt_cur_abs  <-- current time step number
- *   t_cur_abs   <-- current physical time
+ *   ts <-- time step status structure, or NULL
  *----------------------------------------------------------------------------*/
 
 void
-cs_post_write_vars(int     nt_cur_abs,
-                   double  t_cur_abs);
+cs_post_write_vars(const cs_time_step_t  *ts);
 
 /*----------------------------------------------------------------------------
  * Destroy all structures associated with post-processing

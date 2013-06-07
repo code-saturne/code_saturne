@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2013-05-16 15:51+0200\n"
+"POT-Creation-Date: 2013-06-07 17:25+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -4697,6 +4697,9 @@ msgid ""
 "  Key: \"%s\", values per field\n"
 "  ----\n"
 msgstr ""
+"\n"
+"  clé: \"%s\", valeurs par champ\n"
+"  ----\n"
 
 #, c-format
 msgid "    %-24s %-10d (default)\n"
@@ -5202,7 +5205,7 @@ msgstr " --version         affiche le numéro de version\n"
 
 #, c-format
 msgid " -wdir, --wdir     <path> working directory\n"
-msgstr ""
+msgstr " -wdir, --wdir     <chemin> répertoire de travail\n"
 
 #, c-format
 msgid "%s version %s\n"
@@ -5366,6 +5369,9 @@ msgstr "Domaine fluide"
 
 msgid "Boundary"
 msgstr "Bord"
+
+msgid "Particles"
+msgstr "Particules"
 
 #, c-format
 msgid ""
@@ -7484,6 +7490,9 @@ msgid ""
 "descriptions or referenced files renamed so as to be readable.\n"
 msgstr ""
 
+msgid "The number of EnSight parts must not exceed 65000."
+msgstr ""
+
 #, c-format
 msgid ""
 "A variable with the name \"%s\" has already been\n"
@@ -8669,7 +8678,7 @@ msgstr ""
 msgid ""
 "  Inconsistent value found in cs_join_vertex_t struct.:\n"
 "    Vertex %d is defined by:\n"
-"      %u - [%7.4le, %7.4le, %7.4le] - %lg\n"
+"      %llu - [%7.4le, %7.4le, %7.4le] - %lg\n"
 msgstr ""
 
 msgid ""
@@ -9893,4 +9902,3 @@ msgid ""
 msgstr ""
 "  temps écoulé :              %.3g s\n"
 "\n"
-

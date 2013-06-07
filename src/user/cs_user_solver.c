@@ -240,11 +240,10 @@ cs_user_solver(const cs_mesh_t             *mesh,
                     false,                   /* interleave if true */
                     true,                    /* define on parents */
                     CS_POST_TYPE_cs_real_t,  /* type */
-                    -1,                      /* current time step */
-                    0.,                      /* current time */
                     t,                       /* value on cells */
                     NULL,                    /* value on interior faces */
-                    NULL);                   /* value on boundary faces */
+                    NULL,                    /* value on boundary faces */
+                    NULL);                   /* time-independent output */
 
   cs_post_write_var(-1,                      /* default mesh */
                     "solution",              /* variable name */
@@ -252,11 +251,10 @@ cs_user_solver(const cs_mesh_t             *mesh,
                     false,                   /* interleave if true */
                     true,                    /* define on parents */
                     CS_POST_TYPE_cs_real_t,  /* type */
-                    -1,                      /* current time step */
-                    0.,                      /* current time */
                     t_sol,                   /* value on cells */
                     NULL,                    /* value on interior faces */
-                    NULL);                   /* value on boundary faces */
+                    NULL,                    /* value on boundary faces */
+                    NULL);                   /* time-independent output */
 
   /* Finalization */
 

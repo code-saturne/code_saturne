@@ -424,7 +424,7 @@ cs_boundary_conditions_error(const cs_int_t  bc_type[])
 
     cs_post_activate_writer(writer_id, 1);
 
-    cs_post_write_meshes(-1, 0.0);
+    cs_post_write_meshes(NULL);
 
     BFT_FREE(marker.flag);
 
@@ -446,11 +446,10 @@ cs_boundary_conditions_error(const cs_int_t  bc_type[])
                             false, /* no interlace */
                             true,  /* use parents */
                             CS_POST_TYPE_cs_int_t,
-                            -1,
-                            0.0,
                             NULL,
                             NULL,
-                            _bc_type);
+                            _bc_type,
+                            NULL);
 
       }
     }

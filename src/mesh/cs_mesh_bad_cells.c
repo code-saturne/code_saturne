@@ -518,16 +518,14 @@ _compute_volume_ratio(const cs_mesh_t             *mesh,
  *   mesh            <-- pointer to a mesh structure.
  *   mesh_quantities <-- pointer to a mesh quantities structures.
  *   call_type       <-- visualization type id (0: fixed; 1: time varying)
- *   nt_cur_abs      <-- current time step
- *   t_cur_abs       <-- current time value
+ *   ts              <-- time step structure, or NULL
  *----------------------------------------------------------------------------*/
 
 static void
 _bad_cells_post(const cs_mesh_t             *mesh,
                 const cs_mesh_quantities_t  *mesh_quantities,
                 int                          call_type,
-                int                          nt_cur_abs,
-                double                       t_cur_abs)
+                const cs_time_step_t        *ts)
 {
   int i;
 
@@ -585,11 +583,10 @@ _bad_cells_post(const cs_mesh_t             *mesh,
                           false,
                           true,
                           CS_POST_TYPE_int,
-                          nt_cur_abs,
-                          t_cur_abs,
                           bad_cells_v,
                           NULL,
-                          NULL);
+                          NULL,
+                          ts);
 
     }
 
@@ -602,15 +599,13 @@ _bad_cells_post(const cs_mesh_t             *mesh,
  * Post-process bad cell quality indicators.
  *
  * parameters:
- *   mesh            <--  Void pointer to associated mesh structure
- *   nt_cur_abs      <--  Current time step
- *   t_cur_abs       <--  Current time value
+ *   mesh  <--  Void pointer to associated mesh structure
+ *   ts    <-- time step structure, or NULL
  *----------------------------------------------------------------------------*/
 
 static void
-_bad_cells_post_function(void       *mesh,
-                         cs_int_t    nt_cur_abs,
-                         cs_real_t   t_cur_abs)
+_bad_cells_post_function(void                  *mesh,
+                         const cs_time_step_t  *ts)
 {
   /* TODO: enable this function with other meshes thant the
      global mesh (will be easier when mesh_quantities becomes a member
@@ -622,8 +617,7 @@ _bad_cells_post_function(void       *mesh,
   _bad_cells_post(mesh,
                   cs_glob_mesh_quantities,
                   1,
-                  nt_cur_abs,
-                  t_cur_abs);
+                  ts);
 }
 
 /*============================================================================
@@ -1000,8 +994,7 @@ cs_mesh_bad_cells_postprocess(const cs_mesh_t             *mesh,
   _bad_cells_post(mesh,
                   mesh_quantities,
                   0,
-                  -1,
-                  0.0);
+                  NULL);
 
   call_type = 1; /* Prevent future calls from doing anything */
 }

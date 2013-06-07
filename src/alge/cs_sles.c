@@ -3100,9 +3100,8 @@ cs_sles_post_error_output_var(const char  *var_name,
                       true, /* interlace */
                       true, /* use parents */
                       CS_POST_TYPE_cs_real_t,
-                      -1,
-                      0.0,
                       var,
+                      NULL,
                       NULL,
                       NULL);
 
@@ -3127,9 +3126,8 @@ cs_sles_post_error_output_var(const char  *var_name,
                         true, /* interlace */
                         true, /* use parents */
                         CS_POST_TYPE_int,
-                        -1,
-                        0.0,
                         val_type,
+                        NULL,
                         NULL,
                         NULL);
 

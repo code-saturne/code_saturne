@@ -69,6 +69,7 @@
 #include "cs_parall.h"
 #include "cs_post.h"
 #include "cs_selector.h"
+#include "cs_time_step.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -309,14 +310,12 @@ _exchange_sync(cs_syr4_coupling_t  *syr_coupling,
  *
  * parameters:
  *   coupling        <--  Void pointer to SYRTHES coupling structure
- *   nt_cur_abs      <--  Current time step
- *   t_cur_abs       <--  Current time value
+ *   ts              <--  time step status structure, or NULL
  *----------------------------------------------------------------------------*/
 
 static void
-_cs_syr4_coupling_post_function(void       *coupling,
-                                cs_int_t    nt_cur_abs,
-                                cs_real_t   t_cur_abs)
+_cs_syr4_coupling_post_function(void                  *coupling,
+                                const cs_time_step_t  *ts)
 {
   int type_id, var_id;
 
@@ -354,11 +353,10 @@ _cs_syr4_coupling_post_function(void       *coupling,
                             false,
                             false,
                             CS_POST_TYPE_float,
-                            nt_cur_abs,
-                            t_cur_abs,
                             cell_var[var_id],
                             NULL,
-                            face_var[var_id]);
+                            face_var[var_id],
+                            ts);
 
       }
     }
@@ -688,7 +686,7 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
   if (syr_coupling->visualization != 0 && locate_on_closest != NULL) {
 
     cs_post_activate_writer(0, 1);
-    cs_post_write_meshes(-1, 0.0);
+    cs_post_write_meshes(cs_glob_time_step);
 
     cs_post_write_var(coupling_ent->post_mesh_id,
                       _("distance_to_solid"),
@@ -696,11 +694,10 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                       false,
                       false, /* use_parent, */
                       CS_POST_TYPE_float,
-                      -1, /* time-independent variable */
-                      0.0,
                       NULL,
                       NULL,
-                      cs_to_syr_dist);
+                      cs_to_syr_dist,
+                      NULL);  /* time-independent variable */
   }
 
   BFT_FREE(cs_to_syr_dist);
@@ -759,7 +756,7 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                                    writer_ids);
 
       cs_post_activate_writer(0, 1);
-      cs_post_write_meshes(-1, 0.0);
+      cs_post_write_meshes(NULL);
 
       cs_post_write_vertex_var(mesh_id,
                                _("distance_to_fluid"),
@@ -767,9 +764,8 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                                false,
                                false, /* use parent */
                                CS_POST_TYPE_float,
-                               -1, /* time-independent variable */
-                               0.0,
-                               syr_to_cs_dist);
+                               syr_to_cs_dist,
+                               NULL); /* time-independent variable */
 
       cs_post_free_mesh(mesh_id);
 
@@ -847,7 +843,7 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                                  writer_ids);
 
     cs_post_activate_writer(0, 1);
-    cs_post_write_meshes(-1, 0.0);
+    cs_post_write_meshes(NULL);
     cs_post_free_mesh(mesh_id);
 
     if (cs_glob_n_ranks > 1)

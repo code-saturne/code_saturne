@@ -111,17 +111,7 @@ module lagpar
   parameter      (nvplmx = 50)
 
   !=============================================================================
-  ! 8. Visualisation particulaires
-
-  !     NLISTE : Nombre maximum de particules visualisable
-
-  integer         nliste
-  parameter      (nliste = 100000)
-
-  !=============================================================================
-  ! 9. Types d'interaction au bord
-
-  !     NLISTE : Nombre maximum de particules visualisable
+  ! 8. Types d'interaction au bord
 
   integer         ientrl     , isortl     , irebol
   integer         idepo1     , idepo2
