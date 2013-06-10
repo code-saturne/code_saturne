@@ -262,26 +262,7 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
         """
         if self.sender().validator().state == QValidator.Acceptable:
             value, ok = text.toInt()
-            log.debug("slotNBVIS value = %i "%value)
             self.model.setDisplayParticlesValue(value)
-
-
-    @pyqtSignature("const QString&")
-    def slotNBVIS(self, text):
-        """
-        Input NBVIS.
-        """
-        if self.sender().validator().state == QValidator.Acceptable:
-            value, ok = text.toInt()
-            self.model.setDisplayParticlesValue(value)
-
-
-    @pyqtSignature("const QString&")
-    def slotChoiceNVISLA(self, text):
-        """
-        Input NVISLA.
-        """
-        log.debug("slotChoiceNVISLA text = %s " %str(text))
 
 
     @pyqtSignature("const QString&")
@@ -289,7 +270,9 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
         """
         Input NVISLA.
         """
-        log.debug("slotNVISLA text = %s " %str(text))
+        if self.sender().validator().state == QValidator.Acceptable:
+            value, ok = text.toInt()
+            self.model.setPostProcessingFrequency(value)
 
 
     @pyqtSignature("const QString&")
