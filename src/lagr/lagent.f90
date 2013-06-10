@@ -174,7 +174,6 @@ integer, allocatable, dimension(:) :: ilftot
 
 double precision unif(1), offset, rapsurf
 integer irp, ipart, jj, kk, nfrtot, nlocnew, nbpartall
-integer, save :: counter
 integer          ipass
 data             ipass /0/
 save             ipass
@@ -1207,19 +1206,11 @@ call uslain                                                       &
 
 
 !===============================================================================
-! 7bis. NUMEROTATION GLOBALE
+! 7bis. Random id associated with particles (to be initialized later)
 !===============================================================================
-ipass = ipass + 1
-
-if (ipass .eq. 1) counter = 1
 
 do npt = npar1,npar2
-  if (irangp.lt.0) then
-    itepa(npt,jgnum) = counter
-  else
-    itepa(npt,jgnum) = nbpmax * irangp + counter
-  endif
-    counter = counter + 1
+  call random_number(tepa(npt,jrval))
 enddo
 
 !   reinitialisation du compteur de nouvelles particules

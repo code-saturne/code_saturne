@@ -306,7 +306,7 @@ if (iplar.eq.1) then
   !==========
  ( nbpmax , iphyla , idepst , ireent ,                            &
    nvls   , nbclst , icocel , itycel ,                            &
-   jisor  , jgnum  , jrpoi  , jrtsp  , jdp    , jmp    ,          &
+   jisor  , jrval  , jrpoi  , jrtsp  , jdp    , jmp    ,          &
    jxp    , jyp    , jzp    , jup    , jvp    , jwp    ,          &
    juf    , jvf    , jwf    , jtaux  , jryplu ,                   &
    jrinpf , jdfac  , jimark ,                                     &

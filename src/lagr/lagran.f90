@@ -204,19 +204,20 @@ module lagran
   !   Tableau TEPA
   !   ^^^^^^^^^^^^
 
-  !     JRTSP       : TEMPS DE SEJOUR DES PARTICULES
-  !     JRPOI       : POIDS DES PARTICULES
-  !     JREPS       : EMISSIVITE DES PARTICULES
+  !     jrval       : random number associated with a particle
+  !     jrtsp       : temps de sejour des particules
+  !     jrpoi       : poids des particules
+  !     jreps       : emissivite des particules
 
   !   Charbon
   !   -------
-  !     JRDCK       : DIAMETRE DU COEUR RETRECISSANT
-  !     JRD0P       : DIAMETRE INITIAL DES PARTICULES
-  !     JRR0P       : MASSE VOLUMIQUE INITIALE DES PARTICULES
-  !     JRHOCK      : MASSE VOLUMIQUE DU COKE
+  !     jrdck       : diametre du coeur retrecissant
+  !     jrd0p       : diametre initial des particules
+  !     jrr0p       : masse volumique initiale des particules
+  !     jrhock      : masse volumique du coke
 
 
-  integer, save ::           jrtsp, jrpoi, jreps, jrd0p, jrr0p, jrdck, jrhock
+  integer, save :: jrval, jrtsp, jrpoi, jreps, jrd0p, jrr0p, jrdck, jrhock
 
   !   Tableau ITEPA
   !   ^^^^^^^^^^^^^
@@ -232,7 +233,7 @@ module lagran
   !   -------
   !     JINCH       : NUMERO DU CHARBON DE LA PARTICULE
 
-  integer, save ::           jisor, jinch , jclst , jgnum
+  integer, save ::           jisor, jinch , jclst
 
   !    NVLS         : NOMBRE DE VARIABLES UTILISATEUR SUPPLEMENTAIRES
   !                   (DEJA CONTENU DANS NVP et NVP1)

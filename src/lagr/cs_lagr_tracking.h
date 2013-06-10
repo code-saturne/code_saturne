@@ -48,8 +48,6 @@ BEGIN_C_DECLS
 
 typedef enum {
 
-  CS_LAGR_GLOBAL_NUM,       /* global number of the particle */
-
   CS_LAGR_CUR_CELL_NUM,     /* current local cell number */
   CS_LAGR_LAST_FACE_NUM,
 
@@ -62,6 +60,8 @@ typedef enum {
 
   CS_LAGR_PREV_ID,          /* id in particle set of the previous particle */
   CS_LAGR_NEXT_ID,          /* id in particle set of the next particle */
+
+  CS_LAGR_RANDOM_VALUE,     /* random value associated with the particle */
 
   CS_LAGR_STAT_WEIGHT,
   CS_LAGR_RESIDENCE_TIME,
@@ -121,8 +121,6 @@ typedef enum {
 
 typedef struct {
 
-  cs_gnum_t   global_num;     /* global number of the particle */
-
   cs_lnum_t   cur_cell_num;   /* current local cell number */
   cs_lnum_t   last_face_num;
 
@@ -135,6 +133,8 @@ typedef struct {
 
   cs_lnum_t   prev_id;  /* id in particle set of the previous particle */
   cs_lnum_t   next_id;  /* id in particle set of the next particle */
+
+  cs_real_t   random_value;   /* random value associated with the particle */
 
   cs_real_t   stat_weight;
   cs_real_t   residence_time;
@@ -253,7 +253,7 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *n_particles_max,
                           cs_lnum_t          icocel[],
                           cs_lnum_t          itycel[],
                           const cs_lnum_t   *jisor,
-                          const cs_lnum_t   *jgnum,
+                          const cs_lnum_t   *jrval,
                           const cs_lnum_t   *jrpoi,
                           const cs_lnum_t   *jrtsp,
                           const cs_lnum_t   *jdp,

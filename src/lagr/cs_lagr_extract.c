@@ -139,15 +139,33 @@ cs_lagr_get_particle_list(cs_lnum_t         n_cells,
 {
   cs_lnum_t i;
 
+  ptrdiff_t  displ = 0;
+
   cs_lnum_t p_count = 0;
   cs_lagr_particle_set_t  *p_set = NULL;
 
   bool *cell_flag = NULL;
 
   const cs_mesh_t *mesh = cs_glob_mesh;
-  const double r_max = RAND_MAX;
 
   cs_lagr_get_particle_sets(&p_set, NULL);
+
+  assert(p_set != NULL);
+
+  if (density < 1) {
+
+    size_t  extents, size;
+    cs_datatype_t  datatype;
+    int  count;
+
+    cs_lagr_get_attr_info(CS_LAGR_RANDOM_VALUE,
+                          &extents, &size, &displ,
+                          &datatype, &count);
+
+    assert(   (displ > 0 && count == 1 && datatype == CS_REAL_TYPE)
+           || (displ < 0 && count == 0 && datatype == CS_DATATYPE_NULL));
+
+  }
 
   /* Case where we have a filter */
 
@@ -175,10 +193,19 @@ cs_lagr_get_particle_list(cs_lnum_t         n_cells,
 
   for (i = 0; i < p_set->n_particles; i++) {
 
-    /* If density < 1, randomly select which particles are added */
+    /* If density < 1, randomly select which particles are added;
+       normally, particles maintain a random_value for this purpose,
+       but we also plan for the case where this could be optional. */
 
     if (density < 1) {
-      double r = (double)rand() / r_max;
+      double r;
+      if (displ < 0)
+        r = (double)rand() / RAND_MAX;
+      else {
+        const unsigned char
+          *p = (const unsigned char *)(p_set->particles + i) + displ;
+        r = *(const cs_real_t *)p;
+      }
       if (r > density)
         continue;
     }

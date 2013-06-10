@@ -842,7 +842,12 @@ class OutputControlModel(Model):
         """
         self.isInList(mesh_id, self.getMeshIdList())
         node = self.node_out.xmlGetNode('mesh', id = mesh_id)
-        node.xmlSetData('density', density)
+        if float(density) < 1.0:
+            node.xmlSetData('density', density)
+        else:
+            childNode = node.xmlGetNode('density')
+            if childNode != None :
+                childNode.xmlRemoveNode()
 
 
     @Variables.noUndo

@@ -330,8 +330,6 @@ enddo
 
 nomite(jisor) = 'indicateur_'
 
-nomite(jgnum) = 'glob_num_'
-
 if (iphyla.eq.2) then
   nomite(jinch) = 'numero_charbon'
 endif
@@ -396,6 +394,7 @@ endif
 
 ! Caracteristiques et infos particulaires (REELS)
 
+nomrte(jrval) = 'random_value'
 nomrte(jrtsp) = 'temps_sejour_particules'
 nomrte(jrpoi) = 'poids_statistiques_particules'
 if (iphyla.eq.1 .and. itpvar.eq.1 .and.iirayo.gt.0) then

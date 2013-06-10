@@ -440,8 +440,6 @@ endif
 
 nberro = 0
 
-nomite(jgnum) = 'glob_num_'
-
 if (nbclst.gt.0) then
   nomite(jclst) = 'numero_groupe_statistiques'
 endif
@@ -521,6 +519,7 @@ enddo
 
 ! --> Caracteristiques et infos particulaires (REELS)
 
+nomrte(jrval) = 'random_value'
 nomrte(jrtsp) = 'temps_sejour_particules'
 nomrte(jrpoi) = 'poids_statistiques_particules'
 if (iphyla.eq.1 .and. itpvar.eq.1 .and. iirayo.gt.0) then
@@ -551,6 +550,11 @@ do ivar = 1, nvep
   rubriq = nomrte(ivar)
   call lecsui(impaml,rubriq,len(rubriq),itysup,nbval,irtyp,       &
               tepa(1,ivar),ierror)
+  if (ivar.eq.jrval .and. ierror.ne.0) then
+    do ii = 1, nbpart
+      call random_number(tepa(ii,jrval))
+    enddo
+  endif
   nberro = nberro+ierror
 enddo
 

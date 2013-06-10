@@ -303,7 +303,7 @@ static  MPI_Datatype  _CS_MPI_AUX_PARTICLE;
 
 /* Indexes in Fortran arrays */
 
-static int _jisor = - 1, _jgnum = - 1, _jrpoi = -1, _jrtsp = - 1;
+static int _jisor = - 1, _jrval = - 1, _jrpoi = -1, _jrtsp = - 1;
 static int _jmp = -1, _jdp = -1, _jxp = -1, _jyp = -1, _jzp = -1;
 static int _jup = -1, _jvp = -1, _jwp = -1, _juf = -1, _jvf = -1, _jwf = -1;
 static int _jtaux = - 1, _jdepo = - 1, _jryplu = - 1, _jrinpf = - 1;
@@ -503,13 +503,13 @@ _define_particle_datatype(void)
        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
        0, 0, 0, 0, 0, 0, 0};
 
-  MPI_Datatype  types[N_VAR_PART_STRUCT] = {CS_MPI_GNUM,
-                                            CS_MPI_LNUM,
+  MPI_Datatype  types[N_VAR_PART_STRUCT] = {CS_MPI_LNUM,
                                             CS_MPI_LNUM,
                                             MPI_INT,
                                             MPI_INT,
                                             CS_MPI_LNUM,
                                             CS_MPI_LNUM,
+                                            CS_MPI_REAL,
                                             CS_MPI_REAL,
                                             CS_MPI_REAL,
                                             CS_MPI_REAL,
@@ -543,13 +543,13 @@ _define_particle_datatype(void)
 
   /* Initialize a default particle */
 
-  part.global_num = 1;
   part.cur_cell_num = 0;
   part.last_face_num = 1;
   part.switch_order_1 = CS_LAGR_SWITCH_OFF;
   part.state = CS_LAGR_PART_TO_SYNC;
   part.prev_id = 0;
   part.next_id = 0;
+  part.random_value = -1.0;
   part.stat_weight = 0.0;
   part.residence_time = 0.0;
   part.mass = 0.0;
@@ -599,12 +599,12 @@ _define_particle_datatype(void)
   /* Define array of displacements */
 
   MPI_Get_address(&part, displacements + count++);
-  MPI_Get_address(&part.cur_cell_num, displacements + count++);
   MPI_Get_address(&part.last_face_num, displacements + count++);
   MPI_Get_address(&part.switch_order_1, displacements + count++);
   MPI_Get_address(&part.state, displacements + count++);
   MPI_Get_address(&part.next_id, displacements + count++);
   MPI_Get_address(&part.prev_id, displacements + count++);
+  MPI_Get_address(&part.random_value, displacements + count++);
   MPI_Get_address(&part.stat_weight, displacements + count++);
   MPI_Get_address(&part.residence_time, displacements + count++);
   MPI_Get_address(&part.mass, displacements + count++);
@@ -777,17 +777,17 @@ static void
 _dump_particle(cs_lagr_particle_t  part)
 {
   bft_printf("  particle:\n"
-             "\tglobal num    : %llu\n"
              "\tcur_cell_num  : %ld\n"
              "\tstate         : %ld\n"
              "\tprev_id       : %ld\n"
              "\tnext_id       : %ld\n"
+             "\trandom_value  : %e\n"
              "\tcoord         : [%e, %e, %e]\n",
-             (unsigned long long)part.global_num,
              (long)part.cur_cell_num,
              (long)part.state,
              (long)part.prev_id,
              (long)part.next_id,
+             (double)part.random_value,
              (double)part.coord[0],
              (double)part.coord[1],
              (double)part.coord[2]);
@@ -3477,17 +3477,11 @@ _update_c_from_fortran(const cs_lnum_t   *nbpmax,
       prev_part.next_id = -1;
     }
 
-    /* Global number (not true in parallel => MPI_Scan to do)
-       Not useful for postprocessing yet */
-
-    cur_part.global_num = i + 1;
-    prev_part.global_num = i + 1;
-
     cur_part.cur_cell_num = itepa[i + _jisor * (*nbpmax)];
     prev_part.cur_cell_num = indep[i];
 
-    cur_part.global_num = itepa[i + _jgnum * (*nbpmax)];
-    prev_part.global_num = itepa[i + _jgnum * (*nbpmax)];
+    cur_part.random_value = tepa[i + _jrval * (*nbpmax)];
+    prev_part.random_value = tepa[i + _jrval * (*nbpmax)];
 
     if (cur_part.cur_cell_num < 0)
       cur_part.state = CS_LAGR_PART_STICKED;
@@ -3744,7 +3738,7 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *n_particles_max,
                           cs_lnum_t          icocel[],
                           cs_lnum_t          itycel[],
                           const cs_lnum_t   *jisor,
-                          const cs_lnum_t   *jgnum,
+                          const cs_lnum_t   *jrval,
                           const cs_lnum_t   *jrpoi,
                           const cs_lnum_t   *jrtsp,
                           const cs_lnum_t   *jdp,
@@ -3842,7 +3836,7 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *n_particles_max,
   /* Set indexes */
 
   _jisor = *jisor - 1;
-  _jgnum = *jgnum - 1;
+  _jrval = *jrval - 1;
   _jrpoi = *jrpoi -1;
   _jrtsp = *jrtsp -1;
 
@@ -4026,8 +4020,8 @@ CS_PROCF (prtput, PRTPUT)(const cs_int_t   *nbpmax,
       itepa[_jisor * (*nbpmax) + i] = 0;
 
     }
-    itepa[_jgnum * (*nbpmax) + i] = cur_part.global_num;
 
+    tepa[_jrval * (*nbpmax) + i] = cur_part.random_value;
 
     // Data needed if the deposition model is activated
 
@@ -4660,11 +4654,6 @@ cs_lagr_get_attr_info(cs_lagr_attribute_t    attr,
 
   switch(attr) {
 
-  case CS_LAGR_GLOBAL_NUM:
-    _p = &(p.global_num);
-    _t = CS_GNUM_TYPE;
-    break;
-
   case CS_LAGR_CUR_CELL_NUM:
     _p = &(p.cur_cell_num);
     _t = CS_LNUM_TYPE;
@@ -4693,6 +4682,10 @@ cs_lagr_get_attr_info(cs_lagr_attribute_t    attr,
   case CS_LAGR_NEXT_ID:
     _p = &(p.next_id);
     _t = CS_LNUM_TYPE;
+    break;
+
+  case CS_LAGR_RANDOM_VALUE:
+    _p = &(p.random_value);
     break;
 
   case CS_LAGR_STAT_WEIGHT:

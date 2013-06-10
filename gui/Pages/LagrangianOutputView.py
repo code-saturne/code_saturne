@@ -84,7 +84,6 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
         self.connect(self.checkBoxIVISDM, SIGNAL("clicked()"),    self.slotIVISDM)
         self.connect(self.checkBoxIVISTE, SIGNAL("clicked()"),    self.slotIVISTE)
         self.connect(self.checkBoxIVISMP, SIGNAL("clicked()"),    self.slotIVISMP)
-        self.connect(self.checkBoxIVISHP, SIGNAL("clicked()"),    self.slotIVISHP)
         self.connect(self.checkBoxIVISDK, SIGNAL("clicked()"),    self.slotIVISDK)
         self.connect(self.checkBoxIVISCH, SIGNAL("clicked()"),    self.slotIVISCH)
         self.connect(self.checkBoxIVISCK, SIGNAL("clicked()"),    self.slotIVISCK)
@@ -132,19 +131,12 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
 ##         coals = coalThermoChModel.getCoals()
 ##         CoalsNumber = coals.getNumber()
 ##         if CoalsNumber == 0:
-##             self.lineEditIVISHP.setDisabled(True)
-##             self.checkBoxIVISHP.setDisabled(True)
 ##             self.lineEditIVISDK.setDisabled(True)
 ##             self.checkBoxIVISDK.setDisabled(True)
 ##             self.lineEditIVISCH.setDisabled(True)
 ##             self.checkBoxIVISCH.setDisabled(True)
 ##             self.lineEditIVISCK.setDisabled(True)
 ##             self.checkBoxIVISCK.setDisabled(True)
-        status = self.model.getCoalParticleTemperatureStatus()
-        if status == "on":
-            self.checkBoxIVISHP.setChecked(True)
-        else:
-            self.checkBoxIVISHP.setChecked(False)
 
         status = self.model.getCoalParticleDiameterStatus()
         if status == "on":
@@ -231,17 +223,6 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
             self.model.setParticleMassStatus("on")
         else:
             self.model.setParticleMassStatus("off")
-
-
-    @pyqtSignature("")
-    def slotIVISHP(self):
-        """
-        Input IVISHP.
-        """
-        if self.checkBoxIVISHP.isChecked():
-            self.model.setCoalParticleTemperatureStatus("on")
-        else:
-            self.model.setCoalParticleTemperatureStatus("off")
 
 
     @pyqtSignature("")

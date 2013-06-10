@@ -1025,8 +1025,8 @@ nor = 0
 !     NIVEP : Variables d'etat (entiers) sur les particules (ITEPA)
 
 nvp   = 12
-nvep  = 2
-nivep = 2
+nvep  = 3
+nivep = 1
 
 if (nbclst.gt.0) then
 
@@ -1190,16 +1190,17 @@ endif
 !   3.3.2 TABLEAU TEPA
 !   ~~~~~~~~~~~~~~~~~~
 
-!     JRTSP       : TEMPS DE SEJOUR DES PARTICULES
-!     JRPOI       : POIDS DES PARTICULES
-!     JREPS       : EMISSIVITE DES PARTICULES
+!     jrval       : random number associated with a particle
+!     jrtsp       : temps de sejour des particules
+!     jrpoi       : poids des particules
+!     jreps       : emissivite des particules
 
 !   Charbon
 !   -------
-!     JRDCK       : DIAMETRE DU COEUR RETRECISSANT
-!     JRD0P       : DIAMETRE INITIAL DES PARTICULES
-!     JRR0P       : MASSE VOLUMIQUE INITIALE DES PARTICULES
-!     JRHOCK      : MASSE VOLUMIQUE DU COKE
+!     jrdck       : diametre du coeur retrecissant
+!     jrd0p       : diametre initial des particules
+!     jrr0p       : masse volumique initiale des particules
+!     jrhock      : masse volumique du coke
 
 
 jreps = 0
@@ -1208,8 +1209,9 @@ jrr0p = 0
 jrr0p = 0
 jrhock = 0
 
-jrtsp = 1
-jrpoi = 2
+jrval = 1
+jrtsp = 2
+jrpoi = 3
 irf   = jrpoi
 
 if (iphyla.eq.1 .and. itpvar.eq.1 .and. iirayo.gt.0) then
@@ -1268,8 +1270,7 @@ jinch = 0
 
 jisor = 1
 
-jgnum = 2
-irf = jgnum
+irf = jisor
 
 if (nbclst .gt. 0) then
   jclst = irf + 1
