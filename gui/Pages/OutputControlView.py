@@ -2207,7 +2207,8 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         if cindex != (-1,-1):
             row = cindex.row()
             mesh_id = self.modelMesh.getItem(row)['id']
-            associated_writer_id = self.mdl.addAssociatedWriter(mesh_id)
+            lagrangian = 0
+            associated_writer_id = self.mdl.addAssociatedWriter(mesh_id, lagrangian)
             if associated_writer_id == None:
                 title = self.tr("Warning")
                 msg   = self.tr("Please create another writer\n"\
@@ -2252,7 +2253,8 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         if cindex != (-1,-1):
             row = cindex.row()
             mesh_id = self.modelLagrangianMesh.getItem(row)['id']
-            associated_writer_id = self.mdl.addAssociatedWriter(mesh_id)
+            lagrangian = 1
+            associated_writer_id = self.mdl.addAssociatedWriter(mesh_id, lagrangian)
             if associated_writer_id == None:
                 title = self.tr("Warning")
                 msg   = self.tr("Please create another writer\n"\
@@ -2493,45 +2495,6 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         r, ok = text.toDouble()
         if self.sender().validator().state == QValidator.Acceptable:
             self.case['probes'].setRadius(r)
-
-
-    #@pyqtSignature("intS")
-    #def slotSlider(self, intS):
-        ##log.debug("slotSlider -> %s" % (intS,))
-        #for index in self.tableViewPoints.selectionModel().selectedRows():
-            #row = index.row()
-            #dico = self.modelMonitoring.getData(index)
-            #label = dico['n']
-            #x = float(dico['X'])
-            #y = float(dico['Y'])
-            #z = float(dico['Z'])
-            ##log.debug("slotSlider -> l: %s c: %s data: %s" % (index.row(), index.column(), dico))
-
-            #if self.sender() == self.horizontalSliderX:
-                #idx = index.sibling(row, 1)
-                #x = intS * 0.01
-            #elif self.sender() == self.horizontalSliderY:
-                #y = intS * 0.01
-                #idx = index.sibling(row, 2)
-            #elif self.sender() == self.horizontalSliderZ:
-                #z = intS * 0.01
-                #idx = index.sibling(row, 3)
-
-            ##d = MonitoringPointDelegate(self.tableViewPoints, self.case, self.mdl)
-            ##e = self.delegate.createEditor(self.tableViewPoints, QStyleOptionViewItem.Left, idx)
-
-            #self.tableViewPoints.setCurrentIndex(idx)
-            #self.tableViewPoints.openPersistentEditor(idx)
-            ##self.emit(SIGNAL("doubleClicked(const QModelIndex &)"), index)
-            ##self.tableViewPoints.edit(index)
-            #self.modelMonitoring.replaceData(idx.row(), label, x, y, z)
-            ##self.delegate.setEditorData(e, index)
-            ##e.setText(QString(z))
-            ##self.delegate.setModelData(e, self.modelMonitoring, idx)
-            #self.mdl.replaceMonitoringPointCoordinates(label, x, y, z)
-            #if self.case['probes']:
-                #self.case['probes'].updateLocation(label, [x, y, z])
-            #self.tableViewPoints.closePersistentEditor(idx)
 
 
     def isSteady(self):

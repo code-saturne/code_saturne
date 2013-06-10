@@ -282,13 +282,22 @@ class OutputControlModel(Model):
 
 
     @Variables.noUndo
-    def getWriterIdList(self):
+    def getWriterIdList(self, lagrangian = None):
         """
         Return a list of writer id already defined
         """
         writer = []
         for node in self.node_out.xmlGetNodeList('writer', 'label'):
-            writer.append(node['id'])
+            if lagrangian != None:
+                idd = int(node['id'])
+                if lagrangian == 0:
+                    if idd >= -1:
+                        writer.append(node['id'])
+                else:
+                    if idd >= 0 or idd == -3 or idd == -4:
+                        writer.append(node['id'])
+            else:
+                writer.append(node['id'])
         return writer
 
 
@@ -863,13 +872,13 @@ class OutputControlModel(Model):
         return associated_writer
 
 
-    def addAssociatedWriter(self, mesh_id):
+    def addAssociatedWriter(self, mesh_id, lagrangian):
         """Public method.
         Input a new user associated writer to a mesh
         """
         self.isInList(mesh_id, self.getMeshIdList())
         n = self.node_out.xmlGetNode('mesh', id = mesh_id)
-        writer_list = self.getWriterIdList()
+        writer_list = self.getWriterIdList(lagrangian)
         associated_writer_list = []
         for writer in writer_list:
             if writer not in self.getAssociatedWriterIdList(mesh_id):

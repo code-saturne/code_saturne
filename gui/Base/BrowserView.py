@@ -660,6 +660,7 @@ Calculation management
         self.setRowClose(self.tr('Fluid structure interaction'))
         self.setRowClose(self.tr('Source terms'))
         self.setRowClose(self.tr('Head losses'))
+        self.setRowClose(self.tr('Lagrangian solution control'))
 
         # Steady flow management
 
@@ -695,10 +696,12 @@ Calculation management
 
         if nodeLagr and nodeLagr['model'] == "on":
             self.setRowOpen(self.tr('Particles and droplets tracking'))
+            self.setRowOpen(self.tr('Lagrangian solution control'))
             self.setRowOpen(self.tr('Particles boundary conditions'))
             self.setRowClose(self.tr('Deformable mesh'))
         else:
             self.setRowClose(self.tr('Particles and droplets tracking'))
+            self.setRowClose(self.tr('Lagrangian solution control'))
             self.setRowClose(self.tr('Particles boundary conditions'))
             self.setRowOpen(self.tr('Deformable mesh'))
 
