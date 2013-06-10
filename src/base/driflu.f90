@@ -301,6 +301,8 @@ if (btest(iscdri, DRIFT_SCALAR_TURBOPHORESIS).and.iturb.ne.0) then
     cofbfp(ifac) = 0.d0
   enddo
 
+  init   = 0
+
   call itrmas &
   !==========
  ( nvar   , nscal  ,                                              &

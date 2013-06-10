@@ -146,7 +146,7 @@ call field_get_n_fields(nfld)
 !< [example_1]
 
 ! Loop over fields which are scalar with a drift
-do iflid = 0, nfld
+do iflid = 0, nfld-1
 
   call field_get_key_int(iflid, keydri, iscdri)
 
