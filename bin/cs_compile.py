@@ -30,7 +30,7 @@ import tempfile
 
 from optparse import OptionParser
 
-from cs_exec_environment import run_command
+from cs_exec_environment import run_command, separate_args
 
 #-------------------------------------------------------------------------------
 
@@ -146,12 +146,11 @@ def get_flags(pkg, flag):
 
     cmd_line = []
 
-    # Build the command line, and split possible multiple arguments
-    # in lists, assuming at this step no white-space in paths or names
+    # Build the command line, and split possible multiple arguments in lists.
     for lib in pkg.config.deplibs:
         if (pkg.config.libs[lib].have == "yes"
             and (not pkg.config.libs[lib].dynamic_load)):
-            cmd_line += pkg.config.libs[lib].flags[flag].split()
+            cmd_line += separate_args(pkg.config.libs[lib].flags[flag])
 
     # Add CPPFLAGS and LDFLAGS information for the current package
     if flag == 'cppflags':
@@ -182,7 +181,7 @@ def so_dirs_path(flags, pkg):
     """
     Assemble path for shared libraries in nonstandard directories.
     """
-    retval = pkg.config.rpath.split(" ")
+    retval = separate_args(pkg.config.rpath)
     i = len(retval) - 1
     if i < 0:
         return
@@ -194,7 +193,7 @@ def so_dirs_path(flags, pkg):
         count += 1
 
     if type(flags) == str:
-        args = flags.split(" ")
+        args = separate_args(flags)
     else:
         args = flags
 
@@ -263,7 +262,7 @@ def compile_and_link(pkg, srcdir, destdir,
             break
         cmd = [get_compiler(pkg, 'cc')]
         if opt_cflags != None:
-            cmd = cmd + opt_cflags.split()
+            cmd = cmd + separate_args(opt_cflags)
         if len(h_files) > 0:
             cmd = cmd + ["-I", srcdir]
         cmd.append('-DHAVE_CONFIG_H')
@@ -271,7 +270,7 @@ def compile_and_link(pkg, srcdir, destdir,
             cmd = cmd + ['-DLOCALEDIR=\\"' + pkg.get_dir('localedir') + '\\"', \
                          '-DPKGDATADIR=\\"' + pkg.get_dir('pkgdatadir') + '\\"']
         cmd = cmd + get_flags(pkg, 'cppflags')
-        cmd = cmd + pkg.config.flags['cflags'].split()
+        cmd = cmd + separate_args(pkg.config.flags['cflags'])
         cmd = cmd + ["-c", os.path.join(srcdir, f)]
         if run_command(cmd, pkg=pkg, echo=True,
                        stdout=stdout, stderr=stderr) != 0:
@@ -282,12 +281,12 @@ def compile_and_link(pkg, srcdir, destdir,
             break
         cmd = [get_compiler(pkg, 'cxx')]
         if opt_cxxflags != None:
-            cmd = cmd + opt_cxxflags.split()
+            cmd = cmd + separate_args(opt_cxxflags)
         if len(hxx_files) > 0:
             cmd = cmd + ["-I", srcdir]
         cmd.append('-DHAVE_CONFIG_H')
         cmd = cmd + get_flags(pkg, 'cppflags')
-        cmd = cmd + pkg.config.flags['cxxflags'].split()
+        cmd = cmd + separate_args(pkg.config.flags['cxxflags'])
         cmd = cmd + ["-c", os.path.join(srcdir, f)]
         if run_command(cmd, pkg=pkg, echo=True,
                        stdout=stdout, stderr=stderr) != 0:
@@ -303,14 +302,14 @@ def compile_and_link(pkg, srcdir, destdir,
             break
         cmd = [get_compiler(pkg, 'fc')]
         if opt_fcflags != None:
-            cmd = cmd + opt_fcflags.split()
+            cmd = cmd + separate_args(opt_fcflags)
         cmd = cmd + ["-I", srcdir]
         if pkg.config.fcmodinclude != "-I":
             cmd = cmd + [pkg.config.fcmodinclude, srcdir]
         cmd = cmd + ["-I", pkg.get_dir('pkgincludedir')]
         if pkg.config.fcmodinclude != "-I":
             cmd = cmd + [pkg.config.fcmodinclude, pkg.get_dir('pkgincludedir')]
-        cmd = cmd + pkg.config.flags['fcflags'].split()
+        cmd = cmd + separate_args(pkg.config.flags['fcflags'])
         cmd = cmd + ["-c", os.path.join(srcdir, f)]
         if run_command(cmd, pkg=pkg, echo=True,
                        stdout=stdout, stderr=stderr) != 0:
@@ -325,7 +324,7 @@ def compile_and_link(pkg, srcdir, destdir,
             cmd = cmd + o_files
         if opt_libs != None:
             if len(opt_libs) > 0:
-                cmd.append(opt_libs)
+                cmd += separate_args(opt_libs)
         cmd = cmd + get_flags(pkg, 'ldflags')
         cmd = cmd + p_libs
         if pkg.config.rpath != "":

@@ -299,7 +299,7 @@ def run_command(cmd, pkg = None, echo = False,
             l = ''
             for s in cmd:
                 if (s.find(' ') > -1):
-                    l += ' ' + '"' + s + '"'
+                    l += ' ' + enquote_arg(s)
                 else:
                     l += ' ' + s
             stdout.write(l.strip() + '\n')
