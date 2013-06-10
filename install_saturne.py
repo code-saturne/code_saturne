@@ -17,6 +17,7 @@ if platform.system == 'Windows':
 import os, shutil
 import string
 import subprocess
+import types, string, re, fnmatch
 
 #-------------------------------------------------------------------------------
 # Global variable
@@ -50,6 +51,7 @@ def run_command(cmd, stage, app, log):
         sys.stderr.write("See " + log.name + " for more information.\n")
         sys.exit(1)
 
+#-------------------------------------------------------------------------------
 
 def run_test(cmd):
     """
@@ -75,6 +77,87 @@ def run_test(cmd):
     return p.returncode
 
 #-------------------------------------------------------------------------------
+
+def check_directory():
+    """
+    Check we are not in the source directory.
+    """
+
+    script_path = os.path.abspath(sys.argv[0])
+    top_srcdir, script_name = os.path.split(script_path)
+    abscwd = os.path.abspath(os.getcwd())
+
+    if abscwd.find(top_srcdir) == 0:
+            
+        message = \
+"""
+The '%(script_name)s' installer script should not be run from inside the
+'%(top_srcdir)s' Code_Saturne source directory,
+but from a separate directory.
+
+We recommend running for example:
+
+  cd %(top_srcdir)s/..
+  mkdir saturne_build
+  cd saturne_build
+  ../%(rel_script_path)s
+
+or (using absolute paths):
+
+  mkdir %(build_path)s
+  cd %(build_path)s
+  %(script_path)s
+
+"""
+        rel_script_path = os.path.basename(script_path)
+        build_path = top_srcdir + '_build'
+
+        sys.stdout.write(message % {'script_name': script_name,
+                                    'top_srcdir': top_srcdir,
+                                    'rel_script_path': rel_script_path,
+                                    'build_path': build_path,
+                                    'script_path': script_path})
+
+        sys.exit(1)
+
+#-------------------------------------------------------------------------------
+
+def find_executable(names, env_var=None):
+
+    """
+    Find executable in path using given names.
+    """
+
+    # If an associated environment variable id defined,
+    # test it first.
+
+    if env_var:
+        if os.environ.has_key(env_var):
+            return os.environ(env_var)
+        else:
+            for a in sys.argv[1:]:
+                if a.find(env_var) == 0:
+                    return a.split('=', 1)[1]
+
+    # Otherwise, use standard path.
+
+    p = os.getenv('PATH').split(':')
+        
+    for name in names:
+        if os.path.isabs(name):
+            if os.path.isfile(name):
+                return name
+        else:
+            for d in p:
+                absname = os.path.join(d, name)
+                if os.path.isfile(absname):
+                    if p != '/usr/bin':
+                        return absname
+                    else:
+                        return name
+    return None
+
+#-------------------------------------------------------------------------------
 # Class definition for a generic package
 #-------------------------------------------------------------------------------
 
@@ -88,9 +171,13 @@ class Package:
         self.package = package
         self.version = version
         self.archive = archive
-        self.url = url % self.archive
+        if self.archive:
+            self.url = url % self.archive
+        else:
+            self.url = None
 
         # Installation information
+        self.shared = True # not modifiable yet
         self.use = 'no'
         self.installation = 'no'
         self.source_dir = None
@@ -103,6 +190,21 @@ class Package:
         self.vpath_support = True
         self.create_install_dirs = False
 
+    #---------------------------------------------------------------------------
+
+    def set_version_from_configure(self, path):
+        f = open(path)
+        for l in f:
+            if not self.version and l[0:15] == 'PACKAGE_VERSION':
+                sep = l[16] # quote is usually ', but could be "
+                try:
+                    self.version = l.split(sep)[1]
+                    break
+                except Exception:
+                    pass
+        f.close()
+
+    #---------------------------------------------------------------------------
 
     def info(self):
 
@@ -120,6 +222,7 @@ class Package:
                             'src':self.source_dir, 'inst':self.install_dir,
                             'opts':self.config_opts})
 
+    #---------------------------------------------------------------------------
 
     def download(self):
 
@@ -131,6 +234,7 @@ class Package:
             sys.stderr.write("Error while retrieving %s\n" % self.url)
             sys.exit(1)
 
+    #---------------------------------------------------------------------------
 
     def extract(self):
 
@@ -183,6 +287,7 @@ class Package:
 
             tar.close()
 
+    #---------------------------------------------------------------------------
 
     def install(self):
 
@@ -192,7 +297,7 @@ class Package:
         if os.path.isdir(build_dir): shutil.rmtree(build_dir)
 
         # Create some install directories in case install script does not work
-        if self.create_install_dirs and self.install_dir is not None:
+        if self.create_install_dirs and self.install_dir:
             inc_dir = os.path.join(self.install_dir, 'include')
             lib_dir = os.path.join(self.install_dir, 'lib')
             for dir in [inc_dir, lib_dir]:
@@ -211,14 +316,14 @@ class Package:
 
             # Set command line for configure pass
 
-            if self.install_dir is not None:
+            if self.install_dir:
                 configure = configure + ' --prefix=' + self.install_dir
             configure = configure + ' ' + self.config_opts
 
             # Add compilers
-            if self.cxx is not None: configure += ' CXX=\"' + self.cc + '\"'
-            if self.cc is not None: configure += ' CC=\"' + self.cc + '\"'
-            if self.fc is not None: configure += ' FC=\"' + self.fc + '\"'
+            if self.cxx: configure += ' CXX=\"' + self.cxx + '\"'
+            if self.cc: configure += ' CC=\"' + self.cc + '\"'
+            if self.fc: configure += ' FC=\"' + self.fc + '\"'
 
             # Install the package and clean build directory
             run_command(configure, "Configure", self.name, self.log_file)
@@ -231,14 +336,14 @@ class Package:
             # Set command line for CMake pass
 
             cmake = 'cmake'
-            if self.install_dir is not None:
+            if self.install_dir:
                 cmake += ' -D CMAKE_INSTALL_PREFIX=' + self.install_dir
             cmake += ' ' + self.config_opts
 
             # Add compilers
-            if self.cxx is not None: cmake += ' -D CMAKE_CXX_COMPILER=\"' + self.cc + '\"'
-            if self.cc is not None: cmake += ' -D CMAKE_C_COMPILER=\"' + self.cc + '\"'
-            if self.fc is not None: cmake += ' -D CMAKE_Fortran_COMPILER=\"' + self.fc + '\"'
+            if self.cxx: cmake += ' -D CMAKE_CXX_COMPILER=\"' + self.cxx + '\"'
+            if self.cc: cmake += ' -D CMAKE_C_COMPILER=\"' + self.cc + '\"'
+            if self.fc: cmake += ' -D CMAKE_Fortran_COMPILER=\"' + self.fc + '\"'
 
             cmake += ' ' + self.source_dir
 
@@ -251,6 +356,149 @@ class Package:
         # End of installation
         os.chdir(current_dir)
 
+    #---------------------------------------------------------------------------
+
+    def install_ptscotch(self):
+
+        current_dir = os.getcwd()
+
+        build_dir = self.source_dir + '.build'
+        if os.path.isdir(build_dir): shutil.rmtree(build_dir)
+
+        # Create some install directories in case install script does not work
+        if self.install_dir:
+            inc_dir = os.path.join(self.install_dir, 'include')
+            lib_dir = os.path.join(self.install_dir, 'lib')
+            for dir in [inc_dir, lib_dir]:
+                if not os.path.isdir(dir):
+                    os.makedirs(dir)
+
+        # Copy source files in build directory as VPATH feature is unsupported
+        shutil.copytree(self.source_dir, build_dir)
+
+        os.chdir(os.path.join(build_dir, 'src'))
+
+        if self.shared:
+            fdr = open('Make.inc/Makefile.inc.x86-64_pc_linux2.shlib')
+        else:
+            fdr = open('Make.inc/Makefile.inc.x86-64_pc_linux2')
+        fd = open('Makefile.inc','w')
+
+        re_thread = re.compile('-DSCOTCH_PTHREAD')
+        re_intsize32 = re.compile('-DINTSIZE32')
+        re_intsize64 = re.compile('-DINTSIZE64')
+        re_idxsize64 = re.compile('-DIDXSIZE64')
+
+        for line in fdr:
+
+            if line[0:3] in ['CCS', 'CCP', 'CCD']:
+                i1 = line.find('=')
+                line = line[0:i1] + '= ' + self.cc + '\n'
+            line = re.sub(re_thread, '', line)
+            line = re.sub(re_intsize32, '', line)
+            line = re.sub(re_intsize64, '', line)
+            line = re.sub(re_idxsize64, '-DIDXSIZE64 -DINTSIZE64', line)
+            fd.write(line)
+
+        fdr.close()
+        fd.close()
+
+        for target in ['scotch', 'ptscotch']:
+            run_command("make "+target, "Compile", self.name, self.log_file)
+            run_command("make install prefix="+self.install_dir,
+                        "Install", self.name, self.log_file)
+            run_command("make clean", "Clean", self.name, self.log_file)
+
+        # End of installation
+        os.chdir(current_dir)
+
+    #---------------------------------------------------------------------------
+
+    def install_parmetis(self):
+
+        current_dir = os.getcwd()
+
+        build_dir = self.source_dir + '.build'
+        if os.path.isdir(build_dir): shutil.rmtree(build_dir)
+
+        # Copy source files in build directory as VPATH feature is unsupported
+        shutil.copytree(self.source_dir, build_dir)
+
+        for d in [os.path.join(build_dir, 'metis'), build_dir]:
+
+            os.chdir(d)
+
+            configure = "make config prefix=" + self.install_dir
+            configure += " cc=" + self.cc
+            if self.cxx:
+                configure += " cxx=" + self.cxx
+            if self.shared:
+                configure += " shared=1 "
+
+            # Install the package and clean build directory
+            run_command(configure, "Configure", self.name, self.log_file)
+            run_command("make", "Compile", self.name, self.log_file)
+            run_command("make install", "Install", self.name, self.log_file)
+            run_command("make clean", "Clean", self.name, self.log_file)
+
+        # End of installation
+        os.chdir(current_dir)
+
+    #---------------------------------------------------------------------------
+
+    def test_library(self, executables=None, header=None, libname=None):
+
+        libroot = None
+
+        header_found = False
+        lib_found = False
+
+        search_dirs = ['/usr/local', '/usr']
+
+        if executables != None:
+            e = find_executable(executables)
+            if e:
+                if os.path.isabs(e):
+                    libdir = os.path.split(os.path.dirname(e))[0]
+                    if libdir not in search_dirs:
+                        search_dirs.insert(0, libdir)
+
+        for d in search_dirs:
+            if os.path.isfile(os.path.join(d, 'include', header)):
+                header_found = True
+                libroot = d
+                break
+
+        if header_found:
+            d = libroot
+            lib_found = False
+            if os.path.isfile(os.path.join(d, 'lib',
+                                           'lib' + libname + '.so')):
+                lib_found = True
+            elif self.shared == False:
+                if os.path.isfile(os.path.join(d, 'lib',
+                                               'lib' + libname + '.a')):
+                    lib_found = True
+
+        # If library seems to be found, suggest it
+
+        if header_found and lib_found:
+            if libroot in ['/usr']:
+                self.use = 'auto'
+            else:
+                self.use = 'yes'
+                self.installation = 'no'
+            self.install_dir = libroot
+
+        # If headers found but not library, assume the library
+        # is in a system path, so preselect 'auto' mode.
+
+        elif header_found:
+
+            self.use = 'auto'
+            self.installation = 'no'
+            self.install_dir = None
+
 #-------------------------------------------------------------------------------
 # Class definition for Code_Saturne setup
 #-------------------------------------------------------------------------------
@@ -259,11 +507,11 @@ class Setup:
 
     def __init__(self):
 
-        # Optional libraries
-        self.optlibs = ['hdf5', 'cgns', 'med', 'mpi', 'libxml2']
+        # Source directory
+        self.top_srcdir = os.path.abspath(os.path.dirname(sys.argv[0]))
 
-        # Code_Saturne version
-        self.version = '@PACKAGE_VERSION@'
+        # Optional libraries
+        self.optlibs = ['hdf5', 'cgns', 'med', 'scotch', 'parmetis', 'libxml2']
 
         # Logging file
         self.log_file = sys.stdout
@@ -277,10 +525,15 @@ class Setup:
         # Code_Saturne installation with debugging symbols
         self.debug = 'no'
 
+        # Installation with shared libraries (not modifiable yet)
+        self.shared = True
+
         # Default compilers
         self.cc = None
         self.fc = None
+        self.cxx = None
         self.mpicc = None
+        self.mpicxx = None
 
         # Disable GUI
         self.disable_gui = 'no'
@@ -291,38 +544,33 @@ class Setup:
         # Python interpreter path
         self.python = None
 
-        # BLAS library path
-        self.blas = None
-
-        # Metis library path
-        self.metis = None
-
-        # Scotch library path
-        self.scotch = None
+        # SALOME libraries (not application) path
+        self.salome = None
 
         # Architecture name
+        self.use_arch = 'no'
         self.arch = None
 
-        # Installation prefix (if None, standard directory "/usr" will be used)
+        # Installation prefix (if None, standard directory "/usr/local" will be used)
         self.prefix = None
-
 
         # Packages definition
         self.packages = {}
 
         # Code_Saturne
 
-        url_cs = "http://code-saturne.org/cms/sites/default/files/releases/%s"
-
         self.packages['code_saturne'] = \
             Package(name="Code_Saturne",
                     description="Code_Saturne CFD tool",
                     package="code_saturne",
-                    version=self.version,
-                    archive="@distdir@.tar.gz",
-                    url=url_cs)
+                    version=None,
+                    archive=None,
+                    url="http://code-saturne.org")
 
         p = self.packages['code_saturne']
+
+        p.set_version_from_configure(os.path.join(self.top_srcdir, 'configure'))
+
         p.use = 'yes'
         p.installation = 'yes'
 
@@ -363,17 +611,7 @@ class Setup:
                     url="http://files.salome-platform.org/Salome/other/%s")
 
         p = self.packages['med']
-        p.config_opts = "--with-med_int=int"
-
-        # MPI library
-
-        self.packages['mpi'] = \
-            Package(name="MPI",
-                    description="Message Passing Interface",
-                    package="openmpi",
-                    version="1.6.3",
-                    archive="openmpi-1.6.3.tar.gz",
-                    url="http://www.open-mpi.org/software/ompi/v1.6/downloads/%s")
+        p.config_opts = "--with-med_int=int --disable-fortran"
 
         # Libxml2 library (possible mirror at "ftp://fr.rpmfind.net/pub/libxml/%s")
 
@@ -388,6 +626,108 @@ class Setup:
         p = self.packages['libxml2']
         p.config_opts = "--with-ftp=no --with-http=no"
 
+        # ParMETIS
+
+        self.packages['parmetis'] = \
+            Package(name="parmetis",
+                    description="ParMETIS",
+                    package="parmetis",
+                    version="4.0.3",
+                    archive="parmetis-4.0.3.tar.gz",
+                    url="http://glaros.dtc.umn.edu/gkhome/fetch/sw/parmetis/%s")
+
+        # SCOTCH
+
+        self.packages['scotch'] = \
+            Package(name="scotch",
+                    description="PT-Scotch",
+                    package="scotch",
+                    version="6.0.0",
+                    archive="scotch_6.0.0.tar.gz",
+                    url="https://gforge.inria.fr/frs/download.php/31831/%s")
+
+    #---------------------------------------------------------------------------
+
+    def setup_defaults(self):
+
+        self.cc = find_executable(['cc', 'gcc', 'icc', 'xlc'], 'CC')
+        self.fc = find_executable(['f95', 'gfortran', 'ifort'], 'FC')
+        self.cxx = find_executable(['c++', 'g++', 'icpc', 'xlc++'], 'CXX')
+        self.mpicc = find_executable(['mpicc', 'mpicc.openmpi', 'mpicc.mpich'])
+        self.mpicxx = find_executable(['mpicxx', 'mpicxx.openmpi', 'mpicxx.mpich'])
+        self.python = find_executable(['python'], 'PYTHON')
+
+        # Architecture name
+        self.arch = os.uname()[0] + '_' + os.uname()[4]
+
+        # Installation prefix (if None, standard directory "/usr/local" will be used)
+        self.prefix = '/usr/local'
+
+        # Packages definition
+
+        p = self.packages['hdf5']
+
+        p.test_library(executables=['h5cc', 'h5pcc'],
+                       header='H5public.h',
+                       libname='hdf5')
+
+        # CGNS library
+
+        p = self.packages['cgns']
+
+        p.test_library(executables=['cgnsnames'],
+                       header='cgnslib.h',
+                       libname='cgns')
+
+        # MED library
+
+        p = self.packages['med']
+
+        p.test_library(executables=['mdump'],
+                       header='med.h',
+                       libname='medC')
+
+        # Libxml2 library (possible mirror at "ftp://fr.rpmfind.net/pub/libxml/%s")
+        p = self.packages['libxml2']
+
+        p.test_library(header='libxml2/libxml/parser.h',
+                       libname='xml2')
+
+        # Expand user variables
+
+        p = self.packages['code_saturne']
+        from os.path import expanduser
+        home = expanduser("~")
+        self.prefix = os.path.join(home, 'Code_Saturne', p.version)
+
+    #---------------------------------------------------------------------------
+
+    def check_setup_file(self):
+
+        # If setup file exists, nothing to do here
+        if os.path.isfile('setup'):
+            return
+
+        # If setup does not exist, define on from template
+
+        message = \
+"""
+
+Please edit the 'setup' file in the current directory
+to define your Code_Saturne setup options.
+
+You may then re-run '%(script_path)s'
+to start the installation.
+
+"""
+        sys.stdout.write(message % {'script_path': sys.argv[0]})
+
+        self.setup_defaults()
+        self.write_setup()
+
+        sys.exit(0)
+
+    #---------------------------------------------------------------------------
 
     def read_setup(self):
 
@@ -409,7 +749,6 @@ class Setup:
 
             # skip comments
             if line[0] == '#': continue
-            # splitlines necessary to get rid of carriage return on IRIX64
             line = line.splitlines()
             list = line[0].split()
             # skip blank lines
@@ -419,60 +758,64 @@ class Setup:
 
             if len(list) > 1:
                 if key == 'download': self.download = list[1]
-                elif key == 'prefix': self.prefix = list[1]
+                elif key == 'prefix':
+                    if not list[1] in ['default', 'auto']:
+                        self.prefix = list[1]
                 elif key == 'debug': self.debug = list[1]
                 elif key == 'language': self.language = list[1]
                 elif key == 'use_arch': self.use_arch = list[1]
-                elif key == 'arch': self.arch = list[1]
-                elif key == 'compCxx': self.cxx = list[1]
+                elif key == 'arch':
+                    self.arch = list[1]
+                    if self.arch == 'ignore':
+                        self.use_arch = 'no'
+                elif key == 'compCxx':
+                    if not list[1] in ['default', 'auto']:
+                        self.cxx = list[1]
                 elif key == 'compC': self.cc = list[1]
                 elif key == 'compF': self.fc = list[1]
-                elif key == 'mpiCompC': self.mpicc = list[1]
+                elif key == 'mpiCompC':
+                    if not list[1] in ['default', 'auto']:
+                        self.mpicc = list[1]
+                elif key == 'mpiCompCxx':
+                    if not list[1] in ['default', 'auto']:
+                        self.mpicxx = list[1]
                 elif key == 'disable_gui': self.disable_gui = list[1]
                 elif key == 'disable_frontend': self.disable_frontend = list[1]
-                elif key == 'python': self.python = list[1]
-                elif key == 'blas': self.blas = list[1]
-                elif key == 'metis': self.metis = list[1]
-                elif key == 'scotch': self.scotch = list[1]
+                elif key == 'python':
+                    if not list[1] in ['default', 'auto']:
+                        self.python = list[1]
+                elif key == 'salome':
+                    if not list[1] in ['default', 'auto', 'no']:
+                        self.salome = list[1]
                 else:
                     p = self.packages[key]
-                    p.use = list[2]
-                    p.installation = list[3]
-                    if (p.use == 'yes' or p.use == 'auto') \
-                            and p.installation == 'no':
-                        if list[1] != 'None':
-                            p.install_dir = list[1]
+                    p.use = list[1]
+                    p.installation = list[2]
+                    if (p.use != 'no'):
+                        if list[3] != 'None':
+                            p.install_dir = list[3]
 
         # Specify architecture name
         if self.use_arch == 'yes' and self.arch is None:
             self.arch = os.uname()[0] + '_' + os.uname()[4]
 
         # Expand user variables
-        if self.prefix is not None:
+        if self.prefix:
             self.prefix = os.path.expanduser(self.prefix)
             self.prefix = os.path.expandvars(self.prefix)
             self.prefix = os.path.abspath(self.prefix)
 
-        if self.python is not None:
+        if self.python:
             self.python = os.path.expanduser(self.python)
             self.python = os.path.expandvars(self.python)
             self.python = os.path.abspath(self.python)
 
-        if self.blas is not None:
-            self.blas = os.path.expanduser(self.blas)
-            self.blas = os.path.expandvars(self.blas)
-            self.blas = os.path.abspath(self.blas)
+        if self.salome:
+            self.salome = os.path.expanduser(self.salome)
+            self.salome = os.path.expandvars(self.salome)
+            self.salome = os.path.abspath(self.salome)
 
-        if self.metis is not None:
-            self.metis = os.path.expanduser(self.metis)
-            self.metis = os.path.expandvars(self.metis)
-            self.metis = os.path.abspath(self.metis)
-
-        if self.scotch is not None:
-            self.scotch = os.path.expanduser(self.scotch)
-            self.scotch = os.path.expandvars(self.scotch)
-            self.scotch = os.path.abspath(self.scotch)
-
+    #---------------------------------------------------------------------------
 
     def check_setup(self):
 
@@ -525,7 +868,12 @@ Check the setup file and some utilities presence.
             sys.exit(1)
 
         # Testing prefix directory
-        if self.prefix is not None and not os.path.isdir(self.prefix):
+        if self.prefix and not os.path.isdir(self.prefix):
+            try:
+                os.makedirs(self.prefix)
+            except Exception:
+                pass
+        if self.prefix and not os.path.isdir(self.prefix):
             sys.stderr.write("\n*** Aborting installation:\n"
                              "\'%s\' prefix directory is provided in the setup "
                              "file but is not a directory.\n"
@@ -542,8 +890,8 @@ Check the setup file and some utilities presence.
             sys.exit(1)
 
         # Looking for compilers provided by the user
-        for compiler in [self.cc, self.fc, self.mpicc]:
-            if compiler is not None:
+        for compiler in [self.cc, self.mpicc, self.fc]:
+            if compiler:
                 ret = run_test(compiler)
                 if ret != 0:
                     sys.stderr.write("\n*** Aborting installation:\n"
@@ -555,10 +903,10 @@ Check the setup file and some utilities presence.
         
         # Looking for Python executable provided by the user
         python = 'python'
-        if self.python is not None: python = self.python
+        if self.python: python = self.python
         ret = run_test(python)
         if ret != 0:
-            if self.python is not None:
+            if self.python:
                 sys.stderr.write("\n*** Aborting installation:\n"
                                  "\'%s\' Python exec is provided in the setup "
                                  "file doesn't not seem to be executable.\n"
@@ -610,32 +958,15 @@ Check the setup file and some utilities presence.
                                      % {'path':p.install_dir, 'lib':lib})
                     sys.exit(1)
 
-        # Looking for BLAS path probided by the user
-        if self.blas is not None and not os.path.isdir(self.blas):
+        # Looking for SALOME path probided by the user
+        if self.salome and not os.path.isdir(self.salome):
             sys.stderr.write("\n*** Aborting installation:\n"
-                             "\'%s\' BLAS directory is provided in the setup "
-                             "file but is not a directory.\n"
+                             "\'%s\' SALOME directory is provided in the setup "
+                             "file but is not present.\n"
                              "Please check your setup file.\n\n"
-                             % self.blas)
+                             % self.salome)
             sys.exit(1)
 
-        # Looking for Metis path probided by the user
-        if self.metis is not None and not os.path.isdir(self.metis):
-            sys.stderr.write("\n*** Aborting installation:\n"
-                             "\'%s\' Metis directory is provided in the setup "
-                             "file but is not a directory.\n"
-                             "Please check your setup file.\n\n"
-                             % self.metis)
-            sys.exit(1)
-
-        # Looking for Scotch path probided by the user
-        if self.scotch is not None and not os.path.isdir(self.scotch):
-            sys.stderr.write("\n*** Aborting installation:\n"
-                             "\'%s\' Scotch directory is provided in the setup "
-                             "file but is not a directory.\n"
-                             "Please check your setup file.\n\n"
-                             % self.scotch)
-            sys.exit(1)
 
         # Looking for make utility
         ret = run_test("make")
@@ -649,6 +980,7 @@ Check the setup file and some utilities presence.
         if verbose == 'yes':
             sys.stdout.write("\n")
 
+    #---------------------------------------------------------------------------
 
     def update_package_opts(self):
 
@@ -658,20 +990,24 @@ Check the setup file and some utilities presence.
             # Update logging file
             p.log_file = self.log_file
             # Installation directory
-            if p.installation == 'yes':
+            if p.installation == 'yes' and not p.install_dir:
                 subdir = os.path.join(p.package + '-' + p.version)
-                if self.arch is not None:
+                if self.arch:
                     subdir = os.path.join(subdir, 'arch', self.arch)
-                if lib in ['code_saturne'] and self.debug == 'yes':
-                    subdir = subdir + '_dbg'
                 p.install_dir = os.path.join(self.prefix, subdir)
             # Compilers
-            if lib in ['code_saturne'] and self.mpicc is not None:
+            p.cc = self.cc
+            p.cxx = self.cxx
+            if lib in ['code_saturne'] and self.mpicc:
                 p.cc = self.mpicc
-            else:
-                p.cc = self.cc
-            if lib in ['med', 'code_saturne']:
+            elif lib in ['scotch', 'parmetis']:
+                if self.mpicc:
+                    p.cc = self.mpicc
+                if self.mpicxx:
+                    p.cxx = self.mpicxx
+            if lib in ['code_saturne']:
                 p.fc = self.fc
+            p.shared = self.shared
 
         # Update configuration options
 
@@ -679,10 +1015,11 @@ Check the setup file and some utilities presence.
         if self.debug == 'yes':
             config_opts = config_opts + " --enable-debug"
 
-        cgns = self.packages['cgns']
         hdf5 = self.packages['hdf5']
+        cgns = self.packages['cgns']
         med= self.packages['med']
-        mpi = self.packages['mpi']
+        scotch = self.packages['scotch']
+        parmetis = self.packages['parmetis']
         libxml2 = self.packages['libxml2']
 
         # Disable GUI
@@ -701,7 +1038,7 @@ Check the setup file and some utilities presence.
             config_opts = config_opts + " --without-hdf5"
         else:
             cgns.config_opts += " -D ENABLE_HDF5=ON"
-            if hdf5.install_dir is not None:
+            if hdf5.install_dir:
                 config_opts = config_opts + " --with-hdf5=" + hdf5.install_dir
                 med.config_opts += " --with-hdf5=" + hdf5.install_dir
                 cgns.config_opts += " -D HDF5_INCLUDE_PATH=" + hdf5.install_dir + "/include" \
@@ -712,7 +1049,7 @@ Check the setup file and some utilities presence.
         if cgns.use == 'no':
             config_opts = config_opts + " --without-cgns"
         else:
-            if cgns.install_dir is not None:
+            if cgns.install_dir:
                 config_opts = config_opts + " --with-cgns=" + cgns.install_dir
 
         # MED
@@ -720,74 +1057,104 @@ Check the setup file and some utilities presence.
         if med.use == 'no':
             config_opts = config_opts + " --without-med"
         else:
-            if med.install_dir is not None:
+            if med.install_dir:
                 config_opts = config_opts + " --with-med=" + med.install_dir
 
-        # MPI
+        # ParMetis
 
-        if mpi.use == 'no' and self.mpicc is None:
-            config_opts = config_opts + " --without-mpi"
+        if parmetis.use == 'no':
+            config_opts = config_opts + " --without-metis"
         else:
-            if mpi.install_dir is not None:
-                config_opts = config_opts +  " --with-mpi=" + mpi.install_dir
+            config_opts = config_opts + " --with-metis=" + parmetis.install_dir
 
-        if mpi.use == 'yes' or self.mpicc is not None:
-            config_opts = config_opts + " --disable-mpi-io"
+        # PT-Scotch
 
-        # Metis
-
-        if self.metis is not None:
-            config_opts = config_opts + " --with-metis=" + self.metis
-
-        # Scotch
-
-        if self.scotch is not None:
-            config_opts = config_opts + " --with-scotch=" + self.scotch
+        if scotch.use == 'no':
+            config_opts = config_opts + " --without-scotch"
+        else:
+            config_opts = config_opts + " --with-scotch=" + scotch.install_dir
 
         # Libxml2
 
         if libxml2.use == 'no':
             config_opts = config_opts + " --without-libxml2"
         else:
-            if libxml2.install_dir is not None:
+            if libxml2.install_dir:
                 config_opts = config_opts + \
                     " --with-libxml2=" + libxml2.install_dir
 
         # Python
 
-        if self.python is not None:
+        if self.python:
             config_opts = config_opts + " PYTHON=" + self.python
 
-        # BLAS
+        # SALOME
 
-        if self.blas is not None:
-            config_opts = config_opts + " --with-blas=" + self.blas
+        if self.salome:
+            config_opts = config_opts + " --with-salome=" + self.salome
 
         # Language
 
         if self.language == 'fr':
             config_opts = config_opts + " --enable-french"
 
+        # Build type
+
+        if self.shared:
+            config_opts += " --disable-static"
+        else:
+            config_opts += " --disable-shared"
+
         self.packages['code_saturne'].config_opts = config_opts
 
+    #---------------------------------------------------------------------------
 
     def install(self):
 
-        for lib in self.optlibs + ['code_saturne']:
-            p = self.packages[lib]
-            if p.installation == 'yes':
-                sys.stdout.write("Installation of %s\n" % p.name)
-                if self.download == 'yes':
+        if self.download == 'yes':
+            for lib in self.optlibs:
+                p = self.packages[lib]
+                if p.installation == 'yes':
+                    sys.stdout.write("Download of %s\n" % p.name)
                     p.download()
+            self.download = 'no'
+            self.write_setup()
+            sys.stdout.write("\n")
+
+        for lib in self.optlibs:
+            p = self.packages[lib]
+            p.info()
+            if p.installation == 'yes':
+                sys.stdout.write("Extract of %s\n" % p.name)
                 p.extract()
+                sys.stdout.write("Installation of %s\n" % p.name)
                 if verbose == 'yes':
                     p.info()
-                p.install()
+                if lib == 'scotch':
+                    p.install_ptscotch()
+                elif lib == 'parmetis':
+                    p.install_parmetis()
+                else:
+                    p.install()
                 p.installation = 'no'
                 self.write_setup()
                 if verbose == 'yes':
                     sys.stdout.write("\n")
 
+        p = self.packages['code_saturne']
+        p.info()
+        if p.installation == 'yes':
+            p.source_dir = self.top_srcdir
+            sys.stdout.write("Installation of %s\n" % p.name)
+            if verbose == 'yes':
+                p.info()
+            p.install()
+            p.installation = 'no'
+            self.write_setup()
+            if verbose == 'yes':
+                sys.stdout.write("\n")
+
+    #---------------------------------------------------------------------------
 
     def write_setup(self):
         #
@@ -797,18 +1164,18 @@ Check the setup file and some utilities presence.
 
         setupMain = \
 """#========================================================
-#  Setup file for Code_Saturne installation
+# Setup file for Code_Saturne installation
 #========================================================
 #
 #--------------------------------------------------------
-# Download packages
+# Download packages ?
 #--------------------------------------------------------
 download  %(download)s
 #
 #--------------------------------------------------------
 # Language
-#    default: "en" english
-#    others:  "fr" french
+#   default: "en" english
+#   others:  "fr" french
 #--------------------------------------------------------
 language  %(lang)s
 #
@@ -823,145 +1190,141 @@ debug     %(debug)s
 prefix    %(prefix)s
 #
 #--------------------------------------------------------
-# Architecture Name
+# Optional architecture Name (installation subdirectory)
 #--------------------------------------------------------
 use_arch  %(use_arch)s
 arch      %(arch)s
 #
 #--------------------------------------------------------
-# C compiler
+# C compiler and optional MPI wrapper
 #--------------------------------------------------------
 compC     %(cc)s
+mpiCompC  %(mpicc)s
 #
 #--------------------------------------------------------
 # Fortran compiler
 #--------------------------------------------------------
-compF     %(fc)s
+compF    %(fc)s
 #
 #--------------------------------------------------------
-# MPI wrapper for C compiler
+# C++ compiler and MPI wrapper for optional packages
+#
+# Required only for static builds using the MED library
+# or for build of optional modules such as MEDCoupling
+# support.
 #--------------------------------------------------------
-mpiCompC  %(mpicc)s
+compCxx     %(cxx)s
+mpiCompCxx  %(mpicxx)s
 #
 #--------------------------------------------------------
-# Disable Graphical user Interface
-#--------------------------------------------------------
-disable_gui  %(disable_gui)s
-#
-#--------------------------------------------------------
-# Disable frontend (also disables GUI)
-#--------------------------------------------------------
-disable_frontend  %(disable_frontend)s
-#
-#--------------------------------------------------------
-# Python is mandatory to launch the Graphical User
-# Interface and to use Code_Saturne scripts.
-# It has to be compiled with PyQt 4 support.
-#
-# It is highly recommended to use the Python provided
-# by the distribution and to install PyQt through
-# the package manager if needed.
-#
-# If you need to provide your own Python, just set
-# the following variable to the Python interpreter.
+# Python interpreter.
 #--------------------------------------------------------
 python    %(python)s
 #
 #--------------------------------------------------------
-# BLAS For hardware-optimized Basic Linear Algebra
-# Subroutines. If no system BLAS is used, one reverts
-# to an internal BLAS emulation, which may be somewhat
-# slower.
-#
-# ATLAS (or another BLAS) should be available for most
-# platforms through the package manager. If using the
-# Intel or IBM compilers, IMKL or ESSL may be used in
-# place of ATLAS respectively.
-# For a fine-tuning of BLAS library support, it may
-# be necessary to install Code_Saturne Kernel manually.
+# Disable the Graphical user Interface ?
 #--------------------------------------------------------
-blas      %(blas)s
+disable_gui  %(disable_gui)s
 #
 #--------------------------------------------------------
-# Metis is more rarely found in Linux distributions,
-# but may already be installed on massively parallel
-# machines and on clusters. For good parallel
-# performance, it is highly recommended.
-# For meshes larger than 15 million cells, Metis 5.0
-# beta is recommended, as Metis 4 may fail above
-# the 20-35 million cells.
-#
-# Scotch can be use as an alternative.
-#
-# If both are present, Metis will be the default.
-# If none are present, a space-filling-curve algorithm
-# will be used.
+# Disable frontend (also disables GUI) ?
+# May be useful for debug builds and HPC cluster builds
+# installed side-by side with a full build.
 #--------------------------------------------------------
-metis     %(metis)s
-scotch    %(scotch)s
+disable_frontend  %(disable_frontend)s
+#
+#--------------------------------------------------------
+# Optional SALOME platform install path.
+#
+# This is the path for the main SALOME directory,
+# not the application directory.
+#
+# If Code_Saturne is built with SALOME support,
+# running "code_saturne salome" will launch the
+# associated application, containing thr CFDSTUDY module.
+#--------------------------------------------------------
+salome    %(salome)s
 #
 #--------------------------------------------------------
 # Optional packages:
 # ------------------
 #
 # MED / HDF5  For MED file format support
-#             (used by SALOME and now by Gmsh)
+#             (used by SALOME and by Gmsh)
 #
-# CGNS        For CGNS file support
-#             (used by many meshers)
+# CGNS / HDF5 For CGNS file support
+#             (used by many meshing tools)
 #
-# Open MPI (or MPICH2)
+# Scotch (includes PT-Scotch) and/or ParMetis
+# for parallel partitioning
 #
-#   For Linux workstations, MPI, HDF5, and even MED
+#   For Linux workstations, HDF5, CGNS, and even MED
 # packages may be available through the package manager.
 # HDF5 is also often available on large systems such as
 # IBM Blue Gene or Cray XT/XE/XK.
 #
-#   For clusters using high-speed networks,  it is highly
-# recommended to use the system's default MPI library, as
-# this is already configured to use the correct drivers,
-# and to support the local resource manager.
+# Scotch and Pt-Scotch are available in some Linux
+# distributtions, but may be built with options
+# incompatible with non-threaded Code_Saturne runs.
 #
-#   Libxml2 is needed to read xml files output by the
-# Graphical User Interface.
+#   To install CGNS or ParMetis, the CMake
+# configuration/installation tool is required
+# (it is available in most Linux distributions)
+#
+#   Libxml2 is needed to read XML files output by the
+# Graphical User Interface. It is generally available
+# through the package manager.
 #--------------------------------------------------------
 #
-#  Name    Path    Use   Install
+#  Name    Use   Install  Path
 #
 """
         setupLib= \
-"""%(lib)s    %(dir)s    %(use)s  %(install)s
+"""%(lib)-9s  %(use)-4s  %(install)-3s      %(dir)s    
 """
         setupEnd= \
 """#
 #========================================================
 """
 
-        # Clean some potentially not-defined variables for output
-        if self.prefix is None: self.prefix = ''
-        if self.arch is None: self.arch = ''
-        if self.cc is None: self.cc = ''
-        if self.fc is None: self.fc = ''
-        if self.mpicc is None: self.mpicc = ''
-        if self.python is None: self.python = ''
-        if self.blas is None: self.blas = ''
-        if self.metis is None: self.metis = ''
-        if self.scotch is None: self.scotch = ''
+        prefix = self.prefix
+        arch = self.arch
+        cc = self.cc
+        fc = self.fc
+        mpicc = self.mpicc
+        cxx = self.cxx
+        mpicxx = self.mpicc
+        python = self.python
+        salome = self.salome
+
+        # Clean some potentially undefined variables for output
+        if not prefix: prefix = 'default'
+        if not arch: arch = 'ignore'
+        if not cc: cc = 'NEEDS_DEFINITION'
+        if not fc: fc = 'NEEDS_DEFINITION'
+        if not mpicc: mpicc = 'auto'
+        if not cxx: cxx = 'auto'
+        if not mpicxx: mpicc = 'auto'
+        if not python: python = 'NEEDS_DEFINITION'
+        if not salome: salome = 'no'
 
         sf.write(setupMain
-                 % { 'download':self.download, 'prefix':self.prefix,
+                 % { 'download':self.download, 'prefix':prefix,
                      'lang':self.language, 'debug':self.debug,
-                     'use_arch':self.use_arch, 'arch':self.arch,
-                     'cc':self.cc, 'fc':self.fc, 'mpicc':self.mpicc,
+                     'use_arch':self.use_arch, 'arch':arch,
+                     'cc':cc, 'mpicc':mpicc,
+                     'fc':fc,
+                     'cxx':cxx, 'mpicxx':mpicxx,
                      'disable_gui':self.disable_gui,
                      'disable_frontend':self.disable_frontend,
-                     'python':self.python, 'blas':self.blas,
-                     'metis':self.metis, 'scotch': self.scotch})
+                     'python':self.python, 'salome':salome})
 
         for lib in self.optlibs:
             p = self.packages[lib]
-            sf.write(setupLib % { 'lib':lib, 'dir':p.install_dir,
-                                  'use':p.use, 'install':p.installation })
+            sf.write(setupLib % {'lib':lib,
+                                 'use':p.use,
+                                 'install':p.installation,
+                                 'dir':p.install_dir})
 
         sf.write(setupEnd)
         sf.close()
@@ -994,6 +1357,10 @@ The documentation should then be available through the commands:
   code_saturne info -g refcard
   code_saturne info -g user
 
+Do not forget the post-installation steps recommended in the
+installation documentation, available using:
+  code_saturne info -g install
+
 """
 
     thanks = \
@@ -1004,13 +1371,19 @@ Thank you for choosing Code_Saturne!
 
     # Setup process
     # -------------
+
+    check_directory()
+
     sys.stdout.write(welcome)
 
     setup = Setup()
 
+    setup.check_setup_file()
+
     setup.log_file = open('install_saturne.log', mode='w')
 
     setup.read_setup()
+
     setup.check_setup()
     setup.update_package_opts()
     setup.install()
