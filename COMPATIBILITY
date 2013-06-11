@@ -1,9 +1,9 @@
-CODE_SATURNE VERSION 3.1
+CODE_SATURNE VERSION 3.2
 ========================
 
-This is version 3.1 of the Code_Saturne CFD tool.
+This is version 3.2 of the Code_Saturne CFD tool.
 It is composed of the following elements:
-* Code_Saturne version 3.1 (including Graphical User Interface)
+* Code_Saturne version 3.2 (including Graphical User Interface)
 * Parallel Location and Exchange version 1.0
 Other versions of these elements might not be compatible.
 
