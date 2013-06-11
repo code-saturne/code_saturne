@@ -48,7 +48,7 @@ m4_define([cs_licence_c_comment],
 */])
 
 m4_define([cs_major_version], [3])
-m4_define([cs_minor_version], [1])
+m4_define([cs_minor_version], [2])
 m4_define([cs_release_version], [0])
 m4_define([cs_version_extra], [-alpha])
 m4_define([cs_version_string],
