@@ -905,12 +905,7 @@ _rescale_fluctuations(cs_int_t     n_points,
                       cs_real_t   *fluctuations)
 {
   cs_int_t   point_id;
-
-  cs_int_t   n_points_glo;
   cs_int_t   coo_id;
-
-  double    mean_fluct[3];
-  double    mean_fluct_glo[3];
 
   for (point_id = 0; point_id < n_points; point_id++) {
 
@@ -947,43 +942,121 @@ _rescale_fluctuations(cs_int_t     n_points,
 
   }
 
-  /* Refocusing of velocity fluctuations */
+}
 
-  for (coo_id = 0; coo_id < 3; coo_id++)
-    mean_fluct[coo_id] = 0.;
+/*----------------------------------------------------------------------------
+ * Modify the normal component of the fluctuations such that the mass flowrate
+ * of the fluctuating field is zero.
+ *
+ * parameters:
+ *   n_points          --> Local number of points where turbulence is generated
+ *   num_face          --> Local id of inlet boundary faces
+ *   density           --> Density of the flow
+ *   fluctuations      <-> Velocity fluctuations
+ *----------------------------------------------------------------------------*/
 
-  for (point_id = 0; point_id < n_points; point_id++)
-    for (coo_id = 0; coo_id < 3; coo_id++)
-      mean_fluct[coo_id] = mean_fluct[coo_id]
-        + fluctuations[point_id*3 + coo_id];
+static void
+_rescale_flowrate(cs_int_t     n_points,
+                  cs_int_t    *num_face,
+                  cs_real_t   *density,
+                  cs_real_t   *fluctuations)
+{
+  /* Compute the mass flow rate of the fluctuating field */
+  /* and the area of the inlet */
 
-  for (coo_id = 0; coo_id < 3; coo_id++)
-    mean_fluct_glo[coo_id] = mean_fluct[coo_id];
+  cs_lnum_t point_id;
 
-  n_points_glo = n_points;
-
-#if defined(HAVE_MPI)
-
-  if (cs_glob_rank_id >= 0) {
-
-    MPI_Allreduce (mean_fluct, &mean_fluct_glo, 3, CS_MPI_REAL, MPI_SUM,
-             cs_glob_mpi_comm);
-
-    MPI_Allreduce (&n_points, &n_points_glo, 1, CS_MPI_INT, MPI_SUM,
-             cs_glob_mpi_comm);
-  }
-
-#endif
-
-  for (coo_id = 0; coo_id < 3; coo_id++)
-    mean_fluct_glo[coo_id] = mean_fluct_glo[coo_id]/n_points_glo;
+  double mass_flow_rate = 0., mass_flow_rate_g = 0.;
+  double area = 0., area_g = 0.;
+  const cs_mesh_t  *mesh = cs_glob_mesh;
+  const cs_mesh_quantities_t  *mesh_q = cs_glob_mesh_quantities;
 
   for (point_id = 0; point_id < n_points; point_id++) {
-    for (coo_id = 0; coo_id < 3; coo_id++)
-      fluctuations[point_id*3 + coo_id]=
-        fluctuations[point_id*3 + coo_id] - mean_fluct_glo[coo_id];
-  }
 
+    double dot_product = 0.;
+
+    cs_lnum_t b_face_id = num_face[point_id] - 1;
+    cs_lnum_t cell_id = mesh->b_face_cells[b_face_id] - 1;
+
+    double fluct[3] = { fluctuations[point_id*3],
+                        fluctuations[point_id*3 + 1],
+                        fluctuations[point_id*3 + 2] };
+    double normal[3] = { mesh_q->b_face_normal[b_face_id*3], 
+                         mesh_q->b_face_normal[b_face_id*3 + 1], 
+                         mesh_q->b_face_normal[b_face_id*3 + 2] };
+
+    _DOT_PRODUCT_3D(dot_product, fluct, normal);
+
+    mass_flow_rate += density[cell_id]*dot_product;
+    area = area + mesh_q->b_face_surf[b_face_id];
+
+  }
+  mass_flow_rate_g = mass_flow_rate;
+  area_g = area;
+
+#if defined(HAVE_MPI)
+  if (cs_glob_rank_id >= 0) {
+    MPI_Allreduce(&mass_flow_rate, &mass_flow_rate_g, 1, CS_MPI_REAL, MPI_SUM,
+                  cs_glob_mpi_comm);
+    MPI_Allreduce(&area, &area_g, 1, CS_MPI_REAL, MPI_SUM, cs_glob_mpi_comm);
+  }
+#endif
+
+  for (point_id = 0; point_id < n_points; point_id++) {
+
+    /* Decompose the fluctuation in a local coordinate system */
+    /* (not valid for warped boundary faces) */
+
+    int coo_id;
+    cs_lnum_t b_face_id = num_face[point_id] - 1;
+    cs_lnum_t cell_id = mesh->b_face_cells[b_face_id] - 1;
+
+    cs_lnum_t idx = mesh->b_face_vtx_idx[b_face_id];
+    cs_lnum_t vtx_id1 = mesh->b_face_vtx_lst[idx-1] - 1;
+    cs_lnum_t vtx_id2 = mesh->b_face_vtx_lst[idx] - 1;
+
+    double norm = 0.;
+    double normal_comp = 0., tangent_comp1 = 0., tangent_comp2 = 0.;
+    double normal_unit[3], tangent_unit1[3], tangent_unit2[3];
+
+    double fluct[3] = { fluctuations[point_id*3],
+                        fluctuations[point_id*3 + 1],
+                        fluctuations[point_id*3 + 2] };
+
+    for (coo_id = 0; coo_id < 3; coo_id++) {
+      normal_unit[coo_id] = mesh_q->b_face_normal[b_face_id*3 + coo_id];
+      normal_unit[coo_id] /= mesh_q->b_face_surf[b_face_id];
+    }
+
+    for (coo_id = 0; coo_id < 3; coo_id++) {
+      tangent_unit1[coo_id] = mesh->vtx_coord[3*vtx_id1 + coo_id]
+                            - mesh->vtx_coord[3*vtx_id2 + coo_id];
+    }
+
+    _CROSS_PRODUCT_3D(tangent_unit2, normal_unit, tangent_unit1);
+
+    _MODULE_3D(norm, tangent_unit1);
+    for (coo_id = 0; coo_id < 3; coo_id++)
+      tangent_unit1[coo_id] /= norm;
+
+    _MODULE_3D(norm, tangent_unit2);
+    for (coo_id = 0; coo_id < 3; coo_id++)
+      tangent_unit2[coo_id] /= norm;
+
+    _DOT_PRODUCT_3D(normal_comp, fluct, normal_unit);
+    _DOT_PRODUCT_3D(tangent_comp1, fluct, tangent_unit1);
+    _DOT_PRODUCT_3D(tangent_comp2, fluct, tangent_unit2);
+
+    /* Rescale the normal component and return in cartesian coordinates*/
+
+    normal_comp -= mass_flow_rate_g/(density[cell_id]*area_g);
+
+    for (coo_id = 0; coo_id < 3; coo_id++)
+      fluctuations[point_id*3 + coo_id] = normal_comp*normal_unit[coo_id]
+                                        + tangent_comp1*tangent_unit1[coo_id]
+                                        + tangent_comp2*tangent_unit2[coo_id];
+
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -1022,6 +1095,7 @@ _cs_inflow_add_inlet(cs_inflow_type_t   type,
 
   inlet->parent_num  = NULL;
   inlet->face_centre = NULL;
+  inlet->face_surface = NULL;
 
   if (inlet->n_faces > 0) {
 
@@ -1288,6 +1362,7 @@ void CS_PROCF(synthe, SYNTHE)
  const cs_int_t  *const iu,        /* --> index of velocity component         */
  const cs_int_t  *const iv,        /* --> index of velocity component         */
  const cs_int_t  *const iw,        /* --> index of velocity component         */
+ const cs_int_t  *const ipcrom,    /* --> index of density in propce array    */
  const cs_real_t *const ttcabs,    /* --> current physical time               */
  const cs_real_t        dt[],      /* --> time step                           */
  const cs_real_t        rtpa[],    /* --> variables at cellules (previous)    */
@@ -1310,7 +1385,8 @@ void CS_PROCF(synthe, SYNTHE)
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
 
-  const cs_int_t  n_b_faces = mesh->n_b_faces;
+  const cs_lnum_t  n_b_faces = mesh->n_b_faces;
+  const cs_lnum_t  n_cells_with_ghosts = mesh->n_cells_with_ghosts;
 
   if (cs_glob_inflow_n_inlets == 0)
     return;
@@ -1433,6 +1509,16 @@ void CS_PROCF(synthe, SYNTHE)
                             fluctuations);
 
     BFT_FREE(reynolds_stresses);
+
+    /* Rescaling of the mass flow rate */
+    /*---------------------------------*/
+
+    if (inlet->type == CS_INFLOW_RANDOM || inlet->type == CS_INFLOW_BATTEN
+        || inlet->type == CS_INFLOW_SEM)
+      _rescale_flowrate(inlet->n_faces,
+                        inlet->parent_num,
+                        &propce[(*ipcrom - 1)*n_cells_with_ghosts],
+                        fluctuations);
 
     /* Boundary conditions */
     /*---------------------*/
