@@ -1,8 +1,8 @@
 !===============================================================================
 ! User source terms definition.
 !
-! 1) Momentum equation (segegrated solver)
-! 2) Momentum equation (coupled solver)
+! 1) Momentum equation (coupled solver)
+! 2) Momentum equation (segegrated solver)
 ! 3) Species transport
 ! 4) Turbulence (k-epsilon, k-omega, Rij-epsilon, v2-f, Spalart-Allmaras)
 !===============================================================================
@@ -169,14 +169,12 @@ if (1.eq.1) return
 !===============================================================================
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
-
 !===============================================================================
 ! 1. Initialization
 !===============================================================================
 
 ! Allocate a temporary array for cells selection
 allocate(lstelt(ncel))
-
 
 ipp    = ipprtp(ivar)
 
@@ -186,7 +184,6 @@ if (iwarni(ivar).ge.1) then
 endif
 
 ipcrom = ipproc(irom  )
-
 
 !===============================================================================
 ! 2. Example of arbitrary source term for component u:
@@ -203,12 +200,12 @@ ipcrom = ipproc(irom  )
 !  B =  XMMT
 !
 !with:
-!  CKP = 1.D0 [1/s       ] (return term on velocity)
-!  MMT = 100.D0 [kg/m2/s2] (momentum production by volume and time unit)
+!  CKP = 1.d0 [1/s       ] (return term on velocity)
+!  MMT = 100.d0 [kg/m2/s2] (momentum production by volume and time unit)
 !
 !which yields:
-!     crvimp(iel) = volume(iel)* A = - volume(iel)*(rho*CKP )
-!     crvexp(iel) = volume(iel)* B =   volume(iel)*(XMMT    )
+!     crvimp(1, 1, iel) = volume(iel)* A = - volume(iel)*(rho*CKP )
+!     crvexp(1, iel) = volume(iel)* B = volume(iel)*(XMMT)
 
 ! ----------------------------------------------
 
@@ -224,11 +221,11 @@ ckp  = 10.d0
 qdm  = 100.d0
 
 do iel = 1, ncel
-   crvimp(1,1,iel) = - volume(iel)*propce(iel,ipcrom)*ckp
+  crvimp(1, 1, iel) = - volume(iel)*propce(iel, ipcrom)*ckp
 enddo
 
 do iel = 1, ncel
-   crvexp(1,iel) =   volume(iel)*qdm
+  crvexp(1, iel) = volume(iel)*qdm
 enddo
 
 !--------
