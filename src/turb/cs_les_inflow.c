@@ -981,8 +981,8 @@ _rescale_flowrate(cs_int_t     n_points,
     double fluct[3] = { fluctuations[point_id*3],
                         fluctuations[point_id*3 + 1],
                         fluctuations[point_id*3 + 2] };
-    double normal[3] = { mesh_q->b_face_normal[b_face_id*3], 
-                         mesh_q->b_face_normal[b_face_id*3 + 1], 
+    double normal[3] = { mesh_q->b_face_normal[b_face_id*3],
+                         mesh_q->b_face_normal[b_face_id*3 + 1],
                          mesh_q->b_face_normal[b_face_id*3 + 2] };
 
     _DOT_PRODUCT_3D(dot_product, fluct, normal);
