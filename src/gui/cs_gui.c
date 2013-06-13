@@ -4932,7 +4932,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
                       propce[ipcrom * (*ncelet) + iel]);
 
       if (cs_gui_strcmp(vars->model, "compressible_model"))
-        mei_tree_insert(ev_mu, "T", rtp[(isca[*itempk] -1) * (*ncelet) + iel]);
+        mei_tree_insert(ev_mu, "T", rtp[(isca[*itempk -1] -1) * (*ncelet) + iel]);
 
        tmp = mei_evaluate(ev_mu);
       propce[ipcvis * (*ncelet) + iel] = mei_tree_lookup(ev_mu, "mu");
@@ -5182,7 +5182,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
                           vars->label[i],
                           rtp[(isca[i] -1) * (*ncelet) + iel]);
 
-          mei_tree_insert(ev_la, "T", rtp[(isca[*itempk] -1) * (*ncelet) + iel]);
+          mei_tree_insert(ev_la, "T", rtp[(isca[*itempk -1] -1) * (*ncelet) + iel]);
 
           tmp = mei_evaluate(ev_la);
           propce[ipcvsl * (*ncelet) + iel] = mei_tree_lookup(ev_la, "lambda");
@@ -5329,7 +5329,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
 
       for (iel = 0; iel < *ncel; iel++)
       {
-        mei_tree_insert(ev_viscv, "T", rtp[(isca[*itempk] -1) * (*ncelet) + iel] );
+        mei_tree_insert(ev_viscv, "T", rtp[(isca[*itempk -1] -1) * (*ncelet) + iel] );
 
         tmp = mei_evaluate(ev_viscv);
         propce[ipcvsv * (*ncelet) + iel] = mei_tree_lookup(ev_viscv, "viscv");
