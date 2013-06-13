@@ -213,8 +213,13 @@ do iel = 1, ncel
 enddo
 
 !===============================================================================
-! 3. Computation of the turbophorese terms
+! 3. Computation of the turbophoresis and the thermophoresis terms
 !===============================================================================
+
+! Initialized to 0
+do iel = 1, ncel
+  viscce(iel) = 0.d0
+enddo
 
 if (btest(iscdri, DRIFT_SCALAR_TURBOPHORESIS).and.iturb.ne.0) then
 
@@ -247,12 +252,11 @@ if (btest(iscdri, DRIFT_SCALAR_TURBOPHORESIS).and.iturb.ne.0) then
 
   else
 
-    ! Not implemented, initialized to 0
-    do iel = 1, ncel
-      viscce(iel) = 0.d0
-    enddo
-
   endif
+
+endif
+
+if (btest(iscdri, DRIFT_SCALAR_THERMOPHORESIS)) then
 
   ! propce(iel,ipcvsl): contains the Brownian motion
   !------------------------------------------------
@@ -271,6 +275,11 @@ if (btest(iscdri, DRIFT_SCALAR_TURBOPHORESIS).and.iturb.ne.0) then
 
   endif
 
+endif
+
+if (btest(iscdri, DRIFT_SCALAR_TURBOPHORESIS).or.    &
+    btest(iscdri, DRIFT_SCALAR_THERMOPHORESIS)) then
+
   iphydp = 0
   inc    = 1
   iccocg = 1
@@ -283,7 +292,7 @@ if (btest(iscdri, DRIFT_SCALAR_TURBOPHORESIS).and.iturb.ne.0) then
 
   ! Face diffusivity of 1. to compute (Grad K . n)_face
   do iel = 1, ncelet
-    w1(iel) = - 1.d0
+    w1(iel) = 1.d0
   enddo
 
   call viscfa &
@@ -468,13 +477,6 @@ call divmas &
 ! --> mass aggregation term
 do iel = 1, ncel
   rovsdt(iel) = rovsdt(iel) + iconvp*thetap*w1(iel)
-enddo
-
-do ifac = 1, nfabor
-  iel = ifabor(ifac)
-enddo
-
-do iel = 1, ncel
   smbrs(iel) = smbrs(iel) - iconvp*w1(iel)*rtpa(iel,ivar)
 enddo
 

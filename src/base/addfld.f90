@@ -159,6 +159,9 @@ do iflid = 0, nfld-1
     call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
     call field_set_key_str(f_id, keylbl, f_name)
 
+    ! Set the inner mass flux index
+    call field_set_key_int(iflid, kimasf, f_id)
+
     ! If the scalar is the representant of a class, then
     ! set the mass flux index to all members of the class
     if (icla.ne.0) then
@@ -176,6 +179,9 @@ do iflid = 0, nfld-1
     f_name = 'boundary_mass_flux_'//trim(name)
     call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
     call field_set_key_str(f_id, keylbl, f_name)
+
+    ! Set the boundary mass flux index
+    call field_set_key_int(iflid, kbmasf, f_id)
 
     ! If the scalar is the representant of a class, then
     ! set the mass flux index to all members of the class
