@@ -90,9 +90,10 @@ double precision propfa(nfac,*), propfb(nfabor,*)
 
 !< [loc_var_dec]
 integer          ivart, iel, ifac
-integer          ipcrom, ipbrom, ipcvis, ipccp
+integer          ipcrom, ipcvis
 integer          ipcvsl, iscal, iflid, iscdri
 integer          f_id, keydri, nfld, keysca
+double precision rho, viscl
 double precision diamp, rhop, cuning
 double precision xrtp, xk, xeps, beta1
 
@@ -110,6 +111,7 @@ double precision, dimension(:), pointer :: taufpt
 
 !< [init]
 ipcvis = ipproc(iviscl)
+ipcrom = ipproc(irom)
 
 ! Key id for drift scalar
 call field_get_key_id("drift_scalar_model", keydri)
@@ -257,9 +259,12 @@ do iflid = 0, nfld-1
       call csexit (1)
     endif
 
+    ! Homogeneous to a dynamic viscosity
     do iel = 1, ncel
       xrtp = rtp(iel,ivart)
-      propce(iel,ipcvsl) = kboltz*xrtp*cuning/(3.d0*pi*diamp*propce(iel,ipcvis))
+      rho = propce(iel, ipcrom)
+      viscl = propce(iel, ipcvis)
+      propce(iel,ipcvsl) = rho*kboltz*xrtp*cuning/(3.d0*pi*diamp*viscl)
     enddo
 
   endif ! --- Tests on drift scalar
