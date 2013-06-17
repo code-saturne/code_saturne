@@ -357,6 +357,11 @@ endif
 call init_aux_arrays ( ncelet , ncel   , ncelbr , nfac  , nfabor )
 !===================
 
+! Compute the porosity if needed
+if (iporos.ge.1) then
+  call usporo
+endif
+
 if (ippmod(iatmos).ge.0) then
   call init_meteo
   !==============

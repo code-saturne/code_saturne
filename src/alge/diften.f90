@@ -95,7 +95,7 @@
 !>                               at interior faces for the r.h.s.
 !> \param[in]     viscb         \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
 !>                               at border faces for the r.h.s.
-!> \param[in]     viscce        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
+!> \param[in]     viscel        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
 !> \param[in]     weighf        internal face weight between cells i j in case
 !>                               of tensor diffusion
 !> \param[in]     weighb        boundary face weight for cells i in case
@@ -108,7 +108,7 @@ subroutine diften &
    inc    , imrgra , iccocg , ipp    , iwarnp , epsrgp , &
    climgp , extrap , relaxp , thetap ,                   &
    pvar   , pvara  , coefap , coefbp , cofafp , cofbfp , &
-   viscf  , viscb  , viscce ,                            &
+   viscf  , viscb  , viscel ,                            &
    weighf , weighb ,                                     &
    smbrp  )
 
@@ -124,6 +124,7 @@ use entsor
 use parall
 use period
 use cplsat
+use optcal, only: iporos
 use mesh
 
 !===============================================================================
@@ -144,7 +145,7 @@ double precision pvar  (ncelet), pvara(ncelet)
 double precision coefap(nfabor), coefbp(nfabor)
 double precision cofafp(nfabor), cofbfp(nfabor)
 double precision viscf (nfac)  , viscb (nfabor)
-double precision viscce(6,ncelet)
+double precision, target :: viscel(6,ncelet)
 double precision weighf(2,nfac), weighb(nfabor)
 double precision smbrp (ncelet)
 
@@ -153,6 +154,7 @@ double precision smbrp (ncelet)
 character*80     chaine
 character*8      cnom
 integer          ifac,ii,jj,infac,iel, ig, it,i
+integer          isou
 double precision pfacd,flux,fluxi,fluxj
 double precision pi, pj, pia, pja
 double precision pir,pjr,pippr,pjppr
@@ -160,6 +162,8 @@ double precision diippf(3), djjppf(3), pipp, pjpp
 double precision visci(3,3), viscj(3,3)
 double precision fikdvi, fjkdvi
 
+double precision, pointer, dimension(:,:) :: viscce => null()
+double precision, dimension(:,:), allocatable, target :: w2
 double precision, allocatable, dimension(:,:) :: grad
 
 !===============================================================================
@@ -173,6 +177,35 @@ allocate(grad(ncelet,3))
 
 chaine = nomvar(ipp)
 cnom   = chaine(1:8)
+
+! Without porosity
+if (iporos.eq.0) then
+  viscce => viscel(:,:)
+
+! With porosity
+else if (iporos.eq.1) then
+  allocate(w2(6, ncelet))
+  do iel = 1, ncel
+    do isou = 1, 6
+      w2(isou, iel) = porosi(iel)*viscel(isou, iel)
+    enddo
+  enddo
+  viscce => w2(:,:)
+
+! With tensorial porosity
+else if (iporos.eq.2) then
+  allocate(w2(6, ncelet))
+  do iel = 1, ncel
+    call symmetric_matrix_product(w2(1, iel), porosf(1, iel), viscel(1, iel))
+  enddo
+  viscce => w2(:,:)
+endif
+
+! ---> Periodicity and parallelism treatment of symmetric tensors
+
+if (irangp.ge.0.or.iperio.eq.1) then
+  call syntis(viscce)
+endif
 
 !===============================================================================
 ! 2. Compute the diffusive part with reconstruction technics
@@ -512,6 +545,7 @@ endif
 
 ! Free memory
 deallocate(grad)
+if (allocated(w2)) deallocate(w2)
 
 !--------
 ! Formats

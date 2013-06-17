@@ -431,7 +431,7 @@ if (iphydr.eq.1) then
       ! Symmetric tensor diffusivity
       elseif (idften(ipr).eq.6) then
 
-        visci(1,1) =  tpucou(1,iel)
+        visci(1,1) = tpucou(1,iel)
         visci(2,2) = tpucou(2,iel)
         visci(3,3) = tpucou(3,iel)
         visci(1,2) = tpucou(4,iel)

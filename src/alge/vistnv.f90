@@ -72,130 +72,152 @@ implicit none
 
 integer          imvisf
 
-double precision w1(6,ncelet)
+double precision, target :: w1(6,ncelet)
 double precision viscf(3,3,nfac), viscb(nfabor)
 
 ! Local variables
 
 integer          ifac, iel, ii, jj, isou, jsou
-double precision visci(3,3), viscj(3,3)
+double precision visci(3,3), viscj(3,3), s1(6), s2(6)
 double precision distbf
-double precision poroi, poroj, pnd
+double precision poroi, poroj, pnd, srfddi
+
+double precision, pointer, dimension(:,:) :: viscce => null()
+double precision, dimension(:,:), allocatable, target :: w2
 
 !===============================================================================
 
 ! ---> Periodicity and parallelism treatment
 
+! Without porosity
+if (iporos.eq.0) then
+  viscce => w1(:,:)
+
+! With porosity
+else if (iporos.eq.1) then
+  allocate(w2(6, ncelet))
+  do iel = 1, ncel
+    do isou = 1, 6
+      w2(isou, iel) = porosi(iel)*w1(isou, iel)
+    enddo
+  enddo
+  viscce => w2(:,:)
+
+! With tensorial porosity
+else if (iporos.eq.2) then
+  allocate(w2(6,ncelet))
+  do iel = 1, ncel
+    call symmetric_matrix_product(w2(1, iel), porosf(1, iel), w1(1, iel))
+  enddo
+  viscce => w2(:,:)
+endif
+
+! ---> Periodicity and parallelism treatment
+
 if (irangp.ge.0.or.iperio.eq.1) then
-  call syntis(w1)
+  call syntis(viscce)
+endif
+
+! Arithmetic mean
+if (imvisf.eq.0) then
+
+  do ifac = 1, nfac
+
+    ii = ifacel(1,ifac)
+    jj = ifacel(2,ifac)
+
+    visci(1,1) = viscce(1,ii)
+    visci(2,2) = viscce(2,ii)
+    visci(3,3) = viscce(3,ii)
+    visci(1,2) = viscce(4,ii)
+    visci(2,1) = viscce(4,ii)
+    visci(2,3) = viscce(5,ii)
+    visci(3,2) = viscce(5,ii)
+    visci(1,3) = viscce(6,ii)
+    visci(3,1) = viscce(6,ii)
+
+    viscj(1,1) = viscce(1,jj)
+    viscj(2,2) = viscce(2,jj)
+    viscj(3,3) = viscce(3,jj)
+    viscj(1,2) = viscce(4,jj)
+    viscj(2,1) = viscce(4,jj)
+    viscj(2,3) = viscce(5,jj)
+    viscj(3,2) = viscce(5,jj)
+    viscj(1,3) = viscce(6,jj)
+    viscj(3,1) = viscce(6,jj)
+
+    do isou = 1, 3
+      do jsou = 1, 3
+        viscf(isou,jsou,ifac) = 0.5d0*(visci(isou,jsou)+viscj(isou,jsou)) &
+                              * surfan(ifac)/dist(ifac)
+      enddo
+    enddo
+
+  enddo
+
+! Harmonic mean: Kf = Ki . (pnd Ki +(1-pnd) Kj)^-1 . Kj
+else
+
+  do ifac = 1, nfac
+
+    ii = ifacel(1,ifac)
+    jj = ifacel(2,ifac)
+
+    pnd  = pond(ifac)
+
+    do isou = 1, 6
+      s1(isou) = pnd*viscce(isou, ii) + (1.d0-pnd)*viscce(isou, jj)
+    enddo
+
+    call symmetric_matrix_inverse(s2, s1)
+
+    call symmetric_matrix_product(s1, s2, viscce(1, jj))
+
+    call symmetric_matrix_product(s2, viscce(1, ii), s1)
+
+    srfddi = surfan(ifac)/dist(ifac)
+
+    viscf(1,1,ifac) = s2(1)*srfddi
+    viscf(2,2,ifac) = s2(2)*srfddi
+    viscf(3,3,ifac) = s2(3)*srfddi
+    viscf(1,2,ifac) = s2(4)*srfddi
+    viscf(2,1,ifac) = s2(4)*srfddi
+    viscf(2,3,ifac) = s2(5)*srfddi
+    viscf(3,2,ifac) = s2(5)*srfddi
+    viscf(1,3,ifac) = s2(6)*srfddi
+    viscf(3,1,ifac) = s2(6)*srfddi
+
+  enddo
+
 endif
 
 ! Without porosity
 if (iporos.eq.0) then
 
-  ! Arithmetic mean
-  if (imvisf.eq.0) then
-
-    do ifac = 1, nfac
-
-      ii = ifacel(1,ifac)
-      jj = ifacel(2,ifac)
-
-      visci(1,1) = w1(1,ii)
-      visci(2,2) = w1(2,ii)
-      visci(3,3) = w1(3,ii)
-      visci(1,2) = w1(4,ii)
-      visci(2,1) = w1(4,ii)
-      visci(2,3) = w1(5,ii)
-      visci(3,2) = w1(5,ii)
-      visci(1,3) = w1(6,ii)
-      visci(3,1) = w1(6,ii)
-
-      viscj(1,1) = w1(1,jj)
-      viscj(2,2) = w1(2,jj)
-      viscj(3,3) = w1(3,jj)
-      viscj(1,2) = w1(4,jj)
-      viscj(2,1) = w1(4,jj)
-      viscj(2,3) = w1(5,jj)
-      viscj(3,2) = w1(5,jj)
-      viscj(1,3) = w1(6,jj)
-      viscj(3,1) = w1(6,jj)
-
-      do isou = 1, 3
-        do jsou = 1, 3
-          viscf(isou,jsou,ifac) = 0.5d0*(visci(isou,jsou)+viscj(isou,jsou)) &
-                                * surfan(ifac)/dist(ifac)
-        enddo
-      enddo
-
-    enddo
-
-    do ifac = 1, nfabor
-      ii = ifabor(ifac)
-      viscb(ifac) = surfbn(ifac)
-    enddo
-
-  ! Harmonic mean
-  else
-!TODO
-    call csexit(1)
-  endif
+  do ifac = 1, nfabor
+    ii = ifabor(ifac)
+    viscb(ifac) = surfbn(ifac)
+  enddo
 
 ! With porosity
-else
+else if (iporos.eq.1) then
 
-  ! Arithmetic mean
-  if (imvisf.eq.0) then
+  do ifac = 1, nfabor
+    ii = ifabor(ifac)
+    viscb(ifac) = surfbn(ifac)*porosi(ii)
+  enddo
 
-    do ifac = 1, nfac
+! With anisotropic porosity
+else if (iporos.eq.2) then
 
-      ii = ifacel(1,ifac)
-      jj = ifacel(2,ifac)
-
-      poroi = porosi(ii)
-      poroj = porosi(jj)
-
-      visci(1,1) = w1(1,ii)*poroi
-      visci(2,2) = w1(2,ii)*poroi
-      visci(3,3) = w1(3,ii)*poroi
-      visci(1,2) = w1(4,ii)*poroi
-      visci(2,1) = w1(4,ii)*poroi
-      visci(2,3) = w1(5,ii)*poroi
-      visci(3,2) = w1(5,ii)*poroi
-      visci(1,3) = w1(6,ii)*poroi
-      visci(3,1) = w1(6,ii)*poroi
-
-      viscj(1,1) = w1(1,jj)*poroj
-      viscj(2,2) = w1(2,jj)*poroj
-      viscj(3,3) = w1(3,jj)*poroj
-      viscj(1,2) = w1(4,jj)*poroj
-      viscj(2,1) = w1(4,jj)*poroj
-      viscj(2,3) = w1(5,jj)*poroj
-      viscj(3,2) = w1(5,jj)*poroj
-      viscj(1,3) = w1(6,jj)*poroj
-      viscj(3,1) = w1(6,jj)*poroj
-
-      do isou = 1, 3
-        do jsou = 1, 3
-          viscf(isou,jsou,ifac) = 0.5d0*(visci(isou,jsou)+viscj(isou,jsou)) &
-                                * surfan(ifac)/dist(ifac)
-        enddo
-      enddo
-
-    enddo
-
-    do ifac = 1, nfabor
-      ii = ifabor(ifac)
-      viscb(ifac) = surfbn(ifac)*porosi(ii)
-    enddo
-
-  ! Harmonic mean
-  else
-!TODO
-    call csexit(1)
-  endif
+  do ifac = 1, nfabor
+    ii = ifabor(ifac)
+    viscb(ifac) = surfbn(ifac)*porosi(ii)
+  enddo
 
 endif
+
+if (allocated(w2)) deallocate(w2)
 
 !--------
 ! Formats
@@ -207,4 +229,55 @@ endif
 
 return
 
+end subroutine
+
+!===============================================================================
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[out]    sout          sout = s1 * s2
+!> \param[in]     s             symmetric matrix
+!_______________________________________________________________________________
+
+subroutine symmetric_matrix_inverse &
+ ( sout , s )
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+double precision sout(6), s(6)
+
+! Local variables
+
+double precision detinv
+
+!===============================================================================
+
+sout(1) = s(2)*s(3) - s(5)**2
+sout(2) = s(1)*s(3) - s(6)**2
+sout(3) = s(1)*s(2) - s(4)**2
+sout(4) = s(5)*s(6) - s(4)*s(3)
+sout(5) = s(4)*s(6) - s(1)*s(5)
+sout(6) = s(4)*s(5) - s(2)*s(6)
+
+detinv = 1.d0 / (s(1)*sout(1) + s(4)*sout(4) + s(6)*sout(6))
+
+sout(1) = sout(1) * detinv
+sout(2) = sout(2) * detinv
+sout(3) = sout(3) * detinv
+sout(4) = sout(4) * detinv
+sout(5) = sout(5) * detinv
+sout(6) = sout(6) * detinv
+
+return
 end subroutine

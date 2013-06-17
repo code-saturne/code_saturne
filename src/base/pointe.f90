@@ -181,7 +181,11 @@ module pointe
   double precision, allocatable, dimension(:,:) :: smacel
 
   ! porosi ! ncelet                  ! value of the porosity
+  ! porosf ! (6, ncelet)             ! value of the porosity
+  !                                  ! (for convection and diffusion only
+  !                                  !  for iporos=2)
   double precision, allocatable, dimension(:) :: porosi
+  double precision, allocatable, dimension(:,:) :: porosf
 
   ! visten ! ncelet                  ! symmetric tensor cell visco
   double precision, allocatable, dimension(:,:) :: visten
@@ -200,7 +204,7 @@ contains
 ( ncelet , ncel   , ncelbr , nfac  , nfabor )
 
     use paramx
-    use numvar, only: ipr
+    use numvar, only: ipr, iu
     use parall
     use period
     use optcal
@@ -218,7 +222,7 @@ contains
     integer, intent(in) :: ncelet, ncel, ncelbr, nfac, nfabor
 
     ! Local variables
-    integer                iok, ivar, iscal
+    integer                iok, ivar, iscal, iel
 
     ! Boundary-face related arrays
 
@@ -253,8 +257,22 @@ contains
 
     ! Porosity array when needed
 
-    if (iporos.eq.1) then
+    if (iporos.ge.1) then
       allocate(porosi(ncelet))
+      do iel = 1, ncelet
+        porosi(iel) = 1.d0
+      enddo
+    endif
+    if (iporos.eq.2) then
+      allocate(porosf(6, ncelet))
+      do iel = 1, ncelet
+        porosf(1, iel) = 1.d0
+        porosf(2, iel) = 1.d0
+        porosf(3, iel) = 1.d0
+        porosf(4, iel) = 0.d0
+        porosf(5, iel) = 0.d0
+        porosf(6, iel) = 0.d0
+      enddo
     endif
 
     ! Symmetric cell diffusivity when needed
@@ -267,12 +285,19 @@ contains
       if (ityturt(iscal).eq.3) iok = 1
     enddo
 
+    ! Also tensorial diffusion for the velocity in case of tensorial porosity
+    if (iporos.eq.2) then
+      idften(iu) = 6
+      if (ivelco.ne.1) call csexit(1)
+      iok = 1
+    endif
+
     if (iok.eq.1) then
       allocate(visten(6,ncelet))
     endif
 
     ! Diagonal cell tensor for the pressure solving when needed
-    if (ncpdct.gt.0.or.ipucou.eq.1) then
+    if (ncpdct.gt.0.or.ipucou.eq.1.or.iporos.eq.2) then
       if (ivelco.eq.0) then
         idften(ipr) = 3
         allocate(dttens(3,ncelet))

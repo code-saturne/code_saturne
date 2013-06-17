@@ -1374,8 +1374,8 @@ if (ivisep.eq.1) then
 
           flux = visco*tgrdfl + secvis*grdtrv*surfac(isou,ifac)
 
-          smbr(isou,ii) = smbr(isou,ii) + idiffp*flux*bndcel(ii)
-          smbr(isou,jj) = smbr(isou,jj) - idiffp*flux*bndcel(jj)
+          smbr(isou,ii) = smbr(isou,ii) + flux*bndcel(ii)
+          smbr(isou,jj) = smbr(isou,jj) - flux*bndcel(jj)
 
         enddo
 

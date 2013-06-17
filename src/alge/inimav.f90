@@ -182,12 +182,29 @@ if (itypfl.eq.1) then
       enddo
     enddo
   ! With porosity
-  else
+  else if (iporos.eq.1) then
     !$omp parallel do private(isou)
     do iel = 1, ncel
       do isou = 1, 3
         qdm(isou,iel) = rom(iel)*vel(isou,iel)*porosi(iel)
       enddo
+    enddo
+  ! With anisotropic porosity
+  else if (iporos.eq.2) then
+    !$omp parallel do private(isou)
+    do iel = 1, ncel
+      qdm(1, iel) = ( porosf(1, iel)*vel(1, iel)   &
+                    + porosf(4, iel)*vel(2, iel)   &
+                    + porosf(6, iel)*vel(3, iel) ) &
+                  * rom(iel)
+      qdm(2, iel) = ( porosf(4, iel)*vel(1, iel)   &
+                    + porosf(2, iel)*vel(2, iel)   &
+                    + porosf(5, iel)*vel(3, iel) ) &
+                  * rom(iel)
+      qdm(3, iel) = ( porosf(6, iel)*vel(1, iel)   &
+                    + porosf(5, iel)*vel(2, iel)   &
+                    + porosf(3, iel)*vel(3, iel) ) &
+                  * rom(iel)
     enddo
   endif
 
@@ -203,12 +220,26 @@ else
       enddo
     enddo
   ! With porosity
-  else
+  else if (iporos.eq.1) then
     !$omp parallel do private(isou)
     do iel = 1, ncel
       do isou = 1, 3
         qdm(isou,iel) = vel(isou,iel)*porosi(iel)
       enddo
+    enddo
+  ! With anisotropic porosity
+  else if (iporos.eq.2) then
+    !$omp parallel do private(isou)
+    do iel = 1, ncel
+      qdm(1, iel) = porosf(1, iel)*vel(1, iel)  &
+                  + porosf(4, iel)*vel(2, iel)  &
+                  + porosf(6, iel)*vel(3, iel)
+      qdm(2, iel) = porosf(4, iel)*vel(1, iel)  &
+                  + porosf(2, iel)*vel(2, iel)  &
+                  + porosf(5, iel)*vel(3, iel)
+      qdm(3, iel) = porosf(6, iel)*vel(1, iel)  &
+                  + porosf(5, iel)*vel(2, iel)  &
+                  + porosf(3, iel)*vel(3, iel)
     enddo
   endif
 endif
@@ -231,13 +262,31 @@ if (itypfl.eq.1) then
       enddo
     enddo
   ! With porosity
-  else
+  else if (iporos.eq.1) then
     !$omp parallel do private(iel, isou) if(nfabor > thr_n_min)
     do ifac =1, nfabor
       iel = ifabor(ifac)
       do isou = 1, 3
         coefaq(isou,ifac) = romb(ifac)*coefav(isou,ifac)*porosi(iel)
       enddo
+    enddo
+  ! With anisotropic porosity
+  else if (iporos.eq.2) then
+    !$omp parallel do private(iel) if(nfabor > thr_n_min)
+    do ifac = 1, nfabor
+      iel = ifabor(ifac)
+      coefaq(1, ifac) = ( porosf(1, iel)*coefav(1, ifac)   &
+                        + porosf(4, iel)*coefav(2, ifac)   &
+                        + porosf(6, iel)*coefav(3, ifac) ) &
+                      * romb(ifac)
+      coefaq(2, ifac) = ( porosf(4, iel)*coefav(1, ifac)   &
+                        + porosf(2, iel)*coefav(2, ifac)   &
+                        + porosf(5, iel)*coefav(3, ifac) ) &
+                      * romb(ifac)
+      coefaq(3, ifac) = ( porosf(6, iel)*coefav(1, ifac)   &
+                        + porosf(5, iel)*coefav(2, ifac)   &
+                        + porosf(3, iel)*coefav(3, ifac) ) &
+                      * romb(ifac)
     enddo
   endif
 
@@ -253,13 +302,28 @@ else
       enddo
     enddo
   ! With porosity
-  else
+  else if (iporos.eq.1) then
     !$omp parallel do private(iel, isou) if(nfabor > thr_n_min)
     do ifac =1, nfabor
       iel = ifabor(ifac)
       do isou = 1, 3
         coefaq(isou,ifac) = coefav(isou,ifac)*porosi(iel)
       enddo
+    enddo
+  ! With anisotropic porosity
+  else if (iporos.eq.2) then
+    !$omp parallel do private(iel) if(nfabor > thr_n_min)
+    do ifac = 1, nfabor
+      iel = ifabor(ifac)
+      coefaq(1, ifac) = porosf(1, iel)*coefav(1, ifac)  &
+                      + porosf(4, iel)*coefav(2, ifac)  &
+                      + porosf(6, iel)*coefav(3, ifac)
+      coefaq(2, ifac) = porosf(4, iel)*coefav(1, ifac)  &
+                      + porosf(2, iel)*coefav(2, ifac)  &
+                      + porosf(5, iel)*coefav(3, ifac)
+      coefaq(3, ifac) = porosf(6, iel)*coefav(1, ifac)  &
+                      + porosf(5, iel)*coefav(2, ifac)  &
+                      + porosf(3, iel)*coefav(3, ifac)
     enddo
   endif
 

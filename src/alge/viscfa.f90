@@ -94,7 +94,7 @@ if (irangp.ge.0.or.iperio.eq.1) then
 endif
 
 ! Without porosity
-if (iporos.eq.0) then
+if (iporos.ne.1) then
   if (imvisf.eq.0) then
 
     do ifac = 1, nfac
@@ -161,7 +161,6 @@ else
       viscj = vistot(jj) * porosi(jj)
       surfn = surfan(ifac)
       pnd  = pond(ifac)
-
       viscf(ifac) = visci*viscj &
                   / (pnd*visci+(1.d0-pnd)*viscj)*surfan(ifac)/dist(ifac)
 

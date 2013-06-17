@@ -112,7 +112,7 @@ subroutine predvv &
 use paramx
 use dimens, only: ndimfb
 use numvar
-use pointe, only: forbr, porosi
+use pointe, only: forbr, porosi, porosf
 use entsor
 use cstphy
 use cstnum
@@ -206,6 +206,7 @@ double precision, dimension(:,:,:), allocatable :: fimp
 double precision, dimension(:,:), allocatable :: gavinj
 double precision, dimension(:,:), allocatable :: tsexp
 double precision, dimension(:,:,:), allocatable :: tsimp
+double precision, allocatable, dimension(:,:) :: viscce
 double precision, dimension(:,:), allocatable :: vect
 
 !===============================================================================
@@ -219,6 +220,7 @@ allocate(smbr(3,ncelet))
 allocate(fimp(3,3,ncelet))
 allocate(tsexp(3,ncelet))
 allocate(tsimp(3,3,ncelet))
+if (idften(iu).eq.6) allocate(viscce(6,ncelet))
 
 ! Allocate a temporary array for the prediction-stage error estimator
 if (iescal(iespre).gt.0) then
@@ -253,12 +255,6 @@ if(isno2t.gt.0) then
 else
   iptsna = 0
 endif
-
-! Compute the porosity if needed
-if (iterns.eq.1.and.iporos.eq.1) then
-  call usporo
-endif
-
 
 !===============================================================================
 ! 2.  GRADIENT DE PRESSION ET GRAVITE
@@ -349,14 +345,6 @@ call grdpot &
    rtpa(1,ipr)  , coefa(1,iclipr) , coefb(1,iclipr) ,             &
    grad   )
 
-! With porosity
-if (iporos.eq.1) then
-  do iel = 1, ncel
-    grad(iel,1) = grad(iel,1)*porosi(iel)
-    grad(iel,2) = grad(iel,2)*porosi(iel)
-    grad(iel,3) = grad(iel,3)*porosi(iel)
-  enddo
-endif
 
 !    Calcul des efforts aux parois (partie 2/5), si demande
 !    La pression a la face est calculee comme dans gradrc/gradmc
@@ -485,51 +473,110 @@ endif
 !         chaque fois (ie on pourrait le passer dans trava) mais ce n'est
 !         pas cher.
 if (iappel.eq.1) then
-
-  if (iphydr.eq.1) then
-    do iel = 1, ncel
-      trav(1,iel) = (frcxt(iel,1) - grad(iel,1)) * volume(iel)
-      trav(2,iel) = (frcxt(iel,2) - grad(iel,2)) * volume(iel)
-      trav(3,iel) = (frcxt(iel,3) - grad(iel,3)) * volume(iel)
-    enddo
-  elseif (iphydr.eq.2) then
-    do iel = 1, ncel
-      rom = propce(iel, ipcrom)
-      trav(1,iel) = (rom*gx - grdphd(iel,1)) * volume(iel)
-      trav(2,iel) = (rom*gy - grdphd(iel,2)) * volume(iel)
-      trav(3,iel) = (rom*gz - grdphd(iel,3)) * volume(iel)
-    enddo
+  ! Without porosity
+  if (iporos.eq.0) then
+    if (iphydr.eq.1) then
+      do iel = 1, ncel
+        trav(1,iel) = (frcxt(iel,1) - grad(iel,1)) * volume(iel)
+        trav(2,iel) = (frcxt(iel,2) - grad(iel,2)) * volume(iel)
+        trav(3,iel) = (frcxt(iel,3) - grad(iel,3)) * volume(iel)
+      enddo
+    elseif (iphydr.eq.2) then
+      do iel = 1, ncel
+        rom = propce(iel, ipcrom)
+        trav(1,iel) = (rom*gx - grdphd(iel,1)) * volume(iel)
+        trav(2,iel) = (rom*gy - grdphd(iel,2)) * volume(iel)
+        trav(3,iel) = (rom*gz - grdphd(iel,3)) * volume(iel)
+      enddo
+    else
+      do iel = 1, ncel
+        drom = (propce(iel,ipcrom)-ro0)
+        trav(1,iel) = (drom*gx - grad(iel,1)) * volume(iel)
+        trav(2,iel) = (drom*gy - grad(iel,2)) * volume(iel)
+        trav(3,iel) = (drom*gz - grad(iel,3)) * volume(iel)
+      enddo
+    endif
+  ! With porosity
   else
-    do iel = 1, ncel
-      drom = (propce(iel,ipcrom)-ro0)
-      trav(1,iel) = ( drom*gx - grad(iel,1) ) * volume(iel)
-      trav(2,iel) = ( drom*gy - grad(iel,2) ) * volume(iel)
-      trav(3,iel) = ( drom*gz - grad(iel,3) ) * volume(iel)
-    enddo
+    if (iphydr.eq.1) then
+      do iel = 1, ncel
+        trav(1,iel) = (frcxt(iel,1) - grad(iel,1)) * volume(iel) * porosi(iel)
+        trav(2,iel) = (frcxt(iel,2) - grad(iel,2)) * volume(iel) * porosi(iel)
+        trav(3,iel) = (frcxt(iel,3) - grad(iel,3)) * volume(iel) * porosi(iel)
+      enddo
+    elseif (iphydr.eq.2) then
+      do iel = 1, ncel
+        rom = propce(iel, ipcrom)
+        trav(1,iel) = (rom*gx - grdphd(iel,1)) * volume(iel) * porosi(iel)
+        trav(2,iel) = (rom*gy - grdphd(iel,2)) * volume(iel) * porosi(iel)
+        trav(3,iel) = (rom*gz - grdphd(iel,3)) * volume(iel) * porosi(iel)
+      enddo
+    else
+      do iel = 1, ncel
+        drom = (propce(iel,ipcrom)-ro0)
+        trav(1,iel) = (drom*gx - grad(iel,1) ) * volume(iel) * porosi(iel)
+        trav(2,iel) = (drom*gy - grad(iel,2) ) * volume(iel) * porosi(iel)
+        trav(3,iel) = (drom*gz - grad(iel,3) ) * volume(iel) * porosi(iel)
+      enddo
+    endif
+
   endif
 
 elseif(iappel.eq.2) then
 
-  if (iphydr.eq.1) then
-    do iel = 1, ncel
-      trav(1,iel) = trav(1,iel) + ( frcxt(iel,1) - grad(iel,1) ) * volume(iel)
-      trav(2,iel) = trav(2,iel) + ( frcxt(iel,2) - grad(iel,2) ) * volume(iel)
-      trav(3,iel) = trav(3,iel) + ( frcxt(iel,3) - grad(iel,3) ) * volume(iel)
-    enddo
-  elseif (iphydr.eq.2) then
-    do iel = 1, ncel
-      rom = propce(iel,ipcrom)
-      trav(1,iel) = trav(1,iel) + (rom*gx - grdphd(iel,1)) * volume(iel)
-      trav(2,iel) = trav(2,iel) + (rom*gy - grdphd(iel,2)) * volume(iel)
-      trav(3,iel) = trav(3,iel) + (rom*gz - grdphd(iel,3)) * volume(iel)
-    enddo
+  ! Without porosity
+  if (iporos.eq.0) then
+    if (iphydr.eq.1) then
+      do iel = 1, ncel
+        trav(1,iel) = trav(1,iel) + (frcxt(iel,1) - grad(iel,1))*volume(iel)
+        trav(2,iel) = trav(2,iel) + (frcxt(iel,2) - grad(iel,2))*volume(iel)
+        trav(3,iel) = trav(3,iel) + (frcxt(iel,3) - grad(iel,3))*volume(iel)
+      enddo
+    elseif (iphydr.eq.2) then
+      do iel = 1, ncel
+        rom = propce(iel, ipcrom)
+        trav(1,iel) = trav(1,iel) + (rom*gx - grdphd(iel,1))*volume(iel)
+        trav(2,iel) = trav(2,iel) + (rom*gy - grdphd(iel,2))*volume(iel)
+        trav(3,iel) = trav(3,iel) + (rom*gz - grdphd(iel,3))*volume(iel)
+      enddo
+    else
+      do iel = 1, ncel
+        drom = (propce(iel, ipcrom)-ro0)
+        trav(1,iel) = trav(1,iel) + (drom*gx - grad(iel,1))*volume(iel)
+        trav(2,iel) = trav(2,iel) + (drom*gy - grad(iel,2))*volume(iel)
+        trav(3,iel) = trav(3,iel) + (drom*gz - grad(iel,3))*volume(iel)
+      enddo
+    endif
+
+  ! With porosity
   else
-    do iel = 1, ncel
-      drom = (propce(iel,ipcrom)-ro0)
-      trav(1,iel) = trav(1,iel) + ( drom*gx - grad(iel,1) )*volume(iel)
-      trav(2,iel) = trav(2,iel) + ( drom*gy - grad(iel,2) )*volume(iel)
-      trav(3,iel) = trav(3,iel) + ( drom*gz - grad(iel,3) )*volume(iel)
-    enddo
+    if (iphydr.eq.1) then
+      do iel = 1, ncel
+        trav(1,iel) = trav(1,iel)                                           &
+                    + (frcxt(iel,1) - grad(iel,1))*volume(iel)*porosi(iel)
+        trav(2,iel) = trav(2,iel)                                           &
+                    + (frcxt(iel,2) - grad(iel,2))*volume(iel)*porosi(iel)
+        trav(3,iel) = trav(3,iel)                                           &
+                    + (frcxt(iel,3) - grad(iel,3))*volume(iel)*porosi(iel)
+      enddo
+    elseif (iphydr.eq.2) then
+      do iel = 1, ncel
+        rom = propce(iel, ipcrom)
+        trav(1,iel) = trav(1,iel)                                       &
+                    + (rom*gx - grdphd(iel,1))*volume(iel)*porosi(iel)
+        trav(2,iel) = trav(2,iel)                                       &
+                    + (rom*gy - grdphd(iel,2))*volume(iel)*porosi(iel)
+        trav(3,iel) = trav(3,iel)                                       &
+                    + (rom*gz - grdphd(iel,3))*volume(iel)*porosi(iel)
+      enddo
+    else
+      do iel = 1, ncel
+        drom = (propce(iel, ipcrom)-ro0)
+        trav(1,iel) = trav(1,iel) + (drom*gx - grad(iel,1))*volume(iel)*porosi(iel)
+        trav(2,iel) = trav(2,iel) + (drom*gy - grad(iel,2))*volume(iel)*porosi(iel)
+        trav(3,iel) = trav(3,iel) + (drom*gz - grad(iel,3))*volume(iel)*porosi(iel)
+      enddo
+    endif
   endif
 
 endif
@@ -641,7 +688,7 @@ if(     (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) &
   d2s3 = 2.d0/3.d0
 
   ! With porosity
-  if (iporos.eq.1) then
+  if (iporos.ge.1) then
     do iel = 1, ncel
       grad(iel,1) = grad(iel,1)*porosi(iel)
       grad(iel,2) = grad(iel,2)*porosi(iel)
@@ -750,7 +797,7 @@ if((ncepdp.gt.0).and.(iphydr.eq.0)) then
    coefa  , coefb  , ckupdc , trav   )
 
     ! With porosity
-    if (iporos.eq.1) then
+    if (iporos.ge.1) then
       do iel = 1, ncel
         trav(iel,1) = trav(iel,1)*porosi(iel)
         trav(iel,2) = trav(iel,2)*porosi(iel)
@@ -885,26 +932,72 @@ if (idiff(iu).ge. 1) then
     enddo
   endif
 
-  call viscfa &
-  !==========
- ( imvisf ,                                                       &
-   w1     ,                                                       &
-   viscf  , viscb  )
-
-  ! When using Rij-epsilon model with th option irijnu=1, the face
-  ! viscosity for the Matrix (viscfi and viscbi) is increased
-
-  if(itytur.eq.3.and.irijnu.eq.1) then
-
-    do iel = 1, ncel
-      w1(iel) = propce(iel,ipcvis) + idifft(iu)*propce(iel,ipcvst)
-    enddo
+  ! Scalar diffusivity (Default)
+  if (idften(iu).eq.1) then
 
     call viscfa &
     !==========
- ( imvisf ,                                                       &
-   w1     ,                                                       &
-   viscfi , viscbi )
+   ( imvisf ,                                                       &
+     w1     ,                                                       &
+     viscf  , viscb  )
+
+    ! When using Rij-epsilon model with the option irijnu=1, the face
+    ! viscosity for the Matrix (viscfi and viscbi) is increased
+    if(itytur.eq.3.and.irijnu.eq.1) then
+
+      do iel = 1, ncel
+        w1(iel) = propce(iel,ipcvis) + idifft(iu)*propce(iel,ipcvst)
+      enddo
+
+      call viscfa &
+      !==========
+   ( imvisf ,                                                       &
+     w1     ,                                                       &
+     viscfi , viscbi )
+    endif
+
+  ! Tensorial diffusion of the velocity (in case of tensorial porosity)
+  else if (idften(iu).eq.6) then
+
+    do iel = 1, ncel
+      do isou = 1, 3
+        viscce(isou, iel) = w1(iel)
+      enddo
+      do isou = 4, 6
+        viscce(isou, iel) = 0.d0
+      enddo
+    enddo
+
+    call vistnv &
+    !==========
+     ( imvisf ,                                                       &
+       viscce ,                                                       &
+       viscf  , viscb  )
+
+    ! When using Rij-epsilon model with the option irijnu=1, the face
+    ! viscosity for the Matrix (viscfi and viscbi) is increased
+    if(itytur.eq.3.and.irijnu.eq.1) then
+
+      do iel = 1, ncel
+        w1(iel) = propce(iel,ipcvis) + idifft(iu)*propce(iel,ipcvst)
+      enddo
+
+      do iel = 1, ncel
+        do isou = 1, 3
+          viscce(isou, iel) = w1(iel)
+        enddo
+        do isou = 4, 6
+          viscce(isou, iel) = 0.d0
+        enddo
+      enddo
+
+      call vistnv &
+      !==========
+       ( imvisf ,                                                       &
+         viscce ,                                                       &
+         viscfi , viscbi )
+
+    endif
   endif
 
 ! --- If no dissusion, viscosity is set to 0.
@@ -929,7 +1022,7 @@ else
 endif
 
 !===============================================================================
-! 3.  RESOLUTION IMPLICITE COUPLEE DES 3 COMPO. DE VITESSES
+! 3. Solving of the 3x3xNcel coupled system
 !===============================================================================
 
 
@@ -1348,7 +1441,7 @@ if ( ippmod(ielarc) .ge. 1 ) then
 endif
 
 ! With porosity: has to be done just before calling coditv
-if (iporos.eq.1) then
+if (iporos.ge.1) then
   do iel = 1, ncel
     do isou = 1, 3
       do jsou = 1, 3
@@ -1388,6 +1481,7 @@ thetap = thetav(iu)
 ippu   = ipprtp(iu)
 ippv   = ipprtp(iv)
 ippw   = ipprtp(iw)
+
 
 if(iappel.eq.1) then
 
@@ -1653,6 +1747,7 @@ deallocate(fimp)
 
 deallocate(tsexp)
 deallocate(tsimp)
+if (allocated(viscce)) deallocate(viscce)
 !--------
 ! Formats
 !--------

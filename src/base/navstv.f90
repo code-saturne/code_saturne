@@ -137,8 +137,10 @@ double precision vitbox, vitboy, vitboz
 
 double precision rvoid(1)
 
-double precision, allocatable, dimension(:), target :: viscf, viscb
-double precision, allocatable, dimension(:), target :: wvisfi, wvisbi
+double precision, allocatable, dimension(:,:,:), target :: viscf
+double precision, allocatable, dimension(:), target :: viscb
+double precision, allocatable, dimension(:,:,:), target :: wvisfi
+double precision, allocatable, dimension(:), target :: wvisbi
 double precision, allocatable, dimension(:) :: drtp, smbr
 double precision, allocatable, dimension(:,:) :: trav
 double precision, allocatable, dimension(:) :: w1
@@ -151,7 +153,8 @@ double precision, allocatable, dimension(:) :: esflum, esflub
 double precision, allocatable, dimension(:) :: intflx, bouflx
 double precision, allocatable, dimension(:) :: secvif, secvib
 
-double precision, pointer, dimension(:) :: viscfi => null(), viscbi => null()
+double precision, pointer, dimension(:,:,:) :: viscfi => null()
+double precision, pointer, dimension(:) :: viscbi => null()
 
 double precision, dimension(:,:), allocatable :: gradp
 double precision, dimension(:,:), allocatable :: vel
@@ -166,7 +169,12 @@ double precision, dimension(:), allocatable :: coefap
 !===============================================================================
 
 ! Allocate temporary arrays for the velocity-pressure resolution
-allocate(viscf(nfac), viscb(nfabor))
+if (idften(iu).eq.1) then
+  allocate(viscf(1, 1, nfac), viscb(nfabor))
+else if (idften(iu).eq.6) then
+  allocate(viscf(3, 3, nfac), viscb(nfabor))
+endif
+
 allocate(drtp(ncelet))
 allocate(trav(3,ncelet))
 allocate(vela(3,ncelet))
@@ -182,13 +190,24 @@ allocate(dfrcxt(ncelet,3))
 if (icalhy.eq.1) allocate(frchy(ncelet,ndim), dfrchy(ncelet,ndim))
 if (iphydr.eq.2) allocate(grdphd(ncelet,ndim))
 if (iescal(iestot).gt.0) allocate(esflum(nfac), esflub(nfabor))
-if (itytur.eq.3.and.irijnu.eq.1) then
-  allocate(wvisfi(nfac), wvisbi(nfabor))
-  viscfi => wvisfi(1:nfac)
-  viscbi => wvisbi(1:nfabor)
-else
-  viscfi => viscf(1:nfac)
-  viscbi => viscb(1:nfabor)
+if (idften(iu).eq.1) then
+  if (itytur.eq.3.and.irijnu.eq.1) then
+    allocate(wvisfi(1,1,nfac), wvisbi(nfabor))
+    viscfi => wvisfi(:,:,1:nfac)
+    viscbi => wvisbi(1:nfabor)
+  else
+    viscfi => viscf(:,:,1:nfac)
+    viscbi => viscb(1:nfabor)
+  endif
+else if(idften(iu).eq.6) then
+  if (itytur.eq.3.and.irijnu.eq.1) then
+    allocate(wvisfi(3,3,nfac), wvisbi(nfabor))
+    viscfi => wvisfi(1:3,1:3,1:nfac)
+    viscbi => wvisbi(1:nfabor)
+  else
+    viscfi => viscf(1:3,1:3,1:nfac)
+    viscbi => viscb(1:nfabor)
+  endif
 endif
 
 if (ivisse.eq.1) then

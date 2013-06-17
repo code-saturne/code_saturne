@@ -120,6 +120,7 @@ use pointe
 use numvar
 use parall
 use period
+use optcal, only: iporos
 use mesh
 
 !===============================================================================
@@ -138,7 +139,7 @@ double precision epsrgp , climgp , extrap
 double precision pvar(ncelet), coefap(nfabor), coefbp(nfabor)
 double precision cofafp(nfabor), cofbfp(nfabor)
 double precision viscf(nfac), viscb(nfabor)
-double precision viscel(6,ncelet)
+double precision, target :: viscel(6,ncelet)
 double precision weighf(2,nfac), weighb(nfabor)
 double precision diverg(ncelet)
 double precision fextx(ncelet),fexty(ncelet),fextz(ncelet)
@@ -146,16 +147,17 @@ double precision fextx(ncelet),fexty(ncelet),fextz(ncelet)
 ! Local variables
 
 integer          ifac, ii, jj, i, ig, it
+integer          isou, iel
 double precision pfac, flux
 double precision pi, pj
 double precision diippf(3), djjppf(3), pipp, pjpp
 double precision visci(3,3), viscj(3,3)
 double precision fikdvi, fjkdvi
 
-
-
 double precision rvoid(1)
 
+double precision, pointer, dimension(:,:) :: viscce => null()
+double precision, dimension(:,:), allocatable, target :: w2
 double precision, allocatable, dimension(:,:) :: grad
 
 !===============================================================================
@@ -234,6 +236,35 @@ endif
 
 if (nswrgp.gt.1) then
 
+  ! Without porosity
+  if (iporos.eq.0) then
+    viscce => viscel(:,:)
+
+  ! With porosity
+  else if (iporos.eq.1) then
+    allocate(w2(6, ncelet))
+    do iel = 1, ncel
+      do isou = 1, 6
+        w2(isou, iel) = porosi(iel)*viscel(isou, iel)
+      enddo
+    enddo
+    viscce => w2(:,:)
+
+  ! With tensorial porosity
+  else if (iporos.eq.2) then
+    allocate(w2(6,ncelet))
+    do iel = 1, ncel
+      call symmetric_matrix_product(w2(1, iel), porosf(1, iel), viscel(1, iel))
+    enddo
+    viscce => w2(:,:)
+  endif
+
+  ! ---> Periodicity and parallelism treatment of symmetric tensors
+
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call syntis(viscce)
+  endif
+
   ! Allocate a work array for the gradient calculation
   allocate(grad(ncelet,3))
 
@@ -245,12 +276,6 @@ if (nswrgp.gt.1) then
    fextx  , fexty  , fextz  ,                                     &
    pvar   , coefap , coefbp ,                                     &
    grad   )
-
-  ! Handle parallelism and periodicity
-
-  if (irangp.ge.0.or.iperio.eq.1) then
-    call syntis(viscel)
-  endif
 
   ! Mass flow through interior faces
 
@@ -270,15 +295,15 @@ if (nswrgp.gt.1) then
         ! Recompute II" and JJ"
         !----------------------
 
-        visci(1,1) = viscel(1,ii)
-        visci(2,2) = viscel(2,ii)
-        visci(3,3) = viscel(3,ii)
-        visci(1,2) = viscel(4,ii)
-        visci(2,1) = viscel(4,ii)
-        visci(2,3) = viscel(5,ii)
-        visci(3,2) = viscel(5,ii)
-        visci(1,3) = viscel(6,ii)
-        visci(3,1) = viscel(6,ii)
+        visci(1,1) = viscce(1,ii)
+        visci(2,2) = viscce(2,ii)
+        visci(3,3) = viscce(3,ii)
+        visci(1,2) = viscce(4,ii)
+        visci(2,1) = viscce(4,ii)
+        visci(2,3) = viscce(5,ii)
+        visci(3,2) = viscce(5,ii)
+        visci(1,3) = viscce(6,ii)
+        visci(3,1) = viscce(6,ii)
 
         ! IF.Ki.S / ||Ki.S||^2
         fikdvi = weighf(1,ifac)
@@ -291,15 +316,15 @@ if (nswrgp.gt.1) then
                              + visci(i,3)*surfac(3,ifac) )
         enddo
 
-        viscj(1,1) = viscel(1,jj)
-        viscj(2,2) = viscel(2,jj)
-        viscj(3,3) = viscel(3,jj)
-        viscj(1,2) = viscel(4,jj)
-        viscj(2,1) = viscel(4,jj)
-        viscj(2,3) = viscel(5,jj)
-        viscj(3,2) = viscel(5,jj)
-        viscj(1,3) = viscel(6,jj)
-        viscj(3,1) = viscel(6,jj)
+        viscj(1,1) = viscce(1,jj)
+        viscj(2,2) = viscce(2,jj)
+        viscj(3,3) = viscce(3,jj)
+        viscj(1,2) = viscce(4,jj)
+        viscj(2,1) = viscce(4,jj)
+        viscj(2,3) = viscce(5,jj)
+        viscj(3,2) = viscce(5,jj)
+        viscj(1,3) = viscce(6,jj)
+        viscj(3,1) = viscce(6,jj)
 
         ! FJ.Kj.S / ||Kj.S||^2
         fjkdvi = weighf(2,ifac)
@@ -344,15 +369,15 @@ if (nswrgp.gt.1) then
         ! Recompute II"
         !--------------
 
-        visci(1,1) = viscel(1,ii)
-        visci(2,2) = viscel(2,ii)
-        visci(3,3) = viscel(3,ii)
-        visci(1,2) = viscel(4,ii)
-        visci(2,1) = viscel(4,ii)
-        visci(2,3) = viscel(5,ii)
-        visci(3,2) = viscel(5,ii)
-        visci(1,3) = viscel(6,ii)
-        visci(3,1) = viscel(6,ii)
+        visci(1,1) = viscce(1,ii)
+        visci(2,2) = viscce(2,ii)
+        visci(3,3) = viscce(3,ii)
+        visci(1,2) = viscce(4,ii)
+        visci(2,1) = viscce(4,ii)
+        visci(2,3) = viscce(5,ii)
+        visci(3,2) = viscce(5,ii)
+        visci(1,3) = viscce(6,ii)
+        visci(3,1) = viscce(6,ii)
 
         ! IF.Ki.S / ||Ki.S||^2
         fikdvi = weighb(ifac)
@@ -384,6 +409,8 @@ if (nswrgp.gt.1) then
   deallocate(grad)
 
 endif
+
+if (allocated(w2)) deallocate(w2)
 
 !--------
 ! Formats
