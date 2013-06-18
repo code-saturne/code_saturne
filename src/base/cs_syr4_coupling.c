@@ -647,7 +647,7 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
 
   if (coupling_ent->n_elts > 0) {
 
-    if (locate_on_closest != NULL)
+    if (syr_coupling->visualization >= 0)
       BFT_MALLOC(cs_to_syr_dist, coupling_ent->n_elts, float);
 
     BFT_MALLOC(elt_centers,
@@ -683,7 +683,7 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
   if (elt_centers != NULL)
     BFT_FREE(elt_centers);
 
-  if (syr_coupling->visualization != 0 && locate_on_closest != NULL) {
+  if (syr_coupling->visualization >= 0) {
 
     cs_post_activate_writer(0, 1);
     cs_post_write_meshes(cs_glob_time_step);
@@ -698,9 +698,10 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                       NULL,
                       cs_to_syr_dist,
                       NULL);  /* time-independent variable */
-  }
 
-  BFT_FREE(cs_to_syr_dist);
+    BFT_FREE(cs_to_syr_dist);
+
+  }
 
   /* Post-process distances from SYRTHES points to Code_Saturne faces */
 

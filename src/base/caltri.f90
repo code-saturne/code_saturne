@@ -91,7 +91,6 @@ integer          idebra, ifinra
 integer          iiii
 
 integer          modhis, iappel, modntl, iisuit, iwarn0
-integer          ntcam1
 integer          ivar
 
 integer          inod   , idim
@@ -762,10 +761,8 @@ if (itrale.gt.0) then
     !==========
   endif
 
-  ntcam1 = ntcabs - 1
-
-  if (ntmabs .eq. ntcam1) then
-    call csexit (0)
+  if (ntmabs .eq. ntcabs .and. inpdt0.eq.0) then
+    call csexit (1)
     !==========
   endif
 
@@ -1279,8 +1276,6 @@ call dmtmps(tecrf2)
 if(iwarn0.gt.0) then
   write(nfecra,4010)tecrf2-tecrf1
 endif
-
- 200  continue
 
 !===============================================================================
 ! Memory usage
