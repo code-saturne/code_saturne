@@ -83,6 +83,7 @@ subroutine dttvar &
 use paramx
 use dimens, only: ndimfb
 use numvar
+use cplsat
 use cstnum
 use cstphy
 use optcal
@@ -125,11 +126,11 @@ integer          inc, iccocg
 integer          nswrgp, imligp
 integer          ipcrom, ipbrom, iivar
 integer          nbrval
-integer          ipccou, ipcfou
+integer          ipccou, ipcfou, ntcam1
 
 double precision epsrgp, climgp, extrap
 double precision cfmax,cfmin, coufou, w1min, w2min, w3min
-double precision unpvdt, rom
+double precision unpvdt, rom, dtloc
 double precision xyzmax(3), xyzmin(3)
 double precision dtsdtm,dtsdt0
 double precision hint
@@ -533,6 +534,7 @@ if (idtvar.ge.0) then
 ! ---> PAS DE TEMPS UNIFORME : on reuniformise le pas de temps
 
       if (idtvar.eq.1) then
+
         w3min = grand
         do iel = 1, ncel
           w3min = min(w3min,dt(iel))
@@ -541,6 +543,7 @@ if (idtvar.ge.0) then
           call parmin (w3min)
           !==========
         endif
+
         do iel = 1, ncel
           dt(iel) = w3min
         enddo
@@ -554,18 +557,50 @@ if (idtvar.ge.0) then
     icfmin = 0
     icfmax = 0
 
-    do iel = 1, ncel
+    if (idtvar.eq.1) then
 
-      if( dt(iel).gt.dtmax      ) then
-        icfmax = icfmax +1
-        dt(iel) = dtmax
+      dtloc = dt(1)
+      if (dtloc.gt.dtmax) then
+        dtloc = dtmax
+        icfmax = icfmax + ncel
       endif
-      if( dt(iel).lt.dtmin      ) then
-        icfmin = icfmin +1
-        dt(iel) = dtmin
+      if (dtloc.lt.dtmin) then
+        dtloc = dtmin
+        icfmin = icfmin + ncel
       endif
 
-    enddo
+      ntcam1 = ntcabs - 1
+      call cplsyn (ntmabs, ntcam1, dtloc)
+      !==========
+      if (ntmabs.lt.ntcabs) then
+        call csexit(1)
+      endif
+
+      ttcabs = ttcabs + (dtloc - dt(1))
+      if (imobil.eq.1) then
+        ttcmob = ttcmob + (dtloc - dt(1))
+      endif
+
+      do iel = 1, ncel
+        dt(iel) = dtloc
+      enddo
+
+    else
+
+      do iel = 1, ncel
+
+        if( dt(iel).gt.dtmax      ) then
+          icfmax = icfmax +1
+          dt(iel) = dtmax
+        endif
+        if( dt(iel).lt.dtmin      ) then
+          icfmin = icfmin +1
+          dt(iel) = dtmin
+        endif
+
+      enddo
+
+    endif
 
     if (irangp.ge.0) then
       call parcpt (icfmin)

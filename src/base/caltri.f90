@@ -94,7 +94,7 @@ integer          modhis, iappel, modntl, iisuit, iwarn0
 integer          ivar
 
 integer          inod   , idim
-integer          itrale
+integer          itrale , ntmsav
 
 integer          nent
 
@@ -160,8 +160,17 @@ istpp1 = 0
 ttchis = -1.d0
 
 ! Test presence of control_file to modify ntmabs if required
+!
+
+ntmsav = ntmabs
+
 call modpar
 !==========
+
+if (idtvar.eq.1 .and. ntmsav.gt.ntmabs .and. ntmabs.eq.ntcabs) then
+  call cplact(ivoid(1))
+  if (ivoid(1).gt.0) ntmabs = ntmabs+1
+endif
 
 !===============================================================================
 ! Geometry
@@ -753,10 +762,10 @@ endif
 
 if (itrale.gt.0) then
 
-  if (idtvar.eq.0.or.idtvar.eq.1) then
+  if (idtvar.eq.0) then
     call cplsyn (ntmabs, ntcabs, ra(idt))
     !==========
-  else
+  else if (idtvar.ne.1) then ! synchronization in dttvar if idtvar = 1
     call cplsyn (ntmabs, ntcabs, dtref)
     !==========
   endif
@@ -929,10 +938,10 @@ endif
 
 ! Stop test for couplings
 
-if (idtvar.eq.0.or.idtvar.eq.1) then
+if (idtvar.eq.0) then
   call cplsyn (ntmabs, ntcabs, ra(idt))
   !==========
-else
+else if (idtvar.ne.1) then ! synchronization in dttvar if idtvar = 1
   call cplsyn (ntmabs, ntcabs, dtref)
   !==========
 endif
@@ -1156,6 +1165,12 @@ itrale = itrale + 1
 
 if(ntcabs.lt.ntmabs) goto 100
 
+! Final synchronization for variable time step
+
+if (idtvar.eq.1) then
+  call cplsyn (ntmabs, ntcabs, dtref)
+  !==========
+endif
 
 ! LIBERATION DES TABLEAUX INTERMEDIAIRES (PDC+TSM)
 

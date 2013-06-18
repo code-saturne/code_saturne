@@ -87,6 +87,23 @@ void CS_PROCF(cplsyn, CPLSYN)
  cs_real_t        *dtref
  );
 
+/*----------------------------------------------------------------------------
+ * Indicate if there are synchronized applications in the same
+ * PLE coupling group.
+ *
+ * Fortran Interface:
+ *
+ * subroutine cplact (isync)
+ * *****************
+ *
+ * integer          isync       : <-- : 1 if synchronized, 0 otherwise
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(cplact, CPLACT)
+(
+ cs_int_t         *isync
+);
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -224,6 +241,17 @@ cs_coupling_sync_apps(int      flags,
                       int      current_ts_id,
                       int     *max_ts_id,
                       double  *ts);
+
+/*----------------------------------------------------------------------------
+ * Indicate is synchronization with applications in the same
+ * PLE group is active.
+ *
+ * return:
+ *   true if synchronization is required, false otherwise
+ *----------------------------------------------------------------------------*/
+
+bool
+cs_coupling_is_sync_active(void);
 
 /*----------------------------------------------------------------------------
  * Compute extents of a mesh representation

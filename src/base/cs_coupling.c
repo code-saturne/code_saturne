@@ -140,6 +140,29 @@ void CS_PROCF(cplsyn, CPLSYN)
   *dtref = ts;
 }
 
+/*----------------------------------------------------------------------------
+ * Indicate if there are synchronized applications in the same
+ * PLE coupling group.
+ *
+ * Fortran Interface:
+ *
+ * subroutine cplact (isync)
+ * *****************
+ *
+ * integer          isync       : <-- : 1 if synchronized, 0 otherwise
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(cplact, CPLACT)
+(
+ cs_int_t         *isync
+)
+{
+  if (cs_coupling_is_sync_active())
+    *isync = 1;
+  else
+    *isync = 0;
+}
+
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -533,6 +556,61 @@ cs_coupling_sync_apps(int      flags,
   return;
 
 #endif /* PLE_HAVE_MPI */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Indicate is synchronization with applications in the same
+ *        PLE group is active.
+ *
+ * \return  true if synchronization is required, false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_coupling_is_sync_active(void)
+{
+  bool retval = false;
+
+#if defined(PLE_HAVE_MPI)
+
+  if (_cs_glob_coupling_mpi_app_world != NULL) {
+
+    int i;
+    int n_apps
+      = ple_coupling_mpi_set_n_apps(_cs_glob_coupling_mpi_app_world);
+    int app_id
+      = ple_coupling_mpi_set_get_app_id(_cs_glob_coupling_mpi_app_world);
+
+    const int *app_status = NULL;
+
+    /* Set synchronization flag */
+
+    app_status
+      = ple_coupling_mpi_set_get_status(_cs_glob_coupling_mpi_app_world);
+
+    /* Synchronize applications */
+
+    app_status
+      = ple_coupling_mpi_set_get_status(_cs_glob_coupling_mpi_app_world);
+
+    /* Check if we should use the smallest time step */
+
+    if (app_status[app_id] & PLE_COUPLING_NO_SYNC)
+      return retval;
+
+    /* Loop on applications */
+
+    for (i = 0; i < n_apps; i++) {
+      if (!(app_status[i] & PLE_COUPLING_NO_SYNC))
+        retval = true;
+    }
+  }
+
+#endif /* PLE_HAVE_MPI */
+
+  return retval;
+
 }
 
 /*----------------------------------------------------------------------------*/
