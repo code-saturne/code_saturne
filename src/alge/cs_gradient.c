@@ -506,7 +506,7 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
 
   cs_gnum_t  n_clip = 0, n_g_clip = 0;
   cs_real_t  min_factor = 1, max_factor = 0;
-  cs_real_t  *restrict buf = NULL, *restrict clip_factor = NULL;
+  cs_real_t  *buf = NULL, *restrict clip_factor = NULL;
   cs_real_t  *restrict denom = NULL, *restrict denum = NULL;
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
