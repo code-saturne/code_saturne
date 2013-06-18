@@ -92,7 +92,7 @@ static cs_real_t  *_cs_glob_halo_rot_backup = NULL;
 
 /* Should we use barriers after posting receives ? */
 
-static int _cs_glob_halo_use_barrier = 1;
+static int _cs_glob_halo_use_barrier = false;
 
 /*============================================================================
  * Private function definitions
@@ -383,8 +383,6 @@ cs_halo_create(cs_interface_set_t  *ifs)
     cs_lnum_t  *order = NULL;
     cs_gnum_t  *buffer = NULL;
 
-    assert(sizeof(cs_lnum_t) == sizeof(cs_int_t));
-
     BFT_MALLOC(order, halo->n_c_domains - 1, cs_lnum_t);
     BFT_MALLOC(buffer, halo->n_c_domains - 1, cs_gnum_t);
 
@@ -397,15 +395,15 @@ cs_halo_create(cs_interface_set_t  *ifs)
                             halo->n_c_domains - 1);
 
     for (i = 0; i < halo->n_c_domains - 1; i++)
-      halo->c_domain_rank[i+1] = (cs_int_t)buffer[order[i]];
+      halo->c_domain_rank[i+1] = (cs_lnum_t)buffer[order[i]];
 
     BFT_FREE(buffer);
     BFT_FREE(order);
 
   } /* End of ordering ranks */
 
-  BFT_MALLOC(halo->send_index, 2*halo->n_c_domains + 1, cs_int_t);
-  BFT_MALLOC(halo->index, 2*halo->n_c_domains + 1, cs_int_t);
+  BFT_MALLOC(halo->send_index, 2*halo->n_c_domains + 1, cs_lnum_t);
+  BFT_MALLOC(halo->index, 2*halo->n_c_domains + 1, cs_lnum_t);
 
   for (i = 0; i < 2*halo->n_c_domains + 1; i++) {
     halo->send_index[i] = 0;
@@ -431,8 +429,8 @@ cs_halo_create(cs_interface_set_t  *ifs)
 
     perio_lst_size = 2*halo->n_transforms * 2*halo->n_c_domains;
 
-    BFT_MALLOC(halo->send_perio_lst, perio_lst_size, cs_int_t);
-    BFT_MALLOC(halo->perio_lst, perio_lst_size, cs_int_t);
+    BFT_MALLOC(halo->send_perio_lst, perio_lst_size, cs_lnum_t);
+    BFT_MALLOC(halo->perio_lst, perio_lst_size, cs_lnum_t);
 
     for (i = 0; i < perio_lst_size; i++) {
       halo->send_perio_lst[i] = 0;
@@ -461,7 +459,7 @@ cs_halo_create(cs_interface_set_t  *ifs)
 cs_halo_t *
 cs_halo_create_from_ref(const cs_halo_t  *ref)
 {
-  cs_int_t  i;
+  cs_lnum_t  i;
 
   cs_halo_t  *halo = NULL;
 
@@ -480,8 +478,8 @@ cs_halo_create_from_ref(const cs_halo_t  *ref)
   for (i = 0; i < halo->n_c_domains; i++)
     halo->c_domain_rank[i] = ref->c_domain_rank[i];
 
-  BFT_MALLOC(halo->send_index, 2*halo->n_c_domains + 1, cs_int_t);
-  BFT_MALLOC(halo->index, 2*halo->n_c_domains + 1, cs_int_t);
+  BFT_MALLOC(halo->send_index, 2*halo->n_c_domains + 1, cs_lnum_t);
+  BFT_MALLOC(halo->index, 2*halo->n_c_domains + 1, cs_lnum_t);
 
   for (i = 0; i < 2*halo->n_c_domains + 1; i++) {
     halo->send_index[i] = 0;
@@ -493,10 +491,10 @@ cs_halo_create_from_ref(const cs_halo_t  *ref)
 
   if (halo->n_transforms > 0) {
 
-    cs_int_t  perio_lst_size = 2*halo->n_transforms * 2*halo->n_c_domains;
+    cs_lnum_t  perio_lst_size = 2*halo->n_transforms * 2*halo->n_c_domains;
 
-    BFT_MALLOC(halo->send_perio_lst, perio_lst_size, cs_int_t);
-    BFT_MALLOC(halo->perio_lst, perio_lst_size, cs_int_t);
+    BFT_MALLOC(halo->send_perio_lst, perio_lst_size, cs_lnum_t);
+    BFT_MALLOC(halo->perio_lst, perio_lst_size, cs_lnum_t);
 
     for (i = 0; i < perio_lst_size; i++) {
       halo->send_perio_lst[i] = 0;
@@ -593,7 +591,7 @@ cs_halo_update_buffers(const cs_halo_t *halo)
 
     size_t send_buffer_size =   CS_MAX(halo->n_send_elts[CS_HALO_EXTENDED],
                                        halo->n_elts[CS_HALO_EXTENDED])
-                              * CS_MAX(sizeof(cs_int_t), sizeof(cs_real_t)) * 3;
+                              * CS_MAX(sizeof(cs_lnum_t), sizeof(cs_real_t)) * 3;
 
     int n_requests = halo->n_c_domains*2;
 
@@ -678,13 +676,13 @@ cs_halo_free_buffer(void)
  *---------------------------------------------------------------------------*/
 
 void
-cs_halo_renumber_cells(cs_halo_t       *halo,
-                       const cs_int_t   new_cell_id[])
+cs_halo_renumber_cells(cs_halo_t        *halo,
+                       const cs_lnum_t   new_cell_id[])
 {
   if (halo != NULL) {
 
-    cs_int_t i;
-    const cs_int_t n_elts = halo->n_send_elts[CS_HALO_EXTENDED];
+    cs_lnum_t i;
+    const cs_lnum_t n_elts = halo->n_send_elts[CS_HALO_EXTENDED];
 
     for (i = 0; i < n_elts; i++)
       halo->send_list[i] = new_cell_id[halo->send_list[i]];
@@ -720,7 +718,7 @@ cs_halo_sync_untyped(const cs_halo_t  *halo,
   cs_lnum_t i, start, length;
   size_t j;
 
-  cs_int_t end_shift = 0;
+  cs_lnum_t end_shift = 0;
   int local_rank_id = (cs_glob_n_ranks == 1) ? 0 : -1;
   unsigned char *src;
   unsigned char *restrict _val = val;
@@ -880,11 +878,11 @@ cs_halo_sync_untyped(const cs_halo_t  *halo,
 void
 cs_halo_sync_num(const cs_halo_t  *halo,
                  cs_halo_type_t    sync_mode,
-                 cs_int_t          num[])
+                 cs_lnum_t         num[])
 {
   cs_lnum_t i, start, length;
 
-  cs_int_t end_shift = 0;
+  cs_lnum_t end_shift = 0;
   int local_rank_id = (cs_glob_n_ranks == 1) ? 0 : -1;
 
   if (sync_mode == CS_HALO_STANDARD)
@@ -899,7 +897,7 @@ cs_halo_sync_num(const cs_halo_t  *halo,
 
     int rank_id;
     int request_count = 0;
-    cs_int_t *build_buffer = (cs_int_t *)_cs_glob_halo_send_buffer;
+    cs_lnum_t *build_buffer = (cs_lnum_t *)_cs_glob_halo_send_buffer;
     const int local_rank = cs_glob_rank_id;
 
     /* Receive data from distant ranks */
@@ -984,7 +982,7 @@ cs_halo_sync_num(const cs_halo_t  *halo,
 
     if (local_rank_id > -1) {
 
-      cs_int_t *recv_num
+      cs_lnum_t *recv_num
         = num + halo->n_local_elts + halo->index[2*local_rank_id];
 
       start = halo->send_index[2*local_rank_id];
@@ -1152,7 +1150,7 @@ cs_halo_sync_var_strided(const cs_halo_t  *halo,
 {
   cs_lnum_t i, j, start, length;
 
-  cs_int_t end_shift = 0;
+  cs_lnum_t end_shift = 0;
   int local_rank_id = (cs_glob_n_ranks == 1) ? 0 : -1;
 
 #if defined(HAVE_MPI)
@@ -1412,15 +1410,29 @@ cs_halo_sync_components_strided(const cs_halo_t    *halo,
 }
 
 /*----------------------------------------------------------------------------
+ * Return MPI_Barrier usage flag.
+ *
+ * returns:
+ *   true if MPI barriers are used after posting receives and before posting
+ *   sends, false otherwise
+ *---------------------------------------------------------------------------*/
+
+bool
+cs_halo_get_use_barrier(void)
+{
+  return _cs_glob_halo_use_barrier;
+}
+
+/*----------------------------------------------------------------------------
  * Set MPI_Barrier usage flag.
  *
  * parameters:
- *   use_barrier <-- if 1, use MPI barriers after posting receives and
- *                   before posting sends. if 0, do not use barriers;
+ *   use_barrier <-- true if MPI barriers should be used after posting
+ *                   receives and before posting sends, false otherwise.
  *---------------------------------------------------------------------------*/
 
 void
-cs_halo_set_use_barrier(int use_barrier)
+cs_halo_set_use_barrier(bool use_barrier)
 {
   _cs_glob_halo_use_barrier = use_barrier;
 }
@@ -1436,9 +1448,9 @@ cs_halo_set_use_barrier(int use_barrier)
 
 void
 cs_halo_dump(const cs_halo_t  *halo,
-             cs_int_t          print_level)
+             int               print_level)
 {
-  cs_int_t  i, j, halo_id;
+  cs_lnum_t  i, j, halo_id;
 
   if (halo == NULL) {
     bft_printf("\n\n  halo: nil\n");
@@ -1462,8 +1474,8 @@ cs_halo_dump(const cs_halo_t  *halo,
 
   for (halo_id = 0; halo_id < 2; halo_id++) {
 
-    cs_int_t  n_elts[2];
-    cs_int_t  *index = NULL, *list = NULL, *perio_lst = NULL;
+    cs_lnum_t  n_elts[2];
+    cs_lnum_t  *index = NULL, *list = NULL, *perio_lst = NULL;
 
     bft_printf("\n    ---------\n");
 
@@ -1497,7 +1509,7 @@ cs_halo_dump(const cs_halo_t  *halo,
 
     if (halo->n_transforms > 0) {
 
-      const cs_int_t  stride = 4*halo->n_c_domains;
+      const cs_lnum_t  stride = 4*halo->n_c_domains;
 
       for (i = 0; i < halo->n_transforms; i++) {
 

@@ -41,7 +41,7 @@
 BEGIN_C_DECLS
 
 /*=============================================================================
- * Local Type definitions
+ * Type definitions
  *============================================================================*/
 
 /* Halo type */
@@ -64,11 +64,6 @@ typedef enum {
 
 } cs_halo_rotation_t ;
 
-
-/*============================================================================
- * Type definition
- *============================================================================*/
-
 /* Structure for halo management */
 /* ----------------------------- */
 
@@ -85,23 +80,23 @@ typedef struct {
   int       n_rotations;     /* Number of periodic transformations
                                 involving rotations */
 
-  cs_int_t  n_local_elts;    /* Number of local elements */
+  cs_lnum_t  n_local_elts;   /* Number of local elements */
 
   /* send_halo features : send to distant ranks */
 
-  cs_int_t  n_send_elts[2];    /* Numer of ghost elements in send_list
+  cs_lnum_t  n_send_elts[2];   /* Numer of ghost elements in send_list
                                 n_elts[0] = standard elements
                                 n_elts[1] = extended + standard elements */
 
-  cs_int_t  *send_list;        /* List of local elements in distant halos
+  cs_lnum_t  *send_list;       /* List of local elements in distant halos
                                   (0 to n-1 numbering) */
 
-  cs_int_t  *send_index;       /* Index on send_list
+  cs_lnum_t  *send_index;      /* Index on send_list
                                   Size = 2*n_c_domains + 1. For each rank, we
                                   have an index for standard halo and one
                                   for extended halo. */
 
-  cs_int_t  *send_perio_lst ;  /* For each transformation and for each type of
+  cs_lnum_t  *send_perio_lst ; /* For each transformation and for each type of
                                   halo on each communicating rank, we store
                                   2 values:
                                    - start index,
@@ -109,16 +104,16 @@ typedef struct {
 
   /* halo features : receive from distant ranks */
 
-  cs_int_t  n_elts[2];      /* Numer of ghost elements in halo
+  cs_lnum_t  n_elts[2];       /* Numer of ghost elements in halo
                                  n_elts[0] = standard elements
                                  n_elts[1] = extended + standard elements */
 
-  cs_int_t  *index;         /* Index on halo sections;
+  cs_lnum_t  *index;        /* Index on halo sections;
                                Size = 2*n_c_domains. For each rank, we
                                have an index for the standard halo and one
                                for the extended halo. */
 
-  cs_int_t  *perio_lst;     /* For each transformation and for each type of halo
+  cs_lnum_t  *perio_lst;    /* For each transformation and for each type of halo
                                on each communicating rank, we store 2 values:
                                  - start index,
                                  - number of elements. */
@@ -242,8 +237,8 @@ cs_halo_free_buffer(void);
  *---------------------------------------------------------------------------*/
 
 void
-cs_halo_renumber_cells(cs_halo_t       *halo,
-                       const cs_int_t   new_cell_id[]);
+cs_halo_renumber_cells(cs_halo_t        *halo,
+                       const cs_lnum_t   new_cell_id[]);
 
 /*----------------------------------------------------------------------------
  * Update array of any type of halo values in case of parallelism or
@@ -286,7 +281,7 @@ cs_halo_sync_untyped(const cs_halo_t  *halo,
 void
 cs_halo_sync_num(const cs_halo_t  *halo,
                  cs_halo_type_t    sync_mode,
-                 cs_int_t          num[]);
+                 cs_lnum_t         num[]);
 
 /*----------------------------------------------------------------------------
  * Update array of variable (floating-point) halo values in case of
@@ -395,15 +390,26 @@ cs_halo_sync_components_strided(const cs_halo_t    *halo,
                                 int                 stride);
 
 /*----------------------------------------------------------------------------
+ * Return MPI_Barrier usage flag.
+ *
+ * returns:
+ *   true if MPI barriers are used after posting receives and before posting
+ *   sends, false otherwise
+ *---------------------------------------------------------------------------*/
+
+bool
+cs_halo_get_use_barrier(void);
+
+/*----------------------------------------------------------------------------
  * Set MPI_Barrier usage flag.
  *
  * parameters:
- *   use_barrier <-- if 1, use MPI barriers after posting receives and
- *                   before posting sends. if 0, do not use barriers;
+ *   use_barrier <-- true if MPI barriers should be used after posting
+ *                   receives and before posting sends, false otherwise.
  *---------------------------------------------------------------------------*/
 
 void
-cs_halo_set_use_barrier(int use_barrier);
+cs_halo_set_use_barrier(bool use_barrier);
 
 /*----------------------------------------------------------------------------
  * Dump a cs_halo_t structure.
@@ -416,7 +422,7 @@ cs_halo_set_use_barrier(int use_barrier);
 
 void
 cs_halo_dump(const cs_halo_t  *halo,
-             cs_int_t          print_level);
+             int               print_level);
 
 /*----------------------------------------------------------------------------*/
 

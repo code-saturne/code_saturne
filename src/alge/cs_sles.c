@@ -2667,12 +2667,17 @@ cs_sles_finalize(void)
 void
 cs_sles_set_mpi_reduce_comm(MPI_Comm comm)
 {
+  static flag = -1;
+
+  if (flag < 0)
+    flag = cs_halo_get_use_barrier();
+
   _cs_sles_mpi_reduce_comm = comm;
 
   if (comm != cs_glob_mpi_comm)
     cs_halo_set_use_barrier(0);
   else {
-    cs_halo_set_use_barrier(1);
+    cs_halo_set_use_barrier(flag);
     if (cs_glob_n_ranks < 2)
       _cs_sles_mpi_reduce_comm = MPI_COMM_NULL;
   }
