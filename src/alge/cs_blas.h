@@ -97,6 +97,23 @@ cs_dot(cs_lnum_t         n,
        const cs_real_t  *y);
 
 /*----------------------------------------------------------------------------
+ * Return dot products of a vector with itself: x.x
+ *
+ * For better precision, a superblock algorithm is used.
+ *
+ * parameters:
+ *   n  <-- size of arrays x and y
+ *   x  <-- array of floating-point values
+ *
+ * returns:
+ *   dot product
+ *----------------------------------------------------------------------------*/
+
+double
+cs_dot_xx(cs_lnum_t         n,
+          const cs_real_t  *x);
+
+/*----------------------------------------------------------------------------
  * Return the double dot product of 2 vectors: x.x, and x.y
  *
  * The products could be computed separately, but computing them

@@ -183,6 +183,65 @@ cs_dot(cs_lnum_t         n,
 }
 
 /*----------------------------------------------------------------------------
+ * Return dot products of a vector with itself: x.x
+ *
+ * For better precision, a superblock algorithm is used.
+ *
+ * parameters:
+ *   n  <-- size of arrays x and y
+ *   x  <-- array of floating-point values
+ *
+ * returns:
+ *   dot product
+ *----------------------------------------------------------------------------*/
+
+double
+cs_dot_xx(cs_lnum_t         n,
+          const cs_real_t  *x)
+{
+  const cs_lnum_t block_size = 60;
+
+  cs_lnum_t sid, bid, i;
+  cs_lnum_t start_id, end_id;
+  double sdot_xx, cdot_xx;
+
+  cs_lnum_t n_blocks = n / block_size;
+  cs_lnum_t n_sblocks = sqrt(n_blocks);
+  cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
+
+  double dot_xx = 0.0;
+
+# pragma omp parallel for private(bid, start_id, end_id, i, \
+                                  cdot_xx, sdot_xx) \
+                          reduction(+:dot_xx) if (n > THR_MIN)
+  for (sid = 0; sid < n_sblocks; sid++) {
+
+    sdot_xx = 0.0;
+
+    for (bid = 0; bid < blocks_in_sblocks; bid++) {
+      start_id = block_size * (blocks_in_sblocks*sid + bid);
+      end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
+      cdot_xx = 0.0;
+      for (i = start_id; i < end_id; i++)
+        cdot_xx += x[i]*x[i];
+      sdot_xx += cdot_xx;
+    }
+
+    dot_xx += sdot_xx;
+
+  }
+
+  cdot_xx = 0.0;
+  start_id = block_size * n_sblocks*blocks_in_sblocks;
+  end_id = n;
+  for (i = start_id; i < end_id; i++)
+    cdot_xx += x[i]*x[i];
+  dot_xx += cdot_xx;
+
+  return dot_xx;
+}
+
+/*----------------------------------------------------------------------------
  * Return 2 dot products of 2 vectors: x.x, and x.y
  *
  * The products could be computed separately, but computing them

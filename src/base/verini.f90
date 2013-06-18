@@ -716,15 +716,16 @@ enddo
 !   le nombre d'iterations maximal
 ! Il n'y a pas besoin de test sur le nombre d'iterations
 !   Ce sont simplement des entiers
-!   Une valeur negative indique au'on veut sortir de suite
+!   Une valeur negative indique qu'on veut sortir de suite
 
 do ipp = 2, nvppmx
   ii = itrsvr(ipp)
   if (ii.ge.1) then
     if (iresol(ii).ne.-1) then
-      iresop = mod(iresol(ii),1000)
+      iresop = mod(iresol(ii)+10000,1000)
       ipolop = (iresol(ii)-iresop)/1000
-      if ((iresop.lt.0.or.iresop.gt.3).or.                        &
+      iresop = mod(iresop,100)
+      if ((iresop.lt.0.or.iresop.gt.3).or.                       &
           (iresop.eq.1.and.ipolop.ne.0)) then
         chaine=nomvar(ipp)
         write(nfecra,2400) chaine(1:16),ii,iresol(ii)
@@ -2888,10 +2889,10 @@ endif
 '@    IRESOL(',i10,   ') DOIT ETRE UN ENTIER EGAL',             /,&
 '@                                     A -1 OU A IPOL*1000+ J', /,&
 '@      AVEC IPOL LE DEGRE DU POLYNOME DE PRECONDITIONNEMENT',  /,&
-'@        ET J    = 0 POUR GRADIENT CONJUGUE',                  /,&
-'@                = 1 POUR JACOBI   (IPOL = 0 DANS CE CAS)',    /,&
-'@                = 2 POUR BI-CGSTAB',                          /,&
-'@                = 3 POUR GMRES',                              /,&
+'@       ET MOD(J,100) = 0 POUR GRADIENT CONJUGUE',             /,&
+'@                     = 1 POUR JACOBI (IPOL = 0 DANS CE CAS)', /,&
+'@                     = 2 POUR BI-CGSTAB',                     /,&
+'@                     = 3 POUR GMRES',                         /,&
 '@    IL VAUT ICI', i10,                                        /,&
 '@',                                                            /,&
 '@  Le calcul ne peut etre execute.',                           /,&
@@ -5522,10 +5523,10 @@ endif
 '@    IRESOL(',i10,   ') MUST BE AN INTEGER EQUAL',             /,&
 '@                               to -1 or to     IPOL*1000+ J', /,&
 '@ where IPOL is the order of the preconditionning polynomial', /,&
-'@      and  J    = 0 for conjugate grandient',                 /,&
-'@                = 1 for  JACOBI   (IPOL = 0 DANS CE CAS)',    /,&
-'@                = 2 for  BI-CGSTAB',                          /,&
-'@                = 3 for  GMRES',                              /,&
+'@     and  MOD(J,100) = 0 for conjugate gradient',             /,&
+'@                     = 1 for  JACOBI (IPOL = 0 IN THIS CASE)',/,&
+'@                     = 2 for  BI-CGSTAB',                     /,&
+'@                     = 3 for  GMRES',                         /,&
 '@   IT HAS VALUE', i10,                                        /,&
 '@',                                                            /,&
 '@   The calculation could NOT run.',                           /,&

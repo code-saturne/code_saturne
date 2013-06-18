@@ -1627,15 +1627,18 @@ gradient for the pressure {\tt ivar=ipr} or any variable which is not
 convected, Jacobi for the others. Diagonal preconditioning with
 conjugate gradient).\\
 \hspace*{1.3cm}= {\tt ipol*1000+j} with {\tt j}= 0: conjugate gradient\\
+\hspace*{1.3cm}= {\tt ipol*1000+j} with {\tt j}= 200: single-reduction conjugate gradient\\
 \hspace*{1.3cm}\phantom{= {\tt ipol*1000+j} with} {\tt j}= 1: Jacobi\\
 \hspace*{1.3cm}\phantom{= {\tt ipol*1000+j} with} {\tt j}= 2: stabilised
 bi-conjugate gradient (BI-CGSTAB)\\
+\hspace*{1.3cm}\phantom{= {\tt ipol*1000+j} with} {\tt j}= 3: GMRES\\
 \hspace*{1.3cm}{\tt ipol} is the degree of the Neumann polynomial used for the
 preconditioning\footnote{$D$ being the diagonal part of $A$ and $X$ its
 extra-diagonal part, it can be written
 $A=D(Id+D^{-1}X)$. Therefore \mbox{$A^{-1}=(Id+D^{-1}X)^{-1}D^{-1}$}. A series
 development of $Id+D^{-1}X$ can then be used which yields, symbolically,
 \mbox{$Id+\sum\limits_{I=1}^{IPOL}\left(-D^{-1}X\right)^{I}$}.}.\\
+{\tt ipol} = -1 may be used to deactivate preconditioning.\\
 {\tt ipol} is necessarily 0 with the Jacobi algorithm.\\
 Concerning the computational time, the performance depends on the
 case. If a preconditioning method different from

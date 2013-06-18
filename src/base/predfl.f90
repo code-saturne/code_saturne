@@ -183,7 +183,7 @@ if (iresol(ipr).eq.-1) then
     ipol   = 0
   endif
 else
-  ireslp = mod(iresol(ipr),1000)
+  ireslp = mod(iresol(ipr)+10000,1000)
   ipol   = (iresol(ipr)-ireslp)/1000
 endif
 

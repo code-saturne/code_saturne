@@ -213,7 +213,7 @@ if (ireslp.eq.-1) then
     ipol   = 0
   endif
 else
-  ireslq = mod(ireslp,1000)
+  ireslq = mod(ireslp+10000,1000)
   ipol   = (ireslp-ireslq)/1000
 endif
 
