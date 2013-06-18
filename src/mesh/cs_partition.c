@@ -204,6 +204,8 @@ static int                        _part_write_output = 1;
 static int                        _part_n_extra_partitions = 0;
 static int                       *_part_extra_partitions_list = NULL;
 
+static bool                       _part_uniform_sfc_block_size = false;
+
 #if defined(WIN32) || defined(_WIN32)
 static const char _dir_separator = '\\';
 #else
@@ -996,11 +998,9 @@ _cell_rank_by_sfc(cs_gnum_t                 n_g_cells,
   if (n_g_cells % n_ranks)
     block_size += 1;
 
-  /* Determine rank based on global numbering with SFC ordering;
-     use variable block size if necessary so that all ranks have some
-     cells assigned if possible */
+  /* Determine rank based on global numbering with SFC ordering; */
 
-  if ((cs_lnum_t)((n_g_cells - 1) % block_size) < n_ranks - 1) {
+  if (_part_uniform_sfc_block_size == false) {
 
     cs_gnum_t cells_per_rank = n_g_cells / n_ranks;
     cs_lnum_t rmdr = n_g_cells - cells_per_rank * (cs_gnum_t)n_ranks;
@@ -1021,9 +1021,18 @@ _cell_rank_by_sfc(cs_gnum_t                 n_g_cells,
     }
 
   }
+
   else {
+
+    /* Plan for case where we would need a fixed block size,
+       for example, using an external linear solver assuming this.
+       This may not work at high process counts, where the last
+       ranks will have no data (a solution to this would be
+       to build a slightly smaller MPI communicator). */
+
     for (i = 0; i < n_cells; i++)
       cell_rank[i] = ((cell_num[i] - 1) / block_size);
+
   }
 
   cell_io_num = fvm_io_num_destroy(cell_io_num);
