@@ -393,8 +393,8 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
         cs_ibm_bg_type="Q"
         cppflags_default=""
         cflags_default=""                    # "-qlanglvl=extc99" by default
-        cflags_default_opt="-O3"
-        cflags_default_hot="-O3 -qhot"
+        cflags_default_opt="-g -O3"
+        cflags_default_hot="-g -O3 -qhot"
         cflags_default_dbg="-g"
       fi
     fi
@@ -750,8 +750,8 @@ if test "x$cs_cxx_compiler_known" != "xyes" ; then
         cxxflags_default_dbg="-g"
       elif test "x$cs_ibm_bg_type" = "xQ" ; then
         cxxflags_default="-qlanglvl=redefmac"
-        cxxflags_default_opt="-O3"
-        cxxflags_default_hot="-O3 -qhot"
+        cxxflags_default_opt="-g -O3"
+        cxxflags_default_hot="-g -O3 -qhot"
         cxxflags_default_dbg="-g"
       fi
     fi
@@ -1130,8 +1130,8 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
       elif test "x$cs_ibm_bg_type" = "xQ" ; then
         fcflags_default="-qextname -qsuffix=cpp=f90"
         fcflags_default_dbg="-g -qcheck"
-        fcflags_default_opt="-O3"
-        fcflags_default_hot="-O3 -qhot"
+        fcflags_default_opt="-g -O3"
+        fcflags_default_hot="-g -O3 -qhot"
       fi
     fi
 
