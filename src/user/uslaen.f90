@@ -136,14 +136,11 @@ integer, allocatable, dimension(:) :: tabstat
 !    The user does not need to modify this subroutine in standard-use conditions.
 !    In the case where he wishes to produce non-standard statistics, he must
 !    intervene in section number 2.
-!
 !===============================================================================
 
 !===============================================================================
 ! 1 . Zone of standard statistics
 !===============================================================================
-
-
 
 allocate(tabstat(ncel))
 
@@ -151,11 +148,11 @@ allocate(tabstat(ncel))
 
 ii = 0
 do iel = 1, ncel
-   if (statis(iel,ilpd1).gt.seuil ) then
-      ii = ii + 1
-      tabstat(ii) = iel
-   endif
-   tracel(iel) = 0.d0
+  if (statis(iel,ilpd1).gt.seuil) then
+    ii = ii + 1
+    tabstat(ii) = iel
+  endif
+  tracel(iel) = 0.d0
 enddo
 dimtab = ii
 
@@ -176,87 +173,88 @@ dimtab = ii
 
 if (ivarl.ne.ilfv .and. ivarl.ne.ilpd) then
 
-!-----> Average
+  !-----> Average
 
-   if (iflu.eq.0) then
+  if (iflu.eq.0) then
 
-      do jj = 1, dimtab
-         tracel(tabstat(jj)) = statis(tabstat(jj),ivarl1) / statis(tabstat(jj),ilpd1)
-      enddo
+    do jj = 1, dimtab
+      tracel(tabstat(jj)) =    statis(tabstat(jj),ivarl1)                     &
+                             / statis(tabstat(jj),ilpd1)
+    enddo
 
-!-----> Variance
+  !-----> Variance
 
-   else
+  else
 
-      do jj = 1, dimtab
-         aa = statis(tabstat(jj),ivarlm)/statis(tabstat(jj),ilpd1)
-         tracel(tabstat(jj)) =  stativ(tabstat(jj),ivarl1)/statis(tabstat(jj),ilpd1) - (aa * aa)
-      enddo
+    do jj = 1, dimtab
+      aa = statis(tabstat(jj),ivarlm)/statis(tabstat(jj),ilpd1)
+      tracel(tabstat(jj)) =   stativ(tabstat(jj),ivarl1)                      &
+                            / statis(tabstat(jj),ilpd1) - (aa * aa)
+    enddo
 
-   endif
+  endif
 
-!--> Volume fraction (ilfv)
+  !--> Volume fraction (ilfv)
 
 else if (ivarl.eq.ilfv) then
 
-!-----> Average
+  !-----> Average
 
-   if (iflu.eq.0) then
+  if (iflu.eq.0) then
 
-      do jj = 1, dimtab
-         tracel(tabstat(jj)) = statis(tabstat(jj),ilfv)                            &
-              / (dble(npst) * volume(tabstat(jj)))
-      enddo
+    do jj = 1, dimtab
+      tracel(tabstat(jj)) =   statis(tabstat(jj),ilfv)                        &
+                            / (dble(npst) * volume(tabstat(jj)))
+    enddo
 
-   else
+  else
 
-!-----> Variance
+  !-----> Variance
 
-      do jj = 1, dimtab
+    do jj = 1, dimtab
 
-         if (npst.gt.1) then
+      if (npst.gt.1) then
+        aa = statis(tabstat(jj),ivarlm) / (dble(npst) * volume(tabstat(jj)))
+        tracel(tabstat(jj)) =   stativ(tabstat(jj),ivarl1)                    &
+                              / (dble(npst) * volume(tabstat(jj)))**2         &
+                              - aa*aa
+      else
+        tracel(tabstat(jj)) = zero
+      endif
 
-            aa = statis(tabstat(jj),ivarlm) / (dble(npst) * volume(tabstat(jj)))
-            tracel(tabstat(jj)) =   stativ(tabstat(jj),ivarl1)                        &
-                 / (dble(npst) * volume(tabstat(jj)))**2             &
-                 - aa*aa
-         else
-            tracel(tabstat(jj)) = zero
-         endif
+    enddo
+  endif
 
-      enddo
-   endif
-
- !--> Sum of the statistical weights
+  !--> Sum of the statistical weights
 
 else if (ivarl.eq.ilpd) then
 
-   if (iflu .eq.0) then
-      do jj = 1, dimtab
-         tracel(tabstat(jj)) = statis(tabstat(jj),ivarl1)
-      enddo
-   else
-      write(nfecra,9000) iflu
-      do jj = 1, dimtab
-         tracel(tabstat(jj)) = zero
-      enddo
-   endif
+  if (iflu .eq.0) then
+    do jj = 1, dimtab
+      tracel(tabstat(jj)) = statis(tabstat(jj),ivarl1)
+    enddo
+  else
+    write(nfecra,9000) iflu
+    do jj = 1, dimtab
+      tracel(tabstat(jj)) = zero
+    enddo
+  endif
 
 endif
 
- 9000 format(                                                           &
+ 9000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
 '@ @@ CAUTION: ERROR IN THE LAGRANGIAN MODULE (uslaen)        ',/,&
 '@    =========                                               ',/,&
-'@  IT IS NOT POSSIBLE TO COMPUTE THE VARIANCE OF THE         ',/,&
-'@     STATISTICAL WEIGHTS                                    ',/,&
+'@  It is not possible to compute the variance of the         ',/,&
+'@     statistical weights                                    ',/,&
 '@                                                            ',/,&
 '@  The variance of the statistical weight has been asked     ',/,&
 '@    in uslaen (ivarl=',   I10,' et iflu=',  I10,').         ',/,&
 '@                                                            ',/,&
-'@  The call to subroutine uslaen must be checked             ',/, &
+'@  The call to subroutine uslaen must be checked             ',/,&
 '@                                                            ',/,&
 '@  The calculation continues.                                ',/,&
 '@                                                            ',/,&
@@ -267,46 +265,47 @@ endif
 ! 2. Zone of user intervention
 !===============================================================================
 
-!    --------------------------------------------------
-!    Example 1: Statistic calculated in uslast.f90 and
-!               stored in the array statis
-!    --------------------------------------------------
+! --------------------------------------------------
+! Example 1: Statistic calculated in uslast.f90 and
+!            stored in the array statis
+! --------------------------------------------------
 
 if (nvlsts.gt.0) then
 
-   if (ivarl.eq.ilvu(1)) then
+  if (ivarl.eq.ilvu(1)) then
 
-      !-----> Average for the mass concentration
+    !-----> Average for the mass concentration
 
-      if (iflu.eq.0) then
+    if (iflu.eq.0) then
 
-         do jj = 1, dimtab
-            if (npst.gt.0) then
-               tracel(tabstat(jj)) =   statis(tabstat(jj),ivarl1)                      &
-                    / (dble(npst) *ro0 *volume(tabstat(jj)))
-            else if (iplas.ge.idstnt) then
-               tracel(tabstat(jj)) =   statis(tabstat(jj),ivarl1)                      &
-                    / (ro0 *volume(tabstat(jj)))
-            else
-               tracel(tabstat(jj)) = zero
-            endif
-         enddo
+      do jj = 1, dimtab
+        if (npst.gt.0) then
+          tracel(tabstat(jj)) =   statis(tabstat(jj),ivarl1)                  &
+                                / (dble(npst) *ro0 *volume(tabstat(jj)))
+        else if (iplas.ge.idstnt) then
+          tracel(tabstat(jj)) =   statis(tabstat(jj),ivarl1)                  &
+                                / (ro0 *volume(tabstat(jj)))
+        else
+          tracel(tabstat(jj)) = zero
+        endif
+      enddo
 
-      else
+    else
 
-         !-----> Variance of the mass concentration
+    !-----> Variance of the mass concentration
 
-         do jj = 1, dimtab
+      do jj = 1, dimtab
 
-            aa = statis(tabstat(jj),ivarlm)/statis(tabstat(jj),ilpd1)
-            tracel(tabstat(jj)) = stativ(tabstat(jj),ivarl1)/statis(tabstat(jj),ilpd1)    &
-                 - (aa * aa)
+        aa = statis(tabstat(jj),ivarlm)/statis(tabstat(jj),ilpd1)
+        tracel(tabstat(jj)) =   stativ(tabstat(jj),ivarl1)                    &
+                              / statis(tabstat(jj),ilpd1)                     &
+                              - (aa * aa)
 
-         enddo
+      enddo
 
-      endif
+    endif
 
-   endif
+  endif
 
 endif
 
