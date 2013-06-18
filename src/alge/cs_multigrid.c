@@ -2090,13 +2090,8 @@ cs_multigrid_build(const char       *var_name,
 
     /* Recursion test */
 
-    if (grid_lv >= n_max_levels) {
-      cs_base_warn(__FILE__, __LINE__);
-      bft_printf(_(" Multigrid: maximum number of coarse grids (%d)\n"
-                   "            reached for \"%s\".\n"),
-                 n_max_levels, var_name);
+    if (grid_lv >= n_max_levels)
       break;
-    }
 
     /* Build coarser grid from previous grid */
 

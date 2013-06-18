@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2013-06-07 17:25+0200\n"
+"POT-Creation-Date: 2013-06-18 12:27+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3440,14 +3440,6 @@ msgid ""
 msgstr ""
 "\n"
 " Construction de la hiérarchie de grilles pour \"%s\"\n"
-
-#, c-format
-msgid ""
-" Multigrid: maximum number of coarse grids (%d)\n"
-"            reached for \"%s\".\n"
-msgstr ""
-" Multigrille : nombre de maillages grossiers maximal (%d)\n"
-"               atteint pour \"%s\".\n"
 
 #, c-format
 msgid ""
