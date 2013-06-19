@@ -1296,10 +1296,6 @@ else
 
           pi = pvar(isou,ii)
 
-          pip = pi + ircflp*( gradv(isou,1,ii)*diipbv(1)          &
-                            + gradv(isou,2,ii)*diipbv(2)          &
-                            + gradv(isou,3,ii)*diipbv(3))
-
           flux = iconvp*((flui-flumab(ifac))*pi + fluj*pfac)                 &
                + idiffp*viscb(ifac)*pfacd
           smbr(isou,ii) = smbr(isou,ii) - thetap * flux
