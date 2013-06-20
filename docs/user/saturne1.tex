@@ -1422,12 +1422,9 @@ The code may run without any Interface parameter file nor any user subroutine.
 This mode includes the preprocessing stages, and adds elementary tests:\\
 \begin{list}{-}{}
 \item the quality criteria of the mesh are calculated (non-orthogonality angles,
-internal faces off-set, \ldots) and corresponding EnSight
-post-processing parts are created.\\
-\item test calculation of the gradient of $sin(x+2y+3z)$. The calculated
-value is compared to the exact value, and an EnSight part for the
-corresponding error is created. The gradient is calculated with each
-option \texttt{imrgra} from $0$ to $6$ (see the keywords section at \S\ref{sec:prg_motscles}).\\
+internal faces off-set, \ldots) and corresponding
+visualizable post-processing output is generated.\\
+\item a few additional mesh consistency tests are run.\\
 \end{list}
 
 \item \texttt{--benchmark}: triggers the benchmark mode, for a timing

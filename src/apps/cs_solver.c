@@ -83,7 +83,6 @@
 #include "cs_field.h"
 #include "cs_file.h"
 #include "cs_gradient.h"
-#include "cs_gradient_quality.h"
 #include "cs_gui.h"
 #include "cs_gui_mesh.h"
 #include "cs_gui_output.h"
@@ -459,10 +458,7 @@ cs_run(void)
 
     cs_gradient_initialize();
 
-    if (opts.verif == true)
-      cs_gradient_quality();
-
-    else {
+    if (opts.verif == false) {
 
       /* Initialize sparse linear systems resolution */
 
