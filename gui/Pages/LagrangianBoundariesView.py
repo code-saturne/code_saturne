@@ -317,6 +317,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         self.modelIJRDP.addItem(self.tr("User defined diameter"), "subroutine")
 
         self.connect(self.tableViewBoundaries, SIGNAL("clicked(const QModelIndex &)"), self.slotSelectBoundary)
+        self.connect(self.modelBoundaries,     SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), self.dataChanged)
         self.connect(self.spinBoxICLAS, SIGNAL("valueChanged(int)"), self.slotICLAS)
 
         self.connect(self.lineEditIJNBP,  SIGNAL("textChanged(const QString &)"), self.slotIJNBP)
@@ -429,6 +430,13 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
             self.spinBoxICLAS.setMaximum(nclasses)
             self.spinBoxICLAS.setValue(1)
             self.slotICLAS(1)
+
+
+    @pyqtSignature("const QModelIndex &, const QModelIndex &")
+    def dataChanged(self, topLeft, bottomRight):
+        """
+        """
+        self.slotSelectBoundary(topLeft)
 
 
     @pyqtSignature("int")
