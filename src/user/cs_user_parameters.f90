@@ -2072,6 +2072,7 @@ if (.false.) then
 
   itycat = FIELD_INTENSIVE + FIELD_PROPERTY
   ityloc = 3 ! boundary faces
+  idim1 = 1 ! dimension
   ilved = .true. ! interleaved
   inoprv = .false. ! no previous time step values needed
 
@@ -2086,8 +2087,6 @@ if (.false.) then
   endif
 
 endif
-
-return
 
 !===============================================================================
 
