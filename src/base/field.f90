@@ -846,12 +846,52 @@ contains
     c_f_id = f_id
     c_k_id = k_id
     f = cs_field_by_id(c_f_id)
-    c_k_value = cs_field_get_key_int(f, k_id)
+    c_k_value = cs_field_get_key_int(f, c_k_id)
     k_value = c_k_value
 
     return
 
   end subroutine field_get_key_int
+
+  !=============================================================================
+
+  !> \brief Return an integer value for a given key associated with a field.
+
+  !> If the key id is not valid, or the value type or field category is not
+  !> compatible, a fatal error is provoked.
+
+  !> \param[in]   f_id     field id
+  !> \param[in]   k_name   key name
+  !> \param[out]  k_value  integer value associated with key id for this field
+
+  subroutine field_get_key_int_by_name (f_id, k_name, k_value)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer, intent(in)   :: f_id
+    character(len=*), intent(in) :: k_name
+    integer, intent(out)  :: k_value
+
+    ! Local variables
+
+    integer(c_int) :: c_f_id, c_k_id, c_k_value
+    character(len=len_trim(k_name)+1, kind=c_char) :: c_k_name
+    type(c_ptr) :: f
+
+    c_k_name = trim(k_name)//c_null_char
+
+    c_k_id = cs_f_field_key_id_try(c_k_name)
+    c_f_id = f_id
+    f = cs_field_by_id(c_f_id)
+    c_k_value = cs_field_get_key_int(f, c_k_id)
+    k_value = c_k_value
+
+    return
+
+  end subroutine field_get_key_int_by_name
 
   !=============================================================================
 
