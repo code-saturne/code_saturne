@@ -665,8 +665,9 @@ class case:
         cfd_d = self.domains[0]
         ast_d = self.ast_domains[0]
 
-        ast_mesh_name = ast_d.mesh
-        ast_comm = ast_d.comm
+        ast_dir_name = os.path.basename(ast_d.exec_dir)
+        ast_mesh_name = os.path.join(ast_dir_name, ast_d.mesh)
+        ast_comm = os.path.join(ast_dir_name, ast_d.comm)
 
         c = self.fsi_coupler
 
