@@ -1347,11 +1347,17 @@ class aster_domain(base_domain):
         from cs_exec_environment import write_shell_shebang
         write_shell_shebang(s)
 
+        aster_root = os.path.split(self.aster_home)[0]
+
         s.write('cd ..\n')
-        s.write('export PATH=' + os.path.join(self.aster_home, 'bin') + ':$PATH\n')
+        s.write('export PATH=' + os.path.join(aster_root, 'bin') + ':$PATH\n')
         s.write('as_run ' + self.param + '\n')
 
         s.close()
+
+        oldmode = (os.stat(s_path)).st_mode
+        newmode = oldmode | (stat.S_IXUSR)
+        os.chmod(s_path, newmode)
 
     #---------------------------------------------------------------------------
 
