@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2013-06-18 12:27+0200\n"
+"POT-Creation-Date: 2013-06-20 11:02+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3648,7 +3648,8 @@ msgstr ""
 "         ou : %s -d [options] <nom_fichier_1> <nom_fichier_2>\n"
 "\n"
 "Imprime les entêtes et de manière optionnelle le contenu d'un fichier\n"
-"issu du Préprocesseur, du Partitionneur, ou d'un fichier de reprise,\n"
+"issu du Préprocesseur, du Partitionneur, ou d'un fichier de reprise de "
+"calcul,\n"
 "ou comparer deux de ces fichiers.\n"
 "\n"
 "Options :\n"
@@ -5099,6 +5100,28 @@ msgstr "temps"
 msgid "calls"
 msgstr "appels"
 
+msgid "Defining a interpolation grid requires a name."
+msgstr ""
+
+msgid "Defining a measure set requires a name."
+msgstr ""
+
+#, c-format
+msgid "Measure set with id %d is not defined."
+msgstr "Le jeu de mesures avec id %d n'est pas défini."
+
+#, c-format
+msgid "Interpol grid with id %d is not defined."
+msgstr "La grille d'interpolation avec id %d n'est pas définie."
+
+#, c-format
+msgid "Measure set \"%s\" is not defined."
+msgstr "Le jeu de mesures \"%s\" n'est pas défini."
+
+#, c-format
+msgid "Interpol grid \"%s\" is not defined."
+msgstr "La grille d'interpolation \"%s\" n'est pas définie."
+
 msgid "vectorization"
 msgstr "vectorisation"
 
@@ -5638,7 +5661,7 @@ msgid ""
 "Location number %d given for restart file\n"
 "\"%s\" is not valid."
 msgstr ""
-"Le numéro de support %d donné pour le fichier suite\n"
+"Le numéro de support %d donné pour le fichier de reprise de calcul\n"
 "\"%s\" est invalide."
 
 #, c-format
@@ -5646,7 +5669,7 @@ msgid ""
 "Restart file \"%s\" declares a location number %d\n"
 "but no location %d has been declared."
 msgstr ""
-"Le fichier suite \"%s\" déclare un support numéro %d\n"
+"Le fichier de reprise de calcul \"%s\" déclare un support numéro %d\n"
 "alors qu'aucun support numéro %d n'a été déclaré."
 
 #, c-format
@@ -5654,7 +5677,7 @@ msgid ""
 "Restart file number <%d> can not be accessed\n"
 "(file closed or invalid number)."
 msgstr ""
-"Le fichier suite numéro <%d> n'est pas accessible\n"
+"Le fichier de reprise de calcul numéro <%d> n'est pas accessible\n"
 "(fichier déjà fermé ou numéro invalide)."
 
 #, c-format
@@ -5663,7 +5686,7 @@ msgid ""
 "is invalid using the Fortran API."
 msgstr ""
 "Le type de valeur <%d> indiqué pour une rubrique de\n"
-"fichier suite est invalide pour l'interface Fortran."
+"fichier de reprise de calcul est invalide pour l'interface Fortran."
 
 #, c-format
 msgid "  %s: section \"%s\" not present.\n"
@@ -5674,7 +5697,7 @@ msgid ""
 "The access mode of the restart file <%s>\n"
 "must be equal to 1 (read) or 2 (write) and not <%d>."
 msgstr ""
-"Le mode d'ouverture du fichier suite <%s>\n"
+"Le mode d'ouverture du fichier de reprise de calcul <%s>\n"
 "doit être égal à 1 (lecture) ou 2 (écriture) et non <%d>."
 
 #, c-format
@@ -5682,7 +5705,7 @@ msgid ""
 "Restart file number <%d> can not be closed\n"
 "(file already closed or invalid number)."
 msgstr ""
-"Le fichier suite numéro <%d> ne peut être fermé\n"
+"Le fichier de reprise de calcul numéro <%d> ne peut être fermé\n"
 "(fichier déjà fermé ou numéro invalide)."
 
 #, c-format
@@ -5690,7 +5713,7 @@ msgid ""
 "Information on the restart file number <%d> unavailable\n"
 "(file already closed or invalid number)."
 msgstr ""
-"Infomation sur le fichier suite numéro <%d> indisponible\n"
+"Infomation sur le fichier de reprise de calcul numéro <%d> indisponible\n"
 "(fichier déjà fermé ou numéro invalide)."
 
 #, c-format
@@ -5707,7 +5730,7 @@ msgid ""
 "the restart file \"%s\" is %llu and does not\n"
 "correspond to that of the current mesh (%llu).\n"
 msgstr ""
-"La taille du support \"%s\" associé au fichier suite\n"
+"La taille du support \"%s\" associé au fichier de reprise de calcul\n"
 "\"%s\" vaut %llu et ne correspond pas\n"
 "à celle du maillage en cours (%llu).\n"
 
@@ -5716,7 +5739,7 @@ msgid ""
 "The restart file \"%s\" references no\n"
 "location named \"%s\"."
 msgstr ""
-"\"Le fichier suite \\\"%s\\\" ne contient \\n\"\n"
+"\"Le fichier de reprise de calcul \\\"%s\\\" ne contient \\n\"\n"
 "\" aucun support de nom \\\"%s\\\".\""
 
 #, c-format
@@ -5728,7 +5751,7 @@ msgstr ""
 "    (numéro : %03d, n_glob_ents : %llu)\n"
 
 msgid "  General information associated with the restart file:\n"
-msgstr "  Informations générales associées au fichier suite :\n"
+msgstr "  Informations générales associées au fichier de reprise de calcul :\n"
 
 #, c-format
 msgid "  %s: location id %d for \"%s\" does not exist.\n"
@@ -6389,18 +6412,19 @@ msgid ""
 "Abort while opening the 1D-wall thermal module restart file in read mode.\n"
 "Verify the existence and the name of the restart file: %s\n"
 msgstr ""
-"Arret à l'ouverture en lecture du fichier suite du module thermique 1D en "
-"paroi.\n"
-"Vérifier l'existence et le nom du fichier suite: %s \n"
+"Arret à l'ouverture en lecture du fichier de reprise de calcul du module "
+"thermique 1D en paroi.\n"
+"Vérifier l'existence et le nom du fichier de reprise de calcul: %s \n"
 
 msgid ""
 "Abort while reading the 1D-wall thermal module restart file.\n"
 "The number of boundary faces has been modified\n"
 "Verify that the restart file corresponds to the present study.\n"
 msgstr ""
-"Arret de lecture du fichier suite du modulethermique 1D en paroi.\n"
+"Arrêt de lecture du fichier de reprise de calcul du module thermique 1D en "
+"paroi.\n"
 "Le nombre de faces de bord a été modifié\n"
-"Vérifier que le fichier suite correspond bien au cas traité.\n"
+"Vérifier que le fichier de reprise de calcul correspond bien au cas traité.\n"
 
 #, c-format
 msgid ""
@@ -6420,11 +6444,11 @@ msgstr ""
 "      TYPE DE FICHIER INCORRECT\n"
 "\n"
 "Le fichier %s ne semble pas etre un fichier\n"
-"suite de module thermique 1D en paroi.\n"
+"de reprise de calcul de module thermique 1D en paroi.\n"
 "Le calcul ne peut etre execute.\n"
 "\n"
-"Verifier que le fichier suite utilise correspond bien\n"
-"a un fichier suite de module thermique 1D en paroi.\n"
+"Verifier que le fichier de reprise de calcul utilise correspond bien\n"
+"a un fichier de reprise de calcul de module thermique 1D en paroi.\n"
 
 #, c-format
 msgid ""
@@ -6433,8 +6457,8 @@ msgid ""
 "<%s>\n"
 "The calculation will not be run.\n"
 msgstr ""
-"Problème à la lecture de la rubrique dans le fichier suite du module "
-"thermique 1D en paroi:\n"
+"Problème à la lecture de la rubrique dans le fichier de reprise de calcul\n"
+"du module thermique 1D en paroi:\n"
 "<%s>\n"
 "Le calcul ne sera pas executé.\n"
 
@@ -6466,7 +6490,7 @@ msgstr ""
 "\n"
 "Le calcul ne peut être exécuté.\n"
 "\n"
-"Vérifier que le fichier suite utilisé correspond bien\n"
+"Vérifier que le fichier de reprise de calcul utilisé correspond bien\n"
 "au cas traité.\n"
 "Vérifier uspt1d.\n"
 
@@ -6492,12 +6516,12 @@ msgstr ""
 "    DONNEES AMONT ET ACTUELLES DIFFERENTES\n"
 "\n"
 "IFPT1D ou NPPT1D a été modifié par rapport au\n"
-"fichier suite sur au moins une face avec module\n"
+"fichier de reprise de calcul sur au moins une face avec module\n"
 "thermique 1D.\n"
 "\n"
 "Le calcul ne peut être executé.\n"
 "\n"
-"Vérifier que le fichier suite utilisé correspond bien\n"
+"Vérifier que le fichier de reprise de calcul utilisé correspond bien\n"
 "au cas traité.\n"
 "Vérifier uspt1d\n"
 "(se reporter à la documentation utilisateur pour les\n"
@@ -6523,12 +6547,12 @@ msgstr ""
 "      DONNEES AMONT ET ACTUELLES DIFFERENTES\n"
 "\n"
 "Le paramètre EPPT1D a été modifié par rapport au fichier\n"
-"fichier suite sur au moins une face avec module\n"
+"fichier de reprise de calcul sur au moins une face avec module\n"
 "thermique 1D.\n"
 "\n"
 "Le calcul ne peut être exécuté.\n"
 "\n"
-"Vérifier que le fichier suite utilisé correspond bien\n"
+"Vérifier que le fichier de reprise de calcul utilisé correspond bien\n"
 "au cas traité.\n"
 "Vérifier uspt1d.\n"
 
@@ -6552,12 +6576,12 @@ msgstr ""
 "      DONNEES AMONT ET ACTUELLES DIFFERENTES\n"
 "\n"
 "Le parametre RGPT1D a été modifié par rapport au fichier\n"
-"fichier suite sur au moins une face avec module\n"
+"fichier de reprise de calcul sur au moins une face avec module\n"
 "thermique 1D.\n"
 "\n"
 "Le calcul ne peut être exécuté.\n"
 "\n"
-"Vérifier que le fichier suite utilise correspond bien\n"
+"Vérifier que le fichier de reprise de calcul utilise correspond bien\n"
 "au cas traité.\n"
 "Verifier uspt1d.\n"
 
@@ -6567,8 +6591,8 @@ msgid ""
 "for the 1D-wall thermal module:\n"
 "<%s>\n"
 msgstr ""
-"Problème à la lecture de la rubrique dans le fichier suite du module "
-"thermique 1D en paroi:\n"
+"Problème à la lecture de la rubrique dans le fichier de reprise de calcul\n"
+"du module thermique 1D en paroi:\n"
 "<%s>\n"
 
 #, c-format
@@ -6576,9 +6600,9 @@ msgid ""
 "Abort while opening the 1D-wall thermal module restart file in write mode.\n"
 "Verify the existence and the name of the restart file: %s\n"
 msgstr ""
-"Arret à l''ouverture en écriture du fichier suite du module thermique 1D en "
-"paroi.\n"
-"Vérifier l''existence et le nom du fichier suite: %s \n"
+"Arret à l'ouverture en écriture du fichier de reprise de calcul\n"
+"du module thermique 1D en paroi.\n"
+"Vérifier l'existence et le nom du fichier de reprise de calcul: %s \n"
 
 msgid "bft_mem_init() has already been called"
 msgstr ""
@@ -6600,8 +6624,9 @@ msgid ""
 "Abort while opening the cooling tower module restart file in write mode.\n"
 "Verify the existence and the name of the restart file: %s\n"
 msgstr ""
-"Arret à l'ouverture en écriture du fichier suite aéroréfrigérants.\n"
-"Vérifier l''existence et le nom du fichier suite: %s \n"
+"Arret à l'ouverture en écriture du fichier de reprise de calcul "
+"aéroréfrigérants.\n"
+"Vérifier l''existence et le nom du fichier de reprise de calcul: %s \n"
 
 #, c-format
 msgid ""
@@ -6609,8 +6634,9 @@ msgid ""
 "mode.\n"
 "Verify the existence and the name of the restart file: %s\n"
 msgstr ""
-"Arret à l'ouverture en lecture du fichier suite aéroréfrigérants.\n"
-"Vérifier l'existence et le nom du fichier suite: %s \n"
+"Arret à l'ouverture en lecture du fichier de reprise de calcul "
+"aéroréfrigérants.\n"
+"Vérifier l'existence et le nom du fichier de reprise de calcul: %s \n"
 
 #, c-format
 msgid ""
@@ -6619,8 +6645,8 @@ msgid ""
 "<%s>\n"
 "The calculation will not be run.\n"
 msgstr ""
-"Problème à la lecture de la rubrique dans le fichier suite du module "
-"aéroréfrigérants :\n"
+"Problème à la lecture de la rubrique dans le fichier de reprise de calcul\n"
+"du module aéroréfrigérants :\n"
 "<%s>\n"
 "Le calcul ne sera pas executé.\n"
 
@@ -6674,7 +6700,7 @@ msgstr ""
 "\n"
 "Le calcul ne peut être exécuté.\n"
 "\n"
-"Vérifier que le fichier suite utilisé correspond bien\n"
+"Vérifier que le fichier de reprise de calcul utilisé correspond bien\n"
 "au cas traité.\n"
 "Vérifier usctdz.\n"
 
@@ -8067,6 +8093,12 @@ msgstr ""
 
 #, c-format
 msgid "No markup found: %s \n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Attribute %s is of datatype %s and stride %d\n"
+"but %s and %d were requested."
 msgstr ""
 
 #, c-format
@@ -9894,3 +9926,227 @@ msgid ""
 msgstr ""
 "  temps écoulé :              %.3g s\n"
 "\n"
+
+msgid "Max. size of synthetic eddies:\n"
+msgstr ""
+
+#, c-format
+msgid "   max(sigma_%c) = %f, at coordinates (%f,%f,%f)\n"
+msgstr ""
+
+msgid "\n"
+msgstr ""
+
+msgid "Number of min. clippings (eddy size equals grid size):\n"
+msgstr ""
+
+#, c-format
+msgid "   sigma_%c clipped %d times\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Dimensions of the virtual box: \n"
+"   Lx = %f, coo_min : %f, coo_max : %f\n"
+"   Ly = %f, coo_min : %f, coo_max : %f\n"
+"   Lz = %f, coo_min : %f, coo_max : %f\n"
+"\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Number of eddies leaving the box (regenerated): %i\n"
+"\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Invalid choice of synthetic turbulence generation method (%d).\n"
+"Valid choices are:\n"
+"\t0 -> laminar\n"
+"\t1 -> random\n"
+"\t2 -> batten\n"
+"\t3 -> SEM\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"The number of modes for the Batten method must be strictly positive. %d is "
+"given here.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"The number of eddies for the SEM must be strictly positive. %d is given "
+"here.\n"
+msgstr ""
+
+#, c-format
+msgid " Definition of the LES inflow boundary \"%d\" \n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Abort while defing the LES inlets.\n"
+"The LES inlet \"%d\" does not contain any boundary face.\n"
+"Verify the definition of the LES inlets (cs_user_les_inflow.f90 file).\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"   Method: %d (%s)\n"
+"   Number of boundary faces (global): %d\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"   Number of modes: %d\n"
+"\n"
+msgstr ""
+"   Nombre de modes : %d\n"
+"\n"
+
+#, c-format
+msgid ""
+"   Number of structures: %d\n"
+"\n"
+msgstr ""
+"   Nombre de structures : %d\n"
+"\n"
+
+msgid "   \n"
+msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+"-------------------------------------------------------------\n"
+"\n"
+"SEM INFO, inlet \"%d\" \n"
+"\n"
+msgstr ""
+"\n"
+"-------------------------------------------------------------\n"
+"\n"
+"SEM INFO, entrée \"%d\" \n"
+"\n"
+
+msgid " Reading the LES inflow module restart file...\n"
+msgstr " Lecture du fichier de reprise pour le module d'entrée LES...\n"
+
+#, c-format
+msgid ""
+"Abort while opening the LES inflow module restart file in read mode.\n"
+"Verify the existence and the name of the restart file: %s\n"
+msgstr ""
+"Arret à l'ouverture en lecture du fichier de reprise pour l'entrée LES.\n"
+"Vérifier l'existence et le nom du fichier de reprise de calcul: %s \n"
+
+msgid ""
+"Abort while reading the LES inflow module restart file.\n"
+"The number of boundary faces has been modified\n"
+"Verify that the restart file corresponds to the present study.\n"
+msgstr ""
+"Arret de lecture du fichier de reprise pour l'entrée LES.\n"
+"Le nombre de faces de bord a été modifié\n"
+"Vérifier que le fichier de reprise de calcul correspond bien au cas traité.\n"
+
+#, c-format
+msgid ""
+"Abort while reading the LES inflow module restart file.\n"
+"\n"
+"The file %s does not seem to be a restart file\n"
+"for the LES inflow module.\n"
+"The calculation will not be run.\n"
+"\n"
+"Verify that the restart file corresponds to a\n"
+"restart file for the LES inflow module.\n"
+msgstr ""
+"Arret de lecture du fichier de reprise pour l'entrée LES.\n"
+"\n"
+"Le fichier %s ne semble pas etre un fichier\n"
+"de reprise de calcul pour l'entrée LES.\n"
+"Le calcul ne peut etre executé.\n"
+"\n"
+"Verifier que le fichier de reprise de calcul utilisé correspond bien\n"
+"à un fichier de reprise de calcul d'entrée LES.\n"
+
+#, c-format
+msgid ""
+"Problem while reading section in the restart file\n"
+"for the LES inflow module:\n"
+"<%s>\n"
+"The calculation will not be run.\n"
+msgstr ""
+"Problème à la lecture de la rubrique dans le fichier de reprise de calcul\n"
+"du module entrée LES :\n"
+"<%s>\n"
+"Le calcul ne sera pas executé.\n"
+
+#, c-format
+msgid ""
+"Stop reading the LES inflow module restart file.\n"
+"The calculation is defined with %d LES inlets while the restart file "
+"contains %d.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Stop reading the LES inflow module restart file.\n"
+"The inlet %d uses the method %d (%s) instead of %d (%s) in the restart "
+"file.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Stop reading the LES inflow module restart file.\n"
+"%d modes are given for the Batten method while the restart file contains "
+"%d.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Stop reading the LES inflow module restart file.\n"
+"%d eddies are given for the SEM while the restart file contains %d.\n"
+msgstr ""
+
+msgid " ...completed\n"
+msgstr ""
+
+msgid ""
+"\n"
+" Writing the LES inflow module restart file...\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Abort while opening the LES inflow module restart file in write mode.\n"
+"Verify the existence and the name of the restart file: %s\n"
+msgstr ""
+"Arret à l'ouverture en écriture du fichier de reprise de calcul d'entrée "
+"LES.\n"
+"Vérifier l''existence et le nom du fichier de reprise de calcul: %s \n"
+
+#, c-format
+msgid ""
+"\n"
+"Summary of synthetic turbulence generation for inlet \"%d\" (%s) :\n"
+"\n"
+"  Accumulated wall-clock time:      %12.3f\n"
+msgstr ""
+
+#, c-format
+msgid "  Accumulated CPU time:             %12.3f\n"
+msgstr "  Temps CPU cumulé :                %12.3f\n"
+
+#, c-format
+msgid ""
+"  Accumulated CPU time:\n"
+"    local min:                      %12.3f\n"
+"    local max:                      %12.3f\n"
+"    mean:                           %12.3f\n"
+msgstr ""
+"  Temps CPU cumulé :\n"
+"    min local :                     %12.3f\n"
+"    max local :                     %12.3f\n"
+"    moyenne :                       %12.3f\n"

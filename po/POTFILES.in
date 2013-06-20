@@ -70,6 +70,7 @@ src/base/cs_interface.c
 src/base/cs_io.c
 src/base/cs_log.c
 src/base/cs_map.c
+src/base/cs_measures_util.c
 src/base/cs_numbering.c
 src/base/cs_opts.c
 src/base/cs_order.c
@@ -144,6 +145,7 @@ src/gui/cs_gui_particles.c
 src/gui/cs_gui_radiative_transfer.c
 src/gui/cs_gui_specific_physics.c
 src/gui/cs_gui_util.c
+src/lagr/cs_lagr_extract.c
 src/lagr/cs_lagr_perio.c
 src/lagr/cs_lagr_tracking.c
 src/lagr/cs_lagr_utils.c
@@ -179,6 +181,7 @@ src/mesh/cs_mesh_to_builder.c
 src/mesh/cs_mesh_warping.c
 src/mesh/cs_partition.c
 src/turb/cs_les_filter.c
+src/turb/cs_les_inflow.c
 src/user/cs_user_coupling.c
 src/user/cs_user_mesh.c
 src/user/cs_user_performance_tuning.c

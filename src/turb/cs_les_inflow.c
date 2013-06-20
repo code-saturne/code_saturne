@@ -574,7 +574,7 @@ _synthetic_eddy_method(const cs_int_t    n_points,
     }
     bft_printf(_("\n"));
 
-    bft_printf(_("Number of min clipping (eddy size equals grid size):\n"));
+    bft_printf(_("Number of min. clippings (eddy size equals grid size):\n"));
 
 #if defined(HAVE_MPI)
 
@@ -1346,8 +1346,8 @@ void CS_PROCF(defsyn, DEFSYN)
 
   }
 
-  bft_printf(_(" ------------------------------------------------------------- \n"
-               "\n"));
+  bft_printf(" ------------------------------------------------------------- \n"
+             "\n");
 
 }
 
@@ -1489,8 +1489,8 @@ void CS_PROCF(synthe, SYNTHE)
                                fluctuations);
 
         if (inlet->verbosity > 0)
-          bft_printf(_("------------------------------"
-                       "-------------------------------\n"));
+          bft_printf("------------------------------"
+                     "-------------------------------\n");
       }
       break;
     }
@@ -1633,9 +1633,7 @@ void CS_PROCF(lecsyn, LECSYN)
 
     if (ierror < CS_RESTART_SUCCESS)
       bft_error(__FILE__, __LINE__, 0,
-                _("WARNING: ABORT WHILE READING THE RESTART FILE\n"
-                  "********               LES INFLOW MODULE\n"
-                  "       INCORRECT FILE TYPE\n"
+                _("Abort while reading the LES inflow module restart file.\n"
                   "\n"
                   "The file %s does not seem to be a restart file\n"
                   "for the LES inflow module.\n"
@@ -2314,11 +2312,11 @@ cs_inflow_finalize(void)
       MPI_Allreduce(&cpu_loc, &cpu_tot, 1, MPI_DOUBLE, MPI_SUM,
                     cs_glob_mpi_comm);
 
-      bft_printf(_("  Accumulated CPU time: \n"
+      bft_printf(_("  Accumulated CPU time:\n"
                    "    local min:                      %12.3f\n"
                    "    local max:                      %12.3f\n"
-                   "    global:                         %12.3f\n"),
-                 cpu_min, cpu_max, cpu_tot);
+                   "    mean:                           %12.3f\n"),
+                 cpu_min, cpu_max, cpu_tot/cs_glob_n_ranks);
 
     }
 
