@@ -499,20 +499,13 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         # Coals
         if part_model == "coal" and self.LM.getCoalFouling() == "on" :
             self.groupBoxCoal.show()
-            #icoal = self.model.getCoalNumberValue(self.label, self.iclass)
-            icoal = 1
+            icoal = self.model.getCoalNumberValue(self.label, self.iclass)
             self.lineEditINUCHL.setText(QString(str(icoal)))
-            #temp  = self.model.getCoalTemperatureValue(self.label, self.iclass)
-            temp  = 800.
+            temp  = self.model.getCoalTemperatureValue(self.label, self.iclass)
             self.lineEditIHPT.setText(QString(str(temp)))
-            #mass  = self.model.getCoalMassValue(self.label, self.iclass)
-            pis6 = 3.14159265/6.
-            diam = 1. # TODO diam20
-            rho = 1.  # TODO rho0ch
-            mass = pis6 * diam**3 * rho
+            mass  = self.model.getCoalMassValue(self.label, icoal, self.iclass)
             self.lineEditIMCHT.setText(QString(str(mass)))
-            #mass2 = self.model.getCokeMassValue(self.label, self.iclass)
-            mass2 = 0.
+            mass2 = self.model.getCokeMassValue(self.label, self.iclass)
             self.lineEditIMCKT.setText(QString(str(mass2)))
 
         # Diameter
@@ -528,6 +521,16 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
 
         rho = self.model.getDensityValue(self.label, self.iclass)
         self.lineEditIROPT.setText(QString(str(rho)))
+
+        choice = self.model.getDiameterChoice(self.label, self.iclass)
+        if choice == "prescribed":
+            self.frameDiameter.show()
+            diam = self.model.getDiameterValue(self.label, self.iclass)
+            vdiam = self.model.getDiameterVarianceValue(self.label, self.iclass)
+            self.lineEditIDPT.setText(QString(str(diam)))
+            self.lineEditIVDPT.setText(QString(str(vdiam)))
+        elif choice == "subroutine":
+            self.frameDiameter.hide()
 
 
     @pyqtSignature("const QString&")

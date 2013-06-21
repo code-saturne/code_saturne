@@ -1023,7 +1023,7 @@
               <widget class="QLineEdit" name="lineEditINUCHL">
                <property name="maximumSize">
                 <size>
-                 <width>60</width>
+                 <width>16777215</width>
                  <height>16777215</height>
                 </size>
                </property>
@@ -1046,7 +1046,7 @@
               <widget class="QLineEdit" name="lineEditIHPT">
                <property name="maximumSize">
                 <size>
-                 <width>60</width>
+                 <width>16777215</width>
                  <height>16777215</height>
                 </size>
                </property>
@@ -1088,7 +1088,7 @@
              <item row="2" column="2">
               <spacer>
                <property name="toolTip">
-                <string>Code_Saturne key word: IMCHT</string>
+                <string>Ressort horizontal '', 121 x 22</string>
                </property>
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
@@ -1105,7 +1105,7 @@
               <widget class="QLineEdit" name="lineEditIMCHT">
                <property name="maximumSize">
                 <size>
-                 <width>60</width>
+                 <width>16777215</width>
                  <height>16777215</height>
                 </size>
                </property>
@@ -1151,7 +1151,7 @@
               <widget class="QLineEdit" name="lineEditIMCKT">
                <property name="maximumSize">
                 <size>
-                 <width>60</width>
+                 <width>16777215</width>
                  <height>16777215</height>
                 </size>
                </property>

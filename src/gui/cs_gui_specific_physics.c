@@ -3302,7 +3302,7 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
     idecal += nclpch[icha];
 
     /* Type de diametres  = 1 ---> diametre donnes
-       = 2 ---> loi de Rosin-Rammler */
+                          = 2 ---> loi de Rosin-Rammler */
     if (itypdp == 1) {
       for (icla = 0; icla < nclpch[icha]; icla++)
         diam20[icla + iclag] = _get_solid_fuel_diameter(icha+1,icla+1);

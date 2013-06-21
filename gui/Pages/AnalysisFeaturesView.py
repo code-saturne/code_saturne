@@ -134,8 +134,8 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.modelPulverizedCoal.addItem(self.tr("off"), "off")
         self.modelPulverizedCoal.addItem(self.tr("homogeneous approach"), "homogeneous_fuel")
         self.modelPulverizedCoal.addItem(self.tr("homogeneous approach with moisture"), "homogeneous_fuel_moisture")
-        # WARNING: the 'coal_lagr' model is deprecated
-        #self.modelPulverizedCoal.addItem(self.tr("Gaseous phase coupling with Lagrangian coal transport"), "coal_lagr")
+        self.modelPulverizedCoal.addItem(self.tr("homogeneous approach with Lagrangian transport"), "homogeneous_fuel_lagr")
+        self.modelPulverizedCoal.addItem(self.tr("homogeneous approach with moisture with Lagrangian transport"), "homogeneous_fuel_moisture_lagr")
 
         self.modelJouleEffect.addItem(self.tr("off"), "off")
         self.modelJouleEffect.addItem(self.tr("Joule Effect"), "joule")
@@ -185,13 +185,6 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         elec = self.elect.getElectricalModel()
         self.modelJouleEffect.setItem(str_model=elec)
 
-        coal = self.pcoal.getCoalCombustionModel()
-        self.modelPulverizedCoal.setItem(str_model=coal)
-        if coal != 'off':
-            self.modelLagrangian.disableItem(str_model='lagrangian')
-        else:
-            self.modelLagrangian.enableItem(str_model='lagrangian')
-
         compressible = self.comp.getCompressibleModel()
         self.modelCompressible.setItem(str_model=compressible)
         self.modelCompressible.disableItem(str_model='variable_gamma')
@@ -205,18 +198,25 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
             self.comboBoxCompressible.setEnabled(False)
 
         # Multi-phase flow and coal combustion
-        # WARNING: the 'coal_lagr' model is deprecated
+        coal = self.pcoal.getCoalCombustionModel()
+        self.modelPulverizedCoal.setItem(str_model=coal)
 
-        #if self.lagr.getLagrangianStatus() == 'off':
-        #    self.modelLagrangian.setItem(str_model='single_phase')
-        #    self.modelPulverizedCoal.disableItem(str_model='coal_lagr')
-        #else:
-        #    self.modelLagrangian.setItem(str_model='lagrangian')
-        #    self.modelPulverizedCoal.enableItem(str_model='coal_lagr')
+        if coal == 'homogeneous_fuel_lagr' or coal == 'homogeneous_fuel_moisture_lagr':
+            self.modelLagrangian.setItem(str_model='lagrangian')
+            self.modelLagrangian.disableItem(str_model='single_phase')
 
-        #if self.pcoal.getCoalCombustionModel() == 'coal_lagr':
-        #    self.modelLagrangian.setItem(str_model='lagrangian')
-        #    self.modelLagrangian.disableItem(str_model='single_phase')
+        if self.lagr.getLagrangianStatus() == 'off':
+            self.modelLagrangian.setItem(str_model='single_phase')
+            self.modelPulverizedCoal.enableItem(str_model='homogeneous_fuel')
+            self.modelPulverizedCoal.enableItem(str_model='homogeneous_fuel_moisture')
+            self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel_lagr')
+            self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel_moisture_lagr')
+        else:
+            self.modelLagrangian.setItem(str_model='lagrangian')
+            self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel')
+            self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel_moisture')
+            self.modelPulverizedCoal.enableItem(str_model='homogeneous_fuel_lagr')
+            self.modelPulverizedCoal.enableItem(str_model='homogeneous_fuel_moisture_lagr')
 
         # Compatibility between turbulence model and multi-phases flow model
 
@@ -248,8 +248,8 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
             self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel')
             self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel_moisture')
-            # WARNING: the 'coal_lagr' model is deprecated
-            #self.modelPulverizedCoal.disableItem(str_model='coal_lagr')
+            self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel_lagr')
+            self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel_moisture_lagr')
 
             self.comboBoxGasCombustionModel.setEnabled(False)
             self.comboBoxPulverizedCoal.setEnabled(False)
@@ -381,12 +381,16 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         if val == 'off':
             self.modelSteadyFlow.enableItem(str_model='on')
-            # WARNING: the 'coal_lagr' model is deprecated
-            #self.modelPulverizedCoal.disableItem(str_model='coal_lagr')
+            self.modelPulverizedCoal.enableItem(str_model='homogeneous_fuel')
+            self.modelPulverizedCoal.enableItem(str_model='homogeneous_fuel_moisture')
+            self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel_lagr')
+            self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel_moisture_lagr')
         else:
             self.modelSteadyFlow.disableItem(str_model='on')
-            # WARNING: the 'coal_lagr' model is deprecated
-            #self.modelPulverizedCoal.enableItem(str_model='coal_lagr')
+            self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel')
+            self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel_moisture')
+            self.modelPulverizedCoal.enableItem(str_model='homogeneous_fuel_lagr')
+            self.modelPulverizedCoal.enableItem(str_model='homogeneous_fuel_moisture_lagr')
 
         self.lagr.setLagrangianStatus(val)
         self.browser.configureTree(self.case)
@@ -455,11 +459,10 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.pcoal.setCoalCombustionModel(model)
         self.therm.setThermalModel('off')
 
-        # WARNING: the 'coal_lagr' model is deprecated
-#        if model == 'coal_lagr':
-#            self.modelLagrangian.disableItem(str_model='single_phase')
-#        else:
-#            self.modelLagrangian.enableItem(str_model='single_phase')
+        if model == 'homogeneous_fuel_lagr' or model == 'homogeneous_fuel_moisture_lagr':
+            self.modelLagrangian.disableItem(str_model='single_phase')
+        else:
+            self.modelLagrangian.enableItem(str_model='single_phase')
 
         # we inform that thermal scalar will be removed if it exists
         th_label = self.scal.getThermalScalarLabel()

@@ -734,7 +734,8 @@ Calculation management
             if node5.xmlGetAttribute('model') != 'off':
                 self.setRowOpen(self.tr('Radiative boundary conditions'))
 
-        elif node2['model'] in ('homogeneous_fuel', 'homogeneous_fuel_moisture'):
+        elif node2['model'] in ('homogeneous_fuel', 'homogeneous_fuel_moisture',
+                                'homogeneous_fuel_lagr', 'homogeneous_fuel_moisture_lagr'):
             self.setRowClose(self.tr('Thermal model'))
             self.setRowOpen(self.tr('Pulverized fuel combustion'))
             self.setRowOpen(self.tr('Radiative transfers'))

@@ -24,6 +24,7 @@
 
 """
 This module contains the following classes and function:
+- LabelDelegate
 - LagrangianAdvancedOptionsDialogForm
 - StandardItemModelCoals
 - LagrangianView
@@ -222,6 +223,35 @@ class LagrangianAdvancedOptionsDialogView(QDialog, Ui_LagrangianAdvancedOptionsD
         Translation
         """
         return text
+#-------------------------------------------------------------------------------
+# Line edit delegate for the label
+#-------------------------------------------------------------------------------
+
+class LabelDelegate(QItemDelegate):
+    """
+    Use of a QLineEdit in the table.
+    """
+    def __init__(self, parent=None):
+        QItemDelegate.__init__(self, parent)
+        self.parent = parent
+        self.old_plabel = ""
+
+
+    def createEditor(self, parent, option, index):
+        editor = QLineEdit(parent)
+        self.old_label = ""
+        #editor.installEventFilter(self)
+        rx = "[_a-zA-Z][_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX-1) + "}"
+        self.regExp = QRegExp(rx)
+        v = RegExpValidator(editor, self.regExp)
+        editor.setValidator(v)
+        return editor
+
+
+    def setEditorData(self, editor, index):
+        value = index.model().data(index, Qt.DisplayRole).toString()
+        self.old_plabel = str(value)
+        editor.setText(value)
 
 #-------------------------------------------------------------------------------
 # Line edit delegate for values in self.tableViewCoals
@@ -268,12 +298,13 @@ class StandardItemModelCoals(QStandardItemModel):
         """
         """
         QStandardItemModel.__init__(self)
-        self.headers = [self.tr("Limit temperature\nof fouling (deg C)"),
+        self.headers = [self.tr("Name"),
+                        self.tr("Limit temperature\nof fouling (deg C)"),
                         self.tr("Ash critical\nviscosity (Pa.s)"),
                         self.tr("Coefficient 1"),
                         self.tr("Coefficient 2")]
 
-        self.kwords = ["TPRENC", "VISREF", "ENC1" ,"ENC2"]
+        self.kwords = ["", "TPRENC", "VISREF", "ENC1" ,"ENC2"]
 
         self.setColumnCount(len(self.headers))
         self.dataCoals = []
@@ -287,6 +318,7 @@ class StandardItemModelCoals(QStandardItemModel):
 
         for icoal in range(CoalsNumber):
             line = []
+            line.append(self.coalModel.getFuelLabel(icoal+1))
             line.append(self.model.getThresholdTemperatureOfFouling(icoal+1))
             line.append(self.model.getCriticalViscosityOfFouling(icoal+1))
             line.append(self.model.getCoef1OfFouling(icoal+1))
@@ -294,6 +326,8 @@ class StandardItemModelCoals(QStandardItemModel):
             self.dataCoals.append(line)
             row = self.rowCount()
             self.setRowCount(row+1)
+
+        del CoalCombustionModel
 
 
     def data(self, index, role):
@@ -314,6 +348,8 @@ class StandardItemModelCoals(QStandardItemModel):
     def flags(self, index):
         if not index.isValid():
             return Qt.ItemIsEnabled
+        if index.column() == 0:
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
         else:
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
 
@@ -331,13 +367,13 @@ class StandardItemModelCoals(QStandardItemModel):
         val, ok = value.toDouble()
         self.dataCoals[row][col] = val
 
-        if col == 0:
+        if col == 1:
             self.model.setThresholdTemperatureOfFouling(row+1, val)
-        elif col == 1:
-            self.model.setCriticalViscosityOfFouling(row+1, val)
         elif col == 2:
-            self.model.setCoef1OfFouling(row+1, val)
+            self.model.setCriticalViscosityOfFouling(row+1, val)
         elif col == 3:
+            self.model.setCoef1OfFouling(row+1, val)
+        elif col == 4:
             self.model.setCoef2OfFouling(row+1, val)
 
         self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
@@ -385,8 +421,6 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         self.connect(self.checkBoxIDEPST, SIGNAL("clicked()"), self.slotIDEPST)
         self.connect(self.comboBoxIPHYLA, SIGNAL("activated(const QString&)"), self.slotIPHYLA)
         self.connect(self.checkBoxITPVAR, SIGNAL("clicked()"), self.slotITPVAR)
-        #self.connect(self.lineEditTPPART, SIGNAL("textChanged(const QString &)"), self.slotTPPART)
-        #self.connect(self.lineEditCPPART, SIGNAL("textChanged(const QString &)"), self.slotCPPART)
         self.connect(self.checkBoxIMPVAR, SIGNAL("clicked()"), self.slotIMPVAR)
         self.connect(self.checkBoxIENCRA, SIGNAL("clicked()"), self.slotIENCRA)
         #
@@ -398,13 +432,9 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
 
         # Validators
         validatorNBPMAX = IntValidator(self.lineEditNBPMAX, min=0)
-        #validatorTPPART = DoubleValidator(self.lineEditTPPART)
-        #validatorCPPART = DoubleValidator(self.lineEditCPPART, min=0.)
         validatorNSTITS = IntValidator(self.lineEditNSTITS)
 
         self.lineEditNBPMAX.setValidator(validatorNBPMAX)
-        #self.lineEditTPPART.setValidator(validatorTPPART)
-        #self.lineEditCPPART.setValidator(validatorCPPART)
         self.lineEditNSTITS.setValidator(validatorNSTITS)
 
         # initialize Widgets
@@ -419,15 +449,6 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         self.modelIILAGR.setItem(str_model=model)
         self.slotIILAGR(self.modelIILAGR.dicoM2V[model])
 
-        # FIXME
-        # Control if restart is activated
-##         is_restart = StartRestartModel.getRestart()
-##         if is_restart == "on":
-##             self.checkBoxISUILA.setEnabled(True)
-##             self.lineEditISUILA.setEnabled(True)
-##         else:
-##             self.checkBoxISUILA.setEnabled(False)
-##             self.lineEditISUILA.setEnabled(False)
         status = self.model.getRestart()
         if status == "on":
             self.checkBoxISUILA.setChecked(True)
@@ -469,9 +490,6 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         part_model = self.model.getParticlesModel()
         self.modelIPHYLA.setItem(str_model=part_model)
         self.slotIPHYLA(self.modelIPHYLA.dicoM2V[part_model])
-
-        # Disabling the coal model model waiting for validation
-        #self.modelIPHYLA.disableItem(str_model="coal")
 
         self.case.undoStartGlobal()
 
@@ -598,17 +616,9 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             status = self.model.getHeating()
             if status == "on":
                 self.checkBoxITPVAR.setChecked(True)
-                #
-                #self.frameTemperature.show()
-                #
-                #temp = self.model.getParticlesTemperatureValue()
-                #cp   = self.model.getParticlesSpecificHeatValue()
-                #self.lineEditTPPART.setText(str(temp))
-                #self.lineEditCPPART.setText(str(cp))
 
             else:
                 self.checkBoxITPVAR.setChecked(False)
-                #self.frameTemperature.hide()
 
             status = self.model.getEvaporation()
             if status == "on":
@@ -636,34 +646,8 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         """
         if self.checkBoxITPVAR.isChecked():
             self.model.setHeating("on")
-            #self.frameTemperature.show()
-            #temp = self.model.getParticlesTemperatureValue()
-            #self.lineEditTPPART.setText(str(temp))
-            #cp = self.model.getParticlesSpecificHeatValue()
-            #self.lineEditCPPART.setText(str(cp))
         else:
             self.model.setHeating("off")
-            #self.frameTemperature.hide()
-
-
-    @pyqtSignature("const QString&")
-    def slotTPPART(self, text):
-        """
-        Input TPPART.
-        """
-        if self.sender().validator().state == QValidator.Acceptable:
-            value, ok = text.toDouble()
-            self.model.setParticlesTemperatureValue(value)
-
-
-    @pyqtSignature("const QString&")
-    def slotCPPART(self, text):
-        """
-        Input CPPART.
-        """
-        if self.sender().validator().state == QValidator.Acceptable:
-            value, ok = text.toDouble()
-            self.model.setParticlesSpecificHeatValue(value)
 
 
     @pyqtSignature("")
@@ -688,10 +672,12 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.modelCoals = StandardItemModelCoals(self.case, self.model)
             self.tableViewCoals.setModel(self.modelCoals)
             delegateValue = ValueDelegate(self.tableViewCoals)
-            self.tableViewCoals.setItemDelegateForColumn(0, delegateValue)
+            delegateLabel = LabelDelegate(self.tableViewCoals)
+            self.tableViewCoals.setItemDelegateForColumn(0, delegateLabel)
             self.tableViewCoals.setItemDelegateForColumn(1, delegateValue)
             self.tableViewCoals.setItemDelegateForColumn(2, delegateValue)
             self.tableViewCoals.setItemDelegateForColumn(3, delegateValue)
+            self.tableViewCoals.setItemDelegateForColumn(4, delegateValue)
             self.tableViewCoals.show()
             self.tableViewCoals.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
             self.tableViewCoals.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)

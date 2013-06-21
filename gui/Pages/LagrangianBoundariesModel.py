@@ -102,9 +102,8 @@ class LagrangianBoundariesModel(Model):
         default['diameter_choice'] = "prescribed"
         default['diameter'] = 1.0e-5
         default['diameter_standard_deviation'] = 0.
-        default['coal_number'] = 0
-        default['coal_temperature'] = 0.
-        default['raw_coal_mass_fraction'] = 0.
+        default['coal_number'] = 1
+        default['coal_temperature'] = 800.
         default['char_mass_fraction'] = 0.
         return default
 
@@ -679,13 +678,28 @@ class LagrangianBoundariesModel(Model):
 
 
     @Variables.noUndo
-    def getCoalMassValue(self, label, iclass):
+    def getCoalMassDefaultValue(self, icoal, iclass):
         """
         Return the coal mass value.
         """
         value = self.node_class.xmlGetDouble('raw_coal_mass_fraction')
         if value == None:
-            value = self.defaultParticlesBoundaryValues()['raw_coal_mass_fraction']
+            from Pages.CoalCombustionModel import CoalCombustionModel
+            rho = CoalCombustionModel(self.case).getProperty(icoal, "density")
+            diam = CoalCombustionModel(self.case).getDiameter(icoal, iclass)
+            value = 3.14159265 / 6. * rho* diam**3
+            del CoalCombustionModel
+        return value
+
+
+    @Variables.noUndo
+    def getCoalMassValue(self, label, icoal, iclass):
+        """
+        Return the coal mass value.
+        """
+        value = self.node_class.xmlGetDouble('raw_coal_mass_fraction')
+        if value == None:
+            value = self.getCoalMassDefaultValue(icoal, iclass)
             self.setCoalMassValue(label, iclass, value)
         return value
 
@@ -708,7 +722,7 @@ class LagrangianBoundariesModel(Model):
         value = self.node_class.xmlGetDouble('char_mass_fraction')
         if value == None:
             value = self.defaultParticlesBoundaryValues()['char_mass_fraction']
-            self.setCokeMassValue(label, iclass, svalue)
+            self.setCokeMassValue(label, iclass, value)
         return value
 
 

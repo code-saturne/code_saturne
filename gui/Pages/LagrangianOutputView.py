@@ -125,19 +125,6 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
         else:
             self.checkBoxIVISMP.setChecked(False)
 
-        # FIXME
-        # check if coal model is activated
-##         coalThermoChModel = CoalThermoChemistry.CoalThermoChemistryModel("dp_FCP", self.case)
-##         coals = coalThermoChModel.getCoals()
-##         CoalsNumber = coals.getNumber()
-##         if CoalsNumber == 0:
-##             self.lineEditIVISDK.setDisabled(True)
-##             self.checkBoxIVISDK.setDisabled(True)
-##             self.lineEditIVISCH.setDisabled(True)
-##             self.checkBoxIVISCH.setDisabled(True)
-##             self.lineEditIVISCK.setDisabled(True)
-##             self.checkBoxIVISCK.setDisabled(True)
-
         status = self.model.getCoalParticleDiameterStatus()
         if status == "on":
             self.checkBoxIVISDK.setChecked(True)
