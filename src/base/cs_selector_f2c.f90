@@ -24,7 +24,7 @@
 ! Function:
 ! ---------
 
-!> \file cs_selector_f2c subroutine getfac
+!> \file cs_selector_f2c.f90
 
 !> \brief Build the list of interior faces matching a criteria string.
 !-------------------------------------------------------------------------------

@@ -125,7 +125,7 @@ BEGIN_C_DECLS
 
   Function pointer associated with a specific post-processing output.
 
-  Such functions are registered using the \ref cs_post_add_time_dep_vars,
+  Such functions are registered using the \ref cs_post_add_time_dep_output,
   and all registered functions are automatically called by
   \ref cs_post_write_vars.
 

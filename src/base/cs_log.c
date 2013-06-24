@@ -116,9 +116,8 @@ _open_log(cs_log_t log)
   }
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Pad a string so that its printable length is the required length.
+/*----------------------------------------------------------------------------*
+ * Pad a string so that its printable length is the required length.
  *
  * This allows pretty-printing with UTF-8 strings, whose actual length may be
  * larger than their printable length in the presence of multibyte characters.
@@ -211,8 +210,6 @@ _log_strpad(char        *dest,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \fn size_t cs_log_strlen(const char  *str)
- *
  * \brief Count printable length of a character string.
  *
  * This should also include UTF-8 strings.
@@ -220,7 +217,8 @@ _log_strpad(char        *dest,
  * \param[in]  str  pointer to printable string
  *
  * \return  printable length of character string.
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 size_t
 cs_log_strlen(const char  *str)
@@ -290,7 +288,8 @@ cs_log_strlen(const char  *str)
  * \param[in]  src       pointer to printable string
  * \param[in]  width     desired printed length
  * \param[in]  destsize  destination buffer size
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_log_strpad(char        *dest,
@@ -317,7 +316,8 @@ cs_log_strpad(char        *dest,
  * \param[in]  src       pointer to printable string
  * \param[in]  width     desired printed length
  * \param[in]  destsize  destination buffer size
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_log_strpadl(char        *dest,

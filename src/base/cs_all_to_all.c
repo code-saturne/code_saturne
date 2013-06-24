@@ -59,28 +59,6 @@
 BEGIN_C_DECLS
 
 /*=============================================================================
- * Additional doxygen documentation
- *============================================================================*/
-
-/*!
-  \file cs_all_to_all.c
-        All-to-all parallel data exchange.
-
-  \typedef cs_all_to_all_t
-        Opaque all-to-all distribution structure
-
-  \enum cs_all_to_all_type_t
-
-  \brief All-to-all algorithm selection
-
-  \var CS_ALL_TO_ALL_MPI_DEFAULT
-       Use MPI_Alltoall and MPI_Alltoallv sequences
-
-  \var CS_ALL_TO_ALL_CRYSTAL_ROUTER
-       Use crystal router algorithm
-*/
-
-/*=============================================================================
  * Macro definitions
  *============================================================================*/
 
@@ -197,6 +175,28 @@ static size_t              _all_to_all_calls[5] = {0, 0, 0, 0, 0};
 static cs_timer_counter_t  _all_to_all_timers[5];
 
 /*! \endcond (end ignore by Doxygen) */
+
+/*=============================================================================
+ * Additional doxygen documentation
+ *============================================================================*/
+
+/*!
+  \file cs_all_to_all.c
+        All-to-all parallel data exchange.
+
+  \typedef cs_all_to_all_t
+        Opaque all-to-all distribution structure
+
+  \enum cs_all_to_all_type_t
+
+  \brief All-to-all algorithm selection
+
+  \var CS_ALL_TO_ALL_MPI_DEFAULT
+       Use MPI_Alltoall and MPI_Alltoallv sequences
+
+  \var CS_ALL_TO_ALL_CRYSTAL_ROUTER
+       Use crystal router algorithm
+*/
 
 /*============================================================================
  * Local function defintions

@@ -571,7 +571,7 @@ module optcal
   integer, save :: ikecou
 
   !> pseudo eddy viscosity in the matrix of momentum equation to partially
-  !> implicit \$f \divv \left( \rho \tens{R} \right) \f$
+  !> implicit \f$ \divv \left( \rho \tens{R} \right) \f$
   !>    - 1: true
   !>    - 0: false (default)
   integer, save :: irijnu
