@@ -65,6 +65,7 @@ AM_LDFLAGS =
 
 pkginclude_HEADERS = \
 cs_ale.h \
+cs_all_to_all.h \
 cs_ast_coupling.h \
 cs_base.h \
 cs_base_fortran.h \
@@ -129,6 +130,7 @@ libcscorep_la_SOURCES = cs_base.c
 libcscorep_la_LDFLAGS = -no-undefined
 
 libcscore_la_SOURCES = \
+cs_all_to_all.c \
 cs_block_dist.c \
 cs_block_to_part.c \
 cs_defs.c \

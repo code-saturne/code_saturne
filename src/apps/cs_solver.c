@@ -74,6 +74,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_all_to_all.h"
 #include "cs_base.h"
 #include "cs_base_fortran.h"
 #include "cs_benchmark.h"
@@ -635,6 +636,7 @@ cs_run(void)
 
   /* CPU times and memory management finalization */
 
+  cs_all_to_all_log_finalize();
   cs_io_log_finalize();
 
   cs_base_time_summary();

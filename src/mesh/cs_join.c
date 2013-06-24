@@ -30,11 +30,12 @@
  * Standard C library headers
  *---------------------------------------------------------------------------*/
 
-#include <stdio.h>
-#include <string.h>
 #include <assert.h>
-#include <math.h>
 #include <float.h>
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -46,6 +47,7 @@
 
 #include "fvm_periodicity.h"
 
+#include "cs_all_to_all.h"
 #include "cs_block_dist.h"
 #include "cs_join_intersect.h"
 #include "cs_join_merge.h"
@@ -76,6 +78,7 @@ BEGIN_C_DECLS
  *===========================================================================*/
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
+
 /*----------------------------------------------------------------------------
  * Dump a cs_mesh_t structure into a file for debugging purpose
  *
@@ -139,6 +142,7 @@ _dump_gset(const  int               join_num,
   BFT_FREE(filename);
   fclose(dbg_file);
 }
+
 #endif
 
 /*----------------------------------------------------------------------------
@@ -272,9 +276,10 @@ _get_work_struct(cs_join_param_t         param,
   if (param.verbosity > 1)
     bft_printf(_("\n  Sorted possible intersections between faces.\n"));
 
-  cs_log_printf(CS_LOG_PERFORMANCE,
-                _("    Sorting possible intersections between faces:   %10.3g\n"),
-                clock_end - clock_start);
+  cs_log_printf
+    (CS_LOG_PERFORMANCE,
+     _("    Sorting possible intersections between faces:   %10.3g\n"),
+     clock_end - clock_start);
 
   /* Define a distributed cs_join_mesh_t structure to store the connectivity
      of the intersecting faces associated to their bounding boxes in
@@ -429,9 +434,10 @@ _build_join_structures(cs_join_t            *this_join,
   /* log performance info of previous step here only to simplify
      "pretty printing". */
 
-  cs_log_printf(CS_LOG_PERFORMANCE,
-                _("    Definition of local joining mesh:               %10.3g\n"),
-                clock_end - clock_start);
+  cs_log_printf
+    (CS_LOG_PERFORMANCE,
+     _("    Definition of local joining mesh:               %10.3g\n"),
+     clock_end - clock_start);
 
   bft_printf_flush();
 
@@ -514,9 +520,10 @@ _intersect_edges(cs_join_t               *this_join,
 
   clock_end = cs_timer_wtime();
 
-  cs_log_printf(CS_LOG_PERFORMANCE,
-                _("    Edge intersections:                             %10.3g\n"),
-                clock_end - clock_start);
+  cs_log_printf
+    (CS_LOG_PERFORMANCE,
+     _("    Edge intersections:                             %10.3g\n"),
+     clock_end - clock_start);
 
   clock_start = clock_end;
 
@@ -570,6 +577,7 @@ _intersect_edges(cs_join_t               *this_join,
     /* Synchronize inter_edges structure definition */
 
 #if defined(HAVE_MPI)
+
     if (n_ranks > 1 ) {
 
       cs_join_inter_edges_t  *sync_block = NULL;
@@ -617,9 +625,10 @@ _intersect_edges(cs_join_t               *this_join,
 
   clock_end = cs_timer_wtime();
 
-  cs_log_printf(CS_LOG_PERFORMANCE,
-                _("    Creation of new vertices:                       %10.3g\n"),
-                clock_end - clock_start);
+  cs_log_printf
+    (CS_LOG_PERFORMANCE,
+     _("    Creation of new vertices:                       %10.3g\n"),
+     clock_end - clock_start);
 
   if (param.verbosity > 0)
     bft_printf(_("\n"
@@ -660,13 +669,16 @@ _get_local_o2n_vtx_gnum(cs_join_param_t    param,
                         cs_gnum_t          init_max_vtx_gnum,
                         cs_gnum_t         *p_o2n_vtx_gnum[])
 {
-  cs_lnum_t  i, shift, rank;
+  cs_lnum_t i, n_block_vtx;
 
-  int        *send_shift = NULL, *recv_shift = NULL;
-  int        *send_count = NULL, *recv_count = NULL;
-  cs_gnum_t  *send_glist = NULL, *recv_glist = NULL;
-  cs_gnum_t  *new_gnum_by_block = *p_o2n_vtx_gnum;
-  cs_gnum_t  *new_local_gnum = NULL;
+  cs_lnum_t n_tot_vertices = mesh->n_vertices;
+
+  size_t data_stride = 0;
+  int *dest_rank = NULL;
+  cs_gnum_t *new_gnum_by_block = *p_o2n_vtx_gnum;
+  cs_gnum_t *new_local_gnum = NULL;
+  unsigned char *p = NULL;
+  cs_all_to_all_t *d = NULL;
 
   const int  n_ranks = cs_glob_n_ranks;
   const int  local_rank = cs_glob_rank_id;
@@ -680,127 +692,88 @@ _get_local_o2n_vtx_gnum(cs_join_param_t    param,
   MPI_Comm  comm = cs_glob_mpi_comm;
 
   if (param.perio_type != FVM_PERIODICITY_NULL)
-    BFT_MALLOC(new_local_gnum, mesh->n_vertices + select->n_vertices, cs_gnum_t);
-  else
-    BFT_MALLOC(new_local_gnum, mesh->n_vertices, cs_gnum_t);
+    n_tot_vertices = mesh->n_vertices + select->n_vertices;
+
+  /* Initialize new vertex gnum with old one */
+
+  BFT_MALLOC(new_local_gnum, n_tot_vertices, cs_gnum_t);
+  BFT_MALLOC(dest_rank, n_tot_vertices, int);
+
+  for (i = 0; i < mesh->n_vertices; i++) {
+    dest_rank[i] = (mesh->global_vtx_num[i] - 1)/(cs_gnum_t)(bi.block_size);
+    assert(dest_rank[i] >= 0 && dest_rank[i] < n_ranks);
+    new_local_gnum[i] = mesh->global_vtx_num[i];
+  }
+
+  if (param.perio_type != FVM_PERIODICITY_NULL) {
+    for (i = 0; i < select->n_vertices; i++) {
+      const cs_lnum_t j = mesh->n_vertices + i;
+      dest_rank[j] =   (select->per_v_couples[2*i+1] - 1)
+                     / (cs_gnum_t)(bi.block_size);
+      assert(dest_rank[j] >= 0 && dest_rank[j] < n_ranks);
+      new_local_gnum[j] = select->per_v_couples[2*i+1];
+    }
+  }
+
+  /* Send old vtx gnum to matching block */
+
+  d = cs_all_to_all_create_s(n_tot_vertices,
+                             1,
+                             CS_GNUM_TYPE,
+                             new_local_gnum,
+                             dest_rank,
+                             comm);
+
+  BFT_FREE(dest_rank);
+
+  cs_all_to_all_exchange(d);
 
   /* Request the new vtx gnum related to the initial vtx gnum */
 
-  BFT_MALLOC(send_count, n_ranks, int);
-  BFT_MALLOC(recv_count, n_ranks, int);
+  n_block_vtx = cs_all_to_all_n_elts(d);
 
-  for (i = 0; i < n_ranks; i++)
-    send_count[i] = 0;
+  cs_all_to_all_get_data_pointer(d,
+                                 &data_stride,
+                                 &p);
 
-  for (i = 0; i < mesh->n_vertices; i++) {
-    rank = (mesh->global_vtx_num[i] - 1)/(cs_gnum_t)(bi.block_size);
-    assert(rank >= 0 && rank < n_ranks);
-    send_count[rank] += 1;
-  }
+  for (i = 0; i < n_block_vtx; i++) {
 
-  if (param.perio_type != FVM_PERIODICITY_NULL) {
+    unsigned char *p1 = p + i*data_stride;
+    cs_gnum_t *n = (cs_gnum_t *)p1;
 
-    for (i = 0; i < select->n_vertices; i++) {
-      rank = (select->per_v_couples[2*i+1] - 1)/(cs_gnum_t)(bi.block_size);
-      assert(rank >= 0 && rank < n_ranks);
-      send_count[rank] += 1;
-    }
+    /* Transform old to new vertex number */
+    cs_gnum_t o_shift = *n - bi.gnum_range[0];
+    *n = new_gnum_by_block[o_shift];
 
   }
 
-  MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, comm);
+  cs_all_to_all_swap_src_dest(d);
 
-  BFT_MALLOC(send_shift, n_ranks + 1, int);
-  BFT_MALLOC(recv_shift, n_ranks + 1, int);
+  /* Send data back */
 
-  send_shift[0] = 0;
-  recv_shift[0] = 0;
+  cs_all_to_all_exchange(d);
 
-  for (rank = 0; rank < n_ranks; rank++) {
-    send_shift[rank + 1] = send_shift[rank] + send_count[rank];
-    recv_shift[rank + 1] = recv_shift[rank] + recv_count[rank];
+  /* Sort by initial destination rank, then retreive values */
+
+  cs_all_to_all_sort_by_source_rank(d);
+
+  assert(cs_all_to_all_n_elts(d) == n_tot_vertices);
+
+  cs_all_to_all_get_data_pointer(d,
+                                 &data_stride,
+                                 &p);
+
+  for (i = 0; i < n_tot_vertices; i++) {
+    unsigned char *p1 = p + i*data_stride;
+    cs_gnum_t *n = (cs_gnum_t *)p1;
+    new_local_gnum[i] = n[0];
   }
 
-  /* Build send_list */
-
-  BFT_MALLOC(send_glist, send_shift[n_ranks], cs_gnum_t);
-  BFT_MALLOC(recv_glist, recv_shift[n_ranks], cs_gnum_t);
-
-  for (i = 0; i < n_ranks; i++)
-    send_count[i] = 0;
-
-  for (i = 0; i < mesh->n_vertices; i++) {
-
-    rank = (mesh->global_vtx_num[i] - 1)/(cs_gnum_t)(bi.block_size);
-    shift = send_shift[rank] + send_count[rank];
-    send_glist[shift] = mesh->global_vtx_num[i];  /* Old global number */
-    send_count[rank] += 1;
-
-  }
-
-  if (param.perio_type != FVM_PERIODICITY_NULL) {
-
-    for (i = 0; i < select->n_vertices; i++) {
-      rank = (select->per_v_couples[2*i+1] - 1)/(cs_gnum_t)(bi.block_size);
-      shift = send_shift[rank] + send_count[rank];
-      send_glist[shift] = select->per_v_couples[2*i+1]; /* Old global num. */
-      send_count[rank] += 1;
-    }
-
-  }
-
-  MPI_Alltoallv(send_glist, send_count, send_shift, CS_MPI_GNUM,
-                recv_glist, recv_count, recv_shift, CS_MPI_GNUM,
-                comm);
-
-  /* Send back to the original rank the new global vertex number */
-
-  for (rank = 0; rank < n_ranks; rank++) {
-
-    for (i = recv_shift[rank]; i < recv_shift[rank+1]; i++) {
-      shift = recv_glist[i] - bi.gnum_range[0];
-      recv_glist[i] = new_gnum_by_block[shift];
-    }
-
-  } /* End of loop on ranks */
-
-  MPI_Alltoallv(recv_glist, recv_count, recv_shift, CS_MPI_GNUM,
-                send_glist, send_count, send_shift, CS_MPI_GNUM,
-                comm);
-
-  for (i = 0; i < n_ranks; i++)
-    send_count[i] = 0;
-
-  for (i = 0; i < mesh->n_vertices; i++) {
-
-    rank = (mesh->global_vtx_num[i] - 1)/(cs_gnum_t)(bi.block_size);
-    shift = send_shift[rank] + send_count[rank];
-    new_local_gnum[i] = send_glist[shift];  /* New global number */
-    send_count[rank] += 1;
-
-  }
-
-  if (param.perio_type != FVM_PERIODICITY_NULL) {
-
-    for (i = 0; i < select->n_vertices; i++) {
-      rank = (select->per_v_couples[2*i+1] - 1)/(cs_gnum_t)(bi.block_size);
-      shift = send_shift[rank] + send_count[rank];
-      new_local_gnum[mesh->n_vertices + i] = send_glist[shift]; /* New glob num. */
-      send_count[rank] += 1;
-    }
-
-  }
-
-  BFT_FREE(send_count);
-  BFT_FREE(send_shift);
-  BFT_FREE(send_glist);
-  BFT_FREE(recv_glist);
-  BFT_FREE(recv_count);
-  BFT_FREE(recv_shift);
-  BFT_FREE(new_gnum_by_block);
+  cs_all_to_all_destroy(&d);
 
   /* Return pointer */
 
+  BFT_FREE(new_gnum_by_block);
   *p_o2n_vtx_gnum = new_local_gnum;
 }
 
@@ -1001,9 +974,10 @@ _merge_vertices(cs_join_t                *this_join,
   clock_m_end = cs_timer_wtime();
 
 
-  cs_log_printf(CS_LOG_PERFORMANCE,
-                _("    Merging vertices:                               %10.3g\n"),
-                clock_m_end - clock_m_start);
+  cs_log_printf
+    (CS_LOG_PERFORMANCE,
+     _("    Merging vertices:                               %10.3g\n"),
+     clock_m_end - clock_m_start);
 
   cs_join_eset_destroy(vtx_eset);
 
@@ -1068,9 +1042,10 @@ _merge_vertices(cs_join_t                *this_join,
 
   clock_end = cs_timer_wtime();
 
-  cs_log_printf(CS_LOG_PERFORMANCE,
-                _("    Updating structures with vertex merging:        %10.3g\n"),
-                clock_end - clock_start - (clock_m_end - clock_m_start));
+  cs_log_printf
+    (CS_LOG_PERFORMANCE,
+     _("    Updating structures with vertex merging:        %10.3g\n"),
+     clock_end - clock_start - (clock_m_end - clock_m_start));
 
   if (param.verbosity > 0)
     bft_printf(_("\n"
@@ -1220,9 +1195,10 @@ _split_faces(cs_join_t           *this_join,
 
   clock_end = cs_timer_wtime();
 
-  cs_log_printf(CS_LOG_PERFORMANCE,
-                _("    Split old faces and reconstruct new faces:      %10.3g\n"),
-                clock_end - clock_start);
+  cs_log_printf
+    (CS_LOG_PERFORMANCE,
+     _("    Split old faces and reconstruct new faces:      %10.3g\n"),
+     clock_end - clock_start);
 
   bft_printf_flush();
 

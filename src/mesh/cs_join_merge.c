@@ -2273,7 +2273,7 @@ _keep_global_vtx_evolution(cs_lnum_t               n_iwm_vertices,
 #if defined(HAVE_MPI) /* Parallel treatment */
   if (n_ranks > 1) {
 
-    cs_lnum_t  shift, rank, n_recv_elts;
+    cs_lnum_t  shift, rank;
     cs_lnum_t  block_size = 0;
 
     int        *send_shift = NULL, *recv_shift = NULL;
@@ -2350,8 +2350,6 @@ _keep_global_vtx_evolution(cs_lnum_t               n_iwm_vertices,
     MPI_Alltoallv(send_glist, send_count, send_shift, CS_MPI_GNUM,
                   recv_glist, recv_count, recv_shift, CS_MPI_GNUM,
                   mpi_comm);
-
-    n_recv_elts = recv_shift[n_ranks]/2;
 
     BFT_FREE(send_count);
     BFT_FREE(send_shift);

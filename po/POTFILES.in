@@ -51,6 +51,7 @@ src/apps/cs_check_syntax.c
 src/apps/cs_io_dump.c
 src/apps/cs_solver.c
 src/base/cs_ale.c
+src/base/cs_all_to_all.c
 src/base/cs_ast_coupling.c
 src/base/cs_base.c
 src/base/cs_base_fortran.c
@@ -58,8 +59,8 @@ src/base/cs_block_dist.c
 src/base/cs_block_to_part.c
 src/base/cs_boundary_conditions.c
 src/base/cs_calcium.c
-src/base/cs_coupling.c
 src/base/cs_control.c
+src/base/cs_coupling.c
 src/base/cs_defs.c
 src/base/cs_ext_neighborhood.c
 src/base/cs_field.c
@@ -90,8 +91,8 @@ src/base/cs_syr4_coupling.c
 src/base/cs_syr_coupling.c
 src/base/cs_system_info.c
 src/base/cs_time_plot.c
-src/base/cs_time_step.c
 src/base/cs_timer.c
+src/base/cs_time_step.c
 src/base/cs_tpar1d.c
 src/base/cs_ventil.c
 src/bft/bft_backtrace.c
