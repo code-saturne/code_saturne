@@ -23,7 +23,7 @@
 #-------------------------------------------------------------------------------
 
 if HAVE_LATEX
-LATEX_SUBDIRS = refcard theory tutorial user install developer autovnv
+LATEX_SUBDIRS = refcard theory user install developer autovnv
 endif
 
 if HAVE_DOXYGEN

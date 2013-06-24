@@ -2,6 +2,19 @@
 Trunk (unreleased)
 ==================
 
+Changes:
+--------
+
+- Documentation: moved tutorials outside the codebase, and into a separate base.
+  This allows looser synchronization with the code base, as tutorials may be
+  updated somewhat less frequently.
+
+Architectural changes
+---------------------
+
+- Added new all-to-all infrastructure, allowing alternative algorithms such as
+  Crystal Router to MPI_Altoall/MPI_alltoallv as an option.
+
 Release 3.1.0 (11 Jun 2013)
 ===========================
 
