@@ -2163,7 +2163,27 @@ cs_field_log_defs(void)
 
   for (cat_id = mask_id_start; cat_id < mask_id_end + 1; cat_id++) {
 
+    size_t name_width = 24;
+
+    /* First loop to determine name width */
+
     n_cat_fields = 0;
+
+    for (i = 0; i < _n_fields; i++) {
+
+      const cs_field_t *f = _fields + i;
+
+      if (f->type & mask_prev)
+        continue;
+
+      size_t l = strlen(f->name);
+      if (l > name_width)
+        name_width = l;
+    }
+    if (name_width > 63)
+      name_width = 63;
+
+    /* Main loop */
 
     for (i = 0; i < _n_fields; i++) {
 
@@ -2176,13 +2196,13 @@ cs_field_log_defs(void)
 
       if (cat_id == mask_id_end || f->type & _type_flag_mask[cat_id]) {
 
+        char tmp_s[4][64] =  {"", "", "", ""};
+
         /* Print header for first field of each category */
 
         if (n_cat_fields == 0) {
 
-          char tmp_s[4][64] =  {"", "", "", ""};
-
-          cs_log_strpad(tmp_s[0], _("Field"), 24, 64);
+          cs_log_strpad(tmp_s[0], _("Field"), name_width, 64);
           cs_log_strpad(tmp_s[1], _("Dim."), 4, 64);
           cs_log_strpad(tmp_s[2], _("Location"), 20, 64);
           cs_log_strpad(tmp_s[3], _("Id"), 4, 64);
@@ -2207,7 +2227,7 @@ cs_field_log_defs(void)
           for (j = 0; j < 4; j++)
             memset(tmp_s[j], '-', 64);
 
-          tmp_s[0][24] = '\0';
+          tmp_s[0][name_width] = '\0';
           tmp_s[1][4] = '\0';
           tmp_s[2][20] = '\0';
           tmp_s[3][4] = '\0';
@@ -2222,10 +2242,17 @@ cs_field_log_defs(void)
         if (f->interleaved == false)
           ilv_c = 'n';
 
-        cs_log_printf(CS_LOG_SETUP,
-                      "  %-24s %d %c  %-20s %-4d ",
-                      f->name, f->dim, ilv_c,
+        cs_log_strpad(tmp_s[0], f->name, name_width, 64);
+
+        cs_log_strpad(tmp_s[1],
                       _(cs_mesh_location_get_name(f->location_id)),
+                      20,
+                      64);
+
+        cs_log_printf(CS_LOG_SETUP,
+                      "  %s %d %c  %s %-4d ",
+                      tmp_s[0], f->dim, ilv_c,
+                      tmp_s[1],
                       f->id);
 
         if (f->type != 0) {
