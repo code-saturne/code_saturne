@@ -5464,6 +5464,7 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
       if ((*ntmabs == *ntcabs) || (output_frequency > 0 && (*ntcabs % output_frequency) == 0))
         status = true;
     }
+    BFT_FREE(output_type);
 
     if (status) {
 
@@ -5476,6 +5477,8 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
       formula = cs_gui_get_text_value(path);
       ev_formula = mei_tree_new(formula);
       mei_tree_insert(ev_formula, "s", 0.0);
+      BFT_FREE(formula);
+      BFT_FREE(path);
 
       /* try to build the interpreter */
 
@@ -5564,6 +5567,7 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
       cs_xpath_add_function_text(&path);
       if (!cs_gui_get_int(path, &npoint))
         bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+      BFT_FREE(path);
 
       iel1   = -999;
       irang1 = -999;
