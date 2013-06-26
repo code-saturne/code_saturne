@@ -686,7 +686,7 @@ main(int    argc,
 
   /* Trap floating-point exceptions */
 
-#if defined(CS_FPE_TRAP)
+#if defined(CS_FPE_TRAP) && !defined(HAVE_CATALYST)
   if (_fenv_set == 0) {
     if (fegetenv(&_fenv_old) == 0) {
       feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);

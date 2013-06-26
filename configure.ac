@@ -504,6 +504,7 @@ CS_AC_TEST_EOS
 CS_AC_TEST_ZLIB
 CS_AC_TEST_SALOME
 CS_AC_TEST_MEDCOUPLING
+CS_AC_TEST_CATALYST
 
 CS_AC_TEST_DOCS
 
@@ -951,6 +952,7 @@ echo " MEDCoupling support: "$cs_have_medcoupling""
 if test x$cs_have_medcoupling = xyes ; then
   echo " ParaMEDMEM support: "$cs_have_paramedmem""
 fi
+echo " Catalyst (ParaView co-processing) support: "$cs_have_catalyst""
 echo " EOS support: "$cs_have_eos""
 echo " SALOME GUI support: "$cs_have_salome_gui""
 echo " SALOME Kernel support: "$cs_have_salome_kernel""

@@ -200,13 +200,14 @@ class FormatWriterDelegate(QItemDelegate):
         editor.addItem(QString("EnSight"))
         editor.addItem(QString("MED"))
         editor.addItem(QString("CGNS"))
+        editor.addItem(QString("Catalyst"))
         editor.addItem(QString("CCM-IO"))
         editor.installEventFilter(self)
         return editor
 
 
     def setEditorData(self, comboBox, index):
-        dico = {"ensight": 0, "med": 1, "cgns": 2, "ccm": 3}
+        dico = {"ensight": 0, "med": 1, "cgns": 2, "catalyst": 3, "ccm": 4}
         row = index.row()
         string = index.model().dataWriter[row]['format']
         idx = dico[string]
@@ -747,10 +748,12 @@ class StandardItemModelWriter(QStandardItemModel):
         self.dicoV2M= {"EnSight": 'ensight',
                        "MED" : 'med',
                        "CGNS": 'cgns',
+                       "Catalyst": 'catalyst',
                        "CCM-IO": 'ccm'}
         self.dicoM2V= {"ensight" : 'EnSight',
                        "med" : 'MED',
                        "cgns": 'CGNS',
+                       "catalyst": 'Catalyst',
                        "ccm": 'CCM-IO'}
         for id in self.mdl.getWriterIdList():
             row = self.rowCount()
@@ -1950,24 +1953,30 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
 
         # enable and disable options related to the format
 
+        self.modelPolygon.enableItem(str_model='discard_polygons')
+        self.modelPolygon.enableItem(str_model='divide_polygons')
+        self.modelPolyhedra.enableItem(str_model='discard_polyhedra')
+        self.modelPolyhedra.enableItem(str_model='divide_polyhedra')
+        self.comboBoxPolygon.setEnabled(True)
+        self.comboBoxPolyhedra.setEnabled(True)
+
         if format != "ensight":
             if format == "cgns":
                 self.modelPolyhedra.setItem(str_model='divide_polyhedra')
                 self.modelPolyhedra.disableItem(str_model='display')
-            elif format == "ccm":
+            elif format in [ "catalyst", "ccm" ]:
                 self.modelPolygon.disableItem(str_model='discard_polygons')
                 self.modelPolygon.disableItem(str_model='divide_polygons')
                 self.modelPolyhedra.disableItem(str_model='discard_polyhedra')
                 self.modelPolyhedra.disableItem(str_model='divide_polyhedra')
-
+                self.comboBoxPolygon.setEnabled(False)
+                self.comboBoxPolyhedra.setEnabled(False)
             self.modelFormat.setItem(str_model="binary")
             self.comboBoxFormat.setEnabled(False)
         else:
             self.modelFormat.enableItem(str_model='text')
             self.modelFormat.enableItem(str_model='big_endian')
             self.comboBoxFormat.setEnabled(True)
-            self.modelPolyhedra.enableItem(str_model='display')
-            self.comboBoxPolyhedra.setEnabled(True)
 
 
     def __insertMesh(self, name, mesh_id, mesh_type, selection):

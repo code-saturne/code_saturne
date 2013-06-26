@@ -11,7 +11,7 @@ for d in . libple
 do
   for f in `ls $d/build-aux` ; do
     case $f in
-      cs_config_test.py) ;;
+      cs_config_test.py | catalyst) ;;
       *) rm -rf $d/build-aux/*$ ;;
     esac
   done

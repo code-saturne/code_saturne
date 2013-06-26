@@ -98,9 +98,9 @@ extern "C" {
 
 /* Number and status of defined formats */
 
-static const int _fvm_writer_n_formats = 5;
+static const int _fvm_writer_n_formats = 6;
 
-static fvm_writer_format_t _fvm_writer_format_list[5] = {
+static fvm_writer_format_t _fvm_writer_format_list[6] = {
 
   /* Built-in EnSight Gold writer */
   {
@@ -191,6 +191,29 @@ static fvm_writer_format_t _fvm_writer_format_list[5] = {
     NULL,
     NULL
 #endif
+  },
+
+  /* Catalyst (VTK) writer (plugin) */
+  {
+    "Catalyst",
+    "4.0 +",
+    (  FVM_WRITER_FORMAT_USE_EXTERNAL
+     | FVM_WRITER_FORMAT_HAS_POLYGON
+     | FVM_WRITER_FORMAT_HAS_POLYHEDRON),
+    FVM_WRITER_FIXED_MESH,
+    0,                                 /* dynamic library count */
+    NULL,                              /* dynamic library */
+    "fvm_catalyst",                    /* dynamic library name */
+    "fvm_to_catalyst_",                /* dynamic library prefix */
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL
   },
 
   /* MEDCoupling writer (plugin) */
@@ -693,6 +716,8 @@ fvm_writer_get_format_id(const char  *format_name)
     strcpy(closest_name, "MED");
   else if (strncmp(tmp_name, "cgns", 4) == 0)
     strcpy(closest_name, "CGNS");
+  else if (strncmp(tmp_name, "catalyst", 8) == 0)
+    strcpy(closest_name, "Catalyst");
   else if (strncmp(tmp_name, "ccm", 3) == 0)
     strcpy(closest_name, "CCM-IO");
 

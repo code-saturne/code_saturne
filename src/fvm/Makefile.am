@@ -155,7 +155,7 @@ if HAVE_MEDCOUPLING
 fvm_medcoupling_la_CPPFLAGS = \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/bft \
-$(CFLAGS_DBG) $(CFLAGS_OPT) \
+$(CXXFLAGS_DBG) $(CXXFLAGS_OPT) \
 $(MEDCOUPLING_CPPFLAGS) $(MPI_CPPFLAGS)
 pkglib_LTLIBRARIES += fvm_medcoupling.la
 
@@ -164,6 +164,23 @@ fvm_medcoupling_la_LDFLAGS = -module -avoid-version
 fvm_medcoupling_la_LIBADD = \
 $(MEDCOUPLING_LDFLAGS) $(MEDCOUPLING_LIBS) \
 $(MEDCOUPLINGRUNPATH)
+
+endif
+
+if HAVE_CATALYST
+
+fvm_catalyst_la_CPPFLAGS = \
+-I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/bft \
+$(CXXFLAGS_DBG) $(CXXFLAGS_OPT) \
+$(CATALYST_CPPFLAGS) $(CATALYST_CXXFLAGS) $(MPI_CPPFLAGS)
+pkglib_LTLIBRARIES += fvm_catalyst.la
+
+fvm_catalyst_la_SOURCES = fvm_to_catalyst.cxx
+fvm_catalyst_la_LDFLAGS = -module -avoid-version
+fvm_catalyst_la_LIBADD = \
+$(CATALYST_LDFLAGS) $(CATALYST_LIBS) \
+$(CATALYSTRUNPATH)
 
 endif
 

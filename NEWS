@@ -12,6 +12,8 @@ Changes:
 Architectural changes
 ---------------------
 
+- Added experimental ParaView Catalyst co-processing output option.
+
 - Added new all-to-all infrastructure, allowing alternative algorithms such as
   Crystal Router to MPI_Altoall/MPI_alltoallv as an option.
 

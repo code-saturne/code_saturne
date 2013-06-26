@@ -812,7 +812,8 @@ each other. The following formats are currently supported by \CS:
 \item \hyperref[sec:fmtdesc_ensightg]{\ensightg}
 \item \hyperref[sec:fmtdesc_neu]{\gambit neutral}
 \item \hyperref[sec:fmtdesc_gmsh]{\gmsh}
-\item \hyperref[fmtdesc:ccm]{STAR-CCM+}
+\item \hyperref[sec:fmtdesc:ccm]{STAR-CCM+}
+\item \hyperref[sec:fmtdesc_catalyst]{\catalyst (co-processing)}
 \end{list}
 
 These formats are described in greater detail in the following sections.
@@ -1279,7 +1280,7 @@ Documentation:        & See CGNS site: \url{http://www.cgns.org}\\
 \end{tabular}
 
 \subsubsubsection{\starccmp%
-\label{fmtdesc:ccm}}
+\label{sec:fmtdesc:ccm}}
 
 This polyhedral format is the current CD-Adapco format, and is based on
 CD-Adapco's libccmio, which is based on ADF (the low-level file format
@@ -1333,6 +1334,48 @@ Zone selection:    & named face and cell sets\\
 Compatibility:     & all files of this type?\\
 \hline
 Documentation:     & documentation and source code provided by CD-adapco\\
+\hline
+\end{tabular}
+
+%==================================
+\subsubsection{Formats supported for output only\label{sec:formats_out}}
+%==================================
+
+\subsubsubsection{\catalyst%
+\label{sec:fmtdesc_catalyst}}
+
+This is not a ``true'' output format in the sense that output is not written
+directly to file, but is exported to the \catalyst co-processor.
+In turn, this co-processor will execute operations based on a
+special \paraview Python script, and directly generate output such
+as images or movies.
+
+Co-processing scripts may be generated using \paraview 4, with the
+CoProcessing plugin, using initial output in another format (such as \ensightg).
+A \CS postprocessing writer will try to read a script named
+\texttt{\emph{<writer\_name>}.py}, which should be places in a case's
+\texttt{DATA} directory.
+
+Note the this output is still an an experimental stage, and is heavily
+dependent on \paraview. Some operations may work very well, while other,
+similar operations may fail.
+
+\smallskip \noindent
+\begin{tabular}[top]{|p{4.5cm}%
+                     |>{\PreserveBackslash\raggedright\hspace{0pt}}p{10.5cm}|}
+\hline
+Default extension: & not applicable\\
+\hline
+File type:         & co-processing\\
+\hline
+Surface elements:  & triangles, quadrangles, polygons\\
+\hline
+Volume elements:   & tetrahedra, pyramids, prisms, hexahedra, convex polyhedra\\
+\hline
+Compatibility:     & \catalyst from \href{http://paraview.org}{\paraview} 4.0\\
+\hline
+Documentation:     & online documentation and Wiki,  at:
+                     \url{http://paraview.org/Wiki/Main_Page}\\
 \hline
 \end{tabular}
 

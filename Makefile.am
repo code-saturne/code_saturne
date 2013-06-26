@@ -114,6 +114,7 @@ sbin/rmb \
 config/cs_auto_flags.sh \
 m4/acx_pthread.m4 \
 m4/cs_blas.m4 \
+m4/cs_catalyst.m4 \
 m4/cs_ccm.m4 \
 m4/cs_cgns.m4 \
 m4/cs_docs.m4 \

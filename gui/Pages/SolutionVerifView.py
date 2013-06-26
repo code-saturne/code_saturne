@@ -392,6 +392,7 @@ class SolutionVerifView(QWidget, Ui_SolutionVerifForm):
         self.modelFMTCHR.addItem(self.tr("EnSight Gold"), 'ensight')
         self.modelFMTCHR.addItem(self.tr("MED"), 'med')
         self.modelFMTCHR.addItem(self.tr("CGNS"), 'cgns')
+        self.modelFMTCHR.addItem(self.tr("Catalyst"), 'catalyst')
         self.modelFMTCHR.addItem(self.tr("CCM-IO"), 'ccm')
 
         self.modelFormat.addItem(self.tr("binary"), 'binary')
@@ -507,17 +508,22 @@ class SolutionVerifView(QWidget, Ui_SolutionVerifForm):
 
         # enable and disable options related to the format
 
-        if format != "ensight":
+        self.modelPolygon.enableItem(str_model='discard_polygons')
+        self.modelPolygon.enableItem(str_model='divide_polygons')
+        self.modelPolyhedra.enableItem(str_model='discard_polyhedra')
+        self.modelPolyhedra.enableItem(str_model='divide_polyhedra')
+        self.comboBoxPolygon.setEnabled(True)
+        self.comboBoxPolyhedra.setEnabled(True)
 
+        if format != "ensight":
             if format == "cgns":
                 self.modelPolyhedra.setItem(str_model='divide_polyhedra')
                 self.modelPolyhedra.disableItem(str_model='display')
-            elif format == "ccm":
-                self.modelPolygon.disableItem(str_model='divide_polygons')
-                self.modelPolygon.disableItem(str_model='discard_polygons')
-                self.modelPolyhedra.disableItem(str_model='divide_polyhedra')
-                self.modelPolyhedra.disableItem(str_model='discard_polyhedra')
-
+            elif format in ["catalyst", "ccm"]:
+                self.modelPolyhedra.setItem(str_model='display')
+                self.modelPolygon.setItem(str_model='display')
+                self.comboBoxPolygon.setEnabled(False)
+                self.comboBoxPolyhedra.setEnabled(False)
             self.modelFormat.setItem(str_model="binary")
             self.modelFormat.disableItem(str_model='text')
             self.labelBigEndian.setEnabled(False)
@@ -527,8 +533,6 @@ class SolutionVerifView(QWidget, Ui_SolutionVerifForm):
             self.comboBoxFormat.setEnabled(True)
             self.labelBigEndian.setEnabled(True)
             self.checkBoxBigEndian.setEnabled(True)
-            self.modelPolyhedra.enableItem(str_model='display')
-            self.comboBoxPolyhedra.setEnabled(True)
 
 
     def __setButtonEnabled(self):
