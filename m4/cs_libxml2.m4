@@ -75,7 +75,7 @@ if test "x$with_libxml2" != "xno" ; then
 
   LIBXML2_LIBS="-lxml2"
 
-  LDFLAGS="${LDFLAGS} ${LIBXML2_LDFLAGS}"
+  LDFLAGS="${LIBXML2_LDFLAGS} ${LDFLAGS}"
   LIBS="${LIBXML2_LIBS} ${LIBS} -lm"
 
   CPPFLAGS="${saved_CPPFLAGS} ${LIBXML2_CPPFLAGS}"
