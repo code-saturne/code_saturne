@@ -168,11 +168,15 @@ struct _cs_all_to_all_t {
 
 static cs_all_to_all_type_t _all_to_all_type = CS_ALL_TO_ALL_MPI_DEFAULT;
 
+#if defined(HAVE_MPI)
+
 /* Call counter and timer: 0: setup, 1: exchange,
    2: swap source and destination, 3: sort by source rank, 4: copy data */
 
 static size_t              _all_to_all_calls[5] = {0, 0, 0, 0, 0};
 static cs_timer_counter_t  _all_to_all_timers[5];
+
+#endif /* defined(HAVE_MPI) */
 
 /*! \endcond (end ignore by Doxygen) */
 
@@ -1947,6 +1951,8 @@ cs_all_to_all_get_gnum_pointer(cs_all_to_all_t   *d,
               __func__);
 }
 
+#endif /* defined(HAVE_MPI) */
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Get current type of all-to-all distributor algorithm choice.
@@ -1985,6 +1991,8 @@ cs_all_to_all_set_type(cs_all_to_all_type_t  t)
 void
 cs_all_to_all_log_finalize(void)
 {
+#if defined(HAVE_MPI)
+
   int i;
   size_t name_width = 0;
 
@@ -2034,9 +2042,10 @@ cs_all_to_all_log_finalize(void)
 
   cs_log_printf(CS_LOG_PERFORMANCE, "\n");
   cs_log_separator(CS_LOG_PERFORMANCE);
-}
 
 #endif /* defined(HAVE_MPI) */
+}
+
 
 /*----------------------------------------------------------------------------*/
 
