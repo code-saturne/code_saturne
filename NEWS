@@ -1,3 +1,34 @@
+Release 3.0.2 (unreleased)
+==========================
+
+Changes:
+--------
+
+- Several minor documentation updates and fixes.
+
+- Improve mesh coherency test to avoid false error reports in some cases of
+  rotational periodicity.
+
+Bug fixes:
+----------
+
+- Syrthes coupling now also works with rough wall conditions.
+
+- Fix indices in evaluation of user laws for fluid properties when
+  using the compressible model.
+
+- GUI: fix bug 0000035: (NVISLA can not be modified in GUI).
+
+- Fix for loss of particles in serial restart with code built using
+  --enable-long-gnum configure option.
+
+- Fix for build with EURIWARE build of Salome 7.2.
+
+- Initialization fix in LES filter to avoid possible "random" crashes
+  when floating-point error trapping is active.
+
+- Fix array bounds error in boundary face renumbering when using OpenMP.
+
 Release 3.0.1 (03 May 2013)
 ===========================
 
