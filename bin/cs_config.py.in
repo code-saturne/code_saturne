@@ -185,15 +185,24 @@ class config:
 
         self.libs['latex'] = \
             prerequisite("Latex",
-                         have = "@cs_have_latex@")
+                         have = "@cs_have_latex@",
+                         flags = {'cppflags': "",
+                                  'ldflags': "",
+                                  'libs': ""})
 
         self.libs['doxygen'] = \
             prerequisite("Doxygen",
-                         have = "@cs_have_doxygen@")
+                         have = "@cs_have_doxygen@",
+                         flags = {'cppflags': "",
+                                  'ldflags': "",
+                                  'libs': ""})
 
         self.libs['sphinx'] = \
             prerequisite("Sphinx",
-                         have = "@cs_have_sphinx@")
+                         have = "@cs_have_sphinx@",
+                         flags = {'cppflags': "",
+                                  'ldflags': "",
+                                  'libs': ""})
 
         # Setup user and system libraries
 
