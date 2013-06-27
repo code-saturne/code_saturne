@@ -94,7 +94,6 @@ double precision rcodcl(nfabor,nvarcl,3)
 
 integer          ll, nbccou, inbcou, inbcoo, nbfcou
 integer          ifac, iloc, iscal
-integer          icldef
 integer          mode, flag
 integer          issurf
 double precision temper, enthal
@@ -149,9 +148,6 @@ do inbcou = 1, nbccou
     call leltsy(inbcoo, mode, lfcou)
     !==========
 
-    ! Default condition
-    icldef = 5
-
     do iscal = 1, nscal
 
       if (icpsyr(iscal).eq.1) then
@@ -178,8 +174,8 @@ do inbcou = 1, nbccou
           ifac = lfcou(iloc)
 
           if ((icodcl(ifac,ll) .ne. 1) .and.                        &
-               (icodcl(ifac,ll) .ne. 5) .and.                        &
-               (icodcl(ifac,ll) .ne. 6)) icodcl(ifac,ll) = icldef
+              (icodcl(ifac,ll) .ne. 5) .and.                        &
+              (icodcl(ifac,ll) .ne. 6)) icodcl(ifac,ll) = icodcl(ifac,iu)
 
           rcodcl(ifac,ll,1) = thpar(iloc)
           rcodcl(ifac,ll,2) = rinfin
