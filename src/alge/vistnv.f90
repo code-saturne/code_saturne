@@ -171,9 +171,9 @@ else
 
     call symmetric_matrix_inverse(s2, s1)
 
-    call symmetric_matrix_product(s1, s2, viscce(1, jj))
+    call symmetric_matrix_product(s1, s2, viscce(:, jj))
 
-    call symmetric_matrix_product(s2, viscce(1, ii), s1)
+    call symmetric_matrix_product(s2, viscce(:, ii), s1)
 
     srfddi = surfan(ifac)/dist(ifac)
 
