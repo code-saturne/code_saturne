@@ -453,8 +453,6 @@ _add_catalyst_field(fvm_to_catalyst_t         *writer,
     f = vtkUnstructuredGrid::SafeDownCast(vtkDataSet::SafeDownCast
           (writer->mb->GetBlock(mesh_id)));
 
-    int n_locs = 0;
-
     tmp = vtkDoubleArray::New();
     tmp->SetName(fieldname);
 
@@ -1096,7 +1094,6 @@ fvm_to_catalyst_export_nodal(void               *this_writer_p,
 
   fvm_to_catalyst_t  *w = (fvm_to_catalyst_t *)this_writer_p;
 
-  const int  n_ranks = w->n_ranks;
   const int  elt_dim = fvm_nodal_get_max_entity_dim(mesh);
 
   /* Initialization */
@@ -1203,12 +1200,9 @@ fvm_to_catalyst_export_field(void                  *this_writer_p,
                              double                 time_value,
                              const void      *const field_values[])
 {
-  int  output_dim, mesh_id, field_id;
+  int  mesh_id, field_id;
 
   fvm_to_catalyst_t *w = (fvm_to_catalyst_t *)this_writer_p;
-
-  const int  rank = w->rank;
-  const int  n_ranks = w->n_ranks;
 
   /* Initialization */
   /*----------------*/
@@ -1291,9 +1285,6 @@ void
 fvm_to_catalyst_flush(void  *this_writer_p)
 {
   fvm_to_catalyst_t *w = (fvm_to_catalyst_t *)this_writer_p;
-
-  int i;
-  int nb = w->mb->GetNumberOfBlocks();
 
   if (w->processor->RequestDataDescription(w->datadesc) != 0 && w->modified) {
     w->datadesc->GetInputDescriptionByName("input")->SetGrid(w->mb);
