@@ -79,11 +79,11 @@ Yf.fig
 
 OTHERFILES = \
 clthermique.dat \
-clthermique.f \
 clthermique.pdf \
+clthermique.py \
 clthermique.xmgr \
-loilog.f \
 loilog.pdf \
+loilog.py \
 loilog.xmgr
 
 # Distributed files
