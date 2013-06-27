@@ -43,7 +43,7 @@ cs_have_latex=yes
 AC_ARG_VAR([PDFLATEX], [LaTeX PDF generator tool])
 
 dnl where is pdflatex ?
-AC_PATH_PROG(PDFLATEX, [pdflatex]) 
+AC_PATH_PROG(PDFLATEX, [pdflatex])
 if test "x$PDFLATEX" = "x"; then
   AC_MSG_WARN(pdflatex not found)
   cs_have_latex=no
@@ -61,7 +61,7 @@ fi
 AC_ARG_VAR([MAKEINDEX], [LaTeX indexes tool])
 
 dnl where is makeindex ?
-AC_PATH_PROG(MAKEINDEX, [makeindex]) 
+AC_PATH_PROG(MAKEINDEX, [makeindex])
 if test "x$MAKEINDEX" = "x"; then
   AC_MSG_WARN(makeindex not found)
   cs_have_latex=no
@@ -70,7 +70,7 @@ fi
 AC_ARG_VAR([FIG2DEV], [Xfig translation tool])
 
 dnl where is fig2dev ?
-AC_PATH_PROG(FIG2DEV, [fig2dev]) 
+AC_PATH_PROG(FIG2DEV, [fig2dev])
 if test "x$FIG2DEV" = "x"; then
   AC_MSG_WARN(fig2dev not found)
   cs_have_latex=no
@@ -89,6 +89,7 @@ AC_SUBST([cs_tex_path_end])
 AC_SUBST([cs_tex_path_sep])
 
 AM_CONDITIONAL(HAVE_LATEX, [test $cs_have_latex = yes])
+AC_SUBST(cs_have_latex)
 
 ])dnl
 
@@ -103,13 +104,14 @@ cs_have_doxygen=yes
 AC_ARG_VAR([DOXYGEN], [source code documentation generator])
 
 dnl where is doxygen ?
-AC_PATH_PROG(DOXYGEN, [doxygen]) 
+AC_PATH_PROG(DOXYGEN, [doxygen])
 if test "x$DOXYGEN" = "x"; then
   AC_MSG_WARN(doxygen not found)
   cs_have_doxygen=no
 fi
 
 AM_CONDITIONAL(HAVE_DOXYGEN, [test $cs_have_doxygen = yes])
+AC_SUBST(cs_have_doxygen)
 
 ])dnl
 
@@ -124,12 +126,13 @@ cs_have_sphinx=yes
 AC_ARG_VAR([SPHINXBUILD], [Sphinx documentation tool])
 
 dnl where is sphinx ?
-AC_PATH_PROG(SPHINXBUILD, sphinx-build) 
+AC_PATH_PROG(SPHINXBUILD, sphinx-build)
 if test "x$SPHINXBUILD" = "x"; then
   AC_MSG_WARN(sphinx-build not found)
   cs_have_sphinx=no
 fi
 
 AM_CONDITIONAL(HAVE_SPHINX, [test $cs_have_sphinx = yes])
+AC_SUBST(cs_have_sphinx)
 
 ])dnl
