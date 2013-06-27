@@ -96,6 +96,14 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         self.modelPartType.addItem(self.tr("Hilbert curve (bounding cube)"), 'hilbert sfc cube')
         self.modelPartType.addItem(self.tr("Block (unoptimized)"), 'block')
 
+        import cs_config
+        cfg = cs_config.config()
+        if cfg.libs['scotch'].have == "no":
+            self.comboBox_PartType.setItemData(1, QColor(Qt.red), Qt.TextColorRole);
+        if cfg.libs['metis'].have == "no":
+            self.comboBox_PartType.setItemData(2, QColor(Qt.red), Qt.TextColorRole);
+
+
         self.modelPartOut.addItem(self.tr("No"), 'no')
         self.modelPartOut.addItem(self.tr("For graph-based partitioning"), 'default')
         self.modelPartOut.addItem(self.tr("Yes"), 'yes')

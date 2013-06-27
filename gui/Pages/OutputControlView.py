@@ -203,6 +203,17 @@ class FormatWriterDelegate(QItemDelegate):
         editor.addItem(QString("Catalyst"))
         editor.addItem(QString("CCM-IO"))
         editor.installEventFilter(self)
+
+        import cs_config
+        cfg = cs_config.config()
+        if cfg.libs['med'].have == "no":
+            editor.setItemData(1, QColor(Qt.red), Qt.TextColorRole);
+        if cfg.libs['cgns'].have == "no":
+            editor.setItemData(2, QColor(Qt.red), Qt.TextColorRole);
+        if cfg.libs['catalyst'].have == "no":
+            editor.setItemData(3, QColor(Qt.red), Qt.TextColorRole);
+        if cfg.libs['ccm'].have == "no":
+            editor.setItemData(4, QColor(Qt.red), Qt.TextColorRole);
         return editor
 
 
@@ -733,7 +744,7 @@ class StandardItemModelLagrangianMesh(QStandardItemModel):
 #-------------------------------------------------------------------------------
 
 class StandardItemModelWriter(QStandardItemModel):
-    def __init__(self, mdl):
+    def __init__(self, mdl, parent):
         """
         """
         QStandardItemModel.__init__(self)
@@ -742,6 +753,7 @@ class StandardItemModelWriter(QStandardItemModel):
         self.dataWriter = []
         self.mdl = mdl
         self.defaultItem = []
+        self.parent = parent
         self.populateModel()
 
     def populateModel(self):
@@ -841,6 +853,7 @@ class StandardItemModelWriter(QStandardItemModel):
                 self.mdl.setWriterFormat(writer_id,
                                          self.dataWriter[row]['format'])
                 self.mdl.setWriterOptions(writer_id, "")
+
         elif col == 3:
             old_rep = self.dataWriter[row]['directory']
             new_rep = str(value.toString())
@@ -1274,7 +1287,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.delegate = MonitoringPointDelegate(self.tableViewPoints, self.case, self.mdl)
         self.tableViewPoints.setItemDelegate(self.delegate)
 
-        self.modelWriter = StandardItemModelWriter(self.mdl)
+        self.modelWriter = StandardItemModelWriter(self.mdl, parent)
         self.tableViewWriter.setModel(self.modelWriter)
         self.tableViewWriter.resizeColumnToContents(0)
         self.tableViewWriter.resizeRowsToContents()

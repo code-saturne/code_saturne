@@ -395,6 +395,17 @@ class SolutionVerifView(QWidget, Ui_SolutionVerifForm):
         self.modelFMTCHR.addItem(self.tr("Catalyst"), 'catalyst')
         self.modelFMTCHR.addItem(self.tr("CCM-IO"), 'ccm')
 
+        import cs_config
+        cfg = cs_config.config()
+        if cfg.libs['med'].have == "no":
+            self.comboBoxFMTCHR.setItemData(1, QColor(Qt.red), Qt.TextColorRole);
+        if cfg.libs['cgns'].have == "no":
+            self.comboBoxFMTCHR.setItemData(2, QColor(Qt.red), Qt.TextColorRole);
+        if cfg.libs['catalyst'].have == "no":
+            self.comboBoxFMTCHR.setItemData(3, QColor(Qt.red), Qt.TextColorRole);
+        if cfg.libs['ccm'].have == "no":
+            self.comboBoxFMTCHR.setItemData(4, QColor(Qt.red), Qt.TextColorRole);
+
         self.modelFormat.addItem(self.tr("binary"), 'binary')
         self.modelFormat.addItem(self.tr("text"), 'text')
 
