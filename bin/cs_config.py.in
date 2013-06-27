@@ -94,6 +94,7 @@ class config:
                         'ple',                        # PLE
                         'eos',                        # Equations of state
                         'cgns', 'med', 'hdf5', 'ccm', # Mesh filters
+                        'catalyst',                   # co-processing library
                         'medcoupling', 'paramedmem',  # MED coupling
                         'metis', 'scotch',            # Partionning libraries
                         'mpi',                        # MPI
@@ -231,6 +232,14 @@ class config:
                          flags = {'cppflags': "@MED_CPPFLAGS@",
                                   'ldflags': "@MED_LDFLAGS@",
                                   'libs': "@MED_LIBS@"})
+
+        self.libs['catalyst'] = \
+            prerequisite("CATALYST",
+                         have = "@cs_have_catalyst@",
+                         dynamic_load = True,
+                         flags = {'cppflags': "@CATALYST_CPPFLAGS@",
+                                  'ldflags': "@CATALYST_LDFLAGS@",
+                                  'libs': "@CATALYST_LIBS@"})
 
         self.libs['medcoupling'] = \
             prerequisite("MEDCOUPLING",
