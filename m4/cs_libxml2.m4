@@ -75,8 +75,8 @@ if test "x$with_libxml2" != "xno" ; then
   LIBXML2_LIBS="-lxml2"
 
   CPPFLAGS="${CPPFLAGS} ${LIBXML2_CPPFLAGS}"
-  LDFLAGS="${LDFLAGS} ${LIBXML2_LDFLAGS}"
-  LIBS="${LIBS} ${LIBXML2_LIBS}"
+  LDFLAGS="${LIBXML2_LDFLAGS} ${LDFLAGS}"
+  LIBS="${LIBXML2_LIBS} ${LIBS}"
 
   AC_CHECK_HEADER([libxml/parser.h])
 
