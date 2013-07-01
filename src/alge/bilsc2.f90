@@ -32,13 +32,14 @@
 !> More precisely, the right hand side \f$ Rhs \f$ is updated as
 !> follows:
 !> \f[
-!> Rhs = Rhs + \sum_{\fij \in \Facei{\celli}}      \left(
-!>        \dot{m}_\ij \varia_\fij
+!> Rhs = Rhs - \sum_{\fij \in \Facei{\celli}}      \left(
+!>        \dot{m}_\ij \left( \varia_\fij - \varia_\celli \right)
 !>      - \mu_\fij \gradv_\fij \varia \cdot \vect{S}_\ij  \right)
 !> \f]
 !>
 !> Warning:
-!> \f$ Rhs \f$ has already been initialized before calling bilsc2!
+!> - \f$ Rhs \f$ has already been initialized before calling bilsc2!
+!> - mind the sign minus
 !>
 !> Options:
 !> - blencp = 0: upwind scheme for the advection

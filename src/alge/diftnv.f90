@@ -33,12 +33,13 @@
 !> More precisely, the right hand side \f$ \vect{Rhs} \f$ is updated as
 !> follows:
 !> \f[
-!> \vect{Rhs} = \vect{Rhs} + \sum_{\fij \in \Facei{\celli}}      \left(
+!> \vect{Rhs} = \vect{Rhs} - \sum_{\fij \in \Facei{\celli}}      \left(
 !>      - \tens{\mu}_\fij \gradt_\fij \vect{\varia} \cdot \vect{S}_\ij  \right)
 !> \f]
 !>
 !> Warning:
-!> \f$ \vect{Rhs} \f$ has already been initialized before calling diftnv!
+!> - \f$ \vect{Rhs} \f$ has already been initialized before calling diftnv!
+!> - mind the sign minus
 !>
 !-------------------------------------------------------------------------------
 
