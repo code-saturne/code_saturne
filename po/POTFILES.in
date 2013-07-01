@@ -52,6 +52,7 @@ src/apps/cs_io_dump.c
 src/apps/cs_solver.c
 src/base/cs_ale.c
 src/base/cs_all_to_all.c
+src/base/cs_array_reduce.c
 src/base/cs_ast_coupling.c
 src/base/cs_base.c
 src/base/cs_base_fortran.c

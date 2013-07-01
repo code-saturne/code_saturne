@@ -66,6 +66,7 @@ AM_LDFLAGS =
 pkginclude_HEADERS = \
 cs_ale.h \
 cs_all_to_all.h \
+cs_array_reduce.h \
 cs_ast_coupling.h \
 cs_base.h \
 cs_base_fortran.h \
@@ -178,6 +179,7 @@ cptssy.f90 \
 cpvosy.f90 \
 cregeo.f90 \
 cs_ale.c \
+cs_array_reduce.c \
 cs_ast_coupling.c \
 cs_base_fortran.c \
 cs_boundary_conditions.c \
