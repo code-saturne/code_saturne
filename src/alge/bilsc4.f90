@@ -32,8 +32,8 @@
 !> More precisely, the right hand side \f$ \vect{Rhs} \f$ is updated as
 !> follows:
 !> \f[
-!> \vect{Rhs} = \vect{Rhs} + \sum_{\fij \in \Facei{\celli}}      \left(
-!>        \dot{m}_\ij \vect{\varia}_\fij
+!> \vect{Rhs} = \vect{Rhs} - \sum_{\fij \in \Facei{\celli}}      \left(
+!>        \dot{m}_\ij \left( \vect{\varia}_\fij - \vect{\varia}_\celli \right)
 !>      - \mu_\fij \gradt_\fij \vect{\varia} \cdot \vect{S}_\ij  \right)
 !> \f]
 !>
@@ -43,7 +43,8 @@
 !> the secondary viscosity, i.e. usually \f$ -\frac{2}{3} \mu \f$.
 !>
 !> Warning:
-!> \f$ \vect{Rhs} \f$ has already been initialized before calling bilsc!
+!> - \f$ \vect{Rhs} \f$ has already been initialized before calling bilsc!
+!> - mind the sign minus
 !>
 !> Options:
 !> - blencp = 0: upwind scheme for the advection

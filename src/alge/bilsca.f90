@@ -33,13 +33,14 @@
 !> More precisely, the right hand side \f$ Rhs \f$ is updated as
 !> follows:
 !> \f[
-!> Rhs = Rhs + \sum_{\fij \in \Facei{\celli}}      \left(
-!>        \dot{m}_\ij \varia_\fij
+!> Rhs = Rhs - \sum_{\fij \in \Facei{\celli}}      \left(
+!>        \dot{m}_\ij \left( \varia_\fij - \varia_\celli \right)
 !>      - \mu_\fij \gradv_\fij \varia \cdot \vect{S}_\ij  \right)
 !> \f]
 !>
 !> Warning:
-!> \f$ Rhs \f$ has already been initialized before calling bilsca!
+!> - \f$ Rhs \f$ has already been initialized before calling bilsca!
+!> - mind the sign minus
 !>
 !> Options for the diffusive scheme:
 !> - idftnp = 1: scalar diffusivity

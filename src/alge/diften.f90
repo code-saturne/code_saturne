@@ -33,12 +33,13 @@
 !> More precisely, the right hand side \f$ Rhs \f$ is updated as
 !> follows:
 !> \f[
-!> Rhs = Rhs + \sum_{\fij \in \Facei{\celli}}      \left(
+!> Rhs = Rhs - \sum_{\fij \in \Facei{\celli}}      \left(
 !>      - \tens{\mu}_\fij \gradv_\fij \varia \cdot \vect{S}_\ij  \right)
 !> \f]
 !>
 !> Warning:
-!> \f$ Rhs \f$ has already been initialized before calling diften!
+!> - \f$ Rhs \f$ has already been initialized before calling diften!
+!> - mind the sign minus
 !>
 !-------------------------------------------------------------------------------
 
