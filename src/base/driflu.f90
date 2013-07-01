@@ -342,9 +342,9 @@ if (btest(iscdri, DRIFT_SCALAR_CENTRIFUGALFORCE)) then
 
     rhovdt = propce(iel,ipcrom)*volume(iel)/dt(iel)
 
-    dudt(1,iel) = rhovdt*(rtp(iel,iu)-rtpa(iel,iu))
-    dudt(2,iel) = rhovdt*(rtp(iel,iv)-rtpa(iel,iv))
-    dudt(3,iel) = rhovdt*(rtp(iel,iw)-rtpa(iel,iw))
+    dudt(1,iel) = -rhovdt*(rtp(iel,iu)-rtpa(iel,iu))
+    dudt(2,iel) = -rhovdt*(rtp(iel,iv)-rtpa(iel,iv))
+    dudt(3,iel) = -rhovdt*(rtp(iel,iw)-rtpa(iel,iw))
   enddo
 
   iconvp = 1
@@ -374,6 +374,7 @@ if (btest(iscdri, DRIFT_SCALAR_CENTRIFUGALFORCE)) then
   call field_get_coefaf_v(ivarfl(iu), cofafv)
   call field_get_coefbf_v(ivarfl(iu), cofbfv)
 
+  ! Warning: bilsc adds "-( grad(u) . u)"
   call bilscv &
   !==========
  ( nvar   , nscal  ,                                              &
@@ -388,9 +389,9 @@ if (btest(iscdri, DRIFT_SCALAR_CENTRIFUGALFORCE)) then
    dudt   )
 
   do iel = 1, ncel
-    drift(1, iel) = drift(1, iel) - taup(iel)*dudt(1, iel)
-    drift(2, iel) = drift(2, iel) - taup(iel)*dudt(2, iel)
-    drift(3, iel) = drift(3, iel) - taup(iel)*dudt(3, iel)
+    drift(1, iel) = drift(1, iel) + taup(iel)*dudt(1, iel)/volume(iel)
+    drift(2, iel) = drift(2, iel) + taup(iel)*dudt(2, iel)/volume(iel)
+    drift(3, iel) = drift(3, iel) + taup(iel)*dudt(3, iel)/volume(iel)
   enddo
 
 endif
