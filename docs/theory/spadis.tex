@@ -379,11 +379,11 @@ The value of the diffusive flux $D_\ij $ depends on the \emph{reconstruction} of
 \begin{enumerate}[ label=\roman{*}/, ref=(\roman{*})]
 \item a \emph{harmonic} interpolation which reads:
 \begin{equation}\label{eq:spadis:harmonic_viscosity}
-K_\fib^{harmonic} \equiv  \dfrac{K_\celli K_\cellj}{\alpha_\ij K_\celli + \left( 1 - \alpha_\ij\right)K_\cellj}
+K_\fij^{harmonic} \equiv  \dfrac{K_\celli K_\cellj}{\alpha_\ij K_\celli + \left( 1 - \alpha_\ij\right)K_\cellj}
 \end{equation}
 \item an \emph{arithmetic} interpolation which reads:
 \begin{equation}
-K_\fib^{arithmetic} \equiv  \dfrac{1}{2} \left( K_\celli + K_\cellj\right)
+K_\fij^{arithmetic} \equiv  \dfrac{1}{2} \left( K_\celli + K_\cellj\right)
 \end{equation}
 \end{enumerate}
 Note that to ensure flux continuity at the internal faces $\fij$, one should use the \emph{harmonic} mean, 
