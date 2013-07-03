@@ -126,33 +126,42 @@ _clean_i_faces(cs_lnum_t         *i_face_vtx_idx,
                const cs_lnum_t   *clean_list,
                cs_lnum_t          clean_list_size)
 {
-  cs_lnum_t face_id, d, i;
+  cs_lnum_t face_id, i;
   cs_lnum_t ind_empty = 0;
   cs_lnum_t ind_full = 0;
-  cs_lnum_t ind = 0;
+
+  cs_lnum_t l_shift = 0;
 
   for (face_id = 0; face_id < n_i_faces; face_id++) {
-    d = i_face_vtx_idx[face_id + 1] - i_face_vtx_idx[face_id];
 
-    if (face_id != clean_list[ind_empty] - 1) {
+    bool remove_face = false;
+
+    cs_lnum_t start_id = i_face_vtx_idx[face_id];
+    cs_lnum_t end_id = i_face_vtx_idx[face_id + 1];
+    cs_lnum_t d = end_id - start_id;
+
+    if (ind_empty < clean_list_size) {
+      if (face_id == clean_list[ind_empty] - 1 ) {
+        remove_face = true;
+        ind_empty++;
+        l_shift += d;
+      }
+    }
+
+    if (remove_face == false) {
       if (face_id != ind_full) {
         for (i = i_face_vtx_idx[ind_full] - 1;
              i < i_face_vtx_idx[ind_full] + d - 1;
              i++)
-          i_face_vtx_lst[i] = i_face_vtx_lst[i + ind];
+          i_face_vtx_lst[i] = i_face_vtx_lst[i + l_shift];
       }
       i_face_vtx_idx[ind_full + 1] = i_face_vtx_idx[ind_full] + d;
       ind_full++;
     }
-    else {
-      if (ind_empty < clean_list_size - 1)
-        ind_empty++;
-      if (ind_empty < clean_list_size)
-        ind += d;
-    }
+
   }
 
-  return ind;
+  return l_shift;
 }
 
 /*----------------------------------------------------------------------------
@@ -175,23 +184,24 @@ _clean_i_face_cells(cs_lnum_t        *i_face_cells,
   cs_lnum_t face_id;
   cs_lnum_t ind_empty = 0;
   cs_lnum_t ind_full = 0;
-  cs_lnum_t ind = 0;
 
   for (face_id = 0; face_id < n_i_faces; face_id++) {
 
-    if (face_id != clean_list[ind_empty] - 1) {
-      if (face_id != ind_full) {
-        i_face_cells[2*ind_full] = i_face_cells[2*ind_full + ind];
-        i_face_cells[2*ind_full + 1] = i_face_cells[2*ind_full + ind + 1];
+    bool remove_face = false;
+
+    if (ind_empty < clean_list_size) {
+      if (face_id == clean_list[ind_empty] - 1 ) {
+        remove_face = true;
+        ind_empty++;
       }
-      ind_full++;
     }
 
-    else {
-      if (ind_empty < clean_list_size - 1)
-        ind_empty++;
-      if (ind_empty < clean_list_size)
-        ind += 2;
+    if (remove_face == false) {
+      if (face_id != ind_full) {
+        i_face_cells[2*ind_full] = i_face_cells[2*face_id];
+        i_face_cells[2*ind_full + 1] = i_face_cells[2*face_id + 1];
+      }
+      ind_full++;
     }
 
   }
@@ -202,7 +212,7 @@ _clean_i_face_cells(cs_lnum_t        *i_face_cells,
  * (realloc has to be done after).
  *
  * parameters:
- *   i_face_family   <-> interior faces -> cells connectivity
+ *   i_face_family   <-> interior faces family
  *   n_i_faces       <-- number of internal faces
  *   clean_list      <-- sorted index of faces to remove
  *   clean_list_size <-- size of clean_list
@@ -217,23 +227,24 @@ _clean_i_family(cs_lnum_t        *i_face_family,
   cs_lnum_t face_id;
   cs_lnum_t ind_empty = 0;
   cs_lnum_t ind_full = 0;
-  cs_lnum_t ind = 0;
 
   for (face_id = 0; face_id < n_i_faces; face_id++) {
 
-    if (face_id != clean_list[ind_empty] - 1 ) {
-      if (face_id != ind_full) {
-        i_face_family[ind_full] = i_face_family[ind_full + ind];
+    bool remove_face = false;
+
+    if (ind_empty < clean_list_size) {
+      if (face_id == clean_list[ind_empty] - 1 ) {
+        remove_face = true;
+        ind_empty++;
       }
+    }
+
+    if (remove_face == false) {
+      if (face_id != ind_full)
+        i_face_family[ind_full] = i_face_family[face_id];
       ind_full++;
     }
 
-    else {
-      if (ind_empty < clean_list_size - 1)
-        ind_empty++;
-      if (ind_empty < clean_list_size)
-        ind += 1;
-    }
   }
 }
 
@@ -260,12 +271,16 @@ _get_list_c(cs_lnum_t        *list_c,
 
   for (face_id = 0; face_id < list_c_size; face_id++) {
 
-    if (face_id != list[i_empty] - 1)
-      list_c[i_full++] = face_id + 1;
+    if (i_empty < list_size) {
 
-    else
-      if (i_empty < list_size - 1)
+      if (face_id != list[i_empty] - 1)
+        list_c[i_full++] = face_id + 1;
+      else
         i_empty++;
+
+    }
+    else
+      list_c[i_full++] = face_id + 1;
 
   }
 }
