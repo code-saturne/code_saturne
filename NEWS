@@ -6,6 +6,9 @@ Bug fixes:
 
 - Syrthes coupling now also works with rough wall conditions.
 
+- Fix for possibly incorrect array access with empty local list when
+  building thin walls.
+
 Release 3.1.0 (11 Jun 2013)
 ===========================
 
