@@ -493,8 +493,8 @@ cs_user_mesh_thinwall(cs_mesh_t  *mesh)
 {
   return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 
-  /* Example: modify vertex coordinates */
-  /*------------------------------------*/
+  /* Example: thin wall along a plane */
+  /*----------------------------------*/
 
   if (false) {
     cs_lnum_t   n_selected_faces = 0;
