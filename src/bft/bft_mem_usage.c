@@ -111,12 +111,7 @@
 
 /*-----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C" {
-#if 0
-} /* Fake brace to force Emacs auto-indentation back to column 0 */
-#endif
-#endif /* __cplusplus */
+BEGIN_C_DECLS
 
 /*-------------------------------------------------------------------------------
  * Local type definitions
@@ -747,6 +742,4 @@ bft_mem_usage_n_calls(size_t count[3])
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS

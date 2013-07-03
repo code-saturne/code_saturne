@@ -33,11 +33,11 @@
 #include <assert.h>
 
 /*----------------------------------------------------------------------------
- * BFT library headers
+ * Local headers
  *---------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
-#include <bft_printf.h>
+#include "bft_mem.h"
+#include "bft_printf.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

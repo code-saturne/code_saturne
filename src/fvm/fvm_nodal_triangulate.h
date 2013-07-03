@@ -27,6 +27,8 @@
 
 /*----------------------------------------------------------------------------*/
 
+#include "cs_defs.h"
+
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
@@ -35,12 +37,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C" {
-#if 0
-} /* Fake brace to force back Emacs auto-indentation back to column 0 */
-#endif
-#endif /* __cplusplus */
+BEGIN_C_DECLS
 
 /*=============================================================================
  * Public function prototypes
@@ -72,8 +69,6 @@ fvm_nodal_triangulate_polygons(fvm_nodal_t  *this_nodal,
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS
 
 #endif /* __FVM_NODAL_TRIANGULATE_H__ */

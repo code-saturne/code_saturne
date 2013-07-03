@@ -27,12 +27,11 @@
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C" {
-#if 0
-} /* Fake brace to force back Emacs auto-indentation back to column 0 */
-#endif
-#endif /* __cplusplus */
+#include "cs_defs.h"
+
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -68,8 +67,6 @@ fvm_trace_mem_status(const char  *descr);
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS
 
 #endif /* __FVM_TRACE_H__ */

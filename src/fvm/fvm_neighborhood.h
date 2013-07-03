@@ -27,9 +27,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#if defined(HAVE_MPI)
-#include <mpi.h>
-#endif
+#include "cs_defs.h"
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -39,12 +37,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C" {
-#if 0
-} /* Fake brace to */
-#endif
-#endif /* __cplusplus */
+BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -293,8 +286,6 @@ fvm_neighborhood_dump(const fvm_neighborhood_t  *n);
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS
 
 #endif /* __FVM_NEIGHBORHOOD_H__ */

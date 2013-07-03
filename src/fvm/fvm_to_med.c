@@ -51,15 +51,11 @@
 #include <med.h>
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *----------------------------------------------------------------------------*/
-
-#include <bft_error.h>
-#include <bft_mem.h>
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
+
+#include "bft_error.h"
+#include "bft_mem.h"
 
 #include "fvm_defs.h"
 #include "fvm_convert_array.h"
@@ -82,12 +78,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C" {
-#if 0
-} /* Fake brace to force back Emacs auto-indentation back to column 0 */
-#endif
-#endif /* __cplusplus */
+BEGIN_C_DECLS
 
 /*============================================================================
  * Local Type Definitions
@@ -4696,8 +4687,6 @@ fvm_to_med_export_field(void                            *this_writer,
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS
 
 #endif /* HAVE_MED */

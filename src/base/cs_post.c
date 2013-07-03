@@ -4159,7 +4159,7 @@ cs_post_activate_writer(int   writer_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return a pointer to the FVM library writer associated to a writer_id.
+ * \brief Return a pointer to the FVM writer associated to a writer_id.
  *
  * \param[in]  writer_id  associated writer id
  *

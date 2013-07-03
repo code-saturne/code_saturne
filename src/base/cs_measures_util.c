@@ -38,31 +38,21 @@
 #include <stdarg.h>
 #include <float.h>
 
-
-
 #if defined(HAVE_MPI)
 #include <mpi.h>
 #endif
 
-
-/*----------------------------------------------------------------------------
- * BFT library headers
- *----------------------------------------------------------------------------*/
-
-#include <bft_mem_usage.h>
-#include <bft_error.h>
-#include <bft_printf.h>
-#include <bft_mem.h>
-
-/*----------------------------------------------------------------------------
- * FVM library headers
- *----------------------------------------------------------------------------*/
-#include <fvm_nodal.h>
-#include <fvm_point_location.h>
-
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
+
+#include "bft_mem_usage.h"
+#include "bft_error.h"
+#include "bft_printf.h"
+#include "bft_mem.h"
+
+#include "fvm_nodal.h"
+#include "fvm_point_location.h"
 
 #include "cs_base.h"
 #include "cs_selector.h"
@@ -86,8 +76,6 @@ BEGIN_C_DECLS
  * Local Macro Definitions
  *============================================================================*/
 
-
-
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -104,7 +92,6 @@ static int  _n_grids_max = 0;
 static cs_interpol_grid_t  *_grids = NULL;
 static cs_map_name_to_id_t  *_grids_map = NULL;
 
-
 /*============================================================================
  * Local Type Definitions
  *============================================================================*/
@@ -114,7 +101,6 @@ typedef struct
   double val;
   int    rank;
 } _cs_base_mpi_double_int_t;
-
 
 /*============================================================================
  * Private function definitions

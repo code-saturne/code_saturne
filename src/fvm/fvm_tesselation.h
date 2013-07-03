@@ -30,9 +30,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#if defined(HAVE_MPI)
-#include <mpi.h>
-#endif
+#include "cs_defs.h"
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -43,12 +41,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C" {
-#if 0
-} /* Fake brace to force back Emacs auto-indentation back to column 0 */
-#endif
-#endif /* __cplusplus */
+BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -500,8 +493,6 @@ fvm_tesselation_dump(const fvm_tesselation_t  *this_tesselation);
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS
 
 #endif /* __FVM_TESSELATION_H__ */

@@ -27,15 +27,12 @@
 
 /*----------------------------------------------------------------------------*/
 
-#if defined(HAVE_MPI )
-#include <mpi.h>
-#endif
+#include "cs_defs.h"
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
 #include "cs_timer.h"
 
 #include "fvm_defs.h"
@@ -44,12 +41,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C" {
-#if 0
-} /* Fake brace to force back Emacs auto-indentation back to column 0 */
-#endif
-#endif /* __cplusplus */
+BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -240,8 +232,6 @@ fvm_writer_def_nodal_buf_size(const fvm_nodal_t  *this_nodal,
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS
 
 #endif /* __FVM_WRITER_PRIV_H__ */

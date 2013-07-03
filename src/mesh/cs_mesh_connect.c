@@ -36,23 +36,19 @@
 #include <string.h>
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *----------------------------------------------------------------------------*/
-
-#include <bft_error.h>
-#include <bft_mem.h>
-
-/*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
+
+#include "bft_error.h"
+#include "bft_mem.h"
 
 #include "cs_base.h"
 #include "cs_mesh.h"
 
-#include <fvm_defs.h>
-#include <fvm_nodal.h>
-#include <fvm_nodal_from_desc.h>
-#include <fvm_nodal_order.h>
+#include "fvm_defs.h"
+#include "fvm_nodal.h"
+#include "fvm_nodal_from_desc.h"
+#include "fvm_nodal_order.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

@@ -171,6 +171,7 @@ if HAVE_FRONTEND
 
 cs_check_syntax_CPPFLAGS = \
 -DLOCALEDIR=\"$(localedir)\" \
+-I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/mei
 cs_check_syntax_SOURCES = cs_check_syntax.c

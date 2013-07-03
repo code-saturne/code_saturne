@@ -59,14 +59,7 @@
 
 /*-----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C" {
-#if 0
-} /* Fake brace to force back Emacs auto-indentation back to column 0 */
-#endif
-#endif /* __cplusplus */
-
-/*-----------------------------------------------------------------------------*/
+BEGIN_C_DECLS
 
 /*-----------------------------------------------------------------------------
  * Local type definitions
@@ -484,6 +477,4 @@ bft_backtrace_print_set(bft_backtrace_print_t  *const fct)
 
 /*-----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS

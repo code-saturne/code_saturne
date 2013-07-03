@@ -1751,7 +1751,7 @@ _export_field_values_el(const fvm_nodal_t               *mesh,
 
 extern "C" {
 #if 0
-} /* Fake brace to force back Emacs auto-indentation back to column 0 */
+} /* Fake brace to force Emacs auto-indentation back to column 0 */
 #endif
 
 /*----------------------------------------------------------------------------

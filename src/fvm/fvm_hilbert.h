@@ -27,9 +27,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#if defined(HAVE_MPI)
-#include <mpi.h>
-#endif
+#include "cs_defs.h"
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -39,12 +37,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C" {
-#if 0
-} /* Fake brace to */
-#endif
-#endif /* __cplusplus */
+BEGIN_C_DECLS
 
 /*============================================================================
  * Macro and type definitions
@@ -197,8 +190,6 @@ fvm_hilbert_build_rank_index(int                       dim,
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS
 
 #endif /* __FVM_HILBERT_H__ */

@@ -27,32 +27,11 @@
 
 /*----------------------------------------------------------------------------*/
 
-/*
- * Obtain definitions such as that of size_t through stddef.h (C99 standard)
- * if available (preferred method), or through stdlib.h (which defines
- * malloc() and family and so must define size_t some way) otherwise.
- */
+#include "cs_defs.h"
 
-#if defined(__STDC_VERSION__)
-#  if (__STDC_VERSION__ == 199901L)
-#    include <stddef.h>
-#  else
-#    include <stdlib.h>
-#  endif
-#else
-#  include <stdlib.h>
-#endif
+/*----------------------------------------------------------------------------*/
 
-/* BFT library headers */
-
-/*-----------------------------------------------------------------------------*/
-
-#ifdef __cplusplus
-extern "C" {
-#if 0
-} /* Fake brace to force Emacs auto-indentation back to column 0 */
-#endif
-#endif /* __cplusplus */
+BEGIN_C_DECLS
 
 /*============================================================================
  * Public types
@@ -120,8 +99,6 @@ bft_mem_usage_n_calls(size_t count[3]);
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS
 
 #endif /* __BFT_MEM_USAGE_H__ */

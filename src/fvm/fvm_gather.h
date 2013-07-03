@@ -27,9 +27,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#if defined(HAVE_MPI)
-#include <mpi.h>
-#endif
+#include "cs_defs.h"
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -40,12 +38,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C" {
-#if 0
-} /* Fake brace to force back Emacs auto-indentation back to column 0 */
-#endif
-#endif /* __cplusplus */
+BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -416,8 +409,6 @@ fvm_gather_indexed_numbers(const cs_lnum_t      local_index[],
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS
 
 #endif /* __FVM_GATHER_H__ */

@@ -38,15 +38,11 @@
 #include <string.h>
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *---------------------------------------------------------------------------*/
-
-#include <bft_mem.h>
-#include <bft_printf.h>
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *---------------------------------------------------------------------------*/
+
+#include "bft_mem.h"
+#include "bft_printf.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -57,12 +53,7 @@
 
 /*---------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C" {
-#if 0
-} /* Fake brace to force Emacs auto-indentation back to column 0 */
-#endif
-#endif /* __cplusplus */
+BEGIN_C_DECLS
 
 /*=============================================================================
  * Local Macro definitions
@@ -988,6 +979,4 @@ fvm_box_distrib_dump_statistics(const fvm_box_distrib_t  *distrib,
 
 /*---------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS

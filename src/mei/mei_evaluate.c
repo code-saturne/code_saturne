@@ -39,16 +39,12 @@
 #include <math.h>
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *----------------------------------------------------------------------------*/
-
-#include <bft_mem.h>
-#include <bft_printf.h>
-#include <bft_error.h>
-
-/*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
+
+#include "bft_mem.h"
+#include "bft_printf.h"
+#include "bft_error.h"
 
 #include "mei_node.h"
 #include "mei_parser_glob.h"

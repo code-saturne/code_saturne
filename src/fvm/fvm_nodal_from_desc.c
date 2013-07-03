@@ -37,16 +37,12 @@
 #include <string.h>
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *----------------------------------------------------------------------------*/
-
-#include <bft_error.h>
-#include <bft_mem.h>
-#include <bft_printf.h>
-
-/*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
+
+#include "bft_error.h"
+#include "bft_mem.h"
+#include "bft_printf.h"
 
 #include "fvm_defs.h"
 #include "fvm_nodal.h"
@@ -62,12 +58,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C" {
-#if 0
-} /* Fake brace to force back Emacs auto-indentation back to column 0 */
-#endif
-#endif /* __cplusplus */
+BEGIN_C_DECLS
 
 /*============================================================================
  * Enumeration definitions
@@ -1858,6 +1849,4 @@ fvm_nodal_from_desc_cell(const cs_lnum_t    cell_id,
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+END_C_DECLS

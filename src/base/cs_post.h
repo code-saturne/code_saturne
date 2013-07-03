@@ -651,7 +651,7 @@ bool
 cs_post_writer_exists(int  writer_id);
 
 /*----------------------------------------------------------------------------
- * Return a pointer to the FVM library writer associated to a writer_id.
+ * Return a pointer to the FVM writer associated to a writer_id.
  *
  * parameters:
  *   writer_id <-- associated writer id

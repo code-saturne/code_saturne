@@ -55,25 +55,21 @@
 #include <MEDCouplingFieldDouble.hxx>
 
 /*----------------------------------------------------------------------------
- * BFT library headers
- *----------------------------------------------------------------------------*/
-
-#include <bft_error.h>
-#include <bft_mem.h>
-#include <bft_printf.h>
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include <cs_mesh.h>
-#include <cs_mesh_connect.h>
-#include <cs_parall.h>
-#include <cs_prototypes.h>
-#include <cs_selector.h>
+#include "bft_error.h"
+#include "bft_mem.h"
+#include "bft_printf.h"
 
-#include <fvm_defs.h>
-#include <fvm_nodal_from_desc.h>
+#include "cs_mesh.h"
+#include "cs_mesh_connect.h"
+#include "cs_parall.h"
+#include "cs_prototypes.h"
+#include "cs_selector.h"
+
+#include "fvm_defs.h"
+#include "fvm_nodal_from_desc.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
