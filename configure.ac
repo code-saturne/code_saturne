@@ -513,6 +513,8 @@ if test x$cs_have_med_link_cxx = xyes ; then
   cs_have_link_cxx=yes
 elif test x$cs_have_medcoupling = xyes -o x$cs_have_paramedmem = xyes ; then
   cs_have_link_cxx=yes
+elif test x$cs_have_eos = xyes ; then
+  cs_have_link_cxx=yes
 fi
 if test $cs_have_link_cxx = yes ; then
   CS_LD=$CXX
