@@ -742,6 +742,9 @@ class Studies(object):
                     os.chdir(os.path.join(self.dest, l, "MESH"))
                     # prepro external script might need the pythondir
                     pdir = case.pkg.get_dir('pkgpythondir')
+                    if case.pkg.code_name == "NEPTUNE_CFD":
+                        sdir = case.pkg.get_cs_dir('pkgpythondir')
+                        pdir = pdir + ":" + sdir
                     retcode, t = run_autovnv_command(cmd, self.__log, pythondir = pdir)
                     os.chdir(repbase)
                     self.reporting('    - script %s --> OK (%s s)' % (cmd, t))
