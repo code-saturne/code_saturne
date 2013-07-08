@@ -123,7 +123,6 @@
 			<property label="Ga_DV201" name="Ga_DV201"/>
 			<property label="Ga_HET_O201" name="Ga_HET_O201"/>
 			<property label="IntLuminance_4PI" name="IntLuminance_4PI"/>
-			<absorption_coefficient>0.1</absorption_coefficient>
 		        <oxidants>
 			        <oxidant ox_id="1">
 				        <O2_composition>1</O2_composition>
@@ -134,5 +133,8 @@
 			        <oxidant_type>volumic_percent</oxidant_type>
         		</oxidants>
 		</solid_fuels>
+		<radiative_transfer>
+			<absorption_coefficient>0.1</absorption_coefficient>
+		</radiative_transfer>
 	</thermophysical_models>
 </Code_Saturne_GUI>

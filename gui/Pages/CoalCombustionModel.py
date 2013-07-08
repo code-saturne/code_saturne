@@ -101,7 +101,6 @@ class CoalCombustionModel(Variables, Model):
         default['stoichiometric_coefficient']      = 'user_define'
         default['PCI']                             = 0
         default['density']                         = 1200
-        default['absorption_coefficient']          = 0.0
         default['volatile_matter']                 = 0.
         default['ashes_enthalpy']                  = 0
         default['ashes_thermal_capacity']          = 1800
@@ -507,7 +506,8 @@ class CoalCombustionModel(Variables, Model):
             self.node_fuel.xmlRemoveChild('CO2_kinetics')
             self.node_fuel.xmlRemoveChild('H2O_kinetics')
             self.node_fuel.xmlRemoveChild('NOx_formation')
-            self.node_fuel.xmlRemoveChild('absorption_coefficient')
+            self.node_ray = self.node_models.xmlInitNode('radiative_transfer')
+            self.node_ray.xmlRemoveChild('absorption_coefficient')
 
         else:
             self.createModel()
@@ -1260,27 +1260,6 @@ class CoalCombustionModel(Variables, Model):
         self.isInList(fuel_type, ('biomass', 'coal' ))
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         solid_fuel['type']= fuel_type
-
-
-    @Variables.noUndo
-    def getAbsorptionCoeff(self):
-        """
-        Return the absorption coefficient
-        """
-        value = self.node_fuel.xmlGetDouble('absorption_coefficient')
-        if value == None:
-            value = self.defaultValues()['absorption_coefficient']
-            self.setAbsorptionCoeff(value)
-        return value
-
-
-    @Variables.undoLocal
-    def setAbsorptionCoeff(self, value):
-        """
-        Set the absorption coefficient
-        """
-        self.isPositiveFloat(value)
-        self.node_fuel.xmlSetData('absorption_coefficient', value)
 
 
     @Variables.noUndo

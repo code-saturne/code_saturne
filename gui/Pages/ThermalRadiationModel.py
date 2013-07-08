@@ -85,7 +85,6 @@ class ThermalRadiationModel(Variables, Model):
         self.b_prop['coeff_ech_conv']         = self.tr("Coeff_ech_convectif")
 
         self.classesNumber = 0
-        self.isCoalCombustion()
 
 
     def __volumeProperties(self):
@@ -184,22 +183,6 @@ class ThermalRadiationModel(Variables, Model):
         self.getTrs()
         self.getTemperatureListing()
         self.getIntensityResolution()
-
-
-    def isCoalCombustion(self):
-        """
-        Return 0 if pulverized_coal's attribute model is 'off',
-        return 1 if it's different
-        """
-        value = 0
-        if self.node_Coal and self.node_Coal.xmlGetAttribute('model') != 'off':
-            value = 1
-            import Pages.CoalThermoChemistry as CoalThermoChemistry
-            model = CoalThermoChemistry.CoalThermoChemistryModel("dp_FCP", self.case)
-            coalsNumber = model.getCoals().getCoalNumber()
-            self.classesNumber = sum(model.getCoals().getClassesNumberList())
-
-        return value
 
 
     def _setVariable_ray(self):
@@ -325,18 +308,11 @@ class ThermalRadiationModel(Variables, Model):
         """
         Return value of absorption coefficient
         """
-        if self.isCoalCombustion():
-            import Pages.CoalThermoChemistry as CoalThermoChemistry
-            model = CoalThermoChemistry.CoalThermoChemistryModel("dp_FCP", self.case)
-            model.load()
-            val = model.radiativTransfer.getAbsorptionCoeff()
-        else :
-            self.getTypeCoeff()
-            node = self.node_ray.xmlGetNode('absorption_coefficient', 'type')
-            val = self.node_ray.xmlGetDouble('absorption_coefficient')
-            if val == None:
-                val = self._defaultValues()['value_coef']
-                self.setAbsorCoeff(val)
+        self.getTypeCoeff()
+        val = self.node_ray.xmlGetDouble('absorption_coefficient')
+        if val == None:
+            val = self._defaultValues()['value_coef']
+            self.setAbsorCoeff(val)
         return val
 
 
@@ -346,13 +322,6 @@ class ThermalRadiationModel(Variables, Model):
         Put value of absorption coefficient
         """
         self.isPositiveFloat(val)
-        if self.isCoalCombustion():
-            import Pages.CoalThermoChemistry as CoalThermoChemistry
-            model = CoalThermoChemistry.CoalThermoChemistryModel("dp_FCP", self.case)
-            model.load()
-            model.radiativTransfer.setAbsorptionCoeff(val)
-            model.save()
-
         t = self.getTypeCoeff()
         self.node_ray.xmlSetData('absorption_coefficient', val, type=t)
 
@@ -457,15 +426,6 @@ class ThermalRadiationTestCase(ModelTest):
         mdl = ThermalRadiationModel(self.case)
 
         assert mdl != None, 'Could not instantiate ThermalRadiationModel'
-
-
-    def checkIsCoalCombustion(self):
-        """
-        Check whether the ThermalRadiationModel class could be in coal combustion
-        """
-        mdl = ThermalRadiationModel(self.case)
-        mdl.node_Coal['model'] = 'off'
-        assert mdl.isCoalCombustion() != 1, 'Could not verify pulverized_coal is "on"'
 
 
     def checkSetandGetRadiativeModel(self):
