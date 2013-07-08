@@ -38,7 +38,7 @@ if HAVE_SALOME
 SALOME = salome
 endif
 
-SUBDIRS = $(PLE) $(PREPRO) src $(SALOME) po docs $(GUI) tests
+SUBDIRS = . $(PLE) $(PREPRO) src $(SALOME) po docs $(GUI) tests
 
 AUX_DIST = \
 m4/codeset.m4 \
@@ -361,6 +361,8 @@ dist-hook: changelog
 	-rm -rf `find $(distdir)/gui  -name .svn`
 	-rm -rf `find $(distdir)/patches -name .svn`
 	-rm -rf `find $(distdir)/salome -name .svn`
+
+all-local: bin/cs_package.py
 
 clean-local:
 	-rm -f *__genmod.f90 *__genmod.mod

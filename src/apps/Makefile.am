@@ -117,16 +117,8 @@ $(FCLIBS)
 libsaturne_la_LDFLAGS = -no-undefined -version 0:0:0
 
 # Main program
-#pkglibexecdir = $(libexecdir)/'$(PACKAGE)
-pkglibexec_PROGRAMS = cs_solver
-
-if HAVE_LINK_CXX
-# Dummy C++ source to cause C++ linking.
-nodist_EXTRA_cs_solver_SOURCES = dummy.cxx
-cs_solver_LINK = $(CXXLINK)
-else
-cs_solver_LINK = $(LINK)
-endif
+#pkglibexecdir = $(libexecdir)/$(PACKAGE)
+pkglibexec_PROGRAMS =
 
 # Code_Saturne IO utility program
 
@@ -140,22 +132,9 @@ if HAVE_FRONTEND
 pkglibexec_PROGRAMS += cs_check_syntax
 endif
 
-cs_solver_SOURCES =
-cs_solver_LDADD = libsaturne.la \
-$(LIBPLE_LA) \
-$(LTLIBINTL) \
-$(LDFLAGS_PLE) $(LIBS_PLE) \
-$(CCM_LDFLAGS) $(CCM_LIBS) $(CCMRUNPATH) \
-$(CGNS_LDFLAGS) $(CGNS_LIBS) $(CGNSRUNPATH) \
-$(MED_LDFLAGS) $(MED_LIBS) $(MEDRUNPATH) \
-$(HDF5_LDFLAGS) $(HDF5_LIBS) $(HDF5RUNPATH) \
-$(METIS_LDFLAGS) $(METIS_LIBS) $(METISRUNPATH) \
-$(SCOTCH_LDFLAGS) $(SCOTCH_LIBS) $(SCOTCHRUNPATH) \
-$(EOS_LDFLAGS) $(EOS_LIBS) $(EOSRUNPATH) \
-$(MPI_LDFLAGS) $(MPI_LIBS) \
-$(LIBXML2_LDFLAGS) $(LIBXML2_LIBS) \
-$(LDADD_BLAS) \
-$(FCLIBS)
+cs_solver$(EXEEXT): libsaturne.la
+	PYTHONPATH=$(top_builddir)/bin:$(top_srcdir)/bin$${PYTHONPATH:+:$$PYTHONPATH} \
+	$(PYTHON) -B $(top_srcdir)/bin/cs_compile.py
 
 # Code_Saturne IO utility (minimal dependencies)
 
@@ -184,3 +163,15 @@ $(ORIGINRUNPATH)
 
 endif
 
+# cs_solver executable is built using the same Python script as when
+# using user functions (rather than with libtool), so it must be
+# handled separately
+
+all-local: cs_solver$(EXEEXT)
+
+install-exec-hook: libsaturne.la
+	PYTHONPATH=$(top_builddir)/bin:$(top_srcdir)/bin$${PYTHONPATH:+:$$PYTHONPATH} \
+	$(PYTHON) -B $(top_srcdir)/bin/cs_compile.py --mode=install
+
+uninstall-local:
+	rm $(libexecdir)/$(PACKAGE)/cs_solver

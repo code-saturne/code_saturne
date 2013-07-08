@@ -125,6 +125,36 @@ def process_cmd_line(argv, pkg):
 
 #-------------------------------------------------------------------------------
 
+def process_cmd_line_build(argv, pkg):
+    """
+    Processes the passed command line arguments for a build environment.
+
+    Input Argument:
+      arg -- This can be either a list of arguments as in
+             sys.argv[1:] or a string that is similar to the one
+             passed on the command line.  If it is a string,
+             it is split to create a list of arguments.
+    """
+
+    parser = OptionParser(usage="usage: %prog [options]")
+
+    parser.add_option("--mode", dest="mode", type="string",
+                      metavar="<mode>",
+                      help="'build' or 'install' mode")
+
+    parser.set_defaults(build_mode=False)
+    parser.set_defaults(install_link=False)
+
+    (options, args) = parser.parse_args(argv)
+
+    if len(args) > 0:
+        parser.print_help()
+        sys.exit(1)
+
+    return options.mode
+
+#-------------------------------------------------------------------------------
+
 def get_compiler(pkg, compiler):
 
     # First, handle the standard "non relocatable" case
@@ -172,6 +202,34 @@ def get_flags(pkg, flag):
             for p in ["-L/mingw", "-Lc:/mingw"]:
                 s_tmp = s.replace(p, "-L" + pkg.get_dir("prefix"))
             cmd_line[i] = s_tmp
+
+    return cmd_line
+
+#-------------------------------------------------------------------------------
+
+def get_build_flags(pkg, flag, install=False):
+
+    cmd_line = []
+
+    # Build the command line, and split possible multiple arguments in lists.
+    for lib in pkg.config.deplibs:
+        if (pkg.config.libs[lib].have == "yes"
+            and (not pkg.config.libs[lib].dynamic_load)):
+            cmd_line += separate_args(pkg.config.libs[lib].flags[flag])
+
+    if flag == 'ldflags':
+        if not install:
+            if pkg.config.libs['ple'].variant == "internal":
+                top_builddir = os.path.split(os.path.split(os.getcwd())[0])[0]
+                ple_lib_path = os.path.join(top_builddir,
+                                            "libple", "src", ".libs")
+                cmd_line.insert(0, "-L" + ple_lib_path)
+            cmd_line.insert(0, "-L" + os.path.join(os.getcwd(), ".libs"))
+        else:
+            # Do not use pkg.get_dir here as possible relocation paths must be
+            # used after installation, not before.
+            libdir = pkg.dirs['libdir'][1]
+            cmd_line.insert(0, "-L" + libdir)
 
     return cmd_line
 
@@ -346,6 +404,37 @@ def compile_and_link(pkg, srcdir, destdir,
     return retval
 
 #-------------------------------------------------------------------------------
+
+def link_build(pkg, install=False):
+    """
+    Link function for build process.
+    """
+    retval = 0
+
+    # Determine executable name
+
+    exec_name = pkg.solver
+    if install:
+        exec_name = os.path.join(pkg.dirs['pkglibexecdir'][1], exec_name)
+
+    print("Linking executable: " + exec_name)
+
+    # Find files to compile in source path
+
+    p_libs = get_flags(pkg, 'libs')
+
+    cmd = [get_compiler(pkg, 'ld')]
+    cmd = cmd + ["-o", exec_name]
+    cmd = cmd + get_build_flags(pkg, 'ldflags', install)
+    cmd = cmd + p_libs
+    if pkg.config.rpath != "":
+        cmd += so_dirs_path(cmd, pkg)
+    if run_command(cmd, pkg=pkg, echo=True) != 0:
+        retval = 1
+
+    return retval
+
+#-------------------------------------------------------------------------------
 # Main
 #-------------------------------------------------------------------------------
 
@@ -372,6 +461,32 @@ def main(argv, pkg):
                                fcflags, libs, force_link, keep_going)
 
     sys.exit(retcode)
+
+#-------------------------------------------------------------------------------
+
+if __name__ == '__main__':
+
+    # Retrieve package information (name, version, installation dirs, ...)
+    from cs_package import package
+    pkg = package()
+
+    # Check if we are in a build directory
+    l = os.listdir(os.getcwd())
+    if "Makefile" in l and "libsaturne.la" in l and ".libs" in l:
+
+        from cs_exec_environment import set_modules, source_rcfile
+
+        mode = process_cmd_line_build(sys.argv[1:], pkg)
+        install = False
+        if mode == 'install':
+            install = True
+        retcode = link_build(pkg, mode)
+
+        sys.exit(retcode)
+
+    # Create an instance of the main script
+    else:
+        main(sys.argv[1:], pkg)
 
 #-------------------------------------------------------------------------------
 # End
