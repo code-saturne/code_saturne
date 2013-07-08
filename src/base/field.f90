@@ -156,6 +156,18 @@ module field
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function obtaining a field's id by its name
+
+    function cs_f_field_id_by_name_try(name) result(id) &
+      bind(C, name='cs_f_field_id_by_name_try')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      character(kind=c_char, len=1), dimension(*), intent(in)  :: name
+      integer(c_int)                                           :: id
+    end function cs_f_field_id_by_name_try
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function obtaining field's pointer by its id
 
     function cs_field_by_id(id) result(f) &
@@ -465,9 +477,7 @@ contains
 
   !=============================================================================
 
-  !> \brief  Return an id associated with a given field name if present.
-
-  !> If the field has not been defined previously, -1 is returned.
+  !> \brief  Return an id associated with a given field name.
 
   !> \param[in]  name           field name
   !> \param[out] id             id of field
@@ -493,6 +503,37 @@ contains
     return
 
   end subroutine field_get_id
+
+  !=============================================================================
+
+  !> \brief  Return an id associated with a given field name if present.
+
+  !> If the field has not been defined previously, -1 is returned.
+
+  !> \param[in]  name           field name
+  !> \param[out] id             id of field
+
+  subroutine field_get_id_try(name, id)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    character(len=*), intent(in) :: name
+    integer, intent(out)         :: id
+
+    ! Local variables
+
+    character(len=len_trim(name)+1, kind=c_char) :: c_name
+
+    c_name = trim(name)//c_null_char
+
+    id = cs_f_field_id_by_name_try(c_name)
+
+    return
+
+  end subroutine field_get_id_try
 
   !=============================================================================
 
@@ -1130,6 +1171,40 @@ contains
   end subroutine field_get_val_s
 
   !=============================================================================
+
+  !> \brief Return pointer to the values array of a given scalar field
+
+  !> \param[in]     name      name of given field (which must be scalar)
+  !> \param[out]    p         pointer to scalar field values
+
+  subroutine field_get_val_s_by_name (name, p)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    character(len=*), intent(in)                         :: name
+    double precision, dimension(:), pointer, intent(out) :: p
+
+    ! Local variables
+
+    character(len=len_trim(name)+1, kind=c_char) :: c_name
+    integer(c_int) :: f_id, p_type, p_rank
+    integer(c_int), dimension(2) :: f_dim
+    type(c_ptr) :: c_p
+
+    c_name = trim(name)//c_null_char
+
+    f_id = cs_f_field_id_by_name(c_name)
+    p_type = 1
+    p_rank = 1
+
+    call cs_f_field_var_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
+    call c_f_pointer(c_p, p, [f_dim(1)])
+
+  end subroutine field_get_val_s_by_name
+
+  !=============================================================================
+
 
   !> \brief Return pointer to the values array of a given vector field
 

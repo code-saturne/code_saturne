@@ -204,6 +204,9 @@ cs_f_field_n_fields(void);
 int
 cs_f_field_id_by_name(const char *name);
 
+int
+cs_f_field_id_by_name_try(const char *name);
+
 void
 cs_f_field_get_name(int           id,
                     int           name_max,
@@ -550,6 +553,29 @@ cs_f_field_n_fields(void)
 
 int
 cs_f_field_id_by_name(const char *name)
+{
+  int retval;
+  cs_field_t  *f = cs_field_by_name(name);
+
+  retval = f->id;
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Return the id of a defined field based on its name.
+ *
+ * This function is intended for use by Fortran wrappers.
+ *
+ * parameters:
+ *   name <-- field name
+ *
+ * returns:
+ *   id the field structure
+ *----------------------------------------------------------------------------*/
+
+int
+cs_f_field_id_by_name_try(const char *name)
 {
   int retval;
   cs_field_t  *f = cs_field_by_name_try(name);
@@ -2675,8 +2701,12 @@ cs_field_define_keys_base(void)
   cs_field_define_key_int("drift_scalar_model", 0, 0);
   cs_field_define_key_int("inner_mass_flux_id", 0, 0);
   cs_field_define_key_int("boundary_mass_flux_id", 0, 0);
+  cs_field_define_key_int("variable_id", 0, 0); //inverse of the ivarfl(ivar) array
   cs_field_define_key_int("scalar_id", 0, 0); //inverse of the isca(iscal) array
   cs_field_define_key_int("scalar_class", 0, 0);
+  cs_field_define_key_int("first_moment_id", -1, 0); // old iscavr(iscal)
+  cs_field_define_key_double("min_scalar_clipping", 0, 0);
+  cs_field_define_key_double("max_scalar_clipping", 0, 0);
 }
 
 /*----------------------------------------------------------------------------*/

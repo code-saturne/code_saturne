@@ -161,6 +161,7 @@ integer          imode  , iesp
 integer          ipcgev , ipcght , ipchgl
 integer          itermx,nbpauv,nbrich,nbepau,nberic
 integer          nbarre,nbimax,nbpass
+integer          iterch
 
 double precision aux, rhovst
 double precision t1, h1, t2, h2
@@ -168,24 +169,19 @@ double precision xng,rhofol , rom
 double precision gameva,fdev,fsd,ftrac,hfov
 double precision ho2,hco,xesp(ngazem),xcoke,t2mt1
 double precision gmech,gmvap,gmhet
-
 double precision xxco,xxo2,xxco2,xxh2o,xco2mx
 double precision xkp,xk0p,xkm,xk0m,wplus,wmoins,t0p,t0m
 double precision auxp,auxm, aux1 , aux2 , aux3 , w1
-
 double precision xeq,anmr,xcot,xo2t,xco2e,xo2e,xcoe,tauchi,tautur
 double precision sqh2o , x2 , wmhcn , wmno ,wmo2
-
-integer          iterch
 double precision err1mx,err2mx
-
 double precision errch,ter1,ddelta,fn,qpr
 double precision auxmax,auxmin
 double precision ymoy,volm,volmp,dmp
-!
 double precision fn0,fn1,fn2,anmr0,anmr1,anmr2
 double precision lnk0p,l10k0e,lnk0m,t0e,xco2eq,xcoeq,xo2eq
 double precision xcom,xo2m,xkcequ,xkpequ,xden
+
 !===============================================================================
 ! 1. INITIALISATION
 !===============================================================================

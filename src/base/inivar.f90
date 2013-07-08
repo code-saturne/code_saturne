@@ -78,6 +78,7 @@ use ppppar
 use ppthch
 use ppincl
 use mesh
+use field
 
 !===============================================================================
 
@@ -102,6 +103,7 @@ integer          iccfth
 integer          iclip , ipp  , iok   , ii
 integer          idtcm , ipcmom, iiptot
 integer          ibormo(nbmomx), imodif
+integer          kscmin, kscmax, iflid
 
 double precision valmax, valmin, vfmin , vfmax
 double precision vdtmax, vdtmin
@@ -111,6 +113,7 @@ double precision x11min, x22min, x33min, valmom
 double precision vmomax(nbmomx), vmomin(nbmomx)
 double precision xxp0, xyp0, xzp0
 double precision xalmin, xalmax
+double precision scmaxp, scminp
 
 double precision rvoid(1)
 double precision, allocatable, dimension(:) :: w1, w2, w3, w4
@@ -118,9 +121,12 @@ double precision, allocatable, dimension(:) :: w1, w2, w3, w4
 !===============================================================================
 
 !===============================================================================
-! 1.  INITIALISATION
+! 1. Initialization
 !===============================================================================
 
+! Key id for scamin and scamax
+call field_get_key_id("min_scalar_clipping", kscmin)
+call field_get_key_id("max_scalar_clipping", kscmax)
 
 iok = 0
 
@@ -521,7 +527,12 @@ if(nscal.gt.0.and.(iusini.eq.1.or.isuite.eq.1)) then
   do ii = 1, nscal
     if(iscavr(ii).le.0.or.iscavr(ii).gt.nscal) then
 
-      if(scamin(ii).le.scamax(ii)) then
+      ! Get the min clipping
+      iflid = ivarfl(isca(ii))
+      call field_get_key_double(iflid, kscmin, scminp)
+      call field_get_key_double(iflid, kscmax, scmaxp)
+
+      if (scminp.le.scmaxp) then
         ivar = isca(ii)
         valmax = rtp(1  ,ivar)
         valmin = rtp(1  ,ivar)
@@ -538,7 +549,7 @@ if(nscal.gt.0.and.(iusini.eq.1.or.isuite.eq.1)) then
 
 !     Verification de la coherence pour les clippings
 !                                           des scalaires non variance.
-        if(valmin.ge.scamin(ii).and.valmax.le.scamax(ii)) then
+        if (valmin.ge.scminp.and.valmax.le.scmaxp) then
           iscal = ii
           call clpsca                                             &
           !==========
@@ -547,7 +558,7 @@ if(nscal.gt.0.and.(iusini.eq.1.or.isuite.eq.1)) then
         else
           chaine = nomvar(ipprtp(isca(ii)))
           write(nfecra,3040) ii,chaine(1:16),                     &
-                             valmin,scamin(ii),valmax,scamax(ii)
+                             valmin,scminp,valmax,scmaxp
           iok = iok + 1
         endif
       endif
@@ -561,7 +572,13 @@ if(nscal.gt.0.and.(iusini.eq.1.or.isuite.eq.1)) then
   do ii = 1, nscal
     if(iscavr(ii).gt.0.and.iscavr(ii).le.nscal) then
 
-      if(scamin(ii).le.scamax(ii)) then
+      ! Get the min clipping
+      iflid = ivarfl(isca(ii))
+      call field_get_key_double(iflid, kscmin, scminp)
+      call field_get_key_double(iflid, kscmax, scmaxp)
+
+
+      if (scminp.le.scmaxp) then
         ivar = isca(ii)
         valmax = rtp(1  ,ivar)
         valmin = rtp(1  ,ivar)
@@ -586,7 +603,7 @@ if(nscal.gt.0.and.(iusini.eq.1.or.isuite.eq.1)) then
           if(valmin.lt.0.d0) then
             chaine = nomvar(ipprtp(isca(ii)))
             write(nfecra,3050)ii,chaine(1:16),                     &
-                              valmin,scamin(ii),valmax,scamax(ii)
+                              valmin,scminp,valmax,scmaxp
             iok = iok + 1
           endif
         elseif(iclvfl(ii).eq.1) then
@@ -600,19 +617,19 @@ if(nscal.gt.0.and.(iusini.eq.1.or.isuite.eq.1)) then
           else
             chaine = nomvar(ipprtp(isca(ii)))
             write(nfecra,3050)ii,chaine(1:16),                     &
-                              valmin,scamin(ii),valmax,scamax(ii)
+                              valmin,scminp,valmax,scmaxp
             iok = iok + 1
           endif
         elseif(iclvfl(ii).eq.2) then
           vfmin = 0.d0
-          vfmin = max(scamin(iscal),vfmin)
-          vfmax = scamax(iscal)
+          vfmin = max(scminp, vfmin)
+          vfmax = scmaxp
 ! On pourrait clipper dans le cas ou VALMIN.GE.VFMIN.AND.VALMAX.LE.VFMAX
 !     mais ca n'apporterait rien, par definition
           if(valmin.lt.vfmin.or.valmax.gt.vfmax) then
             chaine = nomvar(ipprtp(isca(ii)))
             write(nfecra,3051)ii,chaine(1:16),                     &
-                              valmin,scamin(ii),valmax,scamax(ii), &
+                              valmin,scminp,valmax,scmaxp,         &
                               ii,iclvfl(ii)
             iok = iok + 1
           endif

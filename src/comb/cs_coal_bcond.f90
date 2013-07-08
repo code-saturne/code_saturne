@@ -100,6 +100,7 @@ use ppincl
 use ppcpfu
 use cs_coal_incl
 use mesh
+use field
 
 !===============================================================================
 
@@ -121,11 +122,15 @@ double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
 
+character*80     name
+
 integer          idebia, idebra
 integer          ii, ifac, izone, mode, iel, ige, iok
 integer          icha, iclapc, isol, icla
 integer          ipbrom, icke, idecal, ipcvis
 integer          nbrval, ioxy
+integer          f_id, iaggas, keyvar
+
 double precision qisqc, viscla, d2s3, uref2, rhomoy, dhy, xiturb
 double precision ustar2, xkent, xeent, t1, t2, totcp , dmas
 double precision h1    (nozppm) , h2   (nozppm,nclcpm)
@@ -135,7 +140,9 @@ double precision coefe (ngazem)
 double precision xsolid(nsolim)
 double precision f1mc  (ncharm) , f2mc (ncharm)
 double precision wmh2o,wmco2,wmn2,wmo2
-!
+
+integer, dimension (:), allocatable :: iagecp
+
 !===============================================================================
 ! 1. Initialization
 !===============================================================================
@@ -144,6 +151,19 @@ ipbrom = ipprob(irom  )
 ipcvis = ipproc(iviscl)
 
 d2s3 = 2.d0/3.d0
+
+call field_get_key_id("variable_id", keyvar)
+
+call field_get_id('X_Age_Gas', f_id)
+call field_get_key_int(f_id, keyvar, iaggas)
+
+allocate (iagecp(nclacp))
+
+do icla = 1, nclacp
+  write(name,'(a8,i2.2)')'X_Age_CP', icla
+  call field_get_id(name, f_id)
+  call field_get_key_int(f_id, keyvar, iagecp(icla))
+enddo
 
 !===============================================================================
 ! 1.  ECHANGES EN PARALLELE POUR LES DONNEES UTILISATEUR
@@ -440,7 +460,7 @@ do ifac = 1, nfabor
 enddo
 
 !===============================================================================
-! 2.  REMPLISSAGE DU TABLEAU DES CONDITIONS LIMITES
+! 5.  REMPLISSAGE DU TABLEAU DES CONDITIONS LIMITES
 !       ON BOUCLE SUR TOUTES LES FACES D'ENTREE
 !                     =========================
 !         ON DETERMINE LA FAMILLE ET SES PROPRIETES
@@ -581,7 +601,9 @@ do ifac = 1, nfabor
 ! ------ CL pour H2 de la classe ICLA
         rcodcl(ifac,isca(ih2(icla)),1) = x20(izone,icla)          &
                                         *h2(izone,icla)
-
+        if (i_coal_drift.eq.1) then
+          rcodcl(ifac, iagecp(icla), 1) = zero
+        endif
       enddo
 
       idecal = idecal + nclpch(icha)
@@ -591,6 +613,9 @@ do ifac = 1, nfabor
       rcodcl(ifac,isca(if2m(icha)),1) = zero
 
     enddo
+    if (i_coal_drift.eq.1) then
+      rcodcl(ifac, iaggas, 1) = zero
+    endif
 ! ------ CL pour HM
     rcodcl(ifac,isca(ihm),1) = (1.d0-x20t(izone))*h1(izone)    &
                               +x2h20t(izone)
@@ -649,9 +674,13 @@ do ifac = 1, nfabor
   endif
 
 enddo
-!----
+
+! Free memory
+deallocate(iagecp)
+
+!--------
 ! Formats
-!----
+!--------
 
 !----
 ! End

@@ -536,7 +536,7 @@ else if (numtyp .eq. -2) then
 
   if (ipstdv(ipsttp).ne.0) then
 
-    call field_get_id('tplus', itplus)
+    call field_get_id_try('tplus', itplus)
 
     if (itplus.ge.0) then
 

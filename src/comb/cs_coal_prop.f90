@@ -71,6 +71,7 @@ use cpincl
 use ppincl
 use ihmpre
 use cs_coal_incl
+use field
 
 !===============================================================================
 
@@ -78,13 +79,38 @@ implicit none
 
 ! Arguments
 
-integer       ipropp, ipppst
+integer          ipropp, ipppst
 
 ! Local variables
 
-integer       iprop, ige , icla, iprop2
+integer          iprop, ige , icla, iprop2
+integer          f_id, itycat, ityloc, idim1, idim3
+integer          keyccl, keydri, keyvis, keylbl
+integer          iscdri, iopchr
+
+logical          ilved, iprev, inoprv
+
+character*80     f_name, name
+
 
 !===============================================================================
+
+itycat = FIELD_INTENSIVE + FIELD_PROPERTY
+ityloc = 1 ! variables defined on cells
+idim1  = 1
+ilved  = .false.   ! not interleaved by default
+iprev  = .true.    ! variables have previous value
+inoprv = .false.   ! variables have no previous value
+iopchr = 1         ! Postprocessing level for variables
+
+name = 'post_vis'
+call field_get_key_id(name, keyvis)
+
+name = 'label'
+call field_get_key_id(name, keylbl)
+
+! Key id of the coal scalar class
+call field_get_key_id("scalar_class", keyccl)
 
 ! ---> Definition des pointeurs relatifs aux variables d'etat
 
@@ -132,6 +158,17 @@ do icla = 1, nclacp
   igmdv2(icla) = iprop
   iprop        = iprop2 + 7*nclacp + icla
   igmhet(icla) = iprop
+
+  if (i_coal_drift.eq.1) then
+    write(f_name,'(a6,i2.2)')'Age_CP' ,icla
+    call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+    call field_set_key_str(f_id, keylbl, f_name)
+    ! Set the index of the scalar class in the field structure
+    call field_set_key_int(f_id, keyccl, icla)
+    ! For post-processing
+    call field_set_key_int(f_id, keyvis, iopchr)
+  endif
+
   if ( ihtco2 .eq. 1 ) then
     iprop        = iprop2 + 8*nclacp + icla
     ighco2(icla) = iprop
@@ -164,6 +201,18 @@ do icla = 1, nclacp
     endif
   endif
 enddo
+
+if (i_coal_drift.eq.1) then
+  icla = -1
+  f_name = 'Age_Gas'
+  call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+  call field_set_key_str(f_id, keylbl, f_name)
+  ! Set the index of the scalar class in the field structure
+  call field_set_key_int(f_id, keyccl, icla)
+
+  ! For post-processing
+  call field_set_key_int(f_id, keyvis, iopchr)
+endif
 
 !
 ! Bilan : C , O , H

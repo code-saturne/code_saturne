@@ -67,6 +67,7 @@ use optcal
 use cstphy
 use cstnum
 use parall
+use field
 
 !===============================================================================
 
@@ -84,11 +85,13 @@ double precision scandd(ncelet)
 
 ! Local variables
 
-integer          ivar, iel
+integer          ivar, iel, iflid
 integer          iclmax, iclmin, iiscav
 integer          ippvar
+integer          kscmin, kscmax, f_id
 double precision vmin, vmax, vfmin, vfmax
 double precision scmax, scmin
+double precision scmaxp, scminp
 
 !===============================================================================
 
@@ -98,10 +101,15 @@ double precision scmax, scmin
 
 ! --- Numero de variable de calcul et de post associe au scalaire traite
 ivar   = isca(iscal)
+iflid  = ivarfl(ivar)
 ippvar = ipprtp(ivar)
 
 ! --- Numero du scalaire eventuel associe dans le cas fluctuation
 iiscav = iscavr(iscal)
+
+! Key id for scamin and scamax
+call field_get_key_id("min_scalar_clipping", kscmin)
+call field_get_key_id("max_scalar_clipping", kscmax)
 
 !===============================================================================
 ! 2. IMPRESSIONS ET CLIPPINGS
@@ -131,15 +139,19 @@ if(iiscav.eq.0) then
 
   iclmax = 0
   iclmin = 0
-  if(scamax(iscal).gt.scamin(iscal))then
+  ! Get the min clipping
+  call field_get_key_double(iflid, kscmin, scminp)
+  call field_get_key_double(iflid, kscmax, scmaxp)
+
+  if(scmaxp.gt.scminp)then
     do iel = 1, ncel
-      if(rtp(iel,ivar).gt.scamax(iscal))then
+      if(rtp(iel,ivar).gt.scmaxp)then
         iclmax = iclmax + 1
-        rtp(iel,ivar) = scamax(iscal)
+        rtp(iel,ivar) = scmaxp
       endif
-      if(rtp(iel,ivar).lt.scamin(iscal))then
+      if(rtp(iel,ivar).lt.scminp)then
         iclmin = iclmin + 1
-        rtp(iel,ivar) = scamin(iscal)
+        rtp(iel,ivar) = scminp
       endif
     enddo
   endif
@@ -157,6 +169,8 @@ if(iiscav.eq.0) then
 else
 
 ! --- Clipping des variances
+
+  f_id = ivarfl(isca(iiscav))
 
   iclmax = 0
   iclmin = 0
@@ -179,8 +193,10 @@ else
       endif
     enddo
 
-    scmax = scamax(iscavr(iscal))
-    scmin = scamin(iscavr(iscal))
+    ! Get the min clipping
+    call field_get_key_double(f_id, kscmin, scmin)
+    call field_get_key_double(f_id, kscmax, scmax)
+
     do iel = 1, ncel
       vfmax = (scandd(iel)-scmin)*(scmax-scandd(iel))
       if(rtp(iel,ivar).gt.vfmax) then
@@ -193,8 +209,11 @@ else
 !        (ou 0 au min)
   elseif(iclvfl(iscal).eq.2) then
     vfmin = 0.d0
-    vfmin = max(scamin(iscal),vfmin)
-    vfmax = scamax(iscal)
+    ! Get the min clipping
+    call field_get_key_double(iflid, kscmin, scminp)
+    call field_get_key_double(iflid, kscmax, scmaxp)
+    vfmin = max(scminp,vfmin)
+    vfmax = scmaxp
     if(vfmax.gt.vfmin)then
       do iel = 1, ncel
         if(rtp(iel,ivar).gt.vfmax)then
@@ -223,11 +242,11 @@ endif
 
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 !----
-! FIN
+! End
 !----
 
 return

@@ -110,6 +110,9 @@ module ppincl
   !        Phase dispersee (classe de particules)
   integer, save :: ixck(nclcpm), ixch(nclcpm), inp(nclcpm)
   integer, save :: ih2(nclcpm) , ixwt(nclcpm)
+  ! Pointers to x2*age(particles) and
+  ! x1*age(gas phase)
+  integer, save :: iagecp_temp(nclcpm), iaggas_temp
 
   ! ---- Variables d'etat
   !        Phase continue (melange gazeux)

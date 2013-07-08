@@ -400,12 +400,12 @@ endif
 tplusp => null()
 tstarp => null()
 
-call field_get_id('tplus', itplus)
+call field_get_id_try('tplus', itplus)
 if (itplus.ge.0) then
   call field_get_val_s (itplus, tplusp)
 endif
 
-call field_get_id('tstar', itstar)
+call field_get_id_try('tstar', itstar)
 if (itstar.ge.0) then
   call field_get_val_s (itstar, tstarp)
 endif

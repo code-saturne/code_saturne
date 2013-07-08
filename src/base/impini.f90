@@ -66,6 +66,7 @@ use lagdim
 use lagran
 use mltgrd
 use mesh
+use field
 
 !===============================================================================
 
@@ -84,6 +85,9 @@ integer          iokss , iokcaz
 integer          ii    , jj    , ivar  , iiesca, iest
 integer          ipp   , iwar  , imom
 integer          nbccou, nbsucp, nbvocp, issurf, isvol
+integer          kscmin, kscmax, f_id
+
+double precision scmaxp, scminp
 
 !===============================================================================
 
@@ -91,6 +95,10 @@ integer          nbccou, nbsucp, nbvocp, issurf, isvol
 !===============================================================================
 ! 1. Introduction
 !===============================================================================
+
+! Key id for scamin and scamax
+call field_get_key_id("min_scalar_clipping", kscmin)
+call field_get_key_id("max_scalar_clipping", kscmax)
 
 write(nfecra,1000)
 
@@ -2143,9 +2151,14 @@ if(nscal.ge.1) then
   write(nfecra,6032)
   write(nfecra,6013)
   do ii = 1, nscal
+    ! Get the min clipping
+    f_id = ivarfl(isca(ii))
+    call field_get_key_double(f_id, kscmin, scminp)
+    call field_get_key_double(f_id, kscmax, scmaxp)
+
     chaine=nomvar(ipprtp(isca(ii)))
     write(nfecra,6023) chaine(1:16),ii,iclvfl(ii),      &
-                       scamin(ii),scamax(ii)
+                       scminp,scmaxp
   enddo
   write(nfecra,6033)
   write(nfecra,6030)

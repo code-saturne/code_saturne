@@ -67,7 +67,7 @@ implicit none
 
 integer          icla,  is, icha, isc , is1
 integer          f_id, itycat, ityloc, idim1, idim3
-integer          keyccl, keydri, keyvis, keylbl
+integer          keyccl, keydri, keyvis, keylbl, kscmin, kscmax
 integer          iscdri, iopchr
 
 logical          ilved, iprev, inoprv
@@ -103,6 +103,10 @@ call field_get_key_id("scalar_class", keyccl)
 ! Key id for drift scalar
 call field_get_key_id("drift_scalar_model", keydri)
 
+! Key id for scamin and scamax
+call field_get_key_id("min_scalar_clipping", kscmin)
+call field_get_key_id("max_scalar_clipping", kscmax)
+
 !===============================================================================
 ! 1. DEFINITION DES POINTEURS
 !===============================================================================
@@ -126,6 +130,9 @@ do icla = 1, nclacp
   call field_set_key_str(f_id, keylbl, f_name)
   ! Set the index of the scalar class in the field structure
   call field_set_key_int(f_id, keyccl, icla)
+  ! Set min and max clipping
+  call field_set_key_double(f_id, kscmin, 0.d0)
+  call field_set_key_double(f_id, kscmax, rinfin)
 
   ! Scalar with drift: DO create additional mass flux
   if (i_coal_drift.eq.1) then
@@ -144,6 +151,9 @@ do icla = 1, nclacp
   call field_set_key_str(f_id, keylbl, f_name)
   ! Set the index of the scalar class in the field structure
   call field_set_key_int(f_id, keyccl, icla)
+  ! Set min and max clipping
+  call field_set_key_double(f_id, kscmin, 0.d0)
+  call field_set_key_double(f_id, kscmax, 1.d0)
 
   ! Scalar with drift: BUT Do NOT create additional mass flux
   if (i_coal_drift.eq.1) then
@@ -162,6 +172,9 @@ do icla = 1, nclacp
   call field_set_key_str(f_id, keylbl, f_name)
   ! Set the index of the scalar class in the field structure
   call field_set_key_int(f_id, keyccl, icla)
+  ! Set min and max clipping
+  call field_set_key_double(f_id, kscmin, 0.d0)
+  call field_set_key_double(f_id, kscmax, 1.d0)
 
   ! Scalar with drift: BUT Do NOT create additional mass flux
   if (i_coal_drift.eq.1) then
@@ -182,6 +195,9 @@ do icla = 1, nclacp
     call field_set_key_str(f_id, keylbl, f_name)
     ! Set the index of the scalar class in the field structure
     call field_set_key_int(f_id, keyccl, icla)
+    ! Set min and max clipping
+    call field_set_key_double(f_id, kscmin, 0.d0)
+    call field_set_key_double(f_id, kscmax, 1.d0)
 
     ! Scalar with drift: BUT Do NOT create additional mass flux
     if (i_coal_drift.eq.1) then
@@ -200,6 +216,9 @@ do icla = 1, nclacp
     call field_set_key_str(f_id, keylbl, f_name)
     ! Set the index of the scalar class in the field structure
     call field_set_key_int(f_id, keyccl, icla)
+    ! Set min and max clipping
+    call field_set_key_double(f_id, kscmin, -grand)
+    call field_set_key_double(f_id, kscmax, grand)
 
     ! Scalar with drift: BUT Do NOT create additional mass flux
     if (i_coal_drift.eq.1) then
@@ -210,6 +229,26 @@ do icla = 1, nclacp
     ! For post-processing
     call field_set_key_int(f_id, keyvis, iopchr)
 
+    if (i_coal_drift.eq.1) then
+      is = 1+5*nclacp+icla
+      ! Field X_Age
+      iagecp_temp(icla) = iscapp(is)
+      write(f_name,'(a8,i2.2)')'X_Age_CP' ,icla
+      call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+      call field_set_key_str(f_id, keylbl, f_name)
+      ! Set the index of the scalar class in the field structure
+      call field_set_key_int(f_id, keyccl, icla)
+      ! Set min and max clipping
+      call field_set_key_double(f_id, kscmin, 0.d0 )
+      call field_set_key_double(f_id, kscmax, grand)
+
+      ! Scalar with drift: BUT Do NOT create additional mass flux
+      iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+      call field_set_key_int(f_id, keydri, iscdri)
+
+      ! For post-processing
+      call field_set_key_int(f_id, keyvis, iopchr)
+    endif
   else
     is = 1+3*nclacp+icla
     ! Field h2
@@ -219,6 +258,9 @@ do icla = 1, nclacp
     call field_set_key_str(f_id, keylbl, f_name)
     ! Set the index of the scalar class in the field structure
     call field_set_key_int(f_id, keyccl, icla)
+    ! Set min and max clipping
+    call field_set_key_double(f_id, kscmin, -grand)
+    call field_set_key_double(f_id, kscmax, grand)
 
     ! Scalar with drift: BUT Do NOT create additional mass flux
     if (i_coal_drift.eq.1) then
@@ -229,6 +271,23 @@ do icla = 1, nclacp
     ! For post-processing
     call field_set_key_int(f_id, keyvis, iopchr)
 
+    if (i_coal_drift.eq.1) then
+      is = 1+4*nclacp+icla
+      ! Field X_Age
+      iagecp_temp(icla) = iscapp(is)
+      write(f_name,'(a8,i2.2)')'X_Age_CP' ,icla
+      call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+      call field_set_key_str(f_id, keylbl, f_name)
+      ! Set the index of the scalar class in the field structure
+      call field_set_key_int(f_id, keyccl, icla)
+
+      ! Scalar with drift: BUT Do NOT create additional mass flux
+      iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+      call field_set_key_int(f_id, keydri, iscdri)
+
+      ! For post-processing
+      call field_set_key_int(f_id, keyvis, iopchr)
+    endif
   endif
 enddo
 
@@ -249,6 +308,9 @@ do icha = 1, ncharb
   call field_set_key_str(f_id, keylbl, f_name)
   ! Set the index of the scalar class in the field structure
   call field_set_key_int(f_id, keyccl, icla)
+  ! Set min and max clipping
+  call field_set_key_double(f_id, kscmin, 0.d0)
+  call field_set_key_double(f_id, kscmax, 1.d0)
 
   ! The first gas salar contains the drift flux, the others
   ! Scalar with drift: DO create additional mass flux
@@ -273,6 +335,9 @@ do icha = 1, ncharb
   call field_set_key_str(f_id, keylbl, f_name)
   ! Set the index of the scalar class in the field structure
   call field_set_key_int(f_id, keyccl, icla)
+  ! Set min and max clipping
+  call field_set_key_double(f_id, kscmin, 0.d0)
+  call field_set_key_double(f_id, kscmax, 1.d0)
 
   ! Scalar with drift: BUT Do NOT create additional mass flux
   if (i_coal_drift.eq.1) then
@@ -285,7 +350,7 @@ do icha = 1, ncharb
 enddo
 
 ! Oxydant 2
-if ( noxyd .ge. 2 ) then
+if (noxyd .ge. 2) then
   is = is+1
   ! Field FR_OXYD2
   if4m  = iscapp(is)
@@ -294,6 +359,9 @@ if ( noxyd .ge. 2 ) then
   call field_set_key_str(f_id, keylbl, f_name)
   ! Set the index of the scalar class in the field structure
   call field_set_key_int(f_id, keyccl, icla)
+  ! Set min and max clipping
+  call field_set_key_double(f_id, kscmin, 0.d0)
+  call field_set_key_double(f_id, kscmax, 1.d0)
 
   ! Scalar with drift: BUT Do NOT create additional mass flux
   if (i_coal_drift.eq.1) then
@@ -306,7 +374,7 @@ if ( noxyd .ge. 2 ) then
 endif
 
 ! Oxydant 3
-if ( noxyd .ge. 3 ) then
+if (noxyd .ge. 3) then
   is = is+1
   ! Field FR_OXYD3
   if5m  = iscapp(is)
@@ -315,6 +383,9 @@ if ( noxyd .ge. 3 ) then
   call field_set_key_str(f_id, keylbl, f_name)
   ! Set the index of the scalar class in the field structure
   call field_set_key_int(f_id, keyccl, icla)
+  ! Set min and max clipping
+  call field_set_key_double(f_id, kscmin, 0.d0)
+  call field_set_key_double(f_id, kscmax, 1.d0)
 
   ! Scalar with drift: BUT Do NOT create additional mass flux
   if (i_coal_drift.eq.1) then
@@ -336,6 +407,9 @@ if (ippmod(iccoal).eq.1) then
   call field_set_key_str(f_id, keylbl, f_name)
   ! Set the index of the scalar class in the field structure
   call field_set_key_int(f_id, keyccl, icla)
+  ! Set min and max clipping
+  call field_set_key_double(f_id, kscmin, 0.d0)
+  call field_set_key_double(f_id, kscmax, 1.d0)
 
   ! Scalar with drift: BUT Do NOT create additional mass flux
   if (i_coal_drift.eq.1) then
@@ -356,6 +430,9 @@ call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
 call field_set_key_str(f_id, keylbl, f_name)
 ! Set the index of the scalar class in the field structure
 call field_set_key_int(f_id, keyccl, icla)
+! Set min and max clipping
+call field_set_key_double(f_id, kscmin, 0.d0)
+call field_set_key_double(f_id, kscmax, 1.d0)
 
 ! Scalar with drift: BUT Do NOT create additional mass flux
 if (i_coal_drift.eq.1) then
@@ -376,6 +453,9 @@ if (ihtco2.eq.1) then
   call field_set_key_str(f_id, keylbl, f_name)
   ! Set the index of the scalar class in the field structure
   call field_set_key_int(f_id, keyccl, icla)
+  ! Set min and max clipping
+  call field_set_key_double(f_id, kscmin, 0.d0)
+  call field_set_key_double(f_id, kscmax, 1.d0)
 
   ! Scalar with drift: BUT Do NOT create additional mass flux
   if (i_coal_drift.eq.1) then
@@ -397,6 +477,9 @@ if (ihth2o.eq.1) then
   call field_set_key_str(f_id, keylbl, f_name)
   ! Set the index of the scalar class in the field structure
   call field_set_key_int(f_id, keyccl, icla)
+  ! Set min and max clipping
+  call field_set_key_double(f_id, kscmin, 0.d0)
+  call field_set_key_double(f_id, kscmax, 1.d0)
 
   ! Scalar with drift: BUT Do NOT create additional mass flux
   if (i_coal_drift.eq.1) then
@@ -417,6 +500,9 @@ call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
 call field_set_key_str(f_id, keylbl, f_name)
 ! Set the index of the scalar class in the field structure
 call field_set_key_int(f_id, keyccl, icla)
+! Set min and max clipping
+call field_set_key_double(f_id, kscmin, 0.d0)
+call field_set_key_double(f_id, kscmax, 0.25d0)
 
 ! Scalar with drift: BUT Do NOT create additional mass flux
 if (i_coal_drift.eq.1) then
@@ -437,6 +523,9 @@ if (ieqco2.ge.1) then
   call field_set_key_str(f_id, keylbl, f_name)
   ! Set the index of the scalar class in the field structure
   call field_set_key_int(f_id, keyccl, icla)
+  ! Set min and max clipping
+  call field_set_key_double(f_id, kscmin, 0.d0)
+  call field_set_key_double(f_id, kscmax, 1.d0)
 
   ! Scalar with drift: BUT Do NOT create additional mass flux
   if (i_coal_drift.eq.1) then
@@ -458,6 +547,9 @@ if (ieqnox.eq.1) then
   call field_set_key_str(f_id, keylbl, f_name)
   ! Set the index of the scalar class in the field structure
   call field_set_key_int(f_id, keyccl, icla)
+  ! Set min and max clipping
+  call field_set_key_double(f_id, kscmin, 0.d0)
+  call field_set_key_double(f_id, kscmax, 1.d0)
 
   ! Scalar with drift: BUT Do NOT create additional mass flux
   if (i_coal_drift.eq.1) then
@@ -476,6 +568,9 @@ if (ieqnox.eq.1) then
   call field_set_key_str(f_id, keylbl, f_name)
   ! Set the index of the scalar class in the field structure
   call field_set_key_int(f_id, keyccl, icla)
+  ! Set min and max clipping
+  call field_set_key_double(f_id, kscmin, 0.d0)
+  call field_set_key_double(f_id, kscmax, 1.d0)
 
   ! Scalar with drift: BUT Do NOT create additional mass flux
   if (i_coal_drift.eq.1) then
@@ -494,6 +589,9 @@ if (ieqnox.eq.1) then
   call field_set_key_str(f_id, keylbl, f_name)
   ! Set the index of the scalar class in the field structure
   call field_set_key_int(f_id, keyccl, icla)
+  ! Set min and max clipping
+  call field_set_key_double(f_id, kscmin,-grand)
+  call field_set_key_double(f_id, kscmax, grand)
 
   ! Scalar with drift: BUT Do NOT create additional mass flux
   if (i_coal_drift.eq.1) then
@@ -505,6 +603,26 @@ if (ieqnox.eq.1) then
   call field_set_key_int(f_id, keyvis, iopchr)
 endif
 
+if (i_coal_drift.eq.1) then
+  is     = is+1
+  ! Field
+  iaggas_temp = iscapp(is)
+  f_name = 'X_Age_Gas'
+  call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+  call field_set_key_str(f_id, keylbl, f_name)
+  ! Set the index of the scalar class in the field structure
+  call field_set_key_int(f_id, keyccl, icla)
+  ! Set min and max clipping
+  call field_set_key_double(f_id, kscmin, 0.d0 )
+  call field_set_key_double(f_id, kscmax, grand)
+
+  ! Scalar with drift: BUT Do NOT create additional mass flux
+  iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+  call field_set_key_int(f_id, keydri, iscdri)
+
+  ! For post-processing
+  call field_set_key_int(f_id, keyvis, iopchr)
+endif
 !   - Interface Code_Saturne
 !     ======================
 !     Construction de l'indirection entre la numerotation du noyau et XML

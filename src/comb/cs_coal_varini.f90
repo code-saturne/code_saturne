@@ -106,6 +106,7 @@ use ppincl
 use ppcpfu
 use cs_coal_incl
 use mesh
+use field
 
 !===============================================================================
 
@@ -118,6 +119,8 @@ double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 
 ! Local variables
+
+character*80     name
 
 integer          iel, ige, mode, icla, icha
 
@@ -135,6 +138,8 @@ double precision wmh2o,wmco2,wmn2,wmo2,dmas
 integer          ipass
 data             ipass /0/
 save             ipass
+
+double precision, dimension(:), pointer :: xagecpi, xagegas
 
 !===============================================================================
 ! 1.  INITIALISATION VARIABLES LOCALES
@@ -211,6 +216,9 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
   do icla = 1, nclacp
     icha = ichcor(icla)
 
+    write(name,'(a8,i2.2)')'X_Age_CP' ,icla
+    call field_get_val_s_by_name(name, xagecpi)
+
     do iel = 1, ncel
 
       rtp(iel,isca(ixch(icla))) = zero
@@ -221,6 +229,9 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
         rtp(iel,isca(ixwt(icla))) = zero
       endif
 
+      if (i_coal_drift.eq.1) then
+        xagecpi(iel) = zero
+      endif
     enddo
   enddo
 
@@ -258,6 +269,8 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
 
 ! ------ Variables de transport relatives au melange gazeux
 !        (scalaires passifs et variances associees)
+
+  call field_get_val_s_by_name('X_Age_Gas', xagegas)
 
   do iel = 1, ncel
 !
@@ -304,6 +317,9 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
       rtp(iel,isca(iyhcn)) = zero
       rtp(iel,isca(iyno )) = zero
       rtp(iel,isca(ihox )) = h1init
+    endif
+    if (i_coal_drift.eq.1) then
+      xagegas(iel) = zero
     endif
   enddo
 

@@ -82,11 +82,11 @@ implicit none
 integer          ii, ippu, ippv, ippw, ivar, iprop
 integer          imom, idtnm
 integer          keyvis, keylbl, keycpl, iflid, ikeyid, ikeyvl, iopchr
-integer          keysca
+integer          keysca, keyvar, kscmin, kscmax
 integer          nfld, itycat, ityloc, idim1, idim3
 logical          ilved, iprev, inoprv
 integer          ifvar(nvppmx), iapro(npromx)
-integer          f_id, kimasf, kbmasf
+integer          f_id, kimasf, kbmasf, kscavr
 
 character*80     name
 character*32     name1, name2, name3
@@ -124,11 +124,21 @@ call field_get_key_id(name, keycpl)
 ! Key id for scalar id
 call field_get_key_id("scalar_id", keysca)
 
+! Key id for varaible id
+call field_get_key_id("variable_id", keyvar)
+
 ! Key id for the inner mass flux id
 call field_get_key_id("inner_mass_flux_id", kimasf)
 
 ! Key id for the boundary mass flux id
 call field_get_key_id("boundary_mass_flux_id", kbmasf)
+
+! Key id for scamin and scamax
+call field_get_key_id("min_scalar_clipping", kscmin)
+call field_get_key_id("max_scalar_clipping", kscmax)
+
+! If a scalar is a variance, store the id of the parent scalar
+call field_get_key_id("max_scalar_clipping", kscavr)
 
 ! Postprocessing level for variables
 iopchr = 1
@@ -306,7 +316,7 @@ do ii = 1, nscal
     endif
 
     ! Test if the field has already been defined
-    call field_get_id(trim(name), f_id)
+    call field_get_id_try(trim(name), f_id)
 
     ! If not already created
     if (f_id.eq.-1) then
@@ -315,6 +325,10 @@ do ii = 1, nscal
       if (ichrvr(ipprtp(ivar)).eq.1) then
         call field_set_key_int(ivarfl(ivar), keyvis, iopchr)
       endif
+      ! Set min and max clipping
+      call field_set_key_double(ivarfl(ivar), kscmin, scamin(ii))
+      call field_set_key_double(ivarfl(ivar), kscmax, scamax(ii))
+
     ! It already exists
     else
       ivarfl(ivar) = f_id
@@ -336,6 +350,19 @@ do ii = 1, nscal
 
   endif
 
+enddo
+
+do ii = 1, nscal
+  ! If it is a variance, store the id of the parent scalar
+  if (iscavr(ii).gt.0) then
+    iflid = ivarfl(isca(iscavr(ii)))
+    call field_set_key_int(ivarfl(ivar), kscavr, iflid)
+  endif
+enddo
+
+do ivar = 1, nvar
+  ! Set the "variable_id" key word (inverse of ivarfl(ivar))
+  call field_set_key_int(ivarfl(ivar), keyvar, ivar)
 enddo
 
 ! Flag moments

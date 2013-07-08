@@ -292,7 +292,7 @@ rinfiv(3) = rinfin
 tplusp => null()
 tstarp => null()
 
-call field_get_id('tplus', itplus)
+call field_get_id_try('tplus', itplus)
 if (itplus.ge.0) then
   call field_get_val_s (itplus, tplusp)
   do ifac = 1, nfabor
@@ -300,7 +300,7 @@ if (itplus.ge.0) then
   enddo
 endif
 
-call field_get_id('tstar', itstar)
+call field_get_id_try('tstar', itstar)
 if (itstar.ge.0) then
   call field_get_val_s (itstar, tstarp)
   do ifac = 1, nfabor

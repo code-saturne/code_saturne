@@ -126,6 +126,7 @@ use ppincl
 use ppcpfu
 use cs_coal_incl
 use mesh
+use field
 
 !===============================================================================
 
@@ -152,6 +153,8 @@ double precision smbrs(ncelet), rovsdt(ncelet)
 ! Local variables
 
 character*80     chaine
+character*80     fname
+character*80     name
 integer          ivar , ipcrom, iel
 integer          numcla , numcha , icla , numtra
 integer          ipcgch , ipcgd1 , ipcgd2 , ipcght , ipcsec
@@ -165,6 +168,9 @@ integer          ipcx2c , icha , imode , ii
 integer          itermx,nbpauv,nbrich,nbepau,nberic,ipghc2
 integer          iterch,nbpass,nbarre,nbimax
 integer          iexp1 , iexp2 , iexp3
+integer          itspar
+integer          iok1
+integer          keyccl
 
 double precision epsrgp , climgp , extrap , xnuss
 double precision aux, rhovst
@@ -185,17 +191,19 @@ double precision errch,ter1,ddelta,xden
 double precision fn0,fn1,fn2,anmr0,anmr1,anmr2
 double precision lnk0p,l10k0e,lnk0m,t0e,xco2eq,xcoeq,xo2eq
 double precision xcom,xo2m,xkcequ,xkpequ
-
-double precision  xw1,xw2,xw3,xw4
-double precision  xo2,wmel,wmhcn,wmno,wmo2
+double precision xw1,xw2,xw3,xw4
+double precision xo2,wmel,wmhcn,wmno,wmo2
 double precision gmdev1(ncharm),gmdev2(ncharm),gmhet(ncharm)
 double precision aux1 , aux2 , aux3
 double precision xch,xck,xash,xmx2
 double precision tfuelmin,tfuelmax
+double precision auxdev,auxht3,auxco2,auxh2o,auxwat
 
-integer           iok1
 double precision , dimension ( : )     , allocatable :: w1,w2,w3,w4,w5
 double precision , dimension ( : )     , allocatable :: tfuel
+double precision, dimension(:), pointer :: gadchi, xchcpi, gaheto2i, xckcpi
+double precision, dimension(:), pointer :: gaseci, frmcpi, agei, gahetco2i
+double precision, dimension(:), pointer :: gaheth2oi, xwtcpi
 
 !===============================================================================
 !
@@ -213,18 +221,21 @@ chaine = nomvar(ipprtp(ivar))
 ipcrom = ipproc(irom)
 ipcvst = ipproc(ivisct)
 ipcte1 = ipproc(itemp1)
-!
+
+! Key id of the coal scalar class
+call field_get_key_id("scalar_class", keyccl)
+
 !===============================================================================
 ! Deallocation dynamic arrays
 !----
-allocate(w1(1:ncel),w2(1:ncel),w3(1:ncel),w4(1:ncel),w5(1:ncel),STAT=iok1)
-if ( iok1 > 0 ) THEN
+allocate(w1(1:ncel),w2(1:ncel),w3(1:ncel),w4(1:ncel),w5(1:ncel),stat=iok1)
+if (iok1 > 0) then
   write(nfecra,*) ' Memory allocation error inside: '
   write(nfecra,*) '     cs_coal_scast               '
   call csexit(1)
 endif
-allocate(tfuel(1:ncel),STAT=iok1)
-if ( iok1 > 0 ) THEN
+allocate(tfuel(1:ncel),stat=iok1)
+if (iok1 > 0) then
   write(nfecra,*) ' Memory allocation error inside: '
   write(nfecra,*) '     cs_coal_scast               '
   call csexit(1)
@@ -423,6 +434,237 @@ if ( ippmod(iccoal) .eq. 1 ) then
        smbrs(iel)  = smbrs(iel)  - xw1*rtpa(iel,ivar)
      endif
 
+    enddo
+
+  endif
+
+endif
+
+if (i_coal_drift.eq.1) then
+
+  call field_get_name(ivarfl(ivar), fname)
+
+  ! Particle age source term
+  if (fname(1:8).eq.'X_Age_CP') then
+
+    ! index of the coal particle class
+    call field_get_key_int(ivarfl(ivar), keyccl, icla)
+
+    ! Sum of kinetic constants of Kobayashi model (k1 + k2)
+    write(name,'(a6,i2.2)')'Ga_DCH' ,icla
+    write(nfecra,*) 'in cs_coal_scast before ', name, icla
+    call field_get_val_s_by_name(name, gadchi)
+
+    ! Fraction massique du charbon de icla
+    write(name,'(a6,i2.2)')'Xch_CP' ,icla
+    write(nfecra,*) 'in cs_coal_scast before ', name, icla
+    call field_get_val_s_by_name(name, xchcpi)
+
+    ! Echelle temporelle de la combustion heter.
+    write(name,'(a9,i2.2)')'Ga_HET_O2' ,icla
+    write(nfecra,*) 'in cs_coal_scast before ', name, icla
+    call field_get_val_s_by_name(name, gaheto2i)
+
+    ! Fraction massique du char de icla
+    write(name,'(a6,i2.2)')'xck_cp' ,icla
+    write(nfecra,*) 'in cs_coal_scast before ', name, icla
+    call field_get_val_s_by_name(name, xckcpi)
+
+    ! Indicateur du charbon de classe icla
+    numcha = ichcor(icla)
+
+    ! Echelle temporelle de la sechage
+    if (ippmod(iccoal) .eq. 1) then
+      write(name,'(a6,i2.2)')'Ga_SEC' ,icla
+    write(nfecra,*) 'in cs_coal_scast before ', name, icla
+      call field_get_val_s_by_name(name, gaseci)
+    endif
+
+    ! Fraction massique de la phase solide
+    write(name,'(a6,i2.2)')'Frm_CP' ,icla
+    write(nfecra,*) 'in cs_coal_scast before ', name, icla
+    call field_get_val_s_by_name(name, frmcpi)
+
+    ! L'age des particules par cellule
+    write(name,'(a6,i2.2)')'Age_CP' ,icla
+    write(nfecra,*) 'in cs_coal_scast before ', name, icla
+    call field_get_val_s_by_name(name, agei)
+
+    ! Echelle temporelle de la gazefication par CO2
+    if (ihtco2 .eq. 1) then
+      write(name,'(a10,i2.2)')'Ga_HET_CO2' ,icla
+    write(nfecra,*) 'in cs_coal_scast before ', name, icla
+      call field_get_val_s_by_name(name, gahetco2i)
+    endif
+
+    ! Echelle temporelle de la gazefication par H2O
+    if (ihth2o .eq. 1) then
+      write(name,'(a10,i2.2)')'Ga_HET_H2O' ,icla
+    write(nfecra,*) 'in cs_coal_scast before ', name, icla
+      call field_get_val_s_by_name(name, gaheth2oi)
+    endif
+
+    if (ippmod(iccoal).eq.1) then
+      write(name,'(a6,i2.2)')'Xwt_CP' ,icla
+    write(nfecra,*) 'in cs_coal_scast before ', name, icla
+      call field_get_val_s_by_name(name, xwtcpi)
+    endif
+
+    do iel = 1, ncel
+      ! Flux de masse: Devolatilisation
+      auxdev = -gadchi(iel)*xchcpi(iel)
+      ! Consommation de char par combustion heterogene
+      if (xckcpi(iel) .gt. epsicp) then
+        auxht3 = -gaheto2i(iel) * (xckcpi(iel))**(2.d0/3.d0)
+      else
+        auxht3 = 0.d0
+      endif
+      ! Flux de masse: Gazefication par CO2
+      if (ihtco2 .eq. 1) then
+        if (xckcpi(iel) .gt. epsicp ) then
+          auxco2 = -gahetco2i(iel)* (xckcpi(iel))**(2.d0/3.d0)
+        else
+          auxco2 = 0.d0
+        endif
+      else
+        auxco2 = 0.d0
+      endif
+      ! Flux de masse: Gazefication par H2O
+      if (ihth2o .eq. 1) then
+        if (xckcpi(iel) .gt. epsicp) then
+          auxh2o = -gaheth2oi(iel)*(xckcpi(iel))**(2.d0/3.d0)
+        else
+          auxh2o = 0.d0
+        endif
+      else
+        auxh2o = 0.d0
+      endif
+      !  Flux de masse: Sechage
+      if (ippmod(iccoal) .eq. 1) then
+        if (xwtcpi(iel).gt.epsicp .and.xwatch(numcha).gt.epsicp) then
+          auxwat = gaseci(iel)/(frmcpi(iel)*xwatch(numcha))
+        else
+          auxwat = 0.d0
+        endif
+      else
+        auxwat = 0.d0
+      endif
+
+      smbrs(iel) =  smbrs(iel) + ( propce(iel,ipcrom) * volume(iel) *          &
+                    (frmcpi(iel)                                    -          &
+                    ((auxdev+auxht3+auxco2+auxh2o+auxwat)*agei(iel))) )
+
+    enddo
+  endif
+
+  ! Gas age source term
+  if (fname(1:8).eq.'X_Age_Gas') then
+
+    ! Loop over particle classes
+    do icla = 1, nclacp
+      ! Sum of kinetic constants of Kobayashi model (k1 + k2)
+      write(name,'(a6,i2.2)')'Ga_DCH' ,icla
+      call field_get_val_s_by_name(name, gadchi)
+
+      ! Fraction massique du charbon de icla
+      write(name,'(a6,i2.2)')'Xch_CP' ,icla
+      call field_get_val_s_by_name(name, xchcpi)
+
+      ! Echelle temporelle de la combustion heter.
+      write(name,'(a9,i2.2)')'Ga_HET_O2' ,icla
+      call field_get_val_s_by_name(name, gaheto2i)
+
+      ! Fraction massique du char de icla
+      write(name,'(a6,i2.2)')'xck_cp' ,icla
+      call field_get_val_s_by_name(name, xckcpi)
+
+      ! Indicateur du charbon de classe icla
+      numcha = ichcor(icla)
+
+      ! Echelle temporelle de la sechage
+      if (ippmod(iccoal) .eq. 1) then
+        write(name,'(a6,i2.2)')'Ga_SEC' ,icla
+        call field_get_val_s_by_name(name, gaseci)
+      endif
+
+      ! Fraction massique de la phase solide
+      write(name,'(a6,i2.2)')'Frm_CP' ,icla
+      call field_get_val_s_by_name(name, frmcpi)
+
+      ! L'age des particules par cellule
+      write(name,'(a6,i2.2)')'Age_CP' ,icla
+      call field_get_val_s_by_name(name, agei)
+
+      ! Echelle temporelle de la gazefication par CO2
+      if (ihtco2 .eq. 1) then
+        write(name,'(a10,i2.2)')'Ga_HET_CO2' ,icla
+        call field_get_val_s_by_name(name, gahetco2i)
+      endif
+
+      ! Echelle temporelle de la gazefication par H2O
+      if (ihth2o .eq. 1) then
+        write(name,'(a10,i2.2)')'Ga_HET_H2O' ,icla
+        call field_get_val_s_by_name(name, gaheth2oi)
+      endif
+
+      if (ippmod(iccoal).eq.1) then
+        write(name,'(a6,i2.2)')'Xwt_CP' ,icla
+        call field_get_val_s_by_name(name, xwtcpi)
+      endif
+
+      do iel = 1, ncel
+        ! Flux de masse: Devolatilisation
+        auxdev = -gadchi(iel)*xchcpi(iel)
+        ! Consommation de char par combustion heterogene
+        if (xckcpi(iel) .gt. epsicp) then
+          auxht3 = -gaheto2i(iel) * (xckcpi(iel))**(2.d0/3.d0)
+        else
+          auxht3 = 0.d0
+        endif
+        ! Flux de masse: Gazefication par CO2
+        if (ihtco2 .eq. 1) then
+          if (xckcpi(iel) .gt. epsicp ) then
+            auxco2 = -gahetco2i(iel)* (xckcpi(iel))**(2.d0/3.d0)
+          else
+            auxco2 = 0.d0
+          endif
+        else
+          auxco2 = 0.d0
+        endif
+        ! Flux de masse: Gazefication par H2O
+        if (ihth2o .eq. 1) then
+          if (xckcpi(iel) .gt. epsicp) then
+            auxh2o = -gaheth2oi(iel)*(xckcpi(iel))**(2.d0/3.d0)
+          else
+            auxh2o = 0.d0
+          endif
+        else
+          auxh2o = 0.d0
+        endif
+        !  Flux de masse: Sechage
+        if (ippmod(iccoal) .eq. 1) then
+          if (xwtcpi(iel).gt.epsicp .and.xwatch(numcha).gt.epsicp) then
+            auxwat = gaseci(iel)/(frmcpi(iel)*xwatch(numcha))
+          else
+            auxwat = 0.d0
+          endif
+        else
+          auxwat = 0.d0
+        endif
+
+        smbrs(iel) = smbrs(iel) + propce(iel,ipcrom)*volume(iel)               &
+                                *( ( auxdev+auxht3+auxco2+auxh2o+auxwat)       &
+                                   * agei(iel)                                 &
+                                 - frmcpi(iel)                                 &
+                                 )
+      enddo
+
+    enddo
+
+    ! Finalization
+    do iel = 1, ncel
+      ! The formula is (1- SUM X2)
+      smbrs(iel) =  smbrs(iel) + propce(iel,ipcrom) * volume(iel)
     enddo
 
   endif

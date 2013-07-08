@@ -138,12 +138,19 @@ if (isoot.ge.1) nscapp = nscapp + 2
 ! --> Flamme charbon pulverise
 
 if ( ippmod(iccoal).ge.0 ) then
-! enthalpie du melange
-! phase disperse : (Np , Xch , Xck , h2  ) par classe
-! phase gaz      : ( F1 , F2 ) par charbon
-!                  F4 , F5 optionnel en fonction de Noxyd
-!                  F7 , Variance
+! On ajoute les scalaires "iagcpl(icla)" en remplacant le term 4*nclacp par
+! 5*nclacp. En total on considere:
+! - Enthalpie du melange
+! - Phase disperse : (Np , Xch , Xck , h2, iagcpl  ) =f(icla)
+! - Phase gaz      : ( F1 , F2 ) par charbon
+!                      F4 , F5 optionnel en fonction de Noxyd
+!                      F7 , Variance
+
   nscapp = 1 + 4*nclacp + 2*ncharb + (noxyd-1) + 2
+
+  if (i_coal_drift.eq.1) then
+    nscapp = nscapp + 1*nclacp + 1
+  endif
 
   if ( ippmod(iccoal) .eq. 1 ) then
 !   humidite : f6

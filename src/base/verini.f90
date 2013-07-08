@@ -66,6 +66,7 @@ use lagran
 use radiat
 use cplsat
 use mesh
+use field
 
 !===============================================================================
 
@@ -83,15 +84,19 @@ integer          iscal , iest  , iiesca, ivar
 integer          nbsccp
 integer          ipp   , imgrok, nbccou
 integer          iokpre, indest, itests, iiidef, istop
-integer          iresop, ipolop
+integer          iresop, ipolop, kscmin, kscmax
 double precision testth
-double precision arakfr
+double precision arakfr, scmaxp, scminp
 
 !===============================================================================
 
 ! Initialize variables to avoid warnings
 
 jj = 0
+
+! Key id for scamin and scamax
+call field_get_key_id("min_scalar_clipping", kscmin)
+call field_get_key_id("max_scalar_clipping", kscmax)
 
 !===============================================================================
 ! 1. ENTREES SORTIES entsor : formats 1000
@@ -1524,10 +1529,13 @@ if (nscal.gt.0) then
 !      a l'utilisateur de ne pas y toucher (ca permet d'etre sur
 !      qu'il sait ce qu'il fait)
   do ii = 1, nscal
+    ! Get the min clipping
+    call field_get_key_double(ivarfl(isca(ii)), kscmin, scminp)
+
     if (iscavr(ii).gt.0.and.iscavr(ii).le.nscal.and.               &
-       iclvfl(ii).ne.2.and.scamin(ii).ne.-grand) then
+       iclvfl(ii).ne.2.and.scminp.ne.-grand) then
       chaine=nomvar(ipprtp(isca(ii)))
-      write(nfecra,4360)chaine(1:16),ii,scamin(ii),ii,iclvfl(ii)
+      write(nfecra,4360)chaine(1:16),ii,scminp,ii,iclvfl(ii)
       iok = iok + 1
     endif
   enddo
@@ -1536,20 +1544,26 @@ if (nscal.gt.0) then
 !      a l'utilisateur de ne pas y toucher (ca permet d'etre sur
 !      qu'il sait ce qu'il fait)
   do ii = 1, nscal
+    ! Get the max clipping
+    call field_get_key_double(ivarfl(isca(ii)), kscmax, scmaxp)
+
     if (iscavr(ii).gt.0.and.iscavr(ii).le.nscal.and.               &
-       iclvfl(ii).ne.2.and.scamax(ii).ne.grand) then
+       iclvfl(ii).ne.2.and.scmaxp.ne.grand) then
       chaine=nomvar(ipprtp(isca(ii)))
-      write(nfecra,4361)chaine(1:16),ii,scamax(ii),ii,iclvfl(ii)
+      write(nfecra,4361)chaine(1:16),ii,scmaxp,ii,iclvfl(ii)
       iok = iok + 1
     endif
   enddo
 
 !     Valeur de la borne sup de clipping si on l'utilise
   do ii = 1, nscal
+    ! Get the max clipping
+    call field_get_key_double(ivarfl(isca(ii)), kscmax, scmaxp)
+
     if (iscavr(ii).gt.0.and.iscavr(ii).le.nscal.and.               &
-       iclvfl(ii).eq.2.and.scamax(ii).le.0.d0) then
+       iclvfl(ii).eq.2.and.scmaxp.le.0.d0) then
       chaine=nomvar(ipprtp(isca(ii)))
-      write(nfecra,4370)chaine(1:16),ii,scamax(ii)
+      write(nfecra,4370)chaine(1:16),ii,scmaxp
       iok = iok + 1
     endif
   enddo
