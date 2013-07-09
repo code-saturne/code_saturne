@@ -138,7 +138,7 @@ call field_get_key_id("min_scalar_clipping", kscmin)
 call field_get_key_id("max_scalar_clipping", kscmax)
 
 ! If a scalar is a variance, store the id of the parent scalar
-call field_get_key_id("max_scalar_clipping", kscavr)
+call field_get_key_id("first_moment_id", kscavr)
 
 ! Postprocessing level for variables
 iopchr = 1
