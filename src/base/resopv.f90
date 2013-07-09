@@ -26,7 +26,7 @@
 
 !> \file resopv.f90
 !>
-!> \brief This subroutine perform the pressure correction step of the Navier
+!> \brief This subroutine performs the pressure correction step of the Navier
 !> Stokes equations for incompressible or slightly compressible flows for
 !> the coupled velocity components solver.
 !>
@@ -87,7 +87,7 @@
 !> \param[in]     viscfi        idem viscf pour increments
 !> \param[in]     viscbi        idem viscb pour increments
 !> \param[in]     drtp          tableau de travail pour increment
-!> \param[in]     tslagr        coupling term for teh Lagrangian module
+!> \param[in]     tslagr        coupling term for the Lagrangian module
 !> \param[in]     frchy         tableau de travail
 !> \param[in]     dfrchy        tableau de travail
 !> \param[in]     trava         tableau de travail pour couplage
