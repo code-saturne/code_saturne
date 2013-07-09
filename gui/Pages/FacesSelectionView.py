@@ -39,6 +39,10 @@ import logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
+import sys
+if sys.version_info[0] == 2:
+    import sip
+    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -76,18 +80,17 @@ class LineEditDelegateVerbosity(QItemDelegate):
         editor = QLineEdit(parent)
         validator =  RegExpValidator(editor, QRegExp("^[0-9 ]*$"))
         editor.setValidator(validator)
-        #editor.installEventFilter(self)
         return editor
 
 
     def setEditorData(self, lineEdit, index):
-        value = index.model().data(index, Qt.DisplayRole).toString()
+        value = str(index.model().data(index, Qt.DisplayRole))
         lineEdit.setText(value)
 
 
     def setModelData(self, lineEdit, model, index):
         value = lineEdit.text()
-        model.setData(index, QVariant(value), Qt.DisplayRole)
+        model.setData(index, value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # Line edit delegate for selection
@@ -103,21 +106,19 @@ class LineEditDelegateSelector(QItemDelegate):
 
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
-        #validator =  RegExpValidator(editor, QRegExp("[ '_A-Za-z0-9]*"))
         validator =  RegExpValidator(editor, QRegExp("[ -~]*"))
         editor.setValidator(validator)
-        #editor.installEventFilter(self)
         return editor
 
 
     def setEditorData(self, lineEdit, index):
-        value = index.model().data(index, Qt.DisplayRole).toString()
+        value = str(index.model().data(index, Qt.DisplayRole))
         lineEdit.setText(value)
 
 
     def setModelData(self, lineEdit, model, index):
         value = lineEdit.text()
-        model.setData(index, QVariant(value), Qt.DisplayRole)
+        model.setData(index, value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # Line edit delegate for Fraction and Plane
@@ -133,19 +134,18 @@ class FractionPlaneDelegate(QItemDelegate):
         validator = DoubleValidator(editor, min=0.)
         validator.setExclusiveMin(True)
         editor.setValidator(validator)
-        #editor.installEventFilter(self)
         return editor
 
 
     def setEditorData(self, editor, index):
-        value = index.model().data(index, Qt.DisplayRole).toString()
+        value = str(index.model().data(index, Qt.DisplayRole))
         editor.setText(value)
 
 
     def setModelData(self, editor, model, index):
-        value, ok = editor.text().toDouble()
+        value = float(editor.text())
         if editor.validator().state == QValidator.Acceptable:
-            model.setData(index, QVariant(value), Qt.DisplayRole)
+            model.setData(index, value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # Model class
@@ -205,27 +205,27 @@ class StandardItemModelFaces(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return QVariant()
+            return
 
         row = index.row()
         col = index.column()
 
         if role == Qt.ToolTipRole:
-            return QVariant(self.tooltip[col])
+            return self.tooltip[col]
 
         if role == Qt.DisplayRole:
             if col == 0:
-                return QVariant(self.dataFaces[row]['fraction'])
+                return self.dataFaces[row]['fraction']
             elif col == 1:
-                return QVariant(self.dataFaces[row]['plane'])
+                return self.dataFaces[row]['plane']
             elif col == 2:
-                return QVariant(self.dataFaces[row]['verbosity'])
+                return self.dataFaces[row]['verbosity']
             elif col == 3:
-                return QVariant(self.dataFaces[row]['visualization'])
+                return self.dataFaces[row]['visualization']
             elif col == 4:
-                return QVariant(self.dataFaces[row]['selector'])
+                return self.dataFaces[row]['selector']
 
-        return QVariant()
+        return
 
 
     def flags(self, index):
@@ -236,8 +236,8 @@ class StandardItemModelFaces(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return QVariant(self.headers[section])
-        return QVariant()
+            return self.headers[section]
+        return
 
 
     def setData(self, index, value, role):
@@ -245,15 +245,15 @@ class StandardItemModelFaces(QStandardItemModel):
         col = index.column()
 
         if col == 0:
-            self.dataFaces[row]['fraction'] = str(value.toString())
+            self.dataFaces[row]['fraction'] = str(value)
         elif col == 1:
-            self.dataFaces[row]['plane'] = str(value.toString())
+            self.dataFaces[row]['plane'] = str(value)
         elif col == 2:
-            self.dataFaces[row]['verbosity'] = str(value.toString())
+            self.dataFaces[row]['verbosity'] = str(value)
         elif col == 3:
-            self.dataFaces[row]['visualization'] = str(value.toString())
+            self.dataFaces[row]['visualization'] = str(value)
         elif col == 4:
-            self.dataFaces[row]['selector'] = str(value.toString())
+            self.dataFaces[row]['selector'] = str(value)
 
         if self.tag == "face_joining":
             self.mdl.replaceJoinFaces(row, self.dataFaces[row])
@@ -345,10 +345,6 @@ class FacesSelectionView(QWidget, Ui_FacesSelectionForm):
 
         self.connect(self.pushButtonAdd,    SIGNAL("clicked()"), self.slotAddItem)
         self.connect(self.pushButtonDelete, SIGNAL("clicked()"), self.slotDelItem)
-
-
-#    def populateModel(self, model, tag):
-#        self.modelFaces.populateModel(model, tag)
 
 
     @pyqtSignature("")

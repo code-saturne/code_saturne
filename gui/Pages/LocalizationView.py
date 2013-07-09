@@ -46,6 +46,10 @@ import string, logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
+import sys
+if sys.version_info[0] == 2:
+    import sip
+    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -93,7 +97,7 @@ class LabelDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
-        v = index.model().data(index, Qt.DisplayRole).toString()
+        v = str(index.model().data(index, Qt.DisplayRole))
         self.p_value = str(v)
         editor.setText(v)
 
@@ -121,7 +125,7 @@ class LabelDelegate(QItemDelegate):
                 else:
                     p_value = self.p_value
 
-            model.setData(index, QVariant(QString(p_value)), Qt.DisplayRole)
+            model.setData(index, p_value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # QLineEdit delegate for the zone
@@ -138,17 +142,16 @@ class CodeNumberDelegate(QItemDelegate):
         editor = QLineEdit(parent)
         validator = IntValidator(editor, min=0, max=999)
         editor.setValidator(validator)
-        #editor.installEventFilter(self)
         return editor
 
 
     def setEditorData(self, editor, index):
-        self.value = index.model().data(index, Qt.DisplayRole).toString()
+        self.value = str(index.model().data(index, Qt.DisplayRole))
         editor.setText(self.value)
 
 
     def setModelData(self, editor, model, index):
-        value, ok = editor.text().toInt()
+        value = int(editor.text())
 
         # Check for unicity
         if value != self.value and str(value) in self.mdl.getCodeNumbersList():
@@ -159,7 +162,7 @@ class CodeNumberDelegate(QItemDelegate):
             return
 
         if editor.validator().state == QValidator.Acceptable:
-            model.setData(index, QVariant(value), Qt.DisplayRole)
+            model.setData(index, value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # QComboBox delegate for the boundary nature
@@ -184,7 +187,6 @@ class BoundaryNatureDelegate(QItemDelegate):
         for k in list(self.dicoV2M.keys()):
             editor.addItem(k)
         editor.installEventFilter(self)
-        #editor.setSizeAdjustPolicy(QComboBox.AdjustToContents)
         editor.setMinimumWidth(100)
         return editor
 
@@ -194,8 +196,6 @@ class BoundaryNatureDelegate(QItemDelegate):
         col = index.column()
         str_model = index.model().getData(row, col)
         idx = list(self.dicoM2V.keys()).index(str_model)
-        #str_view  = self.dicoM2V[str_model]
-        #comboBox.setItem(str_view)
         comboBox.setCurrentIndex(idx)
 
 
@@ -205,7 +205,7 @@ class BoundaryNatureDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, QVariant(value), Qt.DisplayRole)
+                model.setData(idx, value, Qt.DisplayRole)
 
 
     def tr(self, text):
@@ -241,32 +241,32 @@ class StandardItemVolumeNature(QStandardItemModel):
 
         row = 0
         for key in self.keys:
-            self.setItem(row, QStandardItem(QString(str(self.dicoM2V[key]))))
+            self.setItem(row, QStandardItem(str(self.dicoM2V[key])))
             row += 1
         self.setRowCount(row)
 
 
     def data(self, index, role):
         if not index.isValid():
-            return QVariant()
+            return
 
         if role == Qt.EditRole:
             key = self.keys[index.row()]
-            return QVariant(self.dicoM2V[key])
+            return self.dicoM2V[key]
 
         elif role == Qt.DisplayRole:
             key = self.keys[index.row()]
-            return QVariant(self.dicoM2V[key])
+            return self.dicoM2V[key]
 
         elif role == Qt.CheckStateRole:
             key = self.keys[index.row()]
             value = self.dicoNature[key]
             if value == 'on':
-                return QVariant(Qt.Checked)
+                return Qt.Checked
             else:
-                return QVariant(Qt.Unchecked)
+                return Qt.Unchecked
 
-        return QVariant()
+        return
 
 
     def flags(self, index):
@@ -278,7 +278,7 @@ class StandardItemVolumeNature(QStandardItemModel):
 
     def setData(self, index, value, role=None):
         if not index.isValid():
-            return QVariant()
+            return
 
         if role == Qt.EditRole:
             pass
@@ -288,7 +288,7 @@ class StandardItemVolumeNature(QStandardItemModel):
             self.dicoNature[key] = str(value)
 
         elif role == Qt.CheckStateRole:
-            state, ok = value.toInt()
+            state = int(value)
             key = self.keys[index.row()]
             if state == Qt.Unchecked:
                 self.dicoNature[key] = "off"
@@ -328,12 +328,12 @@ class FlagBox(QComboBox):
     @pyqtSignature("int")
     def slotActivated(self, index):
         value = self.itemData(index, Qt.CheckStateRole)
-        state, ok = value.toInt()
+        state = int(value)
         if state == Qt.Unchecked:
             s = Qt.Checked
         else:
             s = Qt.Unchecked
-        self.setItemData(index, QVariant(s), Qt.CheckStateRole)
+        self.setItemData(index, s, Qt.CheckStateRole)
 
 
 #    def hidePopup(self):
@@ -355,7 +355,6 @@ class VolumeNatureDelegate(QItemDelegate):
     def createEditor(self, parent, option, index):
         editor = FlagBox(parent)
         editor.setEditable(False)
-        #editor.setSizeAdjustPolicy(QComboBox.AdjustToContents)
         editor.setMinimumWidth(160)
         editor.installEventFilter(self)
         return editor
@@ -371,7 +370,7 @@ class VolumeNatureDelegate(QItemDelegate):
 
     def setModelData(self, editor, model, index):
         value = self.flagbox_model.getChecked()
-        model.setData(index, QVariant(value), Qt.DisplayRole)
+        model.setData(index, value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # QLineEdit delegate for localization
@@ -386,23 +385,16 @@ class LocalizationSelectorDelegate(QItemDelegate):
 
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
-        #editor.installEventFilter(self)
         return editor
 
 
     def setEditorData(self, editor, index):
-        self.value = index.model().data(index, Qt.DisplayRole).toString()
+        self.value = str(index.model().data(index, Qt.DisplayRole))
         editor.setText(self.value)
 
 
     def setModelData(self, editor, model, index):
         value = editor.text()
-
-#        if str(value) == "" :
-#            title = self.tr("Warning")
-#            msg   = self.tr("Please give a localization")
-#            QMessageBox.information(self.parent, title, msg)
-#            return
 
         if value != self.value and str(value) in self.mdl.getLocalizationsZonesList():
             title = self.tr("Warning")
@@ -412,7 +404,7 @@ class LocalizationSelectorDelegate(QItemDelegate):
             return
 
         if str(value) != "" :
-            model.setData(index, QVariant(value), Qt.DisplayRole)
+            model.setData(index, value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # StandarItemModel class
@@ -441,31 +433,27 @@ class StandardItemModelLocalization(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return QVariant()
+            return
 
         if role == Qt.DisplayRole:
             row = index.row()
             col = index.column()
 
             if col in [0, 1, 3]:
-                return QVariant(self._data[row][col])
+                return self._data[row][col]
 
             elif col == 2:
                 if self.zoneType == "VolumicZone":
                     data = self._data[row][col]
                     item = string.join([self.dicoM2V[key] for key in list(self.dicoM2V.keys()) if data[key] == "on"], "\n")
-#                    item = ""
-#                    for key in dico.keys():
-#                        print(key)
-#                        if dico[key] == "on":
-#                            item += key + "\n"
-                    return QVariant(item)
+
+                    return item
 
                 elif self.zoneType == "BoundaryZone":
                     key = self._data[row][col]
-                    return QVariant(self.dicoM2V[key])
+                    return self.dicoM2V[key]
 
-        return QVariant()
+        return
 
 
     def flags(self, index):
@@ -478,8 +466,8 @@ class StandardItemModelLocalization(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return QVariant(self.headers[section])
-        return QVariant()
+            return self.headers[section]
+        return
 
 
     def setData(self, index, value, role):
@@ -501,19 +489,18 @@ class StandardItemModelLocalization(QStandardItemModel):
         new_local  = old_local
 
         if col == 0:
-            new_label = str(value.toString())
+            new_label = str(value)
             self._data[row][col] = new_label
 
         elif col == 1:
-            new_code, ok = value.toInt()
+            new_code = int(value)
             self._data[row][col] = new_code
 
         elif col == 2:
 
             if self.zoneType == "VolumicZone":
-
                 # We modify the dictionary here
-                nature_list = str(value.toString()).split(";")
+                nature_list = str(value).split(";")
 
                 for key in list(self._data[row][col].keys()):
                     if key in nature_list:
@@ -524,12 +511,11 @@ class StandardItemModelLocalization(QStandardItemModel):
                     new_nature = self._data[row][col].copy()
 
             elif self.zoneType == "BoundaryZone":
-
-                new_nature = str(value.toString())
+                new_nature = str(value)
                 self._data[row][col] = new_nature
 
         elif col == 3:
-            new_local = str(value.toString())
+            new_local = str(value)
             self._data[row][col] = new_local
 
         new_zone = Zone(self.zoneType,
@@ -639,7 +625,6 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
 
         self.tableView.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
         self.tableView.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
-        #col = self.tableView.model().rowCount() -1
         self.tableView.horizontalHeader().setResizeMode(3, QHeaderView.Stretch)
 
         # Connections

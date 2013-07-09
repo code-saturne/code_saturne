@@ -36,6 +36,10 @@ import string, logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
+import sys
+if sys.version_info[0] == 2:
+    import sip
+    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -124,7 +128,7 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
                 self.pushButtonTurb.setEnabled(False)
                 setGreenColor(self.pushButtonTurb, False)
                 d = boundary.getHydraulicDiameter()
-                self.lineEditDiameter.setText(QString(str(d)))
+                self.lineEditDiameter.setText(str(d))
             elif turb_choice == "turbulent_intensity":
                 self.frameTurbIntensity.show()
                 self.frameTurbDiameter.hide()
@@ -132,8 +136,8 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
                 setGreenColor(self.pushButtonTurb, False)
                 i = boundary.getTurbulentIntensity()
                 d = boundary.getHydraulicDiameter()
-                self.lineEditIntensity.setText(QString(str(i)))
-                self.lineEditDiameterIntens.setText(QString(str(d)))
+                self.lineEditIntensity.setText(str(i))
+                self.lineEditDiameterIntens.setText(str(d))
             elif turb_choice == "formula":
                 self.frameTurbIntensity.hide()
                 self.frameTurbDiameter.hide()
@@ -167,13 +171,13 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
         if turb_choice  == 'hydraulic_diameter':
             self.frameTurbDiameter.show()
             d = self.__boundary.getHydraulicDiameter()
-            self.lineEditDiameter.setText(QString(str(d)))
+            self.lineEditDiameter.setText(str(d))
         elif turb_choice == 'turbulent_intensity':
             self.frameTurbIntensity.show()
             i = self.__boundary.getTurbulentIntensity()
-            self.lineEditIntensity.setText(QString(str(i)))
+            self.lineEditIntensity.setText(str(i))
             d = self.__boundary.getHydraulicDiameter()
-            self.lineEditDiameterIntens.setText(QString(str(d)))
+            self.lineEditDiameterIntens.setText(str(d))
         elif turb_choice == 'formula':
             self.pushButtonTurb.setEnabled(True)
             setGreenColor(self.pushButtonTurb, True)
@@ -184,7 +188,7 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
         """
         INPUT hydraulic diameter
         """
-        diam, ok = text.toDouble()
+        diam = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.__boundary.setHydraulicDiameter(diam)
 
@@ -194,7 +198,7 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
         """
         INPUT turbulent intensity
         """
-        intens, ok = text.toDouble()
+        intens = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.__boundary.setTurbulentIntensity(intens)
 

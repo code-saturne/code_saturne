@@ -42,6 +42,10 @@ import logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
+import sys
+if sys.version_info[0] == 2:
+    import sip
+    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -93,7 +97,7 @@ class LabelDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
-        value = index.model().data(index, Qt.DisplayRole).toString()
+        value = str(index.model().data(index, Qt.DisplayRole))
         self.old_plabel = str(value)
         editor.setText(value)
 
@@ -121,7 +125,7 @@ class LabelDelegate(QItemDelegate):
                 else:
                     new_plabel = self.old_plabel
 
-            model.setData(index, QVariant(QString(new_plabel)), Qt.DisplayRole)
+            model.setData(index, str(new_plabel), Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # Line edit delegate for the variance name
@@ -148,7 +152,7 @@ class VarianceNameDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
-        value = index.model().data(index, Qt.DisplayRole).toString()
+        value = str(index.model().data(index, Qt.DisplayRole))
         self.old_plabel = str(value)
         editor.setText(value)
 
@@ -176,7 +180,7 @@ class VarianceNameDelegate(QItemDelegate):
                 else:
                     new_plabel = self.old_plabel
 
-            model.setData(index, QVariant(QString(new_plabel)), Qt.DisplayRole)
+            model.setData(index, str(new_plabel), Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -211,7 +215,7 @@ class VarianceDelegate(QItemDelegate):
     def setModelData(self, comboBox, model, index):
         txt = str(comboBox.currentText())
         value = self.modelCombo.dicoV2M[txt]
-        model.setData(index, QVariant(value), Qt.DisplayRole)
+        model.setData(index, value, Qt.DisplayRole)
 
 
     def tr(self, text):
@@ -245,17 +249,17 @@ class StandardItemModelScalars(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return QVariant()
+            return
 
         row = index.row()
         col = index.column()
 
         if role == Qt.ToolTipRole:
-            return QVariant(self.toolTipRole[col])
+            return self.toolTipRole[col]
         if role == Qt.DisplayRole:
-            return QVariant(self._data[row][col])
+            return self._data[row][col]
 
-        return QVariant()
+        return
 
 
     def flags(self, index):
@@ -266,8 +270,8 @@ class StandardItemModelScalars(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return QVariant(self.headers[section])
-        return QVariant()
+            return self.headers[section]
+        return
 
 
     def setData(self, index, value, role):
@@ -281,7 +285,7 @@ class StandardItemModelScalars(QStandardItemModel):
         # Label
         if col == 0:
             old_plabel = self._data[row][col]
-            new_plabel = str(value.toString())
+            new_plabel = str(value)
             self._data[row][col] = new_plabel
             self.mdl.renameScalarLabel(old_plabel, new_plabel)
 
@@ -353,17 +357,17 @@ class StandardItemModelVariance(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return QVariant()
+            return
 
         row = index.row()
         col = index.column()
 
         if role == Qt.ToolTipRole:
-            return QVariant(self.toolTipRole[col])
+            return self.toolTipRole[col]
         if role == Qt.DisplayRole:
-            return QVariant(self._data[row][col])
+            return self._data[row][col]
 
-        return QVariant()
+        return
 
 
     def flags(self, index):
@@ -374,8 +378,8 @@ class StandardItemModelVariance(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return QVariant(self.headers[section])
-        return QVariant()
+            return self.headers[section]
+        return
 
 
     def setData(self, index, value, role):
@@ -389,14 +393,14 @@ class StandardItemModelVariance(QStandardItemModel):
         # Label
         if col == 0:
             old_plabel = self._data[row][col]
-            new_plabel = str(value.toString())
+            new_plabel = str(value)
             self._data[row][col] = new_plabel
             self.mdl.renameScalarLabel(old_plabel, new_plabel)
 
 
         # Variance
         elif col == 1:
-            variance = str(value.toString())
+            variance = str(value)
             self._data[row][col] = variance
             [label, var] = self._data[row]
             self.mdl.setScalarVariance(label,var)

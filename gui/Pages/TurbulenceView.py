@@ -39,6 +39,10 @@ import sys, logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
+import sys
+if sys.version_info[0] == 2:
+    import sip
+    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -213,7 +217,6 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
 
         validator = QtPage.DoubleValidator(self.lineEditLength, min=0.0)
         validator.setExclusiveMin(True)
-        #validator.setFixup(self.model.defaultTurbulenceValues()['length_scale'])
         self.lineEditLength.setValidator(validator)
 
 
@@ -232,7 +235,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
         # Length scale
 
         l_scale = self.model.getLengthScale()
-        self.lineEditLength.setText(QString(str(l_scale)))
+        self.lineEditLength.setText(str(l_scale))
 
         self.case.undoStartGlobal()
 
@@ -243,7 +246,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
         Private slot.
         Input XLOMLG.
         """
-        l_scale, ok = text.toDouble()
+        l_scale = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.model.setLengthScale(l_scale)
 
@@ -272,12 +275,6 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
             self.line.hide()
         else:
             self.line.show()
-
-##         if model in ('LES_Smagorinsky', 'LES_dynamique'):
-##             title = self.tr("Turbulence model")
-##             msg   = self.tr("Please report to the informations \n" \
-##                             "contain in the user subroutine: 'ussmag'")
-##             QMessageBox.warning(self, title, msg)
 
 
     @pyqtSignature("")

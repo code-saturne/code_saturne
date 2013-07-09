@@ -39,6 +39,10 @@ import logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
+import sys
+if sys.version_info[0] == 2:
+    import sip
+    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -79,12 +83,12 @@ class StandardItemModelProfile(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return QVariant()
+            return
         if role == Qt.DisplayRole:
-            return QVariant(self.dataProfile[index.row()][index.column()])
+            return self.dataProfile[index.row()][index.column()]
         elif role == Qt.TextAlignmentRole:
-            return QVariant(Qt.AlignCenter)
-        return QVariant()
+            return Qt.AlignCenter
+        return
 
 
     def flags(self, index):
@@ -97,12 +101,12 @@ class StandardItemModelProfile(QStandardItemModel):
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0:
-                return QVariant(self.tr("Filename"))
+                return self.tr("Filename")
             elif section == 1:
-                return QVariant(self.tr("Variables"))
+                return self.tr("Variables")
         elif role == Qt.TextAlignmentRole:
-            return QVariant(Qt.AlignCenter)
-        return QVariant()
+            return Qt.AlignCenter
+        return
 
 
     def setData(self, index, value, role):
@@ -240,7 +244,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         self.lineEditBaseName.setValidator(validatorBaseName)
 
         #update list of variables, properties, scalars ...
-        liste_label = QStringList()
+        liste_label = []
         for label in self.mdl.getVariablesAndVolumeProperties():
             liste_label.append(label)
         self.modelDrag.setStringList(liste_label)
@@ -287,20 +291,21 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
 
         if choice == "end":
             nfreq = -1
-            self.lineEditFreq.setText(QString(str(nfreq)))
+            self.lineEditFreq.setText(str(nfreq))
             self.lineEditFreq.show()
             self.lineEditFreqTime.hide()
             self.lineEditFreq.setDisabled(True)
-            self.labelBaseName.setText(QString("Filename"))
+            self.labelBaseName.setText("Filename")
 
         elif choice == "frequency":
             self.lineEditFreq.show()
             self.lineEditFreqTime.hide()
-            nfreq, ok = self.lineEditFreq.text().toInt()
+            nfreq = int(self.lineEditFreq.text())
             if nfreq == -1: nfreq = 1
             self.lineEditFreq.setEnabled(True)
-            self.lineEditFreq.setText(QString(str(nfreq)))
-            self.labelBaseName.setText(QString("Filename"))
+            self.lineEditFreq.setText(str(nfreq))
+            self.labelBaseName.setText("Filename")
+
 
         elif choice == "time_value":
             self.lineEditFreq.hide()
@@ -308,9 +313,9 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
             if self.lineEditFreqTime.text() == "":
                 nfreq = 1.
             else:
-                nfreq, ok = self.lineEditFreqTime.text().toDouble()
-            self.lineEditFreqTime.setText(QString(str(nfreq)))
-            self.labelBaseName.setText(QString("Filename"))
+                nfreq = float(self.lineEditFreqTime.text())
+            self.lineEditFreqTime.setText(str(nfreq))
+            self.labelBaseName.setText("Filename")
 
         return choice, nfreq
 
@@ -336,15 +341,14 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         """
         Insert values in table view.
         """
-        self.modelProfile.addItem(label, string.join(list,' ; '))
-
+        self.modelProfile.addItem(label, " ; ".join(list))
 
 
     def __replaceProfile(self, num, label, list):
         """
         Insert values in table view.
         """
-        self.modelProfile.replaceItem(num-1, label, string.join(list,' ; '))
+        self.modelProfile.replaceItem(num-1, label, " ; ".join(list))
 
 
     @pyqtSignature("")
@@ -379,7 +383,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
             format = self.slotFormatType(self.comboBoxFormat.currentText())
             title = str(self.lineEditTitle.text())
             if not title: title = label
-            nb_point, ok = self.lineEditNbPoint.text().toInt()
+            nb_point = int(self.lineEditNbPoint.text())
             formula = self.line_formula
 
             self.mdl.setProfile(label, title, format, var_prof, choice, freq, formula, nb_point)
@@ -446,7 +450,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
                 format = self.slotFormatType(self.comboBoxFormat.currentText())
                 title = str(self.lineEditTitle.text())
                 if not title: title = new_label
-                nb_point, ok = self.lineEditNbPoint.text().toInt()
+                nb_point = int(self.lineEditNbPoint.text())
                 formula = self.line_formula
 
                 self.mdl.replaceProfile(old_label, new_label, title, format, var_prof, choice, freq, formula, nb_point)
@@ -464,35 +468,36 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         label, title, format, liste, choice, freq, formula, nb_point = self.__infoProfile(row)
         self.line_formula = formula
 
-        self.lineEditTitle.setText(QString(str(title)))
-        self.lineEditBaseName.setText(QString(str(label)))
+        self.lineEditTitle.setText(str(title))
+        self.lineEditBaseName.setText(str(label))
         self.modelFormat.setItem(str_model=format)
 
         self.modelFreq.setItem(str_model=choice)
         if choice == "end":
             self.lineEditFreq.show()
             self.lineEditFreqTime.hide()
-            self.lineEditFreq.setText(QString(str("-1")))
+            self.lineEditFreq.setText(str("-1"))
             self.lineEditFreq.setDisabled(True)
-            self.labelBaseName.setText(QString("Filename"))
+            self.labelBaseName.setText("Filename")
 
         elif choice == "frequency":
             self.lineEditFreq.show()
             self.lineEditFreqTime.hide()
             self.lineEditFreq.setEnabled(True)
-            self.lineEditFreq.setText(QString(str(freq)))
-            self.labelBaseName.setText(QString("Filename"))
+            self.lineEditFreq.setText(str(freq))
+            self.labelBaseName.setText("Filename")
 
         elif choice == "time_value":
             self.lineEditFreq.hide()
             self.lineEditFreqTime.show()
-            self.lineEditFreqTime.setText(QString(str(freq)))
-            self.labelBaseName.setText(QString("Filename"))
+            self.lineEditFreqTime.setText(str(freq))
+            self.labelBaseName.setText("Filename")
 
-        self.lineEditNbPoint.setText(QString(str(nb_point)))
+        self.lineEditNbPoint.setText(str(nb_point))
 
-        self.modelDrop.setStringList(QStringList())
-        liste = [QString(s) for s in liste]
+        self.modelDrop.setStringList([])
+        liste = [str(s) for s in liste]
+
         self.modelDrop.setStringList(liste)
 
 
@@ -521,17 +526,20 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         """
         Delete all caracters in the entries.
         """
-        self.lineEditTitle.setText(QString(str("")))
-        self.lineEditBaseName.setText(QString(str("")))
-        self.lineEditNbPoint.setText(QString(str("")))
+        self.lineEditTitle.setText(str(""))
+        self.lineEditBaseName.setText(str(""))
+        self.lineEditNbPoint.setText(str(""))
 
         self.lineEditFreq.show()
         self.lineEditFreqTime.hide()
         self.modelFreq.setItem(str_model='end')
-        self.lineEditFreq.setText(QString(str("-1")))
+        self.lineEditFreq.setText(str("-1"))
+
         self.lineEditFreq.setDisabled(True)
-        self.labelBaseName.setText(QString("Filename"))
-        self.modelDrop.setStringList(QStringList())
+        self.labelBaseName.setText("Filename")
+
+        self.modelDrop.setStringList([])
+
         self.treeViewProfile.clearSelection()
 
 

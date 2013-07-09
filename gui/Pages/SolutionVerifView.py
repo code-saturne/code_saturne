@@ -200,8 +200,8 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
                             SIGNAL('finished(int, QProcess::ExitStatus)'),
                             self.__preProcess)
 
-        self.proc.start(QString(self.case['package'].get_preprocessor()),
-                        QStringList(args))
+        self.proc.start(str(self.case['package'].get_preprocessor()),
+                        [str(s) for s in args])
 
         # Run Preprocessor
 
@@ -259,8 +259,8 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
         self.case2.xmlSaveDocument()
         args = ['--quality', '--log', '0', '--param', self.case2['xmlfile']]
 
-        self.proc.start(QString(self.case['package'].get_solver()),
-                        QStringList(args))
+        self.proc.start(str(self.case['package'].get_solver()),
+                        [str(s) for s in args])
 
         self.connect(self.proc,
                      SIGNAL('finished(int, QProcess::ExitStatus)'),
@@ -301,8 +301,7 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
         while self.proc and self.proc.canReadLine():
             ba = self.proc.readLine()
             if ba.isNull(): return
-            str = QString()
-            s = QString(str.fromUtf8(ba.data()))[:-1]
+            s = (ba.data()).decode("utf-8")[:-1]
             self.logText.append(s)
 
 
@@ -317,15 +316,14 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
         while self.proc and self.proc.canReadLine():
             ba = self.proc.readLine()
             if ba.isNull(): return
-            str = QString()
-            s = QString(str.fromUtf8(ba.data()))[:-1]
-            self.logText.append(s.prepend('<font color="red">').append('</font>'))
+            s = (ba.data()).decode("utf-8")[:-1]
+            self.logText.append('<font color="red">' + s + '</font>')
             self.procErrorFlag = True
 
 
     def __saveLog(self):
         logFile = open(os.path.join(self.exec_dir, 'check_mesh.log'), 'w')
-        logFile.write(str(self.logText.toPlainText().toAscii()))
+        logFile.write(self.logText.toPlainText().encode("utf-8"))
         logFile.close()
 
 

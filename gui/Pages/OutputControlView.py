@@ -44,6 +44,10 @@ import logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
+import sys
+if sys.version_info[0] == 2:
+    import sip
+    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -94,7 +98,7 @@ class LabelWriterDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
-        value = index.model().data(index, Qt.DisplayRole).toString()
+        value = int(index.model().data(index, Qt.DisplayRole))
         self.old_plabel = str(value)
         editor.setText(value)
 
@@ -122,7 +126,7 @@ class LabelWriterDelegate(QItemDelegate):
                 else:
                     new_plabel = self.old_plabel
 
-            model.setData(index, QVariant(QString(new_plabel)), Qt.DisplayRole)
+            model.setData(index, new_plabel, Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -150,7 +154,7 @@ class LabelMeshDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
-        value = index.model().data(index, Qt.DisplayRole).toString()
+        value = int(index.model().data(index, Qt.DisplayRole))
         self.old_plabel = str(value)
         editor.setText(value)
 
@@ -178,7 +182,7 @@ class LabelMeshDelegate(QItemDelegate):
                 else:
                     new_plabel = self.old_plabel
 
-            model.setData(index, QVariant(QString(new_plabel)), Qt.DisplayRole)
+            model.setData(index, new_plabel, Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -197,11 +201,11 @@ class FormatWriterDelegate(QItemDelegate):
 
     def createEditor(self, parent, option, index):
         editor = QComboBox(parent)
-        editor.addItem(QString("EnSight"))
-        editor.addItem(QString("MED"))
-        editor.addItem(QString("CGNS"))
-        editor.addItem(QString("Catalyst"))
-        editor.addItem(QString("CCM-IO"))
+        editor.addItem("EnSight")
+        editor.addItem("MED")
+        editor.addItem("CGNS")
+        editor.addItem("Catalyst")
+        editor.addItem("CCM-IO")
         editor.installEventFilter(self)
 
         import cs_config
@@ -230,7 +234,7 @@ class FormatWriterDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, QVariant(value))
+                model.setData(idx, value)
 
 
 #-------------------------------------------------------------------------------
@@ -251,12 +255,12 @@ class TypeMeshDelegate(QItemDelegate):
     def createEditor(self, parent, option, index):
         editor = QComboBox(parent)
         if self.lag == 0:
-            editor.addItem(QString("cells"))
-            editor.addItem(QString("interior faces"))
-            editor.addItem(QString("boundary faces"))
+            editor.addItem("cells")
+            editor.addItem("interior faces")
+            editor.addItem("boundary faces")
         else:
-            editor.addItem(QString("particles"))
-            editor.addItem(QString("trajectories"))
+            editor.addItem("particles")
+            editor.addItem("trajectories")
         editor.installEventFilter(self)
         return editor
 
@@ -277,7 +281,7 @@ class TypeMeshDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, QVariant(value))
+                model.setData(idx, value)
 
 
     def paint(self, painter, option, index):
@@ -301,7 +305,7 @@ class TypeMeshDelegate(QItemDelegate):
             painter.setPen(QPen(Qt.black))
             value = index.data(Qt.DisplayRole)
             if value.isValid():
-                text = value.toString()
+                text = str(value)
                 painter.drawText(option.rect, Qt.AlignLeft, text)
             painter.restore()
 
@@ -323,7 +327,7 @@ class LocationSelectorDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
-        self.value = index.model().data(index, Qt.DisplayRole).toString()
+        self.value = str(index.model().data(index, Qt.DisplayRole))
         editor.setText(self.value)
 
 
@@ -337,7 +341,7 @@ class LocationSelectorDelegate(QItemDelegate):
            return
 
         if str(value) != "" :
-            model.setData(index, QVariant(value), Qt.DisplayRole)
+            model.setData(index, value, Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -359,7 +363,7 @@ class DensitySelectorDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
-        self.value = index.model().data(index, Qt.DisplayRole).toString()
+        self.value = str(index.model().data(index, Qt.DisplayRole))
         editor.setText(self.value)
 
 
@@ -373,7 +377,7 @@ class DensitySelectorDelegate(QItemDelegate):
            return
 
         if str(value) != "" :
-            model.setData(index, QVariant(value), Qt.DisplayRole)
+            model.setData(index, value, Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -412,7 +416,7 @@ class AssociatedWriterDelegate(QItemDelegate):
     def setModelData(self, comboBox, model, index):
         txt = str(comboBox.currentText())
         value = self.modelCombo.dicoV2M[txt]
-        model.setData(index, QVariant(value), Qt.DisplayRole)
+        model.setData(index, value, Qt.DisplayRole)
 
 
     def tr(self, text):
@@ -463,7 +467,7 @@ class StandardItemModelMesh(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return QVariant()
+            return
 
         if role == Qt.DisplayRole:
 
@@ -472,23 +476,23 @@ class StandardItemModelMesh(QStandardItemModel):
             dico = self.dataMesh[row]
 
             if index.column() == 0:
-                return QVariant(dico['name'])
+                return dico['name']
             elif index.column() == 1:
-                return QVariant(dico['id'])
+                return dico['id']
             elif index.column() == 2:
-                return QVariant(self.dicoM2V[dico['type']])
+                return self.dicoM2V[dico['type']]
             elif index.column() == 3:
-                return QVariant(dico['location'])
+                return dico['location']
             else:
-                return QVariant()
+                return
 
         elif role == Qt.TextAlignmentRole:
             if index.column() != 3:
-                return QVariant(Qt.AlignCenter)
+                return Qt.AlignCenter
             else:
-                return QVariant(Qt.AlignLeft | Qt.AlignVCenter)
+                return Qt.AlignLeft | Qt.AlignVCenter
 
-        return QVariant()
+        return
 
 
     def flags(self, index):
@@ -508,14 +512,14 @@ class StandardItemModelMesh(QStandardItemModel):
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0:
-                return QVariant(self.tr("Name"))
+                return self.tr("Name")
             elif section == 1:
-                return QVariant(self.tr("Id"))
+                return self.tr("Id")
             elif section == 2:
-                return QVariant(self.tr("Type"))
+                return self.tr("Type")
             elif section == 3:
-                return QVariant(self.tr("Selection Criteria"))
-        return QVariant()
+                return self.tr("Selection Criteria")
+        return
 
 
     def setData(self, index, value, role=None):
@@ -527,16 +531,16 @@ class StandardItemModelMesh(QStandardItemModel):
         # Label
         if col == 0:
             old_plabel = self.dataMesh[row]['name']
-            new_plabel = str(value.toString())
+            new_plabel = str(value)
             self.dataMesh[row]['name'] = new_plabel
             self.mdl.setMeshLabel(str(self.dataMesh[row]['id']), new_plabel)
 
         if index.column() == 2:
-            self.dataMesh[row]['type'] = self.dicoV2M[str(value.toString())]
+            self.dataMesh[row]['type'] = self.dicoV2M[str(value)]
             self.mdl.setMeshType(self.dataMesh[row]['id'], self.dataMesh[row]['type'])
 
         if index.column() == 3:
-            new_location = str(value.toString())
+            new_location = str(value)
             self.dataMesh[row]['location'] = new_location
             self.mdl.setMeshLocation(self.dataMesh[row]['id'], new_location)
 
@@ -617,7 +621,7 @@ class StandardItemModelLagrangianMesh(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return QVariant()
+            return None
 
         if role == Qt.DisplayRole:
 
@@ -626,25 +630,25 @@ class StandardItemModelLagrangianMesh(QStandardItemModel):
             dico = self.dataMesh[row]
 
             if index.column() == 0:
-                return QVariant(dico['name'])
+                return dico['name']
             elif index.column() == 1:
-                return QVariant(dico['id'])
+                return dico['id']
             elif index.column() == 2:
-                return QVariant(self.dicoM2V[dico['type']])
+                return self.dicoM2V[dico['type']]
             elif index.column() == 3:
-                return QVariant(dico['density'])
+                return dico['density']
             elif index.column() == 4:
-                return QVariant(dico['location'])
+                return dico['location']
             else:
-                return QVariant()
+                return None
 
         elif role == Qt.TextAlignmentRole:
             if index.column() != 4:
-                return QVariant(Qt.AlignCenter)
+                return Qt.AlignCenter
             else:
-                return QVariant(Qt.AlignLeft | Qt.AlignVCenter)
+                return Qt.AlignLeft | Qt.AlignVCenter
 
-        return QVariant()
+        return None
 
 
     def flags(self, index):
@@ -664,16 +668,16 @@ class StandardItemModelLagrangianMesh(QStandardItemModel):
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0:
-                return QVariant(self.tr("Name"))
+                return self.tr("Name")
             elif section == 1:
-                return QVariant(self.tr("Id"))
+                return self.tr("Id")
             elif section == 2:
-                return QVariant(self.tr("Type"))
+                return self.tr("Type")
             elif section == 3:
-                return QVariant(self.tr("Density"))
+                return self.tr("Density")
             elif section == 4:
-                return QVariant(self.tr("Selection Criteria"))
-        return QVariant()
+                return self.tr("Selection Criteria")
+        return None
 
 
     def setData(self, index, value, role=None):
@@ -685,20 +689,20 @@ class StandardItemModelLagrangianMesh(QStandardItemModel):
         # Label
         if col == 0:
             old_plabel = self.dataMesh[row]['name']
-            new_plabel = str(value.toString())
+            new_plabel = str(value)
             self.dataMesh[row]['name'] = new_plabel
             self.mdl.setMeshLabel(str(self.dataMesh[row]['id']), new_plabel)
 
         if index.column() == 2:
-            self.dataMesh[row]['type'] = self.dicoV2M[str(value.toString())]
+            self.dataMesh[row]['type'] = self.dicoV2M[str(value)]
             self.mdl.setLagrangianMeshType(self.dataMesh[row]['id'], self.dataMesh[row]['type'])
 
         if index.column() == 3:
-            self.dataMesh[row]['density'] = str(value.toString())
+            self.dataMesh[row]['density'] = str(value)
             self.mdl.setMeshDensity(self.dataMesh[row]['id'], self.dataMesh[row]['density'])
 
         if index.column() == 4:
-            new_location = str(value.toString())
+            new_location = str(value)
             self.dataMesh[row]['location'] = new_location
             self.mdl.setMeshLocation(self.dataMesh[row]['id'], new_location)
 
@@ -784,7 +788,7 @@ class StandardItemModelWriter(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return QVariant()
+            return
 
         if role == Qt.DisplayRole:
 
@@ -793,20 +797,20 @@ class StandardItemModelWriter(QStandardItemModel):
             dico = self.dataWriter[row]
 
             if index.column() == 0:
-                return QVariant(dico['name'])
+                return dico['name']
             elif index.column() == 1:
-                return QVariant(dico['id'])
+                return dico['id']
             elif index.column() == 2:
-                return QVariant(self.dicoM2V[dico['format']])
+                return self.dicoM2V[dico['format']]
             elif index.column() == 3:
-                return QVariant(dico['directory'])
+                return dico['directory']
             else:
-                return QVariant()
+                return
 
         elif role == Qt.TextAlignmentRole:
-            return QVariant(Qt.AlignCenter)
+            return Qt.AlignCenter
 
-        return QVariant()
+        return
 
 
     def flags(self, index):
@@ -822,14 +826,14 @@ class StandardItemModelWriter(QStandardItemModel):
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0:
-                return QVariant(self.tr("Name"))
+                return self.tr("Name")
             elif section == 1:
-                return QVariant(self.tr("Id"))
+                return self.tr("Id")
             elif section == 2:
-                return QVariant(self.tr("Format"))
+                return self.tr("Format")
             elif section == 3:
-                return QVariant(self.tr("Directory"))
-        return QVariant()
+                return self.tr("Directory")
+        return
 
 
     def setData(self, index, value, role=None):
@@ -842,21 +846,20 @@ class StandardItemModelWriter(QStandardItemModel):
         # Label
         if col == 0:
             old_plabel = self.dataWriter[row]['name']
-            new_plabel = str(value.toString())
+            new_plabel = str(value)
             self.dataWriter[row]['name'] = new_plabel
             self.mdl.setWriterLabel(writer_id, new_plabel)
 
         elif col == 2:
             f_old = self.mdl.getWriterFormat(writer_id)
-            self.dataWriter[row]['format'] = self.dicoV2M[str(value.toString())]
+            self.dataWriter[row]['format'] = self.dicoV2M[str(value)]
             if self.dataWriter[row]['format'] != f_old:
                 self.mdl.setWriterFormat(writer_id,
                                          self.dataWriter[row]['format'])
                 self.mdl.setWriterOptions(writer_id, "")
-
         elif col == 3:
             old_rep = self.dataWriter[row]['directory']
-            new_rep = str(value.toString())
+            new_rep = str(value)
             self.dataWriter[row]['directory'] = new_rep
             self.mdl.setWriterDirectory(writer_id, new_rep)
 
@@ -921,15 +924,15 @@ class StandardItemModelAssociatedWriter(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return QVariant()
+            return
 
         row = index.row()
         col = index.column()
 
         if role == Qt.DisplayRole:
-            return QVariant(self._data[row])
+            return self._data[row]
 
-        return QVariant()
+        return
 
 
     def flags(self, index):
@@ -940,8 +943,8 @@ class StandardItemModelAssociatedWriter(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return QVariant(self.headers[section])
-        return QVariant()
+            return self.headers[section]
+        return
 
 
     def setData(self, index, value, role):
@@ -953,7 +956,7 @@ class StandardItemModelAssociatedWriter(QStandardItemModel):
 
         # Label
         if col == 0:
-            writer = str(value.toString())
+            writer = str(value)
             self._data[row] = writer
             writer_list = []
             for r in range(self.rowCount()):
@@ -1026,7 +1029,7 @@ class StandardItemModelMonitoring(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return QVariant()
+            return
 
         if role == Qt.DisplayRole:
 
@@ -1034,20 +1037,20 @@ class StandardItemModelMonitoring(QStandardItemModel):
             dico = self.dataMonitoring[row]
 
             if index.column() == 0:
-                return QVariant(dico['n'])
+                return dico['n']
             elif index.column() == 1:
-                return QVariant(dico['X'])
+                return dico['X']
             elif index.column() == 2:
-                return QVariant(dico['Y'])
+                return dico['Y']
             elif index.column() == 3:
-                return QVariant(dico['Z'])
+                return dico['Z']
             else:
-                return QVariant()
+                return
 
         elif role == Qt.TextAlignmentRole:
-            return QVariant(Qt.AlignCenter)
+            return Qt.AlignCenter
 
-        return QVariant()
+        return
 
 
     def flags(self, index):
@@ -1062,29 +1065,29 @@ class StandardItemModelMonitoring(QStandardItemModel):
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0:
-                return QVariant(self.tr("n"))
+                return self.tr("n")
             elif section == 1:
-                return QVariant(self.tr("X"))
+                return self.tr("X")
             elif section == 2:
-                return QVariant(self.tr("Y"))
+                return self.tr("Y")
             elif section == 3:
-                return QVariant(self.tr("Z"))
-        return QVariant()
+                return self.tr("Z")
+        return
 
 
     def setData(self, index, value, role=None):
         row = index.row()
         if index.column() == 0:
-            n, ok = value.toInt()
+            n = int(value)
             self.dataMonitoring[row]['n'] = n
         elif index.column() == 1:
-            X, ok = value.toDouble()
+            X = float(value)
             self.dataMonitoring[row]['X'] = X
         elif index.column() == 2:
-            Y, ok = value.toDouble()
+            Y = float(value)
             self.dataMonitoring[row]['Y'] = Y
         elif index.column() == 3:
-            Z, ok = value.toDouble()
+            Z = float(value)
             self.dataMonitoring[row]['Z'] = Z
 
         self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
@@ -1173,7 +1176,7 @@ class MonitoringPointDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
-        text = index.model().data(index, Qt.DisplayRole).toString()
+        text = str(index.model().data(index, Qt.DisplayRole))
         if isinstance(editor, QLineEdit):
             editor.setText(text)
 
@@ -1186,7 +1189,7 @@ class MonitoringPointDelegate(QItemDelegate):
             item = editor.text()
             selectionModel = self.table.selectionModel()
             for index in selectionModel.selectedRows(index.column()):
-                model.setData(index, QVariant(item), Qt.DisplayRole)
+                model.setData(index, item, Qt.DisplayRole)
                 dico = model.dataMonitoring[index.row()]
                 x = float(dico['X'])
                 y = float(dico['Y'])
@@ -1419,7 +1422,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             m = "Frequency_l"
         self.modelOutput.setItem(str_model=m)
         t = self.modelOutput.dicoM2V[m]
-        self.lineEditNTLIST.setText(QString(str(ntlist)))
+        self.lineEditNTLIST.setText(str(ntlist))
         self.slotOutputListing(t)
 
         if self.lag_mdl.getLagrangianStatus() != 'off':
@@ -1433,7 +1436,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 m = "Frequency_l"
             self.modelNTLAL.setItem(str_model = m)
             t = self.modelNTLAL.dicoM2V[m]
-            self.lineEditNTLAL.setText(QString(str(period)))
+            self.lineEditNTLAL.setText(str(period))
             self.slotChoiceNTLAL(t)
 
             # lagrangian mesh
@@ -1448,10 +1451,10 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         m = self.mdl.getMonitoringPointType()
         if m == 'Frequency_h_x' :
             frhist = self.mdl.getMonitoringPointFrequencyTime()
-            self.lineEditFRHisto.setText(QString(str(frhist)))
+            self.lineEditFRHisto.setText(str(frhist))
         else :
             nthist = self.mdl.getMonitoringPointFrequency()
-            self.lineEditHisto.setText(QString(str(nthist)))
+            self.lineEditHisto.setText(str(nthist))
         self.modelHisto.setItem(str_model=m)
         t = self.modelHisto.dicoM2V[m]
         self.slotMonitoringPoint(t)
@@ -1490,11 +1493,13 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 self.__salomeHandlerAddMonitoringPoint(name, X, Y, Z)
 
         # Writer initialisation
+
         self.groupBoxFrequency.hide()
         self.groupBoxTimeDependency.hide()
         self.groupBoxOptions.hide()
 
         # Mesh initialisation
+
         self.groupBoxVariable.hide()
         self.groupBoxAssociatedWriter.hide()
 
@@ -1523,20 +1528,20 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         if listing == "None":
             ntlist = -1
             self.mdl.setListingFrequency(ntlist)
-            self.lineEditNTLIST.setText(QString(str(ntlist)))
+            self.lineEditNTLIST.setText(str(ntlist))
             self.lineEditNTLIST.setDisabled(True)
 
         elif listing == "At each step":
             ntlist = 1
-            self.lineEditNTLIST.setText(QString(str(ntlist)))
+            self.lineEditNTLIST.setText(str(ntlist))
             self.lineEditNTLIST.setDisabled(True)
 
         elif listing == "Frequency_l":
             self.lineEditNTLIST.setEnabled(True)
-            ntlist, ok = self.lineEditNTLIST.text().toInt()
+            ntlist = int(self.lineEditNTLIST.text())
             if ntlist < 1:
                 ntlist = 1
-                self.lineEditNTLIST.setText(QString(str(ntlist)))
+                self.lineEditNTLIST.setText(str(ntlist))
 
 
     @pyqtSignature("const QString&")
@@ -1550,22 +1555,22 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         if listing == "None":
             ntlist = -1
             self.mdl.setListingFrequencyLagrangian(ntlist)
-            self.lineEditNTLAL.setText(QString(str(ntlist)))
+            self.lineEditNTLAL.setText(str(ntlist))
             self.lineEditNTLAL.setDisabled(True)
 
         elif listing == "At each step":
             ntlist = 1
             self.mdl.setListingFrequencyLagrangian(ntlist)
-            self.lineEditNTLAL.setText(QString(str(ntlist)))
+            self.lineEditNTLAL.setText(str(ntlist))
             self.lineEditNTLAL.setDisabled(True)
 
         elif listing == "Frequency_l":
             self.lineEditNTLAL.setEnabled(True)
-            ntlist, ok = self.lineEditNTLAL.text().toInt()
+            ntlist = int(self.lineEditNTLAL.text())
             if ntlist < 1:
                 ntlist = 1
                 self.mdl.setListingFrequencyLagrangian(ntlist)
-                self.lineEditNTLAL.setText(QString(str(ntlist)))
+                self.lineEditNTLAL.setText(str(ntlist))
 
 
     @pyqtSignature("const QString &")
@@ -1573,8 +1578,8 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         """
         Input the frequency of the listing output
         """
-        n, ok = text.toInt()
         if self.sender().validator().state == QValidator.Acceptable:
+            n = int(text)
             log.debug("slotListingFrequency-> NTLIST = %s" % n)
             self.mdl.setListingFrequency(n)
 
@@ -1584,7 +1589,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         """
         Input the frequency of the listing output for lagrangian variables
         """
-        n, ok = text.toInt()
+        n = int(text)
         if self.sender().validator().state == QValidator.Acceptable:
             log.debug("slotNTLAL-> NTLIST = %s" % n)
             self.mdl.setListingFrequencyLagrangian(n)
@@ -1745,7 +1750,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 if ntchr < 1:
                     ntchr = 1
                     self.mdl.setWriterFrequency(writer_id, ntchr)
-                self.lineEditFrequency.setText(QString(str(ntchr)))
+                self.lineEditFrequency.setText(str(ntchr))
                 self.lineEditFrequencyTime.hide()
                 self.pushButtonFrequency.hide()
 
@@ -1753,7 +1758,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 self.lineEditFrequency.hide()
                 self.lineEditFrequencyTime.show()
                 frchr = float(self.mdl.getWriterFrequency(writer_id))
-                self.lineEditFrequencyTime.setText(QString(str(frchr)))
+                self.lineEditFrequencyTime.setText(str(frchr))
                 self.pushButtonFrequency.hide()
 
             if frequency_choice == "formula":
@@ -1800,7 +1805,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 if ntchr < 1:
                     ntchr = 1
                     self.mdl.setWriterFrequency(writer_id, ntchr)
-                self.lineEditFrequency.setText(QString(str(ntchr)))
+                self.lineEditFrequency.setText(str(ntchr))
                 self.lineEditFrequencyTime.hide()
                 self.pushButtonFrequency.hide()
 
@@ -1809,7 +1814,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 self.lineEditFrequencyTime.show()
                 self.pushButtonFrequency.setEnabled(False)
                 frchr = self.mdl.getWriterFrequency(writer_id)
-                self.lineEditFrequencyTime.setText(QString(str(frchr)))
+                self.lineEditFrequencyTime.setText(str(frchr))
                 self.pushButtonFrequency.hide()
 
             elif chrono == "formula":
@@ -1830,7 +1835,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             row = cindex.row()
             writer_id = self.modelWriter.getItem(row)['id']
             self.lineEditFrequency.setEnabled(True)
-            n, ok = self.lineEditFrequency.text().toInt()
+            n = int(self.lineEditFrequency.text())
             if self.sender().validator().state == QValidator.Acceptable:
                 log.debug("slotPostproFrequency-> NTCHR = %s" % n)
                 self.mdl.setWriterFrequency(writer_id, str(n))
@@ -1845,7 +1850,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         if cindex != (-1,-1):
             row = cindex.row()
             writer_id = self.modelWriter.getItem(row)['id']
-            n, ok = text.toDouble()
+            n = float(text)
             if self.sender().validator().state == QValidator.Acceptable:
                 log.debug("slotPostproFrequencyTime-> FRCHR = %s" % n)
                 self.mdl.setWriterFrequency(writer_id, str(n))
@@ -2354,14 +2359,14 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             if nthist < 1:
                 nthist = 1
                 self.mdl.setMonitoringPointFrequency(nthist)
-            self.lineEditHisto.setText(QString(str(nthist)))
+            self.lineEditHisto.setText(str(nthist))
             self.lineEditFRHisto.hide()
 
         if histo == "Frequency_h_x":
             self.lineEditHisto.hide()
             self.lineEditFRHisto.show()
             frlist = self.mdl.getMonitoringPointFrequencyTime()
-            self.lineEditFRHisto.setText(QString(str(frlist)))
+            self.lineEditFRHisto.setText(str(frlist))
 
 
     @pyqtSignature("const QString &")
@@ -2369,7 +2374,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         """
         Input the frequency of the monitoring point output
         """
-        n, ok = text.toDouble()
+        n = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             log.debug("slotMonitoringPointFrequencyTime-> FRHIST = %s" % n)
             self.mdl.setMonitoringPointFrequencyTime(n)
@@ -2380,7 +2385,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         """
         Input the frequency of the monitoring point output
         """
-        n, ok = text.toInt()
+        n = int(text)
         if self.sender().validator().state == QValidator.Acceptable:
             log.debug("slotMonitoringPointFrequency-> NTHIST = %s" % n)
             self.mdl.setMonitoringPointFrequency(n)
@@ -2401,7 +2406,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         """
         self.mdl.addMonitoringPoint(x=0.0, y=0.0, z=0.0)
         n = self.mdl.getNumberOfMonitoringPoints()
-        self.__insertMonitoringPoint(n, QString('0'), QString('0'), QString('0'))
+        self.__insertMonitoringPoint(n, str('0'), str('0'), str('0'))
 
         self.toolButtonDuplicate.setEnabled(True)
 
@@ -2458,6 +2463,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
 
         for index in selectionModel.selectedRows():
             name = str(index.row() + 1)
+            print name
             X, Y, Z = self.mdl.getMonitoringPointCoordinates(name)
             new_name = str(probe_number + idx)
             self.__insertMonitoringPoint(new_name, X, Y, Z)
@@ -2514,7 +2520,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         @type text: C{QString}
         @param text: radius for display probes
         """
-        r, ok = text.toDouble()
+        r = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.case['probes'].setRadius(r)
 

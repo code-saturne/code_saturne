@@ -36,6 +36,10 @@ import os, logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
+import sys
+if sys.version_info[0] == 2:
+    import sip
+    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import pyqtSignature, SIGNAL, QString
 from PyQt4.QtGui  import QWidget, QFileDialog, QMessageBox
@@ -92,7 +96,7 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
         # Initialize the widgets
         isMeteoDataChecked = model.getMeteoDataStatus() == 'on'
         self.checkBoxMeteoData.setChecked(isMeteoDataChecked)
-        self.labelMeteoFile.setText(QString(self.__model.getMeteoDataFileName()))
+        self.labelMeteoFile.setText(str(self.__model.getMeteoDataFileName()))
         self.labelMeteoData.setEnabled(isMeteoDataChecked)
         self.labelMeteoFile.setEnabled(isMeteoDataChecked)
 
@@ -132,7 +136,7 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
             msg   = self.tr("This selected file is not in the DATA directory")
             QMessageBox.information(self, title, msg)
         else:
-            self.labelMeteoFile.setText(QString(file))
+            self.labelMeteoFile.setText(str(file))
             self.__model.setMeteoDataFileName(file)
             setGreenColor(self.pushButtonMeteoData, False)
 

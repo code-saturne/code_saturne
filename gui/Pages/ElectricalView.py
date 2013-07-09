@@ -36,6 +36,10 @@ import os, logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
+import sys
+if sys.version_info[0] == 2:
+    import sip
+    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -150,13 +154,13 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         """
         name = self.model.getPropertiesDataFileName()
         if name != None:
-            self.labelPropertiesFile.setText(QString(name))
+            self.labelPropertiesFile.setText(str(name))
             setGreenColor(self.pushButtonPropertiesData, False)
         else:
             setGreenColor(self.pushButtonPropertiesData, True)
 
         srrom = self.model.getSRROM()
-        self.lineEditSRROM.setText(QString(str(srrom)))
+        self.lineEditSRROM.setText(str(srrom))
 
         self.groupBoxRecalage.hide()
 
@@ -176,7 +180,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
             model = self.model.getJouleModel()
             self.modelJoule.setItem(str_model=str(model))
             power = self.model.getPower()
-            self.lineEditPower.setText(QString(str(power)))
+            self.lineEditPower.setText(str(power))
 
             self.labelPropertiesData.hide()
             self.pushButtonPropertiesData.hide()
@@ -191,7 +195,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
             self.groupBoxElectricArc.show()
 
             current = self.model.getCurrent()
-            self.lineEditCurrent.setText(QString(str(current)))
+            self.lineEditCurrent.setText(str(current))
 
             if self.model.getScaling() == 'on':
                 model = self.model.getScalingModel()
@@ -201,15 +205,15 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
                     direction = self.model.getDirection()
                     self.modelDirection.setItem(str_model=str(direction))
                     definition = self.model.getPlaneDefinition("A")
-                    self.lineEditPlaneDefinitionA.setText(QString(str(definition)))
+                    self.lineEditPlaneDefinitionA.setText(str(definition))
                     definition = self.model.getPlaneDefinition("B")
-                    self.lineEditPlaneDefinitionB.setText(QString(str(definition)))
+                    self.lineEditPlaneDefinitionB.setText(str(definition))
                     definition = self.model.getPlaneDefinition("C")
-                    self.lineEditPlaneDefinitionC.setText(QString(str(definition)))
+                    self.lineEditPlaneDefinitionC.setText(str(definition))
                     definition = self.model.getPlaneDefinition("D")
-                    self.lineEditPlaneDefinitionD.setText(QString(str(definition)))
+                    self.lineEditPlaneDefinitionD.setText(str(definition))
                     definition = self.model.getPlaneDefinition("epsilon")
-                    self.lineEditEpsilon.setText(QString(str(definition)))
+                    self.lineEditEpsilon.setText(str(definition))
 
 
     @pyqtSignature("")
@@ -230,7 +234,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
             msg   = self.tr("This selected file is not in the DATA directory")
             QMessageBox.information(self, title, msg)
         else:
-            self.labelPropertiesFile.setText(QString(file))
+            self.labelPropertiesFile.setText(str(file))
             self.model.setPropertiesDataFileName(file)
             setGreenColor(self.pushButtonPropertiesData, False)
 
@@ -240,7 +244,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         """
         Input Relaxation coefficient for mass density
         """
-        srrom, ok = text.toDouble()
+        srrom = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.model.setSRROM(srrom)
 
@@ -250,7 +254,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         """
         Input Imposed Power
         """
-        power, ok = text.toDouble()
+        power = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.model.setPower(power)
 
@@ -260,7 +264,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         """
         Input Imposed current intensity
         """
-        current, ok = text.toDouble()
+        current = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.model.setCurrent(current)
 
@@ -311,7 +315,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         """
         Input define plane
         """
-        current, ok = text.toDouble()
+        current = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.model.setPlaneDefinition("A", current)
 
@@ -321,7 +325,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         """
         Input define plane
         """
-        current, ok = text.toDouble()
+        current = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.model.setPlaneDefinition("B", current)
 
@@ -331,7 +335,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         """
         Input define plane
         """
-        current, ok = text.toDouble()
+        current = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.model.setPlaneDefinition("C", current)
 
@@ -341,7 +345,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         """
         Input define plane
         """
-        current, ok = text.toDouble()
+        current = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.model.setPlaneDefinition("D", current)
 
@@ -351,7 +355,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         """
         Input define plane
         """
-        current, ok = text.toDouble()
+        current = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.model.setPlaneDefinition("epsilon", current)
 

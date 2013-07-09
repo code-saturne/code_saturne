@@ -36,6 +36,10 @@ import logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
+import sys
+if sys.version_info[0] == 2:
+    import sip
+    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -188,7 +192,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
             self.line_5.hide()
             self.line_7.hide()
             self.line_8.hide()
-            self.labelNTERUP.setText(QString("Velocity-Pressure algorithm\nsub-iterations on Navier-Stokes"))
+            self.labelNTERUP.setText("Velocity-Pressure algorithm\nsub-iterations on Navier-Stokes")
             self.comboBoxNTERUP.hide()
             self.spinBoxNTERUP.show()
         else:
@@ -274,7 +278,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         """
         Set value for parameter RELAXP
         """
-        relaxp, ok = text.toDouble()
+        relaxp = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.model.setPressureRelaxation(relaxp)
             log.debug("slotRELAXP-> %s" % relaxp)
@@ -285,7 +289,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         """
         Set value for parameter SRROM
         """
-        srrom, ok = text.toDouble()
+        srrom = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.model.setDensityRelaxation(srrom)
             log.debug("slotSRROM-> %s" % srrom)

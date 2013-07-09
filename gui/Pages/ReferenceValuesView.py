@@ -38,6 +38,10 @@ import logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
+import sys
+if sys.version_info[0] == 2:
+    import sip
+    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -89,7 +93,6 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         self.comboBoxLength.setSizeAdjustPolicy(QComboBox.AdjustToContents)
 
         # Connections
-
         self.connect(self.lineEditP0,        SIGNAL("textChanged(const QString &)"), self.slotPressure)
         self.connect(self.lineEditV0,        SIGNAL("textChanged(const QString &)"), self.slotVelocity)
         self.connect(self.comboBoxLength,    SIGNAL("activated(const QString&)"),    self.slotLengthChoice)
@@ -149,38 +152,38 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
             self.groupBoxTempd3p.show()
             t_oxy  = self.mdl.getTempOxydant()
             t_fuel = self.mdl.getTempFuel()
-            self.lineEditOxydant.setText(QString(str(t_oxy)))
-            self.lineEditFuel.setText(QString(str(t_fuel)))
+            self.lineEditOxydant.setText(str(t_oxy))
+            self.lineEditFuel.setText(str(t_fuel))
         else:
             self.groupBoxTempd3p.hide()
 
         # Initialization
 
         p = self.mdl.getPressure()
-        self.lineEditP0.setText(QString(str(p)))
+        self.lineEditP0.setText(str(p))
 
         v = self.mdl.getVelocity()
-        self.lineEditV0.setText(QString(str(v)))
+        self.lineEditV0.setText(str(v))
 
         init_length_choice = self.mdl.getLengthChoice()
         self.modelLength.setItem(str_model=init_length_choice)
         if init_length_choice == 'automatic':
-            self.lineEditL0.setText(QString(str()))
+            self.lineEditL0.setText(str())
             self.lineEditL0.setDisabled(True)
         else:
             self.lineEditL0.setEnabled(True)
             l = self.mdl.getLength()
-            self.lineEditL0.setText(QString(str(l)))
+            self.lineEditL0.setText(str(l))
 
         model = self.mdl.getParticularPhysical()
         if model == "atmo":
             t = self.mdl.getTemperature()
-            self.lineEditT0.setText(QString(str(t)))
+            self.lineEditT0.setText(str(t))
         elif model != "off":
             t = self.mdl.getTemperature()
-            self.lineEditT0.setText(QString(str(t)))
+            self.lineEditT0.setText(str(t))
             m = self.mdl.getMassemol()
-            self.lineEditMassMolar.setText(QString(str(m)))
+            self.lineEditMassMolar.setText(str(m))
 
         self.case.undoStartGlobal()
 
@@ -190,7 +193,7 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         """
         Input PRESS.
         """
-        p, ok = text.toDouble()
+        p = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.mdl.setPressure(p)
 
@@ -200,7 +203,7 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         """
         Input Velocity.
         """
-        v, ok = text.toDouble()
+        v = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.mdl.setVelocity(v)
 
@@ -213,12 +216,12 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         choice = self.modelLength.dicoV2M[str(text)]
         self.mdl.setLengthChoice(choice)
         if choice == 'automatic':
-            self.lineEditL0.setText(QString(str()))
+            self.lineEditL0.setText(str())
             self.lineEditL0.setDisabled(True)
         else:
             self.lineEditL0.setEnabled(True)
             value = self.mdl.getLength()
-            self.lineEditL0.setText(QString(str(value)))
+            self.lineEditL0.setText(str(value))
         log.debug("slotlengthchoice-> %s" % choice)
 
 
@@ -227,7 +230,7 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         """
         Input reference length.
         """
-        l, ok = text.toDouble()
+        l = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.mdl.setLength(l)
 
@@ -237,7 +240,7 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         """
         Input TEMPERATURE.
         """
-        t, ok = text.toDouble()
+        t = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.mdl.setTemperature(t)
 
@@ -247,7 +250,7 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         """
         Input oxydant TEMPERATURE.
         """
-        t, ok = text.toDouble()
+        t = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.mdl.setTempOxydant(t)
 
@@ -257,7 +260,7 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         """
         Input fuel TEMPERATURE.
         """
-        t, ok = text.toDouble()
+        t = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.mdl.setTempFuel(t)
 
@@ -267,7 +270,7 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         """
         Input Mass molar.
         """
-        m, ok = text.toDouble()
+        m = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.mdl.setMassemol(m)
 

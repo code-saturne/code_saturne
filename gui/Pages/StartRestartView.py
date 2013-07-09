@@ -40,6 +40,10 @@ import logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
+import sys
+if sys.version_info[0] == 2:
+    import sip
+    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -172,7 +176,8 @@ class StartRestartAdvancedDialogView(QDialog, Ui_StartRestartAdvancedDialogForm)
 
     @pyqtSignature("const QString &")
     def slotNsuit(self, text):
-        n, ok = text.toInt()
+        ## n, ok = text.toInt()
+        n = int(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.nsuit = n
             log.debug("getNsuit-> nsuit = %s" % n)

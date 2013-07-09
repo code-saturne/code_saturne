@@ -36,6 +36,10 @@ import string, logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
+import sys
+if sys.version_info[0] == 2:
+    import sip
+    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -237,7 +241,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
             self.lineEditValuePotElec.show()
             self.labelValuePotElec.show()
             v = self.__b.getElecScalarValue(self.potElec, self.potElec_type)
-            self.lineEditValuePotElec.setText(QString(str(v)))
+            self.lineEditValuePotElec.setText(str(v))
 
         # Initialize imaginary electric potential
         if self.__model.getElectricalModel() == 'joule':
@@ -250,7 +254,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
                     self.lineEditValuePotElecIm.show()
                     self.labelValuePotElecIm.show()
                     v = self.__b.getElecScalarValue(self.potElecIm, self.potElecIm_type)
-                    self.lineEditValuePotElecIm.setText(QString(str(v)))
+                    self.lineEditValuePotElecIm.setText(str(v))
 
         # Initialize potential vector
         if self.__model.getElectricalModel() == 'arc':
@@ -264,7 +268,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
             # Initialize species
             if self.species :
                 v = self.__b.getElecScalarValue(self.species, 'dirichlet')
-                self.lineEditValueSpecies.setText(QString(str(v)))
+                self.lineEditValueSpecies.setText(str(v))
 
         # Initialize exchange coef
         self.lineEditExThermal.hide()
@@ -286,11 +290,11 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
                 self.labelExThermal.show()
                 v = self.__b.getElecScalarValue(self.thermal, 'dirichlet')
                 w = self.__b.getElecScalarValue(self.thermal, 'exchange_coefficient')
-                self.lineEditValueThermal.setText(QString(str(v)))
-                self.lineEditExThermal.setText(QString(str(w)))
+                self.lineEditValueThermal.setText(str(v))
+                self.lineEditExThermal.setText(str(w))
             else:
                 v = self.__b.getElecScalarValue(self.thermal, self.thermal_type)
-                self.lineEditValueThermal.setText(QString(str(v)))
+                self.lineEditValueThermal.setText(str(v))
 
             if self.thermal_type == 'neumann':
                 self.labelValueThermal.setText('Flux')
@@ -345,7 +349,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
     def slotPotElec(self, var):
         """
         """
-        value, ok = var.toDouble()
+        value = float(var)
 
         if self.sender().validator().state == QValidator.Acceptable:
             self.__b.setElecScalarValue(self.potElec, self.potElec_type, value)
@@ -355,7 +359,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
     def slotPotElecIm(self, var):
         """
         """
-        value, ok = var.toDouble()
+        value = float(var)
         if self.sender().validator().state == QValidator.Acceptable:
             self.__b.setElecScalarValue(self.potElecIm, self.potElecIm_type, value)
 
@@ -364,7 +368,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
     def slotSpecies(self, var):
         """
         """
-        value, ok = var.toDouble()
+        value = float(var)
         if self.sender().validator().state == QValidator.Acceptable:
             self.__b.setElecScalarValue(self.species, 'dirichlet', value)
 
@@ -449,7 +453,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
     def slotValueThermal(self, var):
         """
         """
-        value, ok = var.toDouble()
+        value = float(var)
         if self.sender().validator().state == QValidator.Acceptable:
             if self.thermal_type in ('dirichlet', 'neumann'):
                 self.__b.setElecScalarValue(self.thermal, self.thermal_type, value)
@@ -461,7 +465,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
     def slotExThermal(self, var):
         """
         """
-        value, ok = var.toDouble()
+        value = float(var)
         if self.sender().validator().state == QValidator.Acceptable:
             self.__b.setElecScalarValue(self.thermal, 'exchange_coefficient', value)
 

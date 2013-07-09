@@ -39,6 +39,10 @@ import logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
+import sys
+if sys.version_info[0] == 2:
+    import sip
+    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -184,7 +188,7 @@ class LagrangianAdvancedOptionsDialogView(QDialog, Ui_LagrangianAdvancedOptionsD
         Input MODCPL.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            self.result['complete_model_iteration'], ok = text.toInt()
+            self.result['complete_model_iteration'] = int(text)
 
 
     @pyqtSignature("const QString&")
@@ -240,7 +244,6 @@ class LabelDelegate(QItemDelegate):
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
         self.old_label = ""
-        #editor.installEventFilter(self)
         rx = "[_a-zA-Z][_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX-1) + "}"
         self.regExp = QRegExp(rx)
         v = RegExpValidator(editor, self.regExp)
@@ -249,7 +252,7 @@ class LabelDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
-        value = index.model().data(index, Qt.DisplayRole).toString()
+        value = str(index.model().data(index, Qt.DisplayRole))
         self.old_plabel = str(value)
         editor.setText(value)
 
@@ -271,12 +274,11 @@ class ValueDelegate(QItemDelegate):
         else:
             v = DoubleValidator(editor)
         editor.setValidator(v)
-        #editor.installEventFilter(self)
         return editor
 
 
     def setEditorData(self, editor, index):
-        value = index.model().data(index, Qt.DisplayRole).toString()
+        value = str(index.model().data(index, Qt.DisplayRole))
         editor.setText(value)
 
 
@@ -284,10 +286,10 @@ class ValueDelegate(QItemDelegate):
         if not editor.isModified():
             return
         if editor.validator().state == QValidator.Acceptable:
-            value, ok = editor.text().toDouble()
+            value = float(editor.text())
             for idx in self.parent.selectionModel().selectedIndexes():
                 if idx.column() == index.column():
-                    model.setData(idx, QVariant(value), Qt.DisplayRole)
+                    model.setData(idx, value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # StandarItemModel for Coals
@@ -332,17 +334,17 @@ class StandardItemModelCoals(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return QVariant()
+            return
 
         # ToolTips
         if role == Qt.ToolTipRole:
-            return QVariant(self.tr("Code_Saturne key word: " + self.kwords[index.column()]))
+            return self.tr("Code_Saturne key word: " + self.kwords[index.column()])
 
         # Display
         if role == Qt.DisplayRole:
-            return QVariant(self.dataCoals[index.row()][index.column()])
+            return self.dataCoals[index.row()][index.column()]
 
-        return QVariant()
+        return
 
 
     def flags(self, index):
@@ -356,15 +358,15 @@ class StandardItemModelCoals(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return QVariant(self.headers[section])
-        return QVariant()
+            return self.headers[section]
+        return
 
 
     def setData(self, index, value, role):
         row = index.row()
         col = index.column()
 
-        val, ok = value.toDouble()
+        val = float(value)
         self.dataCoals[row][col] = val
 
         if col == 1:
@@ -479,7 +481,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.checkBoxISTTIO.setDisabled(True)
 
         nmax = self.model.getMaxNumber()
-        self.lineEditNBPMAX.setText(QString(str(nmax)))
+        self.lineEditNBPMAX.setText(str(nmax))
 
         status = self.model.getContinuousInjection()
         if status == "on":
@@ -514,7 +516,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.groupBox2way.show()
 
             start_it = self.model.get2WayCouplingStartIteration()
-            self.lineEditNSTITS.setText(QString(str(start_it)))
+            self.lineEditNSTITS.setText(str(start_it))
 
             status = self.model.get2WayCouplingDynamic()
             if status == "on":
@@ -589,7 +591,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         Input NBPMAX.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value, ok = text.toInt()
+            value = int(text)
             self.model.setMaxNumber(value)
 
 
@@ -695,7 +697,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         Input NSTITS.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value, ok = text.toInt()
+            value = int(text)
             self.model.set2WayCouplingStartIteration(value)
 
 

@@ -39,6 +39,10 @@ import logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
+import sys
+if sys.version_info[0] == 2:
+    import sip
+    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -294,7 +298,8 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
             self.groupBoxDiff.hide()
         else :
             self.groupBoxDiff.show()
-            self.lineEditDiff.setText(QString(str(self.m_sca.getScalarDiffusivityInitialValue(self.scalar))))
+            self.lineEditDiff.setText(str(self.m_sca.getScalarDiffusivityInitialValue(self.scalar)))
+
             diff_choice =  self.m_sca.getScalarDiffusivityChoice(self.scalar)
             self.modelDiff.setItem(str_model=diff_choice)
             self.modelNameDiff.setItem(str_model=str(self.scalar))
@@ -323,15 +328,15 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
                 __model.setItem(str_model=c)
                 if c == 'user_law':
                     __button.setEnabled(True)
-                    __label.setText(QString(self.tr("Reference value")))
+                    __label.setText(self.tr("Reference value"))
                 else:
                     __button.setEnabled(False)
-                    __label.setText(QString(self.tr("Reference value")))
+                    __label.setText(self.tr("Reference value"))
             else:
+                __label.setText(self.tr("Reference value"))
 
-                __label.setText(QString(self.tr("Reference value")))
             self.mdl.getInitialValue(tag)
-            __line.setText(QString(str(self.mdl.getInitialValue(tag))))
+            __line.setText(str(self.mdl.getInitialValue(tag)))
 
         # no 'thermal_conductivity' if not Joule and not Thermal scalar and not
         if mdl_joule == 'off' and mdl_thermal == 'off' and mdl_atmo == 'off' and\
@@ -355,8 +360,8 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
                     __combo.setEnabled(False)
                     __button.setEnabled(False)
                     self.mdl.setPropertyMode(tag, 'variable')
-                    __label.setText(QString(self.tr("Calculation by\n perfect gas law")))
-                    __line.setText(QString(str("")))
+                    __label.setText(self.tr("Calculation by\n perfect gas law"))
+                    __line.setText(str(""))
                     __line.setEnabled(False)
                 elif tag == 'dynamic_diffusion':
                     __model.setItem(str_model='user_law')
@@ -405,7 +410,8 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
                     __combo.setEnabled(False)
                     __button.setEnabled(False)
                     self.mdl.setPropertyMode(tag, 'constant')
-                    self.groupBoxCp.setTitle(QString('Isobaric specific heat'))
+                    self.groupBoxCp.setTitle('Isobaric specific heat')
+
                 if tag == 'volumic_viscosity':
                     __combo.setEnabled(True)
                     c = self.mdl.getPropertyMode(tag)
@@ -416,7 +422,7 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
                 self.groupBoxViscv0.show()
             else:
                 if tag == 'specific_heat':
-                    self.groupBoxCp.setTitle(QString('Specific heat'))
+                    self.groupBoxCp.setTitle('Specific heat')
 
         self.case.undoStartGlobal()
 
@@ -487,7 +493,8 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         choice = self.modelNameDiff.dicoV2M[str(text)]
         log.debug("slotStateDiff -> %s" % (text))
         self.scalar = str(text)
-        self.lineEditDiff.setText(QString(str(self.m_sca.getScalarDiffusivityInitialValue(self.scalar))))
+        self.lineEditDiff.setText(str(self.m_sca.getScalarDiffusivityInitialValue(self.scalar)))
+
         self.modelDiff.setItem(str_model=self.m_sca.getScalarDiffusivityChoice(self.scalar))
 
 
@@ -519,7 +526,7 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         """
         Update the density
         """
-        rho, ok = text.toDouble()
+        rho = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.mdl.setInitialValueDensity(rho)
 
@@ -529,7 +536,7 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         """
         Update the molecular viscosity
         """
-        mu, ok = text.toDouble()
+        mu = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.mdl.setInitialValueViscosity(mu)
 
@@ -539,7 +546,7 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         """
         Update the specific heat
         """
-        cp, ok = self.lineEditCp.text().toDouble()
+        cp = float(self.lineEditCp.text())
         if self.sender().validator().state == QValidator.Acceptable:
             self.mdl.setInitialValueHeat(cp)
 
@@ -549,7 +556,7 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         """
         Update the volumic viscosity
         """
-        viscv0, ok = self.lineEditViscv0.text().toDouble()
+        viscv0 = float(self.lineEditViscv0.text())
         if self.sender().validator().state == QValidator.Acceptable:
             self.mdl.setInitialValueVolumicViscosity(viscv0)
 
@@ -559,7 +566,7 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         """
         Update the thermal conductivity
         """
-        al, ok = text.toDouble()
+        al = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.mdl.setInitialValueCond(al)
 
@@ -569,7 +576,7 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         """
         Update the thermal conductivity
         """
-        diftl0, ok = text.toDouble()
+        diftl0 = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.mdl.setInitialValueDyn(diftl0)
 
@@ -579,7 +586,7 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         """
         Update the thermal conductivity
         """
-        diff, ok = text.toDouble()
+        diff = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.m_sca.setScalarDiffusivityInitialValue(self.scalar, diff)
 

@@ -45,8 +45,12 @@ import logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
+import sys
+if sys.version_info[0] == 2:
+    import sip
+    sip.setapi('QString', 2)
 
-from PyQt4.QtCore import Qt, QVariant, QString, SIGNAL, pyqtSignature
+from PyQt4.QtCore import Qt, SIGNAL, pyqtSignature
 from PyQt4.QtGui  import QDialog, QHeaderView, QStandardItemModel, QWidget
 from PyQt4.QtGui  import QAbstractItemView, QItemSelectionModel, QValidator
 
@@ -225,9 +229,9 @@ class StandardItemModel(QStandardItemModel):
         if index.isValid() and role == Qt.DisplayRole:
             row = index.row()
             col = index.column()
-            return QVariant(self.__data[row][col])
+            return self.__data[row][col]
 
-        return QVariant()
+        return
 
 
     def flags(self, index):
@@ -242,8 +246,8 @@ class StandardItemModel(QStandardItemModel):
         Return the header column data.
         """
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return QVariant(self.headers[section])
-        return QVariant()
+            return self.headers[section]
+        return
 
 
     def setData(self, index, value, role):
@@ -758,9 +762,9 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
         Set Widget initial values that do not depend on the boundary
         """
         nalimx = self.__model.getMaxIterations()
-        self.lineEditNALIMX.setText(QString(str(nalimx)))
+        self.lineEditNALIMX.setText(str(nalimx))
         epalim = self.__model.getPrecision()
-        self.lineEditEPALIM.setText(QString(str(epalim)))
+        self.lineEditEPALIM.setText(str(epalim))
         postSynchronization      = self.__model.getExternalCouplingPostSynchronization()
         self.checkBoxPostSynchronization.setChecked(postSynchronization == 'on')
 
@@ -806,7 +810,7 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
         """
         Input viscosity type of mesh : isotrop or orthotrop.
         """
-        nalimx, ok = text.toInt()
+        nalimx = int(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.__model.setMaxIterations(nalimx)
 
@@ -816,7 +820,7 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
         """
         Input viscosity type of mesh : isotrop or orthotrop.
         """
-        epalim, ok = text.toDouble()
+        epalim = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.__model.setPrecision(epalim)
 

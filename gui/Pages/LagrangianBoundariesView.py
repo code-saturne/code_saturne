@@ -32,14 +32,15 @@ This module contains the following classes:
 #-------------------------------------------------------------------------------
 # Standard modules
 #-------------------------------------------------------------------------------
-
-
 import logging
-
 
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
+import sys
+if sys.version_info[0] == 2:
+    import sip
+    sip.setapi('QString', 2)
 
 
 from PyQt4.QtCore import *
@@ -85,17 +86,16 @@ class ValueDelegate(QItemDelegate):
         editor = QLineEdit(parent)
         validator = IntValidator(editor, min=0) # nb max classes
         editor.setValidator(validator)
-        #editor.installEventFilter(self)
         return editor
 
     def setEditorData(self, editor, index):
-        value = index.model().data(index, Qt.DisplayRole).toString()
+        value = str(index.model().data(index, Qt.DisplayRole))
         editor.setText(value)
 
     def setModelData(self, editor, model, index):
-        value, ok = editor.text().toDouble()
+        value = float(editor.text())
         if editor.validator().state == QValidator.Acceptable:
-            model.setData(index, QVariant(value), Qt.DisplayRole)
+            model.setData(index, value, Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -120,7 +120,6 @@ class ParticleBoundaryInteractionDelegate(QItemDelegate):
         for k, v in list(self.dico.items()):
             self.combo_mdl.addItem(v, k)
         editor.installEventFilter(self)
-        #editor.setSizeAdjustPolicy(QComboBox.AdjustToContents)
         editor.setMinimumWidth(100)
         return editor
 
@@ -138,7 +137,7 @@ class ParticleBoundaryInteractionDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, QVariant(value), Qt.DisplayRole)
+                model.setData(idx, value, Qt.DisplayRole)
 
 
     def tr(self, text):
@@ -193,7 +192,7 @@ class StandardItemModelBoundaries(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return QVariant()
+            return
 
         if role == Qt.DisplayRole:
             row = index.row()
@@ -201,16 +200,16 @@ class StandardItemModelBoundaries(QStandardItemModel):
             if col == 2:
                 nature = self._data[row][1]
                 dico = self.dicoM2V[nature]
-                return QVariant(dico[self._data[row][col]])
+                return dico[self._data[row][col]]
             else:
-                return QVariant(self._data[row][col])
+                return self._data[row][col]
 
         if role == Qt.ToolTipRole:
             if index.column() == 2:
-                return QVariant(self.tr("Code_Saturne keyword: IUSCLB"))
+                return self.tr("Code_Saturne keyword: IUSCLB")
             elif index.column() == 3:
-                return QVariant(self.tr("Code_Saturne keyword: NBCLAS"))
-        return QVariant()
+                return self.tr("Code_Saturne keyword: NBCLAS")
+        return
 
 
     def flags(self, index):
@@ -229,8 +228,8 @@ class StandardItemModelBoundaries(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return QVariant(self.headers[section])
-        return QVariant()
+            return self.headers[section]
+        return
 
 
     def setData(self, index, value, role):
@@ -238,7 +237,7 @@ class StandardItemModelBoundaries(QStandardItemModel):
         col = index.column()
 
         if col == 2:
-            interaction = str(value.toString())
+            interaction = str(value)
             self._data[row][col] = interaction
             label = self._data[row][0]
             nature = self._data[row][1]
@@ -247,7 +246,7 @@ class StandardItemModelBoundaries(QStandardItemModel):
                 self._data[row][3] = 0
 
         elif col == 3:
-            nclasses, ok = value.toInt()
+            nclasses = int(value)
             self._data[row][col] = nclasses
             label = self._data[row][0]
             nn = self.model.getNumberOfClassesValue(label)
@@ -456,14 +455,14 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         # Main variables
         self.groupBoxMain.show()
         npart = self.model.getNumberOfParticulesInClassValue(self.label, self.iclass)
-        self.lineEditIJNBP.setText(QString(str(npart)))
+        self.lineEditIJNBP.setText(str(npart))
         freq = self.model.getInjectionFrequencyValue(self.label, self.iclass)
-        self.lineEditIJFRE.setText(QString(str(freq)))
+        self.lineEditIJFRE.setText(str(freq))
 
         self.LSM = LagrangianStatisticsModel(self.case)
         if self.LSM.getGroupOfParticlesValue() > 0:
             igroup = self.model.getParticleGroupNumberValue(self.label, self.iclass)
-            self.lineEditICLST.setText(QString(str(igroup)))
+            self.lineEditICLST.setText(str(igroup))
         else:
             self.labelICLST.setDisabled(True)
             self.lineEditICLST.setDisabled(True)
@@ -473,14 +472,14 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         choice = self.model.getStatisticalWeightChoice(self.label, self.iclass)
         self.modelIPOIT.setItem(str_model=choice)
         text = self.modelIPOIT.dicoM2V[choice]
-        self.slotIPOITChoice(QString(text))
+        self.slotIPOITChoice(str(text))
 
         # Velocity
         self.groupBoxVelocity.show()
         choice = self.model.getVelocityChoice(self.label, self.iclass)
         self.modelIJUVW.setItem(str_model=choice)
         text = self.modelIJUVW.dicoM2V[choice]
-        self.slotIJUVW(QString(text))
+        self.slotIJUVW(str(text))
 
         # Temperature
         status = self.LM.getHeating()
@@ -489,24 +488,24 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
             choice = self.model.getTemperatureChoice(self.label, self.iclass)
             self.modelIJRTP.setItem(str_model=choice)
             text = self.modelIJRTP.dicoM2V[choice]
-            self.slotIJRTP(QString(text))
+            self.slotIJRTP(str(text))
 
             cp = self.model.getSpecificHeatValue(self.label, self.iclass)
-            self.lineEditICPT.setText(QString(str(cp)))
+            self.lineEditICPT.setText(str(cp))
             eps = self.model.getEmissivityValue(self.label, self.iclass)
-            self.lineEditIEPSI.setText(QString(str(eps)))
+            self.lineEditIEPSI.setText(str(eps))
 
         # Coals
         if part_model == "coal" and self.LM.getCoalFouling() == "on" :
             self.groupBoxCoal.show()
             icoal = self.model.getCoalNumberValue(self.label, self.iclass)
-            self.lineEditINUCHL.setText(QString(str(icoal)))
+            self.lineEditINUCHL.setText(str(icoal))
             temp  = self.model.getCoalTemperatureValue(self.label, self.iclass)
-            self.lineEditIHPT.setText(QString(str(temp)))
+            self.lineEditIHPT.setText(str(temp))
             mass  = self.model.getCoalMassValue(self.label, icoal, self.iclass)
-            self.lineEditIMCHT.setText(QString(str(mass)))
+            self.lineEditIMCHT.setText(str(mass))
             mass2 = self.model.getCokeMassValue(self.label, self.iclass)
-            self.lineEditIMCKT.setText(QString(str(mass2)))
+            self.lineEditIMCKT.setText(str(mass2))
 
         # Diameter
         if part_model == "coal":
@@ -517,18 +516,18 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
             choice = self.model.getDiameterChoice(self.label, self.iclass)
             self.modelIJRDP.setItem(str_model=choice)
             text = self.modelIJRDP.dicoM2V[choice]
-            self.slotIJRDP(QString(text))
+            self.slotIJRDP(str(text))
 
         rho = self.model.getDensityValue(self.label, self.iclass)
-        self.lineEditIROPT.setText(QString(str(rho)))
+        self.lineEditIROPT.setText(str(rho))
 
         choice = self.model.getDiameterChoice(self.label, self.iclass)
         if choice == "prescribed":
             self.frameDiameter.show()
             diam = self.model.getDiameterValue(self.label, self.iclass)
             vdiam = self.model.getDiameterVarianceValue(self.label, self.iclass)
-            self.lineEditIDPT.setText(QString(str(diam)))
-            self.lineEditIVDPT.setText(QString(str(vdiam)))
+            self.lineEditIDPT.setText(str(diam))
+            self.lineEditIVDPT.setText(str(vdiam))
         elif choice == "subroutine":
             self.frameDiameter.hide()
 
@@ -539,7 +538,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         Input IJNBP.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value, ok = text.toInt()
+            value = int(text)
             self.model.setNumberOfParticulesInClassValue(self.label, self.iclass, value)
 
 
@@ -549,7 +548,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         Input IJFRE.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value, ok = text.toInt()
+            value = int(text)
             self.model.setInjectionFrequencyValue(self.label, self.iclass, value)
 
 
@@ -559,7 +558,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         Input ICLST.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value, ok = text.toInt()
+            value = int(text)
             self.model.setParticleGroupNumberValue(self.label, self.iclass, value)
 
 
@@ -569,7 +568,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         Input IDEBT.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value, ok = text.toDouble()
+            value = float(text)
             self.model.setMassFlowRateValue(self.label, self.iclass, value)
 
 
@@ -585,12 +584,12 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         if choice == "rate":
             self.frameVolumicRate.show()
             rate = self.model.getMassFlowRateValue(self.label, self.iclass)
-            self.lineEditIDEBT.setText(QString(str(rate)))
+            self.lineEditIDEBT.setText(str(rate))
             self.model.setStatisticalWeightValue(self.label, self.iclass, 1)
         elif choice == "prescribed":
             self.frameStatisticalWeight.show()
             weight = self.model.getStatisticalWeightValue(self.label, self.iclass)
-            self.lineEditIPOIT.setText(QString(str(weight)))
+            self.lineEditIPOIT.setText(str(weight))
         elif choice == "subroutine":
             pass
 
@@ -601,7 +600,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         Input IPOIT.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value, ok = text.toDouble()
+            value = float(text)
             self.model.setStatisticalWeightValue(self.label, self.iclass, value)
 
 
@@ -611,7 +610,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         Input IROPT.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value, ok = text.toDouble()
+            value = float(text)
             self.model.setDensityValue(self.label, self.iclass, value)
 
 
@@ -627,15 +626,15 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         if choice == "norm":
             self.frameVelocityNorm.show()
             norm = self.model.getVelocityNormValue(self.label, self.iclass)
-            self.lineEditIUNO.setText(QString(str(norm)))
+            self.lineEditIUNO.setText(str(norm))
         elif choice == "components":
             self.frameVelocityValues.show()
             vu = self.model.getVelocityDirectionValue(self.label, self.iclass, "u")
             vv = self.model.getVelocityDirectionValue(self.label, self.iclass, "v")
             vw = self.model.getVelocityDirectionValue(self.label, self.iclass, "w")
-            self.lineEditIUPT.setText(QString(str(vu)))
-            self.lineEditIVPT.setText(QString(str(vv)))
-            self.lineEditIWPT.setText(QString(str(vw)))
+            self.lineEditIUPT.setText(str(vu))
+            self.lineEditIVPT.setText(str(vv))
+            self.lineEditIWPT.setText(str(vw))
 
 
     @pyqtSignature("const QString&")
@@ -644,7 +643,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         Input IUNO.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value, ok = text.toDouble()
+            value = float(text)
             self.model.setVelocityNormValue(self.label, self.iclass, value)
 
 
@@ -654,7 +653,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         Input IUPT.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value, ok = text.toDouble()
+            value = float(text)
             self.model.setVelocityDirectionValue(self.label, self.iclass, "u", value)
 
 
@@ -664,7 +663,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         Input IVPT.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value, ok = text.toDouble()
+            value = float(text)
             self.model.setVelocityDirectionValue(self.label, self.iclass, "v", value)
 
 
@@ -674,7 +673,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         Input IWPT.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value, ok = text.toDouble()
+            value = float(text)
             self.model.setVelocityDirectionValue(self.label, self.iclass, "w", value)
 
 
@@ -688,7 +687,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         if choice == "prescribed":
             self.frameTemperature.show()
             temp = self.model.getTemperatureValue(self.label, self.iclass)
-            self.lineEditITPT.setText(QString(str(temp)))
+            self.lineEditITPT.setText(str(temp))
         elif choice == "subroutine":
             self.frameTemperature.hide()
 
@@ -699,7 +698,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         Input ITPT.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value, ok = text.toDouble()
+            value = float(text)
             self.model.setTemperatureValue(self.label, self.iclass, value)
 
 
@@ -709,7 +708,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         Input ICPT.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value, ok = text.toDouble()
+            value = float(text)
             self.model.setSpecificHeatValue(self.label, self.iclass, value)
 
 
@@ -719,7 +718,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         Input IEPSI.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value, ok = text.toDouble()
+            value = float(text)
             self.model.setEmissivityValue(self.label, self.iclass, value)
 
 
@@ -734,8 +733,8 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
             self.frameDiameter.show()
             diam = self.model.getDiameterValue(self.label, self.iclass)
             vdiam = self.model.getDiameterVarianceValue(self.label, self.iclass)
-            self.lineEditIDPT.setText(QString(str(diam)))
-            self.lineEditIVDPT.setText(QString(str(vdiam)))
+            self.lineEditIDPT.setText(str(diam))
+            self.lineEditIVDPT.setText(str(vdiam))
         elif choice == "subroutine":
             self.frameDiameter.hide()
 
@@ -746,7 +745,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         Input IDPT.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value, ok = text.toDouble()
+            value = float(text)
             self.model.setDiameterValue(self.label, self.iclass, value)
 
 
@@ -756,7 +755,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         Input IVDPT.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value, ok = text.toDouble()
+            value = float(text)
             self.model.setDiameterVarianceValue(self.label, self.iclass, value)
 
 
@@ -766,7 +765,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         Input IHPT.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value, ok = text.toInt()
+            value = int(text)
             self.model.setCoalNumberValue(self.label, self.iclass, value)
 
 
@@ -776,7 +775,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         Input IHPT.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value, ok = text.toDouble()
+            value = float(text)
             self.model.setCoalTemperatureValue(self.label, self.iclass, value)
 
 
@@ -786,7 +785,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         Input IMCHT.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value, ok = text.toDouble()
+            value = float(text)
             self.model.setCoalMassValue(self.label, self.iclass, value)
 
 
@@ -796,7 +795,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         Input IMCKT.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value, ok = text.toDouble()
+            value = float(text)
             self.model.setCokeMassValue(self.label, self.iclass, value)
 
 

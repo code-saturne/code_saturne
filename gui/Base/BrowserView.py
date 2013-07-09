@@ -109,7 +109,8 @@ class TreeModel(QAbstractItemModel):
         QAbstractItemModel.__init__(self, parent)
 
         rootData = []
-        rootData.append(QVariant("Pages"))
+        rootData.append("Pages")
+
         self.rootItem = TreeItem(rootData, "folder")
         self.populateModel(data.split("\n"), self.rootItem)
 
@@ -137,7 +138,7 @@ class TreeModel(QAbstractItemModel):
         @return: C{QVariant}
         """
         if not index.isValid():
-            return QVariant()
+            return None
 
         item = index.internalPointer()
         column = index.column()
@@ -145,7 +146,7 @@ class TreeModel(QAbstractItemModel):
         if role == Qt.DisplayRole:
             # return text for columns
             if column == 0:
-                return QVariant(item.itemData[column])
+                return item.itemData[column]
 
         elif role == Qt.DecorationRole:
             # return icon for first column
@@ -161,10 +162,9 @@ class TreeModel(QAbstractItemModel):
                     icon = style.standardIcon(QStyle.SP_FileIcon)
                 elif item.itemType == "file-new":
                     icon = style.standardIcon(QStyle.SP_FileLinkIcon)
-                return QVariant(icon)
+                return icon
 
-        # return nothing
-        return QVariant()
+        return None
 
 
     def flags(self, index):
@@ -178,9 +178,6 @@ class TreeModel(QAbstractItemModel):
 
         flags = Qt.ItemIsEnabled | Qt.ItemIsSelectable
 
-#       if index.internalPointer() is not self.rootItem and index.column() == 0:
-#            # allow items other than root to be edited
-#            flags |= Qt.ItemIsEditable
         return flags
 
 
@@ -192,7 +189,7 @@ class TreeModel(QAbstractItemModel):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             return self.rootItem.data(section)
 
-        return QVariant()
+        return None
 
 
     def index(self, row, column, parent):
@@ -294,7 +291,8 @@ class TreeModel(QAbstractItemModel):
         """
         """
         info = []
-        search_item = QVariant(QString(data))
+        search_item = str(data)
+
         start = self.index(0, 0, QModelIndex())
         indexList = self.match(start, role, search_item, -1, Qt.MatchExactly)
 
@@ -329,11 +327,12 @@ class TreeModel(QAbstractItemModel):
                     break
                 position += 1
 
-            lineData = lines[number][position:].trimmed()
+            lineData = lines[number][position:].strip()
 
-            if not lineData.isEmpty():
+            if lineData:
                 # Read the column data from the rest of the line.
-                columnStrings = lineData.split("\t", QString.SkipEmptyParts)
+                columnStrings = lineData.split("\t")
+
                 columnData = []
                 for column in range(0, len(columnStrings)):
                     columnData.append(columnStrings[column])
@@ -376,7 +375,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
         self.setupUi(self)
 
         tree = self._browser()
-        self.model = TreeModel(QString(tree))
+        self.model = TreeModel(str(tree))
 
         self.treeView.setModel(self.model)
         self.treeView.header().hide()

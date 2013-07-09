@@ -36,6 +36,10 @@ import logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
+import sys
+if sys.version_info[0] == 2:
+    import sip
+    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -133,11 +137,11 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
             time_step_max_factor = self.mdl.getOptions('time_step_max_factor')
             time_step_var = self.mdl.getOptions('time_step_var')
 
-            self.lineEditCOUMAX.setText(QString(str(courant_max)))
-            self.lineEditFOUMAX.setText(QString(str(fourier_max)))
-            self.lineEditCDTMIN.setText(QString(str(time_step_min_factor)))
-            self.lineEditCDTMAX.setText(QString(str(time_step_max_factor)))
-            self.lineEditVARRDT.setText(QString(str(time_step_var)))
+            self.lineEditCOUMAX.setText(str(courant_max))
+            self.lineEditFOUMAX.setText(str(fourier_max))
+            self.lineEditCDTMIN.setText(str(time_step_min_factor))
+            self.lineEditCDTMAX.setText(str(time_step_max_factor))
+            self.lineEditVARRDT.setText(str(time_step_var))
 
             self.groupBoxLabels.show()
 
@@ -161,10 +165,10 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
             self.slotTimePassing(text)
 
         dtref = self.mdl.getTimeStep()
-        self.lineEditDTREF.setText(QString(str(dtref)))
+        self.lineEditDTREF.setText(str(dtref))
 
         ntmabs = self.mdl.getIterationsNumber()
-        self.lineEditNTMABS.setText(QString(str(ntmabs)))
+        self.lineEditNTMABS.setText(str(ntmabs))
 
         if self.mdl.thermalCase():
             if self.mdl.getThermalTimeStep() == 'on':
@@ -201,11 +205,11 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
             time_step_max_factor = self.mdl.getOptions('time_step_max_factor')
             time_step_var = self.mdl.getOptions('time_step_var')
 
-            self.lineEditCOUMAX.setText(QString(str(courant_max)))
-            self.lineEditFOUMAX.setText(QString(str(fourier_max)))
-            self.lineEditCDTMIN.setText(QString(str(time_step_min_factor)))
-            self.lineEditCDTMAX.setText(QString(str(time_step_max_factor)))
-            self.lineEditVARRDT.setText(QString(str(time_step_var)))
+            self.lineEditCOUMAX.setText(str(courant_max))
+            self.lineEditFOUMAX.setText(str(fourier_max))
+            self.lineEditCDTMIN.setText(str(time_step_min_factor))
+            self.lineEditCDTMAX.setText(str(time_step_max_factor))
+            self.lineEditVARRDT.setText(str(time_step_var))
 
             self.groupBoxLabels.show()
         else:
@@ -217,7 +221,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         """
         Input DTREF.
         """
-        time_step, ok = text.toDouble()
+        time_step = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.mdl.setTimeStep(time_step)
 
@@ -227,7 +231,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         """
         Input NTMABS.
         """
-        iteration, ok = text.toInt()
+        iteration = int(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.mdl.setIterationsNumber(iteration)
 
@@ -237,7 +241,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         """
         Input COUMAX.
         """
-        courant_max, ok = text.toDouble()
+        courant_max = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.mdl.setOptions('max_courant_num', courant_max)
 
@@ -247,7 +251,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         """
         Input FOUMAX.
         """
-        fourier_max, ok = text.toDouble()
+        fourier_max = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.mdl.setOptions('max_fourier_num', fourier_max)
 
@@ -257,7 +261,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         """
         Input CDTMIN.
         """
-        time_step_min_factor, ok = text.toDouble()
+        time_step_min_factor = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.mdl.setOptions('time_step_min_factor', time_step_min_factor)
 
@@ -267,7 +271,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         """
         Input CDTMAX.
         """
-        time_step_max_factor, ok = text.toDouble()
+        time_step_max_factor = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.mdl.setOptions('time_step_max_factor', time_step_max_factor)
 
@@ -277,7 +281,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         """
         Input VARRDT.
         """
-        time_step_var, ok = text.toDouble()
+        time_step_var = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.mdl.setOptions('time_step_var', time_step_var)
 

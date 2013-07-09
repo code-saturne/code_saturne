@@ -36,6 +36,10 @@ import string, logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
+import sys
+if sys.version_info[0] == 2:
+    import sip
+    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -149,9 +153,9 @@ class BoundaryConditionsSlidingWallView(QWidget, Ui_BoundaryConditionsSlidingWal
             self.__boundary.setVelocityChoice("off")
             self.frameSlideVelocity.hide()
             u, v, w = 0.0, 0.0, 0.0
-        self.lineEditSlideU.setText(QString(str(u)))
-        self.lineEditSlideV.setText(QString(str(v)))
-        self.lineEditSlideW.setText(QString(str(w)))
+        self.lineEditSlideU.setText(str(u))
+        self.lineEditSlideV.setText(str(v))
+        self.lineEditSlideW.setText(str(w))
 
 
     @pyqtSignature("const QString&")
@@ -164,7 +168,7 @@ class BoundaryConditionsSlidingWallView(QWidget, Ui_BoundaryConditionsSlidingWal
         @type text: C{QString}
         @param text: sliding wall U velocity component.
         """
-        value, ok = text.toDouble()
+        value = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.__boundary.setVelocityComponent(value, 'velocity_U')
 
@@ -179,7 +183,7 @@ class BoundaryConditionsSlidingWallView(QWidget, Ui_BoundaryConditionsSlidingWal
         @type text: C{QString}
         @param text: sliding wall V velocity component.
         """
-        value, ok = text.toDouble()
+        value = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.__boundary.setVelocityComponent(value, 'velocity_V')
 
@@ -194,7 +198,7 @@ class BoundaryConditionsSlidingWallView(QWidget, Ui_BoundaryConditionsSlidingWal
         @type text: C{QString}
         @param text: sliding wall W velocity component.
         """
-        value, ok = text.toDouble()
+        value = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.__boundary.setVelocityComponent(value, 'velocity_W')
 

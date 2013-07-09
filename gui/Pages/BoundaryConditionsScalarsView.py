@@ -36,6 +36,10 @@ import logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
+import sys
+if sys.version_info[0] == 2:
+    import sip
+    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -244,11 +248,11 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
                     self.labelExThermal.show()
                     v = self.__boundary.getScalarValue(self.thermal, 'dirichlet')
                     w = self.__boundary.getScalarValue(self.thermal, 'exchange_coefficient')
-                    self.lineEditValueThermal.setText(QString(str(v)))
-                    self.lineEditExThermal.setText(QString(str(w)))
+                    self.lineEditValueThermal.setText(str(v))
+                    self.lineEditExThermal.setText(str(w))
                 else:
                     v = self.__boundary.getScalarValue(self.thermal, self.thermal_type)
-                    self.lineEditValueThermal.setText(QString(str(v)))
+                    self.lineEditValueThermal.setText(str(v))
 
                 if self.thermal_type == 'neumann':
                     self.labelValueThermal.setText('Flux')
@@ -280,11 +284,11 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
                     self.labelExSpecies.show()
                     v = self.__boundary.getScalarValue(self.species, 'dirichlet')
                     w = self.__boundary.getScalarValue(self.species, 'exchange_coefficient')
-                    self.lineEditValueSpecies.setText(QString(str(v)))
-                    self.lineEditExSpecies.setText(QString(str(w)))
+                    self.lineEditValueSpecies.setText(str(v))
+                    self.lineEditExSpecies.setText(str(w))
                 else:
                     v = self.__boundary.getScalarValue(self.species, self.species_type)
-                    self.lineEditValueSpecies.setText(QString(str(v)))
+                    self.lineEditValueSpecies.setText(str(v))
 
                 if self.species_type == 'neumann':
                     self.labelValueSpecies.setText('Flux')
@@ -321,11 +325,11 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
                         self.labelExMeteo.show()
                         v = self.__boundary.getScalarValue(self.meteo, 'dirichlet')
                         w = self.__boundary.getScalarValue(self.meteo, 'exchange_coefficient')
-                        self.lineEditValueMeteo.setText(QString(str(v)))
-                        self.lineEditExMeteo.setText(QString(str(w)))
+                        self.lineEditValueMeteo.setText(str(v))
+                        self.lineEditExMeteo.setText(str(w))
                     else:
                         v = self.__boundary.getScalarValue(self.meteo, self.meteo_type)
-                        self.lineEditValueMeteo.setText(QString(str(v)))
+                        self.lineEditValueMeteo.setText(str(v))
 
                 if self.meteo_type == 'neumann':
                     self.labelValueMeteo.setText('Flux')
@@ -500,7 +504,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
     def slotValueThermal(self, var):
         """
         """
-        value, ok = var.toDouble()
+        value = float(var)
         if self.sender().validator().state == QValidator.Acceptable:
             if self.thermal_type in ('dirichlet', 'neumann'):
                 self.__boundary.setScalarValue(self.thermal, self.thermal_type, value)
@@ -512,7 +516,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
     def slotValueSpecies(self, var):
         """
         """
-        value, ok = var.toDouble()
+        value = float(var)
         if self.sender().validator().state == QValidator.Acceptable:
             if self.species_type in ('dirichlet', 'neumann'):
                 self.__boundary.setScalarValue(self.species, self.species_type, value)
@@ -524,7 +528,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
     def slotValueMeteo(self, var):
         """
         """
-        value, ok = var.toDouble()
+        value = float(var)
         if self.sender().validator().state == QValidator.Acceptable:
             if self.meteo_type in ('dirichlet', 'neumann'):
                 self.__boundary.setScalarValue(self.meteo, self.meteo_type, value)
@@ -536,7 +540,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
     def slotExThermal(self, var):
         """
         """
-        value, ok = var.toDouble()
+        value = float(var)
         if self.sender().validator().state == QValidator.Acceptable:
             self.__boundary.setScalarValue(self.thermal, 'exchange_coefficient', value)
 
@@ -545,7 +549,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
     def slotExSpecies(self, var):
         """
         """
-        value, ok = var.toDouble()
+        value = float(var)
         if self.sender().validator().state == QValidator.Acceptable:
             self.__boundary.setScalarValue(self.species, 'exchange_coefficient', value)
 
@@ -554,7 +558,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
     def slotExMeteo(self, var):
         """
         """
-        value, ok = var.toDouble()
+        value = float(var)
         if self.sender().validator().state == QValidator.Acceptable:
             self.__boundary.setScalarValue(self.meteo, 'exchange_coefficient', value)
 

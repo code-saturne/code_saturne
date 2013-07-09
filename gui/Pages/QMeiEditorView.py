@@ -43,6 +43,10 @@ import subprocess
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
+import sys
+if sys.version_info[0] == 2:
+    import sip
+    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -138,7 +142,7 @@ class QMeiHighlighter(QSyntaxHighlighter):
             while pos != -1:
                 pos = rx.pos(0)
                 s = rx.cap(0)
-                self.setFormat(pos, s.length(), fmt)
+                self.setFormat(pos, len(s), fmt)
                 pos = rx.indexIn( text, pos+rx.matchedLength() )
 
 #-------------------------------------------------------------------------------
@@ -309,13 +313,11 @@ class QMeiEditorView(QDialog, Ui_QMeiDialog):
                 block_format.setBackground(QBrush(QColor(Qt.red)))
                 cursor.setBlockFormat(block_format)
 
-                #self.textEditExpression.setCursorPosition(l, c)
-                #self.textEditExpression.setFocus()
                 msg += errors[i*3+3] + \
                        "    line: "   + str(l)   + " \n" + \
                        "    column: " + str(c) + " \n\n"
 
-            QMessageBox.critical(self, self.tr('Expression Editor'), QString(msg))
+            QMessageBox.critical(self, self.tr('Expression Editor'), str(msg))
             QObject.connect(self.textEditExpression, SIGNAL("textChanged()"), self.slotClearBackground)
             return
 
@@ -337,9 +339,8 @@ class QMeiEditorView(QDialog, Ui_QMeiDialog):
                 block_format = QTextBlockFormat()
                 block_format.setBackground(QBrush(QColor(Qt.yellow)))
                 cursor.setBlockFormat(block_format)
-                #self.textEditExpression.setFocus()
             for i in range(0, n_errors): msg += errors[i+1] + " \n"
-            QMessageBox.critical(self, self.tr('Expression Editor'), QString(msg))
+            QMessageBox.critical(self, self.tr('Expression Editor'), str(msg))
             QObject.connect(self.textEditExpression, SIGNAL("textChanged()"), self.slotClearBackground)
             return
 
@@ -351,7 +352,7 @@ class QMeiEditorView(QDialog, Ui_QMeiDialog):
             log.debug("check.errors: %s" % errors)
 
             msg = "Warning, expression check failed unexpectedly:\n\n"
-            QMessageBox.critical(self, self.tr('Expression Editor'), QString(msg))
+            QMessageBox.critical(self, self.tr('Expression Editor'), str(msg))
             QObject.connect(self.textEditExpression, SIGNAL("textChanged()"), self.slotClearBackground)
             return
 

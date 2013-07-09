@@ -36,6 +36,10 @@ import string, logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
+import sys
+if sys.version_info[0] == 2:
+    import sip
+    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -126,7 +130,7 @@ class BoundaryConditionsCompressibleOutletView(QWidget, Ui_BoundaryConditionsCom
         else:
             self.frameDensity.show()
             pressure = self.__boundary.getPressureValue()
-            self.lineEditPressure.setText(QString(str(pressure)))
+            self.lineEditPressure.setText(str(pressure))
 
         self.show()
 
@@ -155,7 +159,7 @@ class BoundaryConditionsCompressibleOutletView(QWidget, Ui_BoundaryConditionsCom
         """
         INPUT outlet pressure
         """
-        t, ok = text.toDouble()
+        t = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.__boundary.setPressureValue(t)
 

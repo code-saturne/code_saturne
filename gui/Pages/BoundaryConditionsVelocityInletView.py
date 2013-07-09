@@ -36,6 +36,10 @@ import string, logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
+import sys
+if sys.version_info[0] == 2:
+    import sip
+    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -195,7 +199,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.pushButtonVelocityFormula.setEnabled(False)
             self.lineEditVelocity.setEnabled(True)
             v = self.__boundary.getVelocity()
-            self.lineEditVelocity.setText(QString(str(v)))
+            self.lineEditVelocity.setText(str(v))
 
         # Initialize direction
         choice = self.__boundary.getDirectionChoice()
@@ -208,11 +212,11 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.pushButtonDirectionFormula.setEnabled(False)
             self.frameDirectionCoordinates.show()
             v = self.__boundary.getDirection('direction_x')
-            self.lineEditDirectionX.setText(QString(str(v)))
+            self.lineEditDirectionX.setText(str(v))
             v = self.__boundary.getDirection('direction_y')
-            self.lineEditDirectionY.setText(QString(str(v)))
+            self.lineEditDirectionY.setText(str(v))
             v = self.__boundary.getDirection('direction_z')
-            self.lineEditDirectionZ.setText(QString(str(v)))
+            self.lineEditDirectionZ.setText(str(v))
         elif choice == "normal":
             self.pushButtonDirectionFormula.setEnabled(False)
             self.frameDirectionCoordinates.hide()
@@ -240,7 +244,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
                         __lineEdit = getattr(self, "lineEdit" + name)
                         __checkBox.setChecked(False)
                         __lineEdit.setEnabled(False)
-                        __lineEdit.setText(QString(str("")))
+                        __lineEdit.setText(str(""))
                 elif len(box_list) == 1:
                     box = box_list[0]
                     for name in self.thermodynamic_list:
@@ -249,21 +253,21 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
                             __lineEdit = getattr(self, "lineEdit" + name)
                             __checkBox.setChecked(False)
                             __lineEdit.setEnabled(False)
-                            __lineEdit.setText(QString(str("")))
+                            __lineEdit.setText(str(""))
                     if box == 'Temperature':
                         self.checkBoxEnergy.setEnabled(False)
                         self.lineEditEnergy.setEnabled(False)
-                        self.lineEditEnergy.setText(QString(str("")))
+                        self.lineEditEnergy.setText(str(""))
                     elif box == 'Energy':
                         self.checkBoxTemperature.setEnabled(False)
                         self.lineEditTemperature.setEnabled(False)
-                        self.lineEditTemperature.setText(QString(str("")))
+                        self.lineEditTemperature.setText(str(""))
                     __checkBox = getattr(self, "checkBox" + box)
                     __checkBox.setChecked(True)
                     __lineEdit = getattr(self, "lineEdit" + box)
                     __lineEdit.setEnabled(True)
                     v1 = self.__boundary.getListValue()[0]
-                    __lineEdit.setText(QString(str(v1)))
+                    __lineEdit.setText(str(v1))
                 elif len(box_list) == 2:
                     box1 = box_list[0]
                     box2 = box_list[1]
@@ -274,7 +278,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
                             __checkBox.setChecked(False)
                             __checkBox.setEnabled(False)
                             __lineEdit.setEnabled(False)
-                            __lineEdit.setText(QString(str("")))
+                            __lineEdit.setText(str(""))
                     v1,v2 = self.__boundary.getListValue()
                     for name in box_list:
                         __checkBox = getattr(self, "checkBox" + name)
@@ -282,15 +286,16 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
                         __checkBox.setChecked(True)
                         __lineEdit.setEnabled(True)
                         if v1 >= 0.:
-                            __lineEdit.setText(QString(str(v1)))
+                            __lineEdit.setText(str(v1))
                         else:
-                            __lineEdit.setText(QString(str(v2)))
+                            __lineEdit.setText(str(v2))
+                            __lineEdit.setText(str(v2))
                         v1 = -1.
             else:
                 self.groupBoxThermodynamic.hide()
                 self.frameDensity.show()
                 density = self.__boundary.getThermoValue('density')
-                self.lineEditDensity2.setText(QString(str(density)))
+                self.lineEditDensity2.setText(str(density))
         else:
             self.groupBoxCompressible.hide()
 
@@ -308,19 +313,16 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
                 self.labelUnitTemp.hide()
                 self.lineEditFraction.setEnabled(False)
                 f = self.__boundary.setMeanMixtureFraction(1)
-                if inlet_type == 'oxydant':
-                    self.lineEditFraction.setText(QString(str(1)))
-                else:
-                    self.lineEditFraction.setText(QString(str(0)))
+                self.lineEditFraction.setText(str(1) if inlet_type == 'oxydant' else str(0))
             else :
                 self.lineEditTemperatureGasComb.show()
                 self.labelTemperature_2.show()
                 self.labelUnitTemp.show()
                 t = self.__boundary.getGasCombustionTemperature()
-                self.lineEditTemperatureGasComb.setText(QString(str(t)))
+                self.lineEditTemperatureGasComb.setText(str(t))
                 self.lineEditFraction.setEnabled(True)
                 f = self.__boundary.getMeanMixtureFraction()
-                self.lineEditFraction.setText(QString(str(f)))
+                self.lineEditFraction.setText(str(f))
         else:
             self.groupBoxGasCombustion.hide()
 
@@ -352,13 +354,13 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.pushButtonVelocityFormula.setEnabled(True)
             setGreenColor(self.pushButtonVelocityFormula, True)
             self.lineEditVelocity.setEnabled(False)
-            self.lineEditVelocity.setText(QString(""))
+            self.lineEditVelocity.setText("")
         else:
             self.pushButtonVelocityFormula.setEnabled(False)
             setGreenColor(self.pushButtonVelocityFormula, False)
             self.lineEditVelocity.setEnabled(True)
             v = self.__boundary.getVelocity()
-            self.lineEditVelocity.setText(QString(str(v)))
+            self.lineEditVelocity.setText(str(v))
 
         self.__updateLabel()
 
@@ -369,11 +371,11 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         """
         c = self.__boundary.getVelocityChoice()
         if c in ('norm', 'norm_formula'):
-            self.labelUnitVelocity.setText(QString(str('m/s')))
+            self.labelUnitVelocity.setText(str('m/s'))
         elif c in ('flow1', 'flow1_formula'):
-            self.labelUnitVelocity.setText(QString(str('kg/s')))
+            self.labelUnitVelocity.setText(str('kg/s'))
         elif c in ('flow2', 'flow2_formula'):
-            self.labelUnitVelocity.setText(QString(str('m<sup>3</sup>/s')))
+            self.labelUnitVelocity.setText(str('m<sup>3</sup>/s'))
 
 
     @pyqtSignature("const QString&")
@@ -386,7 +388,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         @type text: C{QString}
         @param text: value
         """
-        v, ok = text.toDouble()
+        v = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.__boundary.setVelocity(v)
 
@@ -443,11 +445,11 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             setGreenColor(self.pushButtonDirectionFormula, False)
             self.frameDirectionCoordinates.show()
             v = self.__boundary.getDirection('direction_x')
-            self.lineEditDirectionX.setText(QString(str(v)))
+            self.lineEditDirectionX.setText(str(v))
             v = self.__boundary.getDirection('direction_y')
-            self.lineEditDirectionY.setText(QString(str(v)))
+            self.lineEditDirectionY.setText(str(v))
             v = self.__boundary.getDirection('direction_z')
-            self.lineEditDirectionZ.setText(QString(str(v)))
+            self.lineEditDirectionZ.setText(str(v))
         elif c == "normal":
             self.pushButtonDirectionFormula.setEnabled(False)
             setGreenColor(self.pushButtonDirectionFormula, False)
@@ -459,7 +461,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         """
         INPUT value into direction of inlet flow
         """
-        value, ok = text.toDouble()
+        value = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.__boundary.setDirection('direction_x', value)
 
@@ -469,7 +471,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         """
         INPUT value into direction of inlet flow
         """
-        value, ok = text.toDouble()
+        value = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.__boundary.setDirection('direction_y', value)
 
@@ -479,7 +481,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         """
         INPUT value into direction of inlet flow
         """
-        value, ok = text.toDouble()
+        value = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.__boundary.setDirection('direction_z', value)
 
@@ -542,7 +544,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
                     if name not in box_list:
                         __checkBox = getattr(self, "checkBox" + name)
                         __checkBox.setEnabled(False)
-            self.lineEditPressure.setText(QString(str(self.__boundary.getThermoValue('pressure'))))
+            self.lineEditPressure.setText(str(self.__boundary.getThermoValue('pressure')))
         else:
             self.__boundary.setThermoStatus('pressure', "off")
             box_list = self.__boundary.getCheckedBoxList()
@@ -572,7 +574,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
                     if name not in box_list:
                         __checkBox = getattr(self, "checkBox" + name)
                         __checkBox.setEnabled(False)
-            self.lineEditDensity.setText(QString(str(self.__boundary.getThermoValue('density'))))
+            self.lineEditDensity.setText(str(self.__boundary.getThermoValue('density')))
         else:
             self.__boundary.setThermoStatus('density', "off")
             box_list = self.__boundary.getCheckedBoxList()
@@ -603,7 +605,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
                         __checkBox = getattr(self, "checkBox" + name)
                         __checkBox.setEnabled(False)
             self.checkBoxEnergy.setEnabled(False)
-            self.lineEditTemperature.setText(QString(str(self.__boundary.getThermoValue('temperature'))))
+            self.lineEditTemperature.setText(str(self.__boundary.getThermoValue('temperature')))
         else:
             self.__boundary.setThermoStatus('temperature', "off")
             box_list = self.__boundary.getCheckedBoxList()
@@ -632,7 +634,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
                         __checkBox.setEnabled(False)
             if len(box_list) == 1:
                 self.checkBoxTemperature.setEnabled(False)
-            self.lineEditEnergy.setText(QString(str(self.__boundary.getThermoValue('energy'))))
+            self.lineEditEnergy.setText(str(self.__boundary.getThermoValue('energy')))
         else:
             self.__boundary.setThermoStatus('energy', "off")
             box_list = self.__boundary.getCheckedBoxList()
@@ -650,7 +652,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         """
         INPUT inlet Pressure
         """
-        t, ok = text.toDouble()
+        t = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.__boundary.setThermoValue('pressure', t)
 
@@ -660,7 +662,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         """
         INPUT inlet Density
         """
-        t, ok = text.toDouble()
+        t = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.__boundary.setThermoValue('density', t)
 
@@ -670,7 +672,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         """
         INPUT inlet Temperature
         """
-        t, ok = text.toDouble()
+        t = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.__boundary.setThermoValue('temperature', t)
 
@@ -680,7 +682,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         """
         INPUT inlet Energy
         """
-        t, ok = text.toDouble()
+        t = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.__boundary.setThermoValue('energy', t)
 
@@ -690,7 +692,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         """
         INPUT inlet Density
         """
-        t, ok = text.toDouble()
+        t = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.__boundary.setThermoValue('density', t)
 
@@ -700,7 +702,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         """
         INPUT inlet temperature
         """
-        t, ok = text.toDouble()
+        t = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.__boundary.setGasCombustionTemperature(t)
 
@@ -710,7 +712,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         """
         INPUT inlet mean mixutre fraction
         """
-        f, ok = text.toDouble()
+        f = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.__boundary.setMeanMixtureFraction(f)
 

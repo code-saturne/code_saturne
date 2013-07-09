@@ -43,7 +43,6 @@ except Exception:
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
-
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
 
@@ -94,7 +93,7 @@ class MeshNameDelegate(QItemDelegate):
             painter.setPen(QPen(Qt.black))
             value = index.data(Qt.DisplayRole)
             if value.isValid():
-                text = value.toString()
+                text = str(value)
                 painter.drawText(option.rect, Qt.AlignLeft, text)
             painter.restore()
 
@@ -114,10 +113,10 @@ class MeshFormatDelegate(QItemDelegate):
         self.lst = MeshModel().getBuildFormatList()
         # Compute width based on longest possible string and font metrics
         fm = self.parent.fontMetrics()
-        self.textSize = fm.size(Qt.TextSingleLine, QString('pro-STAR/STAR4 (*.ngeom)'))
+        self.textSize = fm.size(Qt.TextSingleLine, 'pro-STAR/STAR4 (*.ngeom)')
         self.textSize.setHeight(1)
         for i in range(len(self.lst)):
-            w = fm.size(Qt.TextSingleLine, QString(self.lst[i][1])).width()
+            w = fm.size(Qt.TextSingleLine, str(self.lst[i][1])).width()
             if w > self.textSize.width():
                 self.textSize.setWidth(w)
 
@@ -126,7 +125,7 @@ class MeshFormatDelegate(QItemDelegate):
         editor = QComboBox(parent)
         for i in range(len(self.lst)):
             fmt = self.lst[i]
-            editor.addItem(QString(fmt[1] + fmt[2]))
+            editor.addItem(str(fmt[1] + fmt[2]))
         return editor
 
 
@@ -144,7 +143,7 @@ class MeshFormatDelegate(QItemDelegate):
         for i in range(len(self.lst)):
             if value == self.lst[i][1] + self.lst[i][2]:
                 key = self.lst[i][0]
-        model.setData(index, QVariant(key))
+        model.setData(index, key)
         if self.updateLayout != None:
             self.updateLayout()
 
@@ -173,9 +172,10 @@ class MeshFormatDelegate(QItemDelegate):
             painter.drawRect(option.rect)
             painter.setPen(QPen(Qt.black))
             value = index.data(Qt.DisplayRole)
-            if value.isValid():
-                text = value.toString()
-                painter.drawText(option.rect, Qt.AlignLeft, text)
+            if value != None:
+                if value.isValid():
+                    text = str(value)
+                    painter.drawText(option.rect, Qt.AlignLeft, text)
             painter.restore()
 
 
@@ -204,7 +204,7 @@ class MeshNumberDelegate(QItemDelegate):
 
     def setModelData(self, lineEdit, model, index):
         value = str(lineEdit.text()).strip()
-        model.setData(index, QVariant(value))
+        model.setData(index, value)
 
 
 #-------------------------------------------------------------------------------
@@ -222,9 +222,9 @@ class GroupDelegate(QItemDelegate):
 
     def createEditor(self, parent, option, index):
         editor = QComboBox(parent)
-        editor.addItem(QString("off"))
-        editor.addItem(QString("section"))
-        editor.addItem(QString("zone"))
+        editor.addItem("off")
+        editor.addItem("section")
+        editor.addItem("zone")
         editor.installEventFilter(self)
         return editor
 
@@ -238,7 +238,7 @@ class GroupDelegate(QItemDelegate):
 
     def setModelData(self, comboBox, model, index):
         value = comboBox.currentText()
-        model.setData(index, QVariant(value))
+        model.setData(index, value)
 
 
 #-------------------------------------------------------------------------------
@@ -291,7 +291,7 @@ class StandardItemModelMeshes(QStandardItemModel):
                 if column != 1:
                     self.setData(index, value)
                 else:
-                    self.setData(index, QVariant(self.dataMeshes[row][1]))
+                    self.setData(index, self.dataMeshes[row][1])
 
 
     def populateModel(self):
@@ -326,42 +326,42 @@ class StandardItemModelMeshes(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return QVariant()
+            return None
 
         col = index.column()
 
         if role == Qt.ToolTipRole:
-            return QVariant(self.tooltip[col])
+            return self.tooltip[col]
 
         elif role == Qt.DisplayRole:
             d = self.dataMeshes[index.row()][col]
             if d:
                 if col == 1:
-                    return QVariant(self.formatDict[d])
+                    return self.formatDict[d]
                 elif col == 3:
-                    return QVariant()
+                    return None
                 else:
-                    return QVariant(d)
+                    return d
             else:
-                return QVariant()
+                return None
 
         elif role == Qt.TextAlignmentRole:
             if col == 6:
-                return QVariant(Qt.AlignLeft)
+                return Qt.AlignLeft
             else:
-                return QVariant(Qt.AlignCenter)
+                return Qt.AlignCenter
 
         elif role == Qt.CheckStateRole:
             if col == 3:
                 d = self.dataMeshes[index.row()][3]
                 if d == True:
-                    return QVariant(Qt.Checked)
+                    return Qt.Checked
                 else:
-                    return QVariant(Qt.Unchecked)
+                    return Qt.Unchecked
             else:
-                return QVariant()
+                return None
 
-        return QVariant()
+        return None
 
 
     def flags(self, index):
@@ -384,29 +384,30 @@ class StandardItemModelMeshes(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return QVariant(self.headers[section])
-        return QVariant()
+            return self.headers[section]
+        return None
 
 
     def setData(self, index, value, role=None):
         row = index.row()
         col = index.column()
 
+
         mesh = (self.dataMeshes[row][0], self.dataMeshes[row][6])
 
         if col == 1:
-            v = str(value.toString())
+            v = str(value)
             self.dataMeshes[row][col] = v
             if v:
                 self.mdl.setMeshFormat(mesh, v)
 
         elif col == 2:
-            v = str(value.toString())
+            v = str(value)
             self.dataMeshes[row][col] = v
             self.mdl.setMeshNumbers(mesh, v)
 
         elif col == 3 and role == Qt.CheckStateRole:
-            state, ok = value.toInt()
+            state = int(value)
             if state == Qt.Unchecked:
                 self.dataMeshes[row][col] = False
             else:
@@ -414,13 +415,14 @@ class StandardItemModelMeshes(QStandardItemModel):
             self.mdl.setMeshReorient(mesh, self.dataMeshes[row][col])
 
         elif col == 4:
-            v = str(value.toString())
+            v = str(value)
             self.dataMeshes[row][col] = v
             if v:
+                print "v = ", v
                 self.mdl.setMeshGroupFaces(mesh, v)
 
         elif col == 5:
-            v = str(value.toString())
+            v = str(value)
             self.dataMeshes[row][col] = v
             if v:
                 self.mdl.setMeshGroupCells(mesh, v)
@@ -508,9 +510,9 @@ class MeshInputDialog(QFileDialog):
                  search_dirs = []):
 
         if len(search_dirs) == 0:
-            directory = QString()
+            directory = ""
         else:
-            directory = QString(search_dirs[0])
+            directory = str(search_dirs[0])
 
         try:
             QFileDialog.__init__(self,
@@ -525,10 +527,10 @@ class MeshInputDialog(QFileDialog):
         caption =  self.tr("Select input mesh file or directory")
         self.setWindowTitle(caption)
 
-        self.name_filter = QString(self.tr("Imported or preprocessed meshes (mesh_input mesh_output)"))
+        self.name_filter = str(self.tr("Imported or preprocessed meshes (mesh_input mesh_output)"))
         self.setFilter(self.name_filter)
 
-        self.select_label = QString(self.tr("Choose"))
+        self.select_label = str(self.tr("Choose"))
         self.setLabelText(QFileDialog.Accept, self.select_label)
 
         if hasattr(QFileDialog, 'ReadOnly'):
@@ -853,7 +855,6 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
             options  = QFileDialog.DontUseNativeDialog | QFileDialog.ReadOnly
         else:
             options  = QFileDialog.DontUseNativeDialog
-        # options  = options | QFileDialog.ShowDirsOnly
 
         l_mesh_dirs = []
         for i in range(0, len(self.mesh_dirs)):
@@ -870,7 +871,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
 
             s = dialog.selectedFiles()
 
-            dir_name = str(s.first())
+            dir_name = str(s[0])
             dir_name = os.path.abspath(dir_name)
 
             self.lineEditMeshDir.setText(RelOrAbsPath(dir_name,
@@ -931,9 +932,11 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
 
         if dialog.exec_() == 1:
             s = dialog.selectedFiles()
-            count = s.count()
+            count = len(s)
             for i in range(count):
-                mesh_files.append(str(s.takeFirst()))
+                el = str(s[0])
+                s = s[1:]
+                mesh_files.append(el)
 
         return mesh_files
 
@@ -953,7 +956,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
             elif row[1] in ['med', 'ensight']:
                 n_num += 1
             if row[6] != None:
-                cmp_width = fm.size(Qt.TextSingleLine, QString(row[6])).width()
+                cmp_width = fm.size(Qt.TextSingleLine, str(row[6])).width()
                 if cmp_width > last_width:
                     last_width = cmp_width
 
@@ -1039,7 +1042,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
 
             s = dialog.selectedFiles()
 
-            mi = str(s.first())
+            mi = str(s[0])
             mi = os.path.abspath(mi)
             mi = RelOrAbsPath(mi, self.case['case_path'])
 
@@ -1139,7 +1142,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         @type text: C{QString}
         @param text: max angle of warped faces
         """
-        var, ok = text.toDouble()
+        var = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.mdl.setCutAngle(var)
 
@@ -1171,7 +1174,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         @type text: C{QString}
         @param text: angle for mesh smoothing
         """
-        var, ok = text.toDouble()
+        var = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.mdl.setSmoothAngle(var)
 
@@ -1213,9 +1216,9 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         """
         dx, dy, dz = self.mdl.getTranslationDirection(perio_id)
 
-        self.lineEditTX.setText(QString(dx))
-        self.lineEditTY.setText(QString(dy))
-        self.lineEditTZ.setText(QString(dz))
+        self.lineEditTX.setText(str(dx))
+        self.lineEditTY.setText(str(dy))
+        self.lineEditTZ.setText(str(dz))
 
 
     def __setValuesRotation(self, perio_id):
@@ -1226,13 +1229,13 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         rx, ry, rz = self.mdl.getRotationDirection(perio_id)
         px, py, pz = self.mdl.getRotationCenter(perio_id)
 
-        self.lineEditAngle.setText(QString((angle)))
-        self.lineEditDX.setText(QString(rx))
-        self.lineEditDY.setText(QString(ry))
-        self.lineEditDZ.setText(QString(rz))
-        self.lineEditX1.setText(QString(px))
-        self.lineEditY1.setText(QString(py))
-        self.lineEditZ1.setText(QString(pz))
+        self.lineEditAngle.setText(str((angle)))
+        self.lineEditDX.setText(str(rx))
+        self.lineEditDY.setText(str(ry))
+        self.lineEditDZ.setText(str(rz))
+        self.lineEditX1.setText(str(px))
+        self.lineEditY1.setText(str(py))
+        self.lineEditZ1.setText(str(pz))
 
 
     def __setValuesMixed(self, perio_id):
@@ -1241,18 +1244,18 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         """
         m11,m12,m13,m14,m21,m22,m23,m24,m31,m32,m33,m34 = self.mdl.getTransformationMatrix(perio_id)
 
-        self.lineEditM11.setText(QString(m11))
-        self.lineEditM12.setText(QString(m12))
-        self.lineEditM13.setText(QString(m13))
-        self.lineEditM14.setText(QString(m14))
-        self.lineEditM21.setText(QString(m21))
-        self.lineEditM22.setText(QString(m22))
-        self.lineEditM23.setText(QString(m23))
-        self.lineEditM24.setText(QString(m24))
-        self.lineEditM31.setText(QString(m31))
-        self.lineEditM32.setText(QString(m32))
-        self.lineEditM33.setText(QString(m33))
-        self.lineEditM34.setText(QString(m34))
+        self.lineEditM11.setText(str(m11))
+        self.lineEditM12.setText(str(m12))
+        self.lineEditM13.setText(str(m13))
+        self.lineEditM14.setText(str(m14))
+        self.lineEditM21.setText(str(m21))
+        self.lineEditM22.setText(str(m22))
+        self.lineEditM23.setText(str(m23))
+        self.lineEditM24.setText(str(m24))
+        self.lineEditM31.setText(str(m31))
+        self.lineEditM32.setText(str(m32))
+        self.lineEditM33.setText(str(m33))
+        self.lineEditM34.setText(str(m34))
 
 
     def __setValuesPeriodicTransformation(self, perio, mode):
@@ -1359,7 +1362,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         Periodicity translation for X
         """
         if self.perio_mode != "rotation" or self.perio_mode != "mixed":
-            val, ok = text.toDouble()
+            val = float(text)
             if self.sender().validator().state == QValidator.Acceptable:
                 self.mdl.setTranslationDirection(self.perio_id, 'translation_x', val)
 
@@ -1370,7 +1373,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         Periodicity translation for Y
         """
         if self.perio_mode != "rotation" or self.perio_mode != "mixed":
-            val, ok = text.toDouble()
+            val = float(text)
             if self.sender().validator().state == QValidator.Acceptable:
                 self.mdl.setTranslationDirection(self.perio_id, 'translation_y', val)
 
@@ -1381,7 +1384,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         Periodicity translation for Z
         """
         if self.perio_mode != "rotation" or self.perio_mode != "mixed":
-            val, ok = text.toDouble()
+            val = float(text)
             if self.sender().validator().state == QValidator.Acceptable:
                 self.mdl.setTranslationDirection(self.perio_id, 'translation_z', val)
 
@@ -1392,7 +1395,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         Periodicity rotation angle
         """
         if self.perio_mode == "rotation":
-            angle, ok = text.toDouble()
+            angle = float(text)
             if self.sender().validator().state == QValidator.Acceptable:
                 self.mdl.setRotationAngle(self.perio_id, angle)
 
@@ -1403,7 +1406,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         Periodicity rotation for X
         """
         if self.perio_mode == "rotation":
-            val, ok = text.toDouble()
+            val = float(text)
             if self.sender().validator().state == QValidator.Acceptable:
                 self.mdl.setRotationVector(self.perio_id, "axis_x", val)
 
@@ -1414,7 +1417,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         Periodicity rotation for Y
         """
         if self.perio_mode == "rotation":
-            val, ok = text.toDouble()
+            val = float(text)
             if self.sender().validator().state == QValidator.Acceptable:
                 self.mdl.setRotationVector(self.perio_id, "axis_y", val)
 
@@ -1425,7 +1428,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         Periodicity rotation for Z
         """
         if self.perio_mode == "rotation":
-            val, ok = text.toDouble()
+            val = float(text)
             if self.sender().validator().state == QValidator.Acceptable:
                 self.mdl.setRotationVector(self.perio_id, "axis_z", val)
 
@@ -1436,7 +1439,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         Periodicity : center of rotation
         """
         if self.perio_mode != "translation":
-            val, ok = text.toDouble()
+            val = float(text)
             if self.sender().validator().state == QValidator.Acceptable:
                 self.mdl.setRotationCenter(self.perio_id, "invariant_x", val)
 
@@ -1447,7 +1450,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         Periodicity : center of rotation
         """
         if self.perio_mode != "translation":
-            val, ok = text.toDouble()
+            val = float(text)
             if self.sender().validator().state == QValidator.Acceptable:
                 self.mdl.setRotationCenter(self.perio_id, "invariant_y", val)
 
@@ -1458,7 +1461,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         Periodicity : center of rotation
         """
         if self.perio_mode != "translation":
-            val, ok = text.toDouble()
+            val = float(text)
             if self.sender().validator().state == QValidator.Acceptable:
                 self.mdl.setRotationCenter(self.perio_id, "invariant_z", val)
 
@@ -1529,7 +1532,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         Periodicity translation
         """
         if self.perio_mode == "mixed":
-            val, ok = text.toDouble()
+            val = float(text)
             if self.sender().validator().state == QValidator.Acceptable:
                 self.mdl.setTransformationMatrix(self.perio_id, pos, val)
 
@@ -1540,7 +1543,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         Periodicity : center of rotation
         """
         if self.perio_mode != "translation":
-            val, ok = text.toDouble()
+            val = float(text)
             if self.sender().validator().state == QValidator.Acceptable:
                 self.mdl.setRotationCenter(self.perio_id, "invariant_x", val)
 
@@ -1551,7 +1554,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         Periodicity : center of rotation
         """
         if self.perio_mode != "translation":
-            val, ok = text.toDouble()
+            val = float(text)
             if self.sender().validator().state == QValidator.Acceptable:
                 self.mdl.setRotationCenter(self.perio_id, "invariant_y", val)
 
@@ -1562,7 +1565,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         Periodicity : center of rotation
         """
         if self.perio_mode != "translation":
-            val, ok = text.toDouble()
+            val = float(text)
             if self.sender().validator().state == QValidator.Acceptable:
                 self.mdl.setRotationCenter(self.perio_id, "invariant_z", val)
 

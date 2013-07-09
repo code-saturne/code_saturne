@@ -70,7 +70,7 @@ def preprocessorFile(parent, initdir):
     filetypes = "Preprocessor log (*.log);;All Files (*)"
     filt = "All files (*)"
     initdir = os.path.join(initdir, 'check_mesh')
-    file_name = QFileDialog.getOpenFileName(parent, title, initdir, filetypes, filt)
+    file_name = QFileDialog.getOpenFileName(parent, title, initdir, filetypes)
     file_name = str(file_name)
 
     if file_name:

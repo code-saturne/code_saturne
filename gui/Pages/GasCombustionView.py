@@ -36,6 +36,10 @@ import logging, os
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
+import sys
+if sys.version_info[0] == 2:
+    import sip
+    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -112,7 +116,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
 
         name = self.mdl.getThermoChemistryDataFileName()
         if name != None:
-            self.labelThermochemistryFile.setText(QString(name))
+            self.labelThermochemistryFile.setText(str(name))
             setGreenColor(self.pushButtonThermochemistryData, False)
         else:
             setGreenColor(self.pushButtonThermochemistryData, True)
@@ -148,7 +152,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
             msg   = self.tr("This selected file is not in the DATA directory")
             QMessageBox.information(self, title, msg)
         else:
-            self.labelThermochemistryFile.setText(QString(file))
+            self.labelThermochemistryFile.setText(str(file))
             self.mdl.setThermoChemistryDataFileName(file)
             setGreenColor(self.pushButtonThermochemistryData, False)
 

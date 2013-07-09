@@ -78,10 +78,10 @@ class StandardItemModelBoundaries(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return QVariant()
+            return
         if role == Qt.DisplayRole:
-            return QVariant(self.dataBoundary[index.row()][index.column()])
-        return QVariant()
+            return self.dataBoundary[index.row()][index.column()]
+        return
 
 
     def flags(self, index):
@@ -93,8 +93,8 @@ class StandardItemModelBoundaries(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return QVariant(self.headers[section])
-        return QVariant()
+            return self.headers[section]
+        return
 
 
     def setData(self, index, value, role):
@@ -238,7 +238,6 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         else:
             self.compressibleOutletWidget.hideWidget()
         self.electricalwidget.showWidget(boundary)
-        #self.pressureWidget.showWidget(boundary)
 
 
     def __selectSymmetryBoundary(self, boundary):
@@ -263,7 +262,6 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.mobileMeshWidget.hideWidget()
         self.radiativeWidget.hideWidget()
         self.electricalwidget.hideWidget()
-        #self.pressureWidget.hideWidget()
 
 
     def tr(self, text):

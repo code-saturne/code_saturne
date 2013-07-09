@@ -38,6 +38,10 @@ import logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
+import sys
+if sys.version_info[0] == 2:
+    import sip
+    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -111,7 +115,7 @@ class ThermalRadiationAdvancedDialogView(QDialog, Ui_ThermalRadiationAdvancedDia
 
         # Initialization
 
-        self.lineEditFreq.setText(QString(str(self.frequ)))
+        self.lineEditFreq.setText(str(self.frequ))
         self.modelTSRay.setItem(str_model=str(self.tsr))
         self.modelPrintT.setItem(str_model=str(self.printTemp))
         self.modelPrintL.setItem(str_model=str(self.printLum))
@@ -136,10 +140,10 @@ class ThermalRadiationAdvancedDialogView(QDialog, Ui_ThermalRadiationAdvancedDia
         What to do when user clicks on 'OK'.
         """
         if self.lineEditFreq.validator().state == QValidator.Acceptable:
-            self.result['frequency'], ok = self.lineEditFreq.text().toInt()
-        self.result['idiver'], ok    = self.comboBoxTSRay.currentText().toInt()
-        self.result['tempP'], ok     = self.comboBoxPrintT.currentText().toInt()
-        self.result['intensity'], ok = self.comboBoxPrintL.currentText().toInt()
+            self.result['frequency'] = int(self.lineEditFreq.text())
+        self.result['idiver']    = int(self.comboBoxTSRay.currentText())
+        self.result['tempP']     = int(self.comboBoxPrintT.currentText())
+        self.result['intensity'] = int(self.comboBoxPrintL.currentText())
 
         QDialog.accept(self)
 
@@ -271,7 +275,7 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
 
         self.pushButtonCoeffFormula.setEnabled(False)
 
-        self.lineEditCoeff.setText(QString(str(self.mdl.getAbsorCoeff())))
+        self.lineEditCoeff.setText(str(self.mdl.getAbsorCoeff()))
 
         self.case.undoStartGlobal()
 
@@ -298,7 +302,7 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
 
                 if str(n) == "6":
                     self.lineEditNdirec.setEnabled(True)
-                    self.lineEditNdirec.setText(QString(str(self.mdl.getNbDir())))
+                    self.lineEditNdirec.setText(str(self.mdl.getNbDir()))
                 else:
                     self.lineEditNdirec.setEnabled(False)
 
@@ -324,7 +328,7 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
 
         if n == 6:
             self.lineEditNdirec.setEnabled(True)
-            self.lineEditNdirec.setText(QString(str(self.mdl.getNbDir())))
+            self.lineEditNdirec.setText(str(self.mdl.getNbDir()))
         else:
             self.lineEditNdirec.setEnabled(False)
 
@@ -333,7 +337,7 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
     def slotNdirec(self, text):
         """
         """
-        n, ok = text.toInt()
+        n = int(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.mdl.setNbDir(n)
 
@@ -357,7 +361,7 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
     def slotAbsorptionCoefficient(self, text):
         """
         """
-        c, ok  = text.toDouble()
+        c  = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.mdl.setAbsorCoeff(c)
 

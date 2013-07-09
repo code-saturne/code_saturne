@@ -62,7 +62,6 @@ class GuiParam(object):
     # debug
     #
     DEBUG = logging.NOTSET
-    #DEBUG = logging.DEBUG
 
 #-------------------------------------------------------------------------------
 # displaySelectedPage direct to the good page with its name
@@ -77,6 +76,7 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
     # 'thisPage' is the instance of classes which create thePages
     # 'page_name' is the name of the page
     #
+
     if page_name == tr("Identity and paths"):
         import Pages.IdentityAndPathesView as Page
         thisPage = Page.IdentityAndPathesView(root, case, study)

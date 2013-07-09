@@ -36,6 +36,12 @@ This module contains the following classes:
 
 import os, string
 import logging
+
+import sys
+if sys.version_info[0] == 2:
+    import sip
+    sip.setapi('QString', 2)
+
 from PyQt4 import QtGui, QtCore
 
 #-------------------------------------------------------------------------------
@@ -186,7 +192,8 @@ class IdentityAndPathesView(QtGui.QWidget, Ui_IdentityAndPathesForm):
                 if sub_dir[i] in os.listdir(case_dir):
                     self.mdl.setPath(self.path[i], os.path.abspath(case_dir + '/' + sub_dir[i]))
                     line = getattr(self, "lineEdit"+line_name[i])  # line is self.lineEditXXX
-                    line.setText(QtCore.QString(sub_dir[i]))
+                    line.setText(str(sub_dir[i]))
+
                     line.setStatusTip("")
                     self.mdl.setRelevantSubdir("yes", sub_dir[i])
                 else:

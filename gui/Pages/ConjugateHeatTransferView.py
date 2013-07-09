@@ -43,6 +43,10 @@ import logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
+import sys
+if sys.version_info[0] == 2:
+    import sip
+    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -84,14 +88,14 @@ class SyrthesVerbosityDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
-        value = index.model().data(index, Qt.DisplayRole).toString()
+        value = str(index.model().data(index, Qt.DisplayRole))
         editor.setText(value)
 
 
     def setModelData(self, editor, model, index):
-        value, ok = editor.text().toInt()
+        value = int(editor.text())
         if editor.validator().state == QValidator.Acceptable:
-            model.setData(index, QVariant(value), Qt.DisplayRole)
+            model.setData(index, value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # QComboBox delegate for Axis Projection in Conjugate Heat Transfer table
@@ -108,10 +112,10 @@ class ProjectionAxisDelegate(QItemDelegate):
 
     def createEditor(self, parent, option, index):
         editor = QComboBox(parent)
-        editor.addItem(QString("off"))
-        editor.addItem(QString("X"))
-        editor.addItem(QString("Y"))
-        editor.addItem(QString("Z"))
+        editor.addItem("off")
+        editor.addItem("X")
+        editor.addItem("Y")
+        editor.addItem("Z")
         editor.installEventFilter(self)
         return editor
 
@@ -125,7 +129,7 @@ class ProjectionAxisDelegate(QItemDelegate):
 
     def setModelData(self, comboBox, model, index):
         value = comboBox.currentText()
-        model.setData(index, QVariant(value), Qt.DisplayRole)
+        model.setData(index, value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # QLineEdit delegate for location
@@ -144,22 +148,15 @@ class SelectionCriteriaDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
-        self.value = index.model().data(index, Qt.DisplayRole).toString()
+        self.value = str(index.model().data(index, Qt.DisplayRole))
         editor.setText(self.value)
 
 
     def setModelData(self, editor, model, index):
         value = editor.text()
 
-#        if value != self.value and str(value) in self.__model.getLocalizationsZonesList():
-#            title = self.tr("Warning")
-#            msg   = self.tr("This localization is already used.\n"\
-#                            "Please give another one.")
-#            QMessageBox.information(self.parent, title, msg)
-#            return
-
         if str(value) != "" :
-            model.setData(index, QVariant(value), Qt.DisplayRole)
+            model.setData(index, value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # StandarItemModel class
@@ -189,14 +186,14 @@ class StandardItemModelSyrthes(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return QVariant()
+            return
         if role == Qt.ToolTipRole:
-            return QVariant(self.tooltip[index.column()])
+            return self.tooltip[index.column()]
         if role == Qt.DisplayRole:
-            return QVariant(self.dataSyrthes[index.row()][index.column()])
+            return self.dataSyrthes[index.row()][index.column()]
         elif role == Qt.TextAlignmentRole:
-            return QVariant(Qt.AlignCenter)
-        return QVariant()
+            return Qt.AlignCenter
+        return
 
 
     def flags(self, index):
@@ -207,19 +204,19 @@ class StandardItemModelSyrthes(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return QVariant(self.headers[section])
-        return QVariant()
+            return self.headers[section]
+        return
 
 
     def setData(self, index, value, role):
         if not index.isValid():
-            return QVariant()
+            return
 
         row = index.row()
         if index.column() in (0, 3, 4):
-            self.dataSyrthes[row][index.column()] = str(value.toString())
+            self.dataSyrthes[row][index.column()] = str(value)
         else:
-            self.dataSyrthes[row][index.column()], ok = value.toInt()
+            self.dataSyrthes[row][index.column()] = int(value)
 
         num = row + 1
         self.__model.setSyrthesInstanceName(num, self.dataSyrthes[row][0])

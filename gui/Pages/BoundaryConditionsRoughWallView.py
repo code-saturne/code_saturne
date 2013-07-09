@@ -36,6 +36,10 @@ import string, logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
+import sys
+if sys.version_info[0] == 2:
+    import sip
+    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -134,7 +138,7 @@ class BoundaryConditionsRoughWallView(QWidget, Ui_BoundaryConditionsRoughWallFor
             self.frameRoughness.show()
             self.__boundary.setRoughnessChoice('on')
             r = self.__boundary.getRoughness()
-            self.lineEditRoughCoef.setText(QString(str(r)))
+            self.lineEditRoughCoef.setText(str(r))
 
 
     @pyqtSignature("const QString&")
@@ -147,7 +151,7 @@ class BoundaryConditionsRoughWallView(QWidget, Ui_BoundaryConditionsRoughWallFor
         @type text: C{QString}
         @param text: roughness height.
         """
-        r, ok = text.toDouble()
+        r = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.__boundary.setRoughness(r)
 

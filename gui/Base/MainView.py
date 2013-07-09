@@ -133,7 +133,8 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
 
         self.listViewDirectory.setRootIndex(self.model.index(self.currentPath))
 
-        self.lineEditCurrentPath.setText(QString(str(self.currentPath)))
+
+        self.lineEditCurrentPath.setText(str(self.currentPath))
 
         self.connect(self.listViewDirectory,   SIGNAL("doubleClicked(QModelIndex)"),   self.slotParentDirectory)
         self.connect(self.listViewFolder,      SIGNAL("clicked(QModelIndex)"),         self.slotSelectFolder)
@@ -155,13 +156,13 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
             self.currentPath = self.model.filePath(index)
             self.model.setRootPath(self.currentPath)
             self.listViewDirectory.setRootIndex(self.model.index(self.currentPath))
-        self.lineEditCurrentPath.setText(QString(str(self.currentPath)))
+        self.lineEditCurrentPath.setText(str(self.currentPath))
 
         # construct list of study in current directory
         cpath = QDir(str(self.currentPath))
         cpath.setFilter(QDir.Dirs | QDir.NoSymLinks)
         lst = []
-        self.modelFolder.setStringList(QStringList())
+        self.modelFolder.setStringList([])
         for name in cpath.entryList():
             stud = True
             base = os.path.abspath(os.path.join(self.currentPath, str(name)))
@@ -179,7 +180,7 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
 
     def slotSelectFolder(self, index):
         if index.row() > 1:
-            self.lineEditCaseName.setText(QString(self.model.fileName(index)))
+            self.lineEditCaseName.setText(str(self.model.fileName(index)))
 
 
     @pyqtSignature("const QString &")
@@ -237,11 +238,11 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
         dataPath = os.path.join(path, "..", "DATA")
         if os.path.isdir(dataPath): path = datapath
 
-        dirName = QFileDialog.getExistingDirectory(self, title,
-                                                   path,
-                                                   QFileDialog.ShowDirsOnly |
-                                                   QFileDialog.DontResolveSymlinks)
-        if dirName.isEmpty() or dirName.isNull():
+        dirName = str(QFileDialog.getExistingDirectory(self, title,
+                                                       path,
+                                                       QFileDialog.ShowDirsOnly |
+                                                       QFileDialog.DontResolveSymlinks))
+        if not dirName:
             self.copyFromName = None
         else:
             self.copyFromName = str(dirName)
@@ -285,7 +286,7 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
                                             "DATA")
             self.model.setRootPath(self.currentPath)
             self.listViewDirectory.setRootIndex(self.model.index(self.currentPath))
-            self.lineEditCurrentPath.setText(QString(str(self.currentPath)))
+            self.lineEditCurrentPath.setText(str(self.currentPath))
 
             os.chdir(self.currentPath)
             QDialog.accept(self)
@@ -385,30 +386,35 @@ class MainView(object):
         signal.signal(signal.SIGINT, signal.SIG_DFL)
 
         self.resize(800, 700)
-        #self.setMaximumSize(QSize(2000, 900))
 
         # restore system settings
 
         settings = QSettings()
-        self.recentFiles = settings.value("RecentFiles").toStringList()
+
+        if settings.value("RecentFiles", list) is not None:
+            self.recentFiles = [str(ch) for ch in settings.value("RecentFiles", list)]
+        else:
+            self.recentFiles = []
+
         self.restoreGeometry(
-                settings.value("MainWindow/Geometry").toByteArray())
+                settings.value("MainWindow/Geometry", bytes))
         self.restoreState(
-                settings.value("MainWindow/State").toByteArray())
+                settings.value("MainWindow/State", bytes))
 
         color = settings.value("MainWindow/Color",
-                  QVariant(self.palette().color(QPalette.Window).name()))
-        color = QColor(color.toString())
+                  self.palette().color(QPalette.Window).name())
+        color = QColor(color)
+
         if color.isValid():
             self.setPalette(QPalette(color))
             app = QCoreApplication.instance()
             app.setPalette(QPalette(color))
 
-        f = settings.value("MainWindow/Font",
-                           QVariant(self.font().toString()))
-        if (f.isValid()):
+        f = settings.value("MainWindow/Font", str(self.font()))
+
+        if f:
             font = QFont()
-            if (font.fromString(f.toString())):
+            if (font.fromString(f)):
                 self.setFont(font)
                 app = QCoreApplication.instance()
                 app.setFont(font)
@@ -495,9 +501,9 @@ class MainView(object):
         self.menuRecent.clear()
 
         if hasattr(self, 'case'):
-            current = QString(self.case['xmlfile'])
+            current = str(self.case['xmlfile'])
         else:
-            current = QString()
+            current = ""
 
         recentFiles = []
         for f in self.recentFiles:
@@ -508,7 +514,7 @@ class MainView(object):
             for i, f in enumerate(recentFiles):
                 action = QAction(QIcon(":/icons/22x22/document-open.png"), "&%d %s" % (
                            i + 1, QFileInfo(f).fileName()), self)
-                action.setData(QVariant(f))
+                action.setData(f)
                 self.connect(action,
                              SIGNAL("triggered()"),
                              self.loadRecentFile)
@@ -526,10 +532,14 @@ class MainView(object):
         """
         if fname is None:
             return
-        if not self.recentFiles.contains(fname):
-            self.recentFiles.prepend(QString(fname))
-            while self.recentFiles.count() > 9:
-                self.recentFiles.takeLast()
+        if not fname in self.recentFiles:
+            self.recentFiles.insert(0, str(fname))
+            # l'idée est de garder les 8 premiers élements de la
+            # liste. On pourrait donc remplacer le code ci-dessus par
+            # :
+            # self.recentFiles = self.recentFiles[:8]
+            while len(self.recentFiles) > 9:
+                self.recentFiles.pop()
 
 
     def closeEvent(self, event):
@@ -541,20 +551,18 @@ class MainView(object):
         if self.okToContinue():
             settings = QSettings()
             if self.recentFiles:
-                recentFiles = QVariant(self.recentFiles)
+                recentFiles = self.recentFiles
             else:
-                recentFiles = QVariant()
-            #recentFiles = QVariant(self.recentFiles) \
-            #        if self.recentFiles else QVariant()
+                recentFiles = None
             settings.setValue("RecentFiles", recentFiles)
             settings.setValue("MainWindow/Geometry",
-                              QVariant(self.saveGeometry()))
+                              self.saveGeometry())
             settings.setValue("MainWindow/State",
-                              QVariant(self.saveState()))
+                              self.saveState())
             settings.setValue("MainWindow/Color",
-                              QVariant(self.palette().color(QPalette.Window).name()))
+                              self.palette().color(QPalette.Window).name())
             settings.setValue("MainWindow/Font",
-                              QVariant(self.font().toString()))
+                              self.font().toString())
 
             event.accept()
             log.debug("closeEvent -> accept")
@@ -732,7 +740,6 @@ class MainView(object):
         @type fname: C{str}
         @param fname: file name to load
         """
-        #file_name = unicode(file_name)
         file_name = os.path.abspath(str(file_name))
         fn = os.path.basename(file_name)
         log.debug("loadFile -> %s" % file_name)
@@ -828,15 +835,14 @@ class MainView(object):
 
         filetypes = self.tr(self.package.code_name) + self.tr(" GUI files (*.xml);;""All Files (*)")
 
-        file_name = QFileDialog.getOpenFileName(self, title, path, filetypes)
+        file_name = str(QFileDialog.getOpenFileName(self, title, path, filetypes))
 
-        if file_name.isEmpty() or file_name.isNull():
+        if not file_name:
             msg = self.tr("Loading aborted")
             self.statusbar.showMessage(msg, 2000)
             file_name = None
             return
         else:
-            #file_name = unicode(file_name)
             file_name = str(file_name)
             log.debug("fileOpen -> %s" % file_name)
 
@@ -951,12 +957,12 @@ class MainView(object):
 
         if hasattr(self,'case'):
             filetypes = self.tr(self.package.code_name) + self.tr(" GUI files (*.xml);;""All Files (*)")
-            fname = QFileDialog.getSaveFileName(self,
-                                                self.tr("Save File As"),
-                                                self.case['data_path'],
-                                                filetypes)
+            fname = str(QFileDialog.getSaveFileName(self,
+                                                    self.tr("Save File As"),
+                                                    self.case['data_path'],
+                                                    filetypes))
 
-            if not fname.isEmpty():
+            if fname:
                 f = str(fname)
                 self.case['xmlfile'] = f
                 self.addRecentFile(f)
@@ -1146,7 +1152,6 @@ class MainView(object):
                                          self.Browser)
 
         if self.page is not None:
-            #self.page.resize(600,500)
             self.scrollArea.setWidget(self.page)
 
         else:

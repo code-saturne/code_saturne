@@ -39,6 +39,9 @@ import logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
+if sys.version_info[0] == 2:
+    import sip
+    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -174,7 +177,7 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         self.modelPartOut.setItem(str_model=self.partition_out)
 
         self.partition_list = str(self.mdl.getPartitionList())
-        self.lineEdit_PartList.setText(QString(self.partition_list))
+        self.lineEdit_PartList.setText(self.partition_list)
 
         self.rank_step = self.mdl.getPartitionRankStep()
         self.spinBoxRankStep.setValue(int(self.rank_step))

@@ -39,6 +39,10 @@ import string, logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
+import sys
+if sys.version_info[0] == 2:
+    import sip
+    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -82,13 +86,13 @@ class ValueDelegate(QItemDelegate):
         return editor
 
     def setEditorData(self, editor, index):
-        value = index.model().data(index, Qt.DisplayRole).toString()
+        value = str(index.model().data(index, Qt.DisplayRole))
         editor.setText(value)
 
     def setModelData(self, editor, model, index):
-        value, ok = editor.text().toDouble()
+        value = float(editor.text())
         if editor.validator().state == QValidator.Acceptable:
-            model.setData(index, QVariant(value), Qt.DisplayRole)
+            model.setData(index, value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # StandarItemModel class to display Coals in a QTableView
@@ -111,10 +115,10 @@ class StandardItemModelCoal(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return QVariant()
+            return
         if role == Qt.DisplayRole:
-            return QVariant(self.dataCoal[index.row()][index.column()])
-        return QVariant()
+            return self.dataCoal[index.row()][index.column()]
+        return
 
 
     def flags(self, index):
@@ -128,8 +132,8 @@ class StandardItemModelCoal(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return QVariant(self.headers[section])
-        return QVariant()
+            return self.headers[section]
+        return
 
 
     def setData(self, index, value, role):
@@ -138,7 +142,7 @@ class StandardItemModelCoal(QStandardItemModel):
         if not hasattr(self, "modelBoundary"):
             log.debug("ERROR in setData (StandardItemModelCoal) : no Boundary model defined")
             return
-        v, ok = value.toDouble()
+        v = float(value)
         self.dataCoal[row][col] = v
         if col == 1:
             self.modelBoundary.setCoalFlow(v, row)
@@ -190,16 +194,16 @@ class StandardItemModelCoalMass(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return QVariant()
+            return
         if role == Qt.DisplayRole:
             classe = index.row()
             coal   = index.column()
             if classe < self.coalClassesNumber[coal]:
                 try:
-                    return QVariant(self.ratio[coal][classe])
+                    return self.ratio[coal][classe]
                 except:
                     log.debug("ERROR no data for self.ratio[%i][%i] "%(coal, classe))
-        return QVariant()
+        return
 
 
     def flags(self, index):
@@ -213,10 +217,10 @@ class StandardItemModelCoalMass(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return QVariant("Coal" + " " + str(section+1))
+            return "Coal" + " " + str(section+1)
         if orientation == Qt.Vertical and role == Qt.DisplayRole:
-            return QVariant("Class" + " " + str(section+1))
-        return QVariant()
+            return "Class" + " " + str(section+1)
+        return
 
 
     def setData(self, index, value, role):
@@ -225,7 +229,7 @@ class StandardItemModelCoalMass(QStandardItemModel):
             return
         classe = index.row()
         coal   = index.column()
-        v, ok = value.toDouble()
+        v = float(value)
         self.ratio[coal][classe] = v
         log.debug("setData v = %f "%v)
 
@@ -401,14 +405,14 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
             self.pushButtonVelocityFormula.setEnabled(False)
             self.lineEditVelocity.setEnabled(True)
             v = self.__boundary.getVelocity()
-            self.lineEditVelocity.setText(QString(str(v)))
+            self.lineEditVelocity.setText(str(v))
 
         # Initialize oxydant and temperature
         self.spinBoxOxydantNumber.setMaximum(self.__maxOxydantNumber)
         o = self.__boundary.getOxydantNumber()
         self.spinBoxOxydantNumber.setValue(o)
         t = self.__boundary.getOxydantTemperature()
-        self.lineEditTemperature.setText(QString(str(t)))
+        self.lineEditTemperature.setText(str(t))
 
         # Initialize direction
         choice = self.__boundary.getDirectionChoice()
@@ -421,11 +425,11 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
             self.pushButtonDirectionFormula.setEnabled(False)
             self.frameDirectionCoordinates.show()
             v = self.__boundary.getDirection('direction_x')
-            self.lineEditDirectionX.setText(QString(str(v)))
+            self.lineEditDirectionX.setText(str(v))
             v = self.__boundary.getDirection('direction_y')
-            self.lineEditDirectionY.setText(QString(str(v)))
+            self.lineEditDirectionY.setText(str(v))
             v = self.__boundary.getDirection('direction_z')
-            self.lineEditDirectionZ.setText(QString(str(v)))
+            self.lineEditDirectionZ.setText(str(v))
         elif choice == "normal":
             self.pushButtonDirectionFormula.setEnabled(False)
             self.frameDirectionCoordinates.hide()
@@ -505,13 +509,13 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
             self.pushButtonVelocityFormula.setEnabled(True)
             setGreenColor(self.pushButtonVelocityFormula, True)
             self.lineEditVelocity.setEnabled(False)
-            self.lineEditVelocity.setText(QString(""))
+            self.lineEditVelocity.setText("")
         else:
             self.pushButtonVelocityFormula.setEnabled(False)
             setGreenColor(self.pushButtonVelocityFormula, False)
             self.lineEditVelocity.setEnabled(True)
             v = self.__boundary.getVelocity()
-            self.lineEditVelocity.setText(QString(str(v)))
+            self.lineEditVelocity.setText(str(v))
 
         self.__updateLabel()
 
@@ -522,11 +526,11 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         """
         c = self.__boundary.getVelocityChoice()
         if c in ('norm', 'norm_formula'):
-            self.labelUnitVelocity.setText(QString(str('m/s')))
+            self.labelUnitVelocity.setText(str('m/s'))
         elif c in ('flow1', 'flow1_formula'):
-            self.labelUnitVelocity.setText(QString(str('kg/s')))
+            self.labelUnitVelocity.setText(str('kg/s'))
         elif c in ('flow2', 'flow2_formula'):
-            self.labelUnitVelocity.setText(QString(str('m<sup>3</sup>/s')))
+            self.labelUnitVelocity.setText(str('m<sup>3</sup>/s'))
 
 
     @pyqtSignature("const QString&")
@@ -539,7 +543,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         @type text: C{QString}
         @param text: value
         """
-        v, ok = text.toDouble()
+        v = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.__boundary.setVelocity(v)
 
@@ -596,11 +600,11 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
             setGreenColor(self.pushButtonDirectionFormula, False)
             self.frameDirectionCoordinates.show()
             v = self.__boundary.getDirection('direction_x')
-            self.lineEditDirectionX.setText(QString(str(v)))
+            self.lineEditDirectionX.setText(str(v))
             v = self.__boundary.getDirection('direction_y')
-            self.lineEditDirectionY.setText(QString(str(v)))
+            self.lineEditDirectionY.setText(str(v))
             v = self.__boundary.getDirection('direction_z')
-            self.lineEditDirectionZ.setText(QString(str(v)))
+            self.lineEditDirectionZ.setText(str(v))
         elif c == "normal":
             self.pushButtonDirectionFormula.setEnabled(False)
             setGreenColor(self.pushButtonDirectionFormula, False)
@@ -612,7 +616,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         """
         INPUT value into direction of inlet flow
         """
-        value, ok = text.toDouble()
+        value = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.__boundary.setDirection('direction_x', value)
 
@@ -622,7 +626,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         """
         INPUT value into direction of inlet flow
         """
-        value, ok = text.toDouble()
+        value = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.__boundary.setDirection('direction_y', value)
 
@@ -632,7 +636,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         """
         INPUT value into direction of inlet flow
         """
-        value, ok = text.toDouble()
+        value = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.__boundary.setDirection('direction_z', value)
 
@@ -691,7 +695,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
 
     @pyqtSignature("const QString&")
     def __slotTemperature(self, text):
-        t, ok = text.toDouble()
+        t = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.__boundary.setOxydantTemperature(t)
 

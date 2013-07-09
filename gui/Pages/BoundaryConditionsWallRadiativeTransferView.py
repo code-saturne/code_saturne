@@ -38,6 +38,10 @@ import logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
+import sys
+if sys.version_info[0] == 2:
+    import sip
+    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -51,7 +55,6 @@ from Pages.ThermalRadiationModel import ThermalRadiationModel
 
 from Base.Toolbox import GuiParam
 from Base.QtPage import IntValidator, DoubleValidator, ComboModel, setGreenColor
-#from Pages.RadiativeBoundariesModel import RadiativeBoundariesModel
 from Pages.LocalizationModel import LocalizationModel, Zone
 from Pages.Boundary import Boundary
 
@@ -89,19 +92,19 @@ class StandardItemModelScalars(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return QVariant()
+            return
         if role == Qt.DisplayRole:
             if index.column() == 0:
-                return QVariant(self.liste[index.row()][1])
+                return self.liste[index.row()][1]
             elif index.column() == 1:
                 key = self.liste[index.row()][3]
-                return QVariant(self.dataScalars[key])
+                return self.dataScalars[key]
             elif index.column() == 2:
-                return QVariant(self.liste[index.row()][2])
+                return self.liste[index.row()][2]
         if role == Qt.ToolTipRole:
             kword = self.liste[index.row()][3]
-            return QVariant(self.tr("Code_Saturne keyword: " + kword))
-        return QVariant()
+            return self.tr("Code_Saturne keyword: " + kword)
+        return
 
 
     def flags(self, index):
@@ -115,8 +118,8 @@ class StandardItemModelScalars(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return QVariant(self.headers[section])
-        return QVariant()
+            return self.headers[section]
+        return
 
 
     def setData(self, index, value, role):
@@ -124,7 +127,7 @@ class StandardItemModelScalars(QStandardItemModel):
             row = index.row()
             key = self.liste[row][3]
             tag = self.liste[row][4]
-            val, ok = value.toDouble()
+            val = float(value)
             self.bdModel.setValRay(val, tag)
             self.dataScalars[key] = val
         self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
@@ -237,7 +240,7 @@ class BoundaryConditionsWallRadiativeTransferView(QWidget,
             self.tableViewScalars.setModel(self.modelScalars)
 
             self.nb_zone = self.__boundary.getOutputRadiativeZone()
-            self.lineEditZone.setText(QString(str(self.nb_zone)))
+            self.lineEditZone.setText(str(self.nb_zone))
 
             self.show()
         else:
@@ -253,7 +256,7 @@ class BoundaryConditionsWallRadiativeTransferView(QWidget,
 
     @pyqtSignature("const QString&")
     def slotZone(self, text):
-        nb_zone, ok = text.toInt()
+        nb_zone = int(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.__boundary.setOutputRadiativeZone(nb_zone)
             return nb_zone

@@ -36,6 +36,10 @@ import logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
+import sys
+if sys.version_info[0] == 2:
+    import sip
+    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -101,9 +105,9 @@ class CoriolisSourceTermsView(QWidget, Ui_CoriolisSourceTermsForm):
         omega_y = self.mdl.getOmega(self.mdl.nodes[1])
         omega_z = self.mdl.getOmega(self.mdl.nodes[2])
 
-        self.lineEditOMEGAX.setText(QString(str(omega_x)))
-        self.lineEditOMEGAY.setText(QString(str(omega_y)))
-        self.lineEditOMEGAZ.setText(QString(str(omega_z)))
+        self.lineEditOMEGAX.setText(str(omega_x))
+        self.lineEditOMEGAY.setText(str(omega_y))
+        self.lineEditOMEGAZ.setText(str(omega_z))
 
         self.case.undoStartGlobal()
 
@@ -113,7 +117,7 @@ class CoriolisSourceTermsView(QWidget, Ui_CoriolisSourceTermsForm):
         """
         Input OMEGAX
         """
-        omega_x, ok = text.toDouble()
+        omega_x = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.mdl.setOmega('omega_x', omega_x)
 
@@ -123,7 +127,7 @@ class CoriolisSourceTermsView(QWidget, Ui_CoriolisSourceTermsForm):
         """
         Input OMEGAY
         """
-        omega_y, ok = text.toDouble()
+        omega_y = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.mdl.setOmega('omega_y', omega_y)
 
@@ -133,7 +137,7 @@ class CoriolisSourceTermsView(QWidget, Ui_CoriolisSourceTermsForm):
         """
         Input OmegaZ
         """
-        omega_z, ok = text.toDouble()
+        omega_z = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.mdl.setOmega('omega_z', omega_z)
 

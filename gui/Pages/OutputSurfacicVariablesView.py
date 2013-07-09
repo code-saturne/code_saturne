@@ -99,29 +99,29 @@ class StandardItemModelOutput(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return QVariant()
+            return
 
         # ToolTips BUG
         if role == Qt.ToolTipRole:
             if index.column() == 0 and index.column() > 3:
-                return QVariant(self.tr("Code_Saturne keyword: nbrvaf"))
+                return self.tr("Code_Saturne keyword: nbrvaf")
             elif index.column() == 1 and index.column() > 3:
-                return QVariant(self.tr("Code_Saturne keyword: irayvf"))
+                return self.tr("Code_Saturne keyword: irayvf")
             elif index.column() == 1 and index.column() <= 3:
-                return QVariant(self.tr("Code_Saturne keyword: ipstdv"))
+                return self.tr("Code_Saturne keyword: ipstdv")
 
         # StatusTips
         if role == Qt.StatusTipRole:
             if index.column() == 1:
-                return QVariant("Post-processing")
+                return "Post-processing"
 
         # Display
         if role == Qt.DisplayRole:
             row = index.row()
             if index.column() == 0:
-                return QVariant(self.dataLabel[row])
+                return self.dataLabel[row]
             else:
-                return QVariant()
+                return
 
         # CheckState
         if role == Qt.CheckStateRole:
@@ -129,11 +129,11 @@ class StandardItemModelOutput(QStandardItemModel):
             if index.column() == 1:
                 value = self.dataPost[row]
                 if value == 'on':
-                    return QVariant(Qt.Checked)
+                    return Qt.Checked
                 else:
-                    return QVariant(Qt.Unchecked)
+                    return Qt.Unchecked
 
-        return QVariant()
+        return
 
 
     def flags(self, index):
@@ -153,22 +153,22 @@ class StandardItemModelOutput(QStandardItemModel):
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0:
-                return QVariant(self.tr("Name"))
+                return self.tr("Name")
             elif section == 1:
-                return QVariant(self.tr("Post-\nprocessing"))
-        return QVariant()
+                return self.tr("Post-\nprocessing")
+        return
 
 
     def setData(self, index, value, role=None):
         row = index.row()
         if index.column() == 0:
-            label = str(value.toString())
+            label = str(value)
             if label == "": label = self.dataLabel[row]
             self.mdl.setPropertyLabel(self.dataLabel[row], label)
             self.dataLabel[row] = label
 
         elif index.column() == 1:
-            v, ok = value.toInt()
+            v = int(value)
             if v == Qt.Checked:
                 self.dataPost[row] = "on"
             else:

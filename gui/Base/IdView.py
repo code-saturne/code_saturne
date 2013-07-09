@@ -36,6 +36,11 @@ This module defines the following classes:
 #-------------------------------------------------------------------------------
 
 import sys
+
+if sys.version_info[0] == 2:
+    import sip
+    sip.setapi('QString', 2)
+
 from PyQt4 import QtGui, QtCore
 
 #-------------------------------------------------------------------------------
@@ -65,36 +70,32 @@ class IdView(QtGui.QWidget, Ui_IdForm):
         """
         Set the study name in the identity dock widget
         """
-        self.lineEdit.setText(QtCore.QString.fromUtf8(str(s)))
-
+        self.lineEdit.setText(str(s))
 
     def setCaseName(self, s):
         """
         Set the case name in the identity dock widget
         """
-        self.lineEdit_2.setText(QtCore.QString.fromUtf8(str(s)))
-
+        self.lineEdit_2.setText(str(s))
 
     def setXMLFileName(self, s):
         """
         Set the XML file name in the identity dock widget
         """
-        self.lineEdit_3.setText(QtCore.QString.fromUtf8(str(s)))
-
+        self.lineEdit_3.setText(str(s))
 
     def set(self, study=None, case=None, filename=None):
         """
         Set names in the identity dock widget
         """
         if study is not None:
-            self.lineEdit.setText(QtCore.QString.fromUtf8(str(study)))
+            self.lineEdit.setText(str(study))
 
         if case is not None:
-           self.lineEdit_2.setText(QtCore.QString.fromUtf8(str(case)))
+           self.lineEdit_2.setText(str(case))
 
         if filename is not None:
-            self.lineEdit_3.setText(QtCore.QString.fromUtf8(str(filename)))
-
+            self.lineEdit_3.setText(str(filename))
 
 
 if __name__ == "__main__":

@@ -91,7 +91,7 @@ class CommandMgrLinesDisplayedDialogView(QDialog, Ui_CommandMgrLinesDisplayedDia
 
         # Previous values
         self.lines = self.default['lines']
-        self.lineEditLines.setText(QString(str(self.lines)))
+        self.lineEditLines.setText(str(self.lines))
 
         self.connect(self.lineEditLines,
                      SIGNAL("textChanged(const QString &)"),
@@ -106,7 +106,7 @@ class CommandMgrLinesDisplayedDialogView(QDialog, Ui_CommandMgrLinesDisplayedDia
         """
         Private slot. Manage the number of lines allowed in the display zone.
         """
-        lines, ok = text.toInt()
+        lines = int(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.lines = lines
 
@@ -117,7 +117,7 @@ class CommandMgrLinesDisplayedDialogView(QDialog, Ui_CommandMgrLinesDisplayedDia
         Private slot. Set a unlimited number of lines in the display zone.
         """
         self.lines = 0
-        self.lineEditLines.setText(QString(str(self.lines)))
+        self.lineEditLines.setText(str(self.lines))
 
 
     def get_result(self):
@@ -167,7 +167,7 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
 
         self.proc = QProcess()
         if start_directory != None and start_directory != "":
-            self.proc.setWorkingDirectory(QString(start_directory))
+            self.proc.setWorkingDirectory(start_directory)
 
         self.objBr = obj_salome
 
@@ -354,7 +354,7 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
                                                self.tr("Save log"),
                                                f,
                                                self.saveLog)
-        if fileName.isEmpty():
+        if not fileName:
             return
 
         try:
@@ -363,7 +363,7 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
             QMessageBox.warning(self, self.tr('Error'), self.tr('Could not open file for writing'))
             return
 
-        logFile.write(str(self.logText.toPlainText().toAscii()))
+        logFile.write(self.logText.toPlainText().encode("utf-8"))
         logFile.close()
 
 
@@ -379,8 +379,7 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
         while self.proc and self.proc.canReadLine():
             ba = self.proc.readLine()
             if ba.isNull(): return
-            str = QString()
-            s = QString(str.fromUtf8(ba.data()))[:-1]
+            s = (ba.data()).decode("utf-8")[:-1]
             self.logText.append(s)
 
 
@@ -396,9 +395,8 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
         while self.proc and self.proc.canReadLine():
             ba = self.proc.readLine()
             if ba.isNull(): return
-            str = QString()
-            s = QString(str.fromUtf8(ba.data()))[:-1]
-            self.logText.append(s.prepend('<font color="red">').append('</font>'))
+            s = (ba.data()).decode("utf-8")[:-1]
+            self.logText.append('<font color="red">' + s + '</font>')
             self.procErrorFlag = True
 
 

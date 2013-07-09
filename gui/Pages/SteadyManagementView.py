@@ -38,6 +38,10 @@ import logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
+import sys
+if sys.version_info[0] == 2:
+    import sip
+    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -99,10 +103,10 @@ class SteadyManagementView(QWidget, Ui_SteadyManagementForm):
         # Initialization
 
         relax_coef = self.mdl.getRelaxCoefficient()
-        self.lineEditRELXST.setText(QString(str(relax_coef)))
+        self.lineEditRELXST.setText(str(relax_coef))
 
         nb_iter = self.mdl.getNbIter()
-        self.lineEditNTMABS.setText(QString(str(nb_iter)))
+        self.lineEditNTMABS.setText(str(nb_iter))
 
         if self.mdl.getZeroIteration() == 'on':
             self.checkBoxINPDT0.setChecked(True)
@@ -117,7 +121,7 @@ class SteadyManagementView(QWidget, Ui_SteadyManagementForm):
         """
         Input relaxation coefficient.
         """
-        relax_coef, ok = text.toDouble()
+        relax_coef = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.mdl.setRelaxCoefficient(relax_coef)
 
@@ -127,8 +131,8 @@ class SteadyManagementView(QWidget, Ui_SteadyManagementForm):
         """
         Input itarations number.
         """
-        nb_iter, ok = text.toInt()
         if self.sender().validator().state == QValidator.Acceptable:
+            nb_iter = int(text)
             self.mdl.setNbIter(nb_iter)
 
 

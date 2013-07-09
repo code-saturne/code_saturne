@@ -36,6 +36,10 @@ import string, logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
+import sys
+if sys.version_info[0] == 2:
+    import sip
+    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -79,7 +83,7 @@ class ProbesValidator(QRegExpValidator):
         self.state = QValidator.Invalid
 
 
-    def validate(self, string, pos):
+    def validate(self, stri, pos):
         """
         Validation method.
 
@@ -87,10 +91,10 @@ class ProbesValidator(QRegExpValidator):
         QValidator.Intermediate  1  The string is a plausible intermediate value during editing.
         QValidator.Acceptable    2  The string is acceptable as a final result; i.e. it is valid.
         """
-        state = QRegExpValidator.validate(self, string, pos)[0]
+        state = QRegExpValidator.validate(self, stri, pos)[0]
 
         valid = True
-        for probe in str(string).split():
+        for probe in str(stri).split():
             if probe not in self.mdl.getVariableProbeList():
                 valid = False
 
@@ -109,7 +113,7 @@ class ProbesValidator(QRegExpValidator):
 
         self.state = state
 
-        return (state, pos)
+        return (state, stri, pos)
 
 #-------------------------------------------------------------------------------
 #
@@ -126,16 +130,13 @@ class ProbesDelegate(QItemDelegate):
 
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
-        #regExp = QRegExp("^all[ ]*$|^[0-9\ ]*$")
-        #validator =  QRegExpValidator(regExp, editor)
         validator = ProbesValidator(editor, self.mdl)
         editor.setValidator(validator)
-        #editor.installEventFilter(self)
         return editor
 
 
     def setEditorData(self, lineEdit, index):
-        value = index.model().data(index, Qt.DisplayRole).toString()
+        value = str(index.model().data(index, Qt.DisplayRole))
         lineEdit.setText(value)
 
 
@@ -145,7 +146,7 @@ class ProbesDelegate(QItemDelegate):
             selectionModel = self.parent.selectionModel()
             for idx in selectionModel.selectedIndexes():
                 if idx.column() == index.column():
-                    model.setData(idx, QVariant(value))
+                    model.setData(idx, value)
 
 #-------------------------------------------------------------------------------
 #
@@ -166,12 +167,11 @@ class LabelDelegate(QItemDelegate):
         self.regExp = QRegExp(rx)
         v =  RegExpValidator(editor, self.regExp)
         editor.setValidator(v)
-        #editor.installEventFilter(self)
         return editor
 
 
     def setEditorData(self, editor, index):
-        v = index.model().data(index, Qt.DisplayRole).toString()
+        v = str(index.model().data(index, Qt.DisplayRole))
         self.p_value = str(v)
         editor.setText(v)
 
@@ -198,7 +198,7 @@ class LabelDelegate(QItemDelegate):
                 else:
                     p_value = self.p_value
 
-            model.setData(index, QVariant(QString(p_value)), Qt.DisplayRole)
+            model.setData(index, p_value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # StandarItemModelOutput class
@@ -214,8 +214,6 @@ class VolumicOutputStandardItemModel(QStandardItemModel):
         self.parent = parent
         self.case   = case
         self.mdl    = mdl
-
-        #self.list_turb_probe = self.mdl.getVariableProbeList()
 
         self.setColumnCount(4)
         self.dataLabel    = []
@@ -278,39 +276,39 @@ class VolumicOutputStandardItemModel(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return QVariant()
+            return
 
         # ToolTips
         if role == Qt.ToolTipRole:
             if index.column() == 0:
-                return QVariant(self.tr("Code_Saturne keyword: NOMVAR"))
+                return self.tr("Code_Saturne keyword: NOMVAR")
             elif index.column() == 1:
-                return QVariant(self.tr("Code_Saturne key word: ILISVR"))
+                return self.tr("Code_Saturne key word: ILISVR")
             elif index.column() == 2:
-                return QVariant(self.tr("Code_Saturne key word: ICHRVR"))
+                return self.tr("Code_Saturne key word: ICHRVR")
             elif index.column() == 3:
-                return QVariant(self.tr("Code_Saturne key word: IHISVR"))
+                return self.tr("Code_Saturne key word: IHISVR")
 
         # StatusTips
         if role == Qt.StatusTipRole:
             if index.column() == 0:
-                return QVariant(self.tr("Variable/Scalar name =< 32 characters"))
+                return self.tr("Variable/Scalar name =< 32 characters")
             elif index.column() == 1:
-                return QVariant(self.tr("Print in listing"))
+                return self.tr("Print in listing")
             elif index.column() == 2:
-                return QVariant(self.tr("Post-processing"))
+                return self.tr("Post-processing")
             elif index.column() == 3:
-                return QVariant(self.tr("Enter Probes number"))
+                return self.tr("Enter Probes number")
 
         # Display
         if role == Qt.DisplayRole:
             row = index.row()
             if index.column() == 0:
-                return QVariant(self.dataLabel[row])
+                return self.dataLabel[row]
             elif index.column() == 3:
-                return QVariant(self.dataProbe[row])
+                return self.dataProbe[row]
             else:
-                return QVariant()
+                return
 
         # CheckState
         if role == Qt.CheckStateRole:
@@ -318,18 +316,18 @@ class VolumicOutputStandardItemModel(QStandardItemModel):
             if index.column() == 1:
                 value = self.dataPrinting[row]
                 if value == 'on':
-                    return QVariant(Qt.Checked)
+                    return Qt.Checked
                 else:
-                    return QVariant(Qt.Unchecked)
+                    return Qt.Unchecked
 
             elif index.column() == 2:
                 value = self.dataPost[row]
                 if value == 'on':
-                    return QVariant(Qt.Checked)
+                    return Qt.Checked
                 else:
-                    return QVariant(Qt.Unchecked)
+                    return Qt.Unchecked
 
-        return QVariant()
+        return
 
 
     def flags(self, index):
@@ -349,26 +347,26 @@ class VolumicOutputStandardItemModel(QStandardItemModel):
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0:
-                return QVariant(self.tr("Name"))
+                return self.tr("Name")
             elif section == 1:
-                return QVariant(self.tr("Print in\nlisting"))
+                return self.tr("Print in\nlisting")
             elif section == 2:
-                return QVariant(self.tr("Post-\nprocessing"))
+                return self.tr("Post-\nprocessing")
             elif section == 3:
-                return QVariant(self.tr("Probes"))
-        return QVariant()
+                return self.tr("Probes")
+        return
 
 
     def setData(self, index, value, role=None):
         row = index.row()
         if index.column() == 0:
-            label = str(value.toString())
+            label = str(value)
             if label == "": label = self.dataLabel[row]
             self.mdl.setVariableLabel(self.dataLabel[row], label)
             self.dataLabel[row] = label
 
         elif index.column() == 1:
-            v, ok = value.toInt()
+            v = int(value)
             if v == Qt.Checked:
                 self.dataPrinting[row] = "on"
             else:
@@ -376,7 +374,7 @@ class VolumicOutputStandardItemModel(QStandardItemModel):
             self.mdl.setPrintingStatus(self.dataLabel[row], self.dataPrinting[row])
 
         elif index.column() == 2:
-            v, ok = value.toInt()
+            v = int(value)
             if v == Qt.Checked:
                 self.dataPost[row] = "on"
             else:
@@ -388,23 +386,12 @@ class VolumicOutputStandardItemModel(QStandardItemModel):
             self.mdl.setPostStatus(self.dataLabel[row], self.dataPost[row])
 
         elif index.column() == 3:
-            probes = str(value.toString())
+            probes = str(value)
             self.dataProbe[row] = probes
-            #print(probes)
             self.mdl.updateProbes(self.dataLabel[row], probes)
 
         self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
         return True
-
-# TODO: VolumicOutputStandardItemModel (selectAllProbe cancelAllProbe methods)
-##     def selectAll(self, event= None):
-##         self.probe.set(string.join(self.list_turb_probe))
-##         self.getProbe()
-
-
-##     def cancelAll(self, event= None):
-##         self.probe.set("")
-##         self.getProbe()
 
 
 #-------------------------------------------------------------------------------

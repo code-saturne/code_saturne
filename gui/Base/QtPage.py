@@ -110,7 +110,8 @@ class ComboModel:
         str_model: correponding string used in the model.
         For example, 'lagrangian'
         """
-        item  = QtGui.QStandardItem(QtCore.QString(str(str_view)))
+        item  = QtGui.QStandardItem(str(str_view))
+
         index = self.last
         self.model.setItem(index, item)
 
@@ -299,7 +300,7 @@ class IntValidator(QtGui.QIntValidator):
         elif min > vmin and max < vmax:
             msg = self.tr("The integer value must be between %i and %i" % (min, max))
 
-        self.parent.setStatusTip(QtCore.QString(msg))
+        self.parent.setStatusTip(msg)
 
 
     def setExclusiveMin(self, b=True):
@@ -315,7 +316,7 @@ class IntValidator(QtGui.QIntValidator):
         elif self.__min > vmin and self.__max < vmax:
             msg = self.tr("The integer value must be greater %i and lower than or equal to %i" % (self.__min, self.__max))
 
-        self.parent.setStatusTip(QtCore.QString(msg))
+        self.parent.setStatusTip(msg)
 
 
     def setExclusiveMax(self, b=True):
@@ -331,7 +332,7 @@ class IntValidator(QtGui.QIntValidator):
         elif self.__min > vmin and self.__max < vmax:
             msg = self.tr("The integer value must be greater than or equal to %i and lower than %i" % (self.__min, self.__max))
 
-        self.parent.setStatusTip(QtCore.QString(msg))
+        self.parent.setStatusTip(msg)
 
 
     def setExclusiveValues(self, l):
@@ -344,7 +345,7 @@ class IntValidator(QtGui.QIntValidator):
             if self.__min > vmin or self.__max < vmax:
                 msg = self.tr("All integers value must be greater than %i and lower than %i" % (self.__min, self.__max))
 
-        self.parent.setStatusTip(QtCore.QString(msg))
+        self.parent.setStatusTip(msg)
 
 
     def setFixup(self, v):
@@ -354,14 +355,13 @@ class IntValidator(QtGui.QIntValidator):
         self.fix = True
 
 
-    def fixup(self, string):
+    def fixup(self, stri):
         if self.fix:
-            if string.length() == 0:
-                string.truncate(0)
-                string += str(self.default)
+            if not stri:
+                stri = str(self.default)
 
 
-    def validate(self, string, pos):
+    def validate(self, stri, pos):
         """
         Validation method.
 
@@ -369,9 +369,15 @@ class IntValidator(QtGui.QIntValidator):
         QValidator.Intermediate  1  The string is a plausible intermediate value during editing.
         QValidator.Acceptable    2  The string is acceptable as a final result; i.e. it is valid.
         """
-        state = QtGui.QIntValidator.validate(self, string, pos)[0]
+        state = QtGui.QIntValidator.validate(self, stri, pos)[0]
 
-        x, valid = string.toInt()
+        try:
+            x = int(stri)
+            valid = True
+            pass
+        except (TypeError, ValueError):
+            x = 0
+            valid = False
 
         if state == QtGui.QValidator.Acceptable:
             if self.exclusiveMin and x == self.bottom():
@@ -392,7 +398,7 @@ class IntValidator(QtGui.QIntValidator):
 
         self.state = state
 
-        return (state, pos)
+        return (state, stri, pos)
 
 
     def tr(self, text):
@@ -436,7 +442,7 @@ class DoubleValidator(QtGui.QDoubleValidator):
         elif min > -1.e99 and max < 1.e99:
             msg = self.tr("The float value must be between than %.1f and %.1f" % (min, max))
 
-        self.parent.setStatusTip(QtCore.QString(msg))
+        self.parent.setStatusTip(str(msg))
 
 
     def setExclusiveMin(self, b=True):
@@ -452,7 +458,7 @@ class DoubleValidator(QtGui.QDoubleValidator):
         elif self.__min > -1.e99 and self.__max < 1.e99:
             msg = self.tr("The float value must be greater than %.1f and lower than or equal to %.1f" % (self.__min, self.__max))
 
-        self.parent.setStatusTip(QtCore.QString(msg))
+        self.parent.setStatusTip(str(msg))
 
 
     def setExclusiveMax(self, b=True):
@@ -468,7 +474,7 @@ class DoubleValidator(QtGui.QDoubleValidator):
         elif self.__min > -1.e99 and self.__max < 1.e99:
             msg = self.tr("The float value must be greater than or equal to %.1f and lower than %.1f" % (self.__min, self.__max))
 
-        self.parent.setStatusTip(QtCore.QString(msg))
+        self.parent.setStatusTip(str(msg))
 
 
     def setFixup(self, v):
@@ -478,14 +484,13 @@ class DoubleValidator(QtGui.QDoubleValidator):
         self.fix = True
 
 
-    def fixup(self, string):
+    def fixup(self, stri):
         if self.fix:
-            if string.length() == 0:
-                string.truncate(0)
-                string += str(self.default)
+            if not stri:
+                stri = str(self.default)
 
 
-    def validate(self, string, pos):
+    def validate(self, stri, pos):
         """
         Validation method.
 
@@ -493,9 +498,15 @@ class DoubleValidator(QtGui.QDoubleValidator):
         QValidator.Intermediate  1  The string is a plausible intermediate value during editing.
         QValidator.Acceptable    2  The string is acceptable as a final result; i.e. it is valid.
         """
-        state = QtGui.QDoubleValidator.validate(self, string, pos)[0]
+        state = QtGui.QDoubleValidator.validate(self, stri, pos)[0]
 
-        x, valid = string.toDouble()
+        try:
+            x = float(stri)
+            valid = True
+            pass
+        except (TypeError, ValueError):
+            x = 0.0
+            valid = False
 
         if state == QtGui.QValidator.Acceptable:
             if self.exclusiveMin and x == self.bottom():
@@ -514,7 +525,7 @@ class DoubleValidator(QtGui.QDoubleValidator):
 
         self.state = state
 
-        return (state, pos)
+        return (state, stri, pos)
 
 
     def tr(self, text):
@@ -539,10 +550,10 @@ class RegExpValidator(QtGui.QRegExpValidator):
 
         if "{1," + str(LABEL_LENGTH_MAX) + "}" in rx.pattern():
             msg = self.tr("The maximum length of the label is %i characters" % LABEL_LENGTH_MAX)
-            self.parent.setStatusTip(QtCore.QString(msg))
+            self.parent.setStatusTip(str(msg))
 
 
-    def validate(self, string, pos):
+    def validate(self, stri, pos):
         """
         Validation method.
 
@@ -550,7 +561,7 @@ class RegExpValidator(QtGui.QRegExpValidator):
         QValidator.Intermediate  1  The string is a plausible intermediate value during editing.
         QValidator.Acceptable    2  The string is acceptable as a final result; i.e. it is valid.
         """
-        state = self.__validator.validate(string, pos)[0]
+        state = self.__validator.validate(stri, pos)[0]
 
         palette = self.parent.palette()
 
@@ -563,7 +574,7 @@ class RegExpValidator(QtGui.QRegExpValidator):
 
         self.state = state
 
-        return (state, pos)
+        return (state, stri, pos)
 
 
     def tr(self, text):

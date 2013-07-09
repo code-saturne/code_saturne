@@ -51,6 +51,10 @@ except Exception:
 # Third-party modules
 #-------------------------------------------------------------------------------
 
+if sys.version_info[0] == 2:
+    import sip
+    sip.setapi('QString', 2)
+
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
 
@@ -130,7 +134,7 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
         # Previous values
         self.scratchdir = self.parent.mdl.getString('scratchdir')
         self.scratchdir_default = self.scratchdir
-        self.lineEdit.setText(QString(self.scratchdir))
+        self.lineEdit.setText(str(self.scratchdir))
         if self.scratchdir == "":
             self.lineEdit.setEnabled(False)
             self.toolButton.setEnabled(False)
@@ -141,8 +145,8 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
             self.modelSCRATCHDIR.setItem(str_model='prescribed')
 
         self.valgrind = self.parent.mdl.getString('valgrind')
-        if self.valgrind != None:
-            self.lineEdit_3.setText(QString(self.valgrind))
+        if self.valgrind is not None:
+            self.lineEdit_3.setText(str(self.valgrind))
 
         self.setLogType()
 
@@ -162,7 +166,7 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
             self.lineEdit.setEnabled(False)
             self.toolButton.setEnabled(False)
             setGreenColor(self.toolButton, False)
-        self.lineEdit.setText(QString(self.scratchdir))
+        self.lineEdit.setText(str(self.scratchdir))
 
 
     @pyqtSignature("const QString &")
@@ -205,7 +209,7 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
         if dir:
             self.scratchdir = dir
             setGreenColor(self.toolButton, False)
-        self.lineEdit.setText(QString(self.scratchdir))
+        self.lineEdit.setText(str(self.scratchdir))
 
         return self.scratchdir
 
@@ -235,7 +239,7 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
                         i = file_name
                         new = new + i + ' '
             self.valgrind = new
-            self.lineEdit_3.setText(QString(self.valgrind))
+            self.lineEdit_3.setText(str(self.valgrind))
 
 
     def get_result(self):
@@ -298,7 +302,7 @@ class BatchRunningStopByIterationDialogView(QDialog, Ui_BatchRunningStopByIterat
 
         # Previous values
         self.iter = self.default['iter']
-        self.lineEditStopIter.setText(QString(str(self.iter)))
+        self.lineEditStopIter.setText(str(self.iter))
 
         self.connect(self.lineEditStopIter,
                      SIGNAL("textChanged(const QString &)"),
@@ -310,7 +314,7 @@ class BatchRunningStopByIterationDialogView(QDialog, Ui_BatchRunningStopByIterat
         """
         Private slot to set a iteration number to stop the code.
         """
-        iter, ok = text.toInt()
+        iter = int(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.iter = iter
 
@@ -369,8 +373,7 @@ class ListingDialogView(CommandMgrDialogView):
         while self.proc and self.proc.canReadLine():
             ba = self.proc.readLine()
             if ba.isNull(): return
-            str = QString()
-            s = QString(str.fromUtf8(ba.data()))[:-1]
+            s = (ba.data()).decode("utf-8")[:-1]
             self.logText.append(s)
             self.n_lines += 1
             self.__execDir(s)
@@ -388,21 +391,21 @@ class ListingDialogView(CommandMgrDialogView):
         # Read directly the run directory from the sdtout of the code.
 
         if not self.scratch_dir:
-            if s.indexOf(QString("Working directory")) != -1:
+            if "Working directory" in s:
                 self.scratch_dir = "Working directory"
                 return
         elif self.scratch_dir == "Working directory":
-            self.scratch_dir = string.join(str(s).split(), ' ')
+            self.scratch_dir = " ".join(str(s).split())
             title = os.path.basename(self.scratch_dir)
             self.setWindowTitle(title)
             self.suffix = title
             return
 
         if not self.result_dir:
-            if s.indexOf(QString("Result directory")) != -1:
+            if "Result directory" in s:
                 self.result_dir = "Result directory"
         elif self.result_dir == "Result directory":
-            self.result_dir = string.join(str(s).split(), ' ')
+            self.result_dir = " ".join(str(s).split())
             title = os.path.basename(self.result_dir)
             self.setWindowTitle(title)
             self.suffix = title
@@ -589,7 +592,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
         name = self.case['batch']
         if name:
-            self.labelBatchName.setText(QString(name))
+            self.labelBatchName.setText(str(name))
             setGreenColor(self.toolButtonSearchBatch, False)
         else:
             setGreenColor(self.toolButtonSearchBatch, True)
@@ -974,7 +977,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
         if self.job_name != None:
             self.labelJobName.show()
-            self.lineEditJobName.setText(QString(self.job_name))
+            self.lineEditJobName.setText(str(self.job_name))
             self.lineEditJobName.show()
 
         if self.job_nodes != None:
@@ -1021,10 +1024,10 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
                 self.getClassList()
                 if len(self.class_list) > 0:
                     for c in self.class_list:
-                        self.comboBoxClass.addItem(self.tr(c), QVariant(c))
+                        self.comboBoxClass.addItem(self.tr(c, c))
                 else:
                     c = self.job_class
-                    self.comboBoxClass.addItem(self.tr(c), QVariant(c))
+                    self.comboBoxClass.addItem(self.tr(c, c))
 
             # All passes
             try:
@@ -1043,7 +1046,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
         if self.job_group != None:
             self.labelJobGroup.show()
-            self.lineEditJobGroup.setText(QString(self.job_group))
+            self.lineEditJobGroup.setText(str(self.job_group))
             self.lineEditJobGroup.show()
 
         # Show Job management box
@@ -1109,7 +1112,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
             if self.case['scripts_path'] == os.path.dirname(file_name):
                 self.case['batch'] = launcher
-                self.labelBatchName.setText(QString(launcher))
+                self.labelBatchName.setText(str(launcher))
                 self.jmdl.readBatchFile()
                 self.hideBatchInfo()
                 if self.case['batch_type'] != None:

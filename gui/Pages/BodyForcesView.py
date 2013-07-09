@@ -36,6 +36,10 @@ import logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
+import sys
+if sys.version_info[0] == 2:
+    import sip
+    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -102,9 +106,9 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
         gravity_y = self.mdl.getGravity(self.mdl.nodes[1])
         gravity_z = self.mdl.getGravity(self.mdl.nodes[2])
 
-        self.lineEditX.setText(QString(str(gravity_x)))
-        self.lineEditY.setText(QString(str(gravity_y)))
-        self.lineEditZ.setText(QString(str(gravity_z)))
+        self.lineEditX.setText(str(gravity_x))
+        self.lineEditY.setText(str(gravity_y))
+        self.lineEditZ.setText(str(gravity_z))
 
         self.case.undoStartGlobal()
 
@@ -114,7 +118,7 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
         """
         Input GX
         """
-        gravity_x, ok = text.toDouble()
+        gravity_x = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.mdl.setGravity('gravity_x', gravity_x)
 
@@ -124,7 +128,7 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
         """
         Input GY
         """
-        gravity_y, ok = text.toDouble()
+        gravity_y = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.mdl.setGravity('gravity_y', gravity_y)
 
@@ -134,8 +138,8 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
         """
         Input GZ
         """
-        gravity_z, ok = text.toDouble()
         if self.sender().validator().state == QValidator.Acceptable:
+            gravity_z = float(text)
             self.mdl.setGravity('gravity_z', gravity_z)
 
 

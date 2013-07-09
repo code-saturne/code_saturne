@@ -38,6 +38,10 @@ import logging
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
+import sys
+if sys.version_info[0] == 2:
+    import sip
+    sip.setapi('QString', 2)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
@@ -173,7 +177,7 @@ if (xray2 < xr2) {
             self.frame.show()
             self.mdl.setMethod ("on")
             nalinf = self.mdl.getSubIterations()
-            self.lineEditNALINF.setText(QString(str(nalinf)))
+            self.lineEditNALINF.setText(str(nalinf))
             value = self.mdl.getViscosity()
             self.modelVISCOSITY.setItem(str_model=value)
         else:
@@ -187,7 +191,7 @@ if (xray2 < xr2) {
         """
         Input viscosity type of mesh : isotrop or orthotrop.
         """
-        nalinf, ok = text.toInt()
+        nalinf = int(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.mdl.setSubIterations(nalinf)
 
