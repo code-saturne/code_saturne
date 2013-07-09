@@ -1840,6 +1840,7 @@ cs_field_is_key_set(const cs_field_t  *f,
  * If the key id is not valid, CS_FIELD_INVALID_KEY_ID is returned.
  * If the field category is not compatible with the key (as defined
  * by its type flag), CS_FIELD_INVALID_CATEGORY is returned.
+ * If the data type does not match, CS_FIELD_INVALID_TYPE is returned.
  *
  * \param[in]  f       pointer to field structure
  * \param[in]  key_id  id of associated key
@@ -1863,6 +1864,8 @@ cs_field_set_key_int(cs_field_t  *f,
     assert(key_id < _n_keys);
     if (kd->type_flag != 0 && !(f->type & kd->type_flag))
       retval = CS_FIELD_INVALID_CATEGORY;
+    else if (kd->type_id != 'i')
+      retval = CS_FIELD_INVALID_TYPE;
     else {
       cs_field_key_val_t *kv = _key_vals + (f->id*_n_keys_max + key_id);
       int *_val = (int *)(kv->val);
@@ -1971,6 +1974,8 @@ cs_field_set_key_double(cs_field_t  *f,
     assert(key_id < _n_keys);
     if (kd->type_flag != 0 && !(f->type & kd->type_flag))
       retval = CS_FIELD_INVALID_CATEGORY;
+    else if (kd->type_id != 'd')
+      retval = CS_FIELD_INVALID_TYPE;
     else {
       cs_field_key_val_t *kv = _key_vals + (f->id*_n_keys_max + key_id);
       double *_val = (double *)(kv->val);
@@ -2079,6 +2084,8 @@ cs_field_set_key_str(cs_field_t  *f,
     assert(key_id < _n_keys);
     if (kd->type_flag != 0 && !(f->type & kd->type_flag))
       retval = CS_FIELD_INVALID_CATEGORY;
+    else if (kd->type_id != 's')
+      retval = CS_FIELD_INVALID_TYPE;
     else {
       cs_field_key_val_t *kv = _key_vals + (f->id*_n_keys_max + key_id);
       char **_val = (char **)(kv->val);

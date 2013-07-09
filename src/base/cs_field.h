@@ -503,6 +503,7 @@ cs_field_is_key_set(const cs_field_t  *f,
  * If the key id is not valid, CS_FIELD_INVALID_KEY_ID is returned.
  * If the field category is not compatible with the key (as defined
  * by its type flag), CS_FIELD_INVALID_CATEGORY is returned.
+ * If the data type does not match, CS_FIELD_INVALID_TYPE is returned.
  *
  * parameters:
  *   f      <-- pointer to field structure
@@ -542,6 +543,7 @@ cs_field_get_key_int(const cs_field_t  *f,
  * If the key id is not valid, CS_FIELD_INVALID_KEY_ID is returned.
  * If the field category is not compatible with the key (as defined
  * by its type flag), CS_FIELD_INVALID_CATEGORY is returned.
+ * If the data type does not match, CS_FIELD_INVALID_TYPE is returned.
  *
  * parameters:
  *   f      <-- pointer to field structure
@@ -581,6 +583,7 @@ cs_field_get_key_double(const cs_field_t  *f,
  * If the key id is not valid, CS_FIELD_INVALID_KEY_ID is returned.
  * If the field category is not compatible with the key (as defined
  * by its type flag), CS_FIELD_INVALID_CATEGORY is returned.
+ * If the data type does not match, CS_FIELD_INVALID_TYPE is returned.
  *
  * parameters:
  *   f      <-- pointer to field structure
