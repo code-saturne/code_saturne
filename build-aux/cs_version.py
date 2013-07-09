@@ -353,7 +353,7 @@ def git_version(srcdir):
     if p.returncode != 0:
         return major, minor, release, extra
     else:
-        if len(output[0].split('\n')) > 0:
+        if len(output[0].split('\n')) > 1:
             extra += '-m'
 
     return major, minor, release, extra
