@@ -74,8 +74,8 @@ BEGIN_C_DECLS
 inline static int
 _binary_search(int              start,
                int              end,
-               cs_int_t         num,
-               const cs_int_t   lst[])
+               cs_lnum_t        num,
+               const cs_lnum_t  lst[])
 {
   if (lst[start] == num)
     return start;
@@ -221,8 +221,8 @@ cs_search_g_binary(size_t             size,
 
 int
 cs_search_binary(size_t           size,
-                 cs_int_t         num,
-                 const cs_int_t   lst[])
+                 cs_lnum_t        num,
+                 const cs_lnum_t  lst[])
 {
   return _binary_search(0, size - 1, num, lst);
 }

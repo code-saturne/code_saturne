@@ -80,8 +80,8 @@ cs_search_g_binary(size_t             size,
 
 int
 cs_search_binary(size_t           size,
-                 cs_int_t         num,
-                 const cs_int_t   lst[]);
+                 cs_lnum_t        num,
+                 const cs_lnum_t  lst[]);
 
 /*----------------------------------------------------------------------------
  * Get the position inside an array related to a value thanks to a binary

@@ -177,11 +177,11 @@ typedef struct {
 
 typedef struct {
 
-  int      n_elts;
-  int      n_ranks;
-  int     *ranks;
-  int     *index;
-  int     *array;
+  cs_lnum_t   n_elts;
+  int         n_ranks;
+  int        *ranks;
+  cs_lnum_t  *index;
+  cs_lnum_t  *array;
 
 } cs_join_sync_t;
 

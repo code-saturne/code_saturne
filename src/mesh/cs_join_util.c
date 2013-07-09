@@ -593,8 +593,8 @@ _add_single_vertices(cs_interface_set_t  *interfaces,
   if (n_max_elts > 0) { /* We have found single vertices */
 
     BFT_MALLOC(single->ranks, n_max_ranks, int);
-    BFT_MALLOC(single->index, n_max_ranks + 1, int);
-    BFT_MALLOC(single->array, n_max_elts, int);
+    BFT_MALLOC(single->index, n_max_ranks + 1, cs_lnum_t);
+    BFT_MALLOC(single->array, n_max_elts, cs_lnum_t);
 
     count_size = 0;
     last_found_rank = -1;
@@ -639,8 +639,8 @@ _add_single_vertices(cs_interface_set_t  *interfaces,
     } /* End of loop on interfaces */
 
     BFT_REALLOC(single->ranks, single->n_ranks, int);
-    BFT_REALLOC(single->index, single->n_ranks + 1, int);
-    BFT_REALLOC(single->array, single->n_elts, int);
+    BFT_REALLOC(single->index, single->n_ranks + 1, cs_lnum_t);
+    BFT_REALLOC(single->array, single->n_elts, cs_lnum_t);
 
   } /* End if n_max_elts > 0 */
 
@@ -757,8 +757,8 @@ _add_coupled_vertices(cs_interface_set_t  *interfaces,
 
     int  rank_shift = 0, vtx_shift = 0;
 
-    BFT_MALLOC(coupled->array, coupled->n_elts, int);
-    BFT_MALLOC(coupled->index, coupled->n_ranks + 1, int);
+    BFT_MALLOC(coupled->array, coupled->n_elts, cs_lnum_t);
+    BFT_MALLOC(coupled->index, coupled->n_ranks + 1, cs_lnum_t);
     BFT_MALLOC(coupled->ranks, coupled->n_ranks, int);
 
     coupled->index[0] = 0;
@@ -1232,8 +1232,8 @@ _add_single_edges(cs_interface_set_t   *ifs,
     BFT_REALLOC(tmp_edges, 2*tmp_size, int);
 
     BFT_MALLOC(edge_tag, tmp_size, int);
-    BFT_MALLOC(s_edges->array, 2*tmp_size, int);
-    BFT_MALLOC(s_edges->index, n_interfaces + 1, int);
+    BFT_MALLOC(s_edges->array, 2*tmp_size, cs_lnum_t);
+    BFT_MALLOC(s_edges->index, n_interfaces + 1, cs_lnum_t);
     BFT_MALLOC(s_edges->ranks, n_interfaces, int);
 
     for (i = 0; i < tmp_size; i++)
@@ -1311,10 +1311,10 @@ _add_single_edges(cs_interface_set_t   *ifs,
     /* Memory management */
 
     if (s_edges->n_elts != tmp_size)
-      BFT_REALLOC(s_edges->array, 2*s_edges->n_elts, int);
+      BFT_REALLOC(s_edges->array, 2*s_edges->n_elts, cs_lnum_t);
 
     BFT_REALLOC(s_edges->ranks, s_edges->n_ranks, int);
-    BFT_REALLOC(s_edges->index, s_edges->n_ranks + 1, int);
+    BFT_REALLOC(s_edges->index, s_edges->n_ranks + 1, cs_lnum_t);
     BFT_FREE(edge_tag);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
@@ -1378,7 +1378,7 @@ _add_coupled_edges(cs_interface_set_t   *ifs,
 
   BFT_MALLOC(request, n_interfaces * 2, MPI_Request);
   BFT_MALLOC(status,  n_interfaces * 2, MPI_Status);
-  BFT_MALLOC(buf, 2*n_interfaces, int);
+  BFT_MALLOC(buf, 2*n_interfaces, cs_lnum_t);
 
   for (i = 0; i < 2*n_interfaces; i++)
     buf[i] = 0;
@@ -1392,7 +1392,7 @@ _add_coupled_edges(cs_interface_set_t   *ifs,
 
     MPI_Irecv(&(buf[id]),
               1,
-              MPI_INT,
+              CS_MPI_LNUM,
               distant_rank,
               distant_rank,
               mpi_comm,
@@ -1421,7 +1421,7 @@ _add_coupled_edges(cs_interface_set_t   *ifs,
 
     MPI_Isend(&(buf[n_interfaces + id]),
               1,
-              MPI_INT,
+              CS_MPI_LNUM,
               distant_rank,
               local_rank,
               mpi_comm,
@@ -1443,8 +1443,8 @@ _add_coupled_edges(cs_interface_set_t   *ifs,
   }
 
   BFT_MALLOC(c_edges->ranks, c_edges->n_ranks, int);
-  BFT_MALLOC(c_edges->index, c_edges->n_ranks + 1, int);
-  BFT_MALLOC(c_edges->array, 2*c_edges->n_elts, int);
+  BFT_MALLOC(c_edges->index, c_edges->n_ranks + 1, cs_lnum_t);
+  BFT_MALLOC(c_edges->array, 2*c_edges->n_elts, cs_lnum_t);
 
   for (i = 0; i < c_edges->n_ranks + 1; i++)
     c_edges->index[i] = 0;
@@ -1491,7 +1491,7 @@ _add_coupled_edges(cs_interface_set_t   *ifs,
 
         MPI_Irecv(recv_buf, /* receive distant num */
                   n_entities,
-                  MPI_INT,
+                  CS_MPI_LNUM,
                   distant_rank,
                   distant_rank,
                   mpi_comm,
@@ -1521,7 +1521,7 @@ _add_coupled_edges(cs_interface_set_t   *ifs,
 
         MPI_Isend(send_buf,
                   n_entities,
-                  MPI_INT,
+                  CS_MPI_LNUM,
                   distant_rank,
                   local_rank,
                   mpi_comm,
@@ -1621,7 +1621,7 @@ _filter_edge_element(cs_join_select_t   *selection,
 {
   cs_lnum_t  i, j, vid1, vid2, edge_id, request_count, shift, save;
 
-  cs_lnum_t  *c_edge_tag = NULL, *s_edge_tag = NULL;
+  int  *c_edge_tag = NULL, *s_edge_tag = NULL;
   cs_join_sync_t  *s_edges = selection->s_edges;
   cs_join_sync_t  *c_edges = selection->c_edges;
 
@@ -1640,8 +1640,8 @@ _filter_edge_element(cs_join_select_t   *selection,
   BFT_MALLOC(request, c_edges->n_ranks + s_edges->n_ranks, MPI_Request);
   BFT_MALLOC(status, c_edges->n_ranks + s_edges->n_ranks, MPI_Status);
 
-  BFT_MALLOC(c_edge_tag, c_edges->n_elts, cs_lnum_t);
-  BFT_MALLOC(s_edge_tag, s_edges->n_elts, cs_lnum_t);
+  BFT_MALLOC(c_edge_tag, c_edges->n_elts, int);
+  BFT_MALLOC(s_edge_tag, s_edges->n_elts, int);
 
   for (i = 0; i < c_edges->n_elts; i++)
     c_edge_tag[i] = 1; /* define as selected */
@@ -1759,7 +1759,6 @@ _filter_edge_element(cs_join_select_t   *selection,
   BFT_FREE(s_edge_tag);
   BFT_FREE(request);
   BFT_FREE(status);
-
 }
 
 /*----------------------------------------------------------------------------
