@@ -4,6 +4,8 @@ Release 3.1.1 (unreleased)
 Bug fixes:
 ----------
 
+- Fix parallel mesh joining bug occuring in some partitioning situations.
+
 - Syrthes coupling now also works with rough wall conditions.
 
 - Fix for possibly incorrect array access with empty local list when
