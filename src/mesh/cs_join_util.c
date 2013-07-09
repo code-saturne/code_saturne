@@ -891,7 +891,6 @@ _get_missing_vertices(cs_lnum_t            n_vertices,
   /* Free memory */
 
   BFT_FREE(related_ranks);
-
 }
 
 /*----------------------------------------------------------------------------
@@ -1214,12 +1213,16 @@ _add_single_edges(cs_interface_set_t   *ifs,
 
     int   n_entities, distant_rank;
 
+    int  s_last_rank = 0;
     int  last_found_rank = -1;
     int  *edge_tag = NULL;
 
     const int  n_interfaces = cs_interface_set_size(ifs);
     const cs_lnum_t  *local_id = NULL;
     const cs_interface_t  *interface = NULL;
+
+    const cs_lnum_t  *s_vertices = selection->s_vertices->array;
+    const int  *s_vertices_index = selection->s_vertices->index;
 
     shift = 0;
     s_edges->n_elts = tmp_size;
@@ -1233,32 +1236,65 @@ _add_single_edges(cs_interface_set_t   *ifs,
     for (i = 0; i < tmp_size; i++)
       edge_tag[i] = 0; /* Not matched */
 
+    /* Loop on interfaces (naturally ordered by rank) */
+
     for (i = 0; i < n_interfaces; i++) {
+
+      cs_lnum_t  _n_s_vertices;
+      const cs_lnum_t  *_s_vertices;
 
       interface = cs_interface_set_get(ifs, i);
       distant_rank = cs_interface_rank(interface);
       n_entities = cs_interface_size(interface);
       local_id = cs_interface_get_elt_ids(interface);
 
+      /* Find rank start and end in single vertices */
+
+      while (s_last_rank < selection->s_vertices->n_ranks) {
+        if (selection->s_vertices->ranks[s_last_rank] >= distant_rank)
+          break;
+        else
+          s_last_rank++;
+      }
+
+      if (selection->s_vertices->ranks[s_last_rank] != distant_rank)
+        continue;
+
+      _n_s_vertices = (  s_vertices_index[s_last_rank + 1]
+                       - s_vertices_index[s_last_rank]);
+
+      if (_n_s_vertices < 1)
+        continue;
+
+      _s_vertices = s_vertices + s_vertices_index[s_last_rank];
+
+      /* Loop on single edges */
+
       for (j = 0; j < tmp_size; j++) {
 
         if (edge_tag[j] == 0) { /* Not already treated */
-          if (cs_search_binary(n_entities, tmp_edges[2*j], local_id) > -1) {
-            if (cs_search_binary(n_entities, tmp_edges[2*j+1], local_id) > -1) {
 
-              if (last_found_rank != distant_rank) {
-                s_edges->ranks[s_edges->n_ranks] = distant_rank;
-                s_edges->index[s_edges->n_ranks] = shift;
-                s_edges->n_ranks++;
-                last_found_rank = distant_rank;
-              }
+          cs_lnum_t i0 = cs_search_binary(_n_s_vertices,
+                                          tmp_edges[2*j]+1,
+                                          _s_vertices);
+          cs_lnum_t i1 = cs_search_binary(_n_s_vertices,
+                                          tmp_edges[2*j+1]+1,
+                                          _s_vertices);
 
-              edge_tag[j] = 1; /* Tag as done */
-              s_edges->array[2*shift] = tmp_edges[2*j] + 1;
-              s_edges->array[2*shift+1] = tmp_edges[2*j+1] + 1;
-              shift++;
+          if (i0 > -1 && i1 > -1) {
 
+            if (last_found_rank != distant_rank) {
+              s_edges->ranks[s_edges->n_ranks] = distant_rank;
+              s_edges->index[s_edges->n_ranks] = shift;
+              s_edges->n_ranks++;
+              last_found_rank = distant_rank;
             }
+
+            edge_tag[j] = 1; /* Tag as done */
+            s_edges->array[2*shift] = tmp_edges[2*j] + 1;
+            s_edges->array[2*shift+1] = tmp_edges[2*j+1] + 1;
+            shift++;
+
           }
         } /* Not matched yet */
 

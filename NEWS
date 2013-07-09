@@ -12,6 +12,8 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix parallel mesh joining bug occuring in some partitioning situations.
+
 - When building with EOS, always link with C++ to avoid issues.
 
 - Fix for possibly incorrect array access with empty local list when
