@@ -1533,7 +1533,7 @@ if (nscal.gt.0) then
     call field_get_key_double(ivarfl(isca(ii)), kscmin, scminp)
 
     if (iscavr(ii).gt.0.and.iscavr(ii).le.nscal.and.               &
-       iclvfl(ii).ne.2.and.scminp.ne.-grand) then
+       iclvfl(ii).ne.2.and.abs(scminp+grand).le.epzero) then
       chaine=nomvar(ipprtp(isca(ii)))
       write(nfecra,4360)chaine(1:16),ii,scminp,ii,iclvfl(ii)
       iok = iok + 1
@@ -1548,7 +1548,7 @@ if (nscal.gt.0) then
     call field_get_key_double(ivarfl(isca(ii)), kscmax, scmaxp)
 
     if (iscavr(ii).gt.0.and.iscavr(ii).le.nscal.and.               &
-       iclvfl(ii).ne.2.and.scmaxp.ne.grand) then
+       iclvfl(ii).ne.2.and.abs(scmaxp-grand).le.epzero) then
       chaine=nomvar(ipprtp(isca(ii)))
       write(nfecra,4361)chaine(1:16),ii,scmaxp,ii,iclvfl(ii)
       iok = iok + 1
