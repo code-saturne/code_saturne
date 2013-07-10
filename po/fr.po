@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2013-07-10 11:18+0200\n"
+"POT-Creation-Date: 2013-07-10 12:45+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -8856,10 +8856,6 @@ msgid ""
 "  Cannot find %llu in element list.\n"
 msgstr ""
 
-#, c-format
-msgid " Unexpected type (%s) to display in the current dump.\n"
-msgstr ""
-
 msgid ""
 "  face splitting with face -> face connectivity is not yet implemented\n"
 msgstr ""
@@ -8891,6 +8887,14 @@ msgid ""
 "    => Eventually modify joining parameters\n"
 "\n"
 msgstr ""
+"\n"
+"  *** ATTENTION ***\n"
+"  Globalement, %llu problème(s) trouvé(s) pendant la subdivision des faces\n"
+"     %12llu  cycles ouverts,\n"
+"     %12llu  arêtes parcourues deux fois,\n"
+"     %12llu  faces subdivisées en plus de max_subfaces (= %d)\n"
+"\n"
+"    => Modifier éventuellement les parmètres de recollement\n"
 
 #, c-format
 msgid ""
@@ -8916,7 +8920,7 @@ msgid ""
 msgstr ""
 
 msgid "  Cannot achieve to reorient the current joined face.\n"
-msgstr ""
+msgstr "  Ne parvient pas à réorienter la face recollée en cours.\n"
 
 #, c-format
 msgid ""
@@ -8954,25 +8958,45 @@ msgid ""
 "    Global number of cleaned interior faces: %8llu\n"
 "    Global number of cleaned border faces:   %8llu\n"
 msgstr ""
+"\n"
+"  Nettoyage du maillage pour des faces dégénérées.\n"
+"    Nombre global de faces intérieures nettoyées : %8llu\n"
+"    Nombre global de faces de bord nettoyées :     %8llu\n"
+
+#, c-format
+msgid ""
+"\n"
+"  Global number of single vertices found: %6llu\n"
+msgstr ""
+"\n"
+"  Nombre global de sommets solitaires repéréss : %6llu\n"
+
+#, c-format
+msgid "  Global number of single edges found:    %6llu\n"
+msgstr "  Nombre global d'arêtes solitaires repérées : %6llu\n"
 
 #, c-format
 msgid ""
 "Mesh joining:  Forbidden value for the fraction parameter.\n"
 "  It must be between [0.0, 1.0[ and is here: %f\n"
 msgstr ""
+"Recollement de maillage : valeur interdite pour le paramètre de fraction.\n"
+"  Il doit être entre [0.0, 1.0[ et vaut ici : %f\n"
 
 #, c-format
 msgid ""
 "Mesh joining:  Forbidden value for the plane parameter.\n"
 "  It must be between [0, 90] and is here: %f\n"
 msgstr ""
+"Recollement de maillage : valeur interdite pour le paramètre de plan.\n"
+"  Il doit être entre [0, 90[ et vaut ici : %f\n"
 
 msgid "The log directory cannot be created"
 msgstr "Le répertoire de traces (log) ne peut être créé"
 
 #, c-format
 msgid "Unable to open file: \"%s\" for logging."
-msgstr ""
+msgstr "Impossibile d'ouvrir le fichier : \"%s\" pour la trace."
 
 #, c-format
 msgid "Error closing log file for joining: %d."
@@ -8989,6 +9013,8 @@ msgid ""
 "  Inconsistent mesh definition. Cannot build edges.\n"
 "  Face %d has the same vertex %d twice.\n"
 msgstr ""
+"  Définition de maillage incohérente. Ne peut pas construire les arêtes.\n"
+"  La Face %d contient deux fois le sommet %d.\n"
 
 msgid "Synchronizing cell families\n"
 msgstr " Synchronisation des familles des cellules\n"
@@ -10198,4 +10224,3 @@ msgstr ""
 "    min local :                     %12.3f\n"
 "    max local :                     %12.3f\n"
 "    moyenne :                       %12.3f\n"
-

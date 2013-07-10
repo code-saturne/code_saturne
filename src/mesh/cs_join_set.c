@@ -2425,7 +2425,7 @@ cs_join_dump_array(FILE        *f,
   }
   else
     bft_error(__FILE__, __LINE__, 0,
-              _(" Unexpected type (%s) to display in the current dump.\n"),
+              " Unexpected type (%s) to display in the current dump.\n",
               type);
 
   fprintf(f, "\n");
