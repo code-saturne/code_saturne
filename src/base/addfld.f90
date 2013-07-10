@@ -84,7 +84,7 @@ integer          ii
 integer          iscdri, icla, iclap
 integer          iflid, iopchr
 integer          nfld, itycat, ityloc, idim1, idim3
-integer          keyccl, keydri, keyvis, keylbl, kimasf, kbmasf
+integer          keyccl, keydri, keyvis, keylbl, kimasf, kbmasf, kdiftn
 logical          ilved, iprev, inoprv
 integer          ifvar(nvppmx), iapro(npromx)
 integer          f_id
@@ -130,6 +130,9 @@ call field_get_key_id("scalar_class", keyccl)
 
 ! Key id for drift scalar
 call field_get_key_id("drift_scalar_model", keydri)
+
+! Key id for diffusivity tensor
+call field_get_key_id("diffusivity_tensor", kdiftn)
 
 ! Number of fields
 call field_get_n_fields(nfld)

@@ -320,9 +320,9 @@ do iel = 1, ncel
   do isou = 1, 6
     if (isou.le.3) then
       viscce(isou,iel) = d1s2*(propce(iel,ipcvis)*(1.d0+1.d0/prdtl))    &
-                       + ctheta(iscal)*visten(isou,iel)
+                       + ctheta(iscal)*visten(isou,iel)/csrij
     else
-      viscce(isou,iel) = ctheta(iscal)*visten(isou,iel)
+      viscce(isou,iel) = ctheta(iscal)*visten(isou,iel)/csrij
     endif
   enddo
 enddo

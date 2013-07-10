@@ -516,8 +516,6 @@ enddo
 !===============================================================================
 ! 5.  Compute pressure at boundary (in pripb(*))
 !     (if we need it, that is if there are outlet boudary faces).
-
-!     The loop on phases starts here and ends at the end of the next block.
 !===============================================================================
 
 xxp0   = xyzp0(1)
@@ -931,6 +929,8 @@ do ivar = 1, nvar
         rcodcl(ifac,ivar,3) = 0.d0
       endif
     enddo
+
+  ! Homogeneous Neumann on the pressure
   elseif(ivar.eq.ipr) then
     do ii = ideb, ifin
       ifac = itrifb(ii)

@@ -20,9 +20,66 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine resrij &
-!================
+!===============================================================================
+! Function:
+! ---------
 
+!> \file resrij.f90
+!>
+!> \brief This subroutine performs the solving of the Reynolds stress components
+!> in \f$ R_{ij} - \varepsilon \f$ RANS (LRR) turbulence model.
+!>
+!> Remark:
+!> - isou=1 for \f$ R_{11} \f$
+!> - isou=2 for \f$ R_{22} \f$
+!> - isou=3 for \f$ R_{33} \f$
+!> - isou=4 for \f$ R_{12} \f$
+!> - isou=5 for \f$ R_{13} \f$
+!> - isou=6 for \f$ R_{23} \f$
+!>
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     ncepdp        number of cells with head loss
+!> \param[in]     ncesmp        number of cells with mass source term
+!> \param[in]     ivar          variable number
+!> \param[in]     isou          local variable number (7 here)
+!> \param[in]     ipp           index for writing
+!> \param[in]     icepdc        index of cells with head loss
+!> \param[in]     icetsm        index of cells with mass source term
+!> \param[in]     itpsmp        type of mass source term for the variables
+!> \param[in]     dt            time step (per cell)
+!> \param[in,out] rtp, rtpa     calculated variables at cell centers
+!>                               (at current and previous time steps)
+!> \param[in]     propce        physical properties at cell centers
+!> \param[in,out] propfa        physical properties at interior face centers
+!> \param[in,out] propfb        physical properties at boundary face centers
+!> \param[in]     coefa, coefb  boundary conditions
+!> \param[in]     grdvit        tableau de travail pour terme grad
+!>                                 de vitesse     uniqt pour iturb=31
+!> \param[in]     produc        tableau de travail pour production
+!> \param[in]     gradro        tableau de travail pour grad rom
+!>                              (sans rho volume) uniqt pour iturb=30
+!> \param[in]     ckupdc        work array for the head loss
+!> \param[in]     smcelp        variable value associated to the mass source
+!>                               term
+!> \param[in]     gamma         valeur du flux de masse
+!> \param[in]     viscf         visc*surface/dist aux faces internes
+!> \param[in]     viscb         visc*surface/dist aux faces de bord
+!> \param[in]     tslagr        coupling term for lagrangian
+!> \param[in]     tslage        explicit source terms for the Lagrangian module
+!> \param[in]     tslagi        implicit source terms for the Lagrangian module
+!> \param[in]     smbr          working array
+!> \param[in]     rovsdt        working array
+!_______________________________________________________________________________
+
+subroutine resrij &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   , isou   , ipp    ,                                     &
    icepdc , icetsm , itpsmp ,                                     &
@@ -33,59 +90,6 @@ subroutine resrij &
    tslage , tslagi ,                                              &
    smbr   , rovsdt )
 
-!===============================================================================
-! FONCTION :
-! ----------
-
-! RESOLUTION DES EQUATIONS CONVECTION DIFFUSION TERME SOURCE
-!   POUR Rij (modele standard LRR)
-! VAR  = R11 R22 R33 R12 R13 R23
-! ISOU =  1   2   3   4   5   6
-
-!-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
-! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
-! ivar             ! i  ! <-- ! variable number                                !
-! isou             ! e  ! <-- ! numero de passage                              !
-! ipp              ! e  ! <-- ! numero de variable pour sorties post           !
-! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
-! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
-! itpsmp           ! te ! <-- ! type de source de masse pour la                !
-! (ncesmp)         !    !     !  variables (cf. ustsma)                        !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
-! produc           ! tr ! <-- ! tableau de travail pour production             !
-!  (6,ncelet)      !    !     ! (sans rho volume)                              !
-! gradro(ncelet,3) ! tr ! <-- ! tableau de travail pour grad rom               !
-! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
-!  (ncepdp,6)      !    !     !                                                !
-! smcelp(ncesmp    ! tr ! <-- ! valeur de la variable associee a la            !
-!                  !    !     !  source de masse                               !
-! gamma(ncesmp)    ! tr ! <-- ! valeur du flux de masse                        !
-! viscf(nfac)      ! tr ! --- ! visc*surface/dist aux faces internes           !
-! viscb(nfabor     ! tr ! --- ! visc*surface/dist aux faces de bord            !
-! tslage(ncelet    ! tr ! <-- ! ts explicite couplage retour lagr.             !
-! tslagi(ncelet    ! tr ! <-- ! ts implicite couplage retour lagr.             !
-! smbr(ncelet      ! tr ! --- ! tableau de travail pour sec mem                !
-! rovsdt(ncelet    ! tr ! --- ! tableau de travail pour terme instat           !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================
@@ -102,6 +106,7 @@ use cstnum
 use parall
 use period
 use lagran
+use pointe, only:visten
 use mesh
 
 !===============================================================================
@@ -151,28 +156,31 @@ double precision grdpx , grdpy , grdpz , grdsn
 double precision surfn2
 double precision tuexpr, thets , thetv , thetp1
 double precision d1s3  , d2s3
-double precision hint
 double precision matrot(3,3)
 
 double precision rvoid(1)
 
 double precision, allocatable, dimension(:,:) :: grad
-double precision, allocatable, dimension(:) :: w1, w2, w3
-double precision, allocatable, dimension(:) :: w4, w5, w6
+double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: w7, w8
 double precision, allocatable, dimension(:) :: dpvar
+double precision, allocatable, dimension(:,:) :: viscce
+double precision, allocatable, dimension(:,:) :: weighf
+double precision, allocatable, dimension(:) :: weighb
 
 !===============================================================================
 
 !===============================================================================
-! 1. INITIALISATION
+! 1. Initialization
 !===============================================================================
 
 ! Allocate work arrays
-allocate(w1(ncelet), w2(ncelet), w3(ncelet))
-allocate(w4(ncelet), w5(ncelet), w6(ncelet))
+allocate(w1(ncelet))
 allocate(w7(ncelet), w8(ncelet))
 allocate(dpvar(ncelet))
+allocate(viscce(6,ncelet))
+allocate(weighf(2,nfac))
+allocate(weighb(nfabor))
 
 if(iwarni(ivar).ge.1) then
   write(nfecra,1000) nomvar(ipp)
@@ -214,12 +222,12 @@ do iel = 1, ncel
 enddo
 
 !===============================================================================
-! 2. TERMES SOURCES  UTILISATEURS
+! 2. User source terms
 !===============================================================================
 !(le premier argument PRODUC est lu en GRDVIT dans ustsri, mais ce
 ! tableau n'est dimensionne et utilise qu'en modele Rij SSG)
 
-call ustsri                                                       &
+call ustsri &
 !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   ,                                                       &
@@ -250,21 +258,20 @@ else
 endif
 
 !===============================================================================
-! 2. TERMES SOURCES  LAGRANGIEN : COUPLAGE RETOUR
+! 3. Lagrangian source terms
 !===============================================================================
 
 !     Ordre 2 non pris en compte
- if (iilagr.eq.2 .and. ltsdyn.eq.1) then
-   do iel = 1,ncel
-     smbr(iel)   = smbr(iel)   + tslage(iel)
-     rovsdt(iel) = rovsdt(iel) + max(-tslagi(iel),zero)
-   enddo
- endif
+if (iilagr.eq.2 .and. ltsdyn.eq.1) then
+  do iel = 1,ncel
+    smbr(iel)   = smbr(iel)   + tslage(iel)
+    rovsdt(iel) = rovsdt(iel) + max(-tslagi(iel),zero)
+  enddo
+endif
 
 !===============================================================================
-! 3. TERME SOURCE DE MASSE
+! 4. Mass source term
 !===============================================================================
-
 
 if (ncesmp.gt.0) then
 
@@ -272,9 +279,9 @@ if (ncesmp.gt.0) then
   iiun = 1
 
 !       On incremente SMBR par -Gamma RTPA et ROVSDT par Gamma (*theta)
-  call catsma                                                     &
+  call catsma &
   !==========
- ( ncelet , ncel   , ncesmp , iiun   , isto2t , thetv  ,   &
+ ( ncelet , ncel   , ncesmp , iiun   , isto2t , thetv  ,          &
    icetsm , itpsmp ,                                              &
    volume , rtpa(1,ivar) , smcelp , gamma  ,                      &
    smbr   ,  rovsdt , w1 )
@@ -295,22 +302,18 @@ if (ncesmp.gt.0) then
 endif
 
 !===============================================================================
-! 4. TERME D'ACCUMULATION DE MASSE -(dRO/dt)*VOLUME
-!    ET TERME INSTATIONNAIRE
+! 5. Non-stationary term
 !===============================================================================
 
-! ---> Ajout dans la diagonale de la matrice
-
 do iel=1,ncel
-  rovsdt(iel) = rovsdt(iel)                                       &
-            + istat(ivar)*(propce(iel,ipcrom)/dt(iel))*volume(iel)
+  rovsdt(iel) = rovsdt(iel)                                          &
+              + istat(ivar)*(propce(iel,ipcrom)/dt(iel))*volume(iel)
 enddo
 
 
 !===============================================================================
-! 5. PRODUCTION, PHI1, PHI2, ET DISSIPATION
+! 6. Production, Pressure-Strain correlation, dissipation
 !===============================================================================
-
 
 ! ---> Calcul de k pour la suite du sous-programme
 !       on utilise un tableau de travail puisqu'il y en a...
@@ -339,7 +342,7 @@ enddo
 
 
 !     Si on extrapole les TS
-if(isto2t.gt.0) then
+if (isto2t.gt.0) then
 
   isoluc = 1
 
@@ -398,7 +401,7 @@ if(isto2t.gt.0) then
 
   endif
 
-!     Si on n'extrapole pas les termes sources
+! Si on n'extrapole pas les termes sources
 else
 
   do iel = 1, ncel
@@ -426,7 +429,7 @@ else
 endif
 
 !===============================================================================
-! 5-bis. Coriolis terms in the Phi1 and production
+! 6-bis. Coriolis terms in the Phi1 and production
 !===============================================================================
 
 if (icorio.eq.1) then
@@ -486,12 +489,12 @@ if (icorio.eq.1) then
     enddo
     ! Coriolis contribution in the Phi1 term:
     ! (1-C2/2)Gij
-    w7(iel) = propce(iel,ipcrom) * volume(iel) *                  &
-         (1.d0 - 0.5d0*crij2)*w7(iel)
+    w7(iel) = propce(iel,ipcrom) * volume(iel)                   &
+            * (1.d0 - 0.5d0*crij2)*w7(iel)
   enddo
 
   ! If source terms are extrapolated
-  if(isto2t.gt.0) then
+  if (isto2t.gt.0) then
     do iel = 1, ncel
       propce(iel,iptsta+isou-1) =                                 &
       propce(iel,iptsta+isou-1) + w7(iel)
@@ -506,7 +509,7 @@ if (icorio.eq.1) then
 endif
 
 !===============================================================================
-! 6. TERMES D'ECHO DE PAROI
+! 7. Wall echo terms
 !===============================================================================
 
 if (irijec.eq.1) then
@@ -515,7 +518,7 @@ if (irijec.eq.1) then
     w7(iel) = 0.d0
   enddo
 
-  call rijech                                                     &
+  call rijech &
   !==========
  ( nvar   , nscal  ,                                              &
    ivar   , isou   , ipp    ,                                     &
@@ -539,10 +542,10 @@ endif
 
 
 !===============================================================================
-! 7. TERMES DE GRAVITE
+! 8. Buoyancy source term
 !===============================================================================
 
-if(igrari.eq.1) then
+if (igrari.eq.1) then
 
   do iel = 1, ncel
     w7(iel) = 0.d0
@@ -555,230 +558,59 @@ if(igrari.eq.1) then
    rtp    , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  , gradro , w7     )
 
-!     Si on extrapole les T.S. : PROPCE
-if(isto2t.gt.0) then
-  do iel = 1, ncel
-     propce(iel,iptsta+isou-1) =                                  &
-     propce(iel,iptsta+isou-1) + w7(iel)
-   enddo
-!     Sinon SMBR
- else
-   do iel = 1, ncel
-     smbr(iel) = smbr(iel) + w7(iel)
-   enddo
- endif
-
-endif
-
-
-!===============================================================================
-! 8. TERMES DE DIFFUSION  A.grad(Rij) : PARTIE EXTRADIAGONALE EXPLICITE
-!===============================================================================
-
-! Allocate a temporary array for the gradient calculation
-allocate(grad(ncelet,3))
-
-! ---> Calcul du grad(Rij)
-
-
-iccocg = 1
-inc = 1
-
-nswrgp = nswrgr(ivar )
-imligp = imligr(ivar )
-iwarnp = iwarni(ivar )
-epsrgp = epsrgr(ivar )
-climgp = climgr(ivar )
-extrap = extrag(ivar )
-
-call grdcel                                                       &
-!==========
- ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   rtpa(1,ivar )   , coefa(1,iclvar) , coefb(1,iclvar) ,          &
-   grad   )
-
-! ---> Calcul des termes extradiagonaux de A.grad(Rij)
-
- do iel = 1, ncel
-  trrij = w8(iel)
-  cstrij = propce(iel,ipcroo) * csrij *trrij / rtpa(iel,iep)
-  w4(iel) = cstrij * ( rtpa(iel,ir12) * grad(iel,2)                 &
-                      +rtpa(iel,ir13) * grad(iel,3) )
-  w5(iel) = cstrij * ( rtpa(iel,ir12) * grad(iel,1)                 &
-                      +rtpa(iel,ir23) * grad(iel,3) )
-  w6(iel) = cstrij * ( rtpa(iel,ir13) * grad(iel,1)                 &
-                      +rtpa(iel,ir23) * grad(iel,2) )
- enddo
-
-
-! ---> Assemblage de { A.grad(Rij) } .S aux faces
-
- call vectds                                                      &
- !==========
-( w4     , w5     , w6     ,                                      &
-  viscf  , viscb  )
-
-init = 1
-call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                  &
-                                   ifacel,ifabor,viscf,viscb,w4)
-
-!     Si on extrapole les termes sources
-if(isto2t.gt.0) then
-  do iel = 1, ncel
-    propce(iel,iptsta+isou-1) =                                   &
-    propce(iel,iptsta+isou-1) + w4(iel)
-  enddo
-!     Sinon
-else
-  do iel = 1, ncel
-    smbr(iel) = smbr(iel) + w4(iel)
-  enddo
-endif
-
-
-!===============================================================================
-! 9. TERMES DE DIFFUSION  A.grad(Rij) : PARTIE DIAGONALE
-!===============================================================================
-!     Implicitation de (grad(Rij).n)n en gradient facette
-!     Si IDIFRE=1, terme correctif explicite
-!        grad(Rij)-(grad(Rij).n)n calcule en gradient cellule
-!     Les termes de bord sont uniquement pris en compte dans la partie
-!        en (grad(Rij).n)n
-!     (W1,W2,W3) contient toujours le gradient de la variable traitee
-
-!     Attention en periodicite on traite le gradient comme si c'etait
-!       un vecteur (alors que dans grdcel on l'a fait comme si c'etait
-!       un tenseur ...).
-!     A modifier eventuellement.
-
-if (idifre.eq.1) then
-
-  do iel = 1, ncel
-    trrij = w8(iel)
-    cstrij = propce(iel,ipcroo) * csrij *trrij / rtpa(iel,iep)
-    w4(iel) = cstrij*rtpa(iel,ir11)
-    w5(iel) = cstrij*rtpa(iel,ir22)
-    w6(iel) = cstrij*rtpa(iel,ir33)
-  enddo
-
-! --->  TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
-!        (il reste des doutes sur la periodicite)
-
-  if (irangp.ge.0.or.iperio.eq.1) then
-    call syndia(w4, w5, w6)
-  endif
-
-
-  do ifac = 1, nfac
-
-    ii = ifacel(1,ifac)
-    jj = ifacel(2,ifac)
-
-    surfn2 = surfan(ifac)**2
-
-    grdpx = 0.5d0*(grad(ii,1)+grad(jj,1))
-    grdpy = 0.5d0*(grad(ii,2)+grad(jj,2))
-    grdpz = 0.5d0*(grad(ii,3)+grad(jj,3))
-    grdsn = grdpx*surfac(1,ifac)+grdpy*surfac(2,ifac)             &
-           +grdpz*surfac(3,ifac)
-    grdpx = grdpx-grdsn*surfac(1,ifac)/surfn2
-    grdpy = grdpy-grdsn*surfac(2,ifac)/surfn2
-    grdpz = grdpz-grdsn*surfac(3,ifac)/surfn2
-
-    viscf(ifac)= 0.5d0*(                                          &
-          (w4(ii)+w4(jj))*grdpx*surfac(1,ifac)                    &
-         +(w5(ii)+w5(jj))*grdpy*surfac(2,ifac)                    &
-         +(w6(ii)+w6(jj))*grdpz*surfac(3,ifac))
-
-  enddo
-
-  ! Free memory
-  deallocate(grad)
-
-  do ifac = 1, nfabor
-    viscb(ifac) = 0.d0
-  enddo
-
-  init = 1
-  call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                &
-       ifacel,ifabor,viscf,viscb,w1)
-
-!     Si on extrapole les termes sources
-  if(isto2t.gt.0) then
+  ! If source terms are extrapolated
+  if (isto2t.gt.0) then
     do iel = 1, ncel
-      propce(iel,iptsta+isou-1) =                                 &
-      propce(iel,iptsta+isou-1) + w1(iel)
+      propce(iel,iptsta+isou-1) =                                  &
+      propce(iel,iptsta+isou-1) + w7(iel)
     enddo
-!     Sinon
   else
     do iel = 1, ncel
-      smbr(iel) = smbr(iel) + w1(iel)
+      smbr(iel) = smbr(iel) + w7(iel)
     enddo
   endif
 
 endif
 
+!===============================================================================
+! 9. Diffusion term (Daly Harlow: generalized gradient hypothesis method)
+!===============================================================================
 
-! ---> Viscosite orthotrope pour partie implicite
+! Symmetric tensor diffusivity (GGDH)
+if (idften(ivar).eq.6) then
 
-if (idiff(ivar).ge.1) then
   do iel = 1, ncel
-    trrij = w8(iel)
-    rctse = propce(iel,ipcrom) * csrij * trrij / rtpa(iel,iep)
-    w1(iel) = propce(iel,ipcvis) + idifft(ivar)*rctse*rtpa(iel,ir11)
-    w2(iel) = propce(iel,ipcvis) + idifft(ivar)*rctse*rtpa(iel,ir22)
-    w3(iel) = propce(iel,ipcvis) + idifft(ivar)*rctse*rtpa(iel,ir33)
+    viscce(1,iel) = visten(1,iel) + propce(iel,ipcvis)
+    viscce(2,iel) = visten(2,iel) + propce(iel,ipcvis)
+    viscce(3,iel) = visten(3,iel) + propce(iel,ipcvis)
+    viscce(4,iel) = visten(4,iel)
+    viscce(5,iel) = visten(5,iel)
+    viscce(6,iel) = visten(6,iel)
   enddo
 
-  call visort                                                     &
+  iwarnp = iwarni(ivar)
+
+  call vitens &
   !==========
- ( imvisf ,                                                       &
-   w1     , w2     , w3     ,                                     &
+ ( imvisf ,                      &
+   viscce , iwarnp ,             &
+   weighf , weighb ,             &
    viscf  , viscb  )
 
-  ! Translate coefa into cofaf and coefb into cofbf
-  do ifac = 1, nfabor
-
-    iel = ifabor(ifac)
-
-    hint = ( w1(iel)*surfbo(1,ifac)*surfbo(1,ifac)                            &
-           + w2(iel)*surfbo(2,ifac)*surfbo(2,ifac)                            &
-           + w3(iel)*surfbo(3,ifac)*surfbo(3,ifac))/surfbn(ifac)**2/distb(ifac)
-
-    ! Translate coefa into cofaf and coefb into cofbf
-    coefa(ifac, iclvaf) = -hint*coefa(ifac,iclvar)
-    coefb(ifac, iclvaf) = hint*(1.d0-coefb(ifac,iclvar))
-
-  enddo
-
 else
-
-  do ifac = 1, nfac
-    viscf(ifac) = 0.d0
-  enddo
-  do ifac = 1, nfabor
-    viscb(ifac) = 0.d0
-
-    ! Translate coefa into cofaf and coefb into cofbf
-    coefa(ifac, iclvaf) = 0.d0
-    coefb(ifac, iclvaf) = 0.d0
-  enddo
-
+  call csexit(1)
 endif
 
-
 !===============================================================================
-! 10. RESOLUTION
+! 10. Solving
 !===============================================================================
 
-if(isto2t.gt.0) then
+if (isto2t.gt.0) then
   thetp1 = 1.d0 + thets
   do iel = 1, ncel
     smbr(iel) = smbr(iel) + thetp1*propce(iel,iptsta+isou-1)
   enddo
 endif
-
 
 iconvp = iconv (ivar)
 idiffp = idiff (ivar)
@@ -820,23 +652,20 @@ call codits &
    coefa(1,iclvar) , coefb(1,iclvar) ,                            &
    coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
    propfa(1,iflmas), propfb(1,iflmab),                            &
-   viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
-   rvoid  , rvoid  ,                                              &
+   viscf  , viscb  , viscce , viscf  , viscb  , viscce ,          &
+   weighf , weighb ,                                              &
    rovsdt , smbr   , rtp(1,ivar)     , dpvar  ,                   &
    rvoid  , rvoid  )
 
-!===============================================================================
-! 11. IMPRESSIONS
-!===============================================================================
-
 ! Free memory
-deallocate(w1, w2, w3)
-deallocate(w4, w5, w6)
+deallocate(w1)
 deallocate(w7, w8)
 deallocate(dpvar)
+deallocate(viscce)
+deallocate(weighf, weighb)
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 #if defined(_CS_LANG_FR)
@@ -849,9 +678,8 @@ deallocate(dpvar)
 
 #endif
 
-!12345678 : MAX: 12345678901234 MIN: 12345678901234 NORM: 12345678901234
 !----
-! FIN
+! End
 !----
 
 return

@@ -206,8 +206,9 @@ double precision cofimp, ypup, yptp, yp1
 double precision bldr12, ypp, dudyp, xv2
 double precision xkip
 double precision tplus
-double precision rinfiv(3), pimpv(3), qimpv(3), pfac
+double precision rinfiv(3), pimpv(3), hintt(6), pfac
 double precision visci(3,3), fikis, viscis, distfi
+double precision temp
 
 character*80     fname
 
@@ -261,6 +262,10 @@ rcprod = 0.d0
 uiptn = 0.d0
 uiptnf = 0.d0
 yp1 = 0.d0
+
+rinfiv(1) = rinfin
+rinfiv(2) = rinfin
+rinfiv(3) = rinfin
 
 ! --- Constants
 uet = 1.d0
@@ -1061,46 +1066,59 @@ do ifac = 1, nfabor
 
       enddo
 
-      ! LRR and the Standard SGG.
-      if ((iturb.eq.30).or.(iturb.eq.31)) then
+      ! blending factor so that the component R(n,tau) have only
+      ! -mu_T/(mu+mu_T)*uet*uk
+      bldr12 = 1.d0
+      if (ivelco.eq.1) bldr12 = visctc/(visclc + visctc)
 
-        ! blending factor so that the component R(n,tau) have only
-        ! -mu_T/(mu+mu_T)*uet*uk
-        bldr12 = 1.d0
-        if (ivelco.eq.1) bldr12 = visctc/(visclc + visctc)
-        do isou = 1,6
+      do isou = 1,6
 
-          if (isou.eq.1) then
-            iclvar = icl11
-            iclvrr = icl11r
-            jj = 1
-            kk = 1
-          else if (isou.eq.2) then
-            iclvar = icl22
-            iclvrr = icl22r
-            jj = 2
-            kk = 2
-          else if (isou.eq.3) then
-            iclvar = icl33
-            iclvrr = icl33r
-            jj = 3
-            kk = 3
-          else if (isou.eq.4) then
-            iclvar = icl12
-            iclvrr = icl12r
-            jj = 1
-            kk = 2
-          else if (isou.eq.5) then
-            iclvar = icl13
-            iclvrr = icl13r
-            jj = 1
-            kk = 3
-          else if (isou.eq.6) then
-            iclvar = icl23
-            iclvrr = icl23r
-            jj = 2
-            kk = 3
-          endif
+        if (isou.eq.1) then
+          ivar = ir11
+          iclvar = icl11
+          iclvaf = icl11f
+          iclvrr = icl11r
+          jj = 1
+          kk = 1
+        else if (isou.eq.2) then
+          ivar = ir22
+          iclvar = icl22
+          iclvaf = icl22f
+          iclvrr = icl22r
+          jj = 2
+          kk = 2
+        else if (isou.eq.3) then
+          ivar = ir33
+          iclvar = icl33
+          iclvaf = icl33f
+          iclvrr = icl33r
+          jj = 3
+          kk = 3
+        else if (isou.eq.4) then
+          ivar = ir12
+          iclvar = icl12
+          iclvaf = icl12f
+          iclvrr = icl12r
+          jj = 1
+          kk = 2
+        else if (isou.eq.5) then
+          ivar = ir13
+          iclvar = icl13
+          iclvaf = icl13f
+          iclvrr = icl13r
+          jj = 1
+          kk = 3
+        else if (isou.eq.6) then
+          ivar = ir23
+          iclvar = icl23
+          iclvaf = icl23f
+          iclvrr = icl23r
+          jj = 2
+          kk = 3
+        endif
+
+        ! LRR and the Standard SGG.
+        if ((iturb.eq.30).or.(iturb.eq.31).and.iuntur.eq.1) then
 
           if (iclptr.eq.1) then
             do ii = 1, 6
@@ -1122,34 +1140,131 @@ do ifac = 1, nfabor
           coefa(ifac,iclvrr) = coefa(ifac,iclvar)
           coefb(ifac,iclvrr) = coefb(ifac,iclvar)
 
-          if (iuntur.eq.1) then
-            coefa(ifac,iclvar) = coefa(ifac,iclvar)  -                  &
-                               (eloglo(jj,1)*eloglo(kk,2)+              &
-                                eloglo(jj,2)*eloglo(kk,1))*bldr12*uet*uk
-          endif
+          coefa(ifac,iclvar) = coefa(ifac,iclvar)                    &
+                             - ( eloglo(jj,1)*eloglo(kk,2)           &
+                               + eloglo(jj,2)*eloglo(kk,1)           &
+                               )*bldr12*uet*uk
 
-          ! If laminar: zero Reynolds' stresses
-          if (iuntur.eq.0) then
-            coefa(ifac,iclvar) = 0.d0
-            coefa(ifac,iclvrr) = 0.d0
-            coefb(ifac,iclvar) = 0.d0
-            coefb(ifac,iclvrr) = 0.d0
-          endif
+        ! In the viscous sublayer or for EBRSM: zero Reynolds' stresses
+        else
+          coefa(ifac,iclvar) = 0.d0
+          coefa(ifac,iclvrr) = 0.d0
+          coefb(ifac,iclvar) = 0.d0
+          coefb(ifac,iclvrr) = 0.d0
+        endif
 
-          ! WARNING
-          ! Translate coefa into cofaf and coefb into cofbf Done in resssg.f90
+        ! Symmetric tensor diffusivity (Daly Harlow -- GGDH)
+        if (idften(ivar).eq.6) then
 
-        enddo
+          visci(1,1) = visclc + visten(1,iel)
+          visci(2,2) = visclc + visten(2,iel)
+          visci(3,3) = visclc + visten(3,iel)
+          visci(1,2) =          visten(4,iel)
+          visci(2,1) =          visten(4,iel)
+          visci(2,3) =          visten(5,iel)
+          visci(3,2) =          visten(5,iel)
+          visci(1,3) =          visten(6,iel)
+          visci(3,1) =          visten(6,iel)
 
-      endif
+          ! ||Ki.S||^2
+          viscis = ( visci(1,1)*surfbo(1,ifac)       &
+                   + visci(1,2)*surfbo(2,ifac)       &
+                   + visci(1,3)*surfbo(3,ifac))**2   &
+                 + ( visci(2,1)*surfbo(1,ifac)       &
+                   + visci(2,2)*surfbo(2,ifac)       &
+                   + visci(2,3)*surfbo(3,ifac))**2   &
+                 + ( visci(3,1)*surfbo(1,ifac)       &
+                   + visci(3,2)*surfbo(2,ifac)       &
+                   + visci(3,3)*surfbo(3,ifac))**2
+
+          ! IF.Ki.S
+          fikis = ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,1)   &
+                  + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,1)   &
+                  + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,1)   &
+                  )*surfbo(1,ifac)                              &
+                + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,2)   &
+                  + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,2)   &
+                  + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,2)   &
+                  )*surfbo(2,ifac)                              &
+                + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,3)   &
+                  + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,3)   &
+                  + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,3)   &
+                  )*surfbo(3,ifac)
+
+          distfi = distb(ifac)
+
+          ! Take I" so that I"F= eps*||FI||*Ki.n when J" is in cell rji
+          ! NB: eps =1.d-1 must be consistent with vitens.f90
+          fikis = max(fikis, 1.d-1*sqrt(viscis)*distfi)
+
+          hint = viscis/surfbn(ifac)/fikis
+
+        else
+          call csexit(1)
+        endif
+
+        ! Translate into Diffusive flux BCs
+        coefa(ifac,iclvaf) = -hint*coefa(ifac,iclvar)
+        coefb(ifac,iclvaf) = hint*(1.d0-coefb(ifac,iclvar))
+
+      enddo
 
       ! ---> Epsilon
       !      NB: no reconstruction, possibility of partial implicitation
 
+      ivar = iep
       iclvar = iclep
       iclvaf = iclepf
 
-      hint = (visclc + idifft(iep)*visctc/sigmae)/distbf
+      ! Symmetric tensor diffusivity (Daly Harlow -- GGDH)
+      if (idften(ivar).eq.6) then
+
+        visci(1,1) = visclc + visten(1,iel)/sigmae
+        visci(2,2) = visclc + visten(2,iel)/sigmae
+        visci(3,3) = visclc + visten(3,iel)/sigmae
+        visci(1,2) =          visten(4,iel)/sigmae
+        visci(2,1) =          visten(4,iel)/sigmae
+        visci(2,3) =          visten(5,iel)/sigmae
+        visci(3,2) =          visten(5,iel)/sigmae
+        visci(1,3) =          visten(6,iel)/sigmae
+        visci(3,1) =          visten(6,iel)/sigmae
+
+        ! ||Ki.S||^2
+        viscis = ( visci(1,1)*surfbo(1,ifac)       &
+                 + visci(1,2)*surfbo(2,ifac)       &
+                 + visci(1,3)*surfbo(3,ifac))**2   &
+               + ( visci(2,1)*surfbo(1,ifac)       &
+                 + visci(2,2)*surfbo(2,ifac)       &
+                 + visci(2,3)*surfbo(3,ifac))**2   &
+               + ( visci(3,1)*surfbo(1,ifac)       &
+                 + visci(3,2)*surfbo(2,ifac)       &
+                 + visci(3,3)*surfbo(3,ifac))**2
+
+        ! IF.Ki.S
+        fikis = ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,1)   &
+                + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,1)   &
+                + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,1)   &
+                )*surfbo(1,ifac)                              &
+              + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,2)   &
+                + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,2)   &
+                + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,2)   &
+                )*surfbo(2,ifac)                              &
+              + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,3)   &
+                + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,3)   &
+                + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,3)   &
+                )*surfbo(3,ifac)
+
+        distfi = distb(ifac)
+
+        ! Take I" so that I"F= eps*||FI||*Ki.n when J" is in cell rji
+        ! NB: eps =1.d-1 must be consistent with vitens.f90
+        fikis = max(fikis, 1.d-1*sqrt(viscis)*distfi)
+
+        hint = viscis/surfbn(ifac)/fikis
+
+      else
+        call csexit(1)
+      endif
 
       if ((iturb.eq.30).or.(iturb.eq.31)) then
 
@@ -1567,26 +1682,19 @@ do ifac = 1, nfabor
               else
                 cpscv = cpscv/cv0
               endif
-              visci(1,1) = rkl + idifft(ivar)*cpp*cpscv*visten(1,iel)*ctheta(iscal)
-              visci(2,2) = rkl + idifft(ivar)*cpp*cpscv*visten(2,iel)*ctheta(iscal)
-              visci(3,3) = rkl + idifft(ivar)*cpp*cpscv*visten(3,iel)*ctheta(iscal)
-              visci(1,2) =       idifft(ivar)*cpp*cpscv*visten(4,iel)*ctheta(iscal)
-              visci(2,1) =       idifft(ivar)*cpp*cpscv*visten(4,iel)*ctheta(iscal)
-              visci(2,3) =       idifft(ivar)*cpp*cpscv*visten(5,iel)*ctheta(iscal)
-              visci(3,2) =       idifft(ivar)*cpp*cpscv*visten(5,iel)*ctheta(iscal)
-              visci(1,3) =       idifft(ivar)*cpp*cpscv*visten(6,iel)*ctheta(iscal)
-              visci(3,1) =       idifft(ivar)*cpp*cpscv*visten(6,iel)*ctheta(iscal)
+              temp = idifft(ivar)*cpp*cpscv*ctheta(iscal)/csrij
             else
-              visci(1,1) = rkl + idifft(ivar)*cpp*visten(1,iel)*ctheta(iscal)
-              visci(2,2) = rkl + idifft(ivar)*cpp*visten(2,iel)*ctheta(iscal)
-              visci(3,3) = rkl + idifft(ivar)*cpp*visten(3,iel)*ctheta(iscal)
-              visci(1,2) =       idifft(ivar)*cpp*visten(4,iel)*ctheta(iscal)
-              visci(2,1) =       idifft(ivar)*cpp*visten(4,iel)*ctheta(iscal)
-              visci(2,3) =       idifft(ivar)*cpp*visten(5,iel)*ctheta(iscal)
-              visci(3,2) =       idifft(ivar)*cpp*visten(5,iel)*ctheta(iscal)
-              visci(1,3) =       idifft(ivar)*cpp*visten(6,iel)*ctheta(iscal)
-              visci(3,1) =       idifft(ivar)*cpp*visten(6,iel)*ctheta(iscal)
+              temp = idifft(ivar)*cpp*ctheta(iscal)/csrij
             endif
+            visci(1,1) = temp*visten(1,iel) + rkl
+            visci(2,2) = temp*visten(2,iel) + rkl
+            visci(3,3) = temp*visten(3,iel) + rkl
+            visci(1,2) = temp*visten(4,iel)
+            visci(2,1) = temp*visten(4,iel)
+            visci(2,3) = temp*visten(5,iel)
+            visci(3,2) = temp*visten(5,iel)
+            visci(1,3) = temp*visten(6,iel)
+            visci(3,1) = temp*visten(6,iel)
 
             ! ||Ki.S||^2
             viscis = ( visci(1,1)*surfbo(1,ifac)       &
@@ -1654,17 +1762,34 @@ do ifac = 1, nfabor
             hext = rcodcl(ifac,ivar,2)
             pimp = rcodcl(ifac,ivar,1)
 
-            ! In the log layer
-            if (yplus.ge.yp1.and.iturb.ne.0) then
-              cofimp  = 1.d0 - yptp*sigmas(iscal)/xkappa*                        &
-                               (deuxd0/yplus - und0/(deuxd0*yplus-dplus))
-              ! On implicite le terme (rho*tet*uk)
-              pfac = 0.d0
-
-            ! In the viscous sub-layer
+            if (abs(hext).gt.rinfin*0.5d0) then
+              heq = hflui
             else
-              cofimp = 0.d0
-              pfac = pimp
+              heq = hflui*hext/(hflui+hext)
+            endif
+
+            ! DFM: the gradient BCs are so that the production term
+            !      of u'T' is correcty computed
+            if (ityturt(iscal).ge.1) then
+              ! In the log layer
+              if (yplus.ge.yp1.and.iturb.ne.0) then
+                xmutlm = xkappa*visclc*yplus
+                rcprod = min(xkappa , max(und0,sqrt(xmutlm/visctc))/yplus)
+
+                cofimp = 1.d0 - yptp*sigmas(iscal)/xkappa*                        &
+                                (deuxd0*rcprod - und0/(deuxd0*yplus-dplus))
+
+                ! the term (rho*tet*uk) is implicit
+                pfac = 0.d0
+
+              ! In the viscous sub-layer
+              else
+                cofimp = 0.d0
+                pfac = pimp
+              endif
+            else
+              pfac = pimp * heq/hint
+              cofimp = 1.d0 - heq/hint
             endif
 
             ! Gradient BCs
@@ -1672,20 +1797,16 @@ do ifac = 1, nfabor
             coefb(ifac,iclvar) = cofimp
 
             ! Flux BCs
-            if (abs(hext).gt.rinfin*0.5d0) then
-              coefa(ifac,iclvaf) = -hflui*pimp
-              coefb(ifac,iclvaf) =  hflui
-            else
-              heq = hflui*hext/(hflui+hext)
-              coefa(ifac,iclvaf) = -heq*pimp
-              coefb(ifac,iclvaf) =  heq
-            endif
+            coefa(ifac,iclvaf) = -heq*pimp
+            coefb(ifac,iclvaf) =  heq
 
             !--> Turbulent heat flux
             if (ityturt(iscal).eq.3) then
 
-              ! Diffusive flux of the scalar T
-              phit = coefa(ifac,iclvaf) + coefb(ifac,iclvaf)*rtp(iel,ivar)
+              ! Turbulent diffusive flux of the scalar T
+              ! (blending factor so that the component v'T' have only
+              !  mu_T/(mu+mu_T)* Phi_T)
+              phit = (coefa(ifac,iclvaf) + coefb(ifac,iclvaf)*rtp(iel,ivar))
 
               ! Name of the scalar ivar !TODO move outside of the loop
               call field_get_name(ivarfl(ivar), fname)
@@ -1700,66 +1821,43 @@ do ifac = 1, nfabor
               call field_get_coefad_v(f_id,cofarut)
               call field_get_coefbd_v(f_id,cofbrut)
 
-              hint = 0.5d0*(visclc+rkl)/distbf
+              hintt(1) = 0.5d0*(visclc+rkl)/distbf                        &
+                       + visten(1,iel)*ctheta(iscal)/distbf/csrij
+              hintt(2) = 0.5d0*(visclc+rkl)/distbf                        &
+                       + visten(2,iel)*ctheta(iscal)/distbf/csrij
+              hintt(3) = 0.5d0*(visclc+rkl)/distbf                        &
+                       + visten(3,iel)*ctheta(iscal)/distbf/csrij
+              hintt(4) = visten(4,iel)*ctheta(iscal)/distbf/csrij
+              hintt(5) = visten(5,iel)*ctheta(iscal)/distbf/csrij
+              hintt(6) = visten(6,iel)*ctheta(iscal)/distbf/csrij
 
-              ! Gradient boundary conditions !TODO FIXME
+              ! Dirichlet Boundary Condition
               !-----------------------------
-
-              coefaut(1,ifac) = 0.d0
-              coefaut(2,ifac) = 0.d0
-              coefaut(3,ifac) = 0.d0
-              ! Projection in order to have the velocity parallel to the wall
-              ! B = cofimp * ( IDENTITY - n x n )
-
-              coefbut(1,1,ifac) = 0.d0
-              coefbut(2,2,ifac) = 0.d0
-              coefbut(3,3,ifac) = 0.d0
-              coefbut(1,2,ifac) = 0.d0
-              coefbut(1,3,ifac) = 0.d0
-              coefbut(2,1,ifac) = 0.d0
-              coefbut(2,3,ifac) = 0.d0
-              coefbut(3,1,ifac) = 0.d0
-              coefbut(3,2,ifac) = 0.d0
-
-              ! Boundary conditions used in the temperature equation
-              do isou = 1, 3
-                cofarut(isou,ifac) = coefaut(isou,ifac)
-                do jsou = 1, 3
-                  cofbrut(isou,jsou,ifac) = coefbut(isou,jsou,ifac)
-                enddo
-              enddo
 
               ! Add rho*uk*Tet to T'v' in High Reynolds
               if (yplus.ge.yp1) then
                 do isou = 1, 3
-                  coefaut(isou,ifac) = coefaut(isou,ifac)        &
-                                     + surfbo(isou,ifac)*phit    &
-                                     / (surfbn(ifac)*cpp*romc)
+                  pimpv(isou) = surfbo(isou,ifac)*phit/(surfbn(ifac)*cpp*romc)
+                enddo
+              else
+                do isou = 1, 3
+                  pimpv(isou) = 0.d0
                 enddo
               endif
 
-              ! Translate coefa into cofaf and coefb into cofbf
+              call set_dirichlet_vector_ggdh &
+                   !========================
+                 ( coefaut(:,ifac)  , cofafut(:,ifac)  ,           &
+                   coefbut(:,:,ifac), cofbfut(:,:,ifac),           &
+                   pimpv            , hintt            , rinfiv )
 
-              ! Flux boundary conditions
-              !-------------------------
-
-              cofafut(1,ifac) = -hint*coefaut(1,ifac)
-              cofafut(2,ifac) = -hint*coefaut(2,ifac)
-              cofafut(3,ifac) = -hint*coefaut(3,ifac)
-
-              ! Projection in order to have the shear stress parallel to the wall
-              !  B = hflui*( IDENTITY - n x n )
-
-              cofbfut(1,1,ifac) = hint*(1.d0-rnx**2)
-              cofbfut(2,2,ifac) = hint*(1.d0-rny**2)
-              cofbfut(3,3,ifac) = hint*(1.d0-rnz**2)
-
-              cofbfut(1,2,ifac) = - hint*rnx*rny
-              cofbfut(1,3,ifac) = - hint*rnx*rnz
-              cofbfut(2,1,ifac) = - hint*rny*rnx
-              cofbfut(2,3,ifac) = - hint*rny*rnz
-              cofbfut(3,1,ifac) = - hint*rnz*rnx
-              cofbfut(3,2,ifac) = - hint*rnz*rny
+              ! Boundary conditions used in the temperature equation
+              do isou = 1, 3
+                cofarut(isou,ifac) = 0.d0
+                do jsou = 1, 3
+                  cofbrut(isou,jsou,ifac) = 0.d0
+                enddo
+              enddo
 
             endif
 

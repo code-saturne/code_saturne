@@ -241,17 +241,17 @@ if (ityturt(iscal).ne.3) then
 
   do iel = 1, ncel
     !Rij
-    xrij(1,1) = rtp(iel,ir11)
-    xrij(2,2) = rtp(iel,ir22)
-    xrij(3,3) = rtp(iel,ir33)
-    xrij(1,2) = rtp(iel,ir12)
-    xrij(1,3) = rtp(iel,ir13)
-    xrij(2,3) = rtp(iel,ir23)
+    xrij(1,1) = rtpa(iel,ir11)
+    xrij(2,2) = rtpa(iel,ir22)
+    xrij(3,3) = rtpa(iel,ir33)
+    xrij(1,2) = rtpa(iel,ir12)
+    xrij(1,3) = rtpa(iel,ir13)
+    xrij(2,3) = rtpa(iel,ir23)
     xrij(2,1) = xrij(1,2)
     xrij(3,1) = xrij(1,3)
     xrij(3,2) = xrij(2,3)
     ! Epsilon
-    xe = rtp(iel,iep)
+    xe = rtpa(iel,iep)
     ! Kinetic turbulent energy
     xk = 0.5d0*(xrij(1,1)+xrij(2,2)+xrij(3,3))
 
@@ -274,7 +274,7 @@ if (ityturt(iscal).ne.3) then
       if (ityturt(iscal).eq.2.and.ibeta.gt.0) then
         if (itt.gt.0) then
           temp(ii) = temp(ii) - ctheta(iscal)*xtt*                            &
-                       etaafm*propce(iel,ipproc(ibeta))*grav(ii)*rtp(iel,isca(itt))
+                       etaafm*propce(iel,ipproc(ibeta))*grav(ii)*rtpa(iel,isca(itt))
         endif
 
         do jj = 1, 3
@@ -295,9 +295,9 @@ if (ityturt(iscal).ne.3) then
     ! Add the term in "grad T" which is implicited by the GGDH part in covofi.
     !  "-C_theta*k/eps* R.grad T"
     do ii = 1, 3
-      xut(ii,iel) = temp(ii) - ctheta(iscal)*xtt*( xrij(ii,1)*gradT(iel,1)  &
-                                                 + xrij(ii,2)*gradT(iel,2)  &
-                                                 + xrij(ii,3)*gradT(iel,3))
+      xut(ii,iel) = temp(ii) - ctheta(iscal)*xtt*( xrij(ii,1)*gradt(iel,1)  &
+                                                 + xrij(ii,2)*gradt(iel,2)  &
+                                                 + xrij(ii,3)*gradt(iel,3))
       ! In the next step, we compute the divergence of:
       !  "-Cp*C_theta*k/eps*( xi* uT'.Grad u + eta*beta*g_i*T'^2)"
       !  The part "-C_theta*k/eps* R.Grad T" is computed by the GGDH part

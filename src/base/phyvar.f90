@@ -108,9 +108,9 @@ Double precision xk, xe, xnu, xrom, vismax(nscamx), vismin(nscamx)
 double precision nusa, xi3, fv1, cv13
 double precision varmn(4), varmx(4), tt, ttmin, ttke, viscto, xrtp
 double precision alp3, xrij(3,3) , xnal(3)   , xnoral
-double precision xttke, xttkmg, xttdrb,epsrgp, climgp, extrap
+double precision xttkmg, xttdrb,epsrgp, climgp, extrap
 double precision alpha, ym, yk
-double precision trrij, csteps
+double precision trrij,rottke
 
 integer          ipass
 data             ipass /0/
@@ -532,18 +532,41 @@ if (iok.eq.1) then
   if (itytur.eq.3) then
 
     ipcrom = ipproc(irom)
+    ipcvis = ipproc(iviscl)
 
-    do iel = 1, ncel
-      trrij = 0.5d0*(rtp(iel,ir11)+rtp(iel,ir22)+rtp(iel,ir33))
-      csteps  = propce(iel,ipcrom) * trrij / rtp(iel,iep)
+    ! EBRSM
+    if (iturb.eq.32) then
+      do iel = 1, ncel
+        trrij = 0.5d0*(rtp(iel,ir11)+rtp(iel,ir22)+rtp(iel,ir33))
+        ttke  = trrij/rtp(iel,iep)
+        ! Durbin scale
+        xttkmg = xct*sqrt(propce(iel,ipcvis)/propce(iel,ipcrom)   &
+                                            /rtp(iel,iep))
+        xttdrb = max(ttke,xttkmg)
+        rottke  = csrij * propce(iel,ipcrom) * xttdrb
 
-      visten(1,iel) = csteps*rtp(iel,ir11)
-      visten(2,iel) = csteps*rtp(iel,ir22)
-      visten(3,iel) = csteps*rtp(iel,ir33)
-      visten(4,iel) = csteps*rtp(iel,ir12)
-      visten(5,iel) = csteps*rtp(iel,ir13)
-      visten(6,iel) = csteps*rtp(iel,ir23)
-    enddo
+        visten(1,iel) = rottke*rtp(iel,ir11)
+        visten(2,iel) = rottke*rtp(iel,ir22)
+        visten(3,iel) = rottke*rtp(iel,ir33)
+        visten(4,iel) = rottke*rtp(iel,ir12)
+        visten(5,iel) = rottke*rtp(iel,ir13)
+        visten(6,iel) = rottke*rtp(iel,ir23)
+      enddo
+
+    ! LRR or SSG
+    else
+      do iel = 1, ncel
+        trrij = 0.5d0*(rtp(iel,ir11)+rtp(iel,ir22)+rtp(iel,ir33))
+        rottke  = csrij * propce(iel,ipcrom) * trrij / rtp(iel,iep)
+
+        visten(1,iel) = rottke*rtp(iel,ir11)
+        visten(2,iel) = rottke*rtp(iel,ir22)
+        visten(3,iel) = rottke*rtp(iel,ir33)
+        visten(4,iel) = rottke*rtp(iel,ir12)
+        visten(5,iel) = rottke*rtp(iel,ir13)
+        visten(6,iel) = rottke*rtp(iel,ir23)
+      enddo
+    endif
 
   else
 

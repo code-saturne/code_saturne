@@ -158,7 +158,7 @@ double precision epsrsp
 double precision rhovst, xk    , xe    , sclnor
 double precision thetv , thets , thetap, thetp1
 double precision smbexp
-double precision trrij , csteps
+double precision temp, idifftp
 
 double precision rvoid(1)
 
@@ -679,7 +679,8 @@ else
   ipcrho = ipcrom
 endif
 
-idftnp = idften(ivar)
+! Get the the order of the diffusivity tensor of the variable
+call field_get_key_int_by_name(ivarfl(ivar), "diffusivity_tensor", idftnp)
 
 ! "VITESSE" DE DIFFUSION FACETTE
 
@@ -690,15 +691,20 @@ idftnp = idften(ivar)
 if (idiff(ivar).ge.1) then
   ! Scalar diffusivity
   if (idftnp.eq.1) then
+
+    idifftp = idifft(ivar)
+    if (ityturt(iscal).eq.3) then
+      idifftp = 0
+    endif
     if (ipcvsl.eq.0) then
       do iel = 1, ncel
         w1(iel) = visls0(iscal)                                     &
-           + idifft(ivar)*xcpp(iel)*max(propce(iel,ipcvst),zero)/sigmas(iscal)
+           + idifftp*xcpp(iel)*max(propce(iel,ipcvst),zero)/sigmas(iscal)
       enddo
     else
       do iel = 1, ncel
         w1(iel) = propce(iel,ipcvsl)                                &
-           + idifft(ivar)*xcpp(iel)*max(propce(iel,ipcvst),zero)/sigmas(iscal)
+           + idifftp*xcpp(iel)*max(propce(iel,ipcvst),zero)/sigmas(iscal)
       enddo
     endif
 
@@ -719,29 +725,25 @@ if (idiff(ivar).ge.1) then
     if (ipcvsl.eq.0) then
       do iel = 1, ncel
 
-        viscce(1,iel) = visls0(iscal)                                      &
-                      + idifft(ivar)*xcpp(iel)*visten(1,iel)*ctheta(iscal)
-        viscce(2,iel) = visls0(iscal)                                      &
-                      + idifft(ivar)*xcpp(iel)*visten(2,iel)*ctheta(iscal)
-        viscce(3,iel) = visls0(iscal)                                      &
-                      + idifft(ivar)*xcpp(iel)*visten(3,iel)*ctheta(iscal)
-        viscce(4,iel) = idifft(ivar)*xcpp(iel)*visten(4,iel)*ctheta(iscal)
-        viscce(5,iel) = idifft(ivar)*xcpp(iel)*visten(5,iel)*ctheta(iscal)
-        viscce(6,iel) = idifft(ivar)*xcpp(iel)*visten(6,iel)*ctheta(iscal)
+        temp = idifft(ivar)*xcpp(iel)*ctheta(iscal)/csrij
+        viscce(1,iel) = temp*visten(1,iel) + visls0(iscal)
+        viscce(2,iel) = temp*visten(2,iel) + visls0(iscal)
+        viscce(3,iel) = temp*visten(3,iel) + visls0(iscal)
+        viscce(4,iel) = temp*visten(4,iel)
+        viscce(5,iel) = temp*visten(5,iel)
+        viscce(6,iel) = temp*visten(6,iel)
 
       enddo
     else
       do iel = 1, ncel
 
-        viscce(1,iel) = propce(iel,ipcvsl)                                 &
-                      + idifft(ivar)*xcpp(iel)*visten(1,iel)*ctheta(iscal)
-        viscce(2,iel) = propce(iel,ipcvsl)                                 &
-                      + idifft(ivar)*xcpp(iel)*visten(2,iel)*ctheta(iscal)
-        viscce(3,iel) = propce(iel,ipcvsl)                                 &
-                      + idifft(ivar)*xcpp(iel)*visten(3,iel)*ctheta(iscal)
-        viscce(4,iel) = idifft(ivar)*xcpp(iel)*visten(4,iel)*ctheta(iscal)
-        viscce(5,iel) = idifft(ivar)*xcpp(iel)*visten(5,iel)*ctheta(iscal)
-        viscce(6,iel) = idifft(ivar)*xcpp(iel)*visten(6,iel)*ctheta(iscal)
+        temp = idifft(ivar)*xcpp(iel)*ctheta(iscal)/csrij
+        viscce(1,iel) = temp*visten(1,iel) + propce(iel,ipcvsl)
+        viscce(2,iel) = temp*visten(2,iel) + propce(iel,ipcvsl)
+        viscce(3,iel) = temp*visten(3,iel) + propce(iel,ipcvsl)
+        viscce(4,iel) = temp*visten(4,iel)
+        viscce(5,iel) = temp*visten(5,iel)
+        viscce(6,iel) = temp*visten(6,iel)
 
       enddo
     endif

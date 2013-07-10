@@ -445,7 +445,7 @@ if (iok21.gt.0) then
   write(nfecra,2532)ce1,ce2,sigmak,sigmae,cmu
 endif
 if (iok30.gt.0) then
-  write(nfecra,2533)ce1,ce2,crij1,crij2,crij3,crijep,csrij,       &
+  write(nfecra,2533)ce1,ce2,crij1,crij2,crij3,sigmae,csrij,       &
                     crijp1,crijp2,cmu
 endif
 if (iok31.gt.0) then
@@ -454,7 +454,7 @@ if (iok31.gt.0) then
 endif
 if (iok32.gt.0) then
   write(nfecra,2539)cebms1,cebmr1,cebmr2,cebmr3,cebmr4,cebmr5,    &
-                    csebm,cebmr6,cebme2,ce1,sigebm,xa1,sigmak,    &
+                    csrij,cebmr6,cebme2,ce1,sigmae,xa1,sigmak,    &
                     xceta,xct
 endif
 if (iok50.gt.0) then
@@ -641,7 +641,7 @@ write(nfecra,9900)
 '       CRIJ1  = ', e14.5,    ' (Coef terme lent             )',/,&
 '       CRIJ2  = ', e14.5,    ' (Coef terme rapide           )',/,&
 '       CRIJ3  = ', e14.5,    ' (Coef terme de gravite       )',/,&
-'       CRIJEP = ', e14.5,    ' (Coef diffusion epsilon      )',/,&
+'       SIGMAE = ', e14.5,    ' (Coef sigma_eps              )',/,&
 '       CSRIJ  = ', e14.5,    ' (Coef diffusion Rij          )',/,&
 '       CRIJP1 = ', e14.5,    ' (Coef lent pour echo de paroi)',/,&
 '       CRIJP2 = ', e14.5,    ' (Coef rapide    echo de paroi)',/,&
@@ -655,7 +655,7 @@ write(nfecra,9900)
 '       CSSGR3 = ', e14.5,    ' (Coef Cr3                    )',/,&
 '       CSSGR4 = ', e14.5,    ' (Coef Cr4                    )',/,&
 '       CSSGR5 = ', e14.5,    ' (Coef Cr5                    )',/,&
-'       CRIJS  = ', e14.5,    ' (Coef Cs diffusion de Rij    )',/,&
+'       CSRIJ  = ', e14.5,    ' (Coef Cs diffusion de Rij    )',/,&
 '       CRIJ3  = ', e14.5,    ' (Coef terme de gravite       )',/,&
 '       Ce1    = ', e14.5,    ' (Coef Ceps1                  )',/,&
 '       CSSGE2 = ', e14.5,    ' (Coef Ceps2                  )',/,&
@@ -718,11 +718,11 @@ write(nfecra,9900)
 '       CEBMR3 = ', e14.5,    ' (Coef Cr3                    )',/,&
 '       CEBMR4 = ', e14.5,    ' (Coef Cr4                    )',/,&
 '       CEBMR5 = ', e14.5,    ' (Coef Cr5                    )',/,&
-'       CSEBM  = ', e14.5,    ' (Coef Cs diffusion de Rij    )',/,&
+'       CSRIJ  = ', e14.5,    ' (Coef Cs diffusion de Rij    )',/,&
 '       CEBMR6 = ', e14.5,    ' (Coef terme de gravite       )',/,&
 '       CEBME2 = ', e14.5,    ' (Coef Ceps2                  )',/,&
 '       Ce1    = ', e14.5,    ' (Coef Ceps1                  )',/,&
-'       SIGEBM = ', e14.5,    ' (Coef sigma_eps              )',/,&
+'       SIGMAE = ', e14.5,    ' (Coef sigma_eps              )',/,&
 '       XA1    = ', e14.5,    ' (Coef A1                     )',/,&
 '       SIGMAK = ', e14.5,    ' (Coef sigma_k                )',/,&
 '       XCETA  = ', e14.5,    ' (Coef Ceta                   )',/,&
@@ -898,7 +898,7 @@ write(nfecra,9900)
 '       CRIJ1  = ', e14.5,    ' (Slow term coefficient       )',/,&
 '       CRIJ2  = ', e14.5,    ' (Fast term coefficient       )',/,&
 '       CRIJ3  = ', e14.5,    ' (Gravity term coefficient    )',/,&
-'       CRIJEP = ', e14.5,    ' (Epsilon diffusion coeff.    )',/,&
+'       SIGMAE = ', e14.5,    ' (sigma_eps coeff.            )',/,&
 '       CSRIJ  = ', e14.5,    ' (Rij diffusion coeff.        )',/,&
 '       CRIJP1 = ', e14.5,    ' (Slow coeff. for wall echo   )',/,&
 '       CRIJP2 = ', e14.5,    ' (Fast coeff. for wall echo   )',/,&
@@ -912,7 +912,7 @@ write(nfecra,9900)
 '       CSSGR3 = ', e14.5,    ' (Cr3 coeff.                  )',/,&
 '       CSSGR4 = ', e14.5,    ' (Cr4 coeff.                  )',/,&
 '       CSSGR5 = ', e14.5,    ' (Cr5 coeff.                  )',/,&
-'       CRIJS  = ', e14.5,    ' (Rij Cs diffusion coeff.     )',/,&
+'       CSRIJ  = ', e14.5,    ' (Rij Cs diffusion coeff.     )',/,&
 '       CRIJ3  = ', e14.5,    ' (Gravity term coeff.         )',/,&
 '       Ce1    = ', e14.5,    ' (Ceps1 coeff.                )',/,&
 '       CSSGE2 = ', e14.5,    ' (Ceps2 coeff.                )',/,&
@@ -975,11 +975,11 @@ write(nfecra,9900)
 '       CEBMR3 = ', e14.5,    ' (Cr3 coeff.                  )',/,&
 '       CEBMR4 = ', e14.5,    ' (Cr4 coeff.                  )',/,&
 '       CEBMR5 = ', e14.5,    ' (Cr5 coeff.                  )',/,&
-'       CSEBM  = ', e14.5,    ' (Rij Cs diffusion coeff.     )',/,&
+'       CSRIJ  = ', e14.5,    ' (Rij Cs diffusion coeff.     )',/,&
 '       CEBMR6 = ', e14.5,    ' (Gravity term coeff.         )',/,&
 '       CEBME2 = ', e14.5,    ' (Coef Ceps2                  )',/,&
 '       Ce1    = ', e14.5,    ' (Coef Ceps1                  )',/,&
-'       SIGEBM = ', e14.5,    ' (Coef sigma_eps              )',/,&
+'       SIGMAE = ', e14.5,    ' (Coef sigma_eps              )',/,&
 '       XA1    = ', e14.5,    ' (Coef A1                     )',/,&
 '       SIGMAK = ', e14.5,    ' (Coef sigma_k                )',/,&
 '       XCETA  = ', e14.5,    ' (Coef Ceta                   )',/,&

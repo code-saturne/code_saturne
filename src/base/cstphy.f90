@@ -101,15 +101,14 @@ module cstphy
   !   c*rij* : constantes du Rij-epsilon standard (LRR)
   !   cssg*  : constantes specifiques du Rij-epsilon SSG
   !   cebm*  : constants of the Rij-epsilon EBRSM
-  !   csebm  : constant of the Rij-epsilon EBRSM
+  !   csrij  : constant of the Rij-epsilon EBRSM (0.21)
   !   cebme2 : constant of the Rij-epsilon EBRSM
   !   cebmmu : constant of the Rij-epsilon EBRSM
   !   xcl    : constant of the Rij-epsilon EBRSM
-  !   sigebm : constants sigmae for the Rij-epsilon EBRSM
+  !   sigmae : constants sigmae for the Rij-epsilon EBRSM (1.15)
   !   xa1    : constant in the expression of Ce1' for the Rij-epsilon EBRSM
   !   xct    : constant of the Rij-epsilon EBRSM
   !   xceta  : constant of the Rij-epsilon EBRSM
-  !   sigebm : constant sigmae for the Rij-epsilon EBRSM
   !   cv2f*  : constantes specifiques du v2f "phi-model" (f-barre)
   !   cpal*  : constantes specifiques du v2f "BL-v2k" (ou phi-alpha)
   !   ckw*   : constantes specifiques du k-omega SST
@@ -145,13 +144,13 @@ module cstphy
                             apow   , bpow   , cpow   , dpow   ,             &
                             cmu    , cmu025 , ce1    , ce2    , ce4    ,    &
                             sigmak , sigmae ,                               &
-                            crij1  , crij2  , crij3  , crijep , csrij  ,    &
+                            crij1  , crij2  , crij3  , csrij  ,             &
                             crijp1 , crijp2 ,                               &
                             cssge2 , cssgs1 , cssgs2 ,                      &
                             cssgr1 , cssgr2 , cssgr3 , cssgr4 , cssgr5 ,    &
                             cebms1 , cebms2 , cebmr1 ,                      &
                             cebmr2 , cebmr3 , cebmr4 , cebmr5 , cebmr6 ,    &
-                            csebm  , cebme2 , cebmmu , xcl    , sigebm ,    &
+                            cebme2 , cebmmu , xcl    ,                      &
                             xa1    , xct    , xceta  ,                      &
                             cv2fa1 , cv2fe2 , cv2fmu , cv2fc1 , cv2fc2 ,    &
                             cv2fct , cv2fcl , cv2fet ,                      &

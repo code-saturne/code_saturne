@@ -206,7 +206,7 @@ double precision visclc, visctc, romc  , distbf, srfbnf, cpscv
 double precision cofimp
 double precision distb0, rugd  , rugt  , ydep  , act
 double precision dsa0
-double precision pfac
+double precision rinfiv(3), pimpv(3), hintt(6), pfac
 double precision visci(3,3), fikis, viscis, distfi
 
 character*80     fname
@@ -259,6 +259,10 @@ phit = 0.d0
 rugt = 0.d0
 uiptn = 0.d0
 uiptnf = 0.d0
+
+rinfiv(1) = rinfin
+rinfiv(2) = rinfin
+rinfiv(3) = rinfin
 
 ! --- Constants
 uet = 1.d0
@@ -1390,26 +1394,18 @@ do ifac = 1, nfabor
             pimp = rcodcl(ifac,ivar,1)
 
             if (abs(hext).gt.rinfin*0.5d0) then
-
-              ! Gradient BCs
-              coefa(ifac,iclvar) = pimp*hflui/hint
-              coefb(ifac,iclvar) = 1.d0 - hflui/hint
-
-              ! Flux BCs
-              coefa(ifac,iclvaf) = -hflui*pimp
-              coefb(ifac,iclvaf) =  hflui
-
+              heq = hflui
             else
-
               heq = hflui*hext/(hflui+hext)
-              ! Gradient BCs
-              coefa(ifac,iclvar) = pimp*heq/hint
-              coefb(ifac,iclvar) = 1.d0 - heq/hint
-
-              ! Flux BCs
-              coefa(ifac,iclvaf) = -heq*pimp
-              coefb(ifac,iclvaf) =  heq
             endif
+
+            ! Gradient BCs
+            coefa(ifac,iclvar) = pimp*heq/hint
+            coefb(ifac,iclvar) = 1.d0 - heq/hint
+
+            ! Flux BCs
+            coefa(ifac,iclvaf) = -heq*pimp
+            coefb(ifac,iclvaf) =  heq
 
             !--> Turbulent heat flux
             if (ityturt(iscal).eq.3) then
@@ -1427,63 +1423,37 @@ do ifac = 1, nfabor
               call field_get_coefad_v(f_id,cofarut)
               call field_get_coefbd_v(f_id,cofbrut)
 
-              hint = 0.5d0*(visclc+rkl)/distbf !FIXME with the GGDH component
+              hintt(1) = 0.5d0*(visclc+rkl)/distbf                        &
+                       + visten(1,iel)*ctheta(iscal)/distbf/csrij
+              hintt(2) = 0.5d0*(visclc+rkl)/distbf                        &
+                       + visten(2,iel)*ctheta(iscal)/distbf/csrij
+              hintt(3) = 0.5d0*(visclc+rkl)/distbf                        &
+                       + visten(3,iel)*ctheta(iscal)/distbf/csrij
+              hintt(4) = visten(4,iel)*ctheta(iscal)/distbf/csrij
+              hintt(5) = visten(5,iel)*ctheta(iscal)/distbf/csrij
+              hintt(6) = visten(6,iel)*ctheta(iscal)/distbf/csrij
 
-              ! Gradient boundary conditions
+              ! Dirichlet Boundary Condition
               !-----------------------------
 
-              coefaut(1,ifac) = 0.d0
-              coefaut(2,ifac) = 0.d0
-              coefaut(3,ifac) = 0.d0
-              ! Projection in order to have the velocity parallel to the wall
-              ! B = cofimp * ( IDENTITY - n x n )
+              ! Add rho*uk*Tet to T'v' in High Reynolds
+              do isou = 1, 3
+                pimpv(isou) = surfbo(isou,ifac)*phit/(surfbn(ifac)*cpp*romc)
+              enddo
 
-              coefbut(1,1,ifac) = 0.d0
-              coefbut(2,2,ifac) = 0.d0
-              coefbut(3,3,ifac) = 0.d0
-              coefbut(1,2,ifac) = 0.d0
-              coefbut(1,3,ifac) = 0.d0
-              coefbut(2,1,ifac) = 0.d0
-              coefbut(2,3,ifac) = 0.d0
-              coefbut(3,1,ifac) = 0.d0
-              coefbut(3,2,ifac) = 0.d0
+              call set_dirichlet_vector_ggdh &
+                   !========================
+                 ( coefaut(:,ifac)  , cofafut(:,ifac)  ,           &
+                   coefbut(:,:,ifac), cofbfut(:,:,ifac),           &
+                   pimpv            , hintt            , rinfiv )
 
               ! Boundary conditions used in the temperature equation
               do isou = 1, 3
-                cofarut(isou,ifac) = coefaut(isou,ifac)
+                cofarut(isou,ifac) = 0.d0
                 do jsou = 1, 3
-                  cofbrut(isou,jsou,ifac) = coefbut(isou,jsou,ifac)
+                  cofbrut(isou,jsou,ifac) = 0.d0
                 enddo
               enddo
-
-              ! Add uk*Tet to the turbulent flux T'v' in High Reynolds
-              do isou = 1, 3
-                coefaut(isou,ifac) = coefaut(isou,ifac)                    &
-                                   + surfbo(isou,ifac)/surfbn(ifac)*phit
-              enddo
-
-              ! Translate coefa into cofaf and coefb into cofbf
-
-              ! Flux boundary conditions
-              !-------------------------
-
-              cofafut(1,ifac) = -hint*coefaut(1,ifac)
-              cofafut(2,ifac) = -hint*coefaut(2,ifac)
-              cofafut(3,ifac) = -hint*coefaut(3,ifac)
-
-              ! Projection in order to have the shear stress parallel to the wall
-              !  B = hflui*( IDENTITY - n x n )
-
-              cofbfut(1,1,ifac) = hint*(1.d0-rnx**2)
-              cofbfut(2,2,ifac) = hint*(1.d0-rny**2)
-              cofbfut(3,3,ifac) = hint*(1.d0-rnz**2)
-
-              cofbfut(1,2,ifac) = - hint*rnx*rny
-              cofbfut(1,3,ifac) = - hint*rnx*rnz
-              cofbfut(2,1,ifac) = - hint*rny*rnx
-              cofbfut(2,3,ifac) = - hint*rny*rnz
-              cofbfut(3,1,ifac) = - hint*rnz*rnx
-              cofbfut(3,2,ifac) = - hint*rnz*rny
 
             endif
 

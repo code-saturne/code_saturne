@@ -128,7 +128,7 @@ integer          icl11r, icl22r, icl33r, icl12r, icl13r, icl23r
 integer          icluf , iclvf , iclwf
 integer          iclumf, iclvmf, iclwmf
 integer          icl11f, icl22f, icl33f, icl12f, icl13f, icl23f
-integer          iclvar, iel   , iclvrr
+integer          iclvar, iel   , iclvrr, iclvaf
 integer          iscal , ipccp , ivar
 integer          niturt, iiturt
 integer          f_id
@@ -142,6 +142,7 @@ double precision srfbnf, rcodcn, hint, visclc, visctc, distbf
 double precision cpp,rkl
 double precision vismsh(3), hintv(3)
 double precision hintt(6)
+double precision visci(3,3), fikis, viscis, distfi
 
 character*80     fname
 
@@ -445,22 +446,34 @@ do ifac = 1, nfabor
       do isou = 1,6
 
         if (isou.eq.1) then
+          ivar = ir11
           iclvar = icl11
+          iclvaf = icl11f
           iclvrr = icl11r
         elseif (isou.eq.2) then
+          ivar = ir22
           iclvar = icl22
+          iclvaf = icl22f
           iclvrr = icl22r
         elseif (isou.eq.3) then
+          ivar = ir33
           iclvar = icl33
+          iclvaf = icl33f
           iclvrr = icl33r
         elseif (isou.eq.4) then
+          ivar = ir12
           iclvar = icl12
+          iclvaf = icl12f
           iclvrr = icl12r
         elseif (isou.eq.5) then
+          ivar = ir13
           iclvar = icl13
+          iclvaf = icl13f
           iclvrr = icl13r
         elseif (isou.eq.6) then
+          ivar = ir23
           iclvar = icl23
+          iclvaf = icl23f
           iclvrr = icl23r
         endif
 
@@ -480,11 +493,64 @@ do ifac = 1, nfabor
           enddo
           coefb(ifac,iclvar) = 0.d0
         endif
-        ! Translate coefa into cofaf and coefb into cofbf Done in resssg.f90
 
         ! Boundary conditions for the momentum equation
         coefa(ifac,iclvrr) = coefa(ifac,iclvar)
         coefb(ifac,iclvrr) = coefb(ifac,iclvar)
+
+        ! Symmetric tensor diffusivity (Daly Harlow -- GGDH)
+        if (idften(ivar).eq.6) then
+
+          visci(1,1) = visclc + visten(1,iel)
+          visci(2,2) = visclc + visten(2,iel)
+          visci(3,3) = visclc + visten(3,iel)
+          visci(1,2) =          visten(4,iel)
+          visci(2,1) =          visten(4,iel)
+          visci(2,3) =          visten(5,iel)
+          visci(3,2) =          visten(5,iel)
+          visci(1,3) =          visten(6,iel)
+          visci(3,1) =          visten(6,iel)
+
+          ! ||Ki.S||^2
+          viscis = ( visci(1,1)*surfbo(1,ifac)       &
+                   + visci(1,2)*surfbo(2,ifac)       &
+                   + visci(1,3)*surfbo(3,ifac))**2   &
+                 + ( visci(2,1)*surfbo(1,ifac)       &
+                   + visci(2,2)*surfbo(2,ifac)       &
+                   + visci(2,3)*surfbo(3,ifac))**2   &
+                 + ( visci(3,1)*surfbo(1,ifac)       &
+                   + visci(3,2)*surfbo(2,ifac)       &
+                   + visci(3,3)*surfbo(3,ifac))**2
+
+          ! IF.Ki.S
+          fikis = ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,1)   &
+                  + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,1)   &
+                  + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,1)   &
+                  )*surfbo(1,ifac)                              &
+                + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,2)   &
+                  + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,2)   &
+                  + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,2)   &
+                  )*surfbo(2,ifac)                              &
+                + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,3)   &
+                  + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,3)   &
+                  + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,3)   &
+                  )*surfbo(3,ifac)
+
+          distfi = distb(ifac)
+
+          ! Take I" so that I"F= eps*||FI||*Ki.n when J" is in cell rji
+          ! NB: eps =1.d-1 must be consistent with vitens.f90
+          fikis = max(fikis, 1.d-1*sqrt(viscis)*distfi)
+
+          hint = viscis/surfbn(ifac)/fikis
+
+        else
+          call csexit(1)
+        endif
+
+        ! Translate into Diffusive flux BCs
+        coefa(ifac,iclvaf) = -hint*coefa(ifac,iclvar)
+        coefb(ifac,iclvaf) = hint*(1.d0-coefb(ifac,iclvar))
 
       enddo
 

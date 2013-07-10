@@ -213,6 +213,7 @@ double precision xk, xe, xnu
 double precision xllke, xllkmg, xlldrb
 double precision rinfiv(3), pimpv(3), qimpv(3), hextv(3), cflv(3), vect(3)
 double precision visci(3,3), fikis, viscis, distfi
+double precision temp
 
 logical          ilved
 character*80     fname
@@ -1452,8 +1453,6 @@ if (itytur.eq.2.or.iturb.eq.60) then
   enddo
 
 ! ---> Rij-epsilon
-!      (Warning, visct is zero here)
-
 elseif (itytur.eq.3) then
 
   ! --> Rij
@@ -1502,13 +1501,60 @@ elseif (itytur.eq.3) then
       ! --- Geometrical quantities
       distbf = distb(ifac)
 
-      hint = visclc/distbf
+      ! Symmetric tensor diffusivity (Daly Harlow -- GGDH)
+      if (idften(ivar).eq.6) then
+
+        visci(1,1) = visclc + visten(1,iel)
+        visci(2,2) = visclc + visten(2,iel)
+        visci(3,3) = visclc + visten(3,iel)
+        visci(1,2) =          visten(4,iel)
+        visci(2,1) =          visten(4,iel)
+        visci(2,3) =          visten(5,iel)
+        visci(3,2) =          visten(5,iel)
+        visci(1,3) =          visten(6,iel)
+        visci(3,1) =          visten(6,iel)
+
+        ! ||Ki.S||^2
+        viscis = ( visci(1,1)*surfbo(1,ifac)       &
+                 + visci(1,2)*surfbo(2,ifac)       &
+                 + visci(1,3)*surfbo(3,ifac))**2   &
+               + ( visci(2,1)*surfbo(1,ifac)       &
+                 + visci(2,2)*surfbo(2,ifac)       &
+                 + visci(2,3)*surfbo(3,ifac))**2   &
+               + ( visci(3,1)*surfbo(1,ifac)       &
+                 + visci(3,2)*surfbo(2,ifac)       &
+                 + visci(3,3)*surfbo(3,ifac))**2
+
+        ! IF.Ki.S
+        fikis = ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,1)   &
+                + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,1)   &
+                + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,1)   &
+                )*surfbo(1,ifac)                              &
+              + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,2)   &
+                + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,2)   &
+                + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,2)   &
+                )*surfbo(2,ifac)                              &
+              + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,3)   &
+                + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,3)   &
+                + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,3)   &
+                )*surfbo(3,ifac)
+
+        distfi = distb(ifac)
+
+        ! Take I" so that I"F= eps*||FI||*Ki.n when J" is in cell rji
+        ! NB: eps =1.d-1 must be consistent with vitens.f90
+        fikis = max(fikis, 1.d-1*sqrt(viscis)*distfi)
+
+        hint = viscis/surfbn(ifac)/fikis
+
+      else
+        call csexit(1)
+      endif
 
       ! Dirichlet Boundary Condition
       !-----------------------------
 
       if (icodcl(ifac,ivar).eq.1) then
-
         pimp = rcodcl(ifac,ivar,1)
         hext = rcodcl(ifac,ivar,2)
 
@@ -1527,7 +1573,6 @@ elseif (itytur.eq.3) then
       !----------------------------
 
       if (icodcl(ifac,ivar).eq.3) then
-
         qimp = rcodcl(ifac,ivar,3)
 
         call set_neumann_scalar &
@@ -1543,7 +1588,6 @@ elseif (itytur.eq.3) then
       !-------------------------------
 
       elseif (icodcl(ifac,ivar).eq.2) then
-
         pimp = rcodcl(ifac,ivar,1)
         cfl = rcodcl(ifac,ivar,2)
 
@@ -1579,9 +1623,55 @@ elseif (itytur.eq.3) then
     ! --- Geometrical quantities
     distbf = distb(ifac)
 
-    hint = (visclc + idifft(ivar)*visctc/sigmae)/distbf !FIXME
-! this hint is good only with SSG because Daly Harlow is used in
-! epsilon equation with EB-RSM and LRR
+    ! Symmetric tensor diffusivity (Daly Harlow -- GGDH)
+    if (idften(ivar).eq.6) then
+
+      visci(1,1) = visclc + visten(1,iel)/sigmae
+      visci(2,2) = visclc + visten(2,iel)/sigmae
+      visci(3,3) = visclc + visten(3,iel)/sigmae
+      visci(1,2) =          visten(4,iel)/sigmae
+      visci(2,1) =          visten(4,iel)/sigmae
+      visci(2,3) =          visten(5,iel)/sigmae
+      visci(3,2) =          visten(5,iel)/sigmae
+      visci(1,3) =          visten(6,iel)/sigmae
+      visci(3,1) =          visten(6,iel)/sigmae
+
+      ! ||Ki.S||^2
+      viscis = ( visci(1,1)*surfbo(1,ifac)       &
+               + visci(1,2)*surfbo(2,ifac)       &
+               + visci(1,3)*surfbo(3,ifac))**2   &
+             + ( visci(2,1)*surfbo(1,ifac)       &
+               + visci(2,2)*surfbo(2,ifac)       &
+               + visci(2,3)*surfbo(3,ifac))**2   &
+             + ( visci(3,1)*surfbo(1,ifac)       &
+               + visci(3,2)*surfbo(2,ifac)       &
+               + visci(3,3)*surfbo(3,ifac))**2
+
+      ! IF.Ki.S
+      fikis = ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,1)   &
+              + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,1)   &
+              + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,1)   &
+              )*surfbo(1,ifac)                              &
+            + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,2)   &
+              + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,2)   &
+              + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,2)   &
+              )*surfbo(2,ifac)                              &
+            + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,3)   &
+              + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,3)   &
+              + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,3)   &
+              )*surfbo(3,ifac)
+
+      distfi = distb(ifac)
+
+      ! Take I" so that I"F= eps*||FI||*Ki.n when J" is in cell rji
+      ! NB: eps =1.d-1 must be consistent with vitens.f90
+      fikis = max(fikis, 1.d-1*sqrt(viscis)*distfi)
+
+      hint = viscis/surfbn(ifac)/fikis
+
+    else
+      call csexit(1)
+    endif
 
     ! Dirichlet Boundary Condition
     !-----------------------------
@@ -2066,15 +2156,16 @@ if (nscal.ge.1) then
       ! Symmetric tensor diffusivity
       elseif (idften(ivar).eq.6) then
 
-        visci(1,1) = rkl + idifft(ivar)*cpp*visten(1,iel)*ctheta(ii)
-        visci(2,2) = rkl + idifft(ivar)*cpp*visten(2,iel)*ctheta(ii)
-        visci(3,3) = rkl + idifft(ivar)*cpp*visten(3,iel)*ctheta(ii)
-        visci(1,2) =       idifft(ivar)*cpp*visten(4,iel)*ctheta(ii)
-        visci(2,1) =       idifft(ivar)*cpp*visten(4,iel)*ctheta(ii)
-        visci(2,3) =       idifft(ivar)*cpp*visten(5,iel)*ctheta(ii)
-        visci(3,2) =       idifft(ivar)*cpp*visten(5,iel)*ctheta(ii)
-        visci(1,3) =       idifft(ivar)*cpp*visten(6,iel)*ctheta(ii)
-        visci(3,1) =       idifft(ivar)*cpp*visten(6,iel)*ctheta(ii)
+        temp = idifft(ivar)*cpp*ctheta(ii)/csrij
+        visci(1,1) = rkl + temp*visten(1,iel)
+        visci(2,2) = rkl + temp*visten(2,iel)
+        visci(3,3) = rkl + temp*visten(3,iel)
+        visci(1,2) =       temp*visten(4,iel)
+        visci(2,1) =       temp*visten(4,iel)
+        visci(2,3) =       temp*visten(5,iel)
+        visci(3,2) =       temp*visten(5,iel)
+        visci(1,3) =       temp*visten(6,iel)
+        visci(3,1) =       temp*visten(6,iel)
 
         ! ||Ki.S||^2
         viscis = ( visci(1,1)*surfbo(1,ifac)       &
@@ -2301,14 +2392,14 @@ if (nscal.ge.1) then
           rkl = propce(iel,ipproc(ivisls(iscal)))/cpp
         endif
         hintt(1) = 0.5d0*(visclc+rkl)/distbf                        &
-                 + visten(1,iel)*ctheta(iscal)/distbf !FIXME ctheta (iscal)
+                 + visten(1,iel)*ctheta(iscal)/distbf/csrij !FIXME ctheta (iscal)
         hintt(2) = 0.5d0*(visclc+rkl)/distbf                        &
-                 + visten(2,iel)*ctheta(iscal)/distbf
+                 + visten(2,iel)*ctheta(iscal)/distbf/csrij
         hintt(3) = 0.5d0*(visclc+rkl)/distbf                        &
-                 + visten(3,iel)*ctheta(iscal)/distbf
-        hintt(4) = visten(4,iel)*ctheta(iscal)/distbf
-        hintt(5) = visten(5,iel)*ctheta(iscal)/distbf
-        hintt(6) = visten(6,iel)*ctheta(iscal)/distbf
+                 + visten(3,iel)*ctheta(iscal)/distbf/csrij
+        hintt(4) = visten(4,iel)*ctheta(iscal)/distbf/csrij
+        hintt(5) = visten(5,iel)*ctheta(iscal)/distbf/csrij
+        hintt(6) = visten(6,iel)*ctheta(iscal)/distbf/csrij
 
         ! Set pointer values of turbulent fluxes in icodcl
         iut = nvar + 3*(ifltur(ii) - 1) + 1

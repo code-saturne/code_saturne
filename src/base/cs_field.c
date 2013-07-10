@@ -2705,11 +2705,12 @@ cs_field_define_keys_base(void)
   cs_field_define_key_int("coupled", 0, CS_FIELD_VARIABLE);
   cs_field_define_key_int("moment_dt", -1, CS_FIELD_PROPERTY);
 
-  cs_field_define_key_int("drift_scalar_model", 0, 0);
   cs_field_define_key_int("inner_mass_flux_id", 0, 0);
   cs_field_define_key_int("boundary_mass_flux_id", 0, 0);
   cs_field_define_key_int("variable_id", 0, 0); //inverse of the ivarfl(ivar) array
+  cs_field_define_key_int("diffusivity_tensor", 0, 0);
   cs_field_define_key_int("scalar_id", 0, 0); //inverse of the isca(iscal) array
+  cs_field_define_key_int("drift_scalar_model", 0, 0);
   cs_field_define_key_int("scalar_class", 0, 0);
   cs_field_define_key_int("first_moment_id", -1, 0); // old iscavr(iscal)
   cs_field_define_key_double("min_scalar_clipping", 0, 0);

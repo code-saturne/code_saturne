@@ -695,6 +695,15 @@ elseif (itytur.eq.3) then
     thetav(ir23) = 0.5d0
     thetav(iep ) = 0.5d0
   endif
+  ! Daly Harlow (GGDH) on Rij and epsilon by Default
+  idften(ir11) = 6
+  idften(ir22) = 6
+  idften(ir33) = 6
+  idften(ir12) = 6
+  idften(ir23) = 6
+  idften(ir13) = 6
+  idften(iep)  = 6
+
   if (iturb.eq.32) then
     if (abs(thetav(ial)+999.d0).gt.epzero) then
       write(nfecra,1031) 'VARIABLES  RIJ-EB','THETAV'
@@ -1269,6 +1278,20 @@ endif
 cpow    = apow**(2.d0/(1.d0-bpow))
 dpow    = 1.d0/(1.d0+bpow)
 cmu025 = cmu**0.25d0
+
+if (iturb.eq.30.or.iturb.eq.31) then
+  sigmae = 1.22d0
+else if (iturb.eq.32) then
+  sigmae = 1.15d0
+else
+  sigmae = 1.30d0
+endif
+
+if (iturb.eq.32) then
+  csrij = 0.21d0
+else
+  csrij = 0.22d0
+endif
 
 ! ---> ICLVFL
 !      Si l'utilisateur n'a pas modifie ICLVFL, on prend par defaut :

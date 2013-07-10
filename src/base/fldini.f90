@@ -82,7 +82,7 @@ implicit none
 integer          ii, ippu, ippv, ippw, ivar, iprop
 integer          imom, idtnm
 integer          keyvis, keylbl, keycpl, iflid, ikeyid, ikeyvl, iopchr
-integer          keysca, keyvar, kscmin, kscmax
+integer          keysca, keyvar, kscmin, kscmax, kdiftn
 integer          nfld, itycat, ityloc, idim1, idim3
 logical          ilved, iprev, inoprv
 integer          ifvar(nvppmx), iapro(npromx)
@@ -139,6 +139,9 @@ call field_get_key_id("max_scalar_clipping", kscmax)
 
 ! If a scalar is a variance, store the id of the parent scalar
 call field_get_key_id("first_moment_id", kscavr)
+
+! Key id for diffusivity tensor
+call field_get_key_id("diffusivity_tensor", kdiftn)
 
 ! Postprocessing level for variables
 iopchr = 1
@@ -341,6 +344,8 @@ do ii = 1, nscal
       f_name = trim(name)//'_turbulent_flux'
       call field_create(f_name, itycat, ityloc, idim3, .true., iprev, iflid)
       call field_set_key_int(iflid, keycpl, 1)
+      ! Tensorial diffusivity
+      call field_set_key_int(iflid, kdiftn, 6)
       if (ichrvr(ipprtp(ivar)) .eq. 1) then
         call field_set_key_int(iflid, keyvis, iopchr)
       endif
@@ -363,6 +368,8 @@ enddo
 do ivar = 1, nvar
   ! Set the "variable_id" key word (inverse of ivarfl(ivar))
   call field_set_key_int(ivarfl(ivar), keyvar, ivar)
+  ! Key word: tensorial diffusivity
+  call field_set_key_int(ivarfl(ivar), kdiftn, idften(ivar))
 enddo
 
 ! Flag moments
