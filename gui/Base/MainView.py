@@ -391,15 +391,13 @@ class MainView(object):
 
         settings = QSettings()
 
-        if settings.value("RecentFiles", list) is not None:
-            self.recentFiles = [str(ch) for ch in settings.value("RecentFiles", list)]
+        if settings.value("RecentFiles", []) is not None:
+            self.recentFiles = settings.value("RecentFiles", [])
         else:
             self.recentFiles = []
 
-        self.restoreGeometry(
-                settings.value("MainWindow/Geometry", bytes))
-        self.restoreState(
-                settings.value("MainWindow/State", bytes))
+        self.restoreGeometry(settings.value("MainWindow/Geometry", QByteArray()))
+        self.restoreState(settings.value("MainWindow/State", QByteArray()))
 
         color = settings.value("MainWindow/Color",
                   self.palette().color(QPalette.Window).name())

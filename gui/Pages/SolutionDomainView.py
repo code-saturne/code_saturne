@@ -415,14 +415,19 @@ class StandardItemModelMeshes(QStandardItemModel):
             self.mdl.setMeshReorient(mesh, self.dataMeshes[row][col])
 
         elif col == 4:
-            v = str(value)
+            if value:
+                v = str(value)
+            else:
+                v = ''
             self.dataMeshes[row][col] = v
             if v:
-                print "v = ", v
                 self.mdl.setMeshGroupFaces(mesh, v)
 
         elif col == 5:
-            v = str(value)
+            if value:
+                v = str(value)
+            else:
+                v = ''
             self.dataMeshes[row][col] = v
             if v:
                 self.mdl.setMeshGroupCells(mesh, v)
