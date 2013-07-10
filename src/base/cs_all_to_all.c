@@ -1252,7 +1252,8 @@ cs_all_to_all_create_s(size_t          n_elts,
 
   if (_all_to_all_calls[0] == 0) {
     int i;
-    for (i = 0; i < 4; i++)
+    int n_timers = sizeof(_all_to_all_timers)/sizeof(_all_to_all_timers[0]);
+    for (i = 0; i < n_timers; i++)
       CS_TIMER_COUNTER_INIT(_all_to_all_timers[i]);
   }
 
@@ -1345,7 +1346,8 @@ cs_all_to_all_create_with_ids_s(size_t            n_elts,
 
   if (_all_to_all_calls[0] == 0) {
     int i;
-    for (i = 0; i < 4; i++)
+    int n_timers = sizeof(_all_to_all_timers)/sizeof(_all_to_all_timers[0]);
+    for (i = 0; i < n_timers; i++)
       CS_TIMER_COUNTER_INIT(_all_to_all_timers[i]);
   }
 
@@ -1439,7 +1441,8 @@ cs_all_to_all_create_from_block_s(size_t                 n_elts,
 
   if (_all_to_all_calls[0] == 0) {
     int i;
-    for (i = 0; i < 4; i++)
+    int n_timers = sizeof(_all_to_all_timers)/sizeof(_all_to_all_timers[0]);
+    for (i = 0; i < n_timers; i++)
       CS_TIMER_COUNTER_INIT(_all_to_all_timers[i]);
   }
 
