@@ -108,7 +108,8 @@ typedef struct _cs_syr4_coupling_ent_t {
 
   int                post_mesh_id;   /* 0 if post-processing is not active,
                                         or post-processing mesh_id (< 0) */
-  float             *solid_temp;     /* Wall temperature (received) */
+  cs_real_t         *solid_temp;     /* Solid temperature received
+                                        from SYRTHES */
   float             *flux;           /* Flux (calculated) */
   float             *tfluid_tmp;     /* Fluid temperature (points to flux in
                                         transient stage where solid_temp and
@@ -117,8 +118,7 @@ typedef struct _cs_syr4_coupling_ent_t {
 
   /* Saved array for volume coupling. Will be used to build source term. */
 
-  double           *hvol;            /* Volumetric exchange coefficient. */
-  double           *sol_temp;        /* Solid temperature sent by SYRTHES */
+  double            *hvol;           /* Volumetric exchange coefficient. */
 
 } cs_syr4_coupling_ent_t;
 
@@ -318,11 +318,10 @@ static void
 _cs_syr4_coupling_post_function(void                  *coupling,
                                 const cs_time_step_t  *ts)
 {
-  int type_id, var_id;
+  int type_id;
 
   const cs_syr4_coupling_t  *syr_coupling = coupling;
   cs_syr4_coupling_ent_t *coupling_ent = NULL;
-  const char *var_name[2] = {N_("Wall T"), N_("Flux")};
 
   for (type_id = 0; type_id < 2; type_id++) {
 
@@ -335,28 +334,35 @@ _cs_syr4_coupling_post_function(void                  *coupling,
 
       if (coupling_ent->post_mesh_id != 0) {
 
-        const float *cell_var[2] = {NULL, NULL};
-        const float *face_var[2] = {NULL, NULL};
+        const cs_real_t *cell_temp = NULL;
+        const cs_real_t *face_temp = NULL;
 
-        if (type_id == 0) {
-          face_var[0] = coupling_ent->solid_temp;
-          face_var[1] = coupling_ent->flux;
-        }
-        else {
-          cell_var[0] = coupling_ent->solid_temp;
-          cell_var[1] = coupling_ent->flux;
-        }
+        if (type_id == 0)
+          face_temp = coupling_ent->solid_temp;
+        else
+          cell_temp = coupling_ent->solid_temp;
 
-        for (var_id = 0; var_id < 2; var_id++)
+        cs_post_write_var(coupling_ent->post_mesh_id,
+                          _("Solid T"),
+                          1,
+                          false,
+                          false,
+                          CS_POST_TYPE_cs_real_t,
+                          cell_temp,
+                          NULL,
+                          face_temp,
+                          ts);
+
+        if (type_id == 1)
           cs_post_write_var(coupling_ent->post_mesh_id,
-                            _(var_name[var_id]),
+                            _("Solid heat flux"),
                             1,
                             false,
                             false,
-                            CS_POST_TYPE_float,
-                            cell_var[var_id],
+                            CS_POST_TYPE_cs_real_t,
                             NULL,
-                            face_var[var_id],
+                            NULL,
+                            coupling_ent->flux,
                             ts);
 
       }
@@ -394,21 +400,19 @@ _post_init(cs_syr4_coupling_t      *syr_coupling,
   if (cs_post_writer_exists(writer_id) != true)
     return;
 
-  /* Initialize post processing flag, and free previous arrays in
-     case this function is called more than once */
+  /* Initialize post processing flag */
 
   coupling_ent->post_mesh_id = cs_post_get_free_mesh_id();
 
-  if (coupling_ent->solid_temp != NULL)
-    BFT_FREE(coupling_ent->solid_temp);
-  if (coupling_ent->flux != NULL)
-    BFT_FREE(coupling_ent->flux);
-
-  /* Allocate arrays */
+  /* Allocate arrays if not already present */
 
   if (coupling_ent->n_elts > 0) {
-    BFT_MALLOC(coupling_ent->solid_temp, coupling_ent->n_elts, float);
-    BFT_MALLOC(coupling_ent->flux, coupling_ent->n_elts, float);
+    if (coupling_ent->solid_temp == NULL) /* surface coupling */
+      BFT_MALLOC(coupling_ent->solid_temp, coupling_ent->n_elts, cs_real_t);
+    if (coupling_ent->elt_dim == syr_coupling->dim) { /* volume coupling */
+      if (coupling_ent->flux == NULL)
+        BFT_MALLOC(coupling_ent->flux, coupling_ent->n_elts, float);
+    }
   }
   coupling_ent->tfluid_tmp = NULL;
 
@@ -486,7 +490,6 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
   coupling_ent->tfluid_tmp = NULL;
 
   coupling_ent->hvol = NULL;
-  coupling_ent->sol_temp = NULL;
 
   if (syr_coupling->verbosity > 0) {
     bft_printf(_("\nExtracting coupled mesh             ..."));
@@ -520,7 +523,7 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
     /* Allocate additional buffers */
 
     BFT_MALLOC(coupling_ent->hvol, coupling_ent->n_elts, double);
-    BFT_MALLOC(coupling_ent->sol_temp, coupling_ent->n_elts, double);
+    BFT_MALLOC(coupling_ent->solid_temp, coupling_ent->n_elts, cs_real_t);
 
   }
 
@@ -590,7 +593,7 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                 _("Error projecting the extracted mesh."));
 
     if (syr_coupling->verbosity > 0) {
-      bft_printf(" [ok]\n");
+      bft_printf(_(" [ok]\n"));
       bft_printf_flush();
     }
 
@@ -673,7 +676,7 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                        locate_on_closest);
 
   if (syr_coupling->verbosity > 0) {
-    bft_printf(" [ok]\n");
+    bft_printf(_(" [ok]\n"));
     bft_printf_flush();
   }
 
@@ -857,7 +860,8 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
     bft_printf(_("Coupling with SYRTHES impossible:\n"
                  "%llu element centers from mesh \"%s\"\n"
                  "not located on SYRTHES mesh."),
-               (unsigned long long)n_ext, fvm_nodal_get_name(coupling_ent->elts));
+               (unsigned long long)n_ext,
+               fvm_nodal_get_name(coupling_ent->elts));
 
     /* Ensure clean stop */
 
@@ -964,9 +968,6 @@ _destroy_coupled_ent(cs_syr4_coupling_ent_t **coupling_ent)
   if (ce->hvol != NULL)
     BFT_FREE(ce->hvol);
 
-  if (ce->sol_temp != NULL)
-    BFT_FREE(ce->sol_temp);
-
   if (ce->elts != NULL)
     ce->elts = fvm_nodal_destroy(ce->elts);
 
@@ -975,6 +976,9 @@ _destroy_coupled_ent(cs_syr4_coupling_ent_t **coupling_ent)
 
 /*----------------------------------------------------------------------------
  * Update post-processing variables of a Syrthes coupling
+ *
+ * Note that only the solid temperature is output for surface coupling,
+ * while the heat flux is also output for volume coupling.
  *
  * parameters:
  *   coupling_ent <--  Syrthes coupling structure
@@ -997,7 +1001,7 @@ _post_var_update(cs_syr4_coupling_ent_t  *coupling_ent,
     return;
 
   assert(coupling_ent->solid_temp != NULL);
-  assert(coupling_ent->flux != NULL);
+  assert(step == 0 || coupling_ent->flux != NULL);
 
   n_elts = coupling_ent->n_elts;
 
@@ -1090,7 +1094,7 @@ _ensure_conservativity(cs_syr4_coupling_t   *syr_coupling,
              syr_coupling->comm);
 
     if (syr_coupling->verbosity > 0)
-      bft_printf(" Global heat flux exchanged with SYRTHES in W: %5.3e\n",
+      bft_printf(_(" Global heat flux exchanged with SYRTHES in W: %5.3e\n"),
                  g_flux);
 
     /* Receive corrector coefficient */
@@ -1107,9 +1111,8 @@ _ensure_conservativity(cs_syr4_coupling_t   *syr_coupling,
   /* Print message */
 
   if (syr_coupling->verbosity > 0)
-    bft_printf(" Correction coefficient used to force conservativity during"
-               " coupling with SYRTHES: %5.3e\n", coef);
-
+    bft_printf(_(" Correction coefficient used to force conservativity during"
+                 " coupling with SYRTHES: %5.3e\n"), coef);
 }
 
 /*============================================================================
@@ -1577,8 +1580,6 @@ cs_syr4_coupling_recv_tsolid(cs_syr4_coupling_t  *syr_coupling,
                              cs_real_t            tsolid[],
                              int                  mode)
 {
-  int  i;
-
   cs_syr4_coupling_ent_t  *coupling_ent = NULL;
 
   assert(mode == 0 || mode == 1);
@@ -1602,17 +1603,16 @@ cs_syr4_coupling_recv_tsolid(cs_syr4_coupling_t  *syr_coupling,
                                  0);
 
   if (coupling_ent->n_elts > 0) {
-    _post_var_update(coupling_ent, 0, tsolid);
-
-    if (mode == 1) { /* Saved tsolid for a future used
+    if (mode == 1) { /* Save tsolid for a future used
                         in source term definition */
-      assert(coupling_ent->sol_temp != NULL);
+      cs_lnum_t i;
+      assert(coupling_ent->solid_temp != NULL);
       for (i = 0; i < coupling_ent->n_elts; i++)
-        coupling_ent->sol_temp[i] = tsolid[i];
+        coupling_ent->solid_temp[i] = tsolid[i];
     }
-
+    else
+      _post_var_update(coupling_ent, 0, tsolid);
   }
-
 }
 
 /*----------------------------------------------------------------------------
@@ -1674,15 +1674,16 @@ cs_syr4_coupling_send_tf_hf(cs_syr4_coupling_t  *syr_coupling,
 
   BFT_FREE(send_var);
 
-  if (coupling_ent->n_elts > 0) {
+  if (mode == 1 && coupling_ent->n_elts > 0) {
+
     _post_var_update(coupling_ent, 1, tf);
     _post_var_update(coupling_ent, 2, hf);
 
-    if (mode == 1) { /* Saved hf for a future used in source term definition */
-      assert(coupling_ent->hvol != NULL);
-      for (ii = 0; ii < coupling_ent->n_elts; ii++)
-        coupling_ent->hvol[ii] = hf[ii];
-    }
+    /* Saved hf for a future used in source term definition */
+
+    assert(coupling_ent->hvol != NULL);
+    for (ii = 0; ii < coupling_ent->n_elts; ii++)
+      coupling_ent->hvol[ii] = hf[ii];
 
   }
 
@@ -1690,7 +1691,6 @@ cs_syr4_coupling_send_tf_hf(cs_syr4_coupling_t  *syr_coupling,
 
   if (cs_syr4_coupling_conservativity > 0 && mode == 0)
     _ensure_conservativity(syr_coupling, cpl_elt_lst);
-
 }
 
 /*----------------------------------------------------------------------------
@@ -1705,14 +1705,15 @@ cs_syr4_coupling_send_tf_hf(cs_syr4_coupling_t  *syr_coupling,
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr4_coupling_ts_contrib(cs_syr4_coupling_t  *syr_coupling,
-                            const cs_real_t      tf[],
-                            cs_real_t            ctbimp[],
-                            cs_real_t            ctbexp[])
+cs_syr4_coupling_ts_contrib(const cs_syr4_coupling_t  *syr_coupling,
+                            const cs_real_t            tf[],
+                            cs_real_t                  ctbimp[],
+                            cs_real_t                  ctbexp[])
 {
   int  i;
 
-  double  *hvol = NULL, *solid_temp = NULL;
+  const double  *hvol = NULL;
+  const cs_real_t  *solid_temp = NULL;
   cs_syr4_coupling_ent_t  *ent = NULL;
 
   /* sanity checks */
@@ -1722,7 +1723,7 @@ cs_syr4_coupling_ts_contrib(cs_syr4_coupling_t  *syr_coupling,
 
   ent = syr_coupling->cells;
   hvol = ent->hvol;
-  solid_temp = ent->sol_temp;
+  solid_temp = ent->solid_temp;
 
   assert(hvol != NULL);
   assert(solid_temp != NULL);

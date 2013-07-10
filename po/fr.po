@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2013-06-24 15:48+0200\n"
+"POT-Creation-Date: 2013-07-10 11:18+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -6011,11 +6011,11 @@ msgstr ""
 msgid " SYRTHES coupling %d: initializing MPI communication ... "
 msgstr " Couplage SYRTHES %d : initialisation de la communication MPI ..."
 
-msgid "Wall T"
-msgstr "T Paroi"
+msgid "Solid T"
+msgstr "T solide"
 
-msgid "Flux"
-msgstr "Flux"
+msgid "Solid heat flux"
+msgstr "flux thermique solide"
 
 msgid ""
 "\n"
@@ -6047,6 +6047,9 @@ msgstr "Projection 2D du maillage extrait  ..."
 
 msgid "Error projecting the extracted mesh."
 msgstr "Erreur lors de la projection du maillage extrait."
+
+msgid " [ok]\n"
+msgstr " [ok]\n"
 
 #, c-format
 msgid ""
@@ -6126,6 +6129,16 @@ msgstr ""
 "      communication et attente :   %12.3f\n"
 "    temps d'échange de variables : %12.3f\n"
 "      communication et attente :   %12.3f\n"
+
+#, c-format
+msgid " Global heat flux exchanged with SYRTHES in W: %5.3e\n"
+msgstr ""
+
+#, c-format
+msgid ""
+" Correction coefficient used to force conservativity during coupling with "
+"SYRTHES: %5.3e\n"
+msgstr ""
 
 msgid ""
 "Coupling with SYRTHES impossible.\n"
@@ -10185,3 +10198,4 @@ msgstr ""
 "    min local :                     %12.3f\n"
 "    max local :                     %12.3f\n"
 "    moyenne :                       %12.3f\n"
+

@@ -290,10 +290,10 @@ cs_syr4_coupling_send_tf_hf(cs_syr4_coupling_t  *syr_coupling,
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr4_coupling_ts_contrib(cs_syr4_coupling_t  *syr_coupling,
-                            const cs_real_t      tf[],
-                            cs_real_t            ctbimp[],
-                            cs_real_t            ctbexp[]);
+cs_syr4_coupling_ts_contrib(const cs_syr4_coupling_t  *syr_coupling,
+                            const cs_real_t            tf[],
+                            cs_real_t                  ctbimp[],
+                            cs_real_t                  ctbexp[]);
 
 /*----------------------------------------------------------------------------*/
 
