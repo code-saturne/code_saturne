@@ -160,9 +160,9 @@ def main(argv, pkg):
     case, spl = process_cmd_line(argv)
 
     app = QApplication(argv)
-    app.setOrganizationName("EDF S.A.")
+    app.setOrganizationName(pkg.code_name) # Defines the name of subdirectory under .config
     app.setOrganizationDomain(pkg.url)
-    app.setApplicationName(pkg.name)
+    app.setApplicationName("gui") # Defines the name of the configuration file
     #app.setWindowIcon(QIcon(":/icon.png"))
     app.connect(app, SIGNAL("lastWindowClosed()"), app, SLOT("quit()"))
 
