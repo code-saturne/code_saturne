@@ -334,7 +334,7 @@ class Parser:
 
         # Additional fields relative to the run environment
 
-        for key in ['scratchdir', 'n_procs']:
+        for key in ['n_procs']:
             val = getDataFromNode(calc_node, key)
             if val:
                 self.dict['case_' + key] = val

@@ -59,14 +59,6 @@ domains = [
 APP_DICTS
     ]
 
-# SCRATCHDIR variable allows the user to specify in which temporary
-# directory the calculation will run. If set to None, a default directory
-# will be used (architecture dependent). If a value is specified,
-# the temporary directory will be of the form:
-#  <SCRATCHDIR>/tmp_Saturne/<study>.<case>.<date>
-
-SCRATCHDIR = None
-
 # PSET_SIZE allows defining the size of a pset (set of processors sharing
 # an I/O node) on Blue Gene type machines. On Blue Gene/P, only one
 # executable per pset may be run. Typical pset sizes are 32 or 64, but
@@ -126,7 +118,6 @@ if __name__ == '__main__':
 
     case.run(n_procs=None,
              mpi_environment=mpi_env,
-             scratchdir=SCRATCHDIR,
              run_id=run_id,
              prepare_data=True,
              run_solver=True,

@@ -643,13 +643,17 @@ The comprehensive list of the user subroutines and their instructions
 %==================================
 \label{sec:prg_temporarydirectory}%
 During a calculation, \CS may use a temporary directory for the compilation and
-the execution if such a ``scratch'' directory is defined in the GUI, in the
-\texttt{cs\_user\_scripts.py} file or in the \texttt{code\_saturne.cfg} file.
-In that case, the result files are only copied at the end in the directory
-\texttt{RESU}. This is recommended if the compute environment includes different
-file-systems, some better suited to data storage, others to intensive I/O.
+the execution if such a ``scratch'' directory is defined in the global or user
+\texttt{code\_saturne.cfg} file. In that case, the result files are only copied
+at the end in the directory \texttt{RESU}. This is recommended if the compute
+environment includes different file-systems, some better suited to data storage,
+others to intensive I/O.
 If this is not the case, there is no point in running in a scratch directory
 rather than the results directory, as this incurs additional file copies.
+
+If the environment variable \texttt{CS\_SCRATCHDIR} is defined, it will have
+priority over the value defined in the preference file, so if necessary, it
+is possible to define a setting specific to a given run using this mechanism.
 
 \noindent
 {\em WARNING: in case of an error, the temporary directories are not deleted
@@ -712,6 +716,21 @@ In some cases, serial partitioning might also provide better partitioning
 quality then parallel partitioning, so if both are available, comparing
 the performance of the code may be worthwhile, at least for calculations
 expected to run for many iterations.
+
+%==================================
+\subsubsection{Environment variables\label{sec:envcs}}
+%==================================
+
+Setting a few environment variables specific to \CS allows modifying
+its default behaviour. The environment variables used by \CS
+are described here:
+
+\envvar{CS\_SCRATCHDIR}
+
+Allows defining the execution directory (see
+\S\ref{sec:prg_temporarydirectory}),
+overriding the default path or settings from the global
+or user \texttt{code\_saturne.cfg}.
 
 %==================================
 \subsubsection{Interactive modification of the target time step}

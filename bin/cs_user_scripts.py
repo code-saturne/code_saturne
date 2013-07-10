@@ -250,27 +250,6 @@ def define_case_parameters(case):
 
     # case.n_procs = None
 
-    # Temporary execution directory
-    #-------------------------------
-
-    # The temporary directory in which the calculation will run may be
-    # set by defining case.scratchdir. If set to None, the calculation
-    # will be run in the case domain's results directory.
-
-    # Using separate results and execution directories is only
-    # of interest on machines which have multiple filesystems,
-    # with different filesystem recommendations for storage and
-    # computations.
-
-    # The default (initial) value may be defined by the
-    #   - the   user mesh database directory, see ~/.code_saturne.cfg
-    #   - the global mesh database directory, see $prefix/etc/code_saturne.cfg
-
-    # If a value is specified, the temporary directory will be of the form:
-    #  <SCRATCHDIR>/tmp_Saturne/<STUDY>.<CASE>.<DATE>
-
-    # case.scratchdir = None
-
     return
 
 #-------------------------------------------------------------------------------

@@ -1614,27 +1614,25 @@ echo "exit \$?" >> $localexec
 
             d = self.domains[0]
 
-            if hasattr(d, 'case_scratchdir'):
-                scratchdir = d.case_scratchdir
-
             if d.user_locals:
                 m = 'define_case_parameters'
                 c = globals()['case']
                 if m in d.user_locals.keys():
                     eval(m + '(case)', globals(), d.user_locals)
                     del d.user_locals[m]
-                if hasattr(c, 'scratchdir'):
-                    scratchdir = c.scratchdir
-                    del(c.scratchdir)
                 if hasattr(c, 'n_procs'):
                     n_procs = int(c.n_procs)
                     del(c.n_procs)
 
         # Define scratch directory
+        # priority: argument, environment variable, preference setting.
+
+        if scratchdir == None:
+            scratchdir = os.getenv('CS_SCRATCHDIR')
 
         if scratchdir == None:
 
-           # Read the possible config files
+            # Read the possible config files
 
             if sys.platform.startswith('win'):
                 username = os.getenv('USERNAME')
