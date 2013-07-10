@@ -121,6 +121,8 @@ cs_syr4_coupling_by_id(cs_int_t coupling_id);
  *   cell_sel_criterion <-- criterion for selection of cells
  *   app_name           <-- SYRTHES application name
  *   allow_nonmatching  <-- nearest-neighbor search for non-matching faces flag
+ *   tolerance          <-- addition to local extents of each element
+ *                          extent = base_extent * (1 + tolerance)
  *   verbosity          <-- verbosity level
  *   visualization      <-- visualization output flag
  *----------------------------------------------------------------------------*/
@@ -132,6 +134,7 @@ cs_syr4_coupling_add(int          dim,
                      const char  *cell_sel_criterion,
                      const char  *app_name,
                      bool         allow_nonmatching,
+                     float        tolerance,
                      int          verbosity,
                      int          visualization);
 

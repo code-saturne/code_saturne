@@ -270,6 +270,8 @@ void CS_PROCF (ctbvsy, CTBVSY)
  *                         independent), or ' ' for standard 3D coupling
  *   allow_nonmatching <-- allow nearest-neighbor mapping where matching
  *                         within tolerance is not available
+ *   tolerance         <-- addition to local extents of each element
+ *                         extent = base_extent * (1 + tolerance)
  *   verbosity         <-- verbosity level
  *   visualization     <-- visualization output level (0 or 1)
  *----------------------------------------------------------------------------*/
@@ -280,6 +282,7 @@ cs_syr_coupling_define(const char  *syrthes_name,
                        const char  *volume_criteria,
                        char         projection_axis,
                        bool         allow_nonmatching,
+                       float        tolerance,
                        int          verbosity,
                        int          visualization);
 

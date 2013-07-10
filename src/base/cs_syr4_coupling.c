@@ -142,6 +142,7 @@ struct _cs_syr4_coupling_t {
   bool                     allow_nearest;  /* Allow nearest-neighbor
                                               mapping beyond basic matching
                                               tolerance */
+  float                    tolerance;      /* Tolerance */
   int                      verbosity;      /* Verbosity level */
   int                      visualization;  /* Visualization output flag */
 
@@ -460,7 +461,6 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
   cs_gnum_t n_ext = 0;
   cs_lnum_t *elt_list = NULL;
   cs_coord_t *elt_centers = NULL;
-  const double tolerance = 0.1;
   fvm_nodal_t *location_elts = NULL;
   ple_mesh_elements_closest_t *locate_on_closest = NULL;
   float *cs_to_syr_dist = NULL;
@@ -632,12 +632,12 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
   }
 
 #if defined(PLE_HAVE_MPI)
-  coupling_ent->locator = ple_locator_create(tolerance,
+  coupling_ent->locator = ple_locator_create(syr_coupling->tolerance,
                                              syr_coupling->comm,
                                              syr_coupling->n_syr_ranks,
                                              syr_coupling->syr_root_rank);
 #else
-  coupling_ent->locator = ple_locator_create(tolerance);
+  coupling_ent->locator = ple_locator_create(syr_coupling->tolerance);
 #endif
 
   /* Retrieve coordinates using FVM functions rather than previous list and
@@ -1161,6 +1161,8 @@ cs_syr4_coupling_by_id(cs_lnum_t coupling_id)
  *   cell_sel_criterion <-- criterion for selection of cells
  *   syr_name           <-- SYRTHES application name
  *   allow_nonmatching  <-- nearest-neighbor search for non-matching faces flag
+ *   tolerance          <-- addition to local extents of each element
+ *                          extent = base_extent * (1 + tolerance)
  *   verbosity          <-- verbosity level
  *   visualization      <-- visualization output flag
  *----------------------------------------------------------------------------*/
@@ -1172,6 +1174,7 @@ cs_syr4_coupling_add(cs_lnum_t    dim,
                      const char  *cell_sel_criterion,
                      const char  *syr_name,
                      bool         allow_nonmatching,
+                     float        tolerance,
                      int          verbosity,
                      int          visualization)
 {
@@ -1221,6 +1224,7 @@ cs_syr4_coupling_add(cs_lnum_t    dim,
   syr_coupling->cells = NULL;
 
   syr_coupling->allow_nearest = allow_nonmatching;
+  syr_coupling->tolerance = tolerance;
   syr_coupling->verbosity = verbosity;
   syr_coupling->visualization = visualization;
 

@@ -109,6 +109,8 @@ cs_user_coupling(void)
  *                         faces beyond mapping tolerance distance (useful
  *                         when meshes have a different level of detail,
  *                         but may lead to a much slower initialization stage)
+ *   tolerance         <-- addition to local extents of each element
+ *                         extent = base_extent * (1 + tolerance)
  *   verbosity         <-- verbosity level
  *   plot              <-- visualization level
  *
@@ -124,6 +126,7 @@ void
 cs_user_syrthes_coupling(void)
 {
   int  verbosity = 1, plot = 1;
+  float tolerance = 0.1;
   bool allow_nonmatching = false;
   return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 
@@ -139,6 +142,7 @@ cs_user_syrthes_coupling(void)
                            NULL,              /* volume_criteria */
                            ' ',               /* projection_axis */
                            allow_nonmatching,
+                           tolerance,
                            verbosity,
                            plot);
 
@@ -155,6 +159,7 @@ cs_user_syrthes_coupling(void)
                            NULL,              /* volume_criteria */
                            'z',               /* projection_axis */
                            allow_nonmatching,
+                           tolerance,
                            verbosity,
                            plot);
 
@@ -171,6 +176,7 @@ cs_user_syrthes_coupling(void)
                            "box[0., 0., 0., 1., 1., 1.]", /* volume */
                            ' ',                           /* projection */
                            allow_nonmatching,
+                           tolerance,
                            verbosity,
                            plot);
 
