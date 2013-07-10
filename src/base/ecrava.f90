@@ -148,6 +148,8 @@ double precision tmpstr(27)
 
 double precision, allocatable, dimension(:) :: w1
 
+double precision, dimension(:,:), pointer :: xut
+
 !===============================================================================
 !     A noter :
 !        Lorsque qu'il est necessaire d'utiliser un ordre implicite
@@ -491,13 +493,14 @@ do iscal = 1, nscal
     ivar = isca(iscal)
     call field_get_name(ivarfl(ivar), fname)
     ! Index of the corresponding turbulent flux
-    call field_get_id(trim(fname)//'_turbulent_flux_ce', f_id)
+    call field_get_id(trim(fname)//'_turbulent_flux', f_id)
+    call field_get_val_v(f_id, xut)
     rubriq = trim(fname)//'_turbulent_flux_ce'
     itysup = 1
     nbval  = 3
     irtyp  = 2
     call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-                iturt(iscal),ierror)
+                xut, ierror)
   endif
 enddo
 
