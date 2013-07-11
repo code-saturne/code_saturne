@@ -47,12 +47,11 @@ m4_define([cs_licence_c_comment],
   Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */])
 
-m4_define([cs_major_version], [3])
-m4_define([cs_minor_version], [2])
-m4_define([cs_release_version], [0])
-m4_define([cs_version_extra], [-alpha])
+# Note: proper determination of the version string requires the NEWS file
+#       to be maintained properly (as it should be anyways).
+
 m4_define([cs_version_string],
-          [cs_major_version.cs_minor_version.cs_release_version@&t@cs_version_extra])
+          [m4_normalize(esyscmd([build-aux/cs_version.py]))])
 
 AC_INIT([code_saturne],[cs_version_string],[saturne-support@edf.fr],[],[http://code-saturne.org])
 AC_CONFIG_SRCDIR([src/apps/cs_solver.c])
