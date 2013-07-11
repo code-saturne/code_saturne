@@ -26,6 +26,25 @@
 import sys
 import os.path
 
+#-------------------------------------------------------------------------------
+
+# Generate version strings, using local and optionally version control info.
+
+# Notes:
+#-------
+# Currently, basic version information is determined from the NEWS file.
+# This is not quite standard (though methods and automation level used by other
+# tools vary widely), but we want to minimize files that need to be edited
+# when releasing a version, but use a robust mechanism which will work
+# for versions pulled by different version control tools (at least
+# Subversion, used for the main repository, git svn clones, which may or
+# may not have up-to-date fetched remotes information, and clones of those
+# clones...). As we need to maintain the NEWS file anyways to provide a clear
+# user-readable summary of changes between versions, using a consistent
+# presentation, using this file to determine version information is a
+# practical solution, which requires enforcing that the NEWS file is
+# maintained correctly, which is good practice.
+
 #===============================================================================
 # Utility functions
 #===============================================================================
