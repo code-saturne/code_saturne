@@ -142,7 +142,7 @@ Tools:
 Options:
   -h, --help  show this help message and exit"""
 
-        print(usage)
+        print(usage % {'prog':sys.argv[0]})
         sys.exit(1)
 
     sys.exit(0)
