@@ -4488,7 +4488,7 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_n_particles,
     prev_set->weight = tot_weight;
 
     set->n_part_out += n_delete_particles;
-    set->weight_out = r_weight;
+    set->weight_out += r_weight;
 
     set->n_failed_part += n_failed_particles;
     set->weight_failed = failed_particle_weight;
