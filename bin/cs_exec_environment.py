@@ -1344,12 +1344,11 @@ class mpi_environment:
 
         if resource_info != None:
             known_manager = False
-            if resource_info.manager == 'PBS':
-                known_manager = True
-            elif os.path.isfile(info_name):
+            if os.path.isfile(info_name):
                 rc_mca_by_type = {'SLURM':' slurm ',
                                   'LSF':' lsf ',
                                   'LOADL':' loadleveler ',
+                                  'PBS':' tm ',
                                   'SGE':' gridengine '}
                 if resource_info.manager in rc_mca_by_type:
                     info = get_command_output(info_name)
@@ -1669,8 +1668,8 @@ if __name__ == '__main__':
 
     import pprint
     pprint.pprint(e.__dict__)
-    pprint.pprint(e.resources__dict__)
-    pprint.pprint(e.mpi_env__dict__)
+    pprint.pprint(e.resources.__dict__)
+    pprint.pprint(e.mpi_env.__dict__)
     print(e.mpi_env.info())
 
 #-------------------------------------------------------------------------------

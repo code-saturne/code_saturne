@@ -4,6 +4,9 @@ Release 3.1.1 (unreleased)
 Bug fixes:
 ----------
 
+- Fix: for Open MPI with Torque or PBS pro, disable --nodefile option only if
+  Open MPI is built with proper support.
+
 - Fix parallel mesh joining bug occuring in some partitioning situations.
 
 - Syrthes coupling now also works with rough wall conditions.
