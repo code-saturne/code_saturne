@@ -12,6 +12,9 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix: for Open MPI with Torque or PBS pro, disable --nodefile option only if
+  Open MPI is built with proper support.
+
 - Fix parallel mesh joining bug occuring in some partitioning situations.
 
 - When building with EOS, always link with C++ to avoid issues.
