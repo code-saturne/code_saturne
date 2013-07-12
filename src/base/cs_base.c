@@ -1049,6 +1049,11 @@ cs_base_logfile_head(int    argc,
 
   bft_printf("\n  Copyright (C) 1998-2013 EDF S.A., France\n\n");
 
+#if defined(CS_REVISION)
+  if (strlen(CS_REVISION) > 0)
+    bft_printf(_("  revision %s\n"), CS_REVISION);
+#endif
+
   bft_printf(_("  build %s\n"), str);
 
 #if defined(MPI_SUBVERSION)

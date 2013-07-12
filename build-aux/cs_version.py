@@ -419,8 +419,8 @@ def git_version(srcdir, defaults):
             # Try to count commits before the one with svn
             svn_log = output[0][:svn_id].split()
             c1 = svn_log.count('commit')
-            c2 = svn_log.count('Author')
-            if c1 == 1 and c2 == 2:
+            c2 = svn_log.count('Author:')
+            if c1 == 1 and c2 == 1:
                 head_is_svn = True
 
     if not head_is_svn:
@@ -513,13 +513,13 @@ if __name__ == '__main__':
         elif sys.argv[1] == '--revision-only':
             if modified:
                 revision += '-m'
-            print(revision)
+            print(revision[1:]) # remove first '-' character
         elif sys.argv[1] == '--verbose':
             print('major:    ' + major)
             print('minor:    ' + minor)
             print('release:  ' + release)
             print('extra:    ' + extra)
-            print('revision: ' + revision)
+            print('revision: ' + revision[1:])
             print('modified: ' + str(modified))
 
     else:

@@ -53,6 +53,7 @@ class package:
         self.string = "@PACKAGE_STRING@"
         self.bugreport = "@PACKAGE_BUGREPORT@"
         self.url = "@PACKAGE_URL@"
+        self.revision = "@cs_src_revision@"
 
         self.code_name = "Code_Saturne"
 

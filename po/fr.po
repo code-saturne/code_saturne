@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2013-07-10 12:45+0200\n"
+"POT-Creation-Date: 2013-07-12 17:43+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -4022,6 +4022,10 @@ msgstr ""
 
 msgid "command: \n"
 msgstr "commande : \n"
+
+#, c-format
+msgid "  revision %s\n"
+msgstr "  révision %s\n"
 
 #, c-format
 msgid "  build %s\n"

@@ -476,6 +476,32 @@ if test "$host_os" = mingw32 ; then
 fi
 
 #------------------------------------------------------------------------------
+# Checks for additional version information.
+#------------------------------------------------------------------------------
+
+AC_ARG_ENABLE(cs_use_revision, [AS_HELP_STRING([--disable-revision],
+                                               [disable Subversion or Git revision info])],
+  [
+    case "${enableval}" in
+      yes) cs_use_revision=yes ;;
+      no)  cs_use_revision=no ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-frontend]) ;;
+    esac
+  ],
+  [ cs_use_revision=yes ]
+)
+
+cs_src_revision=""
+if test "x$cs_use_revision" = "xyes" ; then
+  if test -d ${srcdir}/.svn -o -d ${srcdir}/.git ; then
+    cs_src_revision=`$PYTHON ${srcdir}/build-aux/cs_version.py --revision-only`
+  fi
+fi
+
+AC_DEFINE_UNQUOTED([CS_REVISION], ["$cs_src_revision"], [Subversion / Git revision string])
+AC_SUBST(cs_src_revision)
+
+#------------------------------------------------------------------------------
 # Checks for libraries.
 #------------------------------------------------------------------------------
 
