@@ -778,13 +778,17 @@ pwatt = 100.d0
 ! calculation of volf
 
 volf  = 0.d0
-CALL GETCEL('X > 0.0 and X < 1.2 and Y > 3.1 and'//               &
-            'Y < 4.0',NLELT,LSTELT)
+call getcel('x > 0.0 and x < 1.2 and y > 3.1 and'//               &
+            'y < 4.0',nlelt,lstelt)
 
 do ilelt = 1, nlelt
   iel = lstelt(ilelt)
   volf = volf + volume(iel)
 enddo
+
+if (irangp.ge.0) then
+  call parsom(volf)
+endif
 
 do ilelt = 1, nlelt
   iel = lstelt(ilelt)
