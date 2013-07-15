@@ -404,7 +404,8 @@ class StandardItemModelMeshes(QStandardItemModel):
         elif col == 2:
             v = str(value)
             self.dataMeshes[row][col] = v
-            self.mdl.setMeshNumbers(mesh, v)
+            if value:
+                self.mdl.setMeshNumbers(mesh, v)
 
         elif col == 3 and role == Qt.CheckStateRole:
             state = int(value)

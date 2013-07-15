@@ -521,10 +521,10 @@ class SolutionDomainModel(MeshModel, Model):
         Public method. Return the mesh format recorded in the case.
         """
         node = self._getMeshNode(mesh)
-        format = node['format']
-        if not format:
-            format = MeshModel().getMeshFormat(mesh[0])
-        return format
+        fmt = node['format']
+        if not fmt:
+            fmt = MeshModel().getMeshFormat(mesh[0])
+        return fmt
 
 
     @Variables.undoLocal
