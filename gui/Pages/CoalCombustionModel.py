@@ -63,10 +63,10 @@ class CoalCombustionModel(Variables, Model):
         """
         self.case = case
 
-        nModels         = self.case.xmlGetNode('thermophysical_models')
-        self.node_lagr  = self.case.xmlGetNode('lagrangian', 'model')
-        self.node_turb  = nModels.xmlGetNode('turbulence',   'model')
-        self.node_fuel  = nModels.xmlInitNode('solid_fuels', 'model')
+        self.node_models = self.case.xmlGetNode('thermophysical_models')
+        self.node_lagr   = self.case.xmlGetNode('lagrangian', 'model')
+        self.node_turb   = self.node_models.xmlGetNode('turbulence',   'model')
+        self.node_fuel   = self.node_models.xmlInitNode('solid_fuels', 'model')
 
         self.coalCombustionModel = ('off', 'homogeneous_fuel', 'homogeneous_fuel_moisture',
                                     'homogeneous_fuel_lagr',   'homogeneous_fuel_moisture_lagr')
