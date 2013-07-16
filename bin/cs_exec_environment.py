@@ -23,6 +23,12 @@
 
 #-------------------------------------------------------------------------------
 
+try:
+    import ConfigParser  # Python2
+    configparser = ConfigParser
+except Exception:
+    import configparser  # Python3
+
 import datetime
 import fnmatch
 import os
@@ -32,8 +38,6 @@ import platform
 import tempfile
 
 python_version = sys.version[:3]
-
-from optparse import OptionParser
 
 #===============================================================================
 # Utility functions
@@ -450,12 +454,6 @@ def source_rcfile(pkg):
     """
     Source user environement if defined by rcfile in preferences file.
     """
-
-    try:
-        import ConfigParser  # Python2
-        configparser = ConfigParser
-    except Exception:
-        import configparser  # Python3
 
     config = configparser.ConfigParser()
     config.read([pkg.get_configfile(),
@@ -1657,6 +1655,25 @@ class exec_environment:
         # known MPI types, use default otherwise
 
         self.mpi_env = mpi_environment(pkg, self.resources, wdir)
+
+        # Modify options based on system-wide or user configuration
+
+        config = configparser.ConfigParser()
+        config.read([pkg.get_configfile(),
+                    os.path.expanduser('~/.' + pkg.configfile)])
+
+        if config.has_section('mpi'):
+            for option in config.items('mpi'):
+               k = option[0]
+               v = option[1]
+               if not v:
+                   v = None
+               elif v[0] in ['"', "'"]:
+                   v = v[1:-1]
+               if k == 'mpmd':
+                   self.mpi_env.mpmd_mode = eval(v)
+               else:
+                   self.mpi_env.__dict__[k] = v
 
 #-------------------------------------------------------------------------------
 

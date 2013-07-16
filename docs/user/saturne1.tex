@@ -732,6 +732,17 @@ Allows defining the execution directory (see
 overriding the default path or settings from the global
 or user \texttt{code\_saturne.cfg}.
 
+\envvar{CS\_MPIEXEC\_OPTIONS}
+
+This variable allows defining extra arguments to be passed to
+the MPI execution command by the run scripts.
+If this option is defined, it will have priority over the value defined
+in the preference file (or by computed defaults), so if necessary, it
+is possible to define a setting specific to a given run using this
+mechanism. This may be useful when tuning the installation to a given
+machine, for example experimenting MPI mapping and ``bind to core''
+features.
+
 %==================================
 \subsubsection{Interactive modification of the target time step}
 %==================================

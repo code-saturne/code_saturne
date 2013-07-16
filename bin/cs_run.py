@@ -86,7 +86,7 @@ def process_cmd_line(argv, pkg):
     parser.add_option("--force", dest="force",
                       action="store_true",
                       help="run the data preparation stage even if " \
-	                   + "the matching execution directory exists")
+                           + "the matching execution directory exists")
 
     parser.add_option("--initialize", dest="initialize",
                       action="store_true",

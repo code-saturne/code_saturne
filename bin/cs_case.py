@@ -1257,7 +1257,7 @@ echo "exit \$?" >> $localexec
 
     def prepare_data(self,
                      n_procs = None,
-                     mpi_environment = None,
+                     mpiexec_options=None,
                      run_id = None,
                      force_id = False):
 
@@ -1313,10 +1313,10 @@ echo "exit \$?" >> $localexec
                                                         n_procs,
                                                         n_procs_default)
 
-        # Set user MPI environment if required.
+        # Set user MPI options if required.
 
-        if mpi_environment != None:
-            exec_env.mpi_env = mpi_environment
+        if mpiexec_options != None:
+            exec_env.mpi_env.mpiexec_options = mpiexec_options
 
         # Transfer parameters MPI parameters from user scripts here.
 
@@ -1595,7 +1595,7 @@ echo "exit \$?" >> $localexec
 
     def run(self,
             n_procs = None,
-            mpi_environment = None,
+            mpiexec_options=None,
             scratchdir = None,
             run_id = None,
             force_id = False,
@@ -1619,7 +1619,7 @@ echo "exit \$?" >> $localexec
                 if m in d.user_locals.keys():
                     eval(m + '(case)', globals(), d.user_locals)
                     del d.user_locals[m]
-                if hasattr(c, 'n_procs'):
+                if hasattr(c, 'n_procs') and n_procs == None:
                     n_procs = int(c.n_procs)
                     del(c.n_procs)
 
@@ -1655,6 +1655,12 @@ echo "exit \$?" >> $localexec
         if scratchdir != None:
             self.exec_prefix = os.path.join(scratchdir, self.package.scratchdir)
 
+        # Define MPI execution options
+        # priority: argument, environment variable, preference setting, defaults.
+
+        if mpiexec_options == None:
+            mpiexec_options = os.getenv('CS_MPIEXEC_OPTIONS')
+
         if run_id != None:
             self.run_id = run_id
 
@@ -1662,7 +1668,7 @@ echo "exit \$?" >> $localexec
             retcode = 0
             if prepare_data == True:
                 retcode = self.prepare_data(n_procs,
-                                            mpi_environment,
+                                            mpiexec_options,
                                             run_id,
                                             force_id)
             if run_solver == True and retcode == 0:
