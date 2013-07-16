@@ -243,7 +243,7 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
 
             s = dialog.selectedFiles()
 
-            dir_path = str(s.first())
+            dir_path = str(s[0])
             dir_path = os.path.abspath(dir_path)
 
             self.partinput_path = RelOrAbsPath(dir_path, self.case['case_path'])
