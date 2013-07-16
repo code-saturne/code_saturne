@@ -83,7 +83,12 @@ def process_cmd_line(argv):
     Processes the passed command line arguments.
     """
 
-    parser = OptionParser(usage="usage: %prog [options]")
+    if sys.argv[0][-3:] == '.py':
+        usage = "usage: %prog [options]"
+    else:
+        usage = "usage: %prog gui [options]"
+
+    parser = OptionParser(usage=usage)
 
     parser.add_option("-p", "--param", dest="file_name", type="string",
                       metavar="<file>",

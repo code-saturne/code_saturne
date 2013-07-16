@@ -65,8 +65,16 @@ class master_script:
             command = self.command[0]
 
         if command in help_commands:
-            self.usage()
-            sys.exit(0)
+            subcommand = False
+            if len(self.command) > 1:
+                subcommand = True
+                command = self.command[1]
+                if self.command[1] in self.commands:
+                    options = self.command[1:] + ['--help']
+                    return self.commands[command](options)
+            if not subcommand:
+                self.usage()
+                sys.exit(0)
 
         if command in self.commands:
             options = self.command[1:]

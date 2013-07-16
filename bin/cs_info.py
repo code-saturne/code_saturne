@@ -56,7 +56,12 @@ def process_cmd_line(argv, pkg):
              string is split to create a list of arguments.
     """
 
-    parser = OptionParser(usage="usage: %prog [options]")
+    if sys.argv[0][-3:] == '.py':
+        usage = "usage: %prog [options]"
+    else:
+        usage = "usage: %prog info [options]"
+
+    parser = OptionParser(usage=usage)
 
     parser.add_option("-r", "--reader", dest="pdf_reader", type="string",
                       metavar="<pdfreader>",

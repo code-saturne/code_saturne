@@ -50,7 +50,12 @@ def process_cmd_line(argv, pkg):
     Processes the passed command line arguments.
     """
 
-    parser = OptionParser(usage="usage: %prog [options]")
+    if sys.argv[0][-3:] == '.py':
+        usage = "usage: %prog [options]"
+    else:
+        usage = "usage: %prog salome [options]"
+
+    parser = OptionParser(usage=usage)
 
     (options, args) = parser.parse_args(argv)
 

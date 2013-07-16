@@ -57,7 +57,12 @@ def process_cmd_line(argv, pkg):
     Process the passed command line arguments.
     """
 
-    parser = OptionParser(usage="usage: %prog [options]")
+    if sys.argv[0][-3:] == '.py':
+        usage = "usage: %prog [options]"
+    else:
+        usage = "usage: %prog run [options]"
+
+    parser = OptionParser(usage=usage)
 
     parser.add_option("-p", "--param", dest="param", type="string",
                       metavar="<param>",
@@ -238,7 +243,7 @@ def main(argv, pkg):
 
 if __name__ == '__main__':
 
-    # Retrieve package information (name, version, installation dirs, ...)
+    # Run package
     from cs_package import package
     pkg = package()
 
