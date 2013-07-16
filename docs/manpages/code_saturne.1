@@ -20,7 +20,7 @@
 .\"
 .\"-------------------------------------------------------------------------------
 .\"
-.TH CODE_SATURNE 1 2009-10-27 "" "Code_Saturne commands"
+.TH CODE_SATURNE 1 2013-07-15 "" "Code_Saturne commands"
 .SH NAME
 code_saturne \- Main user script of Code_Saturne.
 .SH SYNOPSIS
@@ -41,23 +41,14 @@ Help message.
 .\"
 .\" Commands description
 .SH COMMANDS
-Further information will be obtain with
+Further information will be obtained with
 .B "code_saturne <command> --help"
 .B
-.IP "check_consistency"
+.IP "autovnv"
 The
-.B "code_saturne check_consistency"
-command checks the consistency between the user files and the Xml file
-(from the Graphical User Interface) provided by the user and, if
-needed, that the chosen options are compatible with parallel
-calculations. Lastly, it prints the chosen specific physics.
-
-.B
-.IP "check_mesh"
-The
-.B "code_saturne check_mesh"
-command verify the quality of a given mesh. The following options will
-be passed to Code_Saturne preprocessor.
+.B "code_saturne autovnv"
+command can be used to run an autovalidation series of runs
+defined by an xml file (see specific autovalidation documentation).
 
 .B
 .IP "compile"
@@ -66,6 +57,12 @@ The
 command can be used to generate the
 .B cs_solver
 executable needed for running a Code_Saturne study.
+
+.B
+.IP "config"
+The
+.B "code_saturne config"
+command provides information about the Code_Saturne build and installation.
 
 .B
 .IP "create"
@@ -78,13 +75,53 @@ DATA, SRC (to store user files), RESU (to store results) and SCRIPTS
 directory.
 
 .B
+.IP "gui"
+The
+.B "code_saturne gui"
+command starts the Code_Saturne gui.
+
+.B
 .IP "info"
 The
 .B "code_saturne info"
 command is a wrapper for an easier look at Code_Saturne documentation.
+
+.B
+.IP "run"
+The
+.B "code_saturne run"
+starts a Code_Saturne case's preprocessing or computation execution.
+
+.B
+.IP "salome"
+The
+.B "code_saturne salome"
+command starts SALOME, with the CFDSTUDY module enabled
+(assuming Code_Saturne is built with SALOME support).
+
+.\"
+.\" Environment variables
+.SH ENVIRONMENT VARIABLES
+The following environment variables may affect
+.B code_saturne run :
+.TP 3
+.B CS_MPIEXEC_OPTIONS
+This variable allows defining extra arguments to be passed to
+the MPI execution command when applicable.
+If this option is defined, it will have priority over the value defined in
+global or local
+.B code_saturne.cfg
+files (or by computed defaults), so if necessary, it is possible to define a
+setting specific to a given run using this variable.
+.TP
+.B CS_SCRATCHDIR
+Allows defining the execution directory, overriding the default path or
+settings from the global or local
+.B code_saturne.cfg
+files.
 .\"
 .\" References
 .SH SEE ALSO
-.BR cs_io_dump (1),
-.BR cs_preprocess (1),
-.BR cs_solver (1)
+The full documentation for Code_Saturne is accessible using the
+.B code_saturne info
+command.
