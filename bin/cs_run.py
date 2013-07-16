@@ -71,9 +71,22 @@ def process_cmd_line(argv, pkg):
                       metavar="<id>",
                       help="use the given run id")
 
+    parser.add_option("--id-prefix", dest="id_prefix", type="string",
+                      metavar="<prefix>",
+                      help="prefix the run id with the given tring")
+
+    parser.add_option("--id-suffix", dest="id_suffix", type="string",
+                      metavar="<suffix>",
+                      help="suffix the run id with the given string")
+
     parser.add_option("--suggest-id", dest="suggest_id",
                       action="store_true",
                       help="suggest a run id for the next run")
+
+    parser.add_option("--force", dest="force",
+                      action="store_true",
+                      help="run the data preparation stage even if " \
+	                   + "the matching execution directory exists")
 
     parser.add_option("--initialize", dest="initialize",
                       action="store_true",
@@ -142,20 +155,22 @@ def process_cmd_line(argv, pkg):
 
     # Stages to run (if no filter given, all are done).
 
-    run_id = options.id
-
-    suggest_id = options.suggest_id
-
     prepare_data = options.initialize
     run_solver = options.execute
     save_results = options.finalize
+
+    if not options.force:
+        force_id = False
+    else:
+        force_id = True
 
     if not (prepare_data or run_solver or save_results):
         prepare_data = True
         run_solver = True
         save_results = True
 
-    return  (casedir, run_id, param, suggest_id,
+    return  (casedir, options.id, param, options.id_prefix, options.id_suffix,
+             options.suggest_id, force_id,
              prepare_data, run_solver, save_results)
 
 #===============================================================================
@@ -167,15 +182,22 @@ def main(argv, pkg):
     Main function.
     """
 
-    (casedir, run_id, param, suggest_id,
+    (casedir, run_id, param, id_prefix, id_suffix, suggest_id, force,
      prepare_data, run_solver, save_results) = process_cmd_line(argv, pkg)
 
     if not casedir:
         return 1
 
-    if suggest_id:
+    if not run_id or suggest_id:
         now = datetime.datetime.now()
         run_id = now.strftime('%Y%m%d-%H%M')
+
+    if id_prefix:
+        run_id = id_prefix + run_id
+    if id_suffix:
+        run_id += id_suffix
+
+    if suggest_id:
         print(run_id)
         return 0
 
@@ -205,6 +227,7 @@ def main(argv, pkg):
 
     retval = c.run(mpi_environment=None,
                    run_id=run_id,
+                   force_id=force,
                    prepare_data=prepare_data,
                    run_solver=run_solver,
                    save_results=save_results)

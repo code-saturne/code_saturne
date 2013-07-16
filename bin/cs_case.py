@@ -447,7 +447,7 @@ class case:
 
     #---------------------------------------------------------------------------
 
-    def mk_exec_dir(self, exec_basename):
+    def mk_exec_dir(self, exec_basename, force=False):
         """
         Create execution directory.
         """
@@ -456,29 +456,18 @@ class case:
 
         self.define_exec_dir(exec_basename)
 
-        # Check that directory does not exist (unless it is also
-        # the results directory, which may already have been created,
-        # but should be empty at this stage.
+        # Check that directory does not exist.
 
-        if self.result_dir != self.exec_dir:
-
-            if os.path.isdir(self.exec_dir):
+        if os.path.isdir(self.exec_dir):
+            if not force and self.result_dir != self.exec_dir:
                 err_str = \
                     '\nWorking directory: ' + self.exec_dir \
                     + ' already exists.\n' \
                     + 'Calculation will not be run.\n'
                 raise RunCaseError(err_str)
 
-            else:
-                os.makedirs(self.exec_dir)
-
-        elif (  len(os.listdir(self.exec_dir))
-              > len(self.domains) + len(self.syr_domains) + len(self.ast_domains)):
-            err_str = \
-                '\nWorking/results directory: ' + self.exec_dir \
-                + ' not empty.\n' \
-                + 'Calculation will not be run.\n'
-            raise RunCaseError(err_str)
+        else:
+            os.makedirs(self.exec_dir)
 
         # Set execution directory
 
@@ -486,7 +475,7 @@ class case:
 
     #---------------------------------------------------------------------------
 
-    def set_result_dir(self, name):
+    def set_result_dir(self, name, force=True):
 
         r = os.path.join(self.case_dir, 'RESU')
 
@@ -497,7 +486,15 @@ class case:
             if os.path.isdir(r):
                 self.result_dir = os.path.join(r, name)
 
-        if not os.path.isdir(self.result_dir):
+        if os.path.isdir(self.result_dir):
+            if not force:
+                err_str = \
+                    '\nResults directory: ' + self.result_dir \
+                    + ' already exists.\n' \
+                    + 'Calculation will not be run.\n'
+                raise RunCaseError(err_str)
+
+        else:
             os.mkdir(self.result_dir)
 
         for d in self.domains:
@@ -1261,7 +1258,8 @@ echo "exit \$?" >> $localexec
     def prepare_data(self,
                      n_procs = None,
                      mpi_environment = None,
-                     run_id = None):
+                     run_id = None,
+                     force_id = False):
 
         """
         Prepare data for calculation.
@@ -1283,7 +1281,7 @@ echo "exit \$?" >> $localexec
 
         # Now that all domains are defined, set result copy mode
 
-        self.set_result_dir(self.run_id)
+        self.set_result_dir(self.run_id, force_id)
 
         # Create working directory (reachable by all the processors)
 
@@ -1600,6 +1598,7 @@ echo "exit \$?" >> $localexec
             mpi_environment = None,
             scratchdir = None,
             run_id = None,
+            force_id = False,
             prepare_data = True,
             run_solver = True,
             save_results = True):
@@ -1663,7 +1662,9 @@ echo "exit \$?" >> $localexec
             retcode = 0
             if prepare_data == True:
                 retcode = self.prepare_data(n_procs,
-                                            mpi_environment)
+                                            mpi_environment,
+                                            run_id,
+                                            force_id)
             if run_solver == True and retcode == 0:
                 self.run_solver()
 
