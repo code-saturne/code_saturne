@@ -92,7 +92,7 @@ class MeshNameDelegate(QItemDelegate):
             painter.drawRect(option.rect)
             painter.setPen(QPen(Qt.black))
             value = index.data(Qt.DisplayRole)
-            if value.isValid():
+            if value != None:
                 text = str(value)
                 painter.drawText(option.rect, Qt.AlignLeft, text)
             painter.restore()
