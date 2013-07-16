@@ -117,10 +117,11 @@ def process_cmd_line(argv, pkg):
 
     if options.case:
         casedir = os.path.realpath(options.case)
-        data = os.path.join(casedir, 'DATA')
-        src = os.path.join(casedir, 'SRC')
 
     if not casedir:
+        data = os.path.join(casedir, 'DATA')
+        src = os.path.join(casedir, 'SRC')
+    else:
         casedir = os.getcwd()
         while os.path.basename(casedir):
             data = os.path.join(casedir, 'DATA')
