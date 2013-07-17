@@ -1024,10 +1024,10 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
                 self.getClassList()
                 if len(self.class_list) > 0:
                     for c in self.class_list:
-                        self.comboBoxClass.addItem(self.tr(c, c))
+                        self.comboBoxClass.addItem(self.tr(c), c)
                 else:
                     c = self.job_class
-                    self.comboBoxClass.addItem(self.tr(c, c))
+                    self.comboBoxClass.addItem(self.tr(c), c)
 
             # All passes
             try:
