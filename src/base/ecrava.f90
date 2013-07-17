@@ -57,7 +57,7 @@ subroutine ecrava &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! frcxt(ncelet,3)  ! tr ! <-- ! force exterieure generant la pression          !
+! frcxt(3,ncelet)  ! tr ! <-- ! force exterieure generant la pression          !
 !                  !    !     !  hydrostatique                                 !
 ! prhyd(ncelet)    ! tr ! <-- ! hydrostatic pressure predicted                 !
 !__________________!____!_____!________________________________________________!
@@ -111,7 +111,7 @@ double precision dt(ncelet), rtp(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
-double precision frcxt(ncelet,3), prhyd(ncelet)
+double precision frcxt(3,ncelet), prhyd(ncelet)
 
 ! Local variables
 
@@ -1583,22 +1583,12 @@ if (iecaux.eq.1) then
     nberro=0
 
     itysup = 1
-    nbval  = 1
+    nbval  = 3
     irtyp  = 2
 
-    rubriq = 'force_ext_ce_x_phase'//cphase
+    rubriq = 'force_ext_ce_phase'//cphase
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         frcxt(1,1),ierror)
-    nberro=nberro+ierror
-
-    rubriq = 'force_ext_ce_y_phase'//cphase
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         frcxt(1,2),ierror)
-    nberro=nberro+ierror
-
-    rubriq = 'force_ext_ce_z_phase'//cphase
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         frcxt(1,3),ierror)
+         frcxt,ierror)
     nberro=nberro+ierror
 
     if (nberro.ne.0) then

@@ -27,7 +27,7 @@ subroutine itrmas &
    init   , inc    , imrgra , iccocg , nswrgp , imligp ,          &
    iphydp , iwarnp , nfecra ,                                     &
    epsrgp , climgp , extrap ,                                     &
-   fextx  , fexty  , fextz  ,                                     &
+   frcxt  ,                                                       &
    pvar   , coefap , coefbp , cofafp , cofbfp , viscf  , viscb  , &
    viselx , visely , viselz ,                                     &
    flumas , flumab )
@@ -85,8 +85,8 @@ subroutine itrmas &
 ! viselz(ncelet    ! tr ! <-- ! "viscosite" par cellule  dir z                 !
 ! flumas(nfac)     ! tr ! <-- ! flux de masse aux faces internes               !
 ! flumab(nfabor    ! tr ! <-- ! flux de masse aux faces de bord                !
-! fextx,y,z        ! tr ! <-- ! force exterieure generant la pression          !
-!   (ncelet)       !    !     !  hydrostatique                                 !
+! frcxt            ! tr ! <-- ! force exterieure generant la pression          !
+!                  !    !     !  hydrostatique                                 !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -124,7 +124,7 @@ double precision cofafp(nfabor), cofbfp(nfabor)
 double precision viscf(nfac), viscb(nfabor)
 double precision viselx(ncelet), visely(ncelet), viselz(ncelet)
 double precision flumas(nfac), flumab(nfabor)
-double precision fextx(ncelet),fexty(ncelet),fextz(ncelet)
+double precision frcxt(3,ncelet)
 
 ! Local variables
 
@@ -231,7 +231,7 @@ if (nswrgp.gt.1) then
  ( ipr    , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    rvoid  ,                                                       &
-   fextx  , fexty  , fextz  ,                                     &
+   frcxt  ,                                                       &
    pvar   , coefap , coefbp ,                                     &
    grad   )
 

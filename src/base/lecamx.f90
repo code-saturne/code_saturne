@@ -65,7 +65,7 @@ subroutine lecamx &
 !  (nfabor,*)      !    !     !    faces de bord                               !
 ! coefa, coefb     ! tr ! --> ! conditions aux limites aux                     !
 !  (nfabor,*)      !    !     !    faces de bord                               !
-! frcxt(ncelet,3)  ! tr ! --> ! force exterieure generant la pression          !
+! frcxt(3,ncelet)  ! tr ! --> ! force exterieure generant la pression          !
 !                  !    !     !  hydrostatique                                 !
 ! prhyd(ncelet)    ! ra ! --> ! hydrostatic pressure predicted                 !
 ! racell(ncelet    ! tr ! --- ! tableau de travail                             !
@@ -118,7 +118,7 @@ double precision dt(ncelet), rtp(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
-double precision frcxt(ncelet,3), prhyd(ncelet)
+double precision frcxt(3,ncelet), prhyd(ncelet)
 
 ! Local variables
 
@@ -1805,22 +1805,13 @@ if(iphydr.eq.1) then
   nberro=0
 
   itysup = 1
-  nbval  = 1
+  nbval  = 3
   irtyp  = 2
 
-  RUBRIQ = 'force_ext_ce_x_phase'//CPHASE
+  ! TODO read the old format
+  rubriq = 'force_ext_ce_phase'//cphase
   call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-       frcxt(1,1),ierror)
-  nberro=nberro+ierror
-
-  RUBRIQ = 'force_ext_ce_y_phase'//CPHASE
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-       frcxt(1,2),ierror)
-  nberro=nberro+ierror
-
-  RUBRIQ = 'force_ext_ce_z_phase'//CPHASE
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-       frcxt(1,3),ierror)
+       frcxt,ierror)
   nberro=nberro+ierror
 
  if (nberro.ne.0) then

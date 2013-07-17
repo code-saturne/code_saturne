@@ -148,7 +148,7 @@ double precision flumas(nfac), flumab(nfabor)
 double precision tslagr(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
-double precision frcxt(ncelet,3), dfrcxt(ncelet,3)
+double precision frcxt(3,ncelet), dfrcxt(3,ncelet)
 double precision grdphd(ncelet,3)
 double precision trava(ndim,ncelet)
 double precision ximpa(ndim,ndim,ncelet),uvwk(ndim,ncelet)
@@ -276,9 +276,9 @@ if (iappel.eq.1.and.iphydr.eq.1) then
 
 ! variation de force (utilise dans resolp)
     drom = (propce(iel,ipcrom)-ro0)
-    dfrcxt(iel,1) = drom*gx - frcxt(iel,1)
-    dfrcxt(iel,2) = drom*gy - frcxt(iel,2)
-    dfrcxt(iel,3) = drom*gz - frcxt(iel,3)
+    dfrcxt(1, iel) = drom*gx - frcxt(1, iel)
+    dfrcxt(2, iel) = drom*gy - frcxt(2, iel)
+    dfrcxt(3, iel) = drom*gz - frcxt(3, iel)
   enddo
   ! Add head losses
   if (ncepdp.gt.0) then
@@ -293,11 +293,11 @@ if (iappel.eq.1.and.iphydr.eq.1) then
       cpdc12 = ckupdc(ielpdc,4)
       cpdc23 = ckupdc(ielpdc,5)
       cpdc13 = ckupdc(ielpdc,6)
-      dfrcxt(iel,1) = dfrcxt(iel,1) &
+      dfrcxt(1 ,iel) = dfrcxt(1 ,iel) &
                     - propce(iel,ipcrom)*(cpdc11*vit1+cpdc12*vit2+cpdc13*vit3)
-      dfrcxt(iel,2) = dfrcxt(iel,2) &
+      dfrcxt(2 ,iel) = dfrcxt(2 ,iel) &
                     - propce(iel,ipcrom)*(cpdc12*vit1+cpdc22*vit2+cpdc23*vit3)
-      dfrcxt(iel,3) = dfrcxt(iel,3) &
+      dfrcxt(3 ,iel) = dfrcxt(3 ,iel) &
                     - propce(iel,ipcrom)*(cpdc13*vit1+cpdc23*vit2+cpdc33*vit3)
     enddo
   endif
@@ -307,14 +307,14 @@ if (iappel.eq.1.and.iphydr.eq.1) then
       cx = omegay*vela(3,iel) - omegaz*vela(2,iel)
       cy = omegaz*vela(1,iel) - omegax*vela(3,iel)
       cz = omegax*vela(2,iel) - omegay*vela(1,iel)
-      dfrcxt(iel,1) = dfrcxt(iel,1) - 2.d0*propce(iel,ipcrom)*cx
-      dfrcxt(iel,2) = dfrcxt(iel,2) - 2.d0*propce(iel,ipcrom)*cy
-      dfrcxt(iel,3) = dfrcxt(iel,3) - 2.d0*propce(iel,ipcrom)*cz
+      dfrcxt(1 ,iel) = dfrcxt(1 ,iel) - 2.d0*propce(iel,ipcrom)*cx
+      dfrcxt(2 ,iel) = dfrcxt(2 ,iel) - 2.d0*propce(iel,ipcrom)*cy
+      dfrcxt(3 ,iel) = dfrcxt(3 ,iel) - 2.d0*propce(iel,ipcrom)*cz
     enddo
   endif
 
   if (irangp.ge.0.or.iperio.eq.1) then
-    call synvec(dfrcxt(1,1), dfrcxt(1,2), dfrcxt(1,3))
+    call synvin(dfrcxt)
     !==========
   endif
 
@@ -341,7 +341,7 @@ call grdpot &
  ( ipr , imrgra , inc    , iccocg , nswrgp , imligp , iphydr ,    &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    rvoid  ,                                                       &
-   frcxt(1,1), frcxt(1,2), frcxt(1,3),                            &
+   frcxt  ,                                                       &
    rtpa(1,ipr)  , coefa(1,iclipr) , coefb(1,iclipr) ,             &
    grad   )
 
@@ -477,9 +477,9 @@ if (iappel.eq.1) then
   if (iporos.eq.0) then
     if (iphydr.eq.1) then
       do iel = 1, ncel
-        trav(1,iel) = (frcxt(iel,1) - grad(iel,1)) * volume(iel)
-        trav(2,iel) = (frcxt(iel,2) - grad(iel,2)) * volume(iel)
-        trav(3,iel) = (frcxt(iel,3) - grad(iel,3)) * volume(iel)
+        trav(1,iel) = (frcxt(1 ,iel) - grad(iel,1)) * volume(iel)
+        trav(2,iel) = (frcxt(2 ,iel) - grad(iel,2)) * volume(iel)
+        trav(3,iel) = (frcxt(3 ,iel) - grad(iel,3)) * volume(iel)
       enddo
     elseif (iphydr.eq.2) then
       do iel = 1, ncel
@@ -500,9 +500,9 @@ if (iappel.eq.1) then
   else
     if (iphydr.eq.1) then
       do iel = 1, ncel
-        trav(1,iel) = (frcxt(iel,1) - grad(iel,1)) * volume(iel) * porosi(iel)
-        trav(2,iel) = (frcxt(iel,2) - grad(iel,2)) * volume(iel) * porosi(iel)
-        trav(3,iel) = (frcxt(iel,3) - grad(iel,3)) * volume(iel) * porosi(iel)
+        trav(1,iel) = (frcxt(1 ,iel) - grad(iel,1)) * volume(iel) * porosi(iel)
+        trav(2,iel) = (frcxt(2 ,iel) - grad(iel,2)) * volume(iel) * porosi(iel)
+        trav(3,iel) = (frcxt(3 ,iel) - grad(iel,3)) * volume(iel) * porosi(iel)
       enddo
     elseif (iphydr.eq.2) then
       do iel = 1, ncel
@@ -528,9 +528,9 @@ elseif(iappel.eq.2) then
   if (iporos.eq.0) then
     if (iphydr.eq.1) then
       do iel = 1, ncel
-        trav(1,iel) = trav(1,iel) + (frcxt(iel,1) - grad(iel,1))*volume(iel)
-        trav(2,iel) = trav(2,iel) + (frcxt(iel,2) - grad(iel,2))*volume(iel)
-        trav(3,iel) = trav(3,iel) + (frcxt(iel,3) - grad(iel,3))*volume(iel)
+        trav(1,iel) = trav(1,iel) + (frcxt(1 ,iel) - grad(iel,1))*volume(iel)
+        trav(2,iel) = trav(2,iel) + (frcxt(2 ,iel) - grad(iel,2))*volume(iel)
+        trav(3,iel) = trav(3,iel) + (frcxt(3 ,iel) - grad(iel,3))*volume(iel)
       enddo
     elseif (iphydr.eq.2) then
       do iel = 1, ncel
@@ -553,11 +553,11 @@ elseif(iappel.eq.2) then
     if (iphydr.eq.1) then
       do iel = 1, ncel
         trav(1,iel) = trav(1,iel)                                           &
-                    + (frcxt(iel,1) - grad(iel,1))*volume(iel)*porosi(iel)
+                    + (frcxt(1 ,iel) - grad(iel,1))*volume(iel)*porosi(iel)
         trav(2,iel) = trav(2,iel)                                           &
-                    + (frcxt(iel,2) - grad(iel,2))*volume(iel)*porosi(iel)
+                    + (frcxt(2 ,iel) - grad(iel,2))*volume(iel)*porosi(iel)
         trav(3,iel) = trav(3,iel)                                           &
-                    + (frcxt(iel,3) - grad(iel,3))*volume(iel)*porosi(iel)
+                    + (frcxt(3 ,iel) - grad(iel,3))*volume(iel)*porosi(iel)
       enddo
     elseif (iphydr.eq.2) then
       do iel = 1, ncel

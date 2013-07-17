@@ -137,7 +137,7 @@ call cgdcel &
 !==========
  ( ivar   , imrgra , inc    , iccocg , imobil , iale   , nswrgp , &
    idimtr , iphydp , ipond  , iwarnp , imligp , epsrgp , extrap , &
-   climgp , isympa , rvoid  , rvoid  , rvoid  , coefap , coefbp , &
+   climgp , isympa , rvoid  , coefap , coefbp ,                   &
    pvar   , ktvar  , grad   )
 
 return

@@ -69,9 +69,9 @@ subroutine resolp &
 ! smacel           ! tr ! <-- ! valeur des variables associee a la             !
 ! (ncesmp,*   )    !    !     !  source de masse                               !
 !                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
-! frcxt(ncelet,3)  ! tr ! <-- ! force exterieure generant la pression          !
+! frcxt(3,ncelet)  ! tr ! <-- ! force exterieure generant la pression          !
 !                  !    !     !  hydrostatique                                 !
-!dfrcxt(ncelet,3)  ! tr ! <-- ! variation de force exterieure                  !
+!dfrcxt(3,ncelet)  ! tr ! <-- ! variation de force exterieure                  !
 !                  !    !     !  generant lapression hydrostatique             !
 ! tpucou           ! tr ! <-- ! couplage vitesse pression                      !
 ! (ncelel,ndim)    !    !     !                                                !
@@ -138,7 +138,7 @@ double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision coefap(nfabor)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
-double precision frcxt(ncelet,3), dfrcxt(ncelet,3)
+double precision frcxt(3,ncelet), dfrcxt(3,ncelet)
 double precision tpucou(ncelet,ndim), trav(ncelet,3)
 double precision viscf(nfac), viscb(nfabor)
 double precision viscfi(nfac), viscbi(nfabor)
@@ -261,9 +261,9 @@ if(irnpnw.ne.1) then
   if (iphydr.eq.1) then
     do iel = 1, ncel
       unsvom = -1.d0/volume(iel)
-      trav(iel,1) = trav(iel,1)*unsvom + frcxt(iel,1) + dfrcxt(iel,1)
-      trav(iel,2) = trav(iel,2)*unsvom + frcxt(iel,2) + dfrcxt(iel,2)
-      trav(iel,3) = trav(iel,3)*unsvom + frcxt(iel,3) + dfrcxt(iel,3)
+      trav(iel,1) = trav(iel,1)*unsvom + frcxt(1 ,iel) + dfrcxt(1 ,iel)
+      trav(iel,2) = trav(iel,2)*unsvom + frcxt(2 ,iel) + dfrcxt(2 ,iel)
+      trav(iel,3) = trav(iel,3)*unsvom + frcxt(3 ,iel) + dfrcxt(3 ,iel)
     enddo
   else
     if(isno2t.gt.0) then
@@ -560,16 +560,16 @@ call grdpot &
  ( ipr , imrgra , inc    , iccocg , nswrgp , imligp , iphydr ,    &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    rvoid  ,                                                       &
-   frcxt(1,1), frcxt(1,2), frcxt(1,3),                            &
+   frcxt  ,                                                       &
    rtpa(1,ipr)  , coefa(1,iclipr) , coefb(1,iclipr)  ,            &
    grad   )
 
 
 if (iphydr.eq.1) then
   do iel = 1, ncel
-    grad(iel,1) = grad(iel,1) - frcxt(iel,1)
-    grad(iel,2) = grad(iel,2) - frcxt(iel,2)
-    grad(iel,3) = grad(iel,3) - frcxt(iel,3)
+    grad(iel,1) = grad(iel,1) - frcxt(1 ,iel)
+    grad(iel,2) = grad(iel,2) - frcxt(2 ,iel)
+    grad(iel,3) = grad(iel,3) - frcxt(3 ,iel)
   enddo
 endif
 
@@ -667,7 +667,7 @@ if (iphydr.eq.1) then
    init   , inc    , imrgra , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp ,                                              &
-   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
+   dfrcxt ,                                                       &
    coefb(1,iclipf) ,                                              &
    propfa(1,iflmas), propfb(1,iflmab) ,                           &
    viscf  , viscb  ,                                              &
@@ -679,7 +679,7 @@ if (iphydr.eq.1) then
    init   , inc    , imrgra , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp ,                                              &
-   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
+   dfrcxt ,                                                       &
    coefb(1,iclipf) ,                                              &
    propfa(1,iflmas), propfb(1,iflmab) ,                           &
    viscf  , viscb  ,                                              &
@@ -719,7 +719,7 @@ if(arak.gt.0.d0) then
    init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   frcxt(1,1), frcxt(1,2), frcxt(1,3),                            &
+   frcxt  ,                                                       &
    rtpa(1,ipr)  ,                                                 &
    coefa(1,iclipr) , coefb(1,iclipr) ,                            &
    coefa(1,iclipf) , coefb(1,iclipf) ,                            &
@@ -749,7 +749,7 @@ if(arak.gt.0.d0) then
    init   , inc    , imrgra , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp ,                                              &
-   frcxt(1,1), frcxt(1,2), frcxt(1,3),                            &
+   frcxt  ,                                                       &
    cofbfp ,                                                       &
    propfa(1,iflmas), propfb(1,iflmab) ,                           &
    viscf  , viscb  ,                                              &
@@ -782,7 +782,7 @@ if(arak.gt.0.d0) then
    init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   frcxt(1,1), frcxt(1,2), frcxt(1,3),                            &
+   frcxt  ,                                                       &
    rtpa(1,ipr)  ,                                                 &
    coefa(1,iclipr) , coefb(1,iclipr) ,                            &
    coefa(1,iclipf) , coefb(1,iclipf) ,                            &
@@ -812,7 +812,7 @@ if(arak.gt.0.d0) then
    init   , inc    , imrgra , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp ,                                              &
-   frcxt(1,1), frcxt(1,2), frcxt(1,3),                            &
+   frcxt  ,                                                       &
    cofbfp ,                                                       &
    propfa(1,iflmas), propfb(1,iflmab) ,                           &
    viscf  , viscb  ,                                              &
@@ -859,10 +859,10 @@ if (iphydr.eq.1) then
       phydr0 = 0.d0
     else
       iel0 = ifabor(ifac0)
-      phydr0 = rtp(iel0,ipr)                                &
-           +(cdgfbo(1,ifac0)-xyzcen(1,iel0))*dfrcxt(iel0,1) &
-           +(cdgfbo(2,ifac0)-xyzcen(2,iel0))*dfrcxt(iel0,2) &
-           +(cdgfbo(3,ifac0)-xyzcen(3,iel0))*dfrcxt(iel0,3)
+      phydr0 = rtp(iel0,ipr)                                 &
+           +(cdgfbo(1,ifac0)-xyzcen(1,iel0))*dfrcxt(1 ,iel0) &
+           +(cdgfbo(2,ifac0)-xyzcen(2,iel0))*dfrcxt(2 ,iel0) &
+           +(cdgfbo(3,ifac0)-xyzcen(3,iel0))*dfrcxt(3 ,iel0)
     endif
     if (irangp.ge.0) then
       call parsom (phydr0)
@@ -870,10 +870,10 @@ if (iphydr.eq.1) then
     do ifac=1,nfabor
       if (isostd(ifac).eq.1) then
         iel=ifabor(ifac)
-        coefap(ifac) = rtp(iel,ipr)                         &
-             +(cdgfbo(1,ifac)-xyzcen(1,iel))*dfrcxt(iel,1)  &
-             +(cdgfbo(2,ifac)-xyzcen(2,iel))*dfrcxt(iel,2)  &
-             +(cdgfbo(3,ifac)-xyzcen(3,iel))*dfrcxt(iel,3)  &
+        coefap(ifac) = rtp(iel,ipr)                          &
+             +(cdgfbo(1,ifac)-xyzcen(1,iel))*dfrcxt(1 ,iel)  &
+             +(cdgfbo(2,ifac)-xyzcen(2,iel))*dfrcxt(2 ,iel)  &
+             +(cdgfbo(3,ifac)-xyzcen(3,iel))*dfrcxt(3 ,iel)  &
              - phydr0
         if (idften(ipr).eq.1) then
           hint = dt(iel)/distb(ifac)
@@ -1117,7 +1117,7 @@ do 100 isweep = 1, nswmpr
    init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
+   dfrcxt ,                                                       &
    rtp(1,ipr)   ,                                                 &
    coefap , coefb(1,iclipr) ,                                     &
    cofafp , coefb(1,iclipf) ,                                     &
@@ -1133,7 +1133,7 @@ do 100 isweep = 1, nswmpr
    init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
+   dfrcxt ,                                                       &
    rtp(1,ipr)   ,                                                 &
    coefap , coefb(1,iclipr) ,                                     &
    cofafp , coefb(1,iclipf) ,                                     &
@@ -1229,7 +1229,7 @@ do 100 isweep = 1, nswmpr
    init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
+   dfrcxt ,                                                       &
    rtp(1,ipr)   ,                                                 &
    coefap , coefb(1,iclipr) ,                                     &
    cofafp , coefb(1,iclipf) ,                                     &
@@ -1249,7 +1249,7 @@ do 100 isweep = 1, nswmpr
    init   , inc    , imrgra , iccocg , nswrp  , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
+   dfrcxt ,                                                       &
    drtp   ,                                                       &
    coefa(1,iclipr) , coefb(1,iclipr) ,                            &
    coefa(1,iclipf) , coefb(1,iclipf) ,                            &
@@ -1265,7 +1265,7 @@ do 100 isweep = 1, nswmpr
    init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
+   dfrcxt ,                                                       &
    rtp(1,ipr)   ,                                                 &
    coefap , coefb(1,iclipr) ,                                     &
    cofafp , coefb(1,iclipf) ,                                     &
@@ -1285,7 +1285,7 @@ do 100 isweep = 1, nswmpr
    init   , inc    , imrgra , iccocg , nswrp  , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
+   dfrcxt ,                                                       &
    drtp   ,                                                       &
    coefa(1,iclipr) , coefb(1,iclipr) ,                            &
    coefa(1,iclipf) , coefb(1,iclipf) ,                            &
@@ -1336,7 +1336,7 @@ do 100 isweep = 1, nswmpr
    init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
+   dfrcxt ,                                                       &
    rtp(1,ipr)      ,                                              &
    coefap , coefb(1,iclipr) ,                                     &
    cofafp , coefb(1,iclipf) ,                                     &
@@ -1352,7 +1352,7 @@ do 100 isweep = 1, nswmpr
    init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
+   dfrcxt ,                                                       &
    rtp(1,ipr)      ,                                              &
    coefap , coefb(1,iclipr) ,                                     &
    cofafp , coefb(1,iclipf) ,                                     &
@@ -1613,7 +1613,7 @@ if (idilat.eq.4) then
    init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   dfrcxt(1,1)     , dfrcxt(1,2)     , dfrcxt(1,3)     ,          &
+   dfrcxt ,                                                       &
    drtp   ,                                                       &
    coefap , coefb(1,iclipr) ,                                     &
    cofafp , coefb(1,iclipf) ,                                     &
@@ -1633,7 +1633,7 @@ if (idilat.eq.4) then
    init   , inc    , imrgra , iccocg , nswrp  , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   dfrcxt(1,1)     , dfrcxt(1,2)     , dfrcxt(1,3)     ,          &
+   dfrcxt ,                                                       &
    dpvar  ,                                                       &
    coefap , coefb(1,iclipr) ,                                     &
    cofafp , coefb(1,iclipf) ,                                     &
@@ -1649,7 +1649,7 @@ if (idilat.eq.4) then
    init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   dfrcxt(1,1)     , dfrcxt(1,2)     , dfrcxt(1,3)     ,          &
+   dfrcxt ,                                                       &
    drtp   ,                                                       &
    coefap , coefb(1,iclipr) ,                                     &
    cofafp , coefb(1,iclipf) ,                                     &
@@ -1669,7 +1669,7 @@ if (idilat.eq.4) then
    init   , inc    , imrgra , iccocg , nswrp  , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   dfrcxt(1,1)     , dfrcxt(1,2)     , dfrcxt(1,3)     ,          &
+   dfrcxt ,                                                       &
    dpvar  ,                                                       &
    coefap , coefb(1,iclipr) ,                                     &
    cofafp , coefb(1,iclipf) ,                                     &

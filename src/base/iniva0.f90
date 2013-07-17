@@ -52,7 +52,7 @@ subroutine iniva0 &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa coefb      ! tr ! <-- ! conditions aux limites aux                     !
 !  (nfabor,*)      !    !     !    faces de bord                               !
-! frcxt(ncelet,3)  ! tr ! <-- ! force exterieure generant la pression          !
+! frcxt(3,ncelet)  ! tr ! <-- ! force exterieure generant la pression          !
 !                  !    !     !  hydrostatique                                 !
 ! prhyd(ncelet)    ! ra ! <-- ! hydrostatic pressure predicted                 !
 !__________________!____!_____!________________________________________________!
@@ -96,7 +96,7 @@ integer          nvar   , nscal  , ncofab
 double precision dt(ncelet), tpucou(ncelet,3), rtp(ncelet,*), propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,ncofab), coefb(nfabor,ncofab)
-double precision frcxt(ncelet,3), prhyd(ncelet)
+double precision frcxt(3,ncelet), prhyd(ncelet)
 
 ! Local variables
 
@@ -648,9 +648,9 @@ endif
 
 if(iphydr.eq.1) then
   do iel = 1, ncel
-    frcxt(iel,1) = 0.d0
-    frcxt(iel,2) = 0.d0
-    frcxt(iel,3) = 0.d0
+    frcxt(1,iel) = 0.d0
+    frcxt(2,iel) = 0.d0
+    frcxt(3,iel) = 0.d0
   enddo
 endif
 

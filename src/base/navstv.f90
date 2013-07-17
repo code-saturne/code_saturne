@@ -108,7 +108,7 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision tslagr(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
-double precision frcxt(ncelet,3)
+double precision frcxt(3,ncelet)
 double precision prhyd(ncelet)
 double precision trava(ndim,ncelet),ximpa(ndim,ndim,ncelet)
 double precision uvwk(ndim,ncelet)
@@ -185,8 +185,7 @@ allocate(vel(3,ncelet))
 ! Array for delta p gradient boundary conditions
 allocate(coefap(nfabor))
 
-!if (iphydr.eq.1) allocate(dfrcxt(ncelet,3))!FIXME
-allocate(dfrcxt(ncelet,3))
+allocate(dfrcxt(3,ncelet))
 if (icalhy.eq.1) allocate(frchy(ncelet,ndim), dfrchy(ncelet,ndim))
 if (iphydr.eq.2) allocate(grdphd(ncelet,ndim))
 if (iescal(iestot).gt.0) allocate(esflum(nfac), esflub(nfabor))
@@ -639,8 +638,8 @@ if (irevmc.eq.0) then
  ( ipr , imrgra , inc    , iccocg , nswrgp , imligp , iphydr ,    &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    rvoid  ,                                                       &
-   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
-   drtp   , coefap        , coefb(1,iclipr)  ,                    & !TODO
+   dfrcxt ,                                                       &
+   drtp   , coefap        , coefb(1,iclipr)  ,                    &
    gradp  )
 
   thetap = thetav(ipr)
@@ -669,7 +668,7 @@ if (irevmc.eq.0) then
         dtsrom = thetap*dt(iel)/propce(iel,ipcrom)
         do isou = 1, 3
           vel(isou,iel) = vel(isou,iel)                            &
-                        + dtsrom*(dfrcxt(iel,isou)-trav(isou,iel))
+                        + dtsrom*(dfrcxt(isou, iel)-trav(isou,iel))
         enddo
       enddo
 
@@ -679,23 +678,23 @@ if (irevmc.eq.0) then
       do iel = 1, ncel
         unsrom = thetap/propce(iel,ipcrom)
 
-        vel(1, iel) = vel(1, iel)                                            &
-                    + unsrom*(                                               &
-                               dttens(1,iel)*(dfrcxt(iel,1)-trav(1,iel))     &
-                             + dttens(4,iel)*(dfrcxt(iel,2)-trav(2,iel))     &
-                             + dttens(6,iel)*(dfrcxt(iel,3)-trav(3,iel))     &
+        vel(1, iel) = vel(1, iel)                                             &
+                    + unsrom*(                                                &
+                               dttens(1,iel)*(dfrcxt(1, iel)-trav(1,iel))     &
+                             + dttens(4,iel)*(dfrcxt(2, iel)-trav(2,iel))     &
+                             + dttens(6,iel)*(dfrcxt(3, iel)-trav(3,iel))     &
                              )
-        vel(2, iel) = vel(2, iel)                                            &
-                    + unsrom*(                                               &
-                               dttens(4,iel)*(dfrcxt(iel,1)-trav(1,iel))     &
-                             + dttens(2,iel)*(dfrcxt(iel,2)-trav(2,iel))     &
-                             + dttens(5,iel)*(dfrcxt(iel,3)-trav(3,iel))     &
+        vel(2, iel) = vel(2, iel)                                             &
+                    + unsrom*(                                                &
+                               dttens(4,iel)*(dfrcxt(1, iel)-trav(1,iel))     &
+                             + dttens(2,iel)*(dfrcxt(2, iel)-trav(2,iel))     &
+                             + dttens(5,iel)*(dfrcxt(3, iel)-trav(3,iel))     &
                              )
-        vel(3, iel) = vel(3, iel)                                            &
-                    + unsrom*(                                               &
-                               dttens(6,iel)*(dfrcxt(iel,1)-trav(1,iel))     &
-                             + dttens(5,iel)*(dfrcxt(iel,2)-trav(2,iel))     &
-                             + dttens(3,iel)*(dfrcxt(iel,3)-trav(3,iel))     &
+        vel(3, iel) = vel(3, iel)                                             &
+                    + unsrom*(                                                &
+                               dttens(6,iel)*(dfrcxt(1 ,iel)-trav(1,iel))     &
+                             + dttens(5,iel)*(dfrcxt(2 ,iel)-trav(2,iel))     &
+                             + dttens(3,iel)*(dfrcxt(3 ,iel)-trav(3,iel))     &
                              )
       enddo
     endif
@@ -703,12 +702,12 @@ if (irevmc.eq.0) then
     ! Update external forces for the computation of the gradients
     !$omp parallel do
     do iel=1,ncel
-      frcxt(iel,1) = frcxt(iel,1) + dfrcxt(iel,1)
-      frcxt(iel,2) = frcxt(iel,2) + dfrcxt(iel,2)
-      frcxt(iel,3) = frcxt(iel,3) + dfrcxt(iel,3)
+      frcxt(1 ,iel) = frcxt(1 ,iel) + dfrcxt(1 ,iel)
+      frcxt(2 ,iel) = frcxt(2 ,iel) + dfrcxt(2 ,iel)
+      frcxt(3 ,iel) = frcxt(3 ,iel) + dfrcxt(3 ,iel)
     enddo
     if (irangp.ge.0.or.iperio.eq.1) then
-      call synvec(frcxt(1,1), frcxt(1,2), frcxt(1,3))
+      call synvin(frcxt)
       !==========
     endif
     ! Update of the Direchlet boundary conditions on the pressure for the outlet
@@ -1228,7 +1227,7 @@ endif
 deallocate(viscf, viscb)
 deallocate(drtp)
 deallocate(trav)
-if (allocated(dfrcxt)) deallocate(dfrcxt)
+deallocate(dfrcxt)
 if (allocated(frchy))  deallocate(frchy, dfrchy)
 if (allocated(grdphd)) deallocate(grdphd)
 if (allocated(esflum)) deallocate(esflum, esflub)

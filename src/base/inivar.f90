@@ -25,7 +25,7 @@ subroutine inivar &
 
  ( nvar   , nscal  , ncofab ,                                     &
    dt     , rtp    , propce , propfa , propfb ,                   &
-   coefa  , coefb  , frcxt  )
+   coefa  , coefb  )
 
 !===============================================================================
 ! FONCTION :
@@ -50,8 +50,6 @@ subroutine inivar &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa coefb      ! tr ! <-- ! conditions aux limites aux                     !
 !  (nfabor,*)      !    !     !    faces de bord                               !
-! frcxt(ncelet,3)  ! tr ! <-- ! force exterieure generant la pression          !
-!                  !    !     !  hydrostatique                                 !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -92,7 +90,6 @@ integer          nvar   , nscal  , ncofab
 double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,ncofab), coefb(nfabor,ncofab)
-double precision frcxt(ncelet,3)
 
 ! Local variables
 

@@ -81,7 +81,7 @@ subroutine cfqdmv &
 ! smacel           ! tr ! <-- ! valeur des variables associee a la             !
 ! (ncesmp,*   )    !    !     !  source de masse                               !
 !                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
-! frcxt(ncelet,3)  ! tr ! <-- ! force exterieure generant la pression          !
+! frcxt(3,ncelet)  ! tr ! <-- ! force exterieure generant la pression          !
 !                  !    !     !  hydrostatique                                 !
 ! tpucou           ! tr ! --> ! couplage vitesse pression                      !
 ! (ncelel,ndim)    !    !     !                                                !
@@ -130,7 +130,7 @@ double precision propfa(nfac,*), propfb(nfabor,*)
 double precision flumas(nfac), flumab(nfabor)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
-double precision frcxt(ncelet,3)
+double precision frcxt(3, ncelet)
 double precision tpucou(ncelet,ndim)
 
 ! Local variables
@@ -173,7 +173,7 @@ double precision, pointer, dimension(:) :: viscfi => null(), viscbi => null()
 allocate(viscf(nfac), viscb(nfabor))
 allocate(drtp(ncelet), smbr(ncelet), rovsdt(ncelet))
 allocate(trav(ncelet,3))
-allocate(dfrcxt(ncelet,3))
+allocate(dfrcxt(3,ncelet))
 
 ! Allocate other arrays, depending on user options
 if (itytur.eq.3.and.irijnu.eq.1) then
@@ -233,9 +233,9 @@ if (iphydr.eq.1) then
       rtprom = rtpa(iel,isca(irho))
     endif
 
-    dfrcxt(iel,1) = rtprom*gx - frcxt(iel,1)
-    dfrcxt(iel,2) = rtprom*gy - frcxt(iel,2)
-    dfrcxt(iel,3) = rtprom*gz - frcxt(iel,3)
+    dfrcxt(1, iel) = rtprom*gx - frcxt(1, iel)
+    dfrcxt(2, iel) = rtprom*gy - frcxt(2, iel)
+    dfrcxt(3, iel) = rtprom*gz - frcxt(3, iel)
   enddo
 !     Ajout eventuel des pertes de charges
   if (ncepdp.gt.0) then
@@ -250,18 +250,17 @@ if (iphydr.eq.1) then
       cpdc12 = ckupdc(ielpdc,4)
       cpdc23 = ckupdc(ielpdc,5)
       cpdc13 = ckupdc(ielpdc,6)
-      dfrcxt(iel,1) = dfrcxt(iel,1)                   &
+      dfrcxt(1 ,iel) = dfrcxt(1 ,iel)                   &
  -rtp(iel,isca(irho))*(cpdc11*vit1+cpdc12*vit2+cpdc13*vit3)
-      dfrcxt(iel,2) = dfrcxt(iel,2)                   &
+      dfrcxt(2 ,iel) = dfrcxt(2 ,iel)                   &
  -rtp(iel,isca(irho))*(cpdc12*vit1+cpdc22*vit2+cpdc23*vit3)
-      dfrcxt(iel,3) = dfrcxt(iel,3)                   &
+      dfrcxt(3 ,iel) = dfrcxt(3 ,iel)                   &
  -rtp(iel,isca(irho))*(cpdc13*vit1+cpdc23*vit2+cpdc33*vit3)
     enddo
   endif
 
   if (irangp.ge.0.or.iperio.eq.1) then
-    call synvec(dfrcxt(1,1), dfrcxt(1,2), dfrcxt(1,3))
-    !==========
+    call synvin(dfrcxt)
   endif
 
 endif
@@ -283,12 +282,12 @@ epsrgp = epsrgr(ipr)
 climgp = climgr(ipr)
 extrap = extrag(ipr)
 
-call grdpot                                                       &
+call grdpot &
 !==========
  ( ipr , imrgra , inc    , iccocg , nswrgp , imligp , iphydr ,    &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    rvoid  ,                                                       &
-   frcxt(1,1), frcxt(1,2), frcxt(1,3),                            &
+   frcxt  ,                                                       &
    rtp(1,ipr)   , coefa(1,iclrtp(ipr,icoef))  ,                   &
                   coefb(1,iclrtp(ipr,icoef))  ,                   &
    grad   )
@@ -296,9 +295,9 @@ call grdpot                                                       &
 
 if (iphydr.eq.1) then
   do iel = 1, ncel
-    trav(iel,1) = ( frcxt(iel,1) - grad(iel,1) )*volume(iel)
-    trav(iel,2) = ( frcxt(iel,2) - grad(iel,2) )*volume(iel)
-    trav(iel,3) = ( frcxt(iel,3) - grad(iel,3) )*volume(iel)
+    trav(iel,1) = ( frcxt(1,iel) - grad(iel,1) )*volume(iel)
+    trav(iel,2) = ( frcxt(2,iel) - grad(iel,2) )*volume(iel)
+    trav(iel,3) = ( frcxt(3,iel) - grad(iel,3) )*volume(iel)
   enddo
 else
   do iel = 1, ncel

@@ -58,7 +58,7 @@ subroutine lecamo &
 !  (nfabor,*)      !    !     !    faces de bord                               !
 ! coefa, coefb     ! tr ! --> ! conditions aux limites aux                     !
 !  (nfabor,*)      !    !     !    faces de bord                               !
-! frcxt(ncelet,3)  ! tr ! --> ! force exterieure generant la pression          !
+! frcxt(3,ncelet)  ! tr ! --> ! force exterieure generant la pression          !
 !                  !    !     !  hydrostatique                                 !
 ! prhyd(ncelet)    ! ra ! --> ! pression hydrostatic predite                   !
 !__________________!____!_____!________________________________________________!
@@ -96,7 +96,7 @@ double precision dt(ncelet), rtp(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision frcxt(ncelet,3), prhyd(ncelet)
+double precision frcxt(3,ncelet), prhyd(ncelet)
 
 ! Local variables
 

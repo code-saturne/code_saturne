@@ -94,9 +94,8 @@ void CS_PROCF (cgdcel, CGDCEL)
  const cs_real_t  *const extrap,      /* <-- extrapolate gradient at boundary */
  const cs_real_t  *const climgp,      /* <-- clipping coefficient             */
  const cs_int_t          isympa[],    /* <-- indicator for symmetry faces     */
-       cs_real_t         fextx[],     /* <-- components of the exterior force */
-       cs_real_t         fexty[],     /*     generating the hydrostatic       */
-       cs_real_t         fextz[],     /*     pressure                         */
+       cs_real_3_t       fext[],      /* <-- exterior force generating the
+                                             hydrostatic pressure             */
  const cs_real_t         coefap[],    /* <-- boundary condition term          */
  const cs_real_t         coefbp[],    /* <-- boundary condition term          */
        cs_real_t         pvar[],      /* <-- gradient's base variable         */
@@ -142,6 +141,58 @@ cs_gradient_initialize(void);
 
 void
 cs_gradient_finalize(void);
+
+/*----------------------------------------------------------------------------
+ * Compute cell gradient of scalar field or component of vector or
+ * tensor field.
+ *
+ * parameters:
+ *   var_name       <-- variable name
+ *   gradient_type  <-- gradient type
+ *   halo_type      <-- halo type
+ *   inc            <-- if 0, solve on increment; 1 otherwise
+ *   recompute_cocg <-- should COCG FV quantities be recomputed ?
+ *   mobile_mesh    <-- is mesh mobile ?
+ *   ale            <-- do we have ALE ?
+ *   n_r_sweeps     <-- if > 1, number of reconstruction sweeps
+ *   tr_dim         <-- scalar, vector_tensor in case of rotation
+ *   hyd_p_flag     <-- flag for hydrostatic pressure
+ *   verbosity      <-- verbosity level
+ *   clip_mode      <-- clipping mode
+ *   epsilon        <-- precision for iterative gradient calculation
+ *   extrap         <-- boundary gradient extrapolation coefficient
+ *   clip_coeff     <-- clipping coefficient
+ *   symmetry_flag  <-- Array with value 0 on symmetries, 1 elsewhere
+ *   f_ext          <-- exterior force generating the hydrostatic pressure
+ *   bc_coeff_a     <-- boundary condition term a
+ *   bc_coeff_b     <-- boundary condition term b
+ *   var            <-> gradient's base variable
+ *   weight_var     <-> weighted gradient coefficient variable, or NULL
+ *   grad           --> gradient
+ *----------------------------------------------------------------------------*/
+
+void cs_gradient_scalar(const char                *var_name,
+                        cs_gradient_type_t         gradient_type,
+                        cs_halo_type_t             halo_type,
+                        int                        inc,
+                        bool                       recompute_cocg,
+                        bool                       mobile_mesh,
+                        bool                       ale,
+                        int                        n_r_sweeps,
+                        int                        tr_dim,
+                        int                        hyd_p_flag,
+                        int                        verbosity,
+                        int                        clip_mode,
+                        double                     epsilon,
+                        double                     extrap,
+                        double                     clip_coeff,
+                        const int                  symmetry_flag[],
+                        cs_real_3_t                f_ext[],
+                        const cs_real_t            bc_coeff_a[],
+                        const cs_real_t            bc_coeff_b[],
+                        cs_real_t        *restrict var,
+                        cs_real_t        *restrict weight_var,
+                        cs_real_3_t      *restrict grad);
 
 /*----------------------------------------------------------------------------*/
 

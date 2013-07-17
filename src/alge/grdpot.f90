@@ -26,7 +26,7 @@ subroutine grdpot &
  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ppond  ,                                                       &
-   fextx  , fexty  , fextz  ,                                     &
+   frcxt  ,                                                       &
    pvar   , coefap , coefbp ,                                     &
    grad   )
 
@@ -77,8 +77,8 @@ subroutine grdpot &
 ! coefap,coefbp    ! tr ! <-- ! tableaux des cond lim pour pvar                !
 !   (nfabor)       !    !     !  sur la normale a la face de bord              !
 ! ppond(ncelet)    ! tr ! <-- ! ponderation "physique"                         !
-! fextx,y,z        ! tr ! <-- ! force exterieure generant la pression          !
-!   (ncelet)       !    !     !  hydrostatique                                 !
+! frcxt            ! tr ! <-- ! force exterieure generant la pression          !
+!                  !    !     !  hydrostatique                                 !
 ! grad(ncelet,3)   ! tr ! --> ! gradient de pvar                               !
 !__________________!____!_____!________________________________________________!
 
@@ -111,7 +111,7 @@ integer          imligp , iwarnp , iphydp , nfecra
 double precision epsrgp , climgp , extrap
 
 double precision ppond(ncelet)
-double precision fextx(ncelet),fexty(ncelet),fextz(ncelet)
+double precision frcxt(3,ncelet)
 double precision pvar(ncelet), coefap(nfabor), coefbp(nfabor)
 double precision grad(ncelet,3)
 
@@ -148,11 +148,11 @@ ipond = 0
 ! 1. Compute gradient
 !===============================================================================
 
-call cgdcel                                                       &
+call cgdcel &
 !==========
  ( ivar   , imrgrp , inc    , iccocg , imobil , iale   , nswrgp , &
    idimtr , iphydp , ipond  , iwarnp , imligp , epsrgp , extrap , &
-   climgp , isympa , fextx  , fexty  , fextz  , coefap , coefbp , &
+   climgp , isympa , frcxt  , coefap , coefbp ,                   &
    pvar   , rvoid  , grad   )
 
 return

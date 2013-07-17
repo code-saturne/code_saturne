@@ -74,9 +74,7 @@
 !> \param[in]     climgp        clipping coeffecient for the computation of
 !>                               the gradient
 !> \param[in]     extrap        coefficient for extrapolation of the gradient
-!> \param[in]     fextx         body force creating the hydrostatic pressure
-!> \param[in]     fexty         body force creating the hydrostatic pressure
-!> \param[in]     fextz         body force creating the hydrostatic pressure
+!> \param[in]     frcxt         body force creating the hydrostatic pressure
 !> \param[in]     pvar          solved variable (pressure)
 !> \param[in]     coefap        boundary condition array for the variable
 !>                               (Explicit part)
@@ -103,7 +101,7 @@ subroutine itrmav &
  ( init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
    iphydp , iwarnp , nfecra ,                                     &
    epsrgp , climgp , extrap ,                                     &
-   fextx  , fexty  , fextz  ,                                     &
+   frcxt  ,                                                       &
    pvar   , coefap , coefbp , cofafp , cofbfp , viscf  , viscb  , &
    viscel ,                                                       &
    weighf , weighb ,                                              &
@@ -142,7 +140,7 @@ double precision viscf(nfac), viscb(nfabor)
 double precision, target :: viscel(6,ncelet)
 double precision weighf(2,nfac), weighb(nfabor)
 double precision flumas(nfac), flumab(nfabor)
-double precision fextx(ncelet),fexty(ncelet),fextz(ncelet)
+double precision frcxt(3,ncelet)
 
 ! Local variables
 
@@ -257,7 +255,7 @@ if (nswrgp.gt.1) then
  ( ipr    , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    rvoid  ,                                                       &
-   fextx  , fexty  , fextz  ,                                     &
+   frcxt  ,                                                       &
    pvar   , coefap , coefbp ,                                     &
    grad   )
 

@@ -57,7 +57,7 @@ subroutine tridim &
 !  (nfabor, *)     !    !     !                                                !
 ! tslagr           ! tr ! <-- ! terme de couplage retour du                    !
 !(ncelet,*)        !    !     !     lagrangien                                 !
-! frcxt(ncelet,3)  ! tr ! <-- ! force exterieure generant la pression          !
+! frcxt(3,ncelet)  ! tr ! <-- ! force exterieure generant la pression          !
 !                  !    !     !  hydrostatique                                 !
 ! prhyd(ncelet)    ! tr ! <-- ! pression hydrostatique predite                 !
 !__________________!____!_____!________________________________________________!
@@ -120,7 +120,7 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision tslagr(ncelet,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision frcxt(ncelet,3), prhyd(ncelet)
+double precision frcxt(3,ncelet), prhyd(ncelet)
 
 ! Local variables
 
@@ -340,16 +340,7 @@ if (ipass.eq.1) then
   if (iphydr.eq.1) then
 
     if (irangp.ge.0 .or. iperio.eq.1) then
-      call synsce (frcxt(1,1))
-      !==========
-      call synsce (frcxt(1,2))
-      !==========
-      call synsce (frcxt(1,3))
-      !==========
-    endif
-    if (iperio.eq.1) then
-      call perrve (frcxt(1,1), frcxt(1,2), frcxt(1,3))
-      !==========
+      call synvin (frcxt)
     endif
 
   endif

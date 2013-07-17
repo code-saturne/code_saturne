@@ -88,14 +88,14 @@ subroutine preduv &
 ! smacel           ! tr ! <-- ! valeur des variables associee a la             !
 ! (ncesmp,*   )    !    !     !  source de masse                               !
 !                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
-! frcxt(ncelet,3)  ! tr ! <-- ! force exterieure generant la pression          !
+! frcxt(3,ncelet)  ! tr ! <-- ! force exterieure generant la pression          !
 !                  !    !     !  hydrostatique                                 !
 ! grdphd(ncelet,3) ! tr ! <-- ! hydrostatic pressure gradient                  !
 ! trava,ximpa      ! tr ! <-- ! tableau de travail pour couplage               !
 ! uvwk             ! tr ! <-- ! tableau de travail pour couplage u/p           !
 !                  !    !     ! sert a stocker la vitesse de                   !
 !                  !    !     ! l'iteration precedente                         !
-!dfrcxt(ncelet,3)  ! tr ! --> ! variation de force exterieure                  !
+!dfrcxt(3,ncelet)  ! tr ! --> ! variation de force exterieure                  !
 !                  !    !     !  generant la pression hydrostatique            !
 ! tpucou           ! tr ! --> ! couplage vitesse pression                      !
 ! (ncelel,ndim)    !    !     !                                                !
@@ -162,7 +162,7 @@ double precision flumas(nfac), flumab(nfabor)
 double precision tslagr(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
-double precision frcxt(ncelet,3), dfrcxt(ncelet,3)
+double precision frcxt(3,ncelet), dfrcxt(3,ncelet)
 double precision grdphd(ncelet,3)
 double precision trava(ncelet,ndim)
 double precision ximpa(ncelet,ndim),uvwk(ncelet,ndim)
@@ -277,9 +277,9 @@ if (iappel.eq.1.and.iphydr.eq.1) then
 
 ! variation de force (utilise dans resolp)
     drom = (propce(iel,ipcrom)-ro0)
-    dfrcxt(iel,1) = drom*gx - frcxt(iel,1)
-    dfrcxt(iel,2) = drom*gy - frcxt(iel,2)
-    dfrcxt(iel,3) = drom*gz - frcxt(iel,3)
+    dfrcxt(1 ,iel) = drom*gx - frcxt(1 ,iel)
+    dfrcxt(2 ,iel) = drom*gy - frcxt(2 ,iel)
+    dfrcxt(3 ,iel) = drom*gz - frcxt(3 ,iel)
   enddo
 !     Ajout eventuel des pertes de charges
   if (ncepdp.gt.0) then
@@ -294,13 +294,13 @@ if (iappel.eq.1.and.iphydr.eq.1) then
       cpdc12 = ckupdc(ielpdc,4)
       cpdc23 = ckupdc(ielpdc,5)
       cpdc13 = ckupdc(ielpdc,6)
-      dfrcxt(iel,1) = dfrcxt(iel,1)                   &
+      dfrcxt(1 ,iel) = dfrcxt(1 ,iel)                   &
            -propce(iel,ipcrom)*(                                  &
            cpdc11*vit1+cpdc12*vit2+cpdc13*vit3)
-      dfrcxt(iel,2) = dfrcxt(iel,2)                   &
+      dfrcxt(2 ,iel) = dfrcxt(2 ,iel)                   &
            -propce(iel,ipcrom)*(                                  &
            cpdc12*vit1+cpdc22*vit2+cpdc23*vit3)
-      dfrcxt(iel,3) = dfrcxt(iel,3)                   &
+      dfrcxt(3 ,iel) = dfrcxt(3 ,iel)                   &
            -propce(iel,ipcrom)*(                                  &
            cpdc13*vit1+cpdc23*vit2+cpdc33*vit3)
     enddo
@@ -311,14 +311,14 @@ if (iappel.eq.1.and.iphydr.eq.1) then
       cx = omegay*rtpa(iel,iw) - omegaz*rtpa(iel,iv)
       cy = omegaz*rtpa(iel,iu) - omegax*rtpa(iel,iw)
       cz = omegax*rtpa(iel,iv) - omegay*rtpa(iel,iu)
-      dfrcxt(iel,1) = dfrcxt(iel,1) - 2.d0*propce(iel,ipcrom)*cx
-      dfrcxt(iel,2) = dfrcxt(iel,2) - 2.d0*propce(iel,ipcrom)*cy
-      dfrcxt(iel,3) = dfrcxt(iel,3) - 2.d0*propce(iel,ipcrom)*cz
+      dfrcxt(1 ,iel) = dfrcxt(1 ,iel) - 2.d0*propce(iel,ipcrom)*cx
+      dfrcxt(2 ,iel) = dfrcxt(2 ,iel) - 2.d0*propce(iel,ipcrom)*cy
+      dfrcxt(3 ,iel) = dfrcxt(3 ,iel) - 2.d0*propce(iel,ipcrom)*cz
     enddo
   endif
 
   if (irangp.ge.0.or.iperio.eq.1) then
-    call synvec(dfrcxt(1,1), dfrcxt(1,2), dfrcxt(1,3))
+    call synvin(dfrcxt)
     !==========
   endif
 
@@ -346,7 +346,7 @@ call grdpot &
  ( ipr , imrgra , inc    , iccocg , nswrgp , imligp , iphydr ,    &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    rvoid  ,                                                       &
-   frcxt(1,1), frcxt(1,2), frcxt(1,3),                            &
+   frcxt  ,                                                       &
    rtpa(1,ipr)  , coefa(1,iclipr) , coefb(1,iclipr) ,             &
    grad   )
 
@@ -490,9 +490,9 @@ if(iappel.eq.1) then
 
   if (iphydr.eq.1) then
     do iel = 1, ncel
-      trav(iel,1) = (frcxt(iel,1) - grad(iel,1)) * volume(iel)
-      trav(iel,2) = (frcxt(iel,2) - grad(iel,2)) * volume(iel)
-      trav(iel,3) = (frcxt(iel,3) - grad(iel,3)) * volume(iel)
+      trav(iel,1) = (frcxt(1 ,iel) - grad(iel,1)) * volume(iel)
+      trav(iel,2) = (frcxt(2 ,iel) - grad(iel,2)) * volume(iel)
+      trav(iel,3) = (frcxt(3 ,iel) - grad(iel,3)) * volume(iel)
     enddo
 
   elseif(iphydr.eq.2) then
@@ -516,9 +516,9 @@ elseif(iappel.eq.2) then
 
   if (iphydr.eq.1) then
     do iel = 1, ncel
-      trav(iel,1) = trav(iel,1) + (frcxt(iel,1) - grad(iel,1))*volume(iel)
-      trav(iel,2) = trav(iel,2) + (frcxt(iel,2) - grad(iel,2))*volume(iel)
-      trav(iel,3) = trav(iel,3) + (frcxt(iel,3) - grad(iel,3))*volume(iel)
+      trav(iel,1) = trav(iel,1) + (frcxt(1 ,iel) - grad(iel,1))*volume(iel)
+      trav(iel,2) = trav(iel,2) + (frcxt(2 ,iel) - grad(iel,2))*volume(iel)
+      trav(iel,3) = trav(iel,3) + (frcxt(3 ,iel) - grad(iel,3))*volume(iel)
     enddo
 
   elseif (iphydr.eq.2) then

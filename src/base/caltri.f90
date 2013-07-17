@@ -355,7 +355,7 @@ allocate(propfa(nfac,nprofa), propfb(nfabor,nprofb))
 
 if (iphydr.eq.1) then
   allocate(isostd(nfabor+1))
-  allocate(frcxt(ncelet,3))
+  allocate(frcxt(3, ncelet))
 endif
 
 if (iphydr.eq.2) then
@@ -490,8 +490,7 @@ call inivar &
  ( nvar   , nscal  , ncofab ,                                     &
    ra(idt)    , ra(irtp) ,                                        &
    ra(ipropc) , propfa , propfb ,                                 &
-   coefa  , coefb  ,                                              &
-   frcxt  )
+   coefa  , coefb  )
 
 !===============================================================================
 ! Radiative transfer: possible restart

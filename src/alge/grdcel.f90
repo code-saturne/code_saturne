@@ -164,11 +164,11 @@ endif
 iphydp = 0
 ipond  = 0
 
-call cgdcel                                                       &
+call cgdcel &
 !==========
  ( ivar   , imrgra , inc    , iccocg , imobil , iale   , nswrgp , &
    idimtr , iphydp , ipond  , iwarnp , imligp , epsrgp , extrap , &
-   climgp , isympa , rvoid  , rvoid  , rvoid  , coefap , coefbp , &
+   climgp , isympa , rvoid  , coefap , coefbp ,                   &
    pvar   , rvoid  , grad   )
 
 return

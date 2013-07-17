@@ -27,7 +27,7 @@ subroutine projts &
    init   , inc    , imrgra , iccocg , nswrgu , imligu ,          &
    iwarnu , nfecra ,                                              &
    epsrgu , climgu ,                                              &
-   fextx  , fexty  , fextz  ,                                     &
+   frcxt  ,                                                       &
    cofbfp ,                                                       &
    flumas , flumab , viscf  , viscb  ,                            &
    viselx , visely , viselz )
@@ -103,7 +103,7 @@ double precision epsrgu , climgu
 
 
 double precision pnd
-double precision fextx(ncelet),fexty(ncelet),fextz(ncelet)
+double precision frcxt(3,ncelet)
 double precision viscf(nfac), viscb(nfabor)
 double precision viselx(ncelet), visely(ncelet), viselz(ncelet)
 double precision cofbfp(nfabor)
@@ -149,14 +149,14 @@ if( nswrgu.le.1 ) then
     ii = ifacel(1,ifac)
     jj = ifacel(2,ifac)
 
-    flumas(ifac) =  flumas(ifac)                                  &
-         + viscf(ifac)*(                                          &
-           (cdgfac(1,ifac)-xyzcen(1,ii))*fextx(ii)                &
-          +(cdgfac(2,ifac)-xyzcen(2,ii))*fexty(ii)                &
-          +(cdgfac(3,ifac)-xyzcen(3,ii))*fextz(ii)                &
-          -(cdgfac(1,ifac)-xyzcen(1,jj))*fextx(jj)                &
-          -(cdgfac(2,ifac)-xyzcen(2,jj))*fexty(jj)                &
-          -(cdgfac(3,ifac)-xyzcen(3,jj))*fextz(jj) )
+    flumas(ifac) =  flumas(ifac)                                     &
+         + viscf(ifac)*(                                             &
+           (cdgfac(1,ifac)-xyzcen(1,ii))*frcxt(1, ii)                &
+          +(cdgfac(2,ifac)-xyzcen(2,ii))*frcxt(2, ii)                &
+          +(cdgfac(3,ifac)-xyzcen(3,ii))*frcxt(3, ii)                &
+          -(cdgfac(1,ifac)-xyzcen(1,jj))*frcxt(1, jj)                &
+          -(cdgfac(2,ifac)-xyzcen(2,jj))*frcxt(2, jj)                &
+          -(cdgfac(3,ifac)-xyzcen(3,jj))*frcxt(3, jj) )
 
   enddo
 
@@ -169,8 +169,8 @@ if( nswrgu.le.1 ) then
     distbf = distb(ifac)
 
     flumab(ifac) = flumab(ifac)+viscb(ifac)*distbf/surfn          &
-         *cofbfp(ifac)*(fextx(ii)*surfbo(1,ifac)                  &
-         +fexty(ii)*surfbo(2,ifac)+fextz(ii)*surfbo(3,ifac) )
+         *cofbfp(ifac)*(frcxt(1, ii)*surfbo(1,ifac)                  &
+         +frcxt(2, ii)*surfbo(2,ifac)+frcxt(3, ii)*surfbo(3,ifac) )
 
   enddo
 
@@ -201,18 +201,18 @@ else
     djjpy = cdgfac(2,ifac)-xyzcen(2,jj)+pnd*dijpfy
     djjpz = cdgfac(3,ifac)-xyzcen(3,jj)+pnd*dijpfz
 
-    flumas(ifac) =  flumas(ifac)                                  &
-         + viscf(ifac)*(                                          &
-           (cdgfac(1,ifac)-xyzcen(1,ii))*fextx(ii)                &
-          +(cdgfac(2,ifac)-xyzcen(2,ii))*fexty(ii)                &
-          +(cdgfac(3,ifac)-xyzcen(3,ii))*fextz(ii)                &
-          -(cdgfac(1,ifac)-xyzcen(1,jj))*fextx(jj)                &
-          -(cdgfac(2,ifac)-xyzcen(2,jj))*fexty(jj)                &
-          -(cdgfac(3,ifac)-xyzcen(3,jj))*fextz(jj) )              &
-         +surfn/dist(ifac)*0.5d0*(                                &
-       (djjpx-diipx)*(viselx(ii)*fextx(ii)+viselx(jj)*fextx(jj))  &
-      +(djjpy-diipy)*(visely(ii)*fexty(ii)+visely(jj)*fexty(jj))  &
-      +(djjpz-diipz)*(viselz(ii)*fextz(ii)+viselz(jj)*fextz(jj)))
+    flumas(ifac) =  flumas(ifac)                                        &
+         + viscf(ifac)*(                                                &
+           (cdgfac(1,ifac)-xyzcen(1,ii))*frcxt(1, ii)                   &
+          +(cdgfac(2,ifac)-xyzcen(2,ii))*frcxt(2, ii)                   &
+          +(cdgfac(3,ifac)-xyzcen(3,ii))*frcxt(3, ii)                   &
+          -(cdgfac(1,ifac)-xyzcen(1,jj))*frcxt(1, jj)                   &
+          -(cdgfac(2,ifac)-xyzcen(2,jj))*frcxt(2, jj)                   &
+          -(cdgfac(3,ifac)-xyzcen(3,jj))*frcxt(3, jj) )                 &
+         +surfn/dist(ifac)*0.5d0*(                                      &
+       (djjpx-diipx)*(viselx(ii)*frcxt(1, ii)+viselx(jj)*frcxt(1, jj))  &
+      +(djjpy-diipy)*(visely(ii)*frcxt(2, ii)+visely(jj)*frcxt(2, jj))  &
+      +(djjpz-diipz)*(viselz(ii)*frcxt(3, ii)+viselz(jj)*frcxt(3, jj)))
 
   enddo
 
@@ -225,9 +225,9 @@ else
     surfn = surfbn(ifac)
     distbf = distb(ifac)
 
-    flumab(ifac) = flumab(ifac)+viscb(ifac)*distbf/surfn          &
-         *cofbfp(ifac)*(fextx(ii)*surfbo(1,ifac)                  &
-         +fexty(ii)*surfbo(2,ifac)+fextz(ii)*surfbo(3,ifac) )
+    flumab(ifac) = flumab(ifac)+viscb(ifac)*distbf/surfn             &
+         *cofbfp(ifac)*(frcxt(1, ii)*surfbo(1,ifac)                  &
+         +frcxt(2, ii)*surfbo(2,ifac)+frcxt(3, ii)*surfbo(3,ifac) )
 
   enddo
 endif

@@ -56,7 +56,7 @@ subroutine navsto &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! frcxt(ncelet,3)  ! tr ! <-- ! force exterieure generant la pression          !
+! frcxt(3,ncelet)  ! tr ! <-- ! force exterieure generant la pression          !
 !                  !    !     !  hydrostatique                                 !
 ! prhyd(ncelet)    ! tr ! <-- ! hydrostatic pressure predicted at cell centers !
 ! tslagr           ! tr ! <-- ! terme de couplage retour du                    !
@@ -111,7 +111,7 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision tslagr(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
-double precision frcxt(ncelet,3)
+double precision frcxt(3,ncelet)
 double precision prhyd(ncelet)
 double precision trava(ncelet,ndim),ximpa(ncelet,ndim)
 double precision uvwk(ncelet,ndim)
@@ -174,8 +174,7 @@ allocate(trav(ncelet,3))
 allocate(coefap(nfabor))
 
 ! Allocate other arrays, depending on user options
-!if (iphydr.eq.1) allocate(dfrcxt(ncelet,3))
-allocate(dfrcxt(ncelet,3))
+allocate(dfrcxt(3,ncelet))
 if (icalhy.eq.1) allocate(frchy(ncelet,ndim), dfrchy(ncelet,ndim))
 if (iphydr.eq.2) allocate(grdphd(ncelet,ndim))
 if (iescal(iestot).gt.0) allocate(esflum(nfac), esflub(nfabor))
@@ -695,7 +694,7 @@ else
  ( ipr    , imrgra , inc    , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    rvoid  ,                                                       &
-   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
+   dfrcxt ,                                                       &
    drtp   , coefap        , coefb(1,iclipr)  ,                    &
    grad   )
 
@@ -725,31 +724,31 @@ else
       !$omp parallel do private(dtsrom)
       do iel = 1, ncel
         dtsrom = thetap*dt(iel)/propce(iel,ipcrom)
-        rtp(iel,iu) = rtp(iel,iu) + dtsrom*(dfrcxt(iel,1)-grad(iel,1) )
-        rtp(iel,iv) = rtp(iel,iv) + dtsrom*(dfrcxt(iel,2)-grad(iel,2) )
-        rtp(iel,iw) = rtp(iel,iw) + dtsrom*(dfrcxt(iel,3)-grad(iel,3) )
+        rtp(iel,iu) = rtp(iel,iu) + dtsrom*(dfrcxt(1 ,iel)-grad(iel,1) )
+        rtp(iel,iv) = rtp(iel,iv) + dtsrom*(dfrcxt(2 ,iel)-grad(iel,2) )
+        rtp(iel,iw) = rtp(iel,iw) + dtsrom*(dfrcxt(3 ,iel)-grad(iel,3) )
       enddo
     else
       !$omp parallel do private(unsrom)
       do iel = 1, ncel
         unsrom = thetap/propce(iel,ipcrom)
         rtp(iel,iu) = rtp(iel,iu) &
-             +unsrom*tpucou(iel,1)*(dfrcxt(iel,1)-grad(iel,1))
+             +unsrom*tpucou(iel,1)*(dfrcxt(1 ,iel)-grad(iel,1))
         rtp(iel,iv) = rtp(iel,iv) &
-             +unsrom*tpucou(iel,2)*(dfrcxt(iel,2)-grad(iel,2))
+             +unsrom*tpucou(iel,2)*(dfrcxt(2 ,iel)-grad(iel,2))
         rtp(iel,iw) = rtp(iel,iw) &
-             +unsrom*tpucou(iel,3)*(dfrcxt(iel,3)-grad(iel,3))
+             +unsrom*tpucou(iel,3)*(dfrcxt(3 ,iel)-grad(iel,3))
       enddo
     endif
     !     mise a jour des forces exterieures pour le calcul des gradients
     !$omp parallel do
     do iel=1,ncel
-      frcxt(iel,1) = frcxt(iel,1) + dfrcxt(iel,1)
-      frcxt(iel,2) = frcxt(iel,2) + dfrcxt(iel,2)
-      frcxt(iel,3) = frcxt(iel,3) + dfrcxt(iel,3)
+      frcxt(1 ,iel) = frcxt(1 ,iel) + dfrcxt(1 ,iel)
+      frcxt(2 ,iel) = frcxt(2 ,iel) + dfrcxt(2 ,iel)
+      frcxt(3 ,iel) = frcxt(3 ,iel) + dfrcxt(3 ,iel)
     enddo
     if (irangp.ge.0.or.iperio.eq.1) then
-      call synvec(frcxt(1,1), frcxt(1,2), frcxt(1,3))
+      call synvin(frcxt)
       !==========
     endif
     !     mise a jour des Dirichlets de pression en sortie dans COEFA
@@ -1266,7 +1265,7 @@ endif
 deallocate(viscf, viscb)
 deallocate(drtp, smbr, rovsdt)
 deallocate(trav)
-if (allocated(dfrcxt)) deallocate(dfrcxt)
+deallocate(dfrcxt)
 if (allocated(frchy))  deallocate(frchy, dfrchy)
 if (allocated(grdphd)) deallocate(grdphd)
 if (allocated(esflum)) deallocate(esflum, esflub)

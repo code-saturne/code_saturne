@@ -74,7 +74,7 @@ subroutine typecl &
 !                  !    !     ! pour la pression             dt*gradp          !
 !                  !    !     ! pour les scalaires                             !
 !                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
-! frcxt(ncelet,3)  ! tr ! <-- ! force exterieure generant la pression          !
+! frcxt(3,ncelet)  ! tr ! <-- ! force exterieure generant la pression          !
 !                  !    !     !  hydrostatique                                 !
 !__________________!____!_____!________________________________________________!
 
@@ -119,7 +119,7 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision rcodcl(nfabor,nvarcl,3)
-double precision frcxt(ncelet,3)
+double precision frcxt(3,ncelet)
 
 ! Local variables
 
@@ -582,7 +582,7 @@ if (itbslb.gt.0) then
      ( ipr , imrgra , inc    , iccocg , nswrgp , imligp , iphydr ,    &
        iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
        rvoid  ,                                                       &
-       frcxt(1,1), frcxt(1,2), frcxt(1,3),                            &
+       frcxt  ,                                                       &
        rtpa(1,ipr)  , coefa(1,iclipr) , coefb(1,iclipr) ,             &
        grad   )
 

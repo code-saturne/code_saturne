@@ -56,9 +56,7 @@
 !>                               - 1 flux reconstruction,
 !>                               - 0 otherwise
 !> \param[in]     iwarnp        verbosity
-!> \param[in]     fextx         body force creating the hydrostatic pressure
-!> \param[in]     fexty         body force creating the hydrostatic pressure
-!> \param[in]     fextz         body force creating the hydrostatic pressure
+!> \param[in]     frcxt         body force creating the hydrostatic pressure
 !> \param[in]     cofbfp        boundary condition array for the diffusion
 !>                               of the variable (Implicit part)
 !> \param[in]     viscf         \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -77,7 +75,7 @@
 subroutine projtv &
  ( init   , inc    , imrgra , nswrgp , imligp , ircflp ,          &
    iwarnp , nfecra ,                                              &
-   fextx  , fexty  , fextz  ,                                     &
+   frcxt  ,                                                       &
    cofbfp ,                                                       &
    viscf  , viscb  ,                                              &
    viscel ,                                                       &
@@ -104,7 +102,7 @@ integer          init   , inc    , imrgra
 integer          nswrgp , imligp , ircflp
 integer          iwarnp , nfecra
 
-double precision fextx(ncelet),fexty(ncelet),fextz(ncelet)
+double precision frcxt(3, ncelet)
 double precision viscf(nfac), viscb(nfabor)
 double precision viscel(6,ncelet)
 double precision weighf(2,nfac), weighb(nfabor)
@@ -154,14 +152,14 @@ if (nswrgp.le.1) then
     ii = ifacel(1,ifac)
     jj = ifacel(2,ifac)
 
-    flumas(ifac) =  flumas(ifac)                                  &
-         + viscf(ifac)*(                                          &
-           (cdgfac(1,ifac)-xyzcen(1,ii))*fextx(ii)                &
-          +(cdgfac(2,ifac)-xyzcen(2,ii))*fexty(ii)                &
-          +(cdgfac(3,ifac)-xyzcen(3,ii))*fextz(ii)                &
-          -(cdgfac(1,ifac)-xyzcen(1,jj))*fextx(jj)                &
-          -(cdgfac(2,ifac)-xyzcen(2,jj))*fexty(jj)                &
-          -(cdgfac(3,ifac)-xyzcen(3,jj))*fextz(jj) )
+    flumas(ifac) =  flumas(ifac)                                     &
+         + viscf(ifac)*(                                             &
+           (cdgfac(1,ifac)-xyzcen(1,ii))*frcxt(1, ii)                &
+          +(cdgfac(2,ifac)-xyzcen(2,ii))*frcxt(2, ii)                &
+          +(cdgfac(3,ifac)-xyzcen(3,ii))*frcxt(3, ii)                &
+          -(cdgfac(1,ifac)-xyzcen(1,jj))*frcxt(1, jj)                &
+          -(cdgfac(2,ifac)-xyzcen(2,jj))*frcxt(2, jj)                &
+          -(cdgfac(3,ifac)-xyzcen(3,jj))*frcxt(3, jj) )
 
   enddo
 
@@ -173,9 +171,9 @@ if (nswrgp.le.1) then
     surfn = surfbn(ifac)
     distbf = distb(ifac)
 
-    flumab(ifac) = flumab(ifac)+viscb(ifac)*distbf/surfn          &
-         *cofbfp(ifac)*(fextx(ii)*surfbo(1,ifac)                  &
-         +fexty(ii)*surfbo(2,ifac)+fextz(ii)*surfbo(3,ifac) )
+    flumab(ifac) = flumab(ifac)+viscb(ifac)*distbf/surfn             &
+         *cofbfp(ifac)*(frcxt(1, ii)*surfbo(1,ifac)                  &
+         +frcxt(2, ii)*surfbo(2,ifac)+frcxt(3, ii)*surfbo(3,ifac) )
 
   enddo
 
@@ -236,22 +234,22 @@ else
                          + viscj(i,3)*surfac(3,ifac) )
     enddo
 
-    flumas(ifac) = flumas(ifac)                                            &
-                 + viscf(ifac)*(                                           &
-                                 fextx(ii)*(cdgfac(1,ifac)-xyzcen(1,ii))   &
-                               + fexty(ii)*(cdgfac(2,ifac)-xyzcen(2,ii))   &
-                               + fextz(ii)*(cdgfac(3,ifac)-xyzcen(3,ii))   &
-                               - fextx(jj)*(cdgfac(1,ifac)-xyzcen(1,jj))   &
-                               - fexty(jj)*(cdgfac(2,ifac)-xyzcen(2,jj))   &
-                               - fextz(jj)*(cdgfac(3,ifac)-xyzcen(3,jj))   &
-                               )                                           &
-                 + viscf(ifac)*ircflp*(                                    &
-                                      - fextx(ii)*diippf(1)                &
-                                      - fexty(ii)*diippf(2)                &
-                                      - fextz(ii)*diippf(3)                &
-                                      + fextx(jj)*djjppf(1)                &
-                                      + fexty(jj)*djjppf(2)                &
-                                      + fextz(jj)*djjppf(3)                &
+    flumas(ifac) = flumas(ifac)                                               &
+                 + viscf(ifac)*(                                              &
+                                 frcxt(1, ii)*(cdgfac(1,ifac)-xyzcen(1,ii))   &
+                               + frcxt(2, ii)*(cdgfac(2,ifac)-xyzcen(2,ii))   &
+                               + frcxt(3, ii)*(cdgfac(3,ifac)-xyzcen(3,ii))   &
+                               - frcxt(1, jj)*(cdgfac(1,ifac)-xyzcen(1,jj))   &
+                               - frcxt(2, jj)*(cdgfac(2,ifac)-xyzcen(2,jj))   &
+                               - frcxt(3, jj)*(cdgfac(3,ifac)-xyzcen(3,jj))   &
+                               )                                              &
+                 + viscf(ifac)*ircflp*(                                       &
+                                      - frcxt(1, ii)*diippf(1)                &
+                                      - frcxt(2, ii)*diippf(2)                &
+                                      - frcxt(3, ii)*diippf(3)                &
+                                      + frcxt(1, jj)*djjppf(1)                &
+                                      + frcxt(2, jj)*djjppf(2)                &
+                                      + frcxt(3, jj)*djjppf(3)                &
                                       )
 
   enddo
@@ -266,11 +264,11 @@ else
     distbf = distb(ifac)
 
     ! FIXME: wrong if dirichlet and viscel is really a tensor
-    flumab(ifac) = flumab(ifac)                                                &
-                 + viscb(ifac)*distbf/surfn*cofbfp(ifac)*(                     &
-                                      fextx(ii)*surfbo(1,ifac)                 &
-                                    + fexty(ii)*surfbo(2,ifac)                 &
-                                    + fextz(ii)*surfbo(3,ifac) )
+    flumab(ifac) = flumab(ifac)                                                   &
+                 + viscb(ifac)*distbf/surfn*cofbfp(ifac)*(                        &
+                                      frcxt(1, ii)*surfbo(1,ifac)                 &
+                                    + frcxt(2, ii)*surfbo(2,ifac)                 &
+                                    + frcxt(3, ii)*surfbo(3,ifac) )
 
   enddo
 endif

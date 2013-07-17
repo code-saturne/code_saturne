@@ -196,7 +196,7 @@ call cgdcel &
 !==========
  ( ivarloc, imrgra , inc    , iccocg , imobil , iale   , nswrgp , &
    idimtr , iphydp , ipond  , iwarnp , imligp , epsrgp , extrap , &
-   climgp , isympa , rvoid  , rvoid  , rvoid  ,                   &
+   climgp , isympa , rvoid  ,                                     &
    coefav(1)       , coefbv(1)       , vel(1) , rvoid  ,          &
    gradv(1)     )
 
@@ -206,7 +206,7 @@ call cgdcel &
 !==========
  ( ivarloc, imrgra , inc    , iccocg , imobil , iale   , nswrgp , &
    idimtr , iphydp , ipond  , iwarnp , imligp , epsrgp , extrap , &
-   climgp , isympa , rvoid  , rvoid  , rvoid  ,                   &
+   climgp , isympa , rvoid  ,                                     &
    coefav(1+ndimfb), coefbv(1+ndimfb), vel(1+ncelet)   , rvoid  , &
    gradv(1+3*ncelet)     )
 
@@ -216,7 +216,7 @@ call cgdcel &
 !==========
  ( ivarloc, imrgra , inc    , iccocg , imobil , iale   , nswrgp , &
    idimtr , iphydp , ipond  , iwarnp , imligp , epsrgp , extrap , &
-   climgp , isympa , rvoid  , rvoid  , rvoid  ,                   &
+   climgp , isympa , rvoid  ,                                     &
    coefav(1+2*ndimfb), coefbv(1+2*ndimfb), vel(1+2*ncelet),       &
    rvoid , gradv(1+6*ncelet)  )
 
