@@ -135,8 +135,6 @@ def process_cmd_line(argv, pkg):
 
     if options.case:
         casedir = os.path.realpath(options.case)
-
-    if not casedir:
         data = os.path.join(casedir, 'DATA')
         src = os.path.join(casedir, 'SRC')
     else:
@@ -230,8 +228,7 @@ def main(argv, pkg):
 
     # Now run case
 
-    retval = c.run(mpi_environment=None,
-                   run_id=run_id,
+    retval = c.run(run_id=run_id,
                    force_id=force,
                    prepare_data=prepare_data,
                    run_solver=run_solver,
