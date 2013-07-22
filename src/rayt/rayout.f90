@@ -227,6 +227,11 @@ nberro = 0
               propce(1,ipproc(itsre(1))),ierror)
   nberro=nberro+ierror
 
+  RUBRIQ = 'luminance'
+  call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,       &
+              propce(1,ipproc(ilumin)),ierror)
+  nberro=nberro+ierror
+
 !  ---> Si pb : on saute
 
 if(nberro.ne.0) then

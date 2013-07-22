@@ -206,6 +206,11 @@ if (isuird.eq.1) then
            propce(1,ipproc(itsre(1))),ierror)
       nberro=nberro+ierror
 
+      RUBRIQ = 'luminance'
+      call lecsui(impamr,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+                  propce(1,ipproc(ilumin)),ierror)
+      nberro=nberro+ierror
+
 
 !  ---> Si pb : arret
 
