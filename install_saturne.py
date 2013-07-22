@@ -337,13 +337,13 @@ class Package:
 
             cmake = 'cmake'
             if self.install_dir:
-                cmake += ' -D CMAKE_INSTALL_PREFIX=' + self.install_dir
+                cmake += ' -DCMAKE_INSTALL_PREFIX=' + self.install_dir
             cmake += ' ' + self.config_opts
 
             # Add compilers
-            if self.cxx: cmake += ' -D CMAKE_CXX_COMPILER=\"' + self.cxx + '\"'
-            if self.cc: cmake += ' -D CMAKE_C_COMPILER=\"' + self.cc + '\"'
-            if self.fc: cmake += ' -D CMAKE_Fortran_COMPILER=\"' + self.fc + '\"'
+            if self.cxx: cmake += ' -DCMAKE_CXX_COMPILER=\"' + self.cxx + '\"'
+            if self.cc: cmake += ' -DCMAKE_C_COMPILER=\"' + self.cc + '\"'
+            if self.fc: cmake += ' -DCMAKE_Fortran_COMPILER=\"' + self.fc + '\"'
 
             cmake += ' ' + self.source_dir
 
