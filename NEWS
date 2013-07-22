@@ -12,6 +12,8 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix handling of batch template defined by absolute path in GUI.
+
 - Fix: for Open MPI with Torque or PBS pro, disable --nodefile option only if
   Open MPI is built with proper support.
 

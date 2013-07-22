@@ -507,6 +507,10 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         cs_batch_type = None
         if config.has_option('install', 'batch'):
             cs_batch_type = config.get('install', 'batch')
+            if os.path.isabs(cs_batch_type):
+                i = cs_batch_type.rfind(".")
+                if i > -1:
+                    cs_batch_type = cs_batch_type[i+1:]
 
         self.case['batch_type'] = cs_batch_type
 
