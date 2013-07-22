@@ -26,7 +26,7 @@ subroutine lagstf &
   ( ncelet , nfabor , nvisbr ,                                    &
     ivar   ,                                                      &
     gmin   , gmax   ,                                             &
-    parbor , unsnbr )
+    parbor , unsnbr , unsnbrfou )
 
 !===============================================================================
 ! FONCTION :
@@ -52,6 +52,8 @@ subroutine lagstf &
 !(nfabor,nvisbr    !    !     !   aux faces de bord                            !
 ! unsnbr(nfabor    ! e  ! <-- ! inverse du nombre interaction                  !
 !                  !    !     !   frontiere pour moyenne                       !
+! unsnbrfou(nfabor ! e  ! <-- ! inverse du nombre interaction                  !
+!                  !    !     !   frontiere (avec fouling) pour moyenne        !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -80,7 +82,7 @@ implicit none
 integer          ncelet , nfabor , nvisbr
 integer          ivar
 double precision gmax   , gmin
-double precision parbor(nfabor, nvisbr), unsnbr(nfabor)
+double precision parbor(nfabor, nvisbr), unsnbr(nfabor), unsnbrfou(nfabor)
 
 !  VARIABLES LOCALES
 
@@ -93,7 +95,17 @@ nbrfac = 0
 gmax = -grand
 gmin =  grand
 
-if (imoybr(ivar).eq.2) then
+if  (imoybr(ivar).eq.3) then
+
+  do ifac = 1,nfabor
+    if (parbor(ifac,iencnb).gt.seuilf) then
+      nbrfac = nbrfac + 1
+      gmax = max (gmax, parbor(ifac,ivar)/unsnbrfou(ifac))
+      gmin = min (gmin, parbor(ifac,ivar)/unsnbrfou(ifac))
+    endif
+  enddo
+
+else if (imoybr(ivar).eq.2) then
 
   do ifac = 1,nfabor
     if (parbor(ifac,inbr).gt.seuilf) then

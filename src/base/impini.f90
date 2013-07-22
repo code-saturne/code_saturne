@@ -2737,13 +2737,14 @@ if (iilagr.ne.0) then
 
   write(nfecra,8155) ivisv1, ivisv2, ivistp, ivisdm, iviste, ivismp
   if (iphyla.eq.2) then
-    write(nfecra,8156) ivisdk, ivisch, ivisck
+    write(nfecra,8156) ivisdk, iviswat, ivisch, ivisck
   endif
 
   write(nfecra,8160) iensi3
   if (iensi3.eq.1) then
-    write(nfecra,8165) seuilf, nstbor,                            &
-          inbrbd, iflmbd, iangbd, ivitbd, iencbd, nusbor
+    write(nfecra,8165) seuilf,   nstbor,   inbrbd,      &
+             iflmbd  , iangbd,   ivitbd,   iencnbbd,    &
+             iencmabd, iencdibd, iencckbd, nusbor
   endif
 
   write(nfecra,9900)
@@ -2752,105 +2753,109 @@ endif
 
 #if defined(_CS_LANG_FR)
 
- 8100 format(                                                     &
-                                                                /,&
-' ** ECOULEMENT DIPHASIQUE LAGRANGIEN',                         /,&
-'    --------------------------------',                         /,&
-' --- Phase continue :',                                        /,&
-'       IILAGR = ',4x,i10,    ' (0 : Lagrangien desactive',     /,&
-'                ',14x,       '  1 : one way coupling',         /,&
-'                ',14x,       '  2 : two way coupling',         /,&
-'                ',14x,       '  3 : sur champs figes        )',/,&
-'       ISUILA = ',4x,i10,    ' (0 : pas de suite ; 1 : suite)',/,&
-'       ISUIST = ',4x,i10,    ' (1 : suite de calcul stats et', /,&
-'                ',14x,       '      TS de couplage retour   )',/,&
-' --- Physique particuliere associee aux particules :',         /,&
-'       IPHYLA = ',4x,i10,    ' (0 : pas d eqn supplementaires',/,&
-'                ',14x,       '  1 : eqns sur Dp Tp Mp',        /,&
-'                ',14x,       '  2 : particules de charbon   )'  )
- 8105 format(                                                     &
-'       IDPVAR = ',4x,i10,    ' (1 eqn diametre Dp,   0 sinon)',/,&
-'       ITPVAR = ',4x,i10,    ' (1 eqn temperature Tp,0 sinon)',/,&
-'       IMPVAR = ',4x,i10,    ' (1 eqn masse Mp,      0 sinon)'  )
- 8106 format(                                                     &
-' --- Parametres Globaux :',                                    /,&
-'       NBPMAX = ',4x,i10,    ' (nb max de part par iteration)',/,&
-'       NVLS   = ',4x,i10,    ' (nb var particulaires suppl. )',/,&
-'       ISTTIO = ',4x,i10,    ' (1 phase porteuse stationnair)',/,&
-'       INJCON = ',4x,i10,    ' (1 injection continue,0 sinon)',/,&
-'       IROULE = ',4x,i10,    ' (2 clonage/fusion avec calc Y+',/,&
-'                                1 clonage/fusion sans calc Y+',/,&
-'                                0 sinon                     )'  )
+ 8100 format(                                                                  &
+                                                                             /,&
+' ** ECOULEMENT DIPHASIQUE LAGRANGIEN',                                      /,&
+'    --------------------------------',                                      /,&
+' --- Phase continue :',                                                     /,&
+'       IILAGR   = ',4x,i10,    ' (0 : Lagrangien desactive',                /,&
+'                  ',14x,       '  1 : one way coupling',                    /,&
+'                  ',14x,       '  2 : two way coupling',                    /,&
+'                  ',14x,       '  3 : sur champs figes                   )',/,&
+'       ISUILA   = ',4x,i10,    ' (0 : pas de suite ; 1 : suite           )',/,&
+'       ISUIST   = ',4x,i10,    ' (1 : suite de calcul stats et'           , /,&
+'                  ',14x,       '      TS de couplage retour              )',/,&
+' --- Physique particuliere associee aux particules :',                      /,&
+'       IPHYLA   = ',4x,i10,    ' (0 : pas d eqn supplementaires'           ,/,&
+'                  ',14x,       '  1 : eqns sur Dp Tp Mp',                   /,&
+'                  ',14x,       '  2 : particules de charbon              )'  )
+ 8105 format(                                                                  &
+'       IDPVAR   = ',4x,i10,    ' (1 eqn diametre Dp,   0 sinon           )',/,&
+'       ITPVAR   = ',4x,i10,    ' (1 eqn temperature Tp,0 sinon           )',/,&
+'       IMPVAR   = ',4x,i10,    ' (1 eqn masse Mp,      0 sinon           )'  )
+ 8106 format(                                                                  &
+' --- Parametres Globaux :',                                                 /,&
+'       NBPMAX   = ',4x,i10,    ' (nb max de part par iteration           )',/,&
+'       NVLS     = ',4x,i10,    ' (nb var particulaires suppl.            )',/,&
+'       ISTTIO   = ',4x,i10,    ' (1 phase porteuse stationnair           )',/,&
+'       INJCON   = ',4x,i10,    ' (1 injection continue,0 sinon           )',/,&
+'       IROULE   = ',4x,i10,    ' (2 clonage/fusion avec calc Y+           ',/,&
+'                                  1 clonage/fusion sans calc Y+           ',/,&
+'                                  0 sinon                                )'  )
 
- 8111 format(                                                     &
-' --- Options Charbon :',                                       /,&
-'       IENCRA = ',4x,i10,    ' (1 : encrassement si charbon )'  )
+ 8111 format(                                                                  &
+' --- Options Charbon :',                                                    /,&
+'       IENCRA = ',4x,i10,    ' (1 : encrassement si charbon              )'  )
 
- 8112 format(                                                     &
-'       TPRENC(',i1,') = ', e11.5,                                &
-                              ' (temp seuil pour encrassement', /,&
-'                ',14x,       '  charbon', i1,8x,'           )'  )
+ 8112 format(                                                                  &
+'       TPRENC(',i1,') = ', e11.5,                                             &
+                              ' (temp seuil pour encrassement ',             /,&
+'                ',14x,       '  charbon',i1,8x,'                         )'  )
 
- 8113 format(                                                     &
-'       VISREF(',i1,') = ', e11.5,                                &
-                         ' (viscosite critique charbon', i1,')'  )
+ 8113 format(                                                                  &
+'       VISREF(',i1,') = ', e11.5,                                             &
+                         ' (viscosite critique charbon',i1,'              )'  )
 
- 8120 format(                                                     &
-' --- Options Couplage Retour :',                               /,&
-'       NSTITS = ',4x,i10,    ' (iter de debut moy. en temps )',/,&
-'       LTSDYN = ',4x,i10,    ' (1 couplage retour dynamique )',/,&
-'       LTSMAS = ',4x,i10,    ' (1 couplage retour massique  )',/,&
-'       LTSTHE = ',4x,i10,    ' (1 couplage retour thermique )'  )
+ 8120 format(                                                                  &
+' --- Options Couplage Retour :',                                            /,&
+'       NSTITS   = ',4x,i10,    ' (iter de debut moy. en temps            )',/,&
+'       LTSDYN   = ',4x,i10,    ' (1 couplage retour dynamique            )',/,&
+'       LTSMAS   = ',4x,i10,    ' (1 couplage retour massique             )',/,&
+'       LTSTHE   = ',4x,i10,    ' (1 couplage retour thermique            )'  )
 
- 8130 format(                                                     &
-' --- Options Statistiques :',                                  /,&
-'       ISTALA = ',4x,i10,    ' (1 : calcul de statistiques  )'  )
+ 8130 format(                                                                  &
+' --- Options Statistiques :',                                               /,&
+'       ISTALA   = ',4x,i10,    ' (1 : calcul de statistiques             )'  )
 
- 8135 format(                                                     &
-'       SEUIL  = ', e14.5,    ' (val min de prise en compte  )',/,&
-'       IDSTNT = ',4x,i10,    ' (iter de debut de calcul stat)',/,&
-'       NSTIST = ',4x,i10,    ' (iter de debut moy. en temps )',/,&
-'       NVLSTS = ',4x,i10,    ' (nb var statistiques suppl.  )'  )
+ 8135 format(                                                                  &
+'       SEUIL    = ', e14.5,    ' (val min de prise en compte             )',/,&
+'       IDSTNT   = ',4x,i10,    ' (iter de debut de calcul stat           )',/,&
+'       NSTIST   = ',4x,i10,    ' (iter de debut moy. en temps            )',/,&
+'       NVLSTS   = ',4x,i10,    ' (nb var statistiques suppl.             )'  )
 
- 8140 format(                                                     &
-' --- Options Dispersion Turbulente :',                         /,&
-'       IDISTU = ',4x,i10,    ' (1 : prise en compte; 0 sinon)',/,&
-'       IDIFFL = ',4x,i10,    ' (1 dispersion =diffusion turb)',/,&
-'       MODCPL = ',4x,i10,    ' (iter lag debut model complet)'  )
- 8141 format(                                                     &
-'       IDIRLA = ',4x,i10,    ' (1 2 ou 3 : dir principal ect)'  )
- 8142 format(                                                     &
-' --- Options Numeriques :',                                    /,&
-'       NORDRE = ',4x,i10,    ' (1 ou 2 ordre schema en temps)',/,&
-'       ILAPOI = ',4x,i10,    ' (1 corr. vit instantannees   )'  )
+ 8140 format(                                                                  &
+' --- Options Dispersion Turbulente :',                                      /,&
+'       IDISTU   = ',4x,i10,    ' (1 : prise en compte; 0 sinon           )',/,&
+'       IDIFFL   = ',4x,i10,    ' (1 dispersion =diffusion turb           )',/,&
+'       MODCPL   = ',4x,i10,    ' (iter lag debut model complet           )'  )
+ 8141 format(                                                                  &
+'       IDIRLA   = ',4x,i10,    ' (1 2 ou 3 : dir principal ect           )'  )
+ 8142 format(                                                                  &
+' --- Options Numeriques :',                                                 /,&
+'       NORDRE   = ',4x,i10,    ' (1 ou 2 ordre schema en temps           )',/,&
+'       ILAPOI   = ',4x,i10,    ' (1 corr. vit instantannees              )'  )
 
- 8155 format(                                                     &
-' --- Options Postprocessing Trajectoires/Particules :',        /,&
-'       IVISV1 = ',4x,i10,    ' (1 : vitesse fluide vu, 0 non)',/,&
-'       IVISV2 = ',4x,i10,    ' (1 : vitesse particule, 0 non)',/,&
-'       IVISTP = ',4x,i10,    ' (1 : temps de sejour,   0 non)',/,&
-'       IVISDM = ',4x,i10,    ' (1 : diametre part.,    0 non)',/,&
-'       IVISTE = ',4x,i10,    ' (1 : temperature part., 0 non)',/,&
-'       IVISMP = ',4x,i10,    ' (1 : masse particule,   0 non)'  )
+ 8155 format(                                                                  &
+' --- Options Postprocessing Trajectoires/Particules :',                     /,&
+'       IVISV1   = ',4x,i10,    ' (1 : vitesse fluide vu, 0 non           )',/,&
+'       IVISV2   = ',4x,i10,    ' (1 : vitesse particule, 0 non           )',/,&
+'       IVISTP   = ',4x,i10,    ' (1 : temps de sejour,   0 non           )',/,&
+'       IVISDM   = ',4x,i10,    ' (1 : diametre part.,    0 non           )',/,&
+'       IVISTE   = ',4x,i10,    ' (1 : temperature part., 0 non           )',/,&
+'       IVISMP   = ',4x,i10,    ' (1 : masse particule,   0 non           )'  )
 
- 8156 format(                                                     &
-'       IVISDK = ',4x,i10,    ' (1 : diam coeur retrecissant )',/,&
-'       IVISCH = ',4x,i10,    ' (1 : masse de charbon actif  )',/,&
-'       IVISCK = ',4x,i10,    ' (1 : masse de coke           )'  )
+ 8156 format(                                                                  &
+'       IVISDK   = ',4x,i10,    ' (1 : diam coeur retrecissant            )',/,&
+'       IVISWAT  = ',4x,i10,    ' (1 : masse d''eau                        )',/,&
+'       IVISCH   = ',4x,i10,    ' (1 : masse de charbon actif             )',/,&
+'       IVISCK   = ',4x,i10,    ' (1 : masse de coke                      )'  )
 
- 8160 format(                                                     &
-' --- Options Stat des Interactions Particules/Frontieres :',   /,&
-'       IENSI3 = ',4x,i10,    ' (1 calcul stat parietales    )'  )
+ 8160 format(                                                                  &
+' --- Options Stat des Interactions Particules/Frontieres :',                /,&
+'       IENSI3   = ',4x,i10,    ' (1 calcul stat parietales               )'  )
 
- 8165 format(                                                     &
-'       SEUILF = ', e14.5,    ' (val min de prise en compte  )',/,&
-'       NSTBOR = ',4x,i10,    ' (iter de debut moy. en temps )',/,&
-'       INBRBD = ',4x,i10,    ' (1 : enr. nb d interactions  )',/,&
-'       IFLMBD = ',4x,i10,    ' (1 : enr. flux de masse part.)',/,&
-'       IANGBD = ',4x,i10,    ' (1 : enr. angle d interaction)',/,&
-'       IVITBD = ',4x,i10,    ' (1 : enr. vitesse interaction)',/,&
-'       IENCBD = ',4x,i10,    ' (1 : masse de charbon encrass)',/,&
-'       NUSBOR = ',4x,i10,    ' (1 : enr. infos user suppl.  )'  )
+ 8165 format(                                                                  &
+'       SEUILF   = ',e14.5 ,    ' (val min de prise en compte             )',/,&
+'       NSTBOR   = ',4x,i10,    ' (iter de debut moy. en temps            )',/,&
+'       INBRBD   = ',4x,i10,    ' (1 : enr. nb d interactions             )',/,&
+'       IFLMBD   = ',4x,i10,    ' (1 : enr. flux de masse part.           )',/,&
+'       IANGBD   = ',4x,i10,    ' (1 : enr. angle d interaction           )',/,&
+'       IVITBD   = ',4x,i10,    ' (1 : enr. vitesse interaction           )',/,&
+'       IENCNBBD = ',4x,i10,    ' (1 : enr. nb d interactions avec encrass)',/,&
+'       IENCMABD = ',4x,i10,    ' (1 : flux de masse de charbon encrass   )',/,&
+'       IENCDIBD = ',4x,i10,    ' (1 : diam. de charbon encrass           )',/,&
+'       IENCCKBD = ',4x,i10,    ' (1 : fraction de coke de charbon encrass)',/,&
+'       NUSBOR   = ',4x,i10,    ' (1 : enr. infos user suppl.             )'  )
 
 #else
 
@@ -2936,23 +2941,27 @@ endif
 '       IVISMP = ',4x,i10,    ' (1: particle mass,     0 none)'  )
 
  8156 format(                                                     &
-'       IVISDK = ',4x,i10,    ' (1: shrinking core diameter  )',/,&
-'       IVISCH = ',4x,i10,    ' (1: active coal mass         )',/,&
-'       IVISCK = ',4x,i10,    ' (1: coke mass                )'  )
+'       IVISDK  = ',4x,i10,    ' (1: shrinking core diameter )',/,&
+'       IVISWAT = ',4x,i10,    ' (1: moisture mass           )',/,&
+'       IVISCH  = ',4x,i10,    ' (1: active coal mass        )',/,&
+'       IVISCK  = ',4x,i10,    ' (1: coke mass               )'  )
 
  8160 format(                                                     &
 ' --- Statistics options for particles/boundary interaction:',  /,&
 '       IENSI3 = ',4x,i10,    ' (1 calculate wall stats      )'  )
 
  8165 format(                                                     &
-'       SEUILF = ', e14.5,    ' (minimul value for handlin   )',/,&
-'       NSTBOR = ',4x,i10,    ' (start iter for time average )',/,&
-'       INBRBD = ',4x,i10,    ' (1: nb interactions rec.     )',/,&
-'       IFLMBD = ',4x,i10,    ' (1: particle mass flow rec.  )',/,&
-'       IANGBD = ',4x,i10,    ' (1: interaction angle rec.   )',/,&
-'       IVITBD = ',4x,i10,    ' (1: interaction velocity rec.)',/,&
-'       IENCBD = ',4x,i10,    ' (1: fouling coal mass        )',/,&
-'       NUSBOR = ',4x,i10,    ' (1: additional user info rec.)'  )
+'       SEUILF   = ', e14.5,    ' (minimul value for handlin           )',/,&
+'       NSTBOR   = ',4x,i10,    ' (start iter for time average         )',/,&
+'       INBRBD   = ',4x,i10,    ' (1: nb interactions rec.             )',/,&
+'       IFLMBD   = ',4x,i10,    ' (1: particle mass flow rec.          )',/,&
+'       IANGBD   = ',4x,i10,    ' (1: interaction angle rec.           )',/,&
+'       IVITBD   = ',4x,i10,    ' (1: interaction velocity rec.        )',/,&
+'       IENCNBBD = ',4x,i10,    ' (1: nb interactions rec. with fouling)',/,&
+'       IENCMABD = ',4x,i10,    ' (1: fouling coal mass flux           )',/,&
+'       IENCDIBD = ',4x,i10,    ' (1: fouling coal diameter            )',/,&
+'       IENCCKBD = ',4x,i10,    ' (1: fouling coal coke fraction       )',/,&
+'       NUSBOR   = ',4x,i10,    ' (1: additional user info rec.        )'  )
 
 #endif
 

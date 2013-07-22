@@ -148,6 +148,8 @@ iencra = 0
 do icha = 1 , ncharm2
   tprenc(icha) = -999.d0
   visref(icha) = -999.d0
+  enc1(icha) = -999.d0
+  enc2(icha) = -999.d0
 enddo
 
 !     NOMBRE DE PARTICULES MAXIMAL AUTORISE DANS LE DOMAINE
@@ -280,6 +282,10 @@ iviste  = 0
 
 ivisdk  = 0
 
+!     POSTPROCESSING VARIABLE : MASSE HUMIDITE
+
+iviswat = 0
+
 !     POSTPROCESSING VARIABLE : MASSE CHARBON REACTIF
 
 ivisch  = 0
@@ -302,11 +308,14 @@ seuilf = 0.d0
 
 !     INFORMATIONS A ENREGISTRER
 
-inbrbd = 0
-iflmbd = 0
-iangbd = 0
-ivitbd = 0
-iencbd = 0
+inbrbd   = 0
+iflmbd   = 0
+iangbd   = 0
+ivitbd   = 0
+iencnbbd = 0
+iencmabd = 0
+iencdibd = 0
+iencckbd = 0
 
 nusbor = 0
 
@@ -331,17 +340,18 @@ if (iihmpr.eq.1) then
 
   call uilag1                                                      &
   !==========
- ( iilagr, isuila, isuist, nbpmax, isttio, injcon, idepst,         &
-   iphyla, idpvar, itpvar, impvar,                                 &
-   iencra, tprenc, visref, enc1, enc2,                             &
-   nstits, ltsdyn, ltsmas, ltsthe,                                 &
-   nordre, idistu, idiffl, modcpl, idirla, ntlal,                  &
-   ivisv1, ivisv2, ivistp, ivisdm, iviste,                         &
-   ivismp, ivisdk, ivisch, ivisck,                                 &
-   istala, nbclst, seuil, idstnt,  nstist,                         &
-   ihslag, iensi3, seuilf, nstbor,                                 &
-   inbrbd, iflmbd, iangbd, ivitbd, iencbd, imoybr,                 &
-   iactfv, iactvx, iactvy, iactvz, iactts)
+ ( iilagr,   isuila,   isuist,   nbpmax, isttio, injcon, idepst,   &
+   iphyla,   idpvar,   itpvar,   impvar,                           &
+   iencra,   tprenc,   visref,   enc1,   enc2,                     &
+   nstits,   ltsdyn,   ltsmas,   ltsthe,                           &
+   nordre,   idistu,   idiffl,   modcpl, idirla, ntlal,            &
+   ivisv1,   ivisv2,   ivistp,   ivisdm, iviste,                   &
+   ivismp,   ivisdk,   iviswat,  ivisch, ivisck,                   &
+   istala,   nbclst,   seuil,    idstnt, nstist,                   &
+   ihslag,   iensi3,   seuilf,   nstbor,                           &
+   inbrbd,   iflmbd,   iangbd,   ivitbd, iencnbbd,                 &
+   iencmabd, iencdibd, iencckbd, imoybr,                           &
+   iactfv,   iactvx,   iactvy,   iactvz, iactts)
 
   do ii = 1, nvplmx
     call cfname(1, nomlag(ii), len(nomlag(ii)), ii)
@@ -480,8 +490,8 @@ if (iphyla.eq.2) then
       write(nfecra,1041) iencra, visref(icha), icha
       iok = iok + 1
     endif
-    if (iencra.eq.1 .and. tprenc(icha).lt.tkelvn) then
-      write(nfecra,1042) iencra, tkelvn, tprenc(icha), icha
+    if (iencra.eq.1 .and. tprenc(icha).lt.150.0d0) then
+      write(nfecra,1042) iencra, 150.0d0, tprenc(icha), icha
       iok = iok + 1
     endif
   enddo
@@ -716,6 +726,11 @@ if (iphyla.eq.1 .and. itpvar.eq.1) then
     write(nfecra,2044) iviste
     iok = iok + 1
   endif
+else if (iphyla.eq.2) then
+  if (iviste.lt.0 .or. iviste.gt.1) then
+    write(nfecra,2041) iviste
+    iok = iok + 1
+  endif
 else
   iviste = 0
 endif
@@ -727,18 +742,23 @@ if (iphyla.eq.2) then
     write(nfecra,2046) ivisdk
     iok = iok + 1
   endif
+  if (iviswat.lt.0 .or. iviswat.gt.1) then
+    write(nfecra,2047) iviswat
+    iok = iok + 1
+  endif
   if (ivisch.lt.0 .or. ivisch.gt.1) then
-    write(nfecra,2047) ivisch
+    write(nfecra,2048) ivisch
     iok = iok + 1
   endif
   if (ivisck.lt.0 .or. ivisck.gt.1) then
-    write(nfecra,2048) ivisck
+    write(nfecra,2049) ivisck
     iok = iok + 1
   endif
 else
-  ivisdk = 0
-  ivisch = 0
-  ivisck = 0
+  ivisdk  = 0
+  iviswat = 0
+  ivisch  = 0
+  ivisck  = 0
 endif
 
 !     IENSI3 NSTBOR
@@ -764,19 +784,9 @@ else
   seuilf = 0.d0
 endif
 
-!     INBRBD IFLMBD IANGBD IVITBD IENCBD NUSBOR
+!     INBRBD IFLMBD IANGBD IVITBD IENCNBBD IENCMABD IENCDIBD IENCCKBD NUSBOR
 
 if (iensi3.eq.1) then
-
-  if (iphyla.eq.2 .and. iencra.eq.1) then
-    if (iencbd.lt.0 .or. iencbd.gt.1) then
-      write(nfecra,2051)
-      iok = iok + 1
-    endif
-  else
-    iencbd = 0
-  endif
-
   if (inbrbd.lt.0 .or. inbrbd.gt.1) then
     write(nfecra,2052) inbrbd
     iok = iok + 1
@@ -798,66 +808,162 @@ if (iensi3.eq.1) then
     iok = iok + 1
   endif
 
+  if (iphyla.eq.2 .and. iencra.eq.1) then
+    if (iencnbbd.lt.0 .or. iencnbbd.gt.1) then
+      write(nfecra,2070) iencnbbd
+      iok = iok + 1
+    endif
+    if (iencmabd.lt.0 .or. iencmabd.gt.1) then
+      write(nfecra,2071) iencmabd
+      iok = iok + 1
+    endif
+    if (iencdibd.lt.0 .or. iencdibd.gt.1) then
+      write(nfecra,2072) iencdibd
+      iok = iok + 1
+    endif
+    if (iencckbd.lt.0 .or. iencckbd.gt.1) then
+      write(nfecra,2073) iencckbd
+      iok = iok + 1
+    endif
+  else
+    iencnbbd = 0
+    iencmabd = 0
+    iencdibd = 0
+    iencckbd = 0
+  endif
+
 if (iok.ne.0) call csexit (1)
               !==========
 
   irf = 0
 
+  ! INBRBD
   if (inbrbd.eq.1) then
     irf = irf + 1
     if (imoybr(irf).eq.2) then
       write(nfecra,2060) inbrbd, imoybr(irf)
-    endif
-  endif
-  if (iflmbd.eq.1) then
-    irf = irf + 1
-    if (imoybr(irf).eq.2 .and. inbrbd.eq.0) then
+    else if (imoybr(irf).eq.3) then
+      write(nfecra,2061) inbrbd, imoybr(irf)
       iok = iok + 1
-      WRITE(NFECRA,2061) NOMBRD(IRF), 'IFLMBD',  IFLMBD,          &
-                         imoybr(irf), inbrbd
     endif
   endif
+  ! IFLMBD IANGBD IVITBD
   if (iangbd.eq.1) then
     irf = irf + 1
     if (imoybr(irf).eq.2 .and. inbrbd.eq.0) then
       iok = iok + 1
-      WRITE(NFECRA,2061) NOMBRD(IRF), 'IANGBD',  IANGBD,          &
+      WRITE(NFECRA,2062) NOMBRD(IRF), 'IANGBD',  IANGBD,          &
                          imoybr(irf), inbrbd
+    else if (imoybr(irf).eq.3) then
+      iok = iok + 1
+      WRITE(NFECRA,2063) NOMBRD(IRF), 'IANGBD',  IANGBD,          &
+                         imoybr(irf)
     endif
   endif
   if (ivitbd.eq.1) then
     irf = irf + 1
     if (imoybr(irf).eq.2 .and. inbrbd.eq.0) then
       iok = iok + 1
-      WRITE(NFECRA,2061) NOMBRD(IRF), 'IVITBD',  IVITBD,          &
+      WRITE(NFECRA,2062) NOMBRD(IRF), 'IVITBD',  IVITBD,          &
                          imoybr(irf), inbrbd
+    else if (imoybr(irf).eq.3) then
+      iok = iok + 1
+      WRITE(NFECRA,2063) NOMBRD(IRF), 'IVITBD',  IVITBD,          &
+                         imoybr(irf)
     endif
   endif
-  if (iphyla.eq.2 .and. iencra.eq.1 .and. iencbd.eq.1) then
+  if (iflmbd.eq.1) then
     irf = irf + 1
     if (imoybr(irf).eq.2 .and. inbrbd.eq.0) then
       iok = iok + 1
-      WRITE(NFECRA,2061) NOMBRD(IRF), 'IENCBD',  IENCBD,          &
+      WRITE(NFECRA,2062) NOMBRD(IRF), 'IFLMBD',  IFLMBD,          &
+                         imoybr(irf), inbrbd
+    else if (imoybr(irf).eq.3) then
+      iok = iok + 1
+      WRITE(NFECRA,2063) NOMBRD(IRF), 'IFLMBD',  IFLMBD,          &
+                         imoybr(irf)
+    endif
+  endif
+  ! IENCNBBD
+  if (iphyla.eq.2 .and. iencra.eq.1 .and. iencnbbd.eq.1) then
+    irf = irf + 1
+    if (imoybr(irf).eq.2) then
+      iok = iok + 1
+      write(nfecra,2074) inbrbd, imoybr(irf)
+    else if (imoybr(irf).eq.3) then
+      write(nfecra,2075) inbrbd, imoybr(irf)
+    endif
+  endif
+  ! IENCMABD IENCDIBD IENCCKBD
+  if (iphyla.eq.2 .and. iencra.eq.1 .and. iencmabd.eq.1) then
+    irf = irf + 1
+    if (imoybr(irf).eq.2) then
+      iok = iok + 1
+      WRITE(NFECRA,2064) NOMBRD(IRF), 'IENCMABD',  IENCMABD,      &
+                         imoybr(irf)
+    else if (imoybr(irf).eq.3 .and. iencnbbd.eq.0) then
+      iok = iok + 1
+      WRITE(NFECRA,2065) NOMBRD(IRF), 'IENCMABD',  IENCMABD,      &
                          imoybr(irf), inbrbd
     endif
   endif
+  if (iphyla.eq.2 .and. iencra.eq.1 .and. iencdibd.eq.1) then
+    irf = irf + 1
+    if (imoybr(irf).eq.2) then
+      iok = iok + 1
+      WRITE(NFECRA,2064) NOMBRD(IRF), 'IENCDIBD',  IENCDIBD,      &
+                         imoybr(irf)
+    else if (imoybr(irf).eq.3 .and. iencnbbd.eq.0) then
+      iok = iok + 1
+      WRITE(NFECRA,2065) NOMBRD(IRF), 'IENCDIBD',  IENCDIBD,      &
+                         imoybr(irf), inbrbd
+    endif
+  endif
+  if (iphyla.eq.2 .and. iencra.eq.1 .and. iencckbd.eq.1) then
+    irf = irf + 1
+    if (imoybr(irf).eq.2) then
+      iok = iok + 1
+      WRITE(NFECRA,2064) NOMBRD(IRF), 'IENCCKBD',  IENCCKBD,      &
+                         imoybr(irf)
+    else if (imoybr(irf).eq.3 .and. iencnbbd.eq.0) then
+      iok = iok + 1
+      WRITE(NFECRA,2065) NOMBRD(IRF), 'IENCCKBD',  IENCCKBD,      &
+                         imoybr(irf), inbrbd
+    endif
+  endif
+  ! NUSBOR
   if (nusbor.gt.0) then
     do ii = 1,nusbor
       irf = irf + 1
       if (imoybr(irf).eq.2 .and. inbrbd.eq.0) then
         iok = iok + 1
-        write(nfecra,2062) nombrd(irf), ii, imoybr(irf), inbrbd
+        write(nfecra,2066) nombrd(irf), ii, imoybr(irf), inbrbd
+      else if (imoybr(irf).eq.3) then
+        iok = iok + 1
+        write(nfecra,2067) nombrd(irf), ii, imoybr(irf)
       endif
     enddo
   endif
 
-  do ii = 1, irf
-    if (imoybr(ii).ne.0 .and.                                     &
-        imoybr(ii).ne.1 .and. imoybr(ii).ne.2) then
-    iok = iok + 1
-      write(nfecra,2063) imoybr(irf), nombrd(irf)
+
+  ! Check of imoybr
+  if (iphyla.eq.2 .and. iencra.eq.1) then
+    do ii = 1, irf
+      if (imoybr(ii).ne.0 .and. imoybr(ii).ne.1 .and.               &
+          imoybr(ii).ne.2 .and. imoybr(ii).ne.3) then
+      iok = iok + 1
+        write(nfecra,2068) imoybr(irf), nombrd(irf)
+      endif
+    enddo
+  else
+    do ii = 1, irf
+      if (imoybr(ii).ne.0 .and.                                     &
+          imoybr(ii).ne.1 .and. imoybr(ii).ne.2) then
+      iok = iok + 1
+        write(nfecra,2069) imoybr(irf), nombrd(irf)
+      endif
+    enddo
   endif
-  enddo
 
 endif
 
@@ -1056,8 +1162,8 @@ else if (iphyla.eq.2) then
 
 !     ETTP et ETTPA :
 !     -------------
-!       5 VARIABLES SUPPLEMENTAIRES Tp, Tf, Mch, Mck, Cp
-  nvp = nvp + 5
+!       5 VARIABLES SUPPLEMENTAIRES Tp, Tf, Mwat, Mch, Mck, Cp
+  nvp = nvp + 6
 
 !     TEPA :
 !     ----
@@ -1123,14 +1229,17 @@ nvp1 = nvp - 9
 
 !   Charbon
 !   -------
-!    JHP  : Temperature en degres Celsius grain de charbon
+!    JHP  : Temperature en K du grain de charbon
+!    JMWAT: MASSE D EAU DANS LE GRAIN DE CHARBON
 !    JMCH : MASSE DE CHARBON REACTIF
+!    JMCH : MASSE D EAU DANS LE CHARBON
 !    JMCK : MASSE DE COKE
 
 jtp  = 0
 jtf  = 0
 jcp  = 0
 jhp  = 0
+jmwat = 0
 jmch = 0
 jmck = 0
 jtaux = 0
@@ -1153,7 +1262,8 @@ else if (iphyla.eq.2) then
 
   jhp  = irf  + 1
   jtf  = jhp  + 1
-  jmch = jtf  + 1
+  jmwat = jtf  + 1
+  jmch = jmwat  + 1
   jmck = jmch + 1
   jcp  = jmck + 1
   irf  = jcp
@@ -1335,6 +1445,7 @@ endif
 !     IEPSI : Emissivite
 !     IROPT : Masse volumique
 !     IHPT  : Temperature
+!     IMWAT : Masse d eau dans le charbon (humidite)
 !     IMCHT : Masse de charbon reactif
 !     IMCKT : Masse de coke
 !     IDCKT : Diametre du coeur retrecissant
@@ -1356,7 +1467,8 @@ irf    = idebt
 ! Specifique Charbon
 
 ihpt   = irf   + 1
-imcht  = ihpt  + 1
+imwat  = ihpt   + 1
+imcht  = imwat + 1
 imckt  = imcht + 1
 irf    = imckt
 
@@ -1423,6 +1535,7 @@ endif
 !     ILMP              : Masse
 
 !     ILHP              : Temperature
+!     ILMWAT            : Masse d eau
 !     ILMCH             : Masse de charbon reactif
 !     ILMCK             : Masse de coke
 !     ILMDK             : Diametre du coeur retrecissant
@@ -1478,6 +1591,7 @@ if (istala.eq.1) then
   ildp  = 0
   ilmp  = 0
   ilhp  = 0
+  ilmwat = 0
   ilmch = 0
   ilmck = 0
   ildck = 0
@@ -1505,10 +1619,30 @@ if (istala.eq.1) then
 
   else if (iphyla.eq.2) then
 
-     ilhp  = irf   + 1
-     ilmch = ilhp  + 1
+     ilmp  = irf   + 1
+     nomlag(ilmp) = 'Part_mass'
+     nomlav(ilmp) = 'var_Part_mass'
+
+     ilhp = ilmp + 1
+     nomlag(ilhp) = 'Part_temperature'
+     nomlav(ilhp) = 'var_Part_temperature'
+
+     ilmwat = ilhp + 1
+     nomlag(ilmwat) = 'Part_wat_mass'
+     nomlav(ilmwat) = 'var_Part_wat_mass'
+
+     ilmch = ilmwat + 1
+     nomlag(ilmch) = 'Part_ch_mass'
+     nomlav(ilmch) = 'var_Part_ch_mass'
+
      ilmck = ilmch + 1
+     nomlag(ilmck) = 'Part_ck_mass'
+     nomlav(ilmck) = 'var_Part_ck_mass'
+
      ildck = ilmck + 1
+     nomlag(ildck) = 'Part_shrink_core_diam'
+     nomlav(ildck) = 'var_Part_shrink_core_diam'
+
      irf   = ildck
 
   endif
@@ -1536,13 +1670,16 @@ endif
 ! 3.7 DEFINITION DES POINTEURS LIES AUX STATISTIQUES AUX FRONTIERES
 
 
-!     INBRBD : NOMBRE D'INTERACTIONS PARTICULES/FRONTIERES
-!     IFLMBD : FLUX DE MASSE PARTICULAIRE
-!     IANGBD : ANGLE VITESSE
-!     IVITBD : VITESSE DE LA PARTICULE
-!     IENCBD : MASSE DE GRAINS DE CHARBON ENCRASSES
-!     NUSBOR : INFORMATIONS UTILISATEUR SUPPLEMENTAIRES
-!     NVISBR : NOMBRE TOTAL D'INTERACTIONS A ENREGISTRER
+!     INBRBD   : NOMBRE D'INTERACTIONS PARTICULES/FRONTIERES
+!     IFLMBD   : FLUX DE MASSE PARTICULAIRE
+!     IANGBD   : ANGLE VITESSE
+!     IVITBD   : VITESSE DE LA PARTICULE
+!     IENCNBBD : NOMBRE D'INTERACTIONS PARTICULES/FRONTIERES AVEC ENCRASSEMENT CHARBON
+!     IENCMABD : MASSE DE GRAINS DE CHARBON ENCRASSES
+!     IENCDIBD : DIAMETRE DES GRAINS DE CHARBON ENCRASSES
+!     IENCCKBD : FRACTION DE COKE DES GRAINS DE CHARBON ENCRASSES
+!     NUSBOR   : INFORMATIONS UTILISATEUR SUPPLEMENTAIRES
+!     NVISBR   : NOMBRE TOTAL D'INTERACTIONS A ENREGISTRER
 
 if (iensi3.eq.1) then
 
@@ -1576,11 +1713,32 @@ if (iensi3.eq.1) then
     imoybr(ivit) = 2
   endif
 
-  if (iphyla.eq.2 .and. iencra.eq.1 .and. iencbd.eq.1) then
+  if (iphyla.eq.2 .and. iencra.eq.1 .and. iencnbbd.eq.1) then
     irf = irf + 1
-    ienc = irf
-    nombrd(ienc) = 'foulingMass'
-    imoybr(ienc) = 0
+    iencnb = irf
+    nombrd(iencnb) = 'Part_fouled_impact_number'
+    imoybr(iencnb) = 0
+  endif
+
+  if (iphyla.eq.2 .and. iencra.eq.1 .and. iencmabd.eq.1) then
+    irf = irf + 1
+    iencma = irf
+    nombrd(iencma) = 'Part_fouled_mass_flux'
+    imoybr(iencma) = 1
+  endif
+
+  if (iphyla.eq.2 .and. iencra.eq.1 .and. iencdibd.eq.1) then
+    irf = irf + 1
+    iencdi = irf
+    nombrd(iencdi) = 'Part_fouled_diam'
+    imoybr(iencdi) = 3
+  endif
+
+  if (iphyla.eq.2 .and. iencra.eq.1 .and. iencckbd.eq.1) then
+    irf = irf + 1
+    iencck = irf
+    nombrd(iencck) = 'Part_fouled_Xck'
+    imoybr(iencck) = 3
   endif
 
   if (nusbor.gt.0) then
@@ -1736,7 +1894,7 @@ endif
 
 call lagpvr(ivisv1, ivisv2, ivistp, ivisdm, iviste, &
 !==========
-            ivismp, ivisdk, ivisch, ivisck)
+            ivismp, ivisdk, iviswat, ivisch, ivisck)
 
 !===============================================================================
 
@@ -2098,7 +2256,9 @@ call lagpvr(ivisv1, ivisv2, ivistp, ivisdm, iviste, &
 '@       IL VAUT ICI TPRENC = ', E14.5                         ,/,&
 '@       POUR LE CHARBON :' , I10                              ,/,&
 '@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
+'@  Le calcul ne sera pas execute. Risque de division par     ',/,&
+'@  zero lors du calcul de la viscosite du charbon dans       ',/,&
+'@  cs_lagr_tracking                                          ',/,&
 '@                                                            ',/,&
 '@  Verifier la valeur de TPRENC dans la subroutine USLAG1.   ',/,&
 '@                                                            ',/,&
@@ -2850,6 +3010,26 @@ call lagpvr(ivisv1, ivisv2, ivistp, ivisdm, iviste, &
 '@ @@ ATTENTION : ARRET A L''EXECUTION DU MODULE LAGRANGIEN   ',/,&
 '@    =========                                               ',/,&
 '@    L''INDICATEUR DE POST-PROCESSING SUR LA VARIABLE        ',/,&
+'@       "MASSE D''EAU DES PARTICULES DE CHARBON"             ',/,&
+'@       A UNE VALEUR NON PERMISE (LAGOPT).                   ',/,&
+'@                                                            ',/,&
+'@    IVISCH DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1             ',/,&
+'@       IL VAUT ICI IVISCH = ', I10                           ,/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@  Verifier la valeur de IVISWAT dans la subroutine USLAG1.  ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 2048 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''EXECUTION DU MODULE LAGRANGIEN   ',/,&
+'@    =========                                               ',/,&
+'@    L''INDICATEUR DE POST-PROCESSING SUR LA VARIABLE        ',/,&
 '@       "MASSE CHARBON REACTIF DES PARTICULES DE CHARBON"    ',/,&
 '@       A UNE VALEUR NON PERMISE (LAGOPT).                   ',/,&
 '@                                                            ',/,&
@@ -2863,7 +3043,7 @@ call lagpvr(ivisv1, ivisv2, ivistp, ivisdm, iviste, &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
- 2048 format(                                                           &
+ 2049 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2899,26 +3079,6 @@ call lagpvr(ivisv1, ivisv2, ivistp, ivisdm, iviste, &
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
 '@  Verifier la valeur de IENSI3 dans la subroutine USLAG1.   ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 2051 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''EXECUTION DU MODULE LAGRANGIEN   ',/,&
-'@    =========                                               ',/,&
-'@    L''INDICATEUR DE CALCUL DE LA STATISTIQUE AUX FRONTIERES',/,&
-'@       "MASSE DE GRAINS DE CHARBON ENCRASSES"               ',/,&
-'@       A UNE VALEUR NON PERMISE (LAGOPT).                   ',/,&
-'@                                                            ',/,&
-'@    IENCBD DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1             ',/,&
-'@       IL VAUT ICI IENCBD = ', I10                           ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier la valeur de IENCBD dans la subroutine USLAG1.   ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -3093,7 +3253,33 @@ call lagpvr(ivisv1, ivisv2, ivistp, ivisdm, iviste, &
 '@                                                            ',/,&
 '@ @@ ATTENTION : A L''EXECUTION DU MODULE LAGRANGIEN         ',/,&
 '@    =========                                               ',/,&
-'@    LA STATISTIQUE AUX FRONTIERES :                         ',/,&
+'@    LA STATISTIQUE AUX FRONTIERES                           ',/,&
+'@     "NOMBRE D''INTERACTIONS PARTICULES/FRONTIERES"         ',/,&
+'@     EST ACTIVE AVEC APPLICATION DE LA MOYENNE              ',/,&
+'@     PARTICULAIRE QUI SE BASE SUR LE NOMBRE                 ',/,&
+'@     D''INTERACTIONS PARTICULES/FRONTIERES                  ',/,&
+'@     AVEC FOULING. IL Y A INCOHERENCE (LAGOPT).             ',/,&
+'@                                                            ',/,&
+'@    LES INDICATEURS DE CALCUL DES STATISTIQUES VALENT :     ',/,&
+'@       INBRBD       = ',I10                                  ,/,&
+'@       IMOYBR(INBR) = ',I10                                  ,/,&
+'@                                                            ',/,&
+'@    IMOYBR(INBR) DEVRAIT ETRE EGAL A 0 OU 2                 ',/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@  Verifier la valeur de IMOYBR(INBR) dans la  USLAG1.       ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 2062 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : A L''EXECUTION DU MODULE LAGRANGIEN         ',/,&
+'@    =========                                               ',/,&
+'@    LA STATISTIQUE AUX FRONTIERES                           ',/,&
 '@ ',A60                                                       ,/,&
 '@     EST ACTIVE AVEC APPLICATION DE LA MOYENNE              ',/,&
 '@     PARTICULAIRE, ALORS QUE LE COMPTE DU NOMBRE            ',/,&
@@ -3113,13 +3299,93 @@ call lagpvr(ivisv1, ivisv2, ivistp, ivisdm, iviste, &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
- 2062 format(                                                           &
+ 2063 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
 '@ @@ ATTENTION : A L''EXECUTION DU MODULE LAGRANGIEN         ',/,&
 '@    =========                                               ',/,&
-'@    LA STATISTIQUE AUX FRONTIERES UTILISATEUR :             ',/,&
+'@    LA STATISTIQUE AUX FRONTIERES                           ',/,&
+'@ ',A60                                                       ,/,&
+'@     EST ACTIVE AVEC APPLICATION DE LA MOYENNE              ',/,&
+'@     PARTICULAIRE. CELLE CI EST CALCULEE A CHAQUE           ',/,&
+'@     INTERRACTION  PARTICULES/FRONTIERES ET SE BASE         ',/,&
+'@     SUR LE NOMBRE D''INTERACTIONS PARTICULES/FRONTIERES    ',/,&
+'@     AVEC FOULING. IL Y A INCOHERENCE (LAGOPT).             ',/,&
+'@                                                            ',/,&
+'@    LES INDICATEURS DE CALCUL DES STATISTIQUES VALENT :     ',/,&
+'@       ',A12,     ' = ',I10                                  ,/,&
+'@             IMOYBR = ',I10                                  ,/,&
+'@                                                            ',/,&
+'@    IMOYBR DEVRAIT ETRE A 0, 1 OU 2                         ',/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@  Verifier la valeur de IMOYBR dans la subroutine USLAG1.   ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 2064 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : A L''EXECUTION DU MODULE LAGRANGIEN         ',/,&
+'@    =========                                               ',/,&
+'@    LA STATISTIQUE AUX FRONTIERES LORS DU FOULING:          ',/,&
+'@ ',A60                                                       ,/,&
+'@     EST ACTIVE AVEC APPLICATION DE LA MOYENNE              ',/,&
+'@     PARTICULAIRE GENERALE ALORS QUE LE CALCUL DE CETTE     ',/,&
+'@     STATISTIQUE EST EFFECTUE UNIQUEMENT LORSQUE IL Y A DU  ',/,&
+'@     FOULING. IL FAUDRAIT FAIRE LA MOYENNE PARTICULAIRE     ',/,&
+'@     SUR NOMBRE D''INTERACTIONS PARTICULES/FRONTIERES AVEC  ',/,&
+'@     FOULING                                                ',/,&
+'@                                                            ',/,&
+'@    LES INDICATEURS DE CALCUL DES STATISTIQUES VALENT :     ',/,&
+'@       ',A12,     ' = ',I10                                  ,/,&
+'@                                                            ',/,&
+'@    IMOYBR DEVRAIT ETRE A 3, IL VAUT ICI IMOYBR = ',I10      ,/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@  Verifier la valeur de IMOYBR dans la subroutine USLAG1.   ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 2065 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : A L''EXECUTION DU MODULE LAGRANGIEN         ',/,&
+'@    =========                                               ',/,&
+'@    LA STATISTIQUE AUX FRONTIERES LORS DU FOULING:          ',/,&
+'@ ',A60                                                       ,/,&
+'@     EST ACTIVE AVEC APPLICATION DE LA MOYENNE              ',/,&
+'@     PARTICULAIRE, ALORS QUE LE COMPTE DU NOMBRE            ',/,&
+'@     D''INTERACTIONS PARTICULES/FRONTIERES AVEC FOULING     ',/,&
+'@     N''EST PAS ENCLENCHE (LAGOPT).                         ',/,&
+'@                                                            ',/,&
+'@    LES INDICATEURS DE CALCUL DES STATISTIQUES VALENT :     ',/,&
+'@       ',A12,     ' = ',I10                                  ,/,&
+'@             IMOYBR = ',I10                                  ,/,&
+'@                                                            ',/,&
+'@    INBRBD DEVRAIT ETRE A 1, IL VAUT ICI IENCNBBD = ',I10    ,/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@  Verifier la valeur de IENCNBBD dans la subroutine USLAG1. ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 2066 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : A L''EXECUTION DU MODULE LAGRANGIEN         ',/,&
+'@    =========                                               ',/,&
+'@    LA STATISTIQUE AUX FRONTIERES UTILISATEUR               ',/,&
 '@ ',A60                                                       ,/,&
 '@     EST ACTIVE AVEC APPLICATION DE LA MOYENNE              ',/,&
 '@     PARTICULAIRE, ALORS QUE LE COMPTE DU NOMBRE            ',/,&
@@ -3139,7 +3405,55 @@ call lagpvr(ivisv1, ivisv2, ivistp, ivisdm, iviste, &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
- 2063 format(                                                           &
+ 2067 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : A L''EXECUTION DU MODULE LAGRANGIEN         ',/,&
+'@    =========                                               ',/,&
+'@    LA STATISTIQUE AUX FRONTIERES UTILISATEUR               ',/,&
+'@ ',A60                                                       ,/,&
+'@     EST ACTIVE AVEC APPLICATION DE LA MOYENNE              ',/,&
+'@     PARTICULAIRE. CELLE CI EST CALCULEE A CHAQUE           ',/,&
+'@     INTERRACTION  PARTICULES/FRONTIERES ET ET SE BASE      ',/,&
+'@     SUR LE NOMBRE D''INTERACTIONS PARTICULES/FRONTIERES    ',/,&
+'@     AVEC FOULING. IL Y A INCOHERENCE (LAGOPT).             ',/,&
+'@                                                            ',/,&
+'@    LES INDICATEURS DE CALCUL DES STATISTIQUES VALENT :     ',/,&
+'@       STAT UTILISATEUR NUMERO ',I10                         ,/,&
+'@       IMOYBR                = ',I10                         ,/,&
+'@                                                            ',/,&
+'@    IMOYBR DEVRAIT ETRE A 0, 1 OU 2                         ',/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@  Verifier la valeur de IMOYBR dans la subroutine USLAG1.   ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 2068 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''EXECUTION DU MODULE LAGRANGIEN   ',/,&
+'@    =========                                               ',/,&
+'@    L''INDICATEUR DE MOYENNE POUR LE CALCUL DES STATISTIQUES',/,&
+'@       AUX FRONTIERES A UNE VALEUR NON PERMISE (LAGOPT).    ',/,&
+'@                                                            ',/,&
+'@    IMOYBR DEVRAIT ETRE UN ENTIER EGAL A 0, 1, 2 OU 3       ',/,&
+'@       IL VAUT ICI IMOYBR = ', I10                           ,/,&
+'@       POUR LA STATISTIQUE AUX FRONTERES :                  ',/,&
+'@ ',A60                                                       ,/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@  Verifier la valeur de IMOYBR dans la subroutine USLAG1.   ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 2069 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -3160,6 +3474,138 @@ call lagpvr(ivisv1, ivisv2, ivistp, ivisdm, iviste, &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
+ 2070 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''EXECUTION DU MODULE LAGRANGIEN   ',/,&
+'@    =========                                               ',/,&
+'@    L''INDICATEUR DE CALCUL DE LA STATISTIQUE AUX FRONTIERES',/,&
+'@       "NBR D''INTERRACTIONS PARTICULES/FRONTIERES AVEC     ',/,&
+'@        FOURLING" A UNE VALEUR NON PERMISE (LAGOPT).        ',/,&
+'@                                                            ',/,&
+'@    IENCNBBD DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1           ',/,&
+'@       IL VAUT ICI IENCNBBD = ', I10                         ,/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@ Verifier la valeur de IENCNBBD dans la subroutine USLAG1.  ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 2071 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''EXECUTION DU MODULE LAGRANGIEN   ',/,&
+'@    =========                                               ',/,&
+'@    L''INDICATEUR DE CALCUL DE LA STATISTIQUE AUX FRONTIERES',/,&
+'@       "MASSE DE GRAINS DE CHARBON ENCRASSES"               ',/,&
+'@       A UNE VALEUR NON PERMISE (LAGOPT).                   ',/,&
+'@                                                            ',/,&
+'@    IENCMABD DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1           ',/,&
+'@       IL VAUT ICI IENCMABD = ', I10                         ,/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@ Verifier la valeur de IENCMABD dans la subroutine USLAG1.  ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 2072 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''EXECUTION DU MODULE LAGRANGIEN   ',/,&
+'@    =========                                               ',/,&
+'@    L''INDICATEUR DE CALCUL DE LA STATISTIQUE AUX FRONTIERES',/,&
+'@       "DIAMETRE DE GRAINS DE CHARBON ENCRASSES"            ',/,&
+'@       A UNE VALEUR NON PERMISE (LAGOPT).                   ',/,&
+'@                                                            ',/,&
+'@    IENCDIBD DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1           ',/,&
+'@       IL VAUT ICI IENCDIBD = ', I10                         ,/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@ Verifier la valeur de IENCDIBD dans la subroutine USLAG1.  ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 2073 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''EXECUTION DU MODULE LAGRANGIEN   ',/,&
+'@    =========                                               ',/,&
+'@    L''INDICATEUR DE CALCUL DE LA STATISTIQUE AUX FRONTIERES',/,&
+'@       "FRACTION DE COKE DES GRAINS DE CHARBON ENCRASSES"   ',/,&
+'@       A UNE VALEUR NON PERMISE (LAGOPT).                   ',/,&
+'@                                                            ',/,&
+'@    IENCCKBD DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1           ',/,&
+'@       IL VAUT ICI IENCCKBD = ', I10                         ,/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@ Verifier la valeur de IENCCKBD dans la subroutine USLAG1.  ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 2074 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : A L''EXECUTION DU MODULE LAGRANGIEN         ',/,&
+'@    =========                                               ',/,&
+'@    LA STATISTIQUE AUX FRONTIERES                           ',/,&
+'@     "NOMBRE D''INTERACTIONS PARTICULES/FRONTIERES AVEC     ',/,&
+'@     FOULING" EST ACTIVE AVEC APPLICATION DE LA MOYENNE     ',/,&
+'@     PARTICULAIRE SANS FOULING. IL Y A INCOHERENCE          ',/,&
+'@     (LAGOPT).                                              ',/,&
+'@                                                            ',/,&
+'@    LES INDICATEURS DE CALCUL DES STATISTIQUES VALENT :     ',/,&
+'@       INBRBD       = ',I10                                  ,/,&
+'@       IMOYBR(INBR) = ',I10                                  ,/,&
+'@                                                            ',/,&
+'@    IMOYBR(INBR) DEVRAIT ETRE EGAL A 0 OU 3                 ',/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@  Verifier la valeur de IMOYBR(INBR) dans la  USLAG1.       ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 2075 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : A L''EXECUTION DU MODULE LAGRANGIEN         ',/,&
+'@    =========                                               ',/,&
+'@    LA STATISTIQUE AUX FRONTIERES                           ',/,&
+'@     "NOMBRE D''INTERACTIONS PARTICULES/FRONTIERES AVEC     ',/,&
+'@     FOULING" EST ACTIVE AVEC APPLICATION DE LA MOYENNE     ',/,&
+'@     PARTICULAIRE QUI SE BASE SUR LE NOMBRE                 ',/,&
+'@     D''INTERACTIONS PARTICULES/FRONTIERES                  ',/,&
+'@     AVEC FOULING (LAGOPT).                                 ',/,&
+'@                                                            ',/,&
+'@    LES INDICATEURS DE CALCUL DES STATISTIQUES VALENT :     ',/,&
+'@       INBRBD       = ',I10                                  ,/,&
+'@       IMOYBR(INBR) = ',I10                                  ,/,&
+'@                                                            ',/,&
+'@    IMOYBR(INBR) DEVRAIT ETRE EGAL A 0 OU 2                 ',/,&
+'@                                                            ',/,&
+'@  Le calcul continue mais risque de donner des affichages   ',/,&
+'@    et des sorties graphiques incoherentes. Une suite       ',/,&
+'@    de calcul est possible sans pertes de donnees.          ',/,&
+'@                                                            ',/,&
+'@  Verifier la valeur de IMOYBR(INBR) dans la  USLAG1.       ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
  3001 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&

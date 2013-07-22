@@ -165,6 +165,7 @@ dimtab = ii
 !   Particle diameter: ivarl=ildp
 !   Particle mass: ivarl= ilmp
 !   Temperature of the coal particles: ivarl=ilhp
+!   Mass of moisture of the coal particles: ivarl= ilmwat
 !   Mass of reactive coal of the coal particles: ivarl= ilmch
 !   Mass of coke of the coal particles: ivarl=ilmck
 !   Diameter of the shrinking core of the coal particles: ivarl=ilmck

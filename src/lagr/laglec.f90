@@ -580,6 +580,7 @@ if (iphyla.eq.1 .and. itpvar.eq.1) then
 elseif (iphyla.eq.2) then
   nomnvl(jhp) = 'variable_temperature_particule'
   nomnvl(jtf) = 'variable_temperature_fluide_vu'
+  nomnvl(jmwat) = 'variable_masse_humidite'
   nomnvl(jmch) = 'variable_masse_charbon_reactif'
   nomnvl(jmck) = 'variable_masse_coke'
   nomnvl(jcp) = 'variable_chaleur_specifique_particule'

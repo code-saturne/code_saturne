@@ -824,6 +824,7 @@ void CS_PROCF(cfname, CFNAME)
  * INTEGER          IVISTE     <--   display of variable 'particle temperature'
  * INTEGER          IVISMP     <--   display of variable 'particle mass'
  * INTEGER          IVISDK     <--   display of variable 'core diameter of part.'
+ * INTEGER          IVISWAT    <--   display of variable 'mass of moisture'
  * INTEGER          IVISCH     <--   display of variable 'mass of reactive coal'
  * INTEGER          IVISCK     <--   display of variable 'mass of char'
  * INTEGER          ISTALA     <--   calculation of volumic statistics
@@ -841,7 +842,10 @@ void CS_PROCF(cfname, CFNAME)
  * INTEGER          IFLMBD     <--   recording of mass flow related to interactions
  * INTEGER          IANGBD     <--   recording of angle between particle traj./boundary
  * INTEGER          IVITBD     <--   recording of velocity of particle in an interaction
- * INTEGER          IENCBD     <--   recording of mass of coal particles
+ * INTEGER          IENCNBBD   <--   recording of particle/boundary interactions with fouling
+ * INTEGER          IENCMABD   <--   recording of flux mass of coal particles (fouling)
+ * INTEGER          IENCDIBD   <--   recording of coal particles diameter (fouling)
+ * INTEGER          IENCCKBD   <--   recording of coal particles coke fraction (fouling)
  * CHAR             NOMBRD     <--   variable name of boundaries statistics
  * INTEGER          IMOYBR     <--   cumulated value for particule/boundary interaction
  *----------------------------------------------------------------------------*/
@@ -879,6 +883,7 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
                                 int *const iviste,
                                 int *const ivismp,
                                 int *const ivisdk,
+                                int *const iviswat,
                                 int *const ivisch,
                                 int *const ivisck,
                                 int *const istala,
@@ -894,7 +899,10 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
                                 int *const iflmbd,
                                 int *const iangbd,
                                 int *const ivitbd,
-                                int *const iencbd,
+                                int *const iencnbbd,
+                                int *const iencmabd,
+                                int *const iencdibd,
+                                int *const iencckbd,
                                 int imoybr[],
                                 int *const iactfv,
                                 int *const iactvx,
@@ -1001,9 +1009,10 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
   _get_status(ivismp, 3, "lagrangian", "output", "mass");
 
   if (*iphyla == 2) {
-    _get_status(ivisdk, 3, "lagrangian", "output", "shrinking_core_diameter");
-    _get_status(ivisch, 3, "lagrangian", "output", "raw_coal_mass_fraction");
-    _get_status(ivisck, 3, "lagrangian", "output", "char_mass_fraction");
+    _get_status(ivisdk,  3, "lagrangian", "output", "shrinking_core_diameter");
+    _get_status(iviswat, 3, "lagrangian", "output", "moisture_mass_fraction");
+    _get_status(ivisch,  3, "lagrangian", "output", "raw_coal_mass_fraction");
+    _get_status(ivisck,  3, "lagrangian", "output", "char_mass_fraction");
   }
 
   _get_int(ntlal,  3, "lagrangian", "output", "listing_printing_frequency");
@@ -1072,57 +1081,50 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
 
       if (*itpvar == 1) {
         i++;
-        label = _get_char_post("volume",  "mean_temperature",  &record_ind);
-        if (label) _copy_mean_varname(label, i);
-        ihslag[i-1] = list_ind;
-
-        label = _get_char_post("volume", "variance_temperature",  &record_ind);
-        if (label) _copy_variance_varname(label, i);
+        _copy_mean_varname("Part_temperature", i);
+        _copy_variance_varname("var_Part_temperature", i);
+        ihslag[i-1] = 1;
       }
 
       if (*idpvar == 1) {
         i++;
-        label = _get_char_post("volume", "mean_diameter",  &record_ind);
-        if (label) _copy_mean_varname(label, i);
-        ihslag[i-1] = list_ind;
-
-        label = _get_char_post("volume", "variance_diameter",  &record_ind);
-        if (label) _copy_variance_varname(label, i);
+        _copy_mean_varname("Part_diameter", i);
+        _copy_variance_varname("var_Part_diameter", i);
+        ihslag[i-1] = 1;
       }
     }
 
     else if (*iphyla == 2) {
-      /*
-      i++;
-      label = _get_char_post("volume", "coal_temperature", &list_ind, &record_ind);
-      if (label) _copy_mean_varname(label, i);
-
-      label = _get_char_post("volume", "coal_temperature", &list_ind, &record_ind);
-      if (label) _copy_variance_varname(label, i);
-      */
-      i++;
-      label = _get_char_post("volume", "mean_shrinking_core_diameter",  &record_ind);
-      if (label) _copy_mean_varname(label, i);
-      ihslag[i] = list_ind;
-
-      label = _get_char_post("volume", "variance_shrinking_core_diameter", &record_ind);
-      if (label) _copy_variance_varname(label, i);
 
       i++;
-      label = _get_char_post("volume", "mean_raw_coal_mass_fraction",  &record_ind);
-      if (label) _copy_mean_varname(label, i);
-      ihslag[i-1] = list_ind;
-
-      label = _get_char_post("volume", "variance_raw_coal_mass_fraction",  &record_ind);
-      if (label) _copy_variance_varname(label, i);
+      _copy_mean_varname("Part_mass", i);
+      _copy_variance_varname("var_Part_mass", i);
+      ihslag[i-1] = 1;
 
       i++;
-      label = _get_char_post("volume", "mean_char_mass_fraction",  &record_ind);
-      if (label) _copy_mean_varname(label, i);
-      ihslag[i-1] = list_ind;
+      _copy_mean_varname("Part_temperature", i);
+      _copy_variance_varname("var_Part_temperature", i);
+      ihslag[i-1] = 1;
 
-      label = _get_char_post("volume", "variance_char_mass_fraction",  &record_ind);
-      if (label) _copy_variance_varname(label, i);
+      i++;
+      _copy_mean_varname("Part_wat_mass", i);
+      _copy_variance_varname("var_Part_wat_mass", i);
+      ihslag[i-1] = 1;
+
+      i++;
+      _copy_mean_varname("Part_ch_mass", i);
+      _copy_variance_varname("var_Part_ch_mass", i);
+      ihslag[i-1] = 1;
+
+      i++;
+      _copy_mean_varname("Part_ck_mass", i);
+      _copy_variance_varname("var_Part_ck_mass", i);
+      ihslag[i-1] = 1;
+
+      i++;
+      _copy_mean_varname("Part_shrink_core_diam", i);
+      _copy_variance_varname("var_Part_shrink_core_diam", i);
+      ihslag[i] = 1;
     }
 
     i++;
@@ -1142,36 +1144,56 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
 
     _get_char_post("boundary", "Part_impact_number", inbrbd);
     if (*inbrbd) {
+      imoybr[i] = 0;
       i++;
       _copy_boundary_varname("Part_impact_number", i);
-      imoybr[i] = 0;
     }
 
     label = _get_char_post("boundary", "Part_bndy_mass_flux", iflmbd);
     if (*iflmbd) {
+      imoybr[i] = 1;
       i++;
       _copy_boundary_varname("Part_bndy_mass_flux", i);
-      imoybr[i] = 1;
     }
 
     label = _get_char_post("boundary", "Part_impact_angle", iangbd);
     if (*iangbd) {
+      imoybr[i] = 2;
       i++;
       _copy_boundary_varname("Part_impact_angle", i);
-      imoybr[i] = 2;
     }
 
     label = _get_char_post("boundary", "Part_impact_velocity", ivitbd);
     if (*ivitbd) {
+      imoybr[i] = 2;
       i++;
       _copy_boundary_varname("Part_impact_velocity", i);
-      imoybr[i] = 2;
     }
-    label = _get_char_post("boundary", "coal_fouling", iencbd);
-    if (*iencbd) {
-      i++;
-      if (label) _copy_boundary_varname(label, i);
+
+    /* Coal fouling statistics*/
+    label = _get_char_post("boundary", "Part_fouled_impact_number", iencnbbd);
+    if (*iencnbbd) {
       imoybr[i] = 0;
+      i++;
+      _copy_boundary_varname("Part_fouled_impact_number", i);
+    }
+    label = _get_char_post("boundary", "Part_fouled_mass_flux", iencmabd);
+    if (*iencmabd) {
+      imoybr[i] = 1;
+      i++;
+      _copy_boundary_varname("Part_fouled_mass_flux", i);
+    }
+    label = _get_char_post("boundary", "Part_fouled_diam", iencdibd);
+    if (*iencdibd) {
+      imoybr[i] = 3;
+      i++;
+      _copy_boundary_varname("Part_fouled_diam", i);
+    }
+    label = _get_char_post("boundary", "Part_fouled_Xck", iencckbd);
+    if (*iencckbd) {
+      imoybr[i] = 3;
+      i++;
+      _copy_boundary_varname("Part_fouled_Xck", i);
     }
   }
   BFT_FREE(label);
@@ -1227,9 +1249,10 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
   bft_printf("--ivismp = %i\n", *ivismp);
 
   if (*iphyla == 2) {
-    bft_printf("--ivisdk = %i\n", *ivisdk);
-    bft_printf("--ivisch = %i\n", *ivisch);
-    bft_printf("--ivisck = %i\n", *ivisck);
+    bft_printf("--ivisdk  = %i\n", *ivisdk);
+    bft_printf("--iviswat = %i\n", *iviswat);
+    bft_printf("--ivisch  = %i\n", *ivisch);
+    bft_printf("--ivisck  = %i\n", *ivisck);
   }
 
   bft_printf("--isuist = %i\n", *isuist);
@@ -1273,13 +1296,16 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
 
   bft_printf("--iensi3 = %i\n", *iensi3);
   if (*iensi3 == 1) {
-    bft_printf("--nstbor = %i\n", *nstbor);
-    bft_printf("--seuilf = %f\n", *seuilf);
-    bft_printf("--inbrbd = %i\n", *inbrbd);
-    bft_printf("--iflmbd = %i\n", *iflmbd);
-    bft_printf("--iangbd = %i\n", *iangbd);
-    bft_printf("--ivitbd = %i\n", *ivitbd);
-    bft_printf("--iencbd = %i\n", *iencbd);
+    bft_printf("--nstbor   = %i\n", *nstbor);
+    bft_printf("--seuilf   = %f\n", *seuilf);
+    bft_printf("--inbrbd   = %i\n", *inbrbd);
+    bft_printf("--iflmbd   = %i\n", *iflmbd);
+    bft_printf("--iangbd   = %i\n", *iangbd);
+    bft_printf("--ivitbd   = %i\n", *ivitbd);
+    bft_printf("--iencnbbd = %i\n", *iencnbbd);
+    bft_printf("--iencmabd = %i\n", *iencmabd);
+    bft_printf("--iencdibd = %i\n", *iencdibd);
+    bft_printf("--iencckbd = %i\n", *iencckbd);
   }
 
 #endif
@@ -1333,12 +1359,14 @@ void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
                                 const int *const iepsi,
                                 const int *const ihpt,
                                 const int *const inuchl,
+                                const int *const imwat,
                                 const int *const imcht,
                                 const int *const imckt,
                                 int     ichcor[],
                                 int     cp2ch[],
                                 int     diam20[],
                                 int     rho0ch[],
+                                int     xwatch[],
                                 int     xashch[],
                                 int     ifrlag[],
                                 int     iusncl[],
@@ -1542,6 +1570,7 @@ void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
           if (*iphyla == 2) {
             _get_int(&(i_cz_params[*inuchl -1]), 2, path2, "coal_number");
             _get_double(&(r_cz_params[*ihpt -1]), 2, path2, "coal_temperature");
+            _get_double(&(r_cz_params[*imwat -1]), 2, path2, "moisture_mass_fraction");
             _get_double(&(r_cz_params[*imcht -1]), 2, path2, "raw_coal_mass_fraction");
             _get_double(&(r_cz_params[*imckt -1]), 2, path2, "char_mass_fraction");
           }
@@ -1600,6 +1629,7 @@ void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
           if (*iphyla == 2) {
             bft_printf("---coal number = %i \n",            i_cz_params[*inuchl -1]);
             bft_printf("---coal temperature = %f \n",       r_cz_params[*ihpt -1]);
+            bft_printf("---water mass fraction = %f \n",    r_cz_params[*imwat -1]);
             bft_printf("---raw coal mass fraction = %f \n", r_cz_params[*imcht -1]);
             bft_printf("---char mass fraction = %f \n",     r_cz_params[*imckt -1]);
           }

@@ -370,6 +370,7 @@ iusncl(izone) = nbclas
 
 !         If coal (iphyla=2)
 !            ihpt  : temperature in Celsius degress (no enthalpy)
+!            imwat : mass of moisture in coal (kg)
 !            imcht : mass of reactive coal (kg)
 !            imckt : masse of coke (kg)
 
@@ -485,11 +486,13 @@ do iclas  = 1, nbclas
 
     rczpar(iropt) = rho0ch(icha)
 
+    ! Mass of moisture in coal and
     ! Mass of reactive coal and
     ! mass of coke (null if the coal has never burnt)
 
     mp0 = pis6 * (rczpar(idpt)**3) * rczpar(iropt)
-    rczpar(imcht) = mp0 * (1.d0-xashch(icha))
+    rczpar(imwat) = mp0 * xwatch(icha)
+    rczpar(imcht) = mp0 * ((1.d0-xwatch(icha))-xashch(icha))
     rczpar(imckt) = 0.d0
 
   endif

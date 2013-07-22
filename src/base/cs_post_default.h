@@ -134,8 +134,8 @@ void CS_PROCF (pstvar, PSTVAR)
  *
  * subroutine lagpvr
  * *****************
- *                  ( ivisv1, ivisv2, ivistp, ivisdm, iviste,
- *                    ivismp, ivisdk, ivisch, ivisck )
+ *                  ( ivisv1, ivisv2, ivistp,  ivisdm, iviste,
+ *                    ivismp, ivisdk, iviswat,  ivisch, ivisck )
  *
  * integer          ivisv1      : <-- : display of variable 'fluid velocity'
  * integer          ivisv2      : <-- : display of variable 'particles velocity'
@@ -144,6 +144,7 @@ void CS_PROCF (pstvar, PSTVAR)
  * integer          iviste      : <-- : display of variable 'particle temperature'
  * integer          ivismp      : <-- : display of variable 'particle mass'
  * integer          ivisdk      : <-- : display of variable 'core diameter of part.'
+ * integer          iviswat     : <-- : display of variable 'mass of water in coal'
  * integer          ivisch      : <-- : display of variable 'mass of reactive coal'
  * integer          ivisck      : <-- : display of variable 'mass of char'
  *----------------------------------------------------------------------------*/
@@ -157,6 +158,7 @@ void CS_PROCF (lagpvr, LAGPVR)
  const cs_int_t  *iviste,
  const cs_int_t  *ivismp,
  const cs_int_t  *ivisdk,
+ const cs_int_t  *iviswat,
  const cs_int_t  *ivisch,
  const cs_int_t  *ivisck
 );

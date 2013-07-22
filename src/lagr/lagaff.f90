@@ -132,10 +132,10 @@ double precision statis(ncelet,nvlsta)
 
 double precision dnbpr
 
-integer nbpartall, nbpoutall, nbperrall, nbpdepall, nbpresall
+integer nbpartall, nbpoutall, nbperrall, nbpdepall, npencrall, nbpresall
 
 double precision dnbparall, dnbperall, dnbpouall
-double precision dnbdepall, dnbpnwall, dnbresall
+double precision dnbdepall, dnpencall, dnbpnwall, dnbresall
 
 ! NOMBRE DE PASSAGES DANS LA ROUTINE
 
@@ -164,12 +164,14 @@ nbpartall = nbpart
 nbpoutall = nbpout
 nbperrall = nbperr
 nbpdepall = nbpdep
+npencrall = npencr
 nbpresall = nbpres
 
 dnbparall = dnbpar
 dnbpouall = dnbpou
 dnbperall = dnbper
 dnbdepall = dnbdep
+dnpencall = dnpenc
 dnbpnwall = dnbpnw
 dnbresall = dnbres
 
@@ -180,12 +182,14 @@ if (irangp.ge.0) then
    call parcpt(nbpoutall)
    call parcpt(nbperrall)
    call parcpt(nbpdepall)
+   call parcpt(npencrall)
    call parcpt(nbpresall)
 
    call parsom(dnbparall)
    call parsom(dnbpouall)
    call parsom(dnbperall)
    call parsom(dnbdepall)
+   call parsom(dnpencall)
    call parsom(dnbpnwall)
    call parsom(dnbresall)
 
@@ -239,14 +243,15 @@ if (irangp.le.0) then
     write(implal,2000) iplas,ttcabs,                              &
          nbpartall        , dnbparall        ,                    &
          nbpnew        ,dnbpnwall        ,                        &
-         nbpoutall-nbperrall , dnbpouall-dnbperall ,              &
+         nbpoutall-nbperrall-npencrall                            &
+                       , dnbpouall-dnbperall-dnpencall ,          &
          nbpdepall        , dnbdepall        ,                    &
          nbperrall        , dnbperall        ,                    &
          dnbpr         ,                                          &
          npcsup        , dnpcsu        ,                          &
          npclon        , dnpclo        ,                          &
          npkill        , dnpkil        ,                          &
-         npencr        , dnpenc
+         npencrall        , dnpencall
 
   elseif ( iroule.ge.1 .and.                                      &
          (iphyla.ne.2 .or. iencra.ne.1) ) then
@@ -268,11 +273,12 @@ if (irangp.le.0) then
     write(implal,2002) iplas,ttcabs,                              &
          nbpartall     , dnbparall        ,                       &
          nbpnew        ,dnbpnwall        ,                        &
-         nbpoutall-nbperrall , dnbpouall-dnbperall ,              &
+         nbpoutall-nbperrall-npencrall                            &
+                       , dnbpouall-dnbperall-dnpencall ,          &
          nbpdepall        , dnbdepall        ,                    &
          nbperrall        , dnbperall        ,                    &
          dnbpr         ,                                          &
-         npencr        , dnpenc
+         npencrall     , dnpencall
 
   elseif (ireent.gt.0) then
 

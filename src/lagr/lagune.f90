@@ -310,9 +310,10 @@ if (iplar.eq.1) then
    jxp    , jyp    , jzp    , jup    , jvp    , jwp    ,          &
    juf    , jvf    , jwf    , jtaux  , jryplu ,                   &
    jrinpf , jdfac  , jimark ,                                     &
-   jtp    , jhp    , jtf    , jmch   , jmck   , jcp    ,          &
-   jrdck  , jrd0p  , jrr0p  , jinch  , jrhock , jreps  ,          &
-   jdepo  , jnbasg , jnbasp , jfadh  , jmfadh , jndisp)
+   jtp    , jhp    , jtf    , jmwat  , jmch   , jmck   ,          &
+   jcp    , jrdck  , jrd0p  , jrr0p  , jinch  , jrhock ,          &
+   jreps  , jdepo  , jnbasg , jnbasp , jfadh  , jmfadh ,          &
+   jndisp)
 
 ! --> if the deposition model is activated
 
@@ -712,16 +713,18 @@ if (nor.eq.1) then
 
   call dplprt                                                     &
   !==========
- ( nbpart , dnbpar, nordre, parbor, iensi3,                       &
-   inbr   , inbrbd,                                               &
-   iflm   , iflmbd, iang  , iangbd, ivit  ,  ivitbd,              &
-   nusbor , iusb,   vislen,  dlgeo , rtp , iu    ,                &
-   iv     , iw  ,   energt)
+ ( nbpart   , dnbpar   , nordre   , parbor   , iensi3   ,         &
+   inbr     , inbrbd   , iflm     , iflmbd   , iang     ,         &
+   iangbd   , ivit     , ivitbd   , iencnb   , iencma   ,         &
+   iencdi   , iencck   , iencnbbd , iencmabd , iencdibd ,         &
+   iencckbd , nusbor   , iusb     , vislen   , dlgeo    ,         &
+   rtp      , iu       , iv       , iw       , energt   ,         &
+   tprenc   , visref   , enc1     , enc2     , tkelvi)
 
   call prtput                                                     &
   !==========
  ( nbpmax , nbpart , dnbpar , nbpout , dnbpou , nbperr , dnbper,  &
-   nbpdep , dnbdep ,                                              &
+   nbpdep , dnbdep , npencr , dnpenc ,                            &
    ettp   , ettpa  , itepa  , tepa   ,                            &
    ibord  )
 
@@ -864,7 +867,7 @@ call uslast                                                       &
 call ucdprt                                                        &
 !==========
  ( nbpmax , nbpart , dnbpar , nbpout , dnbpou , nbperr ,           &
-   dnbper , nbpdep , dnbdep,                                       &
+   dnbper , nbpdep , dnbdep , npencr , dnpenc ,                    &
    ettp   , ettpa  , itepa  , tepa   , ibord  , indep  )
 
 !===============================================================================

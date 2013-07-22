@@ -55,6 +55,7 @@
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_parall.h"
+#include "cs_prototypes.h"
 #include "cs_search.h"
 #include "cs_lagr_utils.h"
 #include "cs_halo.h"
@@ -76,7 +77,7 @@ BEGIN_C_DECLS
 #define  N_GEOL 13
 #define  CS_LAGR_MIN_COMM_BUF_SIZE  10
 #define  CS_LAGR_MAX_PROPAGATION_LOOPS  30
-#define  N_VAR_PART_STRUCT  36
+#define  N_VAR_PART_STRUCT  37
 #define  N_VAR_PART_AUX      1
 
 /*============================================================================
@@ -273,6 +274,7 @@ const char *cs_lagr_attribute_name[] = {
   "CS_LAGR_TEMPERATURE",
   "CS_LAGR_FLUID_TEMPERATURE",
   "CS_LAGR_CP",
+  "CS_LAGR_WATER_MASS",
   "CS_LAGR_COAL_MASS",
   "CS_LAGR_COKE_MASS",
   "CS_LAGR_SHRINKING_DIAMETER",
@@ -309,8 +311,8 @@ static int _jup = -1, _jvp = -1, _jwp = -1, _juf = -1, _jvf = -1, _jwf = -1;
 static int _jtaux = - 1, _jdepo = - 1, _jryplu = - 1, _jrinpf = - 1;
 static int _jdfac = - 1, _jimark = -1, _jnbasg = - 1, _jnbasp = - 1;
 static int _jfadh = - 1, _jmfadh = - 1, _jndisp = - 1;
-static int _jthp = - 1, _jtf = - 1, _jmch = - 1, _jmck = -1, _jcp = -1;
-static int _jrdck = -1, _jrd0p = - 1, _jrr0p = - 1, _jrhock = - 1;
+static int _jthp = - 1, _jtf = - 1, _jmwat = - 1, _jmch = - 1, _jmck = -1;
+static int _jcp = -1, _jrdck = -1, _jrd0p = - 1, _jrr0p = - 1, _jrhock = - 1;
 static int _jinch = - 1, _jreps = -1;
 
 /*=============================================================================
@@ -494,51 +496,52 @@ _define_particle_datatype(void)
   int  blocklengths[N_VAR_PART_STRUCT]
     = {1, 1, 1, 1, 1, 1, 1, 1,
        1, 1, 1, 1, 3, 3, 3, 1, 1, 1, 1 ,
-       1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ,
        1, 1, 1, 1, 1, 1, 1};
 
   MPI_Aint  displacements[N_VAR_PART_STRUCT]
     = {0, 0, 0, 0, 0, 0, 0, 0,
        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ,
-       0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ,
        0, 0, 0, 0, 0, 0, 0};
 
-  MPI_Datatype  types[N_VAR_PART_STRUCT] = {CS_MPI_LNUM,
-                                            CS_MPI_LNUM,
-                                            MPI_INT,
-                                            MPI_INT,
-                                            CS_MPI_LNUM,
-                                            CS_MPI_LNUM,
-                                            CS_MPI_REAL,
-                                            CS_MPI_REAL,
-                                            CS_MPI_REAL,
-                                            CS_MPI_REAL,
-                                            CS_MPI_REAL,
-                                            CS_MPI_REAL,
-                                            CS_MPI_REAL,
-                                            CS_MPI_REAL,
-                                            CS_MPI_REAL,
-                                            CS_MPI_REAL,
-                                            CS_MPI_REAL,
-                                            CS_MPI_LNUM,
-                                            CS_MPI_LNUM,
-                                            CS_MPI_LNUM,
-                                            CS_MPI_LNUM,
-                                            CS_MPI_LNUM,
-                                            CS_MPI_REAL,
-                                            CS_MPI_REAL,
-                                            CS_MPI_REAL,
-                                            CS_MPI_REAL,
-                                            CS_MPI_REAL,
-                                            CS_MPI_REAL,
-                                            CS_MPI_REAL,
-                                            CS_MPI_REAL,
-                                            CS_MPI_REAL,
-                                            CS_MPI_REAL,
-                                            CS_MPI_REAL,
-                                            CS_MPI_LNUM,
-                                            CS_MPI_REAL,
-                                            CS_MPI_REAL
+  MPI_Datatype  types[N_VAR_PART_STRUCT] = {CS_MPI_LNUM,  /* cur_cell_num */
+                                            CS_MPI_LNUM,  /* last_face_num */
+                                            MPI_INT,      /* switch_order_1 */
+                                            MPI_INT,      /* state */
+                                            CS_MPI_LNUM,  /* prev_id */
+                                            CS_MPI_LNUM,  /* next_id */
+                                            CS_MPI_REAL,  /* random_value */
+                                            CS_MPI_REAL,  /* stat_weight */
+                                            CS_MPI_REAL,  /* residence_time */
+                                            CS_MPI_REAL,  /* mass */
+                                            CS_MPI_REAL,  /* diameter */
+                                            CS_MPI_REAL,  /* taup_aux */
+                                            CS_MPI_REAL,  /* coord[3] */
+                                            CS_MPI_REAL,  /* velocity[3] */
+                                            CS_MPI_REAL,  /* velocity_seen[3] */
+                                            CS_MPI_REAL,  /* yplus */
+                                            CS_MPI_REAL,  /* interf */
+                                            CS_MPI_LNUM,  /* close_face_id */
+                                            CS_MPI_LNUM,  /* marko_val */
+                                            CS_MPI_LNUM,  /* depo */
+                                            CS_MPI_LNUM,  /* nb_large_asperities */
+                                            CS_MPI_LNUM,  /* nb_small_asperities */
+                                            CS_MPI_REAL,  /* adhesion_force */
+                                            CS_MPI_REAL,  /* adhesion_torque */
+                                            CS_MPI_REAL,  /*  displacement_norm */
+                                            CS_MPI_REAL,  /* temp */
+                                            CS_MPI_REAL,  /* fluid_temp */
+                                            CS_MPI_REAL,  /* cp */
+                                            CS_MPI_REAL,  /* water_mass */
+                                            CS_MPI_REAL,  /* coal_mass */
+                                            CS_MPI_REAL,  /* coke_mass */
+                                            CS_MPI_REAL,  /* shrinking_diam */
+                                            CS_MPI_REAL,  /* initial_diam */
+                                            CS_MPI_REAL,  /* initial_density */
+                                            CS_MPI_LNUM,  /* coal_number */
+                                            CS_MPI_REAL,  /* coal_density */
+                                            CS_MPI_REAL   /* emissivity */
   };
 
   /* Initialize a default particle */
@@ -586,6 +589,7 @@ _define_particle_datatype(void)
 
   /* Coal combustion */
 
+  part.water_mass = 0.0;
   part.coal_mass = 0.0;
   part.coke_mass = 0.0;
   part.shrinking_diam = 0.0;
@@ -629,6 +633,7 @@ _define_particle_datatype(void)
   MPI_Get_address(&part.fluid_temp, displacements + count++);
   MPI_Get_address(&part.cp, displacements + count++);
 
+  MPI_Get_address(&part.water_mass, displacements + count++);
   MPI_Get_address(&part.coal_mass, displacements + count++);
   MPI_Get_address(&part.coke_mass, displacements + count++);
   MPI_Get_address(&part.shrinking_diam, displacements + count++);
@@ -1902,9 +1907,22 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
                const cs_lnum_t      *iangbd,
                const cs_lnum_t      *ivit,
                const cs_lnum_t      *ivitbd,
+               const cs_lnum_t      *iencnb,
+               const cs_lnum_t      *iencma,
+               const cs_lnum_t      *iencdi,
+               const cs_lnum_t      *iencck,
+               const cs_lnum_t      *iencnbbd,
+               const cs_lnum_t      *iencmabd,
+               const cs_lnum_t      *iencdibd,
+               const cs_lnum_t      *iencckbd,
                const cs_lnum_t      *nusbor,
                cs_lnum_t             iusb[],
-               cs_real_t             energt[])
+               cs_real_t             energt[],
+               const cs_real_t       tprenc[],
+               const cs_real_t       visref[],
+               const cs_real_t       enc1[],
+               const cs_real_t       enc2[],
+               const cs_real_t       *tkelvi)
 
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
@@ -2191,10 +2209,122 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
 
   }
 
-  /* FIXME: Coal particles boundary treatment */
-  else if (bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IENCRL)
-    bft_error(__FILE__, __LINE__, 0,
-              " Boundary condition IENCRL not yet implemented.\n");
+  else if (bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IENCRL) {
+
+    /*--> Fouling of the particle, if its properties make it possible
+         and with respect to a probability
+         ICI if  Tp     > TPENC
+                 if viscp <= VISREF ===> Probability of fouling equal to 1
+                 if viscp  > VISREF ===> Probability equal to TRAP = 1-VISREF/viscp
+                                    ===> Fouling if VNORL is between TRAP et 1.*/
+
+    cs_real_t  random, viscp, trap;
+    int  one = 1;
+
+    /* Selection of the fouling coefficient*/
+    cs_real_t  tprenc_icoal = tprenc[particle.coal_number-1];
+    cs_real_t  visref_icoal = visref[particle.coal_number-1];
+    cs_real_t  enc1_icoal   = enc1[particle.coal_number-1];
+    cs_real_t  enc2_icoal   = enc2[particle.coal_number-1];
+
+
+    if (particle.temp > tprenc_icoal+*tkelvi) {
+
+      /* Coal viscosity*/
+      tmp = ( (1.0e7*enc1_icoal)/ ((particle.temp-150.e0-*tkelvi)*(particle.temp-150.e0-*tkelvi)) )
+            + enc2_icoal;
+      if (tmp <= 0.0) {
+        bft_error(__FILE__, __LINE__, 0,
+                _("Coal viscosity calculation impossible, tmp = %e is < 0.\n")
+                ,tmp);
+      }
+      else {
+        viscp = 0.1e0 * exp( log(10.e0)*tmp );
+      }
+
+      if (viscp >= visref_icoal) {
+        CS_PROCF(zufall, ZUFALL)(&one, &random);
+        trap = 1.e0- (visref_icoal / viscp);
+      }
+
+      if ((viscp <= visref_icoal) || (viscp >= visref_icoal  &&  random >= trap)) {
+
+        move_particle = CS_LAGR_PART_MOVE_OFF;
+        particle_state = CS_LAGR_PART_OUT;
+
+        /* Recording for listing/listla*/
+        _particle_set->n_part_fou += 1;
+        _particle_set->weight_fou += particle.stat_weight;
+
+        /* Recording for statistics*/
+        if (*iencnbbd > 0) {
+          boundary_stat[(*iencnb -1) * nfabor + face_id]
+            += particle.stat_weight;
+        }
+        if (*iencmabd > 0) {
+          boundary_stat[(*iencma -1) * nfabor + face_id]
+            += particle.stat_weight * particle.mass / face_area;
+        }
+        if (*iencdibd > 0) {
+          boundary_stat[(*iencdi -1) * nfabor + face_id]
+            += particle.stat_weight * particle.shrinking_diam;
+        }
+        if (*iencckbd > 0) {
+          if (particle.mass > 0) {
+            boundary_stat[(*iencck -1) * nfabor + face_id]
+              += particle.stat_weight * (particle.coal_mass +
+                 particle.coke_mass) / particle.mass;
+          }
+        }
+
+        /* FIXME: For post-processing by trajectory purpose */
+
+        for (k = 0; k < 3; k++) {
+          particle.coord[k] = intersect_pt[k];
+          particle.velocity[k] = 0.0;
+          particle.velocity_seen[k] = 0.0;}
+      }
+    }
+
+   /*--> if there is no fouling, then it is an elastic rebound*/
+    if (move_particle != CS_LAGR_PART_MOVE_OFF) {
+
+      move_particle = CS_LAGR_PART_MOVE_ON;
+      particle_state = CS_LAGR_PART_TO_SYNC;
+      particle.cur_cell_num = cs_glob_mesh->b_face_cells[face_id];
+
+      for (k = 0; k < 3; k++)
+        prev_particle.coord[k] = intersect_pt[k];
+
+      /* Modify the ending point. */
+
+      for (k = 0; k < 3; k++)
+        depl[k] = particle.coord[k] - intersect_pt[k];
+
+      tmp = CS_ABS(_get_dot_prod(depl, face_norm));
+      tmp *= 2.0;
+
+      for (k = 0; k < 3; k++)
+        particle.coord[k] -= tmp * face_norm[k];
+
+      /* Modify particle velocity and velocity seen */
+
+      tmp = CS_ABS(_get_dot_prod(particle.velocity, face_norm));
+      tmp *= 2.0;
+
+      for (k = 0; k < 3; k++)
+        particle.velocity[k] -= tmp * face_norm[k];
+
+      tmp = CS_ABS(_get_dot_prod(particle.velocity_seen, face_norm));
+      tmp *= 2.0;
+
+      for (k = 0; k < 3; k++) {
+        particle.velocity_seen[k] -= tmp * face_norm[k];
+        particle.velocity_seen[k] = 0.0;}
+
+    }
+
+  }
 
   /* FIXME: JBORD* (user-defined boundary condition) not yet implemented
      nor defined by a macro */
@@ -2217,7 +2347,8 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
     if  (   bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IDEPO1
             || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IDEPO2
             || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IDEPFA
-            || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IREBOL) {
+            || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IREBOL
+            || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IENCRL) {
 
       /* Number of particle-boundary interactions  */
       if (*inbrbd > 0)
@@ -2285,6 +2416,14 @@ _local_propagation(cs_lagr_particle_t     *p_prev_particle,
                    const cs_lnum_t        *iangbd,
                    const cs_lnum_t        *ivit,
                    const cs_lnum_t        *ivitbd,
+                   const cs_lnum_t        *iencnb,
+                   const cs_lnum_t        *iencma,
+                   const cs_lnum_t        *iencdi,
+                   const cs_lnum_t        *iencck,
+                   const cs_lnum_t        *iencnbbd,
+                   const cs_lnum_t        *iencmabd,
+                   const cs_lnum_t        *iencdibd,
+                   const cs_lnum_t        *iencckbd,
                    const cs_lnum_t        *nusbor,
                    cs_lnum_t               iusb[],
                    cs_real_t               visc_length[],
@@ -2294,6 +2433,11 @@ _local_propagation(cs_lagr_particle_t     *p_prev_particle,
                    const cs_lnum_t        *iv,
                    const cs_lnum_t        *iw,
                    cs_real_t               energt[],
+                   const cs_real_t         tprenc[],
+                   const cs_real_t         visref[],
+                   const cs_real_t         enc1[],
+                   const cs_real_t         enc2[],
+                   const cs_real_t         *tkelvi,
                    cs_lnum_t               ipass)
 {
   cs_lnum_t  i, j, k;
@@ -2769,9 +2913,22 @@ _local_propagation(cs_lagr_particle_t     *p_prev_particle,
                              iangbd,
                              ivit,
                              ivitbd,
+                             iencnb,
+                             iencma,
+                             iencdi,
+                             iencck,
+                             iencnbbd,
+                             iencmabd,
+                             iencdibd,
+                             iencckbd,
                              nusbor,
                              iusb,
-                             energt);
+                             energt,
+                             tprenc,
+                             visref,
+                             enc1,
+                             enc2,
+                             tkelvi);
 
           if (scheme_order == 2)
             particle.switch_order_1 = CS_LAGR_SWITCH_ON;
@@ -3632,6 +3789,10 @@ _update_c_from_fortran(const cs_lnum_t   *nbpmax,
       cur_part.fluid_temp = ettp[id];
       prev_part.fluid_temp = ettpa[id];
 
+      id = _jmwat * (*nbpmax) + i;
+      cur_part.water_mass = ettp[id];
+      prev_part.water_mass = ettpa[id];
+
       id = _jmch * (*nbpmax) + i;
       cur_part.coal_mass = ettp[id];
       prev_part.coal_mass = ettpa[id];
@@ -3648,6 +3809,9 @@ _update_c_from_fortran(const cs_lnum_t   *nbpmax,
 
       id = _jrdck * (*nbpmax) + i;
       cur_part.shrinking_diam = tepa[id];
+      /*  FIXME for post-processing by trajectory purpose. To have better
+          results shrinking_diam should be transfered to ETTPA/ETTP arrays*/
+      prev_part.shrinking_diam = tepa[id];
 
       id = _jrd0p * (*nbpmax) + i;
       cur_part.initial_diam = tepa[id];
@@ -3760,6 +3924,7 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *n_particles_max,
                           const cs_lnum_t   *jtp,
                           const cs_lnum_t   *jhp,
                           const cs_lnum_t   *jtf,
+                          const cs_lnum_t   *jmwat,
                           const cs_lnum_t   *jmch,
                           const cs_lnum_t   *jmck,
                           const cs_lnum_t   *jcp,
@@ -3877,6 +4042,7 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *n_particles_max,
     _jthp = *jhp - 1;
 
   _jtf = *jtf - 1;
+  _jmwat = *jmwat - 1;
   _jmch = *jmch - 1;
   _jmck = *jmck - 1;
   _jcp = *jcp - 1;
@@ -3927,11 +4093,17 @@ CS_PROCF (prtget, PRTGET)(const cs_lnum_t   *nbpmax,
   set->n_part_dep = 0;
   prev_set->n_part_dep = 0;
 
+  set->n_part_fou = 0;
+  prev_set->n_part_fou = 0;
+
   set->weight_out = 0.0;
   prev_set->weight_out = 0.0;
 
   set->weight_dep = 0.0;
   prev_set->weight_dep = 0.0;
+
+  set->weight_fou = 0.0;
+  prev_set->weight_fou = 0.0;
 
   set->n_failed_part = 0;
   prev_set->n_failed_part = 0;
@@ -3969,6 +4141,8 @@ CS_PROCF (prtget, PRTGET)(const cs_lnum_t   *nbpmax,
  *   dnbper --> failed particles total weight
  *   nbpdep --> number of depositing particles
  *   dnbdep --> depositing particles total weight
+ *   npencr --> number of fouled particles (coal)
+ *   dnpenc --> fouled particles (coal) total weight
  *   ...
  *----------------------------------------------------------------------------*/
 
@@ -3982,6 +4156,8 @@ CS_PROCF (prtput, PRTPUT)(const cs_int_t   *nbpmax,
                           cs_real_t        *dnbper,
                           cs_int_t         *nbpdep,
                           cs_real_t        *dnbdep,
+                          cs_int_t         *npencr,
+                          cs_real_t        *dnpenc,
                           cs_real_t         ettp[],
                           cs_real_t         ettpa[],
                           cs_int_t          itepa[],
@@ -4071,6 +4247,10 @@ CS_PROCF (prtput, PRTPUT)(const cs_int_t   *nbpmax,
       id = _jtf * (*nbpmax) + i;
       ettp[id] = cur_part.fluid_temp;
       ettpa[id] = prev_part.fluid_temp;
+
+      id = _jmwat * (*nbpmax) + i;
+      ettp[id] = cur_part.water_mass;
+      ettpa[id] = prev_part.water_mass;
 
       id = _jmch * (*nbpmax) + i;
       ettp[id] = cur_part.coal_mass;
@@ -4204,6 +4384,12 @@ CS_PROCF (prtput, PRTPUT)(const cs_int_t   *nbpmax,
   /* weight of depositing particles */
   *dnbdep = set->weight_dep;
 
+  /* Number of fouled particles (coal) */
+  *npencr = set->n_part_fou;
+
+  /* weight of fouled particles (coal) */
+  *dnpenc = set->weight_fou;
+
   /* Number of failed particles */
   *nbperr = set->n_failed_part;
 
@@ -4311,6 +4497,14 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_n_particles,
                           const cs_lnum_t  *iangbd,
                           const cs_lnum_t  *ivit,
                           const cs_lnum_t  *ivitbd,
+                          const cs_lnum_t  *iencnb,
+                          const cs_lnum_t  *iencma,
+                          const cs_lnum_t  *iencdi,
+                          const cs_lnum_t  *iencck,
+                          const cs_lnum_t  *iencnbbd,
+                          const cs_lnum_t  *iencmabd,
+                          const cs_lnum_t  *iencdibd,
+                          const cs_lnum_t  *iencckbd,
                           const cs_lnum_t  *nusbor,
                           cs_lnum_t         iusb[],
                           cs_real_t         visc_length[],
@@ -4319,7 +4513,12 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_n_particles,
                           const cs_lnum_t  *iu,
                           const cs_lnum_t  *iv,
                           const cs_lnum_t  *iw,
-                          cs_real_t         energt[])
+                          cs_real_t         energt[],
+                          const cs_real_t   tprenc[],
+                          const cs_real_t   visref[],
+                          const cs_real_t   enc1[],
+                          const cs_real_t   enc2[],
+                          const cs_real_t   *tkelvi)
 {
   cs_lnum_t  i, j;
 
@@ -4370,6 +4569,7 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_n_particles,
       cs_lagr_particle_t prev_part_aux = *prev_part;
       cs_lagr_particle_t cur_part_aux = *cur_part;
 
+
       if (cur_part->state == CS_LAGR_PART_TO_SYNC)
         cur_part->state = _local_propagation(prev_part,
                                              cur_part,
@@ -4387,12 +4587,25 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_n_particles,
                                              iangbd,
                                              ivit,
                                              ivitbd,
+                                             iencnb,
+                                             iencma,
+                                             iencdi,
+                                             iencck,
+                                             iencnbbd,
+                                             iencmabd,
+                                             iencdibd,
+                                             iencckbd,
                                              nusbor,
                                              iusb,
                                              visc_length,
                                              dlgeo,
                                              rtp, iu, iv ,iw,
                                              energt,
+                                             tprenc,
+                                             visref,
+                                             enc1,
+                                             enc2,
+                                             tkelvi,
                                              0);
 
 
@@ -4568,6 +4781,8 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_n_particles,
  *   dnbper <-- failed particles total weight
  *   nbpdep <-- number of depositing particles
  *   dnbdep <-- depositing particles total weight
+ *   npencr <-- number of fouled particles (coal)
+ *   dnpenc <-- fouled particles (coal) total weight
  *   ...
  *----------------------------------------------------------------------------*/
 
@@ -4581,6 +4796,8 @@ CS_PROCF (ucdprt, UCDPRT)(const cs_lnum_t   *nbpmax,
                           const cs_real_t   *dnbper,
                           const cs_int_t    *nbpdep,
                           const cs_real_t   *dnbdep,
+                          const cs_int_t    *npencr,
+                          const cs_real_t   *dnpenc,
                           const cs_real_t    ettp[],
                           const cs_real_t    ettpa[],
                           const cs_int_t     itepa[],
@@ -4600,8 +4817,10 @@ CS_PROCF (ucdprt, UCDPRT)(const cs_lnum_t   *nbpmax,
   set->weight = *dnbpar;
   set->n_part_out = *nbpout;
   set->n_part_dep = *nbpdep;
+  set->n_part_fou = *npencr;
   set->weight_out = *dnbpou;
   set->weight_dep = *dnbdep;
+  set->weight_fou = *dnpenc;
   set->n_failed_part = *nbperr;
   set->weight_failed = *dnbper;
 
@@ -4807,6 +5026,11 @@ cs_lagr_get_attr_info(cs_lagr_attribute_t    attr,
     break;
 
   /* Coal combustion additional parameters */
+
+  case CS_LAGR_WATER_MASS:
+    if (_jmwat > -1)
+      _p = &(p.water_mass);
+    break;
 
   case CS_LAGR_COAL_MASS:
     if (_jmch > -1)

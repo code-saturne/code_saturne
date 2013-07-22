@@ -96,6 +96,7 @@ typedef enum {
 
   /* Coal combustion additional parameters */
 
+  CS_LAGR_WATER_MASS,
   CS_LAGR_COAL_MASS,
   CS_LAGR_COKE_MASS,
 
@@ -169,14 +170,15 @@ typedef struct {
 
   /* Coal combustion additional parameters */
 
-  cs_real_t   coal_mass;       /* jmch */
-  cs_real_t   coke_mass;       /* jmck */
+  cs_real_t   water_mass;      /* jmwat */
+  cs_real_t   coal_mass;       /* jmch  */
+  cs_real_t   coke_mass;       /* jmck  */
 
   cs_real_t   shrinking_diam;  /* jrdck */
   cs_real_t   initial_diam;    /* jrd0p */
   cs_real_t   initial_density; /* jrr0p */
 
-  cs_lnum_t   coal_number;     /* jinch */
+  cs_lnum_t   coal_number;     /* jinch  */
   cs_real_t   coal_density;    /* jrhock */
 
   /* Radiative model additional parameters */
@@ -203,11 +205,13 @@ typedef struct {
   cs_lnum_t  n_particles;
   cs_lnum_t  n_part_out;
   cs_lnum_t  n_part_dep;
+  cs_lnum_t  n_part_fou;
   cs_lnum_t  n_failed_part;
 
   cs_real_t  weight;
   cs_real_t  weight_out;
   cs_real_t  weight_dep;
+  cs_real_t  weight_fou;
   cs_real_t  weight_failed;
 
   cs_lnum_t  n_particles_max;
@@ -275,6 +279,7 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *n_particles_max,
                           const cs_lnum_t   *jtp,
                           const cs_lnum_t   *jhp,
                           const cs_lnum_t   *jtf,
+                          const cs_lnum_t   *jmwat,
                           const cs_lnum_t   *jmch,
                           const cs_lnum_t   *jmck,
                           const cs_lnum_t   *jcp,
@@ -325,6 +330,8 @@ CS_PROCF (prtget, PRTGET)(const cs_int_t   *nbpmax,
  *   dnbper --> failed particles total weight
  *   nbpdep --> number of depositing particles
  *   dnbdep --> depositing particles total weight
+ *   npencr --> number of fouled particles (coal)
+ *   dnpenc --> fouled particles (coal) total weight
  *   ...
  *----------------------------------------------------------------------------*/
 
@@ -338,6 +345,8 @@ CS_PROCF (prtput, PRTPUT)(const cs_int_t   *nbpmax,
                           cs_real_t        *dnbper,
                           cs_int_t         *nbpdep,
                           cs_real_t        *dnbdep,
+                          cs_int_t         *npencr,
+                          cs_real_t        *dnpenc,
                           cs_real_t         ettp[],
                           cs_real_t         ettpa[],
                           cs_int_t          itepa[],
@@ -385,6 +394,14 @@ CS_PROCF (dplprt, DPLPRT)(cs_int_t        *p_n_particles,
                           const cs_int_t  *iangbd,
                           const cs_int_t  *ivit,
                           const cs_int_t  *ivitbd,
+                          const cs_int_t  *iencnd,
+                          const cs_int_t  *iencma,
+                          const cs_int_t  *iencdi,
+                          const cs_int_t  *iencck,
+                          const cs_int_t  *iencnbbd,
+                          const cs_int_t  *iencmabd,
+                          const cs_int_t  *iencdibd,
+                          const cs_int_t  *iencckbd,
                           const cs_int_t  *nusbor,
                           cs_int_t         iusb[],
                           cs_real_t        visc_length[],
@@ -393,7 +410,12 @@ CS_PROCF (dplprt, DPLPRT)(cs_int_t        *p_n_particles,
                           const cs_int_t  *iu,
                           const cs_int_t  *iv,
                           const cs_int_t  *iw,
-                          cs_real_t        energt[]);
+                          cs_real_t        energt[],
+                          const cs_real_t  tprenc[],
+                          const cs_real_t  visref[],
+                          const cs_real_t  enc1[],
+                          const cs_real_t  enc2[],
+                          const cs_real_t  *tkelvi);
 
 /*----------------------------------------------------------------------------
  * Update C structures metadata after particle computations.
@@ -414,6 +436,8 @@ CS_PROCF (dplprt, DPLPRT)(cs_int_t        *p_n_particles,
  *   dnbper <-- failed particles total weight
  *   nbpdep <-- number of depositing particles
  *   dnbdep <-- depositing particles total weight
+ *   npencr <-- number of fouled particles (coal)
+ *   dnpenc <-- fouled particles (coal) total weight
  *   ...
  *----------------------------------------------------------------------------*/
 
@@ -427,6 +451,8 @@ CS_PROCF (ucdprt, UCDPRT)(const cs_lnum_t   *nbpmax,
                           const cs_real_t   *dnbper,
                           const cs_int_t    *nbpdep,
                           const cs_real_t   *dnbdep,
+                          const cs_int_t    *npencr,
+                          const cs_real_t   *dnpenc,
                           const cs_real_t    ettp[],
                           const cs_real_t    ettpa[],
                           const cs_lnum_t    itepa[],

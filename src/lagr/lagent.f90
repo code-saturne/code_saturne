@@ -221,8 +221,8 @@ if (iihmpr.eq.1) then
    ijnbp,  ijfre,  iclst,  ijuvw,  iuno,   iupt,   ivpt,   iwpt,  &
    ijprpd, ipoit,  idebt,  ijprdp, idpt,   ivdpt,                 &
    iropt,  ijprtp, itpt,   icpt,   iepsi,                         &
-   ihpt,   inuchl, imcht,  imckt,                                 &
-   ichcor, cp2ch,  diam20, rho0ch, xashch,                        &
+   ihpt,   inuchl, imwat,  imcht,  imckt,                         &
+   ichcor, cp2ch,  diam20, rho0ch, xwatch, xashch,                &
    ifrlag, iusncl, iusclb  )
 endif
 
@@ -615,13 +615,15 @@ if (iphyla.eq.2) then
     do nc = 1, iusncl(nb)
       if (ruslag(nc,nb,ihpt)  .lt.0.d0 .or.                       &
           ruslag(nc,nb,icpt)  .lt.0.d0 .or.                       &
+          ruslag(nc,nb,imwat) .lt.0.d0 .or.                       &
           ruslag(nc,nb,imcht) .lt.0.d0 .or.                       &
           ruslag(nc,nb,imckt) .lt.0.d0  ) then
         iok = iok + 1
         write(nfecra,1090)                                        &
         iphyla, nb, nc,                                           &
         ruslag(nc,nb,ihpt),  ruslag(nc,nb,icpt),                  &
-        ruslag(nc,nb,imcht), ruslag(nc,nb,imckt)
+        ruslag(nc,nb,imwat), ruslag(nc,nb,imcht),                 &
+        ruslag(nc,nb,imckt)
       endif
     enddo
   enddo
@@ -1020,6 +1022,7 @@ do ii = 1,nfrtot
           ettp(ip,jtf) = propce(iel,ipproc(itemp1)) - tkelvi
           ettp(ip,jcp) = ruslag(nc,nb,icpt)
 
+          ettp(ip,jmwat) = ruslag(nc,nb,imwat)
           ettp(ip,jmch) = ruslag(nc,nb,imcht)
           ettp(ip,jmck) = ruslag(nc,nb,imckt)
 
@@ -1027,9 +1030,10 @@ do ii = 1,nfrtot
           tepa(ip,jrd0p) = ettp(ip,jdp)
 
           icha = itepa(ip,jinch)
-          ettp(ip,jmp) = ettp(ip,jmch)                            &
-                       + ettp(ip,jmck)                            &
-             + xashch(icha) * pis6 * d3 * rho0ch(icha)
+          ettp(ip,jmp) =ettp(ip,jmch)                            &
+                        + ettp(ip,jmck)                            &
+                        + ettp(ip,jmwat)                           &
+             + xashch(icha)*pis6*d3*rho0ch(icha)
 
         endif
 
@@ -1934,6 +1938,7 @@ endif
 '@    doivent etre renseignees :                              ',/,&
 '@    Temperature   : RUSLAG(NC,NB,IHPT)  = ',E14.5            ,/,&
 '@    Cp            : RUSLAG(NC,NB,ICPT)  = ',E14.5            ,/,&
+'@    Masse d eau   : RUSLAG(NC,NB,IMWAT) = ',E14.5            ,/,&
 '@    Masse de charbon                                        ',/,&
 '@    reactif       : RUSLAG(NC,NB,IMCHT) = ',E14.5            ,/,&
 '@    Masse de coke : RUSLAG(NC,NB,IMCKT) = ',E14.5            ,/,&

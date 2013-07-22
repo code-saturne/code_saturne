@@ -143,7 +143,7 @@ double precision w1(ncelet)
 integer          npt , nv , iel, nv1, izcl
 integer          ilvx1 , ilvy1  , ilvz1  , ilpd1  , ilfv1 , ilts1
 integer          iltp1 , ildp1  , ilmp1
-integer          ilhp1 , ilmch1 , ilmck1 , ildck1
+integer          ilhp1 , ilmwat1 , ilmch1 , ilmck1 , ildck1
 double precision pis6 , concen
 
 !===============================================================================
@@ -159,6 +159,7 @@ double precision pis6 , concen
 
 ildck1 = 0
 ilmck1 = 0
+ilmwat1 = 0
 ilmch1 = 0
 
 ! Memoire
@@ -247,6 +248,7 @@ endif
 !     * Moyenne et variance de la masse
 
 !     * Moyenne et variance de la temperature
+!     * Moyenne et variance de la masse d eau
 !     * Moyenne et variance de la masse de charbon reactif
 !     * Moyenne et variance de la masse de coke
 !     * Moyenne et variance du diametre du coeur retrecissant
@@ -369,13 +371,19 @@ do npt = 1,nbpart
 
     else if ( iphyla .eq. 2 ) then
 
+!     * Moyenne et variance de la masse des particules
 !     * Moyenne et variance de la temperature
+!     * Moyenne et variance de la masse d eau
 !     * Moyenne et variance de la masse de charbon reactif
 !     * Moyenne et variance de la masse de coke
 !     * Moyenne et variance du diametre du coeur retrecissant
 
+      statis(iel,ilmp) = statis(iel,ilmp)                       &
+                         + tepa(npt,jrpoi) * ettp(npt,jmp)
       statis(iel,ilhp)  = statis(iel,ilhp)                        &
                         + tepa(npt,jrpoi) * ettp(npt,jhp)
+      statis(iel,ilmwat) = statis(iel,ilmwat)                       &
+                        + tepa(npt,jrpoi) * ettp(npt,jmwat)
       statis(iel,ilmch) = statis(iel,ilmch)                       &
                         + tepa(npt,jrpoi) * ettp(npt,jmch)
       statis(iel,ilmck) = statis(iel,ilmck)                       &
@@ -383,8 +391,12 @@ do npt = 1,nbpart
       statis(iel,ildck) = statis(iel,ildck)                       &
                         + tepa(npt,jrpoi) * tepa(npt,jrdck)
 
+     stativ(iel,ilmp) = stativ(iel,ilmp)                       &
+             + tepa(npt,jrpoi)*ettp(npt,jmp)*ettp(npt,jmp)
       stativ(iel,ilhp)  = stativ(iel,ilhp)                        &
           + tepa(npt,jrpoi)*ettp(npt,jhp)*ettp(npt,jhp)
+      stativ(iel,ilmwat) = stativ(iel,ilmwat)                       &
+          + tepa(npt,jrpoi)*ettp(npt,jmwat)*ettp(npt,jmwat)
       stativ(iel,ilmch) = stativ(iel,ilmch)                       &
           + tepa(npt,jrpoi)*ettp(npt,jmch)*ettp(npt,jmch)
       stativ(iel,ilmck) = stativ(iel,ilmck)                       &
@@ -511,18 +523,26 @@ if (nbclst.gt.0) then
 
         else if ( iphyla .eq. 2 ) then
 
+!     * Moyenne et variance de la masse
 !     * Moyenne et variance de la temperature
+!     * Moyenne et variance de la masse d eau
 !     * Moyenne et variance de la masse de charbon reactif
 !     * Moyenne et variance de la masse de coke
 !     * Moyenne et variance du diametre du coeur retrecissant
 
-          ilhp1  = ilhp  +izcl*nvlsta
-          ilmch1 = ilmch1+izcl*nvlsta
-          ilmck1 = ilmck1+izcl*nvlsta
-          ildck1 = ildck1+izcl*nvlsta
+          ilmp1   = ilmp   + izcl*nvlsta
+          ilhp1   = ilhp   + izcl*nvlsta
+          ilmwat1 = ilmwat + izcl*nvlsta
+          ilmch1  = ilmch  + izcl*nvlsta
+          ilmck1  = ilmck  + izcl*nvlsta
+          ildck1  = ildck  + izcl*nvlsta
 
+          statis(iel,ilmp1)  = statis(iel,ilmp1)                  &
+                        + tepa(npt,jrpoi) * ettp(npt,jmp)
           statis(iel,ilhp1)  = statis(iel,ilhp1)                  &
                         + tepa(npt,jrpoi) * ettp(npt,jhp)
+          statis(iel,ilmwat1) = statis(iel,ilmwat1)                 &
+                        + tepa(npt,jrpoi) * ettp(npt,jmwat)
           statis(iel,ilmch1) = statis(iel,ilmch1)                 &
                         + tepa(npt,jrpoi) * ettp(npt,jmch)
           statis(iel,ilmck1) = statis(iel,ilmck1)                 &
@@ -530,13 +550,19 @@ if (nbclst.gt.0) then
           statis(iel,ildck1) = statis(iel,ildck1)                 &
                         + tepa(npt,jrpoi) * tepa(npt,jrdck)
 
-          ilhp1  = ilhp  +izcl*(nvlsta-1)
-          ilmch1 = ilmch1+izcl*(nvlsta-1)
-          ilmck1 = ilmck1+izcl*(nvlsta-1)
-          ildck1 = ildck1+izcl*(nvlsta-1)
+          ilmp1   = ilmp   + izcl*(nvlsta-1)
+          ilhp1   = ilhp   + izcl*(nvlsta-1)
+          ilmwat1 = ilmwat + izcl*(nvlsta-1)
+          ilmch1  = ilmch  + izcl*(nvlsta-1)
+          ilmck1  = ilmck  + izcl*(nvlsta-1)
+          ildck1  = ildck  + izcl*(nvlsta-1)
 
+          stativ(iel,ilmp1)  = stativ(iel,ilmp1)                  &
+          + tepa(npt,jrpoi)*ettp(npt,jmp)*ettp(npt,jmp)
           stativ(iel,ilhp1)  = stativ(iel,ilhp1)                  &
           + tepa(npt,jrpoi)*ettp(npt,jhp)*ettp(npt,jhp)
+          stativ(iel,ilmwat1) = stativ(iel,ilmwat1)                 &
+          + tepa(npt,jrpoi)*ettp(npt,jmwat)*ettp(npt,jmwat)
           stativ(iel,ilmch1) = stativ(iel,ilmch1)                 &
           + tepa(npt,jrpoi)*ettp(npt,jmch)*ettp(npt,jmch)
           stativ(iel,ilmck1) = stativ(iel,ilmck1)                 &

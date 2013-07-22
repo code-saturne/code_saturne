@@ -124,18 +124,18 @@ double precision parbor(nfabor,nvisbr)
 
 ! Local variables
 
-integer          ifac , iel , ivf , itabvr
+integer          ifac , iel , ivf , itabvr, iencfou
 integer          ivff , iflu , icla , ii , nb, nbrcel
 double precision aa , bb , gmax , gmin
 character        chcond*16
 
-double precision, allocatable, dimension(:) :: tabvr
+double precision, allocatable, dimension(:) :: tabvr,tabvrfou
 
-integer nbpartall, nbpoutall, nbperrall, nbpdepall
+integer nbpartall, nbpoutall, nbperrall, nbpdepall, npencrall
 integer nbpresall
 
 double precision dnbparall, dnbperall, dnbpouall
-double precision dnbdepall, dnbpnwall, dnbresall
+double precision dnbdepall, dnpencall, dnbpnwall, dnbresall
 
 integer          ipass
 data             ipass /0/
@@ -185,12 +185,14 @@ nbpartall = nbpart
 nbpoutall = nbpout
 nbperrall = nbperr
 nbpdepall = nbpdep
+npencrall = npencr
 nbpresall = nbpres
 
 dnbparall = dnbpar
 dnbpouall = dnbpou
 dnbperall = dnbper
 dnbdepall = dnbdep
+dnpencall = dnpenc
 dnbpnwall = dnbpnw
 dnbresall = dnbres
 
@@ -200,12 +202,14 @@ if (irangp.ge.0) then
    call parcpt(nbpoutall)
    call parcpt(nbperrall)
    call parcpt(nbpdepall)
+   call parcpt(npencrall)
    call parcpt(nbpresall)
 
    call parsom(dnbparall)
    call parsom(dnbpouall)
    call parsom(dnbperall)
    call parsom(dnbdepall)
+   call parsom(dnpencall)
    call parsom(dnbpnwall)
    call parsom(dnbresall)
 
@@ -225,7 +229,7 @@ if (iroule.ge.1) then
   write(nfecra,1034) npkill, dnpkil
 endif
 if (iphyla.eq.2 .and. iencra.eq.1) then
-  write(nfecra,1038) npencr, dnpenc
+  write(nfecra,1038) npencrall, dnpencall
 endif
 write(nfecra,1033) nbpoutall-nbperr, (dnbpou-dnbper)
 write(nfecra,1039) nbpdepall, dnbdepall
@@ -388,6 +392,17 @@ if (iensi3.eq.1) then
 
     endif
 
+    if (iencnbbd.eq.1) then
+      allocate(tabvrfou(nfabor))
+      do ifac = 1,nfabor
+        if (parbor(ifac,iencnb).gt.seuilf) then
+          tabvrfou(ifac) = 1.d0 / parbor(ifac,iencnb)
+        else
+          tabvrfou(ifac) = 0.d0
+        endif
+      enddo
+    endif
+
     do ivf = 1, nvisbr
 
       ivff = ivf
@@ -396,11 +411,12 @@ if (iensi3.eq.1) then
        ( ncelet , nfabor , nvisbr ,                               &
          ivff   ,                                                 &
          gmin   , gmax   ,                                        &
-         parbor , tabvr  )
+         parbor , tabvr  , tabvrfou )
       write(nfecra,6010) nombrd(ivf),  gmin, gmax
     enddo
     ! Free memory
     if (allocated(tabvr)) deallocate(tabvr)
+    if (allocated(tabvrfou)) deallocate(tabvrfou)
     write(nfecra,1001)
   endif
 

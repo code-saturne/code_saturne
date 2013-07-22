@@ -42,6 +42,7 @@ subroutine lagich &
 !     INTEGRATION DES EDS POUR LE CHARBON
 
 !        - Temperature              (JHP)
+!        - Masse d eau              (JMWAT)
 !        - Masse de charbon reactif (JMCH)
 !        - Masse de coke            (JMCK)
 
@@ -136,8 +137,9 @@ double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
 double precision taup(nbpmax) , tlag(nbpmax,3) , tempct(nbpmax,2)
 double precision tsvar(nbpmax,nvp1)
-double precision skp1(nbpmax) , skp2(nbpmax) , skglob(nbpmax)
 double precision cpgd1(nbpmax), cpgd2(nbpmax), cpght(nbpmax)
+double precision skp1(nbpmax) , skp2(nbpmax) , skglob(nbpmax)
+
 
 ! Local variables
 
@@ -145,15 +147,16 @@ integer          npt , iel , icha , mode , ige
 integer          iromf
 double precision aux1 , aux2 , aux3 , aux4 , aux5 , aux6
 double precision ter1 , ter2 , ter3 , diamp2, dd2
+double precision lv, tebl, tlimit, tmini, tsat, fwatsat
 double precision tpk , tfk , skc , skdd , se , po2
 double precision ho2tf , hctp , hcotp , den , sherw
-double precision coef , mp0 , d6spi , dpis6 , d1s3 , d2s3, mckmax,mv
+double precision coef , mp0 , d6spi , dpis6 , d1s3 , d2s3, mv
 double precision gamdv1(ncharm2) , gamdv2(ncharm2)
 double precision f1mc(ncharm2) , f2mc(ncharm2)
 double precision coefe(ngazem)
 
 double precision, allocatable, dimension(:) :: tempf
-double precision, allocatable, dimension(:) :: gamhet, deltah
+double precision, allocatable, dimension(:) :: fwat, gamhet, deltah
 
 double precision precis
 parameter ( precis = 1.d-15 )
@@ -166,7 +169,7 @@ parameter ( precis = 1.d-15 )
 
 ! Allocate temporary arrays
 allocate(tempf(ncelet))
-allocate(gamhet(nbpmax) , deltah(nbpmax))
+allocate(fwat(nbpmax) , gamhet(nbpmax) , deltah(nbpmax))
 
 ! Initialize variables to avoid compiler warnings
 
@@ -180,6 +183,11 @@ d2s3  = 2.d0 / 3.d0
 ! --- Si couplage retour thermique :
 
 if ( ltsthe.eq.1 .and. nor.eq.1 ) then
+
+  ! Le couplage thermique n'est plus valable depuis l'implementation du sechage
+  write(nfecra,1001) iphyla,ltsthe
+  call csexit (1)
+
   do npt = 1,nbpart
     cpgd1(npt) = 0.d0
     cpgd2(npt) = 0.d0
@@ -218,7 +226,112 @@ else
 endif
 
 !===============================================================================
-! 4. Calcul des constantes de vitesses SPK1 et SPK2 du transfert
+! 4. Calcul de la masse d'eau qui s'evapore
+!    On suppose pour le calcul de la masse volumique du charbon actif que
+!    le sechage a lieu a volume constant
+!===============================================================================
+
+! --- Initialisation
+do npt = 1,nbpart
+  fwat(npt) = 0.d0
+enddo
+
+!      Chaleur Latente en J/kg
+lv = 2.263d+6
+!      Temperature d'ebulition de l'eau
+tebl = 100.d0 + tkelvi
+!      Temperature limite
+tlimit = 302.24d0
+!      Temperature mini (apres, la fraction massique d'eau saturante est nulle)
+tmini = tlimit*(1.d0-tlimit*rr/(lv*wmole(ih2o)))
+!      Nombre de Sherwood (fixé à 2)
+sherw=2.0d0
+
+! On prend en compte l'humidité du charbon
+do npt = 1,nbpart
+! --- Calcul de la fraction massique d'eau saturante
+  if (itepa(npt,jisor).gt.0) then
+    iel  = itepa(npt,jisor)
+    tpk = ettp(npt,jhp)
+    if (tpk.ge.tmini) then
+      if (tpk.ge.tlimit) then
+        aux1 = wmole(ih2o) / propce(iel,ipproc(immel))
+        aux2 = aux1 * exp( lv * wmole(ih2o) * (1.0d0/tebl - 1.0d0/tpk) / rr )
+      else
+        ! On linearise la fraction massique d'eau saturante entre tmini et Tlimit
+        ! En Tlimit, la fraction massique d'eau saturante est nulle
+        aux1 = wmole(ih2o) / propce(iel,ipproc(immel))
+        aux2 = aux1 * exp( lv * wmole(ih2o) * (1.0d0/tebl - 1.0d0/tlimit) / rr ) &
+               * (lv*wmole(ih2o) / (rr*tlimit**2)) * (tpk - tmini)
+      endif
+! --- Calcul du terme source d eau diffusee
+      aux3 = max(1.0d0 - aux2, precis)
+      aux4 = pi*tepa(npt,jrd0p)*diftl0*sherw*                                    &
+             log((1.0d0-propce(iel,ipproc(iym1(ih2o))))/aux3)
+    else
+      ! Le flux est nul
+      aux1 = wmole(ih2o) / propce(iel,ipproc(immel))
+      aux4 = 0.0d0
+    endif
+
+! --- Verification clipping
+    ! Limitation du flux par rapport à qte d'humidite encore presente
+    fwat(npt) = min(ettp(npt,jmwat)/dtp,aux4)
+
+    ! Limitation du flux par rapport à la température de saturation
+    ! On limite le flux de sechage pour que, à la fin d'un pas de temps,
+    ! l'enthalpie de la particule soit suffisament élevée pour que sa pression
+    ! saturante en eau soit superieure a la pression partielle d'eau dans l'air
+    ! qui l'entoure
+
+    ! Calcul de tsat, temperature saturante à la fraction partielle de l'air
+    if (propce(iel,ipproc(iym1(ih2o))) .gt. precis) then
+      tsat = 1 / (1/tebl - rr*log(propce(iel,ipproc(iym1(ih2o)))/aux1)         &
+                   /(lv * wmole(ih2o)) )
+      if (tsat .lt. tlimit) then
+        tsat = tmini + propce(iel,ipproc(iym1(ih2o))) / (aux1 *                &
+                       exp( lv*wmole(ih2o)*(1.0d0/tebl-1.0d0/tlimit)/rr) *     &
+                      (lv*wmole(ih2o)/(rr*tlimit**2)) )
+      endif
+    else
+      tsat = tmini
+    endif
+
+    ! On calcule le flux maximum d'evaporation/condensation autorise tel que T(n+1)=Tsat
+    icha = itepa(npt,jinch)
+    ! Temps caracteristique thermique
+    dd2 = ettp(npt,jdp)*ettp(npt,jdp)
+    diamp2 = xashch(icha)*tepa(npt,jrd0p)*tepa(npt,jrd0p)       &
+            +(1.d0-xashch(icha))*tepa(npt,jrdck)*tepa(npt,jrdck)
+    aux1 = tempct(npt,1)*diamp2/dd2
+    ! Flux de rayonnement
+    aux3 = pi * diamp2                                          &
+         * ( propce(iel,ipproc(ilumin))/4.d0                    &
+         - stephn*(tpk**4) )
+    ! Facteurs exponentiels
+    aux5 = dtp/aux1
+    aux6 = exp(-aux5)
+    ! Flux maximum d'evaporation/condensation
+    fwatsat =  ( ( (tpk*aux6-tsat)*ettpa(npt,jmp)*ettpa(npt,jcp) )             &
+                    / (aux1*(1.d0-aux6))                                       &
+                 + (ettpa(npt,jtf)+tkelvi)*ettpa(npt,jmp)*ettpa(npt,jcp)/aux1  &
+                 + aux3 ) / lv
+
+    ! Limitation éventuelle du flux d'evaporation/condensation
+    if (fwat(npt) .gt. 0.d0) then
+      fwatsat = max(0.d0 , fwatsat)
+      fwat(npt) = min( fwatsat , fwat(npt))
+    else
+      fwatsat = min(0.d0 , fwatsat)
+      fwat(npt) = max( fwatsat , fwat(npt))
+    endif
+
+  endif
+enddo
+
+
+!===============================================================================
+! 5. Calcul des constantes de vitesses SPK1 et SPK2 du transfert
 !    de masse par devolatilisation avec des lois d'Arrhenius
 !===============================================================================
 
@@ -227,7 +340,7 @@ endif
 do npt = 1,nbpart
   if (itepa(npt,jisor).gt.0) then
     icha = itepa(npt,jinch)
-    tpk = ettp(npt,jhp) + tkelvi
+    tpk = ettp(npt,jhp)
     aux1 = 1.d0 / (rr*tpk)
     skp1(npt) = a1ch(icha) * exp( -e1ch(icha) * aux1)
     skp2(npt) = a2ch(icha) * exp( -e2ch(icha) * aux1)
@@ -235,7 +348,7 @@ do npt = 1,nbpart
 enddo
 
 !===============================================================================
-! 5. Calcul de la masse volumique du coke
+! 6. Calcul de la masse volumique du coke
 !    On suppose pour le calcul de la masse volumique du coke que
 !    la devolatilisation a lieu a volume constant
 !===============================================================================
@@ -283,20 +396,18 @@ enddo
 
 do npt = 1,nbpart
   if (itepa(npt,jisor).gt.0) then
-
-    icha = itepa(npt,jinch)
-
-    mp0  = dpis6 * (tepa(npt,jrd0p)**3) * rho0ch(icha)
-    mv = mp0 -ettpa(npt,jmch)-xashch(icha)*mp0 -ettpa(npt,jmck)
-
     if ( ettpa(npt,jmch).ge.(1.d-3*ettpa(npt,jmp)) ) then
-       tepa(npt,jrhock)=rho0ch(icha)- d6spi/(tepa(npt,jrd0p)**3)/(1.d0-xashch(icha))*mv
+      icha = itepa(npt,jinch)
+      mp0  = dpis6 * (tepa(npt,jrd0p)**3) * rho0ch(icha)
+      ! mv represente la masse qui a quitté le grain (eau+produits de la devolatilisation)
+      mv = mp0 - ettpa(npt,jmch) - ettpa(npt,jmwat) - xashch(icha)*mp0 - ettpa(npt,jmck)
+      tepa(npt,jrhock)=rho0ch(icha)- d6spi/(tepa(npt,jrd0p)**3)/(1.d0-xashch(icha))*mv
     endif
   endif
 enddo
 
 !===============================================================================
-! 6. Calcul du diametre du coeur retrecissant
+! 7. Calcul du diametre du coeur retrecissant
 !===============================================================================
 
 do npt = 1,nbpart
@@ -314,7 +425,7 @@ do npt = 1,nbpart
 enddo
 
 !===============================================================================
-! 7. Calcul de la constante globale de reaction
+! 8. Calcul de la constante globale de reaction
 !===============================================================================
 
 ! ---  Hypothese Sherwood = 2.
@@ -327,7 +438,7 @@ do npt = 1,nbpart
 
     icha = itepa(npt,jinch)
 
-    tpk = ettp(npt,jhp) + tkelvi
+    tpk = ettp(npt,jhp)
 
 ! --- Coefficient de cinetique chimique de formation de CO
 !       en (kg.m-2.s-1.atm(-n))
@@ -349,7 +460,7 @@ do npt = 1,nbpart
 enddo
 
 !===============================================================================
-! 8. Calcul de la GAMMAhet , GAMMACH et 0.5(MO2/MC)*(HO2(Tp)-HO2(TF))
+! 9. Calcul de la GAMMAhet , GAMMACH et 0.5(MO2/MC)*(HO2(Tp)-HO2(TF))
 !===============================================================================
 
 do npt = 1,nbpart
@@ -358,7 +469,7 @@ do npt = 1,nbpart
     icha = itepa(npt,jinch)
     iel  = itepa(npt,jisor)
 
-    tpk = ettp(npt,jhp) + tkelvi
+    tpk = ettp(npt,jhp)
     tfk = ettp(npt,jtf) + tkelvi
 
 ! --- Calcul de la pression partielle en oxygene (atm)
@@ -433,7 +544,42 @@ do npt = 1,nbpart
 enddo
 
 !===============================================================================
-! 9. Integration Masse de Charbon reactif
+! 10. Integration Masse d eau
+!===============================================================================
+
+if (nor.eq.1) then
+  do npt = 1,nbpart
+    if (itepa(npt,jisor).gt.0) then
+
+      aux1 = fwat(npt)*dtp
+      ettp(npt,jmwat) = ettpa(npt,jmwat)-aux1
+
+! Clipping
+      if ( ettp(npt,jmwat).lt.precis ) then
+        ettp(npt,jmwat) = 0.d0
+      endif
+    endif
+  enddo
+
+else if (nor.eq.2 .and. ibord(npt).eq.0) then
+  do npt = 1,nbpart
+    if (itepa(npt,jisor).gt.0) then
+
+      aux1 = fwat(npt)*dtp
+      ettp(npt,jmwat) = 0.5d0 * ( ettp(npt,jmwat)                   &
+                         + ettpa(npt,jmwat)-aux1 )
+
+! Clipping
+      if ( ettp(npt,jmwat).lt.precis ) then
+        ettp(npt,jmwat) = 0.d0
+      endif
+
+    endif
+  enddo
+endif
+
+!===============================================================================
+! 11. Integration Masse de Charbon reactif
 !===============================================================================
 
 if (nor.eq.1) then
@@ -469,7 +615,7 @@ else if (nor.eq.2) then
 endif
 
 !===============================================================================
-! 10. Integration Masse de Coke
+! 12. Integration Masse de Coke
 !===============================================================================
 
 if (nor.eq.1) then
@@ -478,14 +624,14 @@ if (nor.eq.1) then
 
       icha = itepa(npt,jinch)
 
-      aux1 = -(skp1(npt) * (1.d0-y1ch(icha))      &
-             + skp2(npt) * (1.d0-y2ch(icha)))      &
+      aux1 = -(skp1(npt) * (1.d0-y1ch(icha))       &
+           + skp2(npt) * (1.d0-y2ch(icha)))      &
                        / (skp1(npt)+skp2(npt))
 
       if ( ettpa(npt,jmck).gt.precis ) then
 
         aux2 = ettpa(npt,jmck)**d1s3
-        aux3 = aux2 + d2s3 *gamhet(npt) *dtp
+        aux3 = aux2 + d2s3 *gamhet(npt) * dtp
 
         ter1 = (aux1*(ettp(npt,jmch)-ettpa(npt,jmch))*aux2-gamhet(npt)*ettpa(npt,jmck)*dtp) /aux3
 
@@ -546,7 +692,7 @@ else if (nor.eq.2) then
 endif
 
 !===============================================================================
-! 11. Integration de la temperature des grains de charbon
+! 13. Integration de la temperature des grains de charbon
 !===============================================================================
 
 if (nor.eq.1) then
@@ -562,69 +708,71 @@ if (nor.eq.1) then
 
       aux1 = tempct(npt,1)*diamp2/dd2
 
-!    Combustion heterogene
-      aux2 = ( -gamhet(npt) *(ettp(npt,jmck)**d2s3) *deltah(npt) )
+!    Combustion heterogene & sechage
+      aux2 = ( -gamhet(npt)*(ettp(npt,jmck)**d2s3)*deltah(npt) )  &
+            +( -fwat(npt)                         *lv          )
 
 !    Rayonnement
-
       aux3 = pi * diamp2                                          &
-           * ( propce(iel,ipproc(ilumin))                         &
-           - 4.d0*stephn*((ettp(npt,jhp)+tkelvi)**4) )
+           * ( propce(iel,ipproc(ilumin))/4.d0                    &
+           - stephn*((ettp(npt,jhp))**4) )
 
-      aux4 = ettpa(npt,jtf) + aux1*(aux2+aux3)
 
+      if (ettpa(npt,jmp)*ettpa(npt,jcp) .le. precis) then
+        aux4 = (ettpa(npt,jtf)+tkelvi) + aux1*(aux2+aux3)/precis
+      else
+        aux4 = (ettpa(npt,jtf)+tkelvi) + aux1*(aux2+aux3)/(ettpa(npt,jmp)*ettpa(npt,jcp))
+      endif
       aux5 = dtp/aux1
       aux6 = exp(-aux5)
-
       ter1 = ettpa(npt,jhp) * aux6
       ter2 = aux4 * (1.d0-aux6)
       ter3 = aux4 * ( -aux6+(1.d0-aux6) / aux5 )
-
       tsvar(npt,jhp) = 0.5d0 * ter1 + ter3
       ettp(npt,jhp) = ter1 + ter2
-
     endif
+
   enddo
 
 else if (nor.eq.2) then
   do npt = 1,nbpart
     if (itepa(npt,jisor).gt.0 .and. ibord(npt).eq.0) then
 
-
-      icha  = itepa(npt,jinch)
+      icha = itepa(npt,jinch)
       iel   = itepa(npt,jisor)
 
       dd2 = ettp(npt,jdp)*ettp(npt,jdp)
       diamp2 = xashch(icha)*tepa(npt,jrd0p)*tepa(npt,jrd0p)       &
-             + (1.d0-xashch(icha))*tepa(npt,jrdck)*tepa(npt,jrdck)
+              +(1.d0-xashch(icha))*tepa(npt,jrdck)*tepa(npt,jrdck)
 
       aux1 = tempct(npt,1)*diamp2/dd2
 
-!    Combustion heterogene
-      aux2 = -gamhet(npt) *(ettp(npt,jmck)**d2s3) *deltah(npt)
+!    Combustion heterogene & sechage
+      aux2 = ( -gamhet(npt)*(ettp(npt,jmck)**d2s3)*deltah(npt) )  &
+            +( -fwat(npt)                         *lv          )
 
 !    Rayonnement
-
       aux3 = pi * diamp2                                          &
-           * ( propce(iel,ipproc(ilumin))                         &
-           - 4.d0*stephn*((ettp(npt,jhp)+tkelvi)**4) )
+           * ( propce(iel,ipproc(ilumin))/4.d0                    &
+           - stephn*((ettp(npt,jhp))**4) )
 
-      aux4 = ettp(npt,jtf) + aux1*(aux2+aux3)
 
-      aux5 = dtp / aux1
+      if (ettpa(npt,jmp)*ettpa(npt,jcp) .le. precis) then
+        aux4 = (ettpa(npt,jtf)+tkelvi) + aux1*(aux2+aux3)/precis
+      else
+        aux4 = (ettpa(npt,jtf)+tkelvi) + aux1*(aux2+aux3)/(ettpa(npt,jmp)*ettpa(npt,jcp))
+      endif
+      aux5 = dtp/aux1
       aux6 = exp(-aux5)
-
       ter1 = ettpa(npt,jhp) * aux6
       ter2 = aux4 * ( 1.d0-((1.d0-aux6)/aux5) )
-
       ettp(npt,jhp) = tsvar(npt,jhp) + 0.5d0*ter1 + ter2
-
     endif
   enddo
 endif
 
 !===============================================================================
-! 12. Mise a jour du diametre du coeur retrecissant
+! 14 Mise a jour du diametre du coeur retrecissant
 !===============================================================================
 
 do npt = 1,nbpart
@@ -633,7 +781,7 @@ do npt = 1,nbpart
     if ( ettpa(npt,jmch).ge.(1.d-3*ettpa(npt,jmp)) ) then
      tepa(npt,jrdck) = tepa(npt,jrd0p)
     else
-     tepa(npt,jrdck) =                                             &
+     tepa(npt,jrdck) =                                            &
              ( (d6spi / ( 1.d0-xashch(icha)) )                    &
               *( ettp(npt,jmch)/rho0ch(icha)                      &
               +ettp(npt,jmck)/tepa(npt,jrhock)))**d1s3
@@ -642,7 +790,7 @@ do npt = 1,nbpart
 enddo
 
 !===============================================================================
-! 13. Calcul du diametre des grains de charbon
+! 15. Calcul du diametre des grains de charbon
 !===============================================================================
 
 do npt = 1,nbpart
@@ -655,14 +803,14 @@ do npt = 1,nbpart
 enddo
 
 !===============================================================================
-! 14. Calcul de la masse des grains de charbon
+! 16. Calcul de la masse des grains de charbon
 !===============================================================================
 
 do npt = 1,nbpart
   if (itepa(npt,jisor).gt.0) then
     icha = itepa(npt,jinch)
     mp0  = dpis6 * (tepa(npt,jrd0p)**3) * rho0ch(icha)
-    ettp(npt,jmp) = ettp(npt,jmch) + ettp(npt,jmck)               &
+    ettp(npt,jmp) = ettp(npt,jmch) + ettp(npt,jmck) + ettp(npt,jmwat)          &
                       + xashch(icha)*mp0
   endif
 enddo
@@ -700,6 +848,29 @@ deallocate(gamhet, deltah)
 '@                                                            ',/,&
 '@  Verifier la valeur de IPHYLA dans la subroutine USLAG1 et ',/,&
 '@  verifier la valeur de IPPMOD dans la subroutine USPPMO.   ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+1001 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''EXECUTION DU MODULE LAGRANGIEN   ',/,&
+'@    =========                                               ',/,&
+'@    LE TRANSPORT LAGRANGIEN DE PARTICULES DE CHARBON        ',/,&
+'@      EST ACTIVE (LAGICH) AVEC COUPLAGE RETOUR THERMIQUE    ',/,&
+'@                                                            ',/,&
+'@       IPHYLA = ', I10                                       ,/,&
+'@       LTSTHE = ', I10                                       ,/,&
+'@                                                            ',/,&
+'@  Le transport Lagrangien de particule de charbon ne peut   ',/,&
+'@   etre couple avec la phase Eulerienne depuis              ',/,&
+'@   l''introduction des termes de sechage au moins           ',/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@  Verifier la valeur de LTSTHE dans la subroutine USLAG1 et ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

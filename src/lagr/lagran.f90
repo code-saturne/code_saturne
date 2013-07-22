@@ -191,6 +191,7 @@ module lagran
   !   Charbon
   !   -------
   !    JHP          : TEMPERATURE DES GRAINS DE CHARBON
+  !    JMWAT        : MASSE D EAU
   !    JMCH         : MASSE DE CHARBON REACTIF
   !    JMCK         : MASSE DE COKE
 
@@ -198,7 +199,7 @@ module lagran
                              jup , jvp , jwp ,                               &
                              juf , jvf , jwf ,                               &
                              jmp , jdp , jtp , jtf , jcp ,                   &
-                             jhp , jmch, jmck, jtaux,                        &
+                             jhp , jmwat, jmch, jmck, jtaux,                 &
                              jvls(nusvar)
 
   !   Tableau TEPA
@@ -314,6 +315,7 @@ module lagran
   !     IEPSI : Emissivite des particules
   !     IROPT : Masse volumique
   !     IHPT  : Temperature
+  !     IMWAT : Masse d eau dans le charbon
   !     IMCHT : Masse de charbon reactif
   !     IMCKT : Masse de coke
   !     IDCKT : Diametre du coeur retrecissant
@@ -321,7 +323,7 @@ module lagran
   integer, save ::           iuno, iupt, ivpt, iwpt,                         &
                              itpt, idpt, ivdpt, iropt,                       &
                              icpt, ipoit, idebt, iepsi,                      &
-                             ihpt, imcht, imckt, idckt
+                             ihpt, imwat, imcht, imckt, idckt
 
   !=============================================================================
   ! 8. Statistiques
@@ -339,6 +341,7 @@ module lagran
   !     ILMP              : Masse
 
   !     ILHP              : Temperature
+  !     ILMWAT            : Masse d eau
   !     ILMCH             : Masse de charbon reactif
   !     ILMCK             : Masse de coke
   !     ILDCK             : Diametre du coeur retrecissant
@@ -348,8 +351,8 @@ module lagran
   integer, save ::           ilvx  , ilvy  , ilvz  ,                         &
                              ilpd  , ilfv  , ilts  ,                         &
                              iltp  , ildp  , ilmp  ,                         &
-                             ilhp  , ilmch , ilmck , ildck ,                 &
-                             ilvu(nussta)
+                             ilhp  , ilmwat, ilmch ,                         &
+                             ilmck , ildck , ilvu(nussta)
 
   integer, save ::           iactfv, iactvx, iactvy, iactvz, iactts
 
@@ -544,10 +547,12 @@ module lagran
   !      IMOYBR : Type de moyenne applicable pour affichage et
   !               post-procesing
 
-  integer, save ::           nusbor , nstbor ,                               &
-                             npstf  , npstft ,                               &
-                             inbrbd , iflmbd , iangbd , ivitbd , iencbd ,    &
-                             inbr   , iflm   , iang   , ivit   , ienc   ,    &
+  integer, save ::           nusbor   , nstbor   ,                         &
+                             npstf    , npstft   ,                         &
+                             inbrbd   , iflmbd   , iangbd   , ivitbd   ,   &
+                             iencnbbd , iencmabd , iencdibd , iencckbd ,   &
+                             inbr     , iflm     , iang     , ivit     ,   &
+                             iencnb   , iencma   , iencdi   , iencck   ,   &
                              iusb(nusbrd)    , imoybr(nusbrd+10)
 
   double precision, save ::  tstatp , seuilf
@@ -577,7 +582,8 @@ module lagran
 
   integer, save ::           ivisv1 , ivisv2 , ivistp ,                      &
                              ivisdm , iviste , ivismp ,                      &
-                             ivisch , ivisck , ivisdk
+                             iviswat, ivisch , ivisck ,                      &
+                             ivisdk
 
   !=============================================================================
 
@@ -629,6 +635,7 @@ contains
       endif
     else if ( iphyla .eq. 2 ) then
       ruslag(ii,jj,ihpt)   = -grand
+      ruslag(ii,jj,imwat)  = -grand
       ruslag(ii,jj,imcht)  = -grand
       ruslag(ii,jj,imckt)  = -grand
       ruslag(ii,jj,icpt)   = -grand
@@ -680,6 +687,7 @@ contains
       endif
     else if (iphyla .eq. 2) then
       r_cz_params(ihpt)  = -grand
+      r_cz_params(imwat) = -grand
       r_cz_params(imcht) = -grand
       r_cz_params(imckt) = -grand
       r_cz_params(icpt)  = -grand

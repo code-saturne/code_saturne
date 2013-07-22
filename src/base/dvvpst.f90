@@ -728,7 +728,18 @@ if (numtyp.eq.-2) then
         name80 = nombrd(iusb(ivarl-iii))
       endif
 
-      if (imoybr(ivarl).eq.2) then
+      if (imoybr(ivarl).eq.3) then
+
+        do iloc = 1, nfbrps
+          ifac = lstfbr(iloc)
+          if (statfb(ifac,iencnb).gt.seuilf) then
+            trafbr(iloc) = statfb(ifac,ivarl)/statfb(ifac,iencnb)
+          else
+            trafbr(iloc) = 0.d0
+          endif
+        enddo
+
+      else if (imoybr(ivarl).eq.2) then
 
         do iloc = 1, nfbrps
           ifac = lstfbr(iloc)

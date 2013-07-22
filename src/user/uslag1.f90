@@ -178,7 +178,8 @@ if (iphyla.eq.2) then
   !        = 1 fouling
 
   ! * In uslag2.f90, the boundary on which the fouling can occur must be given
-  ! * Post-processing:  iensi3 = 1 and iencbd = 1 (10.2)
+  ! * Post-processing:  iensi3 = 1 and
+  ! *                   iencnbbd = 1 / iencmabd = 1 / iencdibd = 1 /iencckbd = 1 (10.2)
 
   iencra = 0
 
@@ -403,29 +404,41 @@ if (istala.eq.1) then
   else if (iphyla.eq.2) then
 
     ! 3) Pulverized coal (iphyla = 2) :
+    !      Mean and variance of the mass
     !      Mean and variance of the temperature
+    !      Mean and variance of the water mass
     !      Mean and variance of the mass of reactive coal
     !      Mean and variance of the mass of coke
     !      Mean and variance of the diameter of the shrinking core
 
     ipv  = ipv  + 1
-    nomlag(ipv) = 'MoTempPt'
-    nomlav(ipv) = 'VaTempPt'
+    nomlag(ipv) = 'Part_mass'
+    nomlav(ipv) = 'var_Part_mass'
     ihslag(ipv)  = 2
 
     ipv  = ipv  + 1
-    nomlag(ipv) = 'MoMchPt'
-    nomlav(ipv) = 'VaMchPt'
+    nomlag(ipv) = 'Part_temperature'
+    nomlav(ipv) = 'var_Part_temperature'
     ihslag(ipv)  = 2
 
     ipv  = ipv  + 1
-    nomlag(ipv) = 'MoMcokPt'
-    nomlav(ipv) = 'VaMcokPt'
+    nomlag(ipv) = 'Part_wat_mass'
+    nomlav(ipv) = 'var_Part_wat_mass'
     ihslag(ipv)  = 2
 
     ipv  = ipv  + 1
-    nomlag(ipv) = 'MoDckPt'
-    nomlav(ipv) = 'VaDckPt'
+    nomlag(ipv) = 'Part_ch_mass'
+    nomlav(ipv) = 'var_Part_ch_mass'
+    ihslag(ipv)  = 2
+
+    ipv  = ipv  + 1
+    nomlag(ipv) = 'Part_ck_mass'
+    nomlav(ipv) = 'var_Part_ck_mass'
+    ihslag(ipv)  = 2
+
+    ipv  = ipv  + 1
+    nomlag(ipv) = 'Part_shrink_core_diam'
+    nomlav(ipv) = 'var_Part_shrink_core_diam'
     ihslag(ipv)  = 2
 
   endif
@@ -670,6 +683,9 @@ if (iphyla.eq.2) then
   ! coal: diameter of the shrinking core
   ivisdk  = 0
 
+  ! coal: mass of water
+  iviswat  = 0
+
   ! coal: mass of reactive coal
   ivisch  = 0
 
@@ -739,10 +755,17 @@ iangbd = 0
 ! (default off: 0 ; on: 1)
 ivitbd = 0
 
-! Mass of fouled coal particles
 ! (default off: 0 ; on: 1)
- if (iphyla.eq.2 .and. iencra.eq.1) iencbd = 0
-
+ if (iphyla.eq.2 .and. iencra.eq.1) then
+   ! Number of particle/boundary interactions with fouling
+   iencnbbd = 0
+   ! Mass of fouled coal particles
+   iencmabd = 0
+   ! Diameter of fouled coal particles
+   iencdibd = 0
+   ! Coke fraction of fouled coal particles
+   iencckbd = 0
+ endif
 ! Additional user information to be recorded
 ! ------------------------------------------
 ! (for instance, erosion rate, temperature..)
@@ -773,6 +796,11 @@ nusbor = 0
 !     statistic is divided by the number of recorded particle/boundary
 !     interactions (in terms of statistical weight) in parbor(nfabor,inbr)
 !     To use this average, inbrbd must be set to 1.
+!   - if imoybr(iusb(ii)) = 3 -> (coal fouling only) a particle average
+!     is applied, i.e. the statistic is divided by the number of recorded
+!     particle/boundary interactions with fouling (in terms of statistical
+!     weight) in parbor(nfabor,inbr), To use this average, iencnbbd must be
+!     set to 1.
 ! * The back-ups in the restart file are performed without applying
 !   this average.
 ! * The average is applied if the number of interactions (in statistical
