@@ -1,3 +1,18 @@
+Release 2.0.8 (next release)
+============================
+
+Changes:
+--------
+
+- Update SLURM template for EDF ivanoe cluster.
+
+Bug fixes:
+----------
+
+- Fix handling of batch queue list in GUI.
+
+
+--------
 Release 2.0.7 (16 Apr 2013)
 ===========================
 

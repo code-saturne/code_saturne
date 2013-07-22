@@ -970,6 +970,27 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             os.chdir(saved_path)
 
 
+    def getCommandOutput(self, cmd):
+        """
+        Run a command and return it's standard output.
+        """
+        import subprocess
+        p = subprocess.Popen(cmd,
+                             shell=True,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        lines = []
+        while True:
+            l = p.stdout.readline()
+            lines.append(l.strip())
+            if len(l) == 0 and p.poll() != None:
+                break
+        output = p.communicate()
+
+        if p.returncode == 0:
+            return lines
+
+
     def getClassList(self):
         """
         Layout of the second part of this page.

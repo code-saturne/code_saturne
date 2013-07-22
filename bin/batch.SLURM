@@ -4,7 +4,7 @@
 #
 #SBATCH --ntasks=2
 #SBATCH --time=0:30:00
-#SBATCH --partition=compute
+#SBATCH --partition=par
 #SBATCH --exclusive
 #SBATCH --output nameandcaseo.%j 
 #SBATCH --error nameandcasee.%j 
