@@ -232,13 +232,13 @@ class Package:
 
             cmake = 'cmake'
             if self.install_dir is not None:
-                cmake += ' -D CMAKE_INSTALL_PREFIX=' + self.install_dir
+                cmake += ' -DCMAKE_INSTALL_PREFIX=' + self.install_dir
             cmake += ' ' + self.config_opts
 
             # Add compilers
-            if self.cxx is not None: cmake += ' -D CMAKE_CXX_COMPILER=\"' + self.cc + '\"'
-            if self.cc is not None: cmake += ' -D CMAKE_C_COMPILER=\"' + self.cc + '\"'
-            if self.fc is not None: cmake += ' -D CMAKE_Fortran_COMPILER=\"' + self.fc + '\"'
+            if self.cxx is not None: cmake += ' -DCMAKE_CXX_COMPILER=\"' + self.cc + '\"'
+            if self.cc is not None: cmake += ' -DCMAKE_C_COMPILER=\"' + self.cc + '\"'
+            if self.fc is not None: cmake += ' -DCMAKE_Fortran_COMPILER=\"' + self.fc + '\"'
 
             cmake += ' ' + self.source_dir
 
