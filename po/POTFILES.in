@@ -42,6 +42,7 @@ preprocessor/util/ecs_timer.c
 src/alge/cs_benchmark.c
 src/alge/cs_blas.c
 src/alge/cs_gradient.c
+src/alge/cs_gradient_perio.c
 src/alge/cs_grid.c
 src/alge/cs_matrix.c
 src/alge/cs_matrix_util.c

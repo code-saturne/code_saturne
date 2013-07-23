@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2013-07-12 17:43+0200\n"
+"POT-Creation-Date: 2013-07-23 14:35+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -2974,22 +2974,22 @@ msgstr ""
 
 #, c-format
 msgid ""
-" %s; variable: %2d; converged in %d sweeps\n"
+" %s; variable: %s; converged in %d sweeps\n"
 " %*s  normed residual: %11.4e; norm: %11.4e\n"
 msgstr ""
-" %s; variable : %2d; convergée en %d itération(s)\n"
+" %s; variable : %s; convergée en %d itération(s)\n"
 " %*s  résidu normé : %11.4e; norme : %11.4e\n"
 
 #, c-format
 msgid ""
 " Warning:\n"
 " --------\n"
-"   %s; variable: %2d; sweeps: %d\n"
+"   %s; variable: %s; sweeps: %d\n"
 "   %*s  normed residual: %11.4e; norm: %11.4e\n"
 msgstr ""
 " Attention :\n"
 " ---------\n"
-"   %s; variable: %2d; itérations : %d\n"
+"   %s; variable: %s; itérations : %d\n"
 "   %*s  résidu normé : %11.4e; norme : %11.4e\n"
 
 #, c-format
@@ -3001,8 +3001,8 @@ msgstr ""
 "   facteur minimum = %14.5e ; facteur maximum = %14.5e\n"
 
 #, c-format
-msgid " %s: isweep = %d, residue norm: %e, norm: %e, var_num = %d\n"
-msgstr " %s: isweep = %d, norme du résidu : %e, norme : %e, num_var = %d\n"
+msgid " %s: isweep = %d, residue norm: %e, norm: %e, var: %s\n"
+msgstr " %s: isweep = %d, norme du résidu : %e, norme : %e, var = %s\n"
 
 #, c-format
 msgid ""
@@ -8226,6 +8226,10 @@ msgid ""
 msgstr ""
 
 #, c-format
+msgid "Coal viscosity calculation impossible, tmp = %e is < 0.\n"
+msgstr ""
+
+#, c-format
 msgid " Boundary condition %d not recognized.\n"
 msgstr "La condition limite %d n'est pas reconnue.\n"
 
@@ -9613,7 +9617,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"The algorithm selection indicator for the cell centre of gravity "
+"The algorithm selection indicator for the cell center of gravity "
 "computation\n"
 "can take the following values:\n"
 "  0: computation based on the face centres and surfaces\n"
@@ -9624,20 +9628,6 @@ msgstr ""
 "des cellules peut prendre les valeurs suivantes :\n"
 "  0 : calcul basé sur les centres et surfaces des faces\n"
 "  1 : calcul basé sur les sommets\n"
-"et non %d."
-
-#, c-format
-msgid ""
-"The option selection indicator for the cocg computation\n"
-"for vector gradients can take the following values:\n"
-"  0: do not compute cocg dimensionless matrices\n"
-"  1: compute cocg matrices\n"
-"and not %d."
-msgstr ""
-"L'indicateur de choix de calcul de cocg pour les gradients\n"
-"de vecteurs peut prendre les valeurs suivantes :\n"
-"  0: ne pas calculer les matrices adimensionnelles cocg\n"
-"  1: calculer les matrices adimensionnelles cocg\n"
 "et non %d."
 
 #, c-format
@@ -10228,3 +10218,16 @@ msgstr ""
 "    min local :                     %12.3f\n"
 "    max local :                     %12.3f\n"
 "    moyenne :                       %12.3f\n"
+
+#~ msgid ""
+#~ "The option selection indicator for the cocg computation\n"
+#~ "for vector gradients can take the following values:\n"
+#~ "  0: do not compute cocg dimensionless matrices\n"
+#~ "  1: compute cocg matrices\n"
+#~ "and not %d."
+#~ msgstr ""
+#~ "L'indicateur de choix de calcul de cocg pour les gradients\n"
+#~ "de vecteurs peut prendre les valeurs suivantes :\n"
+#~ "  0: ne pas calculer les matrices adimensionnelles cocg\n"
+#~ "  1: calculer les matrices adimensionnelles cocg\n"
+#~ "et non %d."
