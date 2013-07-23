@@ -1633,21 +1633,14 @@ endif
 if (iperot.gt.0) then
   if (itytur.eq.3) then
     write(nfecra,5009)iperio,iturb
-    !            IOK = IOK + 1
   endif
 endif
 
-! --- periodicite de rotation douteuse avec ordre 2 vitesse
-if (iperot.gt.0) then
-  if ((abs(thetav(iu)-0.5d0).lt.1.d-3).or.                   &
-      (abs(thetav(iv)-0.5d0).lt.1.d-3).or.                   &
-      (abs(thetav(iw)-0.5d0).lt.1.d-3)) then
-    write(nfecra,5010)iperio,                                &
-         thetav(iu),thetav(iv),thetav(iw)
-    !            IOK = IOK + 1
-  endif
+! --- rotational periodicity forbidden with (ivelco = 0)
+if (iperot.gt.0 .and. ivelco.eq. 0) then
+  write(nfecra,5010)
+  iok = iok + 1
 endif
-
 
 !===============================================================================
 ! 5. TABLEAUX DE parall : formats 6000 (limitations)
@@ -4003,10 +3996,7 @@ endif
 '@',                                                            /,&
 '@  Le calcul ne peut etre execute.',                           /,&
 '@',                                                            /,&
-'@  La variable COMMANDE_PERIO a ete renseignee dans le',       /,&
-'@    lanceur (la periodicite a ete activee, ce qui se traduit',/,&
-'@    par IPERIO = ', i10,   ')',                               /,&
-'@    et certaines periodicites sont de rotation.',             /,&
+'@  Au moins une periodicite de rotation a ete definie.',       /,&
 '@  L''indicateur IPUCOU a ete positionne a', i10,              /,&
 '@    dans l''interface ou usipgl (couplage renforce pour',     /,&
 '@    IPUCOU=1).',                                              /,&
@@ -4026,9 +4016,7 @@ endif
 '@',                                                            /,&
 '@  Le calcul ne sera pas execute.',                            /,&
 '@',                                                            /,&
-'@  La variable COMMANDE_PERIO a ete renseignee dans le',       /,&
-'@    lanceur (la periodicite a ete activee, ce qui se traduit',/,&
-'@    par IPERIO = ', i10,   ').',                              /,&
+'@  Au moins une periodicite a ete definie.',                   /,&
 '@  Les parametres de calcul specifies necessitent le calcul',  /,&
 '@    la distance a la paroi (Rij-eps LRR avec echo de paroi,', /,&
 '@    LES avec amortissement de van Driest ou k-omega SST).',   /,&
@@ -4052,10 +4040,7 @@ endif
 '@',                                                            /,&
 '@  Le calcul ne peut etre execute.',                           /,&
 '@',                                                            /,&
-'@  La variable COMMANDE_PERIO a ete renseignee dans le',       /,&
-'@    lanceur (la periodicite a ete activee, ce qui se traduit',/,&
-'@    par IPERIO = ', i10,   ')',                               /,&
-'@    et certaines periodicites sont de rotation.',             /,&
+'@  Au moins une periodicite de rotation a ete definie.',       /,&
 '@  L''indicateur IIRAYO a ete positionne a', i10,              /,&
 '@    dans l''interface ou usray1.',                            /,&
 '@',                                                            /,&
@@ -4070,10 +4055,7 @@ endif
 '@    DES DEFAUTS PEUVENT SE RENCONTRER LORS DE L''UTILISATION',/,&
 '@      DE LA PERIODICITE DE ROTATION EN RIJ-EPSILON.',         /,&
 '@',                                                            /,&
-'@  La variable COMMANDE_PERIO a ete renseignee dans le',       /,&
-'@    lanceur (la periodicite a ete activee, ce qui se traduit',/,&
-'@    par IPERIO = ', i10,   ')',                               /,&
-'@    et certaines periodicites sont de rotation.',             /,&
+'@  Au moins une periodicite de rotation a ete definie.',       /,&
 '@  L''indicateur ITURB a ete positionne a', i10,               /,&
 '@',                                                            /,&
 '@  Le calcul peut etre execute.',                              /,&
@@ -4089,32 +4071,18 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /,&
-'@ @@ ATTENTION :       A L''ENTREE DES DONNEES',               /,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
 '@    =========',                                               /,&
-'@    DES DEFAUTS PEUVENT SE RENCONTRER LORS DE L''UTILISATION',/,&
-'@      DE LA PERIODICITE DE ROTATION AVEC UN SCHEMA D''ORDRE', /,&
-'@      DEUX EN TEMPS POUR LA VITESSE.',                        /,&
+'@    La periodicite de rotation n''est pas compatible avec la',/,&
+'@      resolution non couplee des composantes de vitesse',     /,&
+'@      (IVELCO = 0)',                                          /,&
 '@',                                                            /,&
-'@  La variable COMMANDE_PERIO a ete renseignee dans le',       /,&
-'@    lanceur (la periodicite a ete activee, ce qui se traduit',/,&
-'@    par IPERIO = ', i10,   ')',                               /,&
-'@    et certaines periodicites sont de rotation.',             /,&
-'@  Les indicateurs THETAV des trois composantes Ux, Uy, Uz',   /,&
-'@    de la vitesse',                                           /,&
-'@    ont ete positionnes (dans usipsu ou par defaut suite aux',/,&
-'@    options de calcul selectionnees) aux valeurs suivantes :',/,&
-'@    THETAV(IU)  THETAV(IV)  THETAV(IW)',                      /,&
-'@        ',e14.5,     '     ', e14.5,'     ', e14.5,           /,&
+'@  Le calcul ne sera pas execute.',                            /,&
 '@',                                                            /,&
-'@  Le calcul peut etre execute.',                              /,&
-'@    Les defauts eventuels evoques proviennent de la prise en',/,&
-'@    compte de la rotation du tenseur gradient de vitesse.',   /,&
-'@    En effet, on met en oeuvre une methode explicite qui est',/,&
-'@    susceptible de faire chuter l''ordre du schema en temps.',/,&
+'@  Utiliser IVELCO = 1.',                                      /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
-
  6002 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -6631,16 +6599,13 @@ endif
 '@',                                                            /,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
-'@    ANGULAR PERIODICITE IS NOT COMPATIBLE WITH THE',          /,&
+'@    ROTATIONAL PERIODICITY IS NOT COMPATIBLE WITH THE',       /,&
 '@    ENHANCED PRESSSURE-VELOCITY COUPLING  or ALE METHOD',     /,&
 '@      IN THE CURRENT VERSION',                                /,&
 '@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
+'@  The calculation CAN NOT run.',                              /,&
 '@',                                                            /,&
-'@  variable COMMANDE_PERIO was defined in the run-case script',/,&
-'@    (periodicity was activated which results in :',           /,&
-'@        IPERIO = ', i10,   ')',                               /,&
-'@    and some peridic boundaries involve rotation.',           /,&
+'@  At least one rotational periodicity has been defined',      /,&
 '@  The flag IPUCOU is defined as',  i10,                       /,&
 '@    (enhanced coupling for IPUCOU=1).',                       /,&
 '@  The ALE fag  IALE is defined as',  i10,                     /,&
@@ -6677,9 +6642,7 @@ endif
 '@',                                                            /,&
 '@  Computation CAN NOT run',                                   /,&
 '@',                                                            /,&
-'@  variable COMMANDE_PERIO was defined in the run-case script',/,&
-'@    (periodicity was activated which results in :',           /,&
-'@        IPERIO = ', i10,   ')',                               /,&
+'@  At least one periodicity has been defined',                 /,&
 '@  the parameters specified need the calculation of the',      /,&
 '@  distance to the wall (Rij-eps LRR with wall echo term,   ', /,&
 '@     van Driest damping   or k-omega SST).',                  /,&
@@ -6691,25 +6654,6 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
-! 5007 format(
-!     &'@',                                                            /,
-!     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
-!     &'@',                                                            /,
-!     &'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,
-!     &'@    =========',                                               /,
-!     &'@    PERIODICITY IS NOT COMPATIBLE WITH RADIATIVE HEAT',       /,
-!     &'@      TRANSFER IN SEMI TRANSPARENT MEDIA',                    /,
-!     &'@      (in the current version)',                              /,
-!     &'@',                                                            /,
-!     &'@   The calculation could NOT run.',                           /,
-!     &'@',                                                            /,
-!     &'@  Flag  IPERIO is equl to', i10,                              /,
-!     &'@    (periodicity actived if IPERIO=1).',                      /,
-!     &'@  Flag IIRAYO(',i10,') is equal to', i10,                     /,
-!     &'@    in usray1.',                                              /,
-!     &'@',                                                            /,
-!     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
-!     &'@',                                                            /)
  5008 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -6722,9 +6666,7 @@ endif
 '@',                                                            /,&
 '@   The calculation could NOT run.',                           /,&
 '@',                                                            /,&
-'@ variable COMMANDE_PERIO was activated in the runcase script',/,&
-'@  Flag  IPERIO is equal to', i10,                             /,&
-'@              (periodicity actived if IPERIO=1).',            /,&
+'@  At least one rotational periodicity has been defined',      /,&
 '@  Flag IIRAYO is equal to', i10,                              /,&
 '@    in usray1.',                                              /,&
 '@',                                                            /,&
@@ -6738,19 +6680,16 @@ endif
 '@ @@   WARNING :      WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
 '@    DEFECTS CAN APPEAR WHEN USING A COMBINATION OF',/,          &
-'@     ANGULAR PERIODICITE (ROTATION) AND RSTM RIJ-EPSILON.',   /,&
+'@     ANGULAR PERIODICITY (ROTATION) AND RSTM RIJ-EPSILON.',   /,&
 '@',                                                            /,&
-'@   COMMANDE_PERIO was defined in the run-case script',        /,&
+'@  At least one rotational periodicity has been defined',      /,&
+'@  Flag for turb ITURB is = ', i10,                            /,&
 '@',                                                            /,&
-'@    and IPERIO = ', i10,   ')',                               /,&
-'@    and some periodic boundaries involve rotation',           /,&
-'@      Flag for turb ITURB is = ', i10,                        /,&
+'@  Job can run.',                                              /,&
 '@',                                                            /,&
-'@    Job can run.',                                            /,&
-'@',                                                            /,&
-'@    The defects are related to the turbulent transport terms',/,&
-'@    in the Re stress equations (equivalent to an anisotropic',/,&
-'@    diffusion tensor), but these terms are generaly small',   /,&
+'@  The defects are related to the turbulent transport terms',  /,&
+'@  in the Re stress equations (equivalent to an anisotropic',  /,&
+'@  diffusion tensor), but these terms are generaly small',     /,&
 '@',                                                            /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -6759,47 +6698,14 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /,&
-'@ @@   WARNING :      WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@',                                                            /,&
-'@   DEFECTS CAN APPEAR WHEN USING A COMBINATION OF',           /,&
-'@     ANGULAR PERIODICITE (ROTATION) AND SECOND ORDER SCHEME', /,&
-'@     IN TIME FOR VELOCITY',                                   /,&
-'@',                                                            /,&
-'@   COMMANDE_PERIO was defined in the run-case script',        /,&
-'@',                                                            /,&
-'@    and IPERIO = ', i10,   ')',                               /,&
-'@  Flags  THETAV for 3 velocity components      Ux, Uy, Uz',   /,&
-'@    of velocity',                                             /,&
-'@    are selected',                                            /,&
-'@    with the following values :',                             /,&
-'@    THETAV(IU)  THETAV(IV)  THETAV(IW)',                      /,&
-'@        ',e14.5,     '     ', e14.5,'     ', e14.5,           /,&
-'@',                                                            /,&
-'@  Job can run.',                                              /,&
-'@     defects are due to the computation of the velocity',     /,&
-'@    gradient tensor at rotation perodicity boundaries',       /,&
-'@    This uses an explicit approach which reduces the order',  /,&
-'@    of the time discretization scheme',                       /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
-
-
- 6004 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
-'@     PARALLEL COMPUTING AND MUTIGRID SOLVER',                 /,&
-'@                OR NOT COMPATIBLE IN THE CURRENT VERSION',    /,&
+'@    Rotational periodicity is not compatible with the',       /,&
+'@    uncoupled velocity components coupling (IVELCO = 0)',     /,&
 '@',                                                            /,&
 '@   The calculation could NOT run.',                           /,&
 '@',                                                            /,&
-'@   The present CPU has rank', i10,                            /,&
-'@  Flag IMGR  is set to       1',                              /,&
-'@    for at least one variable',                               /,&
+'@   Use IVELCO = 1.',                                          /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -6848,7 +6754,7 @@ endif
 '@',                                                            /,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
-'@    NOMBRE D''ITERATIONS D''INITIALISATION DU FLUIDE EN ALE', /,&
+'@    NUMBER OF ITERATIONS FOR FLUID INITIALZATION WITH ALE',   /,&
 '@',                                                            /,&
 '@  NALINF MUST BE A POSITIVE INTEGER',                         /,&
 '@   IT HAS VALUE', i10,                                        /,&
@@ -6904,7 +6810,7 @@ endif
 '@',                                                            /,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
-'@    PRECISION DU COUPLAGE IMPLICITE EN ALE',                  /,&
+'@    COUPLING PRECISION FOR ALE',                              /,&
 '@',                                                            /,&
 '@  EPALIM MUST BE A REAL NUMBER,  STRICTLY  POSITIVE',         /,&
 '@   IT HAS VALUE', e14.5,                                      /,&

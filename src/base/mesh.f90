@@ -71,6 +71,9 @@ module mesh
   !> list of cells adjacent to boundary faces
   integer, dimension(:), pointer :: icelbr
 
+  !> symmetry marker (0 to cancel mass flux)
+  integer, dimension(:), pointer :: isympa
+
   !> cell centers
   double precision, dimension(:,:), pointer :: xyzcen
 

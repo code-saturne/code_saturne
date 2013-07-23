@@ -99,12 +99,329 @@ static int cs_glob_mesh_quantities_cell_cen = 0;
 /* Choice of the option for computing cocg (iterative or Least square method)
    or not */
 
-static int cs_glob_mesh_quantities_compute_cocg_it = 0;
-static int cs_glob_mesh_quantities_compute_cocg_lsq = 0;
+static bool _compute_cocg_s_it = false;
+static bool _compute_cocg_s_lsq = false;
+static bool _compute_cocg_it = false;
+static bool _compute_cocg_lsq = false;
+
+/* Number of computation updates */
+
+static int _n_computations = 0;
 
 /*=============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Compute 3x3 matrix cocg for the scalar gradient iterative algorithm
+ *
+ * parameters:
+ *   m    <--  mesh
+ *   fvq  <->  mesh quantities
+ *----------------------------------------------------------------------------*/
+
+static void
+_compute_cell_cocg_s_it(const cs_mesh_t      *m,
+                        cs_mesh_quantities_t *fvq)
+{
+  const int n_cells = m->n_cells;
+  const int n_cells_ext = m->n_cells_with_ghosts;
+  const int n_i_groups = m->i_face_numbering->n_groups;
+  const int n_i_threads = m->i_face_numbering->n_threads;
+  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
+
+  const cs_lnum_2_t *restrict i_face_cells
+    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+
+  const cs_real_t *restrict cell_vol = fvq->cell_vol;
+  const cs_real_3_t *restrict i_face_normal
+    = (const cs_real_3_t *restrict)fvq->i_face_normal;
+  const cs_real_3_t *restrict dofij
+    = (const cs_real_3_t *restrict)fvq->dofij;
+
+  cs_real_33_t   *restrict cocgb = fvq->cocgb_s_it;
+  cs_real_33_t   *restrict cocg = fvq->cocg_s_it;
+
+  cs_lnum_t  cell_id, face_id, ii, jj, ll, mm;
+  int        g_id, t_id;
+  cs_real_t  a11, a12, a13, a21, a22, a23, a31, a32, a33;
+  cs_real_t  cocg11, cocg12, cocg13, cocg21, cocg22, cocg23;
+  cs_real_t  cocg31, cocg32, cocg33;
+  cs_real_t  det_inv;
+  cs_real_4_t  fctb;
+
+  if (cocg == NULL) {
+    BFT_MALLOC(cocgb, m->n_b_cells, cs_real_33_t);
+    BFT_MALLOC(cocg, n_cells_ext, cs_real_33_t);
+    fvq->cocgb_s_it = cocgb;
+    fvq->cocg_s_it = cocg;
+  }
+
+  /* Compute cocg */
+
+# pragma omp parallel for
+  for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+    cocg[cell_id][0][0] = cell_vol[cell_id];
+    cocg[cell_id][0][1] = 0.0;
+    cocg[cell_id][0][2] = 0.0;
+    cocg[cell_id][1][0] = 0.0;
+    cocg[cell_id][1][1] = cell_vol[cell_id];
+    cocg[cell_id][1][2] = 0.0;
+    cocg[cell_id][2][0] = 0.0;
+    cocg[cell_id][2][1] = 0.0;
+    cocg[cell_id][2][2] = cell_vol[cell_id];
+  }
+
+  /* Contribution from interior faces */
+
+  for (g_id = 0; g_id < n_i_groups; g_id++) {
+
+#   pragma omp parallel for private(face_id, ii, jj, ll, fctb)
+    for (t_id = 0; t_id < n_i_threads; t_id++) {
+
+      for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+           face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+           face_id++) {
+
+        ii = i_face_cells[face_id][0] - 1;
+        jj = i_face_cells[face_id][1] - 1;
+
+        for (ll = 0; ll < 3; ll++) {
+          fctb[0] = -dofij[face_id][0] * 0.5 * i_face_normal[face_id][ll];
+          fctb[1] = -dofij[face_id][1] * 0.5 * i_face_normal[face_id][ll];
+          fctb[2] = -dofij[face_id][2] * 0.5 * i_face_normal[face_id][ll];
+          cocg[ii][ll][0] += fctb[0];
+          cocg[ii][ll][1] += fctb[1];
+          cocg[ii][ll][2] += fctb[2];
+          cocg[jj][ll][0] -= fctb[0];
+          cocg[jj][ll][1] -= fctb[1];
+          cocg[jj][ll][2] -= fctb[2];
+        }
+
+      } /* loop on faces */
+
+    } /* loop on threads */
+
+  } /* loop on thread groups */
+
+  /* Save partial cocg at interior faces of boundary cells */
+
+# pragma omp parallel for private(cell_id, ll, mm)
+  for (ii = 0; ii < m->n_b_cells; ii++) {
+    cell_id = m->b_cells[ii] - 1;
+    for (ll = 0; ll < 3; ll++) {
+      for (mm = 0; mm < 3; mm++)
+        cocgb[ii][ll][mm] = cocg[cell_id][ll][mm];
+    }
+  }
+
+  /* Invert for all cells. */
+  /*-----------------------*/
+
+  /* The cocg term for interior cells only changes if the mesh does */
+
+# pragma omp parallel for private(cocg11, cocg12, cocg13, cocg21, cocg22, \
+                                  cocg23, cocg31, cocg32, cocg33, a11, a12, \
+                                  a13, a21, a22, a23, a31, a32, a33, det_inv)
+  for (cell_id = 0; cell_id < n_cells; cell_id++) {
+
+    cocg11 = cocg[cell_id][0][0];
+    cocg12 = cocg[cell_id][0][1];
+    cocg13 = cocg[cell_id][0][2];
+    cocg21 = cocg[cell_id][1][0];
+    cocg22 = cocg[cell_id][1][1];
+    cocg23 = cocg[cell_id][1][2];
+    cocg31 = cocg[cell_id][2][0];
+    cocg32 = cocg[cell_id][2][1];
+    cocg33 = cocg[cell_id][2][2];
+
+    a11 = cocg22*cocg33 - cocg32*cocg23;
+    a12 = cocg32*cocg13 - cocg12*cocg33;
+    a13 = cocg12*cocg23 - cocg22*cocg13;
+    a21 = cocg31*cocg23 - cocg21*cocg33;
+    a22 = cocg11*cocg33 - cocg31*cocg13;
+    a23 = cocg21*cocg13 - cocg11*cocg23;
+    a31 = cocg21*cocg32 - cocg31*cocg22;
+    a32 = cocg31*cocg12 - cocg11*cocg32;
+    a33 = cocg11*cocg22 - cocg21*cocg12;
+
+    det_inv = 1. / (cocg11*a11 + cocg21*a12 + cocg31*a13);
+
+    cocg[cell_id][0][0] = a11 * det_inv;
+    cocg[cell_id][0][1] = a12 * det_inv;
+    cocg[cell_id][0][2] = a13 * det_inv;
+    cocg[cell_id][1][0] = a21 * det_inv;
+    cocg[cell_id][1][1] = a22 * det_inv;
+    cocg[cell_id][1][2] = a23 * det_inv;
+    cocg[cell_id][2][0] = a31 * det_inv;
+    cocg[cell_id][2][1] = a32 * det_inv;
+    cocg[cell_id][2][2] = a33 * det_inv;
+
+  }
+
+}
+
+/*----------------------------------------------------------------------------
+ * Compute 3x3 matrix cocg for the scalar gradient least squares algorithm
+ *
+ * parameters:
+ *   m    <--  mesh
+ *   fvq  <->  mesh quantities
+ *----------------------------------------------------------------------------*/
+
+static void
+_compute_cell_cocg_s_lsq(const cs_mesh_t      *m,
+                         cs_mesh_quantities_t *fvq)
+{
+  const int n_cells = m->n_cells;
+  const int n_cells_ext = m->n_cells_with_ghosts;
+  const int n_i_groups = m->i_face_numbering->n_groups;
+  const int n_i_threads = m->i_face_numbering->n_threads;
+  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
+
+  const cs_lnum_2_t *restrict i_face_cells
+    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+  const cs_lnum_t *restrict cell_cells_idx
+    = (const cs_lnum_t *restrict)m->cell_cells_idx;
+  const cs_lnum_t *restrict cell_cells_lst
+    = (const cs_lnum_t *restrict)m->cell_cells_lst;
+
+  const cs_real_3_t *restrict cell_cen
+    = (const cs_real_3_t *restrict)fvq->cell_cen;
+
+  cs_real_33_t   *restrict cocgb = fvq->cocgb_s_lsq;
+  cs_real_33_t   *restrict cocg = fvq->cocg_s_lsq;
+
+  cs_lnum_t  cell_id, cidx, face_id, ii, jj, ll, mm;
+  int        g_id, t_id;
+  cs_real_t  a11, a12, a13, a22, a23, a33;
+  cs_real_t  cocg11, cocg12, cocg13, cocg22, cocg23, cocg33;
+  cs_real_t  det_inv, uddij2;
+  cs_real_3_t  dc;
+
+  if (cocg == NULL) {
+    BFT_MALLOC(cocgb, m->n_b_cells, cs_real_33_t);
+    BFT_MALLOC(cocg, n_cells_ext, cs_real_33_t);
+    fvq->cocgb_s_lsq = cocgb;
+    fvq->cocg_s_lsq = cocg;
+  }
+
+  /* Initialization */
+
+# pragma omp parallel for private(ll, mm)
+  for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+    for (ll = 0; ll < 3; ll++) {
+      for (mm = 0; mm < 3; mm++)
+        cocg[cell_id][ll][mm] = 0.0;
+    }
+  }
+
+  /* Contribution from interior faces */
+
+  for (g_id = 0; g_id < n_i_groups; g_id++) {
+
+#   pragma omp parallel for private(face_id, ii, jj, ll, mm, uddij2, dc)
+    for (t_id = 0; t_id < n_i_threads; t_id++) {
+
+      for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+           face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+           face_id++) {
+
+        ii = i_face_cells[face_id][0] - 1;
+        jj = i_face_cells[face_id][1] - 1;
+
+        for (ll = 0; ll < 3; ll++)
+          dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
+        uddij2 = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+
+        for (ll = 0; ll < 3; ll++) {
+          for (mm = 0; mm < 3; mm++)
+            cocg[ii][ll][mm] += dc[ll] * dc[mm] * uddij2;
+        }
+        for (ll = 0; ll < 3; ll++) {
+          for (mm = 0; mm < 3; mm++)
+            cocg[jj][ll][mm] += dc[ll] * dc[mm] * uddij2;
+        }
+
+      } /* loop on faces */
+
+    } /* loop on threads */
+
+  } /* loop on thread groups */
+
+  /* Contribution from extended neighborhood */
+
+  if (m->halo_type == CS_HALO_EXTENDED) {
+
+#   pragma omp parallel for private(cidx, jj, ll, mm, uddij2, dc)
+    for (ii = 0; ii < n_cells; ii++) {
+      for (cidx = cell_cells_idx[ii]; cidx < cell_cells_idx[ii+1]; cidx++) {
+
+        jj = cell_cells_lst[cidx - 1] - 1;
+
+        for (ll = 0; ll < 3; ll++)
+          dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
+        uddij2 = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+
+        for (ll = 0; ll < 3; ll++) {
+          for (mm = 0; mm < 3; mm++)
+            cocg[ii][ll][mm] += dc[ll] * dc[mm] * uddij2;
+        }
+
+      }
+    }
+
+  } /* End for extended neighborhood */
+
+  /* Save partial cocg at interior faces of boundary cells */
+
+# pragma omp parallel for private(cell_id, ll, mm)
+  for (ii = 0; ii < m->n_b_cells; ii++) {
+    cell_id = m->b_cells[ii] - 1;
+    for (ll = 0; ll < 3; ll++) {
+      for (mm = 0; mm < 3; mm++)
+        cocgb[ii][ll][mm] = cocg[cell_id][ll][mm];
+    }
+  }
+
+  /* Invert for all cells. */
+  /*-----------------------*/
+
+  /* The cocg term for interior cells only changes if the mesh does */
+
+# pragma omp parallel for private(cocg11, cocg12, cocg13, cocg22, \
+                                  cocg23, cocg33, a11, a12,       \
+                                  a13, a22, a23, a33, det_inv)
+  for (cell_id = 0; cell_id < n_cells; cell_id++) {
+
+    cocg11 = cocg[cell_id][0][0];
+    cocg12 = cocg[cell_id][0][1];
+    cocg13 = cocg[cell_id][0][2];
+    cocg22 = cocg[cell_id][1][1];
+    cocg23 = cocg[cell_id][1][2];
+    cocg33 = cocg[cell_id][2][2];
+
+    a11 = cocg22*cocg33 - cocg23*cocg23;
+    a12 = cocg23*cocg13 - cocg12*cocg33;
+    a13 = cocg12*cocg23 - cocg22*cocg13;
+    a22 = cocg11*cocg33 - cocg13*cocg13;
+    a23 = cocg12*cocg13 - cocg11*cocg23;
+    a33 = cocg11*cocg22 - cocg12*cocg12;
+
+    det_inv = 1. / (cocg11*a11 + cocg12*a12 + cocg13*a13);
+
+    cocg[cell_id][0][0] = a11 * det_inv;
+    cocg[cell_id][0][1] = a12 * det_inv;
+    cocg[cell_id][0][2] = a13 * det_inv;
+    cocg[cell_id][1][0] = a12 * det_inv;
+    cocg[cell_id][1][1] = a22 * det_inv;
+    cocg[cell_id][1][2] = a23 * det_inv;
+    cocg[cell_id][2][0] = a13 * det_inv;
+    cocg[cell_id][2][1] = a23 * det_inv;
+    cocg[cell_id][2][2] = a33 * det_inv;
+
+  }
+}
 
 /*----------------------------------------------------------------------------
  * Compute 3x3 matrix cocg for the iterative algorithm
@@ -1576,36 +1893,24 @@ CS_PROCF (algcen, ALGCEN) (cs_int_t  *const iopt)
 }
 
 /*----------------------------------------------------------------------------
- * Query of the option for computing cocg matrix for the iterative algo
- * and for the Least square method.
- *
- * This function returns 0 or 1 according to the selected option.
+ * Set behavior for computing the cocg matrixes for the iterative algo
+ * and for the Least square method for scalar and vector gradients.
  *
  * Fortran interface :
  *
- * SUBROUTINE COMCOC (IOPTIT, IOPLSQ)
+ * subroutine comcoc (imrgra, ivelco)
  * *****************
  *
- * INTEGER          IOPTIT        : <-> : Choice of the algorithm
- *                                      < 0 : query
- *                                        0 : No computation
- *                                        1 : computation of the
- *                                            3x3 dimensionless matrix cocg_it
- * INTEGER          IOPTLSQ       : <-> : Choice of the algorithm
- *                                      < 0 : query
- *                                        0 : No computation
- *                                        1 : computation of the
- *                                            3x3 dimensionless matrix cocg_lsq
+ * integer          imrgra        : <-- : gradient reconstruction option
+ * integer          iveclo        : <-- : 1 if velocity components are
+ *                                        coupled, 0 otherwise
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (comcoc, COMCOC) (cs_int_t  *const ioptit, cs_int_t  *const ioplsq)
+CS_PROCF (comcoc, COMCOC) (const cs_int_t  *const imrgra,
+                           const cs_int_t  *const ivelco)
 {
-  int  iopt_ret_it = cs_mesh_quantities_compute_cocg_it((int)(*ioptit));
-  int  iopt_ret_lsq = cs_mesh_quantities_compute_cocg_lsq((int)(*ioplsq));
-
-  *ioptit = iopt_ret_it;
-  *ioplsq = iopt_ret_lsq;
+  cs_mesh_quantities_set_cocg_options(*imrgra, *ivelco);
 }
 
 /*=============================================================================
@@ -1629,12 +1934,13 @@ int
 cs_mesh_quantities_cell_cen_choice(const int algo_choice)
 {
   if (algo_choice > 1)
-    bft_error(__FILE__, __LINE__,0,
-              _("The algorithm selection indicator for the cell centre of gravity computation\n"
-                "can take the following values:\n"
-                "  0: computation based on the face centres and surfaces\n"
-                "  1: computation based on the vertices\n"
-                "and not %d."), cs_glob_mesh_quantities_cell_cen);
+    bft_error
+      (__FILE__, __LINE__,0,
+       _("The algorithm selection indicator for the cell center of gravity computation\n"
+         "can take the following values:\n"
+         "  0: computation based on the face centres and surfaces\n"
+         "  1: computation based on the vertices\n"
+         "and not %d."), cs_glob_mesh_quantities_cell_cen);
 
   else if (algo_choice >= 0)
     cs_glob_mesh_quantities_cell_cen = algo_choice;
@@ -1643,65 +1949,47 @@ cs_mesh_quantities_cell_cen_choice(const int algo_choice)
 }
 
 /*----------------------------------------------------------------------------
- * Query or modification of the option for computing cocg for the iterative
- * algorithm.
+ * Compute cocg for iterative gradient reconstruction for scalars.
  *
- *  < 0 : query
- *    0 : Not compute cocg (default choice)
- *    1 : compute the dimensionless cocg matrix
- *
- * algo_choice  <--  choice of the option.
- *
- * returns:
- *  0 or 1 according to the selected option.
+ * parameters:
+ *   gradient_option <-- gradient option (Fortran IMRGRA)
+ *   coupled_vectors <-- 1 if indicates if vector components are coupled
  *----------------------------------------------------------------------------*/
 
-int
-cs_mesh_quantities_compute_cocg_it(const int algo_choice)
+void
+cs_mesh_quantities_set_cocg_options(int  gradient_option,
+                                    int  coupled_vectors)
 {
-  if (algo_choice > 1)
-    bft_error(__FILE__, __LINE__,0,
-              _("The option selection indicator for the cocg computation\n"
-                "for vector gradients can take the following values:\n"
-                "  0: do not compute cocg dimensionless matrices\n"
-                "  1: compute cocg matrices\n"
-                "and not %d."), cs_glob_mesh_quantities_compute_cocg_it);
+  int _gradient_option = CS_ABS(gradient_option);
 
-  else if (algo_choice >= 0)
-    cs_glob_mesh_quantities_compute_cocg_it = algo_choice;
+  assert(_gradient_option <= 6);
 
-  return cs_glob_mesh_quantities_compute_cocg_it;
-}
+  switch (_gradient_option) {
+  case 0:
+    _compute_cocg_s_it = true;
+    break;
+  case 1:
+  case 2:
+  case 3:
+    _compute_cocg_s_lsq = true;
+    break;
+  case 4:
+  case 5:
+  case 6:
+    _compute_cocg_s_it = true;
+    _compute_cocg_s_lsq = true;
+    break;
+  default:
+    break;
+  }
 
-/*----------------------------------------------------------------------------
- * Query or modification of the option for computing cocg for the Least
- * square method.
- *
- *  < 0 : query
- *    0 : Not compute cocg (default choice)
- *    1 : compute the dimensionless cocg matrix
- *
- * algo_choice  <--  choice of the option.
- *
- * returns:
- *  0 or 1 according to the selected option.
- *----------------------------------------------------------------------------*/
+  if (gradient_option > 0)
+    _compute_cocg_s_it = true;
 
-int
-cs_mesh_quantities_compute_cocg_lsq(const int algo_choice)
-{
-  if (algo_choice > 1)
-    bft_error(__FILE__, __LINE__,0,
-              _("The option selection indicator for the cocg computation\n"
-                "for vector gradients can take the following values:\n"
-                "  0: do not compute cocg dimensionless matrices\n"
-                "  1: compute cocg matrices\n"
-                "and not %d."), cs_glob_mesh_quantities_compute_cocg_lsq);
-
-  else if (algo_choice >= 0)
-    cs_glob_mesh_quantities_compute_cocg_lsq = algo_choice;
-
-  return cs_glob_mesh_quantities_compute_cocg_lsq;
+  if (coupled_vectors) {
+    _compute_cocg_it = _compute_cocg_s_it;
+    _compute_cocg_lsq = _compute_cocg_s_lsq;
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -1740,6 +2028,7 @@ cs_mesh_quantities_create(void)
   mesh_quantities->cocg_s_lsq = NULL;
   mesh_quantities->cocg_it = NULL;
   mesh_quantities->cocg_lsq = NULL;
+  mesh_quantities->b_sym_flag = NULL;
   mesh_quantities->bad_cell_flag = NULL;
 
   return (mesh_quantities);
@@ -1780,6 +2069,7 @@ cs_mesh_quantities_destroy(cs_mesh_quantities_t  *mesh_quantities)
   BFT_FREE(mesh_quantities->cocg_s_lsq);
   BFT_FREE(mesh_quantities->cocg_it);
   BFT_FREE(mesh_quantities->cocg_lsq);
+  BFT_FREE(mesh_quantities->b_sym_flag);
   BFT_FREE(mesh_quantities->bad_cell_flag);
 
   BFT_FREE(mesh_quantities);
@@ -1804,11 +2094,9 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
   cs_lnum_t  n_b_faces = mesh->n_b_faces;
   cs_lnum_t  n_cells_with_ghosts = mesh->n_cells_with_ghosts;
 
-  static int  n_pass = 0;
-
   /* Update the number of passes */
 
-  n_pass++;
+  _n_computations++;
 
   /* If this is not an update, allocate members of the structure */
 
@@ -1856,15 +2144,18 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
 
   /* Compute 3x3 cocg dimensionless matrix */
 
-  if (cs_glob_mesh_quantities_compute_cocg_it == 1) {
+  if (_compute_cocg_it == 1) {
     if (mesh_quantities->cocg_it == NULL)
       BFT_MALLOC(mesh_quantities->cocg_it, n_cells_with_ghosts, cs_real_33_t);
   }
 
-  if (cs_glob_mesh_quantities_compute_cocg_lsq == 1) {
+  if (_compute_cocg_lsq == 1) {
     if (mesh_quantities->cocg_lsq == NULL)
       BFT_MALLOC(mesh_quantities->cocg_lsq, n_cells_with_ghosts, cs_real_33_t);
   }
+
+  if (mesh_quantities->b_sym_flag == NULL)
+    BFT_MALLOC(mesh_quantities->b_sym_flag, n_b_faces, cs_int_t);
 
   /* Compute centres of gravity, normals, and surfaces of interior faces */
 
@@ -1995,17 +2286,23 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
                         mesh_quantities->diipb,
                         mesh_quantities->dofij);
 
-  /* Compute 3x3 cocg dimensionless matrix */
+  /* Compute 3x3 cocg matrixes */
 
-  if (cs_glob_mesh_quantities_compute_cocg_it == 1)
+  if (_compute_cocg_s_it == 1)
+    _compute_cell_cocg_s_it(mesh, mesh_quantities);
+
+  if (_compute_cocg_s_lsq == 1)
+    _compute_cell_cocg_s_lsq(mesh, mesh_quantities);
+
+  if (_compute_cocg_it == 1)
     _compute_cell_cocg_it(mesh, mesh_quantities);
 
-  if (cs_glob_mesh_quantities_compute_cocg_lsq == 1)
+  if (_compute_cocg_lsq == 1)
     _compute_cell_cocg_lsq(mesh, mesh_quantities);
 
   /* Print some information on the control volumes, and check min volume */
 
-  if (n_pass == 1)
+  if (_n_computations == 1)
     bft_printf(_(" --- Information on the volumes\n"
                  "       Minimum control volume      = %14.7e\n"
                  "       Maximum control volume      = %14.7e\n"
@@ -2240,8 +2537,23 @@ void
 cs_mesh_quantities_reduce_extended(const cs_mesh_t       *mesh,
                                    cs_mesh_quantities_t  *mesh_quantities)
 {
-  if (cs_glob_mesh_quantities_compute_cocg_lsq == 1)
+  if (_compute_cocg_lsq == 1)
     _compute_cell_cocg_lsq(mesh, mesh_quantities);
+  if (_compute_cocg_s_lsq == 1)
+    _compute_cell_cocg_s_lsq(mesh, mesh_quantities);
+}
+
+/*----------------------------------------------------------------------------
+ * Return the number of times mesh quantities have been computed.
+ *
+ * returns:
+ *   number of times mesh quantities have been computed
+ *----------------------------------------------------------------------------*/
+
+int
+cs_mesh_quantities_compute_count(void)
+{
+  return _n_computations;
 }
 
 /*----------------------------------------------------------------------------

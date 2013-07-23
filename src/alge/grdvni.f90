@@ -40,12 +40,8 @@ subroutine grdvni &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! ivar             ! e  ! <-- ! numero de la variable                          !
-!                  !    !     !   destine a etre utilise pour la               !
-!                  !    !     !   periodicite uniquement (pering)              !
-!                  !    !     !   on pourra donner ivar=0 si la                !
-!                  !    !     !   variable n'est ni une composante de          !
-!                  !    !     !   la vitesse, ni une composante du             !
-!                  !    !     !   tenseur des contraintes rij                  !
+!                  !    !     !   on pourra donner ivar=0 si le                !
+!                  !    !     !   numero de variable n'est pas connu           !
 ! imrgra           ! e  ! <-- ! methode de reconstruction du gradient          !
 !                  !    !     !  0 reconstruction 97                           !
 !                  !    !     !  1 moindres carres                             !
@@ -123,67 +119,13 @@ double precision rvoid(1)
 
 !===============================================================================
 
-!===============================================================================
-! 0. PREPARATION POUR PERIODICITE DE ROTATION
-!===============================================================================
-
-! Par defaut, on traitera le gradient comme un vecteur ...
-!   (i.e. on suppose que c'est le gradient d'une grandeurs scalaire)
-
-! S'il n'y a pas de rotation, les echanges d'informations seront
-!   faits par syngra/syngin (implicite)
-
-! S'il y a une ou des periodicites de rotation,
-!   on determine si la variables est un vecteur (vitesse)
-!   ou un tenseur (de Reynolds)
-!   pour lui appliquer dans syngra/syngin le traitement adequat.
-!   On positionne IDIMTR et on recupere le gradient qui convient.
-! Notons que si on n'a pas, auparavant, calcule et stocke les gradients
-!   du halo on ne peut pas les recuperer ici (...).
-!   Aussi ce sous programme est-il appele dans phyvar (dans perinu perinr)
-!   pour calculer les gradients au debut du pas de temps et les stocker
-!   dans DUDXYZ et DRDXYZ
-
-! Il est necessaire que ITENSO soit toujours initialise, meme hors
-!   periodicite, donc on l'initialise au prealable a sa valeur par defaut.
+! Note: this function is now incompatible with periodicity of rotation, which
+!       requires coupled velocity components.
 
 idimtr = 0
 
-if (iperot.eq.1) then
-
-  call pergra(ivar, idimtr, irpvar)
-  !==========
-
-  if (idimtr .gt. 0) then
-
-    call pering                                                   &
-    !==========
-    ( idimtr, irpvar, iguper , igrper ,                           &
-      gradv(1), gradv(1+1*ncelet), gradv(1+2*ncelet),             &
-      dudxy  , drdxy  )
-
-    irpvar = irpvar + 1
-
-    call pering                                                   &
-    !==========
-    ( idimtr, irpvar, iguper , igrper ,                           &
-      gradv(1+3*ncelet), gradv(1+4*ncelet), gradv(1+5*ncelet),    &
-      dudxy  , drdxy  )
-
-    irpvar = irpvar + 1
-
-    call pering                                                   &
-    !==========
-    ( idimtr, irpvar, iguper , igrper ,                           &
-      gradv(1+6*ncelet), gradv(1+7*ncelet), gradv(1+8*ncelet),    &
-      dudxy  , drdxy  )
-
-  endif
-
-endif
-
 !===============================================================================
-! 1. COMPUTATION OF THE GARDIENT
+! 1. COMPUTATION OF THE GRADIENT
 !===============================================================================
 
 ! This subroutine is never used to compute the pressure gradient
@@ -194,7 +136,7 @@ ivarloc = ivar
 
 call cgdcel &
 !==========
- ( ivarloc, imrgra , inc    , iccocg , imobil , iale   , nswrgp , &
+ ( ivarloc, imrgra , inc    , iccocg , nswrgp ,                   &
    idimtr , iphydp , ipond  , iwarnp , imligp , epsrgp , extrap , &
    climgp , isympa , rvoid  ,                                     &
    coefav(1)       , coefbv(1)       , vel(1) , rvoid  ,          &
@@ -204,7 +146,7 @@ ivarloc = ivarloc+1
 
 call cgdcel &
 !==========
- ( ivarloc, imrgra , inc    , iccocg , imobil , iale   , nswrgp , &
+ ( ivarloc, imrgra , inc    , iccocg , nswrgp ,                   &
    idimtr , iphydp , ipond  , iwarnp , imligp , epsrgp , extrap , &
    climgp , isympa , rvoid  ,                                     &
    coefav(1+ndimfb), coefbv(1+ndimfb), vel(1+ncelet)   , rvoid  , &
@@ -214,7 +156,7 @@ ivarloc = ivarloc+1
 
 call cgdcel &
 !==========
- ( ivarloc, imrgra , inc    , iccocg , imobil , iale   , nswrgp , &
+ ( ivarloc, imrgra , inc    , iccocg , nswrgp ,                   &
    idimtr , iphydp , ipond  , iwarnp , imligp , epsrgp , extrap , &
    climgp , isympa , rvoid  ,                                     &
    coefav(1+2*ndimfb), coefbv(1+2*ndimfb), vel(1+2*ncelet),       &

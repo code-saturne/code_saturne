@@ -325,12 +325,11 @@ if (iperio.eq.1) then
 
   iinvpe = 1
 
-  if (ivar.eq.iu.or.ivar.eq.iv.or.ivar.eq.iw.or.   &
-      ivar.eq.ir11.or.ivar.eq.ir12.or.             &
+  if (ivar.eq.ir11.or.ivar.eq.ir12.or.             &
       ivar.eq.ir13.or.ivar.eq.ir22.or.             &
       ivar.eq.ir23.or.ivar.eq.ir33) then
 
-    !    Pour la vitesse et les tensions de Reynolds, et les tpucou
+    !    Pour les tensions de Reynolds, et les tpucou
     !      seules seront echangees les informations sur les faces periodiques
     !      de translation ; on ne touche pas aux informations
     !      relatives aux faces de periodicite de rotation.

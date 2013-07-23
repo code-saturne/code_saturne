@@ -93,6 +93,8 @@ typedef struct {
                                     for iterative gradients */
   cs_real_33_t  *cocg_lsq;       /* Interleaved cocg matrix
                                     for least square gradients */
+
+  cs_int_t      *b_sym_flag;     /* Symmetry flag for boundary faces */
   unsigned      *bad_cell_flag;  /* Flag (mask) for bad cells detected */
 
 } cs_mesh_quantities_t ;
@@ -131,30 +133,22 @@ void
 CS_PROCF (algcen, ALGCEN) (cs_int_t  *const iopt);
 
 /*----------------------------------------------------------------------------
- * Query of the option for computing cocg matrix for the iterative algo
- * and for the Least square method.
- *
- * This function returns 0 or 1 according to the selected option.
+ * Set behavior for computing the cocg matrixes for the iterative algo
+ * and for the Least square method for scalar and vector gradients.
  *
  * Fortran interface :
  *
- * SUBROUTINE COMCOC (IOPTIT, IOPLSQ)
+ * subroutine comcoc (imrgra, ivelco)
  * *****************
  *
- * INTEGER          IOPTIT        : <-> : Choice of the algorithm
- *                                      < 0 : query
- *                                        0 : No computation
- *                                        1 : computation of the
- *                                            3x3 dimensionless matrix cocg_it
- * INTEGER          IOPTLSQ       : <-> : Choice of the algorithm
- *                                      < 0 : query
- *                                        0 : No computation
- *                                        1 : computation of the
- *                                            3x3 dimensionless matrix cocg_lsq
+ * integer          imrgra        : <-- : gradient reconstruction option
+ * integer          iveclo        : <-- : 1 if velocity components are
+ *                                        coupled, 0 otherwise
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (comcoc, COMCOC) (cs_int_t  *const ioptit, cs_int_t  *const ioplsq);
+CS_PROCF (comcoc, COMCOC) (const cs_int_t  *const imrgra,
+                           const cs_int_t  *const ivelco);
 
 /*=============================================================================
  * Public function prototypes
@@ -177,38 +171,16 @@ int
 cs_mesh_quantities_cell_cen_choice(const int algo_choice);
 
 /*----------------------------------------------------------------------------
- * Query or modification of the option for computing cocg for the iterative
- * algorithm.
+ * Compute cocg for iterative gradient reconstruction for scalars.
  *
- *  < 0 : query
- *    0 : Not compute cocg (default choice)
- *    1 : compute the dimensionless cocg matrix
- *
- * algo_choice  <--  choice of the option.
- *
- * returns:
- *  0 or 1 according to the selected option.
+ * parameters:
+ *   gradient_option <-- gradient option (Fortran IMRGRA)
+ *   coupled_vectors <-- 1 if indicates if vector components are coupled
  *----------------------------------------------------------------------------*/
 
-int
-cs_mesh_quantities_compute_cocg_it(const int algo_choice);
-
-/*----------------------------------------------------------------------------
- * Query or modification of the option for computing cocg for the Least
- * square method.
- *
- *  < 0 : query
- *    0 : Not compute cocg (default choice)
- *    1 : compute the dimensionless cocg matrix
- *
- * algo_choice  <--  choice of the option.
- *
- * returns:
- *  0 or 1 according to the selected option.
- *----------------------------------------------------------------------------*/
-
-int
-cs_mesh_quantities_compute_cocg_lsq(const int algo_choice);
+void
+cs_mesh_quantities_set_cocg_options(int  gradient_option,
+                                    int  coupled_vectors);
 
 /*----------------------------------------------------------------------------
  * Create a mesh quantities structure.
@@ -331,6 +303,16 @@ cs_mesh_quantities_check_vol(const cs_mesh_t             *mesh,
 void
 cs_mesh_quantities_reduce_extended(const cs_mesh_t       *mesh,
                                    cs_mesh_quantities_t  *mesh_quantities);
+
+/*----------------------------------------------------------------------------
+ * Return the number of times mesh quantities have been computed.
+ *
+ * returns:
+ *   number of times mesh quantities have been computed
+ *----------------------------------------------------------------------------*/
+
+int
+cs_mesh_quantities_compute_count(void);
 
 /*----------------------------------------------------------------------------
  * Dump a cs_mesh_quantities_t structure

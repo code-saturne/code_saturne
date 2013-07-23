@@ -104,6 +104,7 @@ use cs_fuel_incl
 use elincl
 use ppcpfu
 use radiat, only: iirayo
+use mesh, only: isympa
 
 !===============================================================================
 
@@ -1159,8 +1160,7 @@ if (nfabok.eq.1) then
   itysup = 3
   nbval  = 1
   irtyp  = 1
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-       isympa,ierror)
+  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,isympa,ierror)
   nberro = nberro+ierror
 
 endif

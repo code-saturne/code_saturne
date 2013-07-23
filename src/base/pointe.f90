@@ -100,30 +100,17 @@ module pointe
   double precision, dimension(:,:), allocatable :: cfaale, claale
   double precision, dimension(:,:,:), allocatable :: cfbale, clbale
 
-  ! dudxy  ! (ncelet-ncel,3,3)   ! sauvegarde du gradient de la
-  !        !                     ! vitesse en cas de rotation
-  ! wdudxy ! (ncelet-ncel,3,3)   ! tableau de travail lie a dudxyz
-  ! drdxy  ! (3,6,ncelet-ncel)   ! sauvegarde du gradient de rij
-  !        !                     ! en cas de rotation
-  ! wdrdxy ! (3,6,ncelet-ncel)   ! tableau de travail lie a drdxyz
-
-  double precision, allocatable, dimension(:,:,:) :: dudxy, wdudxy
-  double precision, allocatable, dimension(:,:,:) :: drdxy, wdrdxy
-
   ! itypfb ! nfabor                  ! type des faces de bord
   ! itrifb ! nfabor                  ! indirection pour tri faces de bord
   ! izfppp ! nfabor                  ! pour reperage des zones frontieres
   !        !                         ! associees aux faces de bord (phys. part.)
   ! izfrad ! nfabor                  ! pour reperage des zones frontieres
   !        !                         ! associees aux faces de bord (radiat.)
-  ! isympa ! nfabor                  ! zero pour annuler le flux de masse
-  !        !                         !   (symetries et parois avec cl couplees)
-  !        !                         ! un sinon
   ! ifapat ! ncelet                  ! numero de face de bord 5 la plus proche
   ! Peut etre serait il plus approprie de le verser dans pointe
 
   integer, allocatable, dimension(:) :: itypfb, itrifb, izfppp, izfrad
-  integer, allocatable, dimension(:) :: isympa, ifapat
+  integer, allocatable, dimension(:) :: ifapat
 
   integer, allocatable, dimension(:) :: idfstr
 
@@ -234,10 +221,6 @@ contains
       allocate(izfrad(nfabor))
     endif
 
-    ! Symmetry faces
-
-    allocate(isympa(nfabor))
-
     ! ALE array for structure definition
 
     if (iale.eq.1) then
@@ -320,15 +303,6 @@ contains
       allocate(ifapat(ncelet))
     endif
 
-    ! Periodicity (work arrays for rotation)
-
-    if (iperot.gt.0) then
-      allocate(dudxy(ncelet-ncel,3,3), wdudxy(ncelet-ncel,3,3))
-      if (itytur.eq.3) then
-        allocate(drdxy(3,6,ncelet-ncel), wdrdxy(3,6,ncelet-ncel))
-      endif
-    endif
-
     ! Forces on boundary faces
 
     if (ineedf.eq.1) then
@@ -388,8 +362,6 @@ contains
     if (allocated(dispar)) deallocate(dispar)
     if (allocated(yplpar)) deallocate(yplpar)
     if (allocated(ifapat)) deallocate(ifapat)
-    if (allocated(dudxy)) deallocate(dudxy, wdudxy)
-    if (allocated(drdxy)) deallocate(drdxy, wdrdxy)
     if (allocated(forbr)) deallocate(forbr)
     if (allocated(uetbor)) deallocate(uetbor)
     if (allocated(yplbr)) deallocate(yplbr)

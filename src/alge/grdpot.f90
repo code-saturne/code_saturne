@@ -150,7 +150,7 @@ ipond = 0
 
 call cgdcel &
 !==========
- ( ivar   , imrgrp , inc    , iccocg , imobil , iale   , nswrgp , &
+ ( ivar   , imrgrp , inc    , iccocg , nswrgp ,                   &
    idimtr , iphydp , ipond  , iwarnp , imligp , epsrgp , extrap , &
    climgp , isympa , frcxt  , coefap , coefbp ,                   &
    pvar   , rvoid  , grad   )

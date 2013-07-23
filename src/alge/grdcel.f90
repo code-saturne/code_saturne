@@ -91,6 +91,7 @@ use pointe
 use parall
 use period
 use mesh
+use numvar, only: ivarfl
 
 !===============================================================================
 
@@ -133,7 +134,7 @@ double precision climin
 !   We set idimtr and we retrieve the matching gradient.
 ! Note that if halo gradients have not been saved before, they cannot be
 !   retrieved here (...)
-!   So this subroutine is called by phyvar (in perinu perinr)
+!   So this subroutine is called by phyvar (in perinr)
 !   to compute gradients at the beginning of the time step and save them
 !   in dudxyz et drdxyz
 
@@ -142,17 +143,9 @@ double precision climin
 
 idimtr = 0
 
-if (iperot.eq.1) then
-
-  call pergra(ivar, idimtr, irpvar)
+if (iperot.eq.1.and.ivar.gt.0) then
+  call pering(ivarfl(ivar), idimtr, grad(1,1), grad(1,2), grad(1,3))
   !==========
-
-  call pering                                                     &
-  !==========
-  ( idimtr , irpvar , iguper , igrper ,                           &
-    grad(1,1) , grad(1,2) , grad(1,3) ,                           &
-    dudxy  , drdxy  )
-
 endif
 
 !===============================================================================
@@ -166,7 +159,7 @@ ipond  = 0
 
 call cgdcel &
 !==========
- ( ivar   , imrgra , inc    , iccocg , imobil , iale   , nswrgp , &
+ ( ivar   , imrgra , inc    , iccocg , nswrgp ,                   &
    idimtr , iphydp , ipond  , iwarnp , imligp , epsrgp , extrap , &
    climgp , isympa , rvoid  , coefap , coefbp ,                   &
    pvar   , rvoid  , grad   )

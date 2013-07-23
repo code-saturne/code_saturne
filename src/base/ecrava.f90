@@ -93,6 +93,7 @@ use elincl
 use ppcpfu
 use cplsat
 use field
+use mesh, only: isympa
 
 !===============================================================================
 
@@ -1165,8 +1166,7 @@ if (iecaux.eq.1) then
   itysup = 3
   nbval  = 1
   irtyp  = 1
-  call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-       isympa,ierror)
+  call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,isympa,ierror)
   nberro=nberro+ierror
 
   if (nberro.ne.0) then

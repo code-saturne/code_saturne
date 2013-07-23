@@ -80,8 +80,6 @@ void CS_PROCF (cgdcel, CGDCEL)
  const cs_int_t   *const imrgra,      /* <-- gradient computation mode        */
  const cs_int_t   *const inc,         /* <-- 0 or 1: increment or not         */
  const cs_int_t   *const iccocg,      /* <-- 1 or 0: recompute COCG or not    */
- const cs_int_t   *const imobil,      /* <-- 1 for mobile mesh, 0 otherwise   */
- const cs_int_t   *const iale,        /* <-- 1 for ALE, 0 otherwise           */
  const cs_int_t   *const nswrgp,      /* <-- >1: with reconstruction          */
  const cs_int_t   *const idimtr,      /* <-- 0, 1, 2: scalar, vector, tensor
                                              in case of rotation              */
@@ -99,7 +97,7 @@ void CS_PROCF (cgdcel, CGDCEL)
  const cs_real_t         coefap[],    /* <-- boundary condition term          */
  const cs_real_t         coefbp[],    /* <-- boundary condition term          */
        cs_real_t         pvar[],      /* <-- gradient's base variable         */
-       cs_real_t         ktvar[],     /* <-- gradient coefficient variable   */
+       cs_real_t         ktvar[],     /* <-- gradient coefficient variable    */
        cs_real_t         grad[]       /* <-> gradient                         */
 );
 
@@ -152,10 +150,9 @@ cs_gradient_finalize(void);
  *   halo_type      <-- halo type
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   recompute_cocg <-- should COCG FV quantities be recomputed ?
- *   mobile_mesh    <-- is mesh mobile ?
- *   ale            <-- do we have ALE ?
  *   n_r_sweeps     <-- if > 1, number of reconstruction sweeps
- *   tr_dim         <-- scalar, vector_tensor in case of rotation
+ *   tr_dim         <-- 2 for tensor with periodicity of rotation,
+ *                      0 otherwise
  *   hyd_p_flag     <-- flag for hydrostatic pressure
  *   verbosity      <-- verbosity level
  *   clip_mode      <-- clipping mode
@@ -176,8 +173,6 @@ void cs_gradient_scalar(const char                *var_name,
                         cs_halo_type_t             halo_type,
                         int                        inc,
                         bool                       recompute_cocg,
-                        bool                       mobile_mesh,
-                        bool                       ale,
                         int                        n_r_sweeps,
                         int                        tr_dim,
                         int                        hyd_p_flag,
@@ -193,6 +188,20 @@ void cs_gradient_scalar(const char                *var_name,
                         cs_real_t        *restrict var,
                         cs_real_t        *restrict weight_var,
                         cs_real_3_t      *restrict grad);
+
+/*----------------------------------------------------------------------------
+ * Determine gradient type by Fortran "imrgra" value
+ *
+ * parameters:
+ *   imrgra         <-- Fortran gradient option
+ *   gradient_type  --> gradient type
+ *   halo_type      --> halo type
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gradient_type_by_imrgra(int                  imrgra,
+                           cs_gradient_type_t  *gradient_type,
+                           cs_halo_type_t      *halo_type);
 
 /*----------------------------------------------------------------------------*/
 

@@ -88,7 +88,7 @@ integer          ii, iscal , nmodpp, iok
 integer          nscmax, nesmax, nscusi
 integer          ieepre, ieeder, ieecor, ieetot, iihmpu
 integer          ialgce
-integer          iappel, ioptit, ioplsq
+integer          iappel
 double precision relaxp, extrap
 
 !===============================================================================
@@ -489,24 +489,8 @@ if (ippmod(icompf).ge.0) then
   !==========
 endif
 
-! Choose if the 3x3 dimensionless matrix cocg is computed for the iterative
-! algorithm and the Least squares method for ivelco = 1.
-if (ivelco.eq.1) then
-  if (imrgra.eq.0) then
-    ioptit = 1
-    ioplsq = 0
-  elseif (imrgra.lt.4 .and. imrgra.gt.-4) then
-    ioptit = 0
-    ioplsq = 1
-  elseif (imrgra.ge.4 .or. imrgra.le.-4) then
-    ioptit = 1
-    ioplsq = 1
-  endif
-else
-  ioptit = 1
-  ioplsq = 0
-endif
-call comcoc(ioptit, ioplsq)
+! Choose which 3x3 cocg matrixes are computed for gradient algorithms.
+call comcoc(imrgra, ivelco)
 
 ! --- Varpos
 !      3ieme passage

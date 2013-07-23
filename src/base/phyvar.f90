@@ -128,27 +128,11 @@ ipass = ipass + 1
 ! 2. Preparing periodicity of rotation
 !===============================================================================
 
-if (iperot.gt.0) then
+if (iperot.gt.0 .and. itytur.eq.3) then
 
-  if (ivelco.eq.0) then
-    call perinu &
-    !==========
-  ( nvar   , nscal  ,                                              &
-    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-    coefa  , coefb  ,                                              &
-    dudxy  )
-  endif
-
-  if (itytur.eq.3) then
-
-    call perinr &
-    !==========
- ( nvar   , nscal  ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
-   drdxy  )
-
-  endif
+  call perinr &
+  !==========
+ ( imrgra , iwarni(ir11) , epsrgr(ir11) , extrag(ir11) )
 
 endif
 

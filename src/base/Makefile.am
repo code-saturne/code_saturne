@@ -263,9 +263,6 @@ navstv.f90 \
 newmrk.f90 \
 numvec.f90 \
 ordita.f90 \
-pergra.f90 \
-perinr.f90 \
-perinu.f90 \
 phyvar.f90 \
 post_util.f90 \
 precli.f90 \

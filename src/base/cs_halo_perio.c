@@ -442,275 +442,6 @@ _test_halo_compatibility(const cs_halo_t  *halo)
               halo->n_transforms, (int)(cs_glob_mesh->n_transforms));
 }
 
-/*----------------------------------------------------------------------------
- * Update dudxyz and wdudxy for periodic ghost cells.
- *
- * Called by PERMAS.
- *
- * parameters:
- *   h_cell_id --> cell id in halo
- *   cell_id   --> cell id
- *   rom       --> density array
- *   call_id   --> first or second call
- *   dudxyz    <-> gradient on the components of the velocity.
- *   wdudxy    <-> associated working array.
- *----------------------------------------------------------------------------*/
-
-static void
-_update_dudxyz(cs_lnum_t         h_cell_id,
-               cs_lnum_t         cell_id,
-               const cs_real_t  *rom,
-               cs_lnum_t         call_id,
-               cs_real_t        *dudxyz,
-               cs_real_t        *wdudxy)
-{
-  cs_lnum_t  i, j, id;
-
-  cs_mesh_t  *mesh = cs_glob_mesh;
-
-  const cs_lnum_t  n_ghost_cells = mesh->n_ghost_cells;
-  const cs_lnum_t  stride = n_ghost_cells * 3;
-
-  if (call_id == 1) { /* First call */
-
-    for (i = 0; i < 3; i++) {
-      for (j = 0; j < 3; j++) {
-        id = h_cell_id + n_ghost_cells*i + stride*j;
-        wdudxy[id] = dudxyz[id];
-        dudxyz[id] *= rom[cell_id];
-      }
-    }
-
-  }
-  else if (call_id == 2) { /* Second call */
-
-    for (i = 0; i < 3; i++) {
-      for (j = 0; j < 3; j++) {
-        id = h_cell_id + n_ghost_cells*i + stride*j;
-        dudxyz[id] = wdudxy[id];
-      }
-    }
-
-  } /* End if second call */
-}
-
-/*----------------------------------------------------------------------------
- * Update drdxyz and wdrdxy for periodic ghost cells.
- *
- * Called by PERMAS.
- *
- * parameters:
- *   h_cell_id --> cell id in halo
- *   cell_id   --> cell id
- *   rom       --> density array
- *   call_id   --> first or second call
- *   drdxyz    <-> Gradient on components of Rij (Reynolds stress tensor)
- *   wdrdxy    <-> associated working array.
- *----------------------------------------------------------------------------*/
-
-static void
-_update_drdxyz(cs_lnum_t         h_cell_id,
-               cs_lnum_t         cell_id,
-               const cs_real_t  *rom,
-               cs_lnum_t         call_id,
-               cs_real_t        *drdxyz,
-               cs_real_t        *wdrdxy)
-{
-  cs_lnum_t  i, j, id;
-
-  if (call_id == 1) { /* First call */
-
-    for (i = 0; i < 2*3; i++) {
-      for (j = 0; j < 3; j++) {
-        id = j + 3*i + 3*6*h_cell_id;
-        wdrdxy[id] = drdxyz[id];
-        drdxyz[id] *= rom[cell_id];
-      }
-    }
-
-  }
-  else if (call_id == 2) { /* Second call */
-
-    for (i = 0; i < 2*3; i++) {
-      for (j = 0; j < 3; j++) {
-        id = j + 3*i + 3*6*h_cell_id;
-        drdxyz[id] = wdrdxy[id];
-      }
-    }
-
-  } /* End if second call */
-}
-
-/*----------------------------------------------------------------------------
- * Exchange buffers for PERINR or PERINU
- *
- * parameters:
- *   strid_c    --> stride on the component
- *   strid_v    --> stride on the variable
- *   dxyz       <-> gradient on the variable (dudxy or drdxy)
- *   w1, w2, w3 <-> working buffers
- *----------------------------------------------------------------------------*/
-
-static void
-_peinur1(cs_lnum_t     strid_c,
-         cs_lnum_t     strid_v,
-         cs_real_t    *dxyz,
-         cs_real_t    *w1,
-         cs_real_t    *w2,
-         cs_real_t    *w3)
-{
-  int  t_id, rank_id;
-  cs_lnum_t  i, shift, start_std, end_std, start_ext, end_ext;
-
-  cs_mesh_t  *mesh = cs_glob_mesh;
-  cs_halo_t  *halo = mesh->halo;
-
-  const cs_lnum_t  n_cells = mesh->n_cells;
-  const cs_lnum_t  n_ghost_cells = mesh->n_cells_with_ghosts - mesh->n_cells;
-  const size_t    save_block_size = n_ghost_cells*sizeof(cs_real_t);
-  const int  n_transforms = mesh->n_transforms;
-  const fvm_periodicity_t  *periodicity = mesh->periodicity;
-
-  cs_real_t *w_save = NULL;
-  BFT_MALLOC(w_save, n_ghost_cells*3, cs_real_t);
-
-  memcpy(w_save,                   w1+n_cells, save_block_size);
-  memcpy(w_save +  n_ghost_cells,  w2+n_cells, save_block_size);
-  memcpy(w_save+(2*n_ghost_cells), w3+n_cells, save_block_size);
-
-  cs_halo_sync_var(mesh->halo, mesh->halo_type, w1);
-  cs_halo_sync_var(mesh->halo, mesh->halo_type, w2);
-  cs_halo_sync_var(mesh->halo, mesh->halo_type, w3);
-
-  for (t_id = 0; t_id < n_transforms; t_id++) {
-
-    if (   fvm_periodicity_get_type(periodicity, t_id)
-        >= FVM_PERIODICITY_ROTATION) {
-
-      shift = 4 * halo->n_c_domains * t_id;
-
-      for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
-
-        start_std = halo->perio_lst[shift + 4*rank_id];
-        end_std = start_std + halo->perio_lst[shift + 4*rank_id + 1];
-
-        for (i = start_std; i < end_std; i++) {
-          dxyz[i + strid_c + strid_v*0] = w1[n_cells + i];
-          dxyz[i + strid_c + strid_v*1] = w2[n_cells + i];
-          dxyz[i + strid_c + strid_v*2] = w3[n_cells + i];
-        }
-
-        if (mesh->halo_type == CS_HALO_EXTENDED) {
-
-          start_ext = halo->perio_lst[shift + 4*rank_id + 2];
-          end_ext = start_ext + halo->perio_lst[shift + 4*rank_id + 3];
-
-          for (i = start_ext; i < end_ext; i++) {
-            dxyz[i + strid_c + strid_v*0] = w1[n_cells + i];
-            dxyz[i + strid_c + strid_v*1] = w2[n_cells + i];
-            dxyz[i + strid_c + strid_v*2] = w3[n_cells + i];
-          }
-
-        } /* End if extended halo */
-
-      } /* End of loop on ranks */
-
-    } /* End of test on rotation */
-
-  } /* End of loop on transformations */
-
-  memcpy(w1+n_cells, w_save,                   save_block_size);
-  memcpy(w2+n_cells, w_save +  n_ghost_cells,  save_block_size);
-  memcpy(w3+n_cells, w_save+(2*n_ghost_cells), save_block_size);
-
-  BFT_FREE(w_save);
-}
-
-/*----------------------------------------------------------------------------
- * Exchange buffers for PERINR only
- *
- * parameters:
- *   strid_v    --> stride on the variable
- *   strid_e    --> stride on the element
- *   dxyz       <-> gradient on the variable (drdxy)
- *   w1, w2, w3 <-> working buffers
- *----------------------------------------------------------------------------*/
-
-static void
-_peinr1(cs_lnum_t     strid_v,
-        cs_lnum_t     strid_e,
-        cs_real_t    *dxyz,
-        cs_real_t    *w1,
-        cs_real_t    *w2,
-        cs_real_t    *w3)
-{
-  int  t_id, rank_id;
-  cs_lnum_t  i, shift, start_std, end_std, start_ext, end_ext;
-
-  cs_mesh_t  *mesh = cs_glob_mesh;
-  cs_halo_t  *halo = mesh->halo;
-
-  const cs_lnum_t  n_cells = mesh->n_cells;
-  const cs_lnum_t  n_ghost_cells = mesh->n_cells_with_ghosts - mesh->n_cells;
-  const size_t    save_block_size = n_ghost_cells*sizeof(cs_real_t);
-  const int  n_transforms = mesh->n_transforms;
-  const fvm_periodicity_t  *periodicity = mesh->periodicity;
-
-  cs_real_t *w_save = NULL;
-  BFT_MALLOC(w_save, n_ghost_cells*3, cs_real_t);
-
-  memcpy(w_save,                   w1+n_cells, save_block_size);
-  memcpy(w_save +  n_ghost_cells,  w2+n_cells, save_block_size);
-  memcpy(w_save+(2*n_ghost_cells), w3+n_cells, save_block_size);
-
-  cs_halo_sync_var(mesh->halo, mesh->halo_type, w1);
-  cs_halo_sync_var(mesh->halo, mesh->halo_type, w2);
-  cs_halo_sync_var(mesh->halo, mesh->halo_type, w3);
-
-  for (t_id = 0; t_id < n_transforms; t_id++) {
-
-    if (   fvm_periodicity_get_type(periodicity, t_id)
-        >= FVM_PERIODICITY_ROTATION) {
-
-      shift = 4 * halo->n_c_domains * t_id;
-
-      for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
-
-        start_std = halo->perio_lst[shift + 4*rank_id];
-        end_std = start_std + halo->perio_lst[shift + 4*rank_id + 1];
-
-        for (i = start_std; i < end_std; i++) {
-          dxyz[0 + strid_v + strid_e*i] = w1[n_cells + i];
-          dxyz[1 + strid_v + strid_e*i] = w2[n_cells + i];
-          dxyz[2 + strid_v + strid_e*i] = w3[n_cells + i];
-        }
-
-        if (mesh->halo_type == CS_HALO_EXTENDED) {
-
-          start_ext = halo->perio_lst[shift + 4*rank_id + 2];
-          end_ext = start_ext + halo->perio_lst[shift + 4*rank_id + 3];
-
-          for (i = start_ext; i < end_ext; i++) {
-            dxyz[0 + strid_v + strid_e*i] = w1[n_cells + i];
-            dxyz[1 + strid_v + strid_e*i] = w2[n_cells + i];
-            dxyz[2 + strid_v + strid_e*i] = w3[n_cells + i];
-          }
-
-        } /* End if extended halo */
-
-      } /* End of loop on ranks */
-
-    } /* End of test on rotation */
-
-  } /* End of loop on transformations */
-
-  memcpy(w1+n_cells, w_save,                   save_block_size);
-  memcpy(w2+n_cells, w_save +  n_ghost_cells,  save_block_size);
-  memcpy(w3+n_cells, w_save+(2*n_ghost_cells), save_block_size);
-
-  BFT_FREE(w_save);
-}
-
 /*============================================================================
  * Public function definitions for Fortran API
  *============================================================================*/
@@ -785,541 +516,6 @@ CS_PROCF (perrte, PERRTE) (cs_real_t  var11[],
                                  var31, var32, var33);
 }
 
-/*----------------------------------------------------------------------------
- * Periodicity management for INIMAS
- *
- * If INIMAS is called by NAVSTO :
- *    We assume that gradient on ghost cells given by a rotation is known
- *    and is equal to the velocity one for the previous time step.
- * If INIMAS is called by DIVRIJ
- *    We assume that (more justifiable than in previous case) gradient on
- *    ghost cells given by rotation is equal to Rij gradient for the previous
- *    time step.
- *
- * Fortran Interface:
- *
- * SUBROUTINE PERMAS
- * *****************
- *
- * INTEGER          IMASPE      :  -> : suivant l'appel de INIMAS
- *                                          = 1 si appel de RESOLP ou NAVSTO
- *                                          = 2 si appel de DIVRIJ
- * INTEGER          IMASPE      :  -> : indicateur d'appel dans INIMAS
- *                                          = 1 si appel au debut
- *                                          = 2 si appel a la fin
- * DOUBLE PRECISION ROM(NCELET) :  -> : masse volumique aux cellules
- * DOUBLE PRECISION DUDXYZ      :  -> : gradient de U aux cellules halo pour
- *                                      l'approche explicite en periodicite
- * DOUBLE PRECISION DRDXYZ      :  -> : gradient de R aux cellules halo pour
- *                                      l'approche explicite en periodicite
- * DOUBLE PRECISION WDUDXY      :  -  : tableau de travail pour DUDXYZ
- * DOUBLE PRECISION WDRDXY      :  -  : tableau de travail pour DRDXYZ
- *
- * Size of DUDXYZ and WDUDXY = n_ghost_cells*3*3
- * Size of DRDXYZ and WDRDXY = n_ghost_cells*6*3
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (permas, PERMAS)(const cs_int_t    *imaspe,
-                          const cs_int_t    *iappel,
-                          cs_real_t          rom[],
-                          cs_real_t         *dudxyz,
-                          cs_real_t         *drdxyz,
-                          cs_real_t         *wdudxy,
-                          cs_real_t         *wdrdxy)
-{
-  int  rank_id, t_id;
-  cs_lnum_t  i, cell_id, shift;
-  cs_lnum_t  start_std, end_std, start_ext, end_ext;
-
-  cs_mesh_t  *mesh = cs_glob_mesh;
-  cs_halo_t  *halo = mesh->halo;
-  cs_halo_type_t  halo_type = mesh->halo_type;
-  const fvm_periodicity_t  *periodicity = mesh->periodicity;
-
-  if (halo_type == CS_HALO_N_TYPES)
-    return;
-
-  if (*iappel == 1)
-    cs_halo_sync_var(mesh->halo, mesh->halo_type, rom);
-
-  for (t_id = 0; t_id < mesh->n_transforms; t_id++) {
-
-    if (   fvm_periodicity_get_type(periodicity, t_id)
-        >= FVM_PERIODICITY_ROTATION) {
-
-      shift = 4 * halo->n_c_domains * t_id;
-
-      for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
-
-        start_std = halo->perio_lst[shift + 4*rank_id];
-        end_std = start_std + halo->perio_lst[shift + 4*rank_id + 1];
-
-        for (i = start_std; i < end_std; i++) {
-
-          cell_id = mesh->n_cells + i;
-
-          if (*imaspe == 1)
-            _update_dudxyz(i, cell_id, rom, *iappel, dudxyz, wdudxy);
-
-          if (*imaspe == 2)
-            _update_drdxyz(i, cell_id, rom, *iappel, drdxyz, wdrdxy);
-
-        } /* End of loop on halo elements */
-
-        if (halo_type == CS_HALO_EXTENDED) {
-
-          start_ext = halo->perio_lst[shift + 4*rank_id + 2];
-          end_ext = start_ext + halo->perio_lst[shift + 4*rank_id + 3];
-
-          for (i = start_ext; i < end_ext; i++) {
-
-            cell_id = mesh->n_cells + i;
-
-            if (*imaspe == 1)
-              _update_dudxyz(i, cell_id, rom, *iappel, dudxyz, wdudxy);
-
-            if (*imaspe == 2)
-              _update_drdxyz(i, cell_id, rom, *iappel, drdxyz, wdrdxy);
-
-          } /* End of loop on halo elements */
-
-        } /* End if extended halo */
-
-      } /* End of loop on ranks */
-
-    } /* End of test on rotation */
-
-  } /* End of loop on transformation */
-}
-
-/*----------------------------------------------------------------------------
- * Process dpdx, dpdy, dpdz buffers in case of rotation on velocity vector and
- * Reynolds stress tensor.
- *
- * We retrieve the gradient given by perinu and perinr (phyvar) for the
- * velocity and the Reynolds stress tensor in a buffer on ghost cells. then
- * we define dpdx, dpdy and dpdz gradient (1 -> n_cells_with_ghosts).
- *
- * We can't implicitly take into account rotation of a gradient of alnon-scalar
- * variable because we have to know the all three components in gradrc.
- *
- * Otherwise, we can implicitly treat values given by translation. There will
- * be replace further in GRADRC.
- *
- * We set idimtr to 1 and 2 respectively for the velocity vector and the
- * Reynolds stress tensor.
- *
- * We assume that is correct to treat periodicities implicitly for the other
- * variables in gradrc, for which we set idimtr to 0.
- *
- * Fortran Interface:
- *
- * subroutine pering
- * *****************
- *
- * integer          idimtr       : <-- : 0 if ivar does not match a vector
- *                               :     :   or tensor or there is no periodicity
- *                               :     :   of rotation
- *                               :     : 1 for velocity, 2 for Reynolds stress
- *                               :     :   in case of periodicity of rotation
- * integer          irpvar       :     : -1 if ivar does not match a vector or
- *                               :     :   or tensor or there is no periodicity
- *                               :     :   of rotation; otherwise:
- *                               :     : 0 for iu, 1 for iv, 2 for iw
- *                               :     : 0 for ir11, 1 for ir22, 2 for ir33,
- *                               :     : 3 for ir12, 4 for ir13, 5 for ir23
- * integer          iguper       : <-- : 0/1 indicates we have not computed
- *                               :     :   gradients in dudxyz
- * integer          igrper       : <-- : 0/1 indicates we have not computed
- *                               :     :   gradients in drdxyz
- * double precision dpdx(ncelet) : <-> : gradient of ivar
- * double precision dpdy(ncelet) : <-> :    "        "
- * double precision dpdz(ncelet) : <-> :    "        "
- * double precision dudxyz       :  -> : gradient of u at ghost cells for
- *                                       explicit periodicity of rotation
- * double precision drdxyz       :  -> : gradient of r at ghost cells for
- *                                       explicit periodicity of rotation
- *
- * size of dudxyz and wdudxy = n_ghost_cells*3*3
- * size of drdxyz and wdrdxy = n_ghost_cells*6*3
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (pering, PERING)(const cs_int_t    *idimtr,
-                          const cs_int_t    *irpvar,
-                          const cs_int_t    *iguper,
-                          const cs_int_t    *igrper,
-                          cs_real_t          dpdx[],
-                          cs_real_t          dpdy[],
-                          cs_real_t          dpdz[],
-                          const cs_real_t   *dudxyz,
-                          const cs_real_t   *drdxyz)
-{
-  int  rank_id, t_id;
-  cs_lnum_t  i, shift, start_std, end_std, start_ext, end_ext;
-  cs_lnum_t  d_var = 0;
-
-  cs_mesh_t  *mesh = cs_glob_mesh;
-  cs_halo_t  *halo = mesh->halo;
-
-  const cs_lnum_t  n_cells   = mesh->n_cells;
-  const cs_lnum_t  n_transforms = mesh->n_transforms;
-  const cs_lnum_t  n_ghost_cells = mesh->n_ghost_cells;
-  const cs_lnum_t  stride1 = n_ghost_cells * 3;
-  const fvm_periodicity_t  *periodicity = mesh->periodicity;
-
-  if (halo == NULL)
-    return;
-
-  /* We treat the gradient like a vector by default ...
-     (i.e. we assume that this is the gradient of a scalar. */
-
-  /*
-    When there is periodicity of rotation :
-      - Retrieve gradient values for ghost cells and for the previous
-        time step without reconstruction
-      - Ghost cells without rotation keep their value.
-  */
-
-  if (*idimtr == 1 && *iguper == 1) { /* velocity, with dudxyz computed */
-
-    d_var = (*irpvar) * n_ghost_cells;
-
-    for (t_id = 0; t_id < n_transforms; t_id++) {
-
-      if (   fvm_periodicity_get_type(periodicity, t_id)
-          >= FVM_PERIODICITY_ROTATION) {
-
-        shift = 4 * halo->n_c_domains * t_id;
-
-        for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
-
-          start_std = halo->perio_lst[shift + 4*rank_id];
-          end_std = start_std + halo->perio_lst[shift + 4*rank_id + 1];
-
-          for (i = start_std; i < end_std; i++) {
-            dpdx[n_cells + i] = dudxyz[i + d_var + stride1*0];
-            dpdy[n_cells + i] = dudxyz[i + d_var + stride1*1];
-            dpdz[n_cells + i] = dudxyz[i + d_var + stride1*2];
-          }
-
-          if (mesh->halo_type == CS_HALO_EXTENDED) {
-
-            start_ext = halo->perio_lst[shift + 4*rank_id + 2];
-            end_ext = start_ext + halo->perio_lst[shift + 4*rank_id + 3];
-
-            for (i = start_ext; i < end_ext; i++) {
-              dpdx[n_cells + i] = dudxyz[i + d_var + stride1*0];
-              dpdy[n_cells + i] = dudxyz[i + d_var + stride1*1];
-              dpdz[n_cells + i] = dudxyz[i + d_var + stride1*2];
-            }
-
-          } /* End if extended halo */
-
-        } /* End of loop on ranks */
-
-      } /* End of test on rotation */
-
-    } /* End of loop on transformations */
-
-  } /* End if *idimtr == 1 && *iguper == 1 */
-
-  else if (*idimtr == 2 && *igrper == 1) { /* Reynolds stress, with drdxyz */
-
-    d_var = *irpvar;
-
-    for (t_id = 0; t_id < n_transforms; t_id++) {
-
-      if (   fvm_periodicity_get_type(periodicity, t_id)
-          >= FVM_PERIODICITY_ROTATION) {
-
-        shift = 4 * halo->n_c_domains * t_id;
-
-        for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
-
-          start_std = halo->perio_lst[shift + 4*rank_id];
-          end_std = start_std + halo->perio_lst[shift + 4*rank_id + 1];
-
-          for (i = start_std; i < end_std; i++) {
-            dpdx[n_cells + i] = drdxyz[0 + d_var*3 + 18*i];
-            dpdy[n_cells + i] = drdxyz[1 + d_var*3 + 18*i];
-            dpdz[n_cells + i] = drdxyz[2 + d_var*3 + 18*i];
-          }
-
-          if (mesh->halo_type == CS_HALO_EXTENDED) {
-
-            start_ext = halo->perio_lst[shift + 4*rank_id + 2];
-            end_ext = start_ext + halo->perio_lst[shift + 4*rank_id + 3];
-
-            for (i = start_ext; i < end_ext; i++) {
-              dpdx[n_cells + i] = drdxyz[0 + d_var*3 + 18*i];
-              dpdy[n_cells + i] = drdxyz[1 + d_var*3 + 18*i];
-              dpdz[n_cells + i] = drdxyz[2 + d_var*3 + 18*i];
-            }
-
-          } /* End if extended halo */
-
-        } /* End of loop on ranks */
-
-      } /* End of test on rotation */
-
-    } /* End of loop on transformations */
-
-  } /* If *idimtr == 2 && *igrper == 1 */
-}
-
-/*----------------------------------------------------------------------------
- * Exchange buffers for PERINU
- *
- * Fortran Interface:
- *
- * SUBROUTINE PEINU1
- * *****************
- *
- * INTEGER          ISOU          :  -> : component of the velocity vector
- * DOUBLE PRECISION DUDXYZ        : <-> : gradient of the velocity vector
- *                                        for ghost cells and for an explicit
- *                                        treatment of the periodicity.
- * DOUBLE PRECISION W1..3(NCELET) :  -  : working buffers
- *
- * Size of DUDXYZ and WDUDXY = n_ghost_cells*3*3
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (peinu1, PEINU1)(const cs_int_t    *isou,
-                          cs_real_t         *dudxyz,
-                          cs_real_t          w1[],
-                          cs_real_t          w2[],
-                          cs_real_t          w3[])
-{
-  cs_mesh_t  *mesh = cs_glob_mesh;
-
-  const cs_lnum_t  n_ghost_cells = mesh->n_ghost_cells;
-  const cs_lnum_t  comp_id = *isou - 1;
-  const cs_lnum_t  strid_v = n_ghost_cells * 3;
-  const cs_lnum_t  strid_c = n_ghost_cells * comp_id;
-
-  _peinur1(strid_c, strid_v, dudxyz, w1, w2, w3);
-}
-
-/*----------------------------------------------------------------------------
- * Apply rotation on DUDXYZ tensor.
- *
- * Fortran Interface:
- *
- * SUBROUTINE PEINU2 (VAR)
- * *****************
- *
- * DOUBLE PRECISION DUDXYZ        : <-> : gradient of the velocity vector
- *                                        for ghost cells and for an explicit
- *                                        treatment of the periodicity.
- *
- * Size of DUDXYZ and WDUDXY = n_ghost_cells*3*3
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (peinu2, PEINU2)(cs_real_t         *dudxyz)
-{
-  int  t_id, rank_id;
-  cs_lnum_t  i, shift, start_std, end_std, start_ext, end_ext;
-  fvm_periodicity_type_t  perio_type;
-  cs_real_t  matrix[3][4];
-
-  cs_mesh_t  *mesh = cs_glob_mesh;
-  cs_halo_t  *halo = mesh->halo;
-
-  const cs_lnum_t  n_transforms = mesh->n_transforms;
-  const cs_lnum_t  n_ghost_cells = mesh->n_ghost_cells;
-  const cs_lnum_t  stride = 3 * n_ghost_cells;
-  const fvm_periodicity_t  *periodicity = mesh->periodicity;
-
-  /* Macro for position inside an array */
-
-#define GET_ID1(i, j, k) ( i + n_ghost_cells*j + stride*k )
-
-  if (mesh->halo_type == CS_HALO_N_TYPES || halo == NULL)
-    return;
-
-  /* Compute the new cell centers through periodicity */
-
-  for (t_id = 0; t_id < n_transforms; t_id++) {
-
-    shift = 4 * halo->n_c_domains * t_id;
-
-    perio_type = fvm_periodicity_get_type(periodicity, t_id);
-
-    if (perio_type >= FVM_PERIODICITY_ROTATION) {
-
-      fvm_periodicity_get_matrix(periodicity, t_id, matrix);
-
-      for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
-
-        start_std = halo->perio_lst[shift + 4*rank_id];
-        end_std = start_std + halo->perio_lst[shift + 4*rank_id + 1];
-
-        for (i = start_std; i < end_std; i++)
-          _apply_tensor_rotation_ni(matrix,
-                                    dudxyz[GET_ID1(i,0,0)],
-                                    dudxyz[GET_ID1(i,0,1)],
-                                    dudxyz[GET_ID1(i,0,2)],
-                                    dudxyz[GET_ID1(i,1,0)],
-                                    dudxyz[GET_ID1(i,1,1)],
-                                    dudxyz[GET_ID1(i,1,2)],
-                                    dudxyz[GET_ID1(i,2,0)],
-                                    dudxyz[GET_ID1(i,2,1)],
-                                    dudxyz[GET_ID1(i,2,2)],
-                                    &dudxyz[GET_ID1(i,0,0)],
-                                    &dudxyz[GET_ID1(i,0,1)],
-                                    &dudxyz[GET_ID1(i,0,2)],
-                                    &dudxyz[GET_ID1(i,1,0)],
-                                    &dudxyz[GET_ID1(i,1,1)],
-                                    &dudxyz[GET_ID1(i,1,2)],
-                                    &dudxyz[GET_ID1(i,2,0)],
-                                    &dudxyz[GET_ID1(i,2,1)],
-                                    &dudxyz[GET_ID1(i,2,2)]);
-
-        if (mesh->halo_type == CS_HALO_EXTENDED) {
-
-          start_ext = halo->perio_lst[shift + 4*rank_id + 2];
-          end_ext = start_ext + halo->perio_lst[shift + 4*rank_id + 3];
-
-          for (i = start_ext; i < end_ext; i++)
-            _apply_tensor_rotation_ni(matrix,
-                                      dudxyz[GET_ID1(i,0,0)],
-                                      dudxyz[GET_ID1(i,0,1)],
-                                      dudxyz[GET_ID1(i,0,2)],
-                                      dudxyz[GET_ID1(i,1,0)],
-                                      dudxyz[GET_ID1(i,1,1)],
-                                      dudxyz[GET_ID1(i,1,2)],
-                                      dudxyz[GET_ID1(i,2,0)],
-                                      dudxyz[GET_ID1(i,2,1)],
-                                      dudxyz[GET_ID1(i,2,2)],
-                                      &dudxyz[GET_ID1(i,0,0)],
-                                      &dudxyz[GET_ID1(i,0,1)],
-                                      &dudxyz[GET_ID1(i,0,2)],
-                                      &dudxyz[GET_ID1(i,1,0)],
-                                      &dudxyz[GET_ID1(i,1,1)],
-                                      &dudxyz[GET_ID1(i,1,2)],
-                                      &dudxyz[GET_ID1(i,2,0)],
-                                      &dudxyz[GET_ID1(i,2,1)],
-                                      &dudxyz[GET_ID1(i,2,2)]);
-
-        } /* End if extended halo exists */
-
-      } /* End of loop on ranks */
-
-    } /* End if periodicity is a rotation */
-
-  } /* End of loop on transformation */
-}
-
-/*----------------------------------------------------------------------------
- * Exchange buffers for PERINR
- *
- * Fortran Interface
- *
- * SUBROUTINE PEINR1 (VAR)
- * *****************
- *
- * INTEGER          ISOU          : -> : component of the Reynolds stress tensor
- * DOUBLE PRECISION DRDXYZ        : -> : gradient of the Reynolds stress tensor
- *                                       for ghost cells and for an explicit
- *                                       treatment of the periodicity.
- * DOUBLE PRECISION GRADX(NCELET)
- *                  GRADY(NCELET)
- *                  GRADZ(NCELET) : -  : x, y, z components of the gradient of
- *                                       the current component of the Reynolds
- *                                       stress tensor.
- *
- * Size of DRDXYZ and WDRDXY = n_ghost_cells*6*3
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (peinr1, PEINR1)(const cs_int_t    *isou,
-                          cs_real_t         *drdxyz,
-                          cs_real_t          gradx[],
-                          cs_real_t          grady[],
-                          cs_real_t          gradz[])
-{
-  const int  comp_id = *isou - 1;
-  const int  strid_v = 3*comp_id;
-  const int  strid_e = 3*6;
-
-  _peinr1(strid_v, strid_e, drdxyz, gradx, grady, gradz);
-}
-
-/*----------------------------------------------------------------------------
- * Apply rotation on the gradient of Reynolds stress tensor
- *
- * Fortran Interface:
- *
- * SUBROUTINE PEINR2 (VAR)
- * *****************
- *
- * DOUBLE PRECISION DRDXYZ        :  -> : gradient of the Reynolds stress tensor
- *                                       for ghost cells and for an explicit
- *                                       treatment of the periodicity.
- *
- * Size of DRDXYZ = 3*6*n_ghost_cells
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (peinr2, PEINR2)(cs_real_t         *drdxyz)
-{
-  int  rank_id, t_id;
-  cs_lnum_t  i, shift, start_std, end_std, start_ext, end_ext;
-  fvm_periodicity_type_t  perio_type;
-
-  cs_real_t  matrix[3][4];
-
-  cs_mesh_t  *mesh = cs_glob_mesh;
-  cs_halo_t  *halo = mesh->halo;
-
-  const int  n_transforms = mesh->n_transforms;
-  const cs_halo_type_t  halo_type = mesh->halo_type;
-  const fvm_periodicity_t  *periodicity = mesh->periodicity;
-
-  if (mesh->halo_type == CS_HALO_N_TYPES || halo == NULL)
-    return;
-
-  assert(halo != NULL);
-
-  for (t_id = 0; t_id < n_transforms; t_id++) {
-
-    shift = 4 * halo->n_c_domains * t_id;
-
-    perio_type = fvm_periodicity_get_type(periodicity, t_id);
-
-    if (perio_type >= FVM_PERIODICITY_ROTATION) {
-
-      fvm_periodicity_get_matrix(periodicity, t_id, matrix);
-
-      for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
-
-        start_std = halo->perio_lst[shift + 4*rank_id];
-        end_std = start_std + halo->perio_lst[shift + 4*rank_id + 1];
-
-        for (i = start_std; i < end_std; i++)
-          _apply_tensor3sym_rotation(matrix, drdxyz + 18*i);
-
-        if (halo_type == CS_HALO_EXTENDED) {
-
-          start_ext = halo->perio_lst[shift + 4*rank_id + 2];
-          end_ext = start_ext + halo->perio_lst[shift + 4*rank_id + 3];
-
-          for (i = start_ext; i < end_ext; i++)
-            _apply_tensor3sym_rotation(matrix, drdxyz + 18*i);
-
-        } /* End if an extended halo exists */
-
-      } /* End of loop on ranks */
-
-    } /* If the transformation is a rotation */
-
-  } /* End of loop on transformations */
-}
-
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -1329,8 +525,8 @@ CS_PROCF (peinr2, PEINR2)(cs_real_t         *drdxyz)
  *
  * parameters:
  *   halo      <-> halo associated with coordinates to synchronize
- *   sync_mode --> kind of halo treatment (standard or extended)
- *   coords    --> coordinates on which transformation have to be done.
+ *   sync_mode <-- kind of halo treatment (standard or extended)
+ *   coords    <-- coordinates on which transformation have to be done.
  *----------------------------------------------------------------------------*/
 
 void
@@ -1394,7 +590,7 @@ cs_halo_perio_sync_coords(const cs_halo_t  *halo,
  *
  * parameters:
  *   halo      <-> halo associated with variable to synchronize
- *   sync_mode --> kind of halo treatment (standard or extended)
+ *   sync_mode <-- kind of halo treatment (standard or extended)
  *   var       <-> vector to update
  *   incvar    <-- specifies the increment for the elements of var
  *----------------------------------------------------------------------------*/
@@ -1464,7 +660,7 @@ cs_halo_perio_sync_var_vect(const cs_halo_t  *halo,
  *
  * parameters:
  *   halo      <-> halo associated with variable to synchronize
- *   sync_mode --> kind of halo treatment (standard or extended)
+ *   sync_mode <-- kind of halo treatment (standard or extended)
  *   var_x     <-> component of the vector to update
  *   var_y     <-> component of the vector to update
  *   var_z     <-> component of the vector to update
@@ -1562,7 +758,7 @@ cs_halo_perio_sync_var_vect_ni(const cs_halo_t     *halo,
  *
  * parameters:
  *   halo      <-> halo associated with variable to synchronize
- *   sync_mode --> kind of halo treatment (standard or extended)
+ *   sync_mode <-- kind of halo treatment (standard or extended)
  *   var11     <-> component of the tensor to update
  *   var12     <-> component of the tensor to update
  *   var13     <-> component of the tensor to update
@@ -1687,7 +883,7 @@ cs_halo_perio_sync_var_tens_ni(const cs_halo_t  *halo,
  *
  * parameters:
  *   halo      <-> halo associated with variable to synchronize
- *   sync_mode --> kind of halo treatment (standard or extended)
+ *   sync_mode <-- kind of halo treatment (standard or extended)
  *   var       <-> tensor to update
  *----------------------------------------------------------------------------*/
 
@@ -1756,7 +952,7 @@ cs_halo_perio_sync_var_tens(const cs_halo_t  *halo,
  *
  * parameters:
  *   halo      <-> halo associated with variable to synchronize
- *   sync_mode --> kind of halo treatment (standard or extended)
+ *   sync_mode <-- kind of halo treatment (standard or extended)
  *   var       <-> symmetric tensor to update (6 values)
  *----------------------------------------------------------------------------*/
 
@@ -1825,7 +1021,7 @@ cs_halo_perio_sync_var_sym_tens(const cs_halo_t  *halo,
  *
  * parameters:
  *   halo      <-> halo associated with variable to synchronize
- *   sync_mode --> kind of halo treatment (standard or extended)
+ *   sync_mode <-- kind of halo treatment (standard or extended)
  *   var11     <-> component of the tensor to update
  *   var22     <-> component of the tensor to update
  *   var33     <-> component of the tensor to update
@@ -1922,7 +1118,7 @@ cs_halo_perio_sync_var_diag_ni(const cs_halo_t  *halo,
  *
  * parameters:
  *   halo      <-> halo associated with variable to synchronize
- *   sync_mode --> kind of halo treatment (standard or extended)
+ *   sync_mode <-- kind of halo treatment (standard or extended)
  *   var       <-> diagonal tensor to update
  *----------------------------------------------------------------------------*/
 
@@ -2017,6 +1213,69 @@ cs_halo_perio_sync_var_diag(const cs_halo_t  *halo,
       } /* End of loop on ranks */
 
     } /* End of the treatment of rotation */
+
+  } /* End of loop on transformations */
+}
+
+/*----------------------------------------------------------------------------
+ * Apply rotation on the gradient of Reynolds stress tensor
+ *
+ * parameters:
+ *   drdxyz     <-> gradient on the variable (size: 3*6*n_ghost_cells)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_halo_perio_rotate_rij(cs_real_t  *drdxyz)
+{
+  int  rank_id, t_id;
+  cs_lnum_t  i, shift, start_std, end_std, start_ext, end_ext;
+  fvm_periodicity_type_t  perio_type;
+
+  cs_real_t  matrix[3][4];
+
+  cs_mesh_t  *mesh = cs_glob_mesh;
+  cs_halo_t  *halo = mesh->halo;
+
+  const int  n_transforms = mesh->n_transforms;
+  const cs_halo_type_t  halo_type = mesh->halo_type;
+  const fvm_periodicity_t  *periodicity = mesh->periodicity;
+
+  if (mesh->halo_type == CS_HALO_N_TYPES || halo == NULL)
+    return;
+
+  assert(halo != NULL);
+
+  for (t_id = 0; t_id < n_transforms; t_id++) {
+
+    shift = 4 * halo->n_c_domains * t_id;
+
+    perio_type = fvm_periodicity_get_type(periodicity, t_id);
+
+    if (perio_type >= FVM_PERIODICITY_ROTATION) {
+
+      fvm_periodicity_get_matrix(periodicity, t_id, matrix);
+
+      for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+
+        start_std = halo->perio_lst[shift + 4*rank_id];
+        end_std = start_std + halo->perio_lst[shift + 4*rank_id + 1];
+
+        for (i = start_std; i < end_std; i++)
+          _apply_tensor3sym_rotation(matrix, drdxyz + 18*i);
+
+        if (halo_type == CS_HALO_EXTENDED) {
+
+          start_ext = halo->perio_lst[shift + 4*rank_id + 2];
+          end_ext = start_ext + halo->perio_lst[shift + 4*rank_id + 3];
+
+          for (i = start_ext; i < end_ext; i++)
+            _apply_tensor3sym_rotation(matrix, drdxyz + 18*i);
+
+        } /* End if an extended halo exists */
+
+      } /* End of loop on ranks */
+
+    } /* If the transformation is a rotation */
 
   } /* End of loop on transformations */
 }

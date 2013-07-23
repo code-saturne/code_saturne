@@ -115,6 +115,7 @@ use parall
 use period
 use cfpoin, only: ifbrus
 use mesh
+use numvar, only: ivarfl
 
 !===============================================================================
 
@@ -299,16 +300,9 @@ if( iconvp.gt.0.and.iupwin.eq.0.and.isstpp.eq.0 ) then
     !==========
   endif
 
-  if (iperot.eq.1) then
-    call pergra(ivar, idimtr, irpvar)
+  if (iperot.eq.1.and.ivar.gt.0) then
+    call pering(ivarfl(ivar), idimtr, dpdxa, dpdya, dpdza)
     !==========
-    if (idimtr .gt. 0) then
-      call pering                                               &
-      !==========
-      ( idimtr , irpvar , iguper , igrper ,                     &
-        dpdxa, dpdya, dpdza,                                    &
-        dudxy  , drdxy  )
-    endif
   endif
 
 endif

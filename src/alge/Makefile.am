@@ -46,6 +46,7 @@ pkginclude_HEADERS = \
 cs_benchmark.h \
 cs_blas.h \
 cs_gradient.h \
+cs_gradient_perio.h \
 cs_grid.h \
 cs_matrix.h \
 cs_matrix_priv.h \
@@ -65,6 +66,7 @@ libcsalge_la_SOURCES = \
 cs_benchmark.c \
 cs_blas.c \
 cs_gradient.c \
+cs_gradient_perio.c \
 cs_grid.c \
 cs_matrix.c \
 cs_matrix_util.c \

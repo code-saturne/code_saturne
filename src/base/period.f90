@@ -33,10 +33,7 @@ module period
   !          (complete automatiquement)
   !          valeur par defaut : 0
 
-  ! iguper : 0/1 indique qu'on a /n'a pas calcule les gradients dans dudxyz
-  ! igrper : 0/1 indique qu'on a /n'a pas calcule les gradients dans drdxyz
-
-  integer, save :: iperio, iperot, iguper, igrper
+  integer, save :: iperio, iperot, igrper
 
   !=============================================================================
 

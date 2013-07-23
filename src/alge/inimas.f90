@@ -378,15 +378,10 @@ if (nswrgu.gt.1) then
 !     TRAITEMENT DE LA PERIODICITE SPEFICIQUE A INIMAS AU DEBUT
 !     =========================================================
 
-  if (iperot.gt.0.and.itypfl.eq.1) then
+  if (iperot.gt.0 .and. itypfl .eq.1 .and. imaspe.eq.2) then
     iappel = 1
-
-    call permas &
+    call permas(iappel, rom)
     !==========
- ( imaspe , iappel ,                 &
-   rom    ,                          &
-   dudxy  , drdxy  , wdudxy , wdrdxy )
-
   endif
 
   ! Mass flow along X
@@ -658,15 +653,10 @@ if (nswrgu.gt.1) then
 !     TRAITEMENT DE LA PERIODICITE SPEFICIQUE A INIMAS A LA FIN
 !     =========================================================
 
-  if(iperot.gt.0.and.itypfl.eq.1) then
+  if (iperot .gt. 0 .and. itypfl.eq.1 .and. imaspe.eq.2) then
     iappel = 2
-
-    call permas &
+    call permas(iappel, rom)
     !==========
- ( imaspe , iappel ,                 &
-   rom    ,                          &
-   dudxy  , drdxy  , wdudxy , wdrdxy )
-
   endif
 
 endif

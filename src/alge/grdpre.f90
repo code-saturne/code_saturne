@@ -135,7 +135,7 @@ ipond = 1
 
 call cgdcel &
 !==========
- ( ivar   , imrgra , inc    , iccocg , imobil , iale   , nswrgp , &
+ ( ivar   , imrgra , inc    , iccocg , nswrgp ,                   &
    idimtr , iphydp , ipond  , iwarnp , imligp , epsrgp , extrap , &
    climgp , isympa , rvoid  , coefap , coefbp ,                   &
    pvar   , ktvar  , grad   )

@@ -71,8 +71,19 @@
 BEGIN_C_DECLS
 
 /*=============================================================================
+ * Additional Doxygen documentation
+ *============================================================================*/
+
+/*!
+  \file cs_gradient.c
+        Gradient reconstruction.
+*/
+
+/*=============================================================================
  * Local type definitions
  *============================================================================*/
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /* Basic per gradient compuation options and logging */
 /*---------------------------------------------------*/
@@ -88,12 +99,14 @@ typedef struct _cs_gradient_info_t {
 
 } cs_gradient_info_t;
 
+/*! \endcond (end ignore by Doxygen) */
+
 /*============================================================================
  *  Global variables
  *============================================================================*/
 
 static int cs_glob_gradient_n_systems = 0;      /* Current number of systems */
-static int cs_glob_gradient_n_max_systems = 0;  /* Max. number of sytems for
+static int cs_glob_gradient_n_max_systems = 0;  /* Max. number of systems for
                                                    cs_glob_gradient_systems. */
 
 /* System info array */
@@ -115,8 +128,8 @@ const char *cs_gradient_type_name[] = {N_("Iterative reconstruction"),
  * Return pointer to new gradient computation info structure.
  *
  * parameters:
- *   name --> system name
- *   type --> resolution method
+ *   name <-- system name
+ *   type <-- resolution method
  *
  * returns:
  *   pointer to newly created linear system info structure
@@ -1237,9 +1250,7 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
  *   m              <-- pointer to associated mesh structure
  *   fvq            <-- pointer to associated finite volume quantities
  *   var_name       <-- variable name
- *   imobil         <-- 1 if using mobile mesh, 0 otherwise
  *   recompute_cocg <-- flag to recompute cocg
- *   iale           <-- 1 if using ALE, 0 otherwise
  *   nswrgp         <-- number of sweeps for gradient reconstruction
  *   idimtr         <-- 0 if ivar does not match a vector or tensor
  *                        or there is no periodicity of rotation
@@ -1252,8 +1263,6 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
  *   f_ext          <-- exterior force generating pressure
  *   coefap         <-- B.C. coefficients for boundary face normals
  *   coefbp         <-- B.C. coefficients for boundary face normals
- *   pvar           <-- variable
- *   ktvar          <-- pressure gradient coefficient variable
  *   dpdxyz         <-> gradient of pvar (halo prepared for periodicity
  *                      of rotation)
  *   rhsv           <-> interleaved array for gradient RHS components
@@ -1265,8 +1274,6 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
                            cs_mesh_quantities_t        *fvq,
                            const char                  *var_name,
                            bool                         recompute_cocg,
-                           int                          imobil,
-                           int                          iale,
                            int                          nswrgp,
                            int                          idimtr,
                            int                          hyd_p_flag,
@@ -1277,8 +1284,6 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
                            const cs_real_3_t            f_ext[],
                            const cs_real_t              coefap[],
                            const cs_real_t              coefbp[],
-                           const cs_real_t              pvar[],
-                           const cs_real_t              ktvar[],
                            cs_real_3_t        *restrict dpdxyz,
                            cs_real_4_t        *restrict rhsv)
 {
@@ -1326,7 +1331,6 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
   cs_real_3_t  fexd;
   cs_real_4_t  fctb;
 
-  bool compute_cocg = false;
   int nswmax = nswrgp;
   int n_sweeps = 0;
   cs_real_t residue = 0.;
@@ -1340,151 +1344,10 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
 
   /* Semi-implicit resolution on the whole mesh  */
 
-  if (cocg == NULL || iale == 1 || imobil == 1)
-    compute_cocg = true;
-
-  if (compute_cocg) {
-
-    if (cocg == NULL) {
-      BFT_MALLOC(cocgb, m->n_b_cells, cs_real_33_t);
-      BFT_MALLOC(cocg, n_cells_ext, cs_real_33_t);
-      fvq->cocgb_s_it = cocgb;
-      fvq->cocg_s_it = cocg;
-    }
-
-    /* Compute cocg */
-
-#   pragma omp parallel for
-    for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
-      cocg[cell_id][0][0] = cell_vol[cell_id];
-      cocg[cell_id][0][1] = 0.0;
-      cocg[cell_id][0][2] = 0.0;
-      cocg[cell_id][1][0] = 0.0;
-      cocg[cell_id][1][1] = cell_vol[cell_id];
-      cocg[cell_id][1][2] = 0.0;
-      cocg[cell_id][2][0] = 0.0;
-      cocg[cell_id][2][1] = 0.0;
-      cocg[cell_id][2][2] = cell_vol[cell_id];
-    }
-
-    /* Contribution from interior faces */
-
-    for (g_id = 0; g_id < n_i_groups; g_id++) {
-
-#     pragma omp parallel for private(face_id, ii, jj, ll, fctb)
-      for (t_id = 0; t_id < n_i_threads; t_id++) {
-
-        for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-             face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-             face_id++) {
-
-          ii = i_face_cells[face_id][0] - 1;
-          jj = i_face_cells[face_id][1] - 1;
-
-          for (ll = 0; ll < 3; ll++) {
-            fctb[0] = -dofij[face_id][0] * 0.5 * i_face_normal[face_id][ll];
-            fctb[1] = -dofij[face_id][1] * 0.5 * i_face_normal[face_id][ll];
-            fctb[2] = -dofij[face_id][2] * 0.5 * i_face_normal[face_id][ll];
-            cocg[ii][ll][0] += fctb[0];
-            cocg[ii][ll][1] += fctb[1];
-            cocg[ii][ll][2] += fctb[2];
-            cocg[jj][ll][0] -= fctb[0];
-            cocg[jj][ll][1] -= fctb[1];
-            cocg[jj][ll][2] -= fctb[2];
-          }
-
-        } /* loop on faces */
-
-      } /* loop on threads */
-
-    } /* loop on thread groups */
-
-    /* Save partial cocg at interior faces of boundary cells */
-
-#   pragma omp parallel for private(cell_id, ll, mm)
-    for (ii = 0; ii < m->n_b_cells; ii++) {
-      cell_id = m->b_cells[ii] - 1;
-      for (ll = 0; ll < 3; ll++) {
-        for (mm = 0; mm < 3; mm++)
-          cocgb[ii][ll][mm] = cocg[cell_id][ll][mm];
-      }
-    }
-
-    /* Contribution from boundary faces */
-
-    for (g_id = 0; g_id < n_b_groups; g_id++) {
-
-#     pragma omp parallel for private(face_id, ii, ll, mm)
-      for (t_id = 0; t_id < n_b_threads; t_id++) {
-
-        for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
-             face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
-             face_id++) {
-
-          ii = b_face_cells[face_id] - 1;
-
-          for (ll = 0; ll < 3; ll++) {
-            for (mm = 0; mm < 3; mm++)
-              cocg[ii][ll][mm] -= (  coefbp[face_id] * diipb[face_id][mm]
-                                   * b_face_normal[face_id][ll]);
-          }
-
-        } /* loop on faces */
-
-      } /* loop on threads */
-
-    } /* loop on thread groups */
-
-    /* Invert for all cells. */
-    /*-----------------------*/
-
-    /* The cocg term for interior cells only changes if the mesh does */
-
-#   pragma omp parallel for private(cocg11, cocg12, cocg13, cocg21, cocg22, \
-                                    cocg23, cocg31, cocg32, cocg33, a11, a12, \
-                                    a13, a21, a22, a23, a31, a32, a33, det_inv)
-    for (cell_id = 0; cell_id < n_cells; cell_id++) {
-
-      cocg11 = cocg[cell_id][0][0];
-      cocg12 = cocg[cell_id][0][1];
-      cocg13 = cocg[cell_id][0][2];
-      cocg21 = cocg[cell_id][1][0];
-      cocg22 = cocg[cell_id][1][1];
-      cocg23 = cocg[cell_id][1][2];
-      cocg31 = cocg[cell_id][2][0];
-      cocg32 = cocg[cell_id][2][1];
-      cocg33 = cocg[cell_id][2][2];
-
-      a11 = cocg22*cocg33 - cocg32*cocg23;
-      a12 = cocg32*cocg13 - cocg12*cocg33;
-      a13 = cocg12*cocg23 - cocg22*cocg13;
-      a21 = cocg31*cocg23 - cocg21*cocg33;
-      a22 = cocg11*cocg33 - cocg31*cocg13;
-      a23 = cocg21*cocg13 - cocg11*cocg23;
-      a31 = cocg21*cocg32 - cocg31*cocg22;
-      a32 = cocg31*cocg12 - cocg11*cocg32;
-      a33 = cocg11*cocg22 - cocg21*cocg12;
-
-      det_inv = 1. / (cocg11*a11 + cocg21*a12 + cocg31*a13);
-
-      cocg[cell_id][0][0] = a11 * det_inv;
-      cocg[cell_id][0][1] = a12 * det_inv;
-      cocg[cell_id][0][2] = a13 * det_inv;
-      cocg[cell_id][1][0] = a21 * det_inv;
-      cocg[cell_id][1][1] = a22 * det_inv;
-      cocg[cell_id][1][2] = a23 * det_inv;
-      cocg[cell_id][2][0] = a31 * det_inv;
-      cocg[cell_id][2][1] = a32 * det_inv;
-      cocg[cell_id][2][2] = a33 * det_inv;
-
-    }
-
-  } /* End of test on ale, mobile mesh, or call counter */
-
-  /* If cocg must be recomputed later, only do it for boundary cells,
+  /* If cocg must be recomputed, only do it for boundary cells,
      with saved cocgb */
 
-  if (recompute_cocg && compute_cocg == false) {
+  if (recompute_cocg) {
 
 #   pragma omp parallel for private(cell_id, ll, mm)
     for (ii = 0; ii < m->n_b_cells; ii++) {
@@ -1847,8 +1710,6 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
  *   fvq            <-- pointer to associated finite volume quantities
  *   halo_type      <-- halo type (extended or not)
  *   recompute_cocg <-- flag to recompute cocg
- *   imobil         <-- 1 if using mobile mesh, 0 otherwise
- *   iale           <-- 1 if using ALE, 0 otherwise
  *   nswrgp         <-- number of sweeps for gradient reconstruction
  *   idimtr         <-- 0 if ivar does not match a vector or tensor
  *                        or there is no periodicity of rotation
@@ -1872,8 +1733,6 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
                      cs_mesh_quantities_t        *fvq,
                      cs_halo_type_t               halo_type,
                      bool                         recompute_cocg,
-                     int                          imobil,
-                     int                          iale,
                      int                          nswrgp,
                      int                          idimtr,
                      int                          hyd_p_flag,
@@ -1928,7 +1787,7 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
   int        g_id, t_id;
   cs_real_t  a11, a12, a13, a22, a23, a33;
   cs_real_t  cocg11, cocg12, cocg13, cocg22, cocg23, cocg33;
-  cs_real_t  pfac, det_inv, uddij2;
+  cs_real_t  pfac, det_inv;
   cs_real_t  extrab, unddij, umcbdd, udbfs;
   cs_real_3_t  dc, dddij, dsij;
   cs_real_4_t  fctb;
@@ -1969,167 +1828,7 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
 
   /* Compute cocg and save contribution at boundaries */
 
-  if ((cocg == NULL || iale == 1|| imobil == 1) && recompute_cocg) {
-
-    if (cocg == NULL) {
-      BFT_MALLOC(cocgb, m->n_b_cells, cs_real_33_t);
-      BFT_MALLOC(cocg, n_cells_ext, cs_real_33_t);
-      fvq->cocgb_s_lsq = cocgb;
-      fvq->cocg_s_lsq = cocg;
-    }
-
-    /* Initialization */
-
-#   pragma omp parallel for private(ll, mm)
-    for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
-      for (ll = 0; ll < 3; ll++) {
-        for (mm = 0; mm < 3; mm++)
-          cocg[cell_id][ll][mm] = 0.0;
-      }
-    }
-
-    /* Contribution from interior faces */
-
-    for (g_id = 0; g_id < n_i_groups; g_id++) {
-
-#     pragma omp parallel for private(face_id, ii, jj, ll, mm, uddij2, dc)
-      for (t_id = 0; t_id < n_i_threads; t_id++) {
-
-        for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-             face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-             face_id++) {
-
-          ii = i_face_cells[face_id][0] - 1;
-          jj = i_face_cells[face_id][1] - 1;
-
-          for (ll = 0; ll < 3; ll++)
-            dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
-          uddij2 = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
-
-          for (ll = 0; ll < 3; ll++) {
-            for (mm = 0; mm < 3; mm++)
-              cocg[ii][ll][mm] += dc[ll] * dc[mm] * uddij2;
-          }
-          for (ll = 0; ll < 3; ll++) {
-            for (mm = 0; mm < 3; mm++)
-              cocg[jj][ll][mm] += dc[ll] * dc[mm] * uddij2;
-          }
-
-        } /* loop on faces */
-
-      } /* loop on threads */
-
-    } /* loop on thread groups */
-
-    /* Contribution from extended neighborhood */
-
-    if (halo_type == CS_HALO_EXTENDED) {
-
-#     pragma omp parallel for private(cidx, jj, ll, mm, uddij2, dc)
-      for (ii = 0; ii < n_cells; ii++) {
-        for (cidx = cell_cells_idx[ii]; cidx < cell_cells_idx[ii+1]; cidx++) {
-
-          jj = cell_cells_lst[cidx - 1] - 1;
-
-          for (ll = 0; ll < 3; ll++)
-            dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
-          uddij2 = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
-
-          for (ll = 0; ll < 3; ll++) {
-            for (mm = 0; mm < 3; mm++)
-              cocg[ii][ll][mm] += dc[ll] * dc[mm] * uddij2;
-          }
-
-        }
-      }
-
-    } /* End for extended neighborhood */
-
-    /* Save partial cocg at interior faces of boundary cells */
-
-#   pragma omp parallel for private(cell_id, ll, mm)
-    for (ii = 0; ii < m->n_b_cells; ii++) {
-      cell_id = m->b_cells[ii] - 1;
-      for (ll = 0; ll < 3; ll++) {
-        for (mm = 0; mm < 3; mm++)
-          cocgb[ii][ll][mm] = cocg[cell_id][ll][mm];
-      }
-    }
-
-    /* Contribution from boundary faces */
-
-    for (g_id = 0; g_id < n_b_groups; g_id++) {
-
-#     pragma omp parallel for private(face_id, ii, ll, mm, \
-                                      extrab, umcbdd, udbfs, dddij)
-      for (t_id = 0; t_id < n_b_threads; t_id++) {
-
-        for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
-             face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
-             face_id++) {
-
-          ii = b_face_cells[face_id] - 1;
-
-          extrab = 1. - isympa[face_id]*extrap*coefbp[face_id];
-
-          umcbdd = extrab * (1. - coefbp[face_id]) / b_dist[face_id];
-          udbfs = extrab / b_face_surf[face_id];
-
-          for (ll = 0; ll < 3; ll++)
-            dddij[ll] =   udbfs * b_face_normal[face_id][ll]
-                        + umcbdd * diipb[face_id][ll];
-
-          for (ll = 0; ll < 3; ll++) {
-            for (mm = 0; mm < 3; mm++)
-              cocg[ii][ll][mm] += dddij[ll]*dddij[mm];
-          }
-
-        } /* loop on faces */
-
-      } /* loop on threads */
-
-    } /* loop on thread groups */
-
-    /* Invert for all cells. */
-    /*-----------------------*/
-
-    /* The cocg term for interior cells only changes if the mesh does */
-
-#   pragma omp parallel for private(cocg11, cocg12, cocg13, cocg22, \
-                                    cocg23, cocg33, a11, a12, \
-                                    a13, a22, a23, a33, det_inv)
-    for (cell_id = 0; cell_id < n_cells; cell_id++) {
-
-      cocg11 = cocg[cell_id][0][0];
-      cocg12 = cocg[cell_id][0][1];
-      cocg13 = cocg[cell_id][0][2];
-      cocg22 = cocg[cell_id][1][1];
-      cocg23 = cocg[cell_id][1][2];
-      cocg33 = cocg[cell_id][2][2];
-
-      a11 = cocg22*cocg33 - cocg23*cocg23;
-      a12 = cocg23*cocg13 - cocg12*cocg33;
-      a13 = cocg12*cocg23 - cocg22*cocg13;
-      a22 = cocg11*cocg33 - cocg13*cocg13;
-      a23 = cocg12*cocg13 - cocg11*cocg23;
-      a33 = cocg11*cocg22 - cocg12*cocg12;
-
-      det_inv = 1. / (cocg11*a11 + cocg12*a12 + cocg13*a13);
-
-      cocg[cell_id][0][0] = a11 * det_inv;
-      cocg[cell_id][0][1] = a12 * det_inv;
-      cocg[cell_id][0][2] = a13 * det_inv;
-      cocg[cell_id][1][0] = a12 * det_inv;
-      cocg[cell_id][1][1] = a22 * det_inv;
-      cocg[cell_id][1][2] = a23 * det_inv;
-      cocg[cell_id][2][0] = a13 * det_inv;
-      cocg[cell_id][2][1] = a23 * det_inv;
-      cocg[cell_id][2][2] = a33 * det_inv;
-
-    }
-
-  }
-  else if (recompute_cocg) {
+  if (recompute_cocg) {
 
   /* Recompute cocg at boundaries, using saved cocgb */
 
@@ -3574,8 +3273,6 @@ void CS_PROCF (cgdcel, CGDCEL)
  const cs_int_t   *const imrgra,      /* <-- gradient computation mode        */
  const cs_int_t   *const inc,         /* <-- 0 or 1: increment or not         */
  const cs_int_t   *const iccocg,      /* <-- 1 or 0: recompute COCG or not    */
- const cs_int_t   *const imobil,      /* <-- 1 for mobile mesh, 0 otherwise   */
- const cs_int_t   *const iale,        /* <-- 1 for ALE, 0 otherwise           */
  const cs_int_t   *const nswrgp,      /* <-- >1: with reconstruction          */
  const cs_int_t   *const idimtr,      /* <-- 0, 1, 2: scalar, vector, tensor
                                              in case of rotation              */
@@ -3610,8 +3307,6 @@ void CS_PROCF (cgdcel, CGDCEL)
   cs_real_t *weight_var = (*ipond > 1) ? ktvar : NULL;
 
   bool recompute_cocg = (*iccocg) ? true : false;
-  bool ale = (*iale) ? true : false;
-  bool mobile_mesh = (*imobil) ? true : false;
 
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
@@ -3626,28 +3321,9 @@ void CS_PROCF (cgdcel, CGDCEL)
 
   /* Choose gradient type */
 
-  switch (*imrgra) {
-  case 0:
-    gradient_type = CS_GRADIENT_ITER;
-    break;
-  case 1:
-    gradient_type = CS_GRADIENT_LSQ;
-    break;
-  case 2:
-  case 3:
-    gradient_type = CS_GRADIENT_LSQ;
-    halo_type = CS_HALO_EXTENDED;
-    break;
-  case 4:
-    gradient_type = CS_GRADIENT_LSQ_ITER;
-    break;
-  case 5:
-  case 6:
-    gradient_type = CS_GRADIENT_LSQ_ITER;
-    halo_type = CS_HALO_EXTENDED;
-    break;
-  default: break;
-  }
+  cs_gradient_type_by_imrgra(*imrgra,
+                             &gradient_type,
+                             &halo_type);
 
   /* Synchronize variable */
 
@@ -3670,8 +3346,6 @@ void CS_PROCF (cgdcel, CGDCEL)
                      halo_type,
                      *inc,
                      recompute_cocg,
-                     mobile_mesh,
-                     ale,
                      *nswrgp,
                      *idimtr,
                      *iphydp,
@@ -3722,6 +3396,8 @@ void CS_PROCF (cgdvec, CGDVEC)
        cs_real_33_t  *restrict gradv    /* <-> gradient of the variable       */
 )
 {
+  char var_name[32];
+
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
 
@@ -3733,39 +3409,16 @@ void CS_PROCF (cgdvec, CGDVEC)
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
 
-  char var_name[32];
-  snprintf(var_name, 31, "Var. %2d", *ivar); var_name[31] = '\0';
+  cs_gradient_type_by_imrgra(*imrgra,
+                             &gradient_type,
+                             &halo_type);
 
-  switch (*imrgra) {
-  case 0:
-    gradient_type = CS_GRADIENT_ITER;
-    break;
-  case 1:
-    gradient_type = CS_GRADIENT_LSQ;
-    break;
-  case 2:
-  case 3:
-    gradient_type = CS_GRADIENT_LSQ;
-    halo_type = CS_HALO_EXTENDED;
-    break;
-  case 4:
-    gradient_type = CS_GRADIENT_LSQ_ITER;
-    break;
-  case 5:
-  case 6:
-    gradient_type = CS_GRADIENT_LSQ_ITER;
-    halo_type = CS_HALO_EXTENDED;
-    break;
-  default: break;
-  }
+  snprintf(var_name, 31, "Var. %2d", *ivar); var_name[31] = '\0';
 
   if (update_stats == true) {
     t0 = cs_timer_time();
     gradient_info = _find_or_add_system(var_name, gradient_type);
   }
-
-  if (*imrgra == 2 || *imrgra ==  3)
-    halo_type = CS_HALO_EXTENDED;
 
   /* Compute gradient */
 
@@ -3935,10 +3588,9 @@ cs_gradient_finalize(void)
  * \param[in]       halo_type       halo type
  * \param[in]       inc             if 0, solve on increment; 1 otherwise
  * \param[in]       recompute_cocg  should COCG FV quantities be recomputed ?
- * \param[in]       mobile_mesh     is mesh mobile ?
- * \param[in]       ale             do we have ALE ?
  * \param[in]       n_r_sweeps      if > 1, number of reconstruction sweeps
- * \param[in]       tr_dim          scalar, vector_tensor in case of rotation
+ * \param[in]       tr_dim          2 for tensor with periodicity of rotation,
+ *                                  0 otherwise
  * \param[in]       hyd_p_flag      flag for hydrostatic pressure
  * \param[in]       verbosity       verbosity level
  * \param[in]       clip_mode       clipping mode
@@ -3963,8 +3615,6 @@ void cs_gradient_scalar(const char                *var_name,
                         cs_halo_type_t             halo_type,
                         int                        inc,
                         bool                       recompute_cocg,
-                        bool                       mobile_mesh,
-                        bool                       ale,
                         int                        n_r_sweeps,
                         int                        tr_dim,
                         int                        hyd_p_flag,
@@ -3983,6 +3633,7 @@ void cs_gradient_scalar(const char                *var_name,
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_halo_t  *halo = mesh->halo;
+  cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
   cs_gradient_info_t *gradient_info = NULL;
   cs_timer_t t0, t1;
@@ -3992,6 +3643,15 @@ void cs_gradient_scalar(const char                *var_name,
   cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
 
   bool update_stats = true;
+
+  static int last_fvm_count = 0;
+
+  if (n_r_sweeps > 0) {
+    int prev_fvq_count = last_fvm_count;
+    last_fvm_count = cs_mesh_quantities_compute_count();
+    if (last_fvm_count != prev_fvq_count)
+      recompute_cocg = true;
+  }
 
   /* Allocate work arrays */
 
@@ -4037,8 +3697,8 @@ void cs_gradient_scalar(const char                *var_name,
 
   if (gradient_type == CS_GRADIENT_ITER) {
 
-    _initialize_scalar_gradient(cs_glob_mesh,
-                                cs_glob_mesh_quantities,
+    _initialize_scalar_gradient(mesh,
+                                fvq,
                                 tr_dim,
                                 hyd_p_flag,
                                 inc,
@@ -4050,12 +3710,10 @@ void cs_gradient_scalar(const char                *var_name,
                                 grad,
                                 rhsv);
 
-    _iterative_scalar_gradient(cs_glob_mesh,
-                               cs_glob_mesh_quantities,
+    _iterative_scalar_gradient(mesh,
+                               fvq,
                                var_name,
                                recompute_cocg,
-                               mobile_mesh,
-                               ale,
                                n_r_sweeps,
                                tr_dim,
                                hyd_p_flag,
@@ -4066,8 +3724,6 @@ void cs_gradient_scalar(const char                *var_name,
                                (const cs_real_3_t *)f_ext,
                                bc_coeff_a,
                                bc_coeff_b,
-                               var,
-                               weight_var,
                                grad,
                                rhsv);
 
@@ -4075,12 +3731,10 @@ void cs_gradient_scalar(const char                *var_name,
 
   else if (gradient_type == CS_GRADIENT_LSQ) {
 
-    _lsq_scalar_gradient(cs_glob_mesh,
-                         cs_glob_mesh_quantities,
+    _lsq_scalar_gradient(mesh,
+                         fvq,
                          halo_type,
                          recompute_cocg,
-                         mobile_mesh,
-                         ale,
                          n_r_sweeps,
                          tr_dim,
                          hyd_p_flag,
@@ -4101,12 +3755,10 @@ void cs_gradient_scalar(const char                *var_name,
     const cs_int_t  _imlini = 1;
     const cs_real_t _climin = 1.5;
 
-    _lsq_scalar_gradient(cs_glob_mesh,
-                         cs_glob_mesh_quantities,
+    _lsq_scalar_gradient(mesh,
+                         fvq,
                          halo_type,
                          recompute_cocg,
-                         mobile_mesh,
-                         ale,
                          n_r_sweeps,
                          tr_dim,
                          hyd_p_flag,
@@ -4124,12 +3776,10 @@ void cs_gradient_scalar(const char                *var_name,
     _scalar_gradient_clipping(halo_type, _imlini, verbosity, tr_dim, _climin,
                               var, grad);
 
-    _iterative_scalar_gradient(cs_glob_mesh,
-                               cs_glob_mesh_quantities,
+    _iterative_scalar_gradient(mesh,
+                               fvq,
                                var_name,
                                recompute_cocg,
-                               mobile_mesh,
-                               ale,
                                n_r_sweeps,
                                tr_dim,
                                hyd_p_flag,
@@ -4140,8 +3790,6 @@ void cs_gradient_scalar(const char                *var_name,
                                (const cs_real_3_t *)f_ext,
                                bc_coeff_a,
                                bc_coeff_b,
-                               var,
-                               weight_var,
                                grad,
                                rhsv);
 
@@ -4157,6 +3805,47 @@ void cs_gradient_scalar(const char                *var_name,
   }
 
   BFT_FREE(rhsv);
+}
+
+/*----------------------------------------------------------------------------
+ * Determine gradient type by Fortran "imrgra" value
+ *
+ * parameters:
+ *   imrgra         <-- Fortran gradient option
+ *   gradient_type  --> gradient type
+ *   halo_type      --> halo type
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gradient_type_by_imrgra(int                  imrgra,
+                           cs_gradient_type_t  *gradient_type,
+                           cs_halo_type_t      *halo_type)
+{
+  *halo_type = CS_HALO_STANDARD;
+  *gradient_type = CS_GRADIENT_ITER;
+
+  switch (imrgra) {
+  case 0:
+    *gradient_type = CS_GRADIENT_ITER;
+    break;
+  case 1:
+    *gradient_type = CS_GRADIENT_LSQ;
+    break;
+  case 2:
+  case 3:
+    *gradient_type = CS_GRADIENT_LSQ;
+    *halo_type = CS_HALO_EXTENDED;
+    break;
+  case 4:
+    *gradient_type = CS_GRADIENT_LSQ_ITER;
+    break;
+  case 5:
+  case 6:
+    *gradient_type = CS_GRADIENT_LSQ_ITER;
+    *halo_type = CS_HALO_EXTENDED;
+    break;
+  default: break;
+  }
 }
 
 /*----------------------------------------------------------------------------*/

@@ -142,6 +142,7 @@ use parall
 use period
 use cplsat
 use mesh
+use numvar, only: ivarfl
 
 !===============================================================================
 
@@ -170,7 +171,7 @@ double precision xcpp(ncelet)
 character*80     chaine
 character*8      cnom
 integer          ifac,ii,jj,infac,iel,iupwin, iij, iii, ig, it
-integer          idimtr, irpvar
+integer          idimtr
 double precision pfac,pfacd,flui,fluj,flux,fluxi,fluxj
 double precision difx,dify,difz,djfx,djfy,djfz
 double precision pi, pj, pia, pja
@@ -348,16 +349,9 @@ if (iconvp.gt.0.and.iupwin.eq.0.and.isstpp.eq.0) then
     !==========
   endif
 
-  if (iperio.eq.1) then
-    call pergra(ivar, idimtr, irpvar)
+  if (iperot.eq.1.and.ivar.gt.0) then
+    call pering(ivarfl(ivar), idimtr, dpdxa, dpdya, dpdza)
     !==========
-    if (idimtr .gt. 0) then
-      call pering                                               &
-      !==========
-      ( idimtr , irpvar , iguper , igrper ,                     &
-        dpdxa, dpdya, dpdza,                                    &
-        dudxy  , drdxy )
-    endif
   endif
 
 endif

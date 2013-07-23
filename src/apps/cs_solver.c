@@ -76,6 +76,7 @@
 #include "cs_field.h"
 #include "cs_file.h"
 #include "cs_gradient.h"
+#include "cs_gradient_perio.h"
 #include "cs_gui.h"
 #include "cs_gui_mesh.h"
 #include "cs_gui_output.h"
@@ -450,6 +451,7 @@ cs_run(void)
     /* Initialize gradient computation */
 
     cs_gradient_initialize();
+    cs_gradient_perio_initialize();
 
     if (opts.verif == false) {
 
@@ -517,6 +519,7 @@ cs_run(void)
                                   cs_glob_mesh->b_face_vtx_idx,
                                   cs_glob_mesh->b_face_vtx_lst,
                                   cs_glob_mesh->b_cells,
+                                  cs_glob_mesh_quantities->b_sym_flag,
                                   &(cs_glob_mesh_quantities->min_vol),
                                   &(cs_glob_mesh_quantities->max_vol),
                                   &(cs_glob_mesh_quantities->tot_vol),
@@ -569,6 +572,7 @@ cs_run(void)
 
     /* Finalize gradient computation */
 
+    cs_gradient_perio_finalize();
     cs_gradient_finalize();
 
     /* Finalize synthetic inlet condition generation */

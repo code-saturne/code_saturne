@@ -176,6 +176,7 @@ extern void CS_PROCF (majgeo, MAJGEO)
  const cs_int_t    ipnfbr[],  /* <-- boundary faces -> vertices index */
  const cs_int_t    nodfbr[],  /* <-- boundary faces -> vertices connectivity */
  const cs_int_t    icelbr[],  /* <-- list of boundary cells */
+ const cs_int_t    isympa[],  /* <-- symmetry flag for boundary faces */
  const cs_real_t  *volmin,    /* <-- minimum control volume */
  const cs_real_t  *volmax,    /* <-- maximum control volume */
  const cs_real_t  *voltot,    /* <-- total   control volume */
@@ -241,35 +242,6 @@ extern void CS_PROCF (tstvec, TSTVEC)
  cs_real_t        rworkf[], /* --- work array, size: max(nfac, nfabor) */
  cs_real_t        rsmbs[],  /* --- work array, size: ncelet */
  cs_real_t        rsmbv[]   /* --- work array, size: ncelet */
-);
-
-/*----------------------------------------------------------------------------
- * Indicate if the variable considered is a component of a vector or tensor
- * in the presence of periodicity of rotation
- *
- * Fortran interface:
- *
- * subroutine pergra (ivar, ipvar)
- * *****************
- *
- * integer    ivar      : <-- : variable number
- * integer    idimtr    : --> : 0 if ivar does not match a vector or tensor
- *                      :     :   or there is no periodicity of rotation
- *                      :     : 1 for velocity, 2 for Reynolds stress
- *                      :     :   in case of periodicity of rotation
- * integer    irpvar    : --> : -1 if ivar does not match a vector or tensor
- *                      :     :    or there is no periodicity of rotation
- *                      :     : In presence of periodicity of rotation:
- *                      :     :  0 for iu, 1 for iv, 2 for iw
- *                      :     :  0 for ir11, 1 for ir22, 2 for ir33,
- *                      :     :  3 for ir12, 4 for ir13, 5 for ir23
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (pergra, PERGRA)
-(
- const cs_int_t  *ivar,
- const cs_int_t  *idimtr,
- const cs_int_t  *irpvar
 );
 
 /*----------------------------------------------------------------------------

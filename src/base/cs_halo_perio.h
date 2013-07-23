@@ -49,60 +49,6 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Process dpdx, dpdy, dpdz buffers in case of rotation on velocity vector and
- * Reynolds stress tensor.
- *
- * We retrieve the gradient given by perinu and perinr (phyvar) for the
- * velocity and the reynolds stress tensor in a buffer on ghost cells. then
- * we define dpdx, dpdy and dpdz gradient (1 -> n_cells_with_ghosts).
- *
- * We can't implicitly take into account rotation of a gradient of a non-scalar
- * variable because we have to know the all three components in grad*c.
- *
- * Otherwise, we can implicitly treat values given by translation. There will
- * be replace further in grad*c.
- *
- * We assume that is correct to treat periodicities implicitly for the other
- * variables.
- *
- * Fortran Interface:
- *
- * subroutine persyn
- * *****************
- *
- * integer          ivar         :  -> : numero de la variable
- * integer          iu           : <-- : position de la Vitesse(x,y,z)
- * integer          iv           : <-- : dans RTP, RTPA
- * integer          iw           : <-- :     "                   "
- * integer          itytur       : <-- : turbulence (Rij-epsilon ITYTUR = 3)
- * integer          ir11         : <-- : position des Tensions de Reynolds
- * integer          ir22         : <-- : en Rij dans RTP, RTPA
- * integer          ir33         : <-- :     "                   "
- * integer          ir12         : <-- :     "                   "
- * integer          ir13         : <-- :     "                   "
- * integer          ir23         : <-- :     "                   "
- * double precision dpdx(ncelet) : <-> : gradient de IVAR
- * double precision dpdy(ncelet) : <-> :    "        "
- * double precision dpdz(ncelet) : <-> :    "        "
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (persyn, PERSYN)(const cs_int_t    *ivar,
-                          const cs_int_t    *iu,
-                          const cs_int_t    *iv,
-                          const cs_int_t    *iw,
-                          const cs_int_t    *itytur,
-                          const cs_int_t    *ir11,
-                          const cs_int_t    *ir22,
-                          const cs_int_t    *ir33,
-                          const cs_int_t    *ir12,
-                          const cs_int_t    *ir13,
-                          const cs_int_t    *ir23,
-                          cs_real_t          dpdx[],
-                          cs_real_t          dpdy[],
-                          cs_real_t          dpdz[]);
-
-/*----------------------------------------------------------------------------
  * Rotate vector values for periodic cells on extended halos.
  *
  * Fortran API:
@@ -149,201 +95,6 @@ CS_PROCF (perrte, PERRTE) (cs_real_t  var11[],
                            cs_real_t  var31[],
                            cs_real_t  var32[],
                            cs_real_t  var33[]);
-
-/*----------------------------------------------------------------------------
- * Periodicity management for INIMAS
- *
- * If INIMAS is called by NAVSTO :
- *    We assume that gradient on ghost cells given by a rotation is known
- *    and is equal to the velocity one for the previous time step.
- * If INIMAS is called by DIVRIJ
- *    We assume that (more justifiable than in previous case) gradient on
- *    ghost cells given by rotation is equal to Rij gradient for the previous
- *    time step.
- *
- * Fortran Interface:
- *
- * SUBROUTINE PERMAS
- * *****************
- *
- * INTEGER          IMASPE      :  -> : suivant l'appel de INIMAS
- *                                          = 1 si appel de RESOLP ou NAVSTO
- *                                          = 2 si appel de DIVRIJ
- * INTEGER          IMASPE      :  -> : indicateur d'appel dans INIMAS
- *                                          = 1 si appel au debut
- *                                          = 2 si appel a la fin
- * DOUBLE PRECISION ROM(NCELET) :  -> : masse volumique aux cellules
- * DOUBLE PRECISION DUDXYZ      :  -> : gradient de U aux cellules halo pour
- *                                      l'approche explicite en periodicite
- * DOUBLE PRECISION DRDXYZ      :  -> : gradient de R aux cellules halo pour
- *                                      l'approche explicite en periodicite
- * DOUBLE PRECISION WDUDXY      :  -  : tableau de travail pour DUDXYZ
- * DOUBLE PRECISION WDRDXY      :  -  : tableau de travail pour DRDXYZ
- *
- * Size of DUDXYZ and WDUDXY = n_ghost_cells*3*3
- * Size of DRDXYZ and WDRDXY = n_ghost_cells*6*3
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (permas, PERMAS)(const cs_int_t    *imaspe,
-                          const cs_int_t    *iappel,
-                          cs_real_t          rom[],
-                          cs_real_t         *dudxyz,
-                          cs_real_t         *drdxyz,
-                          cs_real_t         *wdudxy,
-                          cs_real_t         *wdrdxy);
-
-/*----------------------------------------------------------------------------
- * Process dpdx, dpdy, dpdz buffers in case of rotation on velocity vector and
- * Reynolds stress tensor.
- *
- * We retrieve the gradient given by perinu and perinr (phyvar) for the
- * velocity and the Reynolds stress tensor in a buffer on ghost cells. then
- * we define dpdx, dpdy and dpdz gradient (1 -> n_cells_with_ghosts).
- *
- * We can't implicitly take into account rotation of a gradient of alnon-scalar
- * variable because we have to know the all three components in gradrc.
- *
- * Otherwise, we can implicitly treat values given by translation. There will
- * be replace further in GRADRC.
- *
- * We set idimtr to 1 and 2 respectively for the velocity vector and the
- * Reynolds stress tensor.
- *
- * We assume that is correct to treat periodicities implicitly for the other
- * variables in gradrc, for which we set idimtr to 0.
- *
- * Fortran Interface:
- *
- * subroutine pering
- * *****************
- *
- * integer          ivar         : <-- : variable number
- * integer          idimtr       : <-- : 0 if ivar does not match a vector
- *                               :     :   or tensor or there is no periodicity
- *                               :     :   of rotation
- *                               :     : 1 for velocity, 2 for Reynolds stress
- *                               :     :   in case of periodicity of rotation
- * integer          irpvar       :     : -1 if ivar does not match a vector or
- *                               :     :   or tensor or there is no periodicity
- *                               :     :   of rotation; otherwise:
- *                               :     : 0 for iu, 1 for iv, 2 for iw
- *                               :     : 0 for ir11, 1 for ir22, 2 for ir33,
- *                               :     : 3 for ir12, 4 for ir13, 5 for ir23
- * integer          iguper       : <-- : 0/1 indicates we have not computed
- *                               :     :   gradients in dudxyz
- * integer          igrper       : <-- : 0/1 indicates we have not computed
- *                               :     :   gradients in drdxyz
- * double precision dpdx(ncelet) : <-> : gradient of ivar
- * double precision dpdy(ncelet) : <-> :    "        "
- * double precision dpdz(ncelet) : <-> :    "        "
- * double precision dudxyz       :  -> : gradient of u at ghost cells for
- *                                       explicit periodicity of rotation
- * double precision drdxyz       :  -> : gradient of r at ghost cells for
- *                                       explicit periodicity of rotation
- *
- * size of dudxyz and wdudxy = n_ghost_cells*3*3
- * size of drdxyz and wdrdxy = n_ghost_cells*6*3
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (pering, PERING)(const cs_int_t    *idimtr,
-                          const cs_int_t    *irpvar,
-                          const cs_int_t    *iguper,
-                          const cs_int_t    *igrper,
-                          cs_real_t          dpdx[],
-                          cs_real_t          dpdy[],
-                          cs_real_t          dpdz[],
-                          const cs_real_t   *dudxyz,
-                          const cs_real_t   *drdxyz);
-
-/*----------------------------------------------------------------------------
- * Exchange buffers for PERINU
- *
- * Fortran Interface:
- *
- * SUBROUTINE PEINU1
- * *****************
- *
- * INTEGER          ISOU          :  -> : component of the velocity vector
- * DOUBLE PRECISION DUDXYZ        :  -> : gradient of the velocity vector
- *                                        for ghost cells and for an explicit
- *                                        treatment of the periodicity.
- * DOUBLE PRECISION W1..3(NCELET) :  -  : working buffers
- *
- * Size of DUDXYZ and WDUDXY = n_ghost_cells*3*3
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (peinu1, PEINU1)(const cs_int_t    *isou,
-                          cs_real_t         *dudxyz,
-                          cs_real_t          w1[],
-                          cs_real_t          w2[],
-                          cs_real_t          w3[]);
-
-/*----------------------------------------------------------------------------
- * Apply rotation on DUDXYZ tensor.
- *
- * Fortran Interface:
- *
- * SUBROUTINE PEINU2 (VAR)
- * *****************
- *
- * DOUBLE PRECISION DUDXYZ        : <-> : gradient of the velocity vector
- *                                        for ghost cells and for an explicit
- *                                        treatment of the periodicity.
- *
- * Size of DUDXYZ and WDUDXY = n_ghost_cells*3*3
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (peinu2, PEINU2)(cs_real_t         *dudxyz);
-
-/*----------------------------------------------------------------------------
- * Exchange buffers for PERINR
- *
- * Fortran Interface
- *
- * SUBROUTINE PEINR1 (VAR)
- * *****************
- *
- * INTEGER          ISOU          : -> : component of the Reynolds stress tensor
- * DOUBLE PRECISION DRDXYZ        : -> : gradient of the Reynolds stress tensor
- *                                       for ghost cells and for an explicit
- *                                       treatment of the periodicity.
- * DOUBLE PRECISION GRADX(NCELET)
- *                  GRADY(NCELET)
- *                  GRADZ(NCELET) : -  : x, y, z components of the gradient of
- *                                       the current component of the Reynolds
- *                                       stress tensor.
- *
- * Size of DRDXYZ and WDRDXY = n_ghost_cells*6*3
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (peinr1, PEINR1)(const cs_int_t    *isou,
-                          cs_real_t         *drdxyz,
-                          cs_real_t          gradx[],
-                          cs_real_t          grady[],
-                          cs_real_t          gradz[]);
-
-/*----------------------------------------------------------------------------
- * Apply rotation on the gradient of Reynolds stress tensor
- *
- * Fortran Interface:
- *
- * SUBROUTINE PEINR2 (VAR)
- * *****************
- *
- * DOUBLE PRECISION DRDXYZ        :  -> : gradient of the Reynolds stress tensor
- *                                       for ghost cells and for an explicit
- *                                       treatment of the periodicity.
- *
- * Size of DRDXYZ and WDRDXY = n_ghost_cells*6*3
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (peinr2, PEINR2)(cs_real_t         *drdxyz);
 
 /*=============================================================================
  * Public function prototypes
@@ -492,6 +243,16 @@ void
 cs_halo_perio_sync_var_diag(const cs_halo_t *halo,
                             cs_halo_type_t   sync_mode,
                             cs_real_t        var[]);
+
+/*----------------------------------------------------------------------------
+ * Apply rotation on the gradient of Reynolds stress tensor
+ *
+ * parameters:
+ *   drdxyz     <-> gradient on the variable (size: 3*6*n_ghost_cells)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_halo_perio_rotate_rij(cs_real_t  *drdxyz);
 
 /*----------------------------------------------------------------------------*/
 
