@@ -73,6 +73,7 @@ use elincl
 use mesh
 use field
 use post
+use cs_c_bindings
 
 !===============================================================================
 
@@ -164,8 +165,7 @@ ttchis = -1.d0
 
 ntmsav = ntmabs
 
-call modpar
-!==========
+call cs_control_check_file
 
 if (idtvar.eq.1 .and. ntmsav.gt.ntmabs .and. ntmabs.eq.ntcabs) then
   call cplact(ivoid(1))
@@ -803,8 +803,7 @@ endif
 !===============================================================================
 
 ! Test presence of control_file to modify ntmabs if required
-call modpar
-!==========
+call cs_control_check_file
 
 call dmtmps(titer1)
 !==========

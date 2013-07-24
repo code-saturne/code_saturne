@@ -53,6 +53,7 @@ $(top_srcdir)/src/base/cstnum.f90 \
 $(top_srcdir)/src/base/dimens.f90 \
 $(top_srcdir)/src/base/entsor.f90 \
 $(top_srcdir)/src/base/ihmpre.f90 \
+$(top_srcdir)/src/base/cs_c_bindings.f90 \
 $(top_srcdir)/src/base/mltgrd.f90 \
 $(top_srcdir)/src/base/numvar.f90 \
 $(top_srcdir)/src/base/optcal.f90 \
@@ -88,6 +89,7 @@ $(top_srcdir)/src/base/alstru.f90: paramx.lo
 $(top_srcdir)/src/base/cplsat.f90: paramx.lo
 $(top_srcdir)/src/base/cstphy.f90: paramx.lo
 $(top_srcdir)/src/base/entsor.f90: paramx.lo
+$(top_srcdir)/src/base/cs_c_bindings.f90: paramx.lo
 $(top_srcdir)/src/base/mltgrd.f90: paramx.lo
 $(top_srcdir)/src/base/numvar.f90: paramx.lo
 $(top_srcdir)/src/base/optcal.f90: paramx.lo

@@ -14,9 +14,13 @@ Changes:
    * add a new boundary condition to simulate coal fouling mechanism
    * bug fixes related to radiative transfer
 
-
 Architectural changes
 ---------------------
+
+- Added cs_c_bindings.f90 module for general definitions of C bindings.
+  For large modules, it is recommended to use separate files (see field.f90
+  and post.f90 for example), but for smaller modules, this avoids requiring
+  the definition of specific module files.
 
 - Added experimental ParaView Catalyst co-processing output option.
 
