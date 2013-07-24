@@ -65,7 +65,7 @@ AM_LDFLAGS =
 # Add cs_user_modules file to distribution as it is not automatically accounted
 # for by automake
 
-EXTRA_DIST = cs_user_modules.f90
+EXTRA_DIST = cs_user_modules.f90 cs_user_parameters.f90
 
 # Library source files
 
@@ -78,7 +78,6 @@ cs_user_fluid_structure_interaction.f90 \
 cs_user_initialization.f90 \
 cs_user_les_inflow.f90 \
 cs_user_mesh.c \
-cs_user_parameters.f90 \
 cs_user_particle_tracking.f90 \
 cs_user_performance_tuning.c \
 cs_user_physical_properties.f90 \
@@ -104,12 +103,24 @@ usvort.f90 \
 usvosy.f90 \
 cs_user_postprocess_var.f90
 
+cs_user_f_parameters = $(top_srcdir)/src/user/cs_user_parameters.f90
+
+cs_f_user_parameters.o: $(cs_user_f_parameters)
+	$(FCCOMPILE) -c -o cs_f_user_parameters.o  $(cs_user_f_parameters)
+
+cs_f_user_parameters.obj: $(cs_user_f_parameters)
+	$(FCCOMPILE) -c -o `$(CYGPATH_W) '$<' $(cs_user_f_parameters)`
+
+cs_f_user_parameters.lo: $(cs_user_f_parameters)
+	$(LTFCCOMPILE) -c -o cs_f_user_parameters.o $(cs_user_f_parameters)
+
 noinst_LTLIBRARIES = libcsuser.la
 libcsuser_la_SOURCES = $(userfiles)
+libcsuser_la_LIBADD = cs_f_user_parameters.lo
 libcsuser_la_LDFLAGS = -no-undefined
 
 userdir = $(pkgdatadir)/user
-user_DATA = $(userfiles) cs_user_modules.f90
+user_DATA = $(userfiles) cs_user_modules.f90 cs_user_parameters.f90
 
 clean-local:
 	-rm -f *__genmod.f90 *__genmod.mod
