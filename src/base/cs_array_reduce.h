@@ -60,8 +60,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Compute simple local stats (minima, maxima, sum) of an
- * n-dimensional cs_real_t array's components.
+ * Compute sums of an n-dimensional cs_real_t array's components.
  *
  * The maximum allowed dimension is 9 (allowing for a rank-2 tensor).
  * The array is interleaved.
@@ -82,6 +81,40 @@ BEGIN_C_DECLS
  *   v_elt_list <-- optional list of parent elements on which values
  *                  are defined, or NULL
  *   dim        <-- local array dimension (max: 9)
+ *   v          <-- pointer to array values
+ *   vsum       --> resulting sum array (size: dim, or 4 if dim = 3)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_array_reduce_sum_l(cs_lnum_t         n_elts,
+                      int               dim,
+                      const cs_lnum_t  *v_elt_list,
+                      const cs_real_t   v[],
+                      double            vsum[]);
+
+/*----------------------------------------------------------------------------
+ * Compute simple local stats (minima, maxima, sum) of an
+ * n-dimensional cs_real_t array's components.
+ *
+ * The maximum allowed dimension is 9 (allowing for a rank-2 tensor).
+ * The array is interleaved.
+ *
+ * For arrays of dimension 3, the statistics relative to the norm
+ * are also computed, and added at the end of the statistics arrays
+ * (which must be size dim+1).
+ *
+ * The algorithm here is similar to that used for BLAS, but computes several
+ * quantities simultaneously for better cache behavior.
+ *
+ * Note that for locations with elements shared across ranks
+ * (such as interior faces and vertices), sums may be incorrect as
+ * contributions from multiple ranks may be counted several times.
+ *
+ * parameters:
+ *   n_elts     <-- number of local elements
+ *   dim        <-- local array dimension (max: 9)
+ *   v_elt_list <-- optional list of parent elements on which values
+ *                  are defined, or NULL
  *   v          <-- pointer to array values
  *   vmin       --> resulting min array (size: dim, or 4 if dim = 3)
  *   vmax       --> resulting max array (size: dim, or 4 if dim = 3)

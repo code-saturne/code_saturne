@@ -74,6 +74,74 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Compute sum of a 1-dimensional array.
+ *
+ * The algorithm here is similar to that used for blas.
+ *
+ * parameters:
+ *   n        <-- local number of elements
+ *   v        <-- pointer to values (size: n)
+ *
+ * returns:
+ *   resulting sum
+ *----------------------------------------------------------------------------*/
+
+static double
+_cs_real_sum_1d(cs_lnum_t        n,
+                const cs_real_t  v[])
+{
+  const cs_lnum_t block_size = 60;
+
+  cs_lnum_t i;
+  cs_lnum_t sid, bid;
+  cs_lnum_t start_id, end_id;
+  double c, s;
+
+  cs_lnum_t n_blocks = n / block_size;
+  cs_lnum_t n_sblocks = sqrt(n_blocks);
+  cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
+
+  double v_sum = 0.;
+
+#if defined(__xlc__)
+#pragma disjoint(*v, *w, *vsum, *wsum)
+#endif
+
+# pragma omp parallel private(bid, start_id, end_id, i, c, s)    \
+                              reduction(+:v_sum) if (n > THR_MIN)
+  {
+    # pragma omp parallel for
+    for (sid = 0; sid < n_sblocks; sid++) {
+
+      s = 0.0;
+
+      for (bid = 0; bid < blocks_in_sblocks; bid++) {
+        start_id = block_size * (blocks_in_sblocks*sid + bid);
+        end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
+        c = 0.0;
+        for (i = start_id; i < end_id; i++)
+          c += v[i];
+        s += c;
+      }
+
+      v_sum += s;
+
+    }
+
+  } /* End of OpenMP-threaded section */
+
+  start_id = block_size * n_sblocks*blocks_in_sblocks;
+  end_id = n;
+  c = 0.0;
+  for (i = start_id; i < end_id; i++)
+    c += v[i];
+
+  v_sum += c;
+
+  return v_sum;
+}
+
+/*----------------------------------------------------------------------------
  * Compute simple local stats (minima, maxima, sum) of a 1-dimensional array.
  *
  * The algorithm here is similar to that used for blas, but computes several
@@ -137,15 +205,15 @@ _cs_real_sstats_1d(cs_lnum_t         n,
         s += c;
       }
 
-    }
+#     pragma omp critical
+      {
+        if (lmin < *vmin)
+          *vmin = lmin;
+        if (lmax > *vmax)
+          *vmax = lmax;
+        *vsum += s;
+      }
 
-#   pragma omp critical
-    {
-      if (lmin < *vmin)
-        *vmin = lmin;
-      if (lmax > *vmax)
-        *vmax = lmax;
-      *vsum += s;
     }
   } /* End of OpenMP-threaded section */
 
@@ -231,15 +299,15 @@ _cs_real_sstats_1d_l(cs_lnum_t         n,
         s += c;
       }
 
-    }
+#     pragma omp critical
+      {
+        if (lmin < *vmin)
+          *vmin = lmin;
+        if (lmax > *vmax)
+          *vmax = lmax;
+        *vsum += s;
+      }
 
-#   pragma omp critical
-    {
-      if (lmin < *vmin)
-        *vmin = lmin;
-      if (lmax > *vmax)
-        *vmax = lmax;
-      *vsum += s;
     }
   } /* End of OpenMP-threaded section */
 
@@ -332,16 +400,16 @@ _cs_real_sstats_1d_w(cs_lnum_t         n,
         s[1] += c[1];
       }
 
-    }
+#     pragma omp critical
+      {
+        if (lmin < *vmin)
+          *vmin = lmin;
+        if (lmax > *vmax)
+          *vmax = lmax;
+        *vsum += s[0];
+        *wsum += s[1];
+      }
 
-#   pragma omp critical
-    {
-      if (lmin < *vmin)
-        *vmin = lmin;
-      if (lmax > *vmax)
-        *vmax = lmax;
-      *vsum += s[0];
-      *wsum += s[1];
     }
   } /* End of OpenMP-threaded section */
 
@@ -359,7 +427,7 @@ _cs_real_sstats_1d_w(cs_lnum_t         n,
   }
 
   *vsum += c[0];
-  *wsum += c[0];
+  *wsum += c[1];
 }
 
 /*----------------------------------------------------------------------------
@@ -438,16 +506,16 @@ _cs_real_sstats_1d_w_l(cs_lnum_t         n,
         s[1] += c[1];
       }
 
-    }
+#     pragma omp critical
+      {
+        if (lmin < *vmin)
+          *vmin = lmin;
+        if (lmax > *vmax)
+          *vmax = lmax;
+        *vsum += s[0];
+        *wsum += s[1];
+      }
 
-#   pragma omp critical
-    {
-      if (lmin < *vmin)
-        *vmin = lmin;
-      if (lmax > *vmax)
-        *vmax = lmax;
-      *vsum += s[0];
-      *wsum += s[1];
     }
   } /* End of OpenMP-threaded section */
 
@@ -465,7 +533,7 @@ _cs_real_sstats_1d_w_l(cs_lnum_t         n,
   }
 
   *vsum += c[0];
-  *wsum += c[0];
+  *wsum += c[1];
 }
 
 /*----------------------------------------------------------------------------
@@ -545,16 +613,16 @@ _cs_real_sstats_1d_l_w(cs_lnum_t         n,
         s[1] += c[1];
       }
 
-    }
+#     pragma omp critical
+      {
+        if (lmin < *vmin)
+          *vmin = lmin;
+        if (lmax > *vmax)
+          *vmax = lmax;
+        *vsum += s[0];
+        *wsum += s[1];
+      }
 
-#   pragma omp critical
-    {
-      if (lmin < *vmin)
-        *vmin = lmin;
-      if (lmax > *vmax)
-        *vmax = lmax;
-      *vsum += s[0];
-      *wsum += s[1];
     }
   } /* End of OpenMP-threaded section */
 
@@ -573,7 +641,7 @@ _cs_real_sstats_1d_l_w(cs_lnum_t         n,
   }
 
   *vsum += c[0];
-  *wsum += c[0];
+  *wsum += c[1];
 }
 
 /*----------------------------------------------------------------------------
@@ -660,16 +728,15 @@ _cs_real_sstats_3d(cs_lnum_t          n,
           s[j] += c[j];
       }
 
-    }
-
-#   pragma omp critical
-    {
-      for (j = 0; j < 4; j++) {
-        if (lmin[j] < vmin[j])
-          vmin[j] = lmin[j];
-        if (lmax[j] > vmax[j])
-          vmax[j] = lmax[j];
-        vsum[j] += s[j];
+#     pragma omp critical
+      {
+        for (j = 0; j < 4; j++) {
+          if (lmin[j] < vmin[j])
+            vmin[j] = lmin[j];
+          if (lmax[j] > vmax[j])
+            vmax[j] = lmax[j];
+          vsum[j] += s[j];
+        }
       }
     }
   } /* End of OpenMP-threaded section */
@@ -785,16 +852,15 @@ _cs_real_sstats_3d_l(cs_lnum_t          n,
           s[j] += c[j];
       }
 
-    }
-
-#   pragma omp critical
-    {
-      for (j = 0; j < 4; j++) {
-        if (lmin[j] < vmin[j])
-          vmin[j] = lmin[j];
-        if (lmax[j] > vmax[j])
-          vmax[j] = lmax[j];
-        vsum[j] += s[j];
+#     pragma omp critical
+      {
+        for (j = 0; j < 4; j++) {
+          if (lmin[j] < vmin[j])
+            vmin[j] = lmin[j];
+          if (lmax[j] > vmax[j])
+            vmax[j] = lmax[j];
+          vsum[j] += s[j];
+        }
       }
     }
   } /* End of OpenMP-threaded section */
@@ -915,18 +981,18 @@ _cs_real_sstats_3d_w(cs_lnum_t          n,
           s[j] += c[j];
       }
 
-    }
-
-#   pragma omp critical
-    {
-      for (j = 0; j < 4; j++) {
-        if (lmin[j] < vmin[j])
-          vmin[j] = lmin[j];
-        if (lmax[j] > vmax[j])
-          vmax[j] = lmax[j];
-        vsum[j] += s[j];
-        wsum[j] += s[4+j];
+#     pragma omp critical
+      {
+        for (j = 0; j < 4; j++) {
+          if (lmin[j] < vmin[j])
+            vmin[j] = lmin[j];
+          if (lmax[j] > vmax[j])
+            vmax[j] = lmax[j];
+          vsum[j] += s[j];
+          wsum[j] += s[4+j];
+        }
       }
+
     }
   } /* End of OpenMP-threaded section */
 
@@ -1053,17 +1119,16 @@ _cs_real_sstats_3d_w_l(cs_lnum_t          n,
           s[j] += c[j];
       }
 
-    }
-
-#   pragma omp critical
-    {
-      for (j = 0; j < 4; j++) {
-        if (lmin[j] < vmin[j])
-          vmin[j] = lmin[j];
-        if (lmax[j] > vmax[j])
-          vmax[j] = lmax[j];
-        vsum[j] += s[j];
-        wsum[j] += s[4+j];
+#     pragma omp critical
+      {
+        for (j = 0; j < 4; j++) {
+          if (lmin[j] < vmin[j])
+            vmin[j] = lmin[j];
+          if (lmax[j] > vmax[j])
+            vmax[j] = lmax[j];
+          vsum[j] += s[j];
+          wsum[j] += s[4+j];
+        }
       }
     }
   } /* End of OpenMP-threaded section */
@@ -1191,17 +1256,16 @@ _cs_real_sstats_3d_l_w(cs_lnum_t          n,
           s[j] += c[j];
       }
 
-    }
-
-#   pragma omp critical
-    {
-      for (j = 0; j < 4; j++) {
-        if (lmin[j] < vmin[j])
-          vmin[j] = lmin[j];
-        if (lmax[j] > vmax[j])
-          vmax[j] = lmax[j];
-        vsum[j] += s[j];
-        wsum[j] += s[4+j];
+#     pragma omp critical
+      {
+        for (j = 0; j < 4; j++) {
+          if (lmin[j] < vmin[j])
+            vmin[j] = lmin[j];
+          if (lmax[j] > vmax[j])
+            vmax[j] = lmax[j];
+          vsum[j] += s[j];
+          wsum[j] += s[4+j];
+        }
       }
     }
   } /* End of OpenMP-threaded section */
@@ -1344,17 +1408,17 @@ _cs_real_sstats_nd(cs_lnum_t         n,
 
       }
 
-    }
-
-#   pragma omp critical
-    {
-      for (j = 0; j < dim; j++) {
-        if (lmin[j] < vmin[j])
-          vmin[j] = lmin[j];
-        if (lmax[j] > vmax[j])
-          vmax[j] = lmax[j];
-        vsum[j] += s[j];
+#     pragma omp critical
+      {
+        for (j = 0; j < dim; j++) {
+          if (lmin[j] < vmin[j])
+            vmin[j] = lmin[j];
+          if (lmax[j] > vmax[j])
+            vmax[j] = lmax[j];
+          vsum[j] += s[j];
+        }
       }
+
     }
   } /* End of OpenMP-threaded section */
 
@@ -1533,18 +1597,18 @@ _cs_real_sstats_nd_w(cs_lnum_t         n,
         }
       }
 
-    }
-
-#   pragma omp critical
-    {
-      for (j = 0; j < dim; j++) {
-        if (lmin[j] < vmin[j])
-          vmin[j] = lmin[j];
-        if (lmax[j] > vmax[j])
-          vmax[j] = lmax[j];
-        vsum[j] += s[j];
-        wsum[j] += s[dim+j];
+#     pragma omp critical
+      {
+        for (j = 0; j < dim; j++) {
+          if (lmin[j] < vmin[j])
+            vmin[j] = lmin[j];
+          if (lmax[j] > vmax[j])
+            vmax[j] = lmax[j];
+          vsum[j] += s[j];
+          wsum[j] += s[dim+j];
+        }
       }
+
     }
   } /* End of OpenMP-threaded section */
 
@@ -1601,6 +1665,64 @@ _cs_real_sstats_nd_w(cs_lnum_t         n,
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute sums of an n-dimensional cs_real_t array's components.
+ *
+ * The maximum allowed dimension is 9 (allowing for a rank-2 tensor).
+ * The array is interleaved.
+ *
+ * For arrays of dimension 3, the statistics relative to the norm
+ * are also computed, and added at the end of the statistics arrays
+ * (which must be size dim+1).
+ *
+ * The algorithm here is similar to that used for BLAS.
+ *
+ * \param[in]   n_elts      number of local elements
+ * \param[in]   dim         local array dimension (max: 9)
+ * \param[in]   v_elt_list  optional list of parent elements on which values
+ *                          are defined, or NULL
+ * \param[in]   v           pointer to array values
+ * \param[out]  vsum        resulting sum array (size: dim, or 4 if dim = 3)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_reduce_sum_l(cs_lnum_t         n_elts,
+                      int               dim,
+                      const cs_lnum_t  *v_elt_list,
+                      const cs_real_t   v[],
+                      double            vsum[])
+{
+  /* If all values are defined on same list */
+
+  if (v_elt_list == NULL) {
+    if (dim == 1)
+      vsum[0] = _cs_real_sum_1d(n_elts, v);
+    else if (dim == 3)
+      bft_error(__FILE__, __LINE__, 0,
+                _("_cs_real_sum_3d not implemented yet\n"));
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("_cs_real_sum_nd not implemented yet\n"));
+  }
+
+  /* If values are defined on parent list */
+
+  else {
+    if (dim == 1)
+      bft_error(__FILE__, __LINE__, 0,
+                _("_cs_real_sum_1d_l not implemented yet\n"));
+    else if (dim == 3)
+      bft_error(__FILE__, __LINE__, 0,
+                _("_cs_real_sum_3d_l not implemented yet\n"));
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("_cs_real_sum_nd_l not implemented yet\n"));
+  }
+
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
