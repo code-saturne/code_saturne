@@ -23,7 +23,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Short doc CS class corresponding to article
 \documentclass[a4paper,10pt,twoside]{csshortdoc}
-% MACROS SUPPLEMENTAIRES
+% Additional macros
 \usepackage{csmacros}
 \usepackage[usenames, dvipsnames]{color}
 %
@@ -31,7 +31,7 @@
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% PACKAGES ET COMMANDES POUR LE DOCUMENTS PDF ET LES HYPERLIENS
+% Packages and commands for PDF documents and hyperlinks
 \hypersetup{%
   pdftitle = {CodeSaturne installation guide},
   pdfauthor = {MFEE},
@@ -204,10 +204,10 @@ The list of third-party software usable with \CS is provided here:
       fast for BLAS3 (dense matrix/matrix operations), but the advantage is
       usually much less significant for BLAS 1 (vector/vector) operations, which
       are almost the only ones \CS has the opportunity of using.
-      Starting with version 2.3, \CS uses its own dot product
-      implementation (using a superblock algorithm, for better precision),
-      and $y \leftarrow ax+y$ operations, so external BLAS1 are not used for
-      computation anymore, but only for unit testing.
+      \CS uses its own dot product implementation (using a superblock algorithm,
+      for better precision), and $y \leftarrow ax+y$ operations, so external
+      BLAS1 are not used for computation, but only for unit testing (so as
+      to be able to compare performance of built-in BLAS with external BLAS).
       The Intel MKL BLAS may also be used for matrix-vector products, so it
       is linked with the solver when available, but this is also currently only
       used in unit benchmark mode.
@@ -254,9 +254,12 @@ The list of third-party software usable with \CS is provided here:
       quality is usually slightly lower than that obtained with \scotch or
       \ptscotch, but these libraries are faster.
 
-      Though broadly available, the license is quite restrictive,
-      so \scotch or \ptscotch may be preferred (\CS may be built with both
-      \metis and \scotch libraries).
+      Though broadly available, the \parmetis license is quite restrictive,
+      so \ptscotch may be preferred (\CS may be built with both
+      \metis and \scotch libraries). Also, the \metis licence was changed
+      in March 2013 to the Apache 2 licence, so it would not be surprising
+      for future \parmetis versions to follow.
+
 
 \end{itemize}
 
@@ -324,7 +327,7 @@ not provide these libraries, there are several alternatives:
       When this is finished, the local Python interpreter contains
       the PyQt4 bindings, and may be used by \CS's \texttt{configure}
       script by passing \texttt{PYTHON=<path\_to\_python\_executable}.
-     
+
 \item add Python Qt4 bindings as a Python extension module for an existing
       Python installation. This is a more elegant solution than the previous
       one, and avoids requiring rebuilding Python, but if the user does not
@@ -433,6 +436,22 @@ files from the libCCMIO libraries directory if also building
 for CCMIO, and are are an obsolete version of CGNS, which
 may interfere with the version used by \CS.
 
+\subsubsection{libxml2\label{sec:ext:libxml2}}
+
+This library is usually available on all general purpose Linux
+distributions, so it does not generally need to be rebuilt,
+although the associated developpement package (and headers) must
+as usual be installed.
+
+For HPC clusters, it might not be available by default on compute nodes,
+so it may need to be compiled. This library may be downloaded
+at\url{ftp://xmlsoft.org/libxml2/} (with a possible mirror at
+\url{ftp://fr.rpmfind.net/pub/libxml/}). All versions tested so far
+(at least versions 2.6 to 2.9) have worked well with \CS, but to avoid
+compilation issues (as well as generating a smaller library), it
+may be useful to add the \texttt{--with-ftp=no --with-http=no} options
+to libxml2's \texttt{configure} script.
+
 \section{Preparing for build\label{sec:prepare}}
 
 If the code was obtained as an archive, it must be unpacked:
@@ -459,7 +478,7 @@ for example:
 Some older system's {\tt make} command may not support compilation
 in a directory different from the source directory ({\tt VPATH}
 support). In this case, installing and using the GNU {\tt gmake}
-tool instead of the native {\tt make} is recommended. 
+tool instead of the native {\tt make} is recommended.
 
 \subsection{Source trees obtained through a source code repository\label{sec:preparerepo}}
 
@@ -502,7 +521,7 @@ its own documentation.
 To obtain the full list of available configuration options,
 run: {\tt configure~--help}.
 
-Note that for all options starting with {\tt --enable-}, 
+Note that for all options starting with {\tt --enable-},
 there is a matching options with {\tt --disable-}. Similarly,
 for every {\tt --with-}, {\tt --without-} is also possible.
 
@@ -588,7 +607,7 @@ in which case making the build relocatable would be nonsense anyways,
 so this is not an issue.
 \footnote{In the special case of packaging the code, which
 may require both fine-grained control of the installation directories
-and the possibility to support options such as \texttt{dpgg}'s 
+and the possibility to support options such as \texttt{dpgg}'s
 \texttt{--instdir}, it is assumed the packager has sufficient knowledge to
 update both \emph{rpath} information and paths in scripts in the executables
 and python package directories of a non-relocatable build, and that the
@@ -639,7 +658,7 @@ contain different flags, so they are in conflict.
 
 Also, some MPI compiler wrappers may include optimization options
 used to build MPI, which may be different from those we wish to use
-that were passed. 
+that were passed.
 
 To avoid issues with MPI wrappers, it is possible to select an
 MPI library using the \texttt{--with-mpi} option to \texttt{configure}.
@@ -731,6 +750,26 @@ but partitioning the same mesh on cluster nodes with 24 Gb each
 may not, so using parallel partitioning \ptscotch or \parmetis
 should be preferred.
 
+\subsection{Installation with the SALOME platform\label{sec:config:salome}}
+
+To enable SALOME platform (\url{http://www.salome-platform.org}) integration,
+the \texttt{--with-salome} configuration option should be used, so as to
+specify the directory of the SALOME installation (note that this should be
+the main installation directory, not the default application directory,
+also generated by SALOME's installers).
+
+Whith SALOME support enabled, both the CFDSTUDY salome module
+(available by running \texttt{code\_saturne salome)} after install)
+and the \textit{Code\_Aster} coupling adapter should be available.
+
+Note that specifying a SALOME directory does not automatically
+allow the \CS \texttt{configure} script to find some libraries
+which may be available in the SALOME distribution, such as HDF5,
+MED, or CGNS. It is possible to use those libraries by specifying
+the appropriate paths in the matching options, but other versions and builds
+may also be used (as those file formats are portable, MED or CGNS files produced
+by either \CS or SALOME remain interoperable).
+
 \subsection{Example configuration commands\label{sec:config:examples}}
 
 Most available prerequisites are auto-detected, so to install the
@@ -772,7 +811,7 @@ build on a cluster named \texttt{ivanoe}, using the Intel compilers
 \textbackslash \\
 \textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.1/arch/ivanoe \textbackslash \\
 \textcolor{Violet}{--with-ccm}=\textcolor{OliveGreen}{\$CS\_OPT}/libccmio-2.06.23/arch/ivanoe \textbackslash \\
-\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-5.1.12/arch/ivanoe\_ompi \textbackslash \\
+\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-6.0/arch/ivanoe\_ompi \textbackslash \\
 \textcolor{Violet}{--with-metis}=\textcolor{OliveGreen}{\$CS\_OPT}/parmetis-4.0/arch/ivanoe\_ompi \textbackslash \\
 \textcolor{red}{CC}=mpicc \textcolor{red}{FC}=ifort \textcolor{red}{CXX}=icpc
 }\end{minipage}}
@@ -847,7 +886,7 @@ For an example, let us start with the front-end build:
 \textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.0/arch/frontend
 \textbackslash \\
 \textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.1/arch/frontend \textbackslash \\
-\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-5.1.11/arch/frontend \textbackslash \\
+\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-6.0/arch/frontend \textbackslash \\
 \textcolor{red}{PYTHON}=\textcolor{OliveGreen}{\$CS\_OPT}/python/arch/frontend/bin/python \textbackslash \\
 \textcolor{red}{CFLAGS}="-m64" \textcolor{red}{FCFLAGS}="-m64" \textcolor{red}{CXXFLAGS}="-m64"
 }\end{minipage}}
@@ -873,7 +912,7 @@ compute nodes:
 \textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.0/arch/bgp
 \textbackslash \\
 \textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.1/arch/bgp \textbackslash \\
-\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-5.1.11/arch/bgp \textbackslash \\
+\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-6.0/arch/bgp \textbackslash \\
 \textcolor{Violet}{
 --disable-sockets --disable-dlloader -disable-nls \textbackslash \\
 --disable-frontend --enable-long-gnum \textbackslash
@@ -969,7 +1008,7 @@ For an example, let us start with the front-end build:
 \textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.0/arch/frontend
 \textbackslash \\
 \textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.1/arch/frontend \textbackslash \\
-\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-5.1.12/arch/frontend \\
+\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-6.0/arch/frontend \\
 }\end{minipage}}
 
 For the compute node, we use the same version of Python (which
@@ -987,7 +1026,7 @@ compute nodes:
 \textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.9/arch/bgq \textbackslash \\
 \textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.0/arch/bgq \textbackslash \\
 \textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.1/arch/bgq \textbackslash \\
-\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-5.1.12/arch/bgq \textbackslash \\
+\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-6.0/arch/bgq \textbackslash \\
 \textcolor{Violet}{
 --disable-sockets --disable-dlloader -disable-nls \textbackslash \\
 --disable-frontend --enable-long-gnum \textbackslash
@@ -1052,6 +1091,12 @@ To uninstall an installed build, use \texttt{make uninstall}.
 To clear all configuration info, use \texttt{make distclean}
 (\texttt{make uninstall} will not work after this).
 
+\subsection{Installing to a system directory\label{sec:sys_install}}
+
+When installing to a system directory, such as \texttt{/usr}
+or \texttt{/usr/local}, some Linux systems may require running
+\texttt{ldconfig} as root or sudoer for the cdoe to work correctly.
+
 \section{Post-install\label{sec:post_install}}
 
 Once the code is installed, a post-install step may
@@ -1102,15 +1147,26 @@ be configured to use PLE.
 Alternatively, \syrthes 4 may simply be configured to use the PLE
 library from an existing \CS install.
 
-\section{Shell completion}
+\section{Shell configuration}
 
-If using the bash shell, you may source a bash completion file,
+If \CS is installed in a non-default system directory (i.e. outside
+\texttt{/usr} or \texttt{/usr/local}, it is recommended to define
+an alias (in the user's \texttt{.alias} or \texttt{.profile} file, so as to
+avoid needing to type the full path when using the code:
+
+\texttt{alias code\_saturne="\$prefix/code\_saturne-\$version/bin/code\_saturne"}
+
+Note that when multiple versions of the code are installed side by side, using
+a different alias for each will allow using them simultaneously, with no risk
+of confusion.
+
+If using the bash shell, you may also source a bash completion file,
 so as to benefit from shell completion for \CS commands
-and options, either using 
+and options, either using
 
 \texttt{. <install-prefix>/etc/bash\_completion.d/code\_saturne}
 
-or 
+or
 
 \texttt{source <install-prefix>/etc/bash\_completion.d/code\_saturne}
 
