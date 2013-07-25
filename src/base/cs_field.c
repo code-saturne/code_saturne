@@ -141,7 +141,7 @@ typedef struct {
   int                         type_flag;    /* Field type flag */
   char                        type_id;      /* i: int; d: double; s: str;
                                                t: type */
-  
+
   bool                        is_sub;       /* Indicate if the key is a sub-key
                                                (in which case def_val contains
                                                the parent key id */
@@ -1026,7 +1026,7 @@ cs_f_field_set_key_struct(int    f_id,
                           void  *k_value)
 {
   cs_field_t *f = cs_field_by_id(f_id);
-  
+
   cs_field_set_key_struct(f, k_id, k_value);
 }
 
@@ -1051,7 +1051,7 @@ cs_f_field_get_key_struct(int    f_id,
                           void  *k_value)
 {
   const cs_field_t *f = cs_field_by_id(f_id);
-  
+
   cs_field_get_key_struct(f, k_id, k_value);
 }
 
@@ -2355,8 +2355,8 @@ cs_field_set_key_struct(cs_field_t  *f,
       cs_field_key_val_t *kv = _key_vals + (f->id*_n_keys_max + key_id);
       unsigned char **_val = (unsigned char **)(kv->val);
       if (kv->is_set == false) {
-    		BFT_MALLOC(*_val, kd->type_size, unsigned char);
-			}
+                    BFT_MALLOC(*_val, kd->type_size, unsigned char);
+                        }
       memcpy(*_val, s, kd->type_size);
       kv->is_set = true;
     }
@@ -2691,7 +2691,7 @@ cs_field_log_info(const cs_field_t  *f,
               kd->log_func(t);
             }
             else {
-              cs_log_printf(CS_LOG_SETUP, _("      %-24s %-24p\n"), key, t); 
+              cs_log_printf(CS_LOG_SETUP, _("      %-24s %-24p\n"), key, t);
             }
           }
           else if (log_keywords > 1) {
@@ -2980,14 +2980,14 @@ cs_field_log_key_vals(int   key_id,
               t = *(const void **)(kv->val);
               cs_log_printf(CS_LOG_SETUP, _("    %-24s\n"),
                             f->name);
-              if (kd->log_func != NULL) 
+              if (kd->log_func != NULL)
                 kd->log_func(t);
             }
             else if (log_defaults) {
               t = *(const void **)(kd->def_val);
               cs_log_printf(CS_LOG_SETUP, _("    %-24s (default)\n"),
                             f->name);
-              if (kd->log_func != NULL) 
+              if (kd->log_func != NULL)
                 kd->log_func(t);
             }
           }

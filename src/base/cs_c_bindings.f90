@@ -35,9 +35,9 @@ module cs_c_bindings
 
   type, bind(c)  :: var_cal_opt
     integer(c_int) :: iwarni
-    integer(c_int) :: iconv 
-    integer(c_int) :: istat 
-    integer(c_int) :: idiff 
+    integer(c_int) :: iconv
+    integer(c_int) :: istat
+    integer(c_int) :: idiff
     integer(c_int) :: idifft
     integer(c_int) :: idften
     integer(c_int) :: iswdyn
@@ -47,7 +47,7 @@ module cs_c_bindings
     integer(c_int) :: nswrsm
     integer(c_int) :: imligr
     integer(c_int) :: ircflu
-    integer(c_int) :: inc   
+    integer(c_int) :: inc
     real(c_double) :: thetav
     real(c_double) :: blencv
     real(c_double) :: epsilo
@@ -133,7 +133,7 @@ contains
 
   !=============================================================================
 
-  !> \brief Return a pointer to the var_cal_opt structure for cs_var_cal_opt key 
+  !> \brief Return a pointer to the var_cal_opt structure for cs_var_cal_opt key
   !> associated with a field.
 
   !> If the field category is not compatible, a fatal error is provoked.

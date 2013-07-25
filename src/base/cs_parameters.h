@@ -50,23 +50,23 @@ BEGIN_C_DECLS
  *----------------------------------------------------------------------------*/
 
 typedef struct {
-  int     iwarni; 
-  int     iconv ; 
-  int     istat ; 
-  int     idiff ; 
-  int     idifft; 
-  int     idften; 
-  int     iswdyn; 
-  int     ischcv; 
-  int     isstpc; 
-  int     nswrgr;                   
-  int     nswrsm; 
-  int     imligr;                                              
-  int     ircflu; 
-  int     inc   ; 
-  double  thetav; 
-  double  blencv; 
-  double  epsilo; 
+  int     iwarni;
+  int     iconv ;
+  int     istat ;
+  int     idiff ;
+  int     idifft;
+  int     idften;
+  int     iswdyn;
+  int     ischcv;
+  int     isstpc;
+  int     nswrgr;
+  int     nswrsm;
+  int     imligr;
+  int     ircflu;
+  int     inc   ;
+  double  thetav;
+  double  blencv;
+  double  epsilo;
   double  epsrsm;
   double  epsrgr;
   double  climgr;
