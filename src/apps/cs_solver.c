@@ -98,6 +98,7 @@
 #include "cs_mesh_warping.h"
 #include "cs_multigrid.h"
 #include "cs_opts.h"
+#include "cs_parameters.h"
 #include "cs_partition.h"
 #include "cs_post.h"
 #include "cs_preprocessor_data.h"
@@ -229,6 +230,7 @@ cs_run(void)
   cs_io_log_initialize();
 
   cs_field_define_keys_base();
+  cs_parameters_define_field_keys();
 
   cs_preprocessor_data_read_headers(cs_glob_mesh,
                                     cs_glob_mesh_builder);

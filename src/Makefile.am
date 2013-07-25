@@ -89,7 +89,7 @@ $(top_srcdir)/src/base/alstru.f90: paramx.lo
 $(top_srcdir)/src/base/cplsat.f90: paramx.lo
 $(top_srcdir)/src/base/cstphy.f90: paramx.lo
 $(top_srcdir)/src/base/entsor.f90: paramx.lo
-$(top_srcdir)/src/base/cs_c_bindings.f90: paramx.lo
+$(top_srcdir)/src/base/cs_c_bindings.f90: paramx.lo field.lo
 $(top_srcdir)/src/base/mltgrd.f90: paramx.lo
 $(top_srcdir)/src/base/numvar.f90: paramx.lo
 $(top_srcdir)/src/base/optcal.f90: paramx.lo

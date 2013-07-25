@@ -90,6 +90,7 @@ cs_measures_util.h \
 cs_numbering.h \
 cs_opts.h \
 cs_order.h \
+cs_parameters.h \
 cs_parall.h \
 cs_part_to_block.h \
 cs_post.h \
@@ -208,6 +209,7 @@ cs_measures_util.c \
 csopli.f90 \
 cs_opts.c \
 cs_parall.c \
+cs_parameters.c \
 cs_post.c \
 cs_post_default.c \
 cs_preprocessor_data.c \

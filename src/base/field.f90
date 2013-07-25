@@ -383,6 +383,30 @@ module field
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function copying a structure associated with a field.
+
+    subroutine cs_f_field_set_key_struct(f_id, k_id, k_value) &
+      bind(C, name='cs_f_field_set_key_struct')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value             :: f_id, k_id
+      type(c_ptr), value                :: k_value
+    end subroutine cs_f_field_set_key_struct
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function copying a structure associated with a field.
+
+    subroutine cs_f_field_get_key_struct(f_id, k_id, k_value) &
+      bind(C, name='cs_f_field_get_key_struct')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value             :: f_id, k_id
+      type(c_ptr), value                :: k_value
+    end subroutine cs_f_field_get_key_struct
+
+    !---------------------------------------------------------------------------
+
     !> \endcond DOXYGEN_SHOULD_SKIP_THIS
 
     !---------------------------------------------------------------------------
@@ -1032,21 +1056,21 @@ contains
     ! Local variables
 
     integer :: i
-    integer(c_int) :: c_f_id, c_k_id, str_max, c_str_len
+    integer(c_int) :: c_f_id, c_k_id, c_str_max, c_str_len
     type(c_ptr) :: f, c_str_p
     character(kind=c_char, len=1), dimension(:), pointer :: c_str
 
     c_f_id = f_id
     c_k_id = k_id
-    str_max = len(str)
+    c_str_max = len(str)
 
-    call cs_f_field_get_key_str(f_id, k_id, str_max, c_str_p, c_str_len)
+    call cs_f_field_get_key_str(c_f_id, c_k_id, c_str_max, c_str_p, c_str_len)
     call c_f_pointer(c_str_p, c_str, [c_str_len])
 
     do i = 1, c_str_len
       str(i:i) = c_str(i)
     enddo
-    do i = c_str_len + 1, str_max
+    do i = c_str_len + 1, c_str_max
       str(i:i) = ' '
     enddo
 

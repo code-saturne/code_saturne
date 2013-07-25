@@ -132,13 +132,19 @@ BEGIN_C_DECLS
 
 typedef struct {
 
-  unsigned char      def_val[8];   /* Default value container (int, double,
-                                      or pointer to string) */
-  int                type_flag;    /* Type flag */
-  char               type_id;      /* i: int; d: double; s: str */
-  bool               is_sub;       /* Indicate if the key is a sub-key (in
-                                      which case def_val contains
-                                      the parent key id */
+  unsigned char               def_val[8];   /* Default value container (int,
+                                               double, or pointer to string
+                                               or structure) */
+  cs_field_log_key_struct_t  *log_func;     /* print function for structure */
+  size_t                      type_size;    /* Type length for added types
+                                               (0 for 'i', 'd', or 's') */
+  int                         type_flag;    /* Field type flag */
+  char                        type_id;      /* i: int; d: double; s: str;
+                                               t: type */
+  
+  bool                        is_sub;       /* Indicate if the key is a sub-key
+                                               (in which case def_val contains
+                                               the parent key id */
 
 } cs_field_key_def_t;
 
@@ -252,6 +258,17 @@ cs_f_field_get_key_str(int           f_id,
                        int           str_max,
                        const char  **str,
                        int          *str_len);
+
+void
+cs_f_field_set_key_struct(int    f_id,
+                          int    k_id,
+                          void  *k_value);
+
+void
+cs_f_field_get_key_struct(int    f_id,
+                          int    k_id,
+                          void  *k_value);
+
 
 /*! \endcond (end ignore by Doxygen) */
 
@@ -514,6 +531,30 @@ _cs_field_free_str(void)
         cs_field_key_val_t *kv = _key_vals + (f_id*_n_keys_max + key_id);
         char **s = (char **)(kv->val);
         BFT_FREE(*s);
+      }
+    }
+
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Free structure associated to a key.
+ *----------------------------------------------------------------------------*/
+
+static void
+_cs_field_free_struct(void)
+{
+  int key_id, f_id;
+
+  for (key_id = 0; key_id < _n_keys; key_id++) {
+
+    cs_field_key_def_t *kd = _key_defs + key_id;
+
+    if (kd->type_id == 't') {
+      for (f_id = 0; f_id < _n_fields; f_id++) {
+        cs_field_key_val_t *kv = _key_vals + (f_id*_n_keys_max + key_id);
+        unsigned char **p = (unsigned char **)(kv->val);
+        BFT_FREE(*p);
       }
     }
 
@@ -962,6 +1003,56 @@ cs_f_field_get_key_str(int           f_id,
          "(of length %d)."),
        f->id, f->name, key_id, key, str_max, *str, *str_len);
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Assign a simple structure for a given key to a field.
+ *
+ * If the key id is not valid, or the value type or field category is not
+ * compatible, a fatal error is provoked.
+ *
+ * This function is intended for use by Fortran wrappers.
+ *
+ * parameters:
+ *   f_id    <-- field id
+ *   k_id    <-- id of associated key
+ *   k_value --> pointer to structure
+ *
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_field_set_key_struct(int    f_id,
+                          int    k_id,
+                          void  *k_value)
+{
+  cs_field_t *f = cs_field_by_id(f_id);
+  
+  cs_field_set_key_struct(f, k_id, k_value);
+}
+
+/*----------------------------------------------------------------------------
+ * Copy a structure for a given key associated with a field.
+ *
+ * If the key id is not valid, or the value type or field category is not
+ * compatible, a fatal error is provoked.
+ *
+ * This function is intended for use by Fortran wrappers.
+ *
+ * parameters:
+ *   f_id    <-- field id
+ *   k_id    <-- id of associated key
+ *   k_value --> pointer to structure
+ *
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_field_get_key_struct(int    f_id,
+                          int    k_id,
+                          void  *k_value)
+{
+  const cs_field_t *f = cs_field_by_id(f_id);
+  
+  cs_field_get_key_struct(f, k_id, k_value);
 }
 
 /*! \endcond (end ignore by Doxygen) */
@@ -1423,6 +1514,7 @@ cs_field_destroy_all(void)
   cs_map_name_to_id_destroy(&_field_map);
 
   _cs_field_free_str();
+  _cs_field_free_struct();
 
   BFT_FREE(_key_vals);
 
@@ -1611,6 +1703,8 @@ cs_field_define_key_int(const char  *name,
   int *def_val = (int *)(kd->def_val);
 
   *def_val = default_value;
+  kd->log_func = NULL;
+  kd->type_size = 0;
   kd->type_flag = type_flag;
   kd->type_id = 'i';
   kd->is_sub = false;
@@ -1646,6 +1740,8 @@ cs_field_define_key_double(const char  *name,
   double *def_val = (double *)(kd->def_val);
 
   *def_val = default_value;
+  kd->log_func = NULL;
+  kd->type_size = 0;
   kd->type_flag = type_flag;
   kd->type_id = 'd';
   kd->is_sub = false;
@@ -1655,7 +1751,7 @@ cs_field_define_key_double(const char  *name,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define a key for an floating point value by its name and return an
+ * \brief Define a key for a string value by its name and return an
  * associated id.
  *
  * If the key has already been defined, its previous default value is replaced
@@ -1693,8 +1789,63 @@ cs_field_define_key_str(const char  *name,
   }
   else
     *def_val = NULL;
+  kd->log_func = NULL;
+  kd->type_size = 0;
   kd->type_flag = type_flag;
   kd->type_id = 's';
+  kd->is_sub = false;
+
+  return key_id;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a key for a structure value by its name and return an
+ * associated id.
+ *
+ * If the key has already been defined, its previous default value is replaced
+ * by the current value, and its id is returned.
+ *
+ * \param[in]  name            key name
+ * \param[in]  default_value   pointer to default value associated with key
+ * \param[in]  log_func        pointer to logging function
+ * \param[in]  size            sizeof structure
+ * \param[in]  type_flag       mask associated with field types with which
+ *                             the key may be associated, or 0
+ *
+ * \return  id associated with key
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_field_define_key_struct(const char                 *name,
+                           const void                 *default_value,
+                           cs_field_log_key_struct_t  *log_func,
+                           size_t                      size,
+                           int                         type_flag)
+{
+  int n_keys_init = _n_keys;
+
+  int key_id = _find_or_add_key(name);
+
+  cs_field_key_def_t *kd = _key_defs + key_id;
+
+  unsigned char **def_val = (unsigned char **)(kd->def_val);
+
+  /* Free possible previous allocation */
+  if (n_keys_init == _n_keys)
+    BFT_FREE(*def_val);
+
+  if (default_value != NULL) {
+    BFT_MALLOC(*def_val, size, unsigned char);
+    memcpy(*def_val, default_value, size);
+  }
+  else
+    *def_val = NULL;
+  kd->log_func = log_func;
+  kd->type_size = size;
+  kd->type_flag = type_flag;
+  kd->type_id = 't';
   kd->is_sub = false;
 
   return key_id;
@@ -2170,6 +2321,123 @@ cs_field_get_key_str(const cs_field_t  *f,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Assign a simple structure for a given key to a field.
+ *
+ * If the key id is not valid, CS_FIELD_INVALID_KEY_ID is returned.
+ * If the field category is not compatible with the key (as defined
+ * by its type flag), CS_FIELD_INVALID_CATEGORY is returned.
+ *
+ * \param[in]  f       pointer to field structure
+ * \param[in]  key_id  id of associated key
+ * \param[in]  s       structure associated with key
+ *
+ * \return  0 in case of success, > 1 in case of error
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_field_set_key_struct(cs_field_t  *f,
+                        int          key_id,
+                        void        *s)
+{
+  int retval = CS_FIELD_OK;
+
+  assert(f->id >= 0 && f->id < _n_fields);
+
+  if (key_id > -1) {
+    cs_field_key_def_t *kd = _key_defs + key_id;
+    assert(key_id < _n_keys);
+    if (kd->type_flag != 0 && !(f->type & kd->type_flag))
+      retval = CS_FIELD_INVALID_CATEGORY;
+    else if (kd->type_id != 't')
+      retval = CS_FIELD_INVALID_TYPE;
+    else {
+      cs_field_key_val_t *kv = _key_vals + (f->id*_n_keys_max + key_id);
+      unsigned char **_val = (unsigned char **)(kv->val);
+      if (kv->is_set == false) {
+    		BFT_MALLOC(*_val, kd->type_size, unsigned char);
+			}
+      memcpy(*_val, s, kd->type_size);
+      kv->is_set = true;
+    }
+  }
+  else
+    retval = CS_FIELD_INVALID_KEY_ID;
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a structure for a given key associated with a field.
+ *
+ * If the key id is not valid, or the value type or field category is not
+ * compatible, a fatal error is provoked.
+ *
+ * \param[in]   f       pointer to field structure
+ * \param[in]   key_id  id of associated key
+ * \param[out]  s       structure associated with key
+ *
+ * \return  pointer to structure associated with
+ *          the key id for this field (same as s)
+ */
+/*----------------------------------------------------------------------------*/
+
+const void *
+cs_field_get_key_struct(const cs_field_t  *f,
+                        const int          key_id,
+                        void              *s)
+{
+  int errcode = CS_FIELD_OK;
+
+  assert(f->id >= 0 && f->id < _n_fields);
+
+  if (key_id > -1 && key_id < _n_keys) {
+    cs_field_key_def_t *kd = _key_defs + key_id;
+    assert(key_id < _n_keys);
+    if (kd->type_flag != 0 && !(f->type & kd->type_flag))
+      errcode = CS_FIELD_INVALID_CATEGORY;
+    else if (kd->type_id != 't')
+      errcode = CS_FIELD_INVALID_TYPE;
+    else {
+      cs_field_key_val_t *kv = _key_vals + (f->id*_n_keys_max + key_id);
+      const unsigned char *p = NULL;
+      if (kv->is_set)
+        p = *((const unsigned char **)(kv->val));
+      else if (kd->is_sub)
+        p = cs_field_get_key_struct(f, *((int *)(kd->def_val)), s);
+      else
+        p = *((const unsigned char **)(kd->def_val));
+      memcpy(s, p, kd->type_size);
+      return s;
+    }
+  }
+  else
+    errcode = CS_FIELD_INVALID_KEY_ID;
+
+  if (errcode != CS_FIELD_OK) {
+    const char *key = cs_map_name_to_id_reverse(_key_map, key_id);
+    if (errcode == CS_FIELD_INVALID_CATEGORY)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Field \"%s\" with type flag %d\n"
+                  "has no value associated with key %d (\"%s\")."),
+                f->name, f->type, key_id, key);
+    else if (errcode == CS_FIELD_INVALID_TYPE)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Field \"%s\" has keyword %d (\"%s\")\n"
+                  "of type \"%c\" and not \"%c\"."),
+                f->name, key_id, key, (_key_defs + key_id)->type_id, 'i');
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("Field keyword with id %d is not defined."),
+                key_id);
+  }
+
+  return NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Print info relative to all field definitions to log file.
  */
 /*----------------------------------------------------------------------------*/
@@ -2404,7 +2672,7 @@ cs_field_log_info(const cs_field_t  *f,
             s = *((const char **)(kv->val));
             if (s == NULL)
               s = null_str;
-            cs_log_printf(CS_LOG_SETUP, _("      %-24s %s\n"), key, s);
+            cs_log_printf(CS_LOG_SETUP, _("      %-24s %-10s\n"), key, s);
           }
           else if (log_keywords > 1) {
             s = *(const char **)(kd->def_val);
@@ -2412,6 +2680,29 @@ cs_field_log_info(const cs_field_t  *f,
               s = null_str;
             cs_log_printf(CS_LOG_SETUP, _("      %-24s %-10s (default)\n"),
                           key, s);
+          }
+        }
+        else if (kd->type_id == 't') {
+          const void *t;
+          if (kv->is_set == true) {
+            t = (const void *)(kv->val);
+            if (kd->log_func != NULL) {
+              cs_log_printf(CS_LOG_SETUP, _("      %-24s:\n"), key);
+              kd->log_func(t);
+            }
+            else {
+              cs_log_printf(CS_LOG_SETUP, _("      %-24s %-24p\n"), key, t); 
+            }
+          }
+          else if (log_keywords > 1) {
+            t = (const void *)(kd->def_val);
+            if (kd->log_func != NULL) {
+              cs_log_printf(CS_LOG_SETUP, _("      %-24s: (default)\n"), key);
+              kd->log_func(t);
+            }
+            else
+              cs_log_printf(CS_LOG_SETUP, _("      %-24s %-24p (default) \n"),
+                            key, t);
           }
         }
       }
@@ -2528,6 +2819,8 @@ cs_field_log_key_defs(void)
   cs_log_printf(CS_LOG_SETUP, _("  %s %s %s %s ---------\n"),
                 tmp_s[0], tmp_s[1], tmp_s[2], tmp_s[3]);
 
+  /* First loop on keys execpt structures */
+
   for (i = 0; i < _n_keys; i++) {
 
     int key_id = cs_map_name_to_id_try(_key_map,
@@ -2550,15 +2843,49 @@ cs_field_log_key_defs(void)
                     _("  %-24s %-12s string  %-4d "),
                     key, (*((const char **)kd->def_val)), key_id);
     }
-    if (kd->type_flag == 0)
-      cs_log_printf(CS_LOG_SETUP, "0\n");
-    else {
-      cs_log_printf(CS_LOG_SETUP, "%-4d", kd->type_flag);
-      _log_add_type_flag(kd->type_flag);
-      cs_log_printf(CS_LOG_SETUP, "\n");
+    if (kd->type_id != 't') {
+      if (kd->type_flag == 0)
+        cs_log_printf(CS_LOG_SETUP, "0\n");
+      else {
+        cs_log_printf(CS_LOG_SETUP, "%-4d", kd->type_flag);
+        _log_add_type_flag(kd->type_flag);
+        cs_log_printf(CS_LOG_SETUP, "\n");
+      }
     }
 
   } /* End of loop on keys */
+
+  /* Second loop on keys structures */
+
+  for (i = 0; i < _n_keys; i++) {
+
+    int key_id = cs_map_name_to_id_try(_key_map,
+                                       cs_map_name_to_id_key(_key_map, i));
+    cs_field_key_def_t *kd = _key_defs + key_id;
+    const char *key = cs_map_name_to_id_key(_key_map, i);
+    const void *t;
+
+    if (kd->type_id == 't') {
+      t = *(const void **)(kd->def_val);
+
+      cs_log_printf(CS_LOG_SETUP,
+                    _("  %-24s %-12s struct  %-4d "),
+                    key, " ", key_id);
+
+      if (kd->type_flag == 0)
+        cs_log_printf(CS_LOG_SETUP, "0\n");
+      else {
+        cs_log_printf(CS_LOG_SETUP, "%-4d", kd->type_flag);
+        _log_add_type_flag(kd->type_flag);
+        cs_log_printf(CS_LOG_SETUP, "\n");
+      }
+
+      if (kd->log_func != NULL)
+        kd->log_func(t);
+    }
+
+  } /* End of loop on keys */
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2647,6 +2974,23 @@ cs_field_log_key_vals(int   key_id,
                             f->name, s);
             }
           }
+          else if (kd->type_id == 't') {
+            const void *t;
+            if (kv->is_set == true) {
+              t = *(const void **)(kv->val);
+              cs_log_printf(CS_LOG_SETUP, _("    %-24s\n"),
+                            f->name);
+              if (kd->log_func != NULL) 
+                kd->log_func(t);
+            }
+            else if (log_defaults) {
+              t = *(const void **)(kd->def_val);
+              cs_log_printf(CS_LOG_SETUP, _("    %-24s (default)\n"),
+                            f->name);
+              if (kd->log_func != NULL) 
+                kd->log_func(t);
+            }
+          }
         }
       }
 
@@ -2687,6 +3031,7 @@ cs_field_log_all_key_vals(bool  log_defaults)
  * Keys defined by this function are:
  *   "label"     (string)
  *   "post_vis"  (integer)
+ *   "log"       (integer)
  *   "coupled"   (integer, restricted to CS_FIELD_VARIABLE)
  *   "moment_dt" (integer, restricted to CS_FIELD_PROPERTY);
  *
@@ -2704,17 +3049,6 @@ cs_field_define_keys_base(void)
   cs_field_define_key_int("log", 0, 0);
   cs_field_define_key_int("coupled", 0, CS_FIELD_VARIABLE);
   cs_field_define_key_int("moment_dt", -1, CS_FIELD_PROPERTY);
-
-  cs_field_define_key_int("inner_mass_flux_id", 0, 0);
-  cs_field_define_key_int("boundary_mass_flux_id", 0, 0);
-  cs_field_define_key_int("variable_id", 0, 0); //inverse of the ivarfl(ivar) array
-  cs_field_define_key_int("diffusivity_tensor", 0, 0);
-  cs_field_define_key_int("scalar_id", 0, 0); //inverse of the isca(iscal) array
-  cs_field_define_key_int("drift_scalar_model", 0, 0);
-  cs_field_define_key_int("scalar_class", 0, 0);
-  cs_field_define_key_int("first_moment_id", -1, 0); // old iscavr(iscal)
-  cs_field_define_key_double("min_scalar_clipping", 0, 0);
-  cs_field_define_key_double("max_scalar_clipping", 0, 0);
 }
 
 /*----------------------------------------------------------------------------*/

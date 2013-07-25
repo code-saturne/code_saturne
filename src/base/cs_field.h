@@ -122,6 +122,16 @@ typedef struct {
 
 } cs_field_t;
 
+/*----------------------------------------------------------------------------
+ * Function pointer for structure associated to field key
+ *
+ * parameters:
+ *   t <-- pointer to structure
+ *----------------------------------------------------------------------------*/
+
+typedef void
+(cs_field_log_key_struct_t) (const void  *t);
+
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -437,6 +447,32 @@ cs_field_define_key_str(const char  *name,
                         const char  *default_value,
                         int          type_flag);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a key for a structure value by its name and return an
+ * associated id.
+ *
+ * If the key has already been defined, its previous default value is replaced
+ * by the current value, and its id is returned.
+ *
+ * \param[in]  name            key name
+ * \param[in]  default_value   pointer to default value associated with key
+ * \param[in]  log_funct       pointer to logging function
+ * \param[in]  size            sizeof structure
+ * \param[in]  type_flag       mask associated with field types with which
+ *                             the key may be associated, or 0
+ *
+ * \return  id associated with key
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_field_define_key_struct(const char                 *name,
+                           const void                 *default_value,
+                           cs_field_log_key_struct_t  *log_func,
+                           size_t                      size,
+                           int                         type_flag);
+
 /*----------------------------------------------------------------------------
  * Define a sub key.
  *
@@ -617,6 +653,49 @@ const char *
 cs_field_get_key_str(const cs_field_t  *f,
                      int                key_id);
 
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign a simple structure for a given key to a field.
+ *
+ * If the key id is not valid, CS_FIELD_INVALID_KEY_ID is returned.
+ * If the field category is not compatible with the key (as defined
+ * by its type flag), CS_FIELD_INVALID_CATEGORY is returned.
+ *
+ * \param[in]  f       pointer to field structure
+ * \param[in]  key_id  id of associated key
+ * \param[in]  s       structure associated with key
+ *
+ * \return  0 in case of success, > 1 in case of error
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_field_set_key_struct(cs_field_t  *f,
+                        int          key_id,
+                        void        *s);
+
+/*----------------------------------------------------------------------------
+ * Return a structure for a given key associated with a field.
+ *
+ * If the key id is not valid, or the value type or field category is not
+ * compatible, a fatal error is provoked.
+ *
+ * parameters:
+ *   f      <-- pointer to field structure
+ *   key_id <-- id of associated key
+ *   s      <-- structure associated with key
+ *
+ * returns:
+ *    pointer to structure associated with the key id for this field
+ *    (same as s)
+ *----------------------------------------------------------------------------*/
+
+const void *
+cs_field_get_key_struct(const cs_field_t  *f,
+                        int                key_id,
+                        void              *s);
+
 /*----------------------------------------------------------------------------
  * Print info relative to all field definitions to log file.
  *----------------------------------------------------------------------------*/
@@ -685,6 +764,7 @@ cs_field_log_all_key_vals(bool  log_defaults);
  * Keys defined by this function are:
  *   "label"     (string)
  *   "post_vis"  (integer)
+ *   "log"       (integer)
  *   "coupled"   (integer, restricted to CS_FIELD_VARIABLE)
  *   "moment_dt" (integer, restricted to CS_FIELD_PROPERTY);
  *
