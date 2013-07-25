@@ -277,10 +277,15 @@ _compute_cell_cocg_s_lsq(const cs_mesh_t      *m,
   const int n_cells_ext = m->n_cells_with_ghosts;
   const int n_i_groups = m->i_face_numbering->n_groups;
   const int n_i_threads = m->i_face_numbering->n_threads;
+  const int n_b_groups = m->b_face_numbering->n_groups;
+  const int n_b_threads = m->b_face_numbering->n_threads;
   const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
+  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
   const cs_lnum_2_t *restrict i_face_cells
     = (const cs_lnum_2_t *restrict)m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *restrict)m->b_face_cells;
   const cs_lnum_t *restrict cell_cells_idx
     = (const cs_lnum_t *restrict)m->cell_cells_idx;
   const cs_lnum_t *restrict cell_cells_lst
@@ -288,6 +293,10 @@ _compute_cell_cocg_s_lsq(const cs_mesh_t      *m,
 
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
+  const cs_real_3_t *restrict b_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_face_normal;
+  const cs_real_t *restrict b_face_surf
+    = (const cs_real_t *restrict)fvq->b_face_surf;
 
   cs_real_33_t   *restrict cocgb = fvq->cocgb_s_lsq;
   cs_real_33_t   *restrict cocg = fvq->cocg_s_lsq;
@@ -296,8 +305,8 @@ _compute_cell_cocg_s_lsq(const cs_mesh_t      *m,
   int        g_id, t_id;
   cs_real_t  a11, a12, a13, a22, a23, a33;
   cs_real_t  cocg11, cocg12, cocg13, cocg22, cocg23, cocg33;
-  cs_real_t  det_inv, uddij2;
-  cs_real_3_t  dc;
+  cs_real_t  det_inv, uddij2, udbfs;
+  cs_real_3_t  dc, dddij;
 
   if (cocg == NULL) {
     BFT_MALLOC(cocgb, m->n_b_cells, cs_real_33_t);
@@ -383,6 +392,36 @@ _compute_cell_cocg_s_lsq(const cs_mesh_t      *m,
         cocgb[ii][ll][mm] = cocg[cell_id][ll][mm];
     }
   }
+
+  /* Contribution from boundary faces, assuming symmetry everywhere
+     so as to avoid obtaining a non-invertible matrix in 2D cases. */
+
+  for (g_id = 0; g_id < n_b_groups; g_id++) {
+
+#   pragma omp parallel for private(face_id, ii, ll, mm, udbfs, dddij)
+    for (t_id = 0; t_id < n_b_threads; t_id++) {
+
+      for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+           face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
+           face_id++) {
+
+        ii = b_face_cells[face_id] - 1;
+
+        udbfs = 1 / b_face_surf[face_id];
+
+        for (ll = 0; ll < 3; ll++)
+          dddij[ll] =   udbfs * b_face_normal[face_id][ll];
+
+        for (ll = 0; ll < 3; ll++) {
+          for (mm = 0; mm < 3; mm++)
+            cocg[ii][ll][mm] += dddij[ll]*dddij[mm];
+        }
+
+      } /* loop on faces */
+
+    } /* loop on threads */
+
+  } /* loop on thread groups */
 
   /* Invert for all cells. */
   /*-----------------------*/
