@@ -105,6 +105,80 @@ enddo
 scamin(ihm)   = -grand
 scamax(ihm)   = +grand
 
+! ---- Variables propres a la phase dispersee
+
+do icla = 1, nclacp
+  scamin(ih2(icla)) = -grand
+  scamax(ih2(icla)) = +grand
+  scamin(inp(icla)) = 0.d0
+  scamax(inp(icla)) = +rinfin
+  scamin(ixch(icla)) = 0.d0
+  scamax(ixch(icla)) = 1.d0
+  scamin(ixck(icla)) = 0.d0
+  scamax(ixck(icla)) = 1.d0
+  if ( ippmod(iccoal) .eq. 1 ) then
+    scamin(ixwt(icla)) = 0.d0
+    scamax(ixwt(icla)) = 1.d0
+  endif
+enddo
+do icha = 1, ncharb
+  scamin(if1m(icha)) = 0.d0
+  scamax(if1m(icha)) = 1.d0
+  scamin(if2m(icha)) = 0.d0
+  scamax(if2m(icha)) = 1.d0
+enddo
+
+! ---- Variables propres a la phase continue
+if ( noxyd .ge. 2 ) then
+  ! Oxydant 2
+  scamin(if4m) = 0.d0
+  scamax(if4m) = 1.d0
+endif
+!
+if ( noxyd .eq. 3 ) then
+  ! Oxydant 3
+  scamin(if5m) = 0.d0
+  scamax(if5m) = 1.d0
+endif
+! eau libre
+if ( ippmod(iccoal) .ge. 1 ) then
+  scamin(if6m) = 0.d0
+  scamax(if6m) = 1.d0
+endif
+! Produits de la combustion du coke par O2
+scamin(if7m) = 0.d0
+scamax(if7m) = 1.d0
+! Produits de la combustion du coke par CO2
+if ( ihtco2 .eq. 1 ) then
+  scamin(if8m) = 0.d0
+  scamax(if8m) = 1.d0
+endif
+! Produits de la combustion du coke par H2O
+if ( ihth2o .eq. 1 ) then
+  scamin(if9m) = 0.d0
+  scamax(if9m) = 1.d0
+endif
+! Variance
+scamin(ifvp2m) = 0.d0
+scamax(ifvp2m) = 0.25d0
+!    Modele de CO
+if ( ieqco2 .eq. 1 ) then
+  scamin(iyco2) = 0.d0
+  scamax(iyco2) = 1.d0
+endif
+if ( ieqnox .ge. 1 ) then
+  scamin(iyhcn) = 0.d0
+  scamax(iyhcn) = 1.d0
+! On donne les limites de la variable transportee qui represente le NH3.
+  scamin(iynh3) = 0.d0
+  scamax(iynh3) = 1.d0
+
+  scamin(iyno) = 0.d0
+  scamax(iyno) = 1.d0
+  scamin(ihox) = -grand
+  scamax(ihox) = +grand
+endif
+
 ! --> Nature des scalaires transportes
 
 do isc = 1, nscapp
@@ -342,6 +416,13 @@ if (iihmpr.ne.1) then
     ichrvr(ipp)  = 1
     ilisvr(ipp)  = 1
     ihisvr(ipp,1)= -1
+
+    ipp = ipprtp(isca(iynh3))
+    NOMVAR(IPP)  = 'FR_NH3'
+    ichrvr(ipp)  = 1
+    ilisvr(ipp)  = 1
+    ihisvr(ipp,1)= -1
+
     ipp = ipprtp(isca(iyno))
     NOMVAR(IPP)  = 'FR_NO'
     ichrvr(ipp)  = 1
@@ -510,6 +591,81 @@ if (iihmpr.ne.1) then
     ihisvr(ipp,1) = -1
     ipp = ipppro(ipproc(ignoth))
     nomvar(IPP)   = 'EXP3'
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
+    ipp = ipppro(ipproc(ignh31))
+    nomvar(IPP)   = 'EXP4'
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
+    ipp = ipppro(ipproc(ignh32))
+    nomvar(IPP)   = 'EXP5'
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
+    ipp = ipppro(ipproc(ifhcnd))
+    nomvar(IPP)   = 'F_HCN_DEV'
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
+    ipp = ipppro(ipproc(ifhcnc))
+    nomvar(IPP)   = 'F_HCN_HET'
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
+    ipp = ipppro(ipproc(ifnh3d))
+    nomvar(IPP)   = 'F_NH3_DEV'
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
+    ipp = ipppro(ipproc(ifnh3c))
+    nomvar(IPP)   = 'F_NH3_HET'
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
+    ipp = ipppro(ipproc(ifnohc))
+    nomvar(IPP)   = 'F_NO_HCN'
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
+    ipp = ipppro(ipproc(ifnonh))
+    nomvar(IPP)   = 'F_NO_NH3'
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
+    ipp = ipppro(ipproc(ifnoch))
+    nomvar(IPP)   = 'F_NO_HET'
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
+    ipp = ipppro(ipproc(ifnoth))
+    nomvar(IPP)   = 'F_NO_THE'
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
+    ipp = ipppro(ipproc(icnohc))
+    nomvar(IPP)   = 'C_NO_HCN'
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
+    ipp = ipppro(ipproc(icnonh))
+    nomvar(IPP)   = 'C_NO_NH3'
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
+    ipp = ipppro(ipproc(ifhcnr))
+    nomvar(IPP)   = 'F_HCN_RB'
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
+    ipp = ipppro(ipproc(icnorb))
+    nomvar(IPP)   = 'C_NO_RB'
+    ichrvr(ipp)   = 1
+    ilisvr(ipp)   = 1
+    ihisvr(ipp,1) = -1
+    ipp = ipppro(ipproc(igrb))
+    nomvar(IPP)   = 'EXP_RB'
     ichrvr(ipp)   = 1
     ilisvr(ipp)   = 1
     ihisvr(ipp,1) = -1

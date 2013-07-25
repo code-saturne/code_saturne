@@ -101,8 +101,9 @@ if ( ippmod(iccoal).ge.0 .or. ippmod(icpl3c).ge.0 ) then
               iy1ch, y1ch, iy2ch, y2ch, a1ch, a2ch, e1ch, e2ch,       &
               crepn1, crepn2, ahetch, ehetch, iochet, ahetc2,         &
               ehetc2, ioetc2, ahetwt, ehetwt, ioetwt,                 &
-              ieqnox, ihtco2, ihth2o, qpr, fn,                        &
-              ckabs1, noxyd, oxyo2, oxyn2, oxyh2o, oxyco2)
+              ieqnox, imdnox, irb, ihtco2, ihth2o, qpr, fn,           &
+              ckabs1, noxyd, oxyo2, oxyn2, oxyh2o, oxyco2,            &
+              repnck, repnle, repnlo)
   call cs_coal_readata
   !==================
 endif

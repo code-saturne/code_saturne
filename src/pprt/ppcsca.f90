@@ -162,8 +162,8 @@ if ( ippmod(iccoal).ge.0 ) then
   if ( ihth2o.eq. 1) nscapp = nscapp + 1
 ! Y_CO ou Y_CO2
   if ( ieqco2.ge. 1) nscapp = nscapp + 1
-! Y_HCN, Y_NO, Taire
-  if ( ieqnox.ge. 1) nscapp = nscapp + 3
+! Y_HCN, Y_NH3, Y_NO, Taire
+  if ( ieqnox.ge. 1) nscapp = nscapp + 4
 endif
 
 ! --> Flamme charbon pulverise couple Lagrangien

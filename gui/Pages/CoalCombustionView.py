@@ -786,6 +786,11 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.modelOxidantType.addItem(self.tr("volumic percentage"), "volumic_percent")
         self.modelOxidantType.addItem(self.tr("molar"),              "molar")
 
+        self.modelReburning = ComboModel(self.comboBoxReburning,3,1)
+        self.modelReburning.addItem(self.tr("unused"), "unused")
+        self.modelReburning.addItem(self.tr("Model of Chen et al."), "chen")
+        self.modelReburning.addItem(self.tr("Model of Dimitriou et al."), "dimitriou")
+
         # Connections
         # -----------
         self.connect(self.treeViewCoals,           SIGNAL("clicked(const QModelIndex &)"), self.slotSelectCoal)
@@ -839,6 +844,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.connect(self.lineEditEnergyH2O, SIGNAL("textChanged(const QString &)"), self.slotActivEnergyH2O)
         self.connect(self.comboBoxReactH2O,  SIGNAL("activated(const QString&)"), self.slotReactTypeH2O)
         self.connect(self.comboBoxOxidant,   SIGNAL("activated(const QString&)"), self.slotOxidantType)
+        self.connect(self.comboBoxReburning, SIGNAL("activated(const QString&)"), self.slotReburning)
 
         self.connect(self.lineEditQPR,                   SIGNAL("textChanged(const QString &)"), self.slotQPR)
         self.connect(self.lineEditNitrogenConcentration, SIGNAL("textChanged(const QString &)"), self.slotNitrogenConcentration)
@@ -846,6 +852,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.connect(self.lineEditKobayashi2,            SIGNAL("textChanged(const QString &)"), self.slotKobayashi2)
 
         self.connect(self.checkBoxNOxFormation, SIGNAL("clicked(bool)"), self.slotNOxFormation)
+        self.connect(self.checkBoxNOxFormationFeature,  SIGNAL("clicked(bool)"), self.slotNOxFeature)
         self.connect(self.checkBoxCO2Kinetics,  SIGNAL("clicked(bool)"), self.slotCO2Kinetics)
         self.connect(self.checkBoxH2OKinetics,  SIGNAL("clicked(bool)"), self.slotH2OKinetics)
 
@@ -1049,9 +1056,13 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         initialize NOx tabview for a define solid fuel
         """
+        self.labelReburning.hide()
+        self.comboBoxReburning.hide()
+        self.checkBoxNOxFormationFeature.hide()
         if self.model.getNOxFormationStatus() == 'on':
             self.checkBoxNOxFormation.setChecked(True)
             self.groupBoxNOxFormation.show()
+            self.checkBoxNOxFormationFeature.show()
             self.lineEditQPR.setText(str(self.model.getNitrogenFraction(self.fuel)))
             self.lineEditNitrogenConcentration.setText \
                 (str(self.model.getNitrogenConcentration(self.fuel)))
@@ -1059,10 +1070,14 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
                 (self.fuel, "HCN_NH3_partitionning_reaction_1")))
             self.lineEditKobayashi2.setText(str(self.model.getHCNParameter \
                 (self.fuel, "HCN_NH3_partitionning_reaction_2")))
+            if self.model.getNOxFormationFeature(self.fuel) == 'on':
+                self.labelReburning.show()
+                self.comboBoxReburning.show()
+                mdl = self.model.getReburning(self.fuel)
+                self.modelReburning.setItem(str_model=mdl)
         else:
             self.checkBoxNOxFormation.setChecked(False)
             self.groupBoxNOxFormation.hide()
-
 
     def initializeKineticsView(self):
         """
@@ -1874,6 +1889,15 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.model.setOxidantType(key)
 
 
+    @pyqtSignature("const QString&")
+    def slotReburning(self, text):
+        """
+        Change the reburning type
+        """
+        key = self.modelReburning.dicoV2M[str(text)]
+        self.model.setReburning(self.fuel, key)
+
+
     @pyqtSignature("bool")
     def slotNOxFormation(self, checked):
         """
@@ -1883,6 +1907,18 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         if checked:
             status = 'on'
         self.model.setNOxFormationStatus(status)
+        self.initializeNOxView()
+
+
+    @pyqtSignature("bool")
+    def slotNOxFeature(self, checked):
+        """
+        check box for NOx formation
+        """
+        status = 'off'
+        if checked:
+            status = 'on'
+        self.model.setNOxFormationFeature(self.fuel, status)
         self.initializeNOxView()
 
 

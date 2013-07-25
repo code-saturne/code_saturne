@@ -127,6 +127,8 @@ class CoalCombustionModel(Variables, Model):
         default['NOx_formation']                   = 'on'
         default['CO2_Kinetics']                    = 'off'
         default['H2O_Kinetics']                    = 'off'
+        default['improved_NOx_model']              = 'off'
+        default['reburning']                       = 'unused'
 
         return default
 
@@ -231,6 +233,7 @@ class CoalCombustionModel(Variables, Model):
             lst.append("FR_HCN")
             lst.append("FR_NO")
             lst.append("Enth_Ox")
+            lst.append("FR_NH3")
 
         if self.getCoalCombustionModel() == 'homogeneous_fuel_moisture' or self.getCoalCombustionModel() == 'homogeneous_fuel_moisture_lagr':
             lst.append("FR_H20")
@@ -319,6 +322,21 @@ class CoalCombustionModel(Variables, Model):
             lst.append("EXP1")
             lst.append("EXP2")
             lst.append("EXP3")
+            lst.append("EXP4")
+            lst.append("EXP5")
+            lst.append("F_HCN_DEV")
+            lst.append("F_HCN_HET")
+            lst.append("F_NH3_DEV")
+            lst.append("F_NH3_HET")
+            lst.append("F_NO_HCN")
+            lst.append("F_NO_NH3")
+            lst.append("F_NO_HET")
+            lst.append("F_NO_THE")
+            lst.append("C_NO_HCN")
+            lst.append("C_NO_NH3")
+            lst.append("F_HCN_RB")
+            lst.append("C_NO_RB")
+            lst.append("EXP_RB")
 
         return lst
 
@@ -1750,8 +1768,30 @@ class CoalCombustionModel(Variables, Model):
         """
         node_oxi = self.node_fuel.xmlInitNode('oxidants')
         self.isInList(choice, ('volumic_percent', 'molar' ))
-        old_type = node_oxi.xmlGetString('oxidant_type')
         node_oxi.xmlSetData('oxidant_type', choice)
+
+
+    @Variables.noUndo
+    def getReburning(self, fuelId):
+        """
+        """
+        fuelNode = self.node_fuel.xmlGetNode("solid_fuel", fuel_id = fuelId)
+        node = fuelNode.xmlGetNode("nox_formation")
+        value = node.xmlGetString('reburning_model')
+        if value == '':
+            value = self.defaultValues()['reburning']
+            self.setReburning(fuelId, value)
+        return value
+
+
+    @Variables.undoLocal
+    def setReburning(self, fuelId, choice):
+        """
+        """
+        self.isInList(choice, ('unused', 'chen', 'dimitriou'))
+        fuelNode = self.node_fuel.xmlGetNode("solid_fuel", fuel_id = fuelId)
+        node = fuelNode.xmlGetNode("nox_formation")
+        node.xmlSetData('reburning_model', choice)
 
 
     @Variables.undoGlobal
@@ -1790,6 +1830,35 @@ class CoalCombustionModel(Variables, Model):
         get NOx formation status
         """
         node = self.node_fuel.xmlGetNode('NOx_formation')
+        status = node['status']
+
+        return status
+
+
+    @Variables.undoGlobal
+    def setNOxFormationFeature(self, fuelId, status):
+        """
+        put NOx formation status
+        """
+        self.isOnOff(status)
+
+        fuelNode = self.node_fuel.xmlGetNode("solid_fuel", fuel_id = fuelId)
+        node_nox = fuelNode.xmlGetNode("nox_formation")
+        node = node_nox.xmlInitNode('improved_NOx_model')
+        node['status'] = status
+
+
+    @Variables.noUndo
+    def getNOxFormationFeature(self, fuelId):
+        """
+        get NOx formation feature status
+        """
+        fuelNode = self.node_fuel.xmlGetNode("solid_fuel", fuel_id = fuelId)
+        node_nox = fuelNode.xmlGetNode("nox_formation")
+        node = node_nox.xmlGetNode('improved_NOx_model')
+        if node == None:
+            self.setNOxFormationFeature(fuelId, self.defaultValues()['improved_NOx_model'])
+            node = node_nox.xmlGetNode('improved_NOx_model')
         status = node['status']
 
         return status

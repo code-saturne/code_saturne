@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>561</width>
+    <width>556</width>
     <height>1057</height>
    </rect>
   </property>
@@ -1034,210 +1034,214 @@ p, li { white-space: pre-wrap; }
              </attribute>
              <layout class="QGridLayout" name="gridLayout_22">
               <item row="0" column="0">
-               <spacer name="horizontalSpacer_15">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>7</width>
-                  <height>20</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item row="0" column="1">
-               <widget class="QGroupBox" name="groupBoxKobayashi">
-                <property name="title">
-                 <string>Kobayashi model</string>
-                </property>
-                <layout class="QGridLayout" name="gridLayout_21">
-                 <item row="0" column="0">
-                  <layout class="QGridLayout" name="gridLayout_15">
-                   <item row="0" column="0" colspan="2">
-                    <layout class="QHBoxLayout" name="horizontalLayout_26">
-                     <item>
-                      <spacer>
-                       <property name="orientation">
-                        <enum>Qt::Horizontal</enum>
-                       </property>
-                       <property name="sizeHint" stdset="0">
-                        <size>
-                         <width>16</width>
-                         <height>16</height>
-                        </size>
-                       </property>
-                      </spacer>
+               <layout class="QHBoxLayout" name="horizontalLayout_22">
+                <item>
+                 <spacer name="horizontalSpacer_15">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>13</width>
+                    <height>243</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+                <item>
+                 <widget class="QGroupBox" name="groupBoxKobayashi">
+                  <property name="title">
+                   <string>Kobayashi model</string>
+                  </property>
+                  <layout class="QGridLayout" name="gridLayout_21">
+                   <item row="0" column="0">
+                    <layout class="QGridLayout" name="gridLayout_15">
+                     <item row="0" column="0" colspan="2">
+                      <layout class="QHBoxLayout" name="horizontalLayout_26">
+                       <item>
+                        <spacer>
+                         <property name="orientation">
+                          <enum>Qt::Horizontal</enum>
+                         </property>
+                         <property name="sizeHint" stdset="0">
+                          <size>
+                           <width>16</width>
+                           <height>16</height>
+                          </size>
+                         </property>
+                        </spacer>
+                       </item>
+                       <item>
+                        <widget class="QLabel" name="labelCoefY1">
+                         <property name="text">
+                          <string>Stoechiometric coefficient</string>
+                         </property>
+                        </widget>
+                       </item>
+                       <item>
+                        <widget class="QComboBox" name="comboBoxY1Y2"/>
+                       </item>
+                       <item>
+                        <spacer>
+                         <property name="orientation">
+                          <enum>Qt::Horizontal</enum>
+                         </property>
+                         <property name="sizeHint" stdset="0">
+                          <size>
+                           <width>16</width>
+                           <height>16</height>
+                          </size>
+                         </property>
+                        </spacer>
+                       </item>
+                      </layout>
                      </item>
-                     <item>
-                      <widget class="QLabel" name="labelCoefY1">
-                       <property name="text">
-                        <string>Stoechiometric coefficient</string>
+                     <item row="1" column="0">
+                      <widget class="QFrame" name="frameY1Y2">
+                       <property name="frameShape">
+                        <enum>QFrame::NoFrame</enum>
                        </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QComboBox" name="comboBoxY1Y2"/>
-                     </item>
-                     <item>
-                      <spacer>
-                       <property name="orientation">
-                        <enum>Qt::Horizontal</enum>
+                       <property name="frameShadow">
+                        <enum>QFrame::Raised</enum>
                        </property>
-                       <property name="sizeHint" stdset="0">
-                        <size>
-                         <width>16</width>
-                         <height>16</height>
-                        </size>
-                       </property>
-                      </spacer>
-                     </item>
-                    </layout>
-                   </item>
-                   <item row="1" column="0">
-                    <widget class="QFrame" name="frameY1Y2">
-                     <property name="frameShape">
-                      <enum>QFrame::NoFrame</enum>
-                     </property>
-                     <property name="frameShadow">
-                      <enum>QFrame::Raised</enum>
-                     </property>
-                     <layout class="QGridLayout" name="gridLayout_8">
-                      <item row="0" column="0">
-                       <widget class="QLabel" name="labelY1">
-                        <property name="text">
-                         <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+                       <layout class="QGridLayout" name="gridLayout_8">
+                        <item row="0" column="0">
+                         <widget class="QLabel" name="labelY1">
+                          <property name="text">
+                           <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;&quot;&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Y&lt;span style=&quot; vertical-align:sub;&quot;&gt;1&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                        </property>
-                       </widget>
-                      </item>
-                      <item row="0" column="1">
-                       <widget class="QLineEdit" name="lineEditCoefY1"/>
-                      </item>
-                      <item row="1" column="0">
-                       <widget class="QLabel" name="labelY2">
-                        <property name="text">
-                         <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="0" column="1">
+                         <widget class="QLineEdit" name="lineEditCoefY1"/>
+                        </item>
+                        <item row="1" column="0">
+                         <widget class="QLabel" name="labelY2">
+                          <property name="text">
+                           <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;&quot;&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Y&lt;span style=&quot; vertical-align:sub;&quot;&gt;2&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                        </property>
-                       </widget>
-                      </item>
-                      <item row="1" column="1">
-                       <widget class="QLineEdit" name="lineEditCoefY2"/>
-                      </item>
-                     </layout>
-                    </widget>
-                   </item>
-                   <item row="1" column="1">
-                    <spacer name="horizontalSpacer_12">
-                     <property name="orientation">
-                      <enum>Qt::Horizontal</enum>
-                     </property>
-                     <property name="sizeHint" stdset="0">
-                      <size>
-                       <width>13</width>
-                       <height>20</height>
-                      </size>
-                     </property>
-                    </spacer>
-                   </item>
-                   <item row="2" column="0" colspan="2">
-                    <layout class="QGridLayout" name="gridLayout_7">
-                     <item row="0" column="0">
-                      <widget class="QLabel" name="labelCoefA1">
-                       <property name="text">
-                        <string>Pre-exponential constant A&lt;sub&gt;1&lt;/sub&gt;</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item row="0" column="1">
-                      <widget class="QLineEdit" name="lineEditCoefA1"/>
-                     </item>
-                     <item row="0" column="2">
-                      <widget class="QLabel" name="labelUnitA1">
-                       <property name="text">
-                        <string>s&lt;sup&gt;-1&lt;/sup&gt;</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item row="1" column="0">
-                      <widget class="QLabel" name="labelCoefA2">
-                       <property name="text">
-                        <string>Pre-exponential constant A&lt;sub&gt;2&lt;/sub&gt;</string>
-                       </property>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="1">
+                         <widget class="QLineEdit" name="lineEditCoefY2"/>
+                        </item>
+                       </layout>
                       </widget>
                      </item>
                      <item row="1" column="1">
-                      <widget class="QLineEdit" name="lineEditCoefA2"/>
-                     </item>
-                     <item row="1" column="2">
-                      <widget class="QLabel" name="labelUnitA2">
-                       <property name="text">
-                        <string>s&lt;sup&gt;-1&lt;/sup&gt;</string>
+                      <spacer name="horizontalSpacer_12">
+                       <property name="orientation">
+                        <enum>Qt::Horizontal</enum>
                        </property>
-                      </widget>
-                     </item>
-                     <item row="2" column="0">
-                      <widget class="QLabel" name="labelCoefE1">
-                       <property name="text">
-                        <string>Activation energy E&lt;sub&gt;1&lt;/sub&gt;</string>
+                       <property name="sizeHint" stdset="0">
+                        <size>
+                         <width>13</width>
+                         <height>20</height>
+                        </size>
                        </property>
-                      </widget>
+                      </spacer>
                      </item>
-                     <item row="2" column="1">
-                      <widget class="QLineEdit" name="lineEditCoefE1"/>
-                     </item>
-                     <item row="2" column="2">
-                      <widget class="QLabel" name="labelUnitE1">
-                       <property name="text">
-                        <string>J/mol</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item row="3" column="0">
-                      <widget class="QLabel" name="labelCoefE2">
-                       <property name="text">
-                        <string>Activation energy E&lt;sub&gt;2&lt;/sub&gt;</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item row="3" column="1">
-                      <widget class="QLineEdit" name="lineEditCoefE2"/>
-                     </item>
-                     <item row="3" column="2">
-                      <widget class="QLabel" name="labelUnitE2">
-                       <property name="text">
-                        <string>J/mol</string>
-                       </property>
-                      </widget>
+                     <item row="2" column="0" colspan="2">
+                      <layout class="QGridLayout" name="gridLayout_7">
+                       <item row="0" column="0">
+                        <widget class="QLabel" name="labelCoefA1">
+                         <property name="text">
+                          <string>Pre-exponential constant A&lt;sub&gt;1&lt;/sub&gt;</string>
+                         </property>
+                        </widget>
+                       </item>
+                       <item row="0" column="1">
+                        <widget class="QLineEdit" name="lineEditCoefA1"/>
+                       </item>
+                       <item row="0" column="2">
+                        <widget class="QLabel" name="labelUnitA1">
+                         <property name="text">
+                          <string>s&lt;sup&gt;-1&lt;/sup&gt;</string>
+                         </property>
+                        </widget>
+                       </item>
+                       <item row="1" column="0">
+                        <widget class="QLabel" name="labelCoefA2">
+                         <property name="text">
+                          <string>Pre-exponential constant A&lt;sub&gt;2&lt;/sub&gt;</string>
+                         </property>
+                        </widget>
+                       </item>
+                       <item row="1" column="1">
+                        <widget class="QLineEdit" name="lineEditCoefA2"/>
+                       </item>
+                       <item row="1" column="2">
+                        <widget class="QLabel" name="labelUnitA2">
+                         <property name="text">
+                          <string>s&lt;sup&gt;-1&lt;/sup&gt;</string>
+                         </property>
+                        </widget>
+                       </item>
+                       <item row="2" column="0">
+                        <widget class="QLabel" name="labelCoefE1">
+                         <property name="text">
+                          <string>Activation energy E&lt;sub&gt;1&lt;/sub&gt;</string>
+                         </property>
+                        </widget>
+                       </item>
+                       <item row="2" column="1">
+                        <widget class="QLineEdit" name="lineEditCoefE1"/>
+                       </item>
+                       <item row="2" column="2">
+                        <widget class="QLabel" name="labelUnitE1">
+                         <property name="text">
+                          <string>J/mol</string>
+                         </property>
+                        </widget>
+                       </item>
+                       <item row="3" column="0">
+                        <widget class="QLabel" name="labelCoefE2">
+                         <property name="text">
+                          <string>Activation energy E&lt;sub&gt;2&lt;/sub&gt;</string>
+                         </property>
+                        </widget>
+                       </item>
+                       <item row="3" column="1">
+                        <widget class="QLineEdit" name="lineEditCoefE2"/>
+                       </item>
+                       <item row="3" column="2">
+                        <widget class="QLabel" name="labelUnitE2">
+                         <property name="text">
+                          <string>J/mol</string>
+                         </property>
+                        </widget>
+                       </item>
+                      </layout>
                      </item>
                     </layout>
                    </item>
                   </layout>
-                 </item>
-                </layout>
-               </widget>
+                 </widget>
+                </item>
+                <item>
+                 <spacer name="horizontalSpacer_16">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>13</width>
+                    <height>243</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
               </item>
-              <item row="0" column="2">
-               <spacer name="horizontalSpacer_13">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>162</width>
-                  <height>20</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item row="1" column="0" colspan="3">
+              <item row="1" column="0">
                <spacer>
                 <property name="orientation">
                  <enum>Qt::Vertical</enum>
@@ -1258,304 +1262,321 @@ p, li { white-space: pre-wrap; }
              </attribute>
              <layout class="QGridLayout" name="gridLayout_16">
               <item row="0" column="0">
-               <layout class="QVBoxLayout" name="verticalLayout_5">
+               <layout class="QHBoxLayout" name="horizontalLayout_23">
                 <item>
-                 <widget class="QGroupBox" name="groupBoxParametersO2">
-                  <property name="title">
-                   <string>O2 Kinetics</string>
+                 <spacer name="horizontalSpacer_18">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
                   </property>
-                  <layout class="QGridLayout">
-                   <item row="0" column="0">
-                    <layout class="QHBoxLayout">
-                     <item>
-                      <spacer>
-                       <property name="orientation">
-                        <enum>Qt::Horizontal</enum>
-                       </property>
-                       <property name="sizeHint" stdset="0">
-                        <size>
-                         <width>16</width>
-                         <height>80</height>
-                        </size>
-                       </property>
-                      </spacer>
-                     </item>
-                     <item>
-                      <layout class="QGridLayout">
-                       <item row="0" column="0">
-                        <widget class="QLabel" name="labelConstO2">
-                         <property name="text">
-                          <string>Pre-exponential constant</string>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="0" column="1">
-                        <widget class="QLineEdit" name="lineEditConstO2"/>
-                       </item>
-                       <item row="0" column="2">
-                        <widget class="QLabel" name="labelUnitConstO2">
-                         <property name="text">
-                          <string>kg/m&lt;sup&gt;2&lt;/sup&gt;/s/atm</string>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="1" column="0">
-                        <widget class="QLabel" name="labelEnergyO2">
-                         <property name="text">
-                          <string>Activation energy</string>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="1" column="1">
-                        <widget class="QLineEdit" name="lineEditEnergyO2"/>
-                       </item>
-                       <item row="1" column="2">
-                        <widget class="QLabel" name="labelUnitO2">
-                         <property name="text">
-                          <string>kcal/mol</string>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="2" column="0">
-                        <widget class="QLabel" name="labelReactionOrderO2">
-                         <property name="text">
-                          <string>Reaction order</string>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="2" column="1">
-                        <widget class="QComboBox" name="comboBoxReactO2"/>
-                       </item>
-                      </layout>
-                     </item>
-                     <item>
-                      <spacer>
-                       <property name="orientation">
-                        <enum>Qt::Horizontal</enum>
-                       </property>
-                       <property name="sizeHint" stdset="0">
-                        <size>
-                         <width>16</width>
-                         <height>80</height>
-                        </size>
-                       </property>
-                      </spacer>
-                     </item>
-                    </layout>
-                   </item>
-                  </layout>
-                 </widget>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>13</width>
+                    <height>243</height>
+                   </size>
+                  </property>
+                 </spacer>
                 </item>
                 <item>
-                 <widget class="QCheckBox" name="checkBoxCO2Kinetics">
-                  <property name="text">
-                   <string>CO2 Kinetics</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QGroupBox" name="groupBoxParametersCO2">
-                  <property name="title">
-                   <string>CO2 Kinetics</string>
-                  </property>
-                  <layout class="QGridLayout" name="gridLayout_2">
-                   <item row="0" column="0">
-                    <layout class="QHBoxLayout" name="horizontalLayout_3">
-                     <item>
-                      <spacer name="horizontalSpacer">
-                       <property name="orientation">
-                        <enum>Qt::Horizontal</enum>
-                       </property>
-                       <property name="sizeHint" stdset="0">
-                        <size>
-                         <width>13</width>
-                         <height>13</height>
-                        </size>
-                       </property>
-                      </spacer>
-                     </item>
-                     <item>
-                      <layout class="QGridLayout" name="gridLayout">
-                       <item row="0" column="0">
-                        <widget class="QLabel" name="labelConstCO2">
-                         <property name="text">
-                          <string>Pre-exponential constant</string>
+                 <layout class="QVBoxLayout" name="verticalLayout_5">
+                  <item>
+                   <widget class="QGroupBox" name="groupBoxParametersO2">
+                    <property name="title">
+                     <string>O2 Kinetics</string>
+                    </property>
+                    <layout class="QGridLayout">
+                     <item row="0" column="0">
+                      <layout class="QHBoxLayout">
+                       <item>
+                        <spacer>
+                         <property name="orientation">
+                          <enum>Qt::Horizontal</enum>
                          </property>
-                        </widget>
+                         <property name="sizeHint" stdset="0">
+                          <size>
+                           <width>16</width>
+                           <height>80</height>
+                          </size>
+                         </property>
+                        </spacer>
                        </item>
-                       <item row="0" column="1" rowspan="3">
-                        <layout class="QVBoxLayout" name="verticalLayout">
-                         <item>
-                          <widget class="QLineEdit" name="lineEditConstCO2"/>
+                       <item>
+                        <layout class="QGridLayout">
+                         <item row="0" column="0">
+                          <widget class="QLabel" name="labelConstO2">
+                           <property name="text">
+                            <string>Pre-exponential constant</string>
+                           </property>
+                          </widget>
                          </item>
-                         <item>
-                          <widget class="QLineEdit" name="lineEditEnergyCO2"/>
+                         <item row="0" column="1">
+                          <widget class="QLineEdit" name="lineEditConstO2"/>
                          </item>
-                         <item>
-                          <widget class="QComboBox" name="comboBoxReactCO2"/>
+                         <item row="0" column="2">
+                          <widget class="QLabel" name="labelUnitConstO2">
+                           <property name="text">
+                            <string>kg/m&lt;sup&gt;2&lt;/sup&gt;/s/atm</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item row="1" column="0">
+                          <widget class="QLabel" name="labelEnergyO2">
+                           <property name="text">
+                            <string>Activation energy</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item row="1" column="1">
+                          <widget class="QLineEdit" name="lineEditEnergyO2"/>
+                         </item>
+                         <item row="1" column="2">
+                          <widget class="QLabel" name="labelUnitO2">
+                           <property name="text">
+                            <string>kcal/mol</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item row="2" column="0">
+                          <widget class="QLabel" name="labelReactionOrderO2">
+                           <property name="text">
+                            <string>Reaction order</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item row="2" column="1">
+                          <widget class="QComboBox" name="comboBoxReactO2"/>
                          </item>
                         </layout>
                        </item>
-                       <item row="0" column="2">
-                        <widget class="QLabel" name="labelUnitConstCO2">
-                         <property name="text">
-                          <string>kg/m&lt;sup&gt;2&lt;/sup&gt;/s/atm</string>
+                       <item>
+                        <spacer>
+                         <property name="orientation">
+                          <enum>Qt::Horizontal</enum>
                          </property>
-                        </widget>
-                       </item>
-                       <item row="1" column="0">
-                        <widget class="QLabel" name="labelEnergyCO2">
-                         <property name="text">
-                          <string>Activation energy</string>
+                         <property name="sizeHint" stdset="0">
+                          <size>
+                           <width>16</width>
+                           <height>80</height>
+                          </size>
                          </property>
-                        </widget>
-                       </item>
-                       <item row="1" column="2">
-                        <widget class="QLabel" name="labelUnitCO2">
-                         <property name="text">
-                          <string>kcal/mol</string>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="2" column="0">
-                        <widget class="QLabel" name="labelReactionOrderCO2">
-                         <property name="text">
-                          <string>Reaction order</string>
-                         </property>
-                        </widget>
+                        </spacer>
                        </item>
                       </layout>
                      </item>
-                     <item>
-                      <spacer name="horizontalSpacer_2">
-                       <property name="orientation">
-                        <enum>Qt::Horizontal</enum>
-                       </property>
-                       <property name="sizeHint" stdset="0">
-                        <size>
-                         <width>17</width>
-                         <height>17</height>
-                        </size>
-                       </property>
-                      </spacer>
-                     </item>
                     </layout>
-                   </item>
-                  </layout>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QCheckBox" name="checkBoxH2OKinetics">
-                  <property name="text">
-                   <string>H2O Kinetics</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QGroupBox" name="groupBoxParametersH2O">
-                  <property name="title">
-                   <string>H2O Kinetics</string>
-                  </property>
-                  <layout class="QGridLayout" name="gridLayout_3">
-                   <item row="0" column="0">
-                    <layout class="QHBoxLayout" name="horizontalLayout_27">
-                     <item>
-                      <spacer name="horizontalSpacer_5">
-                       <property name="orientation">
-                        <enum>Qt::Horizontal</enum>
-                       </property>
-                       <property name="sizeHint" stdset="0">
-                        <size>
-                         <width>13</width>
-                         <height>13</height>
-                        </size>
-                       </property>
-                      </spacer>
-                     </item>
-                     <item>
-                      <layout class="QGridLayout" name="gridLayout_12">
-                       <item row="0" column="0">
-                        <widget class="QLabel" name="labelConstH2O">
-                         <property name="text">
-                          <string>Pre-exponential constant</string>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QCheckBox" name="checkBoxCO2Kinetics">
+                    <property name="text">
+                     <string>CO2 Kinetics</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QGroupBox" name="groupBoxParametersCO2">
+                    <property name="title">
+                     <string>CO2 Kinetics</string>
+                    </property>
+                    <layout class="QGridLayout" name="gridLayout_2">
+                     <item row="0" column="0">
+                      <layout class="QHBoxLayout" name="horizontalLayout_3">
+                       <item>
+                        <spacer name="horizontalSpacer">
+                         <property name="orientation">
+                          <enum>Qt::Horizontal</enum>
                          </property>
-                        </widget>
+                         <property name="sizeHint" stdset="0">
+                          <size>
+                           <width>13</width>
+                           <height>13</height>
+                          </size>
+                         </property>
+                        </spacer>
                        </item>
-                       <item row="0" column="1" rowspan="3">
-                        <layout class="QVBoxLayout" name="verticalLayout_11">
-                         <item>
-                          <widget class="QLineEdit" name="lineEditConstH2O"/>
+                       <item>
+                        <layout class="QGridLayout" name="gridLayout">
+                         <item row="0" column="0">
+                          <widget class="QLabel" name="labelConstCO2">
+                           <property name="text">
+                            <string>Pre-exponential constant</string>
+                           </property>
+                          </widget>
                          </item>
-                         <item>
-                          <widget class="QLineEdit" name="lineEditEnergyH2O"/>
+                         <item row="0" column="1" rowspan="3">
+                          <layout class="QVBoxLayout" name="verticalLayout">
+                           <item>
+                            <widget class="QLineEdit" name="lineEditConstCO2"/>
+                           </item>
+                           <item>
+                            <widget class="QLineEdit" name="lineEditEnergyCO2"/>
+                           </item>
+                           <item>
+                            <widget class="QComboBox" name="comboBoxReactCO2"/>
+                           </item>
+                          </layout>
                          </item>
-                         <item>
-                          <widget class="QComboBox" name="comboBoxReactH2O"/>
+                         <item row="0" column="2">
+                          <widget class="QLabel" name="labelUnitConstCO2">
+                           <property name="text">
+                            <string>kg/m&lt;sup&gt;2&lt;/sup&gt;/s/atm</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item row="1" column="0">
+                          <widget class="QLabel" name="labelEnergyCO2">
+                           <property name="text">
+                            <string>Activation energy</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item row="1" column="2">
+                          <widget class="QLabel" name="labelUnitCO2">
+                           <property name="text">
+                            <string>kcal/mol</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item row="2" column="0">
+                          <widget class="QLabel" name="labelReactionOrderCO2">
+                           <property name="text">
+                            <string>Reaction order</string>
+                           </property>
+                          </widget>
                          </item>
                         </layout>
                        </item>
-                       <item row="0" column="2">
-                        <widget class="QLabel" name="labelUnitConstH2O">
-                         <property name="text">
-                          <string>kg/m&lt;sup&gt;2&lt;/sup&gt;/s/atm</string>
+                       <item>
+                        <spacer name="horizontalSpacer_2">
+                         <property name="orientation">
+                          <enum>Qt::Horizontal</enum>
                          </property>
-                        </widget>
-                       </item>
-                       <item row="1" column="0">
-                        <widget class="QLabel" name="labelEnergyH2O">
-                         <property name="text">
-                          <string>Activation energy</string>
+                         <property name="sizeHint" stdset="0">
+                          <size>
+                           <width>17</width>
+                           <height>17</height>
+                          </size>
                          </property>
-                        </widget>
-                       </item>
-                       <item row="1" column="2">
-                        <widget class="QLabel" name="labelUnitH2O">
-                         <property name="text">
-                          <string>kcal/mol</string>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="2" column="0">
-                        <widget class="QLabel" name="labelReactionOrderH2O">
-                         <property name="text">
-                          <string>Reaction order</string>
-                         </property>
-                        </widget>
+                        </spacer>
                        </item>
                       </layout>
                      </item>
-                     <item>
-                      <spacer name="horizontalSpacer_6">
-                       <property name="orientation">
-                        <enum>Qt::Horizontal</enum>
-                       </property>
-                       <property name="sizeHint" stdset="0">
-                        <size>
-                         <width>17</width>
-                         <height>17</height>
-                        </size>
-                       </property>
-                      </spacer>
+                    </layout>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QCheckBox" name="checkBoxH2OKinetics">
+                    <property name="text">
+                     <string>H2O Kinetics</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QGroupBox" name="groupBoxParametersH2O">
+                    <property name="title">
+                     <string>H2O Kinetics</string>
+                    </property>
+                    <layout class="QGridLayout" name="gridLayout_3">
+                     <item row="0" column="0">
+                      <layout class="QHBoxLayout" name="horizontalLayout_27">
+                       <item>
+                        <spacer name="horizontalSpacer_5">
+                         <property name="orientation">
+                          <enum>Qt::Horizontal</enum>
+                         </property>
+                         <property name="sizeHint" stdset="0">
+                          <size>
+                           <width>13</width>
+                           <height>13</height>
+                          </size>
+                         </property>
+                        </spacer>
+                       </item>
+                       <item>
+                        <layout class="QGridLayout" name="gridLayout_12">
+                         <item row="0" column="0">
+                          <widget class="QLabel" name="labelConstH2O">
+                           <property name="text">
+                            <string>Pre-exponential constant</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item row="0" column="1" rowspan="3">
+                          <layout class="QVBoxLayout" name="verticalLayout_11">
+                           <item>
+                            <widget class="QLineEdit" name="lineEditConstH2O"/>
+                           </item>
+                           <item>
+                            <widget class="QLineEdit" name="lineEditEnergyH2O"/>
+                           </item>
+                           <item>
+                            <widget class="QComboBox" name="comboBoxReactH2O"/>
+                           </item>
+                          </layout>
+                         </item>
+                         <item row="0" column="2">
+                          <widget class="QLabel" name="labelUnitConstH2O">
+                           <property name="text">
+                            <string>kg/m&lt;sup&gt;2&lt;/sup&gt;/s/atm</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item row="1" column="0">
+                          <widget class="QLabel" name="labelEnergyH2O">
+                           <property name="text">
+                            <string>Activation energy</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item row="1" column="2">
+                          <widget class="QLabel" name="labelUnitH2O">
+                           <property name="text">
+                            <string>kcal/mol</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item row="2" column="0">
+                          <widget class="QLabel" name="labelReactionOrderH2O">
+                           <property name="text">
+                            <string>Reaction order</string>
+                           </property>
+                          </widget>
+                         </item>
+                        </layout>
+                       </item>
+                       <item>
+                        <spacer name="horizontalSpacer_6">
+                         <property name="orientation">
+                          <enum>Qt::Horizontal</enum>
+                         </property>
+                         <property name="sizeHint" stdset="0">
+                          <size>
+                           <width>17</width>
+                           <height>17</height>
+                          </size>
+                         </property>
+                        </spacer>
+                       </item>
+                      </layout>
                      </item>
                     </layout>
-                   </item>
-                  </layout>
-                 </widget>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+                <item>
+                 <spacer name="horizontalSpacer_17">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>13</width>
+                    <height>243</height>
+                   </size>
+                  </property>
+                 </spacer>
                 </item>
                </layout>
-              </item>
-              <item row="0" column="1">
-               <spacer name="horizontalSpacer_14">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>95</width>
-                  <height>20</height>
-                 </size>
-                </property>
-               </spacer>
               </item>
               <item row="1" column="0">
                <spacer>
@@ -1577,30 +1598,73 @@ p, li { white-space: pre-wrap; }
               <string>NOx formation</string>
              </attribute>
              <layout class="QGridLayout" name="gridLayout_13">
-              <item row="0" column="1">
+              <item row="0" column="0" rowspan="4">
+               <spacer name="horizontalSpacer_20">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>93</width>
+                  <height>288</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="0" column="1" colspan="2">
                <widget class="QCheckBox" name="checkBoxNOxFormation">
                 <property name="text">
                  <string>NOx formation</string>
                 </property>
                </widget>
               </item>
-              <item row="1" column="0">
-               <spacer name="horizontalSpacer_9">
+              <item row="0" column="4" rowspan="4">
+               <spacer name="horizontalSpacer_19">
                 <property name="orientation">
                  <enum>Qt::Horizontal</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
-                  <width>102</width>
+                  <width>93</width>
+                  <height>288</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="1" column="1" colspan="2">
+               <widget class="QCheckBox" name="checkBoxNOxFormationFeature">
+                <property name="text">
+                 <string>Improved NOx model</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QLabel" name="labelReburning">
+                <property name="text">
+                 <string>Reburning</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="2">
+               <widget class="QComboBox" name="comboBoxReburning"/>
+              </item>
+              <item row="2" column="3">
+               <spacer name="horizontalSpacer_10">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>137</width>
                   <height>20</height>
                  </size>
                 </property>
                </spacer>
               </item>
-              <item row="1" column="1">
+              <item row="3" column="1" colspan="3">
                <widget class="QGroupBox" name="groupBoxNOxFormation">
                 <property name="title">
-                 <string>GroupBox</string>
+                 <string/>
                 </property>
                 <layout class="QGridLayout" name="gridLayout_9">
                  <item row="0" column="0">
@@ -1611,7 +1675,7 @@ p, li { white-space: pre-wrap; }
                    <item row="1" column="0">
                     <widget class="QLabel" name="labelNitrogenConcentration">
                      <property name="text">
-                      <string>Nitrogen Concentration(DAF)</string>
+                      <string>Nitrogen Concentration (DAF)</string>
                      </property>
                     </widget>
                    </item>
@@ -1652,20 +1716,7 @@ p, li { white-space: pre-wrap; }
                 </layout>
                </widget>
               </item>
-              <item row="1" column="2">
-               <spacer name="horizontalSpacer_10">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>102</width>
-                  <height>20</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item row="2" column="1" colspan="2">
+              <item row="4" column="0" colspan="5">
                <spacer name="verticalSpacer">
                 <property name="orientation">
                  <enum>Qt::Vertical</enum>

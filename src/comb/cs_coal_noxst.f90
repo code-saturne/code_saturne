@@ -128,7 +128,24 @@ double precision somm  , sommax , sommin , ts4admin,ts4admax
 double precision yo2min,yo2max,yo2min1,yo2max1
 double precision yo2oxmin,yo2oxmax
 double precision toxmin,toxmax
+
+!LOCAL VARIABLES
+!===============
 !
+! Constantes cinetiques
+! ---------------------
+double precision kk4,ee4,kk5,ee5,kkrb,eerb
+!
+! Pointeur auxiliaires
+! --------------------
+integer iexp4,iexp5,iexprb
+!
+! Inidcateurs de l'integration sur la pdf
+! ---------------------------------------
+integer ipdf4,ipdf5
+
+
+
 !
 !===============================================================================
 ! 1. Preliminar computations
@@ -143,6 +160,10 @@ wmo2   = wmole(io2  )
 iexp1 = ipproc(ighcn1)
 iexp2 = ipproc(ighcn2)
 iexp3 = ipproc(ignoth)
+
+iexp4 = ipproc(ignh31)
+iexp5 = ipproc(ignh32)
+iexprb= ipproc(igrb)
 !
 ! Parametres des lois d'Arrhenius
 !
@@ -153,13 +174,25 @@ ee2 = 3.35e4
 kk3 = 3.4e12
 ee3 = 6.69e4
 !
+
+kk4 = 4.1e6
+ee4 = 1.6e4
+kk5 = 1.8e8
+ee5 = 1.35e4
+kkrb= 2.7e12
+eerb= 9.467e3
+
 ! Pour les termes, indicateur de calcul par PDF ou non
 !       = 1 --> passage par pdf
 !       = 0 --> on ne passe pas par les pdf
-!
+
 ipdf1 = 0
 ipdf2 = 0
 ipdf3 = 1
+
+ipdf4 = 0
+ipdf5 = 0
+
 !
 ! Initialisation
 !
@@ -167,6 +200,10 @@ do iel = 1, ncel
   propce(iel,iexp1)  = zero
   propce(iel,iexp2)  = zero
   propce(iel,iexp3)  = zero
+
+  propce(iel,iexp4)  = zero
+  propce(iel,iexp5)  = zero
+  propce(iel,iexprb) = zero
 enddo
 
 !===============================================================================
@@ -198,13 +235,23 @@ do iel = 1, ncel
 !
   propce(iel,iexp3)  = kk3*exp(-ee3/tg)*(xo2**0.5d0)
 !
+! Reaction NH3 + O2 --> NO + ...
+  propce(iel,iexp4)  = kk4*exp(-ee4/tg)*(xo2**bb)
+!
+! Reaction NH3 + NO --> N2 + ...
+  propce(iel,iexp5)  = kk5*exp(-ee5/tg)
+!
+! Reburning (Model de Chen)
+  propce(iel,iexprb) = kkrb*exp(-eerb/tg)
+!
 enddo
 !
 !===============================================================================
 ! 3. CALCUL AVEC LES PDF
 !===============================================================================
 !
-if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
+if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 .or. ipdf4.eq.1 .or.     &
+     ipdf5.eq.1 ) then
 !
   inok = 0
   i300 = 0
@@ -232,16 +279,16 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
   toxmax =-1.d+20
   yo2oxmin= 1.d+20
   yo2oxmax=-1.d20
-!
+
   nbclip30 = 0
   nbclip31 = 0
   yo2min  = 1.d+20
   yo2max  =-1.d+20
   yo2min1 = 1.d+20
   yo2max1 =-1.d+20
-!
+
   do iel=1,ncel
-!
+
     if ((indpdf(iel).eq.1).and.           &
         (fs3no (iel).gt.fs4no(iel)).and.  &
         (fs4no (iel).lt.1.d0)) then
@@ -265,13 +312,13 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
 
       if (  propce(iel, ipproc(iym1(io2))) .gt. 0.d0 ) then
         yo2ox = propce(iel, ipproc(iym1(io2)))/(-gt1+gt2+gt3)
-!
+
         yo2oxmin = min(yo2oxmin,yo2ox)
         yo2oxmax = max(yo2oxmax,yo2ox)
-!
+
         yo2moy = propce(iel, ipproc(iym1(io2)))
         dirac  =  dfuel(iel)*yo2cb + doxyd(iel)*yo2ox
-!
+
         bb1 = max(0.D0      ,pdfm1(iel))
         bb2 = min(fs4no(iel),pdfm2(iel))
         bb3 = max(fs4no(iel),pdfm1(iel))
@@ -286,24 +333,24 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
         else
           lrf = 0.d0
         endif
-!
+
         qqq = bb2**2 - bb1**2
         rrr = bb2    - bb1
         sss = bb4**2 - bb3**2
         ttt = bb4    - bb3
         uuu = fs4no(iel)-fs3no(iel)
-!
+
         gt1 = lro*qqq/(2.d0*fs4no(iel))
         gt2 = lro*rrr
-!
+
         gt10= lrf*sss/(2.d0*uuu)
         gt20= lrf*ttt*fs3no(iel)/uuu
-!
+
         yo24num = yo2moy - dirac + yo2ox*(gt1 -gt2)
         yo24den = gt1+gt10-gt20
-!
+
         yo2s4  = yo24num/yo24den
-!
+
       else
         yo2ox = 0.d0
         yo2s4 = 0.d0
@@ -346,9 +393,10 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
       if ( xmx2 .gt. 0.d0 ) then
         do icla=1,nclacp
           ipctem=ipproc(itemp2(icla))
-          tfuel = tfuel +(rtp(iel,isca(ixck(icla)))                                 &
-                        + rtp(iel,isca(ixch(icla)))                                 &
-                        +rtp(iel,isca(inp (icla)))*xmash(icla))*propce(iel,ipctem)
+          tfuel = tfuel +(rtp(iel,isca(ixck(icla)))                            &
+                        + rtp(iel,isca(ixch(icla)))                            &
+                        + rtp(iel,isca(inp (icla)))*xmash(icla))*              &
+                          propce(iel,ipctem)
 !
 !         Prise en compte de l'humidite
 !
@@ -748,11 +796,62 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
             endif
           endif
 !
-      endif
+!  Calcul de K4*EXP(-E4/T)
 !
+          if ( ipdf4 .eq. 1 ) then
+!
+            if ( xo2 .gt. 0.d0 ) then
+!
+              if(xo2.gt.0.018d0) then
+                bb=0.d0
+              else if(xo2 .lt. 0.0025d0) then
+                bb=1.d0
+              else
+                bb=(0.018d0-xo2)/(0.018d0-0.0025d0)
+              endif
+!
+              propce(iel,iexp4) = kk4*exp(-ee4/toxyd)*doxyd(iel)     &
+                                     *(xo2**bb)                      &
+                                 +kk4*exp(-ee4/tfuel)*dfuel(iel)     &
+                                     *(xo2**bb)
+!
+              do i = 1, npart+1
+                val(i) = kk4*exp(-ee4/tt(i))*hrec(iel)
+              enddo
+
+              do i = 1, npart
+                propce(iel,iexp4) = propce(iel,iexp4)                &
+                                   +0.5d0*dgs*(val(i)+val(i+1))*(xo2**bb)
+              enddo
+            else
+              propce(iel,iexp4) = 0.d0
+            endif
+
+          endif
+!
+! Calcul de K5*EXP(-E5/T)
+!
+        if ( ipdf5 .eq. 1 ) then
+!
+          propce(iel,iexp5)= kk5*exp(-ee5/toxyd)*doxyd(iel)          &
+                            +kk5*exp(-ee5/tfuel)*dfuel(iel)
+
+          do i = 1, npart+1
+            val(i) = kk5*exp(-ee5/tt(i))*hrec(iel)
+          enddo
+
+          do i = 1, npart
+            propce(iel,iexp5) = propce(iel,iexp5)                 &
+                               +0.5d0*dgs*(val(i)+val(i+1))
+          enddo
+
+        endif
+
+      endif
+
     endif
   enddo
-!
+
   if ( irangp .ge. 0 ) then
     call parcpt(inok)
     call parcpt(i300)
@@ -776,14 +875,14 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
     call parmax(ts4admax)
     call parmin(sommin)
     call parmax(sommax)
-!
+
     call parcpt(nbclip30)
     call parcpt(nbclip31)
     call parmin(yo2min)
     call parmax(yo2max)
     call parmin(yo2min1)
     call parmax(yo2max1)
-!
+
     call parmin(toxmin)
     call parmax(toxmax)
     call parmin(yo2oxmin)

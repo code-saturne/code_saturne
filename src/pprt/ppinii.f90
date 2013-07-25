@@ -190,6 +190,7 @@ ifvap   = 0
 if4p2m  = 0
 iyco2   = 0
 iyhcn   = 0
+iynh3   = 0
 iyno    = 0
 itaire  = 0
 
@@ -208,6 +209,26 @@ enddo
 ighcn1 = 0
 ighcn2 = 0
 ignoth = 0
+
+ignh31 = 0
+ignh32 = 0
+ifhcnd = 0
+ifhcnc = 0
+ifnh3d = 0
+ifnh3c = 0
+ifnohc = 0
+ifnonh = 0
+ifnoch = 0
+ifnoth = 0
+icnohc = 0
+icnonh = 0
+ifhcnr = 0
+icnorb = 0
+igrb   = 0
+
+ieqnox = 1
+imdnox = 0
+irb = 0
 
 ! ---> Initialisation pour l'effet Joule , Arc electrique et conduction ionique
 
@@ -427,7 +448,37 @@ do icha = 1, ncharm
   iash(icha)   = 0
   iwat(icha)   = 0
 
+  repnck(icha) = zero
+  repnle(icha) = zero
+  repnlo(icha) = zero
+
+  ychxle(icha) = zero
+  ychxlo(icha) = zero
+  yhcnle(icha) = zero
+  yhcnlo(icha) = zero
+  ynh3le(icha) = zero
+  ynh3lo(icha) = zero
+  ycoch1(icha) = zero
+  yhcnc1(icha) = zero
+  ynoch1(icha) = zero
+  ycoch2(icha) = zero
+  yhcnc2(icha) = zero
+  ynoch2(icha) = zero
+
+  nnch(icha)   = zero
+  nnckle(icha) = zero
+  nhckle(icha) = zero
+  ncckle(icha) = zero
+  nncklo(icha) = zero
+  nhcklo(icha) = zero
+  nccklo(icha) = zero
+
+  wchx1c(icha) = zero
+  wchx2c(icha) = zero
 enddo
+
+wmchx1 = zero
+wmchx2 = zero
 
 do isol = 1, nsolim
   do it = 1, npot

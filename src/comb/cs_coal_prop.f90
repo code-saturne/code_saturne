@@ -128,14 +128,62 @@ do ige = 1,ngazg
 enddo
 iprop = iprop + 1
 immel = iprop
-!
+
 if ( ieqnox .eq. 1 ) then
   iprop  = iprop + 1
   ighcn1 = iprop
+
   iprop  = iprop + 1
   ighcn2 = iprop
+
   iprop  = iprop + 1
   ignoth = iprop
+
+  iprop  = iprop + 1
+  ignh31 = iprop
+
+  iprop  = iprop + 1
+  ignh32 = iprop
+
+  iprop  = iprop + 1
+  ifhcnd = iprop
+
+  iprop  = iprop + 1
+  ifhcnc = iprop
+
+  iprop  = iprop + 1
+  ifnh3d = iprop
+
+  iprop  = iprop + 1
+  ifnh3c = iprop
+
+  iprop  = iprop + 1
+  ifnohc = iprop
+
+  iprop  = iprop + 1
+  ifnonh = iprop
+
+  iprop  = iprop + 1
+  ifnoch = iprop
+
+  iprop  = iprop + 1
+  ifnoth = iprop
+
+  iprop  = iprop + 1
+  icnohc = iprop
+
+  iprop  = iprop + 1
+  icnonh = iprop
+
+  iprop  = iprop + 1
+  ifhcnr = iprop
+
+  iprop  = iprop + 1
+  icnorb = iprop
+
+  iprop  = iprop + 1
+  igrb   = iprop
+
 endif
 
 iprop2 = iprop
@@ -281,6 +329,81 @@ if ( ieqnox .eq. 1 ) then
   ipproc(ignoth)        = iprop
   ipppst                = ipppst + 1
   ipppro(iprop)         = ipppst
+! Positionnement des variables EXP4 et EXP5 dans le tableau de propriete
+  iprop                 = iprop + 1
+  ipproc(ignh31)        = iprop
+  ipppst                = ipppst + 1
+  ipppro(iprop)         = ipppst
+!
+  iprop                 = iprop + 1
+  ipproc(ignh32)        = iprop
+  ipppst                = ipppst + 1
+  ipppro(iprop)         = ipppst
+! Affichage des termes source
+  iprop                 = iprop + 1
+  ipproc(ifhcnd)        = iprop
+  ipppst                = ipppst + 1
+  ipppro(iprop)         = ipppst
+!
+  iprop                 = iprop + 1
+  ipproc(ifhcnc)        = iprop
+  ipppst                = ipppst + 1
+  ipppro(iprop)         = ipppst
+!
+  iprop                 = iprop + 1
+  ipproc(ifnh3d)        = iprop
+  ipppst                = ipppst + 1
+  ipppro(iprop)         = ipppst
+!
+  iprop                 = iprop + 1
+  ipproc(ifnh3c)        = iprop
+  ipppst                = ipppst + 1
+  ipppro(iprop)         = ipppst
+!
+  iprop                 = iprop + 1
+  ipproc(ifnohc)        = iprop
+  ipppst                = ipppst + 1
+  ipppro(iprop)         = ipppst
+!
+  iprop                 = iprop + 1
+  ipproc(ifnonh)        = iprop
+  ipppst                = ipppst + 1
+  ipppro(iprop)         = ipppst
+!
+  iprop                 = iprop + 1
+  ipproc(ifnoch)        = iprop
+  ipppst                = ipppst + 1
+  ipppro(iprop)         = ipppst
+!
+  iprop                 = iprop + 1
+  ipproc(ifnoth)        = iprop
+  ipppst                = ipppst + 1
+  ipppro(iprop)         = ipppst
+!
+  iprop                 = iprop + 1
+  ipproc(icnohc)        = iprop
+  ipppst                = ipppst + 1
+  ipppro(iprop)         = ipppst
+!
+  iprop                 = iprop + 1
+  ipproc(icnonh)        = iprop
+  ipppst                = ipppst + 1
+  ipppro(iprop)         = ipppst
+!
+  iprop                 = iprop + 1
+  ipproc(ifhcnr)        = iprop
+  ipppst                = ipppst + 1
+  ipppro(iprop)         = ipppst
+!
+  iprop                 = iprop + 1
+  ipproc(icnorb)        = iprop
+  ipppst                = ipppst + 1
+  ipppro(iprop)         = ipppst
+!
+  iprop                 = iprop + 1
+  ipproc(igrb)          = iprop
+  ipppst                = ipppst + 1
+  ipppro(iprop)         = ipppst
 endif
 
 iprop2 = iprop
@@ -423,7 +546,10 @@ if (iihmpr.eq.1) then
   !==========
  ( nclacp, nsalpp, nsalto, ippmod, iccoal, ipppro,    &
    ipproc, ieqnox, ieqco2, ihtco2, ihth2o, itemp1,    &
-   irom1, iym1, ighcn1, ighcn2, ignoth, immel,        &
+   irom1, iym1, ighcn1, ighcn2, ignoth,               &
+   ignh31, ignh32, ifhcnd, ifhcnc, ifnh3d, ifnh3c,    &
+   ifnohc, ifnonh, ifnoch, ifnoth, icnohc, icnonh,    &
+   ifhcnr, icnorb, igrb,   immel,                     &
    itemp2, ix2, irom2, idiam2, igmdch, igmdv1,        &
    igmdv2, igmhet, ighco2, ighh2o, igmsec,            &
    ibcarbone, iboxygen, ibhydrogen)

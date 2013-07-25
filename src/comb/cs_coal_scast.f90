@@ -164,7 +164,7 @@ integer          ipcro2 , ipcte1 , ipcte2 , ipcvsl , ipccp
 integer          ipcdia , ipcvst
 integer          mode, ige
 integer          ifac   , ifinra , icoefa , icoefb
-integer          ipcx2c , icha , imode , ii
+integer          ipcx2c , icha , imode , ii, jj
 integer          itermx,nbpauv,nbrich,nbepau,nberic,ipghc2
 integer          iterch,nbpass,nbarre,nbimax
 integer          iexp1 , iexp2 , iexp3
@@ -191,8 +191,9 @@ double precision errch,ter1,ddelta,xden
 double precision fn0,fn1,fn2,anmr0,anmr1,anmr2
 double precision lnk0p,l10k0e,lnk0m,t0e,xco2eq,xcoeq,xo2eq
 double precision xcom,xo2m,xkcequ,xkpequ
-double precision xw1,xw2,xw3,xw4
-double precision xo2,wmel,wmhcn,wmno,wmo2
+
+double precision  xw1,xw2,xw3,xw4
+double precision  xo2,wmel,wmhcn,wmno,wmo2,wmnh3
 double precision gmdev1(ncharm),gmdev2(ncharm),gmhet(ncharm)
 double precision aux1 , aux2 , aux3
 double precision xch,xck,xash,xmx2
@@ -205,6 +206,35 @@ double precision, dimension(:), pointer :: gadchi, xchcpi, gaheto2i, xckcpi
 double precision, dimension(:), pointer :: gaseci, frmcpi, agei, gahetco2i
 double precision, dimension(:), pointer :: gaheth2oi, xwtcpi
 
+!LOCAL VARIABLES
+!===============
+!
+! Pointers de variables d'etat
+! ----------------------------
+! (Temperatur d'une particule de iclas,
+!  Pointeur sur CHx1,
+!  Pointeur sur CHx2,
+!  Masse volumique de la pahse gaz,
+!  Masse volumique du melange)
+integer ipctem, ipcyf1, ipcyf2, idgaz, idmel
+!
+! Constante cinetiques laminaires
+! -------------------------------
+! (NH3 + O2,
+!  NH3 + NO,
+!  reburning)
+integer iexp4,iexp5,iexprb
+! Variables auxiliaire
+! -------------------------------------
+double precision aux4,aux5,auxhet,auxrb1,auxrb2
+double precision core1,core2,core3,para1,para2
+double precision ychx
+! Combustion heterogene
+! ---------------------
+! (Taux de reaction de la comb. het. du char 1,
+!  Taux de reaction de la comb. het. du char 2)
+double precision mckcl1, mckcl2
+!
 !===============================================================================
 !
 !===============================================================================
@@ -1617,15 +1647,17 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
         tfuel(iel) = 0.d0
         do icla=1,nclacp
           ipcte2=ipproc(itemp2(icla))
-          tfuel(iel) = tfuel(iel)                                                  &
-                      +( rtp(iel,isca(ixck(icla)))                                 &
-                        +rtp(iel,isca(ixch(icla)))                                 &
-                        +rtp(iel,isca(inp (icla)))*xmash(icla) )*propce(iel,ipcte2)
+          tfuel(iel) = tfuel(iel)                                              &
+                      +( rtp(iel,isca(ixck(icla)))                             &
+                        +rtp(iel,isca(ixch(icla)))                             &
+                        +rtp(iel,isca(inp (icla)))*xmash(icla) )               &
+                        *propce(iel,ipcte2)
 !
 !         Prise en compte de l'humidite
 !
           if ( ippmod(iccoal) .eq. 1 ) then
-            tfuel(iel) = tfuel(iel) +(rtp(iel,isca(ixwt(icla))))*propce(iel,ipcte2)
+            tfuel(iel) = tfuel(iel) + (rtp(iel,isca(ixwt(icla))))              &
+                         *propce(iel,ipcte2)
           endif
         enddo
 !
@@ -1796,7 +1828,7 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
           f2mc(icha) = zero
         enddo
 
-        t2        = propce(iel,ipcte2)
+        t2        = tfuel(iel)
         mode      = -1
         call cs_coal_htconvers1 &
         !======================
@@ -1895,7 +1927,7 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
   endif
 endif
 !
-if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
+if ( ieqnox .eq. 1 .and. imdnox.eq.0 .and. ntcabs .gt. 1) then
 !
 ! Termes soures sur Y_HCN et Y_NO
 !
@@ -2003,6 +2035,701 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
         smbrs(iel)  = smbrs(iel) - aux1*rtpa(iel,ivar)            &
                                  + aux2 + aux3
         rovsdt(iel) = rovsdt(iel) + aux1
+      enddo
+
+    endif
+
+  endif
+
+endif
+!
+if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
+!
+! Termes soures sur Y_HCN et Y_NO
+!
+  if ( ivar.eq.isca(iyhcn) .or. ivar.eq.isca(iyno) .or. ivar.eq.isca(iynh3)    &
+     ) then
+!
+! Pointeur Termes sources NO phase gaz
+    iexp1  = ipproc(ighcn1)
+    iexp2  = ipproc(ighcn2)
+    iexp3  = ipproc(ignoth)
+    iexp4  = ipproc(ignh31)
+    iexp5  = ipproc(ignh32)
+    iexprb = ipproc(igrb)
+! Pointeur sur CHx1 et CHx2
+    ipcyf1 = ipproc(iym1(1))
+    ipcyf2 = ipproc(iym1(2))
+    idgaz  = ipproc(irom1)
+    idmel  = ipproc(irom)
+!
+! Masse molaire
+!
+    wmhcn = wmole(ihcn)
+    wmno  = 0.030d0
+    wmnh3 = wmole(inh3)
+
+    if ( ivar.eq.isca(iyhcn) ) then
+!
+    aux = 0.d0
+!
+      do iel = 1,ncel
+
+         propce(iel,ipproc(ifhcnr))  = zero
+         propce(iel,ipproc(ifhcnd))  = zero
+         propce(iel,ipproc(ifhcnc)) = zero
+
+      enddo
+!
+!        Terme source HCN
+!
+      if (iwarni(ivar).ge.1) then
+        write(nfecra,1000) chaine(1:8)
+      endif
+!
+      do iel=1,ncel
+!
+!       Masse molaire de la melange gazeuse
+        wmel=propce(iel,ipproc(immel))
+
+!
+!       Coefficient des reaction HCN + O2 et HCN + NO
+        aux = volume(iel)*propce(iel,ipcrom)                                   &
+             *(propce(iel,iexp2)+propce(iel,iexp1)                             &
+             *rtpa(iel,isca(iyno))                                             &
+             *wmel/wmno)
+!
+        smbrs(iel)  = smbrs(iel)  - aux*rtpa(iel,ivar)
+        rovsdt(iel) = rovsdt(iel) + aux
+!
+!       Reburning ?
+!       Model de Chen
+        if(irb.eq.1) then
+!
+          do icha = 1,ncharb
+
+             ychx = ( propce(iel,ipcyf1) * wmel/wmchx1 )                       &
+                  + ( propce(iel,ipcyf2) * wmel/wmchx2 )
+
+             aux = volume(iel)*wmhcn*propce(iel,iexprb)                        &
+                 * rtpa(iel,isca(iyno))*wmel/wmno                              &
+                 * ychx
+
+             smbrs(iel)  = smbrs(iel)  + aux
+!
+             propce(iel,ipproc(ifhcnr)) = propce(iel,ipproc(ifhcnr)) + aux
+!
+          enddo
+!
+!       Model de Dimitiou
+        elseif(irb.eq.2) then
+!
+          do icha = 1,ncharb
+
+!           Reburning par CHx1
+            if(propce(iel,ipcyf1).gt.0.d0) then
+!
+!             Nombre de point de la discretisation de la temperature
+              do ii = 1,7
+!
+!               On cherche l'intervall teno(ii)<Tgaz<teno(ii+1)
+                if(propce(iel,ipcte1).ge.teno(ii).and.propce(iel,ipcte1).lt.   &
+                   teno(ii+1)) then
+
+!                 JJ indique le rapport H/C du combustible (4=CH4;3=CH3,etc.)
+                  do jj = 1,4
+!
+!                   On cherche l'intervall jj<chx1(icha)<jj+1
+                    if(chx1(icha).ge.4.d0) then
+
+                    core1 = ka(4,ii) + ( (ka(4,ii+1)- ka(4,ii))/(teno(ii+1)-   &
+                            teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
+                    core2 = kb(4,ii) + ( (kb(4,ii+1)- kb(4,ii))/(teno(ii+1)-   &
+                            teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
+                    para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii))/(teno(ii+1) -   &
+                            teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
+
+                    elseif(chx1(icha).le.1.d0) then
+
+                    core1 = ka(1,ii) + ( (ka(1,ii+1)- ka(1,ii))/(teno(ii+1)-   &
+                            teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
+                    core2 = kb(1,ii) + ( (kb(1,ii+1)- kb(1,ii))/(teno(ii+1)-   &
+                            teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
+                    para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii))/(teno(ii+1) -   &
+                            teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
+
+                    elseif (chx1(icha).ge.jj.and.chx1(icha).lt.jj+1) then
+
+                    core1 = ka(jj,ii) + ( (ka(jj+1,ii+1)- ka(jj,ii))/          &
+                            (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1)      &
+                            - teno(ii))
+                    core2 = kb(jj,ii) + ( (kb(jj+1,ii+1)- kb(jj,ii))/          &
+                            (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
+                            teno(ii))
+                    para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii))/(teno(ii+1)-    &
+                            teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
+
+                    endif
+
+                  enddo
+
+                endif
+
+              enddo
+
+              if(chx1(icha).ge.3.d0) then
+
+              aux = ( volume(iel)*wmhcn )                                      &
+                  * ( (core1 + core2) * para2 )                                &
+                  * ( rtp(iel,isca(iyno))*propce(iel,idmel)/wmno )             &
+                  * ( propce(iel,ipcyf1)*propce(iel,idgaz)/wmchx1 )
+
+              else
+
+              aux = ( volume(iel)*wmhcn )                                      &
+                  * ( core1 + core2 )                                          &
+                  * ( rtp(iel,isca(iyno))*propce(iel,idmel)/wmno )             &
+                  * ( propce(iel,ipcyf1)*propce(iel,idgaz)/wmchx1 )
+
+              endif
+!
+              smbrs(iel)  = smbrs(iel)  + aux
+!
+              propce(iel,ipproc(ifhcnr)) = propce(iel,ipproc(ifhcnr)) + aux
+!
+            elseif(propce(iel,ipcyf2).gt.0.d0) then
+
+!           Reburning par CHx2
+!
+!             Nombre de point de la discretisation de la temperature
+              do ii = 1,7
+!
+!               On cherche l'intervall teno(ii)<Tgaz<teno(ii+1)
+                if(propce(iel,ipcte1).ge.teno(ii).and.propce(iel,ipcte1).lt.   &
+                   teno(ii+1)) then
+
+!                 JJ indique le rapport H/C du combustible (4=CH4;3=CH3,etc.)
+                  do jj = 1,4
+!
+!                   On cherche l'intervall jj<chx1(icha)<jj+1
+                    if(chx2(icha).ge.4.d0) then
+
+                    core1 = ka(4,ii) + ( (ka(4,ii+1)- ka(4,ii))/(teno(ii+1)-   &
+                            teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
+                    core2 = kb(4,ii) + ( (kb(4,ii+1)- kb(4,ii))/(teno(ii+1)-   &
+                            teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
+                    para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii))/(teno(ii+1) -   &
+                            teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
+
+                    elseif(chx2(icha).le.1.d0) then
+
+                    core1 = ka(1,ii) + ( (ka(1,ii+1)- ka(1,ii))/(teno(ii+1)-   &
+                            teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
+                    core2 = kb(1,ii) + ( (kb(1,ii+1)- kb(1,ii))/(teno(ii+1)-   &
+                            teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
+                    para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii))/(teno(ii+1) -   &
+                            teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
+
+                    elseif (chx2(icha).ge.jj.and.chx2(icha).lt.jj+1) then
+
+                    core1 = ka(jj,ii) + ( (ka(jj+1,ii+1)- ka(jj,ii))/          &
+                            (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
+                            teno(ii))
+                    core2 = kb(jj,ii) + ( (kb(jj+1,ii+1)- kb(jj,ii))/          &
+                            (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
+                            teno(ii))
+                    para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii))/(teno(ii+1) -   &
+                            teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
+
+                    endif
+
+                  enddo
+
+                endif
+
+              enddo
+
+              if(chx2(icha).ge.3.d0) then
+
+              aux = ( volume(iel)*wmhcn )                                      &
+                  * ( (core1 + core2) * para2 )                                &
+                  * ( rtp(iel,isca(iyno))*propce(iel,idmel)/wmno )             &
+                  * ( propce(iel,ipcyf2)*propce(iel,idgaz)/wmchx2 )
+
+              else
+
+              aux = ( volume(iel)*wmhcn )                                      &
+                  * ( core1 + core2 )                                          &
+                  * ( rtp(iel,isca(iyno))*propce(iel,idmel)/wmno )             &
+                  * ( propce(iel,ipcyf2)*propce(iel,idgaz)/wmchx2 )
+
+              endif
+
+              smbrs(iel)  = smbrs(iel)  + aux
+!
+              propce(iel,ipproc(ifhcnr)) = propce(iel,ipproc(ifhcnr)) + aux
+!
+            endif
+!
+          enddo
+!
+        endif
+!
+!       Initialisation des variables
+        do icha=1,ncharb
+!
+          gmdev1(icha)=0.d0
+          gmdev2(icha)=0.d0
+          gmhet (icha)=0.d0
+!
+        enddo
+!
+        do icla=1,nclacp
+
+          icha   = ichcor(icla)
+          ipctem = ipproc(itemp2(icla))
+          ixckcl = isca(ixck(icla))
+          ipcght = ipproc(igmhet(icla))
+!
+          mckcl1 = (1.d0-y1ch(icha))*a1ch(icha)                                &
+                   *exp(-e1ch(icha)/(rr*propce(iel,ipctem)))
+
+          mckcl2 = (1.d0-y2ch(icha))*a2ch(icha)                                &
+                   *exp(-e2ch(icha)/(rr*propce(iel,ipctem)))
+!
+!         Taux de formation de la premiere reaction de pyrolyse
+          gmdev1(icha) = gmdev1(icha)                                          &
+               +propce(iel,ipproc(igmdv1(icla)))                               &
+               *propce(iel,ipcrom)                                             &
+               *rtpa(iel,isca(ixch(icla)))
+!
+!         Taux de formation de la deuxieme reaction de pyrolyse
+          gmdev2(icha) = gmdev2(icha)                                          &
+               +propce(iel,ipproc(igmdv2(icla)))                               &
+               *propce(iel,ipcrom)                                             &
+               *rtpa(iel,isca(ixch(icla)))
+!
+          if ( rtpa(iel,ixckcl) .gt. epsicp ) then
+!           Taux de reaction de la combustion heterogene
+            gmhet(icha) = gmhet(icha)                                          &
+               +propce(iel,ipcght)                                             &
+               *propce(iel,ipcrom)                                             &
+               *( rtpa(iel,ixckcl)*((1.d0/(mckcl2/mckcl1+1.d0))*yhcnc1(icha)   &
+                   +(1.d0/(mckcl1/mckcl2+1.d0))*yhcnc2(icha)) )**(2.d0/3.d0)
+          endif
+!
+        enddo
+!
+!       Terme source modifie (nouveau model de NOx)
+!
+        do icha=1,ncharb
+
+!          Liberation du HCN lors de la devotalisation
+           aux = -volume(iel)*(gmdev1(icha)*yhcnle(icha)                       &
+                 +gmdev2(icha)*yhcnlo(icha))
+!
+!          Liberation du HCN lors de la reaction heterogene selon la valeur
+!          repnck(icha)
+
+           aux = aux-volume(iel)*gmhet(icha)
+!
+           smbrs(iel)  = smbrs(iel) + aux
+
+!          Affichage des termes sources
+           propce(iel,ipproc(ifhcnd)) = propce(iel,ipproc(ifhcnd))             &
+           -volume(iel)*(gmdev1(icha)*yhcnle(icha)+gmdev2(icha)*yhcnlo(icha))
+!
+           propce(iel,ipproc(ifhcnc))= propce(iel,ipproc(ifhcnc))              &
+           -volume(iel)*gmhet(icha)
+
+        enddo
+
+      enddo
+!
+    endif
+!
+!
+    if ( ivar.eq.isca(iynh3)) then
+!
+       aux = 0.d0
+!
+      do iel = 1, ncel
+
+         propce(iel,ipproc(ifnh3d)) = zero
+
+      enddo
+!
+!     Terme source NH3
+!
+      if (iwarni(ivar).ge.1) then
+        write(nfecra,1000) chaine(1:8)
+      endif
+!
+      do iel=1,ncel
+!
+!       Masse molaire de la melange gazeuse
+        wmel = propce(iel,ipproc(immel))
+!
+!       Coefficient des reaction NH3 + O2 et NH3 + NO
+        aux  =   volume(iel)*propce(iel,ipcrom)                                &
+             * ( propce(iel,iexp4) + propce(iel,iexp5)                         &
+             *   rtpa(iel,isca(iyno))*wmel/wmno )
+!
+        smbrs(iel)  = smbrs(iel)  - aux*rtpa(iel,ivar)
+        rovsdt(iel) = rovsdt(iel) + aux
+!
+!       Initialisation des variables
+        do icha=1,ncharb
+
+          gmdev1(icha)=0.d0
+          gmdev2(icha)=0.d0
+          gmhet (icha)=0.d0
+
+        enddo
+!
+        do icla=1,nclacp
+
+          icha = ichcor(icla)
+!
+!         Taux de formation de la premiere reaction de pyrolyse
+          gmdev1(icha) = gmdev1(icha)                                          &
+               +propce(iel,ipproc(igmdv1(icla)))                               &
+               *propce(iel,ipcrom)                                             &
+               *rtpa(iel,isca(ixch(icla)))
+!
+!         Taux de formation de la deuxieme reaction de pyrolyse
+          gmdev2(icha) = gmdev2(icha)                                          &
+               +propce(iel,ipproc(igmdv2(icla)))                               &
+               *propce(iel,ipcrom)                                             &
+               *rtpa(iel,isca(ixch(icla)))
+!
+        enddo
+!
+        do icha=1,ncharb
+!
+!        Liberation du NH3 lors de la devolatisation.
+           aux = -volume(iel)*(gmdev1(icha)*ynh3le(icha)                       &
+                 +gmdev2(icha)*ynh3lo(icha))
+!
+           smbrs(iel)  = smbrs(iel) + aux
+
+!        Affichage des termes source
+           propce(iel,ipproc(ifnh3d)) = propce(iel,ipproc(ifnh3d))             &
+           -volume(iel)*(gmdev1(icha)*ynh3le(icha)+gmdev2(icha)*ynh3lo(icha))
+!
+           propce(iel,ipproc(ifnh3c)) = zero
+!
+        enddo
+
+
+
+      enddo
+!
+    endif
+!
+    if ( ivar.eq.isca(iyno) ) then
+!
+      do iel = 1 ,ncel
+
+        propce(iel,ipproc(icnorb))  = zero
+        propce(iel,ipproc(ifnoch)) = zero
+
+      enddo
+!
+!     Terme source NO
+!
+      if (iwarni(ivar).ge.1) then
+        write(nfecra,1000) chaine(1:8)
+      endif
+
+      do iel=1,ncel
+!
+!       Masse molaire de la melange gazeuse
+        wmel=propce(iel,ipproc(immel))
+!
+!       Coefficient de la reaction HCN + NO
+        aux1 = volume(iel)*propce(iel,ipcrom)                                  &
+              *propce(iel,iexp1)*rtpa(iel,isca(iyhcn))                         &
+              *wmel/wmhcn
+!
+        propce(iel,ipproc(icnohc)) = aux1*rtpa(iel,ivar)
+!
+!       Coefficient de la reaction HCN + O2
+        aux2 = volume(iel)*propce(iel,ipcrom)                                  &
+              *propce(iel,iexp2)*rtpa(iel,isca(iyhcn))                         &
+              *wmno/wmhcn
+!
+        propce(iel,ipproc(ifnohc)) = aux2
+!
+!       Coefficient du NO thermique
+        aux3 = volume(iel)*propce(iel,ipcrom)**1.5d0                           &
+              *propce(iel,iexp3)                                               &
+!       Pourquoi la fraction massique d'azote n'a ete pas transforme dans une
+!       fraction molaire ?
+              *propce(iel,ipproc(iym1(in2)))
+!
+        propce(iel,ipproc(ifnoth)) = aux3
+!
+!       Coefficient de la reaction NH3 + O2 --> NO + ...
+        aux4 = volume(iel)*propce(iel,ipcrom)                                  &
+              *propce(iel,iexp4)*rtpa(iel,isca(iynh3))                         &
+              *wmno/wmnh3
+!
+!
+        propce(iel,ipproc(ifnonh)) = aux4
+!
+!       Coefficient de la reaction NH3 + NO --> N2 + ...
+        aux5 = volume(iel)*propce(iel,ipcrom)                                  &
+              *propce(iel,iexp5)*rtpa(iel,isca(iynh3))                         &
+              *wmel/wmnh3
+!
+!
+        propce(iel,ipproc(icnonh)) = aux5*rtpa(iel,ivar)
+
+!       Reburning ?
+!       Model de Chen
+        if(irb.eq.1) then
+!
+          do icha = 1,ncharb
+
+             ychx = ( propce(iel,ipcyf1) * wmel/wmchx1 )                       &
+                  + ( propce(iel,ipcyf2) * wmel/wmchx2 )
+
+             aux = volume(iel)*wmhcn*propce(iel,iexprb)                        &
+                 * rtpa(iel,isca(iyno)) * wmel/wmno  * ychx
+
+             smbrs(iel)  = smbrs(iel)  - aux
+!
+             propce(iel,ipproc(icnorb)) = propce(iel,ipproc(icnorb)) + aux
+
+          enddo
+
+!       Model de Dimitiou
+        elseif(irb.eq.2) then
+
+          do icha = 1,ncharb
+!
+!           Reburning par CHx1
+            if (propce(iel,ipcyf1).gt.0.d0) then
+
+!             Nombre de point de la discretisation de la temperature
+              do ii = 1,7
+!
+!               On cherche l'intervall teno(ii)<Tgaz<teno(ii+1)
+                if(propce(iel,ipcte1).ge.teno(ii).and.propce(iel,ipcte1).lt.   &
+                   teno(ii+1)) then
+
+!                 JJ indique le rapport H/C du combustible (4=CH4;3=CH3,etc.)
+                  do jj = 1,4
+!
+!                   On cherche l'intervall jj<chx1(icha)<jj+1
+                    if(chx1(icha).ge.4.d0) then
+
+                    core1 = ka(4,ii) + ( (ka(4,ii+1)- ka(4,ii))/(teno(ii+1)-   &
+                            teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
+                    core2 = kb(4,ii) + ( (kb(4,ii+1)- kb(4,ii))/(teno(ii+1)-   &
+                            teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
+                    core3 = kc(4,ii) + ( (kc(4,ii+1)- kc(4,ii))/(teno(ii+1)-   &
+                            teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
+                    para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii))/(teno(ii+1) -   &
+                            teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
+
+                    elseif(chx1(icha).le.1.d0) then
+
+                    core1 = ka(1,ii) + ( (ka(1,ii+1)- ka(1,ii))/               &
+                            (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1)  -   &
+                            teno(ii))
+                    core2 = kb(1,ii) + ( (kb(1,ii+1)- kb(1,ii))/(teno(ii+1)-   &
+                            teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
+                    core3 = kc(1,ii) + ( (kc(1,ii+1)- kc(1,ii))/               &
+                            (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
+                            teno(ii))
+                    para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii)) /               &
+                            (teno(ii+1) - teno(ii)) ) * (propce(iel,ipcte1) -  &
+                            teno(ii))
+
+                    elseif (chx1(icha).ge.jj.and.chx1(icha).lt.jj+1) then
+
+                    core1 = ka(jj,ii) + ( (ka(jj+1,ii+1)- ka(jj,ii))/          &
+                            (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
+                            teno(ii))
+                    core2 = kb(jj,ii) + ( (kb(jj+1,ii+1)- kb(jj,ii))/          &
+                            (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
+                            teno(ii))
+                    core3 = kc(jj,ii) + ( (kc(jj+1,ii+1)- kc(jj,ii))/          &
+                            (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
+                            teno(ii))
+                    para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii))/                &
+                            (teno(ii+1) - teno(ii)) ) * (propce(iel,ipcte1) -  &
+                            teno(ii))
+
+                    endif
+
+                  enddo
+
+                endif
+
+              enddo
+
+              if(chx1(icha).ge.3.d0) then
+
+              auxrb1 = ( volume(iel)*wmno )                                    &
+                     * ( (core1 + core2 + core3) * para2 )                     &
+                     * ( propce(iel,ipcyf1)*propce(iel,idgaz)/wmchx1 )         &
+                     * ( rtp(iel,isca(iyno)) * propce(iel,idmel)/wmno )
+
+              else
+
+              auxrb1 = ( volume(iel)*wmno )                                    &
+                     * ( core1 + core2 + core3 )                               &
+                     * ( propce(iel,ipcyf1)*propce(iel,idgaz)/wmchx1 )         &
+                     * ( rtp(iel,isca(iyno)) * propce(iel,idmel)/wmno )
+
+              endif
+
+              smbrs(iel)  = smbrs(iel)  - auxrb1
+!
+              propce(iel,ipproc(icnorb)) = propce(iel,ipproc(icnorb)) + auxrb1
+
+!           Reburning par CHx2
+            elseif(propce(iel,ipcyf2).gt.0.d0) then
+!
+!             Nombre de point de la discretisation de la temperature
+              do ii = 1,7
+!
+!               On cherche l'intervall teno(ii)<Tgaz<teno(ii+1)
+                if(propce(iel,ipcte1).ge.teno(ii).and.propce(iel,ipcte1).lt.   &
+                   teno(ii+1)) then
+
+!                 JJ indique le rapport H/C du combustible (4=CH4;3=CH3,etc.)
+                  do jj = 1,4
+!
+!                   On cherche l'intervall jj<chx1(icha)<jj+1
+                    if(chx2(icha).ge.4.d0) then
+
+                    core1 = ka(4,ii) + ( (ka(4,ii+1)- ka(4,ii))/               &
+                            (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
+                            teno(ii))
+                    core2 = kb(4,ii) + ( (kb(4,ii+1)- kb(4,ii))/               &
+                            (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
+                            teno(ii))
+                    core3 = kc(4,ii) + ( (kc(4,ii+1)- kc(4,ii))/               &
+                            (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
+                            teno(ii))
+                    para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii))/                &
+                            (teno(ii+1) - teno(ii)) ) * (propce(iel,ipcte1) -  &
+                            teno(ii))
+
+                    elseif(chx2(icha).le.1.d0) then
+
+                    core1 = ka(1,ii) + ( (ka(1,ii+1)- ka(1,ii))/(teno(ii+1)-   &
+                            teno(ii)) ) * (propce(iel,ipcte1) -                &
+                            teno(ii))
+                    core2 = kb(1,ii) + ( (kb(1,ii+1)- kb(1,ii))/               &
+                            (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
+                            teno(ii))
+                    core3 = kc(1,ii) + ( (kc(1,ii+1)- kc(1,ii))/               &
+                            (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
+                            teno(ii))
+                    para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii)) /               &
+                            (teno(ii+1) - teno(ii)) ) * (propce(iel,ipcte1) -  &
+                            teno(ii))
+                    elseif (chx2(icha).ge.jj.and.chx2(icha).lt.jj+1) then
+
+                    core1 = ka(jj,ii) + ( (ka(jj+1,ii+1)- ka(jj,ii))/          &
+                            (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
+                            teno(ii))
+                    core2 = kb(jj,ii) + ( (kb(jj+1,ii+1)- kb(jj,ii))/          &
+                            (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
+                            teno(ii))
+                    core3 = kc(jj,ii) + ( (kc(jj+1,ii+1)- kc(jj,ii))/          &
+                            (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
+                            teno(ii))
+                    para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii))/                &
+                            (teno(ii+1) - teno(ii)) ) * (propce(iel,ipcte1) -  &
+                            teno(ii))
+
+                    endif
+
+                  enddo
+
+                endif
+
+              enddo
+
+              if(chx2(icha).ge.3.d0) then
+
+              auxrb2 = ( volume(iel)*wmno )                                    &
+                     * ( (core1 + core2 + core3) * para2 )                     &
+                     * ( propce(iel,ipcyf2)*propce(iel,idgaz)/wmchx2 )         &
+                     * ( rtp(iel,isca(iyno)) * propce(iel,idmel)/wmno )
+
+              else
+
+              auxrb2 = ( volume(iel)*wmno )                                    &
+                     * ( core1 + core2 + core3 )                               &
+                     * ( propce(iel,ipcyf2)*propce(iel,idgaz)/wmchx2 )         &
+                     * ( rtp(iel,isca(iyno)) * propce(iel,idmel)/wmno )
+
+              endif
+
+              smbrs(iel)  = smbrs(iel)  - auxrb2
+!
+              propce(iel,ipproc(icnorb)) = propce(iel,ipproc(icnorb)) + auxrb2
+!
+            endif
+!
+          enddo
+
+        endif
+
+!
+!       Initialisation
+        do icha=1,ncharb
+!
+          gmhet (icha)=0.d0
+!
+        enddo
+!
+        do icla=1,nclacp
+!
+          icha   = ichcor(icla)
+          ipctem = ipproc(itemp2(icla))
+          ixckcl = isca(ixck(icla))
+!
+          mckcl1 = (1.d0-y1ch(icha))*a1ch(icha)                                &
+                   *exp(-e1ch(icha)/(rr*propce(iel,ipctem)))
+
+          mckcl2 = (1.d0-y2ch(icha))*a2ch(icha)                                &
+                   *exp(-e2ch(icha)/(rr*propce(iel,ipctem)))
+!
+!         Taux de reaction de la combustion heterogene
+          if ( rtpa(iel,ixckcl) .gt. epsicp ) then
+          gmhet(icha) = gmhet(icha)                                            &
+               +propce(iel,ipproc(igmhet(icla)))                               &
+               *propce(iel,ipcrom)                                             &
+               *( rtpa(iel,ixckcl)*((1.d0/(mckcl2/mckcl1+1.d0))*ynoch1(icha)   &
+                   +(1.d0/(mckcl1/mckcl2+1.d0))*ynoch2(icha)) )**(2.d0/3.d0)
+          endif
+!
+        enddo
+!
+!       Coefficient de NO libere lors de la combustion heterogene
+!
+        do icha=1,ncharb
+
+          auxhet = -volume(iel)*gmhet(icha)
+          propce(iel,ipproc(ifnoch)) = propce(iel,ipproc(ifnoch)) + auxhet
+
+
+          smbrs(iel)  = smbrs(iel) - aux1*rtpa(iel,ivar)                       &
+                                   - aux5*rtpa(iel,ivar)                       &
+                                   + aux2 + aux3 + aux4 + auxhet
+
+          rovsdt(iel) = rovsdt(iel) + aux1 + aux5
+
+        enddo
+
       enddo
 
     endif

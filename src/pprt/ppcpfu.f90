@@ -61,17 +61,43 @@ module ppcpfu
 
   ! Equation sur NOX :
   ! ================
-
-  !   IEQNOX = 0 pas de NOx
-  !          = 1 calcul du NOx
-
-  integer, save ::         ieqnox
-
+  !
+  !   ieqnox = 0     pas de NOx
+  !          = 1     calcul du NOx
+  !
+  !   NOx Model Features:
+  !   imdnox = 0 : - HCN is the only intermediate nitrogen species
+  !                  liberated during the devolatilisation process.
+  !                - HCN is the only intermediate nitrogen species
+  !                  liberated during char combustion.
+  !                - Constant ratio of the nitrogen mass liberated
+  !                  during devolatilisation and the nitrogen mass
+  !                  remaining in char.
+  !          = 1 (only with iccoal = 0(1)):
+  !                - HCN and NH3 are the intermediate nitrogen
+  !                  species liberated during the devolatilisation
+  !                  process.
+  !                - HCN and NO are the intermediate nitrogen species
+  !                  liberated during char combustion.
+  !                - Temperature dependent ratios of the nitrogen
+  !                  mass liberated during devolatilisation and the
+  !                  nitrogen mass remaining in char.
+  !                - Activation of Reburning kinetics is possible.
+  !
+  !   irb    = 0     Pas de reburning
+  !          = 1     Modele de Chen et al.
+  !          = 2     Modele de Dimitriou et al.
+  !
+  integer, save ::         ieqnox, imdnox, irb
+  !
   !   Scalaires supplementaires : fraction massique de H2, HCN et NO
   !                               temperature air
 
   integer, save ::         iyhcn , iyno , itaire, ihox
-
+  !
+  integer, save ::         iynh3
+  !
+  !
   !   Propce supplementaires :
 
   !         Conversion HCN en NO       : EXP(-E1/RT)
@@ -79,12 +105,51 @@ module ppcpfu
   !         NO thermique (Zel'dovitch) : EXP(-E3/RT)
 
   integer, save ::         ighcn1 , ighcn2 , ignoth
+  !
+  !   Propce supplementaires :
 
+  !         Conversion NH3 en NO       : EXP(-E4/RT)
+  !         Conversion NH3 en NO       : EXP(-E5/RT)
+  !
+  integer, save ::         ignh31 , ignh32
+  !
+  !   Affichage des termes source:
+  !
+  !         ifhcnd: Liberation de HCN au cours de la devolatilisation
+  !         ifhcnc: Liberation de HCN au cours de la combustion heterogene
+  !         ifnh3d: Liberation de NH3 au cours de la devolatilisation
+  !         ifnh3c: Liberation de NH3 au cours de la combustion heterogene
+  !         ifnohc: Formation de NO selon la reaction HCN + O2 -> NO + ...
+  !         ifnonh: Formation de NO selon la reaction NH3 + O2 -> NO + ...
+  !         ifnoch: Liberation de NO au cours de la combustion heterogene
+  !         ifnoth: Formation de NO thermique
+  !         ifhcnr: Formation de NO selon le mecanisme du "Reburning"
+  !         icnohc: Consommation de NO selon la reaction HCN + NO -> Produits
+  !         icnonh: Consommation de NO selon la reaction NH3 + NO -> Produits
+  !         icnorb: Consommation de NO selon le mecanisme du "Reburning"
+  !
+  integer, save ::         ifhcnd, ifhcnc, ifnh3d, ifnh3c
+  integer, save ::         ifnohc, ifnonh, ifnoch, ifnoth, ifhcnr
+  integer, save ::         icnohc, icnonh, icnorb
+  !
+  !
   !   Temperature moyenne d'entree
   !   Taux de vapeur moyen
 
   double precision, save :: taire
-
+  !
+  !   Reburning
+  !
+  !   Tableau de la temperature utilise pour determiner la cinetique du
+  !   "Reburning".
+  double precision, save :: teno(npot)
+  !
+  !   Tableau des constantes cinetiques (Model de Dimitriou)
+  double precision, save :: ka(4,npot), kb(4,npot), kc(4,npot), chi2(npot)
+  !
+  !   Constante cinetique (Model de Chen)
+  integer, save          :: igrb
+  !
   !--> DONNEES RELATIVES AUX OXYDANTS
 
   !       NOXYD        --> Nombre d'Oxydants (Maximum 3)

@@ -637,10 +637,10 @@ do ifac = 1, nfabor
     endif
 ! ------ CL pour X1.F6M (Water)
     if ( ippmod(iccoal) .ge. 1 ) then
-      rcodcl(ifac,isca(if6m),1)   = zero
+      rcodcl(ifac,isca(if6m),1) = zero
     endif
 ! ------ CL pour X1.F7M_O2
-    rcodcl(ifac,isca(if7m),1) = zero
+    rcodcl(ifac,isca(if7m),1)   = zero
 ! ------ CL pour X1.FM8_CO2
     if ( ihtco2 .eq. 1 ) then
       rcodcl(ifac,isca(if8m),1) = zero
@@ -650,7 +650,7 @@ do ifac = 1, nfabor
       rcodcl(ifac,isca(if9m),1) = zero
     endif
 ! ------ CL pour X1.Variance
-    rcodcl(ifac,isca(ifvp2m),1)   = zero
+    rcodcl(ifac,isca(ifvp2m),1) = zero
 
 ! ------ CL pour X1.YCO2
     if ( ieqco2 .eq. 1 ) then
@@ -665,10 +665,11 @@ do ifac = 1, nfabor
       rcodcl(ifac,isca(iyco2),1)   = xco2*(1.d0-x20t(izone))
     endif
 ! ------ CL pour X1.HCN, X1.NO, Taire
-    if( ieqnox .eq. 1 ) THEN
-      rcodcl(ifac,isca(iyhcn ),1) = zero
-      rcodcl(ifac,isca(iyno  ),1) = zero
-      rcodcl(ifac,isca(ihox  ),1) = (1.d0-x20t(izone))*h1(izone)
+    if( ieqnox .eq. 1 ) then
+      rcodcl(ifac,isca(iyhcn ),1)  = zero
+      rcodcl(ifac,isca(iyno  ),1)  = zero
+      rcodcl(ifac,isca(iynh3 ),1)  = zero
+      rcodcl(ifac,isca(ihox  ),1)  = (1.d0-x20t(izone))*h1(izone)
     endif
 
   endif

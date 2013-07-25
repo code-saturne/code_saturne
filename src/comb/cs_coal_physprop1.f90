@@ -466,6 +466,22 @@ else if ( ieqnox .eq. 1 ) then
     propce(iel,ipproc(ighcn1)) = 0.d0
     propce(iel,ipproc(ighcn2)) = 0.d0
     propce(iel,ipproc(ignoth)) = 0.d0
+    propce(iel,ipproc(ignh31)) = 0.d0
+    propce(iel,ipproc(ignh32)) = 0.d0
+    propce(iel,ipproc(ifhcnr)) = 0.d0
+    propce(iel,ipproc(ifhcnd)) = 0.d0
+    propce(iel,ipproc(ifhcnc)) = 0.d0
+    propce(iel,ipproc(ifnh3d)) = 0.d0
+    propce(iel,ipproc(ifnh3c)) = 0.d0
+    propce(iel,ipproc(ifnohc)) = 0.d0
+    propce(iel,ipproc(ifnonh)) = 0.d0
+    propce(iel,ipproc(ifnoch)) = 0.d0
+    propce(iel,ipproc(ifnoth)) = 0.d0
+    propce(iel,ipproc(icnohc)) = 0.d0
+    propce(iel,ipproc(icnonh)) = 0.d0
+    propce(iel,ipproc(ifhcnr)) = 0.d0
+    propce(iel,ipproc(icnorb)) = 0.d0
+    propce(iel,ipproc(igrb)) = 0.d0
   enddo
 !
 endif

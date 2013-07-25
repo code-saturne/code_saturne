@@ -54,6 +54,10 @@
 				<nox_formation>
 					<nitrogen_fraction>1.1</nitrogen_fraction>
 					<nitrogen_concentration>0.015</nitrogen_concentration>
+                    <nitrogen_in_char_at_low_temperatures>0.8</nitrogen_in_char_at_low_temperatures>
+                    <nitrogen_in_char_at_high_temperatures>0.2</nitrogen_in_char_at_high_temperatures>
+                    <percentage_HCN_char_combustion>1.0</percentage_HCN_char_combustion>
+                    <reburning_model>unused</reburning_model>
 				</nox_formation>
 			</solid_fuel>
 			<scalar label="Fr_HET_O2" name="Fr_HET_O2" type="model">

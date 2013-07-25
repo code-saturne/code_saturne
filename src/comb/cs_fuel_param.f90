@@ -143,6 +143,8 @@ if ( ieqnox .eq. 1 ) then
   scamax(iyno)   = 1.d0
   scamin(ihox) = -grand
   scamax(ihox) = +grand
+  scamin(iynh3) = 0.d0
+  scamax(iynh3) = 1.d0
 endif
 
 ! --> Nature des scalaires transportes

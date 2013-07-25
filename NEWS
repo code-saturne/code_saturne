@@ -4,6 +4,7 @@ Trunk (unreleased)
 
 Changes:
 --------
+- Add new NOx model for coal combustion.
 
 - Documentation: moved tutorials outside the codebase, and into a separate base.
   This allows looser synchronization with the code base, as tutorials may be

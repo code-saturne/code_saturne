@@ -315,6 +315,8 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
 !
     if ( ieqnox .eq. 1 ) then
       rtp(iel,isca(iyhcn)) = zero
+! Initialisation du NH3
+      rtp(iel,isca(iynh3)) = zero
       rtp(iel,isca(iyno )) = zero
       rtp(iel,isca(ihox )) = h1init
     endif

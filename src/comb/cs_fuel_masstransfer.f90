@@ -216,7 +216,7 @@ do icla = 1, nclafu
       endif
 !
 !===============================================================================
-!MC COMBUSTION HETEROGENE
+! COMBUSTION HETEROGENE
 !===============================================================================
 ! Verification sur la masse du coke.
 ! a) Si deva1.le.deva2 -> Il ne reste plus de fioul liquide. Du coup la particule

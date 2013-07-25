@@ -560,6 +560,25 @@ if (ieqnox.eq.1) then
   ! For post-processing
   call field_set_key_int(f_id, keyvis, iopchr)
 
+  ! On ajoute le NH3 comme variable transportee
+  is     = is+1
+  ! Field
+  iynh3  = iscapp(is)
+  f_name =  'FR_NH3'
+  call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+  call field_set_key_str(f_id, keylbl, f_name)
+  ! Set the index of the scalar class in the field structure
+  call field_set_key_int(f_id, keyccl, icla)
+
+  ! Scalar with drift: BUT Do NOT create additional mass flux
+  if (i_coal_drift.eq.1) then
+    iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+    call field_set_key_int(f_id, keydri, iscdri)
+  endif
+
+  ! For post-processing
+  call field_set_key_int(f_id, keyvis, iopchr)
+
   is     = is+1
   ! Field
   iyno   = iscapp(is)
@@ -634,7 +653,7 @@ if (iihmpr.eq.1) then
                ihth2o, ihm, inp, ixch, ixck, ixwt, ih2,     &
                if1m, if2m, if4m, if5m, if6m,                &
                if7m, if8m, ifvp2m, iyco2, if9m,     &
-               iyhcn, iyno, ihox )
+               iyhcn, iyno, ihox, iynh3)
 endif
 
 !===============================================================================

@@ -1013,6 +1013,90 @@ _get_nitrogen_concentration(const int icha)
 }
 
 /*-----------------------------------------------------------------------------
+ * Return double for nitrogen in char.
+ *
+ * parameters:
+ *    param    -->   name of parameter
+ * returns:
+ *    nitrogen concentration
+ *----------------------------------------------------------------------------*/
+
+static double
+_get_hcn_char_comb(const int icha)
+{
+  char *path;
+  double result;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "thermophysical_models", "solid_fuels");
+  cs_xpath_add_element_num(&path, "solid_fuel", icha);
+  cs_xpath_add_elements(&path, 2, "nox_formation", "percentage_HCN_char_combustion");
+  cs_xpath_add_function_text(&path);
+
+  if (!cs_gui_get_double(path, &result))
+    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+  BFT_FREE(path);
+  return result;
+}
+
+/*-----------------------------------------------------------------------------
+ * Return double for nitrogen in char at low temperatures.
+ *
+ * parameters:
+ *    param    -->   name of parameter
+ * returns:
+ *    nitrogen concentration
+ *----------------------------------------------------------------------------*/
+
+static double
+_get_nitrogen_char_low_temp(const int icha)
+{
+  char *path;
+  double result;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "thermophysical_models", "solid_fuels");
+  cs_xpath_add_element_num(&path, "solid_fuel", icha);
+  cs_xpath_add_elements(&path, 2, "nox_formation", "nitrogen_in_char_at_low_temperatures");
+  cs_xpath_add_function_text(&path);
+
+  if (!cs_gui_get_double(path, &result))
+    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+  BFT_FREE(path);
+  return result;
+}
+
+/*-----------------------------------------------------------------------------
+ * Return double for nitrogen in char at high temperatures.
+ *
+ * parameters:
+ *    param    -->   name of parameter
+ * returns:
+ *    nitrogen concentration
+ *----------------------------------------------------------------------------*/
+
+static double
+_get_nitrogen_char_high_temp(const int icha)
+{
+  char *path;
+  double result;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "thermophysical_models", "solid_fuels");
+  cs_xpath_add_element_num(&path, "solid_fuel", icha);
+  cs_xpath_add_elements(&path, 2, "nox_formation", "nitrogen_in_char_at_high_temperatures");
+  cs_xpath_add_function_text(&path);
+
+  if (!cs_gui_get_double(path, &result))
+    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+  BFT_FREE(path);
+  return result;
+}
+
+/*-----------------------------------------------------------------------------
  * Return double for pre exponential constant.
  *
  * parameters:
@@ -1293,6 +1377,66 @@ _getNOxStatus(int   *keyword)
   if (cs_gui_get_status(path, &status))
     *keyword = status;
   BFT_FREE(path);
+}
+
+/*-----------------------------------------------------------------------------
+ * Return integer for NOx feature status
+ *
+ *   parameters:
+ *    icha     -->   char number
+ *    keyword  <--  value of attribute node
+ *----------------------------------------------------------------------------*/
+
+static void
+_getNOxFeatureStatus(const int icha,
+                     int   *keyword)
+{
+  char *path   = NULL;
+  int   status = 0;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "thermophysical_models", "solid_fuels");
+  cs_xpath_add_element_num(&path, "solid_fuel", icha);
+  cs_xpath_add_elements(&path, 2, "nox_formation", "improved_NOx_model");
+
+  cs_xpath_add_attribute(&path, "status");
+
+  if (cs_gui_get_status(path, &status))
+    *keyword = status;
+  BFT_FREE(path);
+}
+
+/*-----------------------------------------------------------------------------
+ * Return integer for NOx feature status
+ *
+ *   parameters:
+ *    icha     -->   char number
+ *    keyword  <--  value of attribute node
+ *----------------------------------------------------------------------------*/
+
+static void
+_getNOxReburning(const int icha,
+                 int   *keyword)
+{
+  char *path   = NULL;
+  char *choice = NULL;
+  int   status = 0;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "thermophysical_models", "solid_fuels");
+  cs_xpath_add_element_num(&path, "solid_fuel", icha);
+  cs_xpath_add_elements(&path, 2, "nox_formation", "reburning_model");
+
+  cs_xpath_add_function_text(&path);
+  choice = cs_gui_get_text_value(path);
+  if (cs_gui_strcmp(choice, "unused"))
+      *keyword = 0;
+  else if (cs_gui_strcmp(choice, "chen"))
+      *keyword = 1;
+  else
+      *keyword = 2;
+  BFT_FREE(path);
+  BFT_FREE(choice);
 }
 
 /*-----------------------------------------------------------------------------
@@ -1596,6 +1740,21 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
                                 const int *const ighcn1,
                                 const int *const ighcn2,
                                 const int *const ignoth,
+                                const int *const ignh31,
+                                const int *const ignh32,
+                                const int *const ifhcnd,
+                                const int *const ifhcnc,
+                                const int *const ifnh3d,
+                                const int *const ifnh3c,
+                                const int *const ifnohc,
+                                const int *const ifnonh,
+                                const int *const ifnoch,
+                                const int *const ifnoth,
+                                const int *const icnohc,
+                                const int *const icnonh,
+                                const int *const ifhcnr,
+                                const int *const icnorb,
+                                const int *const igrb,
                                 const int *const immel,
                                 const int *const itemp2,
                                 const int *const ix2,
@@ -1729,6 +1888,96 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
     vars->propce[n] = ipproc[*ignoth -1] -1;
     BFT_MALLOC(vars->properties_name[n], strlen("EXP3") +1, char);
     strcpy(vars->properties_name[n++], "EXP3");
+
+    /* ignh31 */
+    vars->properties_ipp[n] = ipppro[ipproc[ *ignh31 -1 ] -1];
+    vars->propce[n] = ipproc[*ignh31 -1] -1;
+    BFT_MALLOC(vars->properties_name[n], strlen("EXP4") +1, char);
+    strcpy(vars->properties_name[n++], "EXP4");
+
+    /* ignh32 */
+    vars->properties_ipp[n] = ipppro[ipproc[ *ignh32 -1 ] -1];
+    vars->propce[n] = ipproc[*ignh32 -1] -1;
+    BFT_MALLOC(vars->properties_name[n], strlen("EXP5") +1, char);
+    strcpy(vars->properties_name[n++], "EXP5");
+
+    /* ifhcnd */
+    vars->properties_ipp[n] = ipppro[ipproc[ *ifhcnd -1 ] -1];
+    vars->propce[n] = ipproc[*ifhcnd -1] -1;
+    BFT_MALLOC(vars->properties_name[n], strlen("F_HCN_DEV") +1, char);
+    strcpy(vars->properties_name[n++], "F_HCN_DEV");
+
+    /* ifhcnc */
+    vars->properties_ipp[n] = ipppro[ipproc[ *ifhcnc -1 ] -1];
+    vars->propce[n] = ipproc[*ifhcnc -1] -1;
+    BFT_MALLOC(vars->properties_name[n], strlen("F_HCN_HET") +1, char);
+    strcpy(vars->properties_name[n++], "F_HCN_HET");
+
+    /* ifnh3d */
+    vars->properties_ipp[n] = ipppro[ipproc[ *ifnh3d -1 ] -1];
+    vars->propce[n] = ipproc[*ifnh3d -1] -1;
+    BFT_MALLOC(vars->properties_name[n], strlen("F_NH3_DEV") +1, char);
+    strcpy(vars->properties_name[n++], "F_NH3_DEV");
+
+    /* ifnh3c */
+    vars->properties_ipp[n] = ipppro[ipproc[ *ifnh3c -1 ] -1];
+    vars->propce[n] = ipproc[*ifnh3c -1] -1;
+    BFT_MALLOC(vars->properties_name[n], strlen("F_NH3_HET") +1, char);
+    strcpy(vars->properties_name[n++], "F_NH3_HET");
+
+    /* ifnohc */
+    vars->properties_ipp[n] = ipppro[ipproc[ *ifnohc -1 ] -1];
+    vars->propce[n] = ipproc[*ifnohc -1] -1;
+    BFT_MALLOC(vars->properties_name[n], strlen("F_NO_HCN") +1, char);
+    strcpy(vars->properties_name[n++], "F_NO_HCN");
+
+    /* ifnonh */
+    vars->properties_ipp[n] = ipppro[ipproc[ *ifnonh -1 ] -1];
+    vars->propce[n] = ipproc[*ifnonh -1] -1;
+    BFT_MALLOC(vars->properties_name[n], strlen("F_NO_NH3") +1, char);
+    strcpy(vars->properties_name[n++], "F_NO_NH3");
+
+    /* ifnoch */
+    vars->properties_ipp[n] = ipppro[ipproc[ *ifnoch -1 ] -1];
+    vars->propce[n] = ipproc[*ifnoch -1] -1;
+    BFT_MALLOC(vars->properties_name[n], strlen("F_NO_HET") +1, char);
+    strcpy(vars->properties_name[n++], "F_NO_HET");
+
+    /* ifnoth */
+    vars->properties_ipp[n] = ipppro[ipproc[ *ifnoth -1 ] -1];
+    vars->propce[n] = ipproc[*ifnoth -1] -1;
+    BFT_MALLOC(vars->properties_name[n], strlen("F_NO_THE") +1, char);
+    strcpy(vars->properties_name[n++], "F_NO_THE");
+
+    /* icnohc */
+    vars->properties_ipp[n] = ipppro[ipproc[ *icnohc -1 ] -1];
+    vars->propce[n] = ipproc[*icnohc -1] -1;
+    BFT_MALLOC(vars->properties_name[n], strlen("C_NO_HCN") +1, char);
+    strcpy(vars->properties_name[n++], "C_NO_HCN");
+
+    /* icnonh */
+    vars->properties_ipp[n] = ipppro[ipproc[ *icnonh -1 ] -1];
+    vars->propce[n] = ipproc[*icnonh -1] -1;
+    BFT_MALLOC(vars->properties_name[n], strlen("C_NO_NH3") +1, char);
+    strcpy(vars->properties_name[n++], "C_NO_NH3");
+
+    /* ifhcnr */
+    vars->properties_ipp[n] = ipppro[ipproc[ *ifhcnr -1 ] -1];
+    vars->propce[n] = ipproc[*ifhcnr -1] -1;
+    BFT_MALLOC(vars->properties_name[n], strlen("F_HCN_RB") +1, char);
+    strcpy(vars->properties_name[n++], "F_HCN_RB");
+
+    /* icnorb */
+    vars->properties_ipp[n] = ipppro[ipproc[ *icnorb -1 ] -1];
+    vars->propce[n] = ipproc[*icnorb -1] -1;
+    BFT_MALLOC(vars->properties_name[n], strlen("C_NO_RB") +1, char);
+    strcpy(vars->properties_name[n++], "C_NO_RB");
+
+    /* igrb */
+    vars->properties_ipp[n] = ipppro[ipproc[ *igrb -1 ] -1];
+    vars->propce[n] = ipproc[*igrb -1] -1;
+    BFT_MALLOC(vars->properties_name[n], strlen("EXP_RB") +1, char);
+    strcpy(vars->properties_name[n++], "EXP_RB");
   }
 
   /* IMEL */
@@ -2515,7 +2764,8 @@ void CS_PROCF (uicpsc, UICPSC) (const int *const ncharb,
                                 const int *const if9m,
                                 const int *const iyhcn,
                                 const int *const iyno,
-                                const int *const ihox)
+                                const int *const ihox,
+                                const int *const iynh3)
 {
   int i;
   char *name = NULL;
@@ -2709,6 +2959,12 @@ void CS_PROCF (uicpsc, UICPSC) (const int *const ncharb,
     label = _scalar_name_label("solid_fuels", "Enth_Ox");
     BFT_MALLOC(vars->label[*ihox -1], strlen(label)+1, char);
     strcpy(vars->label[*ihox -1], label);
+    BFT_FREE(label);
+
+    /* FR_NH3 */
+    label = _scalar_name_label("solid_fuels", "FR_NH3");
+    BFT_MALLOC(vars->label[*iynh3 -1], strlen(label)+1, char);
+    strcpy(vars->label[*iynh3 -1], label);
     BFT_FREE(label);
   }
 
@@ -3223,6 +3479,8 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
                                 double       *const ehetwt,
                                 int          *const ioetwt,
                                 int          *const ieqnox,
+                                int          *const imdnox,
+                                int          *const irb,
                                 int          *const ihtco2,
                                 int          *const ihth2o,
                                 double       *const qpr,
@@ -3232,7 +3490,10 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
                                 double       *const oxyo2,
                                 double       *const oxyn2,
                                 double       *const oxyh2o,
-                                double       *const oxyco2)
+                                double       *const oxyco2,
+                                double       *const repnck,
+                                double       *const repnle,
+                                double       *const repnlo)
 {
   char *model = NULL;
   int iclag;
@@ -3464,6 +3725,13 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
       crepn1[*ncharb+icha] = 1-crepn1[icha];
       crepn2[icha] = _get_nitrogen_partition_in_HCN_NH3_reaction_2(icha+1);
       crepn2[*ncharb+icha] = 1-crepn2[icha];
+
+      repnck[icha] = _get_hcn_char_comb(icha+1);
+      repnle[icha] = _get_nitrogen_char_low_temp(icha+1);
+      repnlo[icha] = _get_nitrogen_char_high_temp(icha+1);
+      _getNOxFeatureStatus(icha+1, imdnox);
+      if (*imdnox)
+        _getNOxReburning(icha+1, irb);
     }
   }
 
