@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2013-07-23 14:35+0200\n"
+"POT-Creation-Date: 2013-07-26 18:51+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3945,6 +3945,21 @@ msgstr ""
 msgid "  %s %12.5f s, %lu calls\n"
 msgstr "  %s %12.5f s, %lu appels\n"
 
+msgid "_cs_real_sum_3d not implemented yet\n"
+msgstr ""
+
+msgid "_cs_real_sum_nd not implemented yet\n"
+msgstr ""
+
+msgid "_cs_real_sum_1d_l not implemented yet\n"
+msgstr ""
+
+msgid "_cs_real_sum_3d_l not implemented yet\n"
+msgstr ""
+
+msgid "_cs_real_sum_nd_l not implemented yet\n"
+msgstr ""
+
 msgid ""
 "\n"
 "\n"
@@ -4687,12 +4702,28 @@ msgid "      %-24s %-10.3g (default)\n"
 msgstr "      %-24s %-10.3g (défaut)\n"
 
 #, c-format
-msgid "      %-24s %s\n"
-msgstr "      %-24s %s\n"
+msgid "      %-24s %-10s\n"
+msgstr "      %-24s %-10s\n"
 
 #, c-format
 msgid "      %-24s %-10s (default)\n"
 msgstr "      %-24s %-10s (défaut)\n"
+
+#, c-format
+msgid "      %-24s:\n"
+msgstr "      %-24s:\n"
+
+#, c-format
+msgid "      %-24s %-24p\n"
+msgstr "      %-24s %-24p\n"
+
+#, c-format
+msgid "      %-24s: (default)\n"
+msgstr "      %-24s: (défaut)\n"
+
+#, c-format
+msgid "      %-24s %-24p (default)\n"
+msgstr "      %-24s %-24p (défaut)\n"
 
 msgid "Default"
 msgstr "Défaut"
@@ -4724,6 +4755,10 @@ msgid "  %-24s %-12s string  %-4d "
 msgstr "  %-24s %-12s chaîne  %-4d "
 
 #, c-format
+msgid "  %-24s %-12s struct  %-4d "
+msgstr "  %-24s %-12s structure  %-4d "
+
+#, c-format
 msgid ""
 "\n"
 "  Key: \"%s\", values per field\n"
@@ -4752,6 +4787,14 @@ msgstr "    %-24s %s\n"
 #, c-format
 msgid "    %-24s %-10s (default)\n"
 msgstr "    %-24s %-10s (défaut)\n"
+
+#, c-format
+msgid "    %-24s\n"
+msgstr "    %-24s\n"
+
+#, c-format
+msgid "    %-24s (default)\n"
+msgstr "    %-24s (défaut)\n"
 
 msgid ""
 "\n"
@@ -5138,6 +5181,35 @@ msgstr "temps"
 
 msgid "calls"
 msgstr "appels"
+
+msgid "field"
+msgstr "champ"
+
+#, c-format
+msgid ""
+"\n"
+"  ** Computed fields on %s\n"
+"     -------------------%.*s\n"
+msgstr ""
+"\n"
+"  ** Champs calculés sur %s\n"
+"     --------------------%.*s\n"
+
+msgid "set mean"
+msgstr "moy. ensemble"
+
+msgid "spatial mean"
+msgstr "moy. spatiale"
+
+#, c-format
+msgid ""
+"\n"
+"  ** Computed values on %s\n"
+"     -------------------%.*s\n"
+msgstr ""
+"\n"
+"  ** Valeurs calculées sur on %s\n"
+"     -------------------------%.*s\n"
 
 msgid "Defining a interpolation grid requires a name."
 msgstr ""

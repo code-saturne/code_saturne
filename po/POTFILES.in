@@ -72,6 +72,7 @@ src/base/cs_halo_perio.c
 src/base/cs_interface.c
 src/base/cs_io.c
 src/base/cs_log.c
+src/base/cs_log_iteration.c
 src/base/cs_map.c
 src/base/cs_measures_util.c
 src/base/cs_numbering.c

@@ -347,15 +347,6 @@ do ii = 1, nvppmx
   dervar(ii) = 0.d0
 enddo
 
-!   PARAMETRES DU PAS DE TEMPS LOCAL
-
-do ii = 1, 8
-  do jj = 1, 4
-    ptploc(ii,jj) = 0.d0
-  enddo
-enddo
-
-
 ! ---> Post traitement automatique (bord)
 
 do ii = 1, 5
@@ -376,9 +367,7 @@ tmarus = -1.d0
 ! 3. DIMENSIONS DE dimens.f90 (GEOMETRIE, sauf NCELBR)
 !===============================================================================
 
-!---> GEOMETRIE
-
-!---> LECTURE SELON UTILISATION PREPROCESSEUR OU ANCIEN FICHIER
+! Geometry
 
 ncel   = 0
 ncelet = 0
@@ -395,7 +384,7 @@ nfacgb = 0
 nfbrgb = 0
 nsomgb = 0
 
-! Par defaut, on suppose qu'il n'y a pas de periodicite
+! By default, assume no periodicity
 iperio = 0
 iperot = 0
 

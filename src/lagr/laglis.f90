@@ -23,12 +23,9 @@
 subroutine laglis &
 !================
 
- ( nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+ ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
    ettp   , tepa   , statis , stativ , tslagr , parbor )
 
 !===============================================================================
@@ -45,8 +42,6 @@ subroutine laglis &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! nvp              ! e  ! <-- ! nombre de variables particulaires              !
 ! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
@@ -57,14 +52,6 @@ subroutine laglis &
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
 ! itepa            ! te ! <-- ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! ettp             ! tr ! <-- ! tableaux des variables liees                   !
 !  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
 ! tepa             ! tr ! <-- ! info particulaires (reels)                     !
@@ -106,16 +93,11 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 
 integer          itepa(nbpmax,nivep)
 
-double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*) , propfb(nfabor,*)
-double precision coefa(nfabor,*) , coefb(nfabor,*)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision statis(ncelet,nvlsta)
 double precision stativ(ncelet,nvlsta-1)
@@ -252,22 +234,22 @@ write(nfecra,7000)
 do ii = 1,nfrlag
    nb = ilflag(ii)
     if ( iusclb(nb) .eq. ientrl) then
-     CHCOND = 'INLET'
+     chcond = 'INLET'
   else if ( iusclb(nb) .eq. irebol) then
-     CHCOND = 'REBOUND'
+     chcond = 'REBOUND'
   else if ( iusclb(nb) .eq. isortl) then
-     CHCOND = 'OUTLET'
+     chcond = 'OUTLET'
   else if ( iusclb(nb) .eq. idepo1 .or.                           &
        iusclb(nb) .eq. idepo2    ) then
-    CHCOND = 'DEPOSITION'
+    chcond = 'DEPOSITION'
   else if ( iusclb(nb) .eq. iencrl) then
-    CHCOND = 'FOULING'
+    chcond = 'FOULING'
   else if ( iusclb(nb) .eq. idepfa) then
-    CHCOND = 'DLVO CONDITIONS'
+    chcond = 'DLVO CONDITIONS'
   else if ( iusclb(nb) .eq. isymtl) then
-    CHCOND = 'DLVO CONDITIONS'
+    chcond = 'DLVO CONDITIONS'
   else
-    CHCOND = 'USER'
+    chcond = 'USER'
   endif
 
   if (irangp.ge.0) then
@@ -299,9 +281,9 @@ if (istala.eq.1) then
     if (nvlsta.gt.0) then
       write(nfecra,3010)
 
-         ! Allocate a work array
+      ! Allocate a work array
       allocate(tabvr(ncelet))
-       !    Calculation of the averages
+      ! Calculation of the averages
       do ivf = 1, nvlsta
         ivff = ivf
         icla = 0
@@ -311,9 +293,8 @@ if (istala.eq.1) then
 
         call uslaen                                               &
         !==========
-        ( nvar   , nscal  , nvlsta ,                              &
+        ( nvlsta ,                                                &
           ivff   , ivff   , ivff   , iflu   , ilpd   , icla   ,   &
-          dt     , rtpa   , rtp    , propce , propfa , propfb ,   &
           statis , stativ , tabvr  )
 
         if ((ivf.ne.ilfv).and.(ivf.ne.ilpd)) then
@@ -351,7 +332,7 @@ if (istala.eq.1) then
 
       enddo
 
-         ! Free memory
+      ! Free memory
       deallocate(tabvr)
     endif
   endif
@@ -461,7 +442,7 @@ endif
 1000 format(3X,'** INFORMATION ON THE LAGRANGIAN CALCULATION',/3X,         &
           '   ------------------------------------------')
 
-901  format(/,                                                    &
+901  format(/,                                                              &
 '==================================================================     ',/,&
 ' WARNING: The listing information on the Lagrangian calculation        ',/,&
 ' is not available in parallel mode in this version of Code_Saturne.    ' /,&
@@ -478,10 +459,10 @@ endif
 
 1003 format('  ')
 
-1010 format('Lagrangian iteration n° (absolute/relative) : ',               &
+1010 format('Lagrangian iteration n° (absolute/relative) : ',          &
           I10,' /',I10)
 
-1020 format('   For the current iteration, number of particles',/,   &
+1020 format('   For the current iteration, number of particles',/,     &
           '   (with and without statistical weight) :')
 1031 format('ln  newly injected                           ',I8,3X,E14.5)
 1032 format('ln  new by cloning                           ',I8,3X,E14.5)
@@ -497,16 +478,15 @@ endif
 
 2000 format('   Volume statistics :')
 
-2005 format('Start of calculation from absolute Lagrangian iteration n°:   ',I10)
+2005 format('Start of calculation from absolute Lagrangian iteration n°:   ', i10)
 
-2010 format('Number of iterations in unsteady statistics: ',  &
-          i10)
+2010 format('Number of iterations in unsteady statistics: ', i10)
 
-2020 format('Total number of iterations in the statistics:',I10)
+2020 format('Total number of iterations in the statistics:', i10)
 
-2030 format('Start of steady-state statistics from Lagrangian iteration n°: ',I10,' )')
+2030 format('Start of steady-state statistics from Lagrangian iteration n°: ', i10,' )')
 
-2040 format('Number of iterations in steady-state statistics :',I9)
+2040 format('Number of iterations in steady-state statistics :', i9)
 
 3010 format('                            Min value    Max value    ')
 
@@ -528,8 +508,7 @@ endif
 
 5000 format('   Boundary statistics :')
 
-5010 format('Start of steady-state statistics from Lagrangian iteration n°: ',     &
-          I8,')')
+5010 format('Start of steady-state statistics from Lagrangian iteration n°: ', I8,')')
 
 5020 format('Number of iterations in steady-state statistics: ',I10)
 

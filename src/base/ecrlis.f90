@@ -96,7 +96,7 @@ integer          ipuvw
 integer          icmin, icmax
 integer          nbrval
 integer          idivdt, ixmsdt, iel
-double precision petit,xyzmin(3),xyzmax(3), varmin(nvppmx), varmax(nvppmx)
+double precision petit,xyzmin(3),xyzmax(3)
 character*200    chain, chainc
 
 double precision, dimension(:), allocatable, target :: momtmp
@@ -108,55 +108,8 @@ double precision, dimension(:), pointer :: varptr => null()
 
 petit  =-grand
 
-!================================================
-! 1. CALCUL DES MIN ET MAX DES VARIABLES
-!================================================
-
-do ipp = 2, nvppmx
-  if (ilisvr(ipp).eq.1) then
-    varmin(ipp) = grand
-    varmax(ipp) = petit
-    ira = abs(ipp2ra(ipp))
-
-    ! For moments, we must divide by the cumulative time
-    idivdt = ippmom(ipp)
-    if (idivdt.eq.0) then
-      varptr => ra(ira:ira+ncel)
-    else
-      allocate(momtmp(ncel))
-      varptr => momtmp
-      if (idivdt.gt.0) then
-        do iel = 1, ncel
-          momtmp(iel) = ra(ira+iel-1)/max(ra(idivdt+iel-1),epzero)
-        enddo
-      elseif (idivdt.lt.0) then
-        do iel = 1, ncel
-          momtmp(iel) = ra(ira+iel-1)/max(dtcmom(-idivdt),epzero)
-        enddo
-      endif
-    endif
-
-    do icel = 1, ncel
-      if (varptr(icel).lt.varmin(ipp)) varmin(ipp) = varptr(icel)
-      if (varptr(icel).gt.varmax(ipp)) varmax(ipp) = varptr(icel)
-    enddo
-
-    if (idivdt.ne.0) then
-      deallocate(momtmp)
-    endif
-
-    if (irangp.ge.0) then
-      call parmin (varmin(ipp))
-      !==========
-      call parmax (varmax(ipp))
-      !==========
-    endif
-
-  endif
-enddo
-
 !==================================================================
-! 2. DERIVE POUR LES VARIABLES TRANSPORTEES (sauf pression)
+! 1. DERIVE POUR LES VARIABLES TRANSPORTEES (sauf pression)
 !==================================================================
 
 do ipp = 2, nvppmx
@@ -187,58 +140,9 @@ if(dervar(ipp).lt.epzero) then
 endif
 dervar(ipp) = rnsmbr(ipp) / dervar(ipp)
 
-
-!==================================================================
-! 3. MIN MAX DT + LOCALISATION
-!==================================================================
-
-if (idtvar.ge.0) then
-
-!     -> min max dt
-  ptploc(7,1) = grand
-  ptploc(8,1) = petit
-  icmin = 1
-  icmax = 1
-  do icel = 1, ncel
-    if(dt(icel).lt.ptploc(7,1)) then
-      ptploc(7,1) = dt(icel)
-      icmin = icel
-    endif
-    if(dt(icel).gt.ptploc(8,1)) then
-      ptploc(8,1) = dt(icel)
-      icmax = icel
-    endif
-  enddo
-
-  xyzmin(1) = xyzcen(1,icmin)
-  xyzmin(2) = xyzcen(2,icmin)
-  xyzmin(3) = xyzcen(3,icmin)
-  xyzmax(1) = xyzcen(1,icmax)
-  xyzmax(2) = xyzcen(2,icmax)
-  xyzmax(3) = xyzcen(3,icmax)
-
-  if (irangp.ge.0) then
-    nbrval = 3
-    call parmnl (nbrval, ptploc(7,1), xyzmin)
-    !==========
-    call parmxl (nbrval, ptploc(8,1), xyzmax)
-    !==========
-  endif
-
-  ptploc(7,2) = xyzmin(1)
-  ptploc(7,3) = xyzmin(2)
-  ptploc(7,4) = xyzmin(3)
-  ptploc(8,2) = xyzmax(1)
-  ptploc(8,3) = xyzmax(2)
-  ptploc(8,4) = xyzmax(3)
-
-endif
-
-
 !===============================================================================
-! 4. ECRITURE DES CRITERES DE CONVERGENCE
+! 2. ECRITURE DES CRITERES DE CONVERGENCE
 !===============================================================================
-
 
 write(nfecra,1000)
 write(nfecra,1010)
@@ -280,69 +184,9 @@ write(nfecra,1010)
 write(nfecra,*) ' '
 write(nfecra,*) ' '
 
-
 !===============================================================================
-! 5.  SUIVI DES VARIABLES , MIN - MAX - CLIPPING
+! 3.  SUIVI DES VARIABLES , MIN - MAX - CLIPPING
 !===============================================================================
-
-
-write(nfecra,1100)
-write(nfecra,1110)
-write(nfecra,1111)
-write(nfecra,1110)
-
-do ipp = 2, nvppmx
-  if(ilisvr(ipp).eq.1) then
-
-    chainc = 'v'
-    chain = ' '
-    ic = 4
-    chain = nomvar(ipp)
-    chainc(ic:ic+12) = chain(1:12)
-    ic=ic+12
-    chain = ' '
-    write(chain,3000) varmin(ipp)
-    chainc(ic:ic+12) = chain(1:12)
-    ic=ic+14
-    chain = ' '
-    write(chain,3000) varmax(ipp)
-    chainc(ic:ic+12) = chain(1:12)
-    ic=ic+16
-    ipuvw = 0
-    if(ipp.eq.ipprtp(ipr) .or.                           &
-         ipp.eq.ipprtp(iu ) .or.                           &
-         ipp.eq.ipprtp(iv ) .or.                           &
-         ipp.eq.ipprtp(iw ) ) then
-      ipuvw = 1
-    endif
-    !   En v2f phi-fbar on ne clippe jamais f_barre, on ne l'affiche donc pas
-    if (iturb.eq.50) then
-      if (ipp.eq.ipprtp(ifb)) ipuvw = 1
-    endif
-    !   En ALE on ne clippe pas la vitesse de maillage
-    if (iale.eq.1) then
-      if (ipp.eq.ipprtp(iuma) .or.                                &
-          ipp.eq.ipprtp(ivma) .or.                                &
-          ipp.eq.ipprtp(iwma)) ipuvw = 1
-    endif
-    if(ipuvw.eq.1) then
-      chain = '     --         --'
-      chainc(ic:ic+18) = chain(1:18)
-      ic = ic+18
-    else
-      chain = ' '
-      write(chain,4000) iclpmn(ipp)
-      chainc(ic:ic+7) = chain(1:7)
-      ic=ic+11
-      chain = ' '
-      write(chain,4000) iclpmx(ipp)
-      chainc(ic:ic+7) = chain(1:7)
-      ic=ic+7
-    endif
-
-    write(nfecra,'(A)') chainc(1:ic)
-  endif
-enddo
 
 write(nfecra,1110)
 write(nfecra,*) ' '
@@ -412,89 +256,30 @@ write(nfecra,1160)
 write(nfecra,*) ' '
 write(nfecra,*) ' '
 
-
 !===============================================================================
-! 6.  PAS DE TEMPS LOCAL
+! 4.  PAS DE TEMPS LOCAL
 !===============================================================================
 
-if (idtvar.ge.0) then
+if (idtvar.ge.0 .and. iptlro.eq.1) then
 
   write(nfecra,1200)
   write(nfecra,1210)
-  write(nfecra,1211)
+
+  chainc = ' '
+  chainc = 'Clips a Dtrho'
+  ic = 57
+  chain = ' '
+  write(chain,4000) nclptr
+  chainc(ic:ic+7) = chain(1:7)
+  ic = ic+7
+  write(nfecra,'(a)') chainc(1:ic)
   write(nfecra,1210)
-  do ii = 1, 6
-    chainc = ' '
-    if(ii.eq.1) chainc = 'Courant min'
-    if(ii.eq.2) chainc = 'Courant max'
-    if(ii.eq.3) chainc = 'Fourier min'
-    if(ii.eq.4) chainc = 'Fourier max'
-    if(ii.eq.5) chainc = 'Cou_Fou min'
-    if(ii.eq.6) chainc = 'Cou_Fou max'
-!    Compressible
-    if(ippmod(icompf).ge.0) then
-      if(ii.eq.5) chainc = 'CFL/Mas min'
-      if(ii.eq.6) chainc = 'CFL/Mas max'
-    endif
-
-    ic = 13
-    do jj = 1, 4
-      chain = ' '
-      write(chain,3000) ptploc(ii,jj)
-      chainc(ic:ic+13) = chain(1:13)
-      ic = ic+13
-    enddo
-    write(nfecra,'(A)') chainc(1:ic)
-  enddo
-  write(nfecra,1210)
-
-  if(idtvar.gt.0) then
-    do ii = 7, 8
-      chainc = ' '
-      if(ii.eq.7) chainc = 'Dt min'
-      if(ii.eq.8) chainc = 'Dt max'
-      ic = 13
-      do jj = 1, 4
-        chain = ' '
-        write(chain,3000) ptploc(ii,jj)
-        chainc(ic:ic+13) = chain(1:13)
-        ic = ic+13
-      enddo
-      write(nfecra,'(A)') chainc(1:ic)
-    enddo
-    write(nfecra,1210)
-  endif
-
-  if (iptlro.eq.1) then
-    chainc = ' '
-    chainc = 'Dt/Dtrho max'
-    ic = 13
-    do jj = 1, 4
-      chain = ' '
-      write(chain,3000) rpdtro(jj)
-      chainc(ic:ic+13) = chain(1:13)
-      ic = ic+13
-    enddo
-    write(nfecra,'(A)') chainc(1:ic)
-    chainc = ' '
-    chainc = 'Clips a Dtrho'
-    ic = 57
-    chain = ' '
-    write(chain,4000) nclptr
-    chainc(ic:ic+7) = chain(1:7)
-    ic = ic+7
-    write(nfecra,'(A)') chainc(1:ic)
-    write(nfecra,1210)
-  endif
 
   write(nfecra,*) ' '
   write(nfecra,*) ' '
 
 endif
 
-!===============================================================================
-! 3.
-!===============================================================================
 !--------
 ! Formats
 !--------
@@ -509,10 +294,6 @@ endif
         '------------------------------------')
 
 
- 1100 format (/,3X,'** INFORMATIONS SUR LES VARIABLES',/,         &
-          3X,'   ------------------------------')
- 1111 format ('   Variable      Valeur min    Valeur max',        &
-        '   Clip min   Clip max')
  1110 format ('-----------------------------------------',        &
         '----------------------')
 
@@ -528,8 +309,6 @@ endif
           3X,'   --------------------------------')
  1210 format ('---------------------------',                      &
         '------------------------------------')
- 1211 format ('Critere      Valeur     en         xc',            &
-        '           yc           zc')
 
  3000 format (e12.5)
  4000 format (i7)
@@ -544,10 +323,6 @@ endif
         '------------------------------------')
 
 
- 1100 format (/,3X,'** INFORMATION ON VARIABLES',/,               &
-          3X,'   ------------------------')
- 1111 format ('   Variable      Min. value    Max. value',        &
-        '   Min clip   Max clip')
  1110 format ('-----------------------------------------',        &
         '----------------------')
 
@@ -563,8 +338,6 @@ endif
          3X,'   -----------------------------')
  1210 format ('---------------------------',                      &
         '------------------------------------')
- 1211 format ('Criterion    Value      at         xc',            &
-        '           yc           zc')
 
  3000 format (e12.5)
  4000 format (i7)

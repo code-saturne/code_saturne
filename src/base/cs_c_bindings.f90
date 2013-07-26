@@ -33,6 +33,21 @@ module cs_c_bindings
 
   !=============================================================================
 
+  integer :: MESH_LOCATION_NONE, MESH_LOCATION_CELLS
+  integer :: MESH_LOCATION_INTERIOR_FACES, MESH_LOCATION_BOUNDARY_FACES
+  integer :: MESH_LOCATION_VERTICES, MESH_LOCATION_PARTICLES
+  integer :: MESH_LOCATION_OTHER
+
+  parameter (MESH_LOCATION_NONE=0)
+  parameter (MESH_LOCATION_CELLS=1)
+  parameter (MESH_LOCATION_INTERIOR_FACES=2)
+  parameter (MESH_LOCATION_BOUNDARY_FACES=3)
+  parameter (MESH_LOCATION_VERTICES=4)
+  parameter (MESH_LOCATION_PARTICLES=5)
+  parameter (MESH_LOCATION_OTHER=6)
+
+    !---------------------------------------------------------------------------
+
   type, bind(c)  :: var_cal_opt
     integer(c_int) :: iwarni
     integer(c_int) :: iconv
@@ -64,6 +79,17 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function logging field and other array statistics
+    ! at relevant time steps.
+
+    !> \brief Log field and other array statistics for a given time step.
+
+    subroutine log_iteration()  &
+      bind(C, name='cs_log_iteration')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine log_iteration
+
     !---------------------------------------------------------------------------
 
     !> \cond DOXYGEN_SHOULD_SKIP_THIS
@@ -78,6 +104,24 @@ module cs_c_bindings
       use, intrinsic :: iso_c_binding
       implicit none
     end subroutine cs_control_check_file
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function adding an array not saved as a permanent field
+    ! to logging of fields
+
+    subroutine cs_log_iteration_add_array(name, category, ml, is_intensive,    &
+                                          dim, val)                            &
+      bind(C, name='cs_log_iteration_add_array')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      character(kind=c_char, len=1), dimension(*), intent(in) :: name
+      character(kind=c_char, len=1), dimension(*), intent(in) :: category
+      integer(c_int), value :: ml
+      logical(c_bool), value :: is_intensive
+      integer(c_int), value :: dim
+      real(kind=c_double), dimension(*) :: val
+    end subroutine cs_log_iteration_add_array
 
     !---------------------------------------------------------------------------
 
@@ -171,6 +215,52 @@ contains
     return
 
   end subroutine field_get_key_struct_var_cal_opt
+
+  !=============================================================================
+
+  ! Interface to C function adding an array not saved as a permanent field
+  ! to logging of fields
+
+  !> \brief Add array not saved as permanent field to logging of fields.
+
+  !> \param[in]  name         array name
+  !> \param[in]  category     category name
+  !> \param[in]  location     associated mesh location
+  !> \param[in]  is_intensive associated mesh location
+  !> \param[in]  dim          associated dimension (interleaved)
+  !> \param[in]  val          associated values
+
+  subroutine log_iteration_add_array(name, category, location, is_intensive,   &
+                                     dim, val)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    character(len=*), intent(in)      :: name, category
+    integer, intent(in)               :: location, dim
+    logical, intent(in)               :: is_intensive
+    real(kind=c_double), dimension(*) :: val
+
+    ! Local variables
+
+    character(len=len_trim(name)+1, kind=c_char) :: c_name
+    character(len=len_trim(category)+1, kind=c_char) :: c_cat
+    integer(c_int) :: c_ml, c_dim
+    logical(c_bool) :: c_inten
+
+    c_name = trim(name)//c_null_char
+    c_cat = trim(category)//c_null_char
+    c_ml = location
+    c_inten = is_intensive
+    c_dim = dim
+
+    call cs_log_iteration_add_array(c_name, c_cat, c_ml, c_inten, c_dim, val)
+
+    return
+
+  end subroutine log_iteration_add_array
 
   !=============================================================================
 

@@ -81,6 +81,7 @@ implicit none
 
 integer          ii, ippu, ippv, ippw, ivar, iprop
 integer          imom, idtnm
+integer          keylog
 integer          keyvis, keylbl, keycpl, iflid, ikeyid, ikeyvl, iopchr
 integer          keysca, keyvar, kscmin, kscmax, kdiftn
 integer          nfld, itycat, ityloc, idim1, idim3
@@ -112,6 +113,9 @@ ilved  = .false.   ! not interleaved by default
 iprev = .true.     ! variables have previous value
 inoprv = .false.   ! variables have no previous value
 
+name = 'log'
+call field_get_key_id(name, keylog)
+
 name = 'post_vis'
 call field_get_key_id(name, keyvis)
 
@@ -124,7 +128,7 @@ call field_get_key_id(name, keycpl)
 ! Key id for scalar id
 call field_get_key_id("scalar_id", keysca)
 
-! Key id for varaible id
+! Key id for variable id
 call field_get_key_id("variable_id", keyvar)
 
 ! Key id for the inner mass flux id
@@ -160,6 +164,9 @@ call field_set_key_str(ivarfl(ivar), keylbl, nomvar(ipprtp(ivar)))
 if (ichrvr(ipprtp(ivar)) .eq. 1) then
   call field_set_key_int(ivarfl(ivar), keyvis, iopchr)
 endif
+if (ilisvr(ipprtp(ivar)) .eq. 1) then
+  call field_set_key_int(ivarfl(ivar), keylog, 1)
+endif
 
 ivar = iu
 name = 'velocity'
@@ -177,6 +184,9 @@ call fldsnv (name1, name2, name3)
 call field_set_key_str(ivarfl(ivar), keylbl, name1)
 if (ichrvr(ipprtp(ivar)) .eq. 1) then
   call field_set_key_int(ivarfl(ivar), keyvis, iopchr)
+endif
+if (ilisvr(ipprtp(ivar)) .eq. 1) then
+  call field_set_key_int(ivarfl(ivar), keylog, 1)
 endif
 if (ivelco .eq. 1) then
   call field_set_key_int(ivarfl(ivar), keycpl, 1)
@@ -267,6 +277,9 @@ do ii = 1, nfld
   if (ichrvr(ipprtp(ivar)) .eq. 1) then
     call field_set_key_int(ivarfl(ivar), keyvis, iopchr)
   endif
+  if (ilisvr(ipprtp(ivar)) .eq. 1) then
+    call field_set_key_int(ivarfl(ivar), keylog, 1)
+  endif
 enddo
 
 nfld = 0
@@ -289,6 +302,9 @@ if (iale.eq.1) then
   call field_set_key_str(ivarfl(ivar), keylbl, name1)
   if (ichrvr(ipprtp(ivar)) .eq. 1) then
     call field_set_key_int(ivarfl(ivar), keyvis, iopchr)
+  endif
+  if (ilisvr(ipprtp(ivar)) .eq. 1) then
+    call field_set_key_int(ivarfl(ivar), keylog, 1)
   endif
   if (ivelco .eq. 1) then
     call field_set_key_int(ivarfl(ivar), keycpl, 1)
@@ -328,6 +344,9 @@ do ii = 1, nscal
       if (ichrvr(ipprtp(ivar)).eq.1) then
         call field_set_key_int(ivarfl(ivar), keyvis, iopchr)
       endif
+      if (ilisvr(ipprtp(ivar)) .eq. 1) then
+        call field_set_key_int(ivarfl(ivar), keylog, 1)
+      endif
       ! Set min and max clipping
       call field_set_key_double(ivarfl(ivar), kscmin, scamin(ii))
       call field_set_key_double(ivarfl(ivar), kscmax, scamax(ii))
@@ -348,6 +367,9 @@ do ii = 1, nscal
       call field_set_key_int(iflid, kdiftn, 6)
       if (ichrvr(ipprtp(ivar)) .eq. 1) then
         call field_set_key_int(iflid, keyvis, iopchr)
+      endif
+      if (ilisvr(ipprtp(ivar)) .eq. 1) then
+        call field_set_key_int(iflid, keylog, 1)
       endif
     endif
 
@@ -431,6 +453,9 @@ do iprop = 1, nproce
   if (ichrvr(ipppro(iprop)) .eq. 1) then
     call field_set_key_int(iprpfl(iprop), keyvis, ichrvr(ipppro(iprop)))
   endif
+  if (ilisvr(ipppro(iprop)) .eq. 1) then
+    call field_set_key_int(iprpfl(iprop), keylog, ilisvr(ipppro(iprop)))
+  endif
 enddo
 
 ! Add moment accumulators metadata
@@ -466,6 +491,9 @@ call field_set_key_str(iflid, keylbl, nomvar(ippdt))
 if (idtvar.eq.2.and.ichrvr(ippdt).gt.0) then
   call field_set_key_int(iflid, keyvis, ichrvr(ippdt))
 endif
+if (idtvar.eq.2.and.ilisvr(ippdt).gt.0) then
+  call field_set_key_int(iflid, keylog, ilisvr(ippdt))
+endif
 
 ! Transient velocity/pressure coupling
 
@@ -485,6 +513,9 @@ if (ipucou.ne.0) then
 endif
 if (ichrvr(ipptx).gt.0) then
   call field_set_key_int(iflid, keyvis, ichrvr(ipptx))
+endif
+if (ilisvr(ipptx).gt.0) then
+  call field_set_key_int(iflid, keylog, ilisvr(ipptx))
 endif
 
 ! Inner Mass flux field

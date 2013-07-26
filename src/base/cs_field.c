@@ -2710,7 +2710,7 @@ cs_field_log_info(const cs_field_t  *f,
               kd->log_func(t);
             }
             else
-              cs_log_printf(CS_LOG_SETUP, _("      %-24s %-24p (default) \n"),
+              cs_log_printf(CS_LOG_SETUP, _("      %-24s %-24p (default)\n"),
                             key, t);
           }
         }

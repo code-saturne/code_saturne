@@ -85,6 +85,7 @@ cs_halo_perio.h \
 cs_interface.h \
 cs_io.h \
 cs_log.h \
+cs_log_iteration.c \
 cs_map.h \
 cs_measures_util.h \
 cs_numbering.h \
@@ -204,6 +205,7 @@ cs_field.c \
 cs_halo.c \
 cs_halo_perio.c \
 csinit.f90 \
+cs_log_iteration.c \
 cs_numbering.c \
 cs_measures_util.c \
 csopli.f90 \

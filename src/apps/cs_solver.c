@@ -85,6 +85,7 @@
 #include "cs_join.h"
 #include "cs_lagr_tracking.h"
 #include "cs_log.h"
+#include "cs_log_iteration.h"
 #include "cs_mesh.h"
 #include "cs_mesh_coherency.h"
 #include "cs_mesh_from_builder.h"
@@ -605,15 +606,16 @@ cs_run(void)
 
   cs_ctwr_all_destroy();
 
-  /* Free post processing related structures */
+  /* Free post processing or logging related structures */
 
   cs_post_finalize();
+  cs_log_iteration_destroy_all();
 
   /* Free GUI-related data */
 
   cs_gui_particles_free();
 
-  /* Switch logging back to C (may be moved dependingon Fortran dependencies) */
+  /* Switch logging back to C (may be moved depending on Fortran dependencies) */
 
   cs_base_fortran_bft_printf_to_c();
 

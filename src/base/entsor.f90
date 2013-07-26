@@ -186,19 +186,8 @@ module entsor
                             resvar(nvppmx) , dervar(nvppmx)
 
   ! Parametres du pas de temps local =
-  !   nb Courant, Fourier et combine min et max + points associes
-  !   ptploc(.,1)   = nombre , ptploc(.,2 3 et 4) = point associe
-  !   ptploc(1 2,.) = Courant min/max
-  !   ptploc(3 4,.) = Fourier min/max
-  !   ptploc(5 6,.) = cou/fou min/max
-  !   ptploc(7 8,.) = dt      min/max
-  !   nclptr        = nb de clippings par le pdt max lie aux effets de densite
-  !   rpdtro        = rapport max entre dt et dtmax lie aux effets de densite
-  !                    +localisation
 
   integer, save :: nclptr
-
-  double precision, save :: ptploc(8,4), rpdtro(4)
 
   ! Parametres des sorties au bord =
 

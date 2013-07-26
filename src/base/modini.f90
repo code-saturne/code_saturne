@@ -473,9 +473,17 @@ if (inusa .gt. 0) then
   if (iturb.eq.70.and.ilisvr(ipp).eq.-999) ilisvr(ipp) = 1
 endif
 ipp = ipppro(ipproc(icour))
-if (ilisvr(ipp).eq.-999 .or. idtvar.lt.0) ilisvr(ipp) = 0
+if (idtvar.lt.0) then
+  ilisvr(ipp) = 0
+else if (ilisvr(ipp).eq.-999) then
+  ilisvr(ipp) = 1
+endif
 ipp = ipppro(ipproc(ifour))
-if (ilisvr(ipp).eq.-999 .or. idtvar.lt.0) ilisvr(ipp) = 0
+if (idtvar.lt.0) then
+  ilisvr(ipp) = 0
+else if (ilisvr(ipp).eq.-999) then
+  ilisvr(ipp) = 1
+endif
 if (iescal(iespre).gt.0) then
   ipp = ipppro(ipproc(iestim(iespre)))
   if (ilisvr(ipp).eq.-999) ilisvr(ipp) = 1

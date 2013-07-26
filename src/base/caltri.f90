@@ -1119,26 +1119,23 @@ elseif(ntlist.eq.-1.and.ntcabs.eq.ntmabs) then
 else
   modntl = 1
 endif
-if(modntl.eq.0) then
+if (modntl.eq.0) then
+
   call ecrlis                                                     &
   !==========
   ( nvar   , ndim   , ncelet , ncel   ,                           &
     irtp   ,                                                      &
     ra(irtp  ) , ra(irtpa) , ra(idt ) , volume , xyzcen, ra )
 
-  if (iilagr.gt.0) then
+  call log_iteration
 
+  if (iilagr.gt.0) then
     call laglis                                                   &
     !==========
- ( nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+ ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  ,                                                       &
-   ra(idt)    , ra(irtpa) , ra(irtp) ,                            &
-   ra(ipropc) , propfa , propfb ,                                 &
-   coefa  , coefb  ,                                              &
    ettp   , tepa   , statis , stativ , tslagr , parbor )
-
   endif
 
 endif

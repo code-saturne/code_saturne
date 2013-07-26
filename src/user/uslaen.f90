@@ -25,9 +25,8 @@
 subroutine uslaen &
 !================
 
- ( nvar   , nscal  , nvlsta ,                                     &
+ ( nvlsta ,                                                       &
    ivarl  , ivarl1 , ivarlm , iflu   , ilpd1  , icla   ,          &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    statis , stativ , tracel )
 
 !===============================================================================
@@ -48,8 +47,6 @@ subroutine uslaen &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nvlsta           ! i  ! <-- ! nb of Lagrangian statistical variables         !
 ! ivarl            ! i  ! <-- ! number of the stat (between 1 and nvlsta)      !
 ! ivarl1           ! i  ! <-- ! number of the global stat + group              !
@@ -61,15 +58,6 @@ subroutine uslaen &
 !                  !    !     !                                                !
 ! icla             ! i  ! <-- ! 0: global statistic                            !
 !                  !    ! <-- ! !=0: stat for the icla group                   !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! transported variables at cell centers          !
-! (ncelet,*)       !    !     ! at the current and previous time step          !
-! propce           ! ra ! <-- ! physical properties at cell centers            !
-! (ncelet,*)       !    !     !                                                !
-! propfa           ! ra ! <-- ! physical properties at interior face centers   !
-!  (nfac,*)        !    !     !                                                !
-! propfb           ! ra ! <-- ! physical properties at boundary face centers   !
-!  (nfabor,*)      !    !     !                                                !
 ! statis(ncelet    ! ra ! <-- ! cumulation of the volume statistics            !
 !   nvlsta)        !    !     !                                                !
 ! stativ           ! ra ! <-- ! cumulation for the variances of the            !
@@ -106,12 +94,10 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal  , nvlsta
+integer          nvlsta
 integer          ivarl , ivarl1 , ivarlm , iflu , ilpd1 , icla
 
-double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*) , propfb(nfabor,*)
+double precision dt(ncelet)
 double precision tracel(ncelet)
 double precision statis(ncelet,nvlsta)
 double precision stativ(ncelet,nvlsta-1)
