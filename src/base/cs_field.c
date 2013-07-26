@@ -1896,6 +1896,15 @@ cs_field_define_sub_key(const char  *name,
 void
 cs_field_destroy_all_keys(void)
 {
+  int key_id;
+  for (key_id = 0; key_id < _n_keys; key_id++) {
+    cs_field_key_def_t *kd = _key_defs + key_id;
+    if (kd->type_id == 't') {
+      unsigned char **def_val = (unsigned char **)(kd->def_val);
+      BFT_FREE(*def_val);
+    }
+  }
+
   _n_keys = 0;
   _n_keys_max = 0;
   BFT_FREE(_key_defs);
