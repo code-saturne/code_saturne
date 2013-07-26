@@ -195,6 +195,7 @@ double precision cpdc11, cpdc22, cpdc33, cpdc12, cpdc13, cpdc23
 double precision d2s3  , thetap, thetp1, thets , dtsrom
 double precision diipbx, diipby, diipbz
 double precision cx    , cy    , cz
+double precision dvol
 
 double precision rvoid(1)
 
@@ -1079,24 +1080,39 @@ if(iterns.eq.1) then
    dt     , rtpa   , propce , propfa , propfb ,                   &
    ckupdc , smacel , tsexp  , tsimp  )
 
+
   ! Coupling between two Code_Saturne
   if (nbrcpl.gt.0) then
   !vectorial interleaved exchange
     call cscelv &
     !==========
  ( nvar   , nscal  ,                                              &
-   iu   ,                                                       &
+   iu     ,                                                       &
    dt     , rtpa   , vela   ,                                     &
    propce , propfa , propfb ,                                     &
    coefa  , coefb  , coefav , coefbv ,                            &
    tsexp  , tsimp  )
   endif
 
+  if (iphydr.eq.1) then
+
+    do iel = 1, ncel
+      dvol = 1.d0/volume(iel)
+      do isou = 1, 3
+        dfrcxt(isou, iel) = dfrcxt(isou, iel) + tsexp(isou, iel)*dvol
+      enddo
+    enddo
+
+    if (irangp.ge.0.or.iperio.eq.1) then
+      call synvin(dfrcxt)
+    endif
+  endif
+
 endif
 
 
 !     On conserve la partie implicite pour les autres iter sur navsto
-if(iterns.eq.1.and.nterup.gt.1) then
+if (iterns.eq.1.and.nterup.gt.1) then
   do iel = 1, ncel
     do isou = 1, 3
       do jsou =1, 3
@@ -1114,13 +1130,13 @@ endif
 !     Avec termes sources a l'ordre 2, on implicite DRTP quel que soit son signe
 !       (si on le met dans la matrice ou non selon son signe, on risque de ne pas
 !        avoir le meme traitement d'un pas de temps au suivant)
-if(iterns.eq.1) then
-  if(nterup.gt.1) then
+if (iterns.eq.1) then
+  if (nterup.gt.1) then
     do iel = 1, ncel
       do isou = 1, 3
         do jsou = 1, 3
           trava(isou,iel) = trava(isou,iel)             &
-               + tsimp(isou,jsou,iel)*vela(jsou,iel)
+                          + tsimp(isou,jsou,iel)*vela(jsou,iel)
         enddo
       enddo
     enddo
@@ -1129,7 +1145,7 @@ if(iterns.eq.1) then
       do isou = 1, 3
         do jsou = 1, 3
           trav(isou,iel) = trav(isou,iel)                           &
-               + tsimp(isou,jsou,iel)*vela(jsou,iel)
+                         + tsimp(isou,jsou,iel)*vela(jsou,iel)
         enddo
       enddo
     enddo
@@ -1138,10 +1154,10 @@ endif
 
 !     A la premiere iter sur navsto, on ajoute la partie issue des
 !       termes explicites
-if(iterns.eq.1) then
+if (iterns.eq.1.and.iphydr.ne.1) then
 !     Si on extrapole les termes source en temps :
 !       PROPCE recoit les termes explicites
-  if(isno2t.gt.0) then
+  if (isno2t.gt.0) then
     do iel = 1, ncel
       do isou = 1, 3
         propce(iel,iptsna+isou-1 ) =                              &
@@ -1202,15 +1218,15 @@ endif
 
 ! ---> TERMES SOURCES UTILISATEUR
 
-if(iappel.eq.1) then
-  if(isno2t.gt.0) then
+if (iappel.eq.1) then
+  if (isno2t.gt.0) then
     thetap = thetav(iu)
-    if(iterns.gt.1) then
+    if (iterns.gt.1) then
       do iel = 1, ncel
         do isou = 1, 3
           do jsou = 1, 3
-            fimp(isou,jsou,iel) = fimp(isou,jsou,iel)          &
-                       -ximpa(isou,jsou,iel)*thetap
+            fimp(isou,jsou,iel) = fimp(isou,jsou,iel)                      &
+                                - ximpa(isou,jsou,iel)*thetap
           enddo
         enddo
       enddo
@@ -1218,18 +1234,19 @@ if(iappel.eq.1) then
       do iel = 1, ncel
         do isou = 1, 3
           do jsou = 1, 3
-            fimp(isou,jsou,iel) = fimp(isou,jsou,iel) -tsimp(isou,jsou,iel)*thetap
+            fimp(isou,jsou,iel) = fimp(isou,jsou,iel)                      &
+                                - tsimp(isou,jsou,iel)*thetap
           enddo
         enddo
       enddo
     endif
   else
-    if(iterns.gt.1) then
+    if (iterns.gt.1) then
       do iel = 1, ncel
         do isou = 1, 3
           do jsou = 1, 3
             fimp(isou,jsou,iel) = fimp(isou,jsou,iel)                      &
-               + max(-ximpa(isou,jsou,iel),zero)
+                                + max(-ximpa(isou,jsou,iel),zero)
           enddo
         enddo
       enddo
@@ -1238,7 +1255,7 @@ if(iappel.eq.1) then
         do isou = 1, 3
           do jsou = 1, 3
             fimp(isou,jsou,iel) = fimp(isou,jsou,iel)                      &
-               + max(-tsimp(isou,jsou,iel),zero)
+                                + max(-tsimp(isou,jsou,iel),zero)
           enddo
         enddo
       enddo
@@ -1250,7 +1267,7 @@ endif
 ! ---> Head loss
 
 !  At the second call, fimp is not needed anymore
-if(iappel.eq.1) then
+if (iappel.eq.1) then
   if (ncepdp.gt.0) then
     ! The theta-scheme for the head loss is the same as the other terms
     thetap = thetav(iu)
