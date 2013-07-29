@@ -447,6 +447,12 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
 #            if mdl not in self.model.lagrangianStatus():
 #                self.modelIILAGR.disableItem(str_model=mdl)
 
+        from Pages.CoalCombustionModel import CoalCombustionModel
+        if CoalCombustionModel(self.case).getCoalCombustionModel() != 'off':
+            self.modelIILAGR.disableItem(str_model="one_way")
+            self.modelIILAGR.disableItem(str_model="two_way")
+        del CoalCombustionModel
+
         model = self.model.getCouplingMode()
         self.modelIILAGR.setItem(str_model=model)
         self.slotIILAGR(self.modelIILAGR.dicoM2V[model])

@@ -82,15 +82,16 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
         self.model = LagrangianOutputModel(self.case)
 
         # Connections
-        self.connect(self.checkBoxIVISV1, SIGNAL("clicked()"),    self.slotIVISV1)
-        self.connect(self.checkBoxIVISV2, SIGNAL("clicked()"),    self.slotIVISV2)
-        self.connect(self.checkBoxIVISTP, SIGNAL("clicked()"),    self.slotIVISTP)
-        self.connect(self.checkBoxIVISDM, SIGNAL("clicked()"),    self.slotIVISDM)
-        self.connect(self.checkBoxIVISTE, SIGNAL("clicked()"),    self.slotIVISTE)
-        self.connect(self.checkBoxIVISMP, SIGNAL("clicked()"),    self.slotIVISMP)
-        self.connect(self.checkBoxIVISDK, SIGNAL("clicked()"),    self.slotIVISDK)
-        self.connect(self.checkBoxIVISCH, SIGNAL("clicked()"),    self.slotIVISCH)
-        self.connect(self.checkBoxIVISCK, SIGNAL("clicked()"),    self.slotIVISCK)
+        self.connect(self.checkBoxIVISV1,   SIGNAL("clicked()"),    self.slotIVISV1)
+        self.connect(self.checkBoxIVISV2,   SIGNAL("clicked()"),    self.slotIVISV2)
+        self.connect(self.checkBoxIVISTP,   SIGNAL("clicked()"),    self.slotIVISTP)
+        self.connect(self.checkBoxIVISDM,   SIGNAL("clicked()"),    self.slotIVISDM)
+        self.connect(self.checkBoxIVISTE,   SIGNAL("clicked()"),    self.slotIVISTE)
+        self.connect(self.checkBoxIVISMP,   SIGNAL("clicked()"),    self.slotIVISMP)
+        self.connect(self.checkBoxIVISDK,   SIGNAL("clicked()"),    self.slotIVISDK)
+        self.connect(self.checkBoxIVISCH,   SIGNAL("clicked()"),    self.slotIVISCH)
+        self.connect(self.checkBoxIVISCK,   SIGNAL("clicked()"),    self.slotIVISCK)
+        self.connect(self.checkBoxMoisture, SIGNAL("clicked()"),    self.slotMoisture)
 
         # initialize Widgets
         status = self.model.getFluidVelocityStatus()
@@ -146,6 +147,14 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
             self.checkBoxIVISCK.setChecked(True)
         else:
             self.checkBoxIVISCK.setChecked(False)
+
+        self.case.undoStartGlobal()
+
+        status = self.model.getMoistureMassStatus()
+        if status == "on":
+            self.checkBoxMoisture.setChecked(True)
+        else:
+            self.checkBoxMoisture.setChecked(False)
 
         self.case.undoStartGlobal()
 
@@ -247,6 +256,17 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
             self.model.setCokeParticleMassStatus("on")
         else:
             self.model.setCokeParticleMassStatus("off")
+
+
+    @pyqtSignature("")
+    def slotMoisture(self):
+        """
+        Input IVISCK.
+        """
+        if self.checkBoxMoisture.isChecked():
+            self.model.setMoistureMassStatus("on")
+        else:
+            self.model.setMoistureMassStatus("off")
 
 
     def tr(self, text):

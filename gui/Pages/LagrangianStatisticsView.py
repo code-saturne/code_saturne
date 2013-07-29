@@ -215,7 +215,8 @@ class StandardItemModelBoundariesNames(QStandardItemModel):
 
     def data(self, index, role):
 
-        self.kwords = [ "INBRBD", "IFLMBD", "IANGBD", "IVITBD", "IENCBD"]
+        self.kwords = [ "INBRBD",   "IFLMBD",   "IANGBD",   "IVITBD",
+                        "IENCNBBD", "IENCMABD", "IENCDIBD", "IENCCKBD"]
         if not index.isValid():
             return
 

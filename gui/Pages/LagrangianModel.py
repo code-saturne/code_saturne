@@ -104,6 +104,12 @@ class LagrangianModel(Model):
         default['fluid_particles_turbulent_diffusion'] = "off"
         default['complete_model_iteration']            = 0
         default['complete_model_direction']            = 1
+
+        from Pages.CoalCombustionModel import CoalCombustionModel
+        if CoalCombustionModel(self.case).getCoalCombustionModel() != 'off':
+            default['coupling_mode']                       = "frozen"
+        del CoalCombustionModel
+
         return default
 
 

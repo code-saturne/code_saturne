@@ -91,6 +91,7 @@ class LagrangianOutputModel(Model):
         default['shrinking_core_diameter']    = "off"
         default['raw_coal_mass_fraction']     = "off"
         default['char_mass_fraction']         = "off"
+        default['moisture_mass_fraction']     = "off"
         return default
 
 
@@ -324,6 +325,32 @@ class LagrangianOutputModel(Model):
         if not status:
             status = self._defaultLagrangianOutputValues()['char_mass_fraction']
             self.setCoalParticleDiameterStatus(status)
+        return status
+        return status
+
+
+    @Variables.undoLocal
+    def setMoistureMassStatus(self, status):
+        """
+        Update the status markup from the XML document to associate the variable
+        'mass of moisture' with the display (trajectory or particles) mode.
+        """
+        self.isOnOff(status)
+        node_mass = self.node_output.xmlInitChildNode('moisture_mass_fraction', 'status')
+        node_mass['status'] = status
+
+
+    @Variables.noUndo
+    def getMoistureMassStatus(self):
+        """
+        Return status for association of the variable 'mass of moisture'
+        with the display.
+        """
+        node_mass = self.node_output.xmlInitChildNode('moisture_mass_fraction', 'status')
+        status = node_mass['status']
+        if not status:
+            status = self._defaultLagrangianOutputValues()['moisture_mass_fraction']
+            self.setMoistureMassStatus(status)
         return status
 
 

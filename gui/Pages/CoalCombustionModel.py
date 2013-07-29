@@ -69,7 +69,7 @@ class CoalCombustionModel(Variables, Model):
         self.node_fuel   = self.node_models.xmlInitNode('solid_fuels', 'model')
 
         self.coalCombustionModel = ('off', 'homogeneous_fuel', 'homogeneous_fuel_moisture',
-                                    'homogeneous_fuel_lagr',   'homogeneous_fuel_moisture_lagr')
+                                    'homogeneous_fuel_moisture_lagr')
 
 
     def defaultValues(self):
@@ -142,7 +142,7 @@ class CoalCombustionModel(Variables, Model):
         coalCombustionList = self.coalCombustionModel
 
         if self.node_lagr and self.node_lagr['model'] != 'off':
-            coalCombustionList = ('off', 'homogeneous_fuel_lagr', 'homogeneous_fuel_moisture_lagr')
+            coalCombustionList = ('off', 'homogeneous_fuel_moisture_lagr')
 
         n, m = FluidCharacteristicsModel(self.case).getThermalModel()
         if m != "off" and m not in coalCombustionList:

@@ -134,7 +134,6 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.modelPulverizedCoal.addItem(self.tr("off"), "off")
         self.modelPulverizedCoal.addItem(self.tr("homogeneous approach"), "homogeneous_fuel")
         self.modelPulverizedCoal.addItem(self.tr("homogeneous approach with moisture"), "homogeneous_fuel_moisture")
-        self.modelPulverizedCoal.addItem(self.tr("homogeneous approach with Lagrangian transport"), "homogeneous_fuel_lagr")
         self.modelPulverizedCoal.addItem(self.tr("homogeneous approach with moisture with Lagrangian transport"), "homogeneous_fuel_moisture_lagr")
 
         self.modelJouleEffect.addItem(self.tr("off"), "off")
@@ -201,7 +200,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         coal = self.pcoal.getCoalCombustionModel()
         self.modelPulverizedCoal.setItem(str_model=coal)
 
-        if coal == 'homogeneous_fuel_lagr' or coal == 'homogeneous_fuel_moisture_lagr':
+        if coal == 'homogeneous_fuel_moisture_lagr':
             self.modelLagrangian.setItem(str_model='lagrangian')
             self.modelLagrangian.disableItem(str_model='single_phase')
 
@@ -209,13 +208,11 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
             self.modelLagrangian.setItem(str_model='single_phase')
             self.modelPulverizedCoal.enableItem(str_model='homogeneous_fuel')
             self.modelPulverizedCoal.enableItem(str_model='homogeneous_fuel_moisture')
-            self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel_lagr')
             self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel_moisture_lagr')
         else:
             self.modelLagrangian.setItem(str_model='lagrangian')
             self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel')
             self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel_moisture')
-            self.modelPulverizedCoal.enableItem(str_model='homogeneous_fuel_lagr')
             self.modelPulverizedCoal.enableItem(str_model='homogeneous_fuel_moisture_lagr')
 
         # Compatibility between turbulence model and multi-phases flow model
@@ -248,7 +245,6 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
             self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel')
             self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel_moisture')
-            self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel_lagr')
             self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel_moisture_lagr')
 
             self.comboBoxGasCombustionModel.setEnabled(False)
@@ -383,13 +379,11 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
             self.modelSteadyFlow.enableItem(str_model='on')
             self.modelPulverizedCoal.enableItem(str_model='homogeneous_fuel')
             self.modelPulverizedCoal.enableItem(str_model='homogeneous_fuel_moisture')
-            self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel_lagr')
             self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel_moisture_lagr')
         else:
             self.modelSteadyFlow.disableItem(str_model='on')
             self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel')
             self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel_moisture')
-            self.modelPulverizedCoal.enableItem(str_model='homogeneous_fuel_lagr')
             self.modelPulverizedCoal.enableItem(str_model='homogeneous_fuel_moisture_lagr')
 
         self.lagr.setLagrangianStatus(val)
@@ -459,7 +453,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.pcoal.setCoalCombustionModel(model)
         self.therm.setThermalModel('off')
 
-        if model == 'homogeneous_fuel_lagr' or model == 'homogeneous_fuel_moisture_lagr':
+        if model == 'homogeneous_fuel_moisture_lagr':
             self.modelLagrangian.disableItem(str_model='single_phase')
         else:
             self.modelLagrangian.enableItem(str_model='single_phase')

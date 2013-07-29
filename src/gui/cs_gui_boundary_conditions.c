@@ -556,7 +556,7 @@ _inlet_coal(const int         izone,
             list_of_classes = cs_gui_get_attribute_values(path1, &size);
             BFT_FREE(path1);
 
-            for (iclass=0; iclass < nclpch[icoal]; iclass++)
+            for (iclass = 0; iclass < nclpch[icoal]; iclass++)
             {
                 BFT_MALLOC(path5, strlen(path2) + 1, char);
                 strcpy(path5, path2);
@@ -571,8 +571,8 @@ _inlet_coal(const int         izone,
                 BFT_FREE(path5);
             }
 
-            for (iclass=0; iclass < nclpch[icoal]; iclass++)
-                BFT_FREE(list_of_classes[icoal]);
+            for (iclass = 0; iclass < nclpch[icoal]; iclass++)
+                BFT_FREE(list_of_classes[iclass]);
             BFT_FREE(list_of_classes);
 
             BFT_FREE(path2);

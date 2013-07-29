@@ -1548,7 +1548,7 @@ void CS_PROCF (uippmo, UIPPMO)(int *const ippmod,
     {
       if (cs_gui_strcmp(vars->model_value, "homogeneous_fuel"))
         ippmod[*iccoal - 1] = 0;
-      else if (cs_gui_strcmp(vars->model_value, "homogeneous_fuel_moisture"))
+      else if (cs_gui_strcmp(vars->model_value, "homogeneous_fuel_moisture") || cs_gui_strcmp(vars->model_value, "homogeneous_fuel_moisture_lagr"))
         ippmod[*iccoal - 1] = 1;
       else
         bft_error(__FILE__, __LINE__, 0,

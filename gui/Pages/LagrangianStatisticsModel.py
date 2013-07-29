@@ -123,6 +123,11 @@ class LagrangianStatisticsModel(Model):
     def getVariablesNamesBoundary(self):
         names = ["Part_bndy_mass_flux","Part_impact_number",
                  "Part_impact_angle", "Part_impact_velocity"]
+        if LagrangianModel(self.case).getCoalFouling() == 'on':
+            names = ["Part_bndy_mass_flux"      ,"Part_impact_number",
+                     "Part_impact_angle"        , "Part_impact_velocity",
+                     "Part_fouled_impact_number", "Part_fouled_mass_flux",
+                     "Part_fouled_diam"         , "Part_fouled_Xck"]
         return names
 
 
