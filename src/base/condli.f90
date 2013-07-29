@@ -2628,7 +2628,7 @@ if (ineedf.eq.1 .and. iterns.eq.1) then
       forbr(2,ifac) = ( cofafu(2,ifac)                              &
                       + cofbfu(2,1,ifac) * velipb(ifac,1)           &
                       + cofbfu(2,2,ifac) * velipb(ifac,2)           &
-                      + cofbfu(2,3,ifac) * velipb(ifac,2) )*srfbnf
+                      + cofbfu(2,3,ifac) * velipb(ifac,3) )*srfbnf
       forbr(3,ifac) = ( coefau(3,ifac)                              &
                       + cofbfu(3,1,ifac) * velipb(ifac,1)           &
                       + cofbfu(3,2,ifac) * velipb(ifac,2)           &
