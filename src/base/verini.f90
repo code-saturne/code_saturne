@@ -1323,6 +1323,14 @@ do ivar = 1, nvar
   endif
 enddo
 
+do ivar = 1, nvar
+  if (nswrsm(ivar).le.0) then
+    chaine = nomvar(ipp)
+    write(nfecra,2747) chaine(1:16), nswrsm(ivar), 1
+    nswrsm(ivar) = 1
+  endif
+enddo
+
 !===============================================================================
 ! 2. MULTIGRILLE : TABLEAUX DU MULTIGRILLE : formats 3000
 !===============================================================================
@@ -3640,6 +3648,23 @@ endif
 '@',                                                            /,&
 '@  Le calcul continue avec :',                                 /,&
 '@  isstpc(iu) = isstpc(iu) = isstpc(iu) = 1.',                 /,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
+ 2747 format(                                                     &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@ ATTENTION :      A L''ENTREE DES DONNEES',                /,&
+'@    =========',                                               /,&
+'@   LA VALEUR POUR LE PARAMETRE NSWRSM POUR'                   /,&
+'@     LA VARIABLE', a16, 'DOIT ETRE POSITIVE, VAUT ICI',  i10, /,&
+'@     NSWRSM A ETE IMPOSE A', i10,                             /,&
+'@',                                                            /,&
+'@  Le calcul sera execute',                                    /,&
+'@',                                                            /,&
+'@  Il est conseille de verifier les parametres donnes via',    /,&
+'@  l''interface ou cs_user_parameters.f90.',                   /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -6248,6 +6273,24 @@ endif
 '@',                                                            /,&
 '@  The calculation continue with:',                            /,&
 '@  isstpc(iu) = isstpc(iu) = isstpc(iu) = 1.',                 /,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
+ 2747 format(                                                     &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@   WARNING :      WHEN READING INPUT DATA',                /,&
+'@    =========',                                               /,&
+'@   THE PARAMETER NSWRSM FOR THE',                             /,&
+'@        VARIABLE', a16, 'MUST BE POSITIVE, HAS VALUE',  i10,  /,&
+'@     NSWRSM IS NOW IMPOSED AS',  i10,                         /,&
+'@',                                                            /,&
+'@  computation will go on',                                    /,&
+'@',                                                            /,&
+'@ Check the input data given through the User Interface',      /,&
+'@   or in cs_user_parameters.f90.',                            /,&
+'@',                                                            /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
