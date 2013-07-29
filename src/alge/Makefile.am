@@ -36,6 +36,17 @@ AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
 
 AM_FCFLAGS = \
 $(FCMODINCLUDE)$(top_builddir)/src \
+$(FCMODINCLUDE)$(top_builddir)/src/atmo \
+$(FCMODINCLUDE)$(top_builddir)/src/base \
+$(FCMODINCLUDE)$(top_builddir)/src/cfbl \
+$(FCMODINCLUDE)$(top_builddir)/src/cogz \
+$(FCMODINCLUDE)$(top_builddir)/src/comb \
+$(FCMODINCLUDE)$(top_builddir)/src/ctwr \
+$(FCMODINCLUDE)$(top_builddir)/src/elec \
+$(FCMODINCLUDE)$(top_builddir)/src/lagr \
+$(FCMODINCLUDE)$(top_builddir)/src/pprt \
+$(FCMODINCLUDE)$(top_builddir)/src/rayt \
+$(FCMODINCLUDE)$(top_builddir)/src/turb \
 $(FCFLAGS_DBG) $(FCFLAGS_OPT)
 
 AM_LDFLAGS =
