@@ -392,7 +392,7 @@ call itrgrp &
    init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   w2     , w2     , w2     ,                                     &
+   rvoid  ,                                                       &
    rtpa(1,iphi)    ,                                              &
    coefa(1,iclphi) , coefb(1,iclphi) ,                            &
    coefa(1,iclphf) , coefb(1,iclphf) ,                            &

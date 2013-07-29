@@ -527,7 +527,7 @@ if (iturb.eq.51) then
   init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
   iwarnp , nfecra ,                                              &
   epsrgp , climgp , extrap ,                                     &
-  w2     , w2     , w2     ,                                     &
+  rvoid  ,                                                       &
   rtpa(1,ivar)    ,                                              &
   coefa(1,iclvar) , coefb(1,iclvar) ,                            &
   coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &

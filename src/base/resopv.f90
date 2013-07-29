@@ -88,8 +88,6 @@
 !> \param[in]     viscbi        idem viscb pour increments
 !> \param[in]     drtp          tableau de travail pour increment
 !> \param[in]     tslagr        coupling term for the Lagrangian module
-!> \param[in]     frchy         tableau de travail
-!> \param[in]     dfrchy        tableau de travail
 !> \param[in]     trava         tableau de travail pour couplage
 !_______________________________________________________________________________
 
@@ -103,7 +101,7 @@ subroutine resopv &
    frcxt  , dfrcxt , tpucou , trav   ,                            &
    viscf  , viscb  , viscfi , viscbi ,                            &
    drtp   , tslagr ,                                              &
-   frchy  , dfrchy , trava  )
+   trava  )
 
 !===============================================================================
 
@@ -152,7 +150,6 @@ double precision viscf(nfac), viscb(nfabor)
 double precision viscfi(nfac), viscbi(nfabor)
 double precision drtp(ncelet)
 double precision tslagr(ncelet,*)
-double precision frchy(ncelet,ndim), dfrchy(ncelet,ndim)
 double precision trava(ndim,ncelet)
 double precision coefav(3  ,ndimfb)
 double precision coefbv(3,3,ndimfb)
@@ -209,6 +206,7 @@ double precision, allocatable, dimension(:,:,:) :: coefbr, cofbfr
 double precision, allocatable, dimension(:) :: adxk, adxkm1, dpvarm1, rhs0
 double precision, allocatable, dimension(:,:) :: weighf
 double precision, allocatable, dimension(:) :: weighb
+double precision, allocatable, dimension(:,:) :: frchy, dfrchy
 
 !===============================================================================
 
@@ -226,6 +224,7 @@ allocate(rhs(ncelet), rovsdt(ncelet))
 iswdyp = iswdyn(ipr)
 if (iswdyp.ge.1) allocate(adxk(ncelet), adxkm1(ncelet),   &
                           dpvarm1(ncelet), rhs0(ncelet))
+if (icalhy.eq.1) allocate(frchy(ndim,ncelet), dfrchy(ndim,ncelet))
 
 ! Boundary conditions for delta P
 allocate(cofafp(nfabor), coefbp(nfabor), cofbfp(nfabor))
@@ -499,20 +498,19 @@ if (iphydr.eq.1) then
       do iel = 1, ncelet
         dronm1 = (propce(iel,ipcroa)-ro0)
         drom   = (propce(iel,ipcrom)-ro0)
-        frchy(iel,1)  = dronm1*gx
-        frchy(iel,2)  = dronm1*gy
-        frchy(iel,3)  = dronm1*gz
-        dfrchy(iel,1) = drom  *gx - frchy(iel,1)
-        dfrchy(iel,2) = drom  *gy - frchy(iel,2)
-        dfrchy(iel,3) = drom  *gz - frchy(iel,3)
+        frchy(1,iel)  = dronm1*gx
+        frchy(2,iel)  = dronm1*gy
+        frchy(3,iel)  = dronm1*gz
+        dfrchy(1,iel) = drom  *gx - frchy(1,iel)
+        dfrchy(2,iel) = drom  *gy - frchy(2,iel)
+        dfrchy(3,iel) = drom  *gz - frchy(3,iel)
       enddo
 
       call calhyd &
       !==========
  ( nvar   , nscal  ,                                              &
    indhyd ,                                                       &
-   frchy (1,1) , frchy (1,2) , frchy (1,3) ,                      &
-   dfrchy(1,1) , dfrchy(1,2) , dfrchy(1,3) ,                      &
+   frchy  , dfrchy ,                                              &
    rtp(1,ipr)   , propfa(1,iflmas), propfb(1,iflmab),             &
    coefap , coefbp ,                                              &
    cofafp , cofbfp ,                                              &
@@ -2119,6 +2117,7 @@ deallocate(cofafp, coefbp, cofbfp)
 deallocate(rhs, rovsdt)
 if (allocated(weighf)) deallocate(weighf, weighb)
 if (iswdyp.ge.1) deallocate(adxk, adxkm1, dpvarm1, rhs0)
+if (icalhy.eq.1) deallocate(frchy, dfrchy)
 
 !--------
 ! Formats

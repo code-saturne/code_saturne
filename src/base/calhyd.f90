@@ -25,8 +25,7 @@ subroutine calhyd &
 
  ( nvar   , nscal  ,                                              &
    indhyd ,                                                       &
-   fextx  , fexty  , fextz  ,                                     &
-   dfextx , dfexty , dfextz ,                                     &
+   fext   , dfext  ,                                              &
    phydr  , flumas , flumab ,                                     &
    coefap , coefbp ,                                              &
    cofafp , cofbfp ,                                              &
@@ -58,10 +57,10 @@ subroutine calhyd &
 !  (nfabor)        !    !     !    faces de bord                               !
 ! cof*fp           ! tr ! <-- ! conditions aux limites aux                     !
 !  (nfabor)        !    !     !    faces de bord                               !
-! fextx,fexty      ! tr ! <-- ! force exterieure generant la pression          !
-! fextz(ncelet)    !    !     !    hydrostatique                               !
-! dfextx,dfexty    ! tr ! <-- ! increment de force exterieure                  !
-! dfextz(ncelet    !    !     !    generant la pression hydrostatique          !
+! fext(3, ncelet)  ! tr ! <-- ! force exterieure generant la pression          !
+!                  !    !     !    hydrostatique                               !
+! dfext(3, ncelet) ! tr ! <-- ! increment de force exterieure                  !
+!                  !    !     !    generant la pression hydrostatique          !
 ! viscf(nfac)      ! tr ! --- ! 1*surface/dist aux faces internes              !
 ! viscb(nfabor     ! tr ! --- ! 1*surface/dist aux faces de bord               !
 ! dam(ncelet       ! tr ! --- ! tableau de travail pour matrice                !
@@ -101,8 +100,8 @@ integer          nvar   , nscal
 
 integer          indhyd
 
-double precision fextx(ncelet),fexty(ncelet),fextz(ncelet)
-double precision dfextx(ncelet),dfexty(ncelet),dfextz(ncelet)
+double precision fext(3,ncelet)
+double precision dfext(3,ncelet)
 double precision phydr(ncelet)
 double precision flumas(nfac), flumab(nfabor)
 double precision coefap(nfabor), coefbp(nfabor)
@@ -177,8 +176,8 @@ precab = 1.d2*epzero
 
 ical = 0
 do iel = 1, ncel
-  rnrmf  = fextx(iel)**2+fexty(iel)**2+fextz(iel)**2
-  rnrmdf = dfextx(iel)**2+dfexty(iel)**2+dfextz(iel)**2
+  rnrmf  = fext(1,iel)**2+fext(2,iel)**2+fext(3,iel)**2
+  rnrmdf = dfext(1,iel)**2+dfext(2,iel)**2+dfext(3,iel)**2
   if ((rnrmdf.ge.precre*rnrmf).and.(rnrmdf.ge.precab)) then
     ical = 1
   endif
@@ -276,7 +275,7 @@ call projts                                                       &
    init   , inc    , imrgra , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp ,                                              &
-   dfextx , dfexty , dfextz ,                                     &
+   dfext  ,                                                       &
    cofbfp ,                                                       &
    flumas, flumab ,                                               &
    viscf  , viscb  ,                                              &
@@ -417,7 +416,7 @@ do isweep = 1, nswmpr
    init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   dfextx , dfexty , dfextz ,                                     &
+   dfext  ,                                                       &
    phydr  ,                                                       &
    coefap , coefbp ,                                              &
    cofafp , cofbfp ,                                              &

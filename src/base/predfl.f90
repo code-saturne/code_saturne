@@ -409,7 +409,7 @@ do while (isweep.le.nswmpr.and.residu.gt.tcrite)
      init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
      iwarnp , nfecra ,                                              &
      epsrgp , climgp , extrap ,                                     &
-     rvoid  , rvoid  , rvoid  ,                                     &
+     rvoid  ,                                                       &
      pot    ,                                                       &
      clapot , clbpot ,                                              &
      cfapot , cfbpot ,                                              &

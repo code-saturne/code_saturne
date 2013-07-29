@@ -535,7 +535,7 @@ call resolp &
    frcxt  , dfrcxt , tpucou , trav   ,                            &
    viscf  , viscb  , viscfi , viscbi ,                            &
    drtp   , smbr   , rovsdt , tslagr ,                            &
-   frchy  , dfrchy , trava  )
+   trava  )
 
 
 !===============================================================================

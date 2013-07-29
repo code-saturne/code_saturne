@@ -145,7 +145,6 @@ double precision viscfi(nfac), viscbi(nfabor)
 double precision drtp(ncelet)
 double precision smbr(ncelet), rovsdt(ncelet)
 double precision tslagr(ncelet,*)
-double precision frchy(ncelet,ndim), dfrchy(ncelet,ndim)
 double precision trava(ncelet,ndim)
 
 ! Local variables
@@ -189,6 +188,7 @@ double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:)   :: cofafp, coefbp, cofbfp
 double precision, allocatable, dimension(:)   :: velflx, velflb, dpvar
 double precision, allocatable, dimension(:)   :: coefav, cofafv, coefbv, cofbfv
+double precision, allocatable, dimension(:,:) :: frchy, dfrchy
 
 !===============================================================================
 
@@ -199,10 +199,10 @@ double precision, allocatable, dimension(:)   :: coefav, cofafv, coefbv, cofbfv
 ! Allocate temporary arrays
 allocate(dam(ncelet), xam(nfac,2))
 allocate(w1(ncelet), w7(ncelet))
+if (icalhy.eq.1) allocate(frchy(ndim,ncelet), dfrchy(ndim,ncelet))
 
 ! Boundary conditions for delta P
 allocate(cofafp(nfabor), coefbp(nfabor), cofbfp(nfabor))
-
 
 ! --- Memoire
 
@@ -438,20 +438,19 @@ if (iphydr.eq.1) then
       do iel = 1, ncelet
         dronm1 = (propce(iel,ipcroa)-ro0)
         drom   = (propce(iel,ipcrom)-ro0)
-        frchy(iel,1)  = dronm1*gx
-        frchy(iel,2)  = dronm1*gy
-        frchy(iel,3)  = dronm1*gz
-        dfrchy(iel,1) = drom  *gx - frchy(iel,1)
-        dfrchy(iel,2) = drom  *gy - frchy(iel,2)
-        dfrchy(iel,3) = drom  *gz - frchy(iel,3)
+        frchy(1,iel)  = dronm1*gx
+        frchy(2,iel)  = dronm1*gy
+        frchy(3,iel)  = dronm1*gz
+        dfrchy(1,iel) = drom  *gx - frchy(1,iel)
+        dfrchy(2,iel) = drom  *gy - frchy(2,iel)
+        dfrchy(3,iel) = drom  *gz - frchy(3,iel)
       enddo
 
       call calhyd &
       !==========
  ( nvar   , nscal  ,                                              &
    indhyd ,                                                       &
-   frchy (1,1) , frchy (1,2) , frchy (1,3) ,                      &
-   dfrchy(1,1) , dfrchy(1,2) , dfrchy(1,3) ,                      &
+   frchy  , dfrchy ,                                              &
    rtp(1,ipr)   , propfa(1,iflmas), propfb(1,iflmab),             &
    coefap , coefbp ,                                              &
    cofafp , cofbfp ,                                              &
@@ -1705,6 +1704,7 @@ endif
 deallocate(grad)
 deallocate(dam, xam)
 deallocate(w1, w7)
+if (icalhy.eq.1) deallocate(frchy, dfrchy)
 deallocate(cofafp, coefbp, cofbfp)
 
 !--------

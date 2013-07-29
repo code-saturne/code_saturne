@@ -147,7 +147,6 @@ double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: w7, w8, w9
 double precision, allocatable, dimension(:) :: w10
 double precision, allocatable, dimension(:,:) :: dfrcxt
-double precision, allocatable, dimension(:,:) :: frchy, dfrchy
 double precision, allocatable, dimension(:,:) :: grdphd
 double precision, allocatable, dimension(:) :: esflum, esflub
 double precision, allocatable, dimension(:) :: intflx, bouflx
@@ -186,7 +185,6 @@ allocate(vel(3,ncelet))
 allocate(coefap(nfabor))
 
 allocate(dfrcxt(3,ncelet))
-if (icalhy.eq.1) allocate(frchy(ncelet,ndim), dfrchy(ncelet,ndim))
 if (iphydr.eq.2) allocate(grdphd(ncelet,ndim))
 if (iescal(iestot).gt.0) allocate(esflum(nfac), esflub(nfabor))
 if (idften(iu).eq.1) then
@@ -556,7 +554,7 @@ call resopv &
    frcxt  , dfrcxt , dttens , trav   ,                            &
    viscf  , viscb  , viscfi , viscbi ,                            &
    drtp   , tslagr ,                                              &
-   frchy  , dfrchy , trava  )
+   trava  )
 
 !===============================================================================
 ! 5.  RESOLUTION DE LA VITESSE DE MAILLAGE EN ALE
@@ -1228,7 +1226,6 @@ deallocate(viscf, viscb)
 deallocate(drtp)
 deallocate(trav)
 deallocate(dfrcxt)
-if (allocated(frchy))  deallocate(frchy, dfrchy)
 if (allocated(grdphd)) deallocate(grdphd)
 if (allocated(esflum)) deallocate(esflum, esflub)
 if (allocated(wvisfi)) deallocate(wvisfi, wvisbi)
