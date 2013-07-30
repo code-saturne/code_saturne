@@ -564,7 +564,7 @@ _cs_log_fields(void)
 
     max_name_width = CS_MIN(max_name_width, 63);
 
-    const char *loc_name = cs_mesh_location_get_name(loc_id);
+    const char *loc_name = _(cs_mesh_location_get_name(loc_id));
     size_t loc_name_w = cs_log_strlen(loc_name);
 
     cs_log_printf(CS_LOG_DEFAULT,
@@ -749,7 +749,7 @@ _cs_log_sstats(void)
       const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(loc_id);;
       const cs_lnum_t _n_elts = n_elts[0];
       const cs_real_t *weight = NULL;
-      const char *loc_name = cs_mesh_location_get_name(loc_id);
+      const char *loc_name = _(cs_mesh_location_get_name(loc_id));
       size_t loc_name_w = cs_log_strlen(loc_name);
 
       if (mq != NULL) {
@@ -886,6 +886,21 @@ _cs_log_sstats(void)
 /*============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize logging of moments
+ *
+ * Currently, an external cumulative time array is simply mapped to
+ * the post-processing API.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_log_init_moments(const cs_real_t  *cumulative_time)
+{
+  _cumulative_mom_time = cumulative_time;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!

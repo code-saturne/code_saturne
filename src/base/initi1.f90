@@ -52,6 +52,7 @@ use entsor
 use ihmpre
 use ppincl, only: ippmod, nmodmx
 use post
+use cs_c_bindings
 
 !===============================================================================
 
@@ -228,6 +229,7 @@ call impini
 ! 7. Other initializations
 !===============================================================================
 
+call cs_log_init_moments(dtcmom)   ! Map dtcmom to C logging API
 call cs_post_init_moments(dtcmom)  ! Map dtcmom to C post-processing API
 
 return

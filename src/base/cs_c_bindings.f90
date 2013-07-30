@@ -107,6 +107,17 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function initializoing post-processing of moments
+
+    subroutine cs_log_init_moments(cumulative_time)     &
+      bind(C, name='cs_log_init_moments')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(c_double), dimension(*), intent(in) :: cumulative_time
+    end subroutine cs_log_init_moments
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function adding an array not saved as a permanent field
     ! to logging of fields
 
