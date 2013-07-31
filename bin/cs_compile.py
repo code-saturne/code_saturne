@@ -474,8 +474,9 @@ def main(argv, pkg):
 if __name__ == '__main__':
 
     # Retrieve package information (name, version, installation dirs, ...)
+
     from cs_package import package
-    pkg = package()
+    pkg = package(scriptdir=os.path.realpath(__file__))
 
     # Check if we are in a build directory
     l = os.listdir(os.getcwd())
