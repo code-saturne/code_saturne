@@ -12,6 +12,8 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix reallocation issue for LES with internal fluid-structure coupling.
+
 - Fix Fortran time plot numbering leading to numbering conflicts between
   probes and ALE structure plots.
 

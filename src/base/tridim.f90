@@ -736,13 +736,13 @@ itrfup = 1
 if (nterup.gt.1.or.isno2t.gt.0) then
 
   if (ivelco.eq.1) then
-    allocate(ximpav(ndim,ndim,ncelet))
-    allocate(uvwk(ndim,ncelet))
-    allocate(trava(ndim,ncelet))
+    if (.not.allocated(ximpav)) allocate(ximpav(ndim,ndim,ncelet))
+    if (.not.allocated(uvwk)) allocate(uvwk(ndim,ncelet))
+    if (.not.allocated(trava)) allocate(trava(ndim,ncelet))
   else
-    allocate(ximpa(ncelet,ndim))
-    allocate(uvwk(ncelet,ndim))
-    allocate(trava(ncelet,ndim))
+    if (.not.allocated(ximpa)) allocate(ximpa(ncelet,ndim))
+    if (.not.allocated(uvwk)) allocate(uvwk(ncelet,ndim))
+    if (.not.allocated(trava)) allocate(trava(ncelet,ndim))
   endif
 
   if (nbccou.gt.0 .or. nfpt1t.gt.0 .or. iirayo.gt.0) itrfup = 0
