@@ -69,6 +69,7 @@ use entsor
 use numvar
 use cstnum
 use parall
+use cs_c_bindings
 
 !===============================================================================
 
@@ -85,8 +86,8 @@ double precision rtp(ncelet,nvar)
 ! VARIABLES LOCALES
 
 integer          icleps, iel, ivar, ivar1, ivar2, isou, ipp
-integer          iclalp
-double precision vmin, vmax, var
+integer          iclpmn, iclpmx
+double precision vmin(1), vmax(1), var
 
 !===============================================================================
 
@@ -97,46 +98,29 @@ double precision vmin, vmax, var
 ivar = ial
 ipp = ipprtp(ivar)
 
-vmin =  grand
-vmax = -grand
+vmin(1) =  grand
+vmax(1) = -grand
 do iel = 1, ncel
   var = rtp(iel,ivar)
-  vmin = min(vmin,var)
-  vmax = max(vmax,var)
+  vmin(1) = min(vmin(1),var)
+  vmax(1) = max(vmax(1),var)
 enddo
-if (irangp.ge.0) then
-  call parmin(vmin)
-  !==========
-  call parmax(vmax)
-  !==========
-endif
-varmna(ipp) = vmin
-varmxa(ipp) = vmax
-
 
 ! ---> Clipping (modif pour eviter les valeurs exactement nulles)
 
-
-iclalp = 0
+iclpmn = 0
+iclpmx = 0
 do iel = 1, ncel
   if (rtp(iel,ial).lt.0.d0) then
-    iclalp = iclalp + 1
+    iclpmn = iclpmn + 1
     rtp(iel,ial) = 0.d0
   elseif(rtp(iel,ial).gt.1.d0) then
-    iclalp = iclalp + 1
+    iclpmx = iclpmx + 1
     rtp(iel,ial) = 1.d0
   endif
 enddo
 
-
-! ---> Stockage nb de clippings pour listing
-
-if (irangp.ge.0) then
-  call parcpt (iclalp)
-  !==========
-endif
-
-iclpmn(ipprtp(ial)) = iclalp
+call log_iteration_clipping_field(ivarfl(ial), iclpmn, iclpmx, vmin, vmax)
 
 return
 

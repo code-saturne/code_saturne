@@ -136,6 +136,35 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function adding an array not saved as a permanent field
+    ! to logging of fields
+
+    subroutine cs_log_iteration_clipping(name, dim, n_clip_min, n_clip_max,    &
+                                         min_pre_clip, max_pre_clip)           &
+      bind(C, name='cs_log_iteration_clipping')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      character(kind=c_char, len=1), dimension(*), intent(in) :: name
+      integer(c_int), value :: dim, n_clip_max, n_clip_min
+      real(kind=c_double), dimension(*) :: min_pre_clip, max_pre_clip
+    end subroutine cs_log_iteration_clipping
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function adding an array not saved as a permanent field
+    ! to logging of fields
+
+    subroutine cs_log_iteration_clipping_field(f_id, n_clip_min, n_clip_max,   &
+                                               min_pre_clip, max_pre_clip)     &
+      bind(C, name='cs_log_iteration_clipping_field')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: f_id, n_clip_max, n_clip_min
+      real(kind=c_double), dimension(*) :: min_pre_clip, max_pre_clip
+    end subroutine cs_log_iteration_clipping_field
+
+    !---------------------------------------------------------------------------
+
     !> \endcond DOXYGEN_SHOULD_SKIP_THIS
 
     !---------------------------------------------------------------------------
@@ -272,6 +301,88 @@ contains
     return
 
   end subroutine log_iteration_add_array
+
+  !=============================================================================
+
+  ! Interface to C function adding an array not saved as a permanent field
+  ! to logging of fields
+
+  !> \brief Add array not saved as permanent field to logging of fields.
+
+  !> \param[in]  name          array name
+  !> \param[in]  dim           associated dimension (interleaved)
+  !> \param[in]  n_clip_min    local number of clipped to min values
+  !> \param[in]  n_clip_max    local number of clipped to max values
+  !> \param[in]  min_pre_clip  min local value prior to clip
+  !> \param[in]  max_pre_clip  max local value prior to clip
+
+  subroutine log_iteration_clipping(name, dim, n_clip_min, n_clip_max,        &
+                                    min_pre_clip, max_pre_clip)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    character(len=*), intent(in)      :: name
+    integer, intent(in)               :: dim, n_clip_min, n_clip_max
+    real(kind=c_double), dimension(*) :: min_pre_clip, max_pre_clip
+
+    ! Local variables
+
+    character(len=len_trim(name)+1, kind=c_char) :: c_name
+    integer(c_int) :: c_dim, c_clip_min, c_clip_max
+
+    c_name = trim(name)//c_null_char
+    c_dim = dim
+    c_clip_min = n_clip_min
+    c_clip_max = n_clip_max
+
+    call cs_log_iteration_clipping(c_name, c_dim, c_clip_min, c_clip_max, &
+                                   min_pre_clip, max_pre_clip)
+
+    return
+
+  end subroutine log_iteration_clipping
+
+  !=============================================================================
+
+  ! Interface to C function adding an array not saved as a permanent field
+  ! to logging of fields
+
+  !> \brief Add array not saved as permanent field to logging of fields.
+
+  !> \param[in]  f_id          associated dimension (interleaved)
+  !> \param[in]  n_clip_min    local number of clipped to min values
+  !> \param[in]  n_clip_max    local number of clipped to max values
+  !> \param[in]  min_pre_clip  min local value prior to clip
+  !> \param[in]  max_pre_clip  max local value prior to clip
+
+  subroutine log_iteration_clipping_field(f_id, n_clip_min, n_clip_max,        &
+                                          min_pre_clip, max_pre_clip)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer, intent(in)               :: f_id, n_clip_min, n_clip_max
+    real(kind=c_double), dimension(*) :: min_pre_clip, max_pre_clip
+
+    ! Local variables
+
+    integer(c_int) :: c_f_id, c_clip_min, c_clip_max
+
+    c_f_id = f_id
+    c_clip_min = n_clip_min
+    c_clip_max = n_clip_max
+
+    call cs_log_iteration_clipping_field(c_f_id, c_clip_min, c_clip_max, &
+                                         min_pre_clip, max_pre_clip)
+
+    return
+
+  end subroutine log_iteration_clipping_field
 
   !=============================================================================
 

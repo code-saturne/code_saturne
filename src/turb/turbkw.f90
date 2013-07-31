@@ -82,6 +82,7 @@ use lagran
 use pointe, only: s2kw, divukw, ifapat, dispar, coefau, coefbu
 use parall
 use mesh
+use cs_c_bindings
 
 !===============================================================================
 
@@ -131,7 +132,7 @@ double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
 double precision thetp1, thetak, thetaw, thets, thetap, epsrsp
 double precision tuexpk, tuexpw
 double precision cdkw, xarg1, xxf1, xgamma, xbeta, sigma, produc
-double precision var, vrmin, vrmax
+double precision var, vrmin(2), vrmax(2)
 
 double precision rvoid(1)
 
@@ -1092,22 +1093,13 @@ do ii = 1, 2
   endif
   ipp  = ipprtp(ivar)
 
-  vrmin =  grand
-  vrmax = -grand
+  vrmin(ii) =  grand
+  vrmax(ii) = -grand
   do iel = 1, ncel
     var = rtp(iel,ivar)
-    vrmin = min(vrmin,var)
-    vrmax = max(vrmax,var)
+    vrmin(ii) = min(vrmin(ii),var)
+    vrmax(ii) = max(vrmax(ii),var)
   enddo
-  if (irangp.ge.0) then
-    call parmax (vrmax)
-    !==========
-    call parmin (vrmin)
-    !==========
-  endif
-  varmna(ipp) = vrmin
-  varmxa(ipp) = vrmax
-
 enddo
 
 ! On clippe simplement k et omega par valeur absolue
@@ -1132,17 +1124,12 @@ do iel = 1, ncel
   endif
 enddo
 
-if (irangp.ge.0) then
-  call parcpt (iclipk)
-  !==========
-  call parcpt (iclipw)
-  !==========
-endif
-
 ! ---  Stockage nb de clippings pour listing
 
-iclpmn(ipprtp(ik)) = iclipk
-iclpmn(ipprtp(iomg)) = iclipw
+call log_iteration_clipping_field(ivarfl(ik), iclipk, 0,    &
+                                  vrmin(1:1), vrmax(1:1))
+call log_iteration_clipping_field(ivarfl(iomg), iclipw, 0,  &
+                                  vrmin(2:2), vrmax(2:2))
 
 ! Free memory
 deallocate(viscf, viscb)

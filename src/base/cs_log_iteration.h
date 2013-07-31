@@ -66,7 +66,7 @@ BEGIN_C_DECLS
  * Initialize logging of moments
  *
  * Currently, an external cumulative time array is simply mapped to
- * the post-processing API.
+ * the logging API.
  *----------------------------------------------------------------------------*/
 
 void
@@ -87,14 +87,14 @@ void
 cs_log_iteration(void);
 
 /*----------------------------------------------------------------------------
- * Add array not saved as permanent field to logging of fields.
+ * Add or update array not saved as permanent field to iteration log.
  *
  * parameters:
  *   name         <-- array name
  *   category     <-- category name
  *   loc_id       <-- associated mesh location id
  *   is_intensive <-- are the matching values intensive ?
- *   dimension    <-- associated dimension (interleaved)
+ *   dim          <-- associated dimension (interleaved)
  *   val          <-- associated values
  *----------------------------------------------------------------------------*/
 
@@ -105,6 +105,46 @@ cs_log_iteration_add_array(const char                     *name,
                            bool                            is_intensive,
                            int                             dim,
                            const cs_real_t                 val[]);
+
+/*----------------------------------------------------------------------------
+ * Add or update clipping info for a given array.
+ *
+ * parameters:
+ *   name         <-- array name
+ *   dim          <-- associated dimension
+ *   n_clip_min   <-- number of local clippings to minimum value
+ *   n_clip_max   <-- number of local clippings to maximum value
+ *   min_pre_clip <-- minimum values prior to clipping
+ *   max_pre_clip <-- maximum values prior to clipping
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_log_iteration_clipping(const char       *name,
+                          int               dim,
+                          cs_lnum_t         n_clip_min,
+                          cs_lnum_t         n_clip_max,
+                          const cs_real_t   min_pre_clip[],
+                          const cs_real_t   max_pre_clip[]);
+
+/*----------------------------------------------------------------------------
+ * Add or update clipping info for a field.
+ *
+ * parameters:
+ *   f_id         <-- associated field id
+ *   n_clip_min   <-- number of local clippings to minimum value
+ *   n_clip_max   <-- number of local clippings to maximum value
+ *   min_pre_clip <-- minimum values prior to clipping
+ *   max_pre_clip <-- maximum values prior to clipping
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_log_iteration_clipping_field(int               f_id,
+                                cs_lnum_t         n_clip_min,
+                                cs_lnum_t         n_clip_max,
+                                const cs_real_t   min_pre_clip[],
+                                const cs_real_t   max_pre_clip[]);
 
 /*----------------------------------------------------------------------------*/
 

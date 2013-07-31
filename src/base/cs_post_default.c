@@ -95,8 +95,6 @@ typedef struct {
   const cs_real_t  *propce;
   const cs_real_t  *propfa;
   const cs_real_t  *propfb;
-  const cs_real_t  *coefa;
-  const cs_real_t  *coefb;
   const cs_real_t  *statce;
   const cs_real_t  *stativ;
   const cs_real_t  *statfb;
@@ -264,7 +262,6 @@ _write_additional_vars(void                  *input,
                               _input->dt,
                               _input->rtpa, _input->rtp,
                               _input->propce, _input->propfa, _input->propfb,
-                              _input->coefa, _input->coefb,
                               _input->statce, _input->stativ, _input->statfb,
                               cel_vals, b_face_vals);
 
@@ -303,7 +300,6 @@ _write_additional_vars(void                  *input,
  *                    ttcabs,
  *                    itepa,
  *                    dt,     rtpa,   rtp,    propce, propfa, propfb,
- *                    coefa,  coefb,
  *                    statce, stativ, statfb,
  *                    ettp, ettpa, tepa )
  *
@@ -326,8 +322,6 @@ _write_additional_vars(void                  *input,
  * double precision propce      : <-- : cell physical properties
  * double precision propfa      : <-- : interior face physical properties
  * double precision propfb      : <-- : boundary face physical properties
- * double precision coefa       : <-- : boundary conditions array
- * double precision coefb       : <-- : boundary conditions array
  * double precision statce      : <-- : cell statistics (lagrangian)
  * double precision stativ      : <-- : cell variance statistics (lagrangian)
  * double precision statfb      : <-- : boundary face statistics (lagrangian)
@@ -353,15 +347,11 @@ void CS_PROCF (pstvar, PSTVAR)
  const cs_real_t   propce[],
  const cs_real_t   propfa[],
  const cs_real_t   propfb[],
- const cs_real_t   coefa[],
- const cs_real_t   coefb[],
  const cs_real_t   statce[],
  const cs_real_t   stativ[],
  const cs_real_t   statfb[]
 )
 {
-  cs_lagr_attribute_t p_attr;
-
   /* Define or update map of variables */
 
   _default_input.nvar = nvar;
@@ -384,8 +374,6 @@ void CS_PROCF (pstvar, PSTVAR)
   _default_input.propce = propce;
   _default_input.propfa = propfa;
   _default_input.propfb = propfb;
-  _default_input.coefa = coefa;
-  _default_input.coefb = coefb;
   _default_input.statce = statce;
   _default_input.stativ = stativ;
   _default_input.statfb = statfb;

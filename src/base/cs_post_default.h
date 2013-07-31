@@ -93,8 +93,6 @@ BEGIN_C_DECLS
  * double precision propce      : <-- : cell physical properties
  * double precision propfa      : <-- : interior face physical properties
  * double precision propfb      : <-- : boundary face physical properties
- * double precision coefa       : <-- : boundary conditions array
- * double precision coefb       : <-- : boundary conditions array
  * double precision statce      : <-- : cell statistics (lagrangian)
  * double precision stativ      : <-- : cell variance statistics (lagrangian)
  * double precision statfb      : <-- : boundary face statistics (lagrangian)
@@ -120,8 +118,6 @@ void CS_PROCF (pstvar, PSTVAR)
  const cs_real_t   propce[],
  const cs_real_t   propfa[],
  const cs_real_t   propfb[],
- const cs_real_t   coefa[],
- const cs_real_t   coefb[],
  const cs_real_t   statce[],
  const cs_real_t   stativ[],
  const cs_real_t   statfb[]

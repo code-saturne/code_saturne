@@ -68,6 +68,7 @@ use cstnum
 use entsor
 use optcal
 use parall
+use cs_c_bindings
 
 !===============================================================================
 
@@ -84,8 +85,9 @@ double precision rtp(ncelet,nvar)
 
 integer          iclpke,iel,iclpk2,iclpe2
 integer          ivar,ipp,ii,iivisc,iiromc
-double precision xepmin,xepm,xe,xkmin,xkm,xk, vmin, vmax, var
-double precision epz2
+integer          iclpmn(2)
+double precision xepmin,xepm,xe,xkmin,xkm,xk,var,epz2
+double precision vmin(2), vmax(2)
 
 !===============================================================================
 
@@ -105,28 +107,24 @@ epz2 = epzero**2
 !===============================================================================
 
 do ii = 1, 2
-  if(ii.eq.1) then
+
+  iclpmn(ii) = 0
+
+  if (ii.eq.1) then
     ivar = ik
   elseif(ii.eq.2) then
     ivar = iep
   endif
+
   ipp  = ipprtp(ivar)
 
-  vmin =  grand
-  vmax = -grand
+  vmin(ii) =  grand
+  vmax(ii) = -grand
   do iel = 1, ncel
     var = rtp(iel,ivar)
-    vmin = min(vmin,var)
-    vmax = max(vmax,var)
+    vmin(ii) = min(vmin(ii),var)
+    vmax(ii) = max(vmax(ii),var)
   enddo
-  if (irangp.ge.0) then
-    call parmax (vmax)
-    !==========
-    call parmin (vmin)
-    !==========
-  endif
-  varmna(ipp) = vmin
-  varmxa(ipp) = vmax
 
 enddo
 
@@ -138,7 +136,7 @@ enddo
 
 if (iwarnk.ge.2.or.iclkep.eq.1) then
 
-  if(iclip.eq.1) then
+  if (iclip.eq.1) then
 
     xkm = 1296.d0*sqrt(cmu)/almax**2
     xepm = 46656.d0*cmu/almax**4
@@ -146,9 +144,9 @@ if (iwarnk.ge.2.or.iclkep.eq.1) then
     do iel=1,ncel
       xk = rtp(iel,ik)
       xe = rtp(iel,iep)
-      xkmin = xkm*(propce(iel,iivisc)/propce(iel,iiromc))**2
-      xepmin = xepm*(propce(iel,iivisc)/propce(iel,iiromc))**3
-      if(xk.le.xkmin.or.xe.le.xepmin) then
+      xkmin = xkm * (propce(iel,iivisc) / propce(iel,iiromc))**2
+      xepmin = xepm * (propce(iel,iivisc) / propce(iel,iiromc))**3
+      if (xk.le.xkmin.or.xe.le.xepmin) then
         if(iclkep.eq.1) then
           rtp(iel,ik)  = xkmin
           rtp(iel,iep) = xepmin
@@ -157,18 +155,16 @@ if (iwarnk.ge.2.or.iclkep.eq.1) then
       endif
     enddo
 
-  elseif(iclip.eq.0) then
+  elseif (iclip.eq.0) then
 
-    xkmin = 1296.d0*sqrt(cmu)/almax**2*                    &
-            (viscl0/ro0)**2
-    xepmin = 46656.d0*cmu/almax**4*                        &
-            (viscl0/ro0)**3
+    xkmin = 1296.d0 * sqrt(cmu)/almax**2 * (viscl0/ro0)**2
+    xepmin = 46656.d0 * cmu/almax**4 * (viscl0/ro0)**3
     iclpke = 0
     do iel=1,ncel
       xk = rtp(iel,ik)
       xe = rtp(iel,iep)
-      if(xk.le.xkmin.or.xe.le.xepmin) then
-        if(iclkep.eq.1) then
+      if (xk.le.xkmin.or.xe.le.xepmin) then
+        if (iclkep.eq.1) then
           rtp(iel,ik)  = xkmin
           rtp(iel,iep) = xepmin
         endif
@@ -178,27 +174,23 @@ if (iwarnk.ge.2.or.iclkep.eq.1) then
 
   else
 
-    write(nfecra,1000)iclip
+    write(nfecra,1000) iclip
     call csexit (1)
 
   endif
 
-  if (irangp.ge.0) call parcpt (iclpke)
-                             !==========
+  ! ---  Stockage nb de clippings pour listing
 
-! ---  Impression eventuelle
-
-  if(iwarnk.ge.2) then
-
-    write(nfecra,1010)iclpke
-
+  if (iclkep.eq.1) then
+    iclpmn(1) = iclpke
+    iclpmn(2) = iclpke
   endif
 
-! ---  Stockage nb de clippings pour listing
+  ! ---  Impression eventuelle
 
-  if(iclkep.eq.1) then
-    iclpmn(ipprtp(ik)) = iclpke
-    iclpmn(ipprtp(iep)) = iclpke
+  if (iwarnk.ge.2) then
+    if (irangp.ge.0) call parcpt (iclpke)
+    write(nfecra,1010)iclpke
   endif
 
 endif
@@ -207,7 +199,7 @@ endif
 ! ---> Clipping "standard" ICLKEP = 0
 !===============================================================================
 
-if(iclkep.eq.0) then
+if (iclkep.eq.0) then
 
   iclpk2 = 0
   iclpe2 = 0
@@ -230,20 +222,25 @@ if(iclkep.eq.0) then
     endif
   enddo
 
-  if (irangp.ge.0) then
-    call parcpt (iclpk2)
-    !==========
-    call parcpt (iclpe2)
-    !==========
-  endif
+  ! Stockage nb de clippings pour listing
 
-! ---  Stockage nb de clippings pour listing
-
-  iclpmn(ipprtp(ik)) = iclpk2
-  iclpmn(ipprtp(iep)) = iclpe2
+  iclpmn(1) = iclpk2
+  iclpmn(2) = iclpe2
 
 endif
 
+do ii = 1, 2
+
+  if (ii.eq.1) then
+    ivar = ik
+  elseif(ii.eq.2) then
+    ivar = iep
+  endif
+
+  call log_iteration_clipping_field(ivarfl(ivar), iclpmn(ii), 0,  &
+                                    vmin(ii:ii), vmax(ii:ii))
+
+enddo
 
 !===============================================================================
 ! ---> Formats
@@ -267,7 +264,7 @@ endif
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
  1010 format(                                                           &
- I10,' VALEURS DU K-EPS AU DELA DES ECHELLES BASEES SUR ALMAX')
+ i10,' VALEURS DU K-EPS AU DELA DES ECHELLES BASEES SUR ALMAX')
 
 #else
 
@@ -287,7 +284,7 @@ endif
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
  1010 format(                                                           &
- I10,' K-EPS VALUES BEYOND THE SCALES BASED ON ALMAX')
+ i10,' K-EPS VALUES BEYOND THE SCALES BASED ON ALMAX')
 
 #endif
 

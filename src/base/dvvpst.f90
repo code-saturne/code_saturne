@@ -29,7 +29,7 @@ subroutine dvvpst &
    itypps ,                                                       &
    lstcel , lstfac , lstfbr ,                                     &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  , statce , stativ , statfb ,                   &
+   statce , stativ , statfb ,                                     &
    tracel , trafbr )
 
 !===============================================================================
@@ -65,8 +65,6 @@ subroutine dvvpst &
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! statce           ! tr ! <-- ! statistiques cellules (lagrangien)             !
 !  (ncelet,nvlsta) !    !     !                                                !
 ! stativ           ! tr ! <-- ! statistiques variance cellules (lagrangien)    !
@@ -123,7 +121,6 @@ integer          lstcel(ncelps), lstfac(nfacps), lstfbr(nfbrps)
 double precision dt(ncelet), rtpa(ncelet,*), rtp(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
-double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision statce(ncelet,nvlsta), statfb(nfabor,nvisbr)
 double precision stativ(ncelet,nvlsta)
 double precision tracel(ncelps*3)

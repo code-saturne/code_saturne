@@ -66,6 +66,7 @@ use cstnum
 use entsor
 use optcal
 use parall
+use cs_c_bindings
 
 !===============================================================================
 
@@ -81,9 +82,8 @@ double precision rtp(ncelet,nvar)
 ! Local variables
 
 integer          iclpnu,iel
-integer          ivar,ipp
-double precision xnu, vmin, vmax, var
-double precision epz2
+double precision xnu, var, epz2
+double precision vmin(1), vmax(1)
 
 !===============================================================================
 
@@ -95,47 +95,28 @@ epz2 = epzero**2
 ! ---> Stockage Min et Max pour listing
 !===============================================================================
 
-ipp  = ipprtp(inusa)
-
-vmin =  grand
-vmax = -grand
+vmin(1) =  grand
+vmax(1) = -grand
 do iel = 1, ncel
   var = rtp(iel,inusa)
-  vmin = min(vmin,var)
-  vmax = max(vmax,var)
+  vmin(1) = min(vmin(1),var)
+  vmax(1) = max(vmax(1),var)
 enddo
-if (irangp.ge.0) then
-  call parmax (vmax)
-!==========
-  call parmin (vmin)
-!==========
-endif
-varmna(ipp) = vmin
-varmxa(ipp) = vmax
 
 !===============================================================================
 ! ---> Clipping "standard" NUSA>0
 !===============================================================================
 
-
 iclpnu = 0
 do iel = 1, ncel
   xnu = rtp(iel,inusa)
-  if (xnu.lt.0.D0) then
+  if (xnu.lt.0.d0) then
     iclpnu = iclpnu + 1
     rtp(iel,inusa) = 0.d0
   endif
 enddo
 
-if (irangp.ge.0) then
-  call parcpt (iclpnu)
-!==========
-endif
-
-! ---  Stockage nb de clippings pour listing
-
-iclpmn(ipprtp(inusa)) = iclpnu
-
+call log_iteration_clipping_field(ivarfl(inusa), iclpnu, 0, vmin, vmax)
 
 !===============================================================================
 ! ---> Formats

@@ -68,6 +68,7 @@ use cstphy
 use cstnum
 use parall
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -89,7 +90,7 @@ integer          ivar, iel, iflid
 integer          iclmax, iclmin, iiscav
 integer          ippvar
 integer          kscmin, kscmax, f_id
-double precision vmin, vmax, vfmin, vfmax
+double precision vmin(1), vmax(1), vfmin, vfmax
 double precision scmax, scmin
 double precision scmaxp, scminp
 
@@ -118,27 +119,20 @@ call field_get_key_id("max_scalar_clipping", kscmax)
 !      IL Y A TOUJOURS CLIPPING DES VARIANCES A DES VALEURS POSITIVES
 
 ! --- Calcul du min et max
-vmin = rtp(1,ivar)
-vmax = rtp(1,ivar)
+vmin(1) = rtp(1,ivar)
+vmax(1) = rtp(1,ivar)
 do iel = 1, ncel
-  vmin = min(vmin,rtp(iel,ivar))
-  vmax = max(vmax,rtp(iel,ivar))
+  vmin(1) = min(vmin(1),rtp(iel,ivar))
+  vmax(1) = max(vmax(1),rtp(iel,ivar))
 enddo
-if (irangp.ge.0) then
-  call parmin(vmin)
-  !==========
-  call parmax(vmax)
-  !==========
-endif
-varmna(ippvar) = vmin
-varmxa(ippvar) = vmax
 
-if(iiscav.eq.0) then
+if (iiscav.eq.0) then
 
-! --- Clipping des scalaires non variances
+  ! Clipping of non-variance scalars
 
   iclmax = 0
   iclmin = 0
+
   ! Get the min clipping
   call field_get_key_double(iflid, kscmin, scminp)
   call field_get_key_double(iflid, kscmax, scmaxp)
@@ -156,26 +150,16 @@ if(iiscav.eq.0) then
     enddo
   endif
 
-  if (irangp.ge.0) then
-    call parcpt (iclmin)
-    !==========
-    call parcpt (iclmax)
-    !==========
-  endif
-
-  iclpmn(ippvar) = iclmin
-  iclpmx(ippvar) = iclmax
-
 else
 
-! --- Clipping des variances
+  ! Clipping of variances
 
   f_id = ivarfl(isca(iiscav))
 
   iclmax = 0
   iclmin = 0
 
-!   -- Clipping minimal au minimum 0.
+  ! -- Clipping minimal au minimum 0.
   if(iclvfl(iscal).eq.0) then
     do iel = 1, ncel
       if(rtp(iel,ivar).lt.0.d0) then
@@ -184,7 +168,7 @@ else
       endif
     enddo
 
-!   -- Clipping a partir des valeurs du scalaire (ou 0 au min)
+  ! -- Clipping a partir des valeurs du scalaire (ou 0 au min)
   elseif(iclvfl(iscal).eq.1) then
     do iel = 1, ncel
       if(rtp(iel,ivar).lt.0.d0) then
@@ -228,18 +212,9 @@ else
     endif
   endif
 
-  if (irangp.ge.0) then
-    call parcpt (iclmin)
-    !==========
-    call parcpt (iclmax)
-    !==========
-  endif
-
-  iclpmn(ippvar) = iclmin
-  iclpmx(ippvar) = iclmax
-
 endif
 
+call log_iteration_clipping_field(iflid, iclmin, iclmax, vmin, vmax)
 
 !--------
 ! Formats

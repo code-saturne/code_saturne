@@ -117,7 +117,7 @@ double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 
 character*8      cnom
 
-integer          ifac, iel, icfmax, icfmin, idiff0, iconv0, isym
+integer          ifac, iel, icfmax, icfmin, idiff0, iconv0, isym, flid
 integer          modntl
 integer          ipcvis, ipcvst
 integer          iflmas, iflmab
@@ -125,13 +125,13 @@ integer          icou, ifou , icoucf
 integer          inc, iccocg
 integer          nswrgp, imligp
 integer          ipcrom, ipbrom, iivar
-integer          nbrval
+integer          nbrval, nclptr
 integer          ipccou, ipcfou, ntcam1
 
 double precision epsrgp, climgp, extrap
 double precision cfmax,cfmin, w1min, w2min, w3min
 double precision unpvdt, rom, dtloc
-double precision xyzmax(3), xyzmin(3)
+double precision xyzmax(3), xyzmin(3), vmin(1), vmax(1)
 double precision dtsdtm
 double precision hint
 
@@ -311,11 +311,7 @@ if (idtvar.ge.0) then
     deallocate(grad)
     deallocate(coefbr)
 
-    ! On met le nombre de clippings a 0 (il le restera pour IDTVAR=0)
-    nclptr = 0
-
   endif
-
 
   if (idtvar.eq.1.or.idtvar.eq.2) then
 
@@ -506,22 +502,23 @@ if (idtvar.ge.0) then
 
     if (iptlro.eq.1) then
 
-
       ! On clippe le pas de temps a DTTMAX (affiche dans ecrlis)
 
       nclptr = 0
 
+      vmin(1) = dt(1)
+      vmax(1) = dt(1)
+
       do iel = 1, ncel
+        vmin(1) = min(vmin(1),dt(iel))
+        vmax(1) = max(vmax(1),dt(iel))
         if (dt(iel).gt.w3(iel)) then
           nclptr = nclptr +1
           dt(iel) = w3(iel)
         endif
       enddo
 
-      if (irangp.ge.0) then
-        call parcpt (nclptr)
-        !==========
-      endif
+      call log_iteration_clipping('dt (clip/dtrho)', 1, 0, nclptr, vmin, vmax)
 
       ! ---> PAS DE TEMPS UNIFORME : on reuniformise le pas de temps
 
@@ -549,16 +546,18 @@ if (idtvar.ge.0) then
     icfmin = 0
     icfmax = 0
 
+    call field_get_id('dt', flid)
+
     if (idtvar.eq.1) then
 
       dtloc = dt(1)
       if (dtloc.gt.dtmax) then
         dtloc = dtmax
-        icfmax = icfmax + ncel
+        icfmax = ncel
       endif
       if (dtloc.lt.dtmin) then
         dtloc = dtmin
-        icfmin = icfmin + ncel
+        icfmin = ncel
       endif
 
       ntcam1 = ntcabs - 1
@@ -567,6 +566,8 @@ if (idtvar.ge.0) then
       if (ntmabs.lt.ntcabs) then
         call csexit(1)
       endif
+
+      call log_iteration_clipping_field(flid, icfmin, icfmax, dt, dt)
 
       ttcabs = ttcabs + (dtloc - dt(1))
       if (imobil.eq.1) then
@@ -579,32 +580,37 @@ if (idtvar.ge.0) then
 
     else
 
+      vmin(1) = dt(1)
+      vmax(1) = dt(1)
+
       do iel = 1, ncel
 
-        if (dt(iel).gt.dtmax    ) then
+        vmin(1) = min(vmin(1),dt(iel))
+        vmax(1) = max(vmax(1),dt(iel))
+
+        if (dt(iel).gt.dtmax) then
           icfmax = icfmax +1
           dt(iel) = dtmax
         endif
-        if (dt(iel).lt.dtmin    ) then
+        if (dt(iel).lt.dtmin) then
           icfmin = icfmin +1
           dt(iel) = dtmin
         endif
 
       enddo
 
+      call log_iteration_clipping_field(flid, icfmin, icfmax, vmin, vmax)
+
     endif
 
-    if (irangp.ge.0) then
-      call parcpt (icfmin)
-      !==========
-      call parcpt (icfmax)
-      !==========
-    endif
-
-    iclpmx(ippdt) = icfmax
-    iclpmn(ippdt) = icfmin
 
     if (iwarnp.ge.2) then
+      if (irangp.ge.0) then
+        call parcpt (icfmin)
+        !==========
+        call parcpt (icfmax)
+        !==========
+      endif
       write (nfecra,1003) icfmin,dtmin,icfmax,dtmax
     endif
 

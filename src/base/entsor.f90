@@ -171,12 +171,6 @@ module entsor
 
   integer, save :: ntlist
 
-  ! Parametres de suivi de calcul, clipmin, clipmax
-
-  integer, save :: iclpmn(nvppmx) , iclpmx(nvppmx)
-
-  double precision, save ::  varmna(nvppmx) , varmxa(nvppmx)
-
   ! Parametres de convergence, norme du second membre, nombre iterations
   ! residu norme, derive.
 
@@ -184,10 +178,6 @@ module entsor
 
   double precision, save :: rnsmbr(nvppmx) ,                      &
                             resvar(nvppmx) , dervar(nvppmx)
-
-  ! Parametres du pas de temps local =
-
-  integer, save :: nclptr
 
   ! Parametres des sorties au bord =
 

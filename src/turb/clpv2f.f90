@@ -65,6 +65,7 @@ use numvar
 use cstnum
 use parall
 use optcal
+use cs_c_bindings
 
 !===============================================================================
 
@@ -81,7 +82,7 @@ double precision rtp(ncelet,nvar)
 
 integer          iel, ipp
 integer          nclpmx, nclpmn
-double precision xphi, xal, vmin, vmax, var
+double precision xphi, xal, vmin(1), vmax(1), var
 
 !===============================================================================
 
@@ -97,21 +98,13 @@ double precision xphi, xal, vmin, vmax, var
 
 ipp = ipprtp(iphi)
 
-vmin =  grand
-vmax = -grand
+vmin(1) =  grand
+vmax(1) = -grand
 do iel = 1, ncel
   var = rtp(iel,iphi)
-  vmin = min(vmin,var)
-  vmax = max(vmax,var)
+  vmin(1) = min(vmin(1),var)
+  vmax(1) = max(vmax(1),var)
 enddo
-if (irangp.ge.0) then
-  call parmin(vmin)
-  !==========
-  call parmax(vmax)
-  !==========
-endif
-varmna(ipp) = vmin
-varmxa(ipp) = vmax
 
 !==============================================================================
 !     1.b Reperage des valeurs superieures a 2, pour affichage seulement
@@ -139,16 +132,15 @@ do iel = 1, ncel
     nclpmn = nclpmn + 1
   endif
 enddo
-if(irangp.ge.0) call parcpt(nclpmn)
-                !==========
-iclpmn(ipp) = nclpmn
+
+call log_iteration_clipping_field(ivarfl(iphi), nclpmn, 0, vmin, vmax)
 
 !===============================================================================
 !  2. Pour le BL-v2/k model, clipping de alpha a 0 pour les valeurs negatives
 !     et a 1 pour les valeurs superieurs a 1
 !===============================================================================
 
-if(iturb.eq.51) then
+if (iturb.eq.51) then
 
 !===============================================================================
 !     2.a Stockage Min et Max pour listing
@@ -156,21 +148,13 @@ if(iturb.eq.51) then
 
   ipp = ipprtp(ial)
 
-  vmin =  grand
-  vmax = -grand
+  vmin(1) =  grand
+  vmax(1) = -grand
   do iel = 1, ncel
     var = rtp(iel,ial)
-    vmin = min(vmin,var)
-    vmax = max(vmax,var)
+    vmin(1) = min(vmin(1),var)
+    vmax(1) = max(vmax(1),var)
   enddo
-  if (irangp.ge.0) then
-    call parmin(vmin)
-    !==========
-    call parmax(vmax)
-    !==========
-  endif
-  varmna(ipp) = vmin
-  varmxa(ipp) = vmax
 
 !==============================================================================
 !     2.b Clipping a 0 pour les valeurs negatives et a 1 pour les valeurs
@@ -190,16 +174,11 @@ if(iturb.eq.51) then
       nclpmx = nclpmx + 1
     endif
   enddo
-  if(irangp.ge.0) then
-    call parcpt(nclpmn)
-    !==========
-    call parcpt(nclpmx)
-    !==========
-  endif
-  iclpmn(ipp) = nclpmn
-  iclpmx(ipp) = nclpmx
+
+  call log_iteration_clipping_field(ivarfl(ial), nclpmn, nclpmx, vmin, vmax)
 
 endif
+
 
 !===============================================================================
 ! ---> Formats

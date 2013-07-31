@@ -68,6 +68,7 @@ use entsor
 use numvar
 use cstnum
 use parall
+use cs_c_bindings
 
 !===============================================================================
 
@@ -83,9 +84,9 @@ double precision rtp(ncelet,nvar)
 
 ! Local variables
 
-integer          icleps, iel, ivar, ivar1, ivar2, isou, ipp
-integer          iclrij(6)
-double precision vmin, vmax, var, rijmin, varrel, und0, epz2
+integer          iel, ivar, ivar1, ivar2, isou
+integer          iclrij(7)
+double precision vmin(7), vmax(7), var, rijmin, varrel, und0, epz2
 
 !===============================================================================
 
@@ -119,33 +120,22 @@ do isou = 1, 7
   elseif(isou.eq.7) then
     ivar = iep
   endif
-  ipp = ipprtp(ivar)
 
-  vmin =  grand
-  vmax = -grand
+  iclrij(isou) = 0
+  vmin(isou) =  grand
+  vmax(isou) = -grand
   do iel = 1, ncel
     var = rtp(iel,ivar)
-    vmin = min(vmin,var)
-    vmax = max(vmax,var)
+    vmin(isou) = min(vmin(isou),var)
+    vmax(isou) = max(vmax(isou),var)
   enddo
-  if (irangp.ge.0) then
-    call parmin(vmin)
-    !==========
-    call parmax(vmax)
-    !==========
-  endif
-  varmna(ipp) = vmin
-  varmxa(ipp) = vmax
-
 enddo
 
 ! ---> Clipping (modif pour eviter les valeurs exactement nulles)
 
-if(iclip.eq.1) then
+if (iclip.eq.1) then
 
   do isou = 1, 3
-
-    iclrij(isou) = 0
 
     if(isou.eq.1) ivar=ir11
     if(isou.eq.2) ivar=ir22
@@ -160,13 +150,12 @@ if(iclip.eq.1) then
 
   enddo
 
-  icleps = 0
   do iel = 1, ncel
     if (abs(rtp(iel,iep)).le.epz2) then
-      icleps = icleps + 1
+      iclrij(7) = iclrij(7) + 1
       rtp(iel,iep) = max(rtp(iel,iep),epz2)
     elseif(rtp(iel,iep).le.0.d0) then
-      icleps = icleps + 1
+      iclrij(7) = iclrij(7) + 1
       rtp(iel,iep) = abs(rtp(iel,iep))
     endif
   enddo
@@ -176,8 +165,6 @@ else
   varrel = 1.1d0
 
   do isou = 1, 3
-
-    iclrij(isou) = 0
 
     if(isou.eq.1) ivar=ir11
     if(isou.eq.2) ivar=ir22
@@ -189,20 +176,19 @@ else
         rtp(iel,ivar) = max(rtp(iel,ivar),epz2)
       elseif(rtp(iel,ivar).le.0.d0) then
         iclrij(isou) = iclrij(isou) + 1
-        rtp(iel,ivar) =                                           &
-          min(abs(rtp(iel,ivar)), varrel*abs(rtpa(iel,ivar)))
+        rtp(iel,ivar) = min(abs(rtp(iel,ivar)), varrel*abs(rtpa(iel,ivar)))
       endif
     enddo
 
   enddo
 
-  icleps = 0
+  iclrij(7) = 0
   do iel = 1, ncel
     if (abs(rtp(iel,iep)).lt.epz2) then
-      icleps = icleps + 1
+      iclrij(7) = iclrij(7) + 1
       rtp(iel,iep) = max(rtp(iel,iep),epz2)
     elseif(rtp(iel,iep).le.0.d0) then
-      icleps = icleps + 1
+      iclrij(7) = iclrij(7) + 1
       rtp(iel,iep) = min(abs(rtp(iel,iep )), varrel*abs(rtpa(iel,iep )))
     endif
   enddo
@@ -212,8 +198,6 @@ endif
 ! On force l'inegalite de Cauchy Schwarz
 
 do isou = 4, 6
-
-  iclrij(isou) = 0
 
   if(isou.eq.4) then
     ivar  = ir12
@@ -229,9 +213,9 @@ do isou = 4, 6
     ivar2 = ir33
   endif
   und0 = 1.d0
-  do iel = 1 , ncel
+  do iel = 1, ncel
     rijmin = sqrt(rtp(iel,ivar1)*rtp(iel,ivar2))
-    if(rijmin.lt.abs(rtp(iel,ivar))) then
+    if (rijmin.lt.abs(rtp(iel,ivar))) then
       rtp(iel,ivar) = sign(und0,rtp(iel,ivar)) * rijmin
       iclrij(isou) = iclrij(isou) + 1
     endif
@@ -239,33 +223,28 @@ do isou = 4, 6
 
 enddo
 
-
 ! ---> Stockage nb de clippings pour listing
 
-if (irangp.ge.0) then
-  call parcpt (iclrij(1))
-  !==========
-  call parcpt (iclrij(2))
-  !==========
-  call parcpt (iclrij(3))
-  !==========
-  call parcpt (iclrij(4))
-  !==========
-  call parcpt (iclrij(5))
-  !==========
-  call parcpt (iclrij(6))
-  !==========
-  call parcpt (icleps)
-  !==========
-endif
+do isou = 1, 7
+  if    (isou.eq.1) then
+    ivar = ir11
+  elseif(isou.eq.2) then
+    ivar = ir22
+  elseif(isou.eq.3) then
+    ivar = ir33
+  elseif(isou.eq.4) then
+    ivar = ir12
+  elseif(isou.eq.5) then
+    ivar = ir13
+  elseif(isou.eq.6) then
+    ivar = ir23
+  elseif(isou.eq.7) then
+    ivar = iep
+  endif
+  call log_iteration_clipping_field(ivarfl(ivar), iclrij(isou), 0,  &
+                                    vmin(isou:isou), vmax(isou:isou))
 
-iclpmn(ipprtp(ir11)) = iclrij(1)
-iclpmn(ipprtp(ir22)) = iclrij(2)
-iclpmn(ipprtp(ir33)) = iclrij(3)
-iclpmn(ipprtp(ir12)) = iclrij(4)
-iclpmn(ipprtp(ir13)) = iclrij(5)
-iclpmn(ipprtp(ir23)) = iclrij(6)
-iclpmn(ipprtp(iep )) = icleps
+enddo
 
 return
 

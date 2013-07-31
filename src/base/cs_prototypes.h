@@ -94,8 +94,6 @@ extern void CS_PROCF (dvvpst, DVVPST)
  const cs_real_t  propce[],  /* <-- cell physical properties */
  const cs_real_t  propfa[],  /* <-- interior face physical properties */
  const cs_real_t  propfb[],  /* <-- boundary face physical properties */
- const cs_real_t  coefa[],   /* <-- boundary conditions array */
- const cs_real_t  coefb[],   /* <-- boundary conditions array */
  const cs_real_t  statce[],  /* <-- cell statistics (Lagrangian) */
  const cs_real_t  stativ[],  /* <-- cell variance statistics (Lagrangian) */
  const cs_real_t  statfb[],  /* <-- boundary face statistics (Lagrangian) */

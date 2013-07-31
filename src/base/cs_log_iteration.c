@@ -95,10 +95,26 @@ typedef struct {
 
 } cs_log_sstats_t;
 
+/* Clipping info */
+/*---------------*/
+
+typedef struct {
+
+  int     f_id;     /* Associated field id, or -1 */
+  int     name_id;  /* Associated name id if not a field, -1 for a field */
+  int     dim;      /* Associated dimension */
+  int     c_idx;    /* Start index of counts */
+  int     v_idx;    /* Start index of values */
+
+} cs_log_clip_t;
+
 /*============================================================================
  * Static global variables
  *============================================================================*/
 
+static cs_map_name_to_id_t  *_name_map = NULL;
+
+static cs_map_name_to_id_t  *_category_map = NULL;
 static int _sstats_val_size = 0;
 static int _sstats_val_size_max = 0;
 static int _n_sstats = 0;
@@ -108,8 +124,20 @@ static double *_sstats_vmax = NULL;
 static double *_sstats_vsum = NULL;
 static double *_sstats_wsum = NULL;
 static cs_log_sstats_t  *_sstats = NULL;
-static cs_map_name_to_id_t  *_category_map = NULL;
-static cs_map_name_to_id_t  *_name_map = NULL;
+
+static int _clips_val_size = 0;
+static int _clips_val_size_max = 0;
+static int _n_clips = 0;
+static int _n_clips_max = 0;
+static cs_gnum_t *_clips_count = NULL;
+static double *_clips_vmin = NULL;
+static double *_clips_vmax = NULL;
+static cs_log_clip_t  *_clips = NULL;
+
+/* For naming of array dimension */
+
+static const char *_ext_3[] = {"[x]", "[y]", "[z]", ""};
+static const char *_ext_6[] = {"[11]", "[22]", "[33]", "[12]", "[13]", "[23]"};
 
 /* Additional variable for moments */
 
@@ -155,9 +183,9 @@ static int _compare_sstats(const void *x, const void *y)
     retval = -1;
 
   else if (s0->cat_id == s1->cat_id) {
-    if (s0->cat_id < s1->cat_id)
+    if (s0->name_id < s1->name_id)
       retval = -1;
-    else if (s0->cat_id == s1->cat_id)
+    else if (s0->name_id == s1->name_id)
       retval = 0;
   }
 
@@ -218,7 +246,91 @@ _find_sstats(int  cat_id,
 }
 
 /*----------------------------------------------------------------------------
- * Build moments array for post-processing.
+ * Compare clipping elements (qsort function).
+ *
+ * parameters:
+ *   x <-> pointer to first element
+ *   y <-> pointer to second element
+ *
+ * returns:
+ *   -1 if x < y, 0 if x = y, or 1 if x > y
+ *----------------------------------------------------------------------------*/
+
+static int _compare_clips(const void *x, const void *y)
+{
+  int retval = 1;
+
+  const cs_log_clip_t *c0 = x;
+  const cs_log_clip_t *c1 = y;
+
+  if (c0->name_id < c1->name_id)
+    retval = -1;
+
+  else if (c0->name_id == c1->name_id) {
+    if (c0->f_id < c1->f_id)
+      retval = -1;
+    else if (c0->f_id == c1->f_id)
+      retval = 0;
+  }
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Find clippings by id
+ *
+ * parameters:
+ *   f_id    <-- field id
+ *   name_id <-- name id
+ *
+ * returns:
+ *   id of clipping, or -1 if not found
+ *----------------------------------------------------------------------------*/
+
+static int
+_find_clip(int  f_id,
+           int  name_id)
+{
+  /* Use binary search to find entry */
+
+  int clip_id = -1;
+
+  if (_n_clips > 0) {
+
+    int start_id = 0;
+    int end_id = _n_clips;
+
+    while (start_id < end_id) {
+      int mid_id = start_id + ((end_id -start_id) / 2);
+      int cmp_ret = 0;
+      int cmp_name = _clips[mid_id].name_id;
+      if (cmp_name < name_id)
+        cmp_ret = -1;
+      else if (cmp_name > name_id)
+        cmp_ret = 1;
+      else {
+        int cmp_f = _clips[mid_id].f_id;
+        if (cmp_f < f_id)
+          cmp_ret = -1;
+        else if (cmp_f > f_id)
+          cmp_ret = 1;
+        else {
+          clip_id = mid_id;
+          break;
+        }
+      }
+      if (cmp_ret < 0)
+        start_id = mid_id + 1;
+      else if (cmp_ret > 0)
+        end_id = mid_id;
+    }
+  }
+
+  return clip_id;
+}
+
+/*----------------------------------------------------------------------------
+ * Build moments array for logging
  *
  * If of dimension > 1, the moments array is always interleaved, whether
  * the accumulator field is interleaved or not.
@@ -284,12 +396,12 @@ _build_moment(const cs_field_t  *f,
  *
  * parameters:
  *   prefix       <-- string inserted before name
- *   name         <-- field name or label
+ *   name         <-- array name or label
  *   name_width   <-- width of "name" column
- *   interleaved  <-- is field interleaved ?
- *   dim          <-- field dimension
+ *   interleaved  <-- is array interleaved ?
+ *   dim          <-- array dimension
  *   n_g_elts     <-- global number of associated elements,
- *   total_weight <-- if > 0, weight (volume or surface) of field location
+ *   total_weight <-- if > 0, weight (volume or surface) of array location
  *   vmin         <-- minimum values of each component or norm
  *   vmax         <-- maximum values of each component or norm
  *   vsum         <-- sum of each component or norm
@@ -313,18 +425,16 @@ _log_array_info(const char        *prefix,
   const int _dim = (interleaved && dim == 3) ? 4 : dim;
 
   char tmp_s[2][64] =  {"", ""};
-  const char *ext_3[] = {"[x]", "[y]", "[z]", ""};
-  const char *ext_6[] = {"[11]", "[22]", "[33]", "[12]", "[13]", "[23]"};
 
   for (c_id = 0; c_id < _dim; c_id++) {
 
     if (dim == 3) {
-      snprintf(tmp_s[1], 63, "%s%s", name, ext_3[c_id]);
+      snprintf(tmp_s[1], 63, "%s%s", name, _ext_3[c_id]);
       tmp_s[1][63] = '\0';
       cs_log_strpad(tmp_s[0], tmp_s[1], name_width, 64);
     }
     else if (dim == 6) {
-      snprintf(tmp_s[1], 63, "%s%s", name, ext_6[c_id]);
+      snprintf(tmp_s[1], 63, "%s%s", name, _ext_6[c_id]);
       tmp_s[1][63] = '\0';
       cs_log_strpad(tmp_s[0], tmp_s[1], name_width, 64);
     }
@@ -353,11 +463,98 @@ _log_array_info(const char        *prefix,
 }
 
 /*----------------------------------------------------------------------------
- * Main post-processing output of variables.
+ * Log information for a given clipping.
+ *
+ * parameters:
+ *   prefix       <-- string inserted before name
+ *   name         <-- array name or label
+ *   name_width   <-- width of "name" column
+ *   dim          <-- array dimension
+ *   count_min    <-- global number of clips to minimum
+ *   count_max    <-- global number of clips to maximum
+ *   vmin         <-- minimum values of each component
+ *   vmax         <-- maximum values of each component
  *----------------------------------------------------------------------------*/
 
 static void
-_cs_log_fields(void)
+_log_clip_info(const char        *prefix,
+               const char        *name,
+               size_t             name_width,
+               int                dim,
+               cs_gnum_t          count_min,
+               cs_gnum_t          count_max,
+               const double       vmin[],
+               const double       vmax[])
+{
+  int c_id;
+  const int _dim = (dim == 3) ? 4 : dim;
+
+  char tmp_s[2][64] =  {"", ""};
+
+  for (c_id = 0; c_id < _dim; c_id++) {
+
+    double _vmin, _vmax;
+    const char *_name = (c_id == 0) ? name : " ";
+
+    if (c_id < dim) {
+      _vmin = vmin[c_id];
+      _vmax = vmax[c_id];
+    }
+
+    if (dim == 3) {
+      snprintf(tmp_s[1], 63, "%s%s", _name, _ext_3[c_id]);
+      tmp_s[1][63] = '\0';
+      cs_log_strpad(tmp_s[0], tmp_s[1], name_width, 64);
+      if (c_id == dim) {
+        _vmin = sqrt(vmin[0]*vmin[0] + vmin[1]*vmin[1] + vmin[2]*vmin[2]);
+        _vmax = sqrt(vmax[0]*vmax[0] + vmax[1]*vmax[1] + vmax[2]*vmax[2]);
+      }
+    }
+    else if (dim == 6) {
+      snprintf(tmp_s[1], 63, "%s%s", _name, _ext_6[c_id]);
+      tmp_s[1][63] = '\0';
+      cs_log_strpad(tmp_s[0], tmp_s[1], name_width, 64);
+    }
+    else
+      cs_log_strpad(tmp_s[0], name, name_width, 64);
+
+    if (count_min > 0 && count_max > 0)
+      cs_log_printf(CS_LOG_DEFAULT,
+                    "%s%s  %14.5g  %14.5g  %12llu  %12llu\n",
+                    prefix,
+                    tmp_s[0],
+                    _vmin,
+                    _vmax,
+                    (unsigned long long)count_min,
+                    (unsigned long long)count_max);
+    else if (count_min > 0)
+      cs_log_printf(CS_LOG_DEFAULT,
+                    "%s%s  %14.5g                  %12llu\n",
+                    prefix,
+                    tmp_s[0],
+                    _vmin,
+                    (unsigned long long)count_min);
+    else if (count_max > 0)
+      cs_log_printf(CS_LOG_DEFAULT,
+                    "%s%s                  %14.5g                %12llu\n",
+                    prefix,
+                    tmp_s[0],
+                    _vmax,
+                    (unsigned long long)count_max);
+    else
+      cs_log_printf(CS_LOG_DEFAULT,
+                    "%s%s\n",
+                    prefix,
+                    tmp_s[0]);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Main logging output of variables.
+ *----------------------------------------------------------------------------*/
+
+static void
+_log_fields(void)
 {
   int f_id, li, log_count;
 
@@ -423,8 +620,6 @@ _cs_log_fields(void)
         break;
       }
     }
-
-    if (have_weight)
 
     /* First loop on fields */
 
@@ -595,12 +790,9 @@ _cs_log_fields(void)
     for (size_t col = 0; col < n_cols; col++) {
       size_t i;
       size_t w0 = (col == 0) ? max_name_width : 14;
-      size_t w1 = (col == 0) ? max_name_width : 14;
       for (i = 0; i < w0; i++)
         tmp_s[col][i] = '-';
-      for (i = w0; i < w1; i++)
-        tmp_s[col][i] = ' ';
-      tmp_s[col][w1] = '\0';
+      tmp_s[col][w0] = '\0';
     }
     if (have_weight) {
       cs_log_printf(CS_LOG_DEFAULT,
@@ -664,11 +856,11 @@ _cs_log_fields(void)
 }
 
 /*----------------------------------------------------------------------------
- * Main post-processing output of additional simple statistics
+ * Main logging output of additional simple statistics
  *----------------------------------------------------------------------------*/
 
 static void
-_cs_log_sstats(void)
+_log_sstats(void)
 {
   int     stat_id;
   double _boundary_surf = -1;
@@ -816,12 +1008,9 @@ _cs_log_sstats(void)
       for (size_t col = 0; col < n_cols; col++) {
         size_t i;
         size_t w0 = (col == 0) ? max_name_width : 14;
-        size_t w1 = (col == 0) ? max_name_width : 14;
         for (i = 0; i < w0; i++)
           tmp_s[col][i] = '-';
-        for (i = w0; i < w1; i++)
-          tmp_s[col][i] = ' ';
-        tmp_s[col][w1] = '\0';
+        tmp_s[col][w0] = '\0';
       }
       if (have_weight) {
         cs_log_printf(CS_LOG_DEFAULT,
@@ -875,6 +1064,262 @@ _cs_log_sstats(void)
   cs_log_printf(CS_LOG_DEFAULT, "\n");
 }
 
+/*----------------------------------------------------------------------------
+ * Add or update clipping info for a given array
+ *
+ * parameters:
+ *   name_id       Associated name id if not a field, -1 for a field
+ *   f_id          associated field id, or -1
+ *   dim           associated dimension
+ *   n_clip_min    number of local clippings to minimum value
+ *   n_clip_max    number of local clippings to maximum value
+ *   min_pre_clip  minimum values prior to clipping
+ *   max_pre_clip  maximum values prior to clipping
+ *----------------------------------------------------------------------------*/
+
+static void
+_add_clipping(int               name_id,
+              int               f_id,
+              int               dim,
+              cs_lnum_t         n_clip_min,
+              cs_lnum_t         n_clip_max,
+              const cs_real_t   min_pre_clip[],
+              const cs_real_t   max_pre_clip[])
+{
+  bool need_sort = false;
+
+  int clip_id = _find_clip(f_id, name_id);
+
+  /* If not found, insert statistic */
+
+  if (clip_id < 0) {
+
+    _n_clips += 1;
+    _clips_val_size += dim;
+
+    /* Reallocate key definitions if necessary */
+
+    if (_n_clips > _n_clips_max) {
+      if (_n_clips_max == 0)
+        _n_clips_max = 1;
+      else
+        _n_clips_max *= 2;
+      BFT_REALLOC(_clips, _n_clips_max, cs_log_clip_t);
+    }
+
+    if (_clips_val_size > _clips_val_size_max) {
+      if (_clips_val_size_max == 0)
+        _clips_val_size_max = dim;
+      while (_clips_val_size > _clips_val_size_max)
+        _clips_val_size_max *= 2;
+      BFT_REALLOC(_clips_vmin, _clips_val_size_max, double);
+      BFT_REALLOC(_clips_vmax, _clips_val_size_max, double);
+      BFT_REALLOC(_clips_count, _clips_val_size_max*2, cs_gnum_t);
+    }
+
+    need_sort = true;  /* allow for binary search */
+
+    clip_id = _n_clips - 1;
+    _clips[clip_id].f_id = f_id;
+    _clips[clip_id].name_id = name_id;
+    _clips[clip_id].dim = dim;
+    _clips[clip_id].v_idx = _clips_val_size - dim;
+
+  }
+
+  if (_clips[clip_id].dim != dim) {
+    if (f_id > -1)
+      bft_error(__FILE__, __LINE__, 0,
+                "Clipping of field id %d previously defined in %s\n"
+                "with dimension %d, redefined with dimension %d.",
+                f_id, __func__,
+                _clips[clip_id].dim, dim);
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                "Clipping of name %s previously defined in %s\n"
+                "with dimension %d, redefined with dimension %d.",
+                cs_map_name_to_id_reverse(_name_map, name_id),
+                __func__,
+                _clips[clip_id].dim, dim);
+  }
+
+  /* Update clips */
+
+  _clips[clip_id].dim = dim;
+
+  int v_idx = _clips[clip_id].v_idx;
+
+  /* Prepare for future binary search */
+
+  if (need_sort)
+    qsort(_clips, _n_clips, sizeof(cs_log_clip_t), &_compare_clips);
+
+  /* Update values */
+
+  for (int i = 0; i < dim; i++) {
+    _clips_vmin[v_idx + i] = min_pre_clip[i];
+    _clips_vmax[v_idx + i] = max_pre_clip[i];
+    _clips_count[(v_idx + i)*2] = n_clip_min;
+    _clips_count[(v_idx + i)*2 + 1] = n_clip_max;
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Main logging output of additional clippings
+ *----------------------------------------------------------------------------*/
+
+static void
+_log_clips(void)
+{
+  int     clip_id;
+  int     type_idx[] = {0, 0, 0};
+  double  *vmin = NULL, *vmax = NULL;
+  cs_gnum_t  *vcount = NULL;
+  size_t max_name_width = cs_log_strlen(_("field"));
+  const int label_key_id = cs_field_key_id("label");
+
+  char tmp_s[5][64] =  {"", "", "", "", ""};
+
+  const char *_cat_name[] = {N_("field"), N_("value")};
+  const char *_cat_prefix[] = {"a  ", "a   "};
+
+  /* Allocate working arrays */
+
+  BFT_MALLOC(vmin, _clips_val_size, double);
+  BFT_MALLOC(vmax, _clips_val_size, double);
+  BFT_MALLOC(vcount, _clips_val_size*2, cs_gnum_t);
+
+  memcpy(vmin, _clips_vmin, _clips_val_size*sizeof(double));
+  memcpy(vmax, _clips_vmax, _clips_val_size*sizeof(double));
+  memcpy(vcount, _clips_count, _clips_val_size*sizeof(cs_gnum_t)*2);
+
+  /* Group MPI operations if required */
+
+  cs_parall_min(_clips_val_size, CS_DOUBLE, vmin);
+  cs_parall_max(_clips_val_size, CS_DOUBLE, vmax);
+  cs_parall_sum(_clips_val_size*2, CS_GNUM_TYPE, vcount);
+
+  /* Fist loop on clippings for counting */
+
+  for (clip_id = 0; clip_id < _n_clips; clip_id++) {
+
+    const char *name = NULL;
+    int f_id = _clips[clip_id].f_id;
+    if (f_id > 0) {
+      const cs_field_t  *f = cs_field_by_id(f_id);
+      name = cs_field_get_key_str(f, label_key_id);
+      if (name == NULL)
+        name = f->name;
+      type_idx[1] = clip_id + 1;
+    }
+    else {
+      name = cs_map_name_to_id_reverse(_name_map, _clips[clip_id].name_id);
+      type_idx[2] = clip_id + 1;
+    }
+
+    assert(name != NULL);
+
+    size_t l_name_width = cs_log_strlen(name);
+    max_name_width = CS_MAX(max_name_width, l_name_width);
+
+  }
+
+  if (type_idx[2] - type_idx[1] > 0) {
+    size_t v_name_w = cs_log_strlen(_("value"));
+    max_name_width = CS_MAX(max_name_width, v_name_w);
+  }
+
+  max_name_width = CS_MIN(max_name_width, 63);
+
+  /* Loop on types */
+
+  for (int cat_id = 0; cat_id < 2; cat_id++) {
+
+    int start_id = type_idx[cat_id];
+    int end_id = type_idx[cat_id+1];
+
+    if (end_id - start_id < 1)
+      continue;
+
+    /* Print headers */
+
+    if (cat_id == 0)
+      cs_log_printf(CS_LOG_DEFAULT,
+                    _("\n"
+                      "  ** Clippings for computed fields\n"
+                      "     -----------------------------\n"));
+    else
+      cs_log_printf(CS_LOG_DEFAULT,
+                    _("\n"
+                      "  ** Clippings for auxiliary values\n"
+                      "     ------------------------------\n"));
+
+    cs_log_strpad(tmp_s[0], _(_cat_name[cat_id]), max_name_width, 64);
+    cs_log_strpadl(tmp_s[1], _("initial min"), 14, 64);
+    cs_log_strpadl(tmp_s[2], _("initial max"), 14, 64);
+    cs_log_strpadl(tmp_s[3], _("clips to min"), 12, 64);
+    cs_log_strpadl(tmp_s[4], _("clips to max"), 12, 64);
+    cs_log_printf(CS_LOG_DEFAULT,
+                    "\n   %s  %s  %s  %s  %s\n",
+                    tmp_s[0], tmp_s[1], tmp_s[2], tmp_s[3], tmp_s[4]);
+
+    /* Underline */
+
+    for (size_t col = 0; col < 5; col++) {
+      size_t i;
+      size_t w0;
+      if (col == 0)
+        w0 = max_name_width;
+      else if (col < 3)
+        w0 = 14;
+      else
+        w0 = 12;
+      for (i = 0; i < w0; i++)
+        tmp_s[col][i] = '-';
+      tmp_s[col][w0] = '\0';
+    }
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "-  %s  %s  %s  %s  %s\n",
+                  tmp_s[0], tmp_s[1], tmp_s[2], tmp_s[3], tmp_s[4]);
+
+    /* Second loop on clippings */
+
+    for (clip_id = start_id; clip_id < end_id; clip_id++) {
+
+      int v_idx = _clips[clip_id].v_idx;
+
+      const char *name = NULL;
+      int f_id = _clips[clip_id].f_id;
+      if (f_id > 0) {
+        const cs_field_t  *f = cs_field_by_id(f_id);
+        name = cs_field_get_key_str(f, label_key_id);
+        if (name == NULL)
+          name = f->name;
+      }
+      else
+        name = cs_map_name_to_id_reverse(_name_map, _clips[clip_id].name_id);
+
+      assert(name != NULL);
+
+      _log_clip_info(_cat_prefix[cat_id],
+                      name,
+                      max_name_width,
+                     _clips[clip_id].dim,
+                     _clips_count[v_idx*2],
+                     _clips_count[v_idx*2 + 1],
+                     _clips_vmin + v_idx,
+                     _clips_vmax + v_idx);
+    }
+
+  }
+
+  BFT_FREE(vcount);
+  BFT_FREE(vmax);
+  BFT_FREE(vmin);
+
+  cs_log_printf(CS_LOG_DEFAULT, "\n");
+}
+
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
@@ -892,7 +1337,7 @@ _cs_log_sstats(void)
  * \brief Initialize logging of moments
  *
  * Currently, an external cumulative time array is simply mapped to
- * the post-processing API.
+ * the logging API.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -911,7 +1356,7 @@ cs_log_init_moments(const cs_real_t  *cumulative_time)
 void
 cs_log_iteration_destroy_all(void)
 {
-  if (_name_map != NULL) {
+  if (_category_map != NULL) {
     _sstats_val_size = 0;
     _sstats_val_size_max = 0;
     _n_sstats = 0;
@@ -922,8 +1367,21 @@ cs_log_iteration_destroy_all(void)
     BFT_FREE(_sstats_wsum);
     BFT_FREE(_sstats);
     cs_map_name_to_id_destroy(&_category_map);
-    cs_map_name_to_id_destroy(&_name_map);
   }
+
+  if (_n_clips_max > 0) {
+    _clips_val_size = 0;
+    _clips_val_size_max = 0;
+    _n_clips = 0;
+    _n_clips_max = 0;
+    BFT_FREE(_clips_count);
+    BFT_FREE(_clips_vmin);
+    BFT_FREE(_clips_vmax);
+    BFT_FREE(_clips);
+  }
+
+  if (_name_map != NULL)
+    cs_map_name_to_id_destroy(&_name_map);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -935,21 +1393,24 @@ cs_log_iteration_destroy_all(void)
 void
 cs_log_iteration(void)
 {
-  _cs_log_fields();
+  if (_n_clips > 0)
+    _log_clips();
+
+  _log_fields();
 
   if (_n_sstats > 0)
-    _cs_log_sstats();
+    _log_sstats();
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Add array not saved as permanent field to logging of fields.
+ * \brief Add or update array not saved as permanent field to iteration log.
  *
  * \param[in]  name         array name
  * \param[in]  category     category name
  * \param[in]  loc_id       associated mesh location id
  * \param[in]  is_intensive are the matching values intensive ?
- * \param[in]  dimension    associated dimension (interleaved)
+ * \param[in]  dim          associated dimension (interleaved)
  * \param[in]  val          associated values
  */
 /*----------------------------------------------------------------------------*/
@@ -964,10 +1425,11 @@ cs_log_iteration_add_array(const char                     *name,
 {
   /* Initialize if necessary */
 
-  if (_name_map == NULL) {
+  if (_name_map == NULL)
     _name_map = cs_map_name_to_id_create();
+
+  if (_category_map == NULL)
     _category_map = cs_map_name_to_id_create();
-  }
 
   /* Find or insert entries in map */
 
@@ -1086,6 +1548,65 @@ cs_log_iteration_add_array(const char                     *name,
     for (int i = 0; i < dim; i++)
       _sstats_wsum[v_idx + i] = 0;
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add or update clipping info for a given array.
+ *
+ * \param[in]  name          field or array name
+ * \param[in]  dim           associated dimension
+ * \param[in]  n_clip_min    number of local clippings to minimum value
+ * \param[in]  n_clip_max    number of local clippings to maximum value
+ * \param[in]  min_pre_clip  minimum values prior to clipping
+ * \param[in]  max_pre_clip  maximum values prior to clipping
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_log_iteration_clipping(const char       *name,
+                          int               dim,
+                          cs_lnum_t         n_clip_min,
+                          cs_lnum_t         n_clip_max,
+                          const cs_real_t   min_pre_clip[],
+                          const cs_real_t   max_pre_clip[])
+{
+  /* Initialize if necessary */
+
+  if (_name_map == NULL)
+    _name_map = cs_map_name_to_id_create();
+
+  int name_id = cs_map_name_to_id(_name_map, name);
+
+  _add_clipping(name_id, -1, dim,
+                n_clip_min, n_clip_max,
+                min_pre_clip, max_pre_clip);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add or update clipping info for a field
+ *
+ * \param[in]  f_id          associated field id
+ * \param[in]  n_clip_min    number of local clippings to minimum value
+ * \param[in]  n_clip_max    number of local clippings to maximum value
+ * \param[in]  min_pre_clip  minimum values prior to clipping
+ * \param[in]  max_pre_clip  maximum values prior to clipping
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_log_iteration_clipping_field(int               f_id,
+                                cs_lnum_t         n_clip_min,
+                                cs_lnum_t         n_clip_max,
+                                const cs_real_t   min_pre_clip[],
+                                const cs_real_t   max_pre_clip[])
+{
+  const cs_field_t  *f = cs_field_by_id(f_id);
+
+  _add_clipping(-1, f_id, f->dim,
+                n_clip_min, n_clip_max,
+                min_pre_clip, max_pre_clip);
 }
 
 /*----------------------------------------------------------------------------*/

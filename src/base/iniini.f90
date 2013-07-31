@@ -324,18 +324,6 @@ enddo
 
 ntlist = 1
 
-!   PARAMETRES DE SUIVI DE CALCUL, MIN-MAX, CLIPMIN, CLIPMAX
-
-do ii = 1, nvppmx
-  iclpmn(ii) = 0
-  iclpmx(ii) = 0
-enddo
-
-do ii = 1, nvppmx
-  varmna(ii) = 0.d0
-  varmxa(ii) = 0.d0
-enddo
-
 !   PARAMETRES DE CONVERGENCE, NORME DU SECOND MEMBRE, NOMBRE ITERATIONS
 !                                RESIDU NORME, DERIVE
 do ii = 1, nvppmx
