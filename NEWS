@@ -4,6 +4,9 @@ Release 3.1.1 (unreleased)
 Bug fixes:
 ----------
 
+- Fix Fortran time plot numbering leading to numbering conflicts between
+  probes and ALE structure plots.
+
 - Fix index bug in computation of forces for ALE.
 
 - Fix handling of batch template defined by absolute path in GUI.

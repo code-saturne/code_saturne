@@ -991,13 +991,9 @@ void CS_PROCF (tplnbr, TPLNBR)
   *ntpl = 0;
 
   for (fmt = CS_TIME_PLOT_DAT; fmt <= CS_TIME_PLOT_CSV; fmt++) {
-    for (i = 0; i < _n_files_max[fmt]; i++) {
-      if (_plot_files[fmt][i] != NULL)
-        i_max = i;
-    }
+    if (_n_files_max[fmt] > *ntpl)
+      *ntpl = _n_files_max[fmt];
   }
-
-  *ntpl = (cs_int_t)i_max;
 }
 
 /*============================================================================
