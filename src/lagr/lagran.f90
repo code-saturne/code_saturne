@@ -145,6 +145,7 @@ module lagran
 
   integer, save ::         ireent
 
+
   ! Additional pointers in the ITEPA and TEPA array
   ! ITEPA contains the particule state
 
@@ -154,6 +155,18 @@ module lagran
   ! Parameters of the particle resuspension model
 
    double precision, save :: espasg , denasp, modyeq , rayasp, rayasg
+
+  ! 4.3 Clogging model
+  !=======================
+
+  !     ICLOGST = 0 : no clogging model
+  !             = 1 : clogging model
+
+  integer, save ::         iclogst
+
+  ! Parameters of the particle clogging model
+
+   double precision, save :: jamlim
 
   !=============================================================================
   ! 5. Pas de temps Lagrangien
@@ -547,13 +560,15 @@ module lagran
   !      IMOYBR : Type de moyenne applicable pour affichage et
   !               post-procesing
 
+
   integer, save ::           nusbor   , nstbor   ,                         &
                              npstf    , npstft   ,                         &
                              inbrbd   , iflmbd   , iangbd   , ivitbd   ,   &
                              iencnbbd , iencmabd , iencdibd , iencckbd ,   &
                              inbr     , iflm     , iang     , ivit     ,   &
                              iencnb   , iencma   , iencdi   , iencck   ,   &
-                             iusb(nusbrd)    , imoybr(nusbrd+10)
+                             iusb(nusbrd)    , imoybr(nusbrd+10), inclg,   &
+                             iscovc
 
   double precision, save ::  tstatp , seuilf
 

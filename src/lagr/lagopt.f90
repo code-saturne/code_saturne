@@ -1713,6 +1713,20 @@ if (iensi3.eq.1) then
     imoybr(ivit) = 2
   endif
 
+  if (iclogst.eq.1) then
+    irf = irf + 1
+    inclg = irf
+    nombrd(inclg) = 'Part_deposited_number'
+    imoybr(inclg) = 0
+
+    irf = irf + 1
+    iscovc = irf
+    nombrd(iscovc) = 'Part_surf_coverage'
+    imoybr(iscovc) = 0
+
+  endif
+
+
   if (iphyla.eq.2 .and. iencra.eq.1 .and. iencnbbd.eq.1) then
     irf = irf + 1
     iencnb = irf

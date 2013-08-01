@@ -185,6 +185,8 @@ double precision, allocatable, save, dimension(:) :: vislen
 
 double precision, allocatable, dimension(:):: energt
 
+double precision, allocatable, dimension(:):: tempp
+
 
 integer nrangpp, ii
 integer nbpartall, nbpper
@@ -241,7 +243,11 @@ if (nordre.eq.2) then
   allocate(auxl2(nbpmax,7))
 endif
 if (idlvo.eq.1) then
+
   allocate(energt(nfabor))
+  if (iclogst.eq.1) then
+     allocate(tempp(nfabor))
+  endif
 endif
 
 ipass = ipass + 1
@@ -304,7 +310,7 @@ if (iplar.eq.1) then
 
   call lagbeg                                                     &
   !==========
- ( nbpmax , iphyla , idepst , ireent ,                            &
+ ( nbpmax , iphyla , idepst , ireent , iclogst  ,                 &
    nvls   , nbclst , icocel , itycel ,                            &
    jisor  , jrval  , jrpoi  , jrtsp  , jdp    , jmp    ,          &
    jxp    , jyp    , jzp    , jup    , jvp    , jwp    ,          &
@@ -368,6 +374,37 @@ if (iplar.eq.1) then
      write(nfecra,4100) ustarmoy
 !
   endif
+
+endif
+
+!===============================================================================
+! 1.bis  Initialization for the clogging model
+!===============================================================================
+
+if ( iclogst.eq.1 ) then
+
+   do ifac = 1,nfabor
+      iel = ifabor(ifac)
+
+      if (iscalt.gt.0) then
+
+         if (iscsth(iscalt).eq.-1) then
+            tempp(ifac) = rtp(iel,isca(iscalt)) + tkelvi
+         else if (iscsth(iscalt).eq. 1) then
+            tempp(ifac) = rtp(iel,isca(iscalt))
+         else if (iscsth(iscalt).eq.2) then
+            call usthht(1,rtp(iel,isca(iscalt)),tempp(ifac))
+         endif
+
+      else
+         tempp(ifac) = t0
+      endif
+
+   enddo
+
+   call cloginit                                                   &
+   !===========
+   ( cstfar, epsvid, epseau, fion, jamlim, tempp )
 
 endif
 
@@ -717,7 +754,8 @@ if (nor.eq.1) then
    inbr     , inbrbd   , iflm     , iflmbd   , iang     ,         &
    iangbd   , ivit     , ivitbd   , iencnb   , iencma   ,         &
    iencdi   , iencck   , iencnbbd , iencmabd , iencdibd ,         &
-   iencckbd , nusbor   , iusb     , vislen   , dlgeo    ,         &
+   iencckbd , inclg    , iscovc   ,                               &
+   nusbor   , iusb     , vislen   , dlgeo,                        &
    rtp      , iu       , iv       , iw       , energt   ,         &
    tprenc   , visref   , enc1     , enc2     , tkelvi)
 
@@ -956,6 +994,9 @@ if ((idepst.eq.1).and.(ntcabs.eq.ntmabs)) then
 endif
 if (idlvo.eq.1) then
    deallocate(energt)
+  if (iclogst.eq.1) then
+     deallocate(tempp)
+  endif
 endif
 
 !===============================================================================

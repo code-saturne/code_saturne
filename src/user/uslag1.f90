@@ -615,14 +615,12 @@ endif
 lamvbr = 0
 
 !===============================================================================
-! 12. Activation of deposition model (Guingo & Minier, 2008)
+! 12. Activation of deposition model
 !===============================================================================
 
 ! Activation of the deposition model
 ! (default off: 0 ; on: 1)
 
-! Caution: OPTION FOR DEVELOPERS ONLY
-! ========
 
 idepst = 0
 
@@ -649,6 +647,23 @@ modyeq = 266.d9
 rayasp = 5.d-9
 
 rayasg = 2.d-6
+
+
+!===============================================================================
+! 12ter. Activation of the clogging model
+!===============================================================================
+
+! Activation of the clogging model
+! (default off: 0 ; on: 1)
+
+! Caution: OPTION FOR DEVELOPERS ONLY
+! ========
+
+iclogst = 0
+
+! Parameters for the particle clogging model
+
+jamlim = 0.74d0       ! Jamming limit
 
 
 !===============================================================================

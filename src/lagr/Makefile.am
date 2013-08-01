@@ -63,6 +63,7 @@ cs_lagr_perio.h
 
 noinst_LTLIBRARIES = libcslagr.la
 libcslagr_la_SOURCES = \
+cs_lagr_clogging.c \
 cs_lagr_extract.c \
 cs_lagr_tracking.c \
 cs_lagr_perio.c \
