@@ -92,6 +92,7 @@ use ppthch
 use ppincl
 use cplsat
 use mesh
+use field
 
 !===============================================================================
 
@@ -160,6 +161,7 @@ double precision, dimension(:,:), allocatable :: vel
 double precision, dimension(:,:), allocatable :: vela
 double precision, dimension(:,:), allocatable :: mshvel
 double precision, dimension(:), allocatable :: coefap
+double precision, dimension(:), pointer :: imasfl, bmasfl
 
 !===============================================================================
 
@@ -330,8 +332,14 @@ endif
 !===============================================================================
 
 iappel = 1
-iflmas = ipprof(ifluma(iu))
-iflmab = ipprob(ifluma(iu))
+
+! Id of the mass flux
+call field_get_key_int(ivarfl(iu), kimasf, iflmas)
+call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
+
+! Pointers to the mass fluxes
+call field_get_val_s(iflmas, imasfl)
+call field_get_val_s(iflmab, bmasfl)
 
 call predvv &
 !==========
@@ -341,7 +349,7 @@ call predvv &
   icepdc , icetsm , itypsm ,                                     &
   dt     , rtp    , rtpa   , vel    , vela   ,                   &
   propce , propfa , propfb ,                                     &
-  propfa(1,iflmas), propfb(1,iflmab),                            &
+  imasfl , bmasfl ,                                              &
   tslagr , coefa  , coefb  , coefau , coefbu , cofafu , cofbfu , &
   ckupdc , smacel , frcxt  , grdphd ,                            &
   trava  , ximpa  , uvwk   , dfrcxt , dttens ,  trav  ,          &
@@ -357,8 +365,6 @@ if (iprco.le.0) then
   iclivp = iclrtp(iv,icoef)
   icliwp = iclrtp(iw,icoef)
 
-  iflmas = ipprof(ifluma(iu))
-  iflmab = ipprob(ifluma(iu))
   ipcrom = ipproc(irom)
   ipbrom = ipprob(irom)
 
@@ -384,7 +390,7 @@ if (iprco.le.0) then
    propce(1,ipcrom), propfb(1,ipbrom),                            &
    vel    ,                                                       &
    coefau , coefbu ,                                              &
-   propfa(1,iflmas), propfb(1,iflmab)  )
+   imasfl , bmasfl )
 
   ! In the ALE framework, we add the mesh velocity
   if (iale.eq.1) then
@@ -399,8 +405,6 @@ if (iprco.le.0) then
     !  are moved directly by the user
     allocate(intflx(nfac), bouflx(nfabor))
 
-    iflmas = ipprof(ifluma(iu))
-    iflmab = ipprob(ifluma(iu))
     ipcrom = ipproc(irom)
     ipbrom = ipprob(irom)
 
@@ -430,7 +434,7 @@ if (iprco.le.0) then
     ! Here we need of the opposite of the mesh velocity.
     !$omp parallel do if(nfabor > thr_n_min)
     do ifac = 1, nfabor
-      propfb(ifac,iflmab) = propfb(ifac,iflmab) - bouflx(ifac)
+      bmasfl(ifac) = bmasfl(ifac) - bouflx(ifac)
     enddo
 
     !$omp parallel do private(ddepx, ddepy, ddepz, icpt, ii, inod, &
@@ -455,12 +459,12 @@ if (iprco.le.0) then
         iel2 = ifacel(2,ifac)
         dtfac = 0.5d0*(dt(iel1) + dt(iel2))
         rhofac = 0.5d0*(propce(iel1,ipcrom) + propce(iel2,ipcrom))
-        propfa(ifac,iflmas) = propfa(ifac,iflmas) - rhofac*(      &
+        imasfl(ifac) = imasfl(ifac) - rhofac*(                    &
               ddepx*surfac(1,ifac)                                &
              +ddepy*surfac(2,ifac)                                &
              +ddepz*surfac(3,ifac) )/dtfac/icpt
       else
-        propfa(ifac,iflmas) = propfa(ifac,iflmas) - intflx(ifac)
+        imasfl(ifac) = imasfl(ifac) - intflx(ifac)
       endif
     enddo
 
@@ -474,8 +478,6 @@ if (iprco.le.0) then
   ! En turbomachine, on connaît exactement la vitesse de maillage à ajouter
   if (imobil.eq.1) then
 
-    iflmas = ipprof(ifluma(iu))
-    iflmab = ipprob(ifluma(iu))
     ipcrom = ipproc(irom)
     ipbrom = ipprob(irom)
 
@@ -488,7 +490,7 @@ if (iprco.le.0) then
       vitbox = omegay*cdgfac(3,ifac) - omegaz*cdgfac(2,ifac)
       vitboy = omegaz*cdgfac(1,ifac) - omegax*cdgfac(3,ifac)
       vitboz = omegax*cdgfac(2,ifac) - omegay*cdgfac(1,ifac)
-      propfa(ifac,iflmas) = propfa(ifac,iflmas) - rhofac*(        &
+      imasfl(ifac) = imasfl(ifac) - rhofac*(        &
            vitbox*surfac(1,ifac) + vitboy*surfac(2,ifac) + vitboz*surfac(3,ifac) )
     enddo
     !$omp parallel do private(iel, dtfac, rhofac, vitbox, vitboy, vitboz) &
@@ -500,7 +502,7 @@ if (iprco.le.0) then
       vitbox = omegay*cdgfbo(3,ifac) - omegaz*cdgfbo(2,ifac)
       vitboy = omegaz*cdgfbo(1,ifac) - omegax*cdgfbo(3,ifac)
       vitboz = omegax*cdgfbo(2,ifac) - omegay*cdgfbo(1,ifac)
-      propfb(ifac,iflmab) = propfb(ifac,iflmab) - rhofac*(        &
+      bmasfl(ifac) = bmasfl(ifac) - rhofac*(        &
            vitbox*surfbo(1,ifac) + vitboy*surfbo(2,ifac) + vitboz*surfbo(3,ifac) )
     enddo
 
@@ -584,8 +586,6 @@ icliup = iclrtp(iu ,icoef)
 iclivp = iclrtp(iv ,icoef)
 icliwp = iclrtp(iw ,icoef)
 
-iflmas = ipprof(ifluma(iu))
-iflmab = ipprob(ifluma(iu))
 ipcrom = ipproc(irom  )
 ipbrom = ipprob(irom  )
 
@@ -779,8 +779,6 @@ if (iale.eq.1) then
   !  are moved directly by the user
   allocate(intflx(nfac), bouflx(nfabor))
 
-  iflmas = ipprof(ifluma(iu))
-  iflmab = ipprob(ifluma(iu))
   ipcrom = ipproc(irom)
   ipbrom = ipprob(irom)
 
@@ -810,7 +808,7 @@ if (iale.eq.1) then
   ! Here we need of the opposite of the mesh velocity.
   !$omp parallel do if(nfabor > thr_n_min)
   do ifac = 1, nfabor
-    propfb(ifac,iflmab) = propfb(ifac,iflmab) - bouflx(ifac)
+    bmasfl(ifac) = bmasfl(ifac) - bouflx(ifac)
   enddo
 
   !$omp parallel do private(ddepx, ddepy, ddepz, icpt, ii, inod, &
@@ -835,12 +833,12 @@ if (iale.eq.1) then
       iel2 = ifacel(2,ifac)
       dtfac = 0.5d0*(dt(iel1) + dt(iel2))
       rhofac = 0.5d0*(propce(iel1,ipcrom) + propce(iel2,ipcrom))
-      propfa(ifac,iflmas) = propfa(ifac,iflmas) - rhofac*(      &
+      imasfl(ifac) = imasfl(ifac) - rhofac*(      &
             ddepx*surfac(1,ifac)                                &
            +ddepy*surfac(2,ifac)                                &
            +ddepz*surfac(3,ifac) )/dtfac/icpt
     else
-      propfa(ifac,iflmas) = propfa(ifac,iflmas) - intflx(ifac)
+      imasfl(ifac) = imasfl(ifac) - intflx(ifac)
     endif
   enddo
 
@@ -856,8 +854,6 @@ endif
 
 if (imobil.eq.1) then
 
-  iflmas = ipprof(ifluma(iu))
-  iflmab = ipprob(ifluma(iu))
   ipcrom = ipproc(irom)
   ipbrom = ipprob(irom)
 
@@ -870,7 +866,7 @@ if (imobil.eq.1) then
     vitbox = omegay*cdgfac(3,ifac) - omegaz*cdgfac(2,ifac)
     vitboy = omegaz*cdgfac(1,ifac) - omegax*cdgfac(3,ifac)
     vitboz = omegax*cdgfac(2,ifac) - omegay*cdgfac(1,ifac)
-    propfa(ifac,iflmas) = propfa(ifac,iflmas) - rhofac*(        &
+    imasfl(ifac) = imasfl(ifac) - rhofac*(        &
          vitbox*surfac(1,ifac) + vitboy*surfac(2,ifac) + vitboz*surfac(3,ifac) )
   enddo
   !$omp parallel do private(iel, dtfac, rhofac, vitbox, vitboy, vitboz) &
@@ -882,7 +878,7 @@ if (imobil.eq.1) then
     vitbox = omegay*cdgfbo(3,ifac) - omegaz*cdgfbo(2,ifac)
     vitboy = omegaz*cdgfbo(1,ifac) - omegax*cdgfbo(3,ifac)
     vitboz = omegax*cdgfbo(2,ifac) - omegay*cdgfbo(1,ifac)
-    propfb(ifac,iflmab) = propfb(ifac,iflmab) - rhofac*(        &
+    bmasfl(ifac) = bmasfl(ifac) - rhofac*(        &
          vitbox*surfbo(1,ifac) + vitboy*surfbo(2,ifac) + vitboz*surfbo(3,ifac) )
   enddo
 endif
@@ -1101,8 +1097,6 @@ endif
 ! 9.  IMPRESSIONS
 !===============================================================================
 
-iflmas = ipprof(ifluma(iu))
-iflmab = ipprob(ifluma(iu))
 ipcrom = ipproc(irom)
 ipbrom = ipprob(irom)
 
@@ -1163,7 +1157,7 @@ if (iwarni(iu).ge.1) then
     iel2 = ifacel(2,ifac)
     surf = surfan(ifac)
     rhom = (propce(iel1,ipcrom)+propce(iel2,ipcrom))*0.5d0
-    rnorm = propfa(ifac,iflmas)/(surf*rhom)
+    rnorm = imasfl(ifac)/(surf*rhom)
     rnorma = max(rnorma,rnorm)
     rnormi = min(rnormi,rnorm)
   enddo
@@ -1178,7 +1172,7 @@ if (iwarni(iu).ge.1) then
   rnorma = -grand
   rnormi =  grand
   do ifac = 1, nfabor
-    rnorm = propfb(ifac,iflmab)/(surfbn(ifac)*propfb(ifac,ipbrom))
+    rnorm = bmasfl(ifac)/(surfbn(ifac)*propfb(ifac,ipbrom))
     rnorma = max(rnorma,rnorm)
     rnormi = min(rnormi,rnorm)
   enddo
@@ -1193,7 +1187,7 @@ if (iwarni(iu).ge.1) then
   rnorm = 0.d0
   !$omp parallel do reduction(+: rnorm) if(nfabor > thr_n_min)
   do ifac = 1, nfabor
-    rnorm = rnorm + propfb(ifac,iflmab)
+    rnorm = rnorm + bmasfl(ifac)
   enddo
 
   if (irangp.ge.0) call parsom (rnorm)

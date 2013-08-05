@@ -151,7 +151,7 @@ integer          iconvp, idiffp, ndircp, ireslp, nitmap
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
 integer          imucpp, idftnp, iswdyp
-integer          iflid , f_id, keydri, kimasf, kbmasf, iscdri
+integer          iflid , f_id, keydri, iscdri
 
 double precision epsrgp, climgp, extrap, relaxp, blencp, epsilp
 double precision epsrsp
@@ -188,17 +188,13 @@ iflid = ivarfl(isca(iscal))
 ! Key id for drift scalar
 call field_get_key_id("drift_scalar_model", keydri)
 
-! Key id for the inner mass flux id
-call field_get_key_id("inner_mass_flux_id", kimasf)
 ! Id of the mass flux
-call field_get_key_int(iflid, kimasf, iflmas)
+call field_get_key_int(iflid, kimasf, iflmas) ! interior mass flux
 ! Pointer to the internal mass flux
 call field_get_val_s(iflmas, imasfl)
 
-! Key id for the boundary mass flux id
-call field_get_key_id("boundary_mass_flux_id", kbmasf)
 ! Id of the mass flux
-call field_get_key_int(iflid, kbmasf, iflmab)
+call field_get_key_int(iflid, kbmasf, iflmab) ! boundary mass flux
 ! Pointer to the Boundary mass flux
 call field_get_val_s(iflmab, bmasfl)
 

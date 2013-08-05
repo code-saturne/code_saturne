@@ -65,6 +65,7 @@ use mltgrd
 use ihmpre
 use cplsat
 use mesh
+use field
 
 !===============================================================================
 
@@ -110,6 +111,13 @@ write(nfecra, 900)
                                                                 /)
 
 #endif
+
+!===============================================================================
+! 0. Global field keys
+!===============================================================================
+
+call field_get_key_id("inner_mass_flux_id", kimasf)
+call field_get_key_id("boundary_mass_flux_id", kbmasf)
 
 !===============================================================================
 ! 1. Map Fortran pointers to C global data
