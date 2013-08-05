@@ -87,7 +87,7 @@ integer          keysca, keyvar, kscmin, kscmax, kdiftn
 integer          nfld, itycat, ityloc, idim1, idim3
 logical          ilved, iprev, inoprv
 integer          ifvar(nvppmx), iapro(npromx)
-integer          f_id, kimasf, kbmasf, kscavr
+integer          f_id, kscavr
 
 character*80     name
 character*32     name1, name2, name3
@@ -130,12 +130,6 @@ call field_get_key_id("scalar_id", keysca)
 
 ! Key id for variable id
 call field_get_key_id("variable_id", keyvar)
-
-! Key id for the inner mass flux id
-call field_get_key_id("inner_mass_flux_id", kimasf)
-
-! Key id for the boundary mass flux id
-call field_get_key_id("boundary_mass_flux_id", kbmasf)
 
 ! Key id for scamin and scamax
 call field_get_key_id("min_scalar_clipping", kscmin)
@@ -531,7 +525,6 @@ if (ifluaa(ipr).eq.-1) then
 else
   call field_create(f_name, itycat, ityloc, idim1, ilved, iprev, f_id)
 endif
-call field_set_key_str(f_id, keylbl, f_name)
 
 ! The same mass flux for every variable, an other mass flux
 ! might be defined afterwards in addfld.f90
@@ -552,7 +545,6 @@ if (ifluaa(ipr).eq.-1) then
 else
   call field_create(f_name, itycat, ityloc, idim1, ilved, iprev, f_id)
 endif
-call field_set_key_str(f_id, keylbl, f_name)
 
 ! The same mass flux for every variable, an other mass flux
 ! might be defined afterwards in addfld.f90

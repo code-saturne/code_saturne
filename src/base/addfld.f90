@@ -84,7 +84,7 @@ integer          ii
 integer          iscdri, icla, iclap
 integer          iflid, iopchr
 integer          nfld, itycat, ityloc, idim1, idim3
-integer          keyccl, keydri, keyvis, keylbl, kimasf, kbmasf, kdiftn
+integer          keyccl, keydri, keyvis, keylbl, kdiftn
 logical          ilved, iprev, inoprv
 integer          ifvar(nvppmx), iapro(npromx)
 integer          f_id
@@ -118,12 +118,6 @@ call field_get_key_id(name, keyvis)
 
 name = 'label'
 call field_get_key_id(name, keylbl)
-
-! Key id for the corresponding mass flux
-call field_get_key_id("inner_mass_flux_id", kimasf)
-
-! Key id for the corresponding mass flux
-call field_get_key_id("boundary_mass_flux_id", kbmasf)
 
 ! Key id of the coal scalar class
 call field_get_key_id("scalar_class", keyccl)
