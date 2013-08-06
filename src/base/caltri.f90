@@ -429,14 +429,6 @@ endif
 ! Default initializations
 !===============================================================================
 
-call iniva0 &
-!==========
- ( nvar   , nscal  , ncofab ,                                     &
-   ra(idt)    , ra(itpuco) , ra(irtp) ,                           &
-   ra(ipropc) , propfa , propfb ,                                 &
-   coefa  , coefb  ,                                              &
-   frcxt  , prhyd  )
-
 call fldtri &
 !==========
  ( nproce ,                                                       &
@@ -445,6 +437,14 @@ call fldtri &
 
 call field_allocate_or_map_all
 !=============================
+
+call iniva0 &
+!==========
+ ( nvar   , nscal  , ncofab ,                                     &
+   ra(idt)    , ra(itpuco) , ra(irtp) ,                           &
+   ra(ipropc) , propfa , propfb ,                                 &
+   coefa  , coefb  ,                                              &
+   frcxt  , prhyd  )
 
 !===============================================================================
 ! Possible restart
