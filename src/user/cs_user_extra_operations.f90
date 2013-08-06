@@ -57,15 +57,15 @@
 !> \param[in]     propfa        physical properties at interior face centers
 !> \param[in]     propfb        physical properties at boundary face centers
 !> \param[in]     ettp, ettpa   particle-defined variables
-!> \param[in]                    (at current and previous time steps)
+!>                               (at current and previous time steps)
 !> \param[in]     tepa          real particle properties
-!> \param[in]                    (statistical weight, ...
+!>                               (statistical weight, ...
 !> \param[in]     statis        statistic means
 !> \param[in]     stativ        accumulator for variance of volume statisitics
 !> \param[in]     tslagr        Lagrangian return coupling term
-!> \param[in]                    on carrier phase
+!>                               on carrier phase
 !> \param[in]     parbor        particle interaction properties
-!> \param[in]                    on boundary faces
+!>                               on boundary faces
 !_______________________________________________________________________________
 
 
