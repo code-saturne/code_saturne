@@ -1538,9 +1538,8 @@ if (1.eq.0) then
 
         call uslaen                                               &
         !==========
- ( nvar   , nscal  , nvlsta ,                                     &
+ ( nvlsta ,                                                       &
    ivff   , ivff   , ivff   , iflu   , ilpd   , icla   ,          &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    statis , stativ , tabvr  )
 
         ind = 0

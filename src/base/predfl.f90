@@ -461,7 +461,7 @@ call itrmas &
    init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   rvoid  , rvoid  , rvoid  ,                                     &
+   rvoid  ,                                                       &
    pota   ,                                                       &
    clapot , clbpot ,                                              &
    cfapot , cfbpot ,                                              &
@@ -482,7 +482,7 @@ call itrmas &
    init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   rvoid  , rvoid  , rvoid  ,                                     &
+   rvoid  ,                                                       &
    dpot   ,                                                       &
    clapot , clbpot ,                                              &
    cfapot , cfbpot ,                                              &

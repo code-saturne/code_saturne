@@ -318,7 +318,7 @@ if (btest(iscdri, DRIFT_SCALAR_TURBOPHORESIS).or.    &
    init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   rvoid  , rvoid  , rvoid  ,                                     &
+   rvoid  ,                                                       &
    viscce ,                                                       &
    coefap , coefbp ,                                              &
    cofafp , cofbfp ,                                              &

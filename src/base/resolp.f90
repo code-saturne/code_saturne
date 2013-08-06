@@ -31,7 +31,7 @@ subroutine resolp &
    frcxt  , dfrcxt , tpucou , trav   ,                            &
    viscf  , viscb  , viscfi , viscbi ,                            &
    drtp   , smbr   , rovsdt , tslagr ,                            &
-   frchy  , dfrchy , trava  )
+   trava  )
 
 !===============================================================================
 ! FONCTION :
@@ -85,10 +85,6 @@ subroutine resolp &
 ! rovsdt(ncelet    ! tr ! --- ! tableau de travail pour terme instat           !
 ! tslagr           ! tr ! <-- ! terme de couplage retour du                    !
 !  (ncelet,*)      !    !     !   lagrangien                                   !
-! frchy(ncelet     ! tr ! --- ! tableau de travail                             !
-!  ndim  )         !    !     !                                                !
-! dfrchy(ncelet    ! tr ! --- ! tableau de travail                             !
-!  ndim  )         !    !     !                                                !
 ! trava            ! tr ! <-- ! tableau de travail pour couplage               !
 !__________________!____!_____!________________________________________________!
 
