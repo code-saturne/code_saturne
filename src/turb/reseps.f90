@@ -98,6 +98,7 @@ use period
 use lagran
 use pointe, only:visten
 use mesh
+use field
 
 !===============================================================================
 
@@ -155,6 +156,7 @@ double precision, allocatable, dimension(:) :: dpvar
 double precision, allocatable, dimension(:,:) :: viscce
 double precision, allocatable, dimension(:,:) :: weighf
 double precision, allocatable, dimension(:) :: weighb
+double precision, dimension(:), pointer :: imasfl, bmasfl
 
 !===============================================================================
 
@@ -177,8 +179,10 @@ endif
 ipcrom = ipproc(irom  )
 ipcvis = ipproc(iviscl)
 ipcvst = ipproc(ivisct)
-iflmas = ipprof(ifluma(iu))
-iflmab = ipprob(ifluma(iu))
+call field_get_key_int(ivarfl(iu), kimasf, iflmas)
+call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
+call field_get_val_s(iflmas, imasfl)
+call field_get_val_s(iflmab, bmasfl)
 
 iclvar = iclrtp(ivar,icoef)
 iclvaf = iclrtp(ivar,icoeff)
@@ -522,7 +526,7 @@ call codits &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
    coefa(1,iclvar) , coefb(1,iclvar) ,                            &
    coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
-   propfa(1,iflmas), propfb(1,iflmab),                            &
+   imasfl , bmasfl ,                                              &
    viscf  , viscb  , viscce , viscf  , viscb  , viscce ,          &
    weighf , weighb ,                                              &
    rovsdt , smbr   , rtp(1,ivar)     , dpvar  ,                   &

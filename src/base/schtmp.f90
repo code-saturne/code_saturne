@@ -76,6 +76,7 @@ use pointe
 use parall
 use period
 use mesh
+use field
 
 !===============================================================================
 
@@ -102,6 +103,7 @@ integer          ipcvis , ipcvst
 integer          ipcvsa , ipcvta , ipcvsl
 integer          iicp   , iicpa
 double precision flux   , theta  , aa, bb, viscos, xmasvo, varcp
+double precision, dimension(:), pointer :: imasfl, bmasfl
 
 !===============================================================================
 
@@ -115,19 +117,19 @@ double precision flux   , theta  , aa, bb, viscos, xmasvo, varcp
 ! 1.  AU TOUT DEBUT DE LA BOUCLE EN TEMPS
 !===============================================================================
 
-if(iappel.eq.1) then
+if (iappel.eq.1) then
 
 ! --- Application du schema en temps sur le flux de masse
 !     Soit F le flux de masse
-!       - si ISTMPF = 2 (schema non standard, theta>0 en fait = 0.5)
-!         PROPFA(1,IFLMAS) contient F_(n-2+theta) et on y met F(n-1+theta)
-!         PROPFA(1,IFLMSA) contient F_(n-1+theta) et
+!       - si istmpf = 2 (schema non standard, theta>0 en fait = 0.5)
+!         imasfl           contient F_(n-2+theta) et on y met F(n-1+theta)
+!         propfa(1,iflmsa) contient F_(n-1+theta) et
 !                                    on y met une extrapolation en n+theta
-!       - si ISTMPF = 1 (schema non standard, theta=0)
-!         PROPFA(1,IFLMAS) contient deja F_n et
-!         PROPFA(1,IFLMSA) n'est pas utilise : on ne fait rien
-!       - sinon : ISTMPF = 0 (schema standard, theta= -999)
-!         PROPFA(1,IFLMAS) et PROPFA(1,IFLMSA) contiennent tous les deux F(n)
+!       - si istmpf = 1 (schema non standard, theta=0)
+!         imasfl           contient deja F_n et
+!         propfa(1,iflmsa) n'est pas utilise : on ne fait rien
+!       - sinon : istmpf = 0 (schema standard, theta= -999)
+!         imasfl           et propfa(1,iflmsa) contiennent tous les deux F(n)
 !                                            : on ne fait rien
 
 
@@ -137,20 +139,22 @@ if(iappel.eq.1) then
 !     Au premier pas de temps, l'ancien a ete initialise dans inivar (a 0)
 !       en suite de calcul, les deux ont ete relus.
 
-  if(istmpf.eq.2) then
-    iflmas = ipprof(ifluma(iu))
-    iflmab = ipprob(ifluma(iu))
+  if (istmpf.eq.2) then
+    call field_get_key_int(ivarfl(iu), kimasf, iflmas)
+    call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
+    call field_get_val_s(iflmas, imasfl)
+    call field_get_val_s(iflmab, bmasfl)
     iflmsa = ipprof(ifluaa(iu))
     iflmba = ipprob(ifluaa(iu))
     do ifac = 1 , nfac
-      flux                =      propfa(ifac,iflmas)
-      propfa(ifac,iflmas) = 2.d0*propfa(ifac,iflmas)            &
+      flux                =      imasfl(ifac)
+      imasfl(ifac) = 2.d0*imasfl(ifac)            &
            - propfa(ifac,iflmsa)
       propfa(ifac,iflmsa) = flux
     enddo
     do ifac = 1 , nfabor
-      flux                =      propfb(ifac,iflmab)
-      propfb(ifac,iflmab) = 2.d0*propfb(ifac,iflmab)            &
+      flux                =      bmasfl(ifac)
+      bmasfl(ifac) = 2.d0*bmasfl(ifac)            &
            - propfb(ifac,iflmba)
       propfb(ifac,iflmba) = flux
     enddo
@@ -387,20 +391,23 @@ elseif(iappel.eq.3) then
 !     On traite ici le flux de masse uniquement
 !        On suppose qu'il n'y en a qu'un seul.
 
-!     Si ISTMPF = 1 : standard : on ne fait rien
-!     Si ISTMPF = 2 : ordre 2 (THETFL > 0 : = 0.5)
-!       on calcule F(n+theta) par interpolation a partir
-!       de F_(n-1+theta) et F(n+1) et on le met dans PROPFA(1,IFLMAS)
-!     Si ISTMPF = 0 : explicite (THETFL = 0) : on remet F(n) dans
-!       PROPFA(1,IFLMAS) sauf a la derniere iteration (un traitement
-!       complementaire sera fait en IAPPEL=4)
+!     si istmpf = 1 : standard : on ne fait rien
+!     si istmpf = 2 : ordre 2 (thetfl > 0 : = 0.5)
+!       on calcule f(n+theta) par interpolation a partir
+!       de F_(n-1+theta) et f(n+1) et on le met dans imasfl
+!     si istmpf = 0 : explicite (thetfl = 0) : on remet F(n) dans
+!       imasfl sauf a la derniere iteration (un traitement
+!       complementaire sera fait en iappel=4)
 
 !     Dans le cas ou on itere sur navsto, on passe ici
 !     - a toutes les iterations si ISTMPF.NE.0
 !     - a toutes les iterations sauf la derniere si ISTMPF.EQ.0
 
-  iflmas = ipprof(ifluma(iu))
-  iflmab = ipprob(ifluma(iu))
+  call field_get_key_int(ivarfl(iu), kimasf, iflmas)
+  call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
+  call field_get_val_s(iflmas, imasfl)
+  call field_get_val_s(iflmab, bmasfl)
+
   if(istmpf.eq.2) then
     iflmsa = ipprof(ifluaa(iu))
     iflmba = ipprob(ifluaa(iu))
@@ -408,21 +415,21 @@ elseif(iappel.eq.3) then
     aa = 1.d0/(2.d0-theta)
     bb = (1.d0-theta)/(2.d0-theta)
     do ifac = 1 , nfac
-      propfa(ifac,iflmas) = aa * propfa(ifac,iflmas)            &
+      imasfl(ifac) = aa * imasfl(ifac)            &
            + bb * propfa(ifac,iflmsa)
     enddo
     do ifac = 1 , nfabor
-      propfb(ifac,iflmab) = aa * propfb(ifac,iflmab)            &
+      bmasfl(ifac) = aa * bmasfl(ifac)            &
            + bb * propfb(ifac,iflmba)
     enddo
   elseif(istmpf.eq.0) then
     iflmsa = ipprof(ifluaa(iu))
     iflmba = ipprob(ifluaa(iu))
     do ifac = 1 , nfac
-      propfa(ifac,iflmas) = propfa(ifac,iflmsa)
+      imasfl(ifac) = propfa(ifac,iflmsa)
     enddo
     do ifac = 1 , nfabor
-      propfb(ifac,iflmab) = propfb(ifac,iflmba)
+      bmasfl(ifac) = propfb(ifac,iflmba)
     enddo
   endif
 
@@ -437,26 +444,29 @@ elseif(iappel.eq.4) then
 !     On traite ici le flux de masse uniquement
 !        On suppose qu'il n'y en a qu'un seul.
 
-!     Si ISTMPF = 1 : standard : on ne fait rien
-!     Si ISTMPF = 2 : ordre 2 (THETFL > 0 : = 0.5)
+!     Si istmpf = 1 : standard : on ne fait rien
+!     Si istmpf = 2 : ordre 2 (thetfl > 0 : = 0.5)
 !       on calcule F(n+theta) par interpolation a partir
-!       de F_(n-1+theta) et F(n+1) et on le met dans PROPFA(1,IFLMAS)
-!     Si ISTMPF = 0 : explicite (THETFL = 0)
-!       On sauvegarde F_(n+1) dans PROPFA(1,IFLMSA),mais on continue
-!       les calculs avec F_(n) mis dans PROPFA(1,IFLMAS)
+!       de F_(n-1+theta) et F(n+1) et on le met dans imasfl)
+!     Si istmpf = 0 : explicite (thetfl = 0)
+!       On sauvegarde F_(n+1) dans propfa(1,iflmsa),mais on continue
+!       les calculs avec F_(n) mis dans imasfl
 
-!     On retablira au dernier appel de schtmp pour ISTMPF = 0
+!     On retablira au dernier appel de schtmp pour istmpf = 0
 
 !     Dans le cas ou on itere sur navsto, on passe ici
-!       - a toutes les iterations            si ISTMPF.NE.0
-!       - uniquement a la derniere iteration si ISTMPF.EQ.0
+!       - a toutes les iterations            si istmpf.ne.0
+!       - uniquement a la derniere iteration si istmpf.eq.0
 !         (ce faisant, a partir de la deuxieme sous-iteration,
 !          le calcul sera fait avec F(n+1) et plus F(n), mais on
 !          suppose que l'utilisateur a choisi de faire des sous-iter
 !          aussi pour impliciter le flux de masse)
 
-  iflmas = ipprof(ifluma(iu))
-  iflmab = ipprob(ifluma(iu))
+  call field_get_key_int(ivarfl(iu), kimasf, iflmas)
+  call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
+  call field_get_val_s(iflmas, imasfl)
+  call field_get_val_s(iflmab, bmasfl)
+
   if(istmpf.eq.2) then
     iflmsa = ipprof(ifluaa(iu))
     iflmba = ipprob(ifluaa(iu))
@@ -464,24 +474,24 @@ elseif(iappel.eq.4) then
     aa = 1.d0/(2.d0-theta)
     bb = (1.d0-theta)/(2.d0-theta)
     do ifac = 1 , nfac
-      propfa(ifac,iflmas) = aa * propfa(ifac,iflmas)            &
+      imasfl(ifac) = aa * imasfl(ifac)            &
            + bb * propfa(ifac,iflmsa)
     enddo
     do ifac = 1 , nfabor
-      propfb(ifac,iflmab) = aa * propfb(ifac,iflmab)            &
+      bmasfl(ifac) = aa * bmasfl(ifac)            &
            + bb * propfb(ifac,iflmba)
     enddo
   elseif(istmpf.eq.0) then
     iflmsa = ipprof(ifluaa(iu))
     iflmba = ipprob(ifluaa(iu))
     do ifac = 1 , nfac
-      flux = propfa(ifac,iflmas)
-      propfa(ifac,iflmas) = propfa(ifac,iflmsa)
+      flux = imasfl(ifac)
+      imasfl(ifac) = propfa(ifac,iflmsa)
       propfa(ifac,iflmsa) = flux
     enddo
     do ifac = 1 , nfabor
-      flux = propfb(ifac,iflmab)
-      propfb(ifac,iflmab) = propfb(ifac,iflmba)
+      flux = bmasfl(ifac)
+      bmasfl(ifac) = propfb(ifac,iflmba)
       propfb(ifac,iflmba) = flux
     enddo
   endif
@@ -500,22 +510,24 @@ elseif(iappel.eq.5) then
 !     On corrige les manipulations sur le flux de masse faites dans
 !       l'appel precedent afin d'etre pret pour le pas de temps suivant.
 
-!     Si ISTMPF = 1 : standard : on ne fait rien
-!     Si ISTMPF = 2 : ordre 2 (THETFL > 0 : = 0.5) : on ne fait rien
-!     Si ISTMPF = 0 : explicite (THETFL = 0)
-!       on remet F_(n+1) (stocke dans PROPFA(1,IFLMSA)) dans PROPFA(1,IFLMAS)
+!     Si istmpf = 1 : standard : on ne fait rien
+!     Si istmpf = 2 : ordre 2 (thetfl > 0 : = 0.5) : on ne fait rien
+!     Si istmpf = 0 : explicite (thetfl = 0)
+!       on remet F_(n+1) (stocke dans propfa(1,iflmsa)) dans imasfl
 !       de sorte que les deux flux contiennent la meme chose
 
   if(istmpf.eq.0) then
-    iflmas = ipprof(ifluma(iu))
-    iflmab = ipprob(ifluma(iu))
+    call field_get_key_int(ivarfl(iu), kimasf, iflmas)
+    call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
+    call field_get_val_s(iflmas, imasfl)
+    call field_get_val_s(iflmab, bmasfl)
     iflmsa = ipprof(ifluaa(iu))
     iflmba = ipprob(ifluaa(iu))
     do ifac = 1 , nfac
-      propfa(ifac,iflmas) = propfa(ifac,iflmsa)
+      imasfl(ifac) = propfa(ifac,iflmsa)
     enddo
     do ifac = 1 , nfabor
-      propfb(ifac,iflmab) = propfb(ifac,iflmba)
+      bmasfl(ifac) = propfb(ifac,iflmba)
     enddo
   endif
 

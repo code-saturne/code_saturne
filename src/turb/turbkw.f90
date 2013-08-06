@@ -82,6 +82,7 @@ use lagran
 use pointe, only: s2kw, divukw, ifapat, dispar, coefau, coefbu
 use parall
 use mesh
+use field
 use cs_c_bindings
 
 !===============================================================================
@@ -149,6 +150,7 @@ double precision, allocatable, dimension(:) :: usimpk, usimpw
 double precision, allocatable, dimension(:) :: w7
 double precision, allocatable, dimension(:) :: dpvar
 double precision, allocatable, dimension(:) :: rotfct
+double precision, dimension(:), pointer :: imasfl, bmasfl
 
 !===============================================================================
 
@@ -177,8 +179,12 @@ iclomf = iclrtp(iomg,icoeff)
 ipcrom = ipproc(irom  )
 ipcvst = ipproc(ivisct)
 ipcvis = ipproc(iviscl)
-iflmas = ipprof(ifluma(ik))
-iflmab = ipprob(ifluma(ik))
+
+call field_get_key_int(ivarfl(ik), kimasf, iflmas)
+call field_get_key_int(ivarfl(ik), kbmasf, iflmab)
+call field_get_val_s(iflmas, imasfl)
+call field_get_val_s(iflmab, bmasfl)
+
 ipbrom = ipprob(irom  )
 
 thets  = thetst
@@ -755,7 +761,7 @@ if (ikecou.eq.1) then
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
    coefa(1,iclvar) , coefb(1,iclvar) ,                            &
    coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
-   propfa(1,iflmas), propfb(1,iflmab),                            &
+   imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , rvoid  ,                            &
    rvoid  , rvoid  ,                                              &
    w5     )
@@ -828,7 +834,7 @@ if (ikecou.eq.1) then
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
    coefa(1,iclvar) , coefb(1,iclvar) ,                            &
    coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
-   propfa(1,iflmas), propfb(1,iflmab),                            &
+   imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , rvoid  ,                            &
    rvoid  , rvoid  ,                                              &
    w6     )
@@ -995,7 +1001,7 @@ call codits &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
    coefa(1,iclvar) , coefb(1,iclvar) ,                            &
    coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
-   propfa(1,iflmas), propfb(1,iflmab),                            &
+   imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &
    tinstk , smbrk  , rtp(1,ivar)     , dpvar  ,                   &
@@ -1074,7 +1080,7 @@ call codits &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
    coefa(1,iclvar) , coefb(1,iclvar) ,                            &
    coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
-   propfa(1,iflmas), propfb(1,iflmab),                            &
+   imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &
    tinstw , smbrw  , rtp(1,ivar)     , dpvar  ,                   &

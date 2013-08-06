@@ -83,6 +83,7 @@ use parall
 use period
 use entsor
 use mesh
+use field
 
 !===============================================================================
 
@@ -108,6 +109,7 @@ integer          istr, ii, ifac, inod, iel, indast
 integer          iflmas, iflmab,iclp,iclu,iclv,iclw
 
 integer, allocatable, dimension(:) :: lstfac
+double precision, dimension(:), pointer :: imasfl, bmasfl
 
 !===============================================================================
 
@@ -116,9 +118,11 @@ integer, allocatable, dimension(:) :: lstfac
 ! 1. INITIALISATION
 !===============================================================================
 
+call field_get_key_int(ivarfl(iu), kimasf, iflmas)
+call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
+call field_get_val_s(iflmas, imasfl)
+call field_get_val_s(iflmab, bmasfl)
 
-iflmas = ipprof(ifluma(iu))
-iflmab = ipprob(ifluma(iu))
 iclp = iclrtp(ipr,icoef)
 iclu = iclrtp(iu,icoef)
 iclv = iclrtp(iv,icoef)
@@ -253,10 +257,10 @@ if (italim.eq.1) then
   enddo
   if (ineefl.eq.1) then
     do ifac = 1, nfac
-      flmalf(ifac) = propfa(ifac,iflmas)
+      flmalf(ifac) = imasfl(ifac)
     enddo
     do ifac = 1, nfabor
-      flmalb(ifac) = propfb(ifac,iflmab)
+      flmalb(ifac) = bmasfl(ifac)
       cofale(ifac,1) = coefa(ifac,iclp)
       cofale(ifac,2) = coefa(ifac,iclu)
       cofale(ifac,3) = coefa(ifac,iclv)

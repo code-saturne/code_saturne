@@ -96,6 +96,7 @@ use parall
 use period
 use cplsat
 use mesh
+use field
 
 !===============================================================================
 
@@ -123,7 +124,7 @@ double precision dofcpl(3,nfbcpl)
 
 integer          ifac, iel,isou
 integer          inc, iccocg, iclvar, nswrgp, imligp
-integer          iwarnp, ivar
+integer          iwarnp, ivar, iflmab
 integer          ipt
 integer          iii
 
@@ -137,15 +138,18 @@ double precision xif, yif, zif, xopf, yopf, zopf
 double precision gradi, pondj, flumab
 
 double precision, allocatable, dimension(:,:) :: grad
+double precision, dimension(:), pointer :: bmasfl
 
 !===============================================================================
-
-
 
 
 !===============================================================================
 ! 1.  Translation of the coupling to boundary conditions
 !===============================================================================
+
+! Pointer to the boundary mass flux
+call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
+call field_get_val_s(iflmab, bmasfl)
 
 ! Allocate a temporary array for gradient computation
 allocate(grad(ncelet,3))
@@ -260,7 +264,7 @@ do ivar = 1, nvcp
       ! -- We need alpha_ij for centered interpolation and flumab for decentering
 
       pondj = pndcpl(ipt)
-      flumab = propfb(ifac,ipprob(ifluma(iu)))
+      flumab = bmasfl(ifac)
 
       ! Information received from distant instance at J'/O'
       xjp = rvcpfb(ipt,ivar)

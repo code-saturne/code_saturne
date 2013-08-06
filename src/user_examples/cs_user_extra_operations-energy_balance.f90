@@ -146,6 +146,7 @@ integer, allocatable, dimension(:) :: lstelt
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: treco
+double precision, dimension(:), pointer :: imasfl, bmasfl
 !< [loc_var_dec]
 
 !===============================================================================
@@ -197,8 +198,12 @@ if (inpdt0.eq.0) then
   ! Physical quantity numbers
   ipcrom = ipproc(irom)
   ipcvst = ipproc(ivisct)
-  iflmas = ipprof(ifluma(ivar))
-  iflmab = ipprob(ifluma(ivar))
+
+  ! Pointers to the mass fluxes
+  call field_get_key_int(ivarfl(ivar), kimasf, iflmas)
+  call field_get_key_int(ivarfl(ivar), kbmasf, iflmab)
+  call field_get_val_s(iflmas, imasfl)
+  call field_get_val_s(iflmab, bmasfl)
 
   ! We save in ipccp a flag allowing to determine if the specific heat is
   ! constant (= cp0) or variable. It will be used to compute balances
@@ -402,14 +407,14 @@ if (inpdt0.eq.0) then
 
       iel1 = ifacel(1,ifac)
       if (iel1.le.ncel) then
-        ctb1 = propfa(ifac,iflmas)*propce(iel1,ipccp)*rtp(iel1,ivar)
+        ctb1 = imasfl(ifac)*propce(iel1,ipccp)*rtp(iel1,ivar)
       else
         ctb1 = 0d0
       endif
 
       iel2 = ifacel(2,ifac)
       if (iel2.le.ncel) then
-        ctb2 = propfa(ifac,iflmas)*propce(iel2,ipccp)*rtp(iel2,ivar)
+        ctb2 = imasfl(ifac)*propce(iel2,ipccp)*rtp(iel2,ivar)
       else
         ctb2 = 0d0
       endif
@@ -420,7 +425,7 @@ if (inpdt0.eq.0) then
     do ifac = 1, nfabor
       iel = ifabor(ifac)
       xbildv = xbildv + dt(iel) * propce(iel,ipccp)    &
-                                * propfb(ifac,iflmab)  &
+                                * bmasfl(ifac)         &
                                 * rtp(iel,ivar)
     enddo
 
@@ -431,14 +436,14 @@ if (inpdt0.eq.0) then
 
       iel1 = ifacel(1,ifac)
       if (iel1.le.ncel) then
-        ctb1 = propfa(ifac,iflmas)*cp0*rtp(iel1,ivar)
+        ctb1 = imasfl(ifac)*cp0*rtp(iel1,ivar)
       else
         ctb1 = 0d0
       endif
 
       iel2 = ifacel(2,ifac)
       if (iel2.le.ncel) then
-        ctb2 = propfa(ifac,iflmas)*cp0*rtp(iel2,ivar)
+        ctb2 = imasfl(ifac)*cp0*rtp(iel2,ivar)
       else
         ctb2 = 0d0
       endif
@@ -449,7 +454,7 @@ if (inpdt0.eq.0) then
     do ifac = 1, nfabor
       iel = ifabor(ifac)
       xbildv = xbildv + dt(iel) * cp0                  &
-                                * propfb(ifac,iflmab)  &
+                                * bmasfl(ifac)         &
                                 * rtp(iel,ivar)
     enddo
   endif
@@ -497,7 +502,7 @@ if (inpdt0.eq.0) then
     ! Physical variables
 
     visct  = propce(iel,ipcvst)
-    flumab = propfb(ifac,iflmab)
+    flumab = bmasfl(ifac)
 
     if (ipccp.gt.0) then
       xcp = propce(iel,ipccp)
@@ -541,7 +546,7 @@ if (inpdt0.eq.0) then
     ! Physical variables
 
     visct  = propce(iel,ipcvst)
-    flumab = propfb(ifac,iflmab)
+    flumab = bmasfl(ifac)
 
     if (ipccp.gt.0) then
       xcp = propce(iel,ipccp)
@@ -584,7 +589,7 @@ if (inpdt0.eq.0) then
     ! Physical variables
 
     visct  = propce(iel,ipcvst)
-    flumab = propfb(ifac,iflmab)
+    flumab = bmasfl(ifac)
 
     if (ipccp.gt.0) then
       xcp = propce(iel,ipccp)
@@ -627,7 +632,7 @@ if (inpdt0.eq.0) then
     ! Physical variables
 
     visct  = propce(iel,ipcvst)
-    flumab = propfb(ifac,iflmab)
+    flumab = bmasfl(ifac)
 
     if (ipccp.gt.0) then
       xcp = propce(iel,ipccp)
@@ -670,7 +675,7 @@ if (inpdt0.eq.0) then
     ! Physical variables
 
     visct  = propce(iel,ipcvst)
-    flumab = propfb(ifac,iflmab)
+    flumab = bmasfl(ifac)
 
     if (ipccp.gt.0) then
       xcp = propce(iel,ipccp)

@@ -74,6 +74,7 @@ use ppppar
 use ppthch
 use ppincl
 use mesh
+use field
 
 !===============================================================================
 
@@ -110,6 +111,7 @@ double precision, allocatable, dimension(:) :: coefap, coefbp
 double precision, allocatable, dimension(:) :: cofafp, cofbfp
 double precision, allocatable, dimension(:) :: whsad
 double precision, allocatable, dimension(:) :: xcpp
+double precision, dimension(:), pointer :: imasfl, bmasfl
 
 !===============================================================================
 
@@ -181,9 +183,11 @@ do iscal = 1, nscal
   relaxp = relaxv(ivar)
   thetex = 1.d0
 
-  ! Index for mass flux
-  iflmas = ipprof(ifluma(iu))
-  iflmab = ipprob(ifluma(iu))
+  ! Pointers to the mass fluxes
+  call field_get_key_int(ivarfl(iu), kimasf, iflmas)
+  call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
+  call field_get_val_s(iflmas, imasfl)
+  call field_get_val_s(iflmab, bmasfl)
 
   ! Diffusion velocity
 
@@ -282,7 +286,7 @@ do iscal = 1, nscal
     whsad  , whsad  ,                                              &
     coefap , coefbp ,                                              &
     cofafp , cofbfp ,                                              &
-    propfa(1,iflmas), propfb(1,iflmab),                            &
+    imasfl , bmasfl ,                                              &
     viscf  , viscb  , rvoid  , rvoid  ,                            &
     rvoid  , rvoid  ,                                              &
     propce(1,ipproc(iustdy(iscal))) )
@@ -305,7 +309,7 @@ do iscal = 1, nscal
     rtp(1,ivar)     , rtp(1,ivar)     ,                            &
     coefa(1,iclvar) , coefb(1,iclvar) ,                            &
     coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
-    propfa(1,iflmas), propfb(1,iflmab),                            &
+    imasfl , bmasfl ,                                              &
     viscf  , viscb  , rvoid  , xcpp   ,                            &
     rvoid  , rvoid  ,                                              &
     propce(1,ipproc(iustdy(iscal))) )

@@ -90,6 +90,7 @@ use cstphy
 use parall
 use period
 use mesh
+use field
 
 !===============================================================================
 
@@ -143,6 +144,7 @@ double precision, allocatable, dimension(:,:) :: gradp, gradk
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4, w5
 double precision, allocatable, dimension(:) :: dpvar
+double precision, dimension(:), pointer :: imasfl, bmasfl
 
 !===============================================================================
 
@@ -170,8 +172,10 @@ allocate(dpvar(ncelet))
 ipcrom = ipproc(irom  )
 ipcvis = ipproc(iviscl)
 ipcvst = ipproc(ivisct)
-iflmas = ipprof(ifluma(iu))
-iflmab = ipprob(ifluma(iu))
+call field_get_key_int(ivarfl(iu), kimasf, iflmas)
+call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
+call field_get_val_s(iflmas, imasfl)
+call field_get_val_s(iflmab, bmasfl)
 
 ! --- Gradient Boundary Conditions
 iclk = iclrtp(ik,icoef)
@@ -526,7 +530,7 @@ call codits &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
    coefa(1,iclvar) , coefb(1,iclvar) ,                            &
    coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
-   propfa(1,iflmas), propfb(1,iflmab),                            &
+   imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &
    rovsdt , smbr   , rtp(1,ivar)     , dpvar  ,                   &
@@ -840,7 +844,7 @@ call codits &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
    coefa(1,iclvar) , coefb(1,iclvar) ,                            &
    coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
-   propfa(1,iflmas), propfb(1,iflmab),                            &
+   imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &
    rovsdt , smbr   , rtp(1,ivar)     , dpvar  ,                   &

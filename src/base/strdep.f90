@@ -85,6 +85,7 @@ use alaste
 use parall
 use period
 use mesh
+use field
 
 !===============================================================================
 
@@ -113,6 +114,7 @@ integer          icvext, icvint, icv
 double precision delta
 
 double precision, allocatable, dimension(:,:) :: forast
+double precision, dimension(:), pointer :: imasfl, bmasfl
 
 !===============================================================================
 
@@ -120,9 +122,11 @@ double precision, allocatable, dimension(:,:) :: forast
 ! 1. INITIALISATION
 !===============================================================================
 
+call field_get_key_int(ivarfl(iu), kimasf, iflmas)
+call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
+call field_get_val_s(iflmas, imasfl)
+call field_get_val_s(iflmab, bmasfl)
 
-iflmas = ipprof(ifluma(iu))
-iflmab = ipprob(ifluma(iu))
 iclp = iclrtp(ipr,icoef)
 iclu = iclrtp(iu,icoef)
 iclv = iclrtp(iv,icoef)
@@ -312,10 +316,10 @@ if (itrfin.ne.-1) then
     enddo
   enddo
   do ifac = 1, nfac
-     propfa(ifac,iflmas) = flmalf(ifac)
+     imasfl(ifac) = flmalf(ifac)
   enddo
   do ifac = 1, nfabor
-     propfb(ifac,iflmab) = flmalb(ifac)
+     bmasfl(ifac) = flmalb(ifac)
      coefa(ifac,iclp) = cofale(ifac,1)
      coefa(ifac,iclu) = cofale(ifac,2)
      coefa(ifac,iclv) = cofale(ifac,3)

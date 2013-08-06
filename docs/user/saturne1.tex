@@ -1866,13 +1866,10 @@ Navier-Stokes}
 \bigskip
 
 \variabsize{npromx}{Maximum number of physical properties. They will
-be stored in the arrays \texttt{propce}, \texttt{propfa} or \texttt{propfb}}
+be stored in the arrays \texttt{propce} or \texttt{propfb}}
 
 \variabsize{nproce}{Number of properties defined at the
 cells. They will be stored in the array \texttt{propce}}
-
-\variabsize{nprofa}{Number of properties defined at the internal
-faces. They will be stored in the array \texttt{propfa}}
 
 \variabsize{nprofb}{Number of properties defined at the boundary
 faces. They will be stored in the array \texttt{propfb}}
@@ -2062,9 +2059,6 @@ comprehension.
 \variab{propce}{propce(ncelet,nproce)}{ra}{Properties defined at the
 cell centres. For instance: density, viscosity, ...}
 
-\variab{propfa}{propfa(nfac,nprofa)}{ra}{Properties defined at the
-internal faces. For instance: mass flow across internal faces}
-
 \variab{propfb}{propfb(nfabor,nprofb)}{ra}{Properties defined at the
 boundary faces. For instance: mass flow across boundary faces, density
 at boundary faces, ...}
@@ -2076,6 +2070,11 @@ variables at the current time step}
 variables at the previous time step}
 
 \bigskip
+
+Progressively, this system is being replaced by the \variab{field} module,
+so some variables and properties are now only accessible as fields
+(either through their name or their id). This is the case for example
+for mass flux across interior and boundary faces.
 
 \underline{About \texttt{rtp} and \texttt{rtpa}}
 
@@ -2184,14 +2183,13 @@ The variable corresponding to the mean value of the square of the
 
 \bigskip
 
-\underline{About \texttt{propce}, \texttt{propfa} and \texttt{propfb}}\\
+\underline{About \texttt{propce} and \texttt{propfb}}\\
 In \CS, the physical properties\footnote{other variables are stored in the
-arrays \texttt{propce}, \texttt{propfa} and \texttt{propfb}. They are not
+arrays \texttt{propce} and \texttt{propfb}. They are not
 ``physical properties'' strictly speaking, but it is convenient to have them
 in the same array as the proper physical properties} are stored in the
-\texttt{propce}, \texttt{propfa} and \texttt{propfb} arrays.
+\texttt{propce} and \texttt{propfb} arrays.
 Some properties, like the density, are only stored for cells and boundary
-faces. Some, like the mass flux, are only stored at the interior and boundary
 faces. To avoid having different index numbers for a physical property,
 depending on the array it is used in, the following structure is used in \CS:
 
@@ -2207,9 +2205,6 @@ or the maximum number of variables).
 
 \variab{ipproc}{ipproc(npromx)}{ia}{Rank \texttt{i} in \texttt{propce(.,i)} of the
 properties defined at the cell centres}
-
-\variab{ipprof}{ipprof(npromx)}{ia}{Rank \texttt{i} in \texttt{propfa(.,i)} of the
-properties defined at the internal faces}
 
 \variab{ipprob}{ipprob(npromx)}{ia}{Rank \texttt{i} in \texttt{propfb(.,i)} of the
 properties defined at the boundary faces}
@@ -2296,13 +2291,6 @@ currently available are \texttt{iestim(iespre\index{iespre})},\\
 \texttt{iestim(iescor\index{iescor})},
 \texttt{iestim(iestot\index{iestot})}
 stored at the cells}
-
-\variab{ifluma}{ifluma(nvarmx)}{ia}{Property number corresponding to the
-mass flow associated with each variable ({\em i.e.} for each face
-of surface $S$, $\rho \vect{u} \,.\,\vect{S}$ in $kg.s^{-1}$). It
-must be noticed that the mass flows are associated with the
-variables, which allows to have a distinct convective flow for each scalar.\\
-Stored at the internal faces and boundary faces}
 
 \variab{ifluaa}{ifluaa(nvarmx)}{ia}{Property number corresponding to the
 mass flow associated with each variable at
@@ -7121,7 +7109,7 @@ $\rho^{n+1}=\texttt{srrom}*\rho^{n}+(1-\texttt{srrom})\rho^{n+1}$\\
 To initialise or modify (in case of a continuation) values of transported
 variables and of the time step, the standard subroutine \texttt{cs\_user\_initialization} is used.
 
-Physical properties are stored in \texttt{propce} (cell center), \texttt{propfa} (inner face) and \texttt{propfb}. For instance, \texttt{propce(iel, ipproc(irom  ))} is \texttt{rom(iel)}, the mean density (in $kg.m^{-3}$), and \texttt{propfa(ifac,ipprof(ifluma(ivar)))} is \texttt{flumas(IFAC,IVAR)}, the convective flux of the variable \texttt{ivar}.\\
+Physical properties are stored in \texttt{propce} (cell center) and \texttt{propfb}. For instance, \texttt{propce(iel, ipproc(irom  ))} is \texttt{rom(iel)}, the mean density (in $kg.m^{-3}$).\\
 Physical properties (\texttt{rom, viscl, cp, ...}) are computed in \texttt{ppphyv} and are not to be modified here.
 
 The \texttt{cs\_user\_initialization-fuel.f90} example illustrates how the user

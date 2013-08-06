@@ -110,6 +110,7 @@ use ppppar
 use ppthch
 use ppincl
 use mesh
+use field
 
 !===============================================================================
 
@@ -149,6 +150,7 @@ double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: w4, w6
 double precision, allocatable, dimension(:) :: coefap, coefbp
+double precision, dimension(:), pointer :: imasfl, bmasfl
 
 !===============================================================================
 
@@ -175,12 +177,12 @@ else
   ipcvsv = -1
 endif
 
-
-iflmas = ipprof(ifluma(iu))
-
 ipbrom = ipprob(irom  )
-iflmab = ipprob(ifluma(iu))
 
+call field_get_key_int(ivarfl(iu), kimasf, iflmas)
+call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
+call field_get_val_s(iflmas, imasfl)
+call field_get_val_s(iflmab, bmasfl)
 
 !     Si on extrapole les termes sources, on prend les prop a l'instant n
 if (isno2t.gt.0) then
@@ -359,17 +361,17 @@ deallocate(coefap, coefbp)
 ! Allocate a temporary array
 allocate(w1(ncelet))
 
-!$omp parallel do firstprivate(ipcrom, iflmas) private(ii, jj, romf)
+!$omp parallel do firstprivate(ipcrom) private(ii, jj, romf)
 do ifac = 1, nfac
   ii = ifacel(1,ifac)
   jj = ifacel(2,ifac)
   romf = (propce(ii,ipcrom)+propce(jj,ipcrom))*0.5d0
-  viscf(ifac) = propfa(ifac,iflmas)/romf
+  viscf(ifac) = imasfl(ifac)/romf
 enddo
 
-!$omp parallel do firstprivate(ipbrom, iflmab) if(nfabor > thr_n_min)
+!$omp parallel do firstprivate(ipbrom) if(nfabor > thr_n_min)
 do ifac = 1, nfabor
-  viscb(ifac) = propfb(ifac,iflmab)/propfb(ifac,ipbrom)
+  viscb(ifac) = bmasfl(ifac)/propfb(ifac,ipbrom)
 enddo
 
 init = 1

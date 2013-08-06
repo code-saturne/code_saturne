@@ -87,6 +87,7 @@ use ppthch
 use ppincl
 use cfpoin
 use mesh
+use field
 
 !===============================================================================
 
@@ -116,7 +117,7 @@ integer          iclu   , iclv   , iclw
 integer          iflmab
 double precision und    , uni    , rund   , runi   , cd     , ci
 double precision rrus   , runb
-
+double precision, dimension(:), pointer :: bmasfl
 
 !===============================================================================
 
@@ -134,7 +135,8 @@ iclu = iclrtp(iu,icoef)
 iclv = iclrtp(iv,icoef)
 iclw = iclrtp(iw,icoef)
 
-iflmab = ipprob(ifluma(ien))
+call field_get_key_int(ivarfl(ien), kbmasf, iflmab)
+call field_get_val_s(iflmab, bmasfl)
 
 ifac0 = imodif
 ifac  = ifac0
@@ -173,7 +175,7 @@ runb  = 0.5d0*(coefa(ifac,iclr)*und+rtp(iel,irh)*uni)          &
 ifbrus(ifac) = 1
 
 !     Flux de masse
-propfb(ifac,iflmab) = runb*surfbn(ifac)
+bmasfl(ifac) = runb*surfbn(ifac)
 
 !     Flux de Qdm (la partie centree en pression pourrait etre prise dans
 !       la condition à la limite de pression, ce qui eviterait de retoucher

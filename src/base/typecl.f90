@@ -101,6 +101,7 @@ use ppthch
 use ppincl
 use cplsat
 use mesh
+use field
 
 !===============================================================================
 
@@ -143,11 +144,11 @@ double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: pripb
 double precision, allocatable, dimension(:,:) :: grad
+double precision, dimension(:), pointer :: bmasfl
 
 integer          ipass
 data             ipass /0/
 save             ipass
-
 
 !===============================================================================
 
@@ -163,8 +164,8 @@ allocate(pripb(nfabor))
 pipb = 0.d0
 pref = 0.d0
 
-! Memoire
-
+call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
+call field_get_val_s(iflmab, bmasfl)
 
 !===============================================================================
 ! 2.  Check consistency of types given in cs_user_boundary_conditions
@@ -1042,7 +1043,7 @@ do ivar = 1, nvar
 
       elseif (rcodcl(ifac,ivar,1).gt.rinfin*0.5d0) then
 
-        flumbf = propfb(ifac,ipprob(ifluma(iu)))
+        flumbf = bmasfl(ifac)
         if( flumbf.ge.-epzero) then
           icodcl(ifac,ivar)   = 3
           rcodcl(ifac,ivar,1) = 0.d0
@@ -1217,8 +1218,6 @@ if(iwaru.ge.1 .or. mod(ntcabs,ntlist).eq.0                        &
   write(nfecra,7010)
 endif
 
-iflmab = ipprob(ifluma(iu))
-
 iwrnp = iwarni(iu)
 if (irangp.ge.0) call parcmx (iwrnp)
 !==========
@@ -1237,7 +1236,7 @@ if(iwrnp.ge.1 .or. mod(ntcabs,ntlist).eq.0                      &
     ifin = ifinty(ii)
     do jj = ideb, ifin
       ifac = itrifb(jj)
-      flumty(ii) = flumty(ii) + propfb(ifac,iflmab)
+      flumty(ii) = flumty(ii) + bmasfl(ifac)
     enddo
   enddo
 

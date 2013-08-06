@@ -44,7 +44,6 @@
 !> Physical quantities are defined in the following arrays:
 !> \code
 !>  propce ! physical quantities defined at cell center
-!>  propfa ! physical quantities defined at interior face center
 !>  propfa ! physical quantities defined at border face center
 !> \endcode
 !>
@@ -54,9 +53,7 @@
 !>  propce(iel, ipproc(iviscl)) ! means viscl(iel)
 !>  propce(iel, ipproc(icp   )) ! means cp   (iel)
 !>  propce(iel, ipproc(ivisls(iscal))) ! means visls(iel, iscal)
-!>  propfa(ifac, ipprof(ifluma(ivar))) ! means flumas(ifac, ivar)
 !>  propfb(ifac, ipprob(irom )) ! means romb  (ifac)
-!>  propfb(ifac, ipprob(ifluma(ivar))) ! means flumab(ifac, ivar)
 !> \endcode
 !>
 !> Modification of the behaviour law of physical quantities (rom, viscl,

@@ -70,6 +70,7 @@ use albase, only: ialtyb
 use parall
 use period
 use mesh
+use field
 
 !===============================================================================
 
@@ -107,6 +108,7 @@ double precision rvoid(1)
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:,:) :: smbr, meshv, meshva
 double precision, allocatable, dimension(:,:,:) :: fimp
+double precision, dimension(:), pointer :: imasfl, bmasfl
 
 !===============================================================================
 
@@ -128,8 +130,10 @@ ipcvmy = ipproc(ivisma(2))
 ipcvmz = ipproc(ivisma(3))
 ! The mass flux is necessary to call coditv but not used (ICONV=0)
 ! Except for the free surface, where it is used as a Boundary condition
-iflmas = ipprof(ifluma(iu))
-iflmab = ipprob(ifluma(iu))
+call field_get_key_int(ivarfl(iu), kimasf, iflmas)
+call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
+call field_get_val_s(iflmas, imasfl)
+call field_get_val_s(iflmab, bmasfl)
 
 if(iwarni(iuma).ge.1) then
   write(nfecra,1000)
@@ -253,7 +257,7 @@ call coditv &
    relaxp , thetv  ,                                              &
    meshva , meshva ,                                              &
    claale , clbale , cfaale , cfbale ,                            &
-   propfa(1,iflmas), propfb(1,iflmab),                            &
+   imasfl , bmasfl ,                                              &
    viscf  , viscb  , viscf  , viscb  , viscf  , viscb  ,          &
    fimp   ,                                                       &
    smbr   ,                                                       &

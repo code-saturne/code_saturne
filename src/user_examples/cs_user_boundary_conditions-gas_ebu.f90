@@ -357,7 +357,8 @@ subroutine cs_user_boundary_conditions &
 ! Boundary face values
 
 ! * Density:                                 propfb(ifac, ipprob(irom))
-! * Mass flux (for convecting 'ivar'):       propfb(ifac, ipprob(ifluma(ivar)))
+! * Mass flux (for convecting 'ivar'):
+!     field id 'iflmab', using field_get_key_int(ivarfl(ivar), kimasf, iflmab)
 
 ! * For other values: take as an approximation the value in the adjacent cell
 !                     i.e. as above with iel = ifabor(ifac).

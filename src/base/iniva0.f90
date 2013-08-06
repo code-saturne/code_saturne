@@ -110,7 +110,7 @@ integer          iicp  , iicpa
 integer          iiviss, iiptot
 integer          iptsna, iptsta, iptsca
 integer          nn
-integer          f_id
+integer          f_id, iflmas, iflmab
 
 double precision xxk, xcmu, trii
 
@@ -119,6 +119,7 @@ character*80     fname
 double precision rvoid(1)
 
 double precision, dimension(:,:), pointer :: xut
+double precision, dimension(:), pointer :: imasfl, bmasfl
 
 !===============================================================================
 
@@ -531,13 +532,17 @@ enddo
 !  sans toutefois faire des tests trop compliques)
 iiflum = 0
 do ivar = 1, nvar
-  if(ifluma(ivar).gt.0.and.ifluma(ivar).ne.iiflum) then
+  if (ifluma(ivar).gt.0.and.ifluma(ivar).ne.iiflum) then
     iiflum = ifluma(ivar)
+    call field_get_key_int(ivarfl(ivar), kimasf, iflmas)
+    call field_get_key_int(ivarfl(ivar), kbmasf, iflmab)
+    call field_get_val_s(iflmas, imasfl)
+    call field_get_val_s(iflmab, bmasfl)
     do ifac = 1, nfac
-      propfa(ifac,ipprof(iiflum)) = 0.d0
+      imasfl(ifac) = 0.d0
     enddo
     do ifac = 1, nfabor
-      propfb(ifac,ipprob(iiflum)) = 0.d0
+      bmasfl(ifac) = 0.d0
     enddo
   endif
 enddo

@@ -83,6 +83,7 @@ use cstnum
 use cstphy
 use optcal
 use mesh
+use field
 use parall
 use pointe, only: dispar, coefau, coefbu
 
@@ -150,6 +151,7 @@ double precision, allocatable, dimension(:) :: trgrdn, vort
 double precision, allocatable, dimension(:) :: tsexp
 double precision, allocatable, dimension(:) :: dpvar
 double precision, allocatable, dimension(:) :: csab1r, rotfct
+double precision, dimension(:), pointer :: imasfl, bmasfl
 
 !===============================================================================
 
@@ -174,9 +176,12 @@ icliup = iclrtp(iu,icoef)
 ipcrom = ipproc(irom  )
 ipcvst = ipproc(ivisct)
 ipcvis = ipproc(iviscl)
-iflmas = ipprof(ifluma(iu))
-iflmab = ipprob(ifluma(iu))
 ipbrom = ipprob(irom  )
+
+call field_get_key_int(ivarfl(iu), kimasf, iflmas)
+call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
+call field_get_val_s(iflmas, imasfl)
+call field_get_val_s(iflmab, bmasfl)
 
 ivar   = inusa
 thetv  = thetav(ivar)
@@ -669,7 +674,7 @@ call codits &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
    coefa(1,iclvar) , coefb(1,iclvar) ,                            &
    coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
-   propfa(1,iflmas), propfb(1,iflmab),                            &
+   imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &
    tinssa , rhssa  , rtp(1,ivar)     , dpvar ,                    &

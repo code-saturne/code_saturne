@@ -135,6 +135,7 @@ double precision, allocatable, dimension(:,:,:) :: fimp
 
 double precision, dimension(:,:), pointer :: coefav, cofafv
 double precision, dimension(:,:,:), pointer :: coefbv, cofbfv
+double precision, dimension(:), pointer :: imasfl, bmasfl
 
 !===============================================================================
 
@@ -158,8 +159,11 @@ endif
 ipcrom = ipproc(irom)
 ipcvis = ipproc(iviscl)
 ipcvst = ipproc(ivisct)
-iflmas = ipprof(ifluma(iu))
-iflmab = ipprob(ifluma(iu))
+
+call field_get_key_int(ivarfl(iu), kimasf, iflmas)
+call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
+call field_get_val_s(iflmas, imasfl)
+call field_get_val_s(iflmab, bmasfl)
 
 ivar = isca(iscal)
 ipput = ipprtp(ivar)
@@ -401,7 +405,7 @@ call coditv &
  relaxp , thetv  ,                                              &
  xuta   , xuta   ,                                              &
  coefav , coefbv , cofafv , cofbfv ,                            &
- propfa(1,iflmas), propfb(1,iflmab),                            &
+ imasfl , bmasfl ,                                              &
  viscf  , viscb  , viscf  , viscb  , rvoid  , rvoid  ,          &
  fimp   ,                                                       &
  smbrut ,                                                       &

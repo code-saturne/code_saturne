@@ -92,6 +92,7 @@ use ppppar
 use ppthch
 use ppincl
 use mesh
+use field
 use cs_c_bindings
 
 !===============================================================================
@@ -141,12 +142,19 @@ double precision, allocatable, dimension(:) :: wcf
 double precision, allocatable, dimension(:) :: cofbft, coefbt, coefbr
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w1, w2, w3, dtsdt0
+double precision, dimension(:), pointer :: imasfl, bmasfl
 
 !===============================================================================
 
 !===============================================================================
 ! 0.  INITIALISATION
 !===============================================================================
+
+! Pointers to the mass fluxes
+call field_get_key_int(ivarfl(iu), kimasf, iflmas)
+call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
+call field_get_val_s(iflmas, imasfl)
+call field_get_val_s(iflmab, bmasfl)
 
 ! Allocate temporary arrays for the time-step resolution
 allocate(viscf(nfac), viscb(nfabor))
@@ -161,8 +169,6 @@ endif
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 
-iflmas  = ipprof(ifluma(iu))
-iflmab  = ipprob(ifluma(iu))
 ipcvis  = ipproc(iviscl)
 ipcvst  = ipproc(ivisct)
 ipcrom  = ipproc(irom)
@@ -247,7 +253,7 @@ endif
 
 do ifac = 1, nfabor
 
-  if (propfb(ifac,iflmab).lt.0.d0) then
+  if (bmasfl(ifac).lt.0.d0) then
     iel = ifabor(ifac)
     hint = idiff(iu)*(  propce(iel,ipcvis)                         &
                       + idifft(iu)*propce(iel,ipcvst))/distb(ifac)
@@ -335,9 +341,7 @@ if (idtvar.ge.0) then
 
       call matrdt &
       !==========
- ( iconv(iu)       , idiff0          , isym   ,                            &
-   coefbt , cofbft , propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  , &
-   dam  )
+ (iconv(iu), idiff0, isym, coefbt, cofbft, imasfl, bmasfl, viscf, viscb, dam)
 
       do iel = 1, ncel
         rom = propce(iel,ipcrom)
@@ -386,9 +390,7 @@ if (idtvar.ge.0) then
 
       call matrdt &
       !==========
- ( iconv0          , idiff(iu)    , isym   ,                               &
-   coefbt , cofbft , propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  , &
-   dam  )
+ (iconv0, idiff(iu), isym, coefbt, cofbft, imasfl, bmasfl, viscf, viscb, dam)
 
       do iel = 1, ncel
         rom = propce(iel,ipcrom)
@@ -653,9 +655,7 @@ if (idtvar.ge.0) then
 
     call matrdt &
     !==========
- ( iconv(iu)      , idiff0          , isym   ,                            &
-   coefbt ,cofbft , propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  , &
-   dam  )
+ (iconv(iu), idiff0, isym, coefbt, cofbft, imasfl, bmasfl, viscf, viscb, dam)
 
     do iel = 1, ncel
       rom = propce(iel,ipcrom)
@@ -726,9 +726,7 @@ if (idtvar.ge.0) then
 
     call matrdt &
     !==========
- ( iconv0          , idiff(iu)       , isym   ,                            &
-   coefbt , cofbft , propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  , &
-   dam  )
+ (iconv0, idiff(iu), isym, coefbt, cofbft, imasfl, bmasfl, viscf, viscb, dam)
 
     do iel = 1, ncel
       rom = propce(iel,ipcrom)
@@ -804,9 +802,7 @@ if (idtvar.ge.0) then
 
     call matrdt &
     !==========
- ( iconv(iu)       , idiff(iu)       , isym   ,                            &
-   coefbt , cofbft , propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  , &
-   dam  )
+ (iconv(iu), idiff(iu), isym, coefbt, cofbft, imasfl, bmasfl, viscf, viscb, dam)
 
     do iel = 1, ncel
       rom = propce(iel,ipcrom)
@@ -935,7 +931,7 @@ else
   !==========
  ( iconv(iu), idiff(iu), isym,                                  &
    coefb(1,iclrtp(iu,icoef)), coefb(1,iclrtp(iu,icoeff)),       &
-   propfa(1,iflmas), propfb(1,iflmab),                          &
+   imasfl, bmasfl,                                              &
    viscf, viscb, dt )
 
   do iel = 1, ncel

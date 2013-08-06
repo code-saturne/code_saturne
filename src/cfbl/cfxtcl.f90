@@ -102,6 +102,7 @@ use ppthch
 use ppincl
 use cfpoin
 use mesh
+use field
 
 !===============================================================================
 
@@ -141,6 +142,7 @@ double precision hint  , gammag
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4, w5, w6
 double precision, allocatable, dimension(:) :: w7
+double precision, dimension(:), pointer :: bmasfl
 
 !===============================================================================
 !===============================================================================
@@ -154,8 +156,6 @@ allocate(w4(ncelet), w5(ncelet), w6(ncelet))
 ! Allocate a work array on boundary faces (to be verified...)
 allocate(w7(nfabor))
 
-
-
 irh = isca(irho  )
 ien = isca(ienerg)
 itk = isca(itempk)
@@ -165,7 +165,8 @@ iclu   = iclrtp(iu ,icoef)
 iclv   = iclrtp(iv ,icoef)
 iclw   = iclrtp(iw ,icoef)
 
-iflmab = ipprob(ifluma(ien))
+call field_get_key_int(ivarfl(ien), kbmasf, iflmab)
+call field_get_val_s(iflmab, bmasfl)
 
 !     Liste des variables compressible :
 ivarcf(1) = ipr
@@ -264,7 +265,7 @@ do ifac = 1, nfabor
 
 !     Le flux de masse est nul
 
-    propfb(ifac,iflmab) = 0.d0
+    bmasfl(ifac) = 0.d0
 
 !     Pression :
 
@@ -411,7 +412,7 @@ do ifac = 1, nfabor
 
 !     Le flux de masse est nul
 
-    propfb(ifac,iflmab) = 0.d0
+    bmasfl(ifac) = 0.d0
 
 !     Condition de Pression
 
@@ -747,7 +748,7 @@ do ifac = 1, nfabor
 !     Seul le flux de masse est calcule (on n'appelle pas Rusanov)
 !       (toutes les variables sont connues)
 
-      propfb(ifac,iflmab) = coefa(ifac,iclr)*                   &
+      bmasfl(ifac) = coefa(ifac,iclr)*                          &
            ( coefa(ifac,iclu)*surfbo(1,ifac)                    &
            + coefa(ifac,iclv)*surfbo(2,ifac)                    &
            + coefa(ifac,iclw)*surfbo(3,ifac) )
@@ -758,7 +759,7 @@ do ifac = 1, nfabor
 
 !     Seul le flux de masse est calcule (on n'appelle pas Rusanov)
 
-      propfb(ifac,iflmab) = coefa(ifac,iclr)*                   &
+      bmasfl(ifac) = coefa(ifac,iclr)*                          &
            ( coefa(ifac,iclu)*surfbo(1,ifac)                    &
            + coefa(ifac,iclv)*surfbo(2,ifac)                    &
            + coefa(ifac,iclw)*surfbo(3,ifac) )
@@ -850,7 +851,7 @@ do ifac = 1, nfabor
 !       On choisit un Dirichlet si le flux de masse est entrant et
 !       que l'utilisateur a donné une valeur dans RCODCL
 
-    if(propfb(ifac,iflmab).ge.0.d0) then
+    if (bmasfl(ifac).ge.0.d0) then
       if(itytur.eq.2) then
         icodcl(ifac,ik ) = 3
         icodcl(ifac,iep) = 3

@@ -101,6 +101,7 @@ use cplsat
 use ppcpfu
 use elincl
 use mesh
+use field
 
 ! les " use pp* " ne servent que pour recuperer le pointeur IIZFPP
 
@@ -168,6 +169,7 @@ double precision, allocatable, dimension(:,:,:) :: rcodcl
 double precision, allocatable, dimension(:) :: hbord, theipb
 double precision, allocatable, dimension(:) :: visvdr
 double precision, allocatable, dimension(:) :: prdv2f
+double precision, dimension(:), pointer :: imasfl, bmasfl
 
 !===============================================================================
 
@@ -1308,8 +1310,10 @@ do while (iterns.le.nterup)
     !     SI LE COMPRESSIBLE SANS CHOC EST ACTIF, ON RESOUT AVEC CFQDMV
     if ( ippmod(icompf).ge.0 ) then
 
-      iflmas = ipprof(ifluma(iu))
-      iflmab = ipprob(ifluma(iu))
+      call field_get_key_int(ivarfl(iu), kimasf, iflmas)
+      call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
+      call field_get_val_s(iflmas, imasfl)
+      call field_get_val_s(iflmab, bmasfl)
 
       call cfqdmv &
       !==========
@@ -1318,7 +1322,7 @@ do while (iterns.le.nterup)
       icepdc , icetsm ,                                              &
       itypsm ,                                                       &
       dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-      propfa(1,iflmas), propfb(1,iflmab),                            &
+      imasfl , bmasfl ,                                              &
       coefa  , coefb  ,                                              &
       ckupdc , smacel ,                                              &
       frcxt  , tpucou )

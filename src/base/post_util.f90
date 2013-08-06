@@ -92,6 +92,7 @@ double precision :: epsrgp, climgp, extrap
 
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, allocatable, dimension(:,:) :: grad
+double precision, dimension(:), pointer :: bmasfl
 
 !===============================================================================
 
@@ -119,7 +120,8 @@ if (iscalt.gt.0) then
     ipcvsl = 0
   endif
   ipcvst = ipproc(ivisct)
-  iflmab = ipprob(ifluma(ivar))
+  call field_get_key_int(ivarfl(ivar), kbmasf, iflmab)
+  call field_get_val_s(iflmab, bmasfl)
 
   ! Compute variable values at boundary faces
 
@@ -171,7 +173,7 @@ if (iscalt.gt.0) then
       endif
       srfbn = max(surfbn(ifac), epzero**2)
       visct  = propce(iel,ipcvst)
-      flumab = propfb(ifac,iflmab)
+      flumab = bmasfl(ifac)
 
       bflux(iloc) =                (cofafp(ifac) + cofbfp(ifac)*tcel)   &
                     - flumab/srfbn*(coefap(ifac) + coefbp(ifac)*tcel)
@@ -198,7 +200,7 @@ if (iscalt.gt.0) then
       endif
       srfbn = max(surfbn(ifac), epzero**2)
       visct  = propce(iel,ipcvst)
-      flumab = propfb(ifac,iflmab)
+      flumab = bmasfl(ifac)
 
       bflux(iloc) =                (cofafp(ifac) + cofbfp(ifac)*tcel)   &
                     - flumab/srfbn*(coefap(ifac) + coefbp(ifac)*tcel)

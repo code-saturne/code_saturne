@@ -107,6 +107,7 @@ use lagpar
 use lagran
 use cplsat
 use mesh
+use field
 
 !===============================================================================
 
@@ -152,6 +153,7 @@ double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: xinvro
 double precision, allocatable, dimension(:) :: dpvar
 double precision, allocatable, dimension(:) :: smbr, rovsdt
+double precision, dimension(:), pointer :: imasfl, bmasfl
 
 !===============================================================================
 
@@ -169,8 +171,11 @@ ipp    = ipprtp(ipr)
 
 ! --- Physical properties
 ipcrom = ipproc(irom  )
-iflmas = ipprof(ifluma(iu))
-iflmab = ipprob(ifluma(iu))
+
+call field_get_key_int(ivarfl(iu), kimasf, iflmas)
+call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
+call field_get_val_s(iflmas, imasfl)
+call field_get_val_s(iflmab, bmasfl)
 
 ! --- Resolution options
 isym  = 1
@@ -302,7 +307,7 @@ call codits &
   prhyd  , prhyd  ,                                              &
   coefap , coefbp ,                                              &
   cofafp , cofbfp ,                                              &
-  propfa(1,iflmas), propfb(1,iflmab),                            &
+  imasfl , bmasfl ,                                              &
   viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
   rvoid  , rvoid  ,                                              &
   rovsdt , smbr   , prhyd  , dpvar  ,                            &

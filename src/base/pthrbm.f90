@@ -76,6 +76,7 @@ use entsor
 use parall
 use period
 use mesh
+use field
 
 !===============================================================================
 
@@ -103,6 +104,8 @@ double precision volt , debt
 
 double precision debin, debout, debtot
 
+double precision, dimension(:), pointer :: bmasfl
+
 !===============================================================================
 
 
@@ -116,8 +119,9 @@ double precision debin, debout, debtot
 ipcrom = ipproc(irom)
 ipcroa = ipproc(iroma)
 ipbrom = ipprob(irom)
-iflmab = ipprob(ifluma(ipr))
 
+call field_get_key_int(ivarfl(ipr), kbmasf, iflmab)
+call field_get_val_s(iflmab, bmasfl)
 
 !===============================================================================
 ! 1. Flow rate computation for the inlet and oulet conditions
@@ -136,10 +140,10 @@ debtot = 0.d0
 do ifac = 1, nfabor
   if (itypfb(ifac).eq.ientre) then
     ! the inlet mass flux integrated in space
-    debin = debin + propfb(ifac,iflmab)
+    debin = debin + bmasfl(ifac)
   else if (itypfb(ifac).eq.isolib) then
     ! the outlet mass flux integrated in space:
-    debout = debout + propfb(ifac,iflmab)
+    debout = debout + bmasfl(ifac)
   endif
 enddo
 
@@ -222,7 +226,7 @@ if (mod(ntcabs,ntlist).eq.0 .or. ntcabs.eq.1) then
   ! Compute the mass flux at the boundary faces
   debt = 0.d0
   do ifac = 1, nfabor
-    debt = debt + propfb(ifac,iflmab)
+    debt = debt + bmasfl(ifac)
   enddo
   if (irangp.ge.0) then
     call parsom(debt)

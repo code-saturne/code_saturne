@@ -199,7 +199,7 @@ integer          iclphf, iclfbf, iclalf, iclomf
 integer          iclvaf, iclumf, iclvmf, iclwmf
 integer          nswrgp, imligp, iwarnp
 integer          itplus, itstar
-integer          f_id  ,  iut  , ivt   , iwt
+integer          f_id  ,  iut  , ivt   , iwt, iflmab
 
 double precision sigma , cpp   , rkl
 double precision hint  , hext  , heq   , pimp  , xdis, qimp, cfl
@@ -225,6 +225,7 @@ double precision, dimension(:,:,:), allocatable :: gradv
 double precision, dimension(:), pointer :: tplusp, tstarp
 double precision, dimension(:,:), pointer :: coefaut, cofafut, cofarut
 double precision, dimension(:,:,:), pointer :: coefbut, cofbfut, cofbrut
+double precision, dimension(:), pointer :: bmasfl
 
 !===============================================================================
 
@@ -308,6 +309,10 @@ if (itstar.ge.0) then
     tstarp(ifac) = 0.d0
   enddo
 endif
+
+! Pointers to the mass fluxes
+call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
+call field_get_val_s(iflmab, bmasfl)
 
 !===============================================================================
 ! 2. Treatment of types of BCs given by itypfb
@@ -888,7 +893,7 @@ do ifac = 1, nfabor
 
   if (icodcl(ifac,iu).eq.9) then
 
-    flumbf = propfb(ifac,ipprob(ifluma(iu)))
+    flumbf = bmasfl(ifac)
 
     ! --- Physical Properties
     iel = ifabor(ifac)

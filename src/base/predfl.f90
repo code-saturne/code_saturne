@@ -92,6 +92,7 @@ use lagpar
 use lagran
 use cplsat
 use mesh
+use field
 
 !===============================================================================
 
@@ -139,6 +140,7 @@ double precision, allocatable, dimension(:) :: divu, pot, pota, dpot, rhs
 double precision, allocatable, dimension(:) :: clapot, clbpot
 double precision, allocatable, dimension(:) :: cfapot, cfbpot
 double precision, allocatable, dimension(:) :: viscf, viscb
+double precision, dimension(:), pointer :: imasfl, bmasfl
 
 !===============================================================================
 
@@ -162,8 +164,10 @@ ipcrom = ipproc(irom)
 ipbrom = ipprob(irom  )
 ipcroa = ipproc(iroma)
 
-iflmas = ipprof(ifluma(iu))
-iflmab = ipprob(ifluma(iu))
+call field_get_key_int(ivarfl(iu), kimasf, iflmas)
+call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
+call field_get_val_s(iflmas, imasfl)
+call field_get_val_s(iflmab, bmasfl)
 
 ! --- Solving options
 isym  = 1
@@ -215,8 +219,7 @@ init = 1
 
 call divmas &
    ( ncelet, ncel  , nfac  , nfabor, init  , nfecra,            &
-     ifacel, ifabor, propfa(1,iflmas)      ,propfb(1,iflmab),   &
-     divu )
+     ifacel, ifabor, imasfl , bmasfl , divu )
 
 ! --- Mass source terms
 if (ncesmp.gt.0) then
@@ -290,7 +293,7 @@ call matrix &
    thetap , imucpp ,                                              &
    ifacel , ifabor ,                                              &
    clbpot , cfbpot , pot    ,                                     &
-   propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  ,          &
+   imasfl , bmasfl , viscf  , viscb  ,                            &
    rvoid  , dam    , xam    )
 
 !===============================================================================
@@ -467,7 +470,7 @@ call itrmas &
    cfapot , cfbpot ,                                              &
    viscf  , viscb  ,                                              &
    dt     , dt     , dt     ,                                     &
-   propfa(1,iflmas), propfb(1,iflmab))
+   imasfl , bmasfl )
 
 ! The last increment is not reconstructed to fullfill exactly the continuity
 ! equation (see theory guide)
@@ -488,7 +491,7 @@ call itrmas &
    cfapot , cfbpot ,                                              &
    viscf  , viscb  ,                                              &
    dt     , dt     , dt     ,                                     &
-   propfa(1,iflmas), propfb(1,iflmab))
+   imasfl , bmasfl )
 
 !===============================================================================
 ! 7. Suppression of the mesh hierarchy

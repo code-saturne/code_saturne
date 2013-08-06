@@ -94,6 +94,7 @@ use ppthch
 use ppincl
 use cfpoin
 use mesh
+use field
 
 !===============================================================================
 
@@ -151,6 +152,7 @@ double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: w4, w5, w6
 double precision, allocatable, dimension(:) :: w7, w8, w9
+double precision, dimension(:), pointer :: imasfl, bmasfl
 
 !===============================================================================
 !===============================================================================
@@ -178,8 +180,12 @@ iclvaf = iclrtp(ivar,icoeff)
 ! --- Numero des grandeurs physiques
 ipcrom = ipproc(irom  )
 ipcvst = ipproc(ivisct)
-iflmas = ipprof(ifluma(ivar ))
-iflmab = ipprob(ifluma(ivar ))
+
+call field_get_key_int(ivarfl(ivar), kimasf, iflmas)
+call field_get_key_int(ivarfl(ivar), kbmasf, iflmab)
+call field_get_val_s(iflmas, imasfl)
+call field_get_val_s(iflmab, bmasfl)
+
 if(ivisls(iscal).gt.0) then
   ipcvsl = ipproc(ivisls(iscal))
 else
@@ -360,8 +366,8 @@ endif
 !        pip = w7(ii) +grad(ii,1)*diipfx+grad(ii,2)*diipfy+grad(ii,3)*diipfz
 !        pjp = w7(jj) +grad(jj,1)*djjpfx+grad(jj,2)*djjpfy+grad(jj,3)*djjpfz
 
-!        flui = (propfa(ifac,iflmas)+abs(propfa(ifac,iflmas)))
-!        fluj = (propfa(ifac,iflmas)-abs(propfa(ifac,iflmas)))
+!        flui = (imasfl(ifac)+abs(imasfl(ifac)))
+!        fluj = (imasfl(ifac)-abs(imasfl(ifac)))
 
 !        viscf(ifac) = -(pnd*pip*flui+pnd*pjp*fluj)
 
@@ -382,9 +388,9 @@ do ifac = 1, nfac
   iel2 = ifacel(2,ifac)
   viscf(ifac) =                                                   &
      - rtp(iel1,ipr)/w9(iel1)                              &
-     *0.5d0*( propfa(ifac,iflmas) +abs(propfa(ifac,iflmas)) )     &
+     *0.5d0*( imasfl(ifac) +abs(imasfl(ifac)) )     &
      - rtp(iel2,ipr)/w9(iel2)                              &
-     *0.5d0*( propfa(ifac,iflmas) -abs(propfa(ifac,iflmas)) )
+     *0.5d0*( imasfl(ifac) -abs(imasfl(ifac)) )
 enddo
 
 !     Faces de bord : pour les faces ou on a calcule un flux de Rusanov,
@@ -396,7 +402,7 @@ do ifac = 1, nfabor
   if (ifbrus(ifac).eq.0) then
 
     iel = ifabor(ifac)
-    viscb(ifac) = - propfb(ifac,iflmab)                         &
+    viscb(ifac) = - bmasfl(ifac)                         &
   * ( coefa(ifac,iclrtp(ipr,icoef))                      &
     + coefb(ifac,iclrtp(ipr,icoef))*rtp(iel,ipr) )&
   / ( coefa(ifac,iclrtp(isca(irho),icoef))               &
@@ -651,7 +657,7 @@ call cfcdts                                                       &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap , thetap , &
    rtpa(1,ivar)    , coefa(1,iclvar) , coefb(1,iclvar) ,          &
                      coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
-                     propfa(1,iflmas), propfb(1,iflmab),          &
+                     imasfl , bmasfl ,                            &
    viscf  , viscb  , viscf  , viscb  ,                            &
    rovsdt , smbrs  , rtp(1,ivar)     ,                            &
    rvoid  )

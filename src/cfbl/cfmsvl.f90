@@ -92,6 +92,7 @@ use ppppar
 use ppthch
 use ppincl
 use mesh
+use field
 
 !===============================================================================
 
@@ -148,6 +149,7 @@ double precision, allocatable, dimension(:) :: w10
 double precision, allocatable, dimension(:) :: wflmas, wflmab
 double precision, allocatable, dimension(:) :: wfabg, wfbbg
 double precision, allocatable, dimension(:) :: dpvar
+double precision, dimension(:), pointer :: imasfl, bmasfl
 
 !===============================================================================
 !===============================================================================
@@ -175,8 +177,10 @@ iclvar = iclrtp(ivar,icoef)
 iclvaf = iclrtp(ivar,icoeff)
 
 ! --- Flux de masse associe a l'energie
-iflmas = ipprof(ifluma(isca(ienerg)))
-iflmab = ipprob(ifluma(isca(ienerg)))
+call field_get_key_int(ivarfl(isca(ienerg)), kimasf, iflmas)
+call field_get_key_int(ivarfl(isca(ienerg)), kbmasf, iflmab)
+call field_get_val_s(iflmas, imasfl)
+call field_get_val_s(iflmab, bmasfl)
 
 chaine = nomvar(ippvar)
 
@@ -325,7 +329,7 @@ if(iconv(ivar).le.0) then
   endif
 
   do ifac = 1, nfabor
-    wflmab(ifac) = -propfb(ifac,iflmab)
+    wflmab(ifac) = -bmasfl(ifac)
   enddo
 
   init = 0
@@ -356,7 +360,7 @@ else
       pip = rtpa(ii,ivar)                                         &
            +ircflp*(grad(ii,1)*diipbx+grad(ii,2)*diipby+grad(ii,3)*diipbz)
 
-      wflmab(ifac) = -propfb(ifac,iflmab)/                        &
+      wflmab(ifac) = -bmasfl(ifac)/                               &
            ( coefa(ifac,iclrtp(ivar,icoef))                       &
            + coefb(ifac,iclrtp(ivar,icoef))*pip           )
     enddo
@@ -364,7 +368,7 @@ else
   else
     do ifac = 1, nfabor
       ii = ifabor(ifac)
-      wflmab(ifac) = -propfb(ifac,iflmab)/                        &
+      wflmab(ifac) = -bmasfl(ifac)/                               &
            ( coefa(ifac,iclrtp(ivar,icoef))                       &
            + coefb(ifac,iclrtp(ivar,icoef))*rtpa(ii,ivar) )
     enddo
@@ -528,7 +532,7 @@ call cfbsc3                                                       &
                      coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
                      wflmas          , wflmab          ,          &
    viscf  , viscb  ,                                              &
-   propfa(1,iflmas), propfb(1,iflmab))
+   imasfl , bmasfl)
 
 
 !     Si ICONV = 0, le terme convectif n'est pas traite par CFBSC3
@@ -539,10 +543,10 @@ call cfbsc3                                                       &
 !        car WFLMAB etait, ci-dessus, utilise au second membre)
 if(iconv(ivar).le.0) then
   do ifac = 1, nfac
-    propfa(ifac,iflmas) = propfa(ifac,iflmas) - wflmas(ifac) - wfabg(ifac)
+    imasfl(ifac) = imasfl(ifac) - wflmas(ifac) - wfabg(ifac)
   enddo
   do ifac = 1, nfabor
-    propfb(ifac,iflmab) = propfb(ifac,iflmab) - wflmab(ifac) - wfbbg(ifac)
+    bmasfl(ifac) = bmasfl(ifac) - wflmab(ifac) - wfbbg(ifac)
   enddo
 endif
 

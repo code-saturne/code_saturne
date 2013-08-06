@@ -76,6 +76,7 @@ use pointe
 use period
 use parall
 use mesh
+use field
 
 !===============================================================================
 
@@ -113,6 +114,7 @@ double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: smbr, rovsdt
 double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: dpvar
+double precision, dimension(:), pointer :: imasfl, bmasfl
 
 !===============================================================================
 
@@ -127,8 +129,11 @@ allocate(dpvar(ncelet))
 ipcrom = ipproc(irom)
 ipcvis = ipproc(iviscl)
 ipcvst = ipproc(ivisct)
-iflmas = ipprof(ifluma(iu))
-iflmab = ipprob(ifluma(iu))
+
+call field_get_key_int(ivarfl(iu), kimasf, iflmas)
+call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
+call field_get_val_s(iflmas, imasfl)
+call field_get_val_s(iflmab, bmasfl)
 
 d1s2 = 1.d0/2.d0
 d1s4 = 1.d0/4.d0
@@ -267,7 +272,7 @@ call codits &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
    coefa(1,iclvar) , coefb(1,iclvar) ,                            &
    coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
-   propfa(1,iflmas), propfb(1,iflmab),                            &
+   imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &
    rovsdt , smbr   , rtp(1,ivar)     , dpvar  ,                   &

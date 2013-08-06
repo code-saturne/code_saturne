@@ -125,6 +125,7 @@ use lagpar
 use lagran
 use cplsat
 use mesh
+use field
 
 !===============================================================================
 
@@ -207,6 +208,7 @@ double precision, allocatable, dimension(:) :: adxk, adxkm1, dpvarm1, rhs0
 double precision, allocatable, dimension(:,:) :: weighf
 double precision, allocatable, dimension(:) :: weighb
 double precision, allocatable, dimension(:,:) :: frchy, dfrchy
+double precision, dimension(:), pointer :: imasfl, bmasfl
 
 !===============================================================================
 
@@ -248,8 +250,11 @@ else
   ipcroa = 0
 endif
 ipbrom = ipprob(irom  )
-iflmas = ipprof(ifluma(ipr))
-iflmab = ipprob(ifluma(ipr))
+
+call field_get_key_int(ivarfl(ipr), kimasf, iflmas)
+call field_get_key_int(ivarfl(ipr), kbmasf, iflmab)
+call field_get_val_s(iflmas, imasfl)
+call field_get_val_s(iflmab, bmasfl)
 
 ! --- Solving options
 isym  = 1
@@ -348,11 +353,11 @@ if(irnpnw.ne.1) then
    propce(1,ipcrom), propfb(1,ipbrom),                            &
    trav   ,                                                       &
    coefav , coefbv ,                                              &
-   propfa(1,iflmas), propfb(1,iflmab) )
+   imasfl , bmasfl )
 
   init = 1
   call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                &
-       ifacel,ifabor,propfa(1,iflmas),propfb(1,iflmab),res)
+       ifacel,ifabor,imasfl,bmasfl,res)
 
   ! --- Weakly compressible algorithm: semi analytic scheme
   if (idilat.eq.4) then
@@ -511,7 +516,7 @@ if (iphydr.eq.1) then
  ( nvar   , nscal  ,                                              &
    indhyd ,                                                       &
    frchy  , dfrchy ,                                              &
-   rtp(1,ipr)   , propfa(1,iflmas), propfb(1,iflmab),             &
+   rtp(1,ipr)   , imasfl , bmasfl ,                               &
    coefap , coefbp ,                                              &
    cofafp , cofbfp ,                                              &
    viscf  , viscb  ,                                              &
@@ -588,7 +593,7 @@ call matrix &
    thetap , imucpp ,                                              &
    ifacel , ifabor ,                                              &
    coefb(1,iclipr) , coefb(1,iclipf) , rovsdt ,                   &
-   propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  ,          &
+   imasfl , bmasfl , viscf  , viscb  ,                            &
    rvoid  , dam    , xam    )
 
 ! Strengthen the diagonal
@@ -739,7 +744,7 @@ call inimav &
    propce(1,ipcrom), propfb(1,ipbrom),                            &
    trav   ,                                                       &
    coefav , coefbv ,                                              &
-   propfa(1,iflmas), propfb(1,iflmab) )
+   imasfl , bmasfl )
 
 
 ! --- Projection aux faces des forces exterieures
@@ -765,7 +770,7 @@ if (iphydr.eq.1) then
    epsrgp , climgp ,                                              &
    dfrcxt ,                                                       &
    coefb(1,iclipf) ,                                              &
-   propfa(1,iflmas), propfb(1,iflmab) ,                           &
+   imasfl , bmasfl ,                                              &
    viscf  , viscb  ,                                              &
    dt     , dt     , dt     )
 
@@ -781,7 +786,7 @@ if (iphydr.eq.1) then
     viscf  , viscb  ,                                              &
     tpucou ,                                                       &
     weighf , weighb ,                                              &
-    propfa(1,iflmas), propfb(1,iflmab) )
+    imasfl , bmasfl )
 
   endif
 endif
@@ -838,7 +843,7 @@ if (arak.gt.0.d0) then
    coefa(1,iclipf) , coefb(1,iclipf) ,                            &
    viscf  , viscb  ,                                              &
    dt     , dt     , dt     ,                                     &
-   propfa(1,iflmas), propfb(1,iflmab))
+   imasfl , bmasfl )
 
     ! Projection du terme source pour oter la partie hydrostat de la pression
     if (iphydr.eq.1) then
@@ -865,7 +870,7 @@ if (arak.gt.0.d0) then
    epsrgp , climgp ,                                              &
    frcxt  ,                                                       &
    cofbfp ,                                                       &
-   propfa(1,iflmas), propfb(1,iflmab) ,                           &
+   imasfl , bmasfl ,                                              &
    viscf  , viscb  ,                                              &
    dt     , dt     , dt     )
 
@@ -910,7 +915,7 @@ if (arak.gt.0.d0) then
    viscf  , viscb  ,                                              &
    tpucou ,                                                       &
    weighf , weighb ,                                              &
-   propfa(1,iflmas), propfb(1,iflmab) )
+   imasfl , bmasfl )
 
    ! Projection du terme source pour oter la partie hydrostat de la pression
    if (iphydr.eq.1) then
@@ -937,7 +942,7 @@ if (arak.gt.0.d0) then
      viscf  , viscb  ,                                              &
      tpucou ,                                                       &
      weighf , weighb ,                                              &
-     propfa(1,iflmas), propfb(1,iflmab) )
+     imasfl, bmasfl )
 
    endif
 
@@ -1144,7 +1149,7 @@ call divmas &
 !==========
  ( ncelet , ncel   , nfac  , nfabor , init   , nfecra ,          &
    ifacel , ifabor ,                                             &
-   propfa(1,iflmas), propfb(1,iflmab)        , divu )
+   imasfl , bmasfl , divu )
 
 ! --- Weakly compressible algorithm: semi analytic scheme
 !     1. The RHS contains rho div(u*) and not div(rho u*)
@@ -1220,7 +1225,7 @@ if (idilat.eq.4) then
    propce(1,ipcrom), propfb(1,ipbrom),                            &
    vel    ,                                                       &
    coefav , coefbv ,                                              &
-   propfa(1,iflmas), propfb(1,iflmab) )
+   imasfl , bmasfl )
 
 endif
 
@@ -1670,7 +1675,7 @@ if (idften(ipr).eq.1) then
    cofafp , coefb(1,iclipf) ,                                     &
    viscf  , viscb  ,                                              &
    dt     , dt     , dt     ,                                     &
-   propfa(1,iflmas), propfb(1,iflmab))
+   imasfl , bmasfl )
 
   ! The last increment is not reconstructed to fullfill exactly the continuity
   ! equation (see theory guide). The value of dfrcxt has no importance.
@@ -1690,7 +1695,7 @@ if (idften(ipr).eq.1) then
    coefa(1,iclipf) , coefb(1,iclipf) ,                            &
    viscf  , viscb  ,                                              &
    dt     , dt     , dt     ,                                     &
-   propfa(1,iflmas), propfb(1,iflmab))
+   imasfl , bmasfl )
 
 else if (idften(ipr).eq.6) then
 
@@ -1706,7 +1711,7 @@ else if (idften(ipr).eq.6) then
    viscf  , viscb  ,                                              &
    tpucou ,                                                       &
    weighf , weighb ,                                              &
-   propfa(1,iflmas), propfb(1,iflmab))
+   imasfl , bmasfl )
 
   ! The last increment is not reconstructed to fullfill exactly the continuity
   ! equation (see theory guide). The value of dfrcxt has no importance.
@@ -1727,7 +1732,7 @@ else if (idften(ipr).eq.6) then
    viscf  , viscb  ,                                              &
    tpucou ,                                                       &
    weighf , weighb ,                                              &
-   propfa(1,iflmas), propfb(1,iflmab))
+   imasfl , bmasfl )
 
 endif
 
@@ -2027,7 +2032,7 @@ if (idilat.eq.4) then
    cofafp , coefb(1,iclipf) ,                                     &
    viscf  , viscb  ,                                              &
    dt     , dt     , dt     ,                                     &
-   propfa(1,iflmas), propfb(1,iflmab))
+   imasfl , bmasfl )
 
     ! The last increment is not reconstructed to fullfill exactly the continuity
     ! equation (see theory guide). The value of dfrcxt has no importance.
@@ -2047,7 +2052,7 @@ if (idilat.eq.4) then
    cofafp , coefb(1,iclipf) ,                                     &
    viscf  , viscb  ,                                              &
    dt     , dt     , dt     ,                                     &
-   propfa(1,iflmas), propfb(1,iflmab))
+   imasfl , bmasfl )
 
   else if (idften(ipr).eq.6) then
 
@@ -2063,7 +2068,7 @@ if (idilat.eq.4) then
      viscf  , viscb  ,                                              &
      tpucou ,                                                       &
      weighf , weighb ,                                              &
-     propfa(1,iflmas), propfb(1,iflmab))
+     imasfl , bmasfl )
 
     ! The last increment is not reconstructed to fullfill exactly the continuity
     ! equation (see theory guide). The value of dfrcxt has no importance.
@@ -2083,7 +2088,7 @@ if (idilat.eq.4) then
      viscf  , viscb  ,                                              &
      tpucou ,                                                       &
      weighf , weighb ,                                              &
-     propfa(1,iflmas), propfb(1,iflmab))
+     imasfl , bmasfl )
 
   endif
 

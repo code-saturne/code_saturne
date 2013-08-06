@@ -134,6 +134,7 @@ double precision, dimension(:), pointer :: taup
 double precision, dimension(:), pointer :: taufpt
 double precision, dimension(:,:), pointer :: coefav, cofafv
 double precision, dimension(:,:,:), pointer :: coefbv, cofbfv
+double precision, dimension(:), pointer :: imasfl_mix, bmasfl_mix
 
 !===============================================================================
 
@@ -149,6 +150,12 @@ call field_get_key_int(iflid, keysca, iscal)
 call field_get_key_id("drift_scalar_model", keydri)
 call field_get_key_int(iflid, keydri, iscdri)
 
+! Pointers to the mass fluxes of the mix (based on mix velocity)
+call field_get_key_int(ivarfl(iu), kimasf, iflmas)
+call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
+call field_get_val_s(iflmas, imasfl_mix)
+call field_get_val_s(iflmab, bmasfl_mix)
+
 !===============================================================================
 ! 1. Initialization
 !===============================================================================
@@ -158,8 +165,6 @@ ivar = isca(iscal)
 ! --- Physical properties
 ipcrom = ipproc(irom)
 ipbrom = ipprob(irom)
-iflmas = ipprof(ifluma(ivar))
-iflmab = ipprob(ifluma(ivar))
 ipcvst = ipproc(ivisct)
 
 ! --- Brownian diffusivity
@@ -384,7 +389,7 @@ if (btest(iscdri, DRIFT_SCALAR_CENTRIFUGALFORCE)) then
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    vel    , vel    ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
-   propfa(1,ipprof(ifluma(iu))), propfb(1,ipprob(ifluma(iu))),    &
+   imasfl_mix , bmasfl_mix ,                                      &
    viscf  , viscb  , rvoid  , rvoid  ,                            &
    dudt   )
 
@@ -451,11 +456,11 @@ call inimav &
    flumas , flumab )
 
 do ifac = 1, nfac
-  imasfl(ifac) = propfa(ifac,ipprof(ifluma(iu))) + flumas(ifac)
+  imasfl(ifac) = imasfl_mix(ifac) + flumas(ifac)
 enddo
 
 do ifac = 1, nfabor
-  bmasfl(ifac) = propfb(ifac,ipprob(ifluma(iu))) + flumab(ifac)
+  bmasfl(ifac) = bmasfl_mix(ifac) + flumab(ifac)
 enddo
 
 !===============================================================================

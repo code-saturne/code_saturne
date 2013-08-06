@@ -73,6 +73,7 @@ use pointe
 use parall
 use period
 use mesh
+use field
 
 !===============================================================================
 
@@ -108,6 +109,7 @@ double precision rvoid(1)
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: smbr, rovsdt
 double precision, allocatable, dimension(:) :: dpvar
+double precision, dimension(:), pointer :: imasfl, bmasfl
 
 !===============================================================================
 
@@ -123,9 +125,12 @@ allocate(dpvar(ncelet))
 ipcvmx = ipproc(ivisma(1))
 ipcvmy = ipproc(ivisma(2))
 ipcvmz = ipproc(ivisma(3))
-! Flux de masse necessaire pour l'appel mais non utilise (ICONV=0)
-iflmas = ipprof(ifluma(iu))
-iflmab = ipprob(ifluma(iu))
+
+! Pointers to the mass fluxes
+call field_get_key_int(ivarfl(iu), kimasf, iflmas)
+call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
+call field_get_val_s(iflmas, imasfl)
+call field_get_val_s(iflmab, bmasfl)
 
 if(iwarni(iuma).ge.1) then
   write(nfecra,1000)
@@ -209,7 +214,7 @@ do ii = 1, 3
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
    coefa(1,iclvar) , coefb(1,iclvar) ,                            &
    coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
-   propfa(1,iflmas), propfb(1,iflmab),                            &
+   imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &
    rovsdt , smbr   , rtp(1,ivar)     , dpvar  ,                   &
