@@ -3666,7 +3666,7 @@ cs_restart_read_section_compat(cs_restart_t           *restart,
                                    val_type,
                                    val);
 
-  if (retval == CS_RESTART_ERR_N_VALS || CS_RESTART_ERR_EXISTS)
+  if (retval == CS_RESTART_ERR_N_VALS || retval == CS_RESTART_ERR_EXISTS)
     retval = cs_restart_read_section(restart,
                                      old_name,
                                      location_id,
@@ -3717,7 +3717,7 @@ cs_restart_read_real_3_t_compat(cs_restart_t  *restart,
                                    CS_TYPE_cs_real_t,
                                    val);
 
-  if (retval == CS_RESTART_ERR_N_VALS || CS_RESTART_ERR_EXISTS) {
+  if (retval == CS_RESTART_ERR_N_VALS || retval == CS_RESTART_ERR_EXISTS) {
 
     cs_real_t *buffer = NULL;
     cs_lnum_t i;
