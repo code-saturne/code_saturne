@@ -117,13 +117,8 @@ double precision grad(ncelet,3)
 
 ! Local variables
 
-integer          imrgrp
+integer          imrgrp, ilved
 integer          idimtr, ipond
-integer          iiu,iiv,iiw
-integer          iitytu
-integer          iir11,iir22,iir33
-integer          iir12,iir13,iir23
-integer          imlini
 
 double precision rvoid(1)
 double precision climin
@@ -141,6 +136,7 @@ if (imrgra.lt.0) imrgrp = -imrgra
 
 ! The gradient of a potential (pressure, ...) is a vector
 
+ilved = 0
 idimtr = 0
 ipond = 0
 
@@ -150,9 +146,9 @@ ipond = 0
 
 call cgdcel &
 !==========
- ( ivar   , imrgrp , inc    , iccocg , nswrgp ,                   &
+ ( ivar   , imrgrp , ilved  , inc    , iccocg , nswrgp ,          &
    idimtr , iphydp , ipond  , iwarnp , imligp , epsrgp , extrap , &
-   climgp , isympa , frcxt  , coefap , coefbp ,                   &
+   climgp , frcxt  , coefap , coefbp ,                            &
    pvar   , rvoid  , grad   )
 
 return

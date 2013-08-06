@@ -109,9 +109,8 @@ double precision grad(ncelet,3)
 
 ! Local variables
 
-integer          iphydp, ipond
-integer          idimtr, irpvar
-integer          imlini
+integer          iphydp, ipond, ilved
+integer          idimtr
 
 double precision rvoid(1)
 double precision climin
@@ -138,7 +137,7 @@ double precision climin
 !   to compute gradients at the beginning of the time step and save them
 !   in dudxyz et drdxyz
 
-! It si necessary for idimtr to always be initialized, even with no
+! It is necessary for idimtr to always be initialized, even with no
 !   periodicity of rotation, so it's default value is set.
 
 idimtr = 0
@@ -154,14 +153,15 @@ endif
 
 ! This subroutine is never used to compute the pressure gradient
 
+ilved = 0
 iphydp = 0
 ipond  = 0
 
 call cgdcel &
 !==========
- ( ivar   , imrgra , inc    , iccocg , nswrgp ,                   &
+ ( ivar   , imrgra , ilved  , inc    , iccocg , nswrgp ,          &
    idimtr , iphydp , ipond  , iwarnp , imligp , epsrgp , extrap , &
-   climgp , isympa , rvoid  , coefap , coefbp ,                   &
+   climgp , rvoid  , coefap , coefbp ,                            &
    pvar   , rvoid  , grad   )
 
 return

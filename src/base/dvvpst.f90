@@ -132,26 +132,21 @@ character*80     name80
 
 logical          ilved , ientla, ivarpr
 integer          inc   , iccocg, nswrgp, imligp, iwarnp
-integer          ifac  , iloc  , ivar , iclvar, iclvaf
-integer          ira   , idivdt
-integer          ipp   , idimt , ii    , kk   , ll, iel
-integer          ivarl , ivar0 , iip
+integer          ifac  , iloc  , ivar
+integer          ipp   , idimt , kk   , ll, iel
+integer          ivarl , ivar0
 integer          iii, ivarl1 , ivarlm , iflu   , ilpd1  , icla
-integer          iscal , ipcvsl, ipcvst, iflmab
 integer          fldid, fldprv, keycpl, iflcpl
-integer          ipccp , ipcrom, ipcsii, keyvis, iflpst, itplus
+integer          ipcrom, ipcsii, keyvis, iflpst, itplus
 
-double precision xcp   , xvsl  , srfbn
-double precision visct , flumab, diipbx, diipby, diipbz
 double precision epsrgp, climgp, extrap
 double precision pcentr
 
 double precision rbid(1)
 
 double precision, allocatable, dimension(:,:) :: grad
-double precision, allocatable, dimension(:) :: treco
 double precision, allocatable, dimension(:) :: wcell
-double precision, dimension(:), pointer :: tplusp, tstarp
+double precision, dimension(:), pointer :: tplusp
 double precision, dimension(:), pointer :: valsp, coefap, coefbp
 double precision, dimension(:,:), pointer :: valvp, cofavp, cofbvp
 double precision, dimension(:,:,:), pointer :: cofbtp
@@ -558,8 +553,7 @@ else if (numtyp .eq. -2) then
 
     if (iscalt.gt.0 .and. nscal.gt.0 .and. iscalt.le.nscal) then
 
-      call post_boundary_thermal_flux(nfbrps, lstfbr, rtp, propce, propfb,      &
-                                      trafbr)
+      call post_boundary_thermal_flux(nfbrps, lstfbr, rtp, propce, trafbr)
 
       idimt = 1        ! variable dimension
       ientla = .true.  ! interleaved values
@@ -583,8 +577,7 @@ else if (numtyp .eq. -2) then
 
     ! Compute variable on boundary faces
 
-    call post_boundary_temperature(nfbrps, lstfbr, rtp, propce, propfb,     &
-                                   trafbr)
+    call post_boundary_temperature(nfbrps, lstfbr, rtp, trafbr)
 
     call post_write_var(nummai, 'Wall temperature', idimt, ientla, ivarpr,  &
                         ntcabs, ttcabs, rbid, rbid, trafbr)
@@ -602,8 +595,7 @@ else if (numtyp .eq. -2) then
 
     ! Compute variable on boundary faces
 
-    call post_boundary_nusselt(nfbrps, lstfbr, rtp, propce, propfb,         &
-                               trafbr)
+    call post_boundary_nusselt(nfbrps, lstfbr, rtp, propce, trafbr)
 
     call post_write_var(nummai, 'Wall law Nusselt', idimt, ientla, ivarpr,  &
                         ntcabs, ttcabs, rbid, rbid, trafbr)

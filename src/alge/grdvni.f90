@@ -109,11 +109,9 @@ double precision gradv(3*3*ncelet)
 
 ! Local variables
 
-integer          iel, isou, ivarloc
-integer          iphydp, ipond
-integer          idimtr, irpvar
-integer          iiu,iiv,iiw
-integer          imlini
+integer          ivarloc
+integer          iphydp, ipond, ilved
+integer          idimtr
 
 double precision rvoid(1)
 
@@ -128,6 +126,8 @@ idimtr = 0
 ! 1. COMPUTATION OF THE GRADIENT
 !===============================================================================
 
+ilved = 0
+
 ! This subroutine is never used to compute the pressure gradient
 iphydp = 0
 ipond = 0
@@ -136,9 +136,9 @@ ivarloc = ivar
 
 call cgdcel &
 !==========
- ( ivarloc, imrgra , inc    , iccocg , nswrgp ,                   &
+ ( ivarloc, imrgra , ilved  ,inc     , iccocg , nswrgp ,          &
    idimtr , iphydp , ipond  , iwarnp , imligp , epsrgp , extrap , &
-   climgp , isympa , rvoid  ,                                     &
+   climgp , rvoid  ,                                              &
    coefav(1)       , coefbv(1)       , vel(1) , rvoid  ,          &
    gradv(1)     )
 
@@ -146,9 +146,9 @@ ivarloc = ivarloc+1
 
 call cgdcel &
 !==========
- ( ivarloc, imrgra , inc    , iccocg , nswrgp ,                   &
+ ( ivarloc, imrgra , ilved  , inc    , iccocg , nswrgp ,          &
    idimtr , iphydp , ipond  , iwarnp , imligp , epsrgp , extrap , &
-   climgp , isympa , rvoid  ,                                     &
+   climgp , rvoid  ,                                              &
    coefav(1+ndimfb), coefbv(1+ndimfb), vel(1+ncelet)   , rvoid  , &
    gradv(1+3*ncelet)     )
 
@@ -156,9 +156,9 @@ ivarloc = ivarloc+1
 
 call cgdcel &
 !==========
- ( ivarloc, imrgra , inc    , iccocg , nswrgp ,                   &
+ ( ivarloc, imrgra , ilved  ,inc     , iccocg , nswrgp ,          &
    idimtr , iphydp , ipond  , iwarnp , imligp , epsrgp , extrap , &
-   climgp , isympa , rvoid  ,                                     &
+   climgp , rvoid  ,                                              &
    coefav(1+2*ndimfb), coefbv(1+2*ndimfb), vel(1+2*ncelet),       &
    rvoid , gradv(1+6*ncelet)  )
 

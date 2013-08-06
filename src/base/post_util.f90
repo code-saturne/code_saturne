@@ -39,13 +39,12 @@
 !> \param[in]     lstfbr        list of boundary faces to postprocess
 !> \param[in]     rtp           calculated variables at cell centers
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfb        physical properties at boundary face centers
 !> \param[out]    bflux         boundary heat flux at selected faces
 !_______________________________________________________________________________
 
 subroutine post_boundary_thermal_flux &
  ( nfbrps , lstfbr ,                                              &
-   rtp    , propce , propfb ,                                     &
+   rtp    , propce ,                                              &
    bflux )
 
 !===============================================================================
@@ -66,6 +65,7 @@ use parall
 use period
 use mesh
 use field
+use field_operator
 
 !===============================================================================
 
@@ -73,11 +73,10 @@ implicit none
 
 ! Arguments
 
-integer, intent(in)                                        :: nfbrps
-integer, dimension(nfbrps), intent(in)                     :: lstfbr
-double precision, dimension(ncelet, *), intent(in), target :: rtp, propce
-double precision, dimension(ndimfb, *), intent(in)         :: propfb
-double precision, dimension(nfbrps), intent(out)           :: bflux
+integer, intent(in)                                :: nfbrps
+integer, dimension(nfbrps), intent(in)             :: lstfbr
+double precision, dimension(ncelet, *), intent(in) :: rtp, propce
+double precision, dimension(nfbrps), intent(out)   :: bflux
 
 ! Local variables
 
@@ -86,7 +85,7 @@ integer ::         ifac, iloc, ivar
 integer ::         iel
 integer ::         ipcvsl, ipcvst, iflmab
 
-double precision :: xcp   , xvsl  , srfbn
+double precision :: xvsl  , srfbn
 double precision :: visct , flumab, diipbx, diipby, diipbz, tcel
 double precision :: epsrgp, climgp, extrap
 
@@ -134,7 +133,7 @@ if (iscalt.gt.0) then
     endif
 
     ! Allocate a temporary array for the gradient calculation
-    allocate(grad(ncelet,3))
+    allocate(grad(3,ncelet))
 
     inc = 1
     iccocg = 1
@@ -145,12 +144,9 @@ if (iscalt.gt.0) then
     climgp = climgr(ivar)
     extrap = extrag(ivar)
 
-    call grdcel &
-    !==========
- ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , nfecra ,                                              &
-   epsrgp , climgp , extrap , rtp(1,ivar) , coefap , coefbp ,     &
-   grad   )
+    call field_gradient_scalar                                             &
+      (ivarfl(ivar), imrgra, inc, 0, iccocg, nswrgp, iwarnp, imligp,       &
+       epsrgp, climgp, extrap, grad)
 
     ! Compute diffusive and convective flux using reconstructed temperature
 
@@ -164,7 +160,7 @@ if (iscalt.gt.0) then
       diipbz = diipb(3,ifac)
 
       tcel =   rtp(iel,ivar)                                                  &
-             + diipbx*grad(iel,1) + diipby*grad(iel,2) + diipbz*grad(iel,3)
+             + diipbx*grad(1,iel) + diipby*grad(2,iel) + diipbz*grad(3,iel)
 
       if (ipcvsl.gt.0) then
         xvsl = propce(iel,ipcvsl)
@@ -244,14 +240,11 @@ end subroutine post_boundary_thermal_flux
 !> \param[in]     nfbrps        number of boundary faces to postprocess
 !> \param[in]     lstfbr        list of boundary faces to postprocess
 !> \param[in]     rtp           calculated variables at cell centers
-!> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfb        physical properties at boundary face centers
 !> \param[out]    btemp         boundary temperature at selected faces
 !_______________________________________________________________________________
 
 subroutine post_boundary_temperature &
- ( nfbrps , lstfbr ,                                              &
-   rtp    , propce , propfb ,                                     &
+ ( nfbrps , lstfbr , rtp ,                                        &
    btemp )
 
 !===============================================================================
@@ -261,7 +254,6 @@ subroutine post_boundary_temperature &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use pointe
 use entsor
 use cstnum
@@ -272,6 +264,7 @@ use parall
 use period
 use mesh
 use field
+use field_operator
 
 !===============================================================================
 
@@ -279,11 +272,10 @@ implicit none
 
 ! Arguments
 
-integer, intent(in)                                        :: nfbrps
-integer, dimension(nfbrps), intent(in)                     :: lstfbr
-double precision, dimension(ncelet, *), intent(in), target :: rtp, propce
-double precision, dimension(ndimfb, *), intent(in)         :: propfb
-double precision, dimension(nfbrps), intent(out)           :: btemp
+integer, intent(in)                                :: nfbrps
+integer, dimension(nfbrps), intent(in)             :: lstfbr
+double precision, dimension(ncelet, *), intent(in) :: rtp
+double precision, dimension(nfbrps), intent(out)   :: btemp
 
 ! Local variables
 
@@ -294,7 +286,6 @@ integer ::         itplus, itstar
 double precision :: diipbx, diipby, diipbz
 double precision :: epsrgp, climgp, extrap, tcel
 
-double precision, dimension(:), pointer :: coefap, coefbp
 double precision, allocatable, dimension(:,:) :: grad
 double precision, dimension(:), pointer :: tplusp, tstarp
 
@@ -316,19 +307,8 @@ if (itstar.ge.0 .and. itplus.ge.0) then
 
   if (ircflu(ivar) .gt. 0) then
 
-    ! Boundary condition pointers for gradients and advection
-
-    call field_get_coefa_s(ivarfl(ivar), coefap)
-    call field_get_coefb_s(ivarfl(ivar), coefbp)
-
-    ! Compute gradient of temperature / enthalpy
-
-    if (irangp.ge.0.or.iperio.eq.1) then
-      call synsca(rtp(1,ivar))
-    endif
-
     ! Allocate a temporary array for the gradient calculation
-    allocate(grad(ncelet,3))
+    allocate(grad(3,ncelet))
 
     inc = 1
     iccocg = 1
@@ -339,12 +319,11 @@ if (itstar.ge.0 .and. itplus.ge.0) then
     climgp = climgr(ivar)
     extrap = extrag(ivar)
 
-    call grdcel &
-    !==========
- ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , nfecra ,                                              &
-   epsrgp , climgp , extrap , rtp(1,ivar) , coefap , coefbp ,     &
-   grad   )
+    ! Compute gradient of temperature / enthalpy
+
+    call field_gradient_scalar                                             &
+      (ivarfl(ivar), imrgra, inc, 0, iccocg, nswrgp, iwarnp, imligp,       &
+       epsrgp, climgp, extrap, grad)
 
     ! Compute reconstructed value in boundary cells
 
@@ -357,7 +336,7 @@ if (itstar.ge.0 .and. itplus.ge.0) then
       diipby = diipb(2,ifac)
       diipbz = diipb(3,ifac)
       tcel =   rtp(iel,ivar)                                                 &
-             + diipbx*grad(iel,1) + diipby*grad(iel,2) + diipbz*grad(iel,3)
+             + diipbx*grad(1,iel) + diipby*grad(2,iel) + diipbz*grad(3,iel)
 
       btemp(iloc) = tcel - tplusp(ifac)*tstarp(ifac)
 
@@ -414,13 +393,12 @@ end subroutine post_boundary_temperature
 !> \param[in]     lstfbr        list of boundary faces to postprocess
 !> \param[in]     rtp           calculated variables at cell centers
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfb        physical properties at boundary face centers
 !> \param[out]    bnussl        Nusselt near boundary
 !_______________________________________________________________________________
 
 subroutine post_boundary_nusselt &
  ( nfbrps , lstfbr ,                                              &
-   rtp    , propce , propfb ,                                     &
+   rtp    , propce ,                                              &
    bnussl )
 
 !===============================================================================
@@ -430,7 +408,6 @@ subroutine post_boundary_nusselt &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use pointe
 use entsor
 use cstnum
@@ -441,6 +418,7 @@ use parall
 use period
 use mesh
 use field
+use field_operator
 
 !===============================================================================
 
@@ -448,11 +426,10 @@ implicit none
 
 ! Arguments
 
-integer, intent(in)                                        :: nfbrps
-integer, dimension(nfbrps), intent(in)                     :: lstfbr
-double precision, dimension(ncelet, *), intent(in), target :: rtp, propce
-double precision, dimension(ndimfb, *), intent(in)         :: propfb
-double precision, dimension(nfbrps), intent(out)           :: bnussl
+integer, intent(in)                                :: nfbrps
+integer, dimension(nfbrps), intent(in)             :: lstfbr
+double precision, dimension(ncelet, *), intent(in) :: rtp, propce
+double precision, dimension(nfbrps), intent(out)   :: bnussl
 
 ! Local variables
 
@@ -461,7 +438,7 @@ integer ::         iel, ifac, iloc, ivar
 integer ::         ipcvsl, ipcvst, itplus, itstar
 
 double precision :: xvsl  , srfbn
-double precision :: visct , flumab, diipbx, diipby, diipbz
+double precision :: visct , diipbx, diipby, diipbz
 double precision :: epsrgp, climgp, extrap, numer, denom, tcel
 
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
@@ -512,7 +489,7 @@ if (itstar.ge.0 .and. itplus.ge.0) then
     endif
 
     ! Allocate a temporary array for the gradient calculation
-    allocate(grad(ncelet,3))
+    allocate(grad(3,ncelet))
 
     inc = 1
     iccocg = 1
@@ -523,12 +500,9 @@ if (itstar.ge.0 .and. itplus.ge.0) then
     climgp = climgr(ivar)
     extrap = extrag(ivar)
 
-    call grdcel &
-    !==========
- ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , nfecra ,                                              &
-   epsrgp , climgp , extrap , rtp(1,ivar) , coefap , coefbp ,     &
-   grad   )
+    call field_gradient_scalar                                             &
+      (ivarfl(ivar), imrgra, inc, 0, iccocg, nswrgp, iwarnp, imligp,       &
+       epsrgp, climgp, extrap, grad)
 
     ! Compute using reconstructed temperature value in boundary cells
 
@@ -541,7 +515,7 @@ if (itstar.ge.0 .and. itplus.ge.0) then
       diipby = diipb(2,ifac)
       diipbz = diipb(3,ifac)
       tcel =   rtp(iel,ivar)                                                 &
-             + diipbx*grad(iel,1) + diipby*grad(iel,2) + diipbz*grad(iel,3)
+             + diipbx*grad(1,iel) + diipby*grad(2,iel) + diipbz*grad(3,iel)
 
       if (ipcvsl.gt.0) then
         xvsl = propce(iel,ipcvsl)
@@ -573,7 +547,7 @@ if (itstar.ge.0 .and. itplus.ge.0) then
       ifac = lstfbr(iloc)
       iel = ifabor(ifac)
 
-      tcel =   rtp(iel,ivar)
+      tcel = rtp(iel,ivar)
 
       if (ipcvsl.gt.0) then
         xvsl = propce(iel,ipcvsl)
@@ -642,7 +616,6 @@ subroutine post_efforts &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use pointe
 use entsor
 use cstnum
@@ -716,7 +689,6 @@ subroutine post_efforts_normal &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use pointe
 use entsor
 use cstnum
@@ -794,7 +766,6 @@ subroutine post_efforts_tangential &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use pointe
 use entsor
 use cstnum

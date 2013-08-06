@@ -96,6 +96,7 @@ use ppthch
 use ppincl
 use mesh
 use field
+use field_operator
 
 !===============================================================================
 
@@ -288,7 +289,7 @@ if (inpdt0.eq.0) then
   if (iortho.eq.0) then
 
     ! Allocate a work array for the gradient calculation
-    allocate(grad(ncelet,3))
+    allocate(grad(3,ncelet))
 
     ! --- Compute temperature gradient
 
@@ -328,13 +329,10 @@ if (inpdt0.eq.0) then
     climgp = climgr(ivar)
     extrap = extrag(ivar)
 
-    call grdcel &
-    !==========
-      ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-        iwarnp , nfecra ,                                              &
-        epsrgp , climgp , extrap ,                                     &
-        rtp(1,ivar) , coefap , coefbp ,                                &
-        grad   )
+    call field_gradient_scalar                                             &
+    !=========================
+      (ivarfl(ivar), imrgra, inc, 0, iccocg, nswrgp, iwarnp, imligp,       &
+       epsrgp, climgp, extrap, grad)
 
     ! - Compute reconstructed value in boundary cells
 
@@ -343,10 +341,10 @@ if (inpdt0.eq.0) then
       diipbx = diipb(1,ifac)
       diipby = diipb(2,ifac)
       diipbz = diipb(3,ifac)
-      treco(ifac) =   rtp(iel,ivar)            &
-                    + diipbx*grad(iel,1)  &
-                    + diipby*grad(iel,2)  &
-                    + diipbz*grad(iel,3)
+      treco(ifac) =   rtp(iel,ivar)       &
+                    + diipbx*grad(1,iel)  &
+                    + diipby*grad(2,iel)  &
+                    + diipbz*grad(3,iel)
     enddo
 
     ! Free memory

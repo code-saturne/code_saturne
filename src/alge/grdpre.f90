@@ -110,7 +110,7 @@ double precision grad(ncelet,3)
 
 ! Local variables
 
-integer          iphydp, ipond
+integer          iphydp, ipond, ilved
 integer          idimtr
 
 double precision rvoid(1)
@@ -121,6 +121,8 @@ double precision climin
 !===============================================================================
 ! 1. Compute gradient
 !===============================================================================
+
+ilved = 0
 
 ! The current variable is a scalar (and the gradient is a vector)
 idimtr = 0
@@ -135,7 +137,7 @@ ipond = 1
 
 call cgdcel &
 !==========
- ( ivar   , imrgra , inc    , iccocg , nswrgp ,                   &
+ ( ivar   , imrgra , ilved  , inc    , iccocg , nswrgp ,          &
    idimtr , iphydp , ipond  , iwarnp , imligp , epsrgp , extrap , &
    climgp , isympa , rvoid  , coefap , coefbp ,                   &
    pvar   , ktvar  , grad   )

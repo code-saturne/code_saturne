@@ -121,8 +121,6 @@ double precision statis(ncelet,nvlsta)
 
 ! Local variables
 
-character*32     namevr
-
 integer          ntindp
 integer          iel, ifac, iloc, ivar
 integer          idimt, ii , jj
@@ -133,7 +131,6 @@ double precision rvoid(1)
 
 double precision, dimension(:), allocatable :: scel, sfac, sfbr
 double precision, dimension(:,:), allocatable :: vcel, vfac, vfbr
-double precision, dimension(:), pointer :: coefap, coefbp
 
 integer          intpst
 data             intpst /0/

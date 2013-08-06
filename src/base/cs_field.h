@@ -224,8 +224,7 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
                             bool         have_mom_bc);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief  Initialize boundary condition coefficients arrays.
+/* Initialize boundary condition coefficients arrays.
  *
  * For fields on location CS_MESH_LOCATION_CELLS, boundary conditions
  * are located on CS_MESH_LOCATION_BOUNDARY_FACES.
@@ -242,13 +241,13 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
  * block matrices, not vectors, so the number of entries for each boundary
  * face is dim*dim instead of dim.
  *
- * \param[in, out]  f             pointer to field structure
- * \param[in]       have_flux_bc  if true, flux bc coefficients (af and bf)
- *                                are initialized
- * \param[in]       have_mom_bc   if true, div BC coefficients (ad and bd)
- *                                are initialized
- */
-/*----------------------------------------------------------------------------*/
+ * parameters:
+ *   f            <-> pointer to field structure
+ *   have_flux_bc <-- if true, flux bc coefficients (af and bf)
+ *                    are initialized
+ *   have_mom_bc  <-- if true, div BC coefficients (ad and bd)
+ *                    are initialized
+ *----------------------------------------------------------------------------*/
 
 void
 cs_field_init_bc_coeffs(cs_field_t  *f,

@@ -79,6 +79,7 @@ void CS_PROCF (cgdcel, CGDCEL)
 (
  const cs_int_t   *const ivar,        /* <-- variable number                  */
  const cs_int_t   *const imrgra,      /* <-- gradient computation mode        */
+ const cs_int_t   *const ilved,       /* <-- 1: interleaved; 0: non-interl.   */
  const cs_int_t   *const inc,         /* <-- 0 or 1: increment or not         */
  const cs_int_t   *const iccocg,      /* <-- 1 or 0: recompute COCG or not    */
  const cs_int_t   *const nswrgp,      /* <-- >1: with reconstruction          */
@@ -92,7 +93,6 @@ void CS_PROCF (cgdcel, CGDCEL)
                                              calculation                      */
  const cs_real_t  *const extrap,      /* <-- extrapolate gradient at boundary */
  const cs_real_t  *const climgp,      /* <-- clipping coefficient             */
- const cs_int_t          isympa[],    /* <-- indicator for symmetry faces     */
        cs_real_3_t       fext[],      /* <-- exterior force generating the
                                              hydrostatic pressure             */
  const cs_real_t         coefap[],    /* <-- boundary condition term          */
@@ -109,18 +109,18 @@ void CS_PROCF (cgdcel, CGDCEL)
 void CS_PROCF (cgdvec, CGDVEC)
 (
  const cs_int_t         *const ivar,
- const cs_int_t         *const imrgra,  /* <-- gradient computation mode      */
- const cs_int_t         *const inc,     /* <-- 0 or 1: increment or not       */
- const cs_int_t         *const nswrgp,  /* <-- >1: with reconstruction        */
- const cs_int_t         *const iwarnp,  /* <-- verbosity level                */
- const cs_int_t         *const imligp,  /* <-- type of clipping               */
- const cs_real_t        *const epsrgp,  /* <-- precision for iterative
-                                               gradient calculation           */
- const cs_real_t        *const climgp,  /* <-- clipping coefficient           */
- const cs_real_3_t  (*restrict coefav), /* <-- boundary condition term        */
- const cs_real_33_t (*restrict coefbv), /* <-- boundary condition term        */
- const cs_real_3_t  (*restrict pvar),   /* <-- gradient's base variable       */
-       cs_real_33_t (*restrict gradv)   /* <-> gradient of the variable       */
+ const cs_int_t         *const imrgra,    /* <-- gradient computation mode    */
+ const cs_int_t         *const inc,       /* <-- 0 or 1: increment or not     */
+ const cs_int_t         *const nswrgp,    /* <-- >1: with reconstruction      */
+ const cs_int_t         *const iwarnp,    /* <-- verbosity level              */
+ const cs_int_t         *const imligp,    /* <-- type of clipping             */
+ const cs_real_t        *const epsrgp,    /* <-- precision for iterative
+                                                 gradient calculation         */
+ const cs_real_t        *const climgp,    /* <-- clipping coefficient         */
+ const cs_real_3_t             coefav[],  /* <-- boundary condition term      */
+ const cs_real_33_t            coefbv[],  /* <-- boundary condition term      */
+       cs_real_3_t             pvar[],    /* <-- gradient's base variable     */
+       cs_real_33_t            gradv[]    /* <-> gradient of the variable     */
 );
 
 /*=============================================================================
@@ -160,7 +160,6 @@ cs_gradient_finalize(void);
  *   epsilon        <-- precision for iterative gradient calculation
  *   extrap         <-- boundary gradient extrapolation coefficient
  *   clip_coeff     <-- clipping coefficient
- *   symmetry_flag  <-- Array with value 0 on symmetries, 1 elsewhere
  *   f_ext          <-- exterior force generating the hydrostatic pressure
  *   bc_coeff_a     <-- boundary condition term a
  *   bc_coeff_b     <-- boundary condition term b
@@ -182,13 +181,45 @@ void cs_gradient_scalar(const char                *var_name,
                         double                     epsilon,
                         double                     extrap,
                         double                     clip_coeff,
-                        const int                  symmetry_flag[],
                         cs_real_3_t                f_ext[],
                         const cs_real_t            bc_coeff_a[],
                         const cs_real_t            bc_coeff_b[],
                         cs_real_t        *restrict var,
                         cs_real_t        *restrict weight_var,
                         cs_real_3_t      *restrict grad);
+
+/*----------------------------------------------------------------------------
+ * Compute cell gradient of a vector field.
+ *
+ * parameters:
+ *   var_name       <-- variable name
+ *   gradient_type  <-- gradient type
+ *   halo_type      <-- halo type
+ *   inc            <-- if 0, solve on increment; 1 otherwise
+ *   n_r_sweeps     <-- if > 1, number of reconstruction sweeps
+ *   verbosity      <-- verbosity level
+ *   clip_mode      <-- clipping mode
+ *   epsilon        <-- precision for iterative gradient calculation
+ *   clip_coeff     <-- clipping coefficient
+ *   bc_coeff_a     <-- boundary condition term a
+ *   bc_coeff_b     <-- boundary condition term b
+ *   var            <-> gradient's base variable
+ *   grad           --> gradient
+ *----------------------------------------------------------------------------*/
+
+void cs_gradient_vector(const char                *var_name,
+                        cs_gradient_type_t         gradient_type,
+                        cs_halo_type_t             halo_type,
+                        int                        inc,
+                        int                        n_r_sweeps,
+                        int                        verbosity,
+                        int                        clip_mode,
+                        double                     epsilon,
+                        double                     clip_coeff,
+                        const cs_real_3_t          bc_coeff_a[],
+                        const cs_real_33_t         bc_coeff_b[],
+                        cs_real_3_t      *restrict var,
+                        cs_real_33_t     *restrict gradv);
 
 /*----------------------------------------------------------------------------
  * Determine gradient type by Fortran "imrgra" value

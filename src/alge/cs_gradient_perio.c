@@ -379,7 +379,6 @@ void CS_PROCF (perinr, PERINR)
                        *epsrgp,
                        *extrap,
                        1.5,             /* clip_coeff (ignored here) */
-                       fvq->b_sym_flag,
                        NULL,            /* f_ext */
                        f->bc_coeffs->a,
                        f->bc_coeffs->b,

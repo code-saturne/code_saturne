@@ -44,6 +44,7 @@ libcsmodules_la_SOURCES = \
 $(top_srcdir)/src/base/paramx.f90 \
 $(top_srcdir)/src/base/mesh.f90 \
 $(top_srcdir)/src/base/field.f90 \
+$(top_srcdir)/src/base/field_operator.f90 \
 $(top_srcdir)/src/base/alaste.f90 \
 $(top_srcdir)/src/base/albase.f90 \
 $(top_srcdir)/src/base/alstru.f90 \
@@ -88,8 +89,9 @@ $(top_srcdir)/src/base/albase.f90: cplsat.lo optcal.lo
 $(top_srcdir)/src/base/alstru.f90: paramx.lo
 $(top_srcdir)/src/base/cplsat.f90: paramx.lo
 $(top_srcdir)/src/base/cstphy.f90: paramx.lo
+$(top_srcdir)/src/base/cs_c_bindings.f90: paramx.lo field.lo field_operator.lo
+$(top_srcdir)/src/base/cs_f_ield_operator.f90: paramx.lo dimens.lo mesh.lo optcal.lo field.lo
 $(top_srcdir)/src/base/entsor.f90: paramx.lo
-$(top_srcdir)/src/base/cs_c_bindings.f90: paramx.lo field.lo
 $(top_srcdir)/src/base/mltgrd.f90: paramx.lo
 $(top_srcdir)/src/base/numvar.f90: paramx.lo
 $(top_srcdir)/src/base/optcal.f90: paramx.lo

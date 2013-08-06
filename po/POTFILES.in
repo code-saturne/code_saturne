@@ -66,6 +66,7 @@ src/base/cs_coupling.c
 src/base/cs_defs.c
 src/base/cs_ext_neighborhood.c
 src/base/cs_field.c
+src/base/cs_field_operator.c
 src/base/cs_file.c
 src/base/cs_halo.c
 src/base/cs_halo_perio.c
