@@ -886,9 +886,9 @@ do while (iterns.le.nterup)
     do ii = 1, nnod
       impale(ii) = 0
       if (ivelco.eq.1) then
-        disala(1,ii) = depale(ii,1)
-        disala(2,ii) = depale(ii,2)
-        disala(3,ii) = depale(ii,3)
+        disala(1,ii) = depale(1,ii)
+        disala(2,ii) = depale(2,ii)
+        disala(3,ii) = depale(3,ii)
       endif
     enddo
 
@@ -903,7 +903,7 @@ do while (iterns.le.nterup)
       !==========
     ( nfabor, nozppm,                    &
       ibfixe, igliss, ivimpo,            &
-      ialtyb, ipnfbr, nnod, nodfbr,      &
+      ialtyb, ipnfbr, nodfbr,            &
       impale,                            &
       depale,                            &
       dtref, ttcabs, ntcabs,             &
@@ -925,9 +925,9 @@ do while (iterns.le.nterup)
     !       remet le deplacement initial
     do ii  = 1, nnod
       if (impale(ii).eq.0) then
-        depale(ii,1) = xyznod(1,ii)-xyzno0(1,ii)
-        depale(ii,2) = xyznod(2,ii)-xyzno0(2,ii)
-        depale(ii,3) = xyznod(3,ii)-xyzno0(3,ii)
+        depale(1,ii) = xyznod(1,ii)-xyzno0(1,ii)
+        depale(2,ii) = xyznod(2,ii)-xyzno0(2,ii)
+        depale(3,ii) = xyznod(3,ii)-xyzno0(3,ii)
       endif
     enddo
 

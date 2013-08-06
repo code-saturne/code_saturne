@@ -52,8 +52,8 @@ subroutine alemaj &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! depale(nnod,3    ! tr ! <-- ! deplacement aux noeuds                         !
-! xyzno0(3,nnod    ! tr ! <-- ! coordonnees noeuds maillage initial            !
+! depale(3,nnod)   ! tr ! <-- ! deplacement aux noeuds                         !
+! xyzno0(3,nnod)   ! tr ! <-- ! coordonnees noeuds maillage initial            !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -93,7 +93,7 @@ double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision depale(nnod,3), xyzno0(3,nnod)
+double precision depale(3,nnod), xyzno0(3,nnod)
 
 ! Local variables
 
@@ -142,7 +142,7 @@ call aldepl                                                       &
 do inod = 1, nnod
   if (impale(inod).eq.0) then
     do idim = 1, 3
-      depale(inod,idim) = depale(inod,idim) + dproj(inod,idim)
+      depale(idim,inod) = depale(idim,inod) + dproj(inod,idim)
     enddo
   endif
 enddo
@@ -154,7 +154,7 @@ deallocate(dproj)
 
 do inod = 1, nnod
   do idim = 1, ndim
-    xyznod(idim,inod) = xyzno0(idim,inod) + depale(inod,idim)
+    xyznod(idim,inod) = xyzno0(idim,inod) + depale(idim,inod)
   enddo
 enddo
 

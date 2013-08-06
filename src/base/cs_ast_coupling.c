@@ -309,15 +309,14 @@ void CS_PROCF(astfor, ASTFOR)
 
 void CS_PROCF(astcin, ASTCIN)
 (
- cs_int_t  *ntcast,
- cs_int_t  *nbfast,
- cs_int_t  *lstfac,
- cs_real_t *depale
+ cs_int_t    *ntcast,
+ cs_int_t    *nbfast,
+ cs_int_t    *lstfac,
+ cs_real_3_t *depale
 )
 {
   cs_int_t  i;
   cs_int_t *parent_num      = NULL;
-  cs_int_t  num_node_parent  = 0;
 
   const cs_int_t n_vertices = cs_glob_mesh->n_vertices;
   const cs_int_t local_rank = (cs_glob_rank_id == -1) ? 0 : cs_glob_rank_id;
@@ -398,11 +397,11 @@ void CS_PROCF(astcin, ASTCIN)
 
   for (i = 0; i < n_nodes; i++) {
 
-    num_node_parent = parent_num[i];
+    cs_lnum_t id_node_parent = parent_num[i] - 1;
 
-    depale[               num_node_parent-1] = xast[3*i];
-    depale[  n_vertices + num_node_parent-1] = xast[3*i + 1];
-    depale[2*n_vertices + num_node_parent-1] = xast[3*i + 2];
+    depale[id_node_parent][0] = xast[3*i];
+    depale[id_node_parent][1] = xast[3*i + 1];
+    depale[id_node_parent][2] = xast[3*i + 2];
 
   }
 

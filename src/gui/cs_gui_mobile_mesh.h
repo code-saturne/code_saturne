@@ -131,10 +131,9 @@ void CS_PROCF (uialcl, UIALCL) ( const int *const    nfabor,
                                  const int *const    ivimpo,
                                  int       *const    ialtyb,
                                  const int *const    ipnfbr,
-                                 const int *const    nnod,
                                  const int *const    nodfbr,
                                        int *const    impale,
-                                       double *const depale,
+                                 cs_real_3_t        *depale,
                                  double *const       dtref,
                                  double *const       ttcabs,
                                  const    int *const ntcabs,
@@ -198,24 +197,6 @@ void CS_PROCF (uistr2, UISTR2) ( double *const  xmstru,
                                  double *const  dtref,
                                  double *const  ttcabs,
                                  int *const     ntcabs);
-
-/*-----------------------------------------------------------------------------
- * Retreive data for external coupling
- *
- * Fortran Interface:
- *
- * SUBROUTINE UIASTE
- * *****************
- *
- * parameters:
- * nfabor    <-- Number of boundary faces
- * idfstr    <-- Structure definition
- * asddlf    <-- Block of the DDL forces
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uiaste, UIASTE) (const int *const nfabor,
-                                int    *const    idfstr,
-                                double *const    asddlf);
 
 /*=============================================================================
  * Public function prototypes

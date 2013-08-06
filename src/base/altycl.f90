@@ -23,9 +23,8 @@
 subroutine altycl &
 !================
 
- ( nvar   , nscal  ,                                              &
-   itypfb , ialtyb , icodcl , impale ,                            &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+ ( itypfb , ialtyb , icodcl , impale ,                            &
+   dt     ,                                                      &
    rcodcl , xyzno0 , depale )
 
 !===============================================================================
@@ -39,23 +38,16 @@ subroutine altycl &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
-! ialtyb(nfabor    ! te ! <-- ! type des faces de bord pour l'ale              !
+! ialtyb(nfabor)   ! te ! <-- ! type des faces de bord pour l'ale              !
 ! icodcl           ! te ! <-- ! code de condition limites aux faces            !
-!  (nfabor,nvar    !    !     !  de bord                                       !
+!  (nfabor,nvarcl) !    !     !  de bord                                       !
 !                  !    !     ! = 1   -> dirichlet                             !
 !                  !    !     ! = 3   -> densite de flux                       !
 ! impale(nnod)     ! te ! <-- ! indicateur de delacement impose                !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! rcodcl           ! tr ! <-- ! valeur des conditions aux limites              !
-!  (nfabor,nvar    !    !     !  aux faces de bord                             !
+!  (nfabor,nvarcl) !    !     !  aux faces de bord                             !
 !                  !    !     ! rcodcl(1) = valeur du dirichlet                !
 !                  !    !     ! rcodcl(2) = valeur du coef. d'echange          !
 !                  !    !     !  ext. (infinie si pas d'echange)               !
@@ -65,14 +57,13 @@ subroutine altycl &
 !                  !    !     ! pour la pression             dt*gradp          !
 !                  !    !     ! pour les scalaires                             !
 !                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
-! depale(nnod,3    ! tr ! <-- ! deplacement aux noeuds                         !
-! xyzno0(3,nnod    ! tr ! <-- ! coordonnees noeuds maillage initial            !
+! depale(3,nnod)   ! tr ! <-- ! deplacement aux noeuds                         !
+! xyzno0(3,nnod)   ! tr ! <-- ! coordonnees noeuds maillage initial            !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -80,7 +71,6 @@ subroutine altycl &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use numvar
 use optcal
 use cstnum
@@ -95,17 +85,13 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-
 integer          itypfb(nfabor)
 integer          ialtyb(nfabor), icodcl(nfabor,nvarcl)
 integer          impale(nnod)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(ndimfb,*)
+double precision dt(ncelet)
 double precision rcodcl(nfabor,nvarcl,3)
-double precision depale(nnod,3), xyzno0(3,nnod)
+double precision depale(3,nnod), xyzno0(3,nnod)
 
 ! Local variables
 
@@ -185,9 +171,9 @@ do ifac = 1, nfabor
     inod = nodfbr(ii)
     if (impale(inod).eq.0) iecrw = iecrw + 1
     icpt = icpt + 1
-    ddepx = ddepx + depale(inod,1)+xyzno0(1,inod)-xyznod(1,inod)
-    ddepy = ddepy + depale(inod,2)+xyzno0(2,inod)-xyznod(2,inod)
-    ddepz = ddepz + depale(inod,3)+xyzno0(3,inod)-xyznod(3,inod)
+    ddepx = ddepx + depale(1,inod)+xyzno0(1,inod)-xyznod(1,inod)
+    ddepy = ddepy + depale(2,inod)+xyzno0(2,inod)-xyznod(2,inod)
+    ddepz = ddepz + depale(3,inod)+xyzno0(3,inod)-xyznod(3,inod)
   enddo
   if (iecrw.eq.0) then
     iel = ifabor(ifac)
@@ -232,9 +218,9 @@ do ifac = 1, nfabor
       do ii = ipnfbr(ifac), ipnfbr(ifac+1)-1
         inod = nodfbr(ii)
         if (impale(inod).eq.0) then
-          depale(inod,1) = 0.d0
-          depale(inod,2) = 0.d0
-          depale(inod,3) = 0.d0
+          depale(1,inod) = 0.d0
+          depale(2,inod) = 0.d0
+          depale(3,inod) = 0.d0
           impale(inod) = 1
         endif
       enddo

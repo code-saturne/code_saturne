@@ -23,9 +23,9 @@
 subroutine lecamx &
 !================
 
- ( ndim   , ncelet , ncel   , nfac   , nfabor , nnod   ,          &
+ ( ncelet , ncel   , nfac   , nfabor ,                            &
    nvar   , nscal  ,                                              &
-   dt     , rtp    , propce , propfa , propfb ,                   &
+   dt     , propce , propfa , propfb ,                            &
    coefa  , coefb  , frcxt  , prhyd  )
 
 !===============================================================================
@@ -46,12 +46,10 @@ subroutine lecamx &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ndim             ! e  ! <-- ! dimension du calcul                            !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
 ! nfac             ! i  ! <-- ! number of interior faces                       !
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! nnod             ! e  ! <-- ! nombre de noeuds                               !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! dt(ncelet)       ! tr ! --> ! pas de temps                                   !
@@ -103,8 +101,8 @@ use cpincl
 use cs_fuel_incl
 use elincl
 use ppcpfu
-use radiat, only: iirayo
 use mesh, only: isympa
+use cs_c_bindings
 
 !===============================================================================
 
@@ -112,10 +110,10 @@ implicit none
 
 ! Arguments
 
-integer          ndim   , ncelet , ncel   , nfac   , nfabor, nnod
+integer          ncelet , ncel   , nfac   , nfabor
 integer          nvar   , nscal
 
-double precision dt(ncelet), rtp(ncelet,*)
+double precision dt(ncelet)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
@@ -1860,20 +1858,12 @@ if (iale.eq.1 .and. jale.eq.1) then
   nberro = 0
 
   itysup = 4
-  nbval  = 1
-  irtyp  = 2
 
-  RUBRIQ = 'deplact_x_no'
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              depale(1,1),ierror)
-  nberro=nberro+ierror
-  RUBRIQ = 'deplact_y_no'
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              depale(1,2),ierror)
-  nberro=nberro+ierror
-  RUBRIQ = 'deplact_z_no'
-  call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              depale(1,3),ierror)
+  call restart_read_real_3_t_compat                       &
+         (impamx, 'vertex_displacement',                  &
+         'deplact_x_no', 'deplact_y_no', 'deplact_z_no',  &
+         itysup, depale, ierror)
+
   nberro=nberro+ierror
 
 ! Si JALE=1, on doit avoir le deplacement dans le fichier suite, sinon

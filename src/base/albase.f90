@@ -62,14 +62,14 @@ contains
 
   !=============================================================================
 
-  subroutine init_ale ( ncelet , ncel , nfac , nfabor , nnod )
+  subroutine init_ale (nfabor, nnod)
 
     use cplsat
     use optcal
 
     ! Arguments
 
-    integer, intent(in) :: ncelet, ncel, nfac, nfabor, nnod
+    integer, intent(in) :: nfabor, nnod
 
     if (iale.eq.1.or.imobil.eq.1) then
       allocate(xyzno0(3,nnod))
@@ -78,8 +78,7 @@ contains
     if (iale.eq.1) then
       allocate(impale(nnod))
       allocate(ialtyb(nfabor))
-      !TODO make depale interleaved
-      allocate(depale(nnod,3))
+      allocate(depale(3,nnod))
       if (ivelco.eq.1) allocate(disala(3,nnod))
     endif
 

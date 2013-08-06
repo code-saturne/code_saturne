@@ -23,7 +23,7 @@
 subroutine lecamo &
 !================
 
- ( ndim   , ncelet , ncel   , nfac   , nfabor , nnod   ,          &
+ ( ncelet , ncel   , nfac   , nfabor ,                            &
    nvar   , nscal  ,                                              &
    dt     , rtp    , propce , propfa , propfb ,                   &
    coefa  , coefb  , frcxt  , prhyd  )
@@ -39,12 +39,10 @@ subroutine lecamo &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ndim             ! e  ! <-- ! dimension du calcul                            !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
 ! nfac             ! i  ! <-- ! number of interior faces                       !
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! nnod             ! e  ! <-- ! nombre de noeuds                               !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! dt(ncelet)       ! tr ! --> ! pas de temps                                   !
@@ -88,7 +86,7 @@ implicit none
 
 ! Arguments
 
-integer          ndim   , ncelet , ncel   , nfac   , nfabor, nnod
+integer          ncelet , ncel   , nfac   , nfabor
 integer          nvar   , nscal
 
 
@@ -132,9 +130,9 @@ if (ileaux.eq.1) then
 
   call lecamx &
   !==========
-( ndim   , ncelet , ncel   , nfac   , nfabor ,       &
-  nnod   , nvar   , nscal  ,                         &
-  dt     , rtp    , propce , propfa , propfb ,       &
+( ncelet , ncel   , nfac   , nfabor ,                &
+  nvar   , nscal  ,                                  &
+  dt     , propce , propfa , propfb ,                &
   coefa  , coefb  , frcxt  , prhyd  )
 
 endif

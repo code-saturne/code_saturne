@@ -23,9 +23,9 @@
 subroutine ecrava &
 !================
 
- ( ndim   , ncelet , ncel   , nfac   , nfabor , nnod   ,          &
+ ( ndim   , ncelet , ncel   , nfac   , nfabor ,                   &
    nvar   , nscal  ,                                              &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo ,                   &
+   xyzcen , cdgfbo ,                                              &
    dt     , rtp    , propce , propfa , propfb ,                   &
    coefa  , coefb  , frcxt  , prhyd  )
 
@@ -46,7 +46,6 @@ subroutine ecrava &
 ! ncel             ! i  ! <-- ! number of cells                                !
 ! nfac             ! i  ! <-- ! number of interior faces                       !
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! nnod             ! e  ! <-- ! nombre de noeuds                               !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
@@ -87,7 +86,6 @@ use ppthch
 use ppincl
 use coincl
 use cpincl
-use radiat, only: iirayo
 use cs_fuel_incl
 use elincl
 use ppcpfu
@@ -101,13 +99,12 @@ implicit none
 
 ! Arguments
 
-integer          ndim   , ncelet , ncel   , nfac   , nfabor, nnod
+integer          ndim   , ncelet , ncel   , nfac   , nfabor
 integer          nvar   , nscal
 
 
 double precision xyzcen(ndim,ncelet)
-double precision surfac(ndim,nfac), surfbo(ndim,nfabor)
-double precision cdgfac(ndim,nfac), cdgfbo(ndim,nfabor)
+double precision cdgfbo(ndim,nfabor)
 double precision dt(ncelet), rtp(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
@@ -1647,20 +1644,12 @@ if (iecaux.eq.1) then
     nberro=0
 
     itysup = 4
-    nbval  = 1
+    nbval  = 3
     irtyp  = 2
 
-    rubriq = 'deplact_x_no'
+    rubriq = 'vertex_displacement'
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                depale(1,1),ierror)
-    nberro=nberro+ierror
-    rubriq = 'deplact_y_no'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                depale(1,2),ierror)
-    nberro=nberro+ierror
-    rubriq = 'deplact_z_no'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                depale(1,3),ierror)
+                depale,ierror)
     nberro=nberro+ierror
 
     if (nberro.ne.0) then

@@ -164,9 +164,9 @@
 !> For a better precision concerning mesh displacement, one can also assign values
 !> of displacement to certain internal and/or boundary nodes. Thus, one
 !> need to fill \c DEPALE and \c impale arrays :
-!>  - \c depale(inod,1) = displacement of node inod in 'x' direction
-!>  - \c depale(inod,2) = displacement of node inod in 'y' direction
-!>  - \c depale(inod,3) = displacement of node inod in 'z' direction
+!>  - \c depale(1,inod) = displacement of node inod in 'x' direction
+!>  - \c depale(2,inod) = displacement of node inod in 'y' direction
+!>  - \c depale(3,inod) = displacement of node inod in 'z' direction
 !> This array is defined as the total displacement of the node compared
 !> its initial position in initial mesh.
 !> \c impale(inod) = 1 indicates that the displacement of node inod is imposed
@@ -188,7 +188,7 @@
 !>
 !> If a fixed boundary condition (\c ialtyb(ifac)=ibfixe) is imposed to the face
 !> \c ifac, the displacement of each node inod belonging to ifac is considered
-!> to be fixed, meaning that \c impale(inod) = 1 and \c depale(inod,.) = 0.d0.
+!> to be fixed, meaning that \c impale(inod) = 1 and \c depale(.,inod) = 0.d0.
 !>
 !>
 !> \subsubsection nod_des Description of nodes
@@ -372,7 +372,7 @@ double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision rcodcl(nfabor,nvarcl,3)
-double precision depale(nnod,3), xyzno0(3,nnod)
+double precision depale(3,nnod), xyzno0(3,nnod)
 
 ! Local variables
 
@@ -474,9 +474,9 @@ if (.false.) then
     do ii = ipnfbr(ifac), ipnfbr(ifac+1)-1
       inod = nodfbr(ii)
       if (impale(inod).eq.0) then
-        depale(inod,1) = 0.d0
-        depale(inod,2) = 0.d0
-        depale(inod,3) = delta
+        depale(1,inod) = 0.d0
+        depale(2,inod) = 0.d0
+        depale(3,inod) = delta
         impale(inod) = 1
       endif
     enddo

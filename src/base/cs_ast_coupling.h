@@ -108,10 +108,10 @@ void CS_PROCF(astfor, ASTFOR)
 
 void CS_PROCF(astcin, ASTCIN)
 (
- cs_int_t  *ntcast,
- cs_int_t  *nbfast,
- cs_int_t  *lstfac,
- cs_real_t *depale
+ cs_int_t    *ntcast,
+ cs_int_t    *nbfast,
+ cs_int_t    *lstfac,
+ cs_real_3_t *depale
 );
 
 /*----------------------------------------------------------------------------

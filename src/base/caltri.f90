@@ -376,12 +376,12 @@ if (ippmod(iatmos).ge.0) then
 endif
 
 if (ippmod(icompf).ge.0) then
-  call init_compf ( nfabor )
+  call init_compf (nfabor)
   !==============
 endif
 
 if (iale.eq.1.or.imobil.eq.1) then
-  call init_ale ( ncelet , ncel , nfac , nfabor , nnod )
+  call init_ale (nfabor, nnod)
   !============
 endif
 
@@ -454,19 +454,17 @@ if (isuite.eq.1) then
 
   call lecamo &
   !==========
- ( ndim   , ncelet , ncel   , nfac   , nfabor , nnod   ,          &
-   nvar   , nscal  ,                                              &
+ ( ncelet , ncel   , nfac   , nfabor , nvar   , nscal  ,          &
    ra(idt)    , ra(irtp) ,                                        &
    ra(ipropc) , propfa , propfb ,                                 &
-   coefa  , coefb  ,                                              &
-   frcxt  , prhyd  )
+   coefa  , coefb  , frcxt  , prhyd  )
 
   ! Using ALE, geometric parameters must be recalculated
   if (iale.eq.1) then
 
     do inod = 1, nnod
       do idim = 1, ndim
-        xyznod(idim,inod) =   xyzno0(idim,inod) + depale(inod,idim)
+        xyznod(idim,inod) = xyzno0(idim,inod) + depale(idim,inod)
       enddo
     enddo
 
@@ -966,13 +964,11 @@ if (iisuit.eq.1) then
 
   call ecrava                                                     &
   !==========
- ( ndim   , ncelet , ncel   , nfac   , nfabor , nnod   ,          &
+ ( ndim   , ncelet , ncel   , nfac   , nfabor ,                   &
    nvar   , nscal  ,                                              &
-   xyzcen     , surfac     , surfbo     , cdgfac     , cdgfbo    ,&
-   ra(idt)    , ra(irtp) ,                                        &
-   ra(ipropc) , propfa , propfb ,                                 &
-   coefa  , coefb  ,                                              &
-   frcxt  , prhyd  )
+   xyzcen , cdgfbo ,                                              &
+   ra(idt)    , ra(irtp) , ra(ipropc) , propfa , propfb ,         &
+   coefa  , coefb  , frcxt  , prhyd  )
 
   if (nfpt1t.gt.0) then
     ficsui = '1dwall_module'

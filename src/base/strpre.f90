@@ -58,7 +58,7 @@ subroutine strpre &
 !    (nfabor,8)    !    !     !                                                !
 ! xprale(ncelet    ! tr ! --> ! sauvegarde de la pression, si nterup           !
 !                  !    !     !    est >1                                      !
-! depale(nnod,3    ! tr ! <-- ! deplacement aux noeuds                         !
+! depale(3,nnod)   ! tr ! <-- ! deplacement aux noeuds                         !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -101,7 +101,7 @@ double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision flmalf(nfac), flmalb(nfabor), xprale(ncelet)
 double precision cofale(nfabor,8)
-double precision depale(nnod,3)
+double precision depale(3,nnod)
 
 ! Local variables
 
@@ -187,9 +187,9 @@ if (nbstru.gt.0) then
       do ii = ipnfbr(ifac), ipnfbr(ifac+1)-1
         inod = nodfbr(ii)
         impale(inod) = 1
-        depale(inod,1) = xstp(1,istr)
-        depale(inod,2) = xstp(2,istr)
-        depale(inod,3) = xstp(3,istr)
+        depale(1,inod) = xstp(1,istr)
+        depale(2,inod) = xstp(2,istr)
+        depale(3,inod) = xstp(3,istr)
       enddo
     endif
   enddo

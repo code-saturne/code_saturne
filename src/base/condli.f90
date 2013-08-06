@@ -330,9 +330,8 @@ endif
 if (iale.eq.1) then
   call altycl &
   !==========
- ( nvar   , nscal  ,                                              &
-   itypfb , ialtyb , icodcl , impale ,                            &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+ ( itypfb , ialtyb , icodcl , impale ,                            &
+   dt     ,                                                       &
    rcodcl , xyzno0 , depale )
 endif
 

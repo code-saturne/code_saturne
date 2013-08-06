@@ -90,7 +90,7 @@ double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision depale(nnod,3), xyzno0(3,nnod)
+double precision depale(3,nnod), xyzno0(3,nnod)
 
 ! Local variables
 
@@ -158,7 +158,7 @@ call aledis &
 do inod = 1, nnod
   if (impale(inod).eq.0) then
     do idim = 1, 3
-      depale(inod,idim) = depale(inod,idim) + dproj(idim,inod)
+      depale(idim,inod) = depale(idim,inod) + dproj(idim,inod)
     enddo
   endif
 enddo
@@ -171,7 +171,7 @@ deallocate(gradm)
 
 do inod = 1, nnod
   do idim = 1, ndim
-    xyznod(idim,inod) = xyzno0(idim,inod) + depale(inod,idim)
+    xyznod(idim,inod) = xyzno0(idim,inod) + depale(idim,inod)
   enddo
 enddo
 

@@ -447,9 +447,9 @@ if ( iprco.le.0 ) then
         inod = nodfac(ii)
         if (impale(inod).eq.0) iecrw = iecrw + 1
         icpt = icpt + 1
-        ddepx = ddepx + depale(inod,1) + xyzno0(1,inod)-xyznod(1,inod)
-        ddepy = ddepy + depale(inod,2) + xyzno0(2,inod)-xyznod(2,inod)
-        ddepz = ddepz + depale(inod,3) + xyzno0(3,inod)-xyznod(3,inod)
+        ddepx = ddepx + depale(1,inod) + xyzno0(1,inod)-xyznod(1,inod)
+        ddepy = ddepy + depale(2,inod) + xyzno0(2,inod)-xyznod(2,inod)
+        ddepz = ddepz + depale(3,inod) + xyzno0(3,inod)-xyznod(3,inod)
       enddo
       ! If all the face vertices have prescribed displacement, w is evaluated
       ! from this displacement
@@ -851,9 +851,9 @@ if (iale.eq.1) then
       inod = nodfac(ii)
       if (impale(inod).eq.0) iecrw = iecrw + 1
       icpt = icpt + 1
-      ddepx = ddepx + depale(inod,1) + xyzno0(1,inod)-xyznod(1,inod)
-      ddepy = ddepy + depale(inod,2) + xyzno0(2,inod)-xyznod(2,inod)
-      ddepz = ddepz + depale(inod,3) + xyzno0(3,inod)-xyznod(3,inod)
+      ddepx = ddepx + depale(1,inod) + xyzno0(1,inod)-xyznod(1,inod)
+      ddepy = ddepy + depale(2,inod) + xyzno0(2,inod)-xyznod(2,inod)
+      ddepz = ddepz + depale(3,inod) + xyzno0(3,inod)-xyznod(3,inod)
     enddo
     !     If all the face vertices have imposed displacement, w is evaluated from
     !       this displacement
