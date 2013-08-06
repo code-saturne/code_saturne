@@ -31,6 +31,8 @@ module cs_c_bindings
 
   use field
 
+  implicit none
+
   !=============================================================================
 
   integer :: MESH_LOCATION_NONE, MESH_LOCATION_CELLS
@@ -162,6 +164,71 @@ module cs_c_bindings
       integer(c_int), value :: f_id, n_clip_max, n_clip_min
       real(kind=c_double), dimension(*) :: min_pre_clip, max_pre_clip
     end subroutine cs_log_iteration_clipping_field
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function reading a cs_int_t vector section from a
+    ! restart file, when that section may have used a different name and
+    ! been non-interleaved in a previous version.
+
+    subroutine cs_f_restart_read_int_t_compat(file_num, sec_name,            &
+                                              old_name, location_id,         &
+                                              n_location_vals,               &
+                                              val, ierror)                   &
+      bind(C, name='cs_f_restart_read_int_t_compat')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: file_num
+      character(kind=c_char, len=1), dimension(*), intent(in) :: sec_name
+      character(kind=c_char, len=1), dimension(*), intent(in) :: old_name
+      integer(c_int), value :: location_id, n_location_vals
+      integer, dimension(*) :: val
+      integer(c_int) :: ierror
+    end subroutine cs_f_restart_read_int_t_compat
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function reading a cs_real_t vector section from a
+    ! restart file, when that section may have used a different name and
+    ! been non-interleaved in a previous version.
+
+    subroutine cs_f_restart_read_real_t_compat(file_num, sec_name,           &
+                                               old_name, location_id,        &
+                                               n_location_vals,              &
+                                               val, ierror)                  &
+      bind(C, name='cs_f_restart_read_real_t_compat')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: file_num
+      character(kind=c_char, len=1), dimension(*), intent(in) :: sec_name
+      character(kind=c_char, len=1), dimension(*), intent(in) :: old_name
+      integer(c_int), value :: location_id, n_location_vals
+      real(kind=c_double), dimension(*) :: val
+      integer(c_int) :: ierror
+    end subroutine cs_f_restart_read_real_t_compat
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function reading a cs_real_3_t vector section from a
+    ! restart file, when that section may have used a different name and
+    ! been non-interleaved in a previous version.
+
+    subroutine cs_f_restart_read_real_3_t_compat(file_num, sec_name,           &
+                                                 old_name_x, old_name_y,       &
+                                                 old_name_z, location_id,      &
+                                                 val, ierror)                  &
+      bind(C, name='cs_f_restart_read_real_3_t_compat')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: file_num
+      character(kind=c_char, len=1), dimension(*), intent(in) :: sec_name
+      character(kind=c_char, len=1), dimension(*), intent(in) :: old_name_x
+      character(kind=c_char, len=1), dimension(*), intent(in) :: old_name_y
+      character(kind=c_char, len=1), dimension(*), intent(in) :: old_name_z
+      integer(c_int), value :: location_id
+      real(kind=c_double), dimension(*) :: val
+      integer(c_int) :: ierror
+    end subroutine cs_f_restart_read_real_3_t_compat
 
     !---------------------------------------------------------------------------
 
@@ -383,6 +450,159 @@ contains
     return
 
   end subroutine log_iteration_clipping_field
+
+  !=============================================================================
+
+  !---------------------------------------------------------------------------
+
+  !> \brief Read a section of integers from a restart file,
+  !> when that section may have used a different name in a previous version.
+
+  !> \param[in]   f_num         restart file number
+  !> \param[in]   sec_name      name of section
+  !> \param[in]   old_name      old name of section
+  !> \param[in]   location_id   id of associated mesh location
+  !> \param[in]   n_loc_vals    number of valeus per location
+  !> \param[out]  val           min local value prior to clip
+  !> \param[out]  ierror        0: success, < 0: error code
+
+  subroutine restart_read_int_t_compat(f_num, sec_name, old_name,            &
+                                       location_id, n_loc_vals, val,         &
+                                       ierror)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer, intent(in)               :: f_num
+    character(len=*), intent(in)      :: sec_name
+    character(len=*), intent(in)      :: old_name
+    integer, intent(in)               :: location_id, n_loc_vals
+    integer, dimension(*)             :: val
+    integer, intent(out)              :: ierror
+
+    ! Local variables
+
+    character(len=len_trim(sec_name)+1, kind=c_char) :: c_s_n
+    character(len=len_trim(old_name)+1, kind=c_char) :: c_o_n
+    integer(c_int) :: c_f_num, c_loc_id, c_n_l_vals, c_ierror
+
+    c_f_num = f_num
+    c_s_n = trim(sec_name)//c_null_char
+    c_o_n = trim(old_name)//c_null_char
+    c_loc_id = location_id
+    c_n_l_vals = n_loc_vals
+
+    call cs_f_restart_read_int_t_compat(c_f_num, c_s_n, c_o_n,      &
+                                        c_loc_id, c_n_l_vals, val,  &
+                                        c_ierror)
+
+    ierror = c_ierror
+
+  end subroutine restart_read_int_t_compat
+
+  !---------------------------------------------------------------------------
+
+  !> \brief Read a section of double precision reals from a restart file,
+  !> when that section may have used a different name in a previous version.
+
+  !> \param[in]   f_num         restart file number
+  !> \param[in]   sec_name      name of section
+  !> \param[in]   old_name      old name of section
+  !> \param[in]   location_id   id of associated mesh location
+  !> \param[in]   n_loc_vals    number of valeus per location
+  !> \param[out]  val           min local value prior to clip
+  !> \param[out]  ierror        0: success, < 0: error code
+
+  subroutine restart_read_real_t_compat(f_num, sec_name, old_name,           &
+                                        location_id, n_loc_vals, val,        &
+                                        ierror)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer, intent(in)               :: f_num
+    character(len=*), intent(in)      :: sec_name
+    character(len=*), intent(in)      :: old_name
+    integer, intent(in)               :: location_id, n_loc_vals
+    real(kind=c_double), dimension(*) :: val
+    integer, intent(out)              :: ierror
+
+    ! Local variables
+
+    character(len=len_trim(sec_name)+1, kind=c_char) :: c_s_n
+    character(len=len_trim(old_name)+1, kind=c_char) :: c_o_n
+    integer(c_int) :: c_f_num, c_loc_id, c_n_l_vals, c_ierror
+
+    c_f_num = f_num
+    c_s_n = trim(sec_name)//c_null_char
+    c_o_n = trim(old_name)//c_null_char
+    c_loc_id = location_id
+    c_n_l_vals = n_loc_vals
+
+    call cs_f_restart_read_real_t_compat(c_f_num, c_s_n, c_o_n,      &
+                                         c_loc_id, c_n_l_vals, val,  &
+                                         c_ierror)
+
+    ierror = c_ierror
+
+  end subroutine restart_read_real_t_compat
+
+  !---------------------------------------------------------------------------
+
+  !> \brief Read a vector of double precision reals of dimension (3,*) from a
+  !> restart file, when that section may have used a different name and
+  !> been non-interleaved in a previous version.
+
+  !> \param[in]   f_num         restart file number
+  !> \param[in]   sec_name      name of section
+  !> \param[in]   old_name_x    old name of component x of section
+  !> \param[in]   old_name_y    old name of component y of section
+  !> \param[in]   old_name_z    old name of component z of section
+  !> \param[in]   location_id   id of associated mesh location
+  !> \param[out]  val           min local value prior to clip
+  !> \param[out]  ierror        0: success, < 0: error code
+
+  subroutine restart_read_real_3_t_compat(f_num, sec_name,                     &
+                                          old_name_x, old_name_y, old_name_z,  &
+                                          location_id, val, ierror)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer, intent(in)               :: f_num
+    character(len=*), intent(in)      :: sec_name
+    character(len=*), intent(in)      :: old_name_x, old_name_y, old_name_z
+    integer, intent(in)               :: location_id
+    real(kind=c_double), dimension(*) :: val
+    integer, intent(out)              :: ierror
+
+    ! Local variables
+
+    character(len=len_trim(sec_name)+1, kind=c_char) :: c_s_n
+    character(len=len_trim(old_name_x)+1, kind=c_char) :: c_o_n_x
+    character(len=len_trim(old_name_y)+1, kind=c_char) :: c_o_n_y
+    character(len=len_trim(old_name_z)+1, kind=c_char) :: c_o_n_z
+    integer(c_int) :: c_f_num, c_loc_id, c_n_l_vals, c_ierror
+
+    c_f_num = f_num
+    c_s_n = trim(sec_name)//c_null_char
+    c_o_n_x = trim(old_name_x)//c_null_char
+    c_o_n_y = trim(old_name_y)//c_null_char
+    c_o_n_z = trim(old_name_z)//c_null_char
+    c_loc_id = location_id
+
+    call cs_f_restart_read_real_3_t_compat(c_f_num, c_s_n, c_o_n_x, c_o_n_y,   &
+                                           c_o_n_z, c_loc_id, val, c_ierror)
+
+    ierror = c_ierror
+
+  end subroutine restart_read_real_3_t_compat
 
   !=============================================================================
 

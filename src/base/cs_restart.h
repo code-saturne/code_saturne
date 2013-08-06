@@ -851,6 +851,83 @@ cs_restart_write_ids(cs_restart_t           *restart,
                      const cs_lnum_t        *ref_id);
 
 /*----------------------------------------------------------------------------
+ * Read a section from a restart file, when that section may have used a
+ * different name in a previous version.
+ *
+ * parameters:
+ *   restart         <-- associated restart file pointer
+ *   sec_name        <-- section name
+ *   location_id     <-- id of corresponding location
+ *   n_location_vals <-- number of values per location (interlaced)
+ *   val_type        <-- value type
+ *   val             --> array of values
+ *
+ * returns: 0 (CS_RESTART_SUCCESS) in case of success,
+ *          or error code (CS_RESTART_ERR_xxx) in case of error
+ *----------------------------------------------------------------------------*/
+
+int
+cs_restart_read_section_compat(cs_restart_t           *restart,
+                               const char             *sec_name,
+                               const char             *old_name,
+                               int                     location_id,
+                               int                     n_location_vals,
+                               cs_restart_val_type_t   val_type,
+                               void                   *val);
+
+/*----------------------------------------------------------------------------
+ * Read a cs_real_t section from a restart file, when that section may
+ * have used a different name in a previous version.
+ *
+ * parameters:
+ *   restart         <-- associated restart file pointer
+ *   sec_name        <-- section name
+ *   location_id     <-- id of corresponding location
+ *   n_location_vals <-- number of values per location (interlaced)
+ *   val             --> array of values
+ *
+ * returns: 0 (CS_RESTART_SUCCESS) in case of success,
+ *          or error code (CS_RESTART_ERR_xxx) in case of error
+ *----------------------------------------------------------------------------*/
+
+int
+cs_restart_read_real_t_compat(cs_restart_t  *restart,
+                              const char    *sec_name,
+                              const char    *old_name,
+                              int            location_id,
+                              int            n_location_vals,
+                              cs_real_t     *val);
+
+/*----------------------------------------------------------------------------
+ * Read a cs_real_3_t vector section from a restart file, when that
+ * section may have used a different name and been non-interleaved
+ * in a previous version.
+ *
+ * This file assumes a mesh-base location (i.e. location_id > 0)
+ *
+ * parameters:
+ *   restart     <-- associated restart file pointer
+ *   sec_name    <-- section name
+ *   old_name_x  <-- old name, x component
+ *   old_name_y  <-- old name, y component
+ *   old_name_y  <-- old name, z component
+ *   location_id <-- id of corresponding location
+ *   val         --> array of values
+ *
+ * returns: 0 (CS_RESTART_SUCCESS) in case of success,
+ *          or error code (CS_RESTART_ERR_xxx) in case of error
+ *----------------------------------------------------------------------------*/
+
+int
+cs_restart_read_real_3_t_compat(cs_restart_t  *restart,
+                                const char    *sec_name,
+                                const char    *old_name_x,
+                                const char    *old_name_y,
+                                const char    *old_name_z,
+                                int            location_id,
+                                cs_real_3_t   *val);
+
+/*----------------------------------------------------------------------------
  * Print statistics associated with restart files
  *----------------------------------------------------------------------------*/
 

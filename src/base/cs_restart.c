@@ -155,6 +155,39 @@ static double _checkpoint_wt_last = 0.;      /* wall-clock time of last
                                                 checkpointing */
 
 /*============================================================================
+ * Prototypes for functions intended for use only by Fortran wrappers.
+ * (descriptions follow, with function bodies).
+ *============================================================================*/
+
+void
+cs_f_restart_read_int_t_compat(int           file_num,
+                               const char   *sec_name,
+                               const char   *old_name,
+                               int           location_id,
+                               int           n_location_vals,
+                               cs_int_t     *val,
+                               int          *ierror);
+
+void
+cs_f_restart_read_real_t_compat(int           file_num,
+                                const char   *sec_name,
+                                const char   *old_name,
+                                int           location_id,
+                                int           n_location_vals,
+                                cs_real_t    *val,
+                                int          *ierror);
+
+void
+cs_f_restart_read_real_3_t_compat(int           file_num,
+                                  const char   *sec_name,
+                                  const char   *old_name_x,
+                                  const char   *old_name_y,
+                                  const char   *old_name_z,
+                                  int           location_id,
+                                  cs_real_3_t  *val,
+                                  int          *ierror);
+
+/*============================================================================
  * Private function definitions
  *============================================================================*/
 
@@ -704,6 +737,42 @@ _section_f77_to_c(const cs_int_t          *numsui,
     return;
 
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Convert read/write arguments from Fortran ISO C bindings API to the C API.
+ *
+ * parameters:
+ *   numsui   <-- restart file id
+ *   r        <-- pointer to restart file handle
+ *   location <-- location id
+ *   ierror   <-- 0 = success, < 0 = error
+ *----------------------------------------------------------------------------*/
+
+static void
+_section_f_iso_c_to_c(int             numsui,
+                      cs_restart_t  **r,
+                      cs_int_t       *ierror)
+{
+  int r_id = numsui - 1;
+
+  *ierror = CS_RESTART_SUCCESS;
+
+  /* Pointer to associated restart file handle */
+
+  if (   r_id < 0
+      || r_id > (cs_int_t)_restart_pointer_size
+      || _restart_pointer[r_id] == NULL) {
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf(_("Restart file number <%d> can not be accessed\n"
+                 "(file closed or invalid number)."), numsui);
+
+    *ierror = CS_RESTART_ERR_FILE_NUM;
+    return;
+  }
+
+  else
+    *r = _restart_pointer[r_id];
 }
 
 /*----------------------------------------------------------------------------
@@ -1923,6 +1992,134 @@ void CS_PROCF (ecisui, ECISUI)
 }
 
 /*============================================================================
+ * Fortran wrapper function definitions for iso-c-bindings
+ *============================================================================*/
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
+/*----------------------------------------------------------------------------
+ * Read a cs_int_t section from a restart file, when that
+ * section may have used a different name in a previous version.
+ *
+ * parameters:
+ *   file_num        <-- number of restart file
+ *   sec_name        <-- section name
+ *   old_name        <-- old name, x component
+ *   location_id     <-- id of corresponding location
+ *   n_location_vals <-- number of values per location
+ *   val             --> array of values
+ *   ierror          --> 0: success; < 0: error code
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_restart_read_int_t_compat(int           file_num,
+                               const char   *sec_name,
+                               const char   *old_name,
+                               int           location_id,
+                               int           n_location_vals,
+                               cs_int_t     *val,
+                               int          *ierror)
+{
+  cs_restart_t  *r;
+
+  *ierror = CS_RESTART_SUCCESS;
+
+  _section_f_iso_c_to_c(file_num, &r, ierror);
+
+  if (*ierror == CS_RESTART_SUCCESS)
+    *ierror = cs_restart_read_section_compat(r,
+                                             sec_name,
+                                             old_name,
+                                             location_id,
+                                             n_location_vals,
+                                             CS_TYPE_cs_int_t,
+                                             val);
+}
+
+/*----------------------------------------------------------------------------
+ * Read a cs_real_t section from a restart file, when that
+ * section may have used a different name in a previous version.
+ *
+ * parameters:
+ *   file_num        <-- number of restart file
+ *   sec_name        <-- section name
+ *   old_name        <-- old name, x component
+ *   location_id     <-- id of corresponding location
+ *   n_location_vals <-- number of values per location
+ *   val             --> array of values
+ *   ierror          --> 0: success; < 0: error code
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_restart_read_real_t_compat(int           file_num,
+                                const char   *sec_name,
+                                const char   *old_name,
+                                int           location_id,
+                                int           n_location_vals,
+                                cs_real_t    *val,
+                                int          *ierror)
+{
+  cs_restart_t  *r;
+
+  *ierror = CS_RESTART_SUCCESS;
+
+  _section_f_iso_c_to_c(file_num, &r, ierror);
+
+  if (*ierror == CS_RESTART_SUCCESS)
+    *ierror = cs_restart_read_section_compat(r,
+                                             sec_name,
+                                             old_name,
+                                             location_id,
+                                             n_location_vals,
+                                             CS_TYPE_cs_real_t,
+                                             val);
+}
+
+/*----------------------------------------------------------------------------
+ * Read a cs_real_3_t vector section from a restart file, when that
+ * section may have used a different name and been non-interleaved
+ * in a previous version.
+ *
+ * parameters:
+ *   file_num        <-- number of restart file
+ *   sec_name        <-- section name
+ *   old_name_x      <-- old name, x component
+ *   old_name_y      <-- old name, x component
+ *   old_name_y      <-- old name, x component
+ *   location_id     <-- id of corresponding location
+ *   val             --> array of values
+ *   ierror          --> 0: success; < 0: error code
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_restart_read_real_3_t_compat(int           file_num,
+                                  const char   *sec_name,
+                                  const char   *old_name_x,
+                                  const char   *old_name_y,
+                                  const char   *old_name_z,
+                                  int           location_id,
+                                  cs_real_3_t  *val,
+                                  int          *ierror)
+{
+  cs_restart_t  *r;
+
+  *ierror = CS_RESTART_SUCCESS;
+
+  _section_f_iso_c_to_c(file_num, &r, ierror);
+
+  if (*ierror == CS_RESTART_SUCCESS)
+    *ierror = cs_restart_read_real_3_t_compat(r,
+                                              sec_name,
+                                              old_name_x,
+                                              old_name_y,
+                                              old_name_z,
+                                              location_id,
+                                              val);
+}
+
+/*! \endcond (end ignore by Doxygen) */
+
+/*============================================================================
  * Public function definitions
  *============================================================================*/
 
@@ -2455,7 +2652,6 @@ cs_restart_dump_index(const cs_restart_t  *restart)
 
   cs_io_dump(restart->fh);
 }
-
 
 /*----------------------------------------------------------------------------
  * Read a section from a restart file.
@@ -3432,6 +3628,138 @@ cs_restart_write_ids(cs_restart_t           *restart,
                            g_num);
 
   BFT_FREE(g_num);
+}
+
+/*----------------------------------------------------------------------------
+ * Read a section from a restart file, when that section may have used a
+ * different name in a previous version.
+ *
+ * parameters:
+ *   restart         <-- associated restart file pointer
+ *   sec_name        <-- section name
+ *   location_id     <-- id of corresponding location
+ *   n_location_vals <-- number of values per location (interlaced)
+ *   val_type        <-- value type
+ *   val             --> array of values
+ *
+ * returns: 0 (CS_RESTART_SUCCESS) in case of success,
+ *          or error code (CS_RESTART_ERR_xxx) in case of error
+ *----------------------------------------------------------------------------*/
+
+int
+cs_restart_read_section_compat(cs_restart_t           *restart,
+                               const char             *sec_name,
+                               const char             *old_name,
+                               int                     location_id,
+                               int                     n_location_vals,
+                               cs_restart_val_type_t   val_type,
+                               void                   *val)
+{
+  int retval = CS_RESTART_SUCCESS;
+
+  assert(location_id > 0);
+
+  retval = cs_restart_read_section(restart,
+                                   sec_name,
+                                   location_id,
+                                   n_location_vals,
+                                   val_type,
+                                   val);
+
+  if (retval == CS_RESTART_ERR_N_VALS || CS_RESTART_ERR_EXISTS)
+    retval = cs_restart_read_section(restart,
+                                     old_name,
+                                     location_id,
+                                     n_location_vals,
+                                     val_type,
+                                     val);
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Read a cs_real_3_t vector section from a restart file, when that
+ * section may have used a different name and been non-interleaved
+ * in a previous version.
+ *
+ * This file assumes a mesh-base location (i.e. location_id > 0)
+ *
+ * parameters:
+ *   restart     <-- associated restart file pointer
+ *   sec_name    <-- section name
+ *   old_name_x  <-- old name, x component
+ *   old_name_y  <-- old name, y component
+ *   old_name_y  <-- old name, z component
+ *   location_id <-- id of corresponding location (> 0)
+ *   val         --> array of values
+ *
+ * returns: 0 (CS_RESTART_SUCCESS) in case of success,
+ *          or error code (CS_RESTART_ERR_xxx) in case of error
+ *----------------------------------------------------------------------------*/
+
+int
+cs_restart_read_real_3_t_compat(cs_restart_t  *restart,
+                                const char    *sec_name,
+                                const char    *old_name_x,
+                                const char    *old_name_y,
+                                const char    *old_name_z,
+                                int            location_id,
+                                cs_real_3_t   *val)
+{
+  int retval = CS_RESTART_SUCCESS;
+
+  assert(location_id > 0);
+
+  retval = cs_restart_read_section(restart,
+                                   sec_name,
+                                   location_id,
+                                   3,
+                                   CS_TYPE_cs_real_t,
+                                   val);
+
+  if (retval == CS_RESTART_ERR_N_VALS || CS_RESTART_ERR_EXISTS) {
+
+    cs_real_t *buffer = NULL;
+    cs_lnum_t i;
+    cs_lnum_t n_ents = (restart->location[location_id-1]).n_ents;
+
+    BFT_MALLOC(buffer, n_ents*3, cs_real_t);
+
+    retval = cs_restart_read_section(restart,
+                                     old_name_x,
+                                     location_id,
+                                     1,
+                                     CS_TYPE_cs_real_t,
+                                     buffer);
+
+    if (retval == CS_RESTART_SUCCESS)
+      retval = cs_restart_read_section(restart,
+                                       old_name_y,
+                                       location_id,
+                                       1,
+                                       CS_TYPE_cs_real_t,
+                                       buffer + n_ents);
+
+    if (retval == CS_RESTART_SUCCESS)
+      retval = cs_restart_read_section(restart,
+                                       old_name_z,
+                                       location_id,
+                                       1,
+                                       CS_TYPE_cs_real_t,
+                                       buffer + n_ents*2);
+
+    if (retval == CS_RESTART_SUCCESS) {
+      for (i = 0; i < n_ents; i++) {
+        val[i][0] = buffer[i];
+        val[i][1] = buffer[i + n_ents];
+        val[i][2] = buffer[i + n_ents*2];
+      }
+    }
+
+    BFT_FREE(buffer);
+  }
+
+  return retval;
 }
 
 /*----------------------------------------------------------------------------
