@@ -288,6 +288,19 @@ cs_field_map_bc_coeffs(cs_field_t  *f,
                        cs_real_t   *bf);
 
 /*----------------------------------------------------------------------------
+ * Copy current field values to previous values if applicable.
+ *
+ * For fields with only one time value, or values not allocated yet,
+ * this is a no-op.
+ *
+ * parameters:
+ *   f <-> pointer to field structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_field_current_to_previous(cs_field_t  *f);
+
+/*----------------------------------------------------------------------------
  * Destroy all defined fields.
  *----------------------------------------------------------------------------*/
 

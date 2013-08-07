@@ -23,9 +23,8 @@
 subroutine lecamo &
 !================
 
- ( ncelet , ncel   , nfac   , nfabor ,                            &
-   nvar   , nscal  ,                                              &
-   dt     , rtp    , propce , propfa , propfb ,                   &
+ ( ncelet , ncel   , nfabor , nvar   , nscal  ,                   &
+   dt     , rtp    , propce , propfb ,                            &
    coefa  , coefb  , frcxt  , prhyd  )
 
 !===============================================================================
@@ -41,7 +40,6 @@ subroutine lecamo &
 !__________________!____!_____!________________________________________________!
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
-! nfac             ! i  ! <-- ! number of interior faces                       !
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
@@ -50,8 +48,6 @@ subroutine lecamo &
 ! (ncelet,*)       !    !     !    cellules (instant courant        )          !
 ! propce           ! tr ! --> ! proprietes physiques au centre des             !
 ! (ncelet,*)       !    !     !    cellules                                    !
-! propfa           ! tr ! --> ! proprietes physiques au centre des             !
-!  (nfac,*)        !    !     !    faces internes                              !
 ! propfb           ! tr ! --> ! proprietes physiques au centre des             !
 !  (nfabor,*)      !    !     !    faces de bord                               !
 ! coefa, coefb     ! tr ! --> ! conditions aux limites aux                     !
@@ -86,13 +82,12 @@ implicit none
 
 ! Arguments
 
-integer          ncelet , ncel   , nfac   , nfabor
+integer          ncelet , ncel   , nfabor
 integer          nvar   , nscal
-
 
 double precision dt(ncelet), rtp(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision frcxt(3,ncelet), prhyd(ncelet)
 
@@ -130,9 +125,8 @@ if (ileaux.eq.1) then
 
   call lecamx &
   !==========
-( ncelet , ncel   , nfac   , nfabor ,                &
-  nvar   , nscal  ,                                  &
-  dt     , propce , propfa , propfb ,                &
+( ncelet , ncel   , nfabor , nvar   , nscal  ,       &
+  dt     , propce , propfb ,                         &
   coefa  , coefb  , frcxt  , prhyd  )
 
 endif

@@ -32,7 +32,7 @@ subroutine coprop &
 !     INIT DES POSITIONS DES VARIABLES D'ETAT POUR
 !              POUR LA COMBUSTION
 !        FLAMME DE DIFFUSION ET DE PREMELANGE
-!         (DANS VECTEURS PROPCE, PROPFA, PROPFB)
+!         (DANS VECTEURS PROPCE, PROPFB)
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -40,8 +40,7 @@ subroutine coprop &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! ipropp           ! e  ! <-- ! numero de la derniere propriete                !
-!                  !    !     !  (les proprietes sont dans propce,             !
-!                  !    !     !   propfa ou prpfb)                             !
+!                  !    !     !  (les proprietes sont dans propce ou prpb)     !
 ! ipppst           ! e  ! <-- ! pointeur indiquant le rang de la               !
 !                  !    !     !  derniere grandeur definie aux                 !
 !                  !    !     !  cellules (rtp,propce...) pour le              !
@@ -87,7 +86,7 @@ integer       iprop, icg, idirac
 
 !===============================================================================
 !===============================================================================
-! 1. POSITIONNEMENT DES PROPRIETES : PROPCE, PROPFA, PROPFB
+! 1. POSITIONNEMENT DES PROPRIETES : PROPCE, PROPFB
 !    Physique particuliere : Flamme de diffusion chimie 3 points
 !===============================================================================
 
@@ -178,22 +177,11 @@ if ( ippmod(icod3p).ge.0 ) then
   endif
   nprofb = iprop
 
-
-! ---> Positionnement dans le tableau PROPFA
-!      Au centre des faces internes (flux de masse)
-
- iprop = nprofa
-! Exemple INUTILE DANS NOTRE CAS
-!       IPROP         = IPROP + 1
-!       IPPROF(ITEMP) = IPROP
- nprofa = iprop
-
  endif
 
 
-
 !===============================================================================
-! 2. POSITIONNEMENT DES PROPRIETES : PROPCE, PROPFA, PROPFB
+! 2. POSITIONNEMENT DES PROPRIETES : PROPCE, PROPFB
 !    Physique particuliere : Flamme de diffusion chimie equilibre
 !===============================================================================
 
@@ -203,7 +191,7 @@ if ( ippmod(icod3p).ge.0 ) then
 
 
 !===============================================================================
-! 3. POSITIONNEMENT DES PROPRIETES : PROPCE, PROPFA, PROPFB
+! 3. POSITIONNEMENT DES PROPRIETES : PROPCE, PROPFB
 !    Physique particuliere : Flamme de premelange - Modele EBU
 !===============================================================================
 
@@ -296,22 +284,11 @@ if ( ippmod(icoebu).ge.0 ) then
   endif
   nprofb = iprop
 
-
-! ---> Positionnement dans le tableau PROPFA
-!      Au centre des faces internes (flux de masse)
-
- iprop = nprofa
-! Exemple INUTILE DANS NOTRE CAS
-!       IPROP         = IPROP + 1
-!       IPPROF(ITEMP) = IPROP
- nprofa = iprop
-
  endif
 
 
-
 !===============================================================================
-! 4. POSITIONNEMENT DES PROPRIETES : PROPCE, PROPFA, PROPFB
+! 4. POSITIONNEMENT DES PROPRIETES : PROPCE, PROPFB
 !    Physique particuliere : Flamme de premelange - Modele BML
 !===============================================================================
 
@@ -321,7 +298,7 @@ if ( ippmod(icoebu).ge.0 ) then
 
 
 !===============================================================================
-! 5. POSITIONNEMENT DES PROPRIETES : PROPCE, PROPFA, PROPFB
+! 5. POSITIONNEMENT DES PROPRIETES : PROPCE, PROPFB
 !    Physique particuliere : Flamme de premelange - Modele LWC
 !===============================================================================
 
@@ -499,15 +476,6 @@ if ( ippmod(icolwc).ge.0 ) then
     enddo
   endif
   nprofb = iprop
-
-! ---> Positionnement dans le tableau PROPFA
-!      Au centre des faces internes (flux de masse)
-
-  iprop = nprofa
-! Exemple INUTILE DANS NOTRE CAS
-!       IPROP         = IPROP + 1
-!       IPPROF(ITEMP) = IPROP
-  nprofa = iprop
 
 endif
 

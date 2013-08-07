@@ -79,7 +79,7 @@ implicit none
 
 ! Local variables
 
-integer          ii, ippu, ippv, ippw, ivar, iprop
+integer          ii, ivar, iprop
 integer          imom, idtnm
 integer          keylog
 integer          keyvis, keylbl, keycpl, iflid, ikeyid, ikeyvl, iopchr
@@ -512,18 +512,19 @@ if (ilisvr(ipptx).gt.0) then
   call field_set_key_int(iflid, keylog, ilisvr(ipptx))
 endif
 
-! Inner Mass flux field
-!----------------------
+! Interior mass flux field
+!-------------------------
 
 itycat = FIELD_EXTENSIVE + FIELD_PROPERTY
 ityloc = 2 ! inner faces
 
 ! Mass flux for the class on interior faces
 f_name = 'inner_mass_flux'
-if (ifluaa(ipr).eq.-1) then
-  call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
-else
+
+if (istmpf.ne.1) then
   call field_create(f_name, itycat, ityloc, idim1, ilved, iprev, f_id)
+else
+  call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
 endif
 
 ! The same mass flux for every variable, an other mass flux
@@ -531,6 +532,14 @@ endif
 do ivar = 1, nvar
   call field_set_key_int(ivarfl(ivar), kimasf, f_id)
 enddo
+
+! Separate mass flux for velocity in some compressible cases
+
+if (iflmau.gt.0) then
+  f_name = 'inner_mass_flux_v'
+  call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+  call field_set_key_int(ivarfl(iu), kimasf, f_id)
+endif
 
 ! Boundary Mass flux field
 !-------------------------
@@ -540,10 +549,10 @@ ityloc = 3 ! boundary faces
 
 ! Mass flux for the class on interior faces
 f_name = 'boundary_mass_flux'
-if (ifluaa(ipr).eq.-1) then
-  call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
-else
+if (istmpf.ne.1) then
   call field_create(f_name, itycat, ityloc, idim1, ilved, iprev, f_id)
+else
+  call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
 endif
 
 ! The same mass flux for every variable, an other mass flux
@@ -551,6 +560,14 @@ endif
 do ivar = 1, nvar
   call field_set_key_int(ivarfl(ivar), kbmasf, f_id)
 enddo
+
+! Separate mass flux for velocity in some compressible cases
+
+if (iflmau.gt.0) then
+  f_name = 'boundary_mass_flux_v'
+  call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+  call field_set_key_int(ivarfl(iu), kimasf, f_id)
+endif
 
 ! Additional fields
 !------------------

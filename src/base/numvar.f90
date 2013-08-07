@@ -179,14 +179,8 @@ module numvar
   !> error estimator for Navier-Stokes
   integer, save :: iestim(nestmx)
 
-  !> convective mass flux of the variables
-  integer, save :: ifluma(nvarmx)
-
   !> interior and boundary convective mass flux key ids of the variables
   integer, save :: kimasf, kbmasf
-
-  !> convective mass flux of the variables at the previous time-step
-  integer, save :: ifluaa(nvarmx)
 
   !> dynamic constant of Smagorinsky
   integer, save :: ismago

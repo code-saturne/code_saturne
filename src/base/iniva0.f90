@@ -24,7 +24,7 @@ subroutine iniva0 &
 !================
 
  ( nvar   , nscal  , ncofab ,                                     &
-   dt     , tpucou , rtp    , propce , propfa , propfb ,          &
+   dt     , tpucou , rtp    , propce , propfb ,                   &
    coefa  , coefb  , frcxt  , prhyd)
 
 !===============================================================================
@@ -92,9 +92,8 @@ implicit none
 
 integer          nvar   , nscal  , ncofab
 
-
 double precision dt(ncelet), tpucou(ncelet,3), rtp(ncelet,*), propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propfb(nfabor,*)
 double precision coefa(nfabor,ncofab), coefb(nfabor,ncofab)
 double precision frcxt(3,ncelet), prhyd(ncelet)
 
@@ -103,23 +102,17 @@ double precision frcxt(3,ncelet), prhyd(ncelet)
 integer          iis   , ivar  , iscal , imom
 integer          iel   , ifac  , isou  , jsou
 integer          iclip , ii    , jj    , idim
-integer          iiflum, iiflua
 integer          iirom , iiromb, iiroma
 integer          iivisl, iivist, iivisa, iivism
 integer          iicp  , iicpa
 integer          iiviss, iiptot
 integer          iptsna, iptsta, iptsca
 integer          nn
-integer          f_id, iflmas, iflmab
+integer          iflid, nfld, ifmaip, bfmaip, iflmas, iflmab
 
 double precision xxk, xcmu, trii
 
-character*80     fname
-
 double precision rvoid(1)
-
-double precision, dimension(:,:), pointer :: xut
-double precision, dimension(:), pointer :: imasfl, bmasfl
 
 !===============================================================================
 
@@ -528,42 +521,32 @@ do ifac = 1, nfabor
   isympa(ifac) = 0
 enddo
 
-! Flux de masse (on essaye de ne pas trop faire les choses 2 fois,
-!  sans toutefois faire des tests trop compliques)
-iiflum = 0
-do ivar = 1, nvar
-  if (ifluma(ivar).gt.0.and.ifluma(ivar).ne.iiflum) then
-    iiflum = ifluma(ivar)
-    call field_get_key_int(ivarfl(ivar), kimasf, iflmas)
-    call field_get_key_int(ivarfl(ivar), kbmasf, iflmab)
-    call field_get_val_s(iflmas, imasfl)
-    call field_get_val_s(iflmab, bmasfl)
-    do ifac = 1, nfac
-      imasfl(ifac) = 0.d0
-    enddo
-    do ifac = 1, nfabor
-      bmasfl(ifac) = 0.d0
-    enddo
+! Old mass flux. We try not to do the same operation multiple times
+! (for shared mass fluxes), without doing too complex tests.
+
+call field_get_n_fields(nfld)
+
+ifmaip = -1
+bfmaip = -1
+
+do ii = 1, nfld
+
+  iflid = ii - 1
+
+  call field_get_key_int(iflid, kimasf, iflmas) ! interior mass flux
+  call field_get_key_int(iflid, kbmasf, iflmab) ! boundary mass flux
+
+  if (iflmas.ge.0 .and. iflmas.ne.ifmaip) then
+    call field_current_to_previous(iflid)
+    ifmaip = iflmas
   endif
-enddo
 
-! Flux de masse "ancien" : on utilise le fait  que IFLUMAA = -1 si
-!     le flux ancien n'est pas defini (voir le test dans varpos).
-
-iiflua = 0
-do ivar = 1, nvar
-  if(ifluaa(ivar).gt.0.and.ifluaa(ivar).ne.iiflua) then
-    iiflua = ifluaa(ivar)
-    iiflum = ifluma(ivar)
-    do ifac = 1, nfac
-      propfa(ifac,ipprof(iiflua)) = propfa(ifac,ipprof(iiflum))
-    enddo
-    do ifac = 1, nfabor
-      propfb(ifac,ipprob(iiflua)) = propfb(ifac,ipprob(iiflum))
-    enddo
+  if (iflmab.ge.0 .and. iflmab.ne.bfmaip) then
+    call field_current_to_previous(iflid)
+    bfmaip = iflmab
   endif
-enddo
 
+enddo
 
 !===============================================================================
 ! 8.  INITIALISATION DES TERMES SOURCES SI EXTRAPOLES

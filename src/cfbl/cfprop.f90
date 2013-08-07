@@ -105,14 +105,6 @@ if ( ippmod(icompf).ge.0 ) then
     iviscv = iprop
   endif
 
-!   Flux de masse specifique pour la vitesse (si on en veut un)
-  if(iflmau.gt.0) then
-    iprop         = iprop + 1
-    ifluma(iu  ) = iprop
-    ifluma(iv  ) = iprop
-    ifluma(iw  ) = iprop
-  endif
-
 !    Flux de Rusanov au bord pour Qdm et E
   iprop         = iprop + 1
   ifbrhu = iprop
@@ -174,19 +166,6 @@ if ( ippmod(icompf).ge.0 ) then
   ipprob(ifbene) = iprop
 
   nprofb = iprop
-
-
-! ---> Positionnement dans le tableau PROPFA
-!      Au centre des faces internes (flux de masse)
-
-  iprop = nprofa
-
-  if(iflmau.gt.0) then
-    iprop                     = iprop + 1
-    ipprof(ifluma(iu)) = iprop
-  endif
-
-  nprofa = iprop
 
 !===============================================================================
 ! 2. ENTREES SORTIES (entsor.h)

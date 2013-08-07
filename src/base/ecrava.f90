@@ -23,10 +23,10 @@
 subroutine ecrava &
 !================
 
- ( ndim   , ncelet , ncel   , nfac   , nfabor ,                   &
+ ( ndim   , ncelet , ncel   , nfabor ,                            &
    nvar   , nscal  ,                                              &
    xyzcen , cdgfbo ,                                              &
-   dt     , rtp    , propce , propfa , propfb ,                   &
+   dt     , rtp    , propce , propfb ,                            &
    coefa  , coefb  , frcxt  , prhyd  )
 
 !===============================================================================
@@ -44,7 +44,6 @@ subroutine ecrava &
 !__________________!____!_____!________________________________________________!
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
-! nfac             ! i  ! <-- ! number of interior faces                       !
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
@@ -52,7 +51,6 @@ subroutine ecrava &
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant)                  !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
@@ -61,10 +59,9 @@ subroutine ecrava &
 ! prhyd(ncelet)    ! tr ! <-- ! hydrostatic pressure predicted                 !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -99,7 +96,7 @@ implicit none
 
 ! Arguments
 
-integer          ndim   , ncelet , ncel   , nfac   , nfabor
+integer          ndim   , ncelet , ncel   , nfabor
 integer          nvar   , nscal
 
 
@@ -107,7 +104,7 @@ double precision xyzcen(ndim,ncelet)
 double precision cdgfbo(ndim,nfabor)
 double precision dt(ncelet), rtp(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(ndimfb,*)
+double precision propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision frcxt(3,ncelet), prhyd(ncelet)
 
@@ -127,6 +124,7 @@ character        nomflu(nvarmx)*18, nomrtp(nvarmx)*20
 character        nomcli(nvarmx)*18
 character        cstruc(nstrmx)*2, cindst*2
 character        ficsui*32
+logical          lprev
 integer          nphas
 integer          ivar  , iscal , imom, f_id
 integer          idecal, iclapc, icha  , icla
@@ -137,16 +135,17 @@ integer          nbctm , ipcefj, ipcla1, ipcla2, ipcla3
 integer          nfmtsc, nfmtfl, nfmtmo, nfmtch, nfmtcl
 integer          nfmtst
 integer          nbflu , ilecec, iecr
-integer          ifait (nvarmx)
 integer          icdtvu(nbmom2)
 integer          ngbstr(2)
 integer          ifac, iel, istr
-integer          impava, impavx
+integer          impava, impavx, nfld, iflmas, iflmab
 double precision tmpstr(27)
 
+integer, allocatable, dimension(:) :: mflnum
 double precision, allocatable, dimension(:) :: w1
 
 double precision, dimension(:,:), pointer :: xut
+double precision, dimension(:), pointer :: sval
 
 !===============================================================================
 !     A noter :
@@ -863,33 +862,39 @@ if (iecaux.eq.1) then
   nberro=0
 
 !       Initialisation des tableaux de travail
+
+  call field_get_n_fields(nfld)
+
+  allocate(mflnum(nfld))
+
   nbflu = 0
-  do ii = 1, nvarmx
-    ifait(ii) = 0
+
+  do f_id = 1, nfld
+    mflnum(f_id) = 0
   enddo
 
-  nomflu(IPR)='fm_p_phase'//cphase
-  nomflu(IU)='fm_u_phase'//cphase
-  nomflu(IV)='fm_v_phase'//cphase
-  nomflu(IW)='fm_w_phase'//cphase
+  nomflu(ipr)='fm_p_phase'//cphase
+  nomflu(iu)='fm_u_phase'//cphase
+  nomflu(iv)='fm_v_phase'//cphase
+  nomflu(iw)='fm_w_phase'//cphase
   if (itytur.eq.2) then
-    nomflu(IK)='fm_k_phase'//cphase
-    nomflu(IEP)='fm_eps_phase'//cphase
+    nomflu(ik)='fm_k_phase'//cphase
+    nomflu(iep)='fm_eps_phase'//cphase
   elseif (itytur.eq.3) then
-    nomflu(IR11)='fm_R11_phase'//cphase
-    nomflu(IR22)='fm_R22_phase'//cphase
-    nomflu(IR33)='fm_R33_phase'//cphase
-    nomflu(IR12)='fm_R12_phase'//cphase
-    nomflu(IR13)='fm_R13_phase'//cphase
-    nomflu(IR23)='fm_R23_phase'//cphase
-    nomflu(IEP)='fm_eps_phase'//cphase
+    nomflu(ir11)='fm_R11_phase'//cphase
+    nomflu(ir22)='fm_R22_phase'//cphase
+    nomflu(ir33)='fm_R33_phase'//cphase
+    nomflu(ir12)='fm_R12_phase'//cphase
+    nomflu(ir13)='fm_R13_phase'//cphase
+    nomflu(ir23)='fm_R23_phase'//cphase
+    nomflu(iep)='fm_eps_phase'//cphase
     if (iturb.eq.32) then
       nomflu(ial)='fm_alp_phase'//cphase
     endif
   elseif (itytur.eq.5) then
-    nomflu(IK)='fm_k_phase'//cphase
-    nomflu(IEP)='fm_eps_phase'//cphase
-    nomflu(IPHI)='fm_phi_phase'//cphase
+    nomflu(ik)='fm_k_phase'//cphase
+    nomflu(iep)='fm_eps_phase'//cphase
+    nomflu(iphi)='fm_phi_phase'//cphase
     ! On n'utilise pas le flux de masse pour fb/al en fait mais on le laisse
     ! ici, car ca ne change rien (le flux n'est ecrit qu'une seule fois)
     if(iturb.eq.50) then
@@ -898,8 +903,8 @@ if (iecaux.eq.1) then
       nomflu(ial)='fm_al_phase'//cphase
     endif
   elseif (iturb.eq.60) then
-    nomflu(IK)='fm_k_phase'//cphase
-    nomflu(IOMG)='fm_omega_phase'//cphase
+    nomflu(ik)='fm_k_phase'//cphase
+    nomflu(iomg)='fm_omega_phase'//cphase
   elseif (iturb.eq.70) then
     nomflu(inusa)='fm_nusa_phase'//cphase
   endif
@@ -914,87 +919,98 @@ if (iecaux.eq.1) then
     nomflu(iwma)='fm_vit_maill_w'
   endif
 
+  ! For variables
+
   do ivar = 1, nvar
 
-!        Si la variable n'est pas associee a un flux de masse
-!          on ne fait rien
-    if (ifluma(ivar).gt.0) then
-!          Si le flux de masse n'a pas encore ete ecrit
-      if (ifait(ifluma(ivar)).eq.0) then
-!            C'est un nouveau flux a ecrire
-        nbflu=nbflu+1
-!            On note que ce flux est alors traite (c'est le NBFLUieme)
-        ifait(ifluma(ivar))=nbflu
+    f_id = ivarfl(ivar)
 
-!            Ecriture du flux de masse sur les faces internes
-        rubriq = 'flux_masse_fi_'//CFLU(NBFLU)
+    ! If the variable is not associated with a mass flux, do nothing
+
+    call field_get_key_int(f_id, kimasf, iflmas) ! interior mass flux
+
+    if (iflmas.ge.0) then
+
+      if (mflnum(iflmas).eq.0) then
+
+        ! Flux has not been written yet
+
+        call field_get_val_s(iflmas, sval)
+
+        nbflu=nbflu+1
+        mflnum(iflmas) = nbflu
+
+        ! Write mass flux at interior faces
+        rubriq = 'flux_masse_fi_'//cflu(nbflu)
         itysup = 2
         nbval  = 1
         irtyp  = 2
-        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                    propfa(1,ipprof(ifluma(ivar))),ierror)
-        nberro=nberro+ierror
+        call ecrsui(impavx, rubriq, len(rubriq), itysup, nbval, irtyp,  &
+                    sval, ierror)
 
-!            Ecriture du flux de masse sur les faces de bord
-        rubriq = 'flux_masse_fb_'//CFLU(NBFLU)
+        call field_get_key_int(f_id, kbmasf, iflmab) ! boundary mass flux
+        call field_get_val_s(iflmab, sval)
+
+        ! Write mass flux at boundary faces
+        rubriq = 'flux_masse_fb_'//cflu(nbflu)
         itysup = 3
         nbval  = 1
         irtyp  = 2
-        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                    propfb(1,ipprob(ifluma(ivar))),ierror)
-        nberro=nberro+ierror
+        call ecrsui(impavx, rubriq, len(rubriq), itysup, nbval, irtyp,  &
+                    sval, ierror)
+
       endif
-!          Que le flux de masse ait deja ete ecrit ou pas,
-!            on ecrit  le lien variable/numero de flux
+
+      ! Whether flux has been written or not, associate variable with flux
       rubriq = nomflu(ivar)
       itysup = 0
       nbval  = 1
       irtyp  = 1
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  ifait(ifluma(ivar)),ierror)
-      nberro=nberro+ierror
+      call ecrsui(impavx, rubriq, len(rubriq), itysup, nbval, irtyp,   &
+                  mflnum(iflmas), ierror)
+
     endif
+
   enddo
 
-
-!     On fait de meme pour les flux de masse au temps precedent.
-!       Initialisation des tableaux de travail
+  ! Do the same for mass fluxes at previous time
 
   nbflu = 0
-  do ii = 1, nvarmx
-    ifait(ii) = 0
+
+  do f_id = 1, nfld
+    mflnum(f_id) = 0
   enddo
 
-  nomflu(IPR)='fm_a_p_phase'//cphase
-  nomflu(IU)='fm_a_u_phase'//cphase
-  nomflu(IV)='fm_a_v_phase'//cphase
-  nomflu(IW)='fm_a_w_phase'//cphase
+  nomflu(ipr)='fm_a_p_phase'//cphase
+  nomflu(iu)='fm_a_u_phase'//cphase
+  nomflu(iv)='fm_a_v_phase'//cphase
+  nomflu(iw)='fm_a_w_phase'//cphase
   if (itytur.eq.2) then
-    nomflu(IK)='fm_a_k_phase'//cphase
-    nomflu(IEP)='fm_a_eps_phase'//cphase
+    nomflu(ik)='fm_a_k_phase'//cphase
+    nomflu(iep)='fm_a_eps_phase'//cphase
   elseif (itytur.eq.3) then
-    nomflu(IR11)='fm_a_R11_phase'//cphase
-    nomflu(IR22)='fm_a_R22_phase'//cphase
-    nomflu(IR33)='fm_a_R33_phase'//cphase
-    nomflu(IR12)='fm_a_R12_phase'//cphase
-    nomflu(IR13)='fm_a_R13_phase'//cphase
-    nomflu(IR23)='fm_a_R23_phase'//cphase
-    nomflu(IEP)='fm_a_eps_phase'//cphase
+    nomflu(ir11)='fm_a_R11_phase'//cphase
+    nomflu(ir22)='fm_a_R22_phase'//cphase
+    nomflu(ir33)='fm_a_R33_phase'//cphase
+    nomflu(ir12)='fm_a_R12_phase'//cphase
+    nomflu(ir13)='fm_a_R13_phase'//cphase
+    nomflu(ir23)='fm_a_R23_phase'//cphase
+    nomflu(iep)='fm_a_eps_phase'//cphase
     if (iturb.eq.32) then
       nomflu(ial)='fm_a_alp_phase'//cphase
     endif
   elseif (itytur.eq.5) then
-    nomflu(IK)='fm_a_k_phase'//cphase
-    nomflu(IEP)='fm_a_eps_phase'//cphase
-    nomflu(IPHI)='fm_a_phi_phase'//cphase
+    nomflu(ik)='fm_a_k_phase'//cphase
+    nomflu(iep)='fm_a_eps_phase'//cphase
+    nomflu(iphi)='fm_a_phi_phase'//cphase
     if(iturb.eq.50) then
       nomflu(ifb)='fm_a_fb_phase'//cphase
     elseif(iturb.eq.51) then
       nomflu(ial)='fm_a_al_phase'//cphase
     endif
   elseif (iturb.eq.60) then
-    nomflu(IK)='fm_a_k_phase'//cphase
-    nomflu(IOMG)='fm_a_omega_phase'//cphase
+    nomflu(ik)='fm_a_k_phase'//cphase
+    nomflu(iomg)='fm_a_omega_phase'//cphase
   elseif (iturb.eq.70) then
     nomflu(inusa)='fm_a_nusa_phase'//cphase
   endif
@@ -1011,54 +1027,63 @@ if (iecaux.eq.1) then
 
   do ivar = 1, nvar
 
-!        Si la variable n'est pas associee a un flux de masse
-!          on ne fait rien
-    if (ifluaa(ivar).gt.0) then
-!          Si le flux de masse n'a pas encore ete ecrit
-      if (ifait(ifluaa(ivar)).eq.0) then
-!            C'est un nouveau flux a ecrire
-        nbflu=nbflu+1
-!            On note que ce flux est alors traite (c'est le NBFLUieme)
-        ifait(ifluaa(ivar))=nbflu
+    f_id = ivarfl(ivar)
 
-!            Ecriture du flux de masse sur les faces internes
-        rubriq = 'flux_masse_a_fi_'//CFLU(NBFLU)
+    ! If the variable is not associated with a mass flux, do nothing
+
+    call field_get_key_int(f_id, kimasf, iflmas) ! interior mass flux
+
+    if (mflnum(iflmas).eq.0) then
+
+      ! Flux has not been written yet
+
+      if (mflnum(iflmas).eq.0) then
+
+        call field_have_previous(iflmas, lprev)
+
+        if (.not. lprev) cycle ! skip to next loop variable
+
+        ! Flux has not been written yet
+
+        call field_get_val_prev_s(iflmas, sval)
+
+        nbflu=nbflu+1
+        mflnum(iflmas) = nbflu
+
+        ! Write mass flux at interior faces
+        rubriq = 'flux_masse_a_fi_'//cflu(nbflu)
         itysup = 2
         nbval  = 1
         irtyp  = 2
-        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                    propfa(1,ipprof(ifluaa(ivar))),ierror)
-        nberro=nberro+ierror
+        call ecrsui(impavx, rubriq, len(rubriq), itysup, nbval, irtyp,  &
+                    sval, ierror)
 
-!            Ecriture du flux de masse sur les faces de bord
-        rubriq = 'flux_masse_a_fb_'//CFLU(NBFLU)
+        call field_get_key_int(f_id, kbmasf, iflmab) ! boundary mass flux
+        call field_get_val_prev_s(iflmab, sval)
+
+        ! Write mass flux at boundary faces
+        rubriq = 'flux_masse_a_fb_'//cflu(nbflu)
         itysup = 3
         nbval  = 1
         irtyp  = 2
-        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                    propfb(1,ipprob(ifluaa(ivar))),ierror)
-        nberro=nberro+ierror
+        call ecrsui(impavx, rubriq, len(rubriq), itysup, nbval, irtyp,  &
+                    sval, ierror)
+
       endif
-!          Que le flux de masse ait deja ete ecrit ou pas,
-!            on ecrit  le lien variable/numero de flux
+
+      ! Whether flux has been written or not, associate variable with flux
       rubriq = nomflu(ivar)
       itysup = 0
       nbval  = 1
       irtyp  = 1
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  ifait(ifluaa(ivar)),ierror)
-      nberro=nberro+ierror
+      call ecrsui(impavx, rubriq, len(rubriq), itysup, nbval, irtyp,   &
+                  mflnum(iflmas), ierror)
+
     endif
+
   enddo
 
-  if (nberro.ne.0) then
-#if defined(_CS_LANG_FR)
-    car54='ERREUR A L''ECRITURE DES FLUX DE MASSE                '
-#else
-    car54='ERROR WHILE WRITING THE MASS FLUXES                   '
-#endif
-    write(nfecra,8101)car54
-  endif
+  deallocate(mflnum)
 
 #if defined(_CS_LANG_FR)
   car54 =' Fin de l''ecriture des flux de masse                 '

@@ -23,9 +23,8 @@
 subroutine lecamx &
 !================
 
- ( ncelet , ncel   , nfac   , nfabor ,                            &
-   nvar   , nscal  ,                                              &
-   dt     , propce , propfa , propfb ,                            &
+ ( ncelet , ncel   , nfabor , nvar   , nscal  ,                   &
+   dt     , propce , propfb ,                                     &
    coefa  , coefb  , frcxt  , prhyd  )
 
 !===============================================================================
@@ -48,7 +47,6 @@ subroutine lecamx &
 !__________________!____!_____!________________________________________________!
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
-! nfac             ! i  ! <-- ! number of interior faces                       !
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
@@ -57,8 +55,6 @@ subroutine lecamx &
 ! (ncelet,*)       !    !     !    cellules (instant courant        )          !
 ! propce           ! tr ! --> ! proprietes physiques au centre des             !
 ! (ncelet,*)       !    !     !    cellules                                    !
-! propfa           ! tr ! --> ! proprietes physiques au centre des             !
-!  (nfac,*)        !    !     !    faces internes                              !
 ! propfb           ! tr ! --> ! proprietes physiques au centre des             !
 !  (nfabor,*)      !    !     !    faces de bord                               !
 ! coefa, coefb     ! tr ! --> ! conditions aux limites aux                     !
@@ -66,15 +62,11 @@ subroutine lecamx &
 ! frcxt(3,ncelet)  ! tr ! --> ! force exterieure generant la pression          !
 !                  !    !     !  hydrostatique                                 !
 ! prhyd(ncelet)    ! ra ! --> ! hydrostatic pressure predicted                 !
-! racell(ncelet    ! tr ! --- ! tableau de travail                             !
-! rafacl(nfac      ! tr ! --- ! tableau de travail                             !
-! rafabl(nfabor    ! tr ! --- ! tableau de travail                             !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -110,12 +102,12 @@ implicit none
 
 ! Arguments
 
-integer          ncelet , ncel   , nfac   , nfabor
+integer          ncelet , ncel   , nfabor
 integer          nvar   , nscal
 
 double precision dt(ncelet)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(ndimfb,*)
+double precision propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision frcxt(3,ncelet), prhyd(ncelet)
 
@@ -130,6 +122,7 @@ character        cphase*2
 character        nomflu(nvarmx)*18,nomcli(nvarmx)*18
 character        cstruc(nstrmx)*2, cindst*2
 character        ficsui*32
+logical          lprev
 integer          iel   , ifac, ii, istr
 integer          ivar  , iscal , jphas , isco
 integer          idecal, iclapc, icha  , icla
@@ -148,12 +141,14 @@ integer          ilu   , ilecec, ideblu, iannul, ierrch
 integer          impamx
 integer          nfmtsc, nfmtfl, nfmtmo, nfmtch, nfmtcl
 integer          nfmtst
-integer          numflu(nvarmx)
 integer          jturb , jtytur, jale
+integer          f_id, nfld, iflmas, iflmab
 integer          ngbstr(2)
 double precision d2s3  , tsrii , cdtcm
 double precision tmpstr(27)
 
+integer, allocatable, dimension(:) :: mflnum
+double precision, dimension(:), pointer :: sval
 
 !===============================================================================
 
@@ -631,7 +626,7 @@ write(nfecra,1110)car54
 !===============================================================================
 !     Pour retrouver la correspondance entre les variables
 !     et les flux de masse, on utilise le nom de chaque variable
-!     (NOMFLU(I)= nom de la ieme variable)
+!     (nomflu(I)= nom de la ieme variable)
 !     Ensuite, pour chaque variable, si on a deja le flux, on ne fait
 !       rien, sinon on lit quel est le numero local du
 !       flux qui lui est associe (en pratique 1 ou 2) et le flux lui meme.
@@ -647,118 +642,120 @@ if (nfaiok.eq.1 .or. nfabok.eq.1) then
 
   nberro=0
 
-!        Initialisation des tableaux de travail
-  do ivar = 1, nvarmx
-    numflu(ivar) = 0
+  ! Initialize work arrays
+
+  call field_get_n_fields(nfld)
+
+  allocate(mflnum(nfld))
+
+  do f_id = 1, nfld
+    mflnum(f_id) = 0
   enddo
 
-!     Nom du flux associe a la variable dans le calcul precedent
-  NOMFLU(IPR)='fm_p_phase'//CPHASE
-  NOMFLU(IU)='fm_u_phase'//CPHASE
-  NOMFLU(IV)='fm_v_phase'//CPHASE
-  NOMFLU(IW)='fm_w_phase'//CPHASE
-  if (itytur.eq.2.and.                                   &
-       (jtytur.eq.2.or.jtytur.eq.5) ) then
-    NOMFLU(IK)='fm_k_phase'//CPHASE
-    NOMFLU(IEP)='fm_eps_phase'//CPHASE
-  elseif(itytur.eq.2.and.jtytur.eq.3) then
-    NOMFLU(IK)='fm_R11_phase'//CPHASE
-    NOMFLU(IEP)='fm_eps_phase'//CPHASE
-  elseif(itytur.eq.2.and.jturb.eq.60) then
-    NOMFLU(IK)='fm_k_phase'//CPHASE
-    NOMFLU(IEP)='fm_omega_phase'//CPHASE
-  elseif (itytur.eq.3.and.                               &
-       (jtytur.eq.2.or.jtytur.eq.50) ) then
-    NOMFLU(IR11)='fm_k_phase'//CPHASE
-    NOMFLU(IR22)='fm_k_phase'//CPHASE
-    NOMFLU(IR33)='fm_k_phase'//CPHASE
-    NOMFLU(IR12)='fm_k_phase'//CPHASE
-    NOMFLU(IR13)='fm_k_phase'//CPHASE
-    NOMFLU(IR23)='fm_k_phase'//CPHASE
-    NOMFLU(IEP)='fm_eps_phase'//CPHASE
+  ! Name of flux associated with variable in previous calculation
+  nomflu(ipr)='fm_p_phase'//cphase
+  nomflu(iu)='fm_u_phase'//cphase
+  nomflu(iv)='fm_v_phase'//cphase
+  nomflu(iw)='fm_w_phase'//cphase
+  if (itytur.eq.2.and. (jtytur.eq.2.or.jtytur.eq.5)) then
+    nomflu(ik)='fm_k_phase'//cphase
+    nomflu(iep)='fm_eps_phase'//cphase
+  elseif (itytur.eq.2.and.jtytur.eq.3) then
+    nomflu(ik)='fm_R11_phase'//cphase
+    nomflu(iep)='fm_eps_phase'//cphase
+  elseif (itytur.eq.2.and.jturb.eq.60) then
+    nomflu(ik)='fm_k_phase'//cphase
+    nomflu(iep)='fm_omega_phase'//cphase
+  elseif (itytur.eq.3 .and. (jtytur.eq.2.or.jtytur.eq.50)) then
+    nomflu(ir11)='fm_k_phase'//cphase
+    nomflu(ir22)='fm_k_phase'//cphase
+    nomflu(ir33)='fm_k_phase'//cphase
+    nomflu(ir12)='fm_k_phase'//cphase
+    nomflu(ir13)='fm_k_phase'//cphase
+    nomflu(ir23)='fm_k_phase'//cphase
+    nomflu(iep)='fm_eps_phase'//cphase
   elseif (itytur.eq.3.and.jtytur.eq.3) then
-    NOMFLU(IR11)='fm_R11_phase'//CPHASE
-    NOMFLU(IR22)='fm_R22_phase'//CPHASE
-    NOMFLU(IR33)='fm_R33_phase'//CPHASE
-    NOMFLU(IR12)='fm_R12_phase'//CPHASE
-    NOMFLU(IR13)='fm_R13_phase'//CPHASE
-    NOMFLU(IR23)='fm_R23_phase'//CPHASE
-    NOMFLU(IEP)='fm_eps_phase'//CPHASE
+    nomflu(ir11)='fm_R11_phase'//cphase
+    nomflu(ir22)='fm_R22_phase'//cphase
+    nomflu(ir33)='fm_R33_phase'//cphase
+    nomflu(ir12)='fm_R12_phase'//cphase
+    nomflu(ir13)='fm_R13_phase'//cphase
+    nomflu(ir23)='fm_R23_phase'//cphase
+    nomflu(iep)='fm_eps_phase'//cphase
     if (iturb.eq.32.and.jturb.eq.32) then
-      nomflu(ial)='fm_alp_phase'//CPHASE
+      nomflu(ial)='fm_alp_phase'//cphase
     endif
     if (iturb.eq.32.and.jturb.ne.32) then
-      nomflu(ial)='fm_eps_phase'//CPHASE
+      nomflu(ial)='fm_eps_phase'//cphase
     endif
   elseif (itytur.eq.3.and.jturb.eq.60) then
-    NOMFLU(IR11)='fm_k_phase'//CPHASE
-    NOMFLU(IR22)='fm_k_phase'//CPHASE
-    NOMFLU(IR33)='fm_k_phase'//CPHASE
-    NOMFLU(IR12)='fm_k_phase'//CPHASE
-    NOMFLU(IR13)='fm_k_phase'//CPHASE
-    NOMFLU(IR23)='fm_k_phase'//CPHASE
-    NOMFLU(IEP)='fm_omega_phase'//CPHASE
+    nomflu(ir11)='fm_k_phase'//cphase
+    nomflu(ir22)='fm_k_phase'//cphase
+    nomflu(ir33)='fm_k_phase'//cphase
+    nomflu(ir12)='fm_k_phase'//cphase
+    nomflu(ir13)='fm_k_phase'//cphase
+    nomflu(ir23)='fm_k_phase'//cphase
+    nomflu(iep)='fm_omega_phase'//cphase
   elseif (itytur.eq.5.and.jtytur.eq.2) then
-    NOMFLU(IK)='fm_k_phase'//CPHASE
-    NOMFLU(IEP)='fm_eps_phase'//CPHASE
-    NOMFLU(IPHI)='fm_k_phase'//CPHASE
-    if(iturb.eq.50) then
-      NOMFLU(IFB)='fm_k_phase'//CPHASE
-    elseif(iturb.eq.51) then
-      NOMFLU(IAL)='fm_k_phase'//CPHASE
+    nomflu(ik)='fm_k_phase'//cphase
+    nomflu(iep)='fm_eps_phase'//cphase
+    nomflu(iphi)='fm_k_phase'//cphase
+    if (iturb.eq.50) then
+      nomflu(ifb)='fm_k_phase'//cphase
+    elseif (iturb.eq.51) then
+      nomflu(ial)='fm_k_phase'//cphase
     endif
   elseif (itytur.eq.5.and.jtytur.eq.3) then
-    NOMFLU(IK)='fm_R11_phase'//CPHASE
-    NOMFLU(IEP)='fm_eps_phase'//CPHASE
-    NOMFLU(IPHI)='fm_R11_phase'//CPHASE
-    NOMFLU(IFB)='fm_R11_phase'//CPHASE
-    if(iturb.eq.50) then
-      NOMFLU(IFB)='fm_R11_phase'//CPHASE
-    elseif(iturb.eq.51) then
-      NOMFLU(IAL)='fm_R11_phase'//CPHASE
+    nomflu(ik)='fm_R11_phase'//cphase
+    nomflu(iep)='fm_eps_phase'//cphase
+    nomflu(iphi)='fm_R11_phase'//cphase
+    nomflu(ifb)='fm_R11_phase'//cphase
+    if (iturb.eq.50) then
+      nomflu(ifb)='fm_R11_phase'//cphase
+    elseif (iturb.eq.51) then
+      nomflu(ial)='fm_R11_phase'//cphase
     endif
   elseif (iturb.eq.50.and.jturb.eq.50) then
-    NOMFLU(IK)='fm_k_phase'//CPHASE
-    NOMFLU(IEP)='fm_eps_phase'//CPHASE
-    NOMFLU(IPHI)='fm_phi_phase'//CPHASE
-    NOMFLU(IFB)='fm_fb_phase'//CPHASE
+    nomflu(ik)='fm_k_phase'//cphase
+    nomflu(iep)='fm_eps_phase'//cphase
+    nomflu(iphi)='fm_phi_phase'//cphase
+    nomflu(ifb)='fm_fb_phase'//cphase
   elseif (iturb.eq.51.and.jturb.eq.51) then
-    NOMFLU(IK)='fm_k_phase'//CPHASE
-    NOMFLU(IEP)='fm_eps_phase'//CPHASE
-    NOMFLU(IPHI)='fm_phi_phase'//CPHASE
-    NOMFLU(IAL)='fm_al_phase'//CPHASE
+    nomflu(ik)='fm_k_phase'//cphase
+    nomflu(iep)='fm_eps_phase'//cphase
+    nomflu(iphi)='fm_phi_phase'//cphase
+    nomflu(ial)='fm_al_phase'//cphase
   elseif (iturb.eq.50.and.jturb.eq.51) then
-    NOMFLU(IK)='fm_k_phase'//CPHASE
-    NOMFLU(IEP)='fm_eps_phase'//CPHASE
-    NOMFLU(IPHI)='fm_phi_phase'//CPHASE
-    NOMFLU(IFB)='fm_al_phase'//CPHASE
+    nomflu(ik)='fm_k_phase'//cphase
+    nomflu(iep)='fm_eps_phase'//cphase
+    nomflu(iphi)='fm_phi_phase'//cphase
+    nomflu(ifb)='fm_al_phase'//cphase
   elseif (iturb.eq.51.and.jturb.eq.50) then
-    NOMFLU(IK)='fm_k_phase'//CPHASE
-    NOMFLU(IEP)='fm_eps_phase'//CPHASE
-    NOMFLU(IPHI)='fm_phi_phase'//CPHASE
-    NOMFLU(IAL)='fm_fb_phase'//CPHASE
+    nomflu(ik)='fm_k_phase'//cphase
+    nomflu(iep)='fm_eps_phase'//cphase
+    nomflu(iphi)='fm_phi_phase'//cphase
+    nomflu(ial)='fm_fb_phase'//cphase
   elseif (iturb.eq.50.and.jturb.eq.60) then
-    NOMFLU(IK)='fm_k_phase'//CPHASE
-    NOMFLU(IEP)='fm_omega_phase'//CPHASE
-    NOMFLU(IPHI)='fm_k_phase'//CPHASE
-    NOMFLU(IFB)='fm_k_phase'//CPHASE
-  elseif (iturb.eq.60.and.                               &
-       (jtytur.eq.2.or.jturb.eq.50) ) then
-    NOMFLU(IK  )='fm_k_phase'//CPHASE
-    NOMFLU(IOMG)='fm_eps_phase'//CPHASE
+    nomflu(ik)='fm_k_phase'//cphase
+    nomflu(iep)='fm_omega_phase'//cphase
+    nomflu(iphi)='fm_k_phase'//cphase
+    nomflu(ifb)='fm_k_phase'//cphase
+  elseif (iturb.eq.60.and.(jtytur.eq.2.or.jturb.eq.50)) then
+    nomflu(ik  )='fm_k_phase'//cphase
+    nomflu(iomg)='fm_eps_phase'//cphase
   elseif (iturb.eq.60.and.jtytur.eq.3) then
-    NOMFLU(IK  )='fm_R11_phase'//CPHASE
-    NOMFLU(IOMG)='fm_eps_phase'//CPHASE
+    nomflu(ik  )='fm_R11_phase'//cphase
+    nomflu(iomg)='fm_eps_phase'//cphase
   elseif (iturb.eq.60.and.jturb.eq.60) then
-    NOMFLU(IK  )='fm_k_phase'//CPHASE
-    NOMFLU(IOMG)='fm_omega_phase'//CPHASE
+    nomflu(ik  )='fm_k_phase'//cphase
+    nomflu(iomg)='fm_omega_phase'//cphase
   elseif (iturb.eq.70.and.jturb.eq.70) then
-    nomflu(inusa)='fm_nusa_phase'//CPHASE
+    nomflu(inusa)='fm_nusa_phase'//cphase
   endif
-  if(nscal.gt.0) then
+  if (nscal.gt.0) then
     do iscal = 1, nscal
-      if(iscold(iscal).gt.0) then
-        if(iscold(iscal).le.nfmtsc) then
+      if (iscold(iscal).gt.0) then
+        if (iscold(iscal).le.nfmtsc) then
           write(car4,'(i4.4)')iscold(iscal)
         else
           car4 = cindfs
@@ -773,13 +770,20 @@ if (nfaiok.eq.1 .or. nfabok.eq.1) then
     nomflu(iwma)='fm_vit_maill_w'
   endif
 
-!     --Pour les variables
+  ! For variables
   do ivar = 1, nvar
-!        S'il y a un flux
-    if(ifluma(ivar).gt.0) then
-!          Si le flux n'a pas deja ete rempli, on le fait
-      if (numflu(ifluma(ivar)).eq.0) then
-!            Lecture du numero local du flux correspondant
+
+    f_id = ivarfl(ivar)
+
+    ! Is there an associated flux ?
+
+    call field_get_key_int(f_id, kimasf, iflmas)
+
+    if (iflmas.ge.0) then
+
+      ! If flux has not been read yet, do it
+      if (mflnum(iflmas).eq.0) then
+
         rubriq = nomflu(ivar)
         itysup = 0
         nbval  = 1
@@ -787,169 +791,167 @@ if (nfaiok.eq.1 .or. nfabok.eq.1) then
         call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp, &
                     numero,ierror)
         nberro = nberro+ierror
-!            S'il existe, on le lit
+        ! If it exists, read it
         if (ierror.eq.0) then
           inifok = 0
-          if(numero.gt.0) then
-            if(numero.le.nfmtfl) then
-              WRITE(CAR4,'(I4.4)')NUMERO
+          if (numero.gt.0) then
+            if (numero.le.nfmtfl) then
+              write(car4,'(i4.4)') numero
             else
               car4 = cindff
             endif
             if (nfaiok.eq.1) then
-              RUBRIQ = 'flux_masse_fi_'//CAR4
+              call field_get_val_s(iflmas, sval)
+              rubriq = 'flux_masse_fi_'//car4
               itysup = 2
               nbval  = 1
               irtyp  = 2
-              call lecsui(impamx,rubriq,len(rubriq),itysup,nbval, &
-                          irtyp,propfa(1,ipprof(ifluma(ivar))),   &
-                          ierror)
+              call lecsui(impamx, rubriq, len(rubriq), itysup, nbval,  &
+                          irtyp, sval, ierror)
               nberro = nberro+ierror
-              if(ierror.eq.0) inifok = inifok+1
+              if (ierror.eq.0) inifok = inifok+1
             endif
             if (nfabok.eq.1) then
-              RUBRIQ = 'flux_masse_fb_'//CAR4
+              call field_get_key_int(f_id, kbmasf, iflmab)
+              call field_get_val_s(iflmab, sval)
+              rubriq = 'flux_masse_fb_'//car4
               itysup = 3
               nbval  = 1
               irtyp  = 2
-              call lecsui(impamx,rubriq,len(rubriq),itysup,nbval, &
-                          irtyp,propfb(1,ipprob(ifluma(ivar))),   &
-                          ierror)
+              call lecsui(impamx, rubriq, len(rubriq), itysup, nbval,  &
+                          irtyp, sval, ierror)
               nberro = nberro+ierror
-              if(ierror.eq.0) inifok = inifok+1
+              if (ierror.eq.0) inifok = inifok+1
             endif
           endif
-!             Si ca a marche, on indique que ce flux a ete rempli
-          if(inifok.eq.2) then
-            numflu(ifluma(ivar))=1
+          ! If everything is OK, mark this flux as read
+          if (inifok.eq.2) then
+            mflnum(iflmas) = 1
           endif
         endif
       endif
     endif
   enddo
 
+  ! An now, the same for the preceding time step
 
-!     ET MAINTENANT : pareil, mais FLUMAS au pas de temps precedent
+  ! Initialize work arrays
 
-!        Initialisation des tableaux de travail
-  do ivar = 1, nvarmx
-    numflu(ivar) = 0
+  do f_id = 1, nfld
+    mflnum(f_id) = 0
   enddo
 
-!     Nom du flux associe a la variable dans le calcul precedent
-  NOMFLU(IPR)='fm_a_p_phase'//CPHASE
-  NOMFLU(IU)='fm_a_u_phase'//CPHASE
-  NOMFLU(IV)='fm_a_v_phase'//CPHASE
-  NOMFLU(IW)='fm_a_w_phase'//CPHASE
-  if (itytur.eq.2.and.                                   &
-       (jtytur.eq.2.or.jtytur.eq.5) ) then
-    NOMFLU(IK)='fm_a_k_a_phase'//CPHASE
-    NOMFLU(IEP)='fm_a_eps_phase'//CPHASE
-  elseif(itytur.eq.2.and.jtytur.eq.3) then
-    NOMFLU(IK)='fm_a_R11_phase'//CPHASE
-    NOMFLU(IEP)='fm_a_eps_phase'//CPHASE
-  elseif(itytur.eq.2.and.jturb.eq.60) then
-    NOMFLU(IK)='fm_a_k_phase'//CPHASE
-    NOMFLU(IEP)='fm_a_omega_phase'//CPHASE
-  elseif (itytur.eq.3.and.                               &
-       (jtytur.eq.2.or.jtytur.eq.5) ) then
-    NOMFLU(IR11)='fm_a_k_phase'//CPHASE
-    NOMFLU(IR22)='fm_a_k_phase'//CPHASE
-    NOMFLU(IR33)='fm_a_k_phase'//CPHASE
-    NOMFLU(IR12)='fm_a_k_phase'//CPHASE
-    NOMFLU(IR13)='fm_a_k_phase'//CPHASE
-    NOMFLU(IR23)='fm_a_k_phase'//CPHASE
-    NOMFLU(IEP)='fm_a_eps_phase'//CPHASE
+  ! Name of flux associated with variable for previous calculation
+  nomflu(ipr)='fm_a_p_phase'//cphase
+  nomflu(iu)='fm_a_u_phase'//cphase
+  nomflu(iv)='fm_a_v_phase'//cphase
+  nomflu(iw)='fm_a_w_phase'//cphase
+  if (itytur.eq.2 .and. (jtytur.eq.2.or.jtytur.eq.5)) then
+    nomflu(ik)='fm_a_k_a_phase'//cphase
+    nomflu(iep)='fm_a_eps_phase'//cphase
+  elseif (itytur.eq.2.and.jtytur.eq.3) then
+    nomflu(ik)='fm_a_R11_phase'//cphase
+    nomflu(iep)='fm_a_eps_phase'//cphase
+  elseif (itytur.eq.2.and.jturb.eq.60) then
+    nomflu(ik)='fm_a_k_phase'//cphase
+    nomflu(iep)='fm_a_omega_phase'//cphase
+  elseif (itytur.eq.3 .and. (jtytur.eq.2.or.jtytur.eq.5)) then
+    nomflu(ir11)='fm_a_k_phase'//cphase
+    nomflu(ir22)='fm_a_k_phase'//cphase
+    nomflu(ir33)='fm_a_k_phase'//cphase
+    nomflu(ir12)='fm_a_k_phase'//cphase
+    nomflu(ir13)='fm_a_k_phase'//cphase
+    nomflu(ir23)='fm_a_k_phase'//cphase
+    nomflu(iep)='fm_a_eps_phase'//cphase
   elseif (itytur.eq.3.and.jtytur.eq.3) then
-    NOMFLU(IR11)='fm_a_R11_phase'//CPHASE
-    NOMFLU(IR22)='fm_a_R22_phase'//CPHASE
-    NOMFLU(IR33)='fm_a_R33_phase'//CPHASE
-    NOMFLU(IR12)='fm_a_R12_phase'//CPHASE
-    NOMFLU(IR13)='fm_a_R13_phase'//CPHASE
-    NOMFLU(IR23)='fm_a_R23_phase'//CPHASE
-    NOMFLU(IEP)='fm_a_eps_phase'//CPHASE
+    nomflu(ir11)='fm_a_R11_phase'//cphase
+    nomflu(ir22)='fm_a_R22_phase'//cphase
+    nomflu(ir33)='fm_a_R33_phase'//cphase
+    nomflu(ir12)='fm_a_R12_phase'//cphase
+    nomflu(ir13)='fm_a_R13_phase'//cphase
+    nomflu(ir23)='fm_a_R23_phase'//cphase
+    nomflu(iep)='fm_a_eps_phase'//cphase
     if (iturb.eq.32.and.jturb.eq.32) then
-      nomflu(ial)='fm_a_alp_phase'//CPHASE
+      nomflu(ial)='fm_a_alp_phase'//cphase
     endif
     if (iturb.eq.32.and.jturb.ne.32) then
-      nomflu(ial)='fm_a_eps_phase'//CPHASE
+      nomflu(ial)='fm_a_eps_phase'//cphase
     endif
   elseif (itytur.eq.3.and.jturb.eq.60) then
-    NOMFLU(IR11)='fm_a_k_phase'//CPHASE
-    NOMFLU(IR22)='fm_a_k_phase'//CPHASE
-    NOMFLU(IR33)='fm_a_k_phase'//CPHASE
-    NOMFLU(IR12)='fm_a_k_phase'//CPHASE
-    NOMFLU(IR13)='fm_a_k_phase'//CPHASE
-    NOMFLU(IR23)='fm_a_k_phase'//CPHASE
-    NOMFLU(IEP)='fm_a_omega_phase'//CPHASE
+    nomflu(ir11)='fm_a_k_phase'//cphase
+    nomflu(ir22)='fm_a_k_phase'//cphase
+    nomflu(ir33)='fm_a_k_phase'//cphase
+    nomflu(ir12)='fm_a_k_phase'//cphase
+    nomflu(ir13)='fm_a_k_phase'//cphase
+    nomflu(ir23)='fm_a_k_phase'//cphase
+    nomflu(iep)='fm_a_omega_phase'//cphase
     if (iturb.eq.32) then
-      nomflu(ial)='fm_a_omega_phase'//CPHASE
+      nomflu(ial)='fm_a_omega_phase'//cphase
     endif
   elseif (itytur.eq.5.and.jtytur.eq.2) then
-    NOMFLU(IK)='fm_a_k_phase'//CPHASE
-    NOMFLU(IEP)='fm_a_eps_phase'//CPHASE
-    NOMFLU(IPHI)='fm_a_k_phase'//CPHASE
-    if(iturb.eq.50) then
-      NOMFLU(IFB)='fm_a_k_phase'//CPHASE
-    elseif(iturb.eq.51) then
-      NOMFLU(IAL)='fm_a_k_phase'//CPHASE
+    nomflu(ik)='fm_a_k_phase'//cphase
+    nomflu(iep)='fm_a_eps_phase'//cphase
+    nomflu(iphi)='fm_a_k_phase'//cphase
+    if (iturb.eq.50) then
+      nomflu(ifb)='fm_a_k_phase'//cphase
+    elseif (iturb.eq.51) then
+      nomflu(ial)='fm_a_k_phase'//cphase
     endif
   elseif (itytur.eq.5.and.jtytur.eq.3) then
-    NOMFLU(IK)='fm_a_R11_phase'//CPHASE
-    NOMFLU(IEP)='fm_a_eps_phase'//CPHASE
-    NOMFLU(IPHI)='fm_a_R11_phase'//CPHASE
-    if(iturb.eq.50) then
-      NOMFLU(IFB)='fm_a_R11_phase'//CPHASE
-    elseif(iturb.eq.51) then
-      NOMFLU(IAL)='fm_a_R11_phase'//CPHASE
+    nomflu(ik)='fm_a_R11_phase'//cphase
+    nomflu(iep)='fm_a_eps_phase'//cphase
+    nomflu(iphi)='fm_a_R11_phase'//cphase
+    if (iturb.eq.50) then
+      nomflu(ifb)='fm_a_R11_phase'//cphase
+    elseif (iturb.eq.51) then
+      nomflu(ial)='fm_a_R11_phase'//cphase
     endif
   elseif (iturb.eq.50.and.jturb.eq.50) then
-    NOMFLU(IK)='fm_a_k_phase'//CPHASE
-    NOMFLU(IEP)='fm_a_eps_phase'//CPHASE
-    NOMFLU(IPHI)='fm_a_phi_phase'//CPHASE
-    NOMFLU(IFB)='fm_a_fb_phase'//CPHASE
+    nomflu(ik)='fm_a_k_phase'//cphase
+    nomflu(iep)='fm_a_eps_phase'//cphase
+    nomflu(iphi)='fm_a_phi_phase'//cphase
+    nomflu(ifb)='fm_a_fb_phase'//cphase
   elseif (iturb.eq.51.and.jturb.eq.51) then
-    NOMFLU(IK)='fm_a_k_phase'//CPHASE
-    NOMFLU(IEP)='fm_a_eps_phase'//CPHASE
-    NOMFLU(IPHI)='fm_a_phi_phase'//CPHASE
-    NOMFLU(IAL)='fm_a_al_phase'//CPHASE
+    nomflu(ik)='fm_a_k_phase'//cphase
+    nomflu(iep)='fm_a_eps_phase'//cphase
+    nomflu(iphi)='fm_a_phi_phase'//cphase
+    nomflu(ial)='fm_a_al_phase'//cphase
   elseif (iturb.eq.50.and.jturb.eq.51) then
-    NOMFLU(IK)='fm_a_k_phase'//CPHASE
-    NOMFLU(IEP)='fm_a_eps_phase'//CPHASE
-    NOMFLU(IPHI)='fm_a_phi_phase'//CPHASE
-    NOMFLU(IFB)='fm_a_al_phase'//CPHASE
+    nomflu(ik)='fm_a_k_phase'//cphase
+    nomflu(iep)='fm_a_eps_phase'//cphase
+    nomflu(iphi)='fm_a_phi_phase'//cphase
+    nomflu(ifb)='fm_a_al_phase'//cphase
   elseif (iturb.eq.51.and.jturb.eq.50) then
-    NOMFLU(IK)='fm_a_k_phase'//CPHASE
-    NOMFLU(IEP)='fm_a_eps_phase'//CPHASE
-    NOMFLU(IPHI)='fm_a_phi_phase'//CPHASE
-    NOMFLU(IAL)='fm_a_fb_phase'//CPHASE
+    nomflu(ik)='fm_a_k_phase'//cphase
+    nomflu(iep)='fm_a_eps_phase'//cphase
+    nomflu(iphi)='fm_a_phi_phase'//cphase
+    nomflu(ial)='fm_a_fb_phase'//cphase
   elseif (itytur.eq.5.and.jturb.eq.60) then
-    NOMFLU(IK)='fm_a_k_phase'//CPHASE
-    NOMFLU(IEP)='fm_a_omega_phase'//CPHASE
-    NOMFLU(IPHI)='fm_a_k_phase'//CPHASE
-    if(iturb.eq.50) then
-      NOMFLU(IFB)='fm_a_k_phase'//CPHASE
-    elseif(iturb.eq.51) then
-      NOMFLU(IAL)='fm_a_k_phase'//CPHASE
+    nomflu(ik)='fm_a_k_phase'//cphase
+    nomflu(iep)='fm_a_omega_phase'//cphase
+    nomflu(iphi)='fm_a_k_phase'//cphase
+    if (iturb.eq.50) then
+      nomflu(ifb)='fm_a_k_phase'//cphase
+    elseif (iturb.eq.51) then
+      nomflu(ial)='fm_a_k_phase'//cphase
     endif
-  elseif (iturb.eq.60.and.                               &
-       (jtytur.eq.2.or.jtytur.eq.5) ) then
-    NOMFLU(IK  )='fm_a_k_a_phase'//CPHASE
-    NOMFLU(IOMG)='fm_a_eps_phase'//CPHASE
-  elseif(iturb.eq.60.and.jtytur.eq.3) then
-    NOMFLU(IK  )='fm_a_R11_phase'//CPHASE
-    NOMFLU(IOMG)='fm_a_eps_phase'//CPHASE
-  elseif(iturb.eq.60.and.jturb.eq.60) then
-    NOMFLU(IK  )='fm_a_k_phase'//CPHASE
-    NOMFLU(IOMG)='fm_a_omega_phase'//CPHASE
+  elseif (iturb.eq.60 .and. (jtytur.eq.2.or.jtytur.eq.5)) then
+    nomflu(ik  )='fm_a_k_a_phase'//cphase
+    nomflu(iomg)='fm_a_eps_phase'//cphase
+  elseif (iturb.eq.60.and.jtytur.eq.3) then
+    nomflu(ik  )='fm_a_R11_phase'//cphase
+    nomflu(iomg)='fm_a_eps_phase'//cphase
+  elseif (iturb.eq.60.and.jturb.eq.60) then
+    nomflu(ik  )='fm_a_k_phase'//cphase
+    nomflu(iomg)='fm_a_omega_phase'//cphase
   elseif (iturb.eq.70.and.jturb.eq.70) then
-    nomflu(inusa)='fm_a_nusa_phase'//CPHASE
+    nomflu(inusa)='fm_a_nusa_phase'//cphase
   endif
-  if(nscal.gt.0) then
+  if (nscal.gt.0) then
     do iscal = 1, nscal
-      if(iscold(iscal).gt.0) then
-        if(iscold(iscal).le.nfmtsc) then
-          WRITE(CAR4,'(I4.4)')ISCOLD(ISCAL)
+      if (iscold(iscal).gt.0) then
+        if (iscold(iscal).le.nfmtsc) then
+          write(car4,'(i4.4)')iscold(iscal)
         else
           car4 = cindfs
         endif
@@ -958,76 +960,90 @@ if (nfaiok.eq.1 .or. nfabok.eq.1) then
     enddo
   endif
   if (iale.eq.1) then
-    NOMFLU(IUMA)='fm_a_vit_maill_u'
-    NOMFLU(IVMA)='fm_a_vit_maill_v'
-    NOMFLU(IWMA)='fm_a_vit_maill_w'
+    nomflu(iuma)='fm_a_vit_maill_u'
+    nomflu(ivma)='fm_a_vit_maill_v'
+    nomflu(iwma)='fm_a_vit_maill_w'
   endif
 
-!     --Pour les variables
+  ! For variables
+
   do ivar = 1, nvar
-!        S'il y a un flux
-    if(ifluaa(ivar).gt.0) then
-!          Si le flux n'a pas deja ete rempli, on le fait
-      if (numflu(ifluaa(ivar)).eq.0) then
-!            Lecture du numero local du flux correspondant
+
+    f_id = ivarfl(ivar)
+
+    ! If the variable is not associated with a mass flux, do nothing
+
+    call field_get_key_int(f_id, kimasf, iflmas) ! interior mass flux
+
+    if (iflmas.ge.0) then
+
+      ! If flux has not been read yet, do it
+      if (mflnum(iflmas).eq.0) then
+
+        call field_have_previous(iflmas, lprev)
+
+        if (.not. lprev) cycle ! skip to next loop variable
+
+        ! Read local number of matching flux
         rubriq = nomflu(ivar)
         itysup = 0
         nbval  = 1
         irtyp  = 1
-        call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                    numero,ierror)
+        call lecsui(impamx, rubriq, len(rubriq), itysup, nbval, irtyp,  &
+                    numero, ierror)
         nberro = nberro+ierror
-!            S'il existe, on le lit
+        ! If it exists, read it
         if (ierror.eq.0) then
           inifok = 0
-          if(numero.gt.0) then
-            if(numero.le.nfmtfl) then
-              WRITE(CAR4,'(I4.4)')NUMERO
+          if (numero.gt.0) then
+            if (numero.le.nfmtfl) then
+              write(car4,'(i4.4)')numero
             else
               car4 = cindff
             endif
             if (nfaiok.eq.1) then
-              RUBRIQ = 'flux_masse_a_fi_'//CAR4
+              call field_get_val_prev_s(iflmas, sval)
+              rubriq = 'flux_masse_a_fi_'//car4
               itysup = 2
               nbval  = 1
               irtyp  = 2
-              call lecsui(impamx,rubriq,len(rubriq),itysup,nbval, &
-                          irtyp,propfa(1,ipprof(ifluaa(ivar))),   &
-                          ierror)
+              call lecsui(impamx, rubriq, len(rubriq), itysup, nbval,  &
+                          irtyp, sval, ierror)
               nberro = nberro+ierror
-              if(ierror.eq.0) inifok = inifok+1
+              if (ierror.eq.0) inifok = inifok+1
             endif
             if (nfabok.eq.1) then
-              RUBRIQ = 'flux_masse_a_fb_'//CAR4
+              call field_get_key_int(f_id, kbmasf, iflmab)
+              call field_get_val_prev_s(iflmab, sval)
+              rubriq = 'flux_masse_a_fb_'//car4
               itysup = 3
               nbval  = 1
               irtyp  = 2
-              call lecsui(impamx,rubriq,len(rubriq),itysup,nbval, &
-                          irtyp,propfb(1,ipprob(ifluaa(ivar))),   &
-                          ierror)
+              call lecsui(impamx, rubriq, len(rubriq), itysup, nbval,  &
+                          irtyp, sval, ierror)
               nberro = nberro+ierror
-              if(ierror.eq.0) inifok = inifok+1
+              if (ierror.eq.0) inifok = inifok+1
             endif
           endif
-!              Si ca a marche, on indique que ce flux a ete rempli
-          if(inifok.eq.2) then
-            numflu(ifluaa(ivar))=1
+          ! If everything is OK, mark this flux as read
+          if (inifok.eq.2) then
+            mflnum(iflmas) = 1
           endif
         endif
       endif
     endif
   enddo
 
+  deallocate(mflnum)
 
-!     Si erreur, on previent mais pas stop :
+  ! In case of error, warn but do not stop
   if (nberro.ne.0) then
-    car54 =                                                       &
-         'LECTURE DES FLUX DE MASSE                             '
-    write(nfecra,8300)car54
+    car54 = 'Lecture des flux de masse                             '
+    write(nfecra,8300) car54
   endif
 
-CAR54 = ' Fin de la lecture des flux de masse                  '
-write(nfecra,1110)car54
+  car54 = ' Fin de la lecture des flux de masse                  '
+  write(nfecra,1110) car54
 
 endif
 !     fin de "s'il faut lire les flux de masse (ie. supports coincidents)"
@@ -1075,9 +1091,9 @@ if (nfabok.eq.1) then
     NOMCLI(IK)='_k_phase'//CPHASE
     NOMCLI(IEP)='_eps_phase'//CPHASE
     NOMCLI(IPHI)='_phi_phase'//CPHASE
-    if(iturb.eq.50 .and. jturb.eq.50) then
+    if (iturb.eq.50 .and. jturb.eq.50) then
       NOMCLI(IFB)='_fb_phase'//CPHASE
-    elseif(iturb.eq.51 .and. jturb.eq.51) then
+    elseif (iturb.eq.51 .and. jturb.eq.51) then
       NOMCLI(IAL)='_al_phase'//CPHASE
     endif
   elseif (iturb.eq.60.and.jturb.eq.60) then
@@ -1097,9 +1113,9 @@ if (nfabok.eq.1) then
        .or. jtytur.eq.5 .or. jturb.eq.60) ) then
     NOMCLI(IK)='_k_phase'//CPHASE
   endif
-  if(nscal.gt.0) then
+  if (nscal.gt.0) then
     do iscal = 1, nscal
-      if(iscold(iscal).gt.0) then
+      if (iscold(iscal).gt.0) then
         if(iscold(iscal).le.nfmtsc) then
           write(car4,'(i4.4)')iscold(iscal)
         else

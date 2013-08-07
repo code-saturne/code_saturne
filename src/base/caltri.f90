@@ -75,6 +75,8 @@ use field
 use post
 use cs_c_bindings
 
+use, intrinsic :: iso_c_binding
+
 !===============================================================================
 
 implicit none
@@ -114,9 +116,11 @@ integer, allocatable, dimension(:) :: isostd
 double precision, allocatable, dimension(:) :: ra
 
 double precision, allocatable, dimension(:,:) :: coefa, coefb
-double precision, allocatable, dimension(:,:) :: propfa, propfb
+double precision, allocatable, dimension(:,:) :: propfb
 double precision, allocatable, dimension(:,:) :: frcxt
 double precision, allocatable, dimension(:) :: prhyd
+
+type(c_ptr) :: propfa
 
 ! Lagrangian specific arrays
 
@@ -134,6 +138,8 @@ double precision, allocatable, dimension(:,:) :: dlgeo
 !===============================================================================
 ! Initialization
 !===============================================================================
+
+propfa = c_null_ptr ! Pending complete removal...
 
 ! Initialize first free position in array "ra"
 idebra = 1
@@ -351,7 +357,7 @@ allocate(ra(ifinra))
 
 ! Allocate other main arrays
 allocate(coefa(nfabor,ncofab), coefb(nfabor,ncofab))
-allocate(propfa(nfac,nprofa), propfb(nfabor,nprofb))
+allocate(propfb(nfabor,nprofb))
 
 if (iphydr.eq.1) then
   allocate(isostd(nfabor+1))
@@ -433,7 +439,7 @@ call fldtri &
 !==========
  ( nproce ,                                                       &
    ra(idt)    , ra(itpuco) , ra(irtpa) , ra(irtp) ,               &
-   ra(ipropc) , propfa , propfb , coefa , coefb )
+   ra(ipropc) , coefa , coefb )
 
 call field_allocate_or_map_all
 !=============================
@@ -442,7 +448,7 @@ call iniva0 &
 !==========
  ( nvar   , nscal  , ncofab ,                                     &
    ra(idt)    , ra(itpuco) , ra(irtp) ,                           &
-   ra(ipropc) , propfa , propfb ,                                 &
+   ra(ipropc) , propfb ,                                          &
    coefa  , coefb  ,                                              &
    frcxt  , prhyd  )
 
@@ -454,9 +460,8 @@ if (isuite.eq.1) then
 
   call lecamo &
   !==========
- ( ncelet , ncel   , nfac   , nfabor , nvar   , nscal  ,          &
-   ra(idt)    , ra(irtp) ,                                        &
-   ra(ipropc) , propfa , propfb ,                                 &
+ ( ncelet , ncel   , nfabor , nvar   , nscal  ,                   &
+   ra(idt)   , ra(irtp) , ra(ipropc) , propfb ,                   &
    coefa  , coefb  , frcxt  , prhyd  )
 
   ! Using ALE, geometric parameters must be recalculated
@@ -964,10 +969,9 @@ if (iisuit.eq.1) then
 
   call ecrava                                                     &
   !==========
- ( ndim   , ncelet , ncel   , nfac   , nfabor ,                   &
-   nvar   , nscal  ,                                              &
+ ( ndim   , ncelet , ncel   , nfabor  , nvar   , nscal  ,         &
    xyzcen , cdgfbo ,                                              &
-   ra(idt)    , ra(irtp) , ra(ipropc) , propfa , propfb ,         &
+   ra(idt)    , ra(irtp) , ra(ipropc) , propfb ,                  &
    coefa  , coefb  , frcxt  , prhyd  )
 
   if (nfpt1t.gt.0) then
@@ -1204,7 +1208,7 @@ deallocate(ra)
 
 ! Free other main arrays
 deallocate(coefa, coefb)
-deallocate(propfa, propfb)
+deallocate(propfb)
 
 if (iphydr.eq.1) then
   deallocate(isostd)

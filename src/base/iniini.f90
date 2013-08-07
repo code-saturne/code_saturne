@@ -408,9 +408,7 @@ nvar   = 0
 ! --- Nombre de proprietes physiques (utile ?)
 
 nproce = 0
-nprofa = 0
 nprofb = 0
-nfluma = 0
 
 ! --- Nombre de tableaux NFABOR de type COEFA (ou COEFB)
 
@@ -479,11 +477,6 @@ iprtot = 0
 
 do iscal = 1, nscamx
   ivisls(iscal) = -1
-enddo
-
-do ivar  = 1, nvarmx
-  ifluma(ivar) = 0
-  ifluaa(ivar) = 0
 enddo
 
 ! --- Conditions aux limites (COEFA, COEFB)

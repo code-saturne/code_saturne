@@ -206,6 +206,18 @@ module field
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function indicating if a field maintains a previous time
+
+    function cs_f_field_have_previous(f_id) result(have_previous)  &
+      bind(C, name='cs_f_field_have_previous')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: f_id
+      integer(c_int) :: have_previous
+    end function cs_f_field_have_previous
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function allocating field values
 
     subroutine cs_field_allocate_values(f)  &
@@ -265,6 +277,17 @@ module field
       type(c_ptr), value :: f
       real(kind=c_double), dimension(*) :: a, b, af, bf
     end subroutine cs_field_map_bc_coeffs
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function copying current to previous values
+
+    subroutine cs_field_current_to_previous(f)  &
+      bind(C, name='cs_field_current_to_previous')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), value :: f
+    end subroutine cs_field_current_to_previous
 
     !---------------------------------------------------------------------------
 
@@ -579,8 +602,8 @@ contains
     ! Local variables
 
     integer :: i
-    integer(c_int) :: c_f_id, c_k_id, name_max, c_name_len
-    type(c_ptr) :: f, c_name_p
+    integer(c_int) :: c_f_id, name_max, c_name_len
+    type(c_ptr) :: c_name_p
     character(kind=c_char, len=1), dimension(:), pointer :: c_name
 
     c_f_id = f_id
@@ -638,6 +661,41 @@ contains
     return
 
   end subroutine field_get_dim
+
+  !=============================================================================
+
+  !> \brief Return a given field's dimension.
+
+  !> \param[in]   f_id           field id
+  !> \param[out]  have_previous  true if previous values are maintained
+
+  subroutine field_have_previous(f_id, have_previous)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer, intent(in)  :: f_id
+    logical, intent(out) :: have_previous
+
+    ! Local variables
+
+    integer(c_int) :: c_f_id, c_have_prev
+
+    c_f_id = f_id
+
+    c_have_prev = cs_f_field_have_previous(c_f_id)
+
+    if (c_have_prev .eq. 0) then
+      have_previous = .false.
+    else
+      have_previous = .true.
+    endif
+
+    return
+
+  end subroutine field_have_previous
 
   !=============================================================================
 
@@ -813,6 +871,35 @@ contains
     return
 
   end subroutine field_map_bc_coeffs
+
+  !=============================================================================
+
+  !> \brief  Copy current values to previous values
+
+  !> \param[in]  id  field id
+
+  subroutine field_current_to_previous(id)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer, intent(in) :: id
+
+    ! Local variables
+
+    integer(c_int) :: c_id
+    type(c_ptr)    :: f
+
+    c_id = id
+
+    f = cs_field_by_id(c_id)
+    call cs_field_current_to_previous(f)
+
+    return
+
+  end subroutine field_current_to_previous
 
   !=============================================================================
 
@@ -1057,7 +1144,7 @@ contains
 
     integer :: i
     integer(c_int) :: c_f_id, c_k_id, c_str_max, c_str_len
-    type(c_ptr) :: f, c_str_p
+    type(c_ptr) :: c_str_p
     character(kind=c_char, len=1), dimension(:), pointer :: c_str
 
     c_f_id = f_id

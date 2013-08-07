@@ -411,12 +411,8 @@ if(inpdt0.eq.1.and.isuite.eq.1) goto 200
 
 if (itrale.gt.0) then
   iappel = 1
-  call schtmp                                                     &
+  call schtmp(nscal, iappel, propce, propfb)
   !==========
- ( nvar   , nscal  , iappel ,                                     &
-   isostd ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  )
 endif
 
 
@@ -493,12 +489,8 @@ call phyvar                                                       &
 
 if (itrale.gt.0) then
   iappel = 2
-  call schtmp                                                     &
-!==========
- ( nvar   , nscal  , iappel ,                                     &
-   isostd ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  )
+  call schtmp(nscal, iappel, propce, propfb)
+  !==========
 endif
 
 
@@ -1389,14 +1381,10 @@ do while (iterns.le.nterup)
       !     Sinon on traite le flux de masse a toutes les iterations
 
       !     On teste le flux de masse
-      if( (istmpf.eq.0.and.inslst.eq.0) .or. istmpf.ne.0) then
+      if ((istmpf.eq.0.and.inslst.eq.0) .or. istmpf.ne.0) then
         iappel = 3
-        call schtmp &
+        call schtmp(nscal, iappel, propce, propfb)
         !==========
-      ( nvar   , nscal  , iappel ,                                     &
-        isostd ,                                                       &
-        dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-        coefa  , coefb  )
       endif
 
       if (inslst.eq.1) goto 100
@@ -1462,14 +1450,10 @@ if (iccvfg.eq.0) then
   !     On teste le flux de masse de la phase 1 (toutes les phases sont
   !     necessairement traitees de la meme facon, cf. VERINI)
   !     pour conserver
-  if( istmpf.eq.0 ) then
+  if (istmpf.eq.0) then
     iappel = 4
-    call schtmp &
+    call schtmp(nscal, iappel, propce, propfb)
     !==========
-  ( nvar   , nscal  , iappel ,                                     &
-    isostd ,                                                       &
-    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-    coefa  , coefb  )
   endif
 
 !===============================================================================
@@ -1649,12 +1633,8 @@ deallocate(icodcl, rcodcl)
 
 
 iappel = 5
-call schtmp                                                       &
+call schtmp(nscal, iappel, propce, propfb)
 !==========
- ( nvar   , nscal  , iappel ,                                     &
-   isostd ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  )
 
 !===============================================================================
 ! 18.  SORTIE DANS LE CAS DE "zero pas de temps" ET INIT ALE

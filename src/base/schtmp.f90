@@ -23,10 +23,8 @@
 subroutine schtmp &
 !================
 
- ( nvar   , nscal  , iappel ,                                     &
-   isostd ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  )
+ ( nscal  , iappel ,                                              &
+   propce , propfb )
 
 !===============================================================================
 ! FONCTION :
@@ -41,26 +39,16 @@ subroutine schtmp &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! iappel           ! e  ! <-- ! numero de l'appel (avant ou apres              !
 !                  !    !     ! phyvar                                         !
-! isostd           ! te ! <-- ! indicateur de sortie standard                  !
-!    (nfabor+1)    !    !     !  +numero de la face de reference               !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -84,34 +72,29 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal  , iappel
+integer          nscal  , iappel
 
-integer          isostd(nfabor+1)
-
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
+double precision propfb(nfabor,*)
 
 ! Local variables
 
 integer          iel    , ifac   , iscal
 integer          ipcrom , ipcroa
 integer          ipbrom , ipbroa
-integer          iflmas , iflmab , iflmba, iflmsa
+integer          iflmas , iflmab
 integer          ipcvis , ipcvst
 integer          ipcvsa , ipcvta , ipcvsl
 integer          iicp   , iicpa
 double precision flux   , theta  , aa, bb, viscos, xmasvo, varcp
-double precision, dimension(:), pointer :: imasfl, bmasfl
+double precision, dimension(:), pointer :: i_mass_flux, b_mass_flux
+double precision, dimension(:), pointer :: i_mass_flux_prev, b_mass_flux_prev
 
 !===============================================================================
-
 
 !===============================================================================
 ! 0. INITIALISATION
 !===============================================================================
-
 
 !===============================================================================
 ! 1.  AU TOUT DEBUT DE LA BOUCLE EN TEMPS
@@ -122,14 +105,14 @@ if (iappel.eq.1) then
 ! --- Application du schema en temps sur le flux de masse
 !     Soit F le flux de masse
 !       - si istmpf = 2 (schema non standard, theta>0 en fait = 0.5)
-!         imasfl           contient F_(n-2+theta) et on y met F(n-1+theta)
-!         propfa(1,iflmsa) contient F_(n-1+theta) et
+!         i_mass_flux      contient F_(n-2+theta) et on y met F(n-1+theta)
+!         i_mass_flux_prev contient F_(n-1+theta) et
 !                                    on y met une extrapolation en n+theta
 !       - si istmpf = 1 (schema non standard, theta=0)
-!         imasfl           contient deja F_n et
-!         propfa(1,iflmsa) n'est pas utilise : on ne fait rien
+!         i_mass_flux      contient deja F_n et
+!         i_mass_flux_prev n'est pas utilise : on ne fait rien
 !       - sinon : istmpf = 0 (schema standard, theta= -999)
-!         imasfl           et propfa(1,iflmsa) contiennent tous les deux F(n)
+!         i_mass_flux      et i_mass_flux_prev contiennent tous les deux F(n)
 !                                            : on ne fait rien
 
 
@@ -142,21 +125,19 @@ if (iappel.eq.1) then
   if (istmpf.eq.2) then
     call field_get_key_int(ivarfl(iu), kimasf, iflmas)
     call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
-    call field_get_val_s(iflmas, imasfl)
-    call field_get_val_s(iflmab, bmasfl)
-    iflmsa = ipprof(ifluaa(iu))
-    iflmba = ipprob(ifluaa(iu))
+    call field_get_val_s(iflmas, i_mass_flux)
+    call field_get_val_s(iflmab, b_mass_flux)
+    call field_get_val_prev_s(iflmas, i_mass_flux_prev)
+    call field_get_val_prev_s(iflmab, b_mass_flux_prev)
     do ifac = 1 , nfac
-      flux                =      imasfl(ifac)
-      imasfl(ifac) = 2.d0*imasfl(ifac)            &
-           - propfa(ifac,iflmsa)
-      propfa(ifac,iflmsa) = flux
+      flux                   =                          i_mass_flux(ifac)
+      i_mass_flux(ifac)      = 2.d0*i_mass_flux(ifac) - i_mass_flux_prev(ifac)
+      i_mass_flux_prev(ifac) = flux
     enddo
     do ifac = 1 , nfabor
-      flux                =      bmasfl(ifac)
-      bmasfl(ifac) = 2.d0*bmasfl(ifac)            &
-           - propfb(ifac,iflmba)
-      propfb(ifac,iflmba) = flux
+      flux                   =                          b_mass_flux(ifac)
+      b_mass_flux(ifac)      = 2.d0*b_mass_flux(ifac) - b_mass_flux_prev(ifac)
+      b_mass_flux_prev(ifac) = flux
     enddo
   endif
 
@@ -164,7 +145,7 @@ if (iappel.eq.1) then
 !       en cas d'extrapolation en temps (theta > 0)
 !       Pour RHO, on le fait en double si ICALHY = 1 (et sur NCELET)
 !     Au debut du calcul les flux nouveau et ancien ont ete initialises inivar
-  if(iroext.gt.0) then
+  if (iroext.gt.0) then
     ipcrom = ipproc(irom  )
     ipcroa = ipproc(iroma )
     do iel = 1, ncelet
@@ -176,7 +157,7 @@ if (iappel.eq.1) then
       propfb(ifac,ipbroa) = propfb(ifac,ipbrom)
     enddo
   endif
-  if(iviext.gt.0) then
+  if (iviext.gt.0) then
     ipcvis = ipproc(iviscl)
     ipcvst = ipproc(ivisct)
     ipcvsa = ipproc(ivisla)
@@ -186,8 +167,8 @@ if (iappel.eq.1) then
       propce(iel,ipcvta) = propce(iel,ipcvst)
     enddo
   endif
-  if(icpext.gt.0) then
-    if(icp   .gt.0) then
+  if (icpext.gt.0) then
+    if (icp   .gt.0) then
       iicp   = ipproc(icp   )
       iicpa  = ipproc(icpa  )
       do iel = 1, ncel
@@ -201,8 +182,8 @@ if (iappel.eq.1) then
 !       ayant une variance
   if (nscal.ge.1) then
     do iscal = 1, nscal
-      if(ivisls(iscal).gt.0.and.iscavr(iscal).le.0) then
-        if(ivsext(iscal).gt.0) then
+      if (ivisls(iscal).gt.0.and.iscavr(iscal).le.0) then
+        if (ivsext(iscal).gt.0) then
           ipcvsl = ipproc(ivisls(iscal))
           ipcvsa = ipproc(ivissa(iscal))
           do iel = 1, ncel
@@ -221,7 +202,7 @@ if (iappel.eq.1) then
 !===============================================================================
 
 
-elseif(iappel.eq.2) then
+elseif (iappel.eq.2) then
 
 ! 2.1 MISE A JOUR DES VALEURS ANCIENNES
 ! =====================================
@@ -232,9 +213,9 @@ elseif(iappel.eq.2) then
 !     On passe ici au premier pas de temps et lorsque le fichier suite
 !       ne comportait pas grandeur requise.
 
-  if(initro.ne.1) then
+  if (initro.ne.1) then
     initro = 1
-    if(iroext.gt.0) then
+    if (iroext.gt.0) then
       ipcrom = ipproc(irom  )
       ipcroa = ipproc(iroma )
       do iel = 1, ncelet
@@ -247,9 +228,9 @@ elseif(iappel.eq.2) then
       enddo
     endif
   endif
-  if(initvi.ne.1) then
+  if (initvi.ne.1) then
     initvi = 1
-    if(iviext.gt.0) then
+    if (iviext.gt.0) then
       ipcvis = ipproc(iviscl)
       ipcvst = ipproc(ivisct)
       ipcvsa = ipproc(ivisla)
@@ -260,10 +241,10 @@ elseif(iappel.eq.2) then
       enddo
     endif
   endif
-  if(initcp.ne.1) then
+  if (initcp.ne.1) then
     initcp = 1
-    if(icpext.gt.0) then
-      if(icp   .gt.0) then
+    if (icpext.gt.0) then
+      if (icp   .gt.0) then
         iicp   = ipproc(icp   )
         iicpa  = ipproc(icpa  )
         do iel = 1, ncel
@@ -278,10 +259,10 @@ elseif(iappel.eq.2) then
 !       ayant une variance
   if (nscal.ge.1) then
     do iscal = 1, nscal
-      if(initvs(iscal).ne.1) then
+      if (initvs(iscal).ne.1) then
         initvs(iscal) = 1
-        if(ivisls(iscal).gt.0.and.iscavr(iscal).le.0) then
-          if(ivsext(iscal).gt.0) then
+        if (ivisls(iscal).gt.0.and.iscavr(iscal).le.0) then
+          if (ivsext(iscal).gt.0) then
             ipcvsl = ipproc(ivisls(iscal))
             ipcvsa = ipproc(ivissa(iscal))
             do iel = 1, ncel
@@ -305,7 +286,7 @@ elseif(iappel.eq.2) then
 
 !     Le calcul pour Rho est fait sur NCELET afin d'economiser un echange.
 
-  if(iroext.gt.0) then
+  if (iroext.gt.0) then
     ipcrom = ipproc(irom  )
     ipcroa = ipproc(iroma )
     theta  = thetro
@@ -324,7 +305,7 @@ elseif(iappel.eq.2) then
       propfb(ifac,ipbroa) = xmasvo
     enddo
   endif
-  if(iviext.gt.0) then
+  if (iviext.gt.0) then
     ipcvis = ipproc(iviscl)
     ipcvst = ipproc(ivisct)
     ipcvsa = ipproc(ivisla)
@@ -341,8 +322,8 @@ elseif(iappel.eq.2) then
       propce(iel,ipcvta) = viscos
     enddo
   endif
-  if(icpext.gt.0) then
-    if(icp.gt.0) then
+  if (icpext.gt.0) then
+    if (icp.gt.0) then
       iicp   = ipproc(icp   )
       iicpa  = ipproc(icpa  )
       theta  = thetcp
@@ -360,12 +341,12 @@ elseif(iappel.eq.2) then
 !       ayant une variance ET CE SERAIT FAUX
   if (nscal.ge.1) then
     do iscal = 1, nscal
-      if(ivisls(iscal).gt.0.and.iscavr(iscal).le.0) then
-        if(ivsext(iscal).gt.0) then
+      if (ivisls(iscal).gt.0.and.iscavr(iscal).le.0) then
+        if (ivsext(iscal).gt.0) then
           theta  = thetvs(iscal)
           ipcvsl = ipproc(ivisls(iscal))
           ipcvsa = ipproc(ivissa(iscal))
-          if(ipcvsl.gt.0) then
+          if (ipcvsl.gt.0) then
             do iel = 1, ncel
               viscos = propce(iel,ipcvsl)
               propce(iel,ipcvsl) = (1.d0+theta)*propce(iel,ipcvsl)&
@@ -386,7 +367,7 @@ elseif(iappel.eq.2) then
 ! 3.  JUSTE APRES NAVSTO, DANS LES BOUCLES U/P ET ALE
 !===============================================================================
 
-elseif(iappel.eq.3) then
+elseif (iappel.eq.3) then
 
 !     On traite ici le flux de masse uniquement
 !        On suppose qu'il n'y en a qu'un seul.
@@ -394,9 +375,9 @@ elseif(iappel.eq.3) then
 !     si istmpf = 1 : standard : on ne fait rien
 !     si istmpf = 2 : ordre 2 (thetfl > 0 : = 0.5)
 !       on calcule f(n+theta) par interpolation a partir
-!       de F_(n-1+theta) et f(n+1) et on le met dans imasfl
+!       de F_(n-1+theta) et f(n+1) et on le met dans i_mass_flux
 !     si istmpf = 0 : explicite (thetfl = 0) : on remet F(n) dans
-!       imasfl sauf a la derniere iteration (un traitement
+!       i_mass_flux sauf a la derniere iteration (un traitement
 !       complementaire sera fait en iappel=4)
 
 !     Dans le cas ou on itere sur navsto, on passe ici
@@ -405,31 +386,27 @@ elseif(iappel.eq.3) then
 
   call field_get_key_int(ivarfl(iu), kimasf, iflmas)
   call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
-  call field_get_val_s(iflmas, imasfl)
-  call field_get_val_s(iflmab, bmasfl)
+  call field_get_val_s(iflmas, i_mass_flux)
+  call field_get_val_s(iflmab, b_mass_flux)
+  call field_get_val_prev_s(iflmas, i_mass_flux_prev)
+  call field_get_val_prev_s(iflmab, b_mass_flux_prev)
 
-  if(istmpf.eq.2) then
-    iflmsa = ipprof(ifluaa(iu))
-    iflmba = ipprob(ifluaa(iu))
+  if (istmpf.eq.2) then
     theta  = thetfl
     aa = 1.d0/(2.d0-theta)
     bb = (1.d0-theta)/(2.d0-theta)
     do ifac = 1 , nfac
-      imasfl(ifac) = aa * imasfl(ifac)            &
-           + bb * propfa(ifac,iflmsa)
+      i_mass_flux(ifac) = aa * i_mass_flux(ifac) + bb * i_mass_flux_prev(ifac)
     enddo
     do ifac = 1 , nfabor
-      bmasfl(ifac) = aa * bmasfl(ifac)            &
-           + bb * propfb(ifac,iflmba)
+      b_mass_flux(ifac) = aa * b_mass_flux(ifac) + bb * b_mass_flux_prev(ifac)
     enddo
-  elseif(istmpf.eq.0) then
-    iflmsa = ipprof(ifluaa(iu))
-    iflmba = ipprob(ifluaa(iu))
+  else if (istmpf.eq.0) then
     do ifac = 1 , nfac
-      imasfl(ifac) = propfa(ifac,iflmsa)
+      i_mass_flux(ifac) = i_mass_flux_prev(ifac)
     enddo
     do ifac = 1 , nfabor
-      bmasfl(ifac) = propfb(ifac,iflmba)
+      b_mass_flux(ifac) = b_mass_flux_prev(ifac)
     enddo
   endif
 
@@ -439,7 +416,7 @@ elseif(iappel.eq.3) then
 ! 3.  JUSTE APRES NAVSTO (ET STRDEP), HORS LES BOUCLES U/P ET ALE
 !===============================================================================
 
-elseif(iappel.eq.4) then
+elseif (iappel.eq.4) then
 
 !     On traite ici le flux de masse uniquement
 !        On suppose qu'il n'y en a qu'un seul.
@@ -447,10 +424,10 @@ elseif(iappel.eq.4) then
 !     Si istmpf = 1 : standard : on ne fait rien
 !     Si istmpf = 2 : ordre 2 (thetfl > 0 : = 0.5)
 !       on calcule F(n+theta) par interpolation a partir
-!       de F_(n-1+theta) et F(n+1) et on le met dans imasfl)
+!       de F_(n-1+theta) et F(n+1) et on le met dans i_mass_flux)
 !     Si istmpf = 0 : explicite (thetfl = 0)
-!       On sauvegarde F_(n+1) dans propfa(1,iflmsa),mais on continue
-!       les calculs avec F_(n) mis dans imasfl
+!       On sauvegarde F_(n+1) dans i_mas_flux_prev,mais on continue
+!       les calculs avec F_(n) mis dans i_mass_flux
 
 !     On retablira au dernier appel de schtmp pour istmpf = 0
 
@@ -464,35 +441,31 @@ elseif(iappel.eq.4) then
 
   call field_get_key_int(ivarfl(iu), kimasf, iflmas)
   call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
-  call field_get_val_s(iflmas, imasfl)
-  call field_get_val_s(iflmab, bmasfl)
+  call field_get_val_s(iflmas, i_mass_flux)
+  call field_get_val_s(iflmab, b_mass_flux)
+  call field_get_val_prev_s(iflmas, i_mass_flux_prev)
+  call field_get_val_prev_s(iflmab, b_mass_flux_prev)
 
-  if(istmpf.eq.2) then
-    iflmsa = ipprof(ifluaa(iu))
-    iflmba = ipprob(ifluaa(iu))
+  if (istmpf.eq.2) then
     theta  = thetfl
     aa = 1.d0/(2.d0-theta)
     bb = (1.d0-theta)/(2.d0-theta)
     do ifac = 1 , nfac
-      imasfl(ifac) = aa * imasfl(ifac)            &
-           + bb * propfa(ifac,iflmsa)
+      i_mass_flux(ifac) = aa * i_mass_flux(ifac) + bb * i_mass_flux_prev(ifac)
     enddo
     do ifac = 1 , nfabor
-      bmasfl(ifac) = aa * bmasfl(ifac)            &
-           + bb * propfb(ifac,iflmba)
+      b_mass_flux(ifac) = aa * b_mass_flux(ifac) + bb * b_mass_flux_prev(ifac)
     enddo
-  elseif(istmpf.eq.0) then
-    iflmsa = ipprof(ifluaa(iu))
-    iflmba = ipprob(ifluaa(iu))
+  else if (istmpf.eq.0) then
     do ifac = 1 , nfac
-      flux = imasfl(ifac)
-      imasfl(ifac) = propfa(ifac,iflmsa)
-      propfa(ifac,iflmsa) = flux
+      flux = i_mass_flux(ifac)
+      i_mass_flux(ifac) = i_mass_flux_prev(ifac)
+      i_mass_flux_prev(ifac) = flux
     enddo
     do ifac = 1 , nfabor
-      flux = bmasfl(ifac)
-      bmasfl(ifac) = propfb(ifac,iflmba)
-      propfb(ifac,iflmba) = flux
+      flux = b_mass_flux(ifac)
+      b_mass_flux(ifac) = b_mass_flux_prev(ifac)
+      b_mass_flux_prev(ifac) = flux
     enddo
   endif
 
@@ -502,7 +475,7 @@ elseif(iappel.eq.4) then
 ! 3.  JUSTE APRES SCALAI
 !===============================================================================
 
-elseif(iappel.eq.5) then
+elseif (iappel.eq.5) then
 
 ! 3.1 RETABLISSEMENT POUR LE FLUX DE MASSE
 ! ========================================
@@ -513,21 +486,21 @@ elseif(iappel.eq.5) then
 !     Si istmpf = 1 : standard : on ne fait rien
 !     Si istmpf = 2 : ordre 2 (thetfl > 0 : = 0.5) : on ne fait rien
 !     Si istmpf = 0 : explicite (thetfl = 0)
-!       on remet F_(n+1) (stocke dans propfa(1,iflmsa)) dans imasfl
+!       on remet F_(n+1) (stocke dans i_mass_flux_prev) dans i_mass_flux
 !       de sorte que les deux flux contiennent la meme chose
 
-  if(istmpf.eq.0) then
+  if (istmpf.eq.0) then
     call field_get_key_int(ivarfl(iu), kimasf, iflmas)
     call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
-    call field_get_val_s(iflmas, imasfl)
-    call field_get_val_s(iflmab, bmasfl)
-    iflmsa = ipprof(ifluaa(iu))
-    iflmba = ipprob(ifluaa(iu))
+    call field_get_val_s(iflmas, i_mass_flux)
+    call field_get_val_s(iflmab, b_mass_flux)
+    call field_get_val_prev_s(iflmas, i_mass_flux_prev)
+    call field_get_val_prev_s(iflmab, b_mass_flux_prev)
     do ifac = 1 , nfac
-      imasfl(ifac) = propfa(ifac,iflmsa)
+      i_mass_flux(ifac) = i_mass_flux_prev(ifac)
     enddo
     do ifac = 1 , nfabor
-      bmasfl(ifac) = propfb(ifac,iflmba)
+      b_mass_flux(ifac) = b_mass_flux_prev(ifac)
     enddo
   endif
 
@@ -536,7 +509,7 @@ elseif(iappel.eq.5) then
 
 !     Le calcul pour Rho est fait sur NCELET afin d'economiser un echange.
 
-  if(iroext.gt.0) then
+  if (iroext.gt.0) then
     ipcrom = ipproc(irom  )
     ipcroa = ipproc(iroma )
     do iel = 1, ncelet
@@ -548,7 +521,7 @@ elseif(iappel.eq.5) then
       propfb(ifac,ipbrom) = propfb(ifac,ipbroa)
     enddo
   endif
-  if(iviext.gt.0) then
+  if (iviext.gt.0) then
     ipcvis = ipproc(iviscl)
     ipcvst = ipproc(ivisct)
     ipcvsa = ipproc(ivisla)
@@ -558,8 +531,8 @@ elseif(iappel.eq.5) then
       propce(iel,ipcvst) = propce(iel,ipcvta)
     enddo
   endif
-  if(icpext.gt.0) then
-    if(icp.gt.0) then
+  if (icpext.gt.0) then
+    if (icp.gt.0) then
       iicp   = ipproc(icp   )
       iicpa  = ipproc(icpa  )
       do iel = 1, ncel
@@ -573,8 +546,8 @@ elseif(iappel.eq.5) then
 !       ayant une variance
   if (nscal.ge.1) then
     do iscal = 1, nscal
-      if(ivisls(iscal).gt.0.and.iscavr(iscal).le.0) then
-        if(ivsext(iscal).gt.0) then
+      if (ivisls(iscal).gt.0.and.iscavr(iscal).le.0) then
+        if (ivsext(iscal).gt.0) then
           ipcvsl = ipproc(ivisls(iscal))
           ipcvsa = ipproc(ivissa(iscal))
           do iel = 1, ncel
@@ -591,12 +564,8 @@ endif
 
 !===============================================================================
 
-!--------
-! FORMATS
-!--------
-
 !----
-! FIN
+! End
 !----
 
 end subroutine

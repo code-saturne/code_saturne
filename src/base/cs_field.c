@@ -224,6 +224,9 @@ void
 cs_f_field_get_dimension(int           id,
                          int           dim[2]);
 
+int
+cs_f_field_have_previous(int   id);
+
 void
 cs_f_field_var_ptr_by_id(int          id,
                          int          pointer_type,
@@ -631,26 +634,6 @@ cs_f_field_id_by_name_try(const char *name)
 }
 
 /*----------------------------------------------------------------------------
- * Return the dimension of a field defined by its id.
- *
- * This function is intended for use by Fortran wrappers.
- *
- * parameters:
- *   id  <-- field id
- *   dim <-- field dimension and interleave flag
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_field_get_dimension(int  id,
-                         int  dim[2])
-{
-  const cs_field_t *f = cs_field_by_id(id);
-
-  dim[0] = f->dim;
-  dim[1] = (f->interleaved) ? 1 : 0;
-}
-
-/*----------------------------------------------------------------------------
  * Return the name of a field defined by its id.
  *
  * This function is intended for use by Fortran wrappers.
@@ -680,6 +663,48 @@ cs_f_field_get_name(int           id,
          "(of length %d)."),
        f->id, f->name, name_max, *name, *name_len);
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Return the dimension of a field defined by its id.
+ *
+ * This function is intended for use by Fortran wrappers.
+ *
+ * parameters:
+ *   id  <-- field id
+ *   dim <-- field dimension and interleave flag
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_field_get_dimension(int  id,
+                         int  dim[2])
+{
+  const cs_field_t *f = cs_field_by_id(id);
+
+  dim[0] = f->dim;
+  dim[1] = (f->interleaved) ? 1 : 0;
+}
+
+/*----------------------------------------------------------------------------
+ * Indicate if a field maintains values at previous time steps
+ *
+ * This function is intended for use by Fortran wrappers.
+ *
+ * parameters:
+ *   id  <-- field id
+ *   dim <-- field dimension and interleave flag
+ *----------------------------------------------------------------------------*/
+
+int
+cs_f_field_have_previous(int  id)
+{
+  int retval = 0;
+  const cs_field_t *f = cs_field_by_id(id);
+
+  if (f->n_time_vals > 1)
+    retval = 1;
+
+  return retval;
 }
 
 /*----------------------------------------------------------------------------
@@ -1478,6 +1503,46 @@ cs_field_map_bc_coeffs(cs_field_t  *f,
               _("Field \"%s\"\n"
                 " has location %d, which does not support BC coefficients."),
               f->name, f->location_id);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Copy current field values to previous values if applicable.
+ *
+ * For fields with only one time value, or values not allocated yet,
+ * this is a no-op.
+ *
+ * \param[in, out]  f  pointer to field structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_current_to_previous(cs_field_t  *f)
+{
+  assert(f != NULL);
+
+  if (f->val_pre != NULL) {
+
+    cs_lnum_t ii;
+    const int dim = f->dim;
+    const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(f->location_id);
+    const cs_lnum_t _n_elts = n_elts[2];
+
+    if (dim == 1) {
+#     pragma omp parallel for
+      for (ii = 0; ii < _n_elts; ii++)
+        f->val_pre[ii] = f->val[ii];
+    }
+    else {
+      cs_lnum_t jj;
+#     pragma omp parallel for private(jj)
+      for (ii = 0; ii < _n_elts; ii++) {
+        for (jj = 0; jj < dim; jj++)
+          f->val_pre[ii*dim + jj] = f->val[ii*dim + jj];
+      }
+    }
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/

@@ -84,11 +84,11 @@ integer       nmodpp
 
 character     rubriq*64, cmoy4*4, cindfm*4
 character     ficsui*32
-integer       ivar  , ipp   , iscal , irphas , iprop , iprofl
+integer       ivar  , ipp   , iscal , irphas , iprop
 integer       ii    , jj    , kk    , ll
 integer       iok   , ippok , ipppst
 integer       iflum , icondl
-integer       iest  , iiflaa, ivisph, iprofa, ipropp
+integer       iest  , ivisph, iprofa, ipropp
 integer       imom  , jmom  , imold , jmold , jbmomt, jtcabs
 integer       iiplus, iimoin, jmomok, idto  , jdto
 integer       ierror, irtyp , itysup, nbval
@@ -647,55 +647,6 @@ if(ipass.eq.2) then
 
   endif
 
-
-!   Proprietes des variables : flux de masse porteur
-
-  iprofl = iprop
-  iprop  = iprop + 1
-  ifluma(ipr ) = iprop
-  ifluma(iu  ) = iprop
-  ifluma(iv  ) = iprop
-  ifluma(iw  ) = iprop
-  if(itytur.eq.2) then
-    ifluma(ik  ) = iprop
-    ifluma(iep ) = iprop
-  elseif(itytur.eq.3) then
-    ifluma(ir11) = iprop
-    ifluma(ir22) = iprop
-    ifluma(ir33) = iprop
-    ifluma(ir12) = iprop
-    ifluma(ir13) = iprop
-    ifluma(ir23) = iprop
-    ifluma(iep ) = iprop
-    if (iturb.eq.32) ifluma(ial) = iprop
-  elseif(itytur.eq.5) then
-    ifluma(ik  ) = iprop
-    ifluma(iep ) = iprop
-    ifluma(iphi) = iprop
-    if(iturb.eq.50) then
-      ifluma(ifb ) = iprop
-    elseif(iturb.eq.51) then
-      ifluma(ial ) = iprop
-    endif
-  elseif(iturb.eq.60) then
-    ifluma(ik  ) = iprop
-    ifluma(iomg) = iprop
-  elseif(iturb.eq.70) then
-    ifluma(inusa)= iprop
-  endif
-  do iscal = 1, nscal
-    ifluma(isca(iscal)) = iprop
-  enddo
-
-  if (iale.eq.1) then
-    ifluma(iuma) = ifluma(ipr)
-    ifluma(ivma) = ifluma(ipr)
-    ifluma(iwma) = ifluma(ipr)
-  endif
-!     Nombre total de flux de masse
-!       IPROFL ressert plus bas.
-  nfluma = iprop - iprofl
-
 !     Numero max des proprietes ; ressert plus bas pour
 !       ajouter celles relatives a la physique particuliere
   nprmax = iprop
@@ -871,26 +822,12 @@ if(ipass.eq.2) then
 !   Au centre des faces de bord (rho et flux de masse)
 
   iprop = 0
-  iprop                 = iprop + 1
+  iprop          = iprop + 1
   ipprob(irom  ) = iprop
-  do iflum = 1, nfluma
-    iprop                 = iprop + 1
-    ipprob(iprofl+iflum)  = iprop
-  enddo
   nprofb = iprop
 
-!   Au centre des faces internes (flux de masse)
-
-  iprop = 0
-  do iflum = 1, nfluma
-    iprop                 = iprop + 1
-    ipprof(iprofl+iflum)  = iprop
-  enddo
-  nprofa = iprop
-
-
 ! --- Modifications pour la physique particuliere
-!      des entiers NPROCE, NPROFA, NPROFB
+!      des entiers NPROCE, NPROFB
 
 !      Sauvegarde pour la physique particuliere de IPROP
 !      afin d'initialiser les positions des variables d'etat
@@ -907,12 +844,10 @@ if(ipass.eq.2) then
   nppmax = ipppst
 
 
-! --- Verification de NPROCE, NPROFA, NPROFB
+! --- Verification de NPROCE, NPROFB
 
-  if(nproce.gt.npromx.or.                                         &
-     nprofa.gt.npromx.or.nprofb.gt.npromx) then
-    write(nfecra,7200)nproce, nprofa, nprofb, npromx,             &
-         max(max(nproce,nprofa),nprofb)
+  if(nproce.gt.npromx .or. nprofb.gt.npromx) then
+    write(nfecra,7200)nproce, nprofb, npromx, max(nproce,nprofb)
     call csexit (1)
     !==========
   endif
@@ -1252,63 +1187,6 @@ if(ipass.eq.3) then
       endif
     enddo
   endif
-!     Proprietes des variables : flux de masse porteur
-!       On en ajoute un (et un seul) par phase s'il existe une phase
-!         qui en a besoin.
-!       On est donc dans l'hypothese implicite qu'il n'y a qu'un seul
-!         flux de masse pour toutes les variables
-!         et ceci n'est pas optimal si il y a plusieurs phases traitees
-!         differemment.
-!       On suppose que si une phase en a besoin, on en ajoute donc
-!         autant qu'il y a de flux de masse, cad NFLUMA
-
-!     On les initialise a -1 pour iniva0
-  do ivar = 1, nvarmx
-    ifluaa(ivar) = -1
-  enddo
-!     On regarde s'il y en a besoin
-  iiflaa = 0
-  if(istmpf.ne.1) iiflaa = 1
-
-!     On les affecte
-  iprofa = iprop
-  if(iiflaa.eq.1) then
-    iprop               = iprop + 1
-    ifluaa(ipr ) = iprop
-    ifluaa(iu  ) = iprop
-    ifluaa(iv  ) = iprop
-    ifluaa(iw  ) = iprop
-    if(itytur.eq.2) then
-      ifluaa(ik  ) = iprop
-      ifluaa(iep ) = iprop
-    elseif(itytur.eq.3) then
-      ifluaa(ir11) = iprop
-      ifluaa(ir22) = iprop
-      ifluaa(ir33) = iprop
-      ifluaa(ir12) = iprop
-      ifluaa(ir13) = iprop
-      ifluaa(ir23) = iprop
-      ifluaa(iep ) = iprop
-      if (iturb.eq.32) ifluaa(ial) = iprop
-    elseif(itytur.eq.5) then
-      ifluaa(ik  ) = iprop
-      ifluaa(iep ) = iprop
-      ifluaa(iphi) = iprop
-      if(iturb.eq.50) then
-        ifluaa(ifb ) = iprop
-      elseif(iturb.eq.51) then
-        ifluaa(ial ) = iprop
-      endif
-    elseif(iturb.eq.60) then
-      ifluaa(ik  ) = iprop
-      ifluaa(iomg) = iprop
-    elseif (iturb.eq.70) then
-      ifluaa(inusa)= iprop
-    endif
-    do iscal = 1, nscal
-      ifluaa(isca(iscal)) = ifluaa(iu)
-    enddo
-  endif
 
 ! --- Sauvegarde du dernier numero de propriete
   nprmax = iprop
@@ -1412,32 +1290,9 @@ if(ipass.eq.3) then
     iprop                 = iprop  + 1
     ipprob(iroma ) = iprop
   endif
-  !     Variables schema en temps : flux de masse A
-  if(iiflaa.eq.1) then
-    do iflum = 1, nfluma
-      iprop                 = iprop + 1
-      ipprob(iprofa+iflum)  = iprop
-    enddo
-  endif
 
 ! --- Sauvegarde du dernier NPROFB
   nprofb = iprop
-
-
-! --- Reprise du dernier NPROFA
-  iprop                 = nprofa
-
-! --- Positionnement des PROPFA
-  if(iiflaa.eq.1) then
-    do iflum = 1, nfluma
-      iprop                 = iprop + 1
-      ipprof(iprofa+iflum)  = iprop
-    enddo
-  endif
-
-! --- Sauvegarde du dernier NPROFA
-  nprofa = iprop
-
 
 ! ---> 3.2 CALCUL DE LA TAILLE DU TABLEAU DES TEMPS CUMULES POUR LES MOMENTS
 !      ---------------------------------------------------------------------
@@ -2140,12 +1995,10 @@ if (ipass.eq.4) then
 ! --- Sauvegarde du dernier NPROFB
     nprofb = iprop
 
-! --- Verification de NPROCE, NPROFA, NPROFB
+! --- Verification de NPROCE, NPROFB
 
-    if(nproce.gt.npromx.or.                                       &
-       nprofa.gt.npromx.or.nprofb.gt.npromx) then
-      write(nfecra,7200)nproce, nprofa, nprofb, npromx,           &
-           max(max(nproce,nprofa),nprofb)
+    if (nproce.gt.npromx .or. nprofb.gt.npromx) then
+      write(nfecra,7200) nproce, nprofb, npromx, max(nproce,nprofb)
       call csexit (1)
       !==========
     endif
@@ -2537,7 +2390,6 @@ endif
 '@  Le type de calcul defini                                  ',/,&
 '@    correspond aux nombres de proprietes suivants           ',/,&
 '@      au centre des cellules       : NPROCE = ',I10          ,/,&
-'@      au centre des faces internes : NPROFA = ',I10          ,/,&
 '@      au centre des faces de bord  : NPROFB = ',I10          ,/,&
 '@  Le nombre de proprietes maximal prevu                     ',/,&
 '@                      dans paramx.h est NPROMX = ',I10       ,/,&
@@ -3519,7 +3371,6 @@ endif
 '@  The type of calculation defined                           ',/,&
 '@    corresponds  to the following number of properties      ',/,&
 '@      at the cell centres          : NPROCE = ',I10          ,/,&
-'@      at the internal face centres : NPROFA = ',I10          ,/,&
 '@      at the boundary face centres : NPROFB = ',I10          ,/,&
 '@  The maxumum number of properties allowed                  ',/,&
 '@                      in   paramx   is  NPROMX = ',I10       ,/,&

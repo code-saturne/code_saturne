@@ -142,9 +142,6 @@ endif
 ' --- Flamme premelangee : Modele EBU',                         /,&
 '       OPTION = ',4x,i10,                                      /,&
 '       CEBU   = ',e14.5                                        /)
- 1040 format(                                                     &
-' --- Charbon pulverise : Modele Combustible moyen local',      /,&
-'       OPTION = ',4x,i10                                       /)
  1050 format(                                                     &
 ' --- Fuel              : Modele Combustible moyen local',       /&
 '       OPTION = ',4x,i10                                       /)
@@ -177,9 +174,6 @@ endif
 ' --- Premixed Flame: EBU Model',                               /,&
 '       OPTION = ',4x,i10,                                      /,&
 '       CEBU   = ',e14.5                                        /)
- 1040 format(                                                     &
-' --- Pulverized Coal: Local Mean Combustible Model',           /,&
-'       OPTION = ',4x,i10                                       /)
  1050 format(                                                     &
 ' --- Fuel:            Local Mean Combustible Model',           /,&
 '       OPTION = ',4x,i10                                       /)
@@ -197,7 +191,7 @@ endif
 
 write(nfecra,1500)
 write(nfecra,1520) nvar,nscal,nscaus,nscapp,                      &
-                   nproce,nprofa,nprofb
+                   nproce,nprofb
 
 write(nfecra,9900)
 
@@ -215,7 +209,6 @@ write(nfecra,9900)
 '       NSCAUS = ',4x,i10,    ' (Nb de scalaires utilisateur )',/,&
 '       NSCAPP = ',4x,i10,    ' (Nb de scalaires phys. part. )',/,&
 '       NPROCE = ',4x,i10,    ' (Nb de proprietes (cellules) )',/,&
-'       NPROFA = ',4x,i10,    ' (Nb de proprietes (faces int))',/,&
 '       NPROFB = ',4x,i10,    ' (Nb de proprietes (faces brd))',/)
 
 #else
@@ -231,7 +224,6 @@ write(nfecra,9900)
 '       NSCAUS = ',4x,i10,    ' (Nb user scalars             )',/,&
 '       NSCAPP = ',4x,i10,    ' (Nb specific physics scalars )',/,&
 '       NPROCE = ',4x,i10,    ' (Nb cell properties          )',/,&
-'       NPROFA = ',4x,i10,    ' (Nb internal face properties )',/,&
 '       NPROFB = ',4x,i10,    ' (Nb boundary face properties )',/)
 
 #endif

@@ -29,7 +29,7 @@ subroutine fldtri &
 !================
 
  ( nproce ,                                                            &
-   dt     , tpucou , rtpa   , rtp    , propce , propfa , propfb ,      &
+   dt     , tpucou , rtpa   , rtp    , propce ,                        &
    coefa  , coefb  )
 
 !===============================================================================
@@ -94,14 +94,11 @@ implicit none
 integer          nproce, nscal
 double precision dt(ncelet), tpucou(ncelet,3), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(ndimfb,*)
-double precision frcxt(ncelet,3)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 
 ! Local variables
 
-integer          ii, ippu, ippv, ippw, ivar, iprop
-integer          imom, idtnm
+integer          ii, ivar, iprop
 integer          iflid, nfld
 integer          icondl, icondf
 integer          f_id
@@ -286,26 +283,6 @@ enddo
 do iprop = 1, nproce
   call field_map_values(iprpfl(iprop), propce(1, iprop), propce(1, iprop))
 enddo
-
-! Map inner mass flux (the same for all variables, additional mass fluxes
-! might be defined in addfld.f90)
-call field_get_id("inner_mass_flux", f_id)
-
-if (ifluaa(ipr).eq.-1) then
-  call field_map_values(f_id, propfa(1, ipprof(ifluma(ipr))), propfa(1, ipprof(ifluma(ipr))))
-else
-  call field_map_values(f_id, propfa(1, ipprof(ifluma(ipr))), propfa(1, ipprof(ifluaa(ipr))))
-endif
-
-! Map boundary mass flux (the same for all variables, additional mass fluxes
-! might be defined in addfld.f90)
-call field_get_id("boundary_mass_flux", f_id)
-
-if (ifluaa(ipr).eq.-1) then
-  call field_map_values(f_id, propfb(1, ipprob(ifluma(ipr))), propfb(1, ipprob(ifluma(ipr))))
-else
-  call field_map_values(f_id, propfb(1, ipprob(ifluma(ipr))), propfb(1, ipprob(ifluaa(ipr))))
-endif
 
 ! Reserved fields whose ids are not saved (may be queried by name)
 !-----------------------------------------------------------------

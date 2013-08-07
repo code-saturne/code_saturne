@@ -35,7 +35,7 @@ module dimens
 
   integer, save :: ncofab
 
-  integer, save :: nproce, nprofa, nprofb, nfluma
+  integer, save :: nproce, nprofb
 
   ! Fake dimension for arrays propfb, coefa and coefb
   ! where nfabor = 0 (to avoid issues with array bounds when

@@ -257,12 +257,6 @@ nproce = iprop
 iprop  = nprofb
 nprofb = iprop
 
-! ---> Positionnement dans le tableau PROPFA
-!      Au centre des faces internes (flux de masse)
-
-iprop  = nprofa
-nprofa = iprop
-
 !--------
 ! Formats
 !--------
