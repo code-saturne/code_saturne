@@ -24,7 +24,7 @@ subroutine ctiniv &
 !================
 
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
+   dt     , rtp    , propce , propfb , coefa  , coefb  )
 
 !===============================================================================
 ! FONCTION :
@@ -49,18 +49,14 @@ subroutine ctiniv &
 !     suite de calcul
 
 ! Les proprietes physiaues sont accessibles dans le tableau
-!     PROPCE (prop au centre), PROPFA (aux faces internes),
-!     PROPFB (prop aux faces de bord)
+!     PROPCE (prop au centre), PROPFB (prop aux faces de bord)
 !     Ainsi,
 !      PROPCE(IEL,IPPROC(IROM  )) designe ROM   (IEL)
 !      PROPCE(IEL,IPPROC(IVISCL)) designe VISCL (IEL)
 !      PROPCE(IEL,IPPROC(ICP   )) designe CP    (IEL)
 !      PROPCE(IEL,IPPROC(IVISLS(ISCAL))) designe VISLS (IEL ,ISCAL)
 
-!      PROPFA(IFAC,IPPROF(IFLUMA(IVAR ))) designe FLUMAS(IFAC,IVAR)
-
 !      PROPFB(IFAC,IPPROB(IROM  )) designe ROMB  (IFAC)
-!      PROPFB(IFAC,IPPROB(IFLUMA(IVAR ))) designe FLUMAB(IFAC,IVAR)
 
 ! LA MODIFICATION DES PROPRIETES PHYSIQUES (ROM, VISCL, VISCLS, CP)
 !     SE FERA EN STANDARD DANS LE SOUS PROGRAMME PPPHYV
@@ -76,7 +72,6 @@ subroutine ctiniv &
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules                                    !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa coefb      ! tr ! <-- ! conditions aux limites aux                     !
 !  (nfabor,*)      !    !     !    faces de bord                               !
@@ -111,7 +106,7 @@ integer          nvar   , nscal
 
 
 double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 
 ! Local variables
@@ -136,7 +131,7 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 call cs_user_initialization &
 !==========================
 ( nvar   , nscal  ,                                            &
-  dt     , rtp    , propce , propfa , propfb )
+  dt     , rtp    , propce , propfb )
 
 
 !----

@@ -36,27 +36,20 @@
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[in]     itrale        number of the current ALE iteration
-!> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     impale        indicator of node displacement
 !> \param[in]     ialtyb        ALE Boundary type
 !> \param[in,out] rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
-!> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfa        physical properties at interior face centers
-!> \param[in]     propfb        physical properties at boundary face centers
 !> \param[in]     coefa, coefb  boundary conditions
 !> \param[in,out] depale        nodes displacements
 !> \param[in,out] xyzno0        nodes coordinates of the initial mesh
 !_______________________________________________________________________________
 subroutine alemav &
  ( itrale ,                                                       &
-   nvar   , nscal  ,                                              &
    impale , ialtyb ,                                              &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  , depale , xyzno0 )
-
+   dt     , rtpa   , rtp    ,                                     &
+   depale , xyzno0 )
 
 !===============================================================================
 
@@ -82,14 +75,10 @@ implicit none
 ! Arguments
 
 integer          itrale
-integer          nvar   , nscal
 
 integer          impale(nnod), ialtyb(nfabor)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision depale(3,nnod), xyzno0(3,nnod)
 
 ! Local variables

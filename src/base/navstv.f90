@@ -49,7 +49,6 @@
 !> \param[in,out] rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfa        physical properties at interior face centers
 !> \param[in]     propfb        physical properties at boundary face centers
 !> \param[in]     coefa, coefb  boundary conditions
 !> \param[in]     frcxt         external force generating the hydrostatic
@@ -66,7 +65,7 @@
 subroutine navstv &
  ( nvar   , nscal  , iterns , icvrge , itrale ,                   &
    isostd ,                                                       &
-   dt     , tpucou , rtp    , rtpa   , propce , propfa , propfb , &
+   dt     , tpucou , rtp    , rtpa   , propce , propfb ,          &
    tslagr , coefa  , coefb  , frcxt  , prhyd  ,                   &
    trava  , ximpa  , uvwk   )
 
@@ -105,8 +104,7 @@ integer          nvar   , nscal  , iterns , icvrge , itrale
 integer          isostd(nfabor+1)
 
 double precision dt(ncelet), tpucou(ncelet,3), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(ndimfb,*)
+double precision propce(ncelet,*), propfb(ndimfb,*)
 double precision tslagr(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision frcxt(3,ncelet)
@@ -122,7 +120,7 @@ integer          isou, ivar, iitsm
 integer          iclipr, iclipf
 integer          icliup, iclivp, icliwp, init
 integer          iflmas, iflmab, ipcrom, ipbrom
-integer          iflms1, iflmb1, iflmb0
+integer          iflmb0
 integer          nswrgp, imligp, iwarnp
 integer          nbrval, iappel, iescop
 integer          ndircp, icpt
@@ -142,7 +140,7 @@ double precision, allocatable, dimension(:,:,:), target :: viscf
 double precision, allocatable, dimension(:), target :: viscb
 double precision, allocatable, dimension(:,:,:), target :: wvisfi
 double precision, allocatable, dimension(:), target :: wvisbi
-double precision, allocatable, dimension(:) :: drtp, smbr
+double precision, allocatable, dimension(:) :: drtp
 double precision, allocatable, dimension(:,:) :: trav
 double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: w7, w8, w9
@@ -302,13 +300,8 @@ endif
 if ((idilat.eq.2.or.idilat.eq.3).and. &
     (ntcabs.gt.1.or.isuite.gt.0)) then
 
-  call predfl &
+  call predfl(nvar, ncetsm, icetsm, dt, propce, smacel)
   !==========
-  ( nvar   , nscal  , ncetsm ,                            &
-    icetsm ,                                              &
-    dt     , rtp    , rtpa   ,                            &
-    propce , propfa , propfb ,                            &
-    smacel )
 
 endif
 
@@ -318,12 +311,8 @@ endif
 
 if (iphydr.eq.2) then
 
-  call prehyd &
+  call prehyd(propce, prhyd, grdphd)
   !==========
-  ( nvar   , nscal  ,                                     &
-    dt     , rtp    , rtpa   ,                            &
-    propce , propfa , propfb ,                            &
-    prhyd  , grdphd )
 
 endif
 
@@ -348,7 +337,7 @@ call predvv &
   ncepdc , ncetsm ,                                              &
   icepdc , icetsm , itypsm ,                                     &
   dt     , rtp    , rtpa   , vel    , vela   ,                   &
-  propce , propfa , propfb ,                                     &
+  propce , propfb ,                                              &
   imasfl , bmasfl ,                                              &
   tslagr , coefa  , coefb  , coefau , coefbu , cofafu , cofbfu , &
   ckupdc , smacel , frcxt  , grdphd ,                            &
@@ -382,8 +371,7 @@ if (iprco.le.0) then
 
   call inimav                                                     &
   !==========
- ( nvar   , nscal  ,                                              &
-   iu     , itypfl ,                                              &
+ ( iu     , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -421,8 +409,7 @@ if (iprco.le.0) then
 
     call inimav &
     !==========
-  ( nvar   , nscal  ,                                              &
-    iu     , itypfl ,                                              &
+  ( iu     , itypfl ,                                              &
     iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
     iwarnp , nfecra ,                                              &
     epsrgp , climgp , extrap ,                                     &
@@ -546,11 +533,11 @@ endif
 
 call resopv &
 !==========
- ( nvar   , nscal  ,                                              &
+ ( nvar   ,                                                       &
    ncepdc , ncetsm ,                                              &
    icepdc , icetsm , itypsm , isostd ,                            &
    dt     , rtp    , rtpa   , vel    , vela   ,                   &
-   propce , propfa , propfb ,                                     &
+   propce , propfb ,                                              &
    coefa  , coefb  , coefau , coefbu , coefap ,                   &
    ckupdc , smacel ,                                              &
    frcxt  , dfrcxt , dttens , trav   ,                            &
@@ -565,13 +552,8 @@ call resopv &
 if (iale.eq.1) then
 
   if (itrale.gt.nalinf) then
-
-    call alelav &
+    call alelav(rtp, rtpa, propce, propfb)
     !==========
-  ( nvar   , nscal  ,                                              &
-    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-    coefa  , coefb  )
-
   endif
 
 endif
@@ -795,8 +777,7 @@ if (iale.eq.1) then
 
   call inimav &
   !==========
-( nvar   , nscal  ,                                              &
-  iuma   , itypfl ,                                              &
+( iuma   , itypfl ,                                              &
   iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
   iwarnp , nfecra ,                                              &
   epsrgp , climgp , extrap ,                                     &
@@ -943,8 +924,7 @@ if (iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
 
   call inimav                                                     &
   !==========
- ( nvar   , nscal  ,                                              &
-   iu     , itypfl ,                                              &
+ ( iu     , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -1012,7 +992,7 @@ if (iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
    ncepdc , ncetsm ,                                              &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtp    , rtp    , vel    , vel    ,                   &
-   propce , propfa , propfb ,                                     &
+   propce , propfb ,                                              &
    esflum , esflub ,                                              &
    tslagr , coefa  , coefb  , coefau , coefbu , cofafu , cofbfu , &
    ckupdc , smacel , frcxt  , grdphd ,                            &
@@ -1073,8 +1053,7 @@ endif
 if (ndircp.le.0) then
   call prmoy0 &
   !==========
-( ncelet , ncel   , nfac   , nfabor ,                         &
-  volume , rtp(1,ipr) )
+( ncelet , ncel   , volume , rtp(1,ipr) )
 endif
 
 ! Calcul de la pression totale IPRTOT : (definie comme propriete )

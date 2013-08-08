@@ -28,7 +28,7 @@ subroutine usray3 &
  ( nvar   , nscal  , iappel ,                                     &
    itypfb ,                                                       &
    izfrdp ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    ck     )
 
 !===============================================================================
@@ -68,7 +68,6 @@ subroutine usray3 &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! ck(ncelet)       ! ra ! --> ! medium's absorption coefficient                !
 !                  !    !     ! (zero if transparent)                          !
@@ -112,7 +111,7 @@ integer          izfrdp(nfabor)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propfb(nfabor,*)
 
 
 double precision ck(ncelet)
@@ -280,7 +279,7 @@ subroutine usray4 &
  ( nvar   , nscal  ,                                              &
    mode   ,                                                       &
    itypfb ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    tparop , hparop , tempk  )
 
 !===============================================================================
@@ -311,7 +310,6 @@ subroutine usray4 &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and preceding time steps)         !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! tparop(nfabor)   ! i  ! <-- ! temperature in kelvin for wall boundary faces  !
 ! hparop(nfabor)   ! i  ! --> ! enthalpy for wall boundary faces               !
@@ -356,7 +354,7 @@ integer          itypfb(nfabor)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propfb(nfabor,*)
 
 double precision tempk(ncelet)
 double precision tparop(nfabor), hparop(nfabor)
@@ -429,7 +427,7 @@ subroutine usray5 &
  ( nvar   , nscal  ,                                              &
    itypfb ,                                                       &
    izfrdp ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefap , coefbp ,                                              &
    cofafp , cofbfp ,                                              &
    tparoi , qincid , flunet , xlam   , epa    , eps     ,  ck   )
@@ -462,7 +460,6 @@ subroutine usray5 &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and preceding time steps)         !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefap, coefbp   ! ra ! --> ! boundary conditions for intensity or P-1 model !
 !  cofafp,cofbfp   !    !     !                                                !
@@ -515,7 +512,7 @@ integer          izfrdp(nfabor)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propfb(nfabor,*)
 double precision rcodcl(nfabor,nvar,3)
 
 double precision coefap(nfabor), coefbp(nfabor)

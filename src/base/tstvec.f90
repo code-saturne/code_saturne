@@ -82,7 +82,6 @@ implicit none
 ! Arguments
 
 integer          ncelet, ncel, nfac, nfabor
-integer          irveci, irvecb
 integer          ifacel(2,nfac),ifabor(nfabor)
 integer          iworkf(*), ismbs(ncelet), ismbv(ncelet)
 double precision rworkf(*), rsmbs(ncelet), rsmbv(ncelet)

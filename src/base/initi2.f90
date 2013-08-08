@@ -59,8 +59,6 @@ implicit none
 
 ! Arguments
 
-integer          jcelbr
-
 ! Local variables
 
 

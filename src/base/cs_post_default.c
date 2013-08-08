@@ -93,7 +93,6 @@ typedef struct {
   const cs_real_t  *rtpa;
   const cs_real_t  *rtp;
   const cs_real_t  *propce;
-  const cs_real_t  *propfa;
   const cs_real_t  *propfb;
   const cs_real_t  *statce;
   const cs_real_t  *stativ;
@@ -256,12 +255,12 @@ _write_additional_vars(void                  *input,
     CS_PROCF(dvvpst, DVVPST) (&nummai, &numtyp,
                               _input->nvar, _input->nscal,
                               _input->nvlsta, _input->nvisbr,
-                              &n_cells, &n_i_faces, &n_b_faces,
+                              &n_cells, &n_b_faces,
                               itypps,
-                              cell_list, i_face_list, b_face_list,
+                              cell_list, b_face_list,
                               _input->dt,
                               _input->rtpa, _input->rtp,
-                              _input->propce, _input->propfa, _input->propfb,
+                              _input->propce, _input->propfb,
                               _input->statce, _input->stativ, _input->statfb,
                               cel_vals, b_face_vals);
 
@@ -278,7 +277,7 @@ _write_additional_vars(void                  *input,
                             cell_list, i_face_list, b_face_list,
                             _input->dt,
                             _input->rtpa, _input->rtp,
-                            _input->propce, _input->propfa, _input->propfb,
+                            _input->propce, _input->propfb,
                             _input->statce);
 
 }
@@ -299,7 +298,7 @@ _write_additional_vars(void                  *input,
  *                    nbpmax, nvp, nvp1, nvep, nivep,
  *                    ttcabs,
  *                    itepa,
- *                    dt,     rtpa,   rtp,    propce, propfa, propfb,
+ *                    dt,     rtpa,   rtp,    propce, propfb,
  *                    statce, stativ, statfb,
  *                    ettp, ettpa, tepa )
  *
@@ -320,7 +319,6 @@ _write_additional_vars(void                  *input,
  * double precision rtpa        : <-- : cell variables at previous time step
  * double precision rtp         : <-- : cell variables
  * double precision propce      : <-- : cell physical properties
- * double precision propfa      : <-- : interior face physical properties
  * double precision propfb      : <-- : boundary face physical properties
  * double precision statce      : <-- : cell statistics (lagrangian)
  * double precision stativ      : <-- : cell variance statistics (lagrangian)
@@ -345,7 +343,6 @@ void CS_PROCF (pstvar, PSTVAR)
  const cs_real_t   rtpa[],
  const cs_real_t   rtp[],
  const cs_real_t   propce[],
- const cs_real_t   propfa[],
  const cs_real_t   propfb[],
  const cs_real_t   statce[],
  const cs_real_t   stativ[],
@@ -372,7 +369,6 @@ void CS_PROCF (pstvar, PSTVAR)
   _default_input.rtpa = rtpa;
   _default_input.rtp = rtp;
   _default_input.propce = propce;
-  _default_input.propfa = propfa;
   _default_input.propfb = propfb;
   _default_input.statce = statce;
   _default_input.stativ = stativ;

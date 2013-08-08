@@ -100,7 +100,7 @@ double precision croule(ncelet)
 
 integer          iel    , ield    , nclo    , npars
 integer          npt    , n       , n1      , iva    , nc
-double precision aux(1) , coeff  , pnew     , dnpars
+double precision aux(1) , coeff  , pnew
 
 !===============================================================================
 
@@ -280,25 +280,6 @@ dnbpar = dnbpar + dnpclo
 '@  On ne clone plus de particules por cette iteration.       ',/,&
 '@                                                            ',/,&
 '@  Verifier NBPMAX dans USLAG1.                              ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 9000 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : MODULE LAGRANGIEN                           ',/,&
-'@    =========                                               ',/,&
-'@                CLONAGE / FUSION DES PARTICULES             ',/,&
-'@                                                            ',/,&
-'@  La somme des particules detruites a la Roulette Russe     ',/,&
-'@    avec celles qui ont subit le clonage                    ',/,&
-'@    est different de celui des particules eliminees.        ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier LAGRUS et LAGELI.                                ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

@@ -23,10 +23,8 @@
 subroutine cptssy &
 !================
 
- ( nvar   , nscal  ,                                              &
-   iscal  ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   crvexp , crvimp )
+ ( iscal  ,                                                       &
+   rtpa   , rtp    , crvexp , crvimp )
 
 !===============================================================================
 ! Purpose:
@@ -40,15 +38,9 @@ subroutine cptssy &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! iscal            ! i  ! <-- ! index number of the current scalar             !
-! dt(ncelet)       ! ra ! <-- ! time-step                                      !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! crvexp           ! ra ! --> ! explicit part of the source term               !
 ! crvimp           ! ra ! --> ! implicit part of the source term               !
 !__________________!____!_____!________________________________________________!
@@ -77,17 +69,15 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
 integer          iscal
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*),propfa(nfac,*),propfb(nfabor,*)
+double precision rtp(ncelet,*), rtpa(ncelet,*)
 double precision crvexp(ncelet), crvimp(ncelet)
 
 ! Local variables
 
 integer          nbccou, inbcou, inbcoo, ncecpl, iloc, iel
-integer          mode  , isvol , ipccp , ivart
+integer          mode  , isvol , ivart
 double precision tsexp, tsimp
 
 integer, dimension(:), allocatable :: lcecpl

@@ -31,6 +31,8 @@ module optcal
 
   use paramx
 
+  implicit none
+
   !=============================================================================
 
   !> \defgroup optcal Module for calculation options

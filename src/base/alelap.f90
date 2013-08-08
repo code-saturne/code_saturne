@@ -23,9 +23,7 @@
 subroutine alelap &
 !================
 
- ( nvar   , nscal  ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  )
+ ( rtp    , rtpa   , propce , coefa  , coefb  )
 
 !===============================================================================
 ! FONCTION :
@@ -39,14 +37,9 @@ subroutine alelap &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
 !__________________!____!_____!________________________________________________!
@@ -81,12 +74,8 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-
-
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 
 ! Local variables
@@ -204,8 +193,7 @@ do ii = 1, 3
 
   call codits &
   !==========
- ( nvar   , nscal  ,                                              &
-   idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
+ ( idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &

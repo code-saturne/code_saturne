@@ -24,7 +24,7 @@ subroutine inivar &
 !================
 
  ( nvar   , nscal  , ncofab ,                                     &
-   dt     , rtp    , propce , propfa , propfb ,                   &
+   dt     , rtp    , propce , propfb ,                            &
    coefa  , coefb  )
 
 !===============================================================================
@@ -46,7 +46,6 @@ subroutine inivar &
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules                                    !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa coefb      ! tr ! <-- ! conditions aux limites aux                     !
 !  (nfabor,*)      !    !     !    faces de bord                               !
@@ -88,7 +87,7 @@ integer          nvar   , nscal  , ncofab
 
 
 double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propfb(nfabor,*)
 double precision coefa(nfabor,ncofab), coefb(nfabor,ncofab)
 
 ! Local variables
@@ -148,9 +147,9 @@ if  (ippmod(icompf).ge.0) then
   imodif = 1
     call cfther                                                   &
     !==========
-    ( nvar   , nscal  ,                                              &
+    ( nvar   ,                                                       &
       iccfth , imodif ,                                              &
-      dt     , rtp    , rtp   , propce , propfa , propfb ,           &
+      dt     , rtp    , rtp   , propce ,                             &
       w1     , w2     , w3    , w4     )
     deallocate(w1, w2, w3, w4)
 !     On initialise la diffusivite thermique
@@ -181,24 +180,24 @@ if  (ippmod(icompf).ge.0) then
 endif
 
 ! - Interface Code_Saturne
-!     ======================
+!   ======================
 
 if (iihmpr.eq.1) then
 
   iccfth = 0
   call uiiniv (ncelet, isuite, isca, iscold,       &
                iccfth, ipr, irho, itempk, ienerg,  &
-               ro0, cp0, viscl0, visls0, uref,     &
+               ro0, cp0, viscl0, uref,             &
                almax, xyzcen, rtp)
 
   if  (ippmod(icompf).ge.0) then
     allocate(w1(ncelet), w2(ncelet), w3(ncelet),w4(ncelet))
     imodif = 1
-    call cfther                                                   &
+    call cfther                                                      &
     !==========
-    ( nvar   , nscal  ,                                              &
+    ( nvar   ,                                                       &
       iccfth , imodif ,                                              &
-      dt     , rtp    , rtp   , propce , propfa , propfb ,           &
+      dt     , rtp    , rtp   , propce ,                             &
       w1     , w2     , w3    , w4     )
     deallocate(w1, w2, w3, w4)
   endif
@@ -213,7 +212,7 @@ if (ippmod(iphpar).eq.0) then
   call cs_user_initialization &
   !==========================
 ( nvar   , nscal  ,                                            &
-  dt     , rtp    , propce , propfa , propfb )
+  dt     , rtp    , propce , propfb )
 
   !     Avec l'interface, il peut y avoir eu initialisation,
   !       meme si usiniv n'est pas utilise.
@@ -234,7 +233,7 @@ else
   call ppiniv &
   !==========
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
+   dt     , rtp    , propce , propfb , coefa  , coefb  )
 
 endif
 
@@ -548,10 +547,8 @@ if(nscal.gt.0.and.(iusini.eq.1.or.isuite.eq.1)) then
 !                                           des scalaires non variance.
         if (valmin.ge.scminp.and.valmax.le.scmaxp) then
           iscal = ii
-          call clpsca                                             &
+          call clpsca(ncelet, ncel, iscal, rvoid, rtp)
           !==========
-                ( ncelet , ncel   , nvar   , nscal  , iscal  ,    &
-                  propce , rvoid  , rtp    )
         else
           chaine = nomvar(ipprtp(isca(ii)))
           write(nfecra,3040) ii,chaine(1:16),                     &
@@ -607,14 +604,11 @@ if(nscal.gt.0.and.(iusini.eq.1.or.isuite.eq.1)) then
 ! Ici on clippe pour etre coherent avec la valeur du scalaire
           if(valmin.ge.0.d0) then
             iscal = ii
-            call clpsca                                            &
+            call clpsca(ncelet, ncel, iscal, rtp(1,isca(iscavr(ii))), rtp)
             !==========
-            ( ncelet , ncel   , nvar   , nscal  , iscal  ,         &
-              propce , rtp(1,isca(iscavr(ii))) , rtp      )
           else
             chaine = nomvar(ipprtp(isca(ii)))
-            write(nfecra,3050)ii,chaine(1:16),                     &
-                              valmin,scminp,valmax,scmaxp
+            write(nfecra,3050)ii,chaine(1:16),valmin,scminp,valmax,scmaxp
             iok = iok + 1
           endif
         elseif(iclvfl(ii).eq.2) then

@@ -125,11 +125,11 @@ if ( ippmod(icompf).ge.0 ) then
   imodif = 0
   ii     = 1
   dblpre(1) = 0.d0
-  call cfther                                                   &
+  call cfther                                                     &
   !==========
- ( ii , ii ,                                                      &
+ ( ii ,                                                           &
    iccfth , imodif  ,                                             &
-   dblpre , dblpre , dblpre , dblpre , dblpre , dblpre ,          &
+   dblpre , dblpre , dblpre , dblpre ,                            &
    dblpre , dblpre , dblpre , dblpre )
 
 ! --> Utilisation d'un flux de masse specifique pour la vitesse

@@ -24,10 +24,9 @@ subroutine raydom &
 !================
 
  ( nvar   , nscal  ,                                              &
-   itypfb , icodcl ,                                              &
+   itypfb ,                                                       &
    izfrad ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
-   coefa  , coefb  )
+   dt     , rtp    , rtpa   , propce , propfb )
 
 !===============================================================================
 ! FONCTION :
@@ -52,28 +51,11 @@ subroutine raydom &
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 ! izfrad(nfabor    ! te ! <-- ! numero de zone des faces de bord               !
-! icodcl           ! ia ! <-- ! boundary condition code                        !
-!  (nfabor, nvar)  !    !     ! = 1  -> Dirichlet                              !
-!                  !    !     ! = 2  -> convective outelet                     !
-!                  !    !     ! = 3  -> flux density                           !
-!                  !    !     ! = 4  -> sliding wall and u.n=0 (velocity)      !
-!                  !    !     ! = 5  -> friction and u.n=0 (velocity)          !
-!                  !    !     ! = 6  -> roughness and u.n=0 (velocity)         !
-!                  !    !     ! = 9  -> free inlet/outlet (velocity)           !
-!                  !    !     !         inflowing possibly blocked             !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! rcodcl           ! ra ! --> ! boundary condition values                      !
-!                  !    !     ! rcodcl(1) = Dirichlet value                    !
-!                  !    !     ! rcodcl(2) = convective number                  !
-!                  !    !     ! rcodcl(3) = flux density value                 !
-!                  !    !     !  (negative for gain) in w/m2                   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -112,14 +94,10 @@ implicit none
 integer          nvar   , nscal
 
 integer          itypfb(ndimfb)
-integer          icodcl(ndimfb,nvarcl)
 integer          izfrad(ndimfb)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(ndimfb,*)
-double precision rcodcl(ndimfb,nvarcl,3)
-double precision coefa(ndimfb,*), coefb(ndimfb,*)
+double precision propce(ncelet,*), propfb(ndimfb,*)
 
 ! Local variables
 
@@ -131,10 +109,9 @@ integer          ivart
 integer          idverl
 integer          iflux(nozrdm)
 double precision epsrgp, climgp, extrap
-double precision aa, bb, ckmin, unspi, xlimit, cofrmn, flunmn
+double precision aa, bb, ckmin, unspi, xlimit, flunmn
 double precision flux(nozrdm)
 double precision vv, sf, xlc, xkmin, pp
-double precision hint, qimp, xit, pimp
 
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: smbrs, rovsdt
@@ -202,10 +179,7 @@ if (ippmod(iphpar).ge.2) then
 
   call ppcabs &
   !==========
-( nvar   , nscal  ,                                             &
-  itypfb ,                                                      &
-  dt     , rtp    , rtpa   , propce , propfa , propfb ,         &
-  coefa  , coefb  )
+( dt     , rtp    , rtpa   , propce )
 
   !---> ckmel stores temporarly the absorbption coefficient
   !     of gaz-particle mixing
@@ -301,7 +275,7 @@ else
 ( nvar   , nscal  , iappel ,                                     &
   itypfb ,                                                       &
   izfrad ,                                                       &
-  dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+  dt     , rtp    , rtpa   , propce , propfb ,                   &
   propce(1,ipproc(icak(1))))
 
 endif
@@ -380,18 +354,16 @@ if (idverl.ge.0) then
       ( nvar   , nscal  ,                                            &
         mode   ,                                                     &
         itypfb ,                                                     &
-        dt     , rtp    , rtpa   , propce , propfa , propfb ,        &
+        dt     , rtp    , rtpa   , propce , propfb ,                 &
         propfb(1,ipprob(itparo)) , flurdb , tempk(1,1)  )
 
     else
 
       call ppray4 &
       !==========
-    ( nvar   , nscal  ,                                              &
-      mode   ,                                                       &
+    ( mode   ,                                                       &
       itypfb ,                                                       &
-      dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-      coefa  , coefb  ,                                              &
+      rtp    , rtpa   , propce , propfb ,                            &
       propfb(1,ipprob(itparo)) , flurdb , tempk(1,1)  )
 
     endif
@@ -580,10 +552,9 @@ if (iirayo.eq.2) then
 
   call raycll &
   !==========
-  ( nvar   , nscal  ,                                              &
-    itypfb ,                                                       &
+  ( itypfb ,                                                       &
     izfrad ,                                                       &
-    rtp    , rtpa   , propce , propfa , propfb ,                   &
+    rtp    , rtpa   ,                                              &
     coefap , coefbp ,                                              &
     cofafp , cofbfp ,                                              &
     propfb(1,ipprob(itparo)) , propfb(1,ipprob(iqinci)) ,          &
@@ -596,7 +567,7 @@ if (iirayo.eq.2) then
   !==========
 ( nvar   , nscal  ,                                              &
   itypfb ,                                                       &
-  dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+  dt     , rtp    , rtpa   , propce ,                            &
   coefap , coefbp ,                                              &
   cofafp , cofbfp ,                                              &
   flurds , flurdb ,                                              &
@@ -680,10 +651,9 @@ else if (iirayo.eq.1) then
 
   call raycll &
   !==========
-  ( nvar   , nscal  ,                                              &
-    itypfb ,                                                       &
+  ( itypfb ,                                                       &
     izfrad ,                                                       &
-    rtp    , rtpa   , propce , propfa , propfb ,                   &
+    rtp    , rtpa   ,                                              &
     coefap , coefbp ,                                              &
     cofafp , cofbfp ,                                              &
     propfb(1,ipprob(itparo)) , propfb(1,ipprob(iqinci)) ,          &
@@ -696,7 +666,7 @@ else if (iirayo.eq.1) then
   !==========
  ( nvar   , nscal  ,                                              &
    itypfb ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   ,                                     &
    coefap , coefbp ,                                              &
    cofafp , cofbfp ,                                              &
    flurds , flurdb ,                                              &
@@ -740,7 +710,7 @@ call usray5 &
 ( nvar   , nscal  ,                                              &
   itypfb ,                                                       &
   izfrad ,                                                       &
-  dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+  dt     , rtp    , rtpa   , propce , propfb ,                   &
   coefap , coefbp ,                                              &
   cofafp , cofbfp ,                                              &
   propfb(1,ipprob(itparo)) , propfb(1,ipprob(iqinci)) ,          &

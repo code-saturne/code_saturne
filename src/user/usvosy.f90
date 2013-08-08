@@ -25,9 +25,9 @@
 subroutine usvosy &
 !================
 
- ( nvar   , nscal  , inbcou , ncecpl ,                            &
+ ( inbcou , ncecpl ,                                              &
    iscal  ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    lcecpl , hvol )
 
 !===============================================================================
@@ -53,8 +53,6 @@ subroutine usvosy &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! inbcou           ! i  ! <-- ! SYRTHES coupling number                        !
 ! ncecpl           ! i  ! <-- ! number of cells implied for this coupling      !
 ! iscal            ! i  ! <-- ! index number of the temperature scalar         !
@@ -64,7 +62,6 @@ subroutine usvosy &
 ! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (preceding time step)                         !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! lcecpl(ncecpl)   ! ri ! <-- ! list of coupled cells                          !
 ! hvol(ncecpl)     ! ra ! --> ! volume exchange coefficient to compute         !
@@ -94,7 +91,6 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
 integer          ncecpl
 integer          iscal  , inbcou
 
@@ -102,13 +98,12 @@ integer          lcecpl(ncecpl)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
-double precision hvol(ncecpl), tfluid(ncecpl)
+double precision propfb(nfabor,*)
+double precision hvol(ncecpl)
 
 ! Local variables
 
-character*80     chaine
-integer          ivar, iiscvr, iel, iloc
+integer          iiscvr, iel, iloc
 integer          ipcrom, ipcvsl, ipcvis, ipccp
 
 double precision cp, mu, lambda, rho, uloc, L, sexcvo
@@ -252,32 +247,6 @@ do iloc = 1, ncecpl  ! Loop on coupled cells
 enddo
 
 ! ----------------------------------------------
-
-!--------
-! Formats
-!--------
-
-#if defined(_CS_LANG_FR)
-
- 1000 format(                                                     &
-'@                                                            ',/,&
-'@ @@ ATTENTION : COUPLAGE VOLUMIQUE SYRTHES AVEC UN SCALAIRE ',/,&
-'@      QUI EST DIFFERENT DE LA TEMPERATURE                   ',/,&
-'@    =========                                               ',/,&
-'@      OPTION NON VALIDE                                     ',/,&
-'@                                                            ')
-
-#else
-
- 1000 format(                                                     &
-'@                                                            ',/,&
-'@ @@ WARNING: SYRTHES VOLUME COUPLING WITH A SCALAR          ',/,&
-'@       DIFFERENT FROM TEMPERATURE                           ',/,&
-'@    ========                                                ',/,&
-'@      OPTION NOT POSSIBLE                                   ',/,&
-'@                                                            ')
-
-#endif
 
 !----
 ! End

@@ -25,9 +25,9 @@
 subroutine cfther &
 !================
 
- ( nvar   , nscal  ,                                              &
+ ( nvar   ,                                                       &
    iccfth , imodif ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce ,                            &
    sorti1 , sorti2 , gamagr , xmasm1 )
 
 !===============================================================================
@@ -183,8 +183,6 @@ subroutine cfther &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and preceding time steps)         !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! sorti1,2(*)      ! ra ! --> ! output variable (unused if iccfth.lt.0)        !
 ! gamagr(*)        ! ra ! --> ! equivalent "gamma" constant of the gas         !
 !                  !    !     !   (unused if iccfth.lt.0)                      !
@@ -222,11 +220,11 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
+integer          nvar
 integer          iccfth   , imodif
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfa(nfac,*), propfb(nfabor,*)
+double precision propce(ncelet,*)
 
 double precision sorti1(*), sorti2(*), gamagr(*), xmasm1(*)
 

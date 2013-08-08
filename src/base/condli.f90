@@ -97,7 +97,6 @@
 !> \param[in]     rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfa        physical properties at interior face centers
 !> \param[in]     propfb        physical properties at boundary face centers
 !> \param[in,out] rcodcl        boundary condition values:
 !>                               - rcodcl(1) value of the dirichlet
@@ -128,7 +127,7 @@ subroutine condli &
  ( nvar   , nscal  , iterns ,                                     &
    isvhb  , isvtb  ,                                              &
    icodcl , isostd ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
+   dt     , rtp    , rtpa   , propce , propfb , rcodcl ,          &
    coefa  , coefb  , visvdr , hbord  , theipb , frcxt  )
 
 !===============================================================================
@@ -166,8 +165,7 @@ integer          icodcl(nfabor,nvarcl)
 integer          isostd(nfabor+1)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(ndimfb,*)
+double precision propce(ncelet,*), propfb(ndimfb,*)
 double precision rcodcl(nfabor,nvarcl,3)
 double precision frcxt(3,ncelet)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
@@ -177,7 +175,7 @@ double precision hbord(nfabor),theipb(nfabor)
 ! Local variables
 
 integer          ifac  , iel   , ivar
-integer          isou  , jsou  , ii    , iii
+integer          isou  , jsou  , ii
 integer          ihcp  , iscal , iscat
 integer          inc   , iccocg
 integer          iok   , iok1
@@ -202,15 +200,13 @@ integer          itplus, itstar
 integer          f_id  ,  iut  , ivt   , iwt, iflmab
 
 double precision sigma , cpp   , rkl
-double precision hint  , hext  , heq   , pimp  , xdis, qimp, cfl
+double precision hint  , hext  , pimp  , xdis, qimp, cfl
 double precision hintt(6)
 double precision flumbf, visclc, visctc, distbf, srfbn2
 double precision epsrgp, climgp, extrap
 double precision xxp0, xyp0, xzp0
 double precision srfbnf, normal(3)
-double precision upx   , upy   , upz   , vistot
-double precision xk, xe, xnu
-double precision xllke, xllkmg, xlldrb
+double precision vistot
 double precision rinfiv(3), pimpv(3), qimpv(3), hextv(3), cflv(3), vect(3)
 double precision visci(3,3), fikis, viscis, distfi
 double precision temp
@@ -323,7 +319,7 @@ if (ippmod(iphpar).ge.1) then
   !==========
  ( nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefa  , coefb  , rcodcl )
 endif
 
@@ -336,20 +332,15 @@ if (iale.eq.1) then
 endif
 
 if (imobil.eq.1) then
-  call mmtycl &
+  call mmtycl(itypfb, rcodcl)
   !==========
- ( nvar   , nscal  ,                                              &
-   itypfb , icodcl ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   rcodcl )
 endif
 
 call typecl &
 !==========
  ( nvar   , nscal  ,                                              &
    itypfb , itrifb , icodcl , isostd ,                            &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , rcodcl , frcxt  )
+   rtpa   , propce , rcodcl , frcxt  )
 
 !===============================================================================
 ! 3. Check the consistency of the BCs
@@ -359,8 +350,7 @@ call vericl                                                       &
 !==========
  ( nvar   , nscal  ,                                              &
    itypfb , icodcl ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , rcodcl )
+   rcodcl )
 
 !===============================================================================
 ! 4. Deprecated model to compute wall distance
@@ -836,10 +826,8 @@ if (ipatur.ne.0) then
   ! Smooth wall laws
   call clptur &
   !==========
- ( nvar   , nscal  ,                                              &
-   isvhb  ,                                                       &
-   icodcl ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
+ ( nscal  , isvhb  , icodcl ,                                     &
+   rtp    , rtpa   , propce , propfb , rcodcl ,                   &
    velipb , rijipb , coefa  , coefb  , visvdr ,                   &
    hbord  , theipb )
 
@@ -850,10 +838,9 @@ if (ipatrg.ne.0) then
   ! Rough wall laws
   call clptrg &
   !==========
- ( nvar   , nscal  ,                                              &
-   isvhb  ,                                                       &
+ ( nscal  , isvhb  ,                                              &
    icodcl ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
+   dt     , rtp    , rtpa   , propce , propfb , rcodcl ,          &
    velipb , rijipb , coefa  , coefb  , visvdr ,                   &
    hbord  , theipb )
 
@@ -873,9 +860,8 @@ if (iclsym.ne.0) then
 
   call clsyvt &
   !==========
- ( nvar   , nscal  ,                                              &
-   icodcl ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
+ ( nscal  , icodcl ,                                              &
+   rtp    , rtpa   , propce , rcodcl ,                            &
    velipb , rijipb , coefa  , coefb  )
 
 endif
@@ -3046,7 +3032,6 @@ double precision hextv(3)
 ! Local variables
 
 integer          isou  , jsou
-double precision heq
 
 !===============================================================================
 

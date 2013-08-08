@@ -27,6 +27,10 @@ module cstnum
 
   !=============================================================================
 
+  implicit none
+
+  !=============================================================================
+
   double precision  epzero, rinfin, grand, zero, pi
   parameter        (epzero=1.d-12, rinfin=1.d+30, grand=1.d+12,  &
                     zero=0.d0, pi=3.141592653589793d0)

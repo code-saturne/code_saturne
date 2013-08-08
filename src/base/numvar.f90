@@ -29,6 +29,8 @@ module numvar
 
   use paramx
 
+  implicit none
+
   !=============================================================================
 
   !> \defgroup numvar Module for variable numbering
@@ -128,7 +130,7 @@ module numvar
   !----------------------------------------------------------------------------
 
   !> \defgroup physical_prop Physical properties
-  !> \brief Physical properties are stored in propce, propfa and propfb.
+  !> \brief Physical properties are stored in propce and propfb.
   !> the same index is used for a given properties for cells, internal
   !> faces and boundary faces. See \ref cs_user_boundary_conditions
   !> for some examples.
@@ -138,8 +140,6 @@ module numvar
 
   !> pointer to cell properties (propce)
   integer, save :: ipproc(npromx)
-  !> pointer to internal face properties (propfa)
-  integer, save :: ipprof(npromx)
   !> pointer to boundary face properties (propfb)
   integer, save :: ipprob(npromx)
 

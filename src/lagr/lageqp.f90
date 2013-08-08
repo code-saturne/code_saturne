@@ -24,7 +24,7 @@ subroutine lageqp &
 !================
 
  ( nvar   , nscal  ,                                              &
-   dt     , propce , propfa , propfb ,                            &
+   dt     ,                                                       &
    ul     , vl     , wl     , alphal , phi    )
 
 !===============================================================================
@@ -47,9 +47,6 @@ subroutine lageqp &
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! ul,vl,wl(ncelet) ! tr ! <-- ! vitesse lagrangien                             !
 ! alphal(ncelet)   ! tr ! <-- ! taux de presence                               !
 ! phi(ncelet)      ! tr ! --> ! terme de correction                            !
@@ -88,8 +85,6 @@ integer          nvar   , nscal
 double precision ul(ncelet), vl(ncelet), wl(ncelet)
 double precision phi(ncelet), alphal(ncelet)
 double precision dt(ncelet)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
 
 ! Local variables
 
@@ -315,8 +310,7 @@ thetap = 1.0d0
 
 call codits &
 !==========
- ( nvar   , nscal  ,                                              &
-   idtva0 , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
+ ( idtva0 , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &

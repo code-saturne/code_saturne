@@ -26,7 +26,7 @@ subroutine cfrusb &
  ( nvar   , nscal  ,                                              &
    imodif ,                                                       &
    gammag ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propfb ,                            &
    coefa  , coefb  ,                                              &
    sorti1 , sorti2 , gamagr , masmor )
 
@@ -54,8 +54,6 @@ subroutine cfrusb &
 ! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
 ! rtp,rtpa         ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules                                    !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa coefb      ! tr ! <-- ! conditions aux limites aux                     !
 !  (nfabor,*)      !    !     !    faces de bord                               !
@@ -102,7 +100,7 @@ integer          imodif
 double precision gammag
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*),propfa(nfac,*),propfb(nfabor,*)
+double precision propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision sorti1(*), sorti2(*), gamagr(*), masmor(*)
 

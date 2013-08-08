@@ -23,8 +23,7 @@
 subroutine prmoy0 &
 !================
 
- ( ncelet , ncel   , nfac   , nfabor ,                            &
-   volume , pvar   )
+ ( ncelet , ncel   , volume , pvar   )
 
 !===============================================================================
 ! FONCTION :
@@ -40,8 +39,6 @@ subroutine prmoy0 &
 !__________________!____!_____!________________________________________________!
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
-! nfac             ! i  ! <-- ! number of interior faces                       !
-! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! volume(ncelet    ! tr ! <-- ! volume des elements                            !
 ! pvar             ! tr ! <-- ! tableau de valeurs au cellules                 !
 !__________________!____!_____!________________________________________________!
@@ -66,7 +63,7 @@ implicit none
 
 ! Arguments
 
-integer          ncelet , ncel   , nfac , nfabor
+integer          ncelet , ncel
 
 double precision volume(ncelet), pvar(ncelet)
 

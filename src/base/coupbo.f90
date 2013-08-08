@@ -23,10 +23,8 @@
 subroutine coupbo &
 !================
 
- ( nvar   , nscal  , isvtb  ,                                     &
-   ncp    , ncv    , ientha ,                                     &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
+ ( nvar   , ncp    , ncv    , ientha ,                            &
+   dt     , rtp    , rtpa   , propce ,                            &
    cpcst  , cp     , cvcst  , cv     ,                            &
    hbord  , tbord  )
 
@@ -42,8 +40,6 @@ subroutine coupbo &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! isvtb            ! i  ! <-- !                                                !
 ! ncp              ! i  ! <-- ! dimension de cp (ncelet ou 1)                  !
 ! ncv              ! i  ! <-- ! dimension de cv (ncelet ou 1)                  !
 ! ientha           ! i  ! <-- ! 1 si tparoi est une enthalpie                  !
@@ -52,10 +48,6 @@ subroutine coupbo &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! cpcst            ! r  ! <-- ! chaleur specifique si constante                !
 ! cp(ncp)          ! ra ! <-- ! chaleur specifique si variable                 !
 ! cvcst            ! r  ! <-- ! chaleur specifique si constante                !
@@ -85,22 +77,19 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-integer          isvtb
+integer          nvar
 integer          ncp    , ncv    , ientha
 
 double precision cpcst  , cvcst
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*),propfa(nfac,*),propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
+double precision propce(ncelet,*)
 double precision cp(ncp), cv(ncv)
 double precision hbord(nfabor),tbord(nfabor)
 
 ! Local variables
 
 integer          nbccou, inbcou, inbcoo, nbfcou, ifac, iloc, iel
-integer          itflui, ihparo
 integer          mode, flag
 integer          iccfth, imodif
 integer          iepsel, iepsfa, igamag, ixmasm, ifinwa
@@ -225,9 +214,9 @@ do inbcou = 1, nbccou
 
       call cfther                                                   &
       !==========
-    ( nvar   , nscal  ,                                              &
+    ( nvar   ,                                                       &
       iccfth , imodif ,                                              &
-      dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+      dt     , rtp    , rtpa   , propce ,                            &
       wa(iepsel) , wa(iepsfa) , wa(igamag) , wa(ixmasm) )
       !---------   ---------
 

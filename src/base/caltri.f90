@@ -74,6 +74,7 @@ use mesh
 use field
 use post
 use cs_c_bindings
+use cs_f_interfaces
 
 use, intrinsic :: iso_c_binding
 
@@ -120,8 +121,6 @@ double precision, allocatable, dimension(:,:) :: propfb
 double precision, allocatable, dimension(:,:) :: frcxt
 double precision, allocatable, dimension(:) :: prhyd
 
-type(c_ptr) :: propfa
-
 ! Lagrangian specific arrays
 
 integer, allocatable, dimension(:,:) :: itepa
@@ -138,8 +137,6 @@ double precision, allocatable, dimension(:,:) :: dlgeo
 !===============================================================================
 ! Initialization
 !===============================================================================
-
-propfa = c_null_ptr ! Pending complete removal...
 
 ! Initialize first free position in array "ra"
 idebra = 1
@@ -236,7 +233,7 @@ call  uskpdc &
   ncepdc , iappel ,                                              &
   ivoid  , izcpdc ,                                              &
   rvoid  , rvoid  , rvoid  ,                                     &
-  rvoid  , propfa , propfb ,                                     &
+  rvoid  , propfb ,                                              &
   rvoid  )
 
 ! Total number of cells with head-loss
@@ -262,7 +259,7 @@ call ustsma &
   ivoid  ,                                                       &
   ivoid  , ivoid  , izctsm ,                                     &
   rvoid  , rvoid  ,                                              &
-  rvoid  , propfa , propfb ,                                     &
+  rvoid  , propfb ,                                              &
   ckupdc , rvoid  )
 
 ! Total number of cells with mass source term
@@ -289,7 +286,7 @@ call uspt1d &
    rvoid  , rvoid  , rvoid  ,                                     &
    rvoid  , rvoid  , rvoid  ,                                     &
    rvoid  , rvoid  ,                                              &
-   rvoid  , propfa , propfb )
+   rvoid  , propfb )
 
 nfpt1t = nfpt1d
 if (irangp.ge.0) then
@@ -368,7 +365,7 @@ if (iphydr.eq.2) then
   allocate(prhyd(ncelet))
 endif
 
-call init_aux_arrays ( ncelet , ncel   , ncelbr , nfac  , nfabor )
+call init_aux_arrays(ncelet, nfabor)
 !===================
 
 ! Compute the porosity if needed
@@ -492,7 +489,7 @@ call inivar &
 !==========
  ( nvar   , nscal  , ncofab ,                                     &
    ra(idt)    , ra(irtp) ,                                        &
-   ra(ipropc) , propfa , propfb ,                                 &
+   ra(ipropc) , propfb ,                                          &
    coefa  , coefb  )
 
 !===============================================================================
@@ -549,7 +546,7 @@ if (nfpt1t.gt.0) then
    tept1d , hept1d , fept1d ,                                     &
    xlmbt1 , rcpt1d , dtpt1d ,                                     &
    ra(idt)    , ra(irtpa) ,                                       &
-   ra(ipropc) , propfa , propfb )
+   ra(ipropc) , propfb )
 
   iappel = 2
   call vert1d &
@@ -642,7 +639,7 @@ if(ncpdct.gt.0) then
   ncepdc , iappel ,                                              &
   icepdc , izcpdc ,                                              &
   ra(idt)    , ra(irtpa) , ra(irtp)   ,                          &
-  ra(ipropc) , propfa , propfb ,                                 &
+  ra(ipropc) , propfb ,                                          &
   ckupdc )
 
 endif
@@ -663,7 +660,7 @@ if(nctsmt.gt.0) then
   icepdc ,                                                       &
   icetsm , itypsm , izctsm ,                                     &
   ra(idt)    , ra(irtpa) ,                                       &
-  ra(ipropc) , propfa , propfb ,                                 &
+  ra(ipropc) , propfb ,                                          &
   ckupdc , smacel )
 
 endif
@@ -685,7 +682,7 @@ if (ivrtex.eq.1) then
  ( nvar   , nscal  ,                                              &
    iappel ,                                                       &
    ra(idt)    , ra(irtpa) ,                                       &
-   ra(ipropc) , propfa , propfb )
+   ra(ipropc) , propfb )
 
   call vorver ( nfabor , iappel )
   !==========
@@ -693,10 +690,8 @@ if (ivrtex.eq.1) then
   call init_vortex
   !===============
 
-  call vorpre &
+  call vorpre(ra(ipropc))
   !==========
- ( nvar   , nscal  ,            &
-   ra(ipropc) , propfa , propfb )
 
 endif
 
@@ -708,9 +703,8 @@ if (iale.eq.1) then
 
 ! Attention, strini reserve de la memoire qu'il faut garder ensuite
 !           (-> on utilise IFINIA/IFINRA ensuite)
-  call strini &
+  call strini(ra(idt))
   !==========
- ( ra(idt) )
 
 endif
 
@@ -718,9 +712,8 @@ endif
 
 ! -- Couplage Code_Saturne/Code_Saturne
 
-call cscini                                                       &
+call cscini(nvar)
 !==========
- ( nvar   , nscal  )
 
 !===============================================================================
 ! Start of time loop
@@ -817,7 +810,7 @@ call tridim                                                       &
    nvar   , nscal  ,                                              &
    isostd ,                                                       &
    ra(idt)    , ra(itpuco) , ra(irtpa) , ra(irtp)  ,              &
-   ra(ipropc) , propfa , propfb ,                                 &
+   ra(ipropc) , propfb ,                                          &
    tslagr , coefa  , coefb  ,                                     &
    frcxt  , prhyd  )
 
@@ -849,7 +842,7 @@ if (iilagr.gt.0 .and. inpdt0.eq.0 .and. itrale.gt.0) then
    icocel , itycel , ifrlag , itepa  ,                            &
    dlgeo  ,                                                       &
    ra(idt)    , ra(irtpa) , ra(irtp) ,                            &
-   ra(ipropc) , propfa , propfb ,                                 &
+   ra(ipropc) , propfb ,                                          &
    coefa  , coefb  ,                                              &
    ettp   , ettpa  , tepa   , statis , stativ , tslagr , parbor )
 
@@ -877,7 +870,7 @@ if (itrale.gt.0) then
    nbpmax , nvp    , nvep   , nivep  , ntersl , nvlsta , nvisbr , &
    itepa  ,                                                       &
    ra(idt)    , ra(irtpa) , ra(irtp) ,                            &
-   ra(ipropc) , propfa , propfb ,                                 &
+   ra(ipropc) , propfb ,                                          &
    ettp   , ettpa  , tepa   , statis , stativ , tslagr , parbor )
 
 endif
@@ -895,10 +888,8 @@ if (iale.eq.1 .and. inpdt0.eq.0) then
       call alemaj &
       !==========
     ( itrale ,                                               &
-      nvar   , nscal  ,                                      &
       impale ,                                               &
       ra(idt)    , ra(irtpa) , ra(irtp) ,                    &
-      ra(ipropc) , propfa , propfb ,                         &
       coefa  , coefb  ,                                      &
       depale , xyzno0 )
 
@@ -909,11 +900,8 @@ if (iale.eq.1 .and. inpdt0.eq.0) then
       call alemav &
       !==========
     ( itrale ,                                               &
-      nvar   , nscal  ,                                      &
       impale , ialtyb ,                                      &
       ra(idt)    , ra(irtpa) , ra(irtp) ,                    &
-      ra(ipropc) , propfa , propfb ,                         &
-      coefa  , coefb  ,                                      &
       depale , xyzno0 )
 
     endif
@@ -1004,7 +992,7 @@ if (iisuit.eq.1) then
       ntersl , nvlsta , nvisbr ,                                     &
       icocel , itycel , itepa  ,                                     &
       ra(idt)    , ra(irtpa) , ra(irtp) ,                            &
-      ra(ipropc) , propfa , propfb ,                                 &
+      ra(ipropc) , propfb ,                                          &
       coefa  , coefb  ,                                              &
       ettp   , tepa   , parbor , statis , stativ , tslagr )
 
@@ -1013,10 +1001,7 @@ if (iisuit.eq.1) then
   if (iirayo.gt.0) then
     call rayout                                                   &
     !==========
- ( nvar   , nscal  ,                                              &
-   ra(idt)    , ra(irtpa) , ra(irtp) ,                            &
-   ra(ipropc) , propfa , propfb ,                                 &
-   coefa  , coefb  )
+ ( ra(irtpa) , ra(irtp) , ra(ipropc) , propfb )
   endif
 
   call dmtmps(tecrf2)
@@ -1060,7 +1045,7 @@ call pstvar                                                       &
    ttcabs ,                                                       &
    itepa  ,                                                       &
    ra(idt)    , ra(irtpa) , ra(irtp) ,                            &
-   ra(ipropc) , propfa    , propfb   ,                            &
+   ra(ipropc) , propfb    ,                                       &
    statis , stativ , parbor )
 
 !===============================================================================
@@ -1104,7 +1089,7 @@ call ushist                                                       &
 !==========
  ( nvar   , nscal  ,                                              &
    ra(idt)    , ra(irtpa) , ra(irtp) ,                            &
-   ra(ipropc) , propfa , propfb )
+   ra(ipropc) , propfb )
 
 
 !===============================================================================
@@ -1122,9 +1107,9 @@ if (modntl.eq.0) then
 
   call ecrlis                                                     &
   !==========
-  ( nvar   , ndim   , ncelet , ncel   ,                           &
+  ( nvar   , ncelet , ncel   ,                                    &
     irtp   ,                                                      &
-    ra(irtp  ) , ra(irtpa) , ra(idt ) , volume , xyzcen, ra )
+    ra(irtp  ) , ra(irtpa) , ra(idt ) , volume )
 
   call log_iteration
 

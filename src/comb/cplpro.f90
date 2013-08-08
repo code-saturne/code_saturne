@@ -39,7 +39,7 @@ subroutine cplpro &
 !      TRANSPORT LAGRANGIEN DES PARTICULES DE CHARBON
 
 !      INIT DES POSITIONS DES VARIABLES D'ETAT
-!        (DANS VECTEURS PROPCE, PROPFA, PROPFB)
+!        (DANS VECTEURS PROPCE, PROPFB)
 
 !-------------------------------------------------------------------------------
 ! Arguments

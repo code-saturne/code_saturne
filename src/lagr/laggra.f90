@@ -23,8 +23,7 @@
 subroutine laggra &
 !================
 
- ( nvar   , nscal  ,                                              &
-   rtp    , propce , coefa  , coefb  ,                            &
+ ( rtp    , propce , coefa  , coefb  ,                            &
    gradpr , gradvf )
 
 !===============================================================================
@@ -43,8 +42,6 @@ subroutine laggra &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
@@ -85,9 +82,6 @@ use mesh
 implicit none
 
 ! Arguments
-
-integer          nvar   , nscal
-
 
 double precision coefa(ndimfb,*) , coefb(ndimfb,*)
 double precision rtp(ncelet,*)

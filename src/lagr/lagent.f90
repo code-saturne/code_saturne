@@ -29,8 +29,8 @@ subroutine lagent &
    ntersl , nvlsta , nvisbr ,                                     &
    itycel , icocel , dlgeo  ,                                     &
    itypfb , itrifb , ifrlag , itepa  ,                            &
-   dt     , rtpa   , propce , propfa , propfb ,                   &
-   ettp   , tepa   , vagaus , auxl   , w1     , w2     , w3     )
+   dt     , rtpa   , propce , propfb ,                            &
+   ettp   , tepa   , vagaus , auxl   )
 
 !===============================================================================
 ! FONCTION :
@@ -84,7 +84,6 @@ subroutine lagent &
 ! (ncelet,*)       !    !     !    cellules (instant prec ou                   !
 !                  !    !     !    instant courant si ntcabs = 1)              !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! ettp             ! tr ! <-- ! tableaux des variables liees                   !
 !  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
@@ -93,7 +92,6 @@ subroutine lagent &
 ! vagaus           ! tr ! --> ! variables aleatoires gaussiennes               !
 !(nbpmax,nvgaus    !    !     !                                                !
 ! auxl(nbpmax,3    ! tr ! --- ! tableau de travail                             !
-! w1..w3(ncelet    ! tr ! --- ! tableaux de travail                            !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -140,12 +138,10 @@ integer          icocel(lndnod) , itycel(ncelet+1)
 integer          itepa(nbpmax,nivep) , ifrlag(nfabor)
 
 double precision dt(ncelet) , rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propce(ncelet,*), propfb(nfabor,*)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision vagaus(nbpmax,*)
 double precision auxl(nbpmax,3)
-double precision w1(ncelet) ,  w2(ncelet) ,  w3(ncelet)
 double precision dlgeo(nfabor,ngeol)
 
 ! Local variables
@@ -232,7 +228,7 @@ call uslag2                                                       &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb , itepa  , ifrlag ,                            &
-   dt     , rtpa   , propce , propfa , propfb ,                   &
+   dt     , rtpa   , propce , propfb ,                            &
    ettp   , tepa   )
 
 
@@ -874,7 +870,7 @@ do ii = 1,nfrtot
    itypfb , itrifb , itepa  , ifrlag ,                            &
    xxpart , yypart , zzpart ,                                     &
    tvpart , uupart , vvpart , wwpart , ddpart , ttpart ,          &
-   dt     , rtpa   , propce , propfa , propfb ,                   &
+   dt     , rtpa   , propce , propfb ,                            &
    ettp   , tepa   )
 
           ettp(ip,jup) = uupart
@@ -931,7 +927,7 @@ do ii = 1,nfrtot
    itypfb , itrifb , itepa  , ifrlag ,                            &
    xxpart , yypart , zzpart ,                                     &
    tvpart , uupart , vvpart , wwpart , ddpart , ttpart ,          &
-   dt     , rtpa   , propce , propfa , propfb ,                   &
+   dt     , rtpa   , propce , propfb ,                            &
    ettp   , tepa   )
 
           ettp(ip,jdp) = ddpart
@@ -972,7 +968,7 @@ do ii = 1,nfrtot
    itypfb , itrifb , itepa  , ifrlag ,                            &
    xxpart , yypart , zzpart ,                                     &
    tvpart , uupart , vvpart , wwpart , ddpart , ttpart ,          &
-   dt     , rtpa   , propce , propfa , propfb ,                   &
+   dt     , rtpa   , propce , propfb ,                            &
    ettp   , tepa   )
 
               ettp(ip,jtp) = ttpart
@@ -1057,7 +1053,7 @@ do ii = 1,nfrtot
    itypfb , itrifb , itepa  , ifrlag ,                            &
    xxpart , yypart , zzpart ,                                     &
    tvpart , uupart , vvpart , wwpart , ddpart , ttpart ,          &
-   dt     , rtpa   , propce , propfa , propfb ,                   &
+   dt     , rtpa   , propce , propfb ,                            &
    ettp   , tepa   )
 
           volp = pis6*d3
@@ -1204,7 +1200,7 @@ call uslain                                                       &
    ntersl , nvlsta , nvisbr ,                                     &
    nlocnew ,                                                      &
    itypfb , itrifb , itepa  , ifrlag , iwork  ,                   &
-   dt     , rtpa   , propce , propfa , propfb ,                   &
+   dt     , rtpa   , propce , propfb ,                            &
    ettp   , tepa   , vagaus , icocel , lndnod , itycel , dlgeo,   &
    ncmax  , nzmax  , iusloc )
 

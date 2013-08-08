@@ -86,14 +86,11 @@ integer          ipcvst,ipcvsl,ipccp,ipchgl
 
 double precision xng,xnuss
 double precision pparo2 , xdffli , xdfext , xdftot0 , xdftot1
-double precision diacka, xuash
+double precision diacka
 double precision dcoke , surf , lambda
 !
 double precision peva, pref
 double precision rhoeva
-double precision ueva
-double precision deva
-double precision obfl
 
 double precision dhet1, dhet2
 double precision deva1, deva2

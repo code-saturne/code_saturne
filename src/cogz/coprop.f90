@@ -483,9 +483,9 @@ endif
 !     ======================
 !     Construction de l'indirection entre la numerotation du noyau et XML
 if (iihmpr.eq.1) then
-  call uicopr (nsalpp, ippmod, ipppro, ipproc, icod3p, icoebu,      &
-               icolwc, iirayo, itemp, imam, iym, ickabs, it4m, it3m,&
-               ix2, itsc, irhol, iteml, ifmel, ifmal, iampl, itscl, &
+  call uicopr (nsalpp, ippmod, ipppro, ipproc,                       &
+               icolwc, iirayo, itemp, imam, iym, ickabs, it4m, it3m, &
+               itsc, irhol, iteml, ifmel, ifmal, iampl, itscl,       &
                imaml)
 
 endif

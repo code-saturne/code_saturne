@@ -24,11 +24,10 @@ subroutine raycli &
 !================
 
  ( nvar   , nscal  ,                                              &
-   isvhb  , isvtb  ,                                              &
-   icodcl , itrifb , itypfb ,                                     &
+   icodcl , itypfb ,                                              &
    izfrad ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
-   coefa  , coefb  , hbord  )
+   dt     , rtp    , rtpa   , propce , propfb , rcodcl ,          &
+   coefa  , coefb  )
 
 !===============================================================================
 ! FONCTION :
@@ -48,10 +47,6 @@ subroutine raycli &
 !__________________!____!_____!________________________________________________!
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! isvhb            ! e  ! <-- ! indicateur de sauvegarde des                   !
-!                  !    !     !  coefficients d'echange aux bords              !
-! isvtb            ! e  ! <-- ! indicateur de sauvegarde des                   !
-!                  !    !     !  temperatures aux bords                        !
 ! icodcl           ! te ! --> ! code de condition limites aux faces            !
 !  (nfabor,nvar    !    !     !  de bord                                       !
 !                  !    !     ! = 1   -> dirichlet                             !
@@ -61,14 +56,12 @@ subroutine raycli &
 !                  !    !     ! = 6   -> rugosite et u.n=0 (vitesse)           !
 !                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
 !                  !    !     !  entrante eventuelle     bloquee               !
-! itrifb           ! ia ! <-- ! indirection for boundary faces ordering        !
 ! itypfb           ! ia ! --> ! boundary face types                            !
 ! izfrad(nfabor    ! te ! <-- ! numero de zone des faces de bord               !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
 !  (nfabor,nvar    !    !     !  aux faces de bord                             !
@@ -84,8 +77,6 @@ subroutine raycli &
 !                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! hbord            ! tr ! --> ! coefficients d'echange aux bords               !
-! (nfabor)         !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -119,18 +110,15 @@ implicit none
 ! Arguments
 
 integer          nvar   , nscal
-integer          isvhb  , isvtb
 
 integer          icodcl(ndimfb,nvarcl)
-integer          itrifb(ndimfb), itypfb(ndimfb)
+integer          itypfb(ndimfb)
 integer          izfrad(ndimfb)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(ndimfb,*)
+double precision propce(ncelet,*), propfb(ndimfb,*)
 double precision rcodcl(ndimfb,nvarcl,3)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
-double precision hbord(ndimfb)
 
 ! Local variables
 integer          ifac, iel, ideb, ivart
@@ -254,7 +242,7 @@ if (ipacli.eq.1 .and. isuird.eq.0) then
   itypfb ,                                                       &
   icodcl , izfrad , isothm ,                                     &
   tmin   , tmax   , tx     ,                                     &
-  dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
+  dt     , rtp    , rtpa   , propce , propfb , rcodcl ,          &
   thwall , propfb(1,ipprob(ifnet))  , propfb(1,ipprob(ihconv))  ,&
   propfb(1,ipprob(ifconv)),                                      &
   propfb(1,ipprob(ixlam)) , propfb(1,ipprob(iepa)) ,             &
@@ -312,7 +300,7 @@ call usray2 &
   itypfb ,                                                       &
   icodcl , izfrad , isothm ,                                     &
   tmin   , tmax   , tx     ,                                     &
-  dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
+  dt     , rtp    , rtpa   , propce , propfb , rcodcl ,          &
   thwall , propfb(1,ipprob(ifnet)) ,  propfb(1,ipprob(ifconv)) , &
   propfb(1,ipprob(ifconv)) , propfb(1,ipprob(ixlam)),            &
   propfb(1,ipprob(iepa))   , propfb(1,ipprob(ieps)) ,            &
@@ -552,7 +540,7 @@ if (abs(iscsth(iscalt)).eq.1) then
  ( nvar   , nscal  ,                                              &
    mode   ,                                                       &
    itypfb ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    propfb(1,ipprob(itparo)) , thwall , tempk  )
       ! Resultat : T en K
 
@@ -560,11 +548,9 @@ if (abs(iscsth(iscalt)).eq.1) then
 
       call ppray4 &
       !==========
- ( nvar   , nscal  ,                                              &
-   mode   ,                                                       &
+ ( mode   ,                                                       &
    itypfb ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
+   rtp    , rtpa   , propce , propfb ,                            &
    propfb(1,ipprob(itparo)) , thwall , tempk  )
       ! Resultat : T en K
 
@@ -622,7 +608,7 @@ if(ideb.eq.0) then
    itypfb ,                                                       &
    icodcl , isothm , izfrad ,                                     &
    tmin   , tmax   , tx     ,                                     &
-   dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
+   dt     , rtp    , rtpa   , propce , propfb , rcodcl ,          &
    coefa  , coefb  ,                                              &
    propfb(1,ipprob(itparo)) , propfb(1,ipprob(iqinci)) ,          &
    text   , tint   ,                                              &
@@ -700,7 +686,7 @@ elseif (iscsth(iscalt).eq.2) then
     ( nvar   , nscal  ,                                              &
       mode   ,                                                       &
       itypfb ,                                                       &
-      dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+      dt     , rtp    , rtpa   , propce , propfb ,                   &
       propfb(1,ipprob(itparo)) , propfb(1,ipprob(ifnet))  ,          &
       tempk  )
       ! HPAROI
@@ -709,11 +695,9 @@ elseif (iscsth(iscalt).eq.2) then
 
       call ppray4 &
       !==========
-    ( nvar   , nscal  ,                                              &
-      mode   ,                                                       &
+    ( mode   ,                                                       &
       itypfb ,                                                       &
-      dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-      coefa  , coefb  ,                                              &
+      rtp    , rtpa   , propce , propfb ,                            &
       propfb(1,ipprob(itparo)) , propfb(1,ipprob(ifnet))  ,          &
       tempk  )
       ! HPAROI
@@ -739,7 +723,7 @@ elseif (iscsth(iscalt).eq.2) then
     ( nvar   , nscal  ,                                              &
       mode   ,                                                       &
       itypfb ,                                                       &
-      dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+      dt     , rtp    , rtpa   , propce , propfb ,                   &
       text   , thwall , tempk  )
       ! HEXT
 
@@ -747,11 +731,9 @@ elseif (iscsth(iscalt).eq.2) then
 
       call ppray4 &
       !==========
-    ( nvar   , nscal  ,                                              &
-      mode   ,                                                       &
+    ( mode   ,                                                       &
       itypfb ,                                                       &
-      dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-      coefa  , coefb  ,                                              &
+      rtp    , rtpa   , propce , propfb ,                            &
       text   , thwall , tempk  )
       ! HEXT
 

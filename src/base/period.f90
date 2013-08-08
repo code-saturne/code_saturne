@@ -27,6 +27,10 @@ module period
 
   !=============================================================================
 
+  implicit none
+
+  !=============================================================================
+
   ! iperio : indique s'il y a au moins une periodicite
   !          valeur admissibles : 0 ou 1 ; valeur par defaut : 0
   ! iperot : indique le nombre de periodicites de rotation

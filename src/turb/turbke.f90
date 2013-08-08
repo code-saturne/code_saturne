@@ -48,7 +48,6 @@
 !> \param[in]     rtpa          calculated variables at cell centers
 !>                               (at the previous time step)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfa        physical properties at interior face centers
 !> \param[in]     propfb        physical properties at boundary face centers
 !> \param[in]     tslagr        coupling term of the lagangian module
 !> \param[in]     coefa, coefb  boundary conditions
@@ -63,7 +62,7 @@
 subroutine turbke &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    tslagr , coefa  , coefb  , ckupdc , smacel ,                   &
    prdv2f )
 
@@ -99,8 +98,7 @@ integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(ndimfb,*)
+double precision propce(ncelet,*), propfb(ndimfb,*)
 double precision tslagr(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
@@ -358,7 +356,7 @@ if (irccor.eq.1) then
 
   call rotcor &
   !==========
- ( dt     , rtpa  , propce , coefa , coefb , &
+ ( dt     , rtpa  , coefa , coefb , &
    w1     , ce2rc )
 
 else
@@ -397,7 +395,7 @@ if (igrake.eq.1 .and. ippmod(iatmos).ge.1) then
   call atprke &
   !==========
  ( nscal  ,                                                       &
-   rtp    , rtpa   , propce , propfa , propfb ,                   &
+   rtp    , rtpa   , propce , propfb ,                            &
    coefa  , coefb  ,                                              &
    tinstk , tinste ,                                              &
    smbrk  , smbre  )
@@ -529,8 +527,7 @@ if (iturb.eq.51) then
 
   call itrgrp &
   !==========
-( nvar   , nscal  ,                                              &
-  init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
+( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
   iwarnp , nfecra ,                                              &
   epsrgp , climgp , extrap ,                                     &
   rvoid  ,                                                       &
@@ -553,11 +550,8 @@ if (iturb.eq.51) then
   ! Allocate a work array
   allocate(w12(ncelet))
 
-  call tsepls &
+  call tsepls(dt, rtp, rtpa, coefa, coefb, w12)
   !==========
-( dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-  coefa  , coefb  ,                                              &
-  w12    )
 
   do iel = 1, ncel
 
@@ -750,7 +744,7 @@ call ustske &
 !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce , propfa , propfb ,                   &
+   dt     , rtpa   , propce , propfb ,                            &
    ckupdc , smacel , strain , divu   ,                            &
    w7     , w8     , usimpk , usimpe )
 
@@ -953,8 +947,7 @@ if (ikecou.eq.1) then
 
   call bilsca &
   !==========
- ( nvar   , nscal  ,                                              &
-   idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
+ ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    ipp    , iwarnp , imucpp , idftnp ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
@@ -1024,8 +1017,7 @@ if (ikecou.eq.1) then
 
   call bilsca &
   !==========
- ( nvar   , nscal  ,                                              &
-   idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
+ ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    ipp    , iwarnp , imucpp , idftnp ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
@@ -1197,8 +1189,7 @@ thetap = thetav(ivar)
 
 call codits &
 !==========
- ( nvar   , nscal  ,                                              &
-   idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
+ ( idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
@@ -1279,8 +1270,7 @@ thetap = thetav(ivar)
 
 call codits &
 !==========
- ( nvar   , nscal  ,                                              &
-   idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
+ ( idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &

@@ -53,7 +53,6 @@
 !> \param[in,out] rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in,out] propfa        physical properties at interior face centers
 !> \param[in,out] propfb        physical properties at boundary face centers
 !> \param[in]     tslagr        coupling term for the Lagrangian module
 !> \param[in]     coefa, coefb  boundary conditions
@@ -78,7 +77,7 @@ subroutine covofi &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  , itspdv ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , propfa , propfb , tslagr , &
+   dt     , rtp    , rtpa   , propce , propfb , tslagr ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    viscf  , viscb  ,                                              &
    smbrs  , rovsdt )
@@ -111,6 +110,7 @@ use ihmpre, only: iihmpr
 use mesh
 use parall
 use period
+use cs_f_interfaces
 
 !===============================================================================
 
@@ -126,8 +126,7 @@ integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(ndimfb,*)
+double precision propce(ncelet,*), propfb(ndimfb,*)
 double precision tslagr(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
@@ -140,9 +139,9 @@ double precision rovsdt(ncelet)
 character*80     chaine
 integer          ivar
 integer          ifac  , iel
-integer          init  , inc   , iccocg, isqrt, iii, iiun, ibcl
+integer          inc   , iccocg, isqrt, iii, iiun, ibcl
 integer          ivarsc
-integer          iiscav, iicp
+integer          iiscav
 integer          iclvar, iclvaf
 integer          ipcrom, ipcroa, ipcrho, ipcvst, ipcvsl, iflmas, iflmab
 integer          ippvar, ipp   , iptsca, ipcvso
@@ -322,7 +321,7 @@ call ustssc &
 ( nvar   , nscal  , ncepdp , ncesmp ,                            &
   iscal  ,                                                       &
   icepdc , icetsm , itypsm ,                                     &
-  dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
+  dt     , rtpa   , rtp    , propce , propfb ,                   &
   ckupdc , smacel , smbrs  , rovsdt )
 
 ! Si on extrapole les TS :
@@ -373,12 +372,8 @@ endif
 !     Ordre 2 non pris en compte
 
 if (iscal.eq.iscalt) then
-  call cptssy &
+  call cptssy(iscal, rtpa, rtp, smbrs, rovsdt)
   !==========
-( nvar   , nscal  ,                                              &
-  iscal  ,                                                       &
-  dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-  smbrs  , rovsdt )
 endif
 
 ! --> Physique particulieres
@@ -390,7 +385,7 @@ if (ippmod(iphpar).ge.1) then
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
+   dt     , rtpa   , rtp    , propce , propfb ,                   &
    coefa  , coefb  , ckupdc , smacel ,                            &
    smbrs  , rovsdt , tslagr )
 endif
@@ -763,7 +758,7 @@ if (idiff(ivar).ge.1) then
     !==========
     ( nvar   , nscal  ,                                              &
       iscal  , itspdv ,                                              &
-      dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+      dt     , rtp    , rtpa   , propce , propfb ,                   &
       coefa  , coefb  ,                                              &
       xcpp   ,                                                       &
       smbrs  )
@@ -815,9 +810,8 @@ call field_get_key_int(iflid, keydri, iscdri)
 if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
  call driflu &
  !=========
- ( nvar   , nscal  ,                                              &
-   iflid  ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+ ( iflid  ,                                                       &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    imasfl , bmasfl ,                                              &
    rovsdt , smbrs  )
 endif
@@ -853,8 +847,7 @@ relaxp = relaxv(ivar)
 
 call codits &
 !==========
- ( nvar   , nscal  ,                                              &
-   idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
+ ( idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
@@ -880,11 +873,8 @@ else
   iii = 1
 endif
 
-call clpsca &
+call clpsca(ncelet, ncel, iscal, rtp(1,iii), rtp)
 !==========
- ( ncelet , ncel   , nvar   , nscal  , iscal  ,                   &
-   propce , rtp(1,iii)      , rtp    )
-
 
 ! BILAN EXPLICITE (VOIR CODITS : ON ENLEVE L'INCREMENT)
 ! Ceci devrait etre valable avec le theta schema sur les Termes source

@@ -588,7 +588,7 @@ contains
     character(len=len_trim(old_name_x)+1, kind=c_char) :: c_o_n_x
     character(len=len_trim(old_name_y)+1, kind=c_char) :: c_o_n_y
     character(len=len_trim(old_name_z)+1, kind=c_char) :: c_o_n_z
-    integer(c_int) :: c_f_num, c_loc_id, c_n_l_vals, c_ierror
+    integer(c_int) :: c_f_num, c_loc_id, c_ierror
 
     c_f_num = f_num
     c_s_n = trim(sec_name)//c_null_char

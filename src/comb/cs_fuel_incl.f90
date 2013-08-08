@@ -30,6 +30,8 @@ module cs_fuel_incl
   use ppppar
   use ppthch
 
+  implicit none
+
   !      EPSIFL : Precision pour les tests
 
   double precision epsifl

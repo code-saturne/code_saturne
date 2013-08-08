@@ -48,8 +48,6 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
 !> \param[in]     ivar          index of the current variable
 !> \param[in]     itypfl        indicator (take rho into account or not)
 !>                               - 1 compute \f$ \rho\vect{u}\cdot\vect{S} \f$
@@ -88,8 +86,7 @@
 !_______________________________________________________________________________
 
 subroutine inimav &
- ( nvar   , nscal  ,                                              &
-   ivar   , itypfl ,                                              &
+ ( ivar   , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrgu , imligu ,          &
    iwarnu , nfecra ,                                              &
    epsrgu , climgu , extrau ,                                     &
@@ -118,7 +115,6 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
 integer          ivar   , itypfl
 integer          iflmb0 , init   , inc    , imrgra
 integer          nswrgu , imligu
@@ -135,7 +131,7 @@ double precision flumas(nfac), flumab(nfabor)
 ! Local variables
 
 integer          ifac, ii, jj, iel, ig, it
-integer          iappel, isou, jsou
+integer          isou, jsou
 double precision pfac, pip
 double precision dofx,dofy,dofz,pnd
 double precision diipbx, diipby, diipbz

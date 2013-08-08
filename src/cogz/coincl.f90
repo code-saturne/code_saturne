@@ -29,6 +29,8 @@ module coincl
 
   use ppppar
 
+  implicit none
+
   !=============================================================================
 
   !--> MODELE FLAMME DE DIFFUSION (CHIMIE 3 POINTS)

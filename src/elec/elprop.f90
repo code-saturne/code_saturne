@@ -31,7 +31,7 @@ subroutine elprop &
 
 !     INIT DES POSITIONS DES VARIABLES D'ETAT POUR
 !                LE MODULE ELECTRIQUE
-!         (DANS VECTEURS PROPCE, PROPFA, PROPFB)
+!         (DANS VECTEURS PROPCE, PROPFB)
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -169,7 +169,7 @@ nsalto = iprop
 ipropp = iprop
 
 !===============================================================================
-! 2. POSITIONNEMENT DES PROPRIETES : PROPCE, PROPFB, PROPFA
+! 2. POSITIONNEMENT DES PROPRIETES : PROPCE, PROPFB
 !===============================================================================
 
 ! ---> Positionnement dans le tableau PROPCE
@@ -239,7 +239,7 @@ nproce = iprop
 
 
 !===============================================================================
-! 3. POSITIONNEMENT DES PROPRIETES : PROPFB, PROPFA
+! 3. POSITIONNEMENT DES PROPRIETES : PROPFB
 !===============================================================================
 
 ! ---> Positionnement dans le tableau PROPFB

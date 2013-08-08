@@ -26,6 +26,10 @@ module ctincl
 
   !=============================================================================
 
+  implicit none
+
+  !=============================================================================
+
   ! ichrze : activate postprocessing of cooling tower exchange zones
 
   integer, save :: ichrze

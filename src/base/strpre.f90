@@ -25,7 +25,7 @@ subroutine strpre &
 
  ( itrale , italim , ineefl ,                                     &
    impale ,                                                       &
-   rtp    , rtpa   , propce , propfa , propfb ,                   &
+   rtpa   ,                                                       &
    coefa  , coefb  ,                                              &
    flmalf , flmalb , xprale , cofale , depale )
 
@@ -47,9 +47,6 @@ subroutine strpre &
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
 ! flmalf(nfac)     ! tr ! --> ! sauvegarde du flux de masse faces int          !
@@ -95,9 +92,7 @@ integer          itrale , italim , ineefl
 
 integer          impale(nnod)
 
-double precision rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision rtpa(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision flmalf(nfac), flmalb(nfabor), xprale(ncelet)
 double precision cofale(nfabor,8)

@@ -58,8 +58,6 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
 !> \param[in]     idtvar        indicator of the temporal scheme
 !> \param[in]     ivar          index of the current variable
 !> \param[in]     iconvp        indicator
@@ -133,8 +131,7 @@
 !_______________________________________________________________________________
 
 subroutine bilsc4 &
- ( nvar   , nscal  ,                                              &
-   idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
+ ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , ivisep ,                   &
    ippu   , ippv   , ippw   , iwarnp ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
@@ -164,7 +161,6 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
 integer          idtvar
 integer          ivar   , iconvp , idiffp , nswrgp , imligp
 integer          ircflp , ischcp , isstpp

@@ -23,8 +23,7 @@
 subroutine projts &
 !================
 
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrgu , imligu ,          &
+ ( init   , inc    , imrgra , iccocg , nswrgu , imligu ,          &
    iwarnu , nfecra ,                                              &
    epsrgu , climgu ,                                              &
    frcxt  ,                                                       &
@@ -50,8 +49,6 @@ subroutine projts &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! init             ! e  ! <-- ! > 0 : initialisation du flux de masse          !
 ! inc              ! e  ! <-- ! indicateur = 0 resol sur increment             !
 !                  !    !     !              1 sinon                           !
@@ -95,7 +92,6 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
 integer          init   , inc    , imrgra , iccocg
 integer          nswrgu , imligu
 integer          iwarnu , nfecra

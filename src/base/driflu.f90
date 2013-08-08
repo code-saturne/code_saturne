@@ -35,8 +35,6 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
 !> \param[in]     iflid         index of the current drift scalar field
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     rtp           calculated variables at cell centers
@@ -44,7 +42,6 @@
 !> \param[in]     rtpa          calculated variables at cell centers
 !>                               (at previous time step)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in,out] propfa        physical properties at interior face centers
 !> \param[in,out] propfb        physical properties at boundary face centers
 !> \param[in,out] imasfl        scalar mass flux at interior face centers
 !> \param[in,out] bmasfl        scalar mass flux at boundary face centers
@@ -53,9 +50,8 @@
 !______________________________________________________________________________
 
 subroutine driflu &
-( nvar   , nscal  ,                                              &
-  iflid  ,                                                       &
-  dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+( iflid  ,                                                       &
+  dt     , rtp    , rtpa   , propce , propfb ,                   &
   imasfl , bmasfl ,                                              &
   rovsdt , smbrs  )
 
@@ -84,25 +80,22 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
 integer          iflid
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(ndimfb,*)
+double precision propce(ncelet,*), propfb(ndimfb,*)
 double precision imasfl(nfac), bmasfl(ndimfb)
 double precision rovsdt(ncelet), smbrs(ncelet)
 
 ! Local variables
 
-character*80     chaine
 integer          ivar
 integer          ifac  , iel
 integer          init  , inc   , iccocg
 integer          ipcrom, ipcvst, ipcvsl, iflmas, iflmab
 integer          nswrgp, imligp, iwarnp
-integer          iconvp, idiffp, ndircp, ireslp, nitmap
-integer          ircflp, ischcp, isstpp, iescap
+integer          iconvp, idiffp
+integer          ircflp, ischcp, isstpp
 integer          ippu  , ippv  , ippw
 integer          isou  , jsou
 integer          f_id
@@ -110,7 +103,7 @@ integer          iflmb0, idftnp, iphydp, ivisep, itypfl
 integer          ipbrom
 integer          keysca, iscal, keydri, iscdri
 
-double precision epsrgp, climgp, extrap, blencp, epsilp
+double precision epsrgp, climgp, extrap, blencp
 double precision thetap
 double precision rhovdt
 double precision omega
@@ -319,8 +312,7 @@ if (btest(iscdri, DRIFT_SCALAR_TURBOPHORESIS).or.    &
 
   call itrmas &
   !==========
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
+ ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    rvoid  ,                                                       &
@@ -382,8 +374,7 @@ if (btest(iscdri, DRIFT_SCALAR_CENTRIFUGALFORCE)) then
   ! Warning: bilsc adds "-( grad(u) . u)"
   call bilscv &
   !==========
- ( nvar   , nscal  ,                                              &
-   idtvar , iu     , iconvp , idiffp , nswrgp , imligp , ircflp , &
+ ( idtvar , iu     , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , ivisep ,                   &
    ippu   , ippv   , ippw   , iwarnp , idftnp ,                   &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
@@ -445,8 +436,7 @@ extrap = extrag(ivar)
 
 call inimav &
 !==========
- ( nvar   , nscal  ,                                              &
-   ivar   , itypfl ,                                              &
+ ( ivar   , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &

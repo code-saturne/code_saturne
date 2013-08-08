@@ -28,6 +28,10 @@ module field
 
   !=============================================================================
 
+  implicit none
+
+  !=============================================================================
+
   integer :: FIELD_INTENSIVE, FIELD_EXTENSIVE
   integer :: FIELD_VARIABLE, FIELD_PROPERTY
   integer :: FIELD_POSTPROCESS, FIELD_ACCUMULATOR, FIELD_USER

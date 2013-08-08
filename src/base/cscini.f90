@@ -23,7 +23,7 @@
 subroutine cscini &
 !================
 
- ( nvar   , nscal  )
+ ( nvar  )
 
 !===============================================================================
 ! FONCTION :
@@ -66,9 +66,7 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-
-
+integer          nvar
 
 ! Local variables
 

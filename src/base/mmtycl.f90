@@ -23,10 +23,7 @@
 subroutine mmtycl &
 !================
 
- ( nvar   , nscal  ,                                              &
-   itypfb , icodcl ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   rcodcl )
+ ( itypfb , rcodcl )
 
 !===============================================================================
 ! FONCTION :
@@ -40,21 +37,9 @@ subroutine mmtycl &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
-! icodcl           ! te ! <-- ! code de condition limites aux faces            !
-!  (nfabor,nvar    !    !     !  de bord                                       !
-!                  !    !     ! = 1   -> dirichlet                             !
-!                  !    !     ! = 3   -> densite de flux                       !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! rcodcl           ! tr ! <-- ! valeur des conditions aux limites              !
-!  (nfabor,nvar    !    !     !  aux faces de bord                             !
+!  (nfabor,nvarcl) !    !     !  aux faces de bord                             !
 !                  !    !     ! rcodcl(1) = valeur du dirichlet                !
 !                  !    !     ! rcodcl(2) = valeur du coef. d'echange          !
 !                  !    !     !  ext. (infinie si pas d'echange)               !
@@ -64,8 +49,6 @@ subroutine mmtycl &
 !                  !    !     ! pour la pression             dt*gradp          !
 !                  !    !     ! pour les scalaires                             !
 !                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
-! depmob(nnod,3    ! tr ! <-- ! deplacement aux noeuds                         !
-! xyzno1(3,nnod    ! tr ! <-- ! coordonnees noeuds maillage initial            !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -79,7 +62,6 @@ subroutine mmtycl &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use numvar
 use optcal
 use cstnum
@@ -94,36 +76,21 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-
 integer          itypfb(nfabor)
-integer          icodcl(nfabor,nvarcl)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision rcodcl(nfabor,nvarcl,3)
-double precision depmob(nnod,3), xyzno1(3,nnod)
 
 ! Local variables
 
 integer          ifac, iel
-integer          ii, inod, icpt
-double precision ddepx, ddepy, ddepz
 double precision srfbnf, rnx, rny, rnz
 double precision rcodcx, rcodcy, rcodcz, rcodsn
 double precision vitbox, vitboy, vitboz
 
-
 !===============================================================================
 
 !===============================================================================
-! 1.  INITIALISATIONS
-!===============================================================================
-
-
-!===============================================================================
-! 2.  VITESSE DE DEFILEMENT POUR LES PAROIS FLUIDES ET SYMETRIES
+! VITESSE DE DEFILEMENT POUR LES PAROIS FLUIDES ET SYMETRIES
 !===============================================================================
 
 ! Pour les symetries on rajoute toujours la vitesse de maillage, car on
@@ -138,7 +105,7 @@ do ifac = 1, nfabor
 
   iel = ifabor(ifac)
 
-  ! --- En turbomachine on connaît la valeur exacte de la vitesse de maillage
+  ! --- En turbomachine on connaï¿½t la valeur exacte de la vitesse de maillage
 
   vitbox = omegay*cdgfbo(3,ifac) - omegaz*cdgfbo(2,ifac)
   vitboy = omegaz*cdgfbo(1,ifac) - omegax*cdgfbo(3,ifac)

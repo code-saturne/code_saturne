@@ -25,7 +25,7 @@ subroutine cfxtcl &
 
  ( nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefa  , coefb  , rcodcl )
 
 !===============================================================================
@@ -60,7 +60,6 @@ subroutine cfxtcl &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
@@ -117,8 +116,7 @@ integer          itrifb(nfabor), itypfb(nfabor)
 integer          izfppp(nfabor)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propce(ncelet,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision rcodcl(nfabor,nvarcl,3)
 
@@ -196,9 +194,9 @@ if(icalep.ne.0) then
   imodif = 0
   call cfther                                                   &
   !==========
-( nvar   , nscal  ,                                              &
+( nvar   ,                                                       &
   iccfth , imodif ,                                              &
-  dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+  dt     , rtp    , rtpa   , propce ,                            &
   w5     , w7     , w3     , w4     )
 endif
 
@@ -220,9 +218,9 @@ if(icalgm.ne.0) then
   imodif = 0
   call cfther                                                   &
   !==========
-( nvar   , nscal  ,                                              &
+( nvar   ,                                                       &
   iccfth , imodif ,                                              &
-  dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+  dt     , rtp    , rtpa   , propce ,                            &
   w1     , w2     , w6     , w4     )
 
   if(ieos.eq.1) then
@@ -292,9 +290,9 @@ do ifac = 1, nfabor
 
       call cfther                                               &
       !==========
- ( nvar   , nscal  ,                                              &
+ ( nvar   ,                                                       &
    iccfth , ifac   ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce ,                            &
    w1     , w2     , w3     , w4     )
 
 !       En outre, il faut appliquer une pre-correction pour compenser
@@ -420,9 +418,9 @@ do ifac = 1, nfabor
 
     call cfther                                                 &
     !==========
- ( nvar   , nscal  ,                                              &
+ ( nvar   ,                                                       &
    iccfth , ifac   ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce ,                            &
    w1     , w2     , w3     , w4     )
 
 
@@ -499,9 +497,9 @@ do ifac = 1, nfabor
 
     call cfther                                                 &
     !==========
- ( nvar   , nscal  ,                                              &
+ ( nvar   ,                                                       &
    iccfth , ifac   ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce ,                            &
    w1     , w2     , w3     , w4     )
 
 
@@ -553,9 +551,9 @@ do ifac = 1, nfabor
 
     call cfther                                                 &
     !==========
- ( nvar   , nscal  ,                                              &
+ ( nvar   ,                                                       &
    iccfth , ifac   ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce ,                            &
    w1     , w2     , w3     , w4     )
 
 !               flux de masse et type de conditions aux limites :
@@ -606,9 +604,9 @@ do ifac = 1, nfabor
 
     call cfther                                                 &
     !==========
- ( nvar   , nscal  ,                                              &
+ ( nvar   ,                                                       &
    iccfth , ifac   ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce ,                            &
    w1     , w2     , w3     , w4     )
 
 !     Rusanov, flux de masse et type de conditions aux limites :
@@ -659,9 +657,9 @@ do ifac = 1, nfabor
 
     call cfther                                                 &
     !==========
- ( nvar   , nscal  ,                                              &
+ ( nvar   ,                                                       &
    iccfth , ifac   ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce ,                            &
    w1     , w2     , w3     , w4     )
 
 !     Rusanov, flux de masse et type de conditions aux limites :
@@ -772,12 +770,12 @@ do ifac = 1, nfabor
 !     On calcule des flux par Rusanov (PROPFB)
 !       (en particulier, le flux de masse est complete)
 
-      call cfrusb                                               &
+      call cfrusb                                                 &
       !==========
  ( nvar   , nscal  ,                                              &
    ifac   ,                                                       &
    gammag ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propfb ,                            &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     )
 

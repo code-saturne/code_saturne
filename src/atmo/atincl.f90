@@ -31,6 +31,8 @@ use mesh
 use ppppar
 use ppincl
 
+implicit none
+
 !=============================================================================
 
 ! 1. Arrays specific to the atmospheric physics
@@ -80,7 +82,7 @@ double precision, allocatable, dimension(:) :: nebdia, nn
 integer, save :: itempp, itempl, itotwt, intdrp
 
 ! 1.3 Pointers for the positions of the properties for the specific phys.
-!      (ipproc in propce, propfa, propfb)
+!      (ipproc in propce, propfb)
 !------------------------------------------------------------------------
 
 !   Properties specific to the atmospheric physics:

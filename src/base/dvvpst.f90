@@ -25,10 +25,10 @@ subroutine dvvpst &
 
  ( nummai , numtyp ,                                              &
    nvar   , nscal  , nvlsta , nvisbr ,                            &
-   ncelps , nfacps , nfbrps ,                                     &
+   ncelps , nfbrps ,                                              &
    itypps ,                                                       &
-   lstcel , lstfac , lstfbr ,                                     &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
+   lstcel , lstfbr ,                                              &
+   dt     , rtpa   , rtp    , propce , propfb ,                   &
    statce , stativ , statfb ,                                     &
    tracel , trafbr )
 
@@ -51,19 +51,16 @@ subroutine dvvpst &
 ! nvlsta           ! e  ! <-- ! nombre de variables stat. lagrangien           !
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
 ! ncelps           ! e  ! <-- ! nombre de cellules du maillage post            !
-! nfacps           ! e  ! <-- ! nombre de faces interieur post                 !
 ! nfbrps           ! e  ! <-- ! nombre de faces de bord post                   !
 ! itypps(3)        ! te ! <-- ! indicateur de presence (0 ou 1) de             !
 !                  !    !     ! cellules (1), faces (2), ou faces de           !
 !                  !    !     ! de bord (3) dans le maillage post              !
 ! lstcel(ncelps    ! te ! <-- ! liste des cellules du maillage post            !
-! lstfac(nfacps    ! te ! <-- ! liste des faces interieures post               !
 ! lstfbr(nfbrps    ! te ! <-- ! liste des faces de bord post                   !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! statce           ! tr ! <-- ! statistiques cellules (lagrangien)             !
 !  (ncelet,nvlsta) !    !     !                                                !
@@ -113,14 +110,13 @@ implicit none
 
 integer          nummai , numtyp
 integer          nvar   , nscal  , nvlsta , nvisbr
-integer          ncelps , nfacps , nfbrps
+integer          ncelps , nfbrps
 
 integer          itypps(3)
-integer          lstcel(ncelps), lstfac(nfacps), lstfbr(nfbrps)
+integer          lstcel(ncelps), lstfbr(nfbrps)
 
 double precision dt(ncelet), rtpa(ncelet,*), rtp(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(ndimfb,*)
+double precision propce(ncelet,*), propfb(ndimfb,*)
 double precision statce(ncelet,nvlsta), statfb(nfabor,nvisbr)
 double precision stativ(ncelet,nvlsta)
 double precision tracel(ncelps*3)
@@ -654,7 +650,7 @@ if (numtyp .eq. -1) then
         !==========
           (nvar, nscal, nvlsta,                                   &
            ivarl, ivarl1, ivarlm, iflu, ilpd1, icla,              &
-           dt, rtpa, rtp, propce, propfa, propfb,                 &
+           dt, rtpa, rtp, propce, propfb,                         &
            statce, stativ, wcell)
 
         call post_write_var(nummai, trim(name80), idimt, ientla, ivarpr,  &
@@ -688,7 +684,7 @@ if (numtyp .eq. -1) then
         !==========
           (nvar, nscal, nvlsta,                                   &
            ivarl, ivarl1, ivarlm, iflu, ilpd1, icla,              &
-           dt, rtpa, rtp, propce, propfa, propfb,                 &
+           dt, rtpa, rtp, propce, propfb,                         &
            statce, stativ, wcell)
 
         call post_write_var(nummai, trim(name80), idimt, ientla, ivarpr,  &

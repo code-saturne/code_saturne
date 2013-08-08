@@ -23,15 +23,8 @@
 subroutine cs2tsv &
 !================
 
- ( nvar   , nscal  ,                                              &
-   ncecpl,                                                        &
-   ivar   ,                                                       &
-   lcecpl ,                                                       &
-   dt     , rtpa   , vela   ,                                     &
-   propce , propfa , propfb ,                                     &
-   coefa  , coefb  ,                                              &
-   crvexp , crvimp ,                                              &
-   rvcpce )
+ ( ncecpl,  lcecpl ,                                              &
+   vela   , propce , crvexp , rvcpce )
 
 !===============================================================================
 ! FONCTION :
@@ -42,20 +35,8 @@ subroutine cs2tsv &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ivar             ! i  ! <-- ! variable number                                !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant            prec)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! crvexp(3,ncelet) ! tr ! --> ! tableau de travail pour part explicit          !
-! crvimp           ! tr ! --> ! tableau de travail pour part implicit          !
-! (3,3,ncelet)     !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -85,23 +66,18 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-integer          ivar
 integer          ncecpl
 
 integer          lcecpl(ncecpl)
 
-double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision crvexp(3,ncelet), crvimp(3,3,ncelet)
+double precision crvexp(3,ncelet)
 double precision rvcpce(3,ncecpl)
 double precision vela(3,ncelet)
 
 ! Local variables
 
-integer          iel    , ipcrom , isou
+integer          ipcrom , isou
 integer          ipt    , ielloc
 double precision xdis   , xloc   , xtau   , rovtau
 

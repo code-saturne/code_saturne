@@ -23,8 +23,7 @@
 subroutine visecv &
 !================
 
- ( nvar   ,                            &
-   propce ,                            &
+ ( propce ,                            &
    secvif , secvib )
 
 !===============================================================================
@@ -49,7 +48,6 @@ subroutine visecv &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! secvif(nfac)     ! tr ! --- ! lambda*surface at interior faces               !
 ! secvib(nfabor)   ! tr ! --- ! lambda*surface at boundary faces               !
@@ -70,7 +68,7 @@ use cstphy
 use entsor
 use numvar
 use optcal
-use pointe, only: forbr, porosi
+use pointe, only: porosi
 use parall
 use period
 use ppppar
@@ -84,8 +82,6 @@ implicit none
 
 ! Arguments
 
-integer          nvar
-
 double precision propce(ncelet,*)
 double precision secvif(nfac), secvib(nfabor)
 
@@ -94,7 +90,6 @@ double precision secvif(nfac), secvib(nfabor)
 integer          iel, ifac, ii, jj
 integer          ipcvis, ipcvst
 integer          ipcvsv
-logical          ilved
 
 double precision d2s3m
 

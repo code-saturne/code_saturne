@@ -24,7 +24,7 @@ subroutine resalp &
 !================
 
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefa  , coefb  )
 
 !===============================================================================
@@ -46,8 +46,6 @@ subroutine resalp &
 ! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
 ! propce           ! tr ! <-- ! proprietes physiques au centre des             !
 ! (ncelet,*)       !    !     !    cellules                                    !
-! propfa           ! tr ! <-- ! proprietes physiques au centre des             !
-!  (nfac,*)        !    !     !    faces internes                              !
 ! propfb           ! tr ! <-- ! proprietes physiques au centre des             !
 !  (nfabor,*)      !    !     !    faces de bord                               !
 ! coefa, coefb     ! tr ! <-- ! conditions aux limites aux                     !
@@ -87,8 +85,7 @@ implicit none
 integer          nvar   , nscal
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(ndimfb,*)
+double precision propce(ncelet,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 
 ! Local variables
@@ -105,7 +102,7 @@ integer          imucpp, idftnp, iswdyp
 double precision blencp, epsilp, epsrsp, epsrgp, climgp, extrap, relaxp
 double precision thetv , thetap
 double precision d1s4, d3s2, d1s2
-double precision xk, xnu, xrom, l2
+double precision xk, xnu, l2
 double precision xllke, xllkmg, xlldrb
 
 double precision rvoid(1)
@@ -262,8 +259,7 @@ relaxp = relaxv(ivar)
 
 call codits &
 !==========
- ( nvar   , nscal  ,                                              &
-   idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
+ ( idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
@@ -281,10 +277,9 @@ call codits &
 !===============================================================================
 ! 3. Clipping
 !===============================================================================
-   call clpalp                                                    &
+
+   call clpalp(ncelet, ncel, nvar, rtpa, rtp)
    !==========
- ( ncelet , ncel   , nvar   ,                                     &
-   propce , rtpa   , rtp )
 
 ! Free memory
 deallocate(smbr, rovsdt, w1)

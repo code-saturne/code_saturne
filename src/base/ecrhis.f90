@@ -76,10 +76,9 @@ double precision, dimension(*), target :: ra
 
 character        nompre*300, nomhis*300
 integer          tplnum, ii, ii1, ii2, lpre, lnom, lng
-integer          icap, ncap, ipp, ira, ipp2, jtcabs
-integer          idivdt, ixmsdt, iel
+integer          icap, ncap, ipp, ira
+integer          idivdt, iel
 integer          nbcap(nvppmx)
-double precision xtcabs
 double precision varcap(ncaptm)
 
 integer, dimension(:), allocatable :: lsttmp

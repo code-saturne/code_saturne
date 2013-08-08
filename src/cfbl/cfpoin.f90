@@ -27,6 +27,10 @@ module cfpoin
 
   !=============================================================================
 
+  implicit none
+
+  !=============================================================================
+
   ! Tableau Dimension       Description
   ! ifbet  ! nfabor        ! indicateur flux thermique au bord impose
   !                          (il faut annuler des contributions de bord

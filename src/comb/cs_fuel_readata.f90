@@ -82,7 +82,7 @@ double precision cpcoel(ngazem,npot)
 double precision ncfov,nhfov,nofov,nsfov
 double precision mhsfov,mcofov,mchfov,mtofov
 double precision nhsfov,ncofov,ncmv,nhmv
-double precision ch2fv,ch4fv,h02fov,yo2ox
+double precision ch2fv,ch4fv,h02fov
 double precision dmf3 ,dmf4 , dmf5
 double precision wmco,wmco2,wmo2,wmn2,wmh2o, wmc
 
@@ -843,27 +843,6 @@ call csexit (1)
 '@     CO2 :  ',G15.7,'                                       ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier le fichier parametrique.                         ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9899 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (FUEL)        ',/,&
-'@    =========                                               ',/,&
-'@      PHYSIQUE PARTICULIERE (FUEL)                          ',/,&
-'@                                                            ',/,&
-'@  LA COMPOSITION DE L''OXYDANT 1 EST ERRONEE                ',/,&
-'@     O2  :  ',G15.7,'                                       ',/,&
-'@     N2  :  ',G15.7,'                                       ',/,&
-'@     H2O :  ',G15.7,'                                       ',/,&
-'@     CO2 :  ',G15.7,'                                       ',/,&
-'@                                                            ',/,&
-'@  ALORS QUE L''OXYDANT 1 DOIT OBLIGATOIREMENT CONTENIR      ',/,&
-'@  DE L''OXYGENE                                             ',/,&
 '@                                                            ',/,&
 '@  Verifier le fichier parametrique.                         ',/,&
 '@                                                            ',/,&

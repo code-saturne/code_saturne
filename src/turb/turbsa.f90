@@ -25,7 +25,7 @@ subroutine turbsa &
 
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    tslagr , coefa  , coefb  , ckupdc , smacel ,                   &
    itypfb )
 
@@ -53,7 +53,6 @@ subroutine turbsa &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! tslagr           ! tr ! <-- ! terme de couplage retour du                    !
 !(ncelet,*)        !    !     !     lagrangien                                 !
@@ -101,18 +100,15 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 integer          itypfb(nfabor)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(ndimfb,*)
+double precision propce(ncelet,*), propfb(ndimfb,*)
 double precision tslagr(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 
 ! Local variables
 
-character*80     chaine
-integer          iel   , ifac  , init  , inc   , iccocg, ivar
-integer          iivar , iiun
-integer          iclip , isqrt
+integer          iel   , ifac  , inc   , iccocg, ivar
+integer          iiun
 integer          nswrgp, imligp
 integer          icliup
 integer          iclvar, iclvaf
@@ -363,7 +359,7 @@ if (irccor.eq.1) then
   ! Compute the rotation function (w1 array not used)
   call rotcor &
   !==========
-( dt     , rtpa   , propce , coefa , coefb , &
+( dt     , rtpa   , coefa , coefb , &
   rotfct , w1     )
 
   do iel = 1, ncel
@@ -452,7 +448,7 @@ call ustssa                                                       &
 !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce , propfa , propfb ,                   &
+   dt     , rtpa   , propce , propfb ,                            &
    ckupdc , smacel , vort   , trgrdu ,                            &
    tsexp  , tsimp )
 
@@ -664,8 +660,7 @@ thetap = thetav(ivar)
 
 call codits &
 !==========
- ( nvar   , nscal  ,                                              &
-   idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
+ ( idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
@@ -684,13 +679,11 @@ call codits &
 ! 10. Clipping
 !===============================================================================
 
-iclip = 0
-
 iwarnp = iwarni(inusa)
 call clipsa                                                       &
 !==========
  ( ncelet , ncel   , nvar   ,                                     &
-   iclip  , iwarnp ,                                              &
+   iwarnp ,                                                       &
    propce , rtp    )
 
 

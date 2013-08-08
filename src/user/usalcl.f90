@@ -311,7 +311,6 @@
 !> \param[in]     rtp, rtpa     calculated variables at cell centers
 !> \param[in]                    (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfa        physical properties at interior face centers
 !> \param[in]     propfb        physical properties at boundary face centers
 !> \param[in,out] rcodcl        boundary condition values:
 !>                               - rcodcl(1) value of the dirichlet
@@ -335,7 +334,7 @@ subroutine usalcl &
  ( itrale ,                                                       &
    nvar   , nscal  ,                                              &
    icodcl , itypfb , ialtyb , impale ,                            &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    rcodcl , xyzno0 , depale )
 
 !===============================================================================
@@ -370,7 +369,7 @@ integer          impale(nnod)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propfb(nfabor,*)
 double precision rcodcl(nfabor,nvarcl,3)
 double precision depale(3,nnod), xyzno0(3,nnod)
 

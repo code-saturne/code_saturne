@@ -29,6 +29,8 @@ module ppthch
 
   use cstphy
 
+  implicit none
+
   !===========================================================================
 
   !--> CONSTANTES THERMOCHIMIE

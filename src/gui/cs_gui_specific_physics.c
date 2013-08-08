@@ -1420,7 +1420,6 @@ _getNOxReburning(const int icha,
 {
   char *path   = NULL;
   char *choice = NULL;
-  int   status = 0;
 
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 2, "thermophysical_models", "solid_fuels");
@@ -1725,13 +1724,11 @@ void CS_PROCF (uicpi2, UICPI2) (double *const toxy,
 
 void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
                                 const int *const nsalpp,
-                                const int *const nsalto,
                                 const int *const ippmod,
                                 const int *const iccoal,
                                 const int *const ipppro,
                                 const int *const ipproc,
                                 const int *const ieqnox,
-                                const int *const ieqco2,
                                 const int *const ihtco2,
                                 const int *const ihth2o,
                                 const int *const itemp1,
@@ -2203,12 +2200,11 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
  * Indirection between the solver numbering and the XML one
  * for physical properties of the activated specific physics (gaz combustion)
  *----------------------------------------------------------------------------*/
+
 void CS_PROCF (uicopr, UICOPR) (const int *const nsalpp,
                                 const int *const ippmod,
                                 const int *const ipppro,
                                 const int *const ipproc,
-                                const int *const icod3p,
-                                const int *const icoebu,
                                 const int *const icolwc,
                                 const int *const iirayo,
                                 const int *const itemp,
@@ -2217,7 +2213,6 @@ void CS_PROCF (uicopr, UICOPR) (const int *const nsalpp,
                                 const int *const ickabs,
                                 const int *const it4m,
                                 const int *const it3m,
-                                const int *const ix2,
                                 const int *const itsc,
                                 const int *const irhol,
                                 const int *const iteml,

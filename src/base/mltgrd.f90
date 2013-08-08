@@ -29,6 +29,8 @@ module mltgrd
 
   use paramx
 
+  implicit none
+
   !=============================================================================
 
   ! Multigrid

@@ -26,7 +26,7 @@ subroutine cfmsfl &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefa  , coefb  , ckupdc , smacel ,                            &
    flumas , flumab ,                                              &
    trflms , trflmb , coefu  )
@@ -52,7 +52,6 @@ subroutine cfmsfl &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! tslagr           ! tr ! <-- ! terme de couplage retour du                    !
 !(ncelet,*)        !    !     !     lagrangien                                 !
@@ -102,8 +101,7 @@ integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propce(ncelet,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision flumas(nfac), flumab(nfabor)
@@ -223,7 +221,7 @@ if(itsqdm.ne.0) then
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iu  ,                                                          &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce , propfa , propfb ,                   &
+   dt     , rtpa   , propce , propfb ,                            &
    ckupdc , smacel , w10    , w9     )
 
 !     Suivant Y
@@ -232,7 +230,7 @@ if(itsqdm.ne.0) then
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iv  ,                                                          &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce , propfa , propfb ,                   &
+   dt     , rtpa   , propce , propfb ,                            &
    ckupdc , smacel , w11    , w9     )
 
 !     Suivant Z
@@ -241,7 +239,7 @@ if(itsqdm.ne.0) then
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iw  ,                                                          &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce , propfa , propfb ,                   &
+   dt     , rtpa   , propce , propfb ,                            &
    ckupdc , smacel , w12    , w9     )
 
 
@@ -269,8 +267,7 @@ if(itsqdm.ne.0) then
 !     Calcul du flux de masse
     call inimas                                                   &
     !==========
- ( nvar   , nscal  ,                                              &
-   iu  , iv  , iw  , imaspe , itypfl ,                            &
+ ( iu  , iv  , iw  , imaspe , itypfl ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -337,7 +334,7 @@ if(itsqdm.ne.0) then
     !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   rtpa   , propce , propfa , propfb ,                            &
+   rtpa   , propce , propfb ,                                     &
    coefa  , coefb  , ckupdc , smacel ,                            &
    w10    , w8     , w9     , w9     )
 !        ------
@@ -346,7 +343,7 @@ if(itsqdm.ne.0) then
     !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   rtpa   , propce , propfa , propfb ,                            &
+   rtpa   , propce , propfb ,                                     &
    coefa  , coefb  , ckupdc , smacel ,                            &
    w11    , w9     , w8     , w9     )
 !        ------
@@ -355,7 +352,7 @@ if(itsqdm.ne.0) then
     !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   rtpa   , propce , propfa , propfb ,                            &
+   rtpa   , propce , propfb ,                                     &
    coefa  , coefb  , ckupdc , smacel ,                            &
    w12    , w9     , w9     , w8     )
 !        ------
@@ -430,9 +427,9 @@ iccfth = 6
 imodif = 0
 call cfther                                                       &
 !==========
- ( nvar   , nscal  ,                                              &
+ ( nvar   ,                                                       &
    iccfth , imodif ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce ,                            &
    w1     , w8     , w9     , w10    )
 
 ! --- Communication de l'entropie
@@ -446,9 +443,9 @@ iccfth = 162
 imodif = 0
 call cfther                                                       &
 !==========
- ( nvar   , nscal  ,                                              &
+ ( nvar   ,                                                       &
    iccfth , imodif ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce ,                            &
    w2     , w8     , w9     , w10    )
 
 ! --- Pour la condition au bord sur l'entropie
@@ -564,8 +561,7 @@ itypfl = 1
 
 call inimas                                                       &
 !==========
- ( nvar   , nscal  ,                                              &
-   ivar0  , ivar0  , ivar0  , imaspe , itypfl ,                   &
+ ( ivar0  , ivar0  , ivar0  , imaspe , itypfl ,                   &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &

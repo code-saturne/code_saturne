@@ -26,7 +26,7 @@ subroutine tridim &
  ( itrale ,                                                       &
    nvar   , nscal  ,                                              &
    isostd ,                                                       &
-   dt     , tpucou , rtpa   , rtp    , propce , propfa , propfb , &
+   dt     , tpucou , rtpa   , rtp    , propce , propfb ,          &
    tslagr , coefa  , coefb  , frcxt  , prhyd  )
 
 !===============================================================================
@@ -51,7 +51,6 @@ subroutine tridim &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
@@ -102,6 +101,7 @@ use ppcpfu
 use elincl
 use mesh
 use field
+use cs_f_interfaces
 
 ! les " use pp* " ne servent que pour recuperer le pointeur IIZFPP
 
@@ -117,8 +117,7 @@ integer          nvar   , nscal
 integer          isostd(nfabor+1)
 
 double precision dt(ncelet), tpucou(ncelet,3), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propce(ncelet,*), propfb(nfabor,*)
 double precision tslagr(ncelet,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision frcxt(3,ncelet), prhyd(ncelet)
@@ -127,28 +126,24 @@ double precision frcxt(3,ncelet), prhyd(ncelet)
 
 integer          iel   , ifac  , inod  , ivar  , iscal , iappel
 integer          ncp   , ncv   , iok
-integer          iicodc, ircodc
-integer          ihbord, itheipb
 integer          iiptot
 integer          nbccou
 integer          ntrela
 
 integer          isvhb , isvtb
 integer          ii    , jj    , ippcp , ientha, ippcv
-integer          ipcrom, ipcroa, ipbrom, ipbroa
-integer          iflua , iflub
-integer          iterns, inslst, icvrge, ivsvdr
+integer          ipcrom, ipcroa
+integer          iterns, inslst, icvrge
 integer          iflmas, iflmab
 integer          italim, itrfin, itrfup, ineefl
 integer          nbzfmx, nozfmx
-integer          nturfl, isou, ielpdc
+integer          isou, ielpdc
 
 double precision cpcst , tditot, tdist2, tdist1, cvcst
 double precision xxp0, xyp0, xzp0
 double precision relaxk, relaxe, relaxw, relaxn
 double precision cosdto, sindto, omgnrm, rrotgb(3,3)
 double precision hdls(6)
-double precision detinv
 
 integer          ipass
 data             ipass /0/
@@ -484,7 +479,7 @@ endif
 call phyvar                                                       &
 !==========
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefa  , coefb  )
 
 if (itrale.gt.0) then
@@ -516,7 +511,7 @@ if (ncpdct.gt.0) then
 ( nvar   , nscal  ,                                              &
   ncepdc , iappel ,                                              &
   icepdc , izcpdc ,                                              &
-  dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
+  dt     , rtpa   , rtp    , propce , propfb ,                   &
   ckupdc )
 
 endif
@@ -544,7 +539,7 @@ if(nctsmt.gt.0) then
   ncetsm , iappel ,                                              &
   icepdc ,                                                       &
   icetsm , itypsm , izctsm ,                                     &
-  dt     , rtpa   , propce , propfa , propfb ,                   &
+  dt     , rtpa   , propce , propfb ,                            &
   ckupdc , smacel )
 
 endif
@@ -564,7 +559,7 @@ call dttvar &
    ncepdc , ncetsm ,                                              &
    iwarni(iu)   ,                                                 &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefa  , coefb  , ckupdc , smacel )
 
 if (nbaste.gt.0.and.itrale.gt.nalinf) then
@@ -621,11 +616,8 @@ endif
 !===============================================================================
 
 if (idilat.eq.3) then
-  call pthrbm &
+  call pthrbm(nvar, ncetsm, dt, propce, propfb, smacel)
   !==========
- ( nvar   , nscal  , ncetsm ,        &
-   dt     , rtp    , rtpa   ,        &
-   propce , propfa , propfb , smacel )
 endif
 
 !===============================================================================
@@ -648,7 +640,7 @@ if (ivrtex.eq.1) then
  ( nvar   , nscal  ,                                              &
    iappel ,                                                       &
    dt     , rtpa   ,                                              &
-   propce , propfa , propfb )
+   propce , propfb )
 
 !     Verification des donnees entrees par l'utilisateur
 !       (au premier passage seulement)
@@ -746,14 +738,8 @@ inslst = 0
 iterns = 1
 do while (iterns.le.nterup)
 
-  call precli &
+  call precli(nvar, nscal, icodcl, propfb, rcodcl)
   !==========
-( nvar   , nscal  ,                                              &
-  icodcl ,                                                       &
-  dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-  coefa  , coefb  ,                                              &
-  rcodcl )
-
 
   !     - Interface Code_Saturne
   !       ======================
@@ -767,7 +753,7 @@ do while (iterns.le.nterup)
     call uiclim &
     !==========
   ( ntcabs, nfabor,                                                &
-    nozppm, ncharm, ncharb, nclpch, ngazg,                         &
+    nozppm, ncharm, ncharb, nclpch,                                &
     iindef, ientre, iesicf, isspcf, ierucf, isopcf,                &
     iparoi, iparug, isymet, isolib, isca  ,                        &
     ipr   , irho  , itempk, ienerg,                                &
@@ -791,13 +777,11 @@ do while (iterns.le.nterup)
 
       call stdtcl &
       !==========
-    ( nvar   , nscal  , nbzfmx , nozfmx ,                            &
+    ( nbzfmx , nozfmx ,                                              &
       iqimp  , icalke , qimp   , dh , xintur,                        &
-      icodcl , itrifb , itypfb , izfppp ,                            &
-      ilzfbr ,                                                       &
-      dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-      coefa  , coefb  , rcodcl ,                                     &
-      qcalc  )
+      itypfb , izfppp , ilzfbr ,                                     &
+      propce , propfb ,                                              &
+      rcodcl , qcalc  )
 
       ! Free memory
       deallocate(ilzfbr)
@@ -814,7 +798,7 @@ do while (iterns.le.nterup)
   !===============================
   ( nvar   , nscal  ,                                              &
     icodcl , itrifb , itypfb , izfppp ,                            &
-    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+    dt     , rtp    , rtpa   , propce , propfb ,                   &
     rcodcl )
 
   !     - Interface Code_Saturne
@@ -834,15 +818,9 @@ do while (iterns.le.nterup)
   ! -- Methode des vortex en L.E.S. :
   !    (Transfert des vortex dans les tableaux RCODCL)
 
-  if(ivrtex.eq.1) then
-
-    call vor2cl &
+  if (ivrtex.eq.1) then
+    call vor2cl(icodcl, itypfb, rcodcl)
     !==========
-  ( nvar   , nscal  ,                                              &
-    icodcl , itrifb , itypfb ,                                     &
-    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-    coefa  , coefb  , rcodcl )
-
   endif
 
   ! --- Couplage code/code entre deux instances (ou plus) de Code_Saturne
@@ -853,9 +831,9 @@ do while (iterns.le.nterup)
 
     call cscfbr &
     !==========
-  ( nvar   , nscal  ,                                              &
-    icodcl , itrifb , itypfb ,                                     &
-    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+  ( nscal  ,                                                       &
+    icodcl , itypfb ,                                              &
+    dt     , rtp    , propce ,                                     &
     coefa  , coefb  , rcodcl )
 
   endif
@@ -868,7 +846,7 @@ do while (iterns.le.nterup)
   ( nvar   , nscal  ,                                              &
     iu     , iv     , iw     , ipproc(irom)    ,                   &
     ttcabs ,                                                       &
-    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
+    dt     , rtpa   , rtp    , propce , propfb ,                   &
     coefa  , coefb  , rcodcl )
 
   ! -- Methode ALE (CL de vitesse de maillage et deplacement aux noeuds)
@@ -910,7 +888,7 @@ do while (iterns.le.nterup)
     nvar   , nscal  ,                                              &
     icodcl , itypfb , ialtyb ,                                     &
     impale ,                                                       &
-    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+    dt     , rtp    , rtpa   , propce , propfb ,                   &
     rcodcl , xyzno0 , depale )
 
     !     Au cas ou l'utilisateur aurait touche DEPALE sans mettre IMPALE=1, on
@@ -930,7 +908,7 @@ do while (iterns.le.nterup)
       !==========
     ( itrale , italim , ineefl ,                                     &
       impale ,                                                       &
-      rtp    , rtpa   , propce , propfa , propfb ,                   &
+      rtpa   ,                                                       &
       coefa  , coefb  ,                                              &
       flmalf , flmalb , xprale , cofale , depale )
 
@@ -950,22 +928,15 @@ do while (iterns.le.nterup)
 
   if (itrfin.eq.1 .and. itrfup.eq.1) then
 
-    call cpvosy &
+    call cpvosy(isvtb, dt, rtp, rtpa, propce, propfb)
     !==========
-  ( nvar   , nscal  , isvtb  ,                                 &
-    dt     , rtp    , rtpa   , propce , propfa , propfb ,      &
-    hbord  , theipb )
 
     call coupbi(nfabor, nvar, nscal, icodcl, rcodcl)
     !==========
 
     if (nfpt1t.gt.0) then
-      call cou1di &
+      call cou1di(nfabor, isvtb, icodcl, rcodcl)
       !==========
-    ( nfabor ,                                                       &
-      nvar   , nscal  ,                                              &
-      isvtb  , icodcl ,                                              &
-      rcodcl )
     endif
 
   endif
@@ -976,12 +947,10 @@ do while (iterns.le.nterup)
     call raycli &
     !==========
   ( nvar   , nscal  ,                                              &
-    isvhb  , isvtb  ,                                              &
-    icodcl , itrifb , itypfb ,                                     &
+    icodcl , itypfb ,                                              &
     izfrad ,                                                       &
-    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-    rcodcl ,                                                       &
-    coefa  , coefb  , hbord  )
+    dt     , rtp    , rtpa   , propce , propfb , rcodcl ,          &
+    coefa  , coefb  )
 
   endif
 
@@ -992,7 +961,7 @@ do while (iterns.le.nterup)
 ( nvar   , nscal  , iterns ,                                     &
   isvhb  , isvtb  ,                                              &
   icodcl , isostd ,                                              &
-  dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+  dt     , rtp    , rtpa   , propce , propfb ,                   &
   rcodcl ,                                                       &
   coefa  , coefb  , visvdr ,                                     &
   hbord  , theipb ,                                              &
@@ -1069,13 +1038,10 @@ do while (iterns.le.nterup)
 
     call coupbo &
     !==========
-  ( nvar   , nscal  , isvtb  ,                                     &
-    ncp  , ncv , ientha ,                                          &
-    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-    coefa  , coefb  ,                                              &
+  ( nvar   , ncp    , ncv    , ientha ,                            &
+    dt     , rtp    , rtpa   , propce ,                            &
     cpcst  , propce(1,ippcp) , cvcst  , propce(1,ippcv),           &
     hbord  , theipb )
-
 
     if (nfpt1t.gt.0) then
       call cou1do &
@@ -1084,8 +1050,7 @@ do while (iterns.le.nterup)
       ientha , ifpt1d , iclt1d ,                                     &
       tppt1d , tept1d , hept1d ,                                     &
       fept1d , xlmbt1 , rcpt1d , dtpt1d ,                            &
-      dt     , rtpa   , propce , propfa , propfb ,                   &
-      coefa  , coefb  ,                                              &
+      dt     , rtpa   , propce , propfb ,                            &
       cpcst  , propce(1,ippcp) , hbord  , theipb )
     endif
   endif
@@ -1149,11 +1114,8 @@ do while (iterns.le.nterup)
         !     On doit conserver la memoire de memcli a cause de 'uetbor'
         !       dans DISTYP (uniquement en LES avec van Driest mais tant pis)
 
-        call distpr &
+        call distpr(itypfb, dispar)
         !==========
-    ( nvar   , nscal  ,                                              &
-      itypfb ,                                                       &
-      dispar )
 
         !     La distance n'a plus a etre mise a jour sauf en ALE
         if (iale.eq.0) imajdy = 1
@@ -1180,11 +1142,8 @@ do while (iterns.le.nterup)
       !     On doit conserver la memoire de memcli a cause de 'uetbor'
       !       dans DISTYP
 
-      call distyp                                                 &
+      call distyp(itypfb, dispar, propce, yplpar)
       !==========
-    ( nvar   , nscal  ,                                              &
-      itypfb ,                                                       &
-      dispar , propce    , yplpar )
 
     endif
 
@@ -1230,9 +1189,7 @@ do while (iterns.le.nterup)
       if (ivelco.eq.0) then
         call alelap &
         !==========
-      ( nvar   , nscal  ,                                              &
-        dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-        coefa  , coefb  )
+      ( rtp    , rtpa   , propce , coefa  , coefb  )
 
       else
 
@@ -1241,9 +1198,7 @@ do while (iterns.le.nterup)
 
           call alelav &
           !==========
-        ( nvar   , nscal  ,                                              &
-          dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-          coefa  , coefb  )
+        ( rtp    , rtpa   , propce , propfb )
 
         endif
 
@@ -1285,7 +1240,7 @@ do while (iterns.le.nterup)
       iscal  ,                                                       &
       icepdc , icetsm ,                                              &
       itypsm ,                                                       &
-      dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+      dt     , rtp    , rtpa   , propce , propfb ,                   &
       coefa  , coefb  ,                                              &
       ckupdc , smacel )
 
@@ -1313,7 +1268,7 @@ do while (iterns.le.nterup)
       ncepdc , ncetsm ,                                              &
       icepdc , icetsm ,                                              &
       itypsm ,                                                       &
-      dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+      dt     , rtp    , rtpa   , propce , propfb ,                   &
       imasfl , bmasfl ,                                              &
       coefa  , coefb  ,                                              &
       ckupdc , smacel ,                                              &
@@ -1327,7 +1282,7 @@ do while (iterns.le.nterup)
         !==========
       ( nvar   , nscal  , iterns , icvrge ,                            &
         isostd ,                                                       &
-        dt     , tpucou , rtp    , rtpa   , propce , propfa , propfb , &
+        dt     , tpucou , rtp    , rtpa   , propce , propfb ,          &
         tslagr , coefa  , coefb  , frcxt  , prhyd  ,                   &
         trava  , ximpa  , uvwk   )
 
@@ -1339,7 +1294,7 @@ do while (iterns.le.nterup)
         !==========
       ( nvar   , nscal  , iterns , icvrge , itrale ,                   &
         isostd ,                                                       &
-        dt     , tpucou , rtp    , rtpa   , propce , propfa , propfb , &
+        dt     , tpucou , rtp    , rtpa   , propce , propfb ,          &
         tslagr , coefa  , coefb  , frcxt  , prhyd  ,                   &
         trava  , ximpav , uvwk   )
 
@@ -1427,7 +1382,7 @@ if (iccvfg.eq.0) then
     !==========
   ( itrale , italim , itrfin ,                                     &
     nvar   ,                                                       &
-    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+    dt     , rtp    , rtpa   ,                                     &
     coefa  , coefb  ,                                              &
     flmalf , flmalb , cofale , xprale )
 
@@ -1485,7 +1440,7 @@ if (iccvfg.eq.0) then
   ( nvar   , nscal  ,                                              &
     ncepdc , ncetsm ,                                              &
     icepdc , icetsm , itypsm ,                                     &
-    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+    dt     , rtp    , rtpa   , propce , propfb ,                   &
     tslagr ,                                                       &
     coefa  , coefb  , ckupdc , smacel ,                            &
     prdv2f )
@@ -1497,7 +1452,7 @@ if (iccvfg.eq.0) then
     ( nvar   , nscal  ,                                              &
       ncepdc , ncetsm ,                                              &
       icepdc , icetsm , itypsm ,                                     &
-      dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+      dt     , rtp    , rtpa   , propce , propfb ,                   &
       coefa  , coefb  , ckupdc , smacel ,                            &
       prdv2f )
 
@@ -1524,7 +1479,7 @@ if (iccvfg.eq.0) then
       call resalp &
       !==========
     ( nvar   , nscal  ,                                              &
-      dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+      dt     , rtp    , rtpa   , propce , propfb ,                   &
       coefa  , coefb  )
 
     endif
@@ -1534,7 +1489,7 @@ if (iccvfg.eq.0) then
   ( nvar   , nscal  ,                                              &
     ncepdc , ncetsm ,                                              &
     icepdc , icetsm , itypsm ,                                     &
-    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+    dt     , rtp    , rtpa   , propce , propfb ,                   &
     tslagr ,                                                       &
     coefa  , coefb  , ckupdc , smacel )
 
@@ -1545,7 +1500,7 @@ if (iccvfg.eq.0) then
   ( nvar   , nscal  ,                                              &
     ncepdc , ncetsm ,                                              &
     icepdc , icetsm , itypsm ,                                     &
-    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+    dt     , rtp    , rtpa   , propce , propfb ,                   &
     tslagr ,                                                       &
     coefa  , coefb  , ckupdc , smacel )
 
@@ -1566,7 +1521,7 @@ if (iccvfg.eq.0) then
   ( nvar   , nscal  ,                                              &
     ncepdc , ncetsm ,                                              &
     icepdc , icetsm , itypsm ,                                     &
-    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+    dt     , rtp    , rtpa   , propce , propfb ,                   &
     tslagr   ,                                                     &
     coefa  , coefb  , ckupdc , smacel ,                            &
     itypfb )
@@ -1600,10 +1555,9 @@ if (nscal.ge.1 .and. iirayo.gt.0) then
   call raydom &
   !==========
  ( nvar   , nscal  ,                                              &
-   itypfb , icodcl ,                                              &
+   itypfb ,                                                       &
    izfrad ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
-   coefa  , coefb  )
+   dt     , rtp    , rtpa   , propce , propfb )
 
 endif
 
@@ -1617,7 +1571,7 @@ if (nscal.ge.1) then
   call scalai                                                     &
   !==========
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    tslagr , coefa  , coefb  )
 
 endif

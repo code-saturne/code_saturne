@@ -68,7 +68,7 @@ integer          nbname
 parameter        (nbname=12)
 character        nompre*300, nenvar*300
 character*80     namevr(nbname)
-integer          ii, jj, istr, ii1, ii2, lpre, lnam, tplnum
+integer          ii, jj, ii1, ii2, lpre, lnam, tplnum
 double precision, dimension(:), allocatable :: vartmp
 
 ! Time plot number shift (in case multiple routines define plots)

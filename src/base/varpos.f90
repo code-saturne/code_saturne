@@ -87,8 +87,8 @@ character     ficsui*32
 integer       ivar  , ipp   , iscal , irphas , iprop
 integer       ii    , jj    , kk    , ll
 integer       iok   , ippok , ipppst
-integer       iflum , icondl
-integer       iest  , ivisph, iprofa, ipropp
+integer       icondl
+integer       iest  , ivisph, ipropp
 integer       imom  , jmom  , imold , jmold , jbmomt, jtcabs
 integer       iiplus, iimoin, jmomok, idto  , jdto
 integer       ierror, irtyp , itysup, nbval
@@ -147,21 +147,21 @@ cindfm = 'YYYY'
 !    definis.
 !===============================================================================
 
-if(ipass.eq.1) then
+if (ipass.eq.1) then
 
-! ---> Remplissage de ITYTUR
+  ! ---> Remplissage de ITYTUR
   itytur = iturb/10
 
-! ---> Remplissage de itycor :
-! type de correction rotation/courbure pour les modeles de viscosite turbulente
+  ! ---> Remplissage de itycor :
+  ! type de correction rotation/courbure pour les modeles de viscosite turbulente
   if (irccor.eq.1.and.(itytur.eq.2.or.itytur.eq.5)) then
     itycor = 1
   elseif (irccor.eq.1.and.(iturb.eq.60.or.iturb.eq.70)) then
     itycor = 2
   endif
 
-! ---> Coherence modele
-!     Rq : ATTENTION il faudrait renforcer le blindage
+  ! ---> Coherence modele
+  !     Rq : ATTENTION il faudrait renforcer le blindage
 
   iok   = 0
   nmodpp = 0
@@ -171,13 +171,13 @@ if(ipass.eq.1) then
       ippok = ipp
     endif
   enddo
-  if ( nmodpp.gt.1 ) then
+  if (nmodpp.gt.1) then
     write(nfecra,6000)
     iok = iok + 1
   endif
 
-  if ( nmodpp.eq.1 ) then
-    if ( ippmod(ippok).lt.0 .or. ippmod(ippok).gt.5 ) then
+  if (nmodpp.eq.1) then
+    if (ippmod(ippok).lt.0 .or. ippmod(ippok).gt.5) then
       write(nfecra,6001)
       iok = iok + 1
     endif
@@ -1985,7 +1985,7 @@ if (ipass.eq.4) then
 
       call uirapr &
       !==========
-    ( nprayc, nprayb, nrphas, ipppro, ipproc,           &
+    ( nprayc, nrphas, ipppro, ipproc,                   &
       ilumin, iqx, iqy, iqz,                            &
       itsre, itsri, iabs, iemi, icak)
 

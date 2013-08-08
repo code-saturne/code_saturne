@@ -29,7 +29,7 @@ subroutine usray2 &
    itypfb ,                                                       &
    icodcl , izfrdp , isothp ,                                     &
    tmin   , tmax   , tx     ,                                     &
-   dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
+   dt     , rtp    , rtpa   , propce , propfb , rcodcl ,          &
    thwall , qincid , hfcnvp , flcnvp ,                            &
    xlamp  , epap   , epsp   , textp  , tintp  )
 
@@ -155,7 +155,6 @@ subroutine usray2 &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and preceding time steps)         !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! rcodcl           ! ra ! --> ! boundary condition values                      !
 !                  !    !     ! rcodcl(3) = flux density value                 !
@@ -209,7 +208,7 @@ double precision tmin , tmax , tx
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propfb(nfabor,*)
 double precision rcodcl(nfabor,nvarcl,3)
 
 double precision thwall(nfabor), qincid(nfabor)

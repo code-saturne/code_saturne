@@ -27,6 +27,10 @@ module paramx
 
   !=============================================================================
 
+  implicit none
+
+  !=============================================================================
+
   ! nscamx : nombre max de scalaires
   ! nvarmx : nombre max de variables =
   !          nombre max de scalaires + 12 (u,v,w,P,Rij,e,alp)

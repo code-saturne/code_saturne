@@ -23,11 +23,10 @@
 subroutine csccel &
 !================
 
- ( nvar   , nscal  ,                                              &
-   ivar   ,                                                       &
-   dt     , rtpa   , propce , propfa , propfb ,                   &
+ ( ivar   ,                                                       &
+   rtpa   , propce ,                                              &
    coefa  , coefb  ,                                              &
-   crvexp , crvimp )
+   crvexp )
 
 !===============================================================================
 ! FONCTION :
@@ -41,19 +40,13 @@ subroutine csccel &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ivar             ! i  ! <-- ! variable number                                !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant            prec)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
 ! crvexp(ncelet    ! tr ! --> ! tableau de travail pour part explicit          !
-! crvimp(ncelet    ! tr ! --> ! tableau de travail pour part implicit          !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -84,15 +77,12 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
 integer          ivar
 
-
-double precision dt(ncelet), rtpa(ncelet,*)
+double precision rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision crvexp(ncelet), crvimp(ncelet)
+double precision crvexp(ncelet)
 
 ! Local variables
 
@@ -186,15 +176,8 @@ do numcpl = 1, nbrcpl
 
   if (ncedig.gt.0) then
 
-    call cscpce                                                   &
+    call cscpce(ncedis, ivar, locpts, rtpa, coefa, coefb, coopts, rvdis)
     !==========
-  ( nvar   , nscal  ,                                             &
-    ncedis , ityloc ,                                             &
-    ivar   ,                                                      &
-    locpts ,                                                      &
-    dt     , rtpa   , propce , propfa , propfb ,                  &
-    coefa  , coefb  ,                                             &
-    coopts , rvdis  )
 
   endif
 
@@ -227,17 +210,8 @@ do numcpl = 1, nbrcpl
 
   if (ncecpg.gt.0) then
 
-    call csc2ts                                                   &
+    call csc2ts(ncecpl, ivar, lcecpl, rtpa, propce, crvexp, rvcel)
     !==========
-  ( nvar   , nscal  ,                                             &
-    ncecpl ,                                                      &
-    ivar   ,                                                      &
-    lcecpl ,                                                      &
-    dt     , rtpa   , propce , propfa , propfb ,                  &
-    coefa  , coefb  ,                                             &
-    crvexp , crvimp ,                                             &
-!         ------   ------
-    rvcel  )
 
   endif
 

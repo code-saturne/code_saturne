@@ -25,7 +25,7 @@ subroutine cfqdmv &
 
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    flumas , flumab ,                                              &
    coefa  , coefb  , ckupdc , smacel , frcxt  ,                   &
    tpucou )
@@ -68,7 +68,6 @@ subroutine cfqdmv &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! flumas           ! tr ! <-- ! flux de masse aux faces internes               !
 !  (nfac  )        !    !     !   (distinction iappel=1 ou 2)                  !
@@ -125,8 +124,7 @@ integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propce(ncelet,*), propfb(nfabor,*)
 double precision flumas(nfac), flumab(nfabor)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
@@ -135,7 +133,7 @@ double precision tpucou(ncelet,ndim)
 
 ! Local variables
 
-integer          iel   , ielpdc, ifac  , ivar  , isou  , iii
+integer          iel   , ielpdc, ifac  , ivar  , isou
 integer          iccocg, inc   , init  , ii
 integer          ireslp, nswrgp, imligp, iwarnp, ipp
 integer          iclik , iclvar, iclvaf, iclipr
@@ -452,12 +450,9 @@ if (ivisse.eq.1) then
 
   call vissec                                                     &
   !==========
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   icepdc , icetsm , itypsm ,                                     &
-   rtpa   , propce , propfa , propfb ,                            &
-   coefa  , coefb  , ckupdc , smacel ,                            &
+ ( rtpa   , propce , propfb ,                                     &
+   coefa  , coefb  ,                                              &
    trav   ,                                                       &
-!        ------
    viscf  , viscb  )
 
 endif
@@ -471,12 +466,10 @@ if((ncepdp.gt.0).and.(iphydr.eq.0)) then
   idiaex = 1
   call tsepdc                                                     &
   !==========
- ( nvar   , nscal  ,                                              &
-   ncepdp ,                                                       &
+ ( ncepdp ,                                                       &
    idiaex ,                                                       &
    icepdc ,                                                       &
-   rtp    , propce , propfa , propfb ,                            &
-   coefa  , coefb  , ckupdc , trav   )
+   rtp    , propce , ckupdc , trav   )
 
 endif
 
@@ -495,7 +488,7 @@ if(itytur.eq.3 ) then
     !==========
  ( nvar   , nscal  ,                                              &
    isou   , ivar   ,                                              &
-   rtp    , propce , propfa , propfb ,                            &
+   rtp    , propce , propfb ,                                     &
    coefa  , coefb  ,                                              &
    viscf  , viscb  )
 
@@ -618,7 +611,7 @@ do isou = 1, 3
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , propce , propfa , propfb ,                   &
+   dt     , rtp    , propce , propfb ,                            &
    ckupdc , smacel , smbr   , drtp   )
 
   do iel = 1, ncel

@@ -23,12 +23,10 @@
 subroutine cscelv &
 !================
 
- ( nvar   , nscal  ,                                              &
-   ivar   ,                                                       &
-   dt     , rtpa   , vela   ,                                     &
-   propce , propfa , propfb ,                                     &
-   coefa  , coefb  , coefav , coefbv ,                            &
-   crvexp , crvimp )
+ ( ivar   ,                                                       &
+   vela   , propce ,                                              &
+   coefav , coefbv ,                                              &
+   crvexp )
 
 !===============================================================================
 ! FONCTION :
@@ -43,20 +41,9 @@ subroutine cscelv &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ivar             ! i  ! <-- ! variable number                                !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant            prec)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! crvexp(3,ncelet) ! tr ! --> ! tableau de travail pour part explicit          !
-! crvimp           ! tr ! --> ! tableau de travail pour part implicit          !
-! (3,3,ncelet)     !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -87,15 +74,10 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
 integer          ivar
 
-
-double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision crvexp(3,ncelet), crvimp(3,3,ncelet)
+double precision crvexp(3,ncelet)
 double precision coefav(3,nfabor)
 double precision coefbv(3,3,nfabor)
 double precision vela(3,ncelet)
@@ -194,13 +176,10 @@ do numcpl = 1, nbrcpl
 
     call cspcev                                                   &
     !==========
-  ( nvar   , nscal  ,                                             &
-    ncedis , ityloc ,                                             &
-    ivar   ,                                                      &
+  ( ncedis , ivar   ,                                             &
     locpts ,                                                      &
-    dt     , rtpa   , vela   ,                                    &
-    propce , propfa , propfb ,                                    &
-    coefa  , coefb  , coefav , coefbv ,                           &
+    vela   ,                                                      &
+    coefav , coefbv ,                                             &
     coopts , rvdis  )
 
   endif
@@ -234,18 +213,8 @@ do numcpl = 1, nbrcpl
 
   if (ncecpg.gt.0) then
 
-    call cs2tsv                                                   &
+    call cs2tsv(ncecpl, lcecpl, vela, propce, crvexp, rvcel)
     !==========
-  ( nvar   , nscal  ,                                             &
-    ncecpl ,                                                      &
-    ivar   ,                                                      &
-    lcecpl ,                                                      &
-    dt     , rtpa   , vela   ,                                    &
-    propce , propfa , propfb ,                                    &
-    coefa  , coefb  ,                                             &
-    crvexp , crvimp ,                                             &
-!   ------   ------
-    rvcel  )
 
   endif
 

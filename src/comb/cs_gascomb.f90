@@ -636,12 +636,6 @@ write(nfecra,*) ' Somme Min MAX = ', sommin, sommax
 ' Nb de points YCO2  , YH2O    < 0 ou > 1 = ',I9,I9,/,      &
 ' Nb de points YSO2            < 0 ou > 1 = ',I9  )
 
- 3000 format(/,                                                   &
-'MODELE DE CO CHARBON ACTIVE : ',/,                         &
-'       AVEC  IEQCO2 = ',I2,/,                              &
-'HORS SEUL LES OPTIONS 0 , 1 et 2 SONT DISPONIBLES',/,      &
-'    ARRET DU CALCUL : VERIFIER USPPMO')
-
 !----
 ! End
 !----

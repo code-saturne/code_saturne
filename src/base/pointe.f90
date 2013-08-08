@@ -29,6 +29,8 @@ module pointe
 
   use paramx
 
+  implicit none
+
   !=============================================================================
 
 
@@ -188,7 +190,7 @@ contains
 
   subroutine init_aux_arrays &
 
-( ncelet , ncel   , ncelbr , nfac  , nfabor )
+( ncelet , nfabor )
 
     use paramx
     use numvar, only: ipr, iu
@@ -206,7 +208,7 @@ contains
 
     ! Arguments
 
-    integer, intent(in) :: ncelet, ncel, ncelbr, nfac, nfabor
+    integer, intent(in) :: ncelet, nfabor
 
     ! Local variables
     integer                iok, ivar, iscal, iel

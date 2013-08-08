@@ -43,7 +43,6 @@
 !> \param[in]     rtp, rtpa     calculated variables at cell centers
 !> \param[in]                    (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfa        physical properties at interior face centers
 !> \param[in]     propfb        physical properties at boundary face centers
 !_______________________________________________________________________________
 
@@ -51,7 +50,7 @@ subroutine usphyv &
  ( nvar   , nscal  ,                                              &
    ibrom  ,                                                       &
    dt     , rtp    , rtpa   ,                                     &
-   propce , propfa , propfb )
+   propce , propfb )
 
 !===============================================================================
 
@@ -84,7 +83,7 @@ integer          ibrom
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propfb(nfabor,*)
 
 ! Local variables
 

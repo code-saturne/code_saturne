@@ -25,7 +25,7 @@ subroutine divrij &
 
  ( nvar   , nscal  ,                                              &
    idim   , ivar   ,                                              &
-   rtpa   , propce , propfa , propfb ,                            &
+   rtpa   , propce , propfb ,                                     &
    coefa  , coefb  ,                                              &
    viscf  , viscb  )
 
@@ -55,7 +55,6 @@ subroutine divrij &
 ! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant prec)                     !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
@@ -93,8 +92,7 @@ integer          idim   , ivar
 
 
 double precision rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(ndimfb,*)
+double precision propce(ncelet,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision viscf(nfac), viscb(nfabor)
 
@@ -166,8 +164,7 @@ itypfl = 1
 
 call inimas                                                       &
 !==========
- ( nvar   , nscal  ,                                              &
-   ivar1  , ivar2  , ivar3  , imaspe , itypfl ,                   &
+ ( ivar1  , ivar2  , ivar3  , imaspe , itypfl ,                   &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &

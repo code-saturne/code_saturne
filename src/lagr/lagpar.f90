@@ -26,6 +26,10 @@ module lagpar
 
   !=============================================================================
 
+  implicit none
+
+  !=============================================================================
+
   !         Trois modules complementaires
   !                            lagran qui porte les non dimensions
   !                            lagdim qui porte les dimensions variables

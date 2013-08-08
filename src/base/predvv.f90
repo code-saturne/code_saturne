@@ -56,7 +56,6 @@
 !> \param[in,out] rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in,out] propfa        physical properties at interior face centers
 !> \param[in,out] propfb        physical properties at boundary face centers
 !> \param[in]     flumas        internal mass flux (depending on iappel)
 !> \param[in]     flumab        boundary mass flux (depending on iappel)
@@ -95,7 +94,7 @@ subroutine predvv &
    nvar   , nscal  , iterns , ncepdp , ncesmp ,                   &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtp    , rtpa   , vel    , vela   ,                   &
-   propce , propfa , propfb ,                                     &
+   propce , propfb ,                                              &
    flumas , flumab ,                                              &
    tslagr , coefa  , coefb  , coefav , coefbv , cofafv , cofbfv , &
    ckupdc , smacel , frcxt  , grdphd ,                            &
@@ -112,7 +111,7 @@ subroutine predvv &
 use paramx
 use dimens, only: ndimfb
 use numvar
-use pointe, only: forbr, porosi, porosf
+use pointe, only: forbr, porosi
 use entsor
 use cstphy
 use cstnum
@@ -127,6 +126,7 @@ use ppincl
 use cplsat
 use ihmpre, only: iihmpr
 use mesh
+use cs_f_interfaces
 
 !===============================================================================
 
@@ -142,8 +142,7 @@ integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(ndimfb,*)
+double precision propce(ncelet,*), propfb(ndimfb,*)
 double precision flumas(nfac), flumab(nfabor)
 double precision tslagr(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
@@ -172,7 +171,7 @@ double precision vela  (3  ,ncelet)
 
 integer          iel   , ielpdc, ifac  , ivar  , isou  , itypfl
 integer          iccocg, inc   , init  , ii    , isqrt
-integer          ireslp, nswrgp, imligp, iwarnp, ippt  , ipp
+integer          ireslp, nswrgp, imligp, iwarnp, ipp
 integer          iswdyp, idftnp
 integer          iclipr
 integer          iclik
@@ -425,8 +424,7 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
 
   call inimav                                                     &
   !==========
- ( nvar   , nscal  ,                                              &
-   iu     , itypfl ,                                              &
+ ( iu     , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrp  , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -761,8 +759,7 @@ if (ivisse.eq.1) then
 
   call visecv &
   !==========
- ( nvar   ,                             &
-   propce ,                             &
+ ( propce ,                             &
    secvif , secvib )
 
 endif
@@ -789,13 +786,8 @@ if((ncepdp.gt.0).and.(iphydr.eq.0)) then
       trav(3,iel) = 0.d0
     enddo
 
-    call tspdcv                                                   &
+    call tspdcv(ncepdp, icepdc, vela, propce, ckupdc, trav)
     !==========
- ( nvar   , nscal  , ncepdp ,                                     &
-   icepdc ,                                                       &
-   rtpa   , vela   ,                                              &
-   propce , propfa , propfb ,                                     &
-   coefa  , coefb  , ckupdc , trav   )
 
     ! With porosity
     if (iporos.ge.1) then
@@ -883,7 +875,7 @@ if(itytur.eq.3.and.iterns.eq.1) then
     !==========
  ( nvar   , nscal  ,                                              &
    isou   , ivar   ,                                              &
-   rtpa   , propce , propfa , propfb ,                            &
+   rtpa   , propce , propfb ,                                     &
    coefa  , coefb  ,                                              &
    viscf  , viscb  )
 
@@ -1077,21 +1069,15 @@ if(iterns.eq.1) then
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iu   ,                                                         &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce , propfa , propfb ,                   &
+   dt     , rtpa   , propce , propfb ,                            &
    ckupdc , smacel , tsexp  , tsimp  )
 
 
   ! Coupling between two Code_Saturne
   if (nbrcpl.gt.0) then
   !vectorial interleaved exchange
-    call cscelv &
+    call cscelv(iu, vela, propce, coefav, coefbv, tsexp)
     !==========
- ( nvar   , nscal  ,                                              &
-   iu     ,                                                       &
-   dt     , rtpa   , vela   ,                                     &
-   propce , propfa , propfb ,                                     &
-   coefa  , coefb  , coefav , coefbv ,                            &
-   tsexp  , tsimp  )
   endif
 
   if (iphydr.eq.1) then
@@ -1512,8 +1498,7 @@ if(iappel.eq.1) then
 !     des vitesses predites
     call coditv &
     !==========
- ( nvar   , nscal  ,                                              &
-   idtvar , iu     , iconvp , idiffp , ireslp , ndircp , nitmap , &
+ ( idtvar , iu     , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisse ,          &
    ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
    imgrp  , ncymxp , nitmfp , ippu   , ippv   , ippw   , iwarnp , &
@@ -1532,8 +1517,7 @@ if(iappel.eq.1) then
 
     call coditv &
     !==========
- ( nvar   , nscal  ,                                              &
-   idtvar , iu     , iconvp , idiffp , ireslp , ndircp , nitmap , &
+ ( idtvar , iu     , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisse ,          &
    ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
    imgrp  , ncymxp , nitmfp , ippu   , ippv   , ippw   , iwarnp , &
@@ -1578,8 +1562,7 @@ if(iappel.eq.1) then
 
     call coditv &
     !==========
- ( nvar   , nscal  ,                                              &
-   idtvar , iu     , iconvp , idiffp , ireslp , ndircp , nitmap , &
+ ( idtvar , iu     , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisep ,          &
    ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
    imgrp  , ncymxp , nitmfp , ippu   , ippv   , ippw   , iwarnp , &
@@ -1636,8 +1619,7 @@ elseif(iappel.eq.2) then
 
   call bilscv &
   !==========
- ( nvar   , nscal  ,                                              &
-   idtva0 , iu     , iconvp , idiffp , nswrgp , imligp , ircflp , &
+ ( idtva0 , iu     , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , ivisep ,                   &
    ippu   , ippv   , ippw   , iwarnp , idftnp ,                   &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
@@ -1684,8 +1666,7 @@ if(iappel.eq.1.and.irnpnw.eq.1) then
 
   call inimav &
   !==========
- ( nvar   , nscal  ,                                              &
-   iu     , itypfl ,                                              &
+ ( iu     , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrp  , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &

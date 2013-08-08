@@ -53,21 +53,17 @@
 !> \param[in]     ncesmp        number of cells with mass source term
 !> \param[in]     icetsm        index of cells with mass source term
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     rtp, rtpa     calculated variables at cell centers
-!>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in,out] propfa        physical properties at interior face centers
-!> \param[in,out] propfb        physical properties at boundary face centers
 !> \param[in]     smacel        variable value associated to the mass source
 !>                               term (for ivar=ipr, smacel is the mass flux
 !>                               \f$ \Gamma^n \f$)
 !_______________________________________________________________________________
 
 subroutine predfl &
- ( nvar   , nscal  , ncesmp ,                                     &
+ ( nvar   , ncesmp ,                                              &
    icetsm ,                                                       &
-   dt     , rtp    , rtpa   ,                                     &
-   propce , propfa , propfb ,                                     &
+   dt     ,                                                       &
+   propce ,                                                       &
    smacel )
 
 !===============================================================================
@@ -77,13 +73,11 @@ subroutine predfl &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use numvar
 use entsor
 use cstphy
 use cstnum
 use optcal
-use pointe, only: itypfb
 use albase
 use parall
 use period
@@ -100,14 +94,13 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
+integer          nvar
 integer          ncesmp
 
 integer          icetsm(ncesmp)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision smacel(ncesmp,nvar)
 
 ! Local variables
@@ -118,7 +111,6 @@ integer          iccocg, inc   , init  , isym  , ipol  , isqrt
 integer          ii, iel   , ifac
 integer          ireslp, nswmpr
 integer          isweep, niterf, icycle
-integer          iflmb0
 integer          nswrgp, imligp, iwarnp
 integer          ipcrom, ipcroa, ipbrom, iflmas, iflmab
 integer          idiffp, iconvp, ndircp
@@ -408,8 +400,7 @@ do while (isweep.le.nswmpr.and.residu.gt.tcrite)
 
     call itrgrp &
     !==========
-   ( nvar   , nscal  ,                                              &
-     init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
+   ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
      iwarnp , nfecra ,                                              &
      epsrgp , climgp , extrap ,                                     &
      rvoid  ,                                                       &
@@ -460,8 +451,7 @@ extrap = extrag(ipr)
 
 call itrmas &
 !==========
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
+ ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    rvoid  ,                                                       &
@@ -481,8 +471,7 @@ inc = 0
 
 call itrmas &
 !==========
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
+ ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    rvoid  ,                                                       &

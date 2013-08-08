@@ -30,7 +30,7 @@ subroutine cs_coal_prop &
 
 ! INIT DES POSITIONS DES VARIABLES D'ETAT SELON
 !         COMBUSTION CHARBON PULVERISE
-!   (DANS VECTEURS PROPCE, PROPFA, PROPFB)
+!   (DANS VECTEURS PROPCE, PROPFB)
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -38,8 +38,7 @@ subroutine cs_coal_prop &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! ipropp           ! e  ! <-- ! numero de la derniere propriete                !
-!                  !    !     !  (les proprietes sont dans propce,             !
-!                  !    !     !   propfa ou prpfb)                             !
+!                  !    !     !  (les proprietes sont dans propce ou propfb)   !
 ! ipppst           ! e  ! <-- ! pointeur indiquant le rang de la               !
 !                  !    !     !  derniere grandeur definie aux                 !
 !                  !    !     !  cellules (rtp,propce...) pour le              !
@@ -537,13 +536,13 @@ nprofb = iprop
 if (iihmpr.eq.1) then
   call uicppr &
   !==========
- ( nclacp, nsalpp, nsalto, ippmod, iccoal, ipppro,    &
-   ipproc, ieqnox, ieqco2, ihtco2, ihth2o, itemp1,    &
+ ( nclacp, nsalpp, ippmod, iccoal, ipppro,            &
+   ipproc, ieqnox, ihtco2, ihth2o, itemp1,            &
    irom1, iym1, ighcn1, ighcn2, ignoth,               &
    ignh31, ignh32, ifhcnd, ifhcnc, ifnh3d, ifnh3c,    &
    ifnohc, ifnonh, ifnoch, ifnoth, icnohc, icnonh,    &
    ifhcnr, icnorb, igrb,   immel,                     &
-   itemp2, ix2, irom2, idiam2, igmdch, igmdv1,        &
+   itemp2, irom2, idiam2, igmdch, igmdv1,             &
    igmdv2, igmhet, ighco2, ighh2o, igmsec,            &
    ibcarbone, iboxygen, ibhydrogen)
 endif

@@ -77,11 +77,8 @@ double precision dt(ncelet)
 integer          ifac  , istr, icompt, ii
 integer          mbstru, mbaste
 
-integer          jj, inod
-integer          ilstfa, indast, iidflo, iidnlo
-integer          nbpdt, nbssit
-
-double precision delta, pdt, tt
+integer          inod
+integer          indast
 
 integer, allocatable, dimension(:) :: itrav
 integer, allocatable, dimension(:) :: lstfac, idfloc, idnloc

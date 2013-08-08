@@ -25,7 +25,7 @@ subroutine cfmsvs &
 
  ( nvar   , nscal  ,                                              &
    iscal  ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefa  , coefb  ,                                              &
    viscf  , viscb  ,                                              &
    w1     , w2     , w3     )
@@ -51,7 +51,6 @@ subroutine cfmsvs &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! tslagr           ! tr ! <-- ! terme de couplage retour du                    !
 !(ncelet,*)        !    !     !     lagrangien                                 !
@@ -97,8 +96,7 @@ integer          iscal
 
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propce(ncelet,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision viscf(nfac), viscb(nfabor)
 double precision w1(ncelet) , w2(ncelet) , w3(ncelet)
@@ -134,9 +132,9 @@ iccfth = 126
 imodif = 0
 call cfther                                                       &
 !==========
- ( nvar   , nscal  ,                                              &
+ ( nvar   ,                                                       &
    iccfth , imodif ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce ,                            &
    w1     , rvoid  , w2     , w3     )
 
 ! --- "Vitesse" de diffusion de RHO = dt*c2

@@ -60,7 +60,6 @@ subroutine memtri &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use optcal
 use cstphy
 use numvar
@@ -75,7 +74,6 @@ use cfpoin
 use lagpar
 use lagdim
 use lagran
-use radiat, only: iirayo
 use ihmpre
 use cplsat
 use mesh

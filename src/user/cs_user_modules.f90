@@ -40,6 +40,12 @@
 
 module user_module
 
+  !=============================================================================
+
+  implicit none
+
+  !=============================================================================
+
   ! Example: allocatable user arrays
 
   integer,          dimension(:), allocatable :: iwork

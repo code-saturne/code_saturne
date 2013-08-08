@@ -27,7 +27,7 @@ subroutine lagsta &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
+   dt     , rtpa   , rtp    , propce , propfb ,                   &
    ettp   , tepa   , statis , stativ ,                            &
    w1     )
 
@@ -82,7 +82,6 @@ subroutine lagsta &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! ettp             ! tr ! <-- ! tableaux des variables liees                   !
 !  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
@@ -131,8 +130,7 @@ integer          ntersl , nvlsta , nvisbr
 integer          itepa(nbpmax,nivep)
 
 double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*) , propfb(nfabor,*)
+double precision propce(ncelet,*), propfb(nfabor,*)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision statis(ncelet,nvlsta)
 double precision stativ(ncelet,nvlsta-1)

@@ -63,8 +63,6 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
 !> \param[in]     idtvar        indicator of the temporal scheme
 !> \param[in]     ivar          index of the current variable
 !> \param[in]     iconvp        indicator
@@ -141,8 +139,7 @@
 !_______________________________________________________________________________
 
 subroutine bilscv &
- ( nvar   , nscal  ,                                              &
-   idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
+ ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , ivisep ,                   &
    ippu   , ippv   , ippw   , iwarnp , idftnp ,                   &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
@@ -172,7 +169,6 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
 integer          idtvar
 integer          ivar   , iconvp , idiffp , nswrgp , imligp
 integer          ircflp , ischcp , isstpp
@@ -202,8 +198,7 @@ if (idftnp.eq.1) then
 
   call bilsc4 &
   !==========
-   ( nvar   , nscal  ,                                              &
-     idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
+   ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
      ischcp , isstpp , inc    , imrgra , ivisep ,                   &
      ippu   , ippv   , ippw   , iwarnp ,                            &
      blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
@@ -221,8 +216,7 @@ elseif (idftnp.eq.6) then
 
     call bilsc4 &
     !==========
-     ( nvar   , nscal  ,                                              &
-       idtvar , ivar   , iconvp , idiflc , nswrgp , imligp , ircflp , &
+     ( idtvar , ivar   , iconvp , idiflc , nswrgp , imligp , ircflp , &
        ischcp , isstpp , inc    , imrgra , ivisep ,                   &
        ippu   , ippv   , ippw   , iwarnp ,                            &
        blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &

@@ -36,7 +36,6 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in,out] icodcl        face boundary condition code:
 !>                               - 1 Dirichlet
@@ -49,11 +48,9 @@
 !>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
 !>                               - 9 free inlet/outlet
 !>                                 (input mass flux blocked to 0)
-!> \param[in]     dt            time step (per cell)
 !> \param[in]     rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfa        physical properties at interior face centers
 !> \param[in]     propfb        physical properties at boundary face centers
 !> \param[in,out] rcodcl        boundary condition values:
 !>                               - rcodcl(1) value of the dirichlet
@@ -79,9 +76,8 @@
 
 
 subroutine clsyvt &
- ( nvar   , nscal  ,                                              &
-   icodcl ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
+ ( nscal  , icodcl ,                                     &
+   rtp    , rtpa   , propce , rcodcl ,                   &
    velipb , rijipb , coefa  , coefb  )
 
 !===============================================================================
@@ -107,13 +103,12 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
+integer          nscal
 
 integer          icodcl(nfabor,nvarcl)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
 double precision rcodcl(nfabor,nvarcl,3)
 double precision velipb(nfabor,ndim), rijipb(nfabor,6)
 double precision coefa(nfabor,*), coefb(nfabor,*)
@@ -130,7 +125,6 @@ integer          iclumf, iclvmf, iclwmf
 integer          icl11f, icl22f, icl33f, icl12f, icl13f, icl23f
 integer          iclvar, iel   , iclvrr, iclvaf
 integer          iscal , ipccp , ivar
-integer          niturt, iiturt
 integer          f_id
 
 double precision rnx, rny, rnz, rxnn

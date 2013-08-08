@@ -36,21 +36,14 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
-!> \param[in]     dt            time step (per cell)
 !> \param[in,out] rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in,out] propfa        physical properties at interior face centers
 !> \param[in,out] propfb        physical properties at boundary face centers
-!> \param[in]     coefa, coefb  boundary conditions
 !_______________________________________________________________________________
 
 subroutine alelav &
- ( nvar   , nscal  ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  )
+ ( rtp    , rtpa   , propce , propfb )
 
 !===============================================================================
 
@@ -78,13 +71,8 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-
-
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(ndimfb,*)
-double precision coefa(ndimfb,*), coefb(ndimfb,*)
+double precision rtp(ncelet,*), rtpa(ncelet,*)
+double precision propce(ncelet,*), propfb(ndimfb,*)
 
 ! Local variables
 
@@ -101,7 +89,7 @@ double precision blencp, epsilp, epsrgp, climgp, extrap, thetv
 double precision epsrsp, prosrf
 double precision relaxp
 double precision hint, distbf, srfbn2
-double precision rinfiv(3), pimpv(3), qimpv(3)
+double precision rinfiv(3), pimpv(3)
 
 double precision rvoid(1)
 
@@ -248,8 +236,7 @@ ivisep = 0
 
 call coditv &
 !==========
- ( nvar   , nscal  ,                                              &
-   idtvar , iuma   , iconvp , idiffp , ireslp , ndircp , nitmap , &
+ ( idtvar , iuma   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisep ,          &
    ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
    imgrp  , ncymxp , nitmfp , ippu   , ippv   , ippw   , iwarnp , &

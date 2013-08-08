@@ -28,7 +28,7 @@ subroutine cs_fuel_scast &
    itypfb ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    izfppp ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
+   dt     , rtpa   , rtp    , propce , propfb ,                   &
    coefa  , coefb  , ckupdc , smacel ,                            &
    smbrs  , rovsdt )
 
@@ -86,7 +86,6 @@ subroutine cs_fuel_scast &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
@@ -143,8 +142,7 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 integer          izfppp(nfabor)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(ndimfb,*)
+double precision propce(ncelet,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision smbrs(ncelet), rovsdt(ncelet)
@@ -171,7 +169,7 @@ double precision ho2,hco,xesp(ngazem),xcoke,t2mt1
 double precision gmech,gmvap,gmhet
 double precision xxco,xxo2,xxco2,xxh2o,xco2mx
 double precision xkp,xk0p,xkm,xk0m,wplus,wmoins,t0p,t0m
-double precision auxp,auxm, aux1 , aux2 , aux3 , w1
+double precision auxp, aux1 , aux2 , aux3 , w1
 double precision xeq,anmr,xcot,xo2t,xco2e,xo2e,xcoe,tauchi,tautur
 double precision sqh2o , x2 , wmhcn , wmno ,wmo2
 double precision err1mx,err2mx
@@ -394,7 +392,7 @@ if ( ivar.eq.isca(ifvp2m) ) then
    iscal  ,                                                        &
    itypfb ,                                                        &
    icepdc , icetsm , itypsm ,                                      &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,           &
+   dt     , rtpa   , rtp    , propce , propfb ,                    &
    smbrs  , rovsdt )
 
 endif
@@ -742,9 +740,6 @@ endif
 
  1000 format(' TERMES SOURCES PHYSIQUE PARTICULIERE POUR LA VARIABLE '  &
        ,a8,/)
- 2000 format(' ATTENTION : LE TAUX DE VAPEUR EN SORTIE',                &
-       ' EST NULLE',/,                                                  &
-       ' ON PREND QPR = 0.5')
 
 !----
 ! End

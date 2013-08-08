@@ -27,6 +27,10 @@ module parall
 
   !=============================================================================
 
+  implicit none
+
+  !=============================================================================
+
   ! thr_n_min : minimum number of elements for loops on threads
 
   integer   thr_n_min

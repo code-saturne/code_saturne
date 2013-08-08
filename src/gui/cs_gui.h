@@ -141,7 +141,6 @@ void CS_PROCF (csisca, CSISCA) (int *const iscavr);
  * INTEGER          IVISLS  <--   indicator for the user scalar viscosity
  * INTEGER          ISCALT  <-->  number of the user thermal scalar if any
  * INTEGER          ISCSTH  <-->  type of the user thermal scalar
- * INTEGER          ISCA     -->  indirection array for scalar number
  * INTEGER          ITEMPK   -->  rtp index for temperature (in K)
  *----------------------------------------------------------------------------*/
 
@@ -149,7 +148,6 @@ void CS_PROCF (csivis, CSIVIS) (int *const iscavr,
                                 int *const ivisls,
                                 int *const iscalt,
                                 int *const iscsth,
-                                const int *const isca,
                                 int *const itempk);
 
 /*----------------------------------------------------------------------------
@@ -352,7 +350,6 @@ void CS_PROCF (csphys, CSPHYS) (const    int *const nmodpp,
                                       double *const t0,
                                       double *const p0,
                                       double *const xmasmr,
-                                const    int *const isca,
                                          int *const itempk);
 
 /*----------------------------------------------------------------------------
@@ -527,7 +524,6 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *iscal,
  * DOUBLE PRECISION RO0      -->  value of density if IROVAR=0
  * DOUBLE PRECISION CP0      -->  value of specific heat if ICP=0
  * DOUBLE PRECISION VISCL0   -->  value of viscosity if IVIVAR=0
- * DOUBLE PRECISION VISLS0   -->  value of reference molecular diffusivity
  * DOUBLE PRECISION UREF     -->  value of reference velocity
  * DOUBLE PRECISION ALMAX    -->  value of reference length
  * DOUBLE PRECISION XYZCEN   -->  cell's gravity center
@@ -546,7 +542,6 @@ void CS_PROCF(uiiniv, UIINIV) (const int         *ncelet,
                               const cs_real_t    *ro0,
                               const cs_real_t    *cp0,
                               const cs_real_t    *viscl0,
-                              const cs_real_t    *visls0,
                               const cs_real_t    *uref,
                               const cs_real_t    *almax,
                               const double *const xyzcen,

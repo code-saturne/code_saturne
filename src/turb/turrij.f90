@@ -48,7 +48,6 @@
 !> \param[in]     rtpa          calculated variables at cell centers
 !>                               (at the previous time step)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfa        physical properties at interior face centers
 !> \param[in]     propfb        physical properties at boundary face centers
 !> \param[in]     tslagr        coupling term of the lagangian module
 !> \param[in]     coefa, coefb  boundary conditions
@@ -62,7 +61,7 @@
 subroutine turrij &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    tslagr ,                                                       &
    coefa  , coefb  , ckupdc , smacel )
 
@@ -98,8 +97,7 @@ integer          icetsm(ncesmp)
 integer, dimension(ncesmp,nvar), target :: itypsm
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(ndimfb,*)
+double precision propce(ncelet,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6)
 
@@ -123,7 +121,7 @@ double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: smbr, rovsdt
 double precision, allocatable, dimension(:,:,:) :: grdvel
 double precision, allocatable, dimension(:,:) :: produc
-double precision, allocatable, dimension(:,:) :: gradu, gradv, gradw, gradro
+double precision, allocatable, dimension(:,:) :: gradro
 
 integer,          pointer, dimension(:) :: itpsmp => null()
 double precision, pointer, dimension(:) :: smcelp => null(), gammap => null()
@@ -357,7 +355,7 @@ do isou = 1, 6
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   , isou   , ipp    ,                                     &
    icepdc , icetsm , itpsmp ,                                     &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefa  , coefb  , produc , gradro ,                            &
    ckupdc , smcelp , gammap ,                                     &
    viscf  , viscb  ,                                              &
@@ -372,7 +370,7 @@ do isou = 1, 6
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   , isou   , ipp    ,                                     &
    icepdc , icetsm , itpsmp ,                                     &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefa  , coefb  , grdvel , gradro ,                            &
    ckupdc , smcelp , gammap ,                                     &
    viscf  , viscb  ,                                              &
@@ -401,7 +399,7 @@ call reseps &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   , isou   , ipp    ,                                     &
    icepdc , icetsm , itpsmp ,                                     &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefa  , coefb  , grdvel , produc , gradro ,                   &
    ckupdc , smcelp , gammap ,                                     &
    viscf  , viscb  ,                                              &

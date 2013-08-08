@@ -24,7 +24,7 @@ subroutine lagcli &
 !================
 
  ( marko  ,                                                       &
-   tempf  , romf , ustar , lvisq  , tvisq  , ifac    ,            &
+   tempf  , romf , ustar , lvisq  , tvisq  ,                      &
    vpart  , vvue , dx    ,                                        &
    diamp  , romp , taup  , yplus  , dintrf , enertur , gnorm ,    &
    vnorm  , grpn , piiln , depint )
@@ -51,7 +51,6 @@ subroutine lagcli &
 ! ustar            ! r  ! <-- ! friction velocity                              !
 ! lvisq            ! r  ! <-- ! wall-unit lenghtscale                          !
 ! tvisq            ! r  ! <-- ! wall-unit timescale                            !
-! ifac             ! i  ! <-- ! number of the boundary-face                    !
 ! vpart            ! r  ! <-- ! particle wall-normal velocity                  !
 ! vvue             ! r  ! <-- ! wall-normal velocity of the flow seen          !
 ! dx               ! r  ! <-- ! wall-normal displacement                       !
@@ -88,17 +87,17 @@ use lagran
 
 implicit none
 
-integer          marko , nrtuse, ifac
+integer          marko
 
-double precision tempf
+double precision tempf, romf
 double precision vpart , vvue , vnorm, grpn, piiln
 double precision diamp , romp , taup ,yplus , dx   , dintrf, gnorm, depint
 
 ! Local variables
 
- integer          inb , indint
+ integer          indint
 
- double precision vstruc,tlag2,kdif,kdifcl,rpart, romf
+ double precision vstruc,tlag2,kdif,kdifcl,rpart
  double precision tstruc,tdiffu,ttotal, ustar, lvisq, tvisq
  double precision unif(2),unif1(1), enertur, ectype, paux
  double precision rapkvp

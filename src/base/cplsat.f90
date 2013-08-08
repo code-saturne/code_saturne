@@ -29,6 +29,8 @@ module cplsat
 
   use paramx
 
+  implicit none
+
   !=============================================================================
 
   !  couplage code / code - gestion des parametres principaux

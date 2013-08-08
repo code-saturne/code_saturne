@@ -65,14 +65,7 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
-!> \param[in]     dt            time step (per cell)
-!> \param[in]     rtp, rtpa     calculated variables at cell centers
-!>                                (at current and previous time steps)
 !> \param[in]     propce        physical properties at interior face centers
-!> \param[in]     propfa        physical properties at interior face centers
-!> \param[in]     propfb        physical properties at boundary face centers
 !> \param[in,out] prhyd         hydrostatic pressure predicted with
 !>                              the a priori momentum equation reduced
 !>                              \f$ P_{hydro} \f$
@@ -81,8 +74,7 @@
 !_______________________________________________________________________________
 
 subroutine prehyd &
- ( nvar   , nscal  ,                                              &
-   dt     , rtp    ,  rtpa  , propce , propfa , propfb ,          &
+ ( propce ,                                                    &
    prhyd , grdphd  )
 
 !===============================================================================
@@ -92,13 +84,11 @@ subroutine prehyd &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use numvar
 use entsor
 use cstphy
 use cstnum
 use optcal
-use pointe, only: itypfb
 use albase
 use parall
 use period
@@ -115,11 +105,7 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision prhyd(ncelet), grdphd(ncelet,ndim)
 
 ! Local variables
@@ -140,7 +126,6 @@ integer          iharmo
 
 double precision thetap
 double precision epsrgp, climgp, extrap, epsilp
-double precision snorm
 double precision hint, qimp, epsrsp, blencp, relaxp
 
 double precision rvoid(1)
@@ -297,8 +282,7 @@ thetap = thetav(ivar)
 
 call codits &
 !==========
-( nvar   , nscal  ,                                              &
-  idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
+( idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
   imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
   imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &

@@ -82,17 +82,14 @@ extern void CS_PROCF (dvvpst, DVVPST)
  const cs_int_t  *nvlsta,    /* <-- number of statistical variables (lagr) */
  const cs_int_t  *nvisbr,    /* <-- number of boundary stat. variables (lagr) */
  const cs_int_t  *ncelps,    /* <-- number of post-processed cells */
- const cs_int_t  *nfacps,    /* <-- number of post processed interior faces */
  const cs_int_t  *nfbrps,    /* <-- number of post processed boundary faces */
  const cs_int_t   itypps[3], /* <-- flag (0 or 1) for presence of cells, */
  const cs_int_t   lstcel[],  /* <-- list of post-processed cells */
- const cs_int_t   lstfac[],  /* <-- list of post-processed interior faces */
  const cs_int_t   lstfbr[],  /* <-- list of post-processed boundary faces */
  const cs_real_t  dt[],      /* <-- local time step */
  const cs_real_t  rtpa[],    /* <-- cell variables at previous time step */
  const cs_real_t  rtp[],     /* <-- cell variables */
  const cs_real_t  propce[],  /* <-- cell physical properties */
- const cs_real_t  propfa[],  /* <-- interior face physical properties */
  const cs_real_t  propfb[],  /* <-- boundary face physical properties */
  const cs_real_t  statce[],  /* <-- cell statistics (Lagrangian) */
  const cs_real_t  stativ[],  /* <-- cell variance statistics (Lagrangian) */
@@ -264,7 +261,6 @@ void CS_PROCF (usvpst, USVPST)
  const cs_real_t  rtpa[],    /* <-- cell variables at previous time step */
  const cs_real_t  rtp[],     /* <-- cell variables */
  const cs_real_t  propce[],  /* <-- cell physical properties */
- const cs_real_t  propfa[],  /* <-- interior face physical properties */
  const cs_real_t  propfb[],  /* <-- boundary face physical properties */
  const cs_real_t  statce[]   /* <-- cell statistics (Lagrangian) */
 );

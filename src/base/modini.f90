@@ -54,7 +54,6 @@ use optcal
 use cstphy
 use entsor
 use albase
-use radiat, only: iirayo
 use alstru
 use cplsat
 use post

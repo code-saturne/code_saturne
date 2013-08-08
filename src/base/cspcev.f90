@@ -23,13 +23,10 @@
 subroutine cspcev &
 !================
 
- ( nvar   , nscal  ,                                              &
-   nptdis , ityloc ,                                              &
-   ivar   ,                                                       &
+ ( nptdis , ivar   ,                                              &
    locpts ,                                                       &
-   dt     , rtpa   , vela   ,                                     &
-   propce , propfa , propfb ,                                     &
-   coefa  , coefb  , coefav , coefbv ,                            &
+   vela   ,                                                       &
+   coefav , coefbv ,                                              &
    coopts , rvdis  )
 
 !===============================================================================
@@ -77,17 +74,11 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
 integer          ivar
-integer          nptdis , ityloc
+integer          nptdis
 
 integer          locpts(nptdis)
 
-
-double precision dt(ncelet), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision coopts(3,nptdis), rvdis(3,nptdis)
 double precision coefav(3  ,nfabor)
 double precision coefbv(3,3,nfabor)

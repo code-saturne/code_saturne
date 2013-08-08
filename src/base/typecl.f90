@@ -25,8 +25,7 @@ subroutine typecl &
 
  ( nvar   , nscal  ,                                              &
    itypfb , itrifb , icodcl , isostd ,                            &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , rcodcl , frcxt  )
+   rtpa   , propce , rcodcl , frcxt  )
 
 !===============================================================================
 ! Function :
@@ -54,14 +53,9 @@ subroutine typecl &
 !                  !    !     !  entrante eventuelle     bloquee               !
 ! isostd           ! te ! --> ! indicateur de sortie standard                  !
 !    (nfabor+1)    !    !     !  +numero de la face de reference               !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
+! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
+!  (ncelet, *)     !    !     !  (at previous time step)                       !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
 !  (nfabor,nvar    !    !     !  aux faces de bord                             !
 !                  !    !     ! rcodcl(1) = valeur du dirichlet                !
@@ -89,7 +83,6 @@ subroutine typecl &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use numvar
 use optcal
 use cstnum
@@ -115,22 +108,18 @@ integer          icodcl(nfabor,nvarcl)
 integer          itypfb(nfabor) , itrifb(nfabor)
 integer          isostd(nfabor+1)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(ndimfb,*)
-double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision rcodcl(nfabor,nvarcl,3)
 double precision frcxt(3,ncelet)
 
 ! Local variables
 
-character        chaine*80
 integer          ifac, ivar, iel
 integer          iok, inc, iccocg, ideb, ifin, inb, isum, iwrnp
 integer          ifrslb, itbslb
 integer          ityp, ii, jj, iwaru, iflmab
 integer          nswrgp, imligp, iwarnp
-integer          iii
 integer          irangd, iclipr, iiptot
 integer          ifadir
 integer          iut  , ivt   , iwt, iscal
@@ -145,6 +134,7 @@ double precision rvoid(1)
 double precision, allocatable, dimension(:) :: pripb
 double precision, allocatable, dimension(:,:) :: grad
 double precision, dimension(:), pointer :: bmasfl
+double precision, dimension(:), pointer :: coefap, coefbp
 
 integer          ipass
 data             ipass /0/
@@ -578,13 +568,16 @@ if (itbslb.gt.0) then
   extrap = extrag(ipr)
   iclipr = iclrtp(ipr,icoef)
 
+  call field_get_coefa_s(ivarfl(ipr), coefap)
+  call field_get_coefb_s(ivarfl(ipr), coefbp)
+
   call grdpot &
   !==========
      ( ipr , imrgra , inc    , iccocg , nswrgp , imligp , iphydr ,    &
        iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
        rvoid  ,                                                       &
        frcxt  ,                                                       &
-       rtpa(1,ipr)  , coefa(1,iclipr) , coefb(1,iclipr) ,             &
+       rtpa(1,ipr) , coefap , coefbp ,                                &
        grad   )
 
 

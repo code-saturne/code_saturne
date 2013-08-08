@@ -61,8 +61,6 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
 !> \param[in]     itypfb        boundary face types
 !> \param[in]     distpa        tab des distances a la paroi
 !> \param[in]     propce        physical properties at cell centers
@@ -70,8 +68,7 @@
 !_______________________________________________________________________________
 
 subroutine distyp &
- ( nvar   , nscal  ,                                              &
-   itypfb ,                                                       &
+ ( itypfb ,                                                       &
    distpa , propce , disty  )
 
 !===============================================================================
@@ -98,8 +95,6 @@ use mesh
 implicit none
 
 ! Arguments
-
-integer          nvar   , nscal
 
 integer          itypfb(nfabor)
 
@@ -302,8 +297,7 @@ itypfl = 1
 
 call inimas                                                       &
 !==========
- ( nvar   , nscal  ,                                              &
-   ivar   , ivar   , ivar   , imaspe , itypfl ,                   &
+ ( ivar   , ivar   , ivar   , imaspe , itypfl ,                   &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgy , imligy , &
    iwarny , nfecra ,                                              &
    epsrgy , climgy , extray ,                                     &
@@ -537,8 +531,7 @@ do isweep = 1, ntcmxy
 
   call codits &
   !==========
- ( nvar   , nscal  ,                                              &
-   idtva0 , ivar   , iconvp , idiffp , ireslp , ndircp , nitmay , &
+ ( idtva0 , ivar   , iconvp , idiffp , ireslp , ndircp , nitmay , &
    imrgra , nswrsy , nswrgy , imligy , ircfly ,                   &
    ischcy , isstpy , iescap , imucpp , idftnp , iswdyp ,          &
    imgrpy , ncymxp , nitmfp , ipp    , iwarny ,                   &

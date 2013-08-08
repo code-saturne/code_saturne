@@ -23,10 +23,9 @@
 subroutine cs_fuel_bcond &
 !=======================
 
- ( nvar   , nscal  ,                                              &
-   icodcl , itrifb , itypfb , izfppp ,                            &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , rcodcl )
+ ( icodcl , itypfb , izfppp ,                                     &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   rcodcl )
 
 !===============================================================================
 ! FONCTION :
@@ -38,10 +37,9 @@ subroutine cs_fuel_bcond &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! icodcl           ! te ! --> ! code de condition limites aux faces            !
-!  (nfabor,nvar    !    !     !  de bord                                       !
+!  (nfabor,nvarcl) !    !     !  de bord                                       !
 !                  !    !     ! = 1   -> dirichlet                             !
 !                  !    !     ! = 3   -> densite de flux                       !
 !                  !    !     ! = 4   -> glissemt et u.n=0 (vitesse)           !
@@ -57,12 +55,9 @@ subroutine cs_fuel_bcond &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
-!  (nfabor,nvar    !    !     !  aux faces de bord                             !
+!  (nfabor,nvarcl) !    !     !  aux faces de bord                             !
 !                  !    !     ! rcodcl(1) = valeur du dirichlet                !
 !                  !    !     ! rcodcl(2) = valeur du coef. d'echange          !
 !                  !    !     !  ext. (infinie si pas d'echange)               !
@@ -107,21 +102,17 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-
 integer          icodcl(nfabor,nvarcl)
 integer          itrifb(nfabor), itypfb(nfabor)
 integer          izfppp(nfabor)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
+double precision propfb(nfabor,*)
 double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          ii, ifac, izone, mode, iel, ige, iok
 integer          icla , ioxy
 integer          ipbrom, icke, ipcvis
@@ -135,8 +126,8 @@ double precision x2h20t(nozppm)
 double precision qimpc(nozppm) , qcalc(nozppm)
 double precision coefe(ngazem)
 double precision xsolid(2)
-double precision hlf , totfu , sdeb , sdebt
-double precision volm,volmp,dmp , dmas
+double precision hlf, totfu, sdebt
+double precision volm, dmp, dmas
 
 !===============================================================================
 !===============================================================================

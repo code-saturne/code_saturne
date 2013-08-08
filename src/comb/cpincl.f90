@@ -30,6 +30,8 @@ module cpincl
   use ppppar
   use ppthch
 
+  implicit none
+
   !=============================================================================
 
   !--> POINTEURS VARIABLES COMBUSTION CHARBON PULVERISE cpincl, ppincl

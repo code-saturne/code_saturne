@@ -23,10 +23,10 @@
 subroutine cscpfb &
 !================
 
- ( nvar   , nscal  ,                                              &
-   nptdis , ityloc , nvcp   , numcpl , nvcpto,                    &
+ ( nscal  ,                                                       &
+   nptdis , numcpl , nvcpto,                                      &
    locpts ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   rtp    , propce ,                                              &
    coefa  , coefb  ,                                              &
    coopts , djppts , pndpts ,                                     &
    rvdis  , dofpts )
@@ -76,15 +76,14 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-integer          nptdis , nvcp   , numcpl , nvcpto , ityloc
+integer          nscal
+integer          nptdis , numcpl , nvcpto
 
 integer          locpts(nptdis)
 
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision rtp(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision coopts(3,nptdis), djppts(3,nptdis)
 double precision pndpts(nptdis), dofpts(3,nptdis)
@@ -93,7 +92,7 @@ double precision rvdis(nptdis,nvcpto)
 ! Local variables
 
 
-integer          ipt    , ifac   , iel    , isou
+integer          ipt    , iel    , isou
 integer          ivar   , iscal  , ipcrom
 integer          inc    , iccocg , iclvar, nswrgp
 integer          iwarnp , imligp

@@ -45,7 +45,6 @@
 !> \param[in,out] rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in,out] propfa        physical properties at interior face centers
 !> \param[in,out] propfb        physical properties at boundary face centers
 !> \param[in]     coefa, coefb  boundary conditions
 !_______________________________________________________________________________
@@ -53,7 +52,7 @@
 
 subroutine phyvar &
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefa  , coefb  )
 
 !===============================================================================
@@ -88,27 +87,23 @@ integer          nvar   , nscal
 
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propce(ncelet,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 
 ! Local variables
 
 character*80     chaine
 integer          ivar  , iel   , ifac  , iscal
-integer          ii    , jj    , iok   , iok1  , iok2  , iisct
+integer          ii    , iok   , iok1  , iok2  , iisct
 integer          nn
 integer          ibrom , ipcrom, ipbrom, ipcvst
 integer          ipccp , ipcvis, ipcvma
 integer          ivarh
 integer          iclipc
-integer          nswrgp, imligp, iwarnp, iphydp, iclvar
-integer          ir12ip, ir13ip, ir23ip, ialpip,iccocg,inc
 Double precision xk, xe, xnu, xrom, vismax(nscamx), vismin(nscamx)
 double precision nusa, xi3, fv1, cv13
 double precision varmn(4), varmx(4), tt, ttmin, ttke, viscto, xrtp
-double precision alp3, xrij(3,3) , xnal(3)   , xnoral
-double precision xttkmg, xttdrb,epsrgp, climgp, extrap
+double precision xttkmg, xttdrb
 double precision alpha, ym, yk
 double precision trrij,rottke
 
@@ -144,11 +139,8 @@ endif
 ! Diffusion terms for weakly compressible algorithm
 if (idilat.eq.4.and.ipass.gt.1) then
 
-  call diffst &
+  call diffst(nscal, rtp, propce, coefa, coefb)
   !==========
- ( nvar   , nscal  ,                                     &
-   rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  )
 
 endif
 
@@ -177,14 +169,14 @@ call usphyv &
 ( nvar   , nscal  ,                                              &
   ibrom  ,                                                       &
   dt     , rtp    , rtpa   ,                                     &
-  propce , propfa , propfb )
+  propce , propfb )
 
 if (ippmod(iphpar).ge.1) then
   call ppphyv &
   !==========
  ( nvar   , nscal  ,                                              &
    ibrom  ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefa  , coefb  )
 
 endif
@@ -359,7 +351,7 @@ elseif (iturb.eq.10) then
  ( nvar   , nscal  ,                                              &
    ncepdc , ncetsm ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefa  , coefb  , ckupdc , smacel )
 
 elseif (itytur.eq.2) then
@@ -400,7 +392,7 @@ elseif (iturb.eq.40) then
  ( nvar   , nscal  ,                                              &
    ncepdc , ncetsm ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefa  , coefb  , ckupdc , smacel )
 
 elseif (iturb.eq.41) then
@@ -413,7 +405,7 @@ elseif (iturb.eq.41) then
  ( nvar   , nscal  ,                                              &
    ncepdc , ncetsm ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefa  , coefb  , ckupdc , smacel ,                            &
    propce(1,ipproc(ismago)) )
 
@@ -427,7 +419,7 @@ elseif (iturb.eq.42) then
  ( nvar   , nscal  ,                                              &
    ncepdc , ncetsm ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefa  , coefb  , ckupdc , smacel )
 
 elseif (itytur.eq.5) then
@@ -459,7 +451,7 @@ elseif (itytur.eq.5) then
    ( nvar   , nscal  ,                                              &
      ncepdc , ncetsm ,                                              &
      icepdc , icetsm , itypsm ,                                     &
-     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+     dt     , rtp    , rtpa   , propce ,                            &
      coefa  , coefb  , ckupdc , smacel )
 
   endif
@@ -474,7 +466,7 @@ elseif (iturb.eq.60) then
  ( nvar   , nscal  ,                                              &
    ncepdc , ncetsm ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefa  , coefb  , ckupdc , smacel )
 
 elseif (iturb.eq.70) then
@@ -576,7 +568,7 @@ call usvist &
 ( nvar   , nscal  ,                                              &
   ncepdc , ncetsm ,                                              &
   icepdc , icetsm , itypsm ,                                     &
-  dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+  dt     , rtp    , rtpa   , propce , propfb ,                   &
   ckupdc , smacel )
 
 !===============================================================================
@@ -631,7 +623,7 @@ if (iale.eq.1.and.ntcabs.eq.0) then
   call usvima &
   !==========
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    propce(1,ipproc(ivisma(1))) ,                                  &
    propce(1,ipproc(ivisma(2))) , propce(1,ipproc(ivisma(3))) )
 

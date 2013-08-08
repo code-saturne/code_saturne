@@ -68,8 +68,6 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
 !> \param[in]     idtvar        indicateur du schema temporel
 !> \param[in]     ivar          index of the current variable
 !> \param[in]     iconvp        indicator
@@ -183,8 +181,7 @@
 !_______________________________________________________________________________
 
 subroutine codits &
- ( nvar   , nscal  ,                                              &
-   idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
+ ( idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
@@ -219,7 +216,6 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
 integer          idtvar , ivar   , iconvp , idiffp , ndircp
 integer          nitmap
 integer          imrgra , nswrsp , nswrgp , imligp , ircflp
@@ -252,11 +248,11 @@ character*16     cnom
 integer          lchain
 integer          isym,ireslp,ireslq,ipol,isqrt
 integer          inc,isweep,niterf,iccocg,iel,icycle,nswmod
-integer          idimte,itenso,iinvpe, iinvpp
+integer          itenso,iinvpe, iinvpp
 integer          idtva0
 integer          nagmax, npstmg
 integer          ibsize, iesize
-integer          incp, insqrt
+integer          insqrt
 
 double precision residu, rnorm, ressol, rnorm2
 double precision thetex, nadxkm1, nadxk, paxm1ax, paxm1rk, paxkrk, alph, beta
@@ -408,8 +404,7 @@ if (abs(thetex).gt.epzero) then
 
   call bilsca &
   !==========
- ( nvar   , nscal  ,                                              &
-   idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
+ ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    ipp    , iwarnp , imucpp , idftnp ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetex ,          &
@@ -456,8 +451,7 @@ iccocg = 1
 
 call bilsca &
 !==========
- ( nvar   , nscal  ,                                              &
-   idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
+ ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    ipp    , iwarnp , imucpp , idftnp ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
@@ -579,8 +573,7 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
 
     call bilsca &
     !==========
-   ( nvar   , nscal  ,                                              &
-     idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
+   ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
      ischcp , isstpp , inc    , imrgra , iccocg ,                   &
      ipp    , iwarnp , imucpp , idftnp ,                            &
      blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
@@ -705,8 +698,7 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
 
   call bilsca &
   !==========
- ( nvar   , nscal  ,                                              &
-   idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
+ ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    ipp    , iwarnp , imucpp , idftnp ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
@@ -778,8 +770,7 @@ if (iescap.gt.0) then
 
   call bilsca &
   !==========
- ( nvar   , nscal  ,                                              &
-   idtva0 , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
+ ( idtva0 , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    ipp    , iwarnp , imucpp , idftnp ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &

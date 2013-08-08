@@ -64,7 +64,6 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     isvhb         indicator to save exchange coeffient
 !> \param[in,out] icodcl        face boundary condition code:
@@ -82,7 +81,6 @@
 !> \param[in]     rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfa        physical properties at interior face centers
 !> \param[in]     propfb        physical properties at boundary face centers
 !> \param[in,out] rcodcl        boundary condition values:
 !>                               - rcodcl(1) value of the dirichlet
@@ -113,10 +111,8 @@
 !_______________________________________________________________________________
 
 subroutine clptur &
- ( nvar   , nscal  ,                                              &
-   isvhb  ,                                                       &
-   icodcl ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
+ ( nscal  , isvhb  , icodcl ,                                     &
+   rtp    , rtpa   , propce , propfb , rcodcl ,                   &
    velipb , rijipb , coefa  , coefb  , visvdr ,                   &
    hbord  , theipb )
 
@@ -150,14 +146,12 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-integer          isvhb
+integer          nscal, isvhb
 
 integer          icodcl(nfabor,nvarcl)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision rtp(ncelet,*), rtpa(ncelet,*)
+double precision propce(ncelet,*), propfb(nfabor,*)
 double precision rcodcl(nfabor,nvarcl,3)
 double precision velipb(nfabor,ndim), rijipb(nfabor,6)
 double precision coefa(nfabor,*), coefb(nfabor,*)
@@ -197,13 +191,13 @@ double precision sqrcmu, clsyme, ek
 double precision xnuii, xmutlm
 double precision rcprod, rcflux
 double precision cpp, rkl,  prdtl
-double precision hflui, hredui, hint, hext, pimp, heq, qimp
+double precision hflui, hint, hext, pimp, heq, qimp
 double precision und0, deuxd0
 double precision eloglo(3,3), alpha(6,6)
 double precision rcodcx, rcodcy, rcodcz, rcodcn
 double precision visclc, visctc, romc  , distbf, srfbnf, cpscv
 double precision cofimp, ypup, yptp, yp1
-double precision bldr12, ypp, dudyp, xv2
+double precision bldr12
 double precision xkip
 double precision tplus
 double precision rinfiv(3), pimpv(3), hintt(6), pfac

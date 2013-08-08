@@ -27,7 +27,7 @@ subroutine raypar &
    itypfb ,                                                       &
    icodcl , isothp , izfrap ,                                     &
    tmin   , tmax   , tx     ,                                     &
-   dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
+   dt     , rtp    , rtpa   , propce , propfb , rcodcl ,          &
    coefa  , coefb  ,                                              &
    tparop , qincip , textp  , tintp  ,                            &
    xlamp  , epap   , epsp   ,                                     &
@@ -65,7 +65,6 @@ subroutine raypar &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
 !  (nfabor,nvar    !    !     !  aux faces de bord                             !
@@ -133,8 +132,7 @@ integer          icodcl(nfabor,nvarcl)
 
 double precision tmin , tmax , tx
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propce(ncelet,*), propfb(nfabor,*)
 double precision rcodcl(nfabor,nvarcl,3)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 

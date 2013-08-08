@@ -23,10 +23,9 @@
 subroutine ecrlis &
 !================
 
- ( nvar   , ndim   , ncelet , ncel   ,                            &
+ ( nvar   , ncelet , ncel   ,                                     &
    irtp   ,                                                       &
-   rtp    , rtpa   , dt     , volume , xyzcen ,                   &
-   ra     )
+   rtp    , rtpa   , dt     , volume )
 
 !===============================================================================
 !  FONCTION  :
@@ -40,7 +39,6 @@ subroutine ecrlis &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! nvar             ! e  ! <-- ! nombre de variables                            !
-! ndim             ! i  ! <-- ! spatial dimension                              !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
 ! irtp             ! e  ! <-- ! indice de rtp dans ra                          !
@@ -51,9 +49,6 @@ subroutine ecrlis &
 ! dt   (ncelet)    ! tr ! <-- ! valeur du pas de temps                         !
 ! volume           ! tr ! <-- ! volume d'un des ncelet elements                !
 ! (ncelet)         !    !     !                                                !
-! xyzcen           ! ra ! <-- ! cell centers                                   !
-!  (ndim, ncelet)  !    !     !                                                !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -82,31 +77,19 @@ use ppincl
 
 implicit none
 
-integer          nvar, ndim, ncelet, ncel
+integer          nvar, ncelet, ncel
 integer          irtp
 double precision rtpa(ncelet,nvar), rtp(ncelet,nvar)
 double precision dt(ncelet), volume(ncelet)
-double precision xyzcen(ndim,ncelet)
-double precision, dimension(*), target :: ra
 
 ! Local variables
 
-integer          ii, jj, ic, icel, ipp, ira, ivrtp, iok
-integer          ipuvw
-integer          icmin, icmax
-integer          nbrval
-integer          idivdt, ixmsdt, iel
-double precision petit,xyzmin(3),xyzmax(3)
+integer          ic, icel, ipp, ira, ivrtp, iok
 character*200    chain, chainc
-
-double precision, dimension(:), allocatable, target :: momtmp
-double precision, dimension(:), pointer :: varptr => null()
 
 !===============================================================================
 ! 0. INITIALISATIONS LOCALES
 !===============================================================================
-
-petit  =-grand
 
 !==================================================================
 ! 1. DERIVE POUR LES VARIABLES TRANSPORTEES (sauf pression)
@@ -197,10 +180,6 @@ write(nfecra,*) ' '
  1010 format ('---------------------------',                      &
         '------------------------------------')
 
-
- 1110 format ('-----------------------------------------',        &
-        '----------------------')
-
  3000 format (e12.5)
  4000 format (i7)
 
@@ -212,10 +191,6 @@ write(nfecra,*) ' '
         '  N_iter  Norm. residual      derive')
  1010 format ('---------------------------',                      &
         '------------------------------------')
-
-
- 1110 format ('-----------------------------------------',        &
-        '----------------------')
 
  3000 format (e12.5)
  4000 format (i7)

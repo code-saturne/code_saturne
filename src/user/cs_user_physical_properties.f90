@@ -97,7 +97,6 @@
 !> \param[in]     rtp, rtpa     calculated variables at cell centers
 !> \param[in]                    (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfa        physical properties at interior face centers
 !> \param[in]     propfb        physical properties at boundary face centers
 !_______________________________________________________________________________
 
@@ -105,7 +104,7 @@ subroutine usphyv &
  ( nvar   , nscal  ,                                              &
    ibrom  ,                                                       &
    dt     , rtp    , rtpa   ,                                     &
-   propce , propfa , propfb )
+   propce , propfb )
 
 !===============================================================================
 
@@ -136,7 +135,7 @@ integer          ibrom
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propfb(nfabor,*)
 
 ! Local variables
 
@@ -841,13 +840,12 @@ end subroutine usphyv
 !> \param[in]     rtpR, rtpa    calculated variables at cell centers
 !>                               (at current and preceding time steps)
 !> \param[in,out] propce        physical properties at cell centers
-!> \param[in]     propfa        physical properties at interior face centers
 !> \param[in]     propfb        physical properties at boundary face centers
 !_______________________________________________________________________________
 
 subroutine uscfpv &
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb )
+   dt     , rtp    , rtpa   , propce , propfb )
 
 !===============================================================================
 
@@ -878,7 +876,7 @@ integer          nvar   , nscal
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propfb(nfabor,*)
 
 ! Local variables
 
@@ -1130,9 +1128,9 @@ if (.false.) then
 
   call cfther                                                       &
   !==========
-   ( nvar   , nscal  ,                                              &
+   ( nvar   ,                                                       &
      iccfth , imodif ,                                              &
-     dt     , rtp    , rtpa  , propce , propfa , propfb ,           &
+     dt     , rtp    , rtpa  , propce ,                             &
      propce(1, ipproc(icv))  , w1     , w2     , w3     )
 
 endif ! --- Test on .false.
@@ -1438,7 +1436,7 @@ subroutine uselph &
 
  ( nvar   , nscal  ,                                              &
    ibrom  , izfppp ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb )
+   dt     , rtp    , rtpa   , propce , propfb )
 
 !===============================================================================
 ! FONCTION :
@@ -1526,7 +1524,6 @@ subroutine uselph &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 !__________________!____!_____!________________________________________________!
 
@@ -1564,7 +1561,7 @@ integer          izfppp(nfabor)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propfb(nfabor,*)
 
 ! Local variables
 
@@ -1936,7 +1933,6 @@ end subroutine uselph
 !> \param[in]     rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in,out] propce        physical properties at cell centers
-!> \param[in]     propfa        physical properties at interior face centers
 !> \param[in]     propfb        physical properties at boundary face centers
 !> \param[in]     ckupdc        work array for head loss terms
 !> \param[in]     smacel        values of variables related to mass source
@@ -1946,7 +1942,7 @@ end subroutine uselph
 subroutine usvist &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    ckupdc , smacel )
 
 !===============================================================================
@@ -1980,7 +1976,7 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(ndimfb,*)
+double precision propfb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 
 ! Local variables
@@ -2093,7 +2089,7 @@ subroutine ussmag &
 
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    ckupdc , smacel ,                                              &
    smagor , mijlij , mijmij )
 
@@ -2133,7 +2129,6 @@ subroutine ussmag &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
 !  (ncepdp,6)      !    !     !                                                !
@@ -2179,7 +2174,7 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propfb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision smagor(ncelet), mijlij(ncelet), mijmij(ncelet)
 
@@ -2283,7 +2278,6 @@ end subroutine ussmag
 !> \param[in]     rtp, rtpa     calculated variables at cell centers
 !>                               (at current and preceding time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfa        physical properties at interior face centers
 !> \param[in]     propfb        physical properties at boundary face centers
 !> \param[out]    viscmx        mesh viscosity in X direction
 !> \param[out]    viscmy        mesh viscosity in Y direction
@@ -2292,7 +2286,7 @@ end subroutine ussmag
 
 subroutine usvima &
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    viscmx , viscmy , viscmz )
 
 !===============================================================================
@@ -2324,7 +2318,7 @@ integer          nvar   , nscal
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(ndimfb,*)
+double precision propfb(ndimfb,*)
 double precision viscmx(ncelet), viscmy(ncelet), viscmz(ncelet)
 
 ! Local variables

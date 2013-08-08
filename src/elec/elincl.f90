@@ -30,6 +30,8 @@ module elincl
   use paramx
   use ppthch
 
+  implicit none
+
   !=============================================================================
 
 

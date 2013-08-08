@@ -23,9 +23,7 @@
 subroutine distpr &
 !================
 
- ( nvar   , nscal  ,                                              &
-   itypfb ,                                                       &
-   distpa )
+ ( itypfb , distpa )
 
 !===============================================================================
 ! Purpose:
@@ -48,8 +46,6 @@ subroutine distpr &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 ! distpa(ncelet    ! ra ! --> ! distance to wall                               !
 !__________________!____!_____!________________________________________________!
@@ -80,8 +76,6 @@ use mesh
 implicit none
 
 ! Arguments
-
-integer          nvar   , nscal
 
 integer          itypfb(nfabor)
 
@@ -304,8 +298,7 @@ do isweep = 0, nswrsl
 
     call bilsca &
     !==========
- ( nvar   , nscal  ,                                              &
-   idtva0 , ivar   , iconvp , idiffp , nswrgy , imligy , ircfly , &
+ ( idtva0 , ivar   , iconvp , idiffp , nswrgy , imligy , ircfly , &
    ischcy , isstpy , inc    , imrgra , iccocg ,                   &
    ipp    , iwarny , imucpp , idftnp ,                            &
    blency , epsrgy , climgy , extray , relaxp , thetap ,          &

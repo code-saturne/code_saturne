@@ -24,7 +24,7 @@ subroutine clipsa &
 !================
 
  ( ncelet , ncel   , nvar   ,                                     &
-   iclip  , iwarnu ,                                              &
+   iwarnu ,                                                       &
    propce , rtp    )
 
 !===============================================================================
@@ -41,8 +41,6 @@ subroutine clipsa &
 ! nvar             ! e  ! <-- ! nombre de variables                            !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
-! iclip            ! e  ! <-- ! indicateur = 0 on utilise viscl0               !
-!                  !    !     !            sinon on utilise viscl              !
 ! iwarnu           ! e  ! <-- ! niveau d'impression                            !
 ! propce           ! tr ! <-- ! tableaux des variables au pdt courant          !
 !(ncelet,*         !    !     !                                                !
@@ -75,7 +73,7 @@ implicit none
 ! Arguments
 
 integer          nvar, ncelet, ncel
-integer          iclip, iwarnu
+integer          iwarnu
 double precision propce(ncelet,*)
 double precision rtp(ncelet,nvar)
 
@@ -117,52 +115,6 @@ do iel = 1, ncel
 enddo
 
 call log_iteration_clipping_field(ivarfl(inusa), iclpnu, 0, vmin, vmax)
-
-!===============================================================================
-! ---> Formats
-!===============================================================================
-
-#if defined(_CS_LANG_FR)
-
- 1000 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET DANS clipsa                           ',/,&
-'@    =========                                               ',/,&
-'@     APPEL DE clipsa              AVEC OPTION = ',I10        ,/,&
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut pas etre execute.                       ',/,&
-'@                                                            ',/,&
-'@  Contacter l''assistance.                                  ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 1010 format(                                                           &
- I10,' VALEURS DE NUSA INCORRECTE                            ')
-
-#else
-
- 1000 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ABORT IN clipsa                                ',/,&
-'@    ========                                                ',/,&
-'@     CALL OF clipsa               WITH OPTION = ',I10        ,/,&
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@  The calulation will not be run.                           ',/,&
-'@                                                            ',/,&
-'@  Contact the support.                                      ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 1010 format(                                                           &
- I10,' SA    VALUES INCORRECT                       ')
-
-#endif
 
 return
 

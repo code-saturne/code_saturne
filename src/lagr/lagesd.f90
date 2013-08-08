@@ -29,7 +29,7 @@ subroutine lagesd &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  ,                                                       &
    dlgeo  ,                                                       &
-   dt     , rtpa   , propce , propfa , propfb ,                   &
+   dt     , rtpa   , propce ,                                     &
    ettp   , ettpa  , tepa   ,                                     &
    statis , taup   , tlag   , piil   ,                            &
    bx     , vagaus , gradpr , gradvf , romp,                      &
@@ -108,10 +108,6 @@ subroutine lagesd &
 ! (ncelet,*)       !    !     !    cellules (pas de temps precedent)           !
 ! propce           ! tr ! <-- ! proprietes physiques au centre des             !
 ! (ncelet,*)       !    !     !    cellules                                    !
-! propfa           ! tr ! <-- ! proprietes physiques au centre des             !
-!  (nfac,*)        !    !     !    faces internes                              !
-! propfb           ! tr ! <-- ! proprietes physiques au centre des             !
-!  (nfabor,*)      !    !     !    faces de bord                               !
 ! ettp             ! tr ! --> ! tableaux des variables liees                   !
 !  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
 ! ettpa            ! tr ! <-- ! tableaux des variables liees                   !
@@ -176,7 +172,6 @@ integer          itepa(nbpmax,nivep)
 double precision dlgeo(nfabor,ngeol)
 double precision dt(ncelet) , rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*) , propfb(nfabor,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep) , statis(ncelet,*)
 double precision taup(nbpmax) , tlag(nbpmax,3)
@@ -203,7 +198,7 @@ double precision tci , force, k1
 double precision gama2 , omegam , omega2
 double precision grga2 , gagam , gaome
 double precision p11 , p21 , p22 , p31 , p32 , p33
-double precision grav(3) , ad1, ad2
+double precision grav(3)
 double precision lvisq, tvisq, depint
 double precision c0, cl, visccf
 double precision energi , dissip , vit(3)
@@ -394,7 +389,7 @@ call lagcli                                                       &
 !==========
    ( itepa(ip,jimark),                                            &
      tempf        ,                                               &
-     romf, ustar, lvisq, tvisq, ifac,                             &
+     romf, ustar, lvisq, tvisq,                                   &
      vpart(1)     , vvue(1)   , depl(1) ,                         &
      ettp(ip,jdp) , romp(ip)  , taup(ip),                         &
      tepa(ip,jryplu),tepa(ip,jrinpf), enertur, ggp(1), vflui(1),  &

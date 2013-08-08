@@ -29,6 +29,8 @@ module radiat
 
   use ppppar
 
+  implicit none
+
   !===========================================================================
 
   !-->  IIRAYO = 0 pas de rayonnement, 1 DOM, 2 P-1

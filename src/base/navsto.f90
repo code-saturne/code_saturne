@@ -25,7 +25,7 @@ subroutine navsto &
 
  ( nvar   , nscal  , iterns , icvrge ,                            &
    isostd ,                                                       &
-   dt     , tpucou , rtp    , rtpa   , propce , propfa , propfb , &
+   dt     , tpucou , rtp    , rtpa   , propce , propfb ,          &
    tslagr , coefa  , coefb  , frcxt  , prhyd  ,                   &
    trava  , ximpa  , uvwk   )
 
@@ -52,7 +52,6 @@ subroutine navsto &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
@@ -108,8 +107,7 @@ integer          nvar   , nscal  , iterns , icvrge
 integer          isostd(nfabor+1)
 
 double precision dt(ncelet), tpucou(ncelet,3), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(ndimfb,*)
+double precision propce(ncelet,*), propfb(ndimfb,*)
 double precision tslagr(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision frcxt(3,ncelet)
@@ -126,7 +124,7 @@ integer          iclipr, iclipf
 integer          icliup, iclivp, icliwp, init
 integer          icluma, iclvma, iclwma
 integer          iflmas, iflmab, ipcrom, ipbrom
-integer          iflms1, iflmb1, iflmb0
+integer          iflmb0
 integer          nswrgp, imligp, iwarnp, imaspe , itypfl
 integer          nbrval, iappel, iescop, idtsca
 integer          ndircp, icpt  , iecrw
@@ -266,13 +264,8 @@ endif
 if ((idilat.eq.2.or.idilat.eq.3).and. &
     (ntcabs.gt.1.or.isuite.gt.0)) then
 
-  call predfl &
+  call predfl(nvar, ncetsm, icetsm, dt, propce, smacel)
   !==========
-  ( nvar   , nscal  , ncetsm ,                            &
-    icetsm ,                                              &
-    dt     , rtp    , rtpa   ,                            &
-    propce , propfa , propfb ,                            &
-    smacel )
 
 endif
 
@@ -282,12 +275,8 @@ endif
 
 if (iphydr.eq.2) then
 
-  call prehyd &
+  call prehyd(propce, prhyd, grdphd)
   !==========
-  ( nvar   , nscal  ,                                     &
-    dt     , rtp    , rtpa   ,                            &
-    propce , propfa , propfb ,                            &
-    prhyd  , grdphd )
 
 endif
 
@@ -311,7 +300,7 @@ call preduv &
   nvar   , nscal  , iterns ,                                     &
   ncepdc , ncetsm ,                                              &
   icepdc , icetsm , itypsm ,                                     &
-  dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+  dt     , rtp    , rtpa   , propce , propfb ,                   &
   imasfl , bmasfl ,                                              &
   tslagr , coefa  , coefb  ,                                     &
   ckupdc , smacel , frcxt  , grdphd ,                            &
@@ -349,8 +338,7 @@ if ( iprco.le.0 ) then
 
   call inimas &
   !==========
-( nvar   , nscal  ,                                              &
-  iu  , iv  , iw  , imaspe , itypfl ,                            &
+( iu  , iv  , iw  , imaspe , itypfl ,                            &
   iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
   iwarnp , nfecra ,                                              &
   epsrgp , climgp , extrap ,                                     &
@@ -411,8 +399,7 @@ if ( iprco.le.0 ) then
 
     call inimas &
     !==========
- ( nvar   , nscal  ,                                              &
-   iuma   , ivma   , iwma   , imaspe , itypfl ,                   &
+ ( iuma   , ivma   , iwma   , imaspe , itypfl ,                   &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -526,15 +513,13 @@ if ((ipucou.eq.1).or.(ncpdct.gt.0)) idtsca = 1
 
 call resolp &
 !==========
- ( nvar   , nscal  ,                                              &
-   ncepdc , ncetsm ,                                              &
-   icepdc , icetsm , itypsm ,                                     &
-   isostd , idtsca ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+ ( nvar   , ncetsm ,                                              &
+   icepdc , isostd , idtsca ,                                     &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefa  , coefb  , coefap ,                                     &
-   ckupdc , smacel ,                                              &
+   smacel ,                                                       &
    frcxt  , dfrcxt , tpucou , trav   ,                            &
-   viscf  , viscb  , viscfi , viscbi ,                            &
+   viscf  , viscb  ,                                              &
    drtp   , smbr   , rovsdt , tslagr ,                            &
    trava  )
 
@@ -603,8 +588,7 @@ if (irevmc.eq.1) then
 
   call inimas &
   !==========
- ( nvar   , nscal  ,                                              &
-   iu  , iv  , iw  , imaspe , itypfl ,                            &
+ ( iu  , iv  , iw  , imaspe , itypfl ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -815,8 +799,7 @@ if (iale.eq.1) then
 
   call inimas &
   !==========
- ( nvar   , nscal  ,                                              &
-   iu  , iv  , iw  , imaspe , itypfl ,                            &
+ ( iu  , iv  , iw  , imaspe , itypfl ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -977,8 +960,7 @@ if (iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
 
   call inimas &
   !==========
- ( nvar   , nscal  ,                                              &
-   iu  , iv  , iw  , imaspe , itypfl ,                            &
+ ( iu  , iv  , iw  , imaspe , itypfl ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -1046,7 +1028,7 @@ if (iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
    nvar   , nscal  , iterns ,                                     &
    ncepdc , ncetsm ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtp    , propce , propfa , propfb ,          &
+   dt     , rtp    , rtp    , propce , propfb ,                   &
    esflum , esflub ,                                              &
    tslagr , coefa  , coefb  ,                                     &
    ckupdc , smacel , frcxt  , grdphd ,                            &
@@ -1108,8 +1090,7 @@ endif
 if (ndircp.le.0) then
   call prmoy0 &
   !==========
-( ncelet , ncel   , nfac   , nfabor ,                         &
-  volume , rtp(1,ipr) )
+( ncelet , ncel   , volume , rtp(1,ipr) )
 endif
 
 ! Calcul de la pression totale IPRTOT : (definie comme propriete )

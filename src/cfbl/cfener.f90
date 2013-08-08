@@ -26,7 +26,7 @@ subroutine cfener &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefa  , coefb  , ckupdc , smacel ,                            &
    viscf  , viscb  ,                                              &
    smbrs  , rovsdt )
@@ -56,7 +56,6 @@ subroutine cfener &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
@@ -110,8 +109,7 @@ integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propce(ncelet,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision viscf(nfac), viscb(nfabor)
@@ -225,7 +223,7 @@ call ustssc                                                       &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
+   dt     , rtpa   , rtp    , propce , propfb ,                   &
    ckupdc , smacel , smbrs  , rovsdt )
 
 do iel = 1, ncel
@@ -271,7 +269,7 @@ if( idiff(iu).ge. 1 ) then
   !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   rtpa   , propce , propfa , propfb ,                            &
+   rtpa   , propce , propfb ,                                     &
    coefa  , coefb  , ckupdc , smacel ,                            &
    smbrs  , rtp(1,iu), rtp(1,iv), rtp(1,iw) )
 !        ------
@@ -487,9 +485,9 @@ if( idiff(ivar).ge. 1 ) then
   imodif = 0
   call cfther                                                     &
   !==========
- ( nvar   , nscal  ,                                              &
+ ( nvar   ,                                                       &
    iccfth , imodif ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce ,                            &
    w9     , wb     , w8     , w4     )
 
 !     Calcul de la divergence avec reconstruction
@@ -669,10 +667,8 @@ call cfcdts                                                       &
 ! Valeur bidon
   iii = 1
 
-call clpsca                                                       &
+call clpsca(ncelet, ncel, iscal, rtp(1,iii), rtp)
 !==========
- ( ncelet , ncel   , nvar   , nscal  , iscal  ,                   &
-   propce , rtp(1,iii)      , rtp    )
 
 ! --- Traitement utilisateur pour gestion plus fine des bornes
 !       et actions correctives éventuelles.
@@ -680,9 +676,9 @@ call clpsca                                                       &
   imodif = 0
   call cfther                                                     &
   !==========
- ( nvar   , nscal  ,                                              &
+ ( nvar   ,                                                       &
    iccfth , imodif ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce ,                            &
    w6     , w7     , w8     , w9     )
 
 
@@ -711,9 +707,9 @@ endif
   imodif = 0
   call cfther                                                     &
   !==========
- ( nvar   , nscal  ,                                              &
+ ( nvar   ,                                                       &
    iccfth , imodif ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce ,                            &
    rtp(1,ipr) , rtp(1,isca(itempk)) , w8     , w9 )
 
 !===============================================================================

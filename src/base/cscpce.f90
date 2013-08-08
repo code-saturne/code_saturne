@@ -23,11 +23,9 @@
 subroutine cscpce &
 !================
 
- ( nvar   , nscal  ,                                              &
-   nptdis , ityloc ,                                              &
-   ivar   ,                                                       &
+ ( nptdis , ivar   ,                                              &
    locpts ,                                                       &
-   dt     , rtpa   , propce , propfa , propfb ,                   &
+   rtpa   ,                                                       &
    coefa  , coefb  ,                                              &
    coopts , rvdis  )
 
@@ -76,16 +74,12 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
 integer          ivar
-integer          nptdis , ityloc
+integer          nptdis
 
 integer          locpts(nptdis)
 
-
-double precision dt(ncelet), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision rtpa(ncelet,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision coopts(3,nptdis), rvdis(nptdis)
 

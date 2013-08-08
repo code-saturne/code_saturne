@@ -30,6 +30,8 @@ module alstru
 
   use paramx
 
+  implicit none
+
   !=============================================================================
 
   !  Methode ale - mouvement de structures en couplage interne

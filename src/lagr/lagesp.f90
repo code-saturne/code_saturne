@@ -29,7 +29,7 @@ subroutine lagesp &
    icocel , itycel, ifrlag,                                       &
    itepa  , ibord  ,                                              &
    dlgeo  ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
+   dt     , rtpa   , rtp    , propce , propfb ,                   &
    ettp   , ettpa  , tepa   , statis , stativ ,                   &
    taup   , tlag   , piil   ,                                     &
    tsuf   , tsup   , bx     , tsfext ,                            &
@@ -82,7 +82,6 @@ subroutine lagesp &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! ettp             ! tr ! <-- ! tableaux des variables liees                   !
 !  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
@@ -149,8 +148,7 @@ integer          itepa(nbpmax,nivep) , ibord(nbpmax)
 integer          icocel(lndnod),  ifrlag(nfabor), itycel(ncelet+1)
 
 double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*) , propfb(nfabor,*)
+double precision propce(ncelet,*), propfb(nfabor,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
 double precision statis(ncelet,*),stativ(ncelet,*)
@@ -221,7 +219,7 @@ call uslafe                                                       &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  , ibord  ,                                              &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
+   dt     , rtpa   , rtp    , propce , propfb ,                   &
    ettp   , ettpa  , tepa   , statis , stativ ,                   &
    taup   , tlag   , piil   ,                                     &
    tsuf   , tsup   , bx     , tsfext ,                            &
@@ -248,7 +246,7 @@ if (nordre.eq.1) then
      nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
      ntersl , nvlsta , nvisbr ,                                   &
      itepa  ,                                                     &
-     dt     , rtpa   , propce , propfa , propfb ,                 &
+     dt     , rtpa   , propce , propfb ,                          &
      ettp   , ettpa  , tepa   ,                                   &
      statis , taup   , tlag   , piil   ,                          &
      bx     , vagaus , gradpr , gradvf , romp   ,                 &
@@ -268,7 +266,7 @@ if (nordre.eq.1) then
      ntersl , nvlsta , nvisbr ,                                   &
      itepa  ,                                                     &
      dlgeo  ,                                                     &
-     dt     , rtpa   , propce , propfa , propfb ,                 &
+     dt     , rtpa   , propce , propfb ,                          &
      ettp   , ettpa  , tepa   ,                                   &
      statis , taup   , tlag   , piil   ,                          &
      bx     , vagaus , gradpr , gradvf , romp   ,                 &
@@ -288,7 +286,7 @@ else
      nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
      ntersl , nvlsta , nvisbr ,                                   &
      itepa  , ibord  ,                                            &
-     dt     , rtpa   , rtp    , propce , propfa , propfb ,        &
+     dt     , rtpa   , rtp    , propce , propfb ,                 &
      ettp   , ettpa  , tepa   ,                                   &
      statis , taup   , tlag   , piil   ,                          &
      tsuf   , tsup   , bx     , tsfext , vagaus ,                 &

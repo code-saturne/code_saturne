@@ -28,7 +28,7 @@ subroutine lagpoi &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    icocel , itycel , ifrlag , itepa  ,                            &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
+   dt     , rtpa   , rtp    , propce , propfb ,                   &
    coefa  , coefb  ,                                              &
    ettp   , tepa   , statis )
 
@@ -72,7 +72,6 @@ subroutine lagpoi &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
@@ -122,8 +121,7 @@ integer          icocel(lndnod) , itycel(ncelet+1)
 integer          ifrlag(nfabor) ,  itepa(nbpmax,nivep)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propce(ncelet,*), propfb(nfabor,*)
 double precision coefa(nfabor,*) , coefb(nfabor,*)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision statis(ncelet,nvlsta)
@@ -170,7 +168,7 @@ enddo
 call lageqp                                                       &
 !==========
  ( nvar   , nscal  ,                                              &
-   dt     , propce , propfa , propfb ,                            &
+   dt     ,                                                       &
    statis(1,ilvx)  , statis(1,ilvy)  , statis(1,ilvz)  ,          &
    statis(1,ilfv)  ,                                              &
    phil   )

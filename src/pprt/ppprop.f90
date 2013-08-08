@@ -31,7 +31,7 @@ subroutine ppprop &
 
 ! INIT DES POSITIONS DES VARIABLES D'ETAT SELON
 !   LE TYPE DE PHYSIQUE PARTICULIERE
-!   (DANS VECTEURS PROPCE, PROPFA, PROPFB)
+!   (DANS VECTEURS PROPCE, PROPFB)
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -39,8 +39,7 @@ subroutine ppprop &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! ipropp           ! e  ! <-- ! numero de la derniere propriete                !
-!                  !    !     !  (les proprietes sont dans propce,             !
-!                  !    !     !   propfa ou prpfb)                             !
+!                  !    !     !  (les proprietes sont dans propce ou propfb)   !
 ! ipppst           ! e  ! <-- ! pointeur indiquant le rang de la               !
 !                  !    !     !  derniere grandeur definie aux                 !
 !                  !    !     !  cellules (rtp,propce...) pour le              !

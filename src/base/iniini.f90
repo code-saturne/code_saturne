@@ -463,7 +463,6 @@ call ppinii
 
 do iprop  = 1, npromx
   ipproc(iprop) = 0
-  ipprof(iprop) = 0
   ipprob(iprop) = 0
 enddo
 

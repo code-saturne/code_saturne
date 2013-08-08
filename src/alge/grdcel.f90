@@ -113,7 +113,6 @@ integer          iphydp, ipond, ilved
 integer          idimtr
 
 double precision rvoid(1)
-double precision climin
 
 !===============================================================================
 

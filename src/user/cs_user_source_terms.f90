@@ -100,7 +100,6 @@
 !> \param[in]     rtpa          calculated variables at cell centers
 !>                               (preceding time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfa        physical properties at interior face centers
 !> \param[in]     propfb        physical properties at boundary face centers
 !> \param[in]     ckupdc        head loss coefficient
 !> \param[in]     smacel        value associated to each variable in the mass
@@ -113,7 +112,7 @@ subroutine ustsnv &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce , propfa , propfb ,                   &
+   dt     , rtpa   , propce , propfb ,                            &
    ckupdc , smacel ,                                              &
    crvexp , crvimp )
 
@@ -147,7 +146,7 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propfb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision crvexp(3,ncelet), crvimp(3,3,ncelet)
 
@@ -254,7 +253,7 @@ subroutine ustsns &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce , propfa , propfb ,                   &
+   dt     , rtpa   , propce , propfb ,                            &
    ckupdc , smacel ,                                              &
    crvexp , crvimp )
 
@@ -323,7 +322,6 @@ subroutine ustsns &
 ! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (preceding time steps)                        !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! ckupdc(ncepdp,6) ! ra ! <-- ! head loss coefficient                          !
 ! smacel           ! ra ! <-- ! value associated to each variable in the mass  !
@@ -365,7 +363,7 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propfb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision crvexp(ncelet), crvimp(ncelet)
 
@@ -480,7 +478,7 @@ subroutine ustssc &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
+   dt     , rtpa   , rtp    , propce , propfb ,                   &
    ckupdc , smacel ,                                              &
    crvexp , crvimp )
 
@@ -588,7 +586,6 @@ subroutine ustssc &
 ! rtp              ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (current time step)                           !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! ckupdc(ncepdp,6) ! ra ! <-- ! head loss coefficient                          !
 ! smacel           ! ra ! <-- ! value associated to each variable in the mass  !
@@ -630,7 +627,7 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propfb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision crvexp(ncelet), crvimp(ncelet)
 
@@ -820,7 +817,7 @@ subroutine ustske &
 
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce , propfa , propfb ,                   &
+   dt     , rtpa   , propce , propfb ,                            &
    ckupdc , smacel , tinstk , divu   ,                            &
    crkexp , creexp , crkimp , creimp )
 
@@ -903,7 +900,6 @@ subroutine ustske &
 ! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (preceding time steps)                        !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! ckupdc(ncepdp,6) ! ra ! <-- ! head loss coefficient                          !
 ! smacel           ! ra ! <-- ! value associated to each variable in the mass  !
@@ -948,7 +944,7 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propfb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision tinstk(ncelet), divu(ncelet)
 double precision crkexp(ncelet), crkimp(ncelet)
@@ -1053,7 +1049,7 @@ subroutine ustskw &
 
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce , propfa , propfb ,                   &
+   dt     , rtpa   , propce , propfb ,                            &
    ckupdc , smacel , s2kw   , divukw ,                            &
    gkgw   , ggrho  , xf1    ,                                     &
    crkexp , crwexp , crkimp , crwimp )
@@ -1140,7 +1136,6 @@ subroutine ustskw &
 ! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (preceding time steps)                        !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! ckupdc(ncepdp,6) ! ra ! <-- ! head loss coefficient                          !
 ! smacel           ! ra ! <-- ! value associated to each variable in the mass  !
@@ -1188,7 +1183,7 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propfb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision s2kw(ncelet)  , divukw(ncelet)
 double precision gkgw(ncelet)  , ggrho(ncelet), xf1(ncelet)
@@ -1295,7 +1290,7 @@ subroutine ustsri &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   ,                                                       &
    icepdc , icetsm , itpsmp ,                                     &
-   dt     , rtpa   , propce , propfa , propfb ,                   &
+   dt     , rtpa   , propce , propfb ,                            &
    ckupdc , smcelp , gamma  , grdvit , produc ,                   &
    crvexp , crvimp )
 
@@ -1385,7 +1380,6 @@ subroutine ustsri &
 ! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (preceding time steps)                        !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! ckupdc(ncepdp,6) ! ra ! <-- ! head loss coefficient                          !
 ! smcelp(ncelet)   ! ra ! <-- ! value of variable ivar associated to mass      !
@@ -1430,7 +1424,7 @@ integer          icetsm(ncesmp), itpsmp(ncesmp)
 
 double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propfb(nfabor,*)
 double precision ckupdc(ncepdp,6)
 double precision smcelp(ncesmp), gamma(ncesmp)
 double precision grdvit(ncelet,3,3), produc(6,ncelet)
@@ -1560,7 +1554,7 @@ subroutine ustsv2 &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce , propfa , propfb ,                   &
+   dt     , rtpa   , propce , propfb ,                            &
    ckupdc , smacel , produc , gphigk ,                            &
    crvexp , crvimp )
 
@@ -1644,7 +1638,6 @@ subroutine ustsv2 &
 ! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (preceding time steps)                        !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! ckupdc(ncepdp,6) ! ra ! <-- ! head loss coefficient                          !
 ! smacel           ! ra ! <-- ! value associated to each variable in the mass  !
@@ -1688,7 +1681,7 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propfb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision crvexp(ncelet), crvimp(ncelet)
 double precision produc(ncelet), gphigk(ncelet)
@@ -1814,7 +1807,7 @@ subroutine ustssa &
 
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce , propfa , propfb ,                   &
+   dt     , rtpa   , propce , propfb ,                            &
    ckupdc , smacel , tinssa , divu   ,                            &
    crvexp , crvimp )
 
@@ -1889,7 +1882,6 @@ subroutine ustssa &
 ! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (preceding time steps)                        !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! ckupdc(ncepdp,6) ! ra ! <-- ! head loss coefficient                          !
 ! smacel           ! ra ! <-- ! value associated to each variable in the mass  !
@@ -1932,7 +1924,7 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propfb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision tinssa(ncelet), divu(ncelet)
 double precision crvexp(ncelet), crvimp(ncelet)

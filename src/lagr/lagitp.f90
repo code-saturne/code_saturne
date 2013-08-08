@@ -23,11 +23,10 @@
 subroutine lagitp &
 !================
 
- ( nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+ ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  , ibord  ,                                              &
-   dt     , rtp    , propce , propfa , propfb ,                   &
+   dt     , rtp    , propce ,                                     &
    ettp   , ettpa  , tepa   , taup   , tlag   , tempct ,          &
    tsvar  , auxl1  , auxl2  )
 
@@ -45,8 +44,6 @@ subroutine lagitp &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! nvp              ! e  ! <-- ! nombre de variables particulaires              !
 ! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
@@ -63,8 +60,6 @@ subroutine lagitp &
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! ettp             ! tr ! --> ! tableaux des variables liees                   !
 !  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
 ! ettpa            ! tr ! <-- ! tableaux des variables liees                   !
@@ -110,7 +105,6 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
 integer          nbpmax , nvp , nvp1 , nvep , nivep
 integer          ntersl , nvlsta , nvisbr
 
@@ -118,7 +112,6 @@ integer          itepa(nbpmax,nivep) , ibord(nbpmax)
 
 double precision dt(ncelet) , rtp(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*) , propfb(nfabor,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
 double precision taup(nbpmax) , tlag(nbpmax,3) , tempct(nbpmax,2)

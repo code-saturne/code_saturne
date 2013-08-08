@@ -35,7 +35,6 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     iscal         number of the scalar used
 !> \param[in]     xcpp          Cp
@@ -45,16 +44,14 @@
 !> \param[in,out] rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfa        physical properties at interior face centers
-!> \param[in]     propfb        physical properties at boundary face centers
 !> \param[in]     gradv         mean velocity gradient
 !> \param[in]     gradt         mean temperature gradient
 !_______________________________________________________________________________
 
 subroutine resrit &
- ( nvar   , nscal  ,                                              &
+ ( nscal  ,                                                       &
    iscal  , xcpp   , xut    , xuta   ,                            &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce ,                            &
    gradv  , gradt  )
 
 !===============================================================================
@@ -73,6 +70,7 @@ use period
 use pointe, only:visten
 use field
 use mesh
+use cs_f_interfaces
 
 !===============================================================================
 
@@ -80,18 +78,17 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal , iscal
+integer          nscal , iscal
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision xcpp(ncelet), xut(3,ncelet), xuta(3,ncelet)
 double precision gradv(ncelet,3,3)
 double precision gradt(ncelet,3)
 
 ! Local variables
 
-integer          init  , ifac  , iel   , inc
+integer          init  , iel
 integer          ii    ,jj     , ivar
 integer          iclvar, iclvaf, ipput, ippvt, ippwt
 integer          ipcrom, ipcroo, ipcvis, ipcvst, iflmas, iflmab
@@ -110,11 +107,9 @@ integer          f_id
 double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
 double precision epsrsp
 double precision trrij , rctse
-double precision grdpx,grdpy,grdpz,grdsn
 double precision surfn2
 double precision thets , thetv , thetp1
 double precision xttke , prdtl
-double precision hint
 double precision grav(3)
 double precision xrij(3,3),phiith(3)
 
@@ -122,11 +117,8 @@ double precision d1s2,cssca
 
 double precision rvoid(1)
 
-logical          ilved
-
 character*80     fname
 
-double precision, allocatable, dimension(:,:,:) :: gradut
 double precision, allocatable, dimension(:,:) :: viscce
 double precision, allocatable, dimension(:) :: viscb
 double precision, allocatable, dimension(:,:,:) :: viscf
@@ -396,8 +388,7 @@ ivisep = 0
 
 call coditv &
 !==========
-(nvar   , nscal  ,                                              &
- idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
+(idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
  imrgra , nswrsp , nswrgp , imligp , ircflp , ivisep ,          &
  ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
  imgrp  , ncymxp , nitmfp , ipput  , ippvt  , ippwt  , iwarnp , &

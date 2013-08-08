@@ -60,8 +60,6 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
 !> \param[in]     idtvar        indicator of the temporal scheme
 !> \param[in]     ivar          index of the current variable
 !> \param[in]     iconvp        indicator
@@ -141,8 +139,7 @@
 !_______________________________________________________________________________
 
 subroutine bilsca &
- ( nvar   , nscal  ,                                              &
-   idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
+ ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    ipp    , iwarnp , imucpp , idftnp ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
@@ -164,6 +161,7 @@ use parall
 use period
 use cplsat
 use mesh
+use cs_f_interfaces
 
 !===============================================================================
 
@@ -171,7 +169,6 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
 integer          idtvar
 integer          ivar   , iconvp , idiffp , nswrgp , imligp
 integer          ircflp , ischcp , isstpp

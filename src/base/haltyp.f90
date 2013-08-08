@@ -62,7 +62,7 @@ implicit none
 
 ! Arguments
 
-integer          ii, ivoset, imrgrl
+integer          ivoset, imrgrl
 
 !===============================================================================
 

@@ -23,13 +23,13 @@
 subroutine resolp &
 !================
 
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   icepdc , icetsm , itypsm , isostd , idtsca ,                   &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+ ( nvar   , ncesmp ,                                              &
+   icetsm , isostd , idtsca ,                                     &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefa  , coefb  , coefap ,                                     &
-   ckupdc , smacel ,                                              &
+   smacel ,                                                       &
    frcxt  , dfrcxt , tpucou , trav   ,                            &
-   viscf  , viscb  , viscfi , viscbi ,                            &
+   viscf  , viscb  ,                                              &
    drtp   , smbr   , rovsdt , tslagr ,                            &
    trava  )
 
@@ -46,13 +46,8 @@ subroutine resolp &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
 ! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
-! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
 ! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
-! itypsm           ! te ! <-- ! type de source de masse pour les               !
-! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
 ! isostd           ! te ! <-- ! indicateur de sortie standard                  !
 !    (nfabor+1)    !    !     !  +numero de la face de reference               !
 ! idtsca           ! e  ! <-- ! indicateur de pas de temps non scalai          !
@@ -60,12 +55,9 @@ subroutine resolp &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
-!  (ncepdp,6)      !    !     !                                                !
 ! smacel           ! tr ! <-- ! valeur des variables associee a la             !
 ! (ncesmp,*   )    !    !     !  source de masse                               !
 !                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
@@ -79,7 +71,6 @@ subroutine resolp &
 ! viscf(nfac)      ! tr ! --- ! visc*surface/dist aux faces internes           !
 ! viscb(nfabor     ! tr ! --- ! visc*surface/dist aux faces de bord            !
 ! viscfi(nfac)     ! tr ! --- ! idem viscf pour increments                     !
-! viscbi(nfabor    ! tr ! --- ! idem viscb pour increments                     !
 ! drtp(ncelet      ! tr ! --- ! tableau de travail pour increment              !
 ! smbr  (ncelet    ! tr ! --- ! tableau de travail pour sec mem                !
 ! rovsdt(ncelet    ! tr ! --- ! tableau de travail pour terme instat           !
@@ -122,23 +113,20 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-integer          ncepdp , ncesmp
+integer          nvar
+integer          ncesmp
 
-integer          icepdc(ncepdp)
-integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
+integer          icetsm(ncesmp)
 integer          isostd(nfabor+1)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(ndimfb,*)
+double precision propce(ncelet,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision coefap(nfabor)
-double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
+double precision smacel(ncesmp,nvar)
 double precision frcxt(3,ncelet), dfrcxt(3,ncelet)
 double precision tpucou(ncelet,ndim), trav(ncelet,3)
 double precision viscf(nfac), viscb(nfabor)
-double precision viscfi(nfac), viscbi(nfabor)
 double precision drtp(ncelet)
 double precision smbr(ncelet), rovsdt(ncelet)
 double precision tslagr(ncelet,*)
@@ -321,8 +309,7 @@ if(irnpnw.ne.1) then
 
   call inimas &
   !==========
- ( nvar   , nscal  ,                                              &
-   iu  , iv  , iw  , imaspe , itypfl ,                            &
+ ( iu  , iv  , iw  , imaspe , itypfl ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrp  , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -449,8 +436,7 @@ if (iphydr.eq.1) then
 
       call calhyd &
       !==========
- ( nvar   , nscal  ,                                              &
-   indhyd ,                                                       &
+ ( indhyd ,                                                       &
    frchy  , dfrchy ,                                              &
    rtp(1,ipr)   , imasfl , bmasfl ,                               &
    coefap , coefbp ,                                              &
@@ -637,8 +623,7 @@ itypfl = 1
 
 call inimas &
 !==========
- ( nvar   , nscal  ,                                              &
-   iu     , iv     , iw     , imaspe , itypfl ,                   &
+ ( iu     , iv     , iw     , imaspe , itypfl ,                   &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -663,8 +648,7 @@ if (iphydr.eq.1) then
   if (idtsca.eq.0) then
     call projts &
     !==========
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrgp , imligp ,          &
+ ( init   , inc    , imrgra , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp ,                                              &
    dfrcxt ,                                                       &
@@ -675,8 +659,7 @@ if (iphydr.eq.1) then
   else
     call projts &
     !==========
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrgp , imligp ,          &
+ ( init   , inc    , imrgra , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp ,                                              &
    dfrcxt ,                                                       &
@@ -715,8 +698,7 @@ if(arak.gt.0.d0) then
     extrap = extrag(ipr )
     call itrmas &
     !==========
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
+ ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    frcxt  ,                                                       &
@@ -745,8 +727,7 @@ if(arak.gt.0.d0) then
 
       call projts &
       !==========
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrgp , imligp ,          &
+ ( init   , inc    , imrgra , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp ,                                              &
    frcxt  ,                                                       &
@@ -778,8 +759,7 @@ if(arak.gt.0.d0) then
     extrap = extrag(ipr )
     call itrmas &
     !==========
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
+ ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    frcxt  ,                                                       &
@@ -808,8 +788,7 @@ if(arak.gt.0.d0) then
 
       call projts &
       !==========
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrgp , imligp ,          &
+ ( init   , inc    , imrgra , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp ,                                              &
    frcxt  ,                                                       &
@@ -966,8 +945,7 @@ if (idilat.eq.4) then
 
   call inimas &
   !==========
- ( nvar   , nscal  ,                                              &
-   iu     , iv     , iw     , imaspe , itypfl ,                   &
+ ( iu     , iv     , iw     , imaspe , itypfl ,                   &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -1010,8 +988,7 @@ if (idilat.eq.4) then
 
   call inimas &
   !==========
- ( nvar   , nscal  ,                                              &
-   iu     , iv     , iw     , imaspe , itypfl ,                   &
+ ( iu     , iv     , iw     , imaspe , itypfl ,                   &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -1113,8 +1090,7 @@ do 100 isweep = 1, nswmpr
     if (idtsca.eq.0) then
       call itrmas &
       !==========
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
+ ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
@@ -1129,8 +1105,7 @@ do 100 isweep = 1, nswmpr
 
       call itrmas &
       !==========
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
+ ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
@@ -1225,8 +1200,7 @@ do 100 isweep = 1, nswmpr
     if (idtsca.eq.0) then
       call itrmas &
       !==========
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
+ ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
@@ -1245,8 +1219,7 @@ do 100 isweep = 1, nswmpr
 
       call itrmas                                                 &
       !==========
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrp  , imligp , iphydr , &
+ ( init   , inc    , imrgra , iccocg , nswrp  , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
@@ -1261,8 +1234,7 @@ do 100 isweep = 1, nswmpr
 
       call itrmas &
       !==========
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
+ ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
@@ -1281,8 +1253,7 @@ do 100 isweep = 1, nswmpr
 
       call itrmas                                                 &
       !==========
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrp  , imligp , iphydr , &
+ ( init   , inc    , imrgra , iccocg , nswrp  , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
@@ -1332,8 +1303,7 @@ do 100 isweep = 1, nswmpr
 
       call itrgrp &
       !==========
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
+ ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
@@ -1348,8 +1318,7 @@ do 100 isweep = 1, nswmpr
 
       call itrgrp &
       !==========
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
+ ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
@@ -1465,8 +1434,7 @@ if (idilat.eq.4) then
 
   call inimas &
   !==========
-   ( nvar   , nscal  ,                                              &
-     ipcrom , ipcrom , ipcrom , imaspe , itypfl ,                   &
+   ( ipcrom , ipcrom , ipcrom , imaspe , itypfl ,                   &
      iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
      iwarnp , nfecra ,                                              &
      epsrgp , climgp , extrap ,                                     &
@@ -1513,8 +1481,7 @@ if (idilat.eq.4) then
 
   call bilsca &
   !==========
- ( nvar   , nscal  ,                                              &
-   idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
+ ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    ipp    , iwarnp , imucpp , idftnp ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
@@ -1570,8 +1537,7 @@ if (idilat.eq.4) then
 
   call codits &
   !==========
-   ( nvar   , nscal  ,                                              &
-     idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
+   ( idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
      imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
      ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
      imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
@@ -1609,8 +1575,7 @@ if (idilat.eq.4) then
   if (idtsca.eq.0) then
     call itrmas &
     !==========
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
+ ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
@@ -1629,8 +1594,7 @@ if (idilat.eq.4) then
 
     call itrmas &
     !==========
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrp  , imligp , iphydr , &
+ ( init   , inc    , imrgra , iccocg , nswrp  , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
@@ -1645,8 +1609,7 @@ if (idilat.eq.4) then
 
     call itrmas &
     !==========
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
+ ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
@@ -1665,8 +1628,7 @@ if (idilat.eq.4) then
 
     call itrmas &
     !==========
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrp  , imligp , iphydr , &
+ ( init   , inc    , imrgra , iccocg , nswrp  , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &

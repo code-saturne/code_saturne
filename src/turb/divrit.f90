@@ -41,7 +41,6 @@
 !> \param[in,out] rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfa        physical properties at interior face centers
 !> \param[in]     propfb        physical properties at boundary face centers
 !> \param[in]     coefa         boundary condition array for the variable
 !> \param[in]     coefb         boundary condition array for the variable
@@ -52,7 +51,7 @@
 subroutine divrit &
  ( nvar   , nscal  ,                                              &
    iscal  , itspdv ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefa  , coefb  ,                                              &
    xcpp   ,                                                       &
    smbrs )
@@ -81,8 +80,7 @@ implicit none
 integer          nvar   , nscal
 integer          iscal  , itspdv
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(ndimfb,*)
+double precision propce(ncelet,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision xcpp(ncelet)
 double precision smbrs(ncelet)
@@ -334,8 +332,7 @@ if (ityturt(iscal).ne.3) then
 
   call inimav &
   !==========
-  ( nvar   , nscal  ,                                     &
-    ivar   , itypfl ,                                     &
+  ( ivar   , itypfl ,                                     &
     iflmb0 , init   , inc    , imrgra , nswrgp  , imligp, &
     iwarnp , nfecra ,                                     &
     epsrgp , climgp , extrap ,                            &
@@ -357,9 +354,9 @@ else
 
   call resrit &
   !==========
-( nvar   , nscal  ,                                      &
+( nscal  ,                                               &
   iscal  , xcpp   , xut    , xuta   ,                    &
-  dt     , rtp    , rtpa   , propce , propfa , propfb ,  &
+  dt     , rtp    , rtpa   , propce ,                    &
   gradv  , gradt  )
 
   itypfl = 1
@@ -394,8 +391,7 @@ else
 
   call inimav &
   !==========
-  ( nvar   , nscal  ,                                     &
-    ivar   , itypfl ,                                     &
+  ( ivar   , itypfl ,                                     &
     iflmb0 , init   , inc    , imrgra , nswrgp  , imligp, &
     iwarnp , nfecra ,                                     &
     epsrgp , climgp , extrap ,                            &

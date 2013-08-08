@@ -24,9 +24,8 @@ subroutine alemaj &
 !================
 
  ( itrale ,                                                       &
-   nvar   , nscal  ,                                              &
    impale ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
+   dt     , rtpa   , rtp    ,                                     &
    coefa  , coefb  , depale , xyzno0 )
 
 !===============================================================================
@@ -41,15 +40,10 @@ subroutine alemaj &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! itrale           ! e  ! <-- ! numero d'iteration pour l'ale                  !
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! impale(nnod)     ! te ! <-- ! indicateur de delacement impose                !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
 ! depale(3,nnod)   ! tr ! <-- ! deplacement aux noeuds                         !
@@ -85,13 +79,10 @@ implicit none
 ! Arguments
 
 integer          itrale
-integer          nvar   , nscal
 
 integer          impale(nnod)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision depale(3,nnod), xyzno0(3,nnod)
 

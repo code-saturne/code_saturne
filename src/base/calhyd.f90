@@ -23,8 +23,7 @@
 subroutine calhyd &
 !================
 
- ( nvar   , nscal  ,                                              &
-   indhyd ,                                                       &
+ ( indhyd ,                                                       &
    fext   , dfext  ,                                              &
    phydr  , flumas , flumab ,                                     &
    coefap , coefbp ,                                              &
@@ -45,13 +44,10 @@ subroutine calhyd &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! indhyd           ! e  ! --> ! indicateur de mise a jour de phydr             !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! phydr(ncelet)    ! tr ! <-- ! increment de pression hydrostatique            !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefap,coefbp    ! tr ! <-- ! conditions aux limites aux                     !
 !  (nfabor)        !    !     !    faces de bord                               !
@@ -95,8 +91,6 @@ use mesh
 implicit none
 
 ! Arguments
-
-integer          nvar   , nscal
 
 integer          indhyd
 
@@ -271,8 +265,7 @@ climgp = climgr(ipr)
 
 call projts                                                       &
 !==========
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrgp , imligp ,          &
+ ( init   , inc    , imrgra , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp ,                                              &
    dfext  ,                                                       &
@@ -412,8 +405,7 @@ do isweep = 1, nswmpr
 
     call itrgrp &
     !==========
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
+ ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    dfext  ,                                                       &

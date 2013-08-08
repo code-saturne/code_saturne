@@ -84,7 +84,7 @@ implicit none
 
 ! Local variables
 
-integer          ii, iscal , nmodpp, iok
+integer          ii, nmodpp
 integer          nscmax, nesmax, nscusi
 integer          ieepre, ieeder, ieecor, ieetot, iihmpu
 integer          ialgce
@@ -260,7 +260,7 @@ if (iihmpr.eq.1) then
   call  csisca(iscavr)
   !===========
 
-  call  csivis(iscavr, ivisls, iscalt, iscsth, isca, itempk)
+  call  csivis(iscavr, ivisls, iscalt, iscsth, itempk)
   !===========
 
 endif
@@ -434,7 +434,7 @@ if (iihmpr.eq.1) then
               irovar, ivivar, icorio,                                 &
               gx, gy, gz, omegax, omegay, omegaz ,                    &
               ro0, viscl0, viscv0, visls0, cp0, t0,                   &
-              p0, xmasmr, isca, itempk)
+              p0, xmasmr, itempk)
 
 !     Scamin, scamax
   call cssca2(iscavr, scamin, scamax)

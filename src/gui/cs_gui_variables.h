@@ -53,8 +53,6 @@ typedef struct {
   char **name;            /* variables name and scalars label                */
   char **label;           /* scalars label                                   */
   int   *rtp;             /* variables position in fortran array RTP         */
-  int   *rphas;           /* phase number for rtp variables                  */
-  int   *pphas;           /* phase number for propce variables               */
   int    nvar;            /* total number of variables and scalars           */
   int    nscaus;          /* number of user scalars                          */
   int    nscapp;          /* number of specific physics scalars              */

@@ -23,8 +23,7 @@
 subroutine clpsca &
 !================
 
- ( ncelet , ncel   , nvar   , nscal  , iscal  ,                   &
-   propce , scandd , rtp    )
+ ( ncelet , ncel   , iscal  , scandd , rtp    )
 
 !===============================================================================
 ! FONCTION :
@@ -40,12 +39,9 @@ subroutine clpsca &
 !__________________!____!_____!________________________________________________!
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! iscal            ! i  ! <-- ! scalar number                                  !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant        )          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! scandd           ! tr ! <-- ! scalaire auquel est associe la                 !
 ! (ncelet)         !    !     !    variance traitee (si c'en est une)          !
 !__________________!____!_____!________________________________________________!
@@ -77,11 +73,9 @@ implicit none
 ! Arguments
 
 integer          ncelet , ncel
-integer          nvar   , nscal
 integer          iscal
 
 double precision rtp(ncelet,*)
-double precision propce(ncelet,*)
 double precision scandd(ncelet)
 
 ! Local variables

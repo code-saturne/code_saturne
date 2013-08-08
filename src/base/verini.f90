@@ -83,9 +83,8 @@ integer          ii    , iis   , jj    , iisct
 integer          iscal , iest  , iiesca, ivar
 integer          nbsccp
 integer          ipp   , imgrok, nbccou
-integer          iokpre, indest, itests, iiidef, istop
+integer          iokpre, indest, iiidef, istop
 integer          iresop, ipolop, kscmin, kscmax
-double precision testth
 double precision arakfr, scmaxp, scminp
 
 !===============================================================================
@@ -4108,23 +4107,6 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
- 6002 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    LE PARALLELISME N''EST PAS COMPATIBLE AVEC LE MODULE',    /,&
-'@      LAGRANGIEN DANS LA VERSION COURANTE',                   /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Le processeur courant est de rang', i10,                    /,&
-'@  L''indicateur IILAGR a ete positionne a', i10,              /,&
-'@    dans uslag1 (module lagrangien active pour IILAGR>0).',   /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
  6005 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -6653,24 +6635,6 @@ endif
 '@    (enhanced coupling for IPUCOU=1).',                       /,&
 '@  The ALE fag  IALE is defined as',  i10,                     /,&
 '@    (method activated if IALE=1)',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 5004 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    PERIODICITY IS INCOMPATIBLE WITH THE MULTIGRID SOLVER',   /,&
-'@       IN THE CURRENT VERSION',                               /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@  variable COMMANDE_PERIO was defined in the run-case script',/,&
-'@    (periodicity was activated which results in :',           /,&
-'@        IPERIO = ', i10,   ')',                               /,&
-'@  Flag IMGR is defined as 1  for one variable at least.',     /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)

@@ -25,7 +25,7 @@ subroutine raysol &
 
  ( nvar   , nscal  ,                                              &
    itypfb ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   ,                                     &
    coefap , coefbp ,                                              &
    cofafp , cofbfp ,                                              &
    flurds , flurdb ,                                              &
@@ -86,9 +86,6 @@ subroutine raysol &
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefap,coefbp    ! tr ! --- ! conditions aux limites aux                     !
 !  cofafp, cofbfp  !    !     !    faces de bord pour la luminance             !
 ! flurds,flurdb    ! tr ! --- ! pseudo flux de masse (faces internes           !
@@ -140,8 +137,6 @@ integer          nvar, nscal
 integer          itypfb(nfabor)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
 
 double precision coefap(nfabor), coefbp(nfabor)
 double precision cofafp(nfabor), cofbfp(nfabor)
@@ -391,8 +386,7 @@ do ii = -1,1,2
 
         call codits &
         !==========
- ( nvar   , nscal  ,                                              &
-   idtva0 , ivar0  , iconv1 , idiff1 , ireso1 , ndirc1 ,  nitmap ,&
+ ( idtva0 , ivar0  , iconv1 , idiff1 , ireso1 , ndirc1 ,  nitmap ,&
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    imgr1  , ncymap , nitmgp , inum   , iwarnp ,                   &

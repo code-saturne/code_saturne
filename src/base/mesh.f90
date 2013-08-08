@@ -27,6 +27,10 @@ module mesh
 
   !=============================================================================
 
+  implicit none
+
+  !=============================================================================
+
   ! Mesh Fortran structure, pointers to the C structure
 
   ! ndim : spatial dimension

@@ -23,10 +23,9 @@
 subroutine rijech &
 !================
 
- ( nvar   , nscal  ,                                              &
-   ivar   , isou   , ipp    ,                                     &
-   rtp    , rtpa   , propce , propfa , propfb ,                   &
-   coefa  , coefb  , produc , smbr   )
+ ( ivar   , isou   , ipp    ,                                     &
+   rtp    , rtpa   , propce ,                                     &
+   produc , smbr   )
 
 !===============================================================================
 ! FONCTION :
@@ -42,18 +41,12 @@ subroutine rijech &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ivar             ! i  ! <-- ! variable number                                !
 ! isou             ! e  ! <-- ! numero de passage                              !
 ! ipp              ! e  ! <-- ! numero de variable pour sorties post           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! produc           ! tr ! <-- ! production                                     !
 !  (6,ncelet)      !    !     !                                                !
 ! smbr(ncelet      ! tr ! <-- ! tableau de travail pour sec mem                !
@@ -86,14 +79,11 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
 integer          ivar   , isou   , ipp
 
 
 double precision rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision produc(6,ncelet)
 double precision smbr(ncelet)
 

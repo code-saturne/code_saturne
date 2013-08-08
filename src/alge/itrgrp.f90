@@ -23,8 +23,7 @@
 subroutine itrgrp &
 !================
 
- ( nvar   , nscal  ,                                              &
-   init   , inc    , imrgra , iccocg , nswrgp , imligp ,          &
+ ( init   , inc    , imrgra , iccocg , nswrgp , imligp ,          &
    iphydp , iwarnp , nfecra ,                                     &
    epsrgp , climgp , extrap ,                                     &
    frcxt  ,                                                       &
@@ -50,8 +49,6 @@ subroutine itrgrp &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! init             ! e  ! <-- ! > 0 : initialisation du flux de masse          !
 ! inc              ! e  ! <-- ! indicateur = 0 resol sur increment             !
 !                  !    !     !              1 sinon                           !
@@ -111,7 +108,6 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
 integer          init   , inc    , imrgra , iccocg
 integer          nswrgp , imligp
 integer          iwarnp , iphydp , nfecra
@@ -127,7 +123,7 @@ double precision frcxt(3,ncelet)
 
 ! Local variables
 
-integer          ifac, ii, jj, iij, iii, ivar, ig, it
+integer          ifac, ii, jj, ivar, ig, it
 double precision pfac,pip
 double precision dpxf  , dpyf  , dpzf  , flumas, flumab
 double precision dijpfx, dijpfy, dijpfz

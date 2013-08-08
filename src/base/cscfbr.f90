@@ -23,9 +23,9 @@
 subroutine cscfbr &
 !================
 
- ( nvar   , nscal  ,                                              &
-   icodcl , itrifb , itypfb ,                                     &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+ ( nscal  ,                                                       &
+   icodcl , itypfb ,                                              &
+   dt     , rtp    , propce ,                                     &
    coefa  , coefb  , rcodcl )
 
 !===============================================================================
@@ -40,15 +40,10 @@ subroutine cscfbr &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ivar             ! i  ! <-- ! variable number                                !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant            prec)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
 ! crvexp(ncelet    ! tr ! --> ! tableau de travail pour part explicit          !
@@ -81,14 +76,13 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
+integer          nscal
 
 integer          icodcl(nfabor,nvarcl)
-integer          itrifb(nfabor), itypfb(nfabor)
+integer          itypfb(nfabor)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision rcodcl(nfabor,nvarcl,3)
 
@@ -205,11 +199,10 @@ do numcpl = 1, nbrcpl
 
     call cscpfb                                                   &
     !==========
-  ( nvar   , nscal  ,                                             &
-    nfbdis , ityloc , nvarcp(numcpl) , numcpl ,                   &
-    nvarto(numcpl) ,                                              &
+  ( nscal  ,                                                      &
+    nfbdis , numcpl , nvarto(numcpl) ,                            &
     locpts ,                                                      &
-    dt     , rtp    , rtpa   , propce , propfa , propfb ,         &
+    rtp    , propce ,                                             &
     coefa  , coefb  ,                                             &
     coopts , djppts , pndpts ,                                    &
     rvdis  , dofpts )
@@ -258,11 +251,10 @@ do numcpl = 1, nbrcpl
 
     call csc2cl &
     !==========
-  ( nvar   , nscal  ,                                             &
-    nvarcp(numcpl), nvarto(numcpl) , nfbcpl , nfbncp ,            &
-    icodcl , itrifb , itypfb ,                                    &
+  ( nvarcp(numcpl), nvarto(numcpl) , nfbcpl , nfbncp ,            &
+    icodcl , itypfb ,                                             &
     lfbcpl , lfbncp ,                                             &
-    dt     , rtp    , rtpa   , propce , propfa , propfb ,         &
+    dt     , rtp    ,                                             &
     coefa  , coefb  , rcodcl ,                                    &
     rvfbr  , pndcpl , dofcpl )
 

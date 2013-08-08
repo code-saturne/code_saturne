@@ -27,6 +27,10 @@ module ihmpre
 
   !=============================================================================
 
+  implicit none
+
+  !=============================================================================
+
   ! We could avoid this module by querying a C structure
 
   integer, save :: iihmpr

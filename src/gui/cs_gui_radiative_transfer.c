@@ -553,7 +553,6 @@ void CS_PROCF (uiray4, UIRAY4) (int *const nbrayf,
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uirapr, UIRAPR) (const int *const nprayc,
-                                const int *const nprayb,
                                 const int *const nrphas,
                                 const int *const ipppro,
                                 const int *const ipproc,

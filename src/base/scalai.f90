@@ -24,7 +24,7 @@ subroutine scalai &
 !================
 
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    tslagr , coefa  , coefb  )
 
 !===============================================================================
@@ -45,7 +45,6 @@ subroutine scalai &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! tslagr           ! tr ! <-- ! terme de couplage retour du                    !
 !(ncelet,*)        !    !     !     lagrangien                                 !
@@ -89,8 +88,7 @@ integer          nvar   , nscal
 
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propce(ncelet,*), propfb(nfabor,*)
 double precision tslagr(ncelet,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 
@@ -141,7 +139,7 @@ if (ippmod(iphpar).ge.1) then
   call ppinv2                                                     &
   !==========
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
+   dt     , rtp    , propce , propfb , coefa  , coefb  )
 
 !     On pourra eviter les bugs en initialisant aussi RTPA (sur NCELET)
 !     (d'ailleurs, on s'en sert ensuite dans le cpflux etc)
@@ -239,7 +237,7 @@ if (ippmod(iphpar).ge.1) then
    ncepdc , ncetsm ,                                              &
    iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefa  , coefb  , ckupdc , smacel ,                            &
    viscf  , viscb  ,                                              &
    smbrs  , rovsdt )
@@ -297,7 +295,7 @@ if (ippmod(iphpar).ge.1) then
    ncepdc , ncetsm ,                                              &
    iisc   , itspdv ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   dtr    , rtp    , rtpa   , propce , propfa , propfb , tslagr , &
+   dtr    , rtp    , rtpa   , propce , propfb , tslagr ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    viscf  , viscb  ,                                              &
    smbrs  , rovsdt )
@@ -345,7 +343,7 @@ if (ippmod(iphpar).ge.1) then
           !==========
  ( iappel ,                                                       &
    nvar   , nscal  ,                                              &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
+   dt     , rtpa   , rtp    , propce , propfb ,                   &
    coefa  , coefb  , viscf  , viscb  )
 
 
@@ -356,13 +354,11 @@ if (ippmod(iphpar).ge.1) then
             call elreca                                           &
             !==========
   ( nvar   , nscal  ,                                             &
-    dt     , rtpa   , rtp    , propce , propfa , propfb ,         &
+    dt     , rtpa   , rtp    , propce , propfb ,                  &
     coefa  , coefb  )
 
-            call uselrc                                           &
+            call uselrc(nvar, nscal, dt, rtpa, rtp, propce, propfb)
             !==========
-  ( nvar   , nscal  ,                                             &
-    dt     , rtpa   , rtp    , propce , propfa , propfb )
 
           endif
 
@@ -391,7 +387,7 @@ if ( ippmod(ielarc).ge.1       ) then
   !==========
  ( iappel ,                                                       &
    nvar   , nscal  ,                                              &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
+   dt     , rtpa   , rtp    , propce , propfb ,                   &
    coefa  , coefb  , viscf  , viscb  )
 
 endif
@@ -468,7 +464,7 @@ if(nscaus.gt.0) then
    ncepdc , ncetsm ,                                              &
    iisc   , itspdv ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   dtr    , rtp    , rtpa   , propce , propfa , propfb , tslagr , &
+   dtr    , rtp    , rtpa   , propce , propfb , tslagr ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    viscf  , viscb  ,                                              &
    smbrs  , rovsdt )

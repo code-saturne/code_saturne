@@ -67,7 +67,6 @@
 !> \param[in]     rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfa        physical properties at interior face centers
 !> \param[in]     propfb        physical properties at boundary face centers
 !> \param[in]     statis        statistic values (Lagrangian)
 !_______________________________________________________________________________
@@ -78,7 +77,7 @@ subroutine usvpst &
    ncelps , nfacps , nfbrps ,                                     &
    itypps ,                                                       &
    lstcel , lstfac , lstfbr ,                                     &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
+   dt     , rtpa   , rtp    , propce , propfb ,                   &
    statis )
 
 !===============================================================================
@@ -116,7 +115,7 @@ integer          lstcel(ncelps), lstfac(nfacps), lstfbr(nfbrps)
 
 double precision dt(ncelet), rtpa(ncelet,*), rtp(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propfb(nfabor,*)
 double precision statis(ncelet,nvlsta)
 
 ! Local variables

@@ -29,7 +29,7 @@ subroutine uslag2 &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb , itepa  , ifrlag ,                            &
-   dt     , rtpa   , propce , propfa , propfb ,                   &
+   dt     , rtpa   , propce , propfb ,                            &
    ettp   , tepa   )
 
 !===============================================================================
@@ -79,8 +79,6 @@ subroutine uslag2 &
 ! (ncelet,*)       !    !     ! time step                                      !
 ! propce           ! ra ! <-- ! physical properties at cell centers            !
 ! (ncelet,*)       !    !     !                                                !
-! propfa           ! ra ! <-- ! physical properties at interior face centers   !
-!  (nfac,*)        !    !     !                                                !
 ! propfb           ! ra ! <-- ! physical properties at boundary face centers   !
 !  (nfabor,*)      !    !     !                                                !
 ! ettp             ! ra ! <-- ! array of the variables associated to           !
@@ -127,7 +125,7 @@ integer          itepa(nbpmax,nivep) , ifrlag(nfabor)
 
 double precision dt(ncelet) , rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*) , propfb(nfabor,*)
+double precision propfb(nfabor,*)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 
 ! Local variables

@@ -24,7 +24,7 @@ subroutine atprke &
 !================
 
  ( nscal  ,                                                       &
-   rtp    , rtpa   , propce , propfa , propfb ,                   &
+   rtp    , rtpa   , propce , propfb ,                            &
    coefa  , coefb  ,                                              &
    tinstk , tinste ,                                              &
    smbrk  , smbre )
@@ -44,7 +44,6 @@ subroutine atprke &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb           ! tr ! <-- ! proprietes physiques au centre des             !
 !  (nfabor,*)      !    !     !              faces de bord                     !
 ! coefa, coefb     ! tr ! <-- ! conditions aux limites aux                     !
@@ -90,8 +89,7 @@ integer          nscal
 
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision rtp (ncelet,*), rtpa (ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(ndimfb,*)
+double precision propce(ncelet,*), propfb(ndimfb,*)
 double precision smbrk(ncelet), smbre(ncelet)
 double precision tinstk(ncelet), tinste(ncelet)
 

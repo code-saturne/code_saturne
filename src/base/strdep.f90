@@ -25,7 +25,7 @@ subroutine strdep &
 
  ( itrale , italim , itrfin ,                                     &
    nvar   ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   ,                                     &
    coefa  , coefb  ,                                              &
    flmalf , flmalb , cofale , xprale )
 
@@ -48,9 +48,6 @@ subroutine strdep &
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
 ! flmalf(nfac)     ! tr ! --> ! sauvegarde du flux de masse faces int          !
@@ -96,10 +93,7 @@ implicit none
 integer          itrale , italim , itrfin
 integer          nvar
 
-
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision flmalf(nfac), flmalb(nfabor), xprale(ncelet)
 double precision cofale(nfabor,8)

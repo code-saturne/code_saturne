@@ -75,13 +75,13 @@ implicit none
 integer          mode
 
 double precision xsolid(2)
-double precision temper , enthal
+double precision temper, enthal
 
 ! Local variables
 
-integer          it , isol , ihflt2
+integer          it, isol, ihflt2
 
-double precision eh1 , eh0 , x2
+double precision eh1, eh0
 
 !===============================================================================
 ! Mode de conversion

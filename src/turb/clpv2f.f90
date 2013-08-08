@@ -25,7 +25,7 @@ subroutine clpv2f &
 
  ( ncelet , ncel   , nvar   ,                                     &
    iwaphi ,                                                       &
-   propce , rtp    )
+   rtp    )
 
 !===============================================================================
 ! FONCTION :
@@ -43,8 +43,6 @@ subroutine clpv2f &
 ! ncel             ! e  ! <-- ! nombre de cellules                             !
 ! nvar             ! e  ! <-- ! nombre de variables                            !
 ! iwaphi           ! e  ! <-- ! niveau d'impression                            !
-! propce           ! tr ! <-- ! tableaux des variables au pdt courant          !
-!(ncelet,*         !    !     !                                                !
 ! rtp              ! tr ! <-- ! tableaux des variables au pdt courant          !
 ! (ncelet,nvar)    !    !     !                                                !
 !__________________!____!_____!________________________________________________!
@@ -75,7 +73,6 @@ implicit none
 
 integer          nvar, ncelet, ncel
 integer          iwaphi
-double precision propce(ncelet,*)
 double precision rtp(ncelet,nvar)
 
 ! Local variables

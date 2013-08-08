@@ -23,9 +23,8 @@
 subroutine pthrbm &
 !================
 
- ( nvar   , nscal  , ncesmp ,                                     &
-   dt     , rtp    , rtpa   ,                                     &
-   propce , propfa , propfb , smacel )
+ ( nvar   , ncesmp ,                                              &
+   dt     , propce , propfb , smacel )
 
 !===============================================================================
 ! FONCTION :
@@ -40,15 +39,10 @@ subroutine pthrbm &
 !    nom           !type!mode !                   role                         !
 !__________________!____!_____!________________________________________________!
 ! nvar             ! e  ! <-- ! nombre total de variables                      !
-! nscal            ! e  ! <-- ! nombre total de scalaires                      !
 ! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
 ! dt(ncelet)       ! tr ! <-- ! pas de temps                                   !
-! rtp, rtpa        ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
 ! propce           ! tr ! <-- ! proprietes physiques au centre des             !
 ! (ncelet,*)       !    !     !    cellules                                    !
-! propfa           ! tr ! <-- ! proprietes physiques au centre des             !
-!  (nfac,*)        !    !     !    faces internes                              !
 ! propfb           ! tr ! <-- ! proprietes physiques au centre des             !
 !  (nfabor,*)      !    !     !    faces de bord                               !
 ! smacel           ! ra ! <-- ! value associated to each variable in the mass  !
@@ -66,7 +60,6 @@ subroutine pthrbm &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use numvar
 use optcal
 use cstphy
@@ -84,12 +77,11 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal , ncesmp
+integer          nvar   , ncesmp
 
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision dt(ncelet)
+double precision propce(ncelet,*), propfb(nfabor,*)
 double precision smacel(ncesmp,nvar)
 
 ! VARIABLES LOCALES
@@ -100,7 +92,7 @@ integer          ipcrom, ipcroa, ipbrom
 integer          iflmab
 
 double precision ro0amoy,ro0moy
-double precision volt , debt
+double precision debt
 
 double precision debin, debout, debtot
 

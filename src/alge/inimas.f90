@@ -50,8 +50,6 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
 !> \param[in]     ivar1         current variable in the x direction
 !> \param[in]     ivar2         current variable in the y direction
 !> \param[in]     ivar3         current variable in the z direction
@@ -111,8 +109,7 @@
 !_______________________________________________________________________________
 
 subroutine inimas &
- ( nvar   , nscal  ,                                              &
-   ivar1  , ivar2  , ivar3  , imaspe , itypfl ,                   &
+ ( ivar1  , ivar2  , ivar3  , imaspe , itypfl ,                   &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgu , imligu , &
    iwarnu , nfecra ,                                              &
    epsrgu , climgu , extrau ,                                     &
@@ -141,7 +138,6 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
 integer          ivar1  , ivar2  , ivar3  , imaspe , itypfl
 integer          iflmb0 , init   , inc    , imrgra , iccocg
 integer          nswrgu , imligu
@@ -157,7 +153,7 @@ double precision flumas(nfac), flumab(nfabor)
 
 ! Local variables
 
-integer          ifac, ii, jj, iel, iii, ig, it
+integer          ifac, ii, jj, iel, ig, it
 integer          iappel
 
 double precision pfac,pip,uxfac,uyfac,uzfac

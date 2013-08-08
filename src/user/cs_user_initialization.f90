@@ -44,7 +44,7 @@
 !> Physical quantities are defined in the following arrays:
 !> \code
 !>  propce ! physical quantities defined at cell center
-!>  propfa ! physical quantities defined at border face center
+!>  propfb ! physical quantities defined at border face center
 !> \endcode
 !>
 !> Examples:
@@ -80,13 +80,12 @@
 !> \param[in]     rtp           calculated variables at cell centers
 !>                               (at current time step)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfa        physical properties at interior face centers
 !> \param[in]     propfb        physical properties at boundary face centers
 !_______________________________________________________________________________
 
 subroutine cs_user_initialization &
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce , propfa , propfb )
+   dt     , rtp    , propce , propfb )
 
 !===============================================================================
 
@@ -125,7 +124,7 @@ implicit none
 integer          nvar   , nscal
 
 double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propfb(nfabor,*)
 
 ! Local variables
 

@@ -86,13 +86,10 @@ integer          iflid, iopchr
 integer          nfld, itycat, ityloc, idim1, idim3
 integer          keyccl, keydri, keyvis, keylbl, kdiftn
 logical          ilved, iprev, inoprv
-integer          ifvar(nvppmx), iapro(npromx)
 integer          f_id
 
 character*80     name
-character*32     name1, name2, name3
 character*80     f_name
-character*80     fname(nvppmx)
 
 !===============================================================================
 

@@ -58,7 +58,6 @@
 !> \param[in,out] rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in,out] propfa        physical properties at interior face centers
 !> \param[in,out] propfb        physical properties at boundary face centers
 !> \param[in]     coefa, coefb  boundary conditions
 !> \param[in]     grdvit        tableau de travail pour terme grad
@@ -83,7 +82,7 @@ subroutine resrij &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   , isou   , ipp    ,                                     &
    icepdc , icetsm , itpsmp ,                                     &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefa  , coefb  , produc , gradro ,                            &
    ckupdc , smcelp , gamma  ,                                     &
    viscf  , viscb  ,                                              &
@@ -109,6 +108,7 @@ use lagran
 use pointe, only:visten
 use mesh
 use field
+use cs_f_interfaces
 
 !===============================================================================
 
@@ -124,8 +124,7 @@ integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itpsmp(ncesmp)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(ndimfb,*)
+double precision propce(ncelet,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision produc(6,ncelet)
 double precision gradro(ncelet,3)
@@ -137,7 +136,7 @@ double precision smbr(ncelet), rovsdt(ncelet)
 
 ! Local variables
 
-integer          init  , ifac  , iel   , inc   , iccocg
+integer          iel
 integer          ii    , jj    , kk    , iiun
 integer          ipcrom, ipcvis, iflmas, iflmab, ipcroo
 integer          iclvar, iclvaf
@@ -236,7 +235,7 @@ call ustsri &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   ,                                                       &
    icepdc , icetsm , itpsmp ,                                     &
-   dt     , rtpa   , propce , propfa , propfb ,                   &
+   dt     , rtpa   , propce , propfb ,                            &
    ckupdc , smcelp , gamma  , produc , produc ,                   &
    smbr   , rovsdt )
 
@@ -524,10 +523,9 @@ if (irijec.eq.1) then
 
   call rijech &
   !==========
- ( nvar   , nscal  ,                                              &
-   ivar   , isou   , ipp    ,                                     &
-   rtp    , rtpa   , propce , propfa , propfb ,                   &
-   coefa  , coefb  , produc , w7     )
+ ( ivar   , isou   , ipp    ,                                     &
+   rtp    , rtpa   , propce ,                                     &
+   produc , w7     )
 
   ! Si on extrapole les T.S. : PROPCE
   if(isto2t.gt.0) then
@@ -557,10 +555,10 @@ if (igrari.eq.1) then
 
   call rijthe                                                     &
   !==========
- ( nvar   , nscal  ,                                              &
+ ( nscal  ,                                                       &
    ivar   , isou   , ipp    ,                                     &
-   rtp    , rtpa   , propce , propfa , propfb ,                   &
-   coefa  , coefb  , gradro , w7     )
+   rtp    , rtpa   ,                                              &
+   gradro , w7     )
 
   ! If source terms are extrapolated
   if (isto2t.gt.0) then
@@ -645,8 +643,7 @@ relaxp = relaxv(ivar)
 
 call codits &
 !==========
- ( nvar   , nscal  ,                                              &
-   idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
+ ( idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &

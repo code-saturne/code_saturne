@@ -85,7 +85,7 @@ double precision tmin   , tmax
 double precision wmolce(ngazem), ehcoel(ngazem,npot)
 double precision cpcoel(ngazem,npot),det,matdet
 double precision wmv1,wmvch1,wmv2,wmvch2
-double precision a11,a12,a13,a21,a22,a23,a31,a32,a33
+double precision a21,a22,a23,a32,a33
 double precision dhvol1,dhvol2,hcoke,hchar,ehvol1,ehvol2
 double precision wmco,wmo2,wmco2,wmh2o,wmn2,wmc
 double precision dmf3,dmf4,dmf5,som1,som2
@@ -2187,21 +2187,6 @@ af9(ihy)   = 1.0d0/wmc
 
 return
 
-
-!============================
-! 3. SORTIE EN ERREUR
-!============================
-
-  99  continue
-write ( nfecra,9998 )
-call csexit (1)
-!==========
-
-  999 continue
-write ( nfecra,9999 )
-call csexit (1)
-!==========
-
 !--------
 ! FORMATS
 !--------
@@ -2282,10 +2267,6 @@ call csexit (1)
  8100 format(/,3X,'---------------------------------' , /, &
                3X,'  Devolatization model constant  ' , /, &
                3X,'---------------------------------')
-!================================================================
- 8101 format(/,8X,'--------------', /,&
-               8X,'coal(',i2,'):' , /,&
-               8X,'--------------'  )
 !================================================================
  8102 format(/,8X,'Option 0: Y1 and Y2 computed  ')
  8103 format(/,8X,'Option 1: Y1 and Y2 fixed     ')
@@ -2470,37 +2451,6 @@ call csexit (1)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9998 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (CPLECD)      ',/,&
-'@    =========                                               ',/,&
-'@      PHYSIQUE PARTICULIERE (CHARBON PULVERISE)             ',/,&
-'@                                                            ',/,&
-'@  Erreur a l''ouverture du fichier parametrique.            ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9999 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (CPLECD)      ',/,&
-'@    =========                                               ',/,&
-'@      PHYSIQUE PARTICULIERE (CHARBON PULVERISE)             ',/,&
-'@                                                            ',/,&
-'@  Erreur a la lecture du fichier parametrique.              ',/,&
-'@    Le fichier a ete ouvert mais est peut etre incomplet    ',/,&
-'@    ou son format inadapte.                                 ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
  9896 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -2620,14 +2570,14 @@ implicit none
 
 !===============================================================================
 ! Arguments
-integer                                 , intent(in)    :: NDIM
-double precision , dimension(NDIM,NDIM) , intent(inout) :: AA
-double precision , dimension(NDIM)      , intent(inout) :: BB
-double precision , dimension(NDIM)      , intent(out)   :: XX
-integer                                 , intent(out)   :: IERR
+integer                                 , intent(in)    :: ndim
+double precision , dimension(ndim,ndim) , intent(inout) :: aa
+double precision , dimension(ndim)      , intent(inout) :: bb
+double precision , dimension(ndim)      , intent(out)   :: xx
+integer                                 , intent(out)   :: ierr
 ! Variables locales
-integer          :: ITERMX,IT,II,JJ,KK,IW
-double precision :: EPSIL,ERR,X0,WW,PP,SS
+integer          :: ii,jj,kk,iw
+double precision :: epsil,ww,pp,ss
 
 !===============================================================================
 ! Parametres

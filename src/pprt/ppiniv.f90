@@ -24,7 +24,7 @@ subroutine ppiniv &
 !================
 
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
+   dt     , rtp    , propce , propfb , coefa  , coefb  )
 
 !===============================================================================
 ! FONCTION :
@@ -48,18 +48,14 @@ subroutine ppiniv &
 !     suite de calcul
 
 ! Les proprietes physiques sont accessibles dans le tableau
-!     PROPCE (prop au centre), PROPFA (aux faces internes),
-!     PROPFB (prop aux faces de bord)
+!     PROPCE (prop au centre), PROPFB (prop aux faces de bord)
 !     Ainsi,
 !      PROPCE(IEL,IPPROC(IROM  )) designe ROM   (IEL)
 !      PROPCE(IEL,IPPROC(IVISCL)) designe VISCL (IEL)
 !      PROPCE(IEL,IPPROC(ICP   )) designe CP    (IEL)
 !      PROPCE(IEL,IPPROC(IVISLS(ISCAL))) designe VISLS (IEL ,ISCAL)
 
-!      PROPFA(IFAC,IPPROF(IFLUMA(IVAR ))) designe FLUMAS(IFAC,IVAR)
-
 !      PROPFB(IFAC,IPPROB(IROM  )) designe ROMB  (IFAC)
-!      PROPFB(IFAC,IPPROB(IFLUMA(IVAR ))) designe FLUMAB(IFAC,IVAR)
 
 ! LA MODIFICATION DES PROPRIETES PHYSIQUES (ROM, VISCL, VISCLS, CP)
 !     SE FERA EN STANDARD DANS LE SOUS PROGRAMME PPPHYV
@@ -75,7 +71,6 @@ subroutine ppiniv &
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules                                    !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa coefb      ! tr ! <-- ! conditions aux limites aux                     !
 !  (nfabor,*)      !    !     !    faces de bord                               !
@@ -113,7 +108,7 @@ integer          nvar   , nscal
 
 
 double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 
 ! Local variables
@@ -139,7 +134,7 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
   call d3pini                                                     &
   !==========
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
+   dt     , rtp    , propce , propfb )
   endif
 
 ! ---> Combustion gaz
@@ -149,7 +144,7 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
   call ebuini                                                     &
   !==========
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
+   dt     , rtp    , propce , propfb , coefa  , coefb  )
 endif
 
 ! ---> Combustion gaz
@@ -159,7 +154,7 @@ endif
   call lwcini                                                     &
   !==========
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
+   dt     , rtp    , propce , propfb , coefa  , coefb  )
 endif
 
 ! ---> Combustion charbon pulverise
@@ -168,17 +163,15 @@ if ( ippmod(iccoal).ge.0 ) then
   call cs_coal_varini                                             &
   !==================
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
+   dt     , rtp    , propce , propfb , coefa  , coefb  )
 endif
 
 
 ! ---> Combustion charbon pulverise couples Lagrangien
 
-if ( ippmod(icpl3c).ge.0 ) then
-  call cplini                                                     &
+if (ippmod(icpl3c).ge.0) then
+  call cplini(nvar, nscal, dt, rtp, coefa, coefb)
   !==========
- ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
 endif
 
 ! ---> Combustion fuel
@@ -187,7 +180,7 @@ if  (ippmod(icfuel).ge.0 ) then
   call cs_fuel_varini                                             &
   !==================
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
+   dt     , rtp    , propce , propfb , coefa  , coefb  )
 endif
 
 ! ---> Compressible
@@ -196,7 +189,7 @@ if ( ippmod(icompf).ge.0 ) then
   call cfiniv                                                     &
   !==========
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
+   dt     , rtp    , propce , propfb , coefa  , coefb  )
 endif
 
 ! ---> Version electrique
@@ -210,7 +203,7 @@ if ( ippmod(ieljou).ge.1 .or.                                     &
   call eliniv                                                     &
   !==========
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
+   dt     , rtp    , propce , propfb , coefa  , coefb  )
 
 endif
 
@@ -221,7 +214,7 @@ if ( ippmod(iatmos).ge.0 ) then
   call atiniv                                                     &
   !==========
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
+   dt     , rtp    , propce , propfb )
 
 endif
 
@@ -232,7 +225,7 @@ if ( ippmod(iaeros).ge.0 ) then
   call ctiniv                                                     &
   !==========
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
+   dt     , rtp    , propce , propfb , coefa  , coefb  )
 
 endif
 

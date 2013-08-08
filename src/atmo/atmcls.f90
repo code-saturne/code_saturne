@@ -23,14 +23,13 @@
 subroutine atmcls &
 !================
 
- ( nvar   , nscal  ,                                              &
-   ifac   , iel    ,                                              &
+ ( ifac   , iel    ,                                              &
    uk     , utau   , yplus  ,                                     &
    uet    ,                                                       &
    gredu  , q0     , e0     , rib    , lmo    ,                   &
    cfnnu ,  cfnns  , cfnnk  , cfnne  ,                            &
    icodcl ,                                                       &
-   dt     , rtp    , propce , propfa , propfb , rcodcl )
+   dt     , rtp    , rcodcl )
 
 !===============================================================================
 ! FUNCTION :
@@ -44,8 +43,6 @@ subroutine atmcls &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ifac             ! e  ! <-- ! face de bord traitee                           !
 ! iel              ! e  ! <-- ! cellule de bord en regard de la face           !
 !                  !    !     !  traitee                                       !
@@ -60,7 +57,7 @@ subroutine atmcls &
 ! coeffu,s,k,e     ! r  ! <-- ! non neutral correction coefficients for        !
 !                  !    !     !   profiles of momentum scalar turbulence       !
 ! icodcl           ! te ! --> ! code de condition limites aux faces            !
-!  (nfabor,nvar    !    !     !  de bord                                       !
+!  (nfabor,nvarcl) !    !     !  de bord                                       !
 !                  !    !     ! = 1   -> dirichlet                             !
 !                  !    !     ! = 3   -> densite de flux                       !
 !                  !    !     ! = 4   -> glissemt et u.n=0 (vitesse)           !
@@ -71,11 +68,8 @@ subroutine atmcls &
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
-!  (nfabor,nvar    !    !     !  aux faces de bord                             !
+!  (nfabor,nvarcl) !    !     !  aux faces de bord                             !
 !                  !    !     ! rcodcl(1) = valeur du dirichlet                !
 !                  !    !     ! rcodcl(2) = valeur du coef. d'echange          !
 !                  !    !     !  ext. (infinie si pas d'echange)               !
@@ -119,7 +113,6 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
 integer          ifac   , iel
 
 integer          icodcl(nfabor,nvarcl)
@@ -129,12 +122,9 @@ double precision gredu, rib, lmo, q0, e0
 double precision cfnnu, cfnns, cfnnk,cfnne
 
 double precision dt(ncelet), rtp(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
 double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
-
 
 double precision tpot1,tpot2,tpotv1,tpotv2
 double precision rscp1,rscp2

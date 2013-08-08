@@ -23,8 +23,7 @@
 subroutine lagcou &
 !================
 
- ( nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+ ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  , indep  , ibord  ,                                     &
    rtp    , propce ,                                              &
@@ -61,8 +60,6 @@ subroutine lagcou &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! nvp              ! e  ! <-- ! nombre de variables particulaires              !
 ! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
@@ -137,7 +134,6 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 integer          itepa(nbpmax,nivep), indep(nbpmax), ibord(nbpmax)

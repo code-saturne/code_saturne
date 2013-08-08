@@ -21,12 +21,11 @@
 !-------------------------------------------------------------------------------
 
 subroutine atphyv &
-     !================
+!================
 
-   ( nvar   , nscal  ,                                              &
-     ibrom  , izfppp ,                                              &
+   ( ibrom  , izfppp ,                                              &
      dt     , rtp    , rtpa   ,                                     &
-     propce , propfa , propfb ,                                     &
+     propce , propfb ,                                              &
      coefa  , coefb  )
 
 !===============================================================================
@@ -93,16 +92,12 @@ subroutine atphyv &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ibrom            ! te ! <-- ! indicateur de remplissage de romb              !
-!        !    !     !                                                !
 ! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
@@ -139,14 +134,11 @@ implicit none
 
 ! Arguments
 
-integer          nvar, nscal
-
 integer          ibrom
 integer          izfppp(nfabor)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(ndimfb,*)
+double precision propce(ncelet,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 
 ! Local variables

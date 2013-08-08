@@ -23,9 +23,8 @@
 subroutine cpvosy &
 !================
 
- ( nvar   , nscal  , isvtf  ,                                     &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   hbord  , theipb )
+ ( isvtf  ,                                                       &
+   dt     , rtp    , rtpa   , propce , propfb )
 
 !===============================================================================
 ! Purpose:
@@ -40,16 +39,11 @@ subroutine cpvosy &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! isvtf            ! i  ! <-- ! indicateur de scalaire pour la temp. fluide    !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! hbord(nfabor)    ! ra ! <-- ! coefficients d'echange aux bords               !
-! theipb(nfabor)   ! ra ! <-- ! temperatures aux bords                         !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -74,12 +68,10 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
 integer          isvtf
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*),propfa(nfac,*),propfb(nfabor,*)
-double precision hbord(nfabor),theipb(nfabor)
+double precision propce(ncelet,*),propfb(nfabor,*)
 
 ! Local variables
 
@@ -168,8 +160,8 @@ do inbcou = 1, nbccou
 
     call usvosy &
     !==========
-  ( nvar   , nscal , inbcoo , ncecpl , iscalt ,             &
-    dt     , rtp   , rtpa   , propce , propfa , propfb ,    &
+  ( inbcoo , ncecpl , iscalt ,                              &
+    dt     , rtp   , rtpa   , propce , propfb ,             &
     lcecpl , hvol  )
 
     ! Send fluid temperature and exchange coefficient

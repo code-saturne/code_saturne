@@ -26,7 +26,7 @@ subroutine cs_user_initialization &
 !================================
 
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce , propfa , propfb )
+   dt     , rtp    , propce , propfb )
 
 !===============================================================================
 ! Purpose:
@@ -49,8 +49,7 @@ subroutine cs_user_initialization &
 
 ! Physical quantities are defined in the following arrays:
 !  propce (physical quantities defined at cell center),
-!  propfa (physical quantities defined at interior face center),
-!  propfa (physical quantities defined at border face center).
+!  propfb (physical quantities defined at border face center).
 !
 ! Examples:
 !  propce(iel, ipproc(irom  )) means rom  (iel)
@@ -83,7 +82,6 @@ subroutine cs_user_initialization &
 ! rtp(ncelet, *)   ! ra ! <-- ! computed variables at cell centers at current  !
 !                  !    !     ! time steps                                     !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 !__________________!____!_____!________________________________________________!
 
@@ -127,7 +125,7 @@ implicit none
 integer          nvar   , nscal
 
 double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propfb(nfabor,*)
 
 ! Local variables
 

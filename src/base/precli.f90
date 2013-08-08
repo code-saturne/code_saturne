@@ -25,8 +25,7 @@ subroutine precli &
 
  ( nvar   , nscal  ,                                              &
    icodcl ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
+   propfb ,                                                       &
    rcodcl )
 
 !===============================================================================
@@ -55,14 +54,7 @@ subroutine precli &
 !                  !    !     ! = 6   -> rugosite et u.n=0 (vitesse)           !
 !                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
 !                  !    !     !  entrante eventuelle     bloquee               !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
 !  (nfabor,nvar    !    !     !  aux faces de bord                             !
 !                  !    !     ! rcodcl(1) = valeur du dirichlet                !
@@ -110,10 +102,7 @@ integer          nvar   , nscal
 
 integer          icodcl(nfabor,nvarcl)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
+double precision propfb(nfabor,*)
 double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
@@ -184,22 +173,12 @@ endif
 ! POUR LES PHYSIQUES PARTICULIERES
 
 if (ippmod(iphpar).ge.1) then
-  call ppprcl                                                     &
+  call ppprcl(nvar, izfppp, propfb, rcodcl)
   !==========
- ( nvar   , nscal  ,                                              &
-   icodcl , izfppp ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
-   rcodcl )
 endif
 
 !----
-! FORMATS
-!----
-
-
-!----
-! FIN
+! End
 !----
 
 return

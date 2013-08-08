@@ -26,10 +26,9 @@
 subroutine raycll &
 !================
 
- ( nvar   , nscal  ,                                              &
-   itypfb ,                                                       &
+ ( itypfb ,                                                       &
    izfrdp ,                                                       &
-   rtp    , rtpa   , propce , propfa , propfb ,                   &
+   rtp    , rtpa   ,                                              &
    coefap , coefbp ,                                              &
    cofafp , cofbfp ,                                              &
    tparoi , qincid , eps    ,  ck   , ckmel  )
@@ -74,16 +73,11 @@ subroutine raycll &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! iappel           ! i  ! <-- ! current subroutine call number                 !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 ! izfrdp(nfabor)   ! ia ! --> ! boundary faces -> zone number                  !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and preceding time steps)         !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefap, coefbp   ! ra ! --> ! boundary conditions for intensity or P-1 model !
 !  cofafp,cofbfp   !    !     !                                                !
 ! tparoi(nfabor)   ! ra ! <-- ! inside current wall temperature (K)            !
@@ -127,14 +121,12 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal  , iappel
+integer          iappel
 
 integer          itypfb(nfabor)
 integer          izfrdp(nfabor)
 
 double precision rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefap(nfabor), coefbp(nfabor)
 double precision cofafp(nfabor), cofbfp(nfabor)
 double precision tparoi(nfabor), qincid(nfabor)
@@ -364,34 +356,6 @@ endif
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
- 2000 format( &
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: Radiative transfer (raycll)                    ',/,&
-'@    ========                                                ',/,&
-'@              Net flux calculation non inquiries            ',/,&
-'@                                                            ',/,&
-'@    Face = ',I10   ,' Zone = ',I10   ,' Nature = ',I10         )
-
- 2100 format( &
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: Radiative transfer (raycll)                    ',/,&
-'@    ========                                                ',/,&
-'@    Net radiation flux is unknown for some faces            ',/,&
-'@                                                            ',/,&
-'@    The calculation stops.                                  ',/,&
-'@                                                            ',/,&
-'@    Please verify subroutine raycll.                        ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
 3000 format( &
 '@                                                            ',/,&
 '@                                                            ',/,&

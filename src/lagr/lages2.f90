@@ -27,7 +27,7 @@ subroutine lages2 &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  , ibord  ,                                              &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
+   dt     , rtpa   , rtp    , propce , propfb ,                   &
    ettp   , ettpa  , tepa   , statis , taup   , tlag   , piil   , &
    tsuf   , tsup   , bx     , tsfext ,                            &
    vagaus , auxl   , gradpr , gradvf ,                            &
@@ -70,7 +70,6 @@ subroutine lages2 &
 ! rtp, rtpa        ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant et prec)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! ettp             ! tr ! --> ! tableaux des variables liees                   !
 !  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
@@ -134,8 +133,7 @@ integer          ntersl , nvlsta , nvisbr
 integer          itepa(nbpmax,nivep) , ibord(nbpmax)
 
 double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*) , propfb(nfabor,*)
+double precision propce(ncelet,*), propfb(nfabor,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep) , statis(ncelet,*)
 double precision taup(nbpmax) , tlag(nbpmax,3)
@@ -319,7 +317,7 @@ if (nor.eq.1) then
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  ,                                                       &
-   dt     , rtpa   , propce , propfa , propfb ,                   &
+   dt     , rtpa   , propce , propfb ,                            &
    ettp   , ettpa  , tepa   , statis , taup   , tlag   , piil   , &
    bx     , vagaus , gradpr , gradvf , romp   ,                   &
    brgaus , terbru , fextla )

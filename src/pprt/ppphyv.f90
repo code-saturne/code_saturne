@@ -25,7 +25,7 @@ subroutine ppphyv &
 
  ( nvar   , nscal  ,                                              &
    ibrom  ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefa  , coefb  )
 
 !===============================================================================
@@ -98,7 +98,6 @@ subroutine ppphyv &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
@@ -139,8 +138,7 @@ integer          nvar   , nscal
 integer          ibrom
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propce(ncelet,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 
 ! Local variables
@@ -168,7 +166,7 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
     !==========
  ( nvar   , nscal  ,                                              &
    ibrom  , izfppp ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefa  , coefb  )
 
   endif
@@ -186,7 +184,7 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
     !==========
  ( nvar   , nscal  ,                                              &
    ibrom  , izfppp ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefa  , coefb  )
   endif
 
@@ -203,7 +201,7 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
      !==========
  ( nvar   , nscal  ,                                              &
    ibrom  , izfppp ,                                              &
-   dt     , rtp    , rtpa  , propce , propfa , propfb ,           &
+   dt     , rtp    , rtpa  , propce , propfb ,                    &
    coefa  , coefb  )
   endif
 
@@ -215,7 +213,7 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
      !====================
  ( nvar   , nscal  ,                                              &
    ibrom  , izfppp ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefa  , coefb   )
 
    endif
@@ -230,7 +228,7 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
      !==========
  ( nvar   , nscal  ,                                              &
    ibrom  , izfppp ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefa  , coefb  )
 
    endif
@@ -243,7 +241,7 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
      !====================
  ( nvar   , nscal  ,                                              &
    ibrom  , izfppp ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefa  , coefb  )
 
    endif
@@ -256,7 +254,7 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
      !==========
  ( nvar   , nscal  ,                                              &
    ibrom  , izfppp ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefa  , coefb  )
 
    endif
@@ -279,7 +277,7 @@ if ( ippmod(ieljou).ge.1 .or.                                     &
   !==========
  ( nvar   , nscal  ,                                              &
    ibrom  , izfppp ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefa  , coefb  )
 
 endif
@@ -292,7 +290,7 @@ if ( ippmod(iaeros).ge.0 ) then
    !==========
  ( nvar   , nscal  ,                                              &
    ibrom  , izfppp ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefa  , coefb  )
 
 endif
@@ -303,10 +301,9 @@ if ( ippmod(iatmos).ge.1 ) then
 
    call atphyv                                                    &
    !==========
- ( nvar   , nscal  ,                                              &
-   ibrom  , izfppp ,                                              &
+ ( ibrom  , izfppp ,                                              &
    dt     , rtp    , rtpa   ,                                     &
-   propce , propfa , propfb ,                                     &
+   propce , propfb ,                                              &
    coefa  , coefb  )
 
 endif

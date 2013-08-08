@@ -28,7 +28,7 @@ subroutine cs_user_extra_operations &
  ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvep   , nivep  , ntersl , nvlsta , nvisbr , &
    itepa  ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
+   dt     , rtpa   , rtp    , propce , propfb ,                   &
    ettp   , ettpa  , tepa   , statis , stativ , tslagr , parbor )
 
 !===============================================================================
@@ -60,7 +60,6 @@ subroutine cs_user_extra_operations &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! ettp, ettpa      ! ra ! <-- ! particle-defined variables                     !
 !  (nbpmax, nvp)   !    !     !  (at current and previous time steps)          !
@@ -117,7 +116,7 @@ integer          itepa(nbpmax,nivep)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(ndimfb,*)
+double precision propfb(ndimfb,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
 double precision statis(ncelet,nvlsta), stativ(ncelet,nvlsta-1)

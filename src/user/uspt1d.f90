@@ -31,7 +31,7 @@ subroutine uspt1d &
    tept1d , hept1d , fept1d ,                                     &
    xlmt1d , rcpt1d , dtpt1d ,                                     &
    dt     , rtpa   ,                                              &
-   propce , propfa , propfb )
+   propce , propfb )
 
 !===============================================================================
 ! Purpose:
@@ -100,7 +100,6 @@ subroutine uspt1d &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and preceding time steps)         !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 !__________________!____!_____!________________________________________________!
 
@@ -137,7 +136,7 @@ integer          izft1d(nfabor)
 
 double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propfb(nfabor,*)
 double precision eppt1d(nfpt1d) , rgpt1d(nfpt1d) , tppt1d(nfpt1d)
 double precision tept1d(nfpt1d) , hept1d(nfpt1d) , fept1d(nfpt1d)
 double precision xlmt1d(nfpt1d) , rcpt1d(nfpt1d) , dtpt1d(nfpt1d)

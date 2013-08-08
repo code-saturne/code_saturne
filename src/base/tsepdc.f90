@@ -23,11 +23,9 @@
 subroutine tsepdc &
 !================
 
- ( nvar   , nscal  , ncepdp ,                                     &
-   idiaex ,                                                       &
-   icepdc ,                                                       &
-   rtpa   , propce , propfa , propfb ,                            &
-   coefa  , coefb  , ckupdc , trav   )
+ ( ncepdp , idiaex , icepdc ,                                     &
+   rtpa   , propce ,                                              &
+   ckupdc , trav   )
 
 !===============================================================================
 ! FONCTION :
@@ -40,8 +38,6 @@ subroutine tsepdc &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
 ! idiaex           ! e  ! <-- ! indicateur de traitement de la                 !
 !                  !    !     ! diagonale (=1) ou extradiagonale (=2)          !
@@ -49,10 +45,6 @@ subroutine tsepdc &
 ! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant prec)                     !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
 !  (ncepdp,6)      !    !     !                                                !
 ! trav(ncelet,3    ! tr ! <-- ! tableau des second membres                     !
@@ -79,7 +71,6 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
 integer          ncepdp
 integer          idiaex
 
@@ -87,8 +78,6 @@ integer          icepdc(ncepdp)
 
 double precision rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision ckupdc(ncepdp,6)
 double precision trav(ncelet,3)
 

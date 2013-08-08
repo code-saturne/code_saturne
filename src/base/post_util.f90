@@ -54,7 +54,6 @@ subroutine post_boundary_thermal_flux &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use pointe
 use entsor
 use cstnum

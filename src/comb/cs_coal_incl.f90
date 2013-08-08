@@ -29,6 +29,8 @@ module cs_coal_incl
 
   use ppppar
 
+  implicit none
+
   ! Combustion du coke par H2O
 
   integer, save :: ihth2o , ighh2o(nclcpm)

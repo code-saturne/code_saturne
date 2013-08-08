@@ -27,6 +27,8 @@ module alaste
 
   !=============================================================================
 
+  implicit none
+
   ! Nombre de structures max en ALE et Couplage Code_Aster
 
   integer nastmx

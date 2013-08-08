@@ -28,7 +28,7 @@ subroutine cttssc &
    itypfb ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    izfppp ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
+   dt     , rtpa   , rtp    ,                                     &
    coefa  , coefb  , ckupdc , smacel ,                            &
    smbrs  , rovsdt )
 
@@ -57,9 +57,6 @@ subroutine cttssc &
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
 ! ckupdc(ncepdp,6) ! tr ! <-- ! tableau de travail pour pdc                    !
@@ -109,8 +106,6 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 integer          izfppp(nfabor)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision smbrs(ncelet), rovsdt(ncelet)
@@ -141,16 +136,6 @@ chaine = nomvar(ipprtp(ivar))
 !===============================================================================
 ! 2. PRISE EN COMPTE DES TERMES SOURCES ET VARIABLES STANDARDS
 !===============================================================================
-
-
-!--------
-! FORMATS
-!--------
-
- 1000 format(                                                           &
-'  Calcul des termes sources pour la variable : ',A8             )
-
-
 
 !----
 ! FIN

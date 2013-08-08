@@ -29,6 +29,8 @@ module spefun
 
 use entsor
 
+implicit none
+
 !=============================================================================
 
 contains
@@ -58,7 +60,7 @@ contains
 
     ! Local variables
 
-    double precision series, pp, y1, y2, hyp1, hyp2
+    double precision pp, y1, y2, hyp1, hyp2
     double precision gammaa, gammab, gammac
     double precision gammabma, gammaamb, gammacma, gammacmb
     parameter        (pp=0.1)
@@ -83,7 +85,7 @@ contains
       y2     = hypser( b, b+1.-c, b+1.-a, 1.d0/x )
       hypgeo = (gammac*gammabma*y1*(-1.d0/x)**a)/(gammab*gammacma)              &
              + (gammac*gammaamb*y2*(-1.d0/x)**b)/(gammaa*gammacmb)
-    else if ((x.gt.-1-pp).and.(x.lt.-1+pp)) then
+    else
       y1     = hypser(a, a+1.-c, a+1.-b, 1.d0/(-1.-pp))
       y2     = hypser(b, b+1.-c, b+1.-a, 1.d0/(-1.-pp))
       hyp1   = (gammac*gammabma*y1*(-1.d0/(-1.-pp))**a)/(gammab*gammacma)       &

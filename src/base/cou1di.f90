@@ -24,7 +24,6 @@ subroutine cou1di &
 !================
 
  ( nfabor ,                                                       &
-   nvar   , nscal  ,                                              &
    isvtb  , icodcl ,                                              &
    rcodcl )
 
@@ -41,11 +40,9 @@ subroutine cou1di &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! isvtb            ! e  ! <-- ! numero du scalaire couple                      !
 ! icodcl           ! te ! --> ! code de condition limites aux faces            !
-!  (nfabor,nvar    !    !     !  de bord                                       !
+!  (nfabor,nvarcl) !    !     !  de bord                                       !
 !                  !    !     ! = 1   -> dirichlet                             !
 !                  !    !     ! = 3   -> densite de flux                       !
 !                  !    !     ! = 4   -> glissemt et u.n=0 (vitesse)           !
@@ -54,7 +51,7 @@ subroutine cou1di &
 !                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
 !                  !    !     !  entrante eventuelle     bloquee               !
 ! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
-!  (nfabor,nvar    !    !     !  aux faces de bord                             !
+!  (nfabor,nvarcl) !    !     !  aux faces de bord                             !
 !                  !    !     ! rcodcl(1) = valeur du dirichlet                !
 !                  !    !     ! rcodcl(2) = valeur du coef. d'echange          !
 !                  !    !     !  ext. (infinie si pas d'echange)               !
@@ -92,7 +89,6 @@ implicit none
 ! Arguments
 
 integer          nfabor
-integer          nvar , nscal
 integer          isvtb  , icodcl(nfabor,nvarcl)
 double precision rcodcl(nfabor,nvarcl,3)
 

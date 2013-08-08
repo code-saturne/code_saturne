@@ -25,7 +25,7 @@ subroutine pptycl &
 
  ( nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefa  , coefb  , rcodcl )
 
 !===============================================================================
@@ -61,7 +61,6 @@ subroutine pptycl &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
@@ -120,8 +119,7 @@ integer          itrifb(nfabor), itypfb(nfabor)
 integer          izfppp(nfabor)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision propce(ncelet,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision rcodcl(nfabor,nvarcl,3)
 
@@ -255,7 +253,7 @@ if ( ippmod(icod3p).ge.0 ) then
   !==========
  ( nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefa  , coefb  , rcodcl )
 
 ! ---> Combustion gaz USEBUC
@@ -267,7 +265,7 @@ elseif ( ippmod(icoebu).ge.0 ) then
   !==========
  ( nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefa  , coefb  , rcodcl )
 
 ! ---> Combustion gaz USLWCC
@@ -279,7 +277,7 @@ elseif ( ippmod(icolwc).ge.0 ) then
   !==========
  ( nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefa  , coefb  , rcodcl )
 
 ! ---> Combustion charbon pulverise USCPCL
@@ -290,7 +288,7 @@ elseif ( ippmod(iccoal).ge.0 ) then
   !=================
  ( nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefa  , coefb  , rcodcl )
 
 ! ---> Combustion charbon pulverise couple Lagrangien USCPLC
@@ -301,19 +299,18 @@ elseif ( ippmod(icpl3c).ge.0 ) then
   !==========
  ( nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefa  , coefb  , rcodcl )
 
 ! ---> Combustion fuel USFUCL
 
-elseif ( ippmod(icfuel).ge.0 ) then
+elseif (ippmod(icfuel).ge.0) then
 
   call cs_fuel_bcond                                              &
   !=================
- ( nvar   , nscal  ,                                              &
-   icodcl , itrifb , itypfb , izfppp ,                            &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , rcodcl )
+ ( icodcl , itypfb , izfppp ,                                     &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   rcodcl )
 
 ! ---> Compressible USCFCL
 
@@ -323,7 +320,7 @@ elseif ( ippmod(icompf).ge.0 ) then
   !==========
  ( nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefa  , coefb  , rcodcl )
 
 ! ---> Ecoulements atmospheriques
@@ -332,10 +329,8 @@ elseif ( ippmod(iatmos).ge.0 ) then
 
   call attycl                                                     &
   !==========
- ( nvar   , nscal  ,                                              &
-   icodcl , itrifb , itypfb , izfppp ,                            &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , rcodcl )
+ ( icodcl , itypfb , izfppp ,                                     &
+   dt     , propce , propfb , rcodcl )
 
 ! ---> Ecoulements electrique
 
@@ -345,7 +340,7 @@ elseif ( ippmod(ielarc).ge.1 .or. ippmod(ieljou).ge.1 ) then
   !==========
  ( nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    , rtpa   ,                                     &
    coefa  , coefb  , rcodcl )
 
 endif

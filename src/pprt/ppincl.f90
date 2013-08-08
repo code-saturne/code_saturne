@@ -30,6 +30,10 @@ module ppincl
   use ppppar
   use ppthch
 
+  !=============================================================================
+
+  implicit none
+
   !===========================================================================
 
   !--> TABLEAU INDICATEURS DU CHOIX DE LA PHYSIQUE PARTICULIERE CHOISIE

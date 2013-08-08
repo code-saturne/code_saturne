@@ -23,11 +23,10 @@
 subroutine csc2cl &
 !================
 
- ( nvar   , nscal  ,                                              &
-   nvcp   , nvcpto , nfbcpl , nfbncp ,                            &
-   icodcl , itrifb , itypfb ,                                     &
+ ( nvcp   , nvcpto , nfbcpl , nfbncp ,                            &
+   icodcl , itypfb ,                                              &
    lfbcpl , lfbncp ,                                              &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtp    ,                                              &
    coefa  , coefb  , rcodcl ,                                     &
    rvcpfb , pndcpl , dofcpl )
 
@@ -42,10 +41,8 @@ subroutine csc2cl &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! icodcl           ! te ! --> ! boundary condition code at boundary faces      !
-!  (nfabor, nvar)  !    !     ! = 1   -> dirichlet                             !
+!  (nfabor, nvarcl)!    !     ! = 1   -> dirichlet                             !
 !                  !    !     ! = 3   -> flux density                          !
 !                  !    !     ! = 4   -> sliding and u.n=0 (velocity)          !
 !                  !    !     ! = 5   -> friction and u.n=0 (velocity)         !
@@ -55,18 +52,14 @@ subroutine csc2cl &
 !                  !    !     !  volocity not fixed: prescribe a Dirichlet     !
 !                  !    !     !  value for scalars k, eps, scal in addition to !
 !                  !    !     !  the usual Neumann                             !
-! itrifb           ! ia ! <-- ! indirection for boundary faces ordering        !
 ! itypfb           ! ia ! --> ! boundary face types                            !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
+! rtp,             ! ra ! <-- ! calculated variables at cell centers           !
+!  (ncelet, *)     !    !     !  (at current time step)                        !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
 ! rcodcl           ! tr ! --> ! value of boundary conditions at boundary faces !
-!  (nfabor, nvar)  !    !     ! rcodcl(1) = Dirichlet value                    !
+!  (nfabor, nvarcl)!    !     ! rcodcl(1) = Dirichlet value                    !
 !                  !    !     ! rcodcl(2) = ext. exchange coefficient value    !
 !                  !    !     !  (infinite if no exchange)                     !
 !                  !    !     ! rcodcl(3) = value of the flux density          !
@@ -104,17 +97,14 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
 integer          nvcp   , nvcpto
 integer          nfbcpl , nfbncp
 
 integer          icodcl(nfabor,nvarcl)
 integer          lfbcpl(nfbcpl)  , lfbncp(nfbncp)
-integer          itrifb(nfabor), itypfb(nfabor)
+integer          itypfb(nfabor)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfa(nfac,*), propfb(nfabor,*)
+double precision dt(ncelet), rtp(ncelet,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision rcodcl(nfabor,nvarcl,3)
 double precision rvcpfb(nfbcpl,nvcpto), pndcpl(nfbcpl)
@@ -122,14 +112,12 @@ double precision dofcpl(3,nfbcpl)
 
 ! Local variables
 
-integer          ifac, iel,isou
+integer          ifac, iel
 integer          inc, iccocg, iclvar, nswrgp, imligp
 integer          iwarnp, ivar, iflmab
 integer          ipt
-integer          iii
 
 double precision epsrgp, climgp, extrap
-double precision xp
 double precision xip   , xiip  , yiip  , ziip
 double precision xjp
 double precision xipf, yipf, zipf, ipf

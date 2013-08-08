@@ -53,7 +53,6 @@
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     rtpa          calculated variables at cell centers
 !>                               (at the previous time step)
-!> \param[in]     propce        physical properties at cell centers
 !> \param[in]     coefa, coefb  boundary conditions
 !>
 !> \param[out]    rotfct        rotation function of Spalart-Shur correction
@@ -63,8 +62,7 @@
 !_______________________________________________________________________________
 
 subroutine rotcor &
- ( dt     , rtpa   , propce , coefa  , coefb , &
-   rotfct , ce2rc  )
+ ( dt     , rtpa   , coefa  , coefb , rotfct , ce2rc  )
 
 !===============================================================================
 ! Module files
@@ -88,7 +86,6 @@ implicit none
 ! Arguments
 
 double precision dt(ncelet), rtpa(ncelet,*)
-double precision propce(ncelet,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision rotfct(ncel), ce2rc(ncel)
 

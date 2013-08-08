@@ -48,7 +48,6 @@ subroutine iniva0 &
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules                                    !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa coefb      ! tr ! <-- ! conditions aux limites aux                     !
 !  (nfabor,*)      !    !     !    faces de bord                               !
@@ -437,10 +436,8 @@ if (nscal.gt.0) then
   do iis = 1, nscal
     if(iscavr(iis).eq.0) then
       iscal = iis
-      call clpsca                                                 &
+      call clpsca(ncelet, ncel, iscal, rvoid, rtp)
       !==========
-     ( ncelet , ncel   , nvar   , nscal  , iscal  ,               &
-       propce , rvoid  , rtp    )
     endif
   enddo
 
@@ -449,23 +446,18 @@ if (nscal.gt.0) then
   do iis = 1, nscal
     if(iscavr(iis).ne.0.and.iclvfl(iis).ne.1) then
       iscal = iis
-      call clpsca                                                 &
+      call clpsca(ncelet, ncel, iscal, rvoid, rtp)
       !==========
-     ( ncelet , ncel   , nvar   , nscal  , iscal  ,               &
-       propce , rvoid  , rtp    )
     endif
   enddo
 
 !     Clipping des variances qui sont clippees avec recours au scalaire
 !        associe s'il est connu
   do iis = 1, nscal
-    if( iscavr(iis).le.nscal.and.iscavr(iis).ge.1.and.            &
-        iclvfl(iis).eq.1 ) then
+    if (iscavr(iis).le.nscal.and.iscavr(iis).ge.1.and.iclvfl(iis).eq.1) then
       iscal = iis
-      call clpsca                                                 &
+      call clpsca(ncelet, ncel, iscal, rtp(1,isca(iscavr(iis))), rtp)
       !==========
-     ( ncelet , ncel   , nvar   , nscal  , iscal  ,               &
-       propce , rtp(1,isca(iscavr(iis))) , rtp      )
     endif
   enddo
 

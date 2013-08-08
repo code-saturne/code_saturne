@@ -25,6 +25,10 @@
 
 module atsoil
 
+!=============================================================================
+
+implicit none
+
 integer, save :: nfmodsol , nbrsol
 
 type categorie_sol
@@ -79,5 +83,6 @@ end type soil_tab
 
 type(soil_tab), dimension(:), allocatable, save :: soilvert
 
+!=============================================================================
 
 end module atsoil
