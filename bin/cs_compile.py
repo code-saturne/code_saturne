@@ -160,14 +160,15 @@ def process_cmd_line_build(argv, pkg):
 
 #-------------------------------------------------------------------------------
 
-def get_compiler(pkg, compiler):
+def get_compiler(pkg, compiler, link_build = False):
 
     # First, handle the standard "non relocatable" case
     if pkg.config.features['relocatable'] == "no":
         return pkg.config.compilers[compiler]
 
     # On Windows, compilers are installed in "bindir" for DLL search
-    if sys.platform.startswith("win"):
+    # ...unless the compilation is done during the build stage
+    if sys.platform.startswith("win") and not link_build:
         return os.path.join(pkg.get_dir('bindir'),
                             pkg.config.compilers[compiler])
 
@@ -177,7 +178,7 @@ def get_compiler(pkg, compiler):
 
 #-------------------------------------------------------------------------------
 
-def get_flags(pkg, flag):
+def get_flags(pkg, flag, link_build = False):
 
     cmd_line = []
 
@@ -199,7 +200,8 @@ def get_flags(pkg, flag):
 
     # On Windows, flags must be adapted so as to handle the relocation
     # of system headers (together with the compiler)
-    if sys.platform.startswith("win"):
+    # ...unless the compilation is done during the build stage
+    if sys.platform.startswith("win") and not link_build:
         for i in range(len(cmd_line)):
             s = cmd_line[i]
             for p in ["-I/mingw", "-Ic:/mingw"]:
@@ -234,6 +236,10 @@ def get_build_flags(pkg, flag, install=False):
             # Do not use pkg.get_dir here as possible relocation paths must be
             # used after installation, not before.
             libdir = pkg.dirs['libdir'][1]
+            # Strangely, on MinGW, Windows paths are not correctly handled here
+            # So, assuming we always build on MinGW, here is a little trick!
+            if sys.platform.startswith("win"):
+                libdir = os.path.normpath('C:\\MinGW\\msys\\1.0' + libdir)
             cmd_line.insert(0, "-L" + libdir)
 
     return cmd_line
@@ -423,14 +429,18 @@ def link_build(pkg, install=False):
     exec_name = pkg.solver
     if install:
         exec_name = os.path.join(pkg.dirs['pkglibexecdir'][1], exec_name)
+        # Strangely, on MinGW, Windows paths are not correctly handled here...
+        # So, assuming we always build on MinGW, here is a little trick!
+        if sys.platform.startswith("win"):
+            exec_name = os.path.normpath('C:\\MinGW\\msys\\1.0' + exec_name)
 
     print("Linking executable: " + exec_name)
 
     # Find files to compile in source path
 
-    p_libs = get_flags(pkg, 'libs')
+    p_libs = get_flags(pkg, 'libs', link_build = True)
 
-    cmd = [get_compiler(pkg, 'ld')]
+    cmd = [get_compiler(pkg, 'ld', link_build = True)]
     cmd = cmd + ["-o", exec_name]
     cmd = cmd + get_build_flags(pkg, 'ldflags', install)
     cmd = cmd + p_libs
