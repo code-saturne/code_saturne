@@ -31,7 +31,7 @@ from cx_Freeze import setup, Executable
 # ---------------------
 
 # Module search path
-path = sys.path + ["bin", "lib/python2.6/site-packages/code_saturne"]
+path = sys.path + ["bin", "lib/python2.7/site-packages/code_saturne"]
  
 # Specific modules to be included
 includes = ["sip"]
@@ -54,7 +54,7 @@ if sys.platform.startswith("linux"):
     includefiles += [(r"/usr/lib/qt4/translations", \
                        "translations")]
 elif sys.platform.startswith("win"):
-    includefiles += [(r"C:\Python26\Lib\site-packages\PyQt4\translations", \
+    includefiles += [(r"C:\Python27\Lib\site-packages\PyQt4\translations", \
                        "translations")]
 else:
     pass

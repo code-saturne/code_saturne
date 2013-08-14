@@ -39,7 +39,7 @@
 #define HAVE_SCOTCH "@cs_have_scotch@"
 
 #define GCC_VERSION "4.7.2"
-#define PYTHON_VERSION "2.6"
+#define PYTHON_VERSION "2.7"
 
 #define Install "."
 #define MinGW "C:\MinGW"
@@ -365,7 +365,7 @@ Source: "{#CxFreeze}\library.zip"; DestDir: "{app}\bin"; Flags: ignoreversion; C
 Source: "{#CxFreeze}\pyexpat.pyd"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core
 Source: "{#CxFreeze}\PyQt4.Qtcore.pyd"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core
 Source: "{#CxFreeze}\PyQt4.QtGui.pyd"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core
-Source: "{#CxFreeze}\python26.dll"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core
+Source: "{#CxFreeze}\python27.dll"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core
 Source: "{#CxFreeze}\Qtcore4.dll"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core
 Source: "{#CxFreeze}\QtGui4.dll"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core
 Source: "{#CxFreeze}\select.pyd"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core
