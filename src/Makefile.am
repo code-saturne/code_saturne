@@ -107,7 +107,7 @@ $(top_srcdir)/src/comb/cs_fuel_incl.f90: ppppar.lo ppthch.lo
 $(top_srcdir)/src/elec/elincl.f90: paramx.lo ppthch.lo
 $(top_srcdir)/src/lagr/lagran.f90: lagpar.lo cstnum.lo
 $(top_srcdir)/src/pprt/ppcpfu.f90: ppthch.lo ppppar.lo
-$(top_srcdir)/src/pprt/ppincl.f90: ppthch.lo
+$(top_srcdir)/src/pprt/ppincl.f90: ppppar.lo ppthch.lo
 $(top_srcdir)/src/pprt/ppthch.f90: cstphy.lo
 $(top_srcdir)/src/rayt/radiat.f90: ppppar.lo
 
