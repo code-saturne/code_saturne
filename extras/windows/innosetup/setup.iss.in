@@ -24,7 +24,7 @@
 ;-------------------------------------------------------------------------------
 
 #define MyAppName "Code_Saturne"
-#define MyAppVersion "3.0"
+#define MyAppVersion "3.2"
 #define MyAppPublisher "EDF"
 #define MyAppCopyright "Copyright (C) 1998-2013 EDF S.A."
 #define MyAppURL "http://www.code-saturne.org/"
@@ -37,6 +37,8 @@
 #define HAVE_METIS "@cs_have_metis@"
 #define HAVE_MPI "@cs_have_mpi@"
 #define HAVE_SCOTCH "@cs_have_scotch@"
+
+#define HAVE_SALOME "@cs_have_salome@"
 
 #define GCC_VERSION "4.7.2"
 #define PYTHON_VERSION "2.7"
@@ -54,6 +56,11 @@
   #define HAVE_DOXYGEN "yes"
 #else
   #define HAVE_DOXYGEN "no"
+#endif
+#ifexist Install + "\share\doc\salome\gui\CFDSTUDY\index.html"
+  #define HAVE_SPHINX "yes"
+#else
+  #define HAVE_SPHINX "no"
 #endif
 #ifexist Install + "\share\locale\fr\LC_MESSAGES\code_saturne.mo"
   #define HAVE_LOCALE "yes"
@@ -92,7 +99,10 @@ Name: "french"; MessagesFile: "compiler:Languages\French.isl"
 
 [Components]
 Name: "core"; Description: "Code_Saturne main files"; Types: full compact custom; Flags: checkablealone fixed
-Name: "help"; Description: "Help files"; Types: full compact
+#if HAVE_SALOME == "yes"
+Name: "salome"; Description: "Code_Saturne SALOME plugin"; Types: full
+#endif
+Name: "help"; Description: "Code_Saturne Help files"; Types: full compact
 #if HAVE_PDF == "yes"
 Name: "help\pdf"; Description: "Documentation manuals"; Types: full compact
 #endif
@@ -345,7 +355,6 @@ Source: "{#Install}\share\doc\code_saturne\developer.pdf"; DestDir: "{app}\share
 Source: "{#Install}\share\doc\code_saturne\install.pdf"; DestDir: "{app}\share\doc\code_saturne"; Flags: ignoreversion; Components: help\pdf
 Source: "{#Install}\share\doc\code_saturne\refcard.pdf"; DestDir: "{app}\share\doc\code_saturne"; Flags: ignoreversion; Components: help\pdf
 Source: "{#Install}\share\doc\code_saturne\theory.pdf"; DestDir: "{app}\share\doc\code_saturne"; Flags: ignoreversion; Components: help\pdf
-Source: "{#Install}\share\doc\code_saturne\tutorial.pdf"; DestDir: "{app}\share\doc\code_saturne"; Flags: ignoreversion; Components: help\pdf
 Source: "{#Install}\share\doc\code_saturne\user.pdf"; DestDir: "{app}\share\doc\code_saturne"; Flags: ignoreversion; Components: help\pdf
 #endif
 #if HAVE_DOXYGEN == "yes"
@@ -372,6 +381,17 @@ Source: "{#CxFreeze}\select.pyd"; DestDir: "{app}\bin"; Flags: ignoreversion; Co
 Source: "{#CxFreeze}\sip.pyd"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core
 Source: "{#CxFreeze}\unicodedata.pyd"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core
 Source: "{#CxFreeze}\translations\*"; DestDir: "{app}\translations"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: core
+; SALOME plugin
+#if HAVE_SALOME == "yes"
+Source: "{#Install}\bin\SalomeIDLCFDSTUDY-0.dll"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: salome
+Source: "{#Install}\lib\python{#PYTHON_VERSION}\site-packages\code_saturne\*"; DestDir: "{app}\lib\python{#PYTHON_VERSION}\site-packages\code_saturne"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: salome
+Source: "{#Install}\lib\python{#PYTHON_VERSION}\site-packages\salome\*"; DestDir: "{app}\lib\python{#PYTHON_VERSION}\site-packages\salome"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: salome
+Source: "{#Install}\lib\salome\SalomeIDLCFDSTUDY.dll.lib"; DestDir: "{app}\lib\salome"; Flags: ignoreversion; Components: salome
+Source: "{#Install}\share\salome\resources\cfdstudy\*"; DestDir: "{app}\share\salome\resources\cfdstudy"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: salome
+#if HAVE_SPHINX == "yes"
+Source: "{#Install}\share\doc\salome\gui\CFDSTUDY\*"; DestDir: "{app}\share\doc\salome\gui\CFDSTUDY"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: salome
+#endif
+#endif
 
 ;-------------------------------------------------------------------------------
 
