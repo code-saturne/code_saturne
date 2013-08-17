@@ -492,16 +492,8 @@ def _CallCreateScript(theStudyPath, isCreateStudy, theCaseNames):
             args.append('create')
 
             if isCreateStudy:
-                if CFD_Code() == "Code_Saturne":
-                    args.append("--study")
-                elif CFD_Code() == "NEPTUNE_CFD":
-                    args.append("--study")
+                args.append("--study")
                 args.append(os.path.basename(theStudyPath))
- #           else:
- #                if CFD_Code() == "Code_Saturne":
- #                    args.append("--case")
- #                elif  CFD_Code() == "NEPTUNE_CFD":
-#                     args.append("--case")
 
             for i in theCaseNames.split(' '):
                 args.append("--case")
@@ -514,7 +506,7 @@ def _CallCreateScript(theStudyPath, isCreateStudy, theCaseNames):
             runCommand(args, start_dir, "")
 
             os.chdir(curd)
-        else :
+        else:
             QMessageBox.critical(None,
                                 "Error", mess, QMessageBox.Ok, 0)
     return mess == ""
@@ -790,7 +782,7 @@ def _FillObject(theObject, theParent, theBuilder):
             elif name == "THCH":
                 objectId = dict_object["THCHFolder"]
         else:
-            if name == "SaturneGUI" or name == "NeptuneGUI":
+            if name[0:10] == "SaturneGUI" or name[0:10] == "NeptuneGUI":
                 objectId = dict_object["DATALaunch"]
             elif re.match("^dp_", name):
                 objectId = dict_object["DATAFile"]
@@ -848,7 +840,7 @@ def _FillObject(theObject, theParent, theBuilder):
         if os.path.isdir(path):
             objectId = dict_object["OtherFolder"]
         else:
-            if name == "runcase":
+            if name[0:7] == "runcase":
                 objectId = dict_object["SCRPTLanceFile"]
             else:
                 if os.path.isfile(path):
@@ -1523,10 +1515,17 @@ def checkCaseLaunchGUI(theCase):
     aDataObj =  aChildList[0]
     aDataPath = _GetPath(aDataObj)
 
+    import sys
     if CFD_Code() == "Code_Saturne":
-        aChildList = ScanChildren(aDataObj, "^SaturneGUI$")
+        if sys.platform.startswith("win"):
+            aChildList = ScanChildren(aDataObj, "^SaturneGUI.bat$")
+        else:
+            aChildList = ScanChildren(aDataObj, "^SaturneGUI$")
     elif CFD_Code() == "NEPTUNE_CFD":
-        aChildList = ScanChildren(aDataObj, "^NeptuneGUI$")
+        if sys.platform.startswith("win"):
+            aChildList = ScanChildren(aDataObj, "^NeptuneGUI.bat$")
+        else:
+            aChildList = ScanChildren(aDataObj, "^NeptuneGUI$")
     if not len(aChildList) == 1:
         if Trace(): print "There are not SaturneGUI or NeptuneGUI in selected by user case"
         return False

@@ -61,7 +61,7 @@ import CFDSTUDYGUI_DataModel
 import CFDSTUDYGUI_Commons
 import CFDSTUDYGUI_DesktopMgr
 
-from CFDSTUDYGUI_Commons import CFD_Code, sg, sgPyQt
+from CFDSTUDYGUI_Commons import sg, sgPyQt
 from CFDSTUDYGUI_Commons import CFD_Saturne, CFD_Neptune
 from CFDSTUDYGUI_Commons import CheckCFD_CodeEnv
 

@@ -986,10 +986,6 @@ class CFDSTUDYGUI_DialogCollector:
         self.GUIActivationDialog = GUIActivationDialogHandler()
 
 
-#def CFD_Code():
-#    return CFD_Saturne
-
-
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
     lang = "en"

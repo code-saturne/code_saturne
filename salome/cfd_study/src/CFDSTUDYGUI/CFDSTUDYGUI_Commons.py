@@ -190,14 +190,12 @@ def BinCode():
         from cs_package import package
         pkg = package()
         bindir = pkg.get_dir('bindir')
-        if os.path.isfile(os.path.join(bindir, "code_saturne")):
-            b = os.path.join(bindir, "code_saturne")
+        b = os.path.join(bindir, "code_saturne")
     elif CFD_Code() == CFD_Neptune:
         from nc_package import package
         pkg = package()
         bindir = pkg.get_dir('bindir')
-        if os.path.isfile(os.path.join(bindir, "neptune_cfd")):
-            b = os.path.join(bindir, "neptune_cfd")
+        b = os.path.join(bindir, "neptune_cfd")
 
     c = pkg.get_preprocessor()
     log.debug("BinCode -> \n    %s\n    %s" % (b, c))

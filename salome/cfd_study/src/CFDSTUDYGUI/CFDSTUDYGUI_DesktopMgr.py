@@ -50,7 +50,7 @@ from PyQt4.QtCore import QObject, SIGNAL
 # Application modules
 #-------------------------------------------------------------------------------
 
-from CFDSTUDYGUI_Commons import CFD_Code, Trace, CFD_Saturne, CFD_Neptune, sgPyQt, sg
+from CFDSTUDYGUI_Commons import Trace
 from CFDSTUDYGUI_ActionsHandler import CFDSTUDYGUI_ActionsHandler
 from CFDSTUDYGUI_Agents import *
 

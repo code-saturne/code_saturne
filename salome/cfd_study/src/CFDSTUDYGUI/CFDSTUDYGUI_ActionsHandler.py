@@ -34,6 +34,7 @@ Creates menu, actions, and separators for the SALOME Desktop.
 #-------------------------------------------------------------------------------
 
 import os, string, shutil
+import subprocess
 import re
 import logging
 
@@ -1020,11 +1021,11 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             if sobj is not None:
                 path = CFDSTUDYGUI_DataModel._GetPath(sobj)
                 if re.match(".*emacs$", viewerName):
-                    os.spawnlp(os.P_NOWAIT, viewerName , viewerName, path, "-f", "toggle-read-only")
+                    subprocess.Popen([viewerName, path, "-f", "toggle-read-only"])
                 elif re.match("vi", viewerName) or re.match("vim", viewerName):
-                    os.system("xterm -sb -e vi "  + path )
+                    subprocess.call("xterm -sb -e vi " + path, shell=True)
                 else:
-                    os.spawnlp(os.P_NOWAIT, viewerName ,viewerName , path)
+                    subprocess.Popen([viewerName, path])
 
 
     def slotEditAction(self):
@@ -1038,7 +1039,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             sobj = self._singleSelectedObject()
             if not sobj == None:
                 path = CFDSTUDYGUI_DataModel._GetPath(sobj)
-                os.spawnlp(os.P_NOWAIT,viewerName ,viewerName , path)
+                subprocess.Popen([viewerName, path])
 
 
     def slotRemoveAction(self):
@@ -1595,10 +1596,17 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             aDataObj =  aChildList[0]
             aDataPath = CFDSTUDYGUI_DataModel._GetPath(aDataObj)
             # object of 'CFDSTUDYGUI' file
+            import sys
             if CFD_Code() == CFD_Saturne:
-                aChildList = CFDSTUDYGUI_DataModel.ScanChildren(aDataObj, "^SaturneGUI$")
+                if sys.platform.startswith("win"):
+                    aChildList = CFDSTUDYGUI_DataModel.ScanChildren(aDataObj, "^SaturneGUI.bat$")
+                else:
+                    aChildList = CFDSTUDYGUI_DataModel.ScanChildren(aDataObj, "^SaturneGUI$")
             elif CFD_Code() == CFD_Neptune:
-                aChildList = CFDSTUDYGUI_DataModel.ScanChildren(aDataObj, "^NeptuneGUI$")
+                if sys.platform.startswith("win"):
+                    aChildList = CFDSTUDYGUI_DataModel.ScanChildren(aDataObj, "^NeptuneGUI.bat$")
+                else:
+                    aChildList = CFDSTUDYGUI_DataModel.ScanChildren(aDataObj, "^NeptuneGUI$")
             if len(aChildList) == 0:
                 # no 'CFDSTUDYGUI' file
                 return
