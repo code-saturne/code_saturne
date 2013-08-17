@@ -110,6 +110,15 @@ if test "x$DOXYGEN" = "x"; then
   cs_have_doxygen=no
 fi
 
+AC_ARG_VAR([DOT], [graphs generator])
+
+dnl where is dot ?
+AC_PATH_PROG(DOT, [dot])
+if test "x$DOT" = "x"; then
+  AC_MSG_WARN(dot not found)
+  cs_have_doxygen=no
+fi
+
 AM_CONDITIONAL(HAVE_DOXYGEN, [test $cs_have_doxygen = yes])
 AC_SUBST(cs_have_doxygen)
 
