@@ -485,7 +485,7 @@ AC_ARG_ENABLE(cs_use_revision, [AS_HELP_STRING([--disable-revision],
     case "${enableval}" in
       yes) cs_use_revision=yes ;;
       no)  cs_use_revision=no ;;
-      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-frontend]) ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-revision]) ;;
     esac
   ],
   [ cs_use_revision=yes ]
@@ -500,6 +500,16 @@ fi
 
 AC_DEFINE_UNQUOTED([CS_REVISION], ["$cs_src_revision"], [Subversion / Git revision string])
 AC_SUBST(cs_src_revision)
+
+# Define the different version numbers for later use
+
+cs_version=`$PYTHON ${srcdir}/build-aux/cs_version.py --short`
+cs_version_full=`$PYTHON ${srcdir}/build-aux/cs_version.py --full`
+cs_version_short=`$PYTHON ${srcdir}/build-aux/cs_version.py --short`
+
+AC_SUBST(cs_version)
+AC_SUBST(cs_version_full)
+AC_SUBST(cs_version_short)
 
 #------------------------------------------------------------------------------
 # Checks for libraries.
