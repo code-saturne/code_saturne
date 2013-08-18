@@ -1,30 +1,25 @@
-#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 # Package information, generated from cs_package.py.in by make.
-#============================================================================
+
+#-------------------------------------------------------------------------------
+
+# This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-#     This file is part of the Code_Saturne Kernel, element of the
-#     Code_Saturne CFD tool.
+# Copyright (C) 1998-2013 EDF S.A.
 #
-#     Copyright (C) 2010-2011 EDF S.A., France
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation; either version 2 of the License, or (at your option) any later
+# version.
 #
-#     contact: saturne-support@edf.fr
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+# details.
 #
-#     The Code_Saturne Kernel is free software; you can redistribute it
-#     and/or modify it under the terms of the GNU General Public License
-#     as published by the Free Software Foundation; either version 2 of
-#     the License, or (at your option) any later version.
-#
-#     The Code_Saturne Kernel is distributed in the hope that it will be
-#     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#     GNU General Public License for more details.
-#
-#     You should have received a copy of the GNU General Public License
-#     along with the Code_Saturne Kernel; if not, write to the
-#     Free Software Foundation, Inc.,
-#     51 Franklin St, Fifth Floor,
-#     Boston, MA  02110-1301  USA
-#
-#============================================================================
+# You should have received a copy of the GNU General Public License along with
+# this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+# Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 #-------------------------------------------------------------------------------
 
@@ -49,10 +44,13 @@ class package:
 
         self.name = "@PACKAGE_NAME@"
         self.tarname = "@PACKAGE_TARNAME@"
-        self.version = "@PACKAGE_VERSION@"
+        self.pkgversion = "@PACKAGE_VERSION@"
         self.string = "@PACKAGE_STRING@"
         self.bugreport = "@PACKAGE_BUGREPORT@"
         self.url = "@PACKAGE_URL@"
+        self.version = "@cs_version@"
+        self.version_full = "@cs_version_full@"
+        self.version_short = "@cs_version_short@"
         self.revision = "@cs_src_revision@"
 
         self.code_name = "Code_Saturne"
@@ -64,7 +62,7 @@ class package:
         self.guiname = "SaturneGUI" + self.config.shext
         self.runcase = "runcase" + self.config.shext
         self.runsolver = "run_solver" + self.config.shext
-        self.configfile = "code_saturne.cfg"
+        self.configfile = "code_saturne" + self.config.cfgext
         self.scratchdir = 'tmp_Saturne'
         self.srcdir = 'src_saturne'
 
@@ -157,7 +155,7 @@ class package:
         if sys.platform.startswith("win"):
             # One could use PROGRAMDATA but it is not available on Windows XP
             configdir = os.path.join(os.getenv("ALLUSERSPROFILE"),
-                                     self.code_name, self.version)
+                                     self.code_name, self.version_short)
         else:
             configdir = self.get_dir("sysconfdir")
 
@@ -171,7 +169,7 @@ class package:
 
         if sys.platform.startswith("win"):
             configdir = os.path.join(os.getenv("APPDATA"),
-                                     self.code_name, self.version)
+                                     self.code_name, self.version_short)
         else:
             configdir = os.path.expanduser("~/.")
 

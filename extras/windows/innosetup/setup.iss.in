@@ -24,7 +24,9 @@
 ;-------------------------------------------------------------------------------
 
 #define MyAppName "Code_Saturne"
-#define MyAppVersion "3.2"
+#define MyAppVersion "@cs_version@"
+#define MyAppVersionFull "@cs_version_full@"
+#define MyAppVersionShort "@cs_version_short@"
 #define MyAppPublisher "EDF"
 #define MyAppCopyright "Copyright (C) 1998-2013 EDF S.A."
 #define MyAppURL "http://www.code-saturne.org/"
@@ -76,16 +78,16 @@
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
 AppId={{51C212F8-B939-4F9C-A67B-5532202851BD}
 AppName={#MyAppName}
-AppVersion={#MyAppVersion}
+AppVersion={#MyAppVersionFull}
 AppVerName={#MyAppName} {#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
-DefaultDirName={pf}\{#MyAppName}\{#MyAppVersion}
-DefaultGroupName={#MyAppName} {#MyAppVersion}
+DefaultDirName={pf}\{#MyAppName}\{#MyAppVersionShort}
+DefaultGroupName={#MyAppName} {#MyAppVersionShort}
 LicenseFile={#Install}\share\code_saturne\COPYING
-OutputBaseFilename={#MyAppName} {#MyAppVersion} win32
+OutputBaseFilename={#MyAppName} {#MyAppVersionFull} win32
 Compression=lzma
 SolidCompression=yes
 
@@ -340,6 +342,8 @@ Source: "{#MinGW}\lib\libscotcherr.dll.a"; DestDir: "{app}\lib"; Flags: ignoreve
 #endif
 ; Code_Saturne
 Source: "{#Install}\bin\libple-0.dll"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core
+Source: "{#Install}\etc\code_saturne.cfg.template"; DestDir: "{commonappdata}\{#MyAppName}\{#MyAppVersionShort}"; DestName: "code_saturne.ini"; Flags: onlyifdoesntexist; Components: core
+Source: "{#Install}\etc\code_saturne.cfg.template"; DestDir: "{userappdata}\{#MyAppName}\{#MyAppVersionShort}"; DestName: "code_saturne.ini"; Flags: onlyifdoesntexist; Components: core
 Source: "{#Install}\include\code_saturne\*"; DestDir: "{app}\include\code_saturne"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: dev\saturne
 Source: "{#Install}\include\ple_*"; DestDir: "{app}\include"; Flags: ignoreversion; Components: dev\saturne
 Source: "{#Install}\lib\libple.dll.a"; DestDir: "{app}\lib"; Flags: ignoreversion; Components: dev\saturne
