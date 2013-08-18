@@ -184,6 +184,9 @@ edit_package = sed \
 	-e 's|@PACKAGE_BUGREPORT[@]|$(PACKAGE_BUGREPORT)|g' \
 	-e 's|@PACKAGE_URL[@]|$(PACKAGE_URL)|g' \
 	-e 's|@cs_src_revision[@]|$(cs_src_revision)|g' \
+	-e 's|@cs_version[@]|$(cs_version)|g' \
+	-e 's|@cs_version_full[@]|$(cs_version_full)|g' \
+	-e 's|@cs_version_short[@]|$(cs_version_short)|g' \
 	-e 's|@SALOME_KERNEL[@]|$(SALOME_KERNEL)|g' \
 	-e 's|@SALOMEENVCMD[@]|$(SALOMEENVCMD)|g'
 
