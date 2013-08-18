@@ -40,7 +40,7 @@ from cs_package import package
 
 config = ConfigParser.ConfigParser()
 pkg = package()
-config.read([pkg.get_configfile(), os.path.expanduser('~/.' + pkg.configfile)])
+config.read(pkg.get_configfiles())
 
 # Code_Aster installation directory
 if not config.has_option('install', 'aster'):

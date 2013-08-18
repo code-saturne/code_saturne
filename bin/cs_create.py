@@ -155,8 +155,7 @@ def syrthes_path_line(pkg):
     line = None
 
     config = configparser.ConfigParser()
-    config.read([pkg.get_configfile(),
-                 os.path.expanduser('~/.' + pkg.configfile)])
+    config.read(pkg.get_configfiles())
 
     if config.has_option('install', 'syrthes'):
         syr_datapath = os.path.join(config.get('install', 'syrthes'),
@@ -207,8 +206,7 @@ class Study:
         syrthes_version = None
 
         config = configparser.ConfigParser()
-        config.read([self.package.get_configfile(),
-                     os.path.expanduser('~/.' + self.package.configfile)])
+        config.read(self.package.get_configfiles())
         if config.has_option('install', 'syrthes'):
             syrthes_version = 4
 
@@ -248,8 +246,7 @@ class Study:
         # Creating Code_Aster case
         if self.ast_case_name is not None:
             config = configparser.ConfigParser()
-            config.read([self.package.get_configfile(),
-                         os.path.expanduser('~/.' + self.package.configfile)])
+            config.read(self.package.get_configfiles())
             if config.has_option('install', 'aster'):
                 self.create_aster_case(repbase)
 
@@ -269,8 +266,7 @@ class Study:
 
         try:
             config = configparser.ConfigParser()
-            config.read([self.package.get_configfile(),
-                         os.path.expanduser('~/.' + self.package.configfile)])
+            config.read(self.package.get_configfiles())
             syr_datapath = os.path.join(config.get('install', 'syrthes'),
                                         os.path.join('share', 'syrthes'))
             sys.path.insert(0, syr_datapath)
@@ -578,8 +574,7 @@ class Study:
         # Add batch system info if necessary
 
         config = configparser.ConfigParser()
-        config.read([self.package.get_configfile(),
-                     os.path.expanduser('~/.' + self.package.configfile)])
+        config.read(self.package.get_configfiles())
 
         if config.has_option('install', 'batch'):
 

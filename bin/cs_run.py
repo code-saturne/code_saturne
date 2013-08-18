@@ -207,7 +207,7 @@ def main(argv, pkg):
     # Use alternate compute (back-end) package if defined
 
     config = configparser.ConfigParser()
-    config.read([pkg.get_configfile()])
+    config.read(pkg.get_global_configfile())
 
     pkg_compute = None
     if config.has_option('install', 'compute_versions'):

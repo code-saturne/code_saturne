@@ -89,7 +89,7 @@ def coupling(package,
     # Use alternate compute (back-end) package if defined
 
     config = configparser.ConfigParser()
-    config.read([package.get_configfile()])
+    config.read(package.get_global_configfile())
 
     package_compute = None
     if config.has_option('install', 'compute_versions'):

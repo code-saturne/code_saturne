@@ -655,11 +655,11 @@ class domain(base_domain):
 
         # User config file
         u_cfg = configparser.ConfigParser()
-        u_cfg.read(os.path.expanduser('~/.' + self.package.configfile))
+        u_cfg.read(self.package.get_user_configfile())
 
         # Global config file
         g_cfg = configparser.ConfigParser()
-        g_cfg.read(self.package.get_configfile())
+        g_cfg.read(self.package.get_global_configfile())
 
         # A mesh can be found in different mesh database directories
         # (case, study, user, global -- in this order)
@@ -1096,8 +1096,7 @@ class syrthes_domain(base_domain):
         try:
             if not os.getenv('SYRTHES4_HOME'):
                 config = configparser.ConfigParser()
-                config.read([self.package.get_configfile(),
-                             os.path.expanduser('~/.' + self.package.configfile)])
+                config.read(self.package.get_configfiles())
                 syr_profile = os.path.join(config.get('install', 'syrthes'),
                                            'bin', 'syrthes.profile')
                 source_shell_script(syr_profile)
@@ -1228,8 +1227,7 @@ class aster_domain(base_domain):
         # Get Code_Aster home
 
         config = configparser.ConfigParser()
-        config.read([self.package.get_configfile(),
-                     os.path.expanduser('~/.' + self.package.configfile)])
+        config.read(self.package.get_configfiles())
         self.aster_home = config.get('install', 'aster')
 
         # Additional parameters for Code_Saturne/Code_Aster coupling

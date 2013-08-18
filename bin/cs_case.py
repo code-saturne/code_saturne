@@ -1639,8 +1639,7 @@ echo "exit \$?" >> $localexec
                 username = os.getenv('USER')
 
             config = configparser.ConfigParser({'user':username})
-            config.read([self.package.get_configfile(),
-                         os.path.expanduser('~/.' + self.package.configfile)])
+            config.read(self.package.get_configfiles())
 
             # Determine default execution directory if not forced;
             # If the case is already in a sub-directory of the execution

@@ -627,8 +627,8 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
 
         # User and global mesh directories
 
-        for config_file in [os.path.expanduser('~/.' + package.configfile),
-                            package.get_configfile()]:
+        for config_file in [package.get_user_configfile(),
+                            package.get_global_configfile()]:
             cfg = configparser.ConfigParser()
             cfg.read(config_file)
             if cfg.has_option('run', 'meshpath'):

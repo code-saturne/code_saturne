@@ -502,8 +502,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         # Get batch type
 
         config = configparser.ConfigParser()
-        config.read([self.case['package'].get_configfile(),
-                     os.path.expanduser('~/.' + self.case['package'].configfile)])
+        config.read(self.case['package'].get_configfiles())
 
         cs_batch_type = None
         if config.has_option('install', 'batch'):

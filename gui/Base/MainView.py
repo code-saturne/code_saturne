@@ -1272,8 +1272,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         # Get batch type
 
         config = configparser.ConfigParser()
-        config.read([cmd_package.get_configfile(),
-                     os.path.expanduser('~/.' + cmd_package.configfile)])
+        config.read(cmd_package.get_configfiles())
 
         cs_batch_type = None
         if config.has_option('install', 'batch'):

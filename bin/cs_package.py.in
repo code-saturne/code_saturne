@@ -148,10 +148,41 @@ class package:
         return os.path.join(self.get_dir("pkglibexecdir"),
                             self.io_dump)
 
-    def get_configfile(self):
+    def get_global_configfile(self):
 
-        return os.path.join(self.get_dir("sysconfdir"),
-                            self.configfile)
+        # Windows XP:         C:\Documents and Settings\All Users
+        # Windows Vista/7/8:  C:\ProgramData
+        # Linux and co:       /etc
+
+        if sys.platform.startswith("win"):
+            # One could use PROGRAMDATA but it is not available on Windows XP
+            configdir = os.path.join(os.getenv("ALLUSERSPROFILE"),
+                                     self.code_name, self.version)
+        else:
+            configdir = self.get_dir("sysconfdir")
+
+        return [os.path.join(configdir, self.configfile)]
+
+    def get_user_configfile(self):
+
+        # Windows XP:         C:\Documents and Settings\{user}\Application Data
+        # Windows Vista/7/8:  C:\Users\{user}\AppData\Roaming
+        # Linux and co:       /home/{user}   (or similar)
+
+        if sys.platform.startswith("win"):
+            configdir = os.path.join(os.getenv("APPDATA"),
+                                     self.code_name, self.version)
+        else:
+            configdir = os.path.expanduser("~/.")
+
+        return [os.path.join(configdir, self.configfile)]
+
+    def get_configfiles(self):
+
+        u_cfg = self.get_user_configfile()
+        g_cfg = self.get_global_configfile()
+
+        return g_cfg + u_cfg
 
     def get_batchdir(self):
 

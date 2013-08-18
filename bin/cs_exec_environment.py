@@ -456,8 +456,7 @@ def source_rcfile(pkg):
     """
 
     config = configparser.ConfigParser()
-    config.read([pkg.get_configfile(),
-                 os.path.expanduser('~/.' + pkg.configfile)])
+    config.read(pkg.get_configfiles())
 
     if config.has_option('install', 'rcfile'):
         rcfile = config.get('install', 'rcfile')
@@ -1659,8 +1658,7 @@ class exec_environment:
         # Modify options based on system-wide or user configuration
 
         config = configparser.ConfigParser()
-        config.read([pkg.get_configfile(),
-                    os.path.expanduser('~/.' + pkg.configfile)])
+        config.read(pkg.get_configfiles())
 
         if config.has_section('mpi'):
             for option in config.items('mpi'):
