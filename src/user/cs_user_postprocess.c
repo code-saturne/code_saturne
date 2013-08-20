@@ -307,8 +307,8 @@ cs_user_postprocess_writers(void)
   /* Default time step or physical time based output frequencies */
 
   bool       output_at_end = true;
-  int        ntchr = -1;
-  double     frchr = -1.0;
+  int        frequency_n = -1;
+  double     frequency_t = -1.0;
 
   /* Default output format and options */
 
@@ -327,8 +327,8 @@ cs_user_postprocess_writers(void)
                           format_options,
                           time_dep,
                           output_at_end,
-                          ntchr,
-                          frchr);
+                          frequency_n,
+                          frequency_t);
 
   /* Define additional writers */
   /* ------------------------- */
@@ -341,8 +341,8 @@ cs_user_postprocess_writers(void)
                           "binary, discard_polygons, discard_polyhedra",
                           time_dep,
                           output_at_end,
-                          ntchr,
-                          frchr);
+                          frequency_n,
+                          frequency_t);
 
   if (false)
     cs_post_define_writer(2,                            /* writer_id */
@@ -352,8 +352,8 @@ cs_user_postprocess_writers(void)
                           "text, divide_polyhedra",
                           time_dep,                     /* modification flag */
                           output_at_end,
-                          ntchr,
-                          frchr);
+                          frequency_n,
+                          frequency_t);
 
   if (false)
     cs_post_define_writer(3,                            /* writer_id */
@@ -364,7 +364,7 @@ cs_user_postprocess_writers(void)
                           FVM_WRITER_TRANSIENT_CONNECT,
                           false,
                           3,
-                          frchr);
+                          frequency_t);
 
   if (false)
     cs_post_define_writer(4,                            /* writer_id */
@@ -374,8 +374,8 @@ cs_user_postprocess_writers(void)
                           "",                           /* format options */
                           FVM_WRITER_TRANSIENT_COORDS,  /* modification flag */
                           false,
-                          ntchr,
-                          frchr);
+                          frequency_n,
+                          frequency_t);
 }
 
 /*----------------------------------------------------------------------------
