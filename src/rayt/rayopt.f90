@@ -73,12 +73,11 @@ implicit none
 
 ! Local variables
 
-integer          ii, jj, iok , iiscal, iscaok, ipp, iph, nmodpp, iverif
+integer          ii, jj, iok , iiscal, iscaok, ipp, iph, nmodpp
 integer          irphas
 character        car4*4
 character*3      num
 
-!===============================================================================
 !===============================================================================
 ! 0. REDEFINITION DU NOMBRE DE PHASES POUR LE CHARBON PULVERISE
 !===============================================================================
@@ -635,8 +634,7 @@ if (iihmpr.eq.1) then
   !==========
 
   ! take into acount user modifications
-  iverif = 0
-  call usipes(nmodpp, iverif)
+  call usipes(nmodpp)
   !==========
 
 endif

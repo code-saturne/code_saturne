@@ -648,9 +648,8 @@ if (numtyp .eq. -1) then
 
         call uslaen                                               &
         !==========
-          (nvar, nscal, nvlsta,                                   &
+          (nvlsta,                                                &
            ivarl, ivarl1, ivarlm, iflu, ilpd1, icla,              &
-           dt, rtpa, rtp, propce, propfb,                         &
            statce, stativ, wcell)
 
         call post_write_var(nummai, trim(name80), idimt, ientla, ivarpr,  &
@@ -682,9 +681,8 @@ if (numtyp .eq. -1) then
 
         call uslaen                                               &
         !==========
-          (nvar, nscal, nvlsta,                                   &
+          (nvlsta,                                                &
            ivarl, ivarl1, ivarlm, iflu, ilpd1, icla,              &
-           dt, rtpa, rtp, propce, propfb,                         &
            statce, stativ, wcell)
 
         call post_write_var(nummai, trim(name80), idimt, ientla, ivarpr,  &

@@ -47,6 +47,7 @@ $(FCMODINCLUDE)$(top_builddir)/src/lagr \
 $(FCMODINCLUDE)$(top_builddir)/src/pprt \
 $(FCMODINCLUDE)$(top_builddir)/src/rayt \
 $(FCMODINCLUDE)$(top_builddir)/src/turb \
+$(FCMODINCLUDE)$(top_builddir)/src/user \
 $(FCFLAGS_DBG) $(FCFLAGS_OPT)
 
 AM_LDFLAGS =
