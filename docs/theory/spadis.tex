@@ -394,7 +394,7 @@ whereas the \emph{arithmetic} mean is set as the default option because it has b
 For a \emph{non-reconstructed} field, the diffusive flux reads:
 
 \begin{equation}
-D_\ij^{NRec} \left( K_\fij , \, \varia \right)  =  - \dfrac{K_\fij \norm{\vect{S}_\ij}}{\overline{\centip \centip} } \left( \varia_\celli - \varia_\cellj\right).
+D_\ij^{NRec} \left( K_\fij , \, \varia \right)  =  - \dfrac{K_\fij \norm{\vect{S}_\ij}}{\overline{\centip \centjp} } \left( \varia_\celli - \varia_\cellj\right).
 \end{equation}
 
 
@@ -403,7 +403,7 @@ D_\ij^{NRec} \left( K_\fij , \, \varia \right)  =  - \dfrac{K_\fij \norm{\vect{S
 For a \emph{reconstructed} field, the diffusive flux reads:
 
 \begin{equation}
-D_\ij^{Rec} \left( K_\fij , \, \varia \right)  =  - \dfrac{K_\fij \norm{\vect{S}_\ij}}{\overline{\centip \centip} } \left( \varia_\centip - \varia_\centjp \right).
+D_\ij^{Rec} \left( K_\fij , \, \varia \right)  =  - \dfrac{K_\fij \norm{\vect{S}_\ij}}{\overline{\centip \centjp} } \left( \varia_\centip - \varia_\centjp \right).
 \end{equation}
 
 \begin{remark}
@@ -411,8 +411,8 @@ In fact, it is actually written that
 %
 \begin{equation}
 \begin{array}{r c l}
-D_\ij^{Rec} \left( K_\fij , \, \varia \right)  &=&  - \dfrac{K_\fij \norm{\vect{S}_\ij}}{\overline{\centip \centip} } \left( \varia_\celli - \varia_\cellj \right) \\
-&-& \dfrac{K_\fij \norm{\vect{S}_\ij}}{\overline{\centip \centip} }  \dfrac{1}{2}\left( \grad_\celli \varia + \grad_\cellj \varia \right) \cdot \left( \vect{\centi \centip} - \vect{\centj \centjp} \right),
+D_\ij^{Rec} \left( K_\fij , \, \varia \right)  &=&  - \dfrac{K_\fij \norm{\vect{S}_\ij}}{\overline{\centip \centjp} } \left( \varia_\celli - \varia_\cellj \right) \\
+&-& \dfrac{K_\fij \norm{\vect{S}_\ij}}{\overline{\centip \centjp} }  \dfrac{1}{2}\left( \grad_\celli \varia + \grad_\cellj \varia \right) \cdot \left( \vect{\centi \centip} - \vect{\centj \centjp} \right),
 \end{array}
 \end{equation}
 %
