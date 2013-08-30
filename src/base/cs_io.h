@@ -550,6 +550,18 @@ cs_io_write_block_buffer(const char     *sec_name,
                          cs_io_t        *outp);
 
 /*----------------------------------------------------------------------------
+ * Skip a message.
+ *
+ * parameters:
+ *   header           <-- header structure
+ *   pp_io            --> kernel IO structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_io_skip(const cs_io_sec_header_t  *header,
+           cs_io_t                   *pp_io);
+
+/*----------------------------------------------------------------------------
  * Return the position of the file pointer for an open kernel IO file.
  *
  * parameters:

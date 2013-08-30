@@ -57,6 +57,7 @@
 #include "cs_interface.h"
 #include "cs_mesh.h"
 #include "cs_mesh_from_builder.h"
+#include "cs_parall.h"
 #include "cs_partition.h"
 #include "cs_io.h"
 
@@ -554,6 +555,97 @@ _colors_to_groups(cs_mesh_t  *mesh,
     }
   }
 
+}
+
+/*----------------------------------------------------------------------------
+ * Read sections from the pre-processor about the dimensions of mesh
+ *
+ * This function updates the information in the mesh and mesh reader
+ * structures relative to the data in the given file.
+ *
+ * parameters
+ *   filename <-- file name
+ *
+ * returns:
+ *   on rank 0, 1 if periodicity is present, 2 if rotational periodicity
+ *   is present; 0 in all other cases
+ *----------------------------------------------------------------------------*/
+
+static int
+_read_perio_info(const char  *filename)
+{
+  cs_io_sec_header_t  header;
+
+  cs_io_t   *pp_in = NULL;
+
+  int retval = 0;
+
+  /* Initialize reading of Preprocessor output */
+
+  bft_printf(_(" Checking metadata from file: \"%s\"\n"), filename);
+
+#if defined(HAVE_MPI)
+  pp_in = cs_io_initialize(filename,
+                           "Face-based mesh definition, R0",
+                           CS_IO_MODE_READ,
+                           CS_FILE_STDIO_SERIAL,
+                           CS_IO_ECHO_NONE,
+                           MPI_INFO_NULL,
+                           MPI_COMM_NULL,
+                           MPI_COMM_NULL);
+#else
+  pp_in = cs_io_initialize(filename,
+                           "Face-based mesh definition, R0",
+                           CS_IO_MODE_READ,
+                           CS_FILE_STDIO_SERIAL,
+                           CS_IO_ECHO_NONE);
+#endif
+
+  /* Loop on read sections */
+
+  while (true) {
+
+    /* Receive headers and clean header names */
+
+    cs_io_read_header(pp_in, &header);
+
+    /* Treatment according to the header name */
+
+    if (strncmp(header.sec_name, "EOF", CS_IO_NAME_LEN) == 0)
+      break;
+
+    /* Additional sections for periodicity. */
+
+    else {
+
+      if (strncmp(header.sec_name, "n_periodic_directions",
+                  CS_IO_NAME_LEN) == 0)
+        retval = 1;
+      else if (strncmp(header.sec_name, "n_periodic_rotations",
+                       CS_IO_NAME_LEN) == 0) {
+        retval = 2;
+        break;
+      }
+      else if (strncmp(header.sec_name, "end_block:dimensions",
+                       CS_IO_NAME_LEN) == 0)
+        break;
+
+      cs_io_skip(&header, pp_in);
+
+    }
+
+  }
+
+  cs_io_finalize(&pp_in);
+  pp_in = NULL;
+
+  /* Close file */
+
+  cs_io_finalize(&pp_in);
+
+  /* Return test values */
+
+  return retval;
 }
 
 /*----------------------------------------------------------------------------
@@ -1943,14 +2035,24 @@ void
 CS_PROCF(ledevi, LEDEVI)(cs_int_t   *iperio,
                          cs_int_t   *iperot)
 {
-  cs_mesh_t  *mesh = cs_glob_mesh;
+  cs_mesh_t  *m = cs_glob_mesh;
 
   /* Initialize parameter values */
 
-  if (mesh->n_init_perio > 0)
-    *iperio = 1;
-  if (mesh->have_rotation_perio > 0)
-    *iperot = 1;
+  if (m != NULL) {
+    if (m->n_init_perio > 0)
+      *iperio = 1;
+    if (m->have_rotation_perio > 0)
+      *iperot = 1;
+  }
+  else {
+    int retval = cs_preprocessor_check_perio();
+    if (retval > 0) {
+      *iperio = 1;
+      if (retval > 1)
+        *iperot = 1;
+    }
+  }
 }
 
 /*============================================================================
@@ -2069,6 +2171,46 @@ cs_preprocessor_data_add_file(const char     *file_name,
     else
       _new_group_names[i] = NULL;
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Check for periodicity information in mesh meta-data.
+ *
+ * returns:
+ *   0 if no periodicity is present in mesh input,
+ *   1 for translation periodicity only,
+ *   2 for rotation or mixed periodicity
+ *----------------------------------------------------------------------------*/
+
+int
+cs_preprocessor_check_perio(void)
+{
+  int retval;
+  _mesh_reader_t *mr = NULL;
+
+  int perio_flag = 0;
+
+  /* Initialize reading of Preprocessor output */
+
+  _set_default_input_if_needed();
+
+  mr = _mesh_reader_create(&_n_mesh_files,
+                           &_mesh_file_info);
+
+  _n_max_mesh_files = 0;
+
+  mr = _cs_glob_mesh_reader;
+
+  for (int i = 0; i < _n_mesh_files; i++) {
+    retval = _read_perio_info((_mesh_file_info + i)->filename);
+    perio_flag = CS_MAX(retval, perio_flag);
+  }
+
+  /* Return values */
+
+  cs_parall_max(1, CS_INT_TYPE, &perio_flag);
+
+  return perio_flag;
 }
 
 /*----------------------------------------------------------------------------

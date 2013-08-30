@@ -90,6 +90,18 @@ cs_preprocessor_data_add_file(const char     *file_name,
                               const double    transf_matrix[3][4]);
 
 /*----------------------------------------------------------------------------
+ * Check for periodicity information in mesh meta-data.
+ *
+ * returns:
+ *   0 if no periodicity is present in mesh input,
+ *   1 for translation periodicity only,
+ *   2 for rotation or mixed periodicity
+ *----------------------------------------------------------------------------*/
+
+int
+cs_preprocessor_check_perio(void);
+
+/*----------------------------------------------------------------------------
  * Read mesh meta-data.
  *
  * parameters:

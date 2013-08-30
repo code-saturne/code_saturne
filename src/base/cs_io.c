@@ -3022,6 +3022,64 @@ cs_io_write_block_buffer(const char     *sec_name,
 }
 
 /*----------------------------------------------------------------------------
+ * Skip a message.
+ *
+ * parameters:
+ *   header <-- header structure
+ *   pp_io  --> kernel IO structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_io_skip(const cs_io_sec_header_t  *header,
+           cs_io_t                   *pp_io)
+{
+  double t_start = 0.;
+  size_t  type_size = 0;
+  cs_file_off_t  n_vals = pp_io->n_vals;
+  cs_io_log_t  *log = NULL;
+  size_t  stride = 1;
+
+  assert(pp_io  != NULL);
+  assert(header->n_vals == pp_io->n_vals);
+
+  if (pp_io->log_id > -1) {
+    log = _cs_io_log[pp_io->mode] + pp_io->log_id;
+    t_start = cs_timer_wtime();
+  }
+
+  /* Choose global or block mode */
+
+  if (header->n_location_vals > 1)
+    stride = header->n_location_vals;
+
+  /* Datatype size given by FVM datatype */
+
+  type_size = cs_datatype_size[header->type_read];
+
+  /* If data is present in file, skip it */
+
+  if (pp_io->data == NULL) {
+
+    /* Position read pointer if necessary */
+
+    if (pp_io->body_align > 0) {
+      cs_file_off_t offset = cs_file_tell(pp_io->f);
+      size_t ba = pp_io->body_align;
+      offset += (ba - (offset % ba)) % ba;
+      offset += n_vals*type_size;
+      cs_file_seek(pp_io->f, offset, CS_FILE_SEEK_SET);
+    }
+
+    pp_io->data = NULL; /* Reset for next read */
+  }
+
+  if (log != NULL) {
+    double t_end = cs_timer_wtime();
+    log->wtimes[0] += t_end - t_start;
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Return the position of the file pointer for an open kernel IO file.
  *
  * parameters:

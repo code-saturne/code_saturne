@@ -100,6 +100,7 @@ cs_parall.h \
 cs_part_to_block.h \
 cs_post.h \
 cs_post_default.h \
+cs_preprocess.h \
 cs_preprocessor_data.h \
 cs_prototypes.h \
 cs_renumber.h \
@@ -219,6 +220,7 @@ cs_parall.c \
 cs_parameters.c \
 cs_post.c \
 cs_post_default.c \
+cs_preprocess.c \
 cs_preprocessor_data.c \
 cs_renumber.c \
 cs_resource.c \

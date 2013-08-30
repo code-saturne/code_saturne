@@ -138,61 +138,6 @@ extern void CS_PROCF (initi1, INITI1)
 );
 
 /*----------------------------------------------------------------------------
- * Update mesh dimensions in Fortran commons
- *----------------------------------------------------------------------------*/
-
-extern void CS_PROCF (majgeo, MAJGEO)
-(
- const cs_int_t   *ncel,    /* <-- number of cells */
- const cs_int_t   *ncelet,  /* <-- number of extended (real + ghost) cells */
- const cs_int_t   *nfac,    /* <-- number of interior faces */
- const cs_int_t   *nfabor,  /* <-- number of boundary faces */
- const cs_int_t   *nsom,    /* <-- number of vertices */
- const cs_int_t   *lndfac,  /* <-- interior face -> vertices array size */
- const cs_int_t   *lndfbr,  /* <-- boundary face -> vertices array size */
- const cs_int_t   *ncelbr,  /* <-- number of boundary cells */
- const cs_int_t   *ncelgb,  /* <-- global number of cells */
- const cs_int_t   *nfacgb,  /* <-- global number of interior faces */
- const cs_int_t   *nfbrgb,  /* <-- global number of boundary faces */
- const cs_int_t   *nsomgb,  /* <-- global number of vertices */
- const cs_int_t   *nfml,    /* <-- number of families */
- const cs_int_t   *nthrdi,  /* <-- max threads per interior faces group */
- const cs_int_t   *nthrdb,  /* <-- max threads per boundary faces group */
- const cs_int_t   *ngrpi,   /* <-- number of interior face groups */
- const cs_int_t   *ngrpb,   /* <-- number of boundary face groups */
- const cs_int_t   *idxfi,   /* <-- interior face group/thread start/end ids */
- const cs_int_t   *idxfb,   /* <-- boundary face group/thread start/end ids */
- const cs_int_t    ifacel[],  /* <-- interior faces -> cells connectivity */
- const cs_int_t    ifabor[],  /* <-- boundary faces -> cells connectivity */
- const cs_int_t    ifmfbr[],  /* <-- boundary face families */
- const cs_int_t    ifmcel[],  /* <-- cell families */
- const cs_int_t    ipnfac[],  /* <-- interior faces -> vertices index */
- const cs_int_t    nodfac[],  /* <-- interior faces -> vertices connectivity */
- const cs_int_t    ipnfbr[],  /* <-- boundary faces -> vertices index */
- const cs_int_t    nodfbr[],  /* <-- boundary faces -> vertices connectivity */
- const cs_int_t    icelbr[],  /* <-- list of boundary cells */
- const cs_int_t    isympa[],  /* <-- symmetry flag for boundary faces */
- const cs_real_t  *volmin,    /* <-- minimum control volume */
- const cs_real_t  *volmax,    /* <-- maximum control volume */
- const cs_real_t  *voltot,    /* <-- total   control volume */
- const cs_real_t   xyzcen[],  /* <-- cell centers */
- const cs_real_t   surfac[],  /* <-- interior face surface vectors */
- const cs_real_t   surfbo[],  /* <-- boundary face surface vectors */
- const cs_real_t   cdgfac[],  /* <-- interior face centers */
- const cs_real_t   cdgfbo[],  /* <-- boundary face centers */
- const cs_real_t   xyznod[],  /* <-- vertex coordinates */
- const cs_real_t   volume[],  /* <-- cell volumes */
- const cs_real_t   surfan[],  /* <-- interior face surfaces */
- const cs_real_t   surfbn[],  /* <-- boundary face surfaces */
- const cs_real_t   dist[],    /* <-- distance IJ.Nij */
- const cs_real_t   distb[],   /* <-- likewise for border faces */
- const cs_real_t   pond[],    /* <-- weighting (Aij=pond Ai+(1-pond)Aj */
- const cs_real_t   dijpf[],   /* <-- vector I'J' */
- const cs_real_t   diipb[],   /* <-- likewise for border faces */
- const cs_real_t   dofij[]    /* <-- vector OF at interior faces */
-);
-
-/*----------------------------------------------------------------------------
  * Free Fortran allocated memory
  *----------------------------------------------------------------------------*/
 

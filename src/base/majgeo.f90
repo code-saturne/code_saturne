@@ -31,7 +31,9 @@ subroutine majgeo &
    volmn2 , volmx2 , voltt2 ,                                     &
    xyzce2 , surfa2 , surfb2 , cdgfa2 , cdgfb2 , xyzno2 ,          &
    volum2 , srfan2 , srfbn2 , dist2  , distb2 , pond2  ,          &
-   dijpf2 , diipb2 , dofij2 )
+   dijpf2 , diipb2 , dofij2 )                                     &
+
+ bind(C, name="cs_f_majgeo")
 
 !===============================================================================
 ! Purpose:
@@ -113,7 +115,7 @@ implicit none
 integer, intent(in) :: ncel2, ncele2, nfac2, nfabo2, nsom2
 integer, intent(in) :: lndfa2, lndfb2
 integer, intent(in) :: ncelb2
-integer, intent(in) :: ncelg2, nfacg2 , nfbrg2, nsomg2
+integer(kind=8), intent(in) :: ncelg2, nfacg2 , nfbrg2, nsomg2
 integer, intent(in) :: nfml2
 integer, intent(in) :: nthdi2, nthdb2
 integer, intent(in) :: ngrpi2, ngrpb2

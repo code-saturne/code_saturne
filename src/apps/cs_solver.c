@@ -78,33 +78,27 @@
 #include "cs_gradient.h"
 #include "cs_gradient_perio.h"
 #include "cs_gui.h"
-#include "cs_gui_mesh.h"
 #include "cs_gui_output.h"
 #include "cs_gui_particles.h"
 #include "cs_io.h"
-#include "cs_join.h"
 #include "cs_lagr_tracking.h"
 #include "cs_log.h"
 #include "cs_log_iteration.h"
 #include "cs_mesh.h"
 #include "cs_mesh_coherency.h"
-#include "cs_mesh_from_builder.h"
 #include "cs_mesh_location.h"
 #include "cs_mesh_quality.h"
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_bad_cells.h"
-#include "cs_mesh_save.h"
 #include "cs_mesh_smoother.h"
-#include "cs_mesh_to_builder.h"
-#include "cs_mesh_warping.h"
 #include "cs_multigrid.h"
 #include "cs_opts.h"
 #include "cs_parameters.h"
 #include "cs_partition.h"
 #include "cs_post.h"
+#include "cs_preprocess.h"
 #include "cs_preprocessor_data.h"
 #include "cs_prototypes.h"
-#include "cs_renumber.h"
 #include "cs_restart.h"
 #include "cs_sles.h"
 #include "cs_sat_coupling.h"
@@ -179,12 +173,8 @@ void
 cs_run(void)
 {
   cs_int_t  ivoset;
-  double  t1, t2;
 
-  bool partition_preprocess = false;
   int  check_mask = 0;
-  int  cwf_post = 0;
-  double  cwf_threshold = -1.0;
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
 
   /* System information */
@@ -210,21 +200,7 @@ cs_run(void)
   cs_glob_mesh_builder = cs_mesh_builder_create();
   cs_glob_mesh_quantities = cs_mesh_quantities_create();
 
-  /* Define meshes to read */
-
-  cs_user_mesh_input();
-
-  /* Define joining and periodicity parameters if requested
-     Must be done before initi1 for the sake of verification */
-
-  cs_gui_mesh_define_joinings();
-  cs_user_join();
-
-  cs_gui_mesh_define_periodicities();
-  cs_user_periodicity();
-
-  cs_gui_mesh_warping();
-  cs_user_mesh_warping();
+  cs_preprocess_mesh_define();
 
   /* Call main calculation initialization function or help */
 
@@ -270,37 +246,10 @@ cs_run(void)
   if (opts.app_name != NULL)
     BFT_FREE(opts.app_name);
 
-  /* Initialize SYRTHES couplings and communication if necessary */
+  /* Initialize couplings and communication if necessary */
 
   cs_syr_coupling_all_init();
-
-  /* Initialize Code_Saturne couplings and communication if necessary */
-
   cs_sat_coupling_all_init();
-
-  /* Set partitioning options */
-
-  {
-    int j_id;
-    bool join = false;
-    bool join_periodic = false;
-
-    for (j_id = 0; j_id < cs_glob_n_joinings; j_id++) {
-      if ((cs_glob_join_array[j_id])->param.perio_type == FVM_PERIODICITY_NULL)
-        join = true;
-      else
-        join_periodic = true;
-    }
-
-    cs_partition_set_preprocess_hints(join, join_periodic);
-    cs_gui_partition();
-    cs_user_partition();
-  }
-
-  /* Read Preprocessor output */
-
-  cs_preprocessor_data_read_mesh(cs_glob_mesh,
-                                 cs_glob_mesh_builder);
 
   /* Initialize main post-processing */
 
@@ -315,104 +264,9 @@ cs_run(void)
   cs_field_log_all_key_vals(true);
   cs_log_printf_flush(CS_LOG_SETUP);
 
-  /* Join meshes / build periodicity links if necessary */
+  /* Preprocess mesh */
 
-  cs_join_all();
-
-  /* Insert thin walls if necessary */
-
-  cs_user_mesh_thinwall(cs_glob_mesh);
-
-  /* Initialize extended connectivity, ghost cells and other remaining
-     parallelism-related structures */
-
-  cs_mesh_init_halo(cs_glob_mesh, cs_glob_mesh_builder, halo_type);
-  cs_mesh_update_auxiliary(cs_glob_mesh);
-
-  /* Possible geometry modification */
-
-  cs_user_mesh_modify(cs_glob_mesh);
-
-  /* Discard isolated faces if present */
-
-  cs_post_add_free_faces();
-  cs_mesh_discard_free_faces(cs_glob_mesh);
-
-  /* Smoothe mesh if required */
-
-  cs_gui_mesh_smoothe(cs_glob_mesh);
-  cs_user_mesh_smoothe(cs_glob_mesh);
-
-  /* Triangulate warped faces if necessary */
-
-  cs_mesh_warping_get_defaults(&cwf_threshold, &cwf_post);
-
-  if (cwf_threshold >= 0.0) {
-
-    t1 = cs_timer_wtime();
-    cs_mesh_warping_cut_faces(cs_glob_mesh, cwf_threshold, cwf_post);
-    t2 = cs_timer_wtime();
-
-    bft_printf(_("\n Cutting warped faces (%.3g s)\n"), t2-t1);
-
-  }
-
-  /* Now that mesh modification is finished, save mesh if modified */
-
-  cs_user_mesh_save(cs_glob_mesh); /* Disable or force */
-
-  partition_preprocess = cs_partition_get_preprocess();
-  if (cs_glob_mesh->modified > 0 || partition_preprocess) {
-    if (partition_preprocess) {
-      if (cs_glob_mesh->modified > 0)
-        cs_mesh_save(cs_glob_mesh, cs_glob_mesh_builder, "mesh_output");
-      else
-        cs_mesh_to_builder(cs_glob_mesh, cs_glob_mesh_builder, true, NULL);
-      cs_partition(cs_glob_mesh, cs_glob_mesh_builder, CS_PARTITION_MAIN);
-      cs_mesh_from_builder(cs_glob_mesh, cs_glob_mesh_builder);
-      cs_mesh_init_halo(cs_glob_mesh, cs_glob_mesh_builder, halo_type);
-      cs_mesh_update_auxiliary(cs_glob_mesh);
-    }
-    else
-      cs_mesh_save(cs_glob_mesh, NULL, "mesh_output");
-  }
-
-  /* Destroy the temporary structure used to build the main mesh */
-
-  cs_mesh_builder_destroy(&cs_glob_mesh_builder);
-
-  /* Renumber mesh based on code options */
-
-  cs_user_numbering();
-
-  bft_printf(_("\n Renumbering mesh:\n"));
-  bft_printf_flush();
-  cs_renumber_mesh(cs_glob_mesh,
-                   cs_glob_mesh_quantities);
-
-  /* Initialize group classes */
-
-  cs_mesh_init_group_classes(cs_glob_mesh);
-
-  /* Print info on mesh */
-
-  cs_mesh_print_info(cs_glob_mesh, _("Mesh"));
-
-  /* Compute geometric quantities related to the mesh */
-
-  bft_printf_flush();
-
-  t1 = cs_timer_wtime();
-  cs_mesh_quantities_compute(cs_glob_mesh, cs_glob_mesh_quantities);
-  cs_mesh_bad_cells_detect(cs_glob_mesh, cs_glob_mesh_quantities);
-  cs_user_mesh_bad_cells_tag(cs_glob_mesh, cs_glob_mesh_quantities);
-  t2 = cs_timer_wtime();
-
-  bft_printf(_("\n Computing geometric quantities (%.3g s)\n"), t2-t1);
-
-  /* Initialize selectors and locations for the mesh */
-  cs_mesh_init_selectors();
-  cs_mesh_location_build(cs_glob_mesh, -1);
+  cs_preprocess_mesh(halo_type);
 
   /* Initialize meshes for the main post-processing */
 
@@ -421,11 +275,6 @@ cs_run(void)
   cs_gui_postprocess_meshes();
   cs_user_postprocess_meshes();
   cs_post_init_meshes(check_mask);
-
-#if 0 && defined(DEBUG) && !defined(NDEBUG) /* For debugging purposes */
-  cs_mesh_dump(cs_glob_mesh);
-  cs_mesh_quantities_dump(cs_glob_mesh, cs_glob_mesh_quantities);
-#endif
 
   /* Compute iterations or quality criteria depending on verification options */
 
@@ -466,82 +315,8 @@ cs_run(void)
 
       /* Update Fortran mesh sizes and quantities */
 
-      {
-        cs_int_t n_g_cells = cs_glob_mesh->n_g_cells;
-        cs_int_t n_g_i_faces = cs_glob_mesh->n_g_i_faces;
-        cs_int_t n_g_b_faces = cs_glob_mesh->n_g_b_faces;
-        cs_int_t n_g_vertices = cs_glob_mesh->n_g_vertices;
-        cs_int_t nthrdi = 1;
-        cs_int_t nthrdb = 1;
-        cs_int_t ngrpi = 1;
-        cs_int_t ngrpb = 1;
-        const cs_int_t *idxfi = NULL;
-        const cs_int_t *idxfb = NULL;
-
-        if (cs_glob_mesh->i_face_numbering != NULL) {
-          const cs_numbering_t *_n = cs_glob_mesh->i_face_numbering;
-          nthrdi = _n->n_threads;
-          ngrpi = _n->n_groups;
-          idxfi = _n->group_index;
-        }
-
-        if (cs_glob_mesh->b_face_numbering != NULL) {
-          const cs_numbering_t *_n = cs_glob_mesh->b_face_numbering;
-          nthrdb = _n->n_threads;
-          ngrpb = _n->n_groups;
-          idxfb = _n->group_index;
-        }
-
-        cs_base_fortran_bft_printf_to_f();
-
-        CS_PROCF (majgeo, MAJGEO)(&(cs_glob_mesh->n_cells),
-                                  &(cs_glob_mesh->n_cells_with_ghosts),
-                                  &(cs_glob_mesh->n_i_faces),
-                                  &(cs_glob_mesh->n_b_faces),
-                                  &(cs_glob_mesh->n_vertices),
-                                  &(cs_glob_mesh->i_face_vtx_connect_size),
-                                  &(cs_glob_mesh->b_face_vtx_connect_size),
-                                  &(cs_glob_mesh->n_b_cells),
-                                  &n_g_cells,
-                                  &n_g_i_faces,
-                                  &n_g_b_faces,
-                                  &n_g_vertices,
-                                  &(cs_glob_mesh->n_families),
-                                  &nthrdi,
-                                  &nthrdb,
-                                  &ngrpi,
-                                  &ngrpb,
-                                  idxfi,
-                                  idxfb,
-                                  cs_glob_mesh->i_face_cells,
-                                  cs_glob_mesh->b_face_cells,
-                                  cs_glob_mesh->b_face_family,
-                                  cs_glob_mesh->cell_family,
-                                  cs_glob_mesh->i_face_vtx_idx,
-                                  cs_glob_mesh->i_face_vtx_lst,
-                                  cs_glob_mesh->b_face_vtx_idx,
-                                  cs_glob_mesh->b_face_vtx_lst,
-                                  cs_glob_mesh->b_cells,
-                                  cs_glob_mesh_quantities->b_sym_flag,
-                                  &(cs_glob_mesh_quantities->min_vol),
-                                  &(cs_glob_mesh_quantities->max_vol),
-                                  &(cs_glob_mesh_quantities->tot_vol),
-                                  cs_glob_mesh_quantities->cell_cen,
-                                  cs_glob_mesh_quantities->i_face_normal,
-                                  cs_glob_mesh_quantities->b_face_normal,
-                                  cs_glob_mesh_quantities->i_face_cog,
-                                  cs_glob_mesh_quantities->b_face_cog,
-                                  cs_glob_mesh->vtx_coord,
-                                  cs_glob_mesh_quantities->cell_vol,
-                                  cs_glob_mesh_quantities->i_face_surf,
-                                  cs_glob_mesh_quantities->b_face_surf,
-                                  cs_glob_mesh_quantities->i_dist,
-                                  cs_glob_mesh_quantities->b_dist,
-                                  cs_glob_mesh_quantities->weight,
-                                  cs_glob_mesh_quantities->dijpf,
-                                  cs_glob_mesh_quantities->diipb,
-                                  cs_glob_mesh_quantities->dofij);
-      }
+      cs_base_fortran_bft_printf_to_f();
+      cs_preprocess_mesh_update_fortran();
 
       /* Choose between standard and user solver */
 
