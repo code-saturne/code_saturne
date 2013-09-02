@@ -326,7 +326,6 @@ else
   endif
 
   fmul = fmprsc/(acc(1)/acc(2)) ! 1 / estimate flow multiplier
-  fmul = 1.d0
 
   ! Apply BC
 
@@ -339,13 +338,9 @@ else
 
     vnrm = sqrt(rtp(iel,iu)**2 + rtp(iel,iv)**2 + rtp(iel,iw)**2)
 
-    rcodcl(ifac,iu,1) = fmprsc * vnrm * surfbo(1,ifac) / surfbn(ifac)
-    rcodcl(ifac,iv,1) = fmprsc * vnrm * surfbo(2,ifac) / surfbn(ifac)
-    rcodcl(ifac,iw,1) = fmprsc * vnrm * surfbo(3,ifac) / surfbn(ifac)
-
-    rcodcl(ifac,iu,1) = fmul * rtp(iel,iu)
-    rcodcl(ifac,iv,1) = 0.d0
-    rcodcl(ifac,iw,1) = 0.d0
+    rcodcl(ifac,iu,1) = fmul * vnrm * surfbo(1,ifac) / surfbn(ifac)
+    rcodcl(ifac,iv,1) = fmul * vnrm * surfbo(2,ifac) / surfbn(ifac)
+    rcodcl(ifac,iw,1) = fmul * vnrm * surfbo(3,ifac) / surfbn(ifac)
 
     if (itytur.eq.2) then
 
@@ -389,7 +384,8 @@ else
 
     endif
 
-    ! Handle scalars
+    ! Handle scalars (a correction similar to that of velocity is suggested
+    !                 rather than the simpler code below)
     if (nscal.gt.0) then
       do ii = 1, nscal
         rcodcl(ifac,isca(ii),1) = rtp(iel,isca(ii))
