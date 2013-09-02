@@ -542,7 +542,7 @@ if (iihmpr.eq.1) then
    ignh31, ignh32, ifhcnd, ifhcnc, ifnh3d, ifnh3c,    &
    ifnohc, ifnonh, ifnoch, ifnoth, icnohc, icnonh,    &
    ifhcnr, icnorb, igrb,   immel,                     &
-   itemp2, irom2, idiam2, igmdch, igmdv1,             &
+   itemp2, ix2, irom2, idiam2, igmdch, igmdv1,        &
    igmdv2, igmhet, ighco2, ighh2o, igmsec,            &
    ibcarbone, iboxygen, ibhydrogen)
 endif
