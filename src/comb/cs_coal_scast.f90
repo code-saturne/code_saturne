@@ -200,9 +200,9 @@ double precision auxdev,auxht3,auxco2,auxh2o,auxwat
 
 double precision , dimension ( : )     , allocatable :: w1,w2,w3,w4,w5
 double precision , dimension ( : )     , allocatable :: tfuel
-double precision, dimension(:), pointer :: gadchi, xchcpi, gaheto2i, xckcpi
-double precision, dimension(:), pointer :: gaseci, frmcpi, agei, gahetco2i
-double precision, dimension(:), pointer :: gaheth2oi, xwtcpi
+double precision, dimension(:), pointer :: gamvlei, gamvloi, xchcpi, gaheto2i, xckcpi
+double precision, dimension(:), pointer :: gaseci, frmcpi, agei, ageg, gahetco2i
+double precision, dimension(:), pointer :: gaheth2oi, xwtcpi, xacpip
 
 !LOCAL VARIABLES
 !===============
@@ -478,24 +478,27 @@ if (i_coal_drift.eq.1) then
     ! index of the coal particle class
     call field_get_key_int(ivarfl(ivar), keyccl, icla)
 
-    ! Sum of kinetic constants of Kobayashi model (k1 + k2)
-    write(name,'(a6,i2.2)')'Ga_DCH' ,icla
-    write(nfecra,*) 'in cs_coal_scast before ', name, icla
-    call field_get_val_s_by_name(name, gadchi)
+    ! Array values at previous time step
+    call field_get_val_prev_s_by_name(fname, xacpip)
+
+    ! Light volatile's source term
+    write(name,'(a6,i2.2)')'Ga_DV1' ,icla
+    call field_get_val_s_by_name(name, gamvlei)
+
+    ! Heavy volatile's source term
+    write(name,'(a6,i2.2)')'Ga_DV2' ,icla
+    call field_get_val_s_by_name(name, gamvloi)
 
     ! Fraction massique du charbon de icla
     write(name,'(a6,i2.2)')'Xch_CP' ,icla
-    write(nfecra,*) 'in cs_coal_scast before ', name, icla
     call field_get_val_s_by_name(name, xchcpi)
 
     ! Echelle temporelle de la combustion heter.
     write(name,'(a9,i2.2)')'Ga_HET_O2' ,icla
-    write(nfecra,*) 'in cs_coal_scast before ', name, icla
     call field_get_val_s_by_name(name, gaheto2i)
 
     ! Fraction massique du char de icla
     write(name,'(a6,i2.2)')'xck_cp' ,icla
-    write(nfecra,*) 'in cs_coal_scast before ', name, icla
     call field_get_val_s_by_name(name, xckcpi)
 
     ! Indicateur du charbon de classe icla
@@ -504,43 +507,37 @@ if (i_coal_drift.eq.1) then
     ! Echelle temporelle de la sechage
     if (ippmod(iccoal) .eq. 1) then
       write(name,'(a6,i2.2)')'Ga_SEC' ,icla
-    write(nfecra,*) 'in cs_coal_scast before ', name, icla
       call field_get_val_s_by_name(name, gaseci)
     endif
 
     ! Fraction massique de la phase solide
     write(name,'(a6,i2.2)')'Frm_CP' ,icla
-    write(nfecra,*) 'in cs_coal_scast before ', name, icla
     call field_get_val_s_by_name(name, frmcpi)
 
     ! L'age des particules par cellule
     write(name,'(a6,i2.2)')'Age_CP' ,icla
-    write(nfecra,*) 'in cs_coal_scast before ', name, icla
     call field_get_val_s_by_name(name, agei)
 
     ! Echelle temporelle de la gazefication par CO2
     if (ihtco2 .eq. 1) then
       write(name,'(a10,i2.2)')'Ga_HET_CO2' ,icla
-    write(nfecra,*) 'in cs_coal_scast before ', name, icla
       call field_get_val_s_by_name(name, gahetco2i)
     endif
 
     ! Echelle temporelle de la gazefication par H2O
     if (ihth2o .eq. 1) then
       write(name,'(a10,i2.2)')'Ga_HET_H2O' ,icla
-    write(nfecra,*) 'in cs_coal_scast before ', name, icla
       call field_get_val_s_by_name(name, gaheth2oi)
     endif
 
     if (ippmod(iccoal).eq.1) then
       write(name,'(a6,i2.2)')'Xwt_CP' ,icla
-    write(nfecra,*) 'in cs_coal_scast before ', name, icla
       call field_get_val_s_by_name(name, xwtcpi)
     endif
 
     do iel = 1, ncel
       ! Flux de masse: Devolatilisation
-      auxdev = -gadchi(iel)*xchcpi(iel)
+      auxdev =  -(gamvlei(iel)+gamvloi(iel))*xchcpi(iel)
       ! Consommation de char par combustion heterogene
       if (xckcpi(iel) .gt. epsicp) then
         auxht3 = -gaheto2i(iel) * (xckcpi(iel))**(2.d0/3.d0)
@@ -578,21 +575,29 @@ if (i_coal_drift.eq.1) then
         auxwat = 0.d0
       endif
 
-      smbrs(iel) =  smbrs(iel) + ( propce(iel,ipcrom) * volume(iel) *          &
-                    (frmcpi(iel)                                    -          &
-                    ((auxdev+auxht3+auxco2+auxh2o+auxwat)*agei(iel))) )
+      if (frmcpi(iel).gt.epsicp) then
+         smbrs(iel) =  smbrs(iel) + ( propce(iel,ipcrom) * volume(iel) *          &
+                       (frmcpi(iel)                                    -          &
+                       ((auxdev+auxht3+auxco2+auxh2o+auxwat)*xacpip(iel))) )
+         rovsdt(iel) = rovsdt(iel) + max(((auxdev+auxht3+auxco2+auxh2o+auxwat)/   &
+                                         frmcpi(iel)), zero)
+      endif
 
     enddo
   endif
 
   ! Gas age source term
-  if (fname(1:8).eq.'X_Age_Gas') then
+  if (fname(1:9).eq.'X_Age_Gas') then
 
     ! Loop over particle classes
     do icla = 1, nclacp
-      ! Sum of kinetic constants of Kobayashi model (k1 + k2)
-      write(name,'(a6,i2.2)')'Ga_DCH' ,icla
-      call field_get_val_s_by_name(name, gadchi)
+      ! Light volatile's source term
+      write(name,'(a6,i2.2)')'Ga_DV1' ,icla
+      call field_get_val_s_by_name(name, gamvlei)
+
+      ! Heavy volatile's source term
+      write(name,'(a6,i2.2)')'Ga_DV2' ,icla
+      call field_get_val_s_by_name(name, gamvloi)
 
       ! Fraction massique du charbon de icla
       write(name,'(a6,i2.2)')'Xch_CP' ,icla
@@ -642,7 +647,7 @@ if (i_coal_drift.eq.1) then
 
       do iel = 1, ncel
         ! Flux de masse: Devolatilisation
-        auxdev = -gadchi(iel)*xchcpi(iel)
+        auxdev = -(gamvlei(iel)+gamvloi(iel))*xchcpi(iel)
         ! Consommation de char par combustion heterogene
         if (xckcpi(iel) .gt. epsicp) then
           auxht3 = -gaheto2i(iel) * (xckcpi(iel))**(2.d0/3.d0)

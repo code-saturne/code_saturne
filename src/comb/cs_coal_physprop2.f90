@@ -68,6 +68,7 @@ use ppthch
 use coincl
 use cpincl
 use ppincl
+use field
 
 !===============================================================================
 
@@ -80,6 +81,7 @@ integer          ncelet , ncel
 double precision rtp(ncelet,*) , propce(ncelet,*)
 
 ! Local variables
+character*80     name
 
 integer          nbrint
 parameter       (nbrint=8)
@@ -93,6 +95,8 @@ double precision xashcl , xuash
 double precision x2min  , x2max  , dckmin , dckmax
 double precision dchmin , dchmax , romin  , romax , coedmi
 double precision ro2ini , roh2o
+
+double precision, dimension(:), pointer :: xagcpi, agecpi, frmcpi
 
 !===============================================================================
 
@@ -129,9 +133,20 @@ do icla = 1, nclacp
   dckmax = -grand
   romin  =  grand
   romax  = -grand
-!
+
+  if (i_coal_drift.eq.1) then
+    write(name,'(a8,i2.2)')'X_Age_CP' ,icla
+    call field_get_val_s_by_name(name,xagcpi)
+
+    write(name,'(a6,i2.2)')'Age_CP' ,icla
+    call field_get_val_s_by_name(name,agecpi)
+  endif
+
+  write(name,'(a6,i2.2)')'Frm_CP' ,icla
+  call field_get_val_s_by_name(name,frmcpi)
+
   do iel = 1, ncel
-!
+
     ipcx2c = ipproc(ix2(icla))
     ipcro2 = ipproc(irom2(icla))
     ipcdi2 = ipproc(idiam2(icla))
@@ -233,6 +248,10 @@ do icla = 1, nclacp
       endif
     endif
 
+    ! Particle age by class
+    if (i_coal_drift.eq.1.and.frmcpi(iel).gt.epsicp) then
+      agecpi(iel) = xagcpi(iel)/frmcpi(iel)
+    endif
   enddo
 
   if (irangp.ge.0) then

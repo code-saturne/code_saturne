@@ -234,7 +234,7 @@ do icla = 1, nclacp
       ! Field X_Age
       iagecp_temp(icla) = iscapp(is)
       write(f_name,'(a8,i2.2)')'X_Age_CP' ,icla
-      call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+      call field_create(f_name, itycat, ityloc, idim1, ilved, iprev, f_id)
       call field_set_key_str(f_id, keylbl, f_name)
       ! Set the index of the scalar class in the field structure
       call field_set_key_int(f_id, keyccl, icla)
@@ -276,7 +276,7 @@ do icla = 1, nclacp
       ! Field X_Age
       iagecp_temp(icla) = iscapp(is)
       write(f_name,'(a8,i2.2)')'X_Age_CP' ,icla
-      call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+      call field_create(f_name, itycat, ityloc, idim1, ilved, iprev, f_id)
       call field_set_key_str(f_id, keylbl, f_name)
       ! Set the index of the scalar class in the field structure
       call field_set_key_int(f_id, keyccl, icla)

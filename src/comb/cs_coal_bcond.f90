@@ -153,15 +153,18 @@ d2s3 = 2.d0/3.d0
 call field_get_key_id("variable_id", keyvar)
 
 call field_get_id('X_Age_Gas', f_id)
-call field_get_key_int(f_id, keyvar, iaggas)
 
-allocate (iagecp(nclacp))
+if (f_id.ne.-1) then
+  call field_get_key_int(f_id, keyvar, iaggas)
 
-do icla = 1, nclacp
-  write(name,'(a8,i2.2)')'X_Age_CP', icla
-  call field_get_id(name, f_id)
-  call field_get_key_int(f_id, keyvar, iagecp(icla))
-enddo
+  allocate (iagecp(nclacp))
+
+  do icla = 1, nclacp
+    write(name,'(a8,i2.2)')'X_Age_CP', icla
+    call field_get_id(name, f_id)
+    call field_get_key_int(f_id, keyvar, iagecp(icla))
+  enddo
+endif
 
 !===============================================================================
 ! 1.  ECHANGES EN PARALLELE POUR LES DONNEES UTILISATEUR
@@ -675,7 +678,7 @@ do ifac = 1, nfabor
 enddo
 
 ! Free memory
-deallocate(iagecp)
+if (allocated(iagecp)) deallocate(iagecp)
 
 !--------
 ! Formats

@@ -1320,6 +1320,41 @@ contains
 
   !=============================================================================
 
+  !> \brief Return pointer to the array's previous values of a given scalar
+  !> field
+
+  !> \param[in]     name      name of given field (which must be scalar)
+  !> \param[out]    p         pointer to scalar field values at the previous
+  !>                          iteration
+
+  subroutine field_get_val_prev_s_by_name (name, p)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    character(len=*), intent(in)                         :: name
+    double precision, dimension(:), pointer, intent(out) :: p
+
+    ! Local variables
+
+    character(len=len_trim(name)+1, kind=c_char) :: c_name
+    integer(c_int) :: f_id, p_type, p_rank
+    integer(c_int), dimension(2) :: f_dim
+    type(c_ptr) :: c_p
+
+    c_name = trim(name)//c_null_char
+
+    f_id = cs_f_field_id_by_name(c_name)
+
+    p_type = 2
+    p_rank = 1
+
+    call cs_f_field_var_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
+    call c_f_pointer(c_p, p, [f_dim(1)])
+
+  end subroutine field_get_val_prev_s_by_name
+  !=============================================================================
+
 
   !> \brief Return pointer to the values array of a given vector field
 

@@ -84,6 +84,7 @@ integer          ipropp, ipppst
 
 integer          iprop, ige , icla, iprop2
 integer          f_id, itycat, ityloc, idim1, idim3
+integer          keylog
 integer          keyccl, keydri, keyvis, keylbl
 integer          iscdri, iopchr
 
@@ -101,6 +102,9 @@ ilved  = .false.   ! not interleaved by default
 iprev  = .true.    ! variables have previous value
 inoprv = .false.   ! variables have no previous value
 iopchr = 1         ! Postprocessing level for variables
+
+name = 'log'
+call field_get_key_id(name, keylog)
 
 name = 'post_vis'
 call field_get_key_id(name, keyvis)
@@ -214,9 +218,11 @@ do icla = 1, nclacp
     call field_set_key_int(f_id, keyccl, icla)
     ! For post-processing
     call field_set_key_int(f_id, keyvis, iopchr)
+    ! For log in the listing
+    call field_set_key_int(f_id, keylog, 1)
   endif
 
-  if ( ihtco2 .eq. 1 ) then
+  if (ihtco2 .eq. 1) then
     iprop        = iprop2 + 8*nclacp + icla
     ighco2(icla) = iprop
     if ( ihth2o .eq. 1 ) then
@@ -259,6 +265,8 @@ if (i_coal_drift.eq.1) then
 
   ! For post-processing
   call field_set_key_int(f_id, keyvis, iopchr)
+  ! For log in the listing
+  call field_set_key_int(f_id, keylog, 1)
 endif
 
 !

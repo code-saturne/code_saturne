@@ -119,7 +119,7 @@ use coincl
 use cpincl
 use ppincl
 use ppcpfu
-
+use field
 !===============================================================================
 
 implicit none
@@ -136,19 +136,20 @@ double precision rtp(ncelet,*), propce(ncelet,*)
 double precision rom1(ncelet)
 
 ! Local variables
+character*80     name
 
 integer          iel , ii , icha ,ice , icla
 integer          ipcyf1,ipcyf2,ipcyf3,ipcyf4,ipcyf5,ipcyf6,ipcyf7
 integer          ipcyox,ipcyp1,ipcyp2,ipcyp3,ipcyin
 integer          ipcte1
+integer          iok1 , iok2 , iok3 , iok4 , iok5
 
 double precision xch    , xck    , xash , xwat
 double precision zchx10 , zchx20
 double precision den1   , den2 , f1mc , f2mc
 double precision wmolme
 double precision somch , somck , chxc , chxh , chxo , ckxc , ckxh , ckxo
-!
-integer          iok1 , iok2 , iok3 , iok4 , iok5
+
 integer          , dimension ( : )     , allocatable :: intpdf
 double precision , dimension ( : )     , allocatable :: fmini,fmaxi,ffuel
 double precision , dimension ( : )     , allocatable :: dfuel,doxyd,pdfm1,pdfm2,hrec
@@ -157,10 +158,11 @@ double precision , dimension ( : , : ) , allocatable :: af1    , af2
 double precision , dimension ( : )     , allocatable :: fs3no  , fs4no
 double precision , dimension ( : , : ) , allocatable :: yfs4no
 double precision, allocatable, dimension(:) :: tpdf
-!
+double precision, dimension(:), pointer :: xagepg, agepgc
+
 integer          ipass
 data ipass / 0 /
-!
+
 !===============================================================================
 ! 0. Memory allocation
 !===============================================================================
@@ -221,6 +223,13 @@ ipcyp3 = ipproc(iym1(iso2 ))
 ipcyin = ipproc(iym1(in2  ))
 !
 ipass = ipass + 1
+
+if (i_coal_drift.eq.1) then
+  ! Mass weighted age of the gas phase
+  call field_get_val_s_by_name('X_Age_Gas',xagepg)
+  ! Age of the gas phase
+  call field_get_val_s_by_name('Age_Gas',agepgc)
+endif
 
 !===============================================================================
 ! 2. DETERMINATION DU TYPE DE PDF
@@ -560,6 +569,15 @@ do icla = 1, nclacp
 !
   enddo
 enddo
+
+!===============================================================================
+! 7. Age of the gas phase
+!===============================================================================
+if (i_coal_drift.eq.1) then
+  do iel = 1, ncel
+    agepgc(iel) = xagepg(iel)/(1.d0-x2(iel))
+  enddo
+endif
 
 !--------
 ! Formats
