@@ -12,6 +12,9 @@ Changes:
 Bug fixes:
 ----------
 
+- GUI: fix bugs for atmospheric flows; wall boundary conditions and default
+  values for numerical options.
+
 - Fix reallocation issue for LES with internal fluid-structure coupling.
 
 - Fix Fortran time plot numbering leading to numbering conflicts between
