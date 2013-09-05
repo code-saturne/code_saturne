@@ -1037,7 +1037,7 @@ class MeteoBoundary(Boundary) :
         """
         node = self.boundNode.xmlInitNode('velocity_pressure').xmlInitNode('meteo_automatic')
         if node['status'] == None:
-            self.setMeteoDataStatus (self.__defaultValues()['meteo_automatic'])
+            self.setAutomaticNatureStatus(self.__defaultValues()['meteo_automatic'])
         return node['status']
 
 

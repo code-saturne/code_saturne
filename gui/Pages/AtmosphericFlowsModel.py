@@ -42,6 +42,7 @@ import unittest
 from Base.XMLvariables import Model, Variables
 from Base.XMLmodel     import  ModelTest
 from Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
+from Pages.NumericalParamGlobalModel import NumericalParamGlobalModel
 
 #-------------------------------------------------------------------------------
 # Atmospheric flows model class
@@ -87,6 +88,12 @@ class AtmosphericFlowsModel(Model):
         self.isInList(model, self.__atmosphericModel)
         self.__node_atmos[self.model] = model
         self.__updateScalarAndProperty()
+        if (model == "humid" or model == "dry"):
+            NumericalParamGlobalModel(self.case).setHydrostaticPressure("on")
+            NumericalParamGlobalModel(self.case).setWallPressureExtrapolation("extrapolation")
+        else:
+            NumericalParamGlobalModel(self.case).setHydrostaticPressure("off")
+            NumericalParamGlobalModel(self.case).setWallPressureExtrapolation("neumann")
 
 
     @Variables.noUndo
