@@ -1531,6 +1531,12 @@ _multigrid_cycle(cs_multigrid_t      *mg,
       if (cvg != 0) {
         c_cvg = cvg;
         end_cycle = true;
+        t1 = cs_timer_time();
+        cs_timer_counter_add_diff(&(lv_info->t_tot[2]), &t0, &t1);
+        lv_info->n_calls[2] += 1;
+        _lv_info_update_stage_iter(lv_info->n_it_ds_smoothe, n_iter);
+
+        *n_equiv_iter += n_iter * n_g_cells * denom_n_g_cells_0;
         break;
       }
 
