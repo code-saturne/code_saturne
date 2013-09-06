@@ -5665,7 +5665,7 @@ msgid ""
 "\n"
 msgstr ""
 "\n"
-" Histogramme du profil/lignes de matrice % sur les rangs :\n"
+" Histogramme du profil/lignes de matrice %s sur les rangs :\n"
 "\n"
 
 #, c-format
