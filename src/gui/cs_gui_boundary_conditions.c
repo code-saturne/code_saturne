@@ -829,18 +829,6 @@ _inlet_compressible(int         izone,
     BFT_FREE(status);
     BFT_FREE(path_value);
 
-    cs_xpath_add_element(&path2, "density");
-    BFT_MALLOC(path_value, strlen(path2) + 1, char);
-    strcpy(path_value, path2);
-    cs_xpath_add_attribute(&path2, "status");
-    status = cs_gui_get_attribute_value(path2);
-    if (cs_gui_strcmp(status, "on")){
-      cs_xpath_add_function_text(&path_value);
-      if (cs_gui_get_double(path_value, &value))
-        boundaries->rhoin[izone] = value;
-    }
-    BFT_FREE(status);
-    BFT_FREE(path_value);
 
     cs_xpath_add_element(&path3, "temperature");
     BFT_MALLOC(path_value, strlen(path3) + 1, char);
@@ -1589,7 +1577,6 @@ cs_gui_get_faces_list(int          izone,
  * INTEGER          ISOLIB  <-- type of boundary: outlet
  * INTEGER          ISCA    <-- indirection array for scalar number
  * INTEGER          IPR     <-- rtp index for pressure
- * INTEGER          IRHO    <-- rtp index for density
  * INTEGER          ITEMPK  <-- rtp index for temperature (in K)
  * INTEGER          IENERG  <-- rtp index for energy total
  * INTEGER          IQIMP   <-- 1 if flow rate is applied
@@ -1636,6 +1623,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
                                const int  *iesicf,
                                const int  *isspcf,
                                const int  *ierucf,
+                               const int  *iephcf,
                                const int  *isopcf,
                                const int  *iparoi,
                                const int  *iparug,
@@ -1643,7 +1631,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
                                const int  *isolib,
                                const int  *isca,
                                const int  *ipr,
-                               const int  *irho,
                                const int  *itempk,
                                const int  *ienerg,
                                int        *iqimp,
@@ -1788,15 +1775,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
           for (ifac = 0; ifac < faces; ifac++) {
             ifbr = faces_list[ifac] -1;
             rcodcl[(*ipr-1) * (*nfabor) + ifbr] = boundaries->prein[izone];
-            rcodcl[(isca[*irho-1]-1) * (*nfabor) + ifbr] = boundaries->rhoin[izone];
             rcodcl[(isca[*itempk-1]-1) * (*nfabor) + ifbr] = boundaries->tempin[izone];
             rcodcl[(isca[*ienerg-1]-1) * (*nfabor) + ifbr] = boundaries->entin[izone];
-          }
-        }
-        if (boundaries->itype[izone] == *ierucf) {
-          for (ifac = 0; ifac < faces; ifac++) {
-            ifbr = faces_list[ifac] -1;
-            rcodcl[(isca[*irho-1]-1) * (*nfabor) + ifbr] = boundaries->denin[izone];
           }
         }
       }
@@ -2605,7 +2585,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
         if (boundaries->itype[izone] == *iesicf) {
           bft_printf("-----imposed_inlet\n");
           bft_printf("-----premin=%i \n",boundaries->prein[zone_nbr-1]);
-          bft_printf("-----rhoin=%i \n",boundaries->rhoin[zone_nbr-1]);
           bft_printf("-----tempin=%i \n",boundaries->tempin[zone_nbr-1]);
           bft_printf("-----entin=%i \n",boundaries->entin[zone_nbr-1]);
         }
@@ -2660,6 +2639,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
  * INTEGER          IESICF  --> type of boundary: imposed inlet (compressible)
  * INTEGER          ISSPCF  --> type of boundary: supersonic outlet (compressible)
  * INTEGER          IERUCF  --> type of boundary: subsonic inlet (compressible)
+ * INTEGER          IEPHCF  --> type of boundary: subsonic inlet at given total pressure
+ *                                                and enthalpy (compressible)
  * INTEGER          ISOPCF  --> type of boundary: subsonic outlet (compressible)
  * INTEGER          IPAROI  <-- type of boundary: smooth wall
  * INTEGER          IPARUG  <-- type of boundary: rough wall
@@ -2675,6 +2656,7 @@ void CS_PROCF (uiclve, UICLVE)(const int  *nfabor,
                                const int  *ientre,
                                const int  *iesicf,
                                const int  *ierucf,
+                               const int  *iephcf,
                                const int  *isspcf,
                                const int  *isopcf,
                                const int  *iparoi,
@@ -2871,7 +2853,6 @@ cs_gui_boundary_conditions_free_memory(const int  *ncharb)
     if (cs_gui_strcmp(vars->model, "compressible_model")) {
       BFT_FREE(boundaries->itype);
       BFT_FREE(boundaries->prein);
-      BFT_FREE(boundaries->rhoin);
       BFT_FREE(boundaries->tempin);
       BFT_FREE(boundaries->entin);
       BFT_FREE(boundaries->preout);

@@ -97,20 +97,15 @@ enddo
 ! ==================================================================
 
 
-if(  (abs(scamin(irho  )+grand).gt.epzero).or.           &
-     (abs(scamin(ienerg)+grand).gt.epzero).or.           &
+if(  (abs(scamin(ienerg)+grand).gt.epzero).or.           &
      (abs(scamin(itempk)+grand).gt.epzero).or.           &
-     (abs(scamax(irho  )-grand).gt.epzero).or.           &
      (abs(scamax(ienerg)-grand).gt.epzero).or.           &
      (abs(scamax(itempk)-grand).gt.epzero) ) then
   write(nfecra,2000)                                            &
-       scamin(irho  ),scamax(irho  ),             &
        scamin(ienerg),scamax(ienerg),             &
        scamin(itempk),scamax(itempk)
   call csexit (1)
 endif
-!        SCAMIN(IRHO  )   = -GRAND
-!        SCAMAX(IRHO  )   =  GRAND
 !        SCAMIN(IENERG)   = -GRAND
 !        SCAMAX(IENERG)   =  GRAND
 !        SCAMIN(ITEMPK)   = -GRAND
@@ -125,7 +120,6 @@ endif
 !                                  3 energie totale en J)
 !      La distinction -1/1 sert pour le rayonnement
 
-iscsth(irho  ) = 0
 iscsth(ienerg) = 3
 iscsth(itempk) = 0
 
@@ -140,14 +134,6 @@ enddo
 
 !         Upwind necessaire pour le schema utilise
 
-! --- Segregated or coupled solver for the velocity components:
-!       only the segregated one is possible with the compressible module.
-!       ivelco is imposed to 0.
-
-if (ivelco.ne.0) then
-  write(nfecra,6000) ivelco
-  ivelco = 0
-endif
 
 ! 1.3 Variable courante : nom, sortie chrono, suivi listing, sortie hist
 ! ======================================================================
@@ -166,12 +152,6 @@ endif
 !          listing 'developpeur'
 
 ! ======================================================================
-
-ipp = ipprtp(isca(irho  ))
-nomvar(ipp)  = 'Rho'
-ichrvr(ipp)  = 1
-ilisvr(ipp)  = 1
-ihisvr(ipp,1)= -1
 
 ipp = ipprtp(isca(ienerg))
 nomvar(ipp)  = 'EnergieT'
@@ -240,17 +220,6 @@ call uscfx2
 !     qui pourront etre remontees au dessus de uscfx1
 !     selon les developpements
 !===============================================================================
-
-!     Pour chaque phase
-
-idiff(isca(irho)) = 1
-
-! --> Implicitation du terme de convection de l'equation de masse
-!     (oui = 1 , non = 0)
-!     On choisit 0 ; c'est la seule option qui a ete testee. Elle
-!       facilite le codage pour le respect du flux de masse au bord.
-
-iconv(isca(irho)) = 0
 
 ! --> Prise en compte de la pression predite pour resoudre Navier-Stokes
 !     (oui = 1 , non = 0)
@@ -406,26 +375,6 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
-6000 format(                                                      &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION :      A L''ENTREE DES DONNEES',                /,&
-'@    =========',                                               /,&
-'@   EN COMPRESSIBLE',                                          /,&
-'@   CONCERNANT LE COUPLAGE DES COMPOSANTES DE VITESSE',        /,&
-'@   LA SEULE VALEUR POSSIBLE POUR LE PARAMETRE IVELCO EST 0',  /,&
-'@' ,                                                           /,&
-'@   IVELCO A ETE IMPOSE ICI A', I10,                           /,&
-'@   IL EST DONC REMIS A 0',                                    /,&
-'@',                                                            /,&
-'@  Le calcul sera execute',                                    /,&
-'@',                                                            /,&
-'@  Il est conseille de verifier les parametres donnes via',    /,&
-'@  cs_user_parameters.f90.',                                   /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
 
 #else
 
@@ -550,25 +499,6 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 6000 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@   WARNING :      WHEN READING INPUT DATA',                /,&
-'@    =========',                                               /,&
-'@   FOR COMPRESSIBLE MODEL',                                   /,&
-'@   AND THE CHOICE FOR VELOCITY COMPONENTS COUPLING',          /,&
-'@   THE ONLY POSSIBLE VALUE FOR THE PARAMETER IVELCO IS 0',    /,&
-'@' ,                                                           /,&
-'@   IVELCO IS IMPOSED HERE AS', I10,                           /,&
-'@   IT IS THEN REPLACED BY 0',                                 /,&
-'@',                                                            /,&
-'@  computation will go on',                                    /,&
-'@',                                                            /,&
-'@ Check the input data given in cs_user_parameters.f90.',      /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
 
 #endif
 

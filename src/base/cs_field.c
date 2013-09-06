@@ -784,6 +784,7 @@ cs_f_field_var_ptr_by_id(int          id,
  *   pointer_type <-- 1: bc_coeffs->a;   2: bc_coeffs->b
  *                    3: bc_coeffs->af;  4: bc_coeffs->bf
  *                    5: bc_coeffs->ad;  6: bc_coeffs->bd
+ *                    7: bc_coeffs->ac;  8: bc_coeffs->bc
  *   pointer_rank <-- expected rank (1 for scalar, 2 for vector)
  *   dim          <-- dimensions (indexes in Fortran order,
  *                    dim[i] = 0 if i unused)
@@ -803,9 +804,9 @@ cs_f_field_bc_coeffs_ptr_by_id(int          id,
   cs_field_t *f = cs_field_by_id(id);
   int cur_p_rank = 1;
 
+  dim[0] = 0;
   dim[1] = 0;
   dim[2] = 0;
-  dim[3] = 0;
   *p = NULL;
 
   const int location_id = CS_MESH_LOCATION_BOUNDARY_FACES;
@@ -834,6 +835,10 @@ cs_f_field_bc_coeffs_ptr_by_id(int          id,
       *p = f->bc_coeffs->ad;
     else if (pointer_type == 6)
       *p = f->bc_coeffs->bd;
+    else if (pointer_type == 7)
+      *p = f->bc_coeffs->ac;
+    else if (pointer_type == 8)
+      *p = f->bc_coeffs->bc;
 
     if (*p == NULL) /* Adjust dimensions to assist Fortran bounds-checking */
       _n_elts = 0;
@@ -851,12 +856,14 @@ cs_f_field_bc_coeffs_ptr_by_id(int          id,
 
       if (coupled) {
 
-        if (pointer_type == 1 || pointer_type == 3 || pointer_type == 5) {
+        if (pointer_type == 1 || pointer_type == 3 || pointer_type == 5
+            || pointer_type == 7) {
           dim[0] = f->dim;
           dim[1] = _n_elts;
           cur_p_rank = 2;
         }
-        else { /* if (pointer_type == 2 || pointer_type == 4 || pointer_type == 6) */
+        else { /* if (pointer_type == 2 || pointer_type == 4 || pointer_type == 6
+                      || pointer_type == 8) */
           dim[0] = f->dim;
           dim[1] = f->dim;
           dim[2] = _n_elts;
@@ -1217,13 +1224,16 @@ cs_field_map_values(cs_field_t   *f,
  *                                are added
  * \param[in]       have_mom_bc   if true, div BC coefficients (ad and bd)
  *                                are added
+ * \param[in]       have_conv_bc  if true, convection BC coefficients (ac and bc)
+ *                                are added
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_field_allocate_bc_coeffs(cs_field_t  *f,
                             bool         have_flux_bc,
-                            bool         have_mom_bc)
+                            bool         have_mom_bc,
+                            bool         have_conv_bc)
 {
   /* Add boundary condition coefficients if required */
 
@@ -1271,6 +1281,15 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
         f->bc_coeffs->bd = NULL;
       }
 
+      if (have_conv_bc) {
+        BFT_MALLOC(f->bc_coeffs->ac,  n_elts[0]*a_mult, cs_real_t);
+        BFT_MALLOC(f->bc_coeffs->bc,  n_elts[0]*b_mult, cs_real_t);
+      }
+      else {
+        f->bc_coeffs->ac = NULL;
+        f->bc_coeffs->bc = NULL;
+      }
+
     }
 
     else {
@@ -1294,6 +1313,15 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       else {
         BFT_FREE(f->bc_coeffs->ad);
         BFT_FREE(f->bc_coeffs->bd);
+      }
+
+      if (have_conv_bc) {
+        BFT_REALLOC(f->bc_coeffs->ac,  n_elts[0]*a_mult, cs_real_t);
+        BFT_REALLOC(f->bc_coeffs->bc,  n_elts[0]*b_mult, cs_real_t);
+      }
+      else {
+        BFT_FREE(f->bc_coeffs->ac);
+        BFT_FREE(f->bc_coeffs->bc);
       }
 
     }
@@ -1331,13 +1359,16 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
  *                                are initialized
  * \param[in]       have_mom_bc   if true, div BC coefficients (ad and bd)
  *                                are initialized
+ * \param[in]       have_conv_bc  if true, convection BC coefficients (ac and bc)
+ *                                are initialized
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_field_init_bc_coeffs(cs_field_t  *f,
                         bool         have_flux_bc,
-                        bool         have_mom_bc)
+                        bool         have_mom_bc,
+                        bool         have_conv_bc)
 {
   /* Add boundary condition coefficients if required */
 
@@ -1374,6 +1405,12 @@ cs_field_init_bc_coeffs(cs_field_t  *f,
         for (ifac = 0; ifac < n_elts[0]; ifac++) {
           f->bc_coeffs->ad[ifac] = 0.;
           f->bc_coeffs->bd[ifac] = 1.;
+        }
+
+      if (have_conv_bc)
+        for (ifac = 0; ifac < n_elts[0]; ifac++) {
+          f->bc_coeffs->ac[ifac] = 0.;
+          f->bc_coeffs->bc[ifac] = 0.;
         }
 
 
@@ -1429,6 +1466,22 @@ cs_field_init_bc_coeffs(cs_field_t  *f,
           f->bc_coeffs->bd[ifac*dim*dim + 8] = 0.;
         }
 
+      if (have_conv_bc)
+        for (ifac = 0; ifac < n_elts[0]; ifac++) {
+          f->bc_coeffs->ac[ifac*dim] = 0.;
+          f->bc_coeffs->ac[ifac*dim + 1] = 0.;
+          f->bc_coeffs->ac[ifac*dim + 2] = 0.;
+          f->bc_coeffs->bc[ifac*dim*dim] = 0.;
+          f->bc_coeffs->bc[ifac*dim*dim + 1] = 0.;
+          f->bc_coeffs->bc[ifac*dim*dim + 2] = 0.;
+          f->bc_coeffs->bc[ifac*dim*dim + 3] = 0.;
+          f->bc_coeffs->bc[ifac*dim*dim + 4] = 0.;
+          f->bc_coeffs->bc[ifac*dim*dim + 5] = 0.;
+          f->bc_coeffs->bc[ifac*dim*dim + 6] = 0.;
+          f->bc_coeffs->bc[ifac*dim*dim + 7] = 0.;
+          f->bc_coeffs->bc[ifac*dim*dim + 8] = 0.;
+        }
+
     }
 
   }
@@ -1464,6 +1517,10 @@ cs_field_init_bc_coeffs(cs_field_t  *f,
  * \param[in]       b   implicit BC coefficients array
  * \param[in]       af  explicit flux BC coefficients array, or NULL
  * \param[in]       bf  implicit flux BC coefficients array, or NULL
+ * \param[in]       ad  explicit div BC coefficients array, or NULL
+ * \param[in]       bd  implicit div BC coefficients array, or NULL
+ * \param[in]       ac  explicit convection BC coefficients array, or NULL
+ * \param[in]       bc  implicit convection BC coefficients array, or NULL
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1472,7 +1529,11 @@ cs_field_map_bc_coeffs(cs_field_t  *f,
                        cs_real_t   *a,
                        cs_real_t   *b,
                        cs_real_t   *af,
-                       cs_real_t   *bf)
+                       cs_real_t   *bf,
+                       cs_real_t   *ad,
+                       cs_real_t   *bd,
+                       cs_real_t   *ac,
+                       cs_real_t   *bc)
 {
   /* Add boundary condition coefficients if required */
 
@@ -1489,12 +1550,20 @@ cs_field_map_bc_coeffs(cs_field_t  *f,
       BFT_FREE(f->bc_coeffs->b);
       BFT_FREE(f->bc_coeffs->af);
       BFT_FREE(f->bc_coeffs->bf);
+      BFT_FREE(f->bc_coeffs->ad);
+      BFT_FREE(f->bc_coeffs->bd);
+      BFT_FREE(f->bc_coeffs->ac);
+      BFT_FREE(f->bc_coeffs->bc);
     }
 
     f->bc_coeffs->a = a;
     f->bc_coeffs->b = b;
     f->bc_coeffs->af = af;
     f->bc_coeffs->bf = bf;
+    f->bc_coeffs->ad = ad;
+    f->bc_coeffs->bd = bd;
+    f->bc_coeffs->ac = ac;
+    f->bc_coeffs->bc = bc;
 
   }
 

@@ -115,6 +115,7 @@ use ppcpfu
 use cs_coal_incl
 use cs_fuel_incl
 use mesh
+use cfpoin, only:ithvar
 
 !===============================================================================
 
@@ -122,7 +123,7 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
+integer          nvar, nscal
 
 double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
 double precision propfb(nfabor,*)
@@ -132,8 +133,8 @@ double precision propfb(nfabor,*)
 ! INSERT_VARIABLE_DEFINITIONS_HERE
 
 integer, allocatable, dimension(:) :: lstelt
-integer  iel
-integer  iccfth, iscal, imodif
+integer  iel, ipcrom
+integer  iscal, imodif
 
 double precision, allocatable, dimension(:) :: w1, w2, w3, w4
 
@@ -147,6 +148,8 @@ double precision, allocatable, dimension(:) :: w1, w2, w3, w4
 allocate(lstelt(ncel)) ! temporary array for cells selection
 allocate(w1(ncelet), w2(ncelet), w3(ncelet),w4(ncelet))
 imodif = 1
+ipcrom = ipproc(irom)
+
 !===============================================================================
 ! Unknown variable initialization
 !      for initial calculations (not in case of restart)
@@ -197,31 +200,29 @@ if ( isuite.eq.0 ) then
   !   initialized.
 
 
-  ! iccfth indicates which variables have been set:
+  ! ithvar indicates which variables have been set:
   !   it is completed automatically for each variable and
-!     it must not be modified.
-  iccfth = 10000
-
+  !   it must not be modified.
 
   ! 1. Pressure (Pa)
   if(.true.) then
-    iccfth = iccfth*2
+    ithvar = ithvar*2
     do iel = 1, ncel
       rtp(iel,ipr) = p0
     enddo
   endif
 
-  ! 2. Density (kg/m3)
-  if(.true.) then
-    iccfth = iccfth*3
+  ! 2. Density (kg.m-3)
+  if(.false.) then
+    ithvar = ithvar*3
     do iel = 1, ncel
-      rtp(iel,isca(irho)) = ro0
+        propce(iel,ipcrom) = ro0
     enddo
   endif
 
   ! 3. Temperature (K -- Warning: Kelvin)
   if(.false.) then
-    iccfth = iccfth*5
+    ithvar = ithvar*5
     do iel = 1, ncel
       rtp(iel,isca(itempk)) = t0
     enddo
@@ -229,23 +230,11 @@ if ( isuite.eq.0 ) then
 
   ! 4. Total Energy (J/kg)
   if(.false.) then
-    iccfth = iccfth*7
+    ithvar = ithvar*7
     do iel = 1, ncel
       rtp(iel,isca(ienerg)) = cv0*t0
     enddo
   endif
-
-
-  ! ** The following subroutine returns automatically the values for the
-  ! two remaining variables that need to be computed, using the
-  ! indicator iccfth.
-
-  call cfther                                                    &
-  !==========
-( nvar   ,                                                       &
-  iccfth , imodif ,                                              &
-  dt     , rtp    , rtp   , propce ,                             &
-  w1     , w2     , w3    , w4     )
 
 
 endif

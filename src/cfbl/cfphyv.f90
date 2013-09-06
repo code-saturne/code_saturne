@@ -24,9 +24,8 @@ subroutine cfphyv &
 !================
 
  ( nvar   , nscal  ,                                              &
-   ibrom  , izfppp ,                                              &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   coefa  , coefb  )
+   izfppp ,                                                       &
+   dt     , rtp    , rtpa   , propce , propfb )
 
 !===============================================================================
 ! FONCTION :
@@ -43,7 +42,6 @@ subroutine cfphyv &
 !__________________!____!_____!________________________________________________!
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! ibrom            ! te ! <-- ! indicateur de remplissage de romb              !
 !        !    !     !                                                !
 ! izfppp           ! te ! --> ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
@@ -52,8 +50,6 @@ subroutine cfphyv &
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -84,19 +80,14 @@ implicit none
 ! Arguments
 
 integer          nvar   , nscal
-
-integer          ibrom
 integer          izfppp(nfabor)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 
 ! Local variables
 
 integer          iel
-integer          ifac
-integer          iirom , iiromb
 
 integer          ipass
 data             ipass /0/
@@ -182,29 +173,6 @@ else
   visls0(ienerg) = visls0(itempk)/cv0
 
 endif
-
-!===============================================================================
-! 3. MISE A JOUR DE ROM et ROMB :
-!     On ne s'en sert a priori pas, mais la variable existe
-!     On a ici des valeurs issues du pas de temps précédent (y compris
-!       pour les conditions aux limites) ou issues de valeurs initiales
-!     L'échange pério/parall sera fait dans phyvar.
-!===============================================================================
-
-iirom  = ipproc(irom  )
-iiromb = ipprob(irom  )
-
-do iel = 1, ncel
-  propce(iel,iirom)  = rtpa(iel,isca(irho))
-enddo
-
-do ifac = 1, nfabor
-  iel = ifabor(ifac)
-  propfb(ifac,iiromb) =                                         &
-       coefa(ifac,iclrtp(isca(irho),icoef))              &
-       + coefb(ifac,iclrtp(isca(irho),icoef))            &
-       * rtpa(iel,isca(irho))
-enddo
 
 !--------
 ! FORMATS

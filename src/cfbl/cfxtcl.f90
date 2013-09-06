@@ -26,7 +26,7 @@ subroutine cfxtcl &
  ( nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
    dt     , rtp    , rtpa   , propce , propfb ,                   &
-   coefa  , coefb  , rcodcl )
+   rcodcl )
 
 !===============================================================================
 ! FONCTION :
@@ -61,8 +61,6 @@ subroutine cfxtcl &
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
 !  (nfabor,nvar    !    !     !  aux faces de bord                             !
 !                  !    !     ! rcodcl(1) = valeur du dirichlet                !
@@ -117,7 +115,6 @@ integer          izfppp(nfabor)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
@@ -125,22 +122,28 @@ double precision rcodcl(nfabor,nvarcl,3)
 integer          ivar  , ifac  , iel
 integer          ii    , iii   , imodif, iccfth
 integer          icalep, icalgm
-integer          iflmab
-integer          irh   , ien   , itk
-integer          iclp  , iclr
+integer          iflmab, ipcrom, ipbrom
+integer          ien   , itk
+integer          iclp
 integer          iclu  , iclv  , iclw
 integer          nvarcf
 
 integer          nvcfmx
-parameter       (nvcfmx=7)
+parameter       (nvcfmx=6)
 integer          ivarcf(nvcfmx)
 
 double precision hint  , gammag
 
+double precision rvoid(1)
+
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4, w5, w6
 double precision, allocatable, dimension(:) :: w7
+double precision, allocatable, dimension(:) :: wbfb
+double precision, allocatable, dimension(:,:) :: bval
+
 double precision, dimension(:), pointer :: bmasfl
+double precision, dimension(:), pointer :: coefbp
 
 !===============================================================================
 !===============================================================================
@@ -151,14 +154,12 @@ double precision, dimension(:), pointer :: bmasfl
 allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 allocate(w4(ncelet), w5(ncelet), w6(ncelet))
 
-! Allocate a work array on boundary faces (to be verified...)
-allocate(w7(nfabor))
+allocate(w7(nfabor), wbfb(nfabor))
+allocate(bval(nfabor,nvar))
 
-irh = isca(irho  )
 ien = isca(ienerg)
 itk = isca(itempk)
 iclp   = iclrtp(ipr,icoef)
-iclr   = iclrtp(irh,icoef)
 iclu   = iclrtp(iu ,icoef)
 iclv   = iclrtp(iv ,icoef)
 iclw   = iclrtp(iw ,icoef)
@@ -166,15 +167,22 @@ iclw   = iclrtp(iw ,icoef)
 call field_get_key_int(ivarfl(ien), kbmasf, iflmab)
 call field_get_val_s(iflmab, bmasfl)
 
+ipbrom = ipprob(irom)
+ipcrom = ipproc(irom)
+
 !     Liste des variables compressible :
 ivarcf(1) = ipr
 ivarcf(2) = iu
 ivarcf(3) = iv
 ivarcf(4) = iw
-ivarcf(5) = irh
-ivarcf(6) = ien
-ivarcf(7) = itk
-nvarcf    = 7
+ivarcf(5) = ien
+ivarcf(6) = itk
+nvarcf    = 6
+
+call field_get_coefb_s(ivarfl(ipr), coefbp)
+do ifac = 1, nfabor
+  wbfb(ifac) = coefbp(ifac)
+enddo
 
 !     Calcul de epsilon_sup = e - CvT
 !       On en a besoin si on a des parois a temperature imposee.
@@ -192,12 +200,12 @@ enddo
 if(icalep.ne.0) then
   iccfth = 7
   imodif = 0
-  call cfther                                                   &
+  call cfther                                                    &
   !==========
 ( nvar   ,                                                       &
   iccfth , imodif ,                                              &
-  dt     , rtp    , rtpa   , propce ,                            &
-  w5     , w7     , w3     , w4     )
+  dt     , rtp    , rtpa   , propce , propfb ,                   &
+  w5     , w7     , w3     , w4     , rvoid  , rvoid  )
 endif
 
 
@@ -216,12 +224,12 @@ enddo
 if(icalgm.ne.0) then
   iccfth = 1
   imodif = 0
-  call cfther                                                   &
+  call cfther                                                    &
   !==========
 ( nvar   ,                                                       &
   iccfth , imodif ,                                              &
-  dt     , rtp    , rtpa   , propce ,                            &
-  w1     , w2     , w6     , w4     )
+  dt     , rtp    , rtpa   , propce , propfb ,                   &
+  w1     , w2     , w6     , w4     , rvoid  , rvoid  )
 
   if(ieos.eq.1) then
     gammag = w6(1)
@@ -278,7 +286,7 @@ do ifac = 1, nfabor
            * ( gx*(cdgfbo(1,ifac)-xyzcen(1,iel))                    &
            + gy*(cdgfbo(2,ifac)-xyzcen(2,iel))                    &
            + gz*(cdgfbo(3,ifac)-xyzcen(3,iel)) )                  &
-           * rtp(iel,irh)
+           * propce(iel,ipcrom)
 
     else
 
@@ -288,12 +296,12 @@ do ifac = 1, nfabor
 
       iccfth = 91
 
-      call cfther                                               &
+      call cfther                                                 &
       !==========
  ( nvar   ,                                                       &
    iccfth , ifac   ,                                              &
-   dt     , rtp    , rtpa   , propce ,                            &
-   w1     , w2     , w3     , w4     )
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   w1     , w2     , w3     , w4     , bval   , wbfb )
 
 !       En outre, il faut appliquer une pre-correction pour compenser
 !        le traitement fait dans condli... Si on pouvait remplir COEFA
@@ -302,11 +310,11 @@ do ifac = 1, nfabor
 
 !FIXME with the new cofaf
       icodcl(ifac,ipr) = 1
-      if(coefb(ifac,iclp).lt.rinfin*0.5d0.and.                  &
-           coefb(ifac,iclp).gt.0.d0  ) then
+      if(wbfb(ifac).lt.rinfin*0.5d0.and.                  &
+         wbfb(ifac).gt.0.d0  ) then
         hint = dt(iel)/distb(ifac)
         rcodcl(ifac,ipr,1) = 0.d0
-        rcodcl(ifac,ipr,2) = hint*(1.d0/coefb(ifac,iclp)-1.d0)
+        rcodcl(ifac,ipr,2) = hint*(1.d0/wbfb(ifac)-1.d0)
       else
         rcodcl(ifac,ipr,1) = 0.d0
       endif
@@ -416,12 +424,12 @@ do ifac = 1, nfabor
 
     iccfth = 90
 
-    call cfther                                                 &
+    call cfther                                                   &
     !==========
  ( nvar   ,                                                       &
    iccfth , ifac   ,                                              &
-   dt     , rtp    , rtpa   , propce ,                            &
-   w1     , w2     , w3     , w4     )
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   w1     , w2     , w3     , w4     , bval   ,rvoid )
 
 
 !     Pression :
@@ -466,7 +474,6 @@ do ifac = 1, nfabor
 !        qu'on n'a pas initialise et on sort en erreur)
     iccfth = 10000
     if(rcodcl(ifac,ipr,1).gt.0.d0) iccfth = 2*iccfth
-    if(rcodcl(ifac,irh,1).gt.0.d0) iccfth = 3*iccfth
     if(rcodcl(ifac,itk,1).gt.0.d0) iccfth = 5*iccfth
     if(rcodcl(ifac,ien,1).gt.0.d0) iccfth = 7*iccfth
     if((iccfth.le.70000.and.iccfth.ne.60000).or.                &
@@ -492,15 +499,15 @@ do ifac = 1, nfabor
 !     COEFA sert de tableau de transfert dans USCFTH
 
     do ivar = 1, nvar
-      coefa(ifac,iclrtp(ivar,icoef)) = rcodcl(ifac,ivar,1)
+      bval(ifac,ivar) = rcodcl(ifac,ivar,1)
     enddo
 
-    call cfther                                                 &
+    call cfther                                                   &
     !==========
  ( nvar   ,                                                       &
    iccfth , ifac   ,                                              &
-   dt     , rtp    , rtpa   , propce ,                            &
-   w1     , w2     , w3     , w4     )
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   w1     , w2     , w3     , w4     , bval   , rvoid )
 
 
 !     Rusanov, flux de masse et type de conditions aux limites :
@@ -536,7 +543,7 @@ do ifac = 1, nfabor
     enddo
 
 !     Valeurs de rho u E
-    rcodcl(ifac,irh,1) = rtp(iel,irh)
+    propfb(ifac,ipbrom) = propce(iel,irom)
     rcodcl(ifac,iu ,1) = rtp(iel,iu)
     rcodcl(ifac,iv ,1) = rtp(iel,iv)
     rcodcl(ifac,iw ,1) = rtp(iel,iw)
@@ -546,15 +553,15 @@ do ifac = 1, nfabor
     iccfth = 924
 
     do ivar = 1, nvar
-      coefa(ifac,iclrtp(ivar,icoef)) = rcodcl(ifac,ivar,1)
+      bval(ifac,ivar) = rcodcl(ifac,ivar,1)
     enddo
 
-    call cfther                                                 &
+    call cfther                                                   &
     !==========
  ( nvar   ,                                                       &
    iccfth , ifac   ,                                              &
-   dt     , rtp    , rtpa   , propce ,                            &
-   w1     , w2     , w3     , w4     )
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   w1     , w2     , w3     , w4     , bval   , rvoid )
 
 !               flux de masse et type de conditions aux limites :
 !       voir plus bas
@@ -599,15 +606,15 @@ do ifac = 1, nfabor
     iccfth = 93
 
     do ivar = 1, nvar
-      coefa(ifac,iclrtp(ivar,icoef)) = rcodcl(ifac,ivar,1)
+      bval(ifac,ivar) = rcodcl(ifac,ivar,1)
     enddo
 
-    call cfther                                                 &
+    call cfther                                                   &
     !==========
  ( nvar   ,                                                       &
    iccfth , ifac   ,                                              &
-   dt     , rtp    , rtpa   , propce ,                            &
-   w1     , w2     , w3     , w4     )
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   w1     , w2     , w3     , w4     , bval   , rvoid )
 
 !     Rusanov, flux de masse et type de conditions aux limites :
 !       voir plus bas
@@ -628,8 +635,9 @@ do ifac = 1, nfabor
 !       selon la thermo et on passe dans Rusanov ensuite pour lisser.
 
 !     Si rho et u ne sont pas donnés, erreur
-    if(rcodcl(ifac,irh,1).lt.-rinfin*0.5d0.or.               &
-         rcodcl(ifac,iu ,1).lt.-rinfin*0.5d0.or.               &
+
+!   FIXME: Implement Q,H boundary condition
+    if(rcodcl(ifac,iu ,1).lt.-rinfin*0.5d0.or.               &
          rcodcl(ifac,iv ,1).lt.-rinfin*0.5d0.or.               &
          rcodcl(ifac,iw ,1).lt.-rinfin*0.5d0) then
       write(nfecra,1200)
@@ -652,22 +660,74 @@ do ifac = 1, nfabor
     iccfth = 92
 
     do ivar = 1, nvar
-      coefa(ifac,iclrtp(ivar,icoef)) = rcodcl(ifac,ivar,1)
+      bval(ifac,ivar) = rcodcl(ifac,ivar,1)
     enddo
 
-    call cfther                                                 &
+    call cfther                                                   &
     !==========
  ( nvar   ,                                                       &
    iccfth , ifac   ,                                              &
-   dt     , rtp    , rtpa   , propce ,                            &
-   w1     , w2     , w3     , w4     )
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   w1     , w2     , w3     , w4     , bval   , rvoid )
 
 !     Rusanov, flux de masse et type de conditions aux limites :
 !       voir plus bas
 
+!===============================================================================
+!     4.5 Entree à P et H imposees
+!===============================================================================
+
+  elseif ( itypfb(ifac).eq.iephcf ) then
+
+!       Entree subsonique a priori (si c'est supersonique dans le
+!         domaine, ce n'est pas pour autant que c'est supersonique
+!         à l'entree, selon les valeurs que l'on a imposées)
+
+!     On utilise un scenario détente ou choc.
+!       On détermine les conditions sur l'interface
+!       selon la thermo.
+
+!     Si P et H ne sont pas donnés, erreur
+
+! rcodcl(ifac,isca(ienerg),1) holds the boundary total enthalpy values prescribed by the user
+    if(rcodcl(ifac,ipr ,1).lt.-rinfin*0.5d0.or.               &
+         rcodcl(ifac,isca(ienerg) ,1).lt.-rinfin*0.5d0) then
+      write(nfecra,1200)
+      call csexit (1)
+    endif
+
+!     Les RCODCL ont ete initialises a -RINFIN pour permettre de
+!       verifier ceux que l'utilisateur a modifies. On les remet a zero
+!       si l'utilisateur ne les a pas modifies.
+!       On traite d'abord les variables autres que la turbulence et les
+!       scalaires passifs : celles-ci sont traitees plus bas.
+    do iii = 1, nvarcf
+      ivar = ivarcf(iii)
+      if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
+        rcodcl(ifac,ivar,1) = 0.d0
+      endif
+    enddo
+
+!     Valeurs de rho, U, E
+    iccfth = 95
+
+    do ivar = 1, nvar
+      bval(ifac,ivar) = rcodcl(ifac,ivar,1)
+    enddo
+
+    call cfther                                                   &
+    !==========
+ ( nvar   ,                                                       &
+   iccfth , ifac   ,                                              &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   w1     , w2     , w3     , w4     , bval   , rvoid )
+
+!     flux de masse et type de conditions aux limites :
+!     voir plus bas
+
 
 !===============================================================================
-!     4.5 Entree à rho*U et rho*U*H imposes
+!     4.6 Entree à rho*U et rho*U*H imposes
 !===============================================================================
 
   elseif ( itypfb(ifac).eq.ieqhcf ) then
@@ -682,8 +742,8 @@ do ifac = 1, nfabor
 !       ensuite pour lisser.
 
 !     Si rho et u ne sont pas donnés, erreur
-    if(rcodcl(ifac,irun ,1).lt.-rinfin*0.5d0.or.         &
-         rcodcl(ifac,irunh,1).lt.-rinfin*0.5d0) then
+! TODO implement the Q,H boundary condition
+    if(rcodcl(ifac,irunh,1).lt.-rinfin*0.5d0) then
       write(nfecra,1300)
       call csexit (1)
     endif
@@ -702,8 +762,7 @@ do ifac = 1, nfabor
 
 !     A coder
 
-!     Noter que IRUN  = ISCA(IRHO )
-!            et IRUNH = ISCA(IENER)
+!     IRUNH = ISCA(IENER)
 !     (aliases pour simplifier uscfcl)
 
     write(nfecra,1301)
@@ -731,6 +790,7 @@ do ifac = 1, nfabor
 
   if ( ( itypfb(ifac).eq.iesicf ) .or.                    &
        ( itypfb(ifac).eq.isspcf ) .or.                    &
+       ( itypfb(ifac).eq.iephcf ) .or.                    &
        ( itypfb(ifac).eq.isopcf ) .or.                    &
        ( itypfb(ifac).eq.ierucf ) .or.                    &
        ( itypfb(ifac).eq.ieqhcf ) ) then
@@ -746,10 +806,10 @@ do ifac = 1, nfabor
 !     Seul le flux de masse est calcule (on n'appelle pas Rusanov)
 !       (toutes les variables sont connues)
 
-      bmasfl(ifac) = coefa(ifac,iclr)*                          &
-           ( coefa(ifac,iclu)*surfbo(1,ifac)                    &
-           + coefa(ifac,iclv)*surfbo(2,ifac)                    &
-           + coefa(ifac,iclw)*surfbo(3,ifac) )
+      bmasfl(ifac) = propfb(ifac,ipbrom) *                                     &
+                     ( bval(ifac,iu)*surfbo(1,ifac)                            &
+                     + bval(ifac,iv)*surfbo(2,ifac)                            &
+                     + bval(ifac,iw)*surfbo(3,ifac) )
 
 !     Entree subsonique
 
@@ -757,10 +817,10 @@ do ifac = 1, nfabor
 
 !     Seul le flux de masse est calcule (on n'appelle pas Rusanov)
 
-      bmasfl(ifac) = coefa(ifac,iclr)*                          &
-           ( coefa(ifac,iclu)*surfbo(1,ifac)                    &
-           + coefa(ifac,iclv)*surfbo(2,ifac)                    &
-           + coefa(ifac,iclw)*surfbo(3,ifac) )
+      bmasfl(ifac) = propfb(ifac,ipbrom) *                                     &
+                     ( bval(ifac,iu)*surfbo(1,ifac)                            &
+                     + bval(ifac,iv)*surfbo(2,ifac)                            &
+                     + bval(ifac,iw)*surfbo(3,ifac) )
 
 
 
@@ -769,15 +829,28 @@ do ifac = 1, nfabor
 
 !     On calcule des flux par Rusanov (PROPFB)
 !       (en particulier, le flux de masse est complete)
+!       pour la condition d'entree supersonique seulement
 
-      call cfrusb                                                 &
-      !==========
- ( nvar   , nscal  ,                                              &
-   ifac   ,                                                       &
-   gammag ,                                                       &
-   dt     , rtp    , rtpa   , propfb ,                            &
-   coefa  , coefb  ,                                              &
-   w1     , w2     , w3     , w4     )
+      if ( itypfb(ifac).eq.iesicf ) then
+
+        call cfrusb                                                   &
+        !==========
+     ( nvar   , nscal  ,                                              &
+       ifac   ,                                                       &
+       gammag ,                                                       &
+       dt     , rtp    , rtpa   , propce , propfb , bval ,            &
+       w3     , w4     )
+
+!    Pour les autres types (sortie subsonique, entree QH, entree PH),
+!    On calcule des flux analytiques
+
+      else
+
+        call cffana                                                   &
+        !==========
+      ( nvar   ,  ifac   , propfb , bval )
+
+      endif
 
     endif
 
@@ -787,7 +860,7 @@ do ifac = 1, nfabor
 
 !     On rétablit COEFA dans RCODCL
     do ivar = 1, nvar
-      rcodcl(ifac,ivar,1) = coefa(ifac,iclrtp(ivar,icoef))
+      rcodcl(ifac,ivar,1) = bval(ifac,ivar)
     enddo
 
 !===============================================================================
@@ -814,24 +887,12 @@ do ifac = 1, nfabor
 !     Pression : Dirichlet ou Neumann homogene
 !-------------------------------------------------------------------------------
 
-!       Entree sortie imposee : Neumann
-    if ( itypfb(ifac).eq.iesicf ) then
-      icodcl(ifac,ipr)   = 3
-!       Entree subsonique
-    else if ( itypfb(ifac).eq.ierucf ) then
-      icodcl(ifac,ipr)   = 3
-      rcodcl(ifac,ipr,3) = 0.d0
-!       Autres entrees/sorties : Dirichlet
-    else
-      icodcl(ifac,ipr)   = 1
-    endif
+      icodcl(ifac,ipr)   = 13
 
 !-------------------------------------------------------------------------------
 !     rho U E T : Dirichlet
 !-------------------------------------------------------------------------------
 
-!     Masse volumique
-    icodcl(ifac,irh)   = 1
 !     Vitesse
     icodcl(ifac,iu)    = 1
     icodcl(ifac,iv)    = 1
@@ -978,6 +1039,7 @@ do ifac = 1, nfabor
 deallocate(w1, w2, w3)
 deallocate(w4, w5, w6)
 deallocate(w7)
+deallocate(bval)
 
 !----
 ! FORMATS

@@ -142,7 +142,8 @@ integer          ncymap, nitmgp
 integer          inum
 integer          idtva0, ivar0
 integer          inc, iccocg
-integer          imucpp, idftnp, iswdyp
+integer          imucpp, idftnp, iswdyp, icvflb
+integer          ivoid(1)
 double precision epsrgp, blencp, climgp, epsilp, extrap, epsrsp
 double precision aa, aaa, aaaa, relaxp, thetap
 
@@ -195,6 +196,8 @@ epsrgp  = 1.d-5
 climgp  = 1.5d0
 extrap  = zero
 relaxp  = 1.d0
+! all boundary convective flux with upwind
+icvflb = 0
 
 !--> Il y a des dirichlets
 
@@ -261,6 +264,7 @@ call codits &
    flurds , flurdb ,                                              &
    viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &
+   icvflb , ivoid  ,                                              &
    rovsdt , smbrs  , theta4 , dpvar  ,                            &
    rvoid  , rvoid  )
 

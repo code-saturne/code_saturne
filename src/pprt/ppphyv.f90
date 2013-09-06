@@ -253,9 +253,8 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
      call cfphyv                                                  &
      !==========
  ( nvar   , nscal  ,                                              &
-   ibrom  , izfppp ,                                              &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   coefa  , coefb  )
+   izfppp ,                                                       &
+   dt     , rtp    , rtpa   , propce , propfb )
 
    endif
 

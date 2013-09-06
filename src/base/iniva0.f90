@@ -477,6 +477,13 @@ do ii = 1, ncofab
   enddo
 enddo
 
+do ifac = 1, nfabor
+  coefb(ifac,iclrtp(iu,icoefc)) = 0.d0
+  coefb(ifac,iclrtp(iv,icoefc)) = 0.d0
+  coefb(ifac,iclrtp(iw,icoefc)) = 0.d0
+  coefb(ifac,iclrtp(isca(ienerg),icoefc)) = 0.d0
+enddo
+
 ! Boundary conditions for the velocity if coupling of the components
 if (ivelco.eq.1) then
   do ifac = 1, nfabor

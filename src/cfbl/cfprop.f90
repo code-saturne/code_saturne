@@ -104,17 +104,6 @@ if ( ippmod(icompf).ge.0 ) then
     iviscv = iprop
   endif
 
-!    Flux de Rusanov au bord pour Qdm et E
-  iprop         = iprop + 1
-  ifbrhu = iprop
-  iprop         = iprop + 1
-  ifbrhv = iprop
-  iprop         = iprop + 1
-  ifbrhw = iprop
-  iprop         = iprop + 1
-  ifbene = iprop
-
-
 ! ----  Nb de variables algebriques (ou d'etat)
 !         propre a la physique particuliere NSALPP
 !         total NSALTO
@@ -148,23 +137,6 @@ if ( ippmod(icompf).ge.0 ) then
   endif
 
   nproce = iprop
-
-
-! ---> Positionnement dans le tableau PROPFB
-!      Au centre des faces de bord
-
-  iprop = nprofb
-
-  iprop                 = iprop + 1
-  ipprob(ifbrhu) = iprop
-  iprop                 = iprop + 1
-  ipprob(ifbrhv) = iprop
-  iprop                 = iprop + 1
-  ipprob(ifbrhw) = iprop
-  iprop                 = iprop + 1
-  ipprob(ifbene) = iprop
-
-  nprofb = iprop
 
 !===============================================================================
 ! 2. ENTREES SORTIES (entsor.h)

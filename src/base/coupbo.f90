@@ -96,6 +96,8 @@ integer          iepsel, iepsfa, igamag, ixmasm, ifinwa
 integer          issurf
 double precision enthal, temper, energ, cvt
 
+double precision rvoid(1)
+
 integer, dimension(:), allocatable :: lfcou
 double precision, dimension(:), allocatable :: tfluid, hparoi, wa
 
@@ -212,12 +214,13 @@ do inbcou = 1, nbccou
       iccfth = 7
       imodif = 0
 
-      call cfther                                                   &
+      call cfther                                                    &
       !==========
     ( nvar   ,                                                       &
       iccfth , imodif ,                                              &
-      dt     , rtp    , rtpa   , propce ,                            &
-      wa(iepsel) , wa(iepsfa) , wa(igamag) , wa(ixmasm) )
+      dt     , rtp    , rtpa   , propce , rvoid ,                    &
+      wa(iepsel) , wa(iepsfa) , wa(igamag) , wa(ixmasm) ,            &
+      rvoid  , rvoid )
       !---------   ---------
 
       do iloc = 1, nbfcou

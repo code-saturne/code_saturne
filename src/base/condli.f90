@@ -91,6 +91,8 @@
 !>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
 !>                               - 9 free inlet/outlet
 !>                                 (input mass flux blocked to 0)
+!>                               - 13 Dirichlet for the advection operator and
+!>                                    Neumann for the diffusion operator
 !> \param[in,out] isostd        indicator for standard outlet
 !>                               and reference face index
 !> \param[in]     dt            time step (per cell)
@@ -1339,6 +1341,17 @@ do ifac = 1, nfabor
        ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
          coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
          pimp              , cfl               , hint )
+
+  elseif (icodcl(ifac,ipr).eq.13) then
+
+    pimp = rcodcl(ifac,ipr,1)
+    qimp = rcodcl(ifac,ipr,3)
+
+    call set_dirichlet_conv_neumann_diff_scalar &
+         !===========================
+       ( coefa(ifac,iclvar), coefa(ifac,iclvaf),             &
+         coefb(ifac,iclvar), coefb(ifac,iclvaf),             &
+         pimp              , qimp )
 
   endif
 
@@ -3623,3 +3636,46 @@ cofbf(3,1) = hint(6)*(1.d0 - coefb(3,3))
 
 return
 end subroutine
+
+!===============================================================================
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[out]    coefa         explicit BC coefficient for gradients
+!> \param[out]    cofaf         explicit BC coefficient for diffusive flux
+!> \param[out]    coefb         implicit BC coefficient for gradients
+!> \param[out]    cofbf         implicit BC coefficient for diffusive flux
+!> \param[in]     pimp          Dirichlet value to impose
+!> \param[in]     qimp          Flux value to impose
+!_______________________________________________________________________________
+
+subroutine set_dirichlet_conv_neumann_diff_scalar &
+ ( coefa, cofaf, coefb, cofbf, pimp, qimp )
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+double precision coefa, cofaf, coefb, cofbf, pimp, qimp
+
+! Gradients BCs
+coefa = pimp
+coefb = 0.d0
+
+! Flux BCs
+cofaf = qimp
+cofbf = 0.d0
+
+return
+end subroutine
+
+!===============================================================================

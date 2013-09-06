@@ -171,6 +171,8 @@
 !>                               of tensor diffusion
 !> \param[in]     weighb        boundary face weight for cells i in case
 !>                               of tensor diffusion
+!> \param[in]     icvflb
+!> \param[in]     icvfbr
 !> \param[in]     rovsdt        \f$ f_s^{imp} \f$
 !> \param[in]     smbrp         Right hand side \f$ Rhs^k \f$
 !> \param[in,out] pvar          current variable
@@ -191,6 +193,7 @@ subroutine codits &
    coefap , coefbp , cofafp , cofbfp , flumas , flumab ,          &
    viscfm , viscbm , visccm , viscfs , viscbs , visccs ,          &
    weighf , weighb ,                                              &
+   icvflb , icvfbr ,                                              &
    rovsdt , smbrp  , pvar   , dpvar  ,                            &
    xcpp   , eswork )
 
@@ -222,7 +225,10 @@ integer          imrgra , nswrsp , nswrgp , imligp , ircflp
 integer          ischcp , isstpp , iescap , imgrp
 integer          ncymxp , nitmfp
 integer          ipp    , iwarnp
-integer          imucpp , idftnp , iswdyp
+integer          imucpp , idftnp , iswdyp , icvflb
+
+integer          icvfbr(nfabor)
+
 double precision blencp , epsilp , epsrgp , climgp , extrap
 double precision relaxp , thetap , epsrsp
 
@@ -411,6 +417,7 @@ if (abs(thetex).gt.epzero) then
    pvara  , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
    flumas , flumab , viscfs , viscbs , visccs , xcpp   ,          &
    weighf , weighb ,                                              &
+   icvflb , icvfbr ,                                              &
    smbrp  )
 endif
 
@@ -458,6 +465,7 @@ call bilsca &
    pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
    flumas , flumab , viscfs , viscbs , visccs , xcpp   ,          &
    weighf , weighb ,                                              &
+   icvflb , icvfbr ,                                              &
    smbrp  )
 
 if (iswdyp.ge.1) then
@@ -580,6 +588,7 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
      dpvar  , dpvar  , coefap , coefbp , cofafp , cofbfp ,          &
      flumas , flumab , viscfs , viscbs , visccs , xcpp   ,          &
      weighf , weighb ,                                              &
+     icvflb , icvfbr ,                                              &
      adxk   )
 
     insqrt = 0
@@ -705,6 +714,7 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
    pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
    flumas , flumab , viscfs , viscbs , visccs , xcpp   ,          &
    weighf , weighb ,                                              &
+   icvflb , icvfbr ,                                              &
    smbrp  )
 
   ! --- Convergence test
@@ -777,6 +787,7 @@ if (iescap.gt.0) then
    pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
    flumas , flumab , viscfs , viscbs , visccs , xcpp   ,          &
    weighf , weighb ,                                              &
+   icvflb , icvfbr ,                                              &
    smbrp  )
 
   ! Contribution of the current component to the L2 norm stored in eswork

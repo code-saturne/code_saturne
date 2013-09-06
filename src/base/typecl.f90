@@ -365,9 +365,18 @@ if(ipass.eq.0.or.iwarni(iu).ge.2) then
     inb = ifinty(ii)-idebty(ii)+1
     if (irangp.ge.0) call parcpt (inb)
 #if defined(_CS_LANG_FR)
-    write(nfecra,6020) 'Entree subsonique', ii, inb
+    write(nfecra,6020) 'Entree sub. dens.', ii, inb
 #else
-    write(nfecra,6020) 'Subsonic inlet   ', ii, inb
+    write(nfecra,6020) 'Sub. dens. inlet ', ii, inb
+#endif
+
+    ii = iephcf
+    inb = ifinty(ii)-idebty(ii)+1
+    if (irangp.ge.0) call parcpt (inb)
+#if defined(_CS_LANG_FR)
+    write(nfecra,6020) 'Ptot, Htot       ', ii, inb
+#else
+    write(nfecra,6020) 'Ptot, Htot       ', ii, inb
 #endif
 
     ii = iesicf
@@ -438,6 +447,7 @@ if(ipass.eq.0.or.iwarni(iu).ge.2) then
            ii.ne.isspcf .and. &
            ii.ne.ieqhcf .and. &
            ii.ne.ierucf .and. &
+           ii.ne.iephcf .and. &
            ii.ne.isopcf .and. &
            ii.ne.iparoi .and. &
            ii.ne.iparug .and. &
@@ -1370,6 +1380,18 @@ if(iwrnp.ge.1 .or. mod(ntcabs,ntlist).eq.0                      &
     write(nfecra,7020) 'Subsonic inlet   ',ii,inb,flumty(ii)
 #endif
 
+    ii = iephcf
+    inb = ifinty(ii)-idebty(ii)+1
+    if (irangp.ge.0) then
+      call parcpt (inb)
+      call parsom (flumty(ii))
+    endif
+#if defined(_CS_LANG_FR)
+    write(nfecra,7020) 'Ptot, Htot       ',ii,inb,flumty(ii)
+#else
+    write(nfecra,7020) 'Ptot, Htot       ',ii,inb,flumty(ii)
+#endif
+
     ii = iesicf
     inb = ifinty(ii)-idebty(ii)+1
     if (irangp.ge.0) then
@@ -1447,6 +1469,7 @@ if(iwrnp.ge.1 .or. mod(ntcabs,ntlist).eq.0                      &
            ii.ne.isspcf .and. &
            ii.ne.ieqhcf .and. &
            ii.ne.ierucf .and. &
+           ii.ne.iephcf .and. &
            ii.ne.isopcf .and. &
            ii.ne.iparoi .and. &
            ii.ne.isymet .and. &

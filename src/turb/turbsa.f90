@@ -98,6 +98,8 @@ integer          ncepdp , ncesmp
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 integer          itypfb(nfabor)
+integer          icvflb
+integer          ivoid(1)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*), propfb(ndimfb,*)
@@ -657,6 +659,8 @@ climgp = climgr(ivar)
 extrap = extrag(ivar)
 relaxp = relaxv(ivar)
 thetap = thetav(ivar)
+! all boundary convective flux with upwind
+icvflb = 0
 
 call codits &
 !==========
@@ -672,6 +676,7 @@ call codits &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &
+   icvflb , ivoid  ,                                              &
    tinssa , rhssa  , rtp(1,ivar)     , dpvar ,                    &
    rvoid  , rvoid  )
 

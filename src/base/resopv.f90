@@ -181,6 +181,9 @@ integer          iescap, ircflp, ischcp, isstpp, ivar, ncymxp, nitmfp
 integer          nswrsp
 integer          insqrt
 
+integer          icvflb
+integer          ivoid(1)
+
 double precision residu, resold, phydr0
 double precision ardtsr, arsr  , unsara, thetap
 double precision dtsrom, unsvom, romro0
@@ -1908,6 +1911,8 @@ if (idilat.eq.4) then
   extrap = extrag(ivar)
   relaxp = relaxv(ivar)
   thetap = 1.d0
+  ! all boundary convective flux with upwind
+  icvflb = 0
 
   call bilsca &
   !==========
@@ -1920,6 +1925,7 @@ if (idilat.eq.4) then
    cofafp , coefb(1,iclipf) ,                                     &
    velflx , velflb , viscf  , viscb  , rvoid  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &
+   icvflb , ivoid  ,                                              &
    rhs   )
 
   ! --- Initialization of the variable to solve
@@ -1961,6 +1967,8 @@ if (idilat.eq.4) then
   extrap = extrag(ivar)
   relaxp = relaxv(ivar)
   thetap = thetav(ivar)
+  ! all boundary convective flux with upwind
+  icvflb = 0
 
   ! --- Solve the convection diffusion equation
 
@@ -1978,6 +1986,7 @@ if (idilat.eq.4) then
      velflx , velflb ,                                              &
      viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
      weighf , weighb ,                                              &
+     icvflb , ivoid  ,                                              &
      rovsdt , rhs    , drtp   , dpvar  ,                            &
      rvoid  , rvoid  )
 

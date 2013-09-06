@@ -231,8 +231,11 @@ module numvar
   !> (for example \f$ \tens{R}_{ij} \f$ in the momentum equation)
   integer, save :: icoefr
 
+  !> Coefficients used for convection terms
+  integer, save :: icoefc
+
   !> pointer to coefa and coefb arrays
-  integer, save :: iclrtp(nvarmx,3)
+  integer, save :: iclrtp(nvarmx,4)
 
   !> \}
 

@@ -127,6 +127,8 @@ use cplsat
 use ihmpre, only: iihmpr
 use mesh
 use cs_f_interfaces
+use cfpoin
+use field
 
 !===============================================================================
 
@@ -182,8 +184,9 @@ integer          imgrp , ncymxp, nitmfp
 integer          iesprp, iestop
 integer          iptsna
 integer          iflmb0, nswrp , ipbrom
-integer          idtva0
+integer          idtva0, icvflb
 integer          ippu  , ippv  , ippw  , jsou, ivisep
+integer          ivoid(1)
 
 double precision rnorm , vitnor
 double precision romvom, drom  , rom
@@ -209,10 +212,11 @@ double precision, dimension(:,:,:), allocatable :: tsimp
 double precision, allocatable, dimension(:,:) :: viscce
 double precision, dimension(:,:), allocatable :: vect
 
+double precision, dimension(:), pointer :: pres
 !===============================================================================
 
 !===============================================================================
-! 1.  INITIALISATION
+! 1. Initialization
 !===============================================================================
 
 ! Allocate temporary arrays
@@ -240,7 +244,7 @@ ipbrom = ipprob(irom  )
 ! Reperage de rho courant (ie en cas d'extrapolation rho^n+1/2)
 ipcrom = ipproc(irom  )
 ! Reperage de rho^n en cas d'extrapolation
-if (iroext.gt.0.or.idilat.gt.1) then
+if (iroext.gt.0.or.idilat.gt.1.or.ippmod(icompf).ge.0) then
   ipcroa = ipproc(iroma)
 else
   ipcroa = 0
@@ -257,7 +261,7 @@ else
 endif
 
 !===============================================================================
-! 2.  GRADIENT DE PRESSION ET GRAVITE
+! 2. Potential forces (pressure gradient and gravity)
 !===============================================================================
 
 !-------------------------------------------------------------------------------
@@ -335,6 +339,15 @@ epsrgp = epsrgr(ipr)
 climgp = climgr(ipr)
 extrap = extrag(ipr)
 
+! For compressible flows, the new Pressure field is required
+if (ippmod(icompf).ge.0) then
+  call field_get_val_s(ivarfl(ipr), pres)
+
+! For incompressible flows, keep the pressure at time n
+! in case of PISO algorithm
+else
+  call field_get_val_prev_s(ivarfl(ipr), pres)
+endif
 
 call grdpot &
 !==========
@@ -342,7 +355,7 @@ call grdpot &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    rvoid  ,                                                       &
    frcxt  ,                                                       &
-   rtpa(1,ipr)  , coefa(1,iclipr) , coefb(1,iclipr) ,             &
+   pres   , coefa(1,iclipr) , coefb(1,iclipr) ,                   &
    grad   )
 
 
@@ -1172,8 +1185,8 @@ endif
 
 if(iappel.eq.1) then
 
-  ! Low Mach compressible Algos
-  if (idilat.gt.1) then
+  ! Low Mach compressible Algos or compressible algo
+  if (idilat.gt.1.or.ippmod(icompf).ge.0) then
     ipcrho = ipcroa
 
   ! Standard algo
@@ -1485,6 +1498,13 @@ ippu   = ipprtp(iu)
 ippv   = ipprtp(iv)
 ippw   = ipprtp(iw)
 
+if (ippmod(icompf).ge.0) then
+  ! impose boundary convective flux at some faces (face indicator icvfli)
+  icvflb = 1
+else
+  ! all boundary convective flux with upwind
+  icvflb = 0
+endif
 
 if(iappel.eq.1) then
 
@@ -1508,6 +1528,7 @@ if(iappel.eq.1) then
    coefav , coefbv , cofafv , cofbfv ,                            &
    flumas , flumab ,                                              &
    viscfi , viscbi , viscf  , viscb  , secvif , secvib ,          &
+   icvflb , icvfli ,                                              &
    fimp   ,                                                       &
    smbr   ,                                                       &
    vel    ,                                                       &
@@ -1527,6 +1548,7 @@ if(iappel.eq.1) then
    coefav , coefbv , cofafv , cofbfv ,                            &
    flumas , flumab ,                                              &
    viscfi , viscbi , viscf  , viscb  , secvif , secvib ,          &
+   icvflb , icvfli ,                                              &
    fimp   ,                                                       &
    smbr   ,                                                       &
    vel    ,                                                       &
@@ -1572,6 +1594,7 @@ if(iappel.eq.1) then
    coefav , coefbv , cofafv , cofbfv ,                            &
    flumas , flumab ,                                              &
    viscfi , viscbi , viscf  , viscb  , secvif , secvib ,          &
+   icvflb , ivoid  ,                                              &
    fimp   ,                                                       &
    smbr   ,                                                       &
    vect   ,                                                       &
@@ -1626,6 +1649,7 @@ elseif(iappel.eq.2) then
    vel    , vel    ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
    flumas , flumab , viscf  , viscb  , secvif , secvib ,          &
+   icvflb , icvfli ,                                              &
    smbr   )
 
   iestop = ipproc(iestim(iestot))
@@ -1636,7 +1660,6 @@ elseif(iappel.eq.2) then
     enddo
   enddo
 endif
-
 
 !===============================================================================
 ! 4.     FIN DU CALCUL DE LA NORME POUR RESOLP

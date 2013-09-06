@@ -123,6 +123,8 @@ integer          iescap, ircflp, ischcp, isstpp, ivar, ncymxp, nitmfp
 integer          nswrsp
 integer          imucpp, idftnp, iswdyp
 integer          iharmo
+integer          icvflb
+integer          ivoid(1)
 
 double precision thetap
 double precision epsrgp, climgp, extrap, epsilp
@@ -277,6 +279,8 @@ climgp = climgr(ivar)
 extrap = 0.d0
 relaxp = relaxv(ivar)
 thetap = thetav(ivar)
+! all boundary convective flux with upwind
+icvflb = 0
 
 ! --- Solve the diffusion equation
 
@@ -294,6 +298,7 @@ call codits &
   imasfl , bmasfl ,                                              &
   viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
   rvoid  , rvoid  ,                                              &
+  icvflb , ivoid  ,                                              &
   rovsdt , smbr   , prhyd  , dpvar  ,                            &
   rvoid  , rvoid  )
 

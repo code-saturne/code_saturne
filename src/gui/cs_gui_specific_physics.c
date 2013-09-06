@@ -2979,8 +2979,7 @@ void CS_PROCF (uicpsc, UICPSC) (const int *const ncharb,
  * for the model scalar (compressible model)
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uicfsc, UICFSC) (const int *const irho,
-                                const int *const ienerg,
+void CS_PROCF (uicfsc, UICFSC) (const int *const ienerg,
                                 const int *const itempk)
 {
   cs_var_t *vars = cs_glob_var;
@@ -2991,11 +2990,6 @@ void CS_PROCF (uicfsc, UICFSC) (const int *const irho,
   } else {
     BFT_MALLOC(vars->label, vars->nscapp, char*);
   }
-
-  label = _scalar_name_label("compressible_model", "Rho");
-  BFT_MALLOC(vars->label[*irho -1], strlen(label)+1, char);
-  strcpy(vars->label[*irho -1], label);
-  BFT_FREE(label);
 
   label = _scalar_name_label("compressible_model", "EnergieT");
   BFT_MALLOC(vars->label[*ienerg -1], strlen(label)+1, char);

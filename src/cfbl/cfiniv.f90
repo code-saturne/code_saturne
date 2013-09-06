@@ -24,7 +24,7 @@ subroutine cfiniv &
 !================
 
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce , propfb , coefa  , coefb  )
+   dt     , rtp    , propce , propfb )
 
 !===============================================================================
 ! FONCTION :
@@ -73,8 +73,6 @@ subroutine cfiniv &
 ! (ncelet,*)       !    !     !    cellules                                    !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa coefb      ! tr ! <-- ! conditions aux limites aux                     !
-!  (nfabor,*)      !    !     !    faces de bord                               !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -106,15 +104,14 @@ implicit none
 
 integer          nvar   , nscal
 
+double precision rvoid(1)
 
 double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
 double precision propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 
 ! Local variables
 
-integer          iel   , iccfth, imodif
-integer          iirom , iiromb, ifac
+integer          imodif, iccfth
 
 double precision, allocatable, dimension(:) :: w1, w2, w3, w4
 
@@ -151,23 +148,6 @@ if ( isuite.eq.0 ) then
   ( nvar   , nscal  ,                                            &
     dt     , rtp    , propce , propfb )
 
-! ----- Initialisation des proprietes physiques ROM et ROMB
-
-    iirom  = ipproc(irom  )
-    iiromb = ipprob(irom  )
-
-    do iel = 1, ncel
-      propce(iel,iirom)  = rtp(iel,isca(irho))
-    enddo
-
-    do ifac = 1, nfabor
-      iel = ifabor(ifac)
-      propfb(ifac,iiromb) =                                     &
-           coefa(ifac,iclrtp(isca(irho),icoef))           &
-           + coefb(ifac,iclrtp(isca(irho),icoef))           &
-           * rtp(iel,isca(irho))
-    enddo
-
   endif
 
 else
@@ -181,12 +161,12 @@ else
     iccfth = 0
     imodif = 1
 
-    call cfther                                                 &
+    call cfther &
     !==========
- ( nvar   ,                                                     &
-   iccfth , imodif ,                                            &
-   dt     , rtp    , rtp    , propce ,                          &
-   w1     , w2     , w3     , w4     )
+ ( nvar   ,                                                                    &
+   iccfth , imodif ,                                                           &
+   dt     , rtp    , rtp    , propce , propfb ,                                &
+   w1     , w2     , w3     , w4     , rvoid  , rvoid )
 
   endif
 

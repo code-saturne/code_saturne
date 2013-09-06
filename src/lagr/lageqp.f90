@@ -97,7 +97,8 @@ integer          iconvp, idiffp, ndircp, ireslp, nitmap
 integer          nswrsp, ircflp, ischcp, isstpp
 integer          imgrp, ncymxp, nitmfp
 integer          imucpp, idftnp, iswdyp
-
+integer          icvflb
+integer          ivoid(1)
 double precision epsrgp, climgp, extrap, blencp, epsilp, epsrsp
 double precision relaxp, thetap
 double precision qimp  , hint, pimp
@@ -285,6 +286,8 @@ climgp = 1.5d0
 extrap = 0.d0
 relaxp = 1.d0
 iescap = 0
+! all boundary convective flux with upwind
+icvflb = 0
 
 ipp  = 1
 NOMVAR(IPP) = 'PoissonL'
@@ -321,6 +324,7 @@ call codits &
    fmala  , fmalb  ,                                              &
    viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &
+   icvflb , ivoid  ,                                              &
    rovsdt , smbrs  , phi    , dpvar  ,                            &
    rvoid  , rvoid  )
 

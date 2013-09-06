@@ -268,10 +268,10 @@ endif
 !         inivar et lecamo (et par rapport a une solution d'echange
 !         en fin de pas de temps, on evite une communication)
 !      L'inconvenient est que l'on ne dispose pas des halos sitot les
-!         RTP calcules (fin de navsto, turbke, turrij, boucle dans scalai)
+!         RTP calcules (fin de navstv, turbke, turrij, boucle dans scalai)
 !      On pourrait penser a echanger aussi les PROPCE et le DT
 !         Pour le moment ca ne s'impose pas : on a besoin d'avoir
-!         echange RHO dans navsto pour un affichage et les viscosites
+!         echange RHO dans navstv pour un affichage et les viscosites
 !         dans vissec. On fera les transferts localement quand necessaire.
 !      Par principe, on suppose que
 !         c'est a la charge de celui qui utilise des valeurs voisines de
@@ -690,7 +690,7 @@ endif
 300 continue
 
 
-! --- Boucle sur navsto pour couplage vitesse/pression
+! --- Boucle sur navstv pour couplage vitesse/pression
 !     on s'arrete a NTERUP ou quand TOUTES les phases on converge
 !     ITRFUP=0 indique qu'on a besoin de refaire une iteration
 !     pour Syrthes, T1D ou rayonnement.
@@ -754,9 +754,9 @@ do while (iterns.le.nterup)
     !==========
   ( ntcabs, nfabor,                                                &
     nozppm, ncharm, ncharb, nclpch,                                &
-    iindef, ientre, iesicf, isspcf, ierucf, isopcf,                &
-    iparoi, iparug, isymet, isolib, isca  ,                        &
-    ipr   , irho  , itempk, ienerg,                                &
+    iindef, ientre, iesicf, isspcf, ierucf, iephcf,                &
+    isopcf, iparoi, iparug, isymet, isolib, isca  ,                &
+    ipr   , itempk, ienerg,                                        &
     iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
     ientfu, ientgb, ientgf, iprofm,                                &
     coejou, dpot,   rtpa,   ielcor,                                &
@@ -809,7 +809,7 @@ do while (iterns.le.nterup)
     call uiclve &
     !==========
   ( nfabor, nozppm,                                                &
-    iindef, ientre, iesicf, ierucf, isspcf, isopcf,                &
+    iindef, ientre, iesicf, ierucf, iephcf, isspcf, isopcf,        &
     iparoi, iparug, isymet, isolib,                                &
     itypfb, izfppp )
 
@@ -1221,119 +1221,67 @@ do while (iterns.le.nterup)
   !===============
 
 !===============================================================================
-! 12. RESOLUTION MASSE (MODULE COMPRESSIBLE UNIQUEMENT)
-!===============================================================================
-
-    ! Le module compressible n'est pas compatible avec la boucle U/P
-    if ( ippmod(icompf).ge.0 ) then
-
-      if(iwarni(iu).ge.1) then
-        write(nfecra,1080)
-      endif
-
-      iscal = irho
-
-      call cfmsvl &
-      !==========
-    ( nvar   , nscal  ,                                              &
-      ncepdc , ncetsm ,                                              &
-      iscal  ,                                                       &
-      icepdc , icetsm ,                                              &
-      itypsm ,                                                       &
-      dt     , rtp    , rtpa   , propce , propfb ,                   &
-      coefa  , coefb  ,                                              &
-      ckupdc , smacel )
-
-    endif
-
-!===============================================================================
-! 13. RESOLUTION QUANTITE DE MOUVEMENT ET MASSE (INCOMPRESSIBLE)
+! 12. RESOLUTION QUANTITE DE MOUVEMENT ET MASSE
 !===============================================================================
 
     if(iwarni(iu).ge.1) then
       write(nfecra,1040)
     endif
 
-    !     SI LE COMPRESSIBLE SANS CHOC EST ACTIF, ON RESOUT AVEC CFQDMV
-    if ( ippmod(icompf).ge.0 ) then
 
-      call field_get_key_int(ivarfl(iu), kimasf, iflmas)
-      call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
-      call field_get_val_s(iflmas, imasfl)
-      call field_get_val_s(iflmab, bmasfl)
+    call field_get_key_int(ivarfl(iu), kimasf, iflmas)
+    call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
+    call field_get_val_s(iflmas, imasfl)
+    call field_get_val_s(iflmab, bmasfl)
 
-      call cfqdmv &
-      !==========
-    ( nvar   , nscal  ,                                              &
-      ncepdc , ncetsm ,                                              &
-      icepdc , icetsm ,                                              &
-      itypsm ,                                                       &
-      dt     , rtp    , rtpa   , propce , propfb ,                   &
-      imasfl , bmasfl ,                                              &
-      coefa  , coefb  ,                                              &
-      ckupdc , smacel ,                                              &
-      frcxt  , tpucou )
+    if (ivelco.eq.0) then
+
+      call csexit(1)
 
     else
 
-      if (ivelco.eq.0) then
+      ! Coupled solving of the velocity components
 
-        call navsto &
-        !==========
-      ( nvar   , nscal  , iterns , icvrge ,                            &
-        isostd ,                                                       &
-        dt     , tpucou , rtp    , rtpa   , propce , propfb ,          &
-        tslagr , coefa  , coefb  , frcxt  , prhyd  ,                   &
-        trava  , ximpa  , uvwk   )
+      call navstv &
+      !==========
+    ( nvar   , nscal  , iterns , icvrge , itrale ,                   &
+      isostd ,                                                       &
+      dt     , tpucou , rtp    , rtpa   , propce , propfb ,          &
+      tslagr , coefa  , coefb  , frcxt  , prhyd  ,                   &
+      trava  , ximpav , uvwk   )
 
-      else
-
-        ! Coupled solving of the velocity components
-
-         call navstv &
-        !==========
-      ( nvar   , nscal  , iterns , icvrge , itrale ,                   &
-        isostd ,                                                       &
-        dt     , tpucou , rtp    , rtpa   , propce , propfb ,          &
-        tslagr , coefa  , coefb  , frcxt  , prhyd  ,                   &
-        trava  , ximpav , uvwk   )
-
-      endif
+    endif
 
 
 
-      !     Mise a jour de la pression si on utilise un couplage vitesse/pression
-      !       par point fixe
-      !     En parallele, l'echange est fait au debut de navsto.
-      if(nterup.gt.1) then
-        do iel = 1, ncel
-          rtpa(iel,ipr) = rtp(iel,ipr)
-        enddo
-      endif
+    !     Mise a jour de la pression si on utilise un couplage vitesse/pression
+    !       par point fixe
+    !     En parallele, l'echange est fait au debut de navstv.
+    if(nterup.gt.1) then
+      do iel = 1, ncel
+        rtpa(iel,ipr) = rtp(iel,ipr)
+      enddo
+    endif
 
-      !     Si c'est la derniere iteration : INSLST = 1
-      if((icvrge.eq.1).or.(iterns.eq.nterup)) then
+    !     Si c'est la derniere iteration : INSLST = 1
+    if((icvrge.eq.1).or.(iterns.eq.nterup)) then
 
-        ! Si on a besoin de refaire une nouvelle iteration pour SYRTHES,
-        ! rayonnement, paroi thermique 1D...
-        ! ET que l'on est a la derniere iteration en ALE !
+      ! Si on a besoin de refaire une nouvelle iteration pour SYRTHES,
+      ! rayonnement, paroi thermique 1D...
+      ! ET que l'on est a la derniere iteration en ALE !
 
-        ! ...alors, on remet a zero les indicateurs de convergence
-        if (itrfup.eq.0.and.itrfin.eq.1) then
-          itrfup = 1
-          icvrge = 0
-          iterns = iterns - 1
+      ! ...alors, on remet a zero les indicateurs de convergence
+      if (itrfup.eq.0.and.itrfin.eq.1) then
+        itrfup = 1
+        icvrge = 0
+        iterns = iterns - 1
 
         ! ...sinon, on termine
-        else
-          inslst = 1
-        endif
-
+      else
+        inslst = 1
       endif
 
-      !     Si ISTMPF.EQ.0 (explicite) on ne traite pas le flux de
-      !       masse a la derniere iteration
-      !     Sinon on traite le flux de masse a toutes les iterations
+
 
       !     On teste le flux de masse
       if ((istmpf.eq.0.and.inslst.eq.0) .or. istmpf.ne.0) then
@@ -1373,7 +1321,7 @@ if (iccvfg.eq.0) then
 !===============
 
 !===============================================================================
-! 14.  DEPLACEMENT DES STRUCTURES EN ALE ET TEST DE BOUCLAGE IMPLICITE
+! 13.  DEPLACEMENT DES STRUCTURES EN ALE ET TEST DE BOUCLAGE IMPLICITE
 !===============================================================================
 
   if (nbstru.gt.0.or.nbaste.gt.0) then
@@ -1412,7 +1360,7 @@ if (iccvfg.eq.0) then
   endif
 
 !===============================================================================
-! 15. RESOLUTION TURBULENCE
+! 14. RESOLUTION TURBULENCE
 !===============================================================================
 
   iok = 0
@@ -1542,7 +1490,7 @@ endif  ! Fin si calcul sur champ de vitesse fige SUITE
 !     Ici on peut liberer les eventuels tableaux SKW et DIVUKW
 
 !===============================================================================
-! 16.  RESOLUTION DES SCALAIRES
+! 15.  RESOLUTION DES SCALAIRES
 !===============================================================================
 
 
@@ -1580,7 +1528,7 @@ endif
 deallocate(icodcl, rcodcl)
 
 !===============================================================================
-! 17.  TRAITEMENT DU FLUX DE MASSE, DE LA VISCOSITE,
+! 16.  TRAITEMENT DU FLUX DE MASSE, DE LA VISCOSITE,
 !      DE LA MASSE VOLUMIQUE ET DE LA CHALEUR SPECIFIQUE POUR
 !      UN THETA SCHEMA
 !===============================================================================
@@ -1591,7 +1539,7 @@ call schtmp(nscal, iappel, propce, propfb)
 !==========
 
 !===============================================================================
-! 18.  SORTIE DANS LE CAS DE "zero pas de temps" ET INIT ALE
+! 17.  SORTIE DANS LE CAS DE "zero pas de temps" ET INIT ALE
 !===============================================================================
 
  200  continue
@@ -1645,11 +1593,6 @@ call schtmp(nscal, iappel, propce, propfb)
                                                               /,/,&
  ' RESOLUTION DES TRANSFERTS THERMIQUES RADIATIFS             ',/,&
 '  ==============================================             ',/)
- 1080 format(/,                                                   &
- '------------------------------------------------------------',/,&
-                                                              /,/,&
- ' RESOLUTION DE L''EQUATION DE MASSE                         ',/,&
-'  ==================================                         ',/)
 
  4010 format(/,                                                   &
 ' ** TEMPS POUR LA DISTANCE A LA PAROI : ',E14.5               ,/,&
@@ -1697,11 +1640,6 @@ call schtmp(nscal, iappel, propce, propfb)
                                                               /,/,&
  ' SOLVING THERMAL RADIATIVE TRANSFER                         ',/,&
 '  ==================================                         ',/)
- 1080 format(/,                                                   &
- '------------------------------------------------------------',/,&
-                                                              /,/,&
- ' SOLVING MASS EQUATION                                      ',/,&
-'  =====================                                      ',/)
 
  4010 format(/,                                                   &
 ' ** TIME FOR THE WALL DISTANCE: ',E14.5                       ,/,&

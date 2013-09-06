@@ -67,7 +67,7 @@ implicit none
 
 ! Local variables
 
-integer          ii, iprop, iok, iccfth, imodif
+integer          ii, iprop, iccfth, imodif
 double precision dblpre(1)
 
 !===============================================================================
@@ -80,12 +80,6 @@ if ( ippmod(icompf).ge.0 ) then
 
   iprop =0
 
-! ---- Masse volumique
-  iprop = iprop + 1
-  irho = iscapp(iprop)
-!     Alias pour les C.L.
-  irun = irho
-
 ! ---- Energie totale
   iprop = iprop + 1
   ienerg = iscapp(iprop)
@@ -95,10 +89,6 @@ if ( ippmod(icompf).ge.0 ) then
 ! ---- Temperature (post)
   iprop = iprop + 1
   itempk = iscapp(iprop)
-
-! ---- Viscosite dynamique de reference relative au scalaire IRHO
-  ivisls(irho  ) = 0
-  visls0(irho  ) = epzero
 
 ! ---- Viscosite dynamique de reference relative au scalaire ITEMPK
   ivisls(itempk) = 0
@@ -129,8 +119,8 @@ if ( ippmod(icompf).ge.0 ) then
   !==========
  ( ii ,                                                           &
    iccfth , imodif  ,                                             &
-   dblpre , dblpre , dblpre , dblpre ,                            &
-   dblpre , dblpre , dblpre , dblpre )
+   dblpre , dblpre , dblpre , dblpre , dblpre ,                   &
+   dblpre , dblpre , dblpre , dblpre , dblpre , dblpre )
 
 ! --> Utilisation d'un flux de masse specifique pour la vitesse
 
@@ -146,7 +136,7 @@ if ( ippmod(icompf).ge.0 ) then
 !     ======================
 !     Construction de l'indirection entre la numerotation du noyau et XML
   if (iihmpr.eq.1) then
-    call uicfsc(irho, ienerg, itempk)
+    call uicfsc(ienerg, itempk)
     call csvvva(iviscv)
   endif
 

@@ -99,6 +99,9 @@ double precision epsrgp, climgp, extrap
 double precision blencp, relaxp, thetex
 double precision qimp , hint
 
+integer          icvflb
+integer          ivoid(1)
+
 double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: vistot, viscf, viscb
@@ -270,6 +273,9 @@ do iscal = 1, nscal
 
     enddo
 
+    ! all boundary convective flux with upwind
+    icvflb = 0
+
     ! Diffusion term calculation
     call bilsca &
    !==========
@@ -283,6 +289,7 @@ do iscal = 1, nscal
     imasfl , bmasfl ,                                              &
     viscf  , viscb  , rvoid  , rvoid  ,                            &
     rvoid  , rvoid  ,                                              &
+    icvflb , ivoid  ,                                              &
     propce(1,ipproc(iustdy(iscal))) )
 
     ! Free memory

@@ -151,6 +151,9 @@ integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
 integer          imucpp, idftnp, iswdyp
 integer          iflid , f_id, keydri, iscdri
+integer          icvflb
+
+integer          ivoid(1)
 
 double precision epsrgp, climgp, extrap, relaxp, blencp, epsilp
 double precision epsrsp
@@ -844,6 +847,8 @@ epsrgp = epsrgr(ivar)
 climgp = climgr(ivar)
 extrap = extrag(ivar)
 relaxp = relaxv(ivar)
+! all boundary convective flux with upwind
+icvflb = 0
 
 call codits &
 !==========
@@ -859,6 +864,7 @@ call codits &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , viscce , viscf  , viscb  , viscce ,          &
    weighf , weighb ,                                              &
+   icvflb , ivoid  ,                                              &
    rovsdt , smbrs  , rtp(1,ivar)     , dpvar  ,                   &
    xcpp   , rvoid  )
 

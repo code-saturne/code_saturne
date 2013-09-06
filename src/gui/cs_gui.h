@@ -517,8 +517,8 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *iscal,
  * integer          isca     -->  indirection array for scalar number
  * integer          iscold   -->  scalar number for restart
  * integer          iccfth   -->  type of initialisation(compressible model)
+ * integer          ipcrom   -->  propce index for density
  * integer          ipr      -->  rtp index for pressure
- * integer          irho     -->  rtp index for density
  * integer          itempk   -->  rtp index for temperature (in K)
  * integer          ienerg   -->  rtp index for energy total
  * DOUBLE PRECISION RO0      -->  value of density if IROVAR=0
@@ -528,6 +528,7 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *iscal,
  * DOUBLE PRECISION ALMAX    -->  value of reference length
  * DOUBLE PRECISION XYZCEN   -->  cell's gravity center
  * double precision rtp     <--   variables and scalars array
+ * double precision propce  <--   physical properties array
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(uiiniv, UIINIV) (const int         *ncelet,
@@ -535,8 +536,8 @@ void CS_PROCF(uiiniv, UIINIV) (const int         *ncelet,
                                const int          isca[],
                                const int          iscold[],
                                      int         *iccfth,
+                               const int *const   ipcrom,
                                const int *const   ipr,
-                               const int *const   irho,
                                const int *const   itempk,
                                const int *const   ienerg,
                               const cs_real_t    *ro0,
@@ -545,7 +546,8 @@ void CS_PROCF(uiiniv, UIINIV) (const int         *ncelet,
                               const cs_real_t    *uref,
                               const cs_real_t    *almax,
                               const double *const xyzcen,
-                                     double       rtp[]);
+                                    double       rtp[],
+                                    double       propce[]);
 
 /*----------------------------------------------------------------------------
  * User law for material Properties

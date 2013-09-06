@@ -269,7 +269,6 @@ memfin.f90 \
 memtri.f90 \
 modini.f90 \
 mmtycl.f90 \
-navsto.f90 \
 navstv.f90 \
 newmrk.f90 \
 numvec.f90 \
@@ -278,13 +277,11 @@ phyvar.f90 \
 post_util.f90 \
 precli.f90 \
 predfl.f90 \
-preduv.f90 \
 predvv.f90 \
 prehyd.f90 \
 prmoy0.f90 \
 pthrbm.f90 \
 recvmc.f90 \
-resolp.f90 \
 resopv.f90 \
 scalai.f90 \
 schtmp.f90 \

@@ -91,13 +91,17 @@ module pointe
 
   ! coefau ! (3,nfabor)     ! explicit Boundary conditions for the velocity
   ! coefbu ! (3,3,nfabor)   ! implicit Boundary conditions for the velocity
+  ! cofafu ! (3,nfabor)     ! explicit Boundary conditions for the velocity
+  ! cofbfu ! (3,3,nfabor)   ! implicit Boundary conditions for the velocity
+  ! cofacu ! (3,nfabor)     ! explicit Boundary conditions for the velocity
+  ! cofbcu ! (3,3,nfabor)   ! implicit Boundary conditions for the velocity
   ! claale ! (3,nfabor)     ! explicit Boundary conditions for the mesh velocity
   ! clbale ! (3,3,nfabor)   ! implicit Boundary conditions for the mesh velocity
   ! cfaale ! (3,nfabor)     ! explicit Boundary conditions for the mesh velocity
   ! cfbale ! (3,3,nfabor)   ! implicit Boundary conditions for the mesh velocity
 
-  double precision, dimension(:,:), allocatable :: coefau, cofafu
-  double precision, dimension(:,:,:), allocatable :: coefbu, cofbfu
+  double precision, dimension(:,:), allocatable :: coefau, cofafu, cofacu
+  double precision, dimension(:,:,:), allocatable :: coefbu, cofbfu, cofbcu
 
   double precision, dimension(:,:), allocatable :: cfaale, claale
   double precision, dimension(:,:,:), allocatable :: cfbale, clbale
@@ -238,6 +242,10 @@ contains
     if (ivelco.eq.1) then
       allocate(coefau(3,nfabor),cofafu(3,nfabor))
       allocate(coefbu(3,3,nfabor),cofbfu(3,3,nfabor))
+      if ( ippmod(icompf).ge.0 ) then
+        allocate(cofacu(3,nfabor))
+        allocate(cofbcu(3,3,nfabor))
+      endif
     endif
 
     ! Porosity array when needed
@@ -356,7 +364,9 @@ contains
     if (allocated(izcpdc)) deallocate(izcpdc)
     if (allocated(izctsm)) deallocate(izctsm)
     if (allocated(izft1d)) deallocate(izft1d)
-    if (allocated(coefau)) deallocate(coefau, cofafu, coefbu, cofbfu)
+    if (allocated(coefau)) deallocate(coefau, cofafu, cofacu,                   &
+                                      coefbu, cofbfu, cofbcu)
+    if (allocated(cofacu)) deallocate(cofacu, cofbcu)
     if (allocated(porosi)) deallocate(porosi)
     if (allocated(visten)) deallocate(visten)
     if (allocated(dttens)) deallocate(dttens)

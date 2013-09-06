@@ -448,7 +448,7 @@ double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
 
-integer          ifac  , iel   , ii
+integer          ifac  , iel   , ii , ipcrom
 integer          izone , iutile
 integer          ilelt, nlelt
 
@@ -521,9 +521,6 @@ do ilelt = 1, nlelt
   ! Pressure (in Pa)
   rcodcl(ifac,ipr,1) = 5.d5
 
-  ! Density (in kg/m3)
-  ! rcodcl(ifac,isca(irho  ),1) = 1.d0
-
   ! Temperature (in K)
   rcodcl(ifac,isca(itempk),1) = 300.d0
 
@@ -557,7 +554,8 @@ do ilelt = 1, nlelt
   !     and of k and epsilon at the inlet (xkent and xeent) using
   !     standard laws for a circular pipe
   !     (their initialization is not needed here but is good practice).
-  rhomoy = rtp(iel,isca(irho))
+  ipcrom = ipproc(irom)
+  rhomoy = propce(iel,ipcrom)
   ustar2 = 0.d0
   xkent  = epzero
   xeent  = epzero
@@ -702,7 +700,7 @@ do ilelt = 1, nlelt
   rcodcl(ifac,iw,1) = 0.0d0
 
   ! - Masse Volumique (en kg/m3)
-  rcodcl(ifac,isca(irho  ),1) = 1.d0
+  !FIXME with Q,H, rcodcl(ifac,isca(irho  ),1) = 1.d0
 
 
   ! - Turbulence

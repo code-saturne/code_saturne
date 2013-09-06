@@ -123,6 +123,9 @@ integer          ipcroo, ipbroo, ipcvto, ipcvlo
 integer          iphydp
 integer          imucpp, idftnp, iswdyp
 
+integer          icvflb
+integer          ivoid(1)
+
 double precision rnorm , d2s3, d1s3, divp23
 double precision deltk , delte, a11, a12, a22, a21
 double precision gravke, epssuk, unsdet, romvsd
@@ -944,6 +947,8 @@ if (ikecou.eq.1) then
   extrap = extrag(ivar)
   relaxp = relaxv(ivar)
   thetap = thetav(ivar)
+  ! all boundary convective flux with upwind
+  icvflb = 0
 
   call bilsca &
   !==========
@@ -957,6 +962,7 @@ if (ikecou.eq.1) then
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , rvoid  ,                            &
    rvoid  , rvoid  ,                                              &
+   icvflb , ivoid  ,                                              &
    w7     )
 
   if (iwarni(ivar).ge.2) then
@@ -1014,6 +1020,8 @@ if (ikecou.eq.1) then
   extrap = extrag(ivar)
   relaxp = relaxv(ivar)
   thetap = thetav(ivar)
+  ! all boundary convective flux with upwind
+  icvflb = 0
 
   call bilsca &
   !==========
@@ -1027,6 +1035,7 @@ if (ikecou.eq.1) then
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , rvoid  ,                            &
    rvoid  , rvoid  ,                                              &
+   icvflb , ivoid  ,                                              &
    w8     )
 
   if (iwarni(ivar).ge.2) then
@@ -1186,6 +1195,8 @@ climgp = climgr(ivar)
 extrap = extrag(ivar)
 relaxp = relaxv(ivar)
 thetap = thetav(ivar)
+! all boundary convective flux with upwind
+icvflb = 0
 
 call codits &
 !==========
@@ -1201,6 +1212,7 @@ call codits &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &
+   icvflb , ivoid  ,                                              &
    tinstk , smbrk  , rtp(1,ivar)     , dpvar  ,                   &
    rvoid  , rvoid  )
 
@@ -1267,6 +1279,8 @@ climgp = climgr(ivar)
 extrap = extrag(ivar)
 relaxp = relaxv(ivar)
 thetap = thetav(ivar)
+! all boundary convective flux with upwind
+icvflb = 0
 
 call codits &
 !==========
@@ -1282,6 +1296,7 @@ call codits &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &
+   icvflb , ivoid  ,                                              &
    tinste , smbre  , rtp(1,ivar)     , dpvar  ,                   &
    rvoid  , rvoid  )
 

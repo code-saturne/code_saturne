@@ -69,11 +69,11 @@ module paramx
 
   integer    iindef, ientre, isolib, isymet, iparoi,                &
              iparug, iesicf, isspcf, isopcf, ierucf,                &
-             ieqhcf, icscpl
+             iephcf, ieqhcf, icscpl
 
   parameter(iindef=1, ientre=2, isolib=3, isymet=4, iparoi=5,       &
             iparug=6, iesicf=7, isspcf=8, isopcf=9, ierucf=10,      &
-            ieqhcf=11, icscpl=12)
+            iephcf=11, ieqhcf=12, icscpl=13)
 
   ! nestmx : nombre max d'estimateurs
   ! iespre, iesder, iescor, iestot : numeros

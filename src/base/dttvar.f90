@@ -434,7 +434,7 @@ if (idtvar.ge.0) then
       !       LA CONTRAINTE CFL MAXIMUM PRESCRITE PAR L'UTILISATEUR
 
       do iel = 1, ncel
-        dam(iel) = coumax/max(wcf(iel), epzero)
+        dam(iel) = cflmmx/max( wcf(iel), epzero)
       enddo
 
       ! ---> PAS DE TEMPS UNIFORME : ON PREND LE MINIMUM DE LA CONTRAINTE

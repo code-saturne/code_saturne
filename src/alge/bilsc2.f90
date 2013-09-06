@@ -116,6 +116,8 @@
 !>                               at interior faces for the r.h.s.
 !> \param[in]     viscb         \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
 !>                               at border faces for the r.h.s.
+!> \param[in]     icvflb
+!> \param[in]     icvfli
 !> \param[in,out] smbrp         right hand side \f$ \vect{Rhs} \f$
 !_______________________________________________________________________________
 
@@ -126,6 +128,7 @@ subroutine bilsc2 &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
    flumas , flumab , viscf  , viscb  ,                            &
+   icvflb , icvfli ,                                              &
    smbrp  )
 
 !===============================================================================
@@ -135,6 +138,7 @@ subroutine bilsc2 &
 !===============================================================================
 
 use paramx
+use numvar
 use pointe
 use entsor
 use parall
@@ -142,7 +146,8 @@ use period
 use cplsat
 use mesh
 use numvar, only: ivarfl
-
+use field
+use ppincl
 !===============================================================================
 
 implicit none
@@ -153,8 +158,9 @@ integer          idtvar
 integer          ivar   , iconvp , idiffp , nswrgp , imligp
 integer          ircflp , ischcp , isstpp
 integer          inc    , imrgra , iccocg
-integer          iwarnp , ipp
+integer          iwarnp , ipp    , icvflb
 
+integer          icvfli(nfabor)
 
 double precision blencp , epsrgp , climgp, extrap, relaxp , thetap
 
@@ -170,7 +176,7 @@ double precision smbrp(ncelet)
 character*80     chaine
 character*8      cnom
 integer          ifac,ii,jj,infac,iel,iupwin, iij, iii, ig, it
-integer          idimtr
+integer          idimtr, idim
 double precision pfac,pfacd,flui,fluj,flux,fluxi,fluxj
 double precision difx,dify,difz,djfx,djfy,djfz
 double precision pi, pj, pia, pja
@@ -188,6 +194,9 @@ double precision pfac1, pfac2, pfac3, unsvol
 
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: dpdxa, dpdya, dpdza
+
+double precision, dimension(:,:), pointer :: cofacv, cofbcv
+double precision, dimension(:), pointer :: coface, cofbce
 
 !===============================================================================
 
@@ -1041,89 +1050,205 @@ endif
 ! ---> Contribution from boundary faces
 ! ======================================================================
 
-! Steady
-if (idtvar.lt.0) then
+! Boundary convective flux are all computed with an upwind scheme
+if (icvflb.eq.0) then
 
-  do ig = 1, ngrpb
-    !$omp parallel do private(ifac, ii, diipbx, diipby, diipbz, flui, fluj,     &
-    !$omp                     pir, pipr, pfac, pfacd, flux, pi, pia)            &
-    !$omp          if(nfabor > thr_n_min)
-    do it = 1, nthrdb
-      do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
+  ! Steady
+  if (idtvar.lt.0) then
 
-        ii = ifabor(ifac)
+    do ig = 1, ngrpb
+      !$omp parallel do private(ifac, ii, diipbx, diipby, diipbz, flui, fluj,     &
+      !$omp                     pir, pipr, pfac, pfacd, flux, pi, pia)            &
+      !$omp          if(nfabor > thr_n_min)
+      do it = 1, nthrdb
+        do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
 
-        pi = pvar(ii)
-        pia = pvara(ii)
+          ii = ifabor(ifac)
 
-        diipbx = diipb(1,ifac)
-        diipby = diipb(2,ifac)
-        diipbz = diipb(3,ifac)
+          pi = pvar(ii)
+          pia = pvara(ii)
 
-        ! Remove decentering for coupled faces
-        if (ifaccp.eq.1.and.itypfb(ifac).eq.icscpl) then
-          flui = 0.0d0
-          fluj = flumab(ifac)
-        else
-          flui = 0.5d0*(flumab(ifac) +abs(flumab(ifac)))
-          fluj = 0.5d0*(flumab(ifac) -abs(flumab(ifac)))
-        endif
+          diipbx = diipb(1,ifac)
+          diipby = diipb(2,ifac)
+          diipbz = diipb(3,ifac)
 
-        pir  = pi/relaxp - (1.d0-relaxp)/relaxp*pia
-        pipr =   pir                                                            &
+          ! Remove decentering for coupled faces
+          if (ifaccp.eq.1.and.itypfb(ifac).eq.icscpl) then
+            flui = 0.0d0
+            fluj = flumab(ifac)
+          else
+            flui = 0.5d0*(flumab(ifac) +abs(flumab(ifac)))
+            fluj = 0.5d0*(flumab(ifac) -abs(flumab(ifac)))
+          endif
+
+          pir  = pi/relaxp - (1.d0-relaxp)/relaxp*pia
+          pipr =   pir                                                            &
                + ircflp*(grad(ii,1)*diipbx+grad(ii,2)*diipby+grad(ii,3)*diipbz)
 
-        pfac  = inc*coefap(ifac) +coefbp(ifac)*pipr
-        pfacd = inc*cofafp(ifac) +cofbfp(ifac)*pipr
+          pfac  = inc*coefap(ifac) +coefbp(ifac)*pipr
+          pfacd = inc*cofafp(ifac) +cofbfp(ifac)*pipr
 
-        flux =   iconvp*(flui*pir + fluj*pfac - flumab(ifac)*pi )               &
+          flux =   iconvp*(flui*pir + fluj*pfac - flumab(ifac)*pi )               &
                + idiffp*viscb(ifac)*pfacd
-        smbrp(ii) = smbrp(ii) - flux
+          smbrp(ii) = smbrp(ii) - flux
 
+        enddo
       enddo
     enddo
-  enddo
 
-! Unsteady
+  ! Unsteady
+  else
+
+    do ig = 1, ngrpb
+      !$omp parallel do private(ifac, ii, diipbx, diipby, diipbz, flui, fluj,     &
+      !$omp                     pip, pfac, pfacd, flux, pi)                       &
+      !$omp          if(nfabor > thr_n_min)
+      do it = 1, nthrdb
+        do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
+
+          ii = ifabor(ifac)
+
+          pi = pvar(ii)
+
+          diipbx = diipb(1,ifac)
+          diipby = diipb(2,ifac)
+          diipbz = diipb(3,ifac)
+
+          ! Remove decentering for coupled faces
+          if (ifaccp.eq.1.and.itypfb(ifac).eq.icscpl) then
+            flui = 0.0d0
+            fluj = flumab(ifac)
+          else
+            flui = 0.5d0*(flumab(ifac) +abs(flumab(ifac)))
+            fluj = 0.5d0*(flumab(ifac) -abs(flumab(ifac)))
+          endif
+
+          pip = pi                                                       &
+               + ircflp*(grad(ii,1)*diipbx+grad(ii,2)*diipby+grad(ii,3)*diipbz)
+
+          pfac  = inc*coefap(ifac) + coefbp(ifac)*pip
+          pfacd = inc*cofafp(ifac) + cofbfp(ifac)*pip
+
+          flux =   iconvp*((flui - flumab(ifac))*pi + fluj*pfac)         &
+               + idiffp*viscb(ifac)*pfacd
+          smbrp(ii) = smbrp(ii) - thetap * flux
+
+        enddo
+      enddo
+    enddo
+
+  endif
+
+! Boundary convective flux is imposed at some faces (tagged in icvfli array)
 else
 
-  do ig = 1, ngrpb
-    !$omp parallel do private(ifac, ii, diipbx, diipby, diipbz, flui, fluj,     &
-    !$omp                     pip, pfac, pfacd, flux, pi)                       &
-    !$omp          if(nfabor > thr_n_min)
-    do it = 1, nthrdb
-      do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
+  ! Retrieve the value of the convective flux to be imposed
+  call field_get_coefac_s(ivarfl(ivar), coface)
+  call field_get_coefbc_s(ivarfl(ivar), cofbce)
 
-        ii = ifabor(ifac)
+  ! Steady
+  if (idtvar.lt.0) then
 
-        pi = pvar(ii)
+    do ig = 1, ngrpb
+      !$omp parallel do private(ifac, ii, diipbx, diipby, diipbz, flui, fluj,     &
+      !$omp                     pir, pipr, pfac, pfacd, flux, pi, pia)            &
+      !$omp          if(nfabor > thr_n_min)
+      do it = 1, nthrdb
+        do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
 
-        diipbx = diipb(1,ifac)
-        diipby = diipb(2,ifac)
-        diipbz = diipb(3,ifac)
+          ii = ifabor(ifac)
 
-        ! Remove decentering for coupled faces
-        if (ifaccp.eq.1.and.itypfb(ifac).eq.icscpl) then
-          flui = 0.0d0
-          fluj = flumab(ifac)
-        else
-          flui = 0.5d0*(flumab(ifac) +abs(flumab(ifac)))
-          fluj = 0.5d0*(flumab(ifac) -abs(flumab(ifac)))
-        endif
+          pi = pvar(ii)
+          pia = pvara(ii)
 
-        pip = pi                                                       &
-            + ircflp*(grad(ii,1)*diipbx+grad(ii,2)*diipby+grad(ii,3)*diipbz)
+          diipbx = diipb(1,ifac)
+          diipby = diipb(2,ifac)
+          diipbz = diipb(3,ifac)
 
-        pfac  = inc*coefap(ifac) + coefbp(ifac)*pip
-        pfacd = inc*cofafp(ifac) + cofbfp(ifac)*pip
+          pir  = pi/relaxp - (1.d0-relaxp)/relaxp*pia
+          pipr =   pir                                                            &
+               + ircflp*(grad(ii,1)*diipbx+grad(ii,2)*diipby+grad(ii,3)*diipbz)
 
-        flux =   iconvp*((flui - flumab(ifac))*pi + fluj*pfac)         &
-               + idiffp*viscb(ifac)*pfacd
-        smbrp(ii) = smbrp(ii) - thetap * flux
+          ! Computed convective flux
+          if (icvfli(ifac).eq.0) then
+            ! Remove decentering for coupled faces
+            if (ifaccp.eq.1.and.itypfb(ifac).eq.icscpl) then
+              flui = 0.0d0
+              fluj = flumab(ifac)
+            else
+              flui = 0.5d0*(flumab(ifac) +abs(flumab(ifac)))
+              fluj = 0.5d0*(flumab(ifac) -abs(flumab(ifac)))
+            endif
 
+            pfac  = inc*coefap(ifac) + coefbp(ifac)*pipr
+            flux = iconvp*((flui*pir + fluj*pfac) - flumab(ifac)*pi)
+
+          ! Imposed convective flux
+          else
+            pfac = inc*coface(ifac) + cofbce(ifac)*pipr
+            flux = iconvp*(- flumab(ifac)*pi + pfac)
+          endif
+
+          pfacd = inc*cofafp(ifac) + cofbfp(ifac)*pipr
+
+          flux = flux + idiffp*viscb(ifac)*pfacd
+          smbrp(ii) = smbrp(ii) - flux
+
+        enddo
       enddo
     enddo
-  enddo
+
+  ! Unsteady
+  else
+
+    do ig = 1, ngrpb
+      !$omp parallel do private(ifac, ii, diipbx, diipby, diipbz, flui, fluj,     &
+      !$omp                     pip, pfac, pfacd, flux, pi)                       &
+      !$omp          if(nfabor > thr_n_min)
+      do it = 1, nthrdb
+        do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
+
+          ii = ifabor(ifac)
+
+          pi = pvar(ii)
+
+          diipbx = diipb(1,ifac)
+          diipby = diipb(2,ifac)
+          diipbz = diipb(3,ifac)
+
+          pip = pi                                                       &
+              + ircflp*(grad(ii,1)*diipbx+grad(ii,2)*diipby+grad(ii,3)*diipbz)
+
+          ! Computed convective flux
+          if (icvfli(ifac).eq.0) then
+            ! Remove decentering for coupled faces
+            if (ifaccp.eq.1.and.itypfb(ifac).eq.icscpl) then
+              flui = 0.0d0
+              fluj = flumab(ifac)
+            else
+              flui = 0.5d0*(flumab(ifac) +abs(flumab(ifac)))
+              fluj = 0.5d0*(flumab(ifac) -abs(flumab(ifac)))
+            endif
+
+            pfac = inc*coefap(ifac) + coefbp(ifac)*pip
+            flux = iconvp*((flui - flumab(ifac))*pi + fluj*pfac)
+
+          ! Imposed convective flux
+          else
+            pfac = inc*coface(ifac) + cofbce(ifac)*pip
+            flux = iconvp*( - flumab(ifac)*pi + pfac)
+          endif
+
+          pfacd = inc*cofafp(ifac) + cofbfp(ifac)*pip
+
+          flux = flux + idiffp*viscb(ifac)*pfacd
+          smbrp(ii) = smbrp(ii) - thetap * flux
+
+        enddo
+      enddo
+    enddo
+
+  endif
 
 endif
 

@@ -1140,7 +1140,7 @@ if(ipass.eq.3) then
 
   ! The density at the previous time step is required if idilat>1 or if
   ! we perform a hydrostatic pressure correction (icalhy=1)
-  if (iroext.gt.0.or.icalhy.eq.1.or.idilat.gt.1) then
+  if (iroext.gt.0.or.icalhy.eq.1.or.idilat.gt.1.or.ippmod(icompf).ge.0) then
     iprop         = iprop + 1
     iroma  = iprop
   endif
@@ -1209,7 +1209,7 @@ if(ipass.eq.3) then
   endif
 
   ! Variables schema en temps
-  if (iroext.gt.0.or.icalhy.eq.1.or.idilat.gt.1) then
+  if (iroext.gt.0.or.icalhy.eq.1.or.idilat.gt.1.or.ippmod(icompf).ge.0) then
     iprop                 = iprop  + 1
     ipproc(iroma ) = iprop
   endif
@@ -1770,9 +1770,25 @@ if(ipass.eq.3) then
       iclrtp(ir23,icoefr) = iclrtp(ir23,icoef)
     endif
   endif
+
+  if (ippmod(icompf).ge.0) then
+    icondl = icondl + 1
+    iclrtp(iu,icoefc) = icondl
+    icondl = icondl + 1
+    iclrtp(iv,icoefc) = icondl
+    icondl = icondl + 1
+    iclrtp(iw,icoefc) = icondl
+    icondl = icondl + 1
+    iclrtp(isca(ienerg),icoefc) = icondl
+  endif
+
   ncofab = icondl
 
-
+!        En compressible, avec l'algorithme en pression, celle-ci est
+!        une grandeur instationnaire => istat = 1
+  if (ippmod(icompf).ge.0) then
+    istat(ipr) = 1
+  endif
 ! ---> 3.5 POINTEURS POST-PROCESSING / LISTING / HISTORIQUES / CHRONOS
 !      ---------------------------------------------------------------------
 

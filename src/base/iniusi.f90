@@ -233,17 +233,11 @@ call varpos(nmodpp)
 
 if (ippmod(icompf).ge.0) then
 
-! --- Segregated or coupled solver for the velocity components:
-!       0 for the segregated solver
-!       1 for the coupled solver (default)
-!     For compressible model, only the segregated solver is possible,
-!     ivelco is imposed to 0.
-  ivelco = 0
-
 !     For compressible model, call to uscfx1 to get ieos.
 !     With GUI, ieos has been read below in the call to uippmo.
   call uscfx1
   !==========
+
 endif
 
 ! --- Parametres dependant du nombre de scalaires utilisateurs

@@ -317,7 +317,27 @@ if (iphydr.eq.2) then
 endif
 
 !===============================================================================
-! 3.  ETAPE DE PREDICTION DES VITESSES
+! 3. Pressure resolution and computation of mass flux for compressible flow
+!===============================================================================
+
+if ( ippmod(icompf).ge.0 ) then
+
+  if(iwarni(iu).ge.1) then
+    write(nfecra,1080)
+  endif
+
+  call cfmspr &
+  !==========
+  ( nvar   , nscal  ,                                              &
+    ncepdc , ncetsm , icepdc , icetsm , itypsm ,                   &
+    dt     , rtp    , rtpa   , propce , propfb ,                   &
+    coefa  , coefb  ,                                              &
+    ckupdc , smacel )
+
+endif
+
+!===============================================================================
+! 4. Velocity prediction step
 !===============================================================================
 
 iappel = 1
@@ -524,29 +544,33 @@ if (iprco.le.0) then
 endif
 
 !===============================================================================
-! 4.  ETAPE DE PRESSION/CONTINUITE ( VITESSE/PRESSION )
+! 5. Pressure correction step
 !===============================================================================
 
 if (iwarni(iu).ge.1) then
   write(nfecra,1200)
 endif
 
-call resopv &
-!==========
- ( nvar   ,                                                       &
-   ncepdc , ncetsm ,                                              &
-   icepdc , icetsm , itypsm , isostd ,                            &
-   dt     , rtp    , rtpa   , vel    , vela   ,                   &
-   propce , propfb ,                                              &
-   coefa  , coefb  , coefau , coefbu , coefap ,                   &
-   ckupdc , smacel ,                                              &
-   frcxt  , dfrcxt , dttens , trav   ,                            &
-   viscf  , viscb  , viscfi , viscbi ,                            &
-   drtp   , tslagr ,                                              &
-   trava  )
+if ( ippmod(icompf).lt.0 ) then
+
+  call resopv &
+  !==========
+( nvar   ,                                                       &
+  ncepdc , ncetsm ,                                              &
+  icepdc , icetsm , itypsm , isostd ,                            &
+  dt     , rtp    , rtpa   , vel    , vela   ,                   &
+  propce , propfb ,                                              &
+  coefa  , coefb  , coefau , coefbu , coefap ,                   &
+  ckupdc , smacel ,                                              &
+  frcxt  , dfrcxt , dttens , trav   ,                            &
+  viscf  , viscb  , viscfi , viscbi ,                            &
+  drtp   , tslagr ,                                              &
+  trava  )
+
+endif
 
 !===============================================================================
-! 5.  RESOLUTION DE LA VITESSE DE MAILLAGE EN ALE
+! 6. Mesh velocity solving (ALE)
 !===============================================================================
 
 if (iale.eq.1) then
@@ -559,192 +583,196 @@ if (iale.eq.1) then
 endif
 
 !===============================================================================
-! 6.  REACTUALISATION DU CHAMP DE VITESSE
+! 7. Update of the fluid velocity field
 !===============================================================================
 
-iclipr = iclrtp(ipr,icoef)
-iclipf = iclrtp(ipr,icoeff)
-icliup = iclrtp(iu ,icoef)
-iclivp = iclrtp(iv ,icoef)
-icliwp = iclrtp(iw ,icoef)
+if (ippmod(icompf).lt.0) then
 
-ipcrom = ipproc(irom  )
-ipbrom = ipprob(irom  )
+  iclipr = iclrtp(ipr,icoef)
+  iclipf = iclrtp(ipr,icoeff)
+  icliup = iclrtp(iu ,icoef)
+  iclivp = iclrtp(iv ,icoef)
+  icliwp = iclrtp(iw ,icoef)
 
-! irevmc = 0: Only the standard method is available for the coupled
-!              version of navstv.
+  ipcrom = ipproc(irom  )
+  ipbrom = ipprob(irom  )
 
-if (irevmc.eq.0) then
+  ! irevmc = 0: Only the standard method is available for the coupled
+  !              version of navstv.
 
-  ! The predicted velocity is corrected by the cell gradient of the
-  ! pressure increment.
+  if (irevmc.eq.0) then
 
-  ! GRADIENT DE L'INCREMENT TOTAL DE PRESSION
+    ! The predicted velocity is corrected by the cell gradient of the
+    ! pressure increment.
 
-  if (idtvar.lt.0) then
-    !$omp parallel do
-    do iel = 1, ncel
-      drtp(iel) = (rtp(iel,ipr) -rtpa(iel,ipr)) / relaxv(ipr)
-    enddo
-  else
-    !$omp parallel do
-    do iel = 1, ncel
-      drtp(iel) = rtp(iel,ipr) -rtpa(iel,ipr)
-    enddo
-  endif
+    ! GRADIENT DE L'INCREMENT TOTAL DE PRESSION
 
-  ! --->    TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
-
-  if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(drtp)
-    !==========
-  endif
-
-  iccocg = 1
-  inc = 0
-  if (iphydr.eq.1) inc = 1
-  nswrgp = nswrgr(ipr)
-  imligp = imligr(ipr)
-  iwarnp = iwarni(ipr)
-  epsrgp = epsrgr(ipr)
-  climgp = climgr(ipr)
-  extrap = extrag(ipr)
-
-  !Allocation
-  allocate(gradp(ncelet,3))
-
-  call grdpot &
-  !==========
- ( ipr , imrgra , inc    , iccocg , nswrgp , imligp , iphydr ,    &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   rvoid  ,                                                       &
-   dfrcxt ,                                                       &
-   drtp   , coefap        , coefb(1,iclipr)  ,                    &
-   gradp  )
-
-  thetap = thetav(ipr)
-  !$omp parallel do private(isou)
-  do iel = 1, ncelet
-    do isou = 1, 3
-      trav(isou,iel) = gradp(iel,isou)
-    enddo
-  enddo
-
-  !Free memory
-  deallocate(gradp)
-
-  ! Update the velocity field
-  !--------------------------
-  thetap = thetav(ipr)
-
-  ! Specific handling of hydrostatic pressure
-  !------------------------------------------
-  if (iphydr.eq.1) then
-
-    ! Scalar diffusion for the pressure
-    if (idften(ipr).eq.1) then
-      !$omp parallel do private(dtsrom, isou)
+    if (idtvar.lt.0) then
+      !$omp parallel do
       do iel = 1, ncel
-        dtsrom = thetap*dt(iel)/propce(iel,ipcrom)
-        do isou = 1, 3
-          vel(isou,iel) = vel(isou,iel)                            &
-                        + dtsrom*(dfrcxt(isou, iel)-trav(isou,iel))
-        enddo
+        drtp(iel) = (rtp(iel,ipr) -rtpa(iel,ipr)) / relaxv(ipr)
       enddo
-
-    ! Tensorial diffusion for the pressure
-    else if (idften(ipr).eq.6) then
-      !$omp parallel do private(unsrom)
+    else
+      !$omp parallel do
       do iel = 1, ncel
-        unsrom = thetap/propce(iel,ipcrom)
-
-        vel(1, iel) = vel(1, iel)                                             &
-                    + unsrom*(                                                &
-                               dttens(1,iel)*(dfrcxt(1, iel)-trav(1,iel))     &
-                             + dttens(4,iel)*(dfrcxt(2, iel)-trav(2,iel))     &
-                             + dttens(6,iel)*(dfrcxt(3, iel)-trav(3,iel))     &
-                             )
-        vel(2, iel) = vel(2, iel)                                             &
-                    + unsrom*(                                                &
-                               dttens(4,iel)*(dfrcxt(1, iel)-trav(1,iel))     &
-                             + dttens(2,iel)*(dfrcxt(2, iel)-trav(2,iel))     &
-                             + dttens(5,iel)*(dfrcxt(3, iel)-trav(3,iel))     &
-                             )
-        vel(3, iel) = vel(3, iel)                                             &
-                    + unsrom*(                                                &
-                               dttens(6,iel)*(dfrcxt(1 ,iel)-trav(1,iel))     &
-                             + dttens(5,iel)*(dfrcxt(2 ,iel)-trav(2,iel))     &
-                             + dttens(3,iel)*(dfrcxt(3 ,iel)-trav(3,iel))     &
-                             )
+        drtp(iel) = rtp(iel,ipr) -rtpa(iel,ipr)
       enddo
     endif
 
-    ! Update external forces for the computation of the gradients
-    !$omp parallel do
-    do iel=1,ncel
-      frcxt(1 ,iel) = frcxt(1 ,iel) + dfrcxt(1 ,iel)
-      frcxt(2 ,iel) = frcxt(2 ,iel) + dfrcxt(2 ,iel)
-      frcxt(3 ,iel) = frcxt(3 ,iel) + dfrcxt(3 ,iel)
-    enddo
+    ! --->    TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
+
     if (irangp.ge.0.or.iperio.eq.1) then
-      call synvin(frcxt)
+      call synsca(drtp)
       !==========
     endif
-    ! Update of the Direchlet boundary conditions on the pressure for the outlet
-    iclipr = iclrtp(ipr,icoef)
-    iclipf = iclrtp(ipr,icoeff)
-    !$omp parallel do if(nfabor > thr_n_min)
-    do ifac = 1, nfabor
-      if (isostd(ifac).eq.1) then
-        coefa(ifac,iclipr) = coefa(ifac,iclipr) + coefap(ifac)
-      endif
+
+    iccocg = 1
+    inc = 0
+    if (iphydr.eq.1) inc = 1
+    nswrgp = nswrgr(ipr)
+    imligp = imligr(ipr)
+    iwarnp = iwarni(ipr)
+    epsrgp = epsrgr(ipr)
+    climgp = climgr(ipr)
+    extrap = extrag(ipr)
+
+    !Allocation
+    allocate(gradp(ncelet,3))
+
+    call grdpot &
+    !==========
+         ( ipr , imrgra , inc    , iccocg , nswrgp , imligp , iphydr ,    &
+         iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
+         rvoid  ,                                                       &
+         dfrcxt ,                                                       &
+         drtp   , coefap        , coefb(1,iclipr)  ,                    &
+         gradp  )
+
+    thetap = thetav(ipr)
+    !$omp parallel do private(isou)
+    do iel = 1, ncelet
+      do isou = 1, 3
+        trav(isou,iel) = gradp(iel,isou)
+      enddo
     enddo
 
+    !Free memory
+    deallocate(gradp)
 
-  ! Standard handling of hydrostatic pressure
-  !------------------------------------------
-  else
+    ! Update the velocity field
+    !--------------------------
+    thetap = thetav(ipr)
 
-    ! Scalar diffusion for the pressure
-    if (idften(ipr).eq.1) then
+    ! Specific handling of hydrostatic pressure
+    !------------------------------------------
+    if (iphydr.eq.1) then
 
-      !$omp parallel do private(dtsrom, isou)
-      do iel = 1, ncel
-        dtsrom = thetap*dt(iel)/propce(iel,ipcrom)
-        do isou = 1, 3
-          vel(isou,iel) = vel(isou,iel) - dtsrom*trav(isou,iel)
+      ! Scalar diffusion for the pressure
+      if (idften(ipr).eq.1) then
+        !$omp parallel do private(dtsrom, isou)
+        do iel = 1, ncel
+          dtsrom = thetap*dt(iel)/propce(iel,ipcrom)
+          do isou = 1, 3
+            vel(isou,iel) = vel(isou,iel)                            &
+                 + dtsrom*(dfrcxt(isou, iel)-trav(isou,iel))
+          enddo
         enddo
+
+        ! Tensorial diffusion for the pressure
+      else if (idften(ipr).eq.6) then
+        !$omp parallel do private(unsrom)
+        do iel = 1, ncel
+          unsrom = thetap/propce(iel,ipcrom)
+
+          vel(1, iel) = vel(1, iel)                                             &
+               + unsrom*(                                                &
+               dttens(1,iel)*(dfrcxt(1, iel)-trav(1,iel))     &
+               + dttens(4,iel)*(dfrcxt(2, iel)-trav(2,iel))     &
+               + dttens(6,iel)*(dfrcxt(3, iel)-trav(3,iel))     &
+               )
+          vel(2, iel) = vel(2, iel)                                             &
+               + unsrom*(                                                &
+               dttens(4,iel)*(dfrcxt(1, iel)-trav(1,iel))     &
+               + dttens(2,iel)*(dfrcxt(2, iel)-trav(2,iel))     &
+               + dttens(5,iel)*(dfrcxt(3, iel)-trav(3,iel))     &
+               )
+          vel(3, iel) = vel(3, iel)                                             &
+               + unsrom*(                                                &
+               dttens(6,iel)*(dfrcxt(1 ,iel)-trav(1,iel))     &
+               + dttens(5,iel)*(dfrcxt(2 ,iel)-trav(2,iel))     &
+               + dttens(3,iel)*(dfrcxt(3 ,iel)-trav(3,iel))     &
+               )
+        enddo
+      endif
+
+      ! Update external forces for the computation of the gradients
+      !$omp parallel do
+      do iel=1,ncel
+        frcxt(1 ,iel) = frcxt(1 ,iel) + dfrcxt(1 ,iel)
+        frcxt(2 ,iel) = frcxt(2 ,iel) + dfrcxt(2 ,iel)
+        frcxt(3 ,iel) = frcxt(3 ,iel) + dfrcxt(3 ,iel)
+      enddo
+      if (irangp.ge.0.or.iperio.eq.1) then
+        call synvin(frcxt)
+        !==========
+      endif
+      ! Update of the Direchlet boundary conditions on the pressure for the outlet
+      iclipr = iclrtp(ipr,icoef)
+      iclipf = iclrtp(ipr,icoeff)
+      !$omp parallel do if(nfabor > thr_n_min)
+      do ifac = 1, nfabor
+        if (isostd(ifac).eq.1) then
+          coefa(ifac,iclipr) = coefa(ifac,iclipr) + coefap(ifac)
+        endif
       enddo
 
-    ! Tensorial diffusion for the pressure
-    else if (idften(ipr).eq.6) then
 
-      !$omp parallel do private(unsrom)
-      do iel = 1, ncel
-        unsrom = thetap/propce(iel,ipcrom)
+      ! Standard handling of hydrostatic pressure
+      !------------------------------------------
+    else
 
-        vel(1, iel) = vel(1, iel)                              &
-                    - unsrom*(                                 &
-                               dttens(1,iel)*(trav(1,iel))     &
-                             + dttens(4,iel)*(trav(2,iel))     &
-                             + dttens(6,iel)*(trav(3,iel))     &
-                             )
-        vel(2, iel) = vel(2, iel)                              &
-                    - unsrom*(                                 &
-                               dttens(4,iel)*(trav(1,iel))     &
-                             + dttens(2,iel)*(trav(2,iel))     &
-                             + dttens(5,iel)*(trav(3,iel))     &
-                             )
-        vel(3, iel) = vel(3, iel)                              &
-                    - unsrom*(                                 &
-                               dttens(6,iel)*(trav(1,iel))     &
-                             + dttens(5,iel)*(trav(2,iel))     &
-                             + dttens(3,iel)*(trav(3,iel))     &
-                             )
-      enddo
+      ! Scalar diffusion for the pressure
+      if (idften(ipr).eq.1) then
 
+        !$omp parallel do private(dtsrom, isou)
+        do iel = 1, ncel
+          dtsrom = thetap*dt(iel)/propce(iel,ipcrom)
+          do isou = 1, 3
+            vel(isou,iel) = vel(isou,iel) - dtsrom*trav(isou,iel)
+          enddo
+        enddo
+
+        ! Tensorial diffusion for the pressure
+      else if (idften(ipr).eq.6) then
+
+        !$omp parallel do private(unsrom)
+        do iel = 1, ncel
+          unsrom = thetap/propce(iel,ipcrom)
+
+          vel(1, iel) = vel(1, iel)                              &
+               - unsrom*(                                 &
+               dttens(1,iel)*(trav(1,iel))     &
+               + dttens(4,iel)*(trav(2,iel))     &
+               + dttens(6,iel)*(trav(3,iel))     &
+               )
+          vel(2, iel) = vel(2, iel)                              &
+               - unsrom*(                                 &
+               dttens(4,iel)*(trav(1,iel))     &
+               + dttens(2,iel)*(trav(2,iel))     &
+               + dttens(5,iel)*(trav(3,iel))     &
+               )
+          vel(3, iel) = vel(3, iel)                              &
+               - unsrom*(                                 &
+               dttens(6,iel)*(trav(1,iel))     &
+               + dttens(5,iel)*(trav(2,iel))     &
+               + dttens(3,iel)*(trav(3,iel))     &
+               )
+        enddo
+
+      endif
     endif
   endif
+
 endif
 
 ! In the ALE framework, we add the mesh velocity
@@ -865,7 +893,7 @@ if (imobil.eq.1) then
 endif
 
 !===============================================================================
-! 7.  CALCUL D'UN ESTIMATEUR D'ERREUR DE L'ETAPE DE CORRECTION ET TOTAL
+! 8. Compute error estimators for correction step and the global algo
 !===============================================================================
 
 if (iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
@@ -1005,7 +1033,7 @@ if (iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
 endif
 
 !===============================================================================
-! 8.  TRAITEMENT DU POINT FIXE SUR LE SYSTEME VITESSE/PRESSION
+! 9. Loop on the velocity/Pressure coupling (PISO)
 !===============================================================================
 
 if (nterup.gt.1) then
@@ -1073,7 +1101,7 @@ if (ippmod(icompf).lt.0) then
 endif
 
 !===============================================================================
-! 9.  IMPRESSIONS
+! 10. Printing
 !===============================================================================
 
 ipcrom = ipproc(irom)
@@ -1241,6 +1269,9 @@ deallocate(coefap)
  1000 format(/,                                                   &
 '   ** RESOLUTION POUR LA VITESSE                             ',/,&
 '      --------------------------                             ',/)
+ 1080 format(/,                                                   &
+'   ** RESOLUTION DE L''EQUATION DE MASSE                     ',/,&
+'      ----------------------------------                     ',/)
  1200 format(/,                                                   &
 '   ** RESOLUTION POUR LA PRESSION CONTINUITE                 ',/,&
 '      --------------------------------------                 ',/)
@@ -1271,6 +1302,9 @@ deallocate(coefap)
  1000 format(/,                                                   &
 '   ** SOLVING VELOCITY'                                       ,/,&
 '      ----------------'                                       ,/)
+ 1080 format(/,                                                   &
+'   ** SOLVING MASS BALANCE EQUATION                          ',/,&
+'      -----------------------------                          ',/)
  1200 format(/,                                                   &
 '   ** SOLVING CONTINUITY PRESSURE'                            ,/,&
 '      ---------------------------'                            ,/)

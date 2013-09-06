@@ -31,15 +31,20 @@ module cfpoin
 
   !=============================================================================
 
+  ! ithvar : initialized thermodynamic variables indicator
+  integer, save :: ithvar
+
+  !=============================================================================
+
   ! Tableau Dimension       Description
   ! ifbet  ! nfabor        ! indicateur flux thermique au bord impose
   !                          (il faut annuler des contributions de bord
   !                           de l'eq de E)
-  ! ifbrus ! nfabor        ! indicateur flux de bord calcule par rusanov
+  ! icvfli ! nfabor        ! indicateur flux de bord calcule par rusanov
   !                          (il faut annuler des contributions de bord
   !                           de l'eq de Qdm et de l'eq de E)
 
-  integer, allocatable, dimension(:) :: ifbet , ifbrus
+  integer, allocatable, dimension(:) :: ifbet , icvfli
 
 contains
 
@@ -52,7 +57,7 @@ contains
     integer nfabor
 
     allocate(ifbet(nfabor))
-    allocate(ifbrus(nfabor))
+    allocate(icvfli(nfabor))
 
   end subroutine init_compf
 
@@ -62,7 +67,7 @@ contains
 
     implicit none
 
-    deallocate(ifbet, ifbrus)
+    deallocate(ifbet, icvfli)
 
   end subroutine finalize_compf
 

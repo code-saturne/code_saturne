@@ -88,6 +88,8 @@ integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp, imucpp, idftnp, iswdyp
+integer          icvflb
+integer          ivoid(1)
 
 double precision blencp, epsilp, epsrgp, climgp, extrap, thetv
 double precision epsrsp
@@ -190,6 +192,8 @@ do ii = 1, 3
   extrap = extrag(ivar)
   relaxp = 1.d0
   thetv  = 1.d0
+  ! all boundary convective flux with upwind
+  icvflb = 0
 
   call codits &
   !==========
@@ -205,6 +209,7 @@ do ii = 1, 3
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &
+   icvflb , ivoid  ,                                              &
    rovsdt , smbr   , rtp(1,ivar)     , dpvar  ,                   &
    rvoid  , rvoid  )
 

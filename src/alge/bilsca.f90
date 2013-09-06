@@ -135,6 +135,8 @@
 !>                               of tensor diffusion
 !> \param[in]     weighb        boundary face weight for cells i in case
 !>                               of tensor diffusion
+!> \param[in]     icvflb
+!> \param[in]     icvfbr
 !> \param[in,out] smbrp         right hand side \f$ \vect{Rhs} \f$
 !_______________________________________________________________________________
 
@@ -146,6 +148,7 @@ subroutine bilsca &
    pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
    flumas , flumab , viscf  , viscb  , viscce , xcpp   ,          &
    weighf , weighb ,                                              &
+   icvflb , icvfbr ,                                              &
    smbrp  )
 
 !===============================================================================
@@ -173,7 +176,9 @@ integer          idtvar
 integer          ivar   , iconvp , idiffp , nswrgp , imligp
 integer          ircflp , ischcp , isstpp
 integer          inc    , imrgra , iccocg
-integer          iwarnp , ipp    , imucpp, idftnp
+integer          iwarnp , ipp    , imucpp, idftnp, icvflb
+
+integer          icvfbr(nfabor)
 
 double precision blencp , epsrgp , climgp, extrap, relaxp , thetap
 
@@ -204,6 +209,7 @@ if (idftnp.eq.1) then
      blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
      pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
      flumas , flumab , viscf  , viscb  ,                            &
+     icvflb , icvfbr ,                                              &
      smbrp  )
 
   ! The convective part is mulitplied by Cp for the Temperature
@@ -236,6 +242,7 @@ elseif (idftnp.eq.6) then
      blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
      pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
      flumas , flumab , viscf  , viscb  ,                            &
+     icvflb , icvfbr ,                                              &
      smbrp  )
 
   ! The convective part is mulitplied by Cp for the Temperature

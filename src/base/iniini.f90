@@ -64,6 +64,7 @@ use period
 use mltgrd
 use ihmpre
 use cplsat
+use ppincl
 use mesh
 use field
 
@@ -484,11 +485,14 @@ icoef  = 1
 icoeff = 2
 ! Special treatment of divRij in the momentum equation
 icoefr = 3
+! Replacement of the convection flux
+icoefc = 4
 
 do ivar = 1, nvarmx
   iclrtp(ivar,icoef ) = 0
   iclrtp(ivar,icoeff) = 0
   iclrtp(ivar,icoefr) = 0
+  iclrtp(ivar,icoefc) = 0
 enddo
 
 ! --- Ici tout numvar est initialise.
@@ -793,6 +797,9 @@ idtvar = 0
 
 coumax = 1.d0
 foumax = 10.d0
+!if (ippmod(icompf).ge.0 ) then
+  cflmmx = 0.99d0
+!endif
 dtmin  = -grand*10.d0
 dtmax  = -grand*10.d0
 varrdt = 0.1d0

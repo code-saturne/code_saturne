@@ -83,6 +83,7 @@ use ihmpre
 use cplsat
 use mesh
 use field
+use numvar
 
 !===============================================================================
 
@@ -99,7 +100,7 @@ double precision coefa(ndimfb,*), coefb(ndimfb,*)
 
 integer          ii, ivar, iprop
 integer          iflid, nfld
-integer          icondl, icondf
+integer          icondl, icondf, icondd, icondc
 integer          f_id
 
 integer          ifvar(nvppmx)
@@ -125,14 +126,18 @@ nfld = 0
 ivar = ipr
 icondl = iclrtp(ivar, icoef)
 icondf = iclrtp(ivar, icoeff)
+icondd = icondl
+icondc = icondl
 
 call field_map_values(ivarfl(ivar), rtp(1,ivar), rtpa(1,ivar))
 if (nfabor .gt. 0) then
   call field_map_bc_coeffs(ivarfl(ivar),                             &
                            coefa(1, icondl), coefb(1, icondl),       &
-                           coefa(1, icondf), coefb(1, icondf))
+                           coefa(1, icondf), coefb(1, icondf),       &
+                           coefa(1, icondd), coefb(1, icondd),       &
+                           coefa(1, icondc), coefb(1, icondc))
 else
-  call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false.)
+  call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .false.)
 endif
 
 ivar = iu
@@ -142,16 +147,33 @@ if (nfabor .gt. 0) then
   if (ivelco .eq. 0) then
     icondl = iclrtp(ivar, icoef)
     icondf = iclrtp(ivar, icoeff)
+    icondd = icondl
+    icondc = icondl
+    if (ippmod(icompf).ge.0) then
+      icondc = iclrtp(ivar, icoefc)
+    endif
     call field_map_bc_coeffs(ivarfl(ivar),                           &
                              coefa(1, icondl), coefb(1, icondl),     &
-                             coefa(1, icondf), coefb(1, icondf))
+                             coefa(1, icondf), coefb(1, icondf),     &
+                             coefa(1, icondd), coefb(1, icondd),     &
+                             coefa(1, icondc), coefb(1, icondc))
   else
-    call field_map_bc_coeffs(ivarfl(ivar),                           &
-                             coefau(1, 1), coefbu(1, 1, 1),          &
-                             cofafu(1, 1), cofbfu(1, 1, 1))
+    if (ippmod(icompf).ge.0) then
+      call field_map_bc_coeffs(ivarfl(ivar),                           &
+                               coefau(1, 1), coefbu(1, 1, 1),          &
+                               cofafu(1, 1), cofbfu(1, 1, 1),          &
+                               coefau(1, 1), coefbu(1, 1, 1),          &
+                               cofacu(1, 1), cofbcu(1, 1, 1))
+    else
+      call field_map_bc_coeffs(ivarfl(ivar),                           &
+                               coefau(1, 1), coefbu(1, 1, 1),          &
+                               cofafu(1, 1), cofbfu(1, 1, 1),          &
+                               coefau(1, 1), coefbu(1, 1, 1),          &
+                               coefau(1, 1), coefbu(1, 1, 1))
+    endif
   endif
 else
-  call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false.)
+  call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .true.)
 endif
 
 ! Turbulence
@@ -211,13 +233,17 @@ do ii = 1, nfld
   ivar = ifvar(ii)
   icondl = iclrtp(ivar, icoef)
   icondf = iclrtp(ivar, icoeff)
+  icondd = icondl
+  icondc = icondl
   call field_map_values(ivarfl(ivar), rtp(1,ivar), rtpa(1,ivar))
   if (nfabor .gt. 0) then
     call field_map_bc_coeffs(ivarfl(ivar),                           &
                              coefa(1, icondl), coefb(1, icondl),     &
-                             coefa(1, icondf), coefb(1, icondf))
+                             coefa(1, icondf), coefb(1, icondf),     &
+                             coefa(1, icondd), coefb(1, icondd),     &
+                             coefa(1, icondc), coefb(1, icondc))
   else
-    call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false.)
+    call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .false.)
   endif
 enddo
 
@@ -233,16 +259,22 @@ if (iale.eq.1) then
     if (ivelco .eq. 0) then
       icondl = iclrtp(ivar, icoef)
       icondf = iclrtp(ivar, icoeff)
+      icondd = icondl
+      icondc = icondl
       call field_map_bc_coeffs(ivarfl(ivar),                         &
                                coefa(1, icondl), coefb(1, icondl),   &
-                               coefa(1, icondf), coefb(1, icondf))
+                               coefa(1, icondf), coefb(1, icondf),   &
+                               coefa(1, icondd), coefb(1, icondd),   &
+                               coefa(1, icondc), coefb(1, icondc))
     else
       call field_map_bc_coeffs(ivarfl(ivar),                         &
                                claale(1, 1), clbale(1, 1, 1),        &
-                               cfaale(1, 1), cfbale(1, 1, 1))
+                               cfaale(1, 1), cfbale(1, 1, 1),        &
+                               claale(1, 1), clbale(1, 1, 1),        &
+                               claale(1, 1), clbale(1, 1, 1))
     endif
   else
-    call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false.)
+    call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .false.)
   endif
 endif
 
@@ -256,22 +288,28 @@ do ii = 1, nscal
     ivar = isca(ii)
     icondl = iclrtp(ivar, icoef)
     icondf = iclrtp(ivar, icoeff)
+    icondd = icondl
+    icondc = icondl
     call field_map_values(ivarfl(ivar), rtp(1,ivar), rtpa(1,ivar))
     if (nfabor .gt. 0) then
+      if (ippmod(icompf).ge.0 .and. ii.eq.ienerg) then
+        icondc = iclrtp(ivar, icoefc)
+      endif
       call field_map_bc_coeffs(ivarfl(ivar),                         &
                                coefa(1, icondl), coefb(1, icondl),   &
-                               coefa(1, icondf), coefb(1, icondf))
-
+                               coefa(1, icondf), coefb(1, icondf),   &
+                               coefa(1, icondd), coefb(1, icondd),   &
+                               coefa(1, icondc), coefb(1, icondc))
       ! Boundary conditions of the turbulent fluxes T'u'
       if (ityturt(ii).eq.3) then
         call field_get_name(ivarfl(ivar), fname)
         ! Index of the corresponding turbulent flux
         call field_get_id(trim(fname)//'_turbulent_flux', f_id)
-        call field_allocate_bc_coeffs(f_id, .true., .true.)
-        call field_init_bc_coeffs(f_id, .true., .true.)
+        call field_allocate_bc_coeffs(f_id, .true., .true., .false.)
+        call field_init_bc_coeffs(f_id, .true., .true., .false.)
       endif
     else
-      call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false.)
+      call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .false.)
     endif
   endif
 enddo

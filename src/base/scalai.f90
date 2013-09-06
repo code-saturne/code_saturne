@@ -219,7 +219,7 @@ if (ippmod(iphpar).ge.1) then
 
     if ( ippmod(icompf).ge.0 ) then
 
-      if ( iscal.eq.irho .or. iscal.eq.itempk ) then
+      if ( iscal.eq.itempk ) then
         ispecf = 1
       elseif ( iscal.eq.ienerg ) then
         ispecf = 2

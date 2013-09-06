@@ -228,16 +228,8 @@ elseif ( ippmod(icompf).ge.0 ) then
 !     Marqueur d'utilisation de Rusanov au bord (0 = non)
 !     Marqueur de flux conductif impose au bord (0 = non)
   do ifac = 1, nfabor
-    ifbrus(ifac) = 0
+    icvfli(ifac) = 0
     ifbet(ifac) = 0
-  enddo
-
-!     Flux de Rusanov au bord pour Qdm et E
-  do ifac = 1, nfabor
-    propfb(ifac,ipprob(ifbrhu)) = 0.d0
-    propfb(ifac,ipprob(ifbrhv)) = 0.d0
-    propfb(ifac,ipprob(ifbrhw)) = 0.d0
-    propfb(ifac,ipprob(ifbene)) = 0.d0
   enddo
 
 !     Initialisation des RCODCL(IFAC,.,1) à -RINFIN

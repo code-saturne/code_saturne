@@ -101,7 +101,8 @@ integer          isou  , jsou
 integer          f_id
 integer          iflmb0, idftnp, iphydp, ivisep, itypfl
 integer          ipbrom
-integer          keysca, iscal, keydri, iscdri
+integer          keysca, iscal, keydri, iscdri, icvflb
+integer          ivoid(1)
 
 double precision epsrgp, climgp, extrap, blencp
 double precision thetap
@@ -364,6 +365,7 @@ if (btest(iscdri, DRIFT_SCALAR_CENTRIFUGALFORCE)) then
   extrap = extrag(iu)
   thetap = thetav(iu)
   relaxp = relaxv(iu)
+  icvflb = 0
 
   ! Get Boundary conditions of the velocity
   call field_get_coefa_v (ivarfl(iu), coefav)
@@ -382,6 +384,7 @@ if (btest(iscdri, DRIFT_SCALAR_CENTRIFUGALFORCE)) then
    coefav , coefbv , cofafv , cofbfv ,                            &
    imasfl_mix , bmasfl_mix ,                                      &
    viscf  , viscb  , rvoid  , rvoid  ,                            &
+   icvflb , ivoid  ,                                              &
    dudt   )
 
   do iel = 1, ncel

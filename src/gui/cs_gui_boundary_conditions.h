@@ -143,7 +143,6 @@ extern cs_boundary_t *boundaries;
  * INTEGER          ISOLIB  --> type of boundary: outlet
  * INTEGER          ISCA    <-- indirection array for scalar number
  * INTEGER          IPR     <-- rtp index for pressure
- * INTEGER          IRHO    <-- rtp index for density
  * INTEGER          ITEMPK  <-- rtp index for temperature (in K)
  * INTEGER          IENERG  <-- rtp index for energy total
  * INTEGER          IQIMP   --> 1 if flow rate is applied
@@ -190,6 +189,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
                                const int  *iesicf,
                                const int  *isspcf,
                                const int  *ierucf,
+                               const int  *iephcf,
                                const int  *isopcf,
                                const int  *iparoi,
                                const int  *iparug,
@@ -197,7 +197,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
                                const int  *isolib,
                                const int  *isca,
                                const int  *ipr,
-                               const int  *irho,
                                const int  *itempk,
                                const int  *ienerg,
                                int        *iqimp,
@@ -267,6 +266,7 @@ void CS_PROCF (uiclve, UICLVE) (const int  *nfabor,
                                 const int  *ientre,
                                 const int  *iesicf,
                                 const int  *ierucf,
+                                const int  *iephcf,
                                 const int  *isspcf,
                                 const int  *isopcf,
                                 const int  *iparoi,

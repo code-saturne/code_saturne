@@ -87,6 +87,8 @@ typedef struct {
   cs_real_t         *bf;           /* Implicit coefficient for flux */
   cs_real_t         *ad;           /* Explicit coefficient for divergence */
   cs_real_t         *bd;           /* Implicit coefficient for divergence */
+  cs_real_t         *ac;           /* Explicit coefficient for convection */
+  cs_real_t         *bc;           /* Implicit coefficient for convection */
 
 } cs_field_bc_coeffs_t;
 
@@ -216,12 +218,14 @@ cs_field_map_values(cs_field_t   *f,
  *   f            <-- pointer to field structure
  *   have_flux_bc <-- if true, flux BC coefficients (af and bf) are added
  *   have_mom_bc  <-- if true, div BC coefficients (ad and bd) are added
+ *   have_conv_bc  <-- if true, convection BC coefficients (ac and bc) are added
  *----------------------------------------------------------------------------*/
 
 void
 cs_field_allocate_bc_coeffs(cs_field_t  *f,
                             bool         have_flux_bc,
-                            bool         have_mom_bc);
+                            bool         have_mom_bc,
+                            bool         have_conv_bc);
 
 /*----------------------------------------------------------------------------*/
 /* Initialize boundary condition coefficients arrays.
@@ -247,12 +251,15 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
  *                    are initialized
  *   have_mom_bc  <-- if true, div BC coefficients (ad and bd)
  *                    are initialized
+ *   have_conv_bc <-- if true, convection BC coefficients (ac and bc)
+ *                    are initialized
  *----------------------------------------------------------------------------*/
 
 void
 cs_field_init_bc_coeffs(cs_field_t  *f,
                         bool         have_flux_bc,
-                        bool         have_mom_bc);
+                        bool         have_mom_bc,
+                        bool         have_conv_bc);
 
 /*----------------------------------------------------------------------------
  * Map existing field boundary condition coefficient arrays.
@@ -278,6 +285,10 @@ cs_field_init_bc_coeffs(cs_field_t  *f,
  *   b  <-- implicit BC coefficients array
  *   af <-- explicit flux BC coefficients array, or NULL
  *   bf <-- implicit flux BC coefficients array, or NULL
+ *   ad  explicit div BC coefficients array, or NULL
+ *   bd  implicit div BC coefficients array, or NULL
+ *   ac  explicit convection BC coefficients array, or NULL
+ *   bc  implicit convection BC coefficients array, or NULL
  *----------------------------------------------------------------------------*/
 
 void
@@ -285,7 +296,11 @@ cs_field_map_bc_coeffs(cs_field_t  *f,
                        cs_real_t   *a,
                        cs_real_t   *b,
                        cs_real_t   *af,
-                       cs_real_t   *bf);
+                       cs_real_t   *bf,
+                       cs_real_t   *ad,
+                       cs_real_t   *bd,
+                       cs_real_t   *ac,
+                       cs_real_t   *bc);
 
 /*----------------------------------------------------------------------------
  * Copy current field values to previous values if applicable.

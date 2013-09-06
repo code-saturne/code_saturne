@@ -35,8 +35,9 @@ subroutine cfener &
 ! FONCTION :
 ! ----------
 
-! RESOLUTION DES EQUATIONS CONVECTION DIFFUSION TERME SOURCE
-!   POUR L'ENERGIE TOTALE SUR UN PAS DE TEMPS
+! SOLVING OF A CONVECTION-DIFFUSION EQUATION WITH SOURCE TERMS
+!   FOR TOTAL ENERGY ON ONE TIME-STEP
+!   (COMPRESSIBLE ALGORITHM IN P,U,E)
 
 !-------------------------------------------------------------------------------
 !ARGU                             ARGUMENTS
@@ -59,15 +60,15 @@ subroutine cfener &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
+! ckupdc           ! tr ! <-- ! work array for the head loss                   !
 !  (ncepdp,6)      !    !     !                                                !
-! smacel           ! tr ! <-- ! valeur des variables associee a la             !
-! (ncesmp,*   )    !    !     !  source de masse                               !
-!                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
-! viscf(nfac)      ! tr ! --- ! visc*surface/dist aux faces internes           !
-! viscb(nfabor     ! tr ! --- ! visc*surface/dist aux faces de bord            !
-! smbrs(ncelet     ! tr ! --- ! tableau de travail pour sec mem                !
-! rovsdt(ncelet    ! tr ! --- ! tableau de travail pour terme instat           !
+! smacel           ! tr ! <-- ! variable value associated to the mass source   !
+! (ncesmp,*   )    !    !     ! term (for ivar=ipr, smacel is the mass flux    !
+!                  !    !     ! \f$ \Gamma^n \f$)                              !
+! viscf(nfac)      ! tr ! --- ! visc*surface/dist at internal faces            !
+! viscb(nfabor     ! tr ! --- ! visc*surface/dist at boundary faces            !
+! smbrs(ncelet     ! tr ! --- ! work array for second member                   !
+! rovsdt(ncelet    ! tr ! --- ! work array for unsteady term                   !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -123,17 +124,17 @@ integer          ivar
 integer          ifac  , iel
 integer          init  , isqrt , iii
 integer          iclvar, iclvaf
-integer          ipcrom, ipcvst, ipcvsl, iflmas, iflmab
-integer          ippvar, ipp
+integer          ipcrom, ipbrom, ipcvst, ipcvsl, iflmas, iflmab
+integer          ippvar, ipp   , icvflb
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp, ireslp, nitmap
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
 double precision epsrgp, climgp, extrap, blencp, epsilp
-double precision sclnor, thetap, epsrsp
+double precision sclnor, thetap, epsrsp, relaxp
 
-integer          inc    , iccocg
-integer          ivar0  , iij , ii , jj
+integer          inc    , iccocg , imucpp , idftnp , iswdyp
+integer          ivar0  , ii , jj
 integer          iccfth , imodif
 integer          iel1  , iel2
 integer          iterns
@@ -145,7 +146,7 @@ double precision diipfx, diipfy, diipfz, djjpfx, djjpfy, djjpfz
 double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: wb
-double precision, allocatable, dimension(:) :: coefap, coefbp
+double precision, allocatable, dimension(:) :: coefap, coefbp, dpvar
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: w4, w5, w6
@@ -154,7 +155,7 @@ double precision, dimension(:), pointer :: imasfl, bmasfl
 
 !===============================================================================
 !===============================================================================
-! 1. INITIALISATION
+! 1. INITIALIZATION
 !===============================================================================
 
 ! Allocate a temporary array
@@ -165,18 +166,19 @@ allocate(grad(ncelet,3))
 allocate(w1(ncelet))
 allocate(w4(ncelet), w5(ncelet), w6(ncelet))
 allocate(w7(ncelet), w8(ncelet), w9(ncelet))
+allocate(dpvar(ncelet))
 
-
-! --- Numero de variable de calcul et de post associe au scalaire traite
+! Computation number and post-treatment number of the scalar total energy
 ivar   = isca(iscal)
 ippvar = ipprtp(ivar)
 
-! --- Numero des conditions aux limites
+! Boundary conditions numbers
 iclvar = iclrtp(ivar,icoef)
 iclvaf = iclrtp(ivar,icoeff)
 
-! --- Numero des grandeurs physiques
+! Physical properties numbers
 ipcrom = ipproc(irom  )
+ipbrom = ipprob(irom)
 ipcvst = ipproc(ivisct)
 
 call field_get_key_int(ivarfl(ivar), kimasf, iflmas)
@@ -190,7 +192,7 @@ else
   ipcvsl = 0
 endif
 
-! --- Impressions
+! Prints
 chaine = nomvar(ippvar)
 
 if(iwarni(ivar).ge.1) then
@@ -198,14 +200,13 @@ if(iwarni(ivar).ge.1) then
 endif
 
 !===============================================================================
-! 2. TERMES SOURCES
+! 2. SOURCE TERMS
 !===============================================================================
 
-! --> Theta-schema de resolution
+! Theta-scheme:
+! for now, theta=1 is assumed and the theta-scheme is not implemented
 
-! Pour l'instant on prend THETA=1 et on ne code pas le theta-schema
-
-! --> Initialisation
+! --> Initialization
 
 do iel = 1, ncel
   smbrs(iel) = 0.d0
@@ -214,17 +215,16 @@ do iel = 1, ncel
   rovsdt(iel) = 0.d0
 enddo
 
+! HEAT VOLUMIC SOURCE TERM: RHO * PHI *VOLUME
+! =================================
 
-!     TERME SOURCE VOLUMIQUE DE CHALEUR : RHO*PHI *VOLUME
-!     =================================          v
-
-call ustssc                                                       &
+call ustssc                                                                     &
 !==========
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iscal  ,                                                       &
-   icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , rtp    , propce , propfb ,                   &
-   ckupdc , smacel , smbrs  , rovsdt )
+( nvar   , nscal  , ncepdp , ncesmp ,                                           &
+  iscal  ,                                                                      &
+  icepdc , icetsm , itypsm ,                                                    &
+  dt     , rtpa   , rtp    , propce , propfb ,                                  &
+  ckupdc , smacel , smbrs  , rovsdt )
 
 do iel = 1, ncel
   smbrs(iel) = smbrs(iel) + rovsdt(iel)*rtp(iel,ivar)
@@ -232,35 +232,36 @@ do iel = 1, ncel
 enddo
 
 
-!     TERMES DE SOURCE DE MASSE
-!     =========================
+! MASS SOURCE TERMS
+! =================
 
-!     GAMMA(IEL) = SMACEL(IEL,IPR)
+! GAMMA(IEL) = SMACEL(IEL,IPR)
 
-!     Terme implicite : GAMMA*VOLUME
+! Implicit term : GAMMA*VOLUME
 !                                                        n
-!     Terme explicite : GAMMA*VOLUME*e   - GAMMA*VOLUME*e
+! Explicit term : GAMMA*VOLUME*e   - GAMMA*VOLUME*e
 !                                     inj
 if (ncesmp.gt.0) then
   iterns = 1
-  call catsma ( ncelet , ncel , ncesmp , iterns ,                 &
-                isno2t, thetav(ivar),                             &
-                icetsm , itypsm(1,ivar) ,                         &
-                volume , rtpa(1,ivar) , smacel(1,ivar) ,          &
+  call catsma ( ncelet , ncel , ncesmp , iterns ,                               &
+                isno2t, thetav(ivar),                                           &
+                icetsm , itypsm(1,ivar) ,                                       &
+                volume , rtpa(1,ivar) , smacel(1,ivar) ,                        &
                 smacel(1,ipr) , smbrs , rovsdt , w1    )
 endif
 
-!                                      RHO*VOLUME
-!     TERME INSTATIONNAIRE IMPLICITE : ----------
-!     ==============================       DT
+
+!                          RHO*VOLUME
+! UNSTEADY IMPLICIT TERM : ----------
+! ======================       DT
 
 do iel = 1, ncel
-  rovsdt(iel) = rovsdt(iel)                                       &
-           + istat(ivar)*(propce(iel,ipcrom)/dt(iel))*volume(iel)
+  rovsdt(iel) = rovsdt(iel)                                                     &
+                + istat(ivar)*(propce(iel,ipproc(iroma))/dt(iel))*volume(iel)
 enddo
 
 !                                       __        v
-!     TERME DE DISSIPATION VISQUEUSE  : >  ((SIGMA *U).n)  *S
+!     TERME DE DISSIPATION VISQUEUS   : >  ((SIGMA *U).n)  *S
 !     ==============================    --               ij  ij
 
 if( idiff(iu).ge. 1 ) then
@@ -277,23 +278,15 @@ if( idiff(iu).ge. 1 ) then
 endif
 
 
-!                                         __   P        n+1
-!     TERME DE TRANSPORT DE PRESSION  : - >  (---)  *(Q    .n)  *S
-!     ==============================      --  RHO ij   pr     ij  ij
+!                              __   P        n+1
+! PRESSURE TRANSPORT TERM  : - >  (---)  *(Q    .n)  *S
+! =======================      --  RHO ij   pr     ij  ij
 
-
-if(igrdpp.gt.0) then
-  do iel = 1, ncel
-    w9(iel) = rtp(iel,isca(irho))
-  enddo
-else
-  do iel = 1, ncel
-    w9(iel) = rtpa(iel,isca(irho))
-  enddo
-endif
+do iel = 1, ncel
+  w9(iel) = propce(iel,ipcrom)
+enddo
 
 !     Avec Reconstruction : ca pose probleme pour l'instant
-
 
 !   Calcul du gradient de P/RHO
 
@@ -380,7 +373,7 @@ if (irangp.ge.0.or.iperio.eq.1) then
   !==========
 endif
 
-!     Faces internes
+! Internal faces
 do ifac = 1, nfac
   iel1 = ifacel(1,ifac)
   iel2 = ifacel(2,ifac)
@@ -391,45 +384,44 @@ do ifac = 1, nfac
      *0.5d0*( imasfl(ifac) -abs(imasfl(ifac)) )
 enddo
 
-!     Faces de bord : pour les faces ou on a calcule un flux de Rusanov,
-!       on remplace la contribution standard par le flux de Rusanov qui
-!       contient tous les flux convectifs (et il faudra donc eliminer le
-!       flux convectif dans cfbsc2)
+! Boundary faces: for the faces where a flux (Rusanov or analytical) has been
+! computed, the standard contribution is replaced by this flux in bilsc2.
 
 do ifac = 1, nfabor
-  if (ifbrus(ifac).eq.0) then
+  if (icvfli(ifac).eq.0) then
 
     iel = ifabor(ifac)
     viscb(ifac) = - bmasfl(ifac)                         &
-  * ( coefa(ifac,iclrtp(ipr,icoef))                      &
-    + coefb(ifac,iclrtp(ipr,icoef))*rtp(iel,ipr) )&
-  / ( coefa(ifac,iclrtp(isca(irho),icoef))               &
-    + coefb(ifac,iclrtp(isca(irho),icoef))*w9(iel) )
+                    * ( coefa(ifac,iclrtp(ipr,icoef))                           &
+                        + coefb(ifac,iclrtp(ipr,icoef))*rtp(iel,ipr) )          &
+                    / propfb(ifac,ipbrom)
 
   else
-    viscb(ifac) = - propfb(ifac,ipprob(ifbene))
+
+    viscb(ifac) = 0.d0
+
   endif
 enddo
 
 !     Divergence
 init = 0
-call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                  &
-              ifacel,ifabor,viscf,viscb,smbrs)
+call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                                &
+            ifacel,ifabor,viscf,viscb,smbrs)
 
 
-!     TERME DE FORCES DE PESANTEUR : RHO*g.U *VOLUME
-!     ============================
+! GRAVITATION FORCE TERM : RHO*g.U *VOLUME
+! ======================
 
 do iel = 1, ncel
-  smbrs(iel) = smbrs(iel) + w9(iel)*volume(iel)                   &
-                           *( gx*rtp(iel,iu)               &
-                            + gy*rtp(iel,iv)               &
+  smbrs(iel) = smbrs(iel) + w9(iel)*volume(iel)                                 &
+                           *( gx*rtp(iel,iu)                                    &
+                            + gy*rtp(iel,iv)                                    &
                             + gz*rtp(iel,iw) )
 enddo
 
-!                                       Kij*Sij           LAMBDA   Cp   MUT
-!     "VITESSE" DE DIFFUSION FACETTE : --------- avec K = ------ + -- .------
-!     ==============================    IJ.nij              Cv     Cv  SIGMAS
+!                                  Kij*Sij           LAMBDA   Cp   MUT
+!     FACE DIFFUSION "VELOCITY" : --------- avec K = ------ + -- .------
+!     =========================    IJ.nij              Cv     Cv  SIGMAS
 
 if( idiff(ivar).ge. 1 ) then
 
@@ -475,111 +467,110 @@ if( idiff(ivar).ge. 1 ) then
    viscf  , viscb  )
 
 
-!     TERME DIFFUSIF COMPLEMENTAIRE : - div( K grad ( epsilon - Cv.T ) )
-!     =============================                   1  2
-!                                     - div( K grad ( -.u  ) )
-!                                                     2
+!     COMPLEMENTARY DIFFUSIVE TERM : - div( K grad ( epsilon - Cv.T ) )
+!     ============================                   1  2
+!                                    - div( K grad ( -.u  ) )
+!                                                    2
 
-!     Terme complementaire au centre des cellules
+! Complementary term at cell centers
   iccfth = 7
   imodif = 0
-  call cfther                                                     &
+  call cfther                                                                   &
   !==========
- ( nvar   ,                                                       &
-   iccfth , imodif ,                                              &
-   dt     , rtp    , rtpa   , propce ,                            &
-   w9     , wb     , w8     , w4     )
+ ( nvar   ,                                                                     &
+   iccfth , imodif ,                                                            &
+   dt     , rtp    , rtpa   , propce , propfb ,                                 &
+   w9     , wb     , w8     , w4     , rvoid  , rvoid )
 
-!     Calcul de la divergence avec reconstruction
-
-
-!   Calcul du gradient de (0.5*u*u+EPSILONsup)
+! Divergence computation with reconstruction
 
 
-do iel = 1, ncel
-  w7(iel) =0.5d0*( rtp(iel,iu)**2                          &
-                  +rtp(iel,iv)**2                          &
-                  +rtp(iel,iw)**2 ) + w9(iel)
-enddo
+! Computation of the gradient of (0.5*u*u+EPSILONsup)
 
-! Rq : A defaut de connaitre les parametres, on prend ceux de la Vitesse
+  do iel = 1, ncel
+    w7(iel) =0.5d0*( rtp(iel,iu)**2                                             &
+                    +rtp(iel,iv)**2                                             &
+                    +rtp(iel,iw)**2 ) + w9(iel)
+  enddo
 
-iii = iu
-inc = 1
-iccocg = 1
-nswrgp = nswrgr(iii)
-imligp = imligr(iii)
-iwarnp = iwarni(iii)
-epsrgp = epsrgr(iii)
-climgp = climgr(iii)
-extrap = extrag(iii)
+! Note : by default, since the parameters are unknowns, the velocity parameters
+! are taken
+
+  iii = iu
+  inc = 1
+  iccocg = 1
+  nswrgp = nswrgr(iii)
+  imligp = imligr(iii)
+  iwarnp = iwarni(iii)
+  epsrgp = epsrgr(iii)
+  climgp = climgr(iii)
+  extrap = extrag(iii)
 
 ! Allocate temporary arrays
-allocate(coefap(nfabor))
-allocate(coefbp(nfabor))
+  allocate(coefap(nfabor))
+  allocate(coefbp(nfabor))
 
-do ifac = 1, nfabor
-  coefap(ifac) = zero
-  coefbp(ifac) = 1.d0
-enddo
+  do ifac = 1, nfabor
+    coefap(ifac) = zero
+    coefbp(ifac) = 1.d0
+  enddo
 
-! En periodique et parallele, echange avant calcul du gradient
-if (irangp.ge.0.or.iperio.eq.1) then
-  call synsca(w7)
+  ! Communication before gradient computation in case of periodicity or parallelism
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synsca(w7)
+    !==========
+  endif
+
+!  IVAR0 = 0 (indicates, for the rotation periodicity, that the variable is neither
+!     the velocity, nor Rij)
+  ivar0 = 0
+  call grdcel                                                       &
   !==========
-endif
-
-!  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
-!     n'est pas la vitesse ni Rij)
-ivar0 = 0
-call grdcel                                                       &
-!==========
- ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   w7     , coefap , coefbp ,                                     &
-   grad   )
+   ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+     iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
+     w7     , coefap , coefbp ,                                     &
+     grad   )
 
 ! Free memory
-deallocate(coefap, coefbp)
+  deallocate(coefap, coefbp)
 
-!     Faces internes
+! Internal faces
 
-do ifac = 1, nfac
+  do ifac = 1, nfac
 
-  ii = ifacel(1,ifac)
-  jj = ifacel(2,ifac)
+    ii = ifacel(1,ifac)
+    jj = ifacel(2,ifac)
 
-  dijpfx = dijpf(1,ifac)
-  dijpfy = dijpf(2,ifac)
-  dijpfz = dijpf(3,ifac)
+    dijpfx = dijpf(1,ifac)
+    dijpfy = dijpf(2,ifac)
+    dijpfz = dijpf(3,ifac)
 
-  pnd   = pond(ifac)
+    pnd   = pond(ifac)
 
-!        Calcul II' et JJ'
+! Computation of II' and JJ'
 
-  diipfx = cdgfac(1,ifac) - (xyzcen(1,ii) + (1.d0-pnd) * dijpfx)
-  diipfy = cdgfac(2,ifac) - (xyzcen(2,ii) + (1.d0-pnd) * dijpfy)
-  diipfz = cdgfac(3,ifac) - (xyzcen(3,ii) + (1.d0-pnd) * dijpfz)
-  djjpfx = cdgfac(1,ifac) -  xyzcen(1,jj) +  pnd  * dijpfx
-  djjpfy = cdgfac(2,ifac) -  xyzcen(2,jj) +  pnd  * dijpfy
-  djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj) +  pnd  * dijpfz
+    diipfx = cdgfac(1,ifac) - (xyzcen(1,ii) + (1.d0-pnd) * dijpfx)
+    diipfy = cdgfac(2,ifac) - (xyzcen(2,ii) + (1.d0-pnd) * dijpfy)
+    diipfz = cdgfac(3,ifac) - (xyzcen(3,ii) + (1.d0-pnd) * dijpfz)
+    djjpfx = cdgfac(1,ifac) -  xyzcen(1,jj) +  pnd  * dijpfx
+    djjpfy = cdgfac(2,ifac) -  xyzcen(2,jj) +  pnd  * dijpfy
+    djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj) +  pnd  * dijpfz
 
-  pip = w7(ii) + grad(ii,1)*diipfx+grad(ii,2)*diipfy+grad(ii,3)*diipfz
-  pjp = w7(jj) + grad(jj,1)*djjpfx+grad(jj,2)*djjpfy+grad(jj,3)*djjpfz
+    pip = w7(ii) + grad(ii,1)*diipfx+grad(ii,2)*diipfy+grad(ii,3)*diipfz
+    pjp = w7(jj) + grad(jj,1)*djjpfx+grad(jj,2)*djjpfy+grad(jj,3)*djjpfz
 
-  flux = viscf(ifac)*(pip-pjp)
+    flux = viscf(ifac)*(pip-pjp)
 
-  smbrs(ii) = smbrs(ii) - flux
-  smbrs(jj) = smbrs(jj) + flux
+    smbrs(ii) = smbrs(ii) + flux
+    smbrs(jj) = smbrs(jj) - flux
 
-enddo
+  enddo
 
-
-!       Assemblage a partir des facettes de bord
-!     Pour les faces à flux imposé ou temperature imposée, tout est
-!       pris par le terme de diffusion de l'energie. On ne doit donc
-!       pas prendre en compte la contribution des termes en u2 et e-CvT
-!       quand ifbet(ifac).ne.0
+! Assembling based on boundary faces
+! for the faces where a flux or a temperature is imposed,
+! all is taken into account by the energy diffusion term.
+! Hence the contribution of the terms in u2 and e-CvT shouldn't be taken into
+! account when ifbet(ifac).ne.0
 
   do ifac = 1, nfabor
 
@@ -599,8 +590,7 @@ enddo
    ( coefa(ifac,iclrtp(iw,icoef))                          &
    + coefb(ifac,iclrtp(iw,icoef))*rtp(iel,iw) )**2))
 
-      smbrs(iel) = smbrs(iel) - flux
-
+      smbrs(iel) = smbrs(iel) + flux
     endif
 
   enddo
@@ -617,7 +607,7 @@ else
 endif
 
 !===============================================================================
-! 4. RESOLUTION
+! 4. SOLVING
 !===============================================================================
 
 iconvp = iconv (ivar)
@@ -642,30 +632,43 @@ epsrsp = epsrsm(ivar)
 epsrgp = epsrgr(ivar)
 climgp = climgr(ivar)
 extrap = extrag(ivar)
+relaxp = relaxv(ivar)
 thetap = thetav(ivar)
 iescap = 0
 
-call cfcdts                                                       &
+!  idtvar = 1  => unsteady
+imucpp = 0  ! not a thermal scalar
+idftnp = 1  ! scalar viscosity
+iswdyp = 0  ! no dynamic relaxation
+
+! impose boundary convective at some faces (face indicator icvfli)
+icvflb = 1
+
+call codits                                                      &
 !==========
- ( nvar   , nscal  ,                                              &
-   ivar  , iconvp , idiffp , ireslp , ndircp , nitmap ,           &
-   imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
-   ischcp , isstpp , iescap ,                                     &
-   imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
-   blencp , epsilp , epsrsp , epsrgp , climgp , extrap , thetap , &
-   rtpa(1,ivar)    , coefa(1,iclvar) , coefb(1,iclvar) ,          &
-                     coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
-                     imasfl , bmasfl ,                            &
-   viscf  , viscb  , viscf  , viscb  ,                            &
-   rovsdt , smbrs  , rtp(1,ivar)     ,                            &
-   rvoid  )
+( idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
+  imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
+  ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
+  imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
+  blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
+  relaxp , thetap ,                                              &
+  rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
+  coefa(1,iclvar) , coefb(1,iclvar) ,                            &
+  coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
+  imasfl, bmasfl,                                                &
+  viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
+  rvoid  , rvoid  ,                                              &
+  icvflb , icvfli ,                                              &
+  rovsdt , smbrs  , rtp(1,ivar)     , dpvar  ,                   &
+  rvoid  , rvoid  )
+
 
 !===============================================================================
-! 5. IMPRESSIONS ET CLIPPINGS
+! 5. PRINTINGS AND CLIPPINGS
 !===============================================================================
 
-! Valeur bidon
-  iii = 1
+! dummy value
+iii = 1
 
 call clpsca(ncelet, ncel, iscal, rtp(1,iii), rtp)
 !==========
@@ -678,17 +681,17 @@ call clpsca(ncelet, ncel, iscal, rtp(1,iii), rtp)
   !==========
  ( nvar   ,                                                       &
    iccfth , imodif ,                                              &
-   dt     , rtp    , rtpa   , propce ,                            &
-   w6     , w7     , w8     , w9     )
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   w6     , w7     , w8     , w9     , rvoid  , rvoid )
 
 
-! --- Bilan explicite (voir codits : on enleve l'increment)
+! Explicit balance (see codits : the increment is removed)
 
 if (iwarni(ivar).ge.2) then
   do iel = 1, ncel
-    smbrs(iel) = smbrs(iel)                                       &
-            - istat(ivar)*(propce(iel,ipcrom)/dt(iel))*volume(iel)&
-                *(rtp(iel,ivar)-rtpa(iel,ivar))                   &
+    smbrs(iel) = smbrs(iel)                                                     &
+            - istat(ivar)*(propce(iel,ipcrom)/dt(iel))*volume(iel)              &
+                *(rtp(iel,ivar)-rtpa(iel,ivar))                                 &
                 * max(0,min(nswrsm(ivar)-2,1))
   enddo
   isqrt = 1
@@ -697,23 +700,24 @@ if (iwarni(ivar).ge.2) then
 endif
 
 !===============================================================================
-! 6. ACTUALISATION FINALE DE LA PRESSION (et calcul de la température)
+! 6. FINAL UPDATING OF THE PRESSURE (AND TEMPERATURE)
 !===============================================================================
-!                               n+1      n+1  n+1
-! On utilise l'equation d'etat P   =P(RHO   ,H   )
+!                             n+1      n+1  n+1
+! The state equation is used P   =P(RHO   ,H   )
 
-! --- Calcul de P et T au centre des cellules
-  iccfth = 24
-  imodif = 0
-  call cfther                                                     &
-  !==========
- ( nvar   ,                                                       &
-   iccfth , imodif ,                                              &
-   dt     , rtp    , rtpa   , propce ,                            &
-   rtp(1,ipr) , rtp(1,isca(itempk)) , w8     , w9 )
+! Computation of P and T at cell centers
+iccfth = 24
+imodif = 0
+call cfther                                                                     &
+!==========
+( nvar   ,                                                                      &
+  iccfth , imodif ,                                                             &
+  dt     , rtp    , rtpa   , propce , propfb ,                                  &
+  rtp(1,ipr) , rtp(1,isca(itempk)) , w8     , w9      ,                         &
+  rvoid  , rvoid )
 
 !===============================================================================
-! 7. COMMUNICATION DE LA PRESSION, DE L'ENERGIE ET DE LA TEMPERATURE
+! 7. COMMUNICATION OF PRESSURE, ENERGY AND TEMPERATURE
 !===============================================================================
 
 if (irangp.ge.0.or.iperio.eq.1) then
@@ -737,9 +741,9 @@ deallocate(w7, w8, w9)
 !--------
 
  1000 format(/,                                                   &
-'   ** RESOLUTION POUR LA VARIABLE ',A8                        ,/,&
+'   ** RESOLUTION FOR THE VARIABLE ',A8                        ,/,&
 '      ---------------------------                            ',/)
- 1200 format(1X,A8,' : BILAN EXPLICITE = ',E14.5)
+ 1200 format(1X,A8,' : EXPLICIT BALANCE = ',E14.5)
 
 !----
 ! FIN

@@ -163,6 +163,8 @@ integer          ncymap, nitmgp
 integer          idir  , kdir  , ipp   , inum
 integer          ii, jj, kk, idtva0, ivar0
 integer          imucpp, idftnp, iswdyp
+integer          icvflb
+integer          ivoid(1)
 
 double precision epsrgp, blencp, climgp, epsilp, extrap, epsrsp
 double precision sxt, syt, szt, domegat
@@ -384,6 +386,9 @@ do ii = -1,1,2
         thetap = 1.d0
         idtva0 = 0
 
+        ! all boundary convective flux with upwind
+        icvflb = 0
+
         call codits &
         !==========
  ( idtva0 , ivar0  , iconv1 , idiff1 , ireso1 , ndirc1 ,  nitmap ,&
@@ -396,6 +401,7 @@ do ii = -1,1,2
    coefap , coefbp , cofafp , cofbfp , flurds , flurdb ,          &
    viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &
+   icvflb , ivoid  ,                                              &
    rovsdt , smbrs  , ru     , dpvar  ,                            &
    rvoid  , rvoid  )
 

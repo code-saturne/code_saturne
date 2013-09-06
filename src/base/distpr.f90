@@ -92,6 +92,10 @@ integer          inc   , iccocg, ivar
 integer          isweep, nittot, idtva0
 integer          ibsize, iesize, mmprpl, nswrsl
 integer          imucpp, idftnp
+
+integer          icvflb
+integer          ivoid(1)
+
 double precision relaxp, thetap, rnorm, residu, rnoini
 double precision dismax, dismin, hint, pimp, qimp
 
@@ -296,6 +300,9 @@ do isweep = 0, nswrsl
     idtva0 = 0
     relaxp = 1.d0
 
+    ! all boundary convective flux with upwind
+    icvflb = 0
+
     call bilsca &
     !==========
  ( idtva0 , ivar   , iconvp , idiffp , nswrgy , imligy , ircfly , &
@@ -305,6 +312,7 @@ do isweep = 0, nswrsl
    rtpdp  , rtpdp  , coefad , coefbd , coefad , cofbfd ,          &
    viscf  , viscb  , viscf  , viscb  , rvoid  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &
+   icvflb , ivoid  ,                                              &
    smbdp  )
 
   endif

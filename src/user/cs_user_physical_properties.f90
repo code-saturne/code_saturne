@@ -888,6 +888,7 @@ double precision varal, varbl, varcl, vardl
 double precision varac, varbc
 double precision xrtp
 
+double precision rvoid(1)
 double precision, allocatable, dimension(:) :: w1, w2, w3
 
 !===============================================================================
@@ -1130,8 +1131,9 @@ if (.false.) then
   !==========
    ( nvar   ,                                                       &
      iccfth , imodif ,                                              &
-     dt     , rtp    , rtpa  , propce ,                             &
-     propce(1, ipproc(icv))  , w1     , w2     , w3     )
+     dt     , rtp    , rtpa  , propce , propfb ,                    &
+     propce(1, ipproc(icv))  , w1     , w2     , w3     ,           &
+     rvoid  , rvoid )
 
 endif ! --- Test on .false.
 

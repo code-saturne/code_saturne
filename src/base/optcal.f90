@@ -460,6 +460,9 @@ module optcal
   !> maximum Courant number (when idtvar is different from 0)
   double precision, save :: coumax
 
+  !> maximum Courant number for the continuity equation in compressible model
+  double precision, save :: cflmmx
+
   !> maximum Fourier number (when idtvar is different from 0)
   double precision, save :: foumax
 

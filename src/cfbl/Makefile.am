@@ -51,25 +51,20 @@ pkginclude_HEADERS =
 
 noinst_LTLIBRARIES = libcscfbl.la
 libcscfbl_la_SOURCES = \
-cfbsc2.f90 \
-cfbsc3.f90 \
-cfcdts.f90 \
 cfdivs.f90 \
 cfdttv.f90 \
 cfener.f90 \
 cfini1.f90 \
 cfiniv.f90 \
-cfmsfl.f90 \
-cfmsgs.f90 \
-cfmsvl.f90 \
-cfmsvs.f90 \
 cfphyv.f90 \
 cfprop.f90 \
-cfqdmv.f90 \
 cfrusb.f90 \
+cffana.f90 \
 cfther.f90 \
 cfvarp.f90 \
-cfxtcl.f90
+cfxtcl.f90 \
+cfmspr.f90 \
+cfmsfp.f90
 libcscfbl_la_LDFLAGS = -no-undefined
 
 clean-local:

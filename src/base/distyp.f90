@@ -109,7 +109,9 @@ integer          iescap, iflmb0, imaspe, itypfl
 integer          ncymxp, nitmfp, ipp
 integer          ifac  , iel   , ipcvis, init  , ipcrom
 integer          inc   , iccocg, isym  , isweep, infpar
-integer          imucpp, idftnp, iswdyp
+integer          imucpp, idftnp, iswdyp, icvflb
+
+integer          ivoid(1)
 
 double precision xnorme, dtminy, dtmaxy, relaxp, thetap, timey
 double precision xusnmx, xusnmn, xnorm0
@@ -526,6 +528,8 @@ do isweep = 1, ntcmxy
   ! Pas de stationnaire ni de relaxation -> a modifier eventuellement
   idtva0 = 0
   relaxp = 1.d0
+  ! all boundary convective flux with upwind
+  icvflb = 0
 
   ! Warning: no diffusion so no need of other diffusive Boundary coeeficient
 
@@ -541,6 +545,7 @@ do isweep = 1, ntcmxy
    coefax , coefbx , coefax , coefbx , flumas , flumab ,          &
    flumas , flumab , rvoid  , flumas , flumab , rvoid  ,          &
    rvoid  , rvoid  ,                                              &
+   icvflb , ivoid  ,                                              &
    rovsdp , smbdp  , rtpdp  , dpvar  ,                            &
    rvoid  , rvoid  )
 

@@ -247,26 +247,28 @@ module field
 
     ! Interface to C function allocating boundary condition coefficients
 
-    subroutine cs_field_allocate_bc_coeffs(f, have_flux_bc, have_mom_bc)  &
+    subroutine cs_field_allocate_bc_coeffs(f, have_flux_bc, have_mom_bc, have_conv_bc)  &
       bind(C, name='cs_field_allocate_bc_coeffs')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), value           :: f
       logical(c_bool), value       :: have_flux_bc
       logical(c_bool), value       :: have_mom_bc
+      logical(c_bool), value       :: have_conv_bc
     end subroutine cs_field_allocate_bc_coeffs
 
     !---------------------------------------------------------------------------
 
     ! Interface to C function initializing boundary condition coefficients
 
-    subroutine cs_field_init_bc_coeffs(f, have_flux_bc, have_mom_bc)  &
+    subroutine cs_field_init_bc_coeffs(f, have_flux_bc, have_mom_bc, have_conv_bc)  &
       bind(C, name='cs_field_init_bc_coeffs')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), value           :: f
       logical(c_bool), value       :: have_flux_bc
       logical(c_bool), value       :: have_mom_bc
+      logical(c_bool), value       :: have_conv_bc
     end subroutine cs_field_init_bc_coeffs
 
 
@@ -274,12 +276,12 @@ module field
 
     ! Interface to C function mapping boundary condition coefficients
 
-    subroutine cs_field_map_bc_coeffs(f, a, b, af, bf)  &
+    subroutine cs_field_map_bc_coeffs(f, a, b, af, bf, ad, bd, ac, bc)  &
       bind(C, name='cs_field_map_bc_coeffs')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), value :: f
-      real(kind=c_double), dimension(*) :: a, b, af, bf
+      real(kind=c_double), dimension(*) :: a, b, af, bf, ad, bd, ac, bc
     end subroutine cs_field_map_bc_coeffs
 
     !---------------------------------------------------------------------------
@@ -772,8 +774,10 @@ contains
   !>                           (coefaf and coefbf) are added
   !> \param[in]  have_mom_bc   if .true., BC coefficients used in divergence
   !>                           term (coefad and coefbd) are added
+  !> \param[in]  have_conv_bc   if .true., BC coefficients used in convection
+  !>                           term (coefac and coefbc) are added
 
-  subroutine field_allocate_bc_coeffs(id, have_flux_bc, have_mom_bc)
+  subroutine field_allocate_bc_coeffs(id, have_flux_bc, have_mom_bc, have_conv_bc)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -783,12 +787,14 @@ contains
     integer, intent(in) :: id
     logical, intent(in) :: have_flux_bc
     logical, intent(in) :: have_mom_bc
+    logical, intent(in) :: have_conv_bc
 
     ! Local variables
 
     integer(c_int) :: c_id
     logical(c_bool) :: c_have_flux_bc
     logical(c_bool) :: c_have_mom_bc
+    logical(c_bool) :: c_have_conv_bc
     type(c_ptr)     :: f
 
     c_id = id
@@ -796,7 +802,8 @@ contains
     f = cs_field_by_id(c_id)
     c_have_flux_bc = have_flux_bc
     c_have_mom_bc = have_mom_bc
-    call cs_field_allocate_bc_coeffs(f, c_have_flux_bc, c_have_mom_bc)
+    c_have_conv_bc = have_conv_bc
+    call cs_field_allocate_bc_coeffs(f, c_have_flux_bc, c_have_mom_bc, c_have_conv_bc)
 
     return
 
@@ -811,8 +818,10 @@ contains
   !>                           (coefaf and coefbf) are initialize
   !> \param[in]  have_mom_bc   if .true., BC coefficients used in divergence
   !>                           term (coefad and coefbd) are initialized
+  !> \param[in]  have_conv_bc   if .true., BC coefficients used in convection
+  !>                           term (coefac and coefbc) are initialized
 
-  subroutine field_init_bc_coeffs(id, have_flux_bc, have_mom_bc)
+  subroutine field_init_bc_coeffs(id, have_flux_bc, have_mom_bc, have_conv_bc)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -822,12 +831,14 @@ contains
     integer, intent(in) :: id
     logical, intent(in) :: have_flux_bc
     logical, intent(in) :: have_mom_bc
+    logical, intent(in) :: have_conv_bc
 
     ! Local variables
 
     integer(c_int) :: c_id
     logical(c_bool) :: c_have_flux_bc
     logical(c_bool) :: c_have_mom_bc
+    logical(c_bool) :: c_have_conv_bc
     type(c_ptr)     :: f
 
     c_id = id
@@ -835,7 +846,8 @@ contains
     f = cs_field_by_id(c_id)
     c_have_flux_bc = have_flux_bc
     c_have_mom_bc = have_mom_bc
-    call cs_field_init_bc_coeffs(f, c_have_flux_bc, c_have_mom_bc)
+    c_have_conv_bc = have_conv_bc
+    call cs_field_init_bc_coeffs(f, c_have_flux_bc, c_have_mom_bc, c_have_conv_bc)
 
     return
 
@@ -851,8 +863,12 @@ contains
   !> \param[in]  b   implicit BC coefficients array
   !> \param[in]  af  explicit flux BC coefficients array, if present
   !> \param[in]  bf  implicit flux BC coefficients array, if present
+  !> \param[in]  ad  explicit div BC coefficients array, if present
+  !> \param[in]  bd  implicit div BC coefficients array, if present
+  !> \param[in]  ac  explicit conv BC coefficients array, if present
+  !> \param[in]  bc  implicit conv BC coefficients array, if present
 
-  subroutine field_map_bc_coeffs(id, a, b, af, bf)
+  subroutine field_map_bc_coeffs(id, a, b, af, bf, ad, bd, ac, bc)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -860,7 +876,7 @@ contains
     ! Arguments
 
     integer, intent(in)                        :: id
-    double precision, intent(in), dimension(*) :: a, b, af, bf
+    double precision, intent(in), dimension(*) :: a, b, af, bf, ad, bd, ac, bc
 
     ! Local variables
 
@@ -870,7 +886,7 @@ contains
     c_id = id
 
     f = cs_field_by_id(c_id)
-    call cs_field_map_bc_coeffs(f, a, b, af, bf)
+    call cs_field_map_bc_coeffs(f, a, b, af, bf, ad, bd, ac, bc)
 
     return
 
@@ -1478,7 +1494,7 @@ contains
 
   !> \brief Return pointer to the coefa array of a given vector field
 
-  !> \param[in]     field_id  id of given field (which must be scalar)
+  !> \param[in]     field_id  id of given field (which must be a vector)
   !> \param[out]    p         pointer to vector field BC coefa values
 
   subroutine field_get_coefa_v (field_id, p)
@@ -1536,6 +1552,36 @@ contains
 
   !=============================================================================
 
+  !> \brief Return pointer to the coefac array of a given vector field
+
+  !> \param[in]     field_id  id of given field (which must be a vector)
+  !> \param[out]    p         pointer to vector field BC coefa values
+
+  subroutine field_get_coefac_v (field_id, p)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    integer, intent(in)                                    :: field_id
+    double precision, dimension(:,:), pointer, intent(out) :: p
+
+    ! Local variables
+
+    integer(c_int) :: f_id, p_type, p_rank
+    integer(c_int), dimension(3) :: f_dim
+    type(c_ptr) :: c_p
+
+    f_id = field_id
+    p_type = 7
+    p_rank = 2
+
+    call cs_f_field_bc_coeffs_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
+    call c_f_pointer(c_p, p, [f_dim(1), f_dim(2)])
+
+  end subroutine field_get_coefac_v
+
+  !=============================================================================
+
   !> \brief Return pointer to the coefb array of a given scalar field
 
   !> \param[in]     field_id  id of given field (which must be scalar)
@@ -1566,9 +1612,39 @@ contains
 
   !=============================================================================
 
-  !> \brief Return pointer to the coefb array of a given uncoupled vector field
+  !> \brief Return pointer to the coefbc array of a given scalar field
 
   !> \param[in]     field_id  id of given field (which must be scalar)
+  !> \param[out]    p         pointer to scalar field BC coefbc values
+
+  subroutine field_get_coefbc_s (field_id, p)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    integer, intent(in)                                  :: field_id
+    double precision, dimension(:), pointer, intent(out) :: p
+
+    ! Local variables
+
+    integer(c_int) :: f_id, p_type, p_rank
+    integer(c_int), dimension(3) :: f_dim
+    type(c_ptr) :: c_p
+
+    f_id = field_id
+    p_type = 8
+    p_rank = 1
+
+    call cs_f_field_bc_coeffs_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
+    call c_f_pointer(c_p, p, [f_dim(1)])
+
+  end subroutine field_get_coefbc_s
+
+  !=============================================================================
+
+  !> \brief Return pointer to the coefb array of a given uncoupled vector field
+
+  !> \param[in]     field_id  id of given field (which must be a vector)
   !> \param[out]    p         pointer to vector field BC coefa values
 
   subroutine field_get_coefb_uv (field_id, p)
@@ -1596,9 +1672,39 @@ contains
 
   !=============================================================================
 
+  !> \brief Return pointer to the coefbc array of a given uncoupled vector field
+
+  !> \param[in]     field_id  id of given field (which must be a vector)
+  !> \param[out]    p         pointer to vector field BC coefbc values
+
+  subroutine field_get_coefbc_uv (field_id, p)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    integer, intent(in)                                    :: field_id
+    double precision, dimension(:,:), pointer, intent(out) :: p
+
+    ! Local variables
+
+    integer(c_int) :: f_id, p_type, p_rank
+    integer(c_int), dimension(3) :: f_dim
+    type(c_ptr) :: c_p
+
+    f_id = field_id
+    p_type = 8
+    p_rank = 2
+
+    call cs_f_field_bc_coeffs_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
+    call c_f_pointer(c_p, p, [f_dim(1), f_dim(2)])
+
+  end subroutine field_get_coefbc_uv
+
+  !=============================================================================
+
   !> \brief Return pointer to the coefb array of a given coupled vector field
 
-  !> \param[in]     field_id  id of given field (which must be scalar)
+  !> \param[in]     field_id  id of given field (which must be a vector)
   !> \param[out]    p         pointer to vector field BC coefa values
 
   subroutine field_get_coefb_v (field_id, p)
@@ -1626,7 +1732,37 @@ contains
 
   !=============================================================================
 
-  !> \brief Return pointer to the coefa array of a given scalar field
+  !> \brief Return pointer to the coefbc array of a given coupled vector field
+
+  !> \param[in]     field_id  id of given field (which must be a vector)
+  !> \param[out]    p         pointer to vector field BC coefa values
+
+  subroutine field_get_coefbc_v (field_id, p)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    integer, intent(in)                                      :: field_id
+    double precision, dimension(:,:,:), pointer, intent(out) :: p
+
+    ! Local variables
+
+    integer(c_int) :: f_id, p_type, p_rank
+    integer(c_int), dimension(3) :: f_dim
+    type(c_ptr) :: c_p
+
+    f_id = field_id
+    p_type = 8
+    p_rank = 3
+
+    call cs_f_field_bc_coeffs_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
+    call c_f_pointer(c_p, p, [f_dim(1), f_dim(2), f_dim(3)])
+
+  end subroutine field_get_coefbc_v
+
+  !=============================================================================
+
+  !> \brief Return pointer to the coefaf array of a given scalar field
 
   !> \param[in]     field_id  id of given field (which must be scalar)
   !> \param[out]    p         pointer to scalar field BC coefa values
@@ -1656,7 +1792,37 @@ contains
 
   !=============================================================================
 
-  !> \brief Return pointer to the coefa array of a given vector field
+  !> \brief Return pointer to the coefac array of a given scalar field
+
+  !> \param[in]     field_id  id of given field (which must be scalar)
+  !> \param[out]    p         pointer to scalar field BC coefa values
+
+  subroutine field_get_coefac_s (field_id, p)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    integer, intent(in)                                  :: field_id
+    double precision, dimension(:), pointer, intent(out) :: p
+
+    ! Local variables
+
+    integer(c_int) :: f_id, p_type, p_rank
+    integer(c_int), dimension(3) :: f_dim
+    type(c_ptr) :: c_p
+
+    f_id = field_id
+    p_type = 7
+    p_rank = 1
+
+    call cs_f_field_bc_coeffs_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
+    call c_f_pointer(c_p, p, [f_dim(1)])
+
+  end subroutine field_get_coefac_s
+
+  !=============================================================================
+
+  !> \brief Return pointer to the coefaf array of a given vector field
 
   !> \param[in]     field_id  id of given field (which must be scalar)
   !> \param[out]    p         pointer to vector field BC coefa values
@@ -1686,7 +1852,7 @@ contains
 
   !=============================================================================
 
-  !> \brief Return pointer to the coefb array of a given scalar field
+  !> \brief Return pointer to the coefbf array of a given scalar field
 
   !> \param[in]     field_id  id of given field (which must be scalar)
   !> \param[out]    p         pointer to scalar field BC coefa values
@@ -1716,7 +1882,7 @@ contains
 
   !=============================================================================
 
-  !> \brief Return pointer to the coefb array of a given uncoupled vector field
+  !> \brief Return pointer to the coefbf array of a given uncoupled vector field
 
   !> \param[in]     field_id  id of given field (which must be scalar)
   !> \param[out]    p         pointer to vector field BC coefa values
@@ -1746,7 +1912,7 @@ contains
 
   !=============================================================================
 
-  !> \brief Return pointer to the coefb array of a given coupled vector field
+  !> \brief Return pointer to the coefbf array of a given coupled vector field
 
   !> \param[in]     field_id  id of given field (which must be scalar)
   !> \param[out]    p         pointer to vector field BC coefa values
@@ -1776,7 +1942,7 @@ contains
 
   !=============================================================================
 
-  !> \brief Return pointer to the coefb array of a given coupled vector field
+  !> \brief Return pointer to the coefbd array of a given coupled vector field
 
   !> \param[in]     field_id  id of given field (which must be scalar)
   !> \param[out]    p         pointer to vector field BC coefa values

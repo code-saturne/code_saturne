@@ -26,21 +26,18 @@ subroutine cfrusb &
  ( nvar   , nscal  ,                                              &
    imodif ,                                                       &
    gammag ,                                                       &
-   dt     , rtp    , rtpa   , propfb ,                            &
-   coefa  , coefb  ,                                              &
-   sorti1 , sorti2 , gamagr , masmor )
+   dt     , rtp    , rtpa   , propce , propfb , bval   ,          &
+   gamagr , masmor )
 
 !===============================================================================
-! FONCTION :
+! FUNCTION :
 ! ---------
 
-! Flux de rusanov au bord pour euler + energie
+! Rusanov flux at the boundary for Euler + Energy
 
 ! d rho   /dt + div rho u             = 0
 ! d rho u /dt + div rho u u + grad  P = 0
 ! d E     /dt + div rho u E + div u P = 0
-
-
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -54,10 +51,8 @@ subroutine cfrusb &
 ! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
 ! rtp,rtpa         ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules                                    !
+! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa coefb      ! tr ! <-- ! conditions aux limites aux                     !
-!  (nfabor,*)      !    !     !    faces de bord                               !
-! sorti1,2(*)      ! tr ! --> ! variables de sortie                            !
 ! gamagr(*)        ! tr ! --- ! constante gamma equivalent du gaz              !
 ! masmor(*)        ! tr ! --- ! masse molaire des constituants du gaz          !
 !__________________!____!_____!________________________________________________!
@@ -96,26 +91,24 @@ implicit none
 integer          nvar   , nscal
 integer          imodif
 
-
 double precision gammag
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision sorti1(*), sorti2(*), gamagr(*), masmor(*)
-
+double precision propce(ncelet,*), propfb(nfabor,*)
+double precision bval(nfabor,nvar)
+double precision gamagr(*), masmor(*)
 
 ! Local variables
 
-integer          ifac0
 integer          iel    , ifac
-integer          irh    , ien
-integer          iclp   , iclr   , icle
-integer          iclu   , iclv   , iclw
-integer          iflmab
+integer          ien
+integer          iflmab , ipcrom , ipbrom
+
 double precision und    , uni    , rund   , runi   , cd     , ci
 double precision rrus   , runb
 double precision, dimension(:), pointer :: bmasfl
+double precision, dimension(:,:), pointer :: cofacv
+double precision, dimension(:), pointer :: coface
 
 !===============================================================================
 
@@ -123,98 +116,76 @@ double precision, dimension(:), pointer :: bmasfl
 ! 0. INITIALISATION
 !===============================================================================
 
-
-irh = isca(irho  )
+ipcrom = ipproc(irom)
+ipbrom = ipprob(irom)
 ien = isca(ienerg)
-iclp = iclrtp(ipr,icoef)
-iclr = iclrtp(irh,icoef)
-icle = iclrtp(ien,icoef)
-iclu = iclrtp(iu,icoef)
-iclv = iclrtp(iv,icoef)
-iclw = iclrtp(iw,icoef)
 
 call field_get_key_int(ivarfl(ien), kbmasf, iflmab)
 call field_get_val_s(iflmab, bmasfl)
 
-ifac0 = imodif
-ifac  = ifac0
+call field_get_coefac_v(ivarfl(iu), cofacv)
+call field_get_coefac_s(ivarfl(ien), coface)
+
+ifac  = imodif
 iel   = ifabor(ifac)
 
 !===============================================================================
-! 1. GRANDEURS LIEES A RUSANOV
+! 1. COMPUTE VALUES NEEDED FOR RUSANOV SCHEME
 !===============================================================================
 
-
-und   = (coefa(ifac,iclu)*surfbo(1,ifac)                          &
-       + coefa(ifac,iclv)*surfbo(2,ifac)                          &
-       + coefa(ifac,iclw)*surfbo(3,ifac))/surfbn(ifac)
+und   = (bval(ifac,iu)*surfbo(1,ifac)                          &
+       + bval(ifac,iv)*surfbo(2,ifac)                          &
+       + bval(ifac,iw)*surfbo(3,ifac))/surfbn(ifac)
 uni   = (rtp(iel,iu)*surfbo(1,ifac)                            &
        + rtp(iel,iv)*surfbo(2,ifac)                            &
        + rtp(iel,iw)*surfbo(3,ifac))/surfbn(ifac)
-rund  = coefa(ifac,iclr)*und
-runi  = rtp(iel,irh)     *uni
-cd    = sqrt(gammag*coefa(ifac,iclp)/coefa(ifac,iclr))
-ci    = sqrt(gammag*rtp(iel,ipr)/rtp(iel,irh))
+rund  = propfb(ifac,ipbrom)*und
+runi  = propce(iel,ipcrom)     *uni
+cd    = sqrt(gammag*bval(ifac,ipr)/propfb(ifac,ipbrom))
+ci    = sqrt(gammag*rtp(iel,ipr)/propce(iel,ipcrom))
 rrus  = max(abs(und)+cd,abs(uni)+ci)
 
-runb  = 0.5d0*(coefa(ifac,iclr)*und+rtp(iel,irh)*uni)          &
-      - 0.5d0*rrus*(coefa(ifac,iclr)-rtp(iel,irh))
+runb  = 0.5d0*(propfb(ifac,ipbrom)*und+propce(iel,ipcrom)*uni)          &
+      - 0.5d0*rrus*(propfb(ifac,ipbrom)-propce(iel,ipcrom))
 
 !===============================================================================
-! 2. FLUX CONVECTIFS DE RUSANOV
+! 2. CONVECTIVE RUSANOV FLUX
 !===============================================================================
 
+! Tag the faces where a Rusanov flux is computed
+! The tag will be used in bilsc2 to retrieve the faces where a Rusanov flux
+! has to be imposed
+icvfli(ifac) = 1
 
-!     Reperage de la face pour annuler les flux convectifs
-!       calcules au bord par bilsc2 ou cfbsc2 pour la qdm (div(rho u u))
-!       et l'energie (div(rho u E)) ainsi que les termes en
-!       grad(P) et div(u P)
-
-ifbrus(ifac) = 1
-
-!     Flux de masse
+! Mass flux
 bmasfl(ifac) = runb*surfbn(ifac)
 
-!     Flux de Qdm (la partie centree en pression pourrait etre prise dans
-!       la condition à la limite de pression, ce qui eviterait de retoucher
-!       le gradient de pression de la qdm, mais qui donne moins de
-!       flexibilité quant à la condition à la limite de pression utilisee
-!       pour la reconstruction du gradient, si le maillage est non
-!       orthogonal en entree)
-propfb(ifac,ipprob(ifbrhu)) = surfbn(ifac)*                       &
-             0.5d0*(                                              &
-             (rund*coefa(ifac,iclu)+runi*rtp(iel,iu))             &
-             -rrus*( coefa(ifac,iclr)*coefa(ifac,iclu)            &
-                    -rtp(iel,irh)     *rtp(iel,iu)     ))         &
-                        + surfbo(1,ifac)*                         &
-             0.5d0*(coefa(ifac,iclp)+rtp(iel,ipr))
-propfb(ifac,ipprob(ifbrhv)) = surfbn(ifac)*                       &
-             0.5d0*(                                              &
-             (rund*coefa(ifac,iclv)+runi*rtp(iel,iv))             &
-             -rrus*( coefa(ifac,iclr)*coefa(ifac,iclv)            &
-                    -rtp(iel,irh)     *rtp(iel,iv)     ))         &
-                        + surfbo(2,ifac)*                         &
-             0.5d0*(coefa(ifac,iclp)+rtp(iel,ipr))
-propfb(ifac,ipprob(ifbrhw)) = surfbn(ifac)*                       &
-             0.5d0*(                                              &
-             (rund*coefa(ifac,iclw)+runi*rtp(iel,iw))             &
-             -rrus*( coefa(ifac,iclr)*coefa(ifac,iclw)            &
-                    -rtp(iel,irh)     *rtp(iel,iw)     ))         &
-                        + surfbo(3,ifac)*                         &
-             0.5d0*(coefa(ifac,iclp)+rtp(iel,ipr))
-!     Flux de E
-propfb(ifac,ipprob(ifbene)) = surfbn(ifac)*                       &
-             0.5d0*(                                              &
-              rund*coefa(ifac,icle)+runi*rtp(iel,ien)             &
-              +und*coefa(ifac,iclp)+ uni*rtp(iel,ipr)             &
-             -rrus*( coefa(ifac,iclr)*coefa(ifac,icle)            &
-                    -rtp(iel,irh)     *rtp(iel,ien)     ))
+! Momentum flux (the centered pressure contribution is directly taken into account
+! in the pressure BC)
+cofacv(1,ifac) = surfbn(ifac)*                                                  &
+                 0.5d0*( rund*bval(ifac,iu) + runi*rtp(iel,iu)                  &
+                         -rrus*(propfb(ifac,ipbrom)*bval(ifac,iu)               &
+                         -propce(iel,ipcrom)*rtp(iel,iu)) )
 
+cofacv(2,ifac) = surfbn(ifac)*                                                  &
+                 0.5d0*( rund*bval(ifac,iv) + runi*rtp(iel,iv)                  &
+                         -rrus*( propfb(ifac,ipbrom)*bval(ifac,iv)              &
+                         -propce(iel,ipcrom)*rtp(iel,iv)) )
 
+cofacv(3,ifac) = surfbn(ifac)*                                                  &
+                 0.5d0*( rund*bval(ifac,iw) + runi*rtp(iel,iw)                  &
+                         -rrus*(propfb(ifac,ipbrom)*bval(ifac,iw)               &
+                         -propce(iel,ipcrom)*rtp(iel,iw)) )
 
-!----
-! FIN
-!----
+! BC for the pressure gradient in the momentum balance
+bval(ifac,ipr) = 0.5d0 * (bval(ifac,ipr) + rtp(iel,ipr))
+
+! Total energy flux
+coface(ifac) = surfbn(ifac)*                                                    &
+               0.5d0*( rund*bval(ifac,ien) + runi*rtp(iel,ien)                  &
+                       +und*bval(ifac,ipr) + uni*rtp(iel,ipr)                   &
+                       -rrus*(propfb(ifac,ipbrom)*bval(ifac,ien)                &
+                       -propce(iel,ipcrom)*rtp(iel,ien)) )
 
 return
 

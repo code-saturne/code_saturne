@@ -113,7 +113,7 @@ double precision wflmas(nfac), wflmab(nfabor), viscb(nfabor)
 
 ! Local variables
 
-integer          ifac  , iel   , ivar  , iscal
+integer          ifac  , iel
 integer          init
 
 double precision, allocatable, dimension(:) :: viscf
@@ -132,10 +132,6 @@ allocate(coefu(nfabor,3))
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet))
 
-
-iscal  = irho
-ivar   = isca(iscal)
-
 !===============================================================================
 ! 1. CALCUL DE LA CONDITION CFL ASSOCIEE A LA MASSE VOLUMIQUE
 !===============================================================================
@@ -149,15 +145,14 @@ do ifac = 1, nfabor
   wflmab(ifac) = 0.d0
 enddo
 
-call cfmsfl                                                       &
+call cfmsfp                                                       &
 !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtp    , rtpa   , propce , propfb ,                   &
    coefa  , coefb  , ckupdc , smacel ,                            &
    wflmas , wflmab ,                                              &
-   viscf  , viscb  , coefu  )
+   viscf  , viscb  )
 
 ! ---> Sommation sur les faces (depend de si l'on explicite ou non
 !                               le terme de convection)
@@ -179,8 +174,8 @@ call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                  &
 ! ---> Calcul du coefficient CFL/Dt
 
 do iel = 1, ncel
-  wcf(iel) = max( -dble(iconv(ivar))*w1(iel)/volume(iel),         &
-       max( dble(1-iconv(ivar))*w2(iel)/volume(iel), 0.d0 ) )
+  wcf(iel) = max( -dble(iconv(ipr))*w1(iel)/volume(iel),         &
+       max( dble(1-iconv(ipr))*w2(iel)/volume(iel), 0.d0 ) )
 enddo
 
 ! Free memory

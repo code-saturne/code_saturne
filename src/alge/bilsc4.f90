@@ -127,6 +127,8 @@
 !>                               at border faces for the r.h.s.
 !> \param[in]     secvif        secondary viscosity at interior faces
 !> \param[in]     secvib        secondary viscosity at boundary faces
+!> \param[in]     icvflb
+!> \param[in]     icvfbr
 !> \param[in,out] smbr          right hand side \f$ \vect{Rhs} \f$
 !_______________________________________________________________________________
 
@@ -138,6 +140,7 @@ subroutine bilsc4 &
    pvar   , pvara  ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
    flumas , flumab , viscf  , viscb  , secvif , secvib ,          &
+   icvflb , icvfbr ,                                              &
    smbr   )
 
 !===============================================================================
@@ -154,6 +157,7 @@ use parall
 use period
 use cplsat
 use mesh
+use field
 
 !===============================================================================
 
@@ -164,8 +168,9 @@ implicit none
 integer          idtvar
 integer          ivar   , iconvp , idiffp , nswrgp , imligp
 integer          ircflp , ischcp , isstpp
-integer          inc    , imrgra , ivisep
+integer          inc    , imrgra , ivisep , icvflb
 integer          iwarnp , ippu   , ippv   , ippw
+integer          icvfbr(nfabor)
 
 double precision blencp , epsrgp , climgp, extrap, relaxp , thetap
 double precision pvar  (3  ,ncelet)
@@ -210,6 +215,8 @@ double precision unsvol, visco, grdtrv, tgrdfl, secvis
 double precision, dimension(:,:,:), allocatable :: gradv, gradva
 double precision, dimension(:), allocatable :: bndcel
 
+double precision, dimension(:,:), pointer :: cofacv
+double precision, dimension(:,:,:), pointer :: cofbcv
 
 !===============================================================================
 
@@ -1189,121 +1196,329 @@ endif
 ! ---> Contribution from boundary faces
 ! ======================================================================
 
-! Steady
-if (idtvar.lt.0) then
+! Boundary convective flux are all computed with an upwind scheme
+if (icvflb.eq.0) then
 
-  do ig = 1, ngrpb
-    !$omp parallel do private(ifac, ii, isou, jsou, diipbv, flui, fluj,         &
-    !$omp                     pfac, pfacd, pir, pipr, flux, pi, pia)            &
-    !$omp          if(nfabor > thr_n_min)
-    do it = 1, nthrdb
-      do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
+  ! Steady
+  if (idtvar.lt.0) then
 
-        ii = ifabor(ifac)
+    do ig = 1, ngrpb
+      !$omp parallel do private(ifac, ii, isou, jsou, diipbv, flui, fluj,         &
+      !$omp                     pfac, pfacd, pir, pipr, flux, pi, pia)            &
+      !$omp          if(nfabor > thr_n_min)
+      do it = 1, nthrdb
+        do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
 
-        do jsou = 1, 3
-          diipbv(jsou) = diipb(jsou,ifac)
-        enddo
+          ii = ifabor(ifac)
 
-        ! Remove decentering for coupled faces
-        if (ifaccp.eq.1.and.itypfb(ifac).eq.icscpl) then
-          flui = 0.0d0
-          fluj = flumab(ifac)
-        else
-          flui = 0.5d0*(flumab(ifac) +abs(flumab(ifac)))
-          fluj = 0.5d0*(flumab(ifac) -abs(flumab(ifac)))
-        endif
-
-        !-----------------
-        ! X-Y-Z components, p=u, v, w
-        do isou = 1, 3
-
-          pfac  = inc*coefav(isou,ifac)
-          pfacd = inc*cofafv(isou,ifac)
-
-          !coefu and cofuf are matrices
           do jsou = 1, 3
-            pir  = pvar(jsou,ii)/relaxp - (1.d0-relaxp)/relaxp*pvara(jsou,ii)
-
-            pipr = pir +ircflp*( gradv(jsou,1,ii)*diipbv(1)         &
-                               + gradv(jsou,2,ii)*diipbv(2)         &
-                               + gradv(jsou,3,ii)*diipbv(3))
-            pfac  = pfac  + coefbv(isou,jsou,ifac)*pipr
-            pfacd = pfacd + cofbfv(isou,jsou,ifac)*pipr
+            diipbv(jsou) = diipb(jsou,ifac)
           enddo
 
-          pi  = pvar(isou,ii)
-          pia = pvara(isou,ii)
+          ! Remove decentering for coupled faces
+          if (ifaccp.eq.1.and.itypfb(ifac).eq.icscpl) then
+            flui = 0.0d0
+            fluj = flumab(ifac)
+          else
+            flui = 0.5d0*(flumab(ifac) +abs(flumab(ifac)))
+            fluj = 0.5d0*(flumab(ifac) -abs(flumab(ifac)))
+          endif
 
-          pir  = pi/relaxp - (1.d0-relaxp)/relaxp*pia
-          pipr = pir +ircflp*( gradv(isou,1,ii)*diipbv(1)           &
-                             + gradv(isou,2,ii)*diipbv(2)           &
-                             + gradv(isou,3,ii)*diipbv(3))
+          !-----------------
+          ! X-Y-Z components, p=u, v, w
+          do isou = 1, 3
 
-          flux = iconvp*(flui*pir + fluj*pfac - flumab(ifac)*pi)     &
-               + idiffp*viscb(ifac)*pfacd
-          smbr(isou,ii) = smbr(isou,ii) - flux
+            pfac  = inc*coefav(isou,ifac)
+            pfacd = inc*cofafv(isou,ifac)
 
-        enddo ! isou
+            !coefu and cofuf are matrices
+            do jsou = 1, 3
+              pir  = pvar(jsou,ii)/relaxp - (1.d0-relaxp)/relaxp*pvara(jsou,ii)
 
+              pipr = pir +ircflp*( gradv(jsou,1,ii)*diipbv(1)         &
+                   + gradv(jsou,2,ii)*diipbv(2)         &
+                   + gradv(jsou,3,ii)*diipbv(3))
+              pfac  = pfac  + coefbv(isou,jsou,ifac)*pipr
+              pfacd = pfacd + cofbfv(isou,jsou,ifac)*pipr
+            enddo
+
+            pi  = pvar(isou,ii)
+            pia = pvara(isou,ii)
+
+            pir  = pi/relaxp - (1.d0-relaxp)/relaxp*pia
+            pipr = pir +ircflp*( gradv(isou,1,ii)*diipbv(1)           &
+                 + gradv(isou,2,ii)*diipbv(2)           &
+                 + gradv(isou,3,ii)*diipbv(3))
+
+            flux = iconvp*(flui*pir + fluj*pfac - flumab(ifac)*pi)     &
+                 + idiffp*viscb(ifac)*pfacd
+            smbr(isou,ii) = smbr(isou,ii) - flux
+
+          enddo ! isou
+
+        enddo
       enddo
     enddo
-  enddo
 
-! Unsteady
+    ! Unsteady
+  else
+
+    do ig = 1, ngrpb
+      !$omp parallel do private(ifac, ii, isou, jsou, diipbv, flui, fluj,         &
+      !$omp                     pfac, pfacd, pip, flux, pi)                       &
+      !$omp          if(nfabor > thr_n_min)
+      do it = 1, nthrdb
+        do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
+
+          ii = ifabor(ifac)
+
+          do jsou = 1, 3
+            diipbv(jsou) = diipb(jsou,ifac)
+          enddo
+
+          ! Remove decentering for coupled faces
+          if (ifaccp.eq.1.and.itypfb(ifac).eq.icscpl) then
+            flui = 0.0d0
+            fluj = flumab(ifac)
+          else
+            flui = 0.5d0*(flumab(ifac) +abs(flumab(ifac)))
+            fluj = 0.5d0*(flumab(ifac) -abs(flumab(ifac)))
+          endif
+
+          !-----------------
+          ! X-Y-Z components, p=u, v, w
+          do isou = 1, 3
+
+            pfac  = inc*coefav(isou,ifac)
+            pfacd = inc*cofafv(isou,ifac)
+
+            !coefu and cofuf are matrices
+            do jsou = 1, 3
+              pip = pvar(jsou,ii) + ircflp*( gradv(jsou,1,ii)*diipbv(1)        &
+                   + gradv(jsou,2,ii)*diipbv(2)        &
+                   + gradv(jsou,3,ii)*diipbv(3))
+              pfac  = pfac  + coefbv(isou,jsou,ifac)*pip
+              pfacd = pfacd + cofbfv(isou,jsou,ifac)*pip
+            enddo
+
+            pi = pvar(isou,ii)
+
+            pip = pi + ircflp*( gradv(isou,1,ii)*diipbv(1)          &
+                 + gradv(isou,2,ii)*diipbv(2)          &
+                 + gradv(isou,3,ii)*diipbv(3))
+
+            flux = iconvp*((flui-flumab(ifac))*pi + fluj*pfac)                 &
+                 + idiffp*viscb(ifac)*pfacd
+            smbr(isou,ii) = smbr(isou,ii) - thetap * flux
+
+          enddo ! isou
+
+        enddo
+      enddo
+    enddo
+
+  endif ! idtvar
+
+! Boundary convective flux is imposed at some faces (tagged in icvfli array)
 else
 
-  do ig = 1, ngrpb
-    !$omp parallel do private(ifac, ii, isou, jsou, diipbv, flui, fluj,         &
-    !$omp                     pfac, pfacd, pip, flux, pi)                       &
-    !$omp          if(nfabor > thr_n_min)
-    do it = 1, nthrdb
-      do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
+  call field_get_coefac_v(ivarfl(ivar), cofacv)
+  call field_get_coefbc_v(ivarfl(ivar), cofbcv)
 
-        ii = ifabor(ifac)
+  ! Steady
+  if (idtvar.lt.0) then
 
-        do jsou = 1, 3
-          diipbv(jsou) = diipb(jsou,ifac)
-        enddo
+    do ig = 1, ngrpb
+      !$omp parallel do private(ifac, ii, isou, jsou, diipbv, flui, fluj,         &
+      !$omp                     pfac, pfacd, pir, pipr, flux, pi, pia)            &
+      !$omp          if(nfabor > thr_n_min)
+      do it = 1, nthrdb
+        do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
 
-        ! Remove decentering for coupled faces
-        if (ifaccp.eq.1.and.itypfb(ifac).eq.icscpl) then
-          flui = 0.0d0
-          fluj = flumab(ifac)
-        else
-          flui = 0.5d0*(flumab(ifac) +abs(flumab(ifac)))
-          fluj = 0.5d0*(flumab(ifac) -abs(flumab(ifac)))
-        endif
+          ii = ifabor(ifac)
 
-        !-----------------
-        ! X-Y-Z components, p=u, v, w
-        do isou = 1, 3
-
-          pfac  = inc*coefav(isou,ifac)
-          pfacd = inc*cofafv(isou,ifac)
-
-          !coefu and cofuf are matrices
           do jsou = 1, 3
-            pip = pvar(jsou,ii) + ircflp*( gradv(jsou,1,ii)*diipbv(1)        &
-                                         + gradv(jsou,2,ii)*diipbv(2)        &
-                                         + gradv(jsou,3,ii)*diipbv(3))
-            pfac  = pfac  + coefbv(isou,jsou,ifac)*pip
-            pfacd = pfacd + cofbfv(isou,jsou,ifac)*pip
+            diipbv(jsou) = diipb(jsou,ifac)
           enddo
 
-          pi = pvar(isou,ii)
+          ! Computed convective flux
+          if (icvfbr(ifac).eq.0) then
+            ! Remove decentering for coupled faces
+            if (ifaccp.eq.1.and.itypfb(ifac).eq.icscpl) then
+              flui = 0.0d0
+              fluj = flumab(ifac)
+            else
+              flui = 0.5d0*(flumab(ifac) +abs(flumab(ifac)))
+              fluj = 0.5d0*(flumab(ifac) -abs(flumab(ifac)))
+            endif
 
-          flux = iconvp*((flui-flumab(ifac))*pi + fluj*pfac)                 &
-               + idiffp*viscb(ifac)*pfacd
-          smbr(isou,ii) = smbr(isou,ii) - thetap * flux
+            !-----------------
+            ! X-Y-Z components, p=u, v, w
+            do isou = 1, 3
 
-        enddo ! isou
+              pfac  = inc*coefav(isou,ifac)
+              pfacd = inc*cofafv(isou,ifac)
 
+              !coefu and cofuf are matrices
+              do jsou = 1, 3
+                pir  = pvar(jsou,ii)/relaxp - (1.d0-relaxp)/relaxp*pvara(jsou,ii)
+
+                pipr = pir +ircflp*( gradv(jsou,1,ii)*diipbv(1)         &
+                     + gradv(jsou,2,ii)*diipbv(2)         &
+                     + gradv(jsou,3,ii)*diipbv(3))
+                pfac  = pfac  + coefbv(isou,jsou,ifac)*pipr
+                pfacd = pfacd + cofbfv(isou,jsou,ifac)*pipr
+              enddo
+
+              pi  = pvar(isou,ii)
+              pia = pvara(isou,ii)
+
+              pir  = pi/relaxp - (1.d0-relaxp)/relaxp*pia
+              pipr = pir +ircflp*( gradv(isou,1,ii)*diipbv(1)           &
+                   + gradv(isou,2,ii)*diipbv(2)                         &
+                   + gradv(isou,3,ii)*diipbv(3))
+
+              flux = iconvp*(flui*pir + fluj*pfac - flumab(ifac)*pi)    &
+                   + idiffp*viscb(ifac)*pfacd
+              smbr(isou,ii) = smbr(isou,ii) - flux
+
+            enddo ! isou
+
+          ! Imposed convective flux
+          else
+            !-----------------
+            ! X-Y-Z components, p=u, v, w
+            do isou = 1, 3
+
+              pfac  = inc*cofacv(isou,ifac)
+              pfacd = inc*cofafv(isou,ifac)
+
+              !coefu and cofuf are matrices
+              do jsou = 1, 3
+                pir  = pvar(jsou,ii)/relaxp - (1.d0-relaxp)/relaxp*pvara(jsou,ii)
+
+                pipr = pir +ircflp*( gradv(jsou,1,ii)*diipbv(1)         &
+                     + gradv(jsou,2,ii)*diipbv(2)         &
+                     + gradv(jsou,3,ii)*diipbv(3))
+                pfac  = pfac + cofbcv(isou,jsou,ifac)*pipr
+                pfacd = pfacd + cofbfv(isou,jsou,ifac)*pipr
+              enddo
+
+              pi  = pvar(isou,ii)
+              pia = pvara(isou,ii)
+
+              pir  = pi/relaxp - (1.d0-relaxp)/relaxp*pia
+              pipr = pir +ircflp*( gradv(isou,1,ii)*diipbv(1)           &
+                   + gradv(isou,2,ii)*diipbv(2)           &
+                   + gradv(isou,3,ii)*diipbv(3))
+
+              flux = iconvp*( - flumab(ifac)*pi + pfac*icvfbr(ifac))   &
+                   + idiffp*viscb(ifac)*pfacd
+              smbr(isou,ii) = smbr(isou,ii) - flux
+
+            enddo ! isou
+
+          endif
+
+        enddo
       enddo
     enddo
-  enddo
 
-endif ! idtvar
+    ! Unsteady
+  else
+
+    do ig = 1, ngrpb
+      !$omp parallel do private(ifac, ii, isou, jsou, diipbv, flui, fluj,         &
+      !$omp                     pfac, pfacd, pip, flux, pi)                       &
+      !$omp          if(nfabor > thr_n_min)
+      do it = 1, nthrdb
+        do ifac = iomplb(1,ig,it), iomplb(2,ig,it)
+
+          ii = ifabor(ifac)
+
+          do jsou = 1, 3
+            diipbv(jsou) = diipb(jsou,ifac)
+          enddo
+
+          ! Computed convective flux
+          if (icvfbr(ifac).eq.0) then
+            ! Remove decentering for coupled faces
+            if (ifaccp.eq.1.and.itypfb(ifac).eq.icscpl) then
+              flui = 0.0d0
+              fluj = flumab(ifac)
+            else
+              flui = 0.5d0*(flumab(ifac) +abs(flumab(ifac)))
+              fluj = 0.5d0*(flumab(ifac) -abs(flumab(ifac)))
+            endif
+
+            !-----------------
+            ! X-Y-Z components, p=u, v, w
+            do isou = 1, 3
+
+              pfac  = inc*coefav(isou,ifac)
+              pfacd = inc*cofafv(isou,ifac)
+
+              !coefu and cofuf are matrices
+              do jsou = 1, 3
+                pip = pvar(jsou,ii) + ircflp*( gradv(jsou,1,ii)*diipbv(1)        &
+                     + gradv(jsou,2,ii)*diipbv(2)        &
+                     + gradv(jsou,3,ii)*diipbv(3))
+                pfac  = pfac  + coefbv(isou,jsou,ifac)*pip
+                pfacd = pfacd + cofbfv(isou,jsou,ifac)*pip
+              enddo
+
+              pi = pvar(isou,ii)
+
+              pip = pi + ircflp*( gradv(isou,1,ii)*diipbv(1)          &
+                   + gradv(isou,2,ii)*diipbv(2)          &
+                   + gradv(isou,3,ii)*diipbv(3))
+
+              flux = iconvp*((flui-flumab(ifac))*pi + fluj*pfac)      &
+                   + idiffp*viscb(ifac)*pfacd
+              smbr(isou,ii) = smbr(isou,ii) - thetap * flux
+
+            enddo ! isou
+
+          ! Imposed convective flux
+          else
+            !-----------------
+            ! X-Y-Z components, p=u, v, w
+            do isou = 1, 3
+
+              pfac = inc*cofacv(isou,ifac)
+              pfacd = inc*cofafv(isou,ifac)
+
+              !coefu and cofuf are matrices
+              do jsou = 1, 3
+                pip = pvar(jsou,ii) + ircflp*( gradv(jsou,1,ii)*diipbv(1)        &
+                     + gradv(jsou,2,ii)*diipbv(2)        &
+                     + gradv(jsou,3,ii)*diipbv(3))
+                pfac = pfac + cofbcv(isou,jsou,ifac)*pip
+                pfacd = pfacd + cofbfv(isou,jsou,ifac)*pip
+              enddo
+
+              pi = pvar(isou,ii)
+
+              pip = pi + ircflp*( gradv(isou,1,ii)*diipbv(1)          &
+                   + gradv(isou,2,ii)*diipbv(2)          &
+                   + gradv(isou,3,ii)*diipbv(3))
+
+              flux = iconvp*( -flumab(ifac)*pi + pfac*icvfbr(ifac))  &
+                   + idiffp*viscb(ifac)*pfacd
+              smbr(isou,ii) = smbr(isou,ii) - thetap * flux
+
+            enddo ! isou
+
+          endif
+
+
+        enddo
+      enddo
+    enddo
+
+  endif ! idtvar
+
+endif
 
 !===============================================================================
 ! 3.  Computation of the transpose grad(vel) term and grad(-2/3 div(vel))

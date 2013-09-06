@@ -101,8 +101,10 @@ integer          ivisep
 integer          ipcvsl
 integer          isou, jsou
 integer          itt
-integer          idftnp, iswdyp
+integer          idftnp, iswdyp, icvflb
 integer          f_id
+
+integer          ivoid(1)
 
 double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
 double precision epsrsp
@@ -386,6 +388,9 @@ ippwt = ipprtp(ivar)
 ! We do not take into account transpose of grad
 ivisep = 0
 
+! all boundary convective flux with upwind
+icvflb = 0
+
 call coditv &
 !==========
 (idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
@@ -398,6 +403,7 @@ call coditv &
  coefav , coefbv , cofafv , cofbfv ,                            &
  imasfl , bmasfl ,                                              &
  viscf  , viscb  , viscf  , viscb  , rvoid  , rvoid  ,          &
+ icvflb , ivoid  ,                                              &
  fimp   ,                                                       &
  smbrut ,                                                       &
  xut    ,                                                       &

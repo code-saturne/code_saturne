@@ -76,6 +76,7 @@ use ppthch
 use ppincl
 use mesh
 use field
+use cfpoin, only:ithvar
 
 !===============================================================================
 
@@ -95,7 +96,7 @@ double precision coefa(nfabor,ncofab), coefb(nfabor,ncofab)
 character*80     chaine
 integer          ivar  , iscal , imom
 integer          iel
-integer          iccfth
+integer          iccfth, ipcrom
 integer          iclip , ipp  , iok   , ii
 integer          idtcm , ipcmom, iiptot
 integer          ibormo(nbmomx), imodif
@@ -131,6 +132,9 @@ iok = 0
 !    INITIALISATIONS QUI LUI SONT PROPRES
 !===============================================================================
 
+! Initialized thermodynamic variables indicator
+ithvar = 0
+
 ! Indicateur d'initialisation des scalaires par l'utilisateur
 ! (mis a 1 si passage dans USINIV ou PPINIV ou dans l'IHM ; a 0 sinon)
 
@@ -145,12 +149,12 @@ if  (ippmod(icompf).ge.0) then
 
   iccfth = 0
   imodif = 1
-    call cfther                                                   &
+    call cfther                                                                &
     !==========
-    ( nvar   ,                                                       &
-      iccfth , imodif ,                                              &
-      dt     , rtp    , rtp   , propce ,                             &
-      w1     , w2     , w3    , w4     )
+    ( nvar   ,                                                                 &
+      iccfth , imodif ,                                                        &
+      dt     , rtp    , rtp   , propce , propfb ,                              &
+      w1     , w2     , w3    , w4     , rvoid  , rvoid )
     deallocate(w1, w2, w3, w4)
 !     On initialise la diffusivite thermique
     visls0(ienerg) = visls0(itempk)/cv0
@@ -184,23 +188,11 @@ endif
 
 if (iihmpr.eq.1) then
 
-  iccfth = 0
+  ipcrom = ipproc(irom)
   call uiiniv (ncelet, isuite, isca, iscold,       &
-               iccfth, ipr, irho, itempk, ienerg,  &
+               ithvar, ipr, ipcrom, itempk, ienerg,&
                ro0, cp0, viscl0, uref,             &
-               almax, xyzcen, rtp)
-
-  if  (ippmod(icompf).ge.0) then
-    allocate(w1(ncelet), w2(ncelet), w3(ncelet),w4(ncelet))
-    imodif = 1
-    call cfther                                                      &
-    !==========
-    ( nvar   ,                                                       &
-      iccfth , imodif ,                                              &
-      dt     , rtp    , rtp   , propce ,                             &
-      w1     , w2     , w3    , w4     )
-    deallocate(w1, w2, w3, w4)
-  endif
+               almax, xyzcen, rtp, propce)
 
 endif
 
@@ -211,7 +203,7 @@ if (ippmod(iphpar).eq.0) then
 
   call cs_user_initialization &
   !==========================
-( nvar   , nscal  ,                                            &
+( nvar   , nscal  ,                                                             &
   dt     , rtp    , propce , propfb )
 
   !     Avec l'interface, il peut y avoir eu initialisation,
@@ -232,8 +224,24 @@ else
 
   call ppiniv &
   !==========
- ( nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                                            &
    dt     , rtp    , propce , propfb , coefa  , coefb  )
+
+  if  (ippmod(icompf).ge.0) then
+
+    allocate(w1(ncelet), w2(ncelet), w3(ncelet),w4(ncelet))
+    imodif = 1
+
+    call cfther                                                                 &
+    !==========
+   ( nvar   ,                                                                   &
+     ithvar , imodif ,                                                          &
+     dt     , rtp    , rtp   , propce , propfb ,                                &
+     w1     , w2     , w3    , w4     , rvoid  , rvoid  )
+
+    deallocate(w1, w2, w3, w4)
+
+  endif
 
 endif
 

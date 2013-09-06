@@ -193,7 +193,7 @@ module ppincl
   !--> POINTEURS COMPRESSIBLE
 
   ! ---- Variables transportees par phase
-  integer, save :: irho, ienerg, itempk
+  integer, save :: ienerg, itempk
   ! ---- Proprietes supplementaires par phase
   integer, save :: icv, iviscv, ieos
 
@@ -213,10 +213,6 @@ module ppincl
   integer, save :: igrdpp
   ! --- Conditions aux limites prenant en compte l'equilibre hydrostatique
   integer, save :: icfgrp
-
-  ! ---- Flux de bord convectifs QDM et energie (numero de PROPFB)
-  integer, save ::           ifbrhu , ifbrhv ,               &
-                             ifbrhw , ifbene
 
   !--> POINTEURS AEROREFRIGERANTS
 

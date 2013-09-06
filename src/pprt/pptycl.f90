@@ -321,7 +321,7 @@ elseif ( ippmod(icompf).ge.0 ) then
  ( nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
    dt     , rtp    , rtpa   , propce , propfb ,                   &
-   coefa  , coefb  , rcodcl )
+   rcodcl )
 
 ! ---> Ecoulements atmospheriques
 

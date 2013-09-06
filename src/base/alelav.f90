@@ -83,7 +83,9 @@ integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp, ivisep
-integer          iswdyp, idftnp
+integer          iswdyp, idftnp, icvflb
+
+integer          ivoid(1)
 
 double precision blencp, epsilp, epsrgp, climgp, extrap, thetv
 double precision epsrsp, prosrf
@@ -230,6 +232,8 @@ climgp = climgr(iuma)
 extrap = extrag(iuma)
 relaxp = 1.d0
 thetv  = 1.d0
+! all boundary convective flux with upwind
+icvflb = 0
 
 ! we do not take into account the transpose of grad
 ivisep = 0
@@ -246,6 +250,7 @@ call coditv &
    claale , clbale , cfaale , cfbale ,                            &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , viscf  , viscb  , viscf  , viscb  ,          &
+   icvflb , ivoid  ,                                              &
    fimp   ,                                                       &
    smbr   ,                                                       &
    meshv  ,                                                       &

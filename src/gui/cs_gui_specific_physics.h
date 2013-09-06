@@ -209,8 +209,7 @@ void CS_PROCF (uicppr, UICPPR) (const int *const nclass,
  * Pointers definition for scalars for compressible model
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uicfsc, UICFSC) (const int *const irho,
-                                const int *const ienerg,
+void CS_PROCF (uicfsc, UICFSC) (const int *const ienerg,
                                 const int *const itempk);
 
 /*-----------------------------------------------------------------------------
