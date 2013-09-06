@@ -83,7 +83,7 @@ contains
       allocate(impale(nnod))
       allocate(ialtyb(nfabor))
       allocate(depale(3,nnod))
-      if (ivelco.eq.1) allocate(disala(3,nnod))
+      allocate(disala(3,nnod))
     endif
 
   end subroutine init_ale

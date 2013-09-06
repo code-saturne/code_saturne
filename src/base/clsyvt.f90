@@ -116,12 +116,8 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 ! Local variables
 
 integer          ifac, ii, isou, jsou
-integer          iclu  , iclv  , iclw
-integer          icluma, iclvma, iclwma
 integer          icl11 , icl22 , icl33 , icl12 , icl13 , icl23
 integer          icl11r, icl22r, icl33r, icl12r, icl13r, icl23r
-integer          icluf , iclvf , iclwf
-integer          iclumf, iclvmf, iclwmf
 integer          icl11f, icl22f, icl33f, icl12f, icl13f, icl23f
 integer          iclvar, iel   , iclvrr, iclvaf
 integer          iscal , ipccp , ivar
@@ -168,9 +164,6 @@ iclvar = 0
 cpp = 0.d0
 
 ! --- Gradient Boundary Conditions
-iclu   = iclrtp(iu ,icoef)
-iclv   = iclrtp(iv ,icoef)
-iclw   = iclrtp(iw ,icoef)
 if (itytur.eq.3) then
   icl11  = iclrtp(ir11,icoef)
   icl22  = iclrtp(ir22,icoef)
@@ -187,9 +180,6 @@ if (itytur.eq.3) then
 endif
 
 ! --- Flux Boundary Conditions
-icluf  = iclrtp(iu ,icoeff)
-iclvf  = iclrtp(iv ,icoeff)
-iclwf  = iclrtp(iw ,icoeff)
 if (itytur.eq.3) then
   icl11f = iclrtp(ir11,icoeff)
   icl22f = iclrtp(ir22,icoeff)
@@ -338,69 +328,58 @@ do ifac = 1, nfabor
 
     !===========================================================================
     ! 2. Boundary conditions on the velocity
-    !    (partially (ivelco=0) or totaly (ivelco=1) implicit)
+    !    (totaly implicit)
     !    The condition is a zero (except in ALE) Dirichlet on the normal component
     !                     a homogenous Neumann on the other components
     !===========================================================================
 
-    coefa(ifac,iclu) = rcodcn*rnx - rnx*(rny*upy+rnz*upz)
-    coefb(ifac,iclu) = 1.d0-rnx**2
-    coefa(ifac,iclv) = rcodcn*rny - rny*(rnz*upz+rnx*upx)
-    coefb(ifac,iclv) = 1.d0-rny**2
-    coefa(ifac,iclw) = rcodcn*rnz - rnz*(rnx*upx+rny*upy)
-    coefb(ifac,iclw) = 1.d0-rnz**2
-
     ! Coupled solving of the velocity components
-    if (ivelco.eq.1) then
 
-      iel = ifabor(ifac)
-      ! --- Physical properties
-      visclc = propce(iel,ipproc(iviscl))
-      visctc = propce(iel,ipproc(ivisct))
+    iel = ifabor(ifac)
+    ! --- Physical properties
+    visclc = propce(iel,ipproc(iviscl))
+    visctc = propce(iel,ipproc(ivisct))
 
-      ! --- Geometrical quantity
-      distbf = distb(ifac)
+    ! --- Geometrical quantity
+    distbf = distb(ifac)
 
-      if (itytur.eq.3) then
-        hint =   visclc         /distbf
-      else
-        hint = ( visclc+visctc )/distbf
-      endif
-
-      ! Gradient BCs
-      coefau(1,ifac) = rcodcn*rnx
-      coefau(2,ifac) = rcodcn*rny
-      coefau(3,ifac) = rcodcn*rnz
-
-      coefbu(1,1,ifac) = 1.d0-rnx**2
-      coefbu(2,2,ifac) = 1.d0-rny**2
-      coefbu(3,3,ifac) = 1.d0-rnz**2
-
-      coefbu(1,2,ifac) = -rnx*rny
-      coefbu(1,3,ifac) = -rnx*rnz
-      coefbu(2,1,ifac) = -rny*rnx
-      coefbu(2,3,ifac) = -rny*rnz
-      coefbu(3,1,ifac) = -rnz*rnx
-      coefbu(3,2,ifac) = -rnz*rny
-
-      ! Flux BCs
-      cofafu(1,ifac) = -hint*rcodcn*rnx
-      cofafu(2,ifac) = -hint*rcodcn*rny
-      cofafu(3,ifac) = -hint*rcodcn*rnz
-
-      cofbfu(1,1,ifac) = hint*rnx**2
-      cofbfu(2,2,ifac) = hint*rny**2
-      cofbfu(3,3,ifac) = hint*rnz**2
-
-      cofbfu(1,2,ifac) = hint*rnx*rny
-      cofbfu(1,3,ifac) = hint*rnx*rnz
-      cofbfu(2,1,ifac) = hint*rny*rnx
-      cofbfu(2,3,ifac) = hint*rny*rnz
-      cofbfu(3,1,ifac) = hint*rnz*rnx
-      cofbfu(3,2,ifac) = hint*rnz*rny
-
+    if (itytur.eq.3) then
+      hint =   visclc         /distbf
+    else
+      hint = ( visclc+visctc )/distbf
     endif
 
+    ! Gradient BCs
+    coefau(1,ifac) = rcodcn*rnx
+    coefau(2,ifac) = rcodcn*rny
+    coefau(3,ifac) = rcodcn*rnz
+
+    coefbu(1,1,ifac) = 1.d0-rnx**2
+    coefbu(2,2,ifac) = 1.d0-rny**2
+    coefbu(3,3,ifac) = 1.d0-rnz**2
+
+    coefbu(1,2,ifac) = -rnx*rny
+    coefbu(1,3,ifac) = -rnx*rnz
+    coefbu(2,1,ifac) = -rny*rnx
+    coefbu(2,3,ifac) = -rny*rnz
+    coefbu(3,1,ifac) = -rnz*rnx
+    coefbu(3,2,ifac) = -rnz*rny
+
+    ! Flux BCs
+    cofafu(1,ifac) = -hint*rcodcn*rnx
+    cofafu(2,ifac) = -hint*rcodcn*rny
+    cofafu(3,ifac) = -hint*rcodcn*rnz
+
+    cofbfu(1,1,ifac) = hint*rnx**2
+    cofbfu(2,2,ifac) = hint*rny**2
+    cofbfu(3,3,ifac) = hint*rnz**2
+
+    cofbfu(1,2,ifac) = hint*rnx*rny
+    cofbfu(1,3,ifac) = hint*rnx*rnz
+    cofbfu(2,1,ifac) = hint*rny*rnx
+    cofbfu(2,3,ifac) = hint*rny*rnz
+    cofbfu(3,1,ifac) = hint*rnz*rnx
+    cofbfu(3,2,ifac) = hint*rnz*rny
 
     !===========================================================================
     ! 3. Boundary conditions on Rij (partially implicited)
@@ -657,49 +636,10 @@ enddo
 ! ---  End of loop over boundary faces
 
 !===============================================================================
-! 4. Flux BC coefficient for the veloctiy
-!===============================================================================
-
-if (iclu.ne.icluf) then
-  do ifac = 1, nfabor
-
-    iel = ifabor(ifac)
-    ! --- Physical properties
-    visclc = propce(iel,ipproc(iviscl))
-    visctc = propce(iel,ipproc(ivisct))
-
-    ! --- Geometrical quantities
-    distbf = distb(ifac)
-
-    if (itytur.eq.3) then
-      hint =  visclc          /distbf
-    else
-      hint = (visclc + visctc)/distbf
-    endif
-
-    if (icodcl(ifac,iu).eq.4) then
-      coefa(ifac,icluf) = -hint*coefa(ifac,iclu)
-      coefa(ifac,iclvf) = -hint*coefa(ifac,iclv)
-      coefa(ifac,iclwf) = -hint*coefa(ifac,iclw)
-      coefb(ifac,icluf) = hint*(1.d0-coefb(ifac,iclu))
-      coefb(ifac,iclvf) = hint*(1.d0-coefb(ifac,iclv))
-      coefb(ifac,iclwf) = hint*(1.d0-coefb(ifac,iclw))
-    endif
-  enddo
-endif
-
-!===============================================================================
-! 5. Symmetry boundary conditions for mesh velocity (ALE module)
+! 4. Symmetry boundary conditions for mesh velocity (ALE module)
 !===============================================================================
 
 if (iale.eq.1) then
-
-  icluma = iclrtp(iuma,icoef)
-  iclvma = iclrtp(ivma,icoef)
-  iclwma = iclrtp(iwma,icoef)
-  iclumf = iclrtp(iuma,icoeff)
-  iclvmf = iclrtp(ivma,icoeff)
-  iclwmf = iclrtp(iwma,icoeff)
 
   do ifac = 1, nfabor
     if (icodcl(ifac,iuma).eq.4) then
@@ -728,61 +668,39 @@ if (iale.eq.1) then
       rny = surfbo(2,ifac)/srfbnf
       rnz = surfbo(3,ifac)/srfbnf
 
-      upx = rtpa(iel,iuma)
-      upy = rtpa(iel,ivma)
-      upz = rtpa(iel,iwma)
+      ! Coupled solving of the velocity components
 
       ! Gradient BCs
-      coefa(ifac,icluma) = - rnx*(rny*upy+rnz*upz)
-      coefb(ifac,icluma) = 1.d0-rnx**2
-      coefa(ifac,iclvma) = - rny*(rnz*upz+rnx*upx)
-      coefb(ifac,iclvma) = 1.d0-rny**2
-      coefa(ifac,iclwma) = - rnz*(rnx*upx+rny*upy)
-      coefb(ifac,iclwma) = 1.d0-rnz**2
+      claale(1,ifac) = 0.d0
+      claale(2,ifac) = 0.d0
+      claale(3,ifac) = 0.d0
+
+      clbale(1,1,ifac) = 1.d0-rnx**2
+      clbale(2,2,ifac) = 1.d0-rny**2
+      clbale(3,3,ifac) = 1.d0-rnz**2
+
+      clbale(1,2,ifac) = -rnx*rny
+      clbale(2,1,ifac) = -rny*rnx
+      clbale(1,3,ifac) = -rnx*rnz
+      clbale(3,1,ifac) = -rnz*rnx
+      clbale(2,3,ifac) = -rny*rnz
+      clbale(3,2,ifac) = -rnz*rny
 
       ! Flux BCs
-      coefa(ifac,iclumf) = hintv(1)*rnx*(rny*upy+rnz*upz)
-      coefb(ifac,iclumf) = hintv(1)*rnx**2
-      coefa(ifac,iclvmf) = hintv(2)*rny*(rnz*upz+rnx*upx)
-      coefb(ifac,iclvmf) = hintv(2)*rny**2
-      coefa(ifac,iclwmf) = hintv(3)*rnz*(rnx*upx+rny*upy)
-      coefb(ifac,iclwmf) = hintv(3)*rnz**2
+      cfaale(1,ifac) = 0.d0
+      cfaale(2,ifac) = 0.d0
+      cfaale(3,ifac) = 0.d0
 
-      ! Coupled solving of the velocity components
-      if (ivelco.eq.1) then
+      cfbale(1,1,ifac) = hintv(1)*rnx**2
+      cfbale(2,2,ifac) = hintv(2)*rny**2
+      cfbale(3,3,ifac) = hintv(3)*rnz**2
 
-        ! Gradient BCs
-        claale(1,ifac) = 0.d0
-        claale(2,ifac) = 0.d0
-        claale(3,ifac) = 0.d0
-
-        clbale(1,1,ifac) = 1.d0-rnx**2
-        clbale(2,2,ifac) = 1.d0-rny**2
-        clbale(3,3,ifac) = 1.d0-rnz**2
-
-        clbale(1,2,ifac) = -rnx*rny
-        clbale(2,1,ifac) = -rny*rnx
-        clbale(1,3,ifac) = -rnx*rnz
-        clbale(3,1,ifac) = -rnz*rnx
-        clbale(2,3,ifac) = -rny*rnz
-        clbale(3,2,ifac) = -rnz*rny
-
-        ! Flux BCs
-        cfaale(1,ifac) = 0.d0
-        cfaale(2,ifac) = 0.d0
-        cfaale(3,ifac) = 0.d0
-
-        cfbale(1,1,ifac) = hintv(1)*rnx**2
-        cfbale(2,2,ifac) = hintv(2)*rny**2
-        cfbale(3,3,ifac) = hintv(3)*rnz**2
-
-        cfbale(1,2,ifac) = hintv(1)*rnx*rny
-        cfbale(2,1,ifac) = hintv(2)*rny*rnx
-        cfbale(1,3,ifac) = hintv(1)*rnx*rnz
-        cfbale(3,1,ifac) = hintv(3)*rnz*rnx
-        cfbale(2,3,ifac) = hintv(2)*rny*rnz
-        cfbale(3,2,ifac) = hintv(3)*rnz*rny
-      endif
+      cfbale(1,2,ifac) = hintv(1)*rnx*rny
+      cfbale(2,1,ifac) = hintv(2)*rny*rnx
+      cfbale(1,3,ifac) = hintv(1)*rnx*rnz
+      cfbale(3,1,ifac) = hintv(3)*rnz*rnx
+      cfbale(2,3,ifac) = hintv(2)*rny*rnz
+      cfbale(3,2,ifac) = hintv(3)*rnz*rny
 
     endif
   enddo
@@ -790,7 +708,7 @@ if (iale.eq.1) then
 endif
 
 !===============================================================================
-! 6. Formats
+! 5. Formats
 !===============================================================================
 
 #if defined(_CS_LANG_FR)

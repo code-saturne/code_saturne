@@ -2028,9 +2028,6 @@ ipcrom = ipproc(irom  )
 iccocg = 1
 inc = 1
 
-! Note: this example should produce an error if used with ivelco = 0,
-!       so it should be updated
-
 ! Boundary condition pointers for gradients and advection
 call field_get_coefa_v(ivarfl(iu), coefav)
 call field_get_coefb_v(ivarfl(iu), coefbv)

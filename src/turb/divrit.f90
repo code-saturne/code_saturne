@@ -182,30 +182,17 @@ iclvar = iclrtp(iu,icoef)
 call field_get_coefa_v(ivarfl(iu), coefav)
 call field_get_coefb_v(ivarfl(iu), coefbv)
 
-if (ivelco.eq.1) then
 
-  ilved = .false.
+ilved = .false.
 
-  call grdvec &
-  !==========
+call grdvec &
+!==========
 ( iu     , imrgra , inc    , nswrgp , imligp ,                   &
   iwarnp , nfecra ,                                              &
   epsrgp , climgp , extrap ,                                     &
   ilved ,                                                        &
   rtp(1,iu)       , coefav , coefbv ,                            &
   gradv  )
-
-else
-
-  call grdvni &
-  !==========
-( iu     , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-  iwarnp , nfecra ,                                              &
-  epsrgp , climgp , extrap ,                                     &
-  rtp(1,iu)      , coefa(1,iclvar)  , coefb(1,iclvar) ,          &
-  gradv  )
-
-endif
 
 ! Find the variance of the thermal scalar
 itt = -1

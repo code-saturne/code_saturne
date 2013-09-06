@@ -96,7 +96,6 @@ divrij.f90 \
 grdcel.f90 \
 grdpre.f90 \
 grdvec.f90 \
-grdvni.f90 \
 grdpot.f90 \
 inimas.f90 \
 inimav.f90 \

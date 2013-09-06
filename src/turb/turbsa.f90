@@ -239,30 +239,16 @@ epsrgp = epsrgr(iu)
 climgp = climgr(iu)
 extrap = extrag(iu)
 
-if (ivelco.eq.1) then
+ilved = .false.
 
-  ilved = .false.
-
-  call grdvec &
-  !==========
+call grdvec &
+!==========
 ( iu     , imrgra , inc    , nswrgp , imligp ,                   &
   iwarnp , nfecra ,                                              &
   epsrgp , climgp , extrap ,                                     &
   ilved  ,                                                       &
   rtpa(1,iu) ,  coefau , coefbu,                                 &
   gradv  )
-
-else
-
-  call grdvni &
-  !==========
-( iu  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
-  iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-  rtpa(1,iu)   , coefa(1,icliup) , coefb(1,icliup) ,             &
-  gradv  )
-
-endif
-
 
 ! vort = omega**2 = dudy**2 + dvdx**2 + dudz**2 + dwdx**2 + dvdz**2 + dwdy**2
 !                - 2*dudy*dvdx - 2*dudz*dwdx - 2*dvdz*dwdy

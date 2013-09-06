@@ -1424,7 +1424,7 @@ endif
 
 !     L'ordre 2 sur les termes issus du lagrangien necessiterait de
 !       decomposer TSLAGR(IEL,ISOU) en partie implicite et
-!       explicite, comme c'est fait dans ustsns.
+!       explicite, comme c'est fait dans ustsnv.
 !     Pour le moment, on n'y touche pas.
 if (iilagr.eq.2 .and. ltsdyn.eq.1)  then
 

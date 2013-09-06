@@ -120,30 +120,17 @@ extrap = extrag(iu)
 iphydp = 0
 
 ! gradv(iel, xyz, uvw)
-if (ivelco.eq.1) then
 
-  ilved = .false.
+ilved = .false.
 
-  call grdvec &
-  !==========
+call grdvec &
+!==========
 ( iu     , imrgra , inc    , nswrgp , imligp ,                   &
   iwarnp , nfecra ,                                              &
   epsrgp , climgp , extrap ,                                     &
   ilved  ,                                                       &
   rtpa(1,iu) ,  coefau , coefbu,                                 &
   gradv  )
-
-else
-
-  call grdvni &
-  !==========
-( iu  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
-  iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-  rtpa(1,iu)   ,                                                 &
-  coefa(1,iclrtp(iu,icoef)), coefb(1,iclrtp(iu,icoef)),          &
-  gradv  )
-
-endif
 
 ! Loop over u, v, w components
 do isou = 1, 3

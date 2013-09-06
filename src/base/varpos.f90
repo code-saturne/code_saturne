@@ -1748,27 +1748,18 @@ if(ipass.eq.3) then
 
   if (itytur.eq.3) then
     ! Special treatment of divRij in the momentum equation
-    if (ivelco.eq.1) then
-      icondl = icondl + 1
-      iclrtp(ir11,icoefr) = icondl
-      icondl = icondl + 1
-      iclrtp(ir22,icoefr) = icondl
-      icondl = icondl + 1
-      iclrtp(ir33,icoefr) = icondl
-      icondl = icondl + 1
-      iclrtp(ir12,icoefr) = icondl
-      icondl = icondl + 1
-      iclrtp(ir13,icoefr) = icondl
-      icondl = icondl + 1
-      iclrtp(ir23,icoefr) = icondl
-    else
-      iclrtp(ir11,icoefr) = iclrtp(ir11,icoef)
-      iclrtp(ir22,icoefr) = iclrtp(ir22,icoef)
-      iclrtp(ir33,icoefr) = iclrtp(ir33,icoef)
-      iclrtp(ir12,icoefr) = iclrtp(ir12,icoef)
-      iclrtp(ir13,icoefr) = iclrtp(ir13,icoef)
-      iclrtp(ir23,icoefr) = iclrtp(ir23,icoef)
-    endif
+    icondl = icondl + 1
+    iclrtp(ir11,icoefr) = icondl
+    icondl = icondl + 1
+    iclrtp(ir22,icoefr) = icondl
+    icondl = icondl + 1
+    iclrtp(ir33,icoefr) = icondl
+    icondl = icondl + 1
+    iclrtp(ir12,icoefr) = icondl
+    icondl = icondl + 1
+    iclrtp(ir13,icoefr) = icondl
+    icondl = icondl + 1
+    iclrtp(ir23,icoefr) = icondl
   endif
 
   if (ippmod(icompf).ge.0) then

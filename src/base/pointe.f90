@@ -231,21 +231,17 @@ contains
 
     if (iale.eq.1) then
       allocate(idfstr(nfabor))
-      if (ivelco.eq.1) then
-        allocate(cfaale(3,nfabor), claale(3,nfabor))
-        allocate(cfbale(3,3,nfabor), clbale(3,3,nfabor))
-      endif
+      allocate(cfaale(3,nfabor), claale(3,nfabor))
+      allocate(cfbale(3,3,nfabor), clbale(3,3,nfabor))
     endif
 
     ! Boundary condition for the velocity when components are coupled
 
-    if (ivelco.eq.1) then
-      allocate(coefau(3,nfabor),cofafu(3,nfabor))
-      allocate(coefbu(3,3,nfabor),cofbfu(3,3,nfabor))
-      if ( ippmod(icompf).ge.0 ) then
-        allocate(cofacu(3,nfabor))
-        allocate(cofbcu(3,3,nfabor))
-      endif
+    allocate(coefau(3,nfabor),cofafu(3,nfabor))
+    allocate(coefbu(3,3,nfabor),cofbfu(3,3,nfabor))
+    if (ippmod(icompf).ge.0) then
+      allocate(cofacu(3,nfabor))
+      allocate(cofbcu(3,3,nfabor))
     endif
 
     ! Porosity array when needed
@@ -281,7 +277,6 @@ contains
     ! Also tensorial diffusion for the velocity in case of tensorial porosity
     if (iporos.eq.2) then
       idften(iu) = 6
-      if (ivelco.ne.1) call csexit(1)
       iok = 1
     endif
 
@@ -291,13 +286,8 @@ contains
 
     ! Diagonal cell tensor for the pressure solving when needed
     if (ncpdct.gt.0.or.ipucou.eq.1.or.iporos.eq.2) then
-      if (ivelco.eq.0) then
-        idften(ipr) = 3
-        allocate(dttens(3,ncelet))
-      else
-        idften(ipr) = 6
-        allocate(dttens(6,ncelet))
-      endif
+      idften(ipr) = 6
+      allocate(dttens(6,ncelet))
     endif
 
     ! Wall-distance calculation

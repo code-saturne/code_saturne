@@ -198,40 +198,19 @@ enddo
 
 !     Test on momentum source terms
 itsqdm = 0
-if(itsqdm.ne.0) then
+if (itsqdm.ne.0) then
 
-
-! --- User soure term
-
-!     Along X
-  call ustsns                                                     &
+  ! --- User soure term
+  call ustsnv &
   !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iu  ,                                                          &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce , propfb ,                   &
-   ckupdc , smacel , w10    , w9     )
-
-!     Along Y
-  call ustsns                                                     &
-  !==========
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iv  ,                                                          &
-   icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce , propfb ,                   &
-   ckupdc , smacel , w11    , w9     )
-
-!     Along Z
-  call ustsns                                                     &
-  !==========
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iw  ,                                                          &
-   icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce , propfb ,                   &
-   ckupdc , smacel , w12    , w9     )
+   dt     , rtpa   , propce , propfb ,                            &
+   ckupdc , smacel , w10    , w9     ) !FIXME
 
 
-! --- Convective term of the momentum equation
+  ! --- Convective term of the momentum equation
   if(iconv(iu).ge.1) then
 
     icliup = iclrtp(iu ,icoef)
@@ -347,7 +326,7 @@ if(itsqdm.ne.0) then
 
   endif
 
-
+!FIXME
 ! --- Mass sourceterm
 !     All is explicit for the moment... to be changed when this
 !      term is tested (see remark at the begining of this file)

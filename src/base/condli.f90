@@ -63,8 +63,7 @@
 !>   \vect{Q}_\centf = \vect{A}_u^f + \tens{B}_u^f \vect{u}_\centi
 !>   \f]
 !>   where \f$ \tens{B}_u^g \f$ and \f$ \tens{B}_u^f \f$ are 3x3 tensor matrix
-!>   which coupled veclocity components next to a boundary. This is only
-!>   available when the option ivelco is set to 1.
+!>   which coupled veclocity components next to a boundary.
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -185,18 +184,18 @@ integer          icodcu
 integer          isoent, isorti, ncpt,   isocpt(2)
 integer          iclsym, ipatur, ipatrg, isvhbl
 integer          ipcvis, ipcvst, ipccp , ipcvsl, ipccv
-integer          iclpr , iclu  , iclv  , iclw  , iclk  , iclep
+integer          iclpr , iclk  , iclep
 integer          iclnu
 integer          icl11 , icl22 , icl33 , icl12 , icl13 , icl23
 integer          icl11r, icl22r, icl33r, icl12r, icl13r, icl23r
 integer          iclvrr
 integer          iclphi, iclfb , iclal , iclomg
-integer          iclvar, icluma, iclvma, iclwma
-integer          iclprf, icluf , iclvf , iclwf , iclkf , iclepf
+integer          iclvar
+integer          iclprf, iclkf , iclepf
 integer          iclnuf
 integer          icl11f, icl22f, icl33f, icl12f, icl13f, icl23f
 integer          iclphf, iclfbf, iclalf, iclomf
-integer          iclvaf, iclumf, iclvmf, iclwmf
+integer          iclvaf
 integer          nswrgp, imligp, iwarnp
 integer          itplus, itstar
 integer          f_id  ,  iut  , ivt   , iwt, iflmab
@@ -271,9 +270,6 @@ iclal = 0
 iclalf= 0
 iclvar = 0
 iclvaf = 0
-icluf = 0
-iclvf = 0
-iclwf = 0
 ipccv = 0
 iclepf = 0
 iclfbf = 0
@@ -429,9 +425,6 @@ xzp0   = xyzp0(3)
 
 ! --- Gradient Boundary Conditions
 iclpr = iclrtp(ipr,icoef)
-iclu  = iclrtp(iu, icoef)
-iclv  = iclrtp(iv, icoef)
-iclw  = iclrtp(iw, icoef)
 if (itytur.eq.2) then
   iclk  = iclrtp(ik ,icoef)
   iclep = iclrtp(iep,icoef)
@@ -469,9 +462,6 @@ endif
 
 ! --- Flux Boundary Conditions
 iclprf = iclrtp(ipr,icoeff)
-icluf  = iclrtp(iu, icoeff)
-iclvf  = iclrtp(iv, icoeff)
-iclwf  = iclrtp(iw, icoeff)
 if (itytur.eq.2) then
   iclkf  = iclrtp(ik, icoeff)
   iclepf = iclrtp(iep,icoeff)
@@ -671,30 +661,17 @@ if (iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0) then
     extrap = extrag(iu)
     iclvar = iclrtp(iu,icoef)
 
-    if (ivelco.eq.1) then
+    ilved = .false.
 
-      ilved = .false.
+    call grdvec &
+    !==========
+  ( iu     , imrgra , inc    , nswrgp , imligp ,                   &
+    iwarnp , nfecra ,                                              &
+    epsrgp , climgp , extrap ,                                     &
+    ilved ,                                                        &
+    rtpa(1,iu) ,  coefau , coefbu,                                 &
+    gradv  )
 
-      call grdvec &
-      !==========
-    ( iu     , imrgra , inc    , nswrgp , imligp ,                   &
-      iwarnp , nfecra ,                                              &
-      epsrgp , climgp , extrap ,                                     &
-      ilved ,                                                        &
-      rtpa(1,iu) ,  coefau , coefbu,                                 &
-      gradv  )
-
-    else
-
-      call grdvni &
-      !==========
-    ( iu     , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-      iwarnp , nfecra ,                                              &
-      epsrgp , climgp , extrap ,                                     &
-      rtpa(1,iu)      , coefa(1,iclvar) , coefb(1,iclvar) ,          &
-      gradv  )
-
-    endif
 
     do isou = 1, 3
       if(isou.eq.1) ivar = iu
@@ -903,41 +880,18 @@ do ifac = 1, nfabor
       ! Dirichlet Boundary Condition
       !-----------------------------
 
-      pimp = 0.d0
-
-      call set_dirichlet_scalar &
-           !====================
-         ( coefa(ifac,iclu), coefa(ifac,icluf),             &
-           coefb(ifac,iclu), coefb(ifac,icluf),             &
-           pimp            , hint             , rinfin )
-
-      call set_dirichlet_scalar &
-           !====================
-         ( coefa(ifac,iclv), coefa(ifac,iclvf),             &
-           coefb(ifac,iclv), coefb(ifac,iclvf),             &
-           pimp            , hint             , rinfin )
-
-      call set_dirichlet_scalar &
-           !====================
-         ( coefa(ifac,iclw), coefa(ifac,iclwf),             &
-           coefb(ifac,iclw), coefb(ifac,iclwf),             &
-           pimp            , hint             , rinfin )
-
-
       ! Coupled solving of the velocity components
-      if (ivelco.eq.1) then
 
-        pimpv(1) = 0.d0
-        pimpv(2) = 0.d0
-        pimpv(3) = 0.d0
+      pimpv(1) = 0.d0
+      pimpv(2) = 0.d0
+      pimpv(3) = 0.d0
 
-        call set_dirichlet_vector &
-             !====================
-           ( coefau(1,ifac)  , cofafu(1,ifac)  ,             &
-             coefbu(1,1,ifac), cofbfu(1,1,ifac),             &
-             pimpv           , hint            , rinfiv )
+      call set_dirichlet_vector &
+           !====================
+         ( coefau(1,ifac)  , cofafu(1,ifac)  ,             &
+           coefbu(1,1,ifac), cofbfu(1,1,ifac),             &
+           pimpv           , hint            , rinfiv )
 
-      endif
 
       isoent = isoent + 1
 
@@ -948,39 +902,17 @@ do ifac = 1, nfabor
 
       qimp = 0.d0
 
-      call set_neumann_scalar &
-           !==================
-         ( coefa(ifac,iclu), coefa(ifac,icluf),             &
-           coefb(ifac,iclu), coefb(ifac,icluf),             &
-           qimp            , hint )
-
-      call set_neumann_scalar &
-           !==================
-         ( coefa(ifac,iclv), coefa(ifac,iclvf),             &
-           coefb(ifac,iclv), coefb(ifac,iclvf),             &
-           qimp            , hint )
-
-      call set_neumann_scalar &
-           !==================
-         ( coefa(ifac,iclw), coefa(ifac,iclwf),             &
-           coefb(ifac,iclw), coefb(ifac,iclwf),             &
-           qimp            , hint )
-
-
       ! Coupled solving of the velocity components
-      if (ivelco.eq.1) then
 
-        qimpv(1) = 0.d0
-        qimpv(2) = 0.d0
-        qimpv(3) = 0.d0
+      qimpv(1) = 0.d0
+      qimpv(2) = 0.d0
+      qimpv(3) = 0.d0
 
-        call set_neumann_vector &
-             !==================
-           ( coefau(1,ifac)  , cofafu(1,ifac)  ,             &
-             coefbu(1,1,ifac), cofbfu(1,1,ifac),             &
-             qimpv           , hint )
-
-      endif
+      call set_neumann_vector &
+           !==================
+         ( coefau(1,ifac)  , cofafu(1,ifac)  ,             &
+           coefbu(1,1,ifac), cofbfu(1,1,ifac),             &
+           qimpv           , hint )
 
     endif
 
@@ -1024,147 +956,57 @@ do ifac = 1, nfabor
 
   if (icodcl(ifac,iu).eq.1) then
 
-    pimp = rcodcl(ifac,iu,1)
-    hext = rcodcl(ifac,iu,2)
 
-    call set_dirichlet_scalar &
+    pimpv(1) = rcodcl(ifac,iu,1)
+    pimpv(2) = rcodcl(ifac,iv,1)
+    pimpv(3) = rcodcl(ifac,iw,1)
+    hextv(1) = rcodcl(ifac,iu,2)
+    hextv(2) = rcodcl(ifac,iv,2)
+    hextv(3) = rcodcl(ifac,iw,2)
+
+    call set_dirichlet_vector &
          !====================
-       ( coefa(ifac,iclu), coefa(ifac,icluf),             &
-         coefb(ifac,iclu), coefb(ifac,icluf),             &
-         pimp            , hint             , hext )
+       ( coefau(1,ifac)  , cofafu(1,ifac)  ,             &
+         coefbu(1,1,ifac), cofbfu(1,1,ifac),             &
+         pimpv           , hint            , hextv )
 
-    pimp = rcodcl(ifac,iv,1)
-    hext = rcodcl(ifac,iv,2)
-
-    call set_dirichlet_scalar &
-         !====================
-       ( coefa(ifac,iclv), coefa(ifac,iclvf),             &
-         coefb(ifac,iclv), coefb(ifac,iclvf),             &
-         pimp            , hint             , hext )
-
-    pimp = rcodcl(ifac,iw,1)
-    hext = rcodcl(ifac,iw,2)
-
-    call set_dirichlet_scalar &
-         !====================
-       ( coefa(ifac,iclw), coefa(ifac,iclwf),             &
-         coefb(ifac,iclw), coefb(ifac,iclwf),             &
-         pimp            , hint             , hext )
-
-
-    ! Coupled solving of the velocity components
-    if (ivelco.eq.1) then
-
-      pimpv(1) = rcodcl(ifac,iu,1)
-      pimpv(2) = rcodcl(ifac,iv,1)
-      pimpv(3) = rcodcl(ifac,iw,1)
-      hextv(1) = rcodcl(ifac,iu,2)
-      hextv(2) = rcodcl(ifac,iv,2)
-      hextv(3) = rcodcl(ifac,iw,2)
-
-      call set_dirichlet_vector &
-           !====================
-         ( coefau(1,ifac)  , cofafu(1,ifac)  ,             &
-           coefbu(1,1,ifac), cofbfu(1,1,ifac),             &
-           pimpv           , hint            , hextv )
-
-    endif
 
   ! Neumann Boundary Conditions
   !----------------------------
 
   elseif (icodcl(ifac,iu).eq.3) then
 
-    qimp = rcodcl(ifac,iu,3)
-
-    call set_neumann_scalar &
-         !==================
-       ( coefa(ifac,iclu), coefa(ifac,icluf),             &
-         coefb(ifac,iclu), coefb(ifac,icluf),             &
-         qimp            , hint )
-
-    qimp = rcodcl(ifac,iv,3)
-
-    call set_neumann_scalar &
-         !==================
-       ( coefa(ifac,iclv), coefa(ifac,iclvf),             &
-         coefb(ifac,iclv), coefb(ifac,iclvf),             &
-         qimp            , hint )
-
-    qimp = rcodcl(ifac,iw,3)
-
-    call set_neumann_scalar &
-         !==================
-       ( coefa(ifac,iclw), coefa(ifac,iclwf),             &
-         coefb(ifac,iclw), coefb(ifac,iclwf),             &
-         qimp            , hint )
-
-
     ! Coupled solving of the velocity components
-    if (ivelco.eq.1) then
 
-      qimpv(1) = rcodcl(ifac,iu,3)
-      qimpv(2) = rcodcl(ifac,iv,3)
-      qimpv(3) = rcodcl(ifac,iw,3)
+    qimpv(1) = rcodcl(ifac,iu,3)
+    qimpv(2) = rcodcl(ifac,iv,3)
+    qimpv(3) = rcodcl(ifac,iw,3)
 
-      call set_neumann_vector &
-           !==================
-         ( coefau(1,ifac)  , cofafu(1,ifac)  ,             &
-           coefbu(1,1,ifac), cofbfu(1,1,ifac),             &
-           qimpv           , hint )
-
-    endif
+    call set_neumann_vector &
+         !==================
+       ( coefau(1,ifac)  , cofafu(1,ifac)  ,             &
+         coefbu(1,1,ifac), cofbfu(1,1,ifac),             &
+         qimpv           , hint )
 
   ! Convective Boundary Conditions
   !-------------------------------
 
   elseif (icodcl(ifac,iu).eq.2) then
 
-    pimp = rcodcl(ifac,iu,1)
-    cfl = rcodcl(ifac,iu,2)
-
-    call set_convective_outlet_scalar &
-         !==================
-       ( coefa(ifac,iclu), coefa(ifac,icluf),             &
-         coefb(ifac,iclu), coefb(ifac,icluf),             &
-         pimp            , cfl              , hint )
-
-    pimp = rcodcl(ifac,iv,1)
-    cfl = rcodcl(ifac,iv,2)
-
-    call set_convective_outlet_scalar &
-         !==================
-       ( coefa(ifac,iclv), coefa(ifac,iclvf),             &
-         coefb(ifac,iclv), coefb(ifac,iclvf),             &
-         pimp            , cfl              , hint )
-
-    pimp = rcodcl(ifac,iw,1)
-    cfl = rcodcl(ifac,iw,2)
-
-    call set_convective_outlet_scalar &
-         !==================
-       ( coefa(ifac,iclw), coefa(ifac,iclwf),             &
-         coefb(ifac,iclw), coefb(ifac,iclwf),             &
-         pimp            , cfl              , hint )
-
-
     ! Coupled solving of the velocity components
-    if (ivelco.eq.1) then
 
-      pimpv(1) = rcodcl(ifac,iu,1)
-      cflv(1) = rcodcl(ifac,iu,2)
-      pimpv(2) = rcodcl(ifac,iv,1)
-      cflv(2) = rcodcl(ifac,iv,2)
-      pimpv(3) = rcodcl(ifac,iw,1)
-      cflv(3) = rcodcl(ifac,iw,2)
+    pimpv(1) = rcodcl(ifac,iu,1)
+    cflv(1) = rcodcl(ifac,iu,2)
+    pimpv(2) = rcodcl(ifac,iv,1)
+    cflv(2) = rcodcl(ifac,iv,2)
+    pimpv(3) = rcodcl(ifac,iw,1)
+    cflv(3) = rcodcl(ifac,iw,2)
 
-      call set_convective_outlet_vector &
-           !==================
-         ( coefau(1,ifac)  , cofafu(1,ifac)  ,             &
-           coefbu(1,1,ifac), cofbfu(1,1,ifac),             &
-           pimpv           , cflv            , hint )
-
-    endif
+    call set_convective_outlet_vector &
+         !==================
+       ( coefau(1,ifac)  , cofafu(1,ifac)  ,             &
+         coefbu(1,1,ifac), cofbfu(1,1,ifac),             &
+         pimpv           , cflv            , hint )
 
   ! Convective Boundary For Marangoni Effects (generalized symmetry condition)
   !---------------------------------------------------------------------------
@@ -1185,32 +1027,12 @@ do ifac = 1, nfabor
 
 
     ! Coupled solving of the velocity components
-    if (ivelco.eq.1) then
 
-      call set_generalized_sym_vector &
-           !=========================
-         ( coefau(1,ifac)  , cofafu(1,ifac)  ,             &
-           coefbu(1,1,ifac), cofbfu(1,1,ifac),             &
-           pimpv           , qimpv            , hint , normal )
-
-    else
-
-      vect(1) = velipb(ifac, 1)
-      vect(2) = velipb(ifac, 2)
-      vect(3) = velipb(ifac, 3)
-
-       call set_generalized_sym_scalar &
-           !==========================
-         ( coefa(ifac,iclu), coefa(ifac,icluf),                       &
-           coefa(ifac,iclv), coefa(ifac,iclvf),                       &
-           coefa(ifac,iclw), coefa(ifac,iclwf),                       &
-           coefb(ifac,iclu), coefb(ifac,icluf),                       &
-           coefb(ifac,iclv), coefb(ifac,iclvf),                       &
-           coefb(ifac,iclw), coefb(ifac,iclwf),                       &
-           pimpv           , qimpv            , vect , hint , normal )
-
-    endif
-
+    call set_generalized_sym_vector &
+         !=========================
+       ( coefau(1,ifac)  , cofafu(1,ifac)  ,             &
+         coefbu(1,1,ifac), cofbfu(1,1,ifac),             &
+         pimpv           , qimpv            , hint , normal )
 
   endif
 
@@ -2500,13 +2322,6 @@ endif
 
 if (iale.eq.1) then
 
-  icluma = iclrtp(iuma,icoef)
-  iclvma = iclrtp(ivma,icoef)
-  iclwma = iclrtp(iwma,icoef)
-  iclumf = iclrtp(iuma,icoeff)
-  iclvmf = iclrtp(ivma,icoeff)
-  iclwmf = iclrtp(iwma,icoeff)
-
   do ifac = 1, nfabor
 
     iel = ifabor(ifac)
@@ -2526,147 +2341,56 @@ if (iale.eq.1) then
 
     if (icodcl(ifac,iuma).eq.1) then
 
-      pimp = rcodcl(ifac,iuma,1)
-      hext = rcodcl(ifac,iuma,2)
+      pimpv(1) = rcodcl(ifac,iuma,1)
+      pimpv(2) = rcodcl(ifac,ivma,1)
+      pimpv(3) = rcodcl(ifac,iwma,1)
+      hextv(1) = rcodcl(ifac,iuma,2)
+      hextv(2) = rcodcl(ifac,ivma,2)
+      hextv(3) = rcodcl(ifac,iwma,2)
 
-      call set_dirichlet_scalar &
+      call set_dirichlet_vector &
            !====================
-         ( coefa(ifac,icluma), coefa(ifac,iclumf),             &
-           coefb(ifac,icluma), coefb(ifac,iclumf),             &
-           pimp              , hint              , hext )
-
-      pimp = rcodcl(ifac,ivma,1)
-      hext = rcodcl(ifac,ivma,2)
-
-      call set_dirichlet_scalar &
-           !====================
-         ( coefa(ifac,iclvma), coefa(ifac,iclvmf),             &
-           coefb(ifac,iclvma), coefb(ifac,iclvmf),             &
-           pimp              , hint              , hext )
-
-      pimp = rcodcl(ifac,iwma,1)
-      hext = rcodcl(ifac,iwma,2)
-
-      call set_dirichlet_scalar &
-           !====================
-         ( coefa(ifac,iclwma), coefa(ifac,iclwmf),             &
-           coefb(ifac,iclwma), coefb(ifac,iclwmf),             &
-           pimp              , hint              , hext )
-
-
-      ! Coupled solving of the velocity components
-      if (ivelco.eq.1) then
-
-        pimpv(1) = rcodcl(ifac,iuma,1)
-        pimpv(2) = rcodcl(ifac,ivma,1)
-        pimpv(3) = rcodcl(ifac,iwma,1)
-        hextv(1) = rcodcl(ifac,iuma,2)
-        hextv(2) = rcodcl(ifac,ivma,2)
-        hextv(3) = rcodcl(ifac,iwma,2)
-
-        call set_dirichlet_vector &
-             !====================
-           ( claale(1,ifac)  , cfaale(1,ifac)  ,             &
-             clbale(1,1,ifac), cfbale(1,1,ifac),             &
-             pimpv           , hint            , hextv )
-
-      endif
+         ( claale(1,ifac)  , cfaale(1,ifac)  ,             &
+           clbale(1,1,ifac), cfbale(1,1,ifac),             &
+           pimpv           , hint            , hextv )
 
     ! Neumann Boundary Conditions
     !----------------------------
 
     elseif (icodcl(ifac,iuma).eq.3) then
 
-      qimp = rcodcl(ifac,iuma,3)
-
-      call set_neumann_scalar &
-           !==================
-         ( coefa(ifac,icluma), coefa(ifac,iclumf),             &
-           coefb(ifac,icluma), coefb(ifac,iclumf),             &
-           qimp              , hint )
-
-      qimp = rcodcl(ifac,ivma,3)
-
-      call set_neumann_scalar &
-           !==================
-         ( coefa(ifac,iclvma), coefa(ifac,iclvmf),             &
-           coefb(ifac,iclvma), coefb(ifac,iclvmf),             &
-           qimp              , hint )
-
-      qimp = rcodcl(ifac,iwma,3)
-
-      call set_neumann_scalar &
-           !==================
-         ( coefa(ifac,iclwma), coefa(ifac,iclwmf),             &
-           coefb(ifac,iclwma), coefb(ifac,iclwmf),             &
-           qimp              , hint )
-
-
       ! Coupled solving of the velocity components
-      if (ivelco.eq.1) then
 
-        qimpv(1) = rcodcl(ifac,iuma,3)
-        qimpv(2) = rcodcl(ifac,ivma,3)
-        qimpv(3) = rcodcl(ifac,iwma,3)
+      qimpv(1) = rcodcl(ifac,iuma,3)
+      qimpv(2) = rcodcl(ifac,ivma,3)
+      qimpv(3) = rcodcl(ifac,iwma,3)
 
-        call set_neumann_vector &
-             !==================
-           ( claale(1,ifac)  , cfaale(1,ifac)  ,             &
-             clbale(1,1,ifac), cfbale(1,1,ifac),             &
-             qimpv           , hint )
+      call set_neumann_vector &
+           !==================
+         ( claale(1,ifac)  , cfaale(1,ifac)  ,             &
+           clbale(1,1,ifac), cfbale(1,1,ifac),             &
+           qimpv           , hint )
 
-      endif
 
     ! Convective Boundary Conditions
     !-------------------------------
 
     elseif (icodcl(ifac,iuma).eq.2) then
 
-      pimp = rcodcl(ifac,iuma,1)
-      cfl = rcodcl(ifac,iuma,2)
-
-      call set_convective_outlet_scalar &
-           !==================
-         ( coefa(ifac,icluma), coefa(ifac,iclumf),             &
-           coefb(ifac,icluma), coefb(ifac,iclumf),             &
-           pimp              , cfl               , hint )
-
-      pimp = rcodcl(ifac,ivma,1)
-      cfl = rcodcl(ifac,ivma,2)
-
-      call set_convective_outlet_scalar &
-           !==================
-         ( coefa(ifac,iclvma), coefa(ifac,iclvmf),             &
-           coefb(ifac,iclvma), coefb(ifac,iclvmf),             &
-           pimp              , cfl               , hint )
-
-      pimp = rcodcl(ifac,iwma,1)
-      cfl = rcodcl(ifac,iwma,2)
-
-      call set_convective_outlet_scalar &
-           !==================
-         ( coefa(ifac,iclwma), coefa(ifac,iclwmf),             &
-           coefb(ifac,iclwma), coefb(ifac,iclwmf),             &
-           pimp              , cfl               , hint )
-
-
       ! Coupled solving of the velocity components
-      if (ivelco.eq.1) then
 
-        pimpv(1) = rcodcl(ifac,iuma,1)
-        cflv(1) = rcodcl(ifac,iuma,2)
-        pimpv(2) = rcodcl(ifac,ivma,1)
-        cflv(2) = rcodcl(ifac,ivma,2)
-        pimpv(3) = rcodcl(ifac,iwma,1)
-        cflv(3) = rcodcl(ifac,iwma,2)
+      pimpv(1) = rcodcl(ifac,iuma,1)
+      cflv(1) = rcodcl(ifac,iuma,2)
+      pimpv(2) = rcodcl(ifac,ivma,1)
+      cflv(2) = rcodcl(ifac,ivma,2)
+      pimpv(3) = rcodcl(ifac,iwma,1)
+      cflv(3) = rcodcl(ifac,iwma,2)
 
-        call set_convective_outlet_vector &
-             !==================
-           ( claale(1,ifac)  , cfaale(1,ifac)  ,             &
-             clbale(1,1,ifac), cfbale(1,1,ifac),             &
-             pimpv           , cflv            , hint )
-
-      endif
+      call set_convective_outlet_vector &
+           !==================
+         ( claale(1,ifac)  , cfaale(1,ifac)  ,             &
+           clbale(1,1,ifac), cfbale(1,1,ifac),             &
+           pimpv           , cflv            , hint )
 
     endif
 
@@ -2680,55 +2404,33 @@ endif
 
 if (ineedf.eq.1 .and. iterns.eq.1) then
 
-  if (ivelco.eq.0) then
-    do ifac = 1, nfabor
-      iel = ifabor(ifac)
-      visclc = propce(iel,ipproc(iviscl))
-      visctc = propce(iel,ipproc(ivisct))
-      if (itytur.eq.3) then
-        vistot = visclc
-      else
-        vistot = visclc + visctc
-      endif
-      distbf = distb(ifac)
-      srfbnf = surfbn(ifac)
-      forbr(1,ifac) = ( coefa(ifac,icluf)                          &
-                      + coefb(ifac,icluf)*velipb(ifac,1) )*srfbnf
-      forbr(2,ifac) = ( coefa(ifac,iclvf)                          &
-                      + coefb(ifac,iclvf)*velipb(ifac,2) )*srfbnf
-      forbr(3,ifac) = ( coefa(ifac,iclwf)                          &
-                      + coefb(ifac,iclwf)*velipb(ifac,3) )*srfbnf
-    enddo
-
   ! Coupled solving of the velocity components
-  else
-    do ifac = 1, nfabor
-      iel = ifabor(ifac)
-      visclc = propce(iel,ipproc(iviscl))
-      visctc = propce(iel,ipproc(ivisct))
-      if (itytur.eq.3) then
-        vistot = visclc
-      else
-        vistot = visclc + visctc
-      endif
-      distbf = distb(ifac)
-      srfbnf = surfbn(ifac)
+  do ifac = 1, nfabor
+    iel = ifabor(ifac)
+    visclc = propce(iel,ipproc(iviscl))
+    visctc = propce(iel,ipproc(ivisct))
+    if (itytur.eq.3) then
+      vistot = visclc
+    else
+      vistot = visclc + visctc
+    endif
+    distbf = distb(ifac)
+    srfbnf = surfbn(ifac)
 
-      ! The implicit term is added after having updated the velocity
-      forbr(1,ifac) = ( cofafu(1,ifac)                              &
-                      + cofbfu(1,1,ifac) * velipb(ifac,1)           &
-                      + cofbfu(1,2,ifac) * velipb(ifac,2)           &
-                      + cofbfu(1,3,ifac) * velipb(ifac,3) )*srfbnf
-      forbr(2,ifac) = ( cofafu(2,ifac)                              &
-                      + cofbfu(2,1,ifac) * velipb(ifac,1)           &
-                      + cofbfu(2,2,ifac) * velipb(ifac,2)           &
-                      + cofbfu(2,3,ifac) * velipb(ifac,3) )*srfbnf
-      forbr(3,ifac) = ( coefau(3,ifac)                              &
-                      + cofbfu(3,1,ifac) * velipb(ifac,1)           &
-                      + cofbfu(3,2,ifac) * velipb(ifac,2)           &
-                      + cofbfu(3,3,ifac) * velipb(ifac,3) )*srfbnf
-    enddo
-  endif
+    ! The implicit term is added after having updated the velocity
+    forbr(1,ifac) = ( cofafu(1,ifac)                              &
+                    + cofbfu(1,1,ifac) * velipb(ifac,1)           &
+                    + cofbfu(1,2,ifac) * velipb(ifac,2)           &
+                    + cofbfu(1,3,ifac) * velipb(ifac,3) )*srfbnf
+    forbr(2,ifac) = ( cofafu(2,ifac)                              &
+                    + cofbfu(2,1,ifac) * velipb(ifac,1)           &
+                    + cofbfu(2,2,ifac) * velipb(ifac,2)           &
+                    + cofbfu(2,3,ifac) * velipb(ifac,3) )*srfbnf
+    forbr(3,ifac) = ( coefau(3,ifac)                              &
+                    + cofbfu(3,1,ifac) * velipb(ifac,1)           &
+                    + cofbfu(3,2,ifac) * velipb(ifac,2)           &
+                    + cofbfu(3,3,ifac) * velipb(ifac,3) )*srfbnf
+  enddo
 endif
 
 ! Free memory

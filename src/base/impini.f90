@@ -1387,7 +1387,7 @@ write(nfecra,9900)
 
 ! --- Stokes
 
-write(nfecra,4110) ivelco, iphydr,icalhy,iprco,ipucou,nterup
+write(nfecra,4110) iphydr,icalhy,iprco,ipucou,nterup
 write(nfecra,4111) irevmc
 if (idtvar.ge.0) then
   write(nfecra,4112) relaxv(ipr),arak
@@ -1433,11 +1433,6 @@ write(nfecra,9900)
                                                                 /,&
 ' ** STOKES',                                                   /,&
 '    ------',                                                   /,&
-'       IVELCO = ',4x,i10,  ' (0 : resolution composante par',  /,&
-'                ',14x,     '      composante de l''etape de',  /,&
-'                ',14x,     '      prediction de la vitesse',   /,&
-'                ',14x,     '  1 : resolution couplee des',     /,&
-'                ',14x,     '      composantes de vitesse    )',/,&
 '       IPHYDR = ',4x,i10,  ' (1 : prise en compte explicite',  /,&
 '                ',14x,     '      de l''equilibre entre grad', /,&
 '                ',14x,     '      de pression et termes',      /,&
@@ -1526,11 +1521,6 @@ write(nfecra,9900)
                                                                 /,&
 ' ** STOKES',                                                   /,&
 '    ------',                                                   /,&
-'       IVELCO = ',4x,i10,  ' (0: segregated solving of the',   /,&
-'                ',14x,     '     velocity components during',  /,&
-'                ',14x,     '     the prediction step',         /,&
-'                ',14x,     '  1: coupled solving of the',      /,&
-'                ',14x,     '     velocity components       )', /,&
 '       IPHYDR = ',4x,i10,  ' (1: account for explicit',        /,&
 '                ',14x,     '     balance between pressure',    /,&
 '                ',14x,     '     gradient, gravity source',    /,&

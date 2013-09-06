@@ -55,8 +55,7 @@
 !>   \vect{Q}_\centf = \vect{A}_u^f + \tens{B}_u^f \vect{u}_\centi
 !>   \f]
 !>   where \f$ \tens{B}_u^g \f$ and \f$ \tens{B}_u^f \f$ are 3x3 tensor matrix
-!>   which coupled veclocity components next to a boundary. This is only
-!>   available when the option ivelco is set to 1.
+!>   which coupled veclocity components next to a boundary.
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -165,13 +164,13 @@ integer          ihcp, iscal
 integer          imprim, modntl
 integer          iuntur
 integer          inturb, inlami, iuiptn
-integer          iclu  , iclv  , iclw  , iclk  , iclep
+integer          iclk  , iclep
 integer          iclnu
 integer          icl11 , icl22 , icl33 , icl12 , icl13 , icl23
 integer          icl11r, icl22r, icl33r, icl12r, icl13r, icl23r
 integer          iclphi, iclfb , iclal , iclomg
 integer          iclvar, iclvrr
-integer          icluf , iclvf , iclwf , iclkf , iclepf
+integer          iclkf , iclepf
 integer          iclnuf
 integer          icl11f, icl22f, icl33f, icl12f, icl13f, icl23f
 integer          iclphf, iclfbf, iclalf, iclomf
@@ -270,9 +269,6 @@ und0   = 1.d0
 deuxd0 = 2.d0
 
 ! --- Gradient Boundary Conditions
-iclu   = iclrtp(iu,icoef)
-iclv   = iclrtp(iv,icoef)
-iclw   = iclrtp(iw,icoef)
 if (itytur.eq.2) then
   iclk   = iclrtp(ik ,icoef)
   iclep  = iclrtp(iep,icoef)
@@ -309,9 +305,6 @@ elseif (iturb.eq.70) then
 endif
 
 ! --- Flux Boundary Conditions
-icluf  = iclrtp(iu,icoeff)
-iclvf  = iclrtp(iv,icoeff)
-iclwf  = iclrtp(iw,icoeff)
 if (itytur.eq.2) then
   iclkf  = iclrtp(ik ,icoeff)
   iclepf = iclrtp(iep,icoeff)
@@ -722,19 +715,17 @@ do ifac = 1, nfabor
       uiptnf = uiptn
 
       ! Coupled solving of the velocity components
-      if (ivelco.eq.1) then
-        if (yplus.ge.ypluli) then
-          ! On implicite le terme de bord pour le gradient de vitesse
-          ! Faute de calcul mis a part, a*yplus^b/U+ = uet^(b+1-1/d)
-          ypup = utau**(2.d0*dpow-1.d0)/apow**(2.d0*dpow)
-          cofimp = 1.d0+bpow*uet**(bpow+1.d0-1.d0/dpow)*(2.d0**(bpow-1.d0)-2.d0)
-          ! On implicite le terme (rho*uet*uk)
-          hflui = visclc / distbf * ypup
-        else
-          !Dans la sous couche visceuse : U_F=0
-          cofimp  = 0.d0
-          hflui = visclc / distbf
-        endif
+      if (yplus.ge.ypluli) then
+        ! On implicite le terme de bord pour le gradient de vitesse
+        ! Faute de calcul mis a part, a*yplus^b/U+ = uet^(b+1-1/d)
+        ypup = utau**(2.d0*dpow-1.d0)/apow**(2.d0*dpow)
+        cofimp = 1.d0+bpow*uet**(bpow+1.d0-1.d0/dpow)*(2.d0**(bpow-1.d0)-2.d0)
+        ! On implicite le terme (rho*uet*uk)
+        hflui = visclc / distbf * ypup
+      else
+        !Dans la sous couche visceuse : U_F=0
+        cofimp  = 0.d0
+        hflui = visclc / distbf
       endif
 
     ! Dependant on the turbulence Model
@@ -766,20 +757,18 @@ do ifac = 1, nfabor
         endif
 
         ! Coupled solving of the velocity components
-        if (ivelco.eq.1) then
-          if (yplus.ge.ypluli) then
-            ! On implicite le terme de bord pour le gradient de vitesse
-            ypup =  (yplus-dplus)/(log(yplus)/xkappa +cstlog)
-            cofimp  = 1.d0 - ypup/xkappa*                        &
-                             (deuxd0*rcprod - und0/(deuxd0*yplus-dplus))
-            ! On implicite le terme (rho*uet*uk)
-            hflui = visclc / distbf * ypup
+        if (yplus.ge.ypluli) then
+          ! On implicite le terme de bord pour le gradient de vitesse
+          ypup =  (yplus-dplus)/(log(yplus)/xkappa +cstlog)
+          cofimp  = 1.d0 - ypup/xkappa*                        &
+                           (deuxd0*rcprod - und0/(deuxd0*yplus-dplus))
+          ! On implicite le terme (rho*uet*uk)
+          hflui = visclc / distbf * ypup
 
-          ! In the viscous sub-layer
-          else
-            cofimp  = 0.d0
-            hflui = visclc / distbf
-          endif
+        ! In the viscous sub-layer
+        else
+          cofimp  = 0.d0
+          hflui = visclc / distbf
         endif
 
       ! --> No turbulence, mixing length or Rij-espilon
@@ -798,10 +787,8 @@ do ifac = 1, nfabor
           iuntur = 0
 
           ! Coupled solving of the velocity components
-          if (ivelco.eq.1) then
-            cofimp  = 0.d0
-            hflui = visclc / distbf
-          endif
+          cofimp  = 0.d0
+          hflui = visclc / distbf
 
         else
 
@@ -818,19 +805,17 @@ do ifac = 1, nfabor
           endif
 
           ! Coupled solving of the velocity components
-          if (ivelco.eq.1) then
-            if (yplus.ge.ypluli) then
-              ! On implicite le terme de bord pour le gradient de vitesse
-              ypup   =  (yplus-dplus)/(log(yplus)/xkappa +cstlog)
-              cofimp = 1.d0                                                    &
-                     - ypup/xkappa*(deuxd0/yplus - und0/(deuxd0*yplus-dplus))
-              ! On implicite le terme (rho*uet*uk)
-              hflui = visclc / distbf * ypup
-            else
-              ! Dans la sous couche visceuse : U_F=0
-              cofimp  = 0.d0
-              hflui = visclc / distbf
-            endif
+          if (yplus.ge.ypluli) then
+            ! On implicite le terme de bord pour le gradient de vitesse
+            ypup   =  (yplus-dplus)/(log(yplus)/xkappa +cstlog)
+            cofimp = 1.d0                                                    &
+                   - ypup/xkappa*(deuxd0/yplus - und0/(deuxd0*yplus-dplus))
+            ! On implicite le terme (rho*uet*uk)
+            hflui = visclc / distbf * ypup
+          else
+            ! Dans la sous couche visceuse : U_F=0
+            cofimp  = 0.d0
+            hflui = visclc / distbf
           endif
 
         endif
@@ -842,14 +827,11 @@ do ifac = 1, nfabor
         uiptn  = utau - uet/xkappa*1.5d0
 
         ! Coupled solving of the velocity components
-        if (ivelco.eq.1) then
-          if (yplus.ge.ypluli) then
-            ypup   =  (yplus-dplus)/(log(yplus)/xkappa +cstlog)
-            cofimp = 1.d0 - ypup/(xkappa*(yplus-dplus))*1.5d0
-          else
-            cofimp = 0.d0
-          endif
-
+        if (yplus.ge.ypluli) then
+          ypup   =  (yplus-dplus)/(log(yplus)/xkappa +cstlog)
+          cofimp = 1.d0 - ypup/(xkappa*(yplus-dplus))*1.5d0
+        else
+          cofimp = 0.d0
         endif
 
         ! If (mu+mut) becomes zero (dynamic models), an arbitrary value is set
@@ -857,23 +839,21 @@ do ifac = 1, nfabor
         ! is really zero at this face.
         if (visctc+visclc.le.0) then
           uiptnf = utau
-          if (ivelco.eq.1) hflui = 0.d0
+          hflui = 0.d0
 
         else
           uiptnf = utau -romc*distbf*(uet**2)/(visctc+visclc)
 
           ! Coupled solving of the velocity components
-          if (ivelco.eq.1) then
-            if (yplus.ge.ypluli) then
-              ! The boundary term for velocity gradient is implicit
-              ypup   =  (yplus-dplus)/(log(yplus)/xkappa +cstlog)
-              ! The term (rho*uet*uk) is implicit
-              hflui = visclc / distbf * ypup
+          if (yplus.ge.ypluli) then
+            ! The boundary term for velocity gradient is implicit
+            ypup   =  (yplus-dplus)/(log(yplus)/xkappa +cstlog)
+            ! The term (rho*uet*uk) is implicit
+            hflui = visclc / distbf * ypup
 
-            ! In the viscous sub-layer
-            else
-              hflui = (visclc + visctc) / distbf
-            endif
+          ! In the viscous sub-layer
+          else
+            hflui = (visclc + visctc) / distbf
           endif
 
         endif
@@ -889,10 +869,8 @@ do ifac = 1, nfabor
         uiptnf = 0.d0
 
         ! Coupled solving of the velocity components
-        if(ivelco.eq.1) then
-          hflui = (visclc + visctc) / distbf
-          cofimp = 0.d0
-        endif
+        hflui = (visclc + visctc) / distbf
+        cofimp = 0.d0
 
       endif
     endif
@@ -911,66 +889,49 @@ do ifac = 1, nfabor
       hint = (visclc + visctc)/distbf
     endif
 
-    coefa(ifac,iclu)   = uiptn *tx*iuntur*txn0 + rcodcx
-    coefa(ifac,iclv)   = uiptn *ty*iuntur*txn0 + rcodcy
-    coefa(ifac,iclw)   = uiptn *tz*iuntur*txn0 + rcodcz
-    coefa(ifac,icluf)  = -hint*(uiptnf*tx*iuntur*txn0 + rcodcx)
-    coefa(ifac,iclvf)  = -hint*(uiptnf*ty*iuntur*txn0 + rcodcy)
-    coefa(ifac,iclwf)  = -hint*(uiptnf*tz*iuntur*txn0 + rcodcz)
-
-    coefb(ifac,iclu)   = 0.d0
-    coefb(ifac,iclv)   = 0.d0
-    coefb(ifac,iclw)   = 0.d0
-    coefb(ifac,icluf)  = hint
-    coefb(ifac,iclvf)  = hint
-    coefb(ifac,iclwf)  = hint
-
     ! Coupled solving of the velocity components
-    if (ivelco.eq.1) then
 
-      ! Gradient boundary conditions
-      !-----------------------------
+    ! Gradient boundary conditions
+    !-----------------------------
 
-      coefau(1,ifac) = rcodcx
-      coefau(2,ifac) = rcodcy
-      coefau(3,ifac) = rcodcz
+    coefau(1,ifac) = rcodcx
+    coefau(2,ifac) = rcodcy
+    coefau(3,ifac) = rcodcz
 
-      ! Projection in order to have the velocity parallel to the wall
-      ! B = cofimp * ( IDENTITY - n x n )
+    ! Projection in order to have the velocity parallel to the wall
+    ! B = cofimp * ( IDENTITY - n x n )
 
-      coefbu(1,1,ifac) = cofimp*(1.d0-rnx**2)
-      coefbu(2,2,ifac) = cofimp*(1.d0-rny**2)
-      coefbu(3,3,ifac) = cofimp*(1.d0-rnz**2)
-      coefbu(1,2,ifac) = -cofimp*rnx*rny
-      coefbu(1,3,ifac) = -cofimp*rnx*rnz
-      coefbu(2,1,ifac) = -cofimp*rny*rnx
-      coefbu(2,3,ifac) = -cofimp*rny*rnz
-      coefbu(3,1,ifac) = -cofimp*rnz*rnx
-      coefbu(3,2,ifac) = -cofimp*rnz*rny
+    coefbu(1,1,ifac) = cofimp*(1.d0-rnx**2)
+    coefbu(2,2,ifac) = cofimp*(1.d0-rny**2)
+    coefbu(3,3,ifac) = cofimp*(1.d0-rnz**2)
+    coefbu(1,2,ifac) = -cofimp*rnx*rny
+    coefbu(1,3,ifac) = -cofimp*rnx*rnz
+    coefbu(2,1,ifac) = -cofimp*rny*rnx
+    coefbu(2,3,ifac) = -cofimp*rny*rnz
+    coefbu(3,1,ifac) = -cofimp*rnz*rnx
+    coefbu(3,2,ifac) = -cofimp*rnz*rny
 
-      ! Flux boundary conditions
-      !-------------------------
-      rcodcn = rcodcx*rnx+rcodcy*rny+rcodcz*rnz
+    ! Flux boundary conditions
+    !-------------------------
+    rcodcn = rcodcx*rnx+rcodcy*rny+rcodcz*rnz
 
-      cofafu(1,ifac)   = -hflui*(rcodcx - rcodcn*rnx)
-      cofafu(2,ifac)   = -hflui*(rcodcy - rcodcn*rny)
-      cofafu(3,ifac)   = -hflui*(rcodcz - rcodcn*rnz)
+    cofafu(1,ifac)   = -hflui*(rcodcx - rcodcn*rnx)
+    cofafu(2,ifac)   = -hflui*(rcodcy - rcodcn*rny)
+    cofafu(3,ifac)   = -hflui*(rcodcz - rcodcn*rnz)
 
-      ! Projection in order to have the shear stress parallel to the wall
-      !  B = hflui*( IDENTITY - n x n )
+    ! Projection in order to have the shear stress parallel to the wall
+    !  B = hflui*( IDENTITY - n x n )
 
-      cofbfu(1,1,ifac) = hflui*(1.d0-rnx**2)
-      cofbfu(2,2,ifac) = hflui*(1.d0-rny**2)
-      cofbfu(3,3,ifac) = hflui*(1.d0-rnz**2)
+    cofbfu(1,1,ifac) = hflui*(1.d0-rnx**2)
+    cofbfu(2,2,ifac) = hflui*(1.d0-rny**2)
+    cofbfu(3,3,ifac) = hflui*(1.d0-rnz**2)
 
-      cofbfu(1,2,ifac) = - hflui*rnx*rny
-      cofbfu(1,3,ifac) = - hflui*rnx*rnz
-      cofbfu(2,1,ifac) = - hflui*rny*rnx
-      cofbfu(2,3,ifac) = - hflui*rny*rnz
-      cofbfu(3,1,ifac) = - hflui*rnz*rnx
-      cofbfu(3,2,ifac) = - hflui*rnz*rny
-
-    endif
+    cofbfu(1,2,ifac) = - hflui*rnx*rny
+    cofbfu(1,3,ifac) = - hflui*rnx*rnz
+    cofbfu(2,1,ifac) = - hflui*rny*rnx
+    cofbfu(2,3,ifac) = - hflui*rny*rnz
+    cofbfu(3,1,ifac) = - hflui*rnz*rnx
+    cofbfu(3,2,ifac) = - hflui*rnz*rny
 
     !===========================================================================
     ! 4. Boundary conditions on k and espilon
@@ -1062,8 +1023,7 @@ do ifac = 1, nfabor
 
       ! blending factor so that the component R(n,tau) have only
       ! -mu_T/(mu+mu_T)*uet*uk
-      bldr12 = 1.d0
-      if (ivelco.eq.1) bldr12 = visctc/(visclc + visctc)
+      bldr12 = visctc/(visclc + visctc)
 
       do isou = 1,6
 

@@ -182,9 +182,7 @@ endif
 if (ilisvr(ipprtp(ivar)) .eq. 1) then
   call field_set_key_int(ivarfl(ivar), keylog, 1)
 endif
-if (ivelco .eq. 1) then
-  call field_set_key_int(ivarfl(ivar), keycpl, 1)
-endif
+call field_set_key_int(ivarfl(ivar), keycpl, 1)
 
 ! All components point to same field
 ivarfl(iv) = ivarfl(iu)
@@ -300,9 +298,7 @@ if (iale.eq.1) then
   if (ilisvr(ipprtp(ivar)) .eq. 1) then
     call field_set_key_int(ivarfl(ivar), keylog, 1)
   endif
-  if (ivelco .eq. 1) then
-    call field_set_key_int(ivarfl(ivar), keycpl, 1)
-  endif
+  call field_set_key_int(ivarfl(ivar), keycpl, 1)
   ivarfl(ivma) = ivarfl(iuma)
   ivarfl(iwma) = ivarfl(iuma)
 endif

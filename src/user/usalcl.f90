@@ -70,10 +70,7 @@
 !>  - \c ialtyb(ifac) = \c igliss: The mesh slides on corresponding face \c ifac.
 !>           The normal component of mesh velocity is automatically set to 0.
 !>           A homogeneous Neumann condition is automatically prescribed for the
-!>           other components, as it's the case for 'Symmetry' fluid condition
-!>           (Please note that homogeneous Neumann condition is only partially
-!>           implicit in case of boudary face that is not aligned with axis
-!>           if \c ivelco=0).
+!>           other components, as it's the case for 'Symmetry' fluid condition.
 !>
 !>  - \c ialtyb(ifac) = \c ivimpo: the mesh velocity is imposed on face \c ifac. Thus,
 !>           the users needs to specify the mesh velocity values filling \c rcodcl

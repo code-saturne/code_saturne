@@ -93,7 +93,6 @@ double precision rotfct(ncel), ce2rc(ncel)
 
 integer          iel, ivar, ifac, isou
 integer          iccocg, inc, nswrgp, imligp, iwarnp
-integer          iclu
 integer          istrai(3,3), ivorab(3,3)
 integer          ii, jj, kk
 
@@ -153,31 +152,17 @@ epsrgp = epsrgr(iu)
 climgp = climgr(iu)
 extrap = extrag(iu)
 
-if (ivelco.eq.1) then
 
-  ilved = .false.
+ilved = .false.
 
-  call grdvec &
-  !==========
+call grdvec &
+!==========
 ( iu     , imrgra , inc    , nswrgp , imligp ,                   &
   iwarnp , nfecra ,                                              &
   epsrgp , climgp , extrap ,                                     &
   ilved  ,                                                       &
   rtpa(1,iu) ,  coefau , coefbu,                                 &
   grdvit )
-
-else
-
-  iclu = iclrtp(iu,icoef)
-
-  call grdvni &
-  !==========
-( iu  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
-  iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-  rtpa(1,iu)   , coefa(1,iclu) , coefb(1,iclu) ,                 &
-  grdvit  )
-
-endif
 
 ! Compute rotation matrix (dual antisymmetric matrix of the rotation vector)
 !   matrot(i,j) = e_imj.Omega_m

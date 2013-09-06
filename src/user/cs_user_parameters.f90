@@ -1254,18 +1254,6 @@ if (.false.) then
 
 endif
 
-! --- Segregated or coupled solver for the velocity components:
-!       0 for the segregated solver
-!       1 for the coupled solver (default)
-!
-!     The coupled solver may improve the accuracy and the robustness of the
-!     simulation in case of periodicity of rotation, Corriolis source terms.
-!     It implicits the wall shear stress.
-
-if (.false.) then
-  ivelco = 0
-endif
-
 ! --- Solver taking a pscalar porosity into account:
 !       0 No porosity taken into account (Standard)
 !       1 Porosity taken into account

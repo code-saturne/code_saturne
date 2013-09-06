@@ -1301,22 +1301,18 @@ endif
 
 do ivar = 1, nvar
   if (iswdyn(ivar).ge.1) then
-    if (ivelco.ne.1) then
-      write(nfecra,2741) ivelco
-    else
-      ! The number of reconstruction sweeps is set to 20 at least
-      if (nswrsm(ivar).lt.20) then
-        nswrsm(ivar) = 20
-        write(nfecra,2742) nswrsm(ivar)
-      endif
-      if (ivar.eq.iu.or.ivar.eq.iv.or.ivar.eq.iw) then
-        if (isstpc(iu).eq.0.or.isstpc(iv).eq.0.or.isstpc(iw).eq.0) then
-          isstpc(iu) = 1
-          isstpc(iv) = 1
-          isstpc(iw) = 1
+    ! The number of reconstruction sweeps is set to 20 at least
+    if (nswrsm(ivar).lt.20) then
+      nswrsm(ivar) = 20
+      write(nfecra,2742) nswrsm(ivar)
+    endif
+    if (ivar.eq.iu.or.ivar.eq.iv.or.ivar.eq.iw) then
+      if (isstpc(iu).eq.0.or.isstpc(iv).eq.0.or.isstpc(iw).eq.0) then
+        isstpc(iu) = 1
+        isstpc(iv) = 1
+        isstpc(iw) = 1
 
-          write(nfecra, 2743)
-        endif
+        write(nfecra, 2743)
       endif
     endif
   endif
@@ -1641,12 +1637,6 @@ if (iperot.gt.0) then
   if (itytur.eq.3) then
     write(nfecra,5009)iperio,iturb
   endif
-endif
-
-! --- rotational periodicity forbidden with (ivelco = 0)
-if (iperot.gt.0 .and. ivelco.eq. 0) then
-  write(nfecra,5010)
-  iok = iok + 1
 endif
 
 !===============================================================================
@@ -3609,20 +3599,6 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
- 2741 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION :',                                             /,&
-'@    =========',                                               /,&
-'@    L''OPTION iswdyn = 1 N''EST COMPATIBLE QU''AVEC',         /,&
-'@    L''OPTION IVELCO = 1.',                                   /,&
-'@    IVELCO VAUT ICI', i10,                                    /,&
-'@',                                                            /,&
-'@  Le calcul continue, iswdyn = 0.',                           /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
  2742 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -4088,22 +4064,6 @@ endif
 '@    Il a cependant en general une influence faible de sorte', /,&
 '@    que les tests menes jusqu''a present n''ont pas fait',    /,&
 '@    apparaitre de probleme.',                                 /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 5010 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    La periodicite de rotation n''est pas compatible avec la',/,&
-'@      resolution non couplee des composantes de vitesse',     /,&
-'@      (IVELCO = 0)',                                          /,&
-'@',                                                            /,&
-'@  Le calcul ne sera pas execute.',                            /,&
-'@',                                                            /,&
-'@  Utiliser IVELCO = 1.',                                      /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -6218,19 +6178,6 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
- 2741 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ WARNING:',                                                /,&
-'@    =========',                                               /,&
-'@    iswdyn = 1 OPTION IS ONLY COMPATIBLE WITH ivelco = 1',    /,&
-'@    ivelco HAS VALUE', i10,                                   /,&
-'@',                                                            /,&
-'@  The calculation continue with iswdyn = 0.',                 /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
  2742 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -6698,21 +6645,6 @@ endif
 '@  in the Re stress equations (equivalent to an anisotropic',  /,&
 '@  diffusion tensor), but these terms are generaly small',     /,&
 '@',                                                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 5010 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    Rotational periodicity is not compatible with the',       /,&
-'@    uncoupled velocity components coupling (IVELCO = 0)',     /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@   Use IVELCO = 1.',                                          /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)

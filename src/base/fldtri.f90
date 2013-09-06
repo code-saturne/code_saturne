@@ -144,33 +144,18 @@ ivar = iu
 call field_map_values(ivarfl(ivar), rtp(1,ivar), rtpa(1,ivar))
 
 if (nfabor .gt. 0) then
-  if (ivelco .eq. 0) then
-    icondl = iclrtp(ivar, icoef)
-    icondf = iclrtp(ivar, icoeff)
-    icondd = icondl
-    icondc = icondl
-    if (ippmod(icompf).ge.0) then
-      icondc = iclrtp(ivar, icoefc)
-    endif
+  if (ippmod(icompf).ge.0) then
     call field_map_bc_coeffs(ivarfl(ivar),                           &
-                             coefa(1, icondl), coefb(1, icondl),     &
-                             coefa(1, icondf), coefb(1, icondf),     &
-                             coefa(1, icondd), coefb(1, icondd),     &
-                             coefa(1, icondc), coefb(1, icondc))
+                             coefau(1, 1), coefbu(1, 1, 1),          &
+                             cofafu(1, 1), cofbfu(1, 1, 1),          &
+                             coefau(1, 1), coefbu(1, 1, 1),          &
+                             cofacu(1, 1), cofbcu(1, 1, 1))
   else
-    if (ippmod(icompf).ge.0) then
-      call field_map_bc_coeffs(ivarfl(ivar),                           &
-                               coefau(1, 1), coefbu(1, 1, 1),          &
-                               cofafu(1, 1), cofbfu(1, 1, 1),          &
-                               coefau(1, 1), coefbu(1, 1, 1),          &
-                               cofacu(1, 1), cofbcu(1, 1, 1))
-    else
-      call field_map_bc_coeffs(ivarfl(ivar),                           &
-                               coefau(1, 1), coefbu(1, 1, 1),          &
-                               cofafu(1, 1), cofbfu(1, 1, 1),          &
-                               coefau(1, 1), coefbu(1, 1, 1),          &
-                               coefau(1, 1), coefbu(1, 1, 1))
-    endif
+    call field_map_bc_coeffs(ivarfl(ivar),                           &
+                             coefau(1, 1), coefbu(1, 1, 1),          &
+                             cofafu(1, 1), cofbfu(1, 1, 1),          &
+                             coefau(1, 1), coefbu(1, 1, 1),          &
+                             coefau(1, 1), coefbu(1, 1, 1))
   endif
 else
   call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .true.)
@@ -256,23 +241,11 @@ if (iale.eq.1) then
   ivar = iuma
   call field_map_values(ivarfl(ivar), rtp(1,ivar), rtpa(1,ivar))
   if (nfabor .gt. 0) then
-    if (ivelco .eq. 0) then
-      icondl = iclrtp(ivar, icoef)
-      icondf = iclrtp(ivar, icoeff)
-      icondd = icondl
-      icondc = icondl
-      call field_map_bc_coeffs(ivarfl(ivar),                         &
-                               coefa(1, icondl), coefb(1, icondl),   &
-                               coefa(1, icondf), coefb(1, icondf),   &
-                               coefa(1, icondd), coefb(1, icondd),   &
-                               coefa(1, icondc), coefb(1, icondc))
-    else
-      call field_map_bc_coeffs(ivarfl(ivar),                         &
-                               claale(1, 1), clbale(1, 1, 1),        &
-                               cfaale(1, 1), cfbale(1, 1, 1),        &
-                               claale(1, 1), clbale(1, 1, 1),        &
-                               claale(1, 1), clbale(1, 1, 1))
-    endif
+    call field_map_bc_coeffs(ivarfl(ivar),                         &
+                             claale(1, 1), clbale(1, 1, 1),        &
+                             cfaale(1, 1), cfbale(1, 1, 1),        &
+                             claale(1, 1), clbale(1, 1, 1),        &
+                             claale(1, 1), clbale(1, 1, 1))
   else
     call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .false.)
   endif

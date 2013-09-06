@@ -568,22 +568,7 @@ if (nbaste.gt.0.and.itrale.gt.nalinf) then
   !==========
 endif
 
-! Compute the pseudo tensorial time step if needed for the pressure solving (ivelco=0)
-if (idften(ipr).eq.3) then
-  do iel = 1, ncel
-    do isou = 1, 3
-      dttens(isou, iel) = dt(iel)
-    enddo
-  enddo
-  do ielpdc = 1, ncepdc
-    iel = icepdc(ielpdc)
-    do isou = 1, 3
-      dttens(isou, iel) = 1.d0 / (1.d0/dt(iel) + ckupdc(ielpdc,isou))
-    enddo
-  enddo
-endif
-
-! Compute the pseudo tensorial time step if needed for the pressure solving (ivelco=1)
+! Compute the pseudo tensorial time step if needed for the pressure solving
 if (idften(ipr).eq.6) then
   do iel = 1, ncel
     dttens(1, iel) = dt(iel)
@@ -698,15 +683,9 @@ itrfup = 1
 
 if (nterup.gt.1.or.isno2t.gt.0) then
 
-  if (ivelco.eq.1) then
-    if (.not.allocated(ximpav)) allocate(ximpav(ndim,ndim,ncelet))
-    if (.not.allocated(uvwk)) allocate(uvwk(ndim,ncelet))
-    if (.not.allocated(trava)) allocate(trava(ndim,ncelet))
-  else
-    if (.not.allocated(ximpa)) allocate(ximpa(ncelet,ndim))
-    if (.not.allocated(uvwk)) allocate(uvwk(ncelet,ndim))
-    if (.not.allocated(trava)) allocate(trava(ncelet,ndim))
-  endif
+  if (.not.allocated(ximpav)) allocate(ximpav(ndim,ndim,ncelet))
+  if (.not.allocated(uvwk)) allocate(uvwk(ndim,ncelet))
+  if (.not.allocated(trava)) allocate(trava(ndim,ncelet))
 
   if (nbccou.gt.0 .or. nfpt1t.gt.0 .or. iirayo.gt.0) itrfup = 0
 
@@ -855,11 +834,9 @@ do while (iterns.le.nterup)
 
     do ii = 1, nnod
       impale(ii) = 0
-      if (ivelco.eq.1) then
-        disala(1,ii) = depale(1,ii)
-        disala(2,ii) = depale(2,ii)
-        disala(3,ii) = depale(3,ii)
-      endif
+      disala(1,ii) = depale(1,ii)
+      disala(2,ii) = depale(2,ii)
+      disala(3,ii) = depale(3,ii)
     enddo
 
     ! - Interface Code_Saturne
@@ -1186,23 +1163,15 @@ do while (iterns.le.nterup)
 
     if (itrale.eq.0 .or. itrale.gt.nalinf) then
 
-      if (ivelco.eq.0) then
-        call alelap &
+      ! otherwise it is done in navstv.f90
+      if (itrale.eq.0) then
+
+        call alelav &
         !==========
-      ( rtp    , rtpa   , propce , coefa  , coefb  )
-
-      else
-
-        ! otherwise it is done in navstv.f90
-        if (itrale.eq.0) then
-
-          call alelav &
-          !==========
-        ( rtp    , rtpa   , propce , propfb )
-
-        endif
+      ( rtp    , rtpa   , propce , propfb )
 
       endif
+
 
     endif
 
@@ -1234,24 +1203,15 @@ do while (iterns.le.nterup)
     call field_get_val_s(iflmas, imasfl)
     call field_get_val_s(iflmab, bmasfl)
 
-    if (ivelco.eq.0) then
+    ! Coupled solving of the velocity components
 
-      call csexit(1)
-
-    else
-
-      ! Coupled solving of the velocity components
-
-      call navstv &
-      !==========
-    ( nvar   , nscal  , iterns , icvrge , itrale ,                   &
-      isostd ,                                                       &
-      dt     , tpucou , rtp    , rtpa   , propce , propfb ,          &
-      tslagr , coefa  , coefb  , frcxt  , prhyd  ,                   &
-      trava  , ximpav , uvwk   )
-
-    endif
-
+    call navstv &
+    !==========
+  ( nvar   , nscal  , iterns , icvrge , itrale ,                   &
+    isostd ,                                                       &
+    dt     , tpucou , rtp    , rtpa   , propce , propfb ,          &
+    tslagr , coefa  , coefb  , frcxt  , prhyd  ,                   &
+    trava  , ximpav , uvwk   )
 
 
     !     Mise a jour de la pression si on utilise un couplage vitesse/pression
@@ -1309,11 +1269,7 @@ if (allocated(visvdr)) deallocate(visvdr)
 
 if (nterup.gt.1) then
   deallocate(uvwk, trava)
-  if (ivelco.eq.0) then
-    deallocate(ximpa)
-  else
-    deallocate(ximpav)
-  endif
+  deallocate(ximpav)
 endif
 
 ! Calcul sur champ de vitesse fige SUITE (a cause de la boucle U/P)

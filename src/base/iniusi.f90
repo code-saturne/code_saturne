@@ -484,7 +484,7 @@ if (ippmod(icompf).ge.0) then
 endif
 
 ! Choose which 3x3 cocg matrixes are computed for gradient algorithms.
-call comcoc(imrgra, ivelco)
+call comcoc(imrgra)
 
 ! --- Varpos
 !      3ieme passage

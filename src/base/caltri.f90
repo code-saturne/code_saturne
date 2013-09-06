@@ -883,28 +883,14 @@ if (iale.eq.1 .and. inpdt0.eq.0) then
 
   if (itrale.eq.0 .or. itrale.gt.nalinf) then
 
-    if (ivelco.eq.0) then
+    ! Coupled solving of the velocity components
 
-      call alemaj &
-      !==========
-    ( itrale ,                                               &
-      impale ,                                               &
-      ra(idt)    , ra(irtpa) , ra(irtp) ,                    &
-      coefa  , coefb  ,                                      &
-      depale , xyzno0 )
-
-    else
-
-      ! Coupled solving of the velocity components
-
-      call alemav &
-      !==========
-    ( itrale ,                                               &
-      impale , ialtyb ,                                      &
-      ra(idt)    , ra(irtpa) , ra(irtp) ,                    &
-      depale , xyzno0 )
-
-    endif
+    call alemav &
+    !==========
+  ( itrale ,                                               &
+    impale , ialtyb ,                                      &
+    ra(idt)    , ra(irtpa) , ra(irtp) ,                    &
+    depale , xyzno0 )
 
   endif
 

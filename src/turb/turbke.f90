@@ -259,29 +259,16 @@ epsrgp = epsrgr(iu)
 climgp = climgr(iu)
 extrap = extrag(iu)
 
-if (ivelco.eq.1) then
+ilved = .false.
 
-  ilved = .false.
-
-  call grdvec &
-  !==========
+call grdvec &
+!==========
 ( iu     , imrgra , inc    , nswrgp , imligp ,                   &
   iwarnp , nfecra ,                                              &
   epsrgp , climgp , extrap ,                                     &
   ilved  ,                                                       &
   rtpa(1,iu) ,  coefau , coefbu,                                 &
   gradv  )
-
-else
-
-  call grdvni &
-  !==========
-( iu  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
-  iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-  rtpa(1,iu)   , coefa(1,icliup) , coefb(1,icliup) ,             &
-  gradv  )
-
-endif
 
 ! strain = Stain rate of the deviatoric part of the strain tensor
 !        = 2 (Sij^D).(Sij^D)

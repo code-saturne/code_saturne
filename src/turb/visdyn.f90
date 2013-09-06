@@ -189,30 +189,16 @@ inc = 1
 
 ! Compute the velocity gradient
 
-if (ivelco.eq.1) then
+ilved = .false.
 
-  ilved = .false.
-
-  call grdvec &
-  !==========
+call grdvec &
+!==========
 ( iu  , imrgra , inc    ,                               &
   nswrgr(iu) , imligr(iu) , iwarni(iu) ,                &
   nfecra , epsrgr(iu) , climgr(iu) , extrag(iu) ,       &
   ilved  ,                                              &
   rtpa(1,iu) ,  coefau , coefbu,                        &
   gradv  )
-
-else
-
-  call grdvni &
-  !==========
-( iu  , imrgra , inc    , iccocg ,                      &
-  nswrgr(iu) , imligr(iu) , iwarni(iu) ,                &
-  nfecra , epsrgr(iu) , climgr(iu) , extrag(iu) ,       &
-  rtpa(1,iu) , coefa(1,ipcliu) , coefb(1,ipcliu) ,      &
-  gradv  )
-
-endif
 
 ! Filter the velocity gradient on the extended neighborhood
 

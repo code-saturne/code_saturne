@@ -175,29 +175,16 @@ epsrgp = epsrgr(iu)
 climgp = climgr(iu)
 extrap = extrag(iu)
 
-if (ivelco.eq.1) then
+ilved = .false.
 
-  ilved = .false.
-
-  call grdvec &
-  !==========
+call grdvec &
+!==========
 ( iu     , imrgra , inc    , nswrgp , imligp ,                   &
   iwarnp , nfecra ,                                              &
   epsrgp , climgp , extrap ,                                     &
   ilved  ,                                                       &
   rtpa(1,iu) ,  coefau , coefbu,                                 &
   grdvel  )
-
-else
-
-  call grdvni &
-  !==========
-( iu  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
-  iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-  rtpa(1,iu)   , coefa(1,icliup) , coefb(1,icliup) ,             &
-  grdvel )
-
-endif
 
 !===============================================================================
 ! 2.2 Compute the production term for Rij LRR (iturb =30)

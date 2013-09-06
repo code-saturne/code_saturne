@@ -1937,19 +1937,16 @@ CS_PROCF (algcen, ALGCEN) (cs_int_t  *const iopt)
  *
  * Fortran interface :
  *
- * subroutine comcoc (imrgra, ivelco)
+ * subroutine comcoc (imrgra)
  * *****************
  *
  * integer          imrgra        : <-- : gradient reconstruction option
- * integer          iveclo        : <-- : 1 if velocity components are
- *                                        coupled, 0 otherwise
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (comcoc, COMCOC) (const cs_int_t  *const imrgra,
-                           const cs_int_t  *const ivelco)
+CS_PROCF (comcoc, COMCOC) (const cs_int_t  *const imrgra)
 {
-  cs_mesh_quantities_set_cocg_options(*imrgra, *ivelco);
+  cs_mesh_quantities_set_cocg_options(*imrgra);
 }
 
 /*=============================================================================
@@ -1992,12 +1989,10 @@ cs_mesh_quantities_cell_cen_choice(const int algo_choice)
  *
  * parameters:
  *   gradient_option <-- gradient option (Fortran IMRGRA)
- *   coupled_vectors <-- 1 if indicates if vector components are coupled
  *----------------------------------------------------------------------------*/
 
 void
-cs_mesh_quantities_set_cocg_options(int  gradient_option,
-                                    int  coupled_vectors)
+cs_mesh_quantities_set_cocg_options(int  gradient_option)
 {
   int _gradient_option = CS_ABS(gradient_option);
 
@@ -2025,10 +2020,8 @@ cs_mesh_quantities_set_cocg_options(int  gradient_option,
   if (gradient_option > 0)
     _compute_cocg_s_it = true;
 
-  if (coupled_vectors) {
-    _compute_cocg_it = _compute_cocg_s_it;
-    _compute_cocg_lsq = _compute_cocg_s_lsq;
-  }
+  _compute_cocg_it = _compute_cocg_s_it;
+  _compute_cocg_lsq = _compute_cocg_s_lsq;
 }
 
 /*----------------------------------------------------------------------------

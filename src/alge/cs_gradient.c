@@ -3878,7 +3878,7 @@ cs_gradient_type_by_imrgra(int                  imrgra,
   *halo_type = CS_HALO_STANDARD;
   *gradient_type = CS_GRADIENT_ITER;
 
-  switch (imrgra) {
+  switch (CS_ABS(imrgra)) {
   case 0:
     *gradient_type = CS_GRADIENT_ITER;
     break;

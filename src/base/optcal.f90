@@ -656,8 +656,6 @@ module optcal
   integer, save :: ivisse
 
   !> Reconstruction of the velocity field with the updated pressure option
-  !>    - 2: least square methode (deprecated, only if ivelco=0)
-  !>    - 1: least square methode on the pressure increment (deprecated, only if ivelco=0)
   !>    - 0: default
   integer, save ::          irevmc
 
@@ -676,11 +674,6 @@ module optcal
 
   !> Arakawa multiplicator for the Rhie and Chow filter (1 by default)
   double precision, save :: arak
-
-  !> coupled velocity components solver
-  !>    - 1: true (default)
-  !>    - 0: segregated (deprecated)
-  integer, save :: ivelco
 
   !> Pseudo coupled pressure-velocity solver
   !>    - 1: true
