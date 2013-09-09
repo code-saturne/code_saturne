@@ -782,24 +782,23 @@ do ifac = 1, nfabor
     !-------------------------
     rcodcn = rcodcx*rnx+rcodcy*rny+rcodcz*rnz
 
-    cofafu(1,ifac)   = -hflui*(rcodcx - rcodcn*rnx)
-    cofafu(2,ifac)   = -hflui*(rcodcy - rcodcn*rny)
-    cofafu(3,ifac)   = -hflui*(rcodcz - rcodcn*rnz)
+    cofafu(1,ifac)   = -hflui*(rcodcx - rcodcn*rnx) - hint*rcodcn*rnx
+    cofafu(2,ifac)   = -hflui*(rcodcy - rcodcn*rny) - hint*rcodcn*rny
+    cofafu(3,ifac)   = -hflui*(rcodcz - rcodcn*rnz) - hint*rcodcn*rnz
 
     ! Projection in order to have the shear stress parallel to the wall
     !  B = hflui*( IDENTITY - n x n )
 
-    cofbfu(1,1,ifac) = hflui*(1.d0-rnx**2)
-    cofbfu(2,2,ifac) = hflui*(1.d0-rny**2)
-    cofbfu(3,3,ifac) = hflui*(1.d0-rnz**2)
+    cofbfu(1,1,ifac) = hflui*(1.d0-rnx**2) + hint*rnx**2
+    cofbfu(2,2,ifac) = hflui*(1.d0-rny**2) + hint*rny**2
+    cofbfu(3,3,ifac) = hflui*(1.d0-rnz**2) + hint*rnz**2
 
-    cofbfu(1,2,ifac) = - hflui*rnx*rny
-    cofbfu(1,3,ifac) = - hflui*rnx*rnz
-    cofbfu(2,1,ifac) = - hflui*rny*rnx
-    cofbfu(2,3,ifac) = - hflui*rny*rnz
-    cofbfu(3,1,ifac) = - hflui*rnz*rnx
-    cofbfu(3,2,ifac) = - hflui*rnz*rny
-
+    cofbfu(1,2,ifac) = (hint - hflui)*rnx*rny
+    cofbfu(1,3,ifac) = (hint - hflui)*rnx*rnz
+    cofbfu(2,1,ifac) = (hint - hflui)*rny*rnx
+    cofbfu(2,3,ifac) = (hint - hflui)*rny*rnz
+    cofbfu(3,1,ifac) = (hint - hflui)*rnz*rnx
+    cofbfu(3,2,ifac) = (hint - hflui)*rnz*rny
 
     !===========================================================================
     ! 4. Boundary conditions on k and espilon
