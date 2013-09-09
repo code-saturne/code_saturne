@@ -107,16 +107,17 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         self.connect(self.lineEditDirectionY, SIGNAL("textChanged(const QString &)"), self.__slotDirY)
         self.connect(self.lineEditDirectionZ, SIGNAL("textChanged(const QString &)"), self.__slotDirZ)
 
-        self.connect(self.comboBoxTypeInlet,    SIGNAL("activated(const QString&)"),    self.__slotInletType)
-        self.connect(self.checkBoxPressure,     SIGNAL("clicked()"),                    self.__slotPressure)
-        self.connect(self.checkBoxDensity,      SIGNAL("clicked()"),                    self.__slotDensity)
-        self.connect(self.checkBoxTemperature,  SIGNAL("clicked()"),                    self.__slotTemperature)
-        self.connect(self.checkBoxEnergy,       SIGNAL("clicked()"),                    self.__slotEnergy)
-        self.connect(self.lineEditPressure,     SIGNAL("textChanged(const QString &)"), self.__slotPressureValue)
-        self.connect(self.lineEditDensity,      SIGNAL("textChanged(const QString &)"), self.__slotDensityValue)
-        self.connect(self.lineEditDensity2,     SIGNAL("textChanged(const QString &)"), self.__slotDensity2Value)
-        self.connect(self.lineEditTemperature,  SIGNAL("textChanged(const QString &)"), self.__slotTemperatureValue)
-        self.connect(self.lineEditEnergy,       SIGNAL("textChanged(const QString &)"), self.__slotEnergyValue)
+        self.connect(self.comboBoxTypeInlet,     SIGNAL("activated(const QString&)"),    self.__slotInletType)
+        self.connect(self.checkBoxPressure,      SIGNAL("clicked()"),                    self.__slotPressure)
+        self.connect(self.checkBoxDensity,       SIGNAL("clicked()"),                    self.__slotDensity)
+        self.connect(self.checkBoxTemperature,   SIGNAL("clicked()"),                    self.__slotTemperature)
+        self.connect(self.checkBoxEnergy,        SIGNAL("clicked()"),                    self.__slotEnergy)
+        self.connect(self.lineEditPressure,      SIGNAL("textChanged(const QString &)"), self.__slotPressureValue)
+        self.connect(self.lineEditDensity,       SIGNAL("textChanged(const QString &)"), self.__slotDensityValue)
+        self.connect(self.lineEditTotalPressure, SIGNAL("textChanged(const QString &)"), self.__slotTotalPressure)
+        self.connect(self.lineEditTotalEnthalpy, SIGNAL("textChanged(const QString &)"), self.__slotTotalEnthalpy)
+        self.connect(self.lineEditTemperature,   SIGNAL("textChanged(const QString &)"), self.__slotTemperatureValue)
+        self.connect(self.lineEditEnergy,        SIGNAL("textChanged(const QString &)"), self.__slotEnergyValue)
 
         self.connect(self.comboBoxTypeInletGasComb,   SIGNAL("activated(const QString&)"), self.__slotInletTypeGasComb)
         self.connect(self.lineEditTemperatureGasComb, SIGNAL("textChanged(const QString &)"),  self.__slotTemperatureGasComb)
@@ -138,7 +139,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
 
         self.modelTypeInlet = ComboModel(self.comboBoxTypeInlet, 2, 1)
         self.modelTypeInlet.addItem(self.tr("imposed inlet"), 'imposed_inlet')
-        self.modelTypeInlet.addItem(self.tr("subsonic inlet"), 'subsonic_inlet')
+        self.modelTypeInlet.addItem(self.tr("subsonic inlet (imposed total pressure and total enthalpy)"), 'subsonic_inlet_PH')
 
         self.modelTypeInletGasComb = ComboModel(self.comboBoxTypeInletGasComb, 2, 1)
         model = self.gas.getGasCombustionModel()
@@ -158,7 +159,8 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         validatorD = DoubleValidator(self.lineEditDensity, min = 0.0)
         validatorT = DoubleValidator(self.lineEditTemperature, min = 0.0)
         validatorE = DoubleValidator(self.lineEditEnergy, min = 0.0)
-        validatorD2 = DoubleValidator(self.lineEditDensity2, min = 0.0)
+        validatorP2 = DoubleValidator(self.lineEditTotalPressure, min = 0.0)
+        validatorH2 = DoubleValidator(self.lineEditTotalEnthalpy, min = 0.0)
         validatorTemp = DoubleValidator(self.lineEditTemperatureGasComb, min=0.)
         validatorFrac = DoubleValidator(self.lineEditFraction, min=0., max=1.)
 
@@ -171,7 +173,8 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         self.lineEditDensity.setValidator(validatorD)
         self.lineEditTemperature.setValidator(validatorT)
         self.lineEditEnergy.setValidator(validatorE)
-        self.lineEditDensity2.setValidator(validatorD2)
+        self.lineEditTotalPressure.setValidator(validatorP2)
+        self.lineEditTotalEnthalpy.setValidator(validatorH2)
         self.lineEditTemperatureGasComb.setValidator(validatorTemp)
         self.lineEditFraction.setValidator(validatorFrac)
 
@@ -228,6 +231,11 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         """
         Initialize widget for compressible
         """
+        self.comboBoxVelocity.show()
+        self.lineEditVelocity.show()
+        self.labelUnitVelocity.show()
+        self.pushButtonVelocityFormula.show()
+
         # Initialize thermodynamic value
         if self.mdl.getCompressibleModel() != 'off':
             inlet_type = self.__boundary.getInletType()
@@ -291,11 +299,17 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
                             __lineEdit.setText(str(v2))
                             __lineEdit.setText(str(v2))
                         v1 = -1.
-            else:
+            elif inlet_type == 'subsonic_inlet_PH':
+                self.comboBoxVelocity.hide()
+                self.lineEditVelocity.hide()
+                self.labelUnitVelocity.hide()
+                self.pushButtonVelocityFormula.hide()
                 self.groupBoxThermodynamic.hide()
                 self.frameDensity.show()
-                density = self.__boundary.getThermoValue('density')
-                self.lineEditDensity2.setText(str(density))
+                pressure = self.__boundary.getThermoValue('total_pressure')
+                self.lineEditTotalPressure.setText(str(pressure))
+                enthalpy = self.__boundary.getThermoValue('enthalpy')
+                self.lineEditTotalEnthalpy.setText(str(enthalpy))
         else:
             self.groupBoxCompressible.hide()
 
@@ -688,13 +702,23 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
 
 
     @pyqtSignature("const QString&")
-    def __slotDensity2Value(self, text):
+    def __slotTotalPressure(self, text):
         """
-        INPUT inlet Density
+        INPUT inlet total pressure
         """
         t = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
-            self.__boundary.setThermoValue('density', t)
+            self.__boundary.setThermoValue('total_pressure', t)
+
+
+    @pyqtSignature("const QString&")
+    def __slotTotalEnthalpy(self, text):
+        """
+        INPUT inlet total enthalpy
+        """
+        t = float(text)
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.__boundary.setThermoValue('enthalpy', t)
 
 
     @pyqtSignature("const QString&")

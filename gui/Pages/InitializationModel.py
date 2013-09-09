@@ -278,7 +278,7 @@ omega = k^0.5/almax;"""
         """
         Return status of Density for the initialisation
         """
-        node = self.node_comp.xmlGetNode('scalar', name = 'Rho')
+        node = self.node_comp.xmlGetNode('property', name = 'Rho')
         n = node.xmlInitNode('formula', 'status', zone_id = zone)
         status = n['status']
         if not status:
@@ -293,7 +293,7 @@ omega = k^0.5/almax;"""
         Put status of Density for the initialisation
         """
         self.isOnOff(status)
-        node = self.node_comp.xmlGetNode('scalar', name = 'Rho')
+        node = self.node_comp.xmlGetNode('property', name = 'Rho')
         n = node.xmlInitNode('formula', 'status', zone_id = zone)
         n['status'] = status
 
@@ -413,7 +413,7 @@ omega = k^0.5/almax;"""
         Set the formula for density.
         """
         self.__verifyZone(zone)
-        node = self.node_comp.xmlGetNode('scalar', name = 'Rho')
+        node = self.node_comp.xmlGetNode('property', name = 'Rho')
         if not node:
             msg = "There is an error: this node " + str(node) + "should be existed"
             raise ValueError(msg)
@@ -428,7 +428,7 @@ omega = k^0.5/almax;"""
         Return the formula for density.
         """
         self.__verifyZone(zone)
-        node = self.node_comp.xmlGetNode('scalar', name = 'Rho')
+        node = self.node_comp.xmlGetNode('property', name = 'Rho')
         if not node:
             msg = "There is an error: this node " + str(node) + "should be existed"
             raise ValueError(msg)

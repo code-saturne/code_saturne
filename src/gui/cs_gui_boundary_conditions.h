@@ -85,7 +85,6 @@ typedef struct {
   double     *rhoin;       /* inlet density  (compressible model)             */
   double     *tempin;      /* inlet temperature (compressible model)          */
   double     *entin;       /* inlet total energy (compressible model)         */
-  double     *denin;       /* inlet density for subsonic (compressible model) */
   double     *preout;      /* outlet pressure for subsonic(compressible model)*/
   double     *dh;          /* inlet hydraulic diameter                        */
   double     *xintur;      /* inlet turbulent intensity                       */
@@ -135,7 +134,7 @@ extern cs_boundary_t *boundaries;
  * INTEGER          IENTRE  --> type of boundary: inlet
  * INTEGER          IESICF  --> type of boundary: imposed inlet (compressible)
  * INTEGER          ISSPCF  --> type of boundary: supersonic outlet (compressible)
- * INTEGER          IERUCF  --> type of boundary: subsonic inlet (compressible)
+ * INTEGER          IEPHCF  --> type of boundary: subsonic inlet imposed total pressure and total enthalpy (compressible)
  * INTEGER          ISOPCF  --> type of boundary: subsonic outlet (compressible)
  * INTEGER          IPAROI  --> type of boundary: smooth wall
  * INTEGER          IPARUG  --> type of boundary: rough wall
@@ -145,6 +144,7 @@ extern cs_boundary_t *boundaries;
  * INTEGER          IPR     <-- rtp index for pressure
  * INTEGER          ITEMPK  <-- rtp index for temperature (in K)
  * INTEGER          IENERG  <-- rtp index for energy total
+ * INTEGER          IPBROM  <-- propfb index for density
  * INTEGER          IQIMP   --> 1 if flow rate is applied
  * INTEGER          ICALKE  --> 1 for automatic turbulent boundary conditions
  * INTEGER          IENTAT  --> 1 for air temperature boundary conditions (coal)
@@ -176,6 +176,7 @@ extern cs_boundary_t *boundaries;
  * DOUBLE PRECISION FMENT   --> Mean Mixture Fraction at Inlet (gas combustion)
  * DOUBLE PRECISION DISTCH  --> ratio for each coal
  * DOUBLE PRECISION RCODCL  --> boundary conditions array value
+ * DOUBLE PRECISION PROPFB  <-- boundary properties array value
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
@@ -188,7 +189,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
                                const int  *ientre,
                                const int  *iesicf,
                                const int  *isspcf,
-                               const int  *ierucf,
                                const int  *iephcf,
                                const int  *isopcf,
                                const int  *iparoi,
@@ -199,6 +199,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
                                const int  *ipr,
                                const int  *itempk,
                                const int  *ienerg,
+                               const int  *ipbrom,
                                int        *iqimp,
                                int        *icalke,
                                int        *ientat,
@@ -234,7 +235,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
                                double     *tkent,
                                double     *fment,
                                double     *distch,
-                               double     *rcodcl);
+                               double     *rcodcl,
+                               double     *propfb);
 
 /*----------------------------------------------------------------------------
  * Boundary conditions input verification
@@ -250,7 +252,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
  * INTEGER          IENTRE  --> type of boundary: inlet
  * INTEGER          IESICF  --> type of boundary: imposed inlet (compressible)
  * INTEGER          ISSPCF  --> type of boundary: supersonic outlet (compressible)
- * INTEGER          IERUCF  --> type of boundary: subsonic inlet (compressible)
+ * INTEGER          IEPHCF  --> type of boundary: subsonic inlet imposed total pressure and total enthalpy (compressible)
  * INTEGER          ISOPCF  --> type of boundary: subsonic outlet (compressible)
  * INTEGER          IPAROI  --> type of boundary: wall
  * INTEGER          IPARUG  --> type of boundary: wall with rugosity
@@ -265,7 +267,6 @@ void CS_PROCF (uiclve, UICLVE) (const int  *nfabor,
                                 const int  *iindef,
                                 const int  *ientre,
                                 const int  *iesicf,
-                                const int  *ierucf,
                                 const int  *iephcf,
                                 const int  *isspcf,
                                 const int  *isopcf,

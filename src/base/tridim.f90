@@ -137,7 +137,7 @@ integer          iterns, inslst, icvrge
 integer          iflmas, iflmab
 integer          italim, itrfin, itrfup, ineefl
 integer          nbzfmx, nozfmx
-integer          isou, ielpdc
+integer          isou, ielpdc, ipbrom
 
 double precision cpcst , tditot, tdist2, tdist1, cvcst
 double precision xxp0, xyp0, xzp0
@@ -729,13 +729,15 @@ do while (iterns.le.nterup)
   !    physiques particulieres, meme sans physique particuliere
   !    -> sera modifie lors de la restructuration des zones de bord
 
+    ipbrom = ipprob(irom  )
+
     call uiclim &
     !==========
   ( ntcabs, nfabor,                                                &
     nozppm, ncharm, ncharb, nclpch,                                &
-    iindef, ientre, iesicf, isspcf, ierucf, iephcf,                &
+    iindef, ientre, iesicf, isspcf, iephcf,                        &
     isopcf, iparoi, iparug, isymet, isolib, isca  ,                &
-    ipr   , itempk, ienerg,                                        &
+    ipr   , itempk, ienerg, ipbrom,                                &
     iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
     ientfu, ientgb, ientgf, iprofm,                                &
     coejou, dpot,   rtpa,   ielcor,                                &
@@ -743,7 +745,7 @@ do while (iterns.le.nterup)
     itypfb, izfppp, icodcl,                                        &
     dtref,  ttcabs, surfbo, cdgfbo,                                &
     qimp,   qimpat, qimpcp, dh,     xintur,                        &
-    timpat, timpcp, tkent ,  fment, distch, rcodcl)
+    timpat, timpcp, tkent ,  fment, distch, rcodcl, propfb)
 
     if (ippmod(iphpar).eq.0) then
 
@@ -788,7 +790,7 @@ do while (iterns.le.nterup)
     call uiclve &
     !==========
   ( nfabor, nozppm,                                                &
-    iindef, ientre, iesicf, ierucf, iephcf, isspcf, isopcf,        &
+    iindef, ientre, iesicf, iephcf, isspcf, isopcf,                &
     iparoi, iparug, isymet, isolib,                                &
     itypfb, izfppp )
 

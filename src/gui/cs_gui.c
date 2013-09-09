@@ -4214,7 +4214,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
 
         //              density initialisation
         path = cs_xpath_init_path();
-        cs_xpath_add_elements(&path, 3, "thermophysical_models","compressible_model","scalar");
+        cs_xpath_add_elements(&path, 3, "thermophysical_models","compressible_model","property");
         cs_xpath_add_test_attribute(&path, "name", "Rho");
         cs_xpath_add_element(&path, "formula");
         cs_xpath_add_test_attribute(&path, "zone_id",zone_id);

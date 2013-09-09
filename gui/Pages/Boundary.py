@@ -230,7 +230,7 @@ class InletBoundary(Boundary):
         self._scalarChoicesList = ['dirichlet', 'neumann', 'exchange_coefficient',
                                    'dirichlet_formula', 'neumann_formula', 'exchange_coefficient_formula']
 
-        self.typeList        = ['imposed_inlet', 'subsonic_inlet']
+        self.typeList        = ['imposed_inlet', 'subsonic_inlet_PH']
         self.typeListGasComb = ['oxydant', 'fuel', 'unburned', 'burned']
 
         self.th_model = ThermalScalarModel(self.case)
@@ -280,6 +280,8 @@ class InletBoundary(Boundary):
         dico['density']     = 0.0
         dico['temperature'] = 273.
         dico['energy']      = 0.0
+        dico['total_pressure']    = 101300.
+        dico['enthalpy']    = 0.0
         dico['status']      = 'off'
         dico['compressible_type']   = 'imposed_inlet'
         dico['fraction'] = 0.0
@@ -813,7 +815,7 @@ omega = 0.;"""
         node = self.boundNode.xmlGetNode('velocity_pressure')
         n= node.xmlInitNode('compressible_type')
         old_model = n['choice']
-        if old_model != type and type == "subsonic_inlet":
+        if old_model != type and type == "subsonic_inlet_PH":
             n.xmlRemoveChild('pressure')
             n.xmlRemoveChild('temperature')
             n.xmlRemoveChild('energy')
