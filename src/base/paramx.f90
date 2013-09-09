@@ -175,25 +175,27 @@ module paramx
   !> iest = iespre: prediction, (default name: EsPre).
   !> After the velocity prediction step (yielding \f$\vect{u}^*\f$), the
   !> estimator \f$\eta^{\,pred}_{\,i,k}(\vect{u}^*)\f$, local variable calculated
-  !> at every cell \f$\Omega_i\f$, is created from
+  !> at every cell \f$ \Omega_i \f$, is created from
   !> \f$\vect{\mathcal R}^{\,pred}(\vect{u}^*)\f$,
   !> which represents the residual of the equation solved during this step:
+  !> \f$\vect{u}\f$ and \f$ P \f$:
   !> \f{eqnarray*}{
-  !> \vect{\mathcal R}^{\,pred}(\vect{u}^*)&= & \rho^n \frac{\vect{u}^*-\vect{u}^n}{\Delta t}
-  !> + \rho^n \vect{u}^n \cdot \tens{grad}(\vect{u}^*)
-  !> - div \left((\mu+\mu_t)^n \tens{grad}(\vect{u}^*) \right)
-  !> + \grad(P^n)     \\
-  !> &- &\text{rest of the right-hand member}
-  !> \,(\vect{u}^n, P^n, \text{other variables}^n)
+  !>   \vect{\mathcal R}^{\,pred}(\vect{u}^*)
+  !>       & = & \rho^n \dfrac{\vect{u}^*-\vect{u}^n}{\Delta t}
+  !>           + \rho^n \vect{u}^n \cdot \gradt (\vect{u}^*)
+  !>           - \divv \left((\mu+\mu_t)^n \gradt (\vect{u}^*) \right)
+  !>           + \grad(P^n)
+  !>   \\  & - & \text{rest of the right-hand member }
+  !>            (\vect{u}^n, P^n, \text{other variables}^n)
   !> \f}
   !>  - By definition:
   !> \f$ \eta^{\,pred}_{\,i,k}(\vect{u}^*)= {|\Omega_i|}^{\,(k-2)/2}\ ||\vect{\mathcal R}^{\,pred}(\vect{u}^*)||
-  !> _{{I\hspace{-.25em}L}^{2}(\Omega_i)}\f$
+  !> _{{IL}^{2}(\Omega_i)} \f$
   !>  - The first family, k=1, suppresses the
-  !> volume \f$|\Omega_i|\f$ which intrinsicly appears  with the norm
-  !> \f${{I\hspace{-.25em}L}^{2}(\Omega_i)}\f$.
+  !> volume \f$ |\Omega_i| \f$ which intrinsicly appears  with the norm
+  !> \f$ {IL}^{2}(\Omega_i) \f$.
   !>  - The second family, k=2, exactly represents the norm
-  !> \f${{IL}^{2}(\Omega_i)}\f\f$. The size of the cell therefore
+  !> \f$ {IL}^{2}(\Omega_i) \f$. The size of the cell therefore
   !> appears in its calculation and induces a weighting effect.
   !>  - \f$ \eta^{\,pred}_{\,i,k}(\vect{u}^*)\f$  is ideally equal to zero when the
   !> reconstruction methods are perfect and the associated system is solved exactly.
@@ -205,23 +207,22 @@ module paramx
   !> following quantity (intrinsic to the code):
   !> \f{eqnarray*}{
   !> \eta^{\,der}_{\,i,k}(\vect{u}^{\,n+1})
-  !> &=& {|\Omega_i|}^{\,(k-2)/2}
-  !> ||div (\text{corrected mass flow after the pressure step})
-  !> -\ \Gamma||_{{L}^{2}(\Omega_i)} \\
-  !> &=& {|\Omega_i|}^{\,(1-k)/2}
-  !> |div (\text{corrected mass flow after the pressure step})-\ \Gamma|
+  !>    &=& {|\Omega_i|}^{(k-2)/2}
+  !>       || \divs (\text{corrected mass flow after the pressure step})
+  !>       - \Gamma||_{{L}^{2}(\Omega_i)}
+  !> \\ &=& {|\Omega_i|}^{(1-k)/2}
+  !>      | \divs (\text{corrected mass flow after the pressure step})- \Gamma|
   !> \f}
   !>  - Ideally, it is equal to zero when the Poisson equation related to the pressure is
   !> solved exactly.
   integer   iesder
 
-  !>
   !> error estimator for Navier-Stokes.  iest = iescor: correction, (default name: EsCor).
   !> The estimator \f$ \eta^{\,corr}_{\,i,k}(\vect{u}^{\,n+1})\f$ comes directly
   !> from the mass flow calculated with the updated velocity field:
   !> \f{eqnarray*}{
   !> \eta^{\,corr}_{\,i,k}(\vect{u}^{\,n+1})=
-  !> |\Omega_i|^{\,\delta_{\,2,k}}\ |div (\rho^n \vect{u}^{n+1}) -\ \Gamma|
+  !> |\Omega_i|^{\,\delta_{\,2,k}}\ |div (\rho^n \vect{u}^{n+1}) - \Gamma|
   !> \f}
   !> - The velocities \f$\vect{u}^{n+1}\f$ are taken at the cell centers,
   !> the divergence is calculated after projection on the faces.
@@ -242,12 +243,13 @@ module paramx
   !> residual of the equation using the updated values of
   !> \f$\vect{u}\f$ and \f$P\f$:
   !> \f{eqnarray*}{
-  !> \vect{\mathcal R}^{\,pred}(\vect{u}^*)&= & \rho^n \frac{\vect{u}^*-\vect{u}^n}{\Delta t}
-  !> + \rho^n \vect{u}^n \cdot \tens{grad}(\vect{u}^*)
-  !> - div \left((\mu+\mu_t)^n \tens{grad}(\vect{u}^*) \right)
-  !> + \grad(P^n)     \\
-  !> &- &\text{rest of the right-hand member}
-  !> \,(\vect{u}^n, P^n, \text{other variables}^n)
+  !>   \vect{\mathcal R}^{\,pred}(\vect{u}^*)
+  !>       & = & \rho^n \dfrac{\vect{u}^*-\vect{u}^n}{\Delta t}
+  !>           + \rho^n \vect{u}^n \cdot \gradt (\vect{u}^*)
+  !>           - \divv \left((\mu+\mu_t)^n \gradt (\vect{u}^*) \right)
+  !>           + \grad(P^n)
+  !>   \\  & - & \text{rest of the right-hand member }
+  !>            (\vect{u}^n, P^n, \text{other variables}^n)
   !> \f}
   !> - By definition:
   !> \f$ \eta^{\,tot}_{\,i,k}(\vect{u}^{\,n+1})= {|\Omega_i|}^{\,(k-2)/2}\ ||\vect{\mathcal R}^{\,tot}(\vect{u}^{\,n+1})||
@@ -257,10 +259,10 @@ module paramx
   !> faces).
   !> - As for the prediction estimator:
   !>   - The first family, k=1, suppresses the
-  !> volume \f$|\Omega_i|\f$ which intrinsicly appears  with the norm
-  !> \f${{IL}^{2}(\Omega_i)}\f$.
+  !> volume \f$ |\Omega_i| \f$ which intrinsicly appears  with the norm
+  !> \f$ {IL}^{2}(\Omega_i) \f$.
   !>   - The second family, k=2, exactly represents the norm
-  !> \f${{IL}^{2}(\Omega_i)}\f$. The size of the cell therefore
+  !> \f$ {IL}^{2}(\Omega_i) \f$. The size of the cell therefore
   !> appears in its calculation and induces a weighting effect.
   integer   iestot
   parameter (iespre=1, iesder=2, iescor=3, iestot=4)

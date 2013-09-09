@@ -257,13 +257,13 @@ module entsor
   !> have been activated with \c ichrbo=1. Its value is
   !> the product of the following integers, depending on the variables
   !> that should be post-processed:
-  !> \c ipstyp: \f$  $y^+$  \f$ at the boundary
+  !> \c ipstyp: \f$ y^+ \f$ at the boundary
   !> \c ipstcl: value of the variables at the
   !> boundary (using the boundary conditions but without reconstruction)
   !> \c ipstft}: thermal flux at the boundary
-  !> ( \f$ $W\,m^{-2}$ \f$ ), if a thermal scalar has been defined (\c iscalt)
+  !> ( \f$ W\,m^{-2} \f$ ), if a thermal scalar has been defined (\c iscalt)
   !> For instance, with \c ipstdv=ipstyp*ipstcl,
-  !> \f$ $y^+$  \f$ and the variables will be post-processed at the boundaries.
+  !> \f$ y^+ \f$ and the variables will be post-processed at the boundaries.
   !> With \c ipstdv=1, none of these data are post-processed at the boundaries.
   !> always useful if \c ichrbo=1
   integer, save :: ipstdv(6)

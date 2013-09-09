@@ -627,13 +627,13 @@ module lagran
   integer, save ::  ilfv
   !> recidence time
   integer, save ::  ilts
-  !> phase temperature (\f$ \degresC \f$)
+  !> phase temperature (\degresC)
   integer, save ::  iltp
   !> dispersed phase mean diameter
   integer, save ::  ildp
   !> dispersed phase mean mass
   integer, save ::  ilmp
-  !> temperature of the coal particle cloud (\f$ \degresC \f$)
+  !> temperature of the coal particle cloud (\degresC)
   integer, save ::  ilhp
   !> water mass
   integer, save ::  ilmwat

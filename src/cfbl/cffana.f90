@@ -30,9 +30,9 @@
 !>
 !> The Euler equations used to compute the flux are:
 !> \f{eqnarray*}{
-!> \der{\rho}{t} + \divs \left(\rho\vect{u}\right) &=&0 \\
-!> \der{\rho \vect{u}}{t} + \divv \left(\vect{u}\otimes\rho\vect{u}\right)&=&0\\
-!> \der{E}{t} + \divs \left(\rho\vect{u} E\right) &=&0
+!>    \der{\rho}{t} + \divs \left(\rho\vect{u}\right) &=&0
+!> \\ \der{\rho \vect{u}}{t} + \divv \left(\vect{u}\otimes\rho\vect{u}\right)&=&0
+!> \\ \der{E}{t} + \divs \left(\rho\vect{u} E\right) &=&0
 !> \f}
 !>
 !-------------------------------------------------------------------------------

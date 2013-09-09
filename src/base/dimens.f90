@@ -44,8 +44,9 @@ implicit none
   !> number of solved user scalars
   !> effective number of scalars solutions of an
   !> advection equation, apart from the variables of the turbulence model
-  !> \f$ ($k$, $\varepsilon$, $R_{ij}$, $\omega$, $\varphi$, $\overline{f}$,
-  !> $\alpha$, $\nu_t$) \f$ , that is to say the temperature and other scalars
+  !> (\f$ k \f$, \f$ \varepsilon \f$, \f$ R_{ij} \f$, \f$ \omega \f$,
+  !> \f$ \varphi \f$, \f$ \overline{f} \f$,
+  !> \f$ \alpha \f$, \f$ \nu_T \f$), that is to say the temperature and other scalars
   !> (passive or not, user-defined or not)
   !> These scalars can be divided into two distinct groups: \c nscaus
   !> user-defined scalars and \c nscapp scalars related to a
