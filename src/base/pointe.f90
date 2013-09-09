@@ -354,8 +354,8 @@ contains
     if (allocated(izcpdc)) deallocate(izcpdc)
     if (allocated(izctsm)) deallocate(izctsm)
     if (allocated(izft1d)) deallocate(izft1d)
-    if (allocated(coefau)) deallocate(coefau, cofafu, cofacu,                   &
-                                      coefbu, cofbfu, cofbcu)
+    if (allocated(coefau)) deallocate(coefau, cofafu,                   &
+                                      coefbu, cofbfu)
     if (allocated(cofacu)) deallocate(cofacu, cofbcu)
     if (allocated(porosi)) deallocate(porosi)
     if (allocated(visten)) deallocate(visten)
