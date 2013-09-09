@@ -21,7 +21,7 @@
 !-------------------------------------------------------------------------------
 
 !> \file parall.f90
-!> Module for basic MPI and OpenMP parallelism-related values
+!> \brief Module for basic MPI and OpenMP parallelism-related values
 
 module parall
 
@@ -31,42 +31,63 @@ module parall
 
   !=============================================================================
 
-  ! thr_n_min : minimum number of elements for loops on threads
+  !> \defgroup parall Module for basic MPI and OpenMP parallelism-related values
 
+  !> \addtogroup parall
+  !> \{
+
+  !> thr_n_min : minimum number of elements for loops on threads
   integer   thr_n_min
   parameter(thr_n_min = 128)
 
-  ! irangp : process rank
-  !   = -1 in sequential mode
-  !   =  r (0 < r < n_processes) in distributed parallel run
-  ! nrangp : number of processes (=1 if sequental)
-  ! nthrdi : maximum number of independent interior face subsets in a group
-  ! nthrdi : maximum number of independent boundary face subsets in a group
-  ! ngrpi  : number of interior face groups (> 1 with OpenMP, 1 otherwise)
-  ! ngrpb  : number of boundary face groups (> 1 with OpenMP, 1 otherwise)
-  ! iompli : per-thread bounds for interior faces
-  ! iomplb : per-thread bounds for boundary faces
-  !          (for group j and thread i, loops
-  !           from iompl.(1, j, i) to iompl.(2, j, i)
+  !> process rank
+  !> - -1 in sequential mode
+  !> - r (0 < r < n_processes) in distributed parallel run
+  integer, save ::  irangp
 
-  integer, save ::  irangp, nrangp, nthrdi, nthrdb, ngrpi, ngrpb
+  !> number of processes (=1 if sequental)
+  integer, save ::  nrangp
 
+  !> maximum number of independent boundary face subsets in a group
+  integer, save ::  nthrdi
+
+  ! TODO
+  integer, save ::  nthrdb
+
+  !> number of interior face groups (> 1 with OpenMP, 1 otherwise)
+  integer, save ::  ngrpi
+
+  !> number of boundary face groups (> 1 with OpenMP, 1 otherwise)
+  integer, save ::  ngrpb
+
+  !> per-thread bounds for interior faces
   integer, dimension(:,:,:), allocatable :: iompli
+
+  !> per-thread bounds for boundary faces
+  !> (for group j and thread i, loops
+  !> from iompl.(1, j, i) to iompl.(2, j, i)
   integer, dimension(:,:,:), allocatable :: iomplb
 
   ! Global dimensions (i.e. independent of parallel partitioning)
-  !   ncelgb : global number of cells
-  !   nfacgb : global number of interior faces
-  !   nfbrgb : global number of boundary faces
-  !   nsomgb : global number of vertices
 
-  integer(kind=8), save :: ncelgb, nfacgb, nfbrgb, nsomgb
+  !> global number of cells
+  integer(kind=8), save :: ncelgb
+  !> global number of interior faces
+  integer(kind=8), save :: nfacgb
+  !> global number of boundary faces
+  integer(kind=8), save :: nfbrgb
+  !> global number of vertices
+  integer(kind=8), save :: nsomgb
 
   ! Forced vectorization flags (not used anymore at the moment)
-  !   ivecti : force vectorization of interior face -> cell loops (0/1)
-  !   ivectb : force vectorization of boundary face -> cell loops (0/1)
 
-  integer, save :: ivecti , ivectb
+  !> force vectorization of interior face -> cell loops (0/1)
+  integer, save :: ivecti
+
+  !> force vectorization of boundary face -> cell loops (0/1)
+  integer, save :: ivectb
+
+  !> \}
 
 contains
 

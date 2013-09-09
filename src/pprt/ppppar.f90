@@ -31,11 +31,17 @@ module ppppar
 
   !===========================================================================
 
-  ! --> Nb de zones de bord maximal
+
+  !> \defgroup ppppar General module for specific physics containing common parameters
+
+  !> \addtogroup ppppar
+  !> \{
+
+  !> maximum number of boundary zones
   integer    nbzppm
   parameter (nbzppm=2000)
 
-  ! --> Numero de zone de bord maximal
+  !> maximum index of boundary zones
   integer    nozppm
   parameter (nozppm=2000)
 
@@ -45,9 +51,16 @@ module ppppar
   !    ncpcmx --> nombre maximal de classes par charbon
   !    nclcpm --> Nombre total de classes
 
-  integer    ncharm  , ncpcmx   , nclcpm
+  !> maximum number of coals
+  integer    ncharm
+  !> maximum number of coals classes
+  integer    ncpcmx
+  !> maximum number of coal classes for the pulverised coal combustion module
+  integer    nclcpm
   parameter (ncharm=5, ncpcmx=10, nclcpm=ncharm*ncpcmx)
 
   !=============================================================================
+
+  !> \}
 
 end module ppppar

@@ -21,7 +21,7 @@
 !-------------------------------------------------------------------------------
 
 !> \file lagran.f90
-!> Module for Lagrangian model.
+!> \brief Module for Lagrangian model.
 
 module lagran
 
@@ -36,571 +36,1217 @@ module lagran
 
   implicit none
 
-  !=============================================================================
-  !  1. Base
+  !> \defgroup lagran Module for Lagrangian model
 
-  !     IILAGR = 0 : PAS DE CALCUL LAGRANGIEN
-  !            = 1 : DIPHASIQUE LAGRANGIEN SANS COUPLAGE RETOUR
-  !            = 2 : DIPHASIQUE LAGRANGIEN AVEC COUPLAGE RETOUR
-
-  !     ISUILA = 0 : PAS SUITE LAGRANGIEN
-  !            = 1 :     SUITE LAGRANGIEN
-
-  !     ISTTIO = 0 : calcul instationnaire pour le lagrangien
-  !            = 1 : calcul stationnaire   pour le lagrangien
-
-  integer, save ::           iilagr , isuila , isttio
+  !> \addtogroup lagran
+  !> \{
 
   !=============================================================================
-  ! 2. Compteurs de particules (sans et avec poids statistique)
 
-  !     NBPART/DNBPAR : NOMBRE DE PARTICULES PRESENTES DANS LE DOMAINE
-  !                        A CHAQUE ITERATION
+  !> \defgroup base Base
 
-  !     NBPNEW/DNBPNW : NOMBRE DE NOUVELLES PARTICULES ENTRANTES
+  !> \addtogroup base
+  !> \{
 
-  !     NBPERR/DNBPER : NOMBRE DE PARTICULES ELIMINEES EN ERREUR
+  !> activates (>0) or deactivates (=0) the Lagrangian module
+  !> the different values correspond to the following modellings:
+  !> - = 1 Lagrangian two-phase flow in one-way coupling (no influence of
+  !> the particles on the continuous phase)
+  !> - = 2 Lagrangian two-phase flow with two-way coupling (influence of
+  !> the particles on the dynamics of the continuous phase).
+  !> Dynamics, temperature and mass may be coupled independently.
+  !> - = 3 Lagrangian two-phase flow on frozen continuous phase. This option can
+  !> only be used in case of a calculation restart. All the
+  !> Eulerian fields are frozen (including the scalar fields). This option
+  !> automatically implies \ref iccvfg = 1
+  integer, save ::           iilagr
 
-  !     NBPDEP/DNBDEP : NOMBRE DE PARTICULES DEPOSEES
+  !> activation (=1) or not (=0) of a Lagrangian calculation restart.
+  !> The calculation restart file read when this option is activated (\ref ficaml)
+  !> only contains the data related to the particles (see also \ref isuist)
+  !> the global calculation must also be a restart calculation
+  integer, save ::           isuila
 
-  !     NBPRES/DNBRES : NOMBRE DE PARTICULES RESUSPENDUES
+  !> indicates the steady (=1) or unsteady (=0) state of the
+  !> continuous phase flow
+  !> in particular, \ref isttio = 1 is needed in order to:
+  !> calculate stationary statistics in the volume or at the boundaries
+  !> (starting respectively from the Lagrangian iterations \ref nstist and
+  !> \ref nstbor)
+  !> and calculate time-averaged two-way coupling source terms (from the
+  !> Lagrangian iteration \ref nstits)
+  !> useful if \ref iilagr=1 or \ref iilagr=2 (if \ref iilagr=3,
+  !> then \ref isttio=1 automatically)
+  integer, save ::           isttio
 
-  !     NBPERT : NOMBRE DE PARTICULES ELIMINEES EN ERREUR DANS
-  !                LE CALCUL DEPUIS LE DEBUT, SUITES COMPRISES
-
-  !     NBPTOT : NOMBRE DE PARTICULES TOTAL INJECTE DANS
-  !                LE CALCUL DEPUIS LE DEBUT SUITE COMPRISE
-
-  !     NBPOUT/DNBPOU : Contient les particules sorties de facon normal,
-  !                       plus les particules sorties en erreur de reperage.
-
-  !     NDEPOT : Nombre de particules deposees definitivement
-  !               dont on garde une trace en memoire pour le
-  !               post-processing en mode deplacement.
-
-  !     NPCLON/DNPCLO : NOMBRE DE NOUVELLES PARTICULES PAR CLONNAGE
-
-  !     NPKILL/DNPKIL : NOMBRE DE PARTICULES VICTIMES DE LA ROULETTE RUSSE
-
-  !     NPCSUP/DNPCSU : NOMBRE DE PARTICULES QUI ON SUBIT LE CLONNAGE
-
-
-  integer, save ::           nbpart , nbpnew , nbperr , nbptot , nbpout ,   &
-                             nbpert , ndepot , nbpdep , nbpres
-  double precision, save ::  dnbpar , dnbpnw , dnbper , dnbpou, dnbdep,     &
-                             dnbres
-
-  integer, save ::           npclon , npkill , npcsup
-  double precision, save ::  dnpclo , dnpkil , dnpcsu
+  !> \}
 
   !=============================================================================
-  ! 4. Physiques particulieres
 
-  !       SI IPHYLA = 1 ALORS
+  !> \defgroup particle_counter Particle counter
+  !> (with and without statistical weight)
 
-  !          ITPVAR : EQUATION SUR LA TEMPERATURE
-  !          IDPVAR : EQUATION SUR LE DIAMETRE
-  !          IMPVAR : EQUATION SUR LA MASSE
+  !> \addtogroup particle_counter
+  !> \{
 
-  integer, save ::           iphyla, itpvar, idpvar, impvar
+  !> number of particles treated during one Lagrangian time step,
+  !> must always be lower than \ref nbpmax.
+  !> Always useful, but initialised and updated without intervention of the user
+  integer, save ::           nbpart
 
-  !       SI SUITE ET ENCLENCHEMENT ITPVAR =1 EN COUR DE CALCUL
+  !> number of new entering particles
+  integer, save ::           nbpnew
 
-  !          TPART  : Temperature d initialisation en degres Celsius
-  !          CPPART : Chaleur massique specifique (J/kg/K)
+  !> number of in error deleted particles
+  integer, save ::           nbperr
 
-  double precision, save ::  tpart , cppart
+  !> total number of injected particles, since the beginning,
+  !> including calculation restarts
+  integer, save ::           nbptot
 
+  !> contains normally exited particles
+  !> and  in detection error exited particles
+  integer, save ::           nbpout
 
+  ! TODO
+  integer, save ::           nbpert
 
+  !> number of deposed particles for ever,
+  !> but keeped for post-processing
+  integer, save ::           ndepot
 
-  ! 4.1 Particules deposition submodel
+  !> number of deposed particles
+  integer, save ::           nbpdep
+
+  !> number of re-entrained particles
+  integer, save ::           nbpres
+
+  !> real value for \ref nbpart
+  double precision, save ::  dnbpar
+
+  !> real value for \ref nbpnew
+  double precision, save ::  dnbpnw
+
+  !> real value for \ref nbperr
+  double precision, save ::  dnbper
+
+  !> real value for \ref nbpout
+  double precision, save ::  dnbpou
+
+  !> real value for \ref nbpdep
+  double precision, save ::  dnbdep
+
+  !> real value for nbres
+  double precision, save ::  dnbres
+
+  !> number of cloned new particles
+  integer, save ::           npclon
+
+  !> number of killed by error particles
+  integer, save ::           npkill
+
+  !> number of cloned particles
+  integer, save ::           npcsup
+
+  !> real value for \ref npclon
+  double precision, save ::  dnpclo
+  !> real value for \ref npkill
+  double precision, save ::  dnpkil
+  !> real value for \ref npcsup
+  double precision, save ::  dnpcsu
+
+  !> \}
+
+  !=============================================================================
+
+  !> \defgroup specific_physic Specific physics
+
+  !> \addtogroup specific_physic
+  !> \{
+
+  !> activates (>0) or deactivates (=0) the physical models associated to the
+  !> particles:
+  !> - = 1: allows to associate with the particles evolution
+  !> equations on their temperature (in degrees Celsius), their diameter and
+  !> their mass
+  !> - = 2: the particles are pulverised coal particles.
+  !> Evolution equations on temperature (in degree Celsius), mass of
+  !> reactive coal, mass of char and diameter of the shrinking core are
+  !> associated with the particles. This option is available only if the
+  !> continuous phase represents a pulverised coal flame.
+  integer, save ::           iphyla
+
+  !> activation (=1) or not (=0) of an evolution equation on the particle
+  !> temperature (in degrees Celsius)
+  !> useful if \ref iphyla=1 and if there is a thermal scalar associated with
+  !> the continuous phase
+  integer, save ::           itpvar
+
+  !> activation (=1) or not (=0) of an evolution equation on the particle
+  !> diameter. useful if \ref iphyla = 1
+  integer, save ::           idpvar
+
+  !> activation (=1) or not (=0) of an evolution equation on the particle mass
+  !> useful if si \ref iphyla = 1
+  integer, save ::           impvar
+
+  !> initialisation temperature (in degree Celsius) for the particles already
+  !> present in the calculation domain when an evolution equation on
+  !> the particle temperature is activated during a calculation (\ref iphyla =
+  !> 1 and \ref itpvar = 1)
+  !> useful if \ref isuila = 1 and \ref itpvar = 0 in the previous calculation
+  double precision, save ::  tpart
+
+  !> initialisation value for the specific heat (\f$ J.kg^{-1}.K^{-1} \f$)
+  !> of the particles already present
+  !> in the calculation domain when an evolution equation
+  !> on the particle temperature is activated during a calculation
+  !> (\ref iphyla = 1 and \ref itpvar = 1)
+  !> useful if \ref isuila = 1 and \ref itpvar = 0 in the previous calculation
+  double precision, save ::  cppart
+
   !==================================
 
+  !> \defgroup deposition_model Particle deposition sub-model
 
-  !     IDEPST = 0 : no deposition submodel activated
-  !            = 1 : deposition submodel used
+  !> \addtogroup deposition_model
+  !> \{
 
+  !> - 0: no deposition submodel activated,
+  !> - 1: deposition submodel used
   integer, save ::     idepst
 
-  !     IDLVO  = 0 : no DLVO conditions
-  !            = 1 : DLVO conditions
+  !> - 0: no DLVO conditions
+  !> - 1: DLVO conditions
+  integer, save ::     idlvo
 
-  integer, save ::         idlvo
-
-  !     NGEOL : geometric parameters stored
-
+  !> geometric parameters stored
   integer ngeol
   parameter (ngeol = 13)
 
-  ! Additional pointers in the ITEPA array
-  ! ITEPA contains the particule state
+  !> Additional pointer in the ITEPA array (contains the particule state)
+  integer, save ::   jimark
+  !> Additional pointer in the ITEPA array (contains the particule state)
+  integer, save ::   jdiel
+  !> Additional pointer in the ITEPA array (contains the particule state)
+  integer, save ::   jdfac
+  !> Additional pointer in the ITEPA array (contains the particule state)
+  integer, save ::   jdifel
+  !> Additional pointer in the ITEPA array (contains the particule state)
+  integer, save ::   jtraj
+  !> Additional pointer in the ITEPA array (contains the particule state)
+  integer, save ::   jptdet
+  !> Additional pointer in the ITEPA array (contains the particule state)
+  integer, save ::   jinjst
+  !> Additional pointer in the ITEPA array (contains the particule state)
+  integer, save ::   jryplu
+  !> Additional pointer in the ITEPA array (contains the particule state)
+  integer, save ::   jrinpf
 
-  integer, save ::   jimark , jdiel  , jdfac , jdifel , jtraj , jptdet , jinjst
-  integer, save ::   jryplu , jrinpf
+  !> \}
 
-  ! 4.2 Resuspension model
   !=======================
 
-  !     IREENT = 0 : no resuspension model
-  !            = 1 : resuspension model
+  !> \defgroup reentrained_model Reentrained model
 
-  integer, save ::         ireent
+  !> \addtogroup reentrained_model
+  !> \{
 
+  !> - 0: no resuspension model
+  !> - 1: resuspension model
+  integer, save ::   ireent
 
-  ! Additional pointers in the ITEPA and TEPA array
-  ! ITEPA contains the particule state
+  !> Additional pointer in ITEPA and TEPA arrays (contains particule state)
+  integer, save ::   jroll
+  !> Additional pointer in ITEPA and TEPA arrays (contains particule state)
+  integer, save ::   jnbasg
+  !> Additional pointer in ITEPA and TEPA arrays (contains particule state)
+  integer, save ::   jnbasp
+  !> Additional pointer in ITEPA and TEPA arrays (contains particule state)
+  integer, save ::   jdepo
+  !> Additional pointer in ITEPA and TEPA arrays (contains particule state)
+  integer, save ::   jfadh
+  !> Additional pointer in ITEPA and TEPA arrays (contains particule state)
+  integer, save ::   jmfadh
+  !> Additional pointer in ITEPA and TEPA arrays (contains particule state)
+  integer, save ::   jndisp
 
-  integer, save ::   jroll , jnbasg , jnbasp , jdepo
-  integer, save ::   jfadh , jmfadh , jndisp
+  !> Parameter of the particle resuspension model
+  double precision, save :: espasg
+  !> Parameter of the particle resuspension model
+  double precision, save :: denasp
+  !> Parameter of the particle resuspension model
+  double precision, save :: modyeq
+  !> Parameter of the particle resuspension model
+  double precision, save :: rayasp
+  !> Parameter of the particle resuspension model
+  double precision, save :: rayasg
 
-  ! Parameters of the particle resuspension model
+  !> \}
 
-   double precision, save :: espasg , denasp, modyeq , rayasp, rayasg
-
-  ! 4.3 Clogging model
   !=======================
 
-  !     ICLOGST = 0 : no clogging model
-  !             = 1 : clogging model
+  !> \defgroup clogging_model Clogging model
 
+  !> \addtogroup clogging_model
+  !> \{
+
+  !> - 0: no clogging model
+  !> - 1: clogging model
   integer, save ::         iclogst
 
-  ! Parameters of the particle clogging model
-
+  !> Parameter of the particle clogging model
    double precision, save :: jamlim
 
-  !=============================================================================
-  ! 5. Pas de temps Lagrangien
-
-  !    IPLAS : NOMBRE DE PASSAGES ABSOLUS DANS LE MODULE LAGRANGIEN
-  !    IPLAR : NOMBRE DE PASSAGES RELATIFS DANS LE MODULE LAGRANGIEN
-
-  integer, save ::           iplas , iplar
-
-  !    DTP :  duree d une iteration lagrangienne
-  !    TTCLAG : temps courant physique lagrangien
-
-  double precision, save ::  dtp , ttclag
+  !> \}
+  !> \}
 
   !=============================================================================
-  ! 6. Indicateur d erreur
 
+  !> \defgroup lagrangian_step Lagrangian time-step
+
+  !> \addtogroup lagrangian_step
+  !> \{
+
+  !> absolute iteration number (including the restarts) in the Lagrangian
+  !> module ( i.e. Lagrangian time step number)
+  integer, save ::           iplas
+
+  !> relative iteration number (including the restarts) in the Lagrangian
+  !> module
+  integer, save ::           iplar
+
+  !> duration of a Lagrangian iteration
+  double precision, save ::  dtp
+
+  !> physical time of the Lagrangian simulation
+  double precision, save :: ttclag
+
+  !> \}
+
+  !=============================================================================
+
+  !> \defgroup error_indicator Error indicator
+
+  !> \addtogroup error_indicator
+  !> \{
+
+  !> error indicator
   integer, save :: ierr
 
+  !> \}
+
   !=============================================================================
-  ! 3. Pointeurs particules
 
-  !   Tableau ETTP
-  !   ^^^^^^^^^^^^
+  !> \defgroup particles_pointer Particles pointers
+  !> for array \ref ettp
 
-  !    JXP,JYP,JZP  : COORDONNES DE LA POSITION DE LA PARTICULE
-  !    JUP,JVP,JWP  : COMPOSANTES DE LA VITESSE ABSOLUE
-  !    JUF,JVF,JWF  : COMPOSANTES DE LA VITESSE DU FLUIDE VU
+  !> \addtogroup particles_pointer
+  !> \{
 
-  !    JMP,JDP      : MASSE, DIAMETRE
-  !    JTAUX        : POUR L'ORDRE 2, AUXILIAIRE DE CALCUL UTILE EN PARALLELE
-  !    JTP,JTF,JCP  : TEMPERATURE PARTICULE ET FLUIDE ET CHALEUR SPECIFIQUE
-  !    JVLS(NUSVAR) : VARIABLE SUPPLEMENTAIRES
+  !> pointer to particle X coordinate for array \ref ettp
+  integer, save ::  jxp
+  !> pointer to particle Y coordinate for array \ref ettp
+  integer, save ::  jyp
+  !> pointer to particle Z coordinate for array \ref ettp
+  integer, save ::  jzp
+  !> pointer to particle X velocity component for array \ref ettp
+  integer, save ::  jup
+  !> pointer to particle Y velocity component for array \ref ettp
+  integer, save ::  jvp
+  !> pointer to particle Z velocity component for array \ref ettp
+  integer, save ::  jwp
+  !> pointer to locally undisturbed X fluid velocity component
+  !> for array \ref ettp
+  integer, save ::  juf
+  !> pointer to locally undisturbed Y fluid velocity component
+  !> for array \ref ettp
+  integer, save ::  jvf
+  !> pointer to locally undisturbed Z fluid velocity component
+  !> for array \ref ettp
+  integer, save ::  jwf
+  !> pointer to particle mass for array \ref ettp
+  integer, save ::  jmp
+  !> pointer to particle diameter for array \ref ettp
+  integer, save ::  jdp
+  !> pointer to particle and locally undisturbed fluid flow temperature
+  !> (Celsius) for array \ref ettp
+  integer, save ::  jtp
+  !> pointer to particle and locally undisturbed fluid flow temperature
+  !> (Celsius) for array \ref ettp
+  integer, save ::  jtf
+  !> pointer to particle specific heat for array \ref ettp
+  integer, save ::  jcp
+  !> pointer to coal particle temperature (\degresC) for array \ref ettp
+  integer, save ::  jhp
+  !> pointer to water mass (for coal) for array \ref ettp
+  integer, save ::  jmwat
+  !> pointer to mass of reactive coal of the coal particle for array \ref ettp
+  integer, save ::  jmch
+  !> pointer to mass of coke of the coal particle for array \ref ettp
+  integer, save ::  jmck
+  !> pointer to work array for the second order in time for array \ref ettp
+  integer, save ::  jtaux
+  !> pointer to additional user variable for array \ref ettp
+  integer, save ::  jvls(nusvar)
 
-  !   Charbon
-  !   -------
-  !    JHP          : TEMPERATURE DES GRAINS DE CHARBON
-  !    JMWAT        : MASSE D EAU
-  !    JMCH         : MASSE DE CHARBON REACTIF
-  !    JMCK         : MASSE DE COKE
+  !> pointer to random number associated with a particle
+  !> for array \ref tepa
+  integer, save :: jrval
+  !> pointer to particle residence time
+  !> for array \ref tepa
+  integer, save :: jrtsp
+  !> pointer to particle statistic weight
+  !> for array \ref tepa
+  integer, save :: jrpoi
+  !> pointer to particle emissivity
+  !> for array \ref tepa
+  integer, save :: jreps
+  !> pointer to coal particle initial diameter
+  !> for array \ref tepa
+  integer, save :: jrd0p
+  !> pointer to coal particle initial density
+  !> for array \ref tepa
+  integer, save :: jrr0p
+  !> pointer to coal particle shrinking core diameter
+  !> for array \ref tepa
+  integer, save :: jrdck
+  !> pointer to coal density
+  !> for array \ref tepa
+  integer, save :: jrhock
 
-  integer, save ::           jxp , jyp , jzp ,                               &
-                             jup , jvp , jwp ,                               &
-                             juf , jvf , jwf ,                               &
-                             jmp , jdp , jtp , jtf , jcp ,                   &
-                             jhp , jmwat, jmch, jmck, jtaux,                 &
-                             jvls(nusvar)
-
-  !   Tableau TEPA
-  !   ^^^^^^^^^^^^
-
-  !     jrval       : random number associated with a particle
-  !     jrtsp       : temps de sejour des particules
-  !     jrpoi       : poids des particules
-  !     jreps       : emissivite des particules
-
-  !   Charbon
-  !   -------
-  !     jrdck       : diametre du coeur retrecissant
-  !     jrd0p       : diametre initial des particules
-  !     jrr0p       : masse volumique initiale des particules
-  !     jrhock      : masse volumique du coke
-
-
-  integer, save :: jrval, jrtsp, jrpoi, jreps, jrd0p, jrr0p, jrdck, jrhock
-
-  !   Tableau ITEPA
-  !   ^^^^^^^^^^^^^
-
-  !     JISOR       : MAILLE D ARRIVEE
-
-  !   Statistique par classe
-  !   ----------------------
-
-  !     JCLST       : classe (statique ) a laquelle la particule appartient
-
-  !   Charbon
-  !   -------
-  !     JINCH       : NUMERO DU CHARBON DE LA PARTICULE
-
-  integer, save ::           jisor, jinch , jclst
-
-  !    NVLS         : NOMBRE DE VARIABLES UTILISATEUR SUPPLEMENTAIRES
-  !                   (DEJA CONTENU DANS NVP et NVP1)
-
+  !> pointer to number of the current cell containing the particle
+  !> for \ref itepa array; this
+  !> number is re-actualised during the trajectography step
+  integer, save :: jisor
+  !> pointer to number of the coal particle for \ref itepa array
+  integer, save :: jinch
+  !> pointer to class of the particle for \ref itepa array
+  integer, save :: jclst
+  !> pointer to number of additional variables related to the particles
+  !> for \ref itepa array.
+  !> The additional variables can be accessed in the arrays
+  !> \ref ettp and \ret ettpa by means of the
+  !> pointer \ref jvls:  \ref ettp(nbpt,jvls(ii)) and
+  !> \ref ettpa(nbpt,jvls(ii)) (\ref nbpt is
+  !> the index-number of the treated particle, and \ref ii an integer
+  !> between 1 and \ref nvls)
   integer, save ::           nvls
 
+  !> \}
+
   !=============================================================================
-  ! 7. Conditions aux limites
 
-  !     TABLEAUX POUR LES CONDITIONS AUX LIMITES
-  !     ----------------------------------------
+  !> \defgroup boundary_conditions Boundary conditions
 
-  !     NFRLAG  : nbr de zones frontieres
-  !     INJCON  : INJECTION CONTINUE OU NON
-  !     ILFLAG  : liste des numeros des zones frontieres
-  !     IUSNCL  : nbr de classes par zones
-  !     IUSCLB  : conditions au bord pour les particules
-  !          = IENTRL
-  !          = ISORTL -> particule sortie du domaine par une face fluide
-  !          = IREBOL -> rebond elastique
-  !          = IDEPO1 -> deposition definitive (particule eliminee de la memoire)
-  !          = IDEPO2 -> deposition definitive (part. non eliminee de la memoire)
-  !          = IENCRL -> encrassement (Charbon uniquement IPHYLA = 2)
-  !          = JBORD1 -> interactions utilisateur
-  !          = JBORD2 -> interactions utilisateur
-  !          = JBORD3 -> interactions utilisateur
-  !          = JBORD4 -> interactions utilisateur
-  !          = JBORD5 -> interactions utilisateur
-  !     IUSMOY  : tableau si on fait une moyenne par zone sur la zone considere
-  !     IUSLAG  : tableau d info par classe et par frontieres
-  !     DEBLAG  : debit massique par zone
+  !> \addtogroup boundary_conditions
+  !> \{
 
-  integer, save ::           nfrlag, injcon,                                 &
-                             ilflag(nflagm),                                 &
-                             iusncl(nflagm),                                 &
-                             iusclb(nflagm),                                 &
-                             iusmoy(nflagm)
+  !> number of boundary zones
+  integer, save :: nfrlag
+  !> continue injection or not
+  integer, save :: injcon
+  !> list of number of boundary zones
+  integer, save :: ilflag(nflagm)
 
+
+  !> for all the \ref nfrlag boundary zones previously identified, the number of classes
+  !> \ref nbclas (a class is a set of particles sharing the same physical properties
+  !> and the same characteristics concerning the injection in the calculation domain)
+  !> of entering particles is given: \ref iusncl(izone) = \ref nbclas.
+  !> By default, the number of particle classes is zero.
+  !> The maximum number of classes is \ref nclagm (parameter stored in lagpar,
+  !> whose default value is 20).
+  integer, save :: iusncl(nflagm)
+
+  !> for all the \ref nfrlag boundary zones
+  !> previously identified, a particle boundary condition type is given.
+  !> The categories of particle boundary condition types are marked out by the
+  !> key words \ref ientrl, \ref isortl, \ref irebol, \ref idepo1, \ref idepo2, \ref iencrl.
+  !> - if \ref iusclb(izone) = \ref ientrl, izone is a particle injection zone.
+  !> For each particle class associated with this zone, information must be
+  !> provided (see below). If a particle trajectory may cross an injection zone,
+  !> then this particle leaves the calculation domain.
+
+  !> - if \ref iusclb(izone) = \ref isortl, the particles interacting with the zone
+  !>   \ref izone leave definitely the calculation domain.
+
+  !> - if \ref iusclb(izone) = \ref irebol, the particles undergo an elastic
+  !>   rebound on the boundary zone \ref izone.
+
+  !> - if \ref iusclb(izone) = \ref idepo1, the particles settle definitely on the
+  !>   boundary zone \ref izone. These particles leave the calculation domain
+  !>   and are definitely erased from the calculation
+
+  !> - if \ref iusclb(izone) = \ref idepo2, the particles settle definitevely
+  !> on the boundary zone \ref izone and they are kept in the calculation
+  !> - if \ref iusclb(izone) = \ref idepo2, the particles settle definitevely
+  !> on the boundary zone \ref izone and they are kept in the calculation
+  !> domain: the particles do not disappear after touching the boundary zone.
+  !> However, using \ref idepo2 type zones necessitates more memory
+  !> than using \ref idepo1 type zones.
+  !> - if \ref iusclb(izone) = \ref iencrl, the particles which are coal particles
+  !> (if \ref iphyla = 2) can become fouled up on the zone \ref izone. The
+  !> slagging is a \ref idepo1 type deposit of the coal particle if a certain
+  !> criterion is respected. Otherwise, the coal particle rebounds
+  !> (\ref irebol type behaviour). This boundary condition type is available
+  !> if \ref iencra = 1. A limit temperature \ref tprenc, a
+  !> critical viscosity \ref visref and the coal composition
+  !> in mineral matters must be given in the subroutine
+  !> \ref uslag1.
+  integer, save :: iusclb(nflagm)
+
+  !> mean over a zone (if mean per zones is activated)
+  integer, save :: iusmoy(nflagm)
+
+  !> Some pieces of information must be given for each particle class
+  !> associated with an injection zone.
+  !> The first part consists in integers contained in the
+  !> array \ref iuslag. There are at the most \ref ndlaim integers. These
+  !> pieces of information must be provided for each class \ref iclas and each
+  !> particle injection zone \ref izone.
+  !> They are marked out by means of ``pointers'':
+  !> - \ref iuslag(iclas,izone,ijnbp): number of particles to inject in
+  !> the calculation domain per class and per zone.
+  !> - \ref iuslag(iclas,izone,ijfre): injection period (expressed in number
+  !> of time steps). If the period is null, then there is injection only
+  !> at the first absolute Lagrangian time step (including the restart
+  !> calculations).
+  !> - \ref iuslag(iclas,izone,ijuvw): type of velocity condition:
+  !> - if \ref iuslag(iclas,izone,ijuvw) = 1, the particle velocity vector is
+  !> imposed, and its components must be given in the array \ref ruslag (see
+  !> below).
+  !> - if \ref iuslag(iclas,izone,ijuvw) = 0, the particle velocity is imposed
+  !> perpendicular to the injection boundary face and with the norm
+  !> \ref ruslag(iclas,izone,iuno).
+  !> - if \ref iuslag(iclas,izone,ijuvw) = -1, the particle injection velocity
+  !> is equal to the fluid velocity at the center of the cell
+  !> neighbouring the injection boundary face.
+  !> - \ref iuslag(iclas,izone,inuchl): when the particles are coal particles
+  !> (\ref iphyla = 2), this part of the array contains the coal index-number,
+  !> between 1 and \ref ncharb (defined by the user in the thermochemical
+  !> file dp\_FCP, with  \ref ncharb$\leqslant$ncharm = 3).
   integer, allocatable, dimension(:,:,:) :: iuslag
 
+  !> massic flow rate for a boudary zone
   double precision, save ::  deblag(nflagm)
 
-  !     IJNBP  : nbr de part par classe et zones frontieres
-  !     IJFRE  : frequence d injection
-  !               (si < 0 : on ne rentre des particles qu a la 1ere iter)
-  !     IJUVW  : type de condition vitesse
-  !          = -1 vitesse fluide imposee
-  !          =  0 vitesse imposee selon la direction normale
-  !               a la face de bord et de norme IUNO
-  !          =  1 vitesse imposee : on donne IUPT IVPT IWPT
-  !          =  2 profil de vitesse donne par l'utilisateur
-  !     IJPRPD = 1 distribution uniforme
-  !            = 2 profil de taux de presence donne par l'utilisateur
-  !     IJPRTP = 1 profil plat de temperature donne par la valeur dans uslag2
-  !            = 2 profil de temperature donne par l'utilisateur
-  !     IJPRDP = 1 profil plat de diametre donne par la valeur dans uslag2
-  !            = 2 profil dediametre donne par l'utilisateur
-  !     INUCHL : numero du charbon de la particule (si IPHYLA=2)
-  !     ICLST  : numero du groupe de statistiques
+  !> number of particles per class and per boudary zone
+  integer, save ::  ijnbp
+  !> injection frequency
+  !> (if < 0 : particle are introduced only at first iteration
+  integer, save ::  ijfre
 
-  integer, save ::           ijnbp, ijfre, ijuvw, ijprtp, ijprdp, ijprpd
-  integer, save ::           inuchl, iclst
+  !> velocity condition type:
+  !> - -1 imposed fluid velocity
+  !> -  0 imposed fluid velocity along the normal of
+  !> the bondary face, with \ref iuno norm.
+  !> -  1 imposed velocity: \ref iupt \ref ivpt \ref iwpt must be given.
+  !> -  2 velocity profile given by user.
+  integer, save ::  ijuvw
 
-  !     RUSLAG  : tableau d info par classe et par frontieres
+  !> - 1 uniform distribution,
+  !> - 2 presence rate profile given by user.
+  integer, save ::  ijprpd
 
+  !> - 1 constant temperature profile given in \ref uslag2
+  !> - 2 temperature profile given by the user
+  integer, save ::  ijprtp
+
+  !> type of user profiles in \ref uslag2:
+  !>  - 1: flat profile of diameter given in \ref uslag2
+  !>  - 2: user profile to be given
+  integer, save ::  ijprdp
+  !> coal number of the particle (if \ref iphyla=2)
+  integer, save ::  inuchl
+  !> number of the statistics group
+  integer, save ::  iclst
+
+  !> some pieces of information must be given for each particle class
+  !> associated with an injection zone.
+  !> The second and last part consists in real numbers
+  !> contained in the array \ref ruslag. There are at the most
+  !> \ref ndlagm such real numbers. These pieces of information must
+  !> be provided for each class \ref iclas and each particle injection zone
+  !> \ref izone. They are marked out by means of ``pointers'':
   double precision, allocatable, dimension(:,:,:) :: ruslag
 
-  !     IUNO  : Norme de la vitesse
-  !     IUPT  : U par classe et zones
-  !     IVPT  : V par classe et zones
-  !     IWPT  : W par classe et zones
-  !     IDEBT : Debit
-  !     IPOIT : Poids de la particule
-  !     IDPT  : Diametre
-  !     IVDPT : Variance du diametre
-  !     ITPT  : Temperature
-  !     ICPT  : Cp
-  !     IEPSI : Emissivite des particules
-  !     IROPT : Masse volumique
-  !     IHPT  : Temperature
-  !     IMWAT : Masse d eau dans le charbon
-  !     IMCHT : Masse de charbon reactif
-  !     IMCKT : Masse de coke
-  !     IDCKT : Diametre du coeur retrecissant
+  !> particle velocity magnitude
+  integer, save ::  iuno
+  !> particle u component by class and zone
+  integer, save ::  iupt
+  !> particle v component by class and zone
+  integer, save ::  ivpt
+  !> particle w component by class and zone
+  integer, save ::  iwpt
+  !> particle temperature
+  integer, save ::  itpt
+  !> particle diameter
+  integer, save ::  idpt
+  !> particle diameter variance
+  integer, save ::  ivdpt
+  !> density
+  integer, save ::  iropt
+  !> particle specific heat
+  integer, save ::  icpt
+  !> particle weight
+  integer, save ::  ipoit
+  !> flow rate
+  integer, save ::  idebt
+  !> particle emissivity
+  integer, save ::  iepsi
+  !> particle temperature
+  integer, save ::  ihpt
+  !> water mass in coal particles
+  integer, save ::  imwat
+  !> active coal mass
+  integer, save ::  imcht
+  !> coal mass
+  integer, save ::  imckt
+  !> diameter of shrinking core
+  integer, save ::  idckt
 
-  integer, save ::           iuno, iupt, ivpt, iwpt,                         &
-                             itpt, idpt, ivdpt, iropt,                       &
-                             icpt, ipoit, idebt, iepsi,                      &
-                             ihpt, imwat, imcht, imckt, idckt
+  !> \}
 
   !=============================================================================
-  ! 8. Statistiques
 
-  !     POINTEURS POUR LES STATISTIQUES
-  !     -------------------------------
+  !> \defgroup statistics Statistics
 
-  !     ILVX,ILVY,ILVZ    : Vitesse
-  !     ILFV              : Concentration volumique
-  !     ILPD              : Somme des poids statistiques
-  !     ILTS              : Temps de sejour
+  !> \addtogroup statistics
+  !> \{
 
-  !     ILTP              : Temperature
-  !     ILDP              : Diametre
-  !     ILMP              : Masse
+  !> mean dispersed phase velocity X component
+  integer, save ::  ilvx
+  !> mean dispersed phase velocity Y component
+  integer, save ::  ilvy
+  !> mean dispersed phase velocity Z component
+  integer, save ::  ilvz
+  !> sum of the statistical weights
+  integer, save ::  ilpd
+  !> dispersed phase volumetric concentration
+  integer, save ::  ilfv
+  !> recidence time
+  integer, save ::  ilts
+  !> phase temperature (\f$ \degresC \f$)
+  integer, save ::  iltp
+  !> dispersed phase mean diameter
+  integer, save ::  ildp
+  !> dispersed phase mean mass
+  integer, save ::  ilmp
+  !> temperature of the coal particle cloud (\f$ \degresC \f$)
+  integer, save ::  ilhp
+  !> water mass
+  integer, save ::  ilmwat
+  !> mass of reactive coal of the coal particle cloud
+  integer, save ::  ilmch
+  !> mass of coke of the coal particle cloud
+  integer, save ::  ilmck
+  !> shriking core diameter
+  integer, save ::  ildck
+  !> supplementary user volumetric statistics
+  integer, save ::  ilvu(nussta)
 
-  !     ILHP              : Temperature
-  !     ILMWAT            : Masse d eau
-  !     ILMCH             : Masse de charbon reactif
-  !     ILMCK             : Masse de coke
-  !     ILDCK             : Diametre du coeur retrecissant
+  ! TODO : absence de \texttt{ilmdk} ? shrinking core diameter of the coal particle cloud
 
-  !     ILVU(NUSSTA)      : Statistiques supplementaires utilisateur
+  ! TODO
+  integer, save ::  iactfv
+  ! TODO
+  integer, save ::  iactvx
+  ! TODO
+  integer, save ::  iactvy
+  ! TODO
+  integer, save ::  iactvz
+  ! TODO
+  integer, save ::  iactts
 
-  integer, save ::           ilvx  , ilvy  , ilvz  ,                         &
-                             ilpd  , ilfv  , ilts  ,                         &
-                             iltp  , ildp  , ilmp  ,                         &
-                             ilhp  , ilmwat, ilmch ,                         &
-                             ilmck , ildck , ilvu(nussta)
+  !> activation (=1) or not (=0) of the calculation of the volume
+  !> statistics related to the dispersed phase.
+  !> if \ref istala = 1, the calculation of the statistics is activated
+  !> starting from the absolute iteration (including the restarts) \ref idstnt.
+  !> by default, the statistics are not stationary (reset to zero at every
+  !> Lagrangian iteration). But if \ref isttio=1, since the flow is steady,
+  !> the statistics will be averaged overt he different time steps.
+  !> the statistics represent the significant results on the particle cloud
+  integer, save ::  istala
 
-  integer, save ::           iactfv, iactvx, iactvy, iactvz, iactts
+  !> during a Lagrangian calculation restart, indicates whether the particle
+  !> statistics (volume and boundary) and two-way coupling terms are to be read
+  !> from a restart file (=1) or reinitialised (=0).
+  !> The file to be read is \ref ficmls. Useful if \ref isuila = 1
+  integer, save ::  isuist
 
-  !     DONNEES POUR LES STATISTIQUES VOLUMIQUES
-  !     ----------------------------------------
+  !> number of additional user volume statistic
+  !> the additional statistics (or their cumulated value in the stationary
+  !> case) can be accessed in the array \ref statis by means of the pointer
+  !> \ref ilvu: \ref statis (iel,ilvu(ii))
+  !> (\ref iel is the cell index-number and \ref ii an integer between
+  !> 1 and \ref nvlsts) useful if \ref istala = 1
+  integer, save ::  nvlsts
 
-  !      ISTALA : Calcul statistiques       si  >= 1 sinon pas de stat
-  !      ISUIST : Suite calcul statistiques si  >= 1 sinon pas de stat
-  !      NVLSTS : NOMBRE DE VARIABLES STATISTIQUES SUPPLEMENTAIRES
-  !               UTILISATEUR (CONTENU DANS NVLSTA)
-  !      IDSTNT : Numero du pas de temps pour debut statistque
-  !      NSTIST : Debut calcul stationnaire
-  !      NPST   : Nombre de pas de temps pour le cumul des stats
-  !      NPSTT  : Nombre de pas de temps total des stats depuis le debut
-  !               du calcul, partie instationnaire comprise
-  !      TSTAT  : Temps physique des stats volumiques
-  !      SEUIL  : Seuil en POIDS STAT de particules pour les stats
+  !> absolute Lagrangian iteration number (includings the restarts) after
+  !> which the calculation of the volume statistics is activated
+  !> useful if \ref istala = 1
+  integer, save ::  idstnt
 
-  integer, save ::           istala , isuist , nvlsts ,                      &
-                             idstnt , nstist ,                               &
-                             npst   , npstt
+  !>
+  !> absolute Lagrangian iteration number (includings the restarts) after
+  !> which the volume statistics are cumulated over time (they are then said
+  !> to be stationary).
+  !> if the absolute Lagrangian iteration number is lower than \ref nstist,
+  !> or if the flow is unsteady (\ref isttio=0), the statistics are reset
+  !> to zero at every Lagrangian iteration (the volume statistics are then said
+  !> to be non-stationary).
+  !> useful if \ref istala=1 and \ref isttio=1
+  integer, save ::  nstist
 
-  double precision, save ::  tstat , seuil
+  !> number of iterations during which stationary volume statistics have
+  !> been cumulated.
+  !> useful if \ref istala=1, \ref isttio=1 and if \ref nstist is
+  !> inferior or equal to the current Lagrangian iteration.
+  !> \ref npst is initialised and updated automatically by the code, its
+  !> value is not to be modified by the user
+  integer, save ::  npst
 
-  !     NOMS DES VARIABLES STATISTIQUES (MOYENNES ET VARIANCES)
-  !     -------------------------------------------------------
-  !     Taille limitee par le fait qu on utilise NOMBRD dans
-  !       l ecriture des fichiers suites (lagout)
+  !> number of iterations during which volume statistics have been
+  !> calculated (the potential iterations during which non-stationary
+  !> statistics have been calculated are counted in \ref npstt).
+  !> useful if \ref istala=1.
+  !> \ref npstt is initialised and updated automatically by the code,
+  !> its value is not to be modified by the user
+  integer, save ::  npstt
 
-  character*32, save ::      nomlag(nvplmx) , nomlav(nvplmx)
 
-  !     OPTION POUR LES HISTORIQUES SUR LES STATS
-  !     -----------------------------------------
+  !> if the volume statistics are calculated in a stationary way, \ref tstat
+  !> represents the physical time during which the statistics have been cumulated.
+  !> if the volume statistics are calculated in a non-stationary way,
+  !> then \ref tstat=dtp (it is the Lagrangian time step, because the
+  !> statistics are reset to zero at every iteration).
+  !> useful if \ref istala=1.
+  !> \ref tstat is initialised and updated automatically by the code,
+  !> its value is not to be modified by the user
+  double precision, save ::  tstat
 
+  !> every cell of the calculation domain contains a certain quantity of
+  !> particles, representing a certain statistical weight (sum of the
+  !> statistical weights of all the particles present in the cell). \ref seuil
+  !> is the limit statistical weight value, below which the contribution of the
+  !> cell in term of statistical weight is not taken into account in the volume
+  !> statistics (for the complete turbulent dispersion model, in the
+  !> Poisson's equation used to correct the mean velocities
+  !> or in the listing and post-processing outputs). useful if \ref istala = 1
+  double precision, save ::  seuil
+
+  !> name of the volumetric statistics, displayed in the listing
+  !> and the post-processing files.
+  !> The default value is given above, with ``XXXX''
+  !> representing a four digit number (for instance 0001, 0011 ...).
+  !> useful if \ref istala = 1.
+  !> Warning: this name is also used to reference information in the
+  !> restart file (\ref isuist =1).
+  !> If the name of a variable is changed between two calculations,
+  !> it will not be possible to read its value from the restart file
+  character*32, save ::      nomlag(nvplmx)
+
+  ! TODO
+  character*32, save ::      nomlav(nvplmx)
+
+  !> historic statistics options
   integer, save ::           ihslag(nvplmx)
 
-  !     STATISTIQUE PAR ZONE ET PAR CLASSE
-  !     ----------------------------------
-
+  !> statistic per zone and per class
   integer, save ::           nbclst
 
-  !===============================================================================
-  ! 9. Termes Sources
+  !> \}
 
-  !     OPTION TERMES SOURCES
-  !     ---------------------
-  !       Dynamique
-  !       Masse
-  !       Thermique
+  !============================================================================
 
-  integer, save ::          ltsdyn , ltsmas , ltsthe
+  !> \defgroup source_terms Source terms
 
-  !     POINTEURS POUR LES TERMES SOURCES
-  !     ---------------------------------
+  !> \addtogroup source_terms
+  !> \{
 
-  !    ITSVX,ITSVY,ITVZ    : Termes sources sur la vitesse
-  !    ITSLI               : Terme source implicite (vitesse+turbulence)
-  !    ITSKE               : Terme source sur la turbulence en k-eps
-  !    ITSR11,ITR12,ITSR13 : Termes sources sur la turbulence en Rij-Eps
-  !    ITSR22,ITR23,ITSR33
-  !    ITSTE, ITSTI        : Termes sources pour la thermique
-  !    ITSMAS              : Terme source pour la masse
-  !    ITSMV1              : Terme source sur F1 (MV legeres)
-  !    ITSMV2              : Terme source sur F2 (MV lourdes)
-  !    ITSCO               : Terme source sur F3 (C sous forme de CO)
-  !    ITSFP4              : Variance du traceur relatif a l air
+  !> activation (=1) or not (=0) of the two-way coupling on the dynamics
+  !> of the continuous phase.
+  !> useful if \ref iilagr = 2 and \ref iccvfg = 0
+  integer, save ::  ltsdyn
 
-  integer, save ::           itsvx  , itsvy  , itsvz  , itsli ,              &
-                             itske  ,                                        &
-                             itsr11 , itsr12 , itsr13 ,                      &
-                             itsr22 , itsr23 , itsr33 ,                      &
-                             itste  , itsti  ,                               &
-                             itsmas , itsmv1(ncharm2), itsmv2(ncharm2) ,     &
-                             itsco  , itsfp4
+  !> activation (=1) or not (=0) of the two-way coupling on the mass.
+  !> useful if \ref iilagr = 2, \ref iphyla = 1 and \ref impvar = 1
+  integer, save ::  ltsmas
 
-  !     DONNEES POUR LES TERMES SOURCES
-  !     -------------------------------
+  !> if \ref iphyla = 1 and \ref itpvar = 1, \ref ltsthe
+  !> activates (=1) or not (=0) the two-way coupling on temperature.
+  !> if \ref iphyla = 2, \ref ltsthe activates (=1) or not (=0) the
+  !> two-way coupling on the eulerian variables related to pulverised
+  !> coal combustion.
+  !> useful if \ref iilagr = 2
+  integer, save ::  ltsthe
 
-  !     NSTITS : debut calcul terme source stationnaire
-  !     NPTS   : nombre de pas de temps pour le cumul des termes sources
-  !     NTXERR : nombre de cellules qui un taux vol > 0.8
-  !     VMAX   : taux volumique max atteint
-  !     TMAMAX : taux massique max atteint
+  !> explicit source term for the continuous phase X velocity
+  integer, save ::  itsvx
 
-  integer, save ::           nstits , npts , ntxerr
+  !> explicit source term for the continuous phase Y velocity
+  integer, save ::  itsvy
 
-  double precision, save ::  vmax , tmamax
+  !> explicit source term for the continuous phase Z velocity
+  integer, save ::  itsvz
+
+  !> implicit source term for the continuous phase velocity and
+  !> for the turbulent energy if the \f$k-\varepsilon\f$ model is used
+  integer, save ::  itsli
+
+  !> explicit source term for the turbulent dissipation and the
+  !> turbulent energy if the \f$k-\varepsilon\f$ turbulence model is used
+  !> for the continuous phase
+  integer, save ::  itske
+
+  !> source term for the Reynolds stress
+  !> and the turbulent dissipation if the \f$R_{ij}-\varepsilon\f$
+  !> turbulence model is used for the continuous phase
+  integer, save ::  itsr11
+
+  !> source term for the Reynolds stress
+  !> and the turbulent dissipation if the \f$R_{ij}-\varepsilon\f$
+  !> turbulence model is used for the continuous phase
+  integer, save ::  itsr12
+  !> source term for the Reynolds stress
+  !> and the turbulent dissipation if the \f$R_{ij}-\varepsilon\f$
+  !> turbulence model is used for the continuous phase
+  integer, save ::  itsr13
+  !> source term for the Reynolds stress
+  !> and the turbulent dissipation if the \f$R_{ij}-\varepsilon\f$
+  !> turbulence model is used for the continuous phase
+  integer, save ::  itsr22
+  !> source term for the Reynolds stress
+  !> and the turbulent dissipation if the \f$R_{ij}-\varepsilon\f$
+  !> turbulence model is used for the continuous phase
+  integer, save ::  itsr23
+  !> source term for the Reynolds stress
+  !> and the turbulent dissipation if the \f$R_{ij}-\varepsilon\f$
+  !> turbulence model is used for the continuous phase
+  integer, save ::  itsr33
+
+  !> explicit thermal source term for the thermal scalar of the continuous phase
+  integer, save ::  itste
+
+  !> implicit thermal source term for the thermal scalar of the continuous phase
+  integer, save ::  itsti
+
+  !> mass source term
+  integer, save ::  itsmas
+
+  !> source term for the light volatile matters
+  integer, save ::  itsmv1(ncharm2)
+
+  !> source term for the heavy volatile matters
+  integer, save ::  itsmv2(ncharm2)
+
+  !> source term for the carbon released during heterogeneous combustion
+  integer, save ::  itsco
+
+  !> Variance of the air scalar
+  integer, save ::  itsfp4
+
+  !> number of absolute Lagrangian iterations (including the restarts)
+  !> after which a time-average of the two-way coupling source terms is
+  !> calculated.
+  !> indeed, if the flow is steady (\ref isttio=1), the average quantities
+  !> that appear in the two-way coupling source terms can be calculated over
+  !> different time steps, in order to get a better precision.
+  !> if the number of absolute Lagrangian iterations is strictly inferior to
+  !> \ref nstits, the code considers that the flow has not yet reached its
+  !> steady state (transition period) and the averages appearing in the source
+  !> terms are reinitialised at each time step, as it is the case for unsteady
+  !> flows (\ref isttio=0).
+  !> useful if \ref iilagr = 2 and \ref isttio = 1
+  integer, save ::  nstits
+
+  !> number of time steps for source terms accumulations
+  integer, save ::  npts
+
+  !> nomber of cells, whose vulumetric rate DODO (concentration ?)is greather than 0.8
+  integer, save ::  ntxerr
+
+
+  !> maximum volumetric concentration reached
+  double precision, save ::  vmax
+
+  !> maximum massic concentration reached
+  double precision, save ::  tmamax
+
+  !> \}
 
   !=============================================================================
-  ! 10. Clonage/fusion des particules
 
-  !     INDICATEUR D ACTIVATION DE LA ROULETTE RUSSE
+  !> \defgroup fusion_cloning Particles cloning and fusion
 
+  !> \addtogroup fusion_cloning
+  !> \{
+
+  ! TODO : INDICATEUR D ACTIVATION DE LA ROULETTE RUSSE
   integer, save ::           iroule
 
-  !=============================================================================
-  ! 11. Encrassement
-
-  !     DONNEES POUR L ENCRASSEMENT
-
-  integer, save ::           iencra , npencr
-
-  double precision, save ::  enc1(ncharm2) , enc2(ncharm2) ,                 &
-                             tprenc(ncharm2) , visref(ncharm2) , dnpenc
+  !> \}
 
   !=============================================================================
-  ! 12. Physico-chemical (DLVO) parameters
+  ! TODO
+  !> \defgroup encrustation Encrustation
 
-  !      cstham : Hamaker constant for the particle/fluid/substrate system
-  !      epseau : Dielectric constant of the fluid
-  !      phi1   : Electrokinetic potential of the first solid
-  !      phi2   : Electrokinetic potential of the second solid
-  !      fion   : Ionic force
+  !> \addtogroup encrustation
+  !> \{
 
-  double precision, save ::  cstham , epseau,  phi1 , phi2, fion
+  !> activates (=1) or not (=0) the option of coal particle fouling.
+  !> It then is necessary to specify the domain boundaries
+  !> on which fouling may take place. useful if \ref iphyla = 2
+  integer, save ::  iencra
 
 
-!    Faraday constant (C/mol)
+  !> encrustation data
+  integer, save ::  npencr
 
+  !> encrustation data
+  double precision, save ::  enc1(ncharm2)
+  !> encrustation data
+  double precision, save ::  enc2(ncharm2)
+
+  !> limit temperature (in degree Celsius) below which the coal particles do
+  !> not cause any fouling (if the fouling model is activated),
+  !> useful if \ref iphyla = 2 and \ref iencra = 1
+  double precision, save ::  tprenc(ncharm2)
+
+  !>
+  !> ash critical viscosity in \f$ kg.m^{-1}.s^{-1} \f$, in the fouling model
+  !> cf J.D. Watt et T. Fereday (J.Inst.Fuel, Vol.42-p99).
+  !> useful if \ref iphyla = 2 and \ref iencra = 1
+  double precision, save ::  visref(ncharm2)
+
+  !> encrustation data
+  double precision, save ::  dnpenc
+
+  !> \}
+
+  !=============================================================================
+
+  !> \defgroup physico_chemical Physico-chemical (DLVO) parameters
+
+  !> \addtogroup physico_chemical
+  !> \{
+
+  !> Hamaker constant for the particle/fluid/substrate system
+  double precision, save ::  cstham
+
+  !> Dielectric constant of the fluid
+  double precision, save ::  epseau
+
+  !> Electrokinetic potential of the first solid
+  double precision, save ::  phi1
+
+  !> Electrokinetic potential of the second solid
+  double precision, save ::  phi2
+
+  !> Ionic force
+  double precision, save ::  fion
+
+  !> Faraday constant (C/mol)
   double precision cstfar
   parameter(cstfar = 9.648d4)
 
-!    Vacuum permittivity (F/m):
-
+  !> Vacuum permittivity (F/m)
   double precision epsvid
   parameter(epsvid = 8.854d-12)
 
-!    Boltzmann constant (J/K):
-
+  !> Boltzmann constant (J/K)
   double precision kboltz
   parameter(kboltz = 1.38d-23)
 
-!    Cut-off distance for adhesion forces (assumed to be the Born distance) (m)
-
+  !> Cut-off distance for adhesion forces (assumed to be the Born distance) (m)
   double precision dcutof
   parameter(dcutof = 1.65d-10)
 
-!    Characteristic retardation wavelength (m) for Hamaker constant
-
+  !> Characteristic retardation wavelength (m) for Hamaker constant
   double precision lambwl
   parameter(lambwl = 1000.d-9)
 
+  !> \}
+
   !=============================================================================
-  ! 13. Mouvement brownien
 
-  !     ACTIVATION DU MOUVEMENT BROWNIEN :
+  !> \defgroup brownian Brownian motion
 
+  !> \addtogroup brownian
+  !> \{
+
+  !> brownnian motion activation
   integer, save :: lamvbr
 
+  !> \}
 
   !=============================================================================
-  ! 14. Schema en temps, dispersion turbulente et equation de poisson
 
-  !     NOR    : numero du sous-pas Lagrangien (1 ou 2)
+  !> \defgroup time_scheme Time scheme, turbulent disperion and Poisson's equation
 
-  !     NORDRE : ordre de la methode d integration (1 ou 2)
+  !> \addtogroup time_scheme
+  !> \{
 
-  !     MODCPL : = 0 pour le modele incomplet
-  !              > 0 pour le modele complet, est egal au nombre de
-  !                 passages avant mise en route du modele complet
+  !> number of lagrangian under step (1 or 2)
+  integer, save ::  nor
 
-  !     IDIRLA : = 1 ou 2 ou 3 direction du modele complet
+  !> order of integration for the stochastic differential equations
+  !> - = 1 integration using a first-order scheme
+  !> - = 2 integration using a second-order scheme
+  integer, save ::  nordre
 
-  !     IDISTU : = 0 pas de prise en compte de la dispersion turbulente (la
-  !                  vitesse instantanee est egale a la vitesse moyenne)
-  !              > 0 prise en compte de la dispersion turbulente (si k-eps
-  !                  ou Rij-eps)
+  !> activates (>0) or not (=0) the complete turbulent dispersion model.
+  !> When \ref modcpl is strictly positive, its value is interpreted as the
+  !> absolute Lagrangian time step number (including restarts) after which the
+  !> complete model is applied.
+  !> Since the complete model uses volume statistics, \ref modcpl must
+  !> either be 0 or be larger than \ref idstnt.
+  !> Useful if \ref istala = 1
+  integer, save ::  modcpl
 
-  !     IDIFFL : =1 la dispersion turbulente de la particule est celle de
-  !                 la particule fluide (=0 sinon)
+  !> direction (1=x, 2=y, 3=z) of the complete model.
+  !> it corresponds to the main directions of the flow.
+  !> useful if \ref modcpl > 0
+  integer, save ::  idirla
 
-  !     ILAPOI : = 0 Pas de correction de pression
-  !              = 1 Correction de pression
+  !> activation (=1) or not (=0) of the particle turbulent dispersion.
+  !> The turbulent dispersion is compatible only with the RANS turbulent models
+  !> (\f$k-\varepsilon\f$, $R_{ij}-\varepsilon$, v2f or $k-\omega\f$).
+  !> (\ref iturb=20, 21, 30, 31, 50 or 60).
+  integer, save ::  idistu
 
-  integer, save ::           nor , nordre , modcpl , idirla ,                &
-                             idistu , idiffl , ilapoi
+  !> \ref idiffl=1 suppresses the crossing trajectory effect, making
+  !> turbulent dispersion for the particles identical to the turbulent
+  !> diffusion of fluid particles.
+  !> useful if \ref idistu=1
+  integer, save ::  idiffl
+
+  !> activation (=1) or not (=0) of the solution of a Poisson's equation for
+  !> the correction of the particle instantaneous velocities
+  !> (in order to obtain a null divergence).
+  !> this option is not validated and reserved to the development team.
+  !> Do not change the default value
+  integer, save ::  ilapoi
+
+  !> \}
 
   !=============================================================================
-  ! 15. Traitement des statistiques interactions particules/frontieres
 
-  !     DONNEES POUR LES STATISTIQUES AUX FRONTIERES
-  !     --------------------------------------------
+  !> \defgroup boundary_interactions Particles/boundary interactions statistics
 
-  !      NUSBOR : NOMBRE DE VARIABLES A ENREGISTRER SUR LES FRONTIERES
-  !               SUPPLEMENTAIRES UTILISATEUR (CONTENU DANS NVISBR)
-  !      NSTBOR : debut calcul stationnaire
-  !      NPSTF  : nombre de pas de temps pour le cumul des stats
-  !      NPSTF  : nombre de pas de temps total des stats depuis le debut
-  !               du calcul, partie instationnaire comprise
-  !      TSTATP : Temps physique des stats aux frontieres stationnaires
-  !      SEUILF : Seuil en POIDS STAT de particules pour les stats
-  !      IMOYBR : Type de moyenne applicable pour affichage et
-  !               post-procesing
+  !> \addtogroup boundary_interactions
+  !> \{
 
+  !> number additional user data to record for the calculation
+  !> of additional boundary statistics in \ref parbor.
+  !> useful if \ref iensi3=1
+  integer, save ::  nusbor
 
-  integer, save ::           nusbor   , nstbor   ,                         &
-                             npstf    , npstft   ,                         &
-                             inbrbd   , iflmbd   , iangbd   , ivitbd   ,   &
-                             iencnbbd , iencmabd , iencdibd , iencckbd ,   &
-                             inbr     , iflm     , iang     , ivit     ,   &
-                             iencnb   , iencma   , iencdi   , iencck   ,   &
-                             iusb(nusbrd)    , imoybr(nusbrd+10), inclg,   &
-                             iscovc
+  !> number of absolute Lagrangian iterations (including the restarts)
+  !> after which the statistics at the boundaries are considered stationary
+  !> are veraged (over time or over the number of interactions).
+  !> If the number of absolute Lagrangian iterations is lower than \ref nstbor,
+  !> or if \ref isttio=0, the statistics are reset to zero at every
+  !> Lagrangian iteration (non-stationary statistics).
+  !> useful if \ref iensi3=1 and \ref isttio=1
+  integer, save ::  nstbor
 
-  double precision, save ::  tstatp , seuilf
+  !> number of iterations during which stationary boundary statistics have
+  !> been cumulated.
+  !> useful if \ref iensi3=1, \ref isttio=1 and \ref nstbor inferior
+  !> or equal to the current Lagrangian iteration.
+  !> \ref npstf is initialised and updated automatically by the code,
+  !> its value is not to be modified by the user
+  integer, save ::  npstf
 
-  !     NOMS DES VARIABLES STATISTIQUES
-  !     -------------------------------
-  !     Taille limitee par le fait qu on utilise NOMBRD dans
-  !       l ecriture des fichiers suites (lagout)
+  !> number of iterations during which boundary statistics have
+  !> been calculated
+  !> (the potential iterations during which non-stationary
+  !> statistics have been calculated are counted in \ref npstft).
+  !> useful if \ref iensi3=1.
+  !> \ref npstft is initialised and updated automatically by the code,
+  !> its value is not to be modified by the user
+  integer, save ::  npstft
 
+  !> activation (=1) or not (=0) of the recording of the number of particle/boundary
+  !> interactions, and of the calculation of the associated boundary statistics.
+  !> \ref inbrd = 1 is a compulsory condition to use the particulate average
+  !> \ref imoybr = 2.
+  !> useful if \ref iensi3=1
+  integer, save ::  inbrbd
+
+  !> activation (=1) or not (=0) of the recording of the particulate mass flow
+  !> related to the particle/boundary interactions, and of the calculation of
+  !> the associated boundary statistics.
+  !> \ref inbrd = 1 is a compulsory condition to use \ref iflmbd=1.
+  !> useful if \ref iensi3=1 and \ref inbrbd=1
+  integer, save ::  iflmbd
+
+  !> activation (=1) or not (=0) of the recording of the angle between a
+  !> particle trajectory and a boundary face involved in a particle/boundary
+  !> interaction, and of the calculation of the associated boundary statistics.
+  !> useful if \ref iensi3=1
+  integer, save ::  iangbd
+
+  !> activation (=1) or not (=0) of the recording of the velocity of a particle
+  !> involved in a particle/boundary interaction, and of the calculation of
+  !> the associated boundary statistics.
+  !> useful if \ref iensi3=1
+  integer, save ::  ivitbd
+
+  ! TODO
+  integer, save ::  iencnbbd
+  ! TODO
+  integer, save ::  iencmabd
+  ! TODO
+  integer, save ::  iencdibd
+  ! TODO
+  integer, save ::  iencckbd
+
+  !> number of particle/boundary interactions
+  integer, save ::  inbr
+
+  !> \ref iflm: particle mass flow at the boundary faces
+  integer, save ::  iflm
+
+  !> \ref iang: mean interaction angle with the boundary faces
+  integer, save ::  iang
+
+  !> \ref ivit: mean interaction velocity with the boundary faces
+  integer, save ::  ivit
+
+  ! TODO
+  integer, save ::  iencnb
+  ! TODO
+  integer, save ::  iencma
+  ! TODO
+  integer, save ::  iencdi
+  ! TODO
+  integer, save ::  iencck
+
+  !> supplementary user boundary statistics
+  integer, save ::  iusb(nusbrd)
+
+  !> the recordings in \ref parbor at every particle/boundary interaction are
+  !> cumulated values (possibly reset to zero at every iteration in the
+  !> non-stationary case). They must therefore be divided by a quantity to
+  !> get boundary statistics. The user can choose between two average types:.
+  !> - = 0: no average is applied to the recorded cumulated values.
+  !> - = 1: a time-average is calculated. The cumulated value
+  !> is divided by the physical duration in the case of stationary
+  !> averages (\ref isttio=1). The cumulated value is divided by the value of
+  !> the last time step in the case of non-stationary averages (\ref isttio=0),
+  !> and also in the case of stationary averages while the
+  !> absolute Lagrangian iteration number is inferior to \ref nstbor.
+  !> - = 2: a particulate average is calculated. The cumulated
+  !> value is divided by the number of particle/boundary interactions (in terms
+  !> of statistical weight) recorded in \ref parbor(nfabor,inbr). This average
+  !> can only be calculated when \ref inbrbd=1. The average is calculated if
+  !> the number of interactions (in statistical weight) of the considered
+  !> boundary face is strictly higher than \ref seuilf, otherwise the average
+  !> at the face is set to zero.
+  !> only the cumulated value is recorded in the restart file.
+  !> useful if \ref iensi3=1
+  integer, save ::  imoybr(nusbrd+10)
+
+  ! TODO
+  integer, save ::  inclg
+  ! TODO
+  integer, save ::  iscovc
+
+  !> if the recording of the boundary statistics is stationary, \ref tstatp
+  !> contains the cumulated physical duration of the recording of the boundary
+  !> statistics.
+  !> if the recording of the boundary statisticss is non-stationary, then
+  !> \ref tstat=dtp (it is the Lagrangian time step, because the
+  !> statistics are reset to zero at every time step).
+  !> useful if \ref iensi3=1
+  double precision, save ::  tstatp
+
+  !> every boundary face of the mesh undergoes a certain number of
+  !> interactions with particles, expressed in term of statistical weight
+  !> (sum of the statistical weights of all the particles which have
+  !> interacted with the boundary face). \ref seuilf is
+  !> the limit statistical weight value, below which the contribution of the
+  !> face is not taken into account in the
+  !> statistics at the boundaries for post-processing.
+  !> useful if \ref iensi3=1
+  double precision, save ::  seuilf
+
+  !> name of the boundary statistics, displayed in the listing
+  !> and the post-processing files.
+  !> useful if \ref iensi3=1.
+  !> Warning: this name is also used to reference information in the restart file
+  !> (\ref isuist =1). If the name of a variable is changed between two
+  !> calculations, it will not be possible to read its value from the restart file
   character*50, save ::      nombrd(nvplmx)
 
-  ! IIFRLA Pointeur dans IA sur IFRLAG pour reperage des zones
-  !          frontieres associees aux faces de bord
-
+  !> ifrlag pointer in ia to identify boundary zones and faces
   integer, save ::           iifrla
 
+  !> \}
+
   !=============================================================================
-  ! 16. Visu
 
-  !... Type de visualisation :
-  !    IENSI3 : interaction particules/frontieres
+  !> \defgroup visualization Visualization
 
-  integer, save ::           iensi3
+  !> \addtogroup visualization
+  !> \{
 
-  !... Contenu des fichiers resultats
+  !> activation (=1) or not (=0) of the recording of the particle/boundary
+  !> interactions in  \ref parbor, and of the calculation of the
+  !> statistics at the corresponding boundaries, for post-processing
+  !> (\textit EnSight6 format).
+  !> By default, the statistics are non-stationary (reset to zero at every
+  !> Lagrangian iteration). They may be stationary if \ref isttio=1 (i.e.
+  !> calculation of a cumulated value over time, and then calculation of an
+  !> average over time or over the number of interactions with the boundary).
+  integer, save ::  iensi3
 
+  !> associates (=1) or not (=0) the variable ``velocity of the locally
+  !> undisturbed fluid flow field'' with the output of particles or trajectories.
+  integer, save ::  ivisv1
 
-  integer, save ::           ivisv1 , ivisv2 , ivistp ,                      &
-                             ivisdm , iviste , ivismp ,                      &
-                             iviswat, ivisch , ivisck ,                      &
-                             ivisdk
+  !> associates (=1) or not (=0) the variable ``particle velocity''
+  !> with the output of particles or trajectories.
+  integer, save ::  ivisv2
+
+  !> associates (=1) or not (=0) the variable ``residence time''
+  !> with the output of particles or trajectories.
+  integer, save ::  ivistp
+
+  !> associates (=1) or not (=0) the variable ``particle diameter''
+  !> with the output of particles or trajectories.
+  integer, save ::  ivisdm
+
+  !> associates (=1) or not (=0) the variable ``particle temperature''
+  !> with the output of particles or trajectories.
+  integer, save ::  iviste
+
+  !> associates (=1) or not (=0) the variable ``particle mass''
+  !> with the output of particles or trajectories.
+  integer, save ::  ivismp
+
+  !> associates (=1) or not (=0) the variable ``shrinking core diameter of
+  !> the coal particles'' with the output of particles or trajectories.
+  !> useful only if \ref iphyla = 2
+  integer, save ::  ivisdk
+
+  !> associates (=1) or not (=0) the variable ``mass of reactive coal of the
+  !> coal particles'' with the output of particles or trajectories.
+  !> useful only if \ref iphyla = 2
+  integer, save ::  ivisch
+
+  !> associates (=1) or not (=0) the variable ``mass of coal of the
+  !> coal particles'' with the output of particles or trajectories.
+  !> useful only if \ref iphyla = 2
+  integer, save ::  ivisck
+
+  ! TODO
+  integer, save ::  iviswat
+
+  !> \}
 
   !=============================================================================
 

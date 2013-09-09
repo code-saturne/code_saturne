@@ -21,7 +21,7 @@
 !-------------------------------------------------------------------------------
 
 !> \file dimens.f90
-!> Module for dimensions
+!> \brief Module for dimensions
 
 module dimens
 
@@ -33,17 +33,46 @@ implicit none
 
   !=============================================================================
 
-  integer, save :: nvar, nscal, nvisls
+  !> \defgroup dimens Module for dimensions
 
+  !> \addtogroup dimens
+  !> \{
+
+  !> number of solved variables (must be lower than \c nvrmax)
+  integer, save :: nvar
+
+  !> number of solved user scalars
+  !> effective number of scalars solutions of an
+  !> advection equation, apart from the variables of the turbulence model
+  !> \f$ ($k$, $\varepsilon$, $R_{ij}$, $\omega$, $\varphi$, $\overline{f}$,
+  !> $\alpha$, $\nu_t$) \f$ , that is to say the temperature and other scalars
+  !> (passive or not, user-defined or not)
+  !> These scalars can be divided into two distinct groups: \c nscaus
+  !> user-defined scalars and \c nscapp scalars related to a
+  !> ``specific physics''. \c nscal=nscaus+nscapp, and \c nscal
+  !> must be inferior or equal to \c nscamx.
+  integer, save :: nscal
+
+  !> Number of scalars with variable diffusivity
+  integer, save :: nvisls
+
+  !> number of boundary coefficient for the boundary conditions
   integer, save :: ncofab
 
-  integer, save :: nproce, nprofb
+  !> number of properties defined at the cells.
+  !> They will be stored in the array \c propce.
+  integer, save :: nproce
 
-  ! Fake dimension for arrays propfb, coefa and coefb
-  ! where nfabor = 0 (to avoid issues with array bounds when
-  ! multidimensional arrays have size nfabor in one dimension)
+  !> number of properties defined at the boundary faces.
+  !> They will be stored in the array \c propfb.
+  integer, save :: nprofb
 
+  !> fake dimension for arrays propfb, coefa and coefb
+  !> where \c nfabor = 0 (to avoid issues with array bounds when
+  !> multidimensional arrays have size nfabor in one dimension)
   integer, save :: ndimfb
+  !> \}
+
 
   !=============================================================================
 

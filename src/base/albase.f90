@@ -21,7 +21,7 @@
 !-------------------------------------------------------------------------------
 
 !> \file albase.f90
-!> Module for multigrid parameters
+!> Module for Arbitrary Lagrangian Eulerian method (ALE)
 
 module albase
 
@@ -31,36 +31,38 @@ module albase
 
   !=============================================================================
 
-  !  Methode ale
-  !  iale   : utilisation de la methode ALE
-  !         = 0 sans methode ALE
-  !         = 1 avec methode ALE
-  !  nalinf : nombre d'iterations d'initialisation du fluide
-  !  nalimx : nombre maximal d'iterations d'implicitation du deplacement
-  !           des structures
-  !  iortvm : type de viscosite de maillage
-  !         = 0 isotrope
-  !         = 1 orthotrope
-  !  epalim : precision relative d'implicitation du deplacement des
-  !           structures
-  !  italin : iteration d'initialisation de l'ALE
-  !         = 0 non
-  !         = 1 oui
+  !> \defgroup albase Module for Arbitrary Lagrangian Eulerian method (ALE)
 
-  integer, save :: iale  , nalinf
-  integer, save :: nalimx, iortvm, italin
+  !> \addtogroup albase
+  !> \{
 
+  !> Activates (=1) or not (=0), activate the ALE module
+  integer, save :: iale
+  !> the number of sub-iterations of initialization of the fluid
+  integer, save :: nalinf
+  !> maximum number of imlicitation iterations of of the structure displacement
+  integer, save :: nalimx
+  !> viscosity type of mesh : isotropic=0, orthotropic=1.
+  integer, save :: iortvm
+  !> relative precision of implicitation of the structure displacement
   double precision, save :: epalim
+  !> iteration (yes=1, no=0) to initialize ALE
+  integer, save :: italin
 
-  !  impale : indicateur de deplacement impose
-  !  xyzno0 : position initiale du maillage
-  !  depale : deplacement du maillage
-  !  disala : mesh displacement of the previous time-step
-  !  ialtyb : type de bord
-
-  integer, allocatable, dimension(:) :: impale, ialtyb
-
-  double precision, allocatable, dimension(:,:) :: xyzno0, depale, disala
+  !> indicator of imposed displacement
+  integer, allocatable, dimension(:) :: impale
+  !> defines the mesh velocity from the colour of the boundary faces,
+  !> or more generally from their properties (colours, groups, ...),
+  !> from the boundary conditions defined in cs user boundary conditions,
+  !> or even from their coordinates.
+  integer, allocatable, dimension(:) :: ialtyb
+  !> initial mesh coordinates
+  double precision, allocatable, dimension(:,:) :: xyzno0
+  !> mesh displacement
+  double precision, allocatable, dimension(:,:) :: depale
+  !> mesh displacement of the previous time-step
+  double precision, allocatable, dimension(:,:) :: disala
+  !> \}
 
 contains
 

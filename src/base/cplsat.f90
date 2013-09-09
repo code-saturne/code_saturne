@@ -21,7 +21,7 @@
 !-------------------------------------------------------------------------------
 
 !> \file cplsat.f90
-!> Module for code/code coupling
+!> \brief Module for code/code coupling
 
 module cplsat
 
@@ -33,32 +33,34 @@ module cplsat
 
   !=============================================================================
 
-  !  couplage code / code - gestion des parametres principaux
+  !> \defgroup cplsat Module for code/code coupling
+  !> code / code - management of key parameters
 
-  ! nbrcpl : nombre de couplage Code_Saturne / Code_Saturne
-  ! ifaccp : indicateur de couplage face/face uniquement
-  ! imobil : indicateur de maillage mobile pour les turbomachines
+  !> \addtogroup cplsat
+  !> \{
 
-  integer, save :: nbrcpl, ifaccp, imobil
-
-  ! nbcpmx : nombre de couplage max admissible
-
+  !> number of couplings Code_Saturne / Code_Saturne
+  integer, save :: nbrcpl
+  !> indicator coupling face / face only
+  integer, save :: ifaccp
+  !> "Mobil Mesh" indicator for turbo-machine applications
+  integer, save :: imobil
+  !> maximum permissible number of coupling
   integer   nbcpmx
   parameter(nbcpmx=10)
-
-  ! iturcp(nbcpmx) : modele de turbulence de l'instance distante
-  ! imajcp(nbcpmx) : indice de mise a jour de la localisation du couplage
-  ! icormx(nbcpmx) : indice de presence de calcul en repere relatif
-  ! nvarcp(nbcpmx) : nombre de variables a envoyer/recevoir
-  ! nvarto(nbcpmx) : taille des tableaux d'echange
-
-  integer, save :: iturcp(nbcpmx), imajcp(nbcpmx), icormx(nbcpmx)
-  integer, save :: nvarcp(nbcpmx), nvarto(nbcpmx)
-
+  !> turbulence model of the remote instance
+  integer, save :: iturcp(nbcpmx)
+  !> indicator to update location of the coupling
+  integer, save :: imajcp(nbcpmx)
+  !> indicator of calulation in relative reference frame
+  integer, save :: icormx(nbcpmx)
+  !> number of variables to send/receive
+  integer, save :: nvarcp(nbcpmx)
+  !> size of exchange tables
+  integer, save :: nvarto(nbcpmx)
   !> Absolute time value after the mesh starts to rotate (if it does),
   !> for previous calculation
   double precision, save :: ttpmob
-
   !> Current absolute time after the mesh starts to rotate (if it does).
   !> In case of restart, this is equal to ttpmob + additional computed time.
   double precision, save :: ttcmob

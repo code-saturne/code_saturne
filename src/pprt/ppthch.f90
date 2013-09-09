@@ -33,15 +33,24 @@ module ppthch
 
   !===========================================================================
 
-  !--> CONSTANTES THERMOCHIMIE
+  !> \defgroup  thermophysical Module for specific physics thermophysical data
 
-  !       RR           --> Constante des gaz parfaits en J/mol/K
-  !       TREFTH       --> Temperature de reference (K)
-  !       VOLMOL       --> Volume molaire dans les conditions NTP
-  !                        T = 0 C et P = 1 atm
+  !> \addtogroup thermophysical
+  !> \{
 
+  !> perfect gas constant in \f$J/mol/K\f$
   double precision rr
-  double precision trefth, prefth, volmol
+
+  !> reference temperature for the specific physics, in K
+  double precision trefth
+
+  !> reference pressure for the specific physics, in Pa
+  double precision prefth
+
+  !> molar volume under normal pressure and temperature conditions
+  !>  (1 atmosphere, 0 \f$ \degresC \f$) in \f$m^{-3}\f$
+  double precision volmol
+
   parameter ( rr     = 8.31434d0      ,                             &
               trefth = 25.d0 + tkelvi ,                             &
               prefth = 1.01325d5      ,                             &
@@ -49,50 +58,80 @@ module ppthch
 
   !--> DONNEES
 
-  !       NRGAZ        --> Nb de reactions globales en phase gaz
-  !       NRGAZM       --> Nb maximal de reactions globales en phase gaz
-  !       NATO         --> Nb d especes atomiques (C,H,..)
-  !       NATOM        --> Nb maximal d especes atomiques (C,H,..)
-  !       NGAZE        --> Nb de constituants gazeux elementaires
-  !       NGAZEM       --> Nb maximal de constituants gazeux elementaires
-  !       NGAZG        --> Nb d especes globales (ex:Fuel,Oxyd,Prod1,Prod2)
-  !       NGAZGM       --> Nb maximal d especes globales
-  !       NPO          --> Nb de points de tabulation
-  !       NPOT         --> Nb maximal de points de tabulation
-  !       TH           --> Temperature en Kelvin
-  !       EHGAZG(G,IT) --> Enthalpie massique (J/kg) de l espece globale
-  !                        no G a la temperature T(IT)
-  !       WMOLG(G)     --> Masse molaire de l espece globale
-  !       EHGAZE(G)    --> Enthalpie massique (J/kg) constituant gazeux
-  !                        elementaire no E a la temperature T(IT)
-  !       WMOLE(G)     --> Masse molaire du constituant gazeux elementaire
-  !       WMOLAT(E)    --> Masse molaire des atomes (C,H,..)
-  !       IATC, IATH   --> Pointeur dans WMOLEL pour les ecpeces
-  !       IATO, IATN, IATS       elementaires (C,H,..)
-  !       FS(R)        --> Taux de melange pour la reaction gloable R
-  !       STOEG(G,R)   --> Stoechio en especes globales des reactions
-  !                        pour l espece no G et pour la reaction no R
-  !       CKABSG(G)    --> Coefficient d'absorption des especes globales
-  !       CKABS1       --> Coefficient d'absorption du melange gazeux
-  !                        (en CP)
-  !       DIFTL0       --> Diffusivite dynamique en kg/(m s)
+  !> maximal number of global species
+  integer    ngazgm
 
-  integer    ngazgm, ngazem, npot, natom, nrgazm
+  !> maximal number of elementary gas components
+  integer    ngazem
+
+  !> maximal number of tabulation points
+  integer    npot
+
+  !> maximal number of atomic species
+  integer    natom
+
+  !> maximal number of global reactions in gas phase
+  integer    nrgazm
+
   parameter( ngazgm = 25 , ngazem = 20 ,                                     &
              npot  = 500 , natom  = 5   , nrgazm = 1 )
   integer    iatc, iath, iato, iatn , iats
   parameter( iatc = 1, iath = 2, iato = 3, iatn = 4 , iats = 5 )
 
-  integer, save ::           npo, ngaze, ngazg, nato, nrgaz
+  !> number of tabulation points
+  integer, save ::           npo
+  !> number of elementary gas components
+  integer, save ::           ngaze
+  !> number of global species
+  integer, save ::           ngazg
+  !> number of atomic species
+  integer, save ::           nato
 
-  double precision, save ::  th(npot),                                       &
-                             ehgaze(ngazem,npot), ehgazg(ngazgm,npot),       &
-                             wmole(ngazem), wmolg(ngazgm), wmolat(natom),    &
-                             stoeg(ngazgm,nrgazm), fs(nrgazm),               &
-                             ckabsg(ngazgm), ckabs1,                         &
-                             diftl0, xco2, xh2o
+  !> number of global reactions in gas phase
+  integer, save ::           nrgaz
 
+  !> temperature (in K)
+  double precision, save ::  th(npot)
+
+  !> engaze(ij) is the massic enthalpy (J/kg) of the i-th elementary gas component
+  !> at temperature  th(j)
+  double precision, save ::  ehgaze(ngazem,npot)
+
+  !> engazg(ij) is the massic enthalpy (J/kg) of the i-th global secies
+  !> at temperature  th(j)
+  double precision, save ::  ehgazg(ngazgm,npot)
+
+  !> molar mass of an elementary gas component
+  double precision, save ::  wmole(ngazem)
+
+  !> molar mass of a global species
+  double precision, save ::  wmolg(ngazgm)
+
+  !> molar mass of atoms
+  double precision, save ::  wmolat(natom)
+
+  !> Stoichiometry in reaction global species.  Negative for the reactants,
+  !> and positive for the products
+  double precision, save ::  stoeg(ngazgm,nrgazm)
+
+  !> Mixing rate at the stoichiometry
+  double precision, save ::  fs(nrgazm)
+
+  !> Absorption coefficient of global species
+  double precision, save ::  ckabsg(ngazgm)
+
+  !> Absorption coefficient of gas mixture
+  double precision, save ::  ckabs1
+
+  !> dynamic viscosity
+  double precision, save ::  diftl0
+  !> Molar coefficient of CO2
+  double precision, save ::  xco2
+  !> Molar coefficient of H2O
+  double precision, save ::  xh2o
   !=============================================================================
+
+  !> \}
 
 end module ppthch
 

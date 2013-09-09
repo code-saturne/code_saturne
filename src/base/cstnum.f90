@@ -21,7 +21,7 @@
 !-------------------------------------------------------------------------------
 
 !> \file cstnum.f90
-!> Module for numerical constants
+!> \brief Module for numerical constants
 
 module cstnum
 
@@ -31,10 +31,24 @@ module cstnum
 
   !=============================================================================
 
-  double precision  epzero, rinfin, grand, zero, pi
+  !> \defgroup cstnum Module for numerical constants
+
+  !> \addtogroup cstnum
+  !> \{
+
+  !> epsilon \f$ 10^{-12}\f$
+  double precision  epzero
+  !> infinite \f$ 10^{+30}\f$
+  double precision  rinfin
+  !> big value \f$ 10^{+12}\f$
+  double precision  grand
+  !> zero \f$ 0 \f$
+  double precision  zero
+  !> \f$ \pi \f$ value with 16 digits
+  double precision  pi
   parameter        (epzero=1.d-12, rinfin=1.d+30, grand=1.d+12,  &
                     zero=0.d0, pi=3.141592653589793d0)
-
+  !> \}
   !=============================================================================
 
 end module cstnum

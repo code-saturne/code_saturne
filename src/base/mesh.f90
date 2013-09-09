@@ -21,7 +21,7 @@
 !-------------------------------------------------------------------------------
 
 !> \file mesh.f90
-!> Module for mesh-related arrays
+!> \brief Module for mesh-related arrays
 
 module mesh
 
@@ -31,98 +31,158 @@ module mesh
 
   !=============================================================================
 
-  ! Mesh Fortran structure, pointers to the C structure
+  !> \defgroup mesh Mesh Fortran structure, pointers to the C structure
 
-  ! ndim : spatial dimension
+  !> \addtogroup mesh
+  !> \{
 
+  !< spatial dimension
   integer :: ndim
   parameter(ndim=3)
 
-  integer, save :: ncelet  !< number of extended (real + ghost) cells
-  integer, save :: ncel    !< number of cells
-  integer, save :: nfac    !< number of interior faces
-  integer, save :: nfabor  !< number of boundary faces
-  integer, save :: nnod    !< number of vertices
+  !< number of extended (real + ghost of the 'halo') cells. See \ref note_1
+  integer, save :: ncelet
 
-  integer, save :: ncelbr  !< number of cells with faces on boundary
+  !< number of real cells in the mesh
+  integer, save :: ncel
 
-  integer, save :: lndfac  !< size of nodfac indexed array
-  integer, save :: lndfbr  !< size of nodfbr indexed array
+  !< number of internal faces  (see \ref note_2)
+  integer, save :: nfac
 
+  !< number of boundary faces (see \ref note_2)
+  integer, save :: nfabor
+
+  !< number of vertices in the mesh
+  integer, save :: nnod
+
+  !< number of cells with at least one boundary
+  integer, save :: ncelbr
+
+  !< size of the array \c nodfac of internal faces - nodes connectivity
+  !< (see \ref note_3)
+  integer, save :: lndfac
+
+  !< size of the array \c nodfbr of boundary faces - nodes connectivity
+  !< (see \ref note_3)
+  integer, save :: lndfbr
+
+  !< Number of referenced families of entities (boundary faces, elements, ...)
   integer, save :: nfml    !< number of families (group classes)
 
-  !> interior faces -> cells connectivity
+  !< Index-numbers of the two (only) neighbouring cells for each internal face
   integer, dimension(:,:), pointer :: ifacel
 
-  !> boundary  faces -> cells connectivity
+  !> index-number of the (unique) neighbouring cell for each boundary face
   integer, dimension(:), pointer :: ifabor
 
-  !> interior face -> vertex index
+  !> position of the first node of the each internal face in the array nodfac
+  !> (see \ref note_3)
   integer, dimension(:), pointer :: ipnfac
 
-  !> interior face -> vertex connectivity
+  !> index-numbers of the nodes of each internal face
+  !> (see \ref note_3)
   integer, dimension(:), pointer :: nodfac
 
-  !> boundary face -> vertex index
+  !> position of the first node of the each boundary face in the array nodfbr
+  !> (see \ref note_3)
   integer, dimension(:), pointer :: ipnfbr
 
-  !> boundary face -> vertex connectivity
+  !> index-numbers of the nodes of each boundary face
+  !> (see \ref note_3)
   integer, dimension(:), pointer :: nodfbr
 
-  integer, dimension(:), pointer :: ifmfbr    !< boundary face family numbers
-  integer, dimension(:), pointer :: ifmcel    !< cell family numbers
+  !> family number of the boundary faces. See \ref note_1
+  integer, dimension(:), pointer :: ifmfbr
 
-  !> list of cells adjacent to boundary faces
+  !> family number of the elements. See \ref note_1
+  integer, dimension(:), pointer :: ifmcel
+
+  !> list of cells having at least one boundary face
   integer, dimension(:), pointer :: icelbr
 
-  !> symmetry marker (0 to cancel mass flux)
+  !> integer to mark out the "symmetry" (itypfb=isymet) boundary faces
+  !> where the mass flow has to be canceled when the ALE module is switched
+  !> off (these faces are impermeable).
+  !> For instance, if the face ifac is symmetry face,
+  !> isympa(ifac)=0, otherwise isympa(ifac)=1.
   integer, dimension(:), pointer :: isympa
 
-  !> cell centers
+  !> coordinate of the cell centers
   double precision, dimension(:,:), pointer :: xyzcen
 
-  !> interior face surface vectors
+  !> surface vector of the internal faces. Its norm is the surface of the face
+  !> and it is oriented from \c ifacel(1,.) to \c ifacel(2,.)
   double precision, dimension(:,:), pointer :: surfac
 
-  !> boundary face surface vectors
+
+  !> surface vector of the boundary faces. Its norm is the surface of the face
+  !> and it is oriented outwards
   double precision, dimension(:,:), pointer :: surfbo
 
-  !> interior face centers of gravity
+  !> coordinates of the centres of the internal faces
   double precision, dimension(:,:), pointer :: cdgfac
 
-  !> boundary face centers of gravity
+  !> coordinates of the centres of the boundary faces
   double precision, dimension(:,:), pointer :: cdgfbo
 
-  !> vertex coordinates
+  !> coordinates of the mesh vertices
   double precision, dimension(:,:), pointer :: xyznod
 
-  !> cell volumes
+  !> volume of each cell
   double precision, dimension(:), pointer :: volume
 
-  !> interior face surfaces
+  !> norm of the surface vector of the internal faces
   double precision, dimension(:), pointer :: surfan
 
-  !> boundary face surfaces
+  !> norm of the surface of the boundary faces
   double precision, dimension(:), pointer :: surfbn
 
   !> distance IJ.Nij
+  !> for every internal face, dot product of the vectors
+  !> \f$ \vect{IJ}\f$ and \f$\vect{n}\f$.  I and J are respectively
+  !> the centres of the first and the second neighbouring cell.
+  !> The vector \f$\vect{n}\f$ is the unit vector normal to the face
+  !> and oriented from the first to the second cell
   double precision, dimension(:), pointer :: dist
 
   !> distance IF.N for boundary faces
+  !> For every boundary face, dot product between the vectors
+  !> \f$\vect{IF}\f$ and \f$\vect{n}\f$.
+  !> I is the center of the neighbouring cell. F is the face center.
+  !> The vector \f$\vect{n}\f$ is the unit vector normal to the face and
+  !> oriented to the exterior of the domain
   double precision, dimension(:), pointer :: distb
 
   !> weighting (Aij=pond Ai+(1-pond)Aj)
+  !> for every internal face,
+  !> \f$\displaystyle\frac{\vect{FJ}.\vect{n}}{\vect{IJ}.\vect{n}}\f$.
+  !> With regard to the mesh quality, its ideal value is 0.5
   double precision, dimension(:), pointer :: pond
 
   !> vector I'J' for interior faces
+  !> for every internal face, the three components of the vector
+  !> \f$\vect{I'J'}\f$, where I' and J' are
+  !> respectively the orthogonal projections of the neighbouring cell
+  !> centres I and J on a straight line orthogonal to the face and passing
+  !> through its center
   double precision, dimension(:,:), pointer :: dijpf
 
   !> vector II' for interior faces
+  !> for every boundary face, the three components of the vector
+  !> \f$\vect{II'}\f$. I' is the orthogonal projection of I,
+  !> center of the neighbouring cell, on the
+  !> straight line perpendicular to the face and passign through its center
   double precision, dimension(:,:), pointer :: diipb
 
   !> vector OF for interior faces
+  !> for every internal face, the three components of the vector
+  !> \f$\vect{OF}\f$. O is the intersection
+  !> point between the face and the straight line joining the centres
+  !> of the two neighbouring cells. F is the face center
   double precision, dimension(:,:), pointer :: dofij
 
   !=============================================================================
+
+  !> \}
 
 end module mesh

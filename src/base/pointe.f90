@@ -21,7 +21,7 @@
 !-------------------------------------------------------------------------------
 
 !> \file pointe.f90
-!> Module for pointer variables
+!> \brief Module for pointer variables
 
 module pointe
 
@@ -32,9 +32,12 @@ module pointe
   implicit none
 
   !=============================================================================
+  !> \defgroup pointer_variables Module for pointer variables
 
+  !> \addtogroup pointer_variables
+  !> \{
 
-  !> \defgroup fortan_pointer_containers Containers to Fortran array pointers.
+  !> \defgroup fortran_pointer_containers Containers to Fortran array pointers.
   !> An array of one of these these derived types can be used to manage a set of
   !> pointers (Fortran not allow arrays of pointers directly, so this
   !> technique is a classical workaround.
@@ -46,145 +49,295 @@ module pointe
   ! reportedly have bugs using this feature, so we will need to avoid
   ! depending on it for a few years.
 
-  !> \ingroup fortan_pointer_containers
-  !> \brief container for rank 1 double precision array pointer.
+  !> \addtogroup fortran_pointer_containers
+  !> \{
 
+  !> container for rank 1 double precision array pointer.
   type pmapper_double_r1
     double precision, dimension(:),  pointer :: p !< rank 1 array pointer
   end type pmapper_double_r1
 
-  !> \ingroup fortan_pointer_containers
-  !> \brief container for rank 2 double precision array pointer.
 
+  !> container for rank 2 double precision array pointer.
   type pmapper_double_r2
     double precision, dimension(:,:),  pointer :: p !< rank 2 array pointer
   end type pmapper_double_r2
 
-  !> \ingroup fortan_pointer_containers
-  !> \brief container for rank 3 double precision array pointer.
-
+  !> container for rank 3 double precision array pointer.
   type pmapper_double_r3
     double precision, dimension(:,:,:),  pointer :: p !< rank 3 array pointer
   end type pmapper_double_r3
 
+  !> \}
+
+  !=============================================================================
+
+  !> \defgroup auxilliary Auxilliary variables
+
+  !> \addtogroup auxilliary
+  !> \{
+
+  !... Auxiliaires
+
+  !> distance between the center of a given volume and the closest wall,
+  !> when it is necessary (\f$R_{ij}-\varepsilon\f$ with wall echo,
+  !> LES with van Driest-wall damping, or \f$k-\omega\f$ (SST) turbulence model)
+  !> and when \c icdpar=1. The distance between the center of the cell
+  !> \c iel and the closest wall is \c dispar(iel)
+  double precision, allocatable, dimension(:)   :: dispar
+
+  !> non-dimensional distance \f$y^+\f$ between a given volume and the closest wall,
+  !> when it is necessary (LES with van Driest-wall damping) and when \c icdpar=1.
+  !> The adimensional distance \f$y^+\f$ between the center of the cell \c iel
+  !> and the closest wall is therefore \c yplpar(iel1)
+  double precision, allocatable, dimension(:)   :: yplpar
+
+  !> \f$y^+\f$ at boundary, if post-processed
+  double precision, allocatable, dimension(:)   :: yplbr
+
+  !> friction velocity at the wall, in the case of a LES calculation
+  !> with van Driest-wall damping
+  double precision, allocatable, dimension(:)   :: uetbor
+
+  !> stresses at boundary (if post-processed)
+  double precision, allocatable, dimension(:,:) :: forbr
+
+  !> \}
+
+  !=============================================================================
+
+  !> \defgroup coupled_case Specific arrays for the coupled case
+
+  !> \addtogroup coupled_case
+  !> \{
+
+  !> boundary conditions for the velocity vector with
+  !> the coupled velocity components algorithm (\c ivelco=1): see \ref note_2
+  double precision, dimension(:,:),   allocatable :: coefau
+
+  !> boundary conditions for the velocity diffusion flux with
+  !> the coupled velocity components algorithm (\c ivelco=1): see \ref note_2
+  double precision, dimension(:,:),   allocatable :: cofafu
+
+  !> boundary conditions for the velocity convective flux (only for
+  !> compressible flows).
+  double precision, dimension(:,:),   allocatable :: cofacu
+
+  !> boundary conditions for the velocity vector with
+  !> the coupled velocity components algorithm (\c ivelco=1): see \ref note_2
+  double precision, dimension(:,:,:), allocatable :: coefbu
+
+  !> boundary conditions for the velocity diffusion flux with
+  !> the coupled velocity components algorithm (\c ivelco=1): see \ref note_2
+  double precision, dimension(:,:,:), allocatable :: cofbfu
+
+  !> boundary conditions for the velocity convective flux (only for
+  !> compressible flows).
+  double precision, dimension(:,:,:), allocatable :: cofbcu
+
+  !> explicit Boundary conditions for the mesh velocity.
+  !> dim = (3,nfabor)
+  double precision, dimension(:,:), allocatable ::   cfaale
+
+  !> explicit Boundary conditions for the mesh velocity.
+  !> dim = (3,nfabor)
+  double precision, dimension(:,:), allocatable ::   claale
+
+  !> implicit Boundary conditions for the mesh velocity.
+  !> dim = (3,3,nfabor)
+  double precision, dimension(:,:,:), allocatable :: cfbale
+
+  !> implicit Boundary conditions for the mesh velocity.
+  !> dim = (3,3,nfabor)
+  double precision, dimension(:,:,:), allocatable :: clbale
+
+
+  !> boundary condition type at the boundary face \c ifac
+  !> (see user subroutine \ref cs\_user\_boundary\_conditions)
+  integer, allocatable, dimension(:) :: itypfb
+
+  !> indirection array allowing to sort the boundary faces
+  !> according to their boundary condition type \c itypfb
+  integer, allocatable, dimension(:) :: itrifb
+
+  !> to identify boundary zones associated wiyth boundary faces
+  !> (particular physics)
+  integer, allocatable, dimension(:) :: izfppp
+
+  !> to identify boundary zones associated wiyth boundary faces
+  !> (radiative transfert)
+  integer, allocatable, dimension(:) :: izfrad
+
+  !> number of the wall face (type \c itypfb=iparoi or \c iparug)
+  !> which is closest to the center of a given volume when necessary
+  !> (\f$R_{ij}-\varepsilon\f$ with wall echo, LES with van Driest-wall damping,
+  !> or \f$k-\omega\f$ (SST) turbulence model) and when \c icdpar=2.
+  !> The number of the wall face which is the closest to
+  !> the center of the cell \c iel is \c ifapat(iel1).
+  !> This calculation method is not compatible with parallelism and periodicity
+  integer, allocatable, dimension(:) :: ifapat
+
+  !> the index of the structure, (\c idfstr(ifac) where \c ifac is the index
+  !> of the face), 0 if the face is not coupled to any structure.
+  integer, allocatable, dimension(:) :: idfstr
+
+  !> square of the norm of the deviatoric part of the deformation
+  !> rate tensor (\f$S^2=2S_{ij}^D S_{ij}^D\f$). This array is defined only
+  !> with the \f$k-\omega\f$ (SST) turbulence model
+  double precision, allocatable, dimension(:)   :: s2kw
+
+  !> divergence of the velocity. More precisely it is the trace of the velocity
+  !> gradient (and not a finite volume divergence term). In the
+  !> cell \c iel,  \f$div(\vect{u})\f$ is given by \c divukw(iel1).
+  !> This array is defined only with the \f$k-\omega\f$ SST turbulence model
+  !> (because in this case it may be calculated at the same time as \f$S^2\f$)
+  double precision, allocatable, dimension(:)   :: divukw
+
+  !> strain rate tensor at the previous time step
+  double precision, allocatable, dimension(:,:) :: straio
+
+  !> \}
+
+  !=============================================================================
+
+  !... Parametres du module thermique 1D
+  !> \defgroup thermal_1D Thermal 1D module parameters
+
+  !> \addtogroup thermal_1D
+  !> \{
+
+
+
+  !> number of boundary faces which are coupled
+  !> with a wall 1D thermal module. See the user subroutine \ref uspt1d
+  integer, save :: nfpt1d
+
+  ! TODO
+  integer, save :: nmxt1d
+
+  !> zones of t1d, dimensioned with nfabor (TODO)
+  integer, allocatable, dimension(:) :: izft1d
+
+  !> number of discretisation cells in the 1D wall for the
+  !> \c nfpt1d boundary faces which are coupled with a wall 1D thermal module.
+  !> The number of cells for these boundary faces is given by
+  !> \c nppt1d(ii), with 1 <= ii <= nfpt1d.
+  !> See the user subroutine \ref uspt1d
+  integer, allocatable, dimension(:) :: nppt1d
+
+  !> array allowing to mark out the numbers of
+  !> the \c nfpt1d boundary faces which are coupled with a wall 1D
+  !> thermal module. The numbers of these boundary faces are
+  !> given by \c ifpt1d(ii), with 1 <= ii <= \c nfpt1d.
+  !> See the user subroutine \ref {uspt1d}}
+  integer, allocatable, dimension(:) :: ifpt1d
+
+  !> typical boundary condition at the external (pseudo) wall:
+  !> Dirichlet condition (\c iclt1d=1) or flux condition (\c iclt1d=3)
+  integer, allocatable, dimension(:) :: iclt1d
+
+  !> thickness of the 1D wall for the \c nfpt1d boundary faces
+  !> which are coupled with a wall 1D thermal module.
+  !> The wall thickness for these boundary faces is therefore given by
+  !> \c eppt1d(ii), with 1 <= ii <= \c nfpt1d.
+  !> See the user subroutine \ref uspt1d
+  double precision, allocatable, dimension(:) :: eppt1d
+
+  !> geometry of the pseudo wall mesh (refined as a fluid
+  !> if \c rgt1d is smaller than 1
+  double precision, allocatable, dimension(:) :: rgpt1d
+
+  !> initialisation temperature of the wall (uniform in thickness).
+  !> In the course of the calculation, the array stores the temperature
+  !> of the solid at the fluid/solid interface.
+  double precision, allocatable, dimension(:) :: tppt1d
+
+  !> external temperature of the pseudo wall in the Dirichlet case.
+  double precision, allocatable, dimension(:) :: tept1d
+
+  !> external coefficient of transfer in the pseudo wall under Dirichlet conditions
+  !> (in \f$W.m^{-2}.K^.\f$).
+  double precision, allocatable, dimension(:) :: hept1d
+
+  ! fept1d ! nfpt1d                  ! flux thermique exterieur
+  !> external heat flux in the pseudo wall under the flux conditions
+  !> (in \f$W.m^{-2}\f$, negative value for energy entering the wall).
+  double precision, allocatable, dimension(:) :: fept1d
+
+  !> thermal diffusivity
+  double precision, allocatable, dimension(:) :: xlmbt1
+
+  !> volumetric heat capacity \f$\rho C_p\f$ of the wall uniform in thickness
+  !> (in \f$J.m^{-3}.K^{-1}\f$).
+  double precision, allocatable, dimension(:) :: rcpt1d
+
+  !> physical time step associated with the solved 1D equation of the pseudo wall
+  !> (which can be different from the time step in the calculation).
+  double precision, allocatable, dimension(:) :: dtpt1d
+
+  !> \}
+
   !=============================================================================
 
   !... Auxiliaires
+  !> \addtogroup auxilliary
+  !> \{
 
-  ! Array  ! Dimension               ! Description
 
-  ! dispar ! ncelet                  ! distance a la face de type 5 (phase 1) la
-  !                                    plus proche
-  ! yplpar ! ncelet                  ! yplus associe (LES only)
-  ! forbr  ! nfabor*3                ! efforts aux bords (si posttraite)
-  ! yplbr  ! nfabor                  ! yplus bord (si post-traite)
-  ! uetbor ! nfabor                  ! uetbor  bord (si LES+VanDriest)
-  !        !                         ! ou si le modele de depot est actif
-  ! idfstr ! nfabor                  ! tableau d'indirection pour les structures
-  !                                    mobiles EN ALE
-
-  double precision, allocatable, dimension(:,:) :: forbr
-  double precision, allocatable, dimension(:) :: dispar, yplpar
-  double precision, allocatable, dimension(:) :: yplbr, uetbor
-
-  ! Specific arrays for the coupled case
-
-  ! coefau ! (3,nfabor)     ! explicit Boundary conditions for the velocity
-  ! coefbu ! (3,3,nfabor)   ! implicit Boundary conditions for the velocity
-  ! cofafu ! (3,nfabor)     ! explicit Boundary conditions for the velocity
-  ! cofbfu ! (3,3,nfabor)   ! implicit Boundary conditions for the velocity
-  ! cofacu ! (3,nfabor)     ! explicit Boundary conditions for the velocity
-  ! cofbcu ! (3,3,nfabor)   ! implicit Boundary conditions for the velocity
-  ! claale ! (3,nfabor)     ! explicit Boundary conditions for the mesh velocity
-  ! clbale ! (3,3,nfabor)   ! implicit Boundary conditions for the mesh velocity
-  ! cfaale ! (3,nfabor)     ! explicit Boundary conditions for the mesh velocity
-  ! cfbale ! (3,3,nfabor)   ! implicit Boundary conditions for the mesh velocity
-
-  double precision, dimension(:,:), allocatable :: coefau, cofafu, cofacu
-  double precision, dimension(:,:,:), allocatable :: coefbu, cofbfu, cofbcu
-
-  double precision, dimension(:,:), allocatable :: cfaale, claale
-  double precision, dimension(:,:,:), allocatable :: cfbale, clbale
-
-  ! itypfb ! nfabor                  ! type des faces de bord
-  ! itrifb ! nfabor                  ! indirection pour tri faces de bord
-  ! izfppp ! nfabor                  ! pour reperage des zones frontieres
-  !        !                         ! associees aux faces de bord (phys. part.)
-  ! izfrad ! nfabor                  ! pour reperage des zones frontieres
-  !        !                         ! associees aux faces de bord (radiat.)
-  ! ifapat ! ncelet                  ! numero de face de bord 5 la plus proche
-  ! Peut etre serait il plus approprie de le verser dans pointe
-
-  integer, allocatable, dimension(:) :: itypfb, itrifb, izfppp, izfrad
-  integer, allocatable, dimension(:) :: ifapat
-
-  integer, allocatable, dimension(:) :: idfstr
-
-  ! s2kw   ! ncelet                  ! stockage de 2 Sij.Sij en k-omega
-  ! divukw ! ncelet                  ! stockage de divu en k-omega (en meme
-  !                                    temps que s2kw)
-  ! straio ! ncelet                  ! strain rate tensor at the
-  !                                    previous time step
-
-  double precision, allocatable, dimension(:) :: s2kw , divukw
-  double precision, allocatable, dimension(:,:) :: straio
-
-  !... Parametres du module thermique 1D
-
-  ! nfpt1d !                         ! nb faces de bord avec module thermique 1D
-  ! izft1d ! nfabor                  ! zone de t1d
-  ! nppt1d ! nfpt1d                  ! nombre de mailles dans la paroi
-  ! eppt1d ! nfpt1d                  ! epaisseur de la paroi
-  ! rgpt1d ! nfpt1d                  ! raison du maillage
-  ! ifpt1d ! nfpt1d                  ! numero de la face
-  ! tppt1d ! nfpt1d                  ! temperature de paroi
-  ! iclt1d ! nfpt1d                  ! type de condition limite
-  ! tept1d ! nfpt1d                  ! temperature exterieure
-  ! hept1d ! nfpt1d                  ! coefficient d'echange exterieur
-  ! fept1d ! nfpt1d                  ! flux thermique exterieur
-  ! xlmbt1 ! nfpt1d                  ! diffusivite thermique
-  ! rcpt1d ! nfpt1d                  ! rho*Cp
-  ! dtpt1d ! nfpt1d                  ! pas de temps
-
-  integer, save :: nfpt1d, nmxt1d
-  integer, allocatable, dimension(:) :: izft1d, nppt1d , ifpt1d , iclt1d
-  double precision, allocatable, dimension(:) :: eppt1d , rgpt1d , tppt1d
-  double precision, allocatable, dimension(:) :: tept1d , hept1d , fept1d
-  double precision, allocatable, dimension(:) :: xlmbt1 , rcpt1d , dtpt1d
-
-  !... Auxiliaires
-
-  ! ncepdc !                         ! nombre de cellules avec pdc
-  ! icepdc ! ncepdc                  ! numero des cellules avec pertedecharge
-  ! izcpdc ! ncelet                  ! zone de pdc
-  ! ckupdc ! (ncepdc,6)              ! valeur des coeff de pdc
-
+  !> number of cells in which a pressure drop is imposed.
+  !> See the user subroutine \ref uskpdc
   integer, save :: ncepdc
-  integer, allocatable, dimension(:) :: icepdc, izcpdc
+
+  !> number of the \c ncepdc cells in which a pressure drop is imposed.
+  !> See \c {iicepd} and the user subroutine \ref uskpdc
+  integer, allocatable, dimension(:) :: icepdc
+
+  !> zone with head losses
+  integer, allocatable, dimension(:) :: izcpdc
+
+  !> value of the coefficients of the pressure drop tensor of the
+  !> \c ncepdc cells in which a pressure drop is imposed.
+  !> Note the 6 values are sorted as follows: (k11, k22, k33, k12, k23, k33).
+  !> See \c ickpdc and the user subroutine ref uskpdc
   double precision, allocatable, dimension(:,:) :: ckupdc
 
-  ! ncetsm !                         ! nombre de cellules avec tsm
-  ! icetsm ! ncetsm*nvar             ! numero des cellules avec tsmasse
-  ! itypsm ! ncetsm                  ! type de tsm
-  ! izctsm ! ncelet                  ! zone de tsm
-
+  !> number of the \c ncetsm cells in which a mass source term is imposed.
+  !> See \c iicesm and the user subroutine \ref ustsma
   integer, save :: ncetsm
-  integer, allocatable, dimension(:) :: icetsm, izctsm
+
+  !> number of the \c ncetsm cells in which a mass source term is imposed.
+  !> See \c iicesm and the user subroutine \ref ustsma}}
+  integer, allocatable, dimension(:) :: icetsm
+
+  !> zone where a mass source term is imposed.
+  integer, allocatable, dimension(:) :: izctsm
+
+  !> type of mass source term for each variable
+  !> - 0 for an injection at ambient value,
+  !> - 1 for an injection at imposed value.
+  !> See the user subroutine \ref ustsma
   integer, allocatable, dimension(:,:) :: itypsm
+
+  !> value of the mass source term for pressure.
+  !> For the other variables, eventual imposed injection value.
+  !> See the user subroutine \ref ustsma
   double precision, allocatable, dimension(:,:) :: smacel
 
-  ! porosi ! ncelet                  ! value of the porosity
-  ! porosf ! (6, ncelet)             ! value of the porosity
-  !                                  ! (for convection and diffusion only
-  !                                  !  for iporos=2)
+  !> value of the porosity
   double precision, allocatable, dimension(:) :: porosi
+
+  !> value of the porosity (for convection and diffusion only)
   double precision, allocatable, dimension(:,:) :: porosf
 
-  ! visten ! ncelet                  ! symmetric tensor cell visco
+  !> symmetric tensor cell visco
   double precision, allocatable, dimension(:,:) :: visten
 
-  ! dttens ! ncelet                  ! diagonal tensor cell tensor for pressure
+  !> diagonal tensor cell tensor for pressure
   double precision, allocatable, dimension(:,:) :: dttens
+
+  !> \}
+
+  !> \}
 
 contains
 

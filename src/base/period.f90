@@ -21,7 +21,7 @@
 !-------------------------------------------------------------------------------
 
 !> \file period.f90
-!> Module for periodicity flags
+!> \brief Module for periodicity flags
 
 module period
 
@@ -29,16 +29,25 @@ module period
 
   implicit none
 
+  !> \defgroup period Module for periodicity flags
+
+  !> \addtogroup period
+  !> \{
+
+  !> presence of periodicity.
+  !> - 1: periodicity is activated
+  !> - 0: no periodicity (default value)
+  integer, save :: iperio
+
+  !> number of rotation periodicities. automaticly evaluated.
+  !> default value is 0
+  integer, save :: iperot
+
+  ! TODO
+  integer, save :: igrper
+
   !=============================================================================
 
-  ! iperio : indique s'il y a au moins une periodicite
-  !          valeur admissibles : 0 ou 1 ; valeur par defaut : 0
-  ! iperot : indique le nombre de periodicites de rotation
-  !          (complete automatiquement)
-  !          valeur par defaut : 0
-
-  integer, save :: iperio, iperot, igrper
-
-  !=============================================================================
+  !> \}
 
 end module period

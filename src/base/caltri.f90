@@ -121,16 +121,25 @@ double precision, allocatable, dimension(:,:) :: propfb
 double precision, allocatable, dimension(:,:) :: frcxt
 double precision, allocatable, dimension(:) :: prhyd
 
-! Lagrangian specific arrays
+!> \addtogroup lagran
+!> \{
+!> \defgroup lag_arrays Lagrangian arrays
+
+!> \addtogroup lag_arrays
+!> \{
 
 integer, allocatable, dimension(:,:) :: itepa
 integer, allocatable, dimension(:) :: icocel, itycel
 integer, allocatable, dimension(:) :: ifrlag
 
-double precision, allocatable, dimension(:,:) :: ettp, ettpa, tepa
+double precision, allocatable, dimension(:,:) :: ettp
+double precision, allocatable, dimension(:,:) :: ettpa, tepa
 double precision, allocatable, dimension(:,:) :: statis, stativ, parbor
 double precision, allocatable, dimension(:,:) :: tslagr
 double precision, allocatable, dimension(:,:) :: dlgeo
+
+!> \}
+!> \}
 
 !===============================================================================
 

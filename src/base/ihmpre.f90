@@ -21,7 +21,8 @@
 !-------------------------------------------------------------------------------
 
 !> \file ihmpre.f90
-!> Module for GUI parameter file flag
+!> \brief Module for GUI parameter file flag
+!> We could avoid this module by querying a C structure
 
 module ihmpre
 
@@ -31,10 +32,18 @@ module ihmpre
 
   !=============================================================================
 
-  ! We could avoid this module by querying a C structure
+  !> \defgroup dimens Module for dimensions
+
+  !> \addtogroup ihmpre
+  !> \{
+
+
+  !> indicator of the use of the GUI
+  !> (We could avoid this module by querying a C structure)
 
   integer, save :: iihmpr
 
+  !> \}
   !=============================================================================
 
 end module ihmpre

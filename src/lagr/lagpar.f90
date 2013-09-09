@@ -20,7 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-! Module for Lagrangian: parameters
+!> \file lagpar.f90
+!> \brief Module for Lagrangian model (parameters)
 
 module lagpar
 
@@ -30,98 +31,146 @@ module lagpar
 
   !=============================================================================
 
+  !> \defgroup lagpar Module for Lagrangian (parameters)
+
+  !> \addtogroup lagpar
+  !> \{
+
   !         Trois modules complementaires
   !                            lagran qui porte les non dimensions
   !                            lagdim qui porte les dimensions variables
   !                            lagpar qui porte les parametres
 
   !=============================================================================
-  ! 1. Classes et particules
 
-  !     NCHARM2 : NOMBRE MAXIMAL DE CLASSES DE CHARBON (voir cpincl.f90)
+  !> \defgroup classes_particles Classes and particles
 
+  !> \addtogroup classes_particles
+  !> \{
+
+  !> maximal number of coal classes
   integer         ncharm2
   parameter      (ncharm2 = 5)
 
-  !     NCLSTM : NOMBRE MAXIMUM DE STATISTIQUES VOLUMIQUE PAR GROUPE
-
+  !> maximal number of volumetric statistics
   integer         nclstm
   parameter      (nclstm = 100)
 
+  !> \}
+
   !=============================================================================
-  ! 2. Conditions aux limites
 
-  !     NFLAGM : NOMBRE MAXIMAL DE ZONE FRONTIERES
+  !> \defgroup lag_bcs Boundary conditions
 
+  !> \addtogroup lag_bcs
+  !> \{
+
+  !> maximal number of boundary zones
   integer         nflagm
   parameter      (nflagm = 100)
 
   !=============================================================================
-  ! 3. Conditions aux limites
 
-  !     NDLAGM : NOMBRE MAXIMAL DE DONNEES SUR LES PARTICULES (REELS)
-
+  !> maximal number of particle real data
   integer         ndlagm
   parameter      (ndlagm = 50)
 
-  !     NDLAIM : NOMBRE MAXIMAL DE DONNEES SUR LES PARTICULES (ENTIERS)
-
+  !> maximal number of particle integer data
   integer         ndlaim
   parameter      (ndlaim = 10)
 
+  !> \}
+
   !=============================================================================
-  ! 4. Schema en temps
 
-  !     NVGAUS : NOMBRE DE VARIABLES ALEATOIRES GAUSSIENNES PAR PARTICULES
+  !> \defgroup lag_brownian_motion Brownian motion
 
+  !> \addtogroup lag_brownian_motion
+  !> \{
+
+  !> number of gaussian random variables by particle
   integer         nvgaus
   parameter      (nvgaus = 9)
 
-
-  !=============================================================================
-  ! 5. Mouvement Brownien
-
-  !     NVGAUS : NOMBRE DE VARIABLES ALEATOIRES GAUSSIENNES PAR PARTICULES
-
+  ! TODO
   integer         nbrgau
   parameter      (nbrgau = 6)
 
+  !> \}
 
   !=============================================================================
-  ! 6. Variables utilisateurs supplementaires
 
-  !     NUSVAR : Nombre maximum de variables utilisateur supplementaires
+  !> \defgroup lag_user_variable Additional user variables
 
+  !> \addtogroup lag_user_variable
+  !> \{
+
+  !> maximal number of additional user variables
   integer         nusvar
   parameter      (nusvar = 10)
 
-!     NUSSTA : Nombre maximum de stats utilisateur supplementaires
-
+  !> maximal number of additional user volume statistics
   integer         nussta
   parameter      (nussta = 20)
 
-  !     NUSBRD : Nombre maximum interactions particules/frontieres
-  !              utilisateur supplementaires
-
+  !> maximal number of additional user particles/boundary interactions
   integer         nusbrd
   parameter      (nusbrd = 10)
 
+  !> \}
+
   !============================================================================
-  ! 7. Affichages et fichiers suite
 
-  !     NVPLMX : Nombre maximum de variables
+  !> \defgroup lag_printing Printing
 
+  !> \addtogroup lag_printing
+  !> \{
+
+  !> maximal number of variables
   integer         nvplmx
   parameter      (nvplmx = 50)
+
+  !> \}
 
   !=============================================================================
   ! 8. Types d'interaction au bord
 
-  integer         ientrl     , isortl     , irebol
-  integer         idepo1     , idepo2
-  integer         iencrl     , jbord1     , jbord2
-  integer         jbord3     , jbord4     , jbord5
-  integer         idepfa     , isymtl
+  !> \defgroup lag_typ_bnd_interaction Boundary interation type
+  !> (value of \c iusclb(izone))
+
+  !> \addtogroup lag_typ_bnd_interaction
+  !> \{
+
+
+  !> particle injection zone. For each particle class associated with this zone,
+  !> information must be provided. If a particle trajectory may cross an
+  !> injection zone, then this particle leaves the calculation domain.
+  integer         ientrl
+  !> constant = 2 !TODO
+  integer         isortl
+  !> constant = 3
+  integer         irebol
+  !> constant = 4
+  integer         idepo1
+  !> constant = 5
+  integer         idepo2
+  !> constant = 6
+  integer         iencrl
+  !> constant = 7
+  integer         jbord1
+  !> constant = 8
+  integer         jbord2
+  !> constant = 9
+  integer         jbord3
+  !> constant = 10
+  integer         jbord4
+  !> constant = 11
+  integer         jbord5
+  !> constant = 12
+  integer         idepfa
+  !> constant = 13
+  integer         isymtl
+  !> constant = 14
 
   parameter      (ientrl =  1, isortl =  2, irebol =  3)
   parameter      (idepo1 =  4, idepo2 =  5)
@@ -129,6 +178,7 @@ module lagpar
   parameter      (jbord3 = 10, jbord4 = 11, jbord5 = 12)
   parameter      (idepfa = 13, isymtl = 14)
 
+  !> \}
   !=============================================================================
 
 end module lagpar

@@ -21,7 +21,7 @@
 !-------------------------------------------------------------------------------
 
 !> \file mltgrd.f90
-!> Module for multigrid parameters
+!> \brief Module for multigrid parameters
 
 module mltgrd
 
@@ -31,28 +31,46 @@ module mltgrd
 
   implicit none
 
-  !=============================================================================
+  !> \defgroup mltgrd Module for multigrid parameters
 
-  ! Multigrid
-  ! -----------
-  !   ncegrm : maximum number of cells on coarsest mesh
-  !   ngrmax : maximum number of grids
-
-  !   mltmmn : mean number of cells under which merging should take place
-  !   mltmgl : global number of cells under which merging should take place
-  !   mltmmr : number of active ranks under which no merging is done
-  !   mltmst : number of ranks over which merging takes place (stride)
-  !   mlttyp : multigrid coarsening type (face traversal order)
-  !
-  !   nagmx0 : maximum aggregation per grid level
-  !   ncpmgr : if > 0, activates post-processing output of aggregation,
-  !            by projecting the coarse cell numbers (modulo ncpmgr(ivar))
-  !            on the finest mesh
-
-  integer, save :: ncegrm, ngrmax
-  integer, save :: mltmmn, mltmgl, mltmst, mltmmr, mlttyp
-  integer, save :: nagmx0(nvarmx), ncpmgr(nvarmx)
+  !> \addtogroup mltgrd
+  !> \{
 
   !=============================================================================
+
+  !> for the multi-grid method, maximum number of cells on the coarsest grid.
+  !> useful if and only if imgr(ivar) = 1 for at least one variable ivar
+  integer, save :: ncegrm
+
+  !> when using the multi-grid method, maximum number of grid levels.
+  !> useful if and only if imgr(ivar) = 1 for at least one variable ivar
+  integer, save :: ngrmax
+
+
+  !> mean number of cells under which merging should take place
+  integer, save :: mltmmn
+
+  !> global number of cells under which merging should take place
+  integer, save :: mltmgl
+
+  !> number of ranks over which merging takes place (stride)
+  integer, save :: mltmst
+
+  !> number of active ranks under which no merging is done
+  integer, save :: mltmmr
+
+  !> multigrid coarsening type (face traversal order)
+  integer, save :: mlttyp
+
+  !> maximum aggregation per grid level
+  integer, save :: nagmx0(nvarmx)
+
+  !> if > 0, activates post-processing output of aggregation,
+  !> by projecting the coarse cell numbers (modulo ncpmgr(ivar))
+  !> on the finest mesh
+  integer, save :: ncpmgr(nvarmx)
+
+  !=============================================================================
+  !> \}
 
 end module mltgrd
