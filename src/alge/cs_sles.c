@@ -3135,7 +3135,13 @@ cs_sles_needs_solving(const char        *var_name,
     MPI_Bcast(residue, 1, MPI_DOUBLE, 0, cs_glob_mpi_comm);
 #endif
 
-  if (r_norm <= EPZERO || *residue <= EPZERO) {
+  if (r_norm <= EPZERO) {
+    if (verbosity > 1)
+      bft_printf(_("%s [%s]:\n"
+                   "  immediate exit; r_norm = %11.4e, residual = %11.4e\n"),
+                 solver_name, var_name, r_norm, *residue);
+    retval = 0;
+  } else if (*residue/r_norm <= EPZERO) {
     if (verbosity > 1)
       bft_printf(_("%s [%s]:\n"
                    "  immediate exit; r_norm = %11.4e, residual = %11.4e\n"),
