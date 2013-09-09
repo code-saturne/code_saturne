@@ -127,12 +127,14 @@ double precision propfb(nfabor,*)
 
 ! Local variables
 
+!< [loc_var_dec]
 integer          iel, mode
 integer          iesp , idimve
 
 double precision tinit, hinit, coefe(ngazem)
 
 integer, allocatable, dimension(:) :: lstelt
+!< [loc_var_dec]
 
 !===============================================================================
 
@@ -145,6 +147,7 @@ integer, allocatable, dimension(:) :: lstelt
 !       thus the default (library reference) version returns immediately.
 !===============================================================================
 !
+!< [init1]
 ! For Joule heating by direct conduction, it stops
 !   you have tot be sure that the enthalpy function H(T) is the right one
 !
@@ -164,6 +167,7 @@ elseif (ippmod(ielarc).ge.1) then
   return
 
 endif
+!< [init1]
 
  9010 format(                                                     &
 '@                                                            ',/,&
@@ -191,6 +195,7 @@ endif
 ! Initialization
 !---------------
 
+!< [init2]
 allocate(lstelt(ncel)) ! temporary array for cells selection
 
 ! Control output
@@ -277,6 +282,7 @@ if ( isuite.eq.0 ) then
   endif
 
 endif
+!< [init2]
 
 !--------
 ! Formats

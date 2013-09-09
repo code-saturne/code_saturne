@@ -80,6 +80,7 @@ integer nent
 
 !===============================================================================
 
+!< [init_1]
 ! nent = Number of inlets
 !------------------------
 
@@ -94,6 +95,7 @@ nent = 2
 
 ! Synthetic fluctuations are not re-initialized in case of restart calculation
 isuisy = isuite
+!< [init_1]
 
 !--------
 ! Formats
@@ -217,6 +219,7 @@ double precision vitent(3), enrent, dspent
 
 ! First synthetic turbulence inlet: the Batten Method is used
 ! for boundary faces of color '1'
+!< [init_21]
 if (nument.eq.1) then
 
   ! 1. Data relatve to the method employed
@@ -246,9 +249,12 @@ if (nument.eq.1) then
   dspent = 4.d0
 
 endif
+!< [init_21]
 
 ! Second synthetic turbulence inlet: the Synthetic Eddy Method is used
 ! for the boundary faces verifying a geometric criterion
+
+!< [init_22]
 if (nument.eq.1) then
 
   ! 1. Data relatve to the method employed
@@ -278,6 +284,7 @@ if (nument.eq.1) then
   dspent = 3.d0
 
 endif
+!< [init_22]
 
 !--------
 ! Formats
@@ -390,11 +397,13 @@ double precision epsent(nfbent)
 
 ! Local variables
 
+!< [loc_var_dec3]
 integer          ii, ifac, iel
 integer          ipcvis
 double precision d2s3
 double precision utau, href, reyfro, yy, yplus, uplus, kplus, eplus
 double precision uref2, xdh, xitur, xkent, xeent
+!< [loc_var_dec3]
 
 !===============================================================================
 
@@ -405,6 +414,7 @@ ipcvis = ipproc(iviscl)
 !==========   from a wall law for the first synthetic turbulence inlet,
 !             - no refining of the statistics of the flow is provided for the
 !             second synthetic turbulence inlet
+!< [example_1]
 if (nument.eq.1) then
 
   ! Approximation of the friction velocity
@@ -459,12 +469,14 @@ if (nument.eq.2) then
   continue
 
 endif
+!< [example_1]
 
 ! Example 2 : - Reynolds stresses and dissipation at the inlet are computed
 !==========   using the turbulence intensity and standard laws for
 !             a circular pipe for the first synthetic turbulence inlet,
 !             - no refining of the statistics of the flow is provided for the
 !             other synthetic turbulence inlet
+!< [example_2]
 if (nument.eq.1) then
 
   do ii = 1, nfbent
@@ -505,6 +517,7 @@ if (nument.eq.1) then
   enddo
 
 endif
+!< [example_2]
 
 !--------
 ! Formats

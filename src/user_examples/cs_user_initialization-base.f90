@@ -129,9 +129,10 @@ double precision propfb(nfabor,*)
 
 ! Local variables
 
+!< [loc_var_dec]
 integer          iel, iutile
-
 integer, allocatable, dimension(:) :: lstelt
+!< [loc_var_dec]
 
 !===============================================================================
 
@@ -139,7 +140,9 @@ integer, allocatable, dimension(:) :: lstelt
 ! Initialization
 !===============================================================================
 
+!< [alloc]
 allocate(lstelt(ncel)) ! temporary array for cells selection
+!< [alloc]
 
 !===============================================================================
 ! Variables initialization:
@@ -150,6 +153,7 @@ allocate(lstelt(ncel)) ! temporary array for cells selection
 !   ONLY done if there is no restart computation
 !===============================================================================
 
+!< [init]
 if (isuite.eq.0) then
 
   do iel = 1, ncel
@@ -157,6 +161,7 @@ if (isuite.eq.0) then
   enddo
 
 endif
+!< [init]
 
 !--------
 ! Formats
@@ -166,7 +171,9 @@ endif
 ! End
 !----
 
+!< [finalize]
 deallocate(lstelt)  ! temporary array for cells selection
+!< [finalize]
 
 return
 end subroutine cs_user_initialization

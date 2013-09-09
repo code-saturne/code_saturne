@@ -448,7 +448,7 @@ double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
 
-
+!< [loc_var_dec]
 integer          ifac, ii
 integer          izone
 integer          iclafu
@@ -458,6 +458,7 @@ double precision uref2, d2s3
 double precision xkent, xeent
 
 integer, allocatable, dimension(:) :: lstelt
+!< [loc_var_dec]
 
 !===============================================================================
 
@@ -484,6 +485,7 @@ d2s3 = 2.d0/3.d0
 
 ! ---- The 12 color is a pure air inlet
 
+!< [example_1]
 call getfbr('12', nlelt, lstelt)
 !==========
 
@@ -591,9 +593,11 @@ do ilelt = 1, nlelt
   endif
 
 enddo
+!< [example_1]
 
 ! ---- Inlet of both primary Air and Fuel
 
+!< [example_2]
 call getfbr('11', nlelt, lstelt)
 !==========
 
@@ -702,9 +706,11 @@ do ilelt = 1, nlelt
 !
   xintur(izone) = 0.d0
 enddo
+!< [example_2]
 
 ! --- Color 15 is a wall
 
+!< [example_3]
 call getfbr('15', nlelt, lstelt)
 !==========
 
@@ -727,9 +733,11 @@ do ilelt = 1, nlelt
   izfppp(ifac) = izone
 
 enddo
+!< [example_3]
 
 ! --- Color 19 is an outlet
 
+!< [example_4]
 call getfbr('19', nlelt, lstelt)
 !==========
 
@@ -750,9 +758,11 @@ do ilelt = 1, nlelt
     izfppp(ifac) = izone
 
   enddo
+!< [example_4]
 
 ! --- 14 and 4 are symetry
 
+!< [example_5]
 call getfbr('14 or 4', nlelt, lstelt)
 !==========
 
@@ -772,6 +782,7 @@ do ilelt = 1, nlelt
   izfppp(ifac) = izone
 
 enddo
+!< [example_5]
 
 ! Deallocate the temporary array
 deallocate(lstelt)

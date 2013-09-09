@@ -183,8 +183,10 @@ endif
 ! Frequency of log output
 
 if (.false.) then
-
+!< [init_01]
   ntlist = 1
+!< [init_01]
+
 
 endif
 
@@ -192,6 +194,7 @@ endif
 
 if (.false.) then
 
+!< [init_02]
   do ii = 1, nvar
     iwarni(ii) = 1
   enddo
@@ -200,6 +203,7 @@ if (.false.) then
   iwarni(iu) = 2
   iwarni(iv) = 2
   iwarni(iw) = 2
+!< [init_02]
 
 endif
 
@@ -207,8 +211,10 @@ endif
 
 if (.false.) then
 
+!< [init_03]
   nthist = 1
   frhist = -1.d0
+!< [init_03]
 
 endif
 
@@ -217,6 +223,7 @@ endif
 
 if (.false.) then
 
+!< [init_04]
   ncapt  = 4
   tplfmt = 1 ! time plot format (1: .dat, 2: .csv, 3: both)
 
@@ -235,6 +242,7 @@ if (.false.) then
   xyzcap(1,4) = 0.60d0
   xyzcap(2,4) =-0.05d0
   xyzcap(3,4) = 0.01d0
+!< [init_04]
 
 endif
 
@@ -254,6 +262,7 @@ endif
 
 if (.false.) then
 
+!< [init_05]
   ! Current dynamic variables
 
   ! pressure variable
@@ -414,6 +423,7 @@ if (.false.) then
 
   endif
 
+!< [init_05]
 endif
 
 ! User scalar variables.
@@ -427,6 +437,7 @@ endif
 
 if (.false.) then
 
+!< [init_06]
   if (isca(1).gt.0.and.nscaus.ge.1) then
     ipp = ipprtp(isca(1))
     nomvar(ipp)  = 'Scalar 1'
@@ -443,11 +454,13 @@ if (.false.) then
     ihisvr(ipp,1)= -1
   endif
 
+!< [init_06]
 endif
 
 ! Other variables
 
 if (.false.) then
+!< [init_07]
 
   ! Density variable (output for post-processing only if variable or
   !                   in the case of specific physics)
@@ -465,6 +478,7 @@ if (.false.) then
   endif
 
   ! laminar viscosity
+
   ipp = ipppro(ipproc(iviscl))
   ichrvr(ipp)   = 0
   ilisvr(ipp)   = 0
@@ -537,12 +551,14 @@ if (.false.) then
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
+!< [init_07]
 endif
 
 ! Specific physics variables
 
 if (.false.) then
 
+!< [init_08]
   ! Transported Variables
   !----------------------
 
@@ -612,9 +628,11 @@ if (.false.) then
     ilisvr(ipp)  = 1
     ihisvr(ipp,1)= -1
   endif
+!< [init_08]
 
   ! --> Variables for coal particles
 
+!< [init_09]
   if (ippmod(icod3p).ge.0 .or. ippmod(icoebu).ge.0               &
                           .or. ippmod(icolwc).ge.0) then
 
@@ -759,9 +777,11 @@ if (.false.) then
     ilisvr(ipp)  = 1
     ihisvr(ipp,1)= -1
   endif
+!< [init_09]
 
   ! --> Variables for droplets
 
+!< [init_10]
   do icla = 1, nclafu
 
     ! Fuel mass fraction
@@ -783,9 +803,11 @@ if (.false.) then
     ihisvr(ipp,1)= -1
 
   enddo
+!< [init_10]
 
   ! --> Variables for carrying gas
 
+!< [init_11]
   ! Mean of 1 mixture fraction (fuel vapor)
   if (ifvap.gt.0) then
     ipp = ipprtp(isca(ifvap))
@@ -840,10 +862,12 @@ if (.false.) then
       ihisvr(ipp,1)= -1
     enddo
   endif
+!< [init_11]
 
   ! Variables of State; User defined Variables
   !-------------------------------------------
 
+!< [init_12]
   ! ---- Temperature
   ipp = ipppro(ipproc(itemp))
   ichrvr(ipp)   = 1
@@ -952,9 +976,11 @@ if (.false.) then
   ichrvr(ipp)   = 0
   ilisvr(ipp)   = 0
   ihisvr(ipp,1) = -1
+!< [init_12]
 
   ! --> State variables for coal particles or fuel droplets
 
+!< [init_13]
   do icla = 1, nclacp
 
     ! - Particles' Temperature K (of class ICLA)
@@ -1046,9 +1072,11 @@ if (.false.) then
     ihisvr(ipp,1) = -1
 
   enddo
+!< [init_13]
 
   ! --> State variables for carrier gas phase
 
+!< [init_14]
   ! temperature of gas mixture
   ipp = ipppro(ipproc(itemp1))
   ichrvr(ipp)   = 1
@@ -1212,6 +1240,7 @@ if (.false.) then
     ihisvr(ipp,1)= -1
   endif
 
+!< [init_14]
 endif
 
 !----
@@ -1289,6 +1318,7 @@ integer       fldid, keyvis, idim1, iflpst, itycat, ityloc
 !
 !          field_get_id returns -1 if field does not exist
 
+!< [example_1]
 call field_get_key_id('post_vis', keyvis)
 
 fldid = ivarfl(iu)
@@ -1304,6 +1334,7 @@ if (iand(iflpst, 2) .eq. 0) then
   iflpst = ior(iflpst, 2)
   call field_set_key_int(fldid, keyvis, iflpst)
 endif
+!< [example_1]
 
 !-------------------------------------------------------------------------------
 
@@ -1316,6 +1347,7 @@ endif
 !          forcing the definition of these fields to save the values computed
 !          for the boundary layer is necessary.
 
+!< [example_2]
 itycat = FIELD_INTENSIVE + FIELD_PROPERTY
 ityloc = 3 ! boundary faces
 ilved = .true. ! interleaved
@@ -1330,6 +1362,7 @@ call field_get_id('tstar', fldid)
 if (fldid.lt.0) then
   call field_create('tstar', itycat, ityloc, idim1, ilved, inoprv, fldid)
 endif
+!< [example_2]
 
 return
 

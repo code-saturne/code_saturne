@@ -33,17 +33,16 @@
   This page provides an example of code blocks that may be used
   to perform a calculation with drift scalars for coal combustion.
 
-
   \section cs_user_physical_properties-coal_drift Physical properties
 
-  \subsubsection loc_var Local variables to be added
+  \subsection loc_var Local variables to be added
 
   The following local variables need to be defined for the examples
   in this section:
 
   \snippet cs_user_physical_properties-coal_drift.f90 loc_var_dec
 
-  \subsubsection init Initialization and finalization
+  \subsection init Initialization and finalization
 
   The following initialization block needs to be added for the following examples:
 
@@ -53,7 +52,7 @@
   but deallocating arrays in a symmetric manner to their allocation is good
   practice, and it avoids using a different logic for C and Fortran.
 
-  \subsubsection body Body
+  \subsection body Body
 
   Here is the corresponding code:
   

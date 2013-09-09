@@ -129,9 +129,11 @@ double precision propfb(nfabor,*)
 
 ! Local variables
 
+!< [loc_var_dec]
 integer          iel
 
 integer, allocatable, dimension(:) :: lstelt
+!< [loc_var_dec]
 
 !===============================================================================
 
@@ -139,6 +141,7 @@ integer, allocatable, dimension(:) :: lstelt
 ! Initialization
 !===============================================================================
 
+!< [init]
 allocate(lstelt(ncel)) ! temporary array for cells selection
 
 !===============================================================================
@@ -155,6 +158,7 @@ if (isuite .eq. 1 .and. (idtvar.eq.1 .or. idtvar.eq.2)) then
     dt (iel) = 10.d0*dt(iel)
   enddo
 endif
+!< [init]
 
 !--------
 ! Formats

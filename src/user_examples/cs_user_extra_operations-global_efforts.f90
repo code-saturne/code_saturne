@@ -126,6 +126,7 @@ double precision parbor(nfabor,nvisbr)
 
 ! Local variables
 
+!< [loc_var_dec]
 integer          ifac
 integer          ii
 integer          ilelt  , nlelt
@@ -133,6 +134,7 @@ integer          ilelt  , nlelt
 double precision xfor(3)
 
 integer, allocatable, dimension(:) :: lstelt
+!< [loc_var_dec]
 
 !===============================================================================
 
@@ -149,6 +151,7 @@ allocate(lstelt(max(ncel,nfac,nfabor)))
 
 ! If efforts have been calculated correctly:
 
+!< [example_1]
 if (ineedf.eq.1) then
 
   do ii = 1, ndim
@@ -173,6 +176,7 @@ if (ineedf.eq.1) then
   endif
 
 endif
+!< [example_1]
 
 ! Deallocate the temporary array
 deallocate(lstelt)

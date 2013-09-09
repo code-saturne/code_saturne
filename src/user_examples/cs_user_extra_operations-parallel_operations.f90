@@ -123,15 +123,16 @@ double precision statis(ncelet,nvlsta), stativ(ncelet,nvlsta-1)
 double precision tslagr(ncelet,ntersl)
 double precision parbor(nfabor,nvisbr)
 
-
 ! Local variables
 
+!< [loc_var_dec]
 integer          iel    , ifac
 integer          ii     , nbr    , irangv
 integer          itab(3)
 
 double precision rrr
 double precision xyz(3)
+!< [loc_var_dec]
 
 !===============================================================================
 
@@ -152,6 +153,7 @@ double precision xyz(3)
 
 ! Sum of an integer counter 'ii', here the number of cells
 
+!< [example_1]
 ! local value
 ii = ncel
 ! global sum
@@ -161,9 +163,11 @@ endif
 ! print the global sum
 write(nfecra,5020)ii
  5020 format(' cs_user_extra_operations: total number of cells = ', i10)
+!< [example_1]
 
 ! Maximum of an integer counter 'ii', here the number of cells
 
+!< [example_2]
 ! local value
 ii = ncel
 ! global maximum
@@ -173,9 +177,11 @@ endif
 ! print the global maximum value
 write(nfecra,5010)ii
  5010 format(' cs_user_extra_operations: max. number of cells per process = ', i10)
+!< [example_2]
 
 ! Sum of a real 'rrr', here the volume
 
+!< [example_3]
 ! local value
 rrr = 0.d0
 do iel = 1, ncel
@@ -188,9 +194,11 @@ endif
 ! print the global sum
 write(nfecra,5030)rrr
  5030 format(' cs_user_extra_operations: total domain volume = ', e14.5)
+!< [example_3]
 
 ! Maximum of a real 'rrr', here the volume
 
+!< [example_4]
 ! local value
 rrr = 0.d0
 do iel = 1, ncel
@@ -203,9 +211,11 @@ endif
 ! print the global maximum
 write(nfecra,5040)rrr
  5040 format(' cs_user_extra_operations: max volume per process = ', e14.5)
+!< [example_4]
 
 ! Minimum of a real 'rrr', here the volume
 
+!< [example_5]
 ! local value
 rrr = grand
 do iel = 1, ncel
@@ -218,10 +228,12 @@ endif
 ! print the global minimum
 write(nfecra,5050)rrr
  5050 format(' cs_user_extra_operations: min volume per process = ', e14.5)
+!< [example_5]
 
 ! Maximum of a real and associated real values;
 ! here the volume and its location (3 coordinates)
 
+!< [example_6]
 nbr = 3
 rrr  = -1.d0
 xyz(1) = 0.d0
@@ -243,10 +255,12 @@ endif
 write(nfecra,5060) rrr, xyz(1), xyz(2), xyz(3)
  5060 format(' Cs_user_extra_operations: Max. volume =      ', e14.5, /,  &
              '         Location (x,y,z) = ', 3e14.5)
+!< [example_6]
 
 ! Minimum of a real and associated real values;
 ! here the volume and its location (3 coordinates)
 
+!< [example_7]
 nbr = 3
 rrr  = 1.d+30
 xyz(1) = 0.d0
@@ -268,6 +282,7 @@ endif
 write(nfecra,5070) rrr, xyz(1), xyz(2), xyz(3)
  5070 format(' Cs_user_extra_operations: Min. volume =      ', e14.5, /,  &
              '         Location (x,y,z) = ', 3e14.5)
+!< [example_7]
 
 ! Sum of an array of integers;
 ! here, the number of cells, faces, and boundary faces
@@ -277,6 +292,7 @@ write(nfecra,5070) rrr, xyz(1), xyz(2), xyz(3)
 ! as on a parallel boundary, this is always true for one domain
 ! and false for the other.
 
+!< [example_8]
 nbr = 3
 itab(1) = ncel
 itab(2) = 0
@@ -293,10 +309,12 @@ write(nfecra,5080) itab(1), itab(2), itab(3)
  5080 format(' cs_user_extra_operations: Number of cells =          ', i10, /,  &
              '         Number of interior faces = ', i10, /,  &
              '         Number of boundary faces = ', i10)
+!< [example_8]
 
 ! Maxima from an array of integers;
 ! here, the number of cells, faces, and boundary faces
 
+!< [example_9]
 ! local values
 nbr = 3
 itab(1) = ncel
@@ -311,10 +329,12 @@ write(nfecra,5090) itab(1), itab(2), itab(3)
  5090 format(' cs_user_extra_operations: Max. number of cells per proc. =          ', i10, /,  &
              '         Max. number of interior faces per proc. = ', i10, /,  &
              '         Max. number of boundary faces per proc. = ', i10)
+!< [example_9]
 
 ! Minima from an array of integers;
 ! here, the number of cells, faces, and boundary faces
 
+!< [example_10]
 ! local values
 nbr = 3
 itab(1) = ncel
@@ -329,11 +349,13 @@ write(nfecra,5100) itab(1), itab(2), itab(3)
  5100 format(' cs_user_extra_operations: Min. number of cells per proc. =          ', i10, /,  &
              '         Min. number of interior faces per proc. = ', i10, /,  &
              '         Min. number of boundary faces per proc. = ', i10)
+!< [example_10]
 
 ! Sum of an array of reals;
 ! here, the 3 velocity components (so as to compute a mean for example)
 
 ! local values
+!< [example_11]
 nbr = 3
 xyz(1) = 0.d0
 xyz(2) = 0.d0
@@ -352,11 +374,13 @@ write(nfecra,5110) xyz(1), xyz(2), xyz(3)
  5110 format(' cs_user_extra_operations: Sum of U on the domain = ', e14.5, /,   &
              '         Sum of V on the domain = ', e14.5, /,   &
              '         Sum of V on the domain = ', e14.5)
+!< [example_11]
 
 ! Maximum of an array of reals;
 ! here, the 3 velocity components
 
 ! local values
+!< [example_12]
 nbr = 3
 xyz(1) = rtp(1,iu)
 xyz(2) = rtp(1,iv)
@@ -375,10 +399,12 @@ write(nfecra,5120) xyz(1), xyz(2), xyz(3)
  5120 format(' cs_user_extra_operations: Maximum of U on the domain = ', e14.5, /,   &
              '         Maximum of V on the domain = ', e14.5, /,   &
              '         Maximum of V on the domain = ', e14.5)
+!< [example_12]
 
 ! Maximum of an array of reals;
 ! here, the 3 velocity components
 
+!< [example_13]
 ! local values
 nbr = 3
 xyz(1) = rtp(1,iu)
@@ -398,11 +424,13 @@ write(nfecra,5130) xyz(1), xyz(2), xyz(3)
  5130 format(' cs_user_extra_operations: Minimum of U on the domain = ', e14.5, /,   &
              '         Minimum of V on the domain = ', e14.5, /,   &
              '         Minimum of V on the domain = ', e14.5)
+!< [example_13]
 
 ! Broadcast an array of local integers to other ranks;
 ! in this example, we use the number of cells, interior faces, and boundary
 ! faces from process rank 0 (irangv).
 
+!< [example_14]
 ! local values
 irangv = 0
 nbr = 3
@@ -419,10 +447,12 @@ write(nfecra,5140) irangv, itab(1), itab(2), itab(3)
              '         Number of cells          = ', i10, /,   &
              '         Number of interior faces = ', i10, /,   &
              '         Number of boundary faces = ', i10)
+!< [example_14]
 
 ! Broadcast an array of local reals to other ranks;
 ! in this example, we use 3 velocity values from process rank 0 (irangv).
 
+!< [example_15]
 ! local values
 irangv = 0
 nbr = 3
@@ -439,6 +469,7 @@ write(nfecra,5150) irangv, xyz(1), xyz(2), xyz(3)
              '         Velocity U in first cell = ', e14.5, /,   &
              '         Velocity V in first cell = ', e14.5, /,   &
              '         Velocity W in first cell = ', e14.5)
+!< [example_15]
 
 return
 end subroutine cs_user_extra_operations

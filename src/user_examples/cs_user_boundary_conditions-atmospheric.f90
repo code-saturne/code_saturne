@@ -22,6 +22,60 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Function:
+! ---------
+
+!> \file cs_user_boundary_conditions-atmospheric.f90
+!>
+!> Atmospheric example of cs_user_boundary_conditions.f90 subroutine
+!>
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[out]    icodcl        boundary condition code:
+!>                               - 1 Dirichlet
+!>                               - 2 Radiative outlet
+!>                               - 3 Neumann
+!>                               - 4 sliding and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 5 smooth wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 6 rought wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 9 free inlet/outlet
+!>                                 (input mass flux blocked to 0)
+!> \param[in]     itrifb        indirection for boundary faces ordering
+!> \param[in,out] itypfb        boundary face types
+!> \param[out]    izfppp        boundary face zone number
+!> \param[in]     dt            time step (per cell)
+!> \param[in]     rtp, rtpa     calculated variables at cell centers
+!> \param[in]                    (at current and previous time steps)
+!> \param[in]     propce        physical properties at cell centers
+!> \param[in]     propfb        physical properties at boundary face centers
+!> \param[in,out] rcodcl        boundary condition values:
+!>                               - rcodcl(1) value of the dirichlet
+!>                               - rcodcl(2) value of the exterior exchange
+!>                                 coefficient (infinite if no exchange)
+!>                               - rcodcl(3) value flux density
+!>                                 (negative if gain) in w/m2 or roughtness
+!>                                 in m if icodcl=6
+!>                                 -# for the velocity \f$ (\mu+\mu_T)
+!>                                    \gradt \, \vect{u} \cdot \vect{n}  \f$
+!>                                 -# for the pressure \f$ \Delta t
+!>                                    \grad P \cdot \vect{n}  \f$
+!>                                 -# for a scalar \f$ cp \left( K +
+!>                                     \dfrac{K_T}{\sigma_T} \right)
+!>                                     \grad T \cdot \vect{n} \f$
+!_______________________________________________________________________________
+
+
 subroutine cs_user_boundary_conditions &
 !=====================================
 
@@ -448,6 +502,7 @@ double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
 
+!< [loc_var_dec]
 integer          ifac, iel, ii, ivar
 integer          izone
 integer          ilelt, nlelt
@@ -460,6 +515,7 @@ double precision xkent, xeent
 double precision tpent
 
 integer, allocatable, dimension(:) :: lstelt
+!< [loc_var_dec]
 
 !===============================================================================
 
@@ -491,6 +547,7 @@ rugt=0.1d0
 !       meteo profile with automatic choice between inlet/ outlet according to
 !       the meteo profile
 
+!< [example_1]
 call getfbr('11',nlelt,lstelt)
 !==========
 !   - Zone number (from 1 to n)
@@ -510,12 +567,14 @@ do ilelt = 1, nlelt
   iprofm(izone) = 1
 
 enddo
+!< [example_1]
 
 
 ! ---For boundary faces of color 21,
 !     assign an inlet boundary condition for all phases prescribed from the
 !     meteo profile
 
+!< [example_2]
 call getfbr('21',nlelt,lstelt)
 !==========
 !   -  Zone number (from 1 to n)
@@ -535,12 +594,14 @@ do ilelt = 1, nlelt
   itypfb(ifac) = ientre
 
 enddo
+!< [example_2]
 
 ! --- For boundary faces of color 31,
 !       assign an inlet boundary condition for all phases prescribed from the
 !       meteo profile except for dynamical variables which are prescribed with
 !       a rough log law.
 
+!< [example_3]
 call getfbr('31',nlelt,lstelt)
 !==========
 
@@ -607,6 +668,7 @@ do ilelt = 1, nlelt
   endif
 
 enddo
+!< [example_3]
 
 ! --- Prescribe at boundary faces of color '12' an outlet for all phases
 call getfbr('12', nlelt, lstelt)
@@ -631,6 +693,7 @@ do ilelt = 1, nlelt
 enddo
 
 ! --- Prescribe at boundary faces of color 15 a rough wall for all phases
+!< [example_4]
 call getfbr('15', nlelt, lstelt)
 !==========
 
@@ -672,8 +735,10 @@ do ilelt = 1, nlelt
 
   endif
 enddo
+!< [example_4]
 
 ! --- Prescribe at boundary faces of color 4 a symmetry for all phases
+!< [example_5]
 call getfbr('4', nlelt, lstelt)
 !==========
 
@@ -690,6 +755,7 @@ do ilelt = 1, nlelt
   itypfb(ifac)   = isymet
 
 enddo
+!< [example_5]
 
 !--------
 ! Formats

@@ -129,11 +129,13 @@ double precision propfb(nfabor,*)
 
 ! Local variables
 
+!< [loc_var_dec]
 integer          iel, iutile
 double precision d2s3
 double precision zent,xuent,xvent,xkent,xeent,tpent
 
 integer, allocatable, dimension(:) :: lstelt
+!< [loc_var_dec]
 
 !===============================================================================
 
@@ -141,6 +143,7 @@ integer, allocatable, dimension(:) :: lstelt
 ! Initialization
 !---------------
 
+!< [init]
 allocate(lstelt(ncel)) ! temporary array for cells selection
 
 d2s3 = 2.d0/3.d0
@@ -227,6 +230,7 @@ if (isuite.eq.0) then
   enddo
 
 endif
+!< [init]
 
 !--------
 ! Formats

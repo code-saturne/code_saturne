@@ -448,6 +448,7 @@ double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
 
+!< [loc_var_dec]
 integer          ifac, ii, iel
 integer          idim
 integer          izone,iesp
@@ -459,6 +460,7 @@ double precision xkent, xeent
 double precision z1   , z2
 
 integer, allocatable, dimension(:) :: lstelt
+!< [loc_var_dec]
 
 !===============================================================================
 
@@ -484,6 +486,7 @@ d2s3 = 2.d0/3.d0
 !        and assign a cathode for "electric" variables.
 !        =============================================
 !
+!< [example_1]
 call getfbr('1', nlelt, lstelt)
 !==========
 
@@ -647,12 +650,14 @@ do ilelt = 1, nlelt
   endif
 
 enddo
+!< [example_1]
 
 ! --- For boundary faces of color 5 assign an free outlet for all phases
 !     ==================================================================
 !        and example of electrode for Joule Effect by direct conduction.
 !        ==============================================================
 !
+!< [example_2]
 call getfbr('5', nlelt, lstelt)
 !==========
 
@@ -717,12 +722,14 @@ do ilelt = 1, nlelt
   endif
 
 enddo
+!< [example_2]
 
 ! --- For boundary faces of color 2 assign a free outlet for all phases
 !     =================================================================
 !        and example of anode for electric arc.
 !        =====================================
 !
+!< [example_3]
 call getfbr('2', nlelt, lstelt)
 !==========
 
@@ -789,12 +796,14 @@ do ilelt = 1, nlelt
   !  nothing to do
 
 enddo
+!< [example_3]
 
 ! --- For boundary faces of color 3 assign a wall for all phases
 !     ==========================================================
 !        and example of potential vector Dirichlet condition
 !        ===================================================
 
+!< [example_4]
 call getfbr('3', nlelt, lstelt)
 !==========
 
@@ -864,12 +873,14 @@ do ilelt = 1, nlelt
   endif
 
 enddo
+!< [example_4]
 
 ! --- For boundary faces of color 51 assign a wall
 !     ============================================
 !        and restriking model for electric arc (anode boundaray condition)
 !        =================================================================
 
+!< [example_5]
 call getfbr('51', nlelt, lstelt)
 !==========
 
@@ -939,10 +950,12 @@ do ilelt = 1, nlelt
   endif
 
 enddo
+!< [example_5]
 
 ! --- For boundary faces of color 4 assign a symetry
 !     ==============================================
 
+!< [example_6]
 call getfbr('4', nlelt, lstelt)
 !==========
 
@@ -974,6 +987,7 @@ do ilelt = 1, nlelt
   endif
 
 enddo
+!< [example_6]
 
 !--------
 ! Formats

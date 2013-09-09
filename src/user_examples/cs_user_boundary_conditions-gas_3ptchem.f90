@@ -448,6 +448,7 @@ double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
 
+!< [loc_var_dec]
 integer          ifac, izone, ii
 integer          ilelt, nlelt
 
@@ -455,6 +456,7 @@ double precision uref2, d2s3
 double precision xkent, xeent
 
 integer, allocatable, dimension(:) :: lstelt
+!< [loc_var_dec]
 
 !===============================================================================
 
@@ -477,6 +479,7 @@ d2s3 = 2.d0/3.d0
 
 !   Definition of a fuel flow inlet for each face of colour 11
 
+!< [example_1]
 call getfbr('11', nlelt, lstelt)
 !==========
 
@@ -575,9 +578,11 @@ do ilelt = 1, nlelt
   xintur(izone) = 0.d0
 
 enddo
+!< [example_1]
 
 !   Definition of an air flow inlet for each face of colour 21
 
+!< [example_2]
 call getfbr('21', nlelt, lstelt)
 !==========
 
@@ -675,9 +680,11 @@ do ilelt = 1, nlelt
   xintur(izone) = 0.d0
 !
 enddo
+!< [example_2]
 
 !  Definition of a wall for each face of colour 51 up to 59
 
+!< [example_3]
 call getfbr('51 to 59', nlelt, lstelt)
 !==========
 
@@ -695,10 +702,12 @@ do ilelt = 1, nlelt
   izfppp(ifac) = izone
 
 enddo
+!< [example_3]
 
 
 !  Definition of an exit for each face of colour 91
 
+!< [example_4]
 call getfbr('91', nlelt, lstelt)
 !==========
 
@@ -716,10 +725,12 @@ do ilelt = 1, nlelt
   izfppp(ifac) = izone
 
 enddo
+!< [example_4]
 
 !  Definition of symmetric boundary conditions for each
 !  face of colour 41 and 4.
 
+!< [example_5]
 call getfbr('41 or 4', nlelt, lstelt)
 !==========
 
@@ -737,6 +748,7 @@ do ilelt = 1, nlelt
   izfppp(ifac) = izone
 
 enddo
+!< [example_5]
 
 !--------
 ! Formats

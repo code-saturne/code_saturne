@@ -448,6 +448,7 @@ double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
 
+!< [loc_var_dec]
 integer          ifac, ii
 integer          izone
 integer          icha, iclapc
@@ -457,6 +458,7 @@ double precision uref2, d2s3
 double precision xkent, xeent
 
 integer, allocatable, dimension(:) :: lstelt
+!< [loc_var_dec]
 
 !===============================================================================
 
@@ -480,6 +482,7 @@ d2s3 = 2.d0/3.d0
 ! ---- BOUNDARY FACE corresponding to AIR INLET
 !      e.g. : secondary or tertiary air
 
+!< [example_1]
 call getfbr('12', nlelt, lstelt)
 !==========
 
@@ -594,9 +597,11 @@ do ilelt = 1, nlelt
   endif
 
 enddo
+!< [example_1]
 
 ! ---- BOUNDARY FACE for pulverised COAL & primary air INLET
 
+!< [example_2]
 call getfbr('11', nlelt, lstelt)
 !==========
 
@@ -675,9 +680,11 @@ do ilelt = 1, nlelt
 ! PPl
 !
 enddo
+!< [example_2]
 
 !     The color 15 become a WALL
 
+!< [example_3]
 call getfbr('15', nlelt, lstelt)
 !==========
 
@@ -700,10 +707,12 @@ do ilelt = 1, nlelt
   izfppp(ifac) = izone
 
 enddo
+!< [example_3]
 
 
 !     The color 19 becomes an OUTLET
 
+!< [example_4]
 call getfbr('19', nlelt, lstelt)
 !==========
 
@@ -723,9 +732,11 @@ do ilelt = 1, nlelt
   izfppp(ifac) = izone
 
 enddo
+!< [example_4]
 
 !     The color 14 becomes a symetry plane
 
+!< [example_5]
 call getfbr('14 or 4', nlelt, lstelt)
 !==========
 
@@ -745,6 +756,7 @@ do ilelt = 1, nlelt
   izfppp(ifac) = izone
 
 enddo
+!< [example_5]
 
 
 !--------

@@ -448,10 +448,12 @@ double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
 
+!< [loc_var_dec]
 integer          ifac, iel, ii, ivar
 integer          ilelt, nlelt, izone
 
 integer, allocatable, dimension(:) :: lstelt
+!< [loc_var_dec]
 
 !===============================================================================
 
@@ -472,6 +474,7 @@ allocate(lstelt(nfabor))  ! temporary array for boundary faces selection
 
 ! Assign a free outlet for faces of color/group 2
 
+!< [example_1]
 call getfbr('2', nlelt, lstelt)
 !==========
 
@@ -497,9 +500,11 @@ do ilelt = 1, nlelt
                 + gz*(cdgfbo(3,ifac)-xyzp0(3)))
 
 enddo
+!< [example_1]
 
 ! Assign a wall condition for faces of color/group 4
 
+!< [example_2]
 call getfbr('4', nlelt, lstelt)
 !==========
 
@@ -513,9 +518,11 @@ do ilelt = 1, nlelt
   itypfb(ifac)   = iparoi
 
 enddo
+!< [example_2]
 
 ! Assign a symetry for faces of color/group 5
 
+!< [example_3]
 call getfbr('5', nlelt, lstelt)
 !==========
 
@@ -529,6 +536,7 @@ do ilelt = 1, nlelt
   itypfb(ifac) = isymet
 
 enddo
+!< [example_3]
 
 !--------
 ! Formats

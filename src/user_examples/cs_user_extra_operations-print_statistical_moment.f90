@@ -126,8 +126,10 @@ double precision parbor(nfabor,nvisbr)
 
 ! Local variables
 
+!< [loc_var_dec]
 integer          iel
 integer          imom   , ipcmom , idtcm
+!< [loc_var_dec]
 
 !===============================================================================
 
@@ -139,6 +141,7 @@ integer          imom   , ipcmom , idtcm
 ! Example: print first calculated statistical moment
 !===============================================================================
 
+!< [example_1]
 if (nbmomt.gt.0) then
 
   imom = 1 ! Moment number
@@ -169,6 +172,7 @@ if (nbmomt.gt.0) then
 
 endif
 
+!< [example_1]
 4000 format(' Cell ',i10,'   First moment ',e14.5)
 
 return

@@ -448,6 +448,7 @@ double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
 
+!< [loc_var_dec]
 integer          ifac  , ii     , iel
 integer          i     , ntf    , nb    , id , itrouv
 integer          izone
@@ -462,6 +463,7 @@ double precision sirt(nbtrmx)  ,siit(nbtrmx)
 character*200    chain
 
 integer, allocatable, dimension(:) :: lstelt
+!< [loc_var_dec]
 
 !===============================================================================
 
@@ -469,7 +471,9 @@ integer, allocatable, dimension(:) :: lstelt
 ! Initialization
 !===============================================================================
 
+!< [init]
 allocate(lstelt(nfabor))  ! temporary array for boundary faces selection
+!< [init]
 
 !===============================================================================
 ! Assign boundary conditions to boundary faces here
@@ -480,11 +484,10 @@ allocate(lstelt(nfabor))  ! temporary array for boundary faces selection
 !   - set the boundary condition for each face
 !===============================================================================
 
-! 2.1 - Computation of intensity (A/m2) for each electrode
-!       -----------------------------------------------------
+! 1 - Computation of intensity (A/m2) for each electrode
+!   -----------------------------------------------------
 
-!   Pre - initialisation
-
+!< [pre_init]
 do i= 1,nbelec
   sir(i) = 0.d0
   sii(i) = 0.d0
@@ -501,10 +504,12 @@ if (ntcabs.lt.(ntpabs+2)) then
     uioff(ntf) = 0.d0
   enddo
 endif
+!< [pre_init]
 
 !     Loop on selected boundary faces
 
-do i=1,nbelec
+!< [step_1]
+do i = 1,nbelec
 
   chain = ' '
   write(chain,3000) ielecc(i)
@@ -536,13 +541,14 @@ do i=1,nbelec
   endif
 
 enddo
+!< [step_1]
 
+! 2 - Definition of Voltage on each termin of transformers
+!----------------------------------------------------------------
 
-! 2.2 - Definition of Voltage on each termin of transformers
-!       ----------------------------------------------------------------
+!  2.1 Computation of Intensity on each termin of transformers
 
-!  2.2.1 Computation of Intensity on each termin of transformers
-
+!< [step_2_1]
 do i=1,nbelec
   sirb(ielect(i),ielecb(i)) = 0.d0
   if ( ippmod(ieljou) .eq. 4 ) then
@@ -560,9 +566,11 @@ do i=1,nbelec
     endif
   endif
 enddo
+!< [step_2_1]
 
-!  2.2.2 RVoltage on each termin
+!  2.2 RVoltage on each termin
 
+!< [step_2_2]
 do ntf=1,nbtrf
 
 !      Primary and Secondary in Triangle
@@ -594,10 +602,12 @@ do ntf=1,nbtrf
 
   endif
 enddo
+!< [step_2_2]
 
-!  2.2.3 Total intensity for a transformer
+!  2.3 Total intensity for a transformer
 !         (zero valued WHEN Offset established)
 
+!< [step_2_3]
 do ntf=1,nbtrf
   sirt(ntf) = 0.d0
   if ( ippmod(ieljou) .eq. 4 ) then
@@ -613,9 +623,11 @@ do i=1,nbelec
     endif
   endif
 enddo
+!< [step_2_3]
 
-!  2.2.4 Take in account of Offset
+!  2.4 Take in account of Offset
 
+!< [step_2_4]
 capaeq = 3.d0
 
 do ntf=1,nbtrf
@@ -640,6 +652,7 @@ do ntf=1,nbtrf
     endif
   enddo
 enddo
+!< [step_2_4]
 
 ! Print of UROFF (real part of offset potential)
 
@@ -649,11 +662,11 @@ do ntf=1,nbtrf
 enddo
 write(nfecra,1501)
 
-!  2.2.5 Take in account of Boundary Conditions
-
+!  2.5 Take in account of Boundary Conditions
 
 !     Loop on selected Boundary Faces
 
+!< [step_2_5]
 do i=1,nbelec
 
   CHAIN = ' '
@@ -701,10 +714,12 @@ do i=1,nbelec
   enddo
 
 enddo
+!< [step_2_5]
 
 ! 3 - Test, if not any reference transformer
 !      a piece of wall may be at ground.
 
+!< [step_3]
 if ( ntfref .eq. 0 ) then
 
   itrouv = 0
@@ -740,6 +755,7 @@ if ( ntfref .eq. 0 ) then
   endif
 
 endif
+!< [step_3]
 
 !--------
 ! Formats

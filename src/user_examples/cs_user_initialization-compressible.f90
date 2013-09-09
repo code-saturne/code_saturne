@@ -132,11 +132,13 @@ double precision propfb(nfabor,*)
 
 ! INSERT_VARIABLE_DEFINITIONS_HERE
 
+!< [loc_var_dec]
 integer, allocatable, dimension(:) :: lstelt
 integer  iel, ipcrom
 integer  iscal, imodif
 
 double precision, allocatable, dimension(:) :: w1, w2, w3, w4
+!< [loc_var_dec]
 
 !===============================================================================
 
@@ -145,16 +147,19 @@ double precision, allocatable, dimension(:) :: w1, w2, w3, w4
 ! Initialization
 !===============================================================================
 
+!< [alloc]
 allocate(lstelt(ncel)) ! temporary array for cells selection
 allocate(w1(ncelet), w2(ncelet), w3(ncelet),w4(ncelet))
 imodif = 1
 ipcrom = ipproc(irom)
+!< [alloc]
 
 !===============================================================================
 ! Unknown variable initialization
 !      for initial calculations (not in case of restart)
 !===============================================================================
 
+!< [init]
 if ( isuite.eq.0 ) then
 
 ! --- Velocity components
@@ -238,6 +243,7 @@ if ( isuite.eq.0 ) then
 
 
 endif
+!< [init]
 
 !--------
 ! Formats
@@ -247,8 +253,10 @@ endif
 ! End
 !----
 
+!< [finalize]
 deallocate(lstelt) ! temporary array for cells selection
 deallocate(w1, w2, w3, w4)
+!< [finalize]
 
 return
 end subroutine cs_user_initialization

@@ -448,6 +448,7 @@ double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
 
+!< [loc_var_dec]
 integer          ifac, ii
 integer          izone
 
@@ -457,6 +458,7 @@ double precision uref2, d2s3
 double precision xkent, xeent
 
 integer, allocatable, dimension(:) :: lstelt
+!< [loc_var_dec]
 
 !===============================================================================
 
@@ -480,6 +482,7 @@ d2s3 = 2.d0/3.d0
 ! ---- Face de type entree correspondant a une entree d'air
 !        Par exemple : Air primaire , secondaire ou Air tertiaire
 
+!< [example_1]
 call getfbr('12', nlelt, lstelt)
 !==========
 
@@ -602,9 +605,11 @@ do ilelt = 1, nlelt
   endif
 
 enddo
+!< [example_1]
 
 ! --- On impose en couleur 15 une paroi laterale
 
+!< [example_2]
 call getfbr('15', nlelt, lstelt)
 !==========
 
@@ -627,9 +632,11 @@ do ilelt = 1, nlelt
   izfppp(ifac) = izone
 
 enddo
+!< [example_2]
 
 ! --- On impose en couleur 19 une sortie
 
+!< [example_3]
 call getfbr('19', nlelt, lstelt)
 !==========
 
@@ -651,10 +658,12 @@ do ilelt = 1, nlelt
   izfppp(ifac) = izone
 
 enddo
+!< [example_3]
 
 
 ! --- On impose en couleur 14 et 4 une symetrie
 
+!< [example_4]
 call getfbr('14 or 4', nlelt, lstelt)
 !==========
 
@@ -674,6 +683,7 @@ do ilelt = 1, nlelt
   izfppp(ifac) = izone
 
 enddo
+!< [example_4]
 
 !--------
 ! Formats

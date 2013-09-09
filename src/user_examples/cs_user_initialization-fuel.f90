@@ -129,6 +129,7 @@ double precision propfb(nfabor,*)
 
 ! Local variables
 
+!< [loc_var_dec]
 integer          iel, ige, mode, icla
 integer          ioxy
 
@@ -136,6 +137,7 @@ double precision t1init, h1init, coefe(ngazem)
 double precision t2init, h2init
 double precision xkent, xeent, d2s3
 double precision dmas , wmco2 , wmh2o , wmn2 , wmo2
+!< [loc_var_dec]
 
 !===============================================================================
 
@@ -146,6 +148,7 @@ double precision dmas , wmco2 , wmh2o , wmn2 , wmo2
 write(nfecra,9001)
 
 
+!< [init]
 d2s3 = 2.d0/3.d0
 
 !===============================================================================
@@ -270,6 +273,7 @@ if ( isuite.eq.0 ) then
   enddo
 
 endif
+!< [init]
 
 
 !--------

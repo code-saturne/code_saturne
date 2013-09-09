@@ -129,6 +129,7 @@ double precision propfb(nfabor,*)
 
 ! Local variables
 
+!< [loc_var_dec]
 integer          iel, ige, mode, icla, icha
 integer          ioxy
 
@@ -139,6 +140,7 @@ double precision xkent, xeent, d2s3
 double precision wmh2o,wmco2,wmn2,wmo2,dmas
 
 integer, allocatable, dimension(:) :: lstelt
+!< [loc_var_dec]
 
 !===============================================================================
 
@@ -146,6 +148,7 @@ integer, allocatable, dimension(:) :: lstelt
 ! Initialization
 !---------------
 
+!< [init]
 allocate(lstelt(ncel)) ! temporary array for cells selection
 
 ! Control Print
@@ -319,6 +322,7 @@ if (isuite.eq.0) then
   enddo
 
 endif
+!< [init]
 
 !--------
 ! Formats

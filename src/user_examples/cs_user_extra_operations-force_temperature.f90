@@ -126,8 +126,10 @@ double precision parbor(nfabor,nvisbr)
 
 ! Local variables
 
+!< [loc_var_dec]
 integer          iel
 integer          iscal
+!< [loc_var_dec]
 
 !===============================================================================
 
@@ -143,6 +145,7 @@ integer          iscal
 ! The user is responsible for the validity of results.
 !===============================================================================
 
+!< [example_1]
 iscal = iscalt
 
 if (ttcabs .ge. 12.d0) then
@@ -156,6 +159,7 @@ if (ttcabs .ge. 12.d0) then
   write(nfecra,3000)
 
 endif
+!< [example_1]
 
  3000 format                                                       &
   (/,                                                              &

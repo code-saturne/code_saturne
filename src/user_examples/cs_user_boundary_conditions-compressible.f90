@@ -448,7 +448,8 @@ double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
 
-integer          ifac  , iel   , ii , ipcrom
+!< [loc_var_dec]
+integer          ifac  , iel   , ii, ipcrom
 integer          izone , iutile
 integer          ilelt, nlelt
 
@@ -456,6 +457,7 @@ double precision uref2 , dhyd  , rhomoy
 double precision ustar2, xkent , xeent , d2s3
 
 integer, allocatable, dimension(:) :: lstelt
+!< [loc_var_dec]
 
 !===============================================================================
 
@@ -486,6 +488,7 @@ d2s3 = 2.d0/3.d0
 !       La turbulence et les scalaires utilisateur prennent un flux nul
 !         si la vitesse est sortante.
 
+!< [example_1]
 call getfbr('1 and X <= 1.0 ', nlelt, lstelt)
 !==========
 
@@ -607,6 +610,7 @@ do ilelt = 1, nlelt
   endif
 
 enddo
+!< [example_1]
 
 ! --- Exemple de sortie supersonique
 
@@ -623,6 +627,7 @@ enddo
 !       nul).
 
 
+!< [example_2]
 call getfbr('2', nlelt, lstelt)
 !==========
 
@@ -637,6 +642,7 @@ do ilelt = 1, nlelt
   itypfb(ifac) = isspcf
 
 enddo
+!< [example_2]
 
 ! --- Exemple d'entree subsonique (debit, debit enthalpique)
 
@@ -649,6 +655,7 @@ enddo
 
 !     ATTENTION, on donne des DENSITES de debit (par unite de surface)
 
+!< [example_3]
 call getfbr('3', nlelt, lstelt)
 !==========
 
@@ -673,6 +680,7 @@ do ilelt = 1, nlelt
   !==========
 
 enddo
+!< [example_3]
 
 ! --- Exemple d'entree subsonique (masse volumique, vitesse)
 
@@ -681,6 +689,7 @@ enddo
 !       3-detente dans le domaine
 !     ici on choisit de donner (rho, U)
 
+!< [example_4]
 call getfbr('4', nlelt, lstelt)
 !==========
 
@@ -787,6 +796,7 @@ do ilelt = 1, nlelt
   endif
 
 enddo
+!< [example_4]
 
 ! --- Subsonic outlet example
 
@@ -796,6 +806,7 @@ enddo
 
 ! Turbulence and user scalars take a zero flux.
 
+!< [example_5]
 call getfbr('5', nlelt, lstelt)
 !==========
 
@@ -813,9 +824,11 @@ do ilelt = 1, nlelt
   rcodcl(ifac,ipr,1) = 5.d5
 
 enddo
+!< [example_5]
 
 ! --- Wall example
 
+!< [example_6]
 call getfbr('7', nlelt, lstelt)
 !==========
 
@@ -871,9 +884,11 @@ do ilelt = 1, nlelt
   endif
 
 enddo
+!< [example_6]
 
 ! --- Symmetry example
 
+!< [example_7]
 call getfbr('8', nlelt, lstelt)
 !==========
 
@@ -888,6 +903,7 @@ do ilelt = 1, nlelt
   itypfb(ifac) = isymet
 
 enddo
+!< [example_7]
 
 ! It is not recommended to use other boundary condition types than
 ! the ones provided above.
