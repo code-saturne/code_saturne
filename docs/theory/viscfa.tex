@@ -34,7 +34,7 @@ faces. Ce coefficient fait intervenir la valeur de la viscosité aux faces
 multipliée par le rapport surface de la face sur la distance alg\'ebrique $\overline{I'J'}$ ou $\overline{I'F}$({\it cf.} figure \ref{Base_Viscfa_fig_geom}),
 rapport résultant de l'intégration du terme de diffusion.
  Par analogie du terme calculé, ce sous-programme est aussi appelé par le
-sous-programme \fort{resolp} pour calculer le coefficient ``diffusif'' de la pression faisant intervenir le pas de temps.\\
+sous-programme \fort{resopv} pour calculer le coefficient ``diffusif'' de la pression faisant intervenir le pas de temps.\\
 La valeur de la viscosité aux faces est déterminée soit par une moyenne
 arithmétique, soit par une moyenne harmonique de la viscosité au centre des
 cellules, suivant le choix de l'utilisateur. Par défaut, cette valeur est calculée par une moyenne arithmétique.
@@ -85,7 +85,7 @@ ainsi :\\
 \mu_{\,b_{ik}}=\mu_I.
 \end{equation}
 \minititre{Remarque}
-Lors de l'appel de \fort{viscfa} par le sous-programme \fort{resolp}, le terme
+Lors de l'appel de \fort{viscfa} par le sous-programme \fort{resopv}, le terme
 \`a consid\'erer est :
 \begin{equation}\notag
 \dive (\,\Delta t^n \ \grad(\delta p)\,)

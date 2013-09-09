@@ -712,7 +712,7 @@ do icha = 1, ncharb
 enddo
 
 ! On met SRROM et DIFTL0 a -GRAND pour forcer l'utilisateur a les
-! definir dans uscpi1
+! definir dans user_coal_ini1
 ! ---> Coefficient de relaxation de la masse volumique
 !      RHO(n+1) = SRROM * RHO(n) + (1-SRROM) * RHO(n+1)
 srrom = -grand
@@ -812,7 +812,7 @@ endif
  9998 format(                                                     &
 '                                                             ',/,&
 ' Pas d erreur detectee lors de la verification des donnees   ',/,&
-'                                                    (uscpi1).',/)
+'                                            (user_coal_ini1).',/)
  9999 format(                                                     &
 '@                                                            ',/,&
 '@                                                            ',/,&
@@ -827,7 +827,7 @@ endif
 '@                                                            ',/,&
 '@  Se reporter aux impressions precedentes pour plus de      ',/,&
 '@    renseignements.                                         ',/,&
-'@  Verifier uscpi1.                                          ',/,&
+'@  Verifier user_coal_ini1.                                  ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

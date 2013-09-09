@@ -875,7 +875,7 @@ endif
 ! 12. Parallelism and periodicity
 !===============================================================================
 
-! Pour navsto et vissec on a besoin de ROM dans le halo
+! Pour navstv et visecv on a besoin de ROM dans le halo
 
 ipcrom = ipproc(irom)
 

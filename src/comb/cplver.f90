@@ -119,58 +119,57 @@ endif
 ! 3. FORMATS VERIFICATION
 !===============================================================================
 
- 2000 format(                                                           &
-'@                                                            ',/,&
+ 2000 format(                                                     &
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    PHYSIQUE PARTICULIERE (C.P. COUPLE LAGRANGIEN)          ',/,&
-'@                                                            ',/,&
-'@    ',A6,                            ' DOIT ETRE UN REEL    ',/,&
-'@    COMPRIS ENTRE 0 ET 1                                    ',/,&
-'@    IL VAUT ICI ',E14.5                                      ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@  Verifier uscpi1.                                          ',/,&
-'@                                                            ',/,&
+'@'                                                            ,/,&
+'@ @@ WARNING: STOP WHILE DEFINING INPUT DATA'                 ,/,&
+'@    ========'                                                ,/,&
+'@    SPECIFIC PHYSICS (PULVERIZED COAL)'                      ,/,&
+'@'                                                            ,/,&
+'@    ', A6, ' MUST BE A REAL BETWEEN 0 AND 1'                 ,/,&
+'@    ITS VALUE HERE IS ',E14.5                                ,/,&
+'@'                                                            ,/,&
+'@  The calculation can NOT be run.'                           ,/,&
+'@'                                                            ,/,&
+'@  Verifier user_coal_ini_1.'                                 ,/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 3000 format(                                                           &
-'@                                                            ',/,&
+'@'                                                            ,/)
+ 3000 format(                                                     &
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    PHYSIQUE PARTICULIERE (C.P. COUPLE LAGRANGIEN)          ',/,&
-'@                                                            ',/,&
-'@    ',A6,' DOIT ETRE UN REEL POSITIF                        ',/,&
-'@    IL VAUT ICI ',E14.5                                      ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@  Verifier uscpi1.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 3010 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    PHYSIQUE PARTICULIERE (C.P. COUPLE LAGRANGIEN)          ',/,&
-'@                                                            ',/,&
-'@    ',A6,' DOIT ETRE UN REEL POSITIF                        ',/,&
-'@    IL VAUT ICI ',E14.5                                      ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@  Verifier uscpi1.                                          ',/,&
-'@                                                            ',/,&
+'@'                                                            ,/,&
+'@ @@ WARNING: STOP WHILE DEFINING INPUT DATA'                 ,/,&
+'@    ========'                                                ,/,&
+'@    SPECIFIC PHYSICS (PULVERIZED COAL)'                      ,/,&
+'@'                                                            ,/,&
+'@    ', A6, ' MUST BE A POSITIVE REAL'                        ,/,&
+'@    ITS VALUE HERE IS ',E14.5                                ,/,&
+'@'                                                            ,/,&
+'@  The calculation can NOT be run.'                           ,/,&
+'@'                                                            ,/,&
+'@  Check user_coal_ini_1.'                                    ,/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
+ 3010 format(                                                     &
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/,&
+'@ @@ WARNING: STOP WHILE DEFINING INPUT DATA'                 ,/,&
+'@    ========                                                ',/,&
+'@    SPECIFIC PHYSICS (PULVERIZED COAL)'                     ,/,&
+'@'                                                            ,/,&
+'@    ',A6,' MUST BE A POSITIVE REAL'                          ,/,&
+'@    ITS VALUE HERE IS ',E14.5                                ,/,&
+'@'                                                            ,/,&
+'@  The calculation can run.'                                  ,/,&
+'@'                                                            ,/,&
+'@  Check user_coal_ini_1.'                                    ,/,&
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/)
 
 !===============================================================================
 ! 4. SORTIE

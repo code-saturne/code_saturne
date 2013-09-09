@@ -20,7 +20,7 @@
 
 %-------------------------------------------------------------------------------
 
-\programme{resolp}\label{ap:resolp}
+\programme{resopv}\label{ap:resopv}
 %
 \vspace{1cm}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -28,7 +28,7 @@
 \section*{Fonction}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Dans ce sous-programme appelé dans \fort{navsto}, on effectue l'étape de projection de la vitesse (ou de correction de pression). L'équation de quantité de mouvement (pr\'ediction) est résolue dans \fort{preduv} avec une pression totalement explicite. Il en résulte un champ de vitesse qui ne satisfait pas l'\'equation de continuit\'e. Deux algorithmes de correction sont proposés :
+Dans ce sous-programme appelé dans \fort{navstv}, on effectue l'étape de projection de la vitesse (ou de correction de pression). L'équation de quantité de mouvement (pr\'ediction) est résolue dans \fort{predvv} avec une pression totalement explicite. Il en résulte un champ de vitesse qui ne satisfait pas l'\'equation de continuit\'e. Deux algorithmes de correction sont proposés :
 \begin{enumerate}
 \item L'algorithme que l'on appellera "couplage faible vitesse-pression". C'est un algorithme largement implanté dans les codes industriels. Il ne couple la vitesse et la pression qu'à travers le terme de masse (c'est l'algorithme proposé par défaut). C'est un algorithme de type \textit{SIMPLEC} proche du \textit{SIMPLE}. Ce dernier prend en compte, en plus du terme de masse, les diagonales simplifi\'ees de la convection, de la diffusion et des termes source implicites.
 \item L'algorithme de couplage vitesse-pression renforcé (option \var{IPUCOU  = 1}). C'est un algorithme qui couple la vitesse et la pression à travers tous les termes (convection, diffusion et termes source implicites) de l'équation de quantité de mouvement sans pour autant être exact. Il permet en pratique de prendre de grands pas de temps sans découpler totalement la vitesse et la pression.
@@ -53,7 +53,7 @@ $\tens{T}^n$ est un tenseur d'ordre 2 dont les termes sont homogènes à un pas de
 \section*{Discr\'etisation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-L'étape de pr\'ediction de la vitesse est décrite dans \fort{preduv}. On adopte ici une notation d'opérateurs pour simplifier la compréhension des algorithmes implantés.
+L'étape de pr\'ediction de la vitesse est décrite dans \fort{predvv}. On adopte ici une notation d'opérateurs pour simplifier la compréhension des algorithmes implantés.
 L'équation discr\`ete de quantité de mouvement s'écrit, à un instant de r\'esolution interm\'ediaire, dans chaque direction d'espace $\alpha$ ($\alpha \in \{1,2,3\}$) :
 
 \begin{equation}
@@ -61,7 +61,7 @@ L'équation discr\`ete de quantité de mouvement s'écrit, à un instant de r\'esolu
 \tens{M}_{\,\alpha}^n\ \tens{R}^n\ (\widetilde{\vect{V_\alpha}} - \vect{V_\alpha}^n) +
 \tens{A_\alpha}^n\ \widetilde{\vect{V_\alpha}} =
 -\ \tens{G_\alpha}\ \vect{P}^n + \vect{S_\alpha}^n + \tens{I}_{\,s,\alpha}\ \widetilde{\vect{V_\alpha}}
-\label{Base_Resolp_QDM}
+\label{Base_Resopv_QDM}
 \end{equation}
 \begin{itemize}
 \item[$\star$] $\tens{M}_{\,\alpha}^n$, de  dimension $ \var{NCEL} \times \var{NCEL}$, est une matrice diagonale contenant le rapport du volume d'une cellule et du pas de temps local ($\ \displaystyle {\tens{M}_{\,\alpha}^n}(i,i) = \frac{|\Omega_i|}{{\Delta t}_{\,\alpha,I}^n} $\ ), ${\Delta t}_{\alpha,I}^n$ représente le pas de temps dans la direction d'espace $\alpha$ à la cellule $\Omega_i$ et au pas de temps $n$,
@@ -74,13 +74,13 @@ L'équation discr\`ete de quantité de mouvement s'écrit, à un instant de r\'esolu
 \item[$\star$] $\vect{P}^n$, de dimension $\var{NCEL}$, est un tableau où est
 stockée la pression $p^n$ du pas de temps pr\'ec\'edent à chaque cellule,
 
-\item[$\star$] $\vect{S_\alpha}^{\,n}$ est le tableau de dimension $\var{NCEL}$ qui contient tous les termes source explicites (voir \fort{preduv} pour plus de détails),
+\item[$\star$] $\vect{S_\alpha}^{\,n}$ est le tableau de dimension $\var{NCEL}$ qui contient tous les termes source explicites (voir \fort{predvv} pour plus de détails),
 
 \item[$\star$] $\tens{I}_{\,s,\alpha}$ est le tenseur diagonal relatif aux termes source implicites des composantes de la vitesse.
 \end{itemize}
 
 L'\'etape de correction consiste \`a imposer :
-\begin{equation}\label{Base_Resolp_Eq_Cont}
+\begin{equation}\label{Base_Resopv_Eq_Cont}
 \dive(\,{\rho\,\vect{u}}\,) = \Gamma
 \end{equation}
 o\`u $\Gamma$ est un terme source de masse \'eventuel.
@@ -97,17 +97,17 @@ $$ \vect{W} = \tens{R}^n\ \vect{V} = \left(
 $$
 
 Soit $\tens{D}$ l'opérateur de divergence.
-L'équation de continuité (\ref{Base_Resolp_Eq_Cont}) s'écrit :
+L'équation de continuité (\ref{Base_Resopv_Eq_Cont}) s'écrit :
 \begin{equation}\notag
 \tens{D}\ \vect{W} = \vect{\Gamma}
 \end{equation}
 $\vect{\Gamma}$ contient la valeur de $\Gamma$ au centre des cellules.
 
-D'après l'équation discr\`ete (\ref{Base_Resolp_QDM}), on écrit pour tout $\alpha \in \{1,2,3\}$ :
+D'après l'équation discr\`ete (\ref{Base_Resopv_QDM}), on écrit pour tout $\alpha \in \{1,2,3\}$ :
 \begin{equation}
 \displaystyle
 (\tens{M}_{\,\alpha}^n + \tens{A_{\,\alpha}}^n\ {(\tens{R}^{n})}^{-1} -\ \tens{I}_{\,s,\alpha}\ {(\tens{R}^n)}^{-1})\ \tens{R}^n\ \widetilde{\vect{V_\alpha}} = -\ \tens{G_\alpha}\ \vect{P}^n + \vect{S_{\,\alpha}}^n + \tens{M_{\,\alpha}}\ \tens{R}^n\ \vect{V_\alpha}^n
-\label{Base_Resolp_eqn2}
+\label{Base_Resopv_eqn2}
 \end{equation}
 
 On pose :
@@ -140,37 +140,37 @@ $$
 On peut donc écrire :
 \begin{equation}
 \tens{B}\ \widetilde{\vect{W}} = -\ \tens{G}\ \vect{P}^{\,n} + \vect{S}^{\,n}
-\label{Base_Resolp_eqn3}
+\label{Base_Resopv_eqn3}
 \end{equation}
 
 La m\'ethode des pas fractionnaires se d\'ecompose en deux \'etapes :
 \begin{enumerate}
-\item r\'esolution de l'\'equation (\ref{Base_Resolp_QDM}) (cette \'equation nous donne l'\'equation(\ref{Base_Resolp_eqn3})), soit :
+\item r\'esolution de l'\'equation (\ref{Base_Resopv_QDM}) (cette \'equation nous donne l'\'equation(\ref{Base_Resopv_eqn3})), soit :
 \begin{equation}
 \displaystyle
 \tens{M}_{\,\alpha}^n\ \tens{R}^n\ (\widetilde{\vect{V_\alpha}} - \vect{V_\alpha}^n) +
 \tens{A_{\,\alpha}}^n\ \widetilde{\vect{V_\alpha}} - \tens{I}_{\,s,\alpha}\ \widetilde{\vect{V_\alpha}}
  =
 -\ \tens{G_\alpha}\ \vect{P}^{\,n} + \vect{S_\alpha}^n
-\label{Base_Resolp_QDM2}
+\label{Base_Resopv_QDM2}
 \end{equation}
 
-\item soustraction\footnote{On néglige la variation des termes sources explicites $\vect{S_\alpha}^n$ qui sont toujours estim\'es en $n$.} de l'\'equation de quantit\'e de mouvement prise \`a l'instant $(n+1)$ de (\ref{Base_Resolp_QDM2}) :
+\item soustraction\footnote{On néglige la variation des termes sources explicites $\vect{S_\alpha}^n$ qui sont toujours estim\'es en $n$.} de l'\'equation de quantit\'e de mouvement prise \`a l'instant $(n+1)$ de (\ref{Base_Resopv_QDM2}) :
 \begin{equation}
 \displaystyle
 \tens{M}_{\,\alpha}^n\ \tens{R}^n\ (\vect{V_\alpha}^{n+1} - \widetilde{\vect{V_\alpha}}) +
 \tens{A_{\,\alpha}}^n\ (\vect{V_\alpha}^{n+1} - \widetilde{\vect{V_\alpha}}) - \tens{I}_{\,s,\alpha}\ (\vect{V_\alpha}^{n+1} - \widetilde{\vect{V_\alpha}})
  =
 -\ \tens{G_{\,\alpha}}\ (\vect{P}^{\,n+1}- \vect{P}^{\,n})
-\label{Base_Resolp_frac2}
+\label{Base_Resopv_frac2}
 \end{equation}
 \end{enumerate}
 
-L'\'equation (\ref{Base_Resolp_frac2}) nous donne :
+L'\'equation (\ref{Base_Resopv_frac2}) nous donne :
 
 \begin{equation}
 \tens{B}\ (\vect{W}^{n+1}-\widetilde{\vect{W}}) = -\ \tens{G}\ (\vect{P}^{\,n+1}-\vect{P}^{\,n})
-\label{Base_Resolp_eqn5}
+\label{Base_Resopv_eqn5}
 \end{equation}
 
 avec :
@@ -184,21 +184,20 @@ D'où, en posant $ \delta \vect{P} = \vect{P}^{\,n+1} - \vect{P}^{\,n}$,
 
 \begin{equation}
  \tens{D}\ \tens{B}^{-1}\,\tens{G}\ \,\delta \vect{P} =\ \tens{D}\ \vect{\widetilde{W}} -\ \vect{\Gamma}
-\label{Base_Resolp_eqn5bis}
+\label{Base_Resopv_eqn5bis}
 \end{equation}
 
-Il nous reste donc à inverser le système (\ref{Base_Resolp_eqn5bis}) pour d\'eterminer
+Il nous reste donc à inverser le système (\ref{Base_Resopv_eqn5bis}) pour d\'eterminer
 $\delta p$ (donc $p^{\,n+1}$) et corriger la vitesse pour obtenir
-$\vect{u}^{\,n+1}$. La correction de la vitesse se fait dans \fort{navsto}, soit
+$\vect{u}^{\,n+1}$. La correction de la vitesse se fait dans \fort{navstv},
 en incrémentant la vitesse par le gradient de l'incrément de pression $\delta p$
-calculé, soit en reconstruisant la vitesse à partir du flux de masse actualisé
-par une m\'ethode de moindres carr\'es (en appelant le sous-programme \fort{recvmc}).
+calculé.
 
 Le problème provient tout d'abord du calcul de $\tens{B}^{-1}$. En effet, il a été jugé trop coûteux de calculer l'inverse de $\tens{B}$. Les algorithmes "couplage faible vitesse-pression" et celui du "couplage vitesse-pression renforc\'e" correspondent à une approximation de cet opérateur.
 
 Dans le cas de l'algorithme "couplage faible vitesse-pression", on suppose $\tens{B}_{\,\alpha}^{-1} = \tens{M}_{\,\alpha}^{-1}$ (on pourrait inclure aussi les  termes diagonaux issus de la convection, de la diffusion et des termes source implicites).
 
-Pour le "couplage vitesse-pression renforc\'e", on inverse le système\footnote{$\vect{\Omega} = (|\Omega_1|,...,|\Omega_{\var{NCEL}}|,|\Omega_1|,...,|\Omega_{\var{NCEL}}|,|\Omega_1|,...,|\Omega_{\var{NCEL}}|)$.} $\tens{B}\ \vect{T} = \vect{\Omega} $ et on pose $\tens{B}_{\,\alpha}^{-1}~=~\text{diag}(T_\alpha) $. Cette étape a lieu dans le sous-programme \fort{preduv}.
+Pour le "couplage vitesse-pression renforc\'e", on inverse le système\footnote{$\vect{\Omega} = (|\Omega_1|,...,|\Omega_{\var{NCEL}}|,|\Omega_1|,...,|\Omega_{\var{NCEL}}|,|\Omega_1|,...,|\Omega_{\var{NCEL}}|)$.} $\tens{B}\ \vect{T} = \vect{\Omega} $ et on pose $\tens{B}_{\,\alpha}^{-1}~=~\text{diag}(T_\alpha) $. Cette étape a lieu dans le sous-programme \fort{predvv}.
 
 Les écritures à l'aide des opérateurs posent un inconvénient majeur avec la
 discrétisation colocalisée. En effet, l'opérateur\footnote{On insiste sur le
@@ -214,13 +213,13 @@ Pour \'eviter ce probl\`eme, on utilise l'opérateur $\tens{L}$ (issu
 naturellement de la formulation volumes finis colocalis\'ee de l'op\'erateur
 $\dive(\,\grad\,))$ défini en chaque cellule\footnote{On rappelle que $Vois(i)$ est l'ensemble des centres des cellules voisines de ${\Omega_i}$ et
 $\gamma_b(i)$ l'ensemble des centres \'eventuels des faces de bord de ${\Omega_i}$.} $\Omega_i$ de centre $I$ par\footnote{Si $u_i$ est la valeur d'une variable aux centres des cellules sur un maillage cart\'esien 1D, le Laplacien de $u$ par ce dernier op\'erateur en $i$ s'\'ecrit : $\displaystyle \frac{u_{i-1}+2u_i-u_{i+1}}{4h^2}$, o\`u $\displaystyle h$ est le pas d'espace.}:
-\begin{equation}\label{Base_Resolp_eqn7}
+\begin{equation}\label{Base_Resopv_eqn7}
 \begin{array}{ll}
 &(\tens{L}\ \delta \vect{P})_I = \sum\limits_{j\in Vois(i)}[\ \tens{T}^{\,n}_{\,ij}\ (\grad{\delta p})_{\,f_{\,ij}}]\,.\,\vect{S}_{\,ij}
 + \sum\limits_{k\in {\gamma_b(i)}}[\ \tens{T}^{\,n}_{\,b_{\,ik}}\ (\grad{\delta p})_{\,f_{\,b_{\,ik}}}]\,.\,\vect{S}_{\,b_{\,ik}}
 \end{array}
 \end{equation}
-$\tens{T}^n$ un tenseur diagonal d'ordre 2 contenant les pas de temps dans les trois directions d'espace et $\vect{S}_{\,ij}$ (respectivement $\vect{S}_{\,b_{\,ik}}$) le vecteur surface de la face purement interne $ij$ (resp. de la face de bord $ik$). Le gradient $(\grad{ \delta p})_{\,f_{  }}$  présent dans l'équation (\ref{Base_Resolp_eqn7}) est un gradient facette\footnote{Sur maillage orthogonal, $\displaystyle (\grad{p})_{\,f_{\,ij}} \ . \ \vect{S}_{\,ij} = \frac{ p_J - p_I }{\overline{IJ}} S_{\,ij}$. $I$ (resp. $J$) et $I'$ (resp. $J'$) sont en effet superpos\'es.}.
+$\tens{T}^n$ un tenseur diagonal d'ordre 2 contenant les pas de temps dans les trois directions d'espace et $\vect{S}_{\,ij}$ (respectivement $\vect{S}_{\,b_{\,ik}}$) le vecteur surface de la face purement interne $ij$ (resp. de la face de bord $ik$). Le gradient $(\grad{ \delta p})_{\,f_{  }}$  présent dans l'équation (\ref{Base_Resopv_eqn7}) est un gradient facette\footnote{Sur maillage orthogonal, $\displaystyle (\grad{p})_{\,f_{\,ij}} \ . \ \vect{S}_{\,ij} = \frac{ p_J - p_I }{\overline{IJ}} S_{\,ij}$. $I$ (resp. $J$) et $I'$ (resp. $J'$) sont en effet superpos\'es.}.
 
 D'un point de vue continu, on peut écrire\footnote{Dans le cas de l'algorithme "couplage faible vitesse-pression", $\widetilde{T}^n_I = \Delta t^{\,n}_I$.}:
 $$(\tens{L}\ \vect{P}^{n+1})_I = \int_{\Omega_i}\dive{(\ {\tens{T}}^n \ \grad{p^{n+1}})} \ d\Omega $$
@@ -282,7 +281,7 @@ $$ \vect{\widetilde{G}}\ (\delta p) \approx ((\grad{(\delta p)})_{\,f}\,.\,\vect
 On peut donc se ramener au cas d'un pas de temps scalaire $\widetilde{T}^n_{\,ij}$ en posant :
 \begin{equation}
 \widetilde{T}^n_{\,ij} = (\tens{T}^n_{\,ij}\ \vect{n})\,.\,\vect{n}
-\label{Base_Resolp_approx2}
+\label{Base_Resopv_approx2}
 \end{equation}
 En effet :
 \begin{equation}
@@ -291,11 +290,11 @@ En effet :
  & =  (\tens{T}^n_{\,ij}\ \vect{n})\,.\,\vect{n} \ ({\grad{(\delta p)}}_{f_{\,ij}}\,.\,\vect{n}) \ S_{\,ij} \\
  & =  \widetilde{T}^n_{\,ij} \ ({\grad{(\delta p)}}_{f_{\,ij}}\,.\,\vect{n}) \ S_{\,ij}
  \end{array}
-\label{Base_Resolp_approximation}
+\label{Base_Resopv_approximation}
 \end{equation}
 or :
 \begin{equation}
-\begin{array} {lll}\label{Base_Resolp_Eq_Exacte}
+\begin{array} {lll}\label{Base_Resopv_Eq_Exacte}
 \widetilde{T}^n_{\,ij} \ ({\grad{(\delta p)}}_{f_{\,ij}}\,.\,\vect{n}) \ S_{\,ij} &= \widetilde{T}^n_{\,ij} \ {\grad{(\delta p)}}_{f_{\,ij}}\,.\,\vect{S}_{\,ij}\\
 &=\,\widetilde{T}^n_{\,ij}\ \left[ P_J - P_I
  + (\ \vect{JJ'} - \vect{II'}\ )\,\displaystyle \frac{1}{2}\ (\,{\grad P}_I + \,{\grad P}_J\,)\right]\, \displaystyle \frac{S_{\,ij}}{\overline{I'J'}}
@@ -303,22 +302,22 @@ or :
 \end{equation}
 Ceci intervient lors de la reconstruction des gradients au second membre du syst\`eme final \`a r\'esoudre, par appel aux sous-programmes \fort{itrmas} et \fort{itrgrp}.\\
 En fait, l'approximation ($\displaystyle \widetilde{T}^n_{\,ij}=(\tens{T}^n_{\,ij}\ \vect{n})\,.\,\vect{n}$) n'y est pas utilis\'ee. En effet, puisqu'on calcule un gradient directionnel de l'incr\'ement de pression avec le sous-programme \fort{grdcel}, on se permet d'utiliser le tenseur $\tens{T}$ pour corriger le terme $[\ \tens{T}^{\,n}_{\,ij}\ (\grad{\delta p})_{\,f_{\,ij}}]\,.\,\vect{S}_{\,ij}$ .\\
-En pratique, on le discr\'etise, pour une face interne $ij$, par\footnote{Le coefficient $\displaystyle \frac{1}{2}$ dans (\ref{Base_Resolp_grad1}) est mis pour des raisons de stabilit\'e. En effet, l'utilisation des coefficients de pond\'eration aux faces serait plus exact mais probablement moins stable.}
+En pratique, on le discr\'etise, pour une face interne $ij$, par\footnote{Le coefficient $\displaystyle \frac{1}{2}$ dans (\ref{Base_Resopv_grad1}) est mis pour des raisons de stabilit\'e. En effet, l'utilisation des coefficients de pond\'eration aux faces serait plus exact mais probablement moins stable.}
  :
-\begin{equation}\label{Base_Resolp_grad1}
+\begin{equation}\label{Base_Resopv_grad1}
 \begin{array} {lll}
 &[\ \tens{T}^{\,n}_{\,ij}\ (\grad{\delta p})_{\,f_{\,ij}}]\,.\,\vect{S}_{\,ij}
 &=\left[\widetilde{T}^n_{\,ij}\ \displaystyle \frac{P_J - P_I}{\overline{I'J'}} + \displaystyle
  \frac{\vect{JJ'} -\vect{II'}}{\overline{I'J'}} \, \frac{1}{2}\ (\,\tens{T}^{\,n}_{\,I}\ {\grad P}_I + \tens{T}^{\,n}_{\,J}\ {\grad P}_J\,)\right]\,S_{\,ij}
 \end{array}
 \end{equation}
-au lieu de (\ref{Base_Resolp_Eq_Exacte}).
+au lieu de (\ref{Base_Resopv_Eq_Exacte}).
 On proc\`ede de m\^eme pour les termes de bord.\\
 Par la suite, on notera quand m\^eme cette expression $\widetilde{T}^n_{\,ij} \ ({\grad{(\delta p)}}_{f_{\,ij}}\,.\,\vect{S}_{\,ij})$.\\
 Il reste le terme $\tens{D}\ \widetilde{\vect{W}}$, qui \textit{via} les gradients cellule de la pression présents dans l'équation de quantité de mouvement, découple les cellules paires et impaires sur une grille cartésienne.
 On utilise pour éviter ce problème un filtre de type Rhie \& Chow qui permet de lisser la contribution de la pression de l'équation de quantité de mouvement.
 On écrit :
-\begin{equation}\label{Base_Resolp_eqn8}
+\begin{equation}\label{Base_Resopv_eqn8}
 \begin{array}{lll}
 (\tens{D}\ \widetilde{\vect{W}})_I = &\sum\limits_{j\in Vois(i)}[\rho^{\,n} \widetilde{\vect{u}} + \alpha_{\,Arak}\ (\vect{\widetilde{G}}\ (p^n))_{\,cell}]_{\,f_{\,ij}}\,.\,\vect{S}_{\,ij} - \alpha_{\,Arak}\sum\limits_{j\in Vois(i)}\ \widetilde{T}^n_{\,ij}\ (\grad{p^{n}})_{\,f_{\,ij}}\,.\,\vect{S}_{\,ij} \\
 &+ \sum\limits_{k\in {\gamma_b(i)}}[\rho^{\,n} \widetilde{\vect{u}} + \alpha_{\,Arak}\ (\vect{\widetilde{G}}\ (p^n))_{\,cell}]_{\,f_{\,b_{\,ik}}}\,.\,\vect{S}_{\,b_{\,ik}} - \alpha_{\,Arak}\sum\limits_{k\in {\gamma_b(i)}}\widetilde{T}^n_{\,b_{\,ik}}\ (\grad{p^{n}})_{\,f_{b_{\,ik}}}\,.\,\vect{S}_{\,b_{\,ik}}\\
@@ -329,12 +328,12 @@ $\widetilde{m}_{\,ij}$ (resp. $\widetilde{m}_{\,b_{\,ik}}$) est le flux de masse
 $(\grad{p^{n}})_{f_{\,ij}}$ est un gradient facette alors que $[\rho^{\,n} \widetilde{\vect{u}} + \alpha_{\,Arak}\ (\vect{\widetilde{G}}\ (p^n))_{\,cell}]_{\,f_{\,ij}}$ est une valeur \`a la face interpol\'ee \`a partir des valeurs estim\'ees aux cellules (le gradient de pression dans ce terme est un gradient cellule). Cette pr\'ecision s'applique \'egalement aux termes de bord.\\
 Dans \CS, $ \alpha_{\,Arak} $ est appelé pour des raisons historiques "le coefficient d'Arakawa". Il est noté \var{ARAK}.
 
-Il faut remarquer, encore une fois, que pour le filtre Rhie \& Chow, le tenseur $\tens{T}^n$ est utilis\'e dans le terme volumique $\widetilde{\vect{G}}$ alors que l'approximation (\ref{Base_Resolp_approx2}) est appliqu\'ee lors du calcul du gradient facette.
+Il faut remarquer, encore une fois, que pour le filtre Rhie \& Chow, le tenseur $\tens{T}^n$ est utilis\'e dans le terme volumique $\widetilde{\vect{G}}$ alors que l'approximation (\ref{Base_Resopv_approx2}) est appliqu\'ee lors du calcul du gradient facette.
 
-Finalement, d'apr\`es (\ref{Base_Resolp_eqn5bis}) et (\ref{Base_Resolp_eqn7}), on résout :
+Finalement, d'apr\`es (\ref{Base_Resopv_eqn5bis}) et (\ref{Base_Resopv_eqn7}), on résout :
 \begin{equation}
 \sum\limits_{j\in Vois(i)}\ \widetilde{T}^n_{\,ij}\ (\grad{(\delta p)})_{\,f_{\,ij}}\,.\,\vect{S}_{\,ij} + \sum\limits_{k\in {\gamma_b(i)}}\widetilde{T}^n_{\,b_{\,ik}}\ (\grad{(\delta p)})_{\,f_{b_{\,ik}}}\,.\,\vect{S}_{\,b_{\,ik}} = \sum\limits_{j\in Vois(i)} \widetilde{m}_{\,ij} + \sum\limits_{k\in {\gamma_b(i)}}\widetilde{m}_{\,b_{\,ik}} -\ \Gamma_I
-\label{Base_Resolp_Poisson}
+\label{Base_Resopv_Poisson}
 \end{equation}
 Pour la prise en compte des non orthogonalités, on résout ce système linéaire par incrément, en ajoutant au second membre les termes de reconstruction. Si $\delta(\delta p)$ est l'incrément de l'incrément (l'incrément de la variable $\delta p$ à calculer) et $k$ l'indice d'itération sur le point fixe, on résout exactement :
 \begin{equation}
@@ -345,10 +344,10 @@ Pour la prise en compte des non orthogonalités, on résout ce système linéaire pa
 - \ \Gamma_I\\
 &= \sum\limits_{j\in Vois(i)} m^{\,k}_{\,ij} + \sum\limits_{k\in {\gamma_b(i)}}m^{\,k}_{\,b_{\,ik}} - \ \Gamma_I
 \end{array}
-\label{Base_Resolp_equation resolue}
+\label{Base_Resopv_equation resolue}
 \end{equation}
 avec :
-\begin{equation}\label{Base_Resolp_increment}
+\begin{equation}\label{Base_Resopv_increment}
 \left\{\begin{array}{lll}
 (\delta(\delta p))^{0} &= 0\\
 (\delta(\delta p))^{k+1} &= (\delta p)^{k+1}-(\delta p)^k &\text {$\forall k \in \mathbb{N}$}\\
@@ -361,7 +360,7 @@ Ce sont les gradients facette $(\grad{(\delta{p})^k})_{\,f_{\,ij}}$ et $(\grad{(
 \section*{Mise en \oe uvre}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-On expose dans ce qui suit l'algorithme tel qu'il est écrit dans \fort{resolp}.
+On expose dans ce qui suit l'algorithme tel qu'il est écrit dans \fort{resopv}.
 
 $\vect{T}^n$ désignera un tableau de dimension $3$ contenant les pas de temps locaux dans chaque direction (pour l'utilisation du "couplage vitesse-pression renforc\'e"). Dans le cas de l'algorithme "couplage faible vitesse-pression", on garde cette notation, les pas de temps étant égaux dans les trois directions de l'espace.
 
@@ -371,7 +370,7 @@ $\vect{T}^n$ désignera un tableau de dimension $3$ contenant les pas de temps lo
 
 \begin{enumerate}
 \item Appel de \fort{viscfa} avec une viscosité totale égale au pas de temps $\Delta t_I^n$ pour l'algorithme "couplage faible vitesse-pression" (\var{IPUCOU} = 0),
-\item Appel de \fort{visort} avec une viscosité totale diagonale pour l'algorithme du "couplage vitesse-pression renforc\'e" (\var{IPUCOU} = 1). C'est \`a ce niveau qu'est calcul\'e $\widetilde{T}^n_{\,ij}$. Les pas de temps équivalents calculés auparavant dans la subroutine \fort{preduv} sont stockés dans le tableau \var{TPUCOU}.
+\item Appel de \fort{visort} avec une viscosité totale diagonale pour l'algorithme du "couplage vitesse-pression renforc\'e" (\var{IPUCOU} = 1). C'est \`a ce niveau qu'est calcul\'e $\widetilde{T}^n_{\,ij}$. Les pas de temps équivalents calculés auparavant dans la subroutine \fort{predvv} sont stockés dans le tableau \var{TPUCOU}.
 \end{enumerate}
 
 \item Appel de \fort{matrix} pour la construction de la matrice de diffusion de la pression (sans les termes de reconstruction qui ne peuvent pas être pris en compte si on veut garder une structure de matrice creuse) avec la viscosité calculée préc\'edemment et le tableau \var{COEFB} des conditions aux limites de la pression $p^n$ (on impose une condition de Neumann homog\`ene (resp. Dirichlet homog\`ene) sur $\delta p$ pour une condition de Neumann (resp. Dirichlet) pour $p$).
@@ -379,11 +378,11 @@ $\vect{T}^n$ désignera un tableau de dimension $3$ contenant les pas de temps lo
 \end{itemize}
 
 \etape{Calcul du résidu de normalisation \var{RNORMP}}
-Cette \'etape est r\'ealis\'ee directement dans \fort{preduv} \`a partir de la version
+Cette \'etape est r\'ealis\'ee directement dans \fort{predvv} \`a partir de la version
 1.1.0.s, et le r\'esidu de normalisation est transmis par l'interm\'ediaire de
 la variable RNORMP(IPHAS).
 
-Le tableau \var{TRAV} contient à ce niveau de \CS \ le second membre issu de \fort{preduv} sans les termes source utilisateur. Le calcul de \var{RNORMP} se fait de la façon suivante :
+Le tableau \var{TRAV} contient à ce niveau de \CS \ le second membre issu de \fort{predvv} sans les termes source utilisateur. Le calcul de \var{RNORMP} se fait de la façon suivante :
 
 \begin{enumerate}
 
@@ -411,7 +410,7 @@ $$ \var{TRAV}(I) = \widetilde{\vect{u}}_{\,I} + \frac{\var{ARAK}}{\rho_I} \ \ten
 
 \var{ARAK} représente le coefficient dit "d'Arakawa" que l'utilisateur peut modifier dans \fort{usini1} et qui vaut $1$ par défaut. Pour simplifier les notations, on pose $\var{ARAK} = \alpha_{\,Arak}$.
 
-\item Appel de \fort{inimas} pour calculer le flux de masse de \var{TRAV}. Les conditions aux limites appliquées sont celles de la vitesse (voir sous-programme \fort{navsto}). Ceci reste une approximation des conditions aux limites de \var{TRAV}. Le flux de masse est donc égal à (voir sous-programme \fort{inimas} pour plus de détails sur le calcul aux faces de bord) :
+\item Appel de \fort{inimas} pour calculer le flux de masse de \var{TRAV}. Les conditions aux limites appliquées sont celles de la vitesse (voir sous-programme \fort{navstv}). Ceci reste une approximation des conditions aux limites de \var{TRAV}. Le flux de masse est donc égal à (voir sous-programme \fort{inimas} pour plus de détails sur le calcul aux faces de bord) :
 
 $$m_{\,ij} = \left[\rho \widetilde{\vect{u}}+ \displaystyle \alpha_{\,Arak}\ \tens{T}^n\ \grad(p^n)\right]_{\,f_{\,ij}}\,.\,\vect{S}_{\,ij}$$
 
@@ -453,12 +452,12 @@ modifiée par l'utilisateur dans \fort{usini1}, {\it via} le tableau \var{EPSILO}
 \item[$\star$] Sinon,
 \begin{itemize}
 \item[$\Rightarrow$] $(\delta(\delta p))^{k+1} = 0$,
-\item[$\Rightarrow$] Appel de \fort{invers} pour l'inversion du système (\ref{Base_Resolp_equation resolue}). Le test d'arrêt de l'algorithme d'inversion \var{RESIDU} est normalisé par \var{RNORMP} (voir \fort{gradco} pour l'inversion de la pression).
+\item[$\Rightarrow$] Appel de \fort{invers} pour l'inversion du système (\ref{Base_Resopv_equation resolue}). Le test d'arrêt de l'algorithme d'inversion \var{RESIDU} est normalisé par \var{RNORMP} (voir \fort{gradco} pour l'inversion de la pression).
 \end{itemize}
 \item[$\star$] Si on atteint le nombre de \textit{sweeps} maximal,
 \begin{itemize}
 \item[$\Rightarrow$] Appel de \fort{itrmas} pour l'incrémentation du flux de masse par le gradient de la pression $(\delta p)^{k}$.
-\item[$\Rightarrow$] Second appel de \fort{itrmas} pour l'incrémentation du flux de masse avec le gradient de $(\delta(\delta p))^{k+1}$ non reconstruit pour assurer une divergence finale nulle, ceci pour rester cohérent avec la matrice de pression qui ne prend pas en compte les non orthogonalités\footnote{On pourra se r\'ef\'erer au sous-programme \fort{navsto} pour plus de d\'etails.}.
+\item[$\Rightarrow$] Second appel de \fort{itrmas} pour l'incrémentation du flux de masse avec le gradient de $(\delta(\delta p))^{k+1}$ non reconstruit pour assurer une divergence finale nulle, ceci pour rester cohérent avec la matrice de pression qui ne prend pas en compte les non orthogonalités\footnote{On pourra se r\'ef\'erer au sous-programme \fort{navstv} pour plus de d\'etails.}.
 \item[$\Rightarrow$] mise à jour de l'incrément de pression $(\delta p)^{k+1} = (\delta p)^{k} + (\delta(\delta p))^{k+1}$.
 \end{itemize}
 \item[$\star$]  Sinon,
@@ -496,14 +495,14 @@ Il reste plusieurs probl\`emes \`a r\'esoudre :
 
 \item Utilisation de pond\'eration $\displaystyle \frac {1}{2}$ lors de calculs de valeurs aux faces pour des raisons de stabilit\'e num\'erique (ex. dans \fort{itrmas} ou \fort{itrgrp} lors de la reconstruction du gradient de l'incr\'ement de pression \`a la face).
 
-\item On pourra v\'erifier le calcul du r\'esidu de normalisation (voir \fort{preduv}).
+\item On pourra v\'erifier le calcul du r\'esidu de normalisation (voir \fort{predvv}).
 
 \item Lors du calcul du flux de masse de $\displaystyle \widetilde{u}+
 \frac{\alpha}{\rho}\ \tens{T}\ \grad{p^n}$ dans \fort{inimas}, on utilise les
 conditions aux limites de la vitesse au temps $n$. Ceci reste un point peu clair
 particuli\`erement pour les conditions aux limites de sortie. Il faudra plus
 g\'en\'eralement analyser les conditions aux limites des variables dans
-\fort{navsto}. Ce probl\`eme est \`a relier \`a celui signal\'e pour \fort{vissec}.
+\fort{navstv}. Ce probl\`eme est \`a relier \`a celui signal\'e pour \fort{visecv}.
 
 \item Lors du test de convergence de la boucle sur les non orthogonalit\'es, on multiplie la tol\'erance par 10. Est-ce réellement nécessaire ?
 

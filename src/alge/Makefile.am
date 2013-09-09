@@ -111,12 +111,10 @@ matrxv.f90 \
 prodsc.f90 \
 projts.f90 \
 projtv.f90 \
-vectds.f90 \
 viscfa.f90 \
 visort.f90 \
 vitens.f90 \
-vistnv.f90 \
-viortv.f90
+vistnv.f90
 libcsalge_la_LDFLAGS = -no-undefined
 
 clean-local:

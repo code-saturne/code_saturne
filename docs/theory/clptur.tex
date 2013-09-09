@@ -185,10 +185,10 @@ paroi turbulente pour le Solveur Commun dans le cadre du mod\`ele
 $k-\varepsilon$ standard, rapport EDF HI-81/00/019/A, 2000, M. Boucker, J.-D. Mattei.}
 ($\rho_I$ is the density at the centre of cell $I$). 
 The term which requires boundary conditions is the one containing the 
-velocity derivative in the normal direction to the wall\footnote{The transpose gradient term is treated in \fort{vissec}
+velocity derivative in the normal direction to the wall\footnote{The transpose gradient term is treated in \fort{visecv}
 and thus will not be considered here.}~:
 $(\mu_I+\mu_{t,I})\ggrad{\vect{u}}\,\vect{n}$. It appears on the 
-right-hand side of the usual momentum equation (see \fort{bilsc2} and \fort{preduv}).
+right-hand side of the usual momentum equation (see \fort{bilsc2} and \fort{predvv}).
 
 In the case where the  $k-\varepsilon$  model tends to surestimate 
 the production of turbulent kinetic energy, the length scale of the model,

@@ -198,7 +198,6 @@ if (ipcvmx.eq.ipcvmy) then
   propce(1,ipcvmx),                                              &
   viscf  , viscb  )
 else
-!TODO viortv
   call visort &
   !==========
 ( imvisf ,                                                       &

@@ -772,7 +772,7 @@ endif
 !   Si le point de reference n'a pas ete specifie par l'utilisateur
 !   on le change et on decale alors COEFU s'il y a des sorties.
 !   La pression totale dans PROPCE est aussi decalee (c'est a priori
-!   inutile sauf si l'utilisateur l'utilise dans ustsns par exemple)
+!   inutile sauf si l'utilisateur l'utilise dans ustsnv par exemple)
 
 if (ixyzp0.eq.2) then
   ixyzp0 = 1

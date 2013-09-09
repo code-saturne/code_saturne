@@ -272,7 +272,7 @@ endif
 !      On pourrait penser a echanger aussi les PROPCE et le DT
 !         Pour le moment ca ne s'impose pas : on a besoin d'avoir
 !         echange RHO dans navstv pour un affichage et les viscosites
-!         dans vissec. On fera les transferts localement quand necessaire.
+!         dans visecv. On fera les transferts localement quand necessaire.
 !      Par principe, on suppose que
 !         c'est a la charge de celui qui utilise des valeurs voisines de
 !           s'assurer qu'elles existent (ss pgm utilisateurs en

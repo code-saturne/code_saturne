@@ -20,7 +20,7 @@
 
 %-------------------------------------------------------------------------------
 
-\programme{vissec}
+\programme{visecv}
 %
 
 \vspace{1cm}
@@ -33,7 +33,7 @@ Dans ce sous-programme sont calcul\'es les termes de gradient transposé et de vi
 secondaire (fluide newtonien). Ils seront traités en explicite
 pur. En effet, si on traitait ces termes en implicite, cela reviendrait
 à coupler les équations des différentes composantes de la vitesse, ce qui n'est
-pas compatible avec le sch\'ema de r\'esolution actuel ({\it cf. } sous-programme \fort{navsto}).
+pas compatible avec le sch\'ema de r\'esolution actuel ({\it cf. } sous-programme \fort{navstv}).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -44,7 +44,7 @@ L'intégration des termes de gradient transposé
  $\dive\,(\mu_{\,tot}\,^t\,\ggrad(\underline{v}))$ et de viscosité
 secondaire \\
 $-\displaystyle \frac{2}{3}\,\grad (\mu_{\,tot}\,\dive(\underline{v}))$ est la suivante\footnote{la viscosité de volume
-$\kappa$ est supposée nulle, cf. \fort{navsto}} :
+$\kappa$ est supposée nulle, cf. \fort{navstv}} :
 \begin{equation}\notag
 \begin{array}{llll}
 &\displaystyle \int_{\Omega_i}\dive (\mu_{\,tot}
@@ -83,7 +83,7 @@ où $\mu$ et $\mu_t$ repr\'esentent respectivement la viscosit\'e dynamique moléc
 \subsection*{Terme de gradient transposé}
 Avant de calculer l'intégration des deux termes, on calcule dans un premier
 temps la viscosité totale en fonction du modèle de turbulence considéré.\\
-Les termes calculés dans ce sous-programme, appelé par \fort{preduv}, interviennent dans le second membre
+Les termes calculés dans ce sous-programme, appelé par \fort{predvv}, interviennent dans le second membre
 de l'équation de quantité de mouvement, et sont donc directement stockés dans le
 tableau correspondant  \var{TRAV}.\\
 Le terme $\dive\,(\mu_{\,tot}\,^t\ggrad(\underline{v}))$ est calculé en
@@ -98,7 +98,7 @@ internes, et à la valeur $0$ pour les cellules de bord. Ce tableau sert par la s
 pas considérer la contribution du terme de gradient transposé sur les cellules
 de bord. En effet, on ne sait pas \'ecrire de conditions aux limites correctes
 pour le gradient transpos\'e. On pr\'ef\`ere donc tout simplement annuler son
-effet sur les cellules de bord (\emph{cf.} paragraphe \ref{Base_Vissec_paragraphe4}).
+effet sur les cellules de bord (\emph{cf.} paragraphe \ref{Base_Visecv_paragraphe4}).
 \item pour chaque direction $l$ ($l=x,y,z$), $l$ correspondant à \var{IDIM}
 dans le code, on calcule pour chaque cellule $\Omega_i$ dont le centre
 correspond à la variable \var{II} ou
@@ -150,12 +150,12 @@ Le traitement est similaire pour le terme de viscosité de volume dans le module 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{Points \`a traiter} \label{Base_Vissec_paragraphe4}
+\section*{Points \`a traiter} \label{Base_Visecv_paragraphe4}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 L'intégration du terme de gradient transposé pose un problème de compatibilité.
 En effet, le gradient transposé provient de l'écriture de la divergence
-du tenseur des contraintes (\emph{cf.} \fort{preduv}), soit :
+du tenseur des contraintes (\emph{cf.} \fort{predvv}), soit :
 \begin{equation}\notag
 \dive\,(\tens{\sigma}) = \dive\,(- p \tens{Id} + \tens{\tau })
 \end{equation}
@@ -171,7 +171,7 @@ explicite le gradient transposé $\dive\,(\mu ^t\ggrad \underline{v})$.
  Ce traitement fait intervenir la vitesse au centre des cellules. Elle ne
 vérifie pas exactement la condition $\dive\,(\rho \underline{v})\,=\,0$. En
 effet, au cours de l'étape de correction, on utilise un filtre Rhie et Chow
-(\emph{cf.} \fort{resolp}) et la vitesse n'est mise à jour qu'à la fin de
+(\emph{cf.} \fort{resopv}) et la vitesse n'est mise à jour qu'à la fin de
 l'étape. Par contre, lorsque l'on intègre la deuxième partie de
 la divergence de $\tens{\tau}$ de façon explicite, on utilise
 la vitesse issue du flux masse aux faces qui vérifie la condition $\dive\,(\rho

@@ -58,11 +58,10 @@ itrmas.tex \
 matrix.tex \
 mesh_algo.tex \
 mesh_quality.tex \
-navsto.tex \
+navstv.tex \
 operat.tex \
-preduv.tex \
-recvmc.tex \
-resolp.tex \
+predvv.tex \
+resopv.tex \
 spadis.tex \
 thermo.tex \
 timstp.tex \
@@ -72,7 +71,7 @@ turbke.tex \
 turrij.tex \
 viscfa.tex \
 visort.tex \
-vissec.tex \
+visecv.tex \
 vortex.tex
 
 TEXINPUTFILES = input

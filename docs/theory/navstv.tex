@@ -20,7 +20,7 @@
 
 %-------------------------------------------------------------------------------
 
-\programme{navsto}\label{ap:navsto}
+\programme{navstv}\label{ap:navstv}
 
 \vspace{1cm}
 On s'int\'eresse \`a la r\'esolution du syst\`eme d'\'equations de Navier-Stokes
@@ -104,7 +104,7 @@ Cette équation n'est pas prise en compte dans l'étape de projection (on continue
 seulement
 $\displaystyle \dive(\,{\rho\,\vect{u}}) = \Gamma$) alors que le terme
 $\displaystyle \frac{\partial \rho}{\partial t}$ appara\^{\i}t lors de l'étape de pr\'ediction de la vitesse
-dans le sous-programme \fort{preduv}. Si ce terme joue un rôle sensible, l'algorithme compressible
+dans le sous-programme \fort{predvv}. Si ce terme joue un rôle sensible, l'algorithme compressible
 de \CS (qui résout l'équation complète) est alors sans doute plus adapté.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -128,7 +128,7 @@ On pose :
 \centerline{\includegraphics[height=4cm]{facette}}}
 \parbox{8cm}{%
 \centerline{\includegraphics[height=4cm]{facebord}}}
-\caption{\label{Base_Navsto_fig_geom}D\'efinition des diff\'erentes entit\'es
+\caption{\label{Base_Navstv_fig_geom}D\'efinition des diff\'erentes entit\'es
 g\'eom\'etriques pour les faces internes (gauche) et de bord (droite).}
 \end{figure}
 
@@ -147,7 +147,7 @@ d\'esign\'e comme l'\'etape de correction de pression ou de projection de la vit
 \subsubsection*{\bf \'Etape de pr\'ediction des vitesses}
 La discr\'etisation en temps se fait en appliquant \`a la variable r\'esolue un $\theta$-sch\'ema au temps $n+\theta$ s'inspirant de la d\'emarche utilis\'ee pour l'\'equation de transport d'un scalaire\footnote{cf. \fort{covofi}}.\\ La vitesse au temps $n+1$ n'\'etant disponible qu'apr\`es l'\'etape de projection, c'est ici une vitesse pr\'edite au temps $n+1$ que l'on utilise pour interpoler :
 \begin{equation}
-\label{Base_Navsto_thetaschema}
+\label{Base_Navstv_thetaschema}
 \vect{\widetilde{u}}^{n+\theta} = \theta\, {\vect{\widetilde{u}}}^{n+1}+(1-\theta)\, \vect{u}^{n}
 \end{equation}
 Avec\footnote{Dans le cas où $\theta = 1/2$, le pas de temps $\Delta t$ est supposé uniforme en temps et en espace.} :
@@ -178,7 +178,7 @@ sont supposés pris au temps $n+\theta$ et sont rattach\'es au tenseur
 $\tens{K}$\footnote{En réalité, les composantes de la vitesse étant découplées,
 seuls les termes linéaires par rapport à la composante résolue sont factorisés de la
 sorte. Les autres termes étant traités comme des termes explicites. On pourra se
-rapporter à \fort{preduv} pour plus de détail.}.\\
+rapporter à \fort{predvv} pour plus de détail.}.\\
 
 Par souci de clarté, on suppose qu'en l'absence d'indication, les propriétes
 physiques $\Phi\,=\,\rho,\,\mu\,...$ et le flux de masse $(\rho\vect{u})$ pris
@@ -193,7 +193,7 @@ On r\'esout donc le syst\`eme suivant, après réécriture des termes instationnair
 \rho\,\left(\displaystyle\frac{\vect{\widetilde{u}}^{n+1}-\vect {u}^{n}}{\Delta t}\right) +
 \dive \,\left(\vect{\widetilde{u}}^{n+\theta} \otimes (\rho\vect{u})\right) =
 \dive(\tens{\sigma}^{n+\theta})+\vect{TS}^{n+\theta_{S}}-\tens{K}^{n}\,\vect{u}^{n+\theta} +\vect{\widetilde{u}}^{n+\theta}\,\dive{(\rho\vect{u})}\\
-\label{Base_Navsto_eq_prediction_continue}
+\label{Base_Navstv_eq_prediction_continue}
 \end{array}
 \end{equation}
 avec ~:
@@ -209,7 +209,7 @@ Le champ de vitesse pr\'edit est {\it a priori} \`a divergence non nulle. La sec
 \'etape corrige la pression en imposant la nullit\'e de la contrainte
 stationnaire pour la vitesse prise \`a l'instant ${t^{n+1}}$.
 On r\'esout donc :
-\begin{equation}\label{Base_Navsto_eq_correction_continue}
+\begin{equation}\label{Base_Navstv_eq_correction_continue}
 \left\{\begin{array}{l}
 \displaystyle\frac{(\rho\vect{u})^{n+1}-(\rho\vect{\widetilde{u}})^{n+1}}{\Delta t} =
 -\grad{\delta P^{n+\theta}} \\
@@ -231,7 +231,7 @@ On int\`egre  classiquement sur les volumes de contr\^ole ${\Omega_i}$ (ou cellu
 \'equations discr\'etis\'ees en temps.
 \subsubsection*{\bf \'Etape de pr\'ediction des vitesses}
 \paragraph{\bf Second membre\\ }
-Si l'on ne tient pas compte des termes de convection et de diffusion issus du $\theta$-schéma, les termes sources volumiques explicites de l'\'equation (\ref{Base_Navsto_eq_prediction_continue}) s'écrivent pour le syst\`eme portant sur la quantité $(\vect{\widetilde{u}}^{n+1}-\vect {u}^{n})$ :\\
+Si l'on ne tient pas compte des termes de convection et de diffusion issus du $\theta$-schéma, les termes sources volumiques explicites de l'\'equation (\ref{Base_Navstv_eq_prediction_continue}) s'écrivent pour le syst\`eme portant sur la quantité $(\vect{\widetilde{u}}^{n+1}-\vect {u}^{n})$ :\\
 \begin{equation}\notag
 \begin{array}{c}
 \displaystyle
@@ -242,7 +242,7 @@ Pour int\'egrer ces termes sur une cellule ${\Omega_i}$,  on multiplie leur vale
 
 \paragraph{\bf Convection  \\}
 
-Apr\`es d\'ecomposition de $\vect{\widetilde{u}}$ \`a l'aide de la relation (\ref{Base_Navsto_thetaschema}), l'int\'egration spatiale des parties convectives   $\theta\,{\dive\left(\vect{\widetilde{u}}^{n+1}\otimes (\rho \vect{u})\right)}$ et $(1-\theta)\,{\dive\left(
+Apr\`es d\'ecomposition de $\vect{\widetilde{u}}$ \`a l'aide de la relation (\ref{Base_Navstv_thetaschema}), l'int\'egration spatiale des parties convectives   $\theta\,{\dive\left(\vect{\widetilde{u}}^{n+1}\otimes (\rho \vect{u})\right)}$ et $(1-\theta)\,{\dive\left(
 \vect{u}^{n}\otimes (\rho \vect{u})\right)}$ conduit à une somme de flux num\'eriques ${\vect{F}\,_{\,ij}}$ calcul\'es aux faces des cellules purement internes et de flux num\'eriques ${\vect{F}_{\,b_{ik}}}$ calcul\'es aux faces de bord du domaine $\Omega$.
 Soient $Vois(i)$ l'ensemble des centres des cellules voisines de ${\Omega_i}$ et
 $\gamma_b(i)$ l'ensemble des centres des faces de bord de ${\Omega_i}$, on a :
@@ -373,7 +373,7 @@ les notations suivantes~:
 qui correspondent chacune \`a une valeur non reconstruite aux faces internes et de bord.
 
 \paragraph{\bf R\'esolution\\}
-Le syst\`eme (\ref{Base_Navsto_eq_prediction_continue}) pouvant comporter des non
+Le syst\`eme (\ref{Base_Navstv_eq_prediction_continue}) pouvant comporter des non
 lin\'earit\'es dues au recours au test de pente ou pouvant conduire {\it via} la
 reconstruction  du gradient (cellule) \`a une matrice quasiment pleine en
 pr\'esence de non orthogonalit\'es, on le r\'esout de mani\`ere it\'erative avec
@@ -389,7 +389,7 @@ ce qui d\'efinit \'egalement la suite $(\delta\vect{\widetilde{u}}^{k+1})
 _{k\in \mathbb{N}}$.\\
 Les deux op\'erateurs $\mathcal{E}$ et $\mathcal{EM}$ ont pour expression respective~:
 \begin{equation}\notag
-\begin{array}{ll}\label{Base_Navsto_eq_pred_exacte}
+\begin{array}{ll}\label{Base_Navstv_eq_pred_exacte}
 \mathcal{E}(\vect{\widetilde{u}},I) &= \theta\, \mathcal{J}(\vect{\widetilde{u}},I)\,+\,(1-\theta)\,\mathcal{J}(\vect{u}^{n},I)\,+ |{\Omega_I}|\displaystyle\frac{\rho_I}{\Delta t}\,(\vect{\widetilde{u}}_{I}-\vect{u}^n_{I}) \\
 & +\,|{\Omega_I}|\left[(\vect{TS})^{n+\theta_{S}}_I-(\grad{P})^{n-1+\theta}_I \, \right]\\
 %-\theta\,(\tens{K}^{n})_{I}\,-\theta\,(\dive(\rho \vect{u}))_{I}\right)\,(\vect{\widetilde{u}_{I}}-\vect{u}^n)_I \\
@@ -428,7 +428,7 @@ vers $\vect{\widetilde{u}}^{n+1}$.\\
 
 \minititre{Remarque 4}
 Les conditions aux limites associ\'ees aux op\'erateurs $\mathcal{E}$ et
-$\mathcal{EM}$ du syst\`eme (\ref{Base_Navsto_eq_pred_exacte}) sont celles portant sur la
+$\mathcal{EM}$ du syst\`eme (\ref{Base_Navstv_eq_pred_exacte}) sont celles portant sur la
 vitesse $\vect{u}$. Elles sont de type Dirichlet homog\`ene ou de type Neumann
 homog\`ene sur $\delta\vect{u}$ si $\vect{u}$ a une condition de type Dirichlet
 ou de type Neumann respectivement. Elles sont mixtes dans le cas d'une condition
@@ -458,7 +458,7 @@ $(\vect{\widetilde{u}}^{n+1,k})_{k\in \mathbb{N}}$ n'a pas converg\'e.
 
 \subsubsection*{\bf \'Etape de correction de la pression}
 En prenant la divergence de la premi\`ere \'equation du syst\`eme
-(\ref{Base_Navsto_eq_correction_continue}), on obtient~:
+(\ref{Base_Navstv_eq_correction_continue}), on obtient~:
 \begin{equation}
 \dive\left[(\rho\vect{u})^{n+1}-(\rho\vect{\widetilde{u}})^{n+1}\right]
 =\dive(-\Delta t\, \grad  \delta P^{n+\theta}) \\
@@ -480,7 +480,7 @@ soit :
 \end{equation}
 et :
 \begin{equation}
-\label{Base_Navsto_corrvit}
+\label{Base_Navstv_corrvit}
 \vect{u}^{n+1} = \vect{\widetilde{u}}^{n+1}-\frac{\Delta t}{\rho}\, \grad\delta
 P^{n+\theta}
 \end{equation}
@@ -490,7 +490,7 @@ En int\'egrant sur une cellule :
 \int_{\Omega_i}{\dive(\Delta t \grad\ \delta P^{n+\theta})\, d\Omega} =
 \sum\limits_{j\in Vois(i)}{\vect{D}_{\,ij}(\Delta t, \delta P^{n+\theta})}
 +\sum_{k\in {\gamma_b(i)}} {\vect{D}_{\,{b}_{ik}}(\Delta t, \delta P^{n+\theta})}
-\label{Base_Navsto_eq_correction_discrete}
+\label{Base_Navstv_eq_correction_discrete}
 \end{equation}
 et :
 \begin{equation}
@@ -511,7 +511,7 @@ La discr\'etisation de $\sum\limits_{j\in Vois{(i)}}{\left[ (\rho
 \vect{\widetilde{u}})^{n+1}_{ij}\text{.}\,\vect{S}_{\,ij}\right]} + \sum\limits_{k\in {\gamma_b(i)}} \left[{(\rho \vect{\widetilde{u}})^{n+1}_{\,{b}_{ik}}} \text{.}\, \vect{S}_{\,{b}_{ik}}\right]$ est particuli\`ere. Le
 choix suivant not\'e $\left[{\ \ }\right]^{Init}$, pour une cellule ne touchant pas
 le bord par exemple, est insatisfaisant avec la discr\'etisation et le sch\'ema utilis\'es ici, en particulier avec l'\'equation
-(\ref{Base_Navsto_corrvit}) :\\
+(\ref{Base_Navstv_corrvit}) :\\
 \begin{equation}
 (\rho \vect{\widetilde{u}})^{n+1}_{\,ij}.\,\vect{S}_{\,ij}=
 \left[(\rho \vect{\widetilde{u}})^{n+1}_{\,ij}.\,\vect{S}_{\,ij}\right]^{Init}=
@@ -589,7 +589,7 @@ $R_{ij}-\varepsilon$.
 
 \paragraph{\bf R\'esolution\\}
 On construit une suite $(\delta P^{n+1,k})_{k\in \mathbb{N}}$ pour r\'esoudre
-l'\'equation (\ref{Base_Navsto_eq_correction_discrete}), qui peut conduire {\it via} la
+l'\'equation (\ref{Base_Navstv_eq_correction_discrete}), qui peut conduire {\it via} la
 reconstruction  du gradient cellule \`a une matrice quasiment pleine en
 pr\'esence de non orthogonalit\'es, d\'efinie par :
 \begin{equation}
@@ -718,7 +718,5 @@ et donc :
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 On se reportera aux sections relatives aux sous-programmes
-\fort{Preduv} (pr\'ediction des vitesses) et \fort{Resolp}
-(correction de pression). Pour la reconstruction des vitesses
-par moindres carr\'es \`a partir des flux de masse aux faces, on
-pourra voir \fort{Recvmc}.
+\fort{Predvv} (pr\'ediction des vitesses) et \fort{Resopv}
+(correction de pression).

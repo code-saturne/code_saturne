@@ -20,7 +20,7 @@
 
 %-------------------------------------------------------------------------------
 
-\programme{preduv}\label{ap:preduv}
+\programme{predvv}\label{ap:predvv}
 %
 \vspace{1cm}
 %-------------------------------------------------------------------------------
@@ -29,7 +29,7 @@
 Dans ce sous-programme, on effectue l'\'etape de pr\'ediction de la vitesse
 $\vect{u}$. Ceci consiste \`{a} r\'esoudre l'\'{e}quation de quantit\'e de
 mouvement (Q.D.M.) en traitant la pression $p$ de mani\`{e}re explicite. La solution en vitesse-pression est obtenue apr\`{e}s une \'{e}tape de correction sur la pression
-effectu\'{e}e dans le sous-programme \fort{resolp}, en utilisant la loi de conservation de la masse :
+effectu\'{e}e dans le sous-programme \fort{resopv}, en utilisant la loi de conservation de la masse :
 \begin{equation}
 \frac{\partial \rho } {\partial t}+ \dive(\rho \underline{u}) = \Gamma,
 \end{equation}
@@ -60,7 +60,7 @@ $\tens{\sigma}$ repr\'esente le tenseur de contraintes, $\tens{\tau}$ le tenseur
 des contraintes visqueuses, $\mu$ la viscosit\'e dynamique (mol\'eculaire et
 \'eventuellement turbulente), $\tens{D}$
  le tenseur taux de d\'eformation\footnote{\`A ne pas confondre, malgr\'e la m\^eme notation $D$, avec les flux
-diffusifs d\'ecrits dans le sous-programme \fort{navsto}},
+diffusifs d\'ecrits dans le sous-programme \fort{navstv}},
 $\tens{R}$ le tenseur de Reynolds qui appara\^\i t lors de l'application de
 l'op\'erateur moyenne \`a l'\'equation instantan\'ee, $\underline{S}$ les termes
 sources.\\
@@ -96,7 +96,7 @@ de masse}}- \underbrace {\rho\
 de charge}} + \underbrace { \underline{T}_{\,s}^{\,exp}+
 T_{s}^{\,imp}\ \underline{u}}_{\text{autres termes sources de
 Q.D.M.}}
-\label{Base_Preduv_eqqdm}
+\label{Base_Predvv_eqqdm}
 
 \end{array}
 \end{equation}
@@ -142,7 +142,7 @@ calcul\'{e}s et transmis au sous-programme \fort{codits} qui r\'{e}sout l'\'{e}q
 
 Le terme convectif en $\dive(\underline{u} \otimes \rho\,\underline{u})$
 introduit une non lin\'earit\'e et un couplage des composantes de la vitesse
-$\vect{u}$ dans l'\'{e}quation (\ref{Base_Preduv_eqqdm}). Une lin\'earisation et un d\'ecouplage
+$\vect{u}$ dans l'\'{e}quation (\ref{Base_Predvv_eqqdm}). Une lin\'earisation et un d\'ecouplage
 des trois composantes de la
 vitesse sont r\'ealis\'es lors de la discr\'etisation de cette \'etape de
 pr\'ediction.\\
@@ -152,7 +152,7 @@ En effet, soit :
 \end{equation}
 La contribution exacte du terme convectif \`a prendre en compte dans cette
 \'etape de pr\'ediction serait :\\
-\begin{equation}\label{Base_Preduv_Conv_exact}
+\begin{equation}\label{Base_Predvv_Conv_exact}
 \begin{array}{ll}
 \dive(\vect{\widetilde{u}} \otimes \rho\,\vect{\widetilde{u}}) =
 \dive(\vect{u}^{n} \otimes \rho\,\vect{u}^{n}) + \dive(\delta \vect{u} \otimes
@@ -161,16 +161,16 @@ La contribution exacte du terme convectif \`a prendre en compte dans cette
 \rho\,\delta \vect{u})}_{\text {terme couplant et non lin\'eaire}}\\
 \end{array}
 \end{equation}
-Les deux derniers termes de l'expression (\ref{Base_Preduv_Conv_exact}) sont {\em a priori} n\'{e}glig\'{e}s
+Les deux derniers termes de l'expression (\ref{Base_Predvv_Conv_exact}) sont {\em a priori} n\'{e}glig\'{e}s
 de mani\`{e}re \`{a} obtenir un syst\`eme en vitesse qui soit d\'ecoupl\'e et donc,
 \'{e}viter l'inversion d'une matrice pouvant \^etre de tr\`es grande taille. Ces
 deux termes peuvent n\'{e}anmoins être pris en compte de mani\`{e}re plus ou moins
 approch\'{e}e par extrapolation explicite du flux de masse en $n+\theta_F$ (pour le
 terme couplant lin\'{e}aire provenant de la convection de $\vect{u}^{n}$ par $\delta
 \vect{u}$) et utilisation d'un point-fixe par sous it\'{e}ration sur le sous
-programme \fort{navsto} (pour le terme non-lin\'{e}aire, en sp\'{e}cifiant $\var{NTERUP}>1$).
+programme \fort{navstv} (pour le terme non-lin\'{e}aire, en sp\'{e}cifiant $\var{NTERUP}>1$).
 
-L'\'{e}quation (\ref{Base_Preduv_eqqdm}) est discr\'{e}tis\'{e}e au temps $n+\theta$ \`{a} l'aide d'un
+L'\'{e}quation (\ref{Base_Predvv_eqqdm}) est discr\'{e}tis\'{e}e au temps $n+\theta$ \`{a} l'aide d'un
 $\theta$-sch\'{e}ma, et le tenseur des pertes de charges d\'{e}compos\'{e} en une partie
 diagonale $\tens{K}_{d}$ et une extradiagonale $\tens{K}_{e}$ (soit
  $\tens{K}_{pdc}=\tens{K}_{d}+\tens{K}_{e}$).\\
@@ -201,9 +201,9 @@ $(\rho\underline{u})$ sont pris respectivement aux instants $n+\theta_\Phi$ et
 $n+\theta_F$, o\`{u} $\theta_\Phi$ et $\theta_F$ d\'{e}pendent des sch\'{e}mas en temps
 sp\'{e}cifiquement utilis\'{e}s pour ces grandeurs\footnote{cf. \fort{introd}}.
 
-La discr\'{e}tisation temporelle de l'\'{e}quation (\ref{Base_Preduv_eqqdm}) s'\'{e}crit alors comme suit :
+La discr\'{e}tisation temporelle de l'\'{e}quation (\ref{Base_Predvv_eqqdm}) s'\'{e}crit alors comme suit :
 
-\begin{equation}\label{Base_Preduv_eq_di1}
+\begin{equation}\label{Base_Predvv_eq_di1}
  \begin{array}{c}
 \displaystyle \rho\,\ \frac{ \underline {\widetilde{u}}^{n+1} -\underline {u}^{n} }
 {\Delta t} + \dive(\,\underline{\widetilde{u}}^{n+\theta} \otimes (\rho\underline{u})\,) -\dive
@@ -259,9 +259,9 @@ Avec :
 \right.
 \end{equation}
 
-L'\'{e}quation (\ref{Base_Preduv_eq_di1}) est alors r\'{e}\'{e}crite sous la forme :
+L'\'{e}quation (\ref{Base_Predvv_eq_di1}) est alors r\'{e}\'{e}crite sous la forme :
 
-\begin{equation}\label{Base_Preduv_eq_di2}
+\begin{equation}\label{Base_Predvv_eq_di2}
 \begin{array}{c}
 \displaystyle \underbrace{\left(\frac{\rho}{\Delta t} -\theta \,\dive (\rho\,\underline {u}) +\theta \,\, \Gamma^n +
 \theta \,\, \rho\,\tens{K}_{\,d}^n-\theta \,T_s^{\,imp} \right)}_{\displaystyle f_s^{imp}}\, (\underline {\,\widetilde{u}}^{n+1} -\underline {u}^{n})
@@ -336,13 +336,13 @@ terme de convection (cf. \fort{covofi}).
 L'\'{e}quation de conservation de la quantit\'{e} de mouvement est donc r\'{e}solue de façon
 d\'{e}coupl\'{e}e. Ainsi, l'int\'{e}gration des diff\'{e}rents termes a \'{e}t\'{e} effectu\'{e}e afin de
 traiter s\'{e}par\'{e}ment l'\'{e}quation obtenue pour chaque composante de la vitesse.\\
-Dans le sous-programme \fort{preduv}, on calcule pour chaque
-composante le second membre $f_s^{exp}$ du syst\`{e}me  (\ref{Base_Preduv_eq_di2}), les termes implicites du syst\`{e}me (\`{a} l'exception des termes de convection-diffusion), et le terme de viscosit\'{e} totale aux faces internes\footnote{valeur n\'{e}cessaire pour l'int\'{e}gration du terme de diffusion dans \fort{codits}, $\displaystyle(\mu_{\,tot})_{ij}\frac{\var{SURFN}}{\var{DIST}}$} et de
+Dans le sous-programme \fort{predvv}, on calcule pour chaque
+composante le second membre $f_s^{exp}$ du syst\`{e}me  (\ref{Base_Predvv_eq_di2}), les termes implicites du syst\`{e}me (\`{a} l'exception des termes de convection-diffusion), et le terme de viscosit\'{e} totale aux faces internes\footnote{valeur n\'{e}cessaire pour l'int\'{e}gration du terme de diffusion dans \fort{codits}, $\displaystyle(\mu_{\,tot})_{ij}\frac{\var{SURFN}}{\var{DIST}}$} et de
 bord. Ces termes sont alors transmis au sous-programme \fort{codits} qui construit et
 r\'{e}sout le syst\`{e}me complet obtenu pour chaque composante de la vitesse avec les termes de convection-diffusion.
 \\\\
-Le r\'esidu de normalisation pour la r\'esolution du syst\`eme en pression (\fort{resolp}) est calcul\'e dans
-\fort{preduv}. Il est d\'efini par la norme de la
+Le r\'esidu de normalisation pour la r\'esolution du syst\`eme en pression (\fort{resopv}) est calcul\'e dans
+\fort{predvv}. Il est d\'efini par la norme de la
 grandeur  $$\dive(\rho\,\widetilde{\vect{u}}^{n+1}+\Delta t \grad{P^{n-1+\theta}})-\Gamma$$
 int\'egr\'ee sur chaque cellule \var{IEL} du maillage ($\Omega_{iel}$) soit, symboliquement, par la racine carr\'ee de la
 somme sur les cellules du maillage de la quantit\'e
@@ -358,14 +358,14 @@ l'\'equation portant sur l'incr\'ement de pression, on obtiendrait, pour un calc
 stationnaire men\'e \`a convergence, un r\'esidu de normalisation tendant vers z\'ero, ce qui serait p\'enalisant et
 peu utile.
 
-Au d\'ebut de \fort{preduv}, on ne dispose pas encore de $\widetilde{\vect{u}}^{n+1}$
+Au d\'ebut de \fort{predvv}, on ne dispose pas encore de $\widetilde{\vect{u}}^{n+1}$
 et il n'est donc pas possible de calculer le r\'esidu de normalisation en
-totalit\'e. Cependant, le calcul du r\'esidu complet \`a la fin de \fort{preduv}
+totalit\'e. Cependant, le calcul du r\'esidu complet \`a la fin de \fort{predvv}
 n'est pas souhaitable non plus, car on devrait alors  monopoliser un tableau de
-travail pour conserver le gradient de pression tout au long de \fort{preduv}.
+travail pour conserver le gradient de pression tout au long de \fort{predvv}.
 Le calcul du r\'esidu de normalisation est donc r\'ealis\'e en deux fois.
 
-La quantit\'e $\int\limits_{\Omega_{iel}}{\dive(\Delta\,t\,\grad{P^{n-1+\theta}}) -\Gamma d\Omega}$ est calcul\'ee au d\'ebut de \fort{preduv} et on y ajoute le compl\'ement $\int\limits_{\Omega_{iel}}{\dive(\rho\,\widetilde{\vect{u}}^{n+1})d\Omega}$ \`a la fin de \fort{preduv}.
+La quantit\'e $\int\limits_{\Omega_{iel}}{\dive(\Delta\,t\,\grad{P^{n-1+\theta}}) -\Gamma d\Omega}$ est calcul\'ee au d\'ebut de \fort{predvv} et on y ajoute le compl\'ement $\int\limits_{\Omega_{iel}}{\dive(\rho\,\widetilde{\vect{u}}^{n+1})d\Omega}$ \`a la fin de \fort{predvv}.
 
 On calcule donc tout d'abord le gradient de pression aux cellules \`a l'instant
 $n-1+\theta$ par un appel \`a \fort{grdcel}. On utilise alors \fort{inimas} pour
@@ -395,7 +395,7 @@ reconstruction~: \var{NSWRP=1}). En effet, on cherche \`a \'evaluer un simple
 r\'esidu de normalisation global~: la pr\'ecision locale n'a donc pas
 d'int\'er\^et.
 
-Le calcul du r\'esidu sera compl\'et\'e \`a la fin de \fort{preduv}.
+Le calcul du r\'esidu sera compl\'et\'e \`a la fin de \fort{predvv}.
 
 
 \etape{Calcul en partie du r\'esidu de normalisation pour l'\'etape de pression}
@@ -412,7 +412,7 @@ partir du tableau de travail \var{TRAV}=$\frac{\Delta t}{\rho}
 homog\`enes et sans reconstruction) et \fort{divmas} (calcul dans \var{XNORMP}
 de l'int\'egrale sur les cellules).  Par une simple boucle, on
 ajoute ensuite la contribution du terme source de masse $\Gamma$.
-Ce calcul est compl\'{e}t\'{e} \`a la fin de \fort{preduv}.\\
+Ce calcul est compl\'{e}t\'{e} \`a la fin de \fort{predvv}.\\
 
 \etape{Calcul en partie du terme $\underline{f}_s^{\,exp}$}
 
@@ -424,23 +424,23 @@ z). Quatre cas sont \`{a} consid\'{e}rer suivant que les termes sources sont ext
 en $n+\theta_S$, ou que l'on it\`{e}re par un point fixe sur le syst\`{e}me en
 vitesse-pression (\var{NTERUP}$>1$).
 \\
-$\bullet$ Si on extrapole les termes sources et que l'on it\`{e}re sur \fort{navsto}\\
+$\bullet$ Si on extrapole les termes sources et que l'on it\`{e}re sur \fort{navstv}\\
 \begin{itemize}
 \item [-]\var{TRAV} reçoit les termes sources qui sont recalcul\'{e}s au cours de
-toutes les it\'{e}rations sur \fort{navsto} et qui ne sont pas extrapol\'{e}s
+toutes les it\'{e}rations sur \fort{navstv} et qui ne sont pas extrapol\'{e}s
 ($\grad{P^{n-1+\theta}}$ et $(\rho -\rho_0) \underline {g}$\footnote{en r\'{e}alit\'{e}
 $(\rho -\rho_0) \underline {g}$ ne change pas, mais il est rapide \`{a} calculer ce
 qui \'{e}vite d'avoir un traitement suppl\'{e}mentaire pour ce terme.}).\\
 \item [-]\var{TRAVA} reçoit les termes sources qui ne changent pas au cours des
-it\'{e}rations sur \fort{navsto} et qui ne sont pas extrapol\'{e}s
+it\'{e}rations sur \fort{navstv} et qui ne sont pas extrapol\'{e}s
 ($T_s^{imp}\,u^n\,,-\rho\,\tens{K}_{d}\,u^n\,,\,-\Gamma^n\,u^n,...$).\\
 \item [-]\var{PROPCE} reçoit les termes sources devant \^etre extrapol\'{e}s.\\
 \\
 \end{itemize}
-$\bullet$ Sans it\'{e}ration sur \fort{navsto}, \var{TRAVA} est inutile et son contenu est directement stock\'{e} dans \var{TRAV}.\\
+$\bullet$ Sans it\'{e}ration sur \fort{navstv}, \var{TRAVA} est inutile et son contenu est directement stock\'{e} dans \var{TRAV}.\\
 \\
 $\bullet$ Sans extrapolation des termes sources, \var{PROPCE} est inutile et son contenu est directement stock\'{e} dans \var{TRAVA} (ou dans \var{TRAV} si \var{TRAVA} est inutile).\\
-Ainsi, sans extrapolation des termes sources, et sans it\'{e}ration sur \fort{navsto}, tout les termes sources vont directement dans \var{TRAV}.\\
+Ainsi, sans extrapolation des termes sources, et sans it\'{e}ration sur \fort{navstv}, tout les termes sources vont directement dans \var{TRAV}.\\
 \\
 \begin{itemize}
 \item On dispose d\'ej\`a du gradient de pression sur les cellules \`a l'instant $n-1+\theta$. Le terme de gravit\'e est alors ajout\'{e} au vecteur \var{TRAV} qui contient d\'{e}j\`{a} le gradient de pression. Ainsi, on a par exemple pour la direction x :
@@ -450,7 +450,7 @@ Ainsi, sans extrapolation des termes sources, et sans it\'{e}ration sur \fort{na
 \end{equation}
 
 \item Si une extrapolation des termes sources est utilis\'{e}e, le vecteur
-\var{TRAV} (ou \var{TRAVA}) reçoit \`{a} la premi\`{e}re it\'{e}ration sur \fort{navsto},
+\var{TRAV} (ou \var{TRAVA}) reçoit \`{a} la premi\`{e}re it\'{e}ration sur \fort{navstv},
 $-\theta_S$ fois la contribution au temps $n-1$ des termes sources devant \^etre
 extrapol\'{e}s\footnote{car
 $(\underline{T}_s^{exp})^{n+\theta_S}=(1+\theta_S)\,(\underline{T}_s^{exp})^n
@@ -459,12 +459,12 @@ $(\underline{T}_s^{exp})^{n+\theta_S}=(1+\theta_S)\,(\underline{T}_s^{exp})^n
 recevoir plus tard la contribution au pas de temps courant des termes sources qui
 sont extrapol\'{e}s.
 
-\item Le terme correspondant au mod\`{e}le de turbulence n'est calcul\'{e} que lors de la premiere it\'{e}ration sur \fort{navsto} puis ajout\'{e} \`{a} \var{TRAVA}, \var{TRAV} ou \var{PROPCE} suivant que les termes sources sont extrapol\'{e}s, ou que l'on it\`{e}re sur \fort{navsto}.\\
+\item Le terme correspondant au mod\`{e}le de turbulence n'est calcul\'{e} que lors de la premiere it\'{e}ration sur \fort{navstv} puis ajout\'{e} \`{a} \var{TRAVA}, \var{TRAV} ou \var{PROPCE} suivant que les termes sources sont extrapol\'{e}s, ou que l'on it\`{e}re sur \fort{navstv}.\\
 
 {\tiny$\blacksquare$} Mod\`{e}les \`{a} viscosit\'{e} turbulente :\\
 Si $\var{IGRHOK}=1$, alors on calcule $-\displaystyle \frac{2}{3}\ \rho\ \grad k$ (et non, comme on devrait,
 $-\displaystyle \frac{2}{3}\grad (\rho k)$) par  simplification
-(cf. paragraphe~\ref{Base_Preduv_section4}). Le gradient de $k$ est calcul\'{e} sur la cellule
+(cf. paragraphe~\ref{Base_Predvv_section4}). Le gradient de $k$ est calcul\'{e} sur la cellule
 par le
 sous-programme \fort{grdcel}. \\
 Si $\var{IGRHOK}=0$, ce terme est suppos\'e \^etre implicitement pris en compte
@@ -477,18 +477,18 @@ appelle le sous-programme \fort{divmas} qui en calcule la divergence.\\
 \linebreak
 \item Les termes de viscosit\'{e} secondaire $- \displaystyle \frac {2} {3}\grad (\mu_{\,tot} \dive \underline\,{u})$ et de gradient
 transpos\'{e} $ \dive (\mu_{\,tot} \,^t\ggrad \underline {u})$ sont calcul\'{e}s (s'ils sont pris en compte \emph{i.e.} \var{IVISSE}\,(\var{IPHAS})\ = 1, o\`{u} \var{IPHAS} est le
-num\'{e}ro de la phase trait\'{e}e) par le sous-programme \fort{vissec}. Il ne sont calcul\'{e}s qu'\`{a} la premi\`{e}re it\'{e}ration sur \fort{navsto}. Au cours de cette \'{e}tape, le tableau \var{TRAV} est utilis\'{e} comme tableau de travail lors de l'appel au sous-programme \fort{vissec}. Il retrouve sa valeur \`{a} la fin de cet appel, son contenu \'{e}tant temporairement stock\'{e} dans les vecteurs \var{W7} \`{a} \var{W9}.
+num\'{e}ro de la phase trait\'{e}e) par le sous-programme \fort{visecv}. Il ne sont calcul\'{e}s qu'\`{a} la premi\`{e}re it\'{e}ration sur \fort{navstv}. Au cours de cette \'{e}tape, le tableau \var{TRAV} est utilis\'{e} comme tableau de travail lors de l'appel au sous-programme \fort{visecv}. Il retrouve sa valeur \`{a} la fin de cet appel, son contenu \'{e}tant temporairement stock\'{e} dans les vecteurs \var{W7} \`{a} \var{W9}.
 \\
 \item Les termes correspondant aux pertes de charges ($\rho \tens{K}_{\,pdc}
 {u}$), s'ils existent (\ $\var{NCEPDP}> 0$\ ), sont calcul\'{e}s par le
-sous-programme \fort{tsepdc} \`{a} la premi\`{e}re it\'{e}ration sur \fort{navsto}. Ils sont
+sous-programme \fort{tspdcv} \`{a} la premi\`{e}re it\'{e}ration sur \fort{navstv}. Ils sont
 d\'{e}compos\'{e}s en deux parties :\\
 {\tiny$\blacksquare$} Une premi\`{e}re, correspondant \`{a} la contribution des termes
 diagonaux ($-\rho\,\tens{K}_{\,d}\underline{u}$) qui n'est pas extrapol\'{e}e.\\
 {\tiny$\blacksquare$} Une seconde, correspondant aux  termes extradiagonaux
 ($-\rho\,\tens{K}_{\,e}\underline{u}$) qui peut l'\^etre ou non.\\
 Au cours de cette \'{e}tape, le tableau \var{TRAV} est utilis\'{e} comme tableau de
-travail lors de l'appel au sous-programme \fort{tsepdc}. Il retrouve sa valeur \`{a}
+travail lors de l'appel au sous-programme \fort{tspdcv}. Il retrouve sa valeur \`{a}
 la fin de cet appel, son contenu \'{e}tant temporairement stock\'{e} dans les vecteurs
 \var{W7} \`{a} \var{W9}.
 
@@ -503,7 +503,7 @@ Lors de l'int\'{e}gration des termes de convection-diffusion dans le sous-progra
 \fort{codits}, on distingue les termes non reconstruits, int\'egr\'es dans la
 matrice $\tens{EM}$ , de l'ensemble des termes (non reconstruits +
 gradients de reconstruction) associ\'es \`a l'op\'erateur $\mathcal{E}$ (non
-lin\'eaire)\footnote{ par coh\'erence avec les op\'erateurs $\mathcal{EM}$ et $\mathcal{E}$ d\'efinis dans \fort{navsto} }.
+lin\'eaire)\footnote{ par coh\'erence avec les op\'erateurs $\mathcal{EM}$ et $\mathcal{E}$ d\'efinis dans \fort{navstv} }.
 De la même mani\`{e}re, on distingue la viscosit\'{e} totale aux faces utilis\'{e}e dans
 $\mathcal{E}$, tableaux \var{VISCF} et \var{VISCB}, de la viscosit\'{e} totale aux
 faces utilis\'{e}e dans $\tens{EM}$, tableaux \var{VISCFI} et
@@ -523,13 +523,13 @@ r\'{e}solues de façon d\'{e}coupl\'{e}e. On utilise, par cons\'{e}quent, un seul
 Pour chaque composante de la vitesse :\\
 
 \begin{itemize}
-\item Lors de la premi\`{e}re it\'{e}ration sur le sous-programme \fort{navsto}, les parties implicites et explicites des termes sources utilisateurs sont calcul\'{e}es par appel au sous-programme \fort{ustsns}.\\
+\item Lors de la premi\`{e}re it\'{e}ration sur le sous-programme \fort{navstv}, les parties implicites et explicites des termes sources utilisateurs sont calcul\'{e}es par appel au sous-programme \fort{ustsns}.\\
 {\tiny$\blacksquare$} La partie implicite ($T_s^{imp}$) est conserv\'{e}e dans le vecteur \var{XIMPA} pour les it\'{e}rations suivantes en cas d'utilisation du point-fixe sur le syst\`{e}me en vitesse-pression, et la contribution issue des m\^emes termes implicites ($T_s^{imp}\,\underline{u}^n$) ajout\'{e}e \`{a} \var{TRAVA} ou \`{a} \var{TRAV}.\\
-{\tiny$\blacksquare$} La partie explicite ($T_s^{exp}$) est ajout\'{e}e \`{a} \var{TRAVA}, \var{TRAV} ou \var{PROPCE} suivant que les termes sources sont extrapol\'{e}s, ou que l'on it\`{e}re sur \fort{navsto}.\\
+{\tiny$\blacksquare$} La partie explicite ($T_s^{exp}$) est ajout\'{e}e \`{a} \var{TRAVA}, \var{TRAV} ou \var{PROPCE} suivant que les termes sources sont extrapol\'{e}s, ou que l'on it\`{e}re sur \fort{navstv}.\\
 
 \item Le terme d'accumulation de masse ($\dive(\rho \underline {u})$) est
 calcul\'{e} en appelant le sous-programme \fort{divmas} avec en argument le flux de
-masse. Lors de la premi\`{e}re it\'{e}ration faite sur le sous-programme \fort{navsto},
+masse. Lors de la premi\`{e}re it\'{e}ration faite sur le sous-programme \fort{navstv},
 le terme correspondant \`{a} la contribution explicite de l'accumulation de masse
 ($\underline{u}^{n}\ \dive(\rho \underline{u})$) est ajout\'{e} \`a \var{TRAVA} ou \`{a}
 \var{TRAV}. Le vecteur \var{ROVSDT} est initialis\'{e} par $\theta\,\dive(\rho
@@ -542,7 +542,7 @@ le terme correspondant \`{a} la contribution explicite de l'accumulation de mass
 {\tiny$\blacksquare$} Dans le cas ou ils sont extrapol\'{e}s par contre, elle est prise en compte quel que soit son signe.\\
 
 \item Les termes sources implicite et explicite de masse, s'ils existent
-(~$\var{NCESMP}>0$~), sont calcul\'{e}s \`{a} la premi\`{e}re it\'{e}ration sur \fort{navsto}
+(~$\var{NCESMP}>0$~), sont calcul\'{e}s \`{a} la premi\`{e}re it\'{e}ration sur \fort{navstv}
 par le sous-programme \fort{catsma}. $\Gamma\,\underline{u}_i$ est ajout\'{e} \`{a}
 \var{TRAV}, \var{TRAVA} ou \var{PROPCE} pour être \'{e}ventuellement
 extrapol\'{e}. $\Gamma\,\underline{u}^n$ est rajout\'{e} \`{a} \var{TRAV} ou \var{TRAVA} et
@@ -562,8 +562,8 @@ $$\var{SMBR}=\var{TRAVA}+\var{TRAV}$$
 \item La resolution du syst\`{e}me lin\'{e}aire est faite par le sous-programme
 \fort{codits} avec pour argument \var{ROVSDT} et \var{SMBR}.\\
 
-\item Si on utilise le couplage instationnaire renforc\'{e} vitesse-pression ($\ \var{IPUCOU} = 1\ $) (uniquement disponible avec l'ordre 1, sans extrapolation des termes sources et sans it\'{e}ration sur \fort{navsto}) on r\'{e}sout, en utilisant pour \fort{codits} :
-\begin{equation}\label{Base_Preduv_Eq_Tdir}
+\item Si on utilise le couplage instationnaire renforc\'{e} vitesse-pression ($\ \var{IPUCOU} = 1\ $) (uniquement disponible avec l'ordre 1, sans extrapolation des termes sources et sans it\'{e}ration sur \fort{navstv}) on r\'{e}sout, en utilisant pour \fort{codits} :
+\begin{equation}\label{Base_Predvv_Eq_Tdir}
 \tens{EM}_{\,\var{DIR}}\,.\, (\tens{RHO}^{\,n})^{-1}\,.\,\underline{T}_{\,\var{DIR}} =
 \tens{\Omega}\,.\,\vect{1}
 \end{equation}
@@ -580,14 +580,14 @@ $\tens{EM}_{\,\var{DIR}}$ repr\'{e}sentant toujours la partie implicite de l'\'{
 (\emph{i.e.} \var{ROVSDT} + contribution des
 termes de convection-diffusion pris en compte dans le sous-programme
 \fort{matrix}). $\underline{T}_{\,\var{DIR}}$
-intervient dans l'\'{e}tape corrective (cf. sous-programme \fort{resolp}).\\
+intervient dans l'\'{e}tape corrective (cf. sous-programme \fort{resopv}).\\
 \end{itemize}
 Fin de la boucle sur les composantes de la vitesse.\\
 
 \etape{Fin du calcul du r\'esidu de normalisation pour l'\'etape de pression}
 
 Comme indiqu\'e pr\'ec\'edemment, on peut maintenant compl\'eter le calcul du
-r\'esidu de normalisation pour l'\'etape de pression de \fort{resolp}.
+r\'esidu de normalisation pour l'\'etape de pression de \fort{resopv}.
 
 Le tableau \var{XNORMP} contient d\'ej\`a
 $\int\limits_{\Omega_{iel}}{\dive(\Delta\,t\,\grad{P^{n-1+\theta}}) -\Gamma d\Omega}$ . On
@@ -615,12 +615,12 @@ carr\'e des valeurs de \var{XNORMP} et en prend la racine carr\'ee).\\
 
 \newpage
 
-On r\'{e}sume dans les tableaux (\ref{Base_Preduv_tab_ext0}), (\ref{Base_Preduv_tab_ext1}), (\ref{Base_Preduv_tab_exp0})
-et (\ref{Base_Preduv_tab_exp1}) les diff\'{e}rentes contributions (hors convection-diffusion)
+On r\'{e}sume dans les tableaux (\ref{Base_Predvv_tab_ext0}), (\ref{Base_Predvv_tab_ext1}), (\ref{Base_Predvv_tab_exp0})
+et (\ref{Base_Predvv_tab_exp1}) les diff\'{e}rentes contributions (hors convection-diffusion)
 affect\'{e}es \`{a} chacun des vecteurs \var{TRAV}, \var{TRAVA}, \var{PROPCE} et
 \var{ROVSDT} \`{a} l'it\'{e}ration $n$. On diff\'{e}rencie pour chacun des sch\'{e}mas en temps
 appliqu\'{e}s aux les termes sources, deux cas suivant qu'un point fixe sur le
-syst\`{e}me en vitesse-pression est utilis\'{e} ou non (it\'{e}ration sur \fort{navsto} pour
+syst\`{e}me en vitesse-pression est utilis\'{e} ou non (it\'{e}ration sur \fort{navstv} pour
 \var{NTERUP}$>1$). En l'absence d'indication les propri\'{e}t\'{e}s physiques $\Phi$
 ($\rho$,$\mu$,etc...) sont suppos\'{e}es prises au temps $n+\theta_\Phi$, et le flux
 de masse $(\,\rho \underline{u})$ pris au temps $n+\theta_F$, o\`{u} $\theta_\Phi$
@@ -629,7 +629,7 @@ grandeurs (cf. \fort{introd}).
 \\\\
 Les termes figurant dans ces tableaux sont \'{e}crits tels qu'ils ont \'{e}t\'{e} implant\'{e}s
 dans le code, d'o\`{u} l'origine de certaines diff\'{e}rences par rapport \`{a} l'\'{e}criture
-adopt\'{e}e dans l'\'{e}quation (\ref{Base_Preduv_eq_di2}).
+adopt\'{e}e dans l'\'{e}quation (\ref{Base_Predvv_eq_di2}).
 \\\\
 Par souci de simplification, on pose~:
 \begin{equation}\notag
@@ -651,7 +651,7 @@ Par souci de simplification, on pose~:
 \end{cases}
 \end{equation}
 $\bullet$ \var{NTERUP} $=$ 1 : $\var{SMBR}^n=(1-\theta_S)\,\var{PROPCE}^n+\var{TRAV}^n$
-\begin{equation}\label{Base_Preduv_tab_ext0}
+\begin{equation}\label{Base_Predvv_tab_ext0}
 \begin{array}{|l|c|}
 \hline
 \var{ROVSDT}^{n}
@@ -675,7 +675,7 @@ $\bullet$ \var{NTERUP} $=$ 1 : $\var{SMBR}^n=(1-\theta_S)\,\var{PROPCE}^n+\var{T
 \end{equation}
 \\\\
 $\bullet$ \var{NTERUP} $>$ 1 (sous-it\'{e}ration $k$) : $\var{SMBR}^n=(1-\theta_S)\,\var{PROPCE}^n+\var{TRAVA}^n+\var{TRAV}^n$
-\begin{equation}\label{Base_Preduv_tab_ext1}
+\begin{equation}\label{Base_Predvv_tab_ext1}
 \begin{array}{|l|c|}
 \hline
 \var{ROVSDT}^{n}
@@ -712,7 +712,7 @@ $\bullet$ \var{NTERUP} $>$ 1 (sous-it\'{e}ration $k$) : $\var{SMBR}^n=(1-\theta_
 \end{equation}
 $\bullet$ \var{NTERUP} $=$ 1 : $\var{SMBR}^n=\var{TRAV}^n$
 \\\\
-\begin{equation}\label{Base_Preduv_tab_exp0}
+\begin{equation}\label{Base_Predvv_tab_exp0}
 \begin{array}{|l|c|}
 \hline
 \var{ROVSDT}^{n} &
@@ -732,7 +732,7 @@ $\bullet$ \var{NTERUP} $=$ 1 : $\var{SMBR}^n=\var{TRAV}^n$
 \end{equation}
 \\\\
 $\bullet$ \var{NTERUP} $>$ 1 (sous-it\'{e}ration $k$) : $\var{SMBR}^n=\var{TRAVA}^n+\var{TRAV}^n$
-\begin{equation}\label{Base_Preduv_tab_exp1}
+\begin{equation}\label{Base_Predvv_tab_exp1}
 \begin{array}{|l|c|}
 \hline
 \var{ROVSDT}^{n} &
@@ -755,7 +755,7 @@ $\bullet$ \var{NTERUP} $>$ 1 (sous-it\'{e}ration $k$) : $\var{SMBR}^n=\var{TRAVA
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{Points \`a traiter}\label{Base_Preduv_section4}
+\section*{Points \`a traiter}\label{Base_Predvv_section4}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \etape{Prise en compte du terme $\grad(\rho k)$ pour les mod\`{e}les \`{a} viscosit\'{e} turbulente}

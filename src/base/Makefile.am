@@ -192,7 +192,6 @@ cs_calcium.c \
 csc2cl.f90 \
 csc2ts.f90 \
 cs2tsv.f90 \
-csccel.f90 \
 cscelv.f90 \
 cscfbr.f90 \
 cscini.f90 \
@@ -244,7 +243,6 @@ dvvpst.f90 \
 ecrava.f90 \
 ecrhis.f90 \
 ecrlis.f90 \
-findnd.f90 \
 findpt.f90 \
 fldini.f90 \
 fldtri.f90 \
@@ -279,7 +277,6 @@ predvv.f90 \
 prehyd.f90 \
 prmoy0.f90 \
 pthrbm.f90 \
-recvmc.f90 \
 resopv.f90 \
 scalai.f90 \
 schtmp.f90 \
@@ -291,7 +288,6 @@ strpre.f90 \
 tdesi1.f90 \
 tridim.f90 \
 tspdcv.f90 \
-tsepdc.f90 \
 tstvec.f90 \
 typecl.f90 \
 undscr.f90 \
@@ -300,7 +296,6 @@ vericl.f90 \
 verini.f90 \
 verlon.f90 \
 vert1d.f90 \
-vissec.f90 \
 visecv.f90 \
 zufall.f90
 

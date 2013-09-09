@@ -27,7 +27,7 @@
 %-------------------------------------------------------------------------------
 \section*{Fonction}
 %-------------------------------------------------------------------------------
-Ce sous-programme, appel\'{e} entre autre par \fort{preduv}, \fort{turbke}, \fort{covofi},
+Ce sous-programme, appel\'{e} entre autre par \fort{predvv}, \fort{turbke}, \fort{covofi},
 \fort{resrij}, \fort{reseps}, ..., r\'{e}sout les \'{e}quations de convection-diffusion
 d'un scalaire $a$ avec termes sources du type :
 \begin{equation}\label{Base_Codits_eq_ref}
@@ -61,7 +61,7 @@ existe, est la solution de l'\'{e}quation pr\'{e}c\'{e}dente.
 Afin d'expliquer la proc\'{e}dure utilis\'{e}e pour traiter les difficult\'{e}s dues aux
 termes de reconstruction et de test de pente dans les termes de
 convection-diffusion, on note, de fa\c con analogue \`a ce qui est d\'efini dans
-\fort{navsto} mais sans discr\'etisation spatiale associ\'ee, $\mathcal{E}_{n}$ l'op\'erateur :
+\fort{navstv} mais sans discr\'etisation spatiale associ\'ee, $\mathcal{E}_{n}$ l'op\'erateur :
 \begin{equation}\label{Base_Codits_Eq_ref_small}
 \begin{array}{c}
 \mathcal{E}_{n}(a) = f_s^{\,imp}\,a + \theta\,\, \dive((\rho
@@ -144,7 +144,7 @@ convection (donc \'eventuellement non lin\'eaire si le test de pente est activ\'
 reconstruction vont \^etre pris \`a l'it\'{e}ration $k$ et trait\'es au second membre {\it via} le sous-programme \fort{bilsc2},  alors que les termes
 non reconstruits sont pris \`{a} l'it\'{e}ration $k+1$ et repr\'esentent donc les
 inconnues du syst\`eme lin\'eaire r\'esolu par \fort{codits}\footnote{cf. le sous-programme
-\fort{navsto}.}.\\
+\fort{navstv}.}.\\
 
 On suppose de plus que cette suite $(a^{n+1,\,k})_k$ converge vers la solution
 $a^{n+1}$ de l'\'equation (\ref{Base_Codits_Eq_ref_small}), {\it i.e.}
@@ -167,7 +167,7 @@ priori} arbitraire ($\mathcal{EM}_{n}$ doit \^etre lin\'eaire et la suite
 $R_{ij}-\varepsilon$ ($\var{IRIJNU}=1$) consiste \`a for\c cer  $\mu_{\,tot}^n$
 dans l'expression de $\mathcal{EM}_{n}$ \`a la
 valeur $\mu_{\,laminaire}^n + \mu_{\,turbulent}^n$ lors de l'appel \`a
-\fort{codits} dans le sous-programme \fort{navsto}, pour l'\'etape de
+\fort{codits} dans le sous-programme \fort{navstv}, pour l'\'etape de
 pr\'ediction de la vitesse. Ceci n'a pas de sens
 physique (seul $\mu_{\,laminaire}^n$ \'{e}tant cens\'{e} intervenir), mais cela peut
 dans certains cas avoir un effet stabilisateur, sans que cela modifie pour
@@ -179,7 +179,7 @@ vitesse-pression (\var{IPUCOU}=1), on fait une seule it\'{e}ration $k$ en initia
 annul\'{e}es (on a $\var{INC}\,=\,0$) et le second membre est \'{e}gal \`{a} $\rho |\Omega_i|$.
 Ce qui permet d'obtenir une approximation de type diagonal de
 $\tens{EM}_{n}$
-n\'ecessaire lors de l'\'{e}tape de correction de la vitesse\footnote{cf. le sous-programme \fort{resolp}.}.
+n\'ecessaire lors de l'\'{e}tape de correction de la vitesse\footnote{cf. le sous-programme \fort{resopv}.}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
