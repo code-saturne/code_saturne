@@ -95,6 +95,7 @@ use ppincl
 use cfpoin
 use mesh
 use field
+use pointe, only: coefau, coefbu, cofafu, cofbfu
 
 !===============================================================================
 
@@ -566,11 +567,11 @@ if( idiff(ivar).ge. 1 ) then
 
   enddo
 
-! Assembling based on boundary faces
-! for the faces where a flux or a temperature is imposed,
-! all is taken into account by the energy diffusion term.
-! Hence the contribution of the terms in u2 and e-CvT shouldn't be taken into
-! account when ifbet(ifac).ne.0
+  ! Assembling based on boundary faces
+  ! for the faces where a flux or a temperature is imposed,
+  ! all is taken into account by the energy diffusion term.
+  ! Hence the contribution of the terms in u2 and e-CvT shouldn't be taken into
+  ! account when ifbet(ifac).ne.0
 
   do ifac = 1, nfabor
 
@@ -578,17 +579,25 @@ if( idiff(ivar).ge. 1 ) then
 
       iel = ifabor(ifac)
 
-      flux = viscb(ifac)*(w1(iel)/distb(ifac))*            &
-            ( w9(iel) - wb(ifac)                           &
-           + 0.5d0*( rtp(iel,iu)**2 -                      &
-   ( coefa(ifac,iclrtp(iu,icoef))                          &
-   + coefb(ifac,iclrtp(iu,icoef))*rtp(iel,iu) )**2         &
-                   + rtp(iel,iv)**2 -                      &
-   ( coefa(ifac,iclrtp(iv,icoef))                          &
-   + coefb(ifac,iclrtp(iv,icoef))*rtp(iel,iv) )**2         &
-                   + rtp(iel,iw)**2 -                      &
-   ( coefa(ifac,iclrtp(iw,icoef))                          &
-   + coefb(ifac,iclrtp(iw,icoef))*rtp(iel,iw) )**2))
+      flux = viscb(ifac)*(w1(iel)/distb(ifac))*                  &
+            ( w9(iel) - wb(ifac)                                 &
+            + 0.5d0*( rtp(iel,iu)**2 -                           &
+              ( coefau(1, ifac) + coefbu(1, 1, ifac)*rtp(iel,iu) &
+                                + coefbu(1, 2, ifac)*rtp(iel,iv) &
+                                + coefbu(1, 3, ifac)*rtp(iel,iw) &
+              )**2                                               &
+                   + rtp(iel,iv)**2 -                            &
+              ( coefau(2, ifac) + coefbu(2, 1, ifac)*rtp(iel,iu) &
+                                + coefbu(2, 2, ifac)*rtp(iel,iv) &
+                                + coefbu(2, 3, ifac)*rtp(iel,iw) &
+              )**2                                               &
+                   + rtp(iel,iw)**2 -                            &
+              ( coefau(3, ifac) + coefbu(3, 1, ifac)*rtp(iel,iu) &
+                                + coefbu(3, 2, ifac)*rtp(iel,iv) &
+                                + coefbu(3, 3, ifac)*rtp(iel,iw) &
+              )**2                                               &
+            ))
+
 
       smbrs(iel) = smbrs(iel) + flux
     endif
@@ -607,7 +616,7 @@ else
 endif
 
 !===============================================================================
-! 4. SOLVING
+! 4. Solving
 !===============================================================================
 
 iconvp = iconv (ivar)

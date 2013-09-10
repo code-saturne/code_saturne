@@ -40,19 +40,6 @@ subroutine cfdivs &
 
 ! ET MU = MU_LAMINAIRE + MU_TURBULENT
 
-! DIV(U)            EST CALCULE A PARTIR DE FLUMAS/RHO
-! GRAD_TRANSPOSE(U) EST UN GRADIENT CELLULE
-
-! REMARQUES :
-!  - Theoriquement le terme en div(u) devrait plutot etre calcule
-!      par un gradient cellule, pour correspondre exactement au
-!      terme en dUj/dxi. Mais comme la partie en dUi/dxj est
-!      calculee completement autrement (gradient facette et implicitation)
-!      de toute facon on n'aura jamais Trace(tau_ij)=0 exactement.
-!  - Pour la meme raison, comme le terme en dUi/dxj est calcule sur les
-!      elements de bord et pas celui en dUj/dxi, il est difficile de
-!      traiter le terme en div(u) de maniere rigoureuse. Il est donc
-!      conserve sur les elements de bord.
 !-------------------------------------------------------------------------------
 !ARGU                             ARGUMENTS
 !__________________.____._____.________________________________________________.
@@ -103,6 +90,7 @@ use ppppar
 use ppthch
 use ppincl
 use mesh
+use pointe, only:coefau, coefbu
 
 !===============================================================================
 
@@ -125,31 +113,31 @@ double precision ux(ncelet), uy(ncelet), uz(ncelet)
 
 ! Local variables
 
-integer          iccocg, inc, iel, ifac, ivar, isou, ii, jj
+integer          inc, iel, ifac, ii, jj
 integer          iclvar
 integer          nswrgp, imligp, iwarnp
 integer          ipcvis, ipcvst, ipcvsv
 
+logical          ilved
+
 double precision epsrgp, climgp, extrap
-double precision vecfac, visttt
+double precision vecfac, kappa, mu, trgdru
+double precision sigma(3,3)
 
 double precision, allocatable, dimension(:) :: vistot
-double precision, allocatable, dimension(:,:) :: grad
-double precision, allocatable, dimension(:) :: w4, w5, w6
+double precision, allocatable, dimension(:,:,:) :: gradv
+double precision, allocatable, dimension(:,:) :: tempv
 
 !===============================================================================
 
 !===============================================================================
-! 1.  INITIALISATION
+! 1. Initialization
 !===============================================================================
 
 ! Allocate temporary arrays
 allocate(vistot(ncelet))
-allocate(grad(ncelet,3))
-
-! Allocate work arrays
-allocate(w4(ncelet), w5(ncelet), w6(ncelet))
-
+allocate(gradv(ncelet,3,3))
+allocate(tempv(3, ncelet))
 
 ipcvis = ipproc(iviscl)
 ipcvst = ipproc(ivisct)
@@ -158,7 +146,6 @@ if(iviscv.gt.0) then
 else
   ipcvsv = 0
 endif
-
 
 ! --- Calcul de la viscosite totale
 
@@ -172,189 +159,152 @@ else
   enddo
 endif
 
-!    Pour la periodicite de rotation, il faut avoir calcule
-!      le gradient avec grdcel. La seule solution consiste donc a
-!      echanger VISTOT puis a faire le produit, y compris sur les
-!      cellules halo (calcul sur le halo, exceptionnellement).
-!    Pour le parallelisme, on s'aligne sur la sequence ainsi definie.
-
-! ---> TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
+! ---> Periodicity and parallelism treatment
 
 if (irangp.ge.0.or.iperio.eq.1) then
   call synsca(vistot)
-  !==========
   if (ipcvsv.gt.0) then
     call synsca(propce(1,ipcvsv))
-    !==========
   endif
 endif
 
-
 !===============================================================================
-! 2.  CALCUL DES TERMES DE LA DIVERGENCE
+! 2. Compute the divegence of (sigma.u)
 !===============================================================================
 
-! --- Boucle sur les composantes de vitesse Ui
+! --- Velocity gradient
+inc    = 1
+nswrgp = nswrgr(iu)
+imligp = imligr(iu)
+iwarnp = iwarni(iu)
+epsrgp = epsrgr(iu)
+climgp = climgr(iu)
+extrap = extrag(iu)
 
-do isou = 1, 3
+ilved = .false.
 
-  if (isou.eq.1) ivar = iu
-  if (isou.eq.2) ivar = iv
-  if (isou.eq.3) ivar = iw
+! WARNING: gradv(iel, xyz, uvw)
+call grdvec &
+!==========
+( iu     , imrgra , inc    , nswrgp , imligp ,                   &
+  iwarnp , nfecra ,                                              &
+  epsrgp , climgp , extrap ,                                     &
+  ilved  ,                                                       &
+  rtp(1,iu) ,  coefau , coefbu,                                  &
+  gradv  )
 
-  iclvar = iclrtp(ivar,icoef)
+! --- Compute the vector \tens{\sigma}.\vect{v}
+!     i.e. sigma_ij v_j e_i
 
-! --- Calcul du gradient de la vitesse
+! Variable kappa in space
+if (ipcvsv.gt.0) then
+  do iel = 1, ncel
+    kappa = propce(iel,ipcvsv)
+    mu = vistot(iel)
+    trgdru = gradv(iel, 1, 1)+gradv(iel, 2, 2)+gradv(iel, 3, 3)
 
-  iccocg = 1
-  inc    = 1
-  nswrgp = nswrgr(ivar)
-  imligp = imligr(ivar)
-  iwarnp = iwarni(ivar)
-  epsrgp = epsrgr(ivar)
-  climgp = climgr(ivar)
-  extrap = extrag(ivar)
+    sigma(1, 1) = mu * 2.d0*gradv(iel, 1, 1)  &
+                - (kappa-2.d0/3.d0)*trgdru
 
-  call grdcel                                                     &
-  !==========
- ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   rtp(1,ivar)     , coefa(1,iclvar) , coefb(1,iclvar) ,          &
-   grad   )
+    sigma(2, 2) = mu * 2.d0*gradv(iel, 2, 2)  &
+                - (kappa-2.d0/3.d0)*trgdru
 
+    sigma(3, 3) = mu * 2.d0*gradv(iel, 3, 3)  &
+                - (kappa-2.d0/3.d0)*trgdru
 
+    sigma(1, 2) = mu * (gradv(iel, 1, 2) + gradv(iel, 2, 1))
+    sigma(2, 1) = sigma(1, 2)
 
-! --- Assemblage sur les faces internes
+    sigma(2, 3) = mu * (gradv(iel, 2, 3) + gradv(iel, 3, 2))
+    sigma(3, 2) = sigma(2, 3)
 
-! On a echange le gradient dans grdcel et vistot plus haut
+    sigma(1, 3) = mu * (gradv(iel, 1, 3) + gradv(iel, 3, 1))
+    sigma(3, 1) = sigma(1, 3)
 
-  if(ipcvsv.gt.0) then
-    if    (isou.eq.1) then
-      do iel = 1, ncelet
-        visttt = propce(iel,ipcvsv) - 2.d0/3.d0*vistot(iel)
-        w4(iel) = vistot(iel)*( 2.d0*grad(iel,1)*ux(iel)          &
-                                   + grad(iel,2)*uy(iel)          &
-                                   + grad(iel,3)*uz(iel) )        &
-                     + visttt*grad(iel,1)*ux(iel)
-        w5(iel) = vistot(iel)*grad(iel,2)*ux(iel)                 &
-                     + visttt*grad(iel,1)*uy(iel)
-        w6(iel) = vistot(iel)*grad(iel,3)*ux(iel)                 &
-                     + visttt*grad(iel,1)*uz(iel)
-      enddo
-
-    elseif(isou.eq.2) then
-      do iel = 1, ncelet
-        visttt = propce(iel,ipcvsv) - 2.d0/3.d0*vistot(iel)
-        w4(iel) = vistot(iel)*grad(iel,1)*uy(iel)                 &
-                     + visttt*grad(iel,2)*ux(iel)
-        w5(iel) = vistot(iel)*(      grad(iel,1)*ux(iel)          &
-                              + 2.d0*grad(iel,2)*uy(iel)          &
-                                   + grad(iel,3)*uz(iel) )        &
-                     + visttt*grad(iel,2)*uy(iel)
-        w6(iel) = vistot(iel)*grad(iel,3)*uy(iel)                 &
-                     + visttt*grad(iel,2)*uz(iel)
-      enddo
-
-    elseif(isou.eq.3) then
-      do iel = 1, ncelet
-        visttt = propce(iel,ipcvsv) - 2.d0/3.d0*vistot(iel)
-        w4(iel) = vistot(iel)*grad(iel,1)*uz(iel)                 &
-                     + visttt*grad(iel,3)*ux(iel)
-        w5(iel) = vistot(iel)*grad(iel,2)*uz(iel)                 &
-                     + visttt*grad(iel,3)*uy(iel)
-        w6(iel) = vistot(iel)*(      grad(iel,1)*ux(iel)          &
-                                   + grad(iel,2)*uy(iel)          &
-                              + 2.d0*grad(iel,3)*uz(iel) )        &
-                     + visttt*grad(iel,3)*uz(iel)
-      enddo
-
-    endif
-
-  else
-
-    if    (isou.eq.1) then
-      do iel = 1, ncelet
-        visttt = viscv0 - 2.d0/3.d0*vistot(iel)
-        w4(iel) = vistot(iel)*( 2.d0*grad(iel,1)*ux(iel)          &
-                                   + grad(iel,2)*uy(iel)          &
-                                   + grad(iel,3)*uz(iel) )        &
-                     + visttt*grad(iel,1)*ux(iel)
-        w5(iel) = vistot(iel)*grad(iel,2)*ux(iel)                 &
-                     + visttt*grad(iel,1)*uy(iel)
-        w6(iel) = vistot(iel)*grad(iel,3)*ux(iel)                 &
-                     + visttt*grad(iel,1)*uz(iel)
-      enddo
-
-    elseif(isou.eq.2) then
-      do iel = 1, ncelet
-        visttt = viscv0 - 2.d0/3.d0*vistot(iel)
-        w4(iel) = vistot(iel)*grad(iel,1)*uy(iel)                 &
-                     + visttt*grad(iel,2)*ux(iel)
-        w5(iel) = vistot(iel)*(      grad(iel,1)*ux(iel)          &
-                              + 2.d0*grad(iel,2)*uy(iel)          &
-                                   + grad(iel,3)*uz(iel) )        &
-                     + visttt*grad(iel,2)*uy(iel)
-        w6(iel) = vistot(iel)*grad(iel,3)*uy(iel)                 &
-                     + visttt*grad(iel,2)*uz(iel)
-      enddo
-
-    elseif(isou.eq.3) then
-      do iel = 1, ncelet
-        visttt = viscv0 - 2.d0/3.d0*vistot(iel)
-        w4(iel) = vistot(iel)*grad(iel,1)*uz(iel)                 &
-                     + visttt*grad(iel,3)*ux(iel)
-        w5(iel) = vistot(iel)*grad(iel,2)*uz(iel)                 &
-                     + visttt*grad(iel,3)*uy(iel)
-        w6(iel) = vistot(iel)*(      grad(iel,1)*ux(iel)          &
-                                   + grad(iel,2)*uy(iel)          &
-                              + 2.d0*grad(iel,3)*uz(iel) )        &
-                     + visttt*grad(iel,3)*uz(iel)
-      enddo
-
-    endif
-
-  endif
-
-
-
-! On initialise DIVERG(NCEL+1, NCELET)
-!     (valeur bidon, mais pas NaN : les calculs sur le halo sont
-!      par principe denue de sens, sauf exception)
-  if(ncelet.gt.ncel) then
-    do iel = ncel+1, ncelet
-      diverg(iel) = 0.d0
-    enddo
-  endif
-
-
-
-  do ifac = 1, nfac
-    ii = ifacel(1,ifac)
-    jj = ifacel(2,ifac)
-!MO             VECFAC = SURFAC(ISOU,IFAC)
-!MO     &                  *(POND(IFAC)*W4(II)+(1.D0-POND(IFAC))*W4(JJ))
-    vecfac = surfac(1,ifac)*(w4(ii)+w4(jj))*0.5d0               &
-         + surfac(2,ifac)*(w5(ii)+w5(jj))*0.5d0               &
-         + surfac(3,ifac)*(w6(ii)+w6(jj))*0.5d0
-    diverg(ii) = diverg(ii) + vecfac
-    diverg(jj) = diverg(jj) - vecfac
+    tempv(1, iel) = sigma(1, 1)*ux(iel) &
+                  + sigma(1, 2)*uy(iel) &
+                  + sigma(1, 3)*uz(iel)
+    tempv(2, iel) = sigma(2, 1)*ux(iel) &
+                  + sigma(2, 2)*uy(iel) &
+                  + sigma(2, 3)*uz(iel)
+    tempv(3, iel) = sigma(3, 1)*ux(iel) &
+                  + sigma(3, 2)*uy(iel) &
+                  + sigma(3, 3)*uz(iel)
   enddo
 
+else
 
-! --- Assemblage sur les faces de bord
+  do iel = 1, ncel
+    kappa = viscv0
+    mu = vistot(iel)
+    trgdru = gradv(iel, 1, 1)+gradv(iel, 2, 2)+gradv(iel, 3, 3)
 
-  do ifac = 1, nfabor
-    ii = ifabor(ifac)
-    vecfac = surfbo(1,ifac)*w4(ii)                              &
-         + surfbo(2,ifac)*w5(ii)                              &
-         + surfbo(3,ifac)*w6(ii)
-    diverg(ii) = diverg(ii) + vecfac
+    sigma(1, 1) = mu * 2.d0*gradv(iel, 1, 1)  &
+                - (kappa-2.d0/3.d0)*trgdru
+
+    sigma(2, 2) = mu * 2.d0*gradv(iel, 2, 2)  &
+                - (kappa-2.d0/3.d0)*trgdru
+
+    sigma(3, 3) = mu * 2.d0*gradv(iel, 3, 3)  &
+                - (kappa-2.d0/3.d0)*trgdru
+
+    sigma(1, 2) = mu * (gradv(iel, 1, 2) + gradv(iel, 2, 1))
+    sigma(2, 1) = sigma(1, 2)
+
+    sigma(2, 3) = mu * (gradv(iel, 2, 3) + gradv(iel, 3, 2))
+    sigma(3, 2) = sigma(2, 3)
+
+    sigma(1, 3) = mu * (gradv(iel, 1, 3) + gradv(iel, 3, 1))
+    sigma(3, 1) = sigma(1, 3)
+
+    tempv(1, iel) = sigma(1, 1)*ux(iel) &
+                  + sigma(1, 2)*uy(iel) &
+                  + sigma(1, 3)*uz(iel)
+    tempv(2, iel) = sigma(2, 1)*ux(iel) &
+                  + sigma(2, 2)*uy(iel) &
+                  + sigma(2, 3)*uz(iel)
+    tempv(3, iel) = sigma(3, 1)*ux(iel) &
+                  + sigma(3, 2)*uy(iel) &
+                  + sigma(3, 3)*uz(iel)
   enddo
 
+endif
+
+! ---> Periodicity and parallelism treatment
+
+if (irangp.ge.0.or.iperio.eq.1) then
+  call synvin(tempv)
+endif
+
+! Initialize diverg(ncel+1, ncelet)
+!  (unused value, but need to be initialized to avoid Nan values)
+if (ncelet.gt.ncel) then
+  do iel = ncel+1, ncelet
+    diverg(iel) = 0.d0
+  enddo
+endif
+
+! --- Interior faces contribution
+
+do ifac = 1, nfac
+  ii = ifacel(1,ifac)
+  jj = ifacel(2,ifac)
+  vecfac = surfac(1,ifac)*(tempv(1, ii)+tempv(1, jj))*0.5d0               &
+         + surfac(2,ifac)*(tempv(2, ii)+tempv(2, jj))*0.5d0               &
+         + surfac(3,ifac)*(tempv(3, ii)+tempv(3, jj))*0.5d0
+  diverg(ii) = diverg(ii) + vecfac
+  diverg(jj) = diverg(jj) - vecfac
 enddo
 
-! Free memory
-deallocate(w4, w5, w6)
+! --- Boundary faces contribution
+
+do ifac = 1, nfabor
+  ii = ifabor(ifac)
+  vecfac = surfbo(1,ifac)*tempv(1, ii)                                    &
+         + surfbo(2,ifac)*tempv(2, ii)                                    &
+         + surfbo(3,ifac)*tempv(3, ii)
+  diverg(ii) = diverg(ii) + vecfac
+enddo
 
 return
 
