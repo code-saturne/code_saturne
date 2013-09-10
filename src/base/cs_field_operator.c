@@ -91,9 +91,9 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 void cs_f_field_gradient_scalar(int                    f_id,
+                                int                    use_previous_t,
                                 int                    imrgra,
                                 int                    inc,
-                                int                    use_previous_t,
                                 int                    recompute_cocg,
                                 int                    n_r_sweeps,
                                 int                    verbosity,
@@ -104,9 +104,9 @@ void cs_f_field_gradient_scalar(int                    f_id,
                                 cs_real_3_t  *restrict grad);
 
 void cs_f_field_gradient_potential(int                    f_id,
+                                   int                    use_previous_t,
                                    int                    imrgra,
                                    int                    inc,
-                                   int                    use_previous_t,
                                    int                    recompute_cocg,
                                    int                    n_r_sweeps,
                                    int                    hyd_p_flag,
@@ -119,9 +119,9 @@ void cs_f_field_gradient_potential(int                    f_id,
                                    cs_real_3_t  *restrict grad);
 
 void cs_f_field_gradient_vector(int                     f_id,
+                                int                     use_previous_t,
                                 int                     imrgra,
                                 int                     inc,
-                                int                     use_previous_t,
                                 int                     n_r_sweeps,
                                 int                     verbosity,
                                 int                     clip_mode,
@@ -147,9 +147,9 @@ void cs_f_field_gradient_vector(int                     f_id,
  *
  * parameters:
  *   f_id           <-- field id
+ *   use_previous_t <-- should we use values from the previous time step ?
  *   imrgra         <-- gradient reconstruction mode
  *   inc            <-- if 0, solve on increment; 1 otherwise
- *   use_previous_t <-- should we use values from the previous time step ?
  *   recompute_cocg <-- should COCG FV quantities be recomputed ?
  *   n_r_sweeps     <-- if > 1, number of reconstruction sweeps
  *   verbosity      <-- verbosity level
@@ -161,9 +161,9 @@ void cs_f_field_gradient_vector(int                     f_id,
  *----------------------------------------------------------------------------*/
 
 void cs_f_field_gradient_scalar(int                    f_id,
+                                int                    use_previous_t,
                                 int                    imrgra,
                                 int                    inc,
-                                int                    use_previous_t,
                                 int                    recompute_cocg,
                                 int                    n_r_sweeps,
                                 int                    verbosity,
@@ -184,12 +184,11 @@ void cs_f_field_gradient_scalar(int                    f_id,
                              &gradient_type,
                              &halo_type);
 
-
   cs_field_gradient_scalar(f,
+                           _use_previous_t,
                            gradient_type,
                            halo_type,
                            inc,
-                           _use_previous_t,
                            _recompute_cocg,
                            n_r_sweeps,
                            verbosity,
@@ -206,10 +205,10 @@ void cs_f_field_gradient_scalar(int                    f_id,
  *
  * parameters:
  *   f_id           <-- field id
+ *   use_previous_t <-- should we use values from the previous time step ?
  *   imrgra         <-- gradient reconstruction mode
  *   halo_type      <-- halo type
  *   inc            <-- if 0, solve on increment; 1 otherwise
- *   use_previous_t <-- should we use values from the previous time step ?
  *   recompute_cocg <-- should COCG FV quantities be recomputed ?
  *   n_r_sweeps     <-- if > 1, number of reconstruction sweeps
  *   hyd_p_flag     <-- flag for hydrostatic pressure
@@ -223,9 +222,9 @@ void cs_f_field_gradient_scalar(int                    f_id,
  *----------------------------------------------------------------------------*/
 
 void cs_f_field_gradient_potential(int                    f_id,
+                                   int                    use_previous_t,
                                    int                    imrgra,
                                    int                    inc,
-                                   int                    use_previous_t,
                                    int                    recompute_cocg,
                                    int                    n_r_sweeps,
                                    int                    hyd_p_flag,
@@ -249,10 +248,10 @@ void cs_f_field_gradient_potential(int                    f_id,
                              &halo_type);
 
   cs_field_gradient_potential(f,
+                              _use_previous_t,
                               gradient_type,
                               halo_type,
                               inc,
-                              _use_previous_t,
                               _recompute_cocg,
                               n_r_sweeps,
                               hyd_p_flag,
@@ -271,9 +270,9 @@ void cs_f_field_gradient_potential(int                    f_id,
  *
  * parameters:
  *   f_id           <-- field id
+ *   use_previous_t <-- should we use values from the previous time step ?
  *   imrgra         <-- gradient reconstruction mode
  *   inc            <-- if 0, solve on increment; 1 otherwise
- *   use_previous_t <-- should we use values from the previous time step ?
  *   recompute_cocg <-- should COCG FV quantities be recomputed ?
  *   n_r_sweeps     <-- if > 1, number of reconstruction sweeps
  *   verbosity      <-- verbosity level
@@ -285,9 +284,9 @@ void cs_f_field_gradient_potential(int                    f_id,
  *----------------------------------------------------------------------------*/
 
 void cs_f_field_gradient_vector(int                     f_id,
+                                int                     use_previous_t,
                                 int                     imrgra,
                                 int                     inc,
-                                int                     use_previous_t,
                                 int                     n_r_sweeps,
                                 int                     verbosity,
                                 int                     clip_mode,
@@ -306,10 +305,10 @@ void cs_f_field_gradient_vector(int                     f_id,
                              &halo_type);
 
   cs_field_gradient_vector(f,
+                           _use_previous_t,
                            gradient_type,
                            halo_type,
                            inc,
-                           _use_previous_t,
                            n_r_sweeps,
                            verbosity,
                            clip_mode,
@@ -330,11 +329,11 @@ void cs_f_field_gradient_vector(int                     f_id,
  * tensor field.
  *
  * \param[in]       f               pointer to field
+ * \param[in]       use_previous_t  should we use values from the previous
+ *                                  time step ?
  * \param[in]       gradient_type   gradient type
  * \param[in]       halo_type       halo type
  * \param[in]       inc             if 0, solve on increment; 1 otherwise
- * \param[in]       use_previous_t  should we use values from the previous
- *                                  time step ?
  * \param[in]       recompute_cocg  should COCG FV quantities be recomputed ?
  * \param[in]       n_r_sweeps      if > 1, number of reconstruction sweeps
  * \param[in]       verbosity       verbosity level
@@ -347,10 +346,10 @@ void cs_f_field_gradient_vector(int                     f_id,
 /*----------------------------------------------------------------------------*/
 
 void cs_field_gradient_scalar(const cs_field_t          *f,
+                              bool                       use_previous_t,
                               cs_gradient_type_t         gradient_type,
                               cs_halo_type_t             halo_type,
                               int                        inc,
-                              bool                       use_previous_t,
                               bool                       recompute_cocg,
                               int                        n_r_sweeps,
                               int                        verbosity,
@@ -393,11 +392,11 @@ void cs_field_gradient_scalar(const cs_field_t          *f,
  * tensor field.
  *
  * \param[in]       f               pointer to field
+ * \param[in]       use_previous_t  should we use values from the previous
+ *                                  time step ?
  * \param[in]       gradient_type   gradient type
  * \param[in]       halo_type       halo type
  * \param[in]       inc             if 0, solve on increment; 1 otherwise
- * \param[in]       use_previous_t  should we use values from the previous
- *                                  time step ?
  * \param[in]       recompute_cocg  should COCG FV quantities be recomputed ?
  * \param[in]       n_r_sweeps      if > 1, number of reconstruction sweeps
  * \param[in]       hyd_p_flag      flag for hydrostatic pressure
@@ -413,10 +412,10 @@ void cs_field_gradient_scalar(const cs_field_t          *f,
 /*----------------------------------------------------------------------------*/
 
 void cs_field_gradient_potential(const cs_field_t          *f,
+                                 bool                       use_previous_t,
                                  cs_gradient_type_t         gradient_type,
                                  cs_halo_type_t             halo_type,
                                  int                        inc,
-                                 bool                       use_previous_t,
                                  bool                       recompute_cocg,
                                  int                        n_r_sweeps,
                                  int                        hyd_p_flag,
@@ -457,11 +456,11 @@ void cs_field_gradient_potential(const cs_field_t          *f,
  * tensor field.
  *
  * \param[in]       f               pointer to field
+ * \param[in]       use_previous_t  should we use values from the previous
+ *                                  time step ?
  * \param[in]       gradient_type   gradient type
  * \param[in]       halo_type       halo type
  * \param[in]       inc             if 0, solve on increment; 1 otherwise
- * \param[in]       use_previous_t  should we use values from the previous
- *                                  time step ?
  * \param[in]       recompute_cocg  should COCG FV quantities be recomputed ?
  * \param[in]       n_r_sweeps      if > 1, number of reconstruction sweeps
  * \param[in]       verbosity       verbosity level
@@ -476,10 +475,10 @@ void cs_field_gradient_potential(const cs_field_t          *f,
 /*----------------------------------------------------------------------------*/
 
 void cs_field_gradient_vector(const cs_field_t          *f,
+                              bool                       use_previous_t,
                               cs_gradient_type_t         gradient_type,
                               cs_halo_type_t             halo_type,
                               int                        inc,
-                              bool                       use_previous_t,
                               int                        n_r_sweeps,
                               int                        verbosity,
                               int                        clip_mode,

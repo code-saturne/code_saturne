@@ -61,10 +61,10 @@ module field_operator
     !>         tensor field.
 
     !> \param[in]   f_id             field id
+    !> \param[in]   use_previous_t   1 if values at previous time step should
+    !>                               be used, 0 otherwise
     !> \param[in]   imrgra           gradient computation mode
     !> \param[in]   inc              0: increment; 1: do not increment
-    !> \param[in]   use_previous_t   .true. if values at previous
-    !>                               time step should be used
     !> \param[in]   recompute_cocg   1 or 0: recompute COCG or not
     !> \param[in]   n_r_sweeps       >1: with reconstruction
     !> \param[in]   verbosity        verbosity level
@@ -74,14 +74,14 @@ module field_operator
     !> \param[in]   clip_coeff       clipping coefficient
     !> \param[out]  grad             gradient
 
-    subroutine field_gradient_scalar(f_id, imrgra, inc, use_previous_t,        &
+    subroutine field_gradient_scalar(f_id, use_previous_t, imrgra, inc,        &
                                      recompute_cocg, n_r_sweeps,               &
                                      verbosity, clip_mode, epsilon,            &
                                      extrap, clip_coeff, grad)                 &
       bind(C, name='cs_f_field_gradient_scalar')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), value             :: f_id, imrgra, inc, use_previous_t
+      integer(c_int), value             :: f_id, use_previous_t, imrgra, inc
       integer(c_int), value             :: recompute_cocg
       integer(c_int), value             :: n_r_sweeps, verbosity, clip_mode
       real(kind=c_double), value        :: epsilon, extrap, clip_coeff
@@ -93,10 +93,10 @@ module field_operator
     !> \brief  Compute cell gradient of potential field
 
     !> \param[in]   f_id             field id
+    !> \param[in]   use_previous_t   1 if values at previous time step should
+    !>                               be used, 0 otherwise
     !> \param[in]   imrgra           gradient computation mode
     !> \param[in]   inc              0: increment; 1: do not increment
-    !> \param[in]   use_previous_t   .true. if values at previous
-    !>                               time step should be used
     !> \param[in]   recompute_cocg   1 or 0: recompute COCG or not
     !> \param[in]   n_r_sweeps       >1: with reconstruction
     !> \param[in]   hyd_p_flag       flag for hydrostatic pressure
@@ -109,7 +109,7 @@ module field_operator
     !>                               the hydrostatic pressure
     !> \param[out]  grad             gradient
 
-    subroutine field_gradient_potential(f_id, imrgra, inc, use_previous_t,     &
+    subroutine field_gradient_potential(f_id, use_previous_t, imrgra, inc,     &
                                         recompute_cocg, n_r_sweeps,            &
                                         hyd_p_flag, verbosity, clip_mode,      &
                                         epsilon, extrap, clip_coeff,           &
@@ -117,7 +117,7 @@ module field_operator
       bind(C, name='cs_f_field_gradient_potential')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), value                :: f_id, imrgra, inc, use_previous_t
+      integer(c_int), value                :: f_id, use_previous_t, imrgra, inc
       integer(c_int), value                :: recompute_cocg, n_r_sweeps
       integer(c_int), value                :: hyd_p_flag, verbosity, clip_mode
       real(kind=c_double), value           :: epsilon, extrap, clip_coeff
@@ -127,13 +127,13 @@ module field_operator
 
     !---------------------------------------------------------------------------
 
-    !> \brief  Compute cell gradient of vectort field.
+    !> \brief  Compute cell gradient of vector field.
 
     !> \param[in]   f_id             field id
+    !> \param[in]   use_previous_t   1 if values at previous time step should
+    !>                               be used, 0 otherwise
     !> \param[in]   imrgra           gradient computation mode
     !> \param[in]   inc              0: increment; 1: do not increment
-    !> \param[in]   use_previous_t   .true. if values at previous
-    !>                               time step should be used
     !> \param[in]   n_r_sweeps       >1: with reconstruction
     !> \param[in]   verbosity        verbosity level
     !> \param[in]   clip_mode        type of clipping
@@ -141,13 +141,13 @@ module field_operator
     !> \param[in]   clip_coeff       clipping coefficient
     !> \param[out]  grad             gradient
 
-    subroutine field_gradient_vector(f_id, imrgra, inc, use_previous_t,        &
+    subroutine field_gradient_vector(f_id, use_previous_t, imrgra, inc,        &
                                      n_r_sweeps, verbosity, clip_mode,         &
                                      epsilon, clip_coeff, grad)                &
       bind(C, name='cs_f_field_gradient_vector')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), value                 :: f_id, imrgra, inc, use_previous_t
+      integer(c_int), value                 :: f_id, use_previous_t, imrgra, inc
       integer(c_int), value                 :: n_r_sweeps, verbosity, clip_mode
       real(kind=c_double), value            :: epsilon, clip_coeff
       real(kind=c_double), dimension(3,3,*) :: grad

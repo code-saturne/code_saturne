@@ -57,10 +57,10 @@ BEGIN_C_DECLS
  *
  * parameters:
  *   f              <-- pointer to field
+ *   use_previous_t <-- should we use values from the previous time step ?
  *   gradient_type  <-- gradient type
  *   halo_type      <-- halo type
  *   inc            <-- if 0, solve on increment; 1 otherwise
- *   use_previous_t <-- should we use values from the previous time step ?
  *   recompute_cocg <-- should COCG FV quantities be recomputed ?
  *   n_r_sweeps     <-- if > 1, number of reconstruction sweeps
  *   verbosity      <-- verbosity level
@@ -72,10 +72,10 @@ BEGIN_C_DECLS
  *----------------------------------------------------------------------------*/
 
 void cs_field_gradient_scalar(const cs_field_t          *f,
+                              bool                       use_previous_t,
                               cs_gradient_type_t         gradient_type,
                               cs_halo_type_t             halo_type,
                               int                        inc,
-                              bool                       use_previous_t,
                               bool                       recompute_cocg,
                               int                        n_r_sweeps,
                               int                        verbosity,
@@ -91,10 +91,10 @@ void cs_field_gradient_scalar(const cs_field_t          *f,
  *
  * parameters:
  *   f              <-- pointer to field
+ *   use_previous_t <-- should we use values from the previous time step ?
  *   gradient_type  <-- gradient type
  *   halo_type      <-- halo type
  *   inc            <-- if 0, solve on increment; 1 otherwise
- *   use_previous_t <-- should we use values from the previous time step ?
  *   recompute_cocg <-- should COCG FV quantities be recomputed ?
  *   n_r_sweeps     <-- if > 1, number of reconstruction sweeps
  *   hyd_p_flag     <-- flag for hydrostatic pressure
@@ -108,10 +108,10 @@ void cs_field_gradient_scalar(const cs_field_t          *f,
  *----------------------------------------------------------------------------*/
 
 void cs_field_gradient_potential(const cs_field_t          *f,
+                                 bool                       use_previous_t,
                                  cs_gradient_type_t         gradient_type,
                                  cs_halo_type_t             halo_type,
                                  int                        inc,
-                                 bool                       use_previous_t,
                                  bool                       recompute_cocg,
                                  int                        n_r_sweeps,
                                  int                        hyd_p_flag,
@@ -129,10 +129,10 @@ void cs_field_gradient_potential(const cs_field_t          *f,
  *
  * parameters:
  *   f              <-- pointer to field
+ *   use_previous_t <-- should we use values from the previous time step ?
  *   gradient_type  <-- gradient type
  *   halo_type      <-- halo type
  *   inc            <-- if 0, solve on increment; 1 otherwise
- *   use_previous_t <-- should we use values from the previous time step ?
  *   recompute_cocg <-- should COCG FV quantities be recomputed ?
  *   n_r_sweeps     <-- if > 1, number of reconstruction sweeps
  *   verbosity      <-- verbosity level
@@ -144,10 +144,10 @@ void cs_field_gradient_potential(const cs_field_t          *f,
  *----------------------------------------------------------------------------*/
 
 void cs_field_gradient_vector(const cs_field_t          *f,
+                              bool                       use_previous_t,
                               cs_gradient_type_t         gradient_type,
                               cs_halo_type_t             halo_type,
                               int                        inc,
-                              bool                       use_previous_t,
                               int                        n_r_sweeps,
                               int                        verbosity,
                               int                        clip_mode,
