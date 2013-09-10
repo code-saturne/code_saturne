@@ -130,7 +130,7 @@ integer          ivar  , iscal , imom, f_id
 integer          idecal, iclapc, icha  , icla
 integer          ii    , ivers , idtm  , idtcm
 integer          iclvar, iclvaf, iptsna, iptsta, iptsca
-integer          ierror, nberro, irtyp , itysup, nbval
+integer          ierror, irtyp , itysup, nbval
 integer          nbctm , ipcefj, ipcla1, ipcla2, ipcla3
 integer          nfmtsc, nfmtfl, nfmtmo, nfmtch, nfmtcl
 integer          nfmtst
@@ -226,19 +226,19 @@ enddo
 !     Verifications pour les formats et les numeros
 !       de scalaire en chaine.
 !     Avertissement (certaines infos passent a la trappe)
-if(nscamx.gt.nfmtsc) then
+if (nscamx.gt.nfmtsc) then
   write(nfecra,7001)nfmtsc,nscamx
 endif
-if(nvarmx.gt.nfmtfl) then
+if (nvarmx.gt.nfmtfl) then
   write(nfecra,7002)nfmtfl,nvarmx
 endif
-if(nbmomx.gt.nfmtmo) then
+if (nbmomx.gt.nfmtmo) then
   write(nfecra,7003)nfmtmo,nbmomx
 endif
-if(ncharm.gt.nfmtch) then
+if (ncharm.gt.nfmtch) then
   write(nfecra,7004)nfmtch,ncharm
 endif
-if(ncpcmx.gt.nfmtcl) then
+if (ncpcmx.gt.nfmtcl) then
   write(nfecra,7005)nfmtcl,ncpcmx
 endif
 
@@ -277,16 +277,7 @@ itysup = 0
 nbval  = 1
 irtyp  = 1
 rubriq = 'version_fichier_suite_principal'
-call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,ivers,   &
-            ierror)
-if (ierror.ne.0) then
-#if defined(_CS_LANG_FR)
-  car54='ERREUR A L''ECRITURE DE L''ENTETE                     '
-#else
-  car54='ERROR WHILE WRITING THE HEADER                        '
-#endif
-  write(nfecra,8100)car54
-endif
+call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,ivers)
 
 
 ! 3.1 DIMENSIONS : les dimensions geometriques sont ecrites
@@ -296,45 +287,24 @@ endif
 ! The checkpoint file is now single-phase by default
 nphas = 1
 
-nberro = 0
-
 itysup = 0
 nbval  = 1
 irtyp  = 1
 
 rubriq = 'nombre_variables'
-call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,nvar,    &
-            ierror)
-nberro=nberro+ierror
+call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,nvar)
 
 rubriq = 'nombre_scalaires'
-call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,nscal,   &
-            ierror)
-nberro=nberro+ierror
+call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,nscal)
 
 rubriq = 'nombre_scalaires_us'
-call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,nscaus,  &
-            ierror)
-nberro=nberro+ierror
+call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,nscaus)
 
 rubriq = 'nombre_scalaires_pp'
-call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,nscapp,  &
-            ierror)
-nberro=nberro+ierror
+call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,nscapp)
 
 rubriq = 'nombre_phases'
-call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,nphas,   &
-            ierror)
-nberro=nberro+ierror
-
-if (nberro.ne.0) then
-#if defined(_CS_LANG_FR)
-  car54='ERREUR A L''ECRITURE DES DIMENSIONS                   '
-#else
-  car54='ERROR WHILE WRITING THE DIMENSIONS                    '
-#endif
-  write(nfecra,8100) car54
-endif
+call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,nphas)
 
 #if defined(_CS_LANG_FR)
 car54 =' Fin de l''ecriture des dimensions                    '
@@ -349,60 +319,39 @@ write(nfecra,1110) car54
 !            en revanche, elles peuvent completer les infos au sein
 !            du fichier suite
 
-nberro = 0
-
 !  ---> Nombre de pas de temps, instant precedent
 rubriq = 'nbre_pas_de_temps'
 itysup = 0
 nbval  = 1
 irtyp  = 1
-call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,ntcabs,  &
-            ierror)
-nberro=nberro+ierror
+call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,ntcabs)
 
 rubriq = 'instant_precedent'
 itysup = 0
 nbval  = 1
 irtyp  = 2
-call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,ttcabs,  &
-            ierror)
-nberro=nberro+ierror
+call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,ttcabs)
 
 !  ---> Modeles de turbulence
 rubriq = 'modele_turbulence_phase'//cphase
 itysup = 0
 nbval  = 1
 irtyp  = 1
-call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-     iturb,ierror)
-nberro=nberro+ierror
+call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,iturb)
 
 !  ---> Methode ALE
 rubriq = 'methode_ALE'
 itysup = 0
 nbval  = 1
 irtyp  = 1
-call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,iale,    &
-            ierror)
-nberro=nberro+ierror
+call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,iale)
 
 rubriq = 'instant_mobile_precedent'
 itysup = 0
 nbval  = 1
 irtyp  = 2
-call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,ttcmob,  &
-            ierror)
-nberro=nberro+ierror
+call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,ttcmob)
 
-
-if (nberro.ne.0) then
-#if defined(_CS_LANG_FR)
-  car54='ERREUR A L''ECRITURE DES OPTIONS                      '
-#else
-  car54='ERROR WHILE WRITING THE OPTIONS                       '
-#endif
-  write(nfecra,8100) car54
-endif
 
 #if defined(_CS_LANG_FR)
 car54 =' Fin de l''ecriture des options                       '
@@ -413,8 +362,6 @@ write(nfecra,1110) car54
 
 ! 3.3 VARIABLES "PRINCIPALES"
 !====================================
-
-nberro = 0
 
 nomrtp(ipr)='pression_ce_phase'//cphase
 nomrtp(iu)='vitesse_u_ce_phase'//cphase
@@ -438,9 +385,9 @@ elseif (itytur == 5) then
   nomrtp(ik)='k_ce_phase'//cphase
   nomrtp(iep)='eps_ce_phase'//cphase
   nomrtp(iphi)='phi_ce_phase'//cphase
-  if(iturb.eq.50) then
+  if (iturb.eq.50) then
     nomrtp(ifb)='fb_ce_phase'//cphase
-  elseif(iturb.eq.51) then
+  elseif (iturb.eq.51) then
     nomrtp(ial)='al_ce_phase'//cphase
   endif
 elseif (iturb == 60) then
@@ -456,8 +403,7 @@ if (nscal.gt.0) then
     itysup = 0
     nbval  = 1
     irtyp  = 1
-    call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-         iturt(iscal),ierror)
+    call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,iturt(iscal))
     nomrtp(isca(iscal))='scalaire_ce_'//cscal(iscal)
   enddo
 endif
@@ -478,9 +424,7 @@ do ivar = 1, nvar
   nbval  = 1
   irtyp  = 2
   rubriq = nomrtp(ivar)
-  call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              rtp(1,ivar),ierror)
-  nberro=nberro+ierror
+  call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,rtp(1,ivar))
 
 enddo
 
@@ -496,19 +440,9 @@ do iscal = 1, nscal
     itysup = 1
     nbval  = 3
     irtyp  = 2
-    call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-                xut, ierror)
+    call ecrsui(impava,rubriq,len(rubriq),itysup,nbval,irtyp,xut)
   endif
 enddo
-
-if (nberro.ne.0) then
-#if defined(_CS_LANG_FR)
-  car54='ERREUR A L''ECRITURE DES VARIABLES PRINCIPALES        '
-#else
-  car54='ERROR WHILE WRITING THE MAIN VARIABLES                '
-#endif
-  write(nfecra,8100)car54
-endif
 
 #if defined(_CS_LANG_FR)
 car54 =' Fin de l''ecriture des variables principales         '
@@ -516,34 +450,6 @@ car54 =' Fin de l''ecriture des variables principales         '
 car54 =' End writing the main variables                       '
 #endif
 write(nfecra,1110)car54
-
-
-! 3.5 INFORMATIONS COMPLEMENTAIRES LEGERES (IE UN ENTIER, UN REEL...)
-!==================================================
-
-nberro = 0
-
-iecr = 0
-
-
-
-if (nberro.ne.0) then
-#if defined(_CS_LANG_FR)
-  car54='ERREUR A L''ECRITURE DES INFORMATIONS COMPLEMENTAIRES '
-#else
-  car54='ERROR WHILE WRITING THE COMPLEMENTARY INFORMATION    '
-#endif
-  write(nfecra,8100)car54
-endif
-
-if(iecr.ne.0) then
-#if defined(_CS_LANG_FR)
-  car54 =' Fin de l''ecriture des informations complementaires  '
-#else
-  car54 =' End writing the complementary information           '
-#endif
-  write(nfecra,1110)car54
-endif
 
 
 !===============================================================================
@@ -591,22 +497,11 @@ if (iecaux.eq.1) then
   nbval  = 1
   irtyp  = 1
   rubriq = 'version_fichier_suite_auxiliaire'
-  call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              ivers,ierror)
-  if (ierror.ne.0) then
-#if defined(_CS_LANG_FR)
-    car54='ERREUR A L''ECRITURE DE L''ENTETE                     '
-#else
-    car54='ERROR WHILE WRITING THE HEADER                        '
-#endif
-    write(nfecra,8101)car54
-  endif
+  call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,ivers)
 
 ! 5.2 DIMENSIONS : les dimensions geometriques sont ecrites
 !===============   automatiquement lors de l'ouverture du fichier
 
-
-  nberro=0
 
 !  ---> Nombre de phases
 !       On les reecrit ici car on en aura besoin a la relecture
@@ -614,9 +509,7 @@ if (iecaux.eq.1) then
   itysup = 0
   nbval  = 1
   irtyp  = 1
-  call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,nphas, &
-              ierror)
-  nberro=nberro+ierror
+  call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,nphas)
 
 !  ---> Nombre de pas de temps, instant precedent
 !       On les reecrit ici car on en aura besoin a la relecture
@@ -624,18 +517,14 @@ if (iecaux.eq.1) then
   itysup = 0
   nbval  = 1
   irtyp  = 1
-  call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,ntcabs,&
-              ierror)
-  nberro=nberro+ierror
+  call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,ntcabs)
 
 !  ---> Indicateur de pas de temps variable
   rubriq = 'indic_dt_variable'
   itysup = 0
   nbval  = 1
   irtyp  = 1
-  call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,idtvar,&
-        ierror)
-  nberro=nberro+ierror
+  call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,idtvar)
 
 !  ---> Modeles de turbulence
 !       On les reecrit ici car on en aura besoin a la relecture
@@ -643,26 +532,14 @@ if (iecaux.eq.1) then
   itysup = 0
   nbval  = 1
   irtyp  = 1
-  call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-       iturb,ierror)
-  nberro=nberro+ierror
+  call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,iturb)
 
   rubriq = 'methode_ALE'
   itysup = 0
   nbval  = 1
   irtyp  = 1
-  call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,iale,    &
-       ierror)
-  nberro=nberro+ierror
+  call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,iale)
 
-  if (nberro.ne.0) then
-#if defined(_CS_LANG_FR)
-    car54='ERREUR A L''ECRITURE DES DIMENSIONS ET DES OPTIONS    '
-#else
-    car54='ERROR WHILE WRITING THE DIMENSIONS AND OPTIONS        '
-#endif
-    write(nfecra,8101)car54
-  endif
 
 #if defined(_CS_LANG_FR)
   car54 =' Fin de l''ecriture des dimensions et des options     '
@@ -676,8 +553,6 @@ if (iecaux.eq.1) then
 
 ! --->  Proprietes physiques
 
-  nberro=0
-
   !     Point de reference pour la pression totale
   !     On n'ecrit que si XYZP0 a ete specifie par l'utilisateur ou
   !       calcule a partir de faces de sorties ou de Dirichlet
@@ -686,9 +561,7 @@ if (iecaux.eq.1) then
     itysup = 0
     nbval  = 3
     irtyp  = 2
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         xyzp0(1),ierror)
-    nberro=nberro+ierror
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,xyzp0(1))
   endif
 
   ! The physical variables herebelow are required for the low-Mach algorithm
@@ -700,30 +573,25 @@ if (iecaux.eq.1) then
     itysup = 0
     nbval  = 1
     irtyp  = 2
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         ro0,ierror)
-    nberro=nberro+ierror
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,ro0)
 
     ! the thermodynamic pressure for the previous time step
     rubriq = 'pther'//cphase
     itysup = 0
     nbval  = 1
     irtyp  = 2
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         pther,ierror)
-    nberro=nberro+ierror
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,pther)
   endif
 
   !     Masse volumique si elle est variable uniquement
-  if(irovar.eq.1) then
+  if (irovar.eq.1) then
     !          Masse volumique - cellules
     rubriq = 'rho_ce_phase'//cphase
     itysup = 1
     nbval  = 1
     irtyp  = 2
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         propce(1,ipproc(irom)),ierror)
-    nberro=nberro+ierror
+                propce(1,ipproc(irom)))
 
     !          Masse volumique - faces de bord
     rubriq = 'rho_fb_phase'//cphase
@@ -731,8 +599,7 @@ if (iecaux.eq.1) then
     nbval  = 1
     irtyp  = 2
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         propfb(1,ipprob(irom)),ierror)
-    nberro=nberro+ierror
+                propfb(1,ipprob(irom)))
   endif
 
   !     On n'ecrit les proprietes physiques que si on les extrapole.
@@ -745,16 +612,15 @@ if (iecaux.eq.1) then
   !       Une exception : on ecrit egalement Cp en effet joule pour
   !         pouvoir calculer la temperature H/Cp en debut de calcul
 
-  if(iviext.gt.0) then
+  if (iviext.gt.0) then
     !         Viscosite moleculaire - cellules (si variable)
-    if(ivivar.eq.1) then
+    if (ivivar.eq.1) then
       rubriq = 'viscl_ce_phase'//cphase
       itysup = 1
       nbval  = 1
       irtyp  = 2
       call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-           propce(1,ipproc(iviscl)),ierror)
-      nberro = nberro+ierror
+                  propce(1,ipproc(iviscl)))
     endif
 
     !         Viscosite turbulente ou de sous-maille - cellules
@@ -763,11 +629,10 @@ if (iecaux.eq.1) then
     nbval  = 1
     irtyp  = 2
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         propce(1,ipproc(ivisct)),ierror)
-    nberro = nberro+ierror
+                propce(1,ipproc(ivisct)))
   endif
 
-  if((icpext.gt.0.and.icp.gt.0).or.              &
+  if ((icpext.gt.0.and.icp.gt.0).or.              &
        (ippmod(ieljou).ge.1.and.icp.gt.0))  then
     !         Chaleur massique - cellules
     rubriq = 'cp_ce_phase'//cphase
@@ -775,15 +640,14 @@ if (iecaux.eq.1) then
     nbval  = 1
     irtyp  = 2
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         propce(1,ipproc(icp)),ierror)
-    nberro = nberro+ierror
+                propce(1,ipproc(icp)))
   endif
 
 !     Si on a des scalaires, on ecrit leur model de flux et
 !     leur diffusivite (on ne l'ecrit pas pour les variances)
   if (nscal.gt.0) then
     do iscal = 1, nscal
-      if(ivsext(iscal).gt.0.and.ivisls(iscal).gt.0.and.           &
+      if (ivsext(iscal).gt.0.and.ivisls(iscal).gt.0.and.           &
          (iscavr(iscal).le.0.or.iscavr(iscal).gt.nscal) ) then
         ! Cell diffusivity
         rubriq = 'visls_ce_scalaire'//cscal(iscal)
@@ -791,19 +655,9 @@ if (iecaux.eq.1) then
         nbval  = 1
         irtyp  = 2
         call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                    propce(1,ipproc(ivisls(iscal))),ierror)
-        nberro = nberro+ierror
+                    propce(1,ipproc(ivisls(iscal))))
       endif
     enddo
-  endif
-
-  if (nberro.ne.0) then
-#if defined(_CS_LANG_FR)
-    car54='ERREUR A L''ECRITURE DES PROPRIETES PHYSIQUES         '
-#else
-    car54='ERROR WHILE WRITING THE PHYSICAL PROPERTIES           '
-#endif
-    write(nfecra,8101)car54
   endif
 
 #if defined(_CS_LANG_FR)
@@ -815,33 +669,18 @@ if (iecaux.eq.1) then
 
 ! ---> Pas de temps
 
-  nberro = 0
-
-  if(idtvar.eq.2) then
+  if (idtvar.eq.2) then
     rubriq = 'dt_variable_espace_ce'
     itysup = 1
     nbval  = 1
     irtyp  = 2
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,dt,  &
-                ierror)
-    nberro=nberro+ierror
-  elseif(idtvar.eq.1) then
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,dt)
+  elseif (idtvar.eq.1) then
     rubriq = 'dt_variable_temps'
     itysup = 0
     nbval  = 1
     irtyp  = 2
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,dt,  &
-                ierror)
-    nberro=nberro+ierror
-  endif
-
-  if (nberro.ne.0) then
-#if defined(_CS_LANG_FR)
-    car54='ERREUR A L''ECRITURE DU PAS DE TEMPS                  '
-#else
-    car54='ERROR WHILE WRITING THE TIME STEP                     '
-#endif
-    write(nfecra,8101)car54
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,dt)
   endif
 
 #if defined(_CS_LANG_FR)
@@ -858,8 +697,6 @@ if (iecaux.eq.1) then
 !     (nomflu(i)= nom de la ieme variable)
 !     Ensuite, pour chaque variable, on ecrit son nom et le numero
 !     local du flux de masse correspondant (en pratique 1 ou 2)
-
-  nberro=0
 
 !       Initialisation des tableaux de travail
 
@@ -897,9 +734,9 @@ if (iecaux.eq.1) then
     nomflu(iphi)='fm_phi_phase'//cphase
     ! On n'utilise pas le flux de masse pour fb/al en fait mais on le laisse
     ! ici, car ca ne change rien (le flux n'est ecrit qu'une seule fois)
-    if(iturb.eq.50) then
+    if (iturb.eq.50) then
       nomflu(ifb)='fm_fb_phase'//cphase
-    elseif(iturb.eq.51) then
+    elseif (iturb.eq.51) then
       nomflu(ial)='fm_al_phase'//cphase
     endif
   elseif (iturb.eq.60) then
@@ -908,7 +745,7 @@ if (iecaux.eq.1) then
   elseif (iturb.eq.70) then
     nomflu(inusa)='fm_nusa_phase'//cphase
   endif
-  if(nscal.gt.0) then
+  if (nscal.gt.0) then
     do iscal = 1, nscal
       nomflu(isca(iscal))='fm_scalaire'//cscal(iscal)
     enddo
@@ -945,8 +782,7 @@ if (iecaux.eq.1) then
         itysup = 2
         nbval  = 1
         irtyp  = 2
-        call ecrsui(impavx, rubriq, len(rubriq), itysup, nbval, irtyp,  &
-                    sval, ierror)
+        call ecrsui(impavx, rubriq, len(rubriq), itysup, nbval, irtyp, sval)
 
         call field_get_key_int(f_id, kbmasf, iflmab) ! boundary mass flux
         call field_get_val_s(iflmab, sval)
@@ -956,8 +792,7 @@ if (iecaux.eq.1) then
         itysup = 3
         nbval  = 1
         irtyp  = 2
-        call ecrsui(impavx, rubriq, len(rubriq), itysup, nbval, irtyp,  &
-                    sval, ierror)
+        call ecrsui(impavx, rubriq, len(rubriq), itysup, nbval, irtyp, sval)
 
       endif
 
@@ -967,7 +802,7 @@ if (iecaux.eq.1) then
       nbval  = 1
       irtyp  = 1
       call ecrsui(impavx, rubriq, len(rubriq), itysup, nbval, irtyp,   &
-                  mflnum(iflmas), ierror)
+                  mflnum(iflmas))
 
     endif
 
@@ -1003,9 +838,9 @@ if (iecaux.eq.1) then
     nomflu(ik)='fm_a_k_phase'//cphase
     nomflu(iep)='fm_a_eps_phase'//cphase
     nomflu(iphi)='fm_a_phi_phase'//cphase
-    if(iturb.eq.50) then
+    if (iturb.eq.50) then
       nomflu(ifb)='fm_a_fb_phase'//cphase
-    elseif(iturb.eq.51) then
+    elseif (iturb.eq.51) then
       nomflu(ial)='fm_a_al_phase'//cphase
     endif
   elseif (iturb.eq.60) then
@@ -1014,7 +849,7 @@ if (iecaux.eq.1) then
   elseif (iturb.eq.70) then
     nomflu(inusa)='fm_a_nusa_phase'//cphase
   endif
-  if(nscal.gt.0) then
+  if (nscal.gt.0) then
     do iscal = 1, nscal
       nomflu(isca(iscal))='fm_a_scalaire'//cscal(iscal)
     enddo
@@ -1055,8 +890,7 @@ if (iecaux.eq.1) then
         itysup = 2
         nbval  = 1
         irtyp  = 2
-        call ecrsui(impavx, rubriq, len(rubriq), itysup, nbval, irtyp,  &
-                    sval, ierror)
+        call ecrsui(impavx, rubriq, len(rubriq), itysup, nbval, irtyp, sval)
 
         call field_get_key_int(f_id, kbmasf, iflmab) ! boundary mass flux
         call field_get_val_prev_s(iflmab, sval)
@@ -1066,8 +900,7 @@ if (iecaux.eq.1) then
         itysup = 3
         nbval  = 1
         irtyp  = 2
-        call ecrsui(impavx, rubriq, len(rubriq), itysup, nbval, irtyp,  &
-                    sval, ierror)
+        call ecrsui(impavx, rubriq, len(rubriq), itysup, nbval, irtyp, sval)
 
       endif
 
@@ -1077,7 +910,7 @@ if (iecaux.eq.1) then
       nbval  = 1
       irtyp  = 1
       call ecrsui(impavx, rubriq, len(rubriq), itysup, nbval, irtyp,   &
-                  mflnum(iflmas), ierror)
+                  mflnum(iflmas))
 
     endif
 
@@ -1093,8 +926,6 @@ if (iecaux.eq.1) then
   write(nfecra,1110)car54
 
 ! ---> Conditions aux limites
-
-  nberro=0
 
   nomcli(IPR)='_p_phase'//cphase
   nomcli(IU)='_u_phase'//cphase
@@ -1118,18 +949,18 @@ if (iecaux.eq.1) then
     nomcli(IK)='_k_phase'//cphase
     nomcli(IEP)='_eps_phase'//cphase
     nomcli(IPHI)='_phi_phase'//cphase
-    if(iturb.eq.50) then
+    if (iturb.eq.50) then
       NOMCLI(IFB)='_fb_phase'//CPHASE
-    elseif(iturb.eq.51) then
-      NOMCLI(IAL)='_al_phase'//CPHASE
+    elseif (iturb.eq.51) then
+      nomcli(ial)='_al_phase'//cphase
     endif
   elseif (iturb.eq.60) then
-    nomcli(IK)='_k_phase'//cphase
-    nomcli(IOMG)='_omega_phase'//cphase
+    nomcli(ik)='_k_phase'//cphase
+    nomcli(iomg)='_omega_phase'//cphase
   elseif (iturb.eq.70) then
     nomcli(inusa)='_nusa_phase'//cphase
   endif
-  if(nscal.gt.0) then
+  if (nscal.gt.0) then
     do iscal = 1, nscal
       nomcli(isca(iscal))='_scalaire'//cscal(iscal)
     enddo
@@ -1139,11 +970,6 @@ if (iecaux.eq.1) then
     nomcli(ivma)='_vit_maillage_v'
     nomcli(iwma)='_vit_maillage_w'
   endif
-
-!     Dans le cas ou il y a plusieurs phases,
-!       on ne veut ecrire la pression qu'une seule fois
-!       mais ca tombe bien, car on ne la verra qu'une seule fois
-!       dans la liste des variables
 
   do ivar = 1, nvar
 
@@ -1155,13 +981,11 @@ if (iecaux.eq.1) then
     iclvar = iclrtp(ivar,icoef)
     rubriq = 'cla1'//nomcli(ivar)
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                coefa(1,iclvar),ierror)
-    nberro=nberro+ierror
+                coefa(1,iclvar))
 
     rubriq = 'clb1'//nomcli(ivar)
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                coefb(1,iclvar),ierror)
-    nberro=nberro+ierror
+                coefb(1,iclvar))
 
 !          Coefficients numeros 2
     iclvaf = iclrtp(ivar,icoeff)
@@ -1169,36 +993,24 @@ if (iecaux.eq.1) then
 
       rubriq = 'cla2'//nomcli(ivar)
       call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  coefa(1,iclvaf),ierror)
-      nberro=nberro+ierror
+                  coefa(1,iclvaf))
 
       rubriq = 'clb2'//nomcli(ivar)
       call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  coefb(1,iclvaf),ierror)
-      nberro=nberro+ierror
+                  coefb(1,iclvaf))
     endif
 
   enddo
 
 
-!     Type symétrie (utilisé pour les gradients par moindres carrés
-!       sur support étendu, avec extrapolation du gradient au bord).
+  ! Symmetry flag (used for least-squares gradients,
+  ! with extrapolation at boundar).
 
   rubriq = 'isympa_fb_phase'//cphase
   itysup = 3
   nbval  = 1
   irtyp  = 1
-  call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,isympa,ierror)
-  nberro=nberro+ierror
-
-  if (nberro.ne.0) then
-#if defined(_CS_LANG_FR)
-    car54='ERREUR A L''ECRITURE DES CONDITIONS AUX LIMITES       '
-#else
-    car54='ERROR WHILE WRITING THE BOUNDARY CONDITIONS           '
-#endif
-    write(nfecra,8101)car54
-  endif
+  call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,isympa)
 
 #if defined(_CS_LANG_FR)
   car54 =' Fin de l''ecriture des conditions aux limites        '
@@ -1210,14 +1022,12 @@ if (iecaux.eq.1) then
 ! ---> Termes sources
 !      Lorsqu'ils sont extrapoles (pour les versions elec, voir plus bas)
 
-  nberro=0
-
   iecr = 0
 
 ! ---> Termes sources Navier-Stokes
 
   !     Si les termes sont a l'ordre 2
-  if(isno2t.gt.0) then
+  if (isno2t.gt.0) then
 
     iecr = 1
 
@@ -1228,25 +1038,22 @@ if (iecaux.eq.1) then
 
     rubriq = 'tsource_ns_ce_x_phase'//cphase
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         propce(1,iptsna),ierror)
-    nberro=nberro+ierror
+                propce(1,iptsna))
 
     rubriq = 'tsource_ns_ce_y_phase'//cphase
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         propce(1,iptsna+1),ierror)
-    nberro=nberro+ierror
+                propce(1,iptsna+1))
 
     rubriq = 'tsource_ns_ce_z_phase'//cphase
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         propce(1,iptsna+2),ierror)
-    nberro=nberro+ierror
+                propce(1,iptsna+2))
 
   endif
 
 ! ---> Termes sources turbulence
 
   !        Si les termes sont a l'ordre 2
-  if(isto2t.gt.0) then
+  if (isto2t.gt.0) then
 
     iecr = 1
 
@@ -1256,107 +1063,89 @@ if (iecaux.eq.1) then
     irtyp  = 2
 
     !          En k-eps
-    if(itytur.eq.2) then
+    if (itytur.eq.2) then
 
       rubriq = 'tsource_tu_ce_k_phase'//cphase
       call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-           propce(1,iptsta),ierror)
-      nberro=nberro+ierror
+                  propce(1,iptsta))
 
       rubriq = 'tsource_tu_ce_eps_phase'//cphase
       call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-           propce(1,iptsta+1),ierror)
-      nberro=nberro+ierror
+                  propce(1,iptsta+1))
 
       !          En Rij
-    elseif(itytur.eq.3) then
+    elseif (itytur.eq.3) then
 
       rubriq = 'tsource_tu_ce_R11_phase'//cphase
       call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-           propce(1,iptsta),ierror)
-      nberro=nberro+ierror
+                  propce(1,iptsta))
       rubriq = 'tsource_tu_ce_R22_phase'//cphase
       call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-           propce(1,iptsta+1),ierror)
-      nberro=nberro+ierror
+                  propce(1,iptsta+1))
       rubriq = 'tsource_tu_ce_R33_phase'//cphase
       call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-           propce(1,iptsta+2),ierror)
-      nberro=nberro+ierror
+                  propce(1,iptsta+2))
       rubriq = 'tsource_tu_ce_R12_phase'//cphase
       call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-           propce(1,iptsta+3),ierror)
-      nberro=nberro+ierror
+                  propce(1,iptsta+3))
       rubriq = 'tsource_tu_ce_R13_phase'//cphase
       call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-           propce(1,iptsta+4),ierror)
-      nberro=nberro+ierror
+                  propce(1,iptsta+4))
       rubriq = 'tsource_tu_ce_R23_phase'//cphase
       call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-           propce(1,iptsta+5),ierror)
-      nberro=nberro+ierror
+                  propce(1,iptsta+5))
 
       rubriq = 'tsource_tu_ce_eps_phase'//cphase
       call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-           propce(1,iptsta+6),ierror)
-      nberro=nberro+ierror
+                  propce(1,iptsta+6))
 
       if (iturb.eq.32) then
         rubriq = 'tsource_tu_ce_alp_phase'//cphase
         call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                    propce(1,iptsta+7),ierror)
-        nberro=nberro+ierror
+                    propce(1,iptsta+7))
       endif
 
       !          En v2f
-    elseif(itytur.eq.5) then
+    elseif (itytur.eq.5) then
 
       rubriq = 'tsource_tu_ce_k_phase'//cphase
       call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-           propce(1,iptsta),ierror)
-      nberro=nberro+ierror
+                  propce(1,iptsta))
 
       rubriq = 'tsource_tu_ce_eps_phase'//cphase
       call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-           propce(1,iptsta+1),ierror)
-      nberro=nberro+ierror
+           propce(1,iptsta+1))
 
       rubriq = 'tsource_tu_ce_phi_phase'//cphase
       call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-           propce(1,iptsta+2),ierror)
-      nberro=nberro+ierror
+                  propce(1,iptsta+2))
 
-      if(iturb.eq.50) then
-        RUBRIQ = 'tsource_tu_ce_fb_phase'//CPHASE
+      if (iturb.eq.50) then
+        rubriq = 'tsource_tu_ce_fb_phase'//cphase
         call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                    propce(1,iptsta+3),ierror)
-        nberro=nberro+ierror
-      elseif(iturb.eq.51) then
-        RUBRIQ = 'tsource_tu_ce_al_phase'//CPHASE
+                    propce(1,iptsta+3))
+      elseif (iturb.eq.51) then
+        rubriq = 'tsource_tu_ce_al_phase'//cphase
         call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                    propce(1,iptsta+3),ierror)
-        nberro=nberro+ierror
+                    propce(1,iptsta+3))
       endif
 
       !          En k-omega
-    elseif(iturb.eq.60) then
+    elseif (iturb.eq.60) then
 
       rubriq = 'tsource_tu_ce_k_phase'//cphase
       call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-           propce(1,iptsta),ierror)
-      nberro=nberro+ierror
+                  propce(1,iptsta))
 
       rubriq = 'tsource_tu_ce_omega_phase'//cphase
       call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-           propce(1,iptsta+1),ierror)
-      nberro=nberro+ierror
+                  propce(1,iptsta+1))
       !          En Spalart Allmaras
-    elseif(iturb.eq.70) then
+    elseif (iturb.eq.70) then
 
-      RUBRIQ = 'tsource_tu_ce_nusa_phase'//CPHASE
+      rubriq = 'tsource_tu_ce_nusa_phase'//cphase
       call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-           propce(1,iptsta  ),ierror)
-      nberro=nberro+ierror
+                  propce(1,iptsta))
 
     endif
   endif
@@ -1366,7 +1155,7 @@ if (iecaux.eq.1) then
 !     Boucle sur les scalaires
   do iscal = 1, nscal
 !     Si le terme est a l'ordre 2
-    if(isso2t(iscal).gt.0) then
+    if (isso2t(iscal).gt.0) then
 
       iecr = 1
 
@@ -1374,23 +1163,13 @@ if (iecaux.eq.1) then
       itysup = 1
       nbval  = 1
       irtyp  = 2
-      rubriq = 'tsource_sc_ce_scalaire'//CSCAL(ISCAL)
+      rubriq = 'tsource_sc_ce_scalaire'//cscal(iscal)
       call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  propce(1,iptsca),ierror)
-      nberro=nberro+ierror
+                  propce(1,iptsca))
 
     endif
   enddo
 
-
-  if (nberro.ne.0) then
-#if defined(_CS_LANG_FR)
-    car54='ERREUR A L''ECRITURE DES TERMES SOURCES               '
-#else
-    car54='ERROR WHILE WRITING THE SOURCES TERMS                 '
-#endif
-    write(nfecra,8101)car54
-  endif
 
   if (iecr.ne.0) then
 #if defined(_CS_LANG_FR)
@@ -1404,26 +1183,21 @@ if (iecaux.eq.1) then
 
 ! ---> Moyennes (cumuls)
 
-  nberro = 0
-
 !  ---> Nombre de moyennes
   rubriq = 'nombre_moyennes_temps'
   itysup = 0
   nbval  = 1
   irtyp  = 1
-  call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,nbmomt,&
-              ierror)
-  nberro=nberro+ierror
+  call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,nbmomt)
 
 !     Cumuls des moyennes
   do imom = 1, nbmomt
     itysup = 1
     nbval  = 1
     irtyp  = 2
-    rubriq = 'cumul_ce_moment'//CMOM(IMOM)
+    rubriq = 'cumul_ce_moment'//cmom(imom)
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                propce(1,ipproc(icmome(imom))),ierror)
-    nberro=nberro+ierror
+                propce(1,ipproc(icmome(imom))))
   enddo
 
 !     Cumuls des durees
@@ -1444,15 +1218,15 @@ if (iecaux.eq.1) then
   do imom = 1, nbmomt
     idtm = idtmom(imom)
 !        Si cumul variable en espace
-    if(idtm.gt.0) then
+    if (idtm.gt.0) then
 !          Si cumul pas encore vu
-      if(icdtvu(idtm).eq.0) then
+      if (icdtvu(idtm).eq.0) then
 !            C'est un nouveau, le NBCTM ieme
         nbctm = nbctm+1
 !            On le marque
         icdtvu(idtm) = nbctm
 !            On ecrit ses valeurs
-        if(nbctm.le.nfmtmo) then
+        if (nbctm.le.nfmtmo) then
           write(car4,'(I4.4)') nbctm
         else
           car4 = cindfm
@@ -1463,29 +1237,27 @@ if (iecaux.eq.1) then
         irtyp  = 2
         rubriq = 'cumul_temps_ce_'//car4
         call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                    propce(1,idtcm),ierror)
-        nberro=nberro+ierror
+                    propce(1,idtcm))
       endif
 !          Cumul vu ou pas, on ecrit son numero, >0 pour dire qu'il est
 !            variable en espace
-      rubriq = 'numero_cumul_temps_moment'//CMOM(IMOM)
+      rubriq = 'numero_cumul_temps_moment'//cmom(imom)
       itysup = 0
       nbval  = 1
       irtyp  = 1
       call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  icdtvu(idtm),ierror)
-      nberro=nberro+ierror
+                  icdtvu(idtm))
 
 !        Sinon, si cumul uniforme en espace
-    elseif(idtm.lt.0) then
+    elseif (idtm.lt.0) then
 !          Si cumul pas encore vu
-      if(icdtvu(nbmomx-idtm).eq.0) then
+      if (icdtvu(nbmomx-idtm).eq.0) then
 !            C'est un nouveau, le NBCTM ieme
         nbctm = nbctm+1
 !            On le marque
         icdtvu(nbmomx-idtm) = -nbctm
 !            On ecrit ses valeurs
-        if(nbctm.le.nfmtmo) then
+        if (nbctm.le.nfmtmo) then
           write(car4,'(I4.4)') nbctm
         else
           car4 = cindfm
@@ -1496,8 +1268,7 @@ if (iecaux.eq.1) then
         irtyp  = 2
         rubriq = 'cumul_temps_'//car4
         call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                    dtcmom(idtcm),ierror)
-        nberro=nberro+ierror
+                    dtcmom(idtcm))
       endif
 !          Cumul vu ou pas, on ecrit son numero, <0 pour dire qu'il est
 !            uniforme en espace
@@ -1506,21 +1277,11 @@ if (iecaux.eq.1) then
       nbval  = 1
       irtyp  = 1
       call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  icdtvu(nbmomx-idtm),ierror)
-      nberro=nberro+ierror
+                  icdtvu(nbmomx-idtm))
     endif
   enddo
 
-  if (nberro.ne.0) then
-#if defined(_CS_LANG_FR)
-    car54='ERREUR A L''ECRITURE DES MOYENNES TEMPORELLES         '
-#else
-    car54='ERROR WHILE WRITING THE TIME AVERAGES                 '
-#endif
-    write(nfecra,8101)car54
-  endif
-
-  if(nbmomt.gt.0) then
+  if (nbmomt.gt.0) then
 #if defined(_CS_LANG_FR)
     car54=' Fin de l''ecriture des moyennes temporelles          '
 #else
@@ -1532,22 +1293,18 @@ if (iecaux.eq.1) then
 ! ---> Distance a la paroi
 !      On pourra ecrire ici la distance a la paroi
 
-  nberro = 0
-
   iecr = 0
 
-  if(ineedy.eq.1) then
+  if (ineedy.eq.1) then
 !     Ancien mode de calcul. On ecrit aussi la distance a la paroi,
 !       au cas ou on fait une suite en ICDPAR=1.
-    if(abs(icdpar).eq.2) then
+    if (abs(icdpar).eq.2) then
       iecr   = 1
       itysup = 1
       nbval  = 1
       irtyp  = 1
       rubriq = 'num_fac_par_ce_phase'//cphase
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,     &
-           irtyp,ifapat,ierror)
-      nberro=nberro+ierror
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,  irtyp,ifapat)
 !     Pour la distance reelle, on a besoin d'un tableau provisoire
 !     on ne prend que la phase 1
       allocate(w1(ncelet))
@@ -1562,35 +1319,22 @@ if (iecaux.eq.1) then
       nbval  = 1
       irtyp  = 2
       rubriq = 'dist_fac_par_ce_phase'//cphase
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-           w1,ierror)
-      nberro=nberro+ierror
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,w1)
       ! Free memory
       deallocate(w1)
 
 !     Nouveau mode de calcul
-    elseif(abs(icdpar).eq.1) then
+    elseif (abs(icdpar).eq.1) then
       iecr   = 1
       itysup = 1
       nbval  = 1
       irtyp  = 2
       rubriq = 'dist_fac_par_ce_phase'//cphase
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  dispar,ierror)
-      nberro=nberro+ierror
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,dispar)
     endif
   endif
 
-  if (nberro.ne.0) then
-#if defined(_CS_LANG_FR)
-    car54='ERREUR A L''ECRITURE DE LA DISTANCE A LA PAROI        '
-#else
-    car54='ERROR WHILE WRITING THE WALL DISTANCE                 '
-#endif
-    write(nfecra,8101)car54
-  endif
-
-  if(iecr.ne.0) then
+  if (iecr.ne.0) then
 #if defined(_CS_LANG_FR)
     car54=' Fin de l''ecriture de la distance a la paroi         '
 #else
@@ -1601,26 +1345,14 @@ if (iecaux.eq.1) then
 
 ! ---> Force exterieure
 
-  if(iphydr.eq.1) then
-    nberro=0
+  if (iphydr.eq.1) then
 
     itysup = 1
     nbval  = 3
     irtyp  = 2
 
     rubriq = 'force_ext_ce_phase'//cphase
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         frcxt,ierror)
-    nberro=nberro+ierror
-
-    if (nberro.ne.0) then
-#if defined(_CS_LANG_FR)
-      car54='ERREUR A L''ECRITURE DES FORCES EXTERIEURES           '
-#else
-      car54='ERROR WHILE WRITING THE EXTERNAL FORCES               '
-#endif
-      write(nfecra,8101)car54
-    endif
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,frcxt)
 
 #if defined(_CS_LANG_FR)
     car54=' Fin de l''ecriture des forces exterieures            '
@@ -1633,26 +1365,14 @@ if (iecaux.eq.1) then
 
 ! ---> Pression hydrostatique predite
 
-  if(iphydr.eq.2) then
-    nberro=0
+  if (iphydr.eq.2) then
 
     itysup = 1
     nbval  = 1
     irtyp  = 2
 
     rubriq = 'Prhyd_pre_phase'//cphase
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         prhyd(1),ierror)
-    nberro=nberro+ierror
-
-    if (nberro.ne.0) then
-#if defined(_CS_LANG_FR)
-      car54='ERREUR ECRITURE DE LA PRESSION HYDROSTATIQUE PREDITE  '
-#else
-      car54='ERROR WHILE WRITING THE PREDICTED HYDROSTATIC PRESSURE'
-#endif
-      write(nfecra,8101) car54
-    endif
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,prhyd(1))
 
 #if defined(_CS_LANG_FR)
     car54=' Fin d''ecriture de la pression hydrostatique predite '
@@ -1665,64 +1385,38 @@ if (iecaux.eq.1) then
 
 ! ---> Methode ALE
 
-  if(iale.eq.1) then
-    nberro=0
+  if (iale.eq.1) then
 
     itysup = 4
     nbval  = 3
     irtyp  = 2
 
     rubriq = 'vertex_displacement'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                depale,ierror)
-    nberro=nberro+ierror
-
-    if (nberro.ne.0) then
-#if defined(_CS_LANG_FR)
-      car54='ERREUR A L''ECRITURE DU DEPLACEMENT AUX NOEUDS (ALE)  '
-#else
-      car54='ERROR WHILE WRITING THE VERTICES DISPLACEMENTS (ALE)  '
-#endif
-      write(nfecra,8101)car54
-    endif
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,depale)
 
 !     Viscosite de maillage (elle est souvent definie geometriquement sur le
 !       maillage initial ... il est donc plus facile de la relire ensuite)
 
-    nberro = 0
     rubriq = 'type_visc_mail'
     itysup = 0
     nbval  = 1
     irtyp  = 1
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-         iortvm,ierror)
-    nberro = nberro+ierror
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,iortvm)
 
-    nberro = 0
     rubriq = 'visc_maillage_x'
     itysup = 1
     nbval  = 1
     irtyp  = 2
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-         propce(1,ipproc(ivisma(1))),ierror)
-    nberro = nberro+ierror
+                propce(1,ipproc(ivisma(1))))
 
     if (iortvm.eq.1) then
       rubriq = 'visc_maillage_y'
       call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         propce(1,ipproc(ivisma(2))),ierror)
+                  propce(1,ipproc(ivisma(2))))
       rubriq = 'visc_maillage_z'
       call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         propce(1,ipproc(ivisma(3))),ierror)
-    endif
-
-    if (nberro.ne.0) then
-#if defined(_CS_LANG_FR)
-      car54='ERREUR A L''ECRITURE DE LA VISCOSITE DE MAILLAGE (ALE)'
-#else
-      car54='ERROR WHILE WRITING THE MESH VISCOSITY (ALE)          '
-#endif
-      write(nfecra,8101)car54
+                  propce(1,ipproc(ivisma(3))))
     endif
 
 #if defined(_CS_LANG_FR)
@@ -1735,14 +1429,11 @@ if (iecaux.eq.1) then
     ngbstr(1) = nbstru
     ngbstr(2) = nbaste
 
-    nberro=0
     rubriq = 'nombre_structures'
     itysup = 0
     nbval  = 2
     irtyp  = 1
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-         ngbstr,ierror)
-    nberro=nberro+ierror
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,ngbstr)
 
     if (nbstru.gt.0) then
 
@@ -1774,19 +1465,8 @@ if (iecaux.eq.1) then
           tmpstr(24+ii) = forsta(ii,istr)
         enddo
 
-        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-             tmpstr,ierror)
-        nberro=nberro+ierror
+        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,tmpstr)
       enddo
-
-      if (nberro.ne.0) then
-#if defined(_CS_LANG_FR)
-        car54='ERREUR A L''ECRITURE DES DONNEES DES STRUCTURES (ALE) '
-#else
-      car54='ERROR WHILE WRITING THE STRUCTURES DATE (ALE)         '
-#endif
-        write(nfecra,8101)car54
-      endif
 
 #if defined(_CS_LANG_FR)
       car54=' Fin de l''ecriture des donnees des structures (ALE)'
@@ -1806,75 +1486,50 @@ if (iecaux.eq.1) then
 
   if ( ippmod(icod3p).ge.0 ) then
 
-    nberro=0
-
     rubriq = 'hinfue_cod3p'
     itysup = 0
     nbval  = 1
     irtyp  = 2
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                hinfue,ierror)
-    nberro=nberro+ierror
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,hinfue)
 
     rubriq = 'hinoxy_cod3p'
     itysup = 0
     nbval  = 1
     irtyp  = 2
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                hinoxy,ierror)
-    nberro=nberro+ierror
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,hinoxy)
 
     rubriq = 'tinfue_cod3p'
     itysup = 0
     nbval  = 1
     irtyp  = 2
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                tinfue,ierror)
-    nberro=nberro+ierror
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,tinfue)
 
     rubriq = 'tinoxy_cod3p'
     itysup = 0
     nbval  = 1
     irtyp  = 2
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                tinoxy,ierror)
-    nberro=nberro+ierror
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,tinoxy)
 
 !       Numero des zones
     itysup = 3
     nbval  = 1
     irtyp  = 1
     rubriq = 'num_zone_fb_cod3p'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                izfppp, ierror)
-    nberro=nberro+ierror
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,izfppp)
 
 !       Entree Fuel (si ce n'est pas NOZPPM, erreur)
     itysup = 0
     nbval  = nozppm
     irtyp  = 1
     rubriq = 'ientfu_zone_bord_cod3p'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                ientfu, ierror)
-    nberro=nberro+ierror
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,ientfu)
 
 !       Entree oxydant (si ce n'est pas NOZPPM, erreur)
     itysup = 0
     nbval  = nozppm
     irtyp  = 1
     rubriq = 'ientox_zone_bord_cod3p'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                ientox, ierror)
-    nberro=nberro+ierror
-
-    if (nberro.ne.0) then
-#if defined(_CS_LANG_FR)
-      car54='ERREUR A L''ECRITURE DES INFORMATIONS COMBUSTION COD3P'
-#else
-      car54='ERROR WHILE WRITING COMBUSTION INFORMATION (COD3P)   '
-#endif
-      write(nfecra,8101)car54
-    endif
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,ientox)
 
 #if defined(_CS_LANG_FR)
     car54=' Fin de l''ecriture des informations combustion COD3P'
@@ -1890,77 +1545,52 @@ if (iecaux.eq.1) then
 
   if ( ippmod(icoebu).ge.0 ) then
 
-    nberro=0
-
     rubriq = 'temperature_gaz_frais_ebu'
     itysup = 0
     nbval  = 1
     irtyp  = 2
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                tgf,ierror)
-    nberro=nberro+ierror
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,tgf)
 
     rubriq = 'frmel_ebu'
     itysup = 0
     nbval  = 1
     irtyp  = 2
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                frmel,ierror)
-    nberro=nberro+ierror
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,frmel)
 
-!       Numero des zones
+    ! Numero des zones
     itysup = 3
     nbval  = 1
     irtyp  = 1
     rubriq = 'num_zone_fb_ebu'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                izfppp, ierror)
-    nberro=nberro+ierror
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,izfppp)
 
 !       Entree Gaz brule(si ce n'est pas NOZPPM, erreur)
     itysup = 0
     nbval  = nozppm
     irtyp  = 1
     rubriq = 'ientgb_zone_bord_ebu'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                ientgb, ierror)
-    nberro=nberro+ierror
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,ientgb)
 
 !       Entree gaz frais (si ce n'est pas NOZPPM, erreur)
     itysup = 0
     nbval  = nozppm
     irtyp  = 1
     rubriq = 'ientgf_zone_bord_ebu'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                ientgf, ierror)
-    nberro=nberro+ierror
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,ientgf)
 
 !       FMENT (si ce n'est pas NOZPPM, erreur)
     itysup = 0
     nbval  = nozppm
     irtyp  = 2
     rubriq = 'fment_zone_bord_ebu'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                fment, ierror)
-    nberro=nberro+ierror
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,fment)
 
 !       TKENT (si ce n'est pas NOZPPM, erreur)
     itysup = 0
     nbval  = nozppm
     irtyp  = 2
     rubriq = 'tkent_zone_bord_ebu'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                tkent, ierror)
-    nberro=nberro+ierror
-
-    if (nberro.ne.0) then
-#if defined(_CS_LANG_FR)
-      car54='ERREUR A L''ECRITURE DES INFORMATIONS COMBUSTION EBU'
-#else
-      car54='ERROR WHILE WRITING COMBUSTION INFORMATION (EBU)   '
-#endif
-      write(nfecra,8101)car54
-    endif
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,tkent)
 
 #if defined(_CS_LANG_FR)
     car54=' Fin de l''ecriture des informations combustion EBU '
@@ -1976,93 +1606,64 @@ if (iecaux.eq.1) then
 
   if ( ippmod(icolwc).ge.0 ) then
 
-    nberro=0
-
     rubriq = 'fmin_lwc'
     itysup = 0
     nbval  = 1
     irtyp  = 2
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                fmin,ierror)
-    nberro=nberro+ierror
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,fmin)
 
     rubriq = 'fmax_lwc'
     itysup = 0
     nbval  = 1
     irtyp  = 2
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                fmax,ierror)
-    nberro=nberro+ierror
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,fmax)
 
     rubriq = 'hmin_lwc'
     itysup = 0
     nbval  = 1
     irtyp  = 2
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                hmin,ierror)
-    nberro=nberro+ierror
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,hmin)
 
     rubriq = 'hmax_lwc'
     itysup = 0
     nbval  = 1
     irtyp  = 2
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                hmax,ierror)
-    nberro=nberro+ierror
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,hmax)
 
 !       Numero des zones
     itysup = 3
     nbval  = 1
     irtyp  = 1
     rubriq = 'num_zone_fb_lwc'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                izfppp, ierror)
-    nberro=nberro+ierror
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,izfppp)
 
 !       Entree Gaz brule(si ce n'est pas NOZPPM, erreur)
     itysup = 0
     nbval  = nozppm
     irtyp  = 1
     rubriq = 'ientgb_zone_bord_lwc'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                ientgb, ierror)
-    nberro=nberro+ierror
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,ientgb)
 
 !       Entree gaz frais (si ce n'est pas NOZPPM, erreur)
     itysup = 0
     nbval  = nozppm
     irtyp  = 1
     rubriq = 'ientgf_zone_bord_lwc'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                ientgf, ierror)
-    nberro=nberro+ierror
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,ientgf)
 
 !       FMENT (si ce n'est pas NOZPPM, erreur)
     itysup = 0
     nbval  = nozppm
     irtyp  = 2
     rubriq = 'fment_zone_bord_lwc'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                fment, ierror)
-    nberro=nberro+ierror
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,fment)
 
 !       TKENT (si ce n'est pas NOZPPM, erreur)
     itysup = 0
     nbval  = nozppm
     irtyp  = 2
     rubriq = 'tkent_zone_bord_lwc'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                tkent, ierror)
-    nberro=nberro+ierror
-
-    if (nberro.ne.0) then
-#if defined(_CS_LANG_FR)
-      car54='ERREUR A L''ECRITURE DES INFORMATIONS COMBUSTION LWC'
-#else
-      car54='ERROR WHILE WRITING COMBUSTION INFORMATION (LWC)   '
-#endif
-      write(nfecra,8101)car54
-    endif
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,tkent)
 
 #if defined(_CS_LANG_FR)
     car54=' Fin de l''ecriture des informations combustion LWC '
@@ -2075,9 +1676,7 @@ if (iecaux.eq.1) then
 
 ! ---> Grandeurs complementaires pour la combustion CP
 
-  if (ippmod(icpl3c).ge.0 .or.                                    &
-      ippmod(iccoal).ge.0) then
-    nberro = 0
+  if (ippmod(icpl3c).ge.0 .or. ippmod(iccoal).ge.0) then
 
 !     Charbon PuLVerise : masse vol des charbons
 
@@ -2085,15 +1684,14 @@ if (iecaux.eq.1) then
     nbval  = 1
     irtyp  = 2
     do icha = 1, ncharb
-      if(icha.le.nfmtch) then
+      if (icha.le.nfmtch) then
         write(car2,'(I2.2)') icha
       else
         car2 = cindfc
       endif
       rubriq = 'masse_volumique_charbon'//car2
       call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  rhock(icha), ierror)
-      nberro = nberro + ierror
+                  rhock(icha))
     enddo
 
 
@@ -2105,19 +1703,14 @@ if (iecaux.eq.1) then
     nbval  = 1
     irtyp  = 1
     rubriq = 'num_zone_fb_charbon_pulverise'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                izfppp, ierror)
-    nberro = nberro + ierror
-
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,izfppp)
 
 !       Type entree air ou cp (si ce n'est pas NOZPPM, erreur)
     itysup = 0
     nbval  = nozppm
     irtyp  = 1
     rubriq = 'ientat_zone_bord_charbon_pulverise'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                ientat, ierror)
-    nberro = nberro + ierror
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,ientat)
 
 !       ientat, inmoxy et x20 ne servent pas pour le CP couple Lagrangien (cplphy)
     if (ippmod(iccoal).ge.0) then
@@ -2126,17 +1719,13 @@ if (iecaux.eq.1) then
       nbval  = nozppm
       irtyp  = 1
       rubriq = 'ientcp_zone_bord_charbon_pulverise'
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  ientcp, ierror)
-      nberro = nberro + ierror
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,ientcp)
 
       itysup = 0
       nbval  = nozppm
       irtyp  = 1
       rubriq = 'inmoxy_zone_bord_charbon_pulverise'
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  inmoxy, ierror)
-      nberro = nberro + ierror
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,inmoxy)
 
       itysup = 0
       nbval  = nozppm
@@ -2146,7 +1735,7 @@ if (iecaux.eq.1) then
       do icha = 1, ncharb
         do iclapc = 1, nclpch(icha)
           icla = iclapc + idecal
-          if(icha.le.nfmtch.and.iclapc.le.nfmtcl) then
+          if (icha.le.nfmtch.and.iclapc.le.nfmtcl) then
             write(car2,'(I2.2)') icha
             write(car4,'(I4.4)') iclapc
           else
@@ -2155,9 +1744,7 @@ if (iecaux.eq.1) then
           endif
           rubriq = 'x20_zone_bord_charbon'//car2//'_classe'//car4
           call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,     &
-               irtyp,x20(1,icla), ierror)
-          nberro = nberro + ierror
-
+                      irtyp,x20(1,icla))
         enddo
       enddo
 
@@ -2168,19 +1755,7 @@ if (iecaux.eq.1) then
     nbval  = nozppm
     irtyp  = 2
     rubriq = 'timpat_zone_bord_charbon_pulverise'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                timpat, ierror)
-    nberro = nberro + ierror
-
-
-    if (nberro.ne.0) then
-#if defined(_CS_LANG_FR)
-      car54=' ERREUR A L''ECRITURE DES INFORMATIONS COMBUSTION CP   '
-#else
-      car54=' ERROR WHILE WRITING COMBUSTION INFORMATION (CP)     '
-#endif
-      write(nfecra,8101)car54
-    endif
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,timpat)
 
 #if defined(_CS_LANG_FR)
     car54=' Fin de l''ecriture des informations combustion CP    '
@@ -2194,8 +1769,6 @@ if (iecaux.eq.1) then
 ! ---> Grandeurs complementaires pour la FUEL
 
   if ( ippmod(icfuel).ge.0 ) then
-    nberro = 0
-
 
 !     Fioul : type de zones de bord, ientat, ientfl, timpat
 !       qimpat et qimpfl  pour le calcul de rho au bord en entree
@@ -2205,74 +1778,48 @@ if (iecaux.eq.1) then
     nbval  = 1
     irtyp  = 1
     rubriq = 'num_zone_fb_fuel'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                izfppp, ierror)
-    nberro = nberro + ierror
-
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,izfppp)
 
 !       Type entree air ou fuel (si ce n'est pas NOZPPM, erreur)
     itysup = 0
     nbval  = nozppm
     irtyp  = 1
     rubriq = 'ientat_zone_bord_fuel'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                ientat, ierror)
-    nberro = nberro + ierror
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,ientat)
 
     itysup = 0
     nbval  = nozppm
     irtyp  = 1
     rubriq = 'ientfl_zone_bord_fuel'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                ientfl, ierror)
-    nberro = nberro + ierror
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,ientfl)
 
-!
     itysup = 0
     nbval  = nozppm
     irtyp  = 1
     RUBRIQ = 'inmoxy_zone_bord_fuel'
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                inmoxy, ierror)
-    nberro = nberro + ierror
+                inmoxy)
 
 !       Timpat
     itysup = 0
     nbval  = nozppm
     irtyp  = 2
     rubriq = 'timpat_zone_bord_fuel'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                timpat, ierror)
-    nberro = nberro + ierror
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,timpat)
 
 !       Qimpat
     itysup = 0
     nbval  = nozppm
     irtyp  = 2
     rubriq = 'qimpat_zone_bord_fuel'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                qimpat, ierror)
-    nberro = nberro + ierror
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,qimpat)
 
 !       Qimpfl
     itysup = 0
     nbval  = nozppm
     irtyp  = 2
     rubriq = 'qimpfl_zone_bord_fuel'
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                qimpfl, ierror)
-    nberro = nberro + ierror
-
-    if (nberro.ne.0) then
-#if defined(_CS_LANG_FR)
-      car54=                                                      &
-          'ERREUR A L''ECRITURE DES INFORMATIONS COMBUSTION FUEL '
-#else
-      car54=                                                      &
-          'ERROR WHILE WRITING COMBUSTION INFORMATION (FUEL)    '
-#endif
-      write(nfecra,8101)car54
-    endif
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,qimpfl)
 
 #if defined(_CS_LANG_FR)
     car54=' Fin de l''ecriture des informations combustion FUEL  '
@@ -2285,13 +1832,12 @@ if (iecaux.eq.1) then
 
 ! ---> Grandeurs complementaires pour les versions electriques
 
-  nberro = 0
   iecr = 0
 
 !     Recalage des CL pot des versions electriques
 
   if ( ippmod(ieljou).ge.1       ) then
-    if(ielcor.eq.1) then
+    if (ielcor.eq.1) then
 
       iecr   = 1
       rubriq = 'coeff_recalage_joule'
@@ -2299,15 +1845,13 @@ if (iecaux.eq.1) then
       nbval  = 1
       irtyp  = 2
 
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  coejou,ierror)
-      nberro=nberro+ierror
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,coejou)
 
     endif
   endif
 
   if ( ippmod(ielarc).ge.1 .or. ippmod(ieljou).ge.1 ) then
-    if(ielcor.eq.1) then
+    if (ielcor.eq.1) then
 
       iecr   = 1
       rubriq = 'ddpot_recalage_arc_elec'
@@ -2315,9 +1859,7 @@ if (iecaux.eq.1) then
       nbval  = 1
       irtyp  = 2
 
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  dpot  ,ierror)
-      nberro=nberro+ierror
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,dpot)
 
     endif
   endif
@@ -2336,12 +1878,11 @@ if (iecaux.eq.1) then
 
     rubriq = 'tsource_sc_ce_joule'
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                propce(1,ipcefj),ierror)
-    nberro=nberro+ierror
+                propce(1,ipcefj))
 
   endif
 
-  if( ippmod(ielarc).ge.1 ) then
+  if (ippmod(ielarc).ge.1) then
 
     iecr   = 1
     ipcla1 = ipproc(ilapla(1))
@@ -2353,28 +1894,16 @@ if (iecaux.eq.1) then
 
     rubriq = 'tsource_ns_ce_x_laplace'
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                propce(1,ipcla1),ierror)
-    nberro=nberro+ierror
+                propce(1,ipcla1))
 
     rubriq = 'tsource_ns_ce_y_laplace'
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                propce(1,ipcla2),ierror)
-    nberro=nberro+ierror
+                propce(1,ipcla2))
 
     rubriq = 'tsource_ns_ce_z_laplace'
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                propce(1,ipcla3),ierror)
-    nberro=nberro+ierror
+                propce(1,ipcla3))
 
-  endif
-
-  if (nberro.ne.0) then
-#if defined(_CS_LANG_FR)
-    car54='ERREUR A L''ECRITURE DES INFORMATIONS ELECTRIQUES     '
-#else
-    car54='ERROR WHILE WRITING ELECTRIC INFORMATION             '
-#endif
-    write(nfecra,8101)car54
   endif
 
   if (iecr.ne.0) then
@@ -2580,31 +2109,6 @@ return
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
- 8100 format(                                                          &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : A L''ECRITURE DU FICHIER SUITE              ',/,&
-'@    =========                                 AVAL PRINCIPAL',/,&
-'@      ', A54                                                 ,/,&
-'@                                                            ',/,&
-'@    Le calcul se poursuit...                                ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 8101 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : A L''ECRITURE DU FICHIER SUITE              ',/,&
-'@    =========                                AVAL AUXILIAIRE',/,&
-'@      ', A54                                                 ,/,&
-'@                                                            ',/,&
-'@    Le calcul se poursuit...                                ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
 #else
 
  1000 format(3x,'** Writing the main restart file',/,             &
@@ -2768,31 +2272,6 @@ return
 '@    ========                                                ',/,&
 '@                                                            ',/,&
 '@    Problem with the file of name (',a13,')                 ',/,&
-'@                                                            ',/,&
-'@    The calculation will be run.                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 8100 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: WHILE WRITING THE MAIN RESTART FILE            ',/,&
-'@    ========                                                ',/,&
-'@      ', A54                                                 ,/,&
-'@                                                            ',/,&
-'@    The calculation will be run.                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 8101 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: WHILE WRITING THE AUXILIARY RESTART FILE       ',/,&
-'@    ========                                                ',/,&
-'@      ', A54                                                 ,/,&
 '@                                                            ',/,&
 '@    The calculation will be run.                            ',/,&
 '@                                                            ',/,&

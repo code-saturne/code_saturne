@@ -192,20 +192,17 @@ nbval  = 1
 ivers  = 112
 rubriq = 'version_fichier_suite_Lagrangien_variables'
 irtyp  = 1
-call ecrsui(impavl,rubriq,len(rubriq),itysup,nbval,irtyp,ivers,   &
-            ierror)
+call ecrsui(impavl,rubriq,len(rubriq),itysup,nbval,irtyp,ivers)
 
 ! Temps (par securite)
 
 rubriq = 'nombre_iterations_Lagrangiennes'
 irtyp  = 1
-call ecrsui(impavl,rubriq,len(rubriq),itysup,nbval,irtyp,iplas,   &
-            ierror)
+call ecrsui(impavl,rubriq,len(rubriq),itysup,nbval,irtyp,iplas)
 
 rubriq = 'temps_physique_Lagrangien'
 irtyp  = 2
-call ecrsui(impavl,rubriq,len(rubriq),itysup,nbval,irtyp,ttclag,  &
-            ierror)
+call ecrsui(impavl,rubriq,len(rubriq),itysup,nbval,irtyp,ttclag)
 
 ! Infos sur le suivi du calcul
 
@@ -223,38 +220,30 @@ do ii = 1, nbpart
 enddo
 
 rubriq = 'particles'
-call ecpsui(impavl,rubriq,len(rubriq),inmcoo,nbpart,icepar,coopar,  &
-            ipasup,ierror)
+call ecpsui(impavl,rubriq,len(rubriq),inmcoo,nbpart,icepar,coopar,ipasup)
 
 deallocate(coopar)
 
 rubriq = 'nombre_total_particules'
-call ecrsui(impavl,rubriq,len(rubriq),itysup,nbval,irtyp,nbptot,  &
-            ierror)
+call ecrsui(impavl,rubriq,len(rubriq),itysup,nbval,irtyp,nbptot)
 
 rubriq = 'nombre_particules_perdues'
-call ecrsui(impavl,rubriq,len(rubriq),itysup,nbval,irtyp,nbpert,  &
-            ierror)
+call ecrsui(impavl,rubriq,len(rubriq),itysup,nbval,irtyp,nbpert)
 
 rubriq = 'indicateur_physique_particules'
-call ecrsui(impavl,rubriq,len(rubriq),itysup,nbval,irtyp,iphyla,  &
-            ierror)
+call ecrsui(impavl,rubriq,len(rubriq),itysup,nbval,irtyp,iphyla)
 
 rubriq = 'indicateur_temperature_particules'
-call ecrsui(impavl,rubriq,len(rubriq),itysup,nbval,irtyp,itpvar,  &
-            ierror)
+call ecrsui(impavl,rubriq,len(rubriq),itysup,nbval,irtyp,itpvar)
 
 rubriq = 'indicateur_diametre_particules'
-call ecrsui(impavl,rubriq,len(rubriq),itysup,nbval,irtyp,idpvar,  &
-            ierror)
+call ecrsui(impavl,rubriq,len(rubriq),itysup,nbval,irtyp,idpvar)
 
 rubriq = 'indicateur_masse_particules'
-call ecrsui(impavl,rubriq,len(rubriq),itysup,nbval,irtyp,impvar,  &
-            ierror)
+call ecrsui(impavl,rubriq,len(rubriq),itysup,nbval,irtyp,impvar)
 
 rubriq = 'nombre_variables_utilisateur'
-call ecrsui(impavl,rubriq,len(rubriq),itysup,nbval,irtyp,nvls,    &
-            ierror)
+call ecrsui(impavl,rubriq,len(rubriq),itysup,nbval,irtyp,nvls)
 
 write(nfecra,6012)
 
@@ -273,8 +262,7 @@ nbval  = 1
 irtyp  = 1
 
 rubriq = 'particle_status_flag'
-call ecrsui(impavl, rubriq, len(rubriq), itysup, nbval, irtyp,  &
-            icepar, ierror)
+call ecrsui(impavl, rubriq, len(rubriq), itysup, nbval, irtyp, icepar)
 
 deallocate(icepar)
 
@@ -314,15 +302,13 @@ irtyp  = 2
 do ii = jmp,jwf
   if (ii .lt. jxp .or. ii.gt.jzp) then
     rubriq = nomnvl(ii)
-    call ecrsui(impavl,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-                ettp(1,ii),ierror)
+    call ecrsui(impavl,rubriq,len(rubriq),itysup,nbval,irtyp,ettp(1,ii))
   endif
 enddo
 
 do ii = 1,jmp-1
   rubriq = nomnvl(ii)
-  call ecrsui(impavl,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              ettp(1,ii),ierror)
+  call ecrsui(impavl,rubriq,len(rubriq),itysup,nbval,irtyp,ettp(1,ii))
 enddo
 
 ! Caracteristiques et infos particulaires (ENTIERS)
@@ -361,10 +347,10 @@ do ii = 1, nivep
       idbase = 1
       irfsup = 3
       call ecisui(impavl, rubriq, len(rubriq), itysup, irfsup, idbase,  &
-                  itepa(1,ii), ierror)
+                  itepa(1,ii))
     else
       call ecrsui(impavl, rubriq, len(rubriq), itysup, nbval, irtyp,  &
-                  itepa(1,ii), ierror)
+                  itepa(1,ii))
     endif
   endif
 enddo
@@ -379,16 +365,14 @@ if (nbclst .gt. 0 ) then
   irtyp  = 1
 
   rubriq = nomite(jclst)
-  call ecrsui(impavl,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              itepa(1,jclst),ierror)
+  call ecrsui(impavl,rubriq,len(rubriq),itysup,nbval,irtyp,itepa(1,jclst))
 endif
 
 ! Numero du charbon des particules
 
 if (iphyla.eq.2) then
   rubriq = nomite(jinch)
-  call ecrsui(impavl,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              itepa(1,jinch),ierror)
+  call ecrsui(impavl,rubriq,len(rubriq),itysup,nbval,irtyp,itepa(1,jinch))
 endif
 
 ! Caracteristiques et infos particulaires (REELS)
@@ -424,8 +408,7 @@ irtyp  = 2
 
 do ii = 1, nvep
   rubriq = nomrte(ii)
-  call ecrsui(impavl,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              tepa(1,ii),ierror)
+  call ecrsui(impavl,rubriq,len(rubriq),itysup,nbval,irtyp,tepa(1,ii))
 enddo
 
 write(nfecra,6013)
@@ -473,15 +456,13 @@ if ( (istala.eq.1 .and. iplas.ge.idstnt) .or.                     &
   ivers  = 111
   rubriq = 'version_fichier_suite_Lagrangien_statistiques'
   irtyp  = 1
-  call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp,ivers, &
-              ierror)
+  call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp,ivers)
 
 ! ---> On ecrit ISTTIO c'est utile dans tous les cas
 
   rubriq = 'indicateur_ecoulement_stationnaire'
   irtyp  = 1
-  call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              isttio, ierror)
+  call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp,isttio)
 
 ! --> En premier, on ecrit les statistiques volumiques
 
@@ -489,33 +470,27 @@ if ( (istala.eq.1 .and. iplas.ge.idstnt) .or.                     &
 
     rubriq = 'iteration_debut_statistiques'
     irtyp  = 1
-    call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                idstnt,ierror)
+    call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp,idstnt)
 
     rubriq = 'iteration_debut_statistiques_stationnaires'
     irtyp  = 1
-    call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                nstist,ierror)
+    call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp,nstist)
 
     rubriq = 'nombre_iterations_statistiques_stationnaires'
     irtyp  = 1
-    call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                npst,ierror)
+    call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp,npst)
 
     rubriq = 'temps_statistiques_stationnaires'
     irtyp  = 2
-    call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                tstat,ierror)
+    call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp,tstat)
 
     rubriq = 'classe_statistique_particules'
     irtyp  = 1
-    call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                nbclst,ierror)
+    call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp,nbclst)
 
     rubriq = 'nombre_statistiques_utilisateur'
     irtyp  = 1
-    call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                nvlsts,ierror)
+    call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp,nvlsts)
 
     !  Statistiques volumiques
 
@@ -533,8 +508,7 @@ if ( (istala.eq.1 .and. iplas.ge.idstnt) .or.                     &
         else
           rubriq = 'moy_stat_vol_'//nomlag(ii)
         endif
-        call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                    statis(1,ii),ierror)
+        call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp,statis(1,ii))
 
       enddo
 
@@ -548,7 +522,7 @@ if ( (istala.eq.1 .and. iplas.ge.idstnt) .or.                     &
           rubriq = 'var_stat_vol_'//nomlav(ii)
         endif
         call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                    stativ(1,ii),ierror)
+                    stativ(1,ii))
 
       enddo
 
@@ -565,28 +539,23 @@ if ( (istala.eq.1 .and. iplas.ge.idstnt) .or.                     &
 
     rubriq = 'iteration_debut_stats_frontieres_stationnaires'
     irtyp  = 1
-    call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                nstbor,ierror)
+    call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp,nstbor)
 
     rubriq = 'nombre_iterations_stats_frontieres'
     irtyp  = 1
-    call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                npstft,ierror)
+    call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp,npstft)
 
     rubriq = 'nombre_iterations_stats_frontieres_stationnaires'
     irtyp  = 1
-    call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                npstf,ierror)
+    call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp,npstf)
 
     rubriq = 'temps_stats_frontieres_stationnaires'
     irtyp  = 2
-    call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                tstatp,ierror)
+    call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp,tstatp)
 
     rubriq = 'nombre_stats_frontieres_utilisateur'
     irtyp  = 1
-    call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                nusbor,ierror)
+    call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp,nusbor)
 
     !  Statistiques aux frontieres
 
@@ -596,8 +565,7 @@ if ( (istala.eq.1 .and. iplas.ge.idstnt) .or.                     &
 
     do ii = 1,nvisbr
       rubriq = 'stat_bord_'//nombrd(II)
-      call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  parbor(1,ii),ierror)
+      call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp,parbor(1,ii))
     enddo
 
   endif
@@ -611,18 +579,15 @@ if ( (istala.eq.1 .and. iplas.ge.idstnt) .or.                     &
 
     rubriq = 'iteration_debut_termes_sources_stationnaires'
     irtyp  = 1
-    call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                nstits,ierror)
+    call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp,nstits)
 
     rubriq = 'nombre_iterations_termes_sources_stationnaires'
     irtyp  = 1
-    call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                npts,ierror)
+    call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp,npts)
 
     rubriq = 'modele_turbulence_termes_sources'
     irtyp  = 1
-    call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                iturb,ierror)
+    call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp,iturb)
 
     ! On donne des labels au different TS pour les noms de rubriques
     ! On donne le meme label au keps, au v2f et au k-omega (meme variable k)
@@ -671,8 +636,7 @@ if ( (istala.eq.1 .and. iplas.ge.idstnt) .or.                     &
 
     do ii = 1,ntersl
       rubriq = nomtsl(ii)
-      call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  tslagr(1,ii),ierror)
+      call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp,tslagr(1,ii))
     enddo
 
     ! Dans le cas specifique de la combustion de grains de charbon
@@ -689,7 +653,7 @@ if ( (istala.eq.1 .and. iplas.ge.idstnt) .or.                     &
         write(car4,'(i4.4)') II
         rubriq = 'scalaires_physiques_pariculieres_charbon'//car4
         call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                    propce(1,ipproc(icha)),ierror)
+                    propce(1,ipproc(icha)))
       enddo
 
     endif

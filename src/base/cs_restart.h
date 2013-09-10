@@ -309,7 +309,6 @@ void CS_PROCF (lecsui, LECSUI)
  * integer          nbvent      : <-- : N. values per location entity
  * integer          irtype      : <-- : 1 for integers, 2 for double precision
  * (?)              tabvar      : <-- : Array of values to write
- * integer          ierror      : --> : 0: success, < 0: error code
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (ecrsui, ECRSUI)
@@ -320,8 +319,7 @@ void CS_PROCF (ecrsui, ECRSUI)
  const cs_int_t   *itysup,
  const cs_int_t   *nbvent,
  const cs_int_t   *irtype,
- const void       *tabvar,
-       cs_int_t   *ierror
+ const void       *tabvar
  CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
                                          by many Fortran compilers) */
 );
@@ -400,7 +398,6 @@ void CS_PROCF (lepsui, LEPSUI)
  * integer          ipcell      : <-- : Particle -> cell number
  * double precision coopar      : <-- : Particle coordinates
  * integer          ipsup       : --> : Particles location id
- * integer          ierror      : --> : 0: success, < 0: error code
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (ecpsui, ECPSUI)
@@ -412,8 +409,7 @@ void CS_PROCF (ecpsui, ECPSUI)
  const cs_int_t   *nbpart,
  const cs_int_t   *ipcell,
  const cs_real_t  *coopar,
-       cs_int_t   *itysup,
-       cs_int_t   *ierror
+       cs_int_t   *itysup
  CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
                                          by many Fortran compilers) */
 );
@@ -502,7 +498,7 @@ void CS_PROCF (leisui, LEISUI)
  * integer          ierror      : --> : 0: success, < 0: error code
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (ecisui, ECRSUI)
+void CS_PROCF (ecisui, ECISUI)
 (
  const cs_int_t   *numsui,
  const char       *nomrub,
@@ -510,8 +506,7 @@ void CS_PROCF (ecisui, ECRSUI)
  const cs_int_t   *itysup,
  const cs_int_t   *irfsup,
  const cs_int_t   *idbase,
- const cs_int_t   *tabid,
-       cs_int_t   *ierror
+ const cs_int_t   *tabid
  CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
                                          by many Fortran compilers) */
 );

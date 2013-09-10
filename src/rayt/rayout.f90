@@ -87,7 +87,7 @@ character        rubriq*64
 character        cphase*2
 character        ficsui*32
 integer          itrav1 , ip
-integer          ierror , nberro , irtyp , itysup , nbval
+integer          ierror , irtyp , itysup , nbval
 integer          ivers  , ilecec
 integer          impavr
 
@@ -121,110 +121,74 @@ write(nfecra,6011)
 !       d'un autre fichier suite
 !     Pour le moment, IVERS n'est pas utilise
 
-nberro = 0
-
 ivers  = 111
 itysup = 0
 nbval  = 1
 irtyp  = 1
-RUBRIQ = 'version_fichier_suite_rayonnement'
-call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,ivers,   &
-            ierror)
-nberro=nberro+ierror
+rubriq = 'version_fichier_suite_rayonnement'
+call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,ivers)
 
 itysup = 0
 nbval  = 1
 irtyp  = 1
-
-if(nberro.ne.0) then
-  write(nfecra,9120)
-  goto 9998
-endif
 
 write(nfecra,6012)
 
 ! Temps (par securite)
 
-nberro = 0
-
-RUBRIQ = 'nbre_pas_de_temps'
+rubriq = 'nbre_pas_de_temps'
 itysup = 0
 nbval  = 1
 irtyp  = 1
-call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,ntcabs,  &
-            ierror)
-nberro=nberro+ierror
+call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,ntcabs)
 
-RUBRIQ = 'instant_precedent'
+rubriq = 'instant_precedent'
 itysup = 0
 nbval  = 1
 irtyp  = 2
-call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,ttcabs,  &
-            ierror)
-nberro=nberro+ierror
-
-if(nberro.ne.0) then
-  write(nfecra,8121)
-endif
+call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,ttcabs)
 
 ! Donnees
 
-nberro = 0
-
 !     Aux faces de bord
 
-  itysup = 3
-  nbval  = 1
-  irtyp  = 2
+itysup = 3
+nbval  = 1
+irtyp  = 2
 
-  RUBRIQ = 'tparoi_fb'
-  call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              propfb(1,ipprob(itparo)),ierror)
-  nberro=nberro+ierror
+rubriq = 'tparoi_fb'
+call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,       &
+            propfb(1,ipprob(itparo)))
 
-  RUBRIQ = 'qincid_fb'
-  call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              propfb(1,ipprob(iqinci)),ierror)
-  nberro=nberro+ierror
+rubriq = 'qincid_fb'
+call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,       &
+            propfb(1,ipprob(iqinci)))
 
-  RUBRIQ = 'hfconv_fb'
-  call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              propfb(1,ipprob(ihconv)),ierror)
-  nberro=nberro+ierror
+rubriq = 'hfconv_fb'
+call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,       &
+            propfb(1,ipprob(ihconv)))
 
-  RUBRIQ = 'flconv_fb'
-  call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              propfb(1,ipprob(ifconv)),ierror)
-  nberro=nberro+ierror
-
+rubriq = 'flconv_fb'
+call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,       &
+            propfb(1,ipprob(ifconv)))
 
 !     Aux cellules
 
-  itysup = 1
-  nbval  = 1
-  irtyp  = 2
+itysup = 1
+nbval  = 1
+irtyp  = 2
 
-  RUBRIQ = 'rayimp_ce'
-  call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              propce(1,ipproc(itsri(1))),ierror)
-  nberro=nberro+ierror
+rubriq = 'rayimp_ce'
+call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,       &
+            propce(1,ipproc(itsri(1))))
 
-  RUBRIQ = 'rayexp_ce'
-  call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              propce(1,ipproc(itsre(1))),ierror)
-  nberro=nberro+ierror
+rubriq = 'rayexp_ce'
+call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,       &
+            propce(1,ipproc(itsre(1))))
 
-  RUBRIQ = 'luminance'
-  call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              propce(1,ipproc(ilumin)),ierror)
-  nberro=nberro+ierror
-
-!  ---> Si pb : on saute
-
-if(nberro.ne.0) then
-  write(nfecra,9100)
-  goto 9998
-endif
+rubriq = 'luminance'
+call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,       &
+            propce(1,ipproc(ilumin)))
 
 write(nfecra,6013)
 
@@ -245,7 +209,7 @@ return
 
 
 !--------
-! FORMATS
+! Formats
 !--------
 
  6010 FORMAT (/, 3X,'** INFORMATIONS SUR LE MODULE DE RAYONNEMENT ',/,  &
@@ -275,53 +239,6 @@ return
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
- 9120 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION: A L''ECRITURE DU FICHIER SUITE RAYONNEMENT   ',/,&
-'@    =========                                               ',/,&
-'@                                                            ',/,&
-'@      ERREUR LORS DE L''ECRITURE DES DIMENSIONS             ',/,&
-'@                                                            ',/,&
-'@  Le calcul continue mais                                   ',/,&
-'@            ne fournira pas de fichier suite rayonnement.   ',/,&
-'@                                                            ',/,&
-'@  Voir le sous-programme rayout.                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 8121 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION: A L''ECRITURE DU FICHIER SUITE RAYONNEMENT   ',/,&
-'@    =========                                               ',/,&
-'@                                                            ',/,&
-'@      ERREUR LORS DE L''ECRITURE DU PAS DE TEMPS ET DU TEMPS',/,&
-'@                                                            ',/,&
-'@    Le calcul continue...                                   ',/,&
-'@                                                            ',/,&
-'@    Voir le sous-programme rayout.                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9100 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION: A L''ECRITURE DU FICHIER SUITE RAYONNEMENT   ',/,&
-'@    =========                                               ',/,&
-'@                                                            ',/,&
-'@      ERREUR LORS DE L''ECRITURE DES DONNEES                ',/,&
-'@                                                            ',/,&
-'@  Le calcul continue mais                                   ',/,&
-'@            ne fournira pas de fichier suite rayonnement.   ',/,&
-'@                                                            ',/,&
-'@  Voir le sous-programme rayout.                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  8011 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -337,7 +254,7 @@ return
 '@                                                            ',/)
 
 !----
-! FIN
+! End
 !----
 
 end subroutine

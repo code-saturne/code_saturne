@@ -656,7 +656,6 @@ _write_ent_values(const cs_restart_t     *r,
  *   r        <-- pointer to restart file handle
  *   location  <-- location id
  *   val_type <-- integer of real
- *   ierror   <-- 0 = success, < 0 = error
  *----------------------------------------------------------------------------*/
 
 static void
@@ -665,12 +664,9 @@ _section_f77_to_c(const cs_int_t          *numsui,
                   const cs_int_t          *irtype,
                   cs_restart_t           **r,
                   int                     *location,
-                  cs_restart_val_type_t   *val_type,
-                  cs_int_t                *ierror)
+                  cs_restart_val_type_t   *val_type)
 {
   cs_int_t r_id = *numsui - 1;
-
-  *ierror = CS_RESTART_SUCCESS;
 
   /* Pointer to associated restart file handle */
 
@@ -678,10 +674,9 @@ _section_f77_to_c(const cs_int_t          *numsui,
       || r_id > (cs_int_t)_restart_pointer_size
       || _restart_pointer[r_id] == NULL) {
     cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("Restart file number <%d> can not be accessed\n"
-                 "(file closed or invalid number)."), (int)(*numsui));
-
-    *ierror = CS_RESTART_ERR_FILE_NUM;
+    bft_error(__FILE__, __LINE__, 0,
+              _("Restart file number <%d> can not be accessed\n"
+                "(file closed or invalid number)."), (int)(*numsui));
     return;
   }
 
@@ -733,7 +728,6 @@ _section_f77_to_c(const cs_int_t          *numsui,
     bft_error(__FILE__, __LINE__, 0,
               _("Value type <%d> given for a restart file section\n"
                 "is invalid using the Fortran API."), (int)(*irtype));
-    *ierror = CS_RESTART_ERR_VAL_TYPE;
     return;
 
   }
@@ -1506,8 +1500,7 @@ void CS_PROCF (lecsui, LECSUI)
                     irtype,
                     &restart,
                     &location_id,
-                    &val_type,
-                    ierror);
+                    &val_type);
 
   if (*ierror < CS_RESTART_SUCCESS)
     return;
@@ -1546,7 +1539,6 @@ void CS_PROCF (lecsui, LECSUI)
  * integer          nbvent      : <-- : N. values per location entity
  * integer          irtype      : <-- : 1 for integers, 2 for double precision
  * (?)              tabvar      : <-- : Array of values to write
- * integer          ierror      : --> : 0: success, < 0: error code
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (ecrsui, ECRSUI)
@@ -1557,8 +1549,7 @@ void CS_PROCF (ecrsui, ECRSUI)
  const cs_int_t   *itysup,
  const cs_int_t   *nbvent,
  const cs_int_t   *irtype,
- const void       *tabvar,
-       cs_int_t   *ierror
+ const void       *tabvar
  CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
                                          by many Fortran compilers) */
 )
@@ -1569,8 +1560,6 @@ void CS_PROCF (ecrsui, ECRSUI)
 
   cs_restart_t *restart;
   int location_id;
-
-  *ierror = CS_RESTART_SUCCESS;
 
   /* Handle name for C API */
 
@@ -1583,11 +1572,7 @@ void CS_PROCF (ecrsui, ECRSUI)
                     irtype,
                     &restart,
                     &location_id,
-                    &val_type,
-                    ierror);
-
-  if (*ierror < CS_RESTART_SUCCESS)
-    return;
+                    &val_type);
 
   /* Write section */
 
@@ -1743,7 +1728,6 @@ void CS_PROCF (lepsui, LEPSUI)
  * integer          ipcell      : <-- : Particle -> cell number
  * double precision coopar      : <-- : Particle coordinates
  * integer          ipsup       : --> : Particles location id
- * integer          ierror      : --> : 0: success, < 0: error code
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (ecpsui, ECPSUI)
@@ -1755,8 +1739,7 @@ void CS_PROCF (ecpsui, ECPSUI)
  const cs_int_t   *nbpart,
  const cs_int_t   *ipcell,
  const cs_real_t  *coopar,
-       cs_int_t   *itysup,
-       cs_int_t   *ierror
+       cs_int_t   *itysup
  CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
                                          by many Fortran compilers) */
 )
@@ -1769,7 +1752,6 @@ void CS_PROCF (ecpsui, ECPSUI)
   int r_id = *numsui - 1;
 
   *itysup = 0;
-  *ierror = CS_RESTART_SUCCESS;
 
   /* Handle name for C API */
 
@@ -1782,11 +1764,9 @@ void CS_PROCF (ecpsui, ECPSUI)
   if (   r_id < 0
       || r_id > (cs_int_t)_restart_pointer_size
       || _restart_pointer[r_id] == NULL) {
-    cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("Restart file number <%d> can not be accessed\n"
-                 "(file closed or invalid number)."), (int)(*numsui));
-
-    *ierror = CS_RESTART_ERR_FILE_NUM;
+    bft_error(__FILE__, __LINE__, 0,
+              _("Restart file number <%d> can not be accessed\n"
+                "(file closed or invalid number)."), (int)(*numsui));
     return;
   }
 
@@ -1879,8 +1859,7 @@ void CS_PROCF (leisui, LEISUI)
                     &irtype,
                     &restart,
                     &location_id,
-                    &val_type,
-                    ierror);
+                    &val_type);
 
   assert(val_type == CS_TYPE_cs_int_t);
 
@@ -1931,7 +1910,6 @@ void CS_PROCF (leisui, LEISUI)
  * integer          idbase      : <-- : base of referenced entity id numbers
  *                              :     : (usually 0 or 1)
  * (?)              tabid       : <-- : Array of ids to write
- * integer          ierror      : --> : 0: success, < 0: error code
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (ecisui, ECISUI)
@@ -1942,8 +1920,7 @@ void CS_PROCF (ecisui, ECISUI)
  const cs_int_t   *itysup,
  const cs_int_t   *irfsup,
  const cs_int_t   *idbase,
- const cs_int_t   *tabid,
-       cs_int_t   *ierror
+ const cs_int_t   *tabid
  CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
                                          by many Fortran compilers) */
 )
@@ -1956,8 +1933,6 @@ void CS_PROCF (ecisui, ECISUI)
 
   cs_int_t irtype = 1;
 
-  *ierror = CS_RESTART_SUCCESS;
-
   /* Handle name for C API */
 
   bufname = cs_base_string_f_to_c_create(nomrub, *lngnom);
@@ -1969,13 +1944,9 @@ void CS_PROCF (ecisui, ECISUI)
                     &irtype,
                     &restart,
                     &location_id,
-                    &val_type,
-                    ierror);
+                    &val_type);
 
   assert(val_type == CS_TYPE_cs_int_t);
-
-  if (*ierror < CS_RESTART_SUCCESS)
-    return;
 
   /* Write section */
 
