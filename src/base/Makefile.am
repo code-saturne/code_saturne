@@ -197,7 +197,6 @@ cscfbr.f90 \
 cscini.f90 \
 csclli.f90 \
 cscloc.f90 \
-cscpce.f90 \
 cspcev.f90 \
 cscpfb.f90 \
 cs_control.c \
