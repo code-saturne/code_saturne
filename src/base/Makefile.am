@@ -89,7 +89,7 @@ cs_halo_perio.h \
 cs_interface.h \
 cs_io.h \
 cs_log.h \
-cs_log_iteration.c \
+cs_log_iteration.h \
 cs_map.h \
 cs_measures_util.h \
 cs_numbering.h \
