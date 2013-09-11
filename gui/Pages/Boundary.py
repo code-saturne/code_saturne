@@ -816,9 +816,13 @@ omega = 0.;"""
         n= node.xmlInitNode('compressible_type')
         old_model = n['choice']
         if old_model != type and type == "subsonic_inlet_PH":
-            n.xmlRemoveChild('pressure')
-            n.xmlRemoveChild('temperature')
-            n.xmlRemoveChild('energy')
+            for nn in ('pressure', 'temperature', 'energy', 'density'):
+                node.xmlRemoveChild(nn)
+            self.setThermoStatus('total_pressure', 'on')
+            self.setThermoStatus('enthalpy', 'on')
+        elif old_model != type and type != "subsonic_inlet_PH":
+                node.xmlRemoveChild('total_pressure')
+                node.xmlRemoveChild('enthalpy')
 
         n['choice'] = type
 
