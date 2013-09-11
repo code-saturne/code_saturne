@@ -72,7 +72,8 @@ class CompressibleModel(Variables, Model):
         self.node_ref    = self.node_thermo.xmlInitNode('reference_values')
 
         self.comp_choice = ['off', 'constant_gamma', 'variable_gamma', 'van_der_waals']
-        self.var_list   = ['Rho', 'EnergieT', 'TempK']
+        self.var_list   = ['EnergieT', 'TempK']
+        self.prop_list   = ['Rho']
 
 
     def _defaultCompressibleValues(self):
@@ -109,6 +110,8 @@ class CompressibleModel(Variables, Model):
             else :
                 for v in self.var_list:
                     self.setNewModelScalar(self.node_comp, v)
+                for p in self.prop_list:
+                    self.setNewProperty(self.node_comp, p)
                 from Pages.TurbulenceModel import TurbulenceModel
                 TurbulenceModel(self.case).setTurbulenceModel('off')
                 del TurbulenceModel
@@ -133,6 +136,8 @@ class CompressibleModel(Variables, Model):
         """
         for v in self.var_list:
             self.node_comp.xmlRemoveChild('scalar', name=v)
+        for p in self.prop_list:
+            self.node_comp.xmlRemoveChild('property', name=p)
 
 
 #-------------------------------------------------------------------------------
