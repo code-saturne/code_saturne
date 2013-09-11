@@ -1550,7 +1550,7 @@ if (irangp.ge.0) then
 endif
 
 !===============================================================================
-! 9. Writtings
+! 9. Writings
 !===============================================================================
 
 !     Remarque : afin de ne pas surcharger les listings dans le cas ou

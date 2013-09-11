@@ -550,7 +550,7 @@ write(nfecra,3000)
 '@                                                            ',/,&
 '@    The calculation will not be run.                        ',/,&
 '@                                                            ',/,&
-'@    Verify the auxilliary restart file or the structures    ',/,&
+'@    Verify the auxiliary restart file or the structures     ',/,&
 '@      specifications in usstru.                             ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -587,7 +587,7 @@ write(nfecra,3000)
 '@                                                            ',/,&
 '@    The calculation will not be run.                        ',/,&
 '@                                                            ',/,&
-'@    Verify the auxilliary restart file or the structures    ',/,&
+'@    Verify the auxiliary restart file or the structures     ',/,&
 '@      specifications in usstru.                             ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&

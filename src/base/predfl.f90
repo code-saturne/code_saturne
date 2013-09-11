@@ -148,7 +148,7 @@ allocate(cfapot(nfabor), cfbpot(nfabor))
 allocate(viscf(nfac), viscb(nfabor))
 allocate(pot(ncelet), pota(ncelet), dpot(ncelet), rhs(ncelet))
 
-! --- Writting
+! --- Writing
 chaine = 'potential       '
 
 ! --- Physical quantities

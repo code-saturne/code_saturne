@@ -72,9 +72,9 @@ module pointe
 
   !=============================================================================
 
-  !> \defgroup auxilliary Auxilliary variables
+  !> \defgroup auxiliary Auxiliary variables
 
-  !> \addtogroup auxilliary
+  !> \addtogroup auxiliary
   !> \{
 
   !... Auxiliaires
@@ -280,7 +280,7 @@ module pointe
   !=============================================================================
 
   !... Auxiliaires
-  !> \addtogroup auxilliary
+  !> \addtogroup auxiliary
   !> \{
 
 
@@ -343,7 +343,7 @@ contains
 
   !=============================================================================
 
-  ! Initialize auxilliary arrays
+  ! Initialize auxiliary arrays
 
   subroutine init_aux_arrays &
 
@@ -496,7 +496,7 @@ contains
 
   !=============================================================================
 
-  ! Free auxilliary arrays
+  ! Free auxiliary arrays
 
   subroutine finalize_aux_arrays
 

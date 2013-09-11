@@ -2116,8 +2116,8 @@ return
  1100 format(' Start writing'                                      )
  1110 format('  ',a54                                              )
  1200 format(' End writing'                                        )
- 2000 format(/,3x,'** Writing the auxilliary restart file',/,     &
-               3x,'   -----------------------------------',/)
+ 2000 format(/,3x,'** Writing the auxiliary restart file',/,      &
+               3x,'   ----------------------------------',/)
 
  7001 format(                                                     &
 '@                                                            ',/,&
