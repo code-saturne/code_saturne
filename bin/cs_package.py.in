@@ -170,10 +170,10 @@ class package:
         if sys.platform.startswith("win"):
             configdir = os.path.join(os.getenv("APPDATA"),
                                      self.code_name, self.version_short)
+            return [os.path.join(configdir, self.configfile)]
         else:
-            configdir = os.path.expanduser("~/.")
-
-        return [os.path.join(configdir, self.configfile)]
+            configdir = os.path.expanduser("~")
+            return [os.path.join(configdir, "." + self.configfile)]
 
     def get_configfiles(self):
 
