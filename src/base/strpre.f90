@@ -95,7 +95,7 @@ integer          impale(nnod)
 double precision rtpa(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision flmalf(nfac), flmalb(nfabor), xprale(ncelet)
-double precision cofale(nfabor,8)
+double precision cofale(nfabor,11)
 double precision depale(3,nnod)
 
 ! Local variables
@@ -256,14 +256,18 @@ if (italim.eq.1) then
     enddo
     do ifac = 1, nfabor
       flmalb(ifac) = bmasfl(ifac)
-      cofale(ifac,1) = coefa(ifac,iclp)
-      cofale(ifac,2) = coefa(ifac,iclu)
-      cofale(ifac,3) = coefa(ifac,iclv)
-      cofale(ifac,4) = coefa(ifac,iclw)
-      cofale(ifac,5) = coefb(ifac,iclp)
-      cofale(ifac,6) = coefb(ifac,iclu)
-      cofale(ifac,7) = coefb(ifac,iclv)
-      cofale(ifac,8) = coefb(ifac,iclw)
+      cofale(ifac,1)  = coefa(ifac,iclp)
+      cofale(ifac,2)  = coefau(1, ifac)
+      cofale(ifac,3)  = coefau(2, ifac)
+      cofale(ifac,4)  = coefau(3, ifac)
+      cofale(ifac,5)  = coefb(ifac,iclp)
+      ! the coefficient B is supposed to be symmetric
+      cofale(ifac,6)  = coefbu(1, 1, ifac)
+      cofale(ifac,7)  = coefbu(2, 2, ifac)
+      cofale(ifac,8)  = coefbu(3, 3, ifac)
+      cofale(ifac,9)  = coefbu(1, 2, ifac)
+      cofale(ifac,10) = coefbu(2, 3, ifac)
+      cofale(ifac,11) = coefbu(1, 3, ifac)
     enddo
     if (nterup.gt.1) then
       do iel = 1, ncelet
@@ -273,14 +277,12 @@ if (italim.eq.1) then
   endif
 endif
 
-!----
-! FORMATS
-!----
-
-
+!--------
+! Formats
+!--------
 
 !----
-! FIN
+! End
 !----
 
 end subroutine

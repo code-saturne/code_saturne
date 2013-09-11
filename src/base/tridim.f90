@@ -664,7 +664,7 @@ if (iale.eq.1 .and. nalimx.gt.1 .and. itrale.gt.nalinf) then
 !       memcli juste apres.
   allocate(flmalf(nfac))
   allocate(flmalb(nfabor))
-  allocate(cofale(nfabor,8))
+  allocate(cofale(nfabor,11))
   allocate(xprale(ncelet))
   ineefl = 1
 
