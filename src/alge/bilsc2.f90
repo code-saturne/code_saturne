@@ -116,8 +116,12 @@
 !>                               at interior faces for the r.h.s.
 !> \param[in]     viscb         \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
 !>                               at border faces for the r.h.s.
-!> \param[in]     icvflb
-!> \param[in]     icvfli
+!> \param[in]     icvflb        global indicator of boundary convection flux
+!>                               - 0 upwind scheme at all boundary faces
+!>                               - 1 imposed flux at some boundary faces
+!> \param[in]     icvfli        boundary face indicator array of convection flux
+!>                               - 0 upwind scheme
+!>                               - 1 imposed flux
 !> \param[in,out] smbrp         right hand side \f$ \vect{Rhs} \f$
 !_______________________________________________________________________________
 
@@ -175,8 +179,8 @@ double precision smbrp(ncelet)
 
 character*80     chaine
 character*8      cnom
-integer          ifac,ii,jj,infac,iel,iupwin, iij, iii, ig, it
-integer          idimtr, idim
+integer          ifac,ii,jj,infac,iel,iupwin, ig, it
+integer          idimtr
 double precision pfac,pfacd,flui,fluj,flux,fluxi,fluxj
 double precision difx,dify,difz,djfx,djfy,djfz
 double precision pi, pj, pia, pja
@@ -195,7 +199,6 @@ double precision pfac1, pfac2, pfac3, unsvol
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: dpdxa, dpdya, dpdza
 
-double precision, dimension(:,:), pointer :: cofacv, cofbcv
 double precision, dimension(:), pointer :: coface, cofbce
 
 !===============================================================================
@@ -1140,7 +1143,7 @@ if (icvflb.eq.0) then
   endif
 
 ! Boundary convective flux is imposed at some faces (tagged in icvfli array)
-else
+else ! if (icvflb.eq.1) then
 
   ! Retrieve the value of the convective flux to be imposed
   call field_get_coefac_s(ivarfl(ivar), coface)

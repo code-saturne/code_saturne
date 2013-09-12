@@ -135,8 +135,12 @@
 !>                               at border faces for the r.h.s.
 !> \param[in]     secvif        secondary viscosity at interior faces
 !> \param[in]     secvib        secondary viscosity at boundary faces
-!> \param[in]     icvflb
-!> \param[in]     icvfbr
+!> \param[in]     icvflb        global indicator of boundary convection flux
+!>                               - 0 upwind scheme at all boundary faces
+!>                               - 1 imposed flux at some boundary faces
+!> \param[in]     icvfli        boundary face indicator array of convection flux
+!>                               - 0 upwind scheme
+!>                               - 1 imposed flux
 !> \param[in,out] smbr          right hand side \f$ \vect{Rhs} \f$
 !_______________________________________________________________________________
 
@@ -148,7 +152,7 @@ subroutine bilscv &
    pvar   , pvara  ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
    flumas , flumab , viscf  , viscb  , secvif , secvib ,          &
-   icvflb , icvfbr ,                                              &
+   icvflb , icvfli ,                                              &
    smbr   )
 
 !===============================================================================
@@ -178,7 +182,7 @@ integer          ircflp , ischcp , isstpp
 integer          inc    , imrgra , ivisep
 integer          idftnp , icvflb
 integer          iwarnp , ippu   , ippv   , ippw
-integer          icvfbr(nfabor)
+integer          icvfli(nfabor)
 
 double precision blencp , epsrgp , climgp, extrap, relaxp , thetap
 double precision pvar  (3  ,ncelet)
@@ -209,7 +213,7 @@ if (idftnp.eq.1) then
      pvar   , pvara  ,                                              &
      coefav , coefbv , cofafv , cofbfv ,                            &
      flumas , flumab , viscf  , viscb  , secvif , secvib ,          &
-     icvflb , icvfbr ,                                              &
+     icvflb , icvfli ,                                              &
      smbr   )
 
 ! Symmetric tensor diffusivity
@@ -228,7 +232,7 @@ elseif (idftnp.eq.6) then
        pvar   , pvara  ,                                              &
        coefav , coefbv , cofafv , cofbfv ,                            &
        flumas , flumab , viscf  , viscb  , secvif , secvib ,          &
-       icvflb , icvfbr ,                                              &
+       icvflb , icvfli ,                                              &
        smbr   )
 
   endif

@@ -37,12 +37,13 @@ module cfpoin
   !=============================================================================
 
   ! Tableau Dimension       Description
-  ! ifbet  ! nfabor        ! indicateur flux thermique au bord impose
-  !                          (il faut annuler des contributions de bord
-  !                           de l'eq de E)
-  ! icvfli ! nfabor        ! indicateur flux de bord calcule par rusanov
-  !                          (il faut annuler des contributions de bord
-  !                           de l'eq de Qdm et de l'eq de E)
+  ! ifbet  ! nfabor        ! imposed thermal flux indicator at the boundary
+  !                          (some boundary contributions of the total energy
+  !                           equation have to be cancelled)
+  ! icvfli ! nfabor        ! specific boundary convection flux indicator
+  !                          for a Rusanov or an analytical flux
+  !                          (some boundary contributions of the momentum
+  !                           equation have to be cancelled)
 
   integer, allocatable, dimension(:) :: ifbet , icvfli
 

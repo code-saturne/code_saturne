@@ -127,8 +127,12 @@
 !>                               at border faces for the r.h.s.
 !> \param[in]     secvif        secondary viscosity at interior faces
 !> \param[in]     secvib        secondary viscosity at boundary faces
-!> \param[in]     icvflb
-!> \param[in]     icvfbr
+!> \param[in]     icvflb        global indicator of boundary convection flux
+!>                               - 0 upwind scheme at all boundary faces
+!>                               - 1 imposed flux at some boundary faces
+!> \param[in]     icvfli        boundary face indicator array of convection flux
+!>                               - 0 upwind scheme
+!>                               - 1 imposed flux
 !> \param[in,out] smbr          right hand side \f$ \vect{Rhs} \f$
 !_______________________________________________________________________________
 
@@ -140,7 +144,7 @@ subroutine bilsc4 &
    pvar   , pvara  ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
    flumas , flumab , viscf  , viscb  , secvif , secvib ,          &
-   icvflb , icvfbr ,                                              &
+   icvflb , icvfli ,                                              &
    smbr   )
 
 !===============================================================================
@@ -170,7 +174,7 @@ integer          ivar   , iconvp , idiffp , nswrgp , imligp
 integer          ircflp , ischcp , isstpp
 integer          inc    , imrgra , ivisep , icvflb
 integer          iwarnp , ippu   , ippv   , ippw
-integer          icvfbr(nfabor)
+integer          icvfli(nfabor)
 
 double precision blencp , epsrgp , climgp, extrap, relaxp , thetap
 double precision pvar  (3  ,ncelet)
@@ -1320,7 +1324,7 @@ if (icvflb.eq.0) then
   endif ! idtvar
 
 ! Boundary convective flux is imposed at some faces (tagged in icvfli array)
-else
+else ! if (icvflb.eq.1) then
 
   call field_get_coefac_v(ivarfl(ivar), cofacv)
   call field_get_coefbc_v(ivarfl(ivar), cofbcv)
@@ -1342,7 +1346,7 @@ else
           enddo
 
           ! Computed convective flux
-          if (icvfbr(ifac).eq.0) then
+          if (icvfli(ifac).eq.0) then
             ! Remove decentering for coupled faces
             if (ifaccp.eq.1.and.itypfb(ifac).eq.icscpl) then
               flui = 0.0d0
@@ -1412,7 +1416,7 @@ else
                    + gradv(isou,2,ii)*diipbv(2)           &
                    + gradv(isou,3,ii)*diipbv(3))
 
-              flux = iconvp*( - flumab(ifac)*pi + pfac*icvfbr(ifac))   &
+              flux = iconvp*( - flumab(ifac)*pi + pfac*icvfli(ifac))   &
                    + idiffp*viscb(ifac)*pfacd
               smbr(isou,ii) = smbr(isou,ii) - flux
 
@@ -1441,7 +1445,7 @@ else
           enddo
 
           ! Computed convective flux
-          if (icvfbr(ifac).eq.0) then
+          if (icvfli(ifac).eq.0) then
             ! Remove decentering for coupled faces
             if (ifaccp.eq.1.and.itypfb(ifac).eq.icscpl) then
               flui = 0.0d0
@@ -1503,7 +1507,7 @@ else
                    + gradv(isou,2,ii)*diipbv(2)          &
                    + gradv(isou,3,ii)*diipbv(3))
 
-              flux = iconvp*( -flumab(ifac)*pi + pfac*icvfbr(ifac))  &
+              flux = iconvp*( -flumab(ifac)*pi + pfac*icvfli(ifac))  &
                    + idiffp*viscb(ifac)*pfacd
               smbr(isou,ii) = smbr(isou,ii) - thetap * flux
 

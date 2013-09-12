@@ -175,8 +175,12 @@
 !>                               at interior faces for the r.h.s.
 !> \param[in]     viscbs        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
 !>                               at border faces for the r.h.s.
-!> \param[in]     icvflb
-!> \param[in]     icvfbr
+!> \param[in]     icvflb        global indicator of boundary convection flux
+!>                               - 0 upwind scheme at all boundary faces
+!>                               - 1 imposed flux at some boundary faces
+!> \param[in]     icvfli        boundary face indicator array of convection flux
+!>                               - 0 upwind scheme
+!>                               - 1 imposed flux
 !> \param[in]     fimp          \f$ \tens{f_s}^{imp} \f$
 !> \param[in]     smbrp         Right hand side \f$ \vect{Rhs}^k \f$
 !> \param[in,out] pvar          current variable
@@ -195,7 +199,7 @@ subroutine coditv &
    coefav , coefbv , cofafv , cofbfv ,                            &
    flumas , flumab ,                                              &
    viscfm , viscbm , viscfs , viscbs , secvif , secvib ,          &
-   icvflb , icvfbr ,                                              &
+   icvflb , icvfli ,                                              &
    fimp   ,                                                       &
    smbrp  ,                                                       &
    pvar   ,                                                       &
@@ -231,7 +235,7 @@ integer          ncymxp , nitmfp
 integer          iwarnp
 integer          ippu   , ippv   , ippw   , ivisep
 
-integer          icvfbr(nfabor)
+integer          icvfli(nfabor)
 
 double precision blencp , epsilp , epsrgp , climgp , extrap
 double precision relaxp , thetap , epsrsp
@@ -421,7 +425,7 @@ if (abs(thetex).gt.epzero) then
    pvar   , pvara  ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
    flumas , flumab , viscfs , viscbs , secvif , secvib ,          &
-   icvflb , icvfbr ,                                              &
+   icvflb , icvfli ,                                              &
    smbrp  )
 endif
 
@@ -473,7 +477,7 @@ call bilscv &
    pvar   , pvara  ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
    flumas , flumab , viscfs , viscbs , secvif , secvib ,          &
-   icvflb , icvfbr ,                                              &
+   icvflb , icvfli ,                                              &
    smbrp  )
 
 ! Dynamic relaxation
@@ -613,7 +617,7 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
      dpvar  , dpvar  ,                                              &
      coefav , coefbv , cofafv , cofbfv ,                            &
      flumas , flumab , viscfs , viscbs , secvif , secvib ,          &
-     icvflb , icvfbr ,                                              &
+     icvflb , icvfli ,                                              &
      adxk   )
 
     insqrt = 0
@@ -761,7 +765,7 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
    pvar   , pvara  ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
    flumas , flumab , viscfs , viscbs , secvif , secvib ,          &
-   icvflb , icvfbr ,                                              &
+   icvflb , icvfli ,                                              &
    smbrp  )
 
   ! --- Convergence test
@@ -845,7 +849,7 @@ if (iescap.gt.0) then
    pvar   , pvara  ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
    flumas , flumab , viscfs , viscbs , secvif , secvib ,          &
-   icvflb , icvfbr ,                                              &
+   icvflb , icvfli ,                                              &
    smbrp   )
 
   ! Contribution of the current component to the L2 norm stored in eswork

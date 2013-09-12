@@ -135,8 +135,12 @@
 !>                               of tensor diffusion
 !> \param[in]     weighb        boundary face weight for cells i in case
 !>                               of tensor diffusion
-!> \param[in]     icvflb
-!> \param[in]     icvfbr
+!> \param[in]     icvflb        global indicator of boundary convection flux
+!>                               - 0 upwind scheme at all boundary faces
+!>                               - 1 imposed flux at some boundary faces
+!> \param[in]     icvfli        boundary face indicator array of convection flux
+!>                               - 0 upwind scheme
+!>                               - 1 imposed flux
 !> \param[in,out] smbrp         right hand side \f$ \vect{Rhs} \f$
 !_______________________________________________________________________________
 
@@ -148,7 +152,7 @@ subroutine bilsca &
    pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
    flumas , flumab , viscf  , viscb  , viscce , xcpp   ,          &
    weighf , weighb ,                                              &
-   icvflb , icvfbr ,                                              &
+   icvflb , icvfli ,                                              &
    smbrp  )
 
 !===============================================================================
@@ -178,7 +182,7 @@ integer          ircflp , ischcp , isstpp
 integer          inc    , imrgra , iccocg
 integer          iwarnp , ipp    , imucpp, idftnp, icvflb
 
-integer          icvfbr(nfabor)
+integer          icvfli(nfabor)
 
 double precision blencp , epsrgp , climgp, extrap, relaxp , thetap
 
@@ -209,7 +213,7 @@ if (idftnp.eq.1) then
      blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
      pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
      flumas , flumab , viscf  , viscb  ,                            &
-     icvflb , icvfbr ,                                              &
+     icvflb , icvfli ,                                              &
      smbrp  )
 
   ! The convective part is mulitplied by Cp for the Temperature
@@ -242,7 +246,7 @@ elseif (idftnp.eq.6) then
      blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
      pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
      flumas , flumab , viscf  , viscb  ,                            &
-     icvflb , icvfbr ,                                              &
+     icvflb , icvfli ,                                              &
      smbrp  )
 
   ! The convective part is mulitplied by Cp for the Temperature
