@@ -880,9 +880,9 @@ _inlet_compressible(int         izone,
     BFT_FREE(status);
     BFT_FREE(path_value);
 
-    cs_xpath_add_element(&path1, "enthalpy");
-    BFT_MALLOC(path_value, strlen(path1) + 1, char);
-    strcpy(path_value, path1);
+    cs_xpath_add_element(&path2, "enthalpy");
+    BFT_MALLOC(path_value, strlen(path2) + 1, char);
+    strcpy(path_value, path2);
     cs_xpath_add_function_text(&path_value);
     if (cs_gui_get_double(path_value, &value))
       boundaries->entin[izone] = value;

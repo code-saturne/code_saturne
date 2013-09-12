@@ -245,60 +245,55 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             if inlet_type == 'imposed_inlet':
                 self.groupBoxThermodynamic.show()
                 self.frameDensity.hide()
+                for name in self.thermodynamic_list:
+                    __checkBox = getattr(self, "checkBox" + name)
+                    __lineEdit = getattr(self, "lineEdit" + name)
+                    __checkBox.setChecked(False)
+                    __checkBox.setEnabled(False)
+                    __lineEdit.setEnabled(False)
+                    __lineEdit.clear()
+
                 box_list = self.__boundary.getCheckedBoxList()
-                if box_list == []:
+
+                if len(box_list) == 0:
                     for name in self.thermodynamic_list:
                         __checkBox = getattr(self, "checkBox" + name)
                         __lineEdit = getattr(self, "lineEdit" + name)
-                        __checkBox.setChecked(False)
-                        __lineEdit.setEnabled(False)
-                        __lineEdit.setText(str(""))
+                        __checkBox.setEnabled(True)
+
                 elif len(box_list) == 1:
-                    box = box_list[0]
                     for name in self.thermodynamic_list:
-                        if name != box:
-                            __checkBox = getattr(self, "checkBox" + name)
-                            __lineEdit = getattr(self, "lineEdit" + name)
-                            __checkBox.setChecked(False)
-                            __lineEdit.setEnabled(False)
-                            __lineEdit.setText(str(""))
+                        __checkBox = getattr(self, "checkBox" + name)
+                        __lineEdit = getattr(self, "lineEdit" + name)
+                        __checkBox.setEnabled(True)
+
+                    box = box_list[0]
                     if box == 'Temperature':
                         self.checkBoxEnergy.setEnabled(False)
-                        self.lineEditEnergy.setEnabled(False)
-                        self.lineEditEnergy.setText(str(""))
                     elif box == 'Energy':
                         self.checkBoxTemperature.setEnabled(False)
-                        self.lineEditTemperature.setEnabled(False)
-                        self.lineEditTemperature.setText(str(""))
+
                     __checkBox = getattr(self, "checkBox" + box)
                     __checkBox.setChecked(True)
                     __lineEdit = getattr(self, "lineEdit" + box)
                     __lineEdit.setEnabled(True)
                     v1 = self.__boundary.getListValue()[0]
                     __lineEdit.setText(str(v1))
+
                 elif len(box_list) == 2:
-                    box1 = box_list[0]
-                    box2 = box_list[1]
-                    for name in self.thermodynamic_list:
-                        if name not in box_list:
-                            __checkBox = getattr(self, "checkBox" + name)
-                            __lineEdit = getattr(self, "lineEdit" + name)
-                            __checkBox.setChecked(False)
-                            __checkBox.setEnabled(False)
-                            __lineEdit.setEnabled(False)
-                            __lineEdit.setText(str(""))
                     v1,v2 = self.__boundary.getListValue()
                     for name in box_list:
                         __checkBox = getattr(self, "checkBox" + name)
                         __lineEdit = getattr(self, "lineEdit" + name)
+                        __checkBox.setEnabled(True)
                         __checkBox.setChecked(True)
                         __lineEdit.setEnabled(True)
                         if v1 >= 0.:
                             __lineEdit.setText(str(v1))
                         else:
                             __lineEdit.setText(str(v2))
-                            __lineEdit.setText(str(v2))
                         v1 = -1.
+
             elif inlet_type == 'subsonic_inlet_PH':
                 self.comboBoxVelocity.hide()
                 self.lineEditVelocity.hide()
@@ -551,27 +546,9 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         """
         if self.checkBoxPressure.isChecked():
             self.__boundary.setThermoStatus('pressure', "on")
-            box_list = self.__boundary.getCheckedBoxList()
-            self.lineEditPressure.setEnabled(True)
-            if len(box_list) == 2:
-                for name in self.thermodynamic_list:
-                    if name not in box_list:
-                        __checkBox = getattr(self, "checkBox" + name)
-                        __checkBox.setEnabled(False)
-            self.lineEditPressure.setText(str(self.__boundary.getThermoValue('pressure')))
         else:
             self.__boundary.setThermoStatus('pressure', "off")
-            box_list = self.__boundary.getCheckedBoxList()
-            self.lineEditPressure.setEnabled(False)
-            if len(box_list) == 1:
-                for name in self.thermodynamic_list:
-                    if name != 'Pressure':
-                        __checkBox = getattr(self, "checkBox" + name)
-                        __checkBox.setEnabled(True)
-                if box_list[0] =='Energy':
-                    self.checkBoxTemperature.setEnabled(False)
-                if box_list[0] =='Temperature':
-                    self.checkBoxEnergy.setEnabled(False)
+        self.initialize()
 
 
     @pyqtSignature("")
@@ -581,27 +558,9 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         """
         if self.checkBoxDensity.isChecked():
             self.__boundary.setThermoStatus('density', "on")
-            box_list = self.__boundary.getCheckedBoxList()
-            self.lineEditDensity.setEnabled(True)
-            if len(box_list) == 2:
-                for name in self.thermodynamic_list:
-                    if name not in box_list:
-                        __checkBox = getattr(self, "checkBox" + name)
-                        __checkBox.setEnabled(False)
-            self.lineEditDensity.setText(str(self.__boundary.getThermoValue('density')))
         else:
             self.__boundary.setThermoStatus('density', "off")
-            box_list = self.__boundary.getCheckedBoxList()
-            self.lineEditDensity.setEnabled(False)
-            if len(box_list) == 1:
-                for name in self.thermodynamic_list:
-                    if name != 'Density':
-                        __checkBox = getattr(self, "checkBox" + name)
-                        __checkBox.setEnabled(True)
-                if box_list[0] =='Energy':
-                    self.checkBoxTemperature.setEnabled(False)
-                if box_list[0] =='Temperature':
-                    self.checkBoxEnergy.setEnabled(False)
+        self.initialize()
 
 
     @pyqtSignature("")
@@ -611,25 +570,9 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         """
         if self.checkBoxTemperature.isChecked():
             self.__boundary.setThermoStatus('temperature', "on")
-            box_list = self.__boundary.getCheckedBoxList()
-            self.lineEditTemperature.setEnabled(True)
-            if len(box_list) == 2:
-                for name in self.thermodynamic_list:
-                    if name not in box_list:
-                        __checkBox = getattr(self, "checkBox" + name)
-                        __checkBox.setEnabled(False)
-            self.checkBoxEnergy.setEnabled(False)
-            self.lineEditTemperature.setText(str(self.__boundary.getThermoValue('temperature')))
         else:
             self.__boundary.setThermoStatus('temperature', "off")
-            box_list = self.__boundary.getCheckedBoxList()
-            self.lineEditTemperature.setEnabled(False)
-            if len(box_list) == 1:
-                for name in self.thermodynamic_list:
-                    if name != 'Temperature':
-                        __checkBox = getattr(self, "checkBox" + name)
-                        __checkBox.setEnabled(True)
-            self.checkBoxEnergy.setEnabled(True)
+        self.initialize()
 
 
     @pyqtSignature("")
@@ -639,26 +582,9 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         """
         if self.checkBoxEnergy.isChecked():
             self.__boundary.setThermoStatus('energy', "on")
-            box_list = self.__boundary.getCheckedBoxList()
-            self.lineEditEnergy.setEnabled(True)
-            if len(box_list) == 2:
-                for name in self.thermodynamic_list:
-                    if name not in box_list:
-                        __checkBox = getattr(self, "checkBox" + name)
-                        __checkBox.setEnabled(False)
-            if len(box_list) == 1:
-                self.checkBoxTemperature.setEnabled(False)
-            self.lineEditEnergy.setText(str(self.__boundary.getThermoValue('energy')))
         else:
             self.__boundary.setThermoStatus('energy', "off")
-            box_list = self.__boundary.getCheckedBoxList()
-            self.lineEditEnergy.setEnabled(False)
-            if len(box_list) == 1:
-                for name in self.thermodynamic_list:
-                    if name != 'Energy':
-                        __checkBox = getattr(self, "checkBox" + name)
-                        __checkBox.setEnabled(True)
-            self.checkBoxTemperature.setEnabled(True)
+        self.initialize()
 
 
     @pyqtSignature("const QString&")
@@ -666,9 +592,10 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         """
         INPUT inlet Pressure
         """
-        t = float(text)
-        if self.sender().validator().state == QValidator.Acceptable:
-            self.__boundary.setThermoValue('pressure', t)
+        if text != "":
+            t = float(text)
+            if self.sender().validator().state == QValidator.Acceptable:
+                self.__boundary.setThermoValue('pressure', t)
 
 
     @pyqtSignature("const QString&")
@@ -676,9 +603,10 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         """
         INPUT inlet Density
         """
-        t = float(text)
-        if self.sender().validator().state == QValidator.Acceptable:
-            self.__boundary.setThermoValue('density', t)
+        if text != "":
+            t = float(text)
+            if self.sender().validator().state == QValidator.Acceptable:
+                self.__boundary.setThermoValue('density', t)
 
 
     @pyqtSignature("const QString&")
@@ -686,9 +614,10 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         """
         INPUT inlet Temperature
         """
-        t = float(text)
-        if self.sender().validator().state == QValidator.Acceptable:
-            self.__boundary.setThermoValue('temperature', t)
+        if text != "":
+            t = float(text)
+            if self.sender().validator().state == QValidator.Acceptable:
+                self.__boundary.setThermoValue('temperature', t)
 
 
     @pyqtSignature("const QString&")
@@ -696,9 +625,10 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         """
         INPUT inlet Energy
         """
-        t = float(text)
-        if self.sender().validator().state == QValidator.Acceptable:
-            self.__boundary.setThermoValue('energy', t)
+        if text != "":
+            t = float(text)
+            if self.sender().validator().state == QValidator.Acceptable:
+                self.__boundary.setThermoValue('energy', t)
 
 
     @pyqtSignature("const QString&")

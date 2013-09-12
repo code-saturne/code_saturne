@@ -821,8 +821,8 @@ omega = 0.;"""
             self.setThermoStatus('total_pressure', 'on')
             self.setThermoStatus('enthalpy', 'on')
         elif old_model != type and type != "subsonic_inlet_PH":
-                node.xmlRemoveChild('total_pressure')
-                node.xmlRemoveChild('enthalpy')
+            node.xmlRemoveChild('total_pressure')
+            node.xmlRemoveChild('enthalpy')
 
         n['choice'] = type
 
@@ -906,6 +906,8 @@ omega = 0.;"""
         n.xmlRemoveChild('pressure')
         n.xmlRemoveChild('temperature')
         n.xmlRemoveChild('energy')
+        n.xmlRemoveChild('total_pressure')
+        n.xmlRemoveChild('enthalpy')
 
 
     @Variables.noUndo
