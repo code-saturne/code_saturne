@@ -112,8 +112,8 @@ if (i_quadrature.eq.1) then    ! quadrature S4 : 24 directions
   sy(1) = vec(1)
   sy(2) = vec(2)
   sy(3) = vec(1)
-  sz(1:2) = vec(2)
-  sz(3) = vec(1)
+  sz(1) = vec(2)
+  sz(2:3) = vec(1)
   angsol(1:ndirs) = poids(1)
 
 elseif (i_quadrature.eq.2) then ! quadrature S6 : 48 directions
