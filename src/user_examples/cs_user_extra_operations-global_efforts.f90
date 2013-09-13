@@ -22,6 +22,51 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Purpose:
+! -------
+
+! \file cs_user_extra_operations-global_efforts.f90
+! This is an example of cs_user_extra_operations.f90 which
+! performs global efforts
+
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     nbpmax        max. number of particles allowed
+!> \param[in]     nvp           number of particle-defined variables
+!> \param[in]     nvep          number of real particle properties
+!> \param[in]     nivep         number of integer particle properties
+!> \param[in]     ntersl        number of return coupling source terms
+!> \param[in]     nvlsta        number of Lagrangian statistical variables
+!> \param[in]     nvisbr        number of boundary statistics
+!> \param[in]     itepa         integer particle attributes
+!>                                (containing cell, ...)
+!> \param[in]     dt            time step (per cell)
+!> \param[in]     rtp, rtpa     calculated variables at cell centers
+!>                               (at current and previous time steps)
+!> \param[in]     propce        physical properties at cell centers
+!> \param[in]     propfb        physical properties at boundary face centers
+!> \param[in]     ettp, ettpa   particle-defined variables
+!> \param[in]                    (at current and previous time steps)
+!> \param[in]     tepa          real particle properties
+!> \param[in]                    (statistical weight, ...
+!> \param[in]     statis        statistic means
+!> \param[in]     stativ        accumulator for variance of volume statisitics
+!> \param[in]     tslagr        Lagrangian return coupling term
+!> \param[in]                    on carrier phase
+!> \param[in]     parbor        particle interaction properties
+!> \param[in]                    on boundary faces
+!_______________________________________________________________________________
+
+
+
 subroutine cs_user_extra_operations &
 !==================================
 
@@ -31,53 +76,6 @@ subroutine cs_user_extra_operations &
    dt     , rtpa   , rtp    , propce , propfb ,                   &
    ettp   , ettpa  , tepa   , statis , stativ , tslagr , parbor )
 
-!===============================================================================
-! Purpose:
-! -------
-
-!    User subroutine.
-
-!    Called at end of each time step, very general purpose
-!    (i.e. anything that does not have another dedicated user subroutine)
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! nbpmax           ! i  ! <-- ! max. number of particles allowed               !
-! nvp              ! i  ! <-- ! number of particle-defined variables           !
-! nvep             ! i  ! <-- ! number of real particle properties             !
-! nivep            ! i  ! <-- ! number of integer particle properties          !
-! ntersl           ! i  ! <-- ! number of return coupling source terms         !
-! nvlsta           ! i  ! <-- ! number of Lagrangian statistical variables     !
-! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
-! itepa            ! ia ! <-- ! integer particle attributes                    !
-!  (nbpmax, nivep) !    !     !   (containing cell, ...)                       !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! ettp, ettpa      ! ra ! <-- ! particle-defined variables                     !
-!  (nbpmax, nvp)   !    !     !  (at current and previous time steps)          !
-! tepa             ! ra ! <-- ! real particle properties                       !
-!  (nbpmax, nvep)  !    !     !  (statistical weight, ...                      !
-! statis           ! ra ! <-- ! statistic means                                !
-!  (ncelet, nvlsta)!    !     !                                                !
-! stativ(ncelet,   ! ra ! <-- ! accumulator for variance of volume statisitics !
-!        nvlsta -1)!    !     !                                                !
-! tslagr           ! ra ! <-- ! Lagrangian return coupling term                !
-!  (ncelet, ntersl)!    !     !  on carrier phase                              !
-! parbor           ! ra ! <-- ! particle interaction properties                !
-!  (nfabor, nvisbr)!    !     !  on boundary faces                             !
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================

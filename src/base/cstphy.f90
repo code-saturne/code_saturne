@@ -99,7 +99,7 @@ module cstphy
   !> constant of log law: \f$ \dfrac{1}{\kappa} \ln(y^+) + cstlog \f$
   !>  (\f$ cstlog = 5.2 \f$)
   double precision, save :: cstlog
-  !> yplus limite (\f$ \dfrac{1}{\kappa} or \f$ 10.88 \f$ if \ref ideuch=2)
+  !> yplus limite (\f$ \dfrac{1}{\kappa} \f$ or \f$ 10.88 \f$ if \ref ideuch=2)
   double precision, save :: ypluli
   !> Werner and Wengle coefficient
   double precision, save :: apow

@@ -377,7 +377,7 @@ module lagran
   integer, save ::  jtf
   !> pointer to particle specific heat for array \ref ettp
   integer, save ::  jcp
-  !> pointer to coal particle temperature (\degresC) for array \ref ettp
+  !> pointer to coal particle temperature (\f$\degresC\f$) for array \ref ettp
   integer, save ::  jhp
   !> pointer to water mass (for coal) for array \ref ettp
   integer, save ::  jmwat
@@ -426,7 +426,7 @@ module lagran
   !> pointer to number of additional variables related to the particles
   !> for \ref itepa array.
   !> The additional variables can be accessed in the arrays
-  !> \ref ettp and \ret ettpa by means of the
+  !> \ref ettp and \ref ettpa by means of the
   !> pointer \ref jvls:  \ref ettp(nbpt,jvls(ii)) and
   !> \ref ettpa(nbpt,jvls(ii)) (\ref nbpt is
   !> the index-number of the treated particle, and \ref ii an integer
@@ -525,7 +525,7 @@ module lagran
   !> - \ref iuslag(iclas,izone,inuchl): when the particles are coal particles
   !> (\ref iphyla = 2), this part of the array contains the coal index-number,
   !> between 1 and \ref ncharb (defined by the user in the thermochemical
-  !> file dp\_FCP, with  \ref ncharb$\leqslant$ncharm = 3).
+  !> file dp\_FCP, with  \ref ncharb\f$\leqslant\f$ncharm = 3).
   integer, allocatable, dimension(:,:,:) :: iuslag
 
   !> massic flow rate for a boudary zone
@@ -627,13 +627,13 @@ module lagran
   integer, save ::  ilfv
   !> recidence time
   integer, save ::  ilts
-  !> phase temperature (\degresC)
+  !> phase temperature (\f$\degresC\f$)
   integer, save ::  iltp
   !> dispersed phase mean diameter
   integer, save ::  ildp
   !> dispersed phase mean mass
   integer, save ::  ilmp
-  !> temperature of the coal particle cloud (\degresC)
+  !> temperature of the coal particle cloud (\f$\degresC\f$)
   integer, save ::  ilhp
   !> water mass
   integer, save ::  ilmwat
@@ -1012,7 +1012,7 @@ module lagran
 
   !> activation (=1) or not (=0) of the particle turbulent dispersion.
   !> The turbulent dispersion is compatible only with the RANS turbulent models
-  !> (\f$k-\varepsilon\f$, $R_{ij}-\varepsilon$, v2f or $k-\omega\f$).
+  !> (\f$k-\varepsilon\f$, \f$R_{ij}-\varepsilon\f$, v2f or \f$k-\omega\f\f$).
   !> (\ref iturb=20, 21, 30, 31, 50 or 60).
   integer, save ::  idistu
 
@@ -1197,7 +1197,7 @@ module lagran
   !> activation (=1) or not (=0) of the recording of the particle/boundary
   !> interactions in  \ref parbor, and of the calculation of the
   !> statistics at the corresponding boundaries, for post-processing
-  !> (\textit EnSight6 format).
+  !> (EnSight6 format).
   !> By default, the statistics are non-stationary (reset to zero at every
   !> Lagrangian iteration). They may be stationary if \ref isttio=1 (i.e.
   !> calculation of a cumulated value over time, and then calculation of an
@@ -1246,6 +1246,7 @@ module lagran
   ! TODO
   integer, save ::  iviswat
 
+  !> \}
   !> \}
 
   !=============================================================================

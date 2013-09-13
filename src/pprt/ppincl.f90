@@ -386,13 +386,13 @@ module ppincl
   !> coke mass fraction related to the class icla
   integer, save :: ixck(nclcpm)
 
-  !> reactive coal mass fraction related to the class \c icla
+  !> reactive coal mass fraction related to the class \ref icla
   integer, save :: ixch(nclcpm)
 
-  !> number of particles of the class \c icla per kg of air-coal mixture
+  !> number of particles of the class \ref icla per kg of air-coal mixture
   integer, save :: inp(nclcpm)
 
-  !>  mass enthalpy of the coal of class \c icla, if we are in permeatic conditions
+  !>  mass enthalpy of the coal of class \ref icla, if we are in permeatic conditions
   integer, save :: ih2(nclcpm)
 
   ! TODO absent de la doc utilisateur
@@ -430,32 +430,32 @@ module ppincl
 
   !        Phase dispersee (classes de particules)
 
-  !> temperature of the particles of the class \c icla
+  !> temperature of the particles of the class \ref icla
   integer, save :: itemp2(nclcpm)
 
-  !> density of the particles of the class \c icla
+  !> density of the particles of the class \ref icla
   integer, save :: irom2(nclcpm)
 
-  !> diameter of the particles of the class \c icla
+  !> diameter of the particles of the class \ref icla
   integer, save :: idiam2(nclcpm)
 
-  !>  solid mass fraction of the class \c icla
+  !>  solid mass fraction of the class \ref icla
   integer, save :: ix2(nclcpm)
 
-  !> disappearance rate of the reactive coal of the class \c icla
+  !> disappearance rate of the reactive coal of the class \ref icla
   integer, save :: igmdch(nclcpm)
 
-  !> coke disappearance rate of the coke burnout of the class \c icla
+  !> coke disappearance rate of the coke burnout of the class \ref icla
   integer, save :: igmhet(nclcpm)
 
   ! TODO absent de la doc utilisateur
   !> State variables of dispersed phase (particles class)
   integer, save :: ighco2(nclcpm)
 
-  !>  mass transfer caused by the release of light volatiles  of the class \c icla
+  !>  mass transfer caused by the release of light volatiles  of the class \ref icla
   integer, save :: igmdv1(nclcpm)
 
-  !>  mass transfer caused by the release of heavy volatiles  of the class \c icla
+  !>  mass transfer caused by the release of heavy volatiles  of the class \ref icla
   integer, save :: igmdv2(nclcpm)
 
   ! TODO absent de la doc utilisateur
@@ -624,7 +624,7 @@ module ppincl
   integer, save :: iviscv
 
   !> indicates the equation of state. Only perfect gas with a constant adiabatic
-  !>  coefficient, \c ieos=1 is available, but the user can complete the subroutine
+  !>  coefficient, \ref ieos=1 is available, but the user can complete the subroutine
   !> \ref cfther, which is not a user subroutine, to add new equations of state.
   integer, save :: ieos
 
@@ -650,7 +650,7 @@ module ppincl
   double precision, save :: cv0
 
   !> reference volume viscosity (noted \f$\kappa\f$ in the equation
-  !> expressing \f$\tens{\sigma}\f$ in the paragraph dedicated to \c iviscv)\\
+  !> expressing \f$\tens{\sigma}\f$ in the paragraph dedicated to \ref iviscv)
   !> always useful, it is the used value, unless the user specifies the volume
   !> viscosity in the user subroutine \ref uscfpv
   double precision, save :: viscv0
@@ -721,7 +721,7 @@ module ppincl
   !> \}
 
 
-  !> \defgroup boundary_conditions Bondry conditions
+  !> \defgroup boundary_conditions Boundary conditions
 
   !> \addtogroup boundary_conditions
   !> \{
@@ -729,7 +729,7 @@ module ppincl
   !> imposed flow zone indicator
   !> in a way which is similar to the process described in the framework of the EBU module,
   !> the user chooses for every inlet face to impose the mass flow or not
-  !> (\ref{iqimp(izone)=1 or 0). If the mass flow is imposed, the user
+  !> (\ref iqimp(izone)=1 or 0). If the mass flow is imposed, the user
   !> must set the air mass flow value \ref qimpat(izone), its direction in
   !> \ref rcodcl(ifac,iu), \ref rcodcl(ifac,iv) and \ref rcodcl(ifac,iw) and the incoming
   !> air temperature \ref timpat(izone) in Kelvin. If the velocity is imposed, he has to

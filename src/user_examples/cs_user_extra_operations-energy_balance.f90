@@ -26,8 +26,8 @@
 ! Purpose:
 ! -------
 
-! This is an example of cs_user_extra_operations.f90 which
-! performs an energy balance.
+!> This is an example of cs_user_extra_operations.f90 which
+!> performs an energy balance.
 
 !-------------------------------------------------------------------------------
 

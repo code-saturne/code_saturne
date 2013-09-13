@@ -30,36 +30,29 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine cs_user_les_inflow_init (nent)
-!=================================
-
 !===============================================================================
 ! Purpose :
 ! --------
 
-! Generation of synthetic turbulence at LES inlets
+!> Generation of synthetic turbulence at LES inlets
 
-! Definition of global caracteristics of synthetic turbulence inlets
+!> Definition of global caracteristics of synthetic turbulence inlets
 
-! nent and isuisy might be defined.
+!> nent and isuisy might be defined.
 
-! nent = Number of inlets
-! isuisy = 1: Reading of the LES inflow module restart file
-!        = 0: not activated (synthetic turbulence reinitialized)
-
+!> nent = Number of inlets
+!> isuisy = 1: Reading of the LES inflow module restart file
+!>        = 0: not activated (synthetic turbulence reinitialized)
 
 !-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
-!__________________!____!_____!________________________________________________!
-! nent             ! i  ! <-- ! number of synthetic turbulence inlets          !
-!__________________!____!_____!________________________________________________!
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[out]    nent          number of synthetic turbulence inlets
+!_______________________________________________________________________________
 
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
+subroutine cs_user_les_inflow_init (nent)
 
 
 !===============================================================================

@@ -48,7 +48,7 @@ module ppthch
   double precision prefth
 
   !> molar volume under normal pressure and temperature conditions
-  !>  (1 atmosphere, 0 \degresC) in \f$m^{-3}\f$
+  !>  (1 atmosphere, 0 \f$\degresC\f$) in \f$m^{-3}\f$
   double precision volmol
 
   parameter ( rr     = 8.31434d0      ,                             &

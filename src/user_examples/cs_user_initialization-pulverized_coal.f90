@@ -22,72 +22,34 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine cs_user_initialization &
-!================================
-
- ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce , propfb )
-
 !===============================================================================
 ! Purpose:
 ! -------
 
-!    User subroutine.
-
-!    Initialize variables
-
-! This subroutine is called at beginning of the computation
-! (restart or not) before the loop time step
-
-! This subroutine enables to initialize or modify (for restart)
-!     unkown variables and time step values
-
-! rom and viscl values are equal to ro0 and viscl0 or initialize
-! by reading the restart file
-! viscls and cp variables (when there are defined) have no value
-! excepted if they are read from a restart file
-
-! Physical quantities are defined in the following arrays:
-!  propce (physical quantities defined at cell center),
-!  propfb (physical quantities defined at border face center).
-!
-! Examples:
-!  propce(iel, ipproc(irom  )) means rom  (iel)
-!  propce(iel, ipproc(iviscl)) means viscl(iel)
-!  propce(iel, ipproc(icp   )) means cp   (iel)
-!  propce(iel, ipproc(ivisls(iscal))) means visls(iel, iscal)
-!  propfb(ifac, ipprob(irom )) means romb  (ifac)
-
-! Modification of the behaviour law of physical quantities (rom, viscl,
-! viscls, cp) is not done here. It is the purpose of the user subroutine
-! usphyv
-
-! Cells identification
-! ====================
-
-! Cells may be identified using the 'getcel' subroutine.
-! The syntax of this subroutine is described in the
-! 'cs_user_boundary_conditions' subroutine,
-! but a more thorough description can be found in the user guide.
-
+!> \file cs_user_initialization-pulverized_coal.f90
+!> \brief Pulverized coal example
+!>
+!-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp(ncelet, *)   ! ra ! <-- ! computed variables at cell centers at current  !
-!                  !    !     ! time steps                                     !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-!__________________!____!_____!________________________________________________!
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     dt            time step (per cell)
+!> \param[in]     rtp           calculated variables at cell centers
+!>                               (at current time step)
+!> \param[in]     propce        physical properties at cell centers
+!> \param[in]     propfb        physical properties at boundary face centers
+!_______________________________________________________________________________
 
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
+
+subroutine cs_user_initialization &
+ ( nvar   , nscal  ,                                              &
+   dt     , rtp    , propce , propfb )
+
 !===============================================================================
 
 !===============================================================================

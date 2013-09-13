@@ -151,7 +151,6 @@ module pointe
   !> dim = (3,3,nfabor)
   double precision, dimension(:,:,:), allocatable :: clbale
 
-
   !> boundary condition type at the boundary face \c ifac
   !> (see user subroutine \ref cs\_user\_boundary\_conditions)
   integer, allocatable, dimension(:) :: itypfb
@@ -229,7 +228,7 @@ module pointe
   !> the \c nfpt1d boundary faces which are coupled with a wall 1D
   !> thermal module. The numbers of these boundary faces are
   !> given by \c ifpt1d(ii), with 1 <= ii <= \c nfpt1d.
-  !> See the user subroutine \ref {uspt1d}}
+  !> See the user subroutine \ref uspt1d
   integer, allocatable, dimension(:) :: ifpt1d
 
   !> typical boundary condition at the external (pseudo) wall:

@@ -145,7 +145,7 @@ module paramx
   !> if \ref itypfb=iparoi: smooth solid wall face, impermeable and with friction.
   integer   iparoi
 
-  !> if \tref itypfb=iparug: rough solid wall face, impermeable and with friction.
+  !> if \ref itypfb=iparug: rough solid wall face, impermeable and with friction.
   integer   iparug
 
   ! TODO : mot absent de la doc
