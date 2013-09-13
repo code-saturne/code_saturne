@@ -1087,7 +1087,7 @@ prescribe at the boundary, using the the values of the Reynolds stress
 tensor at the points $I'$.
 
 The friction velocities are then computed and stored in
-\var{UET} ($=u^*$) and \var{UK} ($=u_k$). The subroutine \fort{causta}
+\var{UET} ($=u^*$) and \var{UK} ($=u_k$). The subroutine \fort{cs\_wall\_functions.c}
  computes the friction velocity for the one velocity scale model 
 (\var{IDEUCH}=0). Fot the two velocity scale model (\var{IDEUCH}=1), 
 the (more simple) computation of \var{UET} and \var{UK} is performed 
@@ -1289,7 +1289,7 @@ of boundary conditions (dissipation, velocities) are based on the assumption
 that the mesh is orthogonal at the wall. This assumption is extended 
 without any caution to the case of non-orthogonal meshes.
 
-The one velocity scale (\fort{causta}) wall function requires  
+The one velocity scale (\fort{cs\_wall\_functions.c}) wall function requires  
 solving an equation using a Newton algorithm.
 The computational cost of the latter is low. One can also used 
 a  $1/7$ power law (Werner et Wengle) which yields results which are as 

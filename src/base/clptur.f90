@@ -161,9 +161,9 @@ double precision hbord(nfabor),theipb(nfabor)
 
 integer          ifac, iel, ivar, isou, jsou, ii, jj, kk, isvhbl
 integer          ihcp, iscal
-integer          imprim, modntl
+integer          modntl
 integer          iuntur
-integer          inturb, inlami, iuiptn
+integer          nlogla, nsubla, iuiptn
 integer          iclk  , iclep
 integer          iclnu
 integer          icl11 , icl22 , icl33 , icl12 , icl13 , icl23
@@ -178,17 +178,18 @@ integer          iclvaf
 integer          ipcrom, ipcvis, ipcvst, ipccp , ipccv
 integer          ipcvsl, itplus, itstar
 integer          f_id
+integer          iwallf
 
 double precision rnx, rny, rnz, rxnn
 double precision tx, ty, tz, txn, txn0, t2x, t2y, t2z
 double precision utau, upx, upy, upz, usn
-double precision uiptn, uiptnf, uiptmn, uiptmx
+double precision uiptn, uiptmn, uiptmx
 double precision uetmax, uetmin, ukmax, ukmin, yplumx, yplumn
 double precision tetmax, tetmin, tplumx, tplumn
 double precision uk, uet, nusury, yplus, dplus, tet, phit
 double precision sqrcmu, clsyme, ek
-double precision xnuii, xmutlm
-double precision rcprod, rcflux
+double precision xnuii, xnuit, xmutlm
+double precision rcprod
 double precision cpp, rkl,  prdtl
 double precision hflui, hint, hext, pimp, heq, qimp
 double precision und0, deuxd0
@@ -253,7 +254,6 @@ cofimp  = 0.d0
 ek = 0.d0
 rcprod = 0.d0
 uiptn = 0.d0
-uiptnf = 0.d0
 yp1 = 0.d0
 
 rinfiv(1) = rinfin
@@ -375,8 +375,8 @@ tplumx = -grand
 tplumn =  grand
 
 ! Counters (turbulent, laminar, reversal, scale correction)
-inturb = 0
-inlami = 0
+nlogla = 0
+nsubla = 0
 iuiptn = 0
 
 
@@ -578,99 +578,34 @@ do ifac = 1, nfabor
     !      and uk based on ek
 
     nusury = visclc/(distbf*romc)
-    ! Pseudo translation of wall when ideuch = 2
-    dplus = 0.d0
+    xnuii = visclc/romc
+    xnuit = visctc/romc
 
-    if (ideuch.eq.0) then
-
-      if (ilogpo.eq.0) then
-        ! With power law (Werner & Wengle)
-        uet = (utau/(apow*(1.0d0/nusury)**bpow))**dpow
-      else
-        ! With log law
-        imprim = max(iwarni(iu),2)
-        xnuii = visclc/romc
-        call causta                                               &
-        !==========
-      ( ifac  , imprim , xkappa , cstlog , ypluli ,               &
-        apow  , bpow   , dpow   ,                                 &
-        utau  , distbf , xnuii  , uet    )
-      endif
-
-      ! Re apply the two following lines after possible call to user subroutine
-      uk = uet
-      yplus = uk/nusury
-
-    else
-
-      ! If ideuch = 1 or 2 compute uk and uet
-
-      if (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) then
-        ek = rtp(iel,ik)
-      else if (itytur.eq.3) then
-        ek = 0.5d0*(rtp(iel,ir11)+rtp(iel,ir22)+rtp(iel,ir33))
-      endif
-
-      uk = cmu025*sqrt(ek)
-      yplus = uk/nusury
-      uet = utau/(log(yplus)/xkappa+cstlog)
-
+    if (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) then
+      ek = rtp(iel,ik)
+    else if (itytur.eq.3) then
+      ek = 0.5d0*(rtp(iel,ir11)+rtp(iel,ir22)+rtp(iel,ir33))
     endif
 
-    ! ---> ON TRAITE LES CAS OU YPLUS TEND VERS ZERO
-    ! En une echelle, CAUSTA calcule d'abord u* en supposant une loi lineaire,
-    ! puis si necessaire teste une loi log. Mais comme YPLULI est fixe a 1/kappa et pas
-    ! 10,88 (valeur de continuite), la loi log peut donner une valeur de u* qui redonne
-    ! un y+<YPLULI. Dans ce cas, on recalcule u* et y+ a partir de la loi lineaire : on
-    ! obtient un y+ superieur a YPLULI, mais le frottement est sans doute correct.
-    ! -> travail en cours sur les lois de paroi
 
-    ! On est hors ss couche visqueuse : uet, uk et yplus sont bons
-    if (yplus.gt.ypluli) then
-      iuntur = 1
-      inturb = inturb + 1
-
-    ! On est en sous couche visqueuse :
+    ! With power law (Werner & Wengle)
+    if (ideuch.eq.0.and.ilogpo.eq.0) then
+      iwallf = 3
     else
-
-      ! Si on utilise les "scalable wall functions", on decale la valeur de YPLUS,
-      ! on recalcule uet et on se considere hors de la sous-couche visqueuse
-      if (ideuch.eq.2) then
-        dplus = ypluli - yplus
-        yplus = ypluli
-        uet = utau/(log(yplus)/xkappa+cstlog)
-        iuntur = 1
-        inturb = inturb + 1
-
-      ! Sinon on est reellement en sous-couche visqueuse
-      else
-        iuntur = 0
-        inlami = inlami + 1
-
-        ! On recalcule les valeurs fausses
-        !  en une  echelle  : uet et yplus sont faux
-        !  en deux echelles : uet est faux
-
-        ! En deux echelles :
-        !   On recalcule uet mais il ne sert plus a rien
-        !   (il intervient dans des termes multiplies par iuntur=0)
-        if (ideuch.eq.1) then
-          if (yplus.gt.epzero)  then
-            uet = abs(utau/yplus)
-          else
-            uet = 0.d0
-          endif
-        ! En une echelle :
-        !   On recalcule uet : il sert pour la LES
-        !   On recalcule yplus (qui etait deduit de uet) : il sert pour hturbp
-        else
-          uet = sqrt(utau*nusury)
-          yplus = uet/nusury
-        endif
-
-      endif
-
+      iwallf = ideuch
     endif
+
+    ! No wall functions for low Reynolds models
+    if (iturb.eq.0.or.itytur.eq.5.or.iturb.eq.32) then
+      iwallf = 4
+    endif
+
+    call wallfunctions &
+  ( iwallf, ifac  , xkappa, cstlog, cmu025, ypluli,        &
+    apow  , bpow  , dpow  ,                                &
+    xnuii , xnuit , utau  , distbf, ek    ,                &
+    iuntur, nsubla, nlogla,                                &
+    uet   , uk    , yplus , ypup  , cofimp, dplus )
 
     uetmax = max(uet,uetmax)
     uetmin = min(uet,uetmin)
@@ -688,7 +623,7 @@ do ifac = 1, nfabor
     ! si le modele de depot de particules est active.
 
     if (itytur.eq.4.and.idries.eq.1) then
-      uetbor(ifac) = uet
+      uetbor(ifac) = uet !TODO remove, this information is in cofaf cofbf
       if (visvdr(iel).lt.-900.d0) then
         propce(iel,ipcvst) = propce(iel,ipcvst)                   &
              *(1.d0-exp(-(yplus-dplus)/cdries))**2
@@ -712,29 +647,12 @@ do ifac = 1, nfabor
     ! If ilogpo=0, then ideuch=0
     if (ilogpo.eq.0) then
       uiptn  = utau + uet*apow*bpow*yplus**bpow*(2.d0**(bpow-1.d0)-2.d0)
-      uiptnf = uiptn
-
-      ! Coupled solving of the velocity components
-      if (yplus.ge.ypluli) then
-        ! On implicite le terme de bord pour le gradient de vitesse
-        ! Faute de calcul mis a part, a*yplus^b/U+ = uet^(b+1-1/d)
-        ypup = utau**(2.d0*dpow-1.d0)/apow**(2.d0*dpow)
-        cofimp = 1.d0+bpow*uet**(bpow+1.d0-1.d0/dpow)*(2.d0**(bpow-1.d0)-2.d0)
-        ! On implicite le terme (rho*uet*uk)
-        hflui = visclc / distbf * ypup
-      else
-        !Dans la sous couche visceuse : U_F=0
-        cofimp  = 0.d0
-        hflui = visclc / distbf
-      endif
 
     ! Dependant on the turbulence Model
     else
 
       ! uiptn respecte la production de k
       !  de facon conditionnelle --> Coef RCPROD
-      ! uiptnf respecte le flux
-      !  de facon conditionnelle --> Coef RCFLUX
 
       ! --> k-epsilon and k-omega
       !--------------------------
@@ -746,29 +664,11 @@ do ifac = 1, nfabor
         ! By the way, in this case: iuntur=0
         if (yplus.gt.epzero) then !TODO use iuntur.eq.1
           rcprod = min(xkappa , max(und0,sqrt(xmutlm/visctc))/yplus)
-          rcflux = max(xmutlm,visctc)/(visclc+visctc)
 
           uiptn  = utau + distbf*uet*uk*romc/xkappa/visclc*(       &
                und0/(deuxd0*yplus-dplus) - deuxd0*rcprod )
-          uiptnf = utau - distbf*uet*uk*romc/xmutlm*rcflux
         else
           uiptn = 0.d0
-          uiptnf = 0.d0
-        endif
-
-        ! Coupled solving of the velocity components
-        if (yplus.ge.ypluli) then
-          ! On implicite le terme de bord pour le gradient de vitesse
-          ypup =  (yplus-dplus)/(log(yplus)/xkappa +cstlog)
-          cofimp  = 1.d0 - ypup/xkappa*                        &
-                           (deuxd0*rcprod - und0/(deuxd0*yplus-dplus))
-          ! On implicite le terme (rho*uet*uk)
-          hflui = visclc / distbf * ypup
-
-        ! In the viscous sub-layer
-        else
-          cofimp  = 0.d0
-          hflui = visclc / distbf
         endif
 
       ! --> No turbulence, mixing length or Rij-espilon
@@ -781,15 +681,7 @@ do ifac = 1, nfabor
         ! si on est en LRR ou SSG on laisse les lois de paroi, si on est en
         ! EBRSM, on impose l adherence.
         if (iturb.eq.32.or.iturb.eq.0) then
-
           uiptn = 0.d0
-          uiptnf = uiptn
-          iuntur = 0
-
-          ! Coupled solving of the velocity components
-          cofimp  = 0.d0
-          hflui = visclc / distbf
-
         else
 
           ! If yplus=0, uiptn is set to 0 to avoid division by 0.
@@ -797,25 +689,8 @@ do ifac = 1, nfabor
           if (yplus.gt.epzero) then !FIXME use iuntur
             uiptn = utau - distbf*romc*uet*uk/xkappa/visclc                    &
                                  *(deuxd0/yplus - und0/(deuxd0*yplus-dplus))
-            uiptnf = uiptn
           else
             uiptn = 0.d0
-            uiptnf = uiptn
-            iuntur = 0
-          endif
-
-          ! Coupled solving of the velocity components
-          if (yplus.ge.ypluli) then
-            ! On implicite le terme de bord pour le gradient de vitesse
-            ypup   =  (yplus-dplus)/(log(yplus)/xkappa +cstlog)
-            cofimp = 1.d0                                                    &
-                   - ypup/xkappa*(deuxd0/yplus - und0/(deuxd0*yplus-dplus))
-            ! On implicite le terme (rho*uet*uk)
-            hflui = visclc / distbf * ypup
-          else
-            ! Dans la sous couche visceuse : U_F=0
-            cofimp  = 0.d0
-            hflui = visclc / distbf
           endif
 
         endif
@@ -826,35 +701,13 @@ do ifac = 1, nfabor
 
         uiptn  = utau - uet/xkappa*1.5d0
 
-        ! Coupled solving of the velocity components
-        if (yplus.ge.ypluli) then
-          ypup   =  (yplus-dplus)/(log(yplus)/xkappa +cstlog)
-          cofimp = 1.d0 - ypup/(xkappa*(yplus-dplus))*1.5d0
-        else
-          cofimp = 0.d0
-        endif
-
         ! If (mu+mut) becomes zero (dynamic models), an arbitrary value is set
         ! (nul flux) but without any problems because the flux
         ! is really zero at this face.
         if (visctc+visclc.le.0) then
-          uiptnf = utau
-          hflui = 0.d0
+          hflui = 0.d0!FIXME
 
         else
-          uiptnf = utau -romc*distbf*(uet**2)/(visctc+visclc)
-
-          ! Coupled solving of the velocity components
-          if (yplus.ge.ypluli) then
-            ! The boundary term for velocity gradient is implicit
-            ypup   =  (yplus-dplus)/(log(yplus)/xkappa +cstlog)
-            ! The term (rho*uet*uk) is implicit
-            hflui = visclc / distbf * ypup
-
-          ! In the viscous sub-layer
-          else
-            hflui = (visclc + visctc) / distbf
-          endif
 
         endif
 
@@ -864,13 +717,7 @@ do ifac = 1, nfabor
 
         ! Avec ces conditions, pas besoin de calculer uiptmx, uiptmn
         ! et iuiptn qui sont nuls (valeur d'initialisation)
-        iuntur = 0
         uiptn  = 0.d0
-        uiptnf = 0.d0
-
-        ! Coupled solving of the velocity components
-        hflui = (visclc + visctc) / distbf
-        cofimp = 0.d0
 
       endif
     endif
@@ -882,6 +729,9 @@ do ifac = 1, nfabor
 
     ! To be coherent with a wall function, clip it to 0
     cofimp = max(cofimp, 0.d0)
+
+    ! On implicite le terme (rho*uet*uk)
+    hflui = visclc / distbf * ypup
 
     if (itytur.eq.3) then
       hint =  visclc          /distbf
@@ -1937,8 +1787,8 @@ if (irangp.ge.0) then
   call parmax (ukmax)
   call parmin (yplumn)
   call parmax (yplumx)
-  call parcpt (inturb)
-  call parcpt (inlami)
+  call parcpt (nlogla)
+  call parcpt (nsubla)
   call parcpt (iuiptn)
   if (iscalt.gt.0) then
     call parmin (tetmin)
@@ -1968,9 +1818,9 @@ if (iwarni(iu).ge.0) then
     modntl = 1
   endif
 
-  if ( (iturb.eq.0.and.inturb.ne.0)                      .or.     &
-       (itytur.eq.5.and.inturb.ne.0)                     .or.     &
-       ((itytur.eq.2.or.itytur.eq.3) .and. inlami.gt.0)      )    &
+  if ( (iturb.eq.0.and.nlogla.ne.0)                      .or.     &
+       (itytur.eq.5.and.nlogla.ne.0)                     .or.     &
+       ((itytur.eq.2.or.itytur.eq.3) .and. nsubla.gt.0)      )    &
        ntlast = ntcabs
 
   if ( (ntlast.eq.ntcabs.and.iaff.lt.2         ) .or.             &
@@ -1981,11 +1831,11 @@ if (iwarni(iu).ge.0) then
     if (iscalt.gt.0) then
       write(nfecra,2011) &
            uiptmn,uiptmx,uetmin,uetmax,ukmin,ukmax,yplumn,yplumx,      &
-           tetmin, tetmax, tplumn, tplumx, iuiptn,inlami,inlami+inturb
+           tetmin, tetmax, tplumn, tplumx, iuiptn,nsubla,nsubla+nlogla
     else
       write(nfecra,2010) &
            uiptmn,uiptmx,uetmin,uetmax,ukmin,ukmax,yplumn,yplumx,   &
-           iuiptn,inlami,inlami+inturb
+           iuiptn,nsubla,nsubla+nlogla
     endif
 
     if (iturb.eq. 0) write(nfecra,2020)  ntlast,ypluli
@@ -2004,11 +1854,11 @@ if (iwarni(iu).ge.0) then
     if (iscalt.gt.0) then
       write(nfecra,2011) &
            uiptmn,uiptmx,uetmin,uetmax,ukmin,ukmax,yplumn,yplumx,      &
-           tetmin, tetmax, tplumn, tplumx, iuiptn,inlami,inlami+inturb
+           tetmin, tetmax, tplumn, tplumx, iuiptn,nsubla,nsubla+nlogla
     else
       write(nfecra,2010) &
            uiptmn,uiptmx,uetmin,uetmax,ukmin,ukmax,yplumn,yplumx,   &
-           iuiptn,inlami,inlami+inturb
+           iuiptn,nsubla,nsubla+nlogla
     endif
   endif
 

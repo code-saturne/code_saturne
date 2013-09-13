@@ -117,7 +117,8 @@ cs_time_plot.h \
 cs_time_step.h \
 cs_timer.h \
 cs_tpar1d.h \
-cs_ventil.h
+cs_ventil.h \
+cs_wall_functions.h
 
 # Library source files
 
@@ -166,7 +167,6 @@ calmom.f90 \
 caltri.f90 \
 catsma.f90 \
 catsmv.f90 \
-causta.f90 \
 clca66.f90 \
 clpsca.f90 \
 clptrg.f90 \
@@ -232,6 +232,7 @@ cs_time_plot.c \
 cs_time_step.c \
 cs_tpar1d.c \
 cs_ventil.c \
+cs_wall_functions.c \
 csprnt.f90 \
 diffst.f90 \
 distpr.f90 \
