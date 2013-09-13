@@ -12,6 +12,8 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix bad detection of libccmio when CGNS is not present.
+
 - GUI: fix bugs for atmospheric flows; wall boundary conditions and default
   values for numerical options.
 

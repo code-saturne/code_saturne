@@ -79,12 +79,13 @@ if test "x$with_ccm" != "xno" ; then
     CCM_LIBS="-lccmio -ladf"
     CPPFLAGS="${CPPFLAGS} ${CCM_CPPFLAGS}"
     LDFLAGS="${LDFLAGS} ${CCM_LDFLAGS}"
+    LIBS="${CCM_LIBS} ${LIBS}"
   elif test "x$CGNS_LIBS" != "x" ; then
     CCM_LIBS="-lccmio"
     CPPFLAGS="${CPPFLAGS} ${CCM_CPPFLAGS}"
     LDFLAGS="${LDFLAGS} ${CCM_LDFLAGS} $CGNS_LDFLAGS $HDF5_LDFLAGS"
+    LIBS="${CCM_LIBS} $CGNS_LIBS $HDF5_LIBS ${LIBS}"
   fi
-  LIBS="${LIBS} ${CCM_LIBS} $CGNS_LIBS $HDF5_LIBS"
 
 # Check that CCMIO header files exist
 
@@ -107,7 +108,7 @@ CCMIOOpenFile(&error, "test.ccm", kCCMIOWrite, &root);]])
                    ],
                    [ AC_DEFINE([HAVE_CCM], 1, [CCM file support])
                      cs_have_ccm=yes
-                   ], 
+                   ],
                    [if test "x$with_ccm" != "xcheck" ; then
                       AC_MSG_FAILURE([CCM support is requested, but test for CCM failed!])
                     else
