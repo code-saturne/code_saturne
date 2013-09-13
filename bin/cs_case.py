@@ -1647,8 +1647,8 @@ echo "exit \$?" >> $localexec
 
             if config.has_option('run', 'scratchdir'):
                 scratchdir = os.path.expanduser(config.get('run', 'scratchdir'))
-                scratchdir = os.path.expandvars(scratchdir)
-                if self.case_dir.find(scratchdir) == 0:
+                scratchdir = os.path.realpath(os.path.expandvars(scratchdir))
+                if os.path.realpath(self.case_dir).find(scratchdir) == 0:
                     scratchdir = None
 
         if scratchdir != None:
