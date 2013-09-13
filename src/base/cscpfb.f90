@@ -20,9 +20,35 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine cscpfb &
-!================
+!> \file cscpfb.f90
+!> \brief Preparation of sending variables for coupling between two instances
+!> of Code_Saturne via boundary faces.
+!> Received indformation will be transformed into boundary condition
+!> in subroutine \ref csc2cl.
 
+!------------------------------------------------------------------------------
+! Arguments
+!------------------------------------------------------------------------------
+!   mode          name          role
+!------------------------------------------------------------------------------
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     nptdis
+!> \param[in]     numcpl
+!> \param[in]     nvcpto
+!> \param[in]     locpts
+!> \param[in]     rtp           calculated variables at cell centers
+!>                              (at current and previous time steps)
+!> \param[in]     propce        physical properties at cell centers
+!> \param[in]     coefa         boundary conditions for boundary faces
+!> \param[in]     coefb         boundary conditions for boundary faces
+!> \param[in]     coopts
+!> \param[in]     djppts
+!> \param[in]     pndpts
+!> \param[in]     rvdis
+!> \param[in]     dofpts
+!______________________________________________________________________________
+
+subroutine cscpfb &
  ( nscal  ,                                                       &
    nptdis , numcpl , nvcpto,                                      &
    locpts ,                                                       &
@@ -30,29 +56,6 @@ subroutine cscpfb &
    coefa  , coefb  ,                                              &
    coopts , djppts , pndpts ,                                     &
    rvdis  , dofpts )
-
-!===============================================================================
-! FONCTION :
-! --------
-
-! PREPARATION DE L'ENVOI DES VARIABLES POUR UN COUPLAGE
-!   ENTRE DEUX INSTANCES DE CODE_SATURNE VIA LES FACES DE BORD
-
-! L'INFORMATION RECUE SERA TRANSFORMEE EN CONDITION LIMITE DANS
-!   LA SUBROUTINE CSC2CL
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
 
 !===============================================================================
 ! Module files
@@ -80,7 +83,6 @@ integer          nscal
 integer          nptdis , numcpl , nvcpto
 
 integer          locpts(nptdis)
-
 
 double precision rtp(ncelet,*)
 double precision propce(ncelet,*)

@@ -20,42 +20,34 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine inivar &
-!================
+!> \file inivar.f90
+!> \brief Initialization of calculation variables, time step
+!> and table that stores distance to the wall
+!> by the user (after reading a restart file).
+!>
+!------------------------------------------------------------------------------
 
+!------------------------------------------------------------------------------
+! Arguments
+!------------------------------------------------------------------------------
+!   mode          name          role
+!------------------------------------------------------------------------------
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     ncofab        nombre de couples coefa/b pour les cl
+!> \param[in]     dt            valeur du pas de temps
+!> \param[in]     rtp           variables de calcul au centre des
+!>                              cellules
+!> \param[in]     propce        physical properties at cell centers
+!> \param[in]     propfb        physical properties at boundary face centers
+!> \param[in]     coefa         boundary condition for boundary faces
+!> \param[in]     coefb         boundary condition for boundary faces
+!______________________________________________________________________________
+
+subroutine inivar &
  ( nvar   , nscal  , ncofab ,                                     &
    dt     , rtp    , propce , propfb ,                            &
    coefa  , coefb  )
-
-!===============================================================================
-! FONCTION :
-! --------
-
-! INITIALISATION DES VARIABLES DE CALCUL, DU PAS DE TEMPS
-! ET DU TABLEAU INDICATEUR DU CALCUL DE LA DISTANCE A LA PAROI
-! PAR L'UTILISATEUR (apres relecture eventuelle d'un fichier suite)
-!-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ncofab           ! e  ! <-- ! nombre de couples coefa/b pour les cl          !
-! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
-! rtp              ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules                                    !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa coefb      ! tr ! <-- ! conditions aux limites aux                     !
-!  (nfabor,*)      !    !     !    faces de bord                               !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
 
 !===============================================================================
 ! Module files

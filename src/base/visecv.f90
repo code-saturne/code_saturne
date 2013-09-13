@@ -20,44 +20,35 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine visecv &
-!================
+!> \file visecv.f90
+!> \brief Computes the secondary viscosity contribution \f$\kappa -2/3 \mu\f$
+!> in order to compute:
+!> \f[
+!> \grad( \kappa -2/3 \mu) \trace( \gradt(\vect{u})) )
+!> \f]
+!> with:
+!>   - \f$ \mu = \mu_{laminar} + \mu_{turbulent} \f$
+!>   - \f$ \kappa \f$ is the volume viscosity (generally zero)
+!>
+!> \remark:
+!>   In LES, the tensor <(u-<u>)(u-<u>)> is modeled by mut <S>
+!>   and not by mut <S> - 2/3 mut Tr(<S>) Id + 2/3 k Id
+!>   so that no term mut div<u> is needed.
+!------------------------------------------------------------------------------
 
+!------------------------------------------------------------------------------
+! Arguments
+!------------------------------------------------------------------------------
+!   mode          name          role
+!------------------------------------------------------------------------------
+!> \param[in]     propce        physical properties at cell centers
+!> \param[in,out] secvif        lambda*surface at interior faces
+!> \param[in,out] secvib        lambda*surface at boundary faces
+!______________________________________________________________________________
+
+subroutine visecv &
  ( propce ,                            &
    secvif , secvib )
-
-!===============================================================================
-! FONCTION :
-! ----------
-
-! COMPUTE (K -2/3 MU)
-
-! IN ORDER TO COMPUTE GRAD( (K -2/3 MU) TRACE( GRAD(U)) ) + DIV( MU (GRAD_TRANSPOSE(U)) )
-
-! WITH MU = MU_LAMINAR + MU_TURBULENT
-!  AND K = VOLUME VISCOSITY (GENERALLY ZERO)
-
-! GRAD(U) IS A CELL GRADIENT
-
-! REMARKS :
-!  - In LES, the tensor <(u-<u>)(u-<u>)> is modeled by mut <S>
-!      and not by mut <S> - 2/3 mut Tr(<S>) Id + 2/3 k Id
-!      so that no term mut div<u> is needed.
-!-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! secvif(nfac)     ! tr ! --- ! lambda*surface at interior faces               !
-! secvib(nfabor)   ! tr ! --- ! lambda*surface at boundary faces               !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
 
 !===============================================================================
 ! Module files

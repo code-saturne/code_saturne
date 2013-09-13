@@ -20,60 +20,58 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine precli &
-!================
+!> \file precli.f90
+!> \brief Preparation of boudary conditions determination
+!> Boundary faces of precedent step are used.
+!> Except at first time step, where arrays \ref itypfb and \ref itrifb
+!> are undefined.
+!>
+!------------------------------------------------------------------------------
 
+!------------------------------------------------------------------------------
+! Arguments
+!------------------------------------------------------------------------------
+!   mode          name          role
+!------------------------------------------------------------------------------
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[out]    icodcl        defines the type of boundary condition for the
+!>                              variable ivar on the face
+!>                               - 1: Dirichlet condition at the face
+!>                               - 3: flux condition at the face
+!>                               - 4: symmetry condition, for the symmetry
+!>                              faces or wall faces without friction.
+!>                              Only used for velocity components
+!>                               - 5: friction condition, for wall faces
+!>                              with friction. This condition can not be applied
+!>                              to the pressure.
+!>                               - 6: friction condition, for the rough-wall
+!>                              faces with friction. This condition can not be
+!>                              used with the pressure.
+!>                               - 9: free outlet condition for the
+!>                              velocity. Only applicable to velocity components
+!> \param[in]     propfb        physical properties at boundary face centers
+!> \param[out]    rcodcl        gives the numerical values associated with the
+!>                              type of boundary condition
+!>                              (value of the Dirichlet, of the flux ...).
+!>                               - rcodcl(1) = Dirichlet value
+!>                               - rcodcl(2) = value of the exchange coefficient
+!>                                between the outside and the fluid. Infinite
+!>                                value indicates an ideal transfer(default case)
+!>                               - rcodcl(3):
+!>                                 - if icodcl=6: rugosity height (m)
+!>                                 - else value of flux density (w/m2).
+!>                                            (negative if gain)
+!>                               - for velocity: (vistl+visct)*gradu
+!>                               - for pressure:             dt*gradp
+!>                               - for scalars:  cp*(viscls+visct/sigmas)*gradt
+!______________________________________________________________________________
+
+subroutine precli &
  ( nvar   , nscal  ,                                              &
    icodcl ,                                                       &
    propfb ,                                                       &
    rcodcl )
-
-!===============================================================================
-! FONCTION :
-! --------
-
-!    PREPARATION DU REMPLISSAGE DES CONDITIONS AUX LIMITES
-
-! On dispose des types de faces de bord au pas de temps
-!   precedent (sauf au premier pas de temps, ou les tableaux
-!   ITYPFB et ITRIFB n'ont pas ete renseignes)
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! icodcl           ! te ! --> ! code de condition limites aux faces            !
-!  (nfabor,nvar    !    !     !  de bord                                       !
-!                  !    !     ! = 1   -> dirichlet                             !
-!                  !    !     ! = 3   -> densite de flux                       !
-!                  !    !     ! = 4   -> glissemt et u.n=0 (vitesse)           !
-!                  !    !     ! = 5   -> frottemt et u.n=0 (vitesse)           !
-!                  !    !     ! = 6   -> rugosite et u.n=0 (vitesse)           !
-!                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
-!                  !    !     !  entrante eventuelle     bloquee               !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
-!  (nfabor,nvar    !    !     !  aux faces de bord                             !
-!                  !    !     ! rcodcl(1) = valeur du dirichlet                !
-!                  !    !     ! rcodcl(2) = valeur du coef. d'echange          !
-!                  !    !     !  ext. (infinie si pas d'echange)               !
-!                  !    !     ! rcodcl(3) = valeur de la densite de            !
-!                  !    !     !  flux (negatif si gain) w/m2 ou                !
-!                  !    !     !  hauteur de rugosite (m) si icodcl=6           !
-!                  !    !     ! pour les vitesses (vistl+visct)*gradu          !
-!                  !    !     ! pour la pression             dt*gradp          !
-!                  !    !     ! pour les scalaires                             !
-!                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
 
 !===============================================================================
 ! Module files

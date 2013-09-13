@@ -20,60 +20,61 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine csc2cl &
-!================
+!> \file csc2cl.f90
+!> \brief Translation of the "itypfb(*, *) = icscpl" condition.
+!>
+!------------------------------------------------------------------------------
 
+!------------------------------------------------------------------------------
+! Arguments
+!------------------------------------------------------------------------------
+!   mode          name          role
+!------------------------------------------------------------------------------
+!> \param[in]     nvcp
+!> \param[in]     nvcpto
+!> \param[in]     nfbcpl
+!> \param[in]     nfbncp
+!> \param[out]    icodcl        boundary condition code at boundary faces
+!>                               - 1   -> dirichlet
+!>                               - 3   -> flux density
+!>                               - 4   -> sliding and u.n=0 (velocity)
+!>                               - 5   -> friction and u.n=0 (velocity)
+!>                               - 9   -> free inlet/outlet (inlet velocity
+!>                              possibly fixed)
+!>                               - 10  -> free inlet/outlet (possible inlet
+!>                              volocity not fixed: prescribe a Dirichlet
+!>                              value for scalars k, eps, scal in addition to
+!>                              the usual Neumann
+!> \param[in]     lfbcpl
+!> \param[in]     lfbncp
+!> \param[out]    itypfb        boundary face types
+!> \param[in]     dt            time step (per cell)
+!> \param[in]     rtp           calculated variables at cell centers
+!>                              (at current time step)
+!> \param[in]     coefa         boundary conditions
+!> \param[in]     coefb         boundary conditions
+!> \param[out]    rcodcl        value of boundary conditions at boundary faces
+!>                              rcodcl(1) = Dirichlet value
+!>                              rcodcl(2) = ext. exchange coefficient value
+!>                              (infinite if no exchange)
+!>                              rcodcl(3) = value of the flux density
+!>                              (negative if gain) in w/m2
+!>                              for velocities:   (vistl+visct)*gradu
+!>                              for pressure:                dt*gradp
+!>                              for scalars:
+!>                              cp*(viscls+visct/sigmas)*gradt
+!> \param[in]     rvcpfb
+!> \param[in]     pndcpl
+!> \param[in]     dofcpl
+!______________________________________________________________________________
+
+subroutine csc2cl &
  ( nvcp   , nvcpto , nfbcpl , nfbncp ,                            &
    icodcl , itypfb ,                                              &
    lfbcpl , lfbncp ,                                              &
    dt     , rtp    ,                                              &
    coefa  , coefb  , rcodcl ,                                     &
    rvcpfb , pndcpl , dofcpl )
-
-!===============================================================================
-! Purpose:
-! --------
-
-! Translation of the "itypfb(*, *) = icscpl" condition.
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! icodcl           ! te ! --> ! boundary condition code at boundary faces      !
-!  (nfabor, nvarcl)!    !     ! = 1   -> dirichlet                             !
-!                  !    !     ! = 3   -> flux density                          !
-!                  !    !     ! = 4   -> sliding and u.n=0 (velocity)          !
-!                  !    !     ! = 5   -> friction and u.n=0 (velocity)         !
-!                  !    !     ! = 9   -> free inlet/outlet (inlet velocity     !
-!                  !    !     !  possibly fixed)                               !
-!                  !    !     ! = 10  -> free inlet/outlet (possible inlet     !
-!                  !    !     !  volocity not fixed: prescribe a Dirichlet     !
-!                  !    !     !  value for scalars k, eps, scal in addition to !
-!                  !    !     !  the usual Neumann                             !
-! itypfb           ! ia ! --> ! boundary face types                            !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp,             ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current time step)                        !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
-! rcodcl           ! tr ! --> ! value of boundary conditions at boundary faces !
-!  (nfabor, nvarcl)!    !     ! rcodcl(1) = Dirichlet value                    !
-!                  !    !     ! rcodcl(2) = ext. exchange coefficient value    !
-!                  !    !     !  (infinite if no exchange)                     !
-!                  !    !     ! rcodcl(3) = value of the flux density          !
-!                  !    !     !  (negative if gain) in w/m2                    !
-!                  !    !     ! for velocities:   (vistl+visct)*gradu          !
-!                  !    !     ! for pressure:                dt*gradp          !
-!                  !    !     ! for scalars:                                   !
-!                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
 
 !===============================================================================
 ! Module files

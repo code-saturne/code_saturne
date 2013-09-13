@@ -20,9 +20,48 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine dvvpst &
-!================
+!> \file dvvpst.f90
+!> \brief Standard output of variables on post-processing meshes
+!> (called after \ref cs_user_extra_operations).
+!>
+!------------------------------------------------------------------------------
 
+!------------------------------------------------------------------------------
+! Arguments
+!------------------------------------------------------------------------------
+!   mode          name          role
+!------------------------------------------------------------------------------
+!> \param[in]     nummai        post-processing mesh number
+!> \param[in]     numtyp        post-processing type number
+!>                               - -1: volume
+!>                               - -2: edge
+!>                               - default: nummai
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     nvlsta        number of volumetric statistical variables
+!> \param[in]     nvisbr        number of boundary statistical variables
+!> \param[in]     ncelps        post-processing mesh cells number
+!> \param[in]     nfbrps        number of boundary faces
+!> \param[in]     itypps        presence indicator (0 ou 1) of
+!>                              cells (1), faces (2), ou boubdary faces (3)
+!>                              in the post-processing mesh
+!> \param[in]     lstcel        post-processing mesh cell numbers
+!> \param[in]     lstfbr        post-processing mesh boundary faces numbers
+!> \param[in]     dt            time step (per cell)
+!> \param[in]     rtp           calculated variables at cell center
+!>                              (at current time step)
+!> \param[in]     rtpa          calculated variables at cell center
+!>                              (at previous time step)
+!> \param[in]     propce        physical properties at cell centers
+!> \param[in]     propfb        physical properties at boundary face centers
+!> \param[in]     statce        cells statistics (lagrangian)
+!> \param[in]     stativ        cells variance statistics (lagrangian)
+!> \param[in]     statfb        boundary faces statistics (lagrangian)
+!> \param[in]     tracel        post processing cell real values
+!> \param[in]     trafbr        post processing boundary faces real values
+!______________________________________________________________________________
+
+subroutine dvvpst &
  ( nummai , numtyp ,                                              &
    nvar   , nscal  , nvlsta , nvisbr ,                            &
    ncelps , nfbrps ,                                              &
@@ -31,51 +70,6 @@ subroutine dvvpst &
    dt     , rtpa   , rtp    , propce , propfb ,                   &
    statce , stativ , statfb ,                                     &
    tracel , trafbr )
-
-!===============================================================================
-! Purpose:
-! --------
-
-! Standard output of variables on post-processing meshes
-!   (called after cs_user_extra_operations)
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nummai           ! ec ! <-- ! numero du maillage post                        !
-! numtyp           ! ec ! <-- ! numero de type de post-traitement              !
-!                  !    !     ! (-1: volume, -2: bord, nummai par defaut)      !
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! nvlsta           ! e  ! <-- ! nombre de variables stat. lagrangien           !
-! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
-! ncelps           ! e  ! <-- ! nombre de cellules du maillage post            !
-! nfbrps           ! e  ! <-- ! nombre de faces de bord post                   !
-! itypps(3)        ! te ! <-- ! indicateur de presence (0 ou 1) de             !
-!                  !    !     ! cellules (1), faces (2), ou faces de           !
-!                  !    !     ! de bord (3) dans le maillage post              !
-! lstcel(ncelps    ! te ! <-- ! liste des cellules du maillage post            !
-! lstfbr(nfbrps    ! te ! <-- ! liste des faces de bord post                   !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! statce           ! tr ! <-- ! statistiques cellules (lagrangien)             !
-!  (ncelet,nvlsta) !    !     !                                                !
-! stativ           ! tr ! <-- ! statistiques variance cellules (lagrangien)    !
-!  (ncelet,nvlsta) !    !     !                                                !
-! statfb           ! tr ! <-- ! statistiques faces bord (lagrangien)           !
-!  (nfabor,nvisbr) !    !     !                                                !
-! tracel(*)        ! tr ! <-- ! tab reel valeurs cellules post                 !
-! trafbr(*)        ! tr ! <-- ! tab reel valeurs faces bord post               !
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
 
 !===============================================================================
 ! Module files

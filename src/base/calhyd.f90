@@ -20,9 +20,37 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine calhyd &
-!================
+!> \file calhyd.f90
+!> \brief Poisson equation resolution for hydrostatic pressure:
+!>  \f$ \divs ( \grad P ) = \divs ( f ) \f$
+!>
+!------------------------------------------------------------------------------
 
+!------------------------------------------------------------------------------
+! Arguments
+!------------------------------------------------------------------------------
+!   mode          name          role
+!------------------------------------------------------------------------------
+!> \param[out]    indhyd        indicateur de mise a jour de phydr
+!> \param[in]     fext          external force generating hydrostatic pressure
+!> \param[in]     dfext         external force increment
+!>                              generating hydrostatic pressure
+!> \param[in]     phydr         hydrostatic pressure increment
+!> \param[zz]     flumas        work array
+!> \param[zz]     flumab        work array
+!> \param[in]     coefap        boundary conditions coefficient
+!> \param[in]     coefbp        boundary conditions coefficient
+!> \param[in]     cofafp        boundary conditions coefficient
+!> \param[in]     cofbfp        boundary conditions coefficient
+!> \param[in,out] viscf         work array
+!> \param[in,out] viscb         work array
+!> \param[in,out] dam           work array
+!> \param[in,out] xam           work array
+!> \param[in,out] drtp          work array
+!> \param[in,out] smbr          work array
+!______________________________________________________________________________
+
+subroutine calhyd &
  ( indhyd ,                                                       &
    fext   , dfext  ,                                              &
    phydr  , flumas , flumab ,                                     &
@@ -31,46 +59,6 @@ subroutine calhyd &
    viscf  , viscb  ,                                              &
    dam    , xam    ,                                              &
    drtp   , smbr   )
-
-!===============================================================================
-! FONCTION :
-! ----------
-
-! RESOLUTION D'UNE EQUATION DE POISSON SUR LA PRESSION HYDROSTATIQUE
-!                DIV( GRAD(P) ) = DIV( F )
-!                     ----             -
-!-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! indhyd           ! e  ! --> ! indicateur de mise a jour de phydr             !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! phydr(ncelet)    ! tr ! <-- ! increment de pression hydrostatique            !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefap,coefbp    ! tr ! <-- ! conditions aux limites aux                     !
-!  (nfabor)        !    !     !    faces de bord                               !
-! cof*fp           ! tr ! <-- ! conditions aux limites aux                     !
-!  (nfabor)        !    !     !    faces de bord                               !
-! fext(3, ncelet)  ! tr ! <-- ! force exterieure generant la pression          !
-!                  !    !     !    hydrostatique                               !
-! dfext(3, ncelet) ! tr ! <-- ! increment de force exterieure                  !
-!                  !    !     !    generant la pression hydrostatique          !
-! viscf(nfac)      ! tr ! --- ! 1*surface/dist aux faces internes              !
-! viscb(nfabor     ! tr ! --- ! 1*surface/dist aux faces de bord               !
-! dam(ncelet       ! tr ! --- ! tableau de travail pour matrice                !
-! xam(nfac,*)      ! tr ! --- ! tableau de travail pour matrice                !
-! drtp(ncelet      ! tr ! --- ! tableau de travail pour increment              !
-! smbr  (ncelet    ! tr ! --- ! tableau de travail pour sec mem                !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-
-!===============================================================================
 
 !===============================================================================
 ! Module files

@@ -20,29 +20,28 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine cs2tsv &
-!================
+!> \file cs2tsv.f90
+!> \brief Code-code coupling with source terms.
+!>
+!------------------------------------------------------------------------------
 
+!------------------------------------------------------------------------------
+! Arguments
+!------------------------------------------------------------------------------
+!   mode          name          role
+!------------------------------------------------------------------------------
+!> \param[in]     ncecpl        number of coupling
+!> \param[in]     lcecpl
+!> \param[in]     vela          variable value at time step beginning
+!> \param[in]     propce        physical properties at cell centers
+!> \param[out]    crvexp        explicit source term
+!> \param[in]     rvcpce
+!______________________________________________________________________________
+
+subroutine cs2tsv &
  ( ncecpl,  lcecpl ,                                              &
    vela   , propce , crvexp , rvcpce )
 
-!===============================================================================
-! FONCTION :
-! ----------
-
-!-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! crvexp(3,ncelet) ! tr ! --> ! tableau de travail pour part explicit          !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================

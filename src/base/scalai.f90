@@ -20,43 +20,36 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine scalai &
-!================
+!> \file scalai.f90
+!> \brief Resolution of source term convection diffusion equations
+!> for scalars in a time step.
+!>
+!------------------------------------------------------------------------------
 
+!------------------------------------------------------------------------------
+! Arguments
+!------------------------------------------------------------------------------
+!   mode          name          role
+!------------------------------------------------------------------------------
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     dt            time step (per cell)
+!> \param[in]     rtp           calculated variables at cell centers
+!>                              (at current and previous time steps)
+!> \param[in]     rtpa          calculated variables at cell centers
+!>                              (at current and previous time steps)
+!> \param[in]     propce        physical properties at cell centers
+!> \param[in]     propfb        physical properties at boundary face centers
+!> \param[in]     tslagr        terme de couplage retour du
+!>                              lagrangien
+!> \param[in]     coefa         boundary conditions
+!> \param[in]     coefb         boundary conditions
+!______________________________________________________________________________
+
+subroutine scalai &
  ( nvar   , nscal  ,                                              &
    dt     , rtp    , rtpa   , propce , propfb ,                   &
    tslagr , coefa  , coefb  )
-
-!===============================================================================
-! FONCTION :
-! ----------
-
-! RESOLUTION DES EQUATIONS CONVECTION DIFFUSION TERME SOURCE
-!   POUR LES SCALAIRES SUR UN PAS DE TEMPS
-
-!-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! tslagr           ! tr ! <-- ! terme de couplage retour du                    !
-!(ncelet,*)        !    !     !     lagrangien                                 !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
 
 !===============================================================================
 ! Module files

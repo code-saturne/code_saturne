@@ -20,63 +20,61 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine typecl &
-!================
+!> \file typecl.f90
+!> \brief Handle boundary condition type code (\ref itypfb).
+!>
+!------------------------------------------------------------------------------
 
+!------------------------------------------------------------------------------
+! Arguments
+!------------------------------------------------------------------------------
+!   mode          name          role
+!------------------------------------------------------------------------------
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     itypfb        boundary face types
+!> \param[out]    itrifb        tab d'indirection pour tri des faces
+!> \param[out]    icodcl        defines the type of boundary condition for the
+!>                              variable ivar on the face
+!>                              - 1: Dirichlet condition at the face
+!>                              - 3: flux condition at the face
+!>                              - 4: symmetry condition, for the symmetry
+!>                              faces or wall faces without friction.
+!>                              Only used for velocity components
+!>                              - 5: friction condition, for wall faces
+!>                              with friction. This condition can not be applied
+!>                              to the pressure.
+!>                              - 6: friction condition, for the rough-wall
+!>                              faces with friction. This condition can not be
+!>                              used with the pressure.
+!>                              - 9: free outlet condition for the
+!>                              velocity. Only applicable to velocity components
+!> \param[in]     isostd        standard output indicator
+!>                              + reference face number
+!> \param[in]     rtpa          calculated variables at cell centers
+!>                              (at previous time step)
+!> \param[in]     propce        physical properties at cell centers
+!> \param[out]    rcodcl        gives the numerical values associated with the
+!>                              type of boundary condition
+!>                              (value of the Dirichlet, of the flux ...).
+!>                               - rcodcl(1) = Dirichlet value
+!>                               - rcodcl(2) = value of the exchange coefficient
+!>                                between the outside and the fluid. Infinite
+!>                                value indicates an ideal transfer(default case)
+!>                               - rcodcl(3):
+!>                                 - if icodcl=6: rugosity height (m)
+!>                                 - else value of flux density (w/m2).
+!>                                            (negative if gain)
+!>                               - for velocity: (vistl+visct)*gradu
+!>                               - for pressure:             dt*gradp
+!>                               - for scalars:  cp*(viscls+visct/sigmas)*gradt
+!> \param[in]     frcxt         external force generating hydrostatic pressure
+!______________________________________________________________________________
+
+subroutine typecl &
  ( nvar   , nscal  ,                                              &
    itypfb , itrifb , icodcl , isostd ,                            &
    rtpa   , propce , rcodcl , frcxt  )
-
-!===============================================================================
-! Function :
-! --------
-
-! Handle boundary condition type code (itypfb)
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! itypfb(nfabor)   ! ia ! <-- ! boundary face types                            !
-! itrifb(nfabor)   ! te ! --> ! tab d'indirection pour tri des faces           !
-! icodcl           ! te ! <-- ! code de condition limites aux faces            !
-!  (nfabor,nvar    !    !     !  de bord                                       !
-!                  !    !     ! = 1   -> dirichlet                             !
-!                  !    !     ! = 3   -> densite de flux                       !
-!                  !    !     ! = 4   -> glissemt et u.n=0 (vitesse)           !
-!                  !    !     ! = 5   -> frottemt et u.n=0 (vitesse)           !
-!                  !    !     ! = 6   -> rugosite et u.n=0 (vitesse)           !
-!                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
-!                  !    !     !  entrante eventuelle     bloquee               !
-! isostd           ! te ! --> ! indicateur de sortie standard                  !
-!    (nfabor+1)    !    !     !  +numero de la face de reference               !
-! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at previous time step)                       !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
-!  (nfabor,nvar    !    !     !  aux faces de bord                             !
-!                  !    !     ! rcodcl(1) = valeur du dirichlet                !
-!                  !    !     ! rcodcl(2) = valeur du coef. d'echange          !
-!                  !    !     !  ext. (infinie si pas d'echange)               !
-!                  !    !     ! rcodcl(3) = valeur de la densite de            !
-!                  !    !     !  flux (negatif si gain) w/m2 ou                !
-!                  !    !     !  hauteur de rugosite (m) si icodcl=6           !
-!                  !    !     ! pour les vitesses (vistl+visct)*gradu          !
-!                  !    !     ! pour la pression             dt*gradp          !
-!                  !    !     ! pour les scalaires                             !
-!                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
-! frcxt(3,ncelet)  ! tr ! <-- ! force exterieure generant la pression          !
-!                  !    !     !  hydrostatique                                 !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
 
 !===============================================================================
 ! Module files

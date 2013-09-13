@@ -20,51 +20,40 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine altycl &
-!================
+!> \file altycl.f90
+!> \brief Boundary condition code (in \ref ialtyb) for the ALE module
+!>
+!------------------------------------------------------------------------------
 
+!------------------------------------------------------------------------------
+! Arguments
+!------------------------------------------------------------------------------
+!   mode          name          role
+!------------------------------------------------------------------------------
+!> \param[in]     itypfb        boundary face types
+!> \param[in]     ialtyb        boundary face types for ALE
+!> \param[in,out] icodcl        boundary conditions codes for faces
+!>                              - = 1 -> dirichlet
+!>                              - = 3 -> flux density
+!> \param[in]     impale        imposed displacement indicator
+!> \param[in]     dt            time step (per cell)
+!> \param[in,out] rcodcl        boundary conditions values for boundary faces
+!>                              - rcodcl(1) = dirichlet value
+!>                              - rcodcl(2) = exchange coefficient value
+!>                                 ext. (infinite si no exchange)
+!>                              - rcodcl(3) = flow density value
+!>                                          (negative if gain) w/m2
+!>                              for velocity : (vistl+visct)*gradu
+!>                              for pressure :            dt*gradp
+!>                              for scalars  : cp*(viscls+visct/sigmas)*gradt
+!> \param[in]     depale        nodes displacement
+!> \param[in]     xyzno0        initial mesh nodes coordinates
+!______________________________________________________________________________
+
+subroutine altycl &
  ( itypfb , ialtyb , icodcl , impale ,                            &
    dt     ,                                                      &
    rcodcl , xyzno0 , depale )
-
-!===============================================================================
-! FONCTION :
-! --------
-
-! TRAITEMENT DES CODES DE CONDITIONS AUX LIMITES IALTYB POUR L'ALE
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! itypfb           ! ia ! <-- ! boundary face types                            !
-! ialtyb(nfabor)   ! te ! <-- ! type des faces de bord pour l'ale              !
-! icodcl           ! te ! <-- ! code de condition limites aux faces            !
-!  (nfabor,nvarcl) !    !     !  de bord                                       !
-!                  !    !     ! = 1   -> dirichlet                             !
-!                  !    !     ! = 3   -> densite de flux                       !
-! impale(nnod)     ! te ! <-- ! indicateur de delacement impose                !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rcodcl           ! tr ! <-- ! valeur des conditions aux limites              !
-!  (nfabor,nvarcl) !    !     !  aux faces de bord                             !
-!                  !    !     ! rcodcl(1) = valeur du dirichlet                !
-!                  !    !     ! rcodcl(2) = valeur du coef. d'echange          !
-!                  !    !     !  ext. (infinie si pas d'echange)               !
-!                  !    !     ! rcodcl(3) = valeur de la densite de            !
-!                  !    !     !  flux (negatif si gain) w/m2                   !
-!                  !    !     ! pour les vitesses (vistl+visct)*gradu          !
-!                  !    !     ! pour la pression             dt*gradp          !
-!                  !    !     ! pour les scalaires                             !
-!                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
-! depale(3,nnod)   ! tr ! <-- ! deplacement aux noeuds                         !
-! xyzno0(3,nnod)   ! tr ! <-- ! coordonnees noeuds maillage initial            !
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
 
 !===============================================================================
 ! Module files

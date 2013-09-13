@@ -20,56 +20,46 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine catsmv &
-!================
+!> \file catsmv.f90
+!> \brief Compute explicit and implicit source terms coming from mass source.
+!>
+!------------------------------------------------------------------------------
 
+!------------------------------------------------------------------------------
+! Arguments
+!------------------------------------------------------------------------------
+!   mode          name          role
+!------------------------------------------------------------------------------
+!> \param[in]     ncelet        number of extended (real + ghost) cells
+!> \param[in]     ncel          number of cells
+!> \param[in]     ncesmp        number of cells with mass source term
+!> \param[in]     iterns        Navier-Stokes iteration number
+!> \param[in]     isnexp        sources terms of treated phase extrapolation
+!>                              indicator
+!> \param[in]     thetv         theta scheme for the variable
+!>                              \f$ \varia^\theta = \theta \varia^{n+1}
+!>                                                + (1-\theta)\varia^n \f$
+!> \param[in]     icetsm        source mass cells pointer
+!> \param[in]     itpsmp        mass source type for the working variable
+!>                              (cf. \ref ustsma)
+!> \param[in]     volume        cells volume
+!> \param[in]     vela          variable value at time step beginning
+!> \param[in]     smcelv        valeur de la variable associee a la
+!>                              source de masse NOT INTERLEAVED
+!> \param[in]     gamma         mass flow value
+!> \param[in]     tsexpv        explicit source term part linear in the variable
+!> \param[in]     tsimpv        associated value withr \ref tsexp
+!>                              to be stored in the matrix
+!> \param[out]    gapinj        explicit source term part independant
+!>                              of the variable
+!______________________________________________________________________________
+
+subroutine catsmv &
  ( ncelet , ncel   , ncesmp , iterns , isnexp ,                   &
    thetv  ,                                                       &
    icetsm , itpsmp ,                                              &
    volume , vela   , smcelv , gamma  ,                            &
    tsexpv , tsimpv , gavinj )
-
-!===============================================================================
-! FONCTION :
-! ----------
-
-! COMPUTE EXPLICITE AND IMPLICIT SOURCE TERMS COMING FROM MASS SOURCE
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! e  ! <-- ! nombre de cellules                             !
-! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
-! iterns           ! e  ! <-- ! numero d'iteration sur navsto                  !
-! isnexp           ! e  ! <-- ! indicateur pour extrapolation des              !
-!                  !    !     !  termes sources de la phase traitee            !
-! thetv            ! r  ! <-- ! theta sch. pour la variable                    !
-!                  !    !     !    thetv  v(n+1) + (1-thetv) v(n)              !
-! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
-! itpsmp(ncesmp    ! te ! <-- ! type de source de masse pour la                !
-!                  !    !     !  variable traitee (cf. ustsma)                 !
-! volume(ncel)     ! tr ! <-- ! volume des cellules                            !
-! vela(3,ncelet)   ! tr ! <-- ! valeur de la variable en debut de pas          !
-!                  !    !     !  de temps                                      !
-! smcelv(ncesmp,3) ! tr ! <-- ! valeur de la variable associee a la            !
-!                  !    !     !  source de masse NOT INTERLEAVED               !
-! gamma(ncesmp)    ! tr ! <-- ! valeur du flux de masse                        !
-! tsexpv(3,ncelet) ! tr ! <-- ! part du terme source explicite                 !
-!                  !    !     !  lineaire par rapport a la variable            !
-! tsimpv(3,3,ncelet! tr ! <-- ! valeur associee a tsexp qui ira dans           !
-!                  !    !     !  la matrice                                    !
-! gavinj(3,ncelet) ! tr ! --> ! part du terme source explicite                 !
-!                  !    !     !  independant de la variable                    !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
 
 !===============================================================================
 ! Module files

@@ -20,47 +20,37 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine iniva0 &
-!================
+!> \file iniva0.f90
+!> \brief Computed variable initialization.
+!> The time step, the indicator of wall distance computation are also
+!> initialized just before reading a restart file or use the user
+!> initializations.
+!>
+!------------------------------------------------------------------------------
 
+!------------------------------------------------------------------------------
+! Arguments
+!------------------------------------------------------------------------------
+!   mode          name          role
+!------------------------------------------------------------------------------
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     ncofab        total number of couples coefa/b for bound cond
+!> \param[in]     dt            time step value
+!> \param[in]     tpucou        velocity-pressure coupling
+!> \param[in]     rtp           calculation variables at cells center
+!> \param[in]     propce        physical properties at cell centers
+!> \param[in]     propfb        physical properties at boundary face centers
+!> \param[in]     coefa         boundary conditions for boundary faces
+!> \param[in]     coefb         boundary conditions for boundary faces
+!> \param[in]     frcxt         external stress generating hydrostatic pressure
+!> \param[in]     prhyd         hydrostatic pressure predicted
+!______________________________________________________________________________
+
+subroutine iniva0 &
  ( nvar   , nscal  , ncofab ,                                     &
    dt     , tpucou , rtp    , propce , propfb ,                   &
    coefa  , coefb  , frcxt  , prhyd)
-
-!===============================================================================
-! FONCTION :
-! --------
-
-! INITIALISATION DES VARIABLES DE CALCUL, DU PAS DE TEMPS
-!  ET DU TABLEAU INDICATEUR DU CALCUL DE LA DISTANCE A LA PAROI
-!  AUX VALEURS PAR DEFAUT
-!                AVANT LECTURE EVENTUELLE DU FICHIER SUITE ET
-!                AVANT DE PASSER LA MAIN A L'UTILISATEUR
-!-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ncofab           ! e  ! <-- ! nombre de couples coefa/b pour les cl          !
-! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
-! rtp              ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules                                    !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa coefb      ! tr ! <-- ! conditions aux limites aux                     !
-!  (nfabor,*)      !    !     !    faces de bord                               !
-! frcxt(3,ncelet)  ! tr ! <-- ! force exterieure generant la pression          !
-!                  !    !     !  hydrostatique                                 !
-! prhyd(ncelet)    ! ra ! <-- ! hydrostatic pressure predicted                 !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
 
 !===============================================================================
 ! Module files

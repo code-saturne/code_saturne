@@ -20,37 +20,30 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine cscelv &
-!================
+!> \file cscelv.f90
+!> \brief Exchange of coupling variables between to times of Code_Saturne
+!> thanks to boundary faces.
+!>
+!------------------------------------------------------------------------------
 
+!------------------------------------------------------------------------------
+! Arguments
+!------------------------------------------------------------------------------
+!   mode          name          role
+!------------------------------------------------------------------------------
+!> \param[in]     ivar          variable number
+!> \param[in]     vela          variable value at time step beginning
+!> \param[in]     propce        physical properties at cell centers
+!> \param[in]     coefav        boundary condition coefficient
+!> \param[in]     coefbv        boundary condition coefficient
+!> \param[out]    crvexp        working table for explicit part
+!______________________________________________________________________________
+
+subroutine cscelv &
  ( ivar   ,                                                       &
    vela   , propce ,                                              &
    coefav , coefbv ,                                              &
    crvexp )
-
-!===============================================================================
-! FONCTION :
-! --------
-
-! EXCHANGE OF COUPLING VARIABLES BETWEEN TO TIMES OF CODE_SATURNE THANKS TO
-! BOUNDARY FACES
-!
-
-!-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! ivar             ! i  ! <-- ! variable number                                !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! crvexp(3,ncelet) ! tr ! --> ! tableau de travail pour part explicit          !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
 
 !===============================================================================
 ! Module files

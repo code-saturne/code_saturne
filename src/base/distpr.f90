@@ -20,40 +20,32 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine distpr &
-!================
+!> \file distpr.f90
+!> \brief Compute distance to wall by solving a 3d diffusion equation.
+!> Solve
+!>   \f[ \divs ( \grad \varia ) = -1 \f]
+!> with:
+!>  - \f$ \varia_|b = 0 \f$  at the wall
+!>  - \f$ \grad \varia \cdot \vect{n} = 0 \f$ elsewhere
+!> The wall distance is then equal to:
+!>  \f[
+!>  d \simeq -|\grad \varia |
+!>  + \sqrt{ \grad \varia \cdot \grad \varia +2 \varia }
+!>  \f]
+!>
+!------------------------------------------------------------------------------
 
- ( itypfb , distpa )
-
-!===============================================================================
-! Purpose:
-! --------
-
-! Compute distance to wall by solving a 3D diffusion equation.
-
-! Solve
-!    div[grad(T)] = -1
-!      avec :
-!      T(bord)   = 0 en paroi
-!      grad(T).n = 0 ailleurs
-
-! The wall distance is then equal to:
-
-!   d ~ -|grad(T)| + [grad(T).grad(T)+2.T]^(1/2)
-
-!-------------------------------------------------------------------------------
+!------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! itypfb           ! ia ! <-- ! boundary face types                            !
-! distpa(ncelet    ! ra ! --> ! distance to wall                               !
-!__________________!____!_____!________________________________________________!
+!------------------------------------------------------------------------------
+!   mode          name          role
+!------------------------------------------------------------------------------
+!> \param[in]     itypfb        boundary face types
+!> \param[out]    distpa        distance to wall
+!______________________________________________________________________________
 
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
+subroutine distpr &
+ ( itypfb , distpa )
 
 !===============================================================================
 ! Module files

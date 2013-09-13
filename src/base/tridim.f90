@@ -20,52 +20,43 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine tridim &
-!================
+!> \file tridim.f90
+!> \brief Resolution of incompressible Navier Stokes and scalar transport
+!> equations for a time step.
+!>
+!------------------------------------------------------------------------------
 
+!------------------------------------------------------------------------------
+! Arguments
+!------------------------------------------------------------------------------
+!   mode          name          role
+!------------------------------------------------------------------------------
+!> \param[in]     itrale        ALE iteration number
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     isostd        standard output indicator
+!>                              + reference face number
+!> \param[in]     dt            time step (per cell)
+!> \param[in]     tpucou        velocity-pressure coupling
+!> \param[in]     rtpa          calculated variables at cell centers
+!>                              (at current and previous time steps)
+!> \param[in]     rtp           calculated variables at cell centers
+!>                              (at current and previous time steps)
+!> \param[in]     propce        physical properties at cell centers
+!> \param[in]     propfb        physical properties at boundary face centers
+!> \param[in]     tslagr        lagrangian returned coupling term
+!> \param[in]     coefa         boundary conditions
+!> \param[in]     coefb         boundary conditions
+!> \param[in]     frcxt         external force generating hydrostatic pressure
+!> \param[in]     prhyd         predicted hydrostatic pressure
+!______________________________________________________________________________
+
+subroutine tridim &
  ( itrale ,                                                       &
    nvar   , nscal  ,                                              &
    isostd ,                                                       &
    dt     , tpucou , rtpa   , rtp    , propce , propfb ,          &
    tslagr , coefa  , coefb  , frcxt  , prhyd  )
-
-!===============================================================================
-! FONCTION :
-! ----------
-
-! RESOLUTION DES EQUATIONS N-S MONOPHASIQUES INCOMPRESSIBLE ET DES
-! EQUATIONS SCALAIRES POUR UN PAS DE TEMPS
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! itrale           ! e  ! <-- ! numero d'iteration pour l'ale                  !
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! isostd           ! te ! <-- ! indicateur de sortie standard                  !
-!    (nfabor+1)    !    !     !  +numero de la face de reference               !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! tpucou(ncelet,3) ! ra ! <-- ! velocity-pressure coupling                     !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
-! tslagr           ! tr ! <-- ! terme de couplage retour du                    !
-!(ncelet,*)        !    !     !     lagrangien                                 !
-! frcxt(3,ncelet)  ! tr ! <-- ! force exterieure generant la pression          !
-!                  !    !     !  hydrostatique                                 !
-! prhyd(ncelet)    ! tr ! <-- ! pression hydrostatique predite                 !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
 
 !===============================================================================
 ! Module files
