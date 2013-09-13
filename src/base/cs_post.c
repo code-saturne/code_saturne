@@ -1657,7 +1657,7 @@ _define_mesh(cs_post_mesh_t        *post_mesh,
     }
 
     else if (post_mesh->sel_func[3] != NULL) {
-      cs_post_elt_select_t *sel_func = post_mesh->sel_func[4];
+      cs_post_elt_select_t *sel_func = post_mesh->sel_func[3];
       sel_func(post_mesh->sel_input[0], &n_post_particles, &particle_list);
     }
 
