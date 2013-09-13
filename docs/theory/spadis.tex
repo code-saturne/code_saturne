@@ -335,18 +335,18 @@ with
 \begin{equation}
 \varia_\fij^{SOLU} =
 \left\lbrace\begin{array}{l l}
-\varia_\celli +\grad_\celli \varia \cdot \vect{IF}  & \text{ if }  \varia_\celli \text{ if } \dot{m}_\ij  \geqslant 0,\\
-\varia_\cellj +\grad_\cellj \varia \cdot\vect{JF}   & \text{ if } \varia_\cellj \text{ if } \dot{m}_\ij < 0 .
+\varia_\celli +\grad_\celli \varia \cdot \vect{IF}  & \text{ if } \dot{m}_\ij  \geqslant 0,\\
+\varia_\cellj +\grad_\cellj \varia \cdot\vect{JF}   & \text{ if } \dot{m}_\ij < 0 .
 \end{array}\right.
 \end{equation}
 
 
-The value of $C_\ib^{SOLU}$ is calculated as:
+The boundary value of $C_\ib^{SOLU}$ is calculated as:
 \begin{equation}
 \varia_\fib^{SOLU} =
 \left\lbrace\begin{array}{l l}
-\varia_\celli +\grad_\celli \varia \cdot \vect{IF}  &\text{ if }  \varia_\celli \text{ if } \dot{m}_\ib  \geqslant 0,\\
-A^g_\fib  + B^g_\fib \varia_\centip  & \text{ if } \varia_\cellj \text{ if } \dot{m}_\ij < 0.
+\varia_\celli +\grad_\celli \varia \cdot \vect{IF}  & \text{ if } \dot{m}_\ib  \geqslant 0,\\
+A^g_\fib  + B^g_\fib \varia_\centip  & \text{ if } \dot{m}_\ib < 0.
 \end{array}\right.
 \end{equation}
 
