@@ -236,9 +236,9 @@ integer          ifac0
 integer          ierr
 integer          iel    , ifac   , ipcrom, ipbrom
 integer          itk    , ien    , niter, nitermax
-double precision gamagp , xmasml , enint
+double precision gamagp , xmasml , enint, norm, cosalp
 double precision xmach  , xmachi , xmache , dxmach
-
+double precision dir(3)
 double precision roi, ro1, pri, ei, uni, un1, y, uns, bc, pinf, ptot, eps, res, rhotot
 double precision ci, c1, mi, a, b, sigma1, utxi, utyi, utzi, bMach, old_pstat, pstat
 
@@ -991,12 +991,32 @@ if (ieos.eq.1) then
     roi  = propce(iel,ipcrom)
     pri  = rtp(iel,ipr)
 
+    ! Normalize the direction vector given by the user
+    norm = sqrt(bval(ifac,iu)**2 + bval(ifac,iv)**2 + bval(ifac,iw)**2)
+    if (norm.lt.epzero) then
+      write(nfecra,9010)ifac
+      call csexit (1)
+    endif
+
+    dir(1) = bval(ifac,iu) / norm
+    dir(2) = bval(ifac,iv) / norm
+    dir(3) = bval(ifac,iw) / norm
+
+    ! Angle between the imposed direction and the inlet normal
+    cosalp = ( dir(1)*surfbo(1,ifac) + dir(2)*surfbo(2,ifac)  &
+             + dir(3)*surfbo(3,ifac) ) /surfbn(ifac)
+
+    ! If direction vector is outward, warn the user
+    if (cosalp.gt.epzero) then
+      write(nfecra,9020)ifac
+    endif
+
     ! Computation of the sound speed inside the domain
     ci = sqrt(gamagp * pri / roi)
 
     uni = ( rtp(iel,iu) * surfbo(1,ifac)                             &
-         + rtp(iel,iv) * surfbo(2,ifac)                             &
-         + rtp(iel,iw) * surfbo(3,ifac) ) / surfbn(ifac)
+          + rtp(iel,iv) * surfbo(2,ifac)                             &
+          + rtp(iel,iw) * surfbo(3,ifac) ) / surfbn(ifac)
 
     bMach = uni / ci
 
@@ -1034,14 +1054,14 @@ if (ieos.eq.1) then
         if (un1.le.0.d0) then
 
           ! unb = u2
-          bval(ifac,iu) = un1 * surfbo(1,ifac) / surfbn(ifac)
-          bval(ifac,iv) = un1 * surfbo(2,ifac) / surfbn(ifac)
-          bval(ifac,iw) = un1 * surfbo(3,ifac) / surfbn(ifac)
+          bval(ifac,iu) = un1 / cosalp * dir(1)
+          bval(ifac,iv) = un1 / cosalp * dir(2)
+          bval(ifac,iw) = un1 / cosalp * dir(3)
           ! rob = ro2
           propfb(ifac,ipbrom) = (pstat / ptot)**(1.d0/gamagp) * rhotot
           ! eb = e2
-          bval(ifac,isca(ienerg)) = pstat / ((gamagp - 1.d0) * propfb(ifac,ipbrom)) + 0.5d0 * un1**2
-
+          bval(ifac,isca(ienerg)) = pstat / ((gamagp - 1.d0) * propfb(ifac,ipbrom))                    &
+                                  + 0.5d0 * ( bval(ifac,iu)**2 + bval(ifac,iv)**2 + bval(ifac,iw)**2 )
         ! Outlet
         else
           ! Computation of the shock velocity
@@ -1091,14 +1111,14 @@ if (ieos.eq.1) then
         if (un1.le.0.d0) then
 
           ! unb = u2
-          bval(ifac,iu) = un1 * surfbo(1,ifac) / surfbn(ifac)
-          bval(ifac,iv) = un1 * surfbo(2,ifac) / surfbn(ifac)
-          bval(ifac,iw) = un1 * surfbo(3,ifac) / surfbn(ifac)
+          bval(ifac,iu) = un1 / cosalp * dir(1)
+          bval(ifac,iv) = un1 / cosalp * dir(2)
+          bval(ifac,iw) = un1 / cosalp * dir(3)
           ! rob = ro2
           propfb(ifac,ipbrom) = (pstat / ptot)**(1.d0/gamagp) * rhotot
           ! eb = e2
-          bval(ifac,isca(ienerg)) = pstat / ((gamagp - 1.d0) * propfb(ifac,ipbrom)) + 0.5d0 * un1**2
-
+          bval(ifac,isca(ienerg)) = pstat / ((gamagp - 1.d0) * propfb(ifac,ipbrom))                    &
+                                  + 0.5d0 * ( bval(ifac,iu)**2 + bval(ifac,iv)**2 + bval(ifac,iw)**2 )
         ! Outlet
         else
 
@@ -1176,7 +1196,7 @@ if (ieos.eq.1) then
 
     ! Warn the user if fixed point algorithm did not converge
     if (niter.eq.101) then
-      write(nfecra,3000)ifac,res
+      write(nfecra,9000)ifac,res
     endif
 
 ! --- Calculation of temperature and energy from pressure and density
@@ -1525,7 +1545,7 @@ endif
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)
 
-3000 format(                                                     &
+9000 format(                                                     &
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/,                                                            &
@@ -1536,7 +1556,7 @@ endif
 '@',/,                                                            &
 '@     Fixed point algorithm did not converge when',/,            &
 '@     computing the subsonic inlet boundary condition',/,        &
-'@     with total pressure and enthalpy imposed.',/,              &
+'@     with imposed total pressure and total enthalpy.',/,        &
 '@',/,                                                            &
 '@     At boundary face ',i10   , /,                              &
 '@     boundary Mach number residual = ', e12.4 ,/,               &
@@ -1544,6 +1564,44 @@ endif
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)
+
+9010 format(                                                     &
+'@',/,                                                            &
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    in thermodynamics computations',/,              &
+'@    =======',/,                                                 &
+'@     Error encountered in the user subroutine ''cfther'', ',/,  &
+'@       for perfect gas with variable gamma.',/,                 &
+'@',/,                                                            &
+'@     The computation of the subsonic inlet boundary',/,         &
+'@     condition with imposed total pressure and',/,              &
+'@     total enthalpy failed.',/,                                 &
+'@',/,                                                            &
+'@     At boundary face ',i10   , /,                              &
+'@     The direction vector given by the user can''t be null.',/, &
+'@',/,                                                            &
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',/)
+
+9020 format(                                                     &
+'@',/,                                                            &
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    in thermodynamics computations',/,              &
+'@    =======',/,                                                 &
+'@     In the user subroutine ''cfther'', for perfect gas',/,  &
+'@       with variable gamma,',/,                                 &
+'@',/,                                                            &
+'@       in the computation of the subsonic inlet with',/,        &
+'@       imposed total pressure and total enthalpy.',/,           &
+'@',/,                                                            &
+'@     At boundary face ',i10   , /,                              &
+'@     The direction vector points outward the fluid domain.',/,  &
+'@',/,                                                            &
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',/)
+
 !----
 ! End
 !----
