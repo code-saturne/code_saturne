@@ -20,11 +20,13 @@
 ! this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
 ! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+!-------------------------------------------------------------------------------
+
 !===============================================================================
 ! Function:
 ! ---------
 !> \file  cs_user_boundary_conditions-compressible.f90
-!> \brief Example of cs_user_boundary_conditions subroutine.f90 for compressible
+!> \brief Example of cs_user_boundary_conditions.f90 for compressible
 !
 !-------------------------------------------------------------------------------
 
@@ -70,6 +72,7 @@
 !>                                     \dfrac{K_T}{\sigma_T} \right)
 !>                                     \grad T \cdot \vect{n} \f$
 !_______________________________________________________________________________
+
 
 subroutine cs_user_boundary_conditions &
 !=====================================
@@ -527,15 +530,14 @@ d2s3 = 2.d0/3.d0
 !   - set the boundary condition for each face
 !===============================================================================
 
-! --- Exemple d'entree/sortie pour laquelle tout est connu
+! --- Example of inlet/outlet for which everything is known
 
-!       sans presumer du caractere subsonique ou supersonique,
-!         l'utilisateur souhaite imposer toutes les caracteristiques
-!         de l'ecoulement
-!       une entree supersonique est un cas particulier
+!       Without assuming the subsonic or supersonic nature of the inlet
+!       the user wishes to impose all the characteristics of the flow,
+!       a supersonic inlet is a particular case.
 
-!       La turbulence et les scalaires utilisateur prennent un flux nul
-!         si la vitesse est sortante.
+!       The turbulence and the user scalars take a zero flux if the
+!       velocity is outward.
 
 !< [example_1]
 call getfbr('1 and X <= 1.0 ', nlelt, lstelt)
@@ -562,13 +564,14 @@ do ilelt = 1, nlelt
 
   ! Pressure, Density, Temperature, Total Specific Energy
 
-  !     Seules 2 variables sur les 4 sont independantes
-  !     On peut donc fixer le couple de variables que l'on veut
-  !     (sauf Temperature-Energie) et les 2 autres variables seront
-  !     calculees automatiquement
+  !     Only 2 of the 4 variables are independant,
+  !     hence one can impose values for any couple of variables
+  !     (except Temperature-Energy) and the two other variables
+  !     will be computed automatically
 
-  !  ** Choisir les 2 variables a imposer et effacer les autres
-  !     (elles sont calculees par les lois thermodynamiques dans cfther)
+  !  ** Choose a couple of variables which values are to be imposed
+  !     and delete the others (that will be computed with the help of
+  !     the thermodynamic laws in cfther).
 
   ! Pressure (in Pa)
   rcodcl(ifac,ipr,1) = 5.d5
@@ -661,20 +664,18 @@ do ilelt = 1, nlelt
 enddo
 !< [example_1]
 
-! --- Exemple de sortie supersonique
+! --- Supersonic outlet example
 
-!     toutes les caracteristiques sortent
-!     on ne doit rien imposer (ce sont les valeurs internes qui sont
-!       utilisees pour le calcul des flux de bord)
+!     All the characteristics are outward,
+!     nothing needs to be imposed (only internal values are used
+!     to compute the boundary flux).
 
-!     pour la turbulence et les scalaires, si on fournit ici des
-!       valeurs de RCODCL, on les impose en Dirichlet si le flux
-!       de masse est entrant ; sinon, on impose un flux nul (flux de
-!       masse sortant ou RCODCL renseigne ici).
-!       Noter que pour la turbulence, il faut renseigner RCODCL pour
-!       toutes les variables turbulentes (sinon, on applique un flux
-!       nul).
-
+!     for the turbulence and the scalar, if values of rcodcl are
+!     provided here, we impose them as Dirichlet if the mass flux is
+!     inward ; otherwise a zero flux is imposed (outward mass flux or
+!     RCODCL values given here).
+!     Note that for turbulence, RCODCL has to be filled in for all
+!     turbulent variable (otherwise a zero flux is imposed).
 
 !< [example_2]
 call getfbr('2', nlelt, lstelt)
@@ -693,16 +694,16 @@ do ilelt = 1, nlelt
 enddo
 !< [example_2]
 
-! --- Exemple d'entree subsonique (debit, debit enthalpique)
+! --- Example of subsonic inlet (flow rate, entalpy flow rate)
 
-!     2 caracteristiques sur 3 entrent : il faut donner 2 informations
-!       la troisieme est deduite par un scenario de 2-contact et
-!       3-detente dans le domaine
-!     ici on choisit de donner (rho*(U.n), rho*(U.n)*H)
-!       avec H = 1/2 U*U + P/rho + e
-!            n la normale unitaire entrante
+!     2 characteristics out of 3 are inward : 2 informations have
+!     to be given, the third is deduced by a 2-contact and
+!     3-rarefaction scenario in the domain
+!     here it is chosen to give (rho*(U.n), rho*(U.n)*H)
+!     with H = 1/2 U*U + P/rho + e
+!            n being the unit inward normal
 
-!     ATTENTION, on donne des DENSITES de debit (par unite de surface)
+!     WARNING, flux DENSITIES have to be given (per area unit)
 
 !< [example_3]
 call getfbr('3', nlelt, lstelt)
@@ -712,31 +713,26 @@ do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
 
-  !     On numerote les zones de 1 a n...
+  ! Number of zones from 1 to n...
   izone = 3
   izfppp(ifac) = izone
 
   itypfb(ifac) = ieqhcf
 
-  ! - Densite de debit massique (en kg/(m2 s))
+  ! - flow rate density (kg/(m2 s))
   rcodcl(ifac,irun,1) = 5.d5
 
-  ! - Densite de debit enthalpique (en J/(m2 s))
+  ! - enthalpy flow rate density (J/(m2 s))
   rcodcl(ifac,irunh,1) = 5.d5
 
-  !   Condition non disponible dans la version presente
+  !   Unavailable B.C. in current version
   call csexit (1)
   !==========
 
 enddo
 !< [example_3]
 
-! --- Exemple d'entree subsonique (masse volumique, vitesse)
-
-!     2 caracteristiques sur 3 entrent : il faut donner 2 informations
-!       la troisieme est deduite par un scenario de 2-contact et
-!       3-detente dans le domaine
-!     ici on choisit de donner (rho, U)
+! --- Example of subsonic inlet (total pressure, total enthalpy)
 
 !< [example_4]
 call getfbr('4', nlelt, lstelt)
@@ -750,94 +746,18 @@ do ilelt = 1, nlelt
   izone = 4
   izfppp(ifac) = izone
 
-  itypfb(ifac) = ierucf
+  itypfb(ifac) = iephcf
 
-  ! - Vitesse d'entree
-  rcodcl(ifac,iu,1) = 5.0d0
-  rcodcl(ifac,iv,1) = 0.0d0
-  rcodcl(ifac,iw,1) = 0.0d0
+  ! Total pressure (in Pa)
+  rcodcl(ifac,ipr,1) = 1.d5
 
-  ! - Masse Volumique (en kg/m3)
-  !FIXME with Q,H, rcodcl(ifac,isca(irho  ),1) = 1.d0
+  ! Total enthalpy
+  rcodcl(ifac,isca(ienerg),1) = 294465.d0
 
+  ! Turbulence (no turbulence)
 
-  ! - Turbulence
-
-  uref2 = rcodcl(ifac,iu,1)**2                             &
-         +rcodcl(ifac,iv,1)**2                             &
-         +rcodcl(ifac,iw,1)**2
-  uref2 = max(uref2,1.d-12)
-
-
-  !     Exemple de turbulence calculee a partir
-  !       de formules valables pour une conduite
-
-  !     On veillera a specifier le diametre hydraulique
-  !       adapte a l'entree courante.
-
-  !     On s'attachera egalement a utiliser si besoin une formule
-  !       plus precise pour la viscosite dynamique utilisee dans le
-  !       calcul du nombre de Reynolds (en particulier, lorsqu'elle
-  !       est variable, il peut etre utile de reprendre ici la loi
-  !       imposee dans USCFPV. On utilise ici par defaut la valeur
-  !       VISCL0
-  !     En ce qui concerne la masse volumique, on peut utiliser directement
-  !       sa valeur aux faces de bord si elle est connue (et imposee
-  !       ci-dessus). Dans le cas general, on propose d'utiliser la valeur
-  !       de la cellule adjacente.
-
-  !       Diametre hydraulique
-  dhyd   = 0.075d0
-
-  !       Calcul de la vitesse de frottement au carre (USTAR2)
-  !         et de k et epsilon en entree (XKENT et XEENT) a partir
-  !         de lois standards en conduite circulaire
-  !         (leur initialisation est inutile mais plus propre)
-  rhomoy = propfb(ifac,ipprob(irom))
-  ustar2 = 0.d0
-  xkent  = epzero
-  xeent  = epzero
-
-  call keendb                                              &
-  !==========
-    ( uref2, dhyd, rhomoy, viscl0, cmu, xkappa,            &
-      ustar2, xkent, xeent )
-
-  if    (itytur.eq.2) then
-
-    rcodcl(ifac,ik,1)  = xkent
-    rcodcl(ifac,iep,1) = xeent
-
-  elseif(itytur.eq.3) then
-
-    rcodcl(ifac,ir11,1) = 2.d0/3.d0*xkent
-    rcodcl(ifac,ir22,1) = 2.d0/3.d0*xkent
-    rcodcl(ifac,ir33,1) = 2.d0/3.d0*xkent
-    rcodcl(ifac,ir12,1) = 0.d0
-    rcodcl(ifac,ir13,1) = 0.d0
-    rcodcl(ifac,ir23,1) = 0.d0
-    rcodcl(ifac,iep,1)  = xeent
-
-  elseif(iturb.eq.50) then
-
-    rcodcl(ifac,ik,1)   = xkent
-    rcodcl(ifac,iep,1)  = xeent
-    rcodcl(ifac,iphi,1) = d2s3
-    rcodcl(ifac,ifb,1)  = 0.d0
-
-  elseif(iturb.eq.60) then
-
-    rcodcl(ifac,ik,1)   = xkent
-    rcodcl(ifac,iomg,1) = xeent/cmu/xkent
-
-  elseif(iturb.eq.70) then
-
-    rcodcl(ifac,inusa,1) = cmu*xkent**2/xeent
-
-  endif
-
-  ! - Handle scalars
-    ! (do not loop on nscal, to avoid risking modifying rho and energy)
+  ! Handle scalars
+  ! (do not loop on nscal to avoid modifying rho and energy)
   if(nscaus.gt.0) then
     do ii = 1, nscaus
       rcodcl(ifac,isca(ii),1) = 1.d0

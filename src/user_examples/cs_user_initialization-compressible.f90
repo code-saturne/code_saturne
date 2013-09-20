@@ -188,7 +188,7 @@ if ( isuite.eq.0 ) then
   endif
 
   ! 3. Temperature (K -- Warning: Kelvin)
-  if(.false.) then
+  if(.true.) then
     ithvar = ithvar*5
     do iel = 1, ncel
       rtp(iel,isca(itempk)) = t0
