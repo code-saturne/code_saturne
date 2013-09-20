@@ -32,10 +32,10 @@ subroutine cfdttv &
    wflmas , wflmab , viscb  )
 
 !===============================================================================
-! FONCTION :
+! FUNCTION :
 ! ----------
 
-! CALCUL DE LA CONTRAINTE LIEE AU CFL POUR L'ALGO COMPRESSIBLE
+! Computation of the constraint for the CFL (compressible algorithm)
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -106,37 +106,39 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
+double precision coefa(nfac,*), coefb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision wcf(ncelet)
 double precision wflmas(nfac), wflmab(nfabor), viscb(nfabor)
 
 ! Local variables
 
-integer          ifac  , iel
-integer          init
+integer          ifac, iel, ipcrom
+integer          iccfth, imodif, iconvp, idiffp, isym
+
+double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: viscf
-double precision, allocatable, dimension(:,:) :: coefu
-double precision, allocatable, dimension(:) :: w1, w2
+double precision, allocatable, dimension(:) :: coefbt, cofbft
+double precision, allocatable, dimension(:) :: w1, c2
 
 !===============================================================================
 !===============================================================================
-! 0.  INITIALISATION
+! 0.  INITIALIZATION
 !===============================================================================
 
 ! Allocate temporary arrays
 allocate(viscf(nfac))
-allocate(coefu(nfabor,3))
+allocate(coefbt(nfabor),cofbft(nfabor))
 
 ! Allocate work arrays
-allocate(w1(ncelet), w2(ncelet))
+allocate(w1(ncelet))
 
 !===============================================================================
-! 1. CALCUL DE LA CONDITION CFL ASSOCIEE A LA MASSE VOLUMIQUE
+! 1. COMPUTATION OF THE CFL CONDITION ASSOCIATED TO THE PRESSURE EQUATION
 !===============================================================================
 
-! ---> Calcul du "flux de masse" associe a la masse volumique
+! Computation of the convective flux associated to the density
 
 do ifac = 1, nfac
   wflmas(ifac) = 0.d0
@@ -154,34 +156,54 @@ call cfmsfp                                                       &
    wflmas , wflmab ,                                              &
    viscf  , viscb  )
 
-! ---> Sommation sur les faces (depend de si l'on explicite ou non
-!                               le terme de convection)
+! Summation at each cell taking only outward flux
 
-init = 1
-call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                  &
-               ifacel,ifabor,wflmas,wflmab,w1)
+iconvp = 1
+idiffp = 0
+isym   = 2
 
 do ifac = 1, nfac
-  wflmas(ifac) = max(0.d0,wflmas(ifac))
+  viscf(ifac) = 0.d0
 enddo
 do ifac = 1, nfabor
-  wflmab(ifac) = max(0.d0,wflmab(ifac))
+  coefbt(ifac) = 0.d0
+  cofbft(ifac) = 0.d0
+  viscb(ifac)  = 0.d0
 enddo
-call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                  &
-               ifacel,ifabor,wflmas,wflmab,w2)
 
+call matrdt &
+!==========
+ ( iconvp  , idiffp  , isym   , coefbt , cofbft , wflmas ,          &
+   wflmab , viscf  , viscb  , w1 )
 
-! ---> Calcul du coefficient CFL/Dt
+! Compute the square of the sound celerity
+
+allocate(c2(ncelet))
+
+iccfth = 126
+imodif = 0
+
+call cfther &
+!==========
+ ( nvar   ,                                                       &
+   iccfth , imodif ,                                              &
+   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   c2     , rvoid  , rvoid  , rvoid  , rvoid  , rvoid )
+
+! Compute the coefficient CFL/dt
+
+ipcrom = ipproc(irom)
 
 do iel = 1, ncel
-  wcf(iel) = max( -dble(iconv(ipr))*w1(iel)/volume(iel),         &
-       max( dble(1-iconv(ipr))*w2(iel)/volume(iel), 0.d0 ) )
+  wcf(iel) = w1(iel) * c2(iel) * propce(iel,ipcrom)               &
+             / (rtp(iel,ipr) * volume(iel))
 enddo
 
 ! Free memory
 deallocate(viscf)
-deallocate(coefu)
-deallocate(w1, w2)
+deallocate(w1)
+deallocate(c2)
+deallocate(coefbt,cofbft)
 
 !--------
 ! FORMATS
