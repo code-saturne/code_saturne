@@ -878,7 +878,7 @@ if (idtvar.ge.0) then
       w2(iel) = wcf(iel)*dt(iel)
     enddo
 
-    call log_iteration_add_array('CFL/Density', 'criterion',        &
+    call log_iteration_add_array('CFL / Mass ', 'criterion',        &
                                  MESH_LOCATION_CELLS, .true.,       &
                                  1, w2)
 
