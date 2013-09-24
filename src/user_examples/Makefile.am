@@ -100,6 +100,7 @@ cs_user_initialization-pulverized_coal.f90 \
 cs_user_initialization-time_step.f90 \
 cs_user_initialization-unified_combustion_coal.f90 \
 cs_user_les_inflow-base.f90 \
+cs_user_mesh-groups_from_free_faces.c \
 cs_user_parameters-output.f90 \
 cs_user_physical_properties-scalar_drift.f90 \
 cs_user_physical_properties-coal_drift.f90 \
