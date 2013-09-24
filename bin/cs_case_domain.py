@@ -232,7 +232,10 @@ class base_domain:
                     self.copy_result(f_src, f_dest)
 
             if purge:
-                shutil.rmtree(src)
+                if os.path.islink(src):
+                    os.remove(f)
+                else:
+                    shutil.rmtree(src)
 
     #---------------------------------------------------------------------------
 

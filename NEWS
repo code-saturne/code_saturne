@@ -12,6 +12,9 @@ Changes:
 Bug fixes:
 ----------
 
+- Improve robustness for cleanup stage of run script in the presence of
+  symbolic links for directories.
+
 - Fix bad detection of libccmio when CGNS is not present.
 
 - GUI: fix bugs for atmospheric flows; wall boundary conditions and default
