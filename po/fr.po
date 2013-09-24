@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2013-07-31 16:13+0200\n"
+"POT-Creation-Date: 2013-09-24 19:02+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3870,38 +3870,19 @@ msgstr ""
 "Sections présentes uniquement dans le fichier \"%s\" :\n"
 "\n"
 
-#, c-format
-msgid ""
-"\n"
-" Cutting warped faces (%.3g s)\n"
-msgstr ""
-"\n"
-" Découpage des faces gauches (%.3g s)\n"
-
-msgid ""
-"\n"
-" Renumbering mesh:\n"
-msgstr ""
-"\n"
-" Renumérotation du maillage:\n"
-
-msgid "Mesh"
-msgstr "Maillage"
-
-#, c-format
-msgid ""
-"\n"
-" Computing geometric quantities (%.3g s)\n"
-msgstr ""
-"\n"
-" Calcul des grandeurs géométriques (%.3g s)\n"
-
 msgid ""
 "\n"
 " Computing quality criteria\n"
 msgstr ""
 "\n"
 " Calcul des critères de qualité\n"
+
+msgid ""
+"Coupling with SYRTHES is not possible in mesh preprocessing\n"
+"or verification mode."
+msgstr ""
+"Le couplage avec SYRTHES n'est pas possible en mode de pré-traitement\n"
+"ou vérification de maillage."
 
 msgid ""
 "\n"
@@ -5562,6 +5543,10 @@ msgstr "Domaine de calcul"
 #, c-format
 msgid "No \"%s\" file or directory found."
 msgstr "Aucun fichier ou répertoire \"%s\" trouvé."
+
+#, c-format
+msgid " Checking metadata from file: \"%s\"\n"
+msgstr " Lecture des méta-données du fichier : \"%s\"\n"
 
 #, c-format
 msgid ""
@@ -10323,4 +10308,3 @@ msgstr ""
 "    min local :                     %12.3f\n"
 "    max local :                     %12.3f\n"
 "    moyenne :                       %12.3f\n"
-

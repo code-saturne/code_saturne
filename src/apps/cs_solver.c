@@ -292,6 +292,11 @@ cs_run(void)
     cs_benchmark(mpi_trace_mode);
   }
 
+  if (check_mask && cs_syr_coupling_n_couplings())
+    bft_error(__FILE__, __LINE__, errno,
+              _("Coupling with SYRTHES is not possible in mesh preprocessing\n"
+                "or verification mode."));
+
   if (opts.preprocess == false && opts.benchmark <= 0) {
 
     /* Check that mesh seems valid */

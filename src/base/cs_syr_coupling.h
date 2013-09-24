@@ -304,6 +304,16 @@ void
 cs_syr_coupling_all_finalize(void);
 
 /*----------------------------------------------------------------------------
+ * Return number of SYRTHES couplings.
+ *
+ * return:
+ *   number of SYRTHES couplings defined
+ *----------------------------------------------------------------------------*/
+
+int
+cs_syr_coupling_n_couplings(void);
+
+/*----------------------------------------------------------------------------
  * Set conservativity forcing flag to True (1) or False (0) for all defined
  * SYRTHES couplings
  *

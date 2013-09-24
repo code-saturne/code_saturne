@@ -446,14 +446,7 @@ void CS_PROCF(nbcsyr, NBCSYR)
  cs_lnum_t  *n_couplings
 )
 {
-  if (_cs_glob_n_syr_cp < 0) {
-    if (_syr_coupling_builder_size > 0)
-      _cs_glob_n_syr_cp = _syr_coupling_builder_size;
-    else
-      _cs_glob_n_syr_cp = cs_syr4_coupling_n_couplings();
-  }
-
-  *n_couplings = _cs_glob_n_syr_cp;
+  *n_couplings = cs_syr_coupling_n_couplings();
 }
 
 /*----------------------------------------------------------------------------
@@ -825,7 +818,7 @@ void CS_PROCF (ctbvsy, CTBVSY)
  * In case of multiple couplings, a coupling will be matched with available
  * SYRTHES instances based on the syrthes_name argument.
  *
- * arguments:
+ * parameters:
  *   syrthes_name      <-- name of SYRTHES instance
  *   boundary_criteria <-- boundary face selection criteria, or NULL
  *   volume_criteria   <-- volume cell selection criteria, or NULL
@@ -951,6 +944,26 @@ void
 cs_syr_coupling_all_finalize(void)
 {
   cs_syr4_coupling_all_destroy();
+}
+
+/*----------------------------------------------------------------------------
+ * Return number of SYRTHES couplings.
+ *
+ * return:
+ *   number of SYRTHES couplings defined
+ *----------------------------------------------------------------------------*/
+
+int
+cs_syr_coupling_n_couplings(void)
+{
+  if (_cs_glob_n_syr_cp < 0) {
+    if (_syr_coupling_builder_size > 0)
+      _cs_glob_n_syr_cp = _syr_coupling_builder_size;
+    else
+      _cs_glob_n_syr_cp = cs_syr4_coupling_n_couplings();
+  }
+
+  return _cs_glob_n_syr_cp;
 }
 
 /*----------------------------------------------------------------------------
