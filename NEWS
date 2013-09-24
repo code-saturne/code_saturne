@@ -4,6 +4,9 @@ Release 3.1.1 (unreleased)
 Bug fixes:
 ----------
 
+- Improve robustness for cleanup stage of run script in the presence of
+  symbolic links for directories.
+
 - Fix a bug in radiative quadrature formulas.
 
 - Fix for call of user selection function for particle postprocessing.
