@@ -681,7 +681,8 @@ cs_user_mesh_bad_cells_tag(cs_mesh_t             *mesh,
       /* Compare the cell volume to the user condition */
 
       if (volume[cell_id] < 0.01) {
-        /* Local array used to post-process results --> user tagged cells are set to 1 */
+        /* Local array used to post-process results
+           --> user tagged cells are set to 1 */
         bad_vol_cells[cell_id] = 1;
 
         /* Array used to store bad cells flag
