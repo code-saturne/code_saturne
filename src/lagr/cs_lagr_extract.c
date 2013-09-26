@@ -318,8 +318,8 @@ cs_lagr_get_particle_values(const cs_lagr_particle_set_t  *particles,
         attr_name[31] = '\0';
       }
       bft_error(__FILE__, __LINE__, 0,
-                _("Attribute %s has a number of components equals to %d\n"
-                  "but the component_id %d is requested."),
+                _("Attribute %s has a number of components equal to %d\n"
+                  "but component %d is requested."),
                 _attr_name,
                 stride,
                     component_id);
@@ -454,8 +454,8 @@ cs_lagr_get_trajectory_values(const cs_lagr_particle_set_t  *particles,
         attr_name[31] = '\0';
       }
       bft_error(__FILE__, __LINE__, 0,
-                _("Attribute %s has a number of components equals to %d\n"
-                  "but the component_id %d is requested."),
+                _("Attribute %s has a number of components equal to %d\n"
+                  "but component %d is requested."),
                 _attr_name,
                 stride,
                     component_id);

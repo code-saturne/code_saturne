@@ -4,16 +4,28 @@ Trunk (unreleased)
 
 Changes:
 --------
-- Add new NOx model for coal combustion.
 
 - Documentation: moved tutorials outside the codebase, and into a separate base.
   This allows looser synchronization with the code base, as tutorials may be
   updated somewhat less frequently.
 
-- Particle-tracking module: fixing and extension of the coal combustion model;
+- Particle tracking module:
    * add a modeling of the drying phase of the coal particle combustion 
    * add a new boundary condition to simulate coal fouling mechanism
    * bug fixes related to radiative transfer
+   * implementation of a particle discretization in the coal combustion model:
+     - backwards compatibility is ensured (set nlayer = 1)
+     - computation of intra-particle thermal gradients
+     - adaptation of chemical source terms to temperature discretization
+     - reworked of the particle injection for coal (clear difference between standard
+       and user-defined coal composition)
+     - adapted the particles and trajectories export routines to be able to output variable
+       information for a specific layer.
+    
+- Coal combustion module:
+  - added new NOx model for coal combustion;
+  - introduction of the coal thermal conductivity
+    (for the calculation of intra particle gradients in particle-tracking module)
 
 Architectural changes
 ---------------------

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2013-09-24 19:02+0200\n"
+"POT-Creation-Date: 2013-09-26 13:36+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -8242,6 +8242,14 @@ msgid ""
 "Attribute %s is of datatype %s and stride %d\n"
 "but %s and %d were requested."
 msgstr ""
+
+#, c-format
+msgid ""
+"Attribute %s has a number of components equal to %d\n"
+"but component %d is requested."
+msgstr ""
+"L'attribut %s a %d composantes\n"
+"mais la composante %d est demandée."
 
 #, c-format
 msgid "%s\n"
