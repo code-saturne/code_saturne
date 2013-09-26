@@ -1316,8 +1316,8 @@ contains
         ruslag(ii,jj,ifrmch(ilayer))  = -grand
         ruslag(ii,jj,ifrmck(ilayer))  = -grand
       enddo
-      ruslag(ii,ii,irdck)  = -grand
-      ruslag(jj,jj,ird0p)  = -grand
+      ruslag(ii,jj,irdck)  = -grand
+      ruslag(ii,jj,ird0p)  = -grand
       do ilayer=1,nlayer
         ruslag(ii,jj,irhock0(ilayer))   = -grand
       enddo
