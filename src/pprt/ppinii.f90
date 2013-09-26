@@ -397,6 +397,7 @@ do icha = 1, ncharm
 
   pcich(icha)  = zero
   rho0ch(icha) = zero
+  thcdch(icha) = zero
 
   cck(icha)    = zero
   hck(icha)    = zero

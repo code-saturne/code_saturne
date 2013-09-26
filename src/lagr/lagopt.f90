@@ -81,7 +81,7 @@ use ihmpre
 
 implicit none
 
-integer  ii , ip , irf , icha , i1 , i2 , i3, iok
+integer  ii , ilayer , ip , irf , icha , i1 , i2 , i3, iok
 
 !===============================================================================
 ! 0. INITIALISATION
@@ -340,8 +340,8 @@ if (iihmpr.eq.1) then
 
   call uilag1                                                      &
   !==========
- ( iilagr,   isuila,   isuist,   nbpmax, isttio, injcon, idepst,   &
-   iphyla,   idpvar,   itpvar,   impvar,                           &
+ ( nlayer,   iilagr,   isuila,   isuist,   nbpmax, isttio, injcon, &
+   idepst,   iphyla,   idpvar,   itpvar,   impvar,                 &
    iencra,   tprenc,   visref,   enc1,   enc2,                     &
    nstits,   ltsdyn,   ltsmas,   ltsthe,                           &
    nordre,   idistu,   idiffl,   modcpl, idirla, ntlal,            &
@@ -480,6 +480,16 @@ if (iok.ne.0) call csexit (1)
 !     IENCRA TPRENC VISREF
 
 if (iphyla.eq.2) then
+  if (nordre.eq.2) then
+    write(nfecra,1038) iphyla,nordre
+    iok = iok + 1
+  endif
+
+  if (ltsthe.eq.1) then
+    write(nfecra,1039) iphyla,ltsthe
+    iok = iok + 1
+  endif
+
   if (iencra.lt.0 .or. iencra.gt.1) then
     write(nfecra,1040) iencra
     iok = iok + 1
@@ -508,6 +518,16 @@ endif
 if ( iphyla.eq.2 .and. (ippmod(icpl3c).lt.0 .and.                 &
                         ippmod(iccoal).lt.0) ) then
   write(nfecra,1044) iphyla, ippmod(icpl3c), ippmod(iccoal)
+  iok = iok + 1
+endif
+
+if ( iphyla.eq.2 .and. nlayer.lt.1 ) then
+  write(nfecra,1045) iphyla, nlayer
+  iok = iok + 1
+endif
+
+if ( iphyla.eq.2 .and. nlayer.gt.99 ) then
+  write(nfecra,1046) iphyla, nlayer
   iok = iok + 1
 endif
 
@@ -1162,14 +1182,15 @@ else if (iphyla.eq.2) then
 
 !     ETTP et ETTPA :
 !     -------------
-!       5 VARIABLES SUPPLEMENTAIRES Tp, Tf, Mwat, Mch, Mck, Cp
-  nvp = nvp + 6
+!       5 VARIABLES SUPPLEMENTAIRES Tp(nlayer), Tf, Mwat, Mch(nlayer), Mck(nlayer), Cp
+
+  nvp = nvp + 3 + 3*nlayer
 
 !     TEPA :
 !     ----
-!       4 VARIABLES D'ETATS REELLES SUPPLEMENTAIRES : Dck, D0P, R0P, RHOCK
+!       3 VARIABLES D'ETATS REELLES SUPPLEMENTAIRES : Dck, D0P, RHOCK(nlayer)
 
-  nvep = nvep + 4
+  nvep = nvep + 2 + nlayer
 
 !     ITEPA :
 !     -----
@@ -1223,25 +1244,26 @@ nvp1 = nvp - 9
 !    JUF,JVF,JWF  : COMPOSANTES DE LA VITESSE DU FLUIDE VU
 
 !    JMP,JDP      : MASSE, DIAMETRE
-!    JTP,JTF,JCP  : TEMPERATURE PARTICULE ET FLUIDE ET CHALEUR SPECIFIQUE
 !    JTAUX        : AUXILIAIRE DE CALCUL UTILE EN PARALLELE
+!    JTP,JTF,JCP  : TEMPERATURE PARTICULE ET FLUIDE ET CHALEUR SPECIFIQUE
 !    JVLS(NUSVAR) : VARIABLE SUPPLEMENTAIRES
 
 !   Charbon
 !   -------
-!    JHP  : Temperature en K du grain de charbon
-!    JMWAT: MASSE D EAU DANS LE GRAIN DE CHARBON
-!    JMCH : MASSE DE CHARBON REACTIF
-!    JMCH : MASSE D EAU DANS LE CHARBON
-!    JMCK : MASSE DE COKE
+!    JHP          : TEMPERATURE DES GRAINS DE CHARBON EN K
+!    JMWAT        : MASSE D EAU
+!    JMCH         : MASSE DE CHARBON REACTIF
+!    JMCK         : MASSE DE COKE
 
 jtp  = 0
 jtf  = 0
 jcp  = 0
-jhp  = 0
+do ilayer=1,nlayer
+  jhp(ilayer)  = 0
+  jmch(ilayer) = 0
+  jmck(ilayer) = 0
+enddo
 jmwat = 0
-jmch = 0
-jmck = 0
 jtaux = 0
 do ii = 1,nusvar
   jvls(ii) = 0
@@ -1260,12 +1282,22 @@ if (iphyla.eq.1) then
 
 else if (iphyla.eq.2) then
 
-  jhp  = irf  + 1
-  jtf  = jhp  + 1
+  do ilayer=1,nlayer
+    jhp(ilayer)  = irf  + 1
+    irf      = irf  + 1
+  enddo
+  jtf   = irf  + 1
   jmwat = jtf  + 1
-  jmch = jmwat  + 1
-  jmck = jmch + 1
-  jcp  = jmck + 1
+  irf   = jmwat
+  do ilayer=1,nlayer
+    jmch(ilayer)  = irf  + 1
+    irf      = irf  + 1
+  enddo
+  do ilayer=1,nlayer
+    jmck(ilayer)  = irf  + 1
+    irf      = irf  + 1
+  enddo
+  jcp  = irf + 1
   irf  = jcp
 
 endif
@@ -1309,15 +1341,14 @@ endif
 !   -------
 !     jrdck       : diametre du coeur retrecissant
 !     jrd0p       : diametre initial des particules
-!     jrr0p       : masse volumique initiale des particules
 !     jrhock      : masse volumique du coke
 
 
 jreps = 0
 jrdck = 0
-jrr0p = 0
-jrr0p = 0
-jrhock = 0
+do ilayer=1,nlayer
+  jrhock(ilayer) = 0
+enddo
 
 jrval = 1
 jrtsp = 2
@@ -1332,9 +1363,12 @@ endif
 if (iphyla.eq.2) then
   jrdck = irf   + 1
   jrd0p = jrdck + 1
-  jrr0p = jrd0p + 1
-  jrhock = jrr0p + 1
-  irf   = jrhock
+  irf   = jrd0p
+  do ilayer=1,nlayer
+    jrhock(ilayer) = irf + 1
+    irf = irf + 1
+  enddo
+  irf = jrhock(nlayer)
 endif
 
 ! Modele de deposition : 2 tableaux supp dans TEPA  : YPLUS et DX
@@ -1432,45 +1466,62 @@ endif
 !   3.4.1 TABLEAU RUSLAG (DONNEES D'ENTREE)
 !   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-!     IUNO  : Norme de la vitesse
-!     IUPT  : U par classe et zones
-!     IVPT  : V par classe et zones
-!     IWPT  : W par classe et zones
-!     IDEBT : Debit
-!     IPOIT : Poids de la particule
-!     IDPT  : Diametre
-!     IVDPT : Ecart-type du diametre
-!     ITPT  : Temperature
-!     ICPT  : Cp
-!     IEPSI : Emissivite
-!     IROPT : Masse volumique
-!     IHPT  : Temperature
-!     IMWAT : Masse d eau dans le charbon (humidite)
-!     IMCHT : Masse de charbon reactif
-!     IMCKT : Masse de coke
-!     IDCKT : Diametre du coeur retrecissant
+!     IUNO    : Norme de la vitesse
+!     IUPT    : U par classe et zones
+!     IVPT    : V par classe et zones
+!     IWPT    : W par classe et zones
+!     IPOIT   : Poids statistique de la particule
+!     IDEBT   : Debit
+!     IDPT    : Diametre
+!     IVDPT   : Variance du diametre
+!     IROPT   : Masse volumique
+!     ITPT    : Temperature
+!     ICPT    : Cp
+!     IEPSI   : Emissivite des particules
+!     IHPT    : Temperature pour chaque couche (si IPHYLA=2)
+!     IFRMWT  : Fraction massique d'eau dans la particule (si IPHYLA=2)
+!     IFRMCH  : Fraction massique de charbon reactif par couche (si IPHYLA=2)
+!     IFRMCK  : Fraction massique de coke par couche (si IPHYLA=2)
+!     IRDCK   : Diametre de coke du charbon (si IPHYLA=2)
+!     IRD0P   : Diametre initial du charbon (si IPHYLA=2)
+!     IRHOCK0 : Densite du coke a la fin de la pyrolyse par couche (si IPHYLA=2)
 
 iuno   = 1
 iupt   = iuno  + 1
 ivpt   = iupt  + 1
 iwpt   = ivpt  + 1
-itpt   = iwpt  + 1
-idpt   = itpt  + 1
+ipoit  = iwpt  + 1
+idebt  = ipoit + 1
+idpt   = idebt + 1
 ivdpt  = idpt  + 1
 iropt  = ivdpt + 1
-icpt   = iropt + 1
+itpt   = iropt + 1
+icpt   = itpt  + 1
 iepsi  = icpt  + 1
-ipoit  = iepsi + 1
-idebt  = ipoit + 1
-irf    = idebt
+irf    = iepsi
 
 ! Specifique Charbon
-
-ihpt   = irf   + 1
-imwat  = ihpt   + 1
-imcht  = imwat + 1
-imckt  = imcht + 1
-irf    = imckt
+do ilayer=1,nlayer
+  ihpt(ilayer) = irf   + 1
+  irf = irf + 1
+enddo
+ifrmwt = irf + 1
+irf = irf + 1
+do ilayer=1,nlayer
+  ifrmch(ilayer) = irf   + 1
+  irf = irf + 1
+enddo
+do ilayer=1,nlayer
+  ifrmck(ilayer) = irf   + 1
+  irf = irf + 1
+enddo
+irdck = irf + 1
+ird0p = irdck + 1
+irf = ird0p
+do ilayer=1,nlayer
+  irhock0(ilayer) = irf   + 1
+  irf = irf + 1
+enddo
 
 if (irf.gt.ndlagm) then
   write(nfecra,3001) irf, ndlagm
@@ -1485,24 +1536,26 @@ endif
 !     ICLST : numero de groupe auquel appartient la particule
 !             (uniquement si on souhaite des statistiques par groupe)
 !     IJUVW  : type de condition vitesse
-!     IJPRTP : profil de temperature pour les particules
 !     IJPRPD : profil de poids statistiques
 !     IJPRDP : profil de diametre pour les particules
+!     IJPRTP : profil de temperature pour les particules
 !     INUCHL : numero du charbon de la particule (si IPHYLA=2)
+!     IRAWCL : type d'initialisation de la composition du charbon injecte
 
 ijnbp  = 1
 ijfre  = ijnbp  + 1
 iclst  = ijfre  + 1
 ijuvw  = iclst  + 1
-ijprtp = ijuvw  + 1
-ijprdp = ijprtp + 1
-ijprpd = ijprdp + 1
-irf    = ijprpd
+ijprpd = ijuvw  + 1
+ijprdp = ijprpd + 1
+ijprtp = ijprdp + 1
+irf    = ijprtp
 
 ! Specifique Charbon
 
 inuchl = irf + 1
-irf    = inuchl
+irawcl = inuchl + 1
+irf    = irawcl
 
 if (irf.gt.ndlaim) then
   write(nfecra,3002) irf, ndlaim
@@ -1590,10 +1643,14 @@ if (istala.eq.1) then
   iltp  = 0
   ildp  = 0
   ilmp  = 0
-  ilhp  = 0
+  do ilayer=1,nlayer
+    ilhp(ilayer) = 0
+  enddo
   ilmwat = 0
-  ilmch = 0
-  ilmck = 0
+  do ilayer=1,nlayer
+    ilmch(ilayer) = 0
+    ilmck(ilayer) = 0
+  enddo
   ildck = 0
 
   do ii = 1,nussta
@@ -1622,24 +1679,56 @@ if (istala.eq.1) then
      ilmp  = irf   + 1
      nomlag(ilmp) = 'Part_mass'
      nomlav(ilmp) = 'var_Part_mass'
+     irf   = ilmp
 
-     ilhp = ilmp + 1
-     nomlag(ilhp) = 'Part_temperature'
-     nomlav(ilhp) = 'var_Part_temperature'
+     if ( nlayer.gt.1 ) then
+       do ilayer=1,nlayer
+         ilhp(ilayer) = irf + 1
+         irf   = irf   + 1
+         write(nomlag(ilhp(ilayer)) ,'(A23,I2.2)') 'Part_temperature_layer_',ilayer
+         write(nomlav(ilhp(ilayer)) ,'(A27,I2.2)') 'var_Part_temperature_layer_',ilayer
+       enddo
+     else
+       ilhp(1) = irf + 1
+       irf   = irf   + 1
+       nomlag(ilhp(1)) = 'Part_temperature'
+       nomlav(ilhp(1)) = 'var_Part_temperature'
+     endif
 
-     ilmwat = ilhp + 1
+     ilmwat = irf + 1
      nomlag(ilmwat) = 'Part_wat_mass'
      nomlav(ilmwat) = 'var_Part_wat_mass'
+     irf    = ilmwat
 
-     ilmch = ilmwat + 1
-     nomlag(ilmch) = 'Part_ch_mass'
-     nomlav(ilmch) = 'var_Part_ch_mass'
+     if ( nlayer.gt.1 ) then
+       do ilayer=1,nlayer
+         ilmch(ilayer) = irf + 1
+         irf   = irf   + 1
+         write(nomlag(ilmch(ilayer)) ,'(A19,I2.2)') 'Part_ch_mass_layer_',ilayer
+         write(nomlav(ilmch(ilayer)) ,'(A23,I2.2)') 'var_Part_ch_mass_layer_',ilayer
+       enddo
+     else
+       ilmch(1) = irf + 1
+       irf   = irf   + 1
+       nomlag(ilmch(1)) = 'Part_ch_mass'
+       nomlav(ilmch(1)) = 'var_Part_ch_mass'
+     endif
 
-     ilmck = ilmch + 1
-     nomlag(ilmck) = 'Part_ck_mass'
-     nomlav(ilmck) = 'var_Part_ck_mass'
+     if ( nlayer.gt.1 ) then
+       do ilayer=1,nlayer
+         ilmck(ilayer) = irf + 1
+         irf   = irf   + 1
+         write(nomlag(ilmck(ilayer)) ,'(A19,I2.2)') 'Part_ck_mass_layer_',ilayer
+         write(nomlav(ilmck(ilayer)) ,'(A23,I2.2)') 'var_Part_ck_mass_layer_',ilayer
+       enddo
+     else
+       ilmck(1) = irf + 1
+       irf   = irf   + 1
+       nomlag(ilmck(1)) = 'Part_ck_mass'
+       nomlav(ilmck(1)) = 'var_Part_ck_mass'
+     endif
 
-     ildck = ilmck + 1
+     ildck = irf + 1
      nomlag(ildck) = 'Part_shrink_core_diam'
      nomlav(ildck) = 'var_Part_shrink_core_diam'
 
@@ -1906,7 +1995,7 @@ endif
 
 ! Postprocessing options
 
-call lagpvr(ivisv1, ivisv2, ivistp, ivisdm, iviste, &
+call lagpvr(iphyla, ivisv1, ivisv2,  ivistp, ivisdm, iviste, &
 !==========
             ivismp, ivisdk, iviswat, ivisch, ivisck)
 
@@ -2213,6 +2302,53 @@ call lagpvr(ivisv1, ivisv2, ivistp, ivisdm, iviste, &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
+1038 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''EXECUTION DU MODULE LAGRANGIEN   ',/,&
+'@    =========                                               ',/,&
+'@    LE TRANSPORT LAGRANGIEN DE PARTICULES DE CHARBON        ',/,&
+'@      EST ACTIVE (LAGOPT) AVEC UN SCHEMA D''INTEGRATION      ',/,&
+'@      AU SECOND ORDRE                                       ',/,&
+'@                                                            ',/,&
+'@       IPHYLA = ', I10                                       ,/,&
+'@       NORDRE = ', I10                                       ,/,&
+'@                                                            ',/,&
+'@  Le transport Lagrangien de particule de charbon ne peut   ',/,&
+'@   etre resolu au second ordre. Il faudrait mettre          ',/,&
+'@   à jour les équations                                     ',/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@  Verifier la valeur de NORDRE dans la subroutine USLAG1    ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+1039 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''EXECUTION DU MODULE LAGRANGIEN   ',/,&
+'@    =========                                               ',/,&
+'@    LE TRANSPORT LAGRANGIEN DE PARTICULES DE CHARBON        ',/,&
+'@      EST ACTIVE (LAGOPT) AVEC COUPLAGE RETOUR THERMIQUE    ',/,&
+'@                                                            ',/,&
+'@       IPHYLA = ', I10                                       ,/,&
+'@       LTSTHE = ', I10                                       ,/,&
+'@                                                            ',/,&
+'@  Le transport Lagrangien de particule de charbon ne peut   ',/,&
+'@   etre couple avec la phase Eulerienne. Il faudrait mettre ',/,&
+'@   à jour les équations                                     ',/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@  Verifier la valeur de LTSTHE dans la subroutine USLAG1    ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
  1040 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -2330,6 +2466,54 @@ call lagpvr(ivisv1, ivisv2, ivistp, ivisdm, iviste, &
 '@                                                            ',/,&
 '@  Verifier la valeur de IPHYLA dans la subroutine USLAG1 et ',/,&
 '@  verifier la valeur de IPPMOD dans la subroutine USPPMO.   ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 1045 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''EXECUTION DU MODULE LAGRANGIEN   ',/,&
+'@    =========                                               ',/,&
+'@    LE TRANSPORT LAGRANGIEN DE PARTICULES DE CHARBON        ',/,&
+'@      EST ACTIVE (LAGOPT), ALORS QUE LA PARTICULE N''EST    ',/,&
+'@      DISCRETISEE EN AUCUN COUCHE                           ',/,&
+'@                                                            ',/,&
+'@       IPHYLA = ', I10                                       ,/,&
+'@       NLAYER = ', I10                                       ,/,&
+'@                                                            ',/,&
+'@  Il doit y avoir au moins une couche par particule pour    ',/,&
+'@    que le transport lagrangien de particule de charbon     ',/,&
+'@    soit calculé.                                           ',/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@  Verifier la valeur de NLAYER dans la subroutine LAGPAR    ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 1046 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''EXECUTION DU MODULE LAGRANGIEN   ',/,&
+'@    =========                                               ',/,&
+'@    LE TRANSPORT LAGRANGIEN DE PARTICULES DE CHARBON        ',/,&
+'@      EST ACTIVE (LAGOPT) AVEC CALCUL DES STATISTIQUES      ',/,&
+'@    LA PARTICULE EST DISCRETISEE EN COUCHE:                 ',/,&
+'@                                                            ',/,&
+'@       IPHYLA = ', I10                                       ,/,&
+'@       NLAYER = ', I10                                       ,/,&
+'@                                                            ',/,&
+'@  Il y a trop de couche de discrétisation. nlayer devrait   ',/,&
+'@    etre inferieur à 99. Sinon, il y a un problème au       ',/,&
+'@    niveau du nom des variables (XXXXXX_layer_XX).          ',/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@  Verifier la valeur de NLAYER dans la subroutine LAGPAR    ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

@@ -100,7 +100,8 @@ typedef struct {
 
   /* Lagrangian variables */
 
-  bool  particle_attr[CS_LAGR_N_ATTRIBUTES];
+  bool      particle_attr[CS_LAGR_N_ATTRIBUTES];
+  cs_int_t  particle_multicomponent_export[CS_LAGR_N_ATTRIBUTES];
 
 } cs_post_default_input_t;
 
@@ -143,6 +144,8 @@ _write_particle_vars(cs_post_default_input_t  *input,
   cs_lagr_attribute_t attr_id;
 
   char var_name[64];
+  int  component_id;
+  char var_name_component[64];
 
   for (attr_id = 0; attr_id < CS_LAGR_N_ATTRIBUTES; attr_id++)
 
@@ -161,8 +164,28 @@ _write_particle_vars(cs_post_default_input_t  *input,
 
       /* Output values */
 
-      cs_post_write_particle_values(mesh_id, attr_id, var_name, ts);
-
+      if (input->particle_multicomponent_export[attr_id] == -1)
+        cs_post_write_particle_values(mesh_id,
+                                      attr_id,
+                                      var_name,
+                                      input->particle_multicomponent_export[attr_id],
+                                      ts);
+      else {
+        /* Create one output per component */
+        for (component_id = 0; component_id < input->particle_multicomponent_export[attr_id]; component_id++) {
+          snprintf(var_name_component,
+                   63,
+                   "%s_layer_%2.2i",
+                   var_name,
+                   component_id+1);
+          var_name_component[63] = '\0';
+          cs_post_write_particle_values(mesh_id,
+                                        attr_id,
+                                        var_name_component,
+                                        component_id,
+                                        ts);
+        }
+      }
     }
 
 }
@@ -399,9 +422,10 @@ void CS_PROCF (pstvar, PSTVAR)
  *
  * subroutine lagpvr
  * *****************
- *                  ( ivisv1, ivisv2, ivistp,  ivisdm, iviste,
+ *                  ( iphyla, ivisv1, ivisv2, ivistp,  ivisdm, iviste,
  *                    ivismp, ivisdk, iviswat, ivisch, ivisck )
  *
+ * integer          iphyla      : <-- : type of lagrangian calculation
  * integer          ivisv1      : <-- : display of variable 'fluid velocity'
  * integer          ivisv2      : <-- : display of variable 'particles velocity'
  * integer          ivistp      : <-- : display of variable 'resident time'
@@ -416,6 +440,7 @@ void CS_PROCF (pstvar, PSTVAR)
 
 void CS_PROCF (lagpvr, LAGPVR)
 (
+ const cs_int_t  *iphyla,
  const cs_int_t  *ivisv1,
  const cs_int_t  *ivisv2,
  const cs_int_t  *ivistp,
@@ -430,8 +455,10 @@ void CS_PROCF (lagpvr, LAGPVR)
 {
   cs_lagr_attribute_t attr_id;
 
-  for (attr_id = 0; attr_id < CS_LAGR_N_ATTRIBUTES; attr_id++)
+  for (attr_id = 0; attr_id < CS_LAGR_N_ATTRIBUTES; attr_id++) {
     _default_input.particle_attr[attr_id] = false;
+    _default_input.particle_multicomponent_export[attr_id] = -1;
+  }
 
   if (*ivisv1)
     _default_input.particle_attr[CS_LAGR_VELOCITY] = true;
@@ -445,8 +472,11 @@ void CS_PROCF (lagpvr, LAGPVR)
   if (*ivisdm)
     _default_input.particle_attr[CS_LAGR_DIAMETER] = true;
 
-  if (*iviste)
+  if (*iviste) {
     _default_input.particle_attr[CS_LAGR_TEMPERATURE] = true;
+    if (CS_LAGR_N_LAYERS > 1 && *iphyla == 2)
+      _default_input.particle_multicomponent_export[CS_LAGR_TEMPERATURE] = CS_LAGR_N_LAYERS;
+  }
 
   if (*ivismp)
     _default_input.particle_attr[CS_LAGR_MASS] = true;
@@ -457,11 +487,17 @@ void CS_PROCF (lagpvr, LAGPVR)
   if (*iviswat)
     _default_input.particle_attr[CS_LAGR_WATER_MASS] = true;
 
-  if (*ivisch)
+  if (*ivisch) {
     _default_input.particle_attr[CS_LAGR_COAL_MASS] = true;
+    if (CS_LAGR_N_LAYERS > 1 && *iphyla == 2)
+      _default_input.particle_multicomponent_export[CS_LAGR_COAL_MASS] = CS_LAGR_N_LAYERS;
+  }
 
-  if (*ivisck)
+  if (*ivisck) {
     _default_input.particle_attr[CS_LAGR_COKE_MASS] = true;
+    if (CS_LAGR_N_LAYERS > 1 && *iphyla == 2)
+      _default_input.particle_multicomponent_export[CS_LAGR_COKE_MASS] = CS_LAGR_N_LAYERS;
+  }
 
 }
 

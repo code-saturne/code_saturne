@@ -308,14 +308,14 @@ if (iplar.eq.1) then
 
   call lagbeg                                                     &
   !==========
- ( nbpmax , iphyla , idepst , ireent , iclogst  ,                 &
+ ( nbpmax , nlayer , iphyla , idepst , ireent , iclogst  ,        &
    nvls   , nbclst , icocel , itycel ,                            &
    jisor  , jrval  , jrpoi  , jrtsp  , jdp    , jmp    ,          &
    jxp    , jyp    , jzp    , jup    , jvp    , jwp    ,          &
    juf    , jvf    , jwf    , jtaux  , jryplu ,                   &
    jrinpf , jdfac  , jimark ,                                     &
    jtp    , jhp    , jtf    , jmwat  , jmch   , jmck   ,          &
-   jcp    , jrdck  , jrd0p  , jrr0p  , jinch  , jrhock ,          &
+   jcp    , jrdck  , jrd0p  , jinch  , jrhock ,                   &
    jreps  , jdepo  , jnbasg , jnbasp , jfadh  , jmfadh ,          &
    jndisp)
 

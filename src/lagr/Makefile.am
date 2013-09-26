@@ -108,9 +108,11 @@ lagpoi.f90 \
 lagprj.f90 \
 lagres.f90 \
 lagrus.f90 \
+lagsec.f90 \
 lagsta.f90 \
 lagstf.f90 \
 lagswe.f90 \
+lagtmp.f90 \
 lagune.f90
 libcslagr_la_LDFLAGS = -no-undefined
 

@@ -131,7 +131,7 @@ double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 ! Local variables
 
 integer          ifac , izone, nbclas, iclas
-integer          icha
+integer          icoal , ilayer
 integer          ilelt, nlelt
 
 double precision pis6 , mp0 , temp
@@ -338,39 +338,48 @@ iusncl(izone) = nbclas
 !                                                        rczpar(ivpt)
 !                                                        rczpar(iwpt)
 !                  =  2 user-defined profile
-!        ijprtp : type of temperature condition
-!                  =  1 imposed temperature: we prescribe rczpar(itpt)
+!        ijprpd : type of condition for the statistical weight
+!                  =  1 imposed number: we prescribe rczpar(ipoit) or rczpar(idebt)
 !                  =  2 user-defined profile
 !        ijprdp : type of diameter condition
 !                  =  1 imposed diameter: we prescribe  rczpar(idpt)
 !                                                       rczpar(ivdpt)
 !                  =  2 user-defined profile
+!        ijprtp : type of temperature condition
+!                  =  1 imposed temperature: we prescribe rczpar(itpt)
+!                  =  2 user-defined profile
 !        inuchl : number of the coal of the particle (only if iphyla = 2)
+!        irawcl : type of coal injection composition (only if iphyla = 2)
+!                  = 0 coal injected with an user-defined composition
+!                  = 1 raw coal injection
 
 !     Array rczpar:
 !     ============
 !        iuno  : Norm of the velocity (m/s)
 !        iupt  : Velocity along the X axis, for each class and for each zone (m/s)
 !        ivpt  : Velocity along the Y axis, for each class and for each zone (m/s)
-!        iwpt  : Velocity along the Z axis, for each class and for each zone (m/s)
-!        idebt : Mass flow rate (kg/s)
+!        iwpt  : Velocity along the Z axis, for each class and for each zone (m/s
 !        ipoit : Statistical weight (number of samples) associated
 !                to the particle (automatically computed to respect a mass
 !                flow rate if it is defined)
+!        idebt : Mass flow rate (kg/s)
 
 !        Physical characteristics:
 !          idpt   : diameter (m)
 !          ivdpt  : standard deviation of the diameter (m)
+!          iropt  : density (kg/m3)
 !          itpt   : temperature in Celsius degress (no enthalpy)
 !          icpt   : specific heat (J/kg/K)
 !          iepsi  : emissivity (if =0 then no radiative effect is taken into account)
-!          iropt  : density (kg/m3)
 
 !         If coal (iphyla=2)
-!            ihpt  : temperature in Celsius degress (no enthalpy)
-!            imwat : mass of moisture in coal (kg)
-!            imcht : mass of reactive coal (kg)
-!            imckt : masse of coke (kg)
+!            ihpt    : temperature in Kelvin degres (no enthalpy) (layer by layer)
+!            ifrmwt  : mass fraction of moisture in the particle
+!            ifrmch  : mass fraction of reactive coal in the particle (layer by layer)
+!            ifrmck  : mass fraction of coke coal in the particle (layer by layer)
+!            irdck   : coke diameter (m)
+!            ird0p   : coal particle initial diameter (m)
+!            irhock0 : density of coke at the end of the pyrolysis (kg/m³) (layer by layer)
 
 
 ! ---> EXAMPLE : First zone, numbered IZONE = 1 (NBCLAS classes)
@@ -458,40 +467,64 @@ do iclas  = 1, nbclas
     !
     !             3) For the current phase ICLAS, and for the current boundary
     !                zone NB, we assign to the coal particles the properties of
-    !                the coal ICHA of the ICHA class taken from the file dp_FCP.
+    !                the coal ICOAL of the ICOAL class taken from the file dp_FCP.
     !
-    !             4) icha : number of the coal between 1 and ncharb defined by
+    !             4) icoal : number of the coal between 1 and ncharb defined by
     !                the user in the file dp_FCP.
 
-    icha = ichcor(iclas)
-    temp = 800.d0
-
-    ! Number of the coal
-
-    iczpar(inuchl) = icha
-
-    ! Temperature and Cp
-
-    rczpar(ihpt) = temp
-    rczpar(icpt) = cp2ch(icha)
 
     ! Mean value and standard deviation of the diameter
 
-    rczpar(idpt)  = diam20(iclas)
+    rczpar(idpt)  = 1.0d-5
     rczpar(ivdpt) = 0.d0
 
-    ! Density
+    ! Number of the coal
+    icoal = 1
+    iczpar(inuchl) = icoal
 
-    rczpar(iropt) = rho0ch(icha)
+    ! Temperature (in K)
+    temp = 800.d0
+    do ilayer = 1, nlayer
+      rczpar(ihpt(ilayer)) = temp
+    enddo
 
-    ! Mass of moisture in coal and
-    ! Mass of reactive coal and
-    ! mass of coke (null if the coal has never burnt)
+    ! Raw coal or user defined coal injection condition
+    iczpar(irawcl) = 1
 
-    mp0 = pis6 * (rczpar(idpt)**3) * rczpar(iropt)
-    rczpar(imwat) = mp0 * xwatch(icha)
-    rczpar(imcht) = mp0 * ((1.d0-xwatch(icha))-xashch(icha))
-    rczpar(imckt) = 0.d0
+    if (iczpar(irawcl) .eq.  0) then
+      ! Example of user-defined injection, coal after devolatilisation
+
+      ! Density
+      rczpar(iropt) = xashch(icoal)*rho0ch(icoal) +                          &
+                      (1.0d0-xwatch(icoal)-xashch(icoal)) * rho0ch(icoal)    &
+                       * (1.d0-(y1ch(icoal)+y2ch(icoal))/2.0d0)
+
+      ! Specific heat
+      rczpar(icpt) = cp2ch(icoal)
+
+      ! water mass fraction in the particle
+      rczpar(ifrmwt) = 0.0d0
+      ! reactive coal mass fraction in the particle
+      do ilayer = 1, nlayer
+        rczpar(ifrmch(ilayer)) = 0.0d0
+      enddo
+      ! coke mass fraction in the particle
+      do ilayer = 1, nlayer
+        rczpar(ifrmck(ilayer)) = ((1.0d0-xwatch(icoal)-xashch(icoal))        &
+                                   * rho0ch(icoal)                           &
+                                   * (1.d0-(y1ch(icoal)+y2ch(icoal))/2.0d0)) &
+                                  / rczpar(iropt)
+      enddo
+
+      ! coke diameter
+      rczpar(irdck)   = rczpar(idpt)
+      ! initial particle diameter
+      rczpar(ird0p)   = rczpar(idpt)
+      ! coke density after pyrolysis
+      do ilayer = 1, nlayer
+        rczpar(irhock0(ilayer)) = rczpar(iropt)*rczpar(ifrmck(ilayer))
+      enddo
+    endif
 
   endif
 

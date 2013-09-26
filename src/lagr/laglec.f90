@@ -140,7 +140,7 @@ integer          ncelok , nfaiok , nfabok , nsomok
 integer          ierror , irtyp  , itysup , ipasup, nbval
 integer          irfsup , idbase
 integer          ilecec , nberro , ivers
-integer          mvls   , ivar   , ip     , icha
+integer          mvls   , ivar   , ip     , icha  , ilayer
 integer          ifac   , iel    , ii     , iok
 integer          jphyla , jtpvar , jdpvar , jmpvar
 integer          jsttio , jdstnt , mstist , mvlsts
@@ -528,8 +528,9 @@ endif
 if (iphyla.eq.2) then
   nomrte(jrdck) = 'diametre_coeur_retrecissant_charbon'
   nomrte(jrd0p) = 'diametre_initial_charbon'
-  nomrte(jrr0p) = 'masse_volumique_initial_charbon'
-  nomrte(jrhock) ='masse_volumique_coke'
+  do ilayer = 1, nlayer
+    write(nomrte(jrhock(ilayer)),'(A28,I4.4)') 'masse_volumique_coke_couche_',ilayer
+  enddo
 endif
 
 ! Deposition submodel
@@ -578,11 +579,17 @@ if (iphyla.eq.1 .and. itpvar.eq.1) then
   nomnvl(jtf) = 'variable_temperature_fluide_vu'
   nomnvl(jcp) = 'variable_chaleur_specifique_particule'
 elseif (iphyla.eq.2) then
-  nomnvl(jhp) = 'variable_temperature_particule'
+  do ilayer = 1, nlayer
+    write(nomnvl(jhp(ilayer)),'(A38,I4.4)') 'variable_temperature_particule_couche_',ilayer
+  enddo
   nomnvl(jtf) = 'variable_temperature_fluide_vu'
   nomnvl(jmwat) = 'variable_masse_humidite'
-  nomnvl(jmch) = 'variable_masse_charbon_reactif'
-  nomnvl(jmck) = 'variable_masse_coke'
+  do ilayer = 1, nlayer
+    write(nomnvl(jmch(ilayer)),'(A38,I4.4)') 'variable_masse_charbon_reactif_couche_',ilayer
+  enddo
+  do ilayer = 1, nlayer
+    write(nomnvl(jmck(ilayer)),'(A27,I4.4)') 'variable_masse_coke_couche_',ilayer
+  enddo
   nomnvl(jcp) = 'variable_chaleur_specifique_particule'
 endif
 if (mvls.gt.0) then
@@ -641,7 +648,7 @@ if (iphyla.eq.1 .and. itpvar.eq.1) then
   endif
 
 else if (iphyla.eq.2) then
-  do ivar = jhp,jcp
+  do ivar = jhp(1),jcp
     rubriq = nomnvl(ivar)
     call lecsui(impaml,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 ettp(1,ivar),ierror)

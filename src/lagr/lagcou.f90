@@ -399,36 +399,45 @@ if (ltsthe.eq.1) then
 
   else if (iphyla.eq.2) then
 
-    do npt = 1,nbpart
+    if (nlayer.gt.1) then
 
-      iel = indep(npt)
-      icha = itepa(npt,jinch)
+        ! Couplage thermique non-fonctionnel en multi-layer
 
-      tslag(iel,itste) = tslag(iel,itste)                         &
-                -( ettp(npt,jmp)  *ettp(npt,jhp)                  &
-                    *ettp(npt,jcp)                                &
-                  -ettpa(npt,jmp)*ettpa(npt,jhp)                  &
-                    *ettpa(npt,jcp) )                             &
-                 /dtp*tepa(npt,jrpoi)
+      write(1001,*)
+      call csexit (1)
 
-      tslag(iel,itsti) = tslag(iel,itsti)                         &
-                       + tempct(npt,2) * tepa(npt,jrpoi)
+    else
 
-      tslag(iel,itsmv1(icha)) = tslag(iel,itsmv1(icha))           &
-                              + tepa(npt,jrpoi) * cpgd1(npt)
+      do npt = 1,nbpart
 
-      tslag(iel,itsmv2(icha)) = tslag(iel,itsmv2(icha))           &
-                              + tepa(npt,jrpoi) * cpgd2(npt)
+        iel = indep(npt)
+        icha = itepa(npt,jinch)
 
-      tslag(iel,itsco)  = tslag(iel,itsco)                        &
-                        + tepa(npt,jrpoi) * cpght(npt)
+        tslag(iel,itste) = tslag(iel,itste)                         &
+             -( ettp(npt,jmp)  *ettp(npt,jhp(1))                    &
+             *ettp(npt,jcp)                                         &
+             -ettpa(npt,jmp)*ettpa(npt,jhp(1))                      &
+             *ettpa(npt,jcp) )                                      &
+             /dtp*tepa(npt,jrpoi)
 
-      tslag(iel,itsfp4) = 0.d0
+        tslag(iel,itsti) = tslag(iel,itsti)                         &
+             + tempct(npt,2) * tepa(npt,jrpoi)
 
-    enddo
+        tslag(iel,itsmv1(icha)) = tslag(iel,itsmv1(icha))           &
+             + tepa(npt,jrpoi) * cpgd1(npt)
 
+        tslag(iel,itsmv2(icha)) = tslag(iel,itsmv2(icha))           &
+             + tepa(npt,jrpoi) * cpgd2(npt)
+
+        tslag(iel,itsco)  = tslag(iel,itsco)                        &
+             + tepa(npt,jrpoi) * cpght(npt)
+
+        tslag(iel,itsfp4) = 0.d0
+
+      enddo
+
+    endif
   endif
-
 endif
 
 !===============================================================================
@@ -481,6 +490,28 @@ else
 endif
 
 !===============================================================================
+
+1001 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''EXECUTION DU MODULE LAGRANGIEN   ',/,&
+'@    =========                                               ',/,&
+'@    LE TRANSPORT LAGRANGIEN DE PARTICULES DE CHARBON        ',/,&
+'@      EST ACTIVE EN MODE MULTI-COUCHE AVEC COUPLAGE         ',/,&
+'@      RETOUR THERMIQUE                                      ',/,&
+'@                                                            ',/,&
+'@                                                            ',/,&
+'@  Le transport Lagrangien de particule de charbon ne peut   ',/,&
+'@   etre couple avec la phase Eulerienne depuis              ',/,&
+'@   l''introduction de gradients de temperature              ',/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@  Verifier la valeur de LTSTHE dans la subroutine USLAG1    ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
 
 !----
 ! FIN

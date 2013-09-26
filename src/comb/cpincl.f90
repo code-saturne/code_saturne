@@ -77,6 +77,7 @@ module cpincl
   !                         OMEGA(CH)  = NCH(CH)/CCH(CH)
   !        PCICH(CH)    --> PCI (J/kg) charbon
   !        RHO0CH(CH)   --> Masse volumique initiale (kg/m3)
+  !        THCDCH(CH)   --> Conductivite thermique du charbon (W/m/K)
   !      - Proprietes sur charbon sec du coke
   !        CCK(CH)      --> Composition elementaire en C, H, O , S , N sur sec (%)
   !        HCK(CH)          du coke
@@ -105,7 +106,7 @@ double precision, save :: cch   (ncharm), hch   (ncharm), och   (ncharm),  &
                           sch(ncharm)  , nch(ncharm),                      &
                           alpha (ncharm), beta  (ncharm), teta(ncharm)  ,  &
                           omega(ncharm),                                   &
-                          pcich (ncharm), rho0ch(ncharm),                  &
+                          pcich (ncharm), rho0ch(ncharm), thcdch(ncharm),  &
                           cck   (ncharm), hck   (ncharm), ock   (ncharm),  &
                           sck (ncharm), nck(ncharm),                       &
                           gamma (ncharm), delta (ncharm), kappa(ncharm),   &

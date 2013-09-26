@@ -225,12 +225,9 @@ if (iphyla.eq.2) then
   call lagich                                                     &
   !==========
   ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
-    ntersl , nvlsta , nvisbr ,                                    &
-    itepa  , ibord  ,                                             &
-    dt     , rtp    , propce ,                                    &
-    ettp   , ettpa  , tepa   , taup   , tlag   , tempct , tsvar  ,&
-    cpgd1  , cpgd2  , cpght  ,                                    &
-    auxl(1,1) , auxl(1,2) , auxl(1,3) )
+    itepa  , ibord  , propce , ettp   , ettpa  ,                  &
+    tepa   , tempct , tsvar  , cpgd1  , cpgd2  ,                  &
+    cpght  )
 
 endif
 

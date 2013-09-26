@@ -147,7 +147,7 @@ double precision dlgeo(nfabor,ngeol)
 ! Local variables
 
 
-integer          iel , ifac , ip , nb , nc, ii, ifvu
+integer          iel , ifac , ip , nb , nc, ii, ilayer, ifvu
 integer          iok , n1 , nd , icha
 integer          npt , nfin , npar1  , npar2 , mode , idvar
 integer          ncmax, nzmax
@@ -209,17 +209,15 @@ enddo
 !===============================================================================
 
 if (iihmpr.eq.1) then
-  call uilag2                                                     &
+  call uilag2                                                                  &
   !==========
- ( nfabor, nozppm, nbclst,                                        &
-   ientrl, isortl, idepo1, idepo2,                                &
-   idepfa, iencrl, irebol, isymtl, iphyla,                        &
-   ijnbp,  ijfre,  iclst,  ijuvw,  iuno,   iupt,   ivpt,   iwpt,  &
-   ijprpd, ipoit,  idebt,  ijprdp, idpt,   ivdpt,                 &
-   iropt,  ijprtp, itpt,   icpt,   iepsi,                         &
-   ihpt,   inuchl, imwat,  imcht,  imckt,                         &
-   ichcor, cp2ch,  diam20, rho0ch, xwatch, xashch,                &
-   ifrlag, iusncl, iusclb  )
+ ( nfabor, nozppm,  nbclst,                                                    &
+   ientrl, isortl,  idepo1, idepo2,                                            &
+   idepfa, iencrl,  irebol, isymtl, iphyla,                                    &
+   ijnbp,  ijfre,   iclst,  ijuvw,  iuno,    iupt,    ivpt,  iwpt,             &
+   ijprpd, ipoit,   idebt,  ijprdp, idpt,    ivdpt,                            &
+   iropt,  ijprtp,  itpt,   icpt,   iepsi,                                     &
+   nlayer, inuchl,  irawcl, ihpt,   ifrlag, iusncl,  iusclb  )
 endif
 
 call uslag2                                                       &
@@ -527,14 +525,16 @@ enddo
 do ii = 1, nfrlag
   nb = ilflag(ii)
   do nc = 1, iusncl(nb)
-    if (ruslag(nc,nb,iropt).lt.0.d0 .or.                          &
-        ruslag(nc,nb,idpt) .lt.0.d0 .or.                          &
-        ruslag(nc,nb,ivdpt).lt.0.d0       ) then
-      iok = iok + 1
-      write(nfecra,1060) nb, nc,                                  &
-                         ruslag(nc,nb,iropt),                     &
-                         ruslag(nc,nb,idpt),                      &
-                         ruslag(nc,nb,ivdpt)
+    if (iphyla .ne. 2 .or. iuslag(nc,nb,irawcl).ne.1) then
+      if (ruslag(nc,nb,iropt).lt.0.d0 .or.                          &
+          ruslag(nc,nb,idpt) .lt.0.d0 .or.                          &
+          ruslag(nc,nb,ivdpt).lt.0.d0       ) then
+        iok = iok + 1
+        write(nfecra,1060) nb, nc,                                  &
+                           ruslag(nc,nb,iropt),                     &
+                           ruslag(nc,nb,idpt),                      &
+                           ruslag(nc,nb,ivdpt)
+      endif
     endif
   enddo
 enddo
@@ -608,18 +608,164 @@ if (iphyla.eq.2) then
 
   do ii = 1, nfrlag
     nb = ilflag(ii)
+
     do nc = 1, iusncl(nb)
-      if (ruslag(nc,nb,ihpt)  .lt.0.d0 .or.                       &
-          ruslag(nc,nb,icpt)  .lt.0.d0 .or.                       &
-          ruslag(nc,nb,imwat) .lt.0.d0 .or.                       &
-          ruslag(nc,nb,imcht) .lt.0.d0 .or.                       &
-          ruslag(nc,nb,imckt) .lt.0.d0  ) then
+
+      if (iuslag(nc,nb,irawcl).lt.0                            &
+          .or.  iuslag(nc,nb,irawcl).gt.1) then
+
         iok = iok + 1
-        write(nfecra,1090)                                        &
-        iphyla, nb, nc,                                           &
-        ruslag(nc,nb,ihpt),  ruslag(nc,nb,icpt),                  &
-        ruslag(nc,nb,imwat), ruslag(nc,nb,imcht),                 &
-        ruslag(nc,nb,imckt)
+        write(nfecra,1081) nb, nc, iuslag(nc,nb,irawcl)
+
+      else if (iuslag(nc,nb,irawcl).eq.0                       &
+          .and. iuslag(nc,nb,ijprdp).eq.2) then
+
+        write(nfecra,1082) nb, nc, iuslag(nc,nb,irawcl) ,      &
+                           iuslag(nc,nb,ijprdp)
+
+      else if (iuslag(nc,nb,irawcl).eq.0                       &
+          .and. iuslag(nc,nb,ijprdp).eq.1                      &
+          .and. ruslag(nc,nb,ivdpt).gt.0.0d0) then
+
+        iok = iok + 1
+        write(nfecra,1083) nb, nc, iuslag(nc,nb,irawcl) ,      &
+                           ruslag(nc,nb,ivdpt)
+      endif
+
+      do ilayer = 1, nlayer
+
+        if (ruslag(nc,nb,ihpt(ilayer)) .lt. tkelvi) then
+          iok = iok + 1
+          write(nfecra,1084)                                     &
+          iphyla, nb, nc, ilayer,                                &
+          ruslag(nc,nb,ihpt(ilayer))
+        endif
+
+      enddo
+
+    enddo
+  enddo
+
+! --> Proprietes des particules de Charbon.
+
+  do ii = 1, nfrlag
+
+    nb = ilflag(ii)
+
+    do nc = 1, iusncl(nb)
+
+      ! irawcl = 0 --> Composition du charbon definie par l'utilisateur dans uslag2
+      ! on verifie les donnes contenues dans le tableau ruslag
+
+      if (iuslag(nc,nb,irawcl) .eq. 0) then
+
+        if (ruslag(nc,nb,icpt)    .lt. 0.d0 .or.                 &
+            ruslag(nc,nb,ifrmwt)  .lt. 0.d0 .or.                 &
+            ruslag(nc,nb,ifrmwt)  .gt. 1.d0  ) then
+          iok = iok + 1
+          write(nfecra,1090)                                     &
+          iphyla, nb, nc, ruslag(nc,nb,icpt),                    &
+                          ruslag(nc,nb,ifrmwt)
+        endif
+
+        do ilayer = 1, nlayer
+
+          if (ruslag(nc,nb,ifrmch(ilayer))  .lt. 0.0d0  .or.     &
+              ruslag(nc,nb,ifrmch(ilayer))  .gt. 1.0d0  .or.     &
+              ruslag(nc,nb,ifrmck(ilayer))  .lt. 0.0d0  .or.     &
+              ruslag(nc,nb,ifrmck(ilayer))  .gt. 1.0d0  .or.     &
+              ruslag(nc,nb,irhock0(ilayer)) .lt. 0.0d0  ) then
+
+            iok = iok + 1
+            write(nfecra,1091)                                   &
+            iphyla, nb, nc, ilayer,                              &
+            ruslag(nc,nb,ifrmch(ilayer)),                        &
+            ruslag(nc,nb,ifrmck(ilayer)),                        &
+            ruslag(nc,nb,irhock0(ilayer))
+
+          endif
+        enddo
+
+        if (ruslag(nc,nb,irdck) .lt. 0.0d0    .or.               &
+            ruslag(nc,nb,ird0p) .lt. 0.0d0    ) then
+
+          iok = iok + 1
+          write(nfecra,1092)                                     &
+          iphyla, iuslag(nc,nb,irawcl), nb, nc,                  &
+          ruslag(nc,nb,irdck),                                   &
+          ruslag(nc,nb,ird0p)
+
+        endif
+
+      ! irawcl = 1 --> Composition du charbon definie dans le fichier XML (DP_FCP)
+      ! on verifie les donnes contenues dans le XML
+
+      else if (iuslag(nc,nb,irawcl) .eq. 1 ) then
+
+        if (rho0ch(iuslag(nc,nb,inuchl)).lt. 0.d0 .or.           &
+            cp2ch(iuslag(nc,nb,inuchl)) .lt. 0.d0 .or.           &
+            xwatch(iuslag(nc,nb,inuchl)).lt. 0.d0 .or.           &
+            xwatch(iuslag(nc,nb,inuchl)).gt. 1.d0 .or.           &
+            xashch(iuslag(nc,nb,inuchl)).lt. 0.d0 .or.           &
+            xashch(iuslag(nc,nb,inuchl)).gt. 1.d0 ) then
+
+          iok = iok + 1
+          write(nfecra,1093)                                     &
+          iphyla, nb, nc, iuslag(nc,nb,inuchl),                  &
+          rho0ch(iuslag(nc,nb,inuchl)),                          &
+          cp2ch(iuslag(nc,nb,inuchl)),                           &
+          xwatch(iuslag(nc,nb,inuchl)),                          &
+          xashch(iuslag(nc,nb,inuchl))
+
+        endif
+
+        if (xwatch(iuslag(nc,nb,inuchl)) +                       &
+            xashch(iuslag(nc,nb,inuchl)) .gt. 1.0) then
+
+            iok = iok + 1
+            write(nfecra,1094)                                   &
+            iphyla, nb, nc, iuslag(nc,nb,inuchl),                &
+            xwatch(iuslag(nc,nb,inuchl)),                        &
+            xashch(iuslag(nc,nb,inuchl)),                        &
+            xwatch(iuslag(nc,nb,inuchl))+xashch(iuslag(nc,nb,inuchl))
+
+        endif
+
+        if (ruslag(nc,nb,iropt)  .ge. 0.0d0  .or.                &
+            ruslag(nc,nb,ifrmwt) .ge. 0.0d0  .or.                &
+            ruslag(nc,nb,icpt)   .ge. 0.0d0  .or.                &
+            ruslag(nc,nb,irdck)  .ge. 0.0d0  .or.                &
+            ruslag(nc,nb,ird0p)  .ge. 0.0d0  ) then
+
+          iok = iok + 1
+          write(nfecra,1095)                                     &
+          iphyla, nb, nc, iuslag(nc,nb,irawcl),-grand,           &
+          ruslag(nc,nb,iropt),                                   &
+          ruslag(nc,nb,ifrmwt),                                  &
+          ruslag(nc,nb,icpt),                                    &
+          ruslag(nc,nb,irdck),                                   &
+          ruslag(nc,nb,ird0p)
+
+        endif
+
+        do ilayer = 1, nlayer
+
+          if (ruslag(nc,nb,ifrmch(ilayer))  .ge. 0.0d0  .or.     &
+              ruslag(nc,nb,ifrmck(ilayer))  .ge. 0.0d0  .or.     &
+              ruslag(nc,nb,irhock0(ilayer)) .ge. 0.0d0  ) then
+
+            iok = iok + 1
+            write(nfecra,1096)                                   &
+            iphyla, nb, nc, ilayer,                              &
+            iuslag(nc,nb,irawcl),-grand,                         &
+            ruslag(nc,nb,ifrmch(ilayer)),                        &
+            ruslag(nc,nb,ifrmck(ilayer)),                        &
+            ruslag(nc,nb,irhock0(ilayer))
+
+          endif
+
+        enddo
+
       endif
     enddo
   enddo
@@ -1013,31 +1159,78 @@ do ii = 1,nfrtot
 
         else if ( iphyla.eq.2 ) then
 
+          ! Remplissage de ITEPA
           itepa(ip,jinch)  = iuslag(nc,nb,inuchl)
-          ettp(ip,jhp) = ruslag(nc,nb,ihpt)
+
+          ! Remplissage de ETTP
+          ettp(ip,jtaux) = 0.0d0 ! non utilise pour iphyla=2
           ettp(ip,jtf) = propce(iel,ipproc(itemp1)) - tkelvi
-          ettp(ip,jcp) = ruslag(nc,nb,icpt)
 
-          ettp(ip,jmwat) = ruslag(nc,nb,imwat)
-          ettp(ip,jmch) = ruslag(nc,nb,imcht)
-          ettp(ip,jmck) = ruslag(nc,nb,imckt)
+          do ilayer = 1, nlayer
 
-          tepa(ip,jrdck) = ettp(ip,jdp)
-          tepa(ip,jrd0p) = ettp(ip,jdp)
+            ettp(ip,jhp(ilayer))  = ruslag(nc,nb,ihpt(ilayer))
 
-          icha = itepa(ip,jinch)
-          ettp(ip,jmp) =ettp(ip,jmch)                            &
-                        + ettp(ip,jmck)                            &
-                        + ettp(ip,jmwat)                           &
-             + xashch(icha)*pis6*d3*rho0ch(icha)
+          enddo
 
-        endif
+          ! user-defined composition (uslag2)
+          if (iuslag(nc,nb,irawcl).eq.0) then
+
+            ! Remplissage de ETTP
+            ettp(ip,jcp) = ruslag(nc,nb,icpt)
+            ettp(ip,jmp) = ruslag(nc,nb,iropt) * pis6 * d3
+            ettp(ip,jmwat) = ruslag(nc,nb,ifrmwt) * ettp(ip,jmp)
+
+            do ilayer = 1, nlayer
+
+              ettp(ip,jmch(ilayer)) = ruslag(nc,nb,ifrmch(ilayer)) * ettp(ip,jmp) / float(nlayer)
+              ettp(ip,jmck(ilayer)) = ruslag(nc,nb,ifrmck(ilayer)) * ettp(ip,jmp) / float(nlayer)
+
+            enddo
+
+            ! Remplissage de TEPA
+            tepa(ip,jrdck) = ruslag(nc,nb,irdck)
+            tepa(ip,jrd0p) = ruslag(nc,nb,ird0p)
+
+            do ilayer = 1, nlayer
+
+              tepa(ip,jrhock(ilayer))= ruslag(nc,nb,irhock0(ilayer))
+
+            enddo
+
+          ! composition from DP_FCP
+          else if (iuslag(nc,nb,irawcl).eq.1) then
+
+            ! Remplissage de ETTP
+            ettp(ip,jcp) = cp2ch(iuslag(nc,nb,inuchl))
+            ettp(ip,jmp) = rho0ch(iuslag(nc,nb,inuchl)) * pis6 * d3
+            ettp(ip,jmwat) = xwatch(iuslag(nc,nb,inuchl)) * ettp(ip,jmp)
+
+            do ilayer = 1, nlayer
+
+              ettp(ip,jmch(ilayer)) =                                           &
+              (1.0d0-xwatch(iuslag(nc,nb,inuchl))-xashch(iuslag(nc,nb,inuchl))) &
+                   * ettp(ip,jmp) / float(nlayer)
+
+              ettp(ip,jmck(ilayer)) = 0.0d0
+
+            enddo
+
+            ! Remplissage de TEPA
+            tepa(ip,jrdck) = ettp(ip,jdp)
+            tepa(ip,jrd0p) = ettp(ip,jdp)
+
+            do ilayer=1,nlayer
+              tepa(ip,jrhock(ilayer)) = rho0ch(iuslag(nc,nb,inuchl))
+            enddo
+
+         endif
+       endif
 
 !--> POIDS STATISTIQUE
 
-        if (iuslag(nc,nb,ijprpd).eq.1) then
+       if (iuslag(nc,nb,ijprpd).eq.1) then
           tepa(ip,jrpoi) = ruslag(nc,nb,ipoit)
-        else if (iuslag(nc,nb,ijprpd).eq.2) then
+       else if (iuslag(nc,nb,ijprpd).eq.2) then
 
           idvar = 0
           xxpart = ettp(ip,jxp)
@@ -1620,7 +1813,7 @@ endif
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
 '@  Verifier USLAG2.                                          ',/,&
-'@  (Si IUSLAG(NC,NB,IJUVW) vaut -2 il n''a par ete renseigne)',/,&
+'@  (Si IUSLAG(NC,NB,IJUVW) vaut -2 il n''a pas ete renseigne)',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -1649,7 +1842,7 @@ endif
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
 '@  Verifier USLAG2.                                          ',/,&
-'@ (Si IUSLAG(NC,NB,IJPRDP) vaut -2 il n''a par ete renseigne)',/,&
+'@ (Si IUSLAG(NC,NB,IJPRDP) vaut -2 il n''a pas ete renseigne)',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -1677,7 +1870,7 @@ endif
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
 '@  Verifier USLAG2.                                          ',/,&
-'@ (Si IUSLAG(NC,NB,IJPRTP) vaut -2 il n''a par ete renseigne)',/,&
+'@ (Si IUSLAG(NC,NB,IJPRTP) vaut -2 il n''a pas ete renseigne)',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -1705,7 +1898,7 @@ endif
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
 '@  Verifier USLAG2.                                          ',/,&
-'@ (Si IUSLAG(NC,NB,IJPRPD) vaut -2 il n''a par ete renseigne)',/,&
+'@ (Si IUSLAG(NC,NB,IJPRPD) vaut -2 il n''a pas ete renseigne)',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -1918,6 +2111,131 @@ endif
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
+ 1081 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : MODULE LAGRANGIEN OPTION CHARBON PULVERISE  ',/,&
+'@    =========   (LAGENT)                                    ',/,&
+'@                                                            ',/,&
+'@    LES CONDITIONS AUX LIMITES SONT ERRONEES                ',/,&
+'@                                                            ',/,&
+'@  Le type de condition au bord pour la composition du       ',/,&
+'@    charbon est represente par un entier dont les valeurs   ',/,&
+'@    sont obligatoirement les suivantes                      ',/,&
+'@   = 0 composition définie par l''utilisateur               ',/,&
+'@   = 1 composition prise égale à celle du charbon frais     ',/,&
+'@                                                            ',/,&
+'@  Ce nombre pour la frontiere NB  = ',I10                    ,/,&
+'@    et      pour la classe    NC  = ',I10                    ,/,&
+'@    vaut ici IUSLAG(NC,NB,IRAWCL) = ',I10                    ,/,&
+'@                                                            ',/,&
+'@  Le calcul ne peut etre execute.                           ',/,&
+'@                                                            ',/,&
+'@  Verifier USLAG2.                                          ',/,&
+'@  (Si IUSLAG(NC,NB,IRAWCL) vaut -2 il n''a pas ete          ',/,&
+'@   renseigne)                                               ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 1082 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : MODULE LAGRANGIEN OPTION CHARBON PULVERISE  ',/,&
+'@    =========   (LAGENT)                                    ',/,&
+'@                                                            ',/,&
+'@    LES CONDITIONS AUX LIMITES SONT DANGEREUSES             ',/,&
+'@                                                            ',/,&
+'@    IL Y A UN RISQUE DANS LES CONDITIONS AU BORD            ',/,&
+'@       DEFINIES (LAGOPT).                                   ',/,&
+'@                                                            ',/,&
+'@    IRAWCL = 0 correspond à une composition défini par      ',/,&
+'@    l''utilisateur                                          ',/,&
+'@    IJPRDP = 2 correspond à un diametre défini par          ',/,&
+'@    l''utilisateur                                          ',/,&
+'@                                                            ',/,&
+'@  Ces deux options sont dangereuses car on définit          ',/,&
+'@    RUSLAG(NC,NB,IRDCK) et RUSLAG(NC,NB,IRD0P) dans USLAG2  ',/,&
+'@    avant meme de connaitre le diametre de la particule     ',/,&
+'@    defini dans USLAPR                                      ',/,&
+'@                                                            ',/,&
+'@    Pour la frontiere NB  = ',I10                            ,/,&
+'@    et pour la classe NC  = ',I10                            ,/,&
+'@    IUSLAG(NC,NB,IRAWCL)  = ',I10                            ,/,&
+'@    IUSLAG(NC,NB,IJPRDP)  = ',I10                            ,/,&
+'@                                                            ',/,&
+'@  Le calcul continu mais une verification est souhaitable.  ',/,&
+'@                                                            ',/,&
+'@  Verifier que les expressions du diametre de la particule  ',/,&
+'@    dans USLAPR et la donnee de RUSLAG(NC,NB,IRDCK) et      ',/,&
+'@    RUSLAG(NC,NB,IRD0P) dans USLAG2 sont bien coherentes    ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 1083 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : MODULE LAGRANGIEN OPTION CHARBON PULVERISE  ',/,&
+'@    =========   (LAGENT)                                    ',/,&
+'@                                                            ',/,&
+'@    LES CONDITIONS AUX LIMITES SONT ERRONEES                ',/,&
+'@                                                            ',/,&
+'@    IL Y A INCOMPATIBILITE ENTRE LES CONDITIONS AU BORD     ',/,&
+'@       DEFINIES (LAGOPT).                                   ',/,&
+'@                                                            ',/,&
+'@    IRAWCL = 0 correspond à une composition défini par      ',/,&
+'@    l''utilisateur                                          ',/,&
+'@    IVDPT  > 0.0 correspond à un diametre variable          ',/,&
+'@                                                            ',/,&
+'@  Ces deux options sont incompatibles car on définit        ',/,&
+'@    RUSLAG(NC,NB,IRDCK) et RUSLAG(NC,NB,IRD0P) dans USLAG2  ',/,&
+'@    avant meme de connaitre le diametre de la particule     ',/,&
+'@    tire aleatoirement dans USLAG2                          ',/,&
+'@                                                            ',/,&
+'@    Pour la frontiere NB  = ',I10                            ,/,&
+'@    et pour la classe NC  = ',I10                            ,/,&
+'@    IUSLAG(NC,NB,IRAWCL)  = ',I10                            ,/,&
+'@    RUSLAG(NC,NB,IVDPT) = ',E14.5                            ,/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@  Verifier IUSLAG(NC,NB,IRAWCL) et RUSLAG(NC,NB,IVDPT)      ',/,&
+'@      dans USLAG2, on peut avoir:                           ',/,&
+'@              IRAWCL = 1  et  IVDPT > 0.0                   ',/,&
+'@           ou IRAWCL = 0  et  IVDPP = 0.0                   ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 1084 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : MODULE LAGRANGIEN OPTION CHARBON PULVERISE  ',/,&
+'@    =========   (LAGENT)                                    ',/,&
+'@                                                            ',/,&
+'@    LES CONDITIONS AUX LIMITES SONT ERRONEES                ',/,&
+'@                                                            ',/,&
+'@  L''option de transport de particules de charbon pulverise ',/,&
+'@    est active (IPHYLA = ',I10,')                           ',/,&
+'@  Les proprietes physiques des particules au bord pour      ',/,&
+'@    la frontiere NB = ',I10   ,' et la classe NC = ',I10     ,/,&
+'@    et la couche ILAYER = ',I10                              ,/,&
+'@    doivent etre renseignees :                              ',/,&
+'@    Temperature   :                                         ',/,&
+'@      RUSLAG(NC,NB,IHPT(ILAYER))    = ',E14.5                ,/,&
+'@                                                            ',/,&
+'@  Le calcul ne peut etre execute.                           ',/,&
+'@                                                            ',/,&
+'@  Verifier USLAG2 ou le DP_FCP                              ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
  1090 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -1932,16 +2250,207 @@ endif
 '@  Les proprietes physiques des particules au bord pour      ',/,&
 '@    la frontiere NB = ',I10   ,' et la classe NC = ',I10     ,/,&
 '@    doivent etre renseignees :                              ',/,&
-'@    Temperature   : RUSLAG(NC,NB,IHPT)  = ',E14.5            ,/,&
-'@    Cp            : RUSLAG(NC,NB,ICPT)  = ',E14.5            ,/,&
-'@    Masse d eau   : RUSLAG(NC,NB,IMWAT) = ',E14.5            ,/,&
-'@    Masse de charbon                                        ',/,&
-'@    reactif       : RUSLAG(NC,NB,IMCHT) = ',E14.5            ,/,&
-'@    Masse de coke : RUSLAG(NC,NB,IMCKT) = ',E14.5            ,/,&
+'@    Cp :                                                    ',/,&
+'@      RUSLAG(NC,NB,ICPT)   = ',E14.5                         ,/,&
+'@    Fraction massique d'' eau dans la particule :           ',/,&
+'@      RUSLAG(NC,NB,IFRMWT) = ',E14.5                         ,/,&
+'@                                                            ',/,&
+'@  Le calcul ne peut etre execute.                           ',/,&
+'@                                                            ',/,&
+'@  Verifier USLAG2                                           ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 1091 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : MODULE LAGRANGIEN OPTION CHARBON PULVERISE  ',/,&
+'@    =========   (LAGENT)                                    ',/,&
+'@                                                            ',/,&
+'@    LES CONDITIONS AUX LIMITES SONT ERRONEES                ',/,&
+'@                                                            ',/,&
+'@  L''option de transport de particules de charbon pulverise ',/,&
+'@    est active (IPHYLA = ',I10,')                           ',/,&
+'@  Les proprietes physiques des particules au bord pour      ',/,&
+'@    la frontiere NB = ',I10   ,' et la classe NC = ',I10     ,/,&
+'@    et la couche ILAYER = ',I10                              ,/,&
+'@    doivent etre renseignees :                              ',/,&
+'@    Fraction massique de charbon reactif :                  ',/,&
+'@      RUSLAG(NC,NB,IFRMCH(ILAYER))  = ',E14.5                ,/,&
+'@    Fraction massique de coke :                             ',/,&
+'@      RUSLAG(NC,NB,IFRMCK(ILAYER))  = ',E14.5                ,/,&
+'@    Masse vol de coke juste après pyrolyse :                ',/,&
+'@      RUSLAG(NC,NB,IRHOCK0(ILAYER)) = ',E14.5                ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
 '@  Verifier USLAG2 et le fichier dp_FCP.                     ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 1092 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : MODULE LAGRANGIEN OPTION CHARBON PULVERISE  ',/,&
+'@    =========   (LAGENT)                                    ',/,&
+'@                                                            ',/,&
+'@    LES CONDITIONS AUX LIMITES SONT ERRONEES                ',/,&
+'@                                                            ',/,&
+'@  L''option de transport de particules de charbon pulverise ',/,&
+'@    est active (IPHYLA = ',I10,') et la composition des     ',/,&
+'@    particules est donnée par l''utilisateur                ',/,&
+'@    IUSLAG(NC,NB,IRAWCL) = ',I10                             ,/,&
+'@  Les proprietes physiques des particules au bord pour      ',/,&
+'@    la frontiere NB = ',I10   ,' et la classe NC = ',I10     ,/,&
+'@    doivent etre renseignees :                              ',/,&
+'@    Diam de coke : RUSLAG(NC,NB,IRDCK) = ',E14.5             ,/,&
+'@    Diam initial : RUSLAG(NC,NB,IRD0P) = ',E14.5             ,/,&
+'@                                                            ',/,&
+'@  Le calcul ne peut etre execute.                           ',/,&
+'@                                                            ',/,&
+'@  Verifier USLAG2 et le fichier dp_FCP.                     ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 1093 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : MODULE LAGRANGIEN OPTION CHARBON PULVERISE  ',/,&
+'@    =========   (LAGENT)                                    ',/,&
+'@                                                            ',/,&
+'@    LES CONDITIONS AUX LIMITES SONT ERRONEES                ',/,&
+'@                                                            ',/,&
+'@  L''option de transport de particules de charbon pulverise ',/,&
+'@    est active (IPHYLA = ',I10,')                           ',/,&
+'@  Les proprietes physiques des particules au bord pour      ',/,&
+'@    la frontiere NB = ',I10   ,' et la classe NC = ',I10     ,/,&
+'@    doivent etre renseignees :                              ',/,&
+'@    Numéro de charbon:                                      ',/,&
+'@      ICOAL =         ',I10                                  ,/,&
+'@    Masse volumique :                                       ',/,&
+'@      RHO0CH(ICOAL) = ',E14.5                                ,/,&
+'@    Cp :                                                    ',/,&
+'@      CP2CH(ICOAL)  = ',E14.5                                ,/,&
+'@    Fraction massique d'' eau dans la particule :           ',/,&
+'@      XWATCH(ICOAL) = ',E14.5                                ,/,&
+'@    Fraction massique de cendres dans la particule :        ',/,&
+'@      XASHCH(ICOAL) = ',E14.5                                ,/,&
+'@                                                            ',/,&
+'@                                                            ',/,&
+'@  Le calcul ne peut etre execute.                           ',/,&
+'@                                                            ',/,&
+'@  Verifier DP_FCP                                           ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 1094 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : MODULE LAGRANGIEN OPTION CHARBON PULVERISE  ',/,&
+'@    =========   (LAGENT)                                    ',/,&
+'@                                                            ',/,&
+'@    LES CONDITIONS AUX LIMITES SONT ERRONEES                ',/,&
+'@                                                            ',/,&
+'@  L''option de transport de particules de charbon pulverise ',/,&
+'@    est active (IPHYLA = ',I10,')                           ',/,&
+'@  Les proprietes physiques des particules au bord pour      ',/,&
+'@    la frontiere NB = ',I10   ,' et la classe NC = ',I10     ,/,&
+'@    ne sont pas correctes :                                 ',/,&
+'@    Numéro de charbon:                                      ',/,&
+'@      ICOAL =         ',I10                                  ,/,&
+'@    Fraction massique d'' eau dans la particule :           ',/,&
+'@      XWATCH(ICOAL) = ',E14.5                                ,/,&
+'@    Fraction massique de cendres dans la particule :        ',/,&
+'@      XASHCH(ICOAL) = ',E14.5                                ,/,&
+'@  La fraction massique de cendre et d''eau est supérieure   ',/,&
+'@    à 1:',E14.5                                              ,/,&
+'@                                                            ',/,&
+'@  Le calcul ne peut etre execute.                           ',/,&
+'@                                                            ',/,&
+'@  Verifier DP_FCP                                           ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 1095 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : MODULE LAGRANGIEN OPTION CHARBON PULVERISE  ',/,&
+'@    =========   (LAGENT)                                    ',/,&
+'@                                                            ',/,&
+'@    LES CONDITIONS AUX LIMITES SONT ERRONEES                ',/,&
+'@                                                            ',/,&
+'@  L''option de transport de particules de charbon pulverise ',/,&
+'@    est active (IPHYLA = ',I10,')                           ',/,&
+'@  Les proprietes physiques des particules au bord pour      ',/,&
+'@    la frontiere NB = ',I10   ,' et la classe NC = ',I10     ,/,&
+'@    ne sont pas correctes :                                 ',/,&
+'@                                                            ',/,&
+'@  Le type de condition au limite avec recours au fichier    ',/,&
+'@    DP_FCP a été sélectionné:                               ',/,&
+'@      IUSLAG(NB,NC,IRAWCL) = ',I10                           ,/,&
+'@                                                            ',/,&
+'@  Pourtant un des ces grandeur a été initialisée (valeur    ',/,&
+'@    différente de ',E14.5,')                                ',/,&
+'@    Masse volumique de la particule :                       ',/,&
+'@      RUSLAG(NC,NB,IROPT)  = ',E14.5                         ,/,&
+'@    Fraction massique d'' eau dans la particule :           ',/,&
+'@      RUSLAG(NC,NB,IFRMWT) = ',E14.5                         ,/,&
+'@    Cp :                                                    ',/,&
+'@      RUSLAG(NC,NB,ICPT)   = ',E14.5                         ,/,&
+'@    Diametre de coke :                                      ',/,&
+'@      RUSLAG(NC,NB,IRDCK)  = ',E14.5                         ,/,&
+'@    Diamètre initial :                                      ',/,&
+'@      RUSLAG(NC,NB,IRDCK)  = ',E14.5                         ,/,&
+'@                                                            ',/,&
+'@  Le calcul ne peut etre execute.                           ',/,&
+'@                                                            ',/,&
+'@  Verifier USLAG2                                           ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 1096 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : MODULE LAGRANGIEN OPTION CHARBON PULVERISE  ',/,&
+'@    =========   (LAGENT)                                    ',/,&
+'@                                                            ',/,&
+'@    LES CONDITIONS AUX LIMITES SONT ERRONEES                ',/,&
+'@                                                            ',/,&
+'@  L''option de transport de particules de charbon pulverise ',/,&
+'@    est active (IPHYLA = ',I10,')                           ',/,&
+'@  Les proprietes physiques des particules au bord pour      ',/,&
+'@    la frontiere NB = ',I10   ,' et la classe NC = ',I10     ,/,&
+'@    pour la couche ILAYER = ',I10                            ,/,&
+'@    ne sont pas correctes :                                 ',/,&
+'@                                                            ',/,&
+'@  Le type de condition au limite avec recours au fichier    ',/,&
+'@    DP_FCP a été sélectionné:                               ',/,&
+'@      IUSLAG(NB,NC,IRAWCL) = ',I10                           ,/,&
+'@                                                            ',/,&
+'@  Pourtant un des ces grandeur a été initialisée (valeur    ',/,&
+'@    différente de ',E14.5,')                                ',/,&
+'@    Fraction massique de charbon réactif dans la particule :',/,&
+'@      RUSLAG(NC,NB,IFRMCH(ILAYER)) = ',E14.5                 ,/,&
+'@    Fraction massique de coke dans la particule :'           ,/,&
+'@      RUSLAG(NC,NB,IFRMCK(ILAYER)) = ',E14.5                 ,/,&
+'@    Masse volumique initiale du coke :                      ',/,&
+'@      RUSLAG(NC,NB,IRHOCK0(ILAYER))  = ',E14.5               ,/,&
+'@                                                            ',/,&
+'@  Le calcul ne peut etre execute.                           ',/,&
+'@                                                            ',/,&
+'@  Verifier USLAG2                                           ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

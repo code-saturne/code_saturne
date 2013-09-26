@@ -138,10 +138,10 @@ double precision w1(ncelet)
 
 ! Local variables
 
-integer          npt , nv , iel, nv1, izcl
+integer          npt , nv , iel, ilayer, nv1, izcl
 integer          ilvx1 , ilvy1  , ilvz1  , ilpd1  , ilfv1 , ilts1
 integer          iltp1 , ildp1  , ilmp1
-integer          ilhp1 , ilmwat1 , ilmch1 , ilmck1 , ildck1
+integer          ilhp1(nlayer) , ilmwat1 , ilmch1(nlayer) , ilmck1(nlayer) , ildck1
 double precision pis6 , concen
 
 !===============================================================================
@@ -154,11 +154,13 @@ double precision pis6 , concen
 !===============================================================================
 
 ! Initialize variables to avoid compiler warnings
-
-ildck1 = 0
-ilmck1 = 0
+do ilayer=1,nlayer
+  ilhp1(ilayer) = 0
+  ilmch1(ilayer) = 0
+  ilmck1(ilayer) = 0
+enddo
 ilmwat1 = 0
-ilmch1 = 0
+ildck1 = 0
 
 ! Memoire
 
@@ -376,29 +378,33 @@ do npt = 1,nbpart
 !     * Moyenne et variance de la masse de coke
 !     * Moyenne et variance du diametre du coeur retrecissant
 
-      statis(iel,ilmp) = statis(iel,ilmp)                       &
+      statis(iel,ilmp) = statis(iel,ilmp)                         &
                          + tepa(npt,jrpoi) * ettp(npt,jmp)
-      statis(iel,ilhp)  = statis(iel,ilhp)                        &
-                        + tepa(npt,jrpoi) * ettp(npt,jhp)
-      statis(iel,ilmwat) = statis(iel,ilmwat)                       &
+      do ilayer=1,nlayer
+        statis(iel,ilhp(ilayer))  = statis(iel,ilhp(ilayer))      &
+              + tepa(npt,jrpoi) * ettp(npt,jhp(ilayer))
+        statis(iel,ilmch(ilayer)) = statis(iel,ilmch(ilayer))     &
+              + tepa(npt,jrpoi) * ettp(npt,jmch(ilayer))
+        statis(iel,ilmck(ilayer)) = statis(iel,ilmck(ilayer))     &
+              + tepa(npt,jrpoi) * ettp(npt,jmck(ilayer))
+      enddo
+      statis(iel,ilmwat) = statis(iel,ilmwat)                     &
                         + tepa(npt,jrpoi) * ettp(npt,jmwat)
-      statis(iel,ilmch) = statis(iel,ilmch)                       &
-                        + tepa(npt,jrpoi) * ettp(npt,jmch)
-      statis(iel,ilmck) = statis(iel,ilmck)                       &
-                        + tepa(npt,jrpoi) * ettp(npt,jmck)
       statis(iel,ildck) = statis(iel,ildck)                       &
                         + tepa(npt,jrpoi) * tepa(npt,jrdck)
 
-     stativ(iel,ilmp) = stativ(iel,ilmp)                       &
+     stativ(iel,ilmp) = stativ(iel,ilmp)                          &
              + tepa(npt,jrpoi)*ettp(npt,jmp)*ettp(npt,jmp)
-      stativ(iel,ilhp)  = stativ(iel,ilhp)                        &
-          + tepa(npt,jrpoi)*ettp(npt,jhp)*ettp(npt,jhp)
-      stativ(iel,ilmwat) = stativ(iel,ilmwat)                       &
+      do ilayer=1,nlayer
+        stativ(iel,ilhp(ilayer))  = stativ(iel,ilhp(ilayer))      &
+        + tepa(npt,jrpoi)*ettp(npt,jhp(ilayer))*ettp(npt,jhp(ilayer))
+        stativ(iel,ilmch(ilayer)) = stativ(iel,ilmch(ilayer))     &
+        + tepa(npt,jrpoi)*ettp(npt,jmch(ilayer))*ettp(npt,jmch(ilayer))
+        stativ(iel,ilmck(ilayer)) = stativ(iel,ilmck(ilayer))     &
+        + tepa(npt,jrpoi)*ettp(npt,jmck(ilayer))*ettp(npt,jmck(ilayer))
+      enddo
+      stativ(iel,ilmwat) = stativ(iel,ilmwat)                     &
           + tepa(npt,jrpoi)*ettp(npt,jmwat)*ettp(npt,jmwat)
-      stativ(iel,ilmch) = stativ(iel,ilmch)                       &
-          + tepa(npt,jrpoi)*ettp(npt,jmch)*ettp(npt,jmch)
-      stativ(iel,ilmck) = stativ(iel,ilmck)                       &
-          + tepa(npt,jrpoi)*ettp(npt,jmck)*ettp(npt,jmck)
       stativ(iel,ildck) = stativ(iel,ildck)                       &
           + tepa(npt,jrpoi)*tepa(npt,jrdck)*tepa(npt,jrdck)
 
@@ -529,42 +535,51 @@ if (nbclst.gt.0) then
 !     * Moyenne et variance du diametre du coeur retrecissant
 
           ilmp1   = ilmp   + izcl*nvlsta
-          ilhp1   = ilhp   + izcl*nvlsta
+          do ilayer=1,nlayer
+            ilhp1(ilayer)   = ilhp(ilayer)  + izcl*nvlsta
+            ilmch1(ilayer)  = ilmch(ilayer) + izcl*nvlsta
+            ilmck1(ilayer)  = ilmck(ilayer) + izcl*nvlsta
+          enddo
           ilmwat1 = ilmwat + izcl*nvlsta
-          ilmch1  = ilmch  + izcl*nvlsta
-          ilmck1  = ilmck  + izcl*nvlsta
           ildck1  = ildck  + izcl*nvlsta
 
-          statis(iel,ilmp1)  = statis(iel,ilmp1)                  &
+          statis(iel,ilmp1)  = statis(iel,ilmp1)                   &
                         + tepa(npt,jrpoi) * ettp(npt,jmp)
-          statis(iel,ilhp1)  = statis(iel,ilhp1)                  &
-                        + tepa(npt,jrpoi) * ettp(npt,jhp)
-          statis(iel,ilmwat1) = statis(iel,ilmwat1)                 &
+          do ilayer=1,nlayer
+            statis(iel,ilhp1(ilayer))  = statis(iel,ilhp1(ilayer)) &
+                  + tepa(npt,jrpoi) * ettp(npt,jhp(ilayer))
+            statis(iel,ilmch1(ilayer)) = statis(iel,ilmch1(ilayer))&
+                  + tepa(npt,jrpoi) * ettp(npt,jmch(ilayer))
+            statis(iel,ilmck1(ilayer)) = statis(iel,ilmck1(ilayer))&
+                  + tepa(npt,jrpoi) * ettp(npt,jmck(ilayer))
+          enddo
+          statis(iel,ilmwat1) = statis(iel,ilmwat1)               &
                         + tepa(npt,jrpoi) * ettp(npt,jmwat)
-          statis(iel,ilmch1) = statis(iel,ilmch1)                 &
-                        + tepa(npt,jrpoi) * ettp(npt,jmch)
-          statis(iel,ilmck1) = statis(iel,ilmck1)                 &
-                        + tepa(npt,jrpoi) * ettp(npt,jmck)
           statis(iel,ildck1) = statis(iel,ildck1)                 &
                         + tepa(npt,jrpoi) * tepa(npt,jrdck)
 
           ilmp1   = ilmp   + izcl*(nvlsta-1)
-          ilhp1   = ilhp   + izcl*(nvlsta-1)
+          do ilayer=1,nlayer
+            ilhp1(ilayer)  = ilhp(ilayer)  + izcl*(nvlsta-1)
+            ilmch1(ilayer) = ilmch(ilayer) + izcl*(nvlsta-1)
+            ilmck1(ilayer) = ilmck(ilayer) + izcl*(nvlsta-1)
+
+          enddo
           ilmwat1 = ilmwat + izcl*(nvlsta-1)
-          ilmch1  = ilmch  + izcl*(nvlsta-1)
-          ilmck1  = ilmck  + izcl*(nvlsta-1)
           ildck1  = ildck  + izcl*(nvlsta-1)
 
           stativ(iel,ilmp1)  = stativ(iel,ilmp1)                  &
           + tepa(npt,jrpoi)*ettp(npt,jmp)*ettp(npt,jmp)
-          stativ(iel,ilhp1)  = stativ(iel,ilhp1)                  &
-          + tepa(npt,jrpoi)*ettp(npt,jhp)*ettp(npt,jhp)
-          stativ(iel,ilmwat1) = stativ(iel,ilmwat1)                 &
+          do ilayer=1,nlayer
+            stativ(iel,ilhp1(ilayer))  = stativ(iel,ilhp1(ilayer)) &
+            + tepa(npt,jrpoi)*ettp(npt,jhp(ilayer)) *ettp(npt,jhp(ilayer))
+            stativ(iel,ilmch1(ilayer)) = stativ(iel,ilmch1(ilayer))&
+            + tepa(npt,jrpoi)*ettp(npt,jmch(ilayer))*ettp(npt,jmch(ilayer))
+            stativ(iel,ilmck1(ilayer)) = stativ(iel,ilmck1(ilayer))&
+            + tepa(npt,jrpoi)*ettp(npt,jmck(ilayer))*ettp(npt,jmck(ilayer))
+          enddo
+          stativ(iel,ilmwat1) = stativ(iel,ilmwat1)               &
           + tepa(npt,jrpoi)*ettp(npt,jmwat)*ettp(npt,jmwat)
-          stativ(iel,ilmch1) = stativ(iel,ilmch1)                 &
-          + tepa(npt,jrpoi)*ettp(npt,jmch)*ettp(npt,jmch)
-          stativ(iel,ilmck1) = stativ(iel,ilmck1)                 &
-          + tepa(npt,jrpoi)*ettp(npt,jmck)*ettp(npt,jmck)
           stativ(iel,ildck1) = stativ(iel,ildck1)                 &
           + tepa(npt,jrpoi)*tepa(npt,jrdck)*tepa(npt,jrdck)
 

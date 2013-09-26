@@ -436,6 +436,34 @@ _get_solid_fuel_density(const int icha)
 }
 
 /*-----------------------------------------------------------------------------
+ * Return double for solid fuel thermal conductivity
+ *
+ * parameters:
+ *    icha     -->   char number
+ * returns:
+ *    thermal conductivity
+ *----------------------------------------------------------------------------*/
+
+static double
+_get_solid_fuel_thermal_conductivity(const int icha)
+{
+  char *path;
+  double result;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2,"thermophysical_models", "solid_fuels");
+  cs_xpath_add_element_num(&path, "solid_fuel", icha);
+  cs_xpath_add_element(&path, "thermal_conductivity");
+  cs_xpath_add_function_text(&path);
+
+  if (!cs_gui_get_double(path, &result))
+    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+
+  BFT_FREE(path);
+  return result;
+}
+
+/*-----------------------------------------------------------------------------
  * Return double for ashes rate
  *
  * parameters:
@@ -651,7 +679,9 @@ _get_PCI_type(const int icha)
       bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
   }
   BFT_FREE(path);
+  BFT_FREE(path2);
   BFT_FREE(buff);
+  BFT_FREE(buff2);
   return ichoice;
 }
 
@@ -3437,6 +3467,7 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
                                 double       *const pcich,
                                 double       *const cp2ch,
                                 double       *const rho0ch,
+                                double       *const thcdch,
                                 double       *const cck,
                                 double       *const hck,
                                 double       *const ock,
@@ -3646,6 +3677,9 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
     /* ---- Masse volumique initiale (kg/m3) */
     rho0ch[icha] = _get_solid_fuel_density(icha+1);
 
+    /* ---- Thermal conductivity of the coal (W/m/K) */
+    thcdch[icha] = _get_solid_fuel_thermal_conductivity(icha+1);
+
     /* ---- Caracteristiques cendres */
 
     /* ------ Taux de cendre (kg/kg) en % */
@@ -3721,6 +3755,12 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
       _getNOxFeatureStatus(icha+1, imdnox);
       if (*imdnox)
         _getNOxReburning(icha+1, irb);
+    }
+    else {
+          crepn1[icha] = 0.5;
+      crepn1[*ncharb+icha] = 1-crepn1[icha];
+      crepn2[icha] = 0.5;
+      crepn2[*ncharb+icha] = 1-crepn2[icha];
     }
   }
 

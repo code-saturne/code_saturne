@@ -97,7 +97,6 @@ implicit none
 integer          nvlsta
 integer          ivarl , ivarl1 , ivarlm , iflu , ilpd1 , icla
 
-double precision dt(ncelet)
 double precision tracel(ncelet)
 double precision statis(ncelet,nvlsta)
 double precision stativ(ncelet,nvlsta-1)
@@ -150,7 +149,7 @@ dimtab = ii
 !   Particle temperature: ivarl=iltp
 !   Particle diameter: ivarl=ildp
 !   Particle mass: ivarl= ilmp
-!   Temperature of the coal particles: ivarl=ilhp
+!   Temperature of the coal particles: ivarl=ilhp(ilayer)
 !   Mass of moisture of the coal particles: ivarl= ilmwat
 !   Mass of reactive coal of the coal particles: ivarl= ilmch
 !   Mass of coke of the coal particles: ivarl=ilmck

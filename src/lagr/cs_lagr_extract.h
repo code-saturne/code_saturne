@@ -106,6 +106,8 @@ cs_lagr_get_particle_list(cs_lnum_t         n_cells,
  *   attr          <-- attribute whose values are required
  *   datatype      <-- associated value type
  *   stride        <-- number of values per particle
+ *   component_id  <-- if -1 : extract the whole attribute
+ *                     if >0 : id of the component to extract
  *   n_particles   <-- number of particles in filter
  *   particle_list <-- particle_list (1 to n numbering), or NULL
  *   values        --> particle values for given attribute
@@ -119,6 +121,7 @@ cs_lagr_get_particle_values(const cs_lagr_particle_set_t  *particles,
                             cs_lagr_attribute_t            attr,
                             cs_datatype_t                  datatype,
                             int                            stride,
+                            int                            component_id,
                             cs_lnum_t                      n_particles,
                             const cs_lnum_t                particle_list[],
                             void                          *values);
@@ -139,6 +142,8 @@ cs_lagr_get_particle_values(const cs_lagr_particle_set_t  *particles,
  *   attr           <-- attribute whose values are required
  *   datatype       <-- associated value type
  *   stride         <-- number of values per particle
+ *   component_id   <-- if -1 : extract the whole attribute
+ *                      if >0 : id of the component to extract
  *   n_particles    <-- number of particles in filter
  *   particle_list  <-- particle_list (1 to n numbering), or NULL
  *   segment_values --> particle segment values
@@ -153,6 +158,7 @@ cs_lagr_get_trajectory_values(const cs_lagr_particle_set_t  *particles,
                               cs_lagr_attribute_t            attr,
                               cs_datatype_t                  datatype,
                               int                            stride,
+                              int                            component_id,
                               cs_lnum_t                      n_particles,
                               const cs_lnum_t                particle_list[],
                               void                          *segment_values);

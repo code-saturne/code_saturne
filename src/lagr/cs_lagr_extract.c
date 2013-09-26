@@ -244,6 +244,8 @@ cs_lagr_get_particle_list(cs_lnum_t         n_cells,
  * \param[in]   attr                  attribute whose values are required
  * \param[in]   datatype              associated value type
  * \param[in]   stride                number of values per particle
+ * \param[in]   component_id          if -1 : extract the whole attribute
+ *                                    if >0 : id of the component to extract
  * \param[in]   n_particles           number of particles in filter
  * \param[in]   particle_list         particle_list (1 to n numbering), or NULL
  * \param[out]  values                particle values for given attribute
@@ -257,6 +259,7 @@ cs_lagr_get_particle_values(const cs_lagr_particle_set_t  *particles,
                             cs_lagr_attribute_t            attr,
                             cs_datatype_t                  datatype,
                             int                            stride,
+                            int                            component_id,
                             cs_lnum_t                      n_particles,
                             const cs_lnum_t                particle_list[],
                             void                          *values)
@@ -264,7 +267,7 @@ cs_lagr_get_particle_values(const cs_lagr_particle_set_t  *particles,
   size_t j;
   cs_lnum_t i;
 
-  size_t  extents, size;
+  size_t  extents, size, _length;
   ptrdiff_t  displ;
   cs_datatype_t _datatype;
   int  _count;
@@ -276,6 +279,12 @@ cs_lagr_get_particle_values(const cs_lagr_particle_set_t  *particles,
 
   if (_count == 0)
     return 1;
+  else {
+    if (component_id == -1)
+      _length = size;
+    else
+      _length = size/_count;
+  }
 
   /* Check consistency */
 
@@ -297,14 +306,42 @@ cs_lagr_get_particle_values(const cs_lagr_particle_set_t  *particles,
     return 1;
   }
 
+  /* Check component_id */
+  if (component_id != -1) {
+    if (component_id < 0 || component_id >= stride) {
+      char attr_name[32];
+      const char *_attr_name = attr_name;
+      if (attr < CS_LAGR_N_ATTRIBUTES)
+        _attr_name = cs_lagr_attribute_name[attr];
+      else {
+        snprintf(attr_name, 31, "%d", (int)attr);
+        attr_name[31] = '\0';
+      }
+      bft_error(__FILE__, __LINE__, 0,
+                _("Attribute %s has a number of components equals to %d\n"
+                  "but the component_id %d is requested."),
+                _attr_name,
+                stride,
+                    component_id);
+      return 1;
+    }
+  }
+
+  /* No offset if export of the whole attribute */
+  if (component_id == -1)
+    component_id = 0;
+
+
   /* Case where we have no filter */
 
   if (particle_list == NULL) {
     for (i = 0; i < n_particles; i++) {
-      unsigned char *dest = _values + i*size;
+      unsigned char *dest = _values + i*_length;
       const unsigned char
-        *src = (const unsigned char *)(particles->particles + i) + displ;
-      for (j = 0; j < size; j++)
+        *src = (const unsigned char *)(particles->particles + i)
+               + displ
+               + component_id * _length ;
+      for (j = 0; j < _length; j++)
         dest[j] = src[j];
     }
   }
@@ -313,10 +350,12 @@ cs_lagr_get_particle_values(const cs_lagr_particle_set_t  *particles,
   else {
     for (i = 0; i < n_particles; i++) {
       cs_lnum_t p_id = particle_list[i] - 1;
-      unsigned char *dest = _values + i*size;
+      unsigned char *dest = _values + i*_length;
       const unsigned char
-        *src = (const unsigned char *)(particles->particles + p_id) + displ;
-      for (j = 0; j < size; j++)
+        *src = (const unsigned char *)(particles->particles + p_id)
+               + displ
+               + component_id * _length ;
+      for (j = 0; j < _length; j++)
         dest[j] = src[j];
     }
   }
@@ -340,6 +379,8 @@ cs_lagr_get_particle_values(const cs_lagr_particle_set_t  *particles,
  * \param[in]   attr                  attribute whose values are required
  * \param[in]   datatype              associated value type
  * \param[in]   stride                number of values per particle
+ * \param[in]   component_id          if -1 : extract the whole attribute
+ *                                    if >0 : id of the component to extract
  * \param[in]   n_particles           number of particles in filter
  * \param[in]   particle_list         particle_list (1 to n numbering), or NULL
  * \param[out]  segment_values        particle segment values
@@ -354,6 +395,7 @@ cs_lagr_get_trajectory_values(const cs_lagr_particle_set_t  *particles,
                               cs_lagr_attribute_t            attr,
                               cs_datatype_t                  datatype,
                               int                            stride,
+                              int                            component_id,
                               cs_lnum_t                      n_particles,
                               const cs_lnum_t                particle_list[],
                               void                          *segment_values)
@@ -361,7 +403,7 @@ cs_lagr_get_trajectory_values(const cs_lagr_particle_set_t  *particles,
   size_t j;
   cs_lnum_t i;
 
-  size_t  extents, size;
+  size_t  extents, size, _length;
   ptrdiff_t  displ;
   cs_datatype_t _datatype;
   int  _count;
@@ -373,6 +415,12 @@ cs_lagr_get_trajectory_values(const cs_lagr_particle_set_t  *particles,
 
   if (_count == 0)
     return 1;
+  else {
+    if (component_id == -1)
+      _length = size;
+    else
+      _length = size/_count;
+  }
 
   /* Check consistency */
 
@@ -394,16 +442,48 @@ cs_lagr_get_trajectory_values(const cs_lagr_particle_set_t  *particles,
     return 1;
   }
 
+  /* Check component_id */
+  if (component_id != -1) {
+    if (component_id < 0 || component_id >= stride) {
+      char attr_name[32];
+      const char *_attr_name = attr_name;
+      if (attr < CS_LAGR_N_ATTRIBUTES)
+        _attr_name = cs_lagr_attribute_name[attr];
+      else {
+        snprintf(attr_name, 31, "%d", (int)attr);
+        attr_name[31] = '\0';
+      }
+      bft_error(__FILE__, __LINE__, 0,
+                _("Attribute %s has a number of components equals to %d\n"
+                  "but the component_id %d is requested."),
+                _attr_name,
+                stride,
+                    component_id);
+      return 1;
+    }
+  }
+
+  /* No offset if export of the whole attribute */
+  if (component_id == -1)
+    component_id = 0;
+
+
+  /* Case where we have no filter */
+
   if (particle_list == NULL) {
     for (i = 0; i < n_particles; i++) {
-      unsigned char *dest = _values + i*size*2;
+      unsigned char *dest = _values + i*_length*2;
       const unsigned char
-        *src = (const unsigned char *)(particles->particles + i) + displ;
+        *src = (const unsigned char *)(particles->particles + i)
+               + displ
+               + component_id * _length ;
       const unsigned char
-        *srcp = (const unsigned char *)(particles_prev->particles + i) + displ;
-      for (j = 0; j < size; j++) {
+        *srcp = (const unsigned char *)(particles_prev->particles + i)
+                + displ
+                + component_id * _length ;
+      for (j = 0; j < _length; j++) {
         dest[j] = src[j];
-        dest[j + size] = srcp[j];
+        dest[j + _length] = srcp[j];
       }
     }
   }
@@ -412,15 +492,18 @@ cs_lagr_get_trajectory_values(const cs_lagr_particle_set_t  *particles,
   else {
     for (i = 0; i < n_particles; i++) {
       cs_lnum_t p_id = particle_list[i] - 1;
-      unsigned char *dest = _values + i*size*2;
+      unsigned char *dest = _values + i*_length*2;
       const unsigned char
-        *src = (const unsigned char *)(particles->particles + p_id) + displ;
+        *src = (const unsigned char *)(particles->particles + p_id)
+               + displ
+               + component_id * _length ;
       const unsigned char
         *srcp = (const unsigned char *)(particles_prev->particles + p_id)
-                + displ;
-      for (j = 0; j < size; j++) {
+                + displ
+                + component_id * _length ;
+      for (j = 0; j < _length; j++) {
         dest[j] = src[j];
-        dest[j + size] = srcp[j];
+        dest[j + _length] = srcp[j];
       }
     }
   }

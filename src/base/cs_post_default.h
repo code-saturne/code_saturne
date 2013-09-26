@@ -122,15 +122,16 @@ void CS_PROCF (pstvar, PSTVAR)
 );
 
 /*----------------------------------------------------------------------------
- * Define which Lagragian variables should be postprocessed
+ * Define which Lagrangian variables should be postprocessed
  *
  * Fortran interface:
  *
  * subroutine lagpvr
  * *****************
- *                  ( ivisv1, ivisv2, ivistp,  ivisdm, iviste,
- *                    ivismp, ivisdk, iviswat,  ivisch, ivisck )
+ *                  ( iphyla, ivisv1, ivisv2,  ivistp, ivisdm, iviste,
+ *                    ivismp, ivisdk, iviswat, ivisch, ivisck )
  *
+ * integer          iphyla      : <-- : type of lagrangian calculation
  * integer          ivisv1      : <-- : display of variable 'fluid velocity'
  * integer          ivisv2      : <-- : display of variable 'particles velocity'
  * integer          ivistp      : <-- : display of variable 'resident time'
@@ -145,6 +146,7 @@ void CS_PROCF (pstvar, PSTVAR)
 
 void CS_PROCF (lagpvr, LAGPVR)
 (
+ const cs_int_t  *iphyla,
  const cs_int_t  *ivisv1,
  const cs_int_t  *ivisv2,
  const cs_int_t  *ivistp,

@@ -100,7 +100,8 @@ void CS_PROCF(fclag3, FCLAG3)
  *
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
+void CS_PROCF (uilag1, UILAG1) (int *const nlayer,
+                                int *const iilagr,
                                 int *const isuila,
                                 int *const isuist,
                                 int *const nbpmax,
@@ -117,7 +118,7 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
                                 double enc1[],
                                 double enc2[],
                                 int *const nstits,
-                                int *const lstdyn,
+                                int *const ltsdyn,
                                 int *const ltsmas,
                                 int *const ltsthe,
                                 int *const nordre,
@@ -171,6 +172,12 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
  * integer          nclagm  -->  max number of classes
  * integer          nflagm  -->  max number of boundaries
  * integer          iphyla  -->  physica model associated to the particles
+ * ..
+ * integer          nlayer  <--  number of layer for coal
+ * integer          inuchl  <--  particle coal number
+ * integer          irawcl  <--  coal particle composition injection condition
+ * integer          ihpt    <--  coal temperature in K (for each layer)
+ * integer          ifrlag  -->  type of boundary face
  * integer          iusncl  <--  array for particles class(es) number
  * integer          iusclb  <--  array for particles boundary conditions
  *----------------------------------------------------------------------------*/
@@ -206,17 +213,10 @@ void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
                                 const int *const itpt,
                                 const int *const icpt,
                                 const int *const iepsi,
-                                const int *const ihpt,
+                                const int *const nlayer,
                                 const int *const inuchl,
-                                const int *const imwat,
-                                const int *const imcht,
-                                const int *const imckt,
-                                int     ichcor[],
-                                int     cp2ch[],
-                                int     diam20[],
-                                int     rho0ch[],
-                                int     xwatch[],
-                                int     xashch[],
+                                const int *const irawcl,
+                                const int  const ihpt[],
                                 int     ifrlag[],
                                 int     iusncl[],
                                 int     iusclb[]);

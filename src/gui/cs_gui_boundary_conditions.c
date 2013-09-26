@@ -525,6 +525,7 @@ _inlet_coal(const int         izone,
   if (size == 0) {
     boundaries->ientat[izone] = 1;
     boundaries->ientcp[izone] = 0;
+    BFT_FREE(path0);
   }
   else {
     if (size != *ncharb)

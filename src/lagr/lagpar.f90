@@ -56,6 +56,10 @@ module lagpar
   integer         nclstm
   parameter      (nclstm = 100)
 
+  !> maximal number of layer per coal particle
+  integer         nlayer
+  parameter      (nlayer = 5)
+
   !> \}
 
   !=============================================================================
@@ -73,7 +77,7 @@ module lagpar
 
   !> maximal number of particle real data
   integer         ndlagm
-  parameter      (ndlagm = 50)
+  parameter      (ndlagm = 50+4*nlayer)
 
   !> maximal number of particle integer data
   integer         ndlaim
@@ -128,7 +132,7 @@ module lagpar
 
   !> maximal number of variables
   integer         nvplmx
-  parameter      (nvplmx = 50)
+  parameter      (nvplmx = 50+4*nlayer)
 
   !> \}
 

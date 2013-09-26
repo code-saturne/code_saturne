@@ -78,7 +78,7 @@ BEGIN_C_DECLS
 #define  N_GEOL 13
 #define  CS_LAGR_MIN_COMM_BUF_SIZE  10
 #define  CS_LAGR_MAX_PROPAGATION_LOOPS  30
-#define  N_VAR_PART_STRUCT  37
+#define  N_VAR_PART_STRUCT  36
 #define  N_VAR_PART_AUX      1
 
 /*============================================================================
@@ -196,6 +196,9 @@ typedef struct {
   int  physic_mode;  /* FIXME: => enum: CS_LAGR_PHYS_STD,
                         CS_LAGR_PHYS_COAL,
                         CS_LAGR_PHYS_HEAT... */
+
+  int  cs_lagr_nlayer_temp;
+
   int  deposition;
   int  resuspension;
   int  clogging;
@@ -281,7 +284,6 @@ const char *cs_lagr_attribute_name[] = {
   "CS_LAGR_COKE_MASS",
   "CS_LAGR_SHRINKING_DIAMETER",
   "CS_LAGR_INITIAL_DIAMETER",
-  "CS_LAGR_INITIAL_DENSITY",
   "CS_LAGR_COAL_NUM",
   "CS_LAGR_COAL_DENSITY",
   "CS_LAGR_EMISSIVITY",
@@ -313,8 +315,9 @@ static int _jup = -1, _jvp = -1, _jwp = -1, _juf = -1, _jvf = -1, _jwf = -1;
 static int _jtaux = - 1, _jdepo = - 1, _jryplu = - 1, _jrinpf = - 1;
 static int _jdfac = - 1, _jimark = -1, _jnbasg = - 1, _jnbasp = - 1;
 static int _jfadh = - 1, _jmfadh = - 1, _jndisp = - 1;
-static int _jthp = - 1, _jtf = - 1, _jmwat = - 1, _jmch = - 1, _jmck = -1;
-static int _jcp = -1, _jrdck = -1, _jrd0p = - 1, _jrr0p = - 1, _jrhock = - 1;
+static int *_jthp, *_jmch, *_jmck, *_jrhock;
+static int _jtf = - 1, _jmwat = - 1;
+static int _jcp = -1, _jrdck = -1, _jrd0p = - 1;
 static int _jinch = - 1, _jreps = -1;
 
 /*=============================================================================
@@ -496,16 +499,28 @@ _define_particle_datatype(void)
 
   int  count = 0;
   int  blocklengths[N_VAR_PART_STRUCT]
-    = {1, 1, 1, 1, 1, 1, 1, 1,
-       1, 1, 1, 1, 3, 3, 3, 1, 1, 1, 1 ,
-       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ,
-       1, 1, 1, 1, 1, 1, 1};
+    = {1, 1, 1, 1, 1, 1, 1 , 1,
+       1, 1, 1, 1, 3, 3, 3 , 1, 1, 1, 1 ,
+       1, 1, 1, 1, 1, 1,
+       CS_LAGR_N_LAYERS,
+       1, 1, 1,
+       CS_LAGR_N_LAYERS,
+       CS_LAGR_N_LAYERS,
+       1, 1, 1,
+       CS_LAGR_N_LAYERS,
+       1 };
 
   MPI_Aint  displacements[N_VAR_PART_STRUCT]
     = {0, 0, 0, 0, 0, 0, 0, 0,
        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ,
-       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ,
-       0, 0, 0, 0, 0, 0, 0};
+       0, 0, 0, 0, 0, 0,
+       0,
+       0, 0, 0,
+       0,
+       0,
+       0, 0, 0,
+       0,
+       0};
 
   MPI_Datatype  types[N_VAR_PART_STRUCT] = {CS_MPI_LNUM,  /* cur_cell_num */
                                             CS_MPI_LNUM,  /* last_face_num */
@@ -532,17 +547,16 @@ _define_particle_datatype(void)
                                             CS_MPI_REAL,  /* adhesion_force */
                                             CS_MPI_REAL,  /* adhesion_torque */
                                             CS_MPI_REAL,  /*  displacement_norm */
-                                            CS_MPI_REAL,  /* temp */
+                                            CS_MPI_REAL,  /* temp[nlayer] */
                                             CS_MPI_REAL,  /* fluid_temp */
                                             CS_MPI_REAL,  /* cp */
                                             CS_MPI_REAL,  /* water_mass */
-                                            CS_MPI_REAL,  /* coal_mass */
-                                            CS_MPI_REAL,  /* coke_mass */
+                                            CS_MPI_REAL,  /* coal_mass[nlayer] */
+                                            CS_MPI_REAL,  /* coke_mass[nlayer] */
                                             CS_MPI_REAL,  /* shrinking_diam */
                                             CS_MPI_REAL,  /* initial_diam */
-                                            CS_MPI_REAL,  /* initial_density */
                                             CS_MPI_LNUM,  /* coal_number */
-                                            CS_MPI_REAL,  /* coal_density */
+                                            CS_MPI_REAL,  /* coal_density[nlayer] */
                                             CS_MPI_REAL   /* emissivity */
   };
 
@@ -585,22 +599,27 @@ _define_particle_datatype(void)
 
   /* Thermal model */
 
-  part.temp = 0.0;
+  for (j = 0; j < CS_LAGR_N_LAYERS; j++) {
+    part.temp[j] = 0.0;
+  }
   part.fluid_temp = 0.0;
   part.cp = 0.0;
 
   /* Coal combustion */
 
   part.water_mass = 0.0;
-  part.coal_mass = 0.0;
-  part.coke_mass = 0.0;
+  for (j = 0; j < CS_LAGR_N_LAYERS; j++) {
+    part.coal_mass[j] = 0.0;
+    part.coke_mass[j] = 0.0;
+  }
   part.shrinking_diam = 0.0;
   part.initial_diam = 0.0;
-  part.initial_density = 0.0;
   part.coal_number = 0;
-  part.coal_density = 0.;
+  for (j = 0; j < CS_LAGR_N_LAYERS; j++) {
+    part.coal_density[j] = 0.0;
+  }
 
-  part.emissivity = 0.;
+  part.emissivity = 0.0;
 
   /* Define array of displacements */
 
@@ -640,7 +659,6 @@ _define_particle_datatype(void)
   MPI_Get_address(&part.coke_mass, displacements + count++);
   MPI_Get_address(&part.shrinking_diam, displacements + count++);
   MPI_Get_address(&part.initial_diam, displacements + count++);
-  MPI_Get_address(&part.initial_density, displacements + count++);
   MPI_Get_address(&part.coal_number, displacements + count++);
   MPI_Get_address(&part.coal_density, displacements + count++);
 
@@ -730,10 +748,7 @@ _create_particle_set(const cs_lnum_t n_particles_max)
 
   assert(n_particles_max >= 1);
 
-  new_set->particles[0].prev_id = -1;
-  new_set->particles[0].next_id = 1;
-
-  for (i = 1; i < n_particles_max; i++) {
+  for (i = 0; i < n_particles_max; i++) {
     new_set->particles[i].prev_id = i-1;
     new_set->particles[i].next_id = i+1;
   }
@@ -2340,16 +2355,16 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
     int  one = 1;
 
     /* Selection of the fouling coefficient*/
-    cs_real_t  tprenc_icoal = tprenc[particle.coal_number-1];
-    cs_real_t  visref_icoal = visref[particle.coal_number-1];
-    cs_real_t  enc1_icoal   = enc1[particle.coal_number-1];
-    cs_real_t  enc2_icoal   = enc2[particle.coal_number-1];
+    cs_real_t  temp_ext_part = particle.temp[CS_LAGR_N_LAYERS-1];
+    cs_real_t  tprenc_icoal  = tprenc[particle.coal_number-1];
+    cs_real_t  visref_icoal  = visref[particle.coal_number-1];
+    cs_real_t  enc1_icoal    = enc1[particle.coal_number-1];
+    cs_real_t  enc2_icoal    = enc2[particle.coal_number-1];
 
-
-    if (particle.temp > tprenc_icoal+*tkelvi) {
+    if (temp_ext_part > tprenc_icoal+*tkelvi) {
 
       /* Coal viscosity*/
-      tmp = ( (1.0e7*enc1_icoal)/ ((particle.temp-150.e0-*tkelvi)*(particle.temp-150.e0-*tkelvi)) )
+      tmp = ( (1.0e7*enc1_icoal)/ ((temp_ext_part-150.e0-*tkelvi)*(temp_ext_part-150.e0-*tkelvi)) )
             + enc2_icoal;
       if (tmp <= 0.0) {
         bft_error(__FILE__, __LINE__, 0,
@@ -2389,9 +2404,11 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
         }
         if (*iencckbd > 0) {
           if (particle.mass > 0) {
-            boundary_stat[(*iencck -1) * nfabor + face_id]
-              += particle.stat_weight * (particle.coal_mass +
-                 particle.coke_mass) / particle.mass;
+            for (k = 0; k < CS_LAGR_N_LAYERS; k++) {
+              boundary_stat[(*iencck -1) * nfabor + face_id]
+                += particle.stat_weight * (particle.coal_mass[k] +
+                   particle.coke_mass[k]) / particle.mass;
+            }
           }
         }
 
@@ -3703,7 +3720,7 @@ _update_c_from_fortran(const cs_lnum_t   *nbpmax,
                        const cs_lnum_t    ibord[],
                        const cs_lnum_t    indep[])
 {
-  cs_lnum_t  i, id;
+  cs_lnum_t  i, j, id;
 
   cs_lagr_particle_set_t  *set = _particle_set;
   cs_lagr_particle_set_t  *prev_set = _prev_particle_set;
@@ -3891,16 +3908,17 @@ _update_c_from_fortran(const cs_lnum_t   *nbpmax,
 
     }
 
-    if (_jthp > -1) {
-      id = _jthp * (*nbpmax) + i;
-      cur_part.temp = ettp[id];
-      prev_part.temp = ettpa[id];
+    for (j = 0; j < CS_LAGR_N_LAYERS; j++) {
+      if (_jthp[j] > -1) {
+        id = _jthp[j] * (*nbpmax) + i;
+        cur_part.temp[j] = ettp[id];
+        prev_part.temp[j] = ettpa[id];
+      }
+      else {
+        cur_part.temp[j] = 0.0;
+        prev_part.temp[j] = 0.0;
+      }
     }
-    else {
-      cur_part.temp = 0.0;
-      prev_part.temp = 0.0;
-    }
-
     /* Data needed if the coal combustion is activated */
 
     if (lagr_param->physic_mode ==2) {
@@ -3915,13 +3933,15 @@ _update_c_from_fortran(const cs_lnum_t   *nbpmax,
       cur_part.water_mass = ettp[id];
       prev_part.water_mass = ettpa[id];
 
-      id = _jmch * (*nbpmax) + i;
-      cur_part.coal_mass = ettp[id];
-      prev_part.coal_mass = ettpa[id];
+      for (j = 0; j < CS_LAGR_N_LAYERS; j++) {
+        id = _jmch[j] * (*nbpmax) + i;
+        cur_part.coal_mass[j] = ettp[id];
+        prev_part.coal_mass[j] = ettpa[id];
 
-      id = _jmck * (*nbpmax) + i;
-      cur_part.coke_mass = ettp[id];
-      prev_part.coke_mass = ettpa[id];
+        id = _jmck[j] * (*nbpmax) + i;
+        cur_part.coke_mass[j] = ettp[id];
+        prev_part.coke_mass[j] = ettpa[id];
+      }
 
       id = _jcp * (*nbpmax) + i;
       cur_part.cp = ettp[id];
@@ -3938,11 +3958,10 @@ _update_c_from_fortran(const cs_lnum_t   *nbpmax,
       id = _jrd0p * (*nbpmax) + i;
       cur_part.initial_diam = tepa[id];
 
-      id = _jrr0p * (*nbpmax) + i;
-      cur_part.initial_density = tepa[id];
-
-      id = _jrhock * (*nbpmax) + i;
-      cur_part.coal_density = tepa[id];
+      for (j = 0; j < CS_LAGR_N_LAYERS; j++) {
+        id = _jrhock[j] * (*nbpmax) + i;
+        cur_part.coal_density[j] = tepa[id];
+      }
 
       /* itepa array */
 
@@ -3957,11 +3976,16 @@ _update_c_from_fortran(const cs_lnum_t   *nbpmax,
       cur_part.fluid_temp = 0.0;
       prev_part.fluid_temp = 0.0;
 
-      cur_part.coal_mass = 0.0;
-      prev_part.coal_mass = 0.0;
+      cur_part.water_mass = 0.0;
+      prev_part.water_mass = 0.0;
 
-      cur_part.coke_mass = 0.0;
-      prev_part.coke_mass = 0.0;
+      for (j = 0; j < CS_LAGR_N_LAYERS; j++) {
+        cur_part.coal_mass[j] = 0.0;
+        prev_part.coal_mass[j] = 0.0;
+
+        cur_part.coke_mass[j] = 0.0;
+        prev_part.coke_mass[j] = 0.0;
+      }
 
       cur_part.cp = 0.0;
       prev_part.cp = 0.0;
@@ -3971,8 +3995,6 @@ _update_c_from_fortran(const cs_lnum_t   *nbpmax,
       cur_part.shrinking_diam = 0.0;
 
       cur_part.initial_diam = 0.0;
-
-      cur_part.initial_density = 0.0;
 
       /* itepa array */
 
@@ -4016,6 +4038,7 @@ _update_c_from_fortran(const cs_lnum_t   *nbpmax,
 
 void
 CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *n_particles_max,
+                          const cs_int_t    *nlayer,
                           const cs_int_t    *iphyla,
                           const cs_int_t    *idepst,
                           const cs_int_t    *ireent,
@@ -4045,17 +4068,16 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *n_particles_max,
                           const cs_lnum_t   *jdfac,
                           const cs_lnum_t   *jimark,
                           const cs_lnum_t   *jtp,
-                          const cs_lnum_t   *jhp,
+                          const cs_lnum_t    jhp[],
                           const cs_lnum_t   *jtf,
                           const cs_lnum_t   *jmwat,
-                          const cs_lnum_t   *jmch,
-                          const cs_lnum_t   *jmck,
+                          const cs_lnum_t    jmch[],
+                          const cs_lnum_t    jmck[],
                           const cs_lnum_t   *jcp,
                           const cs_lnum_t   *jrdck,
                           const cs_lnum_t   *jrd0p,
-                          const cs_lnum_t   *jrr0p,
                           const cs_lnum_t   *jinch,
-                          const cs_lnum_t   *jrhock,
+                          const cs_lnum_t    jrhock[],
                           const cs_lnum_t   *jreps,
                           const cs_lnum_t   *jdepo,
                           const cs_lnum_t   *jnbasg,
@@ -4070,6 +4092,24 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *n_particles_max,
   /* Initialize global parameter relative to the lagrangian module */
 
   cs_glob_lagr_param.physic_mode = *iphyla;
+
+  if (cs_glob_lagr_param.physic_mode ==2            &&
+      *nlayer != CS_LAGR_N_LAYERS )
+    bft_error(__FILE__, __LINE__, 0,"%s %i \n %s %i \n %s \n %s %i\n %s\n",
+              "Multi-layer computation with iphyla = ",
+              cs_glob_lagr_param.physic_mode,
+              "The number of layer (defined in lagpar) is nlayer = ",
+              *nlayer,
+              "For cs_lagr_particle_t structure defined in cs_lagr_tracking.h,",
+              "the size of temp, coal_mass, coke_mass, coal_density arrays is CS_LAGR_N_LAYERS = ",
+              CS_LAGR_N_LAYERS,
+              "Please correct this difference");
+
+  if ( cs_glob_lagr_param.physic_mode ==2 )
+    cs_glob_lagr_param.cs_lagr_nlayer_temp = CS_LAGR_N_LAYERS;
+  else
+    cs_glob_lagr_param.cs_lagr_nlayer_temp = 1;
+
   cs_glob_lagr_param.deposition = *idepst;
   cs_glob_lagr_param.resuspension = *ireent;
   cs_glob_lagr_param.clogging = *iclogst;
@@ -4123,12 +4163,24 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *n_particles_max,
   for (i = 0; i < builder->cell_face_idx[mesh->n_cells] ; i++)
     icocel[i] = builder->cell_face_lst[i];
 
+  /* Allocate _jthp _jmch _jmck _jrhock */
+  BFT_MALLOC(_jthp   , CS_LAGR_N_LAYERS, int);
+  BFT_MALLOC(_jmch   , CS_LAGR_N_LAYERS, int);
+  BFT_MALLOC(_jmck   , CS_LAGR_N_LAYERS, int);
+  BFT_MALLOC(_jrhock , CS_LAGR_N_LAYERS, int);
+  for (i = 0; i < CS_LAGR_N_LAYERS ; i++) {
+    _jthp[i]=-1;
+    _jmch[i]=-1;
+    _jmck[i]=-1;
+    _jrhock[i]=-1;
+  }
+
   /* Set indexes */
 
   _jisor = *jisor - 1;
   _jrval = *jrval - 1;
-  _jrpoi = *jrpoi -1;
-  _jrtsp = *jrtsp -1;
+  _jrpoi = *jrpoi - 1;
+  _jrtsp = *jrtsp - 1;
 
   _jmp = *jmp - 1;
   _jdp = *jdp - 1;
@@ -4161,21 +4213,27 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *n_particles_max,
   _jmfadh = *jmfadh - 1;
   _jndisp = *jndisp - 1;
 
-  if (*jtp > 0)
-    _jthp = *jtp - 1;
-  else
-    _jthp = *jhp - 1;
+  if (*jtp > 0){
+    _jthp[0] = *jtp - 1;
+  }
+  else{
+    for (i = 0; i < CS_LAGR_N_LAYERS; i++)
+      _jthp[i]=jhp[i]-1;
+  }
 
   _jtf = *jtf - 1;
   _jmwat = *jmwat - 1;
-  _jmch = *jmch - 1;
-  _jmck = *jmck - 1;
+  for (i = 0; i < CS_LAGR_N_LAYERS; i++){
+    _jmch[i] = jmch[i] - 1;
+    _jmck[i] = jmck[i] - 1;
+  }
   _jcp = *jcp - 1;
 
   _jrdck = *jrdck - 1;
   _jrd0p = *jrd0p - 1;
-  _jrr0p = *jrr0p - 1;
-  _jrhock = *jrhock - 1;
+  for (i = 0; i < CS_LAGR_N_LAYERS; i++){
+    _jrhock[i] = jrhock[i] - 1;
+  }
   _jinch = *jinch - 1;
 
   _jreps = *jreps - 1;
@@ -4359,10 +4417,12 @@ CS_PROCF (prtput, PRTPUT)(const cs_int_t   *nbpmax,
 
     // Data needed if coal combustion is activated
 
-    if (_jthp > -1) {
-      id = _jthp * (*nbpmax) + i;
-      ettp[id] = cur_part.temp;
-      ettpa[id] = prev_part.temp;
+    for (j = 0; j < CS_LAGR_N_LAYERS; j++) {
+      if (_jthp[j] > -1) {
+        id = _jthp[j] * (*nbpmax) + i;
+        ettp[id] = cur_part.temp[j];
+        ettpa[id] = prev_part.temp[j];
+      }
     }
 
     if (lagr_param->physic_mode == 2) {
@@ -4377,13 +4437,15 @@ CS_PROCF (prtput, PRTPUT)(const cs_int_t   *nbpmax,
       ettp[id] = cur_part.water_mass;
       ettpa[id] = prev_part.water_mass;
 
-      id = _jmch * (*nbpmax) + i;
-      ettp[id] = cur_part.coal_mass;
-      ettpa[id] = prev_part.coal_mass;
+      for (j = 0; j < CS_LAGR_N_LAYERS; j++) {
+        id = _jmch[j] * (*nbpmax) + i;
+        ettp[id] = cur_part.coal_mass[j];
+        ettpa[id] = prev_part.coal_mass[j];
 
-      id = _jmck * (*nbpmax) + i;
-      ettp[id] = cur_part.coke_mass;
-      ettpa[id] = prev_part.coke_mass;
+        id = _jmck[j] * (*nbpmax) + i;
+        ettp[id] = cur_part.coke_mass[j];
+        ettpa[id] = prev_part.coke_mass[j];
+      }
 
       id = _jcp * (*nbpmax) + i;
       ettp[id] = cur_part.cp;
@@ -4397,11 +4459,10 @@ CS_PROCF (prtput, PRTPUT)(const cs_int_t   *nbpmax,
       id = _jrd0p * (*nbpmax) + i;
       tepa[id] = cur_part.initial_diam;
 
-      id = _jrr0p * (*nbpmax) + i;
-      tepa[id] = cur_part.initial_density;
-
-      id = _jrhock * (*nbpmax) + i;
-      tepa[id] = cur_part.coal_density;
+      for (j = 0; j < CS_LAGR_N_LAYERS; j++) {
+        id = _jrhock[j] * (*nbpmax) + i;
+        tepa[id] = cur_part.coal_density[j];
+      }
 
       /* itepa array */
 
@@ -5139,8 +5200,10 @@ cs_lagr_get_attr_info(cs_lagr_attribute_t    attr,
   /* Thermal model additional parameters */
 
   case CS_LAGR_TEMPERATURE:
-    if (_jthp > -1)
+    if (_jthp[0] > -1) {
       _p = &(p.temp);
+      _c = cs_glob_lagr_param.cs_lagr_nlayer_temp;
+    }
     break;
 
   case CS_LAGR_FLUID_TEMPERATURE:
@@ -5151,7 +5214,6 @@ cs_lagr_get_attr_info(cs_lagr_attribute_t    attr,
   case CS_LAGR_CP:
     if (_jcp > -1) {
       _p = &(p.cp);
-      _s = sizeof(cs_real_t);
     }
     break;
 
@@ -5163,13 +5225,17 @@ cs_lagr_get_attr_info(cs_lagr_attribute_t    attr,
     break;
 
   case CS_LAGR_COAL_MASS:
-    if (_jmch > -1)
+    if (_jmch[0] > -1) {
       _p = &(p.coal_mass);
+      _c = CS_LAGR_N_LAYERS;
+    }
     break;
 
   case CS_LAGR_COKE_MASS:
-    if (_jmck > -1)
+    if (_jmck[0] > -1) {
       _p = &(p.coke_mass);
+      _c = CS_LAGR_N_LAYERS;
+    }
     break;
 
   case CS_LAGR_SHRINKING_DIAMETER:
@@ -5182,11 +5248,6 @@ cs_lagr_get_attr_info(cs_lagr_attribute_t    attr,
       _p = &(p.initial_diam);
     break;
 
-  case CS_LAGR_INITIAL_DENSITY:
-    if (_jrr0p > -1)
-      _p = &(p.initial_density);
-    break;
-
   case CS_LAGR_COAL_NUM:
     if (_jinch > -1) {
       _p = &(p.coal_number);
@@ -5195,8 +5256,10 @@ cs_lagr_get_attr_info(cs_lagr_attribute_t    attr,
     break;
 
   case CS_LAGR_COAL_DENSITY:
-    if (_jrhock > -1)
+    if (_jrhock[0] > -1) {
       _p = &(p.coal_density);
+      _c = CS_LAGR_N_LAYERS;
+    }
     break;
 
   /* Radiative model additional parameters */
@@ -5204,7 +5267,6 @@ cs_lagr_get_attr_info(cs_lagr_attribute_t    attr,
   case CS_LAGR_EMISSIVITY:
     if (_jreps > -1) {
       _p = &(p.emissivity);
-      _s = sizeof(cs_real_t);
     }
     break;
 

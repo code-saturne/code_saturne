@@ -791,6 +791,7 @@ void CS_PROCF(cfname, CFNAME)
  * SUBROUTINE UILAG1
  * *****************
  *
+ * INTEGER          NLAYER     -->   max number of layer per coal particle
  * INTEGER          IILAGR     <--   type of lagrangian model used
  * INTEGER          ISUILA     <--   lagrangian restart
  * INTEGER          ISUIST     <--   lagrangian restart for statistics
@@ -850,7 +851,8 @@ void CS_PROCF(cfname, CFNAME)
  * INTEGER          IMOYBR     <--   cumulated value for particule/boundary interaction
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
+void CS_PROCF (uilag1, UILAG1) (int *const nlayer,
+                                int *const iilagr,
                                 int *const isuila,
                                 int *const isuist,
                                 int *const nbpmax,
@@ -910,10 +912,10 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
                                 int *const iactvz,
                                 int *const iactts)
 {
-  int i, icoal, ncoals = 0;
+  int i, icoal, ilayer, ncoals = 0;
   int list_ind = 1;
   int record_ind = 1;
-  char *label = NULL;
+  char *name = NULL;
   char *attr = NULL;
   char *path1 = NULL;
 
@@ -1096,31 +1098,109 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
 
     else if (*iphyla == 2) {
 
+      /* Particle Mass */
       i++;
       _copy_mean_varname("Part_mass", i);
       _copy_variance_varname("var_Part_mass", i);
       ihslag[i-1] = 1;
 
-      i++;
-      _copy_mean_varname("Part_temperature", i);
-      _copy_variance_varname("var_Part_temperature", i);
-      ihslag[i-1] = 1;
+      /* Particle Temperature */
+      if (*nlayer < 2) {
+            i++;
+        _copy_mean_varname("Part_temperature", i);
+        _copy_variance_varname("var_Part_temperature", i);
+        ihslag[i-1] = 1;
+      }
+      else {
+        BFT_MALLOC(name, strlen("Part_temperature_layer_")+1 + 2, char);
+        for (ilayer = 0; ilayer < *nlayer; ilayer++){
+          i++;
+          ihslag[i-1] = 1;
+          /* Mean name */
+          BFT_REALLOC(name, strlen("Part_temperature_layer_")+1 + 2, char);
+          sprintf(name,
+                  "%s%2.2i",
+                  "Part_temperature_layer_",
+                  ilayer+1);
+          _copy_mean_varname(name, i);
+          /* Variance name */
+          BFT_REALLOC(name, strlen("var_Part_temperature_layer_")+1 + 2, char);
+          sprintf(name,
+                  "%s%2.2i",
+                  "var_Part_temperature_layer_",
+                  ilayer+1);
+          _copy_variance_varname(name, i);
+        }
+        BFT_FREE(name);
+      }
 
+      /* Particle Water Mass */
       i++;
       _copy_mean_varname("Part_wat_mass", i);
       _copy_variance_varname("var_Part_wat_mass", i);
       ihslag[i-1] = 1;
 
-      i++;
-      _copy_mean_varname("Part_ch_mass", i);
-      _copy_variance_varname("var_Part_ch_mass", i);
-      ihslag[i-1] = 1;
+      /* Particle Reactive Coal Mass */
+      if (*nlayer < 2) {
+        i++;
+        _copy_mean_varname("Part_ch_mass", i);
+        _copy_variance_varname("var_Part_ch_mass", i);
+        ihslag[i-1] = 1;
+      }
+      else {
+        BFT_MALLOC(name, strlen("Part_ch_mass_layer_")+1 + 2, char);
+        for (ilayer = 0; ilayer < *nlayer; ilayer++){
+          i++;
+          ihslag[i-1] = 1;
+          /* Mean name */
+          BFT_REALLOC(name, strlen("Part_ch_mass_layer_")+1 + 2, char);
+          sprintf(name,
+                  "%s%2.2i",
+                  "Part_ch_mass_layer_",
+                  ilayer+1);
+          _copy_mean_varname(name, i);
+          /* Variance name */
+          BFT_REALLOC(name, strlen("var_Part_ch_mass_layer_")+1 + 2, char);
+          sprintf(name,
+                  "%s%2.2i",
+                  "var_Part_ch_mass_layer_",
+                  ilayer+1);
+          _copy_variance_varname(name, i);
+        }
+        BFT_FREE(name);
+      }
 
-      i++;
-      _copy_mean_varname("Part_ck_mass", i);
-      _copy_variance_varname("var_Part_ck_mass", i);
-      ihslag[i-1] = 1;
+      /* Particle Coke Mass */
+      if (*nlayer < 2) {
+        i++;
+        _copy_mean_varname("Part_ck_mass", i);
+        _copy_variance_varname("var_Part_ck_mass", i);
+        ihslag[i-1] = 1;
+      }
+      else {
+        BFT_MALLOC(name, strlen("Part_ck_mass_layer_")+1 + 2, char);
+        for (ilayer = 0; ilayer < *nlayer; ilayer++){
+          i++;
+          ihslag[i-1] = 1;
+          /* Mean name */
+          BFT_REALLOC(name, strlen("Part_ck_mass_layer_")+1 + 2, char);
+          sprintf(name,
+                  "%s%2.2i",
+                  "Part_ck_mass_layer_",
+                  ilayer+1);
+          _copy_mean_varname(name, i);
+          /* Variance name */
+          BFT_REALLOC(name, strlen("var_Part_ck_mass_layer_")+1 + 2, char);
+          sprintf(name,
+                  "%s%2.2i",
+                  "var_Part_ck_mass_layer_",
+                  ilayer+1);
+          _copy_variance_varname(name, i);
+        }
+        BFT_FREE(name);
+      }
 
+      /* Particle shrinking core diameter */
       i++;
       _copy_mean_varname("Part_shrink_core_diam", i);
       _copy_variance_varname("var_Part_shrink_core_diam", i);
@@ -1149,21 +1229,21 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
       _copy_boundary_varname("Part_impact_number", i);
     }
 
-    label = _get_char_post("boundary", "Part_bndy_mass_flux", iflmbd);
+    _get_char_post("boundary", "Part_bndy_mass_flux", iflmbd);
     if (*iflmbd) {
       imoybr[i] = 1;
       i++;
       _copy_boundary_varname("Part_bndy_mass_flux", i);
     }
 
-    label = _get_char_post("boundary", "Part_impact_angle", iangbd);
+    _get_char_post("boundary", "Part_impact_angle", iangbd);
     if (*iangbd) {
       imoybr[i] = 2;
       i++;
       _copy_boundary_varname("Part_impact_angle", i);
     }
 
-    label = _get_char_post("boundary", "Part_impact_velocity", ivitbd);
+    _get_char_post("boundary", "Part_impact_velocity", ivitbd);
     if (*ivitbd) {
       imoybr[i] = 2;
       i++;
@@ -1171,32 +1251,31 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
     }
 
     /* Coal fouling statistics*/
-    label = _get_char_post("boundary", "Part_fouled_impact_number", iencnbbd);
+    _get_char_post("boundary", "Part_fouled_impact_number", iencnbbd);
     if (*iencnbbd) {
       imoybr[i] = 0;
       i++;
       _copy_boundary_varname("Part_fouled_impact_number", i);
     }
-    label = _get_char_post("boundary", "Part_fouled_mass_flux", iencmabd);
+    _get_char_post("boundary", "Part_fouled_mass_flux", iencmabd);
     if (*iencmabd) {
       imoybr[i] = 1;
       i++;
       _copy_boundary_varname("Part_fouled_mass_flux", i);
     }
-    label = _get_char_post("boundary", "Part_fouled_diam", iencdibd);
+    _get_char_post("boundary", "Part_fouled_diam", iencdibd);
     if (*iencdibd) {
       imoybr[i] = 3;
       i++;
       _copy_boundary_varname("Part_fouled_diam", i);
     }
-    label = _get_char_post("boundary", "Part_fouled_Xck", iencckbd);
+    _get_char_post("boundary", "Part_fouled_Xck", iencckbd);
     if (*iencckbd) {
       imoybr[i] = 3;
       i++;
       _copy_boundary_varname("Part_fouled_Xck", i);
     }
   }
-  BFT_FREE(label);
 
 #if _XML_DEBUG_
   bft_printf("==>UILAG1\n");
@@ -1320,7 +1399,15 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
  *
  * integer          nfabor  -->  number of boundary faces
  * integer          nozppm  -->  max number of boundary conditions zone
- * integer          iphyla  -->  physica model associated to the particles
+ * integer          nclagm  -->  max number of classes
+ * integer          nflagm  -->  max number of boundaries
+ * integer          iphyla  -->  physical model associated to the particles
+ * ..
+ * integer          nlayer  <--  number of layer for coal
+ * integer          inuchl  <--  particle coal number
+ * integer          irawcl  <--  coal particle composition injection condition
+ * integer          ihpt    <--  coal temperature in K (for each layer)
+ * integer          ifrlag  -->  type of boundary face
  * integer          iusncl  <--  array for particles class(es) number
  * integer          iusclb  <--  array for particles boundary conditions
  *----------------------------------------------------------------------------*/
@@ -1357,23 +1444,16 @@ void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
                                 const int *const itpt,
                                 const int *const icpt,
                                 const int *const iepsi,
-                                const int *const ihpt,
+                                const int *const nlayer,
                                 const int *const inuchl,
-                                const int *const imwat,
-                                const int *const imcht,
-                                const int *const imckt,
-                                int     ichcor[],
-                                int     cp2ch[],
-                                int     diam20[],
-                                int     rho0ch[],
-                                int     xwatch[],
-                                int     xashch[],
+                                const int *const irawcl,
+                                const int  const ihpt[],
                                 int     ifrlag[],
                                 int     iusncl[],
                                 int     iusclb[])
 {
   int izone, zones;
-  int iclas;
+  int iclas, ilayer, icoal;
   int ielt, ifac, nelt = 0;
   char *interaction = NULL;
   char sclass[10];
@@ -1382,7 +1462,7 @@ void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
   int *faces_list = NULL;
 
   cs_int_t  i_cz_params[20];  /* size: current ndlaim (=10) + margin */
-  cs_real_t r_cz_params[100]; /* size: current ndlagm (=50) + margin */
+  cs_real_t r_cz_params[100+4* *nlayer]; /* size: current ndlagm (=50+4*nlayer) + margin */
 
   zones = cs_gui_boundary_zones_number();
 
@@ -1542,8 +1622,8 @@ void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
           BFT_FREE(choice);
 
           /* density */
-
-          _get_double(&(r_cz_params[*iropt -1]), 2, path2, "density");
+          if (*iphyla != 2)
+            _get_double(&(r_cz_params[*iropt -1]), 2, path2, "density");
 
           if (*iphyla == 1) {
 
@@ -1568,11 +1648,27 @@ void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
           /* coal */
 
           if (*iphyla == 2) {
+            /* Read the coal number */
             _get_int(&(i_cz_params[*inuchl -1]), 2, path2, "coal_number");
-            _get_double(&(r_cz_params[*ihpt -1]), 2, path2, "coal_temperature");
-            _get_double(&(r_cz_params[*imwat -1]), 2, path2, "moisture_mass_fraction");
-            _get_double(&(r_cz_params[*imcht -1]), 2, path2, "raw_coal_mass_fraction");
-            _get_double(&(r_cz_params[*imckt -1]), 2, path2, "char_mass_fraction");
+            icoal = i_cz_params[*inuchl -1];
+
+            // Fresh coal or user defined
+            choice  = _get_attr("choice", 2, path2, "coal_composition");
+
+            if (cs_gui_strcmp(choice, "raw_coal_as_received")) {
+
+              /* Data are read in pulverised fuel combustion module */
+              i_cz_params[*irawcl -1]  = 1;
+
+              for (ilayer=0; ilayer < *nlayer; ilayer++)
+                _get_double(&(r_cz_params[ihpt[ilayer] -1]), 2, path2, "temperature");
+
+            }
+            else if (cs_gui_strcmp(choice, "subroutine")) {
+              i_cz_params[*irawcl-1]  = 0;
+            }
+
+            BFT_FREE(choice);
           }
 
           /* Complete class paramaters definition */
@@ -1613,7 +1709,8 @@ void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
             bft_printf("----standard deviation = %f \n", r_cz_params[*ivdpt -1]);
           }
 
-          bft_printf("---density = %f \n", r_cz_params[*iropt -1]);
+          if (*iphyla != 2)
+            bft_printf("---density = %f \n", r_cz_params[*iropt -1]);
 
           if (*iphyla == 1) {
 
@@ -1628,10 +1725,7 @@ void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
 
           if (*iphyla == 2) {
             bft_printf("---coal number = %i \n",            i_cz_params[*inuchl -1]);
-            bft_printf("---coal temperature = %f \n",       r_cz_params[*ihpt -1]);
-            bft_printf("---water mass fraction = %f \n",    r_cz_params[*imwat -1]);
-            bft_printf("---raw coal mass fraction = %f \n", r_cz_params[*imcht -1]);
-            bft_printf("---char mass fraction = %f \n",     r_cz_params[*imckt -1]);
+            bft_printf("---coal composition = %i (1: raw coal, 2: user defined)\n", i_cz_params[*rawcl -1]);
           }
 
 #endif /* _XML_DEBUG_ */

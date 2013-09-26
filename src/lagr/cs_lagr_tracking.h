@@ -42,6 +42,12 @@
 
 BEGIN_C_DECLS
 
+/*=============================================================================
+ * Macro definitions
+ *============================================================================*/
+
+#define  CS_LAGR_N_LAYERS  5
+
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -102,7 +108,6 @@ typedef enum {
 
   CS_LAGR_SHRINKING_DIAMETER,
   CS_LAGR_INITIAL_DIAMETER,
-  CS_LAGR_INITIAL_DENSITY,
 
   CS_LAGR_COAL_NUM,
   CS_LAGR_COAL_DENSITY,
@@ -164,22 +169,21 @@ typedef struct {
 
   /* Thermal model additional parameters */
 
-  cs_real_t   temp;            /* jhp */
-  cs_real_t   fluid_temp;      /* jtf */
-  cs_real_t   cp;              /* jcp */
+  cs_real_t   temp[CS_LAGR_N_LAYERS]; /* jhp */
+  cs_real_t   fluid_temp;             /* jtf */
+  cs_real_t   cp;                     /* jcp */
 
   /* Coal combustion additional parameters */
 
-  cs_real_t   water_mass;      /* jmwat */
-  cs_real_t   coal_mass;       /* jmch  */
-  cs_real_t   coke_mass;       /* jmck  */
+  cs_real_t   water_mass;                  /* jmwat */
+  cs_real_t   coal_mass[CS_LAGR_N_LAYERS]; /* jmch  */
+  cs_real_t   coke_mass[CS_LAGR_N_LAYERS]; /* jmck  */
 
   cs_real_t   shrinking_diam;  /* jrdck */
   cs_real_t   initial_diam;    /* jrd0p */
-  cs_real_t   initial_density; /* jrr0p */
 
-  cs_lnum_t   coal_number;     /* jinch  */
-  cs_real_t   coal_density;    /* jrhock */
+  cs_lnum_t   coal_number;                    /* jinch  */
+  cs_real_t   coal_density[CS_LAGR_N_LAYERS]; /* jrhock */
 
   /* Radiative model additional parameters */
 
@@ -249,6 +253,7 @@ extern const char *cs_lagr_attribute_name[];
 
 void
 CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *n_particles_max,
+                          const cs_int_t    *nlayer,
                           const cs_int_t    *iphyla,
                           const cs_int_t    *idepst,
                           const cs_int_t    *ireent,
@@ -278,17 +283,16 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *n_particles_max,
                           const cs_lnum_t   *jdfac,
                           const cs_lnum_t   *jimark,
                           const cs_lnum_t   *jtp,
-                          const cs_lnum_t   *jhp,
+                          const cs_lnum_t    jhp[],
                           const cs_lnum_t   *jtf,
                           const cs_lnum_t   *jmwat,
-                          const cs_lnum_t   *jmch,
-                          const cs_lnum_t   *jmck,
+                          const cs_lnum_t    jmch[],
+                          const cs_lnum_t    jmck[],
                           const cs_lnum_t   *jcp,
                           const cs_lnum_t   *jrdck,
                           const cs_lnum_t   *jrd0p,
-                          const cs_lnum_t   *jrr0p,
                           const cs_lnum_t   *jinch,
-                          const cs_lnum_t   *jrhock,
+                          const cs_lnum_t    jrhock[],
                           const cs_lnum_t   *jreps,
                           const cs_lnum_t   *jdepo,
                           const cs_lnum_t   *jnbasg,

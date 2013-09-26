@@ -377,14 +377,14 @@ module lagran
   integer, save ::  jtf
   !> pointer to particle specific heat for array \ref ettp
   integer, save ::  jcp
-  !> pointer to coal particle temperature (\f$\degresC\f$) for array \ref ettp
-  integer, save ::  jhp
+  !> pointer to coal particle temperature (\f$K\f$) for array \ref ettp
+  integer, save ::  jhp(nlayer)
   !> pointer to water mass (for coal) for array \ref ettp
   integer, save ::  jmwat
   !> pointer to mass of reactive coal of the coal particle for array \ref ettp
-  integer, save ::  jmch
+  integer, save ::  jmch(nlayer)
   !> pointer to mass of coke of the coal particle for array \ref ettp
-  integer, save ::  jmck
+  integer, save ::  jmck(nlayer)
   !> pointer to work array for the second order in time for array \ref ettp
   integer, save ::  jtaux
   !> pointer to additional user variable for array \ref ettp
@@ -405,15 +405,12 @@ module lagran
   !> pointer to coal particle initial diameter
   !> for array \ref tepa
   integer, save :: jrd0p
-  !> pointer to coal particle initial density
-  !> for array \ref tepa
-  integer, save :: jrr0p
   !> pointer to coal particle shrinking core diameter
   !> for array \ref tepa
   integer, save :: jrdck
   !> pointer to coal density
   !> for array \ref tepa
-  integer, save :: jrhock
+  integer, save :: jrhock(nlayer)
 
   !> pointer to number of the current cell containing the particle
   !> for \ref itepa array; this
@@ -557,6 +554,10 @@ module lagran
   !>  - 1: flat profile of diameter given in \ref uslag2
   !>  - 2: user profile to be given
   integer, save ::  ijprdp
+  !> type of coal initial composition (if \ref iphyla=2)
+  !>  - 1: coal initial composition is given by DP_FCP
+  !>  - 0: user profile to be given in \ref uslag2
+  integer, save ::  irawcl
   !> coal number of the particle (if \ref iphyla=2)
   integer, save ::  inuchl
   !> number of the statistics group
@@ -596,15 +597,19 @@ module lagran
   !> particle emissivity
   integer, save ::  iepsi
   !> particle temperature
-  integer, save ::  ihpt
-  !> water mass in coal particles
-  integer, save ::  imwat
-  !> active coal mass
-  integer, save ::  imcht
-  !> coal mass
-  integer, save ::  imckt
+  integer, save ::  ihpt(nlayer)
+  !> water mass fraction in coal particles
+  integer, save ::  ifrmwt
+  !> active coal mass fraction in coal particles
+  integer, save ::  ifrmch(nlayer)
+  !> coke mass fraction in coal particles
+  integer, save ::  ifrmck(nlayer)
   !> diameter of shrinking core
-  integer, save ::  idckt
+  integer, save ::  irdck
+  !> initial particle diameter (for coal particles)
+  integer, save :: ird0p
+  !> coke density after pyrolysis (for coal particles)
+  integer, save :: irhock0(nlayer)
 
   !> \}
 
@@ -633,14 +638,14 @@ module lagran
   integer, save ::  ildp
   !> dispersed phase mean mass
   integer, save ::  ilmp
-  !> temperature of the coal particle cloud (\f$\degresC\f$)
-  integer, save ::  ilhp
+  !> temperature of the coal particle cloud (\f$K\f$)
+  integer, save ::  ilhp(nlayer)
   !> water mass
   integer, save ::  ilmwat
   !> mass of reactive coal of the coal particle cloud
-  integer, save ::  ilmch
+  integer, save ::  ilmch(nlayer)
   !> mass of coke of the coal particle cloud
-  integer, save ::  ilmck
+  integer, save ::  ilmck(nlayer)
   !> shriking core diameter
   integer, save ::  ildck
   !> supplementary user volumetric statistics
@@ -1269,7 +1274,7 @@ contains
 
     ! Local variables
 
-    integer :: kk
+    integer :: kk, ilayer
 
     ! define defaults (impossible values the user should override)
 
@@ -1280,6 +1285,10 @@ contains
     iuslag(ii,jj,ijprtp) = -2
     iuslag(ii,jj,ijprdp) = -2
     iuslag(ii,jj,ijprpd) = -2
+    if (iphyla.eq.2) then
+      ruslag(ii,jj,irawcl) = -2
+      ruslag(ii,jj,inuchl) = -2
+    endif
     do kk = 1, ndlagm
       ruslag(ii, jj, kk) = 0.d0
     enddo
@@ -1298,11 +1307,20 @@ contains
         ruslag(ii,jj,iepsi) = -grand
       endif
     else if ( iphyla .eq. 2 ) then
-      ruslag(ii,jj,ihpt)   = -grand
-      ruslag(ii,jj,imwat)  = -grand
-      ruslag(ii,jj,imcht)  = -grand
-      ruslag(ii,jj,imckt)  = -grand
-      ruslag(ii,jj,icpt)   = -grand
+      ruslag(ii,jj,icpt)  = -grand
+      do ilayer=1,nlayer
+        ruslag(ii,jj,ihpt(ilayer))   = -grand
+      enddo
+      ruslag(ii,jj,ifrmwt)  = -grand
+      do ilayer=1,nlayer
+        ruslag(ii,jj,ifrmch(ilayer))  = -grand
+        ruslag(ii,jj,ifrmck(ilayer))  = -grand
+      enddo
+      ruslag(ii,ii,irdck)  = -grand
+      ruslag(jj,jj,ird0p)  = -grand
+      do ilayer=1,nlayer
+        ruslag(ii,jj,irhock0(ilayer))   = -grand
+      enddo
     endif
 
   end subroutine init_zone_class_param
@@ -1328,7 +1346,7 @@ contains
 
     ! Local variables
 
-    integer :: ii
+    integer :: ii, ilayer
 
     ! define defaults (impossible values the user should override)
 
@@ -1339,7 +1357,10 @@ contains
     i_cz_params(ijprtp) = -2
     i_cz_params(ijprdp) = -2
     i_cz_params(ijprpd) = -2
-
+    if (iphyla.eq.2) then
+      i_cz_params(inuchl) = -2
+      i_cz_params(irawcl) = -2
+    endif
     do ii = 1, ndlagm
       r_cz_params(ii) = 0.d0
     enddo
@@ -1350,11 +1371,21 @@ contains
         r_cz_params(iepsi) = -grand
       endif
     else if (iphyla .eq. 2) then
-      r_cz_params(ihpt)  = -grand
-      r_cz_params(imwat) = -grand
-      r_cz_params(imcht) = -grand
-      r_cz_params(imckt) = -grand
+      r_cz_params(iropt) = -grand
       r_cz_params(icpt)  = -grand
+      do ilayer=1,nlayer
+        r_cz_params(ihpt(ilayer)) = -grand
+      enddo
+      r_cz_params(ifrmwt) = -grand
+      do ilayer=1,nlayer
+        r_cz_params(ifrmch(ilayer)) = -grand
+        r_cz_params(ifrmck(ilayer)) = -grand
+      enddo
+      r_cz_params(irdck) = -grand
+      r_cz_params(ird0p) = -grand
+      do ilayer=1,nlayer
+        r_cz_params(irhock0(ilayer)) = -grand
+      enddo
     endif
 
   end subroutine lagr_init_zone_class_param

@@ -873,16 +873,19 @@ cs_post_write_vertex_var(int                    mesh_id,
  * associated writers.
  *
  * parameters:
- *   mesh_id  <-- id of associated mesh
- *   attr     <-- associated particle attribute id
- *   var_name <-- name of variable to output
- *   ts       <-- time step status structure, or NULL
+ *   mesh_id      <-- id of associated mesh
+ *   attr         <-- associated particle attribute id
+ *   var_name     <-- name of variable to output
+ *   component_id <-- if -1 : extract the whole attribute
+ *                    if >0 : id of the component to extract
+ *   ts           <-- time step status structure, or NULL
  *----------------------------------------------------------------------------*/
 
 void
 cs_post_write_particle_values(int                    mesh_id,
                               int                    attr_id,
                               const char            *var_name,
+                              int                    component_id,
                               const cs_time_step_t  *ts);
 
 /*----------------------------------------------------------------------------

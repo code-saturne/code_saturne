@@ -1393,6 +1393,7 @@ _define_particle_export_mesh(cs_post_mesh_t        *post_mesh,
                                   CS_LAGR_COORDS,
                                   CS_REAL_TYPE,
                                   3,
+                                  -1,
                                   n_particles,
                                   particle_list,
                                   coords);
@@ -1431,6 +1432,7 @@ _define_particle_export_mesh(cs_post_mesh_t        *post_mesh,
                                     CS_LAGR_COORDS,
                                     CS_REAL_TYPE,
                                     3,
+                                    -1,
                                     n_particles,
                                     particle_list,
                                     coords);
@@ -4640,10 +4642,12 @@ cs_post_write_vertex_var(int                    mesh_id,
  * positions or trajectory endpoints of a particle mesh using
  * associated writers.
  *
- * \param[in]  mesh_id     id of associated mesh
- * \param[in]  attr_id     associated particle attribute id
- * \param[in]  var_name    name of variable to output
- * \param[in]  ts          time step status structure, or NULL
+ * \param[in]  mesh_id       id of associated mesh
+ * \param[in]  attr_id       associated particle attribute id
+ * \param[in]  var_name      name of variable to output
+ * \param[in]  component_id  if -1 : extract the whole attribute
+ *                           if >0 : id of the component to extract
+ * \param[in]  ts            time step status structure, or NULL
  */
 /*----------------------------------------------------------------------------*/
 
@@ -4651,9 +4655,11 @@ void
 cs_post_write_particle_values(int                    mesh_id,
                               int                    attr_id,
                               const char            *var_name,
+                              int                    component_id,
                               const cs_time_step_t  *ts)
 {
-  int  _mesh_id, i;
+  int  _mesh_id, i, _length;
+  int _stride_export_field = 1;
   cs_post_mesh_t  *post_mesh;
   cs_post_writer_t  *writer;
 
@@ -4699,6 +4705,16 @@ cs_post_write_particle_values(int                    mesh_id,
 
   if (stride == 0)
     return;
+  else {
+    if (component_id == -1) {
+      _length = size;
+      _stride_export_field = stride;
+    }
+    else {
+      _length = size/stride;
+      _stride_export_field = 1;
+     }
+  }
 
   assert(ts->nt_cur > -1);
 
@@ -4706,7 +4722,7 @@ cs_post_write_particle_values(int                    mesh_id,
 
   n_pts = fvm_nodal_get_n_entities(post_mesh->exp_mesh, 0);
 
-  BFT_MALLOC(vals, n_pts*size, unsigned char);
+  BFT_MALLOC(vals, n_pts*_length, unsigned char);
 
   var_ptr[0] = vals;
 
@@ -4723,6 +4739,7 @@ cs_post_write_particle_values(int                    mesh_id,
                                 attr,
                                 datatype,
                                 stride,
+                                component_id,
                                 n_pts,
                                 particle_list,
                                 vals);
@@ -4734,6 +4751,7 @@ cs_post_write_particle_values(int                    mesh_id,
                                   attr,
                                   datatype,
                                   stride,
+                                  component_id,
                                   n_pts/2,
                                   particle_list,
                                   vals);
@@ -4754,7 +4772,7 @@ cs_post_write_particle_values(int                    mesh_id,
                               post_mesh->exp_mesh,
                               var_name,
                               FVM_WRITER_PER_NODE,
-                              stride,
+                              _stride_export_field,
                               CS_INTERLACE,
                               0, /* n_parent_lists, */
                               parent_num_shift,
