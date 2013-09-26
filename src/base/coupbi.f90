@@ -42,14 +42,14 @@ subroutine coupbi &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! icodcl           ! te ! --> ! boundary condition code                        !
-!  (nfabor, nvar)  !    !     ! = 1   -> dirichlet                             !
+!  (nfabor, nvarcl)!    !     ! = 1   -> dirichlet                             !
 !                  !    !     ! = 3   -> flux density                          !
 !                  !    !     ! = 4   -> slip and u.n=0 (velocity)             !
 !                  !    !     ! = 5   -> friction and u.n=0 (velocity)         !
 !                  !    !     ! = 6   -> rugosity and u.n=0 (velocity)         !
 !                  !    !     ! = 9   -> free inlet/outlet (velocity)          !
 ! rcodcl           ! tr ! --> ! boundary condition values                      !
-!  (nfabor, nvar)  !    !     ! rcodcl(1) = dirichlet value                    !
+!  (nfabor, nvarcl)!    !     ! rcodcl(1) = dirichlet value                    !
 !                  !    !     ! rcodcl(2) = exchange coefficient value         !
 !                  !    !     !  (infinite if no exchange)                     !
 !                  !    !     ! rcodcl(3) = flux density value (negative       !
@@ -79,6 +79,7 @@ use entsor
 use ppppar
 use ppthch
 use ppincl
+use pointe
 
 !===============================================================================
 
@@ -173,9 +174,17 @@ do inbcou = 1, nbccou
 
           ifac = lfcou(iloc)
 
-          if ((icodcl(ifac,ll) .ne. 1) .and.                        &
-              (icodcl(ifac,ll) .ne. 5) .and.                        &
-              (icodcl(ifac,ll) .ne. 6)) icodcl(ifac,ll) = icodcl(ifac,iu)
+          if ((icodcl(ifac,ll) .ne. 1) .and.   &
+              (icodcl(ifac,ll) .ne. 5) .and.   &
+              (icodcl(ifac,ll) .ne. 6)) then
+
+            if (itypfb(ifac).eq.iparoi) then
+              icodcl(ifac,ll) = 5
+            elseif (itypfb(ifac).eq.iparug) then
+              icodcl(ifac,ll) = 6
+            endif
+
+          endif
 
           rcodcl(ifac,ll,1) = thpar(iloc)
           rcodcl(ifac,ll,2) = rinfin
