@@ -632,7 +632,7 @@ module lagran
   integer, save ::  ilfv
   !> recidence time
   integer, save ::  ilts
-  !> phase temperature (\f$\degresC\f$)
+  !> phase temperature (\f$\text{\degresC}\f$)
   integer, save ::  iltp
   !> dispersed phase mean diameter
   integer, save ::  ildp
@@ -1017,7 +1017,7 @@ module lagran
 
   !> activation (=1) or not (=0) of the particle turbulent dispersion.
   !> The turbulent dispersion is compatible only with the RANS turbulent models
-  !> (\f$k-\varepsilon\f$, \f$R_{ij}-\varepsilon\f$, v2f or \f$k-\omega\f\f$).
+  !> (\f$k-\varepsilon\f$, \f$R_{ij}-\varepsilon\f$, v2f or \f$k-\omega\f$).
   !> (\ref iturb=20, 21, 30, 31, 50 or 60).
   integer, save ::  idistu
 
