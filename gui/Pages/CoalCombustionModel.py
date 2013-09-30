@@ -106,6 +106,7 @@ class CoalCombustionModel(Variables, Model):
         default['ashes_thermal_capacity']          = 1800
         default['rate_of_ashes_on_mass']           = 11.5
         default['specific_heat_average']           = 1800
+        default['thermal_conductivity']            = 1.e-5
         default['moisture']                        = 0.
         default['Y1']                              = 0.416
         default['Y2']                              = 0.582
@@ -865,6 +866,15 @@ class CoalCombustionModel(Variables, Model):
         self.deleteCoalModelScalarsAndProperties(fuelId)
         node = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         node.xmlRemoveNode()
+
+        # update boundary conditions (1/2)
+        for zone in LocalizationModel('BoundaryZone', self.case).getZones():
+            label = zone.getLabel()
+            nature = zone.getNature()
+            if nature == "inlet":
+                bc = Boundary("coal_inlet", label, self.case)
+                bc.deleteCoalFlow(fuelId, self.getCoalNumber())
+
         self.__updateFuelId()
 
 
@@ -897,6 +907,17 @@ class CoalCombustionModel(Variables, Model):
         self.isInList(str(number), self.getOxidantIdList())
         node = node_oxi.xmlGetNode('oxidant', ox_id = number)
         node.xmlRemoveNode()
+
+        # Update boundary conditions
+        for zone in LocalizationModel('BoundaryZone', self.case).getZones():
+            label = zone.getLabel()
+            nature = zone.getNature()
+            if nature == "inlet":
+                bc = Boundary("coal_inlet", label, self.case)
+                oxi_max = bc.getOxidantNumber()
+                if oxi_max >= number:
+                    bc.setOxidantNumber(oxi_max-1)
+
         self.__updateOxidantId()
 
 
@@ -1008,6 +1029,12 @@ class CoalCombustionModel(Variables, Model):
         elif diameter_type == 'rosin-rammler_law':
             node_class.xmlInitNode('mass_percent', class_id = new)
             self.getMassPercent(fuelId, new)
+
+        # Update boundary conditions
+        for zone in LocalizationModel('BoundaryZone', self.case).getZones():
+            if zone.getNature() == "inlet":
+                b = Boundary("coal_inlet", zone.getLabel(), self.case)
+                b.updateCoalRatios(fuelId)
 
 
     def deleteClass(self, fuelId,  number):

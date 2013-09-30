@@ -6,38 +6,47 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>668</width>
-    <height>1143</height>
+    <width>576</width>
+    <height>1227</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QGridLayout">
+  <layout class="QGridLayout" name="gridLayout_4">
    <item row="0" column="0">
     <widget class="QGroupBox" name="groupBoxBoundaries">
      <property name="title">
       <string>Lagrangian boundary conditions</string>
      </property>
-     <layout class="QGridLayout">
+     <layout class="QGridLayout" name="gridLayout_3">
       <item row="0" column="0">
-       <layout class="QGridLayout">
-        <item row="0" column="0">
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <item>
          <widget class="QTableView" name="tableViewBoundaries">
           <property name="enabled">
            <bool>true</bool>
           </property>
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>300</height>
+           </size>
+          </property>
           <property name="maximumSize">
            <size>
             <width>16777215</width>
-            <height>1500</height>
+            <height>300</height>
            </size>
+          </property>
+          <property name="autoScrollMargin">
+           <number>14</number>
           </property>
           <property name="editTriggers">
            <set>QAbstractItemView::DoubleClicked|QAbstractItemView::EditKeyPressed</set>
@@ -57,9 +66,25 @@
           <property name="selectionBehavior">
            <enum>QAbstractItemView::SelectRows</enum>
           </property>
+          <property name="horizontalScrollMode">
+           <enum>QAbstractItemView::ScrollPerPixel</enum>
+          </property>
          </widget>
         </item>
-        <item row="1" column="0">
+        <item>
+         <spacer name="verticalSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>548</width>
+            <height>0</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
          <widget class="QGroupBox" name="groupBoxClassNumber">
           <property name="title">
            <string/>
@@ -128,7 +153,7 @@
           </layout>
          </widget>
         </item>
-        <item row="2" column="0">
+        <item>
          <widget class="QGroupBox" name="groupBoxMain">
           <property name="title">
            <string/>
@@ -279,7 +304,7 @@
           </layout>
          </widget>
         </item>
-        <item row="3" column="0">
+        <item>
          <widget class="QGroupBox" name="groupBoxRate">
           <property name="title">
            <string/>
@@ -464,7 +489,7 @@
           </layout>
          </widget>
         </item>
-        <item row="4" column="0">
+        <item>
          <widget class="QGroupBox" name="groupBoxVelocity">
           <property name="title">
            <string>Velocity</string>
@@ -706,7 +731,7 @@
           </layout>
          </widget>
         </item>
-        <item row="5" column="0">
+        <item>
          <widget class="QGroupBox" name="groupBoxDiameter">
           <property name="title">
            <string>Diameter</string>
@@ -856,7 +881,7 @@
           </layout>
          </widget>
         </item>
-        <item row="6" column="0">
+        <item>
          <widget class="QGroupBox" name="groupBoxTemperature">
           <property name="title">
            <string>Temperature</string>
@@ -1001,14 +1026,14 @@
           </layout>
          </widget>
         </item>
-        <item row="7" column="0">
+        <item>
          <widget class="QGroupBox" name="groupBoxCoal">
           <property name="title">
            <string>Coal</string>
           </property>
-          <layout class="QGridLayout">
+          <layout class="QGridLayout" name="gridLayout_2">
            <item row="0" column="0">
-            <layout class="QGridLayout">
+            <layout class="QGridLayout" name="gridLayout">
              <item row="0" column="1">
               <widget class="QLabel" name="labelINUCHL">
                <property name="toolTip">
@@ -1033,34 +1058,17 @@
               </widget>
              </item>
              <item row="1" column="1">
-              <widget class="QLabel" name="labelIHPT">
+              <widget class="QLabel" name="labelIRAWCL">
                <property name="toolTip">
-                <string>Code_Saturne key word: IHPT</string>
+                <string>Code_Saturne key word: IMCHT</string>
                </property>
                <property name="text">
-                <string>Temperature</string>
+                <string>Coal composition</string>
                </property>
               </widget>
              </item>
              <item row="1" column="3">
-              <widget class="QLineEdit" name="lineEditIHPT">
-               <property name="maximumSize">
-                <size>
-                 <width>16777215</width>
-                 <height>16777215</height>
-                </size>
-               </property>
-               <property name="toolTip">
-                <string>Code_Saturne key word: IHPT</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="4">
-              <widget class="QLabel" name="labelUnitIHPT">
-               <property name="text">
-                <string>C</string>
-               </property>
-              </widget>
+              <widget class="QComboBox" name="comboBoxIRAWCL"/>
              </item>
              <item row="2" column="0">
               <spacer>
@@ -1076,12 +1084,12 @@
               </spacer>
              </item>
              <item row="2" column="1">
-              <widget class="QLabel" name="labelIMCHT">
+              <widget class="QLabel" name="labelIHPT">
                <property name="toolTip">
-                <string>Code_Saturne key word: IMCHT</string>
+                <string>Code_Saturne key word: IHPT</string>
                </property>
                <property name="text">
-                <string>Mass of coal</string>
+                <string>Temperature</string>
                </property>
               </widget>
              </item>
@@ -1095,14 +1103,14 @@
                </property>
                <property name="sizeHint" stdset="0">
                 <size>
-                 <width>121</width>
+                 <width>88</width>
                  <height>22</height>
                 </size>
                </property>
               </spacer>
              </item>
              <item row="2" column="3">
-              <widget class="QLineEdit" name="lineEditIMCHT">
+              <widget class="QLineEdit" name="lineEditIHPT">
                <property name="maximumSize">
                 <size>
                  <width>16777215</width>
@@ -1110,17 +1118,14 @@
                 </size>
                </property>
                <property name="toolTip">
-                <string>Code_Saturne key word: IMCHT</string>
+                <string>Code_Saturne key word: IHPT</string>
                </property>
               </widget>
              </item>
              <item row="2" column="4">
-              <widget class="QLabel" name="labelUnitIMCHT">
-               <property name="toolTip">
-                <string>Code_Saturne key word: IMCHT</string>
-               </property>
+              <widget class="QLabel" name="labelUnitIHPT">
                <property name="text">
-                <string>kg</string>
+                <string>K</string>
                </property>
               </widget>
              </item>
@@ -1136,39 +1141,6 @@
                 </size>
                </property>
               </spacer>
-             </item>
-             <item row="3" column="1">
-              <widget class="QLabel" name="labelIMCKT">
-               <property name="toolTip">
-                <string>Code_Saturne key word: IMCKT</string>
-               </property>
-               <property name="text">
-                <string>Mass of coke</string>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="3">
-              <widget class="QLineEdit" name="lineEditIMCKT">
-               <property name="maximumSize">
-                <size>
-                 <width>16777215</width>
-                 <height>16777215</height>
-                </size>
-               </property>
-               <property name="toolTip">
-                <string>Code_Saturne key word: IMCKT</string>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="4">
-              <widget class="QLabel" name="labelUnitIIMCKT">
-               <property name="toolTip">
-                <string>Code_Saturne key word: IMCHT</string>
-               </property>
-               <property name="text">
-                <string>kg</string>
-               </property>
-              </widget>
              </item>
             </layout>
            </item>

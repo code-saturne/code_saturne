@@ -59,7 +59,6 @@ from Base.Common import LABEL_LENGTH_MAX
 from Base.QtPage import ComboModel, DoubleValidator, RegExpValidator, setGreenColor
 
 from Pages.Boundary import Boundary
-from Pages.LocalizationModel import LocalizationModel
 from Pages.CoalCombustionModel import CoalCombustionModel
 
 #-------------------------------------------------------------------------------
@@ -813,6 +812,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.connect(self.lineEditVolatileMatter,  SIGNAL("textChanged(const QString &)"), self.slotVolatileMatter)
         self.connect(self.lineEditMoisture,        SIGNAL("textChanged(const QString &)"), self.slotMoisture)
         self.connect(self.lineEditCp,              SIGNAL("textChanged(const QString &)"), self.slotThermalCapacity)
+        self.connect(self.lineEditThermalCond,     SIGNAL("textChanged(const QString &)"), self.slotThermalConductivity)
         self.connect(self.lineEditDensity,         SIGNAL("textChanged(const QString &)"), self.slotDensity)
         self.connect(self.comboBoxPCIList,         SIGNAL("activated(const QString&)"), self.slotPCIChoice)
         self.connect(self.comboBoxPCIType,         SIGNAL("activated(const QString&)"), self.slotPCIType)
@@ -867,6 +867,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         validatorS   = DoubleValidator(self.lineEditS, min=0., max=100.)
         validatorPCI = DoubleValidator(self.lineEditPCI, min=0.)
         validatorCp  = DoubleValidator(self.lineEditCp, min=0.)
+        validatorla  = DoubleValidator(self.lineEditThermalCond, min=0.)
         validatorDensity = DoubleValidator(self.lineEditDensity, min=0.)
         validatorMoisture = DoubleValidator(self.lineEditMoisture, min=0., max=100.)
         validatorVolatileMatter = DoubleValidator(self.lineEditVolatileMatter, min=0., max=100.)
@@ -906,6 +907,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.lineEditS.setValidator(validatorS)
         self.lineEditPCI.setValidator(validatorPCI)
         self.lineEditCp.setValidator(validatorCp)
+        self.lineEditThermalCond.setValidator(validatorla)
         self.lineEditDensity.setValidator(validatorDensity)
         self.lineEditCCoke.setValidator(validatorCCoke)
         self.lineEditHCoke.setValidator(validatorHCoke)
@@ -1143,6 +1145,17 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.lineEditSCoke.setText(str(self.model.getCokeComposition(self.fuel, "S")))
         self.lineEditPCI.setText(str(self.model.getPCIValue(self.fuel)))
         self.lineEditCp.setText(str(self.model.getProperty(self.fuel, "specific_heat_average")))
+
+        if self.model.getCoalCombustionModel() == 'homogeneous_fuel_moisture_lagr':
+            self.labelThermalCond.show()
+            self.labelUnitThermalCond.show()
+            self.lineEditThermalCond.show()
+            self.lineEditThermalCond.setText(str(self.model.getProperty(self.fuel, "thermal_conductivity")))
+        else:
+            self.labelThermalCond.hide()
+            self.labelUnitThermalCond.hide()
+            self.lineEditThermalCond.hide()
+
         self.lineEditDensity.setText(str(self.model.getProperty(self.fuel, "density")))
         self.lineEditMoisture.setText(str(self.model.getProperty(self.fuel, "moisture")))
         self.lineEditVolatileMatter.setText(str(self.model.getProperty(self.fuel, "volatile_matter")))
@@ -1246,15 +1259,6 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
 
         number = row + 1
 
-        # update boundary conditions (1/2)
-        # TODO : a deplacer dans le modele
-        for zone in LocalizationModel('BoundaryZone', self.case).getZones():
-            label = zone.getLabel()
-            nature = zone.getNature()
-            if nature == "inlet":
-                bc = Boundary("coal_inlet", label, self.case)
-                bc.deleteCoalFlow(number-1, self.model.getNumberCoal())
-
         self.model.deleteSolidFuel(number)
 
         # suppress item
@@ -1287,15 +1291,6 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         log.debug("slotCreateClass number + 1 = %i " % (ClassNumber))
 
         self.model.createClassModelScalarsAndProperties(self.fuel)
-
-        # FIXME: bug ici
-        # TODO : a deplacer dans le modele
-        # Update boundary conditions
-        log.debug("slotCreateClass: number of classes: %i " % self.model.getClassNumber(self.fuel))
-        for zone in LocalizationModel('BoundaryZone', self.case).getZones():
-            if zone.getNature() == "inlet":
-                b = Boundary("coal_inlet", zone.getLabel(), self.case)
-                b.updateCoalRatios(self.fuel-1)
 
         # Update buttons
         self._updateClassButton()
@@ -1384,17 +1379,6 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
 
         number = row + 1
         self.model.deleteOxidant(number)
-
-        # TODO : a deplacer dans le modele
-        # Update boundary conditions
-        for zone in LocalizationModel('BoundaryZone', self.case).getZones():
-            label = zone.getLabel()
-            nature = zone.getNature()
-            if nature == "inlet":
-                bc = Boundary("coal_inlet", label, self.case)
-                oxi_max = bc.getOxidantNumber()
-                if oxi_max >= number:
-                    bc.setOxidantNumber(oxi_max-1)
 
         self.modelOxidants.deleteAll()
         for number in range(0, self.model.getOxidantNumber()):
@@ -1608,6 +1592,16 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         Cp = float(text)
         if self.sender().validator().state == QValidator.Acceptable:
             self.model.setProperty(self.fuel, "specific_heat_average", Cp)
+
+
+    @pyqtSignature("const QString&")
+    def slotThermalConductivity(self, text):
+        """
+        Change the thermal conductivity
+        """
+        lam = float(text)
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.model.setProperty(self.fuel, "thermal_conductivity", lam)
 
 
     @pyqtSignature("const QString&")

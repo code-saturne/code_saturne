@@ -1661,7 +1661,7 @@ void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
               i_cz_params[*irawcl -1]  = 1;
 
               for (ilayer=0; ilayer < *nlayer; ilayer++)
-                _get_double(&(r_cz_params[ihpt[ilayer] -1]), 2, path2, "temperature");
+                _get_double(&(r_cz_params[ihpt[ilayer] -1]), 2, path2, "coal_temperature");
 
             }
             else if (cs_gui_strcmp(choice, "subroutine")) {

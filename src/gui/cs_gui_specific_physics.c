@@ -3535,6 +3535,8 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
   double *dprefus= NULL;
   double volatile_matter = 0.;
 
+  cs_var_t  *vars = cs_glob_var;
+
   if (*iihmpr != 1)
     cs_gui_load_file("dp_FCP.xml");
 
@@ -3678,7 +3680,8 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
     rho0ch[icha] = _get_solid_fuel_density(icha+1);
 
     /* ---- Thermal conductivity of the coal (W/m/K) */
-    thcdch[icha] = _get_solid_fuel_thermal_conductivity(icha+1);
+    if (cs_gui_strcmp(vars->model_value, "homogeneous_fuel_moisture_lagr"))
+      thcdch[icha] = _get_solid_fuel_thermal_conductivity(icha+1);
 
     /* ---- Caracteristiques cendres */
 

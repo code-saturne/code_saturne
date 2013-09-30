@@ -48,6 +48,7 @@ from Base.Common import *
 import Base.Toolbox as Tool
 from Base.XMLvariables import Model, Variables
 from Pages.LagrangianModel import LagrangianModel
+from Pages.CoalCombustionModel import CoalCombustionModel
 
 
 #-------------------------------------------------------------------------------
@@ -104,8 +105,14 @@ class LagrangianBoundariesModel(Model):
         default['diameter_standard_deviation'] = 0.
         default['coal_number'] = 1
         default['coal_temperature'] = 800.
-        default['char_mass_fraction'] = 0.
+        default['coal_composition'] = "raw_coal_as_received"
         return default
+
+    def getFoulingStatus(self):
+        """
+        Return fouling status
+        """
+        return LagrangianModel(self.case).getCoalFouling()
 
 
     @Variables.undoGlobal
@@ -122,7 +129,8 @@ class LagrangianBoundariesModel(Model):
             self.isInList(value, ["part_symmetry"])
         elif nature == "wall":
             l = [ "inlet", "bounce", "deposit1", "deposit2"]
-            #if iscoal: l.append("encra")
+            if LagrangianModel(self.case).getCoalFouling() == "on":
+                l.append("fouling")
             self.isInList(value, l)
         self.node_boundary = self.node_boundaries.xmlInitChildNode(nature, label=labelbc)
         self.node_particles = self.node_boundary.xmlInitChildNode('particles', 'choice')
@@ -164,7 +172,10 @@ class LagrangianBoundariesModel(Model):
         node_class.xmlSetData('frequency', self.default['frequency'])
         node_class.xmlSetData('statistical_groups', self.default['statistical_groups'])
         node_class.xmlSetData('mass_flow_rate', self.default['mass_flow_rate'])
-        node_class.xmlSetData('density', self.default['density'])
+        if CoalCombustionModel(self.case).getCoalCombustionModel() == 'off':
+            node_class.xmlSetData('density', self.default['density'])
+            node_class.xmlInitChildNode('temperature', choice=self.default['temperature_choice'])
+            node_class.xmlSetData('temperature', self.default['temperature'])
 
         node_class.xmlInitChildNode('statitical_weight', choice=self.default['statistical_weight_choice'])
         node_class.xmlSetData('statitical_weight', self.default['statistical_weight'])
@@ -174,9 +185,6 @@ class LagrangianBoundariesModel(Model):
         node_class.xmlInitChildNode('diameter', choice=self.default['diameter_choice'])
         node_class.xmlSetData('diameter', self.default['diameter'])
         node_class.xmlSetData('diameter_standard_deviation', self.default['diameter_standard_deviation'])
-
-        node_class.xmlInitChildNode('temperature', choice=self.default['temperature_choice'])
-        node_class.xmlSetData('temperature', self.default['temperature'])
 
 
     @Variables.undoGlobal
@@ -668,62 +676,27 @@ class LagrangianBoundariesModel(Model):
 
 
     @Variables.undoLocal
-    def setCoalMassValue(self, label, iclass, value):
+    def setCoalCompositionChoice(self, label, iclass, value):
         """
-        Update the coal mass value.
+        Update the coal composition choice.
         """
-        self.isFloat(value)
-        self.isGreaterOrEqual(value, 0)
-        self.node_class.xmlSetData('raw_coal_mass_fraction', value)
-
-
-    @Variables.noUndo
-    def getCoalMassDefaultValue(self, icoal, iclass):
-        """
-        Return the coal mass value.
-        """
-        value = self.node_class.xmlGetDouble('raw_coal_mass_fraction')
-        if value == None:
-            from Pages.CoalCombustionModel import CoalCombustionModel
-            rho = CoalCombustionModel(self.case).getProperty(icoal, "density")
-            diam = CoalCombustionModel(self.case).getDiameter(icoal, iclass)
-            value = 3.14159265 / 6. * rho* diam**3
-            del CoalCombustionModel
-        return value
-
-
-    @Variables.noUndo
-    def getCoalMassValue(self, label, icoal, iclass):
-        """
-        Return the coal mass value.
-        """
-        value = self.node_class.xmlGetDouble('raw_coal_mass_fraction')
-        if value == None:
-            value = self.getCoalMassDefaultValue(icoal, iclass)
-            self.setCoalMassValue(label, iclass, value)
-        return value
+        self.isInList(value, ["raw_coal_as_received", "subroutine"])
+        node = self.node_class.xmlInitChildNode('coal_composition', 'choice')
+        node['choice'] = value
 
 
     @Variables.undoLocal
-    def setCokeMassValue(self, label, iclass, value):
+    def getCoalCompositionChoice(self, label, iclass):
         """
-        Update the coke mass value.
+        Return the condition on the coal composition.
         """
-        self.isFloat(value)
-        self.isGreaterOrEqual(value, 0)
-        self.node_class.xmlSetData('char_mass_fraction', value)
-
-
-    @Variables.noUndo
-    def getCokeMassValue(self, label, iclass):
-        """
-        Return the coke mass value.
-        """
-        value = self.node_class.xmlGetDouble('char_mass_fraction')
-        if value == None:
-            value = self.defaultParticlesBoundaryValues()['char_mass_fraction']
-            self.setCokeMassValue(label, iclass, value)
-        return value
+        node = self.node_class.xmlInitChildNode('coal_composition', 'choice')
+        if node:
+            val = node['choice']
+            if val == None:
+                val = self.defaultParticlesBoundaryValues()['coal_composition']
+                self.setCoalCompositionChoice(label, iclass, val)
+        return val
 
 
 #-------------------------------------------------------------------------------

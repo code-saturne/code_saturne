@@ -231,8 +231,11 @@ class LagrangianModel(Model):
         """
         self.isOnOff(status)
         node_steady = self.node_lagr.xmlInitChildNode('carrier_field_stationary', 'status')
-        if not (self.getCouplingMode() == "frozen" and status == "off"):
+
+        if not (self.getCouplingMode() == "frozen"):
             node_steady['status'] = status
+        else:
+            node_steady['status'] = "on"
 
 
     @Variables.noUndo

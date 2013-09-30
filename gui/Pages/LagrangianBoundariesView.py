@@ -60,6 +60,7 @@ from Pages.LocalizationModel import LocalizationModel, Zone
 from Pages.LagrangianBoundariesModel import LagrangianBoundariesModel
 from Pages.LagrangianModel import LagrangianModel
 from Pages.LagrangianStatisticsModel import LagrangianStatisticsModel
+from Pages.CoalCombustionModel import CoalCombustionModel
 
 
 #-------------------------------------------------------------------------------
@@ -161,15 +162,27 @@ class StandardItemModelBoundaries(QStandardItemModel):
         self._data = []
 
         # Corresponding dict for the nature of the boundary. used in combo delegate.
-        self.dicoM2V = {
-            "wall" : { "inlet" : self.tr("Particles inlet"),
-                       "bounce" : self.tr("Particles rebound"),
-                       "deposit1" : self.tr("Deposition and elimination"),
-                       "deposit2" : self.tr("Deposition") },
-            "inlet" : { "inlet" : self.tr("Particles inlet") },
-            "outlet" : { "outlet" : self.tr("Particles outlet") },
-            "symmetry" : { "part_symmetry" : self.tr("Particles zero-flux") }
-            }
+        if self.model.getFoulingStatus() == "on":
+            self.dicoM2V = {
+                "wall" : { "inlet" : self.tr("Particles inlet"),
+                           "bounce" : self.tr("Particles rebound"),
+                           "deposit1" : self.tr("Deposition and elimination"),
+                           "deposit2" : self.tr("Deposition"),
+                           "fouling" : self.tr("Fouling") },
+                "inlet" : { "inlet" : self.tr("Particles inlet") },
+                "outlet" : { "outlet" : self.tr("Particles outlet") },
+                "symmetry" : { "part_symmetry" : self.tr("Particles zero-flux") }
+                }
+        else:
+            self.dicoM2V = {
+                "wall" : { "inlet" : self.tr("Particles inlet"),
+                           "bounce" : self.tr("Particles rebound"),
+                           "deposit1" : self.tr("Deposition and elimination"),
+                           "deposit2" : self.tr("Deposition") },
+                "inlet" : { "inlet" : self.tr("Particles inlet") },
+                "outlet" : { "outlet" : self.tr("Particles outlet") },
+                "symmetry" : { "part_symmetry" : self.tr("Particles zero-flux") }
+                }
 
         self.dicoV2M = {}
         for key in list(self.dicoM2V.keys()):
@@ -315,6 +328,10 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         self.modelIJRDP.addItem(self.tr("Diameter set by values"), "prescribed")
         self.modelIJRDP.addItem(self.tr("User defined diameter"), "subroutine")
 
+        self.modelIRAWCL = ComboModel(self.comboBoxIRAWCL,2,1)
+        self.modelIRAWCL.addItem(self.tr("Raw coal"), "raw_coal_as_received")
+        self.modelIRAWCL.addItem(self.tr("User defined"), "subroutine")
+
         self.connect(self.tableViewBoundaries, SIGNAL("clicked(const QModelIndex &)"), self.slotSelectBoundary)
         self.connect(self.modelBoundaries,     SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), self.dataChanged)
         self.connect(self.spinBoxICLAS, SIGNAL("valueChanged(int)"), self.slotICLAS)
@@ -344,8 +361,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
 
         self.connect(self.lineEditINUCHL, SIGNAL("textChanged(const QString &)"), self.slotINUCHL)
         self.connect(self.lineEditIHPT,   SIGNAL("textChanged(const QString &)"), self.slotIHPT)
-        self.connect(self.lineEditIMCHT,  SIGNAL("textChanged(const QString &)"), self.slotIMCHT)
-        self.connect(self.lineEditIMCKT,  SIGNAL("textChanged(const QString &)"), self.slotIMCKT)
+        self.connect(self.comboBoxIRAWCL, SIGNAL("activated(const QString&)"),    self.slotIRAWCL)
 
         # Validators
         validatorIJNBP  = IntValidator(self.lineEditIJNBP, min=0)
@@ -371,8 +387,6 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
 
         validatorINUCHL = IntValidator(self.lineEditINUCHL, min=0)
         validatorIHPT   = DoubleValidator(self.lineEditIHPT)
-        validatorIMCHT  = DoubleValidator(self.lineEditIMCHT, min=0.)
-        validatorIMCKT  = DoubleValidator(self.lineEditIMCKT, min=0.)
 
         self.lineEditIJNBP.setValidator(validatorIJNBP)
         self.lineEditIJFRE.setValidator(validatorIJFRE)
@@ -395,8 +409,6 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
 
         self.lineEditINUCHL.setValidator(validatorINUCHL)
         self.lineEditIHPT.setValidator(validatorIHPT)
-        self.lineEditIMCHT.setValidator(validatorIMCHT)
-        self.lineEditIMCKT.setValidator(validatorIMCKT)
 
         self._hideAllWidgets()
 
@@ -496,32 +508,26 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
             self.lineEditIEPSI.setText(str(eps))
 
         # Coals
-        if part_model == "coal" and self.LM.getCoalFouling() == "on" :
+        if CoalCombustionModel(self.case).getCoalCombustionModel() != 'off':
             self.groupBoxCoal.show()
             icoal = self.model.getCoalNumberValue(self.label, self.iclass)
             self.lineEditINUCHL.setText(str(icoal))
             temp  = self.model.getCoalTemperatureValue(self.label, self.iclass)
             self.lineEditIHPT.setText(str(temp))
-            mass  = self.model.getCoalMassValue(self.label, icoal, self.iclass)
-            self.lineEditIMCHT.setText(str(mass))
-            mass2 = self.model.getCokeMassValue(self.label, self.iclass)
-            self.lineEditIMCKT.setText(str(mass2))
+            choice = self.model.getCoalCompositionChoice(self.label, self.iclass)
+            self.modelIRAWCL.setItem(str_model=choice)
 
         # Diameter
+        self.groupBoxDiameter.show()
+        choice = self.model.getDiameterChoice(self.label, self.iclass)
+
         if part_model == "coal":
-            self.groupBoxDiameter.show()
             self.modelIJRDP.setItem(str_model="prescribed")
         else:
-            self.groupBoxDiameter.show()
-            choice = self.model.getDiameterChoice(self.label, self.iclass)
             self.modelIJRDP.setItem(str_model=choice)
             text = self.modelIJRDP.dicoM2V[choice]
             self.slotIJRDP(str(text))
 
-        rho = self.model.getDensityValue(self.label, self.iclass)
-        self.lineEditIROPT.setText(str(rho))
-
-        choice = self.model.getDiameterChoice(self.label, self.iclass)
         if choice == "prescribed":
             self.frameDiameter.show()
             diam = self.model.getDiameterValue(self.label, self.iclass)
@@ -530,6 +536,18 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
             self.lineEditIVDPT.setText(str(vdiam))
         elif choice == "subroutine":
             self.frameDiameter.hide()
+
+        #Coal
+        if CoalCombustionModel(self.case).getCoalCombustionModel() != 'off':
+            self.labelIROPT.hide()
+            self.labelUnitIROPT.hide()
+            self.lineEditIROPT.hide()
+        else:
+            self.labelIROPT.show()
+            self.labelUnitIROPT.show()
+            self.lineEditIROPT.show()
+            rho = self.model.getDensityValue(self.label, self.iclass)
+            self.lineEditIROPT.setText(str(rho))
 
 
     @pyqtSignature("const QString&")
@@ -780,23 +798,12 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
 
 
     @pyqtSignature("const QString&")
-    def slotIMCHT(self, text):
+    def slotIRAWCL(self, text):
         """
-        Input IMCHT.
+        Input IJRDP.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
-            value = float(text)
-            self.model.setCoalMassValue(self.label, self.iclass, value)
-
-
-    @pyqtSignature("const QString&")
-    def slotIMCKT(self, text):
-        """
-        Input IMCKT.
-        """
-        if self.sender().validator().state == QValidator.Acceptable:
-            value = float(text)
-            self.model.setCokeMassValue(self.label, self.iclass, value)
+        choice = self.modelIRAWCL.dicoV2M[str(text)]
+        self.model.setCoalCompositionChoice(self.label, self.iclass, choice)
 
 
     def tr(self, text):
