@@ -76,7 +76,7 @@ if test "x$with_catalyst" != "xno" ; then
 
   cs_prv_dir=`pwd`
   mkdir catalyst_test && cd catalyst_test
-  "$CMAKE" -DCMAKE_PREFIX_PATH="$with_catalyst" "$top_srcdir/build-aux/catalyst" >&5
+  "$CMAKE" -DCMAKE_PREFIX_PATH="$with_catalyst" "$srcdir/build-aux/catalyst" >&5
 
   if test $? = 0 ; then
 
