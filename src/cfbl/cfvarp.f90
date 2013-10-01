@@ -122,13 +122,6 @@ if ( ippmod(icompf).ge.0 ) then
    dblpre , dblpre , dblpre , dblpre , dblpre ,                   &
    dblpre , dblpre , dblpre , dblpre , dblpre , dblpre )
 
-! --> Utilisation d'un flux de masse specifique pour la vitesse
-
-!     ATTENTION   PAS ENCORE IMPLEMENTE
-!========   LAISSER IFLMAU = 0
-
-  iflmau = 0
-
 !===============================================================================
 ! 3. ON REDONNE LA MAIN A L'UTILISATEUR
 !===============================================================================

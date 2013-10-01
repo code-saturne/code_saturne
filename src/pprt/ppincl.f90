@@ -658,9 +658,6 @@ module ppincl
   !> pressure predicion by an evolution equation
   integer, save :: ippred
 
-  !> specific mass flux for the velocity
-  integer, save :: iflmau
-
   !> indicates whether the pressure should be updated (=1) or not (=0) after the
   !> solution of the acoustic equation always usef
   integer, save :: igrdpp

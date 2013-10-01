@@ -529,14 +529,6 @@ do ivar = 1, nvar
   call field_set_key_int(ivarfl(ivar), kimasf, f_id)
 enddo
 
-! Separate mass flux for velocity in some compressible cases
-
-if (iflmau.gt.0) then
-  f_name = 'inner_mass_flux_v'
-  call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
-  call field_set_key_int(ivarfl(iu), kimasf, f_id)
-endif
-
 ! Boundary Mass flux field
 !-------------------------
 
@@ -556,14 +548,6 @@ endif
 do ivar = 1, nvar
   call field_set_key_int(ivarfl(ivar), kbmasf, f_id)
 enddo
-
-! Separate mass flux for velocity in some compressible cases
-
-if (iflmau.gt.0) then
-  f_name = 'boundary_mass_flux_v'
-  call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
-  call field_set_key_int(ivarfl(iu), kimasf, f_id)
-endif
 
 ! Additional fields
 !------------------
