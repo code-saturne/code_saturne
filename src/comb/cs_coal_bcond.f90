@@ -152,7 +152,7 @@ d2s3 = 2.d0/3.d0
 
 call field_get_key_id("variable_id", keyvar)
 
-call field_get_id('X_Age_Gas', f_id)
+call field_get_id_try('X_Age_Gas', f_id)
 
 if (f_id.ne.-1) then
   call field_get_key_int(f_id, keyvar, iaggas)
