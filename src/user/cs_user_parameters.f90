@@ -2278,6 +2278,7 @@ use cstnum
 use ppppar
 use atincl
 use atsoil
+use atchem
 
 !===============================================================================
 
@@ -2301,6 +2302,51 @@ if (1.eq.1) return
 ! Reading the meteo file
 
 imeteo = 1
+
+!!! For radiative model or chemistry
+
+! Time of the simulation
+!  syear  --> starting year
+!  squant --> starting quantile
+!  shour  --> starting hour (UTC)
+!  smin   --> starting minute
+!  ssec   --> starting second
+
+syear = 1994
+squant = 1
+shour = 1
+smin = 0
+ssec = 0.d0
+
+! Geographic position
+! xlon --> longitude of the domain origin
+! xlat --> latitude of the domain origin
+
+xlon = 0.d0
+xlat = 45.d0
+
+!!! Chemistry
+
+! ichemistry: choice of chemistry resolution scheme
+!0 --> no atmospheric chemistry
+!1 --> quasi stationary equilibrium NOx scheme with 4 species and 5 reactions
+!2 --> scheme with 20 species and 34 reactions
+!3 --> scheme CB05 with 52 species and 155 reactions
+!4 --> user defined schema
+ichemistry = 1
+
+! ificchemistry: choice to read (=1,2,3,4, according to the scheme) or not (0) a concentration profile file
+! if ichemistry>0 ifilechemistry is automaticaly set to ichemistry
+ifilechemistry = 0
+
+! isepchemistry: splitted (=1) or semi-coupled (=2, pu-sun) resolution of chemistry
+isepchemistry = 1
+
+! iphotolysis: inclusion (=1) or not (=2) of photolysis reactions
+iphotolysis = 1
+
+! dtchemmax: maximal time step (s) for chemistry resolution
+dtchemmax = 10.0d0
 
 !----
 ! End

@@ -111,7 +111,7 @@ use mesh
 use parall
 use period
 use cs_f_interfaces
-
+use atchem
 !===============================================================================
 
 implicit none
@@ -326,6 +326,17 @@ call ustssc &
   icepdc , icetsm , itypsm ,                                     &
   dt     , rtpa   , rtp    , propce , propfb ,                   &
   ckupdc , smacel , smbrs  , rovsdt )
+
+! Atmospheric chemistry
+! In case of a semi-coupled resolution, computation of the explicit
+! chemical source term to be considered during dynamical resolution
+! The first nespg user scalars are supposed to be chemical species
+if ((ichemistry.ge.1).and.(isepchemistry.eq.2)                    &
+     .and.(iscal.le.nespg).and.(ntcabs.gt.1)) then
+  call stchim( iscal  , rtpa   , propce ,       &
+               smbrs  , rovsdt )
+endif
+
 
 ! Si on extrapole les TS :
 !   SMBRS recoit -theta PROPCE du pas de temps precedent

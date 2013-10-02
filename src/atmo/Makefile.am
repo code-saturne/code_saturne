@@ -43,7 +43,7 @@ AM_LDFLAGS =
 
 # Public header files (to be installed)
 
-pkginclude_HEADERS = 
+pkginclude_HEADERS =
 
 # Library source files
 
@@ -51,6 +51,7 @@ noinst_LTLIBRARIES = libcsatmo.la
 libcsatmo_la_SOURCES = \
 atini1.f90 \
 atiniv.f90 \
+atlecc.f90 \
 atlecm.f90 \
 atmcls.f90 \
 atmsol.f90 \
@@ -64,6 +65,8 @@ attssc.f90 \
 atvarp.f90 \
 etheq.f90  \
 intprf.f90 \
+kinrates.f90 \
+mrchim.f90 \
 nuclea.f90 \
 satfun.f90 \
 rayigc.f90 \
@@ -71,10 +74,17 @@ rayir.f90 \
 rayive.f90 \
 rayso.f90 \
 raysze.f90 \
+roschem.f90 \
+scheme1_SparseLU.f90 \
+scheme2_SparseLU.f90 \
+scheme3_SparseLU.f90 \
 solcat.f90 \
 soliva.f90 \
 solmoy.f90 \
-solvar.f90
+solvar.f90 \
+solvlin_SparseLU.f90 \
+stchim.f90
+
 libcsatmo_la_LDFLAGS = -no-undefined
 
 clean-local:

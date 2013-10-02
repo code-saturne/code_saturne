@@ -73,10 +73,12 @@ use elincl
 use mesh
 use field
 use post
+use atchem
 use cs_c_bindings
 use cs_f_interfaces
 
 use, intrinsic :: iso_c_binding
+
 
 !===============================================================================
 
@@ -383,8 +385,14 @@ if (iporos.ge.1) then
 endif
 
 if (ippmod(iatmos).ge.0) then
+
   call init_meteo
   !==============
+
+  if (ifilechemistry.ge.1) then
+    call init_chemistry
+  endif
+
 endif
 
 if (ippmod(icompf).ge.0) then
@@ -1229,6 +1237,11 @@ call finalize_aux_arrays
 
 if (ippmod(iatmos).ge.0) then
   call finalize_meteo
+
+  if (ifilechemistry.ge.1) then
+    call finalize_chemistry
+  endif
+
 endif
 
 if (ippmod(icompf).ge.0) then

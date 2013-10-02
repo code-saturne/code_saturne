@@ -126,7 +126,7 @@ double precision, save:: ps, rvsra, cpvcpa, clatev, gammat,rvap
 
 ! 2.2. Space and time reference of the run
 !-------------------------------------------------------------------------------
-!            syear --> starting hour
+!                     syear --> starting year
 !                     squant --> starting quantile
 !                     shour --> starting hour
 !                     smin --> starting min
@@ -135,7 +135,8 @@ double precision, save:: ps, rvsra, cpvcpa, clatev, gammat,rvap
 !                     xlat --> latitude of the domain origin
 !                            defined in usati1
 
-integer, save:: syear, squant, shour, smin, ssec
+integer, save:: syear, squant, shour, smin
+double precision, save :: ssec
 double precision, save:: xlon, xlat
 
 ! 2.3 Data specific to the meteo profile above the domain

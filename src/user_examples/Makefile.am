@@ -104,7 +104,8 @@ cs_user_mesh-groups_from_free_faces.c \
 cs_user_parameters-output.f90 \
 cs_user_physical_properties-scalar_drift.f90 \
 cs_user_physical_properties-coal_drift.f90 \
-cs_user_postprocess-sfc.c
+cs_user_postprocess-sfc.c \
+usatch_4spe5reac.f90
 
 noinst_LTLIBRARIES = libcsexample.la
 libcsexample_la_SOURCES = $(examplefiles)

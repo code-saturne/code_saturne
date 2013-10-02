@@ -74,7 +74,7 @@ double precision qsatliq
 ! Local variables
 
 integer itp, ii, ios, k
-integer year, quant,hour,minute
+integer year, quant,hour,minute, month, day
 integer ih2o
 
 double precision second
@@ -141,7 +141,14 @@ backspace(impmet)
 if (imode.eq.0) then
   read(impmet, *, err=999, end=906)
 else
-  read(impmet, *, err=999, end=906) year, quant, hour, minute, second
+  read(impmet, *, err=907, end=906) year, month, day, hour, minute, second
+  call comp_quantile(day, month, year, quant)
+  goto 908
+907  continue
+  backspace(impmet)
+  read(impmet,*,err=999,end=906) year, quant, hour, minute, second
+908 continue
+
 
   ! --> if the date and time are not completed in usati1.f90,
   !     the date and time of the first meteo profile are taken as the
@@ -442,7 +449,7 @@ if (imode.eq.1) then
     write(nfecra, *) '==================================================='
     write(nfecra, *) 'printing meteo profiles'
   endif
-  write(nfecra, *) 'year, quant-day , hour, minute, second'
+  write(nfecra, *) 'year, quant-day, hour, minute, second'
   write(nfecra, 7995) year, quant, hour, minute, second
 7995 format(1x, i4, i5, 2i4, f10.2)
   write(nfecra, *) 'tmmet(itp)'
@@ -764,3 +771,50 @@ call csexit (1)
 #endif
 
 end subroutine atlecm
+
+
+!===============================================================================
+
+subroutine comp_quantile(jour,mois,annee,quant)
+
+!===============================================================================
+!  Purpose:
+!  -------
+!             Computes quantile
+!-------------------------------------------------------------------------------
+! Arguments
+!__________________.____._____.________________________________________________.
+! name             !type!mode ! role                                           !
+!__________________!____!_____!________________________________________________!
+!__________________!____!_____!________________________________________________!
+
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
+!===============================================================================
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+integer jour,mois,annee
+integer quant
+
+! Local variables
+integer distrib, booll, retrait
+
+
+distrib = int(mois * 275 / 9.) - 30
+booll = int((mois + 9 ) / 12.) !boolean=0 for jan and feb and =1 for march to dec
+retrait = 1+int(mod(annee,4)+2)/3 !retrait=2 days non leap years and =1 day for leap years
+quant = distrib-(booll*retrait)+jour
+
+return
+end subroutine comp_quantile
+
+

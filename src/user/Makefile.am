@@ -82,10 +82,12 @@ cs_user_particle_tracking.f90 \
 cs_user_performance_tuning.c \
 cs_user_physical_properties.f90 \
 cs_user_postprocess.c \
+cs_user_postprocess_var.f90 \
 cs_user_radiative_transfer.f90 \
 cs_user_solver.c \
 cs_user_source_terms.f90 \
 usalcl.f90 \
+usatch.f90 \
 usctdz.f90 \
 uselrc.f90 \
 ushist.f90 \
@@ -100,8 +102,9 @@ usray2.f90 \
 usthht.f90 \
 ustsma.f90 \
 usvort.f90 \
-usvosy.f90 \
-cs_user_postprocess_var.f90
+usvosy.f90 
+
+
 
 cs_user_f_parameters = $(top_srcdir)/src/user/cs_user_parameters.f90
 

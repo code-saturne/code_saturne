@@ -70,6 +70,7 @@ use cpincl
 use ppincl
 use elincl
 use mesh
+use atchem
 
 !===============================================================================
 
@@ -395,6 +396,15 @@ endif
 
 if(nscaus.gt.0) then
 
+! Atmospheric chemistry
+
+  if (ichemistry.ge.1) then
+    ! Computation of kinetics rates
+    call kinrates                                                    &
+    !==========
+    (rtp    , propce)
+  endif
+
 ! ---> Boucle sur les scalaires utilisateur.
 
   do ii = 1, nscaus
@@ -466,6 +476,12 @@ if(nscaus.gt.0) then
 ! ---> Fin de la Boucle sur les scalaires utilisateurs.
   enddo
 
+! Atmospheric chemistry
+! Resolution of chemical evolution of species
+ if (ichemistry.ge.1) then
+   call mrchim                                                     &
+   ( dt     , rtpa   , rtp    , propce)
+ endif
 endif
 
 ! Free memory

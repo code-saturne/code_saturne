@@ -88,7 +88,7 @@ use ppthch
 use ppincl
 use mesh
 use atincl
-
+use atchem
 !===============================================================================
 
 implicit none
@@ -107,10 +107,11 @@ double precision rcodcl(nfabor,nvarcl,3)
 
 integer          ifac, izone
 integer          ipbrom, icke, iel, ipcvis
+integer          ii
 double precision d2s3, zent, vs, xuent, xvent
 double precision xkent, xeent, tpent, qvent,ncent
 double precision dhy, rhomoy, uref2, ustar2, viscla, xiturb
-
+double precision xcent
 !===============================================================================
 !===============================================================================
 ! 1.  INITIALISATIONS
@@ -328,6 +329,48 @@ do ifac = 1, nfabor
   endif
 
 enddo
+
+! Atmospheric Chemistry
+if (ifilechemistry.ge.1) then
+
+ do ifac = 1, nfabor
+
+  if (itypfb(ifac).eq.ientre) then
+
+   izone = izfppp(ifac)
+
+   if (iprofc(izone).eq.1) then
+
+    zent = cdgfbo(3,ifac)
+
+    ! For species present in the concentration profiles file,
+    ! profiles are used here as boundary conditions if boundary conditions have
+    ! not been treated earier (eg, in usatcl)
+    do ii = 1, nespgi
+      if (rcodcl(ifac,isca(idespgi(ii)),1).gt.0.5d0*rinfin) then
+        call intprf                                                   &
+        !==========
+        (nbchmz, nbchim,                                               &
+        zproc, tchem, espnum(1+(ii-1)*nbchim*nbchmz), zent  , ttcabs, xcent )
+        ! The first nespg user scalars are supposed to be chemical species
+        rcodcl(ifac,isca(idespgi(ii)),1) = xcent
+      endif
+    enddo
+
+   endif
+
+   ! For other species zero dirichlet conditions are imposed,
+   ! unless they have already been treated earlier (eg, in usatcl)
+   do ii =1 , nespg
+    if (rcodcl(ifac,isca(ii),1).gt.0.5d0*rinfin) rcodcl(ifac,isca(ii),1) = 0.0d0
+   enddo
+
+  endif
+
+ enddo
+
+endif
+
 
 !----
 ! FORMATS

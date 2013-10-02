@@ -87,7 +87,7 @@ integer iico2,imer1
 integer ideb, icompt
 integer kmray, ktamp
 
-double precision heuray, xmedor, albedo, emis, foir, fos
+double precision heuray, albedo, emis, foir, fos
 double precision hrmax,esat,qsat,qseuil
 double precision xvert, yvert
 double precision zrac,fpond,rap,tmoy,rhum,dum
@@ -121,10 +121,9 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
   allocate(infrad(3*kmx*nvert))
 
   ideb = 1
-  xmedor = 150.d0
+
   heuray = float(shour) + float(smin)/60.d0+ssec/3600.d0                        &
-         + (ntcabs-1)*dtref/3600.d0 &
-         - xmedor*4.d0/60.d0
+         + (ntcabs-1)*dtref/3600.d0
 
   if (ntcabs.le.2) then
     iico2 = 1

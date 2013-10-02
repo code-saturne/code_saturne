@@ -93,21 +93,22 @@ t00 = 2.d0*pi*jour/365.d0
 !     2 - calcul de la declinaison (erreur maxi <3 mn)
 !     ------------------------------------------------
 
-decl = 0.006918d0 - 0.399912d0*cos(t00) + 0.070257d0*sin(t00)                   &
- - 0.006758d0*cos(2.d0*t00) + 0.000907*sin(2.d0*t00) - 0.002697d0*cos(3.d0*t00) &
- + 0.001480d0*sin(3.d0*t00)
+decl = 0.006918d0 - 0.399912d0*dcos(t00) + 0.070257d0*dsin(t00)                   &
+     - 0.006758d0*dcos(2.d0*t00) + 0.000907d0*dsin(2.d0*t00) - 0.002697d0*dcos(3.d0*t00) &
+     + 0.001480d0*dsin(3.d0*t00)
 
 !     3 - calcul de l'heure solaire locale
 !     ------------------------------------
 !   equation du temps     erreur maxi    35 secondes
 
-eqt = (0.000075d0 + 0.001868d0*cos(t00) - 0.032077d0*sin(t00)                   &
-    - 0.014615d0*cos(2.d0*t00) - 0.040849d0*sin(2.d0*t00))*12.d0/pi
+eqt = (0.000075d0 + 0.001868d0*dcos(t00) - 0.032077d0*dsin(t00)                   &
+    - 0.014615d0*dcos(2.d0*t00) - 0.040849d0*dsin(2.d0*t00))*12.d0/pi
 
 heure = heurtu + flong + eqt
 
 !   transfo    heure-radians
 
+! On retire pi et on prend le modulo 2pi du resultat
 if(heure.ge.12.d0) then
   hr = (heure - 12.d0)*pi/12.d0
 else
@@ -117,7 +118,7 @@ endif
 !     4 - calcul du cosinus de l'angle zenithal
 !     -----------------------------------------
 
-muzero = sin(decl)*sin(flat) + cos(decl)*cos(flat)*cos(hr)
+muzero = dsin(decl)*dsin(flat) + dcos(decl)*dcos(flat)*dcos(hr)
 
 !     5 - calcul de l'albedo sur mer qui depend de l'angle zenithal
 !     -----------------------------------------

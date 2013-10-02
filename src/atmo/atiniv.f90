@@ -97,7 +97,7 @@ use ppthch
 use ppincl
 use atincl
 use mesh
-
+use atchem
 !===============================================================================
 
 implicit none
@@ -113,6 +113,9 @@ double precision propfb(ndimfb,*)
 integer          imode, iel
 double precision d2s3
 double precision zent,xuent,xvent,xkent,xeent,tpent,qvent,ncent
+
+integer k,ii
+double precision xcent
 
 !===============================================================================
 !===============================================================================
@@ -142,6 +145,55 @@ if (iatra1.gt.0) then
   !==========
   ( imode )
 
+endif
+
+! Atmospheric Chemistry
+if (ifilechemistry.ge.1) then
+
+  ! Second reading of chemical profiles file
+  imode = 1
+  call atlecc                                                     &
+  !==========
+  ( imode)
+
+! Computation of the conversion factor matrix used for the reaction rates jaccobian matrix
+ do ii=1,nespg
+  do k=1,nespg
+   conv_factor_jac((chempoint(k)-1)*nespg+chempoint(ii))=dmmk(ii)/dmmk(k)
+  enddo
+ enddo
+
+! Volume initilization with profiles for species present in the chemical profiles file
+ if (isuite.eq.0) then
+   do iel = 1, ncel
+
+    zent=xyzcen(3,iel)
+
+    do k=1,nespgi
+      call intprf                                                   &
+      !==========
+     (nbchmz, nbchim,                                               &
+      zproc, tchem, espnum(1+(k-1)*nbchim*nbchmz), zent  , ttcabs, xcent )
+
+     rtp(iel,isca(idespgi(k))) = xcent ! The first nespg user scalars are supposed to be chemical species
+    enddo
+
+   enddo
+ endif
+endif
+
+!Verifications
+if ((iatra1.eq.1.or.ichemistry.ge.1).and.(syear.eq.-999.or.squant.eq.-999.or.shour.eq.-999&
+.or.smin.eq.-999.or.ssec.eq.-999)) then
+  if (iatra1.eq.1) write(nfecra,1000)
+  if (ichemistry.ge.1) write(nfecra,1001)
+  call csexit (1)
+endif
+
+if ((iatra1.eq.1.or.ichemistry.ge.1).and.(xlat.ge.rinfin*0.5.or.xlon.ge.rinfin*0.5)) then
+  if (iatra1.eq.1) write(nfecra,1002)
+  if (ichemistry.ge.1) write(nfecra,1003)
+  call csexit (1)
 endif
 
 
@@ -287,6 +339,152 @@ call cs_user_initialization &
 !----
 ! FORMATS
 !----
+
+
+#if defined(_CS_LANG_FR)
+
+ 1000 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
+'@    =========                                               ',/,&
+'@    PHYSIQUE PARTICULIERE (ATMOSPHERIQUE) DEMANDEE          ',/,&
+'@    MODELE DE RAYONNEMENT (IATRA1) DEMANDE                  ',/,&
+'@                                                            ',/,&
+'@    Le temps de la simulation est mal defini                ',/,&
+'@    Revoir les variables syear, squant, shour, smin, ssec   ',/,&
+'@                                                            ',/,&
+'@    Par priorite decroissante ces variables peuvent        ',/,&
+'@    etre definies dans cs_user_parameters.f90 ou le fichier ',/,&
+'@    meteo ou le fichier chimie eventuel                     ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 1001 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
+'@    =========                                               ',/,&
+'@    PHYSIQUE PARTICULIERE (ATMOSPHERIQUE) DEMANDEE          ',/,&
+'@    MODULE DE CHIMIE (ICHEMISTRY) DEMANDE                   ',/,&
+'@                                                            ',/,&
+'@    Le temps de la simulation est mal defini                ',/,&
+'@    Revoir les variables syear, squant, shour, smin, ssec   ',/,&
+'@                                                            ',/,&
+'@    Par priorite decroissante ces variables peuvent         ',/,&
+'@    etre definies dans cs_user_parameters.f90 ou le fichier ',/,&
+'@    meteo ou le fichier chimie                             ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 1002 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
+'@    =========                                               ',/,&
+'@    PHYSIQUE PARTICULIERE (ATMOSPHERIQUE) DEMANDEE          ',/,&
+'@    MODELE DE RAYONNEMENT (IATRA1) DEMANDE                  ',/,&
+'@                                                            ',/,&
+'@    Les coordonnees xlat et xlon du domaine sont mal definies',/,&
+'@                                                            ',/,&
+'@    Voir cs_user_parameters.f90                             ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 1003 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
+'@    =========                                               ',/,&
+'@    PHYSIQUE PARTICULIERE (ATMOSPHERIQUE) DEMANDEE          ',/,&
+'@    MODULE DE CHIMIE (ICHEMISTRY) DEMANDE                   ',/,&
+'@                                                            ',/,&
+'@    Les coordonnees xlat et xlon du domaine sont mal definies',/,&
+'@                                                            ',/,&
+'@    Voir cs_user_parameters.f90                             ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+
+#else
+
+ 1000 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
+'@    =========                                               ',/,&
+'@                ATMOSPHERIC  MODULE                         ',/,&
+'@                RADITIVE MODEL (IATRA1)                     ',/,&
+'@                                                            ',/,&
+'@    The simulation time is wrong                            ',/,&
+'@    Check variables syear, squant, shour, smin, ssec        ',/,&
+'@                                                            ',/,&
+'@    By decreasing priority these variablse can be defined   ',/,&
+'@    in cs_user_parameters or the meteo file                 ',/,&
+'@    or the chemistry file                                   ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 1001 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
+'@    =========                                               ',/,&
+'@      ATMOSPHERIC CHEMISTRY                                 ',/,&
+'@                                                            ',/,&
+'@    The simulation time is wrong                            ',/,&
+'@    Check variables syear, squant, shour, smin, ssec        ',/,&
+'@                                                            ',/,&
+'@    By decreasing priority these variablse can be defined   ',/,&
+'@    in cs_user_parameters or the meteo file                 ',/,&
+'@    or the chemistry file                                   ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 1002 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
+'@    =========                                               ',/,&
+'@                ATMOSPHERIC  MODULE                         ',/,&
+'@                RADITIVE MODEL (IATRA1)                     ',/,&
+'@                                                            ',/,&
+'@    Wrong xlat and xlon coordinates                         ',/,&
+'@                                                            ',/,&
+'@    See cs_user_parameters.f90                              ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 1003 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
+'@    =========                                               ',/,&
+'@      ATMOSPHERIC CHEMISTRY                                 ',/,&
+'@                                                            ',/,&
+'@    Wrong xlat and xlon coordinates                         ',/,&
+'@                                                            ',/,&
+'@    See cs_user_parameters.f90                              ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+#endif
 
 !----
 ! FIN

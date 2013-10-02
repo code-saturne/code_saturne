@@ -60,6 +60,7 @@ use ppincl
 use elincl
 use ppcpfu
 use atincl
+use atchem
 
 !===============================================================================
 
@@ -699,8 +700,8 @@ shour=-999
 smin=-999
 ssec=-999
 
-xlon =0.d0
-xlat=0.d0
+xlon=rinfin
+xlat=rinfin
 
 ! --> Initialisation for the 1d radiative model:
 
@@ -711,6 +712,22 @@ kvert = 20
 ivert = 0
 iqv0 = 0
 iatsoil = 0
+
+
+! --> Initialisation for the chemistry model:
+ichemistry=0
+ifilechemistry=0
+isepchemistry=2
+iphotolysis=1
+nespg=0
+nrg=0
+nbchim=0
+nbchmz=0
+nespgi=0
+dtchemmax=10.d0
+do izone = 1, nozppm
+  iprofc(izone) = 0
+enddo
 
 return
 end subroutine
