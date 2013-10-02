@@ -691,11 +691,10 @@ class LagrangianBoundariesModel(Model):
         Return the condition on the coal composition.
         """
         node = self.node_class.xmlInitChildNode('coal_composition', 'choice')
-        if node:
-            val = node['choice']
-            if val == None:
-                val = self.defaultParticlesBoundaryValues()['coal_composition']
-                self.setCoalCompositionChoice(label, iclass, val)
+        val = node['choice']
+        if not val:
+            val = self.defaultParticlesBoundaryValues()['coal_composition']
+            self.setCoalCompositionChoice(label, iclass, val)
         return val
 
 
