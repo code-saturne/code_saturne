@@ -543,7 +543,7 @@ do ifac = 1, nfabor
     enddo
 
 !     Valeurs de rho u E
-    propfb(ifac,ipbrom) = propce(iel,irom)
+    propfb(ifac,ipbrom) = propce(iel,ipcrom)
     rcodcl(ifac,iu ,1) = rtp(iel,iu)
     rcodcl(ifac,iv ,1) = rtp(iel,iv)
     rcodcl(ifac,iw ,1) = rtp(iel,iw)
