@@ -620,7 +620,20 @@ module ppincl
   !> additional property
   integer, save :: icv
 
-  !> additional property
+  !> additional property:
+  !>  - 0 indicates that the volume viscosity is constant and equal to
+  !> the reference volume viscosity \ref viscv0.
+  !>  - 1 indicates that the volume viscosity is variable: its
+  !> variation law must be specified in the user subroutine \ref uscfpv.
+  !>
+  !> Always useful.
+  !> The volume viscosity \f$\kappa\f$ is defined by the formula expressing the stress:
+  !> \f{eqnarray*}{
+  !> \tens{\sigma} = -P\,\tens{Id} + \mu (\grad\,\vect{u} +
+  !> \ ^{t}\ggrad\,\vect{u})
+  !> +(\kappa-\frac{2}{3}\mu)\,\dive(\vect{u})\,\tens{Id}
+  !> \f}
+  !>
   integer, save :: iviscv
 
   !> indicates the equation of state. Only perfect gas with a constant adiabatic
@@ -664,8 +677,37 @@ module ppincl
 
   ! --- Conditions aux limites prenant en compte l'equilibre hydrostatique
 
-  !> indicates if the boundary conditions should take into account (=1) or not (=0)
-  !> the hydrostatic balance.
+  !> indicates if the boundary conditions should take into account (=1)
+  !> or not (=0) the hydrostatic balance.
+  !>
+  !> Always useful.
+  !>
+  !> In the cases where gravity is predominant, taking into account
+  !> the hydrostatic pressure allows to get rid of the disturbances which
+  !> may appear near the horizontal walls when the flow is little convective.
+  !>
+  !> Otherwise, when \ref icfgrp=0, the pressure condition is calculated
+  !> from the solution of the unidimensional Euler equations for a perfect
+  !> gas near a wall, for the variables "normal velocity", "density" and
+  !> "pressure":
+  !>
+  !> Case of an expansion (M <= 0):
+  !> \f{eqnarray*}{
+  !> \left\{\begin{array}{lll}
+  !> P_p=0 & \text{if} & 1 + \displaystyle\frac{\gamma-1}{2}M<0\\
+  !> P_p = P_i \left(1 + \displaystyle\frac{\gamma-1}{2}M\right)
+  !> ^{\frac{2\gamma}{\gamma-1}} & \text{otherwise}\\
+  !> \end{array}\right.\\
+  !> \f}
+  !>
+  !> Case of a schock (M > 0):
+  !> \f{eqnarray*}{
+  !> P_p = P_i \left(1 + \displaystyle\frac{\gamma(\gamma+1)}{4}M^2
+  !> +\gamma M \displaystyle\sqrt{1+\displaystyle\frac{(\gamma+1)^2}{16}M^2}\right)
+  !> \f}
+  !>
+  !> with \f$M = \displaystyle\frac{\vect{u}_i \cdot \vect{n}}{c_i}\f$,
+  !> internal Mach number calculated with the variables taken in the cell.
   integer, save :: icfgrp
 
   !> \}
@@ -713,6 +755,8 @@ module ppincl
   !> automatically used after the second time-step. With Joule effect,
   !> the user decides whether or not it will be used in \ref uselph
   !> from the coding law giving the density.
+  !>
+  !> Always useful with gas combustion, pulverized coal or the electric module.
   double precision, save :: srrom
 
   !> \}

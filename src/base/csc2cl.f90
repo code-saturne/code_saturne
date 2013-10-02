@@ -34,17 +34,20 @@
 !> \param[in]     nvcpto
 !> \param[in]     nfbcpl
 !> \param[in]     nfbncp
-!> \param[out]    icodcl        boundary condition code at boundary faces
-!>                               - 1   -> dirichlet
-!>                               - 3   -> flux density
-!>                               - 4   -> sliding and u.n=0 (velocity)
-!>                               - 5   -> friction and u.n=0 (velocity)
-!>                               - 9   -> free inlet/outlet (inlet velocity
-!>                              possibly fixed)
-!>                               - 10  -> free inlet/outlet (possible inlet
-!>                              volocity not fixed: prescribe a Dirichlet
-!>                              value for scalars k, eps, scal in addition to
-!>                              the usual Neumann
+!> \param[out]    icodcl        face boundary condition code:
+!>                               - 1 Dirichlet
+!>                               - 2 Radiative outlet
+!>                               - 3 Neumann
+!>                               - 4 sliding and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 5 smooth wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 6 rought wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 9 free inlet/outlet
+!>                                 (input mass flux blocked to 0)
+!>                               - 13 Dirichlet for the advection operator and
+!>                                    Neumann for the diffusion operator
 !> \param[in]     lfbcpl
 !> \param[in]     lfbncp
 !> \param[out]    itypfb        boundary face types
@@ -53,16 +56,20 @@
 !>                              (at current time step)
 !> \param[in]     coefa         boundary conditions
 !> \param[in]     coefb         boundary conditions
-!> \param[out]    rcodcl        value of boundary conditions at boundary faces
-!>                              rcodcl(1) = Dirichlet value
-!>                              rcodcl(2) = ext. exchange coefficient value
-!>                              (infinite if no exchange)
-!>                              rcodcl(3) = value of the flux density
-!>                              (negative if gain) in w/m2
-!>                              for velocities:   (vistl+visct)*gradu
-!>                              for pressure:                dt*gradp
-!>                              for scalars:
-!>                              cp*(viscls+visct/sigmas)*gradt
+!> \param[out]    rcodcl        boundary condition values:
+!>                               - rcodcl(1) value of the dirichlet
+!>                               - rcodcl(2) value of the exterior exchange
+!>                                 coefficient (infinite if no exchange)
+!>                               - rcodcl(3) value flux density
+!>                                 (negative if gain) in w/m2 or roughtness
+!>                                 in m if icodcl=6
+!>                                 -# for the velocity \f$ (\mu+\mu_T)
+!>                                    \gradv \vect{u} \cdot \vect{n}  \f$
+!>                                 -# for the pressure \f$ \Delta t
+!>                                    \grad P \cdot \vect{n}  \f$
+!>                                 -# for a scalar \f$ cp \left( K +
+!>                                     \dfrac{K_T}{\sigma_T} \right)
+!>                                     \grad T \cdot \vect{n} \f$
 !> \param[in]     rvcpfb
 !> \param[in]     pndcpl
 !> \param[in]     dofcpl

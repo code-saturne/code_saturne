@@ -38,7 +38,7 @@ implicit none
   !> \addtogroup dimens
   !> \{
 
-  !> number of solved variables (must be lower than \c nvrmax)
+  !> number of solved variables (must be lower than \ref nvrmax)
   integer, save :: nvar
 
   !> number of solved user scalars
@@ -48,10 +48,10 @@ implicit none
   !> \f$ \varphi \f$, \f$ \overline{f} \f$,
   !> \f$ \alpha \f$, \f$ \nu_T \f$), that is to say the temperature and other scalars
   !> (passive or not, user-defined or not)
-  !> These scalars can be divided into two distinct groups: \c nscaus
-  !> user-defined scalars and \c nscapp scalars related to a
-  !> ``specific physics''. \c nscal=nscaus+nscapp, and \c nscal
-  !> must be inferior or equal to \c nscamx.
+  !> These scalars can be divided into two distinct groups: \ref nscaus
+  !> user-defined scalars and \ref nscapp scalars related to a
+  !> "specific physics". \ref nscal=nscaus+nscapp, and \ref nscal
+  !> must be inferior or equal to \ref nscamx.
   integer, save :: nscal
 
   !> Number of scalars with variable diffusivity
@@ -61,15 +61,15 @@ implicit none
   integer, save :: ncofab
 
   !> number of properties defined at the cells.
-  !> They will be stored in the array \c propce.
+  !> They will be stored in the array \ref propce
   integer, save :: nproce
 
   !> number of properties defined at the boundary faces.
-  !> They will be stored in the array \c propfb.
+  !> They will be stored in the array \ref propfb.
   integer, save :: nprofb
 
   !> fake dimension for arrays propfb, coefa and coefb
-  !> where \c nfabor = 0 (to avoid issues with array bounds when
+  !> where \ref nfabor = 0 (to avoid issues with array bounds when
   !> multidimensional arrays have size nfabor in one dimension)
   integer, save :: ndimfb
   !> \}

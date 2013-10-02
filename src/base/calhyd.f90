@@ -35,9 +35,9 @@
 !> \param[in]     fext          external force generating hydrostatic pressure
 !> \param[in]     dfext         external force increment
 !>                              generating hydrostatic pressure
-!> \param[in]     phydr         hydrostatic pressure increment
-!> \param[zz]     flumas        work array
-!> \param[zz]     flumab        work array
+!> \param[out]    phydr         hydrostatic pressure increment
+!> \param[in]     flumas        work array
+!> \param[in]     flumab        work array
 !> \param[in]     coefap        boundary conditions coefficient
 !> \param[in]     coefbp        boundary conditions coefficient
 !> \param[in]     cofafp        boundary conditions coefficient

@@ -47,10 +47,10 @@
 !> \param[in]     smcelv        valeur de la variable associee a la
 !>                              source de masse NOT INTERLEAVED
 !> \param[in]     gamma         mass flow value
-!> \param[in]     tsexpv        explicit source term part linear in the variable
-!> \param[in]     tsimpv        associated value withr \ref tsexp
+!> \param[in,out] tsexpv        explicit source term part linear in the variable
+!> \param[in,out] tsimpv        associated value withr \ref tsexp
 !>                              to be stored in the matrix
-!> \param[out]    gapinj        explicit source term part independant
+!> \param[out]    gavinj        explicit source term part independant
 !>                              of the variable
 !______________________________________________________________________________
 

@@ -74,8 +74,8 @@ module lagran
   !> (starting respectively from the Lagrangian iterations \ref nstist and
   !> \ref nstbor)
   !> and calculate time-averaged two-way coupling source terms (from the
-  !> Lagrangian iteration \ref nstits)
-  !> useful if \ref iilagr=1 or \ref iilagr=2 (if \ref iilagr=3,
+  !> Lagrangian iteration \ref nstits).
+  !> Useful if \ref iilagr=1 or \ref iilagr=2 (if \ref iilagr=3,
   !> then \ref isttio=1 automatically)
   integer, save ::           isttio
 
@@ -177,32 +177,32 @@ module lagran
   integer, save ::           iphyla
 
   !> activation (=1) or not (=0) of an evolution equation on the particle
-  !> temperature (in degrees Celsius)
-  !> useful if \ref iphyla=1 and if there is a thermal scalar associated with
+  !> temperature (in degrees Celsius).
+  !> Useful if \ref iphyla=1 and if there is a thermal scalar associated with
   !> the continuous phase
   integer, save ::           itpvar
 
   !> activation (=1) or not (=0) of an evolution equation on the particle
-  !> diameter. useful if \ref iphyla = 1
+  !> diameter. Useful if \ref iphyla = 1
   integer, save ::           idpvar
 
   !> activation (=1) or not (=0) of an evolution equation on the particle mass
-  !> useful if si \ref iphyla = 1
+  !> Useful if si \ref iphyla = 1
   integer, save ::           impvar
 
   !> initialisation temperature (in degree Celsius) for the particles already
   !> present in the calculation domain when an evolution equation on
   !> the particle temperature is activated during a calculation (\ref iphyla =
-  !> 1 and \ref itpvar = 1)
-  !> useful if \ref isuila = 1 and \ref itpvar = 0 in the previous calculation
+  !> 1 and \ref itpvar = 1).
+  !> Useful if \ref isuila = 1 and \ref itpvar = 0 in the previous calculation
   double precision, save ::  tpart
 
   !> initialisation value for the specific heat (\f$ J.kg^{-1}.K^{-1} \f$)
   !> of the particles already present
   !> in the calculation domain when an evolution equation
   !> on the particle temperature is activated during a calculation
-  !> (\ref iphyla = 1 and \ref itpvar = 1)
-  !> useful if \ref isuila = 1 and \ref itpvar = 0 in the previous calculation
+  !> (\ref iphyla = 1 and \ref itpvar = 1).
+  !> Useful if \ref isuila = 1 and \ref itpvar = 0 in the previous calculation
   double precision, save ::  cppart
 
   !==================================
@@ -420,6 +420,7 @@ module lagran
   integer, save :: jinch
   !> pointer to class of the particle for \ref itepa array
   integer, save :: jclst
+
   !> pointer to number of additional variables related to the particles
   !> for \ref itepa array.
   !> The additional variables can be accessed in the arrays
@@ -441,8 +442,14 @@ module lagran
 
   !> number of boundary zones
   integer, save :: nfrlag
-  !> continue injection or not
+
+  !> activates (=1) or not (=0) the continuous injection of particles.
+  !> this option allows to inject particles continuously during the duration
+  !> of the Lagrangian time step \ref dtp\indexdtp rather than only once at the
+  !> beginning of the Lagrangian iteration. It helps avoiding the fractioning of
+  !> the particles cloud close to the injection areas.
   integer, save :: injcon
+
   !> list of number of boundary zones
   integer, save :: ilflag(nflagm)
 
@@ -502,7 +509,7 @@ module lagran
   !> array \ref iuslag. There are at the most \ref ndlaim integers. These
   !> pieces of information must be provided for each class \ref iclas and each
   !> particle injection zone \ref izone.
-  !> They are marked out by means of ``pointers'':
+  !> They are marked out by means of "pointers":
   !> - \ref iuslag(iclas,izone,ijnbp): number of particles to inject in
   !> the calculation domain per class and per zone.
   !> - \ref iuslag(iclas,izone,ijfre): injection period (expressed in number
@@ -522,7 +529,7 @@ module lagran
   !> - \ref iuslag(iclas,izone,inuchl): when the particles are coal particles
   !> (\ref iphyla = 2), this part of the array contains the coal index-number,
   !> between 1 and \ref ncharb (defined by the user in the thermochemical
-  !> file dp\_FCP, with  \ref ncharb\f$\leqslant\f$ncharm = 3).
+  !> file dp\_FCP, with  \ref ncharb <= ncharm = 3).
   integer, allocatable, dimension(:,:,:) :: iuslag
 
   !> massic flow rate for a boudary zone
@@ -569,7 +576,7 @@ module lagran
   !> contained in the array \ref ruslag. There are at the most
   !> \ref ndlagm such real numbers. These pieces of information must
   !> be provided for each class \ref iclas and each particle injection zone
-  !> \ref izone. They are marked out by means of ``pointers'':
+  !> \ref izone. They are marked out by means of "pointers":
   double precision, allocatable, dimension(:,:,:) :: ruslag
 
   !> particle velocity magnitude
@@ -685,12 +692,12 @@ module lagran
   !> case) can be accessed in the array \ref statis by means of the pointer
   !> \ref ilvu: \ref statis (iel,ilvu(ii))
   !> (\ref iel is the cell index-number and \ref ii an integer between
-  !> 1 and \ref nvlsts) useful if \ref istala = 1
+  !> 1 and \ref nvlsts). Useful if \ref istala = 1
   integer, save ::  nvlsts
 
   !> absolute Lagrangian iteration number (includings the restarts) after
-  !> which the calculation of the volume statistics is activated
-  !> useful if \ref istala = 1
+  !> which the calculation of the volume statistics is activated.
+  !> Useful if \ref istala = 1
   integer, save ::  idstnt
 
   !>
@@ -701,12 +708,12 @@ module lagran
   !> or if the flow is unsteady (\ref isttio=0), the statistics are reset
   !> to zero at every Lagrangian iteration (the volume statistics are then said
   !> to be non-stationary).
-  !> useful if \ref istala=1 and \ref isttio=1
+  !> Useful if \ref istala=1 and \ref isttio=1
   integer, save ::  nstist
 
   !> number of iterations during which stationary volume statistics have
   !> been cumulated.
-  !> useful if \ref istala=1, \ref isttio=1 and if \ref nstist is
+  !> Useful if \ref istala=1, \ref isttio=1 and if \ref nstist is
   !> inferior or equal to the current Lagrangian iteration.
   !> \ref npst is initialised and updated automatically by the code, its
   !> value is not to be modified by the user
@@ -715,7 +722,7 @@ module lagran
   !> number of iterations during which volume statistics have been
   !> calculated (the potential iterations during which non-stationary
   !> statistics have been calculated are counted in \ref npstt).
-  !> useful if \ref istala=1.
+  !> Useful if \ref istala=1.
   !> \ref npstt is initialised and updated automatically by the code,
   !> its value is not to be modified by the user
   integer, save ::  npstt
@@ -726,7 +733,7 @@ module lagran
   !> if the volume statistics are calculated in a non-stationary way,
   !> then \ref tstat=dtp (it is the Lagrangian time step, because the
   !> statistics are reset to zero at every iteration).
-  !> useful if \ref istala=1.
+  !> Useful if \ref istala=1.
   !> \ref tstat is initialised and updated automatically by the code,
   !> its value is not to be modified by the user
   double precision, save ::  tstat
@@ -738,14 +745,14 @@ module lagran
   !> cell in term of statistical weight is not taken into account in the volume
   !> statistics (for the complete turbulent dispersion model, in the
   !> Poisson's equation used to correct the mean velocities
-  !> or in the listing and post-processing outputs). useful if \ref istala = 1
+  !> or in the listing and post-processing outputs). Useful if \ref istala = 1
   double precision, save ::  seuil
 
   !> name of the volumetric statistics, displayed in the listing
   !> and the post-processing files.
-  !> The default value is given above, with ``XXXX''
+  !> The default value is given above, with "XXXX"
   !> representing a four digit number (for instance 0001, 0011 ...).
-  !> useful if \ref istala = 1.
+  !> Useful if \ref istala = 1.
   !> Warning: this name is also used to reference information in the
   !> restart file (\ref isuist =1).
   !> If the name of a variable is changed between two calculations,
@@ -772,11 +779,11 @@ module lagran
 
   !> activation (=1) or not (=0) of the two-way coupling on the dynamics
   !> of the continuous phase.
-  !> useful if \ref iilagr = 2 and \ref iccvfg = 0
+  !> Useful if \ref iilagr = 2 and \ref iccvfg = 0
   integer, save ::  ltsdyn
 
   !> activation (=1) or not (=0) of the two-way coupling on the mass.
-  !> useful if \ref iilagr = 2, \ref iphyla = 1 and \ref impvar = 1
+  !> Useful if \ref iilagr = 2, \ref iphyla = 1 and \ref impvar = 1
   integer, save ::  ltsmas
 
   !> if \ref iphyla = 1 and \ref itpvar = 1, \ref ltsthe
@@ -784,7 +791,7 @@ module lagran
   !> if \ref iphyla = 2, \ref ltsthe activates (=1) or not (=0) the
   !> two-way coupling on the eulerian variables related to pulverised
   !> coal combustion.
-  !> useful if \ref iilagr = 2
+  !> Useful if \ref iilagr = 2
   integer, save ::  ltsthe
 
   !> explicit source term for the continuous phase X velocity
@@ -863,7 +870,7 @@ module lagran
   !> steady state (transition period) and the averages appearing in the source
   !> terms are reinitialised at each time step, as it is the case for unsteady
   !> flows (\ref isttio=0).
-  !> useful if \ref iilagr = 2 and \ref isttio = 1
+  !> Useful if \ref iilagr = 2 and \ref isttio = 1
   integer, save ::  nstits
 
   !> number of time steps for source terms accumulations
@@ -888,7 +895,10 @@ module lagran
   !> \addtogroup fusion_cloning
   !> \{
 
-  ! TODO : INDICATEUR D ACTIVATION DE LA ROULETTE RUSSE
+  !> activates (=1) or not (=0) of the particle cloning/fusion technique
+  !> (option also called "Russian roulette").
+  !> when \ref iroule = 1, the importance function must be specified  via the
+  !> array \ref croule\indexcroule in the user subroutine \ref uslaru
   integer, save ::           iroule
 
   !> \}
@@ -902,9 +912,8 @@ module lagran
 
   !> activates (=1) or not (=0) the option of coal particle fouling.
   !> It then is necessary to specify the domain boundaries
-  !> on which fouling may take place. useful if \ref iphyla = 2
+  !> on which fouling may take place. Useful if \ref iphyla = 2
   integer, save ::  iencra
-
 
   !> encrustation data
   integer, save ::  npencr
@@ -915,14 +924,14 @@ module lagran
   double precision, save ::  enc2(ncharm2)
 
   !> limit temperature (in degree Celsius) below which the coal particles do
-  !> not cause any fouling (if the fouling model is activated),
-  !> useful if \ref iphyla = 2 and \ref iencra = 1
+  !> not cause any fouling (if the fouling model is activated).
+  !> Useful if \ref iphyla = 2 and \ref iencra = 1
   double precision, save ::  tprenc(ncharm2)
 
   !>
   !> ash critical viscosity in \f$ kg.m^{-1}.s^{-1} \f$, in the fouling model
   !> cf J.D. Watt et T. Fereday (J.Inst.Fuel, Vol.42-p99).
-  !> useful if \ref iphyla = 2 and \ref iencra = 1
+  !> Useful if \ref iphyla = 2 and \ref iencra = 1
   double precision, save ::  visref(ncharm2)
 
   !> encrustation data
@@ -1012,7 +1021,7 @@ module lagran
 
   !> direction (1=x, 2=y, 3=z) of the complete model.
   !> it corresponds to the main directions of the flow.
-  !> useful if \ref modcpl > 0
+  !> Useful if \ref modcpl > 0
   integer, save ::  idirla
 
   !> activation (=1) or not (=0) of the particle turbulent dispersion.
@@ -1024,7 +1033,7 @@ module lagran
   !> \ref idiffl=1 suppresses the crossing trajectory effect, making
   !> turbulent dispersion for the particles identical to the turbulent
   !> diffusion of fluid particles.
-  !> useful if \ref idistu=1
+  !> Useful if \ref idistu=1
   integer, save ::  idiffl
 
   !> activation (=1) or not (=0) of the solution of a Poisson's equation for
@@ -1045,7 +1054,7 @@ module lagran
 
   !> number additional user data to record for the calculation
   !> of additional boundary statistics in \ref parbor.
-  !> useful if \ref iensi3=1
+  !> Useful if \ref iensi3=1
   integer, save ::  nusbor
 
   !> number of absolute Lagrangian iterations (including the restarts)
@@ -1054,12 +1063,12 @@ module lagran
   !> If the number of absolute Lagrangian iterations is lower than \ref nstbor,
   !> or if \ref isttio=0, the statistics are reset to zero at every
   !> Lagrangian iteration (non-stationary statistics).
-  !> useful if \ref iensi3=1 and \ref isttio=1
+  !> Useful if \ref iensi3=1 and \ref isttio=1
   integer, save ::  nstbor
 
   !> number of iterations during which stationary boundary statistics have
   !> been cumulated.
-  !> useful if \ref iensi3=1, \ref isttio=1 and \ref nstbor inferior
+  !> Useful if \ref iensi3=1, \ref isttio=1 and \ref nstbor inferior
   !> or equal to the current Lagrangian iteration.
   !> \ref npstf is initialised and updated automatically by the code,
   !> its value is not to be modified by the user
@@ -1069,7 +1078,7 @@ module lagran
   !> been calculated
   !> (the potential iterations during which non-stationary
   !> statistics have been calculated are counted in \ref npstft).
-  !> useful if \ref iensi3=1.
+  !> Useful if \ref iensi3=1.
   !> \ref npstft is initialised and updated automatically by the code,
   !> its value is not to be modified by the user
   integer, save ::  npstft
@@ -1078,26 +1087,26 @@ module lagran
   !> interactions, and of the calculation of the associated boundary statistics.
   !> \ref inbrd = 1 is a compulsory condition to use the particulate average
   !> \ref imoybr = 2.
-  !> useful if \ref iensi3=1
+  !> Useful if \ref iensi3=1
   integer, save ::  inbrbd
 
   !> activation (=1) or not (=0) of the recording of the particulate mass flow
   !> related to the particle/boundary interactions, and of the calculation of
   !> the associated boundary statistics.
   !> \ref inbrd = 1 is a compulsory condition to use \ref iflmbd=1.
-  !> useful if \ref iensi3=1 and \ref inbrbd=1
+  !> Useful if \ref iensi3=1 and \ref inbrbd=1
   integer, save ::  iflmbd
 
   !> activation (=1) or not (=0) of the recording of the angle between a
   !> particle trajectory and a boundary face involved in a particle/boundary
   !> interaction, and of the calculation of the associated boundary statistics.
-  !> useful if \ref iensi3=1
+  !> Useful if \ref iensi3=1
   integer, save ::  iangbd
 
   !> activation (=1) or not (=0) of the recording of the velocity of a particle
   !> involved in a particle/boundary interaction, and of the calculation of
   !> the associated boundary statistics.
-  !> useful if \ref iensi3=1
+  !> Useful if \ref iensi3=1
   integer, save ::  ivitbd
 
   ! TODO
@@ -1136,7 +1145,7 @@ module lagran
   !> the recordings in \ref parbor at every particle/boundary interaction are
   !> cumulated values (possibly reset to zero at every iteration in the
   !> non-stationary case). They must therefore be divided by a quantity to
-  !> get boundary statistics. The user can choose between two average types:.
+  !> get boundary statistics. The user can choose between two average types:
   !> - = 0: no average is applied to the recorded cumulated values.
   !> - = 1: a time-average is calculated. The cumulated value
   !> is divided by the physical duration in the case of stationary
@@ -1152,7 +1161,7 @@ module lagran
   !> boundary face is strictly higher than \ref seuilf, otherwise the average
   !> at the face is set to zero.
   !> only the cumulated value is recorded in the restart file.
-  !> useful if \ref iensi3=1
+  !> Useful if \ref iensi3=1
   integer, save ::  imoybr(nusbrd+10)
 
   ! TODO
@@ -1166,7 +1175,7 @@ module lagran
   !> if the recording of the boundary statisticss is non-stationary, then
   !> \ref tstat=dtp (it is the Lagrangian time step, because the
   !> statistics are reset to zero at every time step).
-  !> useful if \ref iensi3=1
+  !> Useful if \ref iensi3=1
   double precision, save ::  tstatp
 
   !> every boundary face of the mesh undergoes a certain number of
@@ -1176,12 +1185,12 @@ module lagran
   !> the limit statistical weight value, below which the contribution of the
   !> face is not taken into account in the
   !> statistics at the boundaries for post-processing.
-  !> useful if \ref iensi3=1
+  !> Useful if \ref iensi3=1
   double precision, save ::  seuilf
 
   !> name of the boundary statistics, displayed in the listing
   !> and the post-processing files.
-  !> useful if \ref iensi3=1.
+  !> Useful if \ref iensi3=1.
   !> Warning: this name is also used to reference information in the restart file
   !> (\ref isuist =1). If the name of a variable is changed between two
   !> calculations, it will not be possible to read its value from the restart file
@@ -1209,42 +1218,42 @@ module lagran
   !> average over time or over the number of interactions with the boundary).
   integer, save ::  iensi3
 
-  !> associates (=1) or not (=0) the variable ``velocity of the locally
-  !> undisturbed fluid flow field'' with the output of particles or trajectories.
+  !> associates (=1) or not (=0) the variable "velocity of the locally
+  !> undisturbed fluid flow field" with the output of particles or trajectories.
   integer, save ::  ivisv1
 
-  !> associates (=1) or not (=0) the variable ``particle velocity''
+  !> associates (=1) or not (=0) the variable "particle velocity"
   !> with the output of particles or trajectories.
   integer, save ::  ivisv2
 
-  !> associates (=1) or not (=0) the variable ``residence time''
+  !> associates (=1) or not (=0) the variable "residence time"
   !> with the output of particles or trajectories.
   integer, save ::  ivistp
 
-  !> associates (=1) or not (=0) the variable ``particle diameter''
+  !> associates (=1) or not (=0) the variable "particle diameter"
   !> with the output of particles or trajectories.
   integer, save ::  ivisdm
 
-  !> associates (=1) or not (=0) the variable ``particle temperature''
+  !> associates (=1) or not (=0) the variable "particle temperature"
   !> with the output of particles or trajectories.
   integer, save ::  iviste
 
-  !> associates (=1) or not (=0) the variable ``particle mass''
+  !> associates (=1) or not (=0) the variable "particle mass"
   !> with the output of particles or trajectories.
   integer, save ::  ivismp
 
-  !> associates (=1) or not (=0) the variable ``shrinking core diameter of
-  !> the coal particles'' with the output of particles or trajectories.
+  !> associates (=1) or not (=0) the variable "shrinking core diameter of
+  !> the coal particles" with the output of particles or trajectories.
   !> useful only if \ref iphyla = 2
   integer, save ::  ivisdk
 
-  !> associates (=1) or not (=0) the variable ``mass of reactive coal of the
-  !> coal particles'' with the output of particles or trajectories.
+  !> associates (=1) or not (=0) the variable "mass of reactive coal of the
+  !> coal particles" with the output of particles or trajectories.
   !> useful only if \ref iphyla = 2
   integer, save ::  ivisch
 
-  !> associates (=1) or not (=0) the variable ``mass of coal of the
-  !> coal particles'' with the output of particles or trajectories.
+  !> associates (=1) or not (=0) the variable "mass of coal of the
+  !> coal particles" with the output of particles or trajectories.
   !> useful only if \ref iphyla = 2
   integer, save ::  ivisck
 

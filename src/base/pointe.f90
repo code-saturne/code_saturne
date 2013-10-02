@@ -159,11 +159,11 @@ module pointe
   !> according to their boundary condition type \c itypfb
   integer, allocatable, dimension(:) :: itrifb
 
-  !> to identify boundary zones associated wiyth boundary faces
+  !> to identify boundary zones associated with boundary faces
   !> (particular physics)
   integer, allocatable, dimension(:) :: izfppp
 
-  !> to identify boundary zones associated wiyth boundary faces
+  !> to identify boundary zones associated with boundary faces
   !> (radiative transfert)
   integer, allocatable, dimension(:) :: izfrad
 

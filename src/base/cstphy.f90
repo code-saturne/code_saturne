@@ -38,10 +38,11 @@ module cstphy
   !> \addtogroup cstphy
   !> \{
 
-  !> Celsius to Kelvin: positive value of obsolute zero (= +273,15)
+  !> Temperature in Kelvin correponding to 0 degrees Celsius (= +273,15)
   double precision :: tkelvi
   parameter(tkelvi = 273.15d0)
-  !> Kelvin to Celsius: negative value of obsolute zero (= -273,15)
+
+  !> Temperature in degrees Celsius corresponding to 0 Kelvin (= -273,15)
   double precision :: tkelvn
   parameter(tkelvn = -273.15d0)
 
@@ -49,43 +50,142 @@ module cstphy
   double precision :: xcal2j
   parameter(xcal2j = 4.1855d0)
 
-  !> Stephan Boltzmann (constant of)
+  !> Stephan constant for the radiative module \f$\sigma\f$
+  !> in \f$W.m^{-2}.K^{-4}\f$
   double precision :: stephn
   parameter(stephn = 5.6703d-8)
+
   !> Perfect gas constant for air (mixture)
   double precision :: rair
   parameter(rair = 287.d0)
+
   !> Gravity
   double precision, save :: gx, gy, gz
+
   integer, save :: icorio
+
   !> Rotation vector
   double precision, save :: omegax, omegay, omegaz
+
   ! TODO
   double precision, save :: irot(3,3), prot(3,3), qrot(3,3), rrot(3,3)
 
   !> Constantes physiques du fluide
   !> filling \ref xyzp0 indicator
   integer, save ::          ixyzp0
-  !> reference density
+
+  !> reference density.
+  !> Negative value: not initialised.
+  !> Its value is not used in gas or coal combustion modelling (it will be
+  !> calculated following the perfect gas law, with \f$P0\f$ and \f$T0\f$).
+  !> With the compressible module, it is also not used by the code,
+  !> but it may be (and often is) referenced by the user in user subroutines;
+  !> it is therefore better to specify its value.
+  !>
+  !> Always useful otherwise, even if a law defining the density is given by
+  !> the user subroutine \ref usphyv or \ref uselph.
+  !> indeed, except with the
+  !> compressible module, CS  does not use
+  !> the total pressure \f$P\f$ when solving the Navier-Stokes equation, but a
+  !> reduced pressure .
+  !> \f$P^*=P-\rho_0\vect{g}.(\vect{x}-\vect{x}_0)+P^*_0-P_0\f$.
+  !> where
+  !> \f$\vect{x_0}\f$ is a reference point (see \ref xyzp0) and \f$P^*_0\f$ and \f$P_0\f$ are
+  !> reference values (see \ref pred0 and \ref p0). Hence, the term
+  !> \f$-\grad{P}+\rho\vect{g}\f$ in the equation is treated as
+  !> \f$-\grad{P^*}+(\rho-\rho_0)\vect{g}\f$. The closer \ref ro0 is to the value of \f$\rho\f$,
+  !> the more \f$P^*\f$ will tend to represent only the dynamic part of the pressure and
+  !> the faster and more precise its solution will be. Whatever the value of \ref ro0,
+  !> both \f$P\f$ and \f$P^*\f$ appear in the listing and the post-processing outputs..
+  !> with the compressible module, the calculation is made directly on the total
+  !> pressure
   double precision, save :: ro0
-  !> reference viscosity
+
+  !> reference molecular dynamic viscosity.
+  !> Negative value: not initialised.
+  !>
+  !> Always useful, it is the used value unless the user specifies the
+  !> viscosity in the subroutine \ref usphyv
   double precision, save :: viscl0
-  !> reference total pressure
+
+  !> reference pressure for the total pressure.
+  !> except with the compressible module, the total pressure \f$P\f$ is evaluated
+  !> from the reduced pressure \f$P^*\f$ so that \f$P\f$
+  !> is equal to \ref p0 at the reference position \f$\vect{x}_0\f$
+  !> (given by \ref xyzp0).
+  !> with the compressible module, the total pressure is solved directly.
+  !> always Useful
   double precision, save :: p0
-  !> reference reduced pressure
+
+  !> reference value for the reduced pressure \f$P^*\f$ (see \ref ro0).
+  !> It is especially used to initialise the reduced pressure and as a reference
+  !> value for the outlet boundary conditions.
+  !> For an optimised precision in the resolution of \f$P^*\f$,
+  !>  it is wiser to keep \ref pred0 to 0.
+  !> With the compressible module, the "pressure" variable appearing in the
+  !> equations directly represents the total pressure.
+  !> It is therefore initialised to \ref p0 and not \ref pred0 (see \ref ro0).
+  !> Always useful, except with the compressible module
   double precision, save :: pred0
-  !> reference pressure position
+
+  !> coordinates of the reference point \f$\vect{x}_0\f$ for the total pressure.
+  !>  - When there are no Dirichlet conditions for the pressure (closed domain),
+  !> \ref xyzp0
+  !> does not need to be specified (unless the total pressure has a clear
+  !> physical meaning in the configuration treated).
+  !>  - When Dirichlet conditions on the pressure are specified but only through
+  !> stantard outlet conditions (as it is in most configurations),
+  !> \ref xyzp0 does not need to be specified by the user, since it will be
+  !> set to the coordinates of the reference outlet face
+  !> (i.e. the code will automatically select a
+  !> reference outlet boundary face and set \ref xyzp0 so that \f$P\f$ equals
+  !> \ref p0 at this face). Nonetheless, if \ref xyzp0 is specified by
+  !> the user, the calculation will remain correct.
+  !>  - When direct Dirichlet conditions are specified by the user (specific
+  !> value set on specific boundary faces), it is better to specify the
+  !> corresponding reference point (\em i.e. specify where the total pressure
+  !> is \ref p0). This way, the boundary conditions for the reduced pressure
+  !> will be close to \ref pred0, ensuring an optimal precision in the
+  !> resolution. If \ref xyzp0 is not specified, the reduced
+  !> pressure will be shifted, but the calculations will remain correct..
+  !>  - With the compressible module, the "pressure" variable appearing in the
+  !> equations directly represents the total pressure.
+  !> \ref xyzp0 is therefore not used..
+  !>
+  !> Always useful, except with the compressible module.
   double precision, save :: xyzp0(3)
-  !> reference temperature
+
+  !> reference temperature.
+  !>
+  !> Useful for the specific physics gas or coal combustion (initialisation
+  !> of the density), for the electricity modules to initialise the domain
+  !> temperature and for the compressible module (initialisations).
+  !> It must be given in Kelvin.
   double precision, save :: t0
-  !> reference specific heat
+
+  !> reference specific heat.
+  !>
+  !> Useful if there is 1 <= n <= nscaus.
+  !> So that \ref iscsth(n)=1 (there is a scalar "temperature"),
+  !> unless the user specifies the specific heat in the user subroutine
+  !> \ref {usphyv} (\ref icp > 0) with the compressible module or
+  !>  coal combustion, \ref cp0 is also needed even when there is no user scalar.
+  !> \note None of the scalars from the specific physics is a temperature.
+  !> \note When using the Graphical Interface, \ref cp0 is also used to
+  !> calculate the diffusivity of the thermal scalars,
+  !> based on their conductivity; it is therefore needed, unless the
+  !> diffusivity is also specified in \ref usphyv.
   double precision, save :: cp0
+
   !> molar mass of the perfect gas in \f$ kg/mol \f$ (if \ref ieos=1)
+  !>
+  !> Always useful
   double precision, save :: xmasmr
 
   !> Uniform thermodynamic pressure for the low-Mach algorithm
   !> Thermodynamic pressure for the current time step
   double precision, save :: pther
+
   !> Thermodynamic pressure for the previous time step
   double precision, save :: pthera
 
@@ -94,131 +194,282 @@ module cstphy
   !> \addtogroup csttur
   !> \{
 
-  !> constant of Karman (\f$ \kappa = 0.42 \f$)
+  !> Karman constant. (= 0.42)
+  !>
+  !> Useful if and only if \ref iturb >= 10.
+  !> (mixing length, \f$k-\varepsilon\f$, \f$R_{ij}-\varepsilon\f$,
+  !> LES, v2f or \f$k-\omega\f$)
   double precision, save :: xkappa
-  !> constant of log law: \f$ \dfrac{1}{\kappa} \ln(y^+) + cstlog \f$
+
+  !> constant of logarithmic law function:
+  !> \f$ \dfrac{1}{\kappa} \ln(y^+) + cstlog \f$
   !>  (\f$ cstlog = 5.2 \f$)
+
+
+  !> constant of the logarithmic wall function.
+  !> Useful if and only if \ref iturb >= 10
+  !> (mixing length, \f$k-\varepsilon\f$, \f$R_{ij}-\varepsilon\f$,
+  !> LES, v2f or \f$k-\omega\f$)
   double precision, save :: cstlog
-  !> yplus limite (\f$ \dfrac{1}{\kappa} \f$ or \f$ 10.88 \f$ if \ref ideuch=2)
+
+  !> limit value of \f$y^+\f$ for the viscous sublayer.
+  !> \ref ypluli depends on the chosen wall function: it is
+  !> initialised to 10.88 for the scalable wall function (\ref ideuch=2),
+  !> otherwise it is initialised to \f$1/\kappa\approx 2,38\f$.
+  !> In LES, \ref ypluli is taken by default to be 10.88.
+  !>
+  !> Always useful
   double precision, save :: ypluli
+
   !> Werner and Wengle coefficient
   double precision, save :: apow
+
   !> Werner and Wengle coefficient
   double precision, save :: bpow
+
   !> Werner and Wengle coefficient
   double precision, save :: cpow
+
   !> Werner and Wengle coefficient
   double precision, save :: dpow
-  !> \f$ C_\mu \f$ constant of \f$ k-\varepsilon\f$ model
+
+  !> constant \f$C_\mu\f$ for all the RANS turbulence models
+  !> except for the v2f model
+  !> (see \ref cv2fmu for the value of \f$C_\mu\f$ in case of v2f modelling).
+  !> Useful if and only if \ref iturb = 20, 21, 30, 31 or 60
+  !> (\f$k-\varepsilon\f$, \f$R_{ij}-\varepsilon\f$ or \f$k-\omega\f$)
   double precision, save :: cmu
+
   !> \f$ C_\mu^\frac{1}{4} \f$
   double precision, save :: cmu025
-  !> constant of k-epsilon
+
+  !> constant \f$C_{\varepsilon 1}\f$ for all the RANS turbulence models except
+  !> for the v2f and the \f$k-\omega\f$ models.
+  !> Useful if and only if \ref iturb= 20,
+  !> 21, 30 or 31 (\f$k-\varepsilon\f$ or \f$R_{ij}-\varepsilon\f$)
   double precision, save :: ce1
-  !> constant of k-epsilon
+
+  !> constant \f$C_{\varepsilon 2}\f$ for the \f$k-\varepsilon\f$ and
+  !> \f$R_{ij}-\varepsilon\f$ LRR models.
+  !> Useful if and only if {\tt iturb}= 20, 21 or 30
+  !> (\f$k-\varepsilon\f$ or \f$R_{ij}-\varepsilon\f$ LRR)
   double precision, save :: ce2
+
   !> Coefficient of interfacial coefficient in k-eps,
   !> used in Lagrange treatment
+  !>
+
+  !> constant \f$C_{\varepsilon 4}\f$ for the interfacial term
+  !> (Lagrangian module) in case of two-way coupling.
+  !> Useful in case of Lagrangian modelling,
+  !> in \f$k-\varepsilon\f$ and \f$R_{ij}-\varepsilon\f$ with two-way coupling.
   double precision, save :: ce4
-  !> constant of k-epsilon
+
+  !> Prandtl number for \f$k\f$ with \f$k-\varepsilon\f$ and v2f models.
+  !> nUseful if and only if \ref iturb=20, 21 or 50
+  !> (\f$k-\varepsilon\f$ or v2f)
   double precision, save :: sigmak
-  !> constant for the Rij-epsilon EBRSM (1.15)
+
+  !> Prandtl number for \f$\varepsilon\f$.
+  !> Useful if and only if \ref iturb= 20, 21, 30, 31 or 50
+  !> (\f$k-\varepsilon\f$, \f$R_{ij}-\varepsilon\f$ or v2f)
   double precision, save :: sigmae
-  !> constant of standard Rij-epsilon (LRR)
+
+  !> constant \f$C_1\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model.
+  !> Useful if and only if \ref iturb=30
+  !> (\f$R_{ij}-\varepsilon\f$ LRR)
   double precision, save :: crij1
-  !> constant of standard Rij-epsilon (LRR)
+
+  !> constant \f$C_2\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model.
+  !> Useful if and only if \ref iturb=30
+  !> (\f$R_{ij}-\varepsilon\f$ LRR)
   double precision, save :: crij2
-  !> constant of standard Rij-epsilon (LRR)
+
+  !> constant \f$C_3\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model.
+  !> Useful if and only if \ref iturb=30
+  !> (\f$R_{ij}-\varepsilon\f$ LRR)
   double precision, save :: crij3
-  !> constant of standard Rij-epsilon (LRR)
+
+  !> constant \f$C_1^\prime\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model,
+  !> corresponding to the wall echo terms.
+  !> Useful if and only if \ref iturb=30 and \ref irijec=1
+  !> (\f$R_{ij}-\varepsilon\f$ LRR)
   double precision, save :: crijp1
-  !> constant of standard Rij-epsilon (LRR)
+
+  !> constant \f$C_2^\prime\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model,
+  !> corresponding to the wall echo terms.
+  !> Useful if and only if \ref iturb=30 and \ref irijec=1
+  !> (\f$R_{ij}-\varepsilon\f$ LRR)
   double precision, save :: crijp2
-  !> specific constant of SSG Rij-epsilon
+
+  !> constant \f$C_{\varepsilon 2}\f$ for the \f$R_{ij}-\varepsilon\f$ SSG model.
+  !> Useful if and only if \ref iturb=31
+  !> (\f$R_{ij}-\varepsilon\f$ SSG)
   double precision, save :: cssge2
-  !> specific constant of SSG Rij-epsilon
+
+  !> constant \f$C_{s1}\f$ for the \f$R_{ij}-\varepsilon\f$ SSG model.
+  !> Useful if and only if \ref iturb=31
+  !> (\f$R_{ij}-\varepsilon\f$ SSG)
   double precision, save :: cssgs1
-  !> specific constant of SSG Rij-epsilon
+
+  !> constant \f$C_{s2}\f$ for the \f$R_{ij}-\varepsilon\f$ SSG model.
+  !> Useful if and only if \ref iturb=31
+  !> (\f$R_{ij}-\varepsilon\f$ SSG)
   double precision, save :: cssgs2
-  !> specific constant of SSG Rij-epsilon
+
+  !> constant \f$C_{r1}\f$ for the \f$R_{ij}-\varepsilon\f$ SSG model.
+  !> Useful if and only if \ref iturb=31
+  !> (\f$R_{ij}-\varepsilon\f$ SSG)
   double precision, save :: cssgr1
-  !> specific constant of SSG Rij-epsilon
+
+  !> constant \f$C_{r2}\f$ for the \f$R_{ij}-\varepsilon\f$ SSG model.
+  !> Useful if and only if \ref iturb=31
+  !> (\f$R_{ij}-\varepsilon\f$ SSG)
   double precision, save :: cssgr2
-  !> specific constant of SSG Rij-epsilon
+
+  !> constant \f$C_{r3}\f$ for the \f$R_{ij}-\varepsilon\f$ SSG model.
+  !> Useful if and only if \ref iturb=31
+  !> (\f$R_{ij}-\varepsilon\f$ SSG)
   double precision, save :: cssgr3
-  !> specific constant of SSG Rij-epsilon
+
+  !> constant \f$C_{r4}\f$ for the \f$R_{ij}-\varepsilon\f$ SSG model.
+  !> Useful if and only if \ref iturb=31
+  !> (\f$R_{ij}-\varepsilon\f$ SSG)
   double precision, save :: cssgr4
-  !> specific constant of SSG Rij-epsilon
+
+
+  !> constant \f$C_{r1}\f$ for the \f$R_{ij}-\varepsilon\f$ SSG model.
+  !> Useful if and only if \ref iturb=31
+  !> (\f$R_{ij}-\varepsilon\f$ SSG)
   double precision, save :: cssgr5
+
   !> constant of the Rij-epsilon EBRSM
   double precision, save :: cebms1
+
   !> constant of the Rij-epsilon EBRSM
   double precision, save :: cebms2
+
   double precision, save :: cebmr1, cebmr2, cebmr3, cebmr4, cebmr5, cebmr6
-  !> constant of the Rij-epsilon EBRSM (0.21)
+
+  !> constant \f$C_s\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model.
+  !> Useful if and only if \ref iturb=30
+  !> (\f$R_{ij}-\varepsilon\f$ LRR)
   double precision, save :: csrij
+
   !> constant of the Rij-epsilon EBRSM
   double precision, save :: cebme2
+
   !> constant of the Rij-epsilon EBRSM
   double precision, save :: cebmmu
+
   !> constant of the Rij-epsilon EBRSM
   double precision, save :: xcl
+
   !> constant in the expression of Ce1' for the Rij-epsilon EBRSM
   double precision, save :: xa1
+
   !> constant of the Rij-epsilon EBRSM
   double precision, save :: xct
+
   !> constant of the Rij-epsilon EBRSM
   double precision, save :: xceta
 
   !> specific constant of v2f "BL-v2k" (or phi-alpha)
   double precision, save :: cpale1
+
   !> specific constant of v2f "BL-v2k" (or phi-alpha)
   double precision, save :: cpale2
+
   !> specific constant of v2f "BL-v2k" (or phi-alpha)
   double precision, save :: cpale3
+
   !> specific constant of v2f "BL-v2k" (or phi-alpha)
   double precision, save :: cpale4
+
   !> specific constant of v2f "BL-v2k" (or phi-alpha)
   double precision, save :: cpalse
+
   !> specific constant of v2f "BL-v2k" (or phi-alpha)
   double precision, save :: cpalmu
+
   !> specific constant of v2f "BL-v2k" (or phi-alpha)
   double precision, save :: cpalc1
+
   !> specific constant of v2f "BL-v2k" (or phi-alpha)
   double precision, save :: cpalc2
+
   !> specific constant of v2f "BL-v2k" (or phi-alpha)
   double precision, save :: cpalct
+
   !> specific constant of v2f "BL-v2k" (or phi-alpha)
   double precision, save :: cpalcl
+
   !> specific constant of v2f "BL-v2k" (or phi-alpha)
   double precision, save :: cpalet
 
-  !> specific constant of k-omega SST (sigma_k)
+  !> constant \f$\sigma_{k1}\f$ for the \f$k-\omega\f$ SST model.
+  !> Useful if and only if \ref iturb=60
   double precision, save :: ckwsk1
-  !> specific constant of k-omega SST (sigma_k)
+
+  !> constant \f$\sigma_{k2}\f$ for the \f$k-\omega\f$ SST model.
+  !> Useful if and only if \ref iturb=60
   double precision, save :: ckwsk2
-  !> specific constant of k-omega SST (sigma_w)
+
+  !> constant \f$\sigma_{\omega 1}\f$ for the \f$k-\omega\f$ SST model.
+  !> Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST)
   double precision, save :: ckwsw1
-  !> specific constant of k-omega SST (sigma_w)
+
+  !> constant \f$\sigma_{\omega 2}\f$ for the \f$k-\omega\f$ SST model.
+  !> Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST)
   double precision, save :: ckwsw2
-  !> specific constant of k-omega SST (beta)
+
+  !> constant \f$\beta_1\f$ for the \f$k-\omega\f$ SST model.
+  !> Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST)
   double precision, save :: ckwbt1
-  !> specific constant of k-omega SST (beta)
+
+  !> constant \f$\beta_2\f$ for the \f$k-\omega\f$ SST model.
+  !> Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST)
   double precision, save :: ckwbt2
-  !> specific constant of k-omega SST (gamma)
+
+
+  !> \f$\frac{\beta_1}{C_\mu}-\frac{\kappa^2}{\sqrt{C_\mu}\sigma_{\omega 1}}\f$
+  !> constant \f$\gamma_1\f$ for the \f$k-\omega\f$ SST model.
+  !> Useful if and only if \ref iturb=60
+  !> (\f$k-\omega\f$ SST)
+  !> \warning: \f$\gamma_1\f$ is calculated before the call to
+  !> \ref usipsu. Hence, if \f$\beta_1\f$, \f$C_\mu\f$, \f$\kappa\f$
+  !> or \f$\sigma_{\omega 1}\f$ is modified in \ref usipsu,
+  !> \ref ckwgm1 must also be modified in accordance.
   double precision, save :: ckwgm1
-  !> specific constant of k-omega SST (gamma)
+
+  !> \f$\frac{\beta_2}{C_\mu}-\frac{\kappa^2}{\sqrt{C_\mu}\sigma_{\omega 2}}\f$
+  !> constant \f$\gamma_2\f$ for the \f$k-\omega\f$ SST model.
+  !> Useful if and only if \ref iturb=60
+  !> (\f$k-\omega\f$ SST)
+  !> \warning: \f$\gamma_2\f$ is calculated before the call to
+  !> \ref usipsu. Hence, if \f$\beta_2\f$, \f$C_\mu\f$, \f$\kappa\f$
+  !> or \f$\sigma_{\omega 2}\f$ is modified in \ref usipsu,
+  !> \ref ckwgm2 must also be modified in accordance.
   double precision, save :: ckwgm2
+
   !> specific constant of k-omega SST
+  !> constant \f$a_1\f$ for the \f$k-\omega\f$ SST model.
+  !> Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST)
   double precision, save :: ckwa1
+
+  !> constant \f$ c_1 \f$ for the \f$k-\omega\f$ SST model.
+  !> Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST)
   !> specific constant of k-omega SST
   double precision, save :: ckwc1
+
   !> specific constant of Spalart-Allmaras
   double precision, save :: csab1
   !> specific constant of Spalart-Allmaras
   double precision, save :: csab2
+
   !> specific constant of Spalart-Allmaras
   double precision, save :: csasig
+
   !> specific constant of Spalart-Allmaras
   double precision, save :: csav1
   !> specific constant of Spalart-Allmaras
@@ -227,70 +478,160 @@ module cstphy
   double precision, save :: csaw2
   !> specific constant of Spalart-Allmaras
   double precision, save :: csaw3
+
   !> constant of the Spalart-Shur rotation/curvature correction
   double precision, save :: cssr1
   !> constant of the Spalart-Shur rotation/curvature correction
   double precision, save :: cssr2
   !> constant of the Spalart-Shur rotation/curvature correction
   double precision, save :: cssr3
+
   !> constants of the Cazalbou rotation/curvature correction
   double precision, save :: ccaze2
+
   !> constants of the Cazalbou rotation/curvature correction
   double precision, save :: ccazsc
+
   !> constants of the Cazalbou rotation/curvature correction
   double precision, save :: ccaza
+
   !> constants of the Cazalbou rotation/curvature correction
   double precision, save :: ccazb
+
   !> constants of the Cazalbou rotation/curvature correction
   double precision, save :: ccazc
+
   !> constants of the Cazalbou rotation/curvature correction
   double precision, save :: ccazd
-  !> scale of turbulent length
+
+  !> is a characteristic macroscopic
+  !> length of the domain, used for the initialisation of the turbulence and
+  !> the potential clipping (with \ref iclkep=1)
+  !>  - Negative value: not initialised (the code then uses the cubic root of
+  !> the domain volume).
+  !>
+  !> Useful if and only if \ref turb = 20, 21, 30, 31, 50 or 60 (RANS models)
   double precision, save :: almax
-  !> reference velocity
+
+  !> the characteristic flow velocity,
+  !> used for the initialisation of the turbulence.
+  !> Negative value: not initialised.
+  !>
+  !> Useful if and only if \ref iturb= 20, 21, 30, 31, 50 or 60 (RANS model)
+  !> and the turbulence is not initialised somewhere
+  !> else (restart file or subroutine \ref cs\_user\_initialization)
   double precision, save :: uref
+
   !> mixing length for the mixing length model
+  !>
+  !> Useful if and only if \ref iturb= 10 (mixing length)
   double precision, save :: xlomlg
+
   !> constant used in the definition of LES filtering diameter:
   !> \f$ \delta = \text{xlesfl} . (\text{ales} . volume)^{\text{bles}} \f$
   double precision, save :: xlesfl
-  !> constant used in the definition of LES filtering diameter \f$ \delta \f$
+
+  !> constant used to define, for each cell \f$\Omega_i\f$,
+  !> the width of the (implicit) filter:
+  !>  - \f$\overline{\Delta}=xlesfl(ales*|\Omega_i|)^{bles}\f$
+  !>
+  !> Useful if and only if \ref iturb = 40 or 41.
   double precision, save :: ales
-  !> constant used in the definition of LES filtering diameter \f$ \delta \f$
+
+  !> constant used to define, for each cell $\Omega_i$,
+  !>
+  !> the width of the (implicit) filter:
+  !>  - \f$\overline{\Delta}=xlesfl(ales*|\Omega_i|)^{bles}\f$
+  !>
+  !> Useful if and only if \ref iturb = 40 or 41
   double precision, save :: bles
-  !> Smagorinsky constant. In theory Smagorinsky constant is 0.18.
+
+  !> Smagorinsky constant used in the Smagorinsky model for LES.
+  !> The sub-grid scale viscosity is calculated by
+  !> \f$\displaystyle\mu_{sg}=
+  !> \rho C_{smago}^2\bar{\Delta}^2\sqrt{2\bar{S}_{ij}\bar{S}_{ij}}\f$
+  !> where \f$\bar{\Delta}\f$ is the width of the filter
+  !>  and \f$\bar{S}_{ij}\f$ the filtered strain rate.
+  !>
+  !> Useful if and only if \ref iturb = 40
+  !> \note In theory Smagorinsky constant is 0.18.
   !> For a planar canal plan, 0.065 value is rather taken.
   double precision, save :: csmago
+
   !> ratio between
   !> explicit and explicit filter width for a dynamic model
+  !> constant used to define, for each cell \f$\Omega_i\f$,
+  !> the width of the explicit filter used in the framework of
+  !> the LES dynamic model:
+  !> \f$\widetilde{\overline{\Delta}}=xlesfd\overline{\Delta}\f$.
+  !>
+  !> Useful if and only if \ref iturb = 41
   double precision, save :: xlesfd
-  !> Maximal desired Smagorinsky constatnt (e.g. 10 times \c csmago)
+
+  !> maximum allowed value for the variable \f$C\f$ appearing in the LES dynamic
+  !> model (the "square" comes from the fact that the
+  !> variable of the dynamic model corresponds to the square of the
+  !> constant of the Smagorinsky model).
+  !> Any larger value yielded by the calculation
+  !> procedure of the dynamic model will be clipped to \f$ smagmx^2\f$.
+  !>
+  !> Useful if and only if \ref iturb = 41
   double precision, save :: smagmx
-  !> Van Driest constant in \f$ (1-\exp^{(-y^+/cdries}) \f$.
-  !> (the Van Driest damping is activated  when \c idries=1).
+
+  !> van Driest constant appearing in the van Driest damping function
+  !> applied to the Smagorinsky constant:
+  !>  - \f$ (1-\exp^{(-y^+/cdries}) \f$.
+  !>
+  !> Useful if and only if \ref iturb = 40 or 41
   double precision, save :: cdries
+
   !> minimal control volume
   double precision, save :: volmin
   !> maximal control volume
   double precision, save :: volmax
   !> total domain volume
   double precision, save :: voltot
-  !> constant of the v2f "\f$ \phi \f$-model" (\f$ \overline{f} \f$-bar)
+
+  !> constant \f$a_1\f$ for the v2f \f$\varphi\f$-model.
+  !> Useful if and only if \ref iturb=50
+  !> (v2f \f$\varphi\f$-model)
   double precision, save :: cv2fa1
-  !> constant of the v2f "\f$ \phi \f$-model" (\f$ \overline{f} \f$-bar)
+
+  !> constant \f$C_{\varepsilon 2}\f$ for the v2f \f$\varphi\f$-model.
+  !> Useful if and only if \ref iturb=50
+  !> (v2f \f$\varphi\f$-model)
   double precision, save :: cv2fe2
-  !> constant of the v2f "\f$ \phi \f$-model" (\f$ \overline{f} \f$-bar)
+
+  !> constant \f$C_\mu\f$ for the v2f \f$\varphi\f$-model.
+  !> Useful if and only if \ref iturb=50
+  !> (v2f \f$\varphi\f$-model)
   double precision, save :: cv2fmu
-  !> constant of the v2f "\f$ \phi \f$-model" (\f$ \overline{f} \f$-bar)
+
+  !> constant \f$C_1\f$ for the v2f \f$\varphi\f$-model.
+  !> Useful if and only if \ref iturb=50
+  !> (v2f \f$\varphi\f$-model)
   double precision, save :: cv2fc1
-  !> constant of the v2f "\f$ \phi \f$-model" (\f$ \overline{f} \f$-bar)
+
+  !> constant \f$C_2\f$ for the v2f \f$\varphi\f$-model.
+  !> Useful if and only if \ref iturb=50
+  !> (v2f \f$\varphi\f$-model)
   double precision, save :: cv2fc2
-  !> constant of the v2f "\f$ \phi \f$-model" (\f$ \overline{f} \f$-bar)
+
+  !> constant \f$C_T\f$ for the v2f \f$\varphi\f$-model.
+  !> Useful if and only if \ref iturb=50
+  !> (v2f \f$\varphi\f$-model)
   double precision, save :: cv2fct
-  !> constant of the v2f "\f$ \phi \f$-model" (\f$ \overline{f} \f$-bar)
+
+  !> constant \f$C_L\f$ for the v2f \f$\varphi\f$-model.
+  !> Useful if and only if \ref iturb=50
+  !> (v2f \f$\varphi\f$-model)
   double precision, save :: cv2fcl
-  !> constant of the v2f "\f$ \phi \f$-model" (\f$ \overline{f} \f$-bar)
+
+  !> constant \f$C_\eta\f$ for the v2f \f$\varphi\f$-model.
+  !> Useful if and only if \ref iturb=50
+  !> (v2f \f$\varphi\f$-model)
   double precision, save :: cv2fet
+
   !> constant of the WALE LES method
   double precision, save :: cwale
   !> coefficient of turbulent AFM flow model

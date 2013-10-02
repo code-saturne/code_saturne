@@ -44,7 +44,7 @@
 !> \param[in]     coopts
 !> \param[in]     djppts
 !> \param[in]     pndpts
-!> \param[in]     rvdis
+!> \param[in,out] rvdis
 !> \param[in]     dofpts
 !______________________________________________________________________________
 

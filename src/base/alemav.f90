@@ -41,7 +41,6 @@
 !> \param[in]     ialtyb        ALE Boundary type
 !> \param[in,out] rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
-!> \param[in]     coefa, coefb  boundary conditions
 !> \param[in,out] depale        nodes displacements
 !> \param[in,out] xyzno0        nodes coordinates of the initial mesh
 !_______________________________________________________________________________

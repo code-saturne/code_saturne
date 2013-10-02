@@ -46,8 +46,8 @@
 !> \param[in]     pvara         variable value at time step beginning
 !> \param[in]     smcelp        value of the variable associated with mass source
 !> \param[in]     gamma         flow mass value
-!> \param[in]     tsexp         explicit source term part linear in the variable
-!> \param[in]     tsimp         associated value withr \ref tsexp
+!> \param[in,out] tsexp         explicit source term part linear in the variable
+!> \param[in,out] tsimp         associated value withr \ref tsexp
 !>                              to be stored in the matrix
 !> \param[out]    gapinj        explicit source term part independant
 !>                              of the variable

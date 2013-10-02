@@ -36,15 +36,15 @@
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     ncofab        total number of couples coefa/b for bound cond
-!> \param[in]     dt            time step value
-!> \param[in]     tpucou        velocity-pressure coupling
-!> \param[in]     rtp           calculation variables at cells center
-!> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfb        physical properties at boundary face centers
-!> \param[in]     coefa         boundary conditions for boundary faces
-!> \param[in]     coefb         boundary conditions for boundary faces
-!> \param[in]     frcxt         external stress generating hydrostatic pressure
-!> \param[in]     prhyd         hydrostatic pressure predicted
+!> \param[out]    dt            time step value
+!> \param[out]    tpucou        velocity-pressure coupling
+!> \param[out]    rtp           calculation variables at cells center
+!> \param[out]    propce        physical properties at cell centers
+!> \param[out]    propfb        physical properties at boundary face centers
+!> \param[out]    coefa         boundary conditions for boundary faces
+!> \param[out]    coefb         boundary conditions for boundary faces
+!> \param[out]    frcxt         external stress generating hydrostatic pressure
+!> \param[out]    prhyd         hydrostatic pressure predicted
 !______________________________________________________________________________
 
 subroutine iniva0 &

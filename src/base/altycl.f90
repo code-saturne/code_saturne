@@ -31,22 +31,38 @@
 !   mode          name          role
 !------------------------------------------------------------------------------
 !> \param[in]     itypfb        boundary face types
-!> \param[in]     ialtyb        boundary face types for ALE
-!> \param[in,out] icodcl        boundary conditions codes for faces
-!>                              - = 1 -> dirichlet
-!>                              - = 3 -> flux density
-!> \param[in]     impale        imposed displacement indicator
+!> \param[in,out] ialtyb        boundary face types for ALE
+!> \param[in,out] icodcl        face boundary condition code:
+!>                               - 1 Dirichlet
+!>                               - 2 Radiative outlet
+!>                               - 3 Neumann
+!>                               - 4 sliding and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 5 smooth wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 6 rought wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 9 free inlet/outlet
+!>                                 (input mass flux blocked to 0)
+!>                               - 13 Dirichlet for the advection operator and
+!>                                    Neumann for the diffusion operator
+!> \param[in,out] impale        imposed displacement indicator
 !> \param[in]     dt            time step (per cell)
-!> \param[in,out] rcodcl        boundary conditions values for boundary faces
-!>                              - rcodcl(1) = dirichlet value
-!>                              - rcodcl(2) = exchange coefficient value
-!>                                 ext. (infinite si no exchange)
-!>                              - rcodcl(3) = flow density value
-!>                                          (negative if gain) w/m2
-!>                              for velocity : (vistl+visct)*gradu
-!>                              for pressure :            dt*gradp
-!>                              for scalars  : cp*(viscls+visct/sigmas)*gradt
-!> \param[in]     depale        nodes displacement
+!> \param[in,out] rcodcl        boundary condition values:
+!>                               - rcodcl(1) value of the dirichlet
+!>                               - rcodcl(2) value of the exterior exchange
+!>                                 coefficient (infinite if no exchange)
+!>                               - rcodcl(3) value flux density
+!>                                 (negative if gain) in w/m2 or roughtness
+!>                                 in m if icodcl=6
+!>                                 -# for the velocity \f$ (\mu+\mu_T)
+!>                                    \gradv \vect{u} \cdot \vect{n}  \f$
+!>                                 -# for the pressure \f$ \Delta t
+!>                                    \grad P \cdot \vect{n}  \f$
+!>                                 -# for a scalar \f$ cp \left( K +
+!>                                     \dfrac{K_T}{\sigma_T} \right)
+!>                                     \grad T \cdot \vect{n} \f$
+!> \param[in,out] depale        nodes displacement
 !> \param[in]     xyzno0        initial mesh nodes coordinates
 !______________________________________________________________________________
 

@@ -39,7 +39,7 @@
 !> \param[in]     coefav
 !> \param[in]     coefbv
 !> \param[in]     coopts
-!> \param[in]     rvdis
+!> \param[out]    rvdis
 !______________________________________________________________________________
 
 subroutine cspcev &

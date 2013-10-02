@@ -64,6 +64,7 @@ module cplsat
   !> Current absolute time after the mesh starts to rotate (if it does).
   !> In case of restart, this is equal to ttpmob + additional computed time.
   double precision, save :: ttcmob
+  !> \}
 
   !=============================================================================
 

@@ -57,8 +57,8 @@
 !> \param[in]     statce        cells statistics (lagrangian)
 !> \param[in]     stativ        cells variance statistics (lagrangian)
 !> \param[in]     statfb        boundary faces statistics (lagrangian)
-!> \param[in]     tracel        post processing cell real values
-!> \param[in]     trafbr        post processing boundary faces real values
+!> \param[in,out] tracel        post processing cell real values
+!> \param[in,out] trafbr        post processing boundary faces real values
 !______________________________________________________________________________
 
 subroutine dvvpst &

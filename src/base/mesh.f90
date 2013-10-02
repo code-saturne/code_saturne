@@ -36,7 +36,7 @@ module mesh
   !> \addtogroup mesh
   !> \{
 
-  !< spatial dimension
+  !< spatial dimension (3)
   integer :: ndim
   parameter(ndim=3)
 
@@ -67,7 +67,7 @@ module mesh
   integer, save :: lndfbr
 
   !< Number of referenced families of entities (boundary faces, elements, ...)
-  integer, save :: nfml    !< number of families (group classes)
+  integer, save :: nfml
 
   !< Index-numbers of the two (only) neighbouring cells for each internal face
   integer, dimension(:,:), pointer :: ifacel

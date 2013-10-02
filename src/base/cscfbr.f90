@@ -32,21 +32,20 @@
 !   mode          name          role
 !------------------------------------------------------------------------------
 !> \param[in]     nscal         total number of scalars
-!> \param[out]    icodcl        defines the type of boundary condition for the
-!>                              variable ivar on the face
-!>                              - = 1: Dirichlet condition at the face
-!>                              - = 3: flux condition at the face
-!>                              - = 4: symmetry condition, for the symmetry
-!>                              faces or wall faces without friction.
-!>                              Only used for velocity components
-!>                              - = 5: friction condition, for wall faces
-!>                              with friction. This condition can not be applied
-!>                              to the pressure.
-!>                              - = 6: friction condition, for the rough-wall
-!>                              faces with friction. This condition can not be
-!>                              used with the pressure.
-!>                              - = 9: free outlet condition for the
-!>                              velocity. Only applicable to velocity components
+!> \param[in]     icodcl        face boundary condition code:
+!>                               - 1 Dirichlet
+!>                               - 2 Radiative outlet
+!>                               - 3 Neumann
+!>                               - 4 sliding and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 5 smooth wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 6 rought wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 9 free inlet/outlet
+!>                                 (input mass flux blocked to 0)
+!>                               - 13 Dirichlet for the advection operator and
+!>                                    Neumann for the diffusion operator
 !> \param[in]     itypfb        boundary face types
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     rtp           calculated variables at cell centers
@@ -54,21 +53,20 @@
 !> \param[in]     propce        physical properties at cell centers
 !> \param[in]     coefa         boundary condition
 !> \param[in]     coefb         boundary condition
-!> \param[out]    rcodcl        gives the numerical values associated with the
-!>                              type of boundary condition
-!>                              (value of the Dirichlet, of the flux ...).
-!>                              - rcodcl(1) = Dirichlet value
-!>                              - rcodcl(2) = value of the exchange coefficient
-!>                                between the outside and the fluid. Infinite
-!>                                value indicates an ideal transfer(default case)
-!>                              - rcodcl(3):
-!>                                - if icodcl=6: rugosity height (m)
-!>                                - else value of flux density (w/m2).
-!>                                            (negative if gain)
-!>                              - for velocity: (vistl+visct)*gradu
-!>                              - for pressure:             dt*gradp
-!>                              - for scalars:  cp*(viscls+visct/sigmas)*gradt
-!>
+!> \param[in]     rcodcl        boundary condition values:
+!>                               - rcodcl(1) value of the dirichlet
+!>                               - rcodcl(2) value of the exterior exchange
+!>                                 coefficient (infinite if no exchange)
+!>                               - rcodcl(3) value flux density
+!>                                 (negative if gain) in w/m2 or roughtness
+!>                                 in m if icodcl=6
+!>                                 -# for the velocity \f$ (\mu+\mu_T)
+!>                                    \gradv \vect{u} \cdot \vect{n}  \f$
+!>                                 -# for the pressure \f$ \Delta t
+!>                                    \grad P \cdot \vect{n}  \f$
+!>                                 -# for a scalar \f$ cp \left( K +
+!>                                     \dfrac{K_T}{\sigma_T} \right)
+!>                                     \grad T \cdot \vect{n} \f$
 !______________________________________________________________________________
 
 subroutine cscfbr &

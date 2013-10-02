@@ -36,9 +36,9 @@
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     ncofab        nombre de couples coefa/b pour les cl
 !> \param[in]     dt            valeur du pas de temps
-!> \param[in]     rtp           variables de calcul au centre des
+!> \param[in,out] rtp           variables de calcul au centre des
 !>                              cellules
-!> \param[in]     propce        physical properties at cell centers
+!> \param[in,out] propce        physical properties at cell centers
 !> \param[in]     propfb        physical properties at boundary face centers
 !> \param[in]     coefa         boundary condition for boundary faces
 !> \param[in]     coefb         boundary condition for boundary faces

@@ -123,8 +123,13 @@ module ppthch
   !> Absorption coefficient of gas mixture
   double precision, save ::  ckabs1
 
-  !> dynamic viscosity
+  !> molecular diffusivity for the enthalpy (\f$kg.m^{-1}.s^{-1}\f$)
+  !> for gas or coal combustion (the code then automatically sets
+  !> \ref visls0 to \ref diftl0 for the scalar representing the enthalpy).
+  !>
+  !> Always useful for gas or coal combustion.
   double precision, save ::  diftl0
+
   !> Molar coefficient of CO2
   double precision, save ::  xco2
   !> Molar coefficient of H2O
