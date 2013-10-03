@@ -112,22 +112,22 @@ double precision rayst(kmx),romray(kmx)
 ! Local variables
 
 integer i,k,n,l,inua,k1p1,iaer
-integer itop,ibase,itopp1,itopp2,ibasem1,nbjour
+integer itop,ibase,itopp1,itopp2,ibasem1
 double precision muzero,fo,rr1,m,mbar,rabar,rabar2,rbar
 double precision rabarc,rabar2c,rbarc
 double precision qqvtot,ym1,y,ystarm1,ystar
 double precision zqm1,zq,xm1,x,xstar,xstarm1,fabs
-double precision utgpic,utpic,rrbar,rrbar2s,foo3,foo3c,foh2o
+double precision rrbar,rrbar2s,foo3,foo3c,foh2o
 double precision tauctot,wh2ol,rm,req,deltaz
-double precision extlnp,extlnm,pioc,zbas,dud1,dud2
-double precision gasym,drt,uln,tln,drtt1,drtt2,dtrb1,dtrb2
-double precision kn(8),pkn(8),dowtot1,dowtot2,dqqv
+double precision extlnp,extlnm,pioc,zbas,dud1
+double precision gasym,drt,tln,drtt1,dtrb1
+double precision kn(8),pkn(8),dowtot1,dqqv
 double precision zaero,reaero,piaero,gaero,caero
 double precision cphum,qureel
-double precision waero,xlwa,taua(kmx+1),tauatot
+double precision waero,taua(kmx+1),tauatot
 double precision rabara,rabar2a,rbara,raero
-double precision gama,xro,niaer,nraer,muo
-double precision s3,beta1,gama1,gama2,kt,gas,fas
+double precision niaer,nraer
+double precision s3,gama1,gama2,kt,gas,fas
 
 double precision, allocatable:: fabsh2o(:),fabso3(:),tauc(:)
 double precision, allocatable:: tau(:,:),pic(:,:),ref(:,:)
@@ -159,6 +159,8 @@ allocate(fnebmax(kmx+1),fneba(kmx+1))
 
 inua = 0
 iaer = 0
+ibase = 0
+
 do k = 1,kmray
   if(qlray(k).gt.1.d-8.or.aeroso(k).gt.1.d-8) inua = 1
   if(aeroso(k).gt.1.d-10) iaer = 1

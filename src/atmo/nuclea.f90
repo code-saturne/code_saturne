@@ -103,6 +103,10 @@ double precision , parameter :: rhoeau=1000. ! kg/m**3
 ! ===============================================================================
 
 cp     = cp0
+constc = 0.d0
+constk = 0.d0
+fbeta  = 0.d0
+nuc    = 0.d0
 
 if (modnuc.eq.1) then
   !  Const. pour le modele de Pruppacher et Klett (1997)

@@ -62,7 +62,7 @@ double precision dlrki(nrg),dlrkf(nrg)
 
 ! Local variables
 
-integer ji, jj, ii
+integer ji, jj
 double precision dlconcbis(nespg)
 ! chemical production terms for every species
 double precision dlr(nespg)

@@ -81,14 +81,13 @@ double precision propce(ncelet,*)
 double precision rtp(ncelet,*),rtpa(ncelet,*)
 
 ! Local variables
-integer iel, k, ii, jj
+integer k, ii, jj
 integer k1
 integer iico2,imer1
 integer ideb, icompt
 integer kmray, ktamp
 
 double precision heuray, albedo, emis, foir, fos
-double precision hrmax,esat,qsat,qseuil
 double precision xvert, yvert
 double precision zrac,fpond,rap,tmoy,rhum,dum
 

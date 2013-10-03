@@ -109,7 +109,7 @@ double precision qldia,qw
 double precision epsrgp, climgp, extrap
 double precision xk, xeps, visct, ttke, rho
 
-double precision xent,yent,zent,dum
+double precision dum
 double precision, allocatable, dimension(:,:) :: grad
 
 !===============================================================================

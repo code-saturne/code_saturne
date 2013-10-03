@@ -80,7 +80,7 @@ double precision etheta,eq
 ! Variables locales
 
 double precision cp,lscp,beta1,a,alpha1
-double precision c2,tl,qsl,de,alpha2,beta2,qs,qlref
+double precision tl,qsl,de,alpha2,beta2,qs
 double precision rn,dd,aa,theta,t,q
 
 ! Declaration des fonctions

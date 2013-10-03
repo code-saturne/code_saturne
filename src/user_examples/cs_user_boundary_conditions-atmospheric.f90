@@ -503,16 +503,14 @@ double precision rcodcl(nfabor,nvarcl,3)
 ! Local variables
 
 !< [loc_var_dec]
-integer          ifac, iel, ii, ivar
+integer          ifac, ii
 integer          izone
 integer          ilelt, nlelt
-double precision uref2, d2s3
-double precision rhomoy, ustar2
-double precision zref,xuref
-double precision ustar,rugd, rugt
-double precision zent,xuent,xvent
+double precision d2s3
+double precision zref, xuref
+double precision ustar, rugd, rugt
+double precision zent, xuent, xvent
 double precision xkent, xeent
-double precision tpent
 
 integer, allocatable, dimension(:) :: lstelt
 !< [loc_var_dec]
@@ -528,10 +526,10 @@ allocate(lstelt(nfabor))  ! temporary array for boundary faces selection
 d2s3 = 2.d0/3.d0
 
 ! Paremeters for the analytical rough wall law (neutral)
-zref=10.d0
-xuref=10.d0
-rugd=0.1d0
-rugt=0.1d0
+zref = 10.d0
+xuref = 10.d0
+rugd = 0.1d0
+rugt = 0.1d0
 
 !===============================================================================
 ! Assign boundary conditions to boundary faces here

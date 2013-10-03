@@ -69,8 +69,7 @@ use atincl !defines rvsra
 !-------------------------------------------------------------------------------
 
 implicit none
-double precision t,p
-double precision esat
+double precision t
 
 !***********************************************************************
 

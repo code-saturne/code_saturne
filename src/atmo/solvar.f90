@@ -100,7 +100,7 @@ double precision rom(ncelet),dt(ncelet)
 
 !... declaration des variables internes
 
-integer ifac,iel,ifml,icoul,isol
+integer ifac,iel,isol
 double precision rcodcx, rcodcy, rcodcz, rcodsn
 double precision rnx, rny, rnz
 double precision tx, ty, tz, txn
@@ -111,7 +111,7 @@ double precision zreel
 double precision b,c,d,tau1,precip,evapor,albedo
 double precision emis,csol,veg,c1w,c2w,z0t,tprof
 double precision act,rib,fh,fhden,rscp1,rscp2
-double precision pres1,pres2,tpot1,tpot2,tpotv1,tpotv2
+double precision pres1,tpot1,tpot2,tpotv1,tpotv2
 double precision cphum,cht,chq,tsplus,qvsplu,w1plus,w2plus
 double precision w1num,w1den,w2num,w2den
 double precision hu,esat,cstder,qsat,dqsat,rapsat

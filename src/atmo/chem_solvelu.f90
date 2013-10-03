@@ -20,7 +20,7 @@
 
 !-------------------------------------------------------------------------------
 
-!> \file solvlin_SparseLU.f90
+!> \file chem_solvelu.f90
 !> \brief Solver of AX=B with LU decomposition of A for atmospheric chemical
 !>        systems
 !>

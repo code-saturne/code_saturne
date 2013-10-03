@@ -144,16 +144,11 @@ double precision coefa(ndimfb,*), coefb(ndimfb,*)
 ! Local variables
 
 integer          ivart, iclvar, iel
-integer          ipcrom, ipbrom, ipcvis, ipccp, ipctem, ipcliq
-integer          ipcvsl, ith, iscal, ii
-integer          iutile
+integer          ipcrom, ipbrom, ipctem, ipcliq
 
-double precision vara, varb, varc, varam, varbm, varcm, vardm
-double precision                   varal, varbl, varcl, vardl
-double precision                   varac, varbc
 double precision xrtp, rhum, rscp, pp, zent
 double precision lrhum, lrscp
-double precision qsl, esat, deltaq
+double precision qsl, deltaq
 double precision qliq, qwt, tliq, dum
 
 logical activate
@@ -168,7 +163,7 @@ external qsatliq
 ! 0. INITIALISATIONS A CONSERVER
 !===============================================================================
 
-activate = .FALSE.
+activate = .false.
 
 ! Initialize variables to avoid compiler warnings
 
@@ -514,7 +509,6 @@ integer    icltpp
 integer    iivar
 integer    imligp
 integer    inc
-integer    iphydp
 integer    itpp
 integer    iwarnp
 integer    nswrgp
@@ -563,7 +557,6 @@ integer    iclqw
 integer    iivar
 integer    imligp
 integer    inc
-integer    iphydp
 integer    iqw
 integer    iwarnp
 integer    nswrgp

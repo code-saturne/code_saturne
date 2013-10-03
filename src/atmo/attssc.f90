@@ -104,7 +104,6 @@ implicit none
 
 integer          nvar   , nscal
 integer          ncepdp , ncesmp
-integer          nideve , nrdeve , nituse , nrtuse
 integer          iscal
 
 integer          itypfb(nfabor)
@@ -123,7 +122,7 @@ double precision crvexp(ncelet), crvimp(ncelet)
 character*80     chaine
 integer          ivar, ipcrom, iel
 
-integer ntmax,nzmax,i
+integer i
 double precision pp, dum
 
 double precision, dimension(:), allocatable :: ray3Di, ray3Dst
@@ -136,8 +135,6 @@ integer, save :: treated_scalars=0
 
 double precision, dimension(:), allocatable :: pphy
 double precision, dimension(:), allocatable :: refrad
-
-double precision ddd11,ddd12,ddd13,ddd21,ddd22,ddd23
 
 !===============================================================================
 !===============================================================================
@@ -322,8 +319,6 @@ endif! ( ippmod(iatmos).eq.2 ) then ! for humid atmosphere physics only
 ! FORMATS
 !--------
 
-1000 format(                                                           &
-     '  Calcul des termes sources pour la variable : ',A8             )
 return
 contains
 
@@ -388,7 +383,6 @@ integer    iccocg
 integer    iivar
 integer    imligp
 integer    inc
-integer    iphydp
 integer    iqpp
 integer    iwarnp
 integer    nswrgp
@@ -477,7 +471,6 @@ integer    iccocg
 integer    iivar
 integer    imligp
 integer    inc
-integer    iphydp
 integer    iqpp
 integer    iwarnp
 integer    nswrgp

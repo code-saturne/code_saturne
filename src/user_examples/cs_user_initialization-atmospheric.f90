@@ -93,7 +93,7 @@ double precision propfb(nfabor,*)
 ! Local variables
 
 !< [loc_var_dec]
-integer          iel, iutile
+integer          iel
 double precision d2s3
 double precision zent,xuent,xvent,xkent,xeent,tpent
 

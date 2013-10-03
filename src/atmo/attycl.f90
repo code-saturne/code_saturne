@@ -96,7 +96,7 @@ implicit none
 ! Arguments
 
 integer          icodcl(nfabor,nvarcl)
-integer          itrifb(nfabor), itypfb(nfabor)
+integer          itypfb(nfabor)
 integer          izfppp(nfabor)
 
 double precision dt(ncelet)

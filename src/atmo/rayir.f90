@@ -147,7 +147,8 @@ allocate(kliq(kmx))
 
 !   0- initialisations locales
 !   --------------------------
-
+xqqlinf = 0.d0
+taul = 0.d0
 sig = stephn ! Bolztman constant 5.6703d-8
 
 do n = 1, kmx

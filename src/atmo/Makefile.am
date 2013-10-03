@@ -63,6 +63,10 @@ attycl.f90 \
 atr1vf.f90 \
 attssc.f90 \
 atvarp.f90 \
+chem_luscheme1.f90 \
+chem_luscheme2.f90 \
+chem_luscheme3.f90 \
+chem_solvelu.f90 \
 etheq.f90  \
 intprf.f90 \
 kinrates.f90 \
@@ -75,14 +79,10 @@ rayive.f90 \
 rayso.f90 \
 raysze.f90 \
 roschem.f90 \
-scheme1_SparseLU.f90 \
-scheme2_SparseLU.f90 \
-scheme3_SparseLU.f90 \
 solcat.f90 \
 soliva.f90 \
 solmoy.f90 \
 solvar.f90 \
-solvlin_SparseLU.f90 \
 stchim.f90
 
 libcsatmo_la_LDFLAGS = -no-undefined

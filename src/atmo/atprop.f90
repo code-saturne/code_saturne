@@ -80,7 +80,7 @@ integer       ipropp, ipppst
 
 ! Local variables
 
-integer       iprop, ipropc
+integer       iprop
 
 !===============================================================================
 ! 1. POSITIONNEMENT DES PROPRIETES : PROPCE, PROPFB

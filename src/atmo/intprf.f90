@@ -61,7 +61,7 @@ implicit none
 
 ! Arguments
 
-integer          nprofz, nprofv, nproft
+integer          nprofz, nproft
 double precision profz(nprofz), proft(nproft)
 double precision profv(nprofz,nproft)
 double precision xz, temps, var
