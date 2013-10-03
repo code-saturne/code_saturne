@@ -204,13 +204,13 @@ if (ipcvsv.gt.0) then
     trgdru = gradv(iel, 1, 1)+gradv(iel, 2, 2)+gradv(iel, 3, 3)
 
     sigma(1, 1) = mu * 2.d0*gradv(iel, 1, 1)  &
-                - (kappa-2.d0/3.d0)*trgdru
+                + (kappa-2.d0/3.d0*mu)*trgdru
 
     sigma(2, 2) = mu * 2.d0*gradv(iel, 2, 2)  &
-                - (kappa-2.d0/3.d0)*trgdru
+                + (kappa-2.d0/3.d0*mu)*trgdru
 
     sigma(3, 3) = mu * 2.d0*gradv(iel, 3, 3)  &
-                - (kappa-2.d0/3.d0)*trgdru
+                + (kappa-2.d0/3.d0*mu)*trgdru
 
     sigma(1, 2) = mu * (gradv(iel, 1, 2) + gradv(iel, 2, 1))
     sigma(2, 1) = sigma(1, 2)
@@ -240,13 +240,13 @@ else
     trgdru = gradv(iel, 1, 1)+gradv(iel, 2, 2)+gradv(iel, 3, 3)
 
     sigma(1, 1) = mu * 2.d0*gradv(iel, 1, 1)  &
-                - (kappa-2.d0/3.d0)*trgdru
+                + (kappa-2.d0/3.d0*mu)*trgdru
 
     sigma(2, 2) = mu * 2.d0*gradv(iel, 2, 2)  &
-                - (kappa-2.d0/3.d0)*trgdru
+                + (kappa-2.d0/3.d0*mu)*trgdru
 
     sigma(3, 3) = mu * 2.d0*gradv(iel, 3, 3)  &
-                - (kappa-2.d0/3.d0)*trgdru
+                + (kappa-2.d0/3.d0*mu)*trgdru
 
     sigma(1, 2) = mu * (gradv(iel, 1, 2) + gradv(iel, 2, 1))
     sigma(2, 1) = sigma(1, 2)
