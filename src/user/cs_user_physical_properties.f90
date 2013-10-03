@@ -2385,3 +2385,73 @@ endif ! --- Test on .false.
 
 return
 end subroutine usvima
+
+!===============================================================================
+! Purpose:
+! -------
+
+!> usatph
+!> \brief User subroutine dedicated to modifie physical properties of the
+!>        atmospheric module
+!>
+!> This subroutine is called at beginning of each time step at the end of
+!> atphyv.
+!
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     propce        physical properties at cell centers
+!_______________________________________________________________________________
+
+subroutine usatph &
+   (propce)
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use dimens, only: ndimfb
+use pointe
+use numvar
+use optcal
+use cstphy
+use entsor
+use parall
+use period
+use albase
+use field
+use mesh
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+double precision propce(ncelet,*)
+
+! Local variables
+
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
+!===============================================================================
+
+if (1.eq.1) return
+
+!===============================================================================
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
+
+!----
+! Formats
+!----
+
+!----
+! End
+!----
+
+return
+end subroutine usatph

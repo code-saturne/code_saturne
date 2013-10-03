@@ -267,6 +267,8 @@ if (ippmod(iatmos).ge.2) then ! humid atmosphere physics
   endif
 endif ! (ippmod(iatmos).ge.2)
 
+! User re-definition:
+call usatph (propce)
 
 !===============================================================================
 ! FORMATS
@@ -588,3 +590,4 @@ call grdcel                                                     &
 
 end subroutine grad_qw
 end subroutine atphyv
+
