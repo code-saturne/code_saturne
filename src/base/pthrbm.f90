@@ -24,7 +24,7 @@ subroutine pthrbm &
 !================
 
  ( nvar   , ncesmp ,                                              &
-   dt     , propce , propfb , smacel )
+   dt     , smacel )
 
 !===============================================================================
 ! FONCTION :
@@ -41,10 +41,6 @@ subroutine pthrbm &
 ! nvar             ! e  ! <-- ! nombre total de variables                      !
 ! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
 ! dt(ncelet)       ! tr ! <-- ! pas de temps                                   !
-! propce           ! tr ! <-- ! proprietes physiques au centre des             !
-! (ncelet,*)       !    !     !    cellules                                    !
-! propfb           ! tr ! <-- ! proprietes physiques au centre des             !
-!  (nfabor,*)      !    !     !    faces de bord                               !
 ! smacel           ! ra ! <-- ! value associated to each variable in the mass  !
 !  (ncesmp,nvar)   !    !     !  source terms or mass rate                     !
 !__________________!____!_____!________________________________________________!
@@ -79,15 +75,14 @@ implicit none
 
 integer          nvar   , ncesmp
 
-
 double precision dt(ncelet)
-double precision propce(ncelet,*), propfb(nfabor,*)
 double precision smacel(ncesmp,nvar)
 
 ! VARIABLES LOCALES
 
+logical          lromo
+
 integer          iel , ifac, ieltsm
-integer          ipcrom, ipcroa, ipbrom
 
 integer          iflmab
 
@@ -97,6 +92,7 @@ double precision debt
 double precision debin, debout, debtot
 
 double precision, dimension(:), pointer :: bmasfl
+double precision, dimension(:), pointer :: brom, crom, cromo
 
 !===============================================================================
 
@@ -108,9 +104,16 @@ double precision, dimension(:), pointer :: bmasfl
 
 !   pointers for the different variables
 
-ipcrom = ipproc(irom)
-ipcroa = ipproc(iroma)
-ipbrom = ipprob(irom)
+call field_get_val_s(icrom, crom)
+
+call field_have_previous(icrom, lromo)
+if (lromo) then
+  call field_get_val_prev_s(icrom, cromo)
+else
+  call field_get_val_s(icrom, cromo)
+endif
+
+call field_get_val_s(ibrom, brom)
 
 call field_get_key_int(ivarfl(ipr), kbmasf, iflmab)
 call field_get_val_s(iflmab, bmasfl)
@@ -160,7 +163,7 @@ endif
 ! for the first time step : rho^(n-1) = rho^(n)
 if (isuite.eq.0 .and. ntcabs.eq.1) then
   do iel = 1, ncel
-    propce(iel,ipcroa) = propce(iel,ipcrom)
+    cromo(iel) = crom(iel)
   enddo
 endif
 
@@ -169,8 +172,8 @@ ro0amoy = 0.d0
 ro0moy  = 0.d0
 
 do iel = 1, ncel
- ro0amoy = ro0amoy + propce(iel,ipcroa)*volume(iel)
- ro0moy  = ro0moy  + propce(iel,ipcrom)*volume(iel)
+ ro0amoy = ro0amoy + cromo(iel)*volume(iel)
+ ro0moy  = ro0moy  + crom(iel)*volume(iel)
 enddo
 
 if (irangp.ge.0) then
@@ -183,13 +186,13 @@ pther = pthera*(ro0amoy + dt(1)*debtot)/ro0moy
 
 ! Actualize the density rho[p_ther^(n+1)] = rho^(n+1)
 do iel = 1, ncel
-  propce(iel,ipcrom) = pther/pthera*propce(iel,ipcrom)
+  crom(iel) = pther/pthera*crom(iel)
 enddo
 
 ! Update the density at the boundary face
 do ifac = 1, nfabor
   iel = ifabor(ifac)
-  propfb(ifac,ipbrom) = propce(iel,ipcrom)
+  brom(ifac) = crom(iel)
 enddo
 
 !===============================================================================
@@ -200,7 +203,7 @@ enddo
 ro0moy = 0.d0
 
 do iel=1,ncel
-  ro0moy = ro0moy + propce(iel,ipcrom)*volume(iel)
+  ro0moy = ro0moy + crom(iel)*volume(iel)
 enddo
 
 if (irangp.ge.0) then

@@ -66,14 +66,11 @@
 !>                               - 0 iterative gradient
 !>                               - 1 least square gradient
 !> \param[in]     ippu          index of the variable for post-processing
-!> \param[in]     ippv          index of the variable for post-processing
-!> \param[in]     ippw          index of the variable for post-processing
 !> \param[in]     iwarnp        verbosity
 !> \param[in]     epsrgp        relative precision for the gradient
 !>                               reconstruction
 !> \param[in]     climgp        clipping coeffecient for the computation of
 !>                               the gradient
-!> \param[in]     extrap        coefficient for extrapolation of the gradient
 !> \param[in]     relaxp        coefficient of relaxation
 !> \param[in]     thetap        weightening coefficient for the theta-schema,
 !>                               - thetap = 0: explicit scheme
@@ -101,9 +98,9 @@
 subroutine diftnv &
  ( idtvar , ivar   , nswrgp , imligp , ircflp ,          &
    inc    , imrgra ,                                     &
-   ippu   , ippv   , ippw   , iwarnp ,                   &
+   ippu   , iwarnp ,                                     &
    epsrgp ,                                              &
-   climgp , extrap , relaxp , thetap ,                   &
+   climgp , relaxp , thetap ,                            &
    pvar   , pvara  ,                                     &
    coefav , coefbv , cofafv , cofbfv ,                   &
    viscf  , viscb  ,                                     &
@@ -133,9 +130,9 @@ integer          idtvar
 integer          ivar   , nswrgp , imligp
 integer          ircflp
 integer          inc    , imrgra
-integer          iwarnp , ippu, ippv, ippw
+integer          iwarnp , ippu
 
-double precision epsrgp , climgp, extrap, relaxp , thetap
+double precision epsrgp , climgp, relaxp , thetap
 
 double precision pvar  (3  ,ncelet)
 double precision pvara (3  ,ncelet)
@@ -154,7 +151,7 @@ integer          ifac,ii,jj,infac,iel, ig, it,isou, jsou
 logical          ilved
 double precision pfacd,flux,fluxi,fluxj, pnd
 double precision pi, pj, pia, pja
-double precision pir,pjr,pipr(3),pjpr(3)
+double precision pir,pipr(3),pjpr(3)
 double precision dpvf(3)
 double precision dijpfv(3)
 double precision diipfv(3), djjpfv(3), pip(3), pjp(3)
@@ -196,7 +193,7 @@ if (ircflp.eq.1) then
   call grdvec &
   !==========
 ( ivar   , imrgra , inc    , nswrgp , imligp ,                   &
-  iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
+  iwarnp , epsrgp , climgp ,                                     &
   ilved  ,                                                       &
   pvar   , coefav , coefbv ,                                     &
   gradv )

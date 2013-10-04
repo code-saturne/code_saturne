@@ -21,7 +21,7 @@
 !-------------------------------------------------------------------------------
 
 subroutine atmsol
-!==================
+!================
 
 !===============================================================================
 ! FONCTION :
@@ -58,18 +58,17 @@ implicit none
 !===============================================================================
 
 ! Local variables
-!-------------------------------------------------------------------
+
 integer          iappel
 integer          error
-!-------------------------------------------------------------------
+
 !===============================================================================
 
-if ( iatsoil.ge.0 ) then
+if (iatsoil.ge.0) then
   ! Premier appel: definition de nfmodsol
   iappel = 1
-  call usatsoil                                                     &
+  call usatsoil(iappel)
   !============
-       ( iappel )
 
   ! On fabrique une table de valeur des constantes utilisees dans le
   ! modele sol
@@ -95,9 +94,8 @@ if ( iatsoil.ge.0 ) then
     endif
 
     iappel = 2
-    call usatsoil                                                     &
+    call usatsoil(iappel)
     !============
-         ( iappel )
 
     ! On definit une structure dediee a la resolution du probleme,
     ! avec presence des constantes  propre a chaque face ainsi que
@@ -123,7 +121,7 @@ if ( iatsoil.ge.0 ) then
 endif ! iatsoil > 0
 
 !----
-! FIN
+! End
 !----
 
 return

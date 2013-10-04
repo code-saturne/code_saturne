@@ -24,7 +24,7 @@ subroutine lecamx &
 !================
 
  ( ncelet , ncel   , nfabor , nvar   , nscal  ,                   &
-   dt     , propce , propfb ,                                     &
+   dt     , propce ,                                              &
    coefa  , coefb  , frcxt  , prhyd  )
 
 !===============================================================================
@@ -55,8 +55,6 @@ subroutine lecamx &
 ! (ncelet,*)       !    !     !    cellules (instant courant        )          !
 ! propce           ! tr ! --> ! proprietes physiques au centre des             !
 ! (ncelet,*)       !    !     !    cellules                                    !
-! propfb           ! tr ! --> ! proprietes physiques au centre des             !
-!  (nfabor,*)      !    !     !    faces de bord                               !
 ! coefa, coefb     ! tr ! --> ! conditions aux limites aux                     !
 !  (nfabor,*)      !    !     !    faces de bord                               !
 ! frcxt(3,ncelet)  ! tr ! --> ! force exterieure generant la pression          !
@@ -95,7 +93,7 @@ use elincl
 use ppcpfu
 use mesh, only: isympa
 use cs_c_bindings
-
+use field
 !===============================================================================
 
 implicit none
@@ -107,7 +105,6 @@ integer          nvar   , nscal
 
 double precision dt(ncelet)
 double precision propce(ncelet,*)
-double precision propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision frcxt(3,ncelet), prhyd(ncelet)
 
@@ -404,8 +401,8 @@ if(irovar.eq.1) then
     itysup = 3
     nbval  = 1
     irtyp  = 2
-    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         propfb(1,ipprob(irom)),ierror)
+    call field_get_val_s(ibrom, sval)
+    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,sval,ierror)
     nberro = nberro+ierror
     inierr = inierr+ierror
   endif

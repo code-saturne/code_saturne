@@ -24,7 +24,7 @@ subroutine grdvec &
 !================
 
  ( ivar   , imrgra , inc    , nswrgp , imligp ,                   &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
+   iwarnp , epsrgp , climgp ,                                     &
    ilved  ,                                                       &
    pvar   , coefav , coefbv ,                                     &
    gradv )
@@ -63,11 +63,9 @@ subroutine grdvec &
 !                  !    !     !  = 0 a partir des gradients voisins            !
 !                  !    !     !  = 1 a partir du gradient moyen                !
 ! iwarnp           ! i  ! <-- ! verbosity                                      !
-! nfecra           ! e  ! <-- ! unite du fichier sortie std                    !
 ! epsrgp           ! r  ! <-- ! precision relative pour la                     !
 !                  !    !     !  reconstruction des gradients 97               !
 ! climgp           ! r  ! <-- ! coef gradient*distance/ecart                   !
-! extrap           ! r  ! <-- ! coef extrap gradient                           !
 ! pvar(3,ncelet)   ! tr ! <-- ! variable (vectorielle)                         !
 ! coefav,coefbv    ! tr ! <-- ! tableaux des cond lim pour pvar                !
 !   (3,nfabor)     !    !     !  sur la normale a la face de bord              !
@@ -94,7 +92,6 @@ use cstphy
 use cstnum
 use albase
 use cplsat
-use dimens, only: ndimfb
 
 !===============================================================================
 
@@ -103,8 +100,8 @@ implicit none
 ! Arguments
 
 integer          ivar   , imrgra , inc    , nswrgp
-integer          imligp ,iwarnp  , nfecra
-double precision epsrgp , climgp , extrap
+integer          imligp , iwarnp
+double precision epsrgp , climgp
 
 double precision pvar(*)
 double precision coefav(*), coefbv(*)

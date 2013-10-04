@@ -67,9 +67,8 @@ BEGIN_C_DECLS
  *                  ( ntcabs,
  *                    nvar,   nscal,  nvlsta, nvisbr,
  *                    nbpmax, nvp, nvp1, nvep, nivep,
- *                    ttcabs,
  *                    itepa,
- *                    dt,     rtpa,   rtp,    propce, propfb,
+ *                    dt,     rtpa,   rtp,    propce,
  *                    coefa,  coefb,
  *                    statce, stativ, statfb,
  *                    ettp, ettpa, tepa )
@@ -91,7 +90,6 @@ BEGIN_C_DECLS
  * double precision rtpa        : <-- : cell variables at previous time step
  * double precision rtp         : <-- : cell variables
  * double precision propce      : <-- : cell physical properties
- * double precision propfb      : <-- : boundary face physical properties
  * double precision statce      : <-- : cell statistics (lagrangian)
  * double precision stativ      : <-- : cell variance statistics (lagrangian)
  * double precision statfb      : <-- : boundary face statistics (lagrangian)
@@ -109,13 +107,11 @@ void CS_PROCF (pstvar, PSTVAR)
  const cs_int_t   *nvp1,
  const cs_int_t   *nvep,
  const cs_int_t   *nivep,
- const cs_real_t  *ttcabs,
  const cs_int_t    itepa[],
  const cs_real_t   dt[],
  const cs_real_t   rtpa[],
  const cs_real_t   rtp[],
  const cs_real_t   propce[],
- const cs_real_t   propfb[],
  const cs_real_t   statce[],
  const cs_real_t   stativ[],
  const cs_real_t   statfb[]

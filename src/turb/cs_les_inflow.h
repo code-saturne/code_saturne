@@ -100,7 +100,6 @@ void CS_PROCF(synthe, SYNTHE)(
  const cs_real_t        rtpa[],    /* --> variables at cellules (previous)    */
  const cs_real_t        rtp[],     /* --> variables at cellules               */
  const cs_real_t        propce[],  /* --> physical properties at cells        */
- const cs_real_t        propfb[],  /* --> physical properties at bound. faces */
  const cs_real_t        coefa[],   /* --> boundary conditions array           */
  const cs_real_t        coefb[],   /* --> boundary conditions array           */
        cs_real_t        rcodcl[]   /* <-> boundary conditions array           */
@@ -133,7 +132,6 @@ void CS_PROCF(cs_user_les_inflow_advanced, CS_USER_LES_INFLOW_ADVANCED)(
  const cs_real_t        rtpa[],    /* --> variables at cells (previous)       */
  const cs_real_t        rtp[],     /* --> variables at cells                  */
  const cs_real_t        propce[],  /* --> physical properties at cells        */
- const cs_real_t        propfb[],  /* --> physical properties at bound. faces */
        cs_real_t        uent[],    /* <-- mean velocity at the inlet faces    */
        cs_real_t        rijent[],  /* <-- turb. kin. ener. at the inlet faces */
        cs_real_t        epsent[]   /* <-- turb. dissipation at the inlet faces*/

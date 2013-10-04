@@ -33,14 +33,13 @@
 !> \param[in]     ncecpl        number of coupling
 !> \param[in]     lcecpl
 !> \param[in]     vela          variable value at time step beginning
-!> \param[in]     propce        physical properties at cell centers
 !> \param[out]    crvexp        explicit source term
 !> \param[in]     rvcpce
 !______________________________________________________________________________
 
 subroutine cs2tsv &
  ( ncecpl,  lcecpl ,                                              &
-   vela   , propce , crvexp , rvcpce )
+   vela   , crvexp , rvcpce )
 
 !===============================================================================
 
@@ -58,7 +57,7 @@ use parall
 use period
 use cplsat
 use mesh
-
+use field
 !===============================================================================
 
 implicit none
@@ -69,21 +68,20 @@ integer          ncecpl
 
 integer          lcecpl(ncecpl)
 
-double precision propce(ncelet,*)
 double precision crvexp(3,ncelet)
 double precision rvcpce(3,ncecpl)
 double precision vela(3,ncelet)
 
 ! Local variables
 
-integer          ipcrom , isou
+integer          isou
 integer          ipt    , ielloc
 double precision xdis   , xloc   , xtau   , rovtau
-
+double precision, dimension(:), pointer ::  crom
 !----------------------------------------------------------------------------------
 
 
-ipcrom = ipproc(irom)
+call field_get_val_s(icrom, crom)
 
 xtau = 100.d0*dtref
 
@@ -91,7 +89,7 @@ do ipt = 1, ncecpl
 
   ielloc = lcecpl(ipt)
 
-  rovtau = volume(ielloc)*propce(ielloc,ipcrom)/xtau
+  rovtau = volume(ielloc)*crom(ielloc)/xtau
 
   do isou = 1, 3
     xdis = rvcpce(isou,ipt)

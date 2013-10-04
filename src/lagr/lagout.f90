@@ -23,13 +23,10 @@
 subroutine lagout &
 !================
 
- ( lndnod ,                                                       &
-   nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+ ( nbpmax , nvp    , nvep   , nivep  ,                            &
    ntersl , nvlsta , nvisbr ,                                     &
-   icocel , itycel , itepa  ,                                     &
-   dt     , rtpa   , rtp    , propce , propfb ,                   &
-   coefa  , coefb  ,                                              &
+   itepa  ,                                                       &
+   propce ,                                                       &
    ettp   , tepa   , parbor , statis , stativ , tslagr )
 
 !===============================================================================
@@ -56,30 +53,16 @@ subroutine lagout &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! lndnod           ! i  ! <-- ! dim. connectivite cellules->faces              !
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nbpmax           ! i  ! <-- ! nombre max de particulies autorise             !
 ! nvp              ! i  ! <-- ! nombre de variables particulaires              !
-! nvp1             ! i  ! <-- ! nvp sans position, vfluide, vpart              !
 ! nvep             ! i  ! <-- ! nombre info particulaires (reels)              !
 ! nivep            ! i  ! <-- ! nombre info particulaires (entiers)            !
 ! ntersl           ! i  ! <-- ! nbr termes sources de couplage retour          !
 ! nvlsta           ! i  ! <-- ! nombre de var statistiques lagrangien          !
 ! nvisbr           ! i  ! <-- ! nombre de statistiques aux frontieres          !
-! icocel           ! ia ! <-- ! connectivite cellules -> faces                 !
-! (lndnod)         !    !     !    face de bord si numero negatif              !
-! itycel           ! ia ! <-- ! connectivite cellules -> faces                 !
-! (ncelet+1)       !    !     !    pointeur du tableau icocel                  !
 ! itepa            ! ia ! <-- ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! ettp             ! ra ! <-- ! tableaux des variables liees                   !
 !  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
 ! tepa             ! ra ! <-- ! info particulaires (reels)                     !
@@ -127,17 +110,12 @@ implicit none
 
 ! Arguments
 
-integer          lndnod
-integer          nvar   , nscal
-integer          nbpmax , nvp    , nvp1   , nvep  , nivep
+integer          nbpmax , nvp    , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 
-integer          icocel(lndnod) , itycel(ncelet+1)
 integer          itepa(nbpmax,nivep)
 
-double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
-double precision coefa(nfabor,*) , coefb(nfabor,*)
+double precision propce(ncelet,*)
 double precision ettp(nbpmax,nvp) ,  tepa(nbpmax,nvep)
 double precision statis(ncelet,nvlsta)
 double precision stativ(ncelet,nvlsta-1)
@@ -154,7 +132,6 @@ character        ficsui*32
 integer          ierror , nbval, itysup , irtyp  , irfsup, idbase
 integer          ivers  , ilecec
 integer          icha   , ii , ilayer
-integer          itrav1
 integer          ipas   , jj
 integer          impavl , impvls, inmcoo, ipasup
 

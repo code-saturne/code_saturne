@@ -253,9 +253,7 @@ climgp = climgr(ipr)
 
 call projts                                                       &
 !==========
- ( init   , inc    , imrgra , iccocg , nswrgp , imligp ,          &
-   iwarnp , nfecra ,                                              &
-   epsrgp , climgp ,                                              &
+ ( init   , nswrgp , nfecra ,                                     &
    dfext  ,                                                       &
    cofbfp ,                                                       &
    flumas, flumab ,                                               &
@@ -357,7 +355,7 @@ do isweep = 1, nswmpr
  ( chaine(1:16)    , isym   , ibsize , iesize ,                   &
    ipol   , ireslp , nitmap , imgrp  ,                            &
    ncymap , nitmgp ,                                              &
-   iwarnp , nfecra , niterf , icycle , iinvpe ,                   &
+   iwarnp , niterf , icycle , iinvpe ,                            &
    epsilp , rnorm  , residu ,                                     &
    dam    , xam    , smbr   , drtp   )
 

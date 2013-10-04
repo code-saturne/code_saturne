@@ -67,7 +67,6 @@
 !> \param[in]     rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfb        physical properties at boundary face centers
 !> \param[in]     statis        statistic values (Lagrangian)
 !_______________________________________________________________________________
 
@@ -77,7 +76,7 @@ subroutine usvpst &
    ncelps , nfacps , nfbrps ,                                     &
    itypps ,                                                       &
    lstcel , lstfac , lstfbr ,                                     &
-   dt     , rtpa   , rtp    , propce , propfb ,                   &
+   dt     , rtpa   , rtp    , propce ,                            &
    statis )
 
 !===============================================================================
@@ -115,7 +114,6 @@ integer          lstcel(ncelps), lstfac(nfacps), lstfbr(nfbrps)
 
 double precision dt(ncelet), rtpa(ncelet,*), rtp(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfb(nfabor,*)
 double precision statis(ncelet,nvlsta)
 
 ! Local variables
@@ -130,6 +128,7 @@ double precision rvoid(1)
 
 double precision, dimension(:), allocatable :: scel, sfac, sfbr
 double precision, dimension(:,:), allocatable :: vcel, vfac, vfbr
+double precision, dimension(:), pointer :: brom
 
 integer          intpst
 data             intpst /0/
@@ -326,12 +325,13 @@ else if (ipart .eq. -2) then
 
   idimt = 1        ! 1: scalar, 3: vector, 6/9: symm/non-symm tensor
   ientla = .true.  ! dimension 1 here, so no effect
-  ivarpr = .true.  ! we use the propfb array defined on the parent mesh
+  ivarpr = .true.  ! we use the brom array defined on the parent mesh
 
   ! Output values; as we have no cell or interior face values, we can pass a
   ! trivial array for those.
+  call field_get_val_s(ibrom, brom)
   call post_write_var(ipart, 'Density at boundary', idimt, ientla, ivarpr,    &
-                      ntcabs, ttcabs, rvoid, rvoid, propfb(1,ipprob(irom)))
+                      ntcabs, ttcabs, rvoid, rvoid, brom)
 
 !===============================================================================
 ! Examples of volume variables on user meshes 1 or 2

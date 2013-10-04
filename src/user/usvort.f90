@@ -27,7 +27,7 @@ subroutine usvort &
 
  ( nvar   , nscal  ,                                              &
    iappel ,                                                       &
-   dt     , rtpa   , propce , propfb )
+   dt     , rtpa   , propce )
 
 !===============================================================================
 ! FONCTION :
@@ -60,7 +60,6 @@ subroutine usvort &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -89,7 +88,6 @@ integer          iappel
 
 double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfb(nfabor,*)
 
 ! Local variables
 

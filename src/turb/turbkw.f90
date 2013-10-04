@@ -48,7 +48,6 @@
 !> \param[in]     rtpa          calculated variables at cell centers
 !>                               (at the previous time step)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfb        physical properties at boundary face centers
 !> \param[in]     tslagr        coupling term of the lagangian module
 !> \param[in]     coefa, coefb  boundary conditions
 !>
@@ -61,7 +60,7 @@
 subroutine turbkw &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   dt     , rtp    , rtpa   , propce ,                            &
    tslagr , coefa  , coefb  , ckupdc , smacel )
 
 !===============================================================================
@@ -78,7 +77,7 @@ use cstnum
 use cstphy
 use optcal
 use lagran
-use pointe, only: s2kw, divukw, ifapat, dispar, coefau, coefbu
+use pointe, only: s2kw, divukw, ifapat, dispar
 use parall
 use mesh
 use field
@@ -97,7 +96,7 @@ integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(ndimfb,*)
+double precision propce(ncelet,*)
 double precision tslagr(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
@@ -105,7 +104,7 @@ double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 ! Local variables
 
 character*80     chaine
-integer          iel   , ifac  , init  , inc   , iccocg, ivar
+integer          iel   , ifac  , inc   , iccocg, ivar
 integer          ii, iivar , iiun  , ifacpt
 integer          iclipk, iclipw, isqrt
 integer          nswrgp, imligp
@@ -114,17 +113,15 @@ integer          iclvar, iclvaf
 integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
-integer          ipcrom, ipbrom, ipcvst, ipcvis, iflmas, iflmab
+integer          ipcvst, ipcvis, iflmas, iflmab
 integer          iwarnp, ipp
 integer          iptsta
-integer          ipcroo, ipbroo, ipcvto, ipcvlo
+integer          ipcvto, ipcvlo
 integer          imucpp, idftnp, iswdyp
 integer          ipcliu
 
 integer          icvflb
 integer          ivoid(1)
-
-logical          ilved
 
 double precision rnorm , d2s3, divp23, epz2
 double precision deltk , deltw, a11, a12, a22, a21
@@ -153,6 +150,8 @@ double precision, allocatable, dimension(:) :: w7
 double precision, allocatable, dimension(:) :: dpvar
 double precision, allocatable, dimension(:) :: rotfct
 double precision, dimension(:), pointer :: imasfl, bmasfl
+double precision, dimension(:), pointer :: brom, crom
+double precision, dimension(:), pointer :: bromo, cromo
 
 !===============================================================================
 
@@ -178,7 +177,6 @@ iclomg = iclrtp(iomg,icoef)
 iclikf = iclrtp(ik ,icoeff)
 iclomf = iclrtp(iomg,icoeff)
 
-ipcrom = ipproc(irom  )
 ipcvst = ipproc(ivisct)
 ipcvis = ipproc(iviscl)
 
@@ -187,18 +185,19 @@ call field_get_key_int(ivarfl(ik), kbmasf, iflmab)
 call field_get_val_s(iflmas, imasfl)
 call field_get_val_s(iflmab, bmasfl)
 
-ipbrom = ipprob(irom  )
+call field_get_val_s(icrom, crom)
+call field_get_val_s(ibrom, brom)
+call field_get_val_s(icrom, cromo)
+call field_get_val_s(ibrom, bromo)
 
 thets  = thetst
 
-ipcroo = ipcrom
-ipbroo = ipbrom
 ipcvto = ipcvst
 ipcvlo = ipcvis
 if(isto2t.gt.0) then
   if (iroext.gt.0) then
-    ipcroo = ipproc(iroma)
-    ipbroo = ipprob(iroma)
+    call field_get_val_prev_s(icrom, cromo)
+    call field_get_val_prev_s(ibrom, bromo)
   endif
   if(iviext.gt.0) then
     ipcvto = ipproc(ivista)
@@ -292,7 +291,7 @@ endif
 ! a partir de f1 en n -> mais l'effet sur les "constantes" est faible
 ! -> a garder en tete si on fait vraiment de l'ordre 2 en temps en k-omega
 do iel = 1, ncel
-  rho = propce(iel,ipcroo)
+  rho = cromo(iel)
   xnu = propce(iel,ipcvlo)/rho
   xk = rtpa(iel,ik)
   xw  = rtpa(iel,iomg)
@@ -308,7 +307,7 @@ enddo
 !===============================================================================
 
 do iel = 1, ncel
-  rho = propce(iel,ipcrom)
+  rho = crom(iel)
   romvsd = rho*volume(iel)/dt(iel)
   tinstk(iel) = istat(ik)*romvsd
   tinstw(iel) = istat(iomg)*romvsd
@@ -325,7 +324,7 @@ do iel = 1, ncel
   xw   = rtpa(iel,iomg)
   xeps = cmu*xw*xk
   visct = propce(iel,ipcvto)
-  rho = propce(iel,ipcroo)
+  rho = cromo(iel)
   prodw(iel) = visct*s2kw(iel)                    &
              - d2s3*rho*xk*divukw(iel)
 
@@ -358,10 +357,8 @@ if (irccor.eq.1) then
   allocate(rotfct(ncel))
 
   ! Compute the rotation function (gdkgdw array not used)
-  call rotcor &
+  call rotcor(dt, rtpa, rotfct, gdkgdw)
   !==========
-  ( dt     , rtpa   , coefa , coefb , &
-    rotfct , gdkgdw     )
 
   do iel = 1, ncel
     prodk(iel) = prodk(iel)*rotfct(iel)
@@ -409,7 +406,7 @@ if (igrake.eq.1) then
   !==========
  ( iivar  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   propce(1,ipcroo), propfb(1,ipbroo), viscb  ,                   &
+   cromo  , bromo  , viscb  ,                                     &
    grad   )
 
 
@@ -423,7 +420,7 @@ if (igrake.eq.1) then
   endif
 
   do iel = 1, ncel
-    rho = propce(iel,ipcroo)
+    rho = cromo(iel)
     visct = propce(iel,ipcvto)
 
     w2(iel) = -(grad(iel,1)*gx + grad(iel,2)*gy + grad(iel,3)*gz) / &
@@ -461,7 +458,7 @@ call ustskw &
 !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce , propfb ,                            &
+   dt     , rtpa   , propce ,                                     &
    ckupdc , smacel , s2kw   , divukw ,                            &
    gdkgdw , w2     , xf1    ,                                     &
    smbrk  , smbrw  , usimpk , usimpw )
@@ -518,7 +515,7 @@ endif
 do iel = 1, ncel
 
   visct  = propce(iel,ipcvto)
-  rho    = propce(iel,ipcroo)
+  rho    = cromo(iel)
   xk     = rtpa(iel,ik)
   xw     = rtpa(iel,iomg)
   xxf1   = xf1(iel)
@@ -546,7 +543,7 @@ if (ikecou.eq.0) then
     xw    = rtpa(iel,iomg)
     xxf1  = xf1(iel)
     xbeta = xxf1*ckwbt1 + (1.d0-xxf1)*ckwbt2
-    rho = propce(iel,ipcrom)
+    rho = crom(iel)
     tinstk(iel) = tinstk(iel) + volume(iel)*cmu*rho*xw
     tinstw(iel) = tinstw(iel) + 2.d0*volume(iel)*xbeta*rho*xw
   enddo
@@ -571,7 +568,7 @@ if (iilagr.eq.2 .and. ltsdyn.eq.1) then
     ! Termes sources explicte sur omega : on reprend la constante CE4 directement
     !    du k-eps sans justification ... a creuser si necessaire
     smbrw(iel)  = smbrw(iel)                                      &
-                + ce4 *tslagr(iel,itske) * propce(iel,ipcroo)     &
+                + ce4 *tslagr(iel,itske) * cromo(iel)             &
                 /propce(iel,ipcvto)
 
     ! Termes sources implicite sur k
@@ -880,7 +877,7 @@ if(ikecou.eq.1) then
 
   do iel = 1, ncel
 
-    rho = propce(iel,ipcrom)
+    rho = crom(iel)
 
     ! RESOLUTION COUPLEE
 

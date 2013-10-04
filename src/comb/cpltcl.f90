@@ -23,10 +23,9 @@
 subroutine cpltcl &
 !================
 
- ( nvar   , nscal  ,                                              &
-   icodcl , itrifb , itypfb , izfppp ,                            &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   coefa  , coefb  , rcodcl )
+ ( itypfb , izfppp ,                                              &
+   propce ,                                                       &
+   rcodcl )
 
 !===============================================================================
 ! FONCTION :
@@ -47,30 +46,12 @@ subroutine cpltcl &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! icodcl           ! te ! --> ! code de condition limites aux faces            !
-!  (nfabor,nvar    !    !     !  de bord                                       !
-!                  !    !     ! = 1   -> dirichlet                             !
-!                  !    !     ! = 3   -> densite de flux                       !
-!                  !    !     ! = 4   -> glissemt et u.n=0 (vitesse)           !
-!                  !    !     ! = 5   -> frottemt et u.n=0 (vitesse)           !
-!                  !    !     ! = 6   -> rugosite et u.n=0 (vitesse)           !
-!                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
-!                  !    !     !  entrante eventuelle     bloquee               !
-! itrifb           ! ia ! <-- ! indirection for boundary faces ordering        !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 ! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
-!  (nfabor,nvar    !    !     !  aux faces de bord                             !
+!  (nfabor,nvarcl) !    !     !  aux faces de bord                             !
 !                  !    !     ! rcodcl(1) = valeur du dirichlet                !
 !                  !    !     ! rcodcl(2) = valeur du coef. d'echange          !
 !                  !    !     !  ext. (infinie si pas d'echange)               !
@@ -107,28 +88,23 @@ use cpincl
 use ppincl
 use ppcpfu
 use mesh
-
+use field
 !===============================================================================
 
 implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-
-integer          icodcl(nfabor,nvarcl)
-integer          itrifb(nfabor), itypfb(nfabor)
+integer          itypfb(nfabor)
 integer          izfppp(nfabor)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
+double precision propce(ncelet,*)
 double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
 
 integer          ii, ifac, izone, mode, iel, ige, iok
-integer          icha, ipbrom, icke, ipcvis
+integer          icha, icke, ipcvis
 integer          nbrval
 double precision qisqc, viscla, d2s3, uref2, rhomoy, dhy, xiturb
 double precision ustar2, xkent, xeent, t1
@@ -136,14 +112,14 @@ double precision h1    (nozppm)
 double precision qimpc (nozppm) , qcalc(nozppm)
 double precision coefe (ngazem)
 double precision f1mc  (ncharm) , f2mc (ncharm)
-
+double precision, dimension(:), pointer ::  brom
 !===============================================================================
 !===============================================================================
 ! 1.  INITIALISATIONS
 !===============================================================================
 
 
-ipbrom = ipprob(irom  )
+call field_get_val_s(ibrom, brom)
 ipcvis = ipproc(iviscl)
 
 d2s3 = 2.d0/3.d0
@@ -207,7 +183,7 @@ do ifac = 1, nfabor
            rcodcl(ifac,iv,1)*surfbo(2,ifac) +              &
            rcodcl(ifac,iw,1)*surfbo(3,ifac) )
     else
-      qcalc(izone) = qcalc(izone) - propfb(ifac,ipbrom) *         &
+      qcalc(izone) = qcalc(izone) - brom(ifac) *         &
          ( rcodcl(ifac,iu,1)*surfbo(1,ifac) +              &
            rcodcl(ifac,iv,1)*surfbo(2,ifac) +              &
            rcodcl(ifac,iw,1)*surfbo(3,ifac) )
@@ -321,7 +297,7 @@ do ifac = 1, nfabor
             + rcodcl(ifac,iv,1)**2                         &
             + rcodcl(ifac,iw,1)**2
       uref2 = max(uref2,1.d-12)
-      rhomoy = propfb(ifac,ipbrom)
+      rhomoy = brom(ifac)
       iel    = ifabor(ifac)
       viscla = propce(iel,ipcvis)
       icke   = icalke(izone)

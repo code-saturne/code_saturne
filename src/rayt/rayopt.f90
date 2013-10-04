@@ -73,7 +73,7 @@ implicit none
 
 ! Local variables
 
-integer          ii, jj, iok , iiscal, iscaok, ipp, iph, nmodpp
+integer          ii, iok , iiscal, iscaok, ipp, nmodpp
 integer          irphas
 character        car4*4
 character*3      num

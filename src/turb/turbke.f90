@@ -48,7 +48,6 @@
 !> \param[in]     rtpa          calculated variables at cell centers
 !>                               (at the previous time step)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfb        physical properties at boundary face centers
 !> \param[in]     tslagr        coupling term of the lagangian module
 !> \param[in]     coefa, coefb  boundary conditions
 !>
@@ -62,7 +61,7 @@
 subroutine turbke &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   dt     , rtp    , rtpa   , propce ,                            &
    tslagr , coefa  , coefb  , ckupdc , smacel ,                   &
    prdv2f )
 
@@ -98,7 +97,7 @@ integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(ndimfb,*)
+double precision propce(ncelet,*)
 double precision tslagr(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
@@ -116,10 +115,10 @@ integer          iclvar, iclvaf
 integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
-integer          ipcrom, ipbrom, ipcvst, ipcvis, iflmas, iflmab
+integer          ipcvst, ipcvis, iflmas, iflmab
 integer          iwarnp, ipp
 integer          iptsta
-integer          ipcroo, ipbroo, ipcvto, ipcvlo
+integer          ipcvto, ipcvlo
 integer          iphydp
 integer          imucpp, idftnp, iswdyp
 
@@ -130,7 +129,7 @@ double precision rnorm , d2s3, d1s3, divp23
 double precision deltk , delte, a11, a12, a22, a21
 double precision gravke, epssuk, unsdet, romvsd
 double precision prdtur, xk, xeps, xphi, xnu, xnut, ttke, ttmin, tt
-double precision visct , rho   , ceps1 , ctsqnu
+double precision visct , rho   , ceps1
 double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
 double precision epsrsp
 double precision thetp1, thetak, thetae, thets, thetap
@@ -157,6 +156,7 @@ double precision, allocatable, dimension(:,:) :: grad
 double precision, dimension(:,:,:), allocatable :: gradv
 double precision, allocatable, dimension(:) :: dpvar
 double precision, dimension(:), pointer :: imasfl, bmasfl
+double precision, dimension(:), pointer :: brom, crom, bromo, cromo
 
 !===============================================================================
 
@@ -188,7 +188,7 @@ icliup = iclrtp(iu,icoef)
 iclivp = iclrtp(iv,icoef)
 icliwp = iclrtp(iw,icoef)
 
-ipcrom = ipproc(irom  )
+call field_get_val_s(icrom, crom)
 ipcvst = ipproc(ivisct)
 ipcvis = ipproc(iviscl)
 
@@ -197,18 +197,20 @@ call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
 call field_get_val_s(iflmas, imasfl)
 call field_get_val_s(iflmab, bmasfl)
 
-ipbrom = ipprob(irom  )
+call field_get_val_s(ibrom, brom)
 
 thets  = thetst
 
-ipcroo = ipcrom
-ipbroo = ipbrom
+call field_get_val_s(icrom, crom)
+call field_get_val_s(ibrom, brom)
+call field_get_val_s(icrom, cromo)
+call field_get_val_s(ibrom, bromo)
 ipcvto = ipcvst
 ipcvlo = ipcvis
 if(isto2t.gt.0) then
   if (iroext.gt.0) then
-    ipcroo = ipproc(iroma)
-    ipbroo = ipprob(iroma)
+    call field_get_val_prev_s(icrom, cromo)
+    call field_get_val_prev_s(ibrom, bromo)
   endif
   if(iviext.gt.0) then
     ipcvto = ipproc(ivista)
@@ -265,8 +267,7 @@ ilved = .false.
 call grdvec &
 !==========
 ( iu     , imrgra , inc    , nswrgp , imligp ,                   &
-  iwarnp , nfecra ,                                              &
-  epsrgp , climgp , extrap ,                                     &
+  iwarnp , epsrgp , climgp ,                                     &
   ilved  ,                                                       &
   rtpa(1,iu) ,  coefau , coefbu,                                 &
   gradv  )
@@ -299,7 +300,7 @@ deallocate(gradv)
 !===============================================================================
 
 do iel = 1, ncel
-  rho = propce(iel,ipcrom)
+  rho = crom(iel)
   romvsd = rho*volume(iel)/dt(iel)
   tinstk(iel) = istat(ik)*romvsd
   tinste(iel) = istat(iep)*romvsd
@@ -316,7 +317,7 @@ enddo
 ! not in mu_TxS**2
 if (iturb.eq.21) then
   do iel = 1, ncel
-    rho   = propce(iel,ipcroo)
+    rho   = cromo(iel)
     visct = propce(iel,ipcvto)
     xs = sqrt(strain(iel))
     cmueta = min(cmu*rtpa(iel,ik)/rtpa(iel,iep)*xs, sqrcmu)
@@ -345,10 +346,8 @@ if (irccor.eq.1) then
 
   ! Compute the modified Ceps2 coefficient (w1 array not used)
 
-  call rotcor &
+  call rotcor(dt, rtpa, w1, ce2rc)
   !==========
- ( dt     , rtpa  , coefa , coefb , &
-   w1     , ce2rc )
 
 else
 
@@ -386,9 +385,9 @@ if (igrake.eq.1 .and. ippmod(iatmos).ge.1) then
   call atprke &
   !==========
  ( nscal  ,                                                       &
-   rtp    , rtpa   , propce , propfb ,                            &
+   rtpa   , propce ,                                              &
    coefa  , coefb  ,                                              &
-   tinstk , tinste ,                                              &
+   tinstk ,                                                       &
    smbrk  , smbre  )
 
 ! --- Buoyancy term     G = Beta*g.Grad(scalar)/prdtur/rho
@@ -418,7 +417,7 @@ else if (igrake.eq.1) then
   !==========
  ( iivar  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   propce(1,ipcroo), propfb(1,ipbroo), viscb  ,                   &
+   cromo  , bromo  , viscb  ,                                     &
    grad   )
 
   ! Production term due to buoyancy
@@ -432,7 +431,7 @@ else if (igrake.eq.1) then
 
   ! smbr* store mu_TxS**2
   do iel = 1, ncel
-    rho   = propce(iel,ipcroo)
+    rho   = cromo(iel)
     visct = propce(iel,ipcvto)
     xeps = rtpa(iel, iep)
     xk   = rtpa(iel, ik)
@@ -477,7 +476,7 @@ if (iturb.eq.51) then
 
   do iel=1,ncel
     visct = propce(iel,ipcvto)
-    rho   = propce(iel,ipcroo)
+    rho   = cromo(iel)
     w3(iel) = visct/rho/sigmak
   enddo
 
@@ -541,12 +540,12 @@ if (iturb.eq.51) then
   ! Allocate a work array
   allocate(w12(ncelet))
 
-  call tsepls(dt, rtp, rtpa, coefa, coefb, w12)
+  call tsepls(rtpa, w12)
   !==========
 
   do iel = 1, ncel
 
-    rho   = propce(iel,ipcroo)
+    rho   = cromo(iel)
     xnu   = propce(iel,ipcvlo)/rho
     xnut  = propce(iel,ipcvto)/rho
     xeps = rtpa(iel,iep )
@@ -598,7 +597,7 @@ if (itytur.eq.2) then
 
   do iel = 1, ncel
 
-    rho   = propce(iel,ipcroo)
+    rho   = cromo(iel)
 
     smbrk(iel) = volume(iel)*                                     &
                ( smbrk(iel) - rho*rtpa(iel,iep)                   &
@@ -619,7 +618,7 @@ if (itytur.eq.2) then
     do iel = 1, ncel
       xeps = rtpa(iel,iep )
       xk   = rtpa(iel,ik )
-      rho = propce(iel,ipcrom)
+      rho = crom(iel)
       ttke = xk / xeps
       tinstk(iel) = tinstk(iel) + rho*volume(iel)/ttke            &
                   + max(d2s3*rho*volume(iel)*divu(iel), 0.d0)
@@ -633,7 +632,7 @@ else if (iturb.eq.50) then
   do iel = 1, ncel
 
     visct = propce(iel,ipcvto)
-    rho  = propce(iel,ipcroo)
+    rho  = cromo(iel)
     xnu  = propce(iel,ipcvlo)/rho
     xeps = rtpa(iel,iep)
     xk   = rtpa(iel,ik)
@@ -674,7 +673,7 @@ else if (iturb.eq.51) then
   do iel=1,ncel
 
     visct = propce(iel,ipcvto)
-    rho   = propce(iel,ipcroo)
+    rho   = cromo(iel)
     xnu  = propce(iel,ipcvlo)/rho
     xeps = rtpa(iel,iep )
     xk   = rtpa(iel,ik )
@@ -735,7 +734,7 @@ call ustske &
 !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce , propfb ,                            &
+   dt     , rtpa   , propce ,                                     &
    ckupdc , smacel , strain , divu   ,                            &
    w7     , w8     , usimpk , usimpe )
 
@@ -1051,7 +1050,7 @@ if (ikecou.eq.1) then
 
     do iel = 1, ncel
 
-      rho = propce(iel,ipcrom)
+      rho = crom(iel)
       visct = propce(iel,ipcvto)
 
       ! Coupled solving

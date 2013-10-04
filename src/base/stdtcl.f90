@@ -26,7 +26,7 @@ subroutine stdtcl &
  ( nbzfmx , nozfmx ,                                              &
    iqimp  , icalke , qimp   , dh     , xintur ,                   &
    itypfb , iznfbr , ilzfbr ,                                     &
-   propce , propfb ,                                              &
+   propce ,                                                       &
    rcodcl , qcalc  )
 
 !===============================================================================
@@ -50,7 +50,6 @@ subroutine stdtcl &
 ! (nfabor)         !    !     !                                                !
 ! ilzfbr(nbzfmx    ! te ! <-- ! tableau de travail                             !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
 !  (nfabor,nvarcl) !    !     !  aux faces de bord                             !
 !                  !    !     ! rcodcl(1) = valeur du dirichlet                !
@@ -84,7 +83,7 @@ use cstnum
 use entsor
 use parall
 use mesh
-
+use field
 !===============================================================================
 
 implicit none
@@ -99,7 +98,7 @@ integer          itypfb(nfabor)
 integer          iznfbr(nfabor), ilzfbr(nbzfmx)
 
 double precision qimp(nozfmx), dh(nozfmx), xintur(nozfmx)
-double precision propce(ncelet,*), propfb(nfabor,*)
+double precision propce(ncelet,*)
 double precision rcodcl(nfabor,nvarcl,3)
 double precision qcalc(nozfmx)
 
@@ -107,10 +106,10 @@ double precision qcalc(nozfmx)
 
 integer          ifac, izone, ifvu, izonem
 integer          nozapm, nzfppp
-integer          ipbrom, icke, ipcvis, ii, iel, iok
+integer          icke, ipcvis, ii, iel, iok
 double precision qisqc, viscla, d2s3, uref2, rhomoy, dhy, xiturb
 double precision ustar2, xkent, xeent
-
+double precision, dimension(:), pointer :: brom
 integer          ipass
 data             ipass /0/
 save             ipass
@@ -122,7 +121,7 @@ save             ipass
 !===============================================================================
 
 
-ipbrom = ipprob(irom  )
+call field_get_val_s(ibrom, brom)
 ipcvis = ipproc(iviscl)
 
 d2s3 = 2.d0/3.d0
@@ -260,7 +259,7 @@ do ifac = 1,nfabor
            rcodcl(ifac,iv,1)*surfbo(2,ifac) +              &
            rcodcl(ifac,iw,1)*surfbo(3,ifac) )
     else
-      qcalc(izone) = qcalc(izone) - propfb(ifac,ipbrom) *         &
+      qcalc(izone) = qcalc(izone) - brom(ifac) *           &
          ( rcodcl(ifac,iu,1)*surfbo(1,ifac) +              &
            rcodcl(ifac,iv,1)*surfbo(2,ifac) +              &
            rcodcl(ifac,iw,1)*surfbo(3,ifac) )
@@ -403,7 +402,7 @@ do ifac = 1, nfabor
               + rcodcl(ifac,iv,1)**2                       &
               + rcodcl(ifac,iw,1)**2
         uref2 = max(uref2,epzero)
-        rhomoy = propfb(ifac,ipbrom)
+        rhomoy = brom(ifac)
         iel    = ifabor(ifac)
         viscla = propce(iel,ipcvis)
         icke   = icalke(izone)

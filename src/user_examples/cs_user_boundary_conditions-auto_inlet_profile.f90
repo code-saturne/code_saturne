@@ -59,7 +59,6 @@
 !> \param[in]     rtp, rtpa     calculated variables at cell centers
 !> \param[in]                    (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfb        physical properties at boundary face centers
 !> \param[in,out] rcodcl        boundary condition values:
 !>                               - rcodcl(1) value of the dirichlet
 !>                               - rcodcl(2) value of the exterior exchange
@@ -80,7 +79,7 @@
 subroutine cs_user_boundary_conditions &
  ( nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   dt     , rtp    , rtpa   , propce ,                            &
    rcodcl )
 
 !===============================================================================
@@ -109,6 +108,7 @@ use ctincl
 use elincl
 use cs_fuel_incl
 use mesh
+use field
 
 !===============================================================================
 
@@ -124,7 +124,6 @@ integer          izfppp(nfabor)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfb(nfabor,*)
 double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
@@ -138,6 +137,7 @@ double precision uent, vent, went, xustar2, xdh, d2s3, rhomoy
 double precision acc(2), fmprsc, fmul, uref2, vnrm
 
 integer, allocatable, dimension(:) :: lstelt, mrkcel
+double precision, dimension(:), pointer :: brom
 !< [loc_var_dec]
 
 !===============================================================================
@@ -236,7 +236,7 @@ if (ntcabs.eq.1) then
     !     and of k and epsilon at the inlet (xkent and xeent) using
     !     standard laws for a circular pipe
     !     (their initialization is not needed here but is good practice).
-    rhomoy  = propfb(ifac,ipprob(irom))
+    rhomoy  = brom(ifac)
     xustar2 = 0.d0
     xkent   = epzero
     xeent   = epzero

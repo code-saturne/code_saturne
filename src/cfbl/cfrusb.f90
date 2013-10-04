@@ -23,11 +23,10 @@
 subroutine cfrusb &
 !================
 
- ( nvar   , nscal  ,                                              &
-   imodif ,                                                       &
+ ( nvar   ,                                                       &
+   ifac   ,                                                       &
    gammag ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfb , bval   ,          &
-   gamagr , masmor )
+   rtp    , bval   )
 
 !===============================================================================
 ! FUNCTION :
@@ -45,16 +44,9 @@ subroutine cfrusb &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! imodif           ! e  ! <-- ! modification directe de rtp (imodif=1          !
+! ifac             ! i  ! <-- ! face number                                    !
 ! gammag           ! r  ! <-- ! gamma du gaz                                   !
-! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
-! rtp,rtpa         ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules                                    !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! gamagr(*)        ! tr ! --- ! constante gamma equivalent du gaz              !
-! masmor(*)        ! tr ! --- ! masse molaire des constituants du gaz          !
+! rtp(ncelet,*)    ! tr ! <-- ! variables de calcul au centre des cellules     !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -88,27 +80,26 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-integer          imodif
+integer          nvar
+integer          ifac
 
 double precision gammag
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
+double precision rtp(ncelet,*)
 double precision bval(nfabor,nvar)
-double precision gamagr(*), masmor(*)
 
 ! Local variables
 
-integer          iel    , ifac
+integer          iel
 integer          ien
-integer          iflmab , ipcrom , ipbrom
+integer          iflmab
 
 double precision und    , uni    , rund   , runi   , cd     , ci
 double precision rrus   , runb
 double precision, dimension(:), pointer :: bmasfl
 double precision, dimension(:,:), pointer :: cofacv
 double precision, dimension(:), pointer :: coface
+double precision, dimension(:), pointer :: crom, brom
 
 !===============================================================================
 
@@ -116,9 +107,10 @@ double precision, dimension(:), pointer :: coface
 ! 0. INITIALISATION
 !===============================================================================
 
-ipcrom = ipproc(irom)
-ipbrom = ipprob(irom)
 ien = isca(ienerg)
+
+call field_get_val_s(icrom, crom)
+call field_get_val_s(ibrom, brom)
 
 call field_get_key_int(ivarfl(ien), kbmasf, iflmab)
 call field_get_val_s(iflmab, bmasfl)
@@ -126,7 +118,6 @@ call field_get_val_s(iflmab, bmasfl)
 call field_get_coefac_v(ivarfl(iu), cofacv)
 call field_get_coefac_s(ivarfl(ien), coface)
 
-ifac  = imodif
 iel   = ifabor(ifac)
 
 !===============================================================================
@@ -139,14 +130,14 @@ und   = (bval(ifac,iu)*surfbo(1,ifac)                          &
 uni   = (rtp(iel,iu)*surfbo(1,ifac)                            &
        + rtp(iel,iv)*surfbo(2,ifac)                            &
        + rtp(iel,iw)*surfbo(3,ifac))/surfbn(ifac)
-rund  = propfb(ifac,ipbrom)*und
-runi  = propce(iel,ipcrom)     *uni
-cd    = sqrt(gammag*bval(ifac,ipr)/propfb(ifac,ipbrom))
-ci    = sqrt(gammag*rtp(iel,ipr)/propce(iel,ipcrom))
+rund  = brom(ifac)*und
+runi  = crom(iel)     *uni
+cd    = sqrt(gammag*bval(ifac,ipr)/brom(ifac))
+ci    = sqrt(gammag*rtp(iel,ipr)/crom(iel))
 rrus  = max(abs(und)+cd,abs(uni)+ci)
 
-runb  = 0.5d0*(propfb(ifac,ipbrom)*und+propce(iel,ipcrom)*uni)          &
-      - 0.5d0*rrus*(propfb(ifac,ipbrom)-propce(iel,ipcrom))
+runb  = 0.5d0*(brom(ifac)*und+crom(iel)*uni)          &
+      - 0.5d0*rrus*(brom(ifac)-crom(iel))
 
 !===============================================================================
 ! 2. CONVECTIVE RUSANOV FLUX
@@ -164,18 +155,18 @@ bmasfl(ifac) = runb*surfbn(ifac)
 ! in the pressure BC)
 cofacv(1,ifac) = surfbn(ifac)*                                                  &
                  0.5d0*( rund*bval(ifac,iu) + runi*rtp(iel,iu)                  &
-                         -rrus*(propfb(ifac,ipbrom)*bval(ifac,iu)               &
-                         -propce(iel,ipcrom)*rtp(iel,iu)) )
+                         -rrus*(brom(ifac)*bval(ifac,iu)                        &
+                         -crom(iel)*rtp(iel,iu)) )
 
 cofacv(2,ifac) = surfbn(ifac)*                                                  &
                  0.5d0*( rund*bval(ifac,iv) + runi*rtp(iel,iv)                  &
-                         -rrus*( propfb(ifac,ipbrom)*bval(ifac,iv)              &
-                         -propce(iel,ipcrom)*rtp(iel,iv)) )
+                         -rrus*( brom(ifac)*bval(ifac,iv)                       &
+                         -crom(iel)*rtp(iel,iv)) )
 
 cofacv(3,ifac) = surfbn(ifac)*                                                  &
                  0.5d0*( rund*bval(ifac,iw) + runi*rtp(iel,iw)                  &
-                         -rrus*(propfb(ifac,ipbrom)*bval(ifac,iw)               &
-                         -propce(iel,ipcrom)*rtp(iel,iw)) )
+                         -rrus*(brom(ifac)*bval(ifac,iw)                        &
+                         -crom(iel)*rtp(iel,iw)) )
 
 ! BC for the pressure gradient in the momentum balance
 bval(ifac,ipr) = 0.5d0 * (bval(ifac,ipr) + rtp(iel,ipr))
@@ -184,8 +175,8 @@ bval(ifac,ipr) = 0.5d0 * (bval(ifac,ipr) + rtp(iel,ipr))
 coface(ifac) = surfbn(ifac)*                                                    &
                0.5d0*( rund*bval(ifac,ien) + runi*rtp(iel,ien)                  &
                        +und*bval(ifac,ipr) + uni*rtp(iel,ipr)                   &
-                       -rrus*(propfb(ifac,ipbrom)*bval(ifac,ien)                &
-                       -propce(iel,ipcrom)*rtp(iel,ien)) )
+                       -rrus*(brom(ifac)*bval(ifac,ien)                         &
+                       -crom(iel)*rtp(iel,ien)) )
 
 return
 

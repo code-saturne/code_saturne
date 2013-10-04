@@ -24,7 +24,7 @@ subroutine d3pini &
 !================
 
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce , propfb )
+   dt     , rtp    , propce )
 
 !===============================================================================
 ! FONCTION :
@@ -50,14 +50,12 @@ subroutine d3pini &
 !     suite de calcul
 
 ! Les proprietes physiques sont accessibles dans le tableau
-!     PROPCE (prop au centre), PROPFB (prop aux faces de bord)
+!     PROPCE (prop au centre)
 !     Ainsi,
 !      PROPCE(IEL,IPPROC(IROM  )) designe ROM   (IEL)
 !      PROPCE(IEL,IPPROC(IVISCL)) designe VISCL (IEL)
 !      PROPCE(IEL,IPPROC(ICP   )) designe CP    (IEL)
 !      PROPCE(IEL,IPPROC(IVISLS(ISCAL))) designe VISLS (IEL ,ISCAL)
-
-!      PROPFB(IFAC,IPPROB(IROM  )) designe ROMB  (IFAC)
 
 ! LA MODIFICATION DES PROPRIETES PHYSIQUES (ROM, VISCL, VISCLS, CP)
 !     SE FERA EN STANDARD DANS LE SOUS PROGRAMME PPPHYV
@@ -73,7 +71,6 @@ subroutine d3pini &
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules                                    !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -107,9 +104,7 @@ implicit none
 
 integer          nvar   , nscal
 
-
 double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
-double precision propfb(nfabor,*)
 
 ! Local variables
 
@@ -214,7 +209,7 @@ if ( isuite.eq.0 ) then
     call cs_user_initialization &
     !==========================
   ( nvar   , nscal  ,                                            &
-    dt     , rtp    , propce , propfb )
+    dt     , rtp    , propce )
 
 ! ----- En periodique et en parallele,
 !       il faut echanger ces initialisations

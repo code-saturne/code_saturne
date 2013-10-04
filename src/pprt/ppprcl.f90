@@ -25,7 +25,6 @@ subroutine ppprcl &
 
  ( nvar   ,                                                       &
    izfppp ,                                                       &
-   propfb ,                                                       &
    rcodcl )
 
 !===============================================================================
@@ -45,7 +44,6 @@ subroutine ppprcl &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! izfppp           ! te ! --> ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
 !  (nfabor,nvar    !    !     !  aux faces de bord                             !
 !                  !    !     ! rcodcl(1) = valeur du dirichlet                !
@@ -96,7 +94,6 @@ integer          nvar
 
 integer          izfppp(nfabor)
 
-double precision propfb(nfabor,*)
 double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables

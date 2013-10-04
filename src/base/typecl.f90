@@ -581,8 +581,7 @@ if (itbslb.gt.0) then
   call grdpot &
   !==========
      ( ipr , imrgra , inc    , iccocg , nswrgp , imligp , iphydr ,    &
-       iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-       rvoid  ,                                                       &
+       iwarnp , epsrgp , climgp , extrap ,                            &
        frcxt  ,                                                       &
        rtpa(1,ipr) , coefap , coefbp ,                                &
        grad   )

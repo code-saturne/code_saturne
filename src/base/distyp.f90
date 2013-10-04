@@ -89,7 +89,7 @@ use coincl
 use parall
 use period
 use mesh
-
+use field
 !===============================================================================
 
 implicit none
@@ -107,7 +107,7 @@ integer          idtva0, ivar  , iconvp, idiffp
 integer          ndircp, ireslp
 integer          iescap, iflmb0, imaspe, itypfl
 integer          ncymxp, nitmfp, ipp
-integer          ifac  , iel   , ipcvis, init  , ipcrom
+integer          ifac  , iel   , ipcvis, init
 integer          inc   , iccocg, isym  , isweep, infpar
 integer          imucpp, idftnp, iswdyp, icvflb
 
@@ -128,6 +128,7 @@ double precision, allocatable, dimension(:) :: coefbx, coefby, coefbz
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w2
 double precision, allocatable, dimension(:) :: dpvar
+double precision, dimension(:), pointer :: crom
 
 integer          ipass
 data             ipass /0/
@@ -154,7 +155,7 @@ allocate(w2(ncelet))
 
 ipass  = ipass + 1
 
-ipcrom = ipproc(irom)
+call field_get_val_s(icrom, crom)
 ipcvis = ipproc(iviscl)
 
 !===============================================================================
@@ -319,7 +320,7 @@ call inimas                                                       &
 do ifac = 1, nfabor
   if(itypfb(ifac).eq.iparoi.or.itypfb(ifac).eq.iparug) then
     iel = ifabor(ifac)
-    coefax(ifac) = uetbor(ifac)*propce(iel,ipcrom)/propce(iel,ipcvis)
+    coefax(ifac) = uetbor(ifac)*crom(iel)/propce(iel,ipcvis)
     coefbx(ifac) = 0.0d0
   else
     coefax(ifac) = 0.0d0

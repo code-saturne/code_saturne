@@ -23,13 +23,10 @@
 subroutine lagsta &
 !================
 
- ( nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   ntersl , nvlsta , nvisbr ,                                     &
+ ( nbpmax , nvp    , nvep   , nivep  ,                            &
+   nvlsta ,                                                       &
    itepa  ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfb ,                   &
-   ettp   , tepa   , statis , stativ ,                            &
-   w1     )
+   ettp   , tepa   , statis , stativ )
 
 !===============================================================================
 ! FONCTION :
@@ -66,23 +63,14 @@ subroutine lagsta &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! nvp              ! e  ! <-- ! nombre de variables particulaires              !
 ! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
 ! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
 ! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
-! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
 ! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
-! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
 ! itepa            ! te ! <-- ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! ettp             ! tr ! <-- ! tableaux des variables liees                   !
 !  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
 ! tepa             ! tr ! <-- ! info particulaires (reels)                     !
@@ -92,7 +80,6 @@ subroutine lagsta &
 ! stativ           ! tr ! <-- ! cumul pour les variances des                   !
 !(ncelet,          !    !     !    statistiques volumiques                     !
 !   nvlsta-1)      !    !     !                                                !
-! w1(ncelet)       ! tr ! --- ! tableau de travail                             !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -123,18 +110,14 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-integer          nbpmax , nvp    , nvp1   , nvep  , nivep
-integer          ntersl , nvlsta , nvisbr
+integer          nbpmax , nvp    , nvep  , nivep
+integer          nvlsta
 
 integer          itepa(nbpmax,nivep)
 
-double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision statis(ncelet,nvlsta)
 double precision stativ(ncelet,nvlsta-1)
-double precision w1(ncelet)
 
 ! Local variables
 

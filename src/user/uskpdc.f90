@@ -28,7 +28,7 @@ subroutine uskpdc &
  ( nvar   , nscal  ,                                              &
    ncepdp , iappel ,                                              &
    icepdc , izcpdc ,                                              &
-   dt     , rtpa   , rtp    , propce , propfb ,                   &
+   dt     , rtpa   , rtp    , propce ,                            &
    ckupdc )
 
 !===============================================================================
@@ -112,7 +112,6 @@ subroutine uskpdc &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! ckupdc           ! tr ! <-- ! work array for head loss                       !
 !  (ncepdp,6)      !    !     !                                                !
 !__________________!____!_____!________________________________________________!
@@ -149,7 +148,6 @@ integer          izcpdc(ncel)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfb(nfabor,*)
 double precision ckupdc(ncepdp,6)
 
 ! Local variables

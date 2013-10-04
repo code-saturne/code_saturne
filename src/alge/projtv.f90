@@ -40,22 +40,11 @@
 !> \param[in]     init           indicator
 !>                               - 1 initialize the mass flux to 0
 !>                               - 0 otherwise
-!> \param[in]     inc           indicator
-!>                               - 0 when solving an increment
-!>                               - 1 otherwise
-!> \param[in]     imrgra        indicator
-!>                               - 0 iterative gradient
-!>                               - 1 least square gradient
 !> \param[in]     nswrgp        number of reconstruction sweeps for the
 !>                               gradients
-!> \param[in]     imligp        clipping gradient method
-!>                               - < 0 no clipping
-!>                               - = 0 thank to neighbooring gradients
-!>                               - = 1 thank to the mean gradient
 !> \param[in]     ircflp        indicator
 !>                               - 1 flux reconstruction,
 !>                               - 0 otherwise
-!> \param[in]     iwarnp        verbosity
 !> \param[in]     frcxt         body force creating the hydrostatic pressure
 !> \param[in]     cofbfp        boundary condition array for the diffusion
 !>                               of the variable (Implicit part)
@@ -66,20 +55,18 @@
 !> \param[in]     viscel        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
 !> \param[in]     weighf        internal face weight between cells i j in case
 !>                               of tensor diffusion
-!> \param[in]     weighb        boundary face weight for cells i in case
-!>                               of tensor diffusion
 !> \param[in,out] flumas        mass flux at interior faces
 !> \param[in,out] flumab        mass flux at boundary faces
 !_______________________________________________________________________________
 
 subroutine projtv &
- ( init   , inc    , imrgra , nswrgp , imligp , ircflp ,          &
-   iwarnp , nfecra ,                                              &
+ ( init   , nswrgp , ircflp ,                                     &
+   nfecra ,                                                       &
    frcxt  ,                                                       &
    cofbfp ,                                                       &
    viscf  , viscb  ,                                              &
    viscel ,                                                       &
-   weighf , weighb ,                                              &
+   weighf ,                                                       &
    flumas , flumab )
 
 !===============================================================================
@@ -98,14 +85,14 @@ implicit none
 
 ! Arguments
 
-integer          init   , inc    , imrgra
-integer          nswrgp , imligp , ircflp
-integer          iwarnp , nfecra
+integer          init
+integer          nswrgp , ircflp
+integer          nfecra
 
 double precision frcxt(3, ncelet)
 double precision viscf(nfac), viscb(nfabor)
 double precision viscel(6,ncelet)
-double precision weighf(2,nfac), weighb(nfabor)
+double precision weighf(2,nfac)
 double precision cofbfp(nfabor)
 double precision flumas(nfac), flumab(nfabor)
 
@@ -113,12 +100,9 @@ double precision flumas(nfac), flumab(nfabor)
 
 integer          ifac, ii, jj, i
 double precision distbf,surfn
-double precision pi, pj
 double precision diippf(3), djjppf(3)
 double precision visci(3,3), viscj(3,3)
 double precision fikdvi, fjkdvi
-
-
 
 !===============================================================================
 

@@ -24,8 +24,8 @@ subroutine vorvit &
 !================
 
  ( ncevor , nvor   , ient   , ivocel , visco  ,                   &
-   yzc    , xu     , xv     , xw     ,                            &
-   yzv    , xsignv , xsigma , xgamma , xtmps  )
+   yzc    , xv     , xw     ,                                     &
+   yzv    , xsignv , xsigma , xgamma )
 
 !===============================================================================
 !  FONCTION  :
@@ -51,7 +51,6 @@ subroutine vorvit &
 !(icvmax,nnent)    !    !     ! d'entree                                       !
 ! yzc              ! tr ! <-- ! coordonnees des faces d'entree dans            !
 !   (icvmax ,2)    !    !     ! le referentiel local                           !
-! xu(icvmax)       ! tr ! <-- ! composante de vitesse principale               !
 ! xv(icvmax)       ! tr ! <-- ! composantes de vitesse transverses             !
 ! xw(icvmax)       ! tr ! <-- !                                                !
 ! yzv              ! tr ! <-- ! coordonnees du centre des vortex               !
@@ -61,8 +60,6 @@ subroutine vorvit &
 !(nvomax,nnent)    !    !     !                                                !
 ! xgamma           ! tr ! <-- ! intensite (circulation) des vortex             !
 !(nvomax,2,nnen    !    !     ! dans les deux directions du plan               !
-! xtmps            ! tr ! <-- ! temps ecoule depuis la creation                !
-!     (nvomax)     !    !     ! du vortex                                      !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -91,9 +88,9 @@ integer          ncevor , nvor   , ient
 integer          ivocel(nvomax)
 
 double precision yzc(icvmax,2) , visco(icvmax)
-double precision xu(icvmax )     , xv(icvmax )     , xw(icvmax )
-double precision yzv(nvomax,2) , xsignv(nvomax)   , xsigma(nvomax)
-double precision xgamma(nvomax,2) , xtmps(nvomax)
+double precision xv(icvmax )   , xw(icvmax )
+double precision yzv(nvomax,2) , xsignv(nvomax)  , xsigma(nvomax)
+double precision xgamma(nvomax,2)
 
 ! Local variables
 

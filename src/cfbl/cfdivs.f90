@@ -23,10 +23,7 @@
 subroutine cfdivs &
 !================
 
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   icepdc , icetsm , itypsm ,                                     &
-   rtp    , propce , propfb ,                                     &
-   coefa  , coefb  , ckupdc , smacel ,                            &
+ ( rtpa   , propce ,                                              &
    diverg , ux     , uy     , uz     )
 
 !===============================================================================
@@ -45,25 +42,11 @@ subroutine cfdivs &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
-! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
-! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
-! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
-! itypsm           ! te ! <-- ! type de source de masse pour les               !
-! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! rtp              ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant courant)                  !
+! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
+! (ncelet,*)       !    !     !    cellules (instant precedent)                !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
-!  (ncepdp,6)      !    !     !                                                !
-! smacel           ! tr ! <-- ! valeur des variables associee a la             !
-! (ncesmp,*   )    !    !     !  source de masse                               !
-!                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
 ! diverg(ncelet    ! tr ! --> ! div(sigma.u)                                   !
 ! ux,y,z(ncelet    ! tr ! <-- ! composantes du vecteur u                       !
 !__________________!____!_____!________________________________________________!
@@ -98,23 +81,14 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-integer          ncepdp , ncesmp
-
-integer          icepdc(ncepdp)
-integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-
-double precision rtp(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
+double precision rtpa(ncelet,*)
+double precision propce(ncelet,*)
 double precision diverg(ncelet)
 double precision ux(ncelet), uy(ncelet), uz(ncelet)
 
 ! Local variables
 
 integer          inc, iel, ifac, ii, jj
-integer          iclvar
 integer          nswrgp, imligp, iwarnp
 integer          ipcvis, ipcvst, ipcvsv
 
@@ -187,10 +161,9 @@ ilved = .false.
 call grdvec &
 !==========
 ( iu     , imrgra , inc    , nswrgp , imligp ,                   &
-  iwarnp , nfecra ,                                              &
-  epsrgp , climgp , extrap ,                                     &
+  iwarnp , epsrgp , climgp ,                                     &
   ilved  ,                                                       &
-  rtp(1,iu) ,  coefau , coefbu,                                  &
+  rtpa(1,iu) ,  coefau , coefbu ,                                &
   gradv  )
 
 ! --- Compute the vector \tens{\sigma}.\vect{v}

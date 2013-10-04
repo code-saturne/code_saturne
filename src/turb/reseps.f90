@@ -50,7 +50,6 @@
 !> \param[in,out] rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in,out] propfb        physical properties at boundary face centers
 !> \param[in]     coefa, coefb  boundary conditions
 !> \param[in]     gradv         tableau de travail pour terme grad
 !>                                 de vitesse     uniqt pour iturb=31
@@ -72,7 +71,7 @@ subroutine reseps &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   , isou   , ipp    ,                                     &
    icepdc , icetsm , itpsmp ,                                     &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   dt     , rtp    , rtpa   , propce ,                            &
    coefa  , coefb  , gradv  , produc , gradro ,                   &
    ckupdc , smcelp , gamma  ,                                     &
    viscf  , viscb  ,                                              &
@@ -114,7 +113,7 @@ integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itpsmp(ncesmp)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(ndimfb,*)
+double precision propce(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision produc(6,ncelet), gradv(3, 3, ncelet)
 double precision gradro(ncelet,3)
@@ -126,31 +125,28 @@ double precision smbr(ncelet), rovsdt(ncelet)
 
 ! Local variables
 
-integer          init  , ifac  , iel   , inc   , iccocg
-integer          ii    ,jj     , iiun
+integer          iel
+integer          iiun
 integer          iclvar, iclvaf
-integer          ipcrom, ipcroo, ipcvis, ipcvst, iflmas, iflmab
+integer          ipcvis, ipcvst, iflmas, iflmab
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
 integer          iptsta
-integer          iclalp, iii
+integer          iclalp
 integer          imucpp, idftnp, iswdyp
 integer          icvflb
 integer          ivoid(1)
 double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
 double precision epsrsp, alpha3
-double precision trprod , trrij ,csteps, rctse
-double precision grdpx,grdpy,grdpz,grdsn
-double precision surfn2
+double precision trprod , trrij
 double precision tseps , kseps , ceps2
 double precision tuexpe, thets , thetv , thetap, thetp1
 double precision prdeps, xttdrb, xttke , xttkmg
 
 double precision rvoid(1)
 
-double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: w7, w9
 double precision, allocatable, dimension(:) :: dpvar
@@ -158,6 +154,7 @@ double precision, allocatable, dimension(:,:) :: viscce
 double precision, allocatable, dimension(:,:) :: weighf
 double precision, allocatable, dimension(:) :: weighb
 double precision, dimension(:), pointer :: imasfl, bmasfl
+double precision, dimension(:), pointer ::  crom, cromo
 
 !===============================================================================
 
@@ -177,7 +174,7 @@ if(iwarni(ivar).ge.1) then
   write(nfecra,1000) nomvar(ipp)
 endif
 
-ipcrom = ipproc(irom  )
+call field_get_val_s(icrom, crom)
 ipcvis = ipproc(iviscl)
 ipcvst = ipproc(ivisct)
 call field_get_key_int(ivarfl(iu), kimasf, iflmas)
@@ -201,9 +198,10 @@ endif
 thets  = thetst
 thetv  = thetav(ivar )
 
-ipcroo = ipcrom
 if (isto2t.gt.0.and.iroext.gt.0) then
-  ipcroo = ipproc(iroma)
+  call field_get_val_prev_s(icrom, cromo)
+else
+  call field_get_val_s(icrom, cromo)
 endif
 if(isto2t.gt.0) then
   iptsta = ipproc(itstua)
@@ -227,7 +225,7 @@ call ustsri                                                       &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   ,                                                       &
    icepdc , icetsm , itpsmp ,                                     &
-   dt     , rtpa   , propce , propfb ,                            &
+   dt     , rtpa   , propce ,                                     &
    ckupdc , smcelp , gamma  , gradv  , produc ,                   &
    smbr   , rovsdt )
 
@@ -314,7 +312,7 @@ endif
 
 do iel = 1, ncel
   rovsdt(iel) = rovsdt(iel)                                          &
-              + istat(ivar)*(propce(iel,ipcrom)/dt(iel))*volume(iel)
+              + istat(ivar)*(crom(iel)/dt(iel))*volume(iel)
 enddo
 
 !===============================================================================
@@ -360,7 +358,7 @@ if (iturb.eq.32) then
     trrij  = 0.5d0 * (rtpa(iel,ir11) + rtpa(iel,ir22) + rtpa(iel,ir33))
     ! Calcul de l echelle de temps de Durbin
     xttke  = trrij/rtpa(iel,iep)
-    xttkmg = xct*sqrt(propce(iel,ipcvis)/propce(iel,ipcrom)           &
+    xttkmg = xct*sqrt(propce(iel,ipcvis)/crom(iel)           &
                                         /rtpa(iel,iep))
     xttdrb = max(xttke,xttkmg)
 
@@ -369,16 +367,16 @@ if (iturb.eq.32) then
 
     ! Production (explicit)
     ! Compute of C_eps_1'
-    w1(iel) = propce(iel,ipcroo)*volume(iel)*                         &
+    w1(iel) = cromo(iel)*volume(iel)*                         &
               ce1*(1.d0+xa1*(1.d0-alpha3)*prdeps)*trprod/xttdrb
 
 
     ! Dissipation (implicit)
-    smbr(iel) = smbr(iel) - propce(iel,ipcrom)*volume(iel)*           &
+    smbr(iel) = smbr(iel) - crom(iel)*volume(iel)*           &
                              ceps2*rtpa(iel,iep)/xttdrb
 
     rovsdt(iel) = rovsdt(iel)                                         &
-                + ceps2*propce(iel,ipcrom)*volume(iel)*thetap/xttdrb
+                + ceps2*crom(iel)*volume(iel)*thetap/xttdrb
   enddo
 
 ! SSG and LRR
@@ -390,13 +388,13 @@ else
     trrij  = 0.5d0 * (rtpa(iel,ir11) + rtpa(iel,ir22) + rtpa(iel,ir33))
     xttke  = trrij/rtpa(iel,iep)
     ! Production (explicit)
-    w1(iel) = propce(iel,ipcroo)*volume(iel)*ce1/xttke*trprod
+    w1(iel) = cromo(iel)*volume(iel)*ce1/xttke*trprod
 
     ! Dissipation (implicit)
     smbr(iel) = smbr(iel)                              &
-              - propce(iel,ipcrom)*volume(iel)*ceps2*rtpa(iel,iep)**2/trrij
+              - crom(iel)*volume(iel)*ceps2*rtpa(iel,iep)**2/trrij
     rovsdt(iel) = rovsdt(iel)                                        &
-                + ceps2*propce(iel,ipcrom)*volume(iel)/xttke*thetap
+                + ceps2*crom(iel)*volume(iel)/xttke*thetap
   enddo
 
 endif
@@ -425,12 +423,8 @@ if (igrari.eq.1) then
     w7(iel) = 0.d0
   enddo
 
-  call rijthe &
+  call rijthe(nscal, ivar, rtpa, gradro, w7)
   !==========
- ( nscal  ,                                                       &
-   ivar   , isou   , ipp    ,                                     &
-   rtp    , rtpa   ,                                              &
-   gradro , w7     )
 
   ! Extrapolation of source terms (2nd order in time)
   if (isto2t.gt.0) then
@@ -468,8 +462,7 @@ if (idften(ivar).eq.6) then
 
   call vitens &
   !==========
- ( imvisf ,                      &
-   viscce , iwarnp ,             &
+ ( viscce , iwarnp ,             &
    weighf , weighb ,             &
    viscf  , viscb  )
 

@@ -221,7 +221,7 @@ cs_run(void)
 
     cs_base_fortran_bft_printf_to_f();
 
-    CS_PROCF(csinit, CSINIT)(&_rank_id, &_n_ranks, &_n_threads);
+    CS_PROCF(csinit, CSINIT)(&_rank_id, &_n_ranks);
 
     CS_PROCF(initi1, INITI1)();
 

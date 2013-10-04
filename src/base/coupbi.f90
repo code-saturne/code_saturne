@@ -23,7 +23,7 @@
 subroutine coupbi &
 !================
 
- ( nfabor , nvar   , nscal  ,                                     &
+ ( nfabor , nscal  ,                                              &
    icodcl ,                                                       &
    rcodcl )
 
@@ -39,7 +39,6 @@ subroutine coupbi &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! icodcl           ! te ! --> ! boundary condition code                        !
 !  (nfabor, nvarcl)!    !     ! = 1   -> dirichlet                             !
@@ -87,7 +86,7 @@ implicit none
 
 ! Arguments
 
-integer          nfabor, nvar, nscal
+integer          nfabor, nscal
 integer          icodcl(nfabor,nvarcl)
 double precision rcodcl(nfabor,nvarcl,3)
 

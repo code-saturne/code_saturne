@@ -48,10 +48,7 @@
 !>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
 !>                               - 9 free inlet/outlet
 !>                                 (input mass flux blocked to 0)
-!> \param[in]     rtp, rtpa     calculated variables at cell centers
-!>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfb        physical properties at boundary face centers
 !> \param[in,out] rcodcl        boundary condition values:
 !>                               - rcodcl(1) value of the dirichlet
 !>                               - rcodcl(2) value of the exterior exchange
@@ -77,7 +74,7 @@
 
 subroutine clsyvt &
  ( nscal  , icodcl ,                                     &
-   rtp    , rtpa   , propce , rcodcl ,                   &
+   propce , rcodcl ,                                     &
    velipb , rijipb , coefa  , coefb  )
 
 !===============================================================================
@@ -107,7 +104,6 @@ integer          nscal
 
 integer          icodcl(nfabor,nvarcl)
 
-double precision rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision rcodcl(nfabor,nvarcl,3)
 double precision velipb(nfabor,ndim), rijipb(nfabor,6)

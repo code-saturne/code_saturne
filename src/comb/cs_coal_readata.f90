@@ -22,6 +22,7 @@
 
 subroutine cs_coal_readata
 !=========================
+
 !===============================================================================
 !  FONCTION  :
 !  ---------
@@ -71,48 +72,27 @@ implicit none
 character *150  chain1,chain2
 character *12   nomcoe(ngazem)
 
-integer          it     , ice    , iat    , ios , ii ,jj, ioxy
+integer          it     , ice    , iat    , ii ,jj
 integer          ncoel  , inicoe , inicha , ierror
-integer          idecal , icla   , iclapc , icha   , is
+integer          icla   , icha   , is
 integer          idebch , ifinch , lonch  , ichai  , ichcoe
 integer          atcoel(ngazem,natom)
 integer          ierr   , ndim
 
 double precision fcor   , pcisec , pcipur , xashpc
-double precision hco20  , ho20   , hh2o0 , hso20, hnh30
+double precision hco20  , ho20   , hh2o0 , hso20
 double precision den1   , den2
 double precision tmin   , tmax
 double precision wmolce(ngazem), ehcoel(ngazem,npot)
-double precision cpcoel(ngazem,npot),det,matdet
-double precision wmv1,wmvch1,wmv2,wmvch2
-double precision a21,a22,a23,a32,a33
+double precision cpcoel(ngazem,npot)
 double precision dhvol1,dhvol2,hcoke,hchar,ehvol1,ehvol2
 double precision wmco,wmo2,wmco2,wmh2o,wmn2,wmc
 double precision dmf3,dmf4,dmf5,som1,som2
 double precision sm(8),solu(8),mat(8,8)
 
-!
-! Loi Rosin-Rammler
-!
-integer          nbrfmax
-parameter       (nbrfmax = 10)
-!
-integer          itypdp , nbrf
-!
-double precision dprefus(nbrfmax),refus(nbrfmax)
-double precision pourc(nclcpm),rf(nclcpm)
-!
-integer          iclag
-double precision kk1,kk2,kk3,kk4,xx,qq,var
-!
 ! PCI-PCS
 !
 double precision pcibrut,pcssec,pcsbrut,pcspur,xwatpc
-!
-! Oxydant
-!
-integer          itypoxy
-double precision coef
 !
 !MODEL DE NOx
 !============

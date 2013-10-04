@@ -55,6 +55,7 @@
 #include "cs_gui_specific_physics.h"
 #include "cs_gui_variables.h"
 #include "cs_mesh.h"
+#include "cs_field.h"
 #include "cs_prototypes.h"
 #include "cs_timer.h"
 
@@ -1605,7 +1606,6 @@ cs_gui_get_faces_list(int          izone,
  * INTEGER          IPR     <-- rtp index for pressure
  * INTEGER          ITEMPK  <-- rtp index for temperature (in K)
  * INTEGER          IENERG  <-- rtp index for energy total
- * INTEGER          IPBROM  <-- propfb index for density
  * INTEGER          IQIMP   <-- 1 if flow rate is applied
  * INTEGER          ICALKE  <-- 1 for automatic turbulent boundary conditions
  * INTEGER          IENTAT  <-- 1 for air temperature boundary conditions (coal)
@@ -1637,7 +1637,6 @@ cs_gui_get_faces_list(int          izone,
  * DOUBLE PRECISION FMENT   <-- Mean Mixture Fraction at Inlet (gas combustion)
  * DOUBLE PRECISION DISTCH  <-- ratio for each coal
  * DOUBLE PRECISION RCODCL  <-- boundary conditions array value
- * DOUBLE PRECISION PROPFB  <-- boundary properties array value
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
@@ -1660,7 +1659,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
                                const int  *ipr,
                                const int  *itempk,
                                const int  *ienerg,
-                               const int  *ipbrom,
                                int        *iqimp,
                                int        *icalke,
                                int        *ientat,
@@ -1696,8 +1694,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
                                double     *tkent,
                                double     *fment,
                                double     *distch,
-                               double     *rcodcl,
-                               double     *propfb)
+                               double     *rcodcl)
 {
   int faces = 0;
   int zones = 0;
@@ -1801,12 +1798,15 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
       }
       else if (cs_gui_strcmp(vars->model, "compressible_model")) {
         if (boundaries->itype[izone] == *iesicf) {
+          static cs_field_t *b_rho = NULL;
+          if (b_rho == NULL)
+            b_rho = cs_field_by_name("boundary_density");
           for (ifac = 0; ifac < faces; ifac++) {
             ifbr = faces_list[ifac] -1;
             rcodcl[(*ipr-1) * (*nfabor) + ifbr] = boundaries->prein[izone];
             rcodcl[(isca[*itempk-1]-1) * (*nfabor) + ifbr] = boundaries->tempin[izone];
             rcodcl[(isca[*ienerg-1]-1) * (*nfabor) + ifbr] = boundaries->entin[izone];
-            propfb[(*ipbrom-1) * (*nfabor) + ifbr] = boundaries->rhoin[izone];
+            b_rho->val[ifbr] = boundaries->rhoin[izone];
           }
         }
         if (boundaries->itype[izone] == *iephcf) {

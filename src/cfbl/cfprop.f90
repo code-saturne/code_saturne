@@ -31,7 +31,7 @@ subroutine cfprop &
 
 !     INIT DES POSITIONS DES VARIABLES D'ETAT POUR
 !              POUR LE COMPRESSIBLE SANS CHOC
-!         (DANS VECTEURS PROPCE, PROPFB)
+!         (DANS VECTEURS PROPCE)
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -39,7 +39,7 @@ subroutine cfprop &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! ipropp           ! e  ! <-- ! numero de la derniere propriete                !
-!                  !    !     !  (les proprietes sont dans propce, ou propfb)  !
+!                  !    !     !  (les proprietes sont dans propce)             !
 ! ipppst           ! e  ! <-- ! pointeur indiquant le rang de la               !
 !                  !    !     !  derniere grandeur definie aux                 !
 !                  !    !     !  cellules (rtp,propce...) pour le              !
@@ -81,7 +81,7 @@ integer       iprop, ipp
 
 !===============================================================================
 !===============================================================================
-! 1. POSITIONNEMENT DES PROPRIETES : PROPCE, PROPFB
+! 1. POSITIONNEMENT DES PROPRIETES : PROPCE
 !    Physique particuliere : Compressible sans choc
 !===============================================================================
 

@@ -24,7 +24,7 @@ subroutine vorini &
 !================
 
  ( ncevor , nvor   , ient   ,                                     &
-   ivocel , xyz    , yzc    , xu     , xv     , xw     ,          &
+   ivocel , xyz    , yzc    , xu     ,                            &
    yzv    , xsignv , xtmps  , xtpsli )
 
 !===============================================================================
@@ -49,8 +49,6 @@ subroutine vorini &
 ! yzc              ! tr ! <-- ! coordonnees des faces d'entree dans            !
 !   (icvmax ,2)    !    !     ! le referentiel local                           !
 ! xu(icvmax)       ! tr ! --- ! composante de vitesse principale               !
-! xv(icvmax)       ! tr ! <-- ! composantes de vitesse transverses             !
-! xw(icvmax)       ! tr ! <-- !                                                !
 ! yzv              ! tr ! <-- ! coordonnees du centre des vortex               !
 !   (nvomax,2)     !    !     !                                                !
 ! xsignv(nvomax)   ! tr ! <-- ! sens de rotation des vortex                    !
@@ -87,7 +85,7 @@ integer          ncevor , nvor   , ient
 integer          ivocel(nvomax)
 
 double precision xyz(icvmax,3)   , yzc(icvmax,2)
-double precision xu(icvmax)      , xv(icvmax)      , xw(icvmax)
+double precision xu(icvmax)
 double precision yzv(nvomax,2) , xsignv(nvomax)
 double precision xtmps(nvomax)   , xtpsli(nvomax)
 

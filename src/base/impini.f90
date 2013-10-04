@@ -190,8 +190,7 @@ endif
 ! --- Dimensions
 
 write(nfecra,1500)
-write(nfecra,1520) nvar,nscal,nscaus,nscapp,                      &
-                   nproce,nprofb
+write(nfecra,1520) nvar,nscal,nscaus,nscapp,nproce
 
 write(nfecra,9900)
 
@@ -208,8 +207,7 @@ write(nfecra,9900)
 '       NSCAL  = ',4x,i10,    ' (Nb de scalaires             )',/,&
 '       NSCAUS = ',4x,i10,    ' (Nb de scalaires utilisateur )',/,&
 '       NSCAPP = ',4x,i10,    ' (Nb de scalaires phys. part. )',/,&
-'       NPROCE = ',4x,i10,    ' (Nb de proprietes (cellules) )',/,&
-'       NPROFB = ',4x,i10,    ' (Nb de proprietes (faces brd))',/)
+'       NPROCE = ',4x,i10,    ' (Nb de proprietes (cellules) )',/)
 
 #else
 
@@ -223,8 +221,7 @@ write(nfecra,9900)
 '       NSCAL  = ',4x,i10,    ' (Nb scalars                  )',/,&
 '       NSCAUS = ',4x,i10,    ' (Nb user scalars             )',/,&
 '       NSCAPP = ',4x,i10,    ' (Nb specific physics scalars )',/,&
-'       NPROCE = ',4x,i10,    ' (Nb cell properties          )',/,&
-'       NPROFB = ',4x,i10,    ' (Nb boundary face properties )',/)
+'       NPROCE = ',4x,i10,    ' (Nb cell properties          )',/)
 
 #endif
 

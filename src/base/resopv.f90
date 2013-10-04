@@ -56,20 +56,15 @@
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[in]     nvar          total number of variables
-!> \param[in]     ncepdp        number of cells with head loss
 !> \param[in]     ncesmp        number of cells with mass source term
-!> \param[in]     icepdc        index of cells with head loss
 !> \param[in]     icetsm        index of cells with mass source term
-!> \param[in]     itypsm        type of mass source term for the variables
 !> \param[in]     isostd        indicator of standard outlet and index
 !>                               of the reference outlet face
 !> \param[in]     dt            time step (per cell)
 !> \param[in,out] rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in,out] propfb        physical properties at boundary face centers
 !> \param[in]     coefa, coefb  boundary conditions
-!> \param[in]     ckupdc        work array for the head loss
 !> \param[in]     smacel        variable value associated to the mass source
 !>                               term (for ivar=ipr, smacel is the mass flux
 !>                               \f$ \Gamma^n \f$)
@@ -82,22 +77,20 @@
 !>                               the residual
 !> \param[in]     viscf         visc*surface/dist aux faces internes
 !> \param[in]     viscb         visc*surface/dist aux faces de bord
-!> \param[in]     viscfi        idem viscf pour increments
-!> \param[in]     viscbi        idem viscb pour increments
 !> \param[in]     drtp          tableau de travail pour increment
 !> \param[in]     tslagr        coupling term for the Lagrangian module
 !> \param[in]     trava         tableau de travail pour couplage
 !_______________________________________________________________________________
 
 subroutine resopv &
- ( nvar   , ncepdp , ncesmp ,                                     &
-   icepdc , icetsm , itypsm , isostd ,                            &
-   dt     , rtp    , rtpa   , vel    , vela   ,                   &
-   propce , propfb ,                                              &
+ ( nvar   , ncesmp ,                                              &
+   icetsm , isostd ,                                              &
+   dt     , rtp    , rtpa   , vel    ,                            &
+   propce ,                                                       &
    coefa  , coefb  , coefav , coefbv , coefap ,                   &
-   ckupdc , smacel ,                                              &
+   smacel ,                                                       &
    frcxt  , dfrcxt , tpucou , trav   ,                            &
-   viscf  , viscb  , viscfi , viscbi ,                            &
+   viscf  , viscb  ,                                              &
    drtp   , tslagr ,                                              &
    trava  )
 
@@ -133,27 +126,24 @@ implicit none
 ! Arguments
 
 integer          nvar
-integer          ncepdp , ncesmp
+integer          ncesmp
 
-integer          icepdc(ncepdp)
-integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
+integer          icetsm(ncesmp)
 integer          isostd(nfabor+1)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(ndimfb,*)
+double precision propce(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
-double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
+double precision smacel(ncesmp,nvar)
 double precision frcxt(3,ncelet), dfrcxt(3,ncelet)
 double precision tpucou(6, ncelet), trav(3,ncelet)
 double precision viscf(nfac), viscb(nfabor)
-double precision viscfi(nfac), viscbi(nfabor)
 double precision drtp(ncelet)
 double precision tslagr(ncelet,*)
 double precision trava(ndim,ncelet)
 double precision coefav(3  ,ndimfb)
 double precision coefbv(3,3,ndimfb)
 double precision vel   (3  ,ncelet)
-double precision vela  (3  ,ncelet)
 double precision coefap(nfabor)
 
 ! Local variables
@@ -167,7 +157,7 @@ integer          isweep, niterf, icycle
 integer          iflmb0, ifcsor
 integer          nswrgp, imligp, iwarnp
 integer          iclipf, iclipr, icliup, iclivp, icliwp
-integer          ipcrom, ipcroa, ipbrom, iflmas, iflmab
+integer          ipcrom, iflmas, iflmab
 integer          ipp
 integer          idiffp, iconvp, ndircp
 integer          nitmap, imgrp , ncymap, nitmgp
@@ -184,7 +174,7 @@ integer          insqrt
 integer          icvflb
 integer          ivoid(1)
 
-double precision residu, resold, phydr0
+double precision residu, phydr0
 double precision ardtsr, arsr  , unsara, thetap
 double precision dtsrom, unsvom, romro0
 double precision epsrgp, climgp, extrap, epsilp
@@ -210,6 +200,7 @@ double precision, allocatable, dimension(:,:) :: weighf
 double precision, allocatable, dimension(:) :: weighb
 double precision, allocatable, dimension(:,:) :: frchy, dfrchy
 double precision, dimension(:), pointer :: imasfl, bmasfl
+double precision, dimension(:), pointer :: brom, crom, croma
 
 !===============================================================================
 
@@ -244,13 +235,11 @@ iclivp = iclrtp(iv ,icoef)
 icliwp = iclrtp(iw ,icoef)
 
 ! --- Physical quantities
-ipcrom = ipproc(irom)
+call field_get_val_s(icrom, crom)
 if (icalhy.eq.1.or.idilat.gt.1) then
-  ipcroa = ipproc(iroma)
-else
-  ipcroa = 0
+  call field_get_val_prev_s(icrom, croma)
 endif
-ipbrom = ipprob(irom  )
+call field_get_val_s(ibrom, brom)
 
 call field_get_key_int(ivarfl(ipr), kimasf, iflmas)
 call field_get_key_int(ivarfl(ipr), kbmasf, iflmab)
@@ -298,7 +287,7 @@ if(irnpnw.ne.1) then
     if(isno2t.gt.0) then
       do iel = 1, ncel
         unsvom = -1.d0/volume(iel)
-        romro0 = propce(iel,ipcrom)-ro0
+        romro0 = crom(iel)-ro0
         trav(1,iel) = (trav(1,iel)+trava(1,iel))*unsvom + romro0*gx
         trav(2,iel) = (trav(2,iel)+trava(2,iel))*unsvom + romro0*gy
         trav(3,iel) = (trav(3,iel)+trava(3,iel))*unsvom + romro0*gz
@@ -306,7 +295,7 @@ if(irnpnw.ne.1) then
     else
       do iel = 1, ncel
         unsvom = -1.d0/volume(iel)
-        romro0 = propce(iel,ipcrom)-ro0
+        romro0 = crom(iel)-ro0
         trav(1,iel) = trav(1,iel)*unsvom + romro0*gx
         trav(2,iel) = trav(2,iel)*unsvom + romro0*gy
         trav(3,iel) = trav(3,iel)*unsvom + romro0*gz
@@ -314,7 +303,7 @@ if(irnpnw.ne.1) then
     endif
   endif
   do iel = 1, ncel
-    dtsrom = dt(iel)/propce(iel,ipcrom)
+    dtsrom = dt(iel)/crom(iel)
     do isou = 1, 3
       trav(isou,iel) = vel(isou,iel) +dtsrom*trav(isou,iel)
     enddo
@@ -340,7 +329,6 @@ if(irnpnw.ne.1) then
   iwarnp = iwarni(ipr)
   epsrgp = epsrgr(iu )
   climgp = climgr(iu )
-  extrap = extrag(iu )
   itypfl = 1
   if (idilat.eq.4) itypfl = 0
 
@@ -349,8 +337,8 @@ if(irnpnw.ne.1) then
  ( iu     , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
-   epsrgp , climgp , extrap ,                                     &
-   propce(1,ipcrom), propfb(1,ipbrom),                            &
+   epsrgp , climgp ,                                              &
+   crom, brom   ,                                                 &
    trav   ,                                                       &
    coefav , coefbv ,                                              &
    imasfl , bmasfl )
@@ -362,7 +350,7 @@ if(irnpnw.ne.1) then
   ! --- Weakly compressible algorithm: semi analytic scheme
   if (idilat.eq.4) then
     do iel = 1, ncel
-      res(iel) = res(iel)*propce(iel,ipcrom)
+      res(iel) = res(iel)*crom(iel)
     enddo
   endif
 
@@ -501,8 +489,8 @@ if (iphydr.eq.1) then
 !      RHO et RHO n-1 qui ont ete communiques auparavant.
 !     Exceptionnellement, on fait donc le calcul sur ncelet.
       do iel = 1, ncelet
-        dronm1 = (propce(iel,ipcroa)-ro0)
-        drom   = (propce(iel,ipcrom)-ro0)
+        dronm1 = (croma(iel)-ro0)
+        drom   = (crom(iel)-ro0)
         frchy(1,iel)  = dronm1*gx
         frchy(2,iel)  = dronm1*gy
         frchy(3,iel)  = dronm1*gz
@@ -562,8 +550,7 @@ if (idiff(ipr).ge.1) then
 
     call vitens &
     !==========
-   ( imvisf ,                      &
-     tpucou , iwarnp ,             &
+   ( tpucou , iwarnp ,             &
      weighf , weighb ,             &
      viscf  , viscb  )
 
@@ -623,8 +610,7 @@ extrap = extrag(ipr)
 call grdpot &
 !==========
  ( ipr , imrgra , inc    , iccocg , nswrgp , imligp , iphydr ,    &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   rvoid  ,                                                       &
+   iwarnp , epsrgp , climgp , extrap ,                            &
    frcxt  ,                                                       &
    rtpa(1,ipr)  , coefa(1,iclipr) , coefb(1,iclipr)  ,            &
    gradp  )
@@ -649,14 +635,14 @@ endif
 if (idilat.eq.4) then
   if (idften(ipr).eq.1) then
     do iel = 1, ncel
-      ardtsr  = arak*(dt(iel)/propce(iel,ipcrom))
+      ardtsr  = arak*(dt(iel)/crom(iel))
       do isou = 1, 3
         trav(isou,iel) = ardtsr*trav(isou,iel)
       enddo
     enddo
   else if (idften(ipr).eq.6) then
     do iel = 1, ncel
-      arsr  = arak/propce(iel,ipcrom)
+      arsr  = arak/crom(iel)
 
       trav(1,iel) = arsr*(                                 &
                            tpucou(1,iel)*(trav(1,iel))     &
@@ -681,14 +667,14 @@ if (idilat.eq.4) then
 else
   if (idften(ipr).eq.1) then
     do iel = 1, ncel
-      ardtsr  = arak*(dt(iel)/propce(iel,ipcrom))
+      ardtsr  = arak*(dt(iel)/crom(iel))
       do isou = 1, 3
         trav(isou,iel) = vel(isou,iel) + ardtsr*trav(isou,iel)
       enddo
     enddo
   else if (idften(ipr).eq.6) then
     do iel = 1, ncel
-      arsr  = arak/propce(iel,ipcrom)
+      arsr  = arak/crom(iel)
 
       trav(1,iel) = vel(1,iel)                             &
                   + arsr*(                                 &
@@ -730,7 +716,6 @@ imligp = imligr(iu )
 iwarnp = iwarni(ipr)
 epsrgp = epsrgr(iu )
 climgp = climgr(iu )
-extrap = extrag(iu )
 itypfl = 1
 
 call inimav &
@@ -738,8 +723,8 @@ call inimav &
  ( iu     , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
-   epsrgp , climgp , extrap ,                                     &
-   propce(1,ipcrom), propfb(1,ipbrom),                            &
+   epsrgp , climgp ,                                              &
+   crom, brom   ,                                                 &
    trav   ,                                                       &
    coefav , coefbv ,                                              &
    imasfl , bmasfl )
@@ -762,9 +747,7 @@ if (iphydr.eq.1) then
   if (idften(ipr).eq.1) then
     call projts &
     !==========
- ( init   , inc    , imrgra , iccocg , nswrgp , imligp ,          &
-   iwarnp , nfecra ,                                              &
-   epsrgp , climgp ,                                              &
+ ( init   , nswrgp , nfecra ,                                     &
    dfrcxt ,                                                       &
    coefb(1,iclipf) ,                                              &
    imasfl , bmasfl ,                                              &
@@ -776,13 +759,13 @@ if (iphydr.eq.1) then
 
     call projtv &
     !==========
-  ( init   , inc    , imrgra , nswrgp , imligp , ircflp ,          &
-    iwarnp , nfecra ,                                              &
+  ( init   , nswrgp , ircflp ,                                     &
+    nfecra ,                                                       &
     dfrcxt ,                                                       &
     coefb(1,iclipf) ,                                              &
     viscf  , viscb  ,                                              &
     tpucou ,                                                       &
-    weighf , weighb ,                                              &
+    weighf ,                                                       &
     imasfl , bmasfl )
 
   endif
@@ -860,9 +843,7 @@ if (arak.gt.0.d0) then
 
       call projts &
       !==========
- ( init   , inc    , imrgra , iccocg , nswrgp , imligp ,          &
-   iwarnp , nfecra ,                                              &
-   epsrgp , climgp ,                                              &
+ ( init   , nswrgp , nfecra ,                                     &
    frcxt  ,                                                       &
    cofbfp ,                                                       &
    imasfl , bmasfl ,                                              &
@@ -930,13 +911,12 @@ if (arak.gt.0.d0) then
 
      call projtv &
      !==========
-   ( init   , inc    , imrgra , nswrgp , imligp , ircflp ,          &
-     iwarnp , nfecra ,                                              &
+   ( init   , nswrgp , ircflp , nfecra ,                            &
      frcxt  ,                                                       &
      cofbfp ,                                                       &
      viscf  , viscb  ,                                              &
      tpucou ,                                                       &
-     weighf , weighb ,                                              &
+     weighf ,                                                       &
      imasfl, bmasfl )
 
    endif
@@ -980,8 +960,7 @@ if (arak.gt.0.d0) then
 
         call vitens &
         !==========
-       ( imvisf ,                      &
-         tpucou , iwarnp ,             &
+       ( tpucou , iwarnp ,             &
          weighf , weighb ,             &
          viscf  , viscb  )
 
@@ -1165,7 +1144,6 @@ if (idilat.eq.4) then
   iwarnp = iwarni(ipr)
   epsrgp = epsrgr(iu)
   climgp = climgr(iu)
-  extrap = extrag(iu)
 
   itypfl = 0
 
@@ -1174,8 +1152,8 @@ if (idilat.eq.4) then
  ( iu     , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
-   epsrgp , climgp , extrap ,                                     &
-   propce(1,ipcrom), propfb(1,ipbrom),                            &
+   epsrgp , climgp ,                                              &
+   crom, brom   ,                                                 &
    vel    ,                                                       &
    coefav , coefbv ,                                              &
    velflx , velflb )
@@ -1187,7 +1165,7 @@ if (idilat.eq.4) then
    velflx , velflb , res )
 
   do iel = 1, ncel
-    divu(iel) = divu(iel) + res(iel)*propce(iel,ipcrom)
+    divu(iel) = divu(iel) + res(iel)*crom(iel)
   enddo
 
   ! 2. Add the dilatation source term D(rho)/Dt
@@ -1205,7 +1183,6 @@ if (idilat.eq.4) then
   iwarnp = iwarni(ipr)
   epsrgp = epsrgr(iu)
   climgp = climgr(iu)
-  extrap = extrag(iu)
 
   itypfl = 1
 
@@ -1214,8 +1191,8 @@ if (idilat.eq.4) then
  ( iu     , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
-   epsrgp , climgp , extrap ,                                     &
-   propce(1,ipcrom), propfb(1,ipbrom),                            &
+   epsrgp , climgp ,                                              &
+   crom, brom   ,                                                 &
    vel    ,                                                       &
    coefav , coefbv ,                                              &
    imasfl , bmasfl )
@@ -1234,7 +1211,7 @@ endif
 if ((idilat.eq.2.or.idilat.eq.3).and. &
     (ntcabs.gt.1.or.isuite.gt.0)) then
   do iel = 1, ncel
-    drom = propce(iel,ipcrom) - propce(iel,ipcroa)
+    drom = crom(iel) - croma(iel)
     divu(iel) = divu(iel) + drom*volume(iel)/dt(iel)
   enddo
 endif
@@ -1371,7 +1348,7 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
  ( chaine(1:16)    , isym   , ibsize , iesize ,                   &
    ipol   , ireslp , nitmap , imgrp  ,                            &
    ncymap , nitmgp ,                                              &
-   iwarnp , nfecra , niterf , icycle , iinvpe ,                   &
+   iwarnp , niterf , icycle , iinvpe ,                            &
    epsilp , rnormp , ressol ,                                     &
    dam    , xam    , rhs    , drtp   )
 
@@ -1762,7 +1739,7 @@ if (idilat.eq.4) then
   !------------------------------------
 
   do ifac = 1, nfabor
-    coefap(ifac) = propfb(ifac,ipbrom)
+    coefap(ifac) = brom(ifac)
     coefbp(ifac) = 0.d0
   enddo
 
@@ -1771,12 +1748,12 @@ if (idilat.eq.4) then
   (ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   propce(1,ipcrom), coefap , coefbp , gradp  )
+   crom, coefap , coefbp , gradp  )
 
   ! --- dt/rho * grad rho
   do iel = 1, ncel
     do isou = 1, 3
-      trav(isou,iel) = gradp(iel,isou) * dt(iel) / propce(iel,ipcrom)
+      trav(isou,iel) = gradp(iel,isou) * dt(iel) / crom(iel)
     enddo
   enddo
 
@@ -1874,8 +1851,8 @@ if (idilat.eq.4) then
  ( ipcrom , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
-   epsrgp , climgp , extrap ,                                     &
-   propce(1,ipcrom), propfb(1,ipbrom),                            &
+   epsrgp , climgp ,                                              &
+   crom, brom   ,                                                 &
    trav   ,                                                       &
    coefar , coefbr ,                                              &
    velflx , velflb )

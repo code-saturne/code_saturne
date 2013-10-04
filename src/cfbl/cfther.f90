@@ -27,8 +27,8 @@ subroutine cfther &
 
  ( nvar   ,                                                       &
    iccfth , imodif ,                                              &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   sorti1 , sorti2 , gamagr , xmasm1 , bval   , wbfb   )
+   rtp    ,                                                       &
+   sorti1 , sorti2 , gamagr , bval   , wbfb   )
 
 !===============================================================================
 ! Purpose:
@@ -180,16 +180,12 @@ subroutine cfther &
 !__________________!____!_____!________________________________________________!
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and preceding time steps)         !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
+! rtp              ! ra ! <-- ! calculated variables at cell centers           !
+!  (ncelet, *)     !    !     !  (at current time step)                        !
 ! sorti1,2(*)      ! ra ! --> ! output variable (unused if iccfth.lt.0)        !
 ! gamagr(*)        ! ra ! --> ! equivalent "gamma" constant of the gas         !
 !                  !    !     !   (unused if iccfth.lt.0)                      !
 !                  !    !     !   (first value only used for perfect gas)      !
-! xmasm1(*)        ! ra ! --> ! molar mass of the components of the gas        !
-!                  !    !     !   (unused if iccfth.lt.0)                      !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -224,17 +220,16 @@ implicit none
 integer          nvar
 integer          iccfth   , imodif
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
+double precision rtp(ncelet,*)
 double precision wbfb(nfabor), bval(nfabor,nvar)
 
-double precision sorti1(*), sorti2(*), gamagr(*), xmasm1(*)
+double precision sorti1(*), sorti2(*), gamagr(*)
 
 ! Local variables
 
 integer          ifac0
 integer          ierr
-integer          iel    , ifac   , ipcrom, ipbrom
+integer          iel    , ifac
 integer          itk    , ien    , niter, nitermax
 double precision gamagp , xmasml , enint, norm, cosalp
 double precision xmach  , xmachi , xmache , dxmach
@@ -242,9 +237,7 @@ double precision dir(3)
 double precision roi, ro1, pri, ei, uni, un1, y, uns, bc, pinf, ptot, eps, res, rhotot
 double precision ci, c1, mi, a, b, sigma1, utxi, utyi, utzi, bMach, old_pstat, pstat
 
-integer          npmax
-parameter (npmax = 1000)
-double precision cstgr(npmax)
+double precision, dimension(:), pointer :: crom, brom
 
 !===============================================================================
 
@@ -257,8 +250,8 @@ ierr   = 0
 
 ! Rank of the variables in their associated arrays
 if (iccfth.ge.0.or.iccfth.le.-2) then
-  ipcrom = ipproc(irom)
-  ipbrom = ipprob(irom)
+  call field_get_val_s(icrom, crom)
+  call field_get_val_s(ibrom, brom)
   itk = isca(itempk)
   ien = isca(ienerg)
 endif
@@ -348,7 +341,7 @@ if (ieos.eq.1) then
 
     if ( isuite .eq. 0 ) then
       do iel = 1, ncel
-        propce(iel,ipcrom) = p0*xmasml/(rr*t0)
+        crom(iel) = p0*xmasml/(rr*t0)
         rtp(iel,ien) = cv0*t0
       enddo
     endif
@@ -418,8 +411,8 @@ if (ieos.eq.1) then
     ! Verification of the values of the density
     ierr = 0
     do iel = 1, ncel
-      if (propce(iel,ipcrom).le.0.d0) then
-        write(nfecra,3010)propce(iel,ipcrom),iel
+      if (crom(iel).le.0.d0) then
+        write(nfecra,3010)crom(iel),iel
       endif
     enddo
     ! Stop if a negative value is detected (since the density has been
@@ -431,7 +424,7 @@ if (ieos.eq.1) then
 
     do iel = 1, ncel
       ! Temperature
-      sorti1(iel) = xmasml*rtp(iel,ipr)/(rr*propce(iel,ipcrom))
+      sorti1(iel) = xmasml*rtp(iel,ipr)/(rr*crom(iel))
       ! Total energy
       sorti2(iel) = cv0*sorti1(iel)                        &
            + 0.5d0*( rtp(iel,iu)**2 + rtp(iel,iv)**2 + rtp(iel,iw)**2 )
@@ -475,7 +468,7 @@ if (ieos.eq.1) then
     ! Transfer to the array rtp
     if (imodif.gt.0) then
       do iel = 1, ncel
-        propce(iel,ipcrom) = sorti1(iel)
+        crom(iel) = sorti1(iel)
         rtp(iel,ien) = sorti2(iel)
       enddo
     endif
@@ -501,7 +494,7 @@ if (ieos.eq.1) then
     ! Transfer to the array rtp
     if (imodif.gt.0) then
       do iel = 1, ncel
-        propce(iel,ipcrom) = sorti1(iel)
+        crom(iel) = sorti1(iel)
         rtp(iel,itk) = sorti2(iel)
       enddo
     endif
@@ -513,7 +506,7 @@ if (ieos.eq.1) then
 
     do iel = 1, ncel
       ! Pressure
-      sorti1(iel) = propce(iel,ipcrom)*rtp(iel,itk)*rr/xmasml
+      sorti1(iel) = crom(iel)*rtp(iel,itk)*rr/xmasml
       ! Total energy
       sorti2(iel) = cv0*rtp(iel,itk)                    &
            + 0.5d0*( rtp(iel,iu)**2 + rtp(iel,iv)**2 + rtp(iel,iw)**2 )
@@ -540,7 +533,7 @@ if (ieos.eq.1) then
                        + rtp(iel,iv)**2                        &
                        + rtp(iel,iw)**2 )
       ! Pressure
-      sorti1(iel) = (gamagp-1.d0) * propce(iel,ipcrom) * enint
+      sorti1(iel) = (gamagp-1.d0) * crom(iel) * enint
       ! Temperature
       sorti2(iel) = xmasml * (gamagp-1.d0) * enint / rr
     enddo
@@ -567,8 +560,8 @@ if (ieos.eq.1) then
     if (.false.) then
       ierr = 0
       do iel = 1, ncel
-        if (propce(iel,ipcrom).le.0.d0) then
-          write(nfecra,4010)propce(iel,ipcrom),iel
+        if (crom(iel).le.0.d0) then
+          write(nfecra,4010)crom(iel),iel
         endif
       enddo
       if (ierr.eq.1) then
@@ -577,7 +570,7 @@ if (ieos.eq.1) then
     endif
 
     do iel = 1, ncel
-      sorti1(iel) = gamagp * rtp(iel,ipr) / propce(iel,ipcrom)
+      sorti1(iel) = gamagp * rtp(iel,ipr) / crom(iel)
     enddo
 
 
@@ -593,8 +586,8 @@ if (ieos.eq.1) then
     if (.false.) then
       ierr = 0
       do iel = 1, ncel
-        if (propce(iel,ipcrom).lt.0.d0) then
-          write(nfecra,4020)propce(iel,ipcrom),iel
+        if (crom(iel).lt.0.d0) then
+          write(nfecra,4020)crom(iel),iel
         endif
       enddo
       if (ierr.eq.1) then
@@ -603,7 +596,7 @@ if (ieos.eq.1) then
     endif
 
     do iel = 1, ncel
-      sorti1(iel) = propce(iel,ipcrom)**gamagp
+      sorti1(iel) = crom(iel)**gamagp
     enddo
 
 
@@ -624,8 +617,8 @@ if (ieos.eq.1) then
     !     density is <= 0, the calculation will simply fail)
     ierr = 0
     do iel = 1, ncel
-      if (propce(iel,ipcrom).le.0.d0) then
-        write(nfecra,4030)propce(iel,ipcrom),iel
+      if (crom(iel).le.0.d0) then
+        write(nfecra,4030)crom(iel),iel
       endif
     enddo
     if (ierr.eq.1) then
@@ -633,7 +626,7 @@ if (ieos.eq.1) then
     endif
 
     do iel = 1, ncel
-      sorti1(iel) = rtp(iel,ipr) / (propce(iel,ipcrom)**gamagp)
+      sorti1(iel) = rtp(iel,ipr) / (crom(iel)**gamagp)
     enddo
 
 
@@ -669,7 +662,7 @@ if (ieos.eq.1) then
          ( rtp(iel,iu)*surfbo(1,ifac)                          &
          + rtp(iel,iv)*surfbo(2,ifac)                          &
          + rtp(iel,iw)*surfbo(3,ifac) ) / surfbn(ifac)         &
-         / sqrt( gamagp * rtp(iel,ipr) / propce(iel,ipcrom) )
+         / sqrt( gamagp * rtp(iel,ipr) / crom(iel) )
 
     ! Pressure
 
@@ -748,19 +741,19 @@ if (ieos.eq.1) then
          ( rtp(iel,iu)*surfbo(1,ifac)                             &
          + rtp(iel,iv)*surfbo(2,ifac)                             &
          + rtp(iel,iw)*surfbo(3,ifac) ) / surfbn(ifac)            &
-         / sqrt( gamagp * rtp(iel,ipr) / propce(iel,ipcrom) )
-      xmache =                                                    &
+         / sqrt( gamagp * rtp(iel,ipr) / crom(iel) )
+      xmache =                                                   &
            (  bval(ifac,iu)*surfbo(1,ifac)                       &
             + bval(ifac,iv)*surfbo(2,ifac)                       &
             + bval(ifac,iw)*surfbo(3,ifac) ) /surfbn(ifac)       &
-           / sqrt( gamagp * rtp(iel,ipr) / propce(iel,ipcrom) )
+           / sqrt( gamagp * rtp(iel,ipr) / crom(iel) )
     dxmach = xmachi - xmache
 
     ! Pressure: rarefaction wave (Rusanov)
     if (dxmach.le.0.d0) then
 
       if (dxmach.gt.2.d0/(1.d0-gamagp)) then
-        bval(ifac,ipr) = rtp(iel,ipr)*                              &
+        bval(ifac,ipr) = rtp(iel,ipr)*                            &
              ( (1.d0 + (gamagp-1.d0)*0.50d0*dxmach)               &
                ** (2.d0*gamagp/(gamagp-1.d0))    )
       elseif (dxmach.le.2.d0/(1.d0-gamagp) ) then
@@ -769,7 +762,7 @@ if (ieos.eq.1) then
 
       ! Pressure: shock (Rusanov)
     else
-      bval(ifac,ipr) = rtp(iel,ipr)*                                &
+      bval(ifac,ipr) = rtp(iel,ipr)*                              &
            (  1.d0 + gamagp*dxmach                                &
            *( (gamagp+1.d0)*0.25d0*dxmach                         &
            + sqrt(1.d0 + (gamagp+1.d0)**2/16.d0*dxmach**2) )  )
@@ -779,8 +772,8 @@ if (ieos.eq.1) then
     bval(ifac,ipr) = rtp(iel,ipr)
 
     ! Total energy
-    bval(ifac,ien) =                                              &
-         bval(ifac,ipr)/((gamagp-1.d0)*propfb(ifac,ipbrom))              &
+    bval(ifac,ien) =                                           &
+         bval(ifac,ipr)/((gamagp-1.d0)*brom(ifac))             &
          + 0.5d0*(bval(ifac,iu)**2                             &
                   + bval(ifac,iv)**2 + bval(ifac,iw)**2)
 
@@ -818,7 +811,7 @@ if (ieos.eq.1) then
 
     pinf = bval(ifac,ipr)
     pri  = rtp(iel,ipr)
-    roi  = propce(iel,ipcrom)
+    roi  = crom(iel)
 
     ci = sqrt(gamagp * pri / roi)
     uni = ( rtp(iel,iu) * surfbo(1,ifac)                             &
@@ -841,7 +834,7 @@ if (ieos.eq.1) then
       if (un1.lt.0.d0) then
 
         ! Density
-        propfb(ifac,ipbrom) = ro1
+        brom(ifac) = ro1
         ! Velocity
         bval(ifac,iu) = rtp(iel,iu) + a * surfbo(1,ifac) / surfbn(ifac)
         bval(ifac,iv) = rtp(iel,iv) + a * surfbo(2,ifac) / surfbn(ifac)
@@ -862,7 +855,7 @@ if (ieos.eq.1) then
         if ((un1-c1).lt.0.d0) then
 
           ! Density
-          propfb(ifac,ipbrom) = ro1
+          brom(ifac) = ro1
           ! Velocity
           bval(ifac,iu) = rtp(iel,iu) + a * surfbo(1,ifac) / surfbn(ifac)
           bval(ifac,iv) = rtp(iel,iv) + a * surfbo(2,ifac) / surfbn(ifac)
@@ -884,14 +877,14 @@ if (ieos.eq.1) then
           ! Sonic state pressure
           bval(ifac,ipr) = pri * b ** (2.d0 * gamagp / (gamagp - 1.d0))
           ! Sonic state density
-          propfb(ifac,ipbrom) = roi * b ** (2.d0 / (gamagp - 1.d0))
+          brom(ifac) = roi * b ** (2.d0 / (gamagp - 1.d0))
           ! Sonic state velocity
           uns = b * ci
           bval(ifac,iu) = uns * surfbo(1,ifac) / surfbn(ifac)
           bval(ifac,iv) = uns * surfbo(2,ifac) / surfbn(ifac)
           bval(ifac,iw) = uns * surfbo(3,ifac) / surfbn(ifac)
           ! Sonic state energy
-          bval(ifac,isca(ienerg)) = bval(ifac,ipr) / ((gamagp - 1.d0) * propfb(ifac,ipbrom)) + 0.5d0 * uns**2
+          bval(ifac,isca(ienerg)) = bval(ifac,ipr) / ((gamagp - 1.d0) * brom(ifac)) + 0.5d0 * uns**2
 
         ! Supersonic outlet
         else
@@ -903,7 +896,7 @@ if (ieos.eq.1) then
           bval(ifac,iv) = rtp(iel,iv)
           bval(ifac,iw) = rtp(iel,iw)
           ! rob = roi
-          propfb(ifac,ipbrom) = roi
+          brom(ifac) = roi
           ! eb = ei
           bval(ifac,isca(ienerg)) = rtp(iel,isca(ienerg))
 
@@ -928,13 +921,13 @@ if (ieos.eq.1) then
       if (un1.le.0d0) then
 
         ! Density
-        propfb(ifac,ipbrom) = ro1
+        brom(ifac) = ro1
         ! Velocity
         bval(ifac,iu) = rtp(iel,iu) - a * surfbo(1,ifac) / surfbn(ifac)
         bval(ifac,iv) = rtp(iel,iv) - a * surfbo(2,ifac) / surfbn(ifac)
         bval(ifac,iw) = rtp(iel,iw) - a * surfbo(3,ifac) / surfbn(ifac)
         ! Total energy
-        bval(ifac,ien) = pinf / ((gamagp-1.d0) * propfb(ifac,ipbrom))  &
+        bval(ifac,ien) = pinf / ((gamagp-1.d0) * brom(ifac))           &
                          + 0.5d0 * (bval(ifac,iu)**2                   &
                                   + bval(ifac,iv)**2                   &
                                   + bval(ifac,iw)**2)
@@ -949,13 +942,13 @@ if (ieos.eq.1) then
         if (sigma1.le.0.d0) then
 
           ! Density
-          propfb(ifac,ipbrom) = ro1
+          brom(ifac) = ro1
           ! Velocity
           bval(ifac,iu) = rtp(iel,iu) - a * surfbo(1,ifac) / surfbn(ifac)
           bval(ifac,iv) = rtp(iel,iv) - a * surfbo(2,ifac) / surfbn(ifac)
           bval(ifac,iw) = rtp(iel,iw) - a * surfbo(3,ifac) / surfbn(ifac)
           ! Total energy
-          bval(ifac,ien) = pinf / ((gamagp-1.d0) * propfb(ifac,ipbrom))  &
+          bval(ifac,ien) = pinf / ((gamagp-1.d0) * brom(ifac))           &
                            + 0.5d0 * (bval(ifac,iu)**2                   &
                                     + bval(ifac,iv)**2                   &
                                     + bval(ifac,iw)**2)
@@ -970,7 +963,7 @@ if (ieos.eq.1) then
           bval(ifac,iv) = rtp(iel,iv)
           bval(ifac,iw) = rtp(iel,iw)
           ! rob = roi
-          propfb(ifac,ipbrom) = roi
+          brom(ifac) = roi
           ! eb = ei
           bval(ifac,isca(ienerg)) = rtp(iel,isca(ienerg))
 
@@ -988,7 +981,7 @@ if (ieos.eq.1) then
     ifac = ifac0
     iel  = ifabor(ifac)
 
-    roi  = propce(iel,ipcrom)
+    roi  = crom(iel)
     pri  = rtp(iel,ipr)
 
     ! Normalize the direction vector given by the user
@@ -1058,9 +1051,9 @@ if (ieos.eq.1) then
           bval(ifac,iv) = un1 / cosalp * dir(2)
           bval(ifac,iw) = un1 / cosalp * dir(3)
           ! rob = ro2
-          propfb(ifac,ipbrom) = (pstat / ptot)**(1.d0/gamagp) * rhotot
+          brom(ifac) = (pstat / ptot)**(1.d0/gamagp) * rhotot
           ! eb = e2
-          bval(ifac,isca(ienerg)) = pstat / ((gamagp - 1.d0) * propfb(ifac,ipbrom))                    &
+          bval(ifac,isca(ienerg)) = pstat / ((gamagp - 1.d0) * brom(ifac))                    &
                                   + 0.5d0 * ( bval(ifac,iu)**2 + bval(ifac,iv)**2 + bval(ifac,iw)**2 )
         ! Outlet
         else
@@ -1075,7 +1068,7 @@ if (ieos.eq.1) then
             bval(ifac,iv) = utyi + un1 * surfbo(2,ifac) / surfbn(ifac)
             bval(ifac,iw) = utzi + un1 * surfbo(3,ifac) / surfbn(ifac)
             ! rob = ro1
-            propfb(ifac,ipbrom) = ro1
+            brom(ifac) = ro1
             ! eb = e1
             bval(ifac,isca(ienerg)) = ei - 0.5d0 * (pstat + pri) * (1.d0 / ro1 - 1.d0 / roi) &
                                     + 0.5d0 * (un1**2 + utxi**2 + utyi**2 + utzi**2)
@@ -1090,7 +1083,7 @@ if (ieos.eq.1) then
             bval(ifac,iv) = rtp(iel,iv)
             bval(ifac,iw) = rtp(iel,iw)
             ! rob = roi
-            propfb(ifac,ipbrom) = roi
+            brom(ifac) = roi
             ! eb = ei
             bval(ifac,isca(ienerg)) = rtp(iel,isca(ienerg))
 
@@ -1115,9 +1108,9 @@ if (ieos.eq.1) then
           bval(ifac,iv) = un1 / cosalp * dir(2)
           bval(ifac,iw) = un1 / cosalp * dir(3)
           ! rob = ro2
-          propfb(ifac,ipbrom) = (pstat / ptot)**(1.d0/gamagp) * rhotot
+          brom(ifac) = (pstat / ptot)**(1.d0/gamagp) * rhotot
           ! eb = e2
-          bval(ifac,isca(ienerg)) = pstat / ((gamagp - 1.d0) * propfb(ifac,ipbrom))                    &
+          bval(ifac,isca(ienerg)) = pstat / ((gamagp - 1.d0) * brom(ifac))                    &
                                   + 0.5d0 * ( bval(ifac,iu)**2 + bval(ifac,iv)**2 + bval(ifac,iw)**2 )
         ! Outlet
         else
@@ -1133,7 +1126,7 @@ if (ieos.eq.1) then
             bval(ifac,iv) = utyi + un1 * surfbo(2,ifac) / surfbn(ifac)
             bval(ifac,iw) = utzi + un1 * surfbo(3,ifac) / surfbn(ifac)
             ! rob = ro1
-            propfb(ifac,ipbrom) = ro1
+            brom(ifac) = ro1
             ! eb = e1
             bval(ifac,isca(ienerg)) = pstat / (ro1 * (gamagp - 1.d0))                   &
                  + 0.5d0 * (un1**2 + utxi**2 + utyi**2 + utzi**2)
@@ -1148,7 +1141,7 @@ if (ieos.eq.1) then
             bval(ifac,iv) = rtp(iel,iv)
             bval(ifac,iw) = rtp(iel,iw)
             ! rob = roi
-            propfb(ifac,ipbrom) = roi
+            brom(ifac) = roi
             ! eb = ei
             bval(ifac,isca(ienerg)) = rtp(iel,isca(ienerg))
 
@@ -1163,14 +1156,14 @@ if (ieos.eq.1) then
             ! Sonic state pressure
             pstat = pri * a ** (2.d0 * gamagp / (gamagp - 1.d0))
             ! Sonic state density
-            propfb(ifac,ipbrom) = roi * a ** (2.d0 / (gamagp - 1.d0))
+            brom(ifac) = roi * a ** (2.d0 / (gamagp - 1.d0))
             ! Sonic state velocity
             uns = a * ci
             bval(ifac,iu) = uns * surfbo(1,ifac) / surfbn(ifac)
             bval(ifac,iv) = uns * surfbo(2,ifac) / surfbn(ifac)
             bval(ifac,iw) = uns * surfbo(3,ifac) / surfbn(ifac)
             ! Sonic state energy
-            bval(ifac,isca(ienerg)) = pstat / ((gamagp - 1.d0) * propfb(ifac,ipbrom)) + 0.5d0 * uns**2
+            bval(ifac,isca(ienerg)) = pstat / ((gamagp - 1.d0) * brom(ifac)) + 0.5d0 * uns**2
 
           endif
 
@@ -1178,7 +1171,7 @@ if (ieos.eq.1) then
 
       endif
 
-      bc = sqrt(gamagp * pstat / propfb(ifac,ipbrom))
+      bc = sqrt(gamagp * pstat / brom(ifac))
       bMach = ( bval(ifac,iu) * surfbo(1,ifac)                             &
               + bval(ifac,iv) * surfbo(2,ifac)                             &
               + bval(ifac,iw) * surfbo(3,ifac) ) / surfbn(ifac) / bc
@@ -1210,7 +1203,7 @@ if (ieos.eq.1) then
     iel  = ifabor(ifac)
 
     ! Temperature
-    bval(ifac, itk) = xmasml*bval(ifac,ipr)/(rr*propfb(ifac,ipbrom))
+    bval(ifac, itk) = xmasml*bval(ifac,ipr)/(rr*brom(ifac))
 
     ! Energie totale
     bval(ifac,ien) = cv0 * bval(ifac,itk)                                       &
@@ -1226,7 +1219,7 @@ if (ieos.eq.1) then
     iel  = ifabor(ifac)
 
     ! Density
-    propfb(ifac,ipbrom) = xmasml * bval(ifac,ipr) / ( rr * bval(ifac,itk) )
+    brom(ifac) = xmasml * bval(ifac,ipr) / ( rr * bval(ifac,itk) )
 
     ! Total energy
     bval(ifac,ien) = cv0 * bval(ifac,itk)                                     &
@@ -1241,14 +1234,14 @@ if (ieos.eq.1) then
     iel  = ifabor(ifac)
 
     ! Density
-    propfb(ifac,ipbrom) = bval(ifac,ipr)/((gamagp-1.d0)*                        &
+    brom(ifac) = bval(ifac,ipr)/((gamagp-1.d0)*                                 &
                           ( bval(ifac,ien)                                      &
                           - 0.5d0 * ( bval(ifac,iu)**2                          &
                                     + bval(ifac,iv)**2                          &
                                     + bval(ifac,iw)**2)) )
 
     ! Temperature
-    bval(ifac,itk) = xmasml * bval(ifac,ipr) / ( rr * propfb(ifac,ipbrom) )
+    bval(ifac,itk) = xmasml * bval(ifac,ipr) / ( rr * brom(ifac) )
 
 
 ! --- Calculation of pressure and energy from density and temperature
@@ -1259,7 +1252,7 @@ if (ieos.eq.1) then
     iel  = ifabor(ifac)
 
     ! Pressure
-    bval(ifac,ipr) = propfb(ifac,ipbrom)*rr/xmasml * bval(ifac,itk)
+    bval(ifac,ipr) = brom(ifac)*rr/xmasml * bval(ifac,itk)
 
     ! Total energy
       bval(ifac,ien) = cv0 * bval(ifac,itk)                                     &
@@ -1274,14 +1267,14 @@ if (ieos.eq.1) then
     iel  = ifabor(ifac)
 
     ! Pressure
-    bval(ifac,ipr) = (gamagp-1.d0)*propfb(ifac,ipbrom)                          &
+    bval(ifac,ipr) = (gamagp-1.d0)*brom(ifac)                                   &
                      *( bval(ifac,ien)                                          &
                       - 0.5d0*( bval(ifac,iu)**2                                &
                               + bval(ifac,iv)**2                                &
                               + bval(ifac,iw)**2 ) )
 
     ! Temperature
-    bval(ifac,itk)= xmasml * bval(ifac,ipr) / ( rr * propfb(ifac,ipbrom) )
+    bval(ifac,itk)= xmasml * bval(ifac,ipr) / ( rr * brom(ifac) )
 
 ! --- End of the treatment of the perfect gas
   endif
@@ -1304,20 +1297,6 @@ endif
 '@       for perfect gas with constant gamma.',/,                 &
 '@',/,                                                            &
 '@     Gamma = ',e12.4   ,/,                                      &
-'@     Gamma must be a real number greater or equal to 1.',/,     &
-'@',/,                                                            &
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',/)
- 1020 format(                                                     &
-'@',/,                                                            &
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',/,                                                            &
-'@ @@ WARNING:    stop in thermodynamics computations',/,         &
-'@    =======',/,                                                 &
-'@     Error encountered in the user subroutine ''cfther'', ',/,  &
-'@       for perfect gas with constant gamma.',/,                 &
-'@',/,                                                            &
-'@     In cell ',i10   ,', Gamma = ',e12.4   ,/,                  &
 '@     Gamma must be a real number greater or equal to 1.',/,     &
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -1464,86 +1443,6 @@ endif
 ! gamma variable option will have been fixed
 
 
- 1110 format(                                                     &
-'@',/,                                                            &
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',/,                                                            &
-'@ @@ WARNING:    stop in thermodynamics computations',/,         &
-'@    =======',/,                                                 &
-'@     Error encountered in the user subroutine ''cfther'', ',/,  &
-'@       for perfect gas with variable gamma.',/,                 &
-'@',/,                                                            &
-'@     The computation of the squared speed of sound failed.',/,  &
-'@',/,                                                            &
-'@     In cell ',i10   ,' Pressure = ',e12.4   ,/,                &
-'@     Pressure must be positive.',/,                             &
-'@',/,                                                            &
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',/)
- 1120 format(                                                     &
-'@',/,                                                            &
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',/,                                                            &
-'@ @@ WARNING:    stop in thermodynamics computations',/,         &
-'@    =======',/,                                                 &
-'@     Error encountered in the user subroutine ''cfther'', ',/,  &
-'@       for perfect gas with variable gamma.',/,                 &
-'@',/,                                                            &
-'@     The computation of the squared speed of sound failed.',/,  &
-'@',/,                                                            &
-'@     In cell ',i10   ,' Density = ',e12.4   ,/,                 &
-'@     Density must be strictly positive.',/,                     &
-'@',/,                                                            &
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',/)
- 1220 format(                                                     &
-'@',/,                                                            &
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',/,                                                            &
-'@ @@ WARNING:    stop in thermodynamics computations',/,         &
-'@    =======',/,                                                 &
-'@     Error encountered in the user subroutine ''cfther'', ',/,  &
-'@       for perfect gas with variable gamma.',/,                 &
-'@',/,                                                            &
-'@     The computation of the variable beta failed.',/,           &
-'@',/,                                                            &
-'@     In cell ',i10   ,' Density = ',e12.4   ,/,                 &
-'@     Density must be strictly positive.',/,                     &
-'@',/,                                                            &
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',/)
- 1310 format(                                                     &
-'@',/,                                                            &
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',/,                                                            &
-'@ @@ WARNING:    stop in thermodynamics computations',/,         &
-'@    =======',/,                                                 &
-'@     Error encountered in the user subroutine ''cfther'', ',/,  &
-'@       for perfect gas with variable gamma.',/,                 &
-'@',/,                                                            &
-'@     The computation of the entropy failed.',/,                 &
-'@',/,                                                            &
-'@     In cell ',i10   ,' Pressure = ',e12.4   ,/,                &
-'@     Pressure must be positive.',/,                             &
-'@',/,                                                            &
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',/)
- 1320 format(                                                     &
-'@',/,                                                            &
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',/,                                                            &
-'@ @@ WARNING:    stop in thermodynamics computations',/,         &
-'@    =======',/,                                                 &
-'@     Error encountered in the user subroutine ''cfther'', ',/,  &
-'@       for perfect gas with variable gamma.',/,                 &
-'@',/,                                                            &
-'@     The computation of the entropy failed.',/,                 &
-'@',/,                                                            &
-'@     In cell ',i10   ,' Density = ',e12.4   ,/,                 &
-'@     Density must be striclty positive.',/,                     &
-'@',/,                                                            &
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',/)
 
 9000 format(                                                     &
 '@',/,                                                            &

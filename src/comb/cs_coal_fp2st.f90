@@ -23,11 +23,8 @@
 subroutine cs_coal_fp2st &
 !=======================
 
- ( nvar   , nscal  , ncepdp , ncesmp ,                             &
-   iscal  ,                                                        &
-   itypfb ,                                                        &
-   icepdc , icetsm , itypsm ,                                      &
-   dt     , rtpa   , rtp    , propce , propfb ,                    &
+ ( iscal  ,                                                        &
+   rtpa   , rtp    , propce ,                                      &
    smbrs  , rovsdt )
 
 !===============================================================================
@@ -43,20 +40,9 @@ subroutine cs_coal_fp2st &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
-! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
-! itypfb(nfabor)   ! ia ! <-- ! boundary face types                            !
-! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
-! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
-! itypsm           ! te ! <-- ! type de source de masse pour les               !
-! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! smbrs(ncelet)    ! tr ! --> ! second membre explicite                        !
 ! rovsdt(ncelet    ! tr ! --> ! partie diagonale implicite                     !
 !__________________!____!_____!________________________________________________!
@@ -87,6 +73,7 @@ use ppincl
 use ppcpfu
 use cs_coal_incl
 use mesh
+use field
 
 !===============================================================================
 
@@ -94,16 +81,10 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-integer          ncepdp , ncesmp
 integer          iscal
 
-integer          itypfb(nfabor)
-integer          icepdc(ncepdp)
-integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
+double precision rtp(ncelet,*), rtpa(ncelet,*)
+double precision propce(ncelet,*)
 double precision smbrs(ncelet), rovsdt(ncelet)
 
 ! Local variables
@@ -111,21 +92,21 @@ double precision smbrs(ncelet), rovsdt(ncelet)
 integer           iel    , ifac   , ivar   ,ivar0 , ivarsc
 integer           icla   , icha   , numcha
 integer           inc    , iccocg , nswrgp , imligp , iwarnp
-integer           ipcrom , ipcvst , ipcx2c
+integer           ipcvst , ipcx2c
 integer           ixchcl , ixckcl , ixnpcl , ipcgd1 , ipcgd2
 integer           iold
 
 double precision xk     , xe     , rhovst
 double precision epsrgp , climgp , extrap
 double precision aux
-double precision gdev1 , gdev2 , ghet, gsec , ghetco2, gheth2O
+double precision gdev1 , gdev2
 double precision fsd   , fdev  , diamdv , gdev
 
 integer           iok1,iok2
 double precision, dimension(:) ,allocatable :: x1,f1f2
 double precision, dimension(:) ,allocatable :: coefap , coefbp
 double precision, allocatable, dimension(:,:) :: grad
-
+double precision, dimension(:), pointer ::  crom
 !===============================================================================
 ! 1. Initialization
 !===============================================================================
@@ -147,7 +128,7 @@ ivarsc = 0
 ivar   = isca(iscal)
 
 ! --- Numero des grandeurs physiques
-ipcrom = ipproc(irom)
+call field_get_val_s(icrom, crom)
 ipcvst = ipproc(ivisct)
 
 
@@ -276,9 +257,9 @@ if ( iold .eq. 1 ) then
     ipcgd1 = ipproc(igmdv1(icla))
     ipcgd2 = ipproc(igmdv2(icla))
     do iel = 1, ncel
-      gdev1 = -propce(iel,ipcrom)*propce(iel,ipcgd1)               &
+      gdev1 = -crom(iel)*propce(iel,ipcgd1)               &
                                  *rtp(iel,ixchcl)
-      gdev2 = -propce(iel,ipcrom)*propce(iel,ipcgd2)               &
+      gdev2 = -crom(iel)*propce(iel,ipcgd2)               &
                                  *rtp(iel,ixchcl)
       gdev  = gdev1 + gdev2
 !
@@ -288,7 +269,7 @@ if ( iold .eq. 1 ) then
                * exp( ( rtp(iel,ixchcl)                            &
                        *(propce(iel,ipcgd1)+propce(iel,ipcgd2))  ) &
                      /( 2.d0*pi*2.77d-4*diamdv                     &
-                        *rtp(iel,ixnpcl)*propce(iel,ipcrom) ) )
+                        *rtp(iel,ixnpcl)*crom(iel) ) )
         fdev = 1.d0
 !
 ! ts explicite
@@ -311,9 +292,9 @@ else
     ixchcl = isca(ixch(icla))
     ixckcl = isca(ixck(icla))
     do iel = 1, ncel
-      gdev1 = -propce(iel,ipcrom)*propce(iel,ipproc(igmdv1(icla)))       &
+      gdev1 = -crom(iel)*propce(iel,ipproc(igmdv1(icla)))       &
                                  *rtp(iel,ixchcl)
-      gdev2 = -propce(iel,ipcrom)*propce(iel,ipproc(igmdv2(icla)))       &
+      gdev2 = -crom(iel)*propce(iel,ipproc(igmdv2(icla)))       &
                                  *rtp(iel,ixchcl)
 !
       aux  = (gdev1+gdev2)               *(1.d0-f1f2(iel))**2.d0

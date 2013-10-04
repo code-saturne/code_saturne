@@ -27,7 +27,7 @@ subroutine cou1do &
    ientha , ifpt1d , iclt1d ,                                     &
    tppt1d , tept1d , hept1d , fept1d ,                            &
    xlmbt1 , rcpt1d , dtpt1d , dt     , rtpa   ,                   &
-   propce , propfb ,                                              &
+   propce ,                                                       &
    cpcst  , cp     , hbord  , tbord  )
 
 !===============================================================================
@@ -100,7 +100,7 @@ integer          ifpt1d(nfpt1d), iclt1d(nfpt1d)
 integer          ientha
 
 double precision dt(ncelet), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
+double precision propce(ncelet,*)
 double precision hbord(nfabor),tbord(nfabor)
 double precision cpcst, cp(ncp)
 double precision tppt1d(nfpt1d)
@@ -171,8 +171,7 @@ call  uspt1d &
    tppt1d , rvoid  , rvoid  ,                                     &
    tept1d , hept1d , fept1d ,                                     &
    xlmbt1 , rcpt1d , dtpt1d ,                                     &
-   dt     , rtpa   ,                                              &
-   propce , propfb )
+   dt     , rtpa   )
 
 iappel = 3
 call vert1d &

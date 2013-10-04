@@ -96,7 +96,7 @@ use ppthch
 use coincl
 use cpincl
 use ppincl
-
+use field
 !===============================================================================
 
 implicit none
@@ -145,7 +145,7 @@ double precision theta(ndracm)
 
 ! --- Pointeurs & autres
 
-integer ipctem, ipcmam,  ipcrom
+integer ipctem, ipcmam
 integer ipampl(ndracm), ipfmel(ndracm)
 integer ipfmal(ndracm), ipteml(ndracm)
 integer ipmaml(ndracm)
@@ -156,7 +156,7 @@ double precision nbmol,  temsmm
 double precision sum1, sum2, sum3, sum4,  sum5,  sum6 , sum16
 double precision sum7, sum8, sum9, sum10, sum11, sum12, sum15
 double precision sum17
-
+double precision, dimension(:), pointer ::  crom
 integer ipass
 data    ipass /0/
 save    ipass
@@ -186,7 +186,7 @@ ipcoxy = ipproc(iym(2))
 ipcpro = ipproc(iym(3))
 ipctsc = ipproc(itsc)
 ipctem = ipproc(itemp)
-ipcrom = ipproc(irom)
+call field_get_val_s(icrom, crom)
 ipcmam = ipproc(imam)
 
 !      IF ( IIRAYO.GT.0 ) THEN
@@ -345,7 +345,7 @@ do iel = 1, ncel
 
     if ( ipass.gt.1 .or.                                          &
         (isuite.eq.1.and.initro.eq.1) ) then
-      propce(iel,ipcrom) = srrom * propce(iel,ipcrom)             &
+      crom(iel) = srrom * crom(iel)             &
                          + (1.d0-srrom) * (p0/(rr*temsmm))
     endif
 
@@ -756,7 +756,7 @@ do iel = 1, ncel
 ! ---> Masse volumique du melange
 
   if (ipass.gt.1.or.(isuite.eq.1.and.initro.eq.1)) then
-      propce(iel,ipcrom) = srrom * propce(iel,ipcrom)             &
+      crom(iel) = srrom * crom(iel)             &
                        + (1.d0-srrom) * (p0/(rr*temsmm))
     endif
 

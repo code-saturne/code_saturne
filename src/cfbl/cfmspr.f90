@@ -25,7 +25,7 @@ subroutine cfmspr &
 
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   dt     , rtp    , rtpa   , propce ,                            &
    coefa  , coefb  , ckupdc , smacel )
 
 !===============================================================================
@@ -55,7 +55,6 @@ subroutine cfmspr &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! tslagr           ! tr ! <-- ! terme de couplage retour du                    !
 !(ncelet,*)        !    !     !     lagrangien                                 !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
@@ -90,7 +89,6 @@ use ppppar
 use ppthch
 use ppincl
 use mesh
-use pointe, only: itypfb
 use field
 
 !===============================================================================
@@ -107,7 +105,6 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 
@@ -116,9 +113,9 @@ double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 character*80     chaine
 integer          ivar
 integer          ifac  , iel
-integer          init  , inc   , iccocg, isqrt , ii, jj, iii
+integer          init  , inc   , iccocg, isqrt , ii, jj
 integer          iclvar, iclvaf
-integer          iflmas, iflmab, ipcrom, ipbrom
+integer          iflmas, iflmab
 integer          ippvar, ipp   , iphydp, icvflb
 integer          nswrgp, imligp, iwarnp
 integer          istatp, iconvp, idiffp, ireslp, ndircp, nitmap
@@ -130,21 +127,15 @@ double precision epsrsp
 double precision sclnor
 
 integer          iccfth, imodif
-integer          idimte, itenso
-integer          iij
 integer          imucpp, idftnp, iswdyp
 integer          imvis1
 
-double precision dijpfx, dijpfy, dijpfz
-double precision diipfx, diipfy, diipfz, djjpfx, djjpfy, djjpfz
-double precision diipbx, diipby, diipbz
-double precision pip, pjp, thetv, relaxp, hint
+double precision thetv, relaxp, hint
 
 double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: smbrs, rovsdt
-double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: w7, w8, w9
 double precision, allocatable, dimension(:) :: w10
@@ -155,7 +146,7 @@ double precision, allocatable, dimension(:) :: dpvar
 double precision, allocatable, dimension(:) :: c2
 
 double precision, dimension(:), pointer :: imasfl, bmasfl
-double precision, dimension(:), pointer :: rhopre
+double precision, dimension(:), pointer :: rhopre, crom
 
 !===============================================================================
 !===============================================================================
@@ -190,8 +181,8 @@ call field_get_key_int(ivarfl(isca(ienerg)), kbmasf, iflmab)
 call field_get_val_s(iflmas, imasfl)
 call field_get_val_s(iflmab, bmasfl)
 
-ipcrom = ipproc(irom)
-ipbrom = ipprob(irom)
+call field_get_val_s(icrom, crom)
+call field_get_val_prev_s(icrom, rhopre)
 
 chaine = nomvar(ippvar)
 
@@ -208,9 +199,6 @@ do ifac = 1, nfabor
   wbfa(ifac) = -coefa(ifac,iclvaf) / hint
   wbfb(ifac) = 1.d0
 enddo
-
-! Retrieve the density field at the previous iteration
-call field_get_val_s(iprpfl(ipproc(iroma)), rhopre)
 
 !===============================================================================
 ! 2. SOURCE TERMS
@@ -251,8 +239,8 @@ call cfther                                                       &
 !==========
  ( nvar   ,                                                       &
    iccfth , imodif ,                                              &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   c2     , w7     , w8     , w9     , rvoid  , rvoid )
+   rtp    ,                                                       &
+   c2     , w7     , w8     , rvoid  , rvoid )
 
 do iel = 1, ncel
   rovsdt(iel) = rovsdt(iel) + istat(ivar)*(volume(iel)/(dt(iel)*c2(iel)))
@@ -269,7 +257,7 @@ call cfmsfp                                                                     
 !==========
 ( nvar   , nscal  , ncepdp , ncesmp ,                                           &
   icepdc , icetsm , itypsm ,                                                    &
-  dt     , rtp    , rtpa   , propce , propfb ,                                  &
+  dt     , rtpa   , propce ,                                                    &
   coefa  , coefb  , ckupdc , smacel ,                                           &
   wflmas , wflmab ,                                                             &
   viscf  , viscb  )
@@ -278,8 +266,8 @@ do ifac = 1, nfac
   ii = ifacel(1,ifac)
   jj = ifacel(2,ifac)
   wflmas(ifac) = -0.5d0*                                                        &
-                 ( propce(ii,ipcrom)*(wflmas(ifac)+abs(wflmas(ifac)))           &
-                 + propce(jj,ipcrom)*(wflmas(ifac)-abs(wflmas(ifac))))
+                 ( crom(ii)*(wflmas(ifac)+abs(wflmas(ifac)))                    &
+                 + crom(jj)*(wflmas(ifac)-abs(wflmas(ifac))))
 enddo
 
 do ifac = 1, nfabor
@@ -367,8 +355,8 @@ call cfther                                                                     
 !==========
 ( nvar   ,                                                                      &
   iccfth , imodif  ,                                                            &
-  dt     , rtp    , rtpa   , propce , propfb ,                                  &
-  w7     , w8     , w9     , w10    , rvoid  , rvoid )
+  rtp    ,                                                                      &
+  w7     , w8     , w9     , rvoid  , rvoid )
 
 
 ! --- Explicit balance (see codits : the increment is withdrawn)
@@ -440,9 +428,9 @@ if (igrdpp.gt.0) then
 
   do iel = 1, ncel
     ! Backup of the current density values
-    rhopre(iel) = propce(iel,ipcrom)
+    rhopre(iel) = crom(iel)
     ! Update of density values
-    propce(iel,ipcrom) = propce(iel,ipcrom)+(rtp(iel,ivar)-rtpa(iel,ivar))/c2(iel)
+    crom(iel) = crom(iel)+(rtp(iel,ivar)-rtpa(iel,ivar))/c2(iel)
   enddo
 
 !===============================================================================
@@ -450,8 +438,8 @@ if (igrdpp.gt.0) then
 !===============================================================================
 
   if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(propce(1,ipcrom))
-    call synsca(rhopre(1))
+    call synsca(crom)
+    call synsca(rhopre)
   endif
 
 endif

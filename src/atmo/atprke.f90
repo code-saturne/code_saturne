@@ -24,9 +24,9 @@ subroutine atprke &
 !================
 
  ( nscal  ,                                                       &
-   rtp    , rtpa   , propce , propfb ,                            &
+   rtpa   , propce ,                                              &
    coefa  , coefb  ,                                              &
-   tinstk , tinste ,                                              &
+   tinstk ,                                                       &
    smbrk  , smbre )
 
 !===============================================================================
@@ -41,15 +41,12 @@ subroutine atprke &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
+! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
+!  (ncelet, *)     !    !     !  (at previous time step)                       !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb           ! tr ! <-- ! proprietes physiques au centre des             !
-!  (nfabor,*)      !    !     !              faces de bord                     !
 ! coefa, coefb     ! tr ! <-- ! conditions aux limites aux                     !
 !  (nfabor,*)      !    !     !              faces de bord                     !
 ! tinstk(ncelet)   ! tr ! --> ! Implicit part of the buoyancy term (for k)     !
-! tinste(ncelet)   ! tr ! --> ! Implicit part of the buoyancy term (for esp)   !
 ! smbrk(ncelet)    ! tr ! --> ! Explicit part of the buoyancy term (for k)     !
 ! smbre(ncelet)    ! tr ! --> ! Explicit part of the buoyancy term (for eps)   !
 !__________________!____!_____!________________________________________________!
@@ -78,6 +75,7 @@ use ppppar
 use ppthch
 use ppincl
 use mesh
+use field
 use atincl
 
 !===============================================================================
@@ -88,14 +86,14 @@ implicit none
 integer          nscal
 
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
-double precision rtp (ncelet,*), rtpa (ncelet,*)
-double precision propce(ncelet,*), propfb(ndimfb,*)
+double precision rtpa (ncelet,*)
+double precision propce(ncelet,*)
 double precision smbrk(ncelet), smbre(ncelet)
-double precision tinstk(ncelet), tinste(ncelet)
+double precision tinstk(ncelet)
 
 ! Local variables
 integer         iel
-integer         ipcvto, ipcroo
+integer         ipcvto
 integer         itpp , iqw, icltpp,iclqw
 integer         ipcliq
 integer         iccocg, inc
@@ -111,6 +109,7 @@ double precision xk, xeps, visct, ttke, rho
 
 double precision dum
 double precision, allocatable, dimension(:,:) :: grad
+double precision, dimension(:), pointer :: cromo
 
 !===============================================================================
 
@@ -122,11 +121,11 @@ double precision, allocatable, dimension(:,:) :: grad
 allocate(grad(ncelet,3))
 
 ! Pointer to density and turbulent viscosity
-ipcroo = ipproc(irom)
+call field_get_val_s(icrom, cromo)
 ipcvto = ipproc(ivisct)
 if(isto2t.gt.0) then
   if (iroext.gt.0) then
-    ipcroo = ipproc(iroma)
+    call field_get_val_prev_s(icrom, cromo)
   endif
   if(iviext.gt.0) then
     ipcvto = ipproc(ivista)
@@ -183,8 +182,8 @@ iivar = itpp
 ! computes the turbulent production/destruction terms:
 ! dry atmo: (1/sigmas*theta)*(dtheta/dz)*gz
 
-call grdcel                                                     &
-     !==========
+call grdcel                                                       &
+!==========
  ( iivar  , imrgra , inc    , iccocg , nswrgp ,imligp,            &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    rtpa(1,itpp), coefa(1,icltpp) , coefb(1,icltpp) ,              &
@@ -201,7 +200,7 @@ endif
 
 if (itytur.eq.2) then
   do iel = 1, ncel
-    rho   = propce(iel,ipcroo)
+    rho   = cromo(iel)
     visct = propce(iel,ipcvto)
     xeps = rtpa(iel,iep )
     xk   = rtpa(iel,ik )
@@ -330,7 +329,7 @@ iivar = iqw
 ! humid atmo: (1/sigmas*theta_v)*(dtheta_l/dz)*gz
 
 call grdcel                                                       &
-  !==========
+!==========
  ( iivar  , imrgra , inc    , iccocg , nswrgp ,imligp,            &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    rtpa(1,iqw), coefa(1,iclqw) , coefb(1,iclqw) ,                 &
@@ -360,7 +359,7 @@ endif
 
 ! Finalization
 do iel = 1, ncel
-  rho   = propce(iel,ipcroo)
+  rho   = cromo(iel)
   visct = propce(iel,ipcvto)
   xeps = rtpa(iel,iep)
   xk   = rtpa(iel,ik)

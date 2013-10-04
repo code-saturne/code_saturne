@@ -79,8 +79,7 @@ double precision viscf(3,3,nfac), viscb(nfabor)
 
 integer          ifac, iel, ii, jj, isou, jsou
 double precision visci(3,3), viscj(3,3), s1(6), s2(6)
-double precision distbf
-double precision poroi, poroj, pnd, srfddi
+double precision pnd, srfddi
 
 double precision, pointer, dimension(:,:) :: viscce => null()
 double precision, dimension(:,:), allocatable, target :: w2

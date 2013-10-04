@@ -64,7 +64,7 @@ subroutine grdcel &
 !                  !    !     !  = 0 a partir des gradients voisins            !
 !                  !    !     !  = 1 a partir du gradient moyen                !
 ! iwarnp           ! i  ! <-- ! verbosity                                      !
-! nfecra           ! i  ! <-- ! unite du fichier sortie std                    !
+! nfecra           ! i  ! <-- ! unused                                         !
 ! epsrgp           ! r  ! <-- ! precision relative pour la                     !
 !                  !    !     !  reconstruction des gradients 97               !
 ! climgp           ! r  ! <-- ! coef gradient*distance/ecart                   !

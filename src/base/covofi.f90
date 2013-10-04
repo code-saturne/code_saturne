@@ -53,7 +53,6 @@
 !> \param[in,out] rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in,out] propfb        physical properties at boundary face centers
 !> \param[in]     tslagr        coupling term for the Lagrangian module
 !> \param[in]     coefa, coefb  boundary conditions
 !> \param[in]     ckupdc        work array for the head loss
@@ -77,7 +76,7 @@ subroutine covofi &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  , itspdv ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , propfb , tslagr ,          &
+   dt     , rtp    , rtpa   , propce , tslagr ,                   &
    coefa  , coefb  , ckupdc , smacel ,                            &
    viscf  , viscb  ,                                              &
    smbrs  , rovsdt )
@@ -126,7 +125,7 @@ integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(ndimfb,*)
+double precision propce(ncelet,*)
 double precision tslagr(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
@@ -136,6 +135,7 @@ double precision rovsdt(ncelet)
 
 ! Local variables
 
+logical          lprev
 character*80     chaine
 integer          ivar
 integer          ifac  , iel
@@ -143,7 +143,7 @@ integer          inc   , iccocg, isqrt, iii, iiun, ibcl
 integer          ivarsc
 integer          iiscav
 integer          iclvar, iclvaf
-integer          ipcrom, ipcroa, ipcrho, ipcvst, ipcvsl, iflmas, iflmab
+integer          ipcvst, ipcvsl, iflmas, iflmab
 integer          ippvar, ipp   , iptsca, ipcvso
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp, ireslp, nitmap
@@ -177,6 +177,7 @@ double precision, allocatable, dimension(:) :: srcmas
 
 double precision, dimension(:,:), pointer :: xut
 double precision, dimension(:), pointer :: imasfl, bmasfl
+double precision, dimension(:), pointer :: crom, croma, pcrom
 
 !===============================================================================
 
@@ -227,11 +228,10 @@ iclvar = iclrtp(ivar,icoef)
 iclvaf = iclrtp(ivar,icoeff)
 
 ! --- Numero des grandeurs physiques
-ipcrom = ipproc(irom)
-if (iroma .gt. 0) then
-  ipcroa = ipproc(iroma)
-else
-  ipcroa = 0
+call field_get_val_s(icrom, crom)
+call field_have_previous(icrom, lprev)
+if (lprev) then
+  call field_get_val_prev_s(icrom, croma)
 endif
 ipcvst = ipproc(ivisct)
 
@@ -324,7 +324,7 @@ call ustssc &
 ( nvar   , nscal  , ncepdp , ncesmp ,                            &
   iscal  ,                                                       &
   icepdc , icetsm , itypsm ,                                     &
-  dt     , rtpa   , rtp    , propce , propfb ,                   &
+  dt     , rtpa   , rtp    , propce ,                            &
   ckupdc , smacel , smbrs  , rovsdt )
 
 ! Atmospheric chemistry
@@ -386,7 +386,7 @@ endif
 !     Ordre 2 non pris en compte
 
 if (iscal.eq.iscalt) then
-  call cptssy(iscal, rtpa, rtp, smbrs, rovsdt)
+  call cptssy(iscal, rtpa, smbrs, rovsdt)
   !==========
 endif
 
@@ -396,11 +396,9 @@ endif
 if (ippmod(iphpar).ge.1) then
   call pptssc &
   !==========
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iscal  ,                                                       &
-   icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , rtp    , propce , propfb ,                   &
-   coefa  , coefb  , ckupdc , smacel ,                            &
+ ( iscal  ,                                                       &
+   rtpa   , rtp    , propce ,                                     &
+   coefa  , coefb  ,                                              &
    smbrs  , rovsdt , tslagr )
 endif
 
@@ -650,7 +648,7 @@ if (itspdv.eq.1) then
         xk = rtpa(iel,ik)
         xe = cmu*xk*rtpa(iel,iomg)
       endif
-      rhovst = xcpp(iel)*propce(iel,ipcrom)*xe/(xk * rvarfl(iscal))       &
+      rhovst = xcpp(iel)*crom(iel)*xe/(xk * rvarfl(iscal))       &
              *volume(iel)
 
       ! La diagonale recoit eps/Rk, (*theta eventuellement)
@@ -677,11 +675,11 @@ endif
 
 ! Low Mach compressible algos (conservative in time)
 if (idilat.gt.1) then
-  ipcrho = ipcroa
+  call field_get_val_prev_s(icrom, pcrom)
 
 ! Standard algo
 else
-  ipcrho = ipcrom
+  call field_get_val_s(icrom, pcrom)
 endif
 
 ! Get the the order of the diffusivity tensor of the variable
@@ -757,8 +755,7 @@ if (idiff(ivar).ge.1) then
 
     call vitens &
     !==========
-   ( imvisf ,                      &
-     viscce , iwarnp ,             &
+   ( viscce , iwarnp ,             &
      weighf , weighb ,             &
      viscf  , viscb  )
 
@@ -770,10 +767,9 @@ if (idiff(ivar).ge.1) then
 
     call divrit &
     !==========
-    ( nvar   , nscal  ,                                              &
-      iscal  , itspdv ,                                              &
-      dt     , rtp    , rtpa   , propce , propfb ,                   &
-      coefa  , coefb  ,                                              &
+    ( nscal  ,                                                       &
+      iscal  ,                                                       &
+      dt     , rtp    , rtpa   , propce ,                            &
       xcpp   ,                                                       &
       smbrs  )
 
@@ -796,7 +792,7 @@ if (iporos.eq.0) then
   ! --> Non stationnary term and mass aggregation term
   do iel = 1, ncel
     rovsdt(iel) = rovsdt(iel)                                                 &
-                + istat(ivar)*xcpp(iel)*propce(iel,ipcrho)*volume(iel)/dt(iel)
+                + istat(ivar)*xcpp(iel)*pcrom(iel)*volume(iel)/dt(iel)
   enddo
 
 ! With porosity
@@ -808,8 +804,8 @@ else
 
   ! --> Non stationnary term and mass aggregation term
   do iel = 1, ncel
-    rovsdt(iel) = ( rovsdt(iel)                                        &
-                  + istat(ivar)*xcpp(iel)*propce(iel,ipcrho)*volume(iel)/dt(iel) &
+    rovsdt(iel) = ( rovsdt(iel)                                             &
+                  + istat(ivar)*xcpp(iel)*pcrom(iel)*volume(iel)/dt(iel)    &
                   ) * porosi(iel)
   enddo
 
@@ -825,7 +821,7 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
  call driflu &
  !=========
  ( iflid  ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   dt     , rtp    , rtpa   , propce ,                            &
    imasfl , bmasfl ,                                              &
    rovsdt , smbrs  )
 endif
@@ -904,7 +900,7 @@ if (iwarni(ivar).ge.2) then
   endif
   do iel = 1, ncel
     smbrs(iel) = smbrs(iel)                                                 &
-            - istat(ivar)*xcpp(iel)*(propce(iel,ipcrom)/dt(iel))*volume(iel)&
+            - istat(ivar)*xcpp(iel)*(crom(iel)/dt(iel))*volume(iel)&
                 *(rtp(iel,ivar)-rtpa(iel,ivar))*ibcl
   enddo
   isqrt = 1

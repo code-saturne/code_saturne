@@ -42,7 +42,6 @@
 !> \param[in]     rtpa          calculated variables at cell centers
 !>                               (at previous time step)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in,out] propfb        physical properties at boundary face centers
 !> \param[in,out] imasfl        scalar mass flux at interior face centers
 !> \param[in,out] bmasfl        scalar mass flux at boundary face centers
 !> \param[in,out] rovsdt        Non stationnary term and mass aggregation term
@@ -51,7 +50,7 @@
 
 subroutine driflu &
 ( iflid  ,                                                       &
-  dt     , rtp    , rtpa   , propce , propfb ,                   &
+  dt     , rtp    , rtpa   , propce ,                            &
   imasfl , bmasfl ,                                              &
   rovsdt , smbrs  )
 
@@ -83,7 +82,7 @@ implicit none
 integer          iflid
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(ndimfb,*)
+double precision propce(ncelet,*)
 double precision imasfl(nfac), bmasfl(ndimfb)
 double precision rovsdt(ncelet), smbrs(ncelet)
 
@@ -92,7 +91,7 @@ double precision rovsdt(ncelet), smbrs(ncelet)
 integer          ivar
 integer          ifac  , iel
 integer          init  , inc   , iccocg
-integer          ipcrom, ipcvst, ipcvsl, iflmas, iflmab
+integer          ipcvst, ipcvsl, iflmas, iflmab
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp
 integer          ircflp, ischcp, isstpp
@@ -100,7 +99,6 @@ integer          ippu  , ippv  , ippw
 integer          isou  , jsou
 integer          f_id
 integer          iflmb0, idftnp, iphydp, ivisep, itypfl
-integer          ipbrom
 integer          keysca, iscal, keydri, iscdri, icvflb
 integer          ivoid(1)
 
@@ -129,7 +127,7 @@ double precision, dimension(:), pointer :: taufpt
 double precision, dimension(:,:), pointer :: coefav, cofafv
 double precision, dimension(:,:,:), pointer :: coefbv, cofbfv
 double precision, dimension(:), pointer :: imasfl_mix, bmasfl_mix
-
+double precision, dimension(:), pointer :: brom, crom
 !===============================================================================
 
 !===============================================================================
@@ -157,8 +155,8 @@ call field_get_val_s(iflmab, bmasfl_mix)
 ivar = isca(iscal)
 
 ! --- Physical properties
-ipcrom = ipproc(irom)
-ipbrom = ipprob(irom)
+call field_get_val_s(icrom, crom)
+call field_get_val_s(ibrom, brom)
 ipcvst = ipproc(ivisct)
 
 ! --- Brownian diffusivity
@@ -205,7 +203,7 @@ enddo
 !===============================================================================
 
 do iel = 1, ncel
-  rho = propce(iel,ipcrom)
+  rho = crom(iel)
   drift(1, iel) = rho*taup(iel)*gx
   drift(2, iel) = rho*taup(iel)*gy
   drift(3, iel) = rho*taup(iel)*gz
@@ -338,7 +336,7 @@ if (btest(iscdri, DRIFT_SCALAR_CENTRIFUGALFORCE)) then
     vel(2, iel) = rtp(iel, iv)
     vel(3, iel) = rtp(iel, iw)
 
-    rhovdt = propce(iel,ipcrom)*volume(iel)/dt(iel)
+    rhovdt = crom(iel)*volume(iel)/dt(iel)
 
     dudt(1,iel) = -rhovdt*(rtp(iel,iu)-rtpa(iel,iu))
     dudt(2,iel) = -rhovdt*(rtp(iel,iv)-rtpa(iel,iv))
@@ -362,7 +360,6 @@ if (btest(iscdri, DRIFT_SCALAR_CENTRIFUGALFORCE)) then
   blencp = blencv(iu)
   epsrgp = epsrgr(iu)
   climgp = climgr(iu)
-  extrap = extrag(iu)
   thetap = thetav(iu)
   relaxp = relaxv(iu)
   icvflb = 0
@@ -378,8 +375,8 @@ if (btest(iscdri, DRIFT_SCALAR_CENTRIFUGALFORCE)) then
   !==========
  ( idtvar , iu     , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , ivisep ,                   &
-   ippu   , ippv   , ippw   , iwarnp , idftnp ,                   &
-   blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
+   ippu   , iwarnp , idftnp ,                                     &
+   blencp , epsrgp , climgp , relaxp , thetap ,                   &
    vel    , vel    ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
    imasfl_mix , bmasfl_mix ,                                      &
@@ -442,8 +439,8 @@ call inimav &
  ( ivar   , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
-   epsrgp , climgp , extrap ,                                     &
-   propce(1,ipcrom), propfb(1,ipbrom),                            &
+   epsrgp , climgp ,                                              &
+   crom   , brom   ,                                              &
    drift  ,                                                       &
    coefa1 , coefb1 ,                                              &
    flumas , flumab )

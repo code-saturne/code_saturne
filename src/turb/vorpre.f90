@@ -60,7 +60,7 @@ use parall
 use period
 use vorinc
 use mesh
-
+use field
 !===============================================================================
 
 implicit none
@@ -72,15 +72,14 @@ double precision propce(ncelet,*)
 ! Local variables
 
 integer          ifac, iel, ii
-integer          ient, ipcvis, ipcrom
-integer          iappel
+integer          ient, ipcvis
 integer          isurf(nentmx)
 
 double precision xx, yy, zz
 double precision xxv, yyv, zzv
 
 double precision, allocatable, dimension(:,:) :: w1x, w1y, w1z, w1v
-
+double precision, dimension(:), pointer :: crom
 !===============================================================================
 ! 1.  INITIALISATIONS
 !===============================================================================
@@ -140,7 +139,7 @@ enddo
 ! les coordonnees des faces ou il doit ensuite utiliser des vortex
 
 ipcvis = ipproc(iviscl)
-ipcrom = ipproc(irom)
+call field_get_val_s(icrom, crom)
 do ifac = 1, nfabor
   ient = irepvo(ifac)
   if(ient.ne.0) then
@@ -149,7 +148,7 @@ do ifac = 1, nfabor
     w1x(icvor2(ient),ient)= cdgfbo(1,ifac)
     w1y(icvor2(ient),ient)= cdgfbo(2,ifac)
     w1z(icvor2(ient),ient)= cdgfbo(3,ifac)
-    w1v(icvor2(ient),ient) = propce(iel,ipcvis)/propce(iel,ipcrom)
+    w1v(icvor2(ient),ient) = propce(iel,ipcvis)/crom(iel)
     xsurfv(ient) = xsurfv(ient) + sqrt(surfbo(1,ifac)**2          &
       + surfbo(2,ifac)**2 + surfbo(3,ifac)**2)
 !         Vecteur surface d'une face de l'entree

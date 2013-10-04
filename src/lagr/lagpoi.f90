@@ -23,14 +23,10 @@
 subroutine lagpoi &
 !================
 
- ( lndnod ,                                                       &
-   nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   ntersl , nvlsta , nvisbr ,                                     &
-   icocel , itycel , ifrlag , itepa  ,                            &
-   dt     , rtpa   , rtp    , propce , propfb ,                   &
-   coefa  , coefb  ,                                              &
-   ettp   , tepa   , statis )
+ ( nbpmax , nvp    , nivep  ,                            &
+   nvlsta ,                                              &
+   itepa  ,                                              &
+   ettp   , statis )
 
 !===============================================================================
 ! FONCTION :
@@ -49,36 +45,14 @@ subroutine lagpoi &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! lndnod           ! e  ! <-- ! dim. connectivite cellules->faces              !
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
-! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
 ! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
-! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
 ! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
-! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
-! icocel           ! te ! --> ! connectivite cellules -> faces                 !
-! (lndnod)         !    !     !    face de bord si numero negatif              !
-! itycel           ! te ! --> ! connectivite cellules -> faces                 !
-! (ncelet+1)       !    !     !    pointeur du tableau icocel                  !
-! ifrlag           ! te ! --> ! numero de zone de la face de bord              !
-! (nfabor)         !    !     !  pour le module lagrangien                     !
 ! itepa            ! te ! --> ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! ettp             ! tr ! <-- ! tableaux des variables liees                   !
 !  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! tepa             ! tr ! <-- ! info particulaires (reels)                     !
-! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
 ! statis           ! tr ! <-- ! moyennes statistiques                          !
 !(ncelet,nvlsta    !    !     !                                                !
 !__________________!____!_____!________________________________________________!
@@ -112,18 +86,12 @@ implicit none
 
 ! Arguments
 
-integer          lndnod
-integer          nvar   , nscal
-integer          nbpmax , nvp    , nvp1   , nvep  , nivep
-integer          ntersl , nvlsta , nvisbr
+integer          nbpmax , nvp    , nivep
+integer          nvlsta
 
-integer          icocel(lndnod) , itycel(ncelet+1)
-integer          ifrlag(nfabor) ,  itepa(nbpmax,nivep)
+integer          itepa(nbpmax,nivep)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
-double precision coefa(nfabor,*) , coefb(nfabor,*)
-double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
+double precision ettp(nbpmax,nvp)
 double precision statis(ncelet,nvlsta)
 
 ! Local variables
@@ -167,9 +135,7 @@ enddo
 
 call lageqp                                                       &
 !==========
- ( nvar   , nscal  ,                                              &
-   dt     ,                                                       &
-   statis(1,ilvx)  , statis(1,ilvy)  , statis(1,ilvz)  ,          &
+ ( statis(1,ilvx)  , statis(1,ilvy)  , statis(1,ilvz)  ,          &
    statis(1,ilfv)  ,                                              &
    phil   )
 
@@ -241,7 +207,7 @@ enddo
 ! CORRECTION DES VITESSES INSTANTANNES
 
 do npt = 1,nbpart
-  if ( itepa(npt,jisor).gt.0 ) then
+  if (itepa(npt,jisor).gt.0) then
     iel = itepa(npt,jisor)
     ettp(npt,jup) = ettp(npt,jup) - grad(iel,1)
     ettp(npt,jvp) = ettp(npt,jvp) - grad(iel,2)

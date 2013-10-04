@@ -24,8 +24,7 @@ subroutine cfphyv &
 !================
 
  ( nvar   , nscal  ,                                              &
-   izfppp ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfb )
+   dt     , rtp    , rtpa   , propce )
 
 !===============================================================================
 ! FONCTION :
@@ -42,14 +41,10 @@ subroutine cfphyv &
 !__________________!____!_____!________________________________________________!
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-!        !    !     !                                                !
-! izfppp           ! te ! --> ! numero de zone de la face de bord              !
-! (nfabor)         !    !     !  pour le module phys. part.                    !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -80,10 +75,9 @@ implicit none
 ! Arguments
 
 integer          nvar   , nscal
-integer          izfppp(nfabor)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
+double precision propce(ncelet,*)
 
 ! Local variables
 
@@ -109,7 +103,7 @@ save             ipass
 call uscfpv                                                       &
 !==========
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , rtpa   , propce , propfb )
+   dt     , rtp    , rtpa   , propce )
 
 !===============================================================================
 ! 3. MISE A JOUR DE LAMBDA/CV

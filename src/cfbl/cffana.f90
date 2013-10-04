@@ -44,13 +44,12 @@
 !______________________________________________________________________________!
 !> \param[in]     nvar          total number of variables
 !> \param[in]     imodif        indicator of what is computed
-!> \param[in,out] propfb        physical properties at boundary face centers
 !> \param[in,out] bval          dirichlet value for all variables
 !_______________________________________________________________________________
 
 
 subroutine cffana &
- ( nvar   , imodif , propfb , bval   )
+ ( nvar   , imodif , bval   )
 
 !===============================================================================
 
@@ -82,18 +81,18 @@ implicit none
 integer          nvar
 integer          imodif
 
-double precision propfb(nfabor,*)
 double precision bval(nfabor,nvar)
 
 ! Local variables
 
 integer          iel    , ifac
 integer          ien
-integer          iflmab , ipcrom , ipbrom
+integer          iflmab
 double precision und    , rund
 double precision, dimension(:), pointer :: bmasfl
 double precision, dimension(:,:), pointer :: cofacv
 double precision, dimension(:), pointer :: coface
+double precision, dimension(:), pointer :: brom
 
 !===============================================================================
 
@@ -101,8 +100,6 @@ double precision, dimension(:), pointer :: coface
 ! 0. INITIALISATION
 !===============================================================================
 
-ipcrom = ipproc(irom)
-ipbrom = ipprob(irom)
 ien = isca(ienerg)
 
 call field_get_key_int(ivarfl(ien), kbmasf, iflmab)
@@ -110,6 +107,8 @@ call field_get_val_s(iflmab, bmasfl)
 
 call field_get_coefac_v(ivarfl(iu), cofacv)
 call field_get_coefac_s(ivarfl(ien), coface)
+
+call field_get_coefac_s(ibrom, brom)
 
 ifac  = imodif
 iel   = ifabor(ifac)
@@ -121,7 +120,7 @@ iel   = ifabor(ifac)
 und   = (bval(ifac,iu)*surfbo(1,ifac)                          &
        + bval(ifac,iv)*surfbo(2,ifac)                          &
        + bval(ifac,iw)*surfbo(3,ifac))/surfbn(ifac)
-rund  = propfb(ifac,ipbrom)*und
+rund  = brom(ifac)*und
 
 !===============================================================================
 ! 2. CONVECTIVE ANALYTICAL FLUX

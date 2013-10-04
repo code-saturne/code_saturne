@@ -35,24 +35,18 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     dt            time step (per cell)
 !> \param[in,out] rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfb        physical properties at boundary face centers
-!> \param[in]     coefa         boundary condition array for the variable
-!> \param[in]     coefb         boundary condition array for the variable
 !> \param[in]     xcpp          Cp
 !> \param[out]    smbrs         Right hand side to update
 !_______________________________________________________________________________
 
 subroutine divrit &
- ( nvar   , nscal  ,                                              &
-   iscal  , itspdv ,                                              &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   coefa  , coefb  ,                                              &
+ ( nscal  , iscal  ,                                              &
+   dt     , rtp    , rtpa   , propce ,                            &
    xcpp   ,                                                       &
    smbrs )
 
@@ -77,22 +71,20 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-integer          iscal  , itspdv
+integer          nscal
+integer          iscal
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(ndimfb,*)
-double precision coefa(ndimfb,*), coefb(ndimfb,*)
+double precision propce(ncelet,*)
 double precision xcpp(ncelet)
 double precision smbrs(ncelet)
 
 ! Local variables
 
 integer          ifac, init, inc
-integer          iccocg,iflmb0,imaspe
-integer          ipcrom, ipbrom
+integer          iccocg,iflmb0
 integer          nswrgp, imligp, iwarnp
 integer          itypfl
-integer          ivar , iclvar, iel, ii, jj, isou
+integer          ivar , iclvar, iel, ii, jj
 integer          itt
 integer          f_id
 
@@ -119,6 +111,7 @@ double precision, dimension(:,:), pointer :: cofarut
 double precision, dimension(:,:,:), pointer :: cofbrut
 double precision, dimension(:,:), pointer :: xut
 double precision, dimension(:,:), pointer :: xuta
+double precision, dimension(:), pointer :: brom, crom
 
 !===============================================================================
 
@@ -132,8 +125,9 @@ xtt = 0.d0
 ! First component is for x,y,z  and the 2nd for u,v,w
 allocate(gradv(3,3,ncelet))
 allocate(gradt(ncelet,3), thflxf(nfac), thflxb(nfabor))
-ipcrom = ipproc(irom)
-ipbrom = ipprob(irom)
+
+call field_get_val_s(icrom, crom)
+call field_get_val_s(ibrom, brom)
 
 ! Compute scalar gradient
 ivar = isca(iscal)
@@ -189,8 +183,7 @@ ilved = .false.
 call grdvec &
 !==========
 ( iu     , imrgra , inc    , nswrgp , imligp ,                   &
-  iwarnp , nfecra ,                                              &
-  epsrgp , climgp , extrap ,                                     &
+  iwarnp , epsrgp , climgp ,                                     &
   ilved ,                                                        &
   rtp(1,iu)       , coefav , coefbv ,                            &
   gradv  )
@@ -323,8 +316,8 @@ if (ityturt(iscal).ne.3) then
   ( ivar   , itypfl ,                                     &
     iflmb0 , init   , inc    , imrgra , nswrgp  , imligp, &
     iwarnp , nfecra ,                                     &
-    epsrgp , climgp , extrap ,                            &
-    propce(1,ipcrom), propfb(1,ipbrom),                   &
+    epsrgp , climgp ,                                     &
+    crom   , brom   ,                                     &
     w1     ,                                              &
     coefat , coefbt ,                                     &
     thflxf , thflxb )
@@ -382,8 +375,8 @@ else
   ( ivar   , itypfl ,                                     &
     iflmb0 , init   , inc    , imrgra , nswrgp  , imligp, &
     iwarnp , nfecra ,                                     &
-    epsrgp , climgp , extrap ,                            &
-    propce(1,ipcrom), propfb(1,ipbrom),                   &
+    epsrgp , climgp ,                                     &
+    crom   , brom   ,                                     &
     w1     ,                                              &
     cofarut, cofbrut,                                     &
     thflxf , thflxb )

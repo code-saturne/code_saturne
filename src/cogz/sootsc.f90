@@ -55,36 +55,17 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
-!> \param[in]     ncepdp        number of cells with head loss
-!> \param[in]     ncesmp        number of cells with mass source term
 !> \param[in]     iscal         scalar index
-!> \param[in]     icepdc        index of cells with head loss
-!> \param[in]     icetsm        index of cells with mass source term
-!> \param[in]     itypsm        type of mass source term for the variables
-!> \param[in]     izfppp        boundary zone index
-!> \param[in]     dt            time step (per cell)
 !> \param[in,out] rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfb        physical properties at boundary face centers
-!> \param[in]     coefa, coefb  boundary conditions
-!> \param[in]     ckupdc        work array for the head loss
-!> \param[in]     smacel        variable value associated to the mass source
-!>                               term (for ivar=ipr, smacel is the mass flux
-!>                               \f$ \Gamma^n \f$)
 !> \param[in,out] smbrs         explicit right hand side
 !> \param[in,out] rovsdt        implicit terms
 !_______________________________________________________________________________
 
 subroutine sootsc &
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iscal  ,                                                       &
-   icepdc , icetsm , itypsm ,                                     &
-   izfppp ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfb ,                   &
-   coefa  , coefb  , ckupdc , smacel ,                            &
+ ( iscal  ,                                                       &
+   rtpa   , rtp    , propce ,                                     &
    smbrs  , rovsdt )
 
 !===============================================================================
@@ -107,31 +88,23 @@ use coincl
 use cpincl
 use ppincl
 use mesh
-
+use field
 !===============================================================================
 
 implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-integer          ncepdp , ncesmp
 integer          iscal
 
-integer          icepdc(ncepdp)
-integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-integer          izfppp(nfabor)
-
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
+double precision rtp(ncelet,*), rtpa(ncelet,*)
+double precision propce(ncelet,*)
 double precision smbrs(ncelet), rovsdt(ncelet)
 
 ! Local variables
 
 character*80     chaine
-integer          ivar, ipcrom, iel
+integer          ivar, iel
 
 double precision epsi
 parameter       (epsi = 1.d-6)
@@ -139,7 +112,7 @@ double precision d1s3, d2s3, cexp, cimp
 double precision zetan, zetas, rho, xfu, xm, temp, nn0
 double precision ka, kb, kz, kt, chi, po2, wox
 double precision aa, bb, cc, taa, tcc, caa, cbb, ccc, dd
-
+double precision, dimension(:), pointer ::  crom
 !===============================================================================
 
 !===============================================================================
@@ -148,7 +121,7 @@ double precision aa, bb, cc, taa, tcc, caa, cbb, ccc, dd
 
 ivar = isca(iscal)
 chaine = nomvar(ipprtp(ivar))
-ipcrom = ipproc(irom)
+call field_get_val_s(icrom, crom)
 
 !===============================================================================
 ! 2. Writings

@@ -23,7 +23,7 @@
 subroutine vor2cl &
 !================
 
- ( icodcl , itypfb ,                                              &
+ ( itypfb ,                                                       &
    rcodcl )
 
 !===============================================================================
@@ -37,15 +37,6 @@ subroutine vor2cl &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! icodcl           ! te ! --> ! code de condition limites aux faces            !
-!  (nfabor,nvarcl) !    !     !  de bord                                       !
-!                  !    !     ! = 1   -> dirichlet                             !
-!                  !    !     ! = 3   -> densite de flux                       !
-!                  !    !     ! = 4   -> glissemt et u.n=0 (vitesse)           !
-!                  !    !     ! = 5   -> frottemt et u.n=0 (vitesse)           !
-!                  !    !     ! = 6   -> rugosite et u.n=0 (vitesse)           !
-!                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
-!                  !    !     !  entrante eventuelle     bloquee               !
 ! itypfb           ! ia ! --> ! boundary face types                            !
 ! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
 !  (nfabor,nvarcl) !    !     !  aux faces de bord                             !
@@ -88,7 +79,6 @@ implicit none
 
 ! Arguments
 
-integer          icodcl(nfabor,nvarcl)
 integer          itypfb(nfabor)
 
 double precision rcodcl(nfabor,nvarcl,3)

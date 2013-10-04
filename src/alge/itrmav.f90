@@ -152,8 +152,6 @@ double precision diippf(3), djjppf(3), pipp, pjpp
 double precision visci(3,3), viscj(3,3)
 double precision fikdvi, fjkdvi
 
-double precision rvoid(1)
-
 double precision, pointer, dimension(:,:) :: viscce => null()
 double precision, dimension(:,:), allocatable, target :: w2
 double precision, allocatable, dimension(:,:) :: grad
@@ -253,8 +251,7 @@ if (nswrgp.gt.1) then
   call grdpot &
   !==========
  ( ipr    , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   rvoid  ,                                                       &
+   iwarnp , epsrgp , climgp , extrap ,                            &
    frcxt  ,                                                       &
    pvar   , coefap , coefbp ,                                     &
    grad   )

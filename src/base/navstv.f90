@@ -49,7 +49,6 @@
 !> \param[in,out] rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfb        physical properties at boundary face centers
 !> \param[in]     coefa, coefb  boundary conditions
 !> \param[in]     frcxt         external force generating the hydrostatic
 !>                              pressure
@@ -65,7 +64,7 @@
 subroutine navstv &
  ( nvar   , nscal  , iterns , icvrge , itrale ,                   &
    isostd ,                                                       &
-   dt     , tpucou , rtp    , rtpa   , propce , propfb ,          &
+   dt     , tpucou , rtp    , rtpa   , propce ,                   &
    tslagr , coefa  , coefb  , frcxt  , prhyd  ,                   &
    trava  , ximpa  , uvwk   )
 
@@ -104,7 +103,7 @@ integer          nvar   , nscal  , iterns , icvrge , itrale
 integer          isostd(nfabor+1)
 
 double precision dt(ncelet), tpucou(ncelet,3), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(ndimfb,*)
+double precision propce(ncelet,*)
 double precision tslagr(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision frcxt(3,ncelet)
@@ -119,7 +118,7 @@ integer          ii    , inod, itypfl
 integer          isou, ivar, iitsm
 integer          iclipr, iclipf
 integer          icliup, iclivp, icliwp, init
-integer          iflmas, iflmab, ipcrom, ipbrom
+integer          iflmas, iflmab
 integer          iflmb0
 integer          nswrgp, imligp, iwarnp
 integer          nbrval, iappel, iescop
@@ -133,8 +132,6 @@ double precision xxp0 , xyp0 , xzp0
 double precision rhofac, dtfac, ddepx , ddepy, ddepz
 double precision xnrdis
 double precision vitbox, vitboy, vitboz
-
-double precision rvoid(1)
 
 double precision, allocatable, dimension(:,:,:), target :: viscf
 double precision, allocatable, dimension(:), target :: viscb
@@ -159,7 +156,9 @@ double precision, dimension(:,:), allocatable :: vel
 double precision, dimension(:,:), allocatable :: vela
 double precision, dimension(:,:), allocatable :: mshvel
 double precision, dimension(:), allocatable :: coefap
+double precision, dimension(:), pointer :: coefb_pr
 double precision, dimension(:), pointer :: imasfl, bmasfl
+double precision, dimension(:), pointer :: brom, crom
 
 !===============================================================================
 
@@ -238,7 +237,6 @@ endif
 
 ivar = 0
 iflmas = 0
-ipcrom = 0
 imax = 0
 
 ! Memoire
@@ -300,7 +298,7 @@ endif
 if ((idilat.eq.2.or.idilat.eq.3).and. &
     (ntcabs.gt.1.or.isuite.gt.0)) then
 
-  call predfl(nvar, ncetsm, icetsm, dt, propce, smacel)
+  call predfl(nvar, ncetsm, icetsm, dt, smacel)
   !==========
 
 endif
@@ -311,7 +309,7 @@ endif
 
 if (iphydr.eq.2) then
 
-  call prehyd(propce, prhyd, grdphd)
+  call prehyd(prhyd, grdphd)
   !==========
 
 endif
@@ -330,7 +328,7 @@ if ( ippmod(icompf).ge.0 ) then
   !==========
   ( nvar   , nscal  ,                                              &
     ncepdc , ncetsm , icepdc , icetsm , itypsm ,                   &
-    dt     , rtp    , rtpa   , propce , propfb ,                   &
+    dt     , rtp    , rtpa   , propce ,                            &
     coefa  , coefb  ,                                              &
     ckupdc , smacel )
 
@@ -356,8 +354,8 @@ call predvv &
   nvar   , nscal  , iterns ,                                     &
   ncepdc , ncetsm ,                                              &
   icepdc , icetsm , itypsm ,                                     &
-  dt     , rtp    , rtpa   , vel    , vela   ,                   &
-  propce , propfb ,                                              &
+  dt     , rtpa   , vel    , vela   ,                            &
+  propce ,                                                       &
   imasfl , bmasfl ,                                              &
   tslagr , coefa  , coefb  , coefau , coefbu , cofafu , cofbfu , &
   ckupdc , smacel , frcxt  , grdphd ,                            &
@@ -374,8 +372,8 @@ if (iprco.le.0) then
   iclivp = iclrtp(iv,icoef)
   icliwp = iclrtp(iw,icoef)
 
-  ipcrom = ipproc(irom)
-  ipbrom = ipprob(irom)
+  call field_get_val_s(icrom, crom)
+  call field_get_val_s(ibrom, brom)
 
   itypfl = 1
   init   = 1
@@ -387,15 +385,14 @@ if (iprco.le.0) then
   iwarnp = iwarni(iu)
   epsrgp = epsrgr(iu)
   climgp = climgr(iu)
-  extrap = extrag(iu)
 
   call inimav                                                     &
   !==========
  ( iu     , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
-   epsrgp , climgp , extrap ,                                     &
-   propce(1,ipcrom), propfb(1,ipbrom),                            &
+   epsrgp , climgp ,                                              &
+   crom, brom,                                                    &
    vel    ,                                                       &
    coefau , coefbu ,                                              &
    imasfl , bmasfl )
@@ -413,8 +410,8 @@ if (iprco.le.0) then
     !  are moved directly by the user
     allocate(intflx(nfac), bouflx(nfabor))
 
-    ipcrom = ipproc(irom)
-    ipbrom = ipprob(irom)
+    call field_get_val_s(icrom, crom)
+    call field_get_val_s(ibrom, brom)
 
     itypfl = 1
     init   = 1
@@ -425,15 +422,14 @@ if (iprco.le.0) then
     iwarnp = iwarni(iuma)
     epsrgp = epsrgr(iuma)
     climgp = climgr(iuma)
-    extrap = extrag(iuma)
 
     call inimav &
     !==========
   ( iu     , itypfl ,                                              &
     iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
     iwarnp , nfecra ,                                              &
-    epsrgp , climgp , extrap ,                                     &
-    propce(1,ipcrom), propfb(1,ipbrom),                            &
+    epsrgp , climgp ,                                              &
+    crom, brom,                                                    &
     mshvel ,                                                       &
     claale , clbale ,                                              &
     intflx , bouflx )
@@ -465,7 +461,7 @@ if (iprco.le.0) then
         iel1 = ifacel(1,ifac)
         iel2 = ifacel(2,ifac)
         dtfac = 0.5d0*(dt(iel1) + dt(iel2))
-        rhofac = 0.5d0*(propce(iel1,ipcrom) + propce(iel2,ipcrom))
+        rhofac = 0.5d0*(crom(iel1) + crom(iel2))
         imasfl(ifac) = imasfl(ifac) - rhofac*(                    &
               ddepx*surfac(1,ifac)                                &
              +ddepy*surfac(2,ifac)                                &
@@ -482,18 +478,18 @@ if (iprco.le.0) then
 
   ! Ajout de la vitesse du solide dans le flux convectif,
   ! si le maillage est mobile (solide rigide)
-  ! En turbomachine, on connaît exactement la vitesse de maillage à ajouter
+  ! En turbomachine, on conna\EEt exactement la vitesse de maillage \E0 ajouter
   if (imobil.eq.1) then
 
-    ipcrom = ipproc(irom)
-    ipbrom = ipprob(irom)
+    call field_get_val_s(icrom, crom)
+    call field_get_val_s(ibrom, brom)
 
     !$omp parallel do private(iel1, iel2, dtfac, rhofac, vitbox, vitboy, vitboz)
     do ifac = 1, nfac
       iel1 = ifacel(1,ifac)
       iel2 = ifacel(2,ifac)
       dtfac  = 0.5d0*(dt(iel1) + dt(iel2))
-      rhofac = 0.5d0*(propce(iel1,ipcrom) + propce(iel2,ipcrom))
+      rhofac = 0.5d0*(crom(iel1) + crom(iel2))
       vitbox = omegay*cdgfac(3,ifac) - omegaz*cdgfac(2,ifac)
       vitboy = omegaz*cdgfac(1,ifac) - omegax*cdgfac(3,ifac)
       vitboz = omegax*cdgfac(2,ifac) - omegay*cdgfac(1,ifac)
@@ -505,7 +501,7 @@ if (iprco.le.0) then
     do ifac = 1, nfabor
       iel = ifabor(ifac)
       dtfac  = dt(iel)
-      rhofac = propfb(ifac,ipbrom)
+      rhofac = brom(ifac)
       vitbox = omegay*cdgfbo(3,ifac) - omegaz*cdgfbo(2,ifac)
       vitboy = omegaz*cdgfbo(1,ifac) - omegax*cdgfbo(3,ifac)
       vitboz = omegax*cdgfbo(2,ifac) - omegay*cdgfbo(1,ifac)
@@ -556,14 +552,14 @@ if ( ippmod(icompf).lt.0 ) then
   call resopv &
   !==========
 ( nvar   ,                                                       &
-  ncepdc , ncetsm ,                                              &
-  icepdc , icetsm , itypsm , isostd ,                            &
-  dt     , rtp    , rtpa   , vel    , vela   ,                   &
-  propce , propfb ,                                              &
+  ncetsm ,                                                       &
+  icetsm , isostd ,                                              &
+  dt     , rtp    , rtpa   , vel    ,                            &
+  propce ,                                                       &
   coefa  , coefb  , coefau , coefbu , coefap ,                   &
-  ckupdc , smacel ,                                              &
+  smacel ,                                                       &
   frcxt  , dfrcxt , dttens , trav   ,                            &
-  viscf  , viscb  , viscfi , viscbi ,                            &
+  viscf  , viscb  ,                                              &
   drtp   , tslagr ,                                              &
   trava  )
 
@@ -576,7 +572,7 @@ endif
 if (iale.eq.1) then
 
   if (itrale.gt.nalinf) then
-    call alelav(rtp, rtpa, propce, propfb)
+    call alelav(rtp, rtpa, propce)
     !==========
   endif
 
@@ -588,14 +584,8 @@ endif
 
 if (ippmod(icompf).lt.0) then
 
-  iclipr = iclrtp(ipr,icoef)
-  iclipf = iclrtp(ipr,icoeff)
-  icliup = iclrtp(iu ,icoef)
-  iclivp = iclrtp(iv ,icoef)
-  icliwp = iclrtp(iw ,icoef)
-
-  ipcrom = ipproc(irom  )
-  ipbrom = ipprob(irom  )
+  call field_get_val_s(icrom, crom)
+  call field_get_val_s(ibrom, brom)
 
   ! irevmc = 0: Only the standard method is available for the coupled
   !              version of navstv.
@@ -636,16 +626,17 @@ if (ippmod(icompf).lt.0) then
     climgp = climgr(ipr)
     extrap = extrag(ipr)
 
+    call field_get_coefb_s(ivarfl(ipr), coefb_pr)
+
     !Allocation
     allocate(gradp(ncelet,3))
 
     call grdpot &
     !==========
-         ( ipr , imrgra , inc    , iccocg , nswrgp , imligp , iphydr ,    &
-         iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-         rvoid  ,                                                       &
+       ( ipr , imrgra , inc    , iccocg , nswrgp , imligp , iphydr ,    &
+         iwarnp , epsrgp , climgp , extrap ,                            &
          dfrcxt ,                                                       &
-         drtp   , coefap        , coefb(1,iclipr)  ,                    &
+         drtp   , coefap        , coefb_pr ,                            &
          gradp  )
 
     thetap = thetav(ipr)
@@ -671,18 +662,18 @@ if (ippmod(icompf).lt.0) then
       if (idften(ipr).eq.1) then
         !$omp parallel do private(dtsrom, isou)
         do iel = 1, ncel
-          dtsrom = thetap*dt(iel)/propce(iel,ipcrom)
+          dtsrom = thetap*dt(iel)/crom(iel)
           do isou = 1, 3
             vel(isou,iel) = vel(isou,iel)                            &
                  + dtsrom*(dfrcxt(isou, iel)-trav(isou,iel))
           enddo
         enddo
 
-        ! Tensorial diffusion for the pressure
-      else if (idften(ipr).eq.6) then
-        !$omp parallel do private(unsrom)
-        do iel = 1, ncel
-          unsrom = thetap/propce(iel,ipcrom)
+    ! Tensorial diffusion for the pressure
+    else if (idften(ipr).eq.6) then
+      !$omp parallel do private(unsrom)
+      do iel = 1, ncel
+        unsrom = thetap/crom(iel)
 
           vel(1, iel) = vel(1, iel)                                             &
                + unsrom*(                                                &
@@ -734,20 +725,19 @@ if (ippmod(icompf).lt.0) then
       ! Scalar diffusion for the pressure
       if (idften(ipr).eq.1) then
 
-        !$omp parallel do private(dtsrom, isou)
-        do iel = 1, ncel
-          dtsrom = thetap*dt(iel)/propce(iel,ipcrom)
-          do isou = 1, 3
-            vel(isou,iel) = vel(isou,iel) - dtsrom*trav(isou,iel)
-          enddo
+      !$omp parallel do private(dtsrom, isou)
+      do iel = 1, ncel
+        dtsrom = thetap*dt(iel)/crom(iel)
+        do isou = 1, 3
+          vel(isou,iel) = vel(isou,iel) - dtsrom*trav(isou,iel)
         enddo
-
+       enddo
         ! Tensorial diffusion for the pressure
       else if (idften(ipr).eq.6) then
 
-        !$omp parallel do private(unsrom)
-        do iel = 1, ncel
-          unsrom = thetap/propce(iel,ipcrom)
+      !$omp parallel do private(unsrom)
+      do iel = 1, ncel
+        unsrom = thetap/crom(iel)
 
           vel(1, iel) = vel(1, iel)                              &
                - unsrom*(                                 &
@@ -789,8 +779,8 @@ if (iale.eq.1) then
   !  are moved directly by the user
   allocate(intflx(nfac), bouflx(nfabor))
 
-  ipcrom = ipproc(irom)
-  ipbrom = ipprob(irom)
+  call field_get_val_s(icrom, crom)
+  call field_get_val_s(ibrom, brom)
 
   itypfl = 1
   init   = 1
@@ -801,15 +791,14 @@ if (iale.eq.1) then
   iwarnp = iwarni(iuma)
   epsrgp = epsrgr(iuma)
   climgp = climgr(iuma)
-  extrap = extrag(iuma)
 
   call inimav &
   !==========
 ( iuma   , itypfl ,                                              &
   iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
   iwarnp , nfecra ,                                              &
-  epsrgp , climgp , extrap ,                                     &
-  propce(1,ipcrom), propfb(1,ipbrom),                            &
+  epsrgp , climgp ,                                              &
+  crom, brom,                                                    &
   mshvel ,                                                       &
   claale , clbale ,                                              &
   intflx , bouflx )
@@ -841,7 +830,7 @@ if (iale.eq.1) then
       iel1 = ifacel(1,ifac)
       iel2 = ifacel(2,ifac)
       dtfac = 0.5d0*(dt(iel1) + dt(iel2))
-      rhofac = 0.5d0*(propce(iel1,ipcrom) + propce(iel2,ipcrom))
+      rhofac = 0.5d0*(crom(iel1) + crom(iel2))
       imasfl(ifac) = imasfl(ifac) - rhofac*(      &
             ddepx*surfac(1,ifac)                                &
            +ddepy*surfac(2,ifac)                                &
@@ -859,19 +848,19 @@ endif
 !FIXME for me we should do that before predvv
 ! Ajout de la vitesse du solide dans le flux convectif,
 ! si le maillage est mobile (solide rigide)
-! En turbomachine, on connaît exactement la vitesse de maillage à ajouter
+! En turbomachine, on conna\EEt exactement la vitesse de maillage \E0 ajouter
 
 if (imobil.eq.1) then
 
-  ipcrom = ipproc(irom)
-  ipbrom = ipprob(irom)
+  call field_get_val_s(icrom, crom)
+  call field_get_val_s(ibrom, brom)
 
   !$omp parallel do private(iel1, iel2, dtfac, rhofac, vitbox, vitboy, vitboz)
   do ifac = 1, nfac
     iel1 = ifacel(1,ifac)
     iel2 = ifacel(2,ifac)
     dtfac  = 0.5d0*(dt(iel1) + dt(iel2))
-    rhofac = 0.5d0*(propce(iel1,ipcrom) + propce(iel2,ipcrom))
+    rhofac = 0.5d0*(crom(iel1) + crom(iel2))
     vitbox = omegay*cdgfac(3,ifac) - omegaz*cdgfac(2,ifac)
     vitboy = omegaz*cdgfac(1,ifac) - omegax*cdgfac(3,ifac)
     vitboz = omegax*cdgfac(2,ifac) - omegay*cdgfac(1,ifac)
@@ -883,7 +872,7 @@ if (imobil.eq.1) then
   do ifac = 1, nfabor
     iel = ifabor(ifac)
     dtfac  = dt(iel)
-    rhofac = propfb(ifac,ipbrom)
+    rhofac = brom(ifac)
     vitbox = omegay*cdgfbo(3,ifac) - omegaz*cdgfbo(2,ifac)
     vitboy = omegaz*cdgfbo(1,ifac) - omegax*cdgfbo(3,ifac)
     vitboz = omegax*cdgfbo(2,ifac) - omegay*cdgfbo(1,ifac)
@@ -904,8 +893,8 @@ if (iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
   iclivp = iclrtp(iv,icoef)
   icliwp = iclrtp(iw,icoef)
 
-  ipcrom = ipproc(irom)
-  ipbrom = ipprob(irom)
+  call field_get_val_s(icrom, crom)
+  call field_get_val_s(ibrom, brom)
 
 
   ! ---> ECHANGE DES VITESSES ET PRESSION EN PERIODICITE ET PARALLELISME
@@ -948,15 +937,14 @@ if (iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
   iwarnp = iwarni(iu)
   epsrgp = epsrgr(iu)
   climgp = climgr(iu)
-  extrap = extrag(iu)
 
   call inimav                                                     &
   !==========
  ( iu     , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
-   epsrgp , climgp , extrap ,                                     &
-   propce(1,ipcrom), propfb(1,ipbrom),                            &
+   epsrgp , climgp ,                                              &
+   crom, brom,                                                    &
    vel    ,                                                       &
    coefau , coefbu ,                                              &
    esflum , esflub )
@@ -1003,7 +991,7 @@ if (iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
 
     !$omp parallel do private(rovolsdt, isou)
     do iel = 1, ncel
-      rovolsdt = propce(iel,ipcrom)*volume(iel)/dt(iel)
+      rovolsdt = crom(iel)*volume(iel)/dt(iel)
       do isou = 1, 3
         trav(isou,iel) = rovolsdt *                               &
                  ( vela(isou,iel)- vel(isou,iel) )
@@ -1019,8 +1007,8 @@ if (iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
    nvar   , nscal  , iterns ,                                     &
    ncepdc , ncetsm ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtp    , vel    , vel    ,                   &
-   propce , propfb ,                                              &
+   dt     , rtp    , vel    , vel    ,                            &
+   propce ,                                                       &
    esflum , esflub ,                                              &
    tslagr , coefa  , coefb  , coefau , coefbu , cofafu , cofbfu , &
    ckupdc , smacel , frcxt  , grdphd ,                            &
@@ -1104,8 +1092,8 @@ endif
 ! 10. Printing
 !===============================================================================
 
-ipcrom = ipproc(irom)
-ipbrom = ipprob(irom)
+call field_get_val_s(icrom, crom)
+call field_get_val_s(ibrom, brom)
 
 if (iwarni(iu).ge.1) then
 
@@ -1163,7 +1151,7 @@ if (iwarni(iu).ge.1) then
     iel1 = ifacel(1,ifac)
     iel2 = ifacel(2,ifac)
     surf = surfan(ifac)
-    rhom = (propce(iel1,ipcrom)+propce(iel2,ipcrom))*0.5d0
+    rhom = (crom(iel1)+crom(iel2))*0.5d0
     rnorm = imasfl(ifac)/(surf*rhom)
     rnorma = max(rnorma,rnorm)
     rnormi = min(rnormi,rnorm)
@@ -1179,7 +1167,7 @@ if (iwarni(iu).ge.1) then
   rnorma = -grand
   rnormi =  grand
   do ifac = 1, nfabor
-    rnorm = bmasfl(ifac)/(surfbn(ifac)*propfb(ifac,ipbrom))
+    rnorm = bmasfl(ifac)/(surfbn(ifac)*brom(ifac))
     rnorma = max(rnorma,rnorm)
     rnormi = min(rnormi,rnorm)
   enddo

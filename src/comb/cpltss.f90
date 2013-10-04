@@ -23,13 +23,9 @@
 subroutine cpltss &
 !================
 
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iscal  ,                                                       &
+ ( iscal  ,                                                       &
    itypfb ,                                                       &
-   icepdc , icetsm , itypsm ,                                     &
-   izfppp ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfb ,                   &
-   coefa  , coefb  , ckupdc , smacel ,                            &
+   rtpa   , rtp    , propce ,                                     &
    smbrs  , rovsdt , tslagr )
 
 !===============================================================================
@@ -77,30 +73,11 @@ subroutine cpltss &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
-! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
 ! iscal            ! i  ! <-- ! scalar number                                  !
 ! itypfb(nfabor    ! te ! --> ! type des faces de bord                         !
-! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
-! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
-! itypsm           ! te ! <-- ! type de source de masse pour les               !
-! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! izfppp           ! te ! --> ! numero de zone de la face de bord              !
-! (nfabor)         !    !     !  pour le module phys. part.                    !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
-! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
-!  (ncepdp,6)      !    !     !                                                !
-! smacel           ! tr ! <-- ! valeur des variables associee a la             !
-! (ncesmp,*   )    !    !     !  source de masse                               !
-!                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
 ! smbrs(ncelet)    ! tr ! --> ! second membre explicite                        !
 ! rovsdt(ncelet    ! tr ! --> ! partie diagonale implicite                     !
 ! tslagr           ! tr ! <-- ! terme de couplage retour du                    !
@@ -140,25 +117,14 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-integer          ncepdp , ncesmp
 integer          iscal
 
 integer          itypfb(nfabor)
-integer          icepdc(ncepdp)
-integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-integer          izfppp(nfabor)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
+double precision rtp(ncelet,*), rtpa(ncelet,*)
+double precision propce(ncelet,*)
 double precision smbrs(ncelet), rovsdt(ncelet)
 double precision tslagr(ncelet,*)
-double precision w1(ncelet), w2(ncelet), w3(ncelet)
-double precision w4(ncelet), w5(ncelet), w6(ncelet)
-double precision w7(ncelet), w8(ncelet), w9(ncelet)
-double precision w10(ncelet), w11(ncelet)
 
 ! Local variables
 
@@ -172,7 +138,6 @@ integer          iscala , icha
 ! 1. INITIALISATION
 !===============================================================================
 
-
 ! --- Numero du scalaire a traiter : ISCAL
 
 ! --- Numero de la variable associee au scalaire a traiter ISCAL
@@ -180,8 +145,6 @@ ivar = isca(iscal)
 
 ! --- Nom de la variable associee au scalaire a traiter ISCAL
 chaine = nomvar(ipprtp(ivar))
-
-
 
 !===============================================================================
 ! 2. PRISE EN COMPTE DES TERMES SOURCES
@@ -251,17 +214,6 @@ if ( ivar.eq.isca(if4p2m) ) then
 ! ---- Calcul des termes sources explicite et implicite
 !      relatif aux echanges interfaciaux entre phases
 
-! -> appel commente => SMBRS et ROVSDT non modifies
-!       NUMTRA = 4
-!       CALL CPTSVI
-!!==========
-!     & ( NCELET , NCEL   , NUMTRA ,
-!     &   RTP    , PROPCE , VOLUME ,
-!     &   SMBRS  , ROVSDT ,
-!     &   W1     , W2     ,
-!     &   W3 )
-
-
 ! ---- Calcul des termes sources explicite et implicite
 !      relatif aux termes de production et de dissipation
 
@@ -271,12 +223,9 @@ if ( ivar.eq.isca(if4p2m) ) then
 
   call cpltsv                                                     &
   !==========
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iscal  , iscala ,                                              &
+ ( iscal  , iscala ,                                              &
    itypfb ,                                                       &
-   icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , rtp    , propce , propfb ,                   &
-   coefa  , coefb  ,                                              &
+   rtpa   , rtp    , propce ,                                     &
    smbrs  , rovsdt )
 
 endif

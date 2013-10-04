@@ -118,39 +118,36 @@ module cs_f_interfaces
     !---------------------------------------------------------------------------
 
     subroutine post_boundary_thermal_flux &
-      (nfbrps, lstfbr, rtp, propce, propfb, bflux)
+      (nfbrps, lstfbr, rtp, propce, bflux)
       use dimens
       use mesh
       integer, intent(in)                                        :: nfbrps
       integer, dimension(nfbrps), intent(in)                     :: lstfbr
       double precision, dimension(ncelet, *), intent(in), target :: rtp, propce
-      double precision, dimension(ndimfb, *), intent(in)         :: propfb
       double precision, dimension(nfbrps), intent(out)           :: bflux
     end subroutine post_boundary_thermal_flux
 
     !---------------------------------------------------------------------------
 
     subroutine post_boundary_temperature &
-      (nfbrps, lstfbr, rtp, propce, propfb, btemp)
+      (nfbrps, lstfbr, rtp, propce, btemp)
       use dimens
       use mesh
       integer, intent(in)                                        :: nfbrps
       integer, dimension(nfbrps), intent(in)                     :: lstfbr
       double precision, dimension(ncelet, *), intent(in), target :: rtp, propce
-      double precision, dimension(ndimfb, *), intent(in)         :: propfb
       double precision, dimension(nfbrps), intent(out)           :: btemp
     end subroutine post_boundary_temperature
 
     !---------------------------------------------------------------------------
 
     subroutine post_boundary_nusselt &
-      (nfbrps, lstfbr, rtp, propce, propfb, bnussl)
+      (nfbrps, lstfbr, rtp, propce, bnussl)
       use dimens
       use mesh
       integer, intent(in)                                        :: nfbrps
       integer, dimension(nfbrps), intent(in)                     :: lstfbr
       double precision, dimension(ncelet, *), intent(in), target :: rtp, propce
-      double precision, dimension(ndimfb, *), intent(in)         :: propfb
       double precision, dimension(nfbrps), intent(out)           :: bnussl
     end subroutine post_boundary_nusselt
 
@@ -169,7 +166,7 @@ module cs_f_interfaces
 
     subroutine turrij &
       (nvar, nscal, ncepdp, ncesmp, icepdc, icetsm, itypsm,                    &
-      dt, rtp, rtpa, propce, propfb, tslagr,                                   &
+      dt, rtp, rtpa, propce, tslagr,                                           &
       coefa, coefb, ckupdc, smacel)
       use dimens, only: ndimfb
       use lagdim, only: ntersl
@@ -180,7 +177,6 @@ module cs_f_interfaces
       integer, dimension(ncesmp,nvar), target :: itypsm
       double precision, dimension(ncelet) :: dt
       double precision, dimension(ncelet, *) ::rtp, rtpa, propce
-      double precision, dimension(ndimfb, *) :: propfb
       double precision, dimension(ncelet,ntersl), target :: tslagr
       double precision, dimension(ndimfb, *) :: coefa, coefb
       double precision, dimension(ncepdp,6) :: ckupdc
@@ -190,9 +186,9 @@ module cs_f_interfaces
     !---------------------------------------------------------------------------
 
     subroutine vitens &
-     (imvisf, w1, iwarnp, weighf, weighb, viscf, viscb)
+     (w1, iwarnp, weighf, weighb, viscf, viscb)
       use mesh
-      integer :: imvisf, iwarnp
+      integer :: iwarnp
       double precision, dimension(6, ncelet), target :: w1
       double precision, dimension(2, nfac) :: weighf
       double precision, dimension(nfabor) :: weighb

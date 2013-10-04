@@ -23,14 +23,12 @@
 subroutine lages2 &
 !================
 
- ( nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   ntersl , nvlsta , nvisbr ,                                     &
+ ( nbpmax , nvp    , nvep   , nivep  ,                            &
    itepa  , ibord  ,                                              &
-   dt     , rtpa   , rtp    , propce , propfb ,                   &
+   rtpa   , rtp    , propce ,                            &
    ettp   , ettpa  , tepa   , statis , taup   , tlag   , piil   , &
    tsuf   , tsup   , bx     , tsfext ,                            &
-   vagaus , auxl   , gradpr , gradvf ,                            &
+   vagaus , auxl   , gradpr ,                                     &
    romp   , brgaus , terbru , fextla )
 
 !===============================================================================
@@ -52,25 +50,18 @@ subroutine lages2 &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
 ! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
 ! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
-! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
-! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
 ! itepa            ! te ! <-- ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
 ! ibord            ! te ! --> ! si nordre=2, contient le numero de la          !
 !   (nbpmax)       !    !     !   face d'interaction part/frontiere            !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant et prec)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! ettp             ! tr ! --> ! tableaux des variables liees                   !
 !  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
 ! ettpa            ! tr ! <-- ! tableaux des variables liees                   !
@@ -92,7 +83,6 @@ subroutine lages2 &
 !(nbpmax,nvgaus    !    !     !                                                !
 ! auxl             ! tr ! --- ! tableau auxiliaire                             !
 ! gradpr(ncel,3    ! tr ! <-- ! gradient de pression                           !
-! gradvf(ncel,3    ! tr ! <-- ! gradient de la vitesse du fluide               !
 ! romp             ! tr ! <-- ! masse volumique des particules                 !
 ! fextla           ! tr ! <-- ! champ de forces exterieur                      !
 !(ncelet,3)        !    !     !    utilisateur (m/s2)                          !
@@ -127,13 +117,11 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-integer          nbpmax , nvp    , nvp1   , nvep  , nivep
-integer          ntersl , nvlsta , nvisbr
+integer          nbpmax , nvp    , nvep  , nivep
 integer          itepa(nbpmax,nivep) , ibord(nbpmax)
 
-double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
+double precision rtp(ncelet,*) , rtpa(ncelet,*)
+double precision propce(ncelet,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep) , statis(ncelet,*)
 double precision taup(nbpmax) , tlag(nbpmax,3)
@@ -141,7 +129,7 @@ double precision piil(nbpmax,3) , bx(nbpmax,3,2)
 double precision tsuf(nbpmax,3) , tsup(nbpmax,3)
 double precision tsfext(nbpmax)
 double precision vagaus(nbpmax,*) , auxl(nbpmax,7)
-double precision gradpr(ncelet,3) , gradvf(ncelet,9)
+double precision gradpr(ncelet,3)
 double precision romp(nbpmax)
 double precision brgaus(nbpmax,*) , terbru(nbpmax)
 double precision fextla(nbpmax,3)
@@ -313,13 +301,11 @@ if (nor.eq.1) then
 
   call lages1                                                     &
   !==========
- ( nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   ntersl , nvlsta , nvisbr ,                                     &
+ ( nbpmax , nvp    , nvep   , nivep  ,                            &
    itepa  ,                                                       &
-   dt     , rtpa   , propce , propfb ,                            &
-   ettp   , ettpa  , tepa   , statis , taup   , tlag   , piil   , &
-   bx     , vagaus , gradpr , gradvf , romp   ,                   &
+   rtpa   , propce ,                                              &
+   ettp   , ettpa  , tepa   , taup   , tlag   , piil   ,          &
+   bx     , vagaus , gradpr , romp   ,                            &
    brgaus , terbru , fextla )
 
 else

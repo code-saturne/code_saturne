@@ -53,8 +53,6 @@
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     rtpa          calculated variables at cell centers
 !>                               (at the previous time step)
-!> \param[in]     coefa, coefb  boundary conditions
-!>
 !> \param[out]    rotfct        rotation function of Spalart-Shur correction
 !>                               at cell center
 !> \param[out]    ce2rc         modified ce2 coeficient of Cazalbou correction
@@ -62,7 +60,7 @@
 !_______________________________________________________________________________
 
 subroutine rotcor &
- ( dt     , rtpa   , coefa  , coefb , rotfct , ce2rc  )
+ ( dt     , rtpa   , rotfct , ce2rc  )
 
 !===============================================================================
 ! Module files
@@ -86,7 +84,6 @@ implicit none
 ! Arguments
 
 double precision dt(ncelet), rtpa(ncelet,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision rotfct(ncel), ce2rc(ncel)
 
 ! Local variables
@@ -102,7 +99,7 @@ double precision epsrgp, climgp, extrap
 double precision matrot(3,3), sigvor(3,3)
 double precision dsijdt, trrota, wiksjk, rstar, echtm1
 double precision stilde, wtilde, rotild
-double precision xe, xk, xw
+double precision xe, xk
 
 double precision, allocatable, dimension(:,:,:) :: gradv
 double precision, allocatable, dimension(:,:) :: strain, vortab
@@ -158,8 +155,7 @@ ilved = .false.
 call grdvec &
 !==========
 ( iu     , imrgra , inc    , nswrgp , imligp ,                   &
-  iwarnp , nfecra ,                                              &
-  epsrgp , climgp , extrap ,                                     &
+  iwarnp , epsrgp , climgp ,                                     &
   ilved  ,                                                       &
   rtpa(1,iu) ,  coefau , coefbu,                                 &
   gradv  )
@@ -314,8 +310,8 @@ do ii = 1, 3
     call grdcel &
     !==========
   ( ivar , imrgra , inc    , iccocg , nswrgp , imligp ,            &
-    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-    strain(1,istrai(ii,jj))   , coeas , coebs ,             &
+    iwarnp , nfecra, epsrgp , climgp , extrap ,                    &
+    strain(1,istrai(ii,jj))   , coeas , coebs ,                    &
     grdsij )
 
     do iel = 1, ncel

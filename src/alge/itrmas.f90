@@ -124,14 +124,12 @@ double precision frcxt(3,ncelet)
 
 ! Local variables
 
-integer          ifac, ii, jj, iij, iii, ig, it
+integer          ifac, ii, jj, ig, it
 double precision pfac,pip
 double precision dpxf  , dpyf  , dpzf
 double precision dijpfx, dijpfy, dijpfz
 double precision diipbx, diipby, diipbz
 double precision dijx  , dijy  , dijz
-
-double precision rvoid(1)
 
 double precision, allocatable, dimension(:,:) :: grad
 
@@ -225,8 +223,7 @@ if (nswrgp.gt.1) then
   call grdpot                                                     &
   !==========
  ( ipr    , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   rvoid  ,                                                       &
+   iwarnp , epsrgp , climgp , extrap ,                            &
    frcxt  ,                                                       &
    pvar   , coefap , coefbp ,                                     &
    grad   )

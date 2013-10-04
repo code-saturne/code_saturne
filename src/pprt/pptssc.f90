@@ -23,11 +23,9 @@
 subroutine pptssc &
 !================
 
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iscal  ,                                                       &
-   icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , rtp    , propce , propfb ,                   &
-   coefa  , coefb  , ckupdc , smacel ,                            &
+ ( iscal  ,                                                       &
+   rtpa   , rtp    , propce ,                                     &
+   coefa  , coefb  ,                                              &
    smbrs  , rovsdt , tslagr )
 
 !===============================================================================
@@ -69,26 +67,12 @@ subroutine pptssc &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
-! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
 ! iscal            ! i  ! <-- ! scalar number                                  !
-! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
-! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
-! itypsm           ! te ! <-- ! type de source de masse pour les               !
-! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
-!  (ncepdp,6)      !    !     !                                                !
-! smacel           ! tr ! <-- ! valeur des variables associee a la             !
-! (ncesmp,*   )    !    !     !  source de masse                               !
-!                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
 ! smbrs(ncelet)    ! tr ! --> ! second membre explicite                        !
 ! rovsdt(ncelet    ! tr ! --> ! partie diagonale implicite                     !
 ! tslagr           ! tr ! <-- ! terme de couplage retour du                    !
@@ -127,17 +111,11 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-integer          ncepdp , ncesmp
 integer          iscal
 
-integer          icepdc(ncepdp)
-integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
+double precision rtp(ncelet,*), rtpa(ncelet,*)
+double precision propce(ncelet,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision smbrs(ncelet), rovsdt(ncelet)
 double precision tslagr(ncelet,*)
 
@@ -161,27 +139,16 @@ double precision tslagr(ncelet,*)
 if (isoot.eq.1) then
   call sootsc                                                     &
   !==========
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iscal  ,                                                       &
-   icepdc , icetsm , itypsm ,                                     &
-   izfppp ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfb ,                   &
-   coefa  , coefb  , ckupdc , smacel ,                            &
+ ( iscal  ,                                                       &
+   rtpa   , rtp    , propce ,                                     &
    smbrs  , rovsdt )
 endif
 
 ! ---> Flamme de premelange : Modele EBU
 
-if ( ippmod(icoebu).ge.0 ) then
-  call ebutss                                                     &
+if (ippmod(icoebu).ge.0) then
+  call ebutss(iscal, rtpa, smbrs, rovsdt)
   !==========
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iscal  ,                                                       &
-   icepdc , icetsm , itypsm ,                                     &
-   izfppp ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfb ,                   &
-   coefa  , coefb  , ckupdc , smacel ,                            &
-   smbrs  , rovsdt )
 endif
 
 
@@ -192,15 +159,12 @@ endif
 
 ! ---> Flamme de premelange : Modele LWC
 
-if ( ippmod(icolwc).ge.0 ) then
+if (ippmod(icolwc).ge.0) then
   call lwctss                                                     &
   !==========
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iscal  ,                                                       &
-   icepdc , icetsm , itypsm ,                                     &
-   izfppp ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfb ,                   &
-   coefa  , coefb  , ckupdc , smacel ,                            &
+ ( iscal  ,                                                       &
+   rtpa   , propce ,                                              &
+   coefa  , coefb  ,                                              &
    smbrs  , rovsdt )
 endif
 
@@ -209,13 +173,8 @@ endif
 if ( ippmod(iccoal).ge.0 ) then
   call cs_coal_scast                                              &
    !================
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iscal  ,                                                       &
-   itypfb ,                                                       &
-   icepdc , icetsm , itypsm ,                                     &
-   izfppp ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfb ,                   &
-   coefa  , coefb  , ckupdc , smacel ,                            &
+ ( iscal  ,                                                       &
+   rtpa   , rtp    , propce ,                                     &
    smbrs  , rovsdt )
 endif
 
@@ -225,13 +184,9 @@ endif
 if ( ippmod(icpl3c).ge.0 .and. iilagr.eq.2 ) then
   call cpltss                                                     &
    !==========
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iscal  ,                                                       &
+ ( iscal  ,                                                       &
    itypfb ,                                                       &
-   icepdc , icetsm , itypsm ,                                     &
-   izfppp ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfb ,                   &
-   coefa  , coefb  , ckupdc , smacel ,                            &
+   rtpa   , rtp    , propce ,                                     &
    smbrs  , rovsdt , tslagr )
 endif
 
@@ -239,14 +194,9 @@ endif
 
 if ( ippmod(icfuel).ge.0 ) then
   call cs_fuel_scast                                              &
-   !================
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iscal  ,                                                       &
-   itypfb ,                                                       &
-   icepdc , icetsm , itypsm ,                                     &
-   izfppp ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfb ,                   &
-   coefa  , coefb  , ckupdc , smacel ,                            &
+  !=================
+ ( iscal  ,                                                       &
+   rtpa   , rtp    , propce ,                                     &
    smbrs  , rovsdt )
 endif
 
@@ -255,49 +205,34 @@ endif
 !             Arc Electrique
 !             Conduction ionique
 
-if ( ippmod(ieljou).ge.1 .or.                                     &
-     ippmod(ielarc).ge.1 .or.                                     &
-     ippmod(ielion).ge.1       ) then
+if (ippmod(ieljou).ge.1 .or.                                      &
+    ippmod(ielarc).ge.1 .or.                                      &
+    ippmod(ielion).ge.1       ) then
    call eltssc                                                    &
    !==========
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iscal  ,                                                       &
-   itypfb ,                                                       &
-   icepdc , icetsm , itypsm ,                                     &
-   izfppp ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfb ,                   &
-   coefa  , coefb  , ckupdc , smacel ,                            &
-   smbrs  , rovsdt )
+ ( iscal  ,                                                       &
+   propce ,                                                       &
+   smbrs  )
 endif
 
 ! ---> Version atmospherique :
 
-if ( ippmod(iatmos).ge.0 ) then
+if (ippmod(iatmos).ge.0) then
    call attssc                                                    &
    !==========
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iscal  ,                                                       &
-   itypfb ,                                                       &
-   icepdc , icetsm , itypsm ,                                     &
-   izfppp ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfb ,                   &
-   coefa  , coefb  , ckupdc , smacel ,                            &
-   smbrs  , rovsdt )
+ ( iscal  ,                                                       &
+   rtpa   , rtp    , propce ,                                     &
+   smbrs  )
 endif
 
 
 ! ---> Version aerorefrigerant :
 
-if ( ippmod(iaeros).ge.0 ) then
+if (ippmod(iaeros).ge.0) then
    call cttssc                                                    &
    !==========
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iscal  ,                                                       &
-   itypfb ,                                                       &
-   icepdc , icetsm , itypsm ,                                     &
-   izfppp ,                                                       &
-   dt     , rtpa   , rtp    ,                                     &
-   coefa  , coefb  , ckupdc , smacel ,                            &
+ ( iscal  ,                                                       &
+   rtp    ,                                                       &
    smbrs  , rovsdt )
 endif
 

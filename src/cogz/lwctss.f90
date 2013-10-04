@@ -23,12 +23,9 @@
 subroutine lwctss &
 !================
 
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iscal  ,                                                       &
-   icepdc , icetsm , itypsm ,                                     &
-   izfppp ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfb ,                   &
-   coefa  , coefb  , ckupdc , smacel ,                            &
+ ( iscal  ,                                                       &
+   rtpa   , propce ,                                              &
+   coefa  , coefb  ,                                              &
    smbrs  , rovsdt )
 
 !===============================================================================
@@ -70,29 +67,12 @@ subroutine lwctss &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
-! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
 ! iscal            ! i  ! <-- ! scalar number                                  !
-! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
-! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
-! itypsm           ! te ! <-- ! type de source de masse pour les               !
-! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! izfppp           ! te ! --> ! numero de zone de la face de bord              !
-! (nfabor)         !    !     !  pour le module phys. part.                    !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
+! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
+!  (ncelet, *)     !    !     !  (at previous time step)                       !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
-!  (ncepdp,6)      !    !     !                                                !
-! smacel           ! tr ! <-- ! valeur des variables associee a la             !
-! (ncesmp,*   )    !    !     !  source de masse                               !
-!                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
 ! smbrs(ncelet)    ! tr ! --> ! second membre explicite                        !
 ! rovsdt(ncelet    ! tr ! --> ! partie diagonale implicite                     !
 !__________________!____!_____!________________________________________________!
@@ -121,25 +101,18 @@ use coincl
 use cpincl
 use ppincl
 use mesh
-
+use field
 !===============================================================================
 
 implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-integer          ncepdp , ncesmp
 integer          iscal
 
-integer          icepdc(ncepdp)
-integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-integer          izfppp(nfabor)
-
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
+double precision rtpa(ncelet,*)
+double precision propce(ncelet,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision smbrs(ncelet), rovsdt(ncelet)
 
 ! Local variables
@@ -147,7 +120,7 @@ double precision smbrs(ncelet), rovsdt(ncelet)
 integer          ivar, iel, idirac, ivar0
 integer          inc , iccocg
 integer          ipcvst
-integer          ipcrom, ii
+integer          ii
 
 integer          iptscl(ndracm), ipfmal(ndracm)
 integer          ipfmel(ndracm), iprhol(ndracm)
@@ -157,7 +130,7 @@ double precision tsgrad, tschim, tsdiss
 
 double precision, allocatable, dimension(:,:) :: gradf, grady
 double precision, allocatable, dimension(:) :: w10, w11
-
+double precision, dimension(:), pointer ::  crom
 !===============================================================================
 
 !===============================================================================
@@ -172,7 +145,7 @@ epsi   = 1.0d-10
 ivar = isca(iscal)
 
 ! ---
-ipcrom = ipproc(irom)
+call field_get_val_s(icrom, crom)
 ipcvst = ipproc(ivisct)
 
 ! --- Numero des grandeurs physiques (voir cs_user_boundary_conditions)
@@ -350,7 +323,7 @@ if ( ivar.eq.isca(icoyfp)) then
 
 
     w11(iel) = w11(iel)/(w10(iel)*rvarfl(iscal))                  &
-         *volume(iel)*propce(iel,ipcrom)
+         *volume(iel)*crom(iel)
     rovsdt(iel) = rovsdt(iel) + max(w11(iel),zero)
 
 ! terme de gradient

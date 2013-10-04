@@ -24,7 +24,7 @@ subroutine lecamo &
 !================
 
  ( ncelet , ncel   , nfabor , nvar   , nscal  ,                   &
-   dt     , rtp    , propce , propfb ,                            &
+   dt     , rtp    , propce ,                                     &
    coefa  , coefb  , frcxt  , prhyd  )
 
 !===============================================================================
@@ -48,8 +48,6 @@ subroutine lecamo &
 ! (ncelet,*)       !    !     !    cellules (instant courant        )          !
 ! propce           ! tr ! --> ! proprietes physiques au centre des             !
 ! (ncelet,*)       !    !     !    cellules                                    !
-! propfb           ! tr ! --> ! proprietes physiques au centre des             !
-!  (nfabor,*)      !    !     !    faces de bord                               !
 ! coefa, coefb     ! tr ! --> ! conditions aux limites aux                     !
 !  (nfabor,*)      !    !     !    faces de bord                               !
 ! frcxt(3,ncelet)  ! tr ! --> ! force exterieure generant la pression          !
@@ -87,12 +85,10 @@ integer          nvar   , nscal
 
 double precision dt(ncelet), rtp(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision frcxt(3,ncelet), prhyd(ncelet)
 
 ! Local variables
-
 
 
 !===============================================================================
@@ -126,7 +122,7 @@ if (ileaux.eq.1) then
   call lecamx &
   !==========
 ( ncelet , ncel   , nfabor , nvar   , nscal  ,       &
-  dt     , propce , propfb ,                         &
+  dt     , propce ,                                  &
   coefa  , coefb  , frcxt  , prhyd  )
 
 endif

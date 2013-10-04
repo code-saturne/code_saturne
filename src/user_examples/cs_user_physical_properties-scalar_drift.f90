@@ -38,19 +38,18 @@
 !______________________________________________________________________________!
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
-!> \param[in]     ibrom         indicator of filling of romb array
+!> \param[in]     mbrom         indicator of filling of romb array
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     rtp, rtpa     calculated variables at cell centers
 !> \param[in]                    (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfb        physical properties at boundary face centers
 !_______________________________________________________________________________
 
 subroutine usphyv &
  ( nvar   , nscal  ,                                              &
-   ibrom  ,                                                       &
+   mbrom  ,                                                       &
    dt     , rtp    , rtpa   ,                                     &
-   propce , propfb )
+   propce )
 
 !===============================================================================
 
@@ -70,7 +69,7 @@ use period
 use field
 use lagran, only: kboltz
 use mesh
-
+use field
 !===============================================================================
 
 implicit none
@@ -79,17 +78,16 @@ implicit none
 
 integer          nvar   , nscal
 
-integer          ibrom
+integer          mbrom
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfb(nfabor,*)
 
 ! Local variables
 
 !< [loc_var_dec]
 integer          ivart, iel, ifac
-integer          ipcrom, ipcvis
+integer          ipcvis
 integer          ipcvsl, iscal, iflid, iscdri
 integer          f_id, keydri, nfld, keysca
 double precision rho, viscl
@@ -100,6 +98,7 @@ character*80     fname
 
 double precision, dimension(:), pointer :: taup
 double precision, dimension(:), pointer :: taufpt
+double precision, dimension(:), pointer :: crom
 !< [loc_var_dec]
 
 !===============================================================================
@@ -110,7 +109,7 @@ double precision, dimension(:), pointer :: taufpt
 
 !< [init]
 ipcvis = ipproc(iviscl)
-ipcrom = ipproc(irom)
+call field_get_val_s(icrom, crom)
 
 ! Key id for drift scalar
 call field_get_key_id("drift_scalar_model", keydri)
@@ -261,7 +260,7 @@ do iflid = 0, nfld-1
     ! Homogeneous to a dynamic viscosity
     do iel = 1, ncel
       xrtp = rtp(iel,ivart)
-      rho = propce(iel, ipcrom)
+      rho = crom(iel)
       viscl = propce(iel, ipcvis)
       propce(iel,ipcvsl) = rho*kboltz*xrtp*cuning/(3.d0*pi*diamp*viscl)
     enddo

@@ -300,7 +300,9 @@ module ppincl
   !>  - iym(1): is fuel mass fraction
   !>  - iym(2): oxidiser mass fraction
   !>  - iym(3): product mass fraction
+  !> ibym() contains the matching field ids at boundary faces
   integer, save :: iym(ngazgm)
+  integer, save :: ibym(ngazgm)
 
   !> state variable (temperature)
   integer, save :: itemp

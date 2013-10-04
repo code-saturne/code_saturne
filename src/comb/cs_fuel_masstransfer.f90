@@ -23,7 +23,7 @@
 subroutine cs_fuel_masstransfer &
 !=============================
  ( ncelet , ncel   ,            &
-   rtpa   , propce , volume )
+   rtpa   , propce )
 
 !===============================================================================
 ! FONCTION :
@@ -39,7 +39,6 @@ subroutine cs_fuel_masstransfer &
 ! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant precedent)                !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
 !__________________!____!_____!________________________________________________!
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
 !            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
@@ -65,7 +64,7 @@ use cpincl
 use ppincl
 use ppcpfu
 use cs_fuel_incl
-
+use field
 !===============================================================================
 
 implicit none
@@ -75,12 +74,11 @@ implicit none
 integer          ncelet , ncel
 
 double precision rtpa(ncelet,*), propce(ncelet,*)
-double precision volume(ncelet)
 
 ! Local variables
 
 integer          iel    , icla
-integer          ipcrom , ipcte1 , ipcte2 , ipcro2 , ipcdia
+integer          ipcte1 , ipcte2 , ipcro2 , ipcdia
 integer          ipcgev , ipcght , ipcyox
 integer          ipcvst,ipcvsl,ipccp,ipchgl
 
@@ -89,12 +87,11 @@ double precision pparo2 , xdffli , xdfext , xdftot0 , xdftot1
 double precision diacka
 double precision dcoke , surf , lambda
 !
-double precision peva, pref
-double precision rhoeva
+double precision  pref
 
 double precision dhet1, dhet2
 double precision deva1, deva2
-!
+double precision, dimension(:), pointer ::  crom
 !===============================================================================
 ! 1. INITIALISATIONS ET CALCULS PRELIMINAIRES
 !===============================================================================
@@ -113,7 +110,7 @@ enddo
 
 ! --- Pointeur
 
-ipcrom = ipproc(irom)
+call field_get_val_s(icrom, crom)
 ipcte1 = ipproc(itemp1)
 ipcyox = ipproc(iym1(io2))
 ipcvst = ipproc(ivisct)

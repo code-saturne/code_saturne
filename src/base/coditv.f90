@@ -142,7 +142,6 @@
 !>                               reconstruction
 !> \param[in]     climgp        clipping coeffecient for the computation of
 !>                               the gradient
-!> \param[in]     extrap        coefficient for extrapolation of the gradient
 !> \param[in]     relaxp        coefficient of relaxation
 !> \param[in]     thetap        weightening coefficient for the theta-schema,
 !>                               - thetap = 0: explicit scheme
@@ -193,7 +192,7 @@ subroutine coditv &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisep ,          &
    ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
    imgrp  , ncymxp , nitmfp , ippu   , ippv   , ippw   , iwarnp , &
-   blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
+   blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
    relaxp , thetap ,                                              &
    pvara  , pvark  ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
@@ -237,7 +236,7 @@ integer          ippu   , ippv   , ippw   , ivisep
 
 integer          icvfli(nfabor)
 
-double precision blencp , epsilp , epsrgp , climgp , extrap
+double precision blencp , epsilp , epsrgp , climgp
 double precision relaxp , thetap , epsrsp
 
 double precision pvara(3,ncelet)
@@ -420,8 +419,8 @@ if (abs(thetex).gt.epzero) then
   !==========
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , ivisep ,                   &
-   ippu   , ippv   , ippw   , iwarnp , idftnp ,                   &
-   blencp , epsrgp , climgp , extrap , relaxp , thetex ,          &
+   ippu   , iwarnp , idftnp ,                                     &
+   blencp , epsrgp , climgp , relaxp , thetex ,                   &
    pvar   , pvara  ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
    flumas , flumab , viscfs , viscbs , secvif , secvib ,          &
@@ -472,8 +471,8 @@ call bilscv &
 !==========
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , ivisep ,                   &
-   ippu   , ippv   , ippw   , iwarnp , idftnp ,                   &
-   blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
+   ippu   , iwarnp , idftnp ,                                     &
+   blencp , epsrgp , climgp , relaxp , thetap ,                   &
    pvar   , pvara  ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
    flumas , flumab , viscfs , viscbs , secvif , secvib ,          &
@@ -591,7 +590,7 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
  ( cnom(1), isym   , ibsize , iesize ,                            &
    ipol   , ireslq , nitmap , imgrp  ,                            &
    ncymxp , nitmfp ,                                              &
-   iwarnp , nfecra , niterf , icycle , iinvpe ,                   &
+   iwarnp , niterf , icycle , iinvpe ,                            &
    epsilp , rnorm  , ressol ,                                     &
    dam    , xam    , smbrp  , dpvar  )
 
@@ -612,8 +611,8 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
     !==========
    ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
      ischcp , isstpp , incp   , imrgra , ivisep ,                   &
-     ippu   , ippv   , ippw   , iwarnp , idftnp ,                   &
-     blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
+     ippu   , iwarnp , idftnp ,                                     &
+     blencp , epsrgp , climgp , relaxp , thetap ,                   &
      dpvar  , dpvar  ,                                              &
      coefav , coefbv , cofafv , cofbfv ,                            &
      flumas , flumab , viscfs , viscbs , secvif , secvib ,          &
@@ -760,8 +759,8 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
   !==========
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , ivisep ,                   &
-   ippu   , ippv   , ippw   , iwarnp , idftnp ,                   &
-   blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
+   ippu   , iwarnp , idftnp ,                                     &
+   blencp , epsrgp , climgp , relaxp , thetap ,                   &
    pvar   , pvara  ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
    flumas , flumab , viscfs , viscbs , secvif , secvib ,          &
@@ -844,8 +843,8 @@ if (iescap.gt.0) then
   !==========
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , ivisep ,                   &
-   ippu   , ippv   , ippw   , iwarnp , idftnp ,                   &
-   blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
+   ippu   , iwarnp , idftnp ,                                     &
+   blencp , epsrgp , climgp , relaxp , thetap ,                   &
    pvar   , pvara  ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
    flumas , flumab , viscfs , viscbs , secvif , secvib ,          &

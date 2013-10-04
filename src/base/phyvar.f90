@@ -45,14 +45,13 @@
 !> \param[in,out] rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in,out] propfb        physical properties at boundary face centers
 !> \param[in]     coefa, coefb  boundary conditions
 !_______________________________________________________________________________
 
 
 subroutine phyvar &
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   dt     , rtp    , rtpa   , propce ,                            &
    coefa  , coefb  )
 
 !===============================================================================
@@ -76,7 +75,7 @@ use ppppar
 use ppthch
 use ppincl
 use mesh
-
+use field
 !===============================================================================
 
 implicit none
@@ -87,7 +86,7 @@ integer          nvar   , nscal
 
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
+double precision propce(ncelet,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 
 ! Local variables
@@ -96,7 +95,7 @@ character*80     chaine
 integer          ivar  , iel   , ifac  , iscal
 integer          ii    , iok   , iok1  , iok2  , iisct
 integer          nn
-integer          ibrom , ipcrom, ipbrom, ipcvst
+integer          mbrom , ipcvst
 integer          ipccp , ipcvis, ipcvma
 integer          ivarh
 integer          iclipc
@@ -106,7 +105,8 @@ double precision varmn(4), varmx(4), tt, ttmin, ttke, viscto, xrtp
 double precision xttkmg, xttdrb
 double precision alpha, ym, yk
 double precision trrij,rottke
-
+double precision, dimension(:), pointer :: brom, crom
+double precision, dimension(:), pointer :: sval
 integer          ipass
 data             ipass /0/
 save             ipass
@@ -148,7 +148,7 @@ endif
 ! 4. User settings
 !===============================================================================
 
-ibrom = 0
+mbrom = 0
 
 
 ! - Interface Code_Saturne
@@ -167,16 +167,16 @@ endif
 call usphyv &
 !==========
 ( nvar   , nscal  ,                                              &
-  ibrom  ,                                                       &
+  mbrom  ,                                                       &
   dt     , rtp    , rtpa   ,                                     &
-  propce , propfb )
+  propce )
 
 if (ippmod(iphpar).ge.1) then
   call ppphyv &
   !==========
  ( nvar   , nscal  ,                                              &
-   ibrom  ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   mbrom  ,                                                       &
+   dt     , rtp    , rtpa   , propce ,                            &
    coefa  , coefb  )
 
 endif
@@ -192,7 +192,7 @@ if (idilat.eq.3) then
   if (iscalt.le.0) call csexit(1)
   if (iscsth(iscalt).ne.2) call csexit(1)
   ivarh  = isca(iscalt)
-  ipcrom = ipproc(irom)
+  call field_get_val_s(icrom, crom)
 
   ! Count the number of species
   nscasp = 0
@@ -243,7 +243,7 @@ if (idilat.eq.3) then
         call csexit(1)
       endif
 
-      propce(iel,ipcrom) = pther/(alpha*rair*xrtp)
+      crom(iel) = pther/(alpha*rair*xrtp)
 
       ! Monospecies: density defined with the perfect state law
     else
@@ -255,7 +255,7 @@ if (idilat.eq.3) then
         call csexit(1)
       endif
 
-      propce(iel,ipcrom) = pther/(rair*xrtp)
+      crom(iel) = pther/(rair*xrtp)
 
     endif
 
@@ -265,12 +265,12 @@ endif
 
 !  ROMB SUR LES BORDS : VALEUR PAR DEFAUT (CELLE DE LA CELLULE VOISINE)
 
-if (ibrom.eq.0) then
-  ipcrom = ipproc(irom)
-  ipbrom = ipprob(irom)
+if (mbrom.eq.0) then
+  call field_get_val_s(icrom, crom)
+  call field_get_val_s(ibrom, brom)
   do ifac = 1, nfabor
     iel = ifabor(ifac)
-    propfb(ifac,ipbrom) = propce(iel ,ipcrom)
+    brom(ifac) = crom(iel)
   enddo
 endif
 
@@ -285,15 +285,15 @@ if (ntcabs.eq.ntpabs+1) then
   ! Masse volumique aux cellules et aux faces de bord
   iok1 = 0
   if (irovar.eq.0) then
-    ipcrom = ipproc(irom)
-    ipbrom = ipprob(irom)
+    call field_get_val_s(icrom, crom)
+    call field_get_val_s(ibrom, brom)
     do iel = 1, ncel
-      if ( abs(propce(iel ,ipcrom)-ro0   ).gt.epzero) then
+      if ( abs(crom(iel)-ro0   ).gt.epzero) then
         iok1 = 1
       endif
     enddo
     do ifac = 1, nfabor
-      if ( abs(propfb(ifac,ipbrom)-ro0   ).gt.epzero) then
+      if ( abs(brom(ifac)-ro0   ).gt.epzero) then
         iok1 = 1
       endif
     enddo
@@ -346,13 +346,7 @@ elseif (iturb.eq.10) then
 ! 6.2 Mixing length model
 ! =======================
 
-  call vislmg &
-  !==========
- ( nvar   , nscal  ,                                              &
-   ncepdc , ncetsm ,                                              &
-   icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   coefa  , coefb  , ckupdc , smacel )
+  call vislmg(rtpa, propce)
 
 elseif (itytur.eq.2) then
 
@@ -360,12 +354,12 @@ elseif (itytur.eq.2) then
 ! =============
 
   ipcvst = ipproc(ivisct)
-  ipcrom = ipproc(irom  )
+  call field_get_val_s(icrom, crom)
 
   do iel = 1, ncel
     xk = rtp(iel,ik)
     xe = rtp(iel,iep)
-    propce(iel,ipcvst) = propce(iel,ipcrom)*cmu*xk**2/xe
+    propce(iel,ipcvst) = crom(iel)*cmu*xk**2/xe
   enddo
 
 elseif (itytur.eq.3) then
@@ -374,12 +368,12 @@ elseif (itytur.eq.3) then
 ! ===============
 
   ipcvst = ipproc(ivisct)
-  ipcrom = ipproc(irom  )
+  call field_get_val_s(icrom, crom)
 
   do iel = 1, ncel
     xk = 0.5d0*(rtp(iel,ir11)+rtp(iel,ir22)+rtp(iel,ir33))
     xe = rtp(iel,iep)
-    propce(iel,ipcvst) = propce(iel,ipcrom)*cmu*xk**2/xe
+    propce(iel,ipcvst) = crom(iel)*cmu*xk**2/xe
   enddo
 
 elseif (iturb.eq.40) then
@@ -387,13 +381,8 @@ elseif (iturb.eq.40) then
 ! 6.5 LES Smagorinsky
 ! ===================
 
-  call vissma &
+  call vissma(rtpa, propce)
   !==========
- ( nvar   , nscal  ,                                              &
-   ncepdc , ncetsm ,                                              &
-   icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   coefa  , coefb  , ckupdc , smacel )
 
 elseif (iturb.eq.41) then
 
@@ -405,8 +394,8 @@ elseif (iturb.eq.41) then
  ( nvar   , nscal  ,                                              &
    ncepdc , ncetsm ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   coefa  , coefb  , ckupdc , smacel ,                            &
+   dt     , rtp    , rtpa   , propce ,                            &
+   ckupdc , smacel ,                                              &
    propce(1,ipproc(ismago)) )
 
 elseif (iturb.eq.42) then
@@ -414,13 +403,8 @@ elseif (iturb.eq.42) then
 ! 6.7 LES WALE
 ! ============
 
-  call viswal &
+  call viswal(rtpa, propce)
   !==========
- ( nvar   , nscal  ,                                              &
-   ncepdc , ncetsm ,                                              &
-   icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   coefa  , coefb  , ckupdc , smacel )
 
 elseif (itytur.eq.5) then
 
@@ -431,12 +415,12 @@ elseif (itytur.eq.5) then
 
     ipcvis = ipproc(iviscl)
     ipcvst = ipproc(ivisct)
-    ipcrom = ipproc(irom  )
+    call field_get_val_s(icrom, crom)
 
     do iel = 1, ncel
       xk = rtp(iel,ik)
       xe = rtp(iel,iep)
-      xrom = propce(iel,ipcrom)
+      xrom = crom(iel)
       xnu = propce(iel,ipcvis)/xrom
       ttke = xk / xe
       ttmin = cv2fct*sqrt(xnu/xe)
@@ -446,13 +430,8 @@ elseif (itytur.eq.5) then
 
   else if (iturb.eq.51) then
 
-    call visv2f &
+    call visv2f(rtp, rtpa, propce)
     !==========
-   ( nvar   , nscal  ,                                              &
-     ncepdc , ncetsm ,                                              &
-     icepdc , icetsm , itypsm ,                                     &
-     dt     , rtp    , rtpa   , propce ,                            &
-     coefa  , coefb  , ckupdc , smacel )
 
   endif
 
@@ -461,13 +440,8 @@ elseif (iturb.eq.60) then
 ! 6.9 k-omega SST
 ! ===============
 
-  call vissst &
+  call vissst(rtpa, propce)
   !==========
- ( nvar   , nscal  ,                                              &
-   ncepdc , ncetsm ,                                              &
-   icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   coefa  , coefb  , ckupdc , smacel )
 
 elseif (iturb.eq.70) then
 
@@ -477,11 +451,11 @@ elseif (iturb.eq.70) then
   cv13 = csav1**3
 
   ipcvst = ipproc(ivisct)
-  ipcrom = ipproc(irom  )
+  call field_get_val_s(icrom, crom)
   ipcvis = ipproc(iviscl)
 
   do iel = 1, ncel
-    xrom = propce(iel,ipcrom)
+    xrom = crom(iel)
     nusa = rtp(iel,inusa)
     xi3  = (xrom*nusa/propce(iel,ipcvis))**3
     fv1  = xi3/(xi3+cv13)
@@ -507,7 +481,7 @@ enddo
 if (iok.eq.1) then
   if (itytur.eq.3) then
 
-    ipcrom = ipproc(irom)
+    call field_get_val_s(icrom, crom)
     ipcvis = ipproc(iviscl)
 
     ! EBRSM
@@ -516,10 +490,10 @@ if (iok.eq.1) then
         trrij = 0.5d0*(rtp(iel,ir11)+rtp(iel,ir22)+rtp(iel,ir33))
         ttke  = trrij/rtp(iel,iep)
         ! Durbin scale
-        xttkmg = xct*sqrt(propce(iel,ipcvis)/propce(iel,ipcrom)   &
+        xttkmg = xct*sqrt(propce(iel,ipcvis)/crom(iel)   &
                                             /rtp(iel,iep))
         xttdrb = max(ttke,xttkmg)
-        rottke  = csrij * propce(iel,ipcrom) * xttdrb
+        rottke  = csrij * crom(iel) * xttdrb
 
         visten(1,iel) = rottke*rtp(iel,ir11)
         visten(2,iel) = rottke*rtp(iel,ir22)
@@ -533,7 +507,7 @@ if (iok.eq.1) then
     else
       do iel = 1, ncel
         trrij = 0.5d0*(rtp(iel,ir11)+rtp(iel,ir22)+rtp(iel,ir33))
-        rottke  = csrij * propce(iel,ipcrom) * trrij / rtp(iel,iep)
+        rottke  = csrij * crom(iel) * trrij / rtp(iel,iep)
 
         visten(1,iel) = rottke*rtp(iel,ir11)
         visten(2,iel) = rottke*rtp(iel,ir22)
@@ -568,7 +542,7 @@ call usvist &
 ( nvar   , nscal  ,                                              &
   ncepdc , ncetsm ,                                              &
   icepdc , icetsm , itypsm ,                                     &
-  dt     , rtp    , rtpa   , propce , propfb ,                   &
+  dt     , rtp    , rtpa   , propce ,                            &
   ckupdc , smacel )
 
 !===============================================================================
@@ -623,7 +597,7 @@ if (iale.eq.1.and.ntcabs.eq.0) then
   call usvima &
   !==========
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   dt     , rtp    , rtpa   , propce ,                            &
    propce(1,ipproc(ivisma(1))) ,                                  &
    propce(1,ipproc(ivisma(2))) , propce(1,ipproc(ivisma(3))) )
 
@@ -639,7 +613,7 @@ endif
 iok = 0
 
 ! Rang des variables dans PROPCE
-ipcrom = ipproc(irom)
+call field_get_val_s(icrom, crom)
 ipcvis = ipproc(iviscl)
 ipcvst = ipproc(ivisct)
 if (icp.gt.0) then
@@ -650,23 +624,34 @@ else
   nn    = 3
 endif
 
-! Rang des variables dans PROPFB
-ipbrom = ipprob(irom)
+
+call field_get_val_s(ibrom, brom)
 
 ! Min et max sur les cellules
 do ii = 1, nn
   ivar = 0
-  if (ii.eq.1) ivar = ipcrom
-  if (ii.eq.2) ivar = ipcvis
-  if (ii.eq.3) ivar = ipcvst
-  if (ii.eq.4) ivar = ipccp
-  if (ivar.gt.0) then
-    varmx(ii) = propce(1,ivar)
-    varmn(ii) = propce(1,ivar)
+  if (ii.eq.1) then
+    call field_get_val_s(icrom, sval)
+    varmx(ii) = sval(1)
+    varmn(ii) = sval(1)
     do iel = 2, ncel
-      varmx(ii) = max(varmx(ii),propce(iel,ivar))
-      varmn(ii) = min(varmn(ii),propce(iel,ivar))
+      varmx(ii) = max(varmx(ii),sval(iel))
+      varmn(ii) = min(varmn(ii),sval(iel))
     enddo
+  else
+    if (ii.eq.2) ivar = ipcvis
+    if (ii.eq.3) ivar = ipcvst
+    if (ii.eq.4) ivar = ipccp
+    if (ivar.gt.0) then
+      varmx(ii) = propce(1,ivar)
+      varmn(ii) = propce(1,ivar)
+      do iel = 2, ncel
+        varmx(ii) = max(varmx(ii),propce(iel,ivar))
+        varmn(ii) = min(varmn(ii),propce(iel,ivar))
+      enddo
+    endif
+  endif
+  if (ivar.gt.0) then
     if (irangp.ge.0) then
       call parmax (varmx(ii))
       call parmin (varmn(ii))
@@ -676,10 +661,10 @@ enddo
 
 ! Min et max sur les faces de bord (masse volumique uniquement)
 ii   = 1
-ivar = ipbrom
+call field_get_val_s(ibrom, brom)
 do ifac = 1, nfabor
-  varmx(ii) = max(varmx(ii),propfb(ifac,ivar))
-  varmn(ii) = min(varmn(ii),propfb(ifac,ivar))
+  varmx(ii) = max(varmx(ii),brom(ifac) )
+  varmn(ii) = min(varmn(ii),brom(ifac) )
 enddo
 if (irangp.ge.0) then
   call parmax (varmx(ii))
@@ -877,10 +862,10 @@ endif
 
 ! Pour navstv et visecv on a besoin de ROM dans le halo
 
-ipcrom = ipproc(irom)
+call field_get_val_s(icrom, crom)
 
 if (irangp.ge.0.or.iperio.eq.1) then
-  call synsca(propce(1,ipcrom))
+  call synsca(crom)
 endif
 
 !--------

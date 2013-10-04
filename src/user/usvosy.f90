@@ -27,7 +27,7 @@ subroutine usvosy &
 
  ( inbcou , ncecpl ,                                              &
    iscal  ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   dt     , rtp    , rtpa   , propce ,                            &
    lcecpl , hvol )
 
 !===============================================================================
@@ -62,7 +62,6 @@ subroutine usvosy &
 ! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (preceding time step)                         !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! lcecpl(ncecpl)   ! ri ! <-- ! list of coupled cells                          !
 ! hvol(ncecpl)     ! ra ! --> ! volume exchange coefficient to compute         !
 !__________________!____!_____!________________________________________________!
@@ -84,7 +83,7 @@ use cstphy
 use parall
 use period
 use mesh
-
+use field
 !===============================================================================
 
 implicit none
@@ -98,18 +97,17 @@ integer          lcecpl(ncecpl)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfb(nfabor,*)
 double precision hvol(ncecpl)
 
 ! Local variables
 
 integer          iiscvr, iel, iloc
-integer          ipcrom, ipcvsl, ipcvis, ipccp
+integer          ipcvsl, ipcvis, ipccp
 
 double precision cp, mu, lambda, rho, uloc, L, sexcvo
 double precision nu, re, pr
 double precision hcorr, hvol_cst, lambda_over_cp
-
+double precision, dimension(:), pointer ::  crom
 !===============================================================================
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
@@ -126,7 +124,7 @@ if(1.eq.1) return
 !===============================================================================
 
 ! --- Index number of the cell properties the propce array
-ipcrom = ipproc(irom)
+call field_get_val_s(icrom, crom)
 ipcvis = ipproc(iviscl)
 
 if (icp.gt.0) then
@@ -200,7 +198,7 @@ do iloc = 1, ncecpl  ! Loop on coupled cells
 
    ! Get cell properties of the current element
 
-   rho = propce(iel, ipcrom)
+   rho = crom(iel)
    mu = propce(iel, ipcvis)
 
    if (ipccp.gt.0) then

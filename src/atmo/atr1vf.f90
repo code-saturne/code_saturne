@@ -21,8 +21,8 @@
 !-------------------------------------------------------------------------------
 
 subroutine atr1vf &
-                                !================
-     ( rtpa, rtp, propce )
+!================
+     ( rtpa, propce )
 
 !===============================================================================
 !  Purpose:
@@ -41,8 +41,6 @@ subroutine atr1vf &
 !__________________!____!_____!________________________________________________!
 ! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (preceding time step)                         !
-! rtp              ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (current time step)                           !
 ! propce           ! ra ! <-- ! properties cell centers                        !
 !  (ncelet, *)     !    !     !  (current time step)                           !
 !__________________!____!_____!________________________________________________!
@@ -78,7 +76,7 @@ implicit none
 ! Arguments
 
 double precision propce(ncelet,*)
-double precision rtp(ncelet,*),rtpa(ncelet,*)
+double precision rtpa(ncelet,*)
 
 ! Local variables
 integer k, ii, jj
@@ -97,7 +95,6 @@ double precision, allocatable :: fneray(:), romray(:), preray(:)
 double precision, allocatable :: zproj(:), ttvert(:), qvvert(:), romvert(:)
 double precision, allocatable :: aeroso(:)
 double precision, allocatable :: coords(:,:,:), infrad(:)
-
 
 save ideb
 data ideb/0/
@@ -170,15 +167,12 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
          (igrid, nvert*kmx, coords)
   endif
 
-  call gripol &
+  call gripol(igrid, propce(:,ipproc(itempc)), ttvert)
   !===========
-       (igrid, propce(:,ipproc(itempc)), ttvert)
-  call gripol &
+  call gripol(igrid, rtpa(:,isca(itotwt)), qvvert)
   !===========
-       (igrid, rtpa(:,isca(itotwt)), qvvert)
-  call gripol &
+  call gripol(igrid, propce(:,ipproc(irom)), romvert)
   !===========
-       (igrid, propce(:,ipproc(irom)), romvert)
 
   ! --- Loop on the vertical array:
 

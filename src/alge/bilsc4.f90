@@ -93,15 +93,12 @@
 !>                               - 1 take into account,
 !>                               - 0 otherwise
 !> \param[in]     ippu          index of the variable for post-processing
-!> \param[in]     ippv          index of the variable for post-processing
-!> \param[in]     ippw          index of the variable for post-processing
 !> \param[in]     iwarnp        verbosity
 !> \param[in]     blencp        fraction of upwinding
 !> \param[in]     epsrgp        relative precision for the gradient
 !>                               reconstruction
 !> \param[in]     climgp        clipping coeffecient for the computation of
 !>                               the gradient
-!> \param[in]     extrap        coefficient for extrapolation of the gradient
 !> \param[in]     relaxp        coefficient of relaxation
 !> \param[in]     thetap        weightening coefficient for the theta-schema,
 !>                               - thetap = 0: explicit scheme
@@ -126,7 +123,6 @@
 !> \param[in]     viscb         \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
 !>                               at border faces for the r.h.s.
 !> \param[in]     secvif        secondary viscosity at interior faces
-!> \param[in]     secvib        secondary viscosity at boundary faces
 !> \param[in]     icvflb        global indicator of boundary convection flux
 !>                               - 0 upwind scheme at all boundary faces
 !>                               - 1 imposed flux at some boundary faces
@@ -139,11 +135,11 @@
 subroutine bilsc4 &
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , ivisep ,                   &
-   ippu   , ippv   , ippw   , iwarnp ,                            &
-   blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
+   ippu   , iwarnp ,                                              &
+   blencp , epsrgp , climgp , relaxp , thetap ,                   &
    pvar   , pvara  ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
-   flumas , flumab , viscf  , viscb  , secvif , secvib ,          &
+   flumas , flumab , viscf  , viscb  , secvif ,                   &
    icvflb , icvfli ,                                              &
    smbr   )
 
@@ -173,10 +169,10 @@ integer          idtvar
 integer          ivar   , iconvp , idiffp , nswrgp , imligp
 integer          ircflp , ischcp , isstpp
 integer          inc    , imrgra , ivisep , icvflb
-integer          iwarnp , ippu   , ippv   , ippw
+integer          iwarnp , ippu
 integer          icvfli(nfabor)
 
-double precision blencp , epsrgp , climgp, extrap, relaxp , thetap
+double precision blencp , epsrgp , climgp, relaxp , thetap
 double precision pvar  (3  ,ncelet)
 double precision pvara (3  ,ncelet)
 double precision coefav(3  ,nfabor)
@@ -185,7 +181,7 @@ double precision coefbv(3,3,nfabor)
 double precision cofbfv(3,3,nfabor)
 double precision flumas(nfac)  , flumab(nfabor)
 double precision viscf (nfac)  , viscb (nfabor)
-double precision secvif(nfac), secvib(nfabor)
+double precision secvif(nfac)
 double precision smbr(3,ncelet)
 
 
@@ -194,10 +190,6 @@ double precision smbr(3,ncelet)
 character*80     chaine
 character*8      cnom
 integer          ifac,ii,jj,infac,iel,iupwin, ig, it
-integer          iiu,iiv,iiw
-integer          iitytu
-integer          iir11,iir22,iir33
-integer          iir12,iir13,iir23
 integer          isou, jsou, ityp
 logical          ilved
 double precision pfac,pfacd,flui,fluj,flux,fluxi,fluxj
@@ -288,7 +280,7 @@ if ((idiffp.ne.0 .and. ircflp.eq.1) .or. ivisep.eq.1 .or.         &
   call grdvec &
   !==========
 ( ivar   , imrgra , inc    , nswrgp , imligp ,                   &
-  iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
+  iwarnp , epsrgp , climgp ,                                     &
   ilved  ,                                                       &
   pvar   , coefav , coefbv ,                                     &
   gradv )

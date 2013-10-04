@@ -2723,10 +2723,8 @@ _cs_post_build_moment(const cs_field_t  *f,
  * parameters:
  *   post_mesh   <-- pointer to post-processing mesh structure
  *   n_cells     <-- local number of cells of post_mesh
- *   n_i_faces   <-- local number of interior faces of post_mesh
  *   n_b_faces   <-- local number of boundary faces of post_mesh
  *   cell_list   <-- list of cells (1 to n) of post-processing mesh
- *   i_face_list <-- list of interior faces (1 to n) of post-processing mesh
  *   b_face_list <-- list of boundary faces (1 to n) of post-processing mesh
  *   ts          <-- time step status structure, or NULL
  *----------------------------------------------------------------------------*/
@@ -2734,15 +2732,13 @@ _cs_post_build_moment(const cs_field_t  *f,
 static void
 _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
                        cs_lnum_t              n_cells,
-                       cs_lnum_t              n_i_faces,
                        cs_lnum_t              n_b_faces,
                        const cs_lnum_t        cell_list[],
-                       const cs_lnum_t        i_face_list[],
                        const cs_lnum_t        b_face_list[],
                        const cs_time_step_t  *ts)
 {
-  /* Output for cell mesh */
-  /*----------------------*/
+  /* Output for cell and boundary meshes */
+  /*-------------------------------------*/
 
   if (post_mesh->cat_id == -1 || post_mesh->cat_id == -2) {
 
@@ -5413,8 +5409,8 @@ cs_post_write_vars(const cs_time_step_t  *ts)
 
       if (post_mesh->cat_id < 0)
         _cs_post_output_fields(post_mesh,
-                               n_cells, n_i_faces, n_b_faces,
-                               cell_list, i_face_list, b_face_list,
+                               n_cells, n_b_faces,
+                               cell_list, b_face_list,
                                ts);
 
       /* Output of variables by registered function instances */

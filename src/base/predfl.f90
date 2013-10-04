@@ -53,7 +53,6 @@
 !> \param[in]     ncesmp        number of cells with mass source term
 !> \param[in]     icetsm        index of cells with mass source term
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     propce        physical properties at cell centers
 !> \param[in]     smacel        variable value associated to the mass source
 !>                               term (for ivar=ipr, smacel is the mass flux
 !>                               \f$ \Gamma^n \f$)
@@ -63,7 +62,6 @@ subroutine predfl &
  ( nvar   , ncesmp ,                                              &
    icetsm ,                                                       &
    dt     ,                                                       &
-   propce ,                                                       &
    smacel )
 
 !===============================================================================
@@ -100,7 +98,6 @@ integer          ncesmp
 integer          icetsm(ncesmp)
 
 double precision dt(ncelet)
-double precision propce(ncelet,*)
 double precision smacel(ncesmp,nvar)
 
 ! Local variables
@@ -112,7 +109,7 @@ integer          ii, iel   , ifac
 integer          ireslp, nswmpr
 integer          isweep, niterf, icycle
 integer          nswrgp, imligp, iwarnp
-integer          ipcrom, ipcroa, ipbrom, iflmas, iflmab
+integer          iflmas, iflmab
 integer          idiffp, iconvp, ndircp
 integer          nitmap, imgrp , ncymap, nitmgp
 integer          iinvpe
@@ -133,7 +130,7 @@ double precision, allocatable, dimension(:) :: clapot, clbpot
 double precision, allocatable, dimension(:) :: cfapot, cfbpot
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, dimension(:), pointer :: imasfl, bmasfl
-
+double precision, dimension(:), pointer :: brom, crom, croma
 !===============================================================================
 
 !===============================================================================
@@ -152,9 +149,9 @@ allocate(pot(ncelet), pota(ncelet), dpot(ncelet), rhs(ncelet))
 chaine = 'potential       '
 
 ! --- Physical quantities
-ipcrom = ipproc(irom)
-ipbrom = ipprob(irom  )
-ipcroa = ipproc(iroma)
+call field_get_val_s(icrom, crom)
+call field_get_val_s(ibrom, brom)
+call field_get_val_prev_s(icrom, croma)
 
 call field_get_key_int(ivarfl(iu), kimasf, iflmas)
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
@@ -224,7 +221,7 @@ endif
 
 ! --- Source term associated to the mass aggregation
 do iel = 1, ncel
-  drom = propce(iel,ipcrom) - propce(iel,ipcroa)
+  drom = crom(iel) - croma(iel)
   divu(iel) = divu(iel) + drom*volume(iel)/dt(iel)
 
   ! The initial Right Hand Side is - div(u)
@@ -362,7 +359,7 @@ do while (isweep.le.nswmpr.and.residu.gt.tcrite)
  ( chaine(1:16)    , isym   , ibsize , iesize ,                   &
    ipol   , ireslp , nitmap , imgrp  ,                            &
    ncymap , nitmgp ,                                              &
-   iwarnp , nfecra , niterf , icycle , iinvpe ,                   &
+   iwarnp , niterf , icycle , iinvpe ,                            &
    epsilp , rnorm  , residu ,                                     &
    dam    , xam    , rhs   , dpot   )
 

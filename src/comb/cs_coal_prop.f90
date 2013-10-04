@@ -30,7 +30,7 @@ subroutine cs_coal_prop &
 
 ! INIT DES POSITIONS DES VARIABLES D'ETAT SELON
 !         COMBUSTION CHARBON PULVERISE
-!   (DANS VECTEURS PROPCE, PROPFB)
+!   (DANS VECTEURS PROPCE)
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -38,7 +38,7 @@ subroutine cs_coal_prop &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! ipropp           ! e  ! <-- ! numero de la derniere propriete                !
-!                  !    !     !  (les proprietes sont dans propce ou propfb)   !
+!                  !    !     !  (les proprietes sont dans propce)             !
 ! ipppst           ! e  ! <-- ! pointeur indiquant le rang de la               !
 !                  !    !     !  derniere grandeur definie aux                 !
 !                  !    !     !  cellules (rtp,propce...) pour le              !
@@ -83,10 +83,10 @@ integer          ipropp, ipppst
 ! Local variables
 
 integer          iprop, ige , icla, iprop2
-integer          f_id, itycat, ityloc, idim1, idim3
+integer          f_id, itycat, ityloc, idim1
 integer          keylog
-integer          keyccl, keydri, keyvis, keylbl
-integer          iscdri, iopchr
+integer          keyccl, keyvis, keylbl
+integer          iopchr
 
 logical          ilved, iprev, inoprv
 
@@ -530,13 +530,6 @@ ipppst             = ipppst + 1
 ipppro(iprop)      = ipppst
 !
 nproce = iprop
-
-
-! ---> Positionnement dans le tableau PROPFB
-!      Au centre des faces de bord
-
-iprop = nprofb
-nprofb = iprop
 
 !   - Interface Code_Saturne
 !     ======================

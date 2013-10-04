@@ -69,10 +69,8 @@ use field
 
 implicit none
 
-character*80     name
-
 integer          ipp , icla , ii , jj , iok
-integer          icha , isc , is
+integer          icha , isc
 
 double precision wmolme
 

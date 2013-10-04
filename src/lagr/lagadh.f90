@@ -23,11 +23,9 @@
 subroutine lagadh &
 !================
 
- ( ip     , nvar   , nscal  ,                                     &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   ntersl , nvlsta , nvisbr ,                                     &
+ ( ip     ,                                                       &
+   nbpmax , nvp    , nvep   , nivep  ,                            &
    itepa  ,                                                       &
-   dt     ,                                                       &
    ettp   , tepa   , adhesion_energ)
 
 !===============================================================================
@@ -49,19 +47,12 @@ subroutine lagadh &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! ip               ! i  ! <-- ! particle number                                !
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
 ! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
 ! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
-! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
-! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
-! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
 ! itepa            ! te ! <-- ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! ettp             ! tr ! <-- ! tableaux des variables liees                   !
 !  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
 ! tepa             ! tr ! <-- ! info particulaires (reels)                     !
@@ -99,12 +90,9 @@ implicit none
 ! Arguments
 
 integer          ip
-integer          nvar   , nscal
-integer          nbpmax , nvp    , nvp1   , nvep  , nivep
-integer          ntersl , nvlsta , nvisbr
+integer          nbpmax , nvp    , nvep  , nivep
 integer          itepa(nbpmax,nivep)
 
-double precision dt(ncelet)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision adhesion_energ
 
@@ -115,12 +103,11 @@ integer nbasg, nbasp, np, ntmp(1)
 double precision step, rpart, rtmp(1)
 double precision paramh, nmoyap, nmoyag, scovag, scovap
 double precision dismin, distcc, distp
-double precision udlvor(2), uvdwsp, uvdwss, uedlsp, uedlss
+double precision udlvor(2), uvdwsp, uvdwss
 double precision fadhes
 
 ! Variables for the adhesion moment
-double precision dismom, rdismom, omsurf,reff,radh,gaus
-double precision sig2, xmu
+double precision dismom, omsurf
 
 ! ==========================================================================
 ! 0.    initialization

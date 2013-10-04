@@ -23,8 +23,8 @@
 subroutine lagcou &
 !================
 
- ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   ntersl , nvlsta , nvisbr ,                                     &
+ ( nbpmax , nvp    , nvep   , nivep  ,                            &
+   ntersl ,                                                       &
    itepa  , indep  , ibord  ,                                     &
    rtp    , propce ,                                              &
    ettp   , ettpa  , tepa   , taup   , tempct , tsfext , tslagr , &
@@ -62,12 +62,9 @@ subroutine lagcou &
 !__________________!____!_____!________________________________________________!
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
 ! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
 ! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
-! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
-! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
 ! itepa            ! te ! <-- ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
 ! indep            ! te ! <-- ! pour chaque particule :                        !
@@ -134,8 +131,8 @@ implicit none
 
 ! Arguments
 
-integer          nbpmax , nvp    , nvp1   , nvep  , nivep
-integer          ntersl , nvlsta , nvisbr
+integer          nbpmax , nvp    , nvep  , nivep
+integer          ntersl
 integer          itepa(nbpmax,nivep), indep(nbpmax), ibord(nbpmax)
 
 double precision propce(ncelet,*) , rtp(ncelet,*)
@@ -490,28 +487,6 @@ else
 endif
 
 !===============================================================================
-
-1001 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''EXECUTION DU MODULE LAGRANGIEN   ',/,&
-'@    =========                                               ',/,&
-'@    LE TRANSPORT LAGRANGIEN DE PARTICULES DE CHARBON        ',/,&
-'@      EST ACTIVE EN MODE MULTI-COUCHE AVEC COUPLAGE         ',/,&
-'@      RETOUR THERMIQUE                                      ',/,&
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@  Le transport Lagrangien de particule de charbon ne peut   ',/,&
-'@   etre couple avec la phase Eulerienne depuis              ',/,&
-'@   l''introduction de gradients de temperature              ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier la valeur de LTSTHE dans la subroutine USLAG1    ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
 
 !----
 ! FIN

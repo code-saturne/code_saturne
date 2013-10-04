@@ -23,10 +23,7 @@
 subroutine ctphyv &
 !================
 
- ( nvar   , nscal  ,                                              &
-   ibrom  , izfppp ,                                              &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   coefa  , coefb  )
+ ( rtp    , propce )
 
 !===============================================================================
 ! FONCTION :
@@ -91,19 +88,9 @@ subroutine ctphyv &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ibrom            ! te ! <-- ! indicateur de remplissage de romb              !
-!        !    !     !                                                !
-! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
-! (nfabor)         !    !     !  pour le module phys. part.                    !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
+! rtp              ! ra ! <-- ! calculated variables at cell centers           !
+!  (ncelet, *)     !    !     !  (at current time step)                        !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -126,36 +113,29 @@ use ppppar
 use ppthch
 use ppincl
 use mesh
-
+use field
 !===============================================================================
 
 implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-
-integer          ibrom
-integer          izfppp(nfabor)
-
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
+double precision rtp(ncelet,*)
+double precision propce(ncelet,*)
 
 ! Local variables
 
 integer          iel
-integer          ipcrom, ipcvis, ipccp , ipcray
-integer          ipcvsl, ith   , iscal , ivart, ii
+integer          ipcvis, ipccp , ipcray
+integer          ipcvsl, ith   , iscal , ivart
 integer          iclvar
 integer          iiii  , ipcsig, it
-integer          iesp  , iesp1 , iesp2 , mode , isrrom
+integer          iesp  , mode , isrrom
 
-double precision tp    , delt  , somphi, val
 double precision rho   , r     , cpa   , cpe , cpv , del
 double precision hv0 , hvti , rhoj , tti , xxi,  xsati , dxsati
 double precision rho0 , t00 , p00 , t1
-
+double precision, dimension(:), pointer ::  crom
 integer          ipass
 data             ipass /0/
 save             ipass
@@ -189,7 +169,7 @@ iclvar = iclrtp(ivart,icoef)
 ! --- Rang de la masse volumique
 !     dans PROPCE, prop. physiques au centre des elements       : IPCROM
 
-ipcrom = ipproc(irom)
+call field_get_val_s(icrom, crom)
 
 ! --- Coefficients des lois choisis et imposes par l'utilisateur
 !       Les valeurs donnees ici sont fictives
@@ -232,7 +212,7 @@ do iel = 1, ncel
   endif
 
   if (rho .lt. 0.1d0) rho = 0.1d0
-  propce(iel,ipcrom) = rho
+  crom(iel) = rho
 
 enddo
 

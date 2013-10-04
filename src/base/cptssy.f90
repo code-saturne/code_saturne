@@ -24,7 +24,7 @@ subroutine cptssy &
 !================
 
  ( iscal  ,                                                       &
-   rtpa   , rtp    , crvexp , crvimp )
+   rtpa   , crvexp , crvimp )
 
 !===============================================================================
 ! Purpose:
@@ -39,8 +39,8 @@ subroutine cptssy &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! iscal            ! i  ! <-- ! index number of the current scalar             !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
+! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
+!  (ncelet, *)     !    !     !  (at previous time step)                       !
 ! crvexp           ! ra ! --> ! explicit part of the source term               !
 ! crvimp           ! ra ! --> ! implicit part of the source term               !
 !__________________!____!_____!________________________________________________!
@@ -71,7 +71,7 @@ implicit none
 
 integer          iscal
 
-double precision rtp(ncelet,*), rtpa(ncelet,*)
+double precision rtpa(ncelet,*)
 double precision crvexp(ncelet), crvimp(ncelet)
 
 ! Local variables

@@ -568,7 +568,7 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
  ( cnom   , isym   , ibsize , iesize ,                            &
    ipol   , ireslq , nitmap , imgrp  ,                            &
    ncymxp , nitmfp ,                                              &
-   iwarnp , nfecra , niterf , icycle , iinvpe ,                   &
+   iwarnp , niterf , icycle , iinvpe ,                            &
    epsilp , rnorm  , ressol ,                                     &
    dam    , xam    , smbrp  , dpvar  )
 

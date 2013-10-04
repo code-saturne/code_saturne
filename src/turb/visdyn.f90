@@ -25,8 +25,8 @@ subroutine visdyn &
 
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   coefa  , coefb  , ckupdc , smacel ,                            &
+   dt     , rtp    , rtpa   , propce ,                            &
+   ckupdc , smacel ,                            &
    smagor )
 
 !===============================================================================
@@ -61,9 +61,6 @@ subroutine visdyn &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
 !  (ncepdp,6)      !    !     !                                                !
 ! smacel           ! tr ! <-- ! valeur des variables associee a la             !
@@ -94,7 +91,7 @@ use parall
 use period
 use pointe, only: coefau, coefbu
 use mesh
-
+use field
 !===============================================================================
 
 implicit none
@@ -108,8 +105,7 @@ integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(ndimfb,*)
-double precision coefa(ndimfb,*), coefb(ndimfb,*)
+double precision propce(ncelet,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision smagor(ncelet)
 
@@ -117,7 +113,7 @@ double precision smagor(ncelet)
 
 integer          ii, iel, iccocg, inc, isou, jsou
 integer          ipcliu, ipcliv, ipcliw
-integer          ipcrom, ipcvst
+integer          ipcvst
 integer          iclipc
 
 double precision coef, radeux, deux, delta, deltaf
@@ -138,7 +134,7 @@ double precision, allocatable, dimension(:) :: w7, w8, w9
 double precision, allocatable, dimension(:) :: w10
 double precision, allocatable, dimension(:,:) :: xmij
 double precision, dimension(:,:,:), allocatable :: gradv, gradvf
-
+double precision, dimension(:), pointer :: crom
 !===============================================================================
 
 !===============================================================================
@@ -156,7 +152,7 @@ allocate(xmij(ncelet,6))
 
 ! --- Rang des variables dans PROPCE (prop. physiques au centre)
 ipcvst = ipproc(ivisct)
-ipcrom = ipproc(irom  )
+call field_get_val_s(icrom, crom)
 
 ! --- Rang des c.l. des variables dans COEFA COEFB
 !        (c.l. std, i.e. non flux)
@@ -196,7 +192,7 @@ call grdvec &
 !==========
 ( iu  , imrgra , inc    ,                               &
   nswrgr(iu) , imligr(iu) , iwarni(iu) ,                &
-  nfecra , epsrgr(iu) , climgr(iu) , extrag(iu) ,       &
+  epsrgr(iu) , climgr(iu) ,                             &
   ilved  ,                                              &
   rtpa(1,iu) ,  coefau , coefbu,                        &
   gradv  )
@@ -427,7 +423,7 @@ call ussmag                                                       &
 !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   dt     , rtp    , rtpa   , propce ,                            &
    ckupdc , smacel ,                                              &
    smagor , w1     , w2     )
 
@@ -451,7 +447,7 @@ enddo
 do iel = 1, ncel
   coef = smagor(iel)
   delta  = xfil * (xa*volume(iel))**xb
-  propce(iel,ipcvst) = propce(iel,ipcrom)                         &
+  propce(iel,ipcvst) = crom(iel)                         &
        * coef * delta**2 * propce(iel,ipcvst)
 enddo
 

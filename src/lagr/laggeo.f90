@@ -23,8 +23,7 @@
 subroutine laggeo &
 !================
 
- ( lndnod ,                                                       &
-   dlgeo  )
+ ( dlgeo  )
 
 !===============================================================================
 ! Purpose:
@@ -44,42 +43,6 @@ subroutine laggeo &
 !__________________.____._____.________________________________________________.
 !    nom           !type!mode !                   role                         !
 !__________________!____!_____!________________________________________________!
-! lndnod           ! e  ! <-- ! dim. connectivite cellules->faces              !
-! nvar             ! e  ! <-- ! nombre total de variables                      !
-! nscal            ! e  ! <-- ! nombre total de scalaires                      !
-! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
-! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
-! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
-! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
-! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
-! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
-! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
-! icocel           ! te ! --> ! connectivite cellules -> faces                 !
-!   (lndnod)       !    !     !    face de bord si numero negatif              !
-! itycel           ! te ! --> ! connectivite cellules -> faces                 !
-!   (ncelet+1)     !    !     !    pointeur du tableau icocel                  !
-! ifrlag           ! te ! --> ! numero de zone de la face de bord              !
-!   (nfabor)       !    !     !  pour le module lagrangien                     !
-! itepa            ! te ! --> ! info particulaires (entiers)                   !
-! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! indep            ! te ! --> ! pour chaque particule :                        !
-!   (nbpmax)       !    !     !   numero de la cellule de depart               !
-! ibord            ! te ! --> ! contient le numero de la                       !
-!   (nbpmax)       !    !     !   face d'interaction part/frontiere            !
-! xyzcen           ! tr ! <-- ! point associes aux volumes de control          !
-! (ndim,ncelet     !    !     !                                                !
-! surfac           ! tr ! <-- ! vecteur surface des faces internes             !
-! (ndim,nfac)      !    !     !                                                !
-! surfbo           ! tr ! <-- ! vecteur surface des faces de bord              !
-! (ndim,nfabor)    !    !     !                                                !
-! cdgfac           ! tr ! <-- ! centre de gravite des faces internes           !
-! (ndim,nfac)      !    !     !                                                !
-! cdgfbo           ! tr ! <-- ! centre de gravite des faces de bord            !
-! (ndim,nfabor)    !    !     !                                                !
-! xyznod           ! tr ! <-- ! coordonnes des noeuds                          !
-! (ndim,nnod)      !    !     !                                                !
-! volume(ncelet    ! tr ! <-- ! volume d'un des ncelet elements                !
 ! dlgeo            ! tr ! --> ! tableau contenant les donnees geometriques     !
 !(nfabor,ngeol)    !    !     !                                                !
 !__________________!____!_____!________________________________________________!
@@ -119,20 +82,15 @@ implicit none
 
 ! Arguments
 
-integer          lndnod
-
-
 double precision dlgeo(nfabor,ngeol)
 
 ! Local variables
 
-integer          ifac , inoeud , iel
+integer          ifac , inoeud
 double precision xs1,ys1,zs1,xs2,ys2,zs2,xs3,ys3,zs3
-double precision alp1,bet1,gam1,alp2,bet2,gam2
+double precision gam1,alp2,gam2
 double precision xnor
 double precision xn,yn,zn,xt,yt,zt,xtt,ytt,ztt
-double precision px,py,pz
-double precision distp
 
 !===============================================================================
 ! 0.  Memory management and crossing counter

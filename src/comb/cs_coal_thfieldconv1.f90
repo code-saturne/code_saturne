@@ -103,8 +103,6 @@ double precision den1   , den2 , eh0 , eh1
 integer          iok
 double precision , dimension ( : , : )     , allocatable :: f1mc,f2mc
 
-double precision tmin,tmax
-
 !===============================================================================
 !
 !===============================================================================

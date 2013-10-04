@@ -23,9 +23,7 @@
 subroutine tsepls &
 !================
 
- ( dt     , rtp    , rtpa   ,                                     &
-   coefa  , coefb  ,                                              &
-   w1     )
+ ( rtpa   , w1     )
 
 !===============================================================================
 ! FONCTION :
@@ -38,11 +36,8 @@ subroutine tsepls &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
+! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
+!  (ncelet, *)     !    !     !  (at previous time step)                       !
 ! w1(ncelet)       ! ra ! --> ! work array to store the E-term                 !
 !__________________!____!_____!________________________________________________!
 
@@ -71,17 +66,16 @@ implicit none
 
 ! Arguments
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision coefa(ndimfb,*), coefb(ndimfb,*)
+double precision rtpa(ncelet,*)
 double precision w1(ncelet)
 
 ! Local variables
 
-integer          iel, ifac, init, inc, iccocg, iphydp
+integer          iel, ifac, inc, iccocg, iphydp
 integer          isou, ii, jj, nswrgp, imligp, iwarnp
 logical          ilved
-double precision climgp, prdtur, extrap
-double precision w1f, w2f, w3f, pfac
+double precision climgp, extrap
+double precision w1f, w2f, w3f
 double precision pnd, flux, somsur, epsrgp
 
 double precision, allocatable, dimension(:) :: w7
@@ -125,8 +119,7 @@ ilved = .false.
 call grdvec &
 !==========
 ( iu     , imrgra , inc    , nswrgp , imligp ,                   &
-  iwarnp , nfecra ,                                              &
-  epsrgp , climgp , extrap ,                                     &
+  iwarnp , epsrgp , climgp ,                                     &
   ilved  ,                                                       &
   rtpa(1,iu) ,  coefau , coefbu,                                 &
   gradv  )

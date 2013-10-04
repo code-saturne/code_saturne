@@ -26,7 +26,7 @@ subroutine dttvar &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iwarnp ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   dt     , rtp    , rtpa   , propce ,                            &
    coefa  , coefb  , ckupdc , smacel )
 
 !===============================================================================
@@ -59,7 +59,6 @@ subroutine dttvar &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
 ! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
@@ -108,7 +107,7 @@ integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(ndimfb,*)
+double precision propce(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 
@@ -123,7 +122,7 @@ integer          iflmas, iflmab
 integer          icou, ifou , icoucf
 integer          inc, iccocg
 integer          nswrgp, imligp
-integer          ipcrom, ipbrom, iivar
+integer          iivar
 integer          nbrval, nclptr
 integer          ipccou, ipcfou, ntcam1
 
@@ -141,7 +140,7 @@ double precision, allocatable, dimension(:) :: cofbft, coefbt, coefbr
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w1, w2, w3, dtsdt0
 double precision, dimension(:), pointer :: imasfl, bmasfl
-
+double precision, dimension(:), pointer :: brom, crom
 !===============================================================================
 
 !===============================================================================
@@ -169,8 +168,8 @@ allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 
 ipcvis  = ipproc(iviscl)
 ipcvst  = ipproc(ivisct)
-ipcrom  = ipproc(irom)
-ipbrom  = ipprob(irom)
+call field_get_val_s(icrom, crom)
+ call field_get_val_s(ibrom, brom)
 ipccou  = ipproc(icour)
 ipcfou  = ipproc(ifour)
 
@@ -211,12 +210,10 @@ endif
     call cfdttv                                                   &
     !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iwarnp ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   dt     , rtp    , rtpa   , propce ,                            &
    coefa  , coefb  , ckupdc , smacel ,                            &
    wcf    ,                                                       &
-!        ---
    viscf  , viscb  , cofbft )
 
   endif
@@ -301,12 +298,12 @@ if (idtvar.ge.0) then
     !==========
  ( iivar  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   propce(1,ipcrom), propfb(1,ipbrom), coefbr ,                   &
+   crom, brom, coefbr ,                   &
    grad )
 
     do iel = 1, ncel
       w3(iel) = (grad(iel,1)*gx + grad(iel,2)*gy + grad(iel,3)*gz)&
-           /propce(iel,ipcrom)
+           /crom(iel)
       w3(iel) = 1.d0/sqrt(max(epzero,w3(iel)))
 
     enddo
@@ -342,7 +339,7 @@ if (idtvar.ge.0) then
  (iconv(iu), idiff0, isym, coefbt, cofbft, imasfl, bmasfl, viscf, viscb, dam)
 
       do iel = 1, ncel
-        rom = propce(iel,ipcrom)
+        rom = crom(iel)
         w1    (iel) = dam(iel)/(rom*volume(iel))
       enddo
 
@@ -391,7 +388,7 @@ if (idtvar.ge.0) then
  (iconv0, idiff(iu), isym, coefbt, cofbft, imasfl, bmasfl, viscf, viscb, dam)
 
       do iel = 1, ncel
-        rom = propce(iel,ipcrom)
+        rom = crom(iel)
         w2    (iel) = dam(iel)/(rom*volume(iel))
       enddo
 
@@ -656,7 +653,7 @@ if (idtvar.ge.0) then
  (iconv(iu), idiff0, isym, coefbt, cofbft, imasfl, bmasfl, viscf, viscb, dam)
 
     do iel = 1, ncel
-      rom = propce(iel,ipcrom)
+      rom = crom(iel)
       w1    (iel) = dam(iel)/(rom*volume(iel))
     enddo
 
@@ -727,7 +724,7 @@ if (idtvar.ge.0) then
  (iconv0, idiff(iu), isym, coefbt, cofbft, imasfl, bmasfl, viscf, viscb, dam)
 
     do iel = 1, ncel
-      rom = propce(iel,ipcrom)
+      rom = crom(iel)
       w1    (iel) = dam(iel)/(rom*volume(iel))
     enddo
 
@@ -803,7 +800,7 @@ if (idtvar.ge.0) then
  (iconv(iu), idiff(iu), isym, coefbt, cofbft, imasfl, bmasfl, viscf, viscb, dam)
 
     do iel = 1, ncel
-      rom = propce(iel,ipcrom)
+      rom = crom(iel)
       w1    (iel) = dam(iel)/(rom*volume(iel))
     enddo
 
@@ -933,7 +930,7 @@ else
    viscf, viscb, dt )
 
   do iel = 1, ncel
-    dt(iel) =  relaxv(iu)*propce(iel,ipcrom)                    &
+    dt(iel) =  relaxv(iu)*crom(iel)                    &
               *volume(iel)/max(dt(iel),epzero)
   enddo
 

@@ -24,9 +24,8 @@ subroutine elflux &
 !================
 
  ( iappel ,                                                       &
-   nvar   , nscal  ,                                              &
-   dt     , rtpa   , rtp    , propce , propfb ,                   &
-   coefa  , coefb  , viscf  , viscb  )
+   rtp    , propce ,                                              &
+   coefa  , coefb  )
 
 !===============================================================================
 ! FONCTION :
@@ -45,22 +44,14 @@ subroutine elflux &
 ! iappel           ! e  ! <-- ! numero d'appel                                 !
 !                  !    !     ! 1 : j, e, j.e                                  !
 !                  !    !     ! 2 : b,    jxb                                  !
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! itypsm           ! te ! <-- ! type de source de masse pour les               !
-! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
+! rtp              ! ra ! <-- ! calculated variables at cell centers           !
+!  (ncelet, *)     !    !     !  (at current time step)                        !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
 ! smacel           ! tr ! <-- ! valeur des variables associee a la             !
 ! (ncesmp,*   )    !    !     !  source de masse                               !
 !                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
-! viscf(nfac)      ! tr ! --- ! tableau de travail    faces internes           !
-! viscb(nfabor     ! tr ! --- ! tableau de travail    faces de bord            !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -95,13 +86,10 @@ implicit none
 ! Arguments
 
 integer          iappel
-integer          nvar   , nscal
 
-
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(ndimfb,*)
+double precision rtp(ncelet,*)
+double precision propce(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
-double precision viscf(nfac), viscb(nfabor)
 
 ! Local variables
 
@@ -217,7 +205,6 @@ if(iappel.eq.1) then
  ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv)  ,              &
-!       POTR
    grad   )
 
 

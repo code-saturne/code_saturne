@@ -23,12 +23,9 @@
 subroutine raypar &
 !================
 
- ( nvar   , nscal  ,                                              &
-   itypfb ,                                                       &
-   icodcl , isothp , izfrap ,                                     &
+ ( isothp , izfrap ,                                              &
    tmin   , tmax   , tx     ,                                     &
-   dt     , rtp    , rtpa   , propce , propfb , rcodcl ,          &
-   coefa  , coefb  ,                                              &
+   rcodcl ,                                                       &
    tparop , qincip , textp  , tintp  ,                            &
    xlamp  , epap   , epsp   ,                                     &
    hfconp , flconp , tempkp )
@@ -47,27 +44,10 @@ subroutine raypar &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! itypfb(nfabor    ! te ! <-- ! type des faces de bord                         !
-! icodcl           ! te ! --> ! code de condition limites aux faces            !
-!  (nfabor,nvar    !    !     !  de bord                                       !
-!                  !    !     ! = 1   -> dirichlet                             !
-!                  !    !     ! = 3   -> densite de flux                       !
-!                  !    !     ! = 4   -> glissemt et u.n=0 (vitesse)           !
-!                  !    !     ! = 5   -> frottemt et u.n=0 (vitesse)           !
-!                  !    !     ! = 6   -> rugosite et u.n=0 (vitesse)           !
-!                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
-!                  !    !     !  entrante eventuelle     bloquee               !
 ! isothp(nfabor    ! te ! <-- ! liste des frontieres isothermes                !
 ! izfrap(nfabor    ! te ! <-- ! numero de zone des faces de bord               !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
-!  (nfabor,nvar    !    !     !  aux faces de bord                             !
+!  (nfabor,nvarcl) !    !     !  aux faces de bord                             !
 !                  !    !     ! rcodcl(1) = valeur du dirichlet                !
 !                  !    !     ! rcodcl(2) = valeur du coef. d'echange          !
 !                  !    !     !  ext. (infinie si pas d'echange)               !
@@ -78,8 +58,6 @@ subroutine raypar &
 !                  !    !     ! pour la pression             dt*gradp          !
 !                  !    !     ! pour les scalaires                             !
 !                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! tparop(nfabor    ! tr ! --> ! temperature de paroi en kelvin                 !
 ! qincip(nfabor    ! tr ! <-- ! densite de flux radiatif aux bords             !
 ! textp(nfabor)    ! tr ! <-- ! temperature de bord externe                    !
@@ -123,18 +101,10 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-
-integer          itypfb(nfabor)
-
 integer          isothp(nfabor), izfrap(nfabor)
-integer          icodcl(nfabor,nvarcl)
 
 double precision tmin , tmax , tx
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
 double precision rcodcl(nfabor,nvarcl,3)
-double precision coefa(nfabor,*), coefb(nfabor,*)
 
 double precision tparop(nfabor), qincip(nfabor)
 double precision textp(nfabor), tintp(nfabor)

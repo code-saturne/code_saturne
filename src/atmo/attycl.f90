@@ -23,8 +23,8 @@
 subroutine attycl &
 !================
 
- ( icodcl , itypfb , izfppp ,                                     &
-   dt     , propce , propfb ,                                     &
+ ( itypfb , izfppp ,                                              &
+   propce ,                                                       &
    rcodcl )
 
 !===============================================================================
@@ -37,21 +37,10 @@ subroutine attycl &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! icodcl           ! te ! --> ! code de condition limites aux faces            !
-!  (nfabor,nvarcl  !    !     !  de bord                                       !
-!                  !    !     ! = 1   -> dirichlet                             !
-!                  !    !     ! = 3   -> densite de flux                       !
-!                  !    !     ! = 4   -> glissemt et u.n=0 (vitesse)           !
-!                  !    !     ! = 5   -> frottemt et u.n=0 (vitesse)           !
-!                  !    !     ! = 6   -> rugosite et u.n=0 (vitesse)           !
-!                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
-!                  !    !     !  entrante eventuelle     bloquee               !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 ! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
 !  (nfabor,nvarcl) !    !     !  aux faces de bord                             !
 !                  !    !     ! rcodcl(1) = valeur du dirichlet                !
@@ -87,31 +76,33 @@ use ppppar
 use ppthch
 use ppincl
 use mesh
+use field
 use atincl
 use atchem
+
 !===============================================================================
 
 implicit none
 
 ! Arguments
 
-integer          icodcl(nfabor,nvarcl)
 integer          itypfb(nfabor)
 integer          izfppp(nfabor)
 
-double precision dt(ncelet)
-double precision propce(ncelet,*), propfb(nfabor,*)
+double precision propce(ncelet,*)
 double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
 
 integer          ifac, izone
-integer          ipbrom, icke, iel, ipcvis
+integer          icke, iel, ipcvis
 integer          ii
 double precision d2s3, zent, vs, xuent, xvent
 double precision xkent, xeent, tpent, qvent,ncent
 double precision dhy, rhomoy, uref2, ustar2, viscla, xiturb
 double precision xcent
+double precision, dimension(:), pointer ::  brom
+
 !===============================================================================
 !===============================================================================
 ! 1.  INITIALISATIONS
@@ -126,7 +117,7 @@ xkent = 0.d0
 xeent = 0.d0
 tpent = 0.d0
 
-ipbrom = ipprob(irom  )
+call field_get_val_s(ibrom, brom)
 ipcvis = ipproc(iviscl)
 
 !===============================================================================
@@ -282,7 +273,7 @@ do ifac = 1, nfabor
               + rcodcl(ifac,iv,1)**2                         &
               + rcodcl(ifac,iw,1)**2
         uref2 = max(uref2,epzero)
-        rhomoy = propfb(ifac,ipbrom)
+        rhomoy = brom(ifac)
         iel    = ifabor(ifac)
         viscla = propce(iel,ipcvis)
         icke   = icalke(izone)

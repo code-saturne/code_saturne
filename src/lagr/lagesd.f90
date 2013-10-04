@@ -24,17 +24,14 @@ subroutine lagesd &
 !================
 
  ( ifac   , ip     ,                                              &
-   nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   ntersl , nvlsta , nvisbr ,                                     &
+   nbpmax , nvp    , nvep   , nivep  ,                            &
    itepa  ,                                                       &
    dlgeo  ,                                                       &
-   dt     , rtpa   , propce ,                                     &
+   rtpa   , propce ,                                              &
    ettp   , ettpa  , tepa   ,                                     &
-   statis , taup   , tlag   , piil   ,                            &
-   bx     , vagaus , gradpr , gradvf , romp,                      &
+   taup   , piil   ,                                              &
+   vagaus , gradpr , romp,                                        &
    tempf  , romf   , ustar  , lvisq  ,tvisq   ,  depint )
-
 
 !===============================================================================
 
@@ -82,8 +79,6 @@ subroutine lagesd &
 ! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
 ! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
 ! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
-! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
-! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
 ! itepa            ! te ! <-- ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
@@ -103,7 +98,6 @@ subroutine lagesd &
 ! volume(ncelet    ! tr ! <-- ! volume d'un des ncelet elements                !
 ! dlgeo            ! tr ! --> ! tableau contenant les donnees geometriques     !
 !(nfabor,ngeol)    !    !     !                                                !
-! dt(ncelet)       ! tr ! <-- ! pas de temps                                   !
 ! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (pas de temps precedent)           !
 ! propce           ! tr ! <-- ! proprietes physiques au centre des             !
@@ -114,16 +108,11 @@ subroutine lagesd &
 !  (nbpmax,nvp)    !    !     !   aux particules etape precedente              !
 ! tepa             ! tr ! <-- ! info particulaires (reels)                     !
 ! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
-! statis           ! tr ! <-- ! cumul des statistiques volumiques              !
-!(ncelet,nvlsta    !    !     !                                                !
 ! taup(nbpmax)     ! tr ! <-- ! temps caracteristique dynamique                !
-! tlag(nbpmax)     ! tr ! <-- ! temps caracteristique fluide                   !
 ! piil(nbpmax,3    ! tr ! <-- ! terme dans l'integration des eds up            !
-! bx(nbpmax,3,2    ! tr ! <-- ! caracteristiques de la turbulence              !
 ! vagaus           ! tr ! <-- ! variables aleatoires gaussiennes               !
 !(nbpmax,nvgaus    !    !     !                                                !
 ! gradpr(ncel,3    ! tr ! <-- ! gradient de pression                           !
-! gradvf(ncel,3    ! tr ! <-- ! gradient de la vitesse du fluide               !
 ! romp             ! tr ! <-- ! masse volumique des particules                 !
 ! tempf            !  r ! <-- ! temperature of the fluid (K)                   !
 ! romf             !  r ! <-- ! density of the fluid                           !
@@ -164,28 +153,26 @@ implicit none
 ! Arguments
 
 integer          ifac   , ip
-integer          nvar   , nscal
-integer          nbpmax , nvp    , nvp1   , nvep  , nivep
-integer          ntersl , nvlsta , nvisbr
+integer          nbpmax , nvp    , nvep  , nivep
 integer          itepa(nbpmax,nivep)
 
 double precision dlgeo(nfabor,ngeol)
-double precision dt(ncelet) , rtpa(ncelet,*)
+double precision rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
-double precision tepa(nbpmax,nvep) , statis(ncelet,*)
-double precision taup(nbpmax) , tlag(nbpmax,3)
-double precision piil(nbpmax,3) , bx(nbpmax,3,2)
+double precision tepa(nbpmax,nvep)
+double precision taup(nbpmax)
+double precision piil(nbpmax,3)
 double precision vagaus(nbpmax,*)
-double precision gradpr(ncelet,3) , gradvf(ncelet,9)
+double precision gradpr(ncelet,3)
 double precision romp(nbpmax)
 double precision ustar
 
 ! Local variables
 
-integer          isens  , iel , mode, id, i0
+integer          isens  , iel , id, i0
 double precision depg(3),depl(3),vpart(3),vvue(3),tempf, romf
-double precision vflui(3),vflui1(3),vdirn,vdirt,vdirtt,vpartl,vvuel,dxl, enertur
+double precision vflui(3),vflui1(3),enertur
 double precision ggp(3), gdpr(3), piilp(3), tlp,bxp
 
 double precision aa , bb , cc , dd , ee
@@ -194,11 +181,10 @@ double precision aux7 , aux8 , aux9 , aux10 , aux11
 double precision ter1f , ter2f , ter3f
 double precision ter1p , ter2p , ter3p , ter4p , ter5p
 double precision ter1x , ter2x , ter3x , ter4x , ter5x
-double precision tci , force, k1
+double precision tci , force
 double precision gama2 , omegam , omega2
 double precision grga2 , gagam , gaome
 double precision p11 , p21 , p22 , p31 , p32 , p33
-double precision grav(3)
 double precision lvisq, tvisq, depint
 double precision c0, cl, visccf
 double precision energi , dissip , vit(3)
@@ -209,9 +195,6 @@ integer          iromf
 
 double precision drag(3)                 ! Hydrodynamic drag on a deposited particle
 double precision tordrg(3), tordrg_norm  ! Hydrodynamic torque on a deposited particle
-
-double precision omep(3)  ! Angular velocity of the rolling particle
-double precision dome(3)  ! Time increment of the angular velocity of the deposited particle
 
 double precision scalax
 

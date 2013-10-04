@@ -42,13 +42,12 @@
 !> \param[in]     rtp           calculated variables at cell centers
 !>                               (at current time step)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfb        physical properties at boundary face centers
 !_______________________________________________________________________________
 
 
 subroutine cs_user_initialization &
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce , propfb )
+   dt     , rtp    , propce )
 
 !===============================================================================
 
@@ -87,7 +86,6 @@ implicit none
 integer          nvar   , nscal
 
 double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
-double precision propfb(nfabor,*)
 
 ! Local variables
 

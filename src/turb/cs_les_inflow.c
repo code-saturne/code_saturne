@@ -1355,7 +1355,6 @@ void CS_PROCF(synthe, SYNTHE)
  const cs_real_t        rtpa[],    /* --> variables at cellules (previous)    */
  const cs_real_t        rtp[],     /* --> variables at cellules               */
  const cs_real_t        propce[],  /* --> physical properties at cells        */
- const cs_real_t        propfb[],  /* --> physical properties at bound. faces */
  const cs_real_t        coefa[],   /* --> boundary conditions array           */
  const cs_real_t        coefb[],   /* --> boundary conditions array           */
        cs_real_t        rcodcl[]   /* <-> boundary conditions array           */
@@ -1424,7 +1423,7 @@ void CS_PROCF(synthe, SYNTHE)
                             &nument, &inlet->n_faces,
                              nvar, nscal,
                              inlet->parent_num,
-                             dt, rtpa, rtp, propce, propfb,
+                             dt, rtpa, rtp, propce,
                              mean_velocity, reynolds_stresses, dissipation_rate);
 
     /* Generation of the synthetic turbulence */

@@ -36,9 +36,6 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]     imvisf        method to compute the viscosity at faces:
-!>                               - 0: arithmetic
-!>                               - 1: harmonic
 !> \param[in]     w1            cell viscosity symmetric tensor
 !> \param[in]     iwarnp        verbosity
 !> \param[out]    weighf        inner face weight between cells i and j
@@ -57,8 +54,7 @@
 !_______________________________________________________________________________
 
 subroutine vitens &
- ( imvisf ,                                                       &
-   w1     , iwarnp,                                               &
+ ( w1     , iwarnp,                                               &
    weighf , weighb,                                               &
    viscf  , viscb )
 
@@ -82,7 +78,7 @@ implicit none
 
 ! Arguments
 
-integer          imvisf, iwarnp
+integer          iwarnp
 
 double precision, target :: w1(6,ncelet)
 double precision weighf(2,nfac), weighb(nfabor)
@@ -92,9 +88,9 @@ double precision viscf(nfac), viscb(nfabor)
 
 integer          ifac, iel, ii, jj, isou
 integer          nclipf, nclipb
-double precision visci(3,3), viscj(3,3), s(6)
+double precision visci(3,3), viscj(3,3)
 double precision viscis, viscjs, fikis, fjkjs, distfi, distfj
-double precision poroi, poroj, temp, eps
+double precision temp, eps
 
 double precision, pointer, dimension(:,:) :: viscce => null()
 double precision, dimension(:,:), allocatable, target :: w2

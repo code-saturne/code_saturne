@@ -26,8 +26,7 @@ subroutine raycli &
  ( nvar   , nscal  ,                                              &
    icodcl , itypfb ,                                              &
    izfrad ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfb , rcodcl ,          &
-   coefa  , coefb  )
+   dt     , rtp    , rtpa   , propce , rcodcl )
 
 !===============================================================================
 ! FONCTION :
@@ -62,7 +61,6 @@ subroutine raycli &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
 !  (nfabor,nvar    !    !     !  aux faces de bord                             !
 !                  !    !     ! rcodcl(1) = valeur du dirichlet                !
@@ -75,8 +73,6 @@ subroutine raycli &
 !                  !    !     ! pour la pression             dt*gradp          !
 !                  !    !     ! pour les scalaires                             !
 !                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -102,6 +98,7 @@ use ppincl
 use radiat
 use dimens, only: ndimfb
 use mesh
+use field
 
 !===============================================================================
 
@@ -116,9 +113,8 @@ integer          itypfb(ndimfb)
 integer          izfrad(ndimfb)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(ndimfb,*)
+double precision propce(ncelet,*)
 double precision rcodcl(ndimfb,nvarcl,3)
-double precision coefa(ndimfb,*), coefb(ndimfb,*)
 
 ! Local variables
 integer          ifac, iel, ideb, ivart
@@ -131,6 +127,9 @@ integer, allocatable, dimension(:) :: isothm
 
 double precision, allocatable, dimension(:) :: tempk, thwall
 double precision, allocatable, dimension(:) :: text, tint
+double precision, dimension(:), pointer :: bhconv, bfconv
+double precision, dimension(:), pointer :: tparo, bqinci
+double precision, dimension(:), pointer :: bxlam, bepa, beps, bfnet
 
 integer    ipacli
 data       ipacli /0/
@@ -144,6 +143,14 @@ save       ipacli
 allocate(isothm(nfabor))
 allocate(tempk(ncelet), thwall(ndimfb))
 allocate(text(nfabor), tint(nfabor))
+
+! Mapa field arrays
+call field_get_val_s(itparo, tparo)
+call field_get_val_s(iqinci, bqinci)
+call field_get_val_s(ixlam, bxlam)
+call field_get_val_s(iepa, bepa)
+call field_get_val_s(ieps, beps)
+call field_get_val_s(ifnet, bfnet)
 
 !---> NUMERO DE PASSAGE RELATIF
 ipacli = ipacli + 1
@@ -172,15 +179,19 @@ tx = 0.1d0
 do ifac = 1, nfabor
   izfrad(ifac) = -1
   isothm(ifac) = -1
-  propfb(ifac,ipprob(ixlam)) = -grand
-  propfb(ifac,ipprob(iepa))  = -grand
-  propfb(ifac,ipprob(ieps))  = -grand
+  bxlam(ifac) = -grand
+  bepa(ifac)  = -grand
+  beps(ifac)  = -grand
   text  (ifac) = -grand
   tint  (ifac) = -grand
 enddo
 
 ! Index of the thermal variable
 ivart = isca(iscalt)
+
+! Pointers to specific fields
+if (ifconv.ge.0) call field_get_val_s(ifconv, bfconv)
+if (ihconv.ge.0) call field_get_val_s(ihconv, bhconv)
 
 !===============================================================================
 ! 2. SI PAS DE FICHIER SUITE ALORS INITIALISATION AU PREMIER PASSAGE
@@ -202,8 +213,8 @@ if (ipacli.eq.1 .and. isuird.eq.0) then
   enddo
 
   do ifac = 1,nfabor
-    propfb(ifac,ipprob(ihconv)) = zero
-    propfb(ifac,ipprob(ifconv)) = zero
+    bhconv(ifac) = zero
+    bfconv(ifac) = zero
   enddo
 
   !     On utilise TBORD comme auxiliaire pour l'appel a USRAY2
@@ -215,7 +226,7 @@ if (ipacli.eq.1 .and. isuird.eq.0) then
 
   do ifac = 1, nfabor
     thwall(ifac) = zero
-    propfb(ifac,ipprob(ifnet)) = zero
+    bfnet(ifac) = zero
   enddo
 
   ! - Interface Code_Saturne
@@ -230,9 +241,9 @@ if (ipacli.eq.1 .and. isuird.eq.0) then
    ( itypfb, iparoi, iparug, ivart , izfrad,                  &
      isothm, itpimp, ipgrno, iprefl, ifgrno, ifrefl,          &
      nozppm, nfabor, nvar,                                    &
-     propfb(1,ipprob(ieps)), propfb(1,ipprob(iepa)),          &
+     beps, bepa,                                              &
      tint, text,                                              &
-     propfb(1,ipprob(ixlam)), rcodcl)
+     bxlam, rcodcl)
 
   endif
 
@@ -242,25 +253,23 @@ if (ipacli.eq.1 .and. isuird.eq.0) then
   itypfb ,                                                       &
   icodcl , izfrad , isothm ,                                     &
   tmin   , tmax   , tx     ,                                     &
-  dt     , rtp    , rtpa   , propce , propfb , rcodcl ,          &
-  thwall , propfb(1,ipprob(ifnet))  , propfb(1,ipprob(ihconv))  ,&
-  propfb(1,ipprob(ifconv)),                                      &
-  propfb(1,ipprob(ixlam)) , propfb(1,ipprob(iepa)) ,             &
-  propfb(1,ipprob(ieps))  ,                                      &
+  dt     , rtp    , rtpa   , propce , rcodcl ,                   &
+  thwall , bfnet  , bhconv , bfconv ,                            &
+  bxlam  , bepa   , beps   ,                                     &
   text   , tint   )
 
   write(nfecra,1000)
 
   ! Tparoi en Kelvin et QINCID en W/m2
   do ifac = 1, nfabor
-    propfb(ifac,ipprob(itparo)) = tint(ifac)
-    propfb(ifac,ipprob(iqinci)) = stephn*tint(ifac)**4
+    tparo(ifac) = tint(ifac)
+    bqinci(ifac) = stephn*tint(ifac)**4
     if (itypfb(ifac).eq.iparoi.or.itypfb(ifac).eq.iparug) then
-      propfb(ifac,ipprob(itparo)) = tint(ifac)
-      propfb(ifac,ipprob(iqinci)) = stephn*tint(ifac)**4
+      tparo(ifac) = tint(ifac)
+      bqinci(ifac) = stephn*tint(ifac)**4
     else
-      propfb(ifac,ipprob(itparo)) = 0.d0
-      propfb(ifac,ipprob(iqinci)) = 0.d0
+      tparo(ifac) = 0.d0
+      bqinci(ifac) = 0.d0
     endif
   enddo
 
@@ -275,8 +284,8 @@ endif
 !       (puisqu'on a flunet libre)
 
 do ifac = 1, nfabor
-  thwall (ifac) = propfb(ifac,ipprob(itparo))
-  propfb(ifac,ipprob(ifnet)) = propfb(ifac,ipprob(iqinci))
+  thwall (ifac) = tparo(ifac)
+  bfnet(ifac) = bqinci(ifac)
 enddo
 
 !     - Interface Code_Saturne
@@ -289,8 +298,8 @@ if (iihmpr.eq.1) then
 ( itypfb, iparoi, iparug, ivart , izfrad,                       &
   isothm, itpimp, ipgrno, iprefl, ifgrno, ifrefl,               &
   nozppm, nfabor, nvar,                                         &
-  propfb(1,ipprob(ieps)), propfb(1,ipprob(iepa)), tint, text,   &
-  propfb(1,ipprob(ixlam)), rcodcl)
+  beps, bepa, tint, text,                                       &
+  bxlam, rcodcl)
 
 endif
 
@@ -300,10 +309,9 @@ call usray2 &
   itypfb ,                                                       &
   icodcl , izfrad , isothm ,                                     &
   tmin   , tmax   , tx     ,                                     &
-  dt     , rtp    , rtpa   , propce , propfb , rcodcl ,          &
-  thwall , propfb(1,ipprob(ifnet)) ,  propfb(1,ipprob(ifconv)) , &
-  propfb(1,ipprob(ifconv)) , propfb(1,ipprob(ixlam)),            &
-  propfb(1,ipprob(iepa))   , propfb(1,ipprob(ieps)) ,            &
+  dt     , rtp    , rtpa   , propce , rcodcl ,                   &
+  thwall , bfnet ,  bfconv ,                                     &
+  bfconv , bxlam , bepa   , beps ,                               &
   text   , tint   )
 
 !===============================================================================
@@ -391,45 +399,43 @@ if (1.eq.1) then
   !--> Si valeur physique erronee : stop
   do ifac = 1, nfabor
     if (isothm(ifac).eq.itpimp) then
-      if (propfb(ifac,ipprob(ieps)).lt.0.d0.or.                  &
-          propfb(ifac,ipprob(ieps)).gt.1.d0.or.                  &
+      if (beps(ifac).lt.0.d0.or.                                 &
+          beps(ifac).gt.1.d0.or.                                 &
           tint(ifac).le.0.d0                      ) then
         iok = iok + 1
-        write(nfecra,2120) ifac,izfrad(ifac),                    &
-                           propfb(ifac,ipprob(ieps)), tint(ifac)
+        write(nfecra,2120) ifac,izfrad(ifac),beps(ifac), tint(ifac)
       endif
     elseif (isothm(ifac).eq.ipgrno) then
-      if (propfb(ifac,ipprob(ieps)) .lt.0.d0.or.                 &
-          propfb(ifac,ipprob(ieps)) .gt.1.d0.or.                 &
-          propfb(ifac,ipprob(ixlam)).le.0.d0.or.                 &
-          propfb(ifac,ipprob(iepa)) .le.0.d0.or.                 &
+      if (beps(ifac) .lt.0.d0.or.                                &
+          beps(ifac) .gt.1.d0.or.                                &
+          bxlam(ifac).le.0.d0.or.                 &
+          bepa(ifac) .le.0.d0.or.                 &
           text(ifac).le.0.d0.or.                                 &
           tint(ifac).le.0.d0                      ) then
         iok = iok + 1
         write(nfecra,2130) ifac,izfrad(ifac),                    &
-                           propfb(ifac,ipprob(ieps)) ,           &
-                           propfb(ifac,ipprob(ixlam)),           &
-                           propfb(ifac,ipprob(iepa)) ,           &
+                           beps(ifac) ,                           &
+                           bxlam(ifac),           &
+                           bepa(ifac) ,           &
                            text(ifac),tint(ifac)
       endif
     elseif (isothm(ifac).eq.iprefl) then
-      if (propfb(ifac,ipprob(ixlam)).le.0.d0.or.                 &
-          propfb(ifac,ipprob(iepa)) .le.0.d0.or.                 &
+      if (bxlam(ifac).le.0.d0.or.                 &
+          bepa(ifac) .le.0.d0.or.                 &
           text(ifac).le.0.d0.or.                                 &
           tint(ifac).le.0.d0                      ) then
         iok = iok + 1
         write(nfecra,2140) ifac,izfrad(ifac),                    &
-                           propfb(ifac,ipprob(ixlam)),           &
-                           propfb(ifac,ipprob(iepa)),            &
+                           bxlam(ifac),           &
+                           bepa(ifac),            &
                            text(ifac),tint(ifac)
       endif
     elseif (isothm(ifac).eq.ifgrno) then
-      if (propfb(ifac,ipprob(ieps)).lt.0.d0.or.                  &
-          propfb(ifac,ipprob(ieps)).gt.1.d0.or.                  &
+      if (beps(ifac).lt.0.d0.or.                                 &
+          beps(ifac).gt.1.d0.or.                                 &
           tint(ifac).le.0.d0                      ) then
         iok = iok + 1
-        write(nfecra,2150) ifac, izfrad(ifac),                   &
-             propfb(ifac,ipprob(ieps)), tint(ifac)
+        write(nfecra,2150) ifac, izfrad(ifac), beps(ifac), tint(ifac)
       endif
     elseif (isothm(ifac).eq.ifrefl) then
       if (tint(ifac).le.0.d0) then
@@ -445,38 +451,35 @@ if (1.eq.1) then
   !--> Si valeur renseignee sans raison : stop
   do ifac = 1, nfabor
    if (isothm(ifac).eq.itpimp) then
-      if (propfb(ifac,ipprob(ixlam)).gt.0.d0.or.                &
-          propfb(ifac,ipprob(iepa)) .gt.0.d0.or.                &
+      if (bxlam(ifac).gt.0.d0.or.                &
+          bepa(ifac) .gt.0.d0.or.                &
           text(ifac).gt.0.d0                      ) then
         iok = iok + 1
         write(nfecra,2220) ifac,izfrad(ifac),                   &
-                           propfb(ifac,ipprob(ixlam)),          &
-                           propfb(ifac,ipprob(iepa)), text(ifac)
+                           bxlam(ifac),          &
+                           bepa(ifac), text(ifac)
       endif
     elseif (isothm(ifac).eq.iprefl) then
-      if (propfb(ifac,ipprob(ieps)).ge.0.d0) then
+      if (beps(ifac).ge.0.d0) then
         iok = iok + 1
-        write(nfecra,2240) ifac, izfrad(ifac), propfb(ifac,ipprob(ieps))
+        write(nfecra,2240) ifac, izfrad(ifac), beps(ifac)
       endif
     elseif (isothm(ifac).eq.ifgrno) then
-      if (propfb(ifac,ipprob(ixlam)).gt.0.d0.or.                &
-          propfb(ifac,ipprob(iepa)) .gt.0.d0.or.                &
+      if (bxlam(ifac).gt.0.d0.or.                &
+          bepa(ifac) .gt.0.d0.or.                &
           text(ifac).gt.0.d0                      ) then
         iok = iok + 1
         write(nfecra,2250) ifac,izfrad(ifac),                   &
-                           propfb(1,ipprob(ixlam)),             &
-                           propfb(1,ipprob(iepa)), text(ifac)
+                           bxlam(ifac), bepa(ifac), text(ifac)
       endif
     elseif (isothm(ifac).eq.ifrefl) then
-      if(propfb(ifac,ipprob(ieps)) .ge.0.d0.or.                 &
-         propfb(ifac,ipprob(ixlam)).gt.0.d0.or.                 &
-         propfb(ifac,ipprob(iepa)) .gt.0.d0.or.                 &
+      if(beps(ifac) .ge.0.d0.or.                 &
+         bxlam(ifac).gt.0.d0.or.                 &
+         bepa(ifac) .gt.0.d0.or.                 &
          text(ifac).gt.0.d0                      ) then
         iok = iok + 1
-        write(nfecra,2260) ifac,izfrad(ifac),                   &
-                           propfb(ifac,ipprob(ieps)),           &
-                           propfb(ifac,ipprob(ixlam)),          &
-                           propfb(ifac,ipprob(iepa)), text(ifac)
+        write(nfecra,2260) ifac,izfrad(ifac), beps(ifac), bxlam(ifac),   &
+                           bepa(ifac), text(ifac)
       endif
     endif
   enddo
@@ -500,12 +503,12 @@ do ifac = 1, nfabor
     icodcl(ifac,ivart) = 5
   elseif (isothm(ifac).eq.iprefl) then
     icodcl(ifac,ivart) = 5
-    propfb(ifac,ipprob(ieps)) = 0.d0
+    beps(ifac) = 0.d0
   elseif (isothm(ifac).eq.ifgrno) then
     icodcl(ifac,ivart) = 5
   elseif (isothm(ifac).eq.ifrefl) then
     icodcl(ifac,ivart) = 3
-    propfb(ifac,ipprob(ieps)) = 0.d0
+    beps(ifac) = 0.d0
   endif
 enddo
 
@@ -540,8 +543,8 @@ if (abs(iscsth(iscalt)).eq.1) then
  ( nvar   , nscal  ,                                              &
    mode   ,                                                       &
    itypfb ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   propfb(1,ipprob(itparo)) , thwall , tempk  )
+   dt     , rtp    , rtpa   , propce ,                            &
+   tparo  , thwall , tempk  )
       ! Resultat : T en K
 
     else
@@ -550,8 +553,8 @@ if (abs(iscsth(iscalt)).eq.1) then
       !==========
  ( mode   ,                                                       &
    itypfb ,                                                       &
-   rtp    , rtpa   , propce , propfb ,                            &
-   propfb(1,ipprob(itparo)) , thwall , tempk  )
+   rtp    , rtpa   , propce ,                                     &
+   tparo  , thwall , tempk  )
       ! Resultat : T en K
 
     endif
@@ -577,9 +580,9 @@ if (ideb.eq.1) then
 
   do ifac = 1, nfabor
     if (isothm(ifac).ne.-1) then
-      propfb(ifac,ipprob(ifconv)) =                               &
-      propfb(ifac,ipprob(ihconv))*(tempk(ifabor(ifac))-           &
-      propfb(ifac,ipprob(itparo)))
+      bfconv(ifac) =                               &
+      bhconv(ifac)*(tempk(ifabor(ifac))-           &
+      tparo(ifac))
     endif
   enddo
 
@@ -600,21 +603,16 @@ if (ideb.eq.1) then
 
 endif
 
-if(ideb.eq.0) then
+if (ideb.eq.0) then
 
   call raypar &
   !==========
- ( nvar   , nscal  ,                                              &
-   itypfb ,                                                       &
-   icodcl , isothm , izfrad ,                                     &
+ ( isothm , izfrad ,                                              &
    tmin   , tmax   , tx     ,                                     &
-   dt     , rtp    , rtpa   , propce , propfb , rcodcl ,          &
-   coefa  , coefb  ,                                              &
-   propfb(1,ipprob(itparo)) , propfb(1,ipprob(iqinci)) ,          &
-   text   , tint   ,                                              &
-   propfb(1,ipprob(ixlam))  , propfb(1,ipprob(iepa))   ,          &
-   propfb(1,ipprob(ieps))   , propfb(1,ipprob(ihconv)) ,          &
-   propfb(1,ipprob(ifconv)) , tempk  )
+   rcodcl ,                                                       &
+   tparo  , bqinci , text   , tint   ,                            &
+   bxlam  , bepa   , beps   , bhconv ,                            &
+   bfconv , tempk  )
 
 endif
 
@@ -639,14 +637,14 @@ if (abs(iscsth(iscalt)).eq.1) then
     if (isothm(ifac).eq.itpimp .or.                             &
         isothm(ifac).eq.ipgrno .or.                             &
         isothm(ifac).eq.ifgrno) then
-      rcodcl(ifac,ivart,1) = propfb(ifac,ipprob(itparo))+xmtk
+      rcodcl(ifac,ivart,1) = tparo(ifac)+xmtk
       rcodcl(ifac,ivart,2) = rinfin
       rcodcl(ifac,ivart,3) = 0.d0
 
     elseif (isothm(ifac).eq.iprefl) then
       rcodcl(ifac,ivart,1) = text(ifac)+xmtk
-      rcodcl(ifac,ivart,2) = propfb(ifac,ipprob(ixlam))/        &
-                              propfb(ifac,ipprob(iepa))
+      rcodcl(ifac,ivart,2) = bxlam(ifac)/        &
+                              bepa(ifac)
       rcodcl(ifac,ivart,3) = 0.d0
 
     elseif (isothm(ifac).eq.ifrefl) then
@@ -686,8 +684,8 @@ elseif (iscsth(iscalt).eq.2) then
     ( nvar   , nscal  ,                                              &
       mode   ,                                                       &
       itypfb ,                                                       &
-      dt     , rtp    , rtpa   , propce , propfb ,                   &
-      propfb(1,ipprob(itparo)) , propfb(1,ipprob(ifnet))  ,          &
+      dt     , rtp    , rtpa   , propce ,                            &
+      tparo  , bfnet  ,                                              &
       tempk  )
       ! HPAROI
 
@@ -697,8 +695,8 @@ elseif (iscsth(iscalt).eq.2) then
       !==========
     ( mode   ,                                                       &
       itypfb ,                                                       &
-      rtp    , rtpa   , propce , propfb ,                            &
-      propfb(1,ipprob(itparo)) , propfb(1,ipprob(ifnet))  ,          &
+      rtp    , rtpa   , propce ,                                     &
+      tparo  , bfnet  ,                                              &
       tempk  )
       ! HPAROI
 
@@ -723,7 +721,7 @@ elseif (iscsth(iscalt).eq.2) then
     ( nvar   , nscal  ,                                              &
       mode   ,                                                       &
       itypfb ,                                                       &
-      dt     , rtp    , rtpa   , propce , propfb ,                   &
+      dt     , rtp    , rtpa   , propce ,                            &
       text   , thwall , tempk  )
       ! HEXT
 
@@ -733,7 +731,7 @@ elseif (iscsth(iscalt).eq.2) then
       !==========
     ( mode   ,                                                       &
       itypfb ,                                                       &
-      rtp    , rtpa   , propce , propfb ,                            &
+      rtp    , rtpa   , propce ,                                     &
       text   , thwall , tempk  )
       ! HEXT
 
@@ -746,7 +744,7 @@ elseif (iscsth(iscalt).eq.2) then
     if (isothm(ifac).eq.itpimp.or.                              &
         isothm(ifac).eq.ipgrno.or.                              &
         isothm(ifac).eq.ifgrno) then
-      rcodcl(ifac,ivart,1) = propfb(ifac,ipprob(ifnet))
+      rcodcl(ifac,ivart,1) = bfnet(ifac)
       rcodcl(ifac,ivart,2) = rinfin
       rcodcl(ifac,ivart,3) = 0.d0
 
@@ -754,8 +752,7 @@ elseif (iscsth(iscalt).eq.2) then
 
       rcodcl(ifac,ivart,1) = thwall(ifac)
       ! hext
-      rcodcl(ifac,ivart,2) =  propfb(ifac,ipprob(ixlam))     &
-                           / (propfb(ifac,ipprob(iepa)))
+      rcodcl(ifac,ivart,2) =  bxlam(ifac) / (bepa(ifac))
       rcodcl(ifac,ivart,3) = 0.d0
 
     elseif (isothm(ifac).eq.ifrefl) then

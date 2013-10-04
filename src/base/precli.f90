@@ -49,7 +49,6 @@
 !>                                 (input mass flux blocked to 0)
 !>                               - 13 Dirichlet for the advection operator and
 !>                                    Neumann for the diffusion operator
-!> \param[in]     propfb        physical properties at boundary face centers
 !> \param[out]    rcodcl        boundary condition values:
 !>                               - rcodcl(1) value of the dirichlet
 !>                               - rcodcl(2) value of the exterior exchange
@@ -69,7 +68,6 @@
 subroutine precli &
  ( nvar   , nscal  ,                                              &
    icodcl ,                                                       &
-   propfb ,                                                       &
    rcodcl )
 
 !===============================================================================
@@ -99,7 +97,6 @@ integer          nvar   , nscal
 
 integer          icodcl(nfabor,nvarcl)
 
-double precision propfb(nfabor,*)
 double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
@@ -170,7 +167,7 @@ endif
 ! POUR LES PHYSIQUES PARTICULIERES
 
 if (ippmod(iphpar).ge.1) then
-  call ppprcl(nvar, izfppp, propfb, rcodcl)
+  call ppprcl(nvar, izfppp, rcodcl)
   !==========
 endif
 

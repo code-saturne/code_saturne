@@ -120,6 +120,7 @@ use cpincl
 use ppincl
 use ppcpfu
 use field
+
 !===============================================================================
 
 implicit none
@@ -136,7 +137,6 @@ double precision rtp(ncelet,*), propce(ncelet,*)
 double precision rom1(ncelet)
 
 ! Local variables
-character*80     name
 
 integer          iel , ii , icha ,ice , icla
 integer          ipcyf1,ipcyf2,ipcyf3,ipcyf4,ipcyf5,ipcyf6,ipcyf7

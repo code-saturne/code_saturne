@@ -23,8 +23,8 @@
 subroutine resalp &
 !================
 
- ( nvar   , nscal  ,                                              &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
+ ( nvar   ,                                                       &
+   rtp    , rtpa   , propce ,                                     &
    coefa  , coefb  )
 
 !===============================================================================
@@ -40,14 +40,11 @@ subroutine resalp &
 !    nom           !type!mode !                   role                         !
 !__________________!____!_____!________________________________________________!
 ! nvar             ! e  ! <-- ! nombre total de variables                      !
-! nscal            ! e  ! <-- ! nombre total de scalaires                      !
 ! dt(ncelet)       ! tr ! <-- ! pas de temps                                   !
 ! rtp, rtpa        ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
 ! propce           ! tr ! <-- ! proprietes physiques au centre des             !
 ! (ncelet,*)       !    !     !    cellules                                    !
-! propfb           ! tr ! <-- ! proprietes physiques au centre des             !
-!  (nfabor,*)      !    !     !    faces de bord                               !
 ! coefa, coefb     ! tr ! <-- ! conditions aux limites aux                     !
 !  (nfabor,*)      !    !     !    faces de bord                               !
 !__________________!____!_____!________________________________________________!
@@ -82,19 +79,19 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
+integer          nvar
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(ndimfb,*)
+double precision rtp(ncelet,*), rtpa(ncelet,*)
+double precision propce(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 
 ! Local variables
 
 integer          ivar  , iel
 integer          iclvar, iclvaf
-integer          ipcrom, ipcroo, ipcvis, ipcvlo, ipcvst, ipcvso
+integer          ipcvis, ipcvlo, ipcvst
 integer          iflmas, iflmab
-integer          nswrgp, imligp, iwarnp, iphydp, ipp
+integer          nswrgp, imligp, iwarnp, ipp
 integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
@@ -114,6 +111,7 @@ double precision, allocatable, dimension(:) :: smbr, rovsdt
 double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: dpvar
 double precision, dimension(:), pointer :: imasfl, bmasfl
+double precision, dimension(:), pointer ::  crom
 
 !===============================================================================
 
@@ -125,7 +123,7 @@ allocate(smbr(ncelet), rovsdt(ncelet), w1(ncelet))
 allocate(viscf(nfac), viscb(nfabor))
 allocate(dpvar(ncelet))
 
-ipcrom = ipproc(irom)
+call field_get_val_s(icrom, crom)
 ipcvis = ipproc(iviscl)
 ipcvst = ipproc(ivisct)
 
@@ -158,12 +156,8 @@ endif
 
 thetv  = thetav(ivar)
 
-ipcroo = ipcrom
 ipcvlo = ipcvis
 if(isto2t.gt.0) then
-  if (iroext.gt.0) then
-    ipcroo = ipproc(iroma)
-  endif
   if(iviext.gt.0) then
     ipcvlo = ipproc(ivisla)
   endif
@@ -195,7 +189,7 @@ endif
 do iel=1,ncel
 
   xk = d1s2*(rtpa(iel,ir11)+rtpa(iel,ir22)+rtpa(iel,ir33))
-  xnu  = propce(iel,ipcvis)/propce(iel,ipcrom)
+  xnu  = propce(iel,ipcvis)/crom(iel)
 
   ! Echelle de longueur integrale
   xllke = xk**d3s2/rtpa(iel,iep)
@@ -283,8 +277,8 @@ call codits &
 ! 3. Clipping
 !===============================================================================
 
-   call clpalp(ncelet, ncel, nvar, rtpa, rtp)
-   !==========
+call clpalp(ncelet, ncel, nvar, rtp)
+!==========
 
 ! Free memory
 deallocate(smbr, rovsdt, w1)

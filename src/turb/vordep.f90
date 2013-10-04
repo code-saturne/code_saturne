@@ -24,7 +24,7 @@ subroutine vordep &
 !================
 
  ( ncevor , nvor   , ient   , dtref  ,                            &
-   ivocel , yzc    , xu     , xv     , xw     ,                   &
+   ivocel , yzc    , xv     , xw     ,                            &
    yzv    , yzva   , xsignv , xtps   , xtpsli )
 
 !===============================================================================
@@ -49,7 +49,6 @@ subroutine vordep &
 !     (nvomax)     !    !     ! face donnee                                    !
 ! yzc              ! tr ! <-- ! coordonnees des faces d'entree dans            !
 !   (icvmax ,2)    !    !     ! le referentiel local                           !
-! xu(icvmax)       ! tr ! --- ! composante de vitesse principale               !
 ! xv(icvmax)       ! tr ! <-- ! composantes de vitesse transverses             !
 ! xw(icvmax)       ! tr ! <-- !                                                !
 ! yzv              ! tr ! --> ! nouvelles coordonnees du centre                !
@@ -90,7 +89,7 @@ integer          ivocel(nvomax)
 
 double precision dtref
 double precision yzc(icvmax ,2)
-double precision xu(icvmax)      , xv(icvmax)      , xw(icvmax)
+double precision xv(icvmax)      , xw(icvmax)
 double precision yzv(nvomax,2) , yzva(nvomax,2)
 double precision xsignv(nvomax)
 double precision xtps(nvomax)   , xtpsli(nvomax)

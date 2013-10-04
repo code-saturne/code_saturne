@@ -24,12 +24,12 @@ subroutine atmcls &
 !================
 
  ( ifac   , iel    ,                                              &
-   uk     , utau   , yplus  ,                                     &
+   utau   , yplus  ,                                              &
    uet    ,                                                       &
    gredu  , q0     , e0     , rib    , lmo    ,                   &
    cfnnu ,  cfnns  , cfnnk  , cfnne  ,                            &
    icodcl ,                                                       &
-   dt     , rtp    , rcodcl )
+   rtp    , rcodcl )
 
 !===============================================================================
 ! FUNCTION :
@@ -46,7 +46,6 @@ subroutine atmcls &
 ! ifac             ! e  ! <-- ! face de bord traitee                           !
 ! iel              ! e  ! <-- ! cellule de bord en regard de la face           !
 !                  !    !     !  traitee                                       !
-! uk               ! r  ! <-- ! vitesse de frottement cf entete                !
 ! utau             ! r  ! <-- ! vitesse moyenne tangentielle                   !
 ! yplus            ! r  ! <-- ! distance adim a la paroi                       !
 !                  !    !     !  calculee au moyen de uk                       !
@@ -65,7 +64,6 @@ subroutine atmcls &
 !                  !    !     ! = 6   -> rugosite et u.n=0 (vitesse)           !
 !                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
 !                  !    !     !  entrante eventuelle     bloquee               !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
 ! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
@@ -117,11 +115,11 @@ integer          ifac   , iel
 
 integer          icodcl(nfabor,nvarcl)
 
-double precision uk, utau, yplus, uet
+double precision utau, yplus, uet
 double precision gredu, rib, lmo, q0, e0
 double precision cfnnu, cfnns, cfnnk,cfnne
 
-double precision dt(ncelet), rtp(ncelet,*)
+double precision rtp(ncelet,*)
 double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables

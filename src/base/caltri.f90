@@ -119,7 +119,6 @@ integer, allocatable, dimension(:) :: isostd
 double precision, allocatable, dimension(:) :: ra
 
 double precision, allocatable, dimension(:,:) :: coefa, coefb
-double precision, allocatable, dimension(:,:) :: propfb
 double precision, allocatable, dimension(:,:) :: frcxt
 double precision, allocatable, dimension(:) :: prhyd
 
@@ -244,7 +243,7 @@ call  uskpdc &
   ncepdc , iappel ,                                              &
   ivoid  , izcpdc ,                                              &
   rvoid  , rvoid  , rvoid  ,                                     &
-  rvoid  , propfb ,                                              &
+  rvoid  ,                                                       &
   rvoid  )
 
 ! Total number of cells with head-loss
@@ -270,7 +269,7 @@ call ustsma &
   ivoid  ,                                                       &
   ivoid  , ivoid  , izctsm ,                                     &
   rvoid  , rvoid  ,                                              &
-  rvoid  , propfb ,                                              &
+  rvoid  ,                                                       &
   ckupdc , rvoid  )
 
 ! Total number of cells with mass source term
@@ -296,8 +295,7 @@ call uspt1d &
    rvoid  , rvoid  , rvoid  ,                                     &
    rvoid  , rvoid  , rvoid  ,                                     &
    rvoid  , rvoid  , rvoid  ,                                     &
-   rvoid  , rvoid  ,                                              &
-   rvoid  , propfb )
+   rvoid  , rvoid  )
 
 nfpt1t = nfpt1d
 if (irangp.ge.0) then
@@ -365,7 +363,6 @@ allocate(ra(ifinra))
 
 ! Allocate other main arrays
 allocate(coefa(nfabor,ncofab), coefb(nfabor,ncofab))
-allocate(propfb(nfabor,nprofb))
 
 if (iphydr.eq.1) then
   allocate(isostd(nfabor+1))
@@ -462,7 +459,7 @@ call iniva0 &
 !==========
  ( nvar   , nscal  , ncofab ,                                     &
    ra(idt)    , ra(itpuco) , ra(irtp) ,                           &
-   ra(ipropc) , propfb ,                                          &
+   ra(ipropc) ,                                                   &
    coefa  , coefb  ,                                              &
    frcxt  , prhyd  )
 
@@ -475,7 +472,7 @@ if (isuite.eq.1) then
   call lecamo &
   !==========
  ( ncelet , ncel   , nfabor , nvar   , nscal  ,                   &
-   ra(idt)   , ra(irtp) , ra(ipropc) , propfb ,                   &
+   ra(idt)   , ra(irtp) , ra(ipropc) ,                            &
    coefa  , coefb  , frcxt  , prhyd  )
 
   ! Using ALE, geometric parameters must be recalculated
@@ -504,10 +501,9 @@ endif
 
 call inivar &
 !==========
- ( nvar   , nscal  , ncofab ,                                     &
+ ( nvar   , nscal  ,                                              &
    ra(idt)    , ra(irtp) ,                                        &
-   ra(ipropc) , propfb ,                                          &
-   coefa  , coefb  )
+   ra(ipropc) )
 
 !===============================================================================
 ! Radiative transfer: possible restart
@@ -515,10 +511,8 @@ call inivar &
 
 if (iirayo.gt.0 .and. isuird.eq.1) then
 
-  call raylec                                                     &
+  call raylec(ncelet, ra(ipropc))
   !==========
- ( ndim   , ncelet , ncel   , nfac   , nfabor ,                   &
-   ra(ipropc) , propfb )
 
 endif
 
@@ -562,8 +556,7 @@ if (nfpt1t.gt.0) then
    tppt1d , rgpt1d , eppt1d ,                                     &
    tept1d , hept1d , fept1d ,                                     &
    xlmbt1 , rcpt1d , dtpt1d ,                                     &
-   ra(idt)    , ra(irtpa) ,                                       &
-   ra(ipropc) , propfb )
+   ra(idt)    , ra(irtpa) )
 
   iappel = 2
   call vert1d &
@@ -656,7 +649,7 @@ if(ncpdct.gt.0) then
   ncepdc , iappel ,                                              &
   icepdc , izcpdc ,                                              &
   ra(idt)    , ra(irtpa) , ra(irtp)   ,                          &
-  ra(ipropc) , propfb ,                                          &
+  ra(ipropc) ,                                                   &
   ckupdc )
 
 endif
@@ -677,7 +670,7 @@ if(nctsmt.gt.0) then
   icepdc ,                                                       &
   icetsm , itypsm , izctsm ,                                     &
   ra(idt)    , ra(irtpa) ,                                       &
-  ra(ipropc) , propfb ,                                          &
+  ra(ipropc) ,                                                   &
   ckupdc , smacel )
 
 endif
@@ -699,7 +692,7 @@ if (ivrtex.eq.1) then
  ( nvar   , nscal  ,                                              &
    iappel ,                                                       &
    ra(idt)    , ra(irtpa) ,                                       &
-   ra(ipropc) , propfb )
+   ra(ipropc) )
 
   call vorver ( nfabor , iappel )
   !==========
@@ -827,7 +820,7 @@ call tridim                                                       &
    nvar   , nscal  ,                                              &
    isostd ,                                                       &
    ra(idt)    , ra(itpuco) , ra(irtpa) , ra(irtp)  ,              &
-   ra(ipropc) , propfb ,                                          &
+   ra(ipropc) ,                                                   &
    tslagr , coefa  , coefb  ,                                     &
    frcxt  , prhyd  )
 
@@ -859,7 +852,7 @@ if (iilagr.gt.0 .and. inpdt0.eq.0 .and. itrale.gt.0) then
    icocel , itycel , ifrlag , itepa  ,                            &
    dlgeo  ,                                                       &
    ra(idt)    , ra(irtpa) , ra(irtp) ,                            &
-   ra(ipropc) , propfb ,                                          &
+   ra(ipropc) ,                                                   &
    coefa  , coefb  ,                                              &
    ettp   , ettpa  , tepa   , statis , stativ , tslagr , parbor )
 
@@ -887,7 +880,7 @@ if (itrale.gt.0) then
    nbpmax , nvp    , nvep   , nivep  , ntersl , nvlsta , nvisbr , &
    itepa  ,                                                       &
    ra(idt)    , ra(irtpa) , ra(irtp) ,                            &
-   ra(ipropc) , propfb ,                                          &
+   ra(ipropc) ,                                                   &
    ettp   , ettpa  , tepa   , statis , stativ , tslagr , parbor )
 
 endif
@@ -962,7 +955,7 @@ if (iisuit.eq.1) then
   !==========
  ( ndim   , ncelet , ncel   , nfabor  , nvar   , nscal  ,         &
    xyzcen , cdgfbo ,                                              &
-   ra(idt)    , ra(irtp) , ra(ipropc) , propfb ,                  &
+   ra(idt)    , ra(irtp) , ra(ipropc) ,                           &
    coefa  , coefb  , frcxt  , prhyd  )
 
   if (nfpt1t.gt.0) then
@@ -981,7 +974,7 @@ if (iisuit.eq.1) then
 
   if (ippmod(iaeros).ge.0) then
      ficsui = 'cooling_towers'
-     call ecrctw ( ficsui , len(ficsui) )
+     call ecrctw (ficsui , len(ficsui))
      !==========
   endif
 
@@ -989,22 +982,17 @@ if (iisuit.eq.1) then
 
     call lagout                                                      &
     !==========
-    ( lndnod ,                                                       &
-      nvar   , nscal  ,                                              &
-      nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+    ( nbpmax , nvp    , nvep   , nivep  ,                            &
       ntersl , nvlsta , nvisbr ,                                     &
-      icocel , itycel , itepa  ,                                     &
-      ra(idt)    , ra(irtpa) , ra(irtp) ,                            &
-      ra(ipropc) , propfb ,                                          &
-      coefa  , coefb  ,                                              &
+      itepa  ,                                                       &
+      ra(ipropc) ,                                                   &
       ettp   , tepa   , parbor , statis , stativ , tslagr )
 
   endif
 
   if (iirayo.gt.0) then
-    call rayout                                                   &
+    call rayout(ra(ipropc))
     !==========
- ( ra(irtpa) , ra(irtp) , ra(ipropc) , propfb )
   endif
 
   call dmtmps(tecrf2)
@@ -1045,10 +1033,9 @@ call pstvar                                                       &
  ( ntcabs ,                                                       &
    nvar   , nscal  , nvlsta , nvisbr ,                            &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   ttcabs ,                                                       &
    itepa  ,                                                       &
    ra(idt)    , ra(irtpa) , ra(irtp) ,                            &
-   ra(ipropc) , propfb    ,                                       &
+   ra(ipropc) ,                                                   &
    statis , stativ , parbor )
 
 !===============================================================================
@@ -1092,7 +1079,7 @@ call ushist                                                       &
 !==========
  ( nvar   , nscal  ,                                              &
    ra(idt)    , ra(irtpa) , ra(irtp) ,                            &
-   ra(ipropc) , propfb )
+   ra(ipropc) )
 
 
 !===============================================================================
@@ -1196,7 +1183,6 @@ deallocate(ra)
 
 ! Free other main arrays
 deallocate(coefa, coefb)
-deallocate(propfb)
 
 if (iphydr.eq.1) then
   deallocate(isostd)

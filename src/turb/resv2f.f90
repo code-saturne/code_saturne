@@ -25,7 +25,7 @@ subroutine resv2f &
 
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   dt     , rtp    , rtpa   , propce ,                            &
    coefa  , coefb  , ckupdc , smacel ,                            &
    prdv2f )
 
@@ -57,7 +57,6 @@ subroutine resv2f &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
 ! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
@@ -104,7 +103,7 @@ integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(ndimfb,*)
+double precision propce(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision prdv2f(ncelet)
@@ -117,7 +116,7 @@ integer          iiun
 integer          iclvar, iclvaf
 integer          iclk  , iclphi, iclfb , iclal
 integer          iclkf , iclphf, iclfbf, iclalf
-integer          ipcrom, ipcroo, ipcvis, ipcvlo, ipcvst, ipcvso
+integer          ipcvis, ipcvlo, ipcvst, ipcvso
 integer          iflmas, iflmab
 integer          nswrgp, imligp, iwarnp, iphydp
 integer          iconvp, idiffp, ndircp, ireslp
@@ -144,6 +143,7 @@ double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4, w5
 double precision, allocatable, dimension(:) :: dpvar
 double precision, dimension(:), pointer :: imasfl, bmasfl
+double precision, dimension(:), pointer :: crom, cromo
 
 !===============================================================================
 
@@ -168,7 +168,7 @@ allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 allocate(w4(ncelet), w5(ncelet))
 allocate(dpvar(ncelet))
 
-ipcrom = ipproc(irom  )
+call field_get_val_s(icrom, crom)
 ipcvis = ipproc(iviscl)
 ipcvst = ipproc(ivisct)
 call field_get_key_int(ivarfl(iu), kimasf, iflmas)
@@ -247,7 +247,7 @@ extrap = extrag(ivar )
 call grdcel &
 !==========
  ( ik  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
+   iwarnp , nfecra, epsrgp , climgp , extrap ,                    &
    rtpa(1,ik)   , coefa(1,iclk) , coefb(1,iclk) ,                 &
    gradk  )
 
@@ -283,11 +283,12 @@ endif
 thets  = thetst
 thetv  = thetav(ivar )
 
-ipcroo = ipcrom
 ipcvlo = ipcvis
+
+call field_get_val_s(icrom, cromo)
 if(isto2t.gt.0) then
   if (iroext.gt.0) then
-    ipcroo = ipproc(iroma)
+    call field_get_val_prev_s(icrom, cromo)
   endif
   if(iviext.gt.0) then
     ipcvlo = ipproc(ivisla)
@@ -310,7 +311,7 @@ call ustsv2                                                       &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce , propfb ,                            &
+   dt     , rtpa   , propce ,                                     &
    ckupdc , smacel , prdv2f , w1     ,                            &
    smbr   , rovsdt )
 
@@ -409,7 +410,7 @@ call itrgrp &
 do iel=1,ncel
   xk = rtpa(iel,ik)
   xe = rtpa(iel,iep)
-  xnu  = propce(iel,ipcvlo)/propce(iel,ipcroo)
+  xnu  = propce(iel,ipcvlo)/cromo(iel)
   ttke = xk / xe
   if(iturb.eq.50) then
     ttmin = cv2fct*sqrt(xnu/xe)
@@ -419,7 +420,7 @@ do iel=1,ncel
     w3(iel) = sqrt(ttke**2 + ttmin**2)
   endif
 
-  xnu  = propce(iel,ipcvis)/propce(iel,ipcrom)
+  xnu  = propce(iel,ipcvis)/crom(iel)
   llke = xk**d3s2/xe
   if(iturb.eq.50) then
     llmin = cv2fet*(xnu**3/xe)**d1s4
@@ -434,7 +435,7 @@ enddo
 !     W2 est deja multiplie par le volume et contient deja
 !     un signe "-" (issu de ITRGRP)
 do iel = 1, ncel
-    xrom = propce(iel,ipcroo)
+    xrom = cromo(iel)
     xnu  = propce(iel,ipcvlo)/xrom
     xk = rtpa(iel,ik)
     xe = rtpa(iel,iep)
@@ -553,12 +554,8 @@ endif
 thets  = thetst
 thetv  = thetav(ivar )
 
-ipcroo = ipcrom
 ipcvso = ipcvst
 if(isto2t.gt.0) then
-  if (iroext.gt.0) then
-    ipcroo = ipproc(iroma)
-  endif
   if(iviext.gt.0) then
     ipcvso = ipproc(ivista)
   endif
@@ -580,7 +577,7 @@ call ustsv2                                                       &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce , propfb ,                            &
+   dt     , rtpa   , propce ,                                     &
    ckupdc , smacel , prdv2f , w1     ,                            &
    smbr   , rovsdt )
 
@@ -648,7 +645,7 @@ endif
 
 do iel = 1, ncel
   rovsdt(iel) = rovsdt(iel)                                       &
-           + istat(ivar)*(propce(iel,ipcrom)/dt(iel))*volume(iel)
+           + istat(ivar)*(crom(iel)/dt(iel))*volume(iel)
 enddo
 
 !===============================================================================
@@ -666,7 +663,7 @@ enddo
 do iel = 1, ncel
   xk = rtpa(iel,ik)
   xe = rtpa(iel,iep)
-  xrom = propce(iel,ipcroo)
+  xrom = cromo(iel)
   xnu  = propce(iel,ipcvlo)/xrom
   if(iturb.eq.50) then
 !     Le terme en f_barre est pris en RTP et pas en RTPA ... a priori meilleur
@@ -705,7 +702,7 @@ endif
 
 !     Terme implicite
 do iel = 1, ncel
-  xrom = propce(iel,ipcroo)
+  xrom = cromo(iel)
   if(iturb.eq.50) then
     smbr(iel) = smbr(iel)                                         &
          - volume(iel)*prdv2f(iel)*rtpa(iel,iphi)/rtpa(iel,ik)
@@ -725,7 +722,7 @@ else
   thetap = 1.d0
 endif
 do iel = 1, ncel
-  xrom = propce(iel,ipcroo)
+  xrom = cromo(iel)
   if(iturb.eq.50) then
     rovsdt(iel) = rovsdt(iel)                                     &
          + volume(iel)*prdv2f(iel)/rtpa(iel,ik)*thetap

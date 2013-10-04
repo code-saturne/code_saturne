@@ -102,7 +102,7 @@ use ppppar
 use ppthch
 use ppincl
 use coincl
-
+use field
 !===============================================================================
 
 implicit none
@@ -124,7 +124,7 @@ double precision propce(ncelet,*)
 integer          iel, igg, idirac
 integer          mode
 
-integer          ipctem, ipcmam,  ipcrom
+integer          ipctem, ipcmam
 integer          ipampl(ndracm), ipfmel(ndracm)
 integer          ipfmal(ndracm), ipteml(ndracm)
 integer          ipmaml(ndracm)
@@ -175,7 +175,7 @@ double precision mxcoyf, mncoyf
 double precision mcy2p1, mcy2p3
 double precision mcy2p2, mcy2p4
 double precision my2p1 , my2p3, my2p2, my2p4
-
+double precision, dimension(:), pointer ::  crom
 integer ipass
 data    ipass /0/
 save    ipass
@@ -201,7 +201,7 @@ ipcoxy = ipproc(iym(2))
 ipcpro = ipproc(iym(3))
 ipctsc = ipproc(itsc)
 ipctem = ipproc(itemp)
-ipcrom = ipproc(irom)
+call field_get_val_s(icrom, crom)
 ipcmam = ipproc(imam)
 
 !      IF ( IIRAYO.GT.0 ) THEN
@@ -415,7 +415,7 @@ coyfpp=coyfp(iel)
 
     if ( ipass.gt.1.or.                                           &
         (isuite.eq.1.and.initro.eq.1) ) then
-      propce(iel,ipcrom) = srrom*propce(iel,ipcrom)               &
+      crom(iel) = srrom*crom(iel)               &
            +(1.d0-srrom)*(p0/(rr*temsmm))
     endif
 
@@ -824,7 +824,7 @@ coyfpp=coyfp(iel)
 
   if ( ipass.gt.1 .or.                                            &
       (isuite.eq.1.and.initro.eq.1) ) then
-    propce(iel,ipcrom) = srrom * propce(iel,ipcrom)               &
+    crom(iel) = srrom * crom(iel)               &
          + (1.d0-srrom) * (p0/(rr*temsmm))
   endif
 

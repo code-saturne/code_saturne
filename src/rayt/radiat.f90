@@ -59,7 +59,7 @@ module radiat
                     iabs(1+nclcpm)  , iemi(1+nclcpm)  , icak(1+nclcpm)  ,    &
                     ilumin
 
-  !--> pointeur dans le macrotableau PROPFB :
+  !--> field ids for specific  boundary fields
   !                       ITPARO --> temperature de paroi
   !                       IQINCI --> densite de flux incident radiatif
   !                       IXLAM  --> conductivite thermique de la paroi
@@ -69,8 +69,14 @@ module radiat
   !                       IFCONV --> Flux Convectif
   !                       IHCONV --> Coef d'echange fluide
 
-  integer, save ::  itparo, iqinci, ixlam, iepa, ieps, ifnet,               &
-                    ifconv, ihconv
+  integer, save ::  itparo = -1
+  integer, save ::  iqinci = -1
+  integer, save ::  ixlam  = -1
+  integer, save ::  iepa   = -1
+  integer, save ::  ieps   = -1
+  integer, save ::  ifnet  = -1
+  integer, save ::  ifconv = -1
+  integer, save ::  ihconv = -1
 
   !--> XNP1MX : pour le modele P-1,
   !     pourcentage de cellules pour lesquelles on admet que l'epaisseur

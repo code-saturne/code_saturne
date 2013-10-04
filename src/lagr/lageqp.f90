@@ -23,9 +23,7 @@
 subroutine lageqp &
 !================
 
- ( nvar   , nscal  ,                                              &
-   dt     ,                                                       &
-   ul     , vl     , wl     , alphal , phi    )
+ ( ul     , vl     , wl     , alphal , phi    )
 
 !===============================================================================
 ! FONCTION :
@@ -43,10 +41,6 @@ subroutine lageqp &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
 ! ul,vl,wl(ncelet) ! tr ! <-- ! vitesse lagrangien                             !
 ! alphal(ncelet)   ! tr ! <-- ! taux de presence                               !
 ! phi(ncelet)      ! tr ! --> ! terme de correction                            !
@@ -79,12 +73,8 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-
-
 double precision ul(ncelet), vl(ncelet), wl(ncelet)
 double precision phi(ncelet), alphal(ncelet)
-double precision dt(ncelet)
 
 ! Local variables
 
@@ -191,9 +181,7 @@ enddo
 
 call diverv                                                       &
 !==========
- ( nvar   , nscal  ,                                              &
-   dt     ,                                                       &
-   smbrs  , w1     , w2     , w3     ,                            &
+ ( smbrs  , w1     , w2     , w3     ,                            &
    coefax , coefay , coefaz ,                                     &
    coefbx , coefby , coefbz )
 

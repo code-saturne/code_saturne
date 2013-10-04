@@ -29,7 +29,7 @@ subroutine uslaed &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  , ibord  ,                                              &
-   dt     , rtp    , propce , propfb ,                            &
+   dt     , rtp    , propce ,                                     &
    ettp   , ettpa  , tepa   , taup   , tlag   , tempct , tsvar  , &
    auxl1  , auxl2  , auxl3  )
 
@@ -95,8 +95,6 @@ subroutine uslaed &
 ! (ncelet,*)       !    !     ! and previous time step                         !
 ! propce           ! ra ! <-- ! physical properties at cell centers            !
 ! (ncelet,*)       !    !     !                                                !
-! propfb           ! ra ! <-- ! physical properties at boundary face centers   !
-!  (nfabor,*)      !    !     !                                                !
 ! ettp             ! ra ! <-- ! array of the variables associated to           !
 !  (nbpmax,nvp)    !    !     ! the particles at the current time step         !
 ! ettpa            ! ra ! <-- ! array of the variables associated to           !
@@ -149,7 +147,6 @@ integer          itepa(nbpmax,nivep)  , ibord(nbpmax)
 
 double precision dt(ncelet) , rtp(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfb(nfabor,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
 double precision taup(nbpmax) , tlag(nbpmax,3) , tempct(nbpmax,2)
@@ -280,7 +277,7 @@ subroutine uslafe &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  , ibord  ,                                              &
-   dt     , rtpa   , rtp    , propce , propfb ,                   &
+   dt     , rtpa   , rtp    , propce ,                            &
    ettp   , ettpa  , tepa   , statis , stativ ,                   &
    taup   , tlag   , piil   ,                                     &
    tsuf   , tsup   , bx     , tsfext ,                            &
@@ -327,8 +324,6 @@ subroutine uslafe &
 ! (ncelet,*)       !    !     ! the current and the previous time step         !
 ! propce           ! ra ! <-- ! physical properties at cell centers            !
 ! (ncelet,*)       !    !     !                                                !
-! propfb           ! ra ! <-- ! physical properties at boundary face centers   !
-!  (nfabor,*)      !    !     !                                                !
 ! ettp             ! ra ! <-- ! array of the variables associated to           !
 !  (nbpmax,nvp)    !    !     !                                                !
 ! ettpa            ! ra ! <-- ! array of the variables associated to           !
@@ -394,7 +389,6 @@ integer          itepa(nbpmax,nivep) , ibord(nbpmax)
 
 double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfb(nfabor,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
 double precision statis(ncelet,*),stativ(ncelet,*)
@@ -478,7 +472,7 @@ subroutine uslain &
    ntersl , nvlsta , nvisbr ,                                     &
    nptnew ,                                                       &
    itypfb , itrifb , itepa  , ifrlag , injfac ,                   &
-   dt     , rtpa   , propce , propfb ,                            &
+   dt     , rtpa   , propce ,                                     &
    ettp   , tepa   , vagaus , icocel , lndnod , itycel , dlgeo,   &
    ncmax  , nzmax  , iusloc )
 
@@ -527,8 +521,6 @@ subroutine uslain &
 ! (ncelet,*)       !    !     !                                                !
 ! propce           ! ra ! <-- ! physical properties at cell centers            !
 ! (ncelet,*)       !    !     !                                                !
-! propfb           ! ra ! <-- ! physical properties at boundary face centers   !
-!  (nfabor,*)      !    !     !                                                !
 ! ettp             ! ra ! <-- ! array of the variables associated to           !
 !  (nbpmax,nvp)    !    !     ! the particles at the current time step         !
 ! tepa             ! ra ! <-- ! particle information (real) (statis. weight..) !
@@ -588,7 +580,6 @@ integer          injfac(nbpmax)
 
 double precision dt(ncelet) , rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfb(nfabor,*)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision vagaus(nbpmax,*)
 integer          icocel(lndnod) ,  itycel(ncelet+1)
@@ -757,7 +748,7 @@ subroutine uslapr &
    itypfb , itrifb , itepa  , ifrlag ,                            &
    xxpart , yypart , zzpart ,                                     &
    tvpart , uupart , vvpart , wwpart , ddpart , ttpart  ,         &
-   dt     , rtpa   , propce , propfb ,                            &
+   dt     , rtpa   , propce ,                                     &
    ettp   , tepa   )
 
 !===============================================================================
@@ -817,8 +808,6 @@ subroutine uslapr &
 ! (ncelet,*)       !    !     ! time step                                      !
 ! propce           ! ra ! <-- ! physical properties at cell centers            !
 ! (ncelet,*)       !    !     !                                                !
-! propfb           ! ra ! <-- ! physical properties at boundary face centers   !
-!  (nfabor,*)      !    !     !                                                !
 ! ettp             ! ra ! <-- ! array of the variables associated to           !
 !  (nbpmax,nvp)    !    !     ! the particles at the current time step         !
 ! tepa             ! ra ! <-- ! particle information (real) (statis. weight..) !
@@ -870,7 +859,6 @@ double precision ddpart , ttpart
 
 double precision dt(ncelet) , rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfb(nfabor,*)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 
 ! Local variables
@@ -991,7 +979,7 @@ subroutine uslaru &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb , itepa  ,                                     &
-   dt     , rtpa   , propce , propfb ,                            &
+   dt     , rtpa   , propce ,                                     &
    ettp   , tepa   , vagaus , croule , auxl  ,                    &
    distpa , distyp )
 
@@ -1031,8 +1019,6 @@ subroutine uslaru &
 ! (ncelet,*)       !    !     ! the previous timestep                          !
 ! propce           ! ra ! <-- ! physical properties at cell centers            !
 ! (ncelet,*)       !    !     !                                                !
-! propfb           ! ra ! <-- ! physical properties at boundary face centers   !
-!  (nfabor,*)      !    !     !                                                !
 ! ettp             ! ra ! <-- ! array of the variables associated to           !
 !  (nbpmax,nvp)    !    !     ! the particles at the current time step         !
 ! tepa             ! ra ! <-- ! particle information (real) (statis. weight..) !
@@ -1082,7 +1068,6 @@ integer          itepa(nbpmax,nivep)
 
 double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfb(nfabor,*)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision vagaus(nbpmax,*) , croule(ncelet)
 double precision auxl(nbpmax,3)
@@ -1171,7 +1156,7 @@ subroutine uslast &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfb ,                   &
+   dt     , rtpa   , rtp    , propce ,                            &
    ettp   , ettpa  , tepa   , taup   , tlag   , tempct ,          &
    statis , stativ )
 
@@ -1233,8 +1218,6 @@ subroutine uslast &
 ! (ncelet,*)       !    !     ! the current and previous time step             !
 ! propce           ! ra ! <-- ! physical properties at cell centers            !
 ! (ncelet,*)       !    !     !                                                !
-! propfb           ! ra ! <-- ! physical properties at boundary face centers   !
-!  (nfabor,*)      !    !     !                                                !
 ! ettp             ! ra ! <-- ! array of the variables associated to           !
 !  (nbpmax,nvp)    !    !     ! the particles at the current time step         !
 ! ettpa            ! ra ! <-- ! array of the variables associated to           !
@@ -1289,7 +1272,6 @@ integer          itepa(nbpmax,nivep)
 
 double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfb(nfabor,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
 double precision taup(nbpmax) , tlag(nbpmax,3) , tempct(nbpmax,2)
@@ -1591,7 +1573,7 @@ subroutine uslatc &
    numpt  , itepa  ,                                              &
    rep    , uvwr   , romf   , romp   , xnul   ,                   &
    xcp    , xrkl   , tauc   ,                                     &
-   dt     , rtp    , propce , propfb ,                            &
+   dt     , rtp    , propce ,                                     &
    ettp   , ettpa  , tepa   )
 
 !===============================================================================
@@ -1687,8 +1669,6 @@ subroutine uslatc &
 ! (ncelet,*)       !    !     ! the current time step                          !
 ! propce           ! ra ! <-- ! physical properties at cell centers            !
 ! (ncelet,*)       !    !     !                                                !
-! propfb           ! ra ! <-- ! physical properties at boundary face centers   !
-!  (nfabor,*)      !    !     !                                                !
 ! ettp             ! ra ! <-- ! array of the variables associated to           !
 !  (nbpmax,nvp)    !    !     ! the particles at the current time step         !
 ! ettpa            ! ra ! <-- ! array of the variables associated to           !
@@ -1738,7 +1718,6 @@ double precision xcp    , xrkl   , tauc
 
 double precision dt(ncelet) , rtp(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfb(nfabor,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
 
@@ -1814,7 +1793,7 @@ subroutine uslatp &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    numpt  , itepa  ,                                              &
    rep    , uvwr   , romf   , romp   , xnul   , taup   ,          &
-   dt     , rtp    , propce , propfb ,                            &
+   dt     , rtp    , propce ,                                     &
    ettp   , ettpa  , tepa   )
 
 !===============================================================================
@@ -1893,8 +1872,6 @@ subroutine uslatp &
 ! (ncelet,*)       !    !     ! at the previous time step                      !
 ! propce           ! ra ! <-- ! physical properties at cell centers            !
 ! (ncelet,*)       !    !     !                                                !
-! propfb           ! ra ! <-- ! physical properties at boundary face centers   !
-!  (nfabor,*)      !    !     !                                                !
 ! ettp             ! ra ! <-- ! array of the variables associated to           !
 !  (nbpmax,nvp)    !    !     ! the particles at the current time step         !
 ! ettpa            ! ra ! <-- ! array of the variables associated to           !
@@ -1943,7 +1920,6 @@ double precision rep    , uvwr   , romf   , romp   , xnul  , taup
 
 double precision dt(ncelet) , rtp(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfb(nfabor,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
 

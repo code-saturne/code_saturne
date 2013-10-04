@@ -38,19 +38,18 @@
 !______________________________________________________________________________!
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
-!> \param[in]     ibrom         indicator of filling of romb array
+!> \param[in]     mbrom         indicator of filling of romb array
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     rtp, rtpa     calculated variables at cell centers
 !> \param[in]                    (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfb        physical properties at boundary face centers
 !_______________________________________________________________________________
 
 subroutine usphyv &
  ( nvar   , nscal  ,                                              &
-   ibrom  ,                                                       &
+   mbrom  ,                                                       &
    dt     , rtp    , rtpa   ,                                     &
-   propce , propfb )
+   propce )
 
 !===============================================================================
 
@@ -80,17 +79,16 @@ implicit none
 
 integer          nvar   , nscal
 
-integer          ibrom
+integer          mbrom
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfb(nfabor,*)
 
 ! Local variables
 
 !< [loc_var_dec]
 integer          ivart, iel, ifac
-integer          ipcrom, ipbrom, ipcvis, ipccp
+integer          ipcvis, ipccp
 integer          ipcvsl, ivar
 integer          f_id
 integer          iclapc, idecal

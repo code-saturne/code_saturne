@@ -26,7 +26,7 @@ subroutine ecrava &
  ( ndim   , ncelet , ncel   , nfabor ,                            &
    nvar   , nscal  ,                                              &
    xyzcen , cdgfbo ,                                              &
-   dt     , rtp    , propce , propfb ,                            &
+   dt     , rtp    , propce ,                                     &
    coefa  , coefb  , frcxt  , prhyd  )
 
 !===============================================================================
@@ -51,7 +51,6 @@ subroutine ecrava &
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant)                  !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
 ! frcxt(3,ncelet)  ! tr ! <-- ! force exterieure generant la pression          !
@@ -104,7 +103,6 @@ double precision xyzcen(ndim,ncelet)
 double precision cdgfbo(ndim,nfabor)
 double precision dt(ncelet), rtp(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision frcxt(3,ncelet), prhyd(ncelet)
 
@@ -590,16 +588,16 @@ if (iecaux.eq.1) then
     itysup = 1
     nbval  = 1
     irtyp  = 2
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                propce(1,ipproc(irom)))
+    call field_get_val_s(icrom, sval)
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,sval)
 
     !          Masse volumique - faces de bord
     rubriq = 'rho_fb_phase'//cphase
     itysup = 3
     nbval  = 1
     irtyp  = 2
-    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                propfb(1,ipprob(irom)))
+    call field_get_val_s(ibrom, sval)
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,sval)
   endif
 
   !     On n'ecrit les proprietes physiques que si on les extrapole.

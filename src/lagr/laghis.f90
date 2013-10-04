@@ -80,12 +80,11 @@ double precision stativ(ncelet,nvlsta-1)
 
 character        nomhis*300, nompre*300
 integer          ii, ii1, ii2, lpre, lnom, inam1, inam2, lng
-integer          icap, ncap, ipp, ipp2, nbpdte, jtcabs
+integer          icap, ncap, ipp
 integer          iel, ivarl, tplnum
 integer          ipas, ilpd1, il, ilfv1, icla
-integer          iokhis, iok2
+integer          iokhis
 
-double precision xtcabs
 double precision varcap(ncaptm)
 double precision dmoy
 

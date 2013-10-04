@@ -170,7 +170,7 @@ double precision xcpp(ncelet)
 
 character*80     chaine
 character*8      cnom
-integer          ifac,ii,jj,infac,iel,iupwin, iij, iii, ig, it
+integer          ifac,ii,jj,infac,iel,iupwin, ig, it
 integer          idimtr
 double precision pfac,pfacd,flui,fluj,flux,fluxi,fluxj
 double precision difx,dify,difz,djfx,djfy,djfz

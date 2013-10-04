@@ -96,7 +96,6 @@
 !> \param[in]     rtpa          calculated variables at cell centers
 !>                               (preceding time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfb        physical properties at boundary face centers
 !> \param[in]     ckupdc        head loss coefficient
 !> \param[in]     smacel        value associated to each variable in the mass
 !>                               source terms or mass rate (see \ref ustsma)
@@ -108,7 +107,7 @@ subroutine ustsnv &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce , propfb ,                            &
+   dt     , rtpa   , propce ,                                     &
    ckupdc , smacel ,                                              &
    crvexp , crvimp )
 
@@ -126,7 +125,7 @@ use cstphy
 use parall
 use period
 use mesh
-
+use field
 !===============================================================================
 
 implicit none
@@ -142,14 +141,13 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision crvexp(3,ncelet), crvimp(3,3,ncelet)
-
+double precision, dimension(:), pointer ::  crom
 ! Local variables
 
 character*80     chaine
-integer          iel, ipcrom, ipp
+integer          iel,  ipp
 double precision ckp, qdm
 
 integer, allocatable, dimension(:) :: lstelt
@@ -178,7 +176,7 @@ if (iwarni(ivar).ge.1) then
   write(nfecra,1000) chaine(1:8)
 endif
 
-ipcrom = ipproc(irom  )
+call field_get_val_s(icrom, crom)
 
 !===============================================================================
 ! 2. Example of arbitrary source term for component u:
@@ -216,7 +214,7 @@ ckp  = 10.d0
 qdm  = 100.d0
 
 do iel = 1, ncel
-  crvimp(1, 1, iel) = - volume(iel)*propce(iel, ipcrom)*ckp
+  crvimp(1, 1, iel) = - volume(iel)*crom(iel)*ckp
 enddo
 
 do iel = 1, ncel
@@ -252,7 +250,7 @@ subroutine ustssc &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , rtp    , propce , propfb ,                   &
+   dt     , rtpa   , rtp    , propce ,                            &
    ckupdc , smacel ,                                              &
    crvexp , crvimp )
 
@@ -360,7 +358,6 @@ subroutine ustssc &
 ! rtp              ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (current time step)                           !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! ckupdc(ncepdp,6) ! ra ! <-- ! head loss coefficient                          !
 ! smacel           ! ra ! <-- ! value associated to each variable in the mass  !
 !  (ncesmp,nvar)   !    !     !  source terms or mass rate (see ustsma)        !
@@ -385,7 +382,7 @@ use cstphy
 use parall
 use period
 use mesh
-
+use field
 !===============================================================================
 
 implicit none
@@ -401,20 +398,19 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision crvexp(ncelet), crvimp(ncelet)
 
 ! Local variables
 
 character*80     chaine
-integer          ivar, iiscvr, ipcrom, iel
+integer          ivar, iiscvr,  iel
 integer          ilelt, nlelt
 
 double precision tauf, prodf, volf, pwatt
 
 integer, allocatable, dimension(:) :: lstelt
-
+double precision, dimension(:), pointer ::  crom
 !===============================================================================
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
@@ -448,7 +444,7 @@ chaine = nomvar(ipprtp(ivar))
 iiscvr = iscavr(iscal)
 
 ! --- Index number of the density in the propce array
-ipcrom = ipproc(irom)
+call field_get_val_s(icrom, crom)
 
 if (iwarni(ivar).ge.1) then
   write(nfecra,1000) chaine(1:8)
@@ -497,11 +493,11 @@ if (iscal.eq.2) then
    prodf = 100.d0
 
    do iel = 1, ncel
-      crvimp(iel) = - volume(iel)*propce(iel,ipcrom)/tauf
+      crvimp(iel) = - volume(iel)*crom(iel)/tauf
    enddo
 
    do iel = 1, ncel
-      crvexp(iel) =   volume(iel)*propce(iel,ipcrom)*prodf
+      crvexp(iel) =   volume(iel)*crom(iel)*prodf
    enddo
 
 endif
@@ -591,7 +587,7 @@ subroutine ustske &
 
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce , propfb ,                            &
+   dt     , rtpa   , propce ,                                     &
    ckupdc , smacel , tinstk , divu   ,                            &
    crkexp , creexp , crkimp , creimp )
 
@@ -674,7 +670,6 @@ subroutine ustske &
 ! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (preceding time steps)                        !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! ckupdc(ncepdp,6) ! ra ! <-- ! head loss coefficient                          !
 ! smacel           ! ra ! <-- ! value associated to each variable in the mass  !
 !  (ncesmp,nvar)   !    !     !  source terms or mass rate (see ustsma)        !
@@ -703,7 +698,7 @@ use cstphy
 use parall
 use period
 use mesh
-
+use field
 !===============================================================================
 
 implicit none
@@ -718,7 +713,6 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision tinstk(ncelet), divu(ncelet)
 double precision crkexp(ncelet), crkimp(ncelet)
@@ -726,11 +720,11 @@ double precision creexp(ncelet), creimp(ncelet)
 
 ! Local variables
 
-integer          iel, ipcrom
+integer          iel
 double precision ff, tau, xx
 
 integer, allocatable, dimension(:) :: lstelt
-
+double precision, dimension(:), pointer ::  crom
 !===============================================================================
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
@@ -751,7 +745,7 @@ allocate(lstelt(ncel))
 
 
 ! --- Index number of the density in the propce array
-ipcrom = ipproc(irom)
+call field_get_val_s(icrom, crom)
 
 if (iwarni(ik).ge.1) then
   write(nfecra,1000)
@@ -787,15 +781,15 @@ tau = 4.d0
 xx  = 2.d0
 
 do iel = 1, ncel
-  crkexp(iel) = -propce(iel,ipcrom)*volume(iel)*ff*rtpa(iel,iep)
-  creexp(iel) =  propce(iel,ipcrom)*volume(iel)*xx
+  crkexp(iel) = -crom(iel)*volume(iel)*ff*rtpa(iel,iep)
+  creexp(iel) =  crom(iel)*volume(iel)*xx
 enddo
 
 ! --- Implicit source terms
 !        creimp is already initialized to 0, no need to set it here
 
 do iel = 1, ncel
-  crkimp(iel) = -propce(iel,ipcrom)*volume(iel)/tau
+  crkimp(iel) = -crom(iel)*volume(iel)/tau
 enddo
 
 !--------
@@ -823,7 +817,7 @@ subroutine ustskw &
 
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce , propfb ,                            &
+   dt     , rtpa   , propce ,                                     &
    ckupdc , smacel , s2kw   , divukw ,                            &
    gkgw   , ggrho  , xf1    ,                                     &
    crkexp , crwexp , crkimp , crwimp )
@@ -910,7 +904,6 @@ subroutine ustskw &
 ! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (preceding time steps)                        !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! ckupdc(ncepdp,6) ! ra ! <-- ! head loss coefficient                          !
 ! smacel           ! ra ! <-- ! value associated to each variable in the mass  !
 !  (ncesmp,nvar)   !    !     !  source terms or mass rate (see ustsma)        !
@@ -942,7 +935,7 @@ use cstphy
 use parall
 use period
 use mesh
-
+use field
 !===============================================================================
 
 implicit none
@@ -957,7 +950,6 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision s2kw(ncelet)  , divukw(ncelet)
 double precision gkgw(ncelet)  , ggrho(ncelet), xf1(ncelet)
@@ -966,11 +958,11 @@ double precision crwexp(ncelet), crwimp(ncelet)
 
 ! Local variables
 
-integer          iel, ipcrom
+integer          iel
 double precision ff, tau, xx
 
 integer, allocatable, dimension(:) :: lstelt
-
+double precision, dimension(:), pointer ::  crom
 !===============================================================================
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
@@ -991,7 +983,7 @@ allocate(lstelt(ncel))
 
 
 ! --- Index number of the density in the propce array
-ipcrom = ipproc(irom)
+call field_get_val_s(icrom, crom)
 
 if (iwarni(ik).ge.1) then
   write(nfecra,1000)
@@ -1027,15 +1019,15 @@ tau = 4.d0
 xx  = 2.d0
 
 do iel = 1, ncel
-  crkexp(iel) = -propce(iel,ipcrom)*volume(iel)*ff*rtpa(iel,iomg)
-  crwexp(iel) =  propce(iel,ipcrom)*volume(iel)*xx
+  crkexp(iel) = -crom(iel)*volume(iel)*ff*rtpa(iel,iomg)
+  crwexp(iel) =  crom(iel)*volume(iel)*xx
 enddo
 
 ! --- Implicit source terms
 !        crwimp is already initialized to 0, no need to set it here
 
 do iel = 1, ncel
-  crkimp(iel) = -propce(iel,ipcrom)*volume(iel)/tau
+  crkimp(iel) = -crom(iel)*volume(iel)/tau
 enddo
 
 !--------
@@ -1064,7 +1056,7 @@ subroutine ustsri &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   ,                                                       &
    icepdc , icetsm , itpsmp ,                                     &
-   dt     , rtpa   , propce , propfb ,                            &
+   dt     , rtpa   , propce ,                                     &
    ckupdc , smcelp , gamma  , gradv  , produc ,                   &
    crvexp , crvimp )
 
@@ -1154,7 +1146,6 @@ subroutine ustsri &
 ! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (preceding time steps)                        !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! ckupdc(ncepdp,6) ! ra ! <-- ! head loss coefficient                          !
 ! smcelp(ncelet)   ! ra ! <-- ! value of variable ivar associated to mass      !
 !                  ! ra !     !  source term (see ustsma)                      !
@@ -1182,7 +1173,7 @@ use cstphy
 use parall
 use period
 use mesh
-
+use field
 !===============================================================================
 
 implicit none
@@ -1198,7 +1189,6 @@ integer          icetsm(ncesmp), itpsmp(ncesmp)
 
 double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfb(nfabor,*)
 double precision ckupdc(ncepdp,6)
 double precision smcelp(ncesmp), gamma(ncesmp)
 double precision gradv(3, 3, ncelet), produc(6,ncelet)
@@ -1206,11 +1196,11 @@ double precision crvexp(ncelet), crvimp(ncelet)
 
 ! Local variables
 
-integer          iel, ipcrom
+integer          iel
 double precision ff, tau, xx
 
 integer, allocatable, dimension(:) :: lstelt
-
+double precision, dimension(:), pointer ::  crom
 !===============================================================================
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
@@ -1231,7 +1221,7 @@ allocate(lstelt(ncel))
 
 
 ! --- Index number of the density in the propce array
-ipcrom = ipproc(irom)
+call field_get_val_s(icrom, crom)
 
 if (iwarni(ir11).ge.1) then
   write(nfecra,1000)
@@ -1272,14 +1262,14 @@ if (ivar.eq.ir11) then
 !   -- Explicit source term
 
   do iel = 1, ncel
-    crvexp(iel) = -propce(iel,ipcrom)*volume(iel)                 &
+    crvexp(iel) = -crom(iel)*volume(iel)                 &
                                                *ff*rtpa(iel,iep)
   enddo
 
 !    -- Implicit source term
 
   do iel = 1, ncel
-    crvimp(iel) = -propce(iel,ipcrom)*volume(iel)/tau
+    crvimp(iel) = -crom(iel)*volume(iel)/tau
   enddo
 
 
@@ -1293,7 +1283,7 @@ elseif (ivar.eq.iep) then
 !   -- Explicit source term
 
   do iel = 1, ncel
-    crvexp(iel) =  propce(iel,ipcrom)*volume(iel)*xx
+    crvexp(iel) =  crom(iel)*volume(iel)*xx
   enddo
 
 !    -- Implicit source term
@@ -1328,7 +1318,7 @@ subroutine ustsv2 &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce , propfb ,                            &
+   dt     , rtpa   , propce ,                                     &
    ckupdc , smacel , produc , gphigk ,                            &
    crvexp , crvimp )
 
@@ -1412,7 +1402,6 @@ subroutine ustsv2 &
 ! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (preceding time steps)                        !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! ckupdc(ncepdp,6) ! ra ! <-- ! head loss coefficient                          !
 ! smacel           ! ra ! <-- ! value associated to each variable in the mass  !
 !  (ncesmp,nvar)   !    !     !  source terms or mass rate (see ustsma)        !
@@ -1439,7 +1428,7 @@ use cstphy
 use parall
 use period
 use mesh
-
+use field
 !===============================================================================
 
 implicit none
@@ -1455,18 +1444,17 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision crvexp(ncelet), crvimp(ncelet)
 double precision produc(ncelet), gphigk(ncelet)
 
 ! Local variables
 
-integer          iel, ipcrom
+integer          iel
 double precision ff, tau, xx
 
 integer, allocatable, dimension(:) :: lstelt
-
+double precision, dimension(:), pointer ::  crom
 !===============================================================================
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
@@ -1487,7 +1475,7 @@ allocate(lstelt(ncel))
 
 
 ! --- Index number of the density in the propce array
-ipcrom = ipproc(irom)
+call field_get_val_s(icrom, crom)
 
 if (iwarni(ifb).ge.1) then
   write(nfecra,1000)
@@ -1544,13 +1532,13 @@ elseif (ivar.eq.iphi) then
 !   -- Explicit source term
 
   do iel = 1, ncel
-    crvexp(iel) = propce(iel,ipcrom)*volume(iel)*ff*rtpa(iel,ifb)
+    crvexp(iel) = crom(iel)*volume(iel)*ff*rtpa(iel,ifb)
   enddo
 
 !    -- Implicit source term
 
   do iel = 1, ncel
-    crvimp(iel) = -propce(iel,ipcrom)*volume(iel)/tau
+    crvimp(iel) = -crom(iel)*volume(iel)/tau
   enddo
 
 
@@ -1581,7 +1569,7 @@ subroutine ustssa &
 
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce , propfb ,                            &
+   dt     , rtpa   , propce ,                                     &
    ckupdc , smacel , tinssa , divu   ,                            &
    crvexp , crvimp )
 
@@ -1656,7 +1644,6 @@ subroutine ustssa &
 ! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (preceding time steps)                        !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! ckupdc(ncepdp,6) ! ra ! <-- ! head loss coefficient                          !
 ! smacel           ! ra ! <-- ! value associated to each variable in the mass  !
 !  (ncesmp,nvar)   !    !     !  source terms or mass rate (see ustsma)        !
@@ -1683,7 +1670,7 @@ use cstphy
 use parall
 use period
 use mesh
-
+use field
 !===============================================================================
 
 implicit none
@@ -1698,18 +1685,17 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision tinssa(ncelet), divu(ncelet)
 double precision crvexp(ncelet), crvimp(ncelet)
 
 ! Local variables
 
-integer          iel, ipcrom
+integer          iel
 double precision ff, tau, xx
 
 integer, allocatable, dimension(:) :: lstelt
-
+double precision, dimension(:), pointer ::  crom
 !===============================================================================
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
@@ -1730,7 +1716,7 @@ allocate(lstelt(ncel))
 
 
 ! --- Index number of the density in the propce array
-ipcrom = ipproc(irom)
+call field_get_val_s(icrom, crom)
 
 if (iwarni(inusa).ge.1) then
   write(nfecra,1000)
@@ -1762,14 +1748,14 @@ tau = 4.d0
 xx  = 2.d0
 
 do iel = 1, ncel
-  crvexp(iel) = -propce(iel,ipcrom)*volume(iel)*ff
+  crvexp(iel) = -crom(iel)*volume(iel)*ff
 enddo
 
 ! --- Implicit source terms
 !        crvimp is already initialized to 0, no need to set it here
 
 do iel = 1, ncel
-  crvimp(iel) = -propce(iel,ipcrom)*volume(iel)/tau
+  crvimp(iel) = -crom(iel)*volume(iel)/tau
 enddo
 
 !--------

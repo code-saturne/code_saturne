@@ -33,7 +33,6 @@
 !------------------------------------------------------------------------------
 !> \param[in]     ivar          variable number
 !> \param[in]     vela          variable value at time step beginning
-!> \param[in]     propce        physical properties at cell centers
 !> \param[in]     coefav        boundary condition coefficient
 !> \param[in]     coefbv        boundary condition coefficient
 !> \param[out]    crvexp        working table for explicit part
@@ -41,7 +40,7 @@
 
 subroutine cscelv &
  ( ivar   ,                                                       &
-   vela   , propce ,                                              &
+   vela   ,                                                       &
    coefav , coefbv ,                                              &
    crvexp )
 
@@ -69,7 +68,6 @@ implicit none
 
 integer          ivar
 
-double precision propce(ncelet,*)
 double precision crvexp(3,ncelet)
 double precision coefav(3,nfabor)
 double precision coefbv(3,3,nfabor)
@@ -206,7 +204,7 @@ do numcpl = 1, nbrcpl
 
   if (ncecpg.gt.0) then
 
-    call cs2tsv(ncecpl, lcecpl, vela, propce, crvexp, rvcel)
+    call cs2tsv(ncecpl, lcecpl, vela, crvexp, rvcel)
     !==========
 
   endif

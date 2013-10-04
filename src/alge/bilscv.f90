@@ -98,8 +98,6 @@
 !>                               - 1 take into account,
 !>                               - 0 otherwise
 !> \param[in]     ippu          index of the variable for post-processing
-!> \param[in]     ippv          index of the variable for post-processing
-!> \param[in]     ippw          index of the variable for post-processing
 !> \param[in]     iwarnp        verbosity
 !> \param[in]     idftnp        indicator
 !>                               - 1 scalar diffusivity
@@ -109,7 +107,6 @@
 !>                               reconstruction
 !> \param[in]     climgp        clipping coeffecient for the computation of
 !>                               the gradient
-!> \param[in]     extrap        coefficient for extrapolation of the gradient
 !> \param[in]     relaxp        coefficient of relaxation
 !> \param[in]     thetap        weightening coefficient for the theta-schema,
 !>                               - thetap = 0: explicit scheme
@@ -147,8 +144,8 @@
 subroutine bilscv &
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , ivisep ,                   &
-   ippu   , ippv   , ippw   , iwarnp , idftnp ,                   &
-   blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
+   ippu   , iwarnp , idftnp ,                                     &
+   blencp , epsrgp , climgp , relaxp , thetap ,                   &
    pvar   , pvara  ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
    flumas , flumab , viscf  , viscb  , secvif , secvib ,          &
@@ -181,10 +178,10 @@ integer          ivar   , iconvp , idiffp , nswrgp , imligp
 integer          ircflp , ischcp , isstpp
 integer          inc    , imrgra , ivisep
 integer          idftnp , icvflb
-integer          iwarnp , ippu   , ippv   , ippw
+integer          iwarnp , ippu
 integer          icvfli(nfabor)
 
-double precision blencp , epsrgp , climgp, extrap, relaxp , thetap
+double precision blencp , epsrgp , climgp, relaxp , thetap
 double precision pvar  (3  ,ncelet)
 double precision pvara (3  ,ncelet)
 double precision coefav(3  ,nfabor)
@@ -208,11 +205,11 @@ if (idftnp.eq.1) then
   !==========
    ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
      ischcp , isstpp , inc    , imrgra , ivisep ,                   &
-     ippu   , ippv   , ippw   , iwarnp ,                            &
-     blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
+     ippu   , iwarnp ,                                              &
+     blencp , epsrgp , climgp , relaxp , thetap ,                   &
      pvar   , pvara  ,                                              &
      coefav , coefbv , cofafv , cofbfv ,                            &
-     flumas , flumab , viscf  , viscb  , secvif , secvib ,          &
+     flumas , flumab , viscf  , viscb  , secvif ,                   &
      icvflb , icvfli ,                                              &
      smbr   )
 
@@ -227,11 +224,11 @@ elseif (idftnp.eq.6) then
     !==========
      ( idtvar , ivar   , iconvp , idiflc , nswrgp , imligp , ircflp , &
        ischcp , isstpp , inc    , imrgra , ivisep ,                   &
-       ippu   , ippv   , ippw   , iwarnp ,                            &
-       blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
+       ippu   , iwarnp ,                                              &
+       blencp , epsrgp , climgp , relaxp , thetap ,                   &
        pvar   , pvara  ,                                              &
        coefav , coefbv , cofafv , cofbfv ,                            &
-       flumas , flumab , viscf  , viscb  , secvif , secvib ,          &
+       flumas , flumab , viscf  , viscb  , secvif ,                   &
        icvflb , icvfli ,                                              &
        smbr   )
 
@@ -244,8 +241,8 @@ elseif (idftnp.eq.6) then
     !==========
    ( idtvar , ivar   , nswrgp , imligp , ircflp ,                   &
      inc    , imrgra ,                                              &
-     ippu   , ippv   , ippw   , iwarnp , epsrgp ,                   &
-     climgp , extrap , relaxp , thetap ,                            &
+     ippu   , iwarnp , epsrgp ,                                     &
+     climgp , relaxp , thetap ,                                     &
      pvar   , pvara  ,                                              &
      coefav , coefbv , cofafv , cofbfv ,                            &
      viscf  , viscb  ,                                              &

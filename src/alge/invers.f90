@@ -25,7 +25,7 @@ subroutine invers &
 
  ( cnom   , isym   , ibsize , iesize , ipol   , ireslp , nitmap , &
    imgrp  , ncymxp , nitmfp ,                                     &
-   iwarnp , nfecra , niterf , icycle , iinvpe ,                   &
+   iwarnp , niterf , icycle , iinvpe ,                            &
    epsilp , rnorm  , residu ,                                     &
    dam    , xam    , smbrp  , vx     )
 
@@ -61,7 +61,6 @@ subroutine invers &
 ! ncymxp           ! e  ! <-- ! max. number of multigrid cycles                !
 ! nitmfp           ! e  ! <-- ! number of equivalent iterations on fine mesh   !
 ! iwarnp           ! i  ! <-- ! verbosity                                      !
-! nfecra           ! e  ! <-- ! standart output unit                           !
 ! niterf           ! e  ! --> ! number of iterations done (non-multigrid)      !
 ! icycle           ! e  ! --> ! number of multigrid cycles done                !
 ! iinvpe           ! e  ! <-- ! flag to cancel increments in rotational        !
@@ -98,7 +97,7 @@ implicit none
 character*16     cnom
 integer          isym   , ipol   , ireslp , nitmap , ibsize , iesize
 integer          imgrp  , ncymxp , nitmfp
-integer          iwarnp , nfecra
+integer          iwarnp
 integer          niterf , icycle , iinvpe
 double precision epsilp , rnorm  , residu
 

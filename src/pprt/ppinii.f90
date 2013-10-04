@@ -106,6 +106,7 @@ nsalto = 0
 itemp  = 0
 do igg = 1, ngazgm
   iym(igg) = 0
+  ibym(igg) = -1
 enddo
 ickabs = 0
 it4m   = 0

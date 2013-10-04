@@ -136,16 +136,13 @@ double precision enth(ncelet),enthox(ncelet)
 double precision rtp(ncelet,*), propce(ncelet,*)
 double precision rom1(ncelet)
 ! Local variables
-integer          iel , ii , icha ,ice , icla
+integer          iel , ii ,ice , icla
 integer          ipcyf1,ipcyf2,ipcyf3,ipcyf4,ipcyf5,ipcyf6,ipcyf7
 integer          ipcyox,ipcyp1,ipcyp2,ipcyp3,ipcyin
 integer          ipcte1
 
-double precision xch    , xck    , xash , xwat
-double precision zchx10 , zchx20
-double precision den1   , den2 , f1mc , f2mc
 double precision wmolme
-double precision somch , somck , cfolc , cfolh , cfolo , ckxc , ckxh , ckxo
+double precision somch , cfolc , cfolh , cfolo , ckxh
 
 integer          iok1 , iok2 , iok3 , iok4 , iok5
 integer          , dimension ( : )     , allocatable :: intpdf

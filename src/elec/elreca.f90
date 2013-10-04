@@ -25,9 +25,7 @@
 subroutine elreca &
 !================
 
- ( nvar   , nscal  ,                                              &
-   dt     , rtpa   , rtp    , propce , propfb ,                   &
-   coefa  , coefb  )
+ ( dt     , rtp    , propce )
 
 !===============================================================================
 ! FONCTION :
@@ -45,20 +43,10 @@ subroutine elreca &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! itypsm           ! te ! <-- ! type de source de masse pour les               !
-! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
+! rtp              ! ra ! <-- ! calculated variables at cell centers           !
+!  (ncelet, *)     !    !     !  (at current time step)                        !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
-! smacel           ! tr ! <-- ! valeur des variables associee a la             !
-! (ncesmp,*   )    !    !     !  source de masse                               !
-!                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -90,39 +78,30 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
+double precision dt(ncelet), rtp(ncelet,*)
+double precision propce(ncelet,*)
 
 ! Local variables
 
 integer          iel    , ifac
-integer          ipcefj , ipcdc1 , ipcdc2 , ipcdc3 , ipcsig
+integer          ipcefj , ipcdc3
 integer          ipdcrp , idimve, idir
 
 double precision somje , coepoa , coefav , coepot
-double precision emax  , aiex   , amex
-double precision rayo  , econs  , z1     , z2   , posi
 double precision dtj   , dtjm   , delhsh , cdtj , cpmx
-double precision xelec , yelec  , zelec
-
-double precision, allocatable, dimension(:) :: w1
 
 logical          ok
 
 !===============================================================================
+
 !===============================================================================
 ! 1. INITIALISATION
 !===============================================================================
 
 
-
 !===============================================================================
 ! 2.  ARC ELECTRIQUE
 !===============================================================================
-
 
 
 if ( ippmod(ielarc).ge.1 ) then
@@ -158,6 +137,7 @@ if ( ippmod(ielarc).ge.1 ) then
     if ( coepot .lt. 0.75d0 ) coepot = 0.75d0
 
     write(nfecra,1000)coepoa,coepot
+
  1000     format(/,                                               &
  ' Courant impose/Courant= ',E14.5,', Coeff. recalage= ',E14.5)
 

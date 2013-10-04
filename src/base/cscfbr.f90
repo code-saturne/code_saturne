@@ -50,7 +50,6 @@
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     rtp           calculated variables at cell centers
 !>                              (at current and previous time steps)
-!> \param[in]     propce        physical properties at cell centers
 !> \param[in]     coefa         boundary condition
 !> \param[in]     coefb         boundary condition
 !> \param[in]     rcodcl        boundary condition values:
@@ -72,7 +71,7 @@
 subroutine cscfbr &
  ( nscal  ,                                                       &
    icodcl , itypfb ,                                              &
-   dt     , rtp    , propce ,                                     &
+   dt     , rtp    ,                                              &
    coefa  , coefb  , rcodcl )
 
 !===============================================================================
@@ -102,7 +101,6 @@ integer          icodcl(nfabor,nvarcl)
 integer          itypfb(nfabor)
 
 double precision dt(ncelet), rtp(ncelet,*)
-double precision propce(ncelet,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision rcodcl(nfabor,nvarcl,3)
 
@@ -222,7 +220,7 @@ do numcpl = 1, nbrcpl
   ( nscal  ,                                                      &
     nfbdis , numcpl , nvarto(numcpl) ,                            &
     locpts ,                                                      &
-    rtp    , propce ,                                             &
+    rtp    ,                                                      &
     coefa  , coefb  ,                                             &
     coopts , djppts , pndpts ,                                    &
     rvdis  , dofpts )

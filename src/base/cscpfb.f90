@@ -38,7 +38,6 @@
 !> \param[in]     locpts
 !> \param[in]     rtp           calculated variables at cell centers
 !>                              (at current and previous time steps)
-!> \param[in]     propce        physical properties at cell centers
 !> \param[in]     coefa         boundary conditions for boundary faces
 !> \param[in]     coefb         boundary conditions for boundary faces
 !> \param[in]     coopts
@@ -52,7 +51,7 @@ subroutine cscpfb &
  ( nscal  ,                                                       &
    nptdis , numcpl , nvcpto,                                      &
    locpts ,                                                       &
-   rtp    , propce ,                                              &
+   rtp    ,                                                       &
    coefa  , coefb  ,                                              &
    coopts , djppts , pndpts ,                                     &
    rvdis  , dofpts )
@@ -72,7 +71,7 @@ use parall
 use period
 use cplsat
 use mesh
-
+use field
 !===============================================================================
 
 implicit none
@@ -85,7 +84,6 @@ integer          nptdis , numcpl , nvcpto
 integer          locpts(nptdis)
 
 double precision rtp(ncelet,*)
-double precision propce(ncelet,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision coopts(3,nptdis), djppts(3,nptdis)
 double precision pndpts(nptdis), dofpts(3,nptdis)
@@ -95,7 +93,7 @@ double precision rvdis(nptdis,nvcpto)
 
 
 integer          ipt    , iel    , isou
-integer          ivar   , iscal  , ipcrom
+integer          ivar   , iscal
 integer          inc    , iccocg , iclvar, nswrgp
 integer          iwarnp , imligp
 integer          ipos
@@ -112,7 +110,7 @@ double precision vitent, daxis2
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: trav1, trav2, trav3, trav4
 double precision, allocatable, dimension(:) :: trav5, trav6, trav7, trav8
-
+double precision, dimension(:), pointer :: crom
 !===============================================================================
 
 !=========================================================================
@@ -142,7 +140,7 @@ allocate(trav8(nptdis))
 
 d2s3 = 2.d0/3.d0
 
-ipcrom = ipproc(irom)
+call field_get_val_s(icrom, crom)
 
 if (icormx(numcpl).eq.1) then
 
@@ -258,7 +256,7 @@ if (ifaccp.eq.1) then
       daxis2 = daxis2 / omgnrr**2
 
       rvdis(ipt,ipos) = rvdis(ipt,ipos)                         &
-           + 0.5d0*propce(iel,ipcrom)*(omgnrl**2 - omgnrd**2)*daxis2
+           + 0.5d0*crom(iel)*(omgnrl**2 - omgnrd**2)*daxis2
 
     endif
 

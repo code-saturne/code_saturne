@@ -23,9 +23,8 @@
 subroutine divrij &
 !================
 
- ( nvar   , nscal  ,                                              &
-   idim   , ivar   ,                                              &
-   rtpa   , propce , propfb ,                                     &
+ ( idim   , ivar   ,                                              &
+   rtpa   ,                                                       &
    coefa  , coefb  ,                                              &
    viscf  , viscb  )
 
@@ -48,14 +47,10 @@ subroutine divrij &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! idim             ! e  ! <-- ! composante traitee                             !
 ! ivar             ! e  ! <-- ! numero de variable courante                    !
 ! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant prec)                     !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
 ! viscf(nfac)      ! tr ! --> ! resultat du calcul                             !
@@ -80,6 +75,7 @@ use cstphy
 use optcal
 use pointe
 use mesh
+use field
 
 !===============================================================================
 
@@ -87,12 +83,9 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
 integer          idim   , ivar
 
-
 double precision rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision viscf(nfac), viscb(nfabor)
 
@@ -100,12 +93,11 @@ double precision viscf(nfac), viscb(nfabor)
 
 integer          ifac, ivar1, ivar2, ivar3, init, inc
 integer          iccocg,iflmb0
-integer          ipcrom, ipbrom
 integer          iclva1, iclva2, iclva3
 integer          nswrgp, imligp, iwarnp
 integer          imaspe, itypfl
 double precision epsrgp, climgp, extrap
-
+double precision, dimension(:), pointer :: crom, brom
 !===============================================================================
 
 !===============================================================================
@@ -117,11 +109,9 @@ ivar1 = 0
 ivar2 = 0
 ivar2 = 0
 
-! --- Memoire
-
-! --- Masse volumique
-ipcrom = ipproc(irom  )
-ipbrom = ipprob(irom  )
+! --- Density
+call field_get_val_s(icrom, crom)
+call field_get_val_s(ibrom, brom)
 
 ! --- Variables locales (Rij)
 if(ivar.eq.iu) then
@@ -168,7 +158,7 @@ call inimas                                                       &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   propce(1,ipcrom), propfb(1,ipbrom),                            &
+   crom   , brom   ,                                              &
    rtpa(1,ivar1)   , rtpa(1,ivar2)   , rtpa(1,ivar3)   ,          &
    coefa(1,iclva1) , coefa(1,iclva2) , coefa(1,iclva3) ,          &
    coefb(1,iclva1) , coefb(1,iclva2) , coefb(1,iclva3) ,          &

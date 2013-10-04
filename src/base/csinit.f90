@@ -23,7 +23,7 @@
 subroutine csinit &
 !================
 
- ( irgpar , nrgpar , nthpar )
+ ( irgpar , nrgpar )
 
 !===============================================================================
 !  Purpose:
@@ -38,7 +38,6 @@ subroutine csinit &
 !__________________!____!_____!________________________________________________!
 ! irgpar           ! e  ! <-- ! rank if parallel; -1 if sequantial             !
 ! nrgpar           ! e  ! <-- ! number of MPI ranks: 1 if sequantial           !
-! nthpar           ! e  ! <-- ! number of threads per rank                     !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -56,7 +55,7 @@ use parall
 
 implicit none
 
-integer  irgpar, nrgpar, nthpar
+integer  irgpar, nrgpar
 
 !===============================================================================
 

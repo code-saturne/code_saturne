@@ -23,10 +23,8 @@
 subroutine cplphy &
 !================
 
- ( nvar   , nscal  ,                                              &
-   ibrom  , izfppp ,                                              &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   coefa  , coefb  )
+ ( mbrom  , izfppp ,                                              &
+   rtp    , propce )
 
 !===============================================================================
 ! FONCTION :
@@ -97,19 +95,12 @@ subroutine cplphy &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ibrom            ! te ! <-- ! indicateur de remplissage de romb              !
-!        !    !     !                                                !
+! mbrom            ! te ! <-- ! indicateur de remplissage de romb              !
 ! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
+! rtp              ! ra ! <-- ! calculated variables at cell centers           !
+!  (ncelet, *)     !    !     !  (at current time step)                        !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -136,6 +127,7 @@ use cpincl
 use ppincl
 use ppcpfu
 use mesh
+use field
 
 !===============================================================================
 
@@ -143,30 +135,26 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-
-integer          ibrom
+integer          mbrom
 integer          izfppp(nfabor)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
+double precision rtp(ncelet,*)
+double precision propce(ncelet,*)
 
 ! Local variables
 
 integer          ntbcpi, ntbcpr
 integer          ntbmci, ntbmcr
 integer          ntbwoi, ntbwor
-integer          iel, icha, ipcrom
+integer          iel, icha
 integer          izone, ifac
-integer          ipbrom
 double precision srrom1
 double precision wmolme
 
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4, w5, w6
 double precision, allocatable, dimension(:) :: w7, w8
-
+double precision, dimension(:), pointer :: brom,  crom
 integer       ipass
 data          ipass /0/
 save          ipass
@@ -277,7 +265,7 @@ call cplph1                                                       &
 
 ! --- Calcul de Rho avec relaxation
 
-ipcrom = ipproc(irom)
+call field_get_val_s(icrom, crom)
 
 if (ipass.gt.1.or.(isuite.eq.1.and.initro.eq.1)) then
   srrom1 = srrom
@@ -288,7 +276,7 @@ endif
 
 do iel = 1, ncel
 ! ---- Sous relaxation eventuelle a donner dans ppini1.F
-  propce(iel,ipcrom) = srrom1*propce(iel,ipcrom)                  &
+  crom(iel) = srrom1*crom(iel)                  &
                      + (1.d0-srrom1)*w1(iel)
 enddo
 
@@ -300,16 +288,16 @@ enddo
 !                             -------------
 !===============================================================================
 
-ibrom = 1
-ipbrom = ipprob(irom)
-ipcrom = ipproc(irom)
+mbrom = 1
+call field_get_val_s(ibrom, brom)
+call field_get_val_s(icrom, crom)
 
 ! ---> Masse volumique au bord pour toutes les faces
 !      Les faces d'entree seront recalculees.
 
 do ifac = 1, nfabor
   iel = ifabor(ifac)
-  propfb(ifac,ipbrom) = propce(iel,ipcrom)
+  brom(ifac) = crom(iel)
 enddo
 
 ! ---> Masse volumique au bord pour les faces d'entree UNIQUEMENT
@@ -322,7 +310,7 @@ if ( ipass.gt.1 .or. isuite.eq.1 ) then
     if(izone.gt.0) then
       if ( ientat(izone).eq.1 ) then
         wmolme = (1.d0+xsi) / (wmole(io2)+xsi*wmole(in2))
-        propfb(ifac,ipbrom) = p0                           &
+        brom(ifac) = p0                           &
                              /(wmolme*rr*timpat(izone))
       endif
     endif

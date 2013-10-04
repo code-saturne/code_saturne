@@ -39,11 +39,10 @@
 !> \param[in,out] rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in,out] propfb        physical properties at boundary face centers
 !_______________________________________________________________________________
 
 subroutine alelav &
- ( rtp    , rtpa   , propce , propfb )
+ ( rtp    , rtpa   , propce )
 
 !===============================================================================
 
@@ -52,7 +51,6 @@ subroutine alelav &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use numvar
 use entsor
 use optcal
@@ -72,13 +70,13 @@ implicit none
 ! Arguments
 
 double precision rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(ndimfb,*)
+double precision propce(ncelet,*)
 
 ! Local variables
 
 integer          iel   , isou  , jsou  , ifac
 integer          ipcvmx, ipcvmy, ipcvmz, ippu  , ippv  , ippw
-integer          iflmas, iflmab, ipbrom
+integer          iflmas, iflmab
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
@@ -87,7 +85,7 @@ integer          iswdyp, idftnp, icvflb
 
 integer          ivoid(1)
 
-double precision blencp, epsilp, epsrgp, climgp, extrap, thetv
+double precision blencp, epsilp, epsrgp, climgp, thetv
 double precision epsrsp, prosrf
 double precision relaxp
 double precision hint, distbf, srfbn2
@@ -99,6 +97,7 @@ double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:,:) :: smbr, meshv, meshva
 double precision, allocatable, dimension(:,:,:) :: fimp
 double precision, dimension(:), pointer :: imasfl, bmasfl
+double precision, dimension(:), pointer :: brom
 
 !===============================================================================
 
@@ -133,7 +132,7 @@ endif
 ! from the new mass flux.
 
 ! Density at the boundary
-ipbrom = ipprob(irom)
+call field_get_val_s(ibrom, brom)
 
 ! The mesh move in the direction of the gravity in case of free-surface
 do ifac = 1, nfabor
@@ -152,9 +151,9 @@ do ifac = 1, nfabor
     endif
 
     prosrf = gx*surfbo(1,ifac) + gy*surfbo(2,ifac) + gz*surfbo(3,ifac)
-    pimpv(1) = gx*propfb(ifac,iflmab)/(propfb(ifac,ipbrom)*prosrf)
-    pimpv(2) = gy*propfb(ifac,iflmab)/(propfb(ifac,ipbrom)*prosrf)
-    pimpv(3) = gz*propfb(ifac,iflmab)/(propfb(ifac,ipbrom)*prosrf)
+    pimpv(1) = gx*bmasfl(ifac)/(brom(ifac)*prosrf)
+    pimpv(2) = gy*bmasfl(ifac)/(brom(ifac)*prosrf)
+    pimpv(3) = gz*bmasfl(ifac)/(brom(ifac)*prosrf)
 
     call set_dirichlet_vector &
          !====================
@@ -228,7 +227,6 @@ epsilp = epsilo(iuma)
 epsrsp = epsrsm(iuma)
 epsrgp = epsrgr(iuma)
 climgp = climgr(iuma)
-extrap = extrag(iuma)
 relaxp = 1.d0
 thetv  = 1.d0
 ! all boundary convective flux with upwind
@@ -243,7 +241,7 @@ call coditv &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisep ,          &
    ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
    imgrp  , ncymxp , nitmfp , ippu   , ippv   , ippw   , iwarnp , &
-   blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
+   blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
    relaxp , thetv  ,                                              &
    meshva , meshva ,                                              &
    claale , clbale , cfaale , cfbale ,                            &

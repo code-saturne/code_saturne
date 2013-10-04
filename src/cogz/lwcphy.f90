@@ -23,10 +23,8 @@
 subroutine lwcphy &
 !================
 
- ( nvar   , nscal  ,                                              &
-   ibrom  , izfppp ,                                              &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   coefa  , coefb  )
+ ( mbrom  , izfppp ,                                              &
+   rtp    , propce )
 
 !===============================================================================
 ! FONCTION :
@@ -40,19 +38,12 @@ subroutine lwcphy &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ibrom            ! te ! <-- ! indicateur de remplissage de romb              !
-!        !    !     !                                                !
+! mbrom            ! te ! <-- ! indicateur de remplissage de romb              !
 ! izfppp           ! te ! --> ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
+! rtp              ! ra ! <-- ! calculated variables at cell centers           !
+!  (ncelet, *)     !    !     !  (at current time step)                        !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -77,6 +68,7 @@ use coincl
 use cpincl
 use ppincl
 use mesh
+use field
 
 !===============================================================================
 
@@ -84,23 +76,20 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-
-integer          ibrom
+integer          mbrom
 integer          izfppp(nfabor)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
+double precision rtp(ncelet,*)
+double precision propce(ncelet,*)
 
 ! Local variables
 
-integer          igg, iel, ipcrom
-integer          izone , ifac, ipbrom
+integer          igg, iel
+integer          izone , ifac
 double precision coefg(ngazgm)
 double precision nbmol , temsmm
 double precision masmg
-
+double precision, dimension(:), pointer :: brom,  crom
 integer       ipass
 data          ipass /0/
 save          ipass
@@ -128,8 +117,8 @@ enddo
 
 ! ---> Positions des variables, coefficients
 
-ipcrom = ipproc(irom)
-ipbrom = ipprob(irom)
+call field_get_val_s(icrom, crom)
+call field_get_val_s(ibrom, brom)
 
 !===============================================================================
 ! 2. DETERMINATION DES GRANDEURS THERMOCHIMIQUES MOYENNES
@@ -178,14 +167,14 @@ endif
 
 ! --> Masse volumique au bord
 
-ibrom = 1
+mbrom = 1
 
 ! ---- Masse volumique au bord pour toutes les facettes
 !      Les facettes d'entree seront recalculees.
 
 do ifac = 1, nfabor
 iel = ifabor(ifac)
-  propfb(ifac,ipbrom) = propce(iel,ipcrom)
+  brom(ifac) = crom(iel)
 enddo
 
 ! ---- Masse volumique au bord pour les facettes d'entree UNIQUEMENT
@@ -210,7 +199,7 @@ if ( ipass.gt.1 .or. isuite.eq.1 ) then
         enddo
        masmg = 1.d0/nbmol
        temsmm = tkent(izone)/masmg
-       propfb(ifac,ipbrom) = p0/(rr*temsmm)
+       brom(ifac) = p0/(rr*temsmm)
       endif
     endif
   enddo

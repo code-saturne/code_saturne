@@ -86,7 +86,7 @@ integer       iprop, icg, idirac
 
 !===============================================================================
 !===============================================================================
-! 1. POSITIONNEMENT DES PROPRIETES : PROPCE, PROPFB
+! 1. POSITIONNEMENT DES PROPRIETES : PROPCE
 !    Physique particuliere : Flamme de diffusion chimie 3 points
 !===============================================================================
 
@@ -164,34 +164,11 @@ if ( ippmod(icod3p).ge.0 ) then
 
   nproce = iprop
 
-
-! ---> Positionnement dans le tableau PROPFB
-!      Au centre des faces de bord
-
-  iprop = nprofb
-  if ( ippmod(icod3p).eq.1 .and. iirayo.gt.0 ) then
-    do icg = 1, ngazg
-      iprop            = iprop + 1
-      ipprob(iym(icg)) = iprop
-    enddo
-  endif
-  nprofb = iprop
-
  endif
 
 
 !===============================================================================
-! 2. POSITIONNEMENT DES PROPRIETES : PROPCE, PROPFB
-!    Physique particuliere : Flamme de diffusion chimie equilibre
-!===============================================================================
-
-!      IF ( LPP(IDEQA).OR.LPP(IDEQR) ) THEN
-!      ENDIF
-
-
-
-!===============================================================================
-! 3. POSITIONNEMENT DES PROPRIETES : PROPCE, PROPFB
+! 3. POSITIONNEMENT DES PROPRIETES : PROPCE
 !    Physique particuliere : Flamme de premelange - Modele EBU
 !===============================================================================
 
@@ -270,35 +247,11 @@ if ( ippmod(icoebu).ge.0 ) then
 
   nproce = iprop
 
-
-! ---> Positionnement dans le tableau PROPFB
-!      Au centre des faces de bord
-
-  iprop = nprofb
-  if ( ( ippmod(icoebu).eq.1 .or. ippmod(icoebu).eq.3 )           &
-       .and. ( iirayo.gt.0 )  ) then
-    do icg = 1, ngazg
-      iprop            = iprop + 1
-      ipprob(iym(icg)) = iprop
-    enddo
-  endif
-  nprofb = iprop
-
  endif
 
 
 !===============================================================================
-! 4. POSITIONNEMENT DES PROPRIETES : PROPCE, PROPFB
-!    Physique particuliere : Flamme de premelange - Modele BML
-!===============================================================================
-
-!      IF ( IPPMOD(ICOBML).GE.0 ) THEN
-!      ENDIF
-
-
-
-!===============================================================================
-! 5. POSITIONNEMENT DES PROPRIETES : PROPCE, PROPFB
+! 5. POSITIONNEMENT DES PROPRIETES : PROPCE
 !    Physique particuliere : Flamme de premelange - Modele LWC
 !===============================================================================
 
@@ -456,26 +409,6 @@ if ( ippmod(icolwc).ge.0 ) then
   endif
 
   nproce = iprop
-
-
-! ---> Positionnement dans le tableau PROPFB
-!      Au centre des faces de bord
-
-
-
-! ---> Positionnement dans le tableau PROPFB
-!      Au centre des faces de bord
-
-  iprop = nprofb
-  if ( ( ippmod(icolwc).eq.1 .or. ippmod(icolwc).eq.3             &
-                             .or. ippmod(icolwc).eq.5)            &
-       .and. ( iirayo.gt.0 )  ) then
-    do icg = 1, ngazg
-      iprop            = iprop + 1
-      ipprob(iym(icg)) = iprop
-    enddo
-  endif
-  nprofb = iprop
 
 endif
 

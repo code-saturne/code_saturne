@@ -20,14 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine lagaff &
+subroutine lagaff
 !================
-
- ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   ntersl , nvlsta , nvisbr ,                                     &
-   itepa  ,                                                       &
-   dt     , rtpa   , rtp    ,                                     &
-   ettp   , ettpa  , tepa   , taup   , tlag   , tempct , statis )
 
 !===============================================================================
 ! FONCTION :
@@ -41,38 +35,11 @@ subroutine lagaff &
 !       - nombre de particules entrantes
 !       - nombre de particules sorties
 
-
-
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
-! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
-! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
-! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
-! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
-! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
-! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
-! itepa            ! te ! <-- ! info particulaires (entiers)                   !
-! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! ettp             ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! ettpa            ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape precedente              !
-! tepa(nbpmax,     ! tr ! <-- ! caracteristiques des particules                !
-!       nvep)      !    !     !  aux particules (poids, ...)                   !
-! taup(nbpmax)     ! tr ! <-- ! temps caracteristique dynamique                !
-! tlag(nbpmax)     ! tr ! <-- ! temps caracteristique fluide                   !
-! tempct           ! tr ! <-- ! temps caracteristique thermique                !
-!  (nbpmax,2)      !    !     !                                                !
-! statis(ncelet    ! tr ! <-- ! cumul des statistiques volumiques              !
-!    nvlsta)       !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -103,19 +70,7 @@ implicit none
 
 ! Arguments
 
-integer          nbpmax , nvp    , nvp1   , nvep  , nivep
-integer          ntersl , nvlsta , nvisbr
-
-integer          itepa(nbpmax,nivep)
-
-double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
-double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
-double precision tepa(nbpmax,nvep)
-double precision taup(nbpmax) , tlag(nbpmax,3) , tempct(nbpmax,2)
-double precision statis(ncelet,nvlsta)
-
 ! Local variables
-
 
 double precision dnbpr
 
@@ -133,11 +88,6 @@ save             ipass
 
 
 !===============================================================================
-
-!===============================================================================
-! 0.  GESTION MEMOIRE
-!===============================================================================
-
 
 !===============================================================================
 ! 1. INITIALISATION

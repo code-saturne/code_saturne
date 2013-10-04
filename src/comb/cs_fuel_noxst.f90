@@ -113,10 +113,10 @@ double precision ts4,ts4num,ts4den
 double precision dgs
 double precision val(npart+1),tt(npart+1) , gs(npart+1) , yyo2(npart+1)
 !
-integer          icha,ige,numcha,mode
-double precision xxf , hhf , hfuel,tfs4ad,hfs4ad
-double precision xhf1,xhf2 , aa , den
-double precision xesp(ngazem),coefe(ngazem),f1mc(ncharm),f2mc(ncharm)
+integer          icha,ige,mode
+double precision hhf , hfuel,tfs4ad,hfs4ad
+double precision aa
+double precision coefe(ngazem),f1mc(ncharm),f2mc(ncharm)
 double precision yo2moy,yo2ox,yo2cb,yo24den,yo24num,yo2s4,yo2
 double precision toxyd,hoxyd , som , react , deltamol
 !

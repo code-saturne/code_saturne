@@ -23,9 +23,7 @@
 subroutine raypun &
 !================
 
- ( nvar   , nscal  ,                                              &
-   itypfb ,                                                       &
-   dt     , rtp    , rtpa   , propce ,                            &
+ ( itypfb ,                                                       &
    coefap , coefbp ,                                              &
    cofafp , cofbfp ,                                              &
    flurds , flurdb ,                                              &
@@ -51,13 +49,9 @@ subroutine raypun &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! coefap,coefbp    ! tr ! --- ! conditions aux limites aux                     !
 !  cofafp, cofbfp  !    !     !    faces de bord pour la luminance             !
 ! flurds,flurdb    ! tr ! --- ! pseudo flux de masse (faces internes           !
@@ -109,12 +103,8 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-
 integer          itypfb(nfabor)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
 double precision coefap(nfabor), coefbp(nfabor)
 double precision cofafp(nfabor), cofbfp(nfabor)
 double precision flurds(nfac), flurdb(nfabor)

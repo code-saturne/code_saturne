@@ -23,8 +23,8 @@
 subroutine rijech &
 !================
 
- ( ivar   , isou   , ipp    ,                                     &
-   rtp    , rtpa   , propce ,                                     &
+ ( isou   ,                                                       &
+   rtpa   ,                                                       &
    produc , smbr   )
 
 !===============================================================================
@@ -72,18 +72,16 @@ use pointe
 use parall
 use period
 use mesh
-
+use field
 !===============================================================================
 
 implicit none
 
 ! Arguments
 
-integer          ivar   , isou   , ipp
+integer          isou
 
-
-double precision rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
+double precision rtpa(ncelet,*)
 double precision produc(6,ncelet)
 double precision smbr(ncelet)
 
@@ -91,7 +89,6 @@ double precision smbr(ncelet)
 
 integer          ifacpt, iel   , ii    , jj    , kk    , mm
 integer          irkm  , irki  , irkj  , iskm  , iski  , iskj
-integer          ipcrom, ipcroo
 integer          ifac
 integer          inc   , iccocg, ivar0
 
@@ -104,6 +101,7 @@ double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: produk, epsk
 double precision, allocatable, dimension(:) :: w2, w3, w4, w6
 double precision, allocatable, dimension(:) :: coefax, coefbx
+double precision, dimension(:), pointer :: crom, cromo
 
 !===============================================================================
 
@@ -133,11 +131,11 @@ vnm = 0.d0
 
 ! Memoire
 
-
-ipcrom = ipproc(irom  )
-ipcroo = ipcrom
-if(isto2t.gt.0.and.iroext.gt.0) then
-  ipcroo = ipproc(iroma)
+call field_get_val_s(icrom, crom)
+if (isto2t.gt.0.and.iroext.gt.0) then
+  call field_get_val_prev_s(icrom, cromo)
+else
+  call field_get_val_s(icrom, cromo)
 endif
 
 deltij = 1.0d0
@@ -461,8 +459,7 @@ endif
 ! ---> Increment du terme source
 
 do iel = 1, ncel
-  smbr(iel) = smbr(iel)                                           &
-            + propce(iel,ipcroo)*volume(iel)*w6(iel)*w3(iel)
+  smbr(iel) = smbr(iel) + cromo(iel)*volume(iel)*w6(iel)*w3(iel)
 enddo
 
 ! Allocate temporary arrays

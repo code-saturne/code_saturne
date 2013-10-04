@@ -24,8 +24,8 @@ subroutine rijthe &
 !================
 
  ( nscal  ,                                                       &
-   ivar   , isou   , ipp    ,                                     &
-   rtp    , rtpa   ,                                              &
+   ivar   ,                                                       &
+   rtpa   ,                                                       &
    gradro , smbr   )
 
 !===============================================================================
@@ -43,10 +43,8 @@ subroutine rijthe &
 !__________________!____!_____!________________________________________________!
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ivar             ! i  ! <-- ! variable number                                !
-! isou             ! e  ! <-- ! numero de passage                              !
-! ipp              ! e  ! <-- ! numero de variable pour sorties post           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
+! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
+!  (ncelet, *)     !    !     !  (at previous time step)                       !
 ! gradro(ncelet,3) ! tr ! <-- ! tableau de travail pour grad rom               !
 ! smbr(ncelet      ! tr ! --- ! tableau de travail pour sec mem                !
 !__________________!____!_____!________________________________________________!
@@ -75,9 +73,9 @@ implicit none
 ! Arguments
 
 integer          nscal
-integer          ivar   , isou   , ipp
+integer          ivar
 
-double precision rtp(ncelet,*), rtpa(ncelet,*)
+double precision rtpa(ncelet,*)
 double precision gradro(ncelet,3)
 double precision smbr(ncelet)
 

@@ -48,7 +48,6 @@
 !> \param[in]     rtpa          calculated variables at cell centers
 !>                               (at the previous time step)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfb        physical properties at boundary face centers
 !> \param[in]     tslagr        coupling term of the lagangian module
 !> \param[in]     coefa, coefb  boundary conditions
 !>
@@ -61,7 +60,7 @@
 subroutine turrij &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   dt     , rtp    , rtpa   , propce ,                            &
    tslagr ,                                                       &
    coefa  , coefb  , ckupdc , smacel )
 
@@ -81,6 +80,7 @@ use optcal
 use lagran
 use pointe, only: coefau, coefbu
 use mesh
+use field
 
 !===============================================================================
 
@@ -97,12 +97,13 @@ integer          icetsm(ncesmp)
 integer, dimension(ncesmp,nvar), target :: itypsm
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(ndimfb,*)
+double precision propce(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6)
 
 double precision, dimension(ncesmp,nvar), target ::  smacel
 double precision, dimension(ncelet,ntersl), target :: tslagr
+double precision, dimension(:), pointer :: bromo, cromo
 
 ! Local variables
 
@@ -111,7 +112,7 @@ integer          inc   , iccocg
 integer          ipp   , iwarnp, iclip
 integer          icliup, iclivp, icliwp
 integer          nswrgp, imligp
-integer          ipcrom, ipbrom, ipcroo, ipbroo, iivar
+integer          iivar
 integer          iitsla
 double precision epsrgp, climgp, extrap
 
@@ -126,6 +127,7 @@ double precision, allocatable, dimension(:,:) :: gradro
 integer,          pointer, dimension(:) :: itpsmp => null()
 double precision, pointer, dimension(:) :: smcelp => null(), gammap => null()
 double precision, pointer, dimension(:) :: tslage => null(), tslagi => null()
+double precision, dimension(:), pointer :: brom, crom
 
 !===============================================================================
 
@@ -147,8 +149,8 @@ icliup = iclrtp(iu,icoef)
 iclivp = iclrtp(iv,icoef)
 icliwp = iclrtp(iw,icoef)
 
-ipcrom = ipproc(irom  )
-ipbrom = ipprob(irom  )
+call field_get_val_s(icrom, crom)
+call field_get_val_s(ibrom, brom)
 
 if(iwarni(iep).ge.1) then
   if (iturb.eq.30) then
@@ -180,8 +182,7 @@ ilved = .false.
 call grdvec &
 !==========
 ( iu     , imrgra , inc    , nswrgp , imligp ,                   &
-  iwarnp , nfecra ,                                              &
-  epsrgp , climgp , extrap ,                                     &
+  iwarnp , epsrgp , climgp ,                                     &
   ilved  ,                                                       &
   rtpa(1,iu) ,  coefau , coefbu,                                 &
   gradv  )
@@ -283,19 +284,20 @@ if(igrari.eq.1) then
 
   iivar = 0
 
-!     Si on extrapole les termes sources et rho, on utilise cpdt rho^n
-  ipcroo = ipcrom
-  ipbroo = ipbrom
+  ! Si on extrapole les termes sources et rho, on utilise cpdt rho^n
   if(isto2t.gt.0.and.iroext.gt.0) then
-    ipcroo = ipproc(iroma)
-    ipbroo = ipprob(iroma)
+    call field_get_val_prev_s(icrom, cromo)
+    call field_get_val_prev_s(ibrom, bromo)
+  else
+    call field_get_val_s(icrom, cromo)
+    call field_get_val_s(ibrom, bromo)
   endif
 
   call grdcel &
   !==========
  ( iivar  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   propce(1,ipcroo), propfb(1,ipbroo), viscb           ,          &
+   cromo  , bromo  , viscb           ,                            &
    gradro )
 
 endif
@@ -342,7 +344,7 @@ do isou = 1, 6
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   , isou   , ipp    ,                                     &
    icepdc , icetsm , itpsmp ,                                     &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   dt     , rtp    , rtpa   , propce ,                            &
    coefa  , coefb  , produc , gradro ,                            &
    ckupdc , smcelp , gammap ,                                     &
    viscf  , viscb  ,                                              &
@@ -357,7 +359,7 @@ do isou = 1, 6
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   , isou   , ipp    ,                                     &
    icepdc , icetsm , itpsmp ,                                     &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   dt     , rtp    , rtpa   , propce ,                            &
    coefa  , coefb  , gradv  , gradro ,                            &
    ckupdc , smcelp , gammap ,                                     &
    viscf  , viscb  ,                                              &
@@ -386,7 +388,7 @@ call reseps &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   , isou   , ipp    ,                                     &
    icepdc , icetsm , itpsmp ,                                     &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   dt     , rtp    , rtpa   , propce ,                            &
    coefa  , coefb  , gradv  , produc , gradro ,                   &
    ckupdc , smcelp , gammap ,                                     &
    viscf  , viscb  ,                                              &
@@ -407,7 +409,7 @@ call clprij &
 !==========
  ( ncelet , ncel   , nvar   ,                                     &
    iclip  ,                                                       &
-   propce , rtpa   , rtp    )
+   rtpa   , rtp    )
 
 
 ! Free memory

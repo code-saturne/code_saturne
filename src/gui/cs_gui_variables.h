@@ -59,14 +59,12 @@ typedef struct {
   int    nprop;           /* number of properties                            */
   int    nsalpp;          /* number of predifined physics properties         */
   int    nprayc;          /* number of cell's radiative properties           */
-  int    nprayb;          /* number of boundary face's radiative properties  */
   int    ntimaver;        /* number of time averages                         */
   char **properties_name; /* label of properties                             */
   int   *properties_ipp;  /* properties position for post-processing         */
   int   *propce;          /* properties position in fortran array PROPCE     */
   char **b_prop_name;     /* label of boundary faces properties              */
   int   *b_prop_ipp;      /* boundary faces prop position for post           */
-  int   *propfb;          /* bound faces prop position in fortran array PROPFB */
 } cs_var_t;
 
 

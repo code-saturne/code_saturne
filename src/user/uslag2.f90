@@ -29,7 +29,7 @@ subroutine uslag2 &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb , itepa  , ifrlag ,                            &
-   dt     , rtpa   , propce , propfb ,                            &
+   dt     , rtpa   , propce ,                                     &
    ettp   , tepa   )
 
 !===============================================================================
@@ -79,8 +79,6 @@ subroutine uslag2 &
 ! (ncelet,*)       !    !     ! time step                                      !
 ! propce           ! ra ! <-- ! physical properties at cell centers            !
 ! (ncelet,*)       !    !     !                                                !
-! propfb           ! ra ! <-- ! physical properties at boundary face centers   !
-!  (nfabor,*)      !    !     !                                                !
 ! ettp             ! ra ! <-- ! array of the variables associated to           !
 !  (nbpmax,nvp)    !    !     ! the particles at the current time step         !
 ! tepa             ! ra ! <-- ! particle information (real) (statis. weight..) !
@@ -125,7 +123,6 @@ integer          itepa(nbpmax,nivep) , ifrlag(nfabor)
 
 double precision dt(ncelet) , rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfb(nfabor,*)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 
 ! Local variables
@@ -338,8 +335,8 @@ iusncl(izone) = nbclas
 !                                                        rczpar(ivpt)
 !                                                        rczpar(iwpt)
 !                  =  2 user-defined profile
-!        ijprpd : type of condition for the statistical weight
-!                  =  1 imposed number: we prescribe rczpar(ipoit) or rczpar(idebt)
+!        ijprtp : type of temperature condition
+!                  =  1 imposed temperature: we prescribe rczpar(itpt)
 !                  =  2 user-defined profile
 !        ijprdp : type of diameter condition
 !                  =  1 imposed diameter: we prescribe  rczpar(idpt)

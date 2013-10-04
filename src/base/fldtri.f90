@@ -49,7 +49,6 @@ subroutine fldtri &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
 !__________________.____._____.________________________________________________.
@@ -98,9 +97,10 @@ double precision coefa(ndimfb,*), coefb(ndimfb,*)
 
 ! Local variables
 
+logical          lprev
 integer          ii, ivar, iprop
 integer          iflid, nfld
-integer          icondl, icondf, icondd, icondc
+integer          icondl, icondf, icondd, icondc, ipcrom, ipcroa
 integer          f_id
 
 integer          ifvar(nvppmx)
@@ -287,10 +287,23 @@ do ii = 1, nscal
   endif
 enddo
 
+! Density field
+
+ipcrom = ipproc(irom)
+call field_have_previous(iprpfl(ipcrom), lprev)
+if (lprev) then
+  ipcroa = ipproc(iroma)
+  call field_map_values(iprpfl(ipcrom), propce(1, ipcrom), propce(1, ipcroa))
+else
+  ipcroa = -1
+  call field_map_values(iprpfl(ipcrom), propce(1, ipcrom), propce(1, ipcrom))
+endif
+
 ! The choice made in VARPOS specifies that we will only be interested in
 ! properties at cell centers (no mass flux, nor density at the boundary).
 
 do iprop = 1, nproce
+  if (iprop.eq.ipcrom .or. iprop.eq.ipcroa) cycle
   call field_map_values(iprpfl(iprop), propce(1, iprop), propce(1, iprop))
 enddo
 

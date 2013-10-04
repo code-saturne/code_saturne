@@ -75,8 +75,8 @@ module paramx
   integer   nprbmx
 
   !> maximal number of physical properties,
-  !> increased by nprcmx+nprfmx+nprbmx.
-  !> They will be stored in the arrays \ref propce or \ref propfb
+  !> increased by nprcmx.
+  !> They will be stored in the arrays \c propce
   integer   npromx
 
   !> maximal number of physical quantities

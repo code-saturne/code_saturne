@@ -34,20 +34,15 @@
 !------------------------------------------------------------------------------
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
-!> \param[in]     ncofab        nombre de couples coefa/b pour les cl
 !> \param[in]     dt            valeur du pas de temps
 !> \param[in,out] rtp           variables de calcul au centre des
 !>                              cellules
 !> \param[in,out] propce        physical properties at cell centers
-!> \param[in]     propfb        physical properties at boundary face centers
-!> \param[in]     coefa         boundary condition for boundary faces
-!> \param[in]     coefb         boundary condition for boundary faces
 !______________________________________________________________________________
 
 subroutine inivar &
- ( nvar   , nscal  , ncofab ,                                     &
-   dt     , rtp    , propce , propfb ,                            &
-   coefa  , coefb  )
+ ( nvar   , nscal  ,                                              &
+   dt     , rtp    , propce )
 
 !===============================================================================
 ! Module files
@@ -76,12 +71,9 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal  , ncofab
-
+integer          nvar   , nscal
 
 double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
-double precision propfb(nfabor,*)
-double precision coefa(nfabor,ncofab), coefb(nfabor,ncofab)
 
 ! Local variables
 
@@ -145,8 +137,8 @@ if  (ippmod(icompf).ge.0) then
     !==========
     ( nvar   ,                                                                 &
       iccfth , imodif ,                                                        &
-      dt     , rtp    , rtp   , propce , propfb ,                              &
-      w1     , w2     , w3    , w4     , rvoid  , rvoid )
+      rtp    ,                                                                 &
+      w1     , w2     , w3    , rvoid  , rvoid )
     deallocate(w1, w2, w3, w4)
 !     On initialise la diffusivite thermique
     visls0(ienerg) = visls0(itempk)/cv0
@@ -196,7 +188,7 @@ if (ippmod(iphpar).eq.0) then
   call cs_user_initialization &
   !==========================
 ( nvar   , nscal  ,                                                             &
-  dt     , rtp    , propce , propfb )
+  dt     , rtp    , propce )
 
   !     Avec l'interface, il peut y avoir eu initialisation,
   !       meme si usiniv n'est pas utilise.
@@ -214,10 +206,8 @@ else
 
   iusini = 1
 
-  call ppiniv &
+  call ppiniv(nvar, nscal, dt, rtp, propce)
   !==========
- ( nvar   , nscal  ,                                                            &
-   dt     , rtp    , propce , propfb , coefa  , coefb  )
 
   if  (ippmod(icompf).ge.0) then
 
@@ -228,8 +218,8 @@ else
     !==========
    ( nvar   ,                                                                   &
      ithvar , imodif ,                                                          &
-     dt     , rtp    , rtp   , propce , propfb ,                                &
-     w1     , w2     , w3    , w4     , rvoid  , rvoid  )
+     rtp    ,                                                                   &
+     w1     , w2     , w3    , rvoid  , rvoid  )
 
     deallocate(w1, w2, w3, w4)
 
@@ -408,7 +398,7 @@ if(iusini.eq.1.or.isuite.eq.1) then
       call clprij( ncelet , ncel   , nvar   ,          &
       !==========
                    iclip  ,                            &
-                   propce , rtp    , rtp    )
+                   rtp    , rtp    )
     else
       write(nfecra,3030) x11min,x22min,x33min,xepmin
       iok = iok + 1

@@ -23,9 +23,9 @@
 subroutine cfxtcl &
 !================
 
- ( nvar   , nscal  ,                                              &
-   icodcl , itrifb , itypfb , izfppp ,                            &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
+ ( nvar   ,                                                       &
+   icodcl , itypfb ,                                              &
+   dt     , rtp    , propce ,                                     &
    rcodcl )
 
 !===============================================================================
@@ -43,7 +43,6 @@ subroutine cfxtcl &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! icodcl           ! te ! --> ! code de condition limites aux faces            !
 !  (nfabor,nvar    !    !     !  de bord                                       !
 !                  !    !     ! = 1   -> dirichlet                             !
@@ -52,15 +51,11 @@ subroutine cfxtcl &
 !                  !    !     ! = 5   -> frottemt et u.n=0 (vitesse)           !
 !                  !    !     ! = 6   -> rugosite et u.n=0 (vitesse)           !
 !                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
-! itrifb           ! ia ! <-- ! indirection for boundary faces ordering        !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
-! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
-! (nfabor)         !    !     !  pour le module phys. part.                    !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
+! rtp              ! ra ! <-- ! calculated variables at cell centers           !
+!  (ncelet, *)     !    !     !  (at current time step)                        !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
 !  (nfabor,nvar    !    !     !  aux faces de bord                             !
 !                  !    !     ! rcodcl(1) = valeur du dirichlet                !
@@ -107,14 +102,13 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
+integer          nvar
 
 integer          icodcl(nfabor,nvarcl)
-integer          itrifb(nfabor), itypfb(nfabor)
-integer          izfppp(nfabor)
+integer          itypfb(nfabor)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
+double precision dt(ncelet), rtp(ncelet,*)
+double precision propce(ncelet,*)
 double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
@@ -122,7 +116,7 @@ double precision rcodcl(nfabor,nvarcl,3)
 integer          ivar  , ifac  , iel
 integer          ii    , iii   , imodif, iccfth
 integer          icalep, icalgm
-integer          iflmab, ipcrom, ipbrom
+integer          iflmab
 integer          ien   , itk
 integer          iclp
 integer          iclu  , iclv  , iclw
@@ -144,6 +138,7 @@ double precision, allocatable, dimension(:,:) :: bval
 
 double precision, dimension(:), pointer :: bmasfl
 double precision, dimension(:), pointer :: coefbp
+double precision, dimension(:), pointer :: crom, brom
 
 !===============================================================================
 !===============================================================================
@@ -167,8 +162,8 @@ iclw   = iclrtp(iw ,icoef)
 call field_get_key_int(ivarfl(ien), kbmasf, iflmab)
 call field_get_val_s(iflmab, bmasfl)
 
-ipbrom = ipprob(irom)
-ipcrom = ipproc(irom)
+call field_get_val_s(icrom, crom)
+call field_get_val_s(ibrom, brom)
 
 !     Liste des variables compressible :
 ivarcf(1) = ipr
@@ -204,8 +199,8 @@ if(icalep.ne.0) then
   !==========
 ( nvar   ,                                                       &
   iccfth , imodif ,                                              &
-  dt     , rtp    , rtpa   , propce , propfb ,                   &
-  w5     , w7     , w3     , w4     , rvoid  , rvoid  )
+  rtp    ,                                                       &
+  w5     , w7     , w3     , rvoid  , rvoid  )
 endif
 
 
@@ -228,8 +223,8 @@ if(icalgm.ne.0) then
   !==========
 ( nvar   ,                                                       &
   iccfth , imodif ,                                              &
-  dt     , rtp    , rtpa   , propce , propfb ,                   &
-  w1     , w2     , w6     , w4     , rvoid  , rvoid  )
+  rtp    ,                                                       &
+  w1     , w2     , w6     , rvoid  , rvoid  )
 
   if(ieos.eq.1) then
     gammag = w6(1)
@@ -282,11 +277,11 @@ do ifac = 1, nfabor
 
       icodcl(ifac,ipr) = 3
       hint = dt(iel)/distb(ifac)
-      rcodcl(ifac,ipr,3) = -hint                             &
-           * ( gx*(cdgfbo(1,ifac)-xyzcen(1,iel))                    &
+      rcodcl(ifac,ipr,3) = -hint                                  &
+           * ( gx*(cdgfbo(1,ifac)-xyzcen(1,iel))                  &
            + gy*(cdgfbo(2,ifac)-xyzcen(2,iel))                    &
            + gz*(cdgfbo(3,ifac)-xyzcen(3,iel)) )                  &
-           * propce(iel,ipcrom)
+           * crom(iel)
 
     else
 
@@ -300,8 +295,8 @@ do ifac = 1, nfabor
       !==========
  ( nvar   ,                                                       &
    iccfth , ifac   ,                                              &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   w1     , w2     , w3     , w4     , bval   , wbfb )
+   rtp    ,                                                       &
+   w1     , w2     , w3     , bval   , wbfb )
 
 !       En outre, il faut appliquer une pre-correction pour compenser
 !        le traitement fait dans condli... Si on pouvait remplir COEFA
@@ -428,8 +423,8 @@ do ifac = 1, nfabor
     !==========
  ( nvar   ,                                                       &
    iccfth , ifac   ,                                              &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   w1     , w2     , w3     , w4     , bval   ,rvoid )
+   rtp    ,                                                       &
+   w1     , w2     , w3     , bval   ,rvoid )
 
 
 !     Pression :
@@ -506,8 +501,8 @@ do ifac = 1, nfabor
     !==========
  ( nvar   ,                                                       &
    iccfth , ifac   ,                                              &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   w1     , w2     , w3     , w4     , bval   , rvoid )
+   rtp    ,                                                       &
+   w1     , w2     , w3     , bval   , rvoid )
 
 
 !     Rusanov, flux de masse et type de conditions aux limites :
@@ -543,7 +538,7 @@ do ifac = 1, nfabor
     enddo
 
 !     Valeurs de rho u E
-    propfb(ifac,ipbrom) = propce(iel,ipcrom)
+    brom(ifac) = crom(iel)
     rcodcl(ifac,iu ,1) = rtp(iel,iu)
     rcodcl(ifac,iv ,1) = rtp(iel,iv)
     rcodcl(ifac,iw ,1) = rtp(iel,iw)
@@ -560,8 +555,8 @@ do ifac = 1, nfabor
     !==========
  ( nvar   ,                                                       &
    iccfth , ifac   ,                                              &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   w1     , w2     , w3     , w4     , bval   , rvoid )
+   rtp    ,                                                       &
+   w1     , w2     , w3     , bval   , rvoid )
 
 !               flux de masse et type de conditions aux limites :
 !       voir plus bas
@@ -613,8 +608,8 @@ do ifac = 1, nfabor
     !==========
  ( nvar   ,                                                       &
    iccfth , ifac   ,                                              &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   w1     , w2     , w3     , w4     , bval   , rvoid )
+   rtp    ,                                                       &
+   w1     , w2     , w3     , bval   , rvoid )
 
 !     Rusanov, flux de masse et type de conditions aux limites :
 !       voir plus bas
@@ -667,8 +662,8 @@ do ifac = 1, nfabor
     !==========
  ( nvar   ,                                                       &
    iccfth , ifac   ,                                              &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   w1     , w2     , w3     , w4     , bval   , rvoid )
+   rtp    ,                                                       &
+   w1     , w2     , w3     , bval   , rvoid )
 
 !     Rusanov, flux de masse et type de conditions aux limites :
 !       voir plus bas
@@ -719,8 +714,8 @@ do ifac = 1, nfabor
     !==========
  ( nvar   ,                                                       &
    iccfth , ifac   ,                                              &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   w1     , w2     , w3     , w4     , bval   , rvoid )
+   rtp    ,                                                       &
+   w1     , w2     , w3     , bval   , rvoid )
 
 !     flux de masse et type de conditions aux limites :
 !     voir plus bas
@@ -806,7 +801,7 @@ do ifac = 1, nfabor
 !     Seul le flux de masse est calcule (on n'appelle pas Rusanov)
 !       (toutes les variables sont connues)
 
-      bmasfl(ifac) = propfb(ifac,ipbrom) *                                     &
+      bmasfl(ifac) = brom(ifac) *                                              &
                      ( bval(ifac,iu)*surfbo(1,ifac)                            &
                      + bval(ifac,iv)*surfbo(2,ifac)                            &
                      + bval(ifac,iw)*surfbo(3,ifac) )
@@ -817,7 +812,7 @@ do ifac = 1, nfabor
 
 !     Seul le flux de masse est calcule (on n'appelle pas Rusanov)
 
-      bmasfl(ifac) = propfb(ifac,ipbrom) *                                     &
+      bmasfl(ifac) = brom(ifac) *                                              &
                      ( bval(ifac,iu)*surfbo(1,ifac)                            &
                      + bval(ifac,iv)*surfbo(2,ifac)                            &
                      + bval(ifac,iw)*surfbo(3,ifac) )
@@ -827,7 +822,7 @@ do ifac = 1, nfabor
 !     Autres entrees/sorties :
     else
 
-!     On calcule des flux par Rusanov (PROPFB)
+!     On calcule des flux par Rusanov
 !       (en particulier, le flux de masse est complete)
 !       pour la condition d'entree supersonique seulement
 
@@ -835,11 +830,8 @@ do ifac = 1, nfabor
 
         call cfrusb                                                   &
         !==========
-     ( nvar   , nscal  ,                                              &
-       ifac   ,                                                       &
-       gammag ,                                                       &
-       dt     , rtp    , rtpa   , propce , propfb , bval ,            &
-       w3     , w4     )
+     ( nvar   , ifac   ,                                              &
+       gammag , rtp    , bval )
 
 !    Pour les autres types (sortie subsonique, entree QH, entree PH),
 !    On calcule des flux analytiques
@@ -848,7 +840,7 @@ do ifac = 1, nfabor
 
         call cffana                                                   &
         !==========
-      ( nvar   ,  ifac   , propfb , bval )
+      ( nvar   ,  ifac   , bval )
 
       endif
 

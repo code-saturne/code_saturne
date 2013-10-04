@@ -25,9 +25,9 @@ subroutine lagcar &
 
  ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   ntersl , nvlsta , nvisbr ,                                     &
+   nvlsta ,                                                       &
    itepa  ,                                                       &
-   dt     , rtp    , propce , propfb ,                            &
+   dt     , rtp    , propce ,                                     &
    ettp   , ettpa  , tepa   , taup   , tlag   ,                   &
    piil   , bx     , tempct , statis ,                            &
    gradpr , gradvf , energi , dissip , romp   )
@@ -53,16 +53,13 @@ subroutine lagcar &
 ! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
 ! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
 ! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
-! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
 ! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
-! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
 ! itepa            ! te ! <-- ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! ettp             ! tr ! <-- ! tableaux des variables liees                   !
 !  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
 ! ettpa            ! tr ! <-- ! tableaux des variables liees                   !
@@ -117,11 +114,11 @@ implicit none
 
 integer          nvar   , nscal
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
-integer          ntersl , nvlsta , nvisbr
+integer          nvlsta
 integer          itepa(nbpmax,nivep)
 
 double precision dt(ncelet) , rtp(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
+double precision propce(ncelet,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
 double precision taup(nbpmax) , tlag(nbpmax,3)
@@ -241,7 +238,7 @@ do ip = 1,nbpart
        nbpmax , nvp    , nvp1   , nvep   , nivep  ,               &
        ip     , itepa  ,                                          &
        rep    , uvwr   , rom    , romp(ip) , xnul , taup(ip) ,    &
-       dt     , rtp    , propce , propfb ,                        &
+       dt     , rtp    , propce ,                                 &
        ettp   , ettpa  , tepa   )
 
 !--->  CALCUL DE Tc
@@ -299,7 +296,7 @@ do ip = 1,nbpart
        ip     , itepa  ,                                          &
        rep    , uvwr   , rom    , romp(ip) , xnul ,               &
        xcp    , xrkl   , tempct(ip,1) ,                           &
-       dt     , rtp    , propce , propfb ,                        &
+       dt     , rtp    , propce ,                                 &
        ettp   , ettpa  , tepa   )
 
 ! Terme source implicite pour le couplage retour thermique

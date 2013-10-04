@@ -117,7 +117,7 @@ do iel = 1, ncel
   si7(iel)    = 0.d0
   si8(iel)    = 0.d0
   sp2m(iel)   = 0.d0
-  indpdf(iel) = 0.d0
+  indpdf(iel) = 0
 enddo
 
 

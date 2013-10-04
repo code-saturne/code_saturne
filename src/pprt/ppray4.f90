@@ -25,7 +25,7 @@ subroutine ppray4 &
 
  ( mode   ,                                                       &
    itypfb ,                                                       &
-   rtp    , rtpa   , propce , propfb ,                            &
+   rtp    , rtpa   , propce ,                                     &
    tparop , hparop , tempk  )
 
 !===============================================================================
@@ -61,7 +61,6 @@ subroutine ppray4 &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! cofrua,cofrub    ! tr ! --> ! conditions aux limites aux                     !
 !(nfabor)          !    !     !    faces de bord pour la luminances            !
 ! tempk(ncelet)    ! tr ! --> ! temperature en kelvin                          !
@@ -94,6 +93,7 @@ use cs_fuel_incl
 use ppincl
 use radiat
 use mesh
+use field
 
 !===============================================================================
 
@@ -106,12 +106,10 @@ integer          mode
 integer          itypfb(nfabor)
 
 double precision rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
+double precision propce(ncelet,*)
 
 double precision tempk(ncelet)
 double precision tparop(nfabor), hparop(nfabor)
-
-
 
 ! Local variables
 
@@ -123,18 +121,13 @@ double precision f1mc(ncharm) , f2mc(ncharm)
 double precision x2t , h2 , x2h2 , hf , xsolid(nsolim),t1
 double precision ym    (ngazgm)
 double precision diamgt,masgut,mkgout,mfgout,mkfini,rhofol
+double precision, dimension(:), pointer :: bym1, bym2, bym3
 
 !===============================================================================
-
-!===============================================================================
-! 0 - GESTION MEMOIRE
-!===============================================================================
-
 
 !===============================================================================
 ! 1 - INITIALISATIONS GENERALES
 !===============================================================================
-
 
 !===============================================================================
 !  2.1 - CALCUL DE LA TEMPERATURE EN KELVIN AUX CELLULES
@@ -200,26 +193,26 @@ endif
 
 if (mode.eq.-1) then
 
+  call field_get_val_s(ibym(1), bym1)
+  call field_get_val_s(ibym(2), bym2)
+  call field_get_val_s(ibym(3), bym3)
+
   do ifac = 1,nfabor
 
-    if (itypfb(ifac).eq.iparoi .or.                               &
-        itypfb(ifac).eq.iparug) then
-
-!   Numero de la cellule en regard
+    if (itypfb(ifac).eq.iparoi .or. itypfb(ifac).eq.iparug) then
 
       iel = ifabor(ifac)
 
-! ---- Combustion gaz : Flamme de Premelange ou Flamme de Diffusion
+      ! ---- Combustion gaz : Flamme de Premelange ou Flamme de Diffusion
 
-      if ( ippmod(icoebu).ge.0 .or.                               &
-           ippmod(icod3p).ge.0      ) then
+      if (ippmod(icoebu).ge.0 .or. ippmod(icod3p).ge.0) then
 
         do igg = 1, ngazgm
           coefg(igg) = zero
         enddo
-        coefg(1) = propfb(ifac,ipprob(iym(1)))
-        coefg(2) = propfb(ifac,ipprob(iym(2)))
-        coefg(3) = propfb(ifac,ipprob(iym(3)))
+        coefg(1) = bym1(ifac)
+        coefg(2) = bym2(ifac)
+        coefg(3) = bym3(ifac)
         mode     = -1
         call cothht                                               &
         !==========
@@ -227,7 +220,7 @@ if (mode.eq.-1) then
           npo    , npot   , th     , ehgazg ,                     &
           hparop(ifac) , tparop(ifac) )
 
-! ---- Combustion charbon pulverise : nouveau modele
+      ! ---- Combustion charbon pulverise : nouveau modele
 
       else if ( ippmod(iccoal).ge.0 ) then
 
@@ -257,7 +250,7 @@ if (mode.eq.-1) then
             endif
             iii = icla
             t1 = tparop(ifac)
-!
+
             call cs_coal_htconvers2                            &
            !============================
            ( mode , iii , h2 , xsolid ,  tparop(ifac) , t1 )
@@ -282,10 +275,10 @@ if (mode.eq.-1) then
         do ige = 1, ngazg
           coefe(ige) = propce(iel,ipproc(iym1(ige)))
         enddo
-!
+
         call cs_coal_htconvers1(mode,hf,coefe,f1mc,f2mc,tparop(ifac))
        !============================
-!
+
         hparop(ifac) = (1.d0-x2t)*hf+x2h2
 
 ! ---- Combustion fuel

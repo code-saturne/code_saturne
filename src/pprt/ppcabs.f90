@@ -23,7 +23,7 @@
 subroutine ppcabs &
 !================
 
- ( dt     , rtp    , rtpa   , propce )
+ ( rtp    , propce )
 
 !===============================================================================
 ! FONCTION :
@@ -45,8 +45,8 @@ subroutine ppcabs &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
+! rtp              ! ra ! <-- ! calculated variables at cell centers           !
+!  (ncelet, *)     !    !     !  (at current time step)                        !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
@@ -82,7 +82,7 @@ implicit none
 
 ! Arguments
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), rtp(ncelet,*)
 double precision propce(ncelet,*)
 
 ! Local variables

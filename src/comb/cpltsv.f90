@@ -23,12 +23,9 @@
 subroutine cpltsv &
 !================
 
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iscal  , iscala ,                                              &
-   icepdc , icetsm , itypsm ,                                     &
+ ( iscal  , iscala ,                                              &
    itypfb ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfb ,                   &
-   coefa  , coefb  ,                                              &
+   rtpa   , rtp    , propce ,                                     &
    smbrs  , rovsdt )
 
 !===============================================================================
@@ -51,24 +48,14 @@ subroutine cpltsv &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
-! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
 ! iscal            ! i  ! <-- ! scalar number                                  !
 ! iscala           ! e  ! <-- ! numero du scalaire associe                     !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 ! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
 ! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
-! itypsm           ! te ! <-- ! type de source de masse pour les               !
-! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! smbrs(ncelet)    ! tr ! --> ! second membre explicite                        !
 ! rovsdt(ncelet    ! tr ! --> ! partie diagonale implicite                     !
 !__________________!____!_____!________________________________________________!
@@ -97,6 +84,7 @@ use coincl
 use cpincl
 use ppincl
 use mesh
+use field
 
 !===============================================================================
 
@@ -104,27 +92,21 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-integer          ncepdp , ncesmp
 integer          iscal  , iscala
 
 integer          itypfb(nfabor)
-integer          icepdc(ncepdp)
-integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
+double precision rtp(ncelet,*), rtpa(ncelet,*)
+double precision propce(ncelet,*)
 double precision smbrs(ncelet), rovsdt(ncelet)
 
 ! Local variables
 
 integer          ivar   , ivarsc , ivarut, ivar0
 integer          iel, ifac
-integer          ipcrom, ipcvst
+integer          ipcvst
 integer          icha
 integer          inc , iccocg , nswrgp , imligp , iwarnp
-integer          icoefa , icoefb
 
 double precision xk , xe , rhovst
 double precision epsrgp , climgp , extrap
@@ -133,7 +115,7 @@ double precision, allocatable, dimension(:) :: coefap, coefbp
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w1, w2
 double precision, allocatable, dimension(:) :: w7
-
+double precision, dimension(:), pointer ::  crom
 !===============================================================================
 
 !===============================================================================
@@ -162,7 +144,7 @@ else
 endif
 
 ! --- Numero des grandeurs physiques
-ipcrom = ipproc(irom)
+call field_get_val_s(icrom, crom)
 ipcvst = ipproc(ivisct)
 
 
@@ -253,7 +235,6 @@ if ( itytur.eq.2 .or. itytur.eq.3                   &
  ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    w7     , coefap , coefbp ,                                     &
-!        FIM      COEFA        COEFB
    grad   )
 
   ! Free memory
@@ -271,7 +252,7 @@ if ( itytur.eq.2 .or. itytur.eq.3                   &
       xe = cmu*xk*rtpa(iel,iomg)
     endif
 
-    rhovst = propce(iel,ipcrom)*xe/                               &
+    rhovst = crom(iel)*xe/                               &
              (xk * rvarfl(iscal))*volume(iel)
     rovsdt(iel) = rovsdt(iel) + max(zero,rhovst)
     smbrs(iel) = smbrs(iel) +                                        &

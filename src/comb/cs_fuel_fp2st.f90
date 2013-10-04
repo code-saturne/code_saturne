@@ -23,11 +23,8 @@
 subroutine cs_fuel_fp2st &
 !=======================
 
- ( nvar   , nscal  , ncepdp , ncesmp ,                             &
-   iscal  ,                                                        &
-   itypfb ,                                                        &
-   icepdc , icetsm , itypsm ,                                      &
-   dt     , rtpa   , rtp    , propce , propfb ,                    &
+ ( iscal  ,                                                        &
+   rtpa   , rtp    , propce ,                                      &
    smbrs  , rovsdt )
 
 !===============================================================================
@@ -43,20 +40,9 @@ subroutine cs_fuel_fp2st &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
-! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
-! itypfb(nfabor)   ! ia ! <-- ! boundary face types                            !
-! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
-! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
-! itypsm           ! te ! <-- ! type de source de masse pour les               !
-! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! smbrs(ncelet)    ! tr ! --> ! second membre explicite                        !
 ! rovsdt(ncelet    ! tr ! --> ! partie diagonale implicite                     !
 !__________________!____!_____!________________________________________________!
@@ -87,6 +73,7 @@ use ppincl
 use ppcpfu
 use cs_fuel_incl
 use mesh
+use field
 
 !===============================================================================
 
@@ -94,26 +81,18 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-integer          ncepdp , ncesmp
 integer          iscal
 
-integer          itypfb(nfabor)
-integer          icepdc(ncepdp)
-integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
+double precision rtp(ncelet,*), rtpa(ncelet,*)
+double precision propce(ncelet,*)
 double precision smbrs(ncelet), rovsdt(ncelet)
 
 ! Local variables
 
 integer           iel    , ifac   , ivar   ,ivar0 , ivarsc
-integer           icla   , icha   , numcha
+integer           icla
 integer           inc    , iccocg , nswrgp , imligp , iwarnp
-integer           ipcrom , ipcvst , ipcx2c , ipcte1 , ipcte2
-integer           ixchcl , ixckcl , ixnpcl , ipcgd1 , ipcgd2
-integer           iold
+integer           ipcvst , ipcte1 , ipcte2
 
 double precision xk     , xe     , rhovst
 double precision epsrgp , climgp , extrap
@@ -124,7 +103,7 @@ integer           iok1,iok2
 double precision, dimension(:), allocatable :: x1,f1f2
 double precision, dimension(:), allocatable :: coefap , coefbp
 double precision, allocatable, dimension(:,:) :: grad
-
+double precision, dimension(:), pointer ::  crom
 !===============================================================================
 ! 1. Initialization
 !===============================================================================
@@ -147,7 +126,7 @@ ivarsc = 0
 ivar   = isca(iscal)
 
 ! --- Numero des grandeurs physiques
-ipcrom = ipproc(irom)
+call field_get_val_s(icrom, crom)
 ipcvst = ipproc(ivisct)
 
 
@@ -174,7 +153,7 @@ if ( itytur.eq.2 .or. iturb.eq.50 .or.             &
   do icla = 1, nclafu
     do iel = 1, ncel
       f1f2(iel) = f1f2(iel) + rtp(iel,isca(ifvap))
-!      x1(iel)   = x1(iel)   - rtp(iel,isca(iyfol(icla)))                                                       &
+      ! x1(iel)   = x1(iel)   - rtp(iel,isca(iyfol(icla)))
     enddo
   enddo
 
@@ -245,7 +224,7 @@ endif
 ! 3. PRISE EN COMPTE DES TERMES SOURCES RELATIF AUX ECHANGES INTERFACIAUX
 !==============================================================================
 
-ipcrom = ipproc(irom)
+call field_get_val_s(icrom, crom)
 ipcte1 = ipproc(itemp1)
 do icla=1,nclafu
 !
@@ -254,7 +233,7 @@ do icla=1,nclafu
   do iel = 1, ncel
 !
     t2mt1  = propce(iel,ipcte2)-propce(iel,ipcte1)
-    gvap = -propce(iel,ipproc(igmeva(icla)))*t2mt1*propce(iel,ipcrom)
+    gvap = -propce(iel,ipproc(igmeva(icla)))*t2mt1*crom(iel)
 !
     aux  = gvap*(1.d0-f1f2(iel))**2.d0
 !

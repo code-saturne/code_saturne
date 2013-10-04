@@ -40,7 +40,6 @@
 !> \param[out]    tpucou        velocity-pressure coupling
 !> \param[out]    rtp           calculation variables at cells center
 !> \param[out]    propce        physical properties at cell centers
-!> \param[out]    propfb        physical properties at boundary face centers
 !> \param[out]    coefa         boundary conditions for boundary faces
 !> \param[out]    coefb         boundary conditions for boundary faces
 !> \param[out]    frcxt         external stress generating hydrostatic pressure
@@ -49,7 +48,7 @@
 
 subroutine iniva0 &
  ( nvar   , nscal  , ncofab ,                                     &
-   dt     , tpucou , rtp    , propce , propfb ,                   &
+   dt     , tpucou , rtp    , propce ,                            &
    coefa  , coefb  , frcxt  , prhyd)
 
 !===============================================================================
@@ -82,7 +81,6 @@ implicit none
 integer          nvar   , nscal  , ncofab
 
 double precision dt(ncelet), tpucou(ncelet,3), rtp(ncelet,*), propce(ncelet,*)
-double precision propfb(nfabor,*)
 double precision coefa(nfabor,ncofab), coefb(nfabor,ncofab)
 double precision frcxt(3,ncelet), prhyd(ncelet)
 
@@ -91,7 +89,6 @@ double precision frcxt(3,ncelet), prhyd(ncelet)
 integer          iis   , ivar  , iscal , imom
 integer          iel   , ifac  , isou  , jsou
 integer          iclip , ii    , jj    , idim
-integer          iirom , iiromb, iiroma
 integer          iivisl, iivist, iivisa, iivism
 integer          iicp  , iicpa
 integer          iiviss, iiptot
@@ -102,6 +99,7 @@ integer          iflid, nfld, ifmaip, bfmaip, iflmas, iflmab
 double precision xxk, xcmu, trii
 
 double precision rvoid(1)
+double precision, dimension(:), pointer :: brom, crom
 
 !===============================================================================
 
@@ -140,28 +138,22 @@ enddo
 !===============================================================================
 
 !     Masse volumique
-iirom  = ipproc(irom  )
-iiromb = ipprob(irom  )
+call field_get_val_s(icrom, crom)
+call field_get_val_s(ibrom, brom)
 
 !     Masse volumique aux cellules (et au pdt precedent si ordre2 ou icalhy)
 do iel = 1, ncel
-  propce(iel,iirom)  = ro0
+  crom(iel)  = ro0
 enddo
 if (iroext.gt.0.or.icalhy.eq.1.or.idilat.gt.1) then
-  iiroma = ipproc(iroma )
-  do iel = 1, ncel
-    propce(iel,iiroma) = propce(iel,iirom)
-  enddo
+  call field_current_to_previous(icrom)
 endif
 !     Masse volumique aux faces de bord (et au pdt precedent si ordre2)
 do ifac = 1, nfabor
-  propfb(ifac,iiromb) = ro0
+  brom(ifac) = ro0
 enddo
-if(iroext.gt.0) then
-  iiroma = ipprob(iroma )
-  do ifac = 1, nfabor
-    propfb(ifac,iiroma) = propfb(ifac,iiromb)
-  enddo
+if (iroext.gt.0) then
+  call field_current_to_previous(ibrom)
 endif
 
 !     Viscosite moleculaire
@@ -352,8 +344,8 @@ elseif(itytur.eq.3) then
     enddo
     iclip = 1
     call clprij(ncelet , ncel   , nvar    ,     &
-         iclip  ,                               &
-         propce , rtp    , rtp    )
+               iclip  ,                         &
+               rtp    , rtp    )
 
   else
 

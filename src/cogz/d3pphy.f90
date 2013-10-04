@@ -36,23 +36,15 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
-!> \param[in]     ibrom         indicator of boundary density array filling
+!> \param[out]    mbrom         indicator of boundary density array filling
 !> \param[in]     izfppp        boundary zone index for specific physic
-!> \param[in]     dt            time step (per cell)
-!> \param[in]     rtp, rtpa     calculated variables at cell centers
-!>                               (at current and previous time steps)
+!> \param[in]     rtp           calculated variables at cell centers
+!>                               (at current time steps)
 !> \param[in,out] propce        physical properties at cell centers
-!> \param[in,out] propfb        physical properties at boundary face centers
-!> \param[in]     coefa, coefb  boundary conditions
 !_______________________________________________________________________________
 
 subroutine d3pphy &
- ( nvar   , nscal  ,                                              &
-   ibrom  , izfppp ,                                              &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   coefa  , coefb  )
+ ( mbrom  , izfppp , rtp    , propce )
 
 !===============================================================================
 
@@ -73,6 +65,7 @@ use cpincl
 use ppincl
 use radiat
 use mesh
+use field
 
 !===============================================================================
 
@@ -80,20 +73,17 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-
-integer          ibrom
+integer          mbrom
 integer          izfppp(nfabor)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
+double precision rtp(ncelet,*)
+double precision propce(ncelet,*)
 
 ! Local variables
 
 integer          if, ih, iel, icg
 integer          ifac, mode, izone
-integer          ipbrom, ipcrom, ipbycg, ipcycg
+integer          ipcycg
 
 double precision coefg(ngazgm), fsir, hhloc, tstoea, tin
 double precision temsmm
@@ -104,7 +94,8 @@ double precision, allocatable, dimension(:) :: dirmin, dirmax
 double precision, allocatable, dimension(:) :: fdeb, ffin
 double precision, allocatable, dimension(:) :: hrec, tpdf
 double precision, allocatable, dimension(:) :: w1, w2
-
+double precision, dimension(:), pointer :: brom,  crom
+double precision, dimension(:), pointer :: bsval
 integer       ipass
 data          ipass /0/
 save          ipass
@@ -284,9 +275,9 @@ deallocate(indpdf)
 
 ! --> Masse volumique au bord
 
-ibrom = 1
-ipbrom = ipprob(irom)
-ipcrom = ipproc(irom)
+mbrom = 1
+call field_get_val_s(ibrom, brom)
+call field_get_val_s(icrom, crom)
 
 ! ---- Masse volumique au bord pour toutes les facettes
 !      Les facettes d'entree seront recalculees apres
@@ -302,7 +293,7 @@ if ( ipass.gt.1.or.(isuite.eq.1.and.initro.eq.1)) then
 
   do ifac = 1, nfabor
     iel = ifabor(ifac)
-    propfb(ifac,ipbrom) = propce(iel,ipcrom)
+    brom(ifac) = crom(iel)
   enddo
 
 endif
@@ -321,7 +312,7 @@ if(ipass.gt.1 .or. isuite.eq.1 ) then
       if ( ientfu(izone).eq.1 .or. ientox(izone).eq.1 ) then
         temsmm = tinfue/wmolg(1)
         if ( ientox(izone).eq.1 ) temsmm = tinoxy/wmolg(2)
-        propfb(ifac,ipbrom) = p0/(rr*temsmm)
+        brom(ifac) = p0/(rr*temsmm)
       endif
     endif
   enddo
@@ -330,13 +321,13 @@ endif
 ! --> Fractions massiques des especes globales au bord
 !     Uniquement si rayonnement
 
-if ( iirayo.gt.0 ) then
+if (iirayo.gt.0) then
   do icg = 1, ngazg
-    ipbycg = ipprob(iym(icg))
+    call field_get_val_s(ibym(1), bsval)
     ipcycg = ipproc(iym(icg))
     do ifac = 1, nfabor
       iel = ifabor(ifac)
-      propfb(ifac,ipbycg) = propce(iel,ipcycg)
+      bsval(ifac) = propce(iel,ipcycg)
     enddo
   enddo
 endif

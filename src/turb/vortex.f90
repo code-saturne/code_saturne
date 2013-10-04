@@ -88,7 +88,7 @@ do ient = 1, nnent
  ( icvor(ient)     , nvort(ient)     ,                            &
    ient   , ivorce(1,ient)  ,                                     &
    xyzv(1,1,ient)  , yzcel(1,1,ient) ,                            &
-   uvort(1,ient)   , vvort(1,ient)   , wvort(1,ient)   ,          &
+   uvort(1,ient)   ,                                              &
    yzvor(1,1,ient) , signv(1,ient)   , temps(1,ient)   ,          &
    tpslim(1,ient)  )
 
@@ -102,7 +102,7 @@ do ient = 1, nnent
   !==========
  ( icvor(ient)     , nvort(ient)     , ient   , dtref  ,          &
    ivorce(1,ient)  , yzcel(1,1,ient) ,                            &
-   uvort(1,ient)   , vvort(1,ient)   , wvort(1,ient)   ,          &
+   vvort(1,ient)   , wvort(1,ient)   ,                            &
    yzvor(1,1,ient) , yzvora(1,1,ient), signv(1,ient)   ,          &
    temps(1,ient)   , tpslim(1,ient)  )
 
@@ -114,10 +114,9 @@ do ient = 1, nnent
   !==========
  ( icvor(ient)     , nvort(ient)     , ient   ,                   &
    ivorce(1,ient)  , visv(1,ient)    ,                            &
-   yzcel(1,1,ient) ,                                              &
-   uvort(1,ient)   , vvort(1,ient)   , wvort(1,ient)   ,          &
+   yzcel(1,1,ient) , vvort(1,ient)   , wvort(1,ient)   ,          &
    yzvor(1,1,ient) , signv(1,ient)   ,                            &
-   sigma(1,ient)   , gamma(1,1,ient) , temps(1,ient)    )
+   sigma(1,ient)   , gamma(1,1,ient) )
 
 !===============================================================================
 ! 4. CALCUL DES FLUCTUATIONS DANS LE SENS DE L'ECOULEMENT

@@ -23,10 +23,10 @@
 subroutine pptycl &
 !================
 
- ( nvar   , nscal  ,                                              &
-   icodcl , itrifb , itypfb , izfppp ,                            &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   coefa  , coefb  , rcodcl )
+ ( nvar   ,                                                       &
+   icodcl , itypfb , izfppp ,                                     &
+   dt     , rtp    , propce ,                                     &
+   rcodcl )
 
 !===============================================================================
 ! FONCTION :
@@ -43,7 +43,6 @@ subroutine pptycl &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! icodcl           ! te ! --> ! code de condition limites aux faces            !
 !  (nfabor,nvar    !    !     !  de bord                                       !
 !                  !    !     ! = 1   -> dirichlet                             !
@@ -53,17 +52,13 @@ subroutine pptycl &
 !                  !    !     ! = 6   -> rugosite et u.n=0 (vitesse)           !
 !                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
 !                  !    !     !  entrante eventuelle     bloquee               !
-! itrifb           ! ia ! <-- ! indirection for boundary faces ordering        !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 ! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
+! rtp              ! ra ! <-- ! calculated variables at cell centers           !
+!  (ncelet, *)     !    !     !  (at current time step)                        !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 ! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
 !  (nfabor,nvar    !    !     !  aux faces de bord                             !
 !                  !    !     ! rcodcl(1) = valeur du dirichlet                !
@@ -112,15 +107,14 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
+integer          nvar
 
 integer          icodcl(nfabor,nvarcl)
-integer          itrifb(nfabor), itypfb(nfabor)
+integer          itypfb(nfabor)
 integer          izfppp(nfabor)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
+double precision dt(ncelet), rtp(ncelet,*)
+double precision propce(ncelet,*)
 double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
@@ -247,101 +241,72 @@ nozapm = izonem
 
 ! ---> Chimie 3 points : USD3PC
 
-if ( ippmod(icod3p).ge.0 ) then
+if (ippmod(icod3p).ge.0) then
 
-  call d3ptcl                                                     &
+  call d3ptcl(itypfb, izfppp, propce, rcodcl)
   !==========
- ( nvar   , nscal  ,                                              &
-   icodcl , itrifb , itypfb , izfppp ,                            &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   coefa  , coefb  , rcodcl )
 
 ! ---> Combustion gaz USEBUC
 !      Flamme de premelange modele EBU
 
-elseif ( ippmod(icoebu).ge.0 ) then
+elseif (ippmod(icoebu).ge.0) then
 
-  call ebutcl                                                     &
+  call ebutcl(itypfb, izfppp, propce, rcodcl)
   !==========
- ( nvar   , nscal  ,                                              &
-   icodcl , itrifb , itypfb , izfppp ,                            &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   coefa  , coefb  , rcodcl )
 
 ! ---> Combustion gaz USLWCC
 !      Flamme de premelange modele LWC
 
-elseif ( ippmod(icolwc).ge.0 ) then
+elseif (ippmod(icolwc).ge.0) then
 
-  call lwctcl                                                     &
+  call lwctcl(itypfb, izfppp, propce, rcodcl)
   !==========
- ( nvar   , nscal  ,                                              &
-   icodcl , itrifb , itypfb , izfppp ,                            &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   coefa  , coefb  , rcodcl )
 
 ! ---> Combustion charbon pulverise USCPCL
 
 elseif ( ippmod(iccoal).ge.0 ) then
 
-  call cs_coal_bcond                                              &
+  call cs_coal_bcond(itypfb, izfppp, propce, rcodcl)
   !=================
- ( nvar   , nscal  ,                                              &
-   icodcl , itrifb , itypfb , izfppp ,                            &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   coefa  , coefb  , rcodcl )
 
 ! ---> Combustion charbon pulverise couple Lagrangien USCPLC
 
-elseif ( ippmod(icpl3c).ge.0 ) then
+elseif (ippmod(icpl3c).ge.0) then
 
-  call cpltcl                                                     &
+  call cpltcl(itypfb, izfppp, propce, rcodcl)
   !==========
- ( nvar   , nscal  ,                                              &
-   icodcl , itrifb , itypfb , izfppp ,                            &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   coefa  , coefb  , rcodcl )
 
 ! ---> Combustion fuel USFUCL
 
 elseif (ippmod(icfuel).ge.0) then
 
-  call cs_fuel_bcond                                              &
+  call cs_fuel_bcond(itypfb, izfppp, propce, rcodcl)
   !=================
- ( icodcl , itypfb , izfppp ,                                     &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   rcodcl )
 
 ! ---> Compressible USCFCL
 
-elseif ( ippmod(icompf).ge.0 ) then
+elseif (ippmod(icompf).ge.0) then
 
   call cfxtcl                                                     &
   !==========
- ( nvar   , nscal  ,                                              &
-   icodcl , itrifb , itypfb , izfppp ,                            &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
+ ( nvar   ,                                                       &
+   icodcl , itypfb ,                                              &
+   dt     , rtp    , propce ,                                     &
    rcodcl )
 
 ! ---> Ecoulements atmospheriques
 
-elseif ( ippmod(iatmos).ge.0 ) then
+elseif (ippmod(iatmos).ge.0) then
 
-  call attycl                                                     &
+  call attycl(itypfb, izfppp, propce, rcodcl)
   !==========
- ( icodcl , itypfb , izfppp ,                                     &
-   dt     , propce , propfb , rcodcl )
 
 ! ---> Ecoulements electrique
 
-elseif ( ippmod(ielarc).ge.1 .or. ippmod(ieljou).ge.1 ) then
+elseif (ippmod(ielarc).ge.1 .or. ippmod(ieljou).ge.1) then
 
-  call cs_elec_bcond                                              &
-  !==========
- ( nvar   , nscal  ,                                              &
-   icodcl , itrifb , itypfb , izfppp ,                            &
-   dt     , rtp    , rtpa   ,                                     &
-   coefa  , coefb  , rcodcl )
+  call cs_elec_bcond(itypfb, izfppp, rcodcl)
+  !=================
 
 endif
 !----

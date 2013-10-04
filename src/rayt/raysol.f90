@@ -23,9 +23,7 @@
 subroutine raysol &
 !================
 
- ( nvar   , nscal  ,                                              &
-   itypfb ,                                                       &
-   dt     , rtp    , rtpa   ,                                     &
+ ( rtp    , rtpa   ,                                              &
    coefap , coefbp ,                                              &
    cofafp , cofbfp ,                                              &
    flurds , flurdb ,                                              &
@@ -80,10 +78,6 @@ subroutine raysol &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! itypfb           ! ia ! <-- ! boundary face types                            !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! coefap,coefbp    ! tr ! --- ! conditions aux limites aux                     !
@@ -132,11 +126,7 @@ implicit none
 
 ! Arguments
 
-integer          nvar, nscal
-
-integer          itypfb(nfabor)
-
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision rtp(ncelet,*), rtpa(ncelet,*)
 
 double precision coefap(nfabor), coefbp(nfabor)
 double precision cofafp(nfabor), cofbfp(nfabor)

@@ -23,10 +23,8 @@
 subroutine cs_fuel_physprop &
 !==========================
 
- ( nvar   , nscal  ,                                              &
-   ibrom  , izfppp ,                                              &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   coefa  , coefb   )
+ ( mbrom  , izfppp ,                                              &
+   rtp    , rtpa   , propce )
 
 !===============================================================================
 ! FONCTION :
@@ -38,19 +36,13 @@ subroutine cs_fuel_physprop &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ibrom            ! te ! <-- ! indicateur de remplissage de romb              !
+! mbrom            ! te ! <-- ! indicateur de remplissage de romb              !
 !   (nphmx   )     !    !     !                                                !
 ! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -79,31 +71,28 @@ use ppcpfu
 use cs_coal_incl
 use cs_fuel_incl
 use mesh
-
+use field
 !===============================================================================
 
 implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-
-integer          ibrom
+integer          mbrom
 integer          izfppp(nfabor)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
+double precision rtp(ncelet,*), rtpa(ncelet,*)
+double precision propce(ncelet,*)
 
 ! Local variables
 
-integer          iel, icha, icla, ipcrom, ipcro2
+integer          iel, icla, ipcro2
 integer          izone, ifac
-integer          ipbrom, iromf , ioxy , nbclip1,nbclip2
+integer          iromf , ioxy , nbclip1,nbclip2
 
 double precision x1sro1, x2sro2, srrom1, uns1pw
 double precision x2tot, wmolme, unsro1
-double precision ff3min,ff3max,fvp2max,valmin,valmax
+double precision ff3min,ff3max,valmin,valmax
 
 integer          ipass
 data             ipass /0/
@@ -114,7 +103,7 @@ double precision , dimension ( : )     , allocatable :: f1m,f2m,f3m,f4m,f5m
 double precision , dimension ( : )     , allocatable :: f6m,f7m,f8m,f9m
 double precision , dimension ( : )     , allocatable :: enth1 , x2 ,fvp2m
 double precision , dimension ( : )     , allocatable :: xoxyd,enthox
-
+double precision, dimension(:), pointer ::  brom, crom
 !===============================================================================
 !
 !===============================================================================
@@ -335,7 +324,7 @@ call  cs_fuel_thfieldconv2 ( ncelet , ncel , rtp , propce )
 !       a partir du premier passage si on est en suite de calcul et
 !         qu'on a relu la masse volumique dans le fichier suite.
 
-ipcrom = ipproc(irom)
+call field_get_val_s(icrom, crom)
 
 if (ipass.gt.1.or.(isuite.eq.1.and.initro.eq.1)) then
   srrom1 = srrom
@@ -352,7 +341,7 @@ do iel = 1, ncel
   enddo
   x1sro1 = (1.d0-x2(iel)) / propce(iel,iromf)
 ! ---- Sous relaxation eventuelle a donner dans ppini1.F
-  propce(iel,ipcrom) = srrom1*propce(iel,ipcrom)                  &
+  crom(iel) = srrom1*crom(iel)                  &
                      + (1.d0-srrom1)/(x1sro1+x2sro2)
 enddo
 
@@ -363,15 +352,15 @@ enddo
 !                      ----------------
 !===============================================================================
 
-ibrom = 1
-ipbrom = ipprob(irom)
-ipcrom = ipproc(irom)
+mbrom = 1
+call field_get_val_s(ibrom, brom)
+call field_get_val_s(icrom, crom)
 ! ---> Masse volumique au bord pour toutes les facettes
 !      Les facettes d'entree seront recalculees.
 !
 do ifac = 1, nfabor
   iel = ifabor(ifac)
-  propfb(ifac,ipbrom) = propce(iel,ipcrom)
+  brom(ifac) = crom(iel)
 enddo
 
 ! ---> Masse volumique au bord pour les facettes d'entree UNIQUEMENT
@@ -400,7 +389,7 @@ if ( ipass.gt.1 .or. isuite.eq.1 ) then
 
         unsro1 = (wmolme*rr*timpat(izone)) / p0
         x1sro1 = (1.d0-x2tot) * unsro1
-        propfb(ifac,ipbrom) = 1.d0 / (x1sro1+x2sro2)
+        brom(ifac) = 1.d0 / (x1sro1+x2sro2)
       endif
     endif
 

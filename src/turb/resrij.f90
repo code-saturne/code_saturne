@@ -58,7 +58,6 @@
 !> \param[in,out] rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in,out] propfb        physical properties at boundary face centers
 !> \param[in]     coefa, coefb  boundary conditions
 !> \param[in]     grdvit        tableau de travail pour terme grad
 !>                                 de vitesse     uniqt pour iturb=31
@@ -82,7 +81,7 @@ subroutine resrij &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   , isou   , ipp    ,                                     &
    icepdc , icetsm , itpsmp ,                                     &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   dt     , rtp    , rtpa   , propce ,                            &
    coefa  , coefb  , produc , gradro ,                            &
    ckupdc , smcelp , gamma  ,                                     &
    viscf  , viscb  ,                                              &
@@ -124,7 +123,7 @@ integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itpsmp(ncesmp)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(ndimfb,*)
+double precision propce(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision produc(6,ncelet)
 double precision gradro(ncelet,3)
@@ -138,7 +137,7 @@ double precision smbr(ncelet), rovsdt(ncelet)
 
 integer          iel
 integer          ii    , jj    , kk    , iiun
-integer          ipcrom, ipcvis, iflmas, iflmab, ipcroo
+integer          ipcvis, iflmas, iflmab
 integer          iclvar, iclvaf
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp, ireslp
@@ -153,16 +152,13 @@ integer          ivoid(1)
 
 double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
 double precision epsrsp
-double precision trprod, trrij , cstrij, rctse , deltij
-double precision grdpx , grdpy , grdpz , grdsn
-double precision surfn2
+double precision trprod, trrij , deltij
 double precision tuexpr, thets , thetv , thetp1
 double precision d1s3  , d2s3
 double precision matrot(3,3)
 
 double precision rvoid(1)
 
-double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: w7, w8
 double precision, allocatable, dimension(:) :: dpvar
@@ -170,6 +166,7 @@ double precision, allocatable, dimension(:,:) :: viscce
 double precision, allocatable, dimension(:,:) :: weighf
 double precision, allocatable, dimension(:) :: weighb
 double precision, dimension(:), pointer :: imasfl, bmasfl
+double precision, dimension(:), pointer ::  crom, cromo
 
 !===============================================================================
 
@@ -189,7 +186,7 @@ if(iwarni(ivar).ge.1) then
   write(nfecra,1000) nomvar(ipp)
 endif
 
-ipcrom = ipproc(irom  )
+call field_get_val_s(icrom, crom)
 ipcvis = ipproc(iviscl)
 call field_get_key_int(ivarfl(iu), kimasf, iflmas)
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
@@ -210,9 +207,10 @@ d2s3 = 2.d0/3.d0
 thets  = thetst
 thetv  = thetav(ivar )
 
-ipcroo = ipcrom
-if(isto2t.gt.0.and.iroext.gt.0) then
-  ipcroo = ipproc(iroma)
+if (isto2t.gt.0.and.iroext.gt.0) then
+  call field_get_val_prev_s(icrom, cromo)
+else
+  call field_get_val_s(icrom, cromo)
 endif
 iptsta = 0
 if(isto2t.gt.0) then
@@ -237,7 +235,7 @@ call ustsri &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   ,                                                       &
    icepdc , icetsm , itpsmp ,                                     &
-   dt     , rtpa   , propce , propfb ,                            &
+   dt     , rtpa   , propce ,                                     &
    ckupdc , smcelp , gamma  , produc , produc ,                   &
    smbr   , rovsdt )
 
@@ -312,7 +310,7 @@ endif
 
 do iel=1,ncel
   rovsdt(iel) = rovsdt(iel)                                          &
-              + istat(ivar)*(propce(iel,ipcrom)/dt(iel))*volume(iel)
+              + istat(ivar)*(crom(iel)/dt(iel))*volume(iel)
 enddo
 
 
@@ -363,7 +361,7 @@ if (isto2t.gt.0) then
 !       = rhoPij-C1rho eps/k(   -2/3k dij)-C2rho(Pij-1/3Pkk dij)-2/3rho eps dij
 !       = rho{2/3dij[C2 Pkk/2+(C1-1)eps)]+(1-C2)Pij           }
     propce(iel,iptsta+isou-1) = propce(iel,iptsta+isou-1)         &
-                          + propce(iel,ipcroo) * volume(iel)      &
+                          + cromo(iel) * volume(iel)              &
       *(   deltij*d2s3*                                           &
            (  crij2*trprod                                        &
             +(crij1-1.d0)* rtpa(iel,iep)  )                     &
@@ -371,12 +369,12 @@ if (isto2t.gt.0) then
 !       Dans SMBR
 !       =       -C1rho eps/k(Rij         )
 !       = rho{                                     -C1eps/kRij}
-    smbr(iel) = smbr(iel) + propce(iel,ipcrom) * volume(iel)      &
+    smbr(iel) = smbr(iel) + crom(iel) * volume(iel)      &
       *( -crij1*rtpa(iel,iep)/trrij * rtpa(iel,ivar)  )
 
 !     Calcul de la partie implicite issue de Phi1
 !       = C1rho eps/k(1        )
-    rovsdt(iel) = rovsdt(iel) + propce(iel,ipcrom) * volume(iel)  &
+    rovsdt(iel) = rovsdt(iel) + crom(iel) * volume(iel)  &
                             *crij1*rtpa(iel,iep)/trrij*thetv
 
   enddo
@@ -388,19 +386,19 @@ if (isto2t.gt.0) then
 
       trrij  = w8(iel)
 
-!    On enleve a PROPCE (avec IPCROO)
+!    On enleve a CROMO
 !       =       -C1rho eps/k(   -1/3Rij dij)
       propce(iel,iptsta+isou-1) = propce(iel,iptsta+isou-1)       &
-                          - propce(iel,ipcroo) * volume(iel)      &
+                          - cromo(iel) * volume(iel)              &
       *(deltij*d1s3*crij1*rtpa(iel,iep)/trrij * rtpa(iel,ivar))
-!    On ajoute a SMBR (avec IPCROM)
+!    On ajoute a SMBR (avec CROM)
 !       =       -C1rho eps/k(   -1/3Rij dij)
       smbr(iel)                 = smbr(iel)                       &
-                          + propce(iel,ipcrom) * volume(iel)      &
+                          + crom(iel) * volume(iel)      &
       *(deltij*d1s3*crij1*rtpa(iel,iep)/trrij * rtpa(iel,ivar))
-!    On ajoute a ROVSDT (avec IPCROM)
+!    On ajoute a ROVSDT (avec CROM)
 !       =        C1rho eps/k(   -1/3    dij)
-      rovsdt(iel) = rovsdt(iel) + propce(iel,ipcrom) * volume(iel)&
+      rovsdt(iel) = rovsdt(iel) + crom(iel) * volume(iel)&
       *(deltij*d1s3*crij1*rtpa(iel,iep)/trrij                 )
     enddo
 
@@ -418,7 +416,7 @@ else
 !     Calcul de Prod+Phi1+Phi2-Eps
 !       = rhoPij-C1rho eps/k(Rij-2/3k dij)-C2rho(Pij-1/3Pkk dij)-2/3rho eps dij
 !       = rho{2/3dij[C2 Pkk/2+(C1-1)eps)]+(1-C2)Pij-C1eps/kRij}
-    smbr(iel) = smbr(iel) + propce(iel,ipcrom) * volume(iel)      &
+    smbr(iel) = smbr(iel) + crom(iel) * volume(iel)      &
       *(   deltij*d2s3*                                           &
            (  crij2*trprod                                        &
             +(crij1-1.d0)* rtpa(iel,iep)  )                     &
@@ -427,7 +425,7 @@ else
 
 !     Calcul de la partie implicite issue de Phi1
 !       = C1rho eps/k(1-1/3 dij)
-    rovsdt(iel) = rovsdt(iel) + propce(iel,ipcrom) * volume(iel)  &
+    rovsdt(iel) = rovsdt(iel) + crom(iel) * volume(iel)  &
          *(1.d0-d1s3*deltij)*crij1*rtpa(iel,iep)/trrij
   enddo
 
@@ -494,7 +492,7 @@ if (icorio.eq.1) then
     enddo
     ! Coriolis contribution in the Phi1 term:
     ! (1-C2/2)Gij
-    w7(iel) = propce(iel,ipcrom) * volume(iel)                   &
+    w7(iel) = crom(iel) * volume(iel)                   &
             * (1.d0 - 0.5d0*crij2)*w7(iel)
   enddo
 
@@ -523,17 +521,13 @@ if (irijec.eq.1) then
     w7(iel) = 0.d0
   enddo
 
-  call rijech &
+  call rijech(isou, rtpa, produc, w7)
   !==========
- ( ivar   , isou   , ipp    ,                                     &
-   rtp    , rtpa   , propce ,                                     &
-   produc , w7     )
 
   ! Si on extrapole les T.S. : PROPCE
   if(isto2t.gt.0) then
     do iel = 1, ncel
-       propce(iel,iptsta+isou-1) =                                  &
-       propce(iel,iptsta+isou-1) + w7(iel)
+       propce(iel,iptsta+isou-1) = propce(iel,iptsta+isou-1) + w7(iel)
      enddo
   ! Sinon SMBR
   else
@@ -555,12 +549,8 @@ if (igrari.eq.1) then
     w7(iel) = 0.d0
   enddo
 
-  call rijthe                                                     &
+  call rijthe(nscal, ivar, rtpa, gradro, w7)
   !==========
- ( nscal  ,                                                       &
-   ivar   , isou   , ipp    ,                                     &
-   rtp    , rtpa   ,                                              &
-   gradro , w7     )
 
   ! If source terms are extrapolated
   if (isto2t.gt.0) then
@@ -596,8 +586,7 @@ if (idften(ivar).eq.6) then
 
   call vitens &
   !==========
- ( imvisf ,                      &
-   viscce , iwarnp ,             &
+ ( viscce , iwarnp ,             &
    weighf , weighb ,             &
    viscf  , viscb  )
 

@@ -24,7 +24,7 @@ subroutine grdpre &
 !================
 
  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
+   iwarnp , epsrgp , climgp , extrap ,                            &
    pvar   , ktvar  , coefap , coefbp ,                            &
    grad   )
 
@@ -64,7 +64,6 @@ subroutine grdpre &
 !                  !    !     !  = 0 a partir des gradients voisins            !
 !                  !    !     !  = 1 a partir du gradient moyen                !
 ! iwarnp           ! i  ! <-- ! verbosity                                      !
-! nfecra           ! i  ! <-- ! unite du fichier sortie std                    !
 ! epsrgp           ! r  ! <-- ! precision relative pour la                     !
 !                  !    !     !  reconstruction des gradients 97               !
 ! climgp           ! r  ! <-- ! coef gradient*distance/ecart                   !
@@ -100,7 +99,7 @@ implicit none
 ! Arguments
 
 integer          ivar   , imrgra , inc    , iccocg , nswrgp
-integer          imligp ,iwarnp  , nfecra
+integer          imligp , iwarnp
 double precision epsrgp , climgp , extrap
 
 
@@ -114,7 +113,6 @@ integer          iphydp, ipond, ilved
 integer          idimtr
 
 double precision rvoid(1)
-double precision climin
 
 !===============================================================================
 

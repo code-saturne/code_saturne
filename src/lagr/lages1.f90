@@ -23,14 +23,12 @@
 subroutine lages1 &
 !================
 
- ( nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   ntersl , nvlsta , nvisbr ,                                     &
+ ( nbpmax , nvp    , nvep   , nivep  ,                            &
    itepa  ,                                                       &
-   dt     , rtpa   , propce , propfb ,                            &
-   ettp   , ettpa  , tepa   , statis ,                            &
+   rtpa   , propce ,                                              &
+   ettp   , ettpa  , tepa   ,                                     &
    taup   , tlag   , piil   ,                                     &
-   bx     , vagaus , gradpr , gradvf , romp   ,                   &
+   bx     , vagaus , gradpr , romp   ,                            &
    brgaus , terbru , fextla )
 
 !===============================================================================
@@ -47,31 +45,21 @@ subroutine lages1 &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
 ! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
 ! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
-! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
-! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
-! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
 ! itepa            ! te ! <-- ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (pas de temps precedent)           !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! ettp             ! tr ! --> ! tableaux des variables liees                   !
 !  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
 ! ettpa            ! tr ! <-- ! tableaux des variables liees                   !
 !  (nbpmax,nvp)    !    !     !   aux particules etape precedente              !
 ! tepa             ! tr ! <-- ! info particulaires (reels)                     !
 ! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
-! statis           ! tr ! <-- ! cumul des statistiques volumiques              !
-!(ncelet,nvlsta    !    !     !                                                !
 ! taup(nbpmax)     ! tr ! <-- ! temps caracteristique dynamique                !
 ! tlag(nbpmax)     ! tr ! <-- ! temps caracteristique fluide                   !
 ! piil(nbpmax,3    ! tr ! <-- ! terme dans l'integration des eds up            !
@@ -79,7 +67,6 @@ subroutine lages1 &
 ! vagaus           ! tr ! <-- ! variables aleatoires gaussiennes               !
 !(nbpmax,nvgaus    !    !     !                                                !
 ! gradpr(ncel,3    ! tr ! <-- ! gradient de pression                           !
-! gradvf(ncel,3    ! tr ! <-- ! gradient de la vitesse du fluide               !
 ! romp             ! tr ! <-- ! masse volumique des particules                 !
 ! fextla           ! tr ! <-- ! champ de forces exterieur                      !
 !(ncelet,3)        !    !     !    utilisateur (m/s2)                          !
@@ -114,21 +101,19 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-integer          nbpmax , nvp    , nvp1   , nvep  , nivep
-integer          ntersl , nvlsta , nvisbr
+integer          nbpmax , nvp    , nvep  , nivep
 
 integer          itepa(nbpmax,nivep)
 
-double precision dt(ncelet) , rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
+double precision rtpa(ncelet,*)
+double precision propce(ncelet,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
-double precision tepa(nbpmax,nvep) , statis(ncelet,*)
+double precision tepa(nbpmax,nvep)
 double precision taup(nbpmax) , tlag(nbpmax,3)
 double precision piil(nbpmax,3) , bx(nbpmax,3,2)
 double precision vagaus(nbpmax,*)
 double precision brgaus(nbpmax,*) , terbru(nbpmax)
-double precision gradpr(ncelet,3) , gradvf(ncelet,9)
+double precision gradpr(ncelet,3)
 double precision romp(nbpmax)
 double precision fextla(nbpmax,3)
 

@@ -77,10 +77,9 @@
 !>                               - 9 free inlet/outlet
 !>                                 (input mass flux blocked to 0)
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     rtp, rtpa     calculated variables at cell centers
-!>                               (at current and previous time steps)
+!> \param[in]     rtp           calculated variables at cell centers
+!>                               (at current time step)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfb        physical properties at boundary face centers
 !> \param[in,out] rcodcl        boundary condition values:
 !>                               - rcodcl(1) value of the dirichlet
 !>                               - rcodcl(2) value of the exterior exchange
@@ -111,7 +110,7 @@
 
 subroutine clptur &
  ( nscal  , isvhb  , icodcl ,                                     &
-   rtp    , rtpa   , propce , propfb , rcodcl ,                   &
+   rtp    , propce , rcodcl ,                                     &
    velipb , rijipb , coefa  , coefb  , visvdr ,                   &
    hbord  , theipb )
 
@@ -138,7 +137,7 @@ use cplsat
 use mesh
 use field
 use lagran
-
+use field
 !===============================================================================
 
 implicit none
@@ -149,8 +148,8 @@ integer          nscal, isvhb
 
 integer          icodcl(nfabor,nvarcl)
 
-double precision rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
+double precision rtp(ncelet,*)
+double precision propce(ncelet,*)
 double precision rcodcl(nfabor,nvarcl,3)
 double precision velipb(nfabor,ndim), rijipb(nfabor,6)
 double precision coefa(nfabor,*), coefb(nfabor,*)
@@ -175,7 +174,7 @@ integer          iclnuf
 integer          icl11f, icl22f, icl33f, icl12f, icl13f, icl23f
 integer          iclphf, iclfbf, iclalf, iclomf
 integer          iclvaf
-integer          ipcrom, ipcvis, ipcvst, ipccp , ipccv
+integer          ipcvis, ipcvst, ipccp , ipccv
 integer          ipcvsl, itplus, itstar
 integer          f_id
 integer          iwallf
@@ -209,7 +208,8 @@ character*80     fname
 double precision, dimension(:), pointer :: tplusp, tstarp
 double precision, dimension(:,:), pointer :: coefaut, cofafut, cofarut
 double precision, dimension(:,:,:), pointer :: coefbut, cofbfut, cofbrut
-
+double precision, dimension(:), pointer :: crom
+double precision, dimension(:), pointer :: bfconv, bhconv
 integer          ntlast , iaff
 data             ntlast , iaff /-1 , 0/
 save             ntlast , iaff
@@ -334,7 +334,7 @@ elseif (iturb.eq.70) then
 endif
 
 ! --- Physical quantities
-ipcrom = ipproc(irom)
+call field_get_val_s(icrom, crom)
 ipcvis = ipproc(iviscl)
 ipcvst = ipproc(ivisct)
 if (icp.gt.0) then
@@ -402,6 +402,10 @@ if (itstar.ge.0) then
   call field_get_val_s (itstar, tstarp)
 endif
 
+! Pointers to specific fields
+if (ifconv.ge.0) call field_get_val_s(ifconv, bfconv)
+if (ihconv.ge.0) call field_get_val_s(ihconv, bhconv)
+
 ! --- Loop on boundary faces
 do ifac = 1, nfabor
 
@@ -413,7 +417,7 @@ do ifac = 1, nfabor
     ! Physical properties
     visclc = propce(iel,ipcvis)
     visctc = propce(iel,ipcvst)
-    romc   = propce(iel,ipcrom)
+    romc   = crom(iel)
 
     ! Geometric quantities
     distbf = distb(ifac)
@@ -1712,28 +1716,28 @@ do ifac = 1, nfabor
               if (iscsth(iscal).eq.2) then
                 ! If Cp is variable
                 if (ipccp.gt.0) then
-                  propfb(ifac,ipprob(ihconv)) = hflui*propce(iel, ipccp)
+                  bhconv(ifac) = hflui*propce(iel, ipccp)
                 else
-                  propfb(ifac,ipprob(ihconv)) = hflui*cp0
+                  bhconv(ifac) = hflui*cp0
                 endif
 
               ! Energie (compressible module)
               elseif (iscsth(iscal).eq.3) then
                 ! If Cv is variable
                 if (ipccv.gt.0) then
-                  propfb(ifac,ipprob(ihconv)) = hflui*propce(iel,ipccv)
+                  bhconv(ifac) = hflui*propce(iel,ipccv)
                 else
-                  propfb(ifac,ipprob(ihconv)) = hflui*cv0
+                  bhconv(ifac) = hflui*cv0
                 endif
 
               ! Temperature
               elseif (abs(iscsth(iscal)).eq.1) then
-                propfb(ifac,ipprob(ihconv)) = hflui
+                bhconv(ifac) = hflui
               endif
 
               ! The outgoing flux is stored (Q = h(Ti'-Tp): negative if
               !  gain for the fluid) in W/m2
-              propfb(ifac,ipprob(ifconv)) = coefa(ifac,iclvaf)              &
+              bfconv(ifac) = coefa(ifac,iclvaf)              &
                                           + coefb(ifac,iclvaf)*theipb(ifac)
             endif
 

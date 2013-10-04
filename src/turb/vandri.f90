@@ -23,7 +23,7 @@
 subroutine vandri &
 !================
 
- (  ndim   , ncelet , ncel   , nfac   , nfabor ,                  &
+ (  ndim   , ncelet , ncel   , nfabor ,                           &
     itypfb , ifabor , ifapat ,                                    &
     xyzcen , cdgfbo , visvdr , yplusc , propce )
 
@@ -42,7 +42,6 @@ subroutine vandri &
 ! ndim             ! i  ! <-- ! spatial dimension                              !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
-! nfac             ! i  ! <-- ! number of interior faces                       !
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 ! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
@@ -77,14 +76,14 @@ use entsor
 use cstphy
 use parall
 use pointe, only: uetbor
-
+use field
 !===============================================================================
 
 implicit none
 
 ! Arguments
 
-integer          ndim, ncelet , ncel   , nfac   , nfabor
+integer          ndim, ncelet , ncel   , nfabor
 integer          itypfb(nfabor),ifabor(nfabor)
 integer          ifapat(ncelet)
 
@@ -95,12 +94,12 @@ double precision propce(ncelet,*)
 
 ! Local variables
 
-integer          iel   , ifac  , ipcvis, ipcvst, ipcrom
+integer          iel   , ifac  , ipcvis, ipcvst
 double precision yplus , yminpa, viscos
-
+double precision, dimension(:), pointer :: crom
 !===============================================================================
 
-ipcrom = ipproc(irom  )
+call field_get_val_s(icrom, crom)
 ipcvis = ipproc(iviscl)
 ipcvst = ipproc(ivisct)
 
@@ -111,7 +110,7 @@ if(abs(icdpar).eq.2) then
   if(irangp.lt.0) then
     do iel = 1, ncel
       ifac = ifapat(iel)
-      viscos = propce(iel,ipcvis)/propce(iel,ipcrom)
+      viscos = propce(iel,ipcvis)/crom(iel)
       yminpa = sqrt((cdgfbo(1,ifac)-xyzcen(1,iel))**2             &
            +        (cdgfbo(2,ifac)-xyzcen(2,iel))**2             &
            +        (cdgfbo(3,ifac)-xyzcen(3,iel))**2)
@@ -128,7 +127,7 @@ if(abs(icdpar).eq.2) then
       if(itypfb(ifac).eq.iparoi .or.                        &
          itypfb(ifac).eq.iparug ) then
         iel = ifabor(ifac)
-        viscos = propce(iel,ipcvis)/propce(iel,ipcrom)
+        viscos = propce(iel,ipcvis)/crom(iel)
         yminpa = sqrt((cdgfbo(1,ifac)-xyzcen(1,iel))**2           &
              +        (cdgfbo(2,ifac)-xyzcen(2,iel))**2           &
              +        (cdgfbo(3,ifac)-xyzcen(3,iel))**2)

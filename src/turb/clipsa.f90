@@ -24,8 +24,7 @@ subroutine clipsa &
 !================
 
  ( ncelet , ncel   , nvar   ,                                     &
-   iwarnu ,                                                       &
-   propce , rtp    )
+   rtp    )
 
 !===============================================================================
 ! Purpose:
@@ -41,8 +40,6 @@ subroutine clipsa &
 ! nvar             ! e  ! <-- ! nombre de variables                            !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
-! iwarnu           ! e  ! <-- ! niveau d'impression                            !
-! propce           ! tr ! <-- ! tableaux des variables au pdt courant          !
 !(ncelet,*         !    !     !                                                !
 ! rtp              ! tr ! <-- ! tableaux des variables au pdt courant          !
 ! (ncelet     )    !    !     !                                                !
@@ -73,8 +70,6 @@ implicit none
 ! Arguments
 
 integer          nvar, ncelet, ncel
-integer          iwarnu
-double precision propce(ncelet,*)
 double precision rtp(ncelet,nvar)
 
 ! Local variables

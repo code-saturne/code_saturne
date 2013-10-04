@@ -51,7 +51,6 @@
 !> \param[in]     rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfb        physical properties at boundary face centers
 !> \param[in]     ettp, ettpa   particle-defined variables
 !> \param[in]                    (at current and previous time steps)
 !> \param[in]     tepa          real particle properties
@@ -69,7 +68,7 @@ subroutine cs_user_extra_operations &
  ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvep   , nivep  , ntersl , nvlsta , nvisbr , &
    itepa  ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfb ,                   &
+   dt     , rtpa   , rtp    , propce ,                            &
    ettp   , ettpa  , tepa   , statis , stativ , tslagr , parbor )
 
 !===============================================================================
@@ -111,7 +110,6 @@ integer          itepa(nbpmax,nivep)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfb(ndimfb,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
 double precision statis(ncelet,nvlsta), stativ(ncelet,nvlsta-1)
@@ -127,7 +125,7 @@ integer          iel1   , iel2   , ieltsm
 integer          iortho
 integer          inc    , iccocg
 integer          nswrgp , imligp , iwarnp
-integer          ipcrom , ipcvst , iflmas , iflmab , ipccp, ipcvsl
+integer          ipcvst , iflmas , iflmab , ipccp, ipcvsl
 integer          iscal
 integer          ncesmp
 integer          ilelt  , nlelt
@@ -147,6 +145,7 @@ double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: treco
 double precision, dimension(:), pointer :: imasfl, bmasfl
+double precision, dimension(:), pointer ::  crom
 !< [loc_var_dec]
 
 !===============================================================================
@@ -196,7 +195,7 @@ if (inpdt0.eq.0) then
   ivar =  isca(iscal)    ! temperature variable number
 
   ! Physical quantity numbers
-  ipcrom = ipproc(irom)
+  call field_get_val_s(icrom, crom)
   ipcvst = ipproc(ivisct)
 
   ! Pointers to the mass fluxes
@@ -377,7 +376,7 @@ if (inpdt0.eq.0) then
       xrtpa = rtpa(iel,ivar)
       xrtp  = rtp (iel,ivar)
       xbilvl =   xbilvl                                                &
-               + volume(iel) * propce(iel,ipccp) * propce(iel,ipcrom)  &
+               + volume(iel) * propce(iel,ipccp) * crom(iel)  &
                                                  * (xrtpa - xrtp)
     enddo
   else
@@ -385,7 +384,7 @@ if (inpdt0.eq.0) then
       xrtpa = rtpa(iel,ivar)
       xrtp  = rtp (iel,ivar)
       xbilvl =   xbilvl  &
-               + volume(iel) * cp0 * propce(iel,ipcrom) * (xrtpa - xrtp)
+               + volume(iel) * cp0 * crom(iel) * (xrtpa - xrtp)
     enddo
   endif
 

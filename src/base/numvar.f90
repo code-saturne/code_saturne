@@ -130,18 +130,14 @@ module numvar
   !----------------------------------------------------------------------------
 
   !> \defgroup physical_prop Physical properties
-  !> \brief Physical properties are stored in propce and propfb.
-  !> the same index is used for a given properties for cells, internal
-  !> faces and boundary faces. See \ref cs_user_boundary_conditions
-  !> for some examples.
+  !> \brief Physical properties are stored in propce.
+  !> See \ref cs_user_boundary_conditions for some examples.
 
   !> \addtogroup physical_prop
   !> \{
 
   !> pointer to cell properties (propce)
   integer, save :: ipproc(npromx)
-  !> pointer to boundary face properties (propfb)
-  integer, save :: ipprob(npromx)
 
   !> Density at the current time step
   integer, save :: irom
@@ -181,6 +177,12 @@ module numvar
 
   !> interior and boundary convective mass flux key ids of the variables
   integer, save :: kimasf, kbmasf
+
+  !> convective mass flux of the variables at the previous time-step
+  integer, save :: ifluaa(nvarmx)
+
+  !> cell and boundary density key ids of the variables
+  integer, save :: icrom, ibrom
 
   !> dynamic constant of Smagorinsky
   integer, save :: ismago

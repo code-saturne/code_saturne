@@ -247,7 +247,8 @@ module field
 
     ! Interface to C function allocating boundary condition coefficients
 
-    subroutine cs_field_allocate_bc_coeffs(f, have_flux_bc, have_mom_bc, have_conv_bc)  &
+    subroutine cs_field_allocate_bc_coeffs(f, have_flux_bc, have_mom_bc,  &
+                                           have_conv_bc)                  &
       bind(C, name='cs_field_allocate_bc_coeffs')
       use, intrinsic :: iso_c_binding
       implicit none
@@ -261,7 +262,8 @@ module field
 
     ! Interface to C function initializing boundary condition coefficients
 
-    subroutine cs_field_init_bc_coeffs(f, have_flux_bc, have_mom_bc, have_conv_bc)  &
+    subroutine cs_field_init_bc_coeffs(f, have_flux_bc, have_mom_bc,      &
+                                       have_conv_bc)                      &
       bind(C, name='cs_field_init_bc_coeffs')
       use, intrinsic :: iso_c_binding
       implicit none
@@ -1369,6 +1371,7 @@ contains
     call c_f_pointer(c_p, p, [f_dim(1)])
 
   end subroutine field_get_val_prev_s_by_name
+
   !=============================================================================
 
 

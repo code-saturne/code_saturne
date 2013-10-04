@@ -39,7 +39,6 @@ subroutine cplpro &
 !      TRANSPORT LAGRANGIEN DES PARTICULES DE CHARBON
 
 !      INIT DES POSITIONS DES VARIABLES D'ETAT
-!        (DANS VECTEURS PROPCE, PROPFB)
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -139,13 +138,6 @@ ipproc(immel) = iprop
 ipppro(iprop) = ipppst
 
 nproce = iprop
-
-
-! ---> Positionnement dans le tableau PROPFB
-!      Au centre des faces de bord
-
-iprop = nprofb
-nprofb = iprop
 
 return
 end subroutine

@@ -24,9 +24,8 @@ subroutine cfdttv &
 !================
 
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iwarnp ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   dt     , rtp    , rtpa   , propce ,                            &
    coefa  , coefb  , ckupdc , smacel ,                            &
    wcf    ,                                                       &
    wflmas , wflmab , viscb  )
@@ -46,7 +45,6 @@ subroutine cfdttv &
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
 ! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
-! iwarnp           ! i  ! <-- ! verbosity                                      !
 ! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
 ! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
@@ -55,7 +53,6 @@ subroutine cfdttv &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
 ! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
@@ -99,13 +96,12 @@ implicit none
 
 integer          nvar   , nscal
 integer          ncepdp , ncesmp
-integer          iwarnp
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
+double precision propce(ncelet,*)
 double precision coefa(nfac,*), coefb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision wcf(ncelet)
@@ -151,7 +147,7 @@ call cfmsfp                                                       &
 !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   dt     , rtpa   , propce ,                                     &
    coefa  , coefb  , ckupdc , smacel ,                            &
    wflmas , wflmab ,                                              &
    viscf  , viscb  )
@@ -187,8 +183,8 @@ call cfther &
 !==========
  ( nvar   ,                                                       &
    iccfth , imodif ,                                              &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   c2     , rvoid  , rvoid  , rvoid  , rvoid  , rvoid )
+   rtp    ,                                                       &
+   c2     , rvoid  , rvoid  , rvoid  , rvoid )
 
 ! Compute the coefficient CFL/dt
 

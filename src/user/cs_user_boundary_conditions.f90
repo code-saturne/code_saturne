@@ -335,7 +335,7 @@
 !>
 !> \subsubsection fac_id Faces identification
 !>
-!> - Density:                               \c propfb(ifac, ipprob(irom))
+!> - Density:                               \c field id \c ibrom
 !> - Mass flux (for convecting \c ivar):
 !>     field id \c iflmab
 !>     using \c field_get_key_int(ivarfl(ivar), kimasf, iflmab)
@@ -369,7 +369,6 @@
 !> \param[in]     rtp, rtpa     calculated variables at cell centers
 !> \param[in]                    (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfb        physical properties at boundary face centers
 !> \param[in,out] rcodcl        boundary condition values:
 !>                               - rcodcl(1) value of the dirichlet
 !>                               - rcodcl(2) value of the exterior exchange
@@ -389,7 +388,7 @@
 subroutine cs_user_boundary_conditions &
  ( nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   dt     , rtp    , rtpa   , propce ,                            &
    rcodcl )
 
 !===============================================================================
@@ -419,6 +418,7 @@ use ctincl
 use elincl
 use cs_fuel_incl
 use mesh
+use field
 
 !===============================================================================
 
@@ -434,7 +434,6 @@ integer          izfppp(nfabor)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfb(nfabor,*)
 double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables

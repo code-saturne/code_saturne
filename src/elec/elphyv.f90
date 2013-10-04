@@ -24,9 +24,8 @@ subroutine elphyv &
 !================
 
  ( nvar   , nscal  ,                                              &
-   ibrom  , izfppp ,                                              &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   coefa  , coefb  )
+   mbrom  , izfppp ,                                              &
+   dt     , rtp    , rtpa   , propce )
 
 !===============================================================================
 ! FONCTION :
@@ -104,7 +103,7 @@ subroutine elphyv &
 !__________________!____!_____!________________________________________________!
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! ibrom            ! te ! <-- ! indicateur de remplissage de romb              !
+! mbrom            ! te ! <-- ! indicateur de remplissage de romb              !
 !        !    !     !                                                !
 ! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
@@ -112,9 +111,6 @@ subroutine elphyv &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -138,7 +134,7 @@ use ppthch
 use ppincl
 use elincl
 use mesh
-
+use field
 !===============================================================================
 
 implicit none
@@ -147,17 +143,16 @@ implicit none
 
 integer          nvar   , nscal
 
-integer          ibrom
+integer          mbrom
 integer          izfppp(nfabor)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
+double precision propce(ncelet,*)
 
 ! Local variables
 
 integer          iel
-integer          ipcrom, ipcvis, ipccp , ipcray
+integer          ipcvis, ipccp , ipcray
 integer          ipcvsl, ith   , iscal , ii
 integer          iiii  , ipcsig, it
 integer          iesp  , iesp1 , iesp2 , mode , isrrom
@@ -169,7 +164,7 @@ double precision ym    (ngazgm),yvol  (ngazgm)
 double precision coef(ngazgm,ngazgm)
 double precision roesp (ngazgm),visesp(ngazgm),cpesp(ngazgm)
 double precision sigesp(ngazgm),xlabes(ngazgm),xkabes(ngazgm)
-
+double precision, dimension(:), pointer ::  crom
 integer          ipass
 data             ipass /0/
 save             ipass
@@ -229,7 +224,7 @@ endif
 !       n'en avoir qu'une seule (modif dans varpos pour definir
 !       IVISLS(IPOTI) = IVISLS(IPOTR)) et economiser NCEL reels .
 
-!      IPCROM = IPPROC(IROM)
+!      call field_get_val_s(icrom, crom)
 !      IPCVIS = IPPROC(IVISCL)
 !      IPCCP  = IPPROC(ICP)
 !      IPCVSL = IPPROC(IVISLS(ISCALT))
@@ -237,7 +232,7 @@ endif
 !      IPCSII = IPPROC(IVISLS(IPOTI))
 
 !      PROPCE(IEL,IPPROC(ITEMP)) =
-!      PROPCE(IEL,IPCROM) =
+!      crom(iel) =
 !      PROPCE(IEL,IPCVIS) =
 !      PROPCE(IEL,IPCCP) =
 !      PROPCE(IEL,IPCVSL) =
@@ -283,7 +278,7 @@ if ( ippmod(ielarc).ge.1 ) then
 
 !      Pointeurs pour les differentes variables
 
-  ipcrom = ipproc(irom)
+  call field_get_val_s(icrom, crom)
   ipcvis = ipproc(iviscl)
   if(icp.gt.0) then
     ipccp  = ipproc(icp)
@@ -419,16 +414,16 @@ if ( ippmod(ielarc).ge.1 ) then
     enddo
     rhonp1 = 1.d0/rhonp1
     if(isrrom.eq.1) then
-      propce(iel,ipcrom) =                                        &
-           srrom*propce(iel,ipcrom)+(1.d0-srrom)*rhonp1
+      crom(iel) =                                        &
+           srrom*crom(iel)+(1.d0-srrom)*rhonp1
     else
-      propce(iel,ipcrom) = rhonp1
+      crom(iel) = rhonp1
     endif
 
 !        Fraction volumique de chaque constituant
 
     do iesp = 1, ngazg
-      yvol(iesp) = ym(iesp)*roesp(iesp)/propce(iel,ipcrom)
+      yvol(iesp) = ym(iesp)*roesp(iesp)/crom(iel)
       if ( yvol(iesp) .le. 0.d0 ) yvol(iesp) = epzero**2
     enddo
 
@@ -610,9 +605,9 @@ if ( ippmod(ielion).ge.1  ) then
 !       Masse volumique
 !       ---------------
 
-  ipcrom = ipproc(irom)
+  call field_get_val_s(icrom, crom)
   do iel = 1, ncel
-    propce(iel,ipcrom) = 1.d0
+    crom(iel) = 1.d0
   enddo
 
 !       VISCOSITE
@@ -713,8 +708,8 @@ endif
 call uselph                                                       &
 !==========
  ( nvar   , nscal  ,                                              &
-   ibrom  , izfppp ,                                              &
-   dt     , rtp    , rtpa   , propce , propfb )
+   mbrom  , izfppp ,                                              &
+   dt     , rtp    , rtpa   , propce )
 
 
 

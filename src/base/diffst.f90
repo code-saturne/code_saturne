@@ -312,6 +312,7 @@ do iscal = 1, nscal
     imasfl , bmasfl ,                                              &
     viscf  , viscb  , rvoid  , xcpp   ,                            &
     rvoid  , rvoid  ,                                              &
+    icvflb , ivoid  ,                                              &
     propce(1,ipproc(iustdy(iscal))) )
 
   endif

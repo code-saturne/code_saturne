@@ -31,7 +31,6 @@ subroutine atprop &
 
 !     INIT DES POSITIONS DES VARIABLES D'ETAT
 !            POUR LE MODULE ATMOSPHERIQUE
-!         (DANS VECTEURS PROPCE, PROPFB)
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -39,7 +38,7 @@ subroutine atprop &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! ipropp           ! e  ! <-- ! numero de la derniere propriete                !
-!                  !    !     !  (les proprietes sont dans propce ou propfb    !
+!                  !    !     !  (les proprietes sont dans propce)             !
 ! ipppst           ! e  ! <-- ! pointeur indiquant le rang de la               !
 !                  !    !     !  derniere grandeur definie aux                 !
 !                  !    !     !  cellules (rtp,propce...) pour le              !
@@ -83,7 +82,7 @@ integer       ipropp, ipppst
 integer       iprop
 
 !===============================================================================
-! 1. POSITIONNEMENT DES PROPRIETES : PROPCE, PROPFB
+! 1. POSITIONNEMENT DES PROPRIETES
 !    Atmospheric modules:  dry and humid atmosphere
 !===============================================================================
 

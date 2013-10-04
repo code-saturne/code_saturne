@@ -23,12 +23,8 @@
 subroutine ebutss &
 !================
 
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iscal  ,                                                       &
-   icepdc , icetsm , itypsm ,                                     &
-   izfppp ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfb ,                   &
-   coefa  , coefb  , ckupdc , smacel ,                            &
+ ( iscal  ,                                                       &
+   rtpa   ,                                                       &
    smbrs  , rovsdt )
 
 !===============================================================================
@@ -70,29 +66,9 @@ subroutine ebutss &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
-! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
 ! iscal            ! i  ! <-- ! scalar number                                  !
-! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
-! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
-! itypsm           ! te ! <-- ! type de source de masse pour les               !
-! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! izfppp           ! te ! --> ! numero de zone de la face de bord              !
-! (nfabor)         !    !     !  pour le module phys. part.                    !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
-! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
-!  (ncepdp,6)      !    !     !                                                !
-! smacel           ! tr ! <-- ! valeur des variables associee a la             !
-! (ncesmp,*   )    !    !     !  source de masse                               !
-!                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
+! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
+!  (ncelet, *)     !    !     !  (at previous time step)                       !
 ! smbrs(ncelet)    ! tr ! --> ! second membre explicite                        !
 ! rovsdt(ncelet    ! tr ! --> ! partie diagonale implicite                     !
 !__________________!____!_____!________________________________________________!
@@ -119,34 +95,25 @@ use coincl
 use cpincl
 use ppincl
 use mesh
-
+use field
 !===============================================================================
 
 implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-integer          ncepdp , ncesmp
 integer          iscal
 
-integer          icepdc(ncepdp)
-integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-integer          izfppp(nfabor)
-
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
+double precision rtpa(ncelet,*)
 double precision smbrs(ncelet), rovsdt(ncelet)
 
 ! Local variables
 
 character*80     chaine
-integer          ivar, ipcrom, iel
+integer          ivar, iel
 
 double precision, allocatable, dimension(:) :: w1, w2, w3
-
+double precision, dimension(:), pointer ::  crom
 !===============================================================================
 !===============================================================================
 ! 1. INITIALISATION
@@ -165,7 +132,7 @@ ivar = isca(iscal)
 chaine = nomvar(ipprtp(ivar))
 
 ! --- Numero des grandeurs physiques (voir cs_user_boundary_conditions)
-ipcrom = ipproc(irom)
+call field_get_val_s(icrom, crom)
 
 
 !===============================================================================
@@ -218,7 +185,7 @@ if ( ivar.eq.isca(iygfm) ) then
     if ( w1(iel).gt.epzero .and.                                  &
          w2(iel).gt.epzero       ) then
       w3(iel) = cebu*w2(iel)/w1(iel)                              &
-                   *propce(iel,ipcrom)*volume(iel)                &
+                   *crom(iel)*volume(iel)                &
                    *(1.d0 - rtpa(iel,ivar))
       smbrs(iel) = smbrs(iel) - rtpa(iel,ivar)*w3(iel)
       rovsdt(iel) = rovsdt(iel) + max(w3(iel),zero)

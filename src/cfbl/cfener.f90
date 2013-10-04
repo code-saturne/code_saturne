@@ -26,7 +26,7 @@ subroutine cfener &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   dt     , rtp    , rtpa   , propce ,                            &
    coefa  , coefb  , ckupdc , smacel ,                            &
    viscf  , viscb  ,                                              &
    smbrs  , rovsdt )
@@ -57,7 +57,6 @@ subroutine cfener &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
 ! ckupdc           ! tr ! <-- ! work array for the head loss                   !
@@ -95,7 +94,7 @@ use ppincl
 use cfpoin
 use mesh
 use field
-use pointe, only: coefau, coefbu, cofafu, cofbfu
+use pointe, only: coefau, coefbu
 
 !===============================================================================
 
@@ -111,7 +110,7 @@ integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
+double precision propce(ncelet,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision viscf(nfac), viscb(nfabor)
@@ -125,7 +124,7 @@ integer          ivar
 integer          ifac  , iel
 integer          init  , isqrt , iii
 integer          iclvar, iclvaf
-integer          ipcrom, ipbrom, ipcvst, ipcvsl, iflmas, iflmab
+integer          ipcvst, ipcvsl, iflmas, iflmab
 integer          ippvar, ipp   , icvflb
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp, ireslp, nitmap
@@ -153,6 +152,7 @@ double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: w4, w5, w6
 double precision, allocatable, dimension(:) :: w7, w8, w9
 double precision, dimension(:), pointer :: imasfl, bmasfl
+double precision, dimension(:), pointer :: brom, crom, cromo
 
 !===============================================================================
 !===============================================================================
@@ -177,9 +177,11 @@ ippvar = ipprtp(ivar)
 iclvar = iclrtp(ivar,icoef)
 iclvaf = iclrtp(ivar,icoeff)
 
-! Physical properties numbers
-ipcrom = ipproc(irom  )
-ipbrom = ipprob(irom)
+! Physical property numbers
+call field_get_val_s(icrom, crom)
+call field_get_val_s(ibrom, brom)
+call field_get_val_prev_s(icrom, cromo)
+
 ipcvst = ipproc(ivisct)
 
 call field_get_key_int(ivarfl(ivar), kimasf, iflmas)
@@ -224,7 +226,7 @@ call ustssc                                                                     
 ( nvar   , nscal  , ncepdp , ncesmp ,                                           &
   iscal  ,                                                                      &
   icepdc , icetsm , itypsm ,                                                    &
-  dt     , rtpa   , rtp    , propce , propfb ,                                  &
+  dt     , rtpa   , rtp    , propce ,                                           &
   ckupdc , smacel , smbrs  , rovsdt )
 
 do iel = 1, ncel
@@ -258,7 +260,7 @@ endif
 
 do iel = 1, ncel
   rovsdt(iel) = rovsdt(iel)                                                     &
-                + istat(ivar)*(propce(iel,ipproc(iroma))/dt(iel))*volume(iel)
+                + istat(ivar)*(cromo(iel)/dt(iel))*volume(iel)
 enddo
 
 !                                       __        v
@@ -269,12 +271,9 @@ if( idiff(iu).ge. 1 ) then
 !                             ^^^
   call cfdivs                                                     &
   !==========
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   icepdc , icetsm , itypsm ,                                     &
-   rtpa   , propce , propfb ,                                     &
-   coefa  , coefb  , ckupdc , smacel ,                            &
+ ( rtpa   , propce ,                                              &
    smbrs  , rtp(1,iu), rtp(1,iv), rtp(1,iw) )
-!        ------
+  !         ------
 
 endif
 
@@ -284,7 +283,7 @@ endif
 ! =======================      --  RHO ij   pr     ij  ij
 
 do iel = 1, ncel
-  w9(iel) = propce(iel,ipcrom)
+  w9(iel) = crom(iel)
 enddo
 
 !     Avec Reconstruction : ca pose probleme pour l'instant
@@ -395,7 +394,7 @@ do ifac = 1, nfabor
     viscb(ifac) = - bmasfl(ifac)                         &
                     * ( coefa(ifac,iclrtp(ipr,icoef))                           &
                         + coefb(ifac,iclrtp(ipr,icoef))*rtp(iel,ipr) )          &
-                    / propfb(ifac,ipbrom)
+                    / brom(ifac)
 
   else
 
@@ -480,8 +479,8 @@ if( idiff(ivar).ge. 1 ) then
   !==========
  ( nvar   ,                                                                     &
    iccfth , imodif ,                                                            &
-   dt     , rtp    , rtpa   , propce , propfb ,                                 &
-   w9     , wb     , w8     , w4     , rvoid  , rvoid )
+   rtp    ,                                                                     &
+   w9     , wb     , w8     , rvoid  , rvoid )
 
 ! Divergence computation with reconstruction
 
@@ -690,8 +689,8 @@ call clpsca(ncelet, ncel, iscal, rtp(1,iii), rtp)
   !==========
  ( nvar   ,                                                       &
    iccfth , imodif ,                                              &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   w6     , w7     , w8     , w9     , rvoid  , rvoid )
+   rtp    ,                                                       &
+   w6     , w7     , w8     , rvoid  , rvoid )
 
 
 ! Explicit balance (see codits : the increment is removed)
@@ -699,7 +698,7 @@ call clpsca(ncelet, ncel, iscal, rtp(1,iii), rtp)
 if (iwarni(ivar).ge.2) then
   do iel = 1, ncel
     smbrs(iel) = smbrs(iel)                                                     &
-            - istat(ivar)*(propce(iel,ipcrom)/dt(iel))*volume(iel)              &
+            - istat(ivar)*(crom(iel)/dt(iel))*volume(iel)              &
                 *(rtp(iel,ivar)-rtpa(iel,ivar))                                 &
                 * max(0,min(nswrsm(ivar)-2,1))
   enddo
@@ -721,8 +720,8 @@ call cfther                                                                     
 !==========
 ( nvar   ,                                                                      &
   iccfth , imodif ,                                                             &
-  dt     , rtp    , rtpa   , propce , propfb ,                                  &
-  rtp(1,ipr) , rtp(1,isca(itempk)) , w8     , w9      ,                         &
+  rtp    ,                                                                      &
+  rtp(1,ipr) , rtp(1,isca(itempk)) , w8     ,                                   &
   rvoid  , rvoid )
 
 !===============================================================================

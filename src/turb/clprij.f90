@@ -25,7 +25,7 @@ subroutine clprij &
 
  ( ncelet , ncel   , nvar   ,                                     &
    iclip  ,                                                       &
-   propce , rtpa   , rtp    )
+   rtpa   , rtp    )
 
 !===============================================================================
 ! FONCTION :
@@ -45,8 +45,6 @@ subroutine clprij &
 ! iclip            ! e  ! <-- ! indicateur = 1 on n'utilise pas rtpa           !
 !                  !    !     !  (inivar)                                      !
 !                  !    !     !            sinon on peut (turrij)              !
-! propce           ! tr ! <-- ! tableaux des variables au pdt courant          !
-!(ncelet,*         !    !     !                                                !
 ! rtpa             ! tr ! <-- ! tableaux des variables au pdt precedt          !
 ! (ncelet,nvar)    !    !     !                                                !
 ! rtp              ! tr ! <-- ! tableaux des variables au pdt courant          !
@@ -78,7 +76,6 @@ implicit none
 
 integer          nvar, ncelet, ncel
 integer          iclip
-double precision propce(ncelet,*)
 double precision rtpa(ncelet,nvar)
 double precision rtp(ncelet,nvar)
 

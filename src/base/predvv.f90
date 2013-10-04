@@ -53,10 +53,9 @@
 !> \param[in]     icetsm        index of cells with mass source term
 !> \param[in]     itypsm        type of mass source term for the variables
 !> \param[in]     dt            time step (per cell)
-!> \param[in,out] rtp, rtpa     calculated variables at cell centers
-!>                               (at current and previous time steps)
+!> \param[in,out] rtpa          calculated variables at cell centers
+!>                              (at previous time step)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in,out] propfb        physical properties at boundary face centers
 !> \param[in]     flumas        internal mass flux (depending on iappel)
 !> \param[in]     flumab        boundary mass flux (depending on iappel)
 !> \param[in]     coefa, coefb  boundary conditions
@@ -93,8 +92,8 @@ subroutine predvv &
  ( iappel ,                                                       &
    nvar   , nscal  , iterns , ncepdp , ncesmp ,                   &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , vel    , vela   ,                   &
-   propce , propfb ,                                              &
+   dt     , rtpa   , vel    , vela   ,                            &
+   propce ,                                                       &
    flumas , flumab ,                                              &
    tslagr , coefa  , coefb  , coefav , coefbv , cofafv , cofbfv , &
    ckupdc , smacel , frcxt  , grdphd ,                            &
@@ -143,8 +142,8 @@ integer          ncepdp , ncesmp
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(ndimfb,*)
+double precision dt(ncelet), rtpa(ncelet,*)
+double precision propce(ncelet,*)
 double precision flumas(nfac), flumab(nfabor)
 double precision tslagr(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
@@ -177,13 +176,13 @@ integer          ireslp, nswrgp, imligp, iwarnp, ipp
 integer          iswdyp, idftnp
 integer          iclipr
 integer          iclik
-integer          ipcrom, ipcroa, ipcroo, ipcrho, ipcvis, ipcvst
+integer          ipcvis, ipcvst
 integer          iconvp, idiffp, ndircp, nitmap, nswrsp
 integer          ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
 integer          iesprp, iestop
 integer          iptsna
-integer          iflmb0, nswrp , ipbrom
+integer          iflmb0, nswrp
 integer          idtva0, icvflb
 integer          ippu  , ippv  , ippw  , jsou, ivisep
 integer          ivoid(1)
@@ -211,7 +210,7 @@ double precision, dimension(:,:), allocatable :: tsexp
 double precision, dimension(:,:,:), allocatable :: tsimp
 double precision, allocatable, dimension(:,:) :: viscce
 double precision, dimension(:,:), allocatable :: vect
-
+double precision, dimension(:), pointer :: brom, crom, croma, pcrom
 double precision, dimension(:), pointer :: pres
 !===============================================================================
 
@@ -240,14 +239,12 @@ else
 endif
 
 ! Reperage de rho au bord
-ipbrom = ipprob(irom  )
+call field_get_val_s(ibrom, brom)
 ! Reperage de rho courant (ie en cas d'extrapolation rho^n+1/2)
-ipcrom = ipproc(irom  )
+call field_get_val_s(icrom, crom)
 ! Reperage de rho^n en cas d'extrapolation
-if (iroext.gt.0.or.idilat.gt.1.or.ippmod(icompf).ge.0) then
-  ipcroa = ipproc(iroma)
-else
-  ipcroa = 0
+if (iroext.gt.0.or.idilat.gt.1) then
+  call field_get_val_prev_s(icrom, croma)
 endif
 
 ipcvis = ipproc(iviscl)
@@ -279,7 +276,7 @@ if (iappel.eq.1.and.iphydr.eq.1) then
   do iel = 1, ncel
 
 ! variation de force (utilise dans resolp)
-    drom = (propce(iel,ipcrom)-ro0)
+    drom = (crom(iel)-ro0)
     dfrcxt(1, iel) = drom*gx - frcxt(1, iel)
     dfrcxt(2, iel) = drom*gy - frcxt(2, iel)
     dfrcxt(3, iel) = drom*gz - frcxt(3, iel)
@@ -298,11 +295,11 @@ if (iappel.eq.1.and.iphydr.eq.1) then
       cpdc23 = ckupdc(ielpdc,5)
       cpdc13 = ckupdc(ielpdc,6)
       dfrcxt(1 ,iel) = dfrcxt(1 ,iel) &
-                    - propce(iel,ipcrom)*(cpdc11*vit1+cpdc12*vit2+cpdc13*vit3)
+                    - crom(iel)*(cpdc11*vit1+cpdc12*vit2+cpdc13*vit3)
       dfrcxt(2 ,iel) = dfrcxt(2 ,iel) &
-                    - propce(iel,ipcrom)*(cpdc12*vit1+cpdc22*vit2+cpdc23*vit3)
+                    - crom(iel)*(cpdc12*vit1+cpdc22*vit2+cpdc23*vit3)
       dfrcxt(3 ,iel) = dfrcxt(3 ,iel) &
-                    - propce(iel,ipcrom)*(cpdc13*vit1+cpdc23*vit2+cpdc33*vit3)
+                    - crom(iel)*(cpdc13*vit1+cpdc23*vit2+cpdc33*vit3)
     enddo
   endif
 !     Ajout eventuel de la force de Coriolis
@@ -311,9 +308,9 @@ if (iappel.eq.1.and.iphydr.eq.1) then
       cx = omegay*vela(3,iel) - omegaz*vela(2,iel)
       cy = omegaz*vela(1,iel) - omegax*vela(3,iel)
       cz = omegax*vela(2,iel) - omegay*vela(1,iel)
-      dfrcxt(1 ,iel) = dfrcxt(1 ,iel) - 2.d0*propce(iel,ipcrom)*cx
-      dfrcxt(2 ,iel) = dfrcxt(2 ,iel) - 2.d0*propce(iel,ipcrom)*cy
-      dfrcxt(3 ,iel) = dfrcxt(3 ,iel) - 2.d0*propce(iel,ipcrom)*cz
+      dfrcxt(1 ,iel) = dfrcxt(1 ,iel) - 2.d0*crom(iel)*cx
+      dfrcxt(2 ,iel) = dfrcxt(2 ,iel) - 2.d0*crom(iel)*cy
+      dfrcxt(3 ,iel) = dfrcxt(3 ,iel) - 2.d0*crom(iel)*cz
     enddo
   endif
 
@@ -352,8 +349,7 @@ endif
 call grdpot &
 !==========
  ( ipr , imrgra , inc    , iccocg , nswrgp , imligp , iphydr ,    &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   rvoid  ,                                                       &
+   iwarnp , epsrgp , climgp , extrap ,                            &
    frcxt  ,                                                       &
    pres   , coefa(1,iclipr) , coefb(1,iclipr) ,                   &
    grad   )
@@ -411,7 +407,7 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
 
 !     Calcul de dt/rho*grad P
   do iel = 1, ncel
-    dtsrom = dt(iel)/propce(iel,ipcrom)
+    dtsrom = dt(iel)/crom(iel)
     trav(1,iel) = grad(iel,1)*dtsrom
     trav(2,iel) = grad(iel,2)*dtsrom
     trav(3,iel) = grad(iel,3)*dtsrom
@@ -433,15 +429,14 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
   iwarnp = iwarni(ipr)
   epsrgp = epsrgr(iu )
   climgp = climgr(iu )
-  extrap = extrag(iu )
 
   call inimav                                                     &
   !==========
  ( iu     , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrp  , imligp ,          &
    iwarnp , nfecra ,                                              &
-   epsrgp , climgp , extrap ,                                     &
-   propce(1,ipcrom), propfb(1,ipbrom),                            &
+   epsrgp , climgp ,                                              &
+   crom, brom   ,                                                 &
    trav   ,                                                       &
    coefav , coefbv ,                                              &
    viscf  , viscb  )
@@ -495,14 +490,14 @@ if (iappel.eq.1) then
       enddo
     elseif (iphydr.eq.2) then
       do iel = 1, ncel
-        rom = propce(iel, ipcrom)
+        rom = crom(iel)
         trav(1,iel) = (rom*gx - grdphd(iel,1)) * volume(iel)
         trav(2,iel) = (rom*gy - grdphd(iel,2)) * volume(iel)
         trav(3,iel) = (rom*gz - grdphd(iel,3)) * volume(iel)
       enddo
     else
       do iel = 1, ncel
-        drom = (propce(iel,ipcrom)-ro0)
+        drom = (crom(iel)-ro0)
         trav(1,iel) = (drom*gx - grad(iel,1)) * volume(iel)
         trav(2,iel) = (drom*gy - grad(iel,2)) * volume(iel)
         trav(3,iel) = (drom*gz - grad(iel,3)) * volume(iel)
@@ -518,14 +513,14 @@ if (iappel.eq.1) then
       enddo
     elseif (iphydr.eq.2) then
       do iel = 1, ncel
-        rom = propce(iel, ipcrom)
+        rom = crom(iel)
         trav(1,iel) = (rom*gx - grdphd(iel,1)) * volume(iel) * porosi(iel)
         trav(2,iel) = (rom*gy - grdphd(iel,2)) * volume(iel) * porosi(iel)
         trav(3,iel) = (rom*gz - grdphd(iel,3)) * volume(iel) * porosi(iel)
       enddo
     else
       do iel = 1, ncel
-        drom = (propce(iel,ipcrom)-ro0)
+        drom = (crom(iel)-ro0)
         trav(1,iel) = (drom*gx - grad(iel,1) ) * volume(iel) * porosi(iel)
         trav(2,iel) = (drom*gy - grad(iel,2) ) * volume(iel) * porosi(iel)
         trav(3,iel) = (drom*gz - grad(iel,3) ) * volume(iel) * porosi(iel)
@@ -546,14 +541,14 @@ elseif(iappel.eq.2) then
       enddo
     elseif (iphydr.eq.2) then
       do iel = 1, ncel
-        rom = propce(iel, ipcrom)
+        rom = crom(iel)
         trav(1,iel) = trav(1,iel) + (rom*gx - grdphd(iel,1))*volume(iel)
         trav(2,iel) = trav(2,iel) + (rom*gy - grdphd(iel,2))*volume(iel)
         trav(3,iel) = trav(3,iel) + (rom*gz - grdphd(iel,3))*volume(iel)
       enddo
     else
       do iel = 1, ncel
-        drom = (propce(iel, ipcrom)-ro0)
+        drom = (crom(iel)-ro0)
         trav(1,iel) = trav(1,iel) + (drom*gx - grad(iel,1))*volume(iel)
         trav(2,iel) = trav(2,iel) + (drom*gy - grad(iel,2))*volume(iel)
         trav(3,iel) = trav(3,iel) + (drom*gz - grad(iel,3))*volume(iel)
@@ -573,7 +568,7 @@ elseif(iappel.eq.2) then
       enddo
     elseif (iphydr.eq.2) then
       do iel = 1, ncel
-        rom = propce(iel, ipcrom)
+        rom = crom(iel)
         trav(1,iel) = trav(1,iel)                                       &
                     + (rom*gx - grdphd(iel,1))*volume(iel)*porosi(iel)
         trav(2,iel) = trav(2,iel)                                       &
@@ -583,7 +578,7 @@ elseif(iappel.eq.2) then
       enddo
     else
       do iel = 1, ncel
-        drom = (propce(iel, ipcrom)-ro0)
+        drom = (crom(iel)-ro0)
         trav(1,iel) = trav(1,iel) + (drom*gx - grad(iel,1))*volume(iel)*porosi(iel)
         trav(2,iel) = trav(2,iel) + (drom*gy - grad(iel,2))*volume(iel)*porosi(iel)
         trav(3,iel) = trav(3,iel) + (drom*gz - grad(iel,3))*volume(iel)*porosi(iel)
@@ -693,7 +688,7 @@ if(     (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) &
   call grdcel &
   !==========
  ( ik  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
+   iwarnp , nfecra, epsrgp , climgp , extrap ,                    &
    rtpa(1,ik)   , coefa(1,iclik)  , coefb(1,iclik)  ,             &
    grad   )
 
@@ -712,10 +707,11 @@ if(     (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) &
   if(isno2t.gt.0) then
     ! Calcul de rho^n grad k^n      si rho non extrapole
     !           rho^n grad k^n      si rho     extrapole
-    ipcroo = ipcrom
-    if(iroext.gt.0) ipcroo = ipcroa
+
+    call field_get_val_s(icrom, crom)
+    call field_get_val_prev_s(icrom, croma)
     do iel = 1, ncel
-      romvom = -propce(iel,ipcroo)*volume(iel)*d2s3
+      romvom = -croma(iel)*volume(iel)*d2s3
       propce(iel,iptsna  )=propce(iel,iptsna  )+grad(iel,1)*romvom
       propce(iel,iptsna+1)=propce(iel,iptsna+1)+grad(iel,2)*romvom
       propce(iel,iptsna+2)=propce(iel,iptsna+2)+grad(iel,3)*romvom
@@ -724,14 +720,14 @@ if(     (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) &
   else
     if(nterup.eq.1) then
       do iel = 1, ncel
-        romvom = -propce(iel,ipcrom)*volume(iel)*d2s3
+        romvom = -crom(iel)*volume(iel)*d2s3
         do isou = 1, 3
           trav(isou,iel) = trav(isou,iel) + grad(iel,isou) * romvom
         enddo
       enddo
     else
       do iel = 1, ncel
-        romvom = -propce(iel,ipcrom)*volume(iel)*d2s3
+        romvom = -crom(iel)*volume(iel)*d2s3
         do isou = 1, 3
           trava(isou,iel) = trava(isou,iel) + grad(iel,isou) * romvom
         enddo
@@ -749,7 +745,7 @@ if(     (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) &
       xkb = rtpa(iel,ik) + diipbx*grad(iel,1)                      &
            + diipby*grad(iel,2) + diipbz*grad(iel,3)
       xkb = coefa(ifac,iclik)+coefb(ifac,iclik)*xkb
-      xkb = d2s3*propce(iel,ipcrom)*xkb
+      xkb = d2s3*crom(iel)*xkb
       do isou = 1, 3
         forbr(isou,ifac) = forbr(isou,ifac) + xkb*surfbo(isou,ifac)
       enddo
@@ -799,7 +795,7 @@ if((ncepdp.gt.0).and.(iphydr.eq.0)) then
       trav(3,iel) = 0.d0
     enddo
 
-    call tspdcv(ncepdp, icepdc, vela, propce, ckupdc, trav)
+    call tspdcv(ncepdp, icepdc, vela, ckupdc, trav)
     !==========
 
     ! With porosity
@@ -849,7 +845,7 @@ if (icorio.eq.1.and.iphydr.eq.0) then
         cx = omegay*vela(3,iel) - omegaz*vela(2,iel)
         cy = omegaz*vela(1,iel) - omegax*vela(3,iel)
         cz = omegax*vela(2,iel) - omegay*vela(1,iel)
-        romvom = -2.d0*propce(iel,ipcrom)*volume(iel)
+        romvom = -2.d0*crom(iel)*volume(iel)
         trav(1,iel) = trav(1,iel) + romvom*cx
         trav(2,iel) = trav(2,iel) + romvom*cy
         trav(3,iel) = trav(3,iel) + romvom*cz
@@ -862,7 +858,7 @@ if (icorio.eq.1.and.iphydr.eq.0) then
         cx = omegay*vela(3,iel) - omegaz*vela(2,iel)
         cy = omegaz*vela(1,iel) - omegax*vela(3,iel)
         cz = omegax*vela(2,iel) - omegay*vela(1,iel)
-        romvom = -2.d0*propce(iel,ipcrom)*volume(iel)
+        romvom = -2.d0*crom(iel)*volume(iel)
         trava(1,iel) = trava(1,iel) + romvom*cx
         trava(2,iel) = trava(2,iel) + romvom*cy
         trava(3,iel) = trava(3,iel) + romvom*cz
@@ -886,9 +882,8 @@ if(itytur.eq.3.and.iterns.eq.1) then
 
     call divrij                                                   &
     !==========
- ( nvar   , nscal  ,                                              &
-   isou   , ivar   ,                                              &
-   rtpa   , propce , propfb ,                                     &
+ ( isou   , ivar   ,                                              &
+   rtpa   ,                                                       &
    coefa  , coefb  ,                                              &
    viscf  , viscb  )
 
@@ -1082,14 +1077,14 @@ if(iterns.eq.1) then
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iu   ,                                                         &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce , propfb ,                            &
+   dt     , rtpa   , propce ,                                     &
    ckupdc , smacel , tsexp  , tsimp  )
 
 
   ! Coupling between two Code_Saturne
   if (nbrcpl.gt.0) then
-  !vectorial interleaved exchange
-    call cscelv(iu, vela, propce, coefav, coefbv, tsexp)
+    !vectorial interleaved exchange
+    call cscelv(iu, vela, coefav, coefbv, tsexp)
     !==========
   endif
 
@@ -1185,18 +1180,19 @@ endif
 
 if(iappel.eq.1) then
 
-  ! Low Mach compressible Algos or compressible algo
+  ! Low Mach compressible Algos
   if (idilat.gt.1.or.ippmod(icompf).ge.0) then
-    ipcrho = ipcroa
+    call field_get_val_prev_s(icrom, pcrom)
 
   ! Standard algo
   else
-    ipcrho = ipcrom
+
+    call field_get_val_s(icrom, pcrom)
   endif
 
   do iel = 1, ncel
     do isou = 1, 3
-      fimp(isou,isou,iel) = istat(iu)*propce(iel,ipcrho)/dt(iel)*volume(iel)
+      fimp(isou,isou,iel) = istat(iu)*pcrom(iel)/dt(iel)*volume(iel)
       do jsou = 1, 3
         if(jsou.ne.isou) fimp(isou,jsou,iel) = 0.d0
       enddo
@@ -1272,7 +1268,7 @@ if (iappel.eq.1) then
     thetap = thetav(iu)
     do ielpdc = 1, ncepdp
       iel = icepdc(ielpdc)
-      romvom = propce(iel,ipcrom)*volume(iel)*thetap
+      romvom = crom(iel)*volume(iel)*thetap
       ! Diagonal part
       do isou = 1, 3
         fimp(isou,isou,iel) = fimp(isou,isou,iel) +                     &
@@ -1303,7 +1299,7 @@ if(iappel.eq.1) then
     thetap = thetav(iu)
 
     do iel = 1, ncel
-      romvom = propce(iel,ipcrom)*volume(iel)*thetap
+      romvom = crom(iel)*volume(iel)*thetap
       fimp(1,2,iel) = fimp(1,2,iel) + 2.d0*romvom*omegaz
       fimp(2,1,iel) = fimp(2,1,iel) - 2.d0*romvom*omegaz
       fimp(1,3,iel) = fimp(1,3,iel) - 2.d0*romvom*omegay
@@ -1522,7 +1518,7 @@ if(iappel.eq.1) then
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisse ,          &
    ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
    imgrp  , ncymxp , nitmfp , ippu   , ippv   , ippw   , iwarnp , &
-   blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
+   blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
    relaxp , thetap ,                                              &
    vela   , vela   ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
@@ -1542,7 +1538,7 @@ if(iappel.eq.1) then
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisse ,          &
    ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
    imgrp  , ncymxp , nitmfp , ippu   , ippv   , ippw   , iwarnp , &
-   blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
+   blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
    relaxp , thetap ,                                              &
    vela   , uvwk   ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
@@ -1588,7 +1584,7 @@ if(iappel.eq.1) then
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisep ,          &
    ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
    imgrp  , ncymxp , nitmfp , ippu   , ippv   , ippw   , iwarnp , &
-   blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
+   blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
    relaxp , thetap ,                                              &
    vect   , vect   ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
@@ -1601,7 +1597,7 @@ if(iappel.eq.1) then
    rvoid  )
 
     do iel = 1, ncelet
-      rom = propce(iel,ipcrom)
+      rom = crom(iel)
       do isou = 1, 3
         tpucou(isou,iel) = rom*vect(isou,iel)
       enddo
@@ -1644,8 +1640,8 @@ elseif(iappel.eq.2) then
   !==========
  ( idtva0 , iu     , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , ivisep ,                   &
-   ippu   , ippv   , ippw   , iwarnp , idftnp ,                   &
-   blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
+   ippu   , iwarnp , idftnp ,                                     &
+   blencp , epsrgp , climgp , relaxp , thetap ,                   &
    vel    , vel    ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
    flumas , flumab , viscf  , viscb  , secvif , secvib ,          &
@@ -1660,6 +1656,7 @@ elseif(iappel.eq.2) then
     enddo
   enddo
 endif
+
 
 !===============================================================================
 ! 4.     FIN DU CALCUL DE LA NORME POUR RESOLP
@@ -1685,15 +1682,14 @@ if(iappel.eq.1.and.irnpnw.eq.1) then
   iwarnp = iwarni(ipr)
   epsrgp = epsrgr(iu )
   climgp = climgr(iu )
-  extrap = extrag(iu )
 
   call inimav &
   !==========
  ( iu     , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrp  , imligp ,          &
    iwarnp , nfecra ,                                              &
-   epsrgp , climgp , extrap ,                                     &
-   propce(1,ipcrom), propfb(1,ipbrom),                            &
+   epsrgp , climgp ,                                              &
+   crom, brom ,                                                   &
    vel    ,                                                       &
    coefav , coefbv ,                                              &
    viscf  , viscb  )

@@ -130,8 +130,6 @@ double precision dijpfx, dijpfy, dijpfz
 double precision diipbx, diipby, diipbz
 double precision dijx  , dijy  , dijz
 
-double precision rvoid(1)
-
 double precision, allocatable, dimension(:,:) :: grad
 
 !===============================================================================
@@ -228,9 +226,7 @@ if (nswrgp.gt.1) then
   call grdpot                                                     &
   !==========
  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
-
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   rvoid  ,                                                       &
+   iwarnp , epsrgp , climgp , extrap ,                            &
    frcxt  ,                                                       &
    pvar   , coefap , coefbp ,                                     &
    grad   )

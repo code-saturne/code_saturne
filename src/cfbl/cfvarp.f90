@@ -119,8 +119,8 @@ if ( ippmod(icompf).ge.0 ) then
   !==========
  ( ii ,                                                           &
    iccfth , imodif  ,                                             &
-   dblpre , dblpre , dblpre , dblpre , dblpre ,                   &
-   dblpre , dblpre , dblpre , dblpre , dblpre , dblpre )
+   dblpre ,                                                       &
+   dblpre , dblpre , dblpre , dblpre , dblpre )
 
 !===============================================================================
 ! 3. ON REDONNE LA MAIN A L'UTILISATEUR

@@ -30,8 +30,7 @@ subroutine uspt1d &
    tppt1d , rgpt1d , eppt1d ,                                     &
    tept1d , hept1d , fept1d ,                                     &
    xlmt1d , rcpt1d , dtpt1d ,                                     &
-   dt     , rtpa   ,                                              &
-   propce , propfb )
+   dt     , rtpa   )
 
 !===============================================================================
 ! Purpose:
@@ -99,8 +98,6 @@ subroutine uspt1d &
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and preceding time steps)         !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -135,8 +132,6 @@ integer          ifpt1d(nfpt1d), nppt1d(nfpt1d), iclt1d(nfpt1d)
 integer          izft1d(nfabor)
 
 double precision dt(ncelet), rtpa(ncelet,*)
-double precision propce(ncelet,*)
-double precision propfb(nfabor,*)
 double precision eppt1d(nfpt1d) , rgpt1d(nfpt1d) , tppt1d(nfpt1d)
 double precision tept1d(nfpt1d) , hept1d(nfpt1d) , fept1d(nfpt1d)
 double precision xlmt1d(nfpt1d) , rcpt1d(nfpt1d) , dtpt1d(nfpt1d)

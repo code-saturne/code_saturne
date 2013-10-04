@@ -24,7 +24,7 @@ subroutine coupbo &
 !================
 
  ( nvar   , ncp    , ncv    , ientha ,                            &
-   dt     , rtp    , rtpa   , propce ,                            &
+   rtp    ,                                                       &
    cpcst  , cp     , cvcst  , cv     ,                            &
    hbord  , tbord  )
 
@@ -45,9 +45,8 @@ subroutine coupbo &
 ! ientha           ! i  ! <-- ! 1 si tparoi est une enthalpie                  !
 !                  ! i  ! <-- ! 2 si tparoi est une energie                    !
 !                  !    !     !    (compressible)                              !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
+! rtp,             ! ra ! <-- ! calculated variables at cell centers           !
+!  (ncelet, *)     !    !     !  (at current time step)                        !
 ! cpcst            ! r  ! <-- ! chaleur specifique si constante                !
 ! cp(ncp)          ! ra ! <-- ! chaleur specifique si variable                 !
 ! cvcst            ! r  ! <-- ! chaleur specifique si constante                !
@@ -82,8 +81,7 @@ integer          ncp    , ncv    , ientha
 
 double precision cpcst  , cvcst
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*)
+double precision rtp(ncelet,*)
 double precision cp(ncp), cv(ncv)
 double precision hbord(nfabor),tbord(nfabor)
 
@@ -218,10 +216,9 @@ do inbcou = 1, nbccou
       !==========
     ( nvar   ,                                                       &
       iccfth , imodif ,                                              &
-      dt     , rtp    , rtpa   , propce , rvoid ,                    &
-      wa(iepsel) , wa(iepsfa) , wa(igamag) , wa(ixmasm) ,            &
+      rtp    ,                                                       &
+      wa(iepsel) , wa(iepsfa) , wa(igamag) ,                         &
       rvoid  , rvoid )
-      !---------   ---------
 
       do iloc = 1, nbfcou
         ifac  = lfcou(iloc)

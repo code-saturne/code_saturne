@@ -23,10 +23,7 @@
 subroutine vissst &
 !================
 
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   coefa  , coefb  , ckupdc , smacel )
+ ( rtpa   , propce )
 
 !===============================================================================
 ! FONCTION :
@@ -53,26 +50,9 @@ subroutine vissst &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
-! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
-! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
-! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
-! itypsm           ! te ! <-- ! type de source de masse pour les               !
-! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
+! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
+!  (ncelet, *)     !    !     !  (at previous time step)                       !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
-! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
-!  (ncepdp,6)      !    !     !                                                !
-! smacel           ! tr ! <-- ! valeur des variables associee a la             !
-! (ncesmp,*   )    !    !     !  source de masse                               !
-!                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -86,7 +66,6 @@ subroutine vissst &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use cstnum
 use pointe, only: s2kw, divukw, ifapat, dispar, coefau, coefbu
 use numvar
@@ -94,6 +73,7 @@ use optcal
 use cstphy
 use entsor
 use mesh
+use field
 
 !===============================================================================
 
@@ -101,22 +81,13 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-integer          ncepdp , ncesmp
-
-integer          icepdc(ncepdp)
-integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(ndimfb,*)
-double precision coefa(ndimfb,*), coefb(ndimfb,*)
-double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
+double precision rtpa(ncelet,*)
+double precision propce(ncelet,*)
 
 ! Local variables
 
 integer          iel, iccocg, inc
-integer          ipcliu
-integer          ipcrom, ipcvis, ipcvst
+integer          ipcvis, ipcvst
 integer          nswrgp, imligp, iwarnp
 integer          ifacpt
 
@@ -128,6 +99,7 @@ logical          ilved
 
 double precision, allocatable, dimension(:) :: w1
 double precision, dimension(:,:,:), allocatable :: gradv
+double precision, dimension(:), pointer :: crom
 
 !===============================================================================
 
@@ -138,11 +110,7 @@ double precision, dimension(:,:,:), allocatable :: gradv
 ! --- Rang des variables dans PROPCE (prop. physiques au centre)
 ipcvis = ipproc(iviscl)
 ipcvst = ipproc(ivisct)
-ipcrom = ipproc(irom  )
-
-! --- Rang des c.l. des variables dans COEFA COEFB
-!        (c.l. std, i.e. non flux)
-ipcliu = iclrtp(iu,icoef)
+call field_get_val_s(icrom, crom)
 
 d1s3 = 1.d0/3.d0
 d2s3 = 2.d0/3.d0
@@ -176,7 +144,7 @@ call grdvec &
 !==========
 ( iu  , imrgra , inc    ,                               &
   nswrgr(iu) , imligr(iu) , iwarni(iu) ,                &
-  nfecra , epsrgr(iu) , climgr(iu) , extrag(iu) ,       &
+  epsrgr(iu) , climgr(iu) ,                             &
   ilved  ,                                              &
   rtpa(1,iu) ,  coefau , coefbu,                        &
   gradv  )
@@ -237,7 +205,7 @@ do iel = 1, ncel
 
   xk = rtpa(iel,ik)
   xw = rtpa(iel,iomg)
-  rom = propce(iel,ipcrom)
+  rom = crom(iel)
   xmu = propce(iel,ipcvis)
   xdist = w1(iel)
   xarg2 = max (                                                   &

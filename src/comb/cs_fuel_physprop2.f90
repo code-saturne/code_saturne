@@ -90,7 +90,7 @@ double precision rtp(ncelet,*) , propce(ncelet,*)
 integer          iel
 integer          n1     , n2     , ipcdia , ipcro2 , icla
 double precision xnp    ,  d1s3
-double precision rhofol , diam2m , diam2x
+double precision diam2m , diam2x
 
 !===============================================================================
 

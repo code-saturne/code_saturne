@@ -190,7 +190,6 @@ cs_base_fortran.c \
 cs_boundary_conditions.c \
 cs_calcium.c \
 csc2cl.f90 \
-csc2ts.f90 \
 cs2tsv.f90 \
 cscelv.f90 \
 cscfbr.f90 \

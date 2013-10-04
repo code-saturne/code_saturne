@@ -39,7 +39,6 @@
 !> \param[in,out] rtpa          calculated variables at cell centers
 !>                              (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfb        physical properties at boundary face centers
 !> \param[in]     tslagr        terme de couplage retour du
 !>                              lagrangien
 !> \param[in]     coefa         boundary conditions
@@ -48,7 +47,7 @@
 
 subroutine scalai &
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   dt     , rtp    , rtpa   , propce ,                            &
    tslagr , coefa  , coefb  )
 
 !===============================================================================
@@ -82,7 +81,7 @@ integer          nvar   , nscal
 
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
+double precision propce(ncelet,*)
 double precision tslagr(ncelet,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 
@@ -130,10 +129,8 @@ if (ippmod(iphpar).ge.1) then
 !   On initialise RTP (et pas RTPA) car RTPA ne sert pas
 !      dans codits.
 
-  call ppinv2                                                     &
+  call ppinv2(nvar, nscal, dt, rtp, propce)
   !==========
- ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce , propfb , coefa  , coefb  )
 
 !     On pourra eviter les bugs en initialisant aussi RTPA (sur NCELET)
 !     (d'ailleurs, on s'en sert ensuite dans le cpflux etc)
@@ -168,7 +165,7 @@ if (ippmod(iphpar).ge.1) then
     call cs_fuel_masstransfer &
     !=======================
    ( ncelet , ncel   ,        &
-     rtpa   , propce , volume )
+     rtpa   , propce )
 
   endif
 
@@ -231,7 +228,7 @@ if (ippmod(iphpar).ge.1) then
    ncepdc , ncetsm ,                                              &
    iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   dt     , rtp    , rtpa   , propce ,                            &
    coefa  , coefb  , ckupdc , smacel ,                            &
    viscf  , viscb  ,                                              &
    smbrs  , rovsdt )
@@ -289,7 +286,7 @@ if (ippmod(iphpar).ge.1) then
    ncepdc , ncetsm ,                                              &
    iisc   , itspdv ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   dtr    , rtp    , rtpa   , propce , propfb , tslagr ,          &
+   dtr    , rtp    , rtpa   , propce , tslagr ,                   &
    coefa  , coefb  , ckupdc , smacel ,                            &
    viscf  , viscb  ,                                              &
    smbrs  , rovsdt )
@@ -333,25 +330,18 @@ if (ippmod(iphpar).ge.1) then
 !     Calcul de j, E et j.E
           iappel = 1
 
-          call elflux                                             &
+          call elflux(iappel, rtp, propce, coefa, coefb)
           !==========
- ( iappel ,                                                       &
-   nvar   , nscal  ,                                              &
-   dt     , rtpa   , rtp    , propce , propfb ,                   &
-   coefa  , coefb  , viscf  , viscb  )
 
 
 !     Recalage des variables electriques j, j.E (et Pot, E)
 
           if ( ielcor .eq.1  .and. ntcabs .gt. 1 ) then
 
-            call elreca                                           &
+            call elreca(dt, rtp, propce)
             !==========
-  ( nvar   , nscal  ,                                             &
-    dt     , rtpa   , rtp    , propce , propfb ,                  &
-    coefa  , coefb  )
 
-            call uselrc(nvar, nscal, dt, rtpa, rtp, propce, propfb)
+            call uselrc(nvar, nscal, dt, rtpa, rtp, propce)
             !==========
 
           endif
@@ -370,19 +360,15 @@ endif
 
 !     On calcule ici A, B, jxB
 
-if ( ippmod(ielarc).ge.1       ) then
+if (ippmod(ielarc).ge.1) then
 
 !     On utilise le  fait que les scalaires sont dans l'ordre
 !       H, PotR, [PotI], [A] pour faire le calcul de A, B, jxB
 !       apres la determination et le recalage de j
   iappel = 2
 
-  call elflux                                                     &
+  call elflux(iappel, rtp, propce, coefa, coefb)
   !==========
- ( iappel ,                                                       &
-   nvar   , nscal  ,                                              &
-   dt     , rtpa   , rtp    , propce , propfb ,                   &
-   coefa  , coefb  , viscf  , viscb  )
 
 endif
 
@@ -467,7 +453,7 @@ if(nscaus.gt.0) then
    ncepdc , ncetsm ,                                              &
    iisc   , itspdv ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   dtr    , rtp    , rtpa   , propce , propfb , tslagr ,          &
+   dtr    , rtp    , rtpa   , propce , tslagr ,                   &
    coefa  , coefb  , ckupdc , smacel ,                            &
    viscf  , viscb  ,                                              &
    smbrs  , rovsdt )

@@ -64,7 +64,7 @@ use cpincl
 use ppincl
 use ppcpfu
 use cs_coal_incl
-
+use field
 !===============================================================================
 
 implicit none
@@ -79,7 +79,7 @@ double precision volume(ncelet)
 ! Local variables
 
 integer          iel    , icha   , icla
-integer          ipcrom , ipcte1 , ipctem , ipcro2 , ipcdia
+integer          ipcte1 , ipctem , ipcro2 , ipcdia
 integer          ipcgd1 , ipcgd2 , ipcgch , ipcght , ipcyox
 integer          ipcsec
 integer          ipcvsl , ipccp, iromf , ipcte2
@@ -99,7 +99,7 @@ double precision pprco2,pprh2o
 
 integer          iok1
 double precision, dimension (:), allocatable :: x2, x2srho2, rho1, w1
-
+double precision, dimension(:), pointer ::  crom
 !===============================================================================
 ! 1. Initialization and preliminary computations
 !===============================================================================
@@ -131,7 +131,7 @@ enddo
 
 ! --- Calcul de la masse volumique du melange gazeux
 
-ipcrom = ipproc(irom)
+call field_get_val_s(icrom, crom)
 
 ! ---- Calcul de X2=somme(X2i) et X2SRO2 = somme(X2i/Rho2i)
 
@@ -159,7 +159,7 @@ enddo
 ! ---- Rho 1
 
 do iel = 1, ncel
-  rho1(iel) = (1.d0-x2(iel)) / (1.d0/propce(iel,ipcrom)-x2srho2(iel))
+  rho1(iel) = (1.d0-x2(iel)) / (1.d0/crom(iel)-x2srho2(iel))
 enddo
 
 
@@ -217,17 +217,17 @@ enddo
 
 ! --- Calcul de l'integrale de GMDEV1 et GMDEV2 pour chaque charbon
 
-ipcrom = ipproc(irom)
+call field_get_val_s(icrom, crom)
 do icla = 1, nclacp
   ipcgd1 = ipproc(igmdv1(icla))
   ipcgd2 = ipproc(igmdv2(icla))
   do iel = 1, ncel
     xch = rtpa(iel,isca(ixch(icla)))
     devto1(ichcor(icla)) = devto1(ichcor(icla)) -                 &
-      ( propce(iel,ipcgd1)*xch*propce(iel,ipcrom)                 &
+      ( propce(iel,ipcgd1)*xch*crom(iel)                 &
         *volume(iel) )
     devto2(ichcor(icla)) = devto2(ichcor(icla)) -                 &
-      ( propce(iel,ipcgd2)*xch*propce(iel,ipcrom)                 &
+      ( propce(iel,ipcgd2)*xch*crom(iel)                 &
         *volume(iel) )
   enddo
   if(irangp.ge.0) then

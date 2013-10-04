@@ -23,10 +23,8 @@
 subroutine ebuphy &
 !================
 
- ( nvar   , nscal  ,                                              &
-   ibrom  , izfppp ,                                              &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   coefa  , coefb  )
+ ( mbrom  , izfppp ,                                              &
+   rtp    , propce )
 
 !===============================================================================
 ! FONCTION :
@@ -40,25 +38,17 @@ subroutine ebuphy &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ibrom            ! te ! <-- ! indicateur de remplissage de romb              !
-!        !    !     !                                                !
+! mbrom            ! te ! <-- ! indicateur de remplissage de romb              !
 ! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
+! rtp              ! ra ! <-- ! calculated variables at cell centers           !
+!  (ncelet, *)     !    !     !  (at current time step)                        !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -78,6 +68,7 @@ use cpincl
 use ppincl
 use radiat
 use mesh
+use field
 
 !===============================================================================
 
@@ -85,22 +76,19 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-
-integer          ibrom
+integer          mbrom
 integer          izfppp(nfabor)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
+double precision rtp(ncelet,*)
+double precision propce(ncelet,*)
 
 ! Local variables
 
 integer          ipctem, ipcfue, ipcoxy, ipcpro
-integer          igg, iel, ipcrom
+integer          igg, iel
 integer          ipckab, ipt4, ipt3
 integer          ifac, izone
-integer          ipbrom, ipbycg, ipcycg, mode
+integer          ipcycg, mode
 double precision coefg(ngazgm), ygfm, ygbm, epsi
 double precision nbmol , temsmm , fmel , ckabgf, ckabgb
 double precision masmgb, hgb, tgb, masmgf, masmg
@@ -108,7 +96,8 @@ double precision masmgb, hgb, tgb, masmgf, masmg
 double precision, allocatable, dimension(:) :: yfuegf, yoxygf, yprogf
 double precision, allocatable, dimension(:) :: yfuegb, yoxygb, yprogb
 double precision, allocatable, dimension(:) :: temp, masmel
-
+double precision, dimension(:), pointer ::  brom, crom
+double precision, dimension(:), pointer :: bsval
 integer       ipass
 data          ipass /0/
 save          ipass
@@ -150,8 +139,8 @@ enddo
 
 ! ---> Positions des variables, coefficients
 
-ipcrom = ipproc(irom)
-ipbrom = ipprob(irom)
+call field_get_val_s(icrom, crom)
+call field_get_val_s(ibrom, brom)
 ipctem = ipproc(itemp)
 ipcfue = ipproc(iym(1))
 ipcoxy = ipproc(iym(2))
@@ -312,7 +301,7 @@ do iel = 1, ncel
 ! ---> Masse volumique du melange
 
   if (ipass.gt.1.or.(isuite.eq.1.and.initro.eq.1)) then
-    propce(iel,ipcrom) = srrom*propce(iel,ipcrom)                 &
+    crom(iel) = srrom*crom(iel)                 &
                        + (1.d0-srrom)*                            &
                          ( p0/(rr*temsmm) )
   endif
@@ -341,7 +330,7 @@ enddo
 
 ! --> Masse volumique au bord
 
-ibrom = 1
+mbrom = 1
 
 ! ---- Masse volumique au bord pour toutes les facettes
 !      Les facettes d'entree seront recalculees apres
@@ -356,7 +345,7 @@ if (ipass.gt.1.or.(isuite.eq.1.and.initro.eq.1)) then
 
   do ifac = 1, nfabor
     iel = ifabor(ifac)
-    propfb(ifac,ipbrom) = propce(iel,ipcrom)
+    brom(ifac) = crom(iel)
   enddo
 
 endif
@@ -388,7 +377,7 @@ if ( ipass.gt.1 .or. isuite.eq.1 ) then
         enddo
        masmg = 1.d0/nbmol
        temsmm = tkent(izone)/masmg
-       propfb(ifac,ipbrom) = p0/(rr*temsmm)
+       brom(ifac) = p0/(rr*temsmm)
       endif
     endif
   enddo
@@ -400,11 +389,11 @@ endif
 
 if ( iirayo.gt.0 ) then
   do igg = 1, ngazg
-    ipbycg = ipprob(iym(igg))
+    call field_get_val_s(ibym(1), bsval)
     ipcycg = ipproc(iym(igg))
     do ifac = 1, nfabor
       iel = ifabor(ifac)
-      propfb(ifac,ipbycg) = propce(iel,ipcycg)
+      bsval(ifac) = propce(iel,ipcycg)
     enddo
   enddo
 endif

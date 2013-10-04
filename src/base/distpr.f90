@@ -267,7 +267,7 @@ do isweep = 0, nswrsl
  ( nomvar(ipp)     , isym   , ibsize , iesize ,                   &
    ipol   , ireslp , nitmay , imgrpy ,                            &
    ncymxp , nitmfp ,                                              &
-   iwarny , nfecra , niterf , icycle , iinvpe ,                   &
+   iwarny , niterf , icycle , iinvpe ,                            &
    epsily , rnorm  , residu ,                                     &
    dam    , xam    , smbdp  , rtpdp  )
 

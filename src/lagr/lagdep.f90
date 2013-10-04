@@ -23,15 +23,13 @@
 subroutine lagdep &
 !================
 
- ( nvar   , nscal  , lndnod , icocel , itycel ,ifrlag ,           &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   ntersl , nvlsta , nvisbr ,                                     &
+ ( nbpmax , nvp    , nvep   , nivep  ,                            &
    itepa  ,                                                       &
    dlgeo  ,                                                       &
-   dt     , rtpa   , propce , propfb ,                            &
+   rtpa   , propce ,                                              &
    ettp   , ettpa  , tepa   , statis ,                            &
    taup   , tlag   , piil   ,                                     &
-   bx     , vagaus , gradpr , gradvf , romp   ,                   &
+   bx     , vagaus , gradpr , romp   ,                            &
    brgaus , terbru , fextla , vislen)
 
 !===============================================================================
@@ -56,32 +54,17 @@ subroutine lagdep &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! lndnod           ! e  ! <-- ! dim. connectivite cellules->faces              !
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
 ! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
 ! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
-! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
-! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
-! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
-! icocel           ! te ! --> ! connectivite cellules -> faces                 !
-!   (lndnod)       !    !     !    face de bord si numero negatif              !
-! itycel           ! te ! --> ! connectivite cellules -> faces                 !
-!   (ncelet+1)     !    !     !    pointeur du tableau icocel                  !
-! ifrlag           ! te ! --> ! numero de zone de la face de bord              !
-!   (nfabor)       !    !     !  pour le module lagrangien                     !
 ! itepa            ! te ! <-- ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
 ! dlgeo            ! tr ! --> ! tableau contenant les donnees geometriques     !
 !(nfabor,ngeol)    !    !     !                                                !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (pas de temps precedent)           !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! ettp             ! tr ! --> ! tableaux des variables liees                   !
 !  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
 ! ettpa            ! tr ! <-- ! tableaux des variables liees                   !
@@ -97,7 +80,6 @@ subroutine lagdep &
 ! vagaus           ! tr ! <-- ! variables aleatoires gaussiennes               !
 !(nbpmax,nvgaus    !    !     !                                                !
 ! gradpr(ncel,3    ! tr ! <-- ! gradient de pression                           !
-! gradvf(ncel,3    ! tr ! <-- ! gradient de la vitesse du fluide               !
 ! romp             ! tr ! <-- ! masse volumique des particules                 !
 ! fextla           ! tr ! <-- ! champ de forces exterieur                      !
 !(ncelet,3)        !    !     !    utilisateur (m/s2)                          !
@@ -133,32 +115,26 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-integer          nbpmax , nvp    , nvp1   , nvep  , nivep
-integer          ntersl , nvlsta , nvisbr , lndnod
+integer          nbpmax , nvp    , nvep  , nivep
 
 integer          itepa(nbpmax,nivep)
-integer          icocel(lndnod),  ifrlag(nfabor), itycel(ncelet+1)
 
-double precision dt(ncelet) , rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
+double precision rtpa(ncelet,*)
+double precision propce(ncelet,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep) , statis(ncelet,*)
 double precision taup(nbpmax) , tlag(nbpmax,3)
 double precision piil(nbpmax,3) , bx(nbpmax,3,2)
 double precision vagaus(nbpmax,*)
 double precision brgaus(nbpmax,*) , terbru(nbpmax)
-double precision gradpr(ncelet,3) , gradvf(ncelet,9)
+double precision gradpr(ncelet,3)
 double precision romp(nbpmax)
 double precision fextla(nbpmax,3)
 double precision dlgeo(nfabor,ngeol)
 
-
 ! Local variables
 
-integer          ifac, il
 integer          iel , ip , id , i0 , iromf , mode
-integer          izone, nbfac
 
 double precision aa , bb , cc , dd , ee
 double precision aux1 , aux2 ,aux3 , aux4 , aux5 , aux6
@@ -172,9 +148,7 @@ double precision grga2 , gagam , gaome
 double precision p11 , p21 , p22 , p31 , p32 , p33
 double precision grav(3) , romf , vitf
 double precision tempf, lvisq, tvisq
-double precision d3 , vpart, vvue
-double precision px , py , pz , distp , d1
-double precision dismin,dismax, ustar, visccf,depint
+double precision ustar, visccf,depint
 
 double precision vislen(nfabor)
 
@@ -434,18 +408,16 @@ endif
             lvisq = vislen(itepa(ip,jdfac))
             tvisq = lvisq / uetbor(itepa(ip,jdfac))
 
-            call lagesd                                                   &
+            call lagesd                                                    &
             !==========
             ( itepa(ip,jdfac) , ip     ,                                   &
-              nvar   , nscal  ,                                            &
-              nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
-              ntersl , nvlsta , nvisbr ,                                   &
+              nbpmax , nvp    , nvep   , nivep  ,                          &
               itepa  ,                                                     &
               dlgeo  ,                                                     &
-              dt     , rtpa   , propce ,                                   &
+              rtpa   , propce ,                                            &
               ettp   , ettpa  , tepa   ,                                   &
-              statis , taup   , tlag   , piil   ,                          &
-              bx     , vagaus , gradpr , gradvf , romp   ,                 &
+              taup   , piil   ,                                            &
+              vagaus , gradpr , romp   ,                                   &
               tempf  , romf   , ustar  , lvisq  ,tvisq   , depint )
 
          endif

@@ -24,7 +24,7 @@ subroutine cpvosy &
 !================
 
  ( isvtf  ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfb )
+   dt     , rtp    , rtpa   , propce )
 
 !===============================================================================
 ! Purpose:
@@ -43,7 +43,6 @@ subroutine cpvosy &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -71,7 +70,7 @@ implicit none
 integer          isvtf
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*),propfb(nfabor,*)
+double precision propce(ncelet,*)
 
 ! Local variables
 
@@ -161,7 +160,7 @@ do inbcou = 1, nbccou
     call usvosy &
     !==========
   ( inbcoo , ncecpl , iscalt ,                              &
-    dt     , rtp   , rtpa   , propce , propfb ,             &
+    dt     , rtp   , rtpa   , propce ,                      &
     lcecpl , hvol  )
 
     ! Send fluid temperature and exchange coefficient

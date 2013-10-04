@@ -59,7 +59,6 @@ subroutine resrit &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use numvar
 use entsor
 use optcal
@@ -88,10 +87,10 @@ double precision gradt(ncelet,3)
 
 ! Local variables
 
-integer          init  , iel
-integer          ii    ,jj     , ivar
-integer          iclvar, iclvaf, ipput, ippvt, ippwt
-integer          ipcrom, ipcroo, ipcvis, ipcvst, iflmas, iflmab
+integer          iel
+integer          ii, ivar
+integer          ipput, ippvt, ippwt
+integer          ipcvis, ipcvst, iflmas, iflmab
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
@@ -106,16 +105,15 @@ integer          f_id
 
 integer          ivoid(1)
 
-double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
+double precision blencp, epsilp, epsrgp, climgp, relaxp
 double precision epsrsp
-double precision trrij , rctse
-double precision surfn2
+double precision trrij
 double precision thets , thetv , thetp1
 double precision xttke , prdtl
 double precision grav(3)
 double precision xrij(3,3),phiith(3)
 
-double precision d1s2,cssca
+double precision d1s2
 
 double precision rvoid(1)
 
@@ -130,6 +128,7 @@ double precision, allocatable, dimension(:,:,:) :: fimp
 double precision, dimension(:,:), pointer :: coefav, cofafv
 double precision, dimension(:,:,:), pointer :: coefbv, cofbfv
 double precision, dimension(:), pointer :: imasfl, bmasfl
+double precision, dimension(:), pointer ::  crom
 
 !===============================================================================
 
@@ -150,7 +149,7 @@ if ((itytur.eq.2).or.(itytur.eq.5).or.(iturb.eq.60)) then
   call csexit(1)
 endif
 
-ipcrom = ipproc(irom)
+call field_get_val_s(icrom, crom)
 ipcvis = ipproc(iviscl)
 ipcvst = ipproc(ivisct)
 
@@ -169,10 +168,6 @@ endif
 thets  = thetst
 thetv  = thetav(ivar)
 
-ipcroo = ipcrom
-if (isto2t.gt.0.and.iroext.gt.0) then
-  ipcroo = ipproc(iroma)
-endif
 if (isto2t.gt.0) then
   iptsta = ipproc(itstua)
 else
@@ -235,7 +230,7 @@ endif
 do iel = 1, ncel
   do isou = 1, 3
     fimp(isou,isou,iel) = fimp(isou,isou,iel)                                  &
-                        + istat(ivar)*(propce(iel,ipcrom)/dt(iel))*volume(iel)
+                        + istat(ivar)*(crom(iel)/dt(iel))*volume(iel)
   enddo
 enddo
 
@@ -274,17 +269,17 @@ do iel = 1, ncel
 
     ! Pressure/thermal fluctuation correlation term
     !----------------------------------------------
-    smbrut(isou,iel) = smbrut(isou,iel) +                        &
-                volume(iel)*propce(iel,ipcrom)*(phiith(isou) )
+    smbrut(isou,iel) = smbrut(isou,iel) +                           &
+                volume(iel)*crom(iel)*(phiith(isou) )
 
     fimp(isou,isou,iel) = fimp(isou,isou,iel) -                     &
-                volume(iel)*propce(iel,ipcrom)*(                    &
+                volume(iel)*crom(iel)*(                             &
               -c1trit/xttke+c2trit*gradv(isou,isou,iel) )
 
     ! Production terms
     !-----------------
     smbrut(isou,iel) = smbrut(isou,iel)                              &
-                     + volume(iel)*propce(iel,ipcrom)                &
+                     + volume(iel)*crom(iel)                         &
                        ! Production term due to the mean velcoity
                        *( -xuta(1,iel)*gradv(1,isou,iel)             &
                           -xuta(2,iel)*gradv(2,isou,iel)             &
@@ -298,7 +293,7 @@ do iel = 1, ncel
     ! Production term due to the gravity
     if (itt.gt.0) then
       smbrut(isou,iel) = smbrut(isou,iel)                            &
-                       + volume(iel)*propce(iel,ipcrom)*(            &
+                       + volume(iel)*crom(iel)*(            &
                -grav(isou)*propce(iel,ipproc(ibeta))*rtpa(iel,isca(itt)))
     endif
   enddo
@@ -378,7 +373,6 @@ epsilp = epsilo(ivar)
 epsrsp = epsrsm(ivar)
 epsrgp = epsrgr(ivar)
 climgp = climgr(ivar)
-extrap = extrag(ivar)
 relaxp = relaxv(ivar)
 
 ipput = ipprtp(ivar)!FIXME
@@ -397,7 +391,7 @@ call coditv &
  imrgra , nswrsp , nswrgp , imligp , ircflp , ivisep ,          &
  ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
  imgrp  , ncymxp , nitmfp , ipput  , ippvt  , ippwt  , iwarnp , &
- blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
+ blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
  relaxp , thetv  ,                                              &
  xuta   , xuta   ,                                              &
  coefav , coefbv , cofafv , cofbfv ,                            &

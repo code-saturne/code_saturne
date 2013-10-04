@@ -23,9 +23,7 @@
 subroutine diverv &
 !================
 
- ( nvar   , nscal  ,                                              &
-   dt     ,                                                       &
-   div    , ux     , vy     , wz     ,                            &
+ ( div    , ux     , vy     , wz     ,                            &
    coefax , coefay , coefaz ,                                     &
    coefbx , coefby , coefbz )
 
@@ -45,9 +43,6 @@ subroutine diverv &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! div(ncelet)      ! tr ! --> ! divergence du vecteur                          !
 ! ux,uy,uz         ! tr ! --> ! composante du vecteur                          !
 ! (ncelet)         !    !     !                                                !
@@ -84,10 +79,6 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-
-
-double precision dt(ncelet)
 double precision div(ncelet)
 double precision ux(ncelet) , vy(ncelet) , wz(ncelet)
 double precision coefax(nfabor) , coefay(nfabor) , coefaz(nfabor)

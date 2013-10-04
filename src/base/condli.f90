@@ -98,7 +98,6 @@
 !> \param[in]     rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfb        physical properties at boundary face centers
 !> \param[in,out] rcodcl        boundary condition values:
 !>                               - rcodcl(1) value of the dirichlet
 !>                               - rcodcl(2) value of the exterior exchange
@@ -128,7 +127,7 @@ subroutine condli &
  ( nvar   , nscal  , iterns ,                                     &
    isvhb  , isvtb  ,                                              &
    icodcl , isostd ,                                              &
-   dt     , rtp    , rtpa   , propce , propfb , rcodcl ,          &
+   dt     , rtp    , rtpa   , propce , rcodcl ,                   &
    coefa  , coefb  , visvdr , hbord  , theipb , frcxt  )
 
 !===============================================================================
@@ -166,7 +165,7 @@ integer          icodcl(nfabor,nvarcl)
 integer          isostd(nfabor+1)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(ndimfb,*)
+double precision propce(ncelet,*)
 double precision rcodcl(nfabor,nvarcl,3)
 double precision frcxt(3,ncelet)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
@@ -208,7 +207,7 @@ double precision epsrgp, climgp, extrap
 double precision xxp0, xyp0, xzp0
 double precision srfbnf, normal(3)
 double precision vistot
-double precision rinfiv(3), pimpv(3), qimpv(3), hextv(3), cflv(3), vect(3)
+double precision rinfiv(3), pimpv(3), qimpv(3), hextv(3), cflv(3)
 double precision visci(3,3), fikis, viscis, distfi
 double precision temp
 
@@ -223,6 +222,7 @@ double precision, dimension(:), pointer :: tplusp, tstarp
 double precision, dimension(:,:), pointer :: coefaut, cofafut, cofarut
 double precision, dimension(:,:,:), pointer :: coefbut, cofbfut, cofbrut
 double precision, dimension(:), pointer :: bmasfl
+double precision, dimension(:), pointer :: bfconv, bhconv
 
 !===============================================================================
 
@@ -308,6 +308,10 @@ endif
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
 call field_get_val_s(iflmab, bmasfl)
 
+! Pointers to specific fields
+if (ifconv.ge.0) call field_get_val_s(ifconv, bfconv)
+if (ihconv.ge.0) call field_get_val_s(ihconv, bhconv)
+
 !===============================================================================
 ! 2. Treatment of types of BCs given by itypfb
 !===============================================================================
@@ -315,10 +319,10 @@ call field_get_val_s(iflmab, bmasfl)
 if (ippmod(iphpar).ge.1) then
   call pptycl &
   !==========
- ( nvar   , nscal  ,                                              &
-   icodcl , itrifb , itypfb , izfppp ,                            &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   coefa  , coefb  , rcodcl )
+ ( nvar   ,                                                       &
+   icodcl , itypfb , izfppp ,                                     &
+   dt     , rtp    , propce ,                                     &
+   rcodcl )
 endif
 
 if (iale.eq.1) then
@@ -666,8 +670,7 @@ if (iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0) then
     call grdvec &
     !==========
   ( iu     , imrgra , inc    , nswrgp , imligp ,                   &
-    iwarnp , nfecra ,                                              &
-    epsrgp , climgp , extrap ,                                     &
+    iwarnp , epsrgp , climgp ,                                     &
     ilved ,                                                        &
     rtpa(1,iu) ,  coefau , coefbu,                                 &
     gradv  )
@@ -806,7 +809,7 @@ if (ipatur.ne.0) then
   call clptur &
   !==========
  ( nscal  , isvhb  , icodcl ,                                     &
-   rtp    , rtpa   , propce , propfb , rcodcl ,                   &
+   rtp    , propce , rcodcl ,                                     &
    velipb , rijipb , coefa  , coefb  , visvdr ,                   &
    hbord  , theipb )
 
@@ -819,7 +822,7 @@ if (ipatrg.ne.0) then
   !==========
  ( nscal  , isvhb  ,                                              &
    icodcl ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfb , rcodcl ,          &
+   rtp    , propce , rcodcl ,                                     &
    velipb , rijipb , coefa  , coefb  , visvdr ,                   &
    hbord  , theipb )
 
@@ -840,7 +843,7 @@ if (iclsym.ne.0) then
   call clsyvt &
   !==========
  ( nscal  , icodcl ,                                              &
-   rtp    , rtpa   , propce , rcodcl ,                            &
+   propce , rcodcl ,                                              &
    velipb , rijipb , coefa  , coefb  )
 
 endif
@@ -2096,28 +2099,28 @@ if (nscal.ge.1) then
           if (iscsth(ii).eq.2) then
             ! If Cp is variable
             if (ipccp.gt.0) then
-              propfb(ifac,ipprob(ihconv)) = hint*propce(iel,ipccp )
+              bhconv(ifac) = hint*propce(iel,ipccp )
             else
-              propfb(ifac,ipprob(ihconv)) = hint*cp0
+              bhconv(ifac) = hint*cp0
             endif
 
           ! Energie (compressible module)
           elseif (iscsth(ii).eq.3) then
             ! If Cv is variable
             if (ipccv.gt.0) then
-              propfb(ifac,ipprob(ihconv)) = hint*propce(iel,ipccv)
+              bhconv(ifac) = hint*propce(iel,ipccv)
             else
-              propfb(ifac,ipprob(ihconv)) = hint*cv0
+              bhconv(ifac) = hint*cv0
             endif
 
           ! Temperature
           elseif(abs(iscsth(ii)).eq.1) then
-            propfb(ifac,ipprob(ihconv)) = hint
+            bhconv(ifac) = hint
           endif
 
           ! The outgoing flux is stored (Q = h(Ti'-Tp): negative if
           !  gain for the fluid) in W/m2
-          propfb(ifac,ipprob(ifconv)) = coefa(ifac,iclvaf)              &
+          bfconv(ifac) = coefa(ifac,iclvaf)              &
                                       + coefb(ifac,iclvaf)*theipb(ifac)
 
         endif
@@ -2149,28 +2152,28 @@ if (nscal.ge.1) then
           if (iscsth(ii).eq.2) then
             ! If Cp is variable
             if (ipccp.gt.0) then
-              propfb(ifac,ipprob(ihconv)) = hint*propce(iel, ipccp)
+              bhconv(ifac) = hint*propce(iel, ipccp)
             else
-              propfb(ifac,ipprob(ihconv)) = hint*cp0
+              bhconv(ifac) = hint*cp0
             endif
 
           ! Energie (compressible module)
           elseif (iscsth(ii).eq.3) then
             ! If Cv is variable
             if (ipccv.gt.0) then
-              propfb(ifac,ipprob(ihconv)) = hint*propce(iel,ipccv)
+              bhconv(ifac) = hint*propce(iel,ipccv)
             else
-              propfb(ifac,ipprob(ihconv)) = hint*cv0
+              bhconv(ifac) = hint*cv0
             endif
 
           ! Temperature
           elseif (abs(iscsth(ii)).eq.1) then
-            propfb(ifac,ipprob(ihconv)) = hint
+            bhconv(ifac) = hint
           endif
 
           ! The outgoing flux is stored (Q = h(Ti'-Tp): negative if
           !  gain for the fluid) in W/m2
-          propfb(ifac,ipprob(ifconv)) = rcodcl(ifac,ivar,3)
+          bfconv(ifac) = rcodcl(ifac,ivar,3)
         endif
 
       ! Convective Boundary Conditions

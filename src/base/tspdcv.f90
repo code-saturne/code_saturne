@@ -25,7 +25,6 @@ subroutine tspdcv &
 
  ( ncepdp , icepdc ,                                              &
    vela   ,                                                       &
-   propce ,                                                       &
    ckupdc , trav   )
 
 !===============================================================================
@@ -41,7 +40,6 @@ subroutine tspdcv &
 !__________________!____!_____!________________________________________________!
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
 ! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
 !  (ncepdp,6)      !    !     !                                                !
 ! trav(ncelet,3    ! tr ! <-- ! tableau des second membres                     !
@@ -61,7 +59,7 @@ use paramx
 use numvar
 use optcal
 use mesh
-
+use field
 !===============================================================================
 
 implicit none
@@ -71,7 +69,6 @@ implicit none
 integer          ncepdp
 integer          icepdc(ncepdp)
 
-double precision propce(ncelet,*)
 double precision ckupdc(ncepdp,6)
 double precision trav(3,ncelet)
 double precision vela  (3  ,ncelet)
@@ -79,18 +76,17 @@ double precision vela  (3  ,ncelet)
 ! Local variables
 
 integer          iel   , ielpdc
-integer          ipcrom, ipcroo
 double precision romvom, vit1  , vit2  , vit3
 double precision cpdc11, cpdc22, cpdc33, cpdc12, cpdc13, cpdc23
+double precision, dimension(:), pointer :: crom, croma
 
 !===============================================================================
 
 
-ipcrom = ipproc(irom)
+call field_get_val_s(icrom, crom)
 
-ipcroo = ipcrom
-if(iroext.gt.0.and.isno2t.gt.0) then
-  ipcroo = ipproc(iroma )
+if (iroext.gt.0.and.isno2t.gt.0) then
+  call field_get_val_prev_s(icrom, croma)
 endif
 
 !     La matrice est toujours "implicite"
@@ -98,7 +94,7 @@ endif
 do ielpdc = 1, ncepdp
 
   iel    = icepdc(ielpdc)
-  romvom =-propce(iel,ipcrom)*volume(iel)
+  romvom =-crom(iel)*volume(iel)
   cpdc11 = ckupdc(ielpdc,1)
   cpdc22 = ckupdc(ielpdc,2)
   cpdc33 = ckupdc(ielpdc,3)

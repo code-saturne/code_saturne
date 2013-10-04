@@ -92,19 +92,18 @@
 !______________________________________________________________________________!
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
-!> \param[in]     ibrom         indicator of filling of romb array
+!> \param[in]     mbrom         indicator of filling of romb array
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     rtp, rtpa     calculated variables at cell centers
 !> \param[in]                    (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfb        physical properties at boundary face centers
 !_______________________________________________________________________________
 
 subroutine usphyv &
  ( nvar   , nscal  ,                                              &
-   ibrom  ,                                                       &
+   mbrom  ,                                                       &
    dt     , rtp    , rtpa   ,                                     &
-   propce , propfb )
+   propce )
 
 !===============================================================================
 
@@ -131,16 +130,15 @@ implicit none
 
 integer          nvar   , nscal
 
-integer          ibrom
+integer          mbrom
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfb(nfabor,*)
 
 ! Local variables
 
 integer          ivart, iclvar, iel, ifac
-integer          ipcrom, ipbrom, ipcvis, ipccp
+integer          ipcvis, ipccp
 integer          ipcvsl, ith, iscal, ii
 double precision vara, varb, varc, varam, varbm, varcm, vardm
 double precision                   varal, varbl, varcl, vardl
@@ -148,7 +146,7 @@ double precision                   varac, varbc
 double precision xrtp
 
 double precision, dimension(:), pointer :: coefap, coefbp
-
+double precision, dimension(:), pointer :: brom, crom
 !===============================================================================
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
@@ -216,12 +214,10 @@ if (.false.) then
 
   iclvar = iclrtp(ivart,icoef)
 
-  ! --- Rank of density
-  !     in 'propce', physical properties at element centers:       'ipcrom'
-  !     in 'propfb', physical properties at boundary face centers: 'ipbrom'
+  ! --- Pointers to density values
 
-  ipcrom = ipproc(irom)
-  ipbrom = ipprob(irom)
+  call field_get_val_s(icrom, crom)
+  call field_get_val_s(ibrom, brom)
 
   ! --- Coefficients of laws chosen by the user
   !       Values given here are fictitious
@@ -233,17 +229,17 @@ if (.false.) then
   ! Density at cell centers
   !------------------------
   ! law                    rho  = t  * ( a *  t +  b) +   c
-  ! so      propce(iel, ipcrom) = xrtp * (vara*xrtp+varb) + varc
+  ! so      crom(iel) = xrtp * (vara*xrtp+varb) + varc
 
   ! Volumic thermal expansion coefficient
   !--------------------------------------
   ! law                     beta  = -1/rho * (d rho / d T)
-  ! so propce(iel, ipproc(ibeta)) = (-1.d0/propce(iel,ipcrom))*(2.d0*vara*xrtp+varb)
+  ! so propce(iel, ipproc(ibeta)) = (-1.d0/crom(iel))*(2.d0*vara*xrtp+varb)
 
   do iel = 1, ncel
     xrtp = rtp(iel,ivart)
-    propce(iel,ipcrom) = xrtp * (vara*xrtp+varb) + varc
-    propce(iel,ipproc(ibeta))= (-1.d0/propce(iel,ipcrom))*(2.d0*vara*xrtp+varb)
+    crom(iel) = xrtp * (vara*xrtp+varb) + varc
+    propce(iel,ipproc(ibeta))= (-1.d0/crom(iel))*(2.d0*vara*xrtp+varb)
   enddo
 
 
@@ -253,8 +249,8 @@ if (.false.) then
   ! By default, the value of rho at the boundary is the value taken
   !   at the center of adjacent cells. This is the recommended approach.
   ! To be in this case, nothing needs to be done:
-  !   do not prescribe a value for propfb(ifac, ipbrom) and
-  !   do not modify ibrom
+  !   do not prescribe a value for brom(ifac) and
+  !   do not modify mbrom
 
   ! For users who do not wish to follow this recommendation, we
   !   note that the boundary temperature may be fictitious, simply
@@ -265,7 +261,7 @@ if (.false.) then
 
   ! If we wish to specify a law anyways:
   !                        rho  = t  * ( a *  t +  b) +   c
-  ! so      propfb(iel, ipbrom) = xrtp * (vara*xrtp+varb) + varc
+  ! so      brom(ifac) = xrtp * (vara*xrtp+varb) + varc
 
   ! 't' being the temperature at boundary face centers, we may use the
   ! following lines of code (voluntarily deactived, as the must be used
@@ -281,16 +277,16 @@ if (.false.) then
     call field_get_coefa_s(ivarfl(ivart), coefap)
     call field_get_coefb_s(ivarfl(ivart), coefbp)
 
-    ! Caution: ibrom = 1 is necessary for the law to be taken
+    ! Caution: mbrom = 1 is necessary for the law to be taken
     !                           into account.
-    ibrom = 1
+    mbrom = 1
 
     do ifac = 1, nfabor
 
       ! ifabor(ifac) is the cell adjacent to the boundary face
       iel = ifabor(ifac)
       xrtp = coefap(ifac) + rtp(iel, ivart)*coefbp(ifac)
-      propfb(ifac, ipbrom) = xrtp * (vara*xrtp+varb) + varc
+      brom(ifac) = xrtp * (vara*xrtp+varb) + varc
     enddo
 
   endif ! --- Test on .false.
@@ -840,12 +836,11 @@ end subroutine usphyv
 !> \param[in]     rtpR, rtpa    calculated variables at cell centers
 !>                               (at current and preceding time steps)
 !> \param[in,out] propce        physical properties at cell centers
-!> \param[in]     propfb        physical properties at boundary face centers
 !_______________________________________________________________________________
 
 subroutine uscfpv &
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , rtpa   , propce , propfb )
+   dt     , rtp    , rtpa   , propce )
 
 !===============================================================================
 
@@ -876,7 +871,6 @@ integer          nvar   , nscal
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfb(nfabor,*)
 
 ! Local variables
 
@@ -1131,8 +1125,8 @@ if (.false.) then
   !==========
    ( nvar   ,                                                       &
      iccfth , imodif ,                                              &
-     dt     , rtp    , rtpa  , propce , propfb ,                    &
-     propce(1, ipproc(icv))  , w1     , w2     , w3     ,           &
+     rtp    ,                                                       &
+     propce(1, ipproc(icv))  , w1     , w2     ,                    &
      rvoid  , rvoid )
 
 endif ! --- Test on .false.
@@ -1437,8 +1431,8 @@ subroutine uselph &
 !================
 
  ( nvar   , nscal  ,                                              &
-   ibrom  , izfppp ,                                              &
-   dt     , rtp    , rtpa   , propce , propfb )
+   mbrom  , izfppp ,                                              &
+   dt     , rtp    , rtpa   , propce )
 
 !===============================================================================
 ! FONCTION :
@@ -1519,14 +1513,13 @@ subroutine uselph &
 !__________________!____!_____!________________________________________________!
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! ibrom            ! te ! <-- ! indicateur de remplissage de romb              !
+! mbrom            ! te ! <-- ! indicateur de remplissage de romb              !
 ! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -1558,24 +1551,23 @@ implicit none
 
 integer          nvar   , nscal
 
-integer          ibrom
+integer          mbrom
 integer          izfppp(nfabor)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfb(nfabor,*)
 
 ! Local variables
 
 integer          iel
-integer          ipcrom, ipcvis, ipccp , ipcvsl, ipcsig
+integer          ipcvis, ipccp , ipcvsl, ipcsig
 integer          mode
 
 double precision tp
 double precision xkr   , xbr
 double precision rom0  , temp0 , dilar , aa    , bb    , cc
 double precision srrom1, rhonp1
-
+double precision, dimension(:), pointer ::  crom
 integer          ipass
 data             ipass /0/
 save             ipass
@@ -1701,7 +1693,7 @@ if (ippmod(ieljou).ge.1) then
 !     =========
 !       Dans le module electrique effet Joule, on fournira
 !       OBLIGATOIREMENT la loi de variation de la masse volumique ici
-!       en renseignant PROPCE(IEL,IPCROM)
+!       en renseignant crom(iel)
 !       (meme si elle est uniforme ou constante).
 
 
@@ -1719,12 +1711,11 @@ if (ippmod(ieljou).ge.1) then
     srrom1 = 0.d0
   endif
 
-  ipcrom = ipproc(irom)
+  call field_get_val_s(icrom, crom)
   do iel = 1, ncel
     rhonp1 = rom0 /                                               &
             (1.d0+ dilar * (propce(iel,ipproc(itemp))-temp0) )
-    propce(iel,ipcrom) =                                          &
-         srrom1*propce(iel,ipcrom)+(1.d0-srrom1)*rhonp1
+    crom(iel) = srrom1*crom(iel)+(1.d0-srrom1)*rhonp1
   enddo
 
 
@@ -1935,7 +1926,6 @@ end subroutine uselph
 !> \param[in]     rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in,out] propce        physical properties at cell centers
-!> \param[in]     propfb        physical properties at boundary face centers
 !> \param[in]     ckupdc        work array for head loss terms
 !> \param[in]     smacel        values of variables related to mass source
 !>                              term. If ivar=ipr, smacel=mass flux
@@ -1944,7 +1934,7 @@ end subroutine uselph
 subroutine usvist &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   dt     , rtp    , rtpa   , propce ,                            &
    ckupdc , smacel )
 
 !===============================================================================
@@ -1978,19 +1968,18 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 
 ! Local variables
 
 integer          iel, iccocg, inc
-integer          ipcrom, ipcvst
+integer          ipcvst
 double precision dudx, dudy, dudz, sqdu, visct, rom
 
 double precision, dimension(:,:), pointer :: coefav
 double precision, dimension(:,:,:), pointer :: coefbv
 double precision, allocatable, dimension(:,:,:) :: gradv
-
+double precision, dimension(:), pointer ::  crom
 !===============================================================================
 
 !===============================================================================
@@ -2019,7 +2008,7 @@ allocate(gradv(3,3,ncelet))
 ! --- Physical quantity numbers in PROPCE (physical quantities defined
 !     at each cell center)
 ipcvst = ipproc(ivisct)
-ipcrom = ipproc(irom  )
+call field_get_val_s(icrom, crom)
 
 !===============================================================================
 ! 1.3 Compute velocity gradient
@@ -2037,8 +2026,7 @@ call grdvec &
 !==========
  ( iu  , imrgra , inc    , iccocg ,                      &
    nswrgr(iu) , imligr(iu) ,                             &
-   iwarni(iu) , nfecra ,                                 &
-   epsrgr(iu) , climgr(iu) , extrag(iu) ,                &
+   iwarni(iu) , epsrgr(iu) , climgr(iu) ,                &
    rtpa(1,iu) , coefav , coefbv ,                        &
    gradv  )
 
@@ -2050,8 +2038,7 @@ do iel = 1, ncel
 
   ! --- Current dynamic viscosity and fluid density
   visct = propce(iel,ipcvst)
-  rom   = propce(iel,ipcrom)
-
+  rom   = crom(iel)
   ! --- Various computations
   dudx = gradv(1,1,iel)
   dudy = gradv(2,1,iel)
@@ -2089,7 +2076,7 @@ subroutine ussmag &
 
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   dt     , rtp    , rtpa   , propce ,                            &
    ckupdc , smacel ,                                              &
    smagor , mijlij , mijmij )
 
@@ -2129,7 +2116,6 @@ subroutine ussmag &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
 !  (ncepdp,6)      !    !     !                                                !
 ! smacel           ! tr ! <-- ! valeur des variables associee a la             !
@@ -2174,7 +2160,6 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision smagor(ncelet), mijlij(ncelet), mijmij(ncelet)
 
@@ -2278,7 +2263,6 @@ end subroutine ussmag
 !> \param[in]     rtp, rtpa     calculated variables at cell centers
 !>                               (at current and preceding time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfb        physical properties at boundary face centers
 !> \param[out]    viscmx        mesh viscosity in X direction
 !> \param[out]    viscmy        mesh viscosity in Y direction
 !> \param[out]    viscmz        mesh viscosity in Z direction
@@ -2286,7 +2270,7 @@ end subroutine ussmag
 
 subroutine usvima &
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   dt     , rtp    , rtpa   , propce ,                            &
    viscmx , viscmy , viscmz )
 
 !===============================================================================
@@ -2318,7 +2302,6 @@ integer          nvar   , nscal
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfb(ndimfb,*)
 double precision viscmx(ncelet), viscmy(ncelet), viscmz(ncelet)
 
 ! Local variables

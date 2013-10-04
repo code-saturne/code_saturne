@@ -23,8 +23,8 @@
 subroutine cs_fuel_bcond &
 !=======================
 
- ( icodcl , itypfb , izfppp ,                                     &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
+ ( itypfb , izfppp ,                                              &
+   propce ,                                                       &
    rcodcl )
 
 !===============================================================================
@@ -37,25 +37,10 @@ subroutine cs_fuel_bcond &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! icodcl           ! te ! --> ! code de condition limites aux faces            !
-!  (nfabor,nvarcl) !    !     !  de bord                                       !
-!                  !    !     ! = 1   -> dirichlet                             !
-!                  !    !     ! = 3   -> densite de flux                       !
-!                  !    !     ! = 4   -> glissemt et u.n=0 (vitesse)           !
-!                  !    !     ! = 5   -> frottemt et u.n=0 (vitesse)           !
-!                  !    !     ! = 6   -> rugosite et u.n=0 (vitesse)           !
-!                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
-!                  !    !     !  entrante eventuelle     bloquee               !
-! itrifb(nfabor)   ! ia ! <-- ! indirection for boundary faces ordering        !
 ! itypfb(nfabor)   ! ia ! <-- ! boundary face types                            !
 ! izfppp(nfabor)   ! te ! <-- ! numero de zone de la face de bord              !
 !                  !    !     !  pour le module phys. part.                    !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
 !  (nfabor,nvarcl) !    !     !  aux faces de bord                             !
 !                  !    !     ! rcodcl(1) = valeur du dirichlet                !
@@ -95,27 +80,24 @@ use cs_fuel_incl
 use ppincl
 use ppcpfu
 use mesh
-
+use field
 !===============================================================================
 
 implicit none
 
 ! Arguments
 
-integer          icodcl(nfabor,nvarcl)
-integer          itrifb(nfabor), itypfb(nfabor)
+integer          itypfb(nfabor)
 integer          izfppp(nfabor)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfb(nfabor,*)
 double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
 
 integer          ii, ifac, izone, mode, iel, ige, iok
 integer          icla , ioxy
-integer          ipbrom, icke, ipcvis
+integer          icke, ipcvis
 integer          nbrval
 double precision qisqc, viscla, d2s3, uref2, rhomoy, dhy, xiturb
 double precision xkent, xeent, t1, t2, ustar2
@@ -126,15 +108,17 @@ double precision x2h20t(nozppm)
 double precision qimpc(nozppm) , qcalc(nozppm)
 double precision coefe(ngazem)
 double precision xsolid(2)
-double precision hlf, totfu, sdebt
-double precision volm, dmp, dmas
+double precision hlf, totfu
+double precision dmas
+double precision, dimension(:), pointer ::  brom
 
 !===============================================================================
+
 !===============================================================================
 ! 1.  INITIALISATIONS
 !===============================================================================
 !
-ipbrom = ipprob(irom  )
+call field_get_val_s(ibrom, brom)
 ipcvis = ipproc(iviscl)
 !
 d2s3   = 2.d0 / 3.d0
@@ -194,7 +178,7 @@ do izone = 1, nozppm
 enddo
 do ifac = 1, nfabor
   izone = izfppp(ifac)
-  qcalc(izone) = qcalc(izone) - propfb(ifac,ipbrom) *             &
+  qcalc(izone) = qcalc(izone) - brom(ifac) *             &
       ( rcodcl(ifac,iu,1)*surfbo(1,ifac) +                 &
         rcodcl(ifac,iv,1)*surfbo(2,ifac) +                 &
         rcodcl(ifac,iw,1)*surfbo(3,ifac) )
@@ -377,7 +361,7 @@ do ifac = 1, nfabor
             + rcodcl(ifac,iv,1)**2                         &
             + rcodcl(ifac,iw,1)**2
       uref2 = max(uref2,1.d-12)
-      rhomoy = propfb(ifac,ipbrom)
+      rhomoy = brom(ifac)
       iel    = ifabor(ifac)
       viscla = propce(iel,ipcvis)
       icke   = icalke(izone)

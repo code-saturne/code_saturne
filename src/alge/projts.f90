@@ -23,9 +23,8 @@
 subroutine projts &
 !================
 
- ( init   , inc    , imrgra , iccocg , nswrgu , imligu ,          &
-   iwarnu , nfecra ,                                              &
-   epsrgu , climgu ,                                              &
+ ( init   , nswrgu ,                                              &
+   nfecra ,                                                       &
    frcxt  ,                                                       &
    cofbfp ,                                                       &
    flumas , flumab , viscf  , viscb  ,                            &
@@ -50,23 +49,9 @@ subroutine projts &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! init             ! e  ! <-- ! > 0 : initialisation du flux de masse          !
-! inc              ! e  ! <-- ! indicateur = 0 resol sur increment             !
-!                  !    !     !              1 sinon                           !
-! imrgra           ! e  ! <-- ! indicateur = 0 gradrc 97                       !
-!                  ! e  ! <-- !            = 1 gradmc 99                       !
-! iccocg           ! e  ! <-- ! indicateur = 1 pour recalcul de cocg           !
-!                  !    !     !              0 sinon                           !
 ! nswrgu           ! e  ! <-- ! nombre de sweep pour reconstruction            !
 !                  !    !     !             des gradients                      !
-! imligu           ! e  ! <-- ! methode de limitation du gradient              !
-!                  !    !     !  < 0 pas de limitation                         !
-!                  !    !     !  = 0 a partir des gradients voisins            !
-!                  !    !     !  = 1 a partir du gradient moyen                !
-! iwarnu           ! e  ! <-- ! niveau d'impression                            !
 ! nfecra           ! e  ! <-- ! unite du fichier sortie std                    !
-! epsrgu           ! r  ! <-- ! precision relative pour la                     !
-!                  !    !     !  reconstruction des gradients 97               !
-! climgu           ! r  ! <-- ! coef gradient*distance/ecart                   !
 ! cofbfp(nfabor    ! tr ! <-- ! tableaux des cond lim de pression              !
 ! flumas(nfac)     ! tr ! <-- ! flux de masse aux faces internes               !
 ! flumab(nfabor    ! tr ! <-- ! flux de masse aux faces de bord                !
@@ -92,11 +77,9 @@ implicit none
 
 ! Arguments
 
-integer          init   , inc    , imrgra , iccocg
-integer          nswrgu , imligu
-integer          iwarnu , nfecra
-double precision epsrgu , climgu
-
+integer          init
+integer          nswrgu
+integer          nfecra
 
 double precision pnd
 double precision frcxt(3,ncelet)
@@ -107,7 +90,7 @@ double precision flumas(nfac), flumab(nfabor)
 
 ! Local variables
 
-integer          ifac, ii, jj, iii
+integer          ifac, ii, jj
 double precision dijpfx,dijpfy,dijpfz
 double precision diipx,diipy,diipz
 double precision djjpx,djjpy,djjpz

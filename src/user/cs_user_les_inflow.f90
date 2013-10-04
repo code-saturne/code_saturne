@@ -279,7 +279,6 @@ end subroutine cs_user_les_inflow_define
 !> \param[in]     rtpa          variables at cells (previous)
 !> \param[in]     rtp           variables at cells
 !> \param[in]     propce        physical properties at cells
-!> \param[in]     propfb        physical properties at bound. faces
 !> \param[out]    uvwent        mean velocity at the inlet faces
 !> \param[out]    rijent        turb. kin. ener. at the inlet faces
 !> \param[out]    epsent        turb. dissipation at the inlet faces
@@ -289,7 +288,7 @@ subroutine cs_user_les_inflow_advanced &
  ( nument , nfbent ,                                              &
    nvar   , nscal ,                                               &
    lfbent ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfb ,                   &
+   dt     , rtpa   , rtp    , propce ,                            &
    uvwent , rijent , epsent )
 
 !===============================================================================
@@ -318,7 +317,6 @@ integer          lfbent(nfbent)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfb(nfabor,*)
 double precision uvwent(ndim,nfbent), rijent(6,nfbent)
 double precision epsent(nfbent)
 

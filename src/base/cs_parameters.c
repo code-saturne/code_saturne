@@ -164,6 +164,7 @@ cs_parameters_define_field_keys(void)
 {
   cs_field_define_key_int("inner_mass_flux_id", -1, 0);
   cs_field_define_key_int("boundary_mass_flux_id", -1, 0);
+
   cs_field_define_key_int("variable_id", 0, 0); //inverse of the ivarfl(ivar) array
   cs_field_define_key_int("diffusivity_tensor", 0, 0);
   cs_field_define_key_int("scalar_id", 0, 0); //inverse of the isca(iscal) array

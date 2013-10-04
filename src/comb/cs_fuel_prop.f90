@@ -29,14 +29,13 @@ subroutine cs_fuel_prop &
 !  ---------
 ! INIT DES POSITIONS DES VARIABLES D'ETAT SELON
 !         COMBUSTION FUEL
-!   (DANS VECTEURS PROPCE, PROPFB)
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! ipropp           ! e  ! <-- ! numero de la derniere propriete                !
-!                  !    !     !  (les proprietes sont dans propce ou propfb)   !
+!                  !    !     !  (les proprietes sont dans propce)             !
 ! ipppst           ! e  ! <-- ! pointeur indiquant le rang de la               !
 !                  !    !     !  derniere grandeur definie aux                 !
 !                  !    !     !  cellules (rtp,propce...) pour le              !
@@ -249,12 +248,6 @@ ipppro(iprop)      = ipppst
 
 !
 nproce = iprop
-
-! ---> Positionnement dans le tableau PROPFB
-!      Au centre des faces de bord
-
-iprop  = nprofb
-nprofb = iprop
 
 !--------
 ! Formats

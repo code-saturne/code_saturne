@@ -119,7 +119,6 @@ CS_PROCF (aldepl, ALDEPL)(const cs_int_t    i_face_cells[],
  * ipnfbr            : <-- : Border faces -> vertices index
  * nodfbr            : <-- : Border faces -> vertices list
  * ialtyb            : <-- : Type of boundary for ALE
- * pond              : <-- : Interior faces geometric weight
  * meshv             : <-- : Mesh velocity
  * gradm             : <-- : Mesh velocity gradient (du_i/dx_j : gradv[][i][j])
  * claale            : <-- : Boundary conditions A
@@ -136,7 +135,6 @@ CS_PROCF (aledis, ALEDIS)(const cs_int_t      i_face_cells[],
                           const cs_int_t      b_face_vtx_idx[],
                           const cs_int_t      b_face_vtx_lst[],
                           const cs_int_t      ialtyb[],
-                          const cs_real_t     opond[],
                           const cs_real_t    *meshv,
                           const cs_real_33_t  gradm[],
                           const cs_real_t    *claale,

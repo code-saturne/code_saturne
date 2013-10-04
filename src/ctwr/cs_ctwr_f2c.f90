@@ -69,7 +69,7 @@ implicit none
 
 character*(*) nomze
 
-integer          imzech,ntypze,idimze,neleze,icoul
+integer          imzech,ntypze,idimze,neleze
 
 double precision teaueze,qeaueze,deltat
 double precision xap,xnp,surface

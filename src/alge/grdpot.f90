@@ -24,8 +24,7 @@ subroutine grdpot &
 !================
 
  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ppond  ,                                                       &
+   iwarnp , epsrgp , climgp , extrap ,                            &
    frcxt  ,                                                       &
    pvar   , coefap , coefbp ,                                     &
    grad   )
@@ -107,10 +106,9 @@ implicit none
 ! Arguments
 
 integer          ivar   , imrgra , inc    , iccocg , nswrgp
-integer          imligp , iwarnp , iphydp , nfecra
+integer          imligp , iwarnp , iphydp
 double precision epsrgp , climgp , extrap
 
-double precision ppond(ncelet)
 double precision frcxt(3,ncelet)
 double precision pvar(ncelet), coefap(nfabor), coefbp(nfabor)
 double precision grad(ncelet,3)
@@ -121,7 +119,6 @@ integer          imrgrp, ilved
 integer          idimtr, ipond
 
 double precision rvoid(1)
-double precision climin
 
 !===============================================================================
 

@@ -28,7 +28,7 @@ subroutine ustsma &
  ( nvar   , nscal  , ncepdp ,                                     &
    ncesmp , iappel ,                                              &
    icepdc , icetsm , itypsm , izctsm ,                            &
-   dt     , rtpa   , propce , propfb ,                            &
+   dt     , rtpa   , propce ,                                     &
    ckupdc , smacel )
 
 !===============================================================================
@@ -157,7 +157,6 @@ subroutine ustsma &
 ! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (preceding time steps)                        !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! ckupdc(ncepdp,6) ! ra ! <-- ! head loss coefficient                          !
 ! smacel           ! ra ! <-- ! value associated to each variable in the mass  !
 !  (ncesmp,nvar)   !    !     !  source terms or mass rate                     !
@@ -198,7 +197,6 @@ integer          izctsm(ncel)
 
 double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfb(nfabor,*)
 double precision ckupdc(ncepdp,6)
 double precision smacel(ncesmp,nvar)
 

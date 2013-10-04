@@ -42,18 +42,11 @@
 !> \param[in]     nvisbr        number of boundary statistical variables
 !> \param[in]     ncelps        post-processing mesh cells number
 !> \param[in]     nfbrps        number of boundary faces
-!> \param[in]     itypps        presence indicator (0 ou 1) of
-!>                              cells (1), faces (2), ou boubdary faces (3)
-!>                              in the post-processing mesh
 !> \param[in]     lstcel        post-processing mesh cell numbers
 !> \param[in]     lstfbr        post-processing mesh boundary faces numbers
-!> \param[in]     dt            time step (per cell)
 !> \param[in]     rtp           calculated variables at cell center
 !>                              (at current time step)
-!> \param[in]     rtpa          calculated variables at cell center
-!>                              (at previous time step)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfb        physical properties at boundary face centers
 !> \param[in]     statce        cells statistics (lagrangian)
 !> \param[in]     stativ        cells variance statistics (lagrangian)
 !> \param[in]     statfb        boundary faces statistics (lagrangian)
@@ -65,9 +58,8 @@ subroutine dvvpst &
  ( nummai , numtyp ,                                              &
    nvar   , nscal  , nvlsta , nvisbr ,                            &
    ncelps , nfbrps ,                                              &
-   itypps ,                                                       &
    lstcel , lstfbr ,                                              &
-   dt     , rtpa   , rtp    , propce , propfb ,                   &
+   rtp    , propce ,                                              &
    statce , stativ , statfb ,                                     &
    tracel , trafbr )
 
@@ -76,7 +68,6 @@ subroutine dvvpst &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use pointe
 use entsor
 use cstnum
@@ -106,11 +97,10 @@ integer          nummai , numtyp
 integer          nvar   , nscal  , nvlsta , nvisbr
 integer          ncelps , nfbrps
 
-integer          itypps(3)
 integer          lstcel(ncelps), lstfbr(nfbrps)
 
-double precision dt(ncelet), rtpa(ncelet,*), rtp(ncelet,*)
-double precision propce(ncelet,*), propfb(ndimfb,*)
+double precision rtp(ncelet,*)
+double precision propce(ncelet,*)
 double precision statce(ncelet,nvlsta), statfb(nfabor,nvisbr)
 double precision stativ(ncelet,nvlsta)
 double precision tracel(ncelps*3)
@@ -127,7 +117,7 @@ integer          ipp   , idimt , kk   , ll, iel
 integer          ivarl , ivar0
 integer          iii, ivarl1 , ivarlm , iflu   , ilpd1  , icla
 integer          fldid, fldprv, keycpl, iflcpl
-integer          ipcrom, ipcsii, keyvis, iflpst, itplus
+integer          ipcsii, keyvis, iflpst, itplus
 
 double precision epsrgp, climgp, extrap
 double precision pcentr
@@ -140,6 +130,8 @@ double precision, dimension(:), pointer :: tplusp
 double precision, dimension(:), pointer :: valsp, coefap, coefbp
 double precision, dimension(:,:), pointer :: valvp, cofavp, cofbvp
 double precision, dimension(:,:,:), pointer :: cofbtp
+double precision, dimension(:), pointer :: crom
+double precision, dimension(:), pointer :: f_val
 
 !===============================================================================
 
@@ -190,7 +182,7 @@ if (numtyp .eq. -1) then
 
   if (icorio.eq.1) then
 
-    ipcrom = ipproc(irom)
+   call field_get_val_s(icrom, crom)
 
     idimt = 1
     ientla = .true.
@@ -204,7 +196,7 @@ if (numtyp .eq. -1) then
                       + (omegaz*xyzcen(1,iel) - omegax*xyzcen(3,iel))**2 &
                       + (omegax*xyzcen(2,iel) - omegay*xyzcen(1,iel))**2)
 
-      tracel(iloc) = rtp(iel,ipr) + propce(iel,ipcrom)*pcentr
+      tracel(iloc) = rtp(iel,ipr) + crom(iel)*pcentr
 
     enddo
 
@@ -239,7 +231,7 @@ if (numtyp .eq. -1) then
 
   if (imobil.eq.1) then
 
-    ipcrom = ipproc(irom)
+   call field_get_val_s(icrom, crom)
 
     idimt = 1
     ientla = .true.
@@ -253,7 +245,7 @@ if (numtyp .eq. -1) then
                       + (omegaz*xyzcen(1,iel) - omegax*xyzcen(3,iel))**2 &
                       + (omegax*xyzcen(2,iel) - omegay*xyzcen(1,iel))**2)
 
-      tracel(iloc) = rtp(iel,ipr) - propce(iel,ipcrom)*pcentr
+      tracel(iloc) = rtp(iel,ipr) - crom(iel)*pcentr
 
     enddo
 
@@ -784,31 +776,33 @@ if (numtyp.eq.-2) then
 
   if (iirayo.gt.0) then
 
-    do ivarl = 1,nbrayf
+    do ivarl = 1, nbrayf
 
       if (irayvf(ivarl).eq.1) then
 
         if (ivarl .eq. itparp)      then
-          ipp =  ipprob(itparo)
+          ipp =  itparo
         else if (ivarl .eq. iqincp) then
-          ipp = ipprob(iqinci)
+          ipp = iqinci
         else if (ivarl .eq. ixlamp)  then
-          ipp = ipprob(ixlam)
+          ipp = ixlam
         else if (ivarl .eq. iepap)   then
-          ipp = ipprob(iepa)
+          ipp = iepa
         else if (ivarl .eq. iepsp)   then
-          ipp = ipprob(ieps)
+          ipp = ieps
         else if (ivarl .eq. ifnetp)  then
-          ipp = ipprob(ifnet)
+          ipp = ifnet
         else if (ivarl .eq. ifconp) then
-          ipp = ipprob(ifconv)
+          ipp = ifconv
         else if (ivarl .eq. ihconp) then
-          ipp = ipprob(ihconv)
+          ipp = ihconv
         endif
+
+        call field_get_val_s(ipp, f_val)
 
         do iloc = 1, nfbrps
           ifac = lstfbr(iloc)
-          trafbr(iloc) = propfb(ifac,ipp)
+          trafbr(iloc) = f_val(ifac)
         enddo
 
         idimt  = 1
@@ -870,7 +864,7 @@ if (numtyp.eq.-1) then
       call grdcel                                                 &
       !==========
         (ivar0, imrgra, inc, iccocg, nswrgp, imligp,              &
-         iwarnp, nfecra, epsrgp, climgp, extrap,                  &
+         iwarnp, nfecra ,epsrgp, climgp, extrap,                  &
          rtp(1,ivar), coefap, coefbp,                             &
          grad)
 

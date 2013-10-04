@@ -58,7 +58,6 @@
 !> \param[in,out] rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in,out] propfb        physical properties at boundary face centers
 !> \param[in]     coefa, coefb  boundary conditions
 !> \param[in]     gradv         tableau de travail pour terme grad
 !>                                 de vitesse     uniqt pour iturb=31
@@ -82,7 +81,7 @@ subroutine resssg &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   , isou   , ipp    ,                                     &
    icepdc , icetsm , itpsmp ,                                     &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   dt     , rtp    , rtpa   , propce ,                            &
    coefa  , coefb  , gradv  , gradro ,                            &
    ckupdc , smcelp , gamma  ,                                     &
    viscf  , viscb  ,                                              &
@@ -124,7 +123,7 @@ integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itpsmp(ncesmp)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(ndimfb,*)
+double precision propce(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision gradv(3, 3, ncelet)
 double precision gradro(ncelet,3)
@@ -136,17 +135,16 @@ double precision smbr(ncelet), rovsdt(ncelet)
 
 ! Local variables
 
-integer          init  , ifac  , iel
+integer          iel
 integer          ii    , jj    , kk    , iiun  , iii   , jjj
-integer          ipcrom, ipcvis, iflmas, iflmab, ipcroo
+integer          ipcvis, iflmas, iflmab
 integer          iclvar, iclvaf, iclal , iclalf
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
 integer          iptsta
-integer          inc, iccocg, iphydp, ll, kkk
-integer          ipcvlo
+integer          inc, iccocg, iphydp, ll
 integer          imucpp, idftnp, iswdyp
 integer          indrey(3,3)
 integer          icvflb
@@ -154,18 +152,15 @@ integer          ivoid(1)
 
 double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
 double precision epsrsp
-double precision trprod, trrij , rctse , deltij
+double precision trprod, trrij , deltij
 double precision tuexpr, thets , thetv , thetp1
 double precision aiksjk, aikrjk, aii ,aklskl, aikakj
 double precision xaniso(3,3), xstrai(3,3), xrotac(3,3), xprod(3,3), matrot(3,3)
-double precision xrij(3,3), xnal(3), xnoral, xnnd, xnu
-double precision d1s2, d1s3, d2s3, thetap
+double precision xrij(3,3), xnal(3), xnoral, xnnd
+double precision d1s2, d1s3, d2s3
 double precision alpha3
-double precision xttke, xttkmg, xttdrb
-double precision grdpx, grdpy, grdpz, grdsn, surfn2
-double precision pij, phiij1, phiij2, phiij3, epsij
+double precision pij, phiij1, phiij2, epsij
 double precision phiijw, epsijw
-double precision cstrij
 
 double precision rvoid(1)
 
@@ -177,6 +172,7 @@ double precision, allocatable, dimension(:,:) :: viscce
 double precision, allocatable, dimension(:,:) :: weighf
 double precision, allocatable, dimension(:) :: weighb
 double precision, dimension(:), pointer :: imasfl, bmasfl
+double precision, dimension(:), pointer :: crom, cromo
 
 !===============================================================================
 
@@ -200,7 +196,7 @@ if (iwarni(ivar).ge.1) then
   write(nfecra,1000) nomvar(ipp)
 endif
 
-ipcrom = ipproc(irom)
+call field_get_val_s(icrom, crom)
 ipcvis = ipproc(iviscl)
 call field_get_key_int(ivarfl(iu), kimasf, iflmas)
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
@@ -228,9 +224,10 @@ endif
 thets  = thetst
 thetv  = thetav(ivar )
 
-ipcroo = ipcrom
-if(isto2t.gt.0.and.iroext.gt.0) then
-  ipcroo = ipproc(iroma)
+if (isto2t.gt.0.and.iroext.gt.0) then
+  call field_get_val_prev_s(icrom, cromo)
+else
+  call field_get_val_s(icrom, cromo)
 endif
 iptsta = 0
 if (isto2t.gt.0) then
@@ -255,7 +252,7 @@ call ustsri &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   ,                                                       &
    icepdc , icetsm , itpsmp ,                                     &
-   dt     , rtpa   , propce , propfb ,                            &
+   dt     , rtpa   , propce ,                                     &
    ckupdc , smcelp , gamma  , gradv  , gradv ,                    &
    smbr   , rovsdt )
 
@@ -332,7 +329,7 @@ endif
 
 do iel=1,ncel
   rovsdt(iel) = rovsdt(iel)                                       &
-            + istat(ivar)*(propce(iel,ipcrom)/dt(iel))*volume(iel)
+            + istat(ivar)*(crom(iel)/dt(iel))*volume(iel)
 enddo
 
 
@@ -566,7 +563,7 @@ do iel=1,ncel
 !     dans W1 et W2, pour eviter d'avoir un test IF(ISTO2T.GT.0)
 !     dans la boucle NCEL
 !     Dans le terme en W1, qui a vocation a etre extrapole, on utilise
-!     naturellement IPCROO.
+!     naturellement CROMO.
 !     L'implicitation des deux termes pourrait se faire aussi en cas
 !     d'extrapolation, en isolant ces deux termes et les mettant dans
 !     SMBR et pas PROPCE et en utilisant IPCROM ... a modifier si le
@@ -583,9 +580,9 @@ do iel=1,ncel
            +   cssgr5*trrij* aikrjk
     epsij = -d2s3*rtpa(iel,iep)*deltij
 
-    w1(iel) = propce(iel,ipcroo)*volume(iel)*(pij+phiij1+phiij2+epsij)
+    w1(iel) = cromo(iel)*volume(iel)*(pij+phiij1+phiij2+epsij)
 
-    w2(iel) = volume(iel)/trrij*propce(iel,ipcrom)*(                &
+    w2(iel) = volume(iel)/trrij*crom(iel)*(                &
            cssgs1*rtpa(iel,iep) + cssgr1*max(trprod,0.d0) )
 
   ! EBRSM
@@ -637,7 +634,7 @@ do iel=1,ncel
     !            - (1-\alpha^3)\e_{ij}^w   - \alpha^3\e_{ij}^h  ] --> W1
     alpha3 = rtp(iel,ial)**3
 
-    w1(iel) = volume(iel)*propce(iel,ipcrom)*(                    &
+    w1(iel) = volume(iel)*crom(iel)*(                    &
                xprod(iii,jjj)                                     &
             + (1.d0-alpha3)*phiijw + alpha3*(phiij1+phiij2)       &
             - (1.d0-alpha3)*epsijw - alpha3*epsij)
@@ -647,7 +644,7 @@ do iel=1,ncel
     ! le terme ci-dessous correspond a la partie implicitee du SSG
     ! dans le cadre de la ponderation elliptique, il est multiplie par
     ! \alpha^3
-    w2(iel) = volume(iel)*propce(iel,ipcrom)*(                    &
+    w2(iel) = volume(iel)*crom(iel)*(                    &
               cebms1*rtpa(iel,iep)/trrij*alpha3                   &
              +cebmr1*max(trprod/trrij,0.d0)*alpha3                &
     ! Implicitation de epsijw
@@ -688,12 +685,8 @@ if (igrari.eq.1) then
     w7(iel) = 0.d0
   enddo
 
-  call rijthe &
+  call rijthe(nscal, ivar, rtpa, gradro, w7)
   !==========
- ( nscal  ,                                                       &
-   ivar   , isou   , ipp    ,                                     &
-   rtp    , rtpa   ,                                              &
-   gradro , w7     )
 
   ! Si on extrapole les T.S. : PROPCE
   if(isto2t.gt.0) then
@@ -732,8 +725,7 @@ if (idften(ivar).eq.6) then
 
   call vitens &
   !==========
- ( imvisf ,                      &
-   viscce , iwarnp ,             &
+ ( viscce , iwarnp ,             &
    weighf , weighb ,             &
    viscf  , viscb  )
 

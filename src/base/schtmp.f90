@@ -24,7 +24,7 @@ subroutine schtmp &
 !================
 
  ( nscal  , iappel ,                                              &
-   propce , propfb )
+   propce )
 
 !===============================================================================
 ! FONCTION :
@@ -43,7 +43,6 @@ subroutine schtmp &
 ! iappel           ! e  ! <-- ! numero de l'appel (avant ou apres              !
 !                  !    !     ! phyvar                                         !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -75,13 +74,10 @@ implicit none
 integer          nscal  , iappel
 
 double precision propce(ncelet,*)
-double precision propfb(nfabor,*)
 
 ! Local variables
 
 integer          iel    , ifac   , iscal
-integer          ipcrom , ipcroa
-integer          ipbrom , ipbroa
 integer          iflmas , iflmab
 integer          ipcvis , ipcvst
 integer          ipcvsa , ipcvta , ipcvsl
@@ -89,7 +85,7 @@ integer          iicp   , iicpa
 double precision flux   , theta  , aa, bb, viscos, xmasvo, varcp
 double precision, dimension(:), pointer :: i_mass_flux, b_mass_flux
 double precision, dimension(:), pointer :: i_mass_flux_prev, b_mass_flux_prev
-
+double precision, dimension(:), pointer :: brom, crom, broma, croma
 !===============================================================================
 
 !===============================================================================
@@ -146,16 +142,8 @@ if (iappel.eq.1) then
 !       Pour RHO, on le fait en double si ICALHY = 1 (et sur NCELET)
 !     Au debut du calcul les flux nouveau et ancien ont ete initialises inivar
   if (iroext.gt.0) then
-    ipcrom = ipproc(irom  )
-    ipcroa = ipproc(iroma )
-    do iel = 1, ncelet
-      propce(iel,ipcroa) = propce(iel,ipcrom)
-    enddo
-    ipbrom = ipprob(irom  )
-    ipbroa = ipprob(iroma )
-    do ifac = 1, nfabor
-      propfb(ifac,ipbroa) = propfb(ifac,ipbrom)
-    enddo
+    call field_current_to_previous(icrom)
+    call field_current_to_previous(ibrom)
   endif
   if (iviext.gt.0) then
     ipcvis = ipproc(iviscl)
@@ -216,16 +204,8 @@ elseif (iappel.eq.2) then
   if (initro.ne.1) then
     initro = 1
     if (iroext.gt.0) then
-      ipcrom = ipproc(irom  )
-      ipcroa = ipproc(iroma )
-      do iel = 1, ncelet
-        propce(iel,ipcroa) = propce(iel,ipcrom)
-      enddo
-      ipbrom = ipprob(irom  )
-      ipbroa = ipprob(iroma )
-      do ifac = 1, nfabor
-        propfb(ifac,ipbroa) = propfb(ifac,ipbrom)
-      enddo
+      call field_current_to_previous(icrom)
+      call field_current_to_previous(ibrom)
     endif
   endif
   if (initvi.ne.1) then
@@ -287,22 +267,20 @@ elseif (iappel.eq.2) then
 !     Le calcul pour Rho est fait sur NCELET afin d'economiser un echange.
 
   if (iroext.gt.0) then
-    ipcrom = ipproc(irom  )
-    ipcroa = ipproc(iroma )
+    call field_get_val_s(icrom, crom)
+    call field_get_val_prev_s(icrom, croma)
     theta  = thetro
     do iel = 1, ncelet
-      xmasvo = propce(iel,ipcrom)
-      propce(iel,ipcrom) = (1.d0+theta) * propce(iel,ipcrom)    &
-           -       theta  * propce(iel,ipcroa)
-      propce(iel,ipcroa) = xmasvo
+      xmasvo = crom(iel)
+      crom(iel) = (1.d0+theta)*crom(iel) - theta*croma(iel)
+      croma(iel) = xmasvo
     enddo
-    ipbrom = ipprob(irom  )
-    ipbroa = ipprob(iroma )
+    call field_get_val_s(ibrom, brom)
+    call field_get_val_prev_s(ibrom, broma)
     do ifac = 1, nfabor
-      xmasvo = propfb(ifac,ipbrom)
-      propfb(ifac,ipbrom) = (1.d0+theta) * propfb(ifac,ipbrom)  &
-           -       theta  * propfb(ifac,ipbroa)
-      propfb(ifac,ipbroa) = xmasvo
+      xmasvo = brom(ifac)
+      brom(ifac) = (1.d0+theta)*brom(ifac) - theta*broma(ifac)
+      broma(ifac) = xmasvo
     enddo
   endif
   if (iviext.gt.0) then
@@ -510,15 +488,15 @@ elseif (iappel.eq.5) then
 !     Le calcul pour Rho est fait sur NCELET afin d'economiser un echange.
 
   if (iroext.gt.0) then
-    ipcrom = ipproc(irom  )
-    ipcroa = ipproc(iroma )
+    call field_get_val_s(icrom, crom)
+    call field_get_val_prev_s(icrom, croma)
     do iel = 1, ncelet
-      propce(iel,ipcrom) = propce(iel,ipcroa)
+      crom(iel) = croma(iel)
     enddo
-    ipbrom = ipprob(irom  )
-    ipbroa = ipprob(iroma )
+    call field_get_val_s(ibrom, brom)
+    call field_get_val_prev_s(ibrom, broma)
     do ifac = 1, nfabor
-      propfb(ifac,ipbrom) = propfb(ifac,ipbroa)
+      brom(ifac) = broma(ifac)
     enddo
   endif
   if (iviext.gt.0) then

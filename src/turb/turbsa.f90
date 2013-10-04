@@ -25,8 +25,8 @@ subroutine turbsa &
 
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   tslagr , coefa  , coefb  , ckupdc , smacel ,                   &
+   dt     , rtp    , rtpa   , propce ,                            &
+   coefa  , coefb  , ckupdc , smacel ,                            &
    itypfb )
 
 !===============================================================================
@@ -53,7 +53,6 @@ subroutine turbsa &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! tslagr           ! tr ! <-- ! terme de couplage retour du                    !
 !(ncelet,*)        !    !     !     lagrangien                                 !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
@@ -102,8 +101,7 @@ integer          icvflb
 integer          ivoid(1)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(ndimfb,*)
-double precision tslagr(ncelet,*)
+double precision propce(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 
@@ -117,10 +115,10 @@ integer          iclvar, iclvaf
 integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
-integer          ipcrom, ipbrom, ipcvst, ipcvis, iflmas, iflmab
+integer          ipcvst, ipcvis, iflmas, iflmab
 integer          iwarnp, ipp
 integer          iptsta
-integer          ipcroo, ipbroo, ipcvto, ipcvlo
+integer          ipcvto, ipcvlo
 integer          ipatrg
 integer          imucpp, idftnp, iswdyp
 
@@ -150,6 +148,7 @@ double precision, allocatable, dimension(:) :: tsexp
 double precision, allocatable, dimension(:) :: dpvar
 double precision, allocatable, dimension(:) :: csab1r, rotfct
 double precision, dimension(:), pointer :: imasfl, bmasfl
+double precision, dimension(:), pointer :: brom, crom, cromo
 
 !===============================================================================
 
@@ -171,10 +170,10 @@ allocate(dpvar(ncelet))
 
 icliup = iclrtp(iu,icoef)
 
-ipcrom = ipproc(irom  )
+call field_get_val_s(icrom, crom)
 ipcvst = ipproc(ivisct)
 ipcvis = ipproc(iviscl)
-ipbrom = ipprob(irom  )
+call field_get_val_s(ibrom, brom)
 
 call field_get_key_int(ivarfl(iu), kimasf, iflmas)
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
@@ -184,16 +183,13 @@ call field_get_val_s(iflmab, bmasfl)
 ivar   = inusa
 thetv  = thetav(ivar)
 
-ipcroo = ipcrom
-ipbroo = ipbrom
+call field_get_val_s(icrom, cromo)
 ipcvto = ipcvst
 ipcvlo = ipcvis
 
-
 if(isto2t.gt.0) then
   if (iroext.gt.0) then
-    ipcroo = ipproc(iroma)
-    ipbroo = ipprob(iroma)
+    call field_get_val_prev_s(icrom, cromo)
   endif
   if(iviext.gt.0) then
     ipcvto = ipproc(ivista)
@@ -245,8 +241,7 @@ ilved = .false.
 call grdvec &
 !==========
 ( iu     , imrgra , inc    , nswrgp , imligp ,                   &
-  iwarnp , nfecra ,                                              &
-  epsrgp , climgp , extrap ,                                     &
+  iwarnp , epsrgp , climgp ,                                     &
   ilved  ,                                                       &
   rtpa(1,iu) ,  coefau , coefbu,                                 &
   gradv  )
@@ -346,10 +341,8 @@ if (irccor.eq.1) then
   allocate(rotfct(ncel))
 
   ! Compute the rotation function (w1 array not used)
-  call rotcor &
+  call rotcor(dt, rtpa, rotfct, w1)
   !==========
-( dt     , rtpa   , coefa , coefb , &
-  rotfct , w1     )
 
   do iel = 1, ncel
     csab1r(iel) = csab1*rotfct(iel)
@@ -369,7 +362,7 @@ endif
 do iel = 1, ncel
 
   visct = propce(iel,ipcvto)
-  rom   = propce(iel,ipcroo)
+  rom   = cromo(iel)
   ! Kinematic viscosity
   nu0   = propce(iel,ipcvis)/rom
   ! We have to know if there is any rough wall
@@ -437,7 +430,7 @@ call ustssa                                                       &
 !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce , propfb ,                            &
+   dt     , rtpa   , propce ,                                     &
    ckupdc , smacel , vort   , trgrdu ,                            &
    tsexp  , tsimp )
 
@@ -484,7 +477,7 @@ endif
 ! --- rho/dt and div(rho u)
 !     Extrapolated or not in coherence with bilsc2
 do iel = 1, ncel
-  rom = propce(iel,ipcrom)
+  rom = crom(iel)
   romvsd = rom*volume(iel)/dt(iel)
 
   ! tinssa already contains the negativ implicited source term
@@ -559,7 +552,7 @@ ipp    = ipprtp(ivar)
 if (idiff(ivar).ge.1) then
 
   do iel = 1, ncel
-    rom = propce(iel,ipcrom)
+    rom = crom(iel)
 
     ! diffusibility: 1/sigma*(mu_laminaire+ rho*nusa)
     w1(iel) = dsigma *( propce(iel,ipcvis)                        &
@@ -588,7 +581,7 @@ if (idiff(ivar).ge.1) then
     ! Rough wall
     elseif (itypfb(ifac).eq.iparug) then
 
-      rom = propce(iel,ipcrom)
+      rom = crom(iel)
 
       ! dsa0 is recomputed in case of many different roughness
       cofbnu = coefb(ifac,iclvar)
@@ -671,13 +664,8 @@ call codits &
 ! 10. Clipping
 !===============================================================================
 
-iwarnp = iwarni(inusa)
-call clipsa                                                       &
+call clipsa(ncelet, ncel, nvar, rtp)
 !==========
- ( ncelet , ncel   , nvar   ,                                     &
-   iwarnp ,                                                       &
-   propce , rtp    )
-
 
 ! Free memory
 deallocate(viscf, viscb)

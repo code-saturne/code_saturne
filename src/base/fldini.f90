@@ -67,6 +67,7 @@ use lagpar
 use lagdim
 use lagran
 use ihmpre
+use radiat
 use cplsat
 use mesh
 use field
@@ -85,7 +86,8 @@ integer          keylog
 integer          keyvis, keylbl, keycpl, iflid, ikeyid, ikeyvl, iopchr
 integer          keysca, keyvar, kscmin, kscmax, kdiftn
 integer          nfld, itycat, ityloc, idim1, idim3
-logical          ilved, iprev, inoprv
+integer          ipcrom, ipcroa
+logical          ilved, iprev, inoprv, lprev
 integer          ifvar(nvppmx), iapro(npromx)
 integer          f_id, kscavr
 
@@ -384,6 +386,62 @@ do ivar = 1, nvar
   call field_set_key_int(ivarfl(ivar), kdiftn, idften(ivar))
 enddo
 
+! Density field
+!--------------
+
+itycat = FIELD_INTENSIVE + FIELD_PROPERTY
+
+! The density at the previous time step is required if idilat>1 or if
+! we perform a hydrostatic pressure correction (icalhy=1)
+
+f_name = 'density'
+ityloc = 1 ! cells
+ipcrom = ipproc(irom)
+if (     iroext.gt.0 .or. icalhy.eq.1 .or. idilat.gt.1              &
+    .or. ippmod(icompf).ge.0) then
+  lprev = .true.
+  ipcroa = ipproc(iroma)
+else
+  lprev = .false.
+  ipcroa = -1
+endif
+
+call field_create(f_name, itycat, ityloc, idim1, ilved, lprev, icrom)
+
+iprpfl(ipcrom) = icrom
+if (lprev) iprpfl(ipcroa) = -1 ! could set icrom, but avoid this access mode
+
+call field_set_key_str(icrom, keylbl, nomvar(ipppro(ipcrom)))
+if (ichrvr(ipppro(ipcrom)) .eq. 1) then
+  call field_set_key_int(icrom, keyvis, iopchr)
+endif
+if (ilisvr(ipppro(ipcrom)) .eq. 1) then
+  call field_set_key_int(icrom, keylog, 1)
+endif
+
+! The boundary density at the previous time step is not required
+! if we perform a hydrostatic pressure correction (icalhy=1)
+lprev = .false.
+if (iroext.gt.0.or.idilat.gt.1) then
+  lprev = .true.
+endif
+
+f_name = 'boundary_density'
+ityloc = 3 ! boundary faces
+call field_create(f_name, itycat, ityloc, idim1, ilved, lprev, ibrom)
+
+! For now, base logging on that of cell density, and do not postprocess
+! boundary density by default
+
+if (ilisvr(ipppro(ipcrom)) .eq. 1) then
+  call field_set_key_int(ibrom, keylog, 1)
+endif
+
+! Cell properties
+!----------------
+
+ityloc = 1 ! cells
+
 ! Flag moments
 
 do ii = 1, npromx
@@ -418,6 +476,7 @@ enddo
 
 imom = 0
 do iprop = 1, nproce
+  if (iprop.eq.ipcrom .or. iprop.eq.ipcroa) cycle
   name = nomvar(ipppro(iprop))
   if (iapro(iprop).eq.0) then
     if (name(1:4) .eq. '    ') then
@@ -548,6 +607,60 @@ endif
 do ivar = 1, nvar
   call field_set_key_int(ivarfl(ivar), kbmasf, f_id)
 enddo
+
+!====================================================================
+
+! Combustion
+
+if (iirayo .gt. 0) then
+
+  if (     ippmod(icod3p).eq.1                                    &
+      .or. (ippmod(icoebu).eq.1 .or. ippmod(icoebu).eq.3)         &
+      .or. (     ippmod(icolwc).eq.1 .or. ippmod(icolwc).eq.3     &
+            .or. ippmod(icolwc).eq.5)) then
+
+    itycat = FIELD_INTENSIVE + FIELD_PROPERTY
+    ityloc = 3 ! boundary faces
+
+    call field_create('boundary_ym_fuel',  &
+                      itycat, ityloc, idim1, ilved, inoprv, ibym(1))
+    call field_create('boundary_ym_oxydizer',  &
+                      itycat, ityloc, idim1, ilved, inoprv, ibym(2))
+    call field_create('boundary_ym_product',  &
+                      itycat, ityloc, idim1, ilved, inoprv, ibym(3))
+  endif
+
+endif
+
+!====================================================================
+
+! Radiative_model
+
+if (iirayo.gt.0) then
+
+  itycat = FIELD_INTENSIVE + FIELD_PROPERTY
+  ityloc = 3 ! boundary faces
+
+  call field_create('wall_temperature',  &
+                    itycat, ityloc, idim1, ilved, inoprv, itparo)
+  call field_create('incident_radiative_flux_density',  &
+                    itycat, ityloc, idim1, ilved, inoprv, iqinci)
+  call field_create('wall_thermal_conductivity',  &
+                    itycat, ityloc, idim1, ilved, inoprv, ixlam)
+  call field_create('wall_thickness',  &
+                    itycat, ityloc, idim1, ilved, inoprv, iepa)
+  call field_create('wall_emissivity',  &
+                    itycat, ityloc, idim1, ilved, inoprv, ieps)
+  call field_create('net_radiative_flux',  &
+                    itycat, ityloc, idim1, ilved, inoprv, ifnet)
+  call field_create('radiation_convective_flux',  &
+                    itycat, ityloc, idim1, ilved, inoprv, ifconv)
+  call field_create('radiation_exchange_coefficient',  &
+                    itycat, ityloc, idim1, ilved, inoprv, ihconv)
+
+endif
+
+!=====================================================================
 
 ! Additional fields
 !------------------

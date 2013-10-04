@@ -107,11 +107,9 @@ double precision lvisq,  kdifcl, gnorm, vnorm
 
 ! Local variables
 
-integer ibrn
-
 double precision vvue0 , vpart0
 double precision argt , kaux, tci
-double precision mpart,kdifbr,kdifbrtp,distl,distp
+double precision mpart,kdifbr,kdifbrtp
 double precision tlmtp, tlptp, tltp, tl2, tp2
 double precision thet, the2, etl, etp
 double precision l1l, l1p, l2l, l2p, l3

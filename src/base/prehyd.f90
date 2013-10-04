@@ -65,7 +65,6 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]     propce        physical properties at interior face centers
 !> \param[in,out] prhyd         hydrostatic pressure predicted with
 !>                              the a priori momentum equation reduced
 !>                              \f$ P_{hydro} \f$
@@ -74,8 +73,7 @@
 !_______________________________________________________________________________
 
 subroutine prehyd &
- ( propce ,                                                    &
-   prhyd , grdphd  )
+ ( prhyd , grdphd  )
 
 !===============================================================================
 
@@ -105,7 +103,6 @@ implicit none
 
 ! Arguments
 
-double precision propce(ncelet,*)
 double precision prhyd(ncelet), grdphd(ncelet,ndim)
 
 ! Local variables
@@ -114,7 +111,7 @@ integer          iccocg, inc, isym  , ipol  , isqrt
 integer          iel   , ifac
 integer          ireslp
 integer          nswrgp, imligp, iwarnp
-integer          ipcrom, iflmas, iflmab
+integer          iflmas, iflmab
 integer          ipp
 integer          idiffp, iconvp, ndircp
 integer          nitmap, imgrp
@@ -141,7 +138,7 @@ double precision, allocatable, dimension(:) :: xinvro
 double precision, allocatable, dimension(:) :: dpvar
 double precision, allocatable, dimension(:) :: smbr, rovsdt
 double precision, dimension(:), pointer :: imasfl, bmasfl
-
+double precision, dimension(:), pointer :: crom
 !===============================================================================
 
 !===============================================================================
@@ -157,7 +154,7 @@ allocate(coefap(nfabor), cofafp(nfabor), coefbp(nfabor), cofbfp(nfabor))
 ipp    = ipprtp(ipr)
 
 ! --- Physical properties
-ipcrom = ipproc(irom  )
+call field_get_val_s(icrom, crom)
 
 call field_get_key_int(ivarfl(iu), kimasf, iflmas)
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
@@ -201,7 +198,7 @@ allocate(smbr(ncelet), rovsdt(ncelet))
 
 ! --- Initialization of the variable to solve from the interior cells
 do iel = 1, ncel
-  xinvro(iel) = 1.d0/propce(iel,ipcrom)
+  xinvro(iel) = 1.d0/crom(iel)
   rovsdt(iel) = 0.d0
   drtp(iel)   = 0.d0
   smbr(iel)   = 0.d0
@@ -220,7 +217,7 @@ do ifac = 1, nfabor
 
   ! Prescribe the pressure gradient: kt.grd(Phyd)|_b = (g.n)|_b
 
-  hint = 1.d0 /(propce(iel,ipcrom)*distb(ifac))
+  hint = 1.d0 /(crom(iel)*distb(ifac))
   qimp = - (gx*surfbo(1,ifac)                &
            +gy*surfbo(2,ifac)                &
            +gz*surfbo(3,ifac))/(surfbn(ifac))
@@ -313,7 +310,7 @@ extrap = 0.d0
 call grdpre &
 !==========
  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,         &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                  &
+   iwarnp , epsrgp , climgp , extrap ,                           &
    prhyd  , xinvro , coefap , coefbp ,                           &
    grdphd   )
 

@@ -23,9 +23,8 @@
 subroutine atphyv &
 !================
 
-   ( ibrom  , izfppp ,                                              &
-     dt     , rtp    , rtpa   ,                                     &
-     propce , propfb ,                                              &
+   ( rtp    , rtpa   ,                                              &
+     propce ,                                                       &
      coefa  , coefb  )
 
 !===============================================================================
@@ -92,13 +91,9 @@ subroutine atphyv &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ibrom            ! te ! <-- ! indicateur de remplissage de romb              !
-! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
 !__________________!____!_____!________________________________________________!
@@ -127,6 +122,7 @@ use ppthch
 use ppincl
 use mesh
 use atincl
+use field
 
 !===============================================================================
 
@@ -134,23 +130,20 @@ implicit none
 
 ! Arguments
 
-integer          ibrom
-integer          izfppp(nfabor)
-
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(ndimfb,*)
+double precision rtp(ncelet,*), rtpa(ncelet,*)
+double precision propce(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 
 ! Local variables
 
 integer          ivart, iclvar, iel
-integer          ipcrom, ipbrom, ipctem, ipcliq
+integer          ipctem, ipcliq
 
 double precision xrtp, rhum, rscp, pp, zent
 double precision lrhum, lrscp
 double precision qsl, deltaq
 double precision qliq, qwt, tliq, dum
-
+double precision, dimension(:), pointer :: brom, crom
 logical activate
 
 ! External function
@@ -199,12 +192,11 @@ endif
 
 iclvar = iclrtp(ivart,icoef)
 
-! --- Rang de la masse volumique
-!     dans PROPCE, prop. physiques au centre des elements       : IPCROM
-!     dans PROPFB, prop. physiques au centre des faces de bord  : IPBROM
+! --- Masse volumique
 
-ipcrom = ipproc(irom)
-ipbrom = ipprob(irom)
+call field_get_val_s(icrom, crom)
+call field_get_val_s(ibrom, brom)
+
 ipctem = ipproc(itempc)
 
 ! From potential temperature, compute:
@@ -253,7 +245,7 @@ do iel = 1, ncel
   !   ------------------------
   !   law:    RHO       =   P / ( Rair * T(K) )
 
-  propce(iel,ipcrom) = pp/(lrhum*xrtp)*(ps/pp)**lrscp
+  crom(iel) = pp/(lrhum*xrtp)*(ps/pp)**lrscp
 
 enddo
 
@@ -349,7 +341,7 @@ do iel = 1, ncel
     !Celcius temperature of the air parcel
     propce(iel, ipctem) = tliq - tkelvi
     !density of the air parcel
-    propce(iel,ipcrom) = pp/(lrhum*tliq)
+    crom(iel) = pp/(lrhum*tliq)
     !liquid water content
     propce(iel,ipcliq) = 0.d0
     nebdia(iel) = 0.d0
@@ -363,7 +355,7 @@ do iel = 1, ncel
     ! Celcius temperature of the air parcel
     propce(iel, ipctem) = tliq + (clatev/cp0)*qliq - tkelvi
     ! density
-    propce(iel,ipcrom) = pp/(lrhum*(tliq + (clatev/cp0)*qliq))
+    crom(iel) = pp/(lrhum*(tliq + (clatev/cp0)*qliq))
     nebdia(iel) = 1.d0
     nn(iel) = 0.d0
   endif
@@ -459,7 +451,7 @@ do iel = 1, ncel
       !Celcius temperature of the air parcel
       propce(iel, ipctem) = tliq - tkelvi
       !density of the air parcel
-      propce(iel,ipcrom) = pp/(lrhum*tliq)
+      crom(iel) = pp/(lrhum*tliq)
       !liquid water content
       propce(iel,ipcliq) = 0.d0
       nebdia(iel) = 0.d0
@@ -473,7 +465,7 @@ do iel = 1, ncel
       ! Celcius temperature of the air parcel
       propce(iel,ipctem) = tliq+(clatev/cp0)*qliq - tkelvi
       ! density
-      propce(iel,ipcrom) = pp/(lrhum*(tliq + (clatev/cp0)*qliq))
+      crom(iel) = pp/(lrhum*(tliq + (clatev/cp0)*qliq))
       nebdia(iel) = 1.d0
       nn(iel) = 0.d0
     endif
@@ -484,7 +476,7 @@ do iel = 1, ncel
     !Celcius temperature of the air parcel
     propce(iel, ipctem) = tliq + (clatev/cp0)*qliq - tkelvi
     !density
-    propce(iel,ipcrom) = pp/(lrhum*(tliq + (clatev/cp0)*qliq))
+    crom(iel) = pp/(lrhum*(tliq + (clatev/cp0)*qliq))
   endif ! qwt.lt.qliq
 
 enddo
@@ -534,8 +526,8 @@ extrap = extrag(itpp)
 
 iivar = itpp
 
-call grdcel                                                     &
-     !==========
+call grdcel                                                         &
+!==========
    ( iivar  , imrgra , inc    , iccocg , nswrgp ,imligp,            &
      iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
      rtpa(1,itpp), coefa(1,icltpp) , coefb(1,icltpp) ,              &
@@ -581,10 +573,10 @@ extrap = extrag(iqw)
 
 iivar = iqw
 
-call grdcel                                                     &
-     !==========
-    (iivar  , imrgra , inc    , iccocg , nswrgp ,imligp,            &
-     iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
+call grdcel                                                      &
+!==========
+    (iivar  , imrgra , inc    , iccocg , nswrgp ,imligp,         &
+     iwarnp , nfecra , epsrgp , climgp , extrap ,                &
      rtpa(1,iqw), coefa(1,iclqw) , coefb(1,iclqw) ,              &
      dqsd   )
 

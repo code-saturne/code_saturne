@@ -23,7 +23,7 @@
 subroutine rayout &
 !================
 
- ( rtpa   , rtp    , propce , propfb )
+ ( propce )
 
 !===============================================================================
 ! FONCTION :
@@ -41,10 +41,7 @@ subroutine rayout &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -71,34 +68,26 @@ use cpincl
 use ppincl
 use radiat
 use mesh
-
+use field
 !===============================================================================
 
 implicit none
 
 ! Arguments
 
-double precision rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
-
+double precision propce(ncelet,*)
+double precision, dimension(:), pointer :: f_val
 ! Local variables
 
 character        rubriq*64
-character        cphase*2
 character        ficsui*32
-integer          itrav1 , ip
 integer          ierror , irtyp , itysup , nbval
 integer          ivers  , ilecec
 integer          impavr
 
 !===============================================================================
-! 0 - GESTION MEMOIRE
-!===============================================================================
-
-!===============================================================================
 ! 1. ECRITURE DU FICHIER SUITE DU MODULE DE RAYONNEMENT
 !===============================================================================
-
 
 ! ---> Ouverture (et on saute si erreur)
 !     ILECEC = 2 : ecriture
@@ -157,20 +146,20 @@ nbval  = 1
 irtyp  = 2
 
 rubriq = 'tparoi_fb'
-call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-            propfb(1,ipprob(itparo)))
+call field_get_val_s(itparo, f_val)
+call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,f_val)
 
 rubriq = 'qincid_fb'
-call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-            propfb(1,ipprob(iqinci)))
+call field_get_val_s(iqinci, f_val)
+call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,f_val)
 
 rubriq = 'hfconv_fb'
-call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-            propfb(1,ipprob(ihconv)))
+call field_get_val_s(ihconv, f_val)
+call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,f_val)
 
 rubriq = 'flconv_fb'
-call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-            propfb(1,ipprob(ifconv)))
+call field_get_val_s(ifconv, f_val)
+call ecrsui(impavr,rubriq,len(rubriq),itysup,nbval,irtyp,f_val)
 
 !     Aux cellules
 

@@ -25,7 +25,7 @@ subroutine cfmsfp &
 
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   dt     , rtpa   , propce ,                                     &
    coefa  , coefb  , ckupdc , smacel ,                            &
    flumas , flumab ,                                              &
    trflms , trflmb )
@@ -50,7 +50,6 @@ subroutine cfmsfp &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! tslagr           ! tr ! <-- ! terme de couplage retour du                    !
 !(ncelet,*)        !    !     !     lagrangien                                 !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
@@ -84,6 +83,7 @@ use ppppar
 use ppthch
 use ppincl
 use mesh
+use field
 
 !===============================================================================
 
@@ -97,9 +97,8 @@ integer          ncepdp , ncesmp
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision flumas(nfac), flumab(nfabor)
@@ -110,24 +109,22 @@ double precision trflms(nfac), trflmb(nfabor)
 integer          ivar
 integer          ifac  , iel
 integer          init  , inc   , iccocg, ii, jj
-integer          ipp
 integer          nswrgp, imligp, iwarnp
-integer          iconvp, idiffp
-integer          ircflp, ischcp, isstpp
 
-integer          iirom , iiromb
-integer          ivar0 , imvis1, iccfth, imodif, isou
+integer          ivar0 , isou
 integer          imaspe, iflmb0, itypfl
 integer          icliup, iclivp, icliwp, iclvar
 integer          itsqdm, iiun  , iextts
 
-double precision epsrgp, climgp, extrap, blencp
+double precision epsrgp, climgp, extrap
 double precision flui  , fluj  , pfac  , thetv, rom
 
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4, w5, w6
 double precision, allocatable, dimension(:) :: w7, w8, w9
 double precision, allocatable, dimension(:) :: w10, w11, w12
+double precision, dimension(:), pointer :: crom, brom
+
 !===============================================================================
 
 !===============================================================================
@@ -144,9 +141,10 @@ allocate(w10(ncelet), w11(ncelet), w12(ncelet))
 !     Pressure
 ivar     = ipr
 
-!     Denisty in PROPCE
-iirom  = ipproc(irom  )
-iiromb = ipprob(irom  )
+! Density
+
+call field_get_val_s(icrom, crom)
+call field_get_val_s(ibrom, brom)
 
 ! ---> Mass flux initialization
 
@@ -206,7 +204,7 @@ if (itsqdm.ne.0) then
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iu  ,                                                          &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtpa   , propce , propfb ,                            &
+   dt     , rtpa   , propce ,                                     &
    ckupdc , smacel , w10    , w9     ) !FIXME
 
 
@@ -238,7 +236,7 @@ if (itsqdm.ne.0) then
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   propce(1,iirom) , propfb(1,iiromb),                            &
+   crom   , brom   ,                                              &
    rtpa (1,iu)  , rtpa (1,iv)  , rtpa (1,iw)  ,                   &
    coefa(1,icliup) , coefa(1,iclivp) , coefa(1,icliwp) ,          &
    coefb(1,icliup) , coefb(1,iclivp) , coefb(1,icliwp) ,          &
@@ -299,30 +297,21 @@ if (itsqdm.ne.0) then
 
     call cfdivs                                                   &
     !==========
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   icepdc , icetsm , itypsm ,                                     &
-   rtpa   , propce , propfb ,                                     &
-   coefa  , coefb  , ckupdc , smacel ,                            &
+ ( rtpa   , propce ,                                              &
    w10    , w8     , w9     , w9     )
-!        ------
+   !        ------
 
     call cfdivs                                                   &
     !==========
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   icepdc , icetsm , itypsm ,                                     &
-   rtpa   , propce , propfb ,                                     &
-   coefa  , coefb  , ckupdc , smacel ,                            &
+ ( rtpa   , propce ,                                              &
    w11    , w9     , w8     , w9     )
-!        ------
+   !        ------
 
     call cfdivs                                                   &
     !==========
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   icepdc , icetsm , itypsm ,                                     &
-   rtpa   , propce , propfb ,                                     &
-   coefa  , coefb  , ckupdc , smacel ,                            &
+ ( rtpa   , propce ,                                              &
    w12    , w9     , w9     , w8     )
-!        ------
+   !        ------
 
   endif
 
@@ -381,7 +370,7 @@ endif
 
 ! --- Volumic forces term (gravity)
 do iel = 1, ncel
-  rom = propce(iel,iirom)
+  rom = crom(iel)
   w5(iel) = gx + w10(iel)/rom
   w6(iel) = gy + w11(iel)/rom
   w7(iel) = gz + w12(iel)/rom

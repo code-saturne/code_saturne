@@ -24,8 +24,8 @@ subroutine ppphyv &
 !================
 
  ( nvar   , nscal  ,                                              &
-   ibrom  ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
+   mbrom  ,                                                       &
+   dt     , rtp    , rtpa   , propce ,                            &
    coefa  , coefb  )
 
 !===============================================================================
@@ -92,22 +92,20 @@ subroutine ppphyv &
 !__________________!____!_____!________________________________________________!
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! ibrom            ! te ! <-- ! indicateur de remplissage de romb              !
+! mbrom            ! te ! <-- ! indicateur de remplissage de romb              !
 !        !    !     !                                                !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
 ! w1...8(ncelet    ! tr ! --- ! tableau de travail                             !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -135,10 +133,10 @@ implicit none
 
 integer          nvar   , nscal
 
-integer          ibrom
+integer          mbrom
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
+double precision propce(ncelet,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 
 ! Local variables
@@ -162,12 +160,8 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 
   if ( ippmod(icod3p).ge.0 ) then
 
-    call d3pphy                                                   &
+    call d3pphy(mbrom, izfppp, rtp, propce)
     !==========
- ( nvar   , nscal  ,                                              &
-   ibrom  , izfppp ,                                              &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   coefa  , coefb  )
 
   endif
 
@@ -180,12 +174,9 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 
   if ( ippmod(icoebu).ge.0 ) then
 
-    call ebuphy                                                   &
+    call ebuphy(mbrom, izfppp, rtp, propce)
     !==========
- ( nvar   , nscal  ,                                              &
-   ibrom  , izfppp ,                                              &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   coefa  , coefb  )
+
   endif
 
 ! ---> Flamme de premelange : Modele BML
@@ -195,26 +186,19 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 
 ! ---> Flamme de premelange : Modele LWC
 
-  if ( ippmod(icolwc).ge.0 ) then
+  if (ippmod(icolwc).ge.0) then
 
-     call lwcphy                                                  &
-     !==========
- ( nvar   , nscal  ,                                              &
-   ibrom  , izfppp ,                                              &
-   dt     , rtp    , rtpa  , propce , propfb ,                    &
-   coefa  , coefb  )
+    call lwcphy(mbrom, izfppp, rtp, propce)
+    !==========
+
   endif
 
 ! ---> Flamme charbon pulverise
 
-   if ( ippmod(iccoal).ge.0 ) then
+   if (ippmod(iccoal).ge.0) then
 
-     call cs_coal_physprop                                        &
+     call cs_coal_physprop(mbrom, izfppp, rtp, propce)
      !====================
- ( nvar   , nscal  ,                                              &
-   ibrom  , izfppp ,                                              &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   coefa  , coefb   )
 
    endif
 
@@ -222,39 +206,28 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 ! ---> Flamme charbon pulverise couplee Transport Lagrangien
 !      des particules de charbon
 
-  if ( ippmod(icpl3c).ge.0 ) then
+  if (ippmod(icpl3c).ge.0) then
 
-     call cplphy                                                  &
-     !==========
- ( nvar   , nscal  ,                                              &
-   ibrom  , izfppp ,                                              &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   coefa  , coefb  )
+    call cplphy(mbrom, izfppp, rtp, propce)
+    !==========
 
-   endif
+  endif
 
 ! ---> Flamme fuel
 
   if ( ippmod(icfuel).ge.0 ) then
 
-     call cs_fuel_physprop                                        &
-     !====================
- ( nvar   , nscal  ,                                              &
-   ibrom  , izfppp ,                                              &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   coefa  , coefb  )
+    call cs_fuel_physprop(mbrom, izfppp, rtp, rtpa, propce)
+    !====================
 
-   endif
+  endif
 
 ! ---> Compressible
 
-  if ( ippmod(icompf).ge.0 ) then
+  if (ippmod(icompf).ge.0) then
 
-     call cfphyv                                                  &
+     call cfphyv(nvar, nscal, dt, rtp, rtpa, propce)
      !==========
- ( nvar   , nscal  ,                                              &
-   izfppp ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfb )
 
    endif
 
@@ -275,9 +248,8 @@ if ( ippmod(ieljou).ge.1 .or.                                     &
   call elphyv                                                     &
   !==========
  ( nvar   , nscal  ,                                              &
-   ibrom  , izfppp ,                                              &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   coefa  , coefb  )
+   mbrom  , izfppp ,                                              &
+   dt     , rtp    , rtpa   , propce )
 
 endif
 
@@ -285,24 +257,19 @@ endif
 
 if ( ippmod(iaeros).ge.0 ) then
 
-   call ctphyv                                                    &
+   call ctphyv(rtp, propce)
    !==========
- ( nvar   , nscal  ,                                              &
-   ibrom  , izfppp ,                                              &
-   dt     , rtp    , rtpa   , propce , propfb ,                   &
-   coefa  , coefb  )
 
 endif
 
 ! ---> Atmospheric Flows
 
-if ( ippmod(iatmos).ge.1 ) then
+if (ippmod(iatmos).ge.1) then
 
    call atphyv                                                    &
    !==========
- ( ibrom  , izfppp ,                                              &
-   dt     , rtp    , rtpa   ,                                     &
-   propce , propfb ,                                              &
+ ( rtp    , rtpa   ,                                              &
+   propce ,                                                       &
    coefa  , coefb  )
 
 endif

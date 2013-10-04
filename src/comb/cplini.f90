@@ -23,7 +23,7 @@
 subroutine cplini &
 !================
 
- ( nvar   , nscal  , dt     , rtp    , coefa  , coefb  )
+ ( rtp    )
 
 !===============================================================================
 ! FONCTION :
@@ -63,13 +63,8 @@ subroutine cplini &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules                                    !
-! coefa coefb      ! tr ! <-- ! conditions aux limites aux                     !
-!  (nfabor,*)      !    !     !    faces de bord                               !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -100,11 +95,7 @@ use mesh
 
 implicit none
 
-integer          nvar   , nscal
-
-
-double precision dt(ncelet), rtp(ncelet,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
+double precision rtp(ncelet,*)
 
 ! Local variables
 

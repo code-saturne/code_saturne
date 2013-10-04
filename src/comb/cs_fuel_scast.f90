@@ -23,13 +23,8 @@
 subroutine cs_fuel_scast &
 !=======================
 
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iscal  ,                                                       &
-   itypfb ,                                                       &
-   icepdc , icetsm , itypsm ,                                     &
-   izfppp ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfb ,                   &
-   coefa  , coefb  , ckupdc , smacel ,                            &
+ ( iscal  ,                                                       &
+   rtpa   , rtp    , propce ,                                     &
    smbrs  , rovsdt )
 
 !===============================================================================
@@ -71,29 +66,10 @@ subroutine cs_fuel_scast &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
-! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
 ! iscal            ! i  ! <-- ! scalar number                                  !
-! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
-! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
-! itypsm           ! te ! <-- ! type de source de masse pour les               !
-! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! izfppp           ! te ! --> ! numero de zone de la face de bord              !
-! (nfabor)         !    !     !  pour le module phys. part.                    !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
-! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
-!  (ncepdp,6)      !    !     !                                                !
-! smacel           ! tr ! <-- ! valeur des variables associee a la             !
-! (ncesmp,*   )    !    !     !  source de masse                               !
-!                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
 ! smbrs(ncelet)    ! tr ! --> ! second membre explicite                        !
 ! rovsdt(ncelet    ! tr ! --> ! partie diagonale implicite                     !
 !__________________!____!_____!________________________________________________!
@@ -125,6 +101,7 @@ use cs_fuel_incl
 use ppincl
 use ppcpfu
 use mesh
+use field
 
 !===============================================================================
 
@@ -132,27 +109,17 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-integer          ncepdp , ncesmp
 integer          iscal
 
-integer          itypfb(nfabor)
-integer          icepdc(ncepdp)
-integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-integer          izfppp(nfabor)
-
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(ndimfb,*)
-double precision coefa(ndimfb,*), coefb(ndimfb,*)
-double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
+double precision rtp(ncelet,*), rtpa(ncelet,*)
+double precision propce(ncelet,*)
 double precision smbrs(ncelet), rovsdt(ncelet)
 
 ! Local variables
 
 character*80     chaine
-integer          ivar , ipcrom, iel, icla , numcla
-integer          iexp1 , iexp2 , iexp3 , ifac
-integer          iscala
+integer          ivar , iel, icla , numcla
+integer          iexp1 , iexp2 , iexp3
 integer          ipcro2 , ipcte1 , ipcte2
 integer          ipcdia , ipcvst
 integer          imode  , iesp
@@ -162,23 +129,23 @@ integer          nbarre,nbimax,nbpass
 integer          iterch
 
 double precision aux, rhovst
-double precision t1, h1, t2, h2
-double precision xng,rhofol , rom
-double precision gameva,fdev,fsd,ftrac,hfov
-double precision ho2,hco,xesp(ngazem),xcoke,t2mt1
+double precision rom
+double precision fdev,hfov
+double precision ho2,hco,xesp(ngazem),t2mt1
 double precision gmech,gmvap,gmhet
 double precision xxco,xxo2,xxco2,xxh2o,xco2mx
-double precision xkp,xk0p,xkm,xk0m,wplus,wmoins,t0p,t0m
-double precision auxp, aux1 , aux2 , aux3 , w1
-double precision xeq,anmr,xcot,xo2t,xco2e,xo2e,xcoe,tauchi,tautur
+double precision xkp,xkm,t0p,t0m
+double precision aux1 , aux2 , aux3 , w1
+double precision anmr,xcot,xco2e,tauchi,tautur
 double precision sqh2o , x2 , wmhcn , wmno ,wmo2
 double precision err1mx,err2mx
-double precision errch,ter1,ddelta,fn,qpr
+double precision errch,fn,qpr
 double precision auxmax,auxmin
-double precision ymoy,volm,volmp,dmp
+double precision ymoy
 double precision fn0,fn1,fn2,anmr0,anmr1,anmr2
 double precision lnk0p,l10k0e,lnk0m,t0e,xco2eq,xcoeq,xo2eq
 double precision xcom,xo2m,xkcequ,xkpequ,xden
+double precision, dimension(:), pointer ::  crom
 
 !===============================================================================
 ! 1. INITIALISATION
@@ -193,7 +160,7 @@ ivar = isca(iscal)
 chaine = nomvar(ipprtp(ivar))
 
 ! --- Numero des grandeurs physiques (voir cs_user_boundary_conditions)
-ipcrom = ipproc(irom)
+call field_get_val_s(icrom, crom)
 ipcvst = ipproc(ivisct)
 
 ! --- Temperature phase gaz
@@ -246,7 +213,7 @@ if ( ivar .ge. isca(ih2(1))     .and.                            &
 !
     if ( rtpa(iel,isca(iyfol(numcla))) .gt. epsifl ) then
 !
-      rom = propce(iel,ipcrom)
+      rom = crom(iel)
 
       do iesp = 1, ngazem
         xesp(iesp) = zero
@@ -306,9 +273,9 @@ elseif ( ivar .ge. isca(iyfol(1))     .and.                       &
     gmhet = -propce(iel,ipcght)
 
     smbrs(iel) = smbrs(iel)                                       &
-         - propce(iel,ipcrom)*volume(iel)*(gmvap+gmhet)
+         - crom(iel)*volume(iel)*(gmvap+gmhet)
     if ( rtpa(iel,ivar).gt.epsifl ) then
-      rhovst = propce(iel,ipcrom)*volume(iel)*(gmvap + gmhet)       &
+      rhovst = crom(iel)*volume(iel)*(gmvap + gmhet)       &
               / rtpa(iel,ivar)
     else
       rhovst = 0.d0
@@ -341,7 +308,7 @@ elseif ( ivar .eq. isca(ifvap) ) then
       endif
 
       smbrs(iel) = smbrs(iel)                                     &
-                 + gmvap*propce(iel,ipcrom)*volume(iel)
+                 + gmvap*crom(iel)*volume(iel)
     enddo
 
   enddo
@@ -361,12 +328,12 @@ elseif ( ivar .eq. isca(if7m) ) then
     do iel = 1, ncel
       if (rtpa(iel,isca(iyfol(icla))) .gt. epsifl) then
         smbrs(iel) = smbrs(iel)                                        &
-             -propce(iel,ipcrom)*propce(iel,ipcght)*volume(iel)        &
+             -crom(iel)*propce(iel,ipcght)*volume(iel)        &
                                 *rtp(iel,isca(iyfol(icla)))            &
                                 /rtpa(iel,isca(iyfol(icla)))
       else
         smbrs(iel) = smbrs(iel)                                        &
-                    -propce(iel,ipcrom)*propce(iel,ipcght)*volume(iel)
+                    -crom(iel)*propce(iel,ipcght)*volume(iel)
       endif
 
     enddo
@@ -388,11 +355,8 @@ if ( ivar.eq.isca(ifvp2m) ) then
 
   call cs_fuel_fp2st &
  !==================
- ( nvar   , nscal  , ncepdp , ncesmp ,                             &
-   iscal  ,                                                        &
-   itypfb ,                                                        &
-   icepdc , icetsm , itypsm ,                                      &
-   dt     , rtpa   , rtp    , propce , propfb ,                    &
+ ( iscal  ,                                                        &
+   rtpa   , rtp    , propce ,                                      &
    smbrs  , rovsdt )
 
 endif
@@ -403,7 +367,6 @@ endif
 if ( ieqco2 .ge. 1 ) then
 
   if ( ivar.eq.isca(iyco2) ) then
-
 
     if (iwarni(ivar).ge.1) then
       write(nfecra,1000) chaine(1:8)
@@ -588,9 +551,9 @@ if ( ieqco2 .ge. 1 ) then
                     +wmole(ico2)/propce(iel,ipproc(irom1))        &
          * (xco2eq-xxco2)/(tauchi+tautur)                         &
          * (1.d0-x2)                                              &
-         * volume(iel) * propce(iel,ipcrom)
+         * volume(iel) * crom(iel)
 !
-       w1 = volume(iel)*propce(iel,ipcrom)/(tauchi+tautur)
+       w1 = volume(iel)*crom(iel)/(tauchi+tautur)
        rovsdt(iel) = rovsdt(iel) +   max(w1,zero)
 
      else
@@ -665,7 +628,7 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
         xxo2 = propce(iel,ipproc(iym1(io2)))                        &
               *propce(iel,ipproc(immel))/wmo2
 
-        aux = volume(iel)*propce(iel,ipcrom)                       &
+        aux = volume(iel)*crom(iel)                       &
              *( propce(iel,iexp2)                                  &
                +propce(iel,iexp1)*rtpa(iel,isca(iyno))             &
                                  *propce(iel,ipproc(immel))/wmno )
@@ -683,11 +646,11 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
           ipcte1 = ipproc(itemp1)
 
           gmvap = gmvap                                           &
-                 + propce(iel,ipcrom)*propce(iel,ipcgev)          &
+                 + crom(iel)*propce(iel,ipcgev)          &
                   *(propce(iel,ipcte2)-propce(iel,ipcte1))
 
           gmhet = gmhet                                           &
-                 +propce(iel,ipcrom)*propce(iel,ipcght)
+                 +crom(iel)*propce(iel,ipcght)
 
         enddo
         if ( xxo2 .gt. 0.03d0 ) then
@@ -713,13 +676,13 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
 
       do iel=1,ncel
 
-        aux1 = volume(iel)*propce(iel,ipcrom)                     &
+        aux1 = volume(iel)*crom(iel)                     &
               *propce(iel,iexp1)*rtpa(iel,isca(iyhcn))            &
               *propce(iel,ipproc(immel))/wmhcn
-        aux2 = volume(iel)*propce(iel,ipcrom)                     &
+        aux2 = volume(iel)*crom(iel)                     &
               *propce(iel,iexp2)*rtpa(iel,isca(iyhcn))            &
               *wmno/wmhcn
-        aux3 = volume(iel)*propce(iel,ipcrom)**1.5d0              &
+        aux3 = volume(iel)*crom(iel)**1.5d0              &
               *propce(iel,iexp3)                                  &
               *propce(iel,ipproc(iym1(in2)))
 

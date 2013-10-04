@@ -84,15 +84,18 @@ double precision rtp(ncelet,nvar)
 ! Local variables
 
 integer          iclpke,iel,iclpk2,iclpe2
-integer          ivar,ipp,ii,iivisc,iiromc
+integer          ivar,ipp,ii,iivisc
 integer          iclpmn(2)
 double precision xepmin,xepm,xe,xkmin,xkm,xk,var,epz2
 double precision vmin(2), vmax(2)
 
+double precision, dimension(:), pointer :: crom
+
 !===============================================================================
 
+call field_get_val_s(icrom, crom)
+
 iivisc = ipproc(iviscl)
-iiromc = ipproc(irom)
 
 ! Initialization to avoid compiler warnings
 
@@ -144,8 +147,8 @@ if (iwarnk.ge.2.or.iclkep.eq.1) then
     do iel=1,ncel
       xk = rtp(iel,ik)
       xe = rtp(iel,iep)
-      xkmin = xkm * (propce(iel,iivisc) / propce(iel,iiromc))**2
-      xepmin = xepm * (propce(iel,iivisc) / propce(iel,iiromc))**3
+      xkmin = xkm * (propce(iel,iivisc) / crom(iel))**2
+      xepmin = xepm * (propce(iel,iivisc) / crom(iel))**3
       if (xk.le.xkmin.or.xe.le.xepmin) then
         if(iclkep.eq.1) then
           rtp(iel,ik)  = xkmin

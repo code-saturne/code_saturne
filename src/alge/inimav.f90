@@ -73,7 +73,6 @@
 !>                               reconstruction
 !> \param[in]     climgu        clipping coeffecient for the computation of
 !>                               the gradient
-!> \param[in]     extrau        coefficient for extrapolation of the gradient
 !> \param[in]     rom           cell density
 !> \param[in]     romb          border face density
 !> \param[in]     vel           vector variable
@@ -89,7 +88,7 @@ subroutine inimav &
  ( ivar   , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrgu , imligu ,          &
    iwarnu , nfecra ,                                              &
-   epsrgu , climgu , extrau ,                                     &
+   epsrgu , climgu ,                                              &
    rom    , romb   ,                                              &
    vel    ,                                                       &
    coefav , coefbv ,                                              &
@@ -119,7 +118,7 @@ integer          ivar   , itypfl
 integer          iflmb0 , init   , inc    , imrgra
 integer          nswrgu , imligu
 integer          iwarnu , nfecra
-double precision epsrgu , climgu , extrau
+double precision epsrgu , climgu
 
 
 double precision rom(ncelet), romb(nfabor)
@@ -425,7 +424,7 @@ if (nswrgu.gt.1) then
   call grdvec &
   !==========
 ( ivar   , imrgra , inc    , nswrgu , imligu ,                   &
-  iwarnu , nfecra , epsrgu , climgu , extrau ,                   &
+  iwarnu , epsrgu , climgu ,                                     &
   ilved  ,                                                       &
   qdm    , coefaq , coefbv ,                                     &
   grdqdm )

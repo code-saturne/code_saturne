@@ -96,12 +96,17 @@ write(nfecra, 900)
 
 #endif
 
+
+
 !===============================================================================
 ! 0. Global field keys
 !===============================================================================
 
 call field_get_key_id("inner_mass_flux_id", kimasf)
 call field_get_key_id("boundary_mass_flux_id", kbmasf)
+
+icrom = -1
+ibrom = -1
 
 !===============================================================================
 ! 1. Map Fortran pointers to C global data
@@ -392,7 +397,6 @@ nvar   = 0
 ! --- Nombre de proprietes physiques (utile ?)
 
 nproce = 0
-nprofb = 0
 
 ! --- Nombre de tableaux NFABOR de type COEFA (ou COEFB)
 
@@ -443,11 +447,10 @@ enddo
 call ppinii
 !==========
 
-! --- Proprietes physiques au sens large (PROPCE, PROFA, PROPFB)
+! --- Proprietes physiques au sens large
 
 do iprop  = 1, npromx
   ipproc(iprop) = 0
-  ipprob(iprop) = 0
 enddo
 
 irom   = 0

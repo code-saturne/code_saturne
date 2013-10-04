@@ -26,7 +26,7 @@ subroutine raydom &
  ( nvar   , nscal  ,                                              &
    itypfb ,                                                       &
    izfrad ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfb )
+   dt     , rtp    , rtpa   , propce )
 
 !===============================================================================
 ! FONCTION :
@@ -55,7 +55,6 @@ subroutine raydom &
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -84,6 +83,7 @@ use radiat
 use ihmpre
 use dimens, only: ndimfb
 use mesh
+use field
 
 !===============================================================================
 
@@ -97,7 +97,7 @@ integer          itypfb(ndimfb)
 integer          izfrad(ndimfb)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(ndimfb,*)
+double precision propce(ncelet,*)
 
 ! Local variables
 
@@ -123,6 +123,8 @@ double precision, allocatable, dimension(:) :: coefap, coefbp
 double precision, allocatable, dimension(:) :: cofafp, cofbfp
 double precision, allocatable, dimension(:) :: flurds, flurdb
 
+double precision, dimension(:), pointer :: tparo, bqinci
+double precision, dimension(:), pointer :: bxlam, bepa, beps, bfnet
 
 integer    ipadom
 data       ipadom /0/
@@ -144,6 +146,14 @@ allocate(flurds(nfac), flurdb(ndimfb))
 
 ! Allocate work arrays
 allocate(ckmel(ncelet))
+
+! Mapa field arrays
+call field_get_val_s(itparo, tparo)
+call field_get_val_s(iqinci, bqinci)
+call field_get_val_s(ixlam, bxlam)
+call field_get_val_s(iepa, bepa)
+call field_get_val_s(ieps, beps)
+call field_get_val_s(ifnet, bfnet)
 
 !===============================================================================
 ! 1. INITIALISATIONS GENERALES
@@ -177,9 +187,8 @@ enddo
 
 if (ippmod(iphpar).ge.2) then
 
-  call ppcabs &
+  call ppcabs(rtp, propce)
   !==========
-( dt     , rtp    , rtpa   , propce )
 
   !---> ckmel stores temporarly the absorbption coefficient
   !     of gaz-particle mixing
@@ -275,7 +284,7 @@ else
 ( nvar   , nscal  , iappel ,                                     &
   itypfb ,                                                       &
   izfrad ,                                                       &
-  dt     , rtp    , rtpa   , propce , propfb ,                   &
+  dt     , rtp    , rtpa   , propce ,                            &
   propce(1,ipproc(icak(1))))
 
 endif
@@ -354,8 +363,8 @@ if (idverl.ge.0) then
       ( nvar   , nscal  ,                                            &
         mode   ,                                                     &
         itypfb ,                                                     &
-        dt     , rtp    , rtpa   , propce , propfb ,                 &
-        propfb(1,ipprob(itparo)) , flurdb , tempk(1,1)  )
+        dt     , rtp    , rtpa   , propce ,                          &
+        tparo  , flurdb , tempk(1,1)  )
 
     else
 
@@ -363,8 +372,8 @@ if (idverl.ge.0) then
       !==========
     ( mode   ,                                                       &
       itypfb ,                                                       &
-      rtp    , rtpa   , propce , propfb ,                            &
-      propfb(1,ipprob(itparo)) , flurdb , tempk(1,1)  )
+      rtp    , rtpa   , propce ,                                     &
+      tparo  , flurdb , tempk(1,1)  )
 
     endif
 
@@ -557,17 +566,14 @@ if (iirayo.eq.2) then
     rtp    , rtpa   ,                                              &
     coefap , coefbp ,                                              &
     cofafp , cofbfp ,                                              &
-    propfb(1,ipprob(itparo)) , propfb(1,ipprob(iqinci)) ,          &
-    propfb(1,ipprob(ieps))   ,                                     &
+    tparo  , bqinci , beps   ,                                     &
     propce(1,ipproc(icak(1))), ckmel )
 
   ! Solving
 
   call raypun &
   !==========
-( nvar   , nscal  ,                                              &
-  itypfb ,                                                       &
-  dt     , rtp    , rtpa   , propce ,                            &
+( itypfb ,                                                       &
   coefap , coefbp ,                                              &
   cofafp , cofbfp ,                                              &
   flurds , flurdb ,                                              &
@@ -576,8 +582,7 @@ if (iirayo.eq.2) then
   propce(1,ipproc(iabs(1))),propce(1,ipproc(iemi(1))),           &
   propce(1,ipproc(itsre(1))) , propce(1,ipproc(iqx))  ,          &
   propce(1,ipproc(iqy))   , propce(1,ipproc(iqz))  ,             &
-  propfb(1,ipprob(iqinci)), propfb(1,ipprob(ieps)) ,             &
-  propfb(1,ipprob(itparo)),                                      &
+  bqinci, beps , tparo  ,                                        &
   ckmel    )
 
 !===============================================================================
@@ -656,17 +661,14 @@ else if (iirayo.eq.1) then
     rtp    , rtpa   ,                                              &
     coefap , coefbp ,                                              &
     cofafp , cofbfp ,                                              &
-    propfb(1,ipprob(itparo)) , propfb(1,ipprob(iqinci)) ,          &
-    propfb(1,ipprob(ieps))   ,                                     &
+    tparo  , bqinci , beps   ,                                     &
     propce(1,ipproc(icak(1))), ckmel )
 
   ! Solving
 
   call raysol &
   !==========
- ( nvar   , nscal  ,                                              &
-   itypfb ,                                                       &
-   dt     , rtp    , rtpa   ,                                     &
+ ( rtp    , rtpa   ,                                              &
    coefap , coefbp ,                                              &
    cofafp , cofbfp ,                                              &
    flurds , flurdb ,                                              &
@@ -675,7 +677,7 @@ else if (iirayo.eq.1) then
    propce(1,ipproc(iabs(1))),propce(1,ipproc(iemi(1))) ,          &
    propce(1,ipproc(itsre(1))),propce(1,ipproc(iqx))         ,     &
    propce(1,ipproc(iqy))    , propce(1,ipproc(iqz))   ,           &
-   propfb(1,ipprob(iqinci) ), propfb(1,ipprob(ifnet)) )
+   bqinci , bfnet )
 
 endif
 
@@ -701,7 +703,7 @@ enddo
 
 !--> Initialization to a non-admissible value for testing after usray5
 do ifac = 1,nfabor
-  propfb(ifac,ipprob(ifnet)) = -grand
+  bfnet(ifac) = -grand
 enddo
 
 !---> Reading of User datas
@@ -710,12 +712,11 @@ call usray5 &
 ( nvar   , nscal  ,                                              &
   itypfb ,                                                       &
   izfrad ,                                                       &
-  dt     , rtp    , rtpa   , propce , propfb ,                   &
+  dt     , rtp    , rtpa   , propce ,                            &
   coefap , coefbp ,                                              &
   cofafp , cofbfp ,                                              &
-  propfb(1,ipprob(itparo)) , propfb(1,ipprob(iqinci)) ,          &
-  propfb(1,ipprob(ifnet))  , propfb(1,ipprob(ixlam))  ,          &
-  propfb(1,ipprob(iepa))   , propfb(1,ipprob(ieps))   ,          &
+  tparo  , bqinci ,                                              &
+  bfnet  , bxlam  , bepa   , beps   ,                            &
   propce(1,ipproc(icak(1)))  )
 
 !---> Check flunet
@@ -724,9 +725,9 @@ xlimit = -grand*0.1d0
 flunmn = grand
 
 do ifac = 1,nfabor
-  if (propfb(ifac,ipprob(ifnet)).le.xlimit) then
+  if (bfnet(ifac).le.xlimit) then
     iok = iok + 1
-    flunmn = min(flunmn,propfb(ifac,ipprob(ifnet)))
+    flunmn = min(flunmn,bfnet(ifac))
     write(nfecra,4000)ifac,izfrad(ifac),itypfb(ifac)
   endif
 enddo
@@ -745,7 +746,7 @@ do izone = 1, nozrdm
 enddo
 do ifac = 1,nfabor
   izone = izfrad(ifac)
-  flux(izone) = flux(izone) + propfb(ifac,ipprob(ifnet))*surfbn(ifac)
+  flux(izone) = flux(izone) + bfnet(ifac)*surfbn(ifac)
   iflux(izone) = 1
 enddo
 if(irangp.ge.0) then
@@ -768,7 +769,7 @@ write(nfecra,5000)
 
 aa = zero
 do ifac = 1,nfabor
-  aa =  aa + propfb(ifac,ipprob(ifnet)) * surfbn(ifac)
+  aa =  aa + bfnet(ifac) * surfbn(ifac)
 enddo
 if(irangp.ge.0) then
   call parsom(aa)
@@ -969,7 +970,7 @@ if (idverl.eq.1 .or. idverl.eq.2) then
 
   !---> X direction
   do ifac = 1, nfabor
-    coefap(ifac) = propfb(ifac,ipprob(ifnet))*surfbo(1,ifac) / surfbn(ifac)
+    coefap(ifac) = bfnet(ifac)*surfbo(1,ifac) / surfbn(ifac)
   enddo
 
   !  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
@@ -989,7 +990,7 @@ if (idverl.eq.1 .or. idverl.eq.2) then
 
   !---> Y direction
   do ifac = 1, nfabor
-    coefap(ifac) = propfb(ifac,ipprob(ifnet))*surfbo(2,ifac) / surfbn(ifac)
+    coefap(ifac) = bfnet(ifac)*surfbo(2,ifac) / surfbn(ifac)
   enddo
 
   !  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
@@ -1009,7 +1010,7 @@ if (idverl.eq.1 .or. idverl.eq.2) then
 
   !---> Z direction
   do ifac = 1, nfabor
-    coefap(ifac) = propfb(ifac,ipprob(ifnet))*surfbo(3,ifac) / surfbn(ifac)
+    coefap(ifac) = bfnet(ifac)*surfbo(3,ifac) / surfbn(ifac)
   enddo
 
   !  IVAR0 = 0 (indique pour la periodicite de rotation que la variable

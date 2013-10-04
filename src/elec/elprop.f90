@@ -31,7 +31,6 @@ subroutine elprop &
 
 !     INIT DES POSITIONS DES VARIABLES D'ETAT POUR
 !                LE MODULE ELECTRIQUE
-!         (DANS VECTEURS PROPCE, PROPFB)
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -169,7 +168,7 @@ nsalto = iprop
 ipropp = iprop
 
 !===============================================================================
-! 2. POSITIONNEMENT DES PROPRIETES : PROPCE, PROPFB
+! 2. POSITIONNEMENT DES PROPRIETES : PROPCE
 !===============================================================================
 
 ! ---> Positionnement dans le tableau PROPCE
@@ -236,17 +235,6 @@ if ( ippmod(ielion).ge.1 ) then
 endif
 
 nproce = iprop
-
-
-!===============================================================================
-! 3. POSITIONNEMENT DES PROPRIETES : PROPFB
-!===============================================================================
-
-! ---> Positionnement dans le tableau PROPFB
-!      Au centre des faces de bord
-
-  iprop = nprofb
-  nprofb = iprop
 
 !   - Interface Code_Saturne
 !     ======================

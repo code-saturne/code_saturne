@@ -21,16 +21,11 @@
 !-------------------------------------------------------------------------------
 
 subroutine attssc &
-     !================
+!================
 
-     ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-     iscal  ,                                                       &
-     itypfb ,                                                       &
-     icepdc , icetsm , itypsm ,                                     &
-     izfppp ,                                                       &
-     dt     , rtpa   , rtp    , propce , propfb ,                   &
-     coefa  , coefb  , ckupdc , smacel ,                            &
-     crvexp , crvimp )
+   ( iscal  ,                                                       &
+     rtpa   , rtp    , propce ,                                     &
+     crvexp )
 
 !===============================================================================
 ! Purpose :
@@ -49,32 +44,14 @@ subroutine attssc &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
-! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
 ! iscal            ! i  ! <-- ! scalar number                                  !
-! itypfb(nfabor    ! te ! --> ! type des faces de bord                         !
-! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
-! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
-! itypsm           ! te ! <-- ! type de source de masse pour les               !
-! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! izfppp           ! te ! --> ! numero de zone de la face de bord              !
-! (nfabor)         !    !     !  pour le module phys. part.                    !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
-! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
-!  (ncepdp,6)      !    !     !                                                !
 ! smacel           ! tr ! <-- ! valeur des variables associee a la             !
 ! (ncesmp,*   )    !    !     !  source de masse                               !
 !                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
 ! crvexp(ncelet)   ! tr ! --> ! second membre explicite                        !
-! crvimp(ncelet    ! tr ! --> ! partie diagonale implicite                     !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -95,6 +72,7 @@ use parall
 use period
 use mesh
 use atincl
+use field
 
 !===============================================================================
 
@@ -102,25 +80,16 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-integer          ncepdp , ncesmp
 integer          iscal
 
-integer          itypfb(nfabor)
-integer          icepdc(ncepdp)
-integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-integer          izfppp(nfabor)
-
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
-double precision propce(ncelet,*), propfb(nfabor,*)
-double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
-double precision crvexp(ncelet), crvimp(ncelet)
+double precision rtp(ncelet,*), rtpa(ncelet,*)
+double precision propce(ncelet,*)
+double precision crvexp(ncelet)
 
 ! Local variables
 
 character*80     chaine
-integer          ivar, ipcrom, iel
+integer          ivar,  iel
 
 integer i
 double precision pp, dum
@@ -135,6 +104,7 @@ integer, save :: treated_scalars=0
 
 double precision, dimension(:), allocatable :: pphy
 double precision, dimension(:), allocatable :: refrad
+double precision, dimension(:), pointer ::  crom
 
 !===============================================================================
 !===============================================================================
@@ -149,7 +119,7 @@ ivar = isca(iscal)
 chaine = nomvar(ipprtp(ivar))
 
 ! --- Index number of the density in the propce array
-ipcrom = ipproc(irom)
+call field_get_val_s(icrom, crom)
 
 !===============================================================================
 ! 2. TAKING INTO ACOUNT RADIATIVE FORCING FOR THE 1D RADIATIVE MODULE :
@@ -169,8 +139,7 @@ if (ippmod(iatmos).ge.1.and.iatra1.ge.1) then
     ! --- Computes the divergence of the ir and solar radiative fluxes :
 
     ! --- Cressman interpolation of the 1D radiative fluxes on the 3D mesh:
-    call atr1vf   &
-         (rtpa, rtp, propce )
+    call atr1vf(rtpa, propce )
 
     call mscrss   &
          (idrayi, 1, ray3Di)
@@ -182,7 +151,7 @@ if (ippmod(iatmos).ge.1.and.iatra1.ge.1) then
 
     do iel = 1, ncel
       crvexp(iel) = crvexp(iel) +                                                &
-           cp0*volume(iel)*propce(iel,ipcrom)*(-ray3Di(iel) + ray3Dst(iel))
+           cp0*volume(iel)*crom(iel)*(-ray3Di(iel) + ray3Dst(iel))
     enddo
 
     deallocate(ray3Di)
@@ -316,7 +285,7 @@ if ( ippmod(iatmos).eq.2.and.modsedi.eq.1 ) then ! for humid atmosphere physics 
 endif! ( ippmod(iatmos).eq.2 ) then ! for humid atmosphere physics only
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 return
@@ -441,8 +410,8 @@ extrap = extrag(iqpp)
 iivar = 0
 
 call grdcel                                                         &
-     !==========
-     ( iivar  , imrgra , inc    , iccocg , nswrgp ,imligp,          &
+!==========
+   ( iivar  , imrgra , inc    , iccocg , nswrgp ,imligp,            &
      iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
      local_field     , local_coefa , local_coefb ,                  &
      grad   )
@@ -529,8 +498,8 @@ extrap = extrag(iqpp)
 iivar = 0
 
 call grdcel                                                         &
-     !==========
-     ( iivar  , imrgra , inc    , iccocg , nswrgp ,imligp,          &
+!==========
+   ( iivar  , imrgra , inc    , iccocg , nswrgp ,imligp,            &
      iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
      local_field     , local_coefa , local_coefb ,                  &
      grad   )

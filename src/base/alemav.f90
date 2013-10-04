@@ -128,7 +128,7 @@ call grdvec &
 !==========
 ( iuma   , imrgra , inc    ,                                     &
   nswrgr(iuma)    , imligr(iuma)    , iwarni(iuma) ,             &
-  nfecra , epsrgr(iuma), climgr(iuma), extrag(iuma),             &
+  epsrgr(iuma), climgr(iuma),                                    &
   ilved  ,                                                       &
   meshv  , claale , clbale ,                                     &
   gradm  )
@@ -136,7 +136,7 @@ call grdvec &
 call aledis &
 !==========
  ( ifacel , ifabor , ipnfac , nodfac , ipnfbr , nodfbr , ialtyb , &
-   pond   , meshv  , gradm  ,                                     &
+   meshv  , gradm  ,                                              &
    claale , clbale ,                                              &
    dt     , dproj  )
 

@@ -88,7 +88,7 @@ integer       ilsmom, ivers , inmfin
 integer       impamx
 integer       nfmtmo, nberro
 integer       idtold(nbmomx)
-integer       nprayc, nprayb
+integer       nprayc
 integer       idttur
 
 double precision gravn2
@@ -810,15 +810,8 @@ if(ipass.eq.2) then
 
   nproce = iprop
 
-!   Au centre des faces de bord (rho et flux de masse)
-
-  iprop = 0
-  iprop          = iprop + 1
-  ipprob(irom  ) = iprop
-  nprofb = iprop
-
 ! --- Modifications pour la physique particuliere
-!      des entiers NPROCE, NPROFB
+!      des entiers NPROCE
 
 !      Sauvegarde pour la physique particuliere de IPROP
 !      afin d'initialiser les positions des variables d'etat
@@ -835,10 +828,10 @@ if(ipass.eq.2) then
   nppmax = ipppst
 
 
-! --- Verification de NPROCE, NPROFB
+! --- Verification de NPROCE
 
-  if(nproce.gt.npromx .or. nprofb.gt.npromx) then
-    write(nfecra,7200)nproce, nprofb, npromx, max(nproce,nprofb)
+  if(nproce.gt.npromx) then
+    write(nfecra,7200)nproce, npromx, nproce
     call csexit (1)
     !==========
   endif
@@ -1270,20 +1263,6 @@ if(ipass.eq.3) then
   nproce = iprop
   nppmax = ipppst
 
-
-! --- Reprise du dernier NPROFB
-  iprop                 = nprofb
-
-! --- Positionnement des PROPFB
-
-  !     Variables schema en temps : rhoa (pas pour icalhy)
-  if (iroext.gt.0.or.idilat.gt.1) then
-    iprop                 = iprop  + 1
-    ipprob(iroma ) = iprop
-  endif
-
-! --- Sauvegarde du dernier NPROFB
-  nprofb = iprop
 
 ! ---> 3.2 CALCUL DE LA TAILLE DU TABLEAU DES TEMPS CUMULES POUR LES MOMENTS
 !      ---------------------------------------------------------------------
@@ -1930,10 +1909,6 @@ if (ipass.eq.4) then
 
 ! --- Numeros de propriete
     iprop        = iprop + 1
-    itparo       = iprop
-    iprop        = iprop + 1
-    iqinci       = iprop
-    iprop        = iprop + 1
     ixlam        = iprop
     iprop        = iprop + 1
     iepa         = iprop
@@ -1941,43 +1916,9 @@ if (ipass.eq.4) then
     ieps         = iprop
     iprop        = iprop + 1
     ifnet        = iprop
-    iprop        = iprop + 1
-    ifconv       = iprop
-    iprop        = iprop + 1
-    ihconv       = iprop
 
 ! --- Sauvegarde du dernier numero de propriete
     nprmax = iprop
-
-! --- Reprise du dernier NPROFB (PROPFB)
-    iprop   = nprofb
-
-! --- Positionnement
-    iprop          = iprop + 1
-    ipprob(itparo) = iprop
-
-    iprop          = iprop + 1
-    ipprob(iqinci) = iprop
-
-    iprop          = iprop + 1
-    ipprob(ixlam)  = iprop
-
-    iprop          = iprop + 1
-    ipprob(iepa)   = iprop
-
-    iprop          = iprop + 1
-    ipprob(ieps)   = iprop
-
-    iprop          = iprop + 1
-    ipprob(ifnet)  = iprop
-
-    iprop          = iprop + 1
-    ipprob(ifconv) = iprop
-
-    iprop          = iprop + 1
-    ipprob(ihconv) = iprop
-
-    nprayb = iprop - nprofb
 
     if (iihmpr.eq.1) then
 
@@ -1990,13 +1931,10 @@ if (ipass.eq.4) then
     endif
 
 !
-! --- Sauvegarde du dernier NPROFB
-    nprofb = iprop
+! --- Verification de NPROCE
 
-! --- Verification de NPROCE, NPROFB
-
-    if (nproce.gt.npromx .or. nprofb.gt.npromx) then
-      write(nfecra,7200) nproce, nprofb, npromx, max(nproce,nprofb)
+    if (nproce.gt.npromx) then
+      write(nfecra,7200) nproce, npromx, nproce
       call csexit (1)
       !==========
     endif
@@ -2388,7 +2326,6 @@ endif
 '@  Le type de calcul defini                                  ',/,&
 '@    correspond aux nombres de proprietes suivants           ',/,&
 '@      au centre des cellules       : NPROCE = ',I10          ,/,&
-'@      au centre des faces de bord  : NPROFB = ',I10          ,/,&
 '@  Le nombre de proprietes maximal prevu                     ',/,&
 '@                      dans paramx.h est NPROMX = ',I10       ,/,&
 '@                                                            ',/,&
@@ -3369,8 +3306,7 @@ endif
 '@  The type of calculation defined                           ',/,&
 '@    corresponds  to the following number of properties      ',/,&
 '@      at the cell centres          : NPROCE = ',I10          ,/,&
-'@      at the boundary face centres : NPROFB = ',I10          ,/,&
-'@  The maxumum number of properties allowed                  ',/,&
+'@  The maximum number of properties allowed                  ',/,&
 '@                      in   paramx   is  NPROMX = ',I10       ,/,&
 '@                                                            ',/,&
 '@  The calculation cannot be executed                        ',/,&

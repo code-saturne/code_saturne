@@ -23,8 +23,7 @@
 subroutine raylec &
 !================
 
- ( ndim   , ncelet , ncel   , nfac   , nfabor ,                   &
-   propce , propfb )
+ ( ncelet , propce )
 
 !===============================================================================
 ! Purpose:
@@ -41,13 +40,8 @@ subroutine raylec &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ndim             ! i  ! <-- ! spatial dimension                              !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! nfac             ! i  ! <-- ! number of interior faces                       !
-! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -70,30 +64,28 @@ use ppthch
 use cpincl
 use ppincl
 use radiat
-
+use field
 !===============================================================================
 
 implicit none
 
 ! Arguments
 
-integer          ndim   , ncelet , ncel   , nfac   , nfabor
+integer          ncelet
 
 double precision propce(ncelet,*)
-double precision propfb(nfabor,*)
 !
 ! Local variables
 
 character        rubriq*64
-character        cphase*2
 character        ficsui*32
 integer          iok
 
-integer          jphast
 integer          ncelok , nfaiok , nfabok , nsomok
 integer          ierror , irtyp  , itysup , nbval
 integer          ilecec , nberro , ivers
 integer          impamr
+double precision, dimension(:), pointer :: f_val
 
 !===============================================================================
 ! 0 - GESTION MEMOIRE
@@ -105,145 +97,139 @@ integer          impamr
 
 if (isuird.eq.1) then
 
-!  ---> Ouverture
+  !  ---> Ouverture
 
-    write(nfecra,6000)
+  write(nfecra,6000)
 
-!     (ILECEC=1:lecture)
-    ilecec = 1
-    ficsui = 'radiative_transfer'
-    call opnsui(ficsui,len(ficsui),ilecec,impamr,ierror)
-    !==========
-    if (ierror.ne.0) then
-      write(nfecra,9011) ficsui
-      call csexit (1)
-    endif
+  ! (ILECEC=1:lecture)
+  ilecec = 1
+  ficsui = 'radiative_transfer'
+  call opnsui(ficsui,len(ficsui),ilecec,impamr,ierror)
+  !==========
+  if (ierror.ne.0) then
+    write(nfecra,9011) ficsui
+    call csexit (1)
+  endif
 
-    write(nfecra,6010)
-
+  write(nfecra,6010)
 
 !  ---> Type de fichier suite
 !        Pourrait porter le numero de version si besoin.
 !        On ne se sert pas de IVERS pour le moment
 
-    itysup = 0
-    nbval  = 1
-    irtyp  = 1
-    RUBRIQ = 'version_fichier_suite_rayonnement'
-    call lecsui(impamr,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                ivers,ierror)
+  itysup = 0
+  nbval  = 1
+  irtyp  = 1
+  rubriq = 'version_fichier_suite_rayonnement'
+  call lecsui(impamr,rubriq,len(rubriq),itysup,nbval,irtyp,ivers,ierror)
 
-    if (ierror.ne.0) then
-      write(nfecra,9200)ficsui
-      call csexit (1)
-    endif
-
+  if (ierror.ne.0) then
+    write(nfecra,9200)ficsui
+    call csexit (1)
+  endif
 
 !  ---> Tests
 
-    iok = 0
+  iok = 0
 
-!     Dimensions des supports
+  ! Dimensions des supports
 
-    call tstsui(impamr,ncelok,nfaiok,nfabok,nsomok)
-    !==========
-    if (ncelok.eq.0) then
-      write(nfecra,9210)
-      iok = iok + 1
-    endif
-    if (nfabok.eq.0) then
-      write(nfecra,9211)
-      iok = iok + 1
-    endif
+  call tstsui(impamr,ncelok,nfaiok,nfabok,nsomok)
+  !==========
+  if (ncelok.eq.0) then
+    write(nfecra,9210)
+    iok = iok + 1
+  endif
+  if (nfabok.eq.0) then
+    write(nfecra,9211)
+    iok = iok + 1
+  endif
 
+  ! ---> Pour test ulterieur si pb : arret
 
-!  ---> Pour test ulterieur si pb : arret
+  nberro = 0
 
-    nberro = 0
+  ! ---> Lecture des donnees
 
-!  ---> Lecture des donnees
+  ! Aux faces de bord
 
-!     Aux faces de bord
+  itysup = 3
+  nbval  = 1
+  irtyp  = 2
 
-      itysup = 3
-      nbval  = 1
-      irtyp  = 2
+  rubriq = 'tparoi_fb'
+  call field_get_val_s(itparo, f_val)
+  call lecsui(impamr,rubriq,len(rubriq),itysup,nbval,irtyp,f_val,ierror)
+  nberro=nberro+ierror
 
-      RUBRIQ = 'tparoi_fb'
-      call lecsui(impamr,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-           propfb(1,ipprob(itparo)),ierror)
-      nberro=nberro+ierror
+  rubriq = 'qincid_fb'
+  call field_get_val_s(iqinci, f_val)
+  call lecsui(impamr,rubriq,len(rubriq),itysup,nbval,irtyp,f_val,ierror)
+  nberro=nberro+ierror
 
-      RUBRIQ = 'qincid_fb'
-      call lecsui(impamr,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-           propfb(1,ipprob(iqinci)),ierror)
-      nberro=nberro+ierror
+  rubriq = 'hfconv_fb'
+  call field_get_val_s(ihconv, f_val)
+  call lecsui(impamr,rubriq,len(rubriq),itysup,nbval,irtyp,f_val,ierror)
+  nberro=nberro+ierror
 
-      RUBRIQ = 'hfconv_fb'
-      call lecsui(impamr,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-           propfb(1,ipprob(ihconv)),ierror)
-      nberro=nberro+ierror
+  rubriq = 'flconv_fb'
+  call field_get_val_s(ifconv, f_val)
+  call lecsui(impamr,rubriq,len(rubriq),itysup,nbval,irtyp,f_val,ierror)
+  nberro=nberro+ierror
 
-     RUBRIQ = 'flconv_fb'
-      call lecsui(impamr,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-           propfb(1,ipprob(ifconv)),ierror)
-      nberro=nberro+ierror
+  ! Aux cellules
 
+  itysup = 1
+  nbval  = 1
+  irtyp  = 2
 
-!     Aux cellules
+  rubriq = 'rayimp_ce'
+  call lecsui(impamr,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+              propce(1,ipproc(itsri(1))),ierror)
+  nberro=nberro+ierror
 
-     itysup = 1
-      nbval  = 1
-      irtyp  = 2
+  rubriq = 'rayexp_ce'
+  call lecsui(impamr,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+              propce(1,ipproc(itsre(1))),ierror)
+  nberro=nberro+ierror
 
-      RUBRIQ = 'rayimp_ce'
-      call lecsui(impamr,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-           propce(1,ipproc(itsri(1))),ierror)
-      nberro=nberro+ierror
+  rubriq = 'luminance'
+  call lecsui(impamr,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+              propce(1,ipproc(ilumin)),ierror)
+  nberro=nberro+ierror
 
-      RUBRIQ = 'rayexp_ce'
-      call lecsui(impamr,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-           propce(1,ipproc(itsre(1))),ierror)
-      nberro=nberro+ierror
+  !---> Si pb : arret
 
-      RUBRIQ = 'luminance'
-      call lecsui(impamr,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  propce(1,ipproc(ilumin)),ierror)
-      nberro=nberro+ierror
+  if(nberro.ne.0) then
+    write(nfecra,9100)
+    call csexit (1)
+  endif
 
+  write(nfecra,6011)
 
-!  ---> Si pb : arret
+  ! ---> Fermeture du fichier suite
 
-    if(nberro.ne.0) then
-      write(nfecra,9100)
-      call csexit (1)
-    endif
+  call clssui(impamr,ierror)
 
-    write(nfecra,6011)
+  if (ierror.ne.0) then
+    write(nfecra,8011) ficsui
+  endif
 
-!  ---> Fermeture du fichier suite
+  write(nfecra,6099)
 
-    call clssui(impamr,ierror)
-
-    if (ierror.ne.0) then
-      write(nfecra,8011) ficsui
-    endif
-
-    write(nfecra,6099)
-
-! Fin detection suite rayonnement
+  ! Fin detection suite rayonnement
 endif
 
 !--------
-! FORMATS
+! Formats
 !--------
 
- 6000 FORMAT (   3X,'** INFORMATIONS SUR LE MODULE DE RAYONNEMENT   ',/,&
+ 6000 format (   3X,'** INFORMATIONS SUR LE MODULE DE RAYONNEMENT   ',/,&
            3X,'   ------------------------------------------  ',/,&
            3X,' Lecture d''un fichier suite                   '  )
- 6010 FORMAT (   3X,'   Debut de la lecture                         '  )
- 6011 FORMAT (   3X,'   Fin   de la lecture                         '  )
- 6099 FORMAT (   3X,' Fin de la lecture du fichier suite            ',/,&
+ 6010 format (   3X,'   Debut de la lecture                         '  )
+ 6011 format (   3X,'   Fin   de la lecture                         '  )
+ 6099 format (   3X,' Fin de la lecture du fichier suite            ',/,&
 '                                                             ',/,&
 '-------------------------------------------------------------',/)
 

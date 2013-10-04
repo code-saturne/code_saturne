@@ -51,7 +51,6 @@
 !> \param[in]     rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
-!> \param[in]     propfb        physical properties at boundary face centers
 !> \param[in]     ettp, ettpa   particle-defined variables
 !> \param[in]                    (at current and previous time steps)
 !> \param[in]     tepa          real particle properties
@@ -69,7 +68,7 @@ subroutine cs_user_extra_operations &
  ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvep   , nivep  , ntersl , nvlsta , nvisbr , &
    itepa  ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfb ,                   &
+   dt     , rtpa   , rtp    , propce ,                            &
    ettp   , ettpa  , tepa   , statis , stativ , tslagr , parbor )
 
 !===============================================================================
@@ -110,7 +109,6 @@ integer          itepa(nbpmax,nivep)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
-double precision propfb(ndimfb,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
 double precision statis(ncelet,nvlsta), stativ(ncelet,nvlsta-1)

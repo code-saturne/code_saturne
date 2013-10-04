@@ -23,7 +23,7 @@
 subroutine clpalp &
 !================
 
- ( ncelet , ncel   , nvar   , rtpa   , rtp    )
+ ( ncelet , ncel   , nvar   , rtp    )
 
 !===============================================================================
 ! FONCTION :
@@ -43,8 +43,6 @@ subroutine clpalp &
 ! iclip            ! e  ! <-- ! indicateur = 1 on n'utilise pas rtpa           !
 !                  !    !     !  (inivar)                                      !
 !                  !    !     !            sinon on peut (turrij)              !
-! rtpa             ! tr ! <-- ! tableaux des variables au pdt precedt          !
-! (ncelet,nvar)    !    !     !                                                !
 ! rtp              ! tr ! <-- ! tableaux des variables au pdt courant          !
 ! (ncelet,nvar)    !    !     !                                                !
 !__________________!____!_____!________________________________________________!
@@ -74,9 +72,7 @@ implicit none
 
 ! Arguments
 
-integer          nvar, ncelet, ncel, nphas
-integer          iphas, iclip
-double precision rtpa(ncelet,nvar)
+integer          nvar, ncelet, ncel
 double precision rtp(ncelet,nvar)
 
 ! VARIABLES LOCALES

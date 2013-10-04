@@ -81,8 +81,8 @@ double precision viscf(nfac), viscb(nfabor)
 
 ! Local variables
 
-integer          ifac, iel, ii, jj
-double precision visci, viscj, surfn, distbf, pnd
+integer          ifac, ii, jj
+double precision visci, viscj, surfn, pnd
 
 !===============================================================================
 
