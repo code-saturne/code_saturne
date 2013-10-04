@@ -227,7 +227,7 @@ cst3 = 0.9d0
 !===============================================================================
 
 ! Allocate temporary arrays for gradients calculation
-allocate(gradv(ncelet,3,3))
+allocate(gradv(3, 3, ncelet))
 
 iccocg = 1
 inc = 1
@@ -241,6 +241,7 @@ extrap = extrag(iu)
 
 ilved = .false.
 
+! WARNING: gradv(xyz, uvw, iel)
 call grdvec &
 !==========
 ( iu     , imrgra , inc    , nswrgp , imligp ,                   &
@@ -257,10 +258,10 @@ call grdvec &
 ! trgrdu = dudx + dvdy + dwdz
 
 do iel = 1, ncel
-  vort(iel) = (gradv(iel,2,1) - gradv(iel,1,2))**2   &
-            + (gradv(iel,3,1) - gradv(iel,1,3))**2   &
-            + (gradv(iel,3,2) - gradv(iel,2,3))**2
-  trgrdu(iel) = gradv(iel,1,1) + gradv(iel,2,2) + gradv(iel,3,3)
+  vort(iel) = (gradv(2, 1, iel) - gradv(1, 2, iel))**2   &
+            + (gradv(3, 1, iel) - gradv(1, 3, iel))**2   &
+            + (gradv(3, 2, iel) - gradv(2, 3, iel))**2
+  trgrdu(iel) = gradv(1, 1, iel) + gradv(2, 2, iel) + gradv(3, 3, iel)
 enddo
 
 ! Free memory

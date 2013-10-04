@@ -108,7 +108,7 @@ double precision epsrgp , climgp , extrap
 
 double precision pvar(*)
 double precision coefav(*), coefbv(*)
-double precision gradv(*)
+double precision gradv(3,3,ncelet)
 
 logical ilved
 
@@ -117,12 +117,11 @@ logical ilved
 integer          iel, isou, jsou
 
 double precision, dimension(:,:), allocatable :: pvari
-double precision, dimension(:,:,:), allocatable :: gradvi
 
 !===============================================================================
 
 !===============================================================================
-! 1. COMPUTATION OF THE GARDIENT
+! 1. Computation of the gardient
 !===============================================================================
 
 ! the velocity and the gradient fields are interleaved
@@ -140,7 +139,6 @@ else
 
   !Allocation
   allocate(pvari(3,ncelet))
-  allocate(gradvi(3,3,ncelet))
 
   do isou = 1, 3
     do iel = 1, ncelet
@@ -153,18 +151,10 @@ else
  ( ivar   ,                                                       &
    imrgra , inc    , nswrgp , iwarnp , imligp , epsrgp , climgp , &
    coefav , coefbv , pvari  ,                                     &
-   gradvi )
-
-  do isou = 1, 3
-    do jsou = 1, 3
-      do iel = 1, ncelet
-        gradv(iel + (jsou-1)*ncelet + (isou-1)*3*ncelet) = gradvi(isou,jsou,iel)
-      enddo
-    enddo
-  enddo
+   gradv  )
 
   ! Free memory
-  deallocate(pvari, gradvi)
+  deallocate(pvari)
 
 endif
 

@@ -126,7 +126,7 @@ double precision, dimension(:,:,:), allocatable :: gradv
 !===============================================================================
 
 ! Allocate temporary arrays for gradients calculation
-allocate(gradv(ncelet,3,3))
+allocate(gradv(3, 3, ncelet))
 
 ! --- Memoire
 
@@ -156,6 +156,7 @@ inc = 1
 
 ilved = .false.
 
+! WARNING: gradv(xyz, uvw, iel)
 call grdvec &
 !==========
 ( iu  , imrgra , inc    ,                               &
@@ -167,16 +168,15 @@ call grdvec &
 
 do iel = 1, ncel
 
-  ! gradv(iel, xyz, uvw)
-  s11  = gradv(iel,1,1)
-  s22  = gradv(iel,2,2)
-  s33  = gradv(iel,3,3)
-  dudy = gradv(iel,2,1)
-  dvdx = gradv(iel,1,2)
-  dudz = gradv(iel,3,1)
-  dwdx = gradv(iel,1,3)
-  dvdz = gradv(iel,3,2)
-  dwdy = gradv(iel,2,3)
+  s11  = gradv(1, 1, iel)
+  s22  = gradv(2, 2, iel)
+  s33  = gradv(3, 3, iel)
+  dudy = gradv(2, 1, iel)
+  dvdx = gradv(1, 2, iel)
+  dudz = gradv(3, 1, iel)
+  dwdx = gradv(1, 3, iel)
+  dvdz = gradv(3, 2, iel)
+  dwdy = gradv(2, 3, iel)
 
   propce(iel,ipcvst) = s11**2 + s22**2 + s33**2       &
                      + 0.5d0*((dudy+dvdx)**2          &

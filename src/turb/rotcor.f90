@@ -104,7 +104,7 @@ double precision dsijdt, trrota, wiksjk, rstar, echtm1
 double precision stilde, wtilde, rotild
 double precision xe, xk, xw
 
-double precision, allocatable, dimension(:,:,:) :: grdvit
+double precision, allocatable, dimension(:,:,:) :: gradv
 double precision, allocatable, dimension(:,:) :: strain, vortab
 double precision, allocatable, dimension(:,:) :: grdsij
 double precision, allocatable, dimension(:) :: coeas, coebs
@@ -140,7 +140,7 @@ endif
 ! Allocate temporary arrays
 allocate(strain(ncelet,6),vortab(ncelet,3))
 
-allocate(grdvit(ncelet,3,3))
+allocate(gradv(3, 3, ncelet))
 
 iccocg = 1
 inc = 1
@@ -162,7 +162,7 @@ call grdvec &
   epsrgp , climgp , extrap ,                                     &
   ilved  ,                                                       &
   rtpa(1,iu) ,  coefau , coefbu,                                 &
-  grdvit )
+  gradv  )
 
 ! Compute rotation matrix (dual antisymmetric matrix of the rotation vector)
 !   matrot(i,j) = e_imj.Omega_m
@@ -198,27 +198,27 @@ endif
 
 do iel = 1, ncel
   ! S11
-  strain(iel,1) = grdvit(iel,1,1)
+  strain(iel,1) = gradv(1, 1, iel)
   ! S22
-  strain(iel,2) = grdvit(iel,2,2)
+  strain(iel,2) = gradv(2, 2, iel)
   ! S33
-  strain(iel,3) = grdvit(iel,3,3)
+  strain(iel,3) = gradv(3, 3, iel)
   ! S12
-  strain(iel,4) = 0.5d0*(grdvit(iel,2,1) + grdvit(iel,1,2))
+  strain(iel,4) = 0.5d0*(gradv(2, 1, iel) + gradv(1, 2, iel))
   ! S13
-  strain(iel,5) = 0.5d0*(grdvit(iel,3,1) + grdvit(iel,1,3))
+  strain(iel,5) = 0.5d0*(gradv(3, 1, iel) + gradv(1, 3, iel))
   ! S23
-  strain(iel,6) = 0.5d0*(grdvit(iel,3,2) + grdvit(iel,2,3))
+  strain(iel,6) = 0.5d0*(gradv(3, 2, iel) + gradv(2, 3, iel))
   ! W12
-  vortab(iel,1) = 0.5d0*(grdvit(iel,2,1) - grdvit(iel,1,2)) + matrot(1,2)
+  vortab(iel,1) = 0.5d0*(gradv(2, 1, iel) - gradv(1, 2, iel)) + matrot(1,2)
   ! W13
-  vortab(iel,2) = 0.5d0*(grdvit(iel,3,1) - grdvit(iel,1,3)) + matrot(1,3)
+  vortab(iel,2) = 0.5d0*(gradv(3, 1, iel) - gradv(1, 3, iel)) + matrot(1,3)
   ! W23
-  vortab(iel,3) = 0.5d0*(grdvit(iel,3,2) - grdvit(iel,2,3)) + matrot(2,3)
+  vortab(iel,3) = 0.5d0*(gradv(3, 2, iel) - gradv(2, 3, iel)) + matrot(2,3)
 enddo
 
 ! Free memory (strain and vortab arrays are deallocated later)
-deallocate(grdvit)
+deallocate(gradv)
 
 !-------------------------------------------------------------------------------
 ! 1.2 Computation of :

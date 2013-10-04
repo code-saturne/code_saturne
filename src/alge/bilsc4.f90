@@ -298,7 +298,7 @@ else
   do iel = 1, ncelet
     do isou =1, 3
       do jsou = 1, 3
-        gradv(isou,jsou,iel) = 0.d0
+        gradv(jsou,isou,iel) = 0.d0
       enddo
     enddo
   enddo
@@ -312,7 +312,7 @@ endif
 do iel = 1, ncelet
   do jsou = 1, 3
     do isou =1, 3
-      gradva(isou,jsou,iel) = 0.d0
+      gradva(jsou,isou,iel) = 0.d0
     enddo
   enddo
 enddo
@@ -338,8 +338,8 @@ if (iconvp.gt.0.and.iupwin.eq.0.and.isstpp.eq.0) then
           pif = pvar(isou,ii)
           pjf = pvar(isou,jj)
           do jsou = 1, 3
-            pif = pif + gradv(isou,jsou,ii)*difv(jsou)
-            pjf = pjf + gradv(isou,jsou,jj)*djfv(jsou)
+            pif = pif + gradv(jsou,isou,ii)*difv(jsou)
+            pjf = pjf + gradv(jsou,isou,jj)*djfv(jsou)
           enddo
 
           pfac = pjf
@@ -349,8 +349,8 @@ if (iconvp.gt.0.and.iupwin.eq.0.and.isstpp.eq.0) then
           do jsou = 1, 3
             vfac(jsou) = pfac*surfac(jsou,ifac)
 
-            gradva(isou,jsou,ii) = gradva(isou,jsou,ii) + vfac(jsou)
-            gradva(isou,jsou,jj) = gradva(isou,jsou,jj) - vfac(jsou)
+            gradva(jsou,isou,ii) = gradva(jsou,isou,ii) + vfac(jsou)
+            gradva(jsou,isou,jj) = gradva(jsou,isou,jj) - vfac(jsou)
           enddo
         enddo
 
@@ -376,13 +376,13 @@ if (iconvp.gt.0.and.iupwin.eq.0.and.isstpp.eq.0) then
           !coefu is a matrix
           do jsou =  1, 3
             pfac = pfac + coefbv(isou,jsou,ifac)*(pvar(jsou,ii)    &
-                        + gradv(jsou,1,ii)*diipbv(1)               &
-                        + gradv(jsou,2,ii)*diipbv(2)               &
-                        + gradv(jsou,3,ii)*diipbv(3))
+                        + gradv(1,jsou,ii)*diipbv(1)               &
+                        + gradv(2,jsou,ii)*diipbv(2)               &
+                        + gradv(3,jsou,ii)*diipbv(3))
           enddo
 
           do jsou = 1, 3
-            gradva(isou,jsou,ii) = gradva(isou,jsou,ii) +pfac*surfbo(jsou,ifac)
+            gradva(jsou,isou,ii) = gradva(jsou,isou,ii) +pfac*surfbo(jsou,ifac)
           enddo
         enddo
 
@@ -395,7 +395,7 @@ if (iconvp.gt.0.and.iupwin.eq.0.and.isstpp.eq.0) then
     unsvol = 1.d0/volume(iel)
     do isou = 1, 3
       do jsou = 1, 3
-        gradva(isou,jsou,iel) = gradva(isou,jsou,iel)*unsvol
+        gradva(jsou,isou,iel) = gradva(jsou,isou,iel)*unsvol
       enddo
     enddo
   enddo
@@ -471,7 +471,7 @@ if (iupwin.eq.1) then
           do isou = 1, 3
 
             do jsou = 1, 3
-              dpvf(jsou) = 0.5d0*(gradv(isou,jsou,ii) + gradv(isou,jsou,jj))
+              dpvf(jsou) = 0.5d0*(gradv(jsou,isou,ii) + gradv(jsou,isou,jj))
             enddo
 
             ! reconstruction only if IRCFLP = 1
@@ -555,7 +555,7 @@ if (iupwin.eq.1) then
           do isou = 1, 3
 
             do jsou = 1, 3
-              dpvf(jsou) = 0.5d0*(gradv(isou,jsou,ii) + gradv(isou,jsou,jj))
+              dpvf(jsou) = 0.5d0*(gradv(jsou,isou,ii) + gradv(jsou,isou,jj))
             enddo
 
             pi = pvar(isou,ii)
@@ -638,7 +638,7 @@ elseif (isstpp.eq.1) then
           do isou = 1, 3
 
             do jsou = 1, 3
-              dpvf(jsou) = 0.5d0*(gradv(isou,jsou,ii) + gradv(isou,jsou,jj))
+              dpvf(jsou) = 0.5d0*(gradv(jsou,isou,ii) + gradv(jsou,isou,jj))
             enddo
 
             pi = pvar (isou,ii)
@@ -684,19 +684,19 @@ elseif (isstpp.eq.1) then
 
               ! leave reconstruction of PIF and PJF even if IRCFLP=0
               ! otherwise, it is the same as using upwind
-              pifri = pir + difv(1)*gradv(isou,1,ii)      &
-                          + difv(2)*gradv(isou,2,ii)      &
-                          + difv(3)*gradv(isou,3,ii)
-              pifrj = pi  + difv(1)*gradv(isou,1,ii)      &
-                          + difv(2)*gradv(isou,2,ii)      &
-                          + difv(3)*gradv(isou,3,ii)
+              pifri = pir + difv(1)*gradv(1,isou,ii)      &
+                          + difv(2)*gradv(2,isou,ii)      &
+                          + difv(3)*gradv(3,isou,ii)
+              pifrj = pi  + difv(1)*gradv(1,isou,ii)      &
+                          + difv(2)*gradv(2,isou,ii)      &
+                          + difv(3)*gradv(3,isou,ii)
 
-              pjfrj = pjr + djfv(1)*gradv(isou,1,jj)      &
-                          + djfv(2)*gradv(isou,2,jj)      &
-                          + djfv(3)*gradv(isou,3,jj)
-              pjfri = pj  + djfv(1)*gradv(isou,1,jj)      &
-                          + djfv(2)*gradv(isou,2,jj)      &
-                          + djfv(3)*gradv(isou,3,jj)
+              pjfrj = pjr + djfv(1)*gradv(1,isou,jj)      &
+                          + djfv(2)*gradv(2,isou,jj)      &
+                          + djfv(3)*gradv(3,isou,jj)
+              pjfri = pj  + djfv(1)*gradv(1,isou,jj)      &
+                          + djfv(2)*gradv(2,isou,jj)      &
+                          + djfv(3)*gradv(3,isou,jj)
 
             endif
 
@@ -771,7 +771,7 @@ elseif (isstpp.eq.1) then
           do isou = 1, 3
 
             do jsou = 1, 3
-              dpvf(jsou) = 0.5d0*(gradv(isou,jsou,ii) + gradv(isou,jsou,jj))
+              dpvf(jsou) = 0.5d0*(gradv(jsou,isou,ii) + gradv(jsou,isou,jj))
             enddo
 
             pi = pvar(isou,ii)
@@ -804,8 +804,8 @@ elseif (isstpp.eq.1) then
               pif = pi
               pjf = pj
               do jsou = 1, 3
-                pif = pif + gradv(isou,jsou,ii)*difv(jsou)
-                pjf = pjf + gradv(isou,jsou,jj)*djfv(jsou)
+                pif = pif + gradv(jsou,isou,ii)*difv(jsou)
+                pjf = pjf + gradv(jsou,isou,jj)*djfv(jsou)
               enddo
 
             endif
@@ -895,7 +895,7 @@ else
           do isou = 1, 3
 
             do jsou = 1, 3
-              dpvf(jsou) = 0.5d0*(gradv(isou,jsou,ii) + gradv(isou,jsou,jj))
+              dpvf(jsou) = 0.5d0*(gradv(jsou,isou,ii) + gradv(jsou,isou,jj))
             enddo
 
             pi  = pvar (isou,ii)
@@ -926,26 +926,26 @@ else
             ! Slope test
             ! ----------
 
-            testi = gradva(isou,1,ii)*surfac(1,ifac)         &
-                  + gradva(isou,2,ii)*surfac(2,ifac)         &
-                  + gradva(isou,3,ii)*surfac(3,ifac)
-            testj = gradva(isou,1,jj)*surfac(1,ifac)         &
-                  + gradva(isou,2,jj)*surfac(2,ifac)         &
-                  + gradva(isou,3,jj)*surfac(3,ifac)
-            testij= gradva(isou,1,ii)*gradva(isou,1,jj)      &
-                  + gradva(isou,2,ii)*gradva(isou,2,jj)      &
-                  + gradva(isou,3,ii)*gradva(isou,3,jj)
+            testi = gradva(1,isou,ii)*surfac(1,ifac)         &
+                  + gradva(2,isou,ii)*surfac(2,ifac)         &
+                  + gradva(3,isou,ii)*surfac(3,ifac)
+            testj = gradva(1,isou,jj)*surfac(1,ifac)         &
+                  + gradva(2,isou,jj)*surfac(2,ifac)         &
+                  + gradva(3,isou,jj)*surfac(3,ifac)
+            testij= gradva(1,isou,ii)*gradva(1,isou,jj)      &
+                  + gradva(2,isou,ii)*gradva(2,isou,jj)      &
+                  + gradva(3,isou,ii)*gradva(3,isou,jj)
 
             if (flumas(ifac).gt.0.d0) then
-              dcc = gradv(isou,1,ii)*surfac(1,ifac)    &
-                  + gradv(isou,2,ii)*surfac(2,ifac)    &
-                  + gradv(isou,3,ii)*surfac(3,ifac)
+              dcc = gradv(1,isou,ii)*surfac(1,ifac)    &
+                  + gradv(2,isou,ii)*surfac(2,ifac)    &
+                  + gradv(3,isou,ii)*surfac(3,ifac)
               ddi = testi
               ddj = (pj - pi)/distf *srfan
             else
-              dcc = gradv(isou,1,jj)*surfac(1,ifac)    &
-                  + gradv(isou,2,jj)*surfac(2,ifac)    &
-                  + gradv(isou,3,jj)*surfac(3,ifac)
+              dcc = gradv(1,isou,jj)*surfac(1,ifac)    &
+                  + gradv(2,isou,jj)*surfac(2,ifac)    &
+                  + gradv(3,isou,jj)*surfac(3,ifac)
               ddi = (pj - pi)/distf *srfan
               ddj = testj
             endif
@@ -985,19 +985,19 @@ else
 
                 ! leave reconstruction of PIF and PJF even if IRCFLP=0
                 ! otherwise, it is the same as using upwind
-                pifri = pir + difv(1)*gradv(isou,1,ii)      &
-                            + difv(2)*gradv(isou,2,ii)      &
-                            + difv(3)*gradv(isou,3,ii)
-                pifrj = pi  + difv(1)*gradv(isou,1,ii)      &
-                            + difv(2)*gradv(isou,2,ii)      &
-                            + difv(3)*gradv(isou,3,ii)
+                pifri = pir + difv(1)*gradv(1,isou,ii)      &
+                            + difv(2)*gradv(2,isou,ii)      &
+                            + difv(3)*gradv(3,isou,ii)
+                pifrj = pi  + difv(1)*gradv(1,isou,ii)      &
+                            + difv(2)*gradv(2,isou,ii)      &
+                            + difv(3)*gradv(3,isou,ii)
 
-                pjfrj = pjr + djfv(1)*gradv(isou,1,jj)      &
-                            + djfv(2)*gradv(isou,2,jj)      &
-                            + djfv(3)*gradv(isou,3,jj)
-                pjfri = pj  + djfv(1)*gradv(isou,1,jj)      &
-                            + djfv(2)*gradv(isou,2,jj)      &
-                            + djfv(3)*gradv(isou,3,jj)
+                pjfrj = pjr + djfv(1)*gradv(1,isou,jj)      &
+                            + djfv(2)*gradv(2,isou,jj)      &
+                            + djfv(3)*gradv(3,isou,jj)
+                pjfri = pj  + djfv(1)*gradv(1,isou,jj)      &
+                            + djfv(2)*gradv(2,isou,jj)      &
+                            + djfv(3)*gradv(3,isou,jj)
 
               endif
 
@@ -1079,7 +1079,7 @@ else
           do isou = 1, 3
 
             do jsou = 1, 3
-              dpvf(jsou) = 0.5d0*(gradv(isou,jsou,ii) + gradv(isou,jsou,jj))
+              dpvf(jsou) = 0.5d0*(gradv(jsou,isou,ii) + gradv(jsou,isou,jj))
             enddo
 
             pi = pvar(isou,ii)
@@ -1095,26 +1095,26 @@ else
             ! Slope test
             ! ----------
 
-            testi = gradva(isou,1,ii)*surfac(1,ifac)    &
-                  + gradva(isou,2,ii)*surfac(2,ifac)    &
-                  + gradva(isou,3,ii)*surfac(3,ifac)
-            testj = gradva(isou,1,jj)*surfac(1,ifac)    &
-                  + gradva(isou,2,jj)*surfac(2,ifac)    &
-                  + gradva(isou,3,jj)*surfac(3,ifac)
-            testij = gradva(isou,1,ii)*gradva(isou,1,jj) &
-                   + gradva(isou,2,ii)*gradva(isou,2,jj) &
-                   + gradva(isou,3,ii)*gradva(isou,3,jj)
+            testi = gradva(1,isou,ii)*surfac(1,ifac)    &
+                  + gradva(2,isou,ii)*surfac(2,ifac)    &
+                  + gradva(3,isou,ii)*surfac(3,ifac)
+            testj = gradva(1,isou,jj)*surfac(1,ifac)    &
+                  + gradva(2,isou,jj)*surfac(2,ifac)    &
+                  + gradva(3,isou,jj)*surfac(3,ifac)
+            testij= gradva(1,isou,ii)*gradva(1,isou,jj) &
+                  + gradva(2,isou,ii)*gradva(2,isou,jj) &
+                  + gradva(3,isou,ii)*gradva(3,isou,jj)
 
             if (flumas(ifac).gt.0.d0) then
-              dcc = gradv(isou,1,ii)*surfac(1,ifac)     &
-                  + gradv(isou,2,ii)*surfac(2,ifac)     &
-                  + gradv(isou,3,ii)*surfac(3,ifac)
+              dcc = gradv(1,isou,ii)*surfac(1,ifac)     &
+                  + gradv(2,isou,ii)*surfac(2,ifac)     &
+                  + gradv(3,isou,ii)*surfac(3,ifac)
               ddi = testi
               ddj = (pj - pi)/distf *srfan
             else
-              dcc = gradv(isou,1,jj)*surfac(1,ifac)    &
-                  + gradv(isou,2,jj)*surfac(2,ifac)    &
-                  + gradv(isou,3,jj)*surfac(3,ifac)
+              dcc = gradv(1,isou,jj)*surfac(1,ifac)    &
+                  + gradv(2,isou,jj)*surfac(2,ifac)    &
+                  + gradv(3,isou,jj)*surfac(3,ifac)
               ddi = (pj - pi)/distf *srfan
               ddj = testj
             endif
@@ -1151,8 +1151,8 @@ else
                 pif = pi
                 pjf = pj
                 do jsou = 1, 3
-                  pif = pif + gradv(isou,jsou,ii)*difv(jsou)
-                  pjf = pjf + gradv(isou,jsou,jj)*djfv(jsou)
+                  pif = pif + gradv(jsou,isou,ii)*difv(jsou)
+                  pjf = pjf + gradv(jsou,isou,jj)*djfv(jsou)
                 enddo
 
                 ! leave reconstruction of PIF and PJF even if IRCFLP=0
@@ -1189,7 +1189,6 @@ else
   endif ! idtvar
 
 endif ! iupwin
-
 
 if (iwarnp.ge.2) then
   if (irangp.ge.0) call parcpt(infac)
@@ -1239,9 +1238,9 @@ if (icvflb.eq.0) then
             do jsou = 1, 3
               pir  = pvar(jsou,ii)/relaxp - (1.d0-relaxp)/relaxp*pvara(jsou,ii)
 
-              pipr = pir +ircflp*( gradv(jsou,1,ii)*diipbv(1)         &
-                   + gradv(jsou,2,ii)*diipbv(2)         &
-                   + gradv(jsou,3,ii)*diipbv(3))
+              pipr = pir +ircflp*( gradv(1,jsou,ii)*diipbv(1)         &
+                                 + gradv(2,jsou,ii)*diipbv(2)         &
+                                 + gradv(3,jsou,ii)*diipbv(3))
               pfac  = pfac  + coefbv(isou,jsou,ifac)*pipr
               pfacd = pfacd + cofbfv(isou,jsou,ifac)*pipr
             enddo
@@ -1250,9 +1249,6 @@ if (icvflb.eq.0) then
             pia = pvara(isou,ii)
 
             pir  = pi/relaxp - (1.d0-relaxp)/relaxp*pia
-            pipr = pir +ircflp*( gradv(isou,1,ii)*diipbv(1)           &
-                 + gradv(isou,2,ii)*diipbv(2)           &
-                 + gradv(isou,3,ii)*diipbv(3))
 
             flux = iconvp*(flui*pir + fluj*pfac - flumab(ifac)*pi)     &
                  + idiffp*viscb(ifac)*pfacd
@@ -1298,18 +1294,14 @@ if (icvflb.eq.0) then
 
             !coefu and cofuf are matrices
             do jsou = 1, 3
-              pip = pvar(jsou,ii) + ircflp*( gradv(jsou,1,ii)*diipbv(1)        &
-                   + gradv(jsou,2,ii)*diipbv(2)        &
-                   + gradv(jsou,3,ii)*diipbv(3))
+              pip = pvar(jsou,ii) + ircflp*( gradv(1,jsou,ii)*diipbv(1)        &
+                                           + gradv(2,jsou,ii)*diipbv(2)        &
+                                           + gradv(3,jsou,ii)*diipbv(3))
               pfac  = pfac  + coefbv(isou,jsou,ifac)*pip
               pfacd = pfacd + cofbfv(isou,jsou,ifac)*pip
             enddo
 
             pi = pvar(isou,ii)
-
-            pip = pi + ircflp*( gradv(isou,1,ii)*diipbv(1)          &
-                 + gradv(isou,2,ii)*diipbv(2)          &
-                 + gradv(isou,3,ii)*diipbv(3))
 
             flux = iconvp*((flui-flumab(ifac))*pi + fluj*pfac)                 &
                  + idiffp*viscb(ifac)*pfacd
@@ -1367,9 +1359,9 @@ else ! if (icvflb.eq.1) then
               do jsou = 1, 3
                 pir  = pvar(jsou,ii)/relaxp - (1.d0-relaxp)/relaxp*pvara(jsou,ii)
 
-                pipr = pir +ircflp*( gradv(jsou,1,ii)*diipbv(1)         &
-                     + gradv(jsou,2,ii)*diipbv(2)         &
-                     + gradv(jsou,3,ii)*diipbv(3))
+                pipr = pir +ircflp*( gradv(1,jsou,ii)*diipbv(1)         &
+                                   + gradv(2,jsou,ii)*diipbv(2)         &
+                                   + gradv(3,jsou,ii)*diipbv(3))
                 pfac  = pfac  + coefbv(isou,jsou,ifac)*pipr
                 pfacd = pfacd + cofbfv(isou,jsou,ifac)*pipr
               enddo
@@ -1378,9 +1370,6 @@ else ! if (icvflb.eq.1) then
               pia = pvara(isou,ii)
 
               pir  = pi/relaxp - (1.d0-relaxp)/relaxp*pia
-              pipr = pir +ircflp*( gradv(isou,1,ii)*diipbv(1)           &
-                   + gradv(isou,2,ii)*diipbv(2)                         &
-                   + gradv(isou,3,ii)*diipbv(3))
 
               flux = iconvp*(flui*pir + fluj*pfac - flumab(ifac)*pi)    &
                    + idiffp*viscb(ifac)*pfacd
@@ -1401,20 +1390,15 @@ else ! if (icvflb.eq.1) then
               do jsou = 1, 3
                 pir  = pvar(jsou,ii)/relaxp - (1.d0-relaxp)/relaxp*pvara(jsou,ii)
 
-                pipr = pir +ircflp*( gradv(jsou,1,ii)*diipbv(1)         &
-                     + gradv(jsou,2,ii)*diipbv(2)         &
-                     + gradv(jsou,3,ii)*diipbv(3))
+                pipr = pir +ircflp*( gradv(1,jsou,ii)*diipbv(1)         &
+                                   + gradv(2,jsou,ii)*diipbv(2)         &
+                                   + gradv(3,jsou,ii)*diipbv(3))
                 pfac  = pfac + cofbcv(isou,jsou,ifac)*pipr
                 pfacd = pfacd + cofbfv(isou,jsou,ifac)*pipr
               enddo
 
               pi  = pvar(isou,ii)
               pia = pvara(isou,ii)
-
-              pir  = pi/relaxp - (1.d0-relaxp)/relaxp*pia
-              pipr = pir +ircflp*( gradv(isou,1,ii)*diipbv(1)           &
-                   + gradv(isou,2,ii)*diipbv(2)           &
-                   + gradv(isou,3,ii)*diipbv(3))
 
               flux = iconvp*( - flumab(ifac)*pi + pfac*icvfli(ifac))   &
                    + idiffp*viscb(ifac)*pfacd
@@ -1464,18 +1448,14 @@ else ! if (icvflb.eq.1) then
 
               !coefu and cofuf are matrices
               do jsou = 1, 3
-                pip = pvar(jsou,ii) + ircflp*( gradv(jsou,1,ii)*diipbv(1)        &
-                     + gradv(jsou,2,ii)*diipbv(2)        &
-                     + gradv(jsou,3,ii)*diipbv(3))
+                pip = pvar(jsou,ii) + ircflp*( gradv(1,jsou,ii)*diipbv(1)        &
+                                             + gradv(2,jsou,ii)*diipbv(2)        &
+                                             + gradv(3,jsou,ii)*diipbv(3))
                 pfac  = pfac  + coefbv(isou,jsou,ifac)*pip
                 pfacd = pfacd + cofbfv(isou,jsou,ifac)*pip
               enddo
 
               pi = pvar(isou,ii)
-
-              pip = pi + ircflp*( gradv(isou,1,ii)*diipbv(1)          &
-                   + gradv(isou,2,ii)*diipbv(2)          &
-                   + gradv(isou,3,ii)*diipbv(3))
 
               flux = iconvp*((flui-flumab(ifac))*pi + fluj*pfac)      &
                    + idiffp*viscb(ifac)*pfacd
@@ -1494,18 +1474,14 @@ else ! if (icvflb.eq.1) then
 
               !coefu and cofuf are matrices
               do jsou = 1, 3
-                pip = pvar(jsou,ii) + ircflp*( gradv(jsou,1,ii)*diipbv(1)        &
-                     + gradv(jsou,2,ii)*diipbv(2)        &
-                     + gradv(jsou,3,ii)*diipbv(3))
+                pip = pvar(jsou,ii) + ircflp*( gradv(1,jsou,ii)*diipbv(1)        &
+                                             + gradv(2,jsou,ii)*diipbv(2)        &
+                                             + gradv(3,jsou,ii)*diipbv(3))
                 pfac = pfac + cofbcv(isou,jsou,ifac)*pip
                 pfacd = pfacd + cofbfv(isou,jsou,ifac)*pip
               enddo
 
               pi = pvar(isou,ii)
-
-              pip = pi + ircflp*( gradv(isou,1,ii)*diipbv(1)          &
-                   + gradv(isou,2,ii)*diipbv(2)          &
-                   + gradv(isou,3,ii)*diipbv(3))
 
               flux = iconvp*( -flumab(ifac)*pi + pfac*icvfli(ifac))  &
                    + idiffp*viscb(ifac)*pfacd
@@ -1577,12 +1553,12 @@ if (ivisep.eq.1) then
 
         do isou = 1, 3
 
-          tgrdfl = dijpf(1,ifac) * (        pnd*gradv(1,isou,ii)         &
-                                   + (1.d0-pnd)*gradv(1,isou,jj))        &
-                 + dijpf(2,ifac) * (        pnd*gradv(2,isou,ii)         &
-                                   + (1.d0-pnd)*gradv(2,isou,jj))        &
-                 + dijpf(3,ifac) * (        pnd*gradv(3,isou,ii)         &
-                                   + (1.d0-pnd)*gradv(3,isou,jj))
+          tgrdfl = dijpf(1,ifac) * (        pnd*gradv(isou,1,ii)         &
+                                   + (1.d0-pnd)*gradv(isou,1,jj))        &
+                 + dijpf(2,ifac) * (        pnd*gradv(isou,2,ii)         &
+                                   + (1.d0-pnd)*gradv(isou,2,jj))        &
+                 + dijpf(3,ifac) * (        pnd*gradv(isou,3,ii)         &
+                                   + (1.d0-pnd)*gradv(isou,3,jj))
 
           flux = visco*tgrdfl + secvis*grdtrv*surfac(isou,ifac)
 

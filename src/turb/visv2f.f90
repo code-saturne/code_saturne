@@ -143,13 +143,14 @@ ipcliw = iclrtp(iw,icoef)
 !===============================================================================
 
 ! Allocate temporary arrays for gradients calculation
-allocate(gradv(ncelet,3,3))
+allocate(gradv(3,3,ncelet))
 
 iccocg = 1
 inc = 1
 
 ilved = .false.
 
+! WARNING: gradv(xyz, uvw, iel)
 call grdvec &
 !==========
 ( iu  , imrgra , inc    ,                               &
@@ -161,16 +162,15 @@ call grdvec &
 
 do iel = 1, ncel
 
-  ! gradv(iel, xyz, uvw)
-  s11  = gradv(iel,1,1)
-  s22  = gradv(iel,2,2)
-  s33  = gradv(iel,3,3)
-  dudy = gradv(iel,2,1)
-  dudz = gradv(iel,3,1)
-  dvdx = gradv(iel,1,2)
-  dvdz = gradv(iel,3,2)
-  dwdx = gradv(iel,1,3)
-  dwdy = gradv(iel,2,3)
+  s11  = gradv(1,1,iel)
+  s22  = gradv(2,2,iel)
+  s33  = gradv(3,3,iel)
+  dudy = gradv(2,1,iel)
+  dudz = gradv(3,1,iel)
+  dvdx = gradv(1,2,iel)
+  dvdz = gradv(3,2,iel)
+  dwdx = gradv(1,3,iel)
+  dwdy = gradv(2,3,iel)
 
   s2(iel) = 2.d0*(s11**2 + s22**2 + s33**2)                   &
        + (dudy+dvdx)**2 + (dudz+dwdx)**2 + (dvdz+dwdy)**2

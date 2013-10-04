@@ -136,9 +136,9 @@ do ipt = 1, nptdis
   dz = coopts(3,ipt) - xyzcen(3,iel)
 
   do isou = 1, 3
-    rvdis(isou,ipt) = vela(isou,iel) + gradv(isou,1,iel)*dx       &
-                                     + gradv(isou,2,iel)*dy       &
-                                     + gradv(isou,3,iel)*dz
+    rvdis(isou,ipt) = vela(isou,iel) + gradv(1,isou,iel)*dx       &
+                                     + gradv(2,isou,iel)*dy       &
+                                     + gradv(3,isou,iel)*dz
   enddo
 
 enddo

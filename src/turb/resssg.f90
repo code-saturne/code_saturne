@@ -60,7 +60,7 @@
 !> \param[in]     propce        physical properties at cell centers
 !> \param[in,out] propfb        physical properties at boundary face centers
 !> \param[in]     coefa, coefb  boundary conditions
-!> \param[in]     grdvit        tableau de travail pour terme grad
+!> \param[in]     gradv         tableau de travail pour terme grad
 !>                                 de vitesse     uniqt pour iturb=31
 !> \param[in]     produc        tableau de travail pour production
 !> \param[in]     gradro        tableau de travail pour grad rom
@@ -83,7 +83,7 @@ subroutine resssg &
    ivar   , isou   , ipp    ,                                     &
    icepdc , icetsm , itpsmp ,                                     &
    dt     , rtp    , rtpa   , propce , propfb ,                   &
-   coefa  , coefb  , grdvit , gradro ,                            &
+   coefa  , coefb  , gradv  , gradro ,                            &
    ckupdc , smcelp , gamma  ,                                     &
    viscf  , viscb  ,                                              &
    tslage , tslagi ,                                              &
@@ -126,7 +126,7 @@ integer          icetsm(ncesmp), itpsmp(ncesmp)
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
-double precision grdvit(ncelet,3,3)
+double precision gradv(3, 3, ncelet)
 double precision gradro(ncelet,3)
 double precision ckupdc(ncepdp,6)
 double precision smcelp(ncesmp), gamma(ncesmp)
@@ -247,16 +247,16 @@ enddo
 !===============================================================================
 ! 2. User source terms
 !===============================================================================
-!(le deuxieme argument GRDVIT est lu en PRODUC dans ustsri, mais ce
+!(le deuxieme argument gradv est lu en PRODUC dans ustsri, mais ce
 ! tableau n'est dimensionne et utilise qu'en modele Rij standard)
 
-call ustsri                                                       &
+call ustsri &
 !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   ,                                                       &
    icepdc , icetsm , itpsmp ,                                     &
    dt     , rtpa   , propce , propfb ,                            &
-   ckupdc , smcelp , gamma  , grdvit , grdvit ,                   &
+   ckupdc , smcelp , gamma  , gradv  , gradv ,                    &
    smbr   , rovsdt )
 
 !     Si on extrapole les T.S.
@@ -446,33 +446,33 @@ do iel=1,ncel
   endif
 
   ! Pij
-  xprod(1,1) = -2.0d0*(rtpa(iel,ir11)*grdvit(iel,1,1) +         &
-                       rtpa(iel,ir12)*grdvit(iel,2,1) +         &
-                       rtpa(iel,ir13)*grdvit(iel,3,1) )
-  xprod(1,2) = -(      rtpa(iel,ir11)*grdvit(iel,1,2) +         &
-                       rtpa(iel,ir12)*grdvit(iel,2,2) +         &
-                       rtpa(iel,ir13)*grdvit(iel,3,2) )         &
-               -(      rtpa(iel,ir12)*grdvit(iel,1,1) +         &
-                       rtpa(iel,ir22)*grdvit(iel,2,1) +         &
-                       rtpa(iel,ir23)*grdvit(iel,3,1) )
-  xprod(1,3) = -(      rtpa(iel,ir11)*grdvit(iel,1,3) +         &
-                       rtpa(iel,ir12)*grdvit(iel,2,3) +         &
-                       rtpa(iel,ir13)*grdvit(iel,3,3) )         &
-               -(      rtpa(iel,ir13)*grdvit(iel,1,1) +         &
-                       rtpa(iel,ir23)*grdvit(iel,2,1) +         &
-                       rtpa(iel,ir33)*grdvit(iel,3,1) )
-  xprod(2,2) = -2.0d0*(rtpa(iel,ir12)*grdvit(iel,1,2) +         &
-                       rtpa(iel,ir22)*grdvit(iel,2,2) +         &
-                       rtpa(iel,ir23)*grdvit(iel,3,2) )
-  xprod(2,3) = -(      rtpa(iel,ir12)*grdvit(iel,1,3) +         &
-                       rtpa(iel,ir22)*grdvit(iel,2,3) +         &
-                       rtpa(iel,ir23)*grdvit(iel,3,3) )         &
-               -(      rtpa(iel,ir13)*grdvit(iel,1,2) +         &
-                       rtpa(iel,ir23)*grdvit(iel,2,2) +         &
-                       rtpa(iel,ir33)*grdvit(iel,3,2) )
-  xprod(3,3) = -2.0d0*(rtpa(iel,ir13)*grdvit(iel,1,3) +         &
-                       rtpa(iel,ir23)*grdvit(iel,2,3) +         &
-                       rtpa(iel,ir33)*grdvit(iel,3,3) )
+  xprod(1,1) = -2.0d0*(rtpa(iel,ir11)*gradv(1, 1, iel) +         &
+                       rtpa(iel,ir12)*gradv(2, 1, iel) +         &
+                       rtpa(iel,ir13)*gradv(3, 1, iel) )
+  xprod(1,2) = -(      rtpa(iel,ir11)*gradv(1, 2, iel) +         &
+                       rtpa(iel,ir12)*gradv(2, 2, iel) +         &
+                       rtpa(iel,ir13)*gradv(3, 2, iel) )         &
+               -(      rtpa(iel,ir12)*gradv(1, 1, iel) +         &
+                       rtpa(iel,ir22)*gradv(2, 1, iel) +         &
+                       rtpa(iel,ir23)*gradv(3, 1, iel) )
+  xprod(1,3) = -(      rtpa(iel,ir11)*gradv(1, 3, iel) +         &
+                       rtpa(iel,ir12)*gradv(2, 3, iel) +         &
+                       rtpa(iel,ir13)*gradv(3, 3, iel) )         &
+               -(      rtpa(iel,ir13)*gradv(1, 1, iel) +         &
+                       rtpa(iel,ir23)*gradv(2, 1, iel) +         &
+                       rtpa(iel,ir33)*gradv(3, 1, iel) )
+  xprod(2,2) = -2.0d0*(rtpa(iel,ir12)*gradv(1, 2, iel) +         &
+                       rtpa(iel,ir22)*gradv(2, 2, iel) +         &
+                       rtpa(iel,ir23)*gradv(3, 2, iel) )
+  xprod(2,3) = -(      rtpa(iel,ir12)*gradv(1, 3, iel) +         &
+                       rtpa(iel,ir22)*gradv(2, 3, iel) +         &
+                       rtpa(iel,ir23)*gradv(3, 3, iel) )         &
+               -(      rtpa(iel,ir13)*gradv(1, 2, iel) +         &
+                       rtpa(iel,ir23)*gradv(2, 2, iel) +         &
+                       rtpa(iel,ir33)*gradv(3, 2, iel) )
+  xprod(3,3) = -2.0d0*(rtpa(iel,ir13)*gradv(1, 3, iel) +         &
+                       rtpa(iel,ir23)*gradv(2, 3, iel) +         &
+                       rtpa(iel,ir33)*gradv(3, 3, iel) )
 
   ! Rotating frame of reference => "Coriolis production" term
   if (icorio.eq.1) then
@@ -510,22 +510,22 @@ do iel=1,ncel
   xaniso(3,1) = xaniso(1,3)
   xaniso(3,2) = xaniso(2,3)
   ! Sij
-  xstrai(1,1) = grdvit(iel,1,1)
-  xstrai(1,2) = d1s2*(grdvit(iel,2,1)+grdvit(iel,1,2))
-  xstrai(1,3) = d1s2*(grdvit(iel,3,1)+grdvit(iel,1,3))
+  xstrai(1,1) = gradv(1, 1, iel)
+  xstrai(1,2) = d1s2*(gradv(2, 1, iel)+gradv(1, 2, iel))
+  xstrai(1,3) = d1s2*(gradv(3, 1, iel)+gradv(1, 3, iel))
   xstrai(2,1) = xstrai(1,2)
-  xstrai(2,2) = grdvit(iel,2,2)
-  xstrai(2,3) = d1s2*(grdvit(iel,3,2)+grdvit(iel,2,3))
+  xstrai(2,2) = gradv(2, 2, iel)
+  xstrai(2,3) = d1s2*(gradv(3, 2, iel)+gradv(2, 3, iel))
   xstrai(3,1) = xstrai(1,3)
   xstrai(3,2) = xstrai(2,3)
-  xstrai(3,3) = grdvit(iel,3,3)
+  xstrai(3,3) = gradv(3, 3, iel)
   ! omegaij
   xrotac(1,1) = 0.d0
-  xrotac(1,2) = d1s2*(grdvit(iel,2,1)-grdvit(iel,1,2))
-  xrotac(1,3) = d1s2*(grdvit(iel,3,1)-grdvit(iel,1,3))
+  xrotac(1,2) = d1s2*(gradv(2, 1, iel)-gradv(1, 2, iel))
+  xrotac(1,3) = d1s2*(gradv(3, 1, iel)-gradv(1, 3, iel))
   xrotac(2,1) = -xrotac(1,2)
   xrotac(2,2) = 0.d0
-  xrotac(2,3) = d1s2*(grdvit(iel,3,2)-grdvit(iel,2,3))
+  xrotac(2,3) = d1s2*(gradv(3, 2, iel)-gradv(2, 3, iel))
   xrotac(3,1) = -xrotac(1,3)
   xrotac(3,2) = -xrotac(2,3)
   xrotac(3,3) = 0.d0

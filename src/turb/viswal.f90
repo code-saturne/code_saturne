@@ -161,13 +161,14 @@ tiers  = 1.d0/3.d0
 !===============================================================================
 
 ! Allocate temporary arrays for gradients calculation
-allocate(gradv(ncelet,3,3))
+allocate(gradv(3,3,ncelet))
 
 iccocg = 1
 inc = 1
 
 ilved = .false.
 
+! WARNING: gradv(xyz, uvw, iel)
 call grdvec &
 !==========
 ( iu  , imrgra , inc    ,                               &
@@ -195,15 +196,15 @@ do iel = 1, ncel
 
   ! Dudx is interleaved, but not gradv...
   ! gradv(iel, xyz, uvw)
-  dudx(1,1) = gradv(iel,1,1)
-  dudx(1,2) = gradv(iel,2,1)
-  dudx(1,3) = gradv(iel,3,1)
-  dudx(2,1) = gradv(iel,1,2)
-  dudx(2,2) = gradv(iel,2,2)
-  dudx(2,3) = gradv(iel,3,2)
-  dudx(3,1) = gradv(iel,1,3)
-  dudx(3,2) = gradv(iel,2,3)
-  dudx(3,3) = gradv(iel,3,3)
+  dudx(1,1) = gradv(1,1,iel)
+  dudx(1,2) = gradv(2,1,iel)
+  dudx(1,3) = gradv(3,1,iel)
+  dudx(2,1) = gradv(1,2,iel)
+  dudx(2,2) = gradv(2,2,iel)
+  dudx(2,3) = gradv(3,2,iel)
+  dudx(3,1) = gradv(1,3,iel)
+  dudx(3,2) = gradv(2,3,iel)
+  dudx(3,3) = gradv(3,3,iel)
 
   s  = 0.d0
   sd = 0.d0

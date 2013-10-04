@@ -456,9 +456,9 @@ if (nswrgu.gt.1) then
 
                !  --->     ->    -->      ->
                ! (Grad(rho U ) . OFij ) . Sij
-               + 0.5d0*(grdqdm(isou,1,ii) +grdqdm(isou,1,jj))*dofx   &
-               + 0.5d0*(grdqdm(isou,2,ii) +grdqdm(isou,2,jj))*dofy   &
-               + 0.5d0*(grdqdm(isou,3,ii) +grdqdm(isou,3,jj))*dofz   &
+               + 0.5d0*(grdqdm(1,isou,ii) +grdqdm(1,isou,jj))*dofx   &
+               + 0.5d0*(grdqdm(2,isou,ii) +grdqdm(2,isou,jj))*dofy   &
+               + 0.5d0*(grdqdm(3,isou,ii) +grdqdm(3,isou,jj))*dofz   &
                )*surfac(isou,ifac)
         enddo
 
@@ -491,9 +491,9 @@ if (nswrgu.gt.1) then
             do jsou = 1, 3
 
               pip =  romb(ifac)*vel(jsou,ii)                &
-                   + grdqdm(jsou,1,ii)*diipbx               &
-                   + grdqdm(jsou,2,ii)*diipby               &
-                   + grdqdm(jsou,3,ii)*diipbz
+                   + grdqdm(1,jsou,ii)*diipbx               &
+                   + grdqdm(2,jsou,ii)*diipby               &
+                   + grdqdm(3,jsou,ii)*diipbz
 
               pfac = pfac + coefbv(isou,jsou,ifac)*pip
 
@@ -529,9 +529,9 @@ if (nswrgu.gt.1) then
             do jsou = 1, 3
 
               pip = vel(jsou,ii)                           &
-                  + grdqdm(jsou,1,ii)*diipbx               &
-                  + grdqdm(jsou,2,ii)*diipby               &
-                  + grdqdm(jsou,3,ii)*diipbz
+                  + grdqdm(1,jsou,ii)*diipbx               &
+                  + grdqdm(2,jsou,ii)*diipby               &
+                  + grdqdm(3,jsou,ii)*diipbz
 
               pfac = pfac + coefbv(isou,jsou,ifac)*pip
 

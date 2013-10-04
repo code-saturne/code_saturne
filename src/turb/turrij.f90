@@ -119,7 +119,7 @@ logical          ilved
 
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: smbr, rovsdt
-double precision, allocatable, dimension(:,:,:) :: grdvel
+double precision, allocatable, dimension(:,:,:) :: gradv
 double precision, allocatable, dimension(:,:) :: produc
 double precision, allocatable, dimension(:,:) :: gradro
 
@@ -136,7 +136,7 @@ double precision, pointer, dimension(:) :: tslage => null(), tslagi => null()
 ! Allocate temporary arrays for the turbulence resolution
 allocate(viscf(nfac), viscb(nfabor))
 allocate(smbr(ncelet), rovsdt(ncelet))
-allocate(grdvel(ncelet,3,3))
+allocate(gradv(3, 3, ncelet))
 
 ! Allocate other arrays, depending on user options
 if (iturb.eq.30) then
@@ -162,7 +162,6 @@ endif
 
 !===============================================================================
 ! 2.1 Compute the velocity gradient
-! WARNING: grdvel(iel, xyz, uvw)
 !===============================================================================
 
 iccocg = 1
@@ -177,6 +176,7 @@ extrap = extrag(iu)
 
 ilved = .false.
 
+! WARNING: gradv(xyz, uvw, iel)
 call grdvec &
 !==========
 ( iu     , imrgra , inc    , nswrgp , imligp ,                   &
@@ -184,7 +184,7 @@ call grdvec &
   epsrgp , climgp , extrap ,                                     &
   ilved  ,                                                       &
   rtpa(1,iu) ,  coefau , coefbu,                                 &
-  grdvel  )
+  gradv  )
 
 !===============================================================================
 ! 2.2 Compute the production term for Rij LRR (iturb =30)
@@ -202,54 +202,54 @@ if (iturb.eq.30) then
 
     ! grad u
 
-    produc(1,iel) = produc(1,iel)                                &
-                  - 2.0d0*(rtpa(iel,ir11)*grdvel(iel,1,1) +      &
-                           rtpa(iel,ir12)*grdvel(iel,2,1) +      &
-                           rtpa(iel,ir13)*grdvel(iel,3,1) )
+    produc(1,iel) = produc(1,iel)                                  &
+                  - 2.0d0*(rtpa(iel,ir11)*gradv(1, 1, iel) +       &
+                           rtpa(iel,ir12)*gradv(2, 1, iel) +       &
+                           rtpa(iel,ir13)*gradv(3, 1, iel) )
 
-    produc(4,iel) = produc(4,iel)                                 &
-                  - (rtpa(iel,ir12)*grdvel(iel,1,1) +             &
-                     rtpa(iel,ir22)*grdvel(iel,2,1) +             &
-                     rtpa(iel,ir23)*grdvel(iel,3,1) )
+    produc(4,iel) = produc(4,iel)                                  &
+                  - (rtpa(iel,ir12)*gradv(1, 1, iel) +             &
+                     rtpa(iel,ir22)*gradv(2, 1, iel) +             &
+                     rtpa(iel,ir23)*gradv(3, 1, iel) )
 
-    produc(5,iel) = produc(5,iel)                                 &
-                  - (rtpa(iel,ir13)*grdvel(iel,1,1) +             &
-                     rtpa(iel,ir23)*grdvel(iel,2,1) +             &
-                     rtpa(iel,ir33)*grdvel(iel,3,1) )
+    produc(5,iel) = produc(5,iel)                                  &
+                  - (rtpa(iel,ir13)*gradv(1, 1, iel) +             &
+                     rtpa(iel,ir23)*gradv(2, 1, iel) +             &
+                     rtpa(iel,ir33)*gradv(3, 1, iel) )
 
     ! grad v
 
-    produc(2,iel) = produc(2,iel)                                 &
-                  - 2.0d0*(rtpa(iel,ir12)*grdvel(iel,1,2) +       &
-                           rtpa(iel,ir22)*grdvel(iel,2,2) +       &
-                           rtpa(iel,ir23)*grdvel(iel,3,2) )
+    produc(2,iel) = produc(2,iel)                                  &
+                  - 2.0d0*(rtpa(iel,ir12)*gradv(1, 2, iel) +       &
+                           rtpa(iel,ir22)*gradv(2, 2, iel) +       &
+                           rtpa(iel,ir23)*gradv(3, 2, iel) )
 
-    produc(4,iel) = produc(4,iel)                                 &
-                  - (rtpa(iel,ir11)*grdvel(iel,1,2) +             &
-                     rtpa(iel,ir12)*grdvel(iel,2,2) +             &
-                     rtpa(iel,ir13)*grdvel(iel,3,2) )
+    produc(4,iel) = produc(4,iel)                                  &
+                  - (rtpa(iel,ir11)*gradv(1, 2, iel) +             &
+                     rtpa(iel,ir12)*gradv(2, 2, iel) +             &
+                     rtpa(iel,ir13)*gradv(3, 2, iel) )
 
-    produc(6,iel) = produc(6,iel)                                 &
-                  - (rtpa(iel,ir13)*grdvel(iel,1,2) +             &
-                     rtpa(iel,ir23)*grdvel(iel,2,2) +             &
-                     rtpa(iel,ir33)*grdvel(iel,3,2) )
+    produc(6,iel) = produc(6,iel)                                  &
+                  - (rtpa(iel,ir13)*gradv(1, 2, iel) +             &
+                     rtpa(iel,ir23)*gradv(2, 2, iel) +             &
+                     rtpa(iel,ir33)*gradv(3, 2, iel) )
 
     ! grad w
 
-    produc(3,iel) = produc(3,iel)                                 &
-                  - 2.0d0*(rtpa(iel,ir13)*grdvel(iel,1,3) +       &
-                           rtpa(iel,ir23)*grdvel(iel,2,3) +       &
-                           rtpa(iel,ir33)*grdvel(iel,3,3) )
+    produc(3,iel) = produc(3,iel)                                  &
+                  - 2.0d0*(rtpa(iel,ir13)*gradv(1, 3, iel) +       &
+                           rtpa(iel,ir23)*gradv(2, 3, iel) +       &
+                           rtpa(iel,ir33)*gradv(3, 3, iel) )
 
-    produc(5,iel) = produc(5,iel)                                 &
-                  - (rtpa(iel,ir11)*grdvel(iel,1,3) +             &
-                     rtpa(iel,ir12)*grdvel(iel,2,3) +             &
-                     rtpa(iel,ir13)*grdvel(iel,3,3) )
+    produc(5,iel) = produc(5,iel)                                  &
+                  - (rtpa(iel,ir11)*gradv(1, 3, iel) +             &
+                     rtpa(iel,ir12)*gradv(2, 3, iel) +             &
+                     rtpa(iel,ir13)*gradv(3, 3, iel) )
 
-    produc(6,iel) = produc(6,iel)                                 &
-                  - (rtpa(iel,ir12)*grdvel(iel,1,3) +             &
-                     rtpa(iel,ir22)*grdvel(iel,2,3) +             &
-                     rtpa(iel,ir23)*grdvel(iel,3,3) )
+    produc(6,iel) = produc(6,iel)                                  &
+                  - (rtpa(iel,ir12)*gradv(1, 3, iel) +             &
+                     rtpa(iel,ir22)*gradv(2, 3, iel) +             &
+                     rtpa(iel,ir23)*gradv(3, 3, iel) )
 
   enddo
 
@@ -358,7 +358,7 @@ do isou = 1, 6
    ivar   , isou   , ipp    ,                                     &
    icepdc , icetsm , itpsmp ,                                     &
    dt     , rtp    , rtpa   , propce , propfb ,                   &
-   coefa  , coefb  , grdvel , gradro ,                            &
+   coefa  , coefb  , gradv  , gradro ,                            &
    ckupdc , smcelp , gammap ,                                     &
    viscf  , viscb  ,                                              &
    tslage , tslagi ,                                              &
@@ -387,7 +387,7 @@ call reseps &
    ivar   , isou   , ipp    ,                                     &
    icepdc , icetsm , itpsmp ,                                     &
    dt     , rtp    , rtpa   , propce , propfb ,                   &
-   coefa  , coefb  , grdvel , produc , gradro ,                   &
+   coefa  , coefb  , gradv  , produc , gradro ,                   &
    ckupdc , smcelp , gammap ,                                     &
    viscf  , viscb  ,                                              &
    tslagr ,                                                       &
@@ -415,7 +415,7 @@ deallocate(viscf, viscb)
 deallocate(smbr, rovsdt)
 if (allocated(gradro)) deallocate(gradro)
 if (allocated(produc)) deallocate(produc)
-deallocate(grdvel)
+deallocate(gradv)
 
 !--------
 ! Formats

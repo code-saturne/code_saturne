@@ -1065,7 +1065,7 @@ subroutine ustsri &
    ivar   ,                                                       &
    icepdc , icetsm , itpsmp ,                                     &
    dt     , rtpa   , propce , propfb ,                            &
-   ckupdc , smcelp , gamma  , grdvit , produc ,                   &
+   ckupdc , smcelp , gamma  , gradv  , produc ,                   &
    crvexp , crvimp )
 
 !===============================================================================
@@ -1118,16 +1118,16 @@ subroutine ustsri &
 !          produc(6,ncelet) = (P11, P22, P33, P12, P13, P23)
 !          with Pij=-Rik.dUj/dxk - Rjk.dUi/dxk
 !
-!   grdvit is the
-!          grdvit(ncelet,j,i) = dUi/dxj
+!   gradv is the
+!          gradv(j,i,ncelet) = dUi/dxj
 
 
 ! WARNING
 ! =======
 ! produc is only allocated and defined for the Rij-LRR model (ITURB=30)
-! grdvit is only allocated and defined for the Rij-SSG model (ITURB=31)
+! gradv is only allocated and defined for the Rij-SSG model (ITURB=31)
 ! DO NOT USE produc WITH THE SSG MODEL
-! DO NOT USE grdvit WITH THE LRR MODEL
+! DO NOT USE gradv WITH THE LRR MODEL
 
 
 !
@@ -1159,7 +1159,7 @@ subroutine ustsri &
 ! smcelp(ncelet)   ! ra ! <-- ! value of variable ivar associated to mass      !
 !                  ! ra !     !  source term (see ustsma)                      !
 ! gamma(ncelet)    ! ra ! <-- ! volumic rate of mass source term               !
-! grdvit(ncelet,3,3! ra ! <-- ! velocity gradient (only for iturb=31)          !
+! gradv            ! ra ! <-- ! velocity gradient (only for iturb=31)          !
 ! produc(6,ncelet) ! ra ! <-- ! turbulent production term (only for iturb=30)  !
 ! crvexp           ! ra ! --> ! explicit part of the source term               !
 ! crvimp           ! ra ! --> ! implicit part of the source term               !
@@ -1201,7 +1201,7 @@ double precision propce(ncelet,*)
 double precision propfb(nfabor,*)
 double precision ckupdc(ncepdp,6)
 double precision smcelp(ncesmp), gamma(ncesmp)
-double precision grdvit(ncelet,3,3), produc(6,ncelet)
+double precision gradv(3, 3, ncelet), produc(6,ncelet)
 double precision crvexp(ncelet), crvimp(ncelet)
 
 ! Local variables

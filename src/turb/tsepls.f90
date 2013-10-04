@@ -94,7 +94,7 @@ double precision, allocatable, dimension(:,:,:) :: gradv
 !===============================================================================
 
 ! Allocate a temporary for the gradient calculation
-allocate(gradv(ncelet,3,3))
+allocate(gradv(3, 3, ncelet))
 
 ! Allocate work arrays
 allocate(w7(ncelet))
@@ -119,10 +119,9 @@ extrap = extrag(iu)
 
 iphydp = 0
 
-! gradv(iel, xyz, uvw)
-
 ilved = .false.
 
+! WARNING: gradv(xyz, uvw, iel)
 call grdvec &
 !==========
 ( iu     , imrgra , inc    , nswrgp , imligp ,                   &
@@ -144,9 +143,9 @@ do isou = 1, 3
     ii = ifacel(1,ifac)
     jj = ifacel(2,ifac)
     pnd = pond(ifac)
-    w1f = pnd * gradv(ii,1,isou) + (1.0d0 - pnd) * gradv(jj,1,isou)
-    w2f = pnd * gradv(ii,2,isou) + (1.0d0 - pnd) * gradv(jj,2,isou)
-    w3f = pnd * gradv(ii,3,isou) + (1.0d0 - pnd) * gradv(jj,3,isou)
+    w1f = pnd * gradv(1, isou, ii) + (1.0d0 - pnd) * gradv(1, isou, jj)
+    w2f = pnd * gradv(2, isou, ii) + (1.0d0 - pnd) * gradv(2, isou, jj)
+    w3f = pnd * gradv(3, isou, ii) + (1.0d0 - pnd) * gradv(3, isou, jj)
 
     somsur = surfac(1,ifac) + surfac(2,ifac) + surfac(3,ifac)
 
@@ -160,9 +159,9 @@ do isou = 1, 3
   do ifac = 1, nfabor
 
     ii = ifabor(ifac)
-    w1f = gradv(ii,1,isou)
-    w2f = gradv(ii,2,isou)
-    w3f = gradv(ii,3,isou)
+    w1f = gradv(1, isou, ii)
+    w2f = gradv(2, isou, ii)
+    w3f = gradv(3, isou, ii)
     somsur = surfbo(1,ifac) + surfbo(2,ifac) + surfbo(3,ifac)
     flux = (w1f + w2f + w3f)*somsur
     w7(ii) = w7(ii) + flux

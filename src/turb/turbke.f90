@@ -247,7 +247,7 @@ d1s3 = 1.d0/3.d0
 !===============================================================================
 
 ! Allocate temporary arrays for gradients calculation
-allocate(gradv(ncelet,3,3))
+allocate(gradv(3, 3, ncelet))
 
 iccocg = 1
 inc = 1
@@ -261,6 +261,7 @@ extrap = extrag(iu)
 
 ilved = .false.
 
+! WARNING: gradv(xyz, uvw, iel)
 call grdvec &
 !==========
 ( iu     , imrgra , inc    , nswrgp , imligp ,                   &
@@ -278,15 +279,15 @@ call grdvec &
 do iel = 1, ncel
 
   strain(iel) = 2.d0                                                           &
-    *( ( d2s3*gradv(iel,1,1) - d1s3*gradv(iel,2,2) - d1s3*gradv(iel,3,3))**2   &
-     + (-d1s3*gradv(iel,1,1) + d2s3*gradv(iel,2,2) - d1s3*gradv(iel,3,3))**2   &
-     + (-d1s3*gradv(iel,1,1) - d1s3*gradv(iel,2,2) + d2s3*gradv(iel,3,3))**2   &
+    *( ( d2s3*gradv(1, 1, iel)-d1s3*gradv(2, 2, iel)-d1s3*gradv(3, 3, iel))**2 &
+     + (-d1s3*gradv(1, 1, iel)+d2s3*gradv(2, 2, iel)-d1s3*gradv(3, 3, iel))**2 &
+     + (-d1s3*gradv(1, 1, iel)-d1s3*gradv(2, 2, iel)+d2s3*gradv(3, 3, iel))**2 &
      )                                                                         &
-    + (gradv(iel,2,1) + gradv(iel,1,2))**2                                     &
-    + (gradv(iel,3,1) + gradv(iel,1,3))**2                                     &
-    + (gradv(iel,3,2) + gradv(iel,2,3))**2
+    + (gradv(2, 1, iel) + gradv(1, 2, iel))**2                                 &
+    + (gradv(3, 1, iel) + gradv(1, 3, iel))**2                                 &
+    + (gradv(3, 2, iel) + gradv(2, 3, iel))**2
 
-  divu(iel) = gradv(iel,1,1) + gradv(iel,2,2) + gradv(iel,3,3)
+  divu(iel) = gradv(1, 1, iel) + gradv(2, 2, iel) + gradv(3, 3, iel)
 
 enddo
 

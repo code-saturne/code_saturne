@@ -109,40 +109,40 @@ CS_PROCF (aldepl, ALDEPL)(const cs_int_t    i_face_cells[],
  *
  * Fortran Interface
  *
- * SUBROUTINE ALEDIS
+ * subroutine aledis
  * *****************
  *
- * INTEGER         IFACEL(2,NFAC)    : --> : Interior faces -> cells connectivity
- * INTEGER         IFABOR(NFABOR)    : --> : Border faces -> cells connectivity
- * INTEGER         IPNFAC(NFAC+1)    : --> : Interior faces -> vertices index
- * INTEGER         NODFAC(LNDFAC)    : --> : Interior faces -> vertices list
- * INTEGER         IPNFBR(NFABOR+1)  : --> : Border faces -> vertices index
- * INTEGER         NODFBR(LNDFBR)    : --> : Border faces -> vertices list
- * INTEGER         IALTYB(NFABOR)    : --> : Type of boundary for ALE
- * DOUBLE PRECISION POND(NFAC)       : --> : Interior faces geometric weight
- * DOUBLE PRECISION MESHV(3,NCELET)  : --> : Mesh velocity
- * DOUBLE PRECISION GRADM(3,3,NCELET): --> : Mesh velocity gradient
- * DOUBLE PRECISION CLAALE(3,NCELET) : --> : Boundary conditions A
- * DOUBLE PRECISION CLBALE(3,3,NECLET: --> : Boundary conditions B
- * DOUBLE PRECISION DT(NCELET)       : --> : Time step
- * DOUBLE PRECISION DEPROJ(NNOD,3))  : <-- : Displacement projected on vertices
+ * ifacel            : <-- : Interior faces -> cells connectivity
+ * ifabor            : <-- : Border faces -> cells connectivity
+ * ipnfac            : <-- : Interior faces -> vertices index
+ * nodfac            : <-- : Interior faces -> vertices list
+ * ipnfbr            : <-- : Border faces -> vertices index
+ * nodfbr            : <-- : Border faces -> vertices list
+ * ialtyb            : <-- : Type of boundary for ALE
+ * pond              : <-- : Interior faces geometric weight
+ * meshv             : <-- : Mesh velocity
+ * gradm             : <-- : Mesh velocity gradient (du_i/dx_j : gradv[][i][j])
+ * claale            : <-- : Boundary conditions A
+ * clbale            : <-- : Boundary conditions B
+ * dt                : <-- : Time step
+ * deproj            : --> : Displacement projected on vertices
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (aledis, ALEDIS)(const cs_int_t    i_face_cells[],
-                          const cs_int_t    b_face_cells[],
-                          const cs_int_t    i_face_vtx_idx[],
-                          const cs_int_t    i_face_vtx_lst[],
-                          const cs_int_t    b_face_vtx_idx[],
-                          const cs_int_t    b_face_vtx_lst[],
-                          const cs_int_t    ialtyb[],
-                          const cs_real_t   pond[],
-                          cs_real_t        *meshv,
-                          cs_real_t        *gradm,
-                          cs_real_t        *claale,
-                          cs_real_t        *clbale,
-                          cs_real_t        *dt,
-                          cs_real_t        *disp_proj);
+CS_PROCF (aledis, ALEDIS)(const cs_int_t      i_face_cells[],
+                          const cs_int_t      b_face_cells[],
+                          const cs_int_t      i_face_vtx_idx[],
+                          const cs_int_t      i_face_vtx_lst[],
+                          const cs_int_t      b_face_vtx_idx[],
+                          const cs_int_t      b_face_vtx_lst[],
+                          const cs_int_t      ialtyb[],
+                          const cs_real_t     opond[],
+                          const cs_real_t    *meshv,
+                          const cs_real_33_t  gradm[],
+                          const cs_real_t    *claale,
+                          const cs_real_t    *clbale,
+                          const cs_real_t    *dt,
+                          cs_real_t          *disp_proj);
 
 /*----------------------------------------------------------------------------*/
 

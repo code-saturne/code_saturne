@@ -649,7 +649,7 @@ if (iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0) then
   if(ntcabs.gt.1) then
 
     ! Allocate a temporary array
-    allocate(gradv(ncelet,3,3))
+    allocate(gradv(3,3,ncelet))
 
     iccocg = 1
     inc    = 1
@@ -680,9 +680,9 @@ if (iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0) then
 
       do ifac = 1, nfabor
         iel = ifabor(ifac)
-        velipb(ifac,isou) = gradv(iel,1,isou)*diipb(1,ifac)    &
-                          + gradv(iel,2,isou)*diipb(2,ifac)    &
-                          + gradv(iel,3,isou)*diipb(3,ifac)    &
+        velipb(ifac,isou) = gradv(1,isou,iel)*diipb(1,ifac)    &
+                          + gradv(2,isou,iel)*diipb(2,ifac)    &
+                          + gradv(3,isou,iel)*diipb(3,ifac)    &
                           + rtpa(iel,ivar)
       enddo
     enddo

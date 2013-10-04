@@ -83,7 +83,7 @@ integer          nscal , iscal
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision xcpp(ncelet), xut(3,ncelet), xuta(3,ncelet)
-double precision gradv(ncelet,3,3)
+double precision gradv(3,3,ncelet)
 double precision gradt(ncelet,3)
 
 ! Local variables
@@ -261,9 +261,9 @@ do iel = 1, ncel
 
   do isou = 1, 3
     phiith(isou) = -c1trit/xttke*xuta(isou,iel)                     &
-                 + c2trit*(xuta(1,iel)*gradv(iel,1,isou)            &
-                          +xuta(2,iel)*gradv(iel,2,isou)            &
-                          +xuta(3,iel)*gradv(iel,3,isou))           &
+                 + c2trit*(xuta(1,iel)*gradv(1,isou,iel)            &
+                          +xuta(2,iel)*gradv(2,isou,iel)            &
+                          +xuta(3,iel)*gradv(3,isou,iel))           &
                  + c4trit*(-xrij(isou,1)*gradt(iel,1)               &
                            -xrij(isou,2)*gradt(iel,2)               &
                            -xrij(isou,3)*gradt(iel,3))
@@ -279,16 +279,16 @@ do iel = 1, ncel
 
     fimp(isou,isou,iel) = fimp(isou,isou,iel) -                     &
                 volume(iel)*propce(iel,ipcrom)*(                    &
-              -c1trit/xttke+c2trit*gradv(iel,isou,isou) )
+              -c1trit/xttke+c2trit*gradv(isou,isou,iel) )
 
     ! Production terms
     !-----------------
     smbrut(isou,iel) = smbrut(isou,iel)                              &
                      + volume(iel)*propce(iel,ipcrom)                &
                        ! Production term due to the mean velcoity
-                       *( -xuta(1,iel)*gradv(iel,1,isou)             &
-                          -xuta(2,iel)*gradv(iel,2,isou)             &
-                          -xuta(3,iel)*gradv(iel,3,isou)             &
+                       *( -xuta(1,iel)*gradv(1,isou,iel)             &
+                          -xuta(2,iel)*gradv(2,isou,iel)             &
+                          -xuta(3,iel)*gradv(3,isou,iel)             &
                        ! Production term due to the mean temperature
                          -xrij(isou,1)*gradt(iel,1)                  &
                          -xrij(isou,2)*gradt(iel,2)                  &

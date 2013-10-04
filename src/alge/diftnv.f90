@@ -206,7 +206,7 @@ else
   do iel = 1, ncelet
     do isou =1, 3
       do jsou = 1, 3
-        gradv(isou,jsou,iel) = 0.d0
+        gradv(jsou,isou,iel) = 0.d0
       enddo
     enddo
   enddo
@@ -266,7 +266,7 @@ if (idtvar.lt.0) then
         do isou = 1, 3
 
           do jsou = 1, 3
-            dpvf(jsou) = 0.5d0*(gradv(isou,jsou,ii) + gradv(isou,jsou,jj))
+            dpvf(jsou) = 0.5d0*(gradv(jsou,isou,ii) + gradv(jsou,isou,jj))
           enddo
 
           pi  = pvar (isou,ii)
@@ -350,7 +350,7 @@ else
         do isou = 1, 3
 
           do jsou = 1, 3
-            dpvf(jsou) = 0.5d0*(gradv(isou,jsou,ii) + gradv(isou,jsou,jj))
+            dpvf(jsou) = 0.5d0*(gradv(jsou,isou,ii) + gradv(jsou,isou,jj))
           enddo
 
           pi = pvar(isou,ii)
@@ -412,9 +412,9 @@ if (idtvar.lt.0) then
           do jsou = 1, 3
             pir  = pvar(jsou,ii)/relaxp - (1.d0-relaxp)/relaxp*pvara(jsou,ii)
 
-            pipr(jsou) = pir +ircflp*( gradv(jsou,1,ii)*diipbv(1)         &
-                                     + gradv(jsou,2,ii)*diipbv(2)         &
-                                     + gradv(jsou,3,ii)*diipbv(3))
+            pipr(jsou) = pir +ircflp*( gradv(1,jsou,ii)*diipbv(1)         &
+                                     + gradv(2,jsou,ii)*diipbv(2)         &
+                                     + gradv(3,jsou,ii)*diipbv(3))
             pfacd = pfacd + cofbfv(isou,jsou,ifac)*pipr(jsou)
           enddo
 
@@ -451,9 +451,9 @@ else
 
           !coefu and cofuf are matrices
           do jsou = 1, 3
-            pir = pvar(jsou,ii) + ircflp*( gradv(jsou,1,ii)*diipbv(1)        &
-                                         + gradv(jsou,2,ii)*diipbv(2)        &
-                                         + gradv(jsou,3,ii)*diipbv(3))
+            pir = pvar(jsou,ii) + ircflp*( gradv(1,jsou,ii)*diipbv(1)        &
+                                         + gradv(2,jsou,ii)*diipbv(2)        &
+                                         + gradv(3,jsou,ii)*diipbv(3))
             pfacd = pfacd + cofbfv(isou,jsou,ifac)*pir
           enddo
 

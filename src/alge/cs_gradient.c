@@ -2214,7 +2214,7 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
  *   verbosity      <-- output level
  *   climgp         <-- clipping coefficient for the computation of the gradient
  *   pvar           <-- variable
- *   gradv          <-> gradient of pvar
+ *   gradv          <-> gradient of pvar (du_i/dx_j : gradv[][i][j])
  *   pvar           <-- variable
  *----------------------------------------------------------------------------*/
 
@@ -2317,13 +2317,13 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
 
           for (i = 0; i < 3; i++) {
 
-            grad_dist1[i] =   gradv[cell_id1][0][i] * dist[0]
-                            + gradv[cell_id1][1][i] * dist[1]
-                            + gradv[cell_id1][2][i] * dist[2];
+            grad_dist1[i] =   gradv[cell_id1][i][0] * dist[0]
+                            + gradv[cell_id1][i][1] * dist[1]
+                            + gradv[cell_id1][i][2] * dist[2];
 
-            grad_dist2[i] =   gradv[cell_id2][0][i] * dist[0]
-                            + gradv[cell_id2][1][i] * dist[1]
-                            + gradv[cell_id2][2][i] * dist[2];
+            grad_dist2[i] =   gradv[cell_id2][i][0] * dist[0]
+                            + gradv[cell_id2][i][1] * dist[1]
+                            + gradv[cell_id2][i][2] * dist[2];
 
           }
 
@@ -2370,9 +2370,9 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
             dist[i] = cell_cen[cell_id1][i] - cell_cen[cell_id2][i];
 
           for (i = 0; i < 3; i++)
-            grad_dist1[i] =   gradv[cell_id1][0][i] * dist[0]
-                            + gradv[cell_id1][1][i] * dist[1]
-                            + gradv[cell_id1][2][i] * dist[2];
+            grad_dist1[i] =   gradv[cell_id1][i][0] * dist[0]
+                            + gradv[cell_id1][i][1] * dist[1]
+                            + gradv[cell_id1][i][2] * dist[2];
 
 
           dist_sq1 =   grad_dist1[0]*grad_dist1[0]
@@ -2419,9 +2419,9 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
 
           for (i = 0; i < 3; i++)
             grad_dist1[i]
-              = 0.5 * (  (gradv[cell_id1][0][i]+gradv[cell_id2][0][i])*dist[0]
-                       + (gradv[cell_id1][1][i]+gradv[cell_id2][1][i])*dist[1]
-                       + (gradv[cell_id1][2][i]+gradv[cell_id2][2][i])*dist[2]);
+              = 0.5 * (  (gradv[cell_id1][i][0]+gradv[cell_id2][i][0])*dist[0]
+                       + (gradv[cell_id1][i][1]+gradv[cell_id2][i][1])*dist[1]
+                       + (gradv[cell_id1][i][2]+gradv[cell_id2][i][2])*dist[2]);
 
           dist_sq1 =   grad_dist1[0]*grad_dist1[0]
                      + grad_dist1[1]*grad_dist1[1]
@@ -2463,9 +2463,9 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
 
           for (i = 0; i < 3; i++)
             grad_dist1[i]
-              = 0.5 * (  (gradv[cell_id1][0][i]+gradv[cell_id2][0][i])*dist[0]
-                       + (gradv[cell_id1][1][i]+gradv[cell_id2][1][i])*dist[1]
-                       + (gradv[cell_id1][2][i]+gradv[cell_id2][2][i])*dist[2]);
+              = 0.5 * (  (gradv[cell_id1][i][0]+gradv[cell_id2][i][0])*dist[0]
+                       + (gradv[cell_id1][i][1]+gradv[cell_id2][i][1])*dist[1]
+                       + (gradv[cell_id1][i][2]+gradv[cell_id2][i][2])*dist[2]);
 
           dist_sq1 =   grad_dist1[0]*grad_dist1[0]
                      + grad_dist1[1]*grad_dist1[1]
@@ -2701,6 +2701,7 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
  *   coefav         <-- B.C. coefficients for boundary face normals
  *   coefbv         <-- B.C. coefficients for boundary face normals
  *   pvar           <-- variable
+ *   gradv          --> gradient of pvar (du_i/dx_j : gradv[][i][j])
  *----------------------------------------------------------------------------*/
 
 static void
@@ -2753,9 +2754,9 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
 
 # pragma omp parallel for private(i, j)
   for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
-    for (j = 0; j < 3; j++) {
-      for (i = 0; i < 3; i++)
-        gradv[cell_id][j][i] = 0.0;
+    for (i = 0; i < 3; i++) {
+      for (j = 0; j < 3; j++)
+        gradv[cell_id][i][j] = 0.0;
     }
   }
 
@@ -2781,8 +2782,8 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
         for (i = 0; i < 3; i++) {
           pfac   = pond * pvar[cell_id1][i] + (1.0-pond) * pvar[cell_id2][i];
           for (j = 0; j < 3; j++) {
-            gradv[cell_id1][j][i] += pfac * i_face_normal[face_id][j] * dvol1;
-            gradv[cell_id2][j][i] -= pfac * i_face_normal[face_id][j] * dvol2;
+            gradv[cell_id1][i][j] += pfac * i_face_normal[face_id][j] * dvol1;
+            gradv[cell_id2][i][j] -= pfac * i_face_normal[face_id][j] * dvol2;
           }
         }
 
@@ -2813,7 +2814,7 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
                  + coefbv[face_id][1][i] * pvar[cell_id][1]
                  + coefbv[face_id][2][i] * pvar[cell_id][2];
           for (j = 0; j < 3; j++)
-            gradv[cell_id][j][i] += pfac * b_face_normal[face_id][j]*dvol;
+            gradv[cell_id][i][j] += pfac * b_face_normal[face_id][j]*dvol;
         }
 
       } /* loop on faces */
@@ -2851,7 +2852,7 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
  *   coefav         <-- B.C. coefficients for boundary face normals
  *   coefbv         <-- B.C. coefficients for boundary face normals
  *   pvar           <-- variable
- *   gradv          <-> gradient of pvar
+ *   gradv          <-> gradient of pvar (du_i/dx_j : gradv[][i][j])
  *----------------------------------------------------------------------------*/
 
 static void
@@ -2924,9 +2925,9 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
 
 #     pragma omp parallel for private(i, j)
       for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
-        for (j = 0; j < 3; j++) {
-          for (i = 0; i < 3; i++)
-            rhs[cell_id][j][i] = -gradv[cell_id][j][i];
+        for (i = 0; i < 3; i++) {
+          for (j = 0; j < 3; j++)
+            rhs[cell_id][i][j] = -gradv[cell_id][i][j];
         }
       }
 
@@ -2953,12 +2954,12 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
               pfac = pond*pvar[cell_id1][i] + (1.0-pond)*pvar[cell_id2][i];
 
               for (k = 0; k < 3; k++)
-                pfac += 0.5 * (gradv[cell_id1][k][i] + gradv[cell_id2][k][i])
+                pfac += 0.5 * (gradv[cell_id1][i][k] + gradv[cell_id2][i][k])
                             * dofij[face_id][k];
 
               for (j = 0; j < 3; j++) {
-                rhs[cell_id1][j][i] += pfac * i_face_normal[face_id][j] * dvol1;
-                rhs[cell_id2][j][i] -= pfac * i_face_normal[face_id][j] * dvol2;
+                rhs[cell_id1][i][j] += pfac * i_face_normal[face_id][j] * dvol1;
+                rhs[cell_id2][i][j] -= pfac * i_face_normal[face_id][j] * dvol2;
               }
             }
 
@@ -2989,14 +2990,14 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
 
               for (k = 0; k < 3; k++) {
                 vecfac =   pvar[cell_id][k]
-                         + gradv[cell_id][0][k] * diipb[face_id][0]
-                         + gradv[cell_id][1][k] * diipb[face_id][1]
-                         + gradv[cell_id][2][k] * diipb[face_id][2];
+                         + gradv[cell_id][k][0] * diipb[face_id][0]
+                         + gradv[cell_id][k][1] * diipb[face_id][1]
+                         + gradv[cell_id][k][2] * diipb[face_id][2];
                 pfac += coefbv[face_id][k][i] * vecfac;
               }
 
               for (j = 0; j < 3; j++)
-                rhs[cell_id][j][i] += pfac * b_face_normal[face_id][j] * dvol;
+                rhs[cell_id][i][j] += pfac * b_face_normal[face_id][j] * dvol;
 
             }
 
@@ -3013,7 +3014,7 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
         for (j = 0; j < 3; j++) {
           for (i = 0; i < 3; i++) {
             for (k = 0; k < 3; k++)
-              gradv[cell_id][j][i] += rhs[cell_id][k][i] * cocg[cell_id][k][j];
+              gradv[cell_id][i][j] += rhs[cell_id][i][k] * cocg[cell_id][k][j];
           }
         }
       }
@@ -3065,7 +3066,7 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
  *   coefav         <-- B.C. coefficients for boundary face normals
  *   coefbv         <-- B.C. coefficients for boundary face normals
  *   pvar           <-- variable
- *   gradv          <-> gradient of pvar
+ *   gradv          --> gradient of pvar (du_i/dx_j : gradv[][i][j])
  *----------------------------------------------------------------------------*/
 
 static void
@@ -3156,8 +3157,8 @@ _lsq_vector_gradient(const cs_mesh_t              *m,
 
           for (j = 0; j < 3; j++) {
             fctb[j] = dc[j] * pfac;
-            rhs[cell_id1][j][i] += fctb[j];
-            rhs[cell_id2][j][i] += fctb[j];
+            rhs[cell_id1][i][j] += fctb[j];
+            rhs[cell_id2][i][j] += fctb[j];
           }
         }
 
@@ -3189,7 +3190,7 @@ _lsq_vector_gradient(const cs_mesh_t              *m,
           pfac = (pvar[cell_id2][i] - pvar[cell_id1][i]) * ddc;
 
           for (j = 0; j < 3; j++) {
-            rhs[cell_id1][j][i] += dc[j] * pfac;
+            rhs[cell_id1][i][j] += dc[j] * pfac;
           }
         }
       }
@@ -3223,7 +3224,7 @@ _lsq_vector_gradient(const cs_mesh_t              *m,
                  -                         pvar[cell_id1][i])) * ddc;
 
           for (j = 0; j < 3; j++)
-            rhs[cell_id1][j][i] += dc[j] * pfac;
+            rhs[cell_id1][i][j] += dc[j] * pfac;
         }
 
       } /* loop on faces */
@@ -3239,10 +3240,10 @@ _lsq_vector_gradient(const cs_mesh_t              *m,
     for (j = 0; j < 3; j++)
       for (i = 0; i < 3; i++) {
 
-        gradv[cell_id][j][i] = 0.0;
+        gradv[cell_id][i][j] = 0.0;
 
         for (k = 0; k < 3; k++)
-          gradv[cell_id][j][i] += rhs[cell_id][k][i] * cocg[cell_id][k][j];
+          gradv[cell_id][i][j] += rhs[cell_id][i][k] * cocg[cell_id][k][j];
 
       }
 
@@ -3401,7 +3402,8 @@ void CS_PROCF (cgdvec, CGDVEC)
  const cs_real_3_t             coefav[],  /* <-- boundary condition term      */
  const cs_real_33_t            coefbv[],  /* <-- boundary condition term      */
        cs_real_3_t             pvar[],    /* <-- gradient's base variable     */
-       cs_real_33_t            gradv[]    /* <-> gradient of the variable     */
+       cs_real_33_t            gradv[]    /* <-> gradient of the variable
+                                                 (du_i/dx_j : gradv[][i][j])  */
 )
 {
   char var_name[32];
@@ -3715,7 +3717,8 @@ void cs_gradient_scalar(const char                *var_name,
  * \param[in]       bc_coeff_a      boundary condition term a
  * \param[in]       bc_coeff_b      boundary condition term b
  * \param[in, out]  var             gradient's base variable
- * \param[out]      grad            gradient
+ * \param[out]      gradv           gradient
+                                    (\f$ \der{u_i}{x_j} \f$ is gradv[][i][j])
  */
 /*----------------------------------------------------------------------------*/
 

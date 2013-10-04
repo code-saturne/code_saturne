@@ -2014,7 +2014,7 @@ if (.true.) return
 
 ! Allocate work arrays
 ! First component is for x,y,z  and the 2nd for u,v,w
-allocate(gradv(ncelet,3,3))
+allocate(gradv(3,3,ncelet))
 
 ! --- Physical quantity numbers in PROPCE (physical quantities defined
 !     at each cell center)
@@ -2032,6 +2032,7 @@ inc = 1
 call field_get_coefa_v(ivarfl(iu), coefav)
 call field_get_coefb_v(ivarfl(iu), coefbv)
 
+! WARNING: gradv(xyz, uvw, iel)
 call grdvec &
 !==========
  ( iu  , imrgra , inc    , iccocg ,                      &
@@ -2052,9 +2053,9 @@ do iel = 1, ncel
   rom   = propce(iel,ipcrom)
 
   ! --- Various computations
-  dudx = gradv(iel,1,1)
-  dudy = gradv(iel,2,1)
-  dudz = gradv(iel,3,1)
+  dudx = gradv(1,1,iel)
+  dudy = gradv(2,1,iel)
+  dudz = gradv(3,1,iel)
   sqdu = sqrt(dudx**2+dudy**2+dudz**2)
 
   ! --- Computation of the new dynamic viscosity

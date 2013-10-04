@@ -255,40 +255,40 @@ CS_PROCF (aldepl, ALDEPL)(const cs_int_t    i_face_cells[],
  *
  * Fortran Interface
  *
- * SUBROUTINE ALEDIS
+ * subroutine aledis
  * *****************
  *
- * INTEGER         IFACEL(2,NFAC)    : --> : Interior faces -> cells connectivity
- * INTEGER         IFABOR(NFABOR)    : --> : Border faces -> cells connectivity
- * INTEGER         IPNFAC(NFAC+1)    : --> : Interior faces -> vertices index
- * INTEGER         NODFAC(LNDFAC)    : --> : Interior faces -> vertices list
- * INTEGER         IPNFBR(NFABOR+1)  : --> : Border faces -> vertices index
- * INTEGER         NODFBR(LNDFBR)    : --> : Border faces -> vertices list
- * INTEGER         IALTYB(NFABOR)    : --> : Type of boundary for ALE
- * DOUBLE PRECISION POND(NFAC)       : --> : Interior faces geometric weight
- * DOUBLE PRECISION MESHV(3,NCELET)  : --> : Mesh velocity
- * DOUBLE PRECISION GRADM(3,3,NCELET): --> : Mesh velocity gradient
- * DOUBLE PRECISION CLAALE(3,NCELET) : --> : Boundary conditions A
- * DOUBLE PRECISION CLBALE(3,3,NECLET: --> : Boundary conditions B
- * DOUBLE PRECISION DT(NCELET)       : --> : Time step
- * DOUBLE PRECISION DEPROJ(NNOD,3))  : <-- : Displacement projected on vertices
+ * ifacel            : <-- : Interior faces -> cells connectivity
+ * ifabor            : <-- : Border faces -> cells connectivity
+ * ipnfac            : <-- : Interior faces -> vertices index
+ * nodfac            : <-- : Interior faces -> vertices list
+ * ipnfbr            : <-- : Border faces -> vertices index
+ * nodfbr            : <-- : Border faces -> vertices list
+ * ialtyb            : <-- : Type of boundary for ALE
+ * pond              : <-- : Interior faces geometric weight
+ * meshv             : <-- : Mesh velocity
+ * gradm             : <-- : Mesh velocity gradient (du_i/dx_j : gradv[][i][j])
+ * claale            : <-- : Boundary conditions A
+ * clbale            : <-- : Boundary conditions B
+ * dt                : <-- : Time step
+ * deproj            : --> : Displacement projected on vertices
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (aledis, ALEDIS)(const cs_int_t    i_face_cells[],
-                          const cs_int_t    b_face_cells[],
-                          const cs_int_t    i_face_vtx_idx[],
-                          const cs_int_t    i_face_vtx_lst[],
-                          const cs_int_t    b_face_vtx_idx[],
-                          const cs_int_t    b_face_vtx_lst[],
-                          const cs_int_t    ialtyb[],
-                          const cs_real_t   opond[],
-                          cs_real_t        *meshv,
-                          cs_real_t        *gradm,
-                          cs_real_t        *claale,
-                          cs_real_t        *clbale,
-                          cs_real_t        *dt,
-                          cs_real_t        *disp_proj)
+CS_PROCF (aledis, ALEDIS)(const cs_int_t      i_face_cells[],
+                          const cs_int_t      b_face_cells[],
+                          const cs_int_t      i_face_vtx_idx[],
+                          const cs_int_t      i_face_vtx_lst[],
+                          const cs_int_t      b_face_vtx_idx[],
+                          const cs_int_t      b_face_vtx_lst[],
+                          const cs_int_t      ialtyb[],
+                          const cs_real_t     opond[],
+                          const cs_real_t    *meshv,
+                          const cs_real_33_t  gradm[],
+                          const cs_real_t    *claale,
+                          const cs_real_t    *clbale,
+                          const cs_real_t    *dt,
+                          cs_real_t          *disp_proj)
 {
   cs_int_t  i, j, face_id, vtx_id, cell_id, cell_id1, cell_id2;
 
@@ -343,28 +343,28 @@ CS_PROCF (aledis, ALEDIS)(const cs_int_t    i_face_cells[],
         cs_real_t cen2_node_z = -cell_cen[3*cell_id2+2] + vtx_coord[3*vtx_id+2];
 
         disp_proj[dim*vtx_id] +=
-          dvol1*dt[cell_id1]*(meshv[3*cell_id1] + gradm[9*cell_id1  ]*cen1_node_x
-                                                + gradm[9*cell_id1+3]*cen1_node_y
-                                                + gradm[9*cell_id1+6]*cen1_node_z)
-         +dvol2*dt[cell_id2]*(meshv[3*cell_id2] + gradm[9*cell_id2  ]*cen2_node_x
-                                                + gradm[9*cell_id2+3]*cen2_node_y
-                                                + gradm[9*cell_id2+6]*cen2_node_z);
+          dvol1*dt[cell_id1]*(meshv[3*cell_id1] + gradm[cell_id1][0][0]*cen1_node_x
+                                                + gradm[cell_id1][0][1]*cen1_node_y
+                                                + gradm[cell_id1][0][2]*cen1_node_z)
+         +dvol2*dt[cell_id2]*(meshv[3*cell_id2] + gradm[cell_id2][0][0]*cen2_node_x
+                                                + gradm[cell_id2][0][1]*cen2_node_y
+                                                + gradm[cell_id2][0][2]*cen2_node_z);
 
         disp_proj[1 + dim*vtx_id] +=
-          dvol1*dt[cell_id1]*(meshv[3*cell_id1+1] + gradm[9*cell_id1+1]*cen1_node_x
-                                                  + gradm[9*cell_id1+4]*cen1_node_y
-                                                  + gradm[9*cell_id1+7]*cen1_node_z)
-         +dvol2*dt[cell_id2]*(meshv[3*cell_id2+1] + gradm[9*cell_id2+1]*cen2_node_x
-                                                  + gradm[9*cell_id2+4]*cen2_node_y
-                                                  + gradm[9*cell_id2+7]*cen2_node_z);
+          dvol1*dt[cell_id1]*(meshv[3*cell_id1+1] + gradm[cell_id1][1][0]*cen1_node_x
+                                                  + gradm[cell_id1][1][1]*cen1_node_y
+                                                  + gradm[cell_id1][1][2]*cen1_node_z)
+         +dvol2*dt[cell_id2]*(meshv[3*cell_id2+1] + gradm[cell_id2][1][0]*cen2_node_x
+                                                  + gradm[cell_id2][1][1]*cen2_node_y
+                                                  + gradm[cell_id2][1][2]*cen2_node_z);
 
         disp_proj[2 + dim*vtx_id] +=
-          dvol1*dt[cell_id1]*(meshv[3*cell_id1+2] + gradm[9*cell_id1+2]*cen1_node_x
-                                                  + gradm[9*cell_id1+5]*cen1_node_y
-                                                  + gradm[9*cell_id1+8]*cen1_node_z)
-         +dvol2*dt[cell_id2]*(meshv[3*cell_id2+2] + gradm[9*cell_id2+2]*cen2_node_x
-                                                  + gradm[9*cell_id2+5]*cen2_node_y
-                                                  + gradm[9*cell_id2+8]*cen2_node_z);
+          dvol1*dt[cell_id1]*(meshv[3*cell_id1+2] + gradm[cell_id1][2][0]*cen1_node_x
+                                                  + gradm[cell_id1][2][1]*cen1_node_y
+                                                  + gradm[cell_id1][2][2]*cen1_node_z)
+         +dvol2*dt[cell_id2]*(meshv[3*cell_id2+2] + gradm[cell_id2][2][0]*cen2_node_x
+                                                  + gradm[cell_id2][2][1]*cen2_node_y
+                                                  + gradm[cell_id2][2][2]*cen2_node_z);
 
         vtx_counter[vtx_id] += dvol1+dvol2;
 
@@ -423,15 +423,15 @@ CS_PROCF (aledis, ALEDIS)(const cs_int_t    i_face_cells[],
 
         /* 1st order extrapolation of the mesh velocity at the face center to the node */
 
-        cs_real_t vel_node_x = claale[3*face_id  ] + gradm[9*cell_id  ]*face_node_x
-                                                   + gradm[9*cell_id+3]*face_node_y
-                                                   + gradm[9*cell_id+6]*face_node_z;
-        cs_real_t vel_node_y = claale[3*face_id+1] + gradm[9*cell_id+1]*face_node_x
-                                                   + gradm[9*cell_id+4]*face_node_y
-                                                   + gradm[9*cell_id+7]*face_node_z;
-        cs_real_t vel_node_z = claale[3*face_id+2] + gradm[9*cell_id+2]*face_node_x
-                                                   + gradm[9*cell_id+5]*face_node_y
-                                                   + gradm[9*cell_id+8]*face_node_z;
+        cs_real_t vel_node_x = claale[3*face_id  ] + gradm[cell_id][0][0]*face_node_x
+                                                   + gradm[cell_id][0][1]*face_node_y
+                                                   + gradm[cell_id][0][2]*face_node_z;
+        cs_real_t vel_node_y = claale[3*face_id+1] + gradm[cell_id][1][0]*face_node_x
+                                                   + gradm[cell_id][1][1]*face_node_y
+                                                   + gradm[cell_id][1][2]*face_node_z;
+        cs_real_t vel_node_z = claale[3*face_id+2] + gradm[cell_id][2][0]*face_node_x
+                                                   + gradm[cell_id][2][1]*face_node_y
+                                                   + gradm[cell_id][2][2]*face_node_z;
 
         disp_proj[dim*vtx_id] += dsurf*
           dt[cell_id]*(vel_node_x + clbale[9*face_id  ]*vel_cen_x

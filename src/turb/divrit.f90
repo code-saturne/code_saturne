@@ -130,7 +130,7 @@ double precision, dimension(:,:), pointer :: xuta
 xtt = 0.d0
 
 ! First component is for x,y,z  and the 2nd for u,v,w
-allocate(gradv(ncelet,3,3))
+allocate(gradv(3,3,ncelet))
 allocate(gradt(ncelet,3), thflxf(nfac), thflxb(nfabor))
 ipcrom = ipproc(irom)
 ipbrom = ipprob(irom)
@@ -185,6 +185,7 @@ call field_get_coefb_v(ivarfl(iu), coefbv)
 
 ilved = .false.
 
+! WARNING: gradv(xyz, uvw, iel)
 call grdvec &
 !==========
 ( iu     , imrgra , inc    , nswrgp , imligp ,                   &
@@ -265,14 +266,14 @@ if (ityturt(iscal).ne.3) then
         do jj = 1, 3
           if (ii.ne.jj) then
             temp(ii) = temp(ii)                                               &
-                     - ctheta(iscal)*xtt*xiafm*gradv(iel,jj,ii)*xut(jj,iel)
+                     - ctheta(iscal)*xtt*xiafm*gradv(jj,ii,iel)*xut(jj,iel)
           endif
         enddo
       endif
 
       ! Partial implicitation of "-C_theta*k/eps*( xi* uT'.Grad u )"
       if (iturt(iscal).eq.20) then
-        temp(ii) = temp(ii)/(1.d0+ctheta(iscal)*xtt*xiafm*gradv(iel,ii,ii))
+        temp(ii) = temp(ii)/(1.d0+ctheta(iscal)*xtt*xiafm*gradv(ii,ii,iel))
       endif
 
     enddo

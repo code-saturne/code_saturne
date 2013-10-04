@@ -136,7 +136,7 @@ double precision, allocatable, dimension(:,:) :: tempv
 
 ! Allocate temporary arrays
 allocate(vistot(ncelet))
-allocate(gradv(ncelet,3,3))
+allocate(gradv(3,3,ncelet))
 allocate(tempv(3, ncelet))
 
 ipcvis = ipproc(iviscl)
@@ -183,7 +183,7 @@ extrap = extrag(iu)
 
 ilved = .false.
 
-! WARNING: gradv(iel, xyz, uvw)
+! WARNING: gradv(xyz, uvw, iel)
 call grdvec &
 !==========
 ( iu     , imrgra , inc    , nswrgp , imligp ,                   &
@@ -201,24 +201,24 @@ if (ipcvsv.gt.0) then
   do iel = 1, ncel
     kappa = propce(iel,ipcvsv)
     mu = vistot(iel)
-    trgdru = gradv(iel, 1, 1)+gradv(iel, 2, 2)+gradv(iel, 3, 3)
+    trgdru = gradv(1, 1, iel)+gradv(2, 2, iel)+gradv(3, 3, iel)
 
-    sigma(1, 1) = mu * 2.d0*gradv(iel, 1, 1)  &
+    sigma(1, 1) = mu * 2.d0*gradv(1, 1, iel)  &
                 + (kappa-2.d0/3.d0*mu)*trgdru
 
-    sigma(2, 2) = mu * 2.d0*gradv(iel, 2, 2)  &
+    sigma(2, 2) = mu * 2.d0*gradv(2, 2, iel)  &
                 + (kappa-2.d0/3.d0*mu)*trgdru
 
-    sigma(3, 3) = mu * 2.d0*gradv(iel, 3, 3)  &
+    sigma(3, 3) = mu * 2.d0*gradv(3, 3, iel)  &
                 + (kappa-2.d0/3.d0*mu)*trgdru
 
-    sigma(1, 2) = mu * (gradv(iel, 1, 2) + gradv(iel, 2, 1))
+    sigma(1, 2) = mu * (gradv(1, 2, iel) + gradv(2, 1, iel))
     sigma(2, 1) = sigma(1, 2)
 
-    sigma(2, 3) = mu * (gradv(iel, 2, 3) + gradv(iel, 3, 2))
+    sigma(2, 3) = mu * (gradv(2, 3, iel) + gradv(3, 2, iel))
     sigma(3, 2) = sigma(2, 3)
 
-    sigma(1, 3) = mu * (gradv(iel, 1, 3) + gradv(iel, 3, 1))
+    sigma(1, 3) = mu * (gradv(1, 3, iel) + gradv(3, 1, iel))
     sigma(3, 1) = sigma(1, 3)
 
     tempv(1, iel) = sigma(1, 1)*ux(iel) &
@@ -237,24 +237,24 @@ else
   do iel = 1, ncel
     kappa = viscv0
     mu = vistot(iel)
-    trgdru = gradv(iel, 1, 1)+gradv(iel, 2, 2)+gradv(iel, 3, 3)
+    trgdru = gradv(1, 1, iel)+gradv(2, 2, iel)+gradv(3, 3, iel)
 
-    sigma(1, 1) = mu * 2.d0*gradv(iel, 1, 1)  &
+    sigma(1, 1) = mu * 2.d0*gradv(1, 1, iel)  &
                 + (kappa-2.d0/3.d0*mu)*trgdru
 
-    sigma(2, 2) = mu * 2.d0*gradv(iel, 2, 2)  &
+    sigma(2, 2) = mu * 2.d0*gradv(2, 2, iel)  &
                 + (kappa-2.d0/3.d0*mu)*trgdru
 
-    sigma(3, 3) = mu * 2.d0*gradv(iel, 3, 3)  &
+    sigma(3, 3) = mu * 2.d0*gradv(3, 3, iel)  &
                 + (kappa-2.d0/3.d0*mu)*trgdru
 
-    sigma(1, 2) = mu * (gradv(iel, 1, 2) + gradv(iel, 2, 1))
+    sigma(1, 2) = mu * (gradv(1, 2, iel) + gradv(2, 1, iel))
     sigma(2, 1) = sigma(1, 2)
 
-    sigma(2, 3) = mu * (gradv(iel, 2, 3) + gradv(iel, 3, 2))
+    sigma(2, 3) = mu * (gradv(2, 3, iel) + gradv(3, 2, iel))
     sigma(3, 2) = sigma(2, 3)
 
-    sigma(1, 3) = mu * (gradv(iel, 1, 3) + gradv(iel, 3, 1))
+    sigma(1, 3) = mu * (gradv(1, 3, iel) + gradv(3, 1, iel))
     sigma(3, 1) = sigma(1, 3)
 
     tempv(1, iel) = sigma(1, 1)*ux(iel) &

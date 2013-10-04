@@ -52,7 +52,7 @@
 !> \param[in]     propce        physical properties at cell centers
 !> \param[in,out] propfb        physical properties at boundary face centers
 !> \param[in]     coefa, coefb  boundary conditions
-!> \param[in]     grdvit        tableau de travail pour terme grad
+!> \param[in]     gradv         tableau de travail pour terme grad
 !>                                 de vitesse     uniqt pour iturb=31
 !> \param[in]     produc        tableau de travail pour production
 !>                              (sans rho volume) uniqt pour iturb=30
@@ -73,7 +73,7 @@ subroutine reseps &
    ivar   , isou   , ipp    ,                                     &
    icepdc , icetsm , itpsmp ,                                     &
    dt     , rtp    , rtpa   , propce , propfb ,                   &
-   coefa  , coefb  , grdvit , produc , gradro ,                   &
+   coefa  , coefb  , gradv  , produc , gradro ,                   &
    ckupdc , smcelp , gamma  ,                                     &
    viscf  , viscb  ,                                              &
    tslagr ,                                                       &
@@ -116,7 +116,7 @@ integer          icetsm(ncesmp), itpsmp(ncesmp)
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
-double precision produc(6,ncelet), grdvit(ncelet,3,3)
+double precision produc(6,ncelet), gradv(3, 3, ncelet)
 double precision gradro(ncelet,3)
 double precision ckupdc(ncepdp,6)
 double precision smcelp(ncesmp), gamma(ncesmp)
@@ -228,7 +228,7 @@ call ustsri                                                       &
    ivar   ,                                                       &
    icepdc , icetsm , itpsmp ,                                     &
    dt     , rtpa   , propce , propfb ,                            &
-   ckupdc , smcelp , gamma  , grdvit , produc ,                   &
+   ckupdc , smcelp , gamma  , gradv  , produc ,                   &
    smbr   , rovsdt )
 
 !     Si on extrapole les T.S.
@@ -336,15 +336,15 @@ if (iturb.eq.30) then
   enddo
 else
   do iel = 1, ncel
-    w9(iel) = -( rtpa(iel,ir11)*grdvit(iel,1,1) +               &
-                 rtpa(iel,ir12)*grdvit(iel,2,1) +               &
-                 rtpa(iel,ir13)*grdvit(iel,3,1) +               &
-                 rtpa(iel,ir12)*grdvit(iel,1,2) +               &
-                 rtpa(iel,ir22)*grdvit(iel,2,2) +               &
-                 rtpa(iel,ir23)*grdvit(iel,3,2) +               &
-                 rtpa(iel,ir13)*grdvit(iel,1,3) +               &
-                 rtpa(iel,ir23)*grdvit(iel,2,3) +               &
-                 rtpa(iel,ir33)*grdvit(iel,3,3) )
+    w9(iel) = -( rtpa(iel,ir11)*gradv(1, 1, iel) +               &
+                 rtpa(iel,ir12)*gradv(2, 1, iel) +               &
+                 rtpa(iel,ir13)*gradv(3, 1, iel) +               &
+                 rtpa(iel,ir12)*gradv(1, 2, iel) +               &
+                 rtpa(iel,ir22)*gradv(2, 2, iel) +               &
+                 rtpa(iel,ir23)*gradv(3, 2, iel) +               &
+                 rtpa(iel,ir13)*gradv(1, 3, iel) +               &
+                 rtpa(iel,ir23)*gradv(2, 3, iel) +               &
+                 rtpa(iel,ir33)*gradv(3, 3, iel) )
   enddo
 endif
 

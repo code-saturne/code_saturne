@@ -125,7 +125,7 @@ double precision, dimension(:,:,:), allocatable :: gradv
 !===============================================================================
 
 ! Allocate temporary arrays for gradients calculation
-allocate(gradv(ncelet,3,3))
+allocate(gradv(3, 3, ncelet))
 
 ! --- Memoire
 
@@ -160,10 +160,10 @@ call grdvec &
 
 do iel = 1, ncel
   propce(iel,ipcvst) = &
-      gradv(iel,1,1)**2 + gradv(iel,2,2)**2 + gradv(iel,3,3)**2  &
-    + 0.5d0*( (gradv(iel,2,1) + gradv(iel,1,2))**2               &
-            + (gradv(iel,3,1) + gradv(iel,1,3))**2               &
-            + (gradv(iel,3,2) + gradv(iel,2,3))**2 )
+      gradv(1, 1, iel)**2 + gradv(2, 2, iel)**2 + gradv(3, 3, iel)**2  &
+    + 0.5d0*( (gradv(2, 1, iel) + gradv(1, 2, iel))**2                 &
+            + (gradv(3, 1, iel) + gradv(1, 3, iel))**2                 &
+            + (gradv(3, 2, iel) + gradv(2, 3, iel))**2 )
 enddo
 
 ! Free memory

@@ -120,7 +120,8 @@ void CS_PROCF (cgdvec, CGDVEC)
  const cs_real_3_t             coefav[],  /* <-- boundary condition term      */
  const cs_real_33_t            coefbv[],  /* <-- boundary condition term      */
        cs_real_3_t             pvar[],    /* <-- gradient's base variable     */
-       cs_real_33_t            gradv[]    /* <-> gradient of the variable     */
+       cs_real_33_t            gradv[]    /* <-> gradient of the variable
+                                                 (du_i/dx_j : gradv[][i][j])  */
 );
 
 /*=============================================================================
@@ -204,7 +205,7 @@ void cs_gradient_scalar(const char                *var_name,
  *   bc_coeff_a     <-- boundary condition term a
  *   bc_coeff_b     <-- boundary condition term b
  *   var            <-> gradient's base variable
- *   grad           --> gradient
+ *   gradv          --> gradient (du_i/dx_j : gradv[][i][j])
  *----------------------------------------------------------------------------*/
 
 void cs_gradient_vector(const char                *var_name,
