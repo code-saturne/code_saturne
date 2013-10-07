@@ -64,11 +64,11 @@ void CS_PROCF (uiinit, UIINIT) (void);
  * SUBROUTINE CSTURB
  * *****************
  *
- * INTEGER          ITURB   <--   turbulence model
- * INTEGER          IDEUCH  <--   wall law treatment
- * INTEGER          IGRAKE  <--   k-eps gravity effects
- * INTEGER          IGRAKI  <--   Rij-eps gravity effects
- * DOUBLE PRECISION XLOMLG  <--   mixing_length_scale
+ * INTEGER          ITURB   -->   turbulence model
+ * INTEGER          IDEUCH  -->   wall law treatment
+ * INTEGER          IGRAKE  -->   k-eps gravity effects
+ * INTEGER          IGRAKI  -->   Rij-eps gravity effects
+ * DOUBLE PRECISION XLOMLG  -->   mixing_length_scale
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csturb, CSTURB) (int *const iturb,
@@ -85,7 +85,7 @@ void CS_PROCF (csturb, CSTURB) (int *const iturb,
  * SUBROUTINE CSCPVA
  * *****************
  *
- * INTEGER          ICP     <--   Specific heat variable or constant indicator
+ * INTEGER          ICP     -->   Specific heat variable or constant indicator
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (cscpva, CSCPVA) (int *const icp);
@@ -98,7 +98,7 @@ void CS_PROCF (cscpva, CSCPVA) (int *const icp);
  * SUBROUTINE CSCVVVA (ICP)
  * *****************
  *
- * INTEGER          IVISCV     <--   specific heat variable or constant indicator
+ * INTEGER          IVISCV     -->   specific heat variable or constant indicator
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csvvva, CSVVVA) (int *const iviscv);
@@ -111,7 +111,7 @@ void CS_PROCF (csvvva, CSVVVA) (int *const iviscv);
  * SUBROUTINE CSNSCA
  * *****************
  *
- * INTEGER          NSCAUS     <--   user scalars number
+ * INTEGER          NSCAUS     -->   user scalars number
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csnsca, CSNSCA) (int *const nscaus);
@@ -124,7 +124,7 @@ void CS_PROCF (csnsca, CSNSCA) (int *const nscaus);
  * SUBROUTINE CSISCA (ISCAVR)
  * *****************
  *
- * INTEGER          ISCAVR     <--   user scalars variance array
+ * INTEGER          ISCAVR     -->   user scalars variance array
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csisca, CSISCA) (int *const iscavr);
@@ -137,11 +137,11 @@ void CS_PROCF (csisca, CSISCA) (int *const iscavr);
  * SUBROUTINE CSIVIS (IDTVAR)
  * *****************
  *
- * INTEGER          ISCAVR  <-->  number of the related variance if any
- * INTEGER          IVISLS  <--   indicator for the user scalar viscosity
- * INTEGER          ISCALT  <-->  number of the user thermal scalar if any
- * INTEGER          ISCSTH  <-->  type of the user thermal scalar
- * INTEGER          ITEMPK   -->  rtp index for temperature (in K)
+ * INTEGER          ISCAVR  <->  number of the related variance if any
+ * INTEGER          IVISLS  -->  indicator for the user scalar viscosity
+ * INTEGER          ISCALT  <->  number of the user thermal scalar if any
+ * INTEGER          ISCSTH  <->  type of the user thermal scalar
+ * INTEGER          ITEMPK  -->  rtp index for temperature (in K)
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csivis, CSIVIS) (int *const iscavr,
@@ -158,7 +158,7 @@ void CS_PROCF (csivis, CSIVIS) (int *const iscavr,
  * SUBROUTINE CSIDTV (IDTVAR)
  * *****************
  *
- * INTEGER          IDTVAR  <--   fixed or variable time step
+ * INTEGER          IDTVAR  -->   fixed or variable time step
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(csidtv, CSIDTV) (int *const idtvar);
@@ -171,7 +171,7 @@ void CS_PROCF(csidtv, CSIDTV) (int *const idtvar);
  * SUBROUTINE CSIPHY (IPHYDR)
  * *****************
  *
- * INTEGER          IPHYDR  <--   hydrostatic pressure
+ * INTEGER          IPHYDR  -->   hydrostatic pressure
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csiphy, CSIPHY) (int *const iphydr);
@@ -184,7 +184,7 @@ void CS_PROCF (csiphy, CSIPHY) (int *const iphydr);
  * SUBROUTINE CSCFGP (ICFGRP)
  * *****************
  *
- * INTEGER          ICFGRP  <--   hydrostatic equilibrium
+ * INTEGER          ICFGRP  -->   hydrostatic equilibrium
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (cscfgp, CSCFGP) (int *const icfgrp);
@@ -229,9 +229,9 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
  * SUBROUTINE CSISUI
  * *****************
  *
- * INTEGER          NTSUIT  <--   checkpoint frequency
- * INTEGER          ILEAUX  <--   restart with auxiliary
- * INTEGER          ICCFVG  <--   restart with frozen field
+ * INTEGER          NTSUIT  -->   checkpoint frequency
+ * INTEGER          ILEAUX  -->   restart with auxiliary
+ * INTEGER          ICCFVG  -->   restart with frozen field
  *----------------------------------------------------------------------------*/
 
 
@@ -247,17 +247,17 @@ void CS_PROCF (csisui, CSISUI) (int *const ntsuit,
  * SUBROUTINE CSTIME
  * *****************
  *
- * INTEGER          INPDT0  <--   zero tim step
- * INTEGER          IPTLTO  <--   thermal time step control
- * INTEGER          NTMABS  <--   iterations numbers
- * INTEGER          IDTVAR  <--   time step's options
- * DOUBLE PRECISION DTREF   <--   time step
- * DOUBLE PRECISION DTMIN   <--   minimal time step
- * DOUBLE PRECISION DTMAX   <--   maximal time step
- * DOUBLE PRECISION COUMAX  <--   maximal courant number
- * DOUBLE PRECISION FOUMAX  <--   maximal fournier number
- * DOUBLE PRECISION VARRDT  <--   max time step variation between 2 iterations
- * DOUBLE PRECISION RELXST  <--   relaxation coefficient if idtvar = -1
+ * INTEGER          INPDT0  -->   zero tim step
+ * INTEGER          IPTLTO  -->   thermal time step control
+ * INTEGER          NTMABS  -->   iterations numbers
+ * INTEGER          IDTVAR  -->   time step's options
+ * DOUBLE PRECISION DTREF   -->   time step
+ * DOUBLE PRECISION DTMIN   -->   minimal time step
+ * DOUBLE PRECISION DTMAX   -->   maximal time step
+ * DOUBLE PRECISION COUMAX  -->   maximal courant number
+ * DOUBLE PRECISION FOUMAX  -->   maximal fournier number
+ * DOUBLE PRECISION VARRDT  -->   max time step variation between 2 iterations
+ * DOUBLE PRECISION RELXST  -->   relaxation coefficient if idtvar = -1
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (cstime, CSTIME) (int    *const inpdt0,
@@ -280,8 +280,8 @@ void CS_PROCF (cstime, CSTIME) (int    *const inpdt0,
  * SUBROUTINE CSSCA1
  * *****************
  *
- * INTEGER          ISCALT  <--   number of the user thermal scalar if any
- * INTEGER          ISCSTH  <--   type of the user thermal scalar
+ * INTEGER          ISCALT  -->   number of the user thermal scalar if any
+ * INTEGER          ISCSTH  -->   type of the user thermal scalar
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (cssca1, CSSCA1) (int *const iscalt,
@@ -317,12 +317,12 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
  * SUBROUTINE CSNUM2
  * *****************
  *
- * INTEGER          IVISSE  <--   gradient transpose
- * INTEGER          RELAXP  <--   pressure relaxation
- * INTEGER          IPUCOU  <--   velocity pressure coupling
- * INTEGER          EXTRAG  <--   wall pressure extrapolation
- * INTEGER          IMRGRA  <--   gradient reconstruction
- * INTEGER          NTERUP  <--   piso sweep number
+ * INTEGER          IVISSE  -->   gradient transpose
+ * INTEGER          RELAXP  -->   pressure relaxation
+ * INTEGER          IPUCOU  -->   velocity pressure coupling
+ * INTEGER          EXTRAG  -->   wall pressure extrapolation
+ * INTEGER          IMRGRA  -->   gradient reconstruction
+ * INTEGER          NTERUP  -->   piso sweep number
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csnum2, CSNUM2) (   int *const ivisse,
@@ -360,9 +360,9 @@ void CS_PROCF (csphys, CSPHYS) (const    int *const nmodpp,
  * SUBROUTINE CSSCA2
  * *****************
  *
- * INTEGER          ISCAVR   -->  number of the related variance if any
- * DOUBLE PRECISION SCAMIN  <--   user scalar min array
- * DOUBLE PRECISION SCAMAX  <--   user scalar max array
+ * INTEGER          ISCAVR   <--  number of the related variance if any
+ * DOUBLE PRECISION SCAMIN  -->   user scalar min array
+ * DOUBLE PRECISION SCAMAX  -->   user scalar max array
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (cssca2, CSSCA2) ( const    int *const iscavr,
@@ -380,8 +380,7 @@ void CS_PROCF (cssca3, CSSCA3) (const    int *const iscalt,
  * Array of properties used in the calculation
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiprop, UIPROP) (const int *const irom,
-                                const int *const iviscl,
+void CS_PROCF (uiprop, UIPROP) (const int *const iviscl,
                                 const int *const ivisct,
                                 const int *const ivisls,
                                 const int *const icour,
@@ -421,8 +420,8 @@ void CS_PROCF (uimoyt, UIMOYT) (const int *const ndgmox,
  * SUBROUTINE CSTINI
  * *****************
  *
- * INTEGER          UREF   <--   reference velocity
- * INTEGER          ALMAX  <--   reference length
+ * INTEGER          UREF   -->   reference velocity
+ * INTEGER          ALMAX  -->   reference length
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (cstini, CSTINI) (double *const uref,
@@ -430,17 +429,17 @@ void CS_PROCF (cstini, CSTINI) (double *const uref,
 
 void CS_PROCF(fcnmva, FCNMVA)
 (
- const char      *const fstr,    /* --> Fortran string */
- int             *const len,     /* --> String Length  */
- int             *const var_id   /* --> Variable Id (1 to n) */
+ const char      *const fstr,    /* Fortran string */
+ int             *const len,     /* String Length  */
+ int             *const var_id   /* Variable Id (1 to n) */
  CS_ARGF_SUPP_CHAINE
 );
 
 void CS_PROCF(cfnmva, CFNMVA)
 (
- char          *const fstr,    /* --> Fortran string */
- int           *const len,     /* --> String Length  */
- int           *const var_id   /* --> Variable Id (1 to n) */
+ char          *const fstr,    /* Fortran string */
+ int           *const len,     /* String Length  */
+ int           *const var_id   /* Variable Id (1 to n) */
  CS_ARGF_SUPP_CHAINE
 );
 
@@ -454,10 +453,10 @@ void CS_PROCF(nvamem, NVAMEM) (void);
  * subroutine uitsnv (ncelet, vel, tsexp, tsimp)
  * *****************
  *
- * integer          ncelet   -->  number of cells with halo
- * double precision vel      -->  fluid velocity
- * double precision tsexp    <--  explicit source terms
- * double precision tsimp    <--  implicit source terms
+ * integer          ncelet   <--  number of cells with halo
+ * double precision vel      <--  fluid velocity
+ * double precision tsexp    -->  explicit source terms
+ * double precision tsimp    -->  implicit source terms
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t *restrict vel,
@@ -473,10 +472,10 @@ void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t *restrict vel,
  * subroutine uitssc (iscal, pvar, tsexp, tsimp)
  * *****************
  *
- * integer          iscal    --> index of the corresponding scalar
- * double precision pvar     -->  scalar
- * double precision tsexp    <--  explicit source terms
- * double precision tsimp    <--  implicit source terms
+ * integer          iscal    <-- index of the corresponding scalar
+ * double precision pvar     <--  scalar
+ * double precision tsexp    -->  explicit source terms
+ * double precision tsimp    -->  implicit source terms
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(uitssc, UITSSC)(const int                  *iscal,
@@ -493,10 +492,10 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *iscal,
  * subroutine uitsth (iscal, pvar, tsexp, tsimp)
  * *****************
  *
- * integer          iscal    --> index of the corresponding scalar
- * double precision pvar     -->  scalar
- * double precision tsexp    <--  explicit source terms
- * double precision tsimp    <--  implicit source terms
+ * integer          iscal    <-- index of the corresponding scalar
+ * double precision pvar     <--  scalar
+ * double precision tsexp    -->  explicit source terms
+ * double precision tsimp    -->  implicit source terms
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(uitsth, UITSTH)(const int                  *iscal,
@@ -512,31 +511,29 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *iscal,
  * subroutine uiiniv (ncelet, isuite, isca, iscold, rtp)
  * *****************
  *
- * integer          ncelet   -->  number of cells with halo
- * integer          isuite   -->  restart indicator
- * integer          isca     -->  indirection array for scalar number
- * integer          iscold   -->  scalar number for restart
- * integer          iccfth   -->  type of initialisation(compressible model)
- * integer          ipcrom   -->  propce index for density
- * integer          ipr      -->  rtp index for pressure
- * integer          itempk   -->  rtp index for temperature (in K)
- * integer          ienerg   -->  rtp index for energy total
- * DOUBLE PRECISION RO0      -->  value of density if IROVAR=0
- * DOUBLE PRECISION CP0      -->  value of specific heat if ICP=0
- * DOUBLE PRECISION VISCL0   -->  value of viscosity if IVIVAR=0
- * DOUBLE PRECISION UREF     -->  value of reference velocity
- * DOUBLE PRECISION ALMAX    -->  value of reference length
- * DOUBLE PRECISION XYZCEN   -->  cell's gravity center
- * double precision rtp     <--   variables and scalars array
- * double precision propce  <--   physical properties array
+ * integer          ncelet   <--  number of cells with halo
+ * integer          isuite   <--  restart indicator
+ * integer          isca     <--  indirection array for scalar number
+ * integer          iscold   <--  scalar number for restart
+ * integer          iccfth   <--  type of initialisation(compressible model)
+ * integer          ipr      <--  rtp index for pressure
+ * integer          itempk   <--  rtp index for temperature (in K)
+ * integer          ienerg   <--  rtp index for energy total
+ * DOUBLE PRECISION RO0      <--  value of density if IROVAR=0
+ * DOUBLE PRECISION CP0      <--  value of specific heat if ICP=0
+ * DOUBLE PRECISION VISCL0   <--  value of viscosity if IVIVAR=0
+ * DOUBLE PRECISION UREF     <--  value of reference velocity
+ * DOUBLE PRECISION ALMAX    <--  value of reference length
+ * DOUBLE PRECISION XYZCEN   <--  cell's gravity center
+ * double precision rtp     -->   variables and scalars array
+ * double precision propce  -->   physical properties array
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(uiiniv, UIINIV) (const int         *ncelet,
                                const int         *isuite,
-                               const int          isca[],
-                               const int          iscold[],
+                               const int         *isca,
+                               const int         *iscold,
                                      int         *iccfth,
-                               const int *const   ipcrom,
                                const int *const   ipr,
                                const int *const   itempk,
                                const int *const   ienerg,
@@ -546,8 +543,7 @@ void CS_PROCF(uiiniv, UIINIV) (const int         *ncelet,
                               const cs_real_t    *uref,
                               const cs_real_t    *almax,
                               const double *const xyzcen,
-                                    double       rtp[],
-                                    double       propce[]);
+                                    double       rtp[]);
 
 /*----------------------------------------------------------------------------
  * User law for material Properties
@@ -557,36 +553,33 @@ void CS_PROCF(uiiniv, UIINIV) (const int         *ncelet,
  * SUBROUTINE UIPHYV (NCELET, ISCA, RTP)
  * *****************
  *
- * INTEGER          NCEL     -->  number of cells whithout halo
- * INTEGER          NCELET   -->  number of cells whith halo
- * INTEGER          NSCAUS   -->  number of user scalar including thermal scalar
- * INTEGER          IROM     -->  pointer for density rho
- * INTEGER          IVISCL   -->  pointer for mulecular viscosity mu
- * INTEGER          ICP      -->  pointer for predifined heat Cp
- * INTEGER          IVISLS   -->  pointer for Lambda/Cp
- * INTEGER          IROVAR   -->  =1 if rho variable, =0 if rho constant
- * INTEGER          IVIVAR   -->  =1 if mu variable, =0 if mu constant
- * INTEGER          ISCA     -->  indirection array for scalar number
- * INTEGER          ISCALT   -->  pointer for the thermal scalar in ISCA
- * INTEGER          ISCAVR   -->  scalars that are variance
- * INTEGER          IPPROC   -->  indirection array for cell properties
- * INTEGER          IVISCV   -->  pointer for volumic viscosity viscv
- * INTEGER          ITEMPK   -->  pointer for temperature (in K)
- * DOUBLE PRECISION P0       -->  pressure reference value
- * DOUBLE PRECISION T0       -->  temperature reference value
- * DOUBLE PRECISION RO0      -->  density reference value
- * DOUBLE PRECISION CP0      -->  specific heat reference value
- * DOUBLE PRECISION VISCL0   -->  dynamic viscosity reference value
- * DOUBLE PRECISION VISLS0   -->  diffusion coefficient of the scalars
- * DOUBLE PRECISION VISCV0   -->  volumic viscosity
- * DOUBLE PRECISION RTP      -->  variables and scalars array
- * DOUBLE PRECISION PROPCE   <--  cell properties array
+ * INTEGER          NCEL     <--  number of cells whithout halo
+ * INTEGER          NCELET   <--  number of cells whith halo
+ * INTEGER          NSCAUS   <--  number of user scalar including thermal scalar
+ * INTEGER          IVISCL   <--  pointer for mulecular viscosity mu
+ * INTEGER          ICP      <--  pointer for predifined heat Cp
+ * INTEGER          IVISLS   <--  pointer for Lambda/Cp
+ * INTEGER          IROVAR   <--  =1 if rho variable, =0 if rho constant
+ * INTEGER          IVIVAR   <--  =1 if mu variable, =0 if mu constant
+ * INTEGER          ISCA     <--  indirection array for scalar number
+ * INTEGER          ISCALT   <--  pointer for the thermal scalar in ISCA
+ * INTEGER          ISCAVR   <--  scalars that are variance
+ * INTEGER          IPPROC   <--  indirection array for cell properties
+ * INTEGER          IVISCV   <--  pointer for volumic viscosity viscv
+ * INTEGER          ITEMPK   <--  pointer for temperature (in K)
+ * DOUBLE PRECISION P0       <--  pressure reference value
+ * DOUBLE PRECISION T0       <--  temperature reference value
+ * DOUBLE PRECISION RO0      <--  density reference value
+ * DOUBLE PRECISION CP0      <--  specific heat reference value
+ * DOUBLE PRECISION VISCL0   <--  dynamic viscosity reference value
+ * DOUBLE PRECISION VISLS0   <--  diffusion coefficient of the scalars
+ * DOUBLE PRECISION VISCV0   <--  volumic viscosity
+ * DOUBLE PRECISION RTP      <--  variables and scalars array
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
                               const cs_int_t  *const ncelet,
                               const cs_int_t  *const nscaus,
-                              const cs_int_t         irom[],
                               const cs_int_t         iviscl[],
                               const cs_int_t         icp[],
                               const cs_int_t         ivisls[],
@@ -607,7 +600,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
                               const cs_real_t        visls0[],
                               const cs_real_t        viscv0[],
                               const cs_real_t        rtp[],
-                                    cs_real_t        propce[]);
+                                    double           propce[]);
 
 /*----------------------------------------------------------------------------
  * Head losses definition
@@ -617,12 +610,12 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
  * subroutine uikpdc
  * *****************
  *
- * integer          iappel   -->  number of calls during a time step
- * integer          ncelet   -->  number of cells with halo
- * integer          ncepdp  <--   number of cells with head losses
- * integer          icepdc  <--   ncepdp cells number with head losses
- * double precision ckupdc  <--   head losses matrix
- * double precision rtpa     -->  variables array at previous time step
+ * integer          iappel   <--  number of calls during a time step
+ * integer          ncelet   <--  number of cells with halo
+ * integer          ncepdp  -->   number of cells with head losses
+ * integer          icepdc  -->   ncepdp cells number with head losses
+ * double precision ckupdc  -->   head losses matrix
+ * double precision rtpa     <--  variables array at previous time step
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
@@ -640,16 +633,16 @@ void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
  * SUBROUTINE UIPROF
  * *****************
  *
- * INTEGER          NCELET   -->  number of cells with halo
- * INTEGER          NCEL     -->  number of cells without halo
- * INTEGER          NTMABS   -->  max iterations numbers
- * INTEGER          NTCABS   -->  current iteration number
- * DOUBLE PRECISION TTCABS   -->  current physical time
- * DOUBLE PRECISION TTMABS   -->  max physical time
- * DOUBLE PRECISION TTPABS   -->  physical time at calculation beginning
- * DOUBLE PRECISION XYZCEN   -->  cell's gravity center
- * DOUBLE PRECISION RTP      -->  variables and scalars array
- * DOUBLE PRECISION PROPCE   -->  property array
+ * INTEGER          NCELET   <--  number of cells with halo
+ * INTEGER          NCEL     <--  number of cells without halo
+ * INTEGER          NTMABS   <--  max iterations numbers
+ * INTEGER          NTCABS   <--  current iteration number
+ * DOUBLE PRECISION TTCABS   <--  current physical time
+ * DOUBLE PRECISION TTMABS   <--  max physical time
+ * DOUBLE PRECISION TTPABS   <--  physical time at calculation beginning
+ * DOUBLE PRECISION XYZCEN   <--  cell's gravity center
+ * DOUBLE PRECISION RTP      <--  variables and scalars array
+ * DOUBLE PRECISION PROPCE   <--  property array
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uiprof, UIPROF)(const int    *const ncelet,
@@ -671,7 +664,7 @@ void CS_PROCF (uiprof, UIPROF)(const int    *const ncelet,
  * SUBROUTINE MEMUI1
  * *****************
  *
- * INTEGER          NCHARB  --> number of coal
+ * INTEGER          NCHARB  <-- number of coal
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (memui1, MEMUI1) (const int *const ncharb);

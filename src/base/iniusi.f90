@@ -450,7 +450,7 @@ if (iihmpr.eq.1) then
 
   call uiprop                                                     &
   !==========
-            (irom, iviscl, ivisct, ivisls, icour, ifour,          &
+            (iviscl, ivisct, ivisls, icour, ifour,                &
              ismago, iale, icp, iscalt, iscavr,                   &
              iprtot, ipppro, ipproc, icmome,                      &
              ipptx, ippty, ipptz, ippdt,                          &
@@ -509,7 +509,7 @@ if (iihmpr.eq.1) then
 
     call uiprop                                                   &
     !==========
-            (irom, iviscl, ivisct, ivisls, icour, ifour,          &
+            (iviscl, ivisct, ivisls, icour, ifour,                &
              ismago, iale, icp, iscalt, iscavr,                   &
              iprtot, ipppro, ipproc, icmome,                      &
              ipptx, ippty, ipptz, ippdt,                          &

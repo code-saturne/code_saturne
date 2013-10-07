@@ -83,6 +83,7 @@ cs_defs.h \
 cs_ext_neighborhood.h \
 cs_file.h \
 cs_field.h \
+cs_field_pointer.h \
 cs_field_operator.h \
 cs_halo.h \
 cs_halo_perio.h \
@@ -202,6 +203,7 @@ cs_control.c \
 cs_coupling.c \
 cs_ext_neighborhood.c \
 cs_field.c \
+cs_field_pointer.c \
 cs_field_operator.c \
 cs_halo.c \
 cs_halo_perio.c \

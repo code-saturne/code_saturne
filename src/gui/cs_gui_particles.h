@@ -184,7 +184,6 @@ void CS_PROCF (uilag1, UILAG1) (int *const nlayer,
 
 void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
                                 const int *const nozppm,
-                                const int *const nbclst,
                                 const int *const ientrl,
                                 const int *const isortl,
                                 const int *const idepo1,

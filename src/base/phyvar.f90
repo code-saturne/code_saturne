@@ -158,10 +158,10 @@ if (iihmpr.eq.1) then
   call uiphyv &
   !===========
 ( ncel, ncelet, nscaus,                                         &
-  irom, iviscl, icp,    ivisls, irovar, ivivar,                 &
+  iviscl, icp,    ivisls, irovar, ivivar,                       &
   isca, iscalt, iscsth, iscavr, ipproc, iviscv, itempk,         &
   p0  , t0    , ro0   , cp0   , viscl0, visls0, viscv0,         &
-  rtp,    propce)
+  rtp, propce)
 endif
 
 call usphyv &
@@ -674,7 +674,7 @@ endif
 ! Writings
 iok1 = 0
 do ii = 1, nn
-  if (ii.eq.1) chaine = nomvar(ipppro(ipproc(irom  )))
+  if (ii.eq.1) call field_get_name (icrom, chaine)
   if (ii.eq.2) chaine = nomvar(ipppro(ipproc(iviscl)))
   if (ii.eq.3) chaine = nomvar(ipppro(ipproc(ivisct)))
   if (ii.eq.4) chaine = nomvar(ipppro(ipproc(icp   )))
@@ -693,7 +693,7 @@ if (iok1.eq.1) write(nfecra,3012)
 
 ! Masse volumique definie
 ii = 1
-chaine = nomvar(ipppro(ipproc(irom  )))
+call field_get_name (icrom, chaine)
 if (varmn(ii).lt.0.d0) then
   write(nfecra,9011)chaine(1:16),varmn(ii)
   iok = iok + 1

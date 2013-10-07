@@ -241,8 +241,7 @@ nproce = iprop
 !     Construction de l'indirection entre la numerotation du noyau et XML
 if (iihmpr.eq.1) then
   call uielpr (nsalpp, ippmod, ipppro, ipproc, ieljou, ielarc,      &
-               itemp, iefjou, idjr, idji, ilapla, idrad, ivisls,   &
-               ipotr, ixkabe)
+               itemp, iefjou, idjr, idji, ilapla, idrad, ixkabe)
 
 endif
 

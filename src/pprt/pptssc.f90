@@ -95,7 +95,7 @@ use entsor
 use optcal
 use cstphy
 use cstnum
-use pointe, only: itypfb, izfppp
+use pointe, only: itypfb
 use ppppar
 use ppthch
 use coincl

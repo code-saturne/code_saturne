@@ -208,7 +208,7 @@ enddo
 if (iihmpr.eq.1) then
   call uilag2                                                                  &
   !==========
- ( nfabor, nozppm,  nbclst,                                                    &
+ ( nfabor, nozppm,                                                             &
    ientrl, isortl,  idepo1, idepo2,                                            &
    idepfa, iencrl,  irebol, isymtl, iphyla,                                    &
    ijnbp,  ijfre,   iclst,  ijuvw,  iuno,    iupt,    ivpt,  iwpt,             &

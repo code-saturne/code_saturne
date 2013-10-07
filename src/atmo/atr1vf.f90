@@ -66,6 +66,7 @@ use ppppar
 use ppthch
 use ppincl
 use mesh
+use field
 use atincl
 use atsoil
 
@@ -95,6 +96,7 @@ double precision, allocatable :: fneray(:), romray(:), preray(:)
 double precision, allocatable :: zproj(:), ttvert(:), qvvert(:), romvert(:)
 double precision, allocatable :: aeroso(:)
 double precision, allocatable :: coords(:,:,:), infrad(:)
+double precision, dimension(:), pointer :: crom
 
 save ideb
 data ideb/0/
@@ -144,6 +146,7 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
     aeroso(k) = 0.d0
   enddo
 
+  call field_get_val_s(icrom, crom)
 
   !===============================================================================
   ! 2.  Computing long-wave and short-wave radiative fluxes
@@ -171,7 +174,7 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
   !===========
   call gripol(igrid, rtpa(:,isca(itotwt)), qvvert)
   !===========
-  call gripol(igrid, propce(:,ipproc(irom)), romvert)
+  call gripol(igrid, crom, romvert)
   !===========
 
   ! --- Loop on the vertical array:

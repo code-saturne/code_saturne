@@ -126,8 +126,6 @@ double precision flumbf, flumty(ntypmx)
 double precision xxp0, xyp0, xzp0, d0, d0min
 double precision xyzref(4) ! xyzref(3) + PI' for broadcast
 
-double precision rvoid(1)
-
 double precision, allocatable, dimension(:) :: pripb
 double precision, allocatable, dimension(:,:) :: grad
 double precision, dimension(:), pointer :: bmasfl

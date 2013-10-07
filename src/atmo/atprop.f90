@@ -145,12 +145,8 @@ nproce = iprop
 !     ======================
 
 if (iihmpr.eq.1) then
-
-  call uiatpr &
+  call uiatpr(nsalpp, ippmod, iatmos, ipppro, ipproc, itempc, iliqwt)
   !==========
-( nsalpp, nsalto, ippmod, iatmos, &
-  ipppro, ipproc, itempc, iliqwt)
-
 endif
 
 return

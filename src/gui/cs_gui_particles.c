@@ -913,7 +913,6 @@ void CS_PROCF (uilag1, UILAG1) (int *const nlayer,
                                 int *const iactts)
 {
   int i, icoal, ilayer, ncoals = 0;
-  int list_ind = 1;
   int record_ind = 1;
   char *name = NULL;
   char *attr = NULL;
@@ -1415,7 +1414,6 @@ void CS_PROCF (uilag1, UILAG1) (int *const nlayer,
 
 void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
                                 const int *const nozppm,
-                                const int *const nbclst,
                                 const int *const ientrl,
                                 const int *const isortl,
                                 const int *const idepo1,

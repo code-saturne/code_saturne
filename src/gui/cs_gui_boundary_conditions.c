@@ -56,6 +56,7 @@
 #include "cs_gui_variables.h"
 #include "cs_mesh.h"
 #include "cs_field.h"
+#include "cs_field_pointer.h"
 #include "cs_prototypes.h"
 #include "cs_timer.h"
 
@@ -1798,9 +1799,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
       }
       else if (cs_gui_strcmp(vars->model, "compressible_model")) {
         if (boundaries->itype[izone] == *iesicf) {
-          static cs_field_t *b_rho = NULL;
-          if (b_rho == NULL)
-            b_rho = cs_field_by_name("boundary_density");
+          cs_field_t *b_rho = CS_F_(rho_b);
           for (ifac = 0; ifac < faces; ifac++) {
             ifbr = faces_list[ifac] -1;
             rcodcl[(*ipr-1) * (*nfabor) + ifbr] = boundaries->prein[izone];

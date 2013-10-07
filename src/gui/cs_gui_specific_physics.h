@@ -228,8 +228,6 @@ void CS_PROCF (uielpr, UIELPR) (const int *const nsalpp,
                                 const int *const idji,
                                 const int *const ilapla,
                                 const int *const idrad,
-                                const int *const ivisls,
-                                const int *const ipotr,
                                 const int *const ixkabe);
 
 /*------------------------------------------------------------------------------
@@ -307,8 +305,7 @@ void CS_PROCF (uicosc, UICOSC) (const int *const ippmod,
  * char            crit_reca <--   define criteria for plane used to scaling (modrec ==2)
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uieli1, UIELI1) (const int    *const ncelet,
-                                const int    *const ieljou,
+void CS_PROCF (uieli1, UIELI1) (const int    *const ieljou,
                                 const int    *const ielarc,
                                       int    *const ielcor,
                                       double *const couimp,
@@ -328,9 +325,8 @@ void CS_PROCF (uieli1, UIELI1) (const int    *const ncelet,
  * char            crit_reca <--   define criteria for plane used to scaling (modrec ==2)
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uielrc, UIELRC) (const int    *const ncelet,
-                                      int    *const izreca,
-                                      double *const crit_reca);
+void CS_PROCF (uielrc, UIELRC) (int    *const izreca,
+                                double *const crit_reca);
 
 /*----------------------------------------------------------------------------
  * Atmospheric flows: read of meteorological file of data
@@ -358,7 +354,6 @@ void CS_PROCF (uiati1, UIATI1) (int           *imeteo,
  * subroutine uiatpr
  * *****************
  * integer         nsalpp   -->
- * integer         nsalto   -->
  * integer         ippmod   -->   specific physics indicator array
  * integer         iatmos   -->   index for atmospheric flow
  * integer         ipppro   -->
@@ -368,7 +363,6 @@ void CS_PROCF (uiati1, UIATI1) (int           *imeteo,
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uiatpr, UIATPR) (const int *const nsalpp,
-                                const int *const nsalto,
                                 const int *const ippmod,
                                 const int *const iatmos,
                                 const int *const ipppro,
@@ -428,7 +422,6 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
                                       double *const ock,
                                       double *const nck,
                                       double *const sck,
-                                      double *const pcick,
                                       double *const xashch,
                                       double *const xashsec,
                                       double *const xwatch,

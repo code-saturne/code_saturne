@@ -786,42 +786,6 @@ get_uistr2_data(const char    *label,
                                dtref, ttcabs, ntcabs);
 }
 
-/*-----------------------------------------------------------------------------
- * Return the external coupling DDL value
- *
- *  <boundary_conditions>
- *      <wall label=label_argument">
- *          <ale choice="external_coupling">
- *              <node_name_argument choice="off"/>
- *
- *   label     -->  The wall label.
- *   node_name -->  Node name: DDLX, DDLY or DDLZ.
-*----------------------------------------------------------------------------*/
-
-static int
-get_external_coupling_ddl(const char *const label,
-                          const char *const node_name)
-{
-  char* choice;
-  int isOn;
-
-  char *path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2, "boundary_conditions", "wall");
-  cs_xpath_add_test_attribute(&path, "label", label);
-  cs_xpath_add_element(&path, "ale");
-  cs_xpath_add_test_attribute(&path, "choice", "external_coupling");
-  cs_xpath_add_element(&path, node_name);
-  cs_xpath_add_attribute(&path, "choice");
-
-  choice = cs_gui_get_attribute_value(path);
-  isOn = cs_gui_strcmp(choice, "on");
-
-  BFT_FREE(choice);
-  BFT_FREE(path);
-
-  return isOn;
-}
-
 /*============================================================================
  * Public Fortran function definitions
  *============================================================================*/

@@ -188,7 +188,7 @@ if ( ippmod(ielarc).ge.1 ) then
 !        -----------------------------------
 !        (c'est forcement positif ou nul)
 
-    call uielrc(ncelet, izreca, crit_reca)
+    call uielrc(izreca, crit_reca)
 
     ipcefj = ipproc(iefjou)
     somje = 0.d0

@@ -80,7 +80,7 @@ double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
 character*80     chaine
 integer          ivar  , iscal , imom
 integer          iel
-integer          iccfth, ipcrom
+integer          iccfth
 integer          iclip , ipp  , iok   , ii
 integer          idtcm , ipcmom, iiptot
 integer          ibormo(nbmomx), imodif
@@ -172,11 +172,10 @@ endif
 
 if (iihmpr.eq.1) then
 
-  ipcrom = ipproc(irom)
   call uiiniv (ncelet, isuite, isca, iscold,       &
-               ithvar, ipr, ipcrom, itempk, ienerg,&
+               ithvar, ipr, itempk, ienerg,        &
                ro0, cp0, viscl0, uref,             &
-               almax, xyzcen, rtp, propce)
+               almax, xyzcen, rtp)
 
 endif
 

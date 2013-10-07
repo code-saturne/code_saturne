@@ -82,7 +82,7 @@ implicit none
 
 ! Arguments
 
-double precision dt(ncelet), rtp(ncelet,*)
+double precision rtp(ncelet,*)
 double precision propce(ncelet,*)
 
 ! Local variables
