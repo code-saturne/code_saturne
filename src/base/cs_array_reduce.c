@@ -103,10 +103,6 @@ _cs_real_sum_1d(cs_lnum_t        n,
 
   double v_sum = 0.;
 
-#if defined(__xlc__)
-#pragma disjoint(*v, *w, *vsum, *wsum)
-#endif
-
 # pragma omp parallel private(bid, start_id, end_id, i, c, s)    \
                               reduction(+:v_sum) if (n > THR_MIN)
   {
@@ -173,13 +169,13 @@ _cs_real_sstats_1d(cs_lnum_t         n,
   cs_lnum_t n_sblocks = sqrt(n_blocks);
   cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
 
+#if defined(__xlc__)
+#pragma disjoint(*v, *vmin, *vmax, *vsum)
+#endif
+
   *vmin = HUGE_VAL;
   *vmax = -HUGE_VAL;
   *vsum = 0.;
-
-#if defined(__xlc__)
-#pragma disjoint(*v, *w, *vmin, *vmax, *vsum, *wsum)
-#endif
 
 # pragma omp parallel private(bid, start_id, end_id, i, \
                               c, s, lmin, lmax) if (n > THR_MIN)
@@ -266,13 +262,13 @@ _cs_real_sstats_1d_l(cs_lnum_t         n,
   cs_lnum_t n_sblocks = sqrt(n_blocks);
   cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
 
+#if defined(__xlc__)
+#pragma disjoint(*vl, *v, *vmin, *vmax, *vsum)
+#endif
+
   *vmin = HUGE_VAL;
   *vmax = -HUGE_VAL;
   *vsum = 0.;
-
-#if defined(__xlc__)
-#pragma disjoint(*vl, *v, *w, *vmin, *vmax, *vsum, *wsum)
-#endif
 
 # pragma omp parallel private(bid, start_id, end_id, li, i, \
                               c, s, lmin, lmax) if (n > THR_MIN)
@@ -363,14 +359,14 @@ _cs_real_sstats_1d_w(cs_lnum_t         n,
   cs_lnum_t n_sblocks = sqrt(n_blocks);
   cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
 
+#if defined(__xlc__)
+#pragma disjoint(*v, *w, *vmin, *vmax, *vsum, *wsum)
+#endif
+
   *vmin = HUGE_VAL;
   *vmax = -HUGE_VAL;
   *vsum = 0.;
   *wsum = 0.;
-
-#if defined(__xlc__)
-#pragma disjoint(*v, *w, *vmin, *vmax, *vsum, *wsum)
-#endif
 
 # pragma omp parallel private(bid, start_id, end_id, i, \
                               c, s, lmin, lmax) if (n > THR_MIN)
@@ -469,14 +465,14 @@ _cs_real_sstats_1d_w_l(cs_lnum_t         n,
   cs_lnum_t n_sblocks = sqrt(n_blocks);
   cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
 
+#if defined(__xlc__)
+#pragma disjoint(*wl, *v, *w, *vmin, *vmax, *vsum, *wsum)
+#endif
+
   *vmin = HUGE_VAL;
   *vmax = -HUGE_VAL;
   *vsum = 0.;
   *wsum = 0.;
-
-#if defined(__xlc__)
-#pragma disjoint(*wl, *v, *w, *vmin, *vmax, *vsum, *wsum)
-#endif
 
 # pragma omp parallel private(bid, start_id, end_id, i, \
                               c, s, lmin, lmax) if (n > THR_MIN)
@@ -575,14 +571,14 @@ _cs_real_sstats_1d_l_w(cs_lnum_t         n,
   cs_lnum_t n_sblocks = sqrt(n_blocks);
   cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
 
+#if defined(__xlc__)
+#pragma disjoint(*vl, *v, *w, *vmin, *vmax, *vsum, *wsum)
+#endif
+
   *vmin = HUGE_VAL;
   *vmax = -HUGE_VAL;
   *vsum = 0.;
   *wsum = 0.;
-
-#if defined(__xlc__)
-#pragma disjoint(*vl, *v, *w, *vmin, *vmax, *vsum, *wsum)
-#endif
 
 # pragma omp parallel private(bid, start_id, end_id, li, i, \
                               c, s, lmin, lmax) if (n > THR_MIN)
@@ -680,15 +676,15 @@ _cs_real_sstats_3d(cs_lnum_t          n,
   cs_lnum_t n_sblocks = sqrt(n_blocks);
   cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
 
+#if defined(__xlc__)
+#pragma disjoint(*v, *vmin, *vmax, *vsum)
+#endif
+
   for (j = 0; j < 4; j++) {
     vmin[j] = HUGE_VAL;
     vmax[j] = -HUGE_VAL;
     vsum[j] = 0.;
   }
-
-#if defined(__xlc__)
-#pragma disjoint(*v, *vmin, *vmax, *vsum)
-#endif
 
 # pragma omp parallel private(bid, start_id, end_id, i, j, \
                               c, s, v_norm, lmin, lmax) if (n > THR_MIN)
@@ -803,15 +799,15 @@ _cs_real_sstats_3d_l(cs_lnum_t          n,
   cs_lnum_t n_sblocks = sqrt(n_blocks);
   cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
 
+#if defined(__xlc__)
+#pragma disjoint(*v, *vmin, *vmax, *vsum)
+#endif
+
   for (j = 0; j < 4; j++) {
     vmin[j] = HUGE_VAL;
     vmax[j] = -HUGE_VAL;
     vsum[j] = 0.;
   }
-
-#if defined(__xlc__)
-#pragma disjoint(*v, *vmin, *vmax, *vsum)
-#endif
 
 # pragma omp parallel private(bid, start_id, end_id, li, i, j, \
                               c, s, v_norm, lmin, lmax) if (n > THR_MIN)
@@ -930,16 +926,16 @@ _cs_real_sstats_3d_w(cs_lnum_t          n,
   cs_lnum_t n_sblocks = sqrt(n_blocks);
   cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
 
+#if defined(__xlc__)
+#pragma disjoint(*v, *w, *vmin, *vmax, *vsum, *wsum)
+#endif
+
   for (j = 0; j < 4; j++) {
     vmin[j] = HUGE_VAL;
     vmax[j] = -HUGE_VAL;
     vsum[j] = 0.;
     wsum[j] = 0.;
   }
-
-#if defined(__xlc__)
-#pragma disjoint(*v, *w, *vmin, *vmax, *vsum, *wsum)
-#endif
 
 # pragma omp parallel private(bid, start_id, end_id, i, j, \
                               c, s, v_norm, lmin, lmax) if (n > THR_MIN)
@@ -1067,16 +1063,16 @@ _cs_real_sstats_3d_w_l(cs_lnum_t          n,
   cs_lnum_t n_sblocks = sqrt(n_blocks);
   cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
 
+#if defined(__xlc__)
+#pragma disjoint(*wl, *v, *w, *vmin, *vmax, *vsum, *wsum)
+#endif
+
   for (j = 0; j < 4; j++) {
     vmin[j] = HUGE_VAL;
     vmax[j] = -HUGE_VAL;
     vsum[j] = 0.;
     wsum[j] = 0.;
   }
-
-#if defined(__xlc__)
-#pragma disjoint(*wl, *v, *w, *vmin, *vmax, *vsum, *wsum)
-#endif
 
 # pragma omp parallel private(bid, start_id, end_id, i, j, \
                               wi, c, s, v_norm, lmin, lmax) if (n > THR_MIN)
@@ -1204,16 +1200,16 @@ _cs_real_sstats_3d_l_w(cs_lnum_t          n,
   cs_lnum_t n_sblocks = sqrt(n_blocks);
   cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
 
+#if defined(__xlc__)
+#pragma disjoint(*vl, *v, *w, *vmin, *vmax, *vsum, *wsum)
+#endif
+
   for (j = 0; j < 4; j++) {
     vmin[j] = HUGE_VAL;
     vmax[j] = -HUGE_VAL;
     vsum[j] = 0.;
     wsum[j] = 0.;
   }
-
-#if defined(__xlc__)
-#pragma disjoint(*vl, *v, *w, *vmin, *vmax, *vsum, *wsum)
-#endif
 
 # pragma omp parallel private(bid, start_id, end_id, li, i, j, \
                               c, s, v_norm, lmin, lmax) if (n > THR_MIN)
@@ -1341,15 +1337,15 @@ _cs_real_sstats_nd(cs_lnum_t         n,
 
   assert(dim <= 9);
 
+#if defined(__xlc__)
+#pragma disjoint(*vl, *v, *vmin, *vmax, *vsum)
+#endif
+
   for (j = 0; j < dim; j++) {
     vmin[j] = HUGE_VAL;
     vmax[j] = -HUGE_VAL;
     vsum[j] = 0.;
   }
-
-#if defined(__xlc__)
-#pragma disjoint(*vl, *v, *vmin, *vmax, *vsum)
-#endif
 
 # pragma omp parallel private(bid, start_id, end_id, li, i, j, \
                               c, s, lmin, lmax) if (n > THR_MIN)
@@ -1510,16 +1506,16 @@ _cs_real_sstats_nd_w(cs_lnum_t         n,
 
   assert(dim <= 9);
 
+#if defined(__xlc__)
+#pragma disjoint(*vl, *wl, *v, *w, *vmin, *vmax, *vsum, *wsum)
+#endif
+
   for (j = 0; j < dim; j++) {
     vmin[j] = HUGE_VAL;
     vmax[j] = -HUGE_VAL;
     vsum[j] = 0.;
     wsum[j] = 0.;
   }
-
-#if defined(__xlc__)
-#pragma disjoint(*vl, *wl, *v, *w, *vmin, *vmax, *vsum, *wsum)
-#endif
 
 # pragma omp parallel private(bid, start_id, end_id, li, i, j, \
                               wi, c, s, lmin, lmax) if (n > THR_MIN)
