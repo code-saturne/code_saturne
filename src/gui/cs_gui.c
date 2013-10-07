@@ -5020,16 +5020,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
     if (user_law) {
       ipcvsl = ipproc[ ivisls[*itempk -1 ] -1 ] -1;
 
-      /* search the formula for the law */
-
-      path = cs_xpath_short_path();
-      cs_xpath_add_element(&path, "property");
-      cs_xpath_add_test_attribute(&path, "name", "thermal_conductivity");
-      cs_xpath_add_element(&path, "formula");
-      cs_xpath_add_function_text(&path);
-
-      law_la = cs_gui_get_text_value(path);
-      BFT_FREE(path);
+      /* formula for the law already read */
 
       /* return an empty interpreter */
 
@@ -5188,6 +5179,8 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
       mei_tree_insert(ev_viscv,"p0", *p0);
       mei_tree_insert(ev_viscv,"T", 0.);
       mei_tree_insert(ev_viscv,"t0", *t0);
+
+      BFT_FREE(law_viscv);
 
       /* try to build the interpreter */
 
