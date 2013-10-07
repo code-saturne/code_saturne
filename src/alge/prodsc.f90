@@ -26,23 +26,31 @@
 
 !> \file prodsc.f90
 !>
-!> \brief Dot product \c vava = \f$ v_a \cdot \v_b\f$
+!> \brief Dot product \c vava = \f$ v_a \cdot v_b \f$
 !>
 !> The flag \c isqrt can be used to compute the square root of the dot product
 !> or the normed residual of two extensive vectors:
 !>  - if \c isqrt = 0:
-!>    \f[ v_a \cdot v_b = \sum_{\celli =1}^{\ncell} v_a_\celli v_b_\celli \f]
+!>    \f[
+!>       v_a \cdot v_b = \sum_{\celli =1}^{\ncell} v_{a_\celli} v_{b_\celli}
+!>    \f]
 !>  - if \c isqrt = 1:
-!>    \f[ v_a \cdot v_b
-!>      = \sqrt{\sum_{\celli =1}^{\ncell} v_a_\celli v_b_\celli} \f]
+!>    \f[
+!>      v_a \cdot v_b
+!>      = \sqrt{\sum_{\celli =1}^{\ncell} v_{a_\celli} v_{b_\celli}}
+!>    \f]
 !>  - if \c isqrt = 10:
-!>    \f[ v_a \cdot v_b
+!>    \f[
+!>      v_a \cdot v_b
 !>      = \sum_{\celli =1}^{\ncell}
-!>        \dfrac{v_a_\celli v_b_\celli}{\norm{\vol{\celli}}} \f]
+!>        \dfrac{v_{a_\celli} v_{b_\celli}}{\norm{\vol{\celli}}}
+!>    \f]
 !>  - if \c isqrt = 11:
-!>    \f[ v_a \cdot v_b
+!>    \f[
+!>      v_a \cdot v_b
 !>      = \sqrt{\sum_{\celli =1}^{\ncell}
-!>              \dfrac{v_a_\celli v_b_\celli}{\norm{\vol{\celli}}}} \f]
+!>              \dfrac{v_{a_\celli} v_{b_\celli}}{\norm{\vol{\celli}}}}
+!>    \f]
 !>
 !-------------------------------------------------------------------------------
 
