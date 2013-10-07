@@ -74,6 +74,7 @@
 #include "cs_coupling.h"
 #include "cs_ctwr.h"
 #include "cs_field.h"
+#include "cs_field_pointer.h"
 #include "cs_file.h"
 #include "cs_gradient.h"
 #include "cs_gradient_perio.h"
@@ -224,6 +225,8 @@ cs_run(void)
     CS_PROCF(csinit, CSINIT)(&_rank_id, &_n_ranks);
 
     CS_PROCF(initi1, INITI1)();
+
+    cs_field_pointer_map_base();
 
     CS_PROCF (haltyp, HALTYP) (&ivoset);
     if (ivoset)
@@ -401,6 +404,7 @@ cs_run(void)
 
   /* Free field info */
 
+  cs_field_pointer_destroy_all();
   cs_field_destroy_all();
   cs_field_destroy_all_keys();
 

@@ -120,8 +120,12 @@ BEGIN_C_DECLS
 */
 
 /*=============================================================================
- * Macro definitions
+ * Local macro definitions
  *============================================================================*/
+
+/* Field descriptor allocation block size */
+
+#define _CS_FIELD_S_ALLOC_SIZE       16
 
 /*============================================================================
  * Type definitions
@@ -168,7 +172,7 @@ typedef struct {
 
 static int  _n_fields = 0;
 static int  _n_fields_max = 0;
-static cs_field_t  *_fields = NULL;
+static cs_field_t  **_fields = NULL;
 static cs_map_name_to_id_t  *_field_map = NULL;
 
 /* Key definitions */
@@ -331,22 +335,33 @@ _field_create(const char   *name,
     int i;
     ptrdiff_t addr_shift = addr_1 - addr_0;
     for (i = 0; i < field_id; i++)
-      (_fields + i)->name += addr_shift;
+      _fields[i]->name += addr_shift;
   }
 
   if (field_id == _n_fields)
     _n_fields = field_id + 1;
 
-  /* Reallocate fields if necessary */
+  /* Reallocate fields pointer if necessary */
 
   if (_n_fields > _n_fields_max) {
     if (_n_fields_max == 0)
       _n_fields_max = 8;
     else
       _n_fields_max *= 2;
-    BFT_REALLOC(_fields, _n_fields_max, cs_field_t);
+    BFT_REALLOC(_fields, _n_fields_max, cs_field_t *);
     BFT_REALLOC(_key_vals, _n_keys_max*_n_fields_max, cs_field_key_val_t);
   }
+
+  /* Allocate fields descriptor block if necessary
+     (to reduce fragmentation and improve locality of field
+     descriptors, they are allocated in blocks) */
+
+  int shift_in_alloc_block = field_id % _CS_FIELD_S_ALLOC_SIZE;
+  if (shift_in_alloc_block == 0)
+    BFT_MALLOC(_fields[field_id], _CS_FIELD_S_ALLOC_SIZE, cs_field_t);
+  else
+    _fields[field_id] = _fields[field_id - shift_in_alloc_block]
+                        + shift_in_alloc_block;
 
   /* Check type flags and location id */
 
@@ -364,7 +379,7 @@ _field_create(const char   *name,
 
   /* Assign field */
 
-  f = _fields + field_id;
+  f = _fields[field_id];
 
   f->name = cs_map_name_to_id_reverse(_field_map, field_id);
 
@@ -1626,7 +1641,7 @@ cs_field_destroy_all(void)
   int i;
 
   for (i = 0; i < _n_fields; i++) {
-    cs_field_t  *f = _fields + i;
+    cs_field_t  *f = _fields[i];
     if (f->is_owner) {
       BFT_FREE(f->val);
       BFT_FREE(f->val_pre);
@@ -1642,6 +1657,11 @@ cs_field_destroy_all(void)
       }
       BFT_FREE(f->bc_coeffs);
     }
+  }
+
+  for (i = 0; i < _n_fields; i++) {
+    if (i % _CS_FIELD_S_ALLOC_SIZE == 0)
+      BFT_FREE(_fields[i]);
   }
 
   BFT_FREE(_fields);
@@ -1674,7 +1694,7 @@ cs_field_allocate_or_map_all(void)
   int i;
 
   for (i = 0; i < _n_fields; i++) {
-    cs_field_t  *f = _fields + i;
+    cs_field_t  *f = _fields[i];
     if (f->is_owner)
       cs_field_allocate_values(f);
     else
@@ -1703,7 +1723,7 @@ cs_field_t  *
 cs_field_by_id(int  id)
 {
   if (id > -1 && id < _n_fields)
-    return _fields + id;
+    return _fields[id];
   else {
     bft_error(__FILE__, __LINE__, 0,
               _("Field with id %d is not defined."), id);
@@ -1729,7 +1749,7 @@ cs_field_by_name(const char  *name)
   int id = cs_map_name_to_id_try(_field_map, name);
 
   if (id > -1)
-    return _fields + id;
+    return _fields[id];
   else {
     bft_error(__FILE__, __LINE__, 0,
               _("Field \"%s\" is not defined."), name);
@@ -1755,9 +1775,41 @@ cs_field_by_name_try(const char  *name)
   int id = cs_map_name_to_id_try(_field_map, name);
 
   if (id > -1)
-    return _fields + id;
+    return _fields[id];
   else
     return NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the id of a defined field based on its name.
+ *
+ * If no field with the given name exists, -1 is returned.
+ *
+ * \param[in]  name   key name
+ *
+ * \return  id of the field, or -1 if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------
+ * Return the id of a defined field based on its name.
+ *
+ * If no field with the given name exists, -1 is returned.
+ *
+ * parameters:
+ *   name <-- field name
+ *
+ * returns:
+ *   id the field, or -1 if not found
+ *----------------------------------------------------------------------------*/
+
+int
+cs_field_id_by_name(const char *name)
+{
+  int id = cs_map_name_to_id_try(_field_map, name);
+
+  return id;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2612,7 +2664,7 @@ cs_field_log_defs(void)
 
     for (i = 0; i < _n_fields; i++) {
 
-      const cs_field_t *f = _fields + i;
+      const cs_field_t *f = _fields[i];
 
       if (f->type & mask_prev)
         continue;
@@ -2630,7 +2682,7 @@ cs_field_log_defs(void)
 
       char ilv_c = ' ';
 
-      const cs_field_t *f = _fields + i;
+      const cs_field_t *f = _fields[i];
 
       if (f->type & mask_prev)
         continue;
@@ -2886,7 +2938,7 @@ cs_field_log_fields(int  log_keywords)
 
     for (i = 0; i < _n_fields; i++) {
 
-      f = _fields + i;
+      f = _fields[i];
 
       if (f->type & mask_prev)
         continue;
@@ -3076,7 +3128,7 @@ cs_field_log_key_vals(int   key_id,
 
     for (i = 0; i < _n_fields; i++) {
 
-      const cs_field_t *f = _fields + i;
+      const cs_field_t *f = _fields[i];
 
       if (f->type & mask_prev)
         continue;

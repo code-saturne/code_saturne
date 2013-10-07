@@ -35,6 +35,8 @@ Architectural changes
   and post.f90 for example), but for smaller modules, this avoids requiring
   the definition of specific module files.
 
+- Added cs_field_pointer API for quick access to main fields from C.
+
 - Added experimental ParaView Catalyst co-processing output option.
 
 - Added new all-to-all infrastructure, allowing alternative algorithms such as

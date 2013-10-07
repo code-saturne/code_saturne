@@ -380,6 +380,21 @@ cs_field_t  *
 cs_field_by_name_try(const char *name);
 
 /*----------------------------------------------------------------------------
+ * Return the id of a defined field based on its name.
+ *
+ * If no field with the given name exists, -1 is returned.
+ *
+ * parameters:
+ *   name <-- field name
+ *
+ * returns:
+ *   id the field, or -1 if not found
+ *----------------------------------------------------------------------------*/
+
+int
+cs_field_id_by_name(const char *name);
+
+/*----------------------------------------------------------------------------
  * Return an id associated with a given key name.
  *
  * The key must have been defined previously.
@@ -474,24 +489,24 @@ cs_field_define_key_str(const char  *name,
                         const char  *default_value,
                         int          type_flag);
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Define a key for a structure value by its name and return an
+/*----------------------------------------------------------------------------
+ * Define a key for a structure value by its name and return an
  * associated id.
  *
  * If the key has already been defined, its previous default value is replaced
  * by the current value, and its id is returned.
  *
- * \param[in]  name            key name
- * \param[in]  default_value   pointer to default value associated with key
- * \param[in]  log_funct       pointer to logging function
- * \param[in]  size            sizeof structure
- * \param[in]  type_flag       mask associated with field types with which
- *                             the key may be associated, or 0
+ * parameters:
+ *   name          <-- key name
+ *   default_value <-- pointer to default value associated with key
+ *   log_funct     <-- pointer to logging function
+ *   size          <-- sizeof structure
+ *   type_flag     <-- mask associated with field types with which
+ *                     the key may be associated, or 0
  *
- * \return  id associated with key
- */
-/*----------------------------------------------------------------------------*/
+ * returns:
+ *   id associated with key
+ *----------------------------------------------------------------------------*/
 
 int
 cs_field_define_key_struct(const char                 *name,
@@ -681,21 +696,21 @@ cs_field_get_key_str(const cs_field_t  *f,
                      int                key_id);
 
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Assign a simple structure for a given key to a field.
+/*----------------------------------------------------------------------------
+ * Assign a simple structure for a given key to a field.
  *
  * If the key id is not valid, CS_FIELD_INVALID_KEY_ID is returned.
  * If the field category is not compatible with the key (as defined
  * by its type flag), CS_FIELD_INVALID_CATEGORY is returned.
  *
- * \param[in]  f       pointer to field structure
- * \param[in]  key_id  id of associated key
- * \param[in]  s       structure associated with key
+ * parameters:
+ *   f      <-- pointer to field structure
+ *   key_id <-- id of associated key
+ *   s      <-- structure associated with key
  *
- * \return  0 in case of success, > 1 in case of error
- */
-/*----------------------------------------------------------------------------*/
+ * returns:
+ *   0 in case of success, > 1 in case of error
+ *----------------------------------------------------------------------------*/
 
 int
 cs_field_set_key_struct(cs_field_t  *f,
