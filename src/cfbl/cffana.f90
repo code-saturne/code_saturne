@@ -108,7 +108,7 @@ call field_get_val_s(iflmab, bmasfl)
 call field_get_coefac_v(ivarfl(iu), cofacv)
 call field_get_coefac_s(ivarfl(ien), coface)
 
-call field_get_coefac_s(ibrom, brom)
+call field_get_val_s(ibrom, brom)
 
 ifac  = imodif
 iel   = ifabor(ifac)
