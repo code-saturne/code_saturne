@@ -20,31 +20,53 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine prodsc &
-!================
-
- ( ncel   , isqrt  , va     , vb     , vavb   )
-
 !===============================================================================
-! Purpose:
-! --------
+! function:
+! ---------
 
-! Dot product VAPVB = VA.VB or \/ VA.VB  if ISQRT=1
+!> \file prodsc.f90
+!>
+!> \brief Dot product \c vava = \f$ v_a \cdot \v_b\f$
+!>
+!> The flag \c isqrt can be used to compute the square root of the dot product
+!> or the normed residual of two extensive vectors:
+!>  - if \c isqrt = 0:
+!>    \f[ v_a \cdot v_b = \sum_{\celli =1}^{\ncell} v_a_\celli v_b_\celli \f]
+!>  - if \c isqrt = 1:
+!>    \f[ v_a \cdot v_b
+!>      = \sqrt{\sum_{\celli =1}^{\ncell} v_a_\celli v_b_\celli} \f]
+!>  - if \c isqrt = 10:
+!>    \f[ v_a \cdot v_b
+!>      = \sum_{\celli =1}^{\ncell}
+!>        \dfrac{v_a_\celli v_b_\celli}{\norm{\vol{\celli}}} \f]
+!>  - if \c isqrt = 11:
+!>    \f[ v_a \cdot v_b
+!>      = \sqrt{\sum_{\celli =1}^{\ncell}
+!>              \dfrac{v_a_\celli v_b_\celli}{\norm{\vol{\celli}}}} \f]
+!>
+!-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! ncel             ! i  ! <-- ! number of cells                                !
-! isqrt            ! i  ! <-- ! flag: 1 to return the square root              !
-! va, vb(ncel)     ! ra ! <-- ! vectors to multiply                            !
-! vavb             ! r  ! --> ! dot product                                    !
-!__________________!____!_____!________________________________________________!
+! arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     ncel          number of cells
+!> \param[in]     isqrt         flag:
+!>                               - 0 to return the canonic scalar product
+!>                               - 1 to return the square root
+!>                               - 10 to return the scalar product of extensive
+!>                                    vectors
+!>                               - 11 to return the square root of the scalar
+!>                                    product of extensive vectors
+!> \param[in]     va            first vector to multiply
+!> \param[in]     vb            second vector to multiply
+!> \param[out]    vavb          dot product
+!_______________________________________________________________________________
 
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
+subroutine prodsc &
+ ( ncel   , isqrt  , va     , vb     , vavb   )
+
 !===============================================================================
 
 !===============================================================================
@@ -52,6 +74,7 @@ subroutine prodsc &
 !===============================================================================
 
 use paramx
+use mesh, only: volume
 use parall
 
 !===============================================================================
@@ -66,16 +89,26 @@ double precision va(*), vb(*)
 
 ! Local variables
 
-double precision csdot
-external         csdot
+double precision csdot, csres
+external         csdot, csres
 
 !===============================================================================
 
-vavb = csdot(ncel, va, vb)
+if (isqrt.le.1) then
+  vavb = csdot(ncel, va, vb)
 
-if (irangp.ge.0) call parsom (vavb)
-                 !==========
-if (isqrt.eq.1) vavb= sqrt(vavb)
+  if (irangp.ge.0) call parsom (vavb)
+
+  if (isqrt.eq.1) vavb = sqrt(vavb)
+
+! Compute the residual of extensive vectors
+else
+
+  vavb = csres(ncel, volume, va, vb)
+
+  if (isqrt.eq.11) vavb = sqrt(vavb)
+
+endif
 
 !----
 ! End

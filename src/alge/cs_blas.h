@@ -57,6 +57,13 @@ double CS_PROCF(csdot, CSDOT)(const cs_int_t   *n,
                               const cs_real_t  *x,
                               const cs_real_t  *y);
 
+/* Return the global residual of 2 extensiv vectors: x.y */
+
+double CS_PROCF(csres, CSRES)(const cs_int_t   *n,
+                              const cs_real_t  *vol,
+                              const cs_real_t  *x,
+                              const cs_real_t  *y);
+
 /*============================================================================
  *  Public function prototypes or wrapper macros
  *============================================================================*/
@@ -93,6 +100,28 @@ cs_axpy(cs_lnum_t         n,
 
 double
 cs_dot(cs_lnum_t         n,
+       const cs_real_t  *x,
+       const cs_real_t  *y);
+
+/*----------------------------------------------------------------------------
+ * Return the global resildual of 2 extensive vectors:
+ *  1/sum(vol) . sum(X.Y/vol)
+ *
+ * For better precision, a superblock algorithm is used.
+ *
+ * parameters:
+ *   n   <-- size of arrays x and y
+ *   vol <-- array of floating-point values
+ *   x   <-- array of floating-point values
+ *   y   <-- array of floating-point values
+ *
+ * returns:
+ *   dot product
+ *----------------------------------------------------------------------------*/
+
+double
+cs_gres(cs_lnum_t         n,
+       const cs_real_t  *vol,
        const cs_real_t  *x,
        const cs_real_t  *y);
 

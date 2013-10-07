@@ -21,37 +21,37 @@
 !-------------------------------------------------------------------------------
 
 !===============================================================================
-! Function:
+! function:
 ! ---------
 
 !> \file inimav.f90
 !>
-!> \brief This function adds \f$ \rho \vect{u} \cdot \vect{S}_\ij\f$ to the mass
+!> \brief this function adds \f$ \rho \vect{u} \cdot \vect{s}_\ij\f$ to the mass
 !> flux \f$ \dot{m}_\ij \f$.
 !>
-!> For the reconstruction, \f$ \gradt \left(\rho \vect{u} \right) \f$ is
+!> for the reconstruction, \f$ \gradt \left(\rho \vect{u} \right) \f$ is
 !> computed with the following approximated boundary conditions:
-!>  - \f$ \vect{A}_{\rho u} = \rho_\fib \vect{A}_u \f$
-!>  - \f$ \tens{B}_{\rho u} = \tens{B}_u \f$
+!>  - \f$ \vect{a}_{\rho u} = \rho_\fib \vect{a}_u \f$
+!>  - \f$ \tens{b}_{\rho u} = \tens{b}_u \f$
 !>
-!> For the mass flux at the boundary we have:
+!> for the mass flux at the boundary we have:
 !> \f[
-!> \dot{m}_\ib = \left[ \rho_\fib \vect{A}_u  + \rho_\fib \tens{B}_u \vect{u}
-!> + \tens{B}_u \left(\gradt \vect{u} \cdot \vect{\centi \centip}\right)\right]
-!> \cdot \vect{S}_\ij
+!> \dot{m}_\ib = \left[ \rho_\fib \vect{a}_u  + \rho_\fib \tens{b}_u \vect{u}
+!> + \tens{b}_u \left(\gradt \vect{u} \cdot \vect{\centi \centip}\right)\right]
+!> \cdot \vect{s}_\ij
 !> \f]
-!> The last equation uses some approximations detailed in the theory guide.
+!> the last equation uses some approximations detailed in the theory guide.
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
-! Arguments
+! arguments
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[in]     ivar          index of the current variable
 !> \param[in]     itypfl        indicator (take rho into account or not)
-!>                               - 1 compute \f$ \rho\vect{u}\cdot\vect{S} \f$
-!>                               - 0 compute \f$ \vect{u}\cdot\vect{S} \f$
+!>                               - 1 compute \f$ \rho\vect{u}\cdot\vect{s} \f$
+!>                               - 0 compute \f$ \vect{u}\cdot\vect{s} \f$
 !> \param[in]     iflmb0        the mass flux is set to 0 on walls and
 !>                               symmetries if = 1
 !> \param[in]     init          the mass flux is initialize to 0 if > 0
@@ -77,9 +77,9 @@
 !> \param[in]     romb          border face density
 !> \param[in]     vel           vector variable
 !> \param[in]     coefav        boundary condition array for the variable
-!>                               (Explicit part - vector array )
+!>                               (explicit part - vector array )
 !> \param[in]     coefbv        boundary condition array for the variable
-!>                               (Impplicit part - 3x3 tensor array)
+!>                               (impplicit part - 3x3 tensor array)
 !> \param[in,out] flumas        interior mass flux \f$ \dot{m}_\fij \f$
 !> \param[in,out] flumab        border mass flux \f$ \dot{m}_\fib \f$
 !_______________________________________________________________________________

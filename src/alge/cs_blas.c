@@ -85,6 +85,16 @@ double CS_PROCF(csdot, CSDOT)(const cs_int_t   *n,
   return cs_dot(*n, x, y);
 }
 
+/* Return the global residual of 2 extensiv vectors: x.y */
+
+double CS_PROCF(csres, CSRES)(const cs_int_t   *n,
+                              const cs_real_t  *vol,
+                              const cs_real_t  *x,
+                              const cs_real_t  *y)
+{
+  return cs_gres(*n, vol, x, y);
+}
+
 /*============================================================================
  *  Public function definitions
  *============================================================================*/
@@ -182,6 +192,92 @@ cs_dot(cs_lnum_t         n,
   return dot;
 }
 
+/*----------------------------------------------------------------------------
+ * Return the global resildual of 2 extensive vectors:
+ *  1/sum(vol) . sum(X.Y/vol)
+ *
+ * For better precision, a superblock algorithm is used.
+ *
+ * parameters:
+ *   n   <-- size of arrays x and y
+ *   vol <-- array of floating-point values
+ *   x   <-- array of floating-point values
+ *   y   <-- array of floating-point values
+ *
+ * returns:
+ *   dot product
+ *----------------------------------------------------------------------------*/
+
+double
+cs_gres(cs_lnum_t         n,
+       const cs_real_t  *vol,
+       const cs_real_t  *x,
+       const cs_real_t  *y)
+{
+  const cs_lnum_t block_size = 60;
+
+  cs_lnum_t sid, bid, i;
+  cs_lnum_t start_id, end_id;
+  double sdot, cdot;
+  double svtot, cvtot;
+
+  cs_lnum_t n_blocks = n / block_size;
+  cs_lnum_t n_sblocks = sqrt(n_blocks);
+  cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
+
+  double dot = 0.;
+  double vtot = 0.;
+
+ /*
+  * The algorithm used is l3superblock60, based on the article:
+  * "Reducing Floating Point Error in Dot Product Using the Superblock Family
+  * of Algorithms" by Anthony M. Castaldo, R. Clint Whaley, and Anthony
+  * T. Chronopoulos, SIAM J. SCI. COMPUT., Vol. 31, No. 2, pp. 1156–1174
+  * 2008 Society for Industrial and Applied Mathematics
+  */
+
+# pragma omp parallel for reduction(+:dot, vtot) private(bid, start_id, end_id, i, \
+                                                   cdot, sdot, cvtot, svtot) if (n > THR_MIN)
+  for (sid = 0; sid < n_sblocks; sid++) {
+
+    sdot = 0.;
+    svtot = 0.;
+
+    for (bid = 0; bid < blocks_in_sblocks; bid++) {
+      start_id = block_size * (blocks_in_sblocks*sid + bid);
+      end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
+      cdot = 0.;
+      cvtot = 0.;
+      for (i = start_id; i < end_id; i++) {
+        cdot += x[i]*y[i]/vol[i];
+        cvtot += vol[i];
+      }
+      sdot += cdot;
+      svtot += cvtot;
+    }
+
+    dot += sdot;
+
+  }
+
+  cdot = 0.;
+  cvtot = 0.;
+  start_id = block_size * n_sblocks*blocks_in_sblocks;
+  end_id = n;
+  for (i = start_id; i < end_id; i++) {
+    cdot += x[i]*y[i]/vol[i];
+    cvtot += vol[i];
+  }
+  dot += cdot;
+  vtot += cvtot;
+
+  cs_parall_sum(1, CS_DOUBLE, &dot);
+  cs_parall_sum(1, CS_DOUBLE, &vtot);
+
+  dot /= vtot;
+
+  return dot;
+}
 /*----------------------------------------------------------------------------
  * Return dot products of a vector with itself: x.x
  *
