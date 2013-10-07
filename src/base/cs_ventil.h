@@ -168,17 +168,18 @@ void CS_PROCF (debvtl, DEBVTL)
  * Calculate the force induced by the fans (needs a previous calculation
  * of the flows through each fan).
  *
- * The induced force is added to the array CRVXEP (which can have other
- * other contributions).
+ * The induced force is added to the array crvxep (which can have other
+ * contributions).
  *
  * Fortran interface:
  *
- * SUBROUTINE TSVVTL (DEBENT, DEBSOR)
+ * subroutine tsvvtl
  * *****************
  *
- * INTEGER          IDIMTS         : <-- : Dimension associated to the source
- *                                 :     : term of velocity (1: X; 2: Y; 3: Z)
- * DOUBLE PRECISION CRVEXP(NCELET) : <-> : Explicit source term (velocity)
+ * parameters:
+ *  idimts         <-- Dimension associated to the source
+ *                     term of velocity (1: X; 2: Y; 3: Z)
+ *  crvexp         <-> Explicit source term (velocity)
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (tsvvtl, TSVVTL)

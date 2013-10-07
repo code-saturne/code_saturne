@@ -112,12 +112,12 @@ cs_ventil_t  * * cs_glob_ventil_tab = NULL;
 
 enum {X, Y, Z} ;
 
-#define CS_LOC_PRODUIT_VECTORIEL(prod_vect, vect1, vect2)  \
+#define CS_LOC_VECTORIAL_PRODUCT(prod_vect, vect1, vect2)  \
   (prod_vect[X] = vect1[Y] * vect2[Z] - vect2[Y] * vect1[Z], \
    prod_vect[Y] = vect2[X] * vect1[Z] - vect1[X] * vect2[Z], \
    prod_vect[Z] = vect1[X] * vect2[Y] - vect2[X] * vect1[Y])
 
-#define CS_LOC_PRODUIT_SCALAIRE(vect1, vect2) \
+#define CS_LOC_DOT_PRODUCT(vect1, vect2) \
   (vect1[X] * vect2[X] + vect1[Y] * vect2[Y] + vect1[Z] * vect2[Z])
 
 #define CS_LOC_MODULE(vect) \
@@ -282,15 +282,16 @@ void CS_PROCF (numvtl, NUMVTL)
  *
  * Fortran interface:
  *
- * SUBROUTINE DEBVTL
+ * subroutine debvtl
  * *****************
  *
- * DOUBLE PRECISION FLUMAS(*)      : <-- : Interior faces mass flux
- * DOUBLE PRECISION FLUMAB(*)      : <-- : Boundary faces mass flux
- * DOUBLE PRECISION RHO   (*)      : <-- : Density at cells
- * DOUBLE PRECISION RHOFAB(*)      : <-- : Density at boundary faces
- * DOUBLE PRECISION DEBENT(NBRVTL) : --> : Inlet flow through the fan
- * DOUBLE PRECISION DEBSOR(NBRVTL) : --> : Outlet flow through the fan
+ * parameters:
+ *  flumas         <-- Interior faces mass flux
+ *  flumab         <-- Boundary faces mass flux
+ *  rho            <-- Density at cells
+ *  rhofab         <-- Density at boundary faces
+ *  debent         --> Inlet flow through the fan (size is nbrvtl)
+ *  debsor         --> Outlet flow through the fan (size is nbrvtl)
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (debvtl, DEBVTL)
@@ -323,17 +324,18 @@ void CS_PROCF (debvtl, DEBVTL)
  * Calculate the force induced by the fans (needs a previous calculation
  * of the flows through each fan).
  *
- * The induced force is added to the array CRVXEP (which can have other
- * other contributions).
+ * The induced force is added to the array crvxep (which can have other
+ * contributions).
  *
  * Fortran interface:
  *
- * SUBROUTINE TSVVTL (DEBENT, DEBSOR)
+ * subroutine tsvvtl
  * *****************
  *
- * INTEGER          IDIMTS         : <-- : Dimension associated to the source
- *                                 :     : term of velocity (1: X; 2: Y; 3: Z)
- * DOUBLE PRECISION CRVEXP(NCELET) : <-> : Explicit source term (velocity)
+ * parameters:
+ *  idimts         <-- Dimension associated to the source
+ *                     term of velocity (1: X; 2: Y; 3: Z)
+ *  crvexp         <-> Explicit source term (velocity)
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (tsvvtl, TSVVTL)
@@ -807,7 +809,7 @@ cs_ventil_calcul_debits(const cs_mesh_t             *mesh,
           ventil = cs_glob_ventil_tab[ivtl];
           debit = flux_masse_fac[ifac]/densite_cel[icel];
           sens = (i == 0 ? 1 : - 1);
-          if (CS_LOC_PRODUIT_SCALAIRE(ventil->dir_axe, orient) * sens > 0.0)
+          if (CS_LOC_DOT_PRODUCT(ventil->dir_axe, orient) * sens > 0.0)
             ventil->debit_sortant += debit;
           else
             ventil->debit_entrant += debit;
@@ -833,7 +835,7 @@ cs_ventil_calcul_debits(const cs_mesh_t             *mesh,
         orient[idim] = mesh_quantities->b_face_normal[ifac * 3 + idim];
 
       debit = flux_masse_fbr[ifac]/densite_fbr[ifac];
-      if (CS_LOC_PRODUIT_SCALAIRE(ventil->dir_axe, orient) > 0.0)
+      if (CS_LOC_DOT_PRODUCT(ventil->dir_axe, orient) > 0.0)
         ventil->debit_sortant += debit;
       else
         ventil->debit_entrant += debit;
@@ -994,7 +996,7 @@ cs_ventil_calcul_force(const cs_mesh_quantities_t  *mesh_quantities,
 
         d_axe = CS_LOC_MODULE(d_cel_axe); /* Distance to the axis */
 
-        CS_LOC_PRODUIT_VECTORIEL(f_rot, ventil->dir_axe, d_cel_axe);
+        CS_LOC_VECTORIAL_PRODUCT(f_rot, ventil->dir_axe, d_cel_axe);
 
         aux = CS_LOC_MODULE(f_rot);
         for (idim = 0 ; idim < 3 ; idim++)
