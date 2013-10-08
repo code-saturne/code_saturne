@@ -312,7 +312,7 @@ The case has to be repeated in the file of parameters:
 \normalsize
 
 If nothing is done, the case is repeated without modifications. In order to modify
-the setup between two runs of the same case, an external script has to be used for
+the setup between two runs of the same case, an external script has to be used to
 change the related setup (see sections \ref{sec:prepro} and \ref{sec:tricks}).
 
 \subsection{Compare checkpoint files}
@@ -448,7 +448,7 @@ from the current study in the \textbf{repository}. If a script is not found,
 it is searched in the directories of te current case.
 The main objectif of running such external scripts is to create or modify
 meshes or to modify the current setup of the related case (see section
-\ref{sec:trick}).
+\ref{sec:tricks}).
 
 \subsection{Run external additional postprocessing scripts with options for a case}
 
@@ -559,20 +559,22 @@ if __name__ == '__main__':
 The launch of external scripts is activated if the option \texttt{-p, --post}
 is present in the command line.
 
-The purpose of this functionality is to create new data based on several
-runs of cases, and to plot them (see section \ref{sec:curves}).
+The purpose of this functionality is to create new data based on several runs of
+cases, and to plot them (see section \ref{sec:curves}) or to insert them in the
+final detailed report (see section \ref{sec:input}).
 
-The markup \texttt{<postpro>} has to be added as a child of the condidered study.
+The markup \texttt{<postpro>} has to be added as a child of the considered study.
 
 \small
 \begin{verbatim}
 <study label='STUDY' status='on'>
     <case label='CASE1' status='on' compute="on" post="on"/>
-    <postpro label='Grid2' status="on" arg="-n 100">
+    <postpro label='Grid2.py' status="on" arg="-n 100">
         <data file="profile.dat">
             <plot fig="1" xcol="1" ycol="2" legend="Grid level 2" fmt='b-p'/>
             <plot fig="2" xcol="1" ycol="3" legend="Grid level 2" fmt='b-p'/>
         </data>
+    <input file="output.dat" dest=""/>
     </postpro>
 </study>
 \end{verbatim}
@@ -688,7 +690,7 @@ linestyle, for example \texttt{fmt="r--"} for a dashed red line;
 \item some standard options of 2D lines can be added, for example
 \texttt{markevery="2"} or \texttt{markersize="3.5"}. These options
 are summarized in the table \ref{table:curves}. Note that the options
-which are string of characters must be overquoted likes this: 
+which are string of characters must be overquoted likes this:
 \texttt{color="'g'"}.
 
 \begin{table}[htbp]
@@ -1071,7 +1073,7 @@ The attributes \texttt{name} and \texttt{variable} are mandatory.
 \item \texttt{levels}: number of levels for the color bar
 \item \texttt{height}: set the height  of the color bar
 \item \texttt{width}: set the width  of the color bar
-\item \texttt{position}: simple predefined position for the color bar in "North", "South", "West", or "East" 
+\item \texttt{position}: simple predefined position for the color bar in "North", "South", "West", or "East"
 \item \texttt{legend}: legend of the color bar
 \item \texttt{fontsize}: font size for the legend
 \item \texttt{format}: float format to display the value of the levels of the color bar
@@ -1201,7 +1203,7 @@ associated to the zoom to display correctly the scalar map.
 \end{verbatim}
 \normalsize
 
-\subsection{Post-processing: input files}
+\subsection{Post-processing: input files}\label{sec:input}
 
 The post-processing is activated if the option \texttt{-p, --post} is present
 in the command line.
@@ -1324,7 +1326,7 @@ When there is a misprint in the file of parameters,
 with the line and the column of the file:
 \small
 \begin{verbatim}
-my_case.xml file reading error. 
+my_case.xml file reading error.
 
 This file is not in accordance with XML specifications.
 
@@ -1407,44 +1409,78 @@ tetra.ExportMED("./my_mesh.med")
 \end{verbatim}
 \normalsize
 
-\item How to make a grid convergence study ?
+\item How to carry out a grid convergence study ?
 
-The following exemple show how to run twice the same case, with a new mesh:
+The following exemple shows how to carry out a grid convergence study by running
+the same case three times and changing the parameters between each run with the
+help of a prepro script.
+
+Here the mesh, the maximum number of iterations, the reference time step and the
+number of processes are modified, before each run, by the script
+\texttt{prepro.py}.
+
+The file of parameters is as follows:
 
 \small
 \begin{verbatim}
-<case compute="on" label="CANON" run_id="50CELLS" post="on" status="on">
-    <prepro label="grid.py" args="-m canon50.des.gz -p supercanon.xml" status="on"/>
-        <data dest="" file="probes_Pressure.dat">
-        <plot fig="1" fmt="r-s" legend="Grid level 1" xcol="1" ycol="2"/>
-        <plot fig="2" fmt="r-s" xcol="1" ycol="3"/>
+<case compute="on" label="COUETTE" post="on" run_id="21_Theta_1" status="on">
+    <prepro args="-m 21_Theta_1.med -p Couette.xml -n 4000 -a 1. -t 0.01024 -u 1"
+            label="prepro.py" status="on"/prepro>
+    <data dest="" file="profile.dat">
+        <plot fig="5" fmt="r-+" legend="21 theta 1" markersize="5.5" xcol="1" ycol="5"/>
     </data>
 </case>
 
-<case compute="on" label="CANON" run_id="500CELLS" post="on" status="on">
-    <prepro label="grid.py" args="-m canon500.des.gz -p supercanon.xml" status="on"/>
-    <data dest="" file="probes_Pressure.dat">
-        <plot fig="1" fmt="b-d" legend="Grid level 2" xcol="1" ycol="2"/>
-        <plot fig="2" fmt="b-d" xcol="1" ycol="3"/>
+<case compute="on" label="COUETTE" post="on" run_id="43_Theta_05" status="on">
+    <prepro args="-m 43_Theta_05.med -p Couette.xml -n 8000 -a 0.5 -t 0.00512 -u 2"
+            label="prepro.py" status="on"/prepro>
+    <data dest="" file="profile.dat">
+        <plot fig="5" fmt="b" legend="43 Theta 05" markersize="5.5" xcol="1" ycol="5"/>
+    </data>
+</case>
+
+<case compute="on" label="COUETTE" post="on" run_id="86_Theta_025" status="on">
+    <prepro args="-m 86_Theta_025.med -p Couette.xml -n 16000 -a 0.25 -t 0.00256 -u 4"
+            label="prepro.py" status="on" /prepro>
+    <data dest="" file="profile.dat">
+        <plot fig="5" fmt="g" legend="86 Theta 025" markersize="5.5" xcol="1" ycol="5"/>
     </data>
 </case>
 \end{verbatim}
 \normalsize
 
-In order to change the name of the mesh inside the file of parameters of
-the code a script \texttt{grid.py} has to be written in the directory
-\texttt{MESH} of the study or in the directory \texttt{DATA} of the related
-case:
+Recall that the case attribute \texttt{run\_id} should be given a different
+value for each run, while the \texttt{label} should stay the same and that the
+prepro script should be copied in the directory \texttt{MESH} of the study or in
+the directory \texttt{DATA} of the case.
+
+The prepro script is given below. Note that it can be called inside the file of
+parameters without specifying a value for each option:
 
 \small
 \begin{verbatim}
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#-------------------------------------------------------------------------------
+#
+#-------------------------------------------------------------------------------
+
+#-------------------------------------------------------------------------------
+# Standard modules import
+#-------------------------------------------------------------------------------
+
 import os, sys
 import string
 from optparse import OptionParser
-sys.path.append('/home/dupond/code/lib/python2.7/site-packages/code_saturne')
-sys.path.append('/home/dupond/code/lib/python2.7/site-packages/code_saturne/Base')
-sys.path.append('/home/dupond/code/python2.7/site-packages/code_saturne/Pages')
+
+#-------------------------------------------------------------------------------
+
+#-------------------------------------------------------------------------------
+# Application modules import
+#-------------------------------------------------------------------------------
+from Pages.ScriptRunningModel import ScriptRunningModel
+
+#-------------------------------------------------------------------------------
 
 def process_cmd_line(argv):
     """Processes the passed command line arguments."""
@@ -1454,19 +1490,36 @@ def process_cmd_line(argv):
                       help="Directory of the current case")
 
     parser.add_option("-p", "--param", dest="param", type="string",
-                      help="Name f the file of parameters")
+                      help="Name of the file of parameters")
 
     parser.add_option("-m", "--mesh", dest="mesh", type="string",
                       help="Name of the new mesh")
 
+    parser.add_option("-n", "--iter-num", dest="iterationsNumber", type="int",
+                      help="New iteration number")
+
+    parser.add_option("-u", "--n-procs", dest="n_procs", type="int",
+                      help="Number of processes (units)")
+
+    parser.add_option("-t", "--time-step", dest="timeStep", type="float",
+                      help="New time step")
+
+    parser.add_option("-a", "--perio-angle", dest="rotationAngle", type="float",
+                      help="Periodicity angle")
+
     (options, args) = parser.parse_args(argv)
+
     return options
+
+#-------------------------------------------------------------------------------
 
 def main(options):
     from cs_package import package
     from Base.XMLengine import Case
     from Base.XMLinitialize import XMLinit
     from Pages.SolutionDomainModel import SolutionDomainModel
+    from Pages.TimeStepModel import TimeStepModel
+    from Pages.SteadyManagementModel import SteadyManagementModel
 
     fp = os.path.join(options.case, "DATA", options.param)
     if os.path.isfile(fp):
@@ -1480,15 +1533,41 @@ def main(options):
         case['xmlfile'] = fp
         case.xmlCleanAllBlank(case.xmlRootNode())
         XMLinit(case).initialize()
-        s = SolutionDomainModel(case)
-        l = s.getMeshList()
-        s.delMesh(l[0])
-        s.addMesh((options.mesh, None))
+
+        if options.mesh:
+            s = SolutionDomainModel(case)
+            l = s.getMeshList()
+            s.delMesh(l[0])
+            s.addMesh((options.mesh, None))
+
+        if options.rotationAngle:
+            s.setRotationAngle(0, options.rotationAngle)
+
+        if (options.iterationsNumber):
+            s = SteadyManagementModel(case)
+            t = TimeStepModel(case)
+            if s.getSteadyFlowManagement() == 'on':
+                s.setNbIter(options.iterationsNumber)
+            else:
+                t.setIterationsNumber(options.iterationsNumber)
+
+        if (options.TimeStep):
+            t = TimeStepModel(case)
+            t.setTimeStep(options.TimeStep)
+
+        if (options.n_procs):
+            mdl = ScriptRunningModel(case)
+            mdl.setString('n_procs', str(options.n_procs))
+
         case.xmlSaveDocument()
+
+#-------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     options = process_cmd_line(sys.argv[1:])
     main(options)
+
+#-------------------------------------------------------------------------------
 \end{verbatim}
 \normalsize
 
